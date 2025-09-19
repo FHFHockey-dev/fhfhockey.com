@@ -1443,49 +1443,6 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                 {onExportCsv ? "Export CSV" : "Export Settings"}
               </button>
             </div>
-            <div className={styles.settingRow}>
-              <label className={styles.label} htmlFor="allowNameFallbackToggle">
-                Allow name fallback:
-              </label>
-              <div className={styles.toggleRow}>
-                <input
-                  id="allowNameFallbackToggle"
-                  type="checkbox"
-                  checked={settings.allowCustomNameFallback ?? true}
-                  onChange={(e) =>
-                    onSettingsChange({
-                      allowCustomNameFallback: e.target.checked
-                    })
-                  }
-                />
-                <span className={styles.helperText}>
-                  Use standardized player names when IDs are missing in custom
-                  projections.
-                </span>
-              </div>
-            </div>
-            <div className={styles.settingRow}>
-              <label className={styles.label} htmlFor="minimumCoverageInput">
-                Minimum mapping coverage (%):
-              </label>
-              <input
-                id="minimumCoverageInput"
-                type="number"
-                min={0}
-                max={100}
-                value={settings.customSourceMinimumCoverage ?? 25}
-                onChange={(e) => {
-                  const raw = parseFloat(e.target.value);
-                  if (Number.isNaN(raw)) return;
-                  const clamped = Math.max(0, Math.min(100, raw));
-                  onSettingsChange({
-                    customSourceMinimumCoverage: clamped
-                  });
-                }}
-                onWheel={(e) => (e.currentTarget as HTMLInputElement).blur()}
-                className={styles.numberInput}
-              />
-            </div>
           </fieldset>
           <fieldset className={styles.fieldset}>
             <legend className={styles.legend}>

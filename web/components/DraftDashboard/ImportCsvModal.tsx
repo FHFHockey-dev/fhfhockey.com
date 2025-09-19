@@ -27,11 +27,82 @@ const REQUIRED_COLUMNS = [
   "Assists"
 ];
 
+const FIRST_NAME_ALIASES: Record<string, string[]> = {
+  nicholas: ["nick", "nicky"],
+  nick: ["nicholas"],
+  michael: ["mike", "mikey"],
+  mike: ["michael", "mikey"],
+  matthew: ["matt", "matty"],
+  matt: ["matthew", "matty"],
+  zachary: ["zach", "zac", "zack"],
+  zach: ["zachary", "zac", "zack"],
+  zac: ["zachary", "zach", "zack"],
+  zack: ["zachary", "zach", "zac"],
+  jacob: ["jake"],
+  jake: ["jacob"],
+  alexander: ["alex", "sasha"],
+  alex: ["alexander"],
+  alexis: ["alex"],
+  jonathan: ["john", "jon", "johnny"],
+  john: ["jon", "jonathan"],
+  jon: ["john", "jonathan"],
+  william: ["will", "bill", "billy", "liam"],
+  will: ["william"],
+  liam: ["william"],
+  stanislav: ["stan"],
+  daniel: ["dan", "danny"],
+  danila: ["danil", "dan"],
+  maxim: ["max"],
+  max: ["maxim", "maxwell"],
+  alexei: ["alexey", "alex"],
+  alexey: ["alexei", "alex"],
+  andrei: ["andrew", "andy"],
+  andrew: ["andrei", "andy", "drew"],
+  joseph: ["joe", "joey"],
+  jose: ["joe", "joey"],
+  josef: ["joe", "joey"],
+  isaac: ["ike"],
+  michaelson: ["mike"],
+  artemiy: ["artem"],
+  artemi: ["artem"],
+  alexanderh: ["sasha"],
+  brandon: ["brad"],
+  drew: ["andrew"],
+  nathan: ["nate"],
+  nate: ["nathan"],
+  gabriel: ["gaby", "gabe"],
+  gabe: ["gabriel", "gaby"],
+  patrick: ["pat"],
+  pat: ["patrick"],
+  caleb: ["cale"],
+  cale: ["caleb"],
+  luke: ["luc"],
+  luc: ["luke"],
+  alexandre: ["alex", "sasha"],
+  mattias: ["matty", "matt"],
+  mattes: ["matt"],
+  thomas: ["tom", "tommy", "tomas"],
+  tomas: ["thomas", "tom"],
+  alexandar: ["alex", "sasha"],
+  darcy: ["darce"],
+  sergei: ["sergey"],
+  sergey: ["sergei"],
+  ilya: ["ilya"],
+  illya: ["ilya"],
+  mikhail: ["mike"],
+  matias: ["matt"],
+  mathew: ["matt"],
+  nicolas: ["nick"],
+  niklas: ["nick"],
+  steven: ["steve"],
+  stephen: ["steve"],
+  vladimir: ["vlad"],
+  vladislav: ["vlad"],
+  alexi: ["alex", "alexei"]
+};
+
 const CANONICAL_COLUMN_OPTIONS = Array.from(
-  new Set([
-    ...Object.values(defaultCanonicalColumnMap),
-    "player_id"
-  ])
+  new Set([...Object.values(defaultCanonicalColumnMap), "player_id"])
 ).sort();
 
 const ALLOWED_COLUMNS = new Set<string>(CANONICAL_COLUMN_OPTIONS);
@@ -185,6 +256,9 @@ export default function ImportCsvModal({
   const [collapseHeaderMapping, setCollapseHeaderMapping] = useState(false);
   const [collapseUnresolved, setCollapseUnresolved] = useState(false);
   const [collapseAmbiguities, setCollapseAmbiguities] = useState(false);
+  const [manualSearchInputs, setManualSearchInputs] = useState<
+    Record<string, string>
+  >({});
   const loggedTargetsRef = useRef(false);
   const rosterIndex = useMemo(() => {
     const ids = new Set<number>();
@@ -211,6 +285,28 @@ export default function ImportCsvModal({
         byTeamAbbrev.get(key)!.push(record);
       }
       byId.set(record.id, record);
+
+      // Inject common first-name aliases (Nick <-> Nicholas, etc.)
+      const tokens = p.fullName.split(/\s+/);
+      if (tokens.length > 0) {
+        const first = tokens[0];
+        const rest = tokens.slice(1).join(" ");
+        const firstNorm = stdName(first);
+        const aliases = FIRST_NAME_ALIASES[firstNorm];
+        if (aliases && aliases.length) {
+          aliases.forEach((alias) => {
+            const aliasFirst = alias.slice(0, 1).toUpperCase() + alias.slice(1);
+            const aliasFullName = rest ? `${aliasFirst} ${rest}` : aliasFirst;
+            const aliasStd = stdName(aliasFullName);
+            if (!aliasStd || aliasStd === std) return;
+            if (!byStdName.has(aliasStd)) byStdName.set(aliasStd, []);
+            const list = byStdName.get(aliasStd)!;
+            if (!list.some((rec) => rec.id === record.id)) {
+              list.push(record);
+            }
+          });
+        }
+      }
     });
     return {
       ids,
@@ -396,77 +492,77 @@ export default function ImportCsvModal({
     return () => document.removeEventListener("keydown", handleKey);
   }, [open, onClose]);
 
-  const classifyColumn = useCallback(
-    (standardized: string) => {
-      if (REQUIRED_COLUMN_SET.has(standardized)) {
-        return {
-          status: "required" as HeaderConfig["status"],
-          selected: true,
-          error: null
-        };
-      }
-      if (ALLOWED_COLUMNS.has(standardized)) {
-        return {
-          status: "supported" as HeaderConfig["status"],
-          selected: true,
-          error: null
-        };
-      }
+  const classifyColumn = useCallback((standardized: string) => {
+    if (REQUIRED_COLUMN_SET.has(standardized)) {
       return {
-        status: "unsupported" as HeaderConfig["status"],
-        selected: false,
-        error: "Unrecognized column. Choose a supported option or uncheck."
+        status: "required" as HeaderConfig["status"],
+        selected: true,
+        error: null
       };
-    },
-    []
-  );
+    }
+    if (ALLOWED_COLUMNS.has(standardized)) {
+      return {
+        status: "supported" as HeaderConfig["status"],
+        selected: true,
+        error: null
+      };
+    }
+    return {
+      status: "unsupported" as HeaderConfig["status"],
+      selected: false,
+      error: "Unrecognized column. Choose a supported option or uncheck."
+    };
+  }, []);
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    setError(null);
-    const file = acceptedFiles[0];
-    if (!file) return;
-    setIsParsing(true);
-    Papa.parse<CsvPreviewRow>(file, {
-      header: true,
-      skipEmptyLines: true,
-      dynamicTyping: true,
-      complete: (result) => {
-        const data = (result.data || []).filter(Boolean);
-        if (!data.length) {
-          setError("No rows found in CSV.");
+  const onDrop = useCallback(
+    (acceptedFiles: File[]) => {
+      setError(null);
+      const file = acceptedFiles[0];
+      if (!file) return;
+      setIsParsing(true);
+      Papa.parse<CsvPreviewRow>(file, {
+        header: true,
+        skipEmptyLines: true,
+        dynamicTyping: true,
+        complete: (result) => {
+          const data = (result.data || []).filter(Boolean);
+          if (!data.length) {
+            setError("No rows found in CSV.");
+            setIsParsing(false);
+            return;
+          }
+          // Build headers map
+          const firstRow = data[0] as Record<string, any>;
+          const incomingHeaders = Object.keys(firstRow);
+          const processed = incomingHeaders.map((h) => {
+            const standardized = standardizeColumnName(h);
+            const classification = classifyColumn(standardized);
+            return {
+              original: h,
+              standardized,
+              selected: classification.selected,
+              status: classification.status,
+              error: classification.error
+            } as HeaderConfig;
+          });
+          setHeaders(processed);
+          // Guess player column
+          const guess =
+            processed.find((h) => h.standardized === "Player_Name")?.original ||
+            null;
+          setPlayerHeader(guess);
+          setAllRows(data as CsvPreviewRow[]);
+          setRawRows(data.slice(0, 50));
           setIsParsing(false);
-          return;
+        },
+        error: (err) => {
+          setError(err.message || "Failed to parse CSV");
+          setIsParsing(false);
         }
-        // Build headers map
-        const firstRow = data[0] as Record<string, any>;
-        const incomingHeaders = Object.keys(firstRow);
-        const processed = incomingHeaders.map((h) => {
-          const standardized = standardizeColumnName(h);
-          const classification = classifyColumn(standardized);
-          return {
-            original: h,
-            standardized,
-            selected: classification.selected,
-            status: classification.status,
-            error: classification.error
-          } as HeaderConfig;
-        });
-        setHeaders(processed);
-        // Guess player column
-        const guess =
-          processed.find((h) => h.standardized === "Player_Name")?.original ||
-          null;
-        setPlayerHeader(guess);
-        setAllRows(data as CsvPreviewRow[]);
-        setRawRows(data.slice(0, 50));
-        setIsParsing(false);
-      },
-      error: (err) => {
-        setError(err.message || "Failed to parse CSV");
-        setIsParsing(false);
-      }
-    });
-  }, [classifyColumn]);
+      });
+    },
+    [classifyColumn]
+  );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -1039,6 +1135,28 @@ export default function ImportCsvModal({
     );
   };
 
+  const handleManualResolve = (name: string, playerId: number) => {
+    setAmbiguousChoices((prev) => ({ ...prev, [name]: playerId }));
+    const rec = rosterIndex.byId.get(playerId);
+    setManualSearchInputs((prev) => ({
+      ...prev,
+      [name]: rec?.fullName || prev[name] || ""
+    }));
+  };
+
+  const handleManualClear = (name: string) => {
+    setAmbiguousChoices((prev) => {
+      const next = { ...prev };
+      if (Object.prototype.hasOwnProperty.call(next, name)) delete next[name];
+      return next;
+    });
+    setManualSearchInputs((prev) => {
+      const next = { ...prev };
+      if (Object.prototype.hasOwnProperty.call(next, name)) delete next[name];
+      return next;
+    });
+  };
+
   // ---- Derived hook values (must be before any early returns to preserve hook order) ----
   // Count unresolved ambiguous names
   const unresolvedCount = useMemo(
@@ -1098,13 +1216,13 @@ export default function ImportCsvModal({
             }}
             aria-label="CSV Dropzone"
           >
-          <input {...getInputProps()} aria-label="CSV File Input" />
-          {isDragActive ? (
-            <p>Drop the CSV here…</p>
-          ) : (
-            <p>Drag and drop a CSV here, or click to browse</p>
-          )}
-        </div>
+            <input {...getInputProps()} aria-label="CSV File Input" />
+            {isDragActive ? (
+              <p>Drop the CSV here…</p>
+            ) : (
+              <p>Drag and drop a CSV here, or click to browse</p>
+            )}
+          </div>
           {isParsing && <p>Parsing…</p>}
           {error && (
             <p role="alert" style={{ color: "#d32f2f" }}>
@@ -1162,48 +1280,50 @@ export default function ImportCsvModal({
 
           {headers.length > 0 && (
             <div style={{ marginTop: 12 }}>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: 6
-              }}
-            >
-              <h3 style={{ margin: 0 }}>Header mapping</h3>
-              <button
-                type="button"
-                onClick={() => setCollapseHeaderMapping((v) => !v)}
-                style={smallSecondaryBtn}
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: 6
+                }}
               >
-                {collapseHeaderMapping ? "Expand" : "Collapse"}
-              </button>
-            </div>
-            {!collapseHeaderMapping && (
-              <>
-                <div
-                  style={{
-                    maxHeight: 240,
-                    overflow: "auto",
-                    border: "1px solid #2f2f2f",
-                    borderRadius: 6
-                  }}
+                <h3 style={{ margin: 0 }}>Header mapping</h3>
+                <button
+                  type="button"
+                  onClick={() => setCollapseHeaderMapping((v) => !v)}
+                  style={smallSecondaryBtn}
                 >
-                  <datalist id="import-csv-header-options">
-                    {CANONICAL_COLUMN_OPTIONS.map((option) => (
-                      <option key={option} value={option} />
-                    ))}
-                  </datalist>
-                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                    <thead>
-                      <tr>
-                        <th align="left">Include</th>
-                        <th align="left">Original</th>
-                        <th align="left">Standardized</th>
-                        <th align="left">Player Column</th>
-                      </tr>
-                    </thead>
-                    <tbody>
+                  {collapseHeaderMapping ? "Expand" : "Collapse"}
+                </button>
+              </div>
+              {!collapseHeaderMapping && (
+                <>
+                  <div
+                    style={{
+                      maxHeight: 240,
+                      overflow: "auto",
+                      border: "1px solid #2f2f2f",
+                      borderRadius: 6
+                    }}
+                  >
+                    <datalist id="import-csv-header-options">
+                      {CANONICAL_COLUMN_OPTIONS.map((option) => (
+                        <option key={option} value={option} />
+                      ))}
+                    </datalist>
+                    <table
+                      style={{ width: "100%", borderCollapse: "collapse" }}
+                    >
+                      <thead>
+                        <tr>
+                          <th align="left">Include</th>
+                          <th align="left">Original</th>
+                          <th align="left">Standardized</th>
+                          <th align="left">Player Column</th>
+                        </tr>
+                      </thead>
+                      <tbody>
                         {headers.map((h, idx) => {
                           const isRequired = h.status === "required";
                           const isUnsupported = h.status === "unsupported";
@@ -1247,7 +1367,10 @@ export default function ImportCsvModal({
                                     list="import-csv-header-options"
                                     value={h.standardized}
                                     onChange={(e) =>
-                                      handleHeaderNameChange(idx, e.target.value)
+                                      handleHeaderNameChange(
+                                        idx,
+                                        e.target.value
+                                      )
                                     }
                                     aria-label={`Standardized name for ${h.original}`}
                                     style={inputStyle}
@@ -1276,61 +1399,63 @@ export default function ImportCsvModal({
                             </tr>
                           );
                         })}
-                    </tbody>
-                  </table>
-                </div>
-                {missingRequired.length > 0 && (
-                  <p style={{ color: "#d32f2f", marginTop: 6 }}>
-                    Missing required: {missingRequired.join(", ")}
-                  </p>
-                )}
+                      </tbody>
+                    </table>
+                  </div>
+                  {missingRequired.length > 0 && (
+                    <p style={{ color: "#d32f2f", marginTop: 6 }}>
+                      Missing required: {missingRequired.join(", ")}
+                    </p>
+                  )}
 
-                <h3 style={{ margin: "12px 0 4px" }}>
-                  Preview (first 50 rows)
-                </h3>
-                <div
-                  style={{
-                    maxHeight: 180,
-                    overflow: "auto",
-                    border: "1px solid #2f2f2f",
-                    borderRadius: 6
-                  }}
-                >
-                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                    <thead>
-                      <tr>
-                        {headers
-                          .filter((h) => h.selected)
-                          .map((h) => (
-                            <th
-                              key={h.original}
-                              style={{ borderBottom: "1px solid #333" }}
-                            >
-                              {h.standardized}
-                            </th>
-                          ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {mappedPreview.map((row, i) => (
-                        <tr key={i}>
+                  <h3 style={{ margin: "12px 0 4px" }}>
+                    Preview (first 50 rows)
+                  </h3>
+                  <div
+                    style={{
+                      maxHeight: 180,
+                      overflow: "auto",
+                      border: "1px solid #2f2f2f",
+                      borderRadius: 6
+                    }}
+                  >
+                    <table
+                      style={{ width: "100%", borderCollapse: "collapse" }}
+                    >
+                      <thead>
+                        <tr>
                           {headers
                             .filter((h) => h.selected)
                             .map((h) => (
-                              <td
+                              <th
                                 key={h.original}
-                                style={{ borderBottom: "1px solid #2a2a2a" }}
+                                style={{ borderBottom: "1px solid #333" }}
                               >
-                                {String(row[h.standardized] ?? "")}
-                              </td>
+                                {h.standardized}
+                              </th>
                             ))}
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </>
-            )}
+                      </thead>
+                      <tbody>
+                        {mappedPreview.map((row, i) => (
+                          <tr key={i}>
+                            {headers
+                              .filter((h) => h.selected)
+                              .map((h) => (
+                                <td
+                                  key={h.original}
+                                  style={{ borderBottom: "1px solid #2a2a2a" }}
+                                >
+                                  {String(row[h.standardized] ?? "")}
+                                </td>
+                              ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
             </div>
           )}
 
@@ -1352,42 +1477,44 @@ export default function ImportCsvModal({
                     background: "rgba(41, 86, 68, 0.2)"
                   }}
                 >
-                <h3 style={{ margin: "0 0 6px" }}>Name → ID Mapping Summary</h3>
-                <p style={{ margin: 0, fontSize: 13 }}>
-                  Coverage: <strong>{coveragePercentDisplay}%</strong> (
-                  {mappedCount}/{resolutionStats.totalRows} rows mapped). ID
-                  matches: {resolutionStats.idMatched}, Name matches:{" "}
-                  {resolutionStats.nameMatched}
-                  {resolutionStats.fuzzyMatched > 0
-                    ? ` (fuzzy: ${resolutionStats.fuzzyMatched})`
-                    : ""}
-                  , Manual: {resolutionStats.manualOverrides}, Unresolved:{" "}
-                  {resolutionStats.unresolved}.
-                </p>
-                {resolutionStats.invalidIds > 0 && (
-                  <p
-                    style={{
-                      margin: "6px 0 0",
-                      fontSize: 12,
-                      color: "#ffb74d"
-                    }}
-                  >
-                    {resolutionStats.invalidIds} player_id value(s) not present
-                    in the roster were repaired via name matching.
+                  <h3 style={{ margin: "0 0 6px" }}>
+                    Name → ID Mapping Summary
+                  </h3>
+                  <p style={{ margin: 0, fontSize: 13 }}>
+                    Coverage: <strong>{coveragePercentDisplay}%</strong> (
+                    {mappedCount}/{resolutionStats.totalRows} rows mapped). ID
+                    matches: {resolutionStats.idMatched}, Name matches:{" "}
+                    {resolutionStats.nameMatched}
+                    {resolutionStats.fuzzyMatched > 0
+                      ? ` (fuzzy: ${resolutionStats.fuzzyMatched})`
+                      : ""}
+                    , Manual: {resolutionStats.manualOverrides}, Unresolved:{" "}
+                    {resolutionStats.unresolved}.
                   </p>
-                )}
-                {!localAllowFallback && hasUnresolvedRows && (
-                  <p
-                    style={{
-                      margin: "6px 0 0",
-                      fontSize: 12,
-                      color: "#ff8a80"
-                    }}
-                  >
-                    Name fallback is disabled. Unresolved rows will be ignored
-                    until mapped.
-                  </p>
-                )}
+                  {resolutionStats.invalidIds > 0 && (
+                    <p
+                      style={{
+                        margin: "6px 0 0",
+                        fontSize: 12,
+                        color: "#ffb74d"
+                      }}
+                    >
+                      {resolutionStats.invalidIds} player_id value(s) not
+                      present in the roster were repaired via name matching.
+                    </p>
+                  )}
+                  {!localAllowFallback && hasUnresolvedRows && (
+                    <p
+                      style={{
+                        margin: "6px 0 0",
+                        fontSize: 12,
+                        color: "#ff8a80"
+                      }}
+                    >
+                      Name fallback is disabled. Unresolved rows will be ignored
+                      until mapped.
+                    </p>
+                  )}
                 </div>
               )}
               {unresolvedNames.length > 0 && (
@@ -1415,26 +1542,167 @@ export default function ImportCsvModal({
                     <div
                       style={{
                         display: "flex",
-                        flexWrap: "wrap",
-                        gap: 6,
-                        maxHeight: 160,
-                        overflowY: "auto"
+                        flexDirection: "column",
+                        gap: 12,
+                        maxHeight: 260,
+                        overflowY: "auto",
+                        paddingRight: 4
                       }}
                     >
-                      {unresolvedNames.map((name) => (
-                        <span
-                          key={name}
-                          style={{
-                            background: "#2b2b2b",
-                            border: "1px solid #444",
-                            padding: "4px 10px",
-                            borderRadius: 16,
-                            fontSize: 12
-                          }}
-                        >
-                          {name}
-                        </span>
-                      ))}
+                      {unresolvedNames.map((name) => {
+                        const searchValue = manualSearchInputs[name] ?? "";
+                        const normalized = searchValue.trim().toLowerCase();
+                        const baseSuggestions =
+                          rosterIndex.byStdName.get(stdName(name)) || [];
+                        const suggestionsMap = new Map<
+                          number,
+                          PlayerIndexRecord
+                        >();
+                        baseSuggestions.forEach((rec) =>
+                          suggestionsMap.set(rec.id, rec)
+                        );
+                        if (normalized.length >= 2) {
+                          dbPlayers
+                            .filter((p) =>
+                              p.fullName.toLowerCase().includes(normalized)
+                            )
+                            .slice(0, 12)
+                            .forEach((p) => {
+                              const rec =
+                                rosterIndex.byId.get(p.id) ||
+                                ({
+                                  id: p.id,
+                                  fullName: p.fullName,
+                                  position: p.position ?? null,
+                                  lastName: p.lastName ?? null,
+                                  teamId: p.teamId ?? null,
+                                  teamAbbrev: p.teamAbbrev ?? null,
+                                  std: stdName(p.fullName)
+                                } as PlayerIndexRecord);
+                              suggestionsMap.set(rec.id, rec);
+                            });
+                        }
+                        const suggestionList = Array.from(
+                          suggestionsMap.values()
+                        ).slice(0, 12);
+                        const selectedId = ambiguousChoices[name];
+                        const selectedPlayer =
+                          typeof selectedId === "number"
+                            ? rosterIndex.byId.get(selectedId)
+                            : undefined;
+                        return (
+                          <div
+                            key={name}
+                            style={{
+                              border: "1px solid #2f2f2f",
+                              borderRadius: 8,
+                              padding: "10px 12px",
+                              background: "rgba(255,255,255,0.03)"
+                            }}
+                          >
+                            <div
+                              style={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                gap: 8,
+                                flexWrap: "wrap"
+                              }}
+                            >
+                              <strong>{name}</strong>
+                              {selectedPlayer && (
+                                <span style={{ fontSize: 12, opacity: 0.8 }}>
+                                  Matched: {selectedPlayer.fullName}
+                                  {selectedPlayer.teamAbbrev
+                                    ? ` (${selectedPlayer.teamAbbrev}`
+                                    : ""}
+                                  {selectedPlayer.position
+                                    ? ` ${selectedPlayer.position})`
+                                    : selectedPlayer.teamAbbrev
+                                      ? ")"
+                                      : ""}
+                                </span>
+                              )}
+                            </div>
+                            <div
+                              style={{
+                                marginTop: 6,
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: 6
+                              }}
+                            >
+                              <input
+                                type="text"
+                                value={searchValue}
+                                placeholder="Search players…"
+                                onChange={(e) =>
+                                  setManualSearchInputs((prev) => ({
+                                    ...prev,
+                                    [name]: e.target.value
+                                  }))
+                                }
+                                style={{
+                                  border: "1px solid #444",
+                                  background: "#111",
+                                  color: "#f5f5f5",
+                                  borderRadius: 4,
+                                  padding: "4px 6px"
+                                }}
+                              />
+                              <div
+                                style={{
+                                  display: "flex",
+                                  flexWrap: "wrap",
+                                  gap: 6
+                                }}
+                              >
+                                {suggestionList.length === 0 && (
+                                  <span style={{ fontSize: 12, opacity: 0.7 }}>
+                                    {normalized.length < 2
+                                      ? "Type at least two letters to search our roster."
+                                      : "No matches found."}
+                                  </span>
+                                )}
+                                {suggestionList.map((rec) => {
+                                  const labelTeam = rec.teamAbbrev || "FA";
+                                  const labelPos = rec.position || "";
+                                  const isActive =
+                                    typeof selectedId === "number" &&
+                                    selectedId === rec.id;
+                                  return (
+                                    <button
+                                      key={rec.id}
+                                      type="button"
+                                      onClick={() =>
+                                        handleManualResolve(name, rec.id)
+                                      }
+                                      style={{
+                                        ...smallPrimaryBtn,
+                                        background: isActive
+                                          ? "#2e7d32"
+                                          : "#1976d2"
+                                      }}
+                                    >
+                                      {rec.fullName} ({labelTeam}
+                                      {labelPos ? ` ${labelPos}` : ""})
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                              {selectedPlayer && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleManualClear(name)}
+                                  style={smallSecondaryBtn}
+                                >
+                                  Clear match
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -1444,359 +1712,368 @@ export default function ImportCsvModal({
 
           {ambiguousWithSuggestions.length > 0 && (
             <div style={{ marginTop: 12 }}>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: 6
-              }}
-            >
-              <h3 style={{ margin: 0 }}>Resolve Ambiguous Names</h3>
-              <button
-                type="button"
-                onClick={() => setCollapseAmbiguities((v) => !v)}
-                style={smallSecondaryBtn}
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: 6
+                }}
               >
-                {collapseAmbiguities ? "Expand" : "Collapse"}
-              </button>
-            </div>
-            {!collapseAmbiguities && (
-              <>
-                <p style={{ opacity: 0.8, marginTop: 0 }}>
-                  We auto-resolve perfect unique matches. Accept or override
-                  others below. Use search if needed.
-                </p>
-                {ambiguousWithSuggestions.some(
-                  (r) => ambiguousChoices[r.key]
-                ) && (
-                  <div style={{ marginBottom: 12 }}>
-                    <strong>Auto-Resolved</strong>
-                    <ul
-                      style={{
-                        margin: "4px 0 0",
-                        paddingLeft: 18,
-                        maxHeight: 100,
-                        overflowY: "auto"
-                      }}
-                    >
-                      {ambiguousWithSuggestions
-                        .filter((r) => ambiguousChoices[r.key])
-                        .map((r) => {
-                          const id = ambiguousChoices[r.key];
-                          const cand = r.candidates.find((c) => c.id === id);
-                          if (!cand) return null;
-                          return (
-                            <li key={r.key} style={{ fontSize: 12 }}>
-                              {r.key} → {cand.fullName}{" "}
-                              <span
-                                style={{
-                                  background: "#2e7d32",
-                                  color: "#fff",
-                                  padding: "1px 6px",
-                                  borderRadius: 10,
-                                  fontSize: 10
-                                }}
-                              >
-                                auto
-                              </span>
-                            </li>
-                          );
-                        })}
-                    </ul>
-                  </div>
-                )}
-                <div
-                  style={{
-                    maxHeight: 320,
-                    overflowY: "auto",
-                    paddingRight: 4,
-                    borderTop: "1px solid #333",
-                    paddingTop: 8
-                  }}
+                <h3 style={{ margin: 0 }}>Resolve Ambiguous Names</h3>
+                <button
+                  type="button"
+                  onClick={() => setCollapseAmbiguities((v) => !v)}
+                  style={smallSecondaryBtn}
                 >
-                  {ambiguousWithSuggestions
-                    .filter((r) => !ambiguousChoices[r.key])
-                    .map((r) => {
-                  const csvMeta = (() => {
-                    const raw = previewAmbiguities.find((p) => p.key === r.key);
-                    const t = raw?.csvTeam || "CSV?";
-                    const p = raw?.csvPos || "?";
-                    return ` (${t} ${p})`;
-                  })();
-                  const suggestion = r.best;
-                  const rejected = rejectedSuggestions.has(r.key);
-                  const search = searchInputs[r.key] || "";
-                  const dynamicMatches = search
-                    ? dbPlayers
-                        .filter((p) => {
-                          const q = search.toLowerCase();
-                          return p.fullName.toLowerCase().includes(q);
-                        })
-                        .slice(0, 25)
-                    : [];
-                  return (
-                    <div
-                      key={r.key}
-                      style={{
-                        marginBottom: 12,
-                        background: "rgba(255,255,255,0.04)",
-                        padding: 8,
-                        borderRadius: 6
-                      }}
-                    >
-                      <div
+                  {collapseAmbiguities ? "Expand" : "Collapse"}
+                </button>
+              </div>
+              {!collapseAmbiguities && (
+                <>
+                  <p style={{ opacity: 0.8, marginTop: 0 }}>
+                    We auto-resolve perfect unique matches. Accept or override
+                    others below. Use search if needed.
+                  </p>
+                  {ambiguousWithSuggestions.some(
+                    (r) => ambiguousChoices[r.key]
+                  ) && (
+                    <div style={{ marginBottom: 12 }}>
+                      <strong>Auto-Resolved</strong>
+                      <ul
                         style={{
-                          display: "flex",
-                          gap: 8,
-                          alignItems: "center",
-                          flexWrap: "wrap",
-                          justifyContent: "space-between"
+                          margin: "4px 0 0",
+                          paddingLeft: 18,
+                          maxHeight: 100,
+                          overflowY: "auto"
                         }}
                       >
-                        <div style={{ fontWeight: 600 }}>
-                          {r.key}
-                          <span style={{ opacity: 0.6 }}>{csvMeta}</span>
-                        </div>
-                        {!rejected && suggestion && (
-                          <div
-                            style={{
-                              display: "flex",
-                              gap: 8,
-                              alignItems: "center"
-                            }}
-                          >
-                            <span style={{ fontSize: 12, opacity: 0.85 }}>
-                              {(() => {
-                                const team = suggestion.teamAbbrev || "??";
-                                const pos = suggestion.position || "?";
-                                return `Suggest: ${suggestion.fullName} (${team} ${pos}) ${(suggestion.score * 100).toFixed(1)}%`;
-                              })()}
-                            </span>
-                            <button
-                              onClick={() =>
-                                setAmbiguousChoices((prev) => ({
-                                  ...prev,
-                                  [r.key]: suggestion.id
-                                }))
-                              }
-                              style={smallPrimaryBtn}
-                            >
-                              Yes
-                            </button>
-                            <button
-                              onClick={() =>
-                                setRejectedSuggestions(
-                                  (s) => new Set([...Array.from(s), r.key])
-                                )
-                              }
-                              style={smallSecondaryBtn}
-                            >
-                              No
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                      {rejected && (
-                        <div
-                          style={{
-                            marginTop: 6,
-                            display: "flex",
-                            gap: 8,
-                            flexWrap: "wrap"
-                          }}
-                        >
-                          <select
-                            value={ambiguousChoices[r.key] ?? ""}
-                            onChange={(e) =>
-                              setAmbiguousChoices((prev) => ({
-                                ...prev,
-                                [r.key]: e.target.value
-                                  ? Number(e.target.value)
-                                  : ""
-                              }))
-                            }
-                            style={{ minWidth: 260 }}
-                          >
-                            <option value="">Select player…</option>
-                            {r.candidates.map((c) => {
-                              // fallback to CSV context if no teamAbbrev / position
-                              const csvCtx = previewAmbiguities.find(
-                                (p) => p.key === r.key
-                              );
-                              const team =
-                                c.teamAbbrev || csvCtx?.csvTeam || "??";
-                              const pos = c.position || csvCtx?.csvPos || "?";
-                              return (
-                                <option key={c.id} value={c.id}>
-                                  {c.fullName} ({team} {pos}){" "}
-                                  {(c.score * 100).toFixed(0)}%
-                                </option>
-                              );
-                            })}
-                            {dynamicMatches.length > 0 && (
-                              <option disabled>-- Search Results --</option>
-                            )}
-                            {dynamicMatches.map((p) => {
-                              const csvCtx = previewAmbiguities.find(
-                                (px) => px.key === r.key
-                              );
-                              const team =
-                                (p as any).teamAbbrev ||
-                                csvCtx?.csvTeam ||
-                                "??";
-                              const pos =
-                                (p as any).position || csvCtx?.csvPos || "?";
-                              return (
-                                <option key={p.id} value={p.id}>
-                                  {p.fullName} ({team} {pos})
-                                </option>
-                              );
-                            })}
-                          </select>
-                          <input
-                            type="text"
-                            placeholder="Search players…"
-                            value={search}
-                            onChange={(e) =>
-                              setSearchInputs((prev) => ({
-                                ...prev,
-                                [r.key]: e.target.value
-                              }))
-                            }
-                            style={{
-                              flex: "1 1 160px",
-                              minWidth: 160,
-                              padding: 4
-                            }}
-                          />
-                          <button
-                            onClick={() =>
-                              setRejectedSuggestions((s) => {
-                                const n = new Set(s);
-                                n.delete(r.key);
-                                return n;
-                              })
-                            }
-                            style={smallSecondaryBtn}
-                          >
-                            Back
-                          </button>
-                        </div>
-                      )}
+                        {ambiguousWithSuggestions
+                          .filter((r) => ambiguousChoices[r.key])
+                          .map((r) => {
+                            const id = ambiguousChoices[r.key];
+                            const cand = r.candidates.find((c) => c.id === id);
+                            if (!cand) return null;
+                            return (
+                              <li key={r.key} style={{ fontSize: 12 }}>
+                                {r.key} → {cand.fullName}{" "}
+                                <span
+                                  style={{
+                                    background: "#2e7d32",
+                                    color: "#fff",
+                                    padding: "1px 6px",
+                                    borderRadius: 10,
+                                    fontSize: 10
+                                  }}
+                                >
+                                  auto
+                                </span>
+                              </li>
+                            );
+                          })}
+                      </ul>
                     </div>
-                  );
-                    })}
-                </div>
-              </>
-            )}
+                  )}
+                  <div
+                    style={{
+                      maxHeight: 320,
+                      overflowY: "auto",
+                      paddingRight: 4,
+                      borderTop: "1px solid #333",
+                      paddingTop: 8
+                    }}
+                  >
+                    {ambiguousWithSuggestions
+                      .filter((r) => !ambiguousChoices[r.key])
+                      .map((r) => {
+                        const csvMeta = (() => {
+                          const raw = previewAmbiguities.find(
+                            (p) => p.key === r.key
+                          );
+                          const t = raw?.csvTeam || "CSV?";
+                          const p = raw?.csvPos || "?";
+                          return ` (${t} ${p})`;
+                        })();
+                        const suggestion = r.best;
+                        const rejected = rejectedSuggestions.has(r.key);
+                        const search = searchInputs[r.key] || "";
+                        const dynamicMatches = search
+                          ? dbPlayers
+                              .filter((p) => {
+                                const q = search.toLowerCase();
+                                return p.fullName.toLowerCase().includes(q);
+                              })
+                              .slice(0, 25)
+                          : [];
+                        return (
+                          <div
+                            key={r.key}
+                            style={{
+                              marginBottom: 12,
+                              background: "rgba(255,255,255,0.04)",
+                              padding: 8,
+                              borderRadius: 6
+                            }}
+                          >
+                            <div
+                              style={{
+                                display: "flex",
+                                gap: 8,
+                                alignItems: "center",
+                                flexWrap: "wrap",
+                                justifyContent: "space-between"
+                              }}
+                            >
+                              <div style={{ fontWeight: 600 }}>
+                                {r.key}
+                                <span style={{ opacity: 0.6 }}>{csvMeta}</span>
+                              </div>
+                              {!rejected && suggestion && (
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    gap: 8,
+                                    alignItems: "center"
+                                  }}
+                                >
+                                  <span style={{ fontSize: 12, opacity: 0.85 }}>
+                                    {(() => {
+                                      const team =
+                                        suggestion.teamAbbrev || "??";
+                                      const pos = suggestion.position || "?";
+                                      return `Suggest: ${suggestion.fullName} (${team} ${pos}) ${(suggestion.score * 100).toFixed(1)}%`;
+                                    })()}
+                                  </span>
+                                  <button
+                                    onClick={() =>
+                                      setAmbiguousChoices((prev) => ({
+                                        ...prev,
+                                        [r.key]: suggestion.id
+                                      }))
+                                    }
+                                    style={smallPrimaryBtn}
+                                  >
+                                    Yes
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      setRejectedSuggestions(
+                                        (s) =>
+                                          new Set([...Array.from(s), r.key])
+                                      )
+                                    }
+                                    style={smallSecondaryBtn}
+                                  >
+                                    No
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                            {rejected && (
+                              <div
+                                style={{
+                                  marginTop: 6,
+                                  display: "flex",
+                                  gap: 8,
+                                  flexWrap: "wrap"
+                                }}
+                              >
+                                <select
+                                  value={ambiguousChoices[r.key] ?? ""}
+                                  onChange={(e) =>
+                                    setAmbiguousChoices((prev) => ({
+                                      ...prev,
+                                      [r.key]: e.target.value
+                                        ? Number(e.target.value)
+                                        : ""
+                                    }))
+                                  }
+                                  style={{ minWidth: 260 }}
+                                >
+                                  <option value="">Select player…</option>
+                                  {r.candidates.map((c) => {
+                                    // fallback to CSV context if no teamAbbrev / position
+                                    const csvCtx = previewAmbiguities.find(
+                                      (p) => p.key === r.key
+                                    );
+                                    const team =
+                                      c.teamAbbrev || csvCtx?.csvTeam || "??";
+                                    const pos =
+                                      c.position || csvCtx?.csvPos || "?";
+                                    return (
+                                      <option key={c.id} value={c.id}>
+                                        {c.fullName} ({team} {pos}){" "}
+                                        {(c.score * 100).toFixed(0)}%
+                                      </option>
+                                    );
+                                  })}
+                                  {dynamicMatches.length > 0 && (
+                                    <option disabled>
+                                      -- Search Results --
+                                    </option>
+                                  )}
+                                  {dynamicMatches.map((p) => {
+                                    const csvCtx = previewAmbiguities.find(
+                                      (px) => px.key === r.key
+                                    );
+                                    const team =
+                                      (p as any).teamAbbrev ||
+                                      csvCtx?.csvTeam ||
+                                      "??";
+                                    const pos =
+                                      (p as any).position ||
+                                      csvCtx?.csvPos ||
+                                      "?";
+                                    return (
+                                      <option key={p.id} value={p.id}>
+                                        {p.fullName} ({team} {pos})
+                                      </option>
+                                    );
+                                  })}
+                                </select>
+                                <input
+                                  type="text"
+                                  placeholder="Search players…"
+                                  value={search}
+                                  onChange={(e) =>
+                                    setSearchInputs((prev) => ({
+                                      ...prev,
+                                      [r.key]: e.target.value
+                                    }))
+                                  }
+                                  style={{
+                                    flex: "1 1 160px",
+                                    minWidth: 160,
+                                    padding: 4
+                                  }}
+                                />
+                                <button
+                                  onClick={() =>
+                                    setRejectedSuggestions((s) => {
+                                      const n = new Set(s);
+                                      n.delete(r.key);
+                                      return n;
+                                    })
+                                  }
+                                  style={smallSecondaryBtn}
+                                >
+                                  Back
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                  </div>
+                </>
+              )}
             </div>
           )}
 
           <div style={{ marginBottom: 12 }}>
-          <label
-            htmlFor="sourceName"
-            style={{ display: "block", marginBottom: 4 }}
-          >
-            Projection Source Name:
-          </label>
-          <input
-            id="sourceName"
-            type="text"
-            value={sourceName}
-            onChange={(e) => setSourceName(e.target.value)}
-            style={{
-              width: "100%",
-              padding: 8,
-              borderRadius: 4,
-              border: "1px solid #ccc"
-            }}
-            placeholder="Enter a name for this source"
-          />
+            <label
+              htmlFor="sourceName"
+              style={{ display: "block", marginBottom: 4 }}
+            >
+              Projection Source Name:
+            </label>
+            <input
+              id="sourceName"
+              type="text"
+              value={sourceName}
+              onChange={(e) => setSourceName(e.target.value)}
+              style={{
+                width: "100%",
+                padding: 8,
+                borderRadius: 4,
+                border: "1px solid #ccc"
+              }}
+              placeholder="Enter a name for this source"
+            />
           </div>
 
           {/* Unresolved / coverage warnings */}
           <div style={{ marginTop: "12px" }}>
-          {(hasUnresolvedRows || coverageBelowThreshold) &&
-            !forceImportDespiteUnresolved && (
-              <div
-                style={{
-                  background: "#fff3cd",
-                  border: "1px solid #ffeeba",
-                  color: "#856404",
-                  padding: "10px 12px",
-                  borderRadius: 4,
-                  marginBottom: 12
-                }}
-              >
-                <strong>Low ID match rate.</strong> {resolutionStats.unresolved}{" "}
-                unresolved row
-                {resolutionStats.unresolved === 1 ? "" : "s"}; coverage{" "}
-                {coveragePercentDisplay}% (minimum {localMinCoverage}%).
+            {(hasUnresolvedRows || coverageBelowThreshold) &&
+              !forceImportDespiteUnresolved && (
                 <div
                   style={{
-                    marginTop: 8,
-                    display: "flex",
-                    flexWrap: "wrap",
-                    gap: 12,
-                    alignItems: "center"
+                    background: "#fff3cd",
+                    border: "1px solid #ffeeba",
+                    color: "#856404",
+                    padding: "10px 12px",
+                    borderRadius: 4,
+                    marginBottom: 12
                   }}
                 >
-                  <button
+                  <strong>Low ID match rate.</strong>{" "}
+                  {resolutionStats.unresolved} unresolved row
+                  {resolutionStats.unresolved === 1 ? "" : "s"}; coverage{" "}
+                  {coveragePercentDisplay}% (minimum {localMinCoverage}%).
+                  <div
                     style={{
-                      background: "#1976d2",
-                      color: "white",
-                      border: 0,
-                      padding: "6px 10px",
-                      borderRadius: 4,
-                      cursor: "pointer"
+                      marginTop: 8,
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: 12,
+                      alignItems: "center"
                     }}
-                    onClick={() => setForceImportDespiteUnresolved(true)}
                   >
-                    Enable anyway
-                  </button>
-                  <span style={{ fontSize: 12, opacity: 0.85 }}>
-                    {localAllowFallback
-                      ? "We'll use name fallback during aggregation, but accuracy may drop."
-                      : "Name fallback is disabled; unresolved rows won't project."}
-                  </span>
+                    <button
+                      style={{
+                        background: "#1976d2",
+                        color: "white",
+                        border: 0,
+                        padding: "6px 10px",
+                        borderRadius: 4,
+                        cursor: "pointer"
+                      }}
+                      onClick={() => setForceImportDespiteUnresolved(true)}
+                    >
+                      Enable anyway
+                    </button>
+                    <span style={{ fontSize: 12, opacity: 0.85 }}>
+                      {localAllowFallback
+                        ? "We'll use name fallback during aggregation, but accuracy may drop."
+                        : "Name fallback is disabled; unresolved rows won't project."}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-          {(hasUnresolvedRows || coverageBelowThreshold) &&
-            forceImportDespiteUnresolved && (
-              <div
-                style={{
-                  background: "#f8d7da",
-                  border: "1px solid #f5c6cb",
-                  color: "#721c24",
-                  padding: "10px 12px",
-                  borderRadius: 4,
-                  marginBottom: 12
-                }}
-              >
-                Import will proceed with {resolutionStats.unresolved} unresolved
-                row{resolutionStats.unresolved === 1 ? "" : "s"} (
-                {coveragePercentDisplay}% coverage).
-              </div>
-            )}
+            {(hasUnresolvedRows || coverageBelowThreshold) &&
+              forceImportDespiteUnresolved && (
+                <div
+                  style={{
+                    background: "#f8d7da",
+                    border: "1px solid #f5c6cb",
+                    color: "#721c24",
+                    padding: "10px 12px",
+                    borderRadius: 4,
+                    marginBottom: 12
+                  }}
+                >
+                  Import will proceed with {resolutionStats.unresolved}{" "}
+                  unresolved row{resolutionStats.unresolved === 1 ? "" : "s"} (
+                  {coveragePercentDisplay}% coverage).
+                </div>
+              )}
 
-          <label
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              fontSize: 13
-            }}
-          >
-            <input
-              type="checkbox"
-              checked={requireFullMapping}
-              onChange={(e) => setRequireFullMapping(e.target.checked)}
-            />
-            Require full mapping (100% coverage)
-          </label>
+            <label
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                fontSize: 13
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={requireFullMapping}
+                onChange={(e) => setRequireFullMapping(e.target.checked)}
+              />
+              Require full mapping (100% coverage)
+            </label>
           </div>
         </div>
 

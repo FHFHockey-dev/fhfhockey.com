@@ -452,3 +452,74 @@ This single document will accumulate file-by-file findings and cross-references 
 - Changing risk SD in ProjectionsTable updates availability percentages shown here (via localStorage sync).
 - Multi-select via roster bar filters cards; UTIL segment clears filters.
 - Draft action fires `onDraftPlayer`; disabled when `!canDraft`.
+
+---
+
+## ImportCsvModal.tsx
+
+- Summary: CSV import modal for custom projection sources. Parses headers and rows, standardizes column names, previews mapped rows, and resolves player names to internal `player_id` using DB lookups (Supabase), deterministic rules, fuzzy matching, and optional manual overrides. Gated by coverage thresholds with options to require full mapping or force import.
+
+**Props**
+- Inbound: `open`, `onClose`, `minimumCoveragePercent = 25`, `allowNameFallback = true`, `onFallbackSettingsChange?({ allowCustomNameFallback, minimumCoveragePercent })`, `onImported({ headers, rows, sourceId, label, resolution })`.
+- Outbound: Calls `onFallbackSettingsChange` when confirming; calls `onImported` with `sourceId: "custom_csv"`, the standardized `headers`, fully mapped `rows` (adds `player_id`), user `label` (source name), and `resolution` stats.
+
+**Dependencies**
+- External: `react` hooks, `papaparse` (CSV parsing), `react-dropzone` (file input), `supabase` (players lookup), browser focus/keyboard handling.
+- Project: `standardizePlayerName`, `standardizeColumnName`, `defaultCanonicalColumnMap` (canonical keys), `teamsInfo` (id/abbr maps).
+
+**Data Flows**
+- Parse & headers: Dropzone → Papa.parse with `header: true` and `dynamicTyping`. Builds `headers: { original, standardized, selected, status }` via `standardizeColumnName` and classification: `required` (must include) vs `supported` vs `unsupported`.
+- Preview & mapping: Maintains `rawRows` (first 50) and `allRows` (entire file). Builds `mappedPreview` and `mappedAllRows` by re-keying selected headers to canonical names; player column is normalized via `standardizePlayerName`.
+- Player index: On open, paginates `players` from Supabase (id, fullName, lastName, position, team_id) and derives `teamAbbrev` via `teamsInfo`. Secondary fetch pulls any missing last names found in the CSV. Indexes: `ids`, `byId`, `byStdName`, `byTeamAbbrev`.
+- Resolution (per row):
+  - Extracts standardized `Player_Name`, detects any numeric `playerId` column(s), parses optional team from `Team_Abbreviation`.
+  - Priority: manual override → exact `player_id` present in roster → single std-name match → multi-match filtered by team → fuzzy by Levenshtein within team candidates (threshold ≤2).
+  - Writes `player_id` (and any `playerId`-like columns) on success; else deletes them and records in `__resolution` with `method`, `stdKey`, `team`, `invalidOriginalId`.
+  - Accumulates stats: `idMatched`, `nameMatched`, `fuzzyMatched`, `manualOverrides`, `invalidIds`, `unresolved`, `coverage`.
+- Ambiguities: Aggregates names that map to multiple DB players (mostly by last name) and suggests best candidate by normalized Levenshtein score. Auto-resolves unique perfect matches; supports explicit Yes/No, select box, and live search per name.
+- Coverage gates: Local `allowNameFallback` and `minimumCoveragePercent` mirror props. Confirm is disabled if below threshold or unresolved rows exist, unless "Enable anyway" is toggled. `Require full mapping` enforces 100% coverage.
+- Confirm: Persists fallback settings via `onFallbackSettingsChange`, emits `onImported` with rows, headers, label, and stats, then closes.
+- Accessibility: Dialog role with aria attributes, focus trap with Tab wrapping, Escape to close, and keyboard-safe controls.
+
+**Efficiency Gaps & Recommendations**
+- Full-table prefetch: Fetches all players (paged) on open, then a secondary `in(lastName)` query. For large tables this is heavy.
+  - Recommendation: Pre-scan CSV last names first, then fetch only candidates via one or few `in(lastName)` calls (chunked), optionally also `ilike(fullName)` for rare cases. Avoid full-table scan.
+- Resolution on main thread: Name→ID resolution runs over entire dataset with multiple passes and string ops; fuzzy matches call Levenshtein repeatedly.
+  - Recommendation: Move resolution to a Web Worker for large files; post back progress and results. Alternatively, gate expensive fuzzy matching behind a toggle or limit to rows still unresolved after exact/team filtering.
+- Ambiguity keying by name only: `ambiguousChoices` is keyed by canonical name, so a single choice applies to all rows with that name, regardless of CSV team.
+  - Recommendation: Key overrides by a compound key, e.g., `${name}|${csvTeamAbbrev||''}|${csvPos||''}`, or by row index. Reflect this in the UI labels and in `resolution` to disambiguate same-name players on different teams.
+- `allowNameFallback` semantics: The algorithm always attempts name/fuzzy matching regardless of `allowNameFallback`; the flag only affects messaging.
+  - Recommendation: Honor the flag: when false, treat only rows with valid `player_id` as resolved; skip name/fuzzy paths and reflect that in coverage/stats and import rows.
+- Duplicate state and copies: Maintains both `allRows` and `rawRows`, and re-maps arrays multiple times.
+  - Recommendation: Keep only `allRows`; derive preview via `allRows.slice(0, 50)`. Memoize mapping once per header/player column change.
+- Supabase shape: Converts `team_id` to `teamAbbrev` client-side repeatedly.
+  - Recommendation: Request `team_id` and compute abbrev once while building the index; store in the index record only.
+- Logging noise: Multiple `console.log` for target players and counts.
+  - Recommendation: Gate debug logs behind a `DEBUG` flag or `process.env.NODE_ENV !== 'production'`.
+
+**Actionable Improvements (to implement post-audit)**
+- Optimize player fetch path:
+  - Pre-read CSV to collect unique last names; query Supabase with `in('lastName', names)` in chunks (e.g., 200 each). Skip initial full-table pagination.
+- Respect fallback flag:
+  - Add `if (!localAllowFallback) { … }` branch in resolution to bypass name/fuzzy matching and only accept valid `player_id` hits. Update coverage and UI copy accordingly.
+- Row-scoped overrides:
+  - Change `ambiguousChoices` to use a compound key including CSV team/pos (or row index). Update UI to display and set overrides per distinct key.
+- Offload heavy work:
+  - Introduce a worker (`/workers/csvResolver.ts`) to compute mapping and stats for large files, posting progress to the UI (e.g., every 1k rows).
+- Single mapping memo:
+  - Replace duplicate mapping of preview and full arrays with one `useMemo` that returns both `mappedAll` and `mappedPreview` from the same computation.
+- Import UX polish:
+  - Add a Clear File button; persist `sourceName` alongside the session CSV list to show consistent labels in `DraftSettings`.
+
+**Connections & Cross-References**
+- `DraftDashboard.tsx`: Consumes `onImported` payload to append to `draft.customCsvList.v2` in session and trigger reprocessing in `useProcessedProjectionsData`. Coverage and fallback settings should influence source weights and warnings in parent.
+- `DraftSettings.tsx`: Displays custom source label and removal; consider passing a `getCustomSourceLabel` down from parent to avoid direct storage reads in Settings.
+- `useProcessedProjectionsData`: Expects canonical stat keys defined by `defaultCanonicalColumnMap`. Ensure standardized headers match what the processor supports for both skaters and goalies.
+
+**Potential Acceptance Tests (informal)**
+- Header mapping: Unsupported headers get flagged; required headers (`Player_Name`, `Team_Abbreviation`, `Position`, `Goals`, `Assists`) must be present or confirmation blocks.
+- ID-first resolution: Rows with valid `player_id` resolve via id; invalid ids are repaired via name/team matching and counted under `invalidIds`.
+- Fallback off: With `allowNameFallback = false`, only rows with valid `player_id` are considered resolved; coverage reflects this and import is gated appropriately.
+- Ambiguities: Duplicate-name rows surface suggestions; auto-resolve unique perfect matches; manual selection updates mapping and coverage.
+- Coverage gates: Below-threshold or unresolved rows disable Confirm until "Enable anyway" or 100% mapping when required.
+- Payload shape: `onImported` receives `headers`, `rows` with `player_id`, `sourceId: 'custom_csv'`, `label`, and `resolution` matching on-screen summary.
