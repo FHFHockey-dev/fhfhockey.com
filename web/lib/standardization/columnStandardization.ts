@@ -1,5 +1,5 @@
 // /Users/tim/Desktop/fhfhockey.com/web/lib/standardization/columnStandardization.ts
-import { titleCase } from "./nameStandardization"; // <--- ADD THIS IMPORT
+import { titleCase } from "./nameStandardization"; //
 
 export const defaultCanonicalColumnMap: Record<string, string> = {
   // Player Info
@@ -68,6 +68,9 @@ export const defaultCanonicalColumnMap: Record<string, string> = {
   w: "Wins_Goalie",
   l: "Losses_Goalie",
   gaa: "Goals_Against_Average",
+  ga: "Goals_Against_Goalie",
+  otl: "Overtime_Losses_Goalie",
+  sa: "Shots_Against",
   "sv%": "Save_Percentage",
   svp: "Save_Percentage",
   sv: "Saves_Goalie",

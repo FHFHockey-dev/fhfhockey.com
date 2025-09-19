@@ -19,12 +19,19 @@ type HeaderConfig = {
   error?: string | null;
 };
 
-const REQUIRED_COLUMNS = [
+const REQUIRED_SKATER_COLUMNS = [
   "Player_Name",
   "Team_Abbreviation",
   "Position",
   "Goals",
   "Assists"
+];
+
+const REQUIRED_GOALIE_COLUMNS = [
+  "Player_Name",
+  "Team_Abbreviation",
+  "Position",
+  "Games_Started_Goalie"
 ];
 
 const FIRST_NAME_ALIASES: Record<string, string[]> = {
@@ -106,14 +113,13 @@ const CANONICAL_COLUMN_OPTIONS = Array.from(
 ).sort();
 
 const ALLOWED_COLUMNS = new Set<string>(CANONICAL_COLUMN_OPTIONS);
-const REQUIRED_COLUMN_SET = new Set(REQUIRED_COLUMNS);
 
 // Normalization helper: lower-case, strip punctuation (periods, apostrophes, dashes), remove accents
 function normalizeForMatch(name: string): string {
   return name
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[̀-ͯ]/g, "")
     .replace(/[^a-z0-9\s]/g, "")
     .replace(/\s+/g, " ")
     .trim();
@@ -123,7 +129,7 @@ function stdName(s: string): string {
   return s
     .toLowerCase()
     .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[̀-ͯ]/g, "")
     .replace(/[^a-z\s]/g, "")
     .replace(/\s+/g, " ")
     .trim();
@@ -229,6 +235,7 @@ export default function ImportCsvModal({
   const [allRows, setAllRows] = useState<CsvPreviewRow[]>([]);
   const [rawRows, setRawRows] = useState<CsvPreviewRow[]>([]); // preview (first 50)
   const [headers, setHeaders] = useState<HeaderConfig[]>([]);
+  const [isGoalieCsv, setIsGoalieCsv] = useState(false);
   const [playerHeader, setPlayerHeader] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isParsing, setIsParsing] = useState(false);
@@ -260,6 +267,12 @@ export default function ImportCsvModal({
     Record<string, string>
   >({});
   const loggedTargetsRef = useRef(false);
+
+  const REQUIRED_COLUMNS = isGoalieCsv
+    ? REQUIRED_GOALIE_COLUMNS
+    : REQUIRED_SKATER_COLUMNS;
+  const REQUIRED_COLUMN_SET = new Set(REQUIRED_COLUMNS);
+
   const rosterIndex = useMemo(() => {
     const ids = new Set<number>();
     const byStdName = new Map<string, PlayerIndexRecord[]>();
@@ -492,27 +505,31 @@ export default function ImportCsvModal({
     return () => document.removeEventListener("keydown", handleKey);
   }, [open, onClose]);
 
-  const classifyColumn = useCallback((standardized: string) => {
-    if (REQUIRED_COLUMN_SET.has(standardized)) {
+  const classifyColumn = useCallback(
+    (standardized: string) => {
+      if (REQUIRED_COLUMN_SET.has(standardized)) {
+        return {
+          status: "required" as HeaderConfig["status"],
+          selected: true,
+          error: null
+        };
+      }
+      if (ALLOWED_COLUMNS.has(standardized)) {
+        return {
+          status: "supported" as HeaderConfig["status"],
+          selected: true,
+          error: null
+        };
+      }
       return {
-        status: "required" as HeaderConfig["status"],
+        status: "unsupported" as HeaderConfig["status"],
         selected: true,
-        error: null
+        error:
+          "Unrecognized column. Consider mapping to a supported stat or uncheck."
       };
-    }
-    if (ALLOWED_COLUMNS.has(standardized)) {
-      return {
-        status: "supported" as HeaderConfig["status"],
-        selected: true,
-        error: null
-      };
-    }
-    return {
-      status: "unsupported" as HeaderConfig["status"],
-      selected: true,
-      error: "Unrecognized column. Consider mapping to a supported stat or uncheck."
-    };
-  }, []);
+    },
+    [REQUIRED_COLUMN_SET]
+  );
 
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
@@ -531,6 +548,22 @@ export default function ImportCsvModal({
             setIsParsing(false);
             return;
           }
+
+          const positionHeader = Object.keys(data[0] as object).find(
+            (h) => h.toLowerCase() === "position" || h.toLowerCase() === "pos"
+          );
+          if (positionHeader) {
+            const goalieCount = data.filter(
+              (row: any) =>
+                row[positionHeader] &&
+                typeof row[positionHeader] === "string" &&
+                row[positionHeader].toUpperCase() === "G"
+            ).length;
+            if (goalieCount / data.length > 0.5) {
+              setIsGoalieCsv(true);
+            }
+          }
+
           // Build headers map
           const firstRow = data[0] as Record<string, any>;
           const incomingHeaders = Object.keys(firstRow);
@@ -1032,7 +1065,7 @@ export default function ImportCsvModal({
       headers.filter((h) => h.selected).map((h) => h.standardized)
     );
     return REQUIRED_COLUMNS.filter((r) => !set.has(r));
-  }, [headers]);
+  }, [headers, REQUIRED_COLUMNS]);
 
   const handleConfirm = () => {
     if (missingRequired.length) {
@@ -1056,7 +1089,9 @@ export default function ImportCsvModal({
     ) {
       setError(
         coverageBelowThreshold
-          ? `Coverage ${(resolutionStats.coverage * 100).toFixed(1)}% is below the minimum ${localMinCoverage}%. Review or force import.`
+          ? `Coverage ${(resolutionStats.coverage * 100).toFixed(
+              1
+            )}% is below the minimum ${localMinCoverage}%. Review or force import.`
           : `There are still ${resolutionStats.unresolved} unresolved players. Review or force import.`
       );
       return;
@@ -1077,7 +1112,15 @@ export default function ImportCsvModal({
     });
     try {
       console.log(
-        `[ImportCsvModal] Resolution summary: total=${resolutionPayload.totalRows}, id=${resolutionPayload.idMatched}, name=${resolutionPayload.nameMatched}, fuzzy=${resolutionPayload.fuzzyMatched}, manual=${resolutionPayload.manualOverrides}, unresolved=${resolutionPayload.unresolved}, invalidIds=${resolutionPayload.invalidIds}, coverage=${(resolutionPayload.coverage * 100).toFixed(1)}%`
+        `[ImportCsvModal] Resolution summary: total=${
+          resolutionPayload.totalRows
+        }, id=${resolutionPayload.idMatched}, name=${
+          resolutionPayload.nameMatched
+        }, fuzzy=${resolutionPayload.fuzzyMatched}, manual=${
+          resolutionPayload.manualOverrides
+        }, unresolved=${resolutionPayload.unresolved}, invalidIds=${
+          resolutionPayload.invalidIds
+        }, coverage=${(resolutionPayload.coverage * 100).toFixed(1)}%`
       );
     } catch {}
     const payload = {
@@ -1179,7 +1222,9 @@ export default function ImportCsvModal({
       );
       if (row) {
         console.log(
-          `[ImportCsvModal] Mapping status for ${t}: player_id=${(row as any).player_id || "NONE"}`
+          `[ImportCsvModal] Mapping status for ${t}: player_id=${
+            (row as any).player_id || "NONE"
+          }`
         );
       } else {
         console.log(`[ImportCsvModal] CSV row not found for target name: ${t}`);
@@ -1336,7 +1381,9 @@ export default function ImportCsvModal({
                               : undefined;
                           const inputStyle: React.CSSProperties = {
                             width: "100%",
-                            border: `1px solid ${isUnsupported ? "#d32f2f" : "#444"}`,
+                            border: `1px solid ${
+                              isUnsupported ? "#d32f2f" : "#444"
+                            }`,
                             background: "#181818",
                             color: "#f5f5f5",
                             borderRadius: 4,
@@ -1841,7 +1888,11 @@ export default function ImportCsvModal({
                                       const team =
                                         suggestion.teamAbbrev || "??";
                                       const pos = suggestion.position || "?";
-                                      return `Suggest: ${suggestion.fullName} (${team} ${pos}) ${(suggestion.score * 100).toFixed(1)}%`;
+                                      return `Suggest: ${
+                                        suggestion.fullName
+                                      } (${team} ${pos}) ${(
+                                        suggestion.score * 100
+                                      ).toFixed(1)}%`;
                                     })()}
                                   </span>
                                   <button

@@ -587,4 +587,381 @@ This single document will accumulate file-by-file findings and cross-references 
 - Download PNG produces a readable image of the visible content; no CORS font errors; file name includes today’s date.
 - Highlights: Changing a pick to one with extreme ADP delta updates Biggest Steal/Reach; providing `vorpMetrics` updates Top VORP pick.
 - Leaderboard: Top 3 rows styled gold/silver/bronze; ordering matches sort by projectedPoints.
-- Rounds/counts: Header "Rounds" equals `totalRounds`; recap columns match that count for each team.
+
+---
+
+## useProcessedProjectionsData.tsx
+
+- Summary: Core ingestion/processing hook that blends multiple projection sources (built-ins + custom CSV), enriches with ADP/mappings constrained by `CURRENT_YAHOO_GAME_PREFIX`, computes combined stats, and prepares table-friendly `ProcessedPlayer` rows. Supports injecting round summary rows and pulls actual season totals from Supabase for diffs.
+
+**Inputs/Outputs**
+- Inbound (props object): active sources (built-in + `CustomAdditionalProjectionSource[]`), season/game prefix, league type, enabled stat keys, forward grouping, and options for round summaries and caching.
+- Outbound: `{ players, allPlayers, isLoading, error, availableSkaterStatKeys, availableGoalieStatKeys, ... }` (names inferred from usage in parent/components).
+
+**Pipeline**
+- Source fetch: `fetchAllSourceData(supabaseClient, activeSourceConfigs, uniqueNhlPlayerIds, type, currentSeasonId, ...)` paginates via `fetchAllSupabaseData` with `SUPABASE_PAGE_SIZE=1000` and label/timing logs. Applies per-source stat-key mappings.
+- Merge & standardize: Collates per-player stat entries into `combinedStats` with projected/actual placeholders and attaches metadata (ADP, team, positions). `stdName` ensures consistent name lookups.
+- Actuals: Defines `ACTUAL_*_STATS_TABLE` + `ACTUAL_STATS_COLUMN_MAP` to pull last-season totals and compute `% diff` via `calculateDiffPercentage`.
+- Round summaries: `addRoundSummariesToPlayers(sortedPlayers, calculateDiffFn, teamCount)` injects summary rows between players for UI grouping.
+- Caching: Exposes snapshot info types for cache layers (`CachedBasePlayerData`, `CachedFullPlayerData`).
+
+**Efficiency Gaps & Recommendations**
+- Supabase paging: Multiple full-table loads per source can be costly.
+  - Recommendation: Narrow selects; prefer `in(nhl_player_id, ids)` when CSV/name-matched maps are available; chunk queries to reduce bandwidth.
+- Key-mapping cost: Per-source stat remap repeated across renders.
+  - Recommendation: Pre-compile mapping functions per source and memoize by config hash to reduce object churn.
+- Actuals joins: Fetch and join actual stats per player can be heavy.
+  - Recommendation: Cache actuals per season in `sessionStorage` with ETag-like key; only refetch on season change or explicit refresh.
+- Name index: `stdName` runs broadly; avoid repeated normalization for the same strings.
+  - Recommendation: Build a `Map<string,string>` normalization cache for hot paths; size-bound to avoid growth.
+- Round summary injection: Increases array size and sort complexity for very large pools.
+  - Recommendation: Make summary insertion lazy or behind a UI toggle to keep base arrays lean during heavy interactions.
+
+**Actionables**
+- Add a `debug` flag to gate timing logs; provide simple metrics for source fetch duration.
+- Memoize per-source mapping functions; include hash of `ProjectionSourceConfig` in deps.
+- Introduce a simple in-memory LRU for actuals/ADP joins keyed by `nhl_player_id`.
+- Expose a `skipRoundSummaries` option and move summary insertion to the view layer.
+
+**Connections**
+- `DraftDashboard.tsx`: Primary consumer, drives players lists and enabled stat keys.
+- `ProjectionsTable`/`ComparePlayersModal`: Depend on `availableSkaterStatKeys`/`availableGoalieStatKeys` and consistent stat naming.
+
+---
+
+## useProjectionSourceAnalysis.ts
+
+- Summary: Manages source controls (enable/disable + integer weights 0–100), persists them to localStorage (v3), migrates legacy v2 float weights, and derives per-source normalized shares.
+
+**State & Persistence**
+- `controls: SourceControl[]` with `{ id, label, enabled, weight }`.
+- Persistence: Debounced save to `LOCAL_KEY_V3` with change-detection to avoid redundant writes. Legacy migration from `LEGACY_KEY_V2` (0–2 floats) to integer 0-100 handled.
+- Auto-reconcile: Ensures `initialSources` appear with defaults, drops missing sources.
+
+**API**
+- `setEnabled(id, enabled)`: Re-enabling restores last non-zero weight via `lastNonZeroWeightRef` (min 1%).
+- `setWeight(id, weight)`: Sets weight and auto-enables when >0; disables when 0.
+- `removeSource(id)`: Hard-removes a source.
+- `effectiveShares`: Normalized shares across enabled, weight>0 sources; 0 when none enabled.
+
+**Efficiency & UX Notes**
+- Debounced persistence: Good; 180ms likely sufficient. Consider grouping with other settings to a single namespace key.
+- Last-weight restore: Solid UX; ensure ref is hydrated when migrating legacy data.
+
+**Actionables**
+- Add validation to cap weights [0,100]; coerce invalid values from legacy payloads.
+- Provide a hook return for `saveInProgress` to show a subtle saving indicator near sliders.
+- Add optional `onChange(controls, effectiveShares)` callback for analytics or external sync.
+
+**Connections**
+- `DraftSettings.tsx`: UI for sliders/toggles; uses `effectiveShares` to show normalized percent.
+- `useProcessedProjectionsData`: Consumes `effectiveShares`/enable flags to weight-blend source stats.
+
+---
+
+## projectionWeights.ts
+
+- Summary: Integer-based helpers for distributing and normalizing source weights.
+
+**Functions**
+- `evenlyDistribute(count)`: Returns integer array summing to 100; early indices get +1 remainder.
+- `normalizeWithAnchor(weights, anchorIndex)`: Preserves anchor’s value exactly, scales others proportionally to sum to 100 (last non-anchor absorbs drift; anchor bounded at 100 if overweight).
+- `normalize(weights)`: Picks first positive weight as anchor (or 0) and normalizes.
+
+**Edge Cases & Guarantees**
+- Empty arrays → `[]`; negative/oversized anchor indexes coerced to 0.
+- If `othersTotal <= 0`, all weight to anchor (capped at 100), others 0.
+- Rounding drift corrected deterministically to largest non-anchor (or anchor).
+
+**Actionables**
+- Add unit tests for drift handling and anchor overweight scenarios.
+- Provide a `clampWeights` helper to coerce external inputs into [0,100] before normalize.
+
+---
+
+## fantasyPointsConfig.ts
+
+- Summary: Default fantasy point weights for skaters and goalies, plus `getDefaultFantasyPointsConfig` to select a baseline by player type.
+
+**Notes**
+- Keys should match `STATS_MASTER_LIST` keys. Non-listed stats default to 0. Skaters and goalies separated.
+
+**Actionables**
+- Document any league presets (e.g., Yahoo standard) and expose a merge helper to overlay custom values cleanly.
+- Consider versioning the defaults to aid migrations and user education.
+
+---
+
+## projectionSourcesConfig.ts
+
+- Summary: Schema for projection sources and stat mappings. Each source declares where to fetch, which stats it provides, and how to map to canonical keys.
+
+**Key Types**
+- `SourceStatMapping`: Per-stat mapping config (project-specific fields omitted here).
+- `ProjectionSourceConfig`: Source metadata, table names, stat maps, skater/goalie type, and weightability.
+
+**Actionables**
+- Keep mappings centralized and validated at startup; log missing/unknown keys vs `STATS_MASTER_LIST`.
+- Provide example mapping snippets for custom CSV to guide users.
+
+---
+
+## columnStandardization.ts
+
+- Summary: Canonical column-name mapping and header normalization utility used by CSV import and source processing.
+
+**Helpers**
+- `defaultCanonicalColumnMap`: Rich map covering player info, standard stats, special provider keys (e.g., A&G, Bangers), goalie stats, and fantasy point columns.
+- `standardizeColumnName(rawHeader, customMap?)`: Lowercases and trims; matches via merged map; else title-cases and replaces non-alphanumerics with `_`.
+
+**Notes & Actionables**
+- Ensure `titleCase` import is correct (already included) and resilient to nullish headers (guard present).
+- Add round-trip tests for common vendor headers; keep goalie vs skater distinctions tight.
+- Consider exporting `CANONICAL_COLUMN_OPTIONS` for UI autocompletes (mirrors ImportCsvModal behavior).
+
+---
+
+## ComparePlayersModal.tsx
+
+- Summary: Two-player comparison modal with radar chart (Chart.js) and percentile tables across selected metrics. Picks default metric set based on whether any selected is a goalie.
+
+**Data Flows**
+- Filters `allPlayers` by `selectedIds` (first 2). Chooses metric keys (`defaultsSkater` vs `defaultsGoalie`). Computes percentiles per metric across `allPlayers`, then constructs radar datasets and per-game derived rows.
+
+**Efficiency & UX**
+- Percentiles across allPlayers recomputed per open; acceptable for moderate sizes. Consider memoizing a global index of sorted values per key when available.
+- Uses global keydown; ensure handler respects focus in inputs.
+- Image headshots list built per player; can cache URLs per playerId.
+
+**Actionables**
+- Add a11y parity (role="dialog", focus trap, Escape handling like ImportCsvModal).
+- Provide metric selection UI; persist last selection. Allow toggling per-game vs totals.
+- Memoize `byKeySorted` across opens or cache in a context when pool unchanged.
+
+**Connections**
+- `ProjectionsTable`: Launches modal; relies on stat keys consistency in `STATS_MASTER_LIST`.
+
+---
+
+## useVORPCalculations.ts
+
+- Summary: Core value engine computing comparable value (`value`), VORP, VONA, VBD, best position, and replacement baselines. Supports points and categories leagues, forward grouping, personalized replacement, expected picks before next turn, 82-game proration, and custom fantasy scoring.
+
+**Inputs/Outputs**
+- In: `UseVORPParams` including `players`, `availablePlayers`, `draftSettings`, `picksUntilNext`, `leagueType`, `baselineMode`, `categoryWeights`, `forwardGrouping`, `myFilledSlots`, `personalizeReplacement`, `prorate82`, `fantasyPointSettings`.
+- Out: `{ playerMetrics: Map<string, PlayerVorpMetrics>, replacementByPos, expectedTakenByPos?, expectedN? }`.
+
+**Algorithm Highlights**
+- Eligibility parsing from `displayPosition`, honoring forward grouping.
+- Points mode: Computes fantasy points (integrates proration via `prorate82` + `fantasyPointSettings`) and derives VORP-like metrics vs baselines.
+- Categories mode: Z-score per category with goalie rate regression (`PRIOR_SHOTS`, `PRIOR_STARTS`), inversion for lower-better stats, and weighted sum via `categoryWeights` to a composite `value`.
+- Replacement: Baseline can be among remaining or full pool; accounts for my filled slots when `personalizeReplacement` is on.
+- Expected runs: Estimates `expectedTakenByPos` and `expectedN` using `picksUntilNext` to modulate VBD/VONA.
+
+**Efficiency & Recommendations**
+- Heavy memos: Good use of `useMemo`; ensure dependencies include all tuning knobs.
+- Map/array builds: Build `playerById`/`posBuckets` once; avoid repeated `combinedStats` property traversal when possible.
+- Regression params: Consider exposing `PRIOR_*` as configurable tunables via props for experimentation.
+
+**Actionables**
+- Add small helper for projected stat access with optional proration baked in to reduce branching.
+- Expose debug diagnostics (counts per position, baseline picks) when `__DEV__`.
+- Provide a reference doc of metric definitions to align UI labels and tooltips across components.
+
+**Connections**
+- Consumed by `DraftDashboard.tsx`, `ProjectionsTable`, and `SuggestedPicks`; keep semantics identical across displays.
+
+---
+
+## proration.ts
+
+- Summary: Utilities to compute 82-game pacing for skater counting stats and recompute fantasy points accordingly without mutating original projections.
+
+**API**
+- `PRORATE_82_STAT_KEYS`: Set of skater stat keys to prorate (excludes rates/percentages/goalie stats).
+- `isGoaliePlayer(player)`: Detects goalie by `displayPosition`.
+- `getProratedStat(player, statKey, enable)`: Returns `(raw/GP)*82` for eligible stats; guards nulls, goalie roles, and invalid GP.
+- `computeProratedFantasyPoints(player, enable, customScoring?)`: Merges defaults (`DEFAULT_*_FANTASY_POINTS`) with overrides and sums `proratedStat * weight` when enabled; else returns existing projected FP.
+
+**Actionables**
+- Cache per-player GP and derived prorated values for hot keys to avoid repeated property lookups in tight loops (e.g., in VORP calculations).
+- Provide a batch function to map a list of players to prorated FP for table precompute.
+
+**Connections**
+- `useVORPCalculations`: Consumes via `prorate82` to affect points-league `value`.
+- `ProjectionsTable`: Should reflect proration in displayed fantasy points when toggle is on to avoid UI mismatch.
+
+---
+
+## statsMasterList.ts
+
+- Summary: Source of truth for `StatDefinition` and the list of stat keys/metadata used across the app (display names, units, higherIsBetter, player type, etc.).
+
+**Governance**
+- Keep keys stable and aligned with canonical names used by `columnStandardization` and processing hooks.
+- Mark category-vs-points roles explicitly; include goalie vs skater tags to drive defaults in UI (e.g., Compare modal metric sets).
+
+**Actionables**
+- Add docstrings/comments on any non-obvious stat semantics and units.
+- Provide a small validator that runs in dev to ensure no duplicates, all keys are uppercase, and every used key in code exists in this list.
+
+---
+
+## usePlayerRecommendations.ts
+
+- Summary: Memoized hook that ranks players by `score` derived from VBD/VORP and optionally blends in team needs (positions or weighted categories). Adds simple availability heuristics from ADP vs next-pick window and emits explanation tags.
+
+**Inputs/Outputs**
+- In: `{ players, vorpMetrics?, posNeeds?, catNeeds?, needWeightEnabled?, needAlpha?, limit?, baselineMode?, currentPick?, teamCount?, leagueType? }`.
+- Out: `{ recommendations: Recommendation[] }`, where each item includes `{ player, score, vorp?, vona?, vbd?, availability?, fitScore?, reasonTags? }`.
+
+**Algorithm & Data Flow**
+- Pulls `PlayerVorpMetrics` from `vorpMetrics` Map by stringified `playerId`; defaults `score` to `vbd` (fallback to `vorp`).
+- Computes a needs `fitScore`:
+  - Categories mode: `sum(projectedStat[k] * catNeeds[k])` across a fixed set of keys: `GOALS, ASSISTS, PP_POINTS, SHOTS_ON_GOAL, HITS, BLOCKED_SHOTS`.
+  - Points mode: average `posNeeds` across eligible positions parsed from `displayPosition` (uppercase, comma-separated).
+- Availability: Logistic function of `delta = adp - (currentPick + teamCount)` using `sd = 12`, clamped to [0.01, 0.99]. Uses `yahooAvgPick` then `adp` if present.
+- Blending: If `needWeightEnabled`, sets `score = (1-needAlpha)*VBD + needAlpha*(fitNorm*10)` after normalizing `fitScore` by the max absolute fit across candidates. Otherwise `score = VBD`.
+- Tags: Adds `High VBD`, baseline tags for `remaining`/`full`, `Cat Fit` or `Team Need Fit` when fit is material, and `ADP Value` if ADP is well after expected next pick.
+- Sorting: Desc by `score`, then projected fantasy points, then alphabetical by name/ID. Slices to `limit` (default 10).
+
+**Efficiency & Edge Cases**
+- O(n) over input `players`; very fast, dominated by property access. Uses a single `useMemo` over all inputs.
+- Missing metrics: Safely defaults to 0 via `safeNum`; ID coercion uses `String(playerId)` consistently.
+- Position parsing: Relies on `displayPosition` shape; empty/unknown yields neutral fit.
+- Categories set: Fixed `CAT_KEYS` list may diverge from actual configured categories.
+
+**Actionables**
+- Configurable categories: Accept `activeCategoryKeys` to align with league settings instead of fixed `CAT_KEYS`.
+- Availability model: Make `sd` tunable and optionally use a skewed/log-normal based on empirical ADP variance per round.
+- Richer reasons: Include numeric deltas (e.g., `+X VBD vs next`, `ADP +Y vs next pick`) for tooltips.
+- Deterministic tiebreakers: Prefer `playerId` numeric as final tiebreak to stabilize ordering across renders.
+
+**Connections**
+- `SuggestedPicks.tsx`: Primary consumer; sorts/filters the returned list further and renders cards.
+- `MyRoster.tsx`: Wiring exists for recommendations; UI not yet rendered there.
+- `useVORPCalculations`: Supplies `vorpMetrics`; ensure VBD/VORP semantics match table displays.
+
+---
+
+## useCurrentSeason.ts
+
+- Summary: Tiny hook that fetches and returns the current NHL `Season` via `getCurrentSeason()` on mount.
+
+**API & Flow**
+- Imports `Season` type and `getCurrentSeason` client helper; holds `season` in `useState<Season | undefined>`.
+- `useEffect([])` calls `getCurrentSeason().then(setSeason)` once; returns the `season` object.
+
+**Efficiency & Risks**
+- Minimal; single call on mount per component consumer. Multiple consumers on a page may duplicate requests.
+- No error/loading states; components must handle `undefined` while pending.
+
+**Actionables**
+- Share/cache: Memoize globally (e.g., module-level cache or SWR/react-query) to dedupe concurrent calls and share result across components.
+- Error handling: Add a try/catch branch or return `{ season, isLoading, error }` variant to improve robustness.
+- Update cadence: If the notion of "current season" can change at runtime (rare), add revalidation on interval or on visibility change.
+
+**Connections**
+- Used across many pages/components (Team dashboards, WiGO charts, DraftDashboard, etc.) as seen in usages; ensure any migration to a shared cache remains a drop-in replacement for default import.
+
+---
+
+## TeamRosterSelect.tsx
+
+- Summary: Simple controlled `<select>` for choosing a team to view in roster-related components.
+
+**Props**
+- Inbound: `{ value: string, onChange: (id: string) => void, options: { id: string; label: string }[], selectClassName? }`.
+- Outbound: Calls `onChange` with the selected team `id`.
+
+**Behavior & Accessibility**
+- Renders options from `options` array with `key`/`value` = `id` and display `label`.
+- Includes `aria-label="Select team to view"` for screen readers.
+
+**Actionables**
+- Empty state: If `options` is empty, render a disabled placeholder option (e.g., "No teams").
+- IDs vs numbers: Upstream often treats team IDs as numeric; ensure consistent string coercion or switch prop to `string | number` while normalizing internally.
+- Labels: Consider accepting an optional placeholder label and a `disabled` prop for read-only views.
+
+**Connections**
+- Used by `MyRoster.tsx` for picking which team’s roster to view. Ensure the selected value stays in sync with `draftSettings`/parent state.
+
+---
+
+## PlayerAutocomplete.tsx
+
+- Summary: MUI-based autocomplete for NHL players with optional ADP sorting and an override to supply a custom pool. Integrates with default `usePlayers` hook when no override is provided.
+
+**Props**
+- Inbound: `{ playerId, onPlayerIdChange?, onPlayerChange?, inputClassName?, listClassName?, showButton?, adpByPlayerId?, sortByAdp?, playersOverride? }`.
+- Outbound: Emits `onPlayerIdChange(id)` and `onPlayerChange(player|null)` on selection/clear.
+
+**Behavior**
+- Uses `useAutocomplete` with `limit: 10000` and a `stringify` that strips periods from names. Stable equality by `id`.
+- Sorts by ADP when `sortByAdp` and `adpByPlayerId` set; falls back to alphabetical on ties.
+- Ignores `blur` reason to avoid clearing selection accidentally; only responds to `selectOption` and `clear`.
+- Merges refs to ensure MUI’s internal ref and local `inputRef` both receive the element; blurs input on selection.
+
+**Efficiency & Edge Cases**
+- Options array recomputed when ADP map or `sortByAdp` changes; otherwise passes through `players`.
+- `playersOverride` allows importing processed projection pools where sweater numbers may be missing.
+- Event reasons: Historical bug mentioned in PRD—ensure `onPlayerIdChange` is not fired on non-select reasons (handled here).
+
+**Actionables**
+- Loading UX: Add a spinner or empty-state text when `players` is empty.
+- Keyboard UX: Ensure Enter selects highlighted option; consider adding an `onSubmit` handler when `showButton` is true.
+- Accessibility: Associate the hidden label to input via `id/aria-labelledby` rather than `hidden` attribute alone.
+- Virtualization: If options grow large (>10k), consider windowed listbox.
+
+**Connections**
+- Used in `DraftSettings` (keepers) and `MyRoster` (draft/search). Upstream may want to pass `playersOverride` from processed projections to keep names consistent with Draft Dashboard pools.
+
+---
+
+## usePlayers.ts
+
+- Summary: Fetches and returns the full NHL players list via `getAllPlayers()` on mount.
+
+**Behavior**
+- Holds local `players` state; guards state updates using a `mounted` flag in `useEffect` cleanup.
+- Returns an empty array until data arrives; no error/loading indication.
+
+**Actionables**
+- Cache/share: Use SWR/react-query or a module-level cache to avoid duplicate network requests across consumers.
+- Loading/error: Optionally expose `{ players, isLoading, error }` to improve UX in autocompletes.
+- Update strategy: Consider revalidating occasionally or on visibility focus if upstream data can change.
+
+**Connections**
+- Consumed by `PlayerAutocomplete` when `playersOverride` is not supplied.
+
+---
+
+## nameStandardization.ts
+
+- Summary: Core name normalization module exporting a canonical map from normalized strings to DB `fullName`, plus `standardizePlayerName` and `titleCase` helpers used across CSV import and processing.
+
+**Key Exports**
+- `canonicalNameMap`: Dense mapping of normalized keys (diacritics stripped, punctuation removed) to canonical `fullName` strings from DB.
+- `standardizePlayerName(name: string)`: Normalizes input, checks `canonicalNameMap`, applies nickname formalization, and falls back to `titleCase` with debug logging options.
+- `titleCase(str: string)`: Utility used by column and name standardization fallbacks.
+
+**Actionables**
+- Test coverage: Add fixtures validating tricky cases (accents, nicknames, hyphenated names, ambiguous duplicates like Sebastian Aho).
+- Shared artifact: Export a JSON snapshot of `canonicalNameMap` for Python upsert scripts to avoid duplicated logic.
+- Perf: Consider splitting the giant map into smaller chunks or lazy-loading if bundle size becomes a concern; or mark as dev-only for CSV tooling.
+
+**Connections**
+- Consumed by `ImportCsvModal`, `upsert-projections` page, and API `upsert-csv` route; column standardization relies on `titleCase`.
+
+---
+
+## calculatePercentiles.ts
+
+- Summary: Utilities for percentile rank and rank position. `calculatePercentileRank` uses (below + 0.5*equal)/total and inverts when lower-is-better; `calculatePlayerRank` returns 1-based index after sorting.
+
+**Actionables**
+- Consistency: Ensure consumers use the same tie policy; document that percentiles include half of ties by design.
+- Performance: For repeated ranks across many keys, consider pre-sorting and reusing arrays to avoid repeated sorts.
+
+**Connections**
+- Used by compare modal and various charts/tables that need percentile badges.
