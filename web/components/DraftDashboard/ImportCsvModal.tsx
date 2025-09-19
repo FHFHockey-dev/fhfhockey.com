@@ -509,8 +509,8 @@ export default function ImportCsvModal({
     }
     return {
       status: "unsupported" as HeaderConfig["status"],
-      selected: false,
-      error: "Unrecognized column. Choose a supported option or uncheck."
+      selected: true,
+      error: "Unrecognized column. Consider mapping to a supported stat or uncheck."
     };
   }, []);
 

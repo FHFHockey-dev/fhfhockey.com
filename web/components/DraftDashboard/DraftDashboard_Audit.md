@@ -523,3 +523,68 @@ This single document will accumulate file-by-file findings and cross-references 
 - Ambiguities: Duplicate-name rows surface suggestions; auto-resolve unique perfect matches; manual selection updates mapping and coverage.
 - Coverage gates: Below-threshold or unresolved rows disable Confirm until "Enable anyway" or 100% mapping when required.
 - Payload shape: `onImported` receives `headers`, `rows` with `player_id`, `sourceId: 'custom_csv'`, `label`, and `resolution` matching on-screen summary.
+
+---
+
+## DraftSummaryModal.tsx
+
+- Summary: Shareable end-of-draft recap modal that renders either a roster grid per team or a picks recap board. Computes highlights (biggest steal/reach by ADP and top VORP pick), a simple weighted draft winner metric, and exports the visible summary to a PNG via html-to-image.
+
+**Props**
+- Inbound: `isOpen`, `onClose`, `draftSettings`, `draftedPlayers`, `teamStats`, `allPlayers`, `vorpMetrics?`.
+- Outbound: No callbacks beyond `onClose`; image export is client-side via DOM.
+
+**Dependencies**
+- External: `react` hooks, `html-to-image` (`toPng`), `next/image` for a medal image, CSS module `DraftSummaryModal.module.scss`.
+- Project types: `DraftSettings`, `DraftedPlayer`, `TeamDraftStats` from `DraftDashboard`; `ProcessedPlayer` and `PlayerVorpMetrics`.
+
+**Data Flows**
+- `playerMap`: Memoized `Map<string, ProcessedPlayer>` keyed by `playerId` for O(1) lookup during rendering and highlight computation.
+- `sortedTeams`: Takes up to `teamCount` teams from `teamStats`, sorts by `projectedPoints` desc, adds 1-based `rank`.
+- `teamsInDraftOrder`: Reorders `sortedTeams` to match `draftSettings.draftOrder` while preserving computed ranks.
+- `chunkedRosters`: Splits teams into rows of `MAX_TEAMS_PER_ROW` for grid layout.
+- `picksByTeam`: Groups `draftedPlayers` by `teamId`, sorts each group by `pickNumber` to align recap columns by round.
+- `totalRounds`: Computes as `ceil(draftedPlayers.length / teamCount)` to size recap columns.
+- `highlights`: Scans all picks to determine:
+  - Biggest Steal/Reach by delta = `overallPick - ADP` using `yahooAvgPick` or `adp` when present.
+  - Top VORP pick using `vorpMetrics.get(playerId)?.vorp` when provided.
+- `draftWinner`: Combines normalized projectedPoints (60%) and teamVorp (40%) across teams to compute a simple composite score and selects the max.
+- Rendering:
+  - Roster view: Table per team showing slots for C/LW/RW/D/UTIL/G and Bench with pick metadata.
+  - Recap view: Colored cells per round with position-coded classes inferred from first token of `displayPosition`.
+- Export: `downloadImage()` captures the `.content` container to PNG with background color, `pixelRatio: 2`, and `skipFonts: true`, triggers a download.
+
+**Efficiency Gaps & Recommendations**
+- Rounds label mismatch: Header shows "Rounds" as the sum of `rosterConfig` counts, while recap uses `totalRounds` derived from `draftedPlayers`.
+  - Recommendation: Display `totalRounds` consistently in the header for accuracy, and optionally include roster slots as a separate meta item.
+- Large DOM capture: `toPng` on a big grid can be slow and memory-heavy.
+  - Recommendation: Offer capture of the current view only (recap vs roster) and consider a lower `pixelRatio` with an option to upscale. Provide a spinner during export.
+- Position class inference: Recomputes per cell.
+  - Recommendation: Precompute a small map from first-position token to class or use a function with a memoized lookup object.
+- Category vs points display: Leaderboard always sorts by `projectedPoints` and shows a fixed set of skater categories.
+  - Recommendation: In categories leagues, consider ranking by composite category standings or show additional goalie/category columns based on `leagueType` and available stats.
+- Winner formula rigidity: Uses fixed 60/40 weighting.
+  - Recommendation: Expose weighting in UI or compute from league type (e.g., increase VORP share in categories if appropriate) and show a short tooltip explaining the score.
+- Accessibility & controls:
+  - Modal lacks explicit `role="dialog"`, focus management, and Escape handling.
+  - Recommendation: Add `role`, `aria-modal`, focus trap and an Escape key listener consistent with other modals.
+
+**Actionable Improvements (to implement post-audit)**
+- Header accuracy: Replace roster-slot sum with `totalRounds` and add a separate "Roster Spots per Team" indicator.
+- Export UX: Show a brief loading indicator during PNG render; catch and toast errors. Add an option to export the other view without toggling.
+- Dynamic leaderboard: Toggle columns based on `leagueType`; include goalie metrics for goalie-heavy leagues. Optionally colorize ranks by percentile.
+- Position class map: `const posClassMap = { C: styles.posC, LW: styles.posLW, RW: styles.posRW, D: styles.posD, G: styles.posG, UTIL: styles.posUTIL }` and use a helper.
+- Winner explanation: Add a hover tooltip or small legend describing the 60/40 formula with min-max normalization.
+- Modal a11y: Align with `ImportCsvModal` focus/keydown patterns; add `aria-labelledby` and initial focus.
+
+**Connections & Cross-References**
+- `DraftDashboard.tsx`: Supplies `teamStats`, `draftedPlayers`, `draftSettings`, `allPlayers`, and `vorpMetrics`. Winner logic and ranks should align with leaderboard/board semantics in `DraftBoard.tsx`.
+- `DraftBoard.tsx`: Both render team standings; ensure projectedPoints, category totals, and `teamVorp` values match across views.
+- `useVORPCalculations`: `vorpMetrics` used for Top VORP pick; keep metric definitions consistent with `ProjectionsTable` and `SuggestedPicks` displays.
+
+**Potential Acceptance Tests (informal)**
+- Toggling Recap/Roster updates the grid and keeps highlights/leaderboard intact.
+- Download PNG produces a readable image of the visible content; no CORS font errors; file name includes today’s date.
+- Highlights: Changing a pick to one with extreme ADP delta updates Biggest Steal/Reach; providing `vorpMetrics` updates Top VORP pick.
+- Leaderboard: Top 3 rows styled gold/silver/bronze; ordering matches sort by projectedPoints.
+- Rounds/counts: Header "Rounds" equals `totalRounds`; recap columns match that count for each team.
