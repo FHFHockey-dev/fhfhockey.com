@@ -2,7 +2,7 @@
 -- Refresh training baselines for SKO shrinkage math. Includes league-level medians/MADs
 -- that exclude zero-only ratio metrics for robust scaling.
 
-DROP MATERIALIZED VIEW IF EXISTS analytics.mv_sko_skater_moments;
+DROP MATERIALIZED VIEW IF EXISTS analytics.mv_sko_skater_moments CASCADE;
 CREATE MATERIALIZED VIEW analytics.mv_sko_skater_moments AS
 WITH base AS (
   SELECT

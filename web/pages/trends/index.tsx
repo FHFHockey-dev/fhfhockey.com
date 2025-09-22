@@ -1,5 +1,6 @@
 import Head from "next/head";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import * as d3 from "d3";
 
 import { buildMockPlayerSeries } from "../../lib/trends/mockData";
@@ -10,6 +11,13 @@ import type {
 } from "../../lib/trends/types";
 
 type ChartPoint = Omit<TimeSeriesPoint, "date"> & { date: Date };
+
+type StreakSegment = {
+  type: "hot" | "cold";
+  id: number;
+  startIndex: number;
+  endIndex: number;
+};
 
 type RenderBaselineConfig = {
   svgElement: SVGSVGElement;
@@ -24,6 +32,88 @@ type RenderSeriesConfig = {
   timeSeries: ChartPoint[];
   span: number;
   lambda: number;
+};
+
+type FetchPlayerSeriesParams = {
+  playerId: string;
+  season: string;
+  span: number;
+  lambda: number;
+  persistence: number;
+  signal?: AbortSignal;
+};
+
+const PLAYER_NAME_LOOKUP: Record<string, string> = {
+  "8478402": "Connor McDavid",
+  "8477934": "Nathan MacKinnon",
+  "8479318": "Cale Makar",
+};
+
+const fetchPlayerSeries = async ({
+  playerId,
+  season,
+  span,
+  lambda,
+  persistence,
+  signal,
+}: FetchPlayerSeriesParams): Promise<PlayerSeries> => {
+  const params = new URLSearchParams({
+    season,
+    span: String(span),
+    lambdaHot: String(lambda),
+    lambdaCold: String(lambda),
+    lHot: String(persistence),
+    lCold: String(persistence),
+  });
+
+  const response = await fetch(
+    `/api/trends/skaters/${playerId}?${params.toString()}`,
+    { signal }
+  );
+  if (!response.ok) {
+    throw new Error(
+      `Failed to fetch player ${playerId}: ${response.status} ${response.statusText}`
+    );
+  }
+  return (await response.json()) as PlayerSeries;
+};
+
+const buildStreakSegments = (series: ChartPoint[]): StreakSegment[] => {
+  const segments: StreakSegment[] = [];
+  let current: StreakSegment | null = null;
+
+  series.forEach((point, index) => {
+    let type: "hot" | "cold" | null = null;
+    let id: number | null = null;
+
+    if (point.hotStreakId) {
+      type = "hot";
+      id = point.hotStreakId;
+    } else if (point.coldStreakId) {
+      type = "cold";
+      id = point.coldStreakId;
+    }
+
+    if (type && id !== null) {
+      if (!current || current.type !== type || current.id !== id) {
+        if (current) {
+          segments.push(current);
+        }
+        current = { type, id, startIndex: index, endIndex: index };
+      } else {
+        current.endIndex = index;
+      }
+    } else if (current) {
+      segments.push(current);
+      current = null;
+    }
+  });
+
+  if (current) {
+    segments.push(current);
+  }
+
+  return segments;
 };
 
 const renderBaseline = ({
@@ -155,6 +245,11 @@ const renderTimeSeries = ({
       .domain([-1.1, 1.1])
       .range([height - 30, 30]);
 
+    const chartTop = 30;
+    const chartBottom = height - 30;
+    const chartHeight = chartBottom - chartTop;
+    const streakSegments = buildStreakSegments(seriesToDraw);
+
     const xAxis = d3
       .axisBottom<Date>(xScale)
       .ticks(width < 600 ? 6 : 10)
@@ -181,10 +276,39 @@ const renderTimeSeries = ({
       .call(
         yAxis as unknown as (
           selection: d3.Selection<SVGGElement, unknown, null, undefined>
-        ) => void
-      )
+      ) => void
+    )
       .selectAll("text")
       .attr("fill", "rgba(255,255,255,0.7)");
+
+    const segmentLayer = svg.append("g").attr("class", "streak-layer");
+    segmentLayer
+      .selectAll("rect")
+      .data(streakSegments)
+      .enter()
+      .append("rect")
+      .attr("x", (d) => {
+        const startDate = seriesToDraw[d.startIndex].date;
+        return xScale(startDate);
+      })
+      .attr("y", chartTop)
+      .attr("width", (d) => {
+        const endDate =
+          d.endIndex + 1 < seriesToDraw.length
+            ? seriesToDraw[d.endIndex + 1].date
+            : d3.timeDay.offset(seriesToDraw[d.endIndex].date, 1);
+        return Math.max(
+          1,
+          xScale(endDate) - xScale(seriesToDraw[d.startIndex].date)
+        );
+      })
+      .attr("height", chartHeight)
+      .attr("fill", (d) =>
+        d.type === "hot"
+          ? "rgba(255, 111, 0, 0.12)"
+          : "rgba(33, 150, 243, 0.12)"
+      )
+      .attr("stroke", "none");
 
     const bandUpper = baseline.mu0 + lambda * baseline.sigma0;
     const bandLower = baseline.mu0 - lambda * baseline.sigma0;
@@ -305,7 +429,7 @@ const renderTimeSeries = ({
           .html(
             `<strong>${d3.timeFormat("%b %d")(point.date)}</strong><br/>` +
               `SKO ${point.sko.toFixed(2)}<br/>EWMA ${point.ewma.toFixed(2)}<br/>` +
-              `λ-band [${(baseline.mu0 - lambda * baseline.sigma0).toFixed(2)}, ${(baseline.mu0 + lambda * baseline.sigma0).toFixed(2)}]`
+              `Detection band [${(baseline.mu0 - lambda * baseline.sigma0).toFixed(2)}, ${(baseline.mu0 + lambda * baseline.sigma0).toFixed(2)}]`
           );
       })
       .on("mouseleave", () => {
@@ -350,54 +474,52 @@ const TrendsSandboxPage = () => {
   const [trainWindow, setTrainWindow] = useState<"train" | "test">("test");
   const [showDefenseWeights, setShowDefenseWeights] = useState(false);
   const [persistence, setPersistence] = useState(2);
-  const [seriesData, setSeriesData] = useState<PlayerSeries>(() =>
-    buildMockPlayerSeries("8478402", "2024-25")
+
+  const mockFallback = useMemo(
+    () => buildMockPlayerSeries(player, season),
+    [player, season]
   );
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+
+  const playerSeriesQuery = useQuery<PlayerSeries, Error>({
+    queryKey: ["trends", player, season, span, lambda, persistence],
+    queryFn: ({ signal }) =>
+      fetchPlayerSeries({
+        playerId: player,
+        season,
+        span,
+        lambda,
+        persistence,
+        signal,
+      }),
+    placeholderData: (previousData) => previousData ?? mockFallback,
+    refetchOnWindowFocus: false,
+  });
+
+  const seriesData = (playerSeriesQuery.data ?? mockFallback) as PlayerSeries;
+  const isLoading = playerSeriesQuery.isPending;
+  const isFetching = playerSeriesQuery.isFetching;
+  const queryError =
+    playerSeriesQuery.error instanceof Error ? playerSeriesQuery.error : null;
+
+  const playerDisplayName =
+    seriesData.playerName ?? PLAYER_NAME_LOOKUP[player] ?? `Player ${player}`;
+
+  const dateFormatter = useMemo(
+    () => new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }),
+    []
+  );
+
+  useEffect(() => {
+    if (seriesData.position && seriesData.position !== position) {
+      setPosition(seriesData.position);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seriesData.position, player]);
 
   const baselineSvgRef = useRef<SVGSVGElement | null>(null);
   const timeSeriesSvgRef = useRef<SVGSVGElement | null>(null);
   const baselineTooltipRef = useRef<HTMLDivElement | null>(null);
   const timeSeriesTooltipRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    let isActive = true;
-    const controller = new AbortController();
-    setIsLoading(true);
-    setError(null);
-
-    fetch(`/api/trends/skaters/${player}?season=${season}`, {
-      signal: controller.signal,
-    })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(`Failed to load player ${player}`);
-        }
-        return response.json() as Promise<PlayerSeries>;
-      })
-      .then((payload) => {
-        if (!isActive) {
-          return;
-        }
-        setSeriesData(payload);
-        setPosition(payload.position);
-        setIsLoading(false);
-      })
-      .catch((err) => {
-        if (!isActive && err.name === "AbortError") {
-          return;
-        }
-        console.error(err);
-        setIsLoading(false);
-        setError(err.message);
-      });
-
-    return () => {
-      isActive = false;
-      controller.abort();
-    };
-  }, [player, season]);
 
   const chartSeries = useMemo<ChartPoint[]>(
     () =>
@@ -407,6 +529,42 @@ const TrendsSandboxPage = () => {
       })),
     [seriesData.timeSeries]
   );
+
+  const streakSegments = useMemo(
+    () => buildStreakSegments(chartSeries),
+    [chartSeries]
+  );
+
+  const activeStreak = useMemo(() => {
+    if (!chartSeries.length) {
+      return null;
+    }
+    const lastIndex = chartSeries.length - 1;
+    const latestSegment = streakSegments.find(
+      (segment) => segment.endIndex === lastIndex
+    );
+    if (!latestSegment) {
+      return null;
+    }
+    const startPoint = chartSeries[latestSegment.startIndex];
+    const endPoint = chartSeries[latestSegment.endIndex];
+    return {
+      type: latestSegment.type,
+      length: latestSegment.endIndex - latestSegment.startIndex + 1,
+      since: startPoint.date,
+      lastGame: endPoint.date,
+    };
+  }, [chartSeries, streakSegments]);
+
+  const streakTotals = useMemo(() => {
+    return streakSegments.reduce<{ hot: number; cold: number }>(
+      (acc, segment) => {
+        acc[segment.type] += 1;
+        return acc;
+      },
+      { hot: 0, cold: 0 }
+    );
+  }, [streakSegments]);
 
   useEffect(() => {
     if (baselineSvgRef.current && baselineTooltipRef.current) {
@@ -480,7 +638,7 @@ const TrendsSandboxPage = () => {
               </select>
             </label>
             <label htmlFor="spanSlider">
-              <span>EWMA Span</span>
+              <span>Smoothing window (games)</span>
               <input
                 id="spanSlider"
                 type="range"
@@ -495,7 +653,7 @@ const TrendsSandboxPage = () => {
               />
             </label>
             <label htmlFor="lambdaSlider">
-              <span>λ (σ multiplier)</span>
+              <span>Detection band multiplier</span>
               <input
                 id="lambdaSlider"
                 type="range"
@@ -510,7 +668,7 @@ const TrendsSandboxPage = () => {
               />
             </label>
             <label htmlFor="persistenceSlider">
-              <span>L (min run)</span>
+              <span>Minimum streak length</span>
               <input
                 id="persistenceSlider"
                 type="range"
@@ -553,19 +711,24 @@ const TrendsSandboxPage = () => {
           </form>
         </header>
 
-        {error && (
+        {queryError && (
           <div className="status-banner error" role="alert">
-            {error}
+            {queryError.message}
           </div>
         )}
-        {isLoading && !error && (
+        {(isLoading || (isFetching && !isLoading)) && !queryError && (
           <div className="status-banner loading" role="status">
-            Loading player data…
+            {isLoading ? "Loading player data…" : "Updating player data…"}
+          </div>
+        )}
+        {seriesData.isMock && !queryError && !isLoading && (
+          <div className="status-banner" role="status">
+            Showing mock data while live trends become available.
           </div>
         )}
         <main className="content">
           <div className="summary">
-            <h1>{seriesData.playerName}</h1>
+            <h1>{playerDisplayName}</h1>
             <span>
               {seriesData.season} · Position {seriesData.position}
             </span>
@@ -573,7 +736,8 @@ const TrendsSandboxPage = () => {
           <section id="cellA" className="cell" aria-labelledby="cellA-title">
             <h2 id="cellA-title">Cell A · Baseline Explorer</h2>
             <p className="meta">
-              League baseline distribution (μ₀, σ₀) with player-specific cards.
+              How this player's typical SKO compares with league peers at the
+              same position.
             </p>
             <div className="chart-container" aria-label="Baseline violin plot">
               <svg
@@ -589,13 +753,13 @@ const TrendsSandboxPage = () => {
             </div>
             <div className="cards" aria-live="polite">
               <div className="card">
-                <span className="label">μ₀</span>
+                <span className="label">Baseline average</span>
                 <span className="value">
                   {seriesData.baseline.mu0.toFixed(2)}
                 </span>
               </div>
               <div className="card">
-                <span className="label">σ₀</span>
+                <span className="label">Baseline spread</span>
                 <span className="value">
                   {seriesData.baseline.sigma0.toFixed(2)}
                 </span>
@@ -607,14 +771,15 @@ const TrendsSandboxPage = () => {
             </div>
             <p id="cellA-desc" hidden>
               Density plot compares player baseline to league position cohort;
-              cards show μ₀, σ₀, and training sample size.
+              cards show the baseline average, spread, and training sample size.
             </p>
           </section>
 
           <section id="cellB" className="cell" aria-labelledby="cellB-title">
             <h2 id="cellB-title">Cell B · Time Series &amp; Streak Ribbons</h2>
             <p className="meta">
-              SKO vs EWMA with λ·σ band and HOT/COLD ribbons. Brush to zoom.
+              Game-by-game SKO (orange) versus the smoothed trend (teal), with a
+              neutral zone band and shaded streak windows. Brush to zoom.
             </p>
             <div className="chart-container" aria-label="SKO time series">
               <svg
@@ -622,15 +787,74 @@ const TrendsSandboxPage = () => {
                 role="img"
                 aria-describedby="cellB-desc"
               />
-              <div
-                ref={timeSeriesTooltipRef}
-                className="tooltip"
-                role="presentation"
+            <div
+              ref={timeSeriesTooltipRef}
+              className="tooltip"
+              role="presentation"
+            />
+          </div>
+          <div
+            className="chart-legend"
+            aria-hidden="true"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "1rem",
+              flexWrap: "wrap",
+              marginTop: "0.75rem",
+              fontSize: "0.85rem",
+            }}
+          >
+            <span style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem" }}>
+              <span
+                style={{
+                  width: "12px",
+                  height: "12px",
+                  background: "rgba(255, 111, 0, 0.3)",
+                  borderRadius: "2px",
+                  border: "1px solid rgba(255, 111, 0, 0.6)",
+                }}
               />
-            </div>
+              Hot streak window
+            </span>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem" }}>
+              <span
+                style={{
+                  width: "12px",
+                  height: "12px",
+                  background: "rgba(33, 150, 243, 0.3)",
+                  borderRadius: "2px",
+                  border: "1px solid rgba(33, 150, 243, 0.6)",
+                }}
+              />
+              Cold streak window
+            </span>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem" }}>
+              <span
+                style={{
+                  width: "18px",
+                  height: "3px",
+                  background: "var(--sko-color)",
+                  borderRadius: "2px",
+                }}
+              />
+              Game SKO
+            </span>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem" }}>
+              <span
+                style={{
+                  width: "18px",
+                  height: "3px",
+                  background: "var(--ewma-color)",
+                  borderRadius: "2px",
+                }}
+              />
+              Smoothed trend
+            </span>
+          </div>
             <p id="cellB-desc" hidden>
-              Lines show raw SKO and EWMA; shaded band represents μ₀ ± λ·σ;
-              ribbons highlight streak intervals.
+              Lines show raw SKO and the smoothed reading; shaded bands mark the
+              neutral zone and highlight hot or cold streak intervals.
             </p>
           </section>
 

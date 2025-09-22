@@ -21,29 +21,32 @@
 - ✅ Supabase materialized view `analytics.mv_sko_skater_moments` rebuilt with non-zero league filters for on-ice shooting and shooting percentage.
 - ✅ Supabase base view `analytics.vw_sko_skater_base` joins WGO + NST gamelog tables in preparation for z-score pipeline.
 - ✅ RPC skeleton `analytics.rpc_sko_player_series` defined (index creation removed per view limitations).
-- ⏳ Refresh `vw_sko_skater_zscores` and `vw_sko_skater_scores` to consume new helper view.
+- ✅ Refreshed `vw_sko_skater_zscores`/`vw_sko_skater_scores` to consume new base view + ixG shrinkage.
 - ⏳ Model prototyping pending feature extraction pipeline.
-- ⏳ Frontend scaffold requires integration with actual API endpoints once ready.
+- ✅ Frontend scaffold now powered by Supabase RPC via React Query.
+- ✅ Added `callSkoPlayerSeries` helper and documented RPC contract for reuse across API routes.
 
 ## Recent Updates
 - Documented planner guardrails, statistical procedures, SQL artifacts, frontend scaffold, evaluation plan, and UX design blueprint in first design package.
 - Established default hyperparameters (λ=1.8 HOT, 1.6 COLD; EWMA span=5; L=2 HOT, 3 COLD) for validation.
 - Implemented interactive mock `/trends` page (controls, baseline violin, time-series ribbons) using deterministic fixture data for Cells A & B.
-- Frontend `/trends` page now loads player data via the new API route and surfaces loading/error banners.
+- Frontend `/trends` page now uses React Query + Supabase RPC fetches (loading/error banners retained, controls drive live data).
 - Added Supabase helper view `analytics.vw_sko_skater_base` to merge WGO boxscore rows with NST xG metrics and handle missing `game_id` values.
 - Updated `analytics.mv_sko_skater_moments` to exclude zero-only games from league medians/MADs for on-ice shooting and personal shooting percentage.
-- Created PL/pgSQL RPC `analytics.rpc_sko_player_series` (minus view index) to serve JSON baselines/EWMA once z-score view is refreshed.
+- Refreshed PL/pgSQL RPC `analytics.rpc_sko_player_series` with player metadata (fallback when unavailable), season IDs, control params wired for Supabase RPC usage, and marked it security definer with an explicit analytics-first search path so PostgREST can call it safely.
+- Added SQL artifacts under `web/sql/` (materialized view, z-score view, scoring view) plus `web/sql/tests/sko_trends_validation.sql` for spot checks.
+- API route now uses shared RPC helper and serves mock fallback when Supabase is unavailable, keeping `/trends` visuals working during backend outages.
+- Added `public.rpc_sko_player_series` wrapper so PostgREST can reach analytics RPC without updating search path; grant executes included in SQL artifact.
 
 ## Next Steps
 1. Confirm availability of required columns in `wgo_skater_stats` and related NST tables; adjust feature list if needed (in progress).
-2. **Refresh** and validate `analytics.vw_sko_skater_zscores` to consume the new joint base view; re-create `analytics.vw_sko_skater_scores` on top of it.
-3. Unit-test EB shrinkage math and RPC output against sample players; document any missing NST coverage.
+2. Deploy refreshed SQL (`mv_sko_skater_moments`, z-score, scores, RPC) to Supabase and document materialized view refresh steps.
+3. Run validation queries in `web/sql/tests/sko_trends_validation.sql` across more sample players and capture outputs in the PRD.
 4. Prototype ridge regression for SKO weights using Python notebook; store coefficients in config table.
-5. Define API routes in Next.js (or Supabase Edge Functions) matching data contracts; prepare mock responses.
-6. Wire `/trends` page to real API once contracts stabilized; replace deterministic fixtures with fetched data.
-7. Connect UI controls (player select, season toggle, train/test) to live data-fetch layer once endpoints land.
-8. Implement evaluation harness script and schedule nightly job to refresh 2024-25 metrics.
-9. Swap mock API implementation for Supabase-backed queries after analytics views materialize and RPC verified.
+5. Plumb control values (λ, EWMA span, L hot/cold) through the RPC once backend thresholds are finalized; reflect state in UI badges.
+6. Connect UI controls (player select, season toggle, train/test) to additional cells (C–H) as data and models land.
+7. Implement evaluation harness script and schedule nightly job to refresh 2024-25 metrics.
+8. Add Supabase error telemetry/backoff for trends fetches ahead of sandbox promotion.
 
 ## Open Questions
 - Best data source for injury/return indicators if not present in Supabase tables?
@@ -66,12 +69,12 @@
 - Discord channel `#trends` hosts daily asynchronous status updates.
 
 ## Hand-off Prompt
-You are taking over the fhfhockey SKO trends project. Current state: frontend sandbox `/trends` renders Cells A/B with mock data from `/api/trends/skaters/[playerId]`. On the data side, `analytics.mv_sko_skater_moments` is materialized (league medians avoid zero-only distortions) and helper view `analytics.vw_sko_skater_base` is ready to stitch WGO with NST gamelog xG. The RPC skeleton `analytics.rpc_sko_player_series` is defined but depends on a refreshed z-score view.
+You are taking over the fhfhockey SKO trends project. Current state: frontend sandbox `/trends` now calls Supabase via `analytics.rpc_sko_player_series` with React Query, and Cells A/B render live data (baseline violin + time-series). On the data side, `analytics.mv_sko_skater_moments`, `analytics.vw_sko_skater_zscores`, `analytics.vw_sko_skater_scores`, and the RPC have been refreshed to include ixG metrics and season metadata; SQL artifacts live in `web/sql/`. Smoke-test queries live at `web/sql/tests/sko_trends_validation.sql`.
 
 Next steps for you:
-1. Rebuild `analytics.vw_sko_skater_zscores` to pull from `analytics.vw_sko_skater_base`, ensuring shrinkage math covers new columns (`ixg`, `ixg_per_60`). Validate sample output (player/date ordering, null handling).
-2. Recreate `analytics.vw_sko_skater_scores` and rerun `analytics.rpc_sko_player_series` to confirm JSON payload matches the frontend contract. Add unit queries for a couple of players across seasons.
-3. Replace the Next.js mock API implementation with live Supabase fetches. Update `/trends` to use SWR or React Query, wire season/player controls, and handle loading states.
+1. Deploy the refreshed SQL artifacts to Supabase (drop/recreate MV + views, replace RPC) and log materialized view refresh cadence.
+2. Run the validation queries against a few players per position (train/test seasons) and capture notable findings / null edge cases.
+3. Thread UI control params (λ hot/cold, EWMA span, L) end-to-end through the RPC once tuning is finalized, and extend the data layer to downstream cells.
 
 Context you may need: NST tables (`nst_gamelog_as_counts`/`rates`) have no `game_id`; join on `(player_id, date)` and fall back to synthetic ordering when missing. League medians intentionally ignore zero-only games for ratio metrics; keep that logic. Model training and evaluation harness still to come after data extracts are stable.
 
@@ -185,7 +188,10 @@ Deliverables expected from you: refreshed SQL artifacts, validated RPC output, f
 
 #### `analytics.vw_sko_skater_base`
 ```sql
+ DROP VIEW IF EXISTS analytics.vw_sko_skater_base;
+
  SELECT ws.player_id,
+    ws.player_name,
     COALESCE(ws.position_code, 'F'::text) AS position_code,
     COALESCE(ws.season_id, nc.season) AS season_id,
     ws.game_id,
@@ -332,6 +338,11 @@ end;
 $$;
 ```
 
+##### RPC Contract & Helper
+- Supabase returns `player_id`, metadata, and an ordered `series` array with feature z-scores under `features.*`. See TypeScript models in `web/lib/trends/types.ts` (`RpcPayload`, `RpcSeriesEntry`).
+- `web/lib/trends/rpc.ts` exports `callSkoPlayerSeries`, which maps control params (`span`, `lambdaHot`, `lambdaCold`, `lHot`, `lCold`) to the PL/pgSQL signature (`p_*`) and casts the JSON payload.
+- Next.js API routes (e.g. `web/pages/api/trends/skaters/[playerId].ts`) should use the helper for consistent typing and error handling; UI layers still consume the normalized `PlayerSeries` contract.
+
 #### `analytics.vw_sko_skater_zscores`
 ```sql
  WITH constants AS (
@@ -401,4 +412,3 @@ $$;
     tanh('-0.03'::numeric::double precision + 0.24::double precision * COALESCE(z.shots_z, 0::double precision) + 0.28::double precision * COALESCE(z.ixg_z, 0::double precision) + 0.13::double precision * COALESCE(z.ixg_per_60_z, 0::double precision) + 0.09::double precision * COALESCE(z.toi_z, 0::double precision) + 0.07::double precision * COALESCE(z.pp_toi_z, 0::double precision) + 0.09::double precision * COALESCE(z.ozfo_z, 0::double precision) - 0.06::double precision * COALESCE(z.onice_sh_z, 0::double precision) - 0.05::double precision * COALESCE(z.shooting_pct_z, 0::double precision)) AS sko
    FROM analytics.vw_sko_skater_zscores z;
 ```
-
