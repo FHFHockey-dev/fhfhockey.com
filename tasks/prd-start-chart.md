@@ -1,373 +1,110 @@
-# PRD — Start Chart: Short-Horizon Fantasy Hockey Player & Team Prediction
-
-Owner: TJ
-Product: Start Chart (streaming/start-sit recommendations)
-Horizon: 7–14 days (rolling)
-Modes: Points and Categories
-Stack: Next.js (Vercel) + Supabase + Node/TS jobs (or Python for ingestion)
-
----
-
-## 0) Purpose and Outcomes
-
-Goal: Rank players by position over the next 1–2 weeks using player trends, opponent context, and goalie effects, with user-tunable scoring and recency.
-Primary Outcome: A Start Chart UI that converts short-horizon projections into actionable start/stream decisions with confidence and accountability.
-
-Success Metrics
-- Start-vs-replacement decision win rate ≥ 65 percent over rolling 30 days
-- MAPE: Shots ≤ 20 percent, PPP window totals ≤ 30 percent
-- Calibration: 50 percent intervals contain actuals ≈ 50 percent
-- P95 projection latency under 4s for 100 players, 7-day window
-
----
-
-## 1) Scope
-
-In-scope
-- Data ingestion: schedule, lines, skaters, team state-split metrics, goalies
-- Decay-blended player rates and trend-aware TOI
-- Opponent and goalie adjustments (5v5 and PP)
-- Goalie start probabilities and goalie quality effects
-- Window aggregation with off-night capacity/bench conflicts
-- Points and Categories modes with positional replacement (VORP and VONA)
-- Prediction logging, outcome capture, evaluation metrics and basic dashboards
-
-Out-of-scope for MVP
-- Market odds blending
-- Altitude effects (explicitly excluded)
-- Rich injury modeling beyond status feeds
-
----
-
-## 2) Definitions
-
-Decay-weighted rate (s*): exponential recency smoothing with user τ
-Opponent multipliers: defensive intensity factors by game state
-Start probability: probability a goalie starts a specific game
-Off-night leverage: ability to use projected games given daily roster caps
-Replacement level: per-position baseline implied by league size and slots
-
----
-
-## 3) Data Requirements
-
-3.1 Schedule and Context
-- Games next 14 days: date, home, away, team time zones
-- Rest days per team since last game; back-to-back flags for home and away
-- Do not include altitude
-
-3.2 Team Strength (by state)
-- 5v5: xGF per 60, xGA per 60, CF per 60, CA per 60, HDCF per 60, HDCA per 60, pace proxy
-- PP offense: PP xGF per 60, PP individual shots per 60, PPO per game
-- PK defense: PK xGA per 60, PK shots against per 60, PPOA per game
-- Rolling windows: last 10, 25, 50 GP; league baselines L_xGA60_5v5 and L_PK_xGA60
-
-3.3 Goalies
-- Depth chart and rolling 30-day starter share
-- Rest days, B2B, home or away
-- Recent SV percent for 7, 14, 40 games; GSAx per 60 if available; rebounds per shot against if available
-- Start confirmations when known; otherwise start probabilities
-
-3.4 Skaters
-- Usage: ATOI, TOI by 5v5, PP, PK; line and PP unit (1 vs 2)
-- Individual rates: ixG per 60, iSF per 60, iCF per 60, iHDCF per 60, A1 per 60, A2 per 60
-- On-ice: xGF_on per 60, xGA_on per 60, xGF percent relative
-- Deployment: OZS percent; QoT and QoC indices optional v2+
-- Peripherals: Hits per 60, Blocks per 60, FOW per 60, FOL per 60, PIM per 60
-- Status flags: DTD, IR, scratched
-
-3.5 User Scoring and Constraints
-- Points weights JSON for goals, assists, shots, hits, blocks, PIM, PPP, SHP, GWG, etc.
-- Categories list, per-week tie and win logic
-- League structure: teams count, slots per position, bench slots
-- Daily lineup caps for bench conflict estimation
-
----
-
-## 4) Computational Model
-
-4.1 Recency Smoothing
-- For any event rate s at time t_i with time now t_now and user τ:
-    w_i = exp(-(t_now - t_i) / τ)
-    s* = sum(s_i * w_i) / sum(w_i)
-- τ defaults to 30 days and is user-tunable (for example 15, 30, 60)
-
-4.2 Team Ratings (xG-driven Offense and Defense Elo per state)
-- Initialize per team and per state: Elo_O_state = 1500 and Elo_D_state = 1500 for states 5v5, PP, PK
-- Pre-game expected for team T vs opponent O:
-    μ_for_state = L_state * exp(k1 * (Elo_O_state_T - 1500) / 400 - k2 * (Elo_D_state_O - 1500) / 400 + H * home + R * rest_diff + B * b2b_flag)
-- Post-game update per state with xG differential:
-    Δ = (xGF_for - xGF_against) - (μ_for - μ_against)
-    Elo_O_state_T += K * Δ
-    Elo_D_state_O -= K * Δ
-- Use smaller K early season, then taper
-
-4.3 Opponent Multipliers (clipped)
-- 5v5 defensive multiplier:
-    M_def_5v5 = clip(xGA60_opp_5v5 / L_xGA60_5v5, 0.75, 1.25)
-- PK defensive multiplier:
-    M_pk = clip(PK_xGA60_opp / L_PK_xGA60, 0.75, 1.30)
-
-4.4 Goalie Start Probability (logistic)
-- Features: rest days, B2B, home, opponent strength, recent 30d start share, team effect
-- Model:
-    logit(P_start) = β0 + β1 * RestDays + β2 * B2B + β3 * Home + β4 * OppStrength + β5 * RecentStartShare + ζ_team
-
-4.5 Goalie Performance
-- Shots against expectation:
-    E[SA] = TeamAllowed_SA_rate * pace * M_def_5v5
-- SV percent projection using empirical Bayes blend:
-    SV_proj = w7 * SV_7 + w14 * SV_14 + w40 * SV_40 + wP * LeaguePrior  where weights sum to 1 using inverse-variance or decay
-- Goals allowed:
-    E[GA] = E[SA] * (1 - SV_proj)
-- Goalie finishing suppression multiplier for skater finishing:
-    M_goalie_finish = clip(1 - (SV_proj - L_SV) / 0.070, 0.80, 1.20)
-
-4.6 Skater Per-Game Projection
-- TOI trends:
-    E[TOI_5v5] = α + β1 * ΔATOI_10 + β2 * LineRole + β3 * ScoreStateBias + ε
-    E[PP_TOI] = p(PP1) * PPshare1 + (1 - p(PP1)) * PPshare2  where p(PP1) inferred from recent PP usage
-- Event means per game (Poisson assumptions):
-    Goals mean
-        λ_G = (ixG60_5v5* / 60) * E[TOI_5v5] * M_def_5v5 * M_goalie_finish
-            + (ixG60_PP* / 60)  * E[PP_TOI]  * M_pk       * M_goalie_finish
-    Assists mean
-        λ_A = (xGF_on60_5v5* / 60) * E[TOI_5v5] * M_def_5v5 * AssistShare_5v5*
-            + (xGF_on60_PP*  / 60) * E[PP_TOI]  * M_pk       * AssistShare_PP*
-    Shots mean
-        λ_S = (iSF60_total* / 60) * (E[TOI_5v5] + E[PP_TOI]) * average(M_def_5v5, M_pk)
-    Peripherals
-        λ_stat = (stat60* / 60) * relevant_TOI * minor_multipliers
-- Distribution for counts:
-    Stat_i ~ Poisson(λ_i)  or Negative Binomial if overdispersion detected
-
-4.7 Window Aggregation and Capacity
-- WindowStat = sum over games of E[Stat given per-game context]
-- Bench conflicts on heavy nights:
-    AdjFactor_day = min(1, SlotsAvailable_day / ExpectedActive_day)
-    WindowStat_adj = sum over days of (sum over games that day of PlayerStat) times AdjFactor_day for players with conflicts
-
-4.8 Points Mode
-- Fantasy points:
-    fPts = sum over stats of weight_k times WindowStat_adj_k
-
-4.9 Categories Mode with Positional Replacement
-- Determine replacement per position from league teams and slots
-    N_drafted_pos = Teams * Slots_pos  plus optional bench share if desired
-    Replacement_pos = rank threshold N_drafted_pos + 1 within position
-- Compute Z-scores for the window vs position
-    Z_i = (PlayerStat_i - mean_pos_i) / std_pos_i
-- VORP_pos = sum over categories of (Z_i - Z_replacement_pos_i)
-- VONA_pos = sum over categories of (Z_i - Z_next_available_pos_i)
-
-4.10 Ranking and Confidence
-- Primary rank
-    Points mode: by fPts
-    Categories mode: by VORP_pos
-- Confidence bands from Monte Carlo window simulation drawing per-game Poisson or Negative Binomial counts; report P25 and P75
-- Tags: Off-night bonus, PP1, Line 1, soft PK cluster, elite-goalie cluster
-
----
-
-## 5) Evaluation and Accountability
-
-5.1 Storage
-- predictions: game_id, player_id, stat, mean, variance, p_any, timestamp, model_version, context_json
-- outcomes: game_id, player_id, stat, actual, timestamp
-- rank_decisions: timestamp, mode, player_id, replacement_id, projected_delta, actual_delta
-
-5.2 Metrics
-- Continuous: MAE and MAPE for SOG, G, A, PPP
-- Distributional: CRPS for counts where simulated
-- Binary: Brier for at least one point, goal, assist
-- Ranking: Top-N hit rate; Spearman rho per position per day
-- Decision quality: start-vs-replacement win rate and average gain
-
-5.3 Dashboards
-- Rolling 30-day error by stat, position, team
-- Calibration plots; model version diffs
-- Bench conflict heatmap by weekday
-
----
-
-## 6) Data Model (Supabase)
-
-games
-- game_id pk, date, home, away, rest_home, rest_away, b2b_home, b2b_away, tz, created_at
-
-starts
-- game_id, team, goalie_id, p_start, confirmed_at, updated_at
-
-team_strength
-- team, date, state, xgf60, xga60, cf60, ca60, pp_xgf60, pk_xga60, pace, elo_o, elo_d, updated_at
-- state in {5v5, PP, PK}
-
-player_rates
-- player_id, date, ixg60_5v5, ixg60_pp, isf60, a1_60, a2_60, hits60, blks60, fow60, fol60, toi_5v5, toi_pp, toi_pk, line, pp_unit, status, updated_at
-
-projections
-- game_id, player_id, stat, mean, var, p_any, context_json, model_version, created_at
-
-window_summaries
-- player_id, start_date, end_date, mode, fpts_mean, p25, p75, leverage, tags, created_at
-
-scoring_profiles
-- profile_id pk, user_id, mode, weights_json, categories_json, params_json  includes τ and clip bounds
-
-predictions and outcomes as above; rank_decisions for analysis
-
-Indexes: by date, by player_id plus date, by team plus date
-
----
-
-## 7) API Surface (Next.js)
-
-GET /api/v1/schedule?days=14
-- Returns upcoming games with rest and B2B flags
-
-GET /api/v1/players/rates?since=YYYY-MM-DD&tau=30
-- Returns decay-blended rates and usage
-
-GET /api/v1/projections?window=7&profile={id}&mode=points
-- Returns per-player per-game projections and window aggregates
-
-GET /api/v1/rankings?window=7&mode=points&position=C
-- Returns ranked list by position with fPts or VORP and tags
-
-POST /api/v1/scoring-profiles
-- Create or update profile with weights and params
-
-GET /api/v1/metrics/rolling?days=30
-- Returns rolling error metrics by stat
-
-All endpoints accept league parameters: teams, slots_json, bench_slots
-
----
-
-## 8) UI Requirements
-
-Start Chart columns by position
-- Rank, Name, Team, Games, fPts or VORP, P25–P75, Off-night, PP1, Line, Notes
-
-Controls
-- Horizon 7 or 14 days
-- Recency τ slider 15, 30, 60
-- Mode toggle Points or Categories
-- Include peripherals toggle
-- Risk preference: mean vs P75 ranking
-- League profile selector
-
-Explainability tooltip
-- Example: plus 12 percent week; 4 games; PP1; opponents PK 24th; opposing goalie cluster below league SV average
-
----
-
-## 9) Non-functional Requirements
-
-- Deterministic outputs for given inputs and model_version
-- Full audit trail from inputs to predictions and outcomes
-- P95 endpoint latency under 4s for 100 players over 7 days
-- Graceful handling of missing data with league priors and clipping
-- Feature flags for model versions and modes
-
----
-
-## 10) Constants and Clips
-
-- Clip 5v5 defense multiplier in [0.75, 1.25]
-- Clip PK defense multiplier in [0.75, 1.30]
-- Goalie finishing multiplier in [0.80, 1.20]
-- Default τ = 30 days
-- Elo K: 8 early, 4 mid, 2 late season per state
-- H home advantage and R rest and B b2b coefficients tuned via cross-validated grid
-
----
-
-## 11) Risks and Mitigations
-
-- Early-season small samples: stronger priors and lower K in Elo
-- Line volatility: hysteresis on PP and line changes; require sustained shifts
-- Overfitting to streaks: cap τ minimums; blend with career medians when sample thin
-- Bench conflict misestimation: calibrate with observed start logs per weekday
-
----
-
-## 12) Priority Plan (Foundation to MVP)
-
-F0 Foundations
-1. Create Supabase schema for games, team_strength, player_rates, starts, scoring_profiles, projections, window_summaries, predictions, outcomes.
-2. Ingest schedule for next 14 days; compute rest and B2B flags and time zones.
-3. Ingest team rolling state-split metrics and compute league baselines.
-4. Ingest skater rates and usage including PP unit and lines.
-5. Ingest goalie recent stats and confirmations; compute starter shares.
-
-F1 Core Math
-6. Implement exponential decay blending for all per-60 rates with user τ.
-7. Implement opponent multipliers M_def_5v5 and M_pk with clipping.
-8. Implement goalie finishing multiplier M_goalie_finish using projected SV%.
-9. Build per-game λ for G, A, SOG, peripherals with a TOI trend proxy.
-
-F2 Window and Scoring
-10. Aggregate per-game to window totals for 7 and 14 days.
-11. Implement off-night bench adjustment using expected capacity factors.
-12. Implement Points mode: fPts equals sum of weights times adjusted stats.
-
-F3 Rankings and API
-13. Build projections and rankings endpoints with validation and profile support.
-14. Implement Start Chart UI basics: position tabs, rank, fPts, off-night, PP1, line.
-
-F4 Evaluation Loop (MVP complete at end of F4)
-15. Persist predictions with model_version; capture outcomes post-game.
-16. Compute MAE and MAPE; expose rolling metrics endpoint and simple dashboard.
-
-F5 Enhancements
-17. Goalie start probability model and integration into per-game context.
-18. Team offense and defense Elo by state updated using xG differential.
-19. Categories mode including per-position replacement, Z-scores, VORP and VONA.
-20. Monte Carlo simulation for P25 and P75 confidence bands.
-21. Decision analytics for start-vs-replacement gain and win rate.
-
----
-
-## 13) Example Utilities (TypeScript-like pseudocode)
-
-    function decayBlend(samples, tau = 30):
-      weights = samples.map(s => exp(-s.daysAgo / tau))
-      numerator = sum over i of samples[i].value * weights[i]
-      denominator = max(sum over i of weights[i], 1e-9)
-      return numerator / denominator
-
-    function clip(x, lo, hi):
-      return min(hi, max(lo, x))
-
-    function opponentMultipliers(opp, league):
-      M5 = clip(opp.xGA60_5v5 / league.xGA60_5v5, 0.75, 1.25)
-      MPK = clip(opp.pk_xGA60 / league.pk_xGA60, 0.75, 1.30)
-      return { M5, MPK }
-
-    function goalieFinishMult(sv_proj, league_SV):
-      return clip(1 - (sv_proj - league_SV) / 0.070, 0.80, 1.20)
-
-    function projectSkaterGame(p, ctx):
-      { M5, MPK } = opponentMultipliers(ctx.opp, ctx.league)
-      Mgoalie = goalieFinishMult(ctx.oppGoalie.sv_proj, ctx.league.SV)
-      toi5 = p.toi5_pred
-      toipp = p.toipp_pred
-      lambdaG = (p.ixg60_5v5 / 60) * toi5 * M5 * Mgoalie + (p.ixg60_pp / 60) * toipp * MPK * Mgoalie
-      lambdaA = (p.xgf_on60_5v5 / 60) * toi5 * M5 * p.astShare5 + (p.xgf_on60_pp / 60) * toipp * MPK * p.astSharePP
-      lambdaS = (p.isf60_total / 60) * (toi5 + toipp) * ((M5 + MPK) / 2)
-      return { G: { mean: lambdaG }, A: { mean: lambdaA }, S: { mean: lambdaS } }
-
----
-
-## 14) Acceptance Criteria
-
-- Seeded data returns rankings from GET rankings with window and position parameters including fPts or VORP and off-night values
-- Predictions written for today’s games; outcomes captured; rolling metrics endpoint returns MAE and MAPE
-- Deterministic results given same inputs and model_version
-- Basic Start Chart UI renders with interactive controls and tooltips
-
----
-
-
-
+You are GPT-5 Codex. Implement the Start Chart DAILY MVP exactly as specified.
+
+Title
+Start Chart — Daily Fantasy Hockey Start/Sit Rankings
+
+Objective
+Compute and rank short-horizon (single-date) player projections driven by decay-weighted trends, opponent/goalie context, and user scoring. No off-night or bench-capacity adjustments; rankings are for a chosen date only.
+
+Inputs and Inventory
+- Supabase schemas are described in 'supabase-table-structure.md' and include: games, wgo_skater_stats(_totals), wgo_goalie_stats(_totals), nst_gamelog_as_rates/_counts (+ _oi and per-state variants), nst_team_5v5, nst_team_pp, nst_team_pk, nst_team_all, lineCombinations, powerPlayCombinations, players, yahoo_*.
+- Assume nst.player_id equals NHL id and is consistent with wgo_* for joins.
+
+Deliverables
+1) Supabase migrations (db/migrations)
+   - Table 'starts' with columns: game_id bigint fk games.id; team_abbrev text; goalie_id bigint; status text default 'projected' (enum-like: projected, probable, confirmed); p_start numeric default 0.50; source text; confirmed_at timestamptz; updated_at timestamptz default now(); unique (game_id, team_abbrev).
+   - Table 'scoring_profiles' with profile_id uuid pk, user_id, mode ('points'|'categories'), weights_json (points weights), categories_json (optional), params_json (tau, clips, risk), created_at/updated_at.
+   - Table 'model_params' with model_version text pk, params_json jsonb, created_at timestamptz.
+   - Useful indexes on games(date), wgo_skater_stats(player_id,date), wgo_goalie_stats(goalie_id,date).
+   - Optional 'dim_player_ids' future-proof crosswalk (skip if not needed now).
+
+2) Derived views (create as SQL views or materialized views; place SQL in db/sql)
+   - vw_schedule_day(date_param): expand 'games' into team-rows for the target date with columns [team_abbrev, opp_abbrev, game_id, game_date, home_away, rest_days, b2b_flag]. Compute rest/b2b via previous game for each team.
+   - vw_team_strength_state_daily: union of nst_team_5v5, nst_team_pp, nst_team_pk standardized to per-60; columns [team_abbrev, date, state in {5v5, PP, PK}, xgf60, xga60, cf60, ca60, scf60, sca60, hdcf60, hdca60, sf60, sa60]. If missing on a date, backfill from nearest prior date; fallback to season in nst_team_stats.
+   - vw_pp_unit_share_recent: from powerPlayCombinations unnest to per-player rows; 10–15 game window to compute p_pp1 (fraction PP1), pp_share_recent, pp_toi60_recent.
+   - vw_skater_rates_state_recent(tau_days): decay-blended per-60: ixg60_5v5, isf60_5v5, a1_60_5v5, a2_60_5v5; ixg60_pp, isf60_pp, a1_60_pp, a2_60_pp; hits60, blocks60, pim60, fow60, fol60; xgf_on60_5v5, xga_on60_5v5 from _oi tables. Weights w_i = exp(-Δdays/τ).
+   - vw_player_usage_recent(tau_days): decay-blended TOI by state (toi5_recent, toipp_recent, toipk_recent), d_atoi10, modal line_role from lineCombinations over recent games, p_pp1 from vw_pp_unit_share_recent.
+   - vw_goalie_recent(tau_days): sv_proj from 7/14/40 using inverse-variance or exp blend; sa60_proj; starts_share_30d.
+   - vw_opponent_multipliers(date): join vw_team_strength_state_daily for each team vs opponent on date; compute M_def_5v5 = clip(xga60_opp_5v5/L_xGA60_5v5, 0.75, 1.25), M_pk = clip(xga60_opp_pk/L_xGA60_pk, 0.75, 1.30). League baselines come from model_params.params_json (xga60_5v5, xga60_pk, sv_league).
+   - vw_skater_game_lambda(date, tau_days): for each (player_id, game_id) on the date, compute λ means:
+       toi5 = toi5_recent adjusted by d_atoi10 and line_role
+       toipp = toipp_recent scaled by p_pp1 share
+       M5, MPK from vw_opponent_multipliers; Mgoalie = clip(1 - (sv_proj_opp - L_SV)/0.070, 0.80, 1.20)
+       λ_G = (ixg60_5v5/60)*toi5*M5*Mgoalie + (ixg60_pp/60)*toipp*MPK*Mgoalie
+       λ_A = (xgf_on60_5v5/60)*toi5*M5*AssistShare5 + (xgf_on60_pp/60)*toipp*MPK*AssistSharePP
+       λ_S = (isf60_total/60)*(toi5+toipp)*avg(M5,MPK)
+       λ_peripherals = (rate60/60)*relevant_TOI
+     Use Poisson by default; if recent Fano > 1.25 for a stat, use NegBin with fitted r.
+
+3) Ingestion jobs (jobs/)
+   - Nightly: refresh nst_team_* by state; compute and store league baselines in model_params (xga60_5v5, xga60_pk, sv_league, on_ice_sh_pct_5v5, per-pos means/stds).
+   - Nightly: refresh skater gamelogs and goalie stats; update pp and lines from powerPlayCombinations and lineCombinations.
+   - Hourly (game days): refresh starts with heuristic P_start if no confirmation:
+       P_start = 0.75*recent_start_share_14d - 0.15*b2b_penalty + 0.05*home_bonus - 0.10*poor_form_penalty; clip to [0.05,0.95]; status='projected'. Provide manual override path (UI).
+
+4) Math utilities (src/lib/)
+   - decayBlend(samples, tauDays), ewsd(samples, tauDays), slope(lastN), shrinkage(s_recent, s_career, k), clip(x, lo, hi), goalieFinishMult(sv_proj, league_SV).
+   - NegBin fitter for overdispersed stats; Fano detector.
+
+5) Next.js API (src/pages/api/)
+   - GET /api/v1/projections?date=YYYY-MM-DD&profile={id}&mode=points
+       Returns per-player λ and projected counts for that date; also fPts (points mode).
+   - GET /api/v1/rankings?date=YYYY-MM-DD&mode=points&position=C
+       Returns ranked players for the date with fPts; include M5, MPK, p_pp1, line_role, opponent goalie sv_proj.
+   - GET /api/v1/players/rates?since=YYYY-MM-DD&tau=30
+       Returns decay-blended rates and usage.
+   - GET /api/v1/metrics/rolling?days=30
+       Returns rolling MAE/MAPE by stat.
+   All accept league parameters and scoring profile id. Validate inputs.
+
+6) Minimal UI (src/app/)
+   - Daily Start Chart: date picker default today; tabs by position; columns: Rank, Name, Team, Opp, Goalie, Games(=1), fPts or VORP (categories later), PP1, Line, tags for 'hot/cold' and 'tough goalie'.
+   - Controls: date, τ (15/30/60), mode toggle (points now; categories later), scoring profile selector, risk toggle (mean vs P75 when implemented).
+   - Explainability tooltip: show key drivers (usage change, PP1 prob, opponent PK rank, opposing SV proj).
+
+7) Metrics & Logging
+   - predictions table: game_id, player_id, stat, mean, variance, p_any, model_version, context_json, created_at.
+   - outcomes table: game_id, player_id, stat, actual, created_at.
+   - metrics endpoint computes rolling MAE/MAPE; later CRPS/Brier optional.
+
+Computation Details
+- No off-night or bench-capacity factors; everyone is ranked on the same date’s slate.
+- Recency smoothing uses exponential weights w_i = exp(-Δdays/τ), default τ=30 days (configurable via scoring profile params_json or model_params).
+- Opponent multipliers and goalie suppression as specified above with clips.
+- Forwards vs Defensemen: use position-specific priors and elasticities (β_pp higher for D quarterbacking, β_finish lower for D). Store elasticities in model_params.
+- Small-sample shrinkage to career/archetype priors: s_hat = (n_eff/(n_eff+k))*s_recent + (k/(n_eff+k))*s_career where n_eff = Σw_i.
+
+Constraints
+- Exclude altitude effects.
+- Deterministic outputs given same inputs and model_version.
+- P95 latency under 4 seconds for 100 players on the chosen date.
+- Graceful handling of missing data via league priors and clipping.
+
+Tests (src/tests/)
+- Unit tests for math utilities (decayBlend, ewsd, slope, shrinkage, goalieFinishMult).
+- Contract tests for /projections and /rankings responses (schema, determinism).
+- Snapshot test for a seeded date slate.
+
+Acceptance
+- Rankings endpoint returns deterministic order and values for a seeded date using a fixed model_version.
+- Predictions and outcomes logged; metrics endpoint returns rolling MAE/MAPE.
+- UI renders a daily position view with ranks, values, PP1 and line chips, and opponent/goalie context.
+- Lints and tests pass; TypeScript clean.
+
+Execution Order (priority)
+1. Migrations: starts, scoring_profiles, model_params; indexes.
+2. Views: vw_schedule_day, vw_team_strength_state_daily.
+3. Views: vw_pp_unit_share_recent, vw_player_usage_recent, vw_skater_rates_state_recent.
+4. Views: vw_goalie_recent, vw_opponent_multipliers, vw_skater_game_lambda.
+5. Math utils; endpoints /projections and /rankings for a given date.
+6. Minimal UI (daily chart); metrics logging; rolling metrics endpoint.
+7. Heuristic P_start job; manual override UI for starts; polish.
+
+Environment and Constants
+- Store clip bounds, τ defaults, elasticities, league baselines in model_params.params_json and expose as constants.
+- Provide SCORING_PROFILE_DEFAULT with common points weights; allow user override via scoring_profiles.
+
+Begin now by generating:
+- SQL migrations for starts, scoring_profiles, model_params and initial indexes.
+- SQL for vw_schedule_day and vw_team_strength_state_daily.
+- TypeScript modules for math utilities and API route scaffolds for /projections and /rankings with input validation.

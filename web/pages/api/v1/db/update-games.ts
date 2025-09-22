@@ -41,7 +41,7 @@ export default adminOnly(async (req, res) => {
           startTime: game.startTimeUTC,
           type: game.gameType,
           homeTeamId: game.homeTeam.id,
-          awayTeamId: game.awayTeam.id,
+          awayTeamId: game.awayTeam.id
         }))
       )
       .throwOnError();
@@ -50,13 +50,13 @@ export default adminOnly(async (req, res) => {
       message:
         "Successfully updated the games table. " +
         `${games.length} games in ${season.seasonId}.`,
-      success: true,
+      success: true
     });
   } catch (e: any) {
     console.error(e);
     res.status(400).json({
       message: e.message,
-      success: false,
+      success: false
     });
   }
 });
