@@ -2,37 +2,14 @@ import Head from "next/head";
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as d3 from "d3";
 
-type BaselineDensityPoint = { x: number; y: number };
+import { buildMockPlayerSeries } from "../../lib/trends/mockData";
+import type {
+  BaselineDensityPoint,
+  PlayerSeries,
+  TimeSeriesPoint,
+} from "../../lib/trends/types";
 
-type TimeSeriesPoint = {
-  date: Date;
-  sko: number;
-  streak: "hot" | "cold" | null;
-  components: {
-    shots_z: number;
-    ixg_z: number;
-    ixg_per_60_z: number;
-    toi_z: number;
-    pp_toi_z: number;
-    oz_fo_pct_z: number;
-    onice_sh_pct_z: number;
-    shooting_pct_z: number;
-  };
-};
-
-type PlayerSeries = {
-  playerId: number;
-  playerName: string;
-  position: "F" | "D";
-  season: string;
-  baseline: {
-    mu0: number;
-    sigma0: number;
-    nTrain: number;
-    density: BaselineDensityPoint[];
-  };
-  timeSeries: TimeSeriesPoint[];
-};
+type ChartPoint = Omit<TimeSeriesPoint, "date"> & { date: Date };
 
 type RenderBaselineConfig = {
   svgElement: SVGSVGElement;
@@ -44,62 +21,9 @@ type RenderSeriesConfig = {
   svgElement: SVGSVGElement;
   tooltipElement: HTMLDivElement;
   baseline: PlayerSeries["baseline"];
-  timeSeries: TimeSeriesPoint[];
+  timeSeries: ChartPoint[];
   span: number;
   lambda: number;
-};
-
-const computeDeterministicSeries = (): PlayerSeries => {
-  const density: BaselineDensityPoint[] = Array.from(
-    { length: 60 },
-    (_, idx) => {
-      const x = -1.5 + (3 * idx) / 59;
-      const y = Math.exp(-0.5 * Math.pow((x - 0.15) / 0.35, 2));
-      return { x, y };
-    }
-  );
-
-  const baseline = {
-    mu0: 0.18,
-    sigma0: 0.21,
-    nTrain: 196,
-    density
-  };
-
-  const timeSeries: TimeSeriesPoint[] = Array.from({ length: 48 }, (_, idx) => {
-    const date = d3.timeDay.offset(new Date("2024-10-01T00:00:00Z"), idx);
-    const primaryWave = Math.sin(idx / 6) * 0.28;
-    const trend = 0.015 * (idx / 6);
-    const secondaryWave = Math.cos(idx / 4) * 0.12;
-    const combined = primaryWave + secondaryWave + trend;
-    const sko = Math.max(-0.95, Math.min(0.95, combined));
-    const streak: TimeSeriesPoint["streak"] =
-      sko > 0.45 ? "hot" : sko < -0.4 ? "cold" : null;
-    return {
-      date,
-      sko,
-      streak,
-      components: {
-        shots_z: Math.sin(idx / 5) * 0.8 + 0.4,
-        ixg_z: Math.sin(idx / 6 + 0.4) * 0.7 + 0.3,
-        ixg_per_60_z: Math.cos(idx / 7) * 0.6 + 0.2,
-        toi_z: Math.sin(idx / 9) * 0.4 + 0.1,
-        pp_toi_z: Math.cos(idx / 8) * 0.5 + 0.05,
-        oz_fo_pct_z: Math.sin(idx / 10) * 0.45,
-        onice_sh_pct_z: Math.cos(idx / 5 + 0.5) * -0.5,
-        shooting_pct_z: Math.sin(idx / 4 + 0.2) * -0.6
-      }
-    };
-  });
-
-  return {
-    playerId: 8478402,
-    playerName: "Connor McDavid",
-    position: "F",
-    season: "2024-25",
-    baseline,
-    timeSeries
-  };
 };
 
 const renderBaseline = ({
@@ -207,7 +131,7 @@ const renderTimeSeries = ({
   svg.selectAll("*").remove();
 
   const alpha = 2 / (span + 1);
-  const seriesWithEwma: (TimeSeriesPoint & { ewma: number })[] = [];
+  const seriesWithEwma: (ChartPoint & { ewma: number })[] = [];
   let rolling = baseline.mu0;
   timeSeries.forEach((point, idx) => {
     if (idx === 0) {
@@ -218,7 +142,7 @@ const renderTimeSeries = ({
     seriesWithEwma.push({ ...point, ewma: rolling });
   });
 
-  const drawSeries = (seriesToDraw: (TimeSeriesPoint & { ewma: number })[]) => {
+  const drawSeries = (seriesToDraw: (ChartPoint & { ewma: number })[]) => {
     svg.selectAll("*").remove();
 
     const xScale = d3
@@ -286,7 +210,7 @@ const renderTimeSeries = ({
       .attr("stroke-width", 1.5);
 
     const areaHot = d3
-      .area<TimeSeriesPoint & { ewma: number }>()
+      .area<ChartPoint & { ewma: number }>()
       .defined((d) => d.streak === "hot")
       .x((d) => xScale(d.date))
       .y0(yScale(1.1))
@@ -294,7 +218,7 @@ const renderTimeSeries = ({
       .curve(d3.curveLinear);
 
     const areaCold = d3
-      .area<TimeSeriesPoint & { ewma: number }>()
+      .area<ChartPoint & { ewma: number }>()
       .defined((d) => d.streak === "cold")
       .x((d) => xScale(d.date))
       .y0(yScale(-1.1))
@@ -313,14 +237,14 @@ const renderTimeSeries = ({
       .attr("fill", "rgba(214,39,40,0.22)");
 
     const lineSko = d3
-      .line<TimeSeriesPoint & { ewma: number }>()
+      .line<ChartPoint & { ewma: number }>()
       .defined((d) => Number.isFinite(d.sko))
       .x((d) => xScale(d.date))
       .y((d) => yScale(d.sko))
       .curve(d3.curveCatmullRom.alpha(0.6));
 
     const lineEwma = d3
-      .line<TimeSeriesPoint & { ewma: number }>()
+      .line<ChartPoint & { ewma: number }>()
       .defined((d) => Number.isFinite(d.ewma))
       .x((d) => xScale(d.date))
       .y((d) => yScale(d.ewma))
@@ -359,7 +283,7 @@ const renderTimeSeries = ({
       .attr("height", height - 40)
       .attr("fill", "transparent");
 
-    const bisectDate = d3.bisector<TimeSeriesPoint & { ewma: number }, Date>(
+    const bisectDate = d3.bisector<ChartPoint & { ewma: number }, Date>(
       (d) => d.date
     ).center;
 
@@ -426,36 +350,86 @@ const TrendsSandboxPage = () => {
   const [trainWindow, setTrainWindow] = useState<"train" | "test">("test");
   const [showDefenseWeights, setShowDefenseWeights] = useState(false);
   const [persistence, setPersistence] = useState(2);
+  const [seriesData, setSeriesData] = useState<PlayerSeries>(() =>
+    buildMockPlayerSeries("8478402", "2024-25")
+  );
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const baselineSvgRef = useRef<SVGSVGElement | null>(null);
   const timeSeriesSvgRef = useRef<SVGSVGElement | null>(null);
   const baselineTooltipRef = useRef<HTMLDivElement | null>(null);
   const timeSeriesTooltipRef = useRef<HTMLDivElement | null>(null);
 
-  const mockData = useMemo(() => computeDeterministicSeries(), []);
+  useEffect(() => {
+    let isActive = true;
+    const controller = new AbortController();
+    setIsLoading(true);
+    setError(null);
+
+    fetch(`/api/trends/skaters/${player}?season=${season}`, {
+      signal: controller.signal,
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Failed to load player ${player}`);
+        }
+        return response.json() as Promise<PlayerSeries>;
+      })
+      .then((payload) => {
+        if (!isActive) {
+          return;
+        }
+        setSeriesData(payload);
+        setPosition(payload.position);
+        setIsLoading(false);
+      })
+      .catch((err) => {
+        if (!isActive && err.name === "AbortError") {
+          return;
+        }
+        console.error(err);
+        setIsLoading(false);
+        setError(err.message);
+      });
+
+    return () => {
+      isActive = false;
+      controller.abort();
+    };
+  }, [player, season]);
+
+  const chartSeries = useMemo<ChartPoint[]>(
+    () =>
+      seriesData.timeSeries.map((point) => ({
+        ...point,
+        date: new Date(point.date),
+      })),
+    [seriesData.timeSeries]
+  );
 
   useEffect(() => {
     if (baselineSvgRef.current && baselineTooltipRef.current) {
       renderBaseline({
         svgElement: baselineSvgRef.current,
         tooltipElement: baselineTooltipRef.current,
-        baseline: mockData.baseline
+        baseline: seriesData.baseline,
       });
     }
-  }, [mockData]);
+  }, [seriesData.baseline]);
 
   useEffect(() => {
     if (timeSeriesSvgRef.current && timeSeriesTooltipRef.current) {
       renderTimeSeries({
         svgElement: timeSeriesSvgRef.current,
         tooltipElement: timeSeriesTooltipRef.current,
-        baseline: mockData.baseline,
-        timeSeries: mockData.timeSeries,
+        baseline: seriesData.baseline,
+        timeSeries: chartSeries,
         span,
-        lambda
+        lambda,
       });
     }
-  }, [mockData, span, lambda]);
+  }, [seriesData.baseline, chartSeries, span, lambda]);
 
   return (
     <>
@@ -579,7 +553,23 @@ const TrendsSandboxPage = () => {
           </form>
         </header>
 
+        {error && (
+          <div className="status-banner error" role="alert">
+            {error}
+          </div>
+        )}
+        {isLoading && !error && (
+          <div className="status-banner loading" role="status">
+            Loading player data…
+          </div>
+        )}
         <main className="content">
+          <div className="summary">
+            <h1>{seriesData.playerName}</h1>
+            <span>
+              {seriesData.season} · Position {seriesData.position}
+            </span>
+          </div>
           <section id="cellA" className="cell" aria-labelledby="cellA-title">
             <h2 id="cellA-title">Cell A · Baseline Explorer</h2>
             <p className="meta">
@@ -601,18 +591,18 @@ const TrendsSandboxPage = () => {
               <div className="card">
                 <span className="label">μ₀</span>
                 <span className="value">
-                  {mockData.baseline.mu0.toFixed(2)}
+                  {seriesData.baseline.mu0.toFixed(2)}
                 </span>
               </div>
               <div className="card">
                 <span className="label">σ₀</span>
                 <span className="value">
-                  {mockData.baseline.sigma0.toFixed(2)}
+                  {seriesData.baseline.sigma0.toFixed(2)}
                 </span>
               </div>
               <div className="card">
                 <span className="label">Train games</span>
-                <span className="value">{mockData.baseline.nTrain}</span>
+                <span className="value">{seriesData.baseline.nTrain}</span>
               </div>
             </div>
             <p id="cellA-desc" hidden>
@@ -740,10 +730,38 @@ const TrendsSandboxPage = () => {
           align-items: center;
           gap: 0.5rem;
         }
+        .status-banner {
+          margin: 0.5rem 1.25rem 0;
+          padding: 0.65rem 0.9rem;
+          border-radius: 8px;
+          font-size: 0.85rem;
+        }
+        .status-banner.loading {
+          background: rgba(107, 110, 207, 0.2);
+          color: #d9dcff;
+        }
+        .status-banner.error {
+          background: rgba(214, 39, 40, 0.18);
+          color: #ffd7d8;
+        }
         .content {
           padding: 1rem 1.25rem 3rem;
           display: grid;
           gap: 1.5rem;
+        }
+        .summary {
+          display: flex;
+          flex-direction: column;
+          gap: 0.25rem;
+          margin-bottom: 0.5rem;
+        }
+        .summary h1 {
+          font-size: 1.35rem;
+          margin: 0;
+        }
+        .summary span {
+          font-size: 0.85rem;
+          color: rgba(255, 255, 255, 0.65);
         }
         .cell {
           background: var(--bg-panel);

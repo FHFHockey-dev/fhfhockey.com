@@ -26,7 +26,8 @@ export async function fetchCurrentSeason(): Promise<SeasonInfo> {
 
   try {
     const base = isServer
-      ? process.env.NEXT_PUBLIC_SITE_URL || `http://localhost:${process.env.PORT || 3000}`
+      ? process.env.NEXT_PUBLIC_SITE_URL ||
+        `http://localhost:${process.env.PORT || 3000}`
       : "";
     const res = await fetch(`${base}${apiPath}`);
     if (!res.ok) throw new Error(`Internal API error ${res.status}`);
@@ -83,7 +84,10 @@ export async function fetchCurrentSeason(): Promise<SeasonInfo> {
       undefined
     );
   } catch (internalErr) {
-    console.warn("Internal season API failed, falling back to NHL API:", internalErr);
+    console.warn(
+      "Internal season API failed, falling back to NHL API:",
+      internalErr
+    );
 
     // Fallback to NHL public endpoint (may be unstable)
     const response = await Fetch(
