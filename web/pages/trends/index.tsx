@@ -686,13 +686,13 @@ const TrendsSandboxPage = () => {
         </main>
       </div>
 
-      <style>{`
-        :global(html) {
+      <style jsx global>{`
+        html {
           background: #0f1115;
         }
-        :global(body) {
+        body {
           margin: 0;
-          font-family: "Inter", system-ui, sans-serif;
+          font-family: 'Inter', system-ui, sans-serif;
           background: #0f1115;
           color: #f5f7fb;
         }
@@ -731,8 +731,8 @@ const TrendsSandboxPage = () => {
           margin-bottom: 0.25rem;
         }
         select,
-        input[type="range"],
-        input[type="checkbox"] {
+        input[type='range'],
+        input[type='checkbox'] {
           width: 100%;
         }
         .toggle-wrapper {
