@@ -403,7 +403,7 @@ function mapApiDataToDbRecord(
     pp_goals_for_per_60: powerPlayStat?.ppGoalsForPer60,
     pp_goals_per_60: powerPlayStat?.ppGoalsPer60,
     pp_individual_sat_for: powerPlayStat?.ppIndividualSatFor,
-    pp_individual_sat_per_60: powerPlayStat?.ppIndividualSatPer60,
+    pp_individual_sat_per_60: powerPlayStat?.ppIndividualSatForPer60, // ppIndividualSatForPer60 fix, misspelled. Was ppIndividualSatPer60
     pp_points_per_60: powerPlayStat?.ppPointsPer60,
     pp_primary_assists: powerPlayStat?.ppPrimaryAssists,
     pp_primary_assists_per_60: powerPlayStat?.ppPrimaryAssistsPer60,

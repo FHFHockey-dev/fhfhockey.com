@@ -2,6 +2,13 @@
 // /web/lib/trends/utils.ts
 // =============================
 
+import type {
+  ChartPoint,
+  StreakSegment,
+  TrendDataBundle,
+  StreakType
+} from "./types";
+
 export function mean(xs: number[]): number {
   if (!xs.length) return 0;
   return xs.reduce((a, b) => a + b, 0) / xs.length;
@@ -158,4 +165,147 @@ export function classifyRole({
   if (m - d > 0.25) return "Play Maker";
   if (df > 0.8) return "Defensive Specialist";
   return "Balanced";
+}
+export function rollingAverage(series: number[], window: number): number[] {
+  if (!series.length) return [];
+  const span = Math.max(1, Math.floor(window));
+  const out: number[] = [];
+  const buffer: number[] = [];
+  let sum = 0;
+
+  for (const value of series) {
+    buffer.push(value);
+    sum += value;
+    if (buffer.length > span) {
+      sum -= buffer.shift() ?? 0;
+    }
+    const denom = buffer.length;
+    out.push(denom ? sum / denom : 0);
+  }
+
+  return out;
+}
+
+function streakIntensity(length: number): number {
+  if (length <= 0) return 0;
+  return Math.min(1, 0.25 + length * 0.18);
+}
+
+export function buildTrendData({
+  dates,
+  points,
+  window,
+  baseline
+}: {
+  dates: Date[];
+  points: number[];
+  window: number;
+  baseline: number;
+}): TrendDataBundle {
+  if (!dates.length || !points.length || dates.length !== points.length) {
+    return { baseline, chartPoints: [], streaks: [] };
+  }
+
+  const sanitized = points.map((value) =>
+    Number.isFinite(value) ? Number(value) : 0
+  );
+  const averages = rollingAverage(sanitized, window);
+  const chartPoints: ChartPoint[] = [];
+  const streaks: StreakSegment[] = [];
+
+  let hotRun = 0;
+  let coldRun = 0;
+  let open: {
+    type: Exclude<StreakType, "neutral">;
+    startIndex: number;
+  } | null = null;
+
+  const finalizeSegment = (endIndex: number) => {
+    if (!open) return;
+    const length = endIndex - open.startIndex + 1;
+    streaks.push({
+      type: open.type,
+      startDate: dates[open.startIndex],
+      endDate: dates[endIndex],
+      startIndex: open.startIndex,
+      endIndex,
+      length,
+      intensity: streakIntensity(length)
+    });
+    open = null;
+  };
+
+  dates.forEach((date, idx) => {
+    const value = sanitized[idx];
+    let simple: StreakType = "neutral";
+    if (value > baseline) simple = "hot";
+    else if (value < baseline) simple = "cold";
+
+    // If current sign changes vs open segment, close previous segment at idx-1
+    if (open && simple !== open.type) {
+      finalizeSegment(idx - 1);
+    }
+
+    // Update run counters
+    if (simple === "hot") {
+      hotRun += 1;
+      coldRun = 0;
+    } else if (simple === "cold") {
+      coldRun += 1;
+      hotRun = 0;
+    } else {
+      hotRun = 0;
+      coldRun = 0;
+    }
+
+    const runLen = simple === "hot" ? hotRun : simple === "cold" ? coldRun : 0;
+
+    // Per-point streak labeling requires at least 2 consecutive games
+    let pointType: StreakType = "neutral";
+    let pointStreakLength = 0;
+    if (simple === "hot" && runLen >= 2) {
+      pointType = "hot";
+      pointStreakLength = runLen;
+    } else if (simple === "cold" && runLen >= 2) {
+      pointType = "cold";
+      pointStreakLength = runLen;
+    }
+
+    chartPoints.push({
+      date,
+      gameIndex: idx,
+      points: value,
+      rollingAverage: averages[idx],
+      streakType: pointType,
+      streakLength: pointStreakLength
+    });
+
+    // Segment logic: open only when runLen reaches 2, starting at idx-1
+    if (simple === "hot" || simple === "cold") {
+      if (runLen === 2) {
+        // Start new segment at previous index to include both games
+        // Close any lingering open first (shouldn't happen with guard above)
+        if (open) finalizeSegment(idx - 1);
+        open = {
+          type: simple as Exclude<StreakType, "neutral">,
+          startIndex: idx - 1
+        };
+      } else if (runLen > 2) {
+        // Segment continues; ensure open exists
+        if (!open) {
+          open = {
+            type: simple as Exclude<StreakType, "neutral">,
+            startIndex: idx - runLen + 1
+          };
+        }
+      }
+    } else {
+      // Neutral: close any open segment
+      if (open) finalizeSegment(idx - 1);
+    }
+  });
+
+  if (open) finalizeSegment(dates.length - 1);
+
+  return { baseline, chartPoints, streaks };
 }

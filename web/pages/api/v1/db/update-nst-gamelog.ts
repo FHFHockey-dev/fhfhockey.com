@@ -67,7 +67,28 @@ async function nstGet(url: string, timeoutMs = 30000) {
     await delay(waitMs);
   }
   lastNstRequestAt = Date.now();
-  return axios.get(url, { timeout: timeoutMs });
+  // Many sites (including NST) return generic 404s for non-browser requests.
+  // Send realistic browser headers to avoid being blocked by WAF/CDN.
+  const headers = {
+    "User-Agent":
+      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36",
+    Accept:
+      "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.9",
+    Referer: "https://www.naturalstattrick.com/",
+    "Cache-Control": "no-cache",
+    Pragma: "no-cache",
+    // Some CDNs treat these as hints; harmless if ignored server-side
+    "Upgrade-Insecure-Requests": "1"
+  } as Record<string, string>;
+
+  return axios.get(url, {
+    timeout: timeoutMs,
+    headers,
+    maxRedirects: 3,
+    responseType: "text"
+    // Do not decompress on our side explicitly; axios/node handles gzip automatically
+  });
 }
 
 // --- Helper Functions (Normalize Name, Delay, Dates Between, Map Header, Get Table Name) ---
@@ -891,7 +912,8 @@ function constructUrlsForDate(
         if (stdoi === "oi") {
           datasetType += "Oi";
         }
-        let tgp = rate === "n" ? "0" : "0";
+        // NST uses tgp=410 for rate pages in some views; counts can remain 0
+        let tgp = rate === "n" ? "0" : "410";
         const url = `${BASE_URL}?sit=${sitParam}&score=all&stdoi=${stdoi}&rate=${rate}&team=ALL&${commonParams}&tgp=${tgp}`;
         urls[datasetType] = url;
       }
@@ -1250,7 +1272,7 @@ function printTotalProgress(current: number, total: number) {
 }
 
 // --- Main Orchestration Function ---
-async function main(runMode: RunMode) {
+async function main(runMode: RunMode, options?: { startDate?: string }) {
   const isForwardFull = runMode === "forward";
   const isReverseFull = runMode === "reverse";
   console.log(
@@ -1275,10 +1297,16 @@ async function main(runMode: RunMode) {
 
     if (isReverseFull) {
       // 1. Determine the starting (most recent valid) season
+      const requestedStartDateStr = options?.startDate;
       const currentSeasonInfo = await fetchCurrentSeason();
       if (!currentSeasonInfo?.id) {
         throw new Error(
           "Could not determine the current season to start the reverse process."
+        );
+      }
+      if (requestedStartDateStr) {
+        console.log(
+          `Reverse mode requested startDate=${requestedStartDateStr}`
         );
       }
       console.log(
@@ -1296,9 +1324,37 @@ async function main(runMode: RunMode) {
         return; // Exit gracefully
       } // 3. Find the index of the starting season and filter the list
 
-      const startingIndex = allSeasons.findIndex(
-        (s) => s.id === currentSeasonInfo.id
-      );
+      // Determine which season to start from: either the season containing startDate, or the current season
+      let startingIndex = -1;
+      let clampFirstSeasonEndDate: string | null = null;
+      if (requestedStartDateStr) {
+        try {
+          const reqDate = parse(
+            requestedStartDateStr,
+            "yyyy-MM-dd",
+            new Date()
+          );
+          startingIndex = allSeasons.findIndex((s) => {
+            const sStart = parseISO((s as any).startDate);
+            const sEnd = parseISO(
+              (s as any).regularSeasonEndDate || (s as any).endDate
+            );
+            return reqDate >= sStart && reqDate <= sEnd;
+          });
+          if (startingIndex !== -1) {
+            clampFirstSeasonEndDate = requestedStartDateStr;
+          }
+        } catch (e) {
+          console.warn(
+            `Invalid startDate provided ("${requestedStartDateStr}"). Falling back to current season.`
+          );
+        }
+      }
+      if (startingIndex === -1) {
+        startingIndex = allSeasons.findIndex(
+          (s) => s.id === currentSeasonInfo.id
+        );
+      }
 
       let seasonsToProcess = [];
       if (startingIndex !== -1) {
@@ -1315,12 +1371,19 @@ async function main(runMode: RunMode) {
       } // 4. Build the URL queue from the filtered list of seasons
 
       const reverseQueue: UrlQueueItem[] = [];
-      for (const s of seasonsToProcess) {
+      for (let idx = 0; idx < seasonsToProcess.length; idx++) {
+        const s = seasonsToProcess[idx];
+        const seasonStartStr = (s as any).startDate;
         const seasonEndStr =
           (s as any).regularSeasonEndDate || (s as any).endDate;
+        // If this is the first season and a startDate was provided, cap the upper bound at startDate
+        const effectiveEndStr =
+          idx === 0 && clampFirstSeasonEndDate
+            ? clampFirstSeasonEndDate
+            : seasonEndStr;
         const dates = getDatesBetween(
-          parseISO((s as any).startDate),
-          parseISO(seasonEndStr)
+          parseISO(seasonStartStr),
+          parseISO(effectiveEndStr)
         ).reverse(); // Only process regular-season dates, newest to oldest
         for (const date of dates) {
           const urls = constructUrlsForDate(date, String(s.id), false);
@@ -1713,20 +1776,27 @@ export default async function handler(
   }
 
   let runMode: RunMode = "incremental";
+  let startDate: string | undefined;
 
   if (req.method === "POST") {
     const mode = req.body?.runMode;
     if (mode && ["incremental", "forward", "reverse"].includes(mode))
       runMode = mode;
+    if (typeof req.body?.startDate === "string") {
+      startDate = req.body.startDate;
+    }
   } else {
     const q = req.query.runMode as string;
     if (q === "forward" || q === "reverse") runMode = q;
+    if (typeof req.query.startDate === "string") {
+      startDate = req.query.startDate as string;
+    }
   }
 
   console.log(`API request received. runMode=${runMode}`);
   try {
-    await main(runMode);
-    return res.status(200).json({ message: "Done", runMode });
+    await main(runMode, { startDate });
+    return res.status(200).json({ message: "Done", runMode, startDate });
   } catch (err: any) {
     console.error(err);
     return res.status(500).json({ error: err.message });
