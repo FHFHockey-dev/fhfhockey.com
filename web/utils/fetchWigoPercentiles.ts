@@ -1,6 +1,5 @@
 // /utils/fetchWigoPercentiles.ts (or add to fetchWigoPlayerStats.ts)
 import supabase from "lib/supabase";
-import { Database } from "lib/supabase/database-generated.types";
 import {
   PercentileStrength,
   OffensePercentileTable,
@@ -22,13 +21,46 @@ const ALL_DEFENSE_COLUMNS_TO_SELECT = `
     player_id, season, gp, toi_seconds
 `; // Only fetch overlap/required defense stats to merge
 
+// Narrow row shapes for selected columns
+interface OffenseRow {
+  player_id: number;
+  season: number | string | null;
+  gp: number | null;
+  toi_seconds: number | null;
+  goals_per_60?: number | null;
+  total_assists_per_60?: number | null;
+  total_points_per_60?: number | null;
+  shots_per_60?: number | null;
+  iscfs_per_60?: number | null;
+  i_hdcf_per_60?: number | null;
+  ixg_per_60?: number | null;
+  icf_per_60?: number | null;
+  cf_per_60?: number | null;
+  scf_per_60?: number | null;
+  oi_hdcf_per_60?: number | null;
+  cf_pct?: number | null;
+  ff_pct?: number | null;
+  sf_pct?: number | null;
+  gf_pct?: number | null;
+  xgf_pct?: number | null;
+  scf_pct?: number | null;
+  hdcf_pct?: number | null;
+}
+
+interface DefenseRow {
+  player_id: number;
+  season: number | string | null;
+  gp: number | null;
+  toi_seconds: number | null;
+}
+
 /**
  * Fetches raw stats for ALL players for the latest season for a given strength.
  */
 export async function fetchAllPlayerStatsForStrength(
   strength: PercentileStrength
 ): Promise<PlayerRawStats[]> {
-  console.log(`Workspaceing ALL player stats for Strength: ${strength}`);
+  console.log(`Fetching ALL player stats for Strength: ${strength}`);
 
   const offenseTable =
     `nst_percentile_${strength}_offense` as OffensePercentileTable;
@@ -44,11 +76,12 @@ export async function fetchAllPlayerStatsForStrength(
   try {
     // Fetch data from both tables - potentially large datasets!
     const [offenseRes, defenseRes] = await Promise.all([
-      supabase
+      // Using `as any` to accommodate dynamic table names not present in generated types
+      (supabase as any)
         .from(offenseTable)
         .select(ALL_OFFENSE_COLUMNS_TO_SELECT)
         .gt("gp", 0), // Only fetch players with GP > 0
-      supabase.from(defenseTable).select(ALL_DEFENSE_COLUMNS_TO_SELECT)
+      (supabase as any).from(defenseTable).select(ALL_DEFENSE_COLUMNS_TO_SELECT)
       // .eq('season', latestSeason) // Add if latestSeason is determined
     ]);
 
@@ -57,24 +90,32 @@ export async function fetchAllPlayerStatsForStrength(
     if (defenseRes.error)
       console.warn(`Error fetching ${defenseTable}:`, defenseRes.error);
 
-    const offenseData = offenseRes.data || [];
-    const defenseDataById = new Map(
-      (defenseRes.data || []).map((d) => [d.player_id, d])
+    const offenseData: OffenseRow[] = (offenseRes.data as OffenseRow[]) || [];
+    const defenseRows: DefenseRow[] = (defenseRes.data as DefenseRow[]) || [];
+    const defenseDataById = new Map<number, DefenseRow>(
+      defenseRows.map((d: DefenseRow) => [Number(d.player_id), d])
     );
 
     // Combine data: Use offense data as primary, supplement gp/toi from defense if missing
-    const combinedData: PlayerRawStats[] = offenseData.map((offensePlayer) => {
-      const defensePlayer = defenseDataById.get(offensePlayer.player_id);
-      return {
-        ...offensePlayer,
-        // Ensure gp/toi are present, prioritizing offense, fallback to defense
-        gp: offensePlayer.gp ?? defensePlayer?.gp ?? null,
-        toi: offensePlayer.toi_seconds ?? defensePlayer?.toi_seconds ?? null
-      } as PlayerRawStats; // Assert type based on selection
-    });
+    const combinedData: PlayerRawStats[] = offenseData.map(
+      (offensePlayer: OffenseRow) => {
+        const defensePlayer = defenseDataById.get(
+          Number(offensePlayer.player_id)
+        );
+        return {
+          ...offensePlayer,
+          // Ensure gp/toi are present, prioritizing offense, fallback to defense
+          gp: (offensePlayer.gp as number | null) ?? defensePlayer?.gp ?? null,
+          toi:
+            (offensePlayer.toi_seconds as number | null) ??
+            defensePlayer?.toi_seconds ??
+            null
+        } as PlayerRawStats; // Assert type based on selection
+      }
+    );
 
     console.log(
-      `Workspaceed ${combinedData.length} players for strength ${strength}`
+      `Fetched ${combinedData.length} players for strength ${strength}`
     );
     return combinedData;
   } catch (err) {

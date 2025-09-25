@@ -1,0 +1,10 @@
+metric,mean_z_diff
+pp_gf_per_60,0.8533145282501995
+pp_s_per_60,0.7269895455119666
+nst_hdcf_per_60_all_situations,-0.028222575296374723
+nst_s_per_60_all_situations,-0.02194368889512128
+sh_g_per_60,0.015107130822135096
+nst_ixg_per_60_all_situations,0.012895322469878456
+nst_iscfs_per_60_all_situations,0.008480846344505912
+nst_icf_per_60_all_situations,0.006288581180123708
+nst_iff_per_60_all_situations,-0.004073389523983062

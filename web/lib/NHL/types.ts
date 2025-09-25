@@ -451,6 +451,11 @@ export type WGOSummarySkaterStat = {
   ppPoints: number;
   faceoffWinPct: number;
   timeOnIcePerGame: number;
+  teamAbbrev: string;
+  opponentTeamAbbrev: string;
+  homeRoad: string;
+  evGoals: number;
+  evPoints: number;
 };
 
 export type WGOSkatersBio = {
@@ -587,7 +592,7 @@ export type WGOPowerPlaySkaterStat = {
   ppGoalsForPer60: number;
   ppGoalsPer60: number;
   ppIndividualSatFor: number;
-  ppIndividualSatPer60: number;
+  ppIndividualSatForPer60: number;
   ppPointsPer60: number;
   ppPrimaryAssists: number;
   ppPrimaryAssistsPer60: number;

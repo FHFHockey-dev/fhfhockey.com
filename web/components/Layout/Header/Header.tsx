@@ -182,7 +182,7 @@ function Header() {
             aria-label="Buy me a coffee"
           >
             <img
-              src="https://img.buymeacoffee.com/button-api/?text=ferda boys&emoji=🥃&slug=tjsusername&button_colour=07aae2&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00"
+              src="https://img.buymeacoffee.com/button-api/?text=Support&emoji=🥃&slug=tjsusername&button_colour=07aae2&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00"
               alt="Buy me a coffee"
             />
           </a>

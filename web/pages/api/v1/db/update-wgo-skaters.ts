@@ -293,6 +293,12 @@ function mapApiDataToDbRecord(
     pp_points: stat.ppPoints,
     fow_percentage: stat.faceoffWinPct,
     toi_per_game: stat.timeOnIcePerGame,
+    team_abbrev: stat.teamAbbrev,
+    game_id: stat.gameId,
+    opponent_team_abbrev: stat.opponentTeamAbbrev,
+    home_road: stat.homeRoad,
+    ev_goals: stat.evGoals,
+    ev_points: stat.evPoints,
     birth_date: bioStats?.birthDate,
     current_team_abbreviation: bioStats?.currentTeamAbbrev,
     current_team_name: bioStats?.currentTeamName,
@@ -397,7 +403,7 @@ function mapApiDataToDbRecord(
     pp_goals_for_per_60: powerPlayStat?.ppGoalsForPer60,
     pp_goals_per_60: powerPlayStat?.ppGoalsPer60,
     pp_individual_sat_for: powerPlayStat?.ppIndividualSatFor,
-    pp_individual_sat_per_60: powerPlayStat?.ppIndividualSatPer60,
+    pp_individual_sat_per_60: powerPlayStat?.ppIndividualSatForPer60, // ppIndividualSatForPer60 fix, misspelled. Was ppIndividualSatPer60
     pp_points_per_60: powerPlayStat?.ppPointsPer60,
     pp_primary_assists: powerPlayStat?.ppPrimaryAssists,
     pp_primary_assists_per_60: powerPlayStat?.ppPrimaryAssistsPer60,
@@ -552,7 +558,7 @@ async function fetchDataForGameType(
     sort: string,
     factCayenneExp: string = "gamesPlayed>=1"
   ) =>
-    `https://api.nhle.com/stats/rest/en/skater/${reportName}?isAggregate=true&isGame=true&sort=${encodeURIComponent(sort)}&start=${start}&limit=${limit}&factCayenneExp=${factCayenneExp}&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22%20and%20gameTypeId=${gameTypeId}`;
+    `https://api.nhle.com/stats/rest/en/skater/${reportName}?isAggregate=false&isGame=true&sort=${encodeURIComponent(sort)}&start=${start}&limit=${limit}&factCayenneExp=${factCayenneExp}&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22%20and%20gameTypeId=${gameTypeId}`;
   while (moreDataAvailable) {
     const urls = {
       skaterStats: getUrl(
@@ -1470,7 +1476,7 @@ async function fetchDataForPlayer(playerId: string, playerName: string) {
 
   const fetchPlayerDataForGameType = async (gameTypeId: number) => {
     const cayenneExp = `gameDate<="${formattedDate} 23:59:59" and gameDate>="${seasonStartDate}" and gameTypeId=${gameTypeId} and playerId=${playerId}`;
-    const url = `https://api.nhle.com/stats/rest/en/skater/summary?isAggregate=true&isGame=false&sort=[{"property":"points","direction":"DESC"}]&factCayenneExp=gamesPlayed>=1&cayenneExp=${encodeURIComponent(cayenneExp)}`;
+    const url = `https://api.nhle.com/stats/rest/en/skater/summary?isAggregate=false&isGame=false&sort=[{"property":"points","direction":"DESC"}]&factCayenneExp=gamesPlayed>=1&cayenneExp=${encodeURIComponent(cayenneExp)}`;
     const response = await Fetch(url).then(
       (res) => res.json() as Promise<NHLApiResponse>
     );

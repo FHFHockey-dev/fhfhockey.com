@@ -965,3 +965,40 @@ This single document will accumulate file-by-file findings and cross-references 
 
 **Connections**
 - Used by compare modal and various charts/tables that need percentile badges.
+
+---
+
+## Supabase Tables (Draft Dashboard touchpoints)
+
+- Summary: Reference of Supabase tables/columns used by Draft Dashboard features for clarity and performance guardrails. Full schema lives in `web/rules/supabase-table-structure.md`.
+
+**players**
+- Call sites: `ImportCsvModal.tsx` (initial paged fetch, last-name backfill).
+- Columns: `id, fullName, position, lastName, team_id`.
+- Usage: Build disambiguation index (`byId`, `byStdName`, `byTeamAbbrev`) and map `team_id` → abbrev via `teamsInfo`.
+- Notes: Paged in 1000-row chunks; secondary query `.in('lastName', [...])` when CSV contains unseen last names.
+- Actionables: Narrow initial select to columns actually needed; consider server-side function with `lastName` filtering to reduce backfills.
+
+**wgo_skater_stats_totals**
+- Call sites: `ProjectionsTable.tsx` (row expand → last season totals).
+- Columns: `season, games_played, goals, assists, points, shots, hits, blocked_shots, pp_points, toi_per_game, plus_minus, shooting_percentage, gw_goals` filtered by `player_id`.
+- Usage: Display last-season quick reference for skaters.
+- Actionables: Cache results (session/local) keyed by `player_id, season` to avoid repeated queries across expands.
+
+**wgo_goalie_stats_totals**
+- Call sites: `ProjectionsTable.tsx` (row expand → last season totals).
+- Columns: `season_id, games_played, wins, losses, ot_losses, goals_against_avg, save_pct, shutouts, saves` filtered by `goalie_id`.
+- Usage: Display last-season quick reference for goalies.
+- Actionables: Same caching guidance as skaters; ensure season label formatters handle `season_id` shape consistently.
+
+**teamsinfo** (indirect)
+- Call sites: Not queried directly in Draft Dashboard, but used widely elsewhere and via `teamsInfo` static map for id→abbr/name.
+- Columns often used elsewhere: `nst_abbr, name`.
+- Usage: `ImportCsvModal` maps `team_id` → abbrev through `teamsInfo` to improve fuzzy matching and UI labels.
+- Actionables: If runtime consistency with DB is needed, optionally hydrate `teamsInfo` from this table at build/startup; otherwise static map is fine.
+
+**General Actionables**
+- Centralize client: Ensure all calls go through a shared Supabase client with error handling/logging.
+- Dedupe fetches: Memoize expanded-row results and throttle last-name backfills.
+- Column minimization: Keep `.select()` narrow; avoid `*`.
+- Error surfacing: Show concise errors in UI (currently swallowed in some paths).

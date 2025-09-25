@@ -1,6 +1,6 @@
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\pages\api\v1\db\update-teams.ts
 
-import { restGet } from "lib/NHL/base";
+import { get } from "lib/NHL/base";
 import { getCurrentSeason } from "lib/NHL/server";
 import adminOnly from "utils/adminOnlyMiddleware";
 
@@ -23,24 +23,28 @@ export default adminOnly(async function handler(req, res) {
         .map((s) => Number(s))
         .filter((n) => !Number.isNaN(n))
     );
-    // fetch all teams
-    const { data: teams } = await restGet("/team");
+
+    const seasonId = season.seasonId;
+    const today = new Date();
+    const formattedDate = today.toISOString().split('T')[0]; // YYYY-MM-DD
+
+    // For future seasons, the /team/summary endpoint is not yet populated,
+    // so we use the schedule-calendar endpoint for a date in the future season.
+    const { teams } = await get(
+      `/schedule-calendar/${formattedDate}`
+    );
+
     const { error } = await supabase.from("teams").upsert(
-      teams.map((team) => ({
+      teams.map((team: any) => ({
         id: team.id,
-        name: team.fullName,
-        abbreviation: team.triCode
+        name: team.name.default,
+        abbreviation: team.abbrev,
       }))
     );
     if (error) throw error;
 
-    // fetch teams participated in the current season
-    const seasonId = season.seasonId;
-    const { data: currentSeasonTeams } = await restGet(
-      `/team/summary?cayenneExp=seasonId=${seasonId}`
-    );
     const currentSeasonTeamIds = new Set<number>(
-      currentSeasonTeams.map((team) => team.teamId)
+      teams.map((team: any) => team.id)
     );
     // Merge any forced teamIds (useful before NHL stats API returns participants)
     for (const id of forcedTeamIds) currentSeasonTeamIds.add(id);

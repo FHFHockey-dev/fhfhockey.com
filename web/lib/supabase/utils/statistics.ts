@@ -5,13 +5,13 @@ import {
   PerGameAverages,
   PlayerGameLog,
   PerGameStatSummaries,
-  CharacteristicResult,
+  CharacteristicResult
 } from "./types";
 import {
   STAT_FIELDS,
   StatField,
   STAT_WEIGHTS,
-  RATED_STAT_FIELDS,
+  RATED_STAT_FIELDS
 } from "./constants";
 
 /**
@@ -150,9 +150,81 @@ export const computeCharacteristicResults = (
       statResults,
       gameStats: game,
       sumOfWeightedSquaredZScores,
-      overallStatus,
+      overallStatus
     } as CharacteristicResult;
   });
 
   return { results, T1, T2 };
+};
+
+/**
+ * Computes a simple rolling average for a numeric series.
+ */
+export const computeRollingAverage = (
+  values: number[],
+  windowSize: number
+): number[] => {
+  const out: number[] = [];
+  for (let i = 0; i < values.length; i++) {
+    const start = Math.max(0, i - windowSize + 1);
+    const slice = values.slice(start, i + 1);
+    const avg =
+      slice.reduce((acc, v) => acc + (Number.isFinite(v) ? v : 0), 0) /
+      (slice.length || 1);
+    out.push(avg);
+  }
+  return out;
+};
+
+/**
+ * Maps rolling CV to a confidence multiplier in [min,max] using a smoothstep curve.
+ * - At or below T1 => ~max
+ * - At or above T2 => ~min
+ * - Between T1 and T2 => smooth decay
+ */
+export const computeConfidenceMultiplierSmooth = (
+  rollingCV: number,
+  T1: number,
+  T2: number,
+  options?: { min?: number; max?: number }
+): number => {
+  const min = options?.min ?? 0.8;
+  const max = options?.max ?? 1.0;
+  if (
+    !Number.isFinite(rollingCV) ||
+    !Number.isFinite(T1) ||
+    !Number.isFinite(T2) ||
+    T2 <= T1
+  ) {
+    return 1; // fallback safe default
+  }
+  // Normalize to [0,1] where 0 => T1, 1 => T2
+  const xRaw = (rollingCV - T1) / (T2 - T1);
+  const x = Math.max(0, Math.min(1, xRaw));
+  // Smoothstep s(x) = 3x^2 - 2x^3; we want 1 at x=0 and 0 at x=1
+  const smooth = 1 - (3 * x * x - 2 * x * x * x);
+  return min + (max - min) * smooth;
+};
+
+/**
+ * Derive empirical thresholds (e.g., med/90th) from characteristic results.
+ */
+export const computeEmpiricalThresholds = (
+  results: CharacteristicResult[],
+  p1: number = 0.5,
+  p2: number = 0.9
+): { T1: number; T2: number } => {
+  const vals = results
+    .map((r) => r.sumOfWeightedSquaredZScores)
+    .filter((v) => Number.isFinite(v))
+    .sort((a, b) => a - b);
+  if (vals.length === 0) return { T1: 0, T2: 0 };
+  const q = (p: number) => {
+    const idx = Math.min(
+      vals.length - 1,
+      Math.max(0, Math.floor(p * vals.length))
+    );
+    return vals[idx];
+  };
+  return { T1: q(p1), T2: q(p2) };
 };

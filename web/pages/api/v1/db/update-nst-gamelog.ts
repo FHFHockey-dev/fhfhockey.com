@@ -29,8 +29,8 @@ if (!supabaseUrl || !supabaseKey) {
 
 const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
 
-// Adjusted delay to 21 seconds as requested. Applied *before* each NST request.
-const REQUEST_INTERVAL_MS = 25000; // 21 seconds
+// Global NST rate limit: at least 21 seconds between requests (set to 25s for safety)
+const REQUEST_INTERVAL_MS = 25000; // 25 seconds
 
 const BASE_URL = "https://www.naturalstattrick.com/playerteams.php";
 const NHL_API_BASE_URL = "https://api-web.nhle.com/v1";
@@ -53,6 +53,43 @@ const playerNameMapping: Record<string, { fullName: string }> = {
 
 // Global list for players whose IDs couldn't be found during the process
 const troublesomePlayers: string[] = [];
+
+// --- Global NST rate limiter ---
+let lastNstRequestAt = 0;
+async function nstGet(url: string, timeoutMs = 30000) {
+  const now = Date.now();
+  const elapsed = now - lastNstRequestAt;
+  if (elapsed < REQUEST_INTERVAL_MS) {
+    const waitMs = REQUEST_INTERVAL_MS - elapsed;
+    console.log(
+      `NST rate limit: waiting ${(waitMs / 1000).toFixed(1)}s before requesting.`
+    );
+    await delay(waitMs);
+  }
+  lastNstRequestAt = Date.now();
+  // Many sites (including NST) return generic 404s for non-browser requests.
+  // Send realistic browser headers to avoid being blocked by WAF/CDN.
+  const headers = {
+    "User-Agent":
+      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36",
+    Accept:
+      "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.9",
+    Referer: "https://www.naturalstattrick.com/",
+    "Cache-Control": "no-cache",
+    Pragma: "no-cache",
+    // Some CDNs treat these as hints; harmless if ignored server-side
+    "Upgrade-Insecure-Requests": "1"
+  } as Record<string, string>;
+
+  return axios.get(url, {
+    timeout: timeoutMs,
+    headers,
+    maxRedirects: 3,
+    responseType: "text"
+    // Do not decompress on our side explicitly; axios/node handles gzip automatically
+  });
+}
 
 // --- Helper Functions (Normalize Name, Delay, Dates Between, Map Header, Get Table Name) ---
 // These functions remain largely the same as before.
@@ -93,152 +130,193 @@ function getDatesBetween(start: Date, end: Date): string[] {
   return dates;
 }
 
-function mapHeaderToColumn(header: string): string | null {
-  const headerMap: Record<string, string> = {
-    GP: "gp",
-    TOI: "toi",
-    "TOI/GP": "toi_per_gp",
-    Goals: "goals",
-    "Goals/60": "goals_per_60",
-    "Total Assists": "total_assists",
-    "Total Assists/60": "total_assists_per_60",
-    "First Assists": "first_assists",
-    "First Assists/60": "first_assists_per_60",
-    "Second Assists": "second_assists",
-    "Second Assists/60": "second_assists_per_60",
-    "Total Points": "total_points",
-    "Total Points/60": "total_points_per_60",
-    IPP: "ipp",
-    Shots: "shots",
-    "Shots/60": "shots_per_60",
-    "SH%": "sh_percentage",
-    ixG: "ixg",
-    "ixG/60": "ixg_per_60",
-    iCF: "icf",
-    "iCF/60": "icf_per_60",
-    iFF: "iff",
-    "iFF/60": "iff_per_60",
-    iSCF: "iscfs",
-    "iSCF/60": "iscfs_per_60",
-    iHDCF: "hdcf",
-    "iHDCF/60": "hdcf_per_60",
-    HDCF: "hdcf",
-    "HDCF/60": "hdcf_per_60",
-    "Rush Attempts": "rush_attempts",
-    "Rush Attempts/60": "rush_attempts_per_60",
-    "Rebounds Created": "rebounds_created",
-    "Rebounds Created/60": "rebounds_created_per_60",
-    PIM: "pim",
-    "PIM/60": "pim_per_60",
-    "Total Penalties": "total_penalties",
-    "Total Penalties/60": "total_penalties_per_60",
-    Minor: "minor_penalties",
-    "Minor/60": "minor_penalties_per_60",
-    Major: "major_penalties",
-    "Major/60": "major_penalties_per_60",
-    Misconduct: "misconduct_penalties",
-    "Misconduct/60": "misconduct_penalties_per_60",
-    "Penalties Drawn": "penalties_drawn",
-    "Penalties Drawn/60": "penalties_drawn_per_60",
-    Giveaways: "giveaways",
-    "Giveaways/60": "giveaways_per_60",
-    Takeaways: "takeaways",
-    "Takeaways/60": "takeaways_per_60",
-    Hits: "hits",
-    "Hits/60": "hits_per_60",
-    "Hits Taken": "hits_taken",
-    "Hits Taken/60": "hits_taken_per_60",
-    "Shots Blocked": "shots_blocked",
-    "Shots Blocked/60": "shots_blocked_per_60",
-    "Faceoffs Won": "faceoffs_won",
-    "Faceoffs Won/60": "faceoffs_won_per_60",
-    "Faceoffs Lost": "faceoffs_lost",
-    "Faceoffs Lost/60": "faceoffs_lost_per_60",
-    "Faceoffs %": "faceoffs_percentage",
-    CF: "cf",
-    "CF%": "cf_pct",
-    CA: "ca",
-    FF: "ff",
-    "FF%": "ff_pct",
-    FA: "fa",
-    SF: "sf",
-    "SF%": "sf_pct",
-    SA: "sa",
-    GF: "gf",
-    "GF%": "gf_pct",
-    GA: "ga",
-    xGF: "xgf",
-    "xGF%": "xgf_pct",
-    xGA: "xga",
-    "xGA%": "xga_pct", // Note: NST sometimes shows xGA%, sometimes not. Ensure column exists in DB or handle potential absence.
-    SCF: "scf",
-    SCA: "sca",
-    "SCF%": "scf_pct",
-    HDCA: "hdca",
-    "HDCF%": "hdcf_pct",
-    HDGF: "hdgf",
-    HDGA: "hdga",
-    "HDGF%": "hdgf_pct",
-    MDCF: "mdcf",
-    MDCA: "mdca",
-    "MDCF%": "mdcf_pct",
-    MDGF: "mdgf",
-    MDGA: "mdga",
-    "MDGF%": "mdgf_pct",
-    LDCF: "ldcf",
-    LDCA: "ldca",
-    "LDCF%": "ldcf_pct",
-    LDGF: "ldgf",
-    LDGA: "ldga",
-    "LDGF%": "ldgf_pct",
-    "On-Ice SH%": "on_ice_sh_pct",
-    "On-Ice SV%": "on_ice_sv_pct",
-    PDO: "pdo", // Using Non-breaking space unicode character copied from source: ' '
-    "Off. Zone Starts": "off_zone_starts",
-    "Neu. Zone Starts": "neu_zone_starts",
-    "Def. Zone Starts": "def_zone_starts",
-    "Off. Zone Start %": "off_zone_start_pct",
-    "Off. Zone Faceoffs": "off_zone_faceoffs",
-    "Neu. Zone Faceoffs": "neu_zone_faceoffs",
-    "Def. Zone Faceoffs": "def_zone_faceoffs",
-    "Off. Zone Faceoff %": "off_zone_faceoff_pct",
-    "CF/60": "cf_per_60",
-    "CA/60": "ca_per_60",
-    "FF/60": "ff_per_60",
-    "FA/60": "fa_per_60",
-    "SF/60": "sf_per_60",
-    "SA/60": "sa_per_60",
-    "GF/60": "gf_per_60",
-    "GA/60": "ga_per_60",
-    "xGF/60": "xgf_per_60",
-    "xGA/60": "xga_per_60",
-    "SCF/60": "scf_per_60",
-    "SCA/60": "sca_per_60",
-    "HDCA/60": "hdca_per_60",
-    "HDGF/60": "hdgf_per_60",
-    "HDGA/60": "hdga_per_60",
-    "MDCF/60": "mdcf_per_60",
-    "MDCA/60": "mdca_per_60",
-    "MDGF/60": "mdgf_per_60",
-    "MDGA/60": "mdga_per_60",
-    "LDCF/60": "ldcf_per_60",
-    "LDCA/60": "ldca_per_60",
-    "LDGF/60": "ldgf_per_60",
-    "LDGA/60": "ldga_per_60", // These rate columns might not exist in all NST tables, handle potential absence
-    "On-Ice SH%/60": "on_ice_sh_pct_per_60",
-    "On-Ice SV%/60": "on_ice_sv_pct_per_60",
-    "PDO/60": "pdo_per_60",
-    "Off. Zone Starts/60": "off_zone_starts_per_60",
-    "Neu. Zone Starts/60": "neu_zone_starts_per_60",
-    "Def. Zone Starts/60": "def_zone_starts_per_60"
-  }; // Header "Player", "Team", "Position" are handled directly in parsing, return null
-  if (["Player", "Team", "Position"].includes(header)) return null;
+async function dateIsComplete(table: string, date: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from(table)
+    .select("player_id, goals_per_60")
+    .eq("date_scraped", date)
+    .limit(10);
+  if (error) return false;
+  if (!data || data.length < 5) return false;
+  // If all 10 are null in a key column, treat as incomplete
+  return data.some((r) => r.goals_per_60 !== null);
+}
 
-  const mapped = headerMap[header];
-  if (!mapped) {
-    // console.warn(`Warning: Unmapped header "${header}"`); // Optional: Log unmapped headers
-  }
-  return mapped || null; // Return null if not found
+function mapHeaderToColumn(headerRaw: string): string | null {
+  const h = cleanHeader(headerRaw).toLowerCase();
+  if (h === "" || h === "player" || h === "team" || h === "position")
+    return null;
+
+  // light aliasing for common variants
+  const alias: Record<string, string> = {
+    "faceoffs%": "faceoffs %",
+    "goals /60": "goals/60",
+    "total assists /60": "total assists/60"
+  };
+  const key = alias[h] ?? h;
+
+  const map: Record<string, string> = {
+    // basics
+    gp: "gp",
+    toi: "toi",
+    "toi/gp": "toi_per_gp",
+
+    // counts (AS/ES/PP/PK counts tables)
+    goals: "goals",
+    "total assists": "total_assists",
+    "first assists": "first_assists",
+    "second assists": "second_assists",
+    "total points": "total_points",
+    shots: "shots",
+    ixg: "ixg",
+    icf: "icf",
+    iff: "iff",
+    iscf: "iscfs",
+    ihdcf: "hdcf",
+    "rush attempts": "rush_attempts",
+    "rebounds created": "rebounds_created",
+    pim: "pim",
+    "total penalties": "total_penalties",
+    minor: "minor_penalties",
+    major: "major_penalties",
+    misconduct: "misconduct_penalties",
+    "penalties drawn": "penalties_drawn",
+    giveaways: "giveaways",
+    takeaways: "takeaways",
+    hits: "hits",
+    "hits taken": "hits_taken",
+    "shots blocked": "shots_blocked",
+    "faceoffs won": "faceoffs_won",
+    "faceoffs lost": "faceoffs_lost",
+
+    // individual (“i…”) rates
+    "goals/60": "goals_per_60",
+    "total assists/60": "total_assists_per_60",
+    "first assists/60": "first_assists_per_60",
+    "second assists/60": "second_assists_per_60",
+    "total points/60": "total_points_per_60",
+    ipp: "ipp",
+    "shots/60": "shots_per_60",
+    "sh%": "sh_percentage",
+    "ixg/60": "ixg_per_60",
+    "icf/60": "icf_per_60",
+    "iff/60": "iff_per_60",
+    "iscf/60": "iscfs_per_60",
+    "ihdcf/60": "hdcf_per_60",
+
+    // additional AS rates columns often present on NST
+    "rush attempts/60": "rush_attempts_per_60",
+    "rebounds created/60": "rebounds_created_per_60",
+    "pim/60": "pim_per_60",
+    "total penalties/60": "total_penalties_per_60",
+    "minor/60": "minor_penalties_per_60",
+    "major/60": "major_penalties_per_60",
+    "misconduct/60": "misconduct_penalties_per_60",
+    "penalties drawn/60": "penalties_drawn_per_60",
+    "giveaways/60": "giveaways_per_60",
+    "takeaways/60": "takeaways_per_60",
+    "hits/60": "hits_per_60",
+    "hits taken/60": "hits_taken_per_60",
+    "shots blocked/60": "shots_blocked_per_60",
+    "faceoffs won/60": "faceoffs_won_per_60",
+    "faceoffs lost/60": "faceoffs_lost_per_60",
+
+    // faceoffs% (present on the page, but NOT in as_rates schema)
+    "faceoffs %": "faceoffs_percentage"
+  };
+
+  // On-ice (OI) counts and percentages
+  const oiCounts: Record<string, string> = {
+    cf: "cf",
+    ca: "ca",
+    "cf%": "cf_pct",
+    ff: "ff",
+    fa: "fa",
+    "ff%": "ff_pct",
+    sf: "sf",
+    sa: "sa",
+    "sf%": "sf_pct",
+    gf: "gf",
+    ga: "ga",
+    "gf%": "gf_pct",
+    xgf: "xgf",
+    xga: "xga",
+    "xgf%": "xgf_pct",
+    scf: "scf",
+    sca: "sca",
+    "scf%": "scf_pct",
+    hdcf: "hdcf",
+    hdca: "hdca",
+    "hdcf%": "hdcf_pct",
+    hdgf: "hdgf",
+    hdga: "hdga",
+    "hdgf%": "hdgf_pct",
+    mdcf: "mdcf",
+    mdca: "mdca",
+    "mdcf%": "mdcf_pct",
+    mdgf: "mdgf",
+    mdga: "mdga",
+    "mdgf%": "mdgf_pct",
+    ldcf: "ldcf",
+    ldca: "ldca",
+    "ldcf%": "ldcf_pct",
+    ldgf: "ldgf",
+    ldga: "ldga",
+    "ldgf%": "ldgf_pct",
+    "on-ice sh%": "on_ice_sh_pct",
+    "on-ice sv%": "on_ice_sv_pct",
+    pdo: "pdo",
+    "off. zone starts": "off_zone_starts",
+    "neu. zone starts": "neu_zone_starts",
+    "def. zone starts": "def_zone_starts",
+    "on the fly starts": "on_the_fly_starts",
+    "off. zone start %": "off_zone_start_pct",
+    "off. zone faceoffs": "off_zone_faceoffs",
+    "neu. zone faceoffs": "neu_zone_faceoffs",
+    "def. zone faceoffs": "def_zone_faceoffs",
+    "off. zone faceoff %": "off_zone_faceoff_pct"
+  };
+
+  if (oiCounts[key] !== undefined) return oiCounts[key];
+
+  // On-ice (OI) rates per-60 variants
+  const oiRates: Record<string, string> = {
+    "cf/60": "cf_per_60",
+    "ca/60": "ca_per_60",
+    "ff/60": "ff_per_60",
+    "fa/60": "fa_per_60",
+    "sf/60": "sf_per_60",
+    "sa/60": "sa_per_60",
+    "gf/60": "gf_per_60",
+    "ga/60": "ga_per_60",
+    "xgf/60": "xgf_per_60",
+    "xga/60": "xga_per_60",
+    "scf/60": "scf_per_60",
+    "sca/60": "sca_per_60",
+    "hdcf/60": "hdcf_per_60",
+    "hdca/60": "hdca_per_60",
+    "hdgf/60": "hdgf_per_60",
+    "hdga/60": "hdga_per_60",
+    "mdcf/60": "mdcf_per_60",
+    "mdca/60": "mdca_per_60",
+    "mdgf/60": "mdgf_per_60",
+    "mdga/60": "mdga_per_60",
+    "ldcf/60": "ldcf_per_60",
+    "ldca/60": "ldca_per_60",
+    "ldgf/60": "ldgf_per_60",
+    "ldga/60": "ldga_per_60",
+    "off. zone starts/60": "off_zone_starts_per_60",
+    "neu. zone starts/60": "neu_zone_starts_per_60",
+    "def. zone starts/60": "def_zone_starts_per_60",
+    "on the fly starts/60": "on_the_fly_starts_per_60",
+    "off. zone faceoffs/60": "off_zone_faceoffs_per_60",
+    "neu. zone faceoffs/60": "neu_zone_faceoffs_per_60",
+    "def. zone faceoffs/60": "def_zone_faceoffs_per_60"
+  };
+
+  if (oiRates[key] !== undefined) return oiRates[key];
+
+  return map[key] ?? null;
 }
 
 const NST_TABLE_NAMES = [
@@ -357,6 +435,15 @@ async function checkDataExists(
 
   const exists = count !== null && count > 0;
   return exists;
+}
+
+function cleanHeader(h: string): string {
+  return h
+    .replace(/[\u200B-\u200D\uFEFF]/g, "") // remove zero-width chars (ZWSP, ZWNJ, ZWJ, BOM)
+    .replace(/[\u00A0\u202F]+/g, " ") // NBSP, narrow NBSP → normal space
+    .replace(/\s*\/\s*/g, "/") // normalize spaces around '/'
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 async function getPlayerIdByName(
@@ -564,14 +651,13 @@ async function fetchAndParseData(
       `Fetching NST data from: ${url} (Attempt ${attempt}/${retries})`
     );
     try {
-      const response = await axios.get(url, { timeout: 30000 });
+      const response = await nstGet(url, 30000);
 
       if (!response.data) {
         console.warn(
           `No data received from URL: ${url} on attempt ${attempt}.`
         );
         if (attempt === retries) return { success: false, data: [] };
-        await delay(REQUEST_INTERVAL_MS);
         continue;
       }
 
@@ -586,25 +672,58 @@ async function fetchAndParseData(
           return { success: true, data: [] };
         }
         if (attempt === retries) return { success: false, data: [] };
-        await delay(REQUEST_INTERVAL_MS);
         continue;
       }
 
+      // Build headers: pick the thead row whose TH count matches first row TD count
       const headers: string[] = [];
-      table.find("thead tr th").each((_, th) => {
-        headers.push($(th).text().trim());
+      const theadRows = table.find("thead tr");
+      const firstBodyRow = table.find("tbody tr").first();
+      const tdCount = firstBodyRow.find("td").length;
+      let chosenIndex = -1;
+      theadRows.each((idx, trEl) => {
+        const ths = $(trEl).find("th");
+        if (ths.length === tdCount && chosenIndex === -1) {
+          chosenIndex = idx;
+        }
       });
+      const chosenRow =
+        chosenIndex >= 0 ? theadRows.eq(chosenIndex) : theadRows.last();
+      const chosenThCount = chosenRow.find("th").length;
+      console.log(
+        `Header selection: tdCount=${tdCount}, chosenTheadIndex=${chosenIndex}, chosenThCount=${chosenThCount}`
+      );
+      chosenRow.find("th").each((_, th) => {
+        const text = cleanHeader($(th).text());
+        // Keep empty header cells (e.g., rank column) to maintain index alignment
+        headers.push(text);
+      });
+      if (headers.length !== tdCount) {
+        console.warn(
+          `Header/TD mismatch after selection: headers=${headers.length} tds=${tdCount}`
+        );
+      }
 
       if (!headers.includes("Player")) {
         console.warn(
           `Table found, but missing expected 'Player' header at ${url}. Attempt ${attempt}.`
         );
         if (attempt === retries) return { success: false, data: [] };
-        await delay(REQUEST_INTERVAL_MS);
         continue;
       }
 
       const mappedHeaders = headers.map(mapHeaderToColumn);
+      const mappedCount = mappedHeaders.filter(Boolean).length;
+      if (mappedCount < headers.length * 0.7) {
+        console.warn(
+          `Low mapped header ratio: ${mappedCount}/${headers.length} for ${url}`
+        );
+        console.warn("HEADERS:", headers);
+        console.warn(
+          "HEADERS→COLUMNS:",
+          headers.map((h) => [h, mapHeaderToColumn(h)])
+        );
+      }
       const dataRowsCollected: any[] = [];
 
       table.find("tbody tr").each((_, tr) => {
@@ -674,7 +793,7 @@ async function fetchAndParseData(
                 const num = parseFloat(cellText.replace("%", ""));
                 rowData[column] = isNaN(num) ? null : num;
               } else {
-                const num = Number(cellText.replace(/,/g, ""));
+                const num = parseFloat(cellText.replace(/,/g, ""));
                 rowData[column] = isNaN(num) ? cellText : num;
               }
             } else {
@@ -749,7 +868,7 @@ async function fetchAndParseData(
         );
         return { success: false, data: [] };
       }
-      await delay(REQUEST_INTERVAL_MS);
+      // rely on global NST limiter for spacing between attempts
     }
   }
 
@@ -793,7 +912,8 @@ function constructUrlsForDate(
         if (stdoi === "oi") {
           datasetType += "Oi";
         }
-        let tgp = rate === "n" ? "0" : "0";
+        // NST uses tgp=410 for rate pages in some views; counts can remain 0
+        let tgp = rate === "n" ? "0" : "410";
         const url = `${BASE_URL}?sit=${sitParam}&score=all&stdoi=${stdoi}&rate=${rate}&team=ALL&${commonParams}&tgp=${tgp}`;
         urls[datasetType] = url;
       }
@@ -834,9 +954,7 @@ async function processUrls(
     );
     console.log(`URL: ${url}`);
 
-    if (i > 0) {
-      await delay(REQUEST_INTERVAL_MS);
-    }
+    // rely on global NST limiter; do not add extra spacing here
 
     let shouldFetch = true;
     let skipReason = "";
@@ -844,8 +962,17 @@ async function processUrls(
     if (!isFullRefresh) {
       const dataExists = await checkDataExists(datasetType, date);
       if (dataExists) {
-        shouldFetch = false;
-        skipReason = "Data already exists (incremental update).";
+        const tableName = getTableName(datasetType);
+        const complete = await dateIsComplete(tableName, date);
+        if (complete) {
+          shouldFetch = false;
+          skipReason =
+            "Data already exists and appears complete (incremental update).";
+        } else {
+          console.log(
+            `Existing data for ${date} in ${tableName} appears incomplete; refetching.`
+          );
+        }
       }
     } else {
       skipReason =
@@ -1145,7 +1272,7 @@ function printTotalProgress(current: number, total: number) {
 }
 
 // --- Main Orchestration Function ---
-async function main(runMode: RunMode) {
+async function main(runMode: RunMode, options?: { startDate?: string }) {
   const isForwardFull = runMode === "forward";
   const isReverseFull = runMode === "reverse";
   console.log(
@@ -1170,10 +1297,16 @@ async function main(runMode: RunMode) {
 
     if (isReverseFull) {
       // 1. Determine the starting (most recent valid) season
+      const requestedStartDateStr = options?.startDate;
       const currentSeasonInfo = await fetchCurrentSeason();
       if (!currentSeasonInfo?.id) {
         throw new Error(
           "Could not determine the current season to start the reverse process."
+        );
+      }
+      if (requestedStartDateStr) {
+        console.log(
+          `Reverse mode requested startDate=${requestedStartDateStr}`
         );
       }
       console.log(
@@ -1182,7 +1315,7 @@ async function main(runMode: RunMode) {
 
       const { data: allSeasons, error: seasonsError } = await supabase
         .from("seasons")
-        .select("id, startDate, endDate")
+        .select("id, startDate, regularSeasonEndDate, endDate")
         .order("startDate", { ascending: false });
 
       if (seasonsError) throw seasonsError;
@@ -1191,9 +1324,37 @@ async function main(runMode: RunMode) {
         return; // Exit gracefully
       } // 3. Find the index of the starting season and filter the list
 
-      const startingIndex = allSeasons.findIndex(
-        (s) => s.id === currentSeasonInfo.id
-      );
+      // Determine which season to start from: either the season containing startDate, or the current season
+      let startingIndex = -1;
+      let clampFirstSeasonEndDate: string | null = null;
+      if (requestedStartDateStr) {
+        try {
+          const reqDate = parse(
+            requestedStartDateStr,
+            "yyyy-MM-dd",
+            new Date()
+          );
+          startingIndex = allSeasons.findIndex((s) => {
+            const sStart = parseISO((s as any).startDate);
+            const sEnd = parseISO(
+              (s as any).regularSeasonEndDate || (s as any).endDate
+            );
+            return reqDate >= sStart && reqDate <= sEnd;
+          });
+          if (startingIndex !== -1) {
+            clampFirstSeasonEndDate = requestedStartDateStr;
+          }
+        } catch (e) {
+          console.warn(
+            `Invalid startDate provided ("${requestedStartDateStr}"). Falling back to current season.`
+          );
+        }
+      }
+      if (startingIndex === -1) {
+        startingIndex = allSeasons.findIndex(
+          (s) => s.id === currentSeasonInfo.id
+        );
+      }
 
       let seasonsToProcess = [];
       if (startingIndex !== -1) {
@@ -1210,11 +1371,20 @@ async function main(runMode: RunMode) {
       } // 4. Build the URL queue from the filtered list of seasons
 
       const reverseQueue: UrlQueueItem[] = [];
-      for (const s of seasonsToProcess) {
+      for (let idx = 0; idx < seasonsToProcess.length; idx++) {
+        const s = seasonsToProcess[idx];
+        const seasonStartStr = (s as any).startDate;
+        const seasonEndStr =
+          (s as any).regularSeasonEndDate || (s as any).endDate;
+        // If this is the first season and a startDate was provided, cap the upper bound at startDate
+        const effectiveEndStr =
+          idx === 0 && clampFirstSeasonEndDate
+            ? clampFirstSeasonEndDate
+            : seasonEndStr;
         const dates = getDatesBetween(
-          parseISO(s.startDate),
-          parseISO(s.endDate)
-        ).reverse(); // Process dates within the season from newest to oldest
+          parseISO(seasonStartStr),
+          parseISO(effectiveEndStr)
+        ).reverse(); // Only process regular-season dates, newest to oldest
         for (const date of dates) {
           const urls = constructUrlsForDate(date, String(s.id), false);
           for (const [datasetType, url] of Object.entries(urls)) {
@@ -1286,16 +1456,10 @@ async function main(runMode: RunMode) {
       new Date(seasonInfo.regularSeasonEndDate),
       timeZone
     );
-    const playoffsEndDate = toZonedTime(
-      new Date(seasonInfo.playoffsEndDate),
-      timeZone
-    );
     const todayEST = toZonedTime(new Date(), timeZone);
-
-    const officialSeasonEndDate = playoffsEndDate;
-
-    const scrapingEndDate = isAfter(todayEST, officialSeasonEndDate)
-      ? officialSeasonEndDate
+    // Only scrape through the end of the regular season
+    const scrapingEndDate = isAfter(todayEST, regularSeasonEndDate)
+      ? regularSeasonEndDate
       : todayEST;
 
     console.log(
@@ -1303,18 +1467,7 @@ async function main(runMode: RunMode) {
         timeZone
       })}`
     );
-    console.log(
-      `Playoffs end date: ${tzFormat(playoffsEndDate, "yyyy-MM-dd", {
-        timeZone
-      })}`
-    );
-    console.log(
-      `Season end date (including playoffs): ${tzFormat(
-        officialSeasonEndDate,
-        "yyyy-MM-dd",
-        { timeZone }
-      )}`
-    );
+    // Playoff dates are intentionally ignored for NST scraping
 
     let startDate: Date;
     if (isForwardFull) {
@@ -1358,14 +1511,6 @@ async function main(runMode: RunMode) {
     );
 
     const allDatesToScrape = getDatesBetween(startDate, scrapingEndDate);
-    const regularSeasonDates = allDatesToScrape.filter((dateStr) => {
-      const date = parse(dateStr, "yyyy-MM-dd", new Date());
-      return !isAfter(date, regularSeasonEndDate);
-    });
-    const playoffDates = allDatesToScrape.filter((dateStr) => {
-      const date = parse(dateStr, "yyyy-MM-dd", new Date());
-      return isAfter(date, regularSeasonEndDate);
-    });
 
     if (allDatesToScrape.length === 0) {
       console.log("No new dates to scrape based on the determined range.");
@@ -1386,29 +1531,17 @@ async function main(runMode: RunMode) {
       return;
     }
 
-    console.log(`Planning to scrape ${allDatesToScrape.length} total dates:`);
     console.log(
-      `Regular season: ${regularSeasonDates.length} dates [${
-        regularSeasonDates[0] || "none"
-      }...${regularSeasonDates[regularSeasonDates.length - 1] || "none"}]`
-    );
-    console.log(
-      `Playoffs: ${playoffDates.length} dates [${playoffDates[0] || "none"}...${
-        playoffDates[playoffDates.length - 1] || "none"
-      }]`
+      `Planning to scrape ${allDatesToScrape.length} regular-season dates [` +
+        `${allDatesToScrape[0] || "none"}...${
+          allDatesToScrape[allDatesToScrape.length - 1] || "none"
+        }]`
     );
 
     const initialUrlsQueue: UrlQueueItem[] = [];
 
-    for (const date of regularSeasonDates) {
-      const urls = constructUrlsForDate(date, seasonId, false);
-      for (const [datasetType, url] of Object.entries(urls)) {
-        initialUrlsQueue.push({ datasetType, url, date, seasonId });
-      }
-    }
-
-    for (const date of playoffDates) {
-      const urls = constructUrlsForDate(date, seasonId, true);
+    for (const date of allDatesToScrape) {
+      const urls = constructUrlsForDate(date, seasonId, false); // always regular season
       for (const [datasetType, url] of Object.entries(urls)) {
         initialUrlsQueue.push({ datasetType, url, date, seasonId });
       }
@@ -1521,13 +1654,11 @@ async function main(runMode: RunMode) {
             );
 
             const dateObj = parse(validDate, "yyyy-MM-dd", new Date());
-            const isPlayoffDate = isAfter(dateObj, regularSeasonEndDate);
-
-            const urls = constructUrlsForDate(
-              validDate,
-              seasonId,
-              isPlayoffDate
-            );
+            if (isAfter(dateObj, regularSeasonEndDate)) {
+              // Skip playoff dates in cross-reference retry
+              continue;
+            }
+            const urls = constructUrlsForDate(validDate, seasonId, false);
             for (const [datasetType, url] of Object.entries(urls)) {
               retryMissingDatesQueue.push({
                 datasetType,
@@ -1633,6 +1764,7 @@ async function main(runMode: RunMode) {
   }
 }
 
+// http://localhost:3000/api/v1/db/update-nst-gamelog?runMode=incremental
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
@@ -1644,20 +1776,27 @@ export default async function handler(
   }
 
   let runMode: RunMode = "incremental";
+  let startDate: string | undefined;
 
   if (req.method === "POST") {
     const mode = req.body?.runMode;
     if (mode && ["incremental", "forward", "reverse"].includes(mode))
       runMode = mode;
+    if (typeof req.body?.startDate === "string") {
+      startDate = req.body.startDate;
+    }
   } else {
     const q = req.query.runMode as string;
     if (q === "forward" || q === "reverse") runMode = q;
+    if (typeof req.query.startDate === "string") {
+      startDate = req.query.startDate as string;
+    }
   }
 
   console.log(`API request received. runMode=${runMode}`);
   try {
-    await main(runMode);
-    return res.status(200).json({ message: "Done", runMode });
+    await main(runMode, { startDate });
+    return res.status(200).json({ message: "Done", runMode, startDate });
   } catch (err: any) {
     console.error(err);
     return res.status(500).json({ error: err.message });
