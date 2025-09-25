@@ -1,6 +1,8 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { createClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "lib/supabase/database-generated.types";
+import adminOnly from "utils/adminOnlyMiddleware";
+import serviceRoleClient from "lib/supabase/server";
 
 type PlayerStatsRow = {
   player_id: number;
@@ -18,23 +20,8 @@ const DEFAULT_HORIZON = 5;
 const MAX_GAMES_PER_PLAYER = 60;
 const UPSERT_BATCH_SIZE = 200;
 
-function assertServerCredentials(): { url: string; key: string } {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) {
-    throw new Error("Supabase service role credentials are not configured");
-  }
-  return { url, key };
-}
-
-function getAdminClient() {
-  const { url, key } = assertServerCredentials();
-  return createClient<Database>(url, key, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false
-    }
-  });
+interface AdminRequest extends NextApiRequest {
+  supabase: SupabaseClient<Database>;
 }
 
 function parseString(value: unknown): string | undefined {
@@ -129,7 +116,10 @@ function chunk<T>(items: T[], size: number): T[][] {
   return chunks;
 }
 
-async function fetchPlayers(query: any, limit?: number): Promise<number[]> {
+async function fetchPlayers(
+  query: any,
+  limit?: number
+): Promise<number[]> {
   const request = limit ? query.limit(limit) : query;
   const res = await request;
   const data = (res?.data ?? []) as Array<{
@@ -144,7 +134,7 @@ async function fetchPlayers(query: any, limit?: number): Promise<number[]> {
 }
 
 async function fetchPlayerSeries(
-  client: ReturnType<typeof getAdminClient>,
+  client: SupabaseClient<Database>,
   playerId: number,
   asOfDate: string,
   startDate: string
@@ -209,18 +199,18 @@ function buildPredictionRecord(
   } satisfies PredictionsInsert;
 }
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+const handler = async (req: AdminRequest, res: NextApiResponse) => {
   const start = Date.now();
 
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     return res
       .status(405)
-      .json({ success: false, error: "Method not allowed" });
+      .json({ success: false, message: "Method not allowed" });
   }
+
+  const _authorizedClient = req.supabase;
+  const admin = serviceRoleClient;
 
   try {
     const secret = process.env.SKO_UPDATE_SECRET;
@@ -233,7 +223,9 @@ export default async function handler(
           ? header.replace(/^Bearer\s+/i, "").trim()
           : undefined;
       if (!token || token !== secret) {
-        return res.status(401).json({ success: false, error: "Unauthorized" });
+        return res
+          .status(401)
+          .json({ success: false, message: "Unauthorized" });
       }
     }
 
@@ -266,8 +258,6 @@ export default async function handler(
       parsePlayerIds(queryAccessor("playerId")) ??
       parsePlayerIds(queryAccessor("playerIds"));
 
-    const admin = getAdminClient();
-
     const startDate = new Date(asOfDate);
     startDate.setDate(startDate.getDate() - lookbackDays);
     const lookbackStartIso = startDate.toISOString().slice(0, 10);
@@ -298,7 +288,8 @@ export default async function handler(
         horizon,
         players: 0,
         upserts: 0,
-        duration: `${((Date.now() - start) / 1000).toFixed(2)}s`
+        duration: `${((Date.now() - start) / 1000).toFixed(2)}s`,
+        message: `No eligible skaters found for ${asOfDate}`
       });
     }
 
@@ -345,13 +336,16 @@ export default async function handler(
       horizon,
       players: playerIds.length,
       upserts,
-      duration: `${durationSec}s`
+      duration: `${durationSec}s`,
+      message: `Refreshed sKO predictions for ${playerIds.length} skaters (${upserts} rows) as of ${asOfDate} in ${durationSec}s`
     });
   } catch (error: any) {
     // eslint-disable-next-line no-console
     console.error("update-predictions-sko error", error?.message ?? error);
     return res
       .status(500)
-      .json({ success: false, error: error?.message ?? String(error) });
+      .json({ success: false, message: error?.message ?? "Unexpected error" });
   }
-}
+};
+
+export default adminOnly(handler);

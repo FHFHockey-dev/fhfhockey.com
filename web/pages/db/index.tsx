@@ -20,7 +20,6 @@ import Container from "components/Layout/Container";
 import supabase, { doPOST } from "lib/supabase";
 import { useSnackbar } from "notistack";
 import useCurrentSeason from "hooks/useCurrentSeason";
-import { color } from "d3";
 
 export default function Page() {
   const { enqueueSnackbar } = useSnackbar();
@@ -39,6 +38,8 @@ export default function Page() {
     useState<string>("all");
   const [teamsSeasonIdInput, setTeamsSeasonIdInput] = useState<string>("");
   const [gamesSeasonIdInput, setGamesSeasonIdInput] = useState<string>("");
+  const [skoAsOfInput, setSkoAsOfInput] = useState<string>("");
+  const [skoLoading, setSkoLoading] = useState(false);
 
   const season = useCurrentSeason();
   console.log(season);
@@ -254,6 +255,30 @@ export default function Page() {
       enqueueSnackbar(e.message, {
         variant: "error"
       });
+    }
+  }
+
+  async function runSkoPredictions() {
+    try {
+      setSkoLoading(true);
+      const trimmed = skoAsOfInput.trim();
+      const endpoint = trimmed
+        ? `/api/v1/ml/update-predictions-sko?asOfDate=${encodeURIComponent(
+            trimmed
+          )}`
+        : "/api/v1/ml/update-predictions-sko";
+
+      const { message, success } = await doPOST(endpoint);
+      enqueueSnackbar(message ?? "sKO predictions updated", {
+        variant: success ? "success" : "error"
+      });
+    } catch (e: any) {
+      console.error(e.message);
+      enqueueSnackbar(e.message, {
+        variant: "error"
+      });
+    } finally {
+      setSkoLoading(false);
     }
   }
 
@@ -861,6 +886,71 @@ export default function Page() {
             </CardActions>
           </Card>
         </Grid>
+
+        {isAdmin && (
+          <Grid xs={12} md={4}>
+            <Card
+              sx={{
+                border: "5px solid #ff6b6b",
+                borderRadius: "8px",
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
+                background: "linear-gradient(180deg, #202020 50%, #101010 80%)",
+                color: "#fff"
+              }}
+            >
+              <CardMedia
+                sx={{ height: 140 }}
+                image="/pictures/fhfPlaceholder.png"
+                title="sKO predictions"
+              />
+              <CardContent sx={{ flexGrow: 1 }}>
+                <Typography gutterBottom variant="h5" component="div">
+                  sKO PREDICTIONS
+                </Typography>
+                <Typography variant="body2">
+                  Run the Supabase upsert for Sustainability K-Value Outlook
+                  predictions using the latest modeling artifacts. Leave the
+                  date blank to use the most recent run or enter YYYY-MM-DD to
+                  override the as-of date.
+                </Typography>
+                <TextField
+                  label="As-of date (optional)"
+                  variant="outlined"
+                  size="small"
+                  fullWidth
+                  margin="normal"
+                  value={skoAsOfInput}
+                  onChange={(e) => setSkoAsOfInput(e.target.value)}
+                  placeholder="2025-01-05"
+                  sx={{
+                    backgroundColor: "#202020",
+                    border: "1px solid #ff6b6b",
+                    borderRadius: "4px",
+                    "& .css-1sumxir-MuiFormLabel-root-MuiInputLabel-root, .css-1n4twyu-MuiInputBase-input-MuiOutlinedInput-input":
+                      {
+                        color: "#ff6b6b",
+                        fontWeight: "900",
+                        textTransform: "uppercase",
+                        backgroundColor: "#202020",
+                        margin: "1px"
+                      }
+                  }}
+                />
+              </CardContent>
+              <CardActions>
+                <Button
+                  size="small"
+                  onClick={runSkoPredictions}
+                  disabled={skoLoading}
+                >
+                  {skoLoading ? "Running…" : "Run sKO Upsert"}
+                </Button>
+              </CardActions>
+            </Card>
+          </Grid>
+        )}
 
         {/* New Card/Button to link to the CSV Upsert Page */}
         {isAdmin && ( // Only show this card/link if user is admin
