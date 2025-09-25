@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 from api.fetch_team_table import fetch_team_table
+from api.sko_pipeline import trigger_sko_step_forward
 
 app = Flask(__name__)
 
@@ -44,6 +45,14 @@ def fetch_team_table_api():
     
     # Return the result as JSON response
     return jsonify(result)
+
+
+@app.route('/sko/pipeline', methods=['POST'])
+def run_sko_pipeline():
+    payload = request.get_json(silent=True) or {}
+    result = trigger_sko_step_forward(payload)
+    status = 200 if result.get("success") else 500
+    return jsonify(result), status
 
 
 if __name__ == '__main__':

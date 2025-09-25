@@ -257,22 +257,26 @@ export default function TrendsIndexPage() {
         body: JSON.stringify({ startDate: asOfDate, endDate: nextIso })
       });
       const payload = (await response.json()) as StepForwardResponse;
+      const tailLog = payload.logs
+        ? payload.logs
+            .split("\n")
+            .map((line) => line.trim())
+            .filter(Boolean)
+            .slice(-1)[0]
+        : null;
+
       if (!response.ok || !payload.success) {
-        throw new Error(payload.error || "Step forward failed");
+        const message = payload.error || "Step forward failed";
+        const finalMessage = tailLog ? `${message} · ${tailLog}` : message;
+        setError(message);
+        setStepStatus(finalMessage);
+        return;
       }
+
       const resolved = payload.asOfDate ?? nextIso;
       const baseMessage =
         payload.message ?? `Stepped forward to ${formatIsoDate(resolved)}`;
-      const finalMessage = payload.logs
-        ? (() => {
-            const tail = payload.logs
-              .split("\n")
-              .map((line) => line.trim())
-              .filter(Boolean)
-              .slice(-1)[0];
-            return tail ? `${baseMessage} · ${tail}` : baseMessage;
-          })()
-        : baseMessage;
+      const finalMessage = tailLog ? `${baseMessage} · ${tailLog}` : baseMessage;
       setStepStatus(finalMessage);
       await fetchData(resolved);
     } catch (err: any) {

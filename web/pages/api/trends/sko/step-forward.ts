@@ -41,6 +41,8 @@ function pickPythonBin(): string {
   const candidates = [
     process.env.SKO_PYTHON_BIN,
     path.join(process.cwd(), ".venv/bin/python"),
+    path.join(process.cwd(), "..", ".venv/bin/python"),
+    path.join(process.cwd(), "..", ".venv", "bin", "python"),
     path.join(process.cwd(), "venv/bin/python"),
     "python3",
     "python",
