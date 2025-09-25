@@ -11,7 +11,10 @@ import {
 } from "lib/supabase/utils/types";
 import {
   computeStatSummaries,
-  computeCharacteristicResults
+  computeCharacteristicResults,
+  computeRollingAverage,
+  computeConfidenceMultiplierSmooth,
+  computeEmpiricalThresholds
 } from "lib/supabase/utils/statistics";
 import { calculateGameScore } from "lib/supabase/utils/calculations";
 import {
@@ -144,7 +147,15 @@ const SkoCharts: React.FC = () => {
             T1,
             T2
           } = computeCharacteristicResults(fetchedLogs, statSummaries);
-          setThresholds({ T1, T2 });
+          // Optionally refine thresholds empirically to guard against outliers
+          const empirical = computeEmpiricalThresholds(
+            characteristicResults,
+            0.5,
+            0.9
+          );
+          const effT1 = Number.isFinite(empirical.T1) ? empirical.T1 : T1;
+          const effT2 = Number.isFinite(empirical.T2) ? empirical.T2 : T2;
+          setThresholds({ T1: effT1, T2: effT2 });
 
           // Map characteristic results to game logs
           const characteristicMap = new Map<string, number>();
@@ -156,37 +167,25 @@ const SkoCharts: React.FC = () => {
           });
 
           // Calculate gameScore and integrate CV
+          // Precompute rolling CV series with window=10
+          const cvSeries = characteristicResults.map(
+            (r) => r.sumOfWeightedSquaredZScores
+          );
+          const rollingCVSeries = computeRollingAverage(cvSeries, 10);
+
           const processedGameLogs = fetchedLogs.map((game, index) => {
-            // Calculate gameScore
             const gameScore = calculateGameScore(game);
-
-            // Get CV
             const CV = characteristicMap.get(game.date) ?? null;
-
-            // Calculate 10-game rolling average of CV
-            const startIdx = Math.max(0, index - 9);
-            const rollingWindow = characteristicResults.slice(
-              startIdx,
-              index + 1
+            const rollingCV = rollingCVSeries[index] ?? CV ?? 0;
+            const confidenceMultiplier = computeConfidenceMultiplierSmooth(
+              rollingCV,
+              effT1,
+              effT2,
+              { min: 0.8, max: 1.0 }
             );
-            const rollingCV =
-              rollingWindow.reduce(
-                (acc, res) => acc + res.sumOfWeightedSquaredZScores,
-                0
-              ) / rollingWindow.length;
-
-            // Calculate confidenceMultiplier based on rollingCV
-            let confidenceMultiplier = 1; // Default
-            if (rollingCV <= T1) {
-              confidenceMultiplier = 1;
-            } else if (rollingCV <= T2) {
-              confidenceMultiplier = 0.9; // Adjust as needed
-            } else {
-              confidenceMultiplier = 0.8; // Adjust as needed
-            }
-
-            // Predicted gameScore
             const predictedGameScore = gameScore * confidenceMultiplier;
+            // sKO: stability-adjusted score we surface to UI if needed
+            const sKO = predictedGameScore;
 
             return {
               ...game,
@@ -194,8 +193,9 @@ const SkoCharts: React.FC = () => {
               CV,
               rollingCV,
               confidenceMultiplier,
-              predictedGameScore
-            };
+              predictedGameScore,
+              sKO
+            } as CombinedGameLog & { sKO: number };
           });
 
           setCombinedGameLogs(processedGameLogs);

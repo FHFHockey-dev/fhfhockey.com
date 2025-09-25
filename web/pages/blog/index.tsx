@@ -46,15 +46,15 @@ export const getStaticProps: GetStaticProps = async () => {
       title,
       summary,
       createdAt: new Date(publishedAt).toLocaleDateString("en-US"),
-      imageUrl: urlFor(mainImage).url(),
+      imageUrl: urlFor(mainImage).url()
     })
   );
 
   return {
     props: {
-      posts,
+      posts
     },
-    revalidate: 10,
+    revalidate: 10
   };
 };
 

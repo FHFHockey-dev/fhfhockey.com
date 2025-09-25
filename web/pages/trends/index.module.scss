@@ -1,0 +1,308 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 2.4rem;
+  padding: 2rem 2.5rem 3rem;
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+
+.titleBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 600;
+}
+
+.subtitle {
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 0.95rem;
+  max-width: 640px;
+}
+
+.metaBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+  min-width: 200px;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.searchContainer {
+  position: relative;
+  min-width: 260px;
+  max-width: 360px;
+  width: 100%;
+}
+
+.searchInput {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  color: inherit;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+}
+
+.searchResults {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  left: 0;
+  right: 0;
+  background: rgba(10, 14, 26, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 0.25rem 0;
+  max-height: 260px;
+  overflow-y: auto;
+  z-index: 5;
+}
+
+.searchResultItem {
+  padding: 0.45rem 0.75rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.15s ease;
+}
+
+.searchResultItem:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.emptyResult {
+  padding: 0.5rem 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.8rem;
+}
+
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+}
+
+.stepperLabel {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.stepperButton {
+  background: rgba(79, 195, 247, 0.15);
+  border: 1px solid rgba(79, 195, 247, 0.3);
+  color: #4fc3f7;
+  border-radius: 6px;
+  padding: 0.35rem 0.65rem;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: background 0.2s ease;
+}
+
+.stepperButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.stepperButton:not(:disabled):hover {
+  background: rgba(79, 195, 247, 0.3);
+}
+
+.stepperDate {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.tableActions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.asOf {
+  font-weight: 500;
+}
+
+.refreshButton {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 0.4rem 0.75rem;
+  transition: background 0.2s ease;
+}
+
+.refreshButton:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.metricCard {
+  backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 1rem;
+}
+
+.metricTitle {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.metricValue {
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+.metricDetail {
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 0.8rem;
+}
+
+.tableWrapper {
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.playerTable {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 720px;
+}
+
+.playerTable thead {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.playerTable th,
+.playerTable td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+}
+
+
+.playerTable tbody tr:nth-child(odd) {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.playerTable tbody tr:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.clickableRow {
+  cursor: pointer;
+}
+
+.playerCell {
+  display: flex;
+  flex-direction: column;
+}
+
+.playerName {
+  font-weight: 600;
+}
+
+.playerMeta {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.8rem;
+}
+
+.sparklineCell {
+  min-width: 120px;
+}
+
+.sparklineSvg {
+  width: 100%;
+  height: 48px;
+}
+
+.sparklineBaseline {
+  stroke: rgba(255, 255, 255, 0.2);
+  stroke-width: 1;
+}
+
+.sparklinePath {
+  fill: none;
+  stroke: #4fc3f7;
+  stroke-width: 2;
+}
+
+.sparklineShade {
+  fill: rgba(79, 195, 247, 0.15);
+}
+
+.placeholder {
+  padding: 1.5rem;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.error {
+  background: rgba(255, 0, 0, 0.1);
+  border: 1px solid rgba(255, 0, 0, 0.3);
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+}
+
+.loading {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+@media (max-width: 768px) {
+  .page {
+    padding: 1.5rem;
+  }
+
+  .metrics {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  }
+
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .metaBlock {
+    align-items: flex-start;
+  }
+}
