@@ -2,6 +2,7 @@
 
 import Head from "next/head";
 import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import type { AppProps } from "next/app";
 import { ApolloProvider } from "@apollo/client";
 import { SnackbarProvider } from "notistack";
@@ -23,60 +24,58 @@ const queryClient = new QueryClient();
 function MyApp({ Component, pageProps }: AppProps) {
   const hasGql = Boolean(process.env.NEXT_PUBLIC_SANITY_GRAPHQL_URI);
   const AppTree = (
-      <SnackbarProvider maxSnack={3} autoHideDuration={6000}>
-        <AuthProvider>
-          <Layout>
-            <Head>
-              <meta charSet="utf-8" />
-              <meta
-                name="viewport"
-                content="width=device-width, initial-scale=1.0"
-              />
-              <meta
-                name="keywords"
-                content="Fantasy Hockey, Fantasy Hockey Podcast, Five Hole, NHL, Fantasy, Fantasy Sports"
-              />
-              <link
-                rel="apple-touch-icon"
-                sizes="180x180"
-                href="/apple-touch-icon.png"
-              />
-              <link
-                rel="icon"
-                type="image/png"
-                sizes="32x32"
-                href="/fhfh-favicon-32x32.png"
-              />
-              <link
-                rel="icon"
-                type="image/png"
-                sizes="16x16"
-                href="/fhfh-favicon-16x16.png"
-              />
+    <SnackbarProvider maxSnack={3} autoHideDuration={6000}>
+      <AuthProvider>
+        <Layout>
+          <Head>
+            <meta charSet="utf-8" />
+            <meta
+              name="viewport"
+              content="width=device-width, initial-scale=1.0"
+            />
+            <meta
+              name="keywords"
+              content="Fantasy Hockey, Fantasy Hockey Podcast, Five Hole, NHL, Fantasy, Fantasy Sports"
+            />
+            <link
+              rel="apple-touch-icon"
+              sizes="180x180"
+              href="/apple-touch-icon.png"
+            />
+            <link
+              rel="icon"
+              type="image/png"
+              sizes="32x32"
+              href="/fhfh-favicon-32x32.png"
+            />
+            <link
+              rel="icon"
+              type="image/png"
+              sizes="16x16"
+              href="/fhfh-favicon-16x16.png"
+            />
 
-              {/* theme color */}
-              <meta name="theme-color" content="#07aae2" />
-              {/* <!-- Windows Phone --> */}
-              <meta name="msapplication-navbutton-color" content="#07aae2" />
-              {/* <!-- iOS Safari --> */}
-              <meta name="apple-mobile-web-app-capable" content="yes" />
-              <meta
-                name="apple-mobile-web-app-status-bar-style"
-                content="#000"
-              />
-              {/* Recommended modern mobile web app meta */}
-              <meta name="mobile-web-app-capable" content="yes" />
-              <link rel="manifest" href="/site.webmanifest" />
-            </Head>
-            <DefaultSeo {...SEO} />
-            <QueryClientProvider client={queryClient}>
-              {/* https://nextjs.org/docs/api-reference/next/router#resetting-state-after-navigation */}
-              <Component {...pageProps} />
-            </QueryClientProvider>
-          </Layout>
-          <Analytics />
-        </AuthProvider>
-      </SnackbarProvider>
+            {/* theme color */}
+            <meta name="theme-color" content="#07aae2" />
+            {/* <!-- Windows Phone --> */}
+            <meta name="msapplication-navbutton-color" content="#07aae2" />
+            {/* <!-- iOS Safari --> */}
+            <meta name="apple-mobile-web-app-capable" content="yes" />
+            <meta name="apple-mobile-web-app-status-bar-style" content="#000" />
+            {/* Recommended modern mobile web app meta */}
+            <meta name="mobile-web-app-capable" content="yes" />
+            <link rel="manifest" href="/site.webmanifest" />
+          </Head>
+          <DefaultSeo {...SEO} />
+          <QueryClientProvider client={queryClient}>
+            {/* https://nextjs.org/docs/api-reference/next/router#resetting-state-after-navigation */}
+            <Component {...pageProps} />
+          </QueryClientProvider>
+        </Layout>
+        <Analytics />
+        <SpeedInsights />
+      </AuthProvider>
+    </SnackbarProvider>
   );
 
   // Only wrap with ApolloProvider if configured
