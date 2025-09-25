@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from api.fetch_team_table import fetch_team_table
-from api.sko_pipeline import trigger_sko_step_forward
+from lib.sko_pipeline import trigger_sko_step_forward
 
 app = Flask(__name__)
 
