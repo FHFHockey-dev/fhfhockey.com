@@ -29,8 +29,19 @@ export async function fetchCurrentSeason(): Promise<SeasonInfo> {
       ? process.env.NEXT_PUBLIC_SITE_URL ||
         `http://localhost:${process.env.PORT || 3000}`
       : "";
+    if (isServer && process.env.NODE_ENV !== "production") {
+      console.log(`[season] GET ${base}${apiPath}`);
+    }
     const res = await fetch(`${base}${apiPath}`);
-    if (!res.ok) throw new Error(`Internal API error ${res.status}`);
+    if (!res.ok) {
+      let body = "";
+      try {
+        body = await res.text();
+      } catch (_) {}
+      throw new Error(
+        `Internal API error ${res.status}${body ? ` – ${body.slice(0, 300)}` : ""}`
+      );
+    }
     const s = await res.json();
 
     const now = new Date();
@@ -107,14 +118,18 @@ export async function fetchCurrentSeason(): Promise<SeasonInfo> {
     playoffsStartDate.setDate(playoffsStartDate.getDate() + 1);
     const playoffsEndDate = new Date(currentSeason.endDate);
 
+    const prevPlayoffsStartDate = new Date(previousSeason.regularSeasonEndDate);
+    prevPlayoffsStartDate.setDate(prevPlayoffsStartDate.getDate() + 1);
+    const prevPlayoffsEndDate = new Date(previousSeason.endDate);
+
     if (now < startDate && now > prevEndDate) {
       return {
         id: previousSeason.id,
         startDate: previousSeason.startDate,
         regularSeasonEndDate: previousSeason.regularSeasonEndDate,
-        endDate: previousSeason.regularSeasonEndDate,
-        playoffsStartDate: playoffsStartDate.getTime(),
-        playoffsEndDate: playoffsEndDate.getTime(),
+        endDate: previousSeason.endDate,
+        playoffsStartDate: prevPlayoffsStartDate.getTime(),
+        playoffsEndDate: prevPlayoffsEndDate.getTime(),
         previousSeason,
         nextSeason
       } as SeasonInfo;
@@ -123,7 +138,7 @@ export async function fetchCurrentSeason(): Promise<SeasonInfo> {
         id: currentSeason.id,
         startDate: currentSeason.startDate,
         regularSeasonEndDate: currentSeason.regularSeasonEndDate,
-        endDate: currentSeason.regularSeasonEndDate,
+        endDate: currentSeason.endDate,
         playoffsStartDate: playoffsStartDate.getTime(),
         playoffsEndDate: playoffsEndDate.getTime(),
         idPrev: previousSeason.id,

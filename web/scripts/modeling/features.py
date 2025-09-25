@@ -61,6 +61,7 @@ class FeatureBuilderConfig:
     min_date: Optional[date] = None
     max_date: Optional[date] = None
     player_ids: Optional[tuple[int, ...]] = None
+    season_ids: Optional[tuple[str, ...]] = None
     horizon_games: int = 5
     windows: Iterable[int] = (5, 10, 20)
     cv_window: int = 10
@@ -131,6 +132,8 @@ def load_source_data(config: FeatureBuilderConfig) -> pd.DataFrame:
     ]
     if config.player_ids:
         where_clauses.append("player_id = ANY(:player_ids)")
+    if config.season_ids:
+        where_clauses.append("season_id::text = ANY(:season_ids)")
 
     query = sa.text(
         f"""
@@ -149,6 +152,7 @@ def load_source_data(config: FeatureBuilderConfig) -> pd.DataFrame:
                 "start_date": start_date,
                 "end_date": end_date,
                 "player_ids": list(config.player_ids) if config.player_ids else None,
+                "season_ids": list(config.season_ids) if config.season_ids else None,
             },
         )
 
@@ -165,6 +169,8 @@ def apply_local_filters(df: pd.DataFrame, config: FeatureBuilderConfig) -> pd.Da
             work = work[work["date"] <= pd.Timestamp(config.max_date)]
     if config.player_ids:
         work = work[work["player_id"].isin(config.player_ids)]
+    if config.season_ids and "season_id" in work.columns:
+        work = work[work["season_id"].astype(str).isin(config.season_ids)]
     return work
 
 
@@ -384,6 +390,18 @@ def parse_metrics(value: Optional[str], fallback: Iterable[str]) -> tuple[str, .
     return parsed or tuple(fallback)
 
 
+def parse_seasons(value: Optional[str]) -> Optional[tuple[str, ...]]:
+    if not value:
+        return None
+    seasons: list[str] = []
+    for token in value.split(","):
+        token = token.strip()
+        if not token:
+            continue
+        seasons.append(token)
+    return tuple(seasons) if seasons else None
+
+
 def load_env_files(paths: Iterable[Path]) -> None:
     """Best-effort parser for .env style files without extra dependencies."""
 
@@ -452,6 +470,8 @@ def main() -> None:
         if parsed_ids:
             player_ids = tuple(sorted(set(parsed_ids)))
 
+    season_ids = parse_seasons(env.get("SKO_FEATURE_SEASONS"))
+
     append_flag = env.get("SKO_FEATURE_APPEND", "false").lower() in {"1", "true", "yes"}
 
     config_kwargs = {
@@ -465,6 +485,7 @@ def main() -> None:
         "min_date": min_date,
         "max_date": max_date,
         "player_ids": player_ids,
+        "season_ids": season_ids,
         "append": append_flag,
     }
     if lookback_days is not None:

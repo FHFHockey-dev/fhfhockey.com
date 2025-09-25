@@ -30,6 +30,20 @@ except ImportError as exc:  # pragma: no cover - dependency hint path
     ) from exc
 
 try:
+    import lightgbm as lgb
+
+    LIGHTGBM_AVAILABLE = True
+except ImportError:  # pragma: no cover - optional dependency
+    LIGHTGBM_AVAILABLE = False
+
+try:
+    from xgboost import XGBRegressor
+
+    XGBOOST_AVAILABLE = True
+except ImportError:  # pragma: no cover - optional dependency
+    XGBOOST_AVAILABLE = False
+
+try:
     from scipy.stats import spearmanr
 except ImportError as exc:  # pragma: no cover - dependency hint path
     raise ImportError("scipy is required for spearman correlation. `pip install scipy`." ) from exc
@@ -61,6 +75,14 @@ class TrainingConfig:
     gbrt_learning_rate: float = 0.05
     gbrt_max_depth: int = 3
     gbrt_estimators: int = 500
+    lgb_learning_rate: float = 0.03
+    lgb_num_leaves: int = 31
+    lgb_estimators: int = 600
+    xgb_learning_rate: float = 0.03
+    xgb_max_depth: int = 4
+    xgb_estimators: int = 800
+    xgb_subsample: float = 0.9
+    xgb_colsample_bytree: float = 0.8
     run_id: uuid.UUID = field(default_factory=uuid.uuid4)
 
 
@@ -212,10 +234,70 @@ def build_model_registry(config: TrainingConfig) -> dict[str, Pipeline]:
         ]
     )
 
-    return {
+    registry: dict[str, Pipeline] = {
         "elastic_net": elasticnet_pipeline,
         "gbrt": gbrt_pipeline,
     }
+
+    if LIGHTGBM_AVAILABLE:
+        lgbm_pipeline = Pipeline(
+            steps=[
+                (
+                    "preprocess",
+                    ColumnTransformer(
+                        transformers=[("num", tree_transformer, slice(0, None))],
+                        remainder="drop",
+                    ),
+                ),
+                (
+                    "model",
+                    lgb.LGBMRegressor(
+                        objective="regression",
+                        random_state=config.seed,
+                        learning_rate=config.lgb_learning_rate,
+                        n_estimators=config.lgb_estimators,
+                        num_leaves=config.lgb_num_leaves,
+                        subsample=0.9,
+                        colsample_bytree=0.8,
+                    ),
+                ),
+            ]
+        )
+        registry["lightgbm"] = lgbm_pipeline
+    else:
+        print("LightGBM not available; skipping lgbm model")
+
+    if XGBOOST_AVAILABLE:
+        xgb_pipeline = Pipeline(
+            steps=[
+                (
+                    "preprocess",
+                    ColumnTransformer(
+                        transformers=[("num", tree_transformer, slice(0, None))],
+                        remainder="drop",
+                    ),
+                ),
+                (
+                    "model",
+                    XGBRegressor(
+                        random_state=config.seed,
+                        n_estimators=config.xgb_estimators,
+                        learning_rate=config.xgb_learning_rate,
+                        max_depth=config.xgb_max_depth,
+                        subsample=config.xgb_subsample,
+                        colsample_bytree=config.xgb_colsample_bytree,
+                        objective="reg:squarederror",
+                        n_jobs=-1,
+                        missing=np.nan,
+                    ),
+                ),
+            ]
+        )
+        registry["xgboost"] = xgb_pipeline
+    else:
+        print("XGBoost not available; skipping xgb model")
+
+    return registry
 
 
 # ---------------------------------------------------------------------------
@@ -285,7 +367,9 @@ def stat_key_from_target(target_col: str, horizon: int) -> str:
 # ---------------------------------------------------------------------------
 
 
-def train_models(df: DataFrame, config: TrainingConfig) -> tuple[dict[str, dict[str, Pipeline]], DataFrame, DataFrame]:
+def train_models(
+    df: DataFrame, config: TrainingConfig
+) -> tuple[dict[str, dict[str, Pipeline]], DataFrame, DataFrame, list[str], list[str]]:
     """Fit baseline models per target and return trained artifacts and evaluation metrics."""
 
     feature_cols, target_cols = derive_feature_columns(df)
@@ -343,6 +427,7 @@ def train_models(df: DataFrame, config: TrainingConfig) -> tuple[dict[str, dict[
                     "run_id": str(config.run_id),
                     "stat_key": stat_key,
                     "model_name": model_name,
+                    "horizon_games": config.horizon_games,
                     "player_id": int(player_id),
                     "date": pd.Timestamp(prediction_date).date().isoformat(),
                     "actual": float(actual),
@@ -365,7 +450,7 @@ def train_models(df: DataFrame, config: TrainingConfig) -> tuple[dict[str, dict[
         print("Warning: metrics dataframe is empty")
     if predictions_df.empty:
         print("Warning: predictions dataframe is empty")
-    return trained_models, metrics_df, predictions_df
+    return trained_models, metrics_df, predictions_df, feature_cols, target_cols
 
 
 # ---------------------------------------------------------------------------
@@ -373,7 +458,12 @@ def train_models(df: DataFrame, config: TrainingConfig) -> tuple[dict[str, dict[
 # ---------------------------------------------------------------------------
 
 
-def persist_models(models: dict[str, dict[str, Pipeline]], config: TrainingConfig) -> None:
+def persist_models(
+    models: dict[str, dict[str, Pipeline]],
+    config: TrainingConfig,
+    feature_columns: list[str],
+    target_columns: list[str],
+) -> None:
     """Serialize trained models to disk."""
 
     config.model_dir.mkdir(parents=True, exist_ok=True)
@@ -383,6 +473,8 @@ def persist_models(models: dict[str, dict[str, Pipeline]], config: TrainingConfi
         "targets": {
             target: list(model_dict.keys()) for target, model_dict in models.items()
         },
+        "feature_columns": feature_columns,
+        "target_columns": target_columns,
     }
 
     for target, model_dict in models.items():
@@ -417,12 +509,14 @@ def main() -> None:
 
     config = TrainingConfig()
     dataset = load_training_data(config)
-    models, metrics_df, predictions_df = train_models(dataset, config)
+    models, metrics_df, predictions_df, feature_columns, target_columns = train_models(
+        dataset, config
+    )
 
     if not models:
         raise RuntimeError("No models were trained. Ensure targets have sufficient data.")
 
-    persist_models(models, config)
+    persist_models(models, config, feature_columns, target_columns)
     persist_metrics(metrics_df, predictions_df, config)
 
     print(
