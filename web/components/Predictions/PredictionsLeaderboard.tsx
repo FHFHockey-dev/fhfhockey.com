@@ -1,10 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
-import { usePredictionsSko, type PredictionRow } from "lib/hooks/usePredictionsSko";
+import {
+  usePredictionsSko,
+  type PredictionRow
+} from "lib/hooks/usePredictionsSko";
 import supabase from "lib/supabase/client";
-import type { PlayerInfoRow, PlayerPredictionDatum, SparklinePoint } from "lib/trends/skoTypes";
+import type {
+  PlayerInfoRow,
+  PlayerPredictionDatum,
+  SparklinePoint
+} from "lib/trends/skoTypes";
 import { lookupTeamLabel } from "lib/trends/skoUtils";
 import PlayerTable from "./PlayerTable";
-import styles from "../../pages/trends/index.module.scss";
+import styles from "./Predictions.module.scss";
 
 type Props = {
   asOfDate: string | null;
@@ -12,9 +19,17 @@ type Props = {
   sparklineDays?: number;
 };
 
-export default function PredictionsLeaderboard({ asOfDate, limit = 30, sparklineDays = 45 }: Props) {
+export default function PredictionsLeaderboard({
+  asOfDate,
+  limit = 30,
+  sparklineDays = 45
+}: Props) {
   // Headline rows for a single date
-  const { data: rows, loading, error } = usePredictionsSko({
+  const {
+    data: rows,
+    loading,
+    error
+  } = usePredictionsSko({
     asOfDate: asOfDate ?? undefined,
     limit,
     order: "desc"
@@ -26,7 +41,9 @@ export default function PredictionsLeaderboard({ asOfDate, limit = 30, sparkline
   );
 
   // Player info (names/teams/positions)
-  const [playerInfo, setPlayerInfo] = useState<Record<number, PlayerInfoRow>>({});
+  const [playerInfo, setPlayerInfo] = useState<Record<number, PlayerInfoRow>>(
+    {}
+  );
   useEffect(() => {
     let active = true;
     (async () => {
@@ -77,7 +94,10 @@ export default function PredictionsLeaderboard({ asOfDate, limit = 30, sparkline
     for (const r of sparkRows) {
       const pid = Number(r.player_id);
       if (!acc[pid]) acc[pid] = [];
-      acc[pid].push({ date: r.as_of_date, value: r.sko === null ? null : Number(r.sko) });
+      acc[pid].push({
+        date: r.as_of_date,
+        value: r.sko === null ? null : Number(r.sko)
+      });
       if (acc[pid].length > 24) acc[pid] = acc[pid].slice(acc[pid].length - 24);
     }
     return acc;
@@ -102,8 +122,14 @@ export default function PredictionsLeaderboard({ asOfDate, limit = 30, sparkline
   }, [rows, playerInfo, sparklineMap]);
 
   if (error) return <div className={styles.error}>{error}</div>;
-  if (loading && !rows.length) return <div className={styles.loading}>Loading latest sKO projections…</div>;
-  if (!rows.length) return <div className={styles.placeholder}>No predictions available yet.</div>;
+  if (loading && !rows.length)
+    return (
+      <div className={styles.loading}>Loading latest sKO projections…</div>
+    );
+  if (!rows.length)
+    return (
+      <div className={styles.placeholder}>No predictions available yet.</div>
+    );
 
   return (
     <div className={styles.tableWrapper}>

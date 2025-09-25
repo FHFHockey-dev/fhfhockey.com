@@ -1,5 +1,5 @@
 import { useRouter } from "next/router";
-import styles from "../../pages/trends/index.module.scss";
+import styles from "./Predictions.module.scss";
 import { formatNumber } from "lib/trends/skoUtils";
 import type { PlayerPredictionDatum } from "lib/trends/skoTypes";
 import Sparkline from "./Sparkline";
@@ -18,16 +18,24 @@ export default function PlayerTable({
         <tr>
           <th>Player</th>
           <th>
-            <abbr title="Sustainability K‑Value Outlook — expected production adjusted by how steady recent play has been (prediction × stability). Higher is better.">sKO</abbr>
+            <abbr title="Sustainability K‑Value Outlook — expected production adjusted by how steady recent play has been (prediction × stability). Higher is better.">
+              sKO
+            </abbr>
           </th>
           <th>
-            <abbr title="Projected total points over the forecast window (e.g., next 5 games).">Projected Pts</abbr>
+            <abbr title="Projected total points over the forecast window (e.g., next 5 games).">
+              Projected Pts
+            </abbr>
           </th>
           <th>
-            <abbr title="Stability multiplier (about 0.8–1.0) based on recent consistency. Steadier players get closer to 1.0.">Stability ×</abbr>
+            <abbr title="Stability multiplier (about 0.8–1.0) based on recent consistency. Steadier players get closer to 1.0.">
+              Stability ×
+            </abbr>
           </th>
           <th>
-            <abbr title="Recent sKO trend (sparkline) so you can see whether a player is rising or cooling off.">Trend</abbr>
+            <abbr title="Recent sKO trend (sparkline) so you can see whether a player is rising or cooling off.">
+              Trend
+            </abbr>
           </th>
         </tr>
       </thead>

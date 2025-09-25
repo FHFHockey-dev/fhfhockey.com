@@ -1,6 +1,6 @@
 import { formatNumber, formatPercent } from "lib/trends/skoUtils";
 import type { MetricSummary } from "lib/trends/skoTypes";
-import styles from "../../pages/trends/index.module.scss";
+import styles from "./Predictions.module.scss";
 
 export default function MetricCards({ metrics }: { metrics: MetricSummary[] }) {
   if (!metrics?.length) return null;
@@ -20,9 +20,7 @@ export default function MetricCards({ metrics }: { metrics: MetricSummary[] }) {
             <abbr title="Hit rate inside margin of error (MoE): the share of predictions that landed within ±MoE of the actual outcome.">
               {formatPercent(metric.hitRate)} inside MoE
             </abbr>
-            
             ·
-            
             <abbr title="Margin of Error (MoE): a typical wiggle room around predictions. We expect roughly this much deviation. Lower is tighter.">
               MoE ±{formatNumber(metric.marginOfError, 2)}
             </abbr>
@@ -31,7 +29,6 @@ export default function MetricCards({ metrics }: { metrics: MetricSummary[] }) {
             <abbr title="MAPE (Mean Absolute Percentage Error): average percentage error relative to actuals. Lower is better.">
               MAPE {formatNumber(metric.mape, 1)}%
             </abbr>
-            
             · {metric.sampleSize} samples
           </div>
         </div>

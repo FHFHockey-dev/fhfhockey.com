@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import type { SparklinePoint } from "lib/trends/skoTypes";
 import { buildSparklinePath } from "lib/trends/skoUtils";
-import styles from "../../pages/trends/index.module.scss";
+import styles from "./Predictions.module.scss";
 
 type Props = { data: SparklinePoint[] };
 

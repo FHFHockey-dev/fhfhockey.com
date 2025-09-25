@@ -9,7 +9,10 @@ export default function InfoPopover() {
   useEffect(() => {
     function onDocClick(e: MouseEvent) {
       if (!open) return;
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+      if (
+        wrapperRef.current &&
+        !wrapperRef.current.contains(e.target as Node)
+      ) {
         setOpen(false);
       }
     }
@@ -36,10 +39,19 @@ export default function InfoPopover() {
         <span className={styles.infoGlyph}>i</span>
       </button>
       {open ? (
-        <div className={styles.infoPanel} role="dialog" aria-label="sKO explanation">
+        <div
+          className={styles.infoPanel}
+          role="dialog"
+          aria-label="sKO explanation"
+        >
           <div className={styles.infoPanelHeader}>
             <span>What is sKO?</span>
-            <button className={styles.infoClose} type="button" onClick={() => setOpen(false)} aria-label="Close">
+            <button
+              className={styles.infoClose}
+              type="button"
+              onClick={() => setOpen(false)}
+              aria-label="Close"
+            >
               ×
             </button>
           </div>

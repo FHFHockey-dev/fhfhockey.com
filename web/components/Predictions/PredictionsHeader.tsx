@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import styles from "../../pages/trends/index.module.scss";
+import styles from "./Predictions.module.scss";
 
 type Props = {
   latestRunDate?: string | null;
@@ -22,8 +22,11 @@ export default function PredictionsHeader({
           Expected production blended with recent steadiness. Higher sKO values
           reflect both strong projection and stability over the past few weeks.
           Hover for more detail and use the sparkline to see trajectory.
-          <abbr title="We multiply a player’s prediction by a stability factor based on recent consistency. This keeps hot streaks in check and rewards steady performance."> sKO help</abbr>
-          </p>
+          <abbr title="We multiply a player’s prediction by a stability factor based on recent consistency. This keeps hot streaks in check and rewards steady performance.">
+            {" "}
+            sKO help
+          </abbr>
+        </p>
       </div>
       <div className={styles.metaBlock}>
         <span className={styles.asOf}>
