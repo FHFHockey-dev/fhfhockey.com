@@ -49,7 +49,15 @@ def fetch_team_table_api():
 
 @app.route('/sko/pipeline', methods=['POST'])
 def run_sko_pipeline():
-    payload = request.get_json(silent=True) or {}
+    payload = dict(request.get_json(silent=True) or {})
+
+    # Allow callers to pass ?step=score or ?steps=backfill,train,score via query string.
+    if 'step' not in payload and 'steps' not in payload:
+        if 'step' in request.args:
+            payload['step'] = request.args['step']
+        elif 'steps' in request.args:
+            payload['steps'] = [value.strip() for value in request.args['steps'].split(',') if value.strip()]
+
     result = trigger_sko_step_forward(payload)
     status = 200 if result.get("success") else 500
     return jsonify(result), status

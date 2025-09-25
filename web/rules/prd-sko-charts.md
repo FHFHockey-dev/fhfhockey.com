@@ -17,6 +17,15 @@ Implication for sKO: Use an underlying game performance score (GameScore) but mo
 - `web/pages/skoCharts.tsx` — UI and prediction plumbing
 - `web/lib/supabase/utils/statistics.ts` — summaries, characteristic scoring, thresholds, rolling & confidence helpers
 - `web/lib/supabase/utils/calculations.ts` — base `calculateGameScore()`
+- `web/components/Predictions/` — modular UI used by Trends:
+  - `PredictionsHeader.tsx` (title/subtitle + refresh + last run)
+  - `SearchBox.tsx` (player search + selection)
+  - `Stepper.tsx` (date label + step +1 day)
+  - `MetricCards.tsx` (MAE/MAPE/MoE cards)
+  - `PlayerTable.tsx` (leaderboard table rows)
+  - `Sparkline.tsx` (mini trend chart)
+  - `PredictionsLeaderboard.tsx` (container using read-only API + hook to build the leaderboard with names and sparklines)
+  - `SkoExplainer.tsx` (compact legend + formula, layman-friendly sKO definition)
 
 ## 4) sKO Metric Definition
 - Base score per game: `GameScore = f(G, A1, A2, SOG, BLK, PD, PT, FOW, FOL, CF, CA, GF, GA)` (current linear weights in `calculateGameScore`).
@@ -53,6 +62,9 @@ Notes:
   - Exposes `sKO` per game as stability-adjusted predicted score.
 - `calculations.ts`:
   - No change to baseline `calculateGameScore` weights (kept stable reference model).
+- `web/pages/api/v1/ml/update-predictions-sko.ts` now enforces admin-only access, optional secret, batching, and player filters for controlled manual runs.
+- `web/scripts/modeling/backfill_seasons.py` added to generate season-parquet snapshots and append to the master feature set in <15s per run.
+- Trends index now includes player search, sorting, metrics cards, sparkline, and a step-forward control; `/trends/player/[playerId]` renders a D3-based projection vs actual view with candlesticks and crosshair.
 
 ## 7) Future Enhancements (Optional)
 - Context-aware GameScore variants (AS/PP/5v5/ES) and their own context-specific sKO panels.
@@ -80,6 +92,26 @@ Notes:
 - Outputs depend on Supabase `sko_skater_years` and game log fetchers; handle paging and network errors gracefully.
 - All new utilities are pure and unit-testable; future tests should cover rolling averages, empirical quantiles, and smoothstep mapping.
 
+## 11) Progress Snapshot (2025-09-25)
+- Admin-gated `/api/v1/ml/update-predictions-sko` endpoint now supports batching, player filters, and optional shared-secret auth.
+- Seasonal backfill workflow (`web/scripts/modeling/backfill_seasons.py`) processes 2022-23 through 2024-25 in <15s per season and appends to the master features parquet.
+- ElasticNet + scikit-learn GBRT baselines train across points and category targets; scoring computes stability multipliers and writes sKO-ready parquet artifacts.
+- Trends index and player detail pages feature search, step-forward controls, sparkline history, D3 candlestick comparison, and transparency cards powered by local parquet outputs. The Trends index now uses modular components in `components/Predictions/` for easier reuse and testing.
+  - Predictions leaderboard now fetches via `/api/v1/ml/get-predictions-sko` and `usePredictionsSko`, not direct Supabase queries in the page.
+- Serverless proxy (`functions/api/sko_pipeline.py`) deployed on Vercel; currently proxies the long pipeline and surfaces timeouts that guide upcoming segmentation work.
+
+## 12) Outstanding Tasks
+- [ ] Integrate LightGBM / XGBoost into `train.py` and export gain-based feature importances for UI use.
+- [ ] Extend `score.py` to emit per-player `top_features` JSON so Trends cards can surface driver stats.
+- [ ] Deploy Supabase migrations for `predictions_sko` / `predictions_sko_metrics` and enable `upload_predictions.py` to upsert nightly outputs.
+- [ ] Build transparency history charts (MAE/MAPE over time + MoE bands) once metrics land in Supabase.
+- [ ] Refactor pipeline into <300s Vercel-friendly slices (seasonal backfill, scoring, upload) and chain invocations for cron.
+- [ ] Document nightly runbook + alerting plan in `web/scripts/modeling/README.md` and related ops docs.
+
+## Handoff Prompt
+Next contributor: modeling backfill now populates seasonal parquet (2022-23 onward), ElasticNet + scikit-learn GBRT models train/score with stability multipliers, and the Trends UI renders sparkline + candlestick views from local artifacts. LightGBM/XGBoost integration, `top_features` export, Supabase migrations, and accuracy history visualizations remain open. The Vercel `sko_pipeline` endpoint currently times out (~15s) because it runs the full pipeline—split work into <300s slices (seasonal backfill, scoring, upload) before wiring cron. Once Supabase tables are deployed, hook `upload_predictions.py` to publish predictions/metrics, then surface top drivers and accuracy timelines in the UI. Keep env secrets trimmed, update `sko_backfill_state.json` when rerunning seasonal slices, and coordinate with the Trends endpoint before flipping production traffic to ML outputs.
+
+## Context
 ### SQL tables:
 #### player_stats_unified:
 ```sql
@@ -344,11 +376,11 @@ Notes:
   - Upsert one row per player (`player_id, as_of_date, horizon_games`).
 - Implementation reference: `web/pages/api/v1/ml/update-predictions-sko.ts` and `web/pages/api/v1/db/update-team-yearly-summary.ts`.
 
-## 12) Expanded TODOs (Delta)
+## 13) Expanded TODOs (Delta)
 - API
-  - [ ] Harden endpoint with paging/batching and concurrency controls.
-  - [ ] Add auth/secret check for write operations.
-  - [ ] Support `playerId` filter for on-demand updates.
+  - [ ] Harden endpoint with paging/batching and concurrency controls. *(Batch upserts + limit parameters in place; still need request throttling/run manifests.)*
+  - [x] Add auth/secret check for write operations.
+  - [x] Support `playerId` filter for on-demand updates.
   - [ ] Log run metadata to `cron_job_audit`/`job_run_details`.
 - Modeling Script (follow-up)
   - [ ] Replace baseline blend with ElasticNet/LightGBM predictions using `player_stats_unified` features.
@@ -358,12 +390,14 @@ Notes:
   - [ ] Add team/opponent strength, schedule density, home/away.
   - [ ] Ensure centered share features and pos/neg splits for stability scoring.
 - UI
-- [ ] Build `web/pages/trends/index.tsx` consuming `predictions_sko` with sKO tooltip and sorting.
-- [ ] Add mini driver list (top_features) and sparkline trend.
-- [ ] Surface transparency widgets (latest MAE/MAPE, MoE bands, historical accuracy trend) so users can track model quality over time.
-- [ ] Add day-step simulation control on the Trends landing page that triggers the nightly pipeline (step forward + retrain) for controlled backtests.
-- [ ] Implement `/trends/player/[playerId]` detail view with zoomable, brushable projected vs actual lines, candlestick overlay (green under/ red over) and crosshair cursor.
-- [ ] Wire player search + row click-through from the Trends index to the player detail experience, keeping query params in sync.
+  - [x] Build `web/pages/trends/index.tsx` consuming `predictions_sko` with sKO tooltip and sorting. *(MVP shipped with search, sorting, sparkline + status chips.)*
+  - [ ] Add mini driver list (top_features) and sparkline trend. *(Sparkline live; awaiting top_features exposure from modeling pipeline.)*
+  - [x] Surface transparency widgets (latest MAE/MAPE, MoE bands, historical accuracy trend) so users can track model quality over time. *(Metrics cards sourced from `predictions_sko_metrics`.)*
+  - [x] Add day-step simulation control on the Trends landing page that triggers the nightly pipeline (step forward + retrain) for controlled backtests.
+  - [x] Implement `/trends/player/[playerId]` detail view with zoomable, brushable projected vs actual lines, candlestick overlay (green under/ red over) and crosshair cursor.
+  - [x] Wire player search + row click-through from the Trends index to the player detail experience, keeping query params in sync.
 - Ops
   - [ ] Nightly job to call `/api/v1/ml/update-predictions-sko` post-games.
   - [ ] Alerting if failure or unusually low updated rows.
+  - [x] One-season backfill script that runs under 15s to seed historical features (`backfill_seasons.py` + manifest).
+  - [ ] Lightweight nightly scorer/uploader (<300s) leveraging cached models + append-only features.

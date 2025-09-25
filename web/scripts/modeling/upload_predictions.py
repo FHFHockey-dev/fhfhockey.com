@@ -19,7 +19,7 @@ DEFAULT_HOLDOUT_PATH = Path("web/scripts/output/sko_holdout_predictions.parquet"
 DEFAULT_METRICS_PATH = Path("web/scripts/output/sko_metrics.parquet")
 
 DEFAULT_INFERENCE_TABLE = "predictions_sko"
-DEFAULT_HOLDOUT_TABLE = ""
+DEFAULT_HOLDOUT_TABLE = "predictions_sko_predictions"
 DEFAULT_METRICS_TABLE = "predictions_sko_metrics"
 
 
@@ -143,6 +143,20 @@ def prepare_holdout_records(df: pd.DataFrame) -> list[dict[str, object]]:
     if "date" in df.columns and "as_of_date" not in df.columns:
         df = df.rename(columns={"date": "as_of_date"})
 
+    required = {
+        "run_id",
+        "as_of_date",
+        "horizon_games",
+        "stat_key",
+        "model_name",
+        "player_id",
+    }
+    missing = required - set(df.columns)
+    if missing:
+        raise ValueError(
+            f"Holdout predictions parquet missing columns: {', '.join(sorted(missing))}"
+        )
+
     records: list[dict[str, object]] = []
     for record in df.to_dict("records"):
         if "created_at" not in record or record["created_at"] is None:
@@ -212,6 +226,7 @@ def main() -> None:
             config.holdout_table,
             holdout_records,
             config.upsert_limit,
+            on_conflict="run_id,as_of_date,horizon_games,stat_key,model_name,player_id",
         )
         print(
             f"Uploaded {len(holdout_records)} holdout predictions to {config.holdout_table}"

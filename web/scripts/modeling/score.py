@@ -5,14 +5,15 @@ from __future__ import annotations
 
 import json
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date, datetime, timezone
 from pathlib import Path
-from typing import Iterable, Optional
+from typing import Optional
 
 import numpy as np
 import pandas as pd
 
+from importance import extract_top_feature_contributions
 from train import (
     TrainingConfig,
     derive_feature_columns,
@@ -32,6 +33,9 @@ class ScoreConfig:
     as_of_date: Optional[date] = None
     horizon_games: int = 5
     run_id: Optional[str] = None
+    feature_columns: Optional[list[str]] = None
+    target_models: dict[str, list[str]] = field(default_factory=dict)
+    selected_model: Optional[str] = None
 
 
 def load_manifest(models_dir: Path) -> dict[str, object]:
@@ -39,6 +43,21 @@ def load_manifest(models_dir: Path) -> dict[str, object]:
     if not manifest_path.exists():
         raise FileNotFoundError("Model manifest not found; run train.py first.")
     return json.loads(manifest_path.read_text(encoding="utf-8"))
+
+
+MODEL_PRIORITY: tuple[str, ...] = ("lightgbm", "xgboost", "gbrt", "elastic_net")
+
+
+def select_model_name(targets: dict[str, list[str]], target_key: str) -> str:
+    available = targets.get(target_key) or []
+    if not available:
+        raise ValueError(
+            f"No trained models found for target '{target_key}'. Run train.py to generate models."
+        )
+    for candidate in MODEL_PRIORITY:
+        if candidate in available:
+            return candidate
+    return available[0]
 
 
 def parse_env_config() -> ScoreConfig:
@@ -53,6 +72,14 @@ def parse_env_config() -> ScoreConfig:
     horizon_env = os.getenv("SKO_SCORE_HORIZON")
     horizon_games = int(horizon_env) if horizon_env else training_config.horizon_games
 
+    targets = {
+        key: list(value)
+        for key, value in (manifest.get("targets") or {}).items()
+    }
+    feature_cols = manifest.get("feature_columns")
+    target_col_key = f"target_points_next_{horizon_games}"
+    selected_model = select_model_name(targets, target_col_key)
+
     return ScoreConfig(
         models_dir=training_config.model_dir,
         features_path=training_config.features_path,
@@ -65,7 +92,24 @@ def parse_env_config() -> ScoreConfig:
         as_of_date=as_of_date,
         horizon_games=horizon_games,
         run_id=manifest.get("run_id"),
+        feature_columns=list(feature_cols) if feature_cols else None,
+        target_models=targets,
+        selected_model=selected_model,
     )
+
+
+def resolve_feature_columns(dataset: pd.DataFrame, config: ScoreConfig) -> list[str]:
+    if config.feature_columns:
+        missing = [col for col in config.feature_columns if col not in dataset.columns]
+        if missing:
+            preview = ", ".join(missing[:5])
+            raise ValueError(
+                f"Feature columns referenced in manifest are missing from dataset: {preview}"
+            )
+        return list(config.feature_columns)
+
+    feature_cols, _ = derive_feature_columns(dataset)
+    return feature_cols
 
 
 def smoothstep(x: float, t1: float, t2: float, minimum: float, maximum: float) -> float:
@@ -94,9 +138,44 @@ def load_model(model_path: Path):
     return pd.read_pickle(model_path)
 
 
+def compute_contributions(
+    pipeline, X_matrix: np.ndarray, model_name: str
+) -> tuple[np.ndarray, Optional[np.ndarray]]:
+    """Generate predictions and optional feature contributions."""
+
+    predictions = pipeline.predict(X_matrix)
+
+    preprocess = getattr(pipeline, "named_steps", {}).get("preprocess")
+    estimator = getattr(pipeline, "named_steps", {}).get("model", pipeline)
+
+    transformed = X_matrix
+    if preprocess is not None:
+        transformed = preprocess.transform(X_matrix)
+
+    contributions: Optional[np.ndarray] = None
+
+    try:
+        if model_name == "lightgbm" and hasattr(estimator, "predict"):
+            contributions = estimator.predict(transformed, pred_contrib=True)
+        elif model_name == "xgboost" and hasattr(estimator, "predict"):
+            contributions = estimator.predict(transformed, pred_contribs=True)
+        elif model_name == "elastic_net":
+            coef = getattr(estimator, "coef_", None)
+            if coef is not None:
+                intercept = float(getattr(estimator, "intercept_", 0.0))
+                contrib_core = transformed * coef
+                intercept_column = np.full((contrib_core.shape[0], 1), intercept)
+                contributions = np.hstack([contrib_core, intercept_column])
+    except Exception as exc:  # pragma: no cover - guardrail
+        print(f"Warning: failed to compute feature contributions for {model_name}: {exc}")
+        contributions = None
+
+    return predictions, contributions
+
+
 def build_predictions(config: ScoreConfig) -> pd.DataFrame:
     dataset = load_training_data(TrainingConfig(features_path=config.features_path))
-    feature_cols, _ = derive_feature_columns(dataset)
+    feature_cols = resolve_feature_columns(dataset, config)
 
     max_dataset_date = dataset["date"].max()
     as_of_date = config.as_of_date or max_dataset_date.date()
@@ -109,14 +188,23 @@ def build_predictions(config: ScoreConfig) -> pd.DataFrame:
     latest_indices = eligible.groupby("player_id")["date"].idxmax()
     latest_rows = eligible.loc[latest_indices].copy()
 
-    model_path = config.models_dir / f"target_points_next_{config.horizon_games}__gbrt.pickle"
-    model = load_model(model_path)
+    model_name = config.selected_model or "gbrt"
+    model_filename = f"target_points_next_{config.horizon_games}__{model_name}.pickle"
+    model = load_model(config.models_dir / model_filename)
 
     X_inference = latest_rows[feature_cols].to_numpy()
-    pred_points = model.predict(X_inference)
+    pred_points, contribution_matrix = compute_contributions(
+        model, X_inference, model_name
+    )
+
+    contribution_matrix = (
+        np.asarray(contribution_matrix) if contribution_matrix is not None else None
+    )
 
     results = []
-    for row, prediction in zip(latest_rows.itertuples(index=False), pred_points):
+    for idx, (row, prediction) in enumerate(
+        zip(latest_rows.itertuples(index=False), pred_points)
+    ):
         player_history = eligible[eligible["player_id"] == row.player_id]
         player_history = player_history.tail(60)
         stability_multiplier, stability_cv, t1, t2 = compute_stability(player_history)
@@ -124,6 +212,21 @@ def build_predictions(config: ScoreConfig) -> pd.DataFrame:
         pred_total = float(prediction)
         pred_per_game = pred_total / config.horizon_games if np.isfinite(prediction) else None
         sko = pred_total * stability_multiplier if np.isfinite(pred_total) else None
+
+        top_features = None
+        if contribution_matrix is not None and idx < contribution_matrix.shape[0]:
+            try:
+                top_features = extract_top_feature_contributions(
+                    contribution_matrix[idx],
+                    feature_cols,
+                    top_n=5,
+                    min_abs_contribution=0.01,
+                )
+            except ValueError as exc:
+                print(
+                    f"Warning: could not derive top features for player {row.player_id}: {exc}"
+                )
+                top_features = None
 
         results.append(
             {
@@ -134,9 +237,9 @@ def build_predictions(config: ScoreConfig) -> pd.DataFrame:
                 "pred_points_per_game": pred_per_game if pred_per_game is not None else None,
                 "stability_cv": stability_cv,
                 "stability_multiplier": stability_multiplier,
-                "top_features": None,
+                "top_features": top_features,
                 "sko": sko if sko is not None else None,
-                "model_name": "sko-gbrt",
+                "model_name": f"sko-{model_name}",
                 "model_version": config.run_id or "unknown",
                 "created_at": datetime.now(timezone.utc).isoformat(),
             }
