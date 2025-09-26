@@ -211,9 +211,7 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
         for (const key in dateBasedResponseKeys) {
           const { situation, rate } = dateBasedResponseKeys[key];
           const baseUrl =
-            process.env.NEXT_PUBLIC_SERVERLESS_API_URL
-              ? `${process.env.NEXT_PUBLIC_SERVERLESS_API_URL}/api/fetch_team_table`
-              : `/api/fetch_team_table`;
+            "https://functions-fhfhockey.vercel.app/fetch_team_table";
           const queryParams = new URLSearchParams({
             sit: situation,
             rate: rate,
@@ -425,9 +423,7 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
         const thru_season =
           key === "seasonStats" ? seasonId.toString() : lastSeasonId.toString();
         const baseUrl =
-          process.env.NEXT_PUBLIC_SERVERLESS_API_URL
-            ? `${process.env.NEXT_PUBLIC_SERVERLESS_API_URL}/api/fetch_team_table`
-            : `/api/fetch_team_table`;
+          "https://functions-fhfhockey.vercel.app/fetch_team_table";
         const queryParams = new URLSearchParams({
           sit: situation,
           rate: rate,
