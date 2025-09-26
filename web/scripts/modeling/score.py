@@ -9,6 +9,7 @@ from dataclasses import dataclass, field
 from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Optional
+import time
 
 import numpy as np
 import pandas as pd
@@ -45,7 +46,7 @@ def load_manifest(models_dir: Path) -> dict[str, object]:
     return json.loads(manifest_path.read_text(encoding="utf-8"))
 
 
-MODEL_PRIORITY: tuple[str, ...] = ("lightgbm", "xgboost", "gbrt", "elastic_net")
+MODEL_PRIORITY: tuple[str, ...] = ("lightgbm", "xgboost", "hist_gbrt", "gbrt", "elastic_net")
 
 
 def select_model_name(targets: dict[str, list[str]], target_key: str) -> str:
@@ -255,10 +256,22 @@ def persist_predictions(df: pd.DataFrame, output_path: Path) -> Path:
 
 
 def main() -> None:
+    wall_start = time.perf_counter()
     config = parse_env_config()
+
+    build_start = time.perf_counter()
     predictions = build_predictions(config)
+    build_elapsed = time.perf_counter() - build_start
+
+    persist_start = time.perf_counter()
     output_path = persist_predictions(predictions, config.output_path)
-    print(f"Wrote {len(predictions)} predictions to {output_path}")
+    persist_elapsed = time.perf_counter() - persist_start
+
+    total_elapsed = time.perf_counter() - wall_start
+    print(
+        f"Wrote {len(predictions)} predictions to {output_path}"
+        f" (build={build_elapsed:.2f}s persist={persist_elapsed:.2f}s total={total_elapsed:.2f}s)"
+    )
 
 
 if __name__ == "__main__":

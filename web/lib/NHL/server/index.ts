@@ -99,7 +99,9 @@ export async function getTeams(seasonId?: number): Promise<Team[]> {
     }
   }
 
-  const deduped = Array.from(byAbbr.values());
+  const deduped = Array.from(byAbbr.values()).filter(
+    (team) => team.abbreviation !== "ARI"
+  );
   return deduped.map((team) => ({
     ...team,
     logo: getTeamLogo(team.abbreviation)

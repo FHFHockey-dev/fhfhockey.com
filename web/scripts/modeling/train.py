@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import copy
 import json
 import uuid
 from collections import defaultdict
@@ -10,15 +11,17 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable, Optional
+import time
 
 import numpy as np
 import pandas as pd
+from joblib import Parallel, delayed
 from pandas import DataFrame
+from threadpoolctl import threadpool_limits
 
 try:
     from sklearn.base import clone
-    from sklearn.compose import ColumnTransformer
-    from sklearn.ensemble import GradientBoostingRegressor
+    from sklearn.ensemble import HistGradientBoostingRegressor
     from sklearn.impute import SimpleImputer
     from sklearn.linear_model import ElasticNet
     from sklearn.metrics import mean_absolute_error, mean_squared_error
@@ -83,6 +86,10 @@ class TrainingConfig:
     xgb_estimators: int = 800
     xgb_subsample: float = 0.9
     xgb_colsample_bytree: float = 0.8
+    val_fraction: float = 0.1
+    early_stopping_rounds: int = 50
+    outer_n_jobs: int = -1
+    inner_n_threads: int = 1
     run_id: uuid.UUID = field(default_factory=uuid.uuid4)
 
 
@@ -179,121 +186,65 @@ def derive_feature_columns(df: DataFrame) -> tuple[list[str], list[str]]:
 # ---------------------------------------------------------------------------
 
 
-def build_model_registry(config: TrainingConfig) -> dict[str, Pipeline]:
-    """Return the baseline models we want to train for each target."""
+class ModelSpec(dict):
+    """Dictionary carrying estimator metadata (estimator + kind)."""
 
-    common_numeric_transformer = Pipeline(
-        steps=[
-            ("imputer", SimpleImputer(strategy="median")),
-            ("scaler", StandardScaler()),
-        ]
-    )
 
-    # For tree-based models scaling is optional, but keeping the pipeline unified simplifies code.
-    tree_transformer = Pipeline(steps=[("imputer", SimpleImputer(strategy="median"))])
+def build_model_registry(config: TrainingConfig) -> dict[str, ModelSpec]:
+    """Return model specs keyed by identifier."""
 
-    elasticnet_pipeline = Pipeline(
-        steps=[
-            (
-                "preprocess",
-                ColumnTransformer(
-                    transformers=[("num", common_numeric_transformer, slice(0, None))],
-                    remainder="drop",
-                ),
+    registry: dict[str, ModelSpec] = {
+        "elastic_net": ModelSpec(
+            estimator=ElasticNet(
+                alpha=config.elasticnet_alpha,
+                l1_ratio=config.elasticnet_l1_ratio,
+                random_state=config.seed,
+                max_iter=5000,
             ),
-            (
-                "model",
-                ElasticNet(
-                    alpha=config.elasticnet_alpha,
-                    l1_ratio=config.elasticnet_l1_ratio,
-                    random_state=config.seed,
-                    max_iter=5000,
-                ),
+            kind="linear",
+        ),
+        "hist_gbrt": ModelSpec(
+            estimator=HistGradientBoostingRegressor(
+                learning_rate=config.gbrt_learning_rate,
+                max_depth=config.gbrt_max_depth,
+                max_iter=config.gbrt_estimators,
+                random_state=config.seed,
+                early_stopping=True,
             ),
-        ]
-    )
-
-    gbrt_pipeline = Pipeline(
-        steps=[
-            (
-                "preprocess",
-                ColumnTransformer(
-                    transformers=[("num", tree_transformer, slice(0, None))],
-                    remainder="drop",
-                ),
-            ),
-            (
-                "model",
-                GradientBoostingRegressor(
-                    random_state=config.seed,
-                    learning_rate=config.gbrt_learning_rate,
-                    max_depth=config.gbrt_max_depth,
-                    n_estimators=config.gbrt_estimators,
-                ),
-            ),
-        ]
-    )
-
-    registry: dict[str, Pipeline] = {
-        "elastic_net": elasticnet_pipeline,
-        "gbrt": gbrt_pipeline,
+            kind="tree",
+        ),
     }
 
     if LIGHTGBM_AVAILABLE:
-        lgbm_pipeline = Pipeline(
-            steps=[
-                (
-                    "preprocess",
-                    ColumnTransformer(
-                        transformers=[("num", tree_transformer, slice(0, None))],
-                        remainder="drop",
-                    ),
-                ),
-                (
-                    "model",
-                    lgb.LGBMRegressor(
-                        objective="regression",
-                        random_state=config.seed,
-                        learning_rate=config.lgb_learning_rate,
-                        n_estimators=config.lgb_estimators,
-                        num_leaves=config.lgb_num_leaves,
-                        subsample=0.9,
-                        colsample_bytree=0.8,
-                    ),
-                ),
-            ]
+        registry["lightgbm"] = ModelSpec(
+            estimator=lgb.LGBMRegressor(
+                learning_rate=config.lgb_learning_rate,
+                num_leaves=config.lgb_num_leaves,
+                n_estimators=config.lgb_estimators,
+                subsample=0.9,
+                colsample_bytree=0.8,
+                random_state=config.seed,
+            ),
+            kind="tree",
         )
-        registry["lightgbm"] = lgbm_pipeline
     else:
         print("LightGBM not available; skipping lgbm model")
 
     if XGBOOST_AVAILABLE:
-        xgb_pipeline = Pipeline(
-            steps=[
-                (
-                    "preprocess",
-                    ColumnTransformer(
-                        transformers=[("num", tree_transformer, slice(0, None))],
-                        remainder="drop",
-                    ),
-                ),
-                (
-                    "model",
-                    XGBRegressor(
-                        random_state=config.seed,
-                        n_estimators=config.xgb_estimators,
-                        learning_rate=config.xgb_learning_rate,
-                        max_depth=config.xgb_max_depth,
-                        subsample=config.xgb_subsample,
-                        colsample_bytree=config.xgb_colsample_bytree,
-                        objective="reg:squarederror",
-                        n_jobs=-1,
-                        missing=np.nan,
-                    ),
-                ),
-            ]
+        registry["xgboost"] = ModelSpec(
+            estimator=XGBRegressor(
+                learning_rate=config.xgb_learning_rate,
+                max_depth=config.xgb_max_depth,
+                n_estimators=config.xgb_estimators,
+                subsample=config.xgb_subsample,
+                colsample_bytree=config.xgb_colsample_bytree,
+                random_state=config.seed,
+                objective="reg:squarederror",
+                eval_metric="rmse",
+                verbosity=0,
+            ),
+            kind="tree",
         )
-        registry["xgboost"] = xgb_pipeline
     else:
         print("XGBoost not available; skipping xgb model")
 
@@ -367,6 +318,22 @@ def stat_key_from_target(target_col: str, horizon: int) -> str:
 # ---------------------------------------------------------------------------
 
 
+def make_time_validation_split(dates: np.ndarray, val_fraction: float) -> tuple[np.ndarray, np.ndarray]:
+    """Generate train/validation indices while keeping chronological order."""
+
+    if val_fraction <= 0 or dates.size < 8:
+        return np.arange(dates.size), np.array([], dtype=int)
+
+    order = np.argsort(dates)
+    val_size = max(1, int(np.floor(val_fraction * dates.size)))
+    if val_size >= dates.size:
+        return order, np.array([], dtype=int)
+
+    val_indices = order[-val_size:]
+    train_indices = order[:-val_size]
+    return train_indices, val_indices
+
+
 def train_models(
     df: DataFrame, config: TrainingConfig
 ) -> tuple[dict[str, dict[str, Pipeline]], DataFrame, DataFrame, list[str], list[str]]:
@@ -378,8 +345,29 @@ def train_models(
     if train_df.empty or holdout_df.empty:
         raise ValueError("Training or holdout split is empty; adjust configuration.")
 
-    X_train = train_df[feature_cols]
-    X_holdout = holdout_df[feature_cols]
+    train_df = train_df.reset_index(drop=True)
+    holdout_df = holdout_df.reset_index(drop=True)
+
+    X_train_df = train_df[feature_cols]
+    X_holdout_df = holdout_df[feature_cols]
+
+    linear_preprocess = Pipeline(
+        steps=[
+            ("imputer", SimpleImputer(strategy="median")),
+            ("scaler", StandardScaler()),
+        ]
+    )
+    tree_preprocess = Pipeline(
+        steps=[("imputer", SimpleImputer(strategy="median"))]
+    )
+
+    linear_preprocess.fit(X_train_df)
+    tree_preprocess.fit(X_train_df)
+
+    X_train_linear = linear_preprocess.transform(X_train_df).astype(np.float32)
+    X_holdout_linear = linear_preprocess.transform(X_holdout_df).astype(np.float32)
+    X_train_tree = tree_preprocess.transform(X_train_df).astype(np.float32)
+    X_holdout_tree = tree_preprocess.transform(X_holdout_df).astype(np.float32)
 
     model_factory = build_model_registry(config)
     trained_models: dict[str, dict[str, Pipeline]] = defaultdict(dict)
@@ -390,6 +378,8 @@ def train_models(
     if pd.isna(as_of_date):
         raise ValueError("Unable to determine as_of_date from holdout set")
 
+    tasks: list[dict[str, object]] = []
+
     for target_col in target_cols:
         stat_key = stat_key_from_target(target_col, config.horizon_games)
 
@@ -399,49 +389,160 @@ def train_models(
         if train_target.empty or holdout_target.empty:
             continue
 
-        y_train = train_target[target_col].to_numpy()
-        y_holdout = holdout_target[target_col].to_numpy()
+        train_idx = train_target.index.to_numpy()
+        holdout_idx = holdout_target.index.to_numpy()
+        y_train_full = train_target[target_col].to_numpy(dtype=np.float32)
+        y_holdout = holdout_target[target_col].to_numpy(dtype=np.float32)
+        train_dates = train_target["date"].to_numpy()
 
-        X_train_slice = X_train.loc[train_target.index].to_numpy()
-        X_holdout_slice = X_holdout.loc[holdout_target.index].to_numpy()
+        for model_name, spec in model_factory.items():
+            kind = spec.get("kind", "tree")
+            if kind == "linear":
+                X_train_all = X_train_linear
+                X_holdout_all = X_holdout_linear
+            else:
+                X_train_all = X_train_tree
+                X_holdout_all = X_holdout_tree
 
-        for model_name, model in model_factory.items():
-            model_instance = clone(model)
-            model_instance.fit(X_train_slice, y_train)
-            y_pred = model_instance.predict(X_holdout_slice)
+            X_train_target = X_train_all[train_idx]
+            X_holdout_target = X_holdout_all[holdout_idx]
 
-            metrics_records.append(
-                compute_metrics(
-                    y_true=y_holdout,
-                    y_pred=y_pred,
-                    stat_key=stat_key,
-                    model_name=model_name,
-                    run_id=config.run_id,
-                    config=config,
-                    as_of_date=as_of_date,
-                )
-            )
+            fit_indices, val_indices = make_time_validation_split(train_dates, config.val_fraction)
+            X_fit = X_train_target[fit_indices]
+            y_fit = y_train_full[fit_indices]
+            X_val = X_train_target[val_indices] if val_indices.size else None
+            y_val = y_train_full[val_indices] if val_indices.size else None
 
-            predictions_records.extend(
+            tasks.append(
                 {
-                    "run_id": str(config.run_id),
+                    "target_col": target_col,
                     "stat_key": stat_key,
                     "model_name": model_name,
-                    "horizon_games": config.horizon_games,
-                    "player_id": int(player_id),
-                    "date": pd.Timestamp(prediction_date).date().isoformat(),
-                    "actual": float(actual),
-                    "predicted": float(predicted),
+                    "kind": kind,
+                    "estimator": spec["estimator"],
+                    "X_fit": X_fit,
+                    "y_fit": y_fit,
+                    "X_val": X_val,
+                    "y_val": y_val,
+                    "X_holdout": X_holdout_target,
+                    "y_holdout": y_holdout,
+                    "holdout_player_ids": holdout_target["player_id"].to_numpy(dtype=int),
+                    "holdout_dates": holdout_target["date"].to_numpy(),
                 }
-                for player_id, prediction_date, actual, predicted in zip(
-                    holdout_target["player_id"].to_numpy(),
-                    holdout_target["date"].to_numpy(),
-                    y_holdout,
-                    y_pred,
-                )
             )
 
-            trained_models[target_col][model_name] = model_instance
+    if not tasks:
+        raise RuntimeError("No viable training tasks were generated; check data availability.")
+
+    def fit_one(task: dict[str, object]) -> dict[str, object]:
+        estimator = clone(task["estimator"])
+        model_name = task["model_name"]
+        X_fit = task["X_fit"]
+        y_fit = task["y_fit"]
+        X_val = task["X_val"]
+        y_val = task["y_val"]
+
+        with threadpool_limits(limits=config.inner_n_threads):
+            if model_name == "lightgbm":
+                estimator.set_params(n_jobs=config.inner_n_threads)
+                if X_val is not None and X_val.size:
+                    callbacks = [
+                        lgb.early_stopping(
+                            stopping_rounds=config.early_stopping_rounds,
+                            verbose=False,
+                        )
+                    ]
+                    estimator.fit(
+                        X_fit,
+                        y_fit,
+                        eval_set=[(X_val, y_val)],
+                        eval_metric="l2",
+                        callbacks=callbacks,
+                    )
+                else:
+                    estimator.fit(X_fit, y_fit)
+            elif model_name == "xgboost":
+                estimator.set_params(
+                    n_jobs=config.inner_n_threads,
+                    tree_method="hist",
+                    max_bin=256,
+                )
+                if X_val is not None and X_val.size:
+                    estimator.set_params(
+                        early_stopping_rounds=config.early_stopping_rounds,
+                    )
+                    estimator.fit(
+                        X_fit,
+                        y_fit,
+                        eval_set=[(X_val, y_val)],
+                        verbose=False,
+                    )
+                else:
+                    estimator.fit(X_fit, y_fit, verbose=False)
+            elif model_name == "hist_gbrt":
+                estimator.set_params(max_bins=255)
+                estimator.fit(X_fit, y_fit)
+            else:
+                estimator.fit(X_fit, y_fit)
+
+            y_pred = estimator.predict(task["X_holdout"])
+
+        metrics = compute_metrics(
+            y_true=task["y_holdout"],
+            y_pred=y_pred,
+            stat_key=task["stat_key"],
+            model_name=model_name,
+            run_id=config.run_id,
+            config=config,
+            as_of_date=as_of_date,
+        )
+
+        return {
+            "task": task,
+            "model": estimator,
+            "metrics": metrics,
+            "predictions": y_pred,
+        }
+
+    results = Parallel(n_jobs=config.outer_n_jobs, prefer="threads")(
+        delayed(fit_one)(task) for task in tasks
+    )
+
+    for result in results:
+        task = result["task"]
+        model = result["model"]
+        metrics_records.append(result["metrics"])
+
+        holdout_player_ids = task["holdout_player_ids"]
+        holdout_dates = task["holdout_dates"]
+        y_holdout = task["y_holdout"]
+        preds = result["predictions"]
+
+        predictions_records.extend(
+            {
+                "run_id": str(config.run_id),
+                "stat_key": task["stat_key"],
+                "model_name": task["model_name"],
+                "horizon_games": config.horizon_games,
+                "player_id": int(player_id),
+                "date": pd.Timestamp(pred_date).date().isoformat(),
+                "actual": float(actual),
+                "predicted": float(pred),
+            }
+            for player_id, pred_date, actual, pred in zip(
+                holdout_player_ids,
+                holdout_dates,
+                y_holdout,
+                preds,
+            )
+        )
+
+        preprocess = linear_preprocess if task["kind"] == "linear" else tree_preprocess
+        pipeline = Pipeline([
+            ("preprocess", copy.deepcopy(preprocess)),
+            ("model", model),
+        ])
+        trained_models[task["target_col"]][task["model_name"]] = pipeline
 
     metrics_df = pd.DataFrame(metrics_records)
     predictions_df = pd.DataFrame(predictions_records)
@@ -507,20 +608,33 @@ def persist_metrics(metrics_df: DataFrame, predictions_df: DataFrame, config: Tr
 def main() -> None:
     """Entry point for running training from the CLI."""
 
+    wall_start = time.perf_counter()
     config = TrainingConfig()
+    load_start = time.perf_counter()
     dataset = load_training_data(config)
+    load_elapsed = time.perf_counter() - load_start
+
+    train_start = time.perf_counter()
     models, metrics_df, predictions_df, feature_columns, target_columns = train_models(
         dataset, config
     )
+    train_elapsed = time.perf_counter() - train_start
 
     if not models:
         raise RuntimeError("No models were trained. Ensure targets have sufficient data.")
 
+    persist_start = time.perf_counter()
     persist_models(models, config, feature_columns, target_columns)
     persist_metrics(metrics_df, predictions_df, config)
+    persist_elapsed = time.perf_counter() - persist_start
+
+    total_elapsed = time.perf_counter() - wall_start
 
     print(
-        f"Persisted {len(models)} target families with {len(metrics_df)} metric rows to {config.model_dir}"
+        (
+            f"Persisted {len(models)} target families with {len(metrics_df)} metric rows to {config.model_dir}"
+            f" (load={load_elapsed:.2f}s train={train_elapsed:.2f}s persist={persist_elapsed:.2f}s total={total_elapsed:.2f}s)"
+        )
     )
 
 

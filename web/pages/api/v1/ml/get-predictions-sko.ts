@@ -2,10 +2,73 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "lib/supabase/database-generated.types";
 
+/**
+ * Resolve the best available Supabase admin key.
+ * Preference order:
+ *  1. SUPABASE_SERVICE_ROLE_KEY
+ *  2. NEXT_SUPABASE_SERVICE_ROLE_KEY (your alternate naming convention)
+ *  3. SUPABASE_SERVICE_KEY (fallback legacy name if ever used)
+ *  4. NEXT_PUBLIC_SUPABASE_PUBLIC_KEY / NEXT_PUBLIC_SUPABASE_ANON_KEY (last resort – NOT service role)
+ *
+ * We purposefully do NOT expose the full key in logs; only a short masked prefix is logged for troubleshooting.
+ */
+function resolveSupabaseAdminKey(): {
+  key: string;
+  from: string;
+  serviceRole: boolean;
+} {
+  const candidates: Array<[string | undefined, string]> = [
+    [process.env.SUPABASE_SERVICE_ROLE_KEY, "SUPABASE_SERVICE_ROLE_KEY"],
+    [
+      process.env.NEXT_SUPABASE_SERVICE_ROLE_KEY,
+      "NEXT_SUPABASE_SERVICE_ROLE_KEY"
+    ],
+    [process.env.SUPABASE_SERVICE_KEY, "SUPABASE_SERVICE_KEY"],
+    [
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY,
+      "NEXT_PUBLIC_SUPABASE_PUBLIC_KEY"
+    ],
+    [process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY, "NEXT_PUBLIC_SUPABASE_ANON_KEY"]
+  ];
+  for (const [val, name] of candidates) {
+    if (val && val.trim()) {
+      const serviceRole = isServiceRoleJWT(val);
+      return { key: val.trim(), from: name, serviceRole };
+    }
+  }
+  throw new Error(
+    "Supabase credentials missing (looked for SUPABASE_SERVICE_ROLE_KEY / NEXT_SUPABASE_SERVICE_ROLE_KEY / SUPABASE_SERVICE_KEY / NEXT_PUBLIC_SUPABASE_PUBLIC_KEY / NEXT_PUBLIC_SUPABASE_ANON_KEY)."
+  );
+}
+
+// Heuristic: decode JWT payload and see if role == 'service_role'.
+function isServiceRoleJWT(token: string): boolean {
+  const parts = token.split(".");
+  if (parts.length !== 3) return false;
+  try {
+    const payload = JSON.parse(Buffer.from(parts[1], "base64").toString());
+    return payload?.role === "service_role";
+  } catch {
+    return false;
+  }
+}
+
 function assertServerCredentials(): { url: string; key: string } {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) throw new Error("Supabase credentials missing");
+  if (!url) throw new Error("Supabase URL missing (NEXT_PUBLIC_SUPABASE_URL)");
+  const { key, from, serviceRole } = resolveSupabaseAdminKey();
+  if (!serviceRole) {
+    // Warn server-side only (does not leak full key)
+    // eslint-disable-next-line no-console
+    console.warn(
+      `[get-predictions-sko] Using non-service key from ${from}. Some rows may be blocked by RLS.`
+    );
+  } else {
+    // eslint-disable-next-line no-console
+    console.log(
+      `[get-predictions-sko] Using service role key from ${from} (${key.slice(0, 8)}… masked)`
+    );
+  }
   return { url, key };
 }
 
@@ -40,6 +103,8 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  const wallStart = Date.now();
+  const hrStart = process.hrtime.bigint();
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET");
     return res
@@ -48,6 +113,15 @@ export default async function handler(
   }
 
   try {
+    const debug = (req.query.debug ?? "").toString() === "1";
+    const phase: Record<string, number> = {};
+    const mark = (name: string, since?: number) => {
+      const now = Date.now();
+      phase[name] = now - (since ?? wallStart);
+      return now;
+    };
+    let t = wallStart;
+
     const asOfDate = parseIso(parseString(req.query.asOfDate));
     const since = parseIso(parseString(req.query.since));
     const until = parseIso(parseString(req.query.until));
@@ -58,11 +132,15 @@ export default async function handler(
       (parseString(req.query.order) ?? "desc").toLowerCase() === "asc"
         ? "asc"
         : "desc";
+    mark("parsed_query", t);
+    t = Date.now();
 
     const { url, key } = assertServerCredentials();
     const admin = createClient<Database>(url, key, {
       auth: { persistSession: false, autoRefreshToken: false }
     });
+    mark("client_init", t);
+    t = Date.now();
 
     let query = admin
       .from("predictions_sko")
@@ -78,12 +156,32 @@ export default async function handler(
     if (until) query = query.lte("as_of_date", until);
     if (playerIds?.length) query = query.in("player_id", playerIds);
 
+    const queryStart = Date.now();
     const { data, error } = await query;
+    const queryEnd = Date.now();
+    phase.query_ms = queryEnd - queryStart;
     if (error) throw error;
 
-    return res
-      .status(200)
-      .json({ success: true, count: data?.length ?? 0, rows: data ?? [] });
+    const totalMs = Number(
+      (process.hrtime.bigint() - hrStart) / BigInt(1_000_000)
+    );
+    res.setHeader("X-Execution-Time-ms", String(totalMs));
+
+    // Server-side log (masked) for performance tracking
+    // eslint-disable-next-line no-console
+    console.log(
+      `[get-predictions-sko] success rows=${data?.length ?? 0} totalMs=${totalMs} queryMs=${phase.query_ms}`
+    );
+
+    const basePayload: any = {
+      success: true,
+      count: data?.length ?? 0,
+      rows: data ?? [],
+      durationMs: totalMs,
+      queryMs: phase.query_ms
+    };
+    if (debug) basePayload.timings = phase;
+    return res.status(200).json(basePayload);
   } catch (err: any) {
     // eslint-disable-next-line no-console
     console.error("get-predictions-sko error", err?.message || err);

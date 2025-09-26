@@ -186,14 +186,22 @@ export default function TrendsIndexPage() {
 
   return (
     <div className={styles.page}>
-      <PredictionsHeader
-        latestRunDate={latestRunDate}
-        refreshing={refreshing}
-        onRefresh={handleRefresh}
-      />
+      <a href="#predictions-main" className={styles.skipLink}>
+        Skip to content
+      </a>
+      <header>
+        <PredictionsHeader
+          latestRunDate={latestRunDate}
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
+        />
+      </header>
 
       <div className={styles.controlsAndMetrics}>
-        <div className={styles.controls}>
+        <aside
+          className={styles.controls}
+          aria-label="Predictions filters and actions"
+        >
           <SearchBox onSelect={handlePlayerSelect} />
           <Stepper
             dateLabel={
@@ -204,16 +212,33 @@ export default function TrendsIndexPage() {
             busy={stepping}
           />
           <InfoPopover />
-        </div>
-        <MetricCards metrics={latestMetrics} />
+        </aside>
+        <section
+          aria-labelledby="metric-cards-heading"
+          role="region"
+          id="metric-summary"
+        >
+          <h2 id="metric-cards-heading" className="visually-hidden">
+            Prediction Metric Summary
+          </h2>
+          <MetricCards metrics={latestMetrics} />
+        </section>
       </div>
 
-      {error ? <div className={styles.error}>{error}</div> : null}
+      {error ? (
+        <div className={styles.error} role="alert">
+          {error}
+        </div>
+      ) : null}
       {stepStatus ? (
-        <div className={styles.tableActions}>{stepStatus}</div>
+        <div className={styles.tableActions} aria-live="polite">
+          {stepStatus}
+        </div>
       ) : null}
 
-      <PredictionsLeaderboard asOfDate={asOfDate} limit={MAX_PLAYERS} />
+      <main id="predictions-main" role="main">
+        <PredictionsLeaderboard asOfDate={asOfDate} limit={MAX_PLAYERS} />
+      </main>
     </div>
   );
 }

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import logging
 import os
+import time
 from dataclasses import dataclass
 from datetime import date, timedelta
 from pathlib import Path
@@ -425,6 +426,7 @@ def main() -> None:
     """Entry point for CLI usage."""
 
     logging.basicConfig(level=logging.INFO)
+    wall_start = time.perf_counter()
 
     load_env_files(
         [
@@ -492,9 +494,22 @@ def main() -> None:
         config_kwargs["lookback_days"] = lookback_days
 
     config = FeatureBuilderConfig(**config_kwargs)
+    extract_start = time.perf_counter()
     dataset = extract_features(config)
+    extract_elapsed = time.perf_counter() - extract_start
+
+    persist_start = time.perf_counter()
     output_path = persist_features(dataset, config)
-    print(f"Features saved to {output_path}")
+    persist_elapsed = time.perf_counter() - persist_start
+
+    total_elapsed = time.perf_counter() - wall_start
+    LOG.info(
+        "Feature build timings — extract=%.2fs persist=%.2fs total=%.2fs",
+        extract_elapsed,
+        persist_elapsed,
+        total_elapsed,
+    )
+    print(f"Features saved to {output_path} (extract={extract_elapsed:.2f}s total={total_elapsed:.2f}s)")
 
 
 if __name__ == "__main__":

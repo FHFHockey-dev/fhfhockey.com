@@ -98,34 +98,78 @@ export default function PredictionsLeaderboard({
     if (!enableSpark) return previousSparkMap.current;
     if (!sparkRows.length) return previousSparkMap.current; // preserve last non-empty
     const acc: Record<number, SparklinePoint[]> = {};
+    // Group rows by player->date, then pick the 'best' (sko present else highest pred_points)
+    const byPlayerDate: Record<string, PredictionRow[]> = {};
     for (const r of sparkRows) {
-      const pid = Number(r.player_id);
-      if (!acc[pid]) acc[pid] = [];
-      // Some historical rows may not yet have an explicit sKO value populated
-      // (earlier backfills or legacy pipeline versions). When r.sko is null we
-      // derive a reasonable approximation so the sparkline still reflects
-      // historical movement instead of collapsing to a single duplicate point.
-      // Definition: sKO ≈ predicted points * stability multiplier.
-      let derivedValue: number | null = null;
-      if (r.sko != null) {
-        derivedValue = Number(r.sko);
-      } else if (
-        r.pred_points != null &&
-        r.stability_multiplier != null &&
-        !Number.isNaN(r.pred_points) &&
-        !Number.isNaN(r.stability_multiplier)
-      ) {
-        derivedValue = Number(r.pred_points) * Number(r.stability_multiplier);
-      } else if (r.pred_points != null && !Number.isNaN(r.pred_points)) {
-        // Last‑chance fallback: use raw prediction so we at least show trend.
-        derivedValue = Number(r.pred_points);
+      const key = `${r.player_id}|${r.as_of_date}`;
+      if (!byPlayerDate[key]) byPlayerDate[key] = [];
+      byPlayerDate[key].push(r as PredictionRow);
+    }
+    for (const key of Object.keys(byPlayerDate)) {
+      const [pidStr, date] = key.split("|");
+      const pid = Number(pidStr);
+      const rowsForDay = byPlayerDate[key];
+      // Prefer a row with non-null sko. If multiple, take the one with latest created_at.
+      let chosen = rowsForDay
+        .filter((r) => r.sko != null)
+        .sort((a, b) => a.created_at.localeCompare(b.created_at))
+        .pop();
+      if (!chosen) {
+        // fallback: highest pred_points
+        chosen = rowsForDay
+          .filter((r) => r.pred_points != null)
+          .sort((a, b) => (a.pred_points ?? 0) - (b.pred_points ?? 0))
+          .pop();
       }
+      if (!chosen) chosen = rowsForDay[0];
+      if (!acc[pid]) acc[pid] = [];
 
-      acc[pid].push({
-        date: r.as_of_date,
-        value: derivedValue
-      });
-      if (acc[pid].length > 32) acc[pid] = acc[pid].slice(acc[pid].length - 32); // allow a little more history
+      // Derive value (same fallback logic)
+      let value: number | null = null;
+      if (chosen.sko != null && !Number.isNaN(chosen.sko)) {
+        value = Number(chosen.sko);
+      } else if (
+        chosen.pred_points != null &&
+        chosen.stability_multiplier != null &&
+        !Number.isNaN(chosen.pred_points) &&
+        !Number.isNaN(chosen.stability_multiplier)
+      ) {
+        value =
+          Number(chosen.pred_points) * Number(chosen.stability_multiplier);
+      } else if (
+        chosen.pred_points != null &&
+        !Number.isNaN(chosen.pred_points)
+      ) {
+        value = Number(chosen.pred_points);
+      }
+      acc[pid].push({ date, value });
+      if (acc[pid].length > 45) acc[pid] = acc[pid].slice(acc[pid].length - 45);
+    }
+    // Dev debug: log one example player's sparkline to inspect variability
+    if (process.env.NODE_ENV === "development") {
+      const firstPid = Object.keys(acc)[0];
+      if (firstPid) {
+        // eslint-disable-next-line no-console
+        console.log("[sparkline-debug] pid", firstPid, acc[Number(firstPid)]);
+      }
+      // Additional summary for first few players to inspect variability
+      const summaries = Object.entries(acc)
+        .slice(0, 5)
+        .map(([pid, arr]) => {
+          const values = arr
+            .map((p) => p.value)
+            .filter((v): v is number => v != null && !Number.isNaN(v));
+          if (!values.length) {
+            return { pid, n: arr.length, empty: true };
+          }
+          const min = Math.min(...values);
+          const max = Math.max(...values);
+          const range = max - min;
+          const uniq = new Set(values.map((v) => v.toFixed(4))).size;
+          return { pid, n: arr.length, min, max, range, uniq };
+        });
+      // eslint-disable-next-line no-console
+      console.log("[sparkline-summary]", summaries);
     }
     previousSparkMap.current = acc;
     return acc;

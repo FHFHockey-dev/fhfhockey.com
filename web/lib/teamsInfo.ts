@@ -494,22 +494,6 @@ export const teamsInfo: {
     abbrev: "WPG",
     location: "Winnipeg"
   },
-  ARI: {
-    name: "Arizona Coyotes",
-    shortName: "Coyotes",
-    primaryColor: "#8C2633", // Red
-    secondaryColor: "#DDCBA4", // Tan
-    jersey: "#ffffff", // White
-    accent: "#A9431E", // Brick Red
-    alt: "#5F259F", // Purple
-    lightColor: "#d72d49", // Lighter Red
-    darkColor: "#6c0415", // Darker Red
-    franchiseId: 28,
-    nstAbbr: "ARI",
-    id: 53,
-    abbrev: "ARI",
-    location: "Arizona"
-  },
   VGK: {
     name: "Vegas Golden Knights",
     shortName: "Knights",
@@ -593,7 +577,6 @@ export const teamNameToAbbreviationMap: { [name: string]: string } = {
   "Columbus Blue Jackets": "CBJ",
   "Minnesota Wild": "MIN",
   "Winnipeg Jets": "WPG",
-  "Arizona Coyotes": "ARI",
   "Vegas Golden Knights": "VGK",
   "Seattle Kraken": "SEA",
   "Utah Mammoth": "UTA",
