@@ -2,10 +2,12 @@
   "version": 2,
   "functions": {
     "api/**/*.py": {
-      "runtime": "python3.11"
+      "maxDuration": 240,
+      "memory": 1024
     }
   },
   "routes": [
+    { "src": "/sko/pipeline", "dest": "/api/sko/pipeline/index.py" },
     { "src": "/api/(.*)", "dest": "/api/$1" }
   ]
 }
