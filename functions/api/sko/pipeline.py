@@ -1,4 +1,8 @@
 from flask import Flask, request, jsonify
+try:
+    from vercel_wsgi import handle as _vercel_handle
+except Exception:
+    _vercel_handle = None
 import os
 from lib.sko_pipeline import trigger_sko_step_forward
 
@@ -36,3 +40,10 @@ def run_sko_pipeline():
     result = trigger_sko_step_forward(payload)
     status = 200 if result.get("success") else 500
     return jsonify(result), status
+
+# Expose a Vercel-compatible handler
+if _vercel_handle:
+    handler = _vercel_handle(app)
+
+if __name__ == "__main__":
+    app.run(debug=True, port=int(os.environ.get("PORT", 8000)))

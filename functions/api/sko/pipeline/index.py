@@ -1,4 +1,8 @@
 from flask import Flask, request, jsonify
+try:
+    from vercel_wsgi import handle as _vercel_handle
+except Exception:
+    _vercel_handle = None
 import os
 from lib.sko_pipeline import trigger_sko_step_forward
 
@@ -19,6 +23,8 @@ def _check_auth(req) -> tuple[bool, str]:
 
 
 @app.route("/", methods=["POST"]) 
+@app.route("/api/sko/pipeline", methods=["POST"]) 
+@app.route("/sko/pipeline", methods=["POST"]) 
 def run_sko_pipeline():
     ok, msg = _check_auth(request)
     if not ok:
@@ -35,3 +41,6 @@ def run_sko_pipeline():
     result = trigger_sko_step_forward(payload)
     status = 200 if result.get("success") else 500
     return jsonify(result), status
+
+if _vercel_handle:
+    handler = _vercel_handle(app)

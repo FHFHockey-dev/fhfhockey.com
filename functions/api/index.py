@@ -1,4 +1,8 @@
 from flask import Flask, request, jsonify
+try:
+    from vercel_wsgi import handle as _vercel_handle
+except Exception:
+    _vercel_handle = None
 from api.fetch_team_table import fetch_team_table
 from lib.sko_pipeline import trigger_sko_step_forward
 import os
@@ -144,3 +148,7 @@ def run_sko_pipeline_step():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+# Expose a Vercel-compatible handler
+if _vercel_handle:
+    handler = _vercel_handle(app)

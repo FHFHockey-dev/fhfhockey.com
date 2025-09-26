@@ -25,8 +25,9 @@
 }
 
 .subtitle {
+  font-family: "Roboto Condensed", sans-serif;
   color: rgba(255, 255, 255, 0.65);
-  font-size: 0.95rem;
+  font-size: 1rem;
   max-width: 640px;
 }
 
@@ -38,171 +39,66 @@
   min-width: 200px;
 }
 
+.controlsAndMetrics {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
 .controls {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 1rem;
-  align-items: flex-start;
+  position: sticky;
+  top: 80px; /* Adjust based on nav height */
+}
+
+.searchContainer,
+.stepper,
+.infoWrapper {
+  width: 100%;
+}
+
+.stepper,
+.searchContainer > :global(input),
+.infoWrapper > :global(button) {
+  height: 42px; /* Consistent height */
+  display: flex;
+  align-items: center;
+}
+
+.searchContainer > :global(input) {
+  padding-top: 0;
+  padding-bottom: 0;
 }
 
 .infoWrapper {
-  position: relative;
+  justify-content: flex-start;
 }
 
 .infoButton {
   background: rgba(79, 195, 247, 0.15);
   border: 1px solid rgba(79, 195, 247, 0.35);
   color: #4fc3f7;
-  border-radius: 999px;
-  width: 28px;
-  height: 28px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  border-radius: 8px;
+  width: 100%;
+  height: 100%;
   cursor: pointer;
-  transition:
-    background 0.2s ease,
-    transform 0.08s ease;
+  transition: background 0.2s ease;
+  font-size: 0.9rem;
+  font-weight: 500;
 }
 
 .infoButton:hover {
   background: rgba(79, 195, 247, 0.3);
 }
 
-.infoButton:active {
-  transform: scale(0.98);
-}
-
 .infoGlyph {
+  margin-right: 0.5rem;
   font-weight: 700;
-  font-family:
-    system-ui,
-    -apple-system,
-    "Segoe UI",
-    Roboto,
-    Ubuntu,
-    "Helvetica Neue",
-    Arial;
-}
-
-.infoPanel {
-  position: absolute;
-  top: 36px;
-  right: 0;
-  width: min(520px, 92vw);
-  z-index: 50;
-  background: rgba(10, 14, 26, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-  padding: 0.5rem;
-}
-
-.infoPanelHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.25rem 0.5rem 0.5rem;
-  font-weight: 600;
-}
-
-.infoClose {
-  background: transparent;
-  border: 0;
-  color: rgba(255, 255, 255, 0.7);
-  cursor: pointer;
-  font-size: 1.1rem;
-}
-
-.searchContainer {
-  position: relative;
-  min-width: 260px;
-  max-width: 360px;
-  width: 100%;
-}
-
-.searchInput {
-  width: 100%;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 8px;
-  color: inherit;
-  padding: 0.5rem 0.75rem;
-  font-size: 0.9rem;
-}
-
-.searchResults {
-  position: absolute;
-  top: calc(100% + 0.25rem);
-  left: 0;
-  right: 0;
-  background: rgba(10, 14, 26, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
-  padding: 0.25rem 0;
-  max-height: 260px;
-  overflow-y: auto;
-  z-index: 5;
-}
-
-.searchResultItem {
-  padding: 0.45rem 0.75rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  cursor: pointer;
-  font-size: 0.85rem;
-  transition: background 0.15s ease;
-}
-
-.searchResultItem:hover {
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.emptyResult {
-  padding: 0.5rem 0.75rem;
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 0.8rem;
-}
-
-.stepper {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.5rem 0.75rem;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
-}
-
-.stepperLabel {
-  font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.75);
-}
-
-.stepperButton {
-  background: rgba(79, 195, 247, 0.15);
-  border: 1px solid rgba(79, 195, 247, 0.3);
-  color: #4fc3f7;
-  border-radius: 6px;
-  padding: 0.35rem 0.65rem;
-  cursor: pointer;
-  font-size: 0.8rem;
-  transition: background 0.2s ease;
-}
-
-.stepperButton:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-
-.stepperButton:not(:disabled):hover {
-  background: rgba(79, 195, 247, 0.3);
-}
-
-.stepperDate {
-  font-weight: 600;
-  font-size: 0.9rem;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu,
+    "Helvetica Neue", Arial;
 }
 
 .tableActions {
@@ -214,25 +110,6 @@
   color: rgba(255, 255, 255, 0.6);
 }
 
-.asOf {
-  font-weight: 500;
-}
-
-.refreshButton {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 8px;
-  color: inherit;
-  cursor: pointer;
-  font-size: 0.85rem;
-  padding: 0.4rem 0.75rem;
-  transition: background 0.2s ease;
-}
-
-.refreshButton:hover {
-  background: rgba(255, 255, 255, 0.14);
-}
-
 .metrics {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -240,14 +117,32 @@
 }
 
 .metricCard {
-  backdrop-filter: blur(12px);
-  background: rgba(255, 255, 255, 0.04);
+  background: #10141e;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
   padding: 1rem;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.metricCard::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #4fc3f7; /* Accent color */
+  opacity: 0.75;
+}
+
+.metricCard:hover {
+  transform: translateY(-3px);
+  background: #141924;
 }
 
 .metricTitle {
@@ -285,8 +180,10 @@
 
 .playerTable th,
 .playerTable td {
-  padding: 0.75rem 1rem;
+  padding: 0.5rem 1rem;
   text-align: left;
+  vertical-align: middle;
+  height: 56px;
 }
 
 .playerTable tbody tr:nth-child(odd) {
@@ -304,6 +201,7 @@
 .playerCell {
   display: flex;
   flex-direction: column;
+  justify-content: center; /* Vertical centering */
 }
 
 .playerName {
@@ -321,7 +219,7 @@
 
 .sparklineSvg {
   width: 100%;
-  height: 48px;
+  height: 40px;
 }
 
 .sparklineBaseline {
@@ -356,13 +254,26 @@
   color: rgba(255, 255, 255, 0.7);
 }
 
+@media (max-width: 1024px) {
+  .controlsAndMetrics {
+    grid-template-columns: 1fr;
+  }
+
+  .controls {
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .searchContainer {
+    min-width: 260px;
+    flex-grow: 1;
+  }
+}
+
 @media (max-width: 768px) {
   .page {
     padding: 1.5rem;
-  }
-
-  .metrics {
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   }
 
   .controls {

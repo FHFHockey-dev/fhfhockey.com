@@ -1,4 +1,8 @@
 from flask import Flask, request, jsonify
+try:
+    from vercel_wsgi import handle as _vercel_handle
+except Exception:
+    _vercel_handle = None
 import os
 
 app = Flask(__name__)
@@ -18,6 +22,8 @@ def _check_auth(req) -> tuple[bool, str]:
 
 
 @app.route("/", methods=["POST"]) 
+@app.route("/api/sko/pipeline-step", methods=["POST"]) 
+@app.route("/sko/pipeline-step", methods=["POST"]) 
 def run_sko_pipeline_step():
     ok, msg = _check_auth(request)
     if not ok:
@@ -49,3 +55,6 @@ def run_sko_pipeline_step():
             "seasonCutoff": season_cutoff,
         },
     }), 200
+
+if _vercel_handle:
+    handler = _vercel_handle(app)

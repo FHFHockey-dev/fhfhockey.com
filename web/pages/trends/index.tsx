@@ -192,27 +192,26 @@ export default function TrendsIndexPage() {
         onRefresh={handleRefresh}
       />
 
-      <div className={styles.controls}>
-        <SearchBox onSelect={handlePlayerSelect} />
-
-        <Stepper
-          dateLabel={asOfDate ? format(new Date(asOfDate), "MMM d, yyyy") : "—"}
-          onStep={handleStepForward}
-          disabled={!asOfDate || stepping}
-          busy={stepping}
-        />
-
-        <InfoPopover />
+      <div className={styles.controlsAndMetrics}>
+        <div className={styles.controls}>
+          <SearchBox onSelect={handlePlayerSelect} />
+          <Stepper
+            dateLabel={
+              asOfDate ? format(new Date(asOfDate), "MMM d, yyyy") : "—"
+            }
+            onStep={handleStepForward}
+            disabled={!asOfDate || stepping}
+            busy={stepping}
+          />
+          <InfoPopover />
+        </div>
+        <MetricCards metrics={latestMetrics} />
       </div>
 
       {error ? <div className={styles.error}>{error}</div> : null}
       {stepStatus ? (
         <div className={styles.tableActions}>{stepStatus}</div>
       ) : null}
-
-      <SkoExplainer />
-
-      <MetricCards metrics={latestMetrics} />
 
       <PredictionsLeaderboard asOfDate={asOfDate} limit={MAX_PLAYERS} />
     </div>
