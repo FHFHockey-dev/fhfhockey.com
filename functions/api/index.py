@@ -2,6 +2,11 @@ from flask import Flask, request, jsonify
 from api.fetch_team_table import fetch_team_table
 from lib.sko_pipeline import trigger_sko_step_forward
 
+try:  # Provide a Vercel-compatible handler when deployed
+    from vercel_wsgi import handle as _vercel_handle
+except Exception:  # pragma: no cover - local dev path
+    _vercel_handle = None
+
 app = Flask(__name__)
 
 @app.route('/')
@@ -63,5 +68,9 @@ def run_sko_pipeline():
     return jsonify(result), status
 
 
-if __name__ == '__main__':
-    app.run(debug=True)
+if _vercel_handle:
+    # Vercel will look for a top-level 'handler'
+    handler = _vercel_handle(app)
+
+if __name__ == '__main__':  # Local dev
+    app.run(debug=True, port=5001)
