@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "builds": [
+    { "src": "functions/api/**/*.py", "use": "@vercel/python@3.2.7" }
+  ],
+  "functions": {
+    "functions/api/**/*.py": {
+      "runtime": "python3.11",
+      "maxDuration": 240,
+      "memory": 1024
+    }
+  },
+  "routes": [
+    { "src": "/sko/pipeline", "dest": "functions/api/index.py" },
+    { "src": "/api/(.*)", "dest": "functions/api/$1" }
+  ]
+}
