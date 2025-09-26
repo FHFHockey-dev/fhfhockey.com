@@ -1,55 +1,57 @@
-import type { NextApiRequest, NextApiResponse } from "next";
+import type { NextApiRequest, NextApiResponse } from 'next';
 
-function checkAuth(req: NextApiRequest): [boolean, string] {
+interface PipelineStepResponse {
+  success: boolean;
+  message: string;
+  step?: string;
+  echo?: Record<string, any>;
+}
+
+const ALLOWED_STEPS = new Set(['backfill','train','score','upload']);
+
+function checkAuth(req: NextApiRequest): [boolean,string] {
   const expected = process.env.SKO_PIPELINE_SECRET;
-  if (!expected) return [true, "no secret configured"];
-  const auth = req.headers.authorization || "";
-  if (!auth.startsWith("Bearer ")) return [false, "missing bearer token"];
-  const token = auth.split(" ", 2)[1];
-  if (token !== expected) return [false, "invalid token"];
-  return [true, "ok"];
+  if (!expected) return [true,'no secret configured'];
+  const auth = req.headers.authorization || '';
+  if (!auth.startsWith('Bearer ')) return [false,'missing bearer token'];
+  const token = auth.slice(7);
+  if (token !== expected) return [false,'invalid token'];
+  return [true,'ok'];
 }
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse
+  res: NextApiResponse<PipelineStepResponse>
 ) {
-  if (req.method !== "POST") {
-    res.setHeader("Allow", "POST");
-    return res
-      .status(405)
-      .json({ success: false, error: "Method Not Allowed" });
+  if (req.method !== 'POST') {
+    res.setHeader('Allow','POST');
+    return res.status(405).json({ success: false, message: 'Method not allowed' });
   }
+  const [ok,msg] = checkAuth(req);
+  if (!ok) return res.status(401).json({ success:false, message: msg });
 
-  const [ok, msg] = checkAuth(req);
-  if (!ok) return res.status(401).json({ success: false, message: msg });
-
-  const { step, asOfDate, as_of_date, horizon, seasonCutoff, season_cutoff } =
-    req.body || {};
-  const s = (step || "").trim();
-  if (!s)
-    return res
-      .status(400)
-      .json({ success: false, message: "Missing 'step' in payload" });
-  const allowed = new Set(["backfill", "train", "score", "upload"]);
-  if (!allowed.has(s)) {
-    return res
-      .status(400)
-      .json({
-        success: false,
-        message: `Unknown step '${s}'. Allowed: ${Array.from(allowed).sort().join(", ")}`
-      });
+  let payload: any = {};
+  if (typeof req.body === 'string' && req.body) {
+    try { payload = JSON.parse(req.body); } catch { payload = {}; }
+  } else if (req.body && typeof req.body === 'object') {
+    payload = req.body;
   }
+  const step = (payload.step || '').trim();
+  if (!step) {
+    return res.status(400).json({ success:false, message: "Missing 'step' in payload" });
+  }
+  if (!ALLOWED_STEPS.has(step)) {
+    return res.status(400).json({ success:false, message: `Unknown step '${step}'. Allowed: ${Array.from(ALLOWED_STEPS).sort().join(', ')}` });
+  }
+  const asOfDate = payload.asOfDate || payload.as_of_date;
+  const horizon = payload.horizon;
+  const seasonCutoff = payload.seasonCutoff || payload.season_cutoff;
 
-  // Quick return — no long work here. Or enqueue lightweight task if needed.
+  // Placeholder: integrate actual execution logic here.
   return res.status(200).json({
     success: true,
-    message: `Accepted step '${s}'`,
-    step: s,
-    echo: {
-      asOfDate: asOfDate || as_of_date,
-      horizon,
-      seasonCutoff: seasonCutoff || season_cutoff
-    }
+    message: `Accepted step '${step}'`,
+    step,
+    echo: { asOfDate, horizon, seasonCutoff }
   });
 }
