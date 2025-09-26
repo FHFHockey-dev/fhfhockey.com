@@ -23,6 +23,8 @@ def _check_auth(req) -> tuple[bool, str]:
 
 
 @app.route("/", methods=["POST"]) 
+@app.route("/api/sko/pipeline", methods=["POST"]) 
+@app.route("/sko/pipeline", methods=["POST"]) 
 def run_sko_pipeline():
     ok, msg = _check_auth(request)
     if not ok:
@@ -30,7 +32,6 @@ def run_sko_pipeline():
 
     payload = dict(request.get_json(silent=True) or {})
 
-    # Support query-string steps/step like ...?steps=a,b,c
     if 'step' not in payload and 'steps' not in payload:
         if 'step' in request.args:
             payload['step'] = request.args['step']
@@ -41,9 +42,5 @@ def run_sko_pipeline():
     status = 200 if result.get("success") else 500
     return jsonify(result), status
 
-# Expose a Vercel-compatible handler
 if _vercel_handle:
     handler = _vercel_handle(app)
-
-if __name__ == "__main__":
-    app.run(debug=True, port=int(os.environ.get("PORT", 8000)))
