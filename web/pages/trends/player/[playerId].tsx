@@ -91,14 +91,10 @@ function buildTrendData(
     const predicted = prediction.pred_mean ?? null;
     const actualRow = sortedGames.find((g) => g.date === asOf);
     const actual = actualRow ? actualRow.points : null;
-    const diff = actual !== null && predicted !== null ? actual - predicted : null;
-    const direction: "over" | "under" | "match" = diff == null
-      ? "match"
-      : diff < 0
-        ? "over"
-        : diff > 0
-          ? "under"
-          : "match";
+    const diff =
+      actual !== null && predicted !== null ? actual - predicted : null;
+    const direction: "over" | "under" | "match" =
+      diff == null ? "match" : diff < 0 ? "over" : diff > 0 ? "under" : "match";
     const low = prediction.pred_low ?? null;
     const high = prediction.pred_high ?? null;
     const dateObj = new Date(asOf);
@@ -132,7 +128,31 @@ function buildTrendData(
       });
   }
 
-  return points.filter((entry) => entry.predicted !== null || entry.actual !== null);
+  // Ensure every played game date appears even if no prediction row existed (adds actual-only points)
+  const existingDateSet = new Set(points.map((p) => p.date));
+  for (const g of sortedGames) {
+    if (!existingDateSet.has(g.date)) {
+      const dateObj = new Date(g.date);
+      points.push({
+        date: g.date,
+        predicted: null,
+        actual: g.points,
+        diff: null,
+        low: null,
+        high: null,
+        direction: "match",
+        timestamp: dateObj.getTime(),
+        dateObj
+      });
+    }
+  }
+
+  // Sort after augmentation
+  points.sort((a, b) => a.timestamp - b.timestamp);
+
+  return points.filter(
+    (entry) => entry.predicted !== null || entry.actual !== null
+  );
 }
 
 function computeMetrics(data: TrendPoint[]) {
@@ -392,73 +412,6 @@ function ProjectionChart({ data }: ProjectionChartProps) {
 
     const candleGroup = focusContent.append("g").attr("class", "candles");
 
-    const brush = d3
-      .brushX()
-      .extent([
-        [0, 0],
-        [innerWidth, contextHeight]
-      ])
-      .on("brush end", (event) => {
-        if (event.selection) {
-          const [x0, x1] = event.selection.map(x2.invert);
-          x.domain([x0, x1]);
-        } else {
-          x.domain(x2.domain() as [Date, Date]);
-        }
-        updateFocus();
-      });
-
-    context
-      .append("g")
-      .attr("class", "brush")
-      .call(brush as any)
-      .call(brush.move as any, x2.range());
-
-    const crosshair = focus
-      .append("g")
-      .style("display", "none")
-      .attr("class", "crosshair");
-
-    const crosshairLine = crosshair
-      .append("line")
-      .attr("stroke", "rgba(255,255,255,0.45)")
-      .attr("stroke-dasharray", "4 4")
-      .attr("y1", 0)
-      .attr("y2", focusHeight);
-
-    const crosshairHorizontal = crosshair
-      .append("line")
-      .attr("stroke", "rgba(255,255,255,0.25)")
-      .attr("stroke-dasharray", "4 4");
-
-    const predictedDot = crosshair
-      .append("circle")
-      .attr("r", 4)
-      .attr("fill", "#4fc3f7")
-      .attr("stroke", "#0e1c2f")
-      .attr("stroke-width", 1.5);
-
-    const actualDot = crosshair
-      .append("circle")
-      .attr("r", 4)
-      .attr("fill", "#44d07b")
-      .attr("stroke", "#0e1c2f")
-      .attr("stroke-width", 1.5);
-
-    focusContent
-      .append("rect")
-      .attr("class", "overlay")
-      .attr("width", innerWidth)
-      .attr("height", focusHeight)
-      .style("fill", "transparent")
-      .style("pointer-events", "all")
-      .on("mousemove", pointerMoved)
-      .on("mouseleave", pointerLeft);
-
-    const bisectDate = d3.bisector<TrendPoint, number>((d) =>
-      d.dateObj.getTime()
-    ).left;
-
     // Divider between historical (actual present) and future (no actual yet)
     const futureDivider = focusContent
       .append("line")
@@ -542,6 +495,74 @@ function ProjectionChart({ data }: ProjectionChartProps) {
         futureDivider.style("display", "none");
       }
     }
+
+    const brush = d3
+      .brushX()
+      .extent([
+        [0, 0],
+        [innerWidth, contextHeight]
+      ])
+      .on("brush end", (event) => {
+        if (event.selection) {
+          const [x0, x1] = event.selection.map(x2.invert);
+          x.domain([x0, x1]);
+        } else {
+          x.domain(x2.domain() as [Date, Date]);
+        }
+        updateFocus();
+      });
+
+    context
+      .append("g")
+      .attr("class", "brush")
+      .call(brush as any)
+      .call(brush.move as any, x2.range());
+
+    const crosshair = focus
+      .append("g")
+      .style("display", "none")
+      .attr("class", "crosshair");
+
+    const crosshairLine = crosshair
+      .append("line")
+      .attr("stroke", "rgba(255,255,255,0.45)")
+      .attr("stroke-dasharray", "4 4")
+      .attr("y1", 0)
+      .attr("y2", focusHeight);
+
+    const crosshairHorizontal = crosshair
+      .append("line")
+      .attr("stroke", "rgba(255,255,255,0.25)")
+      .attr("stroke-dasharray", "4 4");
+
+    const predictedDot = crosshair
+      .append("circle")
+      .attr("r", 4)
+      .attr("fill", "#4fc3f7")
+      .attr("stroke", "#0e1c2f")
+      .attr("stroke-width", 1.5);
+
+    const actualDot = crosshair
+      .append("circle")
+      .attr("r", 4)
+      .attr("fill", "#44d07b")
+      .attr("stroke", "#0e1c2f")
+      .attr("stroke-width", 1.5);
+
+    focusContent
+      .append("rect")
+      .attr("class", "overlay")
+      .attr("width", innerWidth)
+      .attr("height", focusHeight)
+      .style("fill", "transparent")
+      .style("pointer-events", "all")
+      .on("mousemove", pointerMoved)
+      .on("mouseleave", pointerLeft);
+
+    const bisectDate = d3.bisector<TrendPoint, number>((d) =>
+      d.dateObj.getTime()
+    ).left;
+
 
     function pointerMoved(event: any) {
       const [mouseX] = d3.pointer(event);
@@ -737,7 +758,9 @@ export default function PlayerTrendPage() {
         .map((row) => row.base_as_of_date)
         .filter((value): value is string => Boolean(value))
         .sort((a, b) => a.localeCompare(b));
-      const latestBase = baseDates.length ? baseDates[baseDates.length - 1] : null;
+      const latestBase = baseDates.length
+        ? baseDates[baseDates.length - 1]
+        : null;
 
       const latestForecasts = latestBase
         ? allPredictions
@@ -756,7 +779,10 @@ export default function PlayerTrendPage() {
           : 0
       );
 
-      const built = buildTrendData(allPredictions, (gameRows ?? []) as GameRow[]);
+      const built = buildTrendData(
+        allPredictions,
+        (gameRows ?? []) as GameRow[]
+      );
       setTrendData(built);
     } catch (err: any) {
       // eslint-disable-next-line no-console
@@ -785,7 +811,8 @@ export default function PlayerTrendPage() {
     return forecastSummary[forecastSummary.length - 1].as_of_date;
   }, [forecastSummary]);
 
-  const horizonWindow = horizon || (forecastSummary.length ? forecastSummary.length : 0);
+  const horizonWindow =
+    horizon || (forecastSummary.length ? forecastSummary.length : 0);
   const horizonLabel = horizonWindow
     ? `${horizonWindow}-day outlook`
     : "Day outlook";
@@ -822,7 +849,8 @@ export default function PlayerTrendPage() {
           </span>
           {forecastEndDate ? (
             <span>
-              Projecting through {format(new Date(forecastEndDate), "MMM d, yyyy")}
+              Projecting through{" "}
+              {format(new Date(forecastEndDate), "MMM d, yyyy")}
             </span>
           ) : null}
           {latestDiff !== null ? (
