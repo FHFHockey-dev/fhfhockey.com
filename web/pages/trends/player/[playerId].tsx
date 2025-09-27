@@ -117,6 +117,9 @@ function buildTrendData(
     .sort((a, b) => a.as_of_date.localeCompare(b.as_of_date))
     .forEach(addPoint);
 
+  // Track which dates are added from the future horizon (so we can mask actuals beyond the historical vantage)
+  const futureAddedDates: string[] = [];
+
   // Future horizon: take all forecast_value>=1 from the latest base that are NOT already in points
   if (latestBase) {
     const existingDates = new Set(points.map((p) => p.date));
@@ -124,7 +127,10 @@ function buildTrendData(
       .filter((p) => p.base_as_of_date === latestBase && p.forecast_value >= 1)
       .sort((a, b) => a.as_of_date.localeCompare(b.as_of_date))
       .forEach((p) => {
-        if (!existingDates.has(p.as_of_date)) addPoint(p);
+        if (!existingDates.has(p.as_of_date)) {
+          addPoint(p);
+          futureAddedDates.push(p.as_of_date);
+        }
       });
   }
 
@@ -149,6 +155,20 @@ function buildTrendData(
 
   // Sort after augmentation
   points.sort((a, b) => a.timestamp - b.timestamp);
+
+  // Mask (hide) actual results that would not have been known yet at the time of the latest model run
+  if (futureAddedDates.length) {
+    const firstFuture = futureAddedDates
+      .map((d) => new Date(d).getTime())
+      .sort((a, b) => a - b)[0];
+    for (const pt of points) {
+      if (pt.timestamp >= firstFuture) {
+        pt.actual = null;
+        pt.diff = null;
+        pt.direction = "match"; // neutral when actual unknown
+      }
+    }
+  }
 
   return points.filter(
     (entry) => entry.predicted !== null || entry.actual !== null
@@ -680,6 +700,15 @@ function ProjectionChart({ data }: ProjectionChartProps) {
   );
 }
 
+function seasonOf(date: Date) {
+  // NHL-style season starting in Jul/Aug (month index >=7) -> seasonStartYear-current+1 short form
+  const y = date.getFullYear();
+  const m = date.getMonth(); // 0-based
+  const startYear = m >= 7 ? y : y - 1;
+  const endYearShort = (startYear + 1).toString().slice(-2);
+  return `${startYear}-${endYearShort}`;
+}
+
 export default function PlayerTrendPage() {
   const router = useRouter();
   const [meta, setMeta] = useState<PlayerMeta | null>(null);
@@ -689,6 +718,8 @@ export default function PlayerTrendPage() {
   const [error, setError] = useState<string | null>(null);
   const [horizon, setHorizon] = useState<number>(5);
   const [lastRunDate, setLastRunDate] = useState<string | null>(null);
+  const [seasons, setSeasons] = useState<string[]>([]);
+  const [selectedSeason, setSelectedSeason] = useState<string>("all");
 
   const playerId = useMemo(() => {
     if (!router.isReady) return null;
@@ -784,6 +815,16 @@ export default function PlayerTrendPage() {
         (gameRows ?? []) as GameRow[]
       );
       setTrendData(built);
+
+      // Derive seasons from built data
+      const seasonSet = new Set<string>();
+      for (const p of built) seasonSet.add(seasonOf(p.dateObj));
+      const seasonList = Array.from(seasonSet).sort((a, b) => a.localeCompare(b));
+      setSeasons(seasonList);
+      if (seasonList.length && selectedSeason === "all") {
+        // default to latest season (last in sorted list)
+        setSelectedSeason(seasonList[seasonList.length - 1]);
+      }
     } catch (err: any) {
       // eslint-disable-next-line no-console
       console.error("Player trend load error", err);
@@ -798,13 +839,20 @@ export default function PlayerTrendPage() {
     fetchPlayerData();
   }, [playerId, fetchPlayerData]);
 
-  const metrics = useMemo(() => computeMetrics(trendData), [trendData]);
+  const filteredTrendData = useMemo(() => {
+    if (selectedSeason === "all") return trendData;
+    return trendData.filter(
+      (p) => seasonOf(p.dateObj) === selectedSeason
+    );
+  }, [trendData, selectedSeason]);
 
-  const latestDirection = trendData.length
-    ? trendData[trendData.length - 1].direction
+  const metrics = useMemo(() => computeMetrics(filteredTrendData), [filteredTrendData]);
+
+  const latestDirection = filteredTrendData.length
+    ? filteredTrendData[filteredTrendData.length - 1].direction
     : null;
-  const latestDiff = trendData.length
-    ? (trendData[trendData.length - 1].diff ?? null)
+  const latestDiff = filteredTrendData.length
+    ? (filteredTrendData[filteredTrendData.length - 1].diff ?? null)
     : null;
   const forecastEndDate = useMemo(() => {
     if (!forecastSummary.length) return null;
@@ -944,7 +992,7 @@ export default function PlayerTrendPage() {
         </div>
       ) : null}
 
-      {trendData.length ? (
+      {filteredTrendData.length ? (
         <div className={styles.chartCard}>
           <div className={styles.chartHeader}>
             <div className={styles.chartTitle}>Projection vs Actual</div>
@@ -953,12 +1001,29 @@ export default function PlayerTrendPage() {
               green when the model undershot actual production and red when it
               overshot.
             </div>
+            <div className={styles.controlsRow}>
+              <label className={styles.seasonFilterLabel}>
+                <span>Season:</span>
+                <select
+                  value={selectedSeason}
+                  onChange={(e) => setSelectedSeason(e.target.value)}
+                  className={styles.seasonSelect}
+                >
+                  <option value="all">All</option>
+                  {seasons.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
           </div>
-          <ProjectionChart data={trendData} />
+          <ProjectionChart data={filteredTrendData} />
         </div>
       ) : null}
 
-      {trendData.length ? (
+      {filteredTrendData.length ? (
         <div className={styles.tableCard}>
           <table>
             <thead>
@@ -971,7 +1036,7 @@ export default function PlayerTrendPage() {
               </tr>
             </thead>
             <tbody>
-              {trendData.map((entry) => (
+              {filteredTrendData.map((entry) => (
                 <tr key={entry.date}>
                   <td>{format(new Date(entry.date), "MMM d, yyyy")}</td>
                   <td>{formatNumber(entry.predicted, 2)}</td>
