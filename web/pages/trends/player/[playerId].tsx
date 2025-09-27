@@ -111,11 +111,35 @@ function buildTrendData(
     });
   }
 
-  // Historical: use only forecast_value=1 (next-day) so we compare to realized actuals.
-  predictions
-    .filter((p) => p.forecast_value === 1)
-    .sort((a, b) => a.as_of_date.localeCompare(b.as_of_date))
-    .forEach(addPoint);
+  // Historical selection:
+  // Prefer forecast_value=1 for a date; if missing (because we skipped a daily base run),
+  // fall back to the smallest available forecast_value for that as_of_date so we still
+  // have a predicted value to compare against actuals.
+  const byAsOfDate = new Map<string, PredictionRow[]>();
+  for (const pr of predictions) {
+    if (!byAsOfDate.has(pr.as_of_date)) byAsOfDate.set(pr.as_of_date, []);
+    byAsOfDate.get(pr.as_of_date)!.push(pr);
+  }
+  const asOfDatesSorted = Array.from(byAsOfDate.keys()).sort((a, b) => a.localeCompare(b));
+  for (const asOf of asOfDatesSorted) {
+    const rows = byAsOfDate.get(asOf)!;
+    const fv1 = rows.filter((r) => r.forecast_value === 1);
+    if (fv1.length) {
+      // Multiple fv=1 rows (different bases) -> choose the one with the latest base_as_of_date
+      fv1.sort((a, b) => (a.base_as_of_date ?? '').localeCompare(b.base_as_of_date ?? ''));
+      addPoint(fv1[fv1.length - 1]);
+    } else {
+      // Fallback: smallest forecast_value > 0
+      const eligible = rows.filter((r) => r.forecast_value > 0);
+      if (eligible.length) {
+        eligible.sort((a, b) => {
+          if (a.forecast_value !== b.forecast_value) return a.forecast_value - b.forecast_value;
+          return (a.base_as_of_date ?? '').localeCompare(b.base_as_of_date ?? '');
+        });
+        addPoint(eligible[0]);
+      }
+    }
+  }
 
   // Track which dates are added from the future horizon (so we can mask actuals beyond the historical vantage)
   const futureAddedDates: string[] = [];
@@ -583,7 +607,6 @@ function ProjectionChart({ data }: ProjectionChartProps) {
       d.dateObj.getTime()
     ).left;
 
-
     function pointerMoved(event: any) {
       const [mouseX] = d3.pointer(event);
       if (mouseX < 0 || mouseX > innerWidth) {
@@ -819,7 +842,9 @@ export default function PlayerTrendPage() {
       // Derive seasons from built data
       const seasonSet = new Set<string>();
       for (const p of built) seasonSet.add(seasonOf(p.dateObj));
-      const seasonList = Array.from(seasonSet).sort((a, b) => a.localeCompare(b));
+      const seasonList = Array.from(seasonSet).sort((a, b) =>
+        a.localeCompare(b)
+      );
       setSeasons(seasonList);
       if (seasonList.length && selectedSeason === "all") {
         // default to latest season (last in sorted list)
@@ -841,12 +866,13 @@ export default function PlayerTrendPage() {
 
   const filteredTrendData = useMemo(() => {
     if (selectedSeason === "all") return trendData;
-    return trendData.filter(
-      (p) => seasonOf(p.dateObj) === selectedSeason
-    );
+    return trendData.filter((p) => seasonOf(p.dateObj) === selectedSeason);
   }, [trendData, selectedSeason]);
 
-  const metrics = useMemo(() => computeMetrics(filteredTrendData), [filteredTrendData]);
+  const metrics = useMemo(
+    () => computeMetrics(filteredTrendData),
+    [filteredTrendData]
+  );
 
   const latestDirection = filteredTrendData.length
     ? filteredTrendData[filteredTrendData.length - 1].direction
