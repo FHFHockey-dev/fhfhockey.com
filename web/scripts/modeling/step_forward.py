@@ -16,6 +16,8 @@ from __future__ import annotations
 import os
 import time
 from dataclasses import dataclass
+import sys
+import subprocess
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Iterable, List, Optional
@@ -50,7 +52,85 @@ class StepStats:
     upload_time: float
 
 
-COMMAND_PREFIX = [".venv/bin/python"]
+# ---------------------------------------------------------------------------
+# Interpreter / dependency management helpers
+# ---------------------------------------------------------------------------
+
+def _detect_python_executable() -> str:
+    """Pick a python executable for sub-commands.
+
+    Order:
+      1. SKO_PYTHON_BIN env override
+      2. .venv/bin/python if it exists
+      3. Current interpreter (sys.executable)
+    """
+    override = os.getenv("SKO_PYTHON_BIN")
+    if override and Path(override).exists():
+        return override
+    venv_path = Path(".venv/bin/python")
+    if venv_path.exists():
+        return str(venv_path)
+    return sys.executable
+
+
+COMMAND_PREFIX = [_detect_python_executable()]
+
+REQUIRED_PACKAGES = [
+    "pandas",
+    "numpy",
+    "sqlalchemy",
+    "scikit-learn",
+    "scipy",
+    "lightgbm",
+    "xgboost",
+    "python-dotenv",
+    "supabase",
+]
+
+
+def ensure_dependencies():  # pragma: no cover - runtime convenience
+    """Attempt to import required packages; optionally auto-install missing.
+
+    Enable by setting SKO_AUTO_INSTALL_DEPS=1. This is a convenience for local
+    one-click runs (e.g. pressing VS Code Run) when a venv is not explicitly
+    created. It's recommended to still use a virtual environment for
+    reproducibility.
+    """
+    if os.getenv("SKO_AUTO_INSTALL_DEPS", "0").lower() not in {"1", "true", "yes"}:
+        return
+    missing: list[str] = []
+    for pkg in REQUIRED_PACKAGES:
+        try:
+            __import__(pkg.split("[")[0])
+        except Exception:  # broad - just detect absence
+            missing.append(pkg)
+    if not missing:
+        return
+    print(f"[deps] Installing missing packages: {', '.join(missing)}")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", *missing])
+
+
+def load_inline_env():  # pragma: no cover - convenience
+    """Optionally parse an env file if user wants implicit key import.
+
+    Controlled by SKO_INLINE_ENV=1 (defaults off). This reads web/.env.local
+    safely line-by-line without executing code, setting any KEY=VALUE pairs
+    not already present in the environment. Quoted values are unquoted.
+    """
+    if os.getenv("SKO_INLINE_ENV", "0").lower() not in {"1", "true", "yes"}:
+        return
+    candidate = Path("web/.env.local")
+    if not candidate.exists():
+        return
+    for raw in candidate.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        k, v = line.split("=", 1)
+        k = k.strip()
+        v = v.strip().strip("'\"")
+        os.environ.setdefault(k, v)
+
 
 
 def run_cmd(args: List[str], env: dict[str, str]) -> float:
@@ -242,6 +322,9 @@ def persist_stats(stats: Iterable[StepStats], path: Path) -> Path:
 
 
 def main() -> None:
+    # Optional convenience bootstrapping (no-op unless flags enabled)
+    load_inline_env()
+    ensure_dependencies()
     load_env_files([
         Path(".env"),
         Path(".env.local"),
