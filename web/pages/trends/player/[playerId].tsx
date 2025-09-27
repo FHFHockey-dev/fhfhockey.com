@@ -17,10 +17,11 @@ import styles from "./player.module.scss";
 
 interface PredictionRow {
   as_of_date: string;
-  pred_points: number | null;
-  horizon_games: number;
-  model_name: string | null;
-  model_version: string | null;
+  base_as_of_date: string | null;
+  forecast_value: number;
+  pred_mean: number | null;
+  pred_low: number | null;
+  pred_high: number | null;
   stability_multiplier: number | null;
 }
 
@@ -51,6 +52,9 @@ function computePlayerMeta(
   };
 }
 
+// Build historical (forecast_value=1) prediction vs actual trend PLUS extend
+// the series with the most recent base run's future horizon (forecast_value > 1)
+// so users can see upcoming projections on the same timeline.
 function buildTrendData(
   predictions: PredictionRow[],
   games: GameRow[]
@@ -62,55 +66,73 @@ function buildTrendData(
     }))
     .filter((row) => Boolean(row.date))
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  if (!predictions.length) return [];
 
-  return predictions
-    .map((prediction) => {
-      const asOf = prediction.as_of_date;
-      const horizon = prediction.horizon_games || 5;
-      const predicted = prediction.pred_points ?? null;
-      const asOfDate = new Date(asOf);
+  const byAsOf: Record<string, PredictionRow[]> = {};
+  for (const p of predictions) {
+    if (!byAsOf[p.as_of_date]) byAsOf[p.as_of_date] = [];
+    byAsOf[p.as_of_date].push(p);
+  }
 
-      const futureGames = sortedGames.filter(
-        (game) => new Date(game.date) > asOfDate
-      );
-      const horizonGames = futureGames.slice(0, horizon);
-      const actual =
-        horizonGames.length === horizon
-          ? horizonGames.reduce((sum, game) => sum + game.points, 0)
-          : null;
+  // Identify the latest base run to harvest multi-day horizon forecasts
+  const baseDates = Array.from(
+    new Set(
+      predictions
+        .map((p) => p.base_as_of_date)
+        .filter((v): v is string => Boolean(v))
+    )
+  ).sort((a, b) => a.localeCompare(b));
+  const latestBase = baseDates[baseDates.length - 1] ?? null;
 
-      const diff =
-        actual !== null && predicted !== null ? actual - predicted : null;
-      const direction: "over" | "under" | "match" = !diff
-        ? "match"
-        : diff < 0
-          ? "over"
-          : diff > 0
-            ? "under"
-            : "match";
-      const low =
-        actual !== null && predicted !== null
-          ? Math.min(actual, predicted)
-          : null;
-      const high =
-        actual !== null && predicted !== null
-          ? Math.max(actual, predicted)
-          : null;
+  const points: TrendPoint[] = [];
 
-      const dateObj = new Date(asOf);
-      return {
-        date: asOf,
-        predicted,
-        actual,
-        diff,
-        low,
-        high,
-        direction,
-        timestamp: dateObj.getTime(),
-        dateObj
-      } as TrendPoint;
-    })
-    .filter((entry) => entry.predicted !== null || entry.actual !== null);
+  function addPoint(prediction: PredictionRow) {
+    const asOf = prediction.as_of_date;
+    const predicted = prediction.pred_mean ?? null;
+    const actualRow = sortedGames.find((g) => g.date === asOf);
+    const actual = actualRow ? actualRow.points : null;
+    const diff = actual !== null && predicted !== null ? actual - predicted : null;
+    const direction: "over" | "under" | "match" = diff == null
+      ? "match"
+      : diff < 0
+        ? "over"
+        : diff > 0
+          ? "under"
+          : "match";
+    const low = prediction.pred_low ?? null;
+    const high = prediction.pred_high ?? null;
+    const dateObj = new Date(asOf);
+    points.push({
+      date: asOf,
+      predicted,
+      actual,
+      diff,
+      low,
+      high,
+      direction,
+      timestamp: dateObj.getTime(),
+      dateObj
+    });
+  }
+
+  // Historical: use only forecast_value=1 (next-day) so we compare to realized actuals.
+  predictions
+    .filter((p) => p.forecast_value === 1)
+    .sort((a, b) => a.as_of_date.localeCompare(b.as_of_date))
+    .forEach(addPoint);
+
+  // Future horizon: take all forecast_value>=1 from the latest base that are NOT already in points
+  if (latestBase) {
+    const existingDates = new Set(points.map((p) => p.date));
+    predictions
+      .filter((p) => p.base_as_of_date === latestBase && p.forecast_value >= 1)
+      .sort((a, b) => a.as_of_date.localeCompare(b.as_of_date))
+      .forEach((p) => {
+        if (!existingDates.has(p.as_of_date)) addPoint(p);
+      });
+  }
+
+  return points.filter((entry) => entry.predicted !== null || entry.actual !== null);
 }
 
 function computeMetrics(data: TrendPoint[]) {
@@ -321,6 +343,41 @@ function ProjectionChart({ data }: ProjectionChartProps) {
           .tickFormat(d3.timeFormat("%b %d") as (value: Date) => string)
       );
 
+    // Interval band (low/high) area for prediction uncertainty
+    const bandArea = d3
+      .area<TrendPoint>()
+      .defined((d) => d.low != null && d.high != null)
+      .x((d) => x(d.dateObj))
+      .y0((d) => y(d.low as number))
+      .y1((d) => y(d.high as number));
+
+    const focusBand = focusContent
+      .append("path")
+      .attr("fill", "url(#gradientBand)")
+      .attr("stroke", "none")
+      .attr("opacity", 0.35);
+
+    const defs = svg.append("defs");
+    const gradId = `pred-band-${Math.random().toString(36).slice(2, 9)}`;
+    const gradient = defs
+      .append("linearGradient")
+      .attr("id", gradId)
+      .attr("x1", "0")
+      .attr("x2", "0")
+      .attr("y1", "0")
+      .attr("y2", "1");
+    gradient
+      .append("stop")
+      .attr("offset", "0%")
+      .attr("stop-color", "#4fc3f7")
+      .attr("stop-opacity", 0.45);
+    gradient
+      .append("stop")
+      .attr("offset", "100%")
+      .attr("stop-color", "#4fc3f7")
+      .attr("stop-opacity", 0.05);
+    focusBand.attr("fill", `url(#${gradId})`);
+
     const focusPredicted = focusContent
       .append("path")
       .attr("fill", "none")
@@ -402,9 +459,22 @@ function ProjectionChart({ data }: ProjectionChartProps) {
       d.dateObj.getTime()
     ).left;
 
+    // Divider between historical (actual present) and future (no actual yet)
+    const futureDivider = focusContent
+      .append("line")
+      .attr("class", "future-divider")
+      .attr("stroke", "rgba(255,255,255,0.4)")
+      .attr("stroke-dasharray", "6 6")
+      .attr("y1", 0)
+      .attr("y2", focusHeight)
+      .style("display", "none");
+
     function updateFocus() {
       focusPredicted.attr("d", predictedLine(sortedPoints) ?? "");
       focusActual.attr("d", actualLine(sortedPoints) ?? "");
+
+      // Update band
+      focusBand.attr("d", bandArea(sortedPoints) ?? "");
 
       const candleData = sortedPoints.filter(
         (point) => point.predicted !== null && point.actual !== null
@@ -457,6 +527,20 @@ function ProjectionChart({ data }: ProjectionChartProps) {
           .tickFormat(d3.timeFormat("%b %d") as (value: Date) => string)
       );
       yAxis.call(d3.axisLeft(y).ticks(6));
+
+      // Place divider at last date with actual
+      const lastActual = [...sortedPoints]
+        .filter((p) => p.actual != null)
+        .sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime())
+        .pop();
+      if (lastActual) {
+        futureDivider
+          .style("display", null)
+          .attr("x1", x(lastActual.dateObj))
+          .attr("x2", x(lastActual.dateObj));
+      } else {
+        futureDivider.style("display", "none");
+      }
     }
 
     function pointerMoved(event: any) {
@@ -579,6 +663,7 @@ export default function PlayerTrendPage() {
   const router = useRouter();
   const [meta, setMeta] = useState<PlayerMeta | null>(null);
   const [trendData, setTrendData] = useState<TrendPoint[]>([]);
+  const [forecastSummary, setForecastSummary] = useState<PredictionRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [horizon, setHorizon] = useState<number>(5);
@@ -620,10 +705,13 @@ export default function PlayerTrendPage() {
       const { data: predictionRows, error: predictionErr } = await supabase
         .from("predictions_sko")
         .select(
-          "as_of_date, pred_points, horizon_games, model_name, model_version, stability_multiplier"
+          "as_of_date, base_as_of_date, forecast_value, pred_mean, pred_low, pred_high, stability_multiplier"
         )
         .eq("player_id", playerId)
-        .order("as_of_date", { ascending: true });
+        .eq("stat_key", "points")
+        .eq("forecast_scope", "day")
+        .order("base_as_of_date", { ascending: true })
+        .order("forecast_value", { ascending: true });
       if (predictionErr) throw predictionErr;
 
       const { data: gameRows, error: gameErr } = await supabase
@@ -636,16 +724,39 @@ export default function PlayerTrendPage() {
       const predictions = (predictionRows ?? []) as PredictionRow[];
       if (!predictions.length) {
         setTrendData([]);
+        setForecastSummary([]);
         setLastRunDate(null);
-        setHorizon(5);
+        setHorizon(0);
         return;
       }
 
-      const latestPrediction = predictions[predictions.length - 1];
-      setLastRunDate(latestPrediction.as_of_date);
-      setHorizon(latestPrediction.horizon_games || 5);
+      const allPredictions = [...predictions].sort((a, b) =>
+        a.as_of_date.localeCompare(b.as_of_date)
+      );
+      const baseDates = allPredictions
+        .map((row) => row.base_as_of_date)
+        .filter((value): value is string => Boolean(value))
+        .sort((a, b) => a.localeCompare(b));
+      const latestBase = baseDates.length ? baseDates[baseDates.length - 1] : null;
 
-      const built = buildTrendData(predictions, (gameRows ?? []) as GameRow[]);
+      const latestForecasts = latestBase
+        ? allPredictions
+            .filter((row) => row.base_as_of_date === latestBase)
+            .sort((a, b) => (a.forecast_value ?? 0) - (b.forecast_value ?? 0))
+        : [];
+
+      setForecastSummary(latestForecasts);
+      setLastRunDate(latestBase);
+      setHorizon(
+        latestForecasts.length
+          ? latestForecasts.reduce(
+              (max, row) => Math.max(max, row.forecast_value ?? 0),
+              0
+            )
+          : 0
+      );
+
+      const built = buildTrendData(allPredictions, (gameRows ?? []) as GameRow[]);
       setTrendData(built);
     } catch (err: any) {
       // eslint-disable-next-line no-console
@@ -669,6 +780,15 @@ export default function PlayerTrendPage() {
   const latestDiff = trendData.length
     ? (trendData[trendData.length - 1].diff ?? null)
     : null;
+  const forecastEndDate = useMemo(() => {
+    if (!forecastSummary.length) return null;
+    return forecastSummary[forecastSummary.length - 1].as_of_date;
+  }, [forecastSummary]);
+
+  const horizonWindow = horizon || (forecastSummary.length ? forecastSummary.length : 0);
+  const horizonLabel = horizonWindow
+    ? `${horizonWindow}-day outlook`
+    : "Day outlook";
 
   return (
     <div className={styles.page}>
@@ -691,15 +811,20 @@ export default function PlayerTrendPage() {
           <p className={styles.subtitle}>
             {meta?.teamLabel ? `${meta.teamLabel}` : ""}
             {meta?.position ? ` · ${meta.position}` : ""}
-            {` — ${horizon}-game horizon projections`}
+            {` — ${horizonLabel}`}
           </p>
         </div>
         <div className={styles.meta}>
           <span>
             {lastRunDate
-              ? `Latest inference: ${format(new Date(lastRunDate), "MMM d, yyyy")}`
+              ? `Simulated on ${format(new Date(lastRunDate), "MMM d, yyyy")}`
               : "No predictions yet"}
           </span>
+          {forecastEndDate ? (
+            <span>
+              Projecting through {format(new Date(forecastEndDate), "MMM d, yyyy")}
+            </span>
+          ) : null}
           {latestDiff !== null ? (
             <span>
               Last diff: {formatNumber(latestDiff, 2)} pts — {latestDirection}
@@ -751,6 +876,43 @@ export default function PlayerTrendPage() {
               {formatPercent(metrics.hitRate)}
             </span>
           </div>
+        </div>
+      ) : null}
+
+      {forecastSummary.length ? (
+        <div className={styles.forecastCard}>
+          <div className={styles.forecastHeader}>
+            <div>
+              <h2 className={styles.forecastTitle}>Upcoming Points Outlook</h2>
+              <p className={styles.forecastSubtitle}>
+                Daily mean projection with 80% Poisson interval
+              </p>
+            </div>
+          </div>
+          <table className={styles.forecastTable}>
+            <thead>
+              <tr>
+                <th>Day</th>
+                <th>Date</th>
+                <th>Mean</th>
+                <th>Likely Range</th>
+              </tr>
+            </thead>
+            <tbody>
+              {forecastSummary.map((row) => (
+                <tr key={`${row.base_as_of_date}-${row.forecast_value}`}>
+                  <td>{`+${row.forecast_value}`}</td>
+                  <td>{format(new Date(row.as_of_date), "MMM d, yyyy")}</td>
+                  <td>{formatNumber(row.pred_mean, 2)}</td>
+                  <td>
+                    {row.pred_low != null && row.pred_high != null
+                      ? `${formatNumber(row.pred_low, 2)} – ${formatNumber(row.pred_high, 2)}`
+                      : "—"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       ) : null}
 

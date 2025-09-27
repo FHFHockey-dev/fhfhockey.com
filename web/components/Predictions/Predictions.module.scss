@@ -166,6 +166,47 @@
   overflow: hidden;
 }
 
+.tableHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: v.$space-md v.$space-lg v.$space-sm;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.tableTitle {
+  font-size: v.$font-size-lg;
+  font-weight: 600;
+  color: v.$text-primary;
+  margin: 0;
+}
+
+.tableSubtitle {
+  margin: v.$space-xxs 0 0;
+  font-size: v.$font-size-xs;
+  color: v.$text-secondary;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.tableFooter {
+  display: flex;
+  justify-content: center;
+  gap: v.$space-md;
+  padding: v.$space-md;
+  flex-wrap: wrap;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.loadMoreButton {
+  @include v.button-ghost(true);
+  padding: v.$space-xs v.$space-lg;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
 .playerTable {
   width: 100%;
   border-collapse: collapse;
@@ -192,14 +233,14 @@
   }
   td {
     padding: v.$space-sm v.$space-md;
-    border-bottom: 1px solid v.$border-secondary;
     color: v.$text-secondary;
     font-family: v.$font-family-numbers, monospace;
     vertical-align: middle;
-    height: 56px; // establish consistent row rhythm
+    height: fit-content;
   }
   tbody tr {
     transition: background-color 0.2s ease;
+    height: 56px; // establish consistent row rhythm
   }
   tbody tr:nth-child(odd) {
     background-color: color.adjust(v.$background-dark, $lightness: -2%);
@@ -211,20 +252,23 @@
 
 .clickableRow {
   cursor: pointer;
+  height: auto;
+  border-bottom: 1px solid v.$border-secondary;
 }
 
 .playerCell {
   font-family: v.$font-family-primary, sans-serif;
+  height: 100%;
   display: flex;
   flex-direction: column;
   justify-content: center; // center text vertically within enforced row height
-  gap: 2px;
-  line-height: 1.1;
+  align-items: flex-start;
+  gap: 4px;
 }
 
 .playerName {
   font-weight: 600;
-  color: v.$text-primary;
+  color: v.$primary-color;
 }
 
 .playerMeta {
@@ -263,6 +307,55 @@
 
 .sparklineShade {
   fill: rgba(v.$primary-color, 0.15);
+}
+
+.sparklineBand {
+  opacity: 0.9;
+}
+
+.accuracySection {
+  margin-top: v.$space-xxl;
+  @include p.panel-container($padding: v.$space-xl);
+}
+
+.accuracyHeader {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-sm;
+  margin-bottom: v.$space-lg;
+
+  h2 {
+    margin: 0;
+    font-size: v.$font-size-lg;
+  }
+
+  p {
+    margin: 0;
+    color: v.$text-secondary;
+    font-size: v.$font-size-sm;
+  }
+}
+
+.accuracyTable {
+  width: 100%;
+  border-collapse: collapse;
+
+  th,
+  td {
+    text-align: left;
+    padding: v.$space-sm;
+    border-bottom: 1px solid rgba(v.$border-primary, 0.2);
+  }
+
+  th {
+    font-weight: 600;
+    color: v.$text-secondary;
+    font-size: v.$font-size-sm;
+  }
+
+  tbody tr:hover {
+    background: rgba(v.$primary-color, 0.07);
+  }
 }
 
 .placeholder,

@@ -12,27 +12,38 @@ import type {
 import { lookupTeamLabel } from "lib/trends/skoUtils";
 import PlayerTable from "./PlayerTable";
 import styles from "./Predictions.module.scss";
+import { format } from "date-fns";
 
 type Props = {
-  asOfDate: string | null;
-  limit?: number;
+  baseDate: string | null;
+  limit?: number; // initial page size
   sparklineDays?: number;
+  forecastValue?: number;
 };
 
 export default function PredictionsLeaderboard({
-  asOfDate,
+  baseDate,
   limit = 30,
-  sparklineDays = 45
+  sparklineDays = 60,
+  forecastValue = 1
 }: Props) {
+  const [rowLimit, setRowLimit] = useState(limit);
+
+  useEffect(() => {
+    setRowLimit(limit);
+  }, [limit]);
   // Headline rows for a single date
   const {
     data: rows,
     loading,
     error
   } = usePredictionsSko({
-    asOfDate: asOfDate ?? undefined,
-    limit,
-    order: "desc"
+    baseAsOfDate: baseDate ?? undefined,
+    limit: rowLimit,
+    order: "desc",
+    statKey: "points",
+    forecastScope: "day",
+    forecastValue
   });
 
   const playerIds = useMemo(
@@ -74,19 +85,30 @@ export default function PredictionsLeaderboard({
   }, [playerIds.join(",")]);
 
   // Sparkline window
+  const forecastDate = useMemo(() => {
+    if (rows.length) return rows[0].as_of_date;
+    if (!baseDate) return undefined;
+    const d = new Date(baseDate);
+    d.setDate(d.getDate() + forecastValue);
+    return d.toISOString().slice(0, 10);
+  }, [rows, baseDate, forecastValue]);
+
   const cutoffIso = useMemo(() => {
-    if (!asOfDate) return undefined;
-    const d = new Date(asOfDate);
+    if (!forecastDate) return undefined;
+    const d = new Date(forecastDate);
     d.setDate(d.getDate() - sparklineDays);
     return d.toISOString().slice(0, 10);
-  }, [asOfDate, sparklineDays]);
+  }, [forecastDate, sparklineDays]);
 
-  const enableSpark = !!asOfDate && playerIds.length > 0;
+  const enableSpark = !!forecastDate && playerIds.length > 0;
   const { data: sparkRows } = usePredictionsSko(
     enableSpark
       ? {
           since: cutoffIso,
-          until: asOfDate ?? undefined,
+          until: forecastDate ?? undefined,
+          statKey: "points",
+          forecastScope: "day",
+          forecastValue,
           playerIds: playerIds.length ? playerIds : undefined,
           order: "asc",
           limit: 2000
@@ -124,25 +146,11 @@ export default function PredictionsLeaderboard({
       if (!chosen) chosen = rowsForDay[0];
       if (!acc[pid]) acc[pid] = [];
 
-      // Derive value (same fallback logic)
-      let value: number | null = null;
-      if (chosen.sko != null && !Number.isNaN(chosen.sko)) {
-        value = Number(chosen.sko);
-      } else if (
-        chosen.pred_points != null &&
-        chosen.stability_multiplier != null &&
-        !Number.isNaN(chosen.pred_points) &&
-        !Number.isNaN(chosen.stability_multiplier)
-      ) {
-        value =
-          Number(chosen.pred_points) * Number(chosen.stability_multiplier);
-      } else if (
-        chosen.pred_points != null &&
-        !Number.isNaN(chosen.pred_points)
-      ) {
-        value = Number(chosen.pred_points);
-      }
-      acc[pid].push({ date, value });
+      const value =
+        chosen.pred_mean ?? chosen.pred_points ?? chosen.sko ?? null;
+      const low = chosen.pred_low ?? null;
+      const high = chosen.pred_high ?? null;
+      acc[pid].push({ date, value, low, high });
       if (acc[pid].length > 45) acc[pid] = acc[pid].slice(acc[pid].length - 45);
     }
     // Dev debug: log one example player's sparkline to inspect variability
@@ -185,13 +193,23 @@ export default function PredictionsLeaderboard({
         position: info?.position ?? null,
         team: teamLabel,
         sko: row.sko ?? null,
-        predPoints: row.pred_points ?? null,
+        predPoints: row.pred_mean ?? row.pred_points ?? null,
         stability: row.stability_multiplier ?? null,
         asOfDate: row.as_of_date,
-        sparkline: sparklineMap[row.player_id] ?? []
+        sparkline: sparklineMap[row.player_id] ?? [],
+        predLow: row.pred_low ?? null,
+        predHigh: row.pred_high ?? null
       };
     });
   }, [rows, playerInfo, sparklineMap]);
+
+  const canLoadMore = rows.length >= rowLimit; // if we filled the page, allow asking for more
+
+  const handleLoadMore = () => {
+    // If user clicks repeatedly we grow by the initial limit chunk.
+    // Provide a hard ceiling safeguard (e.g., 1000) to avoid accidental runaway.
+    setRowLimit((prev) => Math.min(1000, prev + limit));
+  };
 
   if (error) return <div className={styles.error}>{error}</div>;
   if (loading && !rows.length)
@@ -203,9 +221,46 @@ export default function PredictionsLeaderboard({
       <div className={styles.placeholder}>No predictions available yet.</div>
     );
 
+  const headlineDate = forecastDate
+    ? format(new Date(forecastDate), "MMM d, yyyy")
+    : null;
+  const baseLabel = baseDate ? format(new Date(baseDate), "MMM d, yyyy") : null;
+
   return (
     <div className={styles.tableWrapper}>
+      <div className={styles.tableHeader}>
+        <div>
+          <h2 className={styles.tableTitle}>
+            {headlineDate ? `Top Outlook · ${headlineDate}` : "Top Outlook"}
+          </h2>
+          <p className={styles.tableSubtitle}>
+            {baseLabel
+              ? `Simulated on ${baseLabel} · Forecast day +${forecastValue}`
+              : `Forecast day +${forecastValue}`}
+          </p>
+        </div>
+      </div>
       <PlayerTable players={tableData} />
+      <div className={styles.tableFooter}>
+        {canLoadMore ? (
+          <button
+            type="button"
+            className={styles.loadMoreButton}
+            onClick={handleLoadMore}
+          >
+            Load more players
+          </button>
+        ) : null}
+        {rowLimit < 1000 && rows.length > 15 ? (
+          <button
+            type="button"
+            className={styles.loadMoreButton}
+            onClick={() => setRowLimit(1000)}
+          >
+            Show all
+          </button>
+        ) : null}
+      </div>
     </div>
   );
 }
