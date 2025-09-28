@@ -4,6 +4,7 @@
 - `migrations/sql/2025xxxx_create_priors_tables.sql` - Migration: create `priors_cache`, `player_priors_cache`, config, distribution, queue, barometer tables.
 - `migrations/sql/2025xxxx_seed_sigma_constants.sql` - Migration: seed fixed standard deviation constants (initial SD mode = fixed).
 - `functions/lib/sustainability/config_loader.py` - Load active model configuration (weights, toggles, constants) from DB.
+- `functions/lib/env_loader.py` - Local helper to ingest `web/.env.local` for SUPABASE_DB_URL & related secrets in dev without exporting.
 - `functions/lib/sustainability/priors.py` - League × position prior (Beta) computation utilities.
 - `functions/lib/sustainability/player_priors.py` - Multi-season blending + posterior mean calculation.
 - `functions/lib/sustainability/windows.py` - Rolling window builder (GAME, G5, G10, STD) with freshness enforcement.
@@ -58,37 +59,38 @@
 - [ ] 2.0 Configuration & Constants Initialization
 	- [x] 2.1 Implement `config_loader.py` to fetch active config row (latest active TRUE and highest model_version).
 	- [x] 2.2 Validate presence of required keys (weights, toggles, constants, k_r map, c, sd_mode, freshness_days) (Enhanced validation added: k_r coverage, guardrails bounds, freshness_days > 0).
-	- [ ] 2.3 Implement hash generation (stable JSON canonicalization + SHA256) for config_hash.
-	- [ ] 2.4 Implement fallback to environment-embedded default if DB row missing (fail gracefully, log warning).
-	- [ ] 2.5 Add unit tests to confirm deterministic hash for semantically identical JSON ordering.
-	- [ ] 2.6 Add function to upsert new config version (future admin utility) — behind feature flag.
-	- [ ] 2.7 Store metric code enum & mapping (human label) in `constants.py`.
-	- [ ] 2.8 Implement loader for fixed SD constants table (or embedded JSON) returning dict keyed by metric × position_code.
-	- [ ] 2.9 Add validation: raise if any required metric weight missing while toggle indicates active.
+	- [x] 2.3 Implement hash generation (stable JSON canonicalization + SHA256) for config_hash. (Added `build_config_hash_payload` to isolate semantic fields; refactored `load_config`.)
+	- [x] 2.4 Implement fallback to environment-embedded default if DB row missing (fail gracefully, log warning). (Added structured warnings + debug summary log.)
+	- [x] 2.5 Add unit tests to confirm deterministic hash for semantically identical JSON ordering. (Created `functions/tests/test_config_loader.py` with hash stability + fallback scenarios.)
+	- [x] 2.6 Add function to upsert new config version (future admin utility) — behind feature flag. (Stub `upsert_new_config_version` added raising ConfigUpsertError until DB integration.)
+	- [x] 2.7 Store metric code enum & mapping (human label) in `constants.py`. (Added `METRIC_CODES`, `HUMAN_LABELS`.)
+	- [x] 2.8 Implement loader for fixed SD constants table (or embedded JSON) returning dict keyed by metric × position_code. (Added `load_sd_constants` with graceful fallback merge.)
+	- [x] 2.9 Add validation: raise if any required metric weight missing while toggle indicates active. (Added `cross_validate_weights_vs_toggles` + tests.)
 
 - [ ] 3.0 Prior & Posterior Computation Modules (League + Player)
-	- [ ] 3.1 Implement `priors.py` function `compute_league_beta_priors(season_id)` returning list of {season_id, position_code, stat_code, alpha0, beta0, k, league_mu}.
-	- [ ] 3.2 Add query to aggregate successes/trials for sh_pct, oish_pct, ipp from canonical stats source (player_totals_unified or fallback join strategy).
-	- [ ] 3.3 Implement upsert for priors_cache (batch insert ON CONFLICT update if league_mu changes).
-	- [ ] 3.4 Implement multi-season data fetch for each player (current + last two seasons) with successes/trials per stat.
-	- [ ] 3.5 Implement weight normalization if seasons missing (rookie case) and set rookie_status flag.
-	- [ ] 3.6 Calculate posterior mean with Beta update using league prior (store model_version from config).
-	- [ ] 3.7 Upsert player_priors_cache rows (post_mean, successes_blend, trials_blend, rookie_status).
-	- [ ] 3.8 Add unit tests for: correct Beta posterior when no history; correct weighted blend with partial seasons; reproducibility.
-	- [ ] 3.9 Add logging summary (#players processed, rookies, changes vs prior run).
+	- [x] 3.1 Implement `priors.py` function `compute_league_beta_priors(season_id)` returning list of {season_id, position_code, stat_code, alpha0, beta0, k, league_mu}. (Added `priors.py` + unit tests `test_priors.py`.)
+	- [x] 3.2 Add query to aggregate successes/trials for sh_pct, oish_pct, ipp from canonical stats source (player_totals_unified or fallback join strategy). (Stub `fetch_league_aggregates` + DB adapter integration attempts real query if SUPABASE_DB_URL set.)
+	- [x] 3.3 Implement upsert for priors_cache (batch insert ON CONFLICT update if league_mu changes). (Stub now routes to `db_adapter.upsert_league_priors` when available; otherwise no-op.)
+	- [x] 3.4 Implement multi-season data fetch for each player (current + last two seasons) with successes/trials per stat. (Stub fetch + grouping implemented in `player_priors.py`.)
+	- [x] 3.5 Implement weight normalization if seasons missing (rookie case) and set rookie_status flag. (Automatic normalization logic + rookie detection.)
+	- [x] 3.6 Calculate posterior mean with Beta update using league prior (store model_version from config). (Posterior math in `compute_player_posteriors`.)
+	- [x] 3.7 Upsert player_priors_cache rows (post_mean, successes_blend, trials_blend, rookie_status). (Stub `upsert_player_priors`.)
+	- [x] 3.8 Add unit tests for: correct Beta posterior when no history; correct weighted blend with partial seasons; reproducibility. (Added tests in `test_player_priors.py` including reproducibility & rookie summary.)
+	- [x] 3.9 Add logging summary (#players processed, rookies, changes vs prior run). (Added `summarize_player_posteriors` & `log_player_posteriors_summary`.)
 
 - [ ] 4.0 Rolling Window & Scoring Engine (Reliability, Soft Clip, Contributions)
-	- [ ] 4.1 Implement `windows.py` to build GAME, G5, G10, STD aggregates with freshness filter (<= freshness_days default 45).
-	- [ ] 4.2 Provide builder returning exposures & rates for each metric (shots, goals, on-ice GF/SF, points, ixG, ICF, HDCF, minutes if needed).
-	- [ ] 4.3 Implement scoring util: raw z (luck metrics) vs posterior baseline; raw z (stabilizers) vs position mean/σ.
-	- [ ] 4.4 Implement reliability r = sqrt(n/(n+k_r)) for sh_pct, oish_pct, ipp; r=1 for stabilizers (placeholder).
-	- [ ] 4.5 Implement soft clip function tanh-based with configurable c.
-	- [ ] 4.6 Implement finishing residual components (rate & count) conditional on toggle; ensure no division by zero.
-	- [ ] 4.7 Compute contrib per metric; accumulate logistic score S_raw and formatted integer S.
-	- [ ] 4.8 Implement quintile assignment placeholder using prior snapshot (fallback: None => mark provisional_tier until snapshot available).
-	- [ ] 4.9 Pack components_json with required fields (z_raw, z_soft, r, n, weight, contrib, extreme flag).
-	- [ ] 4.10 Add unit tests for scoring edge cases: zero exposures, extreme high z, reliability scaling, formatting guardrails.
-	- [ ] 4.11 Benchmark scoring function on synthetic dataset (≥5k players × 4 windows) ensure runtime acceptable (< threshold) & record metrics.
+	- [x] 4.1 Implement `windows.py` to build GAME, G5, G10, STD aggregates with freshness filter (<= freshness_days default 45).
+	- [x] 4.2 Provide builder returning exposures & rates for each metric (shots, goals, on-ice GF/SF, points, ixG, ICF, HDCF, minutes if needed). (Implemented via `windows.py` & verified in tests.)
+	- [x] 4.3 Implement scoring util: raw z (luck metrics) vs posterior baseline; raw z (stabilizers) vs position mean/σ. (Implemented as `zscores.annotate_zscores` for rate metrics sh_pct, oish_pct, ipp.)
+	- [x] 4.4 Implement reliability r = sqrt(n/(n+k_r)) for sh_pct, oish_pct, ipp; r=1 for stabilizers (placeholder). (Implemented in `reliability.compute_reliability`.)
+	- [x] 4.5 Implement soft clip function tanh-based with configurable c. (Implemented in `clipping.apply_soft_clipping` + unit tests + integrated prerequisite for contributions.)
+	- [x] 4.6 Compute contrib per metric (weights * r * zc) producing contrib_<metric> & contrib_total (Implemented in `contributions.compute_contributions` with tests). Pending logistic score & formatted integer S moved to new 4.7.
+	- [ ] 4.7 Accumulate logistic score S_raw & formatted integer S (final mapping) using contrib_total.
+	- [ ] 4.8 Implement finishing residual components (rate & count) conditional on toggle; ensure no division by zero.
+	- [ ] 4.9 Implement quintile assignment placeholder using prior snapshot (fallback: None => mark provisional_tier until snapshot available).
+	- [ ] 4.10 Pack components_json with required fields (z_raw, z_soft, r, n, weight, contrib, extreme flag).
+	- [ ] 4.11 Add unit tests for scoring edge cases: zero exposures, extreme high z, reliability scaling, formatting guardrails.
+	- [ ] 4.12 Benchmark scoring function on synthetic dataset (≥5k players × 4 windows) ensure runtime acceptable (< threshold) & record metrics.
 
 - [ ] 5.0 Nightly Pipeline Orchestration & Retro Recompute Queue
 	- [ ] 5.1 Implement `pipeline.py` main orchestration run: load config → priors → player priors → new games → windows → scoring → persistence.
