@@ -151,46 +151,82 @@ def upsert_player_priors(rows: List[Dict[str, Any]]) -> int:
             return 0
 
 
-def upsert_barometers(rows: List[Dict[str, Any]]) -> int:
-    """Upsert final scoring rows into model_player_game_barometers.
+def upsert_barometers(rows: List[Dict[str, Any]], batch_size: int = 500) -> int:
+    """Upsert final scoring rows into model_player_game_barometers (batched multi-row insert).
 
-    Expected keys (subset used): player_id, season_id, position_code, window_type, game_date,
-      score_raw, score, contrib_total, model_version, config_hash, components_json (optional), rookie_status
+    Strategy:
+      * Serialize components_json once per row if dict/list.
+      * Chunk rows (default 500) → build single multi-values INSERT with ON CONFLICT.
+      * Fallback to original row-at-a-time if batch assembly fails (never raise to caller).
+
+    Returns number of input rows (best-effort) or 0 if DB unavailable.
     """
     if not rows:
         return 0
-    sql = """
-        INSERT INTO model_player_game_barometers(
-          player_id, season_id, position_code, window_type, game_date,
-          score_raw, score, contrib_total, model_version, config_hash, rookie_status, components_json
-        ) VALUES (
-          %(player_id)s, %(season_id)s, %(position_code)s, %(window_type)s, %(game_date)s,
-          %(score_raw)s, %(score)s, %(contrib_total)s, %(model_version)s, %(config_hash)s, %(rookie_status)s, %(components_json)s::jsonb
-        )
-        ON CONFLICT (player_id, window_type, game_date, model_version)
-        DO UPDATE SET score_raw=EXCLUDED.score_raw,
-                      score=EXCLUDED.score,
-                      contrib_total=EXCLUDED.contrib_total,
-                      config_hash=EXCLUDED.config_hash,
-                      components_json=COALESCE(EXCLUDED.components_json, model_player_game_barometers.components_json),
-                      updated_at=NOW();
-    """
+
+    base_sql_prefix = (
+        "INSERT INTO model_player_game_barometers("
+        "player_id, season_id, position_code, window_type, game_date, "
+        "score_raw, score, contrib_total, model_version, config_hash, rookie_status, components_json) VALUES "
+    )
+    conflict_sql = (
+        " ON CONFLICT (player_id, window_type, game_date, model_version) DO UPDATE SET "
+        "score_raw=EXCLUDED.score_raw, "
+        "score=EXCLUDED.score, "
+        "contrib_total=EXCLUDED.contrib_total, "
+        "config_hash=EXCLUDED.config_hash, "
+        "components_json=COALESCE(EXCLUDED.components_json, model_player_game_barometers.components_json), "
+        "updated_at=NOW();"
+    )
+
+    columns = [
+        "player_id", "season_id", "position_code", "window_type", "game_date",
+        "score_raw", "score", "contrib_total", "model_version", "config_hash", "rookie_status", "components_json"
+    ]
+
+    # Pre-serialize JSON
+    serialized: List[Dict[str, Any]] = []
+    for r in rows:
+        if isinstance(r.get("components_json"), (dict, list)):
+            r = {**r, "components_json": json.dumps(r["components_json"]) }
+        serialized.append(r)
+
     with get_conn() as conn:
         if conn is None:
             return 0
         try:
             with conn.transaction():  # type: ignore[attr-defined]
-                payloads = []
-                for r in rows:
-                    if isinstance(r.get("components_json"), (dict, list)):
-                        r = {**r, "components_json": json.dumps(r["components_json"]) }
-                    payloads.append(r)
-                for p in payloads:
-                    conn.execute(sql, p)
+                for i in range(0, len(serialized), batch_size):
+                    batch = serialized[i:i+batch_size]
+                    # Build VALUES placeholders
+                    values_clauses = []
+                    params: Dict[str, Any] = {}
+                    for idx, row in enumerate(batch):
+                        placeholders = []
+                        for col in columns:
+                            key = f"{col}_{idx}"
+                            # components_json needs explicit cast
+                            if col == "components_json":
+                                placeholders.append(f"%({key})s::jsonb")
+                            else:
+                                placeholders.append(f"%({key})s")
+                            params[key] = row.get(col)
+                        values_clauses.append(f"({', '.join(placeholders)})")
+                    sql = base_sql_prefix + ",".join(values_clauses) + conflict_sql
+                    conn.execute(sql, params)
             return len(rows)
         except Exception as e:  # pragma: no cover
-            logger.error("upsert_barometers failed: %s", e)
-            return 0
+            logger.error("upsert_barometers batch path failed (%s); falling back row mode", e)
+            # Fallback single-row path
+            try:
+                with conn.transaction():  # type: ignore[attr-defined]
+                    single_sql = base_sql_prefix + "(%(player_id)s, %(season_id)s, %(position_code)s, %(window_type)s, %(game_date)s, %(score_raw)s, %(score)s, %(contrib_total)s, %(model_version)s, %(config_hash)s, %(rookie_status)s, %(components_json)s::jsonb)" + conflict_sql
+                    for r in serialized:
+                        conn.execute(single_sql, r)
+                return len(rows)
+            except Exception as e2:  # pragma: no cover
+                logger.error("upsert_barometers fallback failed: %s", e2)
+                return 0
 
 
 def fetch_max_barometer_game_date(model_version: int, window_type: str = "GAME") -> Optional[str]:

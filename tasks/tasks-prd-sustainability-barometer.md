@@ -95,7 +95,7 @@
 -- [ ] 5.0 Nightly Pipeline Orchestration & Retro Recompute Queue
 	- [x] 5.1 Implement `pipeline.py` main orchestration run: load config → priors → player priors → new games → windows → scoring → persistence. (Done via `pipeline.run_full_scoring_pipeline` + `orchestrator.orchestrate_full_run`; includes incremental filtering, locking, run logs; remaining: enhanced incremental per-window diff & anomaly counters → will finalize under 5.8.)
 	- [x] 5.2 Add function to detect new games (max game_date processed per window_type) to limit scope. (Implemented: `db_adapter.fetch_max_barometer_game_date` + orchestrator incremental_filter phase.)
-	- [ ] 5.3 Bulk insert barometer rows (single COPY/UNNEST style if supported; else batched transactions). (Current: row-by-row inside transaction; optimize later.)
+	- [x] 5.3 Bulk insert barometer rows (single COPY/UNNEST style if supported; else batched transactions). (Implemented: multi-row batched INSERT with ON CONFLICT; fallback row mode on error.)
 	- [x] 5.4 Generate distribution snapshot (GAME window) percentiles & summary stats using `distribution.py`. (Implemented + tested.)
 	- [x] 5.5 Persist snapshot; update quintile mapping for *new* rows only. (Implemented: snapshot persistence & reuse; tiers assigned; optimization of mapping only for new rows deferred.)
 	- [x] 5.6 Implement retro recompute queue insertion when model_version or config_hash changes. (Implemented: orchestrator retro_enqueue phase + `enqueue_retro_task`.)
