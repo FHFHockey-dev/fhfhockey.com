@@ -25,10 +25,16 @@ def test_attach_components_json():
         'player_id':1,
         'z_sh_pct':0.2,'zc_sh_pct':0.19,'r_sh_pct':0.6,'contrib_sh_pct':-0.1,
         'z_ipp':-0.3,'zc_ipp':-0.28,'r_ipp':0.5,'contrib_ipp':0.05,
+        'sh_pct':0.11,'exp_sh_pct':0.10,
     }]
     weights = {'sh_pct':-1.2,'ipp':-0.8}
-    out = attach_components_json(rows, metrics=['sh_pct','ipp'], weights=weights)
+    out = attach_components_json(rows, metrics=['sh_pct','ipp'], weights=weights, extreme_threshold=0.25)
     comp = out[0]['components_json']
     assert set(comp.keys()) == {'sh_pct','ipp'}
     assert comp['sh_pct']['weight'] == -1.2
     assert comp['ipp']['z'] == -0.3
+    assert 'obs' in comp['sh_pct'] and comp['sh_pct']['obs'] == 0.11
+    assert 'exp' in comp['sh_pct']
+    # With threshold 0.25, z=0.2 should not be extreme, z=-0.3 should be
+    assert comp['sh_pct']['extreme'] is False
+    assert comp['ipp']['extreme'] is True

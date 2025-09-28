@@ -88,7 +88,7 @@
 	- [x] 4.7 Accumulate logistic score S_raw & formatted integer S (final mapping) using contrib_total. (Implemented in `scoring.apply_logistic_scoring`; integrated via `run_full_scoring_pipeline` including soft clipping → contributions → logistic → components_json. Added integration test `functions/tests/test_full_scoring_pipeline.py`.)
 	- [x] 4.8 Implement finishing residual components (rate & count) conditional on toggle; ensure no division by zero. (Added `finishing.py` with annotate_finishing_residuals, integrated into `run_full_scoring_pipeline`, tests in `test_finishing.py`.)
 	- [x] 4.9 Implement quintile assignment placeholder using prior snapshot (fallback: None => mark provisional_tier until snapshot available). (Added `distribution.py` with snapshot builder & in-memory quintile assignment; integrated into `run_full_scoring_pipeline` returning `snapshot` and assigning `quintile` + `provisional_tier` fields.)
-	- [ ] 4.10 Pack components_json with required fields (z_raw, z_soft, r, n, weight, contrib, extreme flag).
+	- [x] 4.10 Pack components_json with required fields (z_raw, z_soft, r, n, weight, contrib, extreme flag). (Enhanced `scoring.build_components_json` to include obs, exp, n, extreme, rookie, weight, z, zc, contrib, r; pipeline passes configurable threshold.)
 	- [ ] 4.11 Add unit tests for scoring edge cases: zero exposures, extreme high z, reliability scaling, formatting guardrails.
 	- [ ] 4.12 Benchmark scoring function on synthetic dataset (≥5k players × 4 windows) ensure runtime acceptable (< threshold) & record metrics.
 

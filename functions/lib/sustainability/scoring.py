@@ -16,6 +16,8 @@ from __future__ import annotations
 
 from math import exp
 from typing import Iterable, Dict, Any, List, Iterable
+from .reliability import RELIABILITY_METRICS as _REL_MAP
+from .finishing import FINISHING_METRICS, FINISHING_COUNT_METRIC, FINISHING_RATE_METRIC
 
 
 def logistic(x: float) -> float:
@@ -74,21 +76,39 @@ def build_components_json(
     metrics: Iterable[str],
     weights: Dict[str, float],
     include_missing: bool = False,
+    extreme_threshold: float = 4.0,
 ) -> Dict[str, Any]:
     comp: Dict[str, Any] = {}
+    # Trials (n) mapping for rate metrics
+    trials_map = dict(_REL_MAP)
+    # Finishing residuals special handling
+    trials_map[FINISHING_RATE_METRIC] = "shots"
+    trials_map[FINISHING_COUNT_METRIC] = "shots"  # treat shots as exposure context
     for m in metrics:
         z = row.get(f"z_{m}")
         zc = row.get(f"zc_{m}")
         r_val = row.get(f"r_{m}")
         contrib = row.get(f"contrib_{m}")
-        if not include_missing and (contrib is None and r_val is None and z is None):
+        exp_val = row.get(f"exp_{m}")
+        obs_val = row.get(m)
+        n = None
+        trials_field = trials_map.get(m)
+        if trials_field:
+            n = row.get(trials_field)
+        if not include_missing and all(v is None for v in (contrib, r_val, z, zc, obs_val)):
             continue
+        extreme = bool(z is not None and abs(float(z)) >= extreme_threshold)
         comp[m] = {
             "weight": weights.get(m),
             "z": z,
             "zc": zc,
             "r": r_val,
             "contrib": contrib,
+            "obs": obs_val,
+            "exp": exp_val,
+            "n": n,
+            "extreme": extreme,
+            "rookie": row.get("rookie_status"),
         }
     return comp
 
@@ -99,11 +119,18 @@ def attach_components_json(
     weights: Dict[str, float],
     field_name: str = "components_json",
     include_missing: bool = False,
+    extreme_threshold: float = 4.0,
 ) -> List[Dict[str, Any]]:
     out: List[Dict[str, Any]] = []
     for r in rows:
         new_r = r.copy()
-        new_r[field_name] = build_components_json(new_r, metrics, weights, include_missing=include_missing)
+        new_r[field_name] = build_components_json(
+            new_r,
+            metrics,
+            weights,
+            include_missing=include_missing,
+            extreme_threshold=extreme_threshold,
+        )
         out.append(new_r)
     return out
 

@@ -52,6 +52,9 @@ def test_run_full_scoring_pipeline_basic():
     # Finishing residual metrics should appear when toggle enabled and weights present
     comp = sample['components_json']
     assert 'finish_res_cnt' in comp and 'finish_res_rate' in comp
+    # Enriched fields
+    fr = comp['finish_res_cnt']
+    assert 'obs' in fr and 'exp' in fr and 'extreme' in fr and 'weight' in fr
     # Snapshot & quintile
     assert result['snapshot'] is not None
     if sample['window_type'] == 'GAME':

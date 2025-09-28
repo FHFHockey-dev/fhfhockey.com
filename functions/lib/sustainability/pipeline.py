@@ -160,7 +160,8 @@ def run_full_scoring_pipeline(
     scored = apply_logistic_scoring(contrib, guardrails=cfg.constants)
     # Components JSON
     if include_components:
-        scored = attach_components_json(scored, metrics=metrics_list, weights=cfg.weights)
+        extreme_thresh = cfg.constants.get("extreme_z_threshold", 4.0)
+        scored = attach_components_json(scored, metrics=metrics_list, weights=cfg.weights, extreme_threshold=extreme_thresh)
 
     snapshot = None
     if build_snapshot:
