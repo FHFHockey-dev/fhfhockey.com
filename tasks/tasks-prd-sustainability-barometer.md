@@ -93,7 +93,7 @@
 	- [ ] 4.12 Benchmark scoring function on synthetic dataset (≥5k players × 4 windows) ensure runtime acceptable (< threshold) & record metrics.
 
 - [ ] 5.0 Nightly Pipeline Orchestration & Retro Recompute Queue
-	- [ ] 5.1 Implement `pipeline.py` main orchestration run: load config → priors → player priors → new games → windows → scoring → persistence.
+	- [ ] 5.1 Implement `pipeline.py` main orchestration run: load config → priors → player priors → new games → windows → scoring → persistence. (In progress: added `orchestrator.py` with `orchestrate_full_run` performing full scoring flow & returning structured summary; pending: incremental new game detection, run logging persistence, DB locking, retro queue trigger.)
 	- [ ] 5.2 Add function to detect new games (max game_date processed per window_type) to limit scope.
 	- [ ] 5.3 Bulk insert barometer rows (single COPY/UNNEST style if supported; else batched transactions).
 	- [ ] 5.4 Generate distribution snapshot (GAME window) percentiles & summary stats using `distribution.py`.
