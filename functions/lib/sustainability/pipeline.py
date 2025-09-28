@@ -26,6 +26,10 @@ from .player_priors import compute_player_posteriors
 from .windows import build_all_players_windows
 from .zscores import annotate_zscores
 from .reliability import compute_reliability
+from .clipping import apply_soft_clipping
+from .contributions import compute_contributions
+from .scoring import apply_logistic_scoring, attach_components_json
+from .db_adapter import upsert_barometers
 
 
 def _league_priors_map(priors: List[LeaguePriorRow]) -> Dict[Tuple[int, str, str], LeaguePriorRow]:
@@ -96,3 +100,82 @@ def run_pre_scoring_pipeline(
 
 
 __all__ = ["run_pre_scoring_pipeline"]
+
+
+def run_full_scoring_pipeline(
+    season_id: int,
+    games: Iterable[Dict[str, Any]],
+    db_client=None,
+    cfg: SustainabilityConfig | None = None,
+    league_priors: List[LeaguePriorRow] | None = None,
+    player_priors_rows: List[Dict[str, Any]] | None = None,
+    metrics: Iterable[str] | None = None,
+    persist: bool = False,
+    include_components: bool = True,
+    dry_run: bool | None = None,
+) -> Dict[str, Any]:
+    """End‑to‑end scoring pipeline through barometer persistence (Task integration 4.4–4.7).
+
+    Parameters mirror `run_pre_scoring_pipeline` plus:
+      persist: when True attempts DB upsert of barometer rows (no-op if adapter can't connect)
+      include_components: attach components_json diagnostic payload
+      dry_run: legacy alias (if provided overrides persist=False when True)
+
+    Returns dict with extended keys: all pre-scoring keys plus
+      windows_scored: list of rows with score fields
+      persisted_count: int (if persist True)
+    """
+    if dry_run is True:
+        persist = False
+    pre = run_pre_scoring_pipeline(
+        season_id=season_id,
+        games=games,
+        db_client=db_client,
+        cfg=cfg,
+        league_priors=league_priors,
+        player_priors_rows=player_priors_rows,
+        metrics=metrics,
+    )
+    cfg = pre["cfg"]
+    metrics_list = list(metrics) if metrics is not None else list(cfg.weights.keys())
+
+    # Soft clipping
+    clipped = apply_soft_clipping(pre["windows_enriched"], metrics=metrics_list, c=cfg.constants.get("c", 3.0))
+    # Contributions
+    contrib = compute_contributions(clipped, weights=cfg.weights, metrics=metrics_list, use_clipped=True)
+    # Logistic scoring
+    scored = apply_logistic_scoring(contrib, guardrails=cfg.constants)
+    # Components JSON
+    if include_components:
+        scored = attach_components_json(scored, metrics=metrics_list, weights=cfg.weights)
+
+    # Prepare persistence payload
+    persisted_count = 0
+    if persist:
+        out_rows: List[Dict[str, Any]] = []
+        weight_keys = set(cfg.weights.keys())
+        for r in scored:
+            # Only persist windows where we actually have a score
+            if r.get("score") is None:
+                continue
+            out_rows.append({
+                "player_id": r.get("player_id"),
+                "season_id": r.get("season_id", season_id),
+                "position_code": r.get("position_code"),
+                "window_type": r.get("window_type"),
+                "game_date": r.get("game_date"),
+                "score_raw": r.get("score_raw"),
+                "score": r.get("score"),
+                "contrib_total": r.get("contrib_total"),
+                "model_version": cfg.model_version,
+                "config_hash": cfg.config_hash,
+                "rookie_status": r.get("rookie_status"),
+                "components_json": r.get("components_json") if include_components else None,
+            })
+        if out_rows:
+            persisted_count = upsert_barometers(out_rows)
+
+    return {**pre, "windows_scored": scored, "persisted_count": persisted_count}
+
+
+__all__.append("run_full_scoring_pipeline")
