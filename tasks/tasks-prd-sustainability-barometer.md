@@ -56,7 +56,7 @@
 	- [x] 1.9 Document schema decisions in PRD appendices / update task list (Added: FK optional rationale, uniqueness strategy, partial indexes justification, rookie_status index deferred until profiling.)
 
 - [ ] 2.0 Configuration & Constants Initialization
-	- [ ] 2.1 Implement `config_loader.py` to fetch active config row (latest active TRUE and highest model_version).
+	- [x] 2.1 Implement `config_loader.py` to fetch active config row (latest active TRUE and highest model_version).
 	- [ ] 2.2 Validate presence of required keys (weights, toggles, constants, k_r map, c, sd_mode, freshness_days).
 	- [ ] 2.3 Implement hash generation (stable JSON canonicalization + SHA256) for config_hash.
 	- [ ] 2.4 Implement fallback to environment-embedded default if DB row missing (fail gracefully, log warning).
