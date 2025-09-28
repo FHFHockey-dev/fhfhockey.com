@@ -180,14 +180,164 @@ def upsert_barometers(rows: List[Dict[str, Any]]) -> int:
             return 0
         try:
             with conn.transaction():  # type: ignore[attr-defined]
+                payloads = []
                 for r in rows:
-                    # ensure JSON serialization string
                     if isinstance(r.get("components_json"), (dict, list)):
                         r = {**r, "components_json": json.dumps(r["components_json"]) }
-                    conn.execute(sql, r)
+                    payloads.append(r)
+                for p in payloads:
+                    conn.execute(sql, p)
             return len(rows)
         except Exception as e:  # pragma: no cover
             logger.error("upsert_barometers failed: %s", e)
+            return 0
+
+
+def fetch_max_barometer_game_date(model_version: int, window_type: str = "GAME") -> Optional[str]:
+    """Return latest game_date processed for given model_version & window_type.
+
+    Used for incremental detection. Returns ISO date string or None if no rows / unavailable.
+    """
+    sql = """
+        SELECT MAX(game_date)::text
+        FROM model_player_game_barometers
+        WHERE model_version = %(model_version)s AND window_type = %(window_type)s
+    """
+    with get_conn() as conn:
+        if conn is None:
+            return None
+        try:
+            cur = conn.execute(sql, {"model_version": model_version, "window_type": window_type})
+            row = cur.fetchone()
+            if row and row[0]:
+                return row[0]
+            return None
+        except Exception as e:  # pragma: no cover
+            logger.error("fetch_max_barometer_game_date failed: %s", e)
+            return None
+
+
+def upsert_distribution_snapshot(snapshot: Dict[str, Any]) -> int:
+    """Persist distribution snapshot thresholds.
+
+    Expects keys: window_type, model_version, config_hash, n, t20, t40, t60, t80, created_at
+    Upsert on (window_type, model_version, config_hash).
+    """
+    sql = """
+        INSERT INTO sustainability_distribution_snapshots(
+          window_type, model_version, config_hash, n, t20, t40, t60, t80, created_at
+        ) VALUES (
+          %(window_type)s, %(model_version)s, %(config_hash)s, %(n)s, %(t20)s, %(t40)s, %(t60)s, %(t80)s, %(created_at)s
+        )
+        ON CONFLICT (window_type, model_version, config_hash)
+        DO UPDATE SET n=EXCLUDED.n, t20=EXCLUDED.t20, t40=EXCLUDED.t40, t60=EXCLUDED.t60, t80=EXCLUDED.t80, updated_at=NOW();
+    """
+    with get_conn() as conn:
+        if conn is None:
+            return 0
+        try:
+            with conn.transaction():  # type: ignore[attr-defined]
+                conn.execute(sql, snapshot)
+            return 1
+        except Exception as e:  # pragma: no cover
+            logger.error("upsert_distribution_snapshot failed: %s", e)
+            return 0
+
+
+def fetch_latest_distribution_snapshot(window_type: str, model_version: int, config_hash: str) -> Optional[Dict[str, Any]]:
+    sql = """
+        SELECT window_type, model_version, config_hash, n, t20, t40, t60, t80, created_at
+        FROM sustainability_distribution_snapshots
+        WHERE window_type=%(window_type)s AND model_version=%(model_version)s AND config_hash=%(config_hash)s
+        ORDER BY created_at DESC
+        LIMIT 1
+    """
+    with get_conn() as conn:
+        if conn is None:
+            return None
+        try:
+            cur = conn.execute(sql, {"window_type": window_type, "model_version": model_version, "config_hash": config_hash})
+            row = cur.fetchone()
+            if not row:
+                return None
+            cols = [d[0] for d in cur.description]
+            return dict(zip(cols, row))
+        except Exception as e:  # pragma: no cover
+            logger.error("fetch_latest_distribution_snapshot failed: %s", e)
+            return None
+
+
+# --- Locking & Run Log (Task 5.1 extension) -----------------------------------------------------
+
+LOCK_KEY = 834271  # arbitrary unique int for sustainability orchestrator advisory lock
+
+
+def acquire_run_lock(timeout_seconds: int = 0) -> bool:
+    """Attempt to acquire an advisory lock.
+
+    Returns True if lock acquired or DB unavailable (fail-open so pipeline can still run dry).
+    When timeout_seconds > 0 will poll until acquired or timeout.
+    """
+    sql_try = "SELECT pg_try_advisory_lock(%(k)s)"
+    sql_lock = "SELECT pg_advisory_lock(%(k)s)"  # blocking
+    with get_conn() as conn:
+        if conn is None:
+            return True
+        try:
+            if timeout_seconds <= 0:
+                cur = conn.execute(sql_try, {"k": LOCK_KEY})
+                row = cur.fetchone()
+                return bool(row and row[0])
+            else:  # blocking attempt with timeout by using timeout on connection
+                # Psycopg3 supports statement timeout via SET
+                conn.execute("SET LOCAL statement_timeout = %s", (timeout_seconds * 1000,))
+                conn.execute(sql_lock, {"k": LOCK_KEY})
+                return True
+        except Exception as e:  # pragma: no cover
+            logger.error("acquire_run_lock failed: %s", e)
+            return True  # fail-open
+
+
+def release_run_lock():
+    sql = "SELECT pg_advisory_unlock(%(k)s)"
+    with get_conn() as conn:
+        if conn is None:
+            return
+        try:
+            conn.execute(sql, {"k": LOCK_KEY})
+        except Exception as e:  # pragma: no cover
+            logger.error("release_run_lock failed: %s", e)
+
+
+def insert_run_log(entry: Dict[str, Any]) -> int:
+    """Persist a run log entry.
+
+    Expected keys: season_id, model_version, config_hash, started_at, finished_at, duration_ms,
+                   total_rows_scored, persisted_count, snapshot_n, status, meta_json
+    meta_json may be a dict and will be serialized.
+    """
+    if not entry:
+        return 0
+    if isinstance(entry.get("meta_json"), (dict, list)):
+        entry = {**entry, "meta_json": json.dumps(entry["meta_json"]) }
+    sql = """
+        INSERT INTO sustainability_run_logs(
+          season_id, model_version, config_hash, started_at, finished_at, duration_ms,
+          total_rows_scored, persisted_count, snapshot_n, status, meta_json
+        ) VALUES (
+          %(season_id)s, %(model_version)s, %(config_hash)s, %(started_at)s, %(finished_at)s, %(duration_ms)s,
+          %(total_rows_scored)s, %(persisted_count)s, %(snapshot_n)s, %(status)s, %(meta_json)s::jsonb
+        )
+    """
+    with get_conn() as conn:
+        if conn is None:
+            return 0
+        try:
+            with conn.transaction():  # type: ignore[attr-defined]
+                conn.execute(sql, entry)
+            return 1
+        except Exception as e:  # pragma: no cover
+            logger.error("insert_run_log failed: %s", e)
             return 0
 
 __all__ = [
@@ -196,4 +346,10 @@ __all__ = [
     "upsert_league_priors",
     "upsert_player_priors",
     "upsert_barometers",
+    "fetch_max_barometer_game_date",
+    "upsert_distribution_snapshot",
+    "fetch_latest_distribution_snapshot",
+    "acquire_run_lock",
+    "release_run_lock",
+    "insert_run_log",
 ]

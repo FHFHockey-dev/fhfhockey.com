@@ -25,7 +25,7 @@ Persistence (DB):
 from __future__ import annotations
 
 from dataclasses import dataclass, asdict
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 from typing import List, Dict, Any, Iterable, Optional
 
 
@@ -79,7 +79,7 @@ def build_distribution_snapshot(
         t40=t40,
         t60=t60,
         t80=t80,
-        created_at=datetime.utcnow().isoformat(timespec="seconds"),
+        created_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
     )
     return snap
 

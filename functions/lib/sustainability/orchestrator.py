@@ -26,6 +26,7 @@ from typing import Any, Dict, Iterable, List, Optional
 
 from .pipeline import run_full_scoring_pipeline
 from .config_loader import load_config, SustainabilityConfig
+from . import db_adapter
 
 
 @dataclass
@@ -52,8 +53,29 @@ def orchestrate_full_run(
     build_snapshot: bool = True,
     assign_tiers: bool = True,
     cfg: SustainabilityConfig | None = None,
+    incremental: bool = False,
+    snapshot_window_type: str = "GAME",
+    persist_snapshot: bool = False,
+    use_lock: bool = False,
+    log_run: bool = False,
+    lock_timeout_seconds: int = 0,
 ) -> OrchestratorResult:
     t0 = time.time()
+    started_iso = None
+    finished_iso = None
+    lock_acquired = False
+    try_release_lock = False
+    if use_lock and persist:
+        getter = getattr(db_client, "acquire_run_lock", None) if db_client else db_adapter.acquire_run_lock
+        if callable(getter):
+            try:
+                lock_acquired = getter(lock_timeout_seconds)
+                try_release_lock = lock_acquired
+            except Exception:  # pragma: no cover
+                lock_acquired = True  # fail-open
+        phases["lock"] = {"requested": True, "acquired": lock_acquired}
+
+    started_iso = time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime())
     phases: Dict[str, Dict[str, Any]] = {}
 
     # Config phase (explicit to capture timing and because run_full_scoring_pipeline will load if None)
@@ -62,15 +84,28 @@ def orchestrate_full_run(
         cfg = load_config(db_client=db_client)
     phases["config"] = {"duration_ms": int((time.time() - t_cfg) * 1000)}
 
+    # Incremental filter: if enabled and DB accessible, drop games with game_date <= last processed
+    game_list = list(games)
+    if incremental and persist:
+        getter = getattr(db_client, "fetch_max_barometer_game_date", None) if db_client else db_adapter.fetch_max_barometer_game_date
+        try:
+            last_date = getter(cfg.model_version, "GAME") if callable(getter) else None
+        except Exception:
+            last_date = None
+        if last_date:
+            game_list = [g for g in game_list if g.get("game_date") > last_date]
+            phases["incremental_filter"] = {"last_processed": last_date, "games_after_filter": len(game_list)}
+
     t_pipeline = time.time()
     result = run_full_scoring_pipeline(
         season_id=season_id,
-        games=games,
+        games=game_list,
         db_client=db_client,
         cfg=cfg,
         persist=persist,
         build_snapshot=build_snapshot,
         assign_tiers=assign_tiers,
+        snapshot_window_type=snapshot_window_type,
     )
     phases["scoring_pipeline"] = {
         "duration_ms": int((time.time() - t_pipeline) * 1000),
@@ -84,8 +119,22 @@ def orchestrate_full_run(
     if snapshot:
         snapshot_thresholds = {k: snapshot[k] for k in ("t20", "t40", "t60", "t80") if k in snapshot}
 
+    # Persist snapshot thresholds if requested and available
+    if persist_snapshot and snapshot and persist:
+        try:
+            db_snapshot = {
+                **snapshot,
+            }
+            saver = getattr(db_client, "upsert_distribution_snapshot", None) if db_client else db_adapter.upsert_distribution_snapshot
+            if callable(saver):
+                saver(db_snapshot)
+                phases["snapshot_persist"] = {"status": "ok"}
+        except Exception as e:  # pragma: no cover
+            phases["snapshot_persist"] = {"status": "error", "error": str(e)}
+
     total_ms = int((time.time() - t0) * 1000)
-    return OrchestratorResult(
+    finished_iso = time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime())
+    result_obj = OrchestratorResult(
         season_id=season_id,
         model_version=cfg.model_version,
         config_hash=cfg.config_hash,
@@ -96,6 +145,36 @@ def orchestrate_full_run(
         duration_ms=total_ms,
         phases=phases,
     )
+    # Run log persistence
+    if log_run and persist:
+        entry = {
+            "season_id": season_id,
+            "model_version": cfg.model_version,
+            "config_hash": cfg.config_hash,
+            "started_at": started_iso,
+            "finished_at": finished_iso,
+            "duration_ms": total_ms,
+            "total_rows_scored": result_obj.total_rows_scored,
+            "persisted_count": result_obj.persisted_count,
+            "snapshot_n": snapshot_n,
+            "status": "ok",
+            "meta_json": {"phases": phases},
+        }
+        saver = getattr(db_client, "insert_run_log", None) if db_client else db_adapter.insert_run_log
+        if callable(saver):
+            try:
+                saver(entry)
+                phases["run_log"] = {"status": "ok"}
+            except Exception as e:  # pragma: no cover
+                phases["run_log"] = {"status": "error", "error": str(e)}
+    if try_release_lock:
+        rel = getattr(db_client, "release_run_lock", None) if db_client else db_adapter.release_run_lock
+        if callable(rel):
+            try:
+                rel()
+            except Exception:  # pragma: no cover
+                pass
+    return result_obj
 
 
 __all__ = ["orchestrate_full_run", "OrchestratorResult"]
