@@ -61,6 +61,8 @@ def orchestrate_full_run(
     log_run: bool = False,
     lock_timeout_seconds: int = 0,
     reuse_snapshot: bool = True,
+    enqueue_retro_on_config_change: bool = True,
+    previous_config_hash: str | None = None,
 ) -> OrchestratorResult:
     t0 = time.time()
     started_iso = None
@@ -195,6 +197,16 @@ def orchestrate_full_run(
                 rel()
             except Exception:  # pragma: no cover
                 pass
+
+    # Retro recompute enqueue if config changed (Task 5.6 placeholder)
+    if enqueue_retro_on_config_change and persist and previous_config_hash and previous_config_hash != cfg.config_hash:
+        enq = getattr(db_client, "enqueue_retro_task", None) if db_client else db_adapter.enqueue_retro_task
+        if callable(enq):
+            try:
+                enq("config_change", None, season_id)
+                phases["retro_enqueue"] = {"status": "ok", "reason": "config_change"}
+            except Exception as e:  # pragma: no cover
+                phases.setdefault("retro_enqueue", {"status": "error", "error": str(e)})
     return result_obj
 
 

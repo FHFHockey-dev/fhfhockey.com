@@ -352,4 +352,27 @@ __all__ = [
     "acquire_run_lock",
     "release_run_lock",
     "insert_run_log",
+    "enqueue_retro_task",
 ]
+
+
+def enqueue_retro_task(reason: str, player_id: int | None = None, season_id: int | None = None) -> int:
+    """Insert a retro recompute queue entry.
+
+    reason: 'config_change' | 'data_backfill'
+    Returns 1 if inserted else 0. Fails open if DB unavailable.
+    """
+    sql = """
+        INSERT INTO sustainability_recompute_queue(player_id, season_id, reason)
+        VALUES (%(player_id)s, %(season_id)s, %(reason)s)
+    """
+    with get_conn() as conn:
+        if conn is None:
+            return 0
+        try:
+            with conn.transaction():  # type: ignore[attr-defined]
+                conn.execute(sql, {"player_id": player_id, "season_id": season_id, "reason": reason})
+            return 1
+        except Exception as e:  # pragma: no cover
+            logger.error("enqueue_retro_task failed: %s", e)
+            return 0
