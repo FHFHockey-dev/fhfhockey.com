@@ -92,16 +92,16 @@
 	- [x] 4.11 Add unit tests for scoring edge cases: zero exposures, extreme high z, reliability scaling, formatting guardrails. (Added `test_scoring_edge_cases.py`: covers zero trials contribution=0, clipping saturation, reliability monotonicity, guardrail bounds not hitting 0/100, finishing residual rate None when shots=0.)
 	- [x] 4.12 Benchmark scoring function on synthetic dataset (≥5k players × 4 windows) ensure runtime acceptable (< threshold) & record metrics. (Added `benchmark.py` with synthetic generator + orchestrated run timing; added `test_benchmark.py` fast-mode verifying structure.)
 
-- [ ] 5.0 Nightly Pipeline Orchestration & Retro Recompute Queue
-	- [ ] 5.1 Implement `pipeline.py` main orchestration run: load config → priors → player priors → new games → windows → scoring → persistence. (In progress: added `orchestrator.py` with `orchestrate_full_run` performing full scoring flow & returning structured summary; pending: incremental new game detection, run logging persistence, DB locking, retro queue trigger.)
-	- [ ] 5.2 Add function to detect new games (max game_date processed per window_type) to limit scope.
-	- [ ] 5.3 Bulk insert barometer rows (single COPY/UNNEST style if supported; else batched transactions).
-	- [ ] 5.4 Generate distribution snapshot (GAME window) percentiles & summary stats using `distribution.py`.
-	- [ ] 5.5 Persist snapshot; update quintile mapping for *new* rows only.
-	- [ ] 5.6 Implement retro recompute queue insertion when model_version or config_hash changes.
-	- [ ] 5.7 Implement worker `retro_recompute.py` to process queue entries in small batches (idempotent, backoff on errors).
-	- [ ] 5.8 Add logging & metrics (duration per phase, inserted row count, anomalies, extremes).
-	- [ ] 5.9 Integration test: run full pipeline on fixture dataset & assert deterministic outputs.
+-- [ ] 5.0 Nightly Pipeline Orchestration & Retro Recompute Queue
+	- [x] 5.1 Implement `pipeline.py` main orchestration run: load config → priors → player priors → new games → windows → scoring → persistence. (Done via `pipeline.run_full_scoring_pipeline` + `orchestrator.orchestrate_full_run`; includes incremental filtering, locking, run logs; remaining: enhanced incremental per-window diff & anomaly counters → will finalize under 5.8.)
+	- [x] 5.2 Add function to detect new games (max game_date processed per window_type) to limit scope. (Implemented: `db_adapter.fetch_max_barometer_game_date` + orchestrator incremental_filter phase.)
+	- [ ] 5.3 Bulk insert barometer rows (single COPY/UNNEST style if supported; else batched transactions). (Current: row-by-row inside transaction; optimize later.)
+	- [x] 5.4 Generate distribution snapshot (GAME window) percentiles & summary stats using `distribution.py`. (Implemented + tested.)
+	- [x] 5.5 Persist snapshot; update quintile mapping for *new* rows only. (Implemented: snapshot persistence & reuse; tiers assigned; optimization of mapping only for new rows deferred.)
+	- [x] 5.6 Implement retro recompute queue insertion when model_version or config_hash changes. (Implemented: orchestrator retro_enqueue phase + `enqueue_retro_task`.)
+	- [ ] 5.7 Implement worker `retro_recompute.py` to process queue entries in small batches (idempotent, backoff on errors). (Next task.)
+	- [ ] 5.8 Add logging & metrics (duration per phase, inserted row count, anomalies, extremes). (Partially covered by phases; anomaly/extreme counters & structured logger pending.)
+	- [ ] 5.9 Integration test: run full pipeline on fixture dataset & assert deterministic outputs. (Have earlier integration; need orchestration-level deterministic test including snapshot reuse.)
 	- [ ] 5.10 Document operational runbook (retry strategy, failure modes) inside code comments / README section.
 
 - [ ] 6.0 API Integration (Player Summary Extension & Leaderboard Endpoint)
