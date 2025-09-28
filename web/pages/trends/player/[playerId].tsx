@@ -5,7 +5,9 @@ import { useEffect, useState } from "react";
 export default function PlayerTrendPage() {
   const router = useRouter();
   const { playerId } = router.query;
-  const [message, setMessage] = useState("Loading player refactor placeholder...");
+  const [message, setMessage] = useState(
+    "Loading player refactor placeholder..."
+  );
 
   useEffect(() => {
     if (playerId) {
@@ -22,7 +24,9 @@ export default function PlayerTrendPage() {
       <ul style={{ marginTop: "1.5rem", fontSize: "0.9rem", opacity: 0.75 }}>
         <li>Legacy multi-horizon & candlestick visualization removed.</li>
         <li>New data source: predictions_next_game (per-game next matchup).</li>
-        <li>Derived rollups (3/5/10/20) will use SQL view, not forward horizons.</li>
+        <li>
+          Derived rollups (3/5/10/20) will use SQL view, not forward horizons.
+        </li>
       </ul>
       <button
         type="button"

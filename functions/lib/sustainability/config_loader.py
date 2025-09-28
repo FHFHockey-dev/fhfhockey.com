@@ -14,8 +14,19 @@ from __future__ import annotations
 
 import json
 import hashlib
+import logging
 from dataclasses import dataclass, field
 from typing import Any, Dict, Optional, Tuple
+
+try:  # Local import guard so tests without psycopg still pass
+    from . import db_adapter
+except Exception:  # pragma: no cover
+    db_adapter = None  # type: ignore
+
+try:
+    from lib.env_loader import ensure_loaded_for
+except Exception:  # pragma: no cover
+    ensure_loaded_for = lambda *a, **k: None  # type: ignore
 
 
 DEFAULT_CONFIG = {
@@ -69,6 +80,9 @@ REQUIRED_CONSTANT_KEYS = {"c", "k_r", "guardrails", "quintiles"}
 RELIABILITY_METRICS = {"sh_pct", "oish_pct", "ipp"}
 
 
+logger = logging.getLogger("sustainability.config")
+
+
 @dataclass(frozen=True)
 class SustainabilityConfig:
     model_version: int
@@ -97,6 +111,10 @@ class ConfigLoadError(RuntimeError):
     pass
 
 
+class ConfigUpsertError(RuntimeError):
+    pass
+
+
 def canonical_json(value: Any) -> str:
     """Return a canonical JSON string (sorted keys, no whitespace) for hashing."""
     return json.dumps(value, sort_keys=True, separators=(",", ":"))
@@ -108,6 +126,23 @@ def compute_hash(payload: Dict[str, Any]) -> str:
     return h.hexdigest()
 
 
+def build_config_hash_payload(row: Dict[str, Any]) -> Dict[str, Any]:
+    """Extract only the hash-relevant fields from a raw config row.
+
+    Purpose: If future columns are added to the table (e.g., notes, author),
+    the model reproducibility hash remains stable because only semantic
+    parameters are included here.
+    """
+    return {
+        "model_version": row.get("model_version"),
+        "weights_json": row.get("weights_json"),
+        "toggles_json": row.get("toggles_json"),
+        "constants_json": row.get("constants_json"),
+        "sd_mode": row.get("sd_mode"),
+        "freshness_days": row.get("freshness_days"),
+    }
+
+
 def fetch_active_config_row(db_client) -> Optional[Dict[str, Any]]:
     """Fetch the active config row from DB.
 
@@ -116,7 +151,20 @@ def fetch_active_config_row(db_client) -> Optional[Dict[str, Any]]:
 
     Replace this placeholder with actual query logic. Return None if no rows.
     """
-    # Placeholder implementation; integrate with actual DB layer.
+    if db_client is not None:
+        # Expect caller provided already-fetched row or has its own method
+        getter = getattr(db_client, "fetch_active_config_row", None)
+        if callable(getter):
+            return getter()
+        return None
+    # Fallback to module-level db_adapter
+    if db_adapter is not None:
+        # Ensure env is loaded for DSN if necessary
+        ensure_loaded_for(["SUPABASE_DB_URL"])
+        try:
+            return db_adapter.fetch_active_config_row()  # type: ignore[attr-defined]
+        except Exception:  # pragma: no cover
+            return None
     return None
 
 
@@ -209,6 +257,10 @@ def load_config(db_client=None, allow_fallback: bool = True) -> SustainabilityCo
             raise ConfigLoadError("No active configuration row found and fallback disabled.")
         row = DEFAULT_CONFIG.copy()
         source = "default"
+        logger.warning(
+            "SustainabilityConfig fallback: no active DB row; using embedded DEFAULT_CONFIG (model_version=%s)",
+            row.get("model_version"),
+        )
 
     ok, issues = validate_config(row)
     if not ok:
@@ -221,18 +273,23 @@ def load_config(db_client=None, allow_fallback: bool = True) -> SustainabilityCo
                 )
             row = DEFAULT_CONFIG.copy()
             source = "default"
+            logger.warning(
+                "SustainabilityConfig fallback: active DB config invalid (%s); using embedded DEFAULT_CONFIG (model_version=%s)",
+                issues,
+                row.get("model_version"),
+            )
         else:
             raise ConfigLoadError(f"Configuration validation failed: {issues}")
 
-    hash_payload = {
-        "model_version": row.get("model_version"),
-        "weights_json": row.get("weights_json"),
-        "toggles_json": row.get("toggles_json"),
-        "constants_json": row.get("constants_json"),
-        "sd_mode": row.get("sd_mode"),
-        "freshness_days": row.get("freshness_days"),
-    }
-    cfg_hash = compute_hash(hash_payload)
+    cfg_hash = compute_hash(build_config_hash_payload(row))
+    logger.debug(
+        "Loaded SustainabilityConfig source=%s model_version=%s hash=%s sd_mode=%s freshness_days=%s",
+        source,
+        row.get("model_version"),
+        cfg_hash[:12],
+        row.get("sd_mode"),
+        row.get("freshness_days"),
+    )
 
     return SustainabilityConfig(
         model_version=row["model_version"],
@@ -246,10 +303,53 @@ def load_config(db_client=None, allow_fallback: bool = True) -> SustainabilityCo
     )
 
 
+def cross_validate_weights_vs_toggles(cfg: SustainabilityConfig) -> None:
+    """Ensure if a toggle activates a metric, a corresponding weight exists.
+
+    Current design: finishing residual metrics only meaningful if toggle use_finishing_residuals=True.
+    If disabled, weights may still exist (harmless); we only enforce presence when enabled.
+    """
+    if cfg.toggles.get("use_finishing_residuals"):
+        for metric in ("finish_res_rate", "finish_res_cnt"):
+            if metric not in cfg.weights:
+                raise ConfigLoadError(f"Missing weight for active metric '{metric}'")
+
+
+def upsert_new_config_version(
+    db_client,
+    weights: Dict[str, float],
+    toggles: Dict[str, Any],
+    constants: Dict[str, Any],
+    sd_mode: str,
+    freshness_days: int,
+    activate: bool = True,
+) -> SustainabilityConfig:
+    """Insert a new config version and (optionally) mark it active; deactivate prior versions.
+
+    This is a stub; integrate real DB logic (transactional) as needed.
+    Steps:
+      1. Fetch current max(model_version).
+      2. new_version = max + 1.
+      3. Insert row (active flag per param), deactivate previous active if activate=True.
+      4. Return loaded config (ensures validation + hashing).
+    """
+    if db_client is None:
+        raise ConfigUpsertError("db_client required for upsert_new_config_version")
+
+    # Placeholder: user must implement actual persistence. We'll raise to signal incomplete wiring.
+    raise ConfigUpsertError(
+        "upsert_new_config_version not implemented: provide DB persistence layer integration."
+    )
+
+
 __all__ = [
     "SustainabilityConfig",
     "ConfigLoadError",
+    "ConfigUpsertError",
     "load_config",
     "compute_hash",
     "canonical_json",
+    "build_config_hash_payload",
+    "cross_validate_weights_vs_toggles",
+    "upsert_new_config_version",
 ]

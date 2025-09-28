@@ -8,7 +8,9 @@ export default function TrendsIndexPage() {
   const [message, setMessage] = useState("Initializing predictions v2...");
 
   useEffect(() => {
-    setMessage("Predictions v2 refactor in progress. UI temporarily minimized.");
+    setMessage(
+      "Predictions v2 refactor in progress. UI temporarily minimized."
+    );
   }, []);
 
   return (

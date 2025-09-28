@@ -4,7 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-# your packages here, e.g. flask = "*"
+psycopg = "*"
 
 [requires]
 python_version = "3.12"
