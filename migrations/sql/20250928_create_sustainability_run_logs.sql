@@ -12,6 +12,23 @@ BEGIN;
 -- you may want a UNIQUE(model_version, config_hash) there. If that does not exist, either add it
 -- or drop the FK below.
 
+-- Ensure model_version is unique so FK below is valid (id is PK, but we reference model_version)
+DO $$
+BEGIN
+    IF NOT EXISTS (
+            SELECT 1 FROM pg_constraint
+            WHERE conname = 'model_sustainability_config_model_version_key'
+    ) THEN
+        BEGIN
+            ALTER TABLE model_sustainability_config
+                ADD CONSTRAINT model_sustainability_config_model_version_key UNIQUE (model_version);
+        EXCEPTION WHEN duplicate_table THEN
+            -- ignore race, or if added concurrently elsewhere
+            NULL;
+        END;
+    END IF;
+END$$;
+
 CREATE TABLE IF NOT EXISTS sustainability_run_logs (
     id BIGSERIAL PRIMARY KEY,
     season_id INTEGER NOT NULL,
