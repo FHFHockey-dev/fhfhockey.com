@@ -900,8 +900,13 @@ async function getMostRecentDateFromDB(): Promise<string | null> {
 }
 
 async function updateAllSkatersFromMostRecentDate(
-  fullRefresh: boolean = false
+  arg?: boolean | { fullRefresh?: boolean; startDate?: string }
 ) {
+  // Support both boolean and options object to remain backwards compatible
+  const opts = typeof arg === "boolean" ? { fullRefresh: arg } : arg ? arg : {};
+  const fullRefresh = opts.fullRefresh ?? false;
+  const providedStartDate = opts.startDate;
+
   let startDate: Date;
   const currentSeason = await getCurrentSeason();
 
@@ -909,7 +914,13 @@ async function updateAllSkatersFromMostRecentDate(
   const today = new Date();
   const finalEndDate = isBefore(endDate, today) ? endDate : today;
 
-  if (fullRefresh) {
+  if (providedStartDate) {
+    startDate = parseISO(providedStartDate);
+    console.log(
+      "Starting from provided start date:",
+      formatISO(startDate, { representation: "date" })
+    );
+  } else if (fullRefresh) {
     startDate = parseISO(currentSeason.regularSeasonStartDate);
     console.log(
       "Full refresh: Starting from season start date:",
@@ -1502,9 +1513,12 @@ export default async function handler(
       playerId,
       action,
       fullRefresh: fullRefreshParam,
+      startDate: startDateParam, // Accept startDate
       playerFullName: rawPlayerFullName
     } = req.query;
     const fullRefresh = fullRefreshParam === "true" || fullRefreshParam === "1";
+    const startDate =
+      typeof startDateParam === "string" ? startDateParam : undefined;
     const playerFullName = Array.isArray(rawPlayerFullName)
       ? rawPlayerFullName[0]
       : rawPlayerFullName;
@@ -1517,16 +1531,22 @@ export default async function handler(
       details = { message: result.message, failedDates: result.failedDates };
       res.status(200).json(result);
     } else if (action === "all") {
-      console.log(`Action 'all' triggered. Full refresh: ${fullRefresh}`);
-      result = await updateAllSkatersFromMostRecentDate(fullRefresh);
+      console.log(
+        `Action 'all' triggered. Full refresh: ${fullRefresh}, Start date: ${startDate}`
+      );
+      result = await updateAllSkatersFromMostRecentDate({
+        fullRefresh,
+        startDate
+      });
       totalUpdates = result.totalUpdates;
       details = {
         message: result.message,
         datesProcessed: result.datesProcessed,
         failedDates: result.failedDates,
-        fullRefresh
+        fullRefresh,
+        startDate
       };
-      res.status(200).json({ ...result, fullRefresh });
+      res.status(200).json({ ...result, fullRefresh, startDate });
     } else if (date && typeof date === "string") {
       console.log(`Date parameter found: ${date}`);
       const seasonInfo = await getSeasonFromDate(date);
