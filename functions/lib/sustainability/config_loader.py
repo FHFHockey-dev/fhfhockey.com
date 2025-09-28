@@ -65,6 +65,9 @@ REQUIRED_TOGGLE_KEYS = {
 
 REQUIRED_CONSTANT_KEYS = {"c", "k_r", "guardrails", "quintiles"}
 
+# Metrics requiring reliability k_r constants (subset of weights)
+RELIABILITY_METRICS = {"sh_pct", "oish_pct", "ipp"}
+
 
 @dataclass(frozen=True)
 class SustainabilityConfig:
@@ -118,20 +121,78 @@ def fetch_active_config_row(db_client) -> Optional[Dict[str, Any]]:
 
 
 def validate_config(raw: Dict[str, Any]) -> Tuple[bool, str]:
+    """Validate structural correctness of a raw config row.
+
+    Returns (ok, message). If ok=False, message concatenates issues.
+    Validation Layers:
+      * Required top-level maps (weights, toggles, constants)
+      * Required weight keys
+      * Required toggles keys
+      * Required constants keys
+      * k_r coverage for reliability metrics
+      * Guardrails structure (upper_raw > lower_raw in (0,1))
+      * sd_mode enumeration
+      * freshness_days presence & positive integer
+    """
     missing = []
-    if not REQUIRED_WEIGHT_KEYS.issubset(raw.get("weights_json", {}).keys()):
-        diff = REQUIRED_WEIGHT_KEYS - set(raw.get("weights_json", {}).keys())
+    weights = raw.get("weights_json", {})
+    toggles = raw.get("toggles_json", {})
+    constants = raw.get("constants_json", {})
+
+    if not isinstance(weights, dict):
+        missing.append("weights_json not dict")
+    if not isinstance(toggles, dict):
+        missing.append("toggles_json not dict")
+    if not isinstance(constants, dict):
+        missing.append("constants_json not dict")
+
+    if not REQUIRED_WEIGHT_KEYS.issubset(weights.keys()):
+        diff = REQUIRED_WEIGHT_KEYS - set(weights.keys())
         missing.append(f"weights_json missing: {sorted(diff)}")
-    if not REQUIRED_TOGGLE_KEYS.issubset(raw.get("toggles_json", {}).keys()):
-        diff = REQUIRED_TOGGLE_KEYS - set(raw.get("toggles_json", {}).keys())
+    if not REQUIRED_TOGGLE_KEYS.issubset(toggles.keys()):
+        diff = REQUIRED_TOGGLE_KEYS - set(toggles.keys())
         missing.append(f"toggles_json missing: {sorted(diff)}")
-    if not REQUIRED_CONSTANT_KEYS.issubset(raw.get("constants_json", {}).keys()):
-        diff = REQUIRED_CONSTANT_KEYS - set(raw.get("constants_json", {}).keys())
+    if not REQUIRED_CONSTANT_KEYS.issubset(constants.keys()):
+        diff = REQUIRED_CONSTANT_KEYS - set(constants.keys())
         missing.append(f"constants_json missing: {sorted(diff)}")
+
+    # k_r coverage
+    k_r = constants.get("k_r", {})
+    if isinstance(k_r, dict):
+        if not RELIABILITY_METRICS.issubset(k_r.keys()):
+            diff = RELIABILITY_METRICS - set(k_r.keys())
+            missing.append(f"k_r missing metrics: {sorted(diff)}")
+    else:
+        missing.append("k_r not dict")
+
+    # Guardrails shape
+    guardrails = constants.get("guardrails", {})
+    if isinstance(guardrails, dict):
+        upper = guardrails.get("upper_raw")
+        lower = guardrails.get("lower_raw")
+        if not (isinstance(upper, (int, float)) and isinstance(lower, (int, float))):
+            missing.append("guardrails upper_raw/lower_raw must be numeric")
+        else:
+            if not (0 < lower < upper < 1):
+                missing.append("guardrails bounds invalid (expect 0 < lower_raw < upper_raw < 1)")
+    else:
+        missing.append("guardrails not dict")
+
+    # sd_mode
     if raw.get("sd_mode") not in {"fixed", "empirical"}:
         missing.append("sd_mode invalid (expected 'fixed' or 'empirical')")
-    if "freshness_days" not in raw:
+
+    # freshness_days
+    freshness = raw.get("freshness_days")
+    if freshness is None:
         missing.append("freshness_days missing")
+    else:
+        try:
+            if int(freshness) <= 0:
+                missing.append("freshness_days must be > 0")
+        except Exception:
+            missing.append("freshness_days not integer")
+
     return (len(missing) == 0, "; ".join(missing))
 
 

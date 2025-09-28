@@ -57,7 +57,7 @@
 
 - [ ] 2.0 Configuration & Constants Initialization
 	- [x] 2.1 Implement `config_loader.py` to fetch active config row (latest active TRUE and highest model_version).
-	- [ ] 2.2 Validate presence of required keys (weights, toggles, constants, k_r map, c, sd_mode, freshness_days).
+	- [x] 2.2 Validate presence of required keys (weights, toggles, constants, k_r map, c, sd_mode, freshness_days) (Enhanced validation added: k_r coverage, guardrails bounds, freshness_days > 0).
 	- [ ] 2.3 Implement hash generation (stable JSON canonicalization + SHA256) for config_hash.
 	- [ ] 2.4 Implement fallback to environment-embedded default if DB row missing (fail gracefully, log warning).
 	- [ ] 2.5 Add unit tests to confirm deterministic hash for semantically identical JSON ordering.
