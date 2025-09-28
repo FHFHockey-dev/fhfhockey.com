@@ -31,6 +31,7 @@ from .contributions import compute_contributions
 from .scoring import apply_logistic_scoring, attach_components_json
 from .db_adapter import upsert_barometers
 from .finishing import annotate_finishing_residuals, FINISHING_METRICS
+from .distribution import build_distribution_snapshot, assign_quintiles
 
 
 def _league_priors_map(priors: List[LeaguePriorRow]) -> Dict[Tuple[int, str, str], LeaguePriorRow]:
@@ -114,6 +115,9 @@ def run_full_scoring_pipeline(
     persist: bool = False,
     include_components: bool = True,
     dry_run: bool | None = None,
+    build_snapshot: bool = True,
+    assign_tiers: bool = True,
+    snapshot_window_type: str = "GAME",
 ) -> Dict[str, Any]:
     """End‑to‑end scoring pipeline through barometer persistence (Task integration 4.4–4.7).
 
@@ -158,6 +162,12 @@ def run_full_scoring_pipeline(
     if include_components:
         scored = attach_components_json(scored, metrics=metrics_list, weights=cfg.weights)
 
+    snapshot = None
+    if build_snapshot:
+        snapshot = build_distribution_snapshot(scored, window_type=snapshot_window_type, model_version=cfg.model_version, config_hash=cfg.config_hash)
+    if assign_tiers:
+        scored = assign_quintiles(scored, snapshot, window_filter=snapshot_window_type)
+
     # Prepare persistence payload
     persisted_count = 0
     if persist:
@@ -184,7 +194,7 @@ def run_full_scoring_pipeline(
         if out_rows:
             persisted_count = upsert_barometers(out_rows)
 
-    return {**pre, "windows_scored": scored, "persisted_count": persisted_count}
+    return {**pre, "windows_scored": scored, "persisted_count": persisted_count, "snapshot": snapshot.to_dict() if snapshot else None}
 
 
 __all__.append("run_full_scoring_pipeline")
