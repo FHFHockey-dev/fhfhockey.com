@@ -49,3 +49,6 @@ def test_run_full_scoring_pipeline_basic():
     # Contrib_total should align with logistic input
     assert 'contrib_total' in sample
     assert 0 <= sample['score'] <= 100
+    # Finishing residual metrics should appear when toggle enabled and weights present
+    comp = sample['components_json']
+    assert 'finish_res_cnt' in comp and 'finish_res_rate' in comp

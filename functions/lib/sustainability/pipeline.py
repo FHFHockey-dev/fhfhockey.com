@@ -30,6 +30,7 @@ from .clipping import apply_soft_clipping
 from .contributions import compute_contributions
 from .scoring import apply_logistic_scoring, attach_components_json
 from .db_adapter import upsert_barometers
+from .finishing import annotate_finishing_residuals, FINISHING_METRICS
 
 
 def _league_priors_map(priors: List[LeaguePriorRow]) -> Dict[Tuple[int, str, str], LeaguePriorRow]:
@@ -138,9 +139,17 @@ def run_full_scoring_pipeline(
     )
     cfg = pre["cfg"]
     metrics_list = list(metrics) if metrics is not None else list(cfg.weights.keys())
+    # Optionally add finishing residual z annotations prior to clipping
+    enriched = pre["windows_enriched"]
+    if cfg.toggles.get("use_finishing_residuals"):
+        enriched = annotate_finishing_residuals(enriched, pre["sd_constants"])
+        # Ensure metrics list includes finishing metrics if they have weights
+        for fm in FINISHING_METRICS:
+            if fm in cfg.weights and fm not in metrics_list:
+                metrics_list.append(fm)
 
     # Soft clipping
-    clipped = apply_soft_clipping(pre["windows_enriched"], metrics=metrics_list, c=cfg.constants.get("c", 3.0))
+    clipped = apply_soft_clipping(enriched, metrics=metrics_list, c=cfg.constants.get("c", 3.0))
     # Contributions
     contrib = compute_contributions(clipped, weights=cfg.weights, metrics=metrics_list, use_clipped=True)
     # Logistic scoring
