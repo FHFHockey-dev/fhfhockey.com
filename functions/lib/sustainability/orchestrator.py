@@ -27,6 +27,7 @@ from typing import Any, Dict, Iterable, List, Optional
 from .pipeline import run_full_scoring_pipeline
 from .config_loader import load_config, SustainabilityConfig
 from . import db_adapter
+from .distribution import assign_quintiles
 
 
 @dataclass
@@ -59,6 +60,7 @@ def orchestrate_full_run(
     use_lock: bool = False,
     log_run: bool = False,
     lock_timeout_seconds: int = 0,
+    reuse_snapshot: bool = True,
 ) -> OrchestratorResult:
     t0 = time.time()
     started_iso = None
@@ -131,6 +133,25 @@ def orchestrate_full_run(
                 phases["snapshot_persist"] = {"status": "ok"}
         except Exception as e:  # pragma: no cover
             phases["snapshot_persist"] = {"status": "error", "error": str(e)}
+
+    # Snapshot reuse path (5.4/5.5): if we did not build a snapshot but want tiers, try fetching existing
+    if reuse_snapshot and assign_tiers and not snapshot and persist and build_snapshot is False:
+        fetcher = getattr(db_client, "fetch_latest_distribution_snapshot", None) if db_client else db_adapter.fetch_latest_distribution_snapshot
+        try:
+            existing = fetcher(snapshot_window_type, cfg.model_version, cfg.config_hash) if callable(fetcher) else None
+        except Exception:  # pragma: no cover
+            existing = None
+        if existing:
+            phases["snapshot_reuse"] = {"status": "reused", "n": existing.get("n")}
+            # reassign quintiles on GAME window rows only
+            windows_scored = result.get("windows_scored", [])
+            reassigned = assign_quintiles(windows_scored, type("Obj", (), existing)(), window_filter=snapshot_window_type)  # dynamic simple object
+            # mutate in-place for return coherence
+            result["windows_scored"] = reassigned
+            snapshot_n = existing.get("n")
+            snapshot_thresholds = {k: existing[k] for k in ("t20", "t40", "t60", "t80") if k in existing}
+        else:
+            phases["snapshot_reuse"] = {"status": "none_available"}
 
     total_ms = int((time.time() - t0) * 1000)
     finished_iso = time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime())
