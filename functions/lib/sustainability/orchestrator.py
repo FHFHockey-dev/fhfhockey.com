@@ -28,6 +28,7 @@ from .pipeline import run_full_scoring_pipeline
 from .config_loader import load_config, SustainabilityConfig
 from . import db_adapter
 from .distribution import assign_quintiles
+from .anomalies import compute_anomaly_stats
 
 
 @dataclass
@@ -122,6 +123,14 @@ def orchestrate_full_run(
     snapshot_thresholds = None
     if snapshot:
         snapshot_thresholds = {k: snapshot[k] for k in ("t20", "t40", "t60", "t80") if k in snapshot}
+
+    # Anomaly stats (Task 5.8)
+    try:
+        extreme_thresh = cfg.constants.get("extreme_z_threshold", 4.0)
+        anomaly_stats = compute_anomaly_stats(result.get("windows_scored", []), extreme_threshold=extreme_thresh)
+        phases["anomalies"] = anomaly_stats
+    except Exception as e:  # pragma: no cover
+        phases["anomalies"] = {"status": "error", "error": str(e)}
 
     # Persist snapshot thresholds if requested and available
     if persist_snapshot and snapshot and persist:
