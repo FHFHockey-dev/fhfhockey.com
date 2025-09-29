@@ -178,18 +178,20 @@ def run_full_scoring_pipeline(
             # Only persist windows where we actually have a score
             if r.get("score") is None:
                 continue
+            # Map quintile field if present
+            sustainability_quintile = r.get("quintile")
             out_rows.append({
                 "player_id": r.get("player_id"),
                 "season_id": r.get("season_id", season_id),
-                "position_code": r.get("position_code"),
                 "window_type": r.get("window_type"),
                 "game_date": r.get("game_date"),
-                "score_raw": r.get("score_raw"),
-                "score": r.get("score"),
-                "contrib_total": r.get("contrib_total"),
+                "sustainability_score_raw": r.get("score_raw"),
+                "sustainability_score": r.get("score"),
+                "sustainability_quintile": sustainability_quintile,
+                "status": "ACTIVE",
                 "model_version": cfg.model_version,
                 "config_hash": cfg.config_hash,
-                "rookie_status": r.get("rookie_status"),
+                "rookie_status": r.get("rookie_status", False),
                 "components_json": r.get("components_json") if include_components else None,
             })
         if out_rows:

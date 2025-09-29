@@ -100,7 +100,7 @@
 	- [x] 5.5 Persist snapshot; update quintile mapping for *new* rows only. (Implemented: snapshot persistence & reuse; tiers assigned; optimization of mapping only for new rows deferred.)
 	- [x] 5.6 Implement retro recompute queue insertion when model_version or config_hash changes. (Implemented: orchestrator retro_enqueue phase + `enqueue_retro_task`.)
 	- [x] 5.7 Implement worker `retro_recompute.py` to process queue entries in small batches (idempotent, backoff on errors). (Implemented: player-specific recompute stub calling scoring pipeline; global config_change remains no-op placeholder; test added.)
-	- [x] 5.8 Add logging & metrics (duration per phase, inserted row count, anomalies, extremes). (Completed: phases include timings; anomaly & clipping saturation stats added via anomalies phase; run_log meta captures phases.)
+	- [ ] 5.8 Add logging & metrics (duration per phase, inserted row count, anomalies, extremes). (Partially covered by phases; anomaly/extreme counters & structured logger pending.)
 	- [ ] 5.9 Integration test: run full pipeline on fixture dataset & assert deterministic outputs. (Have earlier integration; need orchestration-level deterministic test including snapshot reuse.)
 	- [ ] 5.10 Document operational runbook (retry strategy, failure modes) inside code comments / README section.
 

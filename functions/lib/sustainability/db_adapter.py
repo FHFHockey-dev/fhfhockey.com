@@ -164,24 +164,28 @@ def upsert_barometers(rows: List[Dict[str, Any]], batch_size: int = 500) -> int:
     if not rows:
         return 0
 
+    # Align with existing schema: sustainability_score_raw, sustainability_score
+    # Existing table columns (introspected earlier): player_id, game_id (we will ignore if not provided), game_date, season_id,
+    # window_type, sustainability_score (int), sustainability_score_raw (double), sustainability_quintile (smallint), status,
+    # model_version, config_hash, components_json, rookie_status, extreme_flag
     base_sql_prefix = (
         "INSERT INTO model_player_game_barometers("
-        "player_id, season_id, position_code, window_type, game_date, "
-        "score_raw, score, contrib_total, model_version, config_hash, rookie_status, components_json) VALUES "
+        "player_id, season_id, window_type, game_date, "
+        "sustainability_score_raw, sustainability_score, sustainability_quintile, status, model_version, config_hash, rookie_status, components_json) VALUES "
     )
     conflict_sql = (
         " ON CONFLICT (player_id, window_type, game_date, model_version) DO UPDATE SET "
-        "score_raw=EXCLUDED.score_raw, "
-        "score=EXCLUDED.score, "
-        "contrib_total=EXCLUDED.contrib_total, "
+        "sustainability_score_raw=EXCLUDED.sustainability_score_raw, "
+        "sustainability_score=EXCLUDED.sustainability_score, "
+        "sustainability_quintile=COALESCE(EXCLUDED.sustainability_quintile, model_player_game_barometers.sustainability_quintile), "
+        "status=EXCLUDED.status, "
         "config_hash=EXCLUDED.config_hash, "
-        "components_json=COALESCE(EXCLUDED.components_json, model_player_game_barometers.components_json), "
-        "updated_at=NOW();"
+        "components_json=COALESCE(EXCLUDED.components_json, model_player_game_barometers.components_json);"
     )
 
     columns = [
-        "player_id", "season_id", "position_code", "window_type", "game_date",
-        "score_raw", "score", "contrib_total", "model_version", "config_hash", "rookie_status", "components_json"
+        "player_id", "season_id", "window_type", "game_date",
+        "sustainability_score_raw", "sustainability_score", "sustainability_quintile", "status", "model_version", "config_hash", "rookie_status", "components_json"
     ]
 
     # Pre-serialize JSON
@@ -220,7 +224,7 @@ def upsert_barometers(rows: List[Dict[str, Any]], batch_size: int = 500) -> int:
             # Fallback single-row path
             try:
                 with conn.transaction():  # type: ignore[attr-defined]
-                    single_sql = base_sql_prefix + "(%(player_id)s, %(season_id)s, %(position_code)s, %(window_type)s, %(game_date)s, %(score_raw)s, %(score)s, %(contrib_total)s, %(model_version)s, %(config_hash)s, %(rookie_status)s, %(components_json)s::jsonb)" + conflict_sql
+                    single_sql = base_sql_prefix + "(%(player_id)s, %(season_id)s, %(window_type)s, %(game_date)s, %(sustainability_score_raw)s, %(sustainability_score)s, %(sustainability_quintile)s, %(status)s, %(model_version)s, %(config_hash)s, %(rookie_status)s, %(components_json)s::jsonb)" + conflict_sql
                     for r in serialized:
                         conn.execute(single_sql, r)
                 return len(rows)
@@ -256,24 +260,40 @@ def fetch_max_barometer_game_date(model_version: int, window_type: str = "GAME")
 def upsert_distribution_snapshot(snapshot: Dict[str, Any]) -> int:
     """Persist distribution snapshot thresholds.
 
-    Expects keys: window_type, model_version, config_hash, n, t20, t40, t60, t80, created_at
-    Upsert on (window_type, model_version, config_hash).
+    Existing schema: snapshot_date, season_id, model_version, window_type, percentiles_json, stats_json, created_at
+    We'll store percentiles_json with keys t20..t80 and stats_json with supporting metadata (n, config_hash).
+    Conflict strategy: insert new row; if duplicate (window_type, model_version, season_id) then update json blobs.
     """
+    percentiles = {k: snapshot[k] for k in ("t20", "t40", "t60", "t80") if k in snapshot}
+    stats_json = {k: snapshot.get(k) for k in ("n", "config_hash") if k in snapshot}
+    payload = {
+        "snapshot_date": snapshot.get("created_at"),
+        "season_id": snapshot.get("season_id", 0),
+        "model_version": snapshot.get("model_version"),
+        "window_type": snapshot.get("window_type"),
+        "percentiles_json": json.dumps(percentiles),
+        "stats_json": json.dumps(stats_json),
+        "created_at": snapshot.get("created_at"),
+    }
     sql = """
         INSERT INTO sustainability_distribution_snapshots(
-          window_type, model_version, config_hash, n, t20, t40, t60, t80, created_at
+          snapshot_date, season_id, model_version, window_type, percentiles_json, stats_json, created_at
         ) VALUES (
-          %(window_type)s, %(model_version)s, %(config_hash)s, %(n)s, %(t20)s, %(t40)s, %(t60)s, %(t80)s, %(created_at)s
+          %(snapshot_date)s, %(season_id)s, %(model_version)s, %(window_type)s, %(percentiles_json)s::jsonb, %(stats_json)s::jsonb, %(created_at)s
         )
-        ON CONFLICT (window_type, model_version, config_hash)
-        DO UPDATE SET n=EXCLUDED.n, t20=EXCLUDED.t20, t40=EXCLUDED.t40, t60=EXCLUDED.t60, t80=EXCLUDED.t80, updated_at=NOW();
+                ON CONFLICT (snapshot_date, window_type, model_version)
+                DO UPDATE SET
+                    season_id = EXCLUDED.season_id,
+                    percentiles_json = EXCLUDED.percentiles_json,
+                    stats_json = EXCLUDED.stats_json,
+                    created_at = EXCLUDED.created_at
     """
     with get_conn() as conn:
         if conn is None:
             return 0
         try:
             with conn.transaction():  # type: ignore[attr-defined]
-                conn.execute(sql, snapshot)
+                conn.execute(sql, payload)
             return 1
         except Exception as e:  # pragma: no cover
             logger.error("upsert_distribution_snapshot failed: %s", e)
@@ -281,10 +301,11 @@ def upsert_distribution_snapshot(snapshot: Dict[str, Any]) -> int:
 
 
 def fetch_latest_distribution_snapshot(window_type: str, model_version: int, config_hash: str) -> Optional[Dict[str, Any]]:
+    # Adapt to existing schema; we will not match on config_hash (not a column) so return latest for window/model.
     sql = """
-        SELECT window_type, model_version, config_hash, n, t20, t40, t60, t80, created_at
+        SELECT window_type, model_version, season_id, percentiles_json, stats_json, created_at
         FROM sustainability_distribution_snapshots
-        WHERE window_type=%(window_type)s AND model_version=%(model_version)s AND config_hash=%(config_hash)s
+        WHERE window_type=%(window_type)s AND model_version=%(model_version)s
         ORDER BY created_at DESC
         LIMIT 1
     """
@@ -292,12 +313,23 @@ def fetch_latest_distribution_snapshot(window_type: str, model_version: int, con
         if conn is None:
             return None
         try:
-            cur = conn.execute(sql, {"window_type": window_type, "model_version": model_version, "config_hash": config_hash})
+            cur = conn.execute(sql, {"window_type": window_type, "model_version": model_version})
             row = cur.fetchone()
             if not row:
                 return None
             cols = [d[0] for d in cur.description]
-            return dict(zip(cols, row))
+            data = dict(zip(cols, row))
+            # Expand json percentiles so caller gets t20..t80 keys for compatibility
+            try:
+                perc = data.get("percentiles_json") or {}
+                if isinstance(perc, str):
+                    import json as _json
+                    perc = _json.loads(perc)
+                for k, v in perc.items():
+                    data[k] = v
+            except Exception:
+                pass
+            return data
         except Exception as e:  # pragma: no cover
             logger.error("fetch_latest_distribution_snapshot failed: %s", e)
             return None

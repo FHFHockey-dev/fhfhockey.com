@@ -1,5 +1,19 @@
 from flask import Flask, request, jsonify
-from api.fetch_team_table import fetch_team_table
+import os as _os, sys as _sys
+
+# Ensure project root (functions directory parent) is on sys.path when run as a script
+_here = _os.path.dirname(__file__)
+_root = _os.path.abspath(_os.path.join(_here, '..'))
+_parent = _os.path.abspath(_os.path.join(_root, '..'))
+for _p in (_root, _parent):
+    if _p not in _sys.path:
+        _sys.path.insert(0, _p)
+
+# Support running either via `python -m api.index` (package context) or `python api/index.py`
+try:  # package-style import first
+    from api.fetch_team_table import fetch_team_table  # type: ignore
+except ModuleNotFoundError:  # fallback to local relative
+    from fetch_team_table import fetch_team_table  # type: ignore
 from lib.sko_pipeline import trigger_sko_step_forward
 import os
 
