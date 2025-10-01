@@ -1,7 +1,9 @@
+// web/lib/sustainability/priors.ts
+
 import supabase from "lib/supabase";
 
 // Types
-export type StatCode = "shp" | "oishp" | "ipp";
+export type StatCode = "shp" | "oishp" | "ipp" | "ppshp"; // ppshp = power play shooting %
 export type PosGroup = "F" | "D";
 
 const FORWARDS = new Set(["C", "LW", "RW"]);
@@ -29,6 +31,8 @@ export async function fetchLeagueMeans(
         "nst_oi_gf",
         "nst_oi_sf",
         "points_5v5",
+        "pp_goals",
+        "pp_shots",
         "season_id",
         "position_code"
       ].join(",")
@@ -41,26 +45,35 @@ export async function fetchLeagueMeans(
     sh_sum = 0,
     gf_sum = 0,
     sf_sum = 0,
-    p5_sum = 0;
+    p5_sum = 0,
+    ppg_sum = 0,
+    pps_sum = 0;
   for (const r of data ?? []) {
     g_sum += Number(r.goals) || 0;
     sh_sum += Number(r.shots) || 0;
     gf_sum += Number(r.nst_oi_gf) || 0;
     sf_sum += Number(r.nst_oi_sf) || 0;
     p5_sum += Number(r.points_5v5) || 0;
+    ppg_sum += Number(r.pp_goals) || 0;
+    pps_sum += Number(r.pp_shots) || 0;
   }
 
   const shp = sh_sum > 0 ? g_sum / sh_sum : 0;
   const oishp = sf_sum > 0 ? gf_sum / sf_sum : 0;
   const ipp = gf_sum > 0 ? p5_sum / gf_sum : 0;
-  return { shp, oishp, ipp } as Record<StatCode, number>;
+  const ppshp = pps_sum > 0 ? ppg_sum / pps_sum : 0;
+  return { shp, oishp, ipp, ppshp } as Record<StatCode, number>;
 }
 
-export function betaFromMuK(mu: number, k: number): {
+export function betaFromMuK(
+  mu: number,
+  k: number
+): {
   alpha0: number;
   beta0: number;
 } {
-  if (k <= 0) return { alpha0: mu > 0 ? mu : EPS, beta0: mu < 1 ? 1 - mu : EPS };
+  if (k <= 0)
+    return { alpha0: mu > 0 ? mu : EPS, beta0: mu < 1 ? 1 - mu : EPS };
   const alpha0 = Math.max(mu * k, EPS);
   const beta0 = Math.max((1 - mu) * k, EPS);
   return { alpha0, beta0 };
@@ -91,7 +104,9 @@ export async function fetchPlayerSeasonCounts(seasonIdNow: number): Promise<
         "shots",
         "nst_oi_gf",
         "nst_oi_sf",
-        "points_5v5"
+        "points_5v5",
+        "pp_goals",
+        "pp_shots"
       ].join(",")
     )
     .in("season_id", seasonIds)
@@ -104,7 +119,12 @@ export async function fetchPlayerSeasonCounts(seasonIdNow: number): Promise<
       position_group: PosGroup;
       seasons: Record<
         number,
-        { shp: { s: number; n: number }; oishp: { s: number; n: number }; ipp: { s: number; n: number } }
+        {
+          shp: { s: number; n: number };
+          oishp: { s: number; n: number };
+          ipp: { s: number; n: number };
+          ppshp: { s: number; n: number };
+        }
       >;
     }
   > = new Map();
@@ -123,14 +143,16 @@ export async function fetchPlayerSeasonCounts(seasonIdNow: number): Promise<
     // Use first non-null position group (should match across seasons)
     if (bucket.position_group !== pg) {
       // keep existing; mixed positions rare; treat as forward if any forward
-      if (bucket.position_group === "D" && pg === "F") bucket.position_group = "F"; // favor F
+      if (bucket.position_group === "D" && pg === "F")
+        bucket.position_group = "F"; // favor F
     }
     const sid = Number(row.season_id);
     if (!bucket.seasons[sid]) {
       bucket.seasons[sid] = {
         shp: { s: 0, n: 0 },
         oishp: { s: 0, n: 0 },
-        ipp: { s: 0, n: 0 }
+        ipp: { s: 0, n: 0 },
+        ppshp: { s: 0, n: 0 }
       };
     }
     const rec = bucket.seasons[sid];
@@ -139,12 +161,16 @@ export async function fetchPlayerSeasonCounts(seasonIdNow: number): Promise<
     const gf = Number(row.nst_oi_gf) || 0;
     const sf = Number(row.nst_oi_sf) || 0;
     const p5 = Number(row.points_5v5) || 0;
+    const ppg = Number((row as any).pp_goals) || 0;
+    const pps = Number((row as any).pp_shots) || 0;
     rec.shp.s += goals;
     rec.shp.n += shots;
     rec.oishp.s += gf;
     rec.oishp.n += sf;
     rec.ipp.s += p5;
     rec.ipp.n += gf; // denominator = on-ice goals for
+    rec.ppshp.s += ppg;
+    rec.ppshp.n += pps;
   }
 
   const result: Array<{
@@ -155,6 +181,7 @@ export async function fetchPlayerSeasonCounts(seasonIdNow: number): Promise<
       shp: { s: number; n: number };
       oishp: { s: number; n: number };
       ipp: { s: number; n: number };
+      ppshp: { s: number; n: number };
     }>;
   }> = [];
 
@@ -164,10 +191,15 @@ export async function fetchPlayerSeasonCounts(seasonIdNow: number): Promise<
         season_id: sid,
         shp: val.seasons[sid]?.shp || { s: 0, n: 0 },
         oishp: val.seasons[sid]?.oishp || { s: 0, n: 0 },
-        ipp: val.seasons[sid]?.ipp || { s: 0, n: 0 }
+        ipp: val.seasons[sid]?.ipp || { s: 0, n: 0 },
+        ppshp: val.seasons[sid]?.ppshp || { s: 0, n: 0 }
       })
     );
-    result.push({ player_id: pid, position_group: val.position_group, seasons: seasonsArr });
+    result.push({
+      player_id: pid,
+      position_group: val.position_group,
+      seasons: seasonsArr
+    });
   }
   return result;
 }
@@ -177,13 +209,15 @@ export function blendCounts(
     shp: { s: number; n: number };
     oishp: { s: number; n: number };
     ipp: { s: number; n: number };
+    ppshp: { s: number; n: number };
   }>
 ): Record<StatCode, { s: number; n: number }> {
   const weights = [0.6, 0.3, 0.1];
   const out: Record<StatCode, { s: number; n: number }> = {
     shp: { s: 0, n: 0 },
     oishp: { s: 0, n: 0 },
-    ipp: { s: 0, n: 0 }
+    ipp: { s: 0, n: 0 },
+    ppshp: { s: 0, n: 0 }
   };
   for (let i = 0; i < seasons.length && i < weights.length; i++) {
     const w = weights[i];
@@ -193,6 +227,8 @@ export function blendCounts(
     out.oishp.n += seasons[i].oishp.n * w;
     out.ipp.s += seasons[i].ipp.s * w;
     out.ipp.n += seasons[i].ipp.n * w;
+    out.ppshp.s += seasons[i].ppshp.s * w;
+    out.ppshp.n += seasons[i].ppshp.n * w;
   }
   return out;
 }
@@ -202,7 +238,12 @@ export function betaPosterior(
   beta0: number,
   s: number,
   n: number
-): { post_alpha: number; post_beta: number; post_mean: number; post_var: number } {
+): {
+  post_alpha: number;
+  post_beta: number;
+  post_mean: number;
+  post_var: number;
+} {
   if (n <= 0) {
     const a = alpha0;
     const b = beta0;
@@ -220,66 +261,86 @@ export function betaPosterior(
 }
 
 // Upsert league priors
+// priors.ts
 export async function upsertLeaguePriors(
   season_id: number,
   posGroup: PosGroup,
-  k: { shp: number; oishp: number; ipp: number }
-): Promise<void> {
+  k: { shp: number; oishp: number; ipp: number; ppshp?: number },
+  opts: { dry?: boolean } = {}
+): Promise<
+  Array<{
+    season_id: number;
+    position_group: PosGroup;
+    stat_code: StatCode;
+    k: number;
+    league_mu: number;
+    alpha0: number;
+    beta0: number;
+  }>
+> {
   const means = await fetchLeagueMeans(season_id, posGroup);
-  const rows: any[] = [];
-  (Object.keys(means) as StatCode[]).forEach((stat) => {
+  const rows = (Object.keys(means) as StatCode[]).map((stat) => {
     const mu = means[stat];
-    const { alpha0, beta0 } = betaFromMuK(mu, k[stat]);
-    rows.push({
+    const kVal: number = (k as any)[stat] ?? (stat === "ppshp" ? 80 : 200);
+    const { alpha0, beta0 } = betaFromMuK(mu, kVal);
+    return {
       season_id,
       position_group: posGroup,
       stat_code: stat,
-      k: k[stat],
+      k: kVal,
       league_mu: mu,
       alpha0,
       beta0
-    });
+    };
   });
-  if (!rows.length) return;
-  const { error } = await (supabase as any)
-    .from("sustainability_priors")
-    .upsert(rows, { onConflict: "season_id,position_group,stat_code" });
-  if (error) throw error;
+
+  if (!opts.dry && rows.length) {
+    const { error } = await (supabase as any)
+      .from("sustainability_priors")
+      .upsert(rows, { onConflict: "season_id,position_group,stat_code" });
+    if (error) throw error;
+  }
+  return rows;
 }
 
+// Let player posteriors accept precomputed priors (so dry mode doesn’t require DB writes/reads)
 export async function upsertPlayerPosteriors(
   season_id: number,
   k: { shp: number; oishp: number; ipp: number },
-  dryRun = false
+  dryRun = false,
+  leaguePriors?: Map<string, { alpha0: number; beta0: number }> // NEW
 ): Promise<{ inserted: number; sample: any[] }> {
-  // Load league priors for both pos groups
-  const { data: leagueRows, error: leagueErr } = await (supabase as any)
-    .from("sustainability_priors")
-    .select("season_id, position_group, stat_code, alpha0, beta0")
-    .eq("season_id", season_id);
-  if (leagueErr) throw leagueErr;
-  const leagueMap = new Map<string, { alpha0: number; beta0: number }>();
-  for (const r of leagueRows ?? []) {
-    leagueMap.set(
-      `${r.position_group}|${r.stat_code}`,
-      { alpha0: r.alpha0, beta0: r.beta0 }
-    );
+  let leagueMap = leaguePriors;
+  if (!leagueMap) {
+    const { data: leagueRows, error: leagueErr } = await (supabase as any)
+      .from("sustainability_priors")
+      .select("season_id, position_group, stat_code, alpha0, beta0")
+      .eq("season_id", season_id);
+    if (leagueErr) throw leagueErr;
+    leagueMap = new Map();
+    for (const r of leagueRows ?? []) {
+      leagueMap.set(`${r.position_group}|${r.stat_code}`, {
+        alpha0: r.alpha0,
+        beta0: r.beta0
+      });
+    }
   }
 
-  // fetch player season counts
   const playerSeasonCounts = await fetchPlayerSeasonCounts(season_id);
   const upsertRows: any[] = [];
   for (const rec of playerSeasonCounts) {
-    const blended = blendCounts(rec.seasons.map((s) => ({
-      shp: s.shp,
-      oishp: s.oishp,
-      ipp: s.ipp
-    })));
+    const blended = blendCounts(
+      rec.seasons.map((s) => ({
+        shp: s.shp,
+        oishp: s.oishp,
+        ipp: s.ipp,
+        ppshp: (s as any).ppshp || { s: 0, n: 0 }
+      }))
+    );
     (Object.keys(blended) as StatCode[]).forEach((stat) => {
       const b = blended[stat];
-      const key = `${rec.position_group}|${stat}`;
-      const prior = leagueMap.get(key);
-      if (!prior) return; // should not happen if league priors done
+      const prior = leagueMap!.get(`${rec.position_group}|${stat}`);
+      if (!prior) return;
       const post = betaPosterior(prior.alpha0, prior.beta0, b.s, b.n);
       upsertRows.push({
         player_id: rec.player_id,
@@ -355,7 +416,9 @@ export async function ensureTables() {
   // Without a SQL execution function, we optimistically rely on tables existing.
   // If you have a custom RPC (e.g., exec_sql) you could call it here.
   // eslint-disable-next-line no-console
-  console.log("ensureTables: (best-effort) DDL prepared but not executed via public anon key");
+  console.log(
+    "ensureTables: (best-effort) DDL prepared but not executed via public anon key"
+  );
   return ddlStatements.join("\n\n");
 }
 

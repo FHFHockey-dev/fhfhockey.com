@@ -1,109 +1,179 @@
 import supabase from "lib/supabase";
-import { toPosGroup, PosGroup } from "lib/sustainability/priors";
+import { toPosGroup, PosGroup, StatCode } from "lib/sustainability/priors";
 
 export type WindowCode = "l3" | "l5" | "l10" | "l20";
 const EPS = 1e-9;
 
-export async function fetchShpPrior(season_id: number, pg: PosGroup) {
+// Generic fetch of priors for all Beta proportion stats we currently support.
+// Returns a mapping: stat_code -> { alpha0, beta0, k }
+export async function fetchPriors(
+  season_id: number,
+  pg: PosGroup,
+  statCodes: StatCode[]
+): Promise<Record<StatCode, { alpha0: number; beta0: number; k: number }>> {
   const { data, error } = await (supabase as any)
     .from("sustainability_priors")
-    .select("alpha0, beta0, k")
+    .select("stat_code, alpha0, beta0, k")
     .eq("season_id", season_id)
     .eq("position_group", pg)
-    .eq("stat_code", "shp")
-    .single();
+    .in("stat_code", statCodes);
   if (error) throw error;
-  return { alpha0: Number(data.alpha0), beta0: Number(data.beta0), k: Number(data.k) };
+  const out: any = {};
+  for (const r of data ?? []) {
+    out[r.stat_code] = {
+      alpha0: Number(r.alpha0),
+      beta0: Number(r.beta0),
+      k: Number(r.k)
+    };
+  }
+  return out;
 }
 
-export async function fetchShpWindowCounts(
+// Fetch rolling window counts for all needed columns in one query.
+// We derive per-stat (successes, trials):
+//  - shp: goals / shots
+//  - oishp: nst_oi_gf / nst_oi_sf
+//  - ipp: points_5v5 / nst_oi_gf
+//  - ppshp: pp_goals / pp_shots
+export async function fetchWindowCountsAll(
   player_id: number,
   snapshot_date: string,
   nGames: number
-): Promise<{ goals: number; shots: number }> {
+): Promise<
+  Record<
+    StatCode,
+    {
+      s: number; // successes
+      n: number; // trials
+    }
+  >
+> {
   const { data, error } = await (supabase as any)
     .from("player_stats_unified")
-    .select("goals, shots")
+    .select(
+      [
+        "goals",
+        "shots",
+        "nst_oi_gf",
+        "nst_oi_sf",
+        "points_5v5",
+        "pp_goals",
+        "pp_shots"
+      ].join(",")
+    )
     .eq("player_id", player_id)
     .lte("date", snapshot_date)
     .order("date", { ascending: false })
     .limit(nGames);
   if (error) throw error;
-  let goals = 0,
-    shots = 0;
+  let g = 0,
+    sh = 0,
+    gf = 0,
+    sf = 0,
+    p5 = 0,
+    ppg = 0,
+    pps = 0;
   for (const r of data ?? []) {
-    goals += Number(r.goals) || 0;
-    shots += Number(r.shots) || 0;
+    g += Number(r.goals) || 0;
+    sh += Number(r.shots) || 0;
+    gf += Number(r.nst_oi_gf) || 0;
+    sf += Number(r.nst_oi_sf) || 0;
+    p5 += Number(r.points_5v5) || 0;
+    ppg += Number((r as any).pp_goals) || 0;
+    pps += Number((r as any).pp_shots) || 0;
   }
-  return { goals, shots };
+  return {
+    shp: { s: g, n: sh },
+    oishp: { s: gf, n: sf },
+    ipp: { s: p5, n: gf },
+    ppshp: { s: ppg, n: pps }
+  } as Record<StatCode, { s: number; n: number }>;
 }
 
-export function ebZ_shp(
-  goals: number,
-  shots: number,
+export function ebZ_generic(
+  s: number,
+  n: number,
   alpha0: number,
   beta0: number,
   k: number
 ) {
-  const p_hat = shots > 0 ? goals / shots : 0;
+  const p_hat = n > 0 ? s / n : 0;
   const priorMean = alpha0 / (alpha0 + beta0);
-  const priorVar = (alpha0 * beta0) / ((alpha0 + beta0) ** 2 * (alpha0 + beta0 + 1));
-  const shrink = 1 / (1 + (shots || 0) / Math.max(k, EPS));
-  const sampleVar = (p_hat * (1 - p_hat)) / Math.max(shots, 1);
+  const priorVar =
+    (alpha0 * beta0) / ((alpha0 + beta0) ** 2 * (alpha0 + beta0 + 1));
+  const shrink = 1 / (1 + (n || 0) / Math.max(k, EPS));
+  // Binomial sample variance (unbiased-ish); guard n>0
+  const sampleVar = n > 0 ? (p_hat * (1 - p_hat)) / Math.max(n, 1) : 0;
   const varMixed = priorVar * shrink + sampleVar * (1 - shrink);
   const z = (p_hat - priorMean) / Math.max(Math.sqrt(varMixed), Math.sqrt(EPS));
   return { p_hat, priorMean, priorVar, shrink, varMixed, z };
 }
 
-export async function rebuildShootingZForSnapshot(
+export async function rebuildBetaWindowZForSnapshot(
   season_id: number,
   snapshot_date: string,
   playerIds: number[],
   posByPlayer: Map<number, PosGroup>,
   windows: Array<{ code: WindowCode; n: number }>,
+  statCodes: StatCode[] = ["shp", "oishp", "ipp", "ppshp"],
   dry = false
 ) {
-  // preload priors for F and D
-  const priors: Record<PosGroup, { alpha0: number; beta0: number; k: number }> = {
-    F: await fetchShpPrior(season_id, "F"),
-    D: await fetchShpPrior(season_id, "D")
-  };
+  // Preload priors for both position groups
+  const priorsByPos: Record<
+    PosGroup,
+    Record<StatCode, { alpha0: number; beta0: number; k: number }>
+  > = {
+    F: await fetchPriors(season_id, "F", statCodes),
+    D: await fetchPriors(season_id, "D", statCodes)
+  } as any;
 
   const rows: any[] = [];
   for (const pid of playerIds) {
     const pg = posByPlayer.get(pid);
     if (!pg) continue;
-    const prior = priors[pg];
+    const priors = priorsByPos[pg];
     for (const w of windows) {
-      const { goals, shots } = await fetchShpWindowCounts(pid, snapshot_date, w.n);
-      const { p_hat, priorMean, priorVar, shrink, varMixed, z } =
-        ebZ_shp(goals, shots, prior.alpha0, prior.beta0, prior.k);
-      rows.push({
-        player_id: pid,
-        season_id,
-        snapshot_date,
-        position_group: pg,
-        window_code: w.code,
-        stat_code: "shp",
-        successes: goals,
-        trials: shots,
-        rate: Number(p_hat.toFixed(8)),
-        prior_alpha: prior.alpha0,
-        prior_beta: prior.beta0,
-        prior_mean: Number(priorMean.toFixed(8)),
-        prior_var: Number(priorVar.toFixed(10)),
-        k: prior.k,
-        shrink: Number(shrink.toFixed(8)),
-        var_mixed: Number(varMixed.toFixed(10)),
-        eb_z: Number(z.toFixed(6))
-      });
+      const counts = await fetchWindowCountsAll(pid, snapshot_date, w.n);
+      for (const stat of statCodes) {
+        const prior = priors[stat];
+        if (!prior) continue; // skip if prior row missing (e.g., not yet built)
+        const c = counts[stat];
+        const { p_hat, priorMean, priorVar, shrink, varMixed, z } = ebZ_generic(
+          c.s,
+          c.n,
+          prior.alpha0,
+          prior.beta0,
+          prior.k
+        );
+        rows.push({
+          player_id: pid,
+          season_id,
+          snapshot_date,
+          position_group: pg,
+          window_code: w.code,
+          stat_code: stat,
+          successes: c.s,
+          trials: c.n,
+          rate: Number(p_hat.toFixed(8)),
+          prior_alpha: prior.alpha0,
+          prior_beta: prior.beta0,
+          prior_mean: Number(priorMean.toFixed(8)),
+          prior_var: Number(priorVar.toFixed(10)),
+          k: prior.k,
+          shrink: Number(shrink.toFixed(8)),
+          var_mixed: Number(varMixed.toFixed(10)),
+          eb_z: Number(z.toFixed(6))
+        });
+      }
     }
   }
 
   if (!dry && rows.length) {
     const { error } = await (supabase as any)
       .from("sustainability_window_z")
-      .upsert(rows, { onConflict: "player_id,snapshot_date,window_code,stat_code" });
+      .upsert(rows, {
+        onConflict: "player_id,snapshot_date,window_code,stat_code"
+      });
     if (error) throw error;
   }
   return { count: rows.length, sample: rows.slice(0, 5) };
@@ -157,10 +227,10 @@ CREATE INDEX IF NOT EXISTS idx_suswinz_player ON sustainability_window_z (player
 }
 
 export default {
-  fetchShpPrior,
-  fetchShpWindowCounts,
-  ebZ_shp,
-  rebuildShootingZForSnapshot,
+  fetchPriors,
+  fetchWindowCountsAll,
+  ebZ_generic,
+  rebuildBetaWindowZForSnapshot,
   loadPlayersForSnapshot,
   ensureWindowTable
 };

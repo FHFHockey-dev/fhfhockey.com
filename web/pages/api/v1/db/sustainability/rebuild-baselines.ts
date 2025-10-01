@@ -1,5 +1,6 @@
+// rebuild-baselines.ts
 import { NextApiRequest, NextApiResponse } from "next";
-import supabase from "lib/supabase";
+import supabase from "lib/supabase/server";
 import {
   buildBaselinePayload,
   computePPControls
@@ -77,14 +78,34 @@ async function fetchAllFromView(
   const out: any[] = [];
   while (true) {
     const to = from + PAGE - 1;
-    let q: any = (supabase as any).from(table).select(select).range(from, to);
-    if (applyBuilder) q = applyBuilder(q);
-    const { data, error } = await q;
-    if (error) throw error;
-    if (!data || data.length === 0) break;
-    out.push(...data);
-    if (data.length < PAGE) break;
-    from += PAGE;
+    let q: any = (supabase as any).from(table).select(select);
+    if (applyBuilder) {
+      q = applyBuilder(q);
+    }
+    try {
+      const { data, error } = await q.range(from, to);
+      if (error) {
+        // Attach context for easier debugging
+        const err: any = new Error(
+          `Supabase query error on table=${table} select=${select} range=${from}-${to}: ${error.message || error}`
+        );
+        err.original = error;
+        throw err;
+      }
+
+      if (!data || data.length === 0) break;
+      out.push(...data);
+      if (data.length < PAGE) break;
+      from += PAGE;
+    } catch (err: any) {
+      // Re-throw with context and include stack
+      console.error(
+        `Error fetching from view=${table} select=${select} range=${from}-${to}:`,
+        err?.message ?? err
+      );
+      if (err?.stack) console.error(err.stack);
+      throw err;
+    }
   }
   return out;
 }
@@ -110,7 +131,11 @@ export default async function handler(
     const rawPlayers = (await fetchAllFromView(
       "player_stats_unified",
       "player_id, player_name, position_code",
-      (q: any) => q.gte("date", sinceDate).not("player_id", "is", null)
+      (q: any) =>
+        q
+          .gte("date", sinceDate)
+          .not("player_id", "is", null)
+          .order("player_id", { ascending: true })
     )) as any[];
 
     if (!rawPlayers || rawPlayers.length === 0) {
@@ -156,7 +181,11 @@ export default async function handler(
       const totalsRows = (await fetchAllFromView(
         "player_totals_unified",
         "*",
-        (q: any) => q.in("player_id", batch)
+        (q: any) =>
+          q
+            .in("player_id", batch)
+            .order("player_id", { ascending: true })
+            .order("season_id", { ascending: false })
       )) as PlayerTotalsUnifiedRow[];
 
       // group rows
@@ -238,18 +267,31 @@ export default async function handler(
       if (upsertRecords.length > 0) {
         allUpsertRecords.push(...upsertRecords);
         if (!DRY_RUN) {
-          const { error: upsertError } = await ((supabase as any)
-            .from("player_baselines")
-            .upsert(upsertRecords as any, {
-              onConflict: "player_id,snapshot_date"
-            }) as any);
-
-          if (upsertError) {
-            console.error(
-              "Upsert error. Sample record:",
-              JSON.stringify(upsertRecords[0], null, 2)
+          try {
+            console.log(
+              `Upserting ${upsertRecords.length} baselines (sample player_id=${upsertRecords[0]?.player_id})`
             );
-            throw upsertError;
+            const { error: upsertError } = await ((supabase as any)
+              .from("player_baselines")
+              .upsert(upsertRecords as any, {
+                onConflict: "player_id,snapshot_date"
+              }) as any);
+
+            if (upsertError) {
+              console.error(
+                "Upsert error. Sample record:",
+                JSON.stringify(upsertRecords[0], null, 2)
+              );
+              const e: any = new Error(
+                `Upsert failed: ${upsertError.message || JSON.stringify(upsertError)}`
+              );
+              e.original = upsertError;
+              throw e;
+            }
+          } catch (err: any) {
+            console.error("Caught upsert exception:", err?.message ?? err);
+            if (err?.stack) console.error(err.stack);
+            throw err;
           }
         }
       }
