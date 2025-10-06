@@ -14,7 +14,11 @@ import {
   GameData
 } from "lib/NHL/types";
 import supabase from "lib/supabase";
-import { teamsInfo } from "lib/teamsInfo";
+import {
+  activeTeamAbbreviations,
+  legacyTeamIdToAbbr,
+  teamsInfo
+} from "lib/teamsInfo";
 import supabaseServer from "lib/supabase/server";
 import { Tables } from "lib/supabase/database-generated.types";
 import { updatePlayer } from "pages/api/v1/db/update-player/[playerId]";
@@ -78,34 +82,46 @@ export async function getTeams(seasonId?: number): Promise<Team[]> {
     .eq("team_season.seasonId", seasonId)) as unknown as {
     data: Tables<"teams">[];
   };
-  // Deduplicate by abbreviation: keep the entry with the highest team ID
-  const byAbbr = new Map<string, Tables<"teams">>();
-  for (const t of teams) {
-    const prev = byAbbr.get(t.abbreviation);
-    if (!prev || t.id > prev.id) byAbbr.set(t.abbreviation, t);
-  }
 
-  // Merge in static fallbacks for current NHL teams (e.g., UTA id 68 during rebrand)
-  for (const [abbr, info] of Object.entries(teamsInfo)) {
-    const existing = byAbbr.get(abbr);
-    if (!existing || existing.id < info.id) {
-      // Minimal shape to satisfy Team type downstream
-      byAbbr.set(abbr, {
-        id: info.id,
-        name: info.name,
-        abbreviation: abbr
-        // other columns not required for downstream Team type
-      } as unknown as Tables<"teams">);
+  const canonical = new Map<number, Team>();
+
+  for (const team of teams) {
+    const overrideAbbr = legacyTeamIdToAbbr[team.id];
+    const derivedAbbr = overrideAbbr ?? team.abbreviation;
+    if (!activeTeamAbbreviations.has(derivedAbbr as keyof typeof teamsInfo)) {
+      continue;
+    }
+    const abbr = derivedAbbr as keyof typeof teamsInfo;
+    const info = teamsInfo[abbr];
+    const canonicalId = info.id;
+    const abbreviation = info.abbrev ?? String(abbr);
+    const normalized: Team = {
+      id: canonicalId,
+      name: info.name,
+      abbreviation,
+      logo: getTeamLogo(abbreviation)
+    };
+    const existing = canonical.get(canonicalId);
+    if (!existing || team.id === canonicalId) {
+      canonical.set(canonicalId, normalized);
     }
   }
 
-  const deduped = Array.from(byAbbr.values()).filter(
-    (team) => team.abbreviation !== "ARI"
-  );
-  return deduped.map((team) => ({
-    ...team,
-    logo: getTeamLogo(team.abbreviation)
-  }));
+  for (const [abbr, info] of Object.entries(teamsInfo) as Array<
+    [keyof typeof teamsInfo, (typeof teamsInfo)[keyof typeof teamsInfo]]
+  >) {
+    if (!canonical.has(info.id)) {
+      const abbreviation = info.abbrev ?? String(abbr);
+      canonical.set(info.id, {
+        id: info.id,
+        name: info.name,
+        abbreviation,
+        logo: getTeamLogo(abbreviation)
+      });
+    }
+  }
+
+  return Array.from(canonical.values()).sort((a, b) => a.id - b.id);
 }
 
 export function getTeamLogo(teamAbbreviation: string | undefined) {
@@ -196,6 +212,22 @@ async function getTeamsMap(): Promise<Record<number, Team>> {
   const map: any = {};
   teams.forEach((team) => {
     map[team.id] = team;
+  });
+  Object.entries(legacyTeamIdToAbbr).forEach(([legacyId, abbrKey]) => {
+    const abbr = abbrKey as keyof typeof teamsInfo;
+    const info = teamsInfo[abbr];
+    if (!info) return;
+    const abbreviation = info.abbrev ?? String(abbr);
+    const canonical = map[info.id] ?? {
+      id: info.id,
+      name: info.name,
+      abbreviation,
+      logo: getTeamLogo(abbreviation)
+    };
+    map[Number(legacyId)] = {
+      ...canonical,
+      id: Number(legacyId)
+    };
   });
   return map;
 }

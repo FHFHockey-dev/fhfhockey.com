@@ -97,13 +97,22 @@ export function ebZ_generic(
   beta0: number,
   k: number
 ) {
-  const p_hat = n > 0 ? s / n : 0;
   const priorMean = alpha0 / (alpha0 + beta0);
   const priorVar =
     (alpha0 * beta0) / ((alpha0 + beta0) ** 2 * (alpha0 + beta0 + 1));
-  const shrink = 1 / (1 + (n || 0) / Math.max(k, EPS));
-  // Binomial sample variance (unbiased-ish); guard n>0
-  const sampleVar = n > 0 ? (p_hat * (1 - p_hat)) / Math.max(n, 1) : 0;
+  if (!n || n <= 0) {
+    return {
+      p_hat: priorMean,
+      priorMean,
+      priorVar,
+      shrink: 1,
+      varMixed: priorVar,
+      z: 0
+    };
+  }
+  const p_hat = s / n;
+  const shrink = 1 / (1 + n / Math.max(k, EPS));
+  const sampleVar = (p_hat * (1 - p_hat)) / n;
   const varMixed = priorVar * shrink + sampleVar * (1 - shrink);
   const z = (p_hat - priorMean) / Math.max(Math.sqrt(varMixed), Math.sqrt(EPS));
   return { p_hat, priorMean, priorVar, shrink, varMixed, z };
