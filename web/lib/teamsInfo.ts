@@ -28,6 +28,7 @@ export const teamsInfo: {
     id: number;
     abbrev: string; // added for compatibility with legacy JS version
     location?: string; // added where legacy version exposed a location label
+    legacyIds?: number[];
   };
 } = {
   NJD: {
@@ -494,22 +495,6 @@ export const teamsInfo: {
     abbrev: "WPG",
     location: "Winnipeg"
   },
-  ARI: {
-    name: "Arizona Coyotes",
-    shortName: "Coyotes",
-    primaryColor: "#8C2633", // Red
-    secondaryColor: "#DDCBA4", // Tan
-    jersey: "#ffffff", // White
-    accent: "#A9431E", // Brick Red
-    alt: "#5F259F", // Purple
-    lightColor: "#d72d49", // Lighter Red
-    darkColor: "#6c0415", // Darker Red
-    franchiseId: 28,
-    nstAbbr: "ARI",
-    id: 53,
-    abbrev: "ARI",
-    location: "Arizona"
-  },
   VGK: {
     name: "Vegas Golden Knights",
     shortName: "Knights",
@@ -556,7 +541,8 @@ export const teamsInfo: {
     nstAbbr: "UTA",
     id: 68, // Updated to new NHL team ID so schedules match
     abbrev: "UTA",
-    location: "Utah"
+    location: "Utah",
+    legacyIds: [53, 59]
   }
 };
 
@@ -593,7 +579,6 @@ export const teamNameToAbbreviationMap: { [name: string]: string } = {
   "Columbus Blue Jackets": "CBJ",
   "Minnesota Wild": "MIN",
   "Winnipeg Jets": "WPG",
-  "Arizona Coyotes": "ARI",
   "Vegas Golden Knights": "VGK",
   "Seattle Kraken": "SEA",
   "Utah Mammoth": "UTA",
@@ -625,3 +610,14 @@ export const getTeamAbbreviationById = (teamId: number): string | undefined => {
   );
   return entry ? entry[0] : undefined;
 };
+
+export const activeTeamAbbreviations = new Set(
+  Object.keys(teamsInfo) as Array<keyof typeof teamsInfo>
+);
+
+export const legacyTeamIdToAbbr: Record<number, keyof typeof teamsInfo> = {};
+Object.entries(teamsInfo).forEach(([abbr, info]) => {
+  info.legacyIds?.forEach((legacyId) => {
+    legacyTeamIdToAbbr[legacyId] = abbr as keyof typeof teamsInfo;
+  });
+});

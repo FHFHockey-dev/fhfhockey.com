@@ -1,40 +1,72 @@
-// /Users/tim/Desktop/FHFH/fhfhockey.com/web/pages/api/v1/db/update-wgo-skaters.ts
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//// URL Paths and Query Parameters:
-///////////////////
-//// Full refresh of all seasons:
-////    Path: /api/v1/db/update-wgo-skaters?action=all_seasons_full_refresh
-////
-////    Parameters:
-////      - action: "all_seasons_full_refresh" (string, required) - Triggers a full re-fetch and upsert for all dates across all seasons present in the 'seasons' table.
-////
-///////////////////
-//// Incremental or full refresh from most recent date:
-////    Path: /api/v1/db/update-wgo-skaters?action=all&fullRefresh=true|false
-////    Path: /api/v1/db/update-wgo-skaters?action=all will simply start from the most recent date found in `wgo_skater_stats` or `wgo_skater_stats_playoffs`
-////
-////    Parameters:
-////      - action: "all" (string, required) - Triggers an update from the most recent date found in `wgo_skater_stats` or `wgo_skater_stats_playoffs`.
-////      - fullRefresh: "true" | "1" (string, optional) - If "true" or "1", forces the update to start from the current season's `regularSeasonStartDate`.
-////          Otherwise, it starts from the day after the most recent date in the database.
-////
-///////////////////
-//// Update for a specific date:
-////    Path: /api/v1/db/update-wgo-skaters?date=YYYY-MM-DD
-///
-////    Parameters:
-////      - date: "YYYY-MM-DD" (string, required) - Specifies a single date for which skater statistics should be fetched and upserted.
-////
-///////////////////
-//// Fetch data for a specific player:
-////    Path: /api/v1/db/update-wgo-skaters?playerId=XXX&playerFullName=YYY
-////
-////    Parameters:
-////      - playerId: "XXX" (string, required) - The unique ID of the player whose data needs to be fetched.
-////      - playerFullName: "YYY" (string, optional) - The full name of the player, used for logging and context.
-////
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**
+ * This API route fetches, processes, and stores daily skater statistics from the official NHL API.
+ * It is designed to be called by a cron job or manually to populate and maintain a database
+ * of player game-by-game stats. The script can perform several types of updates, from
+ * incremental daily updates to full historical backfills, controlled by URL query parameters.
+ *
+ * --- How It Works ---
+ * 1.  **Parameter Parsing**: The handler determines the requested operation by parsing query parameters
+ *     like `action`, `date`, `fullRefresh`, etc.
+ * 2.  **Date & Season Logic**: It intelligently determines the date range to process and identifies which
+ *     season(s) those dates belong to, correctly distinguishing between regular season and playoffs.
+ * 3.  **Data Fetching**: It calls up to 16 different NHL API endpoints for each game date to gather a
+ *     comprehensive set of stats (summary, bio, time on ice, puck possession, etc.).
+ * 4.  **Data Aggregation**: The data from all endpoints is aggregated into a single, unified record for each player for that day.
+ * 5.  **Database Upsert**: The aggregated records are "upserted" into the Supabase database, either into
+ *     `wgo_skater_stats` (regular season) or `wgo_skater_stats_playoffs`.
+ * 6.  **Error Handling & Retries**: The script includes a robust retry mechanism. If fetching data for a
+ *     specific date fails, it will attempt a few more times before marking it as a failed date and
+ *     moving on. A final retry pass is attempted at the end of the run.
+ * 7.  **Logging**: The entire process is logged to the console and the results are recorded in the
+ *     `cron_job_audit` table in Supabase for monitoring.
+ *
+ * --- Query Parameters ---
+ *
+ * The script's behavior is controlled by the following query parameters:
+ *
+ * 1.  `action`: The primary parameter to define the script's operation.
+ *
+ *     - `action=all` (Most Common):
+ *       Triggers an update for the current season. By default, it runs incrementally, starting from the
+ *       day after the most recent date found in the database. Can be modified by `fullRefresh` and `startDate`.
+ *       - **Incremental Update (Default)**:
+ *         `/api/v1/db/update-wgo-skaters?action=all`
+ *       - **Full Refresh of Current Season**:
+ *         `/api/v1/db/update-wgo-skaters?action=all&fullRefresh=true`
+ *
+ *     - `action=all_seasons_full_refresh`:
+ *       Triggers a comprehensive backfill of all statistics for every date of every season stored in the
+ *       `seasons` table. This is a very long-running and data-intensive operation.
+ *       - **Example**:
+ *         `/api/v1/db/update-wgo-skaters?action=all_seasons_full_refresh`
+ *
+ * 2.  `date`: Fetches and updates data for a single, specific date.
+ *     - **Format**: YYYY-MM-DD
+ *     - **Example**:
+ *       `/api/v1/db/update-wgo-skaters?date=2023-10-25`
+ *
+ * 3.  `playerId`: Fetches a specific player's career stats for the current and previous season.
+ *     This is primarily for debugging or targeted updates and does not write to the daily stats tables.
+ *     - **Example**:
+ *       `/api/v1/db/update-wgo-skaters?playerId=8478402&playerFullName=Connor%20McDavid`
+ *
+ * 4.  `fullRefresh` (Optional, Boolean): Modifies `action=all`.
+ *     If `true` or `1`, the script ignores the most recent date in the database and re-fetches all data
+ *     from the beginning of the current season.
+ *     - **Example**:
+ *       `/api/v1/db/update-wgo-skaters?action=all&fullRefresh=true`
+ *
+ * 5.  `startDate` (Optional, Date String): Modifies `action=all`.
+ *     Overrides the automatic start date (which is either the day after the last record or the season start)
+ *     with a specific date.
+ *     - **Format**: YYYY-MM-DD
+ *     - **Example**:
+ *       `/api/v1/db/update-wgo-skaters?action=all&startDate=2023-12-01`
+ *
+ * 6.  `playerFullName` (Optional, String): Used for logging when `playerId` is specified.
+ *     - **Example**:
+ *       `/api/v1/db/update-wgo-skaters?playerId=8478402&playerFullName=Connor%20McDavid`
+ */
 
 import { NextApiRequest, NextApiResponse } from "next";
 import supabase from "lib/supabase";
@@ -900,8 +932,13 @@ async function getMostRecentDateFromDB(): Promise<string | null> {
 }
 
 async function updateAllSkatersFromMostRecentDate(
-  fullRefresh: boolean = false
+  arg?: boolean | { fullRefresh?: boolean; startDate?: string }
 ) {
+  // Support both boolean and options object to remain backwards compatible
+  const opts = typeof arg === "boolean" ? { fullRefresh: arg } : arg ? arg : {};
+  const fullRefresh = opts.fullRefresh ?? false;
+  const providedStartDate = opts.startDate;
+
   let startDate: Date;
   const currentSeason = await getCurrentSeason();
 
@@ -909,7 +946,13 @@ async function updateAllSkatersFromMostRecentDate(
   const today = new Date();
   const finalEndDate = isBefore(endDate, today) ? endDate : today;
 
-  if (fullRefresh) {
+  if (providedStartDate) {
+    startDate = parseISO(providedStartDate);
+    console.log(
+      "Starting from provided start date:",
+      formatISO(startDate, { representation: "date" })
+    );
+  } else if (fullRefresh) {
     startDate = parseISO(currentSeason.regularSeasonStartDate);
     console.log(
       "Full refresh: Starting from season start date:",
@@ -1502,9 +1545,12 @@ export default async function handler(
       playerId,
       action,
       fullRefresh: fullRefreshParam,
+      startDate: startDateParam, // Accept startDate
       playerFullName: rawPlayerFullName
     } = req.query;
     const fullRefresh = fullRefreshParam === "true" || fullRefreshParam === "1";
+    const startDate =
+      typeof startDateParam === "string" ? startDateParam : undefined;
     const playerFullName = Array.isArray(rawPlayerFullName)
       ? rawPlayerFullName[0]
       : rawPlayerFullName;
@@ -1517,16 +1563,22 @@ export default async function handler(
       details = { message: result.message, failedDates: result.failedDates };
       res.status(200).json(result);
     } else if (action === "all") {
-      console.log(`Action 'all' triggered. Full refresh: ${fullRefresh}`);
-      result = await updateAllSkatersFromMostRecentDate(fullRefresh);
+      console.log(
+        `Action 'all' triggered. Full refresh: ${fullRefresh}, Start date: ${startDate}`
+      );
+      result = await updateAllSkatersFromMostRecentDate({
+        fullRefresh,
+        startDate
+      });
       totalUpdates = result.totalUpdates;
       details = {
         message: result.message,
         datesProcessed: result.datesProcessed,
         failedDates: result.failedDates,
-        fullRefresh
+        fullRefresh,
+        startDate
       };
-      res.status(200).json({ ...result, fullRefresh });
+      res.status(200).json({ ...result, fullRefresh, startDate });
     } else if (date && typeof date === "string") {
       console.log(`Date parameter found: ${date}`);
       const seasonInfo = await getSeasonFromDate(date);

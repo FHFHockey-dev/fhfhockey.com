@@ -1,5 +1,46 @@
 // pages/api/v1/db/update-nst-gamelog.ts
 
+/**
+ * This API route is responsible for scraping and updating hockey player game log data from Natural Stat Trick (NST).
+ * It supports several modes of operation, controlled by query parameters.
+ *
+ * --- Query Parameters ---
+ *
+ * 1. `runMode` (optional): Specifies the operation mode for the data fetch.
+ *    - `incremental` (default): Fetches data from the last successfully scraped date up to the current date.
+ *      This is the most common mode for daily updates.
+ *      Example: /api/v1/db/update-nst-gamelog
+ *      Example: /api/v1/db/update-nst-gamelog?runMode=incremental
+ *
+ *    - `forward`: Performs a full refresh of the current season's data from its start date to the current date.
+ *      Useful for correcting widespread data issues within the current season.
+ *      Example: /api/v1/db/update-nst-gamelog?runMode=forward
+ *
+ *    - `reverse`: Fetches all historical data for all past seasons, starting from the most recent season and going
+ *      backward in time. This is a heavy operation intended for initial data backfills or major historical updates.
+ *      It can be combined with the `startDate` parameter to begin the process from a specific point in the past.
+ *      Example: /api/v1/db/update-nst-gamelog?runMode=reverse
+ *
+ * 2. `startDate` (optional): Used exclusively with `runMode=reverse`. This parameter defines the starting date for the
+ *    historical data fetch. The script will identify the season corresponding to this date and begin its reverse
+ *    chronological fetch from there. If omitted in `reverse` mode, it starts from the current season.
+ *    The format must be YYYY-MM-DD.
+ *    Example: /api/v1/db/update-nst-gamelog?runMode=reverse&startDate=2022-10-10
+ *
+ * --- How It Works ---
+ *
+ * - The script initiates a connection to a Supabase database to store the scraped data.
+ * - It constructs URLs for the Natural Stat Trick website based on the date range and game situations (e.g., even strength, power play).
+ * - A rate limiter is used to avoid sending too many requests to the NST server in a short period.
+ * - It uses `axios` to fetch the HTML content and `cheerio` to parse the data tables.
+ * - Player names are normalized and mapped to corresponding player IDs in the database.
+ * - The parsed and cleaned data is then "upserted" into the appropriate Supabase tables.
+ * - For full refreshes (`forward` mode), it includes a cross-referencing step against the official NHL API to identify and
+ *   fill in any missing game logs.
+ * - The entire process is logged in a `cron_job_audit` table for monitoring and debugging.
+ *
+ */
+
 import type { NextApiRequest, NextApiResponse } from "next";
 import axios from "axios";
 import * as cheerio from "cheerio";

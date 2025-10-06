@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { getTeams } from "lib/NHL/client";
 import { Team } from "lib/NHL/types";
-import { teamsInfo } from "lib/teamsInfo";
+import { legacyTeamIdToAbbr, teamsInfo } from "lib/teamsInfo";
 
 export default function useTeams() {
   const [teams, setTeams] = useState<Team[]>([]);
@@ -20,20 +20,53 @@ export function useTeamsMap(): { [id: number]: Team } {
 
   const map = useMemo(() => {
     const result: { [id: number]: Team } = {};
-    teams.forEach((team) => (result[team.id] = team));
 
-    // Fallback: ensure static teams exist even if DB hasn't populated
-    // for the current season (e.g., Utah Mammoth id 68 during rebrand).
+    teams.forEach((team) => {
+      const info = teamsInfo[team.abbreviation];
+      if (info) {
+        const abbreviation = info.abbrev ?? team.abbreviation;
+        result[team.id] = {
+          id: team.id,
+          name: info.name,
+          abbreviation,
+          logo: `/teamLogos/${abbreviation}.png`
+        };
+        return;
+      }
+      result[team.id] = team;
+    });
+
     Object.entries(teamsInfo).forEach(([abbr, info]) => {
+      const abbreviation = info.abbrev ?? abbr;
       if (!result[info.id]) {
         result[info.id] = {
           id: info.id,
           name: info.name,
-          abbreviation: abbr,
-          logo: `/teamLogos/${abbr}.png`
+          abbreviation,
+          logo: `/teamLogos/${abbreviation}.png`
         };
       }
     });
+
+    Object.entries(legacyTeamIdToAbbr).forEach(([legacyId, abbrKey]) => {
+      const abbr = abbrKey as keyof typeof teamsInfo;
+      const info = teamsInfo[abbr];
+      if (!info) {
+        return;
+      }
+      const abbreviation = info.abbrev ?? String(abbr);
+      const canonical = result[info.id] ?? {
+        id: info.id,
+        name: info.name,
+        abbreviation,
+        logo: `/teamLogos/${abbreviation}.png`
+      };
+      result[Number(legacyId)] = {
+        ...canonical,
+        id: Number(legacyId)
+      };
+    });
+
     return result;
   }, [teams]);
 

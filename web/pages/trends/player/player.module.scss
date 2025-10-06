@@ -219,6 +219,77 @@
   color: rgba(255, 255, 255, 0.7);
 }
 
+.bandLegend {
+  margin-top: 8px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  opacity: 0.85;
+}
+
+.bandBoxOuter {
+  width: 14px;
+  height: 10px;
+  background: rgba(79, 195, 247, 0.18);
+  border: 1px solid rgba(79, 195, 247, 0.5);
+  border-radius: 2px;
+  display: inline-block;
+}
+
+.bandBoxInner {
+  width: 14px;
+  height: 10px;
+  background: rgba(79, 195, 247, 0.32);
+  border: 1px solid rgba(79, 195, 247, 0.6);
+  border-radius: 2px;
+  display: inline-block;
+}
+
+.bandSpacer {
+  width: 20px;
+}
+
+.controlsRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.seasonSelector {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.4rem 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+}
+
+.seasonSelector select {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border-radius: 6px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8rem;
+}
+
+.seasonSelector select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.seasonRange {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
 @media (max-width: 768px) {
   .page {
     padding: 1.5rem;

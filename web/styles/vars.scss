@@ -659,6 +659,43 @@ $z-desktop-toast: 650;
   }
 }
 
+// Unified secondary (ghost) button variant – used by toggle groups & stepper
+@mixin button-ghost($active: false) {
+  background: transparent;
+  color: if($active, $secondary-color, $text-secondary);
+  border: if($active, 2px solid $primary-color, 1px solid $border-secondary);
+  padding: $space-xs $space-md;
+  font-family: $font-family-accent, sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border-radius: $border-radius-sm;
+  cursor: pointer;
+  position: relative;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+  &:hover:not(:disabled) {
+    color: $primary-color;
+    background-color: rgba($primary-color, 0.08);
+  }
+  &:focus-visible {
+    outline: 2px solid $primary-color;
+    outline-offset: 2px;
+  }
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  @if $active == true {
+    background-color: $primary-color-opaque;
+    box-shadow:
+      0 0 0 1px rgba($primary-color, 0.4),
+      0 0 8px rgba($primary-color, 0.4);
+  }
+}
+
 @mixin table-base {
   // Definition 2 (Implicitly overrides Def 1)
   margin: 0 auto;

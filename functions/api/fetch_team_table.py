@@ -1,4 +1,5 @@
 # scripts/fetch_team_table.py
+# functions/api/fetch_team_table.py
 
 import requests
 from bs4 import BeautifulSoup

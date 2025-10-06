@@ -116,10 +116,7 @@ function chunk<T>(items: T[], size: number): T[][] {
   return chunks;
 }
 
-async function fetchPlayers(
-  query: any,
-  limit?: number
-): Promise<number[]> {
+async function fetchPlayers(query: any, limit?: number): Promise<number[]> {
   const request = limit ? query.limit(limit) : query;
   const res = await request;
   const data = (res?.data ?? []) as Array<{
@@ -200,7 +197,17 @@ function buildPredictionRecord(
 }
 
 const handler = async (req: AdminRequest, res: NextApiResponse) => {
-  const start = Date.now();
+  const startWall = Date.now();
+  const startHr = process.hrtime.bigint();
+  const debugParam = (req.query?.debug ?? (req.body as any)?.debug) as
+    | string
+    | undefined;
+  const debug = debugParam === "1" || debugParam === "true";
+
+  const phases: Record<string, number> = {};
+  const mark = (name: string) => {
+    phases[name] = Date.now() - startWall;
+  };
 
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
@@ -209,26 +216,11 @@ const handler = async (req: AdminRequest, res: NextApiResponse) => {
       .json({ success: false, message: "Method not allowed" });
   }
 
+  // Provided by adminOnly wrapper (either admin user or cron secret)
   const _authorizedClient = req.supabase;
   const admin = serviceRoleClient;
 
   try {
-    const secret = process.env.SKO_UPDATE_SECRET;
-    if (secret) {
-      const header =
-        req.headers["authorization"] ?? req.headers["x-sko-secret"];
-      const token = Array.isArray(header)
-        ? header[0]
-        : typeof header === "string"
-          ? header.replace(/^Bearer\s+/i, "").trim()
-          : undefined;
-      if (!token || token !== secret) {
-        return res
-          .status(401)
-          .json({ success: false, message: "Unauthorized" });
-      }
-    }
-
     const body =
       typeof req.body === "string" && req.body
         ? JSON.parse(req.body)
@@ -280,16 +272,22 @@ const handler = async (req: AdminRequest, res: NextApiResponse) => {
         .order("player_id", { ascending: true });
       playerIds = await fetchPlayers(baseQuery, batchSize);
     }
+    mark("phase_player_discovery");
 
     if (!playerIds.length) {
+      const totalMsEmpty = Number(
+        (process.hrtime.bigint() - startHr) / BigInt(1_000_000)
+      );
+      phases.total = totalMsEmpty;
       return res.status(200).json({
         success: true,
         asOfDate,
         horizon,
         players: 0,
         upserts: 0,
-        duration: `${((Date.now() - start) / 1000).toFixed(2)}s`,
-        message: `No eligible skaters found for ${asOfDate}`
+        duration: `${(totalMsEmpty / 1000).toFixed(2)}s`,
+        message: `No eligible skaters found for ${asOfDate}`,
+        ...(debug ? { timings: phases } : {})
       });
     }
 
@@ -298,17 +296,30 @@ const handler = async (req: AdminRequest, res: NextApiResponse) => {
     }
 
     const predictionRecords: PredictionsInsert[] = [];
+    let playerSeriesQueries = 0;
+    let totalSeriesFetchMs = 0;
+    let totalProcessMs = 0;
+    let maxSeriesLength = 0;
+    let minSeriesLength = Number.POSITIVE_INFINITY;
+    const PROGRESS_INTERVAL = 50;
 
-    for (const playerId of playerIds) {
+    for (let i = 0; i < playerIds.length; i++) {
+      const playerId = playerIds[i];
+      const fetchStart = Date.now();
       const series = await fetchPlayerSeries(
         admin,
         playerId,
         asOfDate,
         effectiveStartIso
       );
+      const fetchEnd = Date.now();
+      playerSeriesQueries += 1;
+      totalSeriesFetchMs += fetchEnd - fetchStart;
       if (!series.length) continue;
-
+      const processStart = Date.now();
       const pointsSeries = series.map((row) => Number(row.points ?? 0));
+      maxSeriesLength = Math.max(maxSeriesLength, pointsSeries.length);
+      minSeriesLength = Math.min(minSeriesLength, pointsSeries.length);
       const record = buildPredictionRecord(
         playerId,
         asOfDate,
@@ -317,19 +328,65 @@ const handler = async (req: AdminRequest, res: NextApiResponse) => {
         stabilityWindow
       );
       predictionRecords.push(record);
+      totalProcessMs += Date.now() - processStart;
+
+      if (debug && (i + 1) % PROGRESS_INTERVAL === 0) {
+        // eslint-disable-next-line no-console
+        console.log(
+          `[update-predictions-sko] progress ${i + 1}/${playerIds.length} avgFetchMs=${(
+            totalSeriesFetchMs / playerSeriesQueries
+          ).toFixed(2)} avgProcessMs=${(
+            totalProcessMs / playerSeriesQueries
+          ).toFixed(2)}`
+        );
+      }
     }
+    mark("phase_series_and_build");
 
     let upserts = 0;
+    const batchDurations: number[] = [];
     for (const batch of chunk(predictionRecords, UPSERT_BATCH_SIZE)) {
       if (!batch.length) continue;
+      const bStart = Date.now();
       const { error } = await admin
         .from("predictions_sko")
         .upsert(batch, { onConflict: "player_id,as_of_date,horizon_games" });
       if (error) throw error;
       upserts += batch.length;
+      batchDurations.push(Date.now() - bStart);
     }
+    mark("phase_upserts");
 
-    const durationSec = ((Date.now() - start) / 1000).toFixed(2);
+    const totalMs = Number(
+      (process.hrtime.bigint() - startHr) / BigInt(1_000_000)
+    );
+    phases.total = totalMs;
+    phases.avg_player_fetch_ms = playerSeriesQueries
+      ? Number((totalSeriesFetchMs / playerSeriesQueries).toFixed(2))
+      : 0;
+    phases.avg_player_process_ms = playerSeriesQueries
+      ? Number((totalProcessMs / playerSeriesQueries).toFixed(2))
+      : 0;
+    phases.max_series_len = maxSeriesLength;
+    phases.min_series_len =
+      minSeriesLength === Number.POSITIVE_INFINITY ? 0 : minSeriesLength;
+    phases.upsert_batches = batchDurations.length;
+    phases.avg_upsert_batch_ms = batchDurations.length
+      ? Number(
+          (
+            batchDurations.reduce((a, b) => a + b, 0) / batchDurations.length
+          ).toFixed(2)
+        )
+      : 0;
+
+    // Server log summary
+    // eslint-disable-next-line no-console
+    console.log(
+      `[update-predictions-sko] completed players=${playerIds.length} upserts=${upserts} totalMs=${totalMs} avgFetchMs=${phases.avg_player_fetch_ms} avgProcessMs=${phases.avg_player_process_ms} batches=${batchDurations.length}`
+    );
+
+    res.setHeader("X-Execution-Time-ms", String(totalMs));
+    const durationSec = (totalMs / 1000).toFixed(2);
     return res.status(200).json({
       success: true,
       asOfDate,
@@ -337,14 +394,16 @@ const handler = async (req: AdminRequest, res: NextApiResponse) => {
       players: playerIds.length,
       upserts,
       duration: `${durationSec}s`,
-      message: `Refreshed sKO predictions for ${playerIds.length} skaters (${upserts} rows) as of ${asOfDate} in ${durationSec}s`
+      message: `Refreshed sKO predictions for ${playerIds.length} skaters (${upserts} rows) as of ${asOfDate} in ${durationSec}s`,
+      ...(debug ? { timings: phases } : {})
     });
   } catch (error: any) {
     // eslint-disable-next-line no-console
     console.error("update-predictions-sko error", error?.message ?? error);
-    return res
-      .status(500)
-      .json({ success: false, message: error?.message ?? "Unexpected error" });
+    return res.status(500).json({
+      success: false,
+      message: error?.message ?? "Unexpected error"
+    });
   }
 };
 

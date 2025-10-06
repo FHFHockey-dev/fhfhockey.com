@@ -1,71 +1,111 @@
+@use "sass:color";
+@use "styles/vars" as v;
+
+// ============================================================================
+// Trends Page Layout (Refined to match Design System v1.1)
+// ============================================================================
+
 .page {
+  background-color: v.$background-dark;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
-  gap: 2.4rem;
-  padding: 2rem 2.5rem 3rem;
+  gap: v.$space-xl;
+  padding: v.$space-lg v.$space-xl;
+  position: relative;
 }
 
-.header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 1.5rem;
+// Skip link (optional future; style placeholder)
+.skipLink {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: v.$primary-color;
+  color: v.$text-button;
+  padding: v.$space-xs v.$space-sm;
+  font-size: v.$font-size-xs;
+  text-decoration: none;
+  border-radius: v.$border-radius-sm;
+  &:focus-visible {
+    top: 0;
+  }
 }
 
-.titleBlock {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-
-.title {
-  font-size: 2rem;
-  font-weight: 600;
-}
-
-.subtitle {
-  font-family: "Roboto Condensed", sans-serif;
-  color: rgba(255, 255, 255, 0.65);
-  font-size: 1rem;
-  max-width: 640px;
-}
-
-.metaBlock {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.25rem;
-  min-width: 200px;
+// Glass utility (shared with metric cards & controls) – mirrors .glass-panel recipe
+.glassPanel {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.05),
+    rgba(255, 255, 255, 0.02)
+  );
+  backdrop-filter: blur(12px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: v.$desktop-panel-shadow;
+  border-radius: v.$border-radius-lg;
 }
 
 .controlsAndMetrics {
   display: grid;
   grid-template-columns: 320px 1fr;
-  gap: 2rem;
+  gap: v.$space-xl;
   align-items: start;
+  width: 100%;
+  position: relative;
 }
 
 .controls {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: v.$space-lg;
   position: sticky;
-  top: 80px; /* Adjust based on nav height */
+  top: 80px; // Adjust if global nav height changes
+  padding: v.$space-md;
+  @extend .glassPanel;
+  // Provide a subtle accent top bar
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, v.$primary-color, v.$secondary-color);
+    box-shadow: 0 0 8px rgba(v.$primary-color, 0.6);
+    border-top-left-radius: inherit;
+    border-top-right-radius: inherit;
+  }
 }
 
-.searchContainer,
-.stepper,
+// Grouping containers for alignment similar to DraftSettings
+.controlGroup {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-sm;
+}
+
+.controlRow {
+  display: flex;
+  align-items: stretch;
+  gap: v.$space-sm;
+}
+
+.searchContainer {
+  flex: 1;
+}
+
 .infoWrapper {
   width: 100%;
 }
 
-.stepper,
-.searchContainer > :global(input),
+.stepper {
+  width: 100%;
+}
+
+.searchContainer > :global(input) {
+  height: 42px;
+}
 .infoWrapper > :global(button) {
-  height: 42px; /* Consistent height */
-  display: flex;
-  align-items: center;
+  height: 42px;
 }
 
 .searchContainer > :global(input) {
@@ -73,125 +113,396 @@
   padding-bottom: 0;
 }
 
+.controlsHeader {
+  font-family: v.$font-family-accent;
+  font-size: v.$font-size-sm;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: v.$text-primary;
+  padding: 0 v.$space-xs;
+}
+
+.searchInput {
+  width: 100%;
+  background-color: v.$background-dark;
+  color: v.$text-primary;
+  border: 2px solid v.$border-secondary;
+  border-radius: v.$border-radius-md;
+  padding: v.$space-xs v.$space-sm;
+  font-size: v.$font-size-sm;
+  &:focus {
+    border-color: v.$primary-color;
+    box-shadow: 0 0 0 3px rgba(v.$primary-color, 0.25);
+    outline: none;
+  }
+  &::placeholder {
+    color: v.$text-secondary;
+  }
+}
+
+.searchResults {
+  margin-top: v.$space-xs;
+  background: v.$background-dark;
+  border: 1px solid v.$primary-color;
+  border-radius: v.$border-radius-md;
+  max-height: 260px;
+  overflow-y: auto;
+  @include v.custom-scrollbar(v.$primary-color, v.$background-medium, 4px);
+}
+.searchResultItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: v.$space-xs v.$space-sm;
+  cursor: pointer;
+  font-size: v.$font-size-xs;
+  color: v.$text-primary;
+  &:hover {
+    background: v.$primary-color;
+    color: v.$color-white;
+  }
+}
+.emptyResult {
+  padding: v.$space-xs v.$space-sm;
+  font-size: v.$font-size-xs;
+  color: v.$text-secondary;
+}
+
 .infoWrapper {
   justify-content: flex-start;
 }
 
 .infoButton {
-  background: rgba(79, 195, 247, 0.15);
-  border: 1px solid rgba(79, 195, 247, 0.35);
-  color: #4fc3f7;
-  border-radius: 8px;
+  background: rgba(v.$primary-color, 0.12);
+  border: 1px solid rgba(v.$primary-color, 0.4);
+  color: v.$primary-color;
+  border-radius: v.$border-radius-md;
   width: 100%;
   height: 100%;
   cursor: pointer;
-  transition: background 0.2s ease;
-  font-size: 0.9rem;
-  font-weight: 500;
+  transition:
+    background 0.2s ease,
+    box-shadow 0.2s ease,
+    color 0.2s ease;
+  font-size: v.$font-size-sm;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  position: relative;
+  &:hover:not(:disabled) {
+    background: rgba(v.$primary-color, 0.28);
+    box-shadow:
+      0 0 0 1px rgba(v.$primary-color, 0.5),
+      0 0 12px rgba(v.$primary-color, 0.35);
+  }
+  &:focus-visible {
+    outline: 2px solid v.$primary-color;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 3px rgba(v.$primary-color, 0.35);
+  }
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 }
 
-.infoButton:hover {
-  background: rgba(79, 195, 247, 0.3);
+// Stepper redesigned to mirror toggle button group aesthetics
+.stepper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: v.$background-dark;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-md;
+  padding: v.$space-xs v.$space-sm;
+  gap: v.$space-sm;
+}
+
+.stepperInfo {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.stepperLabel {
+  font-size: v.$font-size-xxs;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: v.$text-secondary;
+  font-weight: 600;
+}
+
+.stepperDate {
+  font-family: v.$font-family-numbers;
+  font-size: v.$font-size-sm;
+  color: v.$text-primary;
+  font-weight: 600;
+}
+
+.stepperActions {
+  display: flex;
+  align-items: center;
+}
+
+.stepperButton {
+  @include v.button-ghost(true);
+  min-width: 96px;
 }
 
 .infoGlyph {
-  margin-right: 0.5rem;
+  margin-right: v.$space-sm;
   font-weight: 700;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu,
-    "Helvetica Neue", Arial;
+  font-family:
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    Ubuntu,
+    "Helvetica Neue",
+    Arial;
 }
 
 .tableActions {
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.6);
+  gap: v.$space-sm;
+  font-size: v.$font-size-xs;
+  color: v.$text-secondary;
 }
 
 .metrics {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(4, minmax(160px, 1fr));
+  gap: v.$space-lg;
+  align-items: stretch;
 }
 
-.metricCard {
-  background: #10141e;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
+.metricsWrapper {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
-  padding: 1rem;
-  position: relative;
-  overflow: hidden;
-  transition: transform 0.2s ease, background 0.2s ease;
+  gap: v.$space-xl;
 }
 
-.metricCard::before {
-  content: "";
+.metricComposite {
+  @extend .glassPanel;
+  padding: v.$space-lg;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-md;
+  position: relative;
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, v.$primary-color, v.$secondary-color);
+  }
+}
+
+.metricCompositeHeader {
+  font-family: v.$font-family-accent;
+  font-size: v.$font-size-sm;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: v.$text-primary;
+}
+
+.metricCompositeValue {
+  font-family: v.$font-family-numbers;
+  font-size: v.$font-size-xl;
+  font-weight: 700;
+  color: v.$primary-color;
+  text-shadow: 0 0 10px rgba(v.$primary-color, 0.55);
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-xs;
+}
+
+.metricCompositeSub {
+  font-size: v.$font-size-xs;
+  color: v.$text-secondary;
+  font-weight: 400;
+}
+.metricBars {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-sm;
+}
+.metricBar {
+  display: grid;
+  grid-template-columns: 48px 1fr 54px;
+  gap: v.$space-sm;
+  align-items: center;
+}
+.metricBarLabel {
+  font-size: v.$font-size-xs;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: v.$text-secondary;
+  text-transform: uppercase;
+}
+.metricBarTrack {
+  position: relative;
+  height: 12px;
+  background: color.adjust(v.$background-dark, $lightness: 6%);
+  border: 1px solid v.$border-secondary;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.metricBarFill {
   position: absolute;
   top: 0;
   left: 0;
-  right: 0;
-  height: 2px;
-  background: #4fc3f7; /* Accent color */
-  opacity: 0.75;
+  bottom: 0;
+  background: linear-gradient(90deg, v.$primary-color, v.$secondary-color);
+  box-shadow: 0 0 6px rgba(v.$primary-color, 0.5);
+}
+.metricBarValue {
+  font-family: v.$font-family-numbers;
+  font-size: v.$font-size-xs;
+  color: v.$text-primary;
+  text-align: right;
 }
 
-.metricCard:hover {
-  transform: translateY(-3px);
-  background: #141924;
+@media (max-width: 1200px) {
+  .metrics {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  }
+}
+
+.metricCard {
+  @extend .glassPanel;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-xs;
+  padding: v.$space-md;
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    background 0.25s ease;
+  isolation: isolate; // ensure glow layering doesn't bleed
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+      circle at 15% 20%,
+      rgba(v.$primary-color, 0.18),
+      transparent 60%
+    );
+    mix-blend-mode: screen;
+    opacity: 0.4;
+    pointer-events: none;
+  }
+  &::after {
+    // accent top bar
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, v.$primary-color, v.$secondary-color);
+    box-shadow: 0 0 6px rgba(v.$primary-color, 0.6);
+  }
+  &:hover:not(.loading) {
+    transform: translateY(-4px);
+    box-shadow:
+      0 8px 28px rgba(0, 0, 0, 0.55),
+      0 0 0 1px rgba(255, 255, 255, 0.12),
+      0 0 24px rgba(v.$primary-color, 0.25);
+  }
+  &:focus-within {
+    box-shadow:
+      0 0 0 2px rgba(v.$primary-color, 0.4),
+      0 0 0 4px rgba(v.$primary-color, 0.15);
+  }
+  &.loading {
+    opacity: 0.6;
+  }
 }
 
 .metricTitle {
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 0.85rem;
+  color: v.$text-primary;
+  font-size: v.$font-size-xs;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.metricValue {
-  font-size: 1.4rem;
+  letter-spacing: 0.06em;
   font-weight: 600;
 }
 
+.metricValue {
+  font-family: v.$font-family-numbers;
+  font-size: v.$font-size-lg;
+  font-weight: 600;
+  color: v.$primary-color;
+  text-shadow: 0 0 8px rgba(v.$primary-color, 0.5);
+  font-variant-numeric: tabular-nums; // alignment
+}
+
 .metricDetail {
-  color: rgba(255, 255, 255, 0.65);
-  font-size: 0.8rem;
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
 }
 
 .tableWrapper {
   overflow-x: auto;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: v.$border-radius-lg;
+  border: 1px solid v.$border-primary;
+  background-color: v.$background-dark;
+  position: relative;
+  // subtle inner gradient at top for depth under sticky header
+  &::before {
+    content: "";
+    position: sticky;
+    top: 0;
+    display: block;
+    height: 0;
+    box-shadow: 0 2px 0 rgba(255, 255, 255, 0.05);
+  }
 }
 
 .playerTable {
   width: 100%;
   border-collapse: collapse;
   min-width: 720px;
-}
-
-.playerTable thead {
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.playerTable th,
-.playerTable td {
-  padding: 0.5rem 1rem;
-  text-align: left;
-  vertical-align: middle;
-  height: 56px;
-}
-
-.playerTable tbody tr:nth-child(odd) {
-  background: rgba(255, 255, 255, 0.02);
-}
-
-.playerTable tbody tr:hover {
-  background: rgba(255, 255, 255, 0.05);
+  font-size: v.$font-size-sm;
+  font-variant-numeric: tabular-nums;
+  thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  th {
+    background-color: color.adjust(v.$background-dark, $lightness: -5%);
+    color: v.$text-primary;
+    padding: v.$space-sm v.$space-md;
+    font-weight: 700;
+    text-align: left;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 2px solid v.$border-secondary;
+    white-space: nowrap;
+  }
+  td {
+    padding: v.$space-sm v.$space-md;
+    color: v.$text-secondary;
+    border-bottom: 1px solid v.$border-secondary;
+    height: 56px;
+    vertical-align: middle;
+  }
+  tbody tr:nth-child(odd) {
+    background-color: color.adjust(v.$background-dark, $lightness: -2%);
+  }
+  tbody tr:hover {
+    background-color: color.adjust(v.$background-dark, $lightness: 2%);
+  }
 }
 
 .clickableRow {
@@ -206,11 +517,12 @@
 
 .playerName {
   font-weight: 600;
+  color: v.$text-primary;
 }
 
 .playerMeta {
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 0.8rem;
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
 }
 
 .sparklineCell {
@@ -229,40 +541,57 @@
 
 .sparklinePath {
   fill: none;
-  stroke: #4fc3f7;
+  stroke: v.$primary-color;
   stroke-width: 2;
 }
 
 .sparklineShade {
-  fill: rgba(79, 195, 247, 0.15);
+  fill: rgba(v.$primary-color, 0.15);
 }
 
 .placeholder {
-  padding: 1.5rem;
+  padding: v.$space-lg;
   text-align: center;
-  color: rgba(255, 255, 255, 0.6);
+  color: v.$text-secondary;
 }
 
 .error {
-  background: rgba(255, 0, 0, 0.1);
-  border: 1px solid rgba(255, 0, 0, 0.3);
-  border-radius: 8px;
-  padding: 1rem 1.25rem;
+  background: rgba(v.$danger-color, 0.1);
+  border: 1px solid rgba(v.$danger-color, 0.3);
+  border-radius: v.$border-radius-md;
+  padding: v.$space-md;
+  color: v.$text-primary;
 }
 
 .loading {
-  color: rgba(255, 255, 255, 0.7);
+  color: v.$text-secondary;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: v.$breakpoint-desktop) {
   .controlsAndMetrics {
     grid-template-columns: 1fr;
+    gap: v.$space-lg;
   }
 
   .controls {
     position: static;
     flex-direction: row;
     flex-wrap: wrap;
+    background: transparent;
+    backdrop-filter: none;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    &::before {
+      display: none;
+    }
+  }
+
+  .controlGroup {
+    flex: 1 1 280px;
+  }
+  .stepper {
+    flex: 1 1 auto;
   }
 
   .searchContainer {
@@ -271,17 +600,25 @@
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: v.$breakpoint-tablet) {
   .page {
-    padding: 1.5rem;
+    padding: v.$space-md;
   }
 
   .controls {
     flex-direction: column;
     align-items: stretch;
   }
+}
 
-  .metaBlock {
-    align-items: flex-start;
+// Reduced motion support
+@media (prefers-reduced-motion: reduce) {
+  .metricCard,
+  .infoButton {
+    transition: none;
+    transform: none !important;
+  }
+  .metricCard:hover {
+    box-shadow: v.$desktop-panel-shadow;
   }
 }

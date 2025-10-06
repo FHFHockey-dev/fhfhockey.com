@@ -401,3 +401,118 @@ Next contributor: modeling backfill now populates seasonal parquet (2022-23 onwa
   - [ ] Alerting if failure or unusually low updated rows.
   - [x] One-season backfill script that runs under 15s to seed historical features (`backfill_seasons.py` + manifest).
   - [ ] Lightweight nightly scorer/uploader (<300s) leveraging cached models + append-only features.
+
+---
+
+## 14) Progress Update (2025-09-27)
+
+### Newly Completed Since Previous Snapshot
+| Area | Item | Status |
+|------|------|--------|
+| Modeling | Horizon=1 (single‑game) targets & force-train logic | ✅ Implemented (fallback 80/20 split when no natural holdout) |
+| Modeling | Multi-horizon (1,3,5,10,20) unified training & scoring loop | ✅ |
+| Modeling | Uncertainty generation (Poisson quantiles q05–q95 + variance) | ✅ (per horizon, appended; parquet + upload) |
+| Data Upload | Supabase upserts for predictions, metrics, holdout, uncertainty | ✅ (resilient retries, skip holdout flag) |
+| Resilience | Retry + exponential backoff for HTTP2/SSL transient errors | ✅ |
+| Logging | Structured per-day & per-horizon logging in `step_forward.py` | ✅ |
+| Logging | Upload summary & migration hint for missing columns | ✅ |
+| DB | Uncertainty table migration script with proper PK & index | ✅ (file present; requires applying in target env) |
+| Deltas | Points delta computation (actual vs predicted) parquet | ✅ (local only; not yet persisted to DB) |
+| Actuals Capture | JSONL append of per-day actual stats | ✅ |
+
+### Partially Complete
+| Area | Detail | Remaining Gap |
+|------|--------|---------------|
+| LightGBM / XGBoost | LightGBM sometimes unavailable in earlier runs (now appears during scoring) | Standardize dependency & document reproducible install |
+| Metrics Upload | Works, but daily MAE/MAPE not yet visualized across horizons historically | Add historical aggregation + UI consumption |
+| Backfill | Step simulation functional for a window | Add restart/resume manifest + idempotent run ledger |
+| Uncertainty | Only points stat; single distribution assumption Poisson | Extend multi-stat + alternative distributions (e.g., NegBin) |
+
+### Still Outstanding / Not Started (Key)
+| Area | Item |
+|------|------|
+| Modeling | top_features (explainability) export to parquet & DB |
+| Modeling | Season-aware rolling backtest w/ archived run metrics |
+| Data | Team / opponent strength, schedule density, home/away features |
+| Data | Centered share positive/negative splits for stability layer |
+| Ops | Nightly orchestrated job chain (features → train (conditional) → score → uncertainty → upload → deltas) with alerts |
+| Ops | Deltas table migration + uploader (points first, extensible) |
+| Ops | Incremental feature build mode (append new day only) |
+| Resilience | Optional HTTP/1.1 fallback transport for Supabase requests |
+| Observability | Run manifest / audit trail (job id, git sha, timings, row counts) |
+| UI | Integrate per-horizon uncertainty ribbons & delta summaries |
+
+### Known Nuances & Roadblocks
+1. Early Season Data Scarcity: Horizon=1 lacked a natural holdout; force-train path added (skips metrics to avoid zero division) — revisit once enough games accumulate.
+2. Network Instability: HTTP/2 stream resets caused upload failures; mitigated with retries + backoff but consider lowering chunk size or adding manual transport override.
+3. Migration Drift: Uncertainty table missing `lambda_total` on first upload attempt produced hard failure; detection + hint now printed. Need an automated migration verifier step before pipeline runs.
+4. Parquet Corruption: Prior `sko_features.parquet` corruption (pyarrow repetition level mismatch) was solved by quarantining and full rebuild; no checksum guard yet — consider hashing file after write.
+5. Performance: Full feature rebuild each step is wasteful. Need incremental append (last N days) to reduce runtime and I/O.
+6. Idempotence: Upload scripts overwrite same PK rows (desirable for predictions) but deltas parquet is append-only; implementing a deterministic primary key for deltas would avoid duplicates if re-run.
+7. Time Anchoring: Scoring uses `prev_date` as `as_of_date` anchor for predictions of future horizon window; ensure UI semantics match (display “Predicted next X games from previous game day”).
+8. Uncertainty Semantics: Poisson assumes independence + integer counts; if moving to rate-based or multi-stat predictions, evaluate Negative Binomial for overdispersion.
+
+### Current Data Flow (High-Level)
+```
+player_stats_unified (DB) ─┐
+                            ├─> features.py → sko_features.parquet
+Historical models (manifest) ┘             │
+                                            ├─> train.py (conditional) → models/, sko_metrics.parquet, sko_holdout_predictions.parquet
+sko_features.parquet + models → score.py → sko_predictions.parquet
+sko_predictions.parquet → compute_uncertainty.py → sko_uncertainty.parquet
+sko_predictions.parquet + game_actuals.jsonl → step_forward (delta calc) → prediction_deltas.parquet
+{predictions, holdout, metrics, uncertainty}.parquet → upload_predictions.py → Supabase tables
+```
+
+### Key Scripts & Paths
+| Purpose | Path |
+|---------|------|
+| Feature extraction | `web/scripts/modeling/features.py` |
+| Training | `web/scripts/modeling/train.py` |
+| Scoring | `web/scripts/modeling/score.py` |
+| Uncertainty | `web/scripts/modeling/compute_uncertainty.py` |
+| Upload | `web/scripts/modeling/upload_predictions.py` |
+| Step simulation | `web/scripts/modeling/step_forward.py` |
+| Backfill seasons | `web/scripts/modeling/backfill_seasons.py` |
+| Output directory | `web/scripts/output/` |
+| Models manifest | `web/scripts/output/models/manifest.json` |
+| Deltas (local) | `web/scripts/output/prediction_deltas.parquet` |
+| Actuals capture | `web/scripts/output/game_actuals.jsonl` |
+
+### Environment Variables (Operational Core)
+| Variable | Role |
+|----------|------|
+| DATABASE_URL / SUPABASE_DB_URL | Source DB connectivity |
+| SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY | Supabase REST upserts |
+| SKO_STEP_START / SKO_STEP_END | Backtest / simulation window |
+| SKO_STEP_HORIZONS | Comma-separated horizons for scoring |
+| SKO_STEP_TRAIN_FREQUENCY_DAYS | Retraining cadence |
+| SKO_STEP_AUTORANGE / SKO_STEP_LOOKBACK | Historical feature window control |
+| SKO_UPLOAD_SKIP_HOLDOUT | Skip heavy holdout upserts in backfill |
+| SKO_UPLOAD_MAX_RETRIES / SKO_UPLOAD_RETRY_BASE | Network retry tuning |
+| SKO_SCORE_AS_OF_DATE / SKO_SCORE_HORIZON | Manual scoring overrides |
+| SKO_UNCERTAINTY_STAT_KEY | Stat key for uncertainty (default points) |
+
+### Suggested Immediate Next Steps
+1. Apply and verify uncertainty & metrics table migrations automatically (pre-flight SQL check script). 
+2. Create `prediction_deltas` table + uploader (PK: player_id, stat_key, game_date, horizon_games) and extend delta computation to other stats (goals, assists). 
+3. Implement incremental feature append (limit extraction to new dates since last run). 
+4. Add `top_features` extraction (SHAP or gain) stored JSONB to power UI explainability. 
+5. Introduce run manifest table (run_id, git_sha, start_ts, end_ts, counts) for audit & UI “last updated” indicators. 
+6. Extend uncertainty to multiple stats & evaluate Negative Binomial (capture overdispersion). 
+7. Add alerting (e.g., row count < threshold, runtime > SLA). 
+8. Introduce HTTP/1.1 fallback or custom httpx transport if transient HTTP/2 errors persist beyond retry budget. 
+9. UI: Add uncertainty ribbons + delta MAE trend view per horizon. 
+10. Performance profiling: time each stage with row counts & memory to guide caching. 
+
+### Risk Register (Condensed)
+| Risk | Impact | Mitigation |
+|------|--------|------------|
+| Missing migrations in prod | Upload failures halt pipeline | Pre-flight migration check + auto apply |
+| Feature build full-scan daily | Slow scale-up & cost | Incremental append mode |
+| No audit trail | Hard to debug discrepancies | Run manifest & checksum logging |
+| Overfitting horizon=1 early | Poor early-season accuracy | Re-train threshold gating + confidence weighting |
+| Poisson variance mis-spec | Under/over confidence bands | Fit dispersion & shift to NegBin if needed |
+| Network flakiness | Intermittent data gaps | Retries (done) + alt transport + chunk size tuning |
+
+---
