@@ -23,7 +23,7 @@ export default async function handler(
   if (!playerId) {
     return res.json({
       message: "Player Id is required",
-      success: false,
+      success: false
     });
   }
 
@@ -39,12 +39,12 @@ export default async function handler(
       success: true,
       message:
         "Successfully fetch the sustainability stats for player: " + playerId,
-      data: stats,
+      data: stats
     });
   } catch (e: any) {
     res.json({
       success: false,
-      message: "Unable to fetch the data. " + e.message,
+      message: "Unable to fetch the data. " + e.message
     });
   }
 }
@@ -89,7 +89,7 @@ async function getStats(
 
   const [individualHtml, onIceHtml] = (await Promise.all([
     fetchWithCache(individualURL, false),
-    fetchWithCache(onIceURL, false),
+    fetchWithCache(onIceURL, false)
   ])) as string[];
   const individualDocument = parse(individualHtml);
 
@@ -97,13 +97,13 @@ async function getStats(
   const onIces = parseTable(onIceDocument.getElementById("players"));
   const onIce = {
     headers: onIces.headers,
-    data: onIces.data.find((person) => person[1] === player.fullName),
+    data: onIces.data.find((person) => person[1] === player.fullName)
   };
 
   const individuals = parseTable(individualDocument.getElementById("indreg"));
   const individual = {
     headers: individuals.headers,
-    data: individuals.data.find((person) => person[1] === player.fullName),
+    data: individuals.data.find((person) => person[1] === player.fullName)
   };
 
   if (!individual.data || !onIce.data) {
@@ -165,7 +165,7 @@ async function getStats(
     iHDCF: iHDCF,
     iSCF: iSCF,
     ixG: ixG,
-    goals: goals,
+    goals: goals
   };
 }
 
@@ -201,5 +201,5 @@ const NST_TEAM_ABBREVATION: { [key: string]: string } = {
   "Vancouver Canucks": "VAN",
   "Vegas Golden Knights": "VGK",
   "Winnipeg Jets": "WPG",
-  "Washington Capitals": "WSH",
+  "Washington Capitals": "WSH"
 };

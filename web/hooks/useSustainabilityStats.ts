@@ -25,8 +25,8 @@ export default function useSustainabilityStats(
           body: JSON.stringify({
             StartTime,
             EndTime,
-            Season: season?.seasonId,
-          }),
+            Season: season?.seasonId
+          })
         }
       )
         .then((res) => res.json())
