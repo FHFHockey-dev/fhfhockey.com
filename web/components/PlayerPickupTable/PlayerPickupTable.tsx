@@ -4,6 +4,7 @@ import styles from "./PlayerPickupTable.module.scss";
 import Image from "next/image";
 import clsx from "clsx";
 import useCurrentSeason from "hooks/useCurrentSeason";
+import { teamsInfo } from "lib/teamsInfo";
 
 // TO DO
 // integrate week score, dynamic. if toggle turns off a day, update score
@@ -151,6 +152,67 @@ const goalieQuantityKeys: MetricKey[] = [
 ];
 const gamePlayedKey: MetricKey = "percent_games"; // Keep GP% separate for UI Grouping
 
+type OwnershipTimelineEntry = {
+  date?: string | null;
+  value?: number | string | null;
+};
+
+const getLatestOwnershipValue = (timelineRaw: unknown): number | null => {
+  let entries: OwnershipTimelineEntry[] | null = null;
+
+  if (Array.isArray(timelineRaw)) {
+    entries = timelineRaw as OwnershipTimelineEntry[];
+  } else if (typeof timelineRaw === "string") {
+    try {
+      const parsed = JSON.parse(timelineRaw);
+      if (Array.isArray(parsed)) {
+        entries = parsed as OwnershipTimelineEntry[];
+      }
+    } catch (err) {
+      console.warn("Failed to parse ownership_timeline string", err);
+    }
+  }
+
+  if (!entries || entries.length === 0) {
+    return null;
+  }
+
+  let latestTimestamp: number | null = null;
+  let latestDateString: string | null = null;
+  let latestValue: number | null = null;
+
+  for (const entry of entries) {
+    if (!entry || typeof entry !== "object") continue;
+    const entryDateRaw = typeof entry.date === "string" ? entry.date : null;
+    if (!entryDateRaw) continue;
+
+    const parsedTimestamp = Date.parse(entryDateRaw);
+    const numericValue =
+      typeof entry.value === "number"
+        ? entry.value
+        : entry.value != null
+          ? Number(entry.value)
+          : NaN;
+
+    if (Number.isNaN(numericValue)) continue;
+
+    if (!Number.isNaN(parsedTimestamp)) {
+      if (latestTimestamp === null || parsedTimestamp > latestTimestamp) {
+        latestTimestamp = parsedTimestamp;
+        latestValue = numericValue;
+      }
+      continue;
+    }
+
+    if (latestDateString === null || entryDateRaw > latestDateString) {
+      latestDateString = entryDateRaw;
+      latestValue = numericValue;
+    }
+  }
+
+  return latestValue;
+};
+
 // ---------------------------
 // Default Filter Settings & Props
 // ---------------------------
@@ -205,25 +267,147 @@ const normalizePlayerName = (name: string | null): string => {
   return shortenName(mappedName);
 };
 
+const sanitizeTeamValue = (value: string | number): string =>
+  String(value)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^A-Za-z]/g, "")
+    .toUpperCase();
+
+const DIRECT_TEAM_ABBREVIATION_OVERRIDES: Record<
+  string,
+  keyof typeof teamsInfo
+> = {
+  TB: "TBL",
+  TAMPA: "TBL",
+  SJ: "SJS",
+  SJS: "SJS",
+  SJSHARKS: "SJS",
+  NJ: "NJD",
+  NJD: "NJD",
+  LA: "LAK",
+  LAKINGS: "LAK",
+  LOSANGELESKINGS: "LAK"
+};
+
+const teamAliasMap: Map<string, keyof typeof teamsInfo> = (() => {
+  const map = new Map<string, keyof typeof teamsInfo>();
+  const addAlias = (
+    alias: string | number | null | undefined,
+    abbr: keyof typeof teamsInfo
+  ) => {
+    if (alias === null || alias === undefined) return;
+    const key = sanitizeTeamValue(alias);
+    if (!key) return;
+    if (!map.has(key)) {
+      map.set(key, abbr);
+    }
+  };
+
+  (
+    Object.entries(teamsInfo) as Array<
+      [keyof typeof teamsInfo, (typeof teamsInfo)[keyof typeof teamsInfo]]
+    >
+  ).forEach(([abbr, info]) => {
+    addAlias(abbr, abbr);
+    addAlias(info.abbrev, abbr);
+    addAlias(info.nstAbbr, abbr);
+    addAlias(info.name, abbr);
+    addAlias(info.shortName, abbr);
+    addAlias(`${info.name} ${info.shortName}`, abbr);
+    if (info.location) {
+      addAlias(info.location, abbr);
+      addAlias(`${info.location} ${info.shortName}`, abbr);
+      addAlias(`${info.location}${info.shortName}`, abbr);
+    }
+    addAlias(`${abbr}${info.shortName}`, abbr);
+    if (info.nstAbbr) {
+      addAlias(`${info.nstAbbr}${info.shortName}`, abbr);
+      addAlias(`${info.nstAbbr}.${info.shortName}`, abbr);
+    }
+  });
+
+  return map;
+})();
+
+const resolveTeamAlias = (raw: string | null | undefined): string | null => {
+  if (!raw) return null;
+  const sanitized = sanitizeTeamValue(raw);
+  if (!sanitized) return null;
+
+  const override = DIRECT_TEAM_ABBREVIATION_OVERRIDES[sanitized];
+  if (override) return String(override);
+
+  if ((teamsInfo as Record<string, unknown>)[sanitized]) {
+    return sanitized;
+  }
+
+  const aliasResolved = teamAliasMap.get(sanitized);
+  if (aliasResolved) return String(aliasResolved);
+
+  // Heuristic: try to infer from team names when alias lookup fails.
+  for (const [abbr, info] of Object.entries(teamsInfo) as Array<
+    [keyof typeof teamsInfo, (typeof teamsInfo)[keyof typeof teamsInfo]]
+  >) {
+    const abbrSan = sanitizeTeamValue(abbr);
+    const shortSan = sanitizeTeamValue(info.shortName);
+    const locationSan = info.location ? sanitizeTeamValue(info.location) : "";
+    const nameSan = sanitizeTeamValue(info.name);
+    const nstSan = info.nstAbbr ? sanitizeTeamValue(info.nstAbbr) : "";
+
+    if (sanitized === nameSan || sanitized === shortSan) {
+      return String(abbr);
+    }
+
+    if (shortSan && sanitized.endsWith(shortSan)) {
+      const prefix = sanitized.slice(0, sanitized.length - shortSan.length);
+      if (
+        !prefix ||
+        prefix === abbrSan ||
+        (abbrSan && abbrSan.startsWith(prefix)) ||
+        prefix === nstSan ||
+        (nstSan && nstSan.startsWith(prefix)) ||
+        prefix === locationSan ||
+        (locationSan &&
+          (locationSan.startsWith(prefix) || prefix.startsWith(locationSan))) ||
+        prefix.length <= 3
+      ) {
+        return String(abbr);
+      }
+    }
+  }
+
+  return null;
+};
+
 const normalizeTeamAbbreviation = (
   team: string | null,
   expectedTeam?: string | null
 ): string | null => {
+  const expectedResolved = resolveTeamAlias(expectedTeam);
+  if (expectedResolved) return expectedResolved;
+
   if (!team) return null;
-  const mapping: Record<string, string> = {
-    TB: "TBL",
-    SJ: "SJS",
-    NJ: "NJD",
-    LA: "LAK"
-  };
-  const teamsArray = team.split(",").map((t) => t.trim());
-  const mappedTeams = teamsArray.map((t) => mapping[t] || t);
-  if (expectedTeam) {
-    const expected = mapping[expectedTeam] || expectedTeam;
-    const match = mappedTeams.find((t) => t === expected);
-    if (match) return match;
+  const teamsArray = team
+    .split(",")
+    .map((t) => t.trim())
+    .filter(Boolean);
+
+  for (const t of teamsArray) {
+    const resolved = resolveTeamAlias(t);
+    if (resolved) return resolved;
   }
-  return mappedTeams[0] || null;
+
+  const fallback = teamsArray[0];
+  if (!fallback) return null;
+  const sanitizedFallback = sanitizeTeamValue(fallback);
+  if (
+    sanitizedFallback &&
+    (teamsInfo as Record<string, unknown>)[sanitizedFallback]
+  ) {
+    return sanitizedFallback;
+  }
+  return fallback.toUpperCase();
 };
 
 function getRankColorStyle(
@@ -1374,18 +1558,17 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
 
   // --- Data Fetching ---
   useEffect(() => {
+    if (yahooSeasonYear === null) return;
+
     let isCancelled = false;
 
     const fetchAllData = async () => {
       setLoading(true);
-      let allData: UnifiedPlayerData[] = [];
-      let from = 0;
+      const allData: UnifiedPlayerData[] = [];
       const supabasePageSize = 1000;
+      let from = 0;
 
       try {
-        let effectiveSeasonYear: number | null = yahooSeasonYear;
-
-        // Determine optional gameId override from URL (quick dev convenience)
         let gameIdOverride: string | null = null;
         if (typeof window !== "undefined") {
           const params = new URLSearchParams(window.location.search);
@@ -1393,70 +1576,66 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
           if (override) gameIdOverride = override;
         }
 
-        let latestGameId: string | null = gameIdOverride;
-        let latestYahooPrefix: string | null = null;
+        const allowedPlayerKeys = new Set<string>();
+        const allowedPlayerIds = new Set<string>();
+        const percentOwnershipByIdentifier = new Map<string, number>();
 
-        // If no override, try to infer latest game_id (and season) from yahoo_game_keys
-        try {
-          const { data: gameRow } = await supabase
-            .from("yahoo_game_keys")
-            .select("game_id, season")
-            .eq("code", "nhl")
-            .order("season", { ascending: false })
-            .limit(1)
-            .single();
-
-          if (!latestGameId && gameRow?.game_id) {
-            latestGameId = String(gameRow.game_id);
-          }
-
-          if (effectiveSeasonYear === null && gameRow?.season != null) {
-            const seasonFromKeys = Number(gameRow.season);
-            if (!Number.isNaN(seasonFromKeys)) {
-              effectiveSeasonYear = seasonFromKeys;
-            }
-          }
-        } catch (e) {
-          console.warn("Could not read game metadata from yahoo_game_keys:", e);
-        }
-
-        if (latestGameId) {
-          latestYahooPrefix = `${latestGameId}.`;
-        }
-
-        let seasonPlayerKeySet: Set<string> | null = null;
-        if (effectiveSeasonYear !== null) {
-          try {
-            const { data: seasonPlayerRows, error: seasonPlayersError } = await supabase
+        // Build lookup of valid Yahoo identifiers for the active season
+        let playersFrom = 0;
+        while (true) {
+          const { data: seasonPlayerRows, error: seasonPlayersError } =
+            await supabase
               .from("yahoo_players")
-              .select("player_key, player_id")
-              .eq("season", effectiveSeasonYear);
+              .select(
+                "player_key, player_id, percent_ownership, ownership_timeline"
+              )
+              .eq("season", yahooSeasonYear)
+              .range(playersFrom, playersFrom + supabasePageSize - 1);
 
-            if (seasonPlayersError) {
-              console.warn(
-                `Failed to load yahoo_players keys for season ${effectiveSeasonYear}:`,
-                seasonPlayersError
-              );
-            } else if (seasonPlayerRows && seasonPlayerRows.length > 0) {
-              const seasonKeySet = new Set<string>();
-              seasonPlayerRows.forEach((row: any) => {
-                const key = row?.player_key;
-                const id = row?.player_id;
-                if (typeof key === "string" && key.length > 0) {
-                  seasonKeySet.add(key);
-                }
-                if (id !== null && id !== undefined) {
-                  seasonKeySet.add(String(id));
-                }
-              });
-              seasonPlayerKeySet = seasonKeySet;
-            }
-          } catch (seasonKeysError) {
-            console.warn(
-              `Unexpected error while fetching yahoo_players keys for season ${effectiveSeasonYear}:`,
-              seasonKeysError
+          if (seasonPlayersError) throw seasonPlayersError;
+          if (!seasonPlayerRows || seasonPlayerRows.length === 0) break;
+
+          (seasonPlayerRows as any[]).forEach((row) => {
+            const key = row?.player_key;
+            const id = row?.player_id;
+            const latestPercent = getLatestOwnershipValue(
+              row?.ownership_timeline
             );
-          }
+            const percentFromRow =
+              latestPercent !== null
+                ? latestPercent
+                : typeof row?.percent_ownership === "number"
+                  ? row.percent_ownership
+                  : row?.percent_ownership != null
+                    ? Number(row.percent_ownership)
+                    : null;
+
+            if (typeof key === "string" && key.length > 0) {
+              allowedPlayerKeys.add(key);
+              if (percentFromRow !== null && !Number.isNaN(percentFromRow)) {
+                percentOwnershipByIdentifier.set(key, percentFromRow);
+              }
+            }
+            if (id !== null && id !== undefined) {
+              const idString = String(id);
+              allowedPlayerIds.add(idString);
+              if (percentFromRow !== null && !Number.isNaN(percentFromRow)) {
+                percentOwnershipByIdentifier.set(idString, percentFromRow);
+              }
+            }
+          });
+
+          if (seasonPlayerRows.length < supabasePageSize) break;
+          playersFrom += supabasePageSize;
+        }
+
+        const hasAllowedIdentifiers =
+          allowedPlayerKeys.size > 0 || allowedPlayerIds.size > 0;
+
+        if (!hasAllowedIdentifiers) {
+          console.warn(
+            `No yahoo_players identifiers found for season ${yahooSeasonYear}; excluding rows without explicit season.`
+          );
         }
 
         // Query `yahoo_nhl_player_map_mat` with pagination
@@ -1470,178 +1649,236 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
           if (!data || data.length === 0) break;
 
           const filteredRows = (data as any[]).filter((row) => {
-            if (row == null || typeof row !== "object") return false;
+            if (!row || typeof row !== "object") return false;
 
-            if (effectiveSeasonYear !== null && "season" in row) {
-              const rowSeasonValue = (row as any).season;
-              if (rowSeasonValue !== undefined && rowSeasonValue !== null) {
-                const numericRowSeason = Number(rowSeasonValue);
-                if (!Number.isNaN(numericRowSeason)) {
-                  return numericRowSeason === effectiveSeasonYear;
+            const rowSeasonValue =
+              row.season !== undefined && row.season !== null
+                ? Number(row.season)
+                : null;
+
+            if (rowSeasonValue !== null) {
+              if (Number.isNaN(rowSeasonValue)) return false;
+              if (rowSeasonValue !== yahooSeasonYear) return false;
+            } else {
+              if (!hasAllowedIdentifiers) return false;
+
+              const yahooIdRaw = row.yahoo_player_id;
+              const yahooIdString =
+                yahooIdRaw !== null && yahooIdRaw !== undefined
+                  ? String(yahooIdRaw)
+                  : "";
+              if (!yahooIdString) return false;
+
+              if (!allowedPlayerKeys.has(yahooIdString)) {
+                const numericTail = yahooIdString.includes(".")
+                  ? yahooIdString.split(".").pop()
+                  : yahooIdString;
+                if (!numericTail || !allowedPlayerIds.has(numericTail)) {
+                  return false;
                 }
               }
             }
 
-            const yahooIdRaw = (row as any).yahoo_player_id;
-            const yahooIdString =
-              yahooIdRaw !== null && yahooIdRaw !== undefined
-                ? String(yahooIdRaw)
-                : "";
-
-            if (seasonPlayerKeySet && seasonPlayerKeySet.size > 0) {
-              if (!yahooIdString) return false;
-              return seasonPlayerKeySet.has(yahooIdString);
+            if (gameIdOverride) {
+              const yahooIdString =
+                row.yahoo_player_id !== null &&
+                row.yahoo_player_id !== undefined
+                  ? String(row.yahoo_player_id)
+                  : "";
+              if (!yahooIdString.startsWith(`${gameIdOverride}.`)) return false;
             }
 
-            if (latestYahooPrefix && yahooIdString) {
-              return yahooIdString.startsWith(latestYahooPrefix);
-            }
-
-            // If we have no filters, allow the row to preserve legacy behavior.
-            return !seasonPlayerKeySet && !latestYahooPrefix;
+            return true;
           });
 
-          // Map DB rows (which may include extra fields) into UnifiedPlayerData shape
-          const mapped = filteredRows.map((r) => ({
-            nhl_player_id: r.nhl_player_id ? String(r.nhl_player_id) : "",
-            nhl_player_name: r.nhl_player_name || "",
-            nhl_team_abbreviation:
-              r.nhl_team_abbreviation || r.normalized_team || null,
-            yahoo_player_id: r.yahoo_player_id
-              ? String(r.yahoo_player_id)
-              : null,
-            yahoo_player_name: r.yahoo_player_name || null,
-            yahoo_team: r.yahoo_team || null,
-            percent_ownership:
-              typeof r.percent_ownership === "number"
-                ? r.percent_ownership
-                : r.percent_ownership != null
-                  ? Number(r.percent_ownership)
-                  : null,
-            eligible_positions: r.eligible_positions || null,
-            off_nights: r.off_nights ?? null,
-            points:
-              r.points != null
-                ? typeof r.points === "number"
-                  ? r.points
-                  : Number(r.points)
-                : null,
-            goals:
-              r.goals != null
-                ? typeof r.goals === "number"
-                  ? r.goals
-                  : Number(r.goals)
-                : null,
-            assists:
-              r.assists != null
-                ? typeof r.assists === "number"
-                  ? r.assists
-                  : Number(r.assists)
-                : null,
-            shots:
-              r.shots != null
-                ? typeof r.shots === "number"
-                  ? r.shots
-                  : Number(r.shots)
-                : null,
-            pp_points:
-              r.pp_points != null
-                ? typeof r.pp_points === "number"
-                  ? r.pp_points
-                  : Number(r.pp_points)
-                : null,
-            blocked_shots:
-              r.blocked_shots != null
-                ? typeof r.blocked_shots === "number"
-                  ? r.blocked_shots
-                  : Number(r.blocked_shots)
-                : null,
-            hits:
-              r.hits != null
-                ? typeof r.hits === "number"
-                  ? r.hits
-                  : Number(r.hits)
-                : null,
-            total_fow:
-              r.total_fow != null
-                ? typeof r.total_fow === "number"
-                  ? r.total_fow
-                  : Number(r.total_fow)
-                : null,
-            penalty_minutes:
-              r.penalty_minutes != null
-                ? typeof r.penalty_minutes === "number"
-                  ? r.penalty_minutes
-                  : Number(r.penalty_minutes)
-                : null,
-            sh_points:
-              r.sh_points != null
-                ? typeof r.sh_points === "number"
-                  ? r.sh_points
-                  : Number(r.sh_points)
-                : null,
-            wins:
-              r.wins != null
-                ? typeof r.wins === "number"
-                  ? r.wins
-                  : Number(r.wins)
-                : null,
-            saves:
-              r.saves != null
-                ? typeof r.saves === "number"
-                  ? r.saves
-                  : Number(r.saves)
-                : null,
-            shots_against:
-              r.shots_against != null
-                ? typeof r.shots_against === "number"
-                  ? r.shots_against
-                  : Number(r.shots_against)
-                : null,
-            shutouts:
-              r.shutouts != null
-                ? typeof r.shutouts === "number"
-                  ? r.shutouts
-                  : Number(r.shutouts)
-                : null,
-            quality_start:
-              r.quality_start != null
-                ? typeof r.quality_start === "number"
-                  ? r.quality_start
-                  : Number(r.quality_start)
-                : null,
-            goals_against_avg:
-              r.goals_against_avg != null
-                ? typeof r.goals_against_avg === "number"
-                  ? r.goals_against_avg
-                  : Number(r.goals_against_avg)
-                : null,
-            save_pct:
-              r.save_pct != null
-                ? typeof r.save_pct === "number"
-                  ? r.save_pct
-                  : Number(r.save_pct)
-                : null,
-            player_type:
-              r.player_type === "goalie" || r.player_type === "G"
-                ? "goalie"
-                : "skater",
-            current_team_abbreviation:
-              r.nhl_team_abbreviation ||
-              r.normalized_team ||
-              r.yahoo_team ||
-              null,
-            percent_games:
-              r.percent_games != null
-                ? typeof r.percent_games === "number"
-                  ? r.percent_games
-                  : Number(r.percent_games)
-                : null,
-            status: r.status || null,
-            injury_note: r.injury_note || null
-          }));
+          const mapped = filteredRows.map((r) => {
+            const yahooPlayerIdString =
+              r.yahoo_player_id !== null && r.yahoo_player_id !== undefined
+                ? String(r.yahoo_player_id)
+                : null;
 
-          allData = allData.concat(mapped as UnifiedPlayerData[]);
+            const ownershipFromSeasonLookup = (() => {
+              if (!yahooPlayerIdString) return null;
+              const direct =
+                percentOwnershipByIdentifier.get(yahooPlayerIdString);
+              if (direct !== undefined) return direct;
+
+              if (yahooPlayerIdString.includes(".")) {
+                const tail = yahooPlayerIdString.split(".").pop() || "";
+                if (tail) {
+                  const fromTail = percentOwnershipByIdentifier.get(tail);
+                  if (fromTail !== undefined) return fromTail;
+                }
+              }
+
+              return null;
+            })();
+
+            const percentOwnershipFromTimeline = getLatestOwnershipValue(
+              r.ownership_timeline
+            );
+
+            const resolvedPercentOwnership = (() => {
+              if (
+                ownershipFromSeasonLookup !== null &&
+                ownershipFromSeasonLookup !== undefined &&
+                !Number.isNaN(ownershipFromSeasonLookup)
+              ) {
+                return ownershipFromSeasonLookup;
+              }
+
+              if (percentOwnershipFromTimeline !== null) {
+                return percentOwnershipFromTimeline;
+              }
+
+              if (typeof r.percent_ownership === "number") {
+                return r.percent_ownership;
+              }
+
+              if (r.percent_ownership != null) {
+                const numeric = Number(r.percent_ownership);
+                return Number.isNaN(numeric) ? null : numeric;
+              }
+
+              return null;
+            })();
+
+            return {
+              nhl_player_id: r.nhl_player_id ? String(r.nhl_player_id) : "",
+              nhl_player_name: r.nhl_player_name || "",
+              nhl_team_abbreviation:
+                r.nhl_team_abbreviation || r.normalized_team || null,
+              yahoo_player_id: r.yahoo_player_id
+                ? String(r.yahoo_player_id)
+                : null,
+              yahoo_player_name: r.yahoo_player_name || null,
+              yahoo_team: r.yahoo_team || null,
+              percent_ownership: resolvedPercentOwnership,
+              eligible_positions: r.eligible_positions || null,
+              off_nights: r.off_nights ?? null,
+              points:
+                r.points != null
+                  ? typeof r.points === "number"
+                    ? r.points
+                    : Number(r.points)
+                  : null,
+              goals:
+                r.goals != null
+                  ? typeof r.goals === "number"
+                    ? r.goals
+                    : Number(r.goals)
+                  : null,
+              assists:
+                r.assists != null
+                  ? typeof r.assists === "number"
+                    ? r.assists
+                    : Number(r.assists)
+                  : null,
+              shots:
+                r.shots != null
+                  ? typeof r.shots === "number"
+                    ? r.shots
+                    : Number(r.shots)
+                  : null,
+              pp_points:
+                r.pp_points != null
+                  ? typeof r.pp_points === "number"
+                    ? r.pp_points
+                    : Number(r.pp_points)
+                  : null,
+              blocked_shots:
+                r.blocked_shots != null
+                  ? typeof r.blocked_shots === "number"
+                    ? r.blocked_shots
+                    : Number(r.blocked_shots)
+                  : null,
+              hits:
+                r.hits != null
+                  ? typeof r.hits === "number"
+                    ? r.hits
+                    : Number(r.hits)
+                  : null,
+              total_fow:
+                r.total_fow != null
+                  ? typeof r.total_fow === "number"
+                    ? r.total_fow
+                    : Number(r.total_fow)
+                  : null,
+              penalty_minutes:
+                r.penalty_minutes != null
+                  ? typeof r.penalty_minutes === "number"
+                    ? r.penalty_minutes
+                    : Number(r.penalty_minutes)
+                  : null,
+              sh_points:
+                r.sh_points != null
+                  ? typeof r.sh_points === "number"
+                    ? r.sh_points
+                    : Number(r.sh_points)
+                  : null,
+              wins:
+                r.wins != null
+                  ? typeof r.wins === "number"
+                    ? r.wins
+                    : Number(r.wins)
+                  : null,
+              saves:
+                r.saves != null
+                  ? typeof r.saves === "number"
+                    ? r.saves
+                    : Number(r.saves)
+                  : null,
+              shots_against:
+                r.shots_against != null
+                  ? typeof r.shots_against === "number"
+                    ? r.shots_against
+                    : Number(r.shots_against)
+                  : null,
+              shutouts:
+                r.shutouts != null
+                  ? typeof r.shutouts === "number"
+                    ? r.shutouts
+                    : Number(r.shutouts)
+                  : null,
+              quality_start:
+                r.quality_start != null
+                  ? typeof r.quality_start === "number"
+                    ? r.quality_start
+                    : Number(r.quality_start)
+                  : null,
+              goals_against_avg:
+                r.goals_against_avg != null
+                  ? typeof r.goals_against_avg === "number"
+                    ? r.goals_against_avg
+                    : Number(r.goals_against_avg)
+                  : null,
+              save_pct:
+                r.save_pct != null
+                  ? typeof r.save_pct === "number"
+                    ? r.save_pct
+                    : Number(r.save_pct)
+                  : null,
+              player_type:
+                r.player_type === "goalie" || r.player_type === "G"
+                  ? "goalie"
+                  : "skater",
+              current_team_abbreviation:
+                r.nhl_team_abbreviation ||
+                r.normalized_team ||
+                r.yahoo_team ||
+                null,
+              percent_games:
+                r.percent_games != null
+                  ? typeof r.percent_games === "number"
+                    ? r.percent_games
+                    : Number(r.percent_games)
+                  : null,
+              status: r.status || null,
+              injury_note: r.injury_note || null
+            };
+          });
+
+          allData.push(...(mapped as UnifiedPlayerData[]));
 
           if (count !== null && allData.length >= count) break;
           if (data.length < supabasePageSize) break;
