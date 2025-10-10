@@ -65,10 +65,8 @@ async function saveLinemateMatrixImages(gameId: number, teamIds: number[]) {
     } catch (_) {
       // Use dynamic import to avoid require() (keeps lint happy and works in ESM)
       // import() returns a module namespace object
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const util = await import("util");
       // util.inspect is available on the imported module
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
       errSerialized = (util as any).inspect(err, { depth: 4 });
     }
     console.error("Failed to connect to puppeteer:", err);
