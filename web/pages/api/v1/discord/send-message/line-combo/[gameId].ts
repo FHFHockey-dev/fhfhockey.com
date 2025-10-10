@@ -45,8 +45,14 @@ export default adminOnly(async (req, res) => {
         .from("images")
         .getPublicUrl(`line-combos/${gameId}-${item.teamId}.png`)
         .data.publicUrl;
+      // Append a cache-busting query param so Discord will fetch the fresh image
+      const cacheBuster = `?v=${Date.now()}`;
       const image = {
-        url: imageUrl
+        url: `${imageUrl}${cacheBuster}`,
+        // also set the thumbnail to the same URL; some clients use this for previews
+        thumbnail: {
+          url: `${imageUrl}${cacheBuster}`
+        }
       };
       // get players
       let { data: forwards } = await supabase
