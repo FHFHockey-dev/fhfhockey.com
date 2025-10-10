@@ -55,7 +55,7 @@ export default async function handler(
           snapshot,
           pg,
           w,
-            refs[pg],
+          refs[pg],
           DEFAULT_WEIGHTS
         );
         rows.push(row);

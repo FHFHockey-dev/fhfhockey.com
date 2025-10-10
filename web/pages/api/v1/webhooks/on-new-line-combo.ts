@@ -29,14 +29,21 @@ export default adminOnly(async (req, res) => {
     );
 
     res.json({
-      message: "Successfully handled the line combo for " + gameId,
+      message: "Successfully handled the line combo for " + gameId
     });
   } catch (e: any) {
-    console.error(e);
-    res.json({
-      error:
-        `Failed to handle the line combo ${teamId}-${gameId} error: ` +
-        e.message,
+    // Log the full error and return a more informative response.
+    console.error("on-new-line-combo error:", e);
+    const msg =
+      e && e.message
+        ? e.message
+        : typeof e === "string"
+          ? e
+          : JSON.stringify(e);
+    const details = e && e.stack ? e.stack : msg;
+    res.status(500).json({
+      error: `Failed to handle the line combo ${teamId}-${gameId} error: ${msg}`,
+      details
     });
   }
 });
@@ -45,15 +52,33 @@ async function saveLinemateMatrixImages(gameId: number, teamIds: number[]) {
   console.log("Start to save line combo for " + gameId);
   let old = Date.now();
   console.log(process.env.PUPPETEER_ENDPOINT);
-  const browser = await puppeteer.connect({
-    browserWSEndpoint: process.env.PUPPETEER_ENDPOINT,
-  });
+  let browser: any;
+  try {
+    browser = await puppeteer.connect({
+      browserWSEndpoint: process.env.PUPPETEER_ENDPOINT
+    });
+  } catch (err: any) {
+    // Attempt to serialize the error with JSON.stringify; fall back to util.inspect
+    let errSerialized: string;
+    try {
+      errSerialized = JSON.stringify(err, Object.getOwnPropertyNames(err), 2);
+    } catch (_) {
+      // Use dynamic import to avoid require() (keeps lint happy and works in ESM)
+      // import() returns a module namespace object
+      const util = await import("util");
+      // util.inspect is available on the imported module
+      errSerialized = (util as any).inspect(err, { depth: 4 });
+    }
+    console.error("Failed to connect to puppeteer:", err);
+    throw new Error(`Failed to connect to puppeteer: ${errSerialized}`);
+  }
 
   // Create a page
   const page = await browser.newPage();
+  await page.setViewport({ width: 1440, height: 900, deviceScaleFactor: 1 });
 
   // Go to your site
-  await page.goto(`${BASE_URL}/lines/line-combo/${gameId}`);
+  await page.goto(`${BASE_URL}/lines/line-combo/${gameId}?isScreenshot=1`);
   await page.waitForSelector(".content");
   console.log(`show linemate duration: ${Date.now() - old}`);
 
@@ -63,6 +88,16 @@ async function saveLinemateMatrixImages(gameId: number, teamIds: number[]) {
     const header = document.querySelector("header");
     if (!header) return;
     header.style.display = "none";
+  });
+
+  // Hide mobile bottom navigation if present (defensive)
+  await page.evaluate(() => {
+    const mobile = document.querySelector(
+      ".mobileNavWrapper"
+    ) as HTMLElement | null;
+    if (mobile) mobile.style.display = "none";
+    const bottom = document.querySelector(".bottomNav") as HTMLElement | null;
+    if (bottom) bottom.style.display = "none";
   });
 
   console.log(`hide header duration: ${Date.now() - old}`);
@@ -79,7 +114,7 @@ async function saveLinemateMatrixImages(gameId: number, teamIds: number[]) {
       if (!content) throw new Error("Cannot find the matrix");
 
       const image = await content.screenshot({
-        type: "png",
+        type: "png"
       });
       console.log(`take one screenshot duration: ${Date.now() - old}`);
 
@@ -90,7 +125,7 @@ async function saveLinemateMatrixImages(gameId: number, teamIds: number[]) {
         .upload(`line-combos/${gameId}-${teamId}.png`, image, {
           cacheControl: "604800",
           contentType: "image/png",
-          upsert: true,
+          upsert: true
         });
 
       console.log(`upload one image duration: ${Date.now() - old}`);
@@ -111,8 +146,8 @@ function sendLineComboToDiscord(gameId: number, teamId: number) {
     {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${process.env.CRON_SECRET}`,
-      },
+        Authorization: `Bearer ${process.env.CRON_SECRET}`
+      }
     }
   ).then((res) => res.json());
 }
