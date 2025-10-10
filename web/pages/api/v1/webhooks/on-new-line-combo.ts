@@ -34,7 +34,12 @@ export default adminOnly(async (req, res) => {
   } catch (e: any) {
     // Log the full error and return a more informative response.
     console.error("on-new-line-combo error:", e);
-    const msg = e && e.message ? e.message : typeof e === "string" ? e : JSON.stringify(e);
+    const msg =
+      e && e.message
+        ? e.message
+        : typeof e === "string"
+          ? e
+          : JSON.stringify(e);
     const details = e && e.stack ? e.stack : msg;
     res.status(500).json({
       error: `Failed to handle the line combo ${teamId}-${gameId} error: ${msg}`,
@@ -50,7 +55,7 @@ async function saveLinemateMatrixImages(gameId: number, teamIds: number[]) {
   let browser: any;
   try {
     browser = await puppeteer.connect({
-      browserWSEndpoint: process.env.PUPPETEER_ENDPOINT,
+      browserWSEndpoint: process.env.PUPPETEER_ENDPOINT
     });
   } catch (err: any) {
     // Attempt to serialize the error with JSON.stringify; fall back to util.inspect
@@ -58,10 +63,13 @@ async function saveLinemateMatrixImages(gameId: number, teamIds: number[]) {
     try {
       errSerialized = JSON.stringify(err, Object.getOwnPropertyNames(err), 2);
     } catch (_) {
-      // lazy require to avoid adding top-level dependency
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const util = require("util");
-      errSerialized = util.inspect(err, { depth: 4 });
+      // Use dynamic import to avoid require() (keeps lint happy and works in ESM)
+      // import() returns a module namespace object
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const util = await import("util");
+      // util.inspect is available on the imported module
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+      errSerialized = (util as any).inspect(err, { depth: 4 });
     }
     console.error("Failed to connect to puppeteer:", err);
     throw new Error(`Failed to connect to puppeteer: ${errSerialized}`);
