@@ -135,6 +135,20 @@ function BurgerButton({ onClick }: { onClick: () => void }) {
 function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { navbarRef, isNavbarVisible } = useHideableNavbar();
+  const router = useRouter();
+
+  // When taking automated screenshots, append ?isScreenshot=1 to the URL
+  // to hide mobile-only UI like the bottom nav. This avoids layout overlays
+  // regardless of viewport size the screenshot tool uses.
+  const isScreenshot = (() => {
+    const q = router?.query ?? {};
+    const raw = (q.isScreenshot || q.screenshot || q.capture) as
+      | string
+      | string[]
+      | undefined;
+    const val = Array.isArray(raw) ? raw[0] : raw;
+    return val === "1" || val === "true";
+  })();
 
   const onItemClick = () => {
     setTimeout(() => {
@@ -210,12 +224,14 @@ function Header() {
         )}
       </header>
 
-      {/* Mobile Bottom Navigation */}
-      <ClientOnly>
-        <div className={styles.mobileNavWrapper}>
-          <BottomNavigation onMoreClick={() => setMenuOpen(!menuOpen)} />
-        </div>
-      </ClientOnly>
+      {/* Mobile Bottom Navigation (hidden during screenshots via ?isScreenshot=1) */}
+      {!isScreenshot && (
+        <ClientOnly>
+          <div className={styles.mobileNavWrapper}>
+            <BottomNavigation onMoreClick={() => setMenuOpen(!menuOpen)} />
+          </div>
+        </ClientOnly>
+      )}
 
       <ClientOnly>
         <MobileMenu visible={menuOpen} onItemClick={onItemClick} />

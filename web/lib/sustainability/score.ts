@@ -17,7 +17,11 @@ export async function fetchSkillLeagueRef(season_id: number, pg: PosGroup) {
     .eq("season_id", season_id)
     .in("position_code", pg === "F" ? ["C", "LW", "RW"] : ["D"]);
   if (error) throw error;
-  const vals = { ixg60: [] as number[], icf60: [] as number[], hdcf60: [] as number[] };
+  const vals = {
+    ixg60: [] as number[],
+    icf60: [] as number[],
+    hdcf60: [] as number[]
+  };
   for (const r of data ?? []) {
     vals.ixg60.push(Number(r.nst_ixg_per_60) || 0);
     vals.icf60.push(Number(r.nst_icf_per_60) || 0);
@@ -26,7 +30,8 @@ export async function fetchSkillLeagueRef(season_id: number, pg: PosGroup) {
   function muSig(arr: number[]) {
     if (!arr.length) return { mu: 0, sig: 1 };
     const mu = arr.reduce((a, b) => a + b, 0) / arr.length;
-    const v = arr.reduce((a, b) => a + (b - mu) ** 2, 0) / Math.max(arr.length - 1, 1);
+    const v =
+      arr.reduce((a, b) => a + (b - mu) ** 2, 0) / Math.max(arr.length - 1, 1);
     return { mu, sig: Math.max(Math.sqrt(v), 1e-6) };
   }
   return {
@@ -117,7 +122,11 @@ export async function buildScoreForPlayerWindow(
   const rates = await fetchSkillWindowRates(player_id, snapshot_date, window.n);
   const z_ixg = zClip(rates.ixg60, leagueSkill.ixg60.mu, leagueSkill.ixg60.sig);
   const z_icf = zClip(rates.icf60, leagueSkill.icf60.mu, leagueSkill.icf60.sig);
-  const z_hdc = zClip(rates.hdcf60, leagueSkill.hdcf60.mu, leagueSkill.hdcf60.sig);
+  const z_hdc = zClip(
+    rates.hdcf60,
+    leagueSkill.hdcf60.mu,
+    leagueSkill.hdcf60.sig
+  );
 
   const sRaw =
     weights.luck.shp * (zmap["shp"] ?? 0) +

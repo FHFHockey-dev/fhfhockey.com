@@ -65,9 +65,13 @@ async function saveLinemateMatrixImages(gameId, teamIds) {
 
   // Create a page
   const page = await browser.newPage();
+  // Ensure desktop-like viewport so mobile UI is not shown by media queries
+  await page.setViewport({ width: 1440, height: 900, deviceScaleFactor: 1 });
 
   // Go to your site
-  await page.goto(`https://fhfhockey.com/lines/line-combo/${gameId}`);
+  await page.goto(
+    `https://fhfhockey.com/lines/line-combo/${gameId}?isScreenshot=1`
+  );
   await page.waitForSelector(".content");
   console.log(`show linemate duration: ${Date.now() - old}`);
 
@@ -77,6 +81,18 @@ async function saveLinemateMatrixImages(gameId, teamIds) {
     const header = document.querySelector("header");
     if (!header) return;
     header.style.display = "none";
+  });
+
+  // Also hide mobile bottom navigation if present
+  await page.evaluate(() => {
+    const mobile = document.querySelector(".mobileNavWrapper");
+    if (mobile && mobile instanceof HTMLElement) {
+      mobile.style.display = "none";
+    }
+    const bottom = document.querySelector(".bottomNav");
+    if (bottom && bottom instanceof HTMLElement) {
+      bottom.style.display = "none";
+    }
   });
 
   console.log(`hide header duration: ${Date.now() - old}`);
