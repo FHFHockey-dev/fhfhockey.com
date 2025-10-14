@@ -1,3 +1,5 @@
+// web/lib/baselines/aggregations.ts
+
 import { SIGMA_MIN, deploymentElasticity, metricAllowlist } from "./config";
 
 type GameRow = Record<string, any>;

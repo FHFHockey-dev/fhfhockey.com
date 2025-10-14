@@ -1,0 +1,238 @@
+@use "styles/vars";
+
+.wrapper {
+  margin-top: vars.$space-lg;
+  padding: vars.$space-md vars.$space-lg;
+  border-radius: vars.$border-radius-lg;
+  border: 1px solid vars.$border-secondary;
+  background: linear-gradient(
+    135deg,
+    rgba(vars.$background-light, 0.92),
+    rgba(vars.$background-medium, 0.88)
+  );
+  box-shadow: vars.$desktop-panel-shadow;
+  backdrop-filter: blur(12px);
+  color: vars.$text-primary;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: vars.$space-xs;
+  margin-bottom: vars.$space-md;
+}
+
+.title {
+  margin: 0;
+  font-family: vars.$font-family-primary;
+  font-size: vars.$font-size-lg;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.context {
+  margin: 0;
+  font-size: vars.$font-size-xs;
+  color: vars.$text-secondary;
+}
+
+.gameId {
+  color: vars.$primary-color;
+  font-family: vars.$font-family-numbers;
+  letter-spacing: 0.08em;
+}
+
+.status,
+.statusError {
+  padding: vars.$space-sm;
+  border-radius: vars.$border-radius-md;
+  text-align: center;
+  font-size: vars.$font-size-sm;
+}
+
+.status {
+  border: 1px dashed vars.$border-secondary;
+  color: vars.$text-secondary;
+}
+
+.statusError {
+  border: 1px solid rgba(vars.$danger-color, 0.6);
+  color: vars.$danger-color;
+  background: rgba(vars.$danger-color, 0.08);
+}
+
+.units {
+  display: flex;
+  flex-direction: column;
+  gap: vars.$space-md;
+}
+
+.unitRow {
+  display: flex;
+  flex-direction: column;
+  gap: vars.$space-sm;
+  border: 1px solid rgba(vars.$border-secondary, 0.8);
+  border-radius: vars.$border-radius-md;
+  background: rgba(vars.$background-medium, 0.82);
+  padding: vars.$space-md;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  transition:
+    border-color 180ms ease,
+    box-shadow 200ms ease,
+    transform 200ms ease;
+  color: inherit;
+}
+
+.unitRow:hover {
+  border-color: vars.$primary-color;
+  transform: translateY(-1px);
+}
+
+.unitRow:focus-visible {
+  outline: 2px solid vars.$primary-color;
+  outline-offset: 2px;
+}
+
+.unitRowExpanded {
+  border-color: vars.$primary-color;
+  box-shadow: 0 0 24px rgba(vars.$primary-color, 0.22);
+}
+
+.unitSummary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: vars.$space-sm;
+}
+
+.unitTitleGroup {
+  display: flex;
+  gap: vars.$space-xs;
+  align-items: baseline;
+}
+
+.unitLabel {
+  font-size: vars.$font-size-sm;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: vars.$text-primary;
+}
+
+.unitMeta {
+  font-size: vars.$font-size-xs;
+  color: vars.$text-secondary;
+  font-family: vars.$font-family-numbers;
+}
+
+.chevron {
+  font-size: vars.$font-size-md;
+  line-height: 1;
+  color: vars.$text-secondary;
+  transition: transform 180ms ease;
+}
+
+.unitRowExpanded .chevron {
+  transform: rotate(180deg);
+}
+
+.unitPlayers,
+.historyPlayers {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: vars.$space-xs;
+  width: 100%;
+}
+
+.playerChip {
+  display: inline-flex;
+  align-items: center;
+  gap: vars.$space-xs;
+  padding: vars.$space-xs vars.$space-sm;
+  border-radius: vars.$border-radius-sm;
+  background: rgba(vars.$background-dark, 0.82);
+  border: 1px solid rgba(vars.$border-secondary, 0.6);
+  font-size: vars.$font-size-xs;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  transition: border-color 180ms ease;
+  width: 100%;
+  justify-content: space-between;
+}
+
+.playerChipDefense {
+  background: rgba(vars.$primary-color, 0.2);
+  border-color: rgba(vars.$primary-color, 0.6);
+}
+
+.playerNumber {
+  font-family: vars.$font-family-numbers;
+  color: vars.$primary-color;
+  font-size: vars.$font-size-xs;
+  letter-spacing: 0.08em;
+}
+
+.playerName {
+  font-family: vars.$font-family-primary;
+  font-size: vars.$font-size-xs;
+  color: vars.$text-primary;
+}
+
+.playerPosition {
+  font-size: vars.$font-size-xxs;
+  color: vars.$text-secondary;
+  letter-spacing: 0.08em;
+}
+
+.history {
+  border-top: 1px solid rgba(vars.$border-secondary, 0.4);
+  padding-top: vars.$space-sm;
+  display: flex;
+  flex-direction: column;
+  gap: vars.$space-sm;
+}
+
+.historyEntry {
+  display: flex;
+  flex-direction: column;
+  gap: vars.$space-xs;
+}
+
+.historyMeta {
+  display: flex;
+  align-items: center;
+  gap: vars.$space-sm;
+  font-size: vars.$font-size-xs;
+  color: vars.$text-secondary;
+  letter-spacing: 0.06em;
+  font-family: vars.$font-family-numbers;
+}
+
+.historyDate {
+  color: vars.$text-primary;
+}
+
+.historyEmpty {
+  font-size: vars.$font-size-xs;
+  color: vars.$text-secondary;
+}
+
+@media screen and (min-width: vars.$breakpoint-desktop) {
+  .wrapper {
+    padding: vars.$space-lg;
+  }
+
+  .title {
+    font-size: vars.$font-size-xl;
+  }
+
+  .units {
+    gap: vars.$space-lg;
+  }
+
+  .unitRow {
+    padding: vars.$space-lg;
+  }
+}

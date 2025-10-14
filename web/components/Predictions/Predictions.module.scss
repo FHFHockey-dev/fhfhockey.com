@@ -280,6 +280,33 @@
   color: v.$danger-color;
 }
 
+.errorWrapper {
+  @include p.panel-container($padding: v.$space-md);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: v.$space-md;
+}
+
+.errorMessage {
+  text-align: left;
+  color: v.$text-primary;
+}
+
+.errorDetail {
+  color: v.$text-secondary;
+  margin-top: v.$space-xs;
+}
+
+.errorActions button {
+  @include v.button-style;
+  background: transparent;
+  border: 1px solid rgba(v.$primary-color, 0.25);
+  color: v.$primary-color;
+  padding: v.$space-xs v.$space-md;
+  border-radius: 6px;
+}
+
 // Reduced motion adjustments
 @media (prefers-reduced-motion: reduce) {
   .metricCard,

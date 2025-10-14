@@ -118,12 +118,21 @@ export default async function handler(
     process.env.BASELINE_DRY_RUN === "true" ||
     (req.query && (req.query.dry === "1" || req.query.dry === "true"));
 
-  const start = Date.now();
+  // ✅ define snapshot_date once, up front
+  const snapshot_date: string =
+    typeof req.query.snapshot_date === "string" &&
+    /^\d{4}-\d{2}-\d{2}$/.test(req.query.snapshot_date)
+      ? req.query.snapshot_date
+      : new Date().toISOString().slice(0, 10);
 
+  // (Optional) base sinceDate on snapshot_date instead of "now"
+  const start = Date.now();
   try {
     console.log("Starting rebuild-baselines job");
 
-    const sinceDate = new Date(Date.now() - 365 * 24 * 3600 * 1000)
+    const sinceDate = new Date(
+      new Date(snapshot_date).getTime() - 365 * 24 * 3600 * 1000
+    )
       .toISOString()
       .slice(0, 10);
 
@@ -206,7 +215,10 @@ export default async function handler(
       });
 
       const upsertRecords: BaselineRecord[] = [];
-      const snapshot_date = new Date().toISOString().slice(0, 10);
+      const snapshot_date = String(
+        (req.query as any)?.snapshot_date ||
+          new Date().toISOString().slice(0, 10)
+      );
 
       for (const pid of batch) {
         const meta = uniquePlayers.get(pid) ?? {
@@ -309,6 +321,7 @@ export default async function handler(
         success: true,
         processed,
         duration: durationSec,
+        snapshot_date: snapshot_date,
         dry_run: true,
         sample_records: allUpsertRecords.slice(0, 100)
       });
@@ -316,7 +329,12 @@ export default async function handler(
 
     return res
       .status(200)
-      .json({ success: true, processed, duration: durationSec });
+      .json({
+        success: true,
+        processed,
+        duration: durationSec,
+        snapshot_date: snapshot_date
+      });
   } catch (error: any) {
     console.error("Error building baselines:", error?.message || error);
     return res

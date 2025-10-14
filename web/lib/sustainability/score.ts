@@ -1,3 +1,5 @@
+// web/lib/sustainability/score.ts
+
 import supabase from "lib/supabase";
 import { PosGroup } from "lib/sustainability/priors";
 import { WindowCode } from "lib/sustainability/windows";

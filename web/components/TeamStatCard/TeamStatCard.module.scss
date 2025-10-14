@@ -12,8 +12,15 @@
     text-align: center;
   }
   .image {
-    height: 190px;
+    height: 140px;
     border-radius: 8px;
+    background-position: center center;
+    background-size: contain; /* keep logos contained instead of covering entire area */
+    background-repeat: no-repeat;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden; /* hide any large source bleed */
   }
   .body {
     padding-right: 20px;

@@ -23,6 +23,7 @@ import Fetch from "lib/cors-fetch";
 
 // Import our chart component
 import TeamStandingsChart from "components/TeamStandingsChart/TeamStandingsChart";
+import TransactionTrends from "components/TransactionTrends/TransactionTrends";
 
 // Shared debug logger for both server and client
 const debugLog = (...args: any[]) => {
@@ -441,6 +442,11 @@ const Home: NextPage = ({
             )}
           </div>
         </div>
+
+        {/* --- Transaction Trends (Ownership Risers/Fallers) --- */}
+        <ClientOnly>
+          <TransactionTrends />
+        </ClientOnly>
 
         {/* --- Chart Section --- */}
         <div className={styles.chartContainer}>
