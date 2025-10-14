@@ -1,0 +1,275 @@
+@use "styles/vars" as v;
+
+.transactionTrends {
+  padding: v.$space-lg;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-lg;
+}
+
+.headerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: v.$space-md;
+}
+
+.title {
+  font-family: v.$font-family-accent;
+  font-size: v.$font-size-lg;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0;
+  span {
+    color: v.$primary-color;
+  }
+}
+
+.timeframeButtons {
+  display: flex;
+  gap: v.$space-sm;
+  flex-wrap: wrap;
+  button {
+    font-size: v.$font-size-xs;
+    letter-spacing: 0.06em;
+    padding: 6px 10px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid v.$border-secondary;
+    border-radius: 4px;
+    cursor: pointer;
+    color: v.$text-primary;
+    transition: all 0.2s ease;
+    &:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+    &.active {
+      background: v.$primary-color;
+      color: v.$text-button;
+      box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.4);
+    }
+  }
+}
+
+.tablesWrapper {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: v.$space-lg;
+  @media (max-width: #{v.$breakpoint-tablet}) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.panel {
+  // Align with broader site panel styling (reuse elevation & glass aesthetic)
+  @include v.element-wrapper;
+  position: relative;
+  padding: v.$space-md v.$space-lg;
+  border: 1px solid rgba(v.$border-secondary, 0.6);
+  box-shadow: v.$desktop-panel-shadow;
+  background: linear-gradient(
+    140deg,
+    rgba(v.$background-medium, 0.88),
+    rgba(v.$background-light, 0.78)
+  );
+  border-radius: v.$border-radius-lg;
+  overflow: hidden;
+}
+
+// Accent stripe (subtle) instead of full neon border; neon kept for per-cell boxes
+.risersPanel::before,
+.fallersPanel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-left: 3px solid v.$success-color;
+  pointer-events: none;
+  border-radius: inherit;
+  mix-blend-mode: screen;
+  opacity: 0.9;
+}
+.fallersPanel::before {
+  border-left-color: v.$danger-color;
+}
+
+.risersPanel {
+  border-color: rgba(v.$border-secondary, 0.6);
+}
+.fallersPanel {
+  border-color: rgba(v.$border-secondary, 0.6);
+}
+
+.tableTitle {
+  font-family: v.$font-family-primary;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: v.$font-size-sm;
+  margin: 0 0 v.$space-sm;
+  display: flex;
+  align-items: center;
+  gap: v.$space-sm;
+  color: v.$text-primary;
+}
+
+.dataTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: v.$font-size-xs;
+  font-family: v.$font-family-primary;
+  font-variant-numeric: tabular-nums;
+  thead th {
+    position: sticky;
+    top: 0;
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(6px);
+    text-align: left;
+    padding: 6px 8px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+  }
+  tbody td,
+  tbody th {
+    padding: 4px 8px;
+    border-bottom: 1px solid v.$border-secondary;
+    vertical-align: middle;
+  }
+  tbody tr:hover {
+    background: rgba(255, 255, 255, 0.05);
+  }
+}
+
+.rankCell {
+  width: 32px;
+  text-align: right;
+  font-family: v.$font-family-numbers;
+}
+.playerCell {
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  align-items: center;
+  gap: v.$space-sm;
+  line-height: 1.1;
+  min-height: 38px;
+  height: 100%;
+}
+.headshot {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.6);
+}
+.playerName {
+  font-weight: 600;
+  color: v.$text-primary;
+}
+
+.sparkCell {
+  width: 140px;
+}
+.sparkSvg {
+  width: 100%;
+  height: 38px;
+  display: block;
+}
+.sparkBaseline {
+  stroke: v.$border-secondary;
+  stroke-width: 1;
+  stroke-dasharray: 2 2;
+  opacity: 0.5;
+}
+.sparkPath {
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.6));
+}
+.sparkArea {
+  fill-opacity: 0.18;
+}
+.sparkPath.rise {
+  stroke: v.$success-color;
+}
+.sparkArea.rise {
+  fill: v.$success-color;
+}
+// use danger instead of warning
+.sparkPath.fall {
+  stroke: v.$danger-color;
+}
+.sparkArea.fall {
+  fill: v.$danger-color;
+}
+
+.deltaCell {
+  text-align: right;
+  font-family: v.$font-family-numbers;
+  font-weight: 600;
+}
+.deltaPositive {
+  color: v.$success-color;
+}
+.deltaNegative {
+  color: v.$danger-color;
+}
+
+// Row-level subtle neon effect wrappers for sparkline + delta
+.neonBox {
+  border: 1px solid v.$border-secondary;
+  border-radius: 6px;
+  padding: 2px 4px;
+  background: rgba(255, 255, 255, 0.03);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  transition:
+    box-shadow 0.25s ease,
+    border-color 0.25s ease,
+    background-color 0.25s ease;
+}
+.neonBox.rise {
+  border-color: v.$success-color;
+  box-shadow: 0 0 6px rgba(v.$success-color, 0.35);
+  background-color: rgba(v.$success-color, 0.08);
+}
+.neonBox.fall {
+  border-color: v.$danger-color;
+  box-shadow: 0 0 6px rgba(v.$danger-color, 0.35);
+  background-color: rgba(v.$danger-color, 0.1);
+}
+
+tbody tr:hover .neonBox.rise {
+  box-shadow: 0 0 10px rgba(v.$success-color, 0.55);
+}
+tbody tr:hover .neonBox.fall {
+  box-shadow: 0 0 10px rgba(v.$danger-color, 0.55);
+}
+
+// Optional row classes (future hook for more styling)
+
+.loading,
+.errorMsg {
+  text-align: center;
+  padding: v.$space-md 0;
+  font-style: italic;
+}
+.errorMsg {
+  color: v.$danger-color;
+}
+
+.footNote {
+  font-size: v.$font-size-xxs;
+  color: v.$text-secondary;
+  margin-top: v.$space-sm;
+}
+
+@media (max-width: #{v.$breakpoint-tablet}) {
+  .sparkCell {
+    width: 110px;
+  }
+  .sparkSvg {
+    height: 32px;
+  }
+}
