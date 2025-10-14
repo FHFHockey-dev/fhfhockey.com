@@ -144,13 +144,11 @@
   font-family: v.$font-family-numbers;
 }
 .playerCell {
-  display: grid;
-  grid-template-columns: 34px 1fr;
+  display: flex;
   align-items: center;
   gap: v.$space-sm;
   line-height: 1.1;
   min-height: 38px;
-  height: 100%;
 }
 .headshot {
   width: 34px;
@@ -162,6 +160,17 @@
 .playerName {
   font-weight: 600;
   color: v.$text-primary;
+}
+
+.playerText {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.playerMeta {
+  color: v.$text-secondary;
+  font-size: 0.72rem;
+  margin-top: 2px;
 }
 
 .sparkCell {
@@ -212,6 +221,15 @@
 }
 .deltaNegative {
   color: v.$danger-color;
+}
+
+.ownCellHeader {
+  width: 72px;
+  text-align: center;
+}
+.ownCell {
+  width: 72px;
+  text-align: center;
 }
 
 // Row-level subtle neon effect wrappers for sparkline + delta
