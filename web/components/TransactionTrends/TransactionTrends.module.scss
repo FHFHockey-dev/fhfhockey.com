@@ -21,6 +21,7 @@
   text-transform: uppercase;
   letter-spacing: 0.08em;
   margin: 0;
+  color: v.$color-white;
   span {
     color: v.$primary-color;
   }
@@ -54,7 +55,7 @@
 .tablesWrapper {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: v.$space-lg;
+  gap: v.$space-xxl;
   @media (max-width: #{v.$breakpoint-tablet}) {
     grid-template-columns: 1fr;
   }
@@ -65,7 +66,7 @@
   @include v.element-wrapper;
   position: relative;
   padding: v.$space-md v.$space-lg;
-  border: 1px solid rgba(v.$border-secondary, 0.6);
+  border: 2px solid rgba(v.$border-secondary, 0.6);
   box-shadow: v.$desktop-panel-shadow;
   background: linear-gradient(
     140deg,
@@ -82,9 +83,9 @@
   content: "";
   position: absolute;
   inset: 0;
-  border-left: 3px solid v.$success-color;
+  border-left: 12px solid v.$success-color;
   pointer-events: none;
-  border-radius: inherit;
+  border-radius: v.$border-radius-md;
   mix-blend-mode: screen;
   opacity: 0.9;
 }
@@ -93,10 +94,10 @@
 }
 
 .risersPanel {
-  border-color: rgba(v.$border-secondary, 0.6);
+  border-color: rgba(v.$success-color, 0.4);
 }
 .fallersPanel {
-  border-color: rgba(v.$border-secondary, 0.6);
+  border-color: rgba(v.$danger-color, 0.4);
 }
 
 .tableTitle {
@@ -117,7 +118,7 @@
   font-size: v.$font-size-xs;
   font-family: v.$font-family-primary;
   font-variant-numeric: tabular-nums;
-  --row-h: 44px;
+  --row-h: 52px;
   thead th {
     position: sticky;
     top: 0;
@@ -151,6 +152,12 @@
   line-height: 1.1;
   min-height: var(--row-h);
 }
+.rowBox {
+  display: flex;
+  align-items: center;
+  gap: v.$space-sm;
+  min-height: var(--row-h);
+}
 .headshot {
   width: calc(var(--row-h) - 10px);
   height: calc(var(--row-h) - 10px);
@@ -167,6 +174,11 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
+}
+.playerTextWrap {
+  display: flex;
+  align-items: center;
+  min-height: var(--row-h);
 }
 .playerMeta {
   color: v.$text-secondary;

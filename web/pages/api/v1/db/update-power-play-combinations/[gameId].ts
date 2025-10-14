@@ -5,7 +5,7 @@ import {
   getKey,
   getTOIData,
   sortByPPTOI,
-  TOIData,
+  TOIData
 } from "components/LinemateMatrix";
 import { getAvg } from "components/LinemateMatrix/utilities";
 

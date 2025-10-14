@@ -10,7 +10,9 @@ interface PlayerRow {
   full_name: string | null;
   headshot_url: string | null;
   display_position: string | null;
-  editorial_full_team_name: string | null;
+  editorial_team_full_name: string | null;
+  eligible_positions: string[] | null;
+  uniform_number: number | null;
   ownership_timeline: OwnershipPoint[] | null;
 }
 
@@ -20,6 +22,8 @@ type TrendPlayer = {
   headshot: string | null;
   displayPosition?: string | null;
   teamFullName?: string | null;
+  eligiblePositions?: string[] | null;
+  uniformNumber?: number | null;
   latest: number;
   previous: number;
   delta: number;
@@ -67,16 +71,48 @@ export default async function handler(
       auth: { persistSession: false }
     });
 
+    const selectWithMeta =
+      "player_key, full_name, headshot_url, display_position, editorial_team_full_name, eligible_positions, uniform_number, ownership_timeline";
+    const selectMinimal =
+      "player_key, full_name, headshot_url, ownership_timeline";
+
+    // Attempt with metadata columns first
     let query = supabase
       .from("yahoo_players")
-      .select(
-        "player_key, full_name, headshot_url, display_position, editorial_full_team_name, ownership_timeline"
-      )
+      .select(selectWithMeta)
       .limit(2500);
     if (season) query = query.eq("season", season);
+    let resultData: any[] | null = null;
+    let resultError: any = null;
+    {
+      const { data, error } = await query;
+      resultData = data as any[] | null;
+      resultError = error;
+    }
 
-    const { data, error } = await query;
-    if (error) throw error;
+    if (resultError) {
+      const msg = String(resultError?.message || "").toLowerCase();
+      const missingCols =
+        msg.includes("display_position") ||
+        msg.includes("editorial_team_full_name") ||
+        msg.includes("eligible_positions") ||
+        msg.includes("uniform_number") ||
+        msg.includes("column") ||
+        msg.includes("does not exist");
+      if (missingCols) {
+        // Fallback to minimal set
+        let fallback = supabase
+          .from("yahoo_players")
+          .select(selectMinimal)
+          .limit(2500);
+        if (season) fallback = fallback.eq("season", season);
+        const { data, error } = await fallback;
+        resultData = data as any[] | null;
+        resultError = error;
+      }
+    }
+    if (resultError) throw resultError;
+    const data = Array.isArray(resultData) ? resultData : [];
 
     const today = new Date();
     const targetDateObj = new Date(today);
@@ -86,7 +122,7 @@ export default async function handler(
     const risers: TrendPlayer[] = [];
     const fallers: TrendPlayer[] = [];
 
-    (data as PlayerRow[]).forEach((row) => {
+    (data as any[]).forEach((row: any) => {
       const tl = Array.isArray(row.ownership_timeline)
         ? (row.ownership_timeline as OwnershipPoint[])
         : [];
@@ -117,7 +153,14 @@ export default async function handler(
         name: row.full_name || row.player_key,
         headshot: row.headshot_url || null,
         displayPosition: row.display_position ?? null,
-        teamFullName: row.editorial_full_team_name ?? null,
+        teamFullName: (row as any).editorial_team_full_name ?? null,
+        eligiblePositions: Array.isArray((row as any).eligible_positions)
+          ? ((row as any).eligible_positions as string[])
+          : null,
+        uniformNumber:
+          typeof (row as any).uniform_number === "number"
+            ? ((row as any).uniform_number as number)
+            : null,
         latest,
         previous,
         delta,

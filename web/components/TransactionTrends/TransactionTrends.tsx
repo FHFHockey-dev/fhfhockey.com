@@ -10,6 +10,8 @@ type TrendPlayer = {
   headshot: string | null;
   displayPosition?: string | null;
   teamFullName?: string | null;
+  eligiblePositions?: string[] | null;
+  uniformNumber?: number | null;
   latest: number;
   previous: number;
   delta: number;
@@ -176,30 +178,48 @@ export default function TransactionTrends() {
                       {idx + 1}
                     </th>
                     <td className={styles.playerCell}>
-                      {p.headshot ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={p.headshot}
-                          alt=""
-                          className={styles.headshot}
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div
-                          className={styles.headshot}
-                          style={{ background: "#333" }}
-                        />
-                      )}
-                      <span className={styles.playerText}>
-                        <span className={styles.playerName}>{p.name}</span>
-                        {(p.displayPosition || p.teamFullName) && (
-                          <span className={styles.playerMeta}>
-                            {p.displayPosition ? `${p.displayPosition}` : ""}
-                            {p.displayPosition && p.teamFullName ? " • " : ""}
-                            {p.teamFullName ? `${p.teamFullName}` : ""}
-                          </span>
+                      <div className={styles.rowBox}>
+                        {p.headshot ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={p.headshot}
+                            alt=""
+                            className={styles.headshot}
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div
+                            className={styles.headshot}
+                            style={{ background: "#333" }}
+                          />
                         )}
-                      </span>
+                        <div className={styles.playerTextWrap}>
+                          <span className={styles.playerText}>
+                            <span className={styles.playerName}>{p.name}</span>
+                            {(p.displayPosition ||
+                              p.teamFullName ||
+                              p.eligiblePositions ||
+                              p.uniformNumber !== undefined) && (
+                              <span className={styles.playerMeta}>
+                                {Array.isArray(p.eligiblePositions) &&
+                                p.eligiblePositions.length
+                                  ? p.eligiblePositions.join(", ")
+                                  : p.displayPosition || ""}
+                                {p.teamFullName &&
+                                (p.displayPosition ||
+                                  (p.eligiblePositions &&
+                                    p.eligiblePositions.length))
+                                  ? " • "
+                                  : ""}
+                                {p.teamFullName || ""}
+                                {typeof p.uniformNumber === "number"
+                                  ? ` • #${p.uniformNumber}`
+                                  : ""}
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                      </div>
                     </td>
                     <td className={styles.ownCell}>
                       <div className={`${styles.neonBox} ${styles.rise}`}>
@@ -255,30 +275,48 @@ export default function TransactionTrends() {
                       {idx + 1}
                     </th>
                     <td className={styles.playerCell}>
-                      {p.headshot ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={p.headshot}
-                          alt=""
-                          className={styles.headshot}
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div
-                          className={styles.headshot}
-                          style={{ background: "#333" }}
-                        />
-                      )}
-                      <span className={styles.playerText}>
-                        <span className={styles.playerName}>{p.name}</span>
-                        {(p.displayPosition || p.teamFullName) && (
-                          <span className={styles.playerMeta}>
-                            {p.displayPosition ? `${p.displayPosition}` : ""}
-                            {p.displayPosition && p.teamFullName ? " • " : ""}
-                            {p.teamFullName ? `${p.teamFullName}` : ""}
-                          </span>
+                      <div className={styles.rowBox}>
+                        {p.headshot ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={p.headshot}
+                            alt=""
+                            className={styles.headshot}
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div
+                            className={styles.headshot}
+                            style={{ background: "#333" }}
+                          />
                         )}
-                      </span>
+                        <div className={styles.playerTextWrap}>
+                          <span className={styles.playerText}>
+                            <span className={styles.playerName}>{p.name}</span>
+                            {(p.displayPosition ||
+                              p.teamFullName ||
+                              p.eligiblePositions ||
+                              p.uniformNumber !== undefined) && (
+                              <span className={styles.playerMeta}>
+                                {Array.isArray(p.eligiblePositions) &&
+                                p.eligiblePositions.length
+                                  ? p.eligiblePositions.join(", ")
+                                  : p.displayPosition || ""}
+                                {p.teamFullName &&
+                                (p.displayPosition ||
+                                  (p.eligiblePositions &&
+                                    p.eligiblePositions.length))
+                                  ? " • "
+                                  : ""}
+                                {p.teamFullName || ""}
+                                {typeof p.uniformNumber === "number"
+                                  ? ` • #${p.uniformNumber}`
+                                  : ""}
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                      </div>
                     </td>
                     <td className={styles.ownCell}>
                       <div className={`${styles.neonBox} ${styles.fall}`}>

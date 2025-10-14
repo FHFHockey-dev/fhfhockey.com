@@ -1,64 +1,84 @@
-@use "styles/vars";
+@use "styles/vars" as v;
 
 .teamSelect {
   display: none;
+  margin: 0 v.$space-md;
 }
 
 .container {
   padding: 0 !important;
 
   .top {
-    padding: 0 0.75rem;
+    margin: v.$space-md v.$space-md 0;
     display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    margin-top: 1rem;
-    margin-bottom: 10px;
-    position: relative;
+    flex-direction: column;
+    gap: v.$space-sm;
+    align-items: flex-start;
+
     .title {
-      font-size: 1.25rem;
       margin: 0;
-      line-height: initial;
+      font-family: v.$font-family-primary;
+      font-size: clamp(1.25rem, 4vw, 1.75rem);
+      font-weight: 400;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
     }
+
     .select {
-      width: 128px;
+      width: 160px;
     }
   }
 
   .header {
+    margin: v.$space-sm v.$space-md 0;
+    padding: v.$space-sm v.$space-md;
+    border-radius: v.$border-radius-lg;
+    border: 1px solid rgba(v.$color-white, 0.35);
+    background: linear-gradient(
+      135deg,
+      rgba(v.$background-dark, 0.85),
+      rgba(v.$background-light, 0.75)
+    );
+    box-shadow: v.$desktop-panel-shadow;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    border-top: 2px solid #ffffff;
-    border-bottom: 2px solid #ffffff;
-    padding: 0 0.75rem 0 0.75rem;
-    height: 60px;
+    gap: v.$space-md;
+
     .left {
       display: flex;
       flex-direction: column;
+      gap: v.$space-xxs;
       align-items: flex-start;
+
       .teamName {
         margin: 0;
-        font-family: "Roboto";
-        font-weight: 400;
-        font-size: 1.375rem;
-        margin-bottom: 2px;
-        letter-spacing: 2px;
+        font-family: v.$font-family-primary;
+        font-size: 1.5rem;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+
         .highlight {
-          font-weight: 800;
+          font-family: v.$font-family-primary;
+          font-weight: 700;
         }
       }
 
       .time {
-        font-weight: 400;
-        font-size: 0.75rem;
+        font-size: v.$font-size-xs;
+        letter-spacing: 0.08em;
+
         &:hover {
-          color: vars.$primary-color;
+          color: v.$primary-color;
         }
       }
     }
 
     .right {
+      display: flex;
+      align-items: center;
+      gap: v.$space-sm;
+
       .small {
         display: block;
         height: 35px;
@@ -67,6 +87,7 @@
       .large {
         display: none;
       }
+
       &:hover {
         cursor: pointer;
       }
@@ -74,75 +95,86 @@
   }
 
   .mainContent {
-    padding: 0 0.75rem;
+    margin: v.$space-md;
+    margin-top: v.$space-lg;
+    padding: v.$space-lg v.$space-md;
+    border-radius: v.$border-radius-lg;
+    border: 1px solid rgba(v.$border-secondary, 0.6);
+    background: linear-gradient(
+      140deg,
+      rgba(v.$background-medium, 0.88),
+      rgba(v.$background-light, 0.78)
+    );
+    box-shadow: v.$desktop-panel-shadow;
+    display: grid;
+    gap: v.$space-lg;
 
-    .forwards {
-      .line:not(:last-of-type) {
-        margin-bottom: 12px;
-      }
+    .categoryTitle {
+      padding-left: 0;
+      font-size: v.$font-size-sm;
+      letter-spacing: 0.18em;
     }
 
-    .defense {
-      .line:not(:last-of-type) {
-        margin-bottom: 12px;
-      }
-    }
-
+    .forwards,
+    .defense,
     .goalies {
-      .line:not(:last-of-type) {
-        margin-bottom: 12px;
-      }
+      display: grid;
+      gap: v.$space-sm;
     }
 
     .defenseAndGoalies {
       display: none;
     }
   }
+
+  .powerPlay {
+    margin: 0 v.$space-md v.$space-xl;
+  }
 }
 
-@media only screen and (min-width: vars.$screen-large) {
+@media only screen and (min-width: v.$screen-large) {
   .teamSelect {
     display: flex;
+    justify-content: flex-end;
+    margin: v.$space-lg auto 0;
+    max-width: 1280px;
   }
+
   .container {
-    min-width: 1024px;
+    max-width: 1280px;
     margin: 0 auto;
 
     .top {
-      padding: 0;
-      margin: 40px 0;
+      flex-direction: row;
+      align-items: flex-end;
+      justify-content: space-between;
+      margin: v.$space-xl v.$space-lg;
+
       .title {
-        font-size: 3rem;
+        font-size: clamp(2.5rem, 4vw, 3.25rem);
         font-weight: 300;
       }
+
       .select {
         display: none;
       }
     }
 
     .header {
-      border-left: 2px solid white;
-      border-right: 2px solid white;
-      height: 124px;
-      padding: 0 3rem 0 3.625rem;
+      margin: 0 v.$space-lg;
+      padding: v.$space-md v.$space-xl;
+      border: 1px solid rgba(v.$color-white, 0.4);
 
       .left {
         .teamName {
-          font-family: "Roboto Condensed";
-          font-weight: 400;
-          font-size: 2.25rem;
-          margin-bottom: 6px;
-
-          .highlight {
-            font-family: Roboto;
-            font-weight: 800;
-          }
+          font-size: 2.5rem;
         }
 
         .time {
-          font-size: 1rem;
+          font-size: v.$font-size-sm;
         }
       }
+
       .right {
         .small {
           display: none;
@@ -150,42 +182,37 @@
 
         .large {
           display: block;
+          height: 72px;
         }
       }
     }
 
     .mainContent {
-      background-color: vars.$bg-light;
-      border: 2px solid white;
-      border-top: none;
-      padding-bottom: 40px;
-
-      display: flex;
-      justify-content: space-between;
-
-      .categoryTitle {
-        padding-left: 54px;
-      }
+      margin: v.$space-xl v.$space-lg 0;
+      padding: v.$space-xl;
+      grid-template-columns: minmax(0, 2fr) minmax(0, 1.25fr);
+      align-items: flex-start;
 
       .forwards {
-        flex: 1;
-        margin-right: 24px;
-        .line:not(:last-of-type) {
-          margin-bottom: 24px;
-        }
+        display: flex;
+        flex-direction: column;
+        gap: v.$space-lg;
       }
 
       .defenseAndGoalies {
-        display: block;
-        .line:not(:last-of-type) {
-          margin-bottom: 24px;
-        }
+        display: flex;
+        flex-direction: column;
+        gap: v.$space-lg;
       }
 
       .defense,
       .goalies {
         display: none;
       }
+    }
+
+    .powerPlay {
+      margin: v.$space-xl v.$space-lg v.$space-xxl;
     }
   }
 }

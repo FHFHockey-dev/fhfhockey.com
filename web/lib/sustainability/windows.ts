@@ -1,3 +1,5 @@
+// web/lib/sustainability/windows.ts
+
 import supabase from "lib/supabase";
 import { toPosGroup, PosGroup, StatCode } from "lib/sustainability/priors";
 
@@ -20,10 +22,38 @@ export async function fetchPriors(
   if (error) throw error;
   const out: any = {};
   for (const r of data ?? []) {
+    const alpha0 =
+      r.alpha0 === null || r.alpha0 === undefined
+        ? Number.NaN
+        : Number(r.alpha0);
+    const beta0 =
+      r.beta0 === null || r.beta0 === undefined
+        ? Number.NaN
+        : Number(r.beta0);
+    const k =
+      r.k === null || r.k === undefined ? Number.NaN : Number(r.k);
+    if (
+      !Number.isFinite(alpha0) ||
+      !Number.isFinite(beta0) ||
+      !Number.isFinite(k) ||
+      alpha0 + beta0 <= 0
+    ) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        "[fetchPriors] skipping invalid prior row",
+        season_id,
+        pg,
+        r.stat_code,
+        alpha0,
+        beta0,
+        k
+      );
+      continue;
+    }
     out[r.stat_code] = {
-      alpha0: Number(r.alpha0),
-      beta0: Number(r.beta0),
-      k: Number(r.k)
+      alpha0,
+      beta0,
+      k
     };
   }
   return out;
@@ -146,14 +176,47 @@ export async function rebuildBetaWindowZForSnapshot(
       for (const stat of statCodes) {
         const prior = priors[stat];
         if (!prior) continue; // skip if prior row missing (e.g., not yet built)
+        if (
+          !Number.isFinite(prior.alpha0) ||
+          !Number.isFinite(prior.beta0) ||
+          !Number.isFinite(prior.k) ||
+          prior.alpha0 + prior.beta0 <= 0
+        ) {
+          // eslint-disable-next-line no-console
+          console.warn(
+            "[rebuildBetaWindowZForSnapshot] invalid prior encountered",
+            pid,
+            stat,
+            prior
+          );
+          continue;
+        }
         const c = counts[stat];
+        const successesRaw =
+          c && Number.isFinite(Number(c.s)) ? Number(c.s) : 0;
+        const trialsRaw =
+          c && Number.isFinite(Number(c.n)) ? Number(c.n) : 0;
         const { p_hat, priorMean, priorVar, shrink, varMixed, z } = ebZ_generic(
-          c.s,
-          c.n,
+          successesRaw,
+          trialsRaw,
           prior.alpha0,
           prior.beta0,
           prior.k
         );
+        const rate = Number.isFinite(p_hat) ? Number(p_hat.toFixed(8)) : 0;
+        const prior_mean = Number.isFinite(priorMean)
+          ? Number(priorMean.toFixed(8))
+          : 0;
+        const prior_var = Number.isFinite(priorVar)
+          ? Number(priorVar.toFixed(10))
+          : 0;
+        const shrink_out = Number.isFinite(shrink)
+          ? Number(shrink.toFixed(8))
+          : 0;
+        const var_mixed = Number.isFinite(varMixed)
+          ? Number(varMixed.toFixed(10))
+          : 0;
+        const eb_z = Number.isFinite(z) ? Number(z.toFixed(6)) : 0;
         rows.push({
           player_id: pid,
           season_id,
@@ -161,17 +224,17 @@ export async function rebuildBetaWindowZForSnapshot(
           position_group: pg,
           window_code: w.code,
           stat_code: stat,
-          successes: c.s,
-          trials: c.n,
-          rate: Number(p_hat.toFixed(8)),
+          successes: successesRaw,
+          trials: trialsRaw,
+          rate,
           prior_alpha: prior.alpha0,
           prior_beta: prior.beta0,
-          prior_mean: Number(priorMean.toFixed(8)),
-          prior_var: Number(priorVar.toFixed(10)),
+          prior_mean,
+          prior_var,
           k: prior.k,
-          shrink: Number(shrink.toFixed(8)),
-          var_mixed: Number(varMixed.toFixed(10)),
-          eb_z: Number(z.toFixed(6))
+          shrink: shrink_out,
+          var_mixed,
+          eb_z
         });
       }
     }

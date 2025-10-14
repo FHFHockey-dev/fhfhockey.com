@@ -193,7 +193,35 @@ export default function PredictionsLeaderboard({
     });
   }, [rows, playerInfo, sparklineMap]);
 
-  if (error) return <div className={styles.error}>{error}</div>;
+  const [retryKey, setRetryKey] = useState(0);
+
+  useEffect(() => {
+    // no-op; adding retryKey to dependency list of hooks above would trigger refetch if needed
+  }, [retryKey]);
+
+  if (error)
+    return (
+      <div className={styles.errorWrapper}>
+        <div className={styles.errorMessage}>
+          <strong>Unable to load projections</strong>
+          <div className={styles.errorDetail}>{error}</div>
+        </div>
+        <div className={styles.errorActions}>
+          <button
+            onClick={() => {
+              // bumping retryKey will cause parent callers using usePredictionsSko to re-run (they observe query string changes)
+              setRetryKey((k) => k + 1);
+              // naive retry by reloading the page-level API endpoint
+              fetch(`/api/v1/ml/get-predictions-sko?limit=${limit}`).catch(
+                () => {}
+              );
+            }}
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
   if (loading && !rows.length)
     return (
       <div className={styles.loading}>Loading latest sKO projections…</div>

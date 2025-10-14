@@ -1,6 +1,6 @@
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\pages\lines\[abbreviation].tsx
 
-import React, { useRef } from "react";
+import React, { useMemo, useRef } from "react";
 import { useRouter } from "next/router";
 import { NextSeo } from "next-seo";
 import type { GetStaticPaths, GetStaticProps } from "next";
@@ -14,6 +14,7 @@ import Select from "components/Select";
 import CategoryTitle from "components/LineCombinations/CategoryTitle";
 import Line from "components/LineCombinations/Line";
 import { mapTeamAbbreviation } from "lib/NHL/utils/utils";
+import PowerPlayCombos from "components/PowerPlayCombos";
 
 import { LineChange } from "components/LineCombinations/PlayerCard/SkaterCard";
 import Custom404 from "pages/404";
@@ -100,6 +101,11 @@ export default function TeamLC({
   const router = useRouter();
   const { abbreviation } = router.query;
   const mappedAbbreviation = mapTeamAbbreviation(abbreviation as string); // Map abbreviation
+  const teamMeta = useMemo(
+    () => teams.find((team) => team.abbreviation === mappedAbbreviation),
+    [teams, mappedAbbreviation]
+  );
+  const teamId = teamMeta?.id ?? 0;
 
   const onTeamChange = (newAbbreviation: string) => {
     const mappedNewAbbreviation = mapTeamAbbreviation(newAbbreviation);
@@ -272,6 +278,14 @@ export default function TeamLC({
               />
             </section>
           </Container>
+          {teamId ? (
+            <div className={styles.powerPlay}>
+              <PowerPlayCombos
+                teamId={teamId}
+                gameId={lineCombinations.game.id}
+              />
+            </div>
+          ) : null}
         </div>
       </Container>
     </TeamColorProvider>

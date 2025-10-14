@@ -1,3 +1,5 @@
+// rebuild-score.ts
+
 import { NextApiRequest, NextApiResponse } from "next";
 import { loadPlayersForSnapshot } from "lib/sustainability/windows";
 import {

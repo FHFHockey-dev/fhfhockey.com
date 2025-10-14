@@ -750,6 +750,40 @@ $mobile-column-short: 30px;
   }
 }
 
+// --- Extra Widgets (Top team cards + Projections) ---
+.extraWidgets {
+  display: grid;
+  grid-template-columns: 1fr 380px; // main area + side widget
+  gap: v.$space-lg;
+  align-items: start;
+}
+
+.teamStatCards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: v.$space-md;
+}
+
+.predictionsWidget {
+  // small card container on the right side
+  .title {
+    margin: 0 0 v.$space-sm 0;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: v.$primary-color;
+    font-family: v.$font-family-accent;
+  }
+}
+
+@media (max-width: #{v.$breakpoint-tablet - 1px}) {
+  .extraWidgets {
+    grid-template-columns: 1fr;
+  }
+  .teamStatCards {
+    grid-template-columns: repeat(1, 1fr);
+  }
+}
+
 // --- General Cleanup ---
 .separator {
   // Remove this if not needed, headers provide separation now
