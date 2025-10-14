@@ -158,11 +158,11 @@ export default function TransactionTrends() {
                     #
                   </th>
                   <th scope="col">Player</th>
-                  <th scope="col" className={styles.sparkCell}>
-                    Trend
-                  </th>
                   <th scope="col" className={styles.ownCellHeader}>
                     Own
+                  </th>
+                  <th scope="col" className={styles.sparkCell}>
+                    Trend
                   </th>
                   <th scope="col" style={{ textAlign: "right" }}>
                     Δ
@@ -201,15 +201,14 @@ export default function TransactionTrends() {
                         )}
                       </span>
                     </td>
-                    <td className={styles.sparkCell}>
-                      <div className={`${styles.neonBox} ${styles.rise}`}>
-                        {" "}
-                        <Spark points={p.sparkline} variant="rise" />{" "}
-                      </div>
-                    </td>
                     <td className={styles.ownCell}>
                       <div className={`${styles.neonBox} ${styles.rise}`}>
                         {p.latest.toFixed(1)}%
+                      </div>
+                    </td>
+                    <td className={styles.sparkCell}>
+                      <div className={`${styles.neonBox} ${styles.rise}`}>
+                        <Spark points={p.sparkline} variant="rise" />
                       </div>
                     </td>
                     <td className={styles.deltaCell}>
@@ -238,11 +237,11 @@ export default function TransactionTrends() {
                     #
                   </th>
                   <th scope="col">Player</th>
-                  <th scope="col" className={styles.sparkCell}>
-                    Trend
-                  </th>
                   <th scope="col" className={styles.ownCellHeader}>
                     Own
+                  </th>
+                  <th scope="col" className={styles.sparkCell}>
+                    Trend
                   </th>
                   <th scope="col" style={{ textAlign: "right" }}>
                     Δ
@@ -281,15 +280,14 @@ export default function TransactionTrends() {
                         )}
                       </span>
                     </td>
-                    <td className={styles.sparkCell}>
-                      <div className={`${styles.neonBox} ${styles.fall}`}>
-                        {" "}
-                        <Spark points={p.sparkline} variant="fall" />{" "}
-                      </div>
-                    </td>
                     <td className={styles.ownCell}>
                       <div className={`${styles.neonBox} ${styles.fall}`}>
                         {p.latest.toFixed(1)}%
+                      </div>
+                    </td>
+                    <td className={styles.sparkCell}>
+                      <div className={`${styles.neonBox} ${styles.fall}`}>
+                        <Spark points={p.sparkline} variant="fall" />
                       </div>
                     </td>
                     <td className={styles.deltaCell}>
