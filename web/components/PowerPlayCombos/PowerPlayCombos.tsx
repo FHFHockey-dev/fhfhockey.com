@@ -84,7 +84,7 @@ export default function PowerPlayCombos({ teamId, gameId }: Props) {
           .from("rosters")
           .select("playerId, sweaterNumber")
           .eq("teamId", teamId)
-          .eq("seasonId", seasonId);
+          .eq("seasonId", seasonId!);
         if (rosterError) throw rosterError;
 
         const roster = (rosterData ?? []) as RosterRow[];
