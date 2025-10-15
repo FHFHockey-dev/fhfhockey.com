@@ -88,7 +88,21 @@ const Home: NextPage = ({
       const res = await fetch(`/api/v1/games?date=${currentDate}`);
       const data = await res.json();
 
-      // Fetch period and time remaining for LIVE games
+      // Dev: log a sample of the schedule payload to verify structure
+      if (process.env.NODE_ENV !== "production") {
+        try {
+          const sample = Array.isArray(data) ? data.slice(0, 1) : data;
+          debugLog("/api/v1/games payload sample:", sample);
+          if (Array.isArray(data) && data[0]) {
+            debugLog("first game homeTeam:", data[0].homeTeam);
+            debugLog("first game awayTeam:", data[0].awayTeam);
+          }
+        } catch (e) {
+          // ignore
+        }
+      }
+
+      // Fetch period and time remaining for LIVE games from gamecenter
       const liveGamePromises = data
         .filter((game) => game.gameState === "LIVE")
         .map(async (game) => {
@@ -98,25 +112,113 @@ const Home: NextPage = ({
           const liveData = await liveDataResponse.json();
 
           return {
-            ...game,
-            period: liveData.periodDescriptor.number,
-            periodType: liveData.periodDescriptor.periodType,
-            timeRemaining: liveData.clock.timeRemaining,
-            inIntermission: liveData.clock.inIntermission
+            id: game.id,
+            clock: liveData.clock || null,
+            periodDescriptor: liveData.periodDescriptor || null
           };
         });
 
       const liveGamesData = await Promise.all(liveGamePromises);
 
-      // Combine live games data with other games data
+      // Combine live overlay with schedule payload
       const updatedGames = data.map((game) => {
-        const liveGameData = liveGamesData.find(
-          (liveGame) => liveGame.id === game.id
-        );
-        return liveGameData || game;
+        const overlay = liveGamesData.find((lg) => lg.id === game.id);
+        if (overlay) {
+          return {
+            ...game,
+            clock:
+              overlay.clock ||
+              game.clock ||
+              (typeof game.timeRemaining === "string" ||
+              typeof game.inIntermission === "boolean"
+                ? {
+                    timeRemaining: game.timeRemaining,
+                    inIntermission: game.inIntermission
+                  }
+                : null),
+            periodDescriptor:
+              overlay.periodDescriptor ||
+              game.periodDescriptor ||
+              (game.period || game.periodType
+                ? { number: game.period, periodType: game.periodType }
+                : null)
+          };
+        }
+        const clockFromSchedule =
+          typeof game.timeRemaining === "string" ||
+          typeof game.inIntermission === "boolean"
+            ? {
+                timeRemaining: game.timeRemaining,
+                inIntermission: game.inIntermission
+              }
+            : null;
+        const pdFromSchedule =
+          game.periodDescriptor ||
+          (game.period || game.periodType
+            ? { number: game.period, periodType: game.periodType }
+            : null);
+        return {
+          ...game,
+          clock: game.clock || clockFromSchedule || null,
+          periodDescriptor: pdFromSchedule || null
+        };
       });
 
-      setGames(updatedGames);
+      if (process.env.NODE_ENV !== "production") {
+        try {
+          const sample = Array.isArray(updatedGames)
+            ? updatedGames.slice(0, 1)
+            : updatedGames;
+          debugLog("updatedGames sample:", sample);
+        } catch (e) {
+          // ignore
+        }
+      }
+
+      // Fetch standings NOW to attach record strings (W-L-OTL) by team abbrev
+      let gamesWithRecords = updatedGames;
+      try {
+        const standingsNowResp = await Fetch(
+          `https://api-web.nhle.com/v1/standings/now`
+        );
+        const standingsNow = await standingsNowResp.json();
+        const recByAbbrev = {} as any;
+        if (standingsNow && Array.isArray(standingsNow.standings)) {
+          standingsNow.standings.forEach((row: any) => {
+            const abbr = row?.teamAbbrev?.default;
+            const wins = row?.wins ?? 0;
+            const losses = row?.losses ?? 0;
+            const otl = row?.otLosses ?? 0;
+            if (abbr) recByAbbrev[abbr] = `${wins}-${losses}-${otl}`;
+          });
+        }
+        gamesWithRecords = updatedGames.map((g: any) => {
+          const homeAbbrev = g?.homeTeam?.abbrev;
+          const awayAbbrev = g?.awayTeam?.abbrev;
+          const homeRecord =
+            typeof g?.homeTeam?.record === "string" && g.homeTeam.record
+              ? g.homeTeam.record
+              : homeAbbrev
+                ? recByAbbrev[homeAbbrev] || ""
+                : "";
+          const awayRecord =
+            typeof g?.awayTeam?.record === "string" && g.awayTeam.record
+              ? g.awayTeam.record
+              : awayAbbrev
+                ? recByAbbrev[awayAbbrev] || ""
+                : "";
+          return {
+            ...g,
+            homeTeam: { ...g.homeTeam, record: homeRecord },
+            awayTeam: { ...g.awayTeam, record: awayRecord }
+          };
+        });
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.warn("standings/now fetch failed; records may be missing", e);
+      }
+
+      setGames(gamesWithRecords);
     };
 
     fetchGames();
@@ -141,6 +243,18 @@ const Home: NextPage = ({
         }[periodNumber] || "th"; // Default to 'th' for any other cases
 
       return `${periodNumber}${periodSuffix} Period`;
+    }
+  };
+
+  // Format a UTC start time to the user's local timezone, e.g. "7:00 PM EDT"
+  const formatLocalStartTime = (startTimeUTC: string) => {
+    if (!startTimeUTC) return "";
+    try {
+      const tz = moment.tz.guess();
+      return moment.tz(startTimeUTC, "UTC").tz(tz).format("h:mm A z");
+    } catch (e) {
+      // Fallback without timezone abbreviation
+      return moment.utc(startTimeUTC).local().format("h:mm A");
     }
   };
 
@@ -383,7 +497,11 @@ const Home: NextPage = ({
                         } as React.CSSProperties
                       }
                     >
-                      <div className={styles.homeTeamLogo}>
+                      <div
+                        className={styles.homeTeamLogo}
+                        title={`HOME ${homeTeam?.abbrev ?? ""} record: ${homeTeam?.record ?? "n/a"}`}
+                      >
+                        <div className={styles.homeAwayLabel}>HOME</div>
                         <OptimizedImage
                           src={getTeamLogoSvg(homeTeam.abbrev)}
                           className={styles.leftImage}
@@ -393,6 +511,11 @@ const Home: NextPage = ({
                           priority={false}
                           fallbackSrc={fallbackNHLLogo}
                         />
+                        <div className={styles.teamRecord}>
+                          {typeof homeTeam?.record === "string"
+                            ? homeTeam.record
+                            : ""}
+                        </div>
                       </div>
                       <div className={styles.gameTimeSection}>
                         <div className={styles.homeScore}>
@@ -402,24 +525,41 @@ const Home: NextPage = ({
                           <span className={styles.gameState}>
                             {game.gameState === "LIVE"
                               ? formatPeriodText(
-                                  game.periodDescriptor?.number,
-                                  game.periodDescriptor?.periodType,
-                                  game.clock?.inIntermission
+                                  game?.periodDescriptor?.number ??
+                                    game?.period,
+                                  game?.periodDescriptor?.periodType ??
+                                    game?.periodType,
+                                  game?.clock &&
+                                    game.clock.inIntermission !== undefined
+                                    ? game.clock.inIntermission
+                                    : (game as any)?.inIntermission
                                 )
                               : getDisplayGameState(game.gameState)}
                           </span>
-                          <span className={styles.gameTimeText}>
-                            {game.gameState === "LIVE" &&
-                            !game.clock?.inIntermission
-                              ? (game.clock?.timeRemaining ?? "--:--")
-                              : ""}
-                          </span>
+                          <ClientOnly>
+                            <span className={styles.gameTimeText}>
+                              {game.gameState === "LIVE"
+                                ? !(game?.clock &&
+                                  game.clock.inIntermission !== undefined
+                                    ? game.clock.inIntermission
+                                    : (game as any)?.inIntermission)
+                                  ? (game?.clock && game.clock.timeRemaining) ||
+                                    (game as any)?.timeRemaining ||
+                                    "--:--"
+                                  : ""
+                                : formatLocalStartTime(game.startTimeUTC)}
+                            </span>
+                          </ClientOnly>
                         </div>
                         <div className={styles.awayScore}>
                           {awayTeam.score ?? "-"}
                         </div>
                       </div>
-                      <div className={styles.awayTeamLogo}>
+                      <div
+                        className={styles.awayTeamLogo}
+                        title={`AWAY ${awayTeam?.abbrev ?? ""} record: ${awayTeam?.record ?? "n/a"}`}
+                      >
+                        <div className={styles.homeAwayLabel}>AWAY</div>
                         <OptimizedImage
                           src={getTeamLogoSvg(awayTeam.abbrev)}
                           className={styles.rightImage}
@@ -429,6 +569,11 @@ const Home: NextPage = ({
                           priority={false}
                           fallbackSrc={fallbackNHLLogo}
                         />
+                        <div className={styles.teamRecord}>
+                          {typeof awayTeam?.record === "string"
+                            ? awayTeam.record
+                            : ""}
+                        </div>
                       </div>
                     </div>
                   </Link>
@@ -440,6 +585,22 @@ const Home: NextPage = ({
                 {moment(currentDate).format("MM/DD/YYYY")}.
               </p>
             )}
+            {process.env.NODE_ENV !== "production" &&
+            Array.isArray(games) &&
+            games[0] ? (
+              <details style={{ marginTop: 12 }}>
+                <summary>Debug: First game payload</summary>
+                <pre
+                  style={{
+                    whiteSpace: "pre-wrap",
+                    maxHeight: 280,
+                    overflow: "auto"
+                  }}
+                >
+                  {JSON.stringify(games[0], null, 2)}
+                </pre>
+              </details>
+            ) : null}
           </div>
         </div>
 

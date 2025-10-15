@@ -15,6 +15,13 @@
   gap: v.$space-md;
 }
 
+.headerControls {
+  display: flex;
+  gap: v.$space-md;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
 .title {
   font-family: v.$font-family-accent;
   font-size: v.$font-size-lg;
@@ -48,6 +55,31 @@
       background: v.$primary-color;
       color: v.$text-button;
       box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.4);
+    }
+  }
+}
+
+.posButtons {
+  display: flex;
+  gap: v.$space-sm;
+  flex-wrap: wrap;
+  button {
+    font-size: v.$font-size-xs;
+    letter-spacing: 0.06em;
+    padding: 6px 10px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid v.$border-secondary;
+    border-radius: 4px;
+    cursor: pointer;
+    color: v.$text-primary;
+    transition: all 0.2s ease;
+    &:hover {
+      background: rgba(255, 255, 255, 0.12);
+    }
+    &.active {
+      background: v.$secondary-color;
+      color: v.$text-button;
+      box-shadow: 0 0 0 2px rgba(v.$secondary-color, 0.4);
     }
   }
 }
@@ -294,6 +326,47 @@ tbody tr:hover .neonBox.fall {
   font-size: v.$font-size-xxs;
   color: v.$text-secondary;
   margin-top: v.$space-sm;
+}
+
+.pager {
+  margin-top: v.$space-sm;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: v.$space-md;
+  flex-wrap: wrap;
+}
+.pagerInfo {
+  color: v.$text-secondary;
+  font-size: v.$font-size-xxs;
+  display: flex;
+  align-items: center;
+  gap: v.$space-sm;
+}
+.separator {
+  opacity: 0.6;
+}
+.pagerButtons {
+  display: flex;
+  gap: v.$space-sm;
+  button {
+    font-size: v.$font-size-xs;
+    letter-spacing: 0.06em;
+    padding: 6px 12px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid v.$border-secondary;
+    border-radius: 4px;
+    cursor: pointer;
+    color: v.$text-primary;
+    transition: all 0.2s ease;
+    &:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
 }
 
 @media (max-width: #{v.$breakpoint-tablet}) {
