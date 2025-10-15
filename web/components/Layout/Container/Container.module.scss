@@ -5,7 +5,12 @@
   flex: 1;
   padding: 0 0.5rem;
   overflow-x: hidden;
+  // Ensure page content does not get obscured by the fixed bottom nav on mobile
+  // Use a generous padding that also accounts for safe-area inset
+  padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
   @media only screen and (min-width: $screen-large) {
     padding: 0 1.5rem;
+    // Remove extra bottom padding on desktop where bottom nav is hidden
+    padding-bottom: 0;
   }
 }

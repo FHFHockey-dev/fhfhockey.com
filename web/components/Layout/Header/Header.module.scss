@@ -136,6 +136,7 @@ $mobile-header-height: 65px;
   backdrop-filter: blur(20px);
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+  will-change: transform;
 
   // More compact design for mobile browsers
   height: auto;
@@ -149,10 +150,24 @@ $mobile-header-height: 65px;
     position: absolute;
     left: 0;
     right: 0;
-    bottom: -48px; // extend below visual viewport
-    height: 48px; // decent margin to cover dynamic UI
+    bottom: -12px; // small safety extension below visual viewport
+    height: 12px; // minimal margin to mask tiny transitions without visible gap
     background: inherit; // continue the gradient
     pointer-events: none;
+  }
+
+  // Prefer dynamic viewport units where supported so the bar clamps to
+  // the visual viewport bottom as Safari URL bar expands/collapses.
+  @supports (height: 100dvh) {
+    bottom: auto;
+    // Place the top of the bar at the bottom edge of the dynamic viewport,
+    // then pull it upward by its own height (minus safe-area) so it sits flush.
+    top: calc(100dvh - env(safe-area-inset-bottom, 0px));
+    // Allow a small runtime-adjustable offset via --vv-offset for edge cases
+    // where Safari still reports a residual gap.
+    transform: translateY(
+      calc(-100% + env(safe-area-inset-bottom, 0px) + var(--vv-offset, 0px))
+    );
   }
 
   @media only screen and (min-width: v.$screen-large) {

@@ -1,6 +1,6 @@
 // /Users/tim/Desktop/FHFH/fhfhockey.com/web/components/Layout/Header/Header.tsx
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import classNames from "classnames";
@@ -55,6 +55,39 @@ const BOTTOM_NAV_ITEMS = [
 
 function BottomNavigation({ onMoreClick }: { onMoreClick: () => void }) {
   const router = useRouter();
+  const [offset, setOffset] = useState(0);
+  const [supportsDynamicVH, setSupportsDynamicVH] = useState(false);
+
+  // Fallback for browsers that don't fully support CSS dynamic viewport units
+  // Listen to visualViewport changes and adjust translateY so the nav clamps
+  // to the visible bottom when URL bars expand/collapse.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const supports =
+      typeof CSS !== "undefined" && CSS.supports?.("height: 100dvh");
+    setSupportsDynamicVH(!!supports);
+    // Use visualViewport (when available) to compute a tiny runtime offset that
+    // nudges the bar exactly flush with the visible bottom. We do this even when
+    // dvh is supported, as Safari sometimes leaves a fractional gap due to rounding.
+    const vv = (window as any).visualViewport as VisualViewport | undefined;
+    if (!vv) return;
+
+    const handler = () => {
+      const bottomInset =
+        (window as any).innerHeight - vv.height - vv.offsetTop;
+      // ceil to avoid tiny fractional gaps from subpixel rounding
+      setOffset(Math.max(0, Math.ceil(bottomInset)));
+    };
+    handler();
+    vv.addEventListener("resize", handler);
+    vv.addEventListener("scroll", handler);
+    window.addEventListener("orientationchange", handler);
+    return () => {
+      vv.removeEventListener("resize", handler);
+      vv.removeEventListener("scroll", handler);
+      window.removeEventListener("orientationchange", handler);
+    };
+  }, []);
 
   const handleNavClick = (item: (typeof BOTTOM_NAV_ITEMS)[0]) => {
     if (item.id === "more") {
@@ -70,8 +103,17 @@ function BottomNavigation({ onMoreClick }: { onMoreClick: () => void }) {
     return router.pathname.startsWith(href);
   };
 
+  // Inline style drives a CSS custom property used by the CSS transform when dvh is supported.
+  const navStyle: React.CSSProperties | undefined = supportsDynamicVH
+    ? // dvh path: expose --vv-offset to CSS so it can add a tiny nudge if needed
+      ({ ["--vv-offset" as any]: `${Math.max(0, offset)}px` } as any)
+    : // no-dvh path: directly translate by the computed offset
+      offset
+      ? { transform: `translateY(-${offset}px)` }
+      : undefined;
+
   return (
-    <nav className={styles.bottomNav}>
+    <nav className={styles.bottomNav} style={navStyle}>
       <div className={styles.bottomNavContainer}>
         {BOTTOM_NAV_ITEMS.map((item) => (
           <div key={item.id} className={styles.bottomNavItem}>

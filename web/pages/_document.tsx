@@ -6,11 +6,6 @@ export default function Document() {
   return (
     <Html lang="en">
       <Head>
-        {/* Ensure iOS respects safe-area insets for full-bleed layouts */}
-        <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"
-        />
         {/* Add Google Fonts */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
