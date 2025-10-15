@@ -22,6 +22,13 @@ type TrendPlayer = {
 interface ApiResponse {
   success: boolean;
   windowDays: number;
+  generatedAt?: string;
+  page?: number;
+  pageSize?: number;
+  offset?: number;
+  pos?: string | null;
+  totalRisers?: number;
+  totalFallers?: number;
   risers: TrendPlayer[];
   fallers: TrendPlayer[];
   error?: string;
@@ -86,6 +93,9 @@ function Spark({
 export default function TransactionTrends() {
   // Default to 3-day window per request
   const [windowDays, setWindowDays] = useState(3);
+  const [pos, setPos] = useState<string>("");
+  const [limit, setLimit] = useState<number>(10);
+  const [offset, setOffset] = useState<number>(0);
   const [data, setData] = useState<ApiResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -96,8 +106,13 @@ export default function TransactionTrends() {
       setLoading(true);
       setError(null);
       try {
+        const params = new URLSearchParams();
+        params.set("window", String(windowDays));
+        params.set("limit", String(limit));
+        params.set("offset", String(offset));
+        if (pos) params.set("pos", pos);
         const res = await fetch(
-          `/api/v1/transactions/ownership-trends?window=${windowDays}`
+          `/api/v1/transactions/ownership-trends?${params.toString()}`
         );
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json: ApiResponse = await res.json();
@@ -113,7 +128,12 @@ export default function TransactionTrends() {
     return () => {
       active = false;
     };
-  }, [windowDays]);
+  }, [windowDays, pos, offset, limit]);
+
+  // Reset paging when filters change
+  useEffect(() => {
+    setOffset(0);
+  }, [windowDays, pos]);
 
   return (
     <section
@@ -124,20 +144,38 @@ export default function TransactionTrends() {
         <h2 id="trends-heading" className={styles.title}>
           Transaction <span>Trends</span>
         </h2>
-        <div
-          className={styles.timeframeButtons}
-          role="group"
-          aria-label="Time windows"
-        >
-          {WINDOWS.map((w) => (
-            <button
-              key={w}
-              className={w === windowDays ? "active" : ""}
-              onClick={() => setWindowDays(w)}
-            >
-              {w}D
-            </button>
-          ))}
+        <div className={styles.headerControls}>
+          <div
+            className={styles.timeframeButtons}
+            role="group"
+            aria-label="Time windows"
+          >
+            {WINDOWS.map((w) => (
+              <button
+                key={w}
+                className={w === windowDays ? "active" : ""}
+                onClick={() => setWindowDays(w)}
+              >
+                {w}D
+              </button>
+            ))}
+          </div>
+          <div
+            className={styles.posButtons}
+            role="group"
+            aria-label="Position filter"
+          >
+            {["", "F", "C", "LW", "RW", "D", "G"].map((p) => (
+              <button
+                key={p || "ALL"}
+                className={p === pos ? "active" : ""}
+                onClick={() => setPos(p)}
+                title={p ? `Filter: ${p}` : "All positions"}
+              >
+                {p || "All"}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
       {loading && !data && (
@@ -172,10 +210,10 @@ export default function TransactionTrends() {
                 </tr>
               </thead>
               <tbody>
-                {data.risers.slice(0, 10).map((p, idx) => (
+                {data.risers.map((p, idx) => (
                   <tr key={p.playerKey} className={styles.riseRow}>
                     <th scope="row" className={styles.rankCell}>
-                      {idx + 1}
+                      {offset + idx + 1}
                     </th>
                     <td className={styles.playerCell}>
                       <div className={styles.rowBox}>
@@ -269,10 +307,10 @@ export default function TransactionTrends() {
                 </tr>
               </thead>
               <tbody>
-                {data.fallers.slice(0, 10).map((p, idx) => (
+                {data.fallers.map((p, idx) => (
                   <tr key={p.playerKey} className={styles.fallRow}>
                     <th scope="row" className={styles.rankCell}>
-                      {idx + 1}
+                      {offset + idx + 1}
                     </th>
                     <td className={styles.playerCell}>
                       <div className={styles.rowBox}>
@@ -337,6 +375,43 @@ export default function TransactionTrends() {
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+      {data && (
+        <div className={styles.pager} role="navigation" aria-label="Pagination">
+          <div className={styles.pagerInfo}>
+            <span>
+              Page{" "}
+              {Math.floor((data.offset ?? offset) / (data.pageSize ?? limit)) +
+                1}
+            </span>
+            <span className={styles.separator}>•</span>
+            <span>
+              Risers: {data.totalRisers ?? data.risers.length} | Fallers:{" "}
+              {data.totalFallers ?? data.fallers.length}
+            </span>
+          </div>
+          <div className={styles.pagerButtons}>
+            <button
+              onClick={() => setOffset((o) => Math.max(0, o - limit))}
+              disabled={offset === 0}
+            >
+              Prev
+            </button>
+            <button
+              onClick={() => setOffset((o) => o + limit)}
+              disabled={
+                !!(
+                  data.totalRisers !== undefined &&
+                  offset + limit >= data.totalRisers &&
+                  data.totalFallers !== undefined &&
+                  offset + limit >= data.totalFallers
+                )
+              }
+            >
+              Next
+            </button>
           </div>
         </div>
       )}

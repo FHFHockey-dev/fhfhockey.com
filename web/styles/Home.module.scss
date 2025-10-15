@@ -328,19 +328,21 @@ $mobile-column-short: 30px;
   border-radius: v.$border-radius-sm;
   overflow: hidden;
   color: v.$text-color-primary;
-  min-height: 80px; // Keep min-height
+  min-height: 96px; // Reduce height to tighten space between label/logo/record
   position: relative;
 }
 
 // Team Logo Sections (Home/Away)
 .homeTeamLogo,
 .awayTeamLogo {
-  flex: 0 0 75px;
+  flex: 0 0 86px; // width of logo columns
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  justify-content: space-between; // top label, middle logo, bottom record
   align-items: center;
-  padding: v.$space-xs;
+  padding: v.$space-sm v.$space-xs; // maintain vertical padding for absolute elements
   position: relative;
+  gap: v.$space-xxs;
 
   &::before {
     content: "";
@@ -365,12 +367,44 @@ $mobile-column-short: 30px;
 
 .leftImage,
 .rightImage {
-  max-width: 70px;
-  max-height: 70px;
+  max-width: 56px;
+  max-height: 56px;
   height: auto;
   filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.5));
   position: relative;
   z-index: 1;
+}
+
+// Team record text under logos
+.teamRecord {
+  position: relative;
+  z-index: 1;
+  margin-top: 0; // remove extra spacing above record
+  font-family: v.$font-family-primary;
+  font-size: 0.75rem;
+  color: v.$text-color-primary;
+  text-align: center;
+  line-height: 1;
+}
+
+// HOME/AWAY label above the logo
+.homeAwayLabel {
+  position: relative;
+  z-index: 1;
+  font-family: v.$font-family-primary;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: v.$text-color-primary;
+  opacity: 0.9;
+}
+
+// Team-colored labels
+.homeTeamLogo .homeAwayLabel {
+  color: var(--home-secondary-color);
+}
+.awayTeamLogo .homeAwayLabel {
+  color: var(--away-secondary-color);
 }
 
 // Middle Game Info Section
@@ -855,19 +889,26 @@ $mobile-column-short: 30px;
   }
 
   .combinedGameCard {
-    min-height: 60px;
+    min-height: 90px; // Allow room for label + logo + record on mobile
     border: 2px solid v.$border-color-secondary;
     border-radius: v.$border-radius * 0.5;
   }
   .homeTeamLogo,
   .awayTeamLogo {
     flex-basis: 60px;
-    padding: v.$space-xxs;
+    padding: v.$space-sm v.$space-xxs; // maintain vertical padding for absolute elements
   }
   .leftImage,
   .rightImage {
     max-width: 50px;
     max-height: 50px;
+    margin: v.$space-xxs 0; // breathing room from labels
+  }
+  .teamRecord {
+    font-size: 0.65rem;
+  }
+  .homeAwayLabel {
+    font-size: 0.55rem;
   }
   .homeScore,
   .awayScore {

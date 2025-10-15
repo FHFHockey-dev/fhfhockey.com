@@ -1,0 +1,14 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Build web (typecheck)",
+			"type": "shell",
+			"command": "npm run -w web build",
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		}
+	]
+}

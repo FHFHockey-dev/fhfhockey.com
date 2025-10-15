@@ -61,7 +61,7 @@ export default function PowerPlayCombos({ teamId, gameId }: Props) {
     () =>
       new Intl.DateTimeFormat("en-US", {
         month: "short",
-        day: "numeric",
+        day: "numeric"
       }),
     []
   );
@@ -122,9 +122,7 @@ export default function PowerPlayCombos({ teamId, gameId }: Props) {
         const formatPlayer = (row: PowerPlayRow): UnitPlayer => {
           const details = row.players;
           const rawFirstName =
-            details?.firstName ??
-            details?.fullName?.split(" ").at(0) ??
-            "";
+            details?.firstName ?? details?.fullName?.split(" ").at(0) ?? "";
           const initial = rawFirstName
             ? `${rawFirstName.charAt(0).toUpperCase()}.`
             : "";
@@ -155,7 +153,7 @@ export default function PowerPlayCombos({ teamId, gameId }: Props) {
             position: normalizedPosition,
             sweaterNumber: sweater,
             ppToi: row.PPTOI ?? 0,
-            isDefense,
+            isDefense
           };
         };
 
@@ -242,7 +240,7 @@ export default function PowerPlayCombos({ teamId, gameId }: Props) {
                 const entry: UnitHistoryEntry = {
                   gameId: game.id,
                   startTime: game.startTime,
-                  players: ordered,
+                  players: ordered
                 };
 
                 if (!historyMap[unit]) {
@@ -306,109 +304,116 @@ export default function PowerPlayCombos({ teamId, gameId }: Props) {
       ) : error ? (
         <div className={styles.statusError}>{error}</div>
       ) : unitNumbers.length === 0 ? (
-        <div className={styles.status}>No power play units recorded for this game.</div>
+        <div className={styles.status}>
+          No power play units recorded for this game.
+        </div>
       ) : (
         <div className={styles.units}>
           {unitNumbers.map((unit) => {
             const unitLabelText = unit === 3 ? "Extras" : `Unit ${unit}`;
             return (
-            <button
-              key={unit}
-              type="button"
-              className={clsx(
-                styles.unitRow,
-                expandedUnit === unit && styles.unitRowExpanded
-              )}
-              onClick={() => toggleUnit(unit)}
-              aria-expanded={expandedUnit === unit}
-            >
-              <div className={styles.unitSummary}>
-                <div className={styles.unitTitleGroup}>
-                  <span className={styles.unitLabel}>{unitLabelText}</span>
-                  <span className={styles.unitMeta}>
-                    {(units[unit] ?? []).length} skaters
+              <button
+                key={unit}
+                type="button"
+                className={clsx(
+                  styles.unitRow,
+                  expandedUnit === unit && styles.unitRowExpanded
+                )}
+                onClick={() => toggleUnit(unit)}
+                aria-expanded={expandedUnit === unit}
+              >
+                <div className={styles.unitSummary}>
+                  <div className={styles.unitTitleGroup}>
+                    <span className={styles.unitLabel}>{unitLabelText}</span>
+                    <span className={styles.unitMeta}>
+                      {(units[unit] ?? []).length} skaters
+                    </span>
+                  </div>
+                  <span className={styles.chevron} aria-hidden>
+                    v
                   </span>
                 </div>
-                <span className={styles.chevron} aria-hidden>
-                  v
-                </span>
-              </div>
-              <div className={styles.unitPlayers}>
-                {(units[unit] ?? []).map((player) => (
-                  <span
-                    key={player.playerId}
-                    className={clsx(
-                      styles.playerChip,
-                      player.isDefense && styles.playerChipDefense
-                    )}
-                  >
-                    <span className={styles.playerNumber}>
-                      {player.sweaterNumber ? `#${player.sweaterNumber}` : "—"}
-                    </span>
-                    <span className={styles.playerName}>
-                      {player.displayName}
-                    </span>
-                    {player.position ? (
-                      <span className={styles.playerPosition}>
-                        {player.position}
+                <div className={styles.unitPlayers}>
+                  {(units[unit] ?? []).map((player) => (
+                    <span
+                      key={player.playerId}
+                      className={clsx(
+                        styles.playerChip,
+                        player.isDefense && styles.playerChipDefense
+                      )}
+                    >
+                      <span className={styles.playerNumber}>
+                        {player.sweaterNumber
+                          ? `#${player.sweaterNumber}`
+                          : "—"}
                       </span>
-                    ) : null}
-                  </span>
-                ))}
-              </div>
-              {expandedUnit === unit ? (
-                <div className={styles.history}>
-                  {(history[unit] ?? []).length === 0 ? (
-                    <div className={styles.historyEmpty}>
-                      No recent power play units tracked.
-                    </div>
-                  ) : (
-                    (history[unit] ?? []).map((entry) => {
-                      const formattedDate = entry.startTime
-                        ? dateFormatter.format(new Date(entry.startTime))
-                        : null;
-                      return (
-                        <div key={entry.gameId} className={styles.historyEntry}>
-                          <div className={styles.historyMeta}>
-                            <span>Game #{entry.gameId}</span>
-                            {formattedDate ? (
-                              <span className={styles.historyDate}>
-                                {formattedDate}
-                              </span>
-                            ) : null}
-                          </div>
-                          <div className={styles.historyPlayers}>
-                            {entry.players.map((player) => (
-                              <span
-                                key={`${entry.gameId}-${player.playerId}`}
-                                className={clsx(
-                                  styles.playerChip,
-                                  player.isDefense && styles.playerChipDefense
-                                )}
-                              >
-                                <span className={styles.playerNumber}>
-                                  {player.sweaterNumber
-                                    ? `#${player.sweaterNumber}`
-                                    : "—"}
-                                </span>
-                                <span className={styles.playerName}>
-                                  {player.displayName}
-                                </span>
-                                {player.position ? (
-                                  <span className={styles.playerPosition}>
-                                    {player.position}
-                                  </span>
-                                ) : null}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
+                      <span className={styles.playerName}>
+                        {player.displayName}
+                      </span>
+                      {player.position ? (
+                        <span className={styles.playerPosition}>
+                          {player.position}
+                        </span>
+                      ) : null}
+                    </span>
+                  ))}
                 </div>
-              ) : null}
-            </button>
+                {expandedUnit === unit ? (
+                  <div className={styles.history}>
+                    {(history[unit] ?? []).length === 0 ? (
+                      <div className={styles.historyEmpty}>
+                        No recent power play units tracked.
+                      </div>
+                    ) : (
+                      (history[unit] ?? []).map((entry) => {
+                        const formattedDate = entry.startTime
+                          ? dateFormatter.format(new Date(entry.startTime))
+                          : null;
+                        return (
+                          <div
+                            key={entry.gameId}
+                            className={styles.historyEntry}
+                          >
+                            <div className={styles.historyMeta}>
+                              <span>Game #{entry.gameId}</span>
+                              {formattedDate ? (
+                                <span className={styles.historyDate}>
+                                  {formattedDate}
+                                </span>
+                              ) : null}
+                            </div>
+                            <div className={styles.historyPlayers}>
+                              {entry.players.map((player) => (
+                                <span
+                                  key={`${entry.gameId}-${player.playerId}`}
+                                  className={clsx(
+                                    styles.playerChip,
+                                    player.isDefense && styles.playerChipDefense
+                                  )}
+                                >
+                                  <span className={styles.playerNumber}>
+                                    {player.sweaterNumber
+                                      ? `#${player.sweaterNumber}`
+                                      : "—"}
+                                  </span>
+                                  <span className={styles.playerName}>
+                                    {player.displayName}
+                                  </span>
+                                  {player.position ? (
+                                    <span className={styles.playerPosition}>
+                                      {player.position}
+                                    </span>
+                                  ) : null}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                ) : null}
+              </button>
             );
           })}
         </div>

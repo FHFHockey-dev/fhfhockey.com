@@ -1,21 +1,7 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { createClient } from "@supabase/supabase-js";
 
-interface OwnershipPoint {
-  date: string;
-  value: number;
-}
-interface PlayerRow {
-  player_key: string;
-  full_name: string | null;
-  headshot_url: string | null;
-  display_position: string | null;
-  editorial_team_full_name: string | null;
-  eligible_positions: string[] | null;
-  uniform_number: number | null;
-  ownership_timeline: OwnershipPoint[] | null;
-}
-
+type OwnershipPoint = { date: string; value: number };
 type TrendPlayer = {
   playerKey: string;
   name: string;
@@ -64,6 +50,9 @@ export default async function handler(
       50,
       Math.max(1, parseInt(String(req.query.limit ?? "10"), 10))
     );
+    const offset = Math.max(0, parseInt(String(req.query.offset ?? "0"), 10));
+    const posFilterRaw = String(req.query.pos ?? "").trim();
+    const posFilter = posFilterRaw ? posFilterRaw.toUpperCase() : null;
     const season = req.query.season ? Number(req.query.season) : undefined;
 
     const { url, key } = resolveKey();
@@ -76,22 +65,22 @@ export default async function handler(
     const selectMinimal =
       "player_key, full_name, headshot_url, ownership_timeline";
 
-    // Attempt with metadata columns first
+    // Try metadata fields first
     let query = supabase
       .from("yahoo_players")
       .select(selectWithMeta)
       .limit(2500);
     if (season) query = query.eq("season", season);
-    let resultData: any[] | null = null;
-    let resultError: any = null;
+    let data: any[] | null = null;
+    let error: any = null;
     {
-      const { data, error } = await query;
-      resultData = data as any[] | null;
-      resultError = error;
+      const r1 = await query;
+      data = (r1.data as any[] | null) ?? null;
+      error = r1.error;
     }
 
-    if (resultError) {
-      const msg = String(resultError?.message || "").toLowerCase();
+    if (error) {
+      const msg = String(error.message || "").toLowerCase();
       const missingCols =
         msg.includes("display_position") ||
         msg.includes("editorial_team_full_name") ||
@@ -100,19 +89,18 @@ export default async function handler(
         msg.includes("column") ||
         msg.includes("does not exist");
       if (missingCols) {
-        // Fallback to minimal set
-        let fallback = supabase
+        let fb = supabase
           .from("yahoo_players")
           .select(selectMinimal)
           .limit(2500);
-        if (season) fallback = fallback.eq("season", season);
-        const { data, error } = await fallback;
-        resultData = data as any[] | null;
-        resultError = error;
+        if (season) fb = fb.eq("season", season);
+        const r2 = await fb;
+        data = (r2.data as any[] | null) ?? null;
+        error = r2.error;
       }
     }
-    if (resultError) throw resultError;
-    const data = Array.isArray(resultData) ? resultData : [];
+    if (error) throw error;
+    const rows: any[] = Array.isArray(data) ? (data as any[]) : [];
 
     const today = new Date();
     const targetDateObj = new Date(today);
@@ -122,17 +110,19 @@ export default async function handler(
     const risers: TrendPlayer[] = [];
     const fallers: TrendPlayer[] = [];
 
-    (data as any[]).forEach((row: any) => {
-      const tl = Array.isArray(row.ownership_timeline)
+    for (const row of rows) {
+      const tl: OwnershipPoint[] = Array.isArray(row.ownership_timeline)
         ? (row.ownership_timeline as OwnershipPoint[])
         : [];
-      if (tl.length < 2) return;
+      if (tl.length < 2) continue;
       tl.sort((a, b) => a.date.localeCompare(b.date));
       const latestPoint = tl[tl.length - 1];
-      if (typeof latestPoint.value !== "number") return;
+      if (typeof latestPoint?.value !== "number") continue;
 
-      let previousPoint: OwnershipPoint | undefined = undefined;
-      previousPoint = tl.find((p) => p.date === targetDateStr);
+      // Find previous value at or before target date
+      let previousPoint: OwnershipPoint | undefined = tl.find(
+        (p) => p.date === targetDateStr
+      );
       if (!previousPoint) {
         for (let i = tl.length - 2; i >= 0; i--) {
           if (tl[i].date <= targetDateStr) {
@@ -141,45 +131,80 @@ export default async function handler(
           }
         }
       }
-      if (!previousPoint) return;
-      const latest = latestPoint.value;
-      const previous = previousPoint.value;
-      if (typeof previous !== "number") return;
+      if (!previousPoint) continue;
+
+      const latest = Number(latestPoint.value);
+      const previous = Number(previousPoint.value);
       const delta = Number((latest - previous).toFixed(2));
-      if (delta === 0) return;
+      if (!Number.isFinite(delta) || delta === 0) continue;
+
       const sparkSlice = tl.slice(-Math.max(12, windowDays + 2));
+
+      // Normalize positions
+      const eligibleRaw = row.eligible_positions;
+      let eligiblePositions: string[] | null = null;
+      if (Array.isArray(eligibleRaw)) {
+        eligiblePositions = eligibleRaw.map((p: any) =>
+          String(p).toUpperCase()
+        );
+      } else if (typeof eligibleRaw === "string") {
+        eligiblePositions = [eligibleRaw.toUpperCase()];
+      }
+      const displayPosTokens = (row.display_position || "")
+        .toString()
+        .toUpperCase()
+        .split(/[\s,/]+/)
+        .filter(Boolean);
+
+      // Optional position filter
+      if (posFilter) {
+        const all = new Set<string>([
+          ...(eligiblePositions ?? []),
+          ...displayPosTokens
+        ]);
+        if (!all.has(posFilter)) continue;
+      }
+
       const obj: TrendPlayer = {
         playerKey: row.player_key,
         name: row.full_name || row.player_key,
         headshot: row.headshot_url || null,
         displayPosition: row.display_position ?? null,
-        teamFullName: (row as any).editorial_team_full_name ?? null,
-        eligiblePositions: Array.isArray((row as any).eligible_positions)
-          ? ((row as any).eligible_positions as string[])
-          : null,
+        teamFullName: row.editorial_team_full_name ?? null,
+        eligiblePositions,
         uniformNumber:
-          typeof (row as any).uniform_number === "number"
-            ? ((row as any).uniform_number as number)
-            : null,
+          typeof row.uniform_number === "number" ? row.uniform_number : null,
         latest,
         previous,
         delta,
         deltaPct: delta,
         sparkline: sparkSlice
       };
+
       if (delta > 0) risers.push(obj);
       else fallers.push(obj);
-    });
+    }
 
     risers.sort((a, b) => b.delta - a.delta);
     fallers.sort((a, b) => a.delta - b.delta);
+
+    const totalRisers = risers.length;
+    const totalFallers = fallers.length;
+    const risersPage = risers.slice(offset, offset + limit);
+    const fallersPage = fallers.slice(offset, offset + limit);
 
     const payload = {
       success: true,
       windowDays,
       generatedAt: new Date().toISOString(),
-      risers: risers.slice(0, limit),
-      fallers: fallers.slice(0, limit)
+      page: Math.floor(offset / limit) + 1,
+      pageSize: limit,
+      offset,
+      pos: posFilter,
+      totalRisers,
+      totalFallers,
+      risers: risersPage,
+      fallers: fallersPage
     };
     res.setHeader(
       "Cache-Control",
