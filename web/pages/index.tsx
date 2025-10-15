@@ -585,22 +585,7 @@ const Home: NextPage = ({
                 {moment(currentDate).format("MM/DD/YYYY")}.
               </p>
             )}
-            {process.env.NODE_ENV !== "production" &&
-            Array.isArray(games) &&
-            games[0] ? (
-              <details style={{ marginTop: 12 }}>
-                <summary>Debug: First game payload</summary>
-                <pre
-                  style={{
-                    whiteSpace: "pre-wrap",
-                    maxHeight: 280,
-                    overflow: "auto"
-                  }}
-                >
-                  {JSON.stringify(games[0], null, 2)}
-                </pre>
-              </details>
-            ) : null}
+            
           </div>
         </div>
 
