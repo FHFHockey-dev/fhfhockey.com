@@ -1,0 +1,14 @@
+@use "styles/vars" as v;
+
+.clientOnly {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+@media (max-width: #{v.$breakpoint-mobile-lg}) {
+  .clientOnly {
+    display: block;
+  }
+}

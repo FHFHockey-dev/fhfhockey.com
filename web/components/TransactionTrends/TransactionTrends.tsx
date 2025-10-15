@@ -10,6 +10,7 @@ type TrendPlayer = {
   headshot: string | null;
   displayPosition?: string | null;
   teamFullName?: string | null;
+  teamAbbrev?: string | null;
   eligiblePositions?: string[] | null;
   uniformNumber?: number | null;
   latest: number;
@@ -153,7 +154,7 @@ export default function TransactionTrends() {
             {WINDOWS.map((w) => (
               <button
                 key={w}
-                className={w === windowDays ? "active" : ""}
+                className={w === windowDays ? `${styles.isActive} active` : ""}
                 onClick={() => setWindowDays(w)}
               >
                 {w}D
@@ -168,7 +169,7 @@ export default function TransactionTrends() {
             {["", "F", "C", "LW", "RW", "D", "G"].map((p) => (
               <button
                 key={p || "ALL"}
-                className={p === pos ? "active" : ""}
+                className={p === pos ? `${styles.isActive} active` : ""}
                 onClick={() => setPos(p)}
                 title={p ? `Filter: ${p}` : "All positions"}
               >
@@ -186,7 +187,7 @@ export default function TransactionTrends() {
         <div className={styles.tablesWrapper}>
           <div className={`${styles.panel} ${styles.risersPanel}`}>
             <h3 className={styles.tableTitle}>
-              Top Risers (Δ {data.windowDays}D)
+              Top Risers (% Change Δ {data.windowDays}D)
             </h3>
             <table
               className={styles.dataTable}
@@ -205,7 +206,7 @@ export default function TransactionTrends() {
                     Trend
                   </th>
                   <th scope="col" style={{ textAlign: "right" }}>
-                    Δ
+                    % Change Δ
                   </th>
                 </tr>
               </thead>
@@ -236,20 +237,32 @@ export default function TransactionTrends() {
                             <span className={styles.playerName}>{p.name}</span>
                             {(p.displayPosition ||
                               p.teamFullName ||
+                              p.teamAbbrev ||
                               p.eligiblePositions ||
                               p.uniformNumber !== undefined) && (
-                              <span className={styles.playerMeta}>
+                              <span
+                                className={`${styles.playerMeta} ${p.teamAbbrev ? styles.hasAbbrev : ""}`}
+                              >
                                 {Array.isArray(p.eligiblePositions) &&
                                 p.eligiblePositions.length
                                   ? p.eligiblePositions.join(", ")
                                   : p.displayPosition || ""}
-                                {p.teamFullName &&
+                                {(p.teamFullName || p.teamAbbrev) &&
                                 (p.displayPosition ||
                                   (p.eligiblePositions &&
                                     p.eligiblePositions.length))
                                   ? " • "
                                   : ""}
-                                {p.teamFullName || ""}
+                                {p.teamFullName ? (
+                                  <span className={styles.teamFullName}>
+                                    {p.teamFullName}
+                                  </span>
+                                ) : null}
+                                {p.teamAbbrev ? (
+                                  <span className={styles.teamAbbrev}>
+                                    {p.teamAbbrev}
+                                  </span>
+                                ) : null}
                                 {typeof p.uniformNumber === "number"
                                   ? ` • #${p.uniformNumber}`
                                   : ""}
@@ -270,10 +283,17 @@ export default function TransactionTrends() {
                       </div>
                     </td>
                     <td className={styles.deltaCell}>
-                      <div className={`${styles.neonBox} ${styles.rise}`}>
-                        {p.delta > 0
-                          ? `+${p.delta.toFixed(1)}%`
-                          : `${p.delta.toFixed(1)}%`}
+                      <div
+                        className={`${styles.neonBox} ${styles.rise} ${styles.deltaBox}`}
+                      >
+                        <div className={styles.deltaSparkBackdrop}>
+                          <Spark points={p.sparkline} variant="rise" />
+                        </div>
+                        <div className={styles.deltaContent}>
+                          {p.delta > 0
+                            ? `+${p.delta.toFixed(1)}%`
+                            : `${p.delta.toFixed(1)}%`}
+                        </div>
                       </div>
                     </td>
                   </tr>
@@ -283,7 +303,7 @@ export default function TransactionTrends() {
           </div>
           <div className={`${styles.panel} ${styles.fallersPanel}`}>
             <h3 className={styles.tableTitle}>
-              Top Fallers (Δ {data.windowDays}D)
+              Top Fallers (% Change Δ {data.windowDays}D)
             </h3>
             <table
               className={styles.dataTable}
@@ -302,7 +322,7 @@ export default function TransactionTrends() {
                     Trend
                   </th>
                   <th scope="col" style={{ textAlign: "right" }}>
-                    Δ
+                    % Change Δ
                   </th>
                 </tr>
               </thead>
@@ -333,20 +353,32 @@ export default function TransactionTrends() {
                             <span className={styles.playerName}>{p.name}</span>
                             {(p.displayPosition ||
                               p.teamFullName ||
+                              p.teamAbbrev ||
                               p.eligiblePositions ||
                               p.uniformNumber !== undefined) && (
-                              <span className={styles.playerMeta}>
+                              <span
+                                className={`${styles.playerMeta} ${p.teamAbbrev ? styles.hasAbbrev : ""}`}
+                              >
                                 {Array.isArray(p.eligiblePositions) &&
                                 p.eligiblePositions.length
                                   ? p.eligiblePositions.join(", ")
                                   : p.displayPosition || ""}
-                                {p.teamFullName &&
+                                {(p.teamFullName || p.teamAbbrev) &&
                                 (p.displayPosition ||
                                   (p.eligiblePositions &&
                                     p.eligiblePositions.length))
                                   ? " • "
                                   : ""}
-                                {p.teamFullName || ""}
+                                {p.teamFullName ? (
+                                  <span className={styles.teamFullName}>
+                                    {p.teamFullName}
+                                  </span>
+                                ) : null}
+                                {p.teamAbbrev ? (
+                                  <span className={styles.teamAbbrev}>
+                                    {p.teamAbbrev}
+                                  </span>
+                                ) : null}
                                 {typeof p.uniformNumber === "number"
                                   ? ` • #${p.uniformNumber}`
                                   : ""}
@@ -367,8 +399,15 @@ export default function TransactionTrends() {
                       </div>
                     </td>
                     <td className={styles.deltaCell}>
-                      <div className={`${styles.neonBox} ${styles.fall}`}>
-                        {p.delta.toFixed(1)}%
+                      <div
+                        className={`${styles.neonBox} ${styles.fall} ${styles.deltaBox}`}
+                      >
+                        <div className={styles.deltaSparkBackdrop}>
+                          <Spark points={p.sparkline} variant="fall" />
+                        </div>
+                        <div className={styles.deltaContent}>
+                          {p.delta.toFixed(1)}%
+                        </div>
                       </div>
                     </td>
                   </tr>

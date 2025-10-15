@@ -39,6 +39,19 @@ $mobile-column-short: 30px;
   gap: v.$space-xl * 1.5; // Slightly larger gap between main sections
 }
 
+// Make the homepage container fluid on tablet/mobile to avoid horizontal overflow
+@media (max-width: #{v.$breakpoint-tablet}) {
+  .homepage {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin: v.$space-lg auto;
+    padding-left: v.$mobile-edge-padding;
+    padding-right: v.$mobile-edge-padding;
+    box-sizing: border-box;
+  }
+}
+
 // --- Games Section ---
 .gameCardsContainer {
   @include v.element-wrapper; // Apply consistent component frame
@@ -841,6 +854,10 @@ $mobile-column-short: 30px;
   .homepage {
     margin-top: v.$space-md;
     gap: v.$space-lg; // Tighter gap for mobile
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
   }
 
   .gameCardsContainer,
@@ -848,8 +865,8 @@ $mobile-column-short: 30px;
   .injuriesContainer,
   .chartContainer {
     min-width: 0 !important;
-    max-width: 96vw !important;
-    width: 96vw !important;
+    max-width: 100% !important; // respect Container.pageContent width
+    width: 100% !important; // avoid viewport-based overflow
     outline: none !important;
     box-sizing: border-box;
     border: 4px solid v.$border-color-primary;

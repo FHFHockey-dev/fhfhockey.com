@@ -5,6 +5,16 @@
   display: flex;
   flex-direction: column;
   gap: v.$space-lg;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0; // allow children to shrink within viewport
+  box-sizing: border-box;
+  @media (max-width: #{v.$breakpoint-mobile-lg}) {
+    padding: v.$mobile-space-md;
+    overflow-x: hidden;
+    // Avoid sticky bottom nav overlap on mobile
+    padding-bottom: 0;
+  }
 }
 
 .headerRow {
@@ -35,61 +45,95 @@
 }
 
 .timeframeButtons {
-  display: flex;
+  display: grid;
   gap: v.$space-sm;
-  flex-wrap: wrap;
+  width: 100%;
+  grid-template-columns: repeat(4, 1fr); // 4 equal columns, single row
   button {
     font-size: v.$font-size-xs;
+    font-family: v.$font-family-accent, sans-serif;
     letter-spacing: 0.06em;
     padding: 6px 10px;
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid v.$border-secondary;
     border-radius: 4px;
     cursor: pointer;
-    color: v.$text-primary;
+    color: v.$border-secondary;
+    width: 100%; // fill grid cell so all are the same width
+    min-width: 0; // allow shrink inside grid cell
+    box-sizing: border-box; // include padding in width to avoid overflow
+    display: flex; // center text
+    align-items: center;
+    justify-content: center;
+    text-align: center;
     transition: all 0.2s ease;
     &:hover {
       background: rgba(255, 255, 255, 0.15);
     }
-    &.active {
-      background: v.$primary-color;
-      color: v.$text-button;
+    &.active,
+    &.isActive,
+    :global(.active) & {
+      // fallback, in case a nested span gets the class
+      border-color: v.$primary-color;
+      background-color: v.$primary-color-opaque;
+      color: v.$primary-color;
       box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.4);
     }
   }
 }
 
 .posButtons {
-  display: flex;
+  display: grid;
   gap: v.$space-sm;
-  flex-wrap: wrap;
+  width: 100%;
+  grid-template-columns: repeat(7, 1fr); // 7 equal columns, single row
   button {
     font-size: v.$font-size-xs;
+    font-family: v.$font-family-accent, sans-serif;
     letter-spacing: 0.06em;
     padding: 6px 10px;
     background: rgba(255, 255, 255, 0.06);
     border: 1px solid v.$border-secondary;
     border-radius: 4px;
     cursor: pointer;
-    color: v.$text-primary;
+    color: v.$border-secondary;
+    width: 100%; // fill grid cell so all are the same width
+    min-width: 0; // allow shrink inside grid cell
+    box-sizing: border-box; // include padding in width to avoid overflow
+    display: flex; // center text
+    align-items: center;
+    justify-content: center;
+    text-align: center;
     transition: all 0.2s ease;
     &:hover {
       background: rgba(255, 255, 255, 0.12);
     }
-    &.active {
-      background: v.$secondary-color;
-      color: v.$text-button;
-      box-shadow: 0 0 0 2px rgba(v.$secondary-color, 0.4);
+    &.active,
+    &.isActive,
+    :global(.active) & {
+      border-color: v.$primary-color;
+      background-color: v.$primary-color-opaque;
+      color: v.$primary-color;
+      box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.4);
     }
   }
 }
 
 .tablesWrapper {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: v.$space-xxl;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  // Ensure grid children can shrink and not force overflow
+  > * {
+    min-width: 0;
+  }
   @media (max-width: #{v.$breakpoint-tablet}) {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+    gap: v.$space-lg;
   }
 }
 
@@ -106,7 +150,10 @@
     rgba(v.$background-light, 0.78)
   );
   border-radius: v.$border-radius-lg;
-  overflow: hidden;
+  overflow: hidden; // default desktop behavior
+  width: 100%;
+  min-width: 0; // prevent intrinsic min-content overflow
+  box-sizing: border-box;
 }
 
 // Accent stripe (subtle) instead of full neon border; neon kept for per-cell boxes
@@ -146,6 +193,7 @@
 
 .dataTable {
   width: 100%;
+  max-width: 100%;
   border-collapse: collapse;
   font-size: v.$font-size-xs;
   font-family: v.$font-family-primary;
@@ -183,12 +231,15 @@
   gap: v.$space-sm;
   line-height: 1.1;
   min-height: var(--row-h);
+  min-width: 0; // allow inner content to shrink
 }
 .rowBox {
   display: flex;
   align-items: center;
   gap: v.$space-sm;
   min-height: var(--row-h);
+  flex: 1;
+  min-width: 0;
 }
 .headshot {
   width: calc(var(--row-h) - 10px);
@@ -211,11 +262,26 @@
   display: flex;
   align-items: center;
   min-height: var(--row-h);
+  flex: 1;
+  min-width: 0;
 }
 .playerMeta {
   color: v.$text-secondary;
   font-size: 0.72rem;
   margin-top: 2px;
+}
+.teamFullName {
+  display: inline;
+}
+.teamAbbrev {
+  display: none;
+}
+.playerName {
+  display: block;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .sparkCell {
@@ -261,6 +327,19 @@
   font-family: v.$font-family-numbers;
   font-weight: 600;
 }
+.deltaBox {
+  position: relative;
+}
+.deltaSparkBackdrop {
+  position: absolute;
+  inset: 2px;
+  z-index: 0;
+  opacity: 0.35;
+}
+.deltaContent {
+  position: relative;
+  z-index: 1;
+}
 .deltaPositive {
   color: v.$success-color;
 }
@@ -287,6 +366,7 @@
   align-items: center;
   justify-content: center;
   min-height: var(--row-h);
+  white-space: nowrap;
   transition:
     box-shadow 0.25s ease,
     border-color 0.25s ease,
@@ -371,9 +451,128 @@ tbody tr:hover .neonBox.fall {
 
 @media (max-width: #{v.$breakpoint-tablet}) {
   .sparkCell {
-    width: 110px;
+    width: 100px;
   }
   .sparkSvg {
     height: 32px;
+  }
+}
+
+// Mobile optimizations
+@media (max-width: #{v.$breakpoint-mobile-lg}) {
+  // Only swap to abbreviation on mobile when a row actually has an abbrev
+  .playerMeta.hasAbbrev {
+    .teamFullName {
+      display: none;
+    }
+    .teamAbbrev {
+      display: inline;
+    }
+  }
+  .panel {
+    padding: v.$mobile-space-md;
+    // Prevent horizontal scroll; we trim columns instead
+    overflow-x: hidden;
+  }
+  .risersPanel::before,
+  .fallersPanel::before {
+    border-left-width: 8px;
+  }
+  .headerControls {
+    width: 100%;
+    // Stack controls vertically on small screens to prevent overflow
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: v.$mobile-space-sm;
+  }
+  // Make button groups take full width and equal column widths
+  .timeframeButtons,
+  .posButtons {
+    width: 100%;
+    display: grid;
+    gap: v.$mobile-space-sm;
+  }
+  .timeframeButtons {
+    // four windows: 1D, 3D, 5D, 10D – single row
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .posButtons {
+    // 7 options (All + 6 positions) – single row, equal widths
+    grid-template-columns: repeat(7, 1fr);
+  }
+  .timeframeButtons button,
+  .posButtons button {
+    min-height: v.$touch-target-min;
+    padding: 8px 12px;
+    width: 100%;
+  }
+  .dataTable {
+    font-size: v.$mobile-font-size-xs;
+    --row-h: 44px;
+    table-layout: fixed; // prevent content from forcing overflow
+  }
+  .dataTable thead th {
+    padding: 6px;
+  }
+  .dataTable tbody td,
+  .dataTable tbody th {
+    padding: 4px 6px;
+  }
+  .rankCell {
+    width: 20px;
+  }
+  .ownCell,
+  .ownCellHeader {
+    width: 48px;
+  }
+  .deltaCell {
+    width: 54px;
+  }
+  // Slightly smaller numbers to save space
+  .ownCell .neonBox,
+  .deltaCell .neonBox {
+    font-size: 0.9em;
+  }
+  // Hide sparkline on small phones to prioritize key columns
+  .sparkCell {
+    display: none;
+  }
+  .playerMeta {
+    font-size: 0.68rem;
+    display: -webkit-box;
+    line-clamp: 1;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .headshot {
+    width: calc(var(--row-h) - 10px);
+    height: calc(var(--row-h) - 10px);
+  }
+  .rowBox {
+    gap: v.$mobile-space-xs;
+  }
+  .neonBox {
+    padding: 2px 3px;
+  }
+}
+
+// Extra-narrow phones: hide sparkline to prioritize name/own/delta
+@media (max-width: #{v.$breakpoint-mobile-sm}) {
+  .dataTable {
+    --row-h: 40px;
+  }
+  .sparkCell {
+    display: none;
+  }
+  // On the narrowest screens, hide secondary meta entirely to avoid overflow
+  .playerMeta {
+    display: none;
+  }
+  .risersPanel::before,
+  .fallersPanel::before {
+    border-left-width: 6px;
   }
 }
