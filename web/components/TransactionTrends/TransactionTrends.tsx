@@ -382,11 +382,14 @@ export default function TransactionTrends() {
         <div className={styles.pager} role="navigation" aria-label="Pagination">
           <div className={styles.pagerInfo}>
             <span>
-              Page {Math.floor((data.offset ?? offset) / (data.pageSize ?? limit)) + 1}
+              Page{" "}
+              {Math.floor((data.offset ?? offset) / (data.pageSize ?? limit)) +
+                1}
             </span>
             <span className={styles.separator}>•</span>
             <span>
-              Risers: {data.totalRisers ?? data.risers.length} | Fallers: {data.totalFallers ?? data.fallers.length}
+              Risers: {data.totalRisers ?? data.risers.length} | Fallers:{" "}
+              {data.totalFallers ?? data.fallers.length}
             </span>
           </div>
           <div className={styles.pagerButtons}>
@@ -400,8 +403,10 @@ export default function TransactionTrends() {
               onClick={() => setOffset((o) => o + limit)}
               disabled={
                 !!(
-                  (data.totalRisers !== undefined && offset + limit >= data.totalRisers) &&
-                  (data.totalFallers !== undefined && offset + limit >= data.totalFallers)
+                  data.totalRisers !== undefined &&
+                  offset + limit >= data.totalRisers &&
+                  data.totalFallers !== undefined &&
+                  offset + limit >= data.totalFallers
                 )
               }
             >

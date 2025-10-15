@@ -94,9 +94,9 @@ export default async function handler(
           .select(selectMinimal)
           .limit(2500);
         if (season) fb = fb.eq("season", season);
-  const r2 = await fb;
-  data = (r2.data as any[] | null) ?? null;
-  error = r2.error;
+        const r2 = await fb;
+        data = (r2.data as any[] | null) ?? null;
+        error = r2.error;
       }
     }
     if (error) throw error;
@@ -144,7 +144,9 @@ export default async function handler(
       const eligibleRaw = row.eligible_positions;
       let eligiblePositions: string[] | null = null;
       if (Array.isArray(eligibleRaw)) {
-        eligiblePositions = eligibleRaw.map((p: any) => String(p).toUpperCase());
+        eligiblePositions = eligibleRaw.map((p: any) =>
+          String(p).toUpperCase()
+        );
       } else if (typeof eligibleRaw === "string") {
         eligiblePositions = [eligibleRaw.toUpperCase()];
       }
@@ -158,7 +160,7 @@ export default async function handler(
       if (posFilter) {
         const all = new Set<string>([
           ...(eligiblePositions ?? []),
-          ...displayPosTokens,
+          ...displayPosTokens
         ]);
         if (!all.has(posFilter)) continue;
       }
@@ -176,7 +178,7 @@ export default async function handler(
         previous,
         delta,
         deltaPct: delta,
-        sparkline: sparkSlice,
+        sparkline: sparkSlice
       };
 
       if (delta > 0) risers.push(obj);
@@ -202,7 +204,7 @@ export default async function handler(
       totalRisers,
       totalFallers,
       risers: risersPage,
-      fallers: fallersPage,
+      fallers: fallersPage
     };
     res.setHeader(
       "Cache-Control",
