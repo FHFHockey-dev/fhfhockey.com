@@ -585,7 +585,6 @@ const Home: NextPage = ({
                 {moment(currentDate).format("MM/DD/YYYY")}.
               </p>
             )}
-            
           </div>
         </div>
 

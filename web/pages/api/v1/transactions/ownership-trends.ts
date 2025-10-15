@@ -8,6 +8,7 @@ type TrendPlayer = {
   headshot: string | null;
   displayPosition?: string | null;
   teamFullName?: string | null;
+  teamAbbrev?: string | null;
   eligiblePositions?: string[] | null;
   uniformNumber?: number | null;
   latest: number;
@@ -61,7 +62,7 @@ export default async function handler(
     });
 
     const selectWithMeta =
-      "player_key, full_name, headshot_url, display_position, editorial_team_full_name, eligible_positions, uniform_number, ownership_timeline";
+      "player_key, full_name, headshot_url, display_position, editorial_team_full_name, editorial_team_abbreviation, eligible_positions, uniform_number, ownership_timeline";
     const selectMinimal =
       "player_key, full_name, headshot_url, ownership_timeline";
 
@@ -84,6 +85,7 @@ export default async function handler(
       const missingCols =
         msg.includes("display_position") ||
         msg.includes("editorial_team_full_name") ||
+        msg.includes("editorial_team_abbreviation") ||
         msg.includes("eligible_positions") ||
         msg.includes("uniform_number") ||
         msg.includes("column") ||
@@ -171,6 +173,7 @@ export default async function handler(
         headshot: row.headshot_url || null,
         displayPosition: row.display_position ?? null,
         teamFullName: row.editorial_team_full_name ?? null,
+        teamAbbrev: row.editorial_team_abbreviation ?? null,
         eligiblePositions,
         uniformNumber:
           typeof row.uniform_number === "number" ? row.uniform_number : null,

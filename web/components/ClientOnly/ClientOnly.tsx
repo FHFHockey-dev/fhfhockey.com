@@ -1,4 +1,5 @@
 import { ReactNode, useEffect, useState } from "react";
+import styles from "./ClientOnly.module.scss";
 
 interface ClientOnlyProps {
   children: ReactNode;
@@ -21,5 +22,9 @@ export default function ClientOnly({
     return <>{placeHolder ?? null}</>;
   }
 
-  return <div {...delegated}>{children}</div>;
+  return (
+    <div className={styles.clientOnly} {...delegated}>
+      {children}
+    </div>
+  );
 }

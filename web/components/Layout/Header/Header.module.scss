@@ -139,7 +139,21 @@ $mobile-header-height: 65px;
 
   // More compact design for mobile browsers
   height: auto;
-  min-height: 60px;
+  // Include the safe-area inset space in the min height so the nav hugs the bottom
+  min-height: calc(60px + env(safe-area-inset-bottom, 0px));
+  width: 100%;
+
+  // Extend the background past the bottom edge to cover iOS bottom bar gaps
+  &::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -48px; // extend below visual viewport
+    height: 48px; // decent margin to cover dynamic UI
+    background: inherit; // continue the gradient
+    pointer-events: none;
+  }
 
   @media only screen and (min-width: v.$screen-large) {
     display: none;
@@ -153,7 +167,8 @@ $mobile-header-height: 65px;
   max-width: 100%;
   margin: 0 auto;
   padding: 6px 8px;
-  padding-bottom: max(6px, env(safe-area-inset-bottom));
+  // Ensure content clears the bottom safe area on modern iOS
+  padding-bottom: max(6px, env(safe-area-inset-bottom, 0px));
 
   // Compact height for better mobile experience
   min-height: 60px;
