@@ -63,7 +63,8 @@ function BottomNavigation({ onMoreClick }: { onMoreClick: () => void }) {
   // to the visible bottom when URL bars expand/collapse.
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const supports = typeof CSS !== "undefined" && CSS.supports?.("height: 100dvh");
+    const supports =
+      typeof CSS !== "undefined" && CSS.supports?.("height: 100dvh");
     setSupportsDynamicVH(!!supports);
     // Use visualViewport (when available) to compute a tiny runtime offset that
     // nudges the bar exactly flush with the visible bottom. We do this even when
@@ -72,7 +73,8 @@ function BottomNavigation({ onMoreClick }: { onMoreClick: () => void }) {
     if (!vv) return;
 
     const handler = () => {
-      const bottomInset = (window as any).innerHeight - vv.height - vv.offsetTop;
+      const bottomInset =
+        (window as any).innerHeight - vv.height - vv.offsetTop;
       // ceil to avoid tiny fractional gaps from subpixel rounding
       setOffset(Math.max(0, Math.ceil(bottomInset)));
     };
@@ -104,9 +106,11 @@ function BottomNavigation({ onMoreClick }: { onMoreClick: () => void }) {
   // Inline style drives a CSS custom property used by the CSS transform when dvh is supported.
   const navStyle: React.CSSProperties | undefined = supportsDynamicVH
     ? // dvh path: expose --vv-offset to CSS so it can add a tiny nudge if needed
-      (({ ['--vv-offset' as any]: `${Math.max(0, offset)}px` } as any))
+      ({ ["--vv-offset" as any]: `${Math.max(0, offset)}px` } as any)
     : // no-dvh path: directly translate by the computed offset
-      (offset ? { transform: `translateY(-${offset}px)` } : undefined);
+      offset
+      ? { transform: `translateY(-${offset}px)` }
+      : undefined;
 
   return (
     <nav className={styles.bottomNav} style={navStyle}>
