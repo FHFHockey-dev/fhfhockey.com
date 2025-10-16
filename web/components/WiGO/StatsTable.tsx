@@ -42,7 +42,9 @@ interface StatsTableProps {
   leftTimeframe: keyof TableAggregateData;
   rightTimeframe: keyof TableAggregateData;
   // Optional: restrict which data columns are visible (e.g., for mobile)
-  visibleColumns?: Array<keyof Omit<TableAggregateData, "label" | "GP" | "DIFF">>;
+  visibleColumns?: Array<
+    keyof Omit<TableAggregateData, "label" | "GP" | "DIFF">
+  >;
 }
 
 // These are the keys for the standard data COLUMNS
@@ -104,9 +106,7 @@ const StatsTable: React.FC<StatsTableProps> = ({
   const renderColumnKeys: DataColumnKey[] = useMemo(() => {
     if (!visibleColumns || visibleColumns.length === 0) return columnKeys;
     // Keep original order from columnKeys, include only those specified, ensure uniqueness
-    const desired = new Set(
-      visibleColumns as DataColumnKey[]
-    );
+    const desired = new Set(visibleColumns as DataColumnKey[]);
     return columnKeys.filter((k) => desired.has(k));
   }, [visibleColumns]);
 
@@ -311,8 +311,8 @@ const StatsTable: React.FC<StatsTableProps> = ({
                           const colorClass = isPositive
                             ? styles.diffPositive
                             : isNegative
-                            ? styles.diffNegative
-                            : styles.diffNeutral;
+                              ? styles.diffNegative
+                              : styles.diffNeutral;
                           const displayValue = `${
                             isPositive ? "+" : ""
                           }${diffValue.toFixed(1)}%`; // Assuming DIFF is always percentage

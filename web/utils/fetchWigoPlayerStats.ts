@@ -522,12 +522,12 @@ export async function fetchPlayerAggregatedStats(
 
   const careerData = careerRes.data as WigoCareerRow | null;
   const recentData = recentRes.data as WigoRecentRow | null;
-  const ratesData = (ratesRes && !ratesRes.error
-    ? (ratesRes.data as any | null)
-    : null) as any | null;
-  const totalsData = (totalsRes && !totalsRes.error
-    ? (totalsRes.data as any | null)
-    : null) as
+  const ratesData = (
+    ratesRes && !ratesRes.error ? (ratesRes.data as any | null) : null
+  ) as any | null;
+  const totalsData = (
+    totalsRes && !totalsRes.error ? (totalsRes.data as any | null) : null
+  ) as
     | (Partial<{
         goals: number | null;
         assists: number | null;
@@ -611,7 +611,7 @@ export async function fetchPlayerAggregatedStats(
       if (rL20 !== undefined) l20Value = rL20;
     }
 
-  // --- Apply conditional unit conversions ---
+    // --- Apply conditional unit conversions ---
     if (label === "ATOI") {
       // ... ATOI conversion logic ...
       const convertMinutesToSeconds = (val: number | null): number | null =>

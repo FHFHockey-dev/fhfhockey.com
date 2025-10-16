@@ -116,9 +116,13 @@ const WigoCharts: React.FC = () => {
         if (v === undefined) delete nextQuery[k];
         else nextQuery[k] = v;
       });
-      router.replace({ pathname: router.pathname, query: nextQuery }, undefined, {
-        shallow: true
-      });
+      router.replace(
+        { pathname: router.pathname, query: nextQuery },
+        undefined,
+        {
+          shallow: true
+        }
+      );
     },
     [router]
   );
@@ -293,7 +297,7 @@ const WigoCharts: React.FC = () => {
             } as React.CSSProperties
           }
         >
-            {/* === Grid Items START === */}
+          {/* === Grid Items START === */}
 
           {/* --- Top Row Items (Direct Grid Children) --- */}
           {/* --- NEW: Header Row Wrapper (Direct Grid Child) --- */}
@@ -434,7 +438,7 @@ const WigoCharts: React.FC = () => {
             </div>
           </div>
 
-            {/* === Grid Items END === */}
+          {/* === Grid Items END === */}
         </div>
 
         {/* Mobile/Tabbed view (hidden on desktop via CSS) */}
@@ -450,146 +454,146 @@ const WigoCharts: React.FC = () => {
             } as React.CSSProperties
           }
         >
-            <div className={styles.mobileHeaderRow}>
-              <div className={styles.nameSearchBarContainer}>
-                <NameSearchBar onSelect={handlePlayerSelect} />
-              </div>
-              <div className={styles.wigoHeader}>
-                <div className={styles.headerText}>
-                  <span className={styles.spanColorBlue}>WiGO</span>
-                  {"\u00A0\u00A0//\u00A0\u00A0"}
-                  <span className={styles.spanColorBlue}>W</span>
-                  HAT
-                  {"\u00A0\u00A0"}
-                  <span className={styles.spanColorBlue}>I</span>S{"\u00A0\u00A0"}
-                  <span className={styles.spanColorBlue}>G</span>
-                  OING
-                  {"\u00A0\u00A0"}
-                  <span className={styles.spanColorBlue}>O</span>N
-                </div>
+          <div className={styles.mobileHeaderRow}>
+            <div className={styles.nameSearchBarContainer}>
+              <NameSearchBar onSelect={handlePlayerSelect} />
+            </div>
+            <div className={styles.wigoHeader}>
+              <div className={styles.headerText}>
+                <span className={styles.spanColorBlue}>WiGO</span>
+                {"\u00A0\u00A0//\u00A0\u00A0"}
+                <span className={styles.spanColorBlue}>W</span>
+                HAT
+                {"\u00A0\u00A0"}
+                <span className={styles.spanColorBlue}>I</span>S{"\u00A0\u00A0"}
+                <span className={styles.spanColorBlue}>G</span>
+                OING
+                {"\u00A0\u00A0"}
+                <span className={styles.spanColorBlue}>O</span>N
               </div>
             </div>
+          </div>
 
-            {renderTabs()}
+          {renderTabs()}
 
-            <div className={styles.mobilePanel}>
-              {activeTab === "overview" && (
-                <>
-                  <div className={styles.playerHeaderContainer}>
-                    <PlayerHeader
-                      selectedPlayer={selectedPlayer}
-                      headshotUrl={headshotUrl}
-                      teamName={teamName}
-                      teamAbbreviation={teamAbbreviation}
-                      teamColors={teamColors}
-                      placeholderImage={placeholderImage}
-                    />
-                  </div>
-                  <div className={styles.playerNameContainer}>
-                    {selectedPlayer ? (
-                      <h2 className={styles.playerName}>
-                        <span className={styles.spanColorBlueName}>
-                          {selectedPlayer.firstName}
-                        </span>{" "}
-                        {selectedPlayer.lastName}
-                      </h2>
-                    ) : (
-                      <div className={styles.chartLoadingPlaceholder}>
-                        Select a player
-                      </div>
-                    )}
-                  </div>
-                  <div className={styles.perGameStatsContainer}>
-                    <PerGameStatsTable playerId={selectedPlayer?.id} />
-                  </div>
-                  <div className={styles.opponentLogContainer}>
-                    <OpponentGamelog
-                      teamId={teamIdForLog}
-                      highlightColor={teamColors.primaryColor || "#07aae2"}
-                    />
-                  </div>
-                  <div className={styles.ratingsContainer}>
-                    {selectedPlayer ? (
-                      <PlayerRatingsDisplay
-                        playerId={selectedPlayer.id}
-                        minGp={minGp}
-                      />
-                    ) : (
-                      <div className={styles.chartLoadingPlaceholder}>
-                        Select player for ratings
-                      </div>
-                    )}
-                  </div>
-                </>
-              )}
-
-              {activeTab === "trends" && (
-                <>
-                  <div className={styles.consistencyAndCategoryWrapper}>
-                    <div className={styles.consistencyRatingContainer}>
-                      {selectedPlayer ? (
-                        <ConsistencyChart playerId={selectedPlayer.id} />
-                      ) : (
-                        <ChartLoadingPlaceholder message="Select a player" />
-                      )}
-                    </div>
-                    <div className={styles.percentileChartContainer}>
-                      <div className={styles.chartTitle}>
-                        <h3 style={{ margin: 0 }}>Percentiles</h3>
-                      </div>
-                      <CategoryCoverageChart
-                        playerId={selectedPlayer?.id}
-                        timeOption="SEASON"
-                      />
-                    </div>
-                  </div>
-                  <div className={styles.toiChartContainer}>
-                    <ToiLineChart playerId={selectedPlayer?.id} />
-                  </div>
-                  <div className={styles.ppgChartContainer}>
-                    <PpgLineChart playerId={selectedPlayer?.id} />
-                  </div>
-                  <div className={styles.gameScoreContainer}>
-                    <GameScoreSection playerId={selectedPlayer?.id} />
-                  </div>
-                </>
-              )}
-
-              {activeTab === "percentiles" && (
-                <div className={styles.rateStatBarPercentilesContainer}>
-                  <RateStatPercentiles
-                    playerId={selectedPlayer?.id}
-                    minGp={minGp}
-                    onMinGpChange={setMinGp}
+          <div className={styles.mobilePanel}>
+            {activeTab === "overview" && (
+              <>
+                <div className={styles.playerHeaderContainer}>
+                  <PlayerHeader
+                    selectedPlayer={selectedPlayer}
+                    headshotUrl={headshotUrl}
+                    teamName={teamName}
+                    teamAbbreviation={teamAbbreviation}
+                    teamColors={teamColors}
+                    placeholderImage={placeholderImage}
                   />
                 </div>
-              )}
-
-              {activeTab === "comparison" && (
-                <div className={styles.timeframeComparisonWrapper}>
-                  <TimeframeComparison
-                    initialLeft={leftTimeframe}
-                    initialRight={rightTimeframe}
-                    onCompare={handleTimeframeCompare}
+                <div className={styles.playerNameContainer}>
+                  {selectedPlayer ? (
+                    <h2 className={styles.playerName}>
+                      <span className={styles.spanColorBlueName}>
+                        {selectedPlayer.firstName}
+                      </span>{" "}
+                      {selectedPlayer.lastName}
+                    </h2>
+                  ) : (
+                    <div className={styles.chartLoadingPlaceholder}>
+                      Select a player
+                    </div>
+                  )}
+                </div>
+                <div className={styles.perGameStatsContainer}>
+                  <PerGameStatsTable playerId={selectedPlayer?.id} />
+                </div>
+                <div className={styles.opponentLogContainer}>
+                  <OpponentGamelog
+                    teamId={teamIdForLog}
+                    highlightColor={teamColors.primaryColor || "#07aae2"}
                   />
-                  <div className={styles.combinedStatsTableContainer}>
-                    <StatsTable
-                      data={displayDataWithDiff}
-                      isLoading={
-                        isLoadingAggData && displayDataWithDiff.length === 0
-                      }
-                      error={aggDataError}
-                      formatCell={formatCellUtil}
-                      playerId={selectedPlayer?.id ?? 0}
-                      currentSeasonId={currentSeasonId ?? 0}
-                      leftTimeframe={leftTimeframe}
-                      rightTimeframe={rightTimeframe}
-                      visibleColumns={mobileVisibleColumns as any}
+                </div>
+                <div className={styles.ratingsContainer}>
+                  {selectedPlayer ? (
+                    <PlayerRatingsDisplay
+                      playerId={selectedPlayer.id}
+                      minGp={minGp}
+                    />
+                  ) : (
+                    <div className={styles.chartLoadingPlaceholder}>
+                      Select player for ratings
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+
+            {activeTab === "trends" && (
+              <>
+                <div className={styles.consistencyAndCategoryWrapper}>
+                  <div className={styles.consistencyRatingContainer}>
+                    {selectedPlayer ? (
+                      <ConsistencyChart playerId={selectedPlayer.id} />
+                    ) : (
+                      <ChartLoadingPlaceholder message="Select a player" />
+                    )}
+                  </div>
+                  <div className={styles.percentileChartContainer}>
+                    <div className={styles.chartTitle}>
+                      <h3 style={{ margin: 0 }}>Percentiles</h3>
+                    </div>
+                    <CategoryCoverageChart
+                      playerId={selectedPlayer?.id}
+                      timeOption="SEASON"
                     />
                   </div>
                 </div>
-              )}
-            </div>
+                <div className={styles.toiChartContainer}>
+                  <ToiLineChart playerId={selectedPlayer?.id} />
+                </div>
+                <div className={styles.ppgChartContainer}>
+                  <PpgLineChart playerId={selectedPlayer?.id} />
+                </div>
+                <div className={styles.gameScoreContainer}>
+                  <GameScoreSection playerId={selectedPlayer?.id} />
+                </div>
+              </>
+            )}
+
+            {activeTab === "percentiles" && (
+              <div className={styles.rateStatBarPercentilesContainer}>
+                <RateStatPercentiles
+                  playerId={selectedPlayer?.id}
+                  minGp={minGp}
+                  onMinGpChange={setMinGp}
+                />
+              </div>
+            )}
+
+            {activeTab === "comparison" && (
+              <div className={styles.timeframeComparisonWrapper}>
+                <TimeframeComparison
+                  initialLeft={leftTimeframe}
+                  initialRight={rightTimeframe}
+                  onCompare={handleTimeframeCompare}
+                />
+                <div className={styles.combinedStatsTableContainer}>
+                  <StatsTable
+                    data={displayDataWithDiff}
+                    isLoading={
+                      isLoadingAggData && displayDataWithDiff.length === 0
+                    }
+                    error={aggDataError}
+                    formatCell={formatCellUtil}
+                    playerId={selectedPlayer?.id ?? 0}
+                    currentSeasonId={currentSeasonId ?? 0}
+                    leftTimeframe={leftTimeframe}
+                    rightTimeframe={rightTimeframe}
+                    visibleColumns={mobileVisibleColumns as any}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
