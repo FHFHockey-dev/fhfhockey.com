@@ -1,0 +1,230 @@
+@use "styles/vars" as v;
+@use "sass:color";
+
+.page {
+  padding: v.$space-lg;
+  background-color: v.$background-dark;
+  color: v.$text-primary;
+  font-family: v.$font-family-primary;
+}
+
+.panel {
+  @include v.glass-panel(v.$space-md, v.$border-radius-lg);
+  margin-bottom: v.$space-lg;
+}
+
+.panelHeader {
+  background: linear-gradient(
+    135deg,
+    v.$background-dark,
+    color.adjust(v.$background-dark, $lightness: 4%)
+  );
+  border-bottom: 2px solid v.$border-accent;
+  padding: v.$space-md v.$space-lg;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: v.$space-md;
+  border-radius: v.$border-radius-lg v.$border-radius-lg 0 0;
+  margin: -#{v.$space-md} -#{v.$space-md} v.$space-md; // Absorb panel padding
+}
+
+.panelTitle {
+  font-family: v.$font-family-accent;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: v.$font-size-lg;
+  margin: 0;
+  color: v.$text-primary;
+
+  .accent {
+    color: v.$primary-color;
+  }
+}
+
+.teamMatchup {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.team {
+  display: flex;
+  align-items: center;
+  gap: v.$space-md;
+
+  &.home {
+    .teamName {
+      color: var(--home-primary-color, v.$text-primary);
+    }
+  }
+
+  &.away {
+    flex-direction: row-reverse;
+    .teamName {
+      color: var(--away-primary-color, v.$text-primary);
+    }
+  }
+}
+
+.teamLogo {
+  width: 80px;
+  height: 80px;
+}
+
+.teamName {
+  font-family: v.$font-family-accent;
+  font-size: v.$font-size-xl;
+  text-transform: uppercase;
+}
+
+.teamRecord {
+  font-size: v.$font-size-sm;
+  color: v.$text-secondary;
+}
+
+.matchupVs {
+  font-family: v.$font-family-accent;
+  font-size: v.$font-size-lg;
+  color: v.$text-secondary;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: v.$space-lg;
+
+  @media (max-width: v.$breakpoint-desktop) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.statRow {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-xs;
+  padding: v.$space-sm 0;
+  border-bottom: 1px solid v.$border-primary;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.statRowHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: v.$font-family-numbers;
+}
+
+.statLabel {
+  font-family: v.$font-family-accent;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: v.$font-size-sm;
+  color: v.$text-secondary;
+}
+
+.statValue {
+  font-size: v.$font-size-md;
+  font-weight: v.$font-weight-bold;
+
+  &.homeValue {
+    color: var(--home-primary-color, v.$text-primary);
+  }
+  &.awayValue {
+    color: var(--away-primary-color, v.$text-primary);
+  }
+}
+
+.comparisonBar {
+  height: 10px;
+  border-radius: v.$border-radius-sm;
+  width: 100%;
+}
+
+.playerComparison, .goalieComparison {
+  .playerRow, .goalieRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: v.$space-sm 0;
+    border-bottom: 1px solid v.$border-primary;
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+
+  .playerDetails {
+    display: flex;
+    align-items: center;
+    gap: v.$space-sm;
+  }
+
+  .playerHeadshot {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+  }
+
+  .playerName {
+    font-weight: v.$font-weight-bold;
+  }
+
+  .playerMeta {
+    font-size: v.$font-size-xs;
+    color: v.$text-secondary;
+  }
+
+  .statCategory {
+    font-family: v.$font-family-accent;
+    text-transform: uppercase;
+    color: v.$text-secondary;
+  }
+
+  .homePlayer {
+    .playerName {
+      color: var(--home-primary-color, v.$text-primary);
+    }
+  }
+
+  .awayPlayer {
+    flex-direction: row-reverse;
+    .playerName {
+      color: var(--away-primary-color, v.$text-primary);
+    }
+    .playerDetails {
+      flex-direction: row-reverse;
+      text-align: right;
+    }
+  }
+}
+
+.gameOverContainer {
+  .team {
+    .score {
+      font-size: v.$font-size-xl;
+      font-family: v.$font-family-numbers;
+      font-weight: v.$font-weight-bold;
+    }
+  }
+}
+
+.threeStars {
+  .starRow {
+    display: flex;
+    align-items: center;
+    gap: v.$space-md;
+    padding: v.$space-sm 0;
+    border-bottom: 1px solid v.$border-primary;
+  }
+}
+
+.scratches {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: v.$space-lg;
+}

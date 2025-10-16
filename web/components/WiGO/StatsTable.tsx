@@ -41,6 +41,8 @@ interface StatsTableProps {
   currentSeasonId: number;
   leftTimeframe: keyof TableAggregateData;
   rightTimeframe: keyof TableAggregateData;
+  // Optional: restrict which data columns are visible (e.g., for mobile)
+  visibleColumns?: Array<keyof Omit<TableAggregateData, "label" | "GP" | "DIFF">>;
 }
 
 // These are the keys for the standard data COLUMNS
@@ -78,7 +80,8 @@ const StatsTable: React.FC<StatsTableProps> = ({
   playerId,
   currentSeasonId,
   leftTimeframe,
-  rightTimeframe
+  rightTimeframe,
+  visibleColumns
 }) => {
   const [expandedStatLabel, setExpandedStatLabel] = useState<string | null>(
     null
@@ -97,8 +100,18 @@ const StatsTable: React.FC<StatsTableProps> = ({
   // const gpRowData = useMemo(() => data.find((d) => d.label === "GP"), [data]);
 
   // --- Calculate highlight indices ---
-  const leftIndex = columnKeys.indexOf(leftTimeframe as DataColumnKey);
-  const rightIndex = columnKeys.indexOf(rightTimeframe as DataColumnKey);
+  // Determine which columns to render (allow caller to limit visible ones)
+  const renderColumnKeys: DataColumnKey[] = useMemo(() => {
+    if (!visibleColumns || visibleColumns.length === 0) return columnKeys;
+    // Keep original order from columnKeys, include only those specified, ensure uniqueness
+    const desired = new Set(
+      visibleColumns as DataColumnKey[]
+    );
+    return columnKeys.filter((k) => desired.has(k));
+  }, [visibleColumns]);
+
+  const leftIndex = renderColumnKeys.indexOf(leftTimeframe as DataColumnKey);
+  const rightIndex = renderColumnKeys.indexOf(rightTimeframe as DataColumnKey);
 
   // Determine the actual start and end index of the highlighted block
   const validIndices = [leftIndex, rightIndex].filter((index) => index !== -1);
@@ -193,7 +206,7 @@ const StatsTable: React.FC<StatsTableProps> = ({
             </th>
 
             {/* Data Column Headers */}
-            {columnKeys.map((key, index) => {
+            {renderColumnKeys.map((key, index) => {
               // Get index from map
               const isHighlighted =
                 key === leftTimeframe || key === rightTimeframe;
@@ -259,7 +272,7 @@ const StatsTable: React.FC<StatsTableProps> = ({
                     </td>
 
                     {/* Data Cells */}
-                    {columnKeys.map((key, index) => {
+                    {renderColumnKeys.map((key, index) => {
                       // Get index from map
                       const isHighlighted =
                         key === leftTimeframe || key === rightTimeframe;

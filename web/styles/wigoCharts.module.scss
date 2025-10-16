@@ -48,6 +48,93 @@
   margin-bottom: v.$space-sm; // Bottom margin spacing
 }
 
+/* Hide mobile container by default (desktop/tablet). It will be enabled in the mobile media query below */
+.mobileContainer {
+  display: none;
+}
+
+/* --- Mobile overrides --- */
+@media (max-width: 768px) {
+  .wigoDashboardContainer {
+    min-width: auto; // allow shrinking on mobile
+    max-height: none;
+  }
+  .wigoDashboardContent {
+    display: none; // hide desktop grid on mobile
+  }
+  .mobileContainer {
+    display: flex;
+    flex-direction: column;
+    gap: v.$space-md;
+    width: 100%;
+    padding-bottom: v.$space-lg;
+  }
+  .mobileHeaderRow {
+    display: flex;
+    flex-direction: column;
+    gap: v.$space-sm;
+    padding: 0 v.$space-md;
+  }
+  .mobileTabsBar {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: color.adjust(v.$background-dark, $lightness: -2%);
+    display: flex;
+    gap: v.$space-sm;
+    padding: v.$space-sm v.$space-md;
+    overflow-x: auto;
+    border-bottom: 2px solid v.$border-color-secondary;
+  }
+  .tabBtn {
+    background: transparent;
+    color: v.$text-color-secondary;
+    border: 1px solid v.$border-color-secondary;
+    border-radius: v.$border-radius-sm;
+    padding: 6px 10px;
+    white-space: nowrap;
+    font-family: v.$font-family-primary;
+    font-size: v.$font-size-small;
+  }
+  .activeTab {
+    background: var(--primary-color, v.$primary-color);
+    color: v.$color-white;
+    border: 1px solid color.adjust(v.$primary-color, $lightness: -10%);
+    border-radius: v.$border-radius-sm;
+    padding: 6px 10px;
+    white-space: nowrap;
+    font-family: v.$font-family-primary;
+    font-size: v.$font-size-small;
+  }
+  .mobilePanel {
+    display: flex;
+    flex-direction: column;
+    gap: v.$space-md;
+    padding: 0 v.$space-md;
+  }
+  // Tweak some heights for better mobile fit
+  .playerHeaderContainer,
+  .toiChartContainer,
+  .ppgChartContainer,
+  .gameScoreContainer {
+    height: auto;
+    min-height: 180px;
+  }
+  .consistencyAndCategoryWrapper {
+    flex-direction: column;
+    height: auto;
+    gap: v.$space-md;
+  }
+  .consistencyRatingContainer,
+  .percentileChartContainer {
+    flex: initial;
+    min-height: 220px;
+  }
+  .combinedStatsTableContainer {
+    overflow-x: auto;
+  }
+}
+
 /* Base Styles for Grid Items */
 
 // Mixin for common internal flex setup used by charts and tables
