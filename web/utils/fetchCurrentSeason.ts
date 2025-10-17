@@ -1,6 +1,8 @@
 // web/utils/fetchCurrentSeason.ts
 
 import Fetch from "lib/cors-fetch";
+import { toZonedTime } from "date-fns-tz";
+import { parseISO } from "date-fns";
 
 export interface SeasonInfo {
   id: number;
@@ -19,6 +21,8 @@ export interface SeasonInfo {
 
 export async function fetchCurrentSeason(): Promise<SeasonInfo> {
   console.log("Fetching current season...");
+
+  const timeZone = "America/New_York";
 
   // Prefer our internal API (stable, backed by DB), then fall back to NHL API
   const isServer = typeof window === "undefined";
@@ -44,11 +48,15 @@ export async function fetchCurrentSeason(): Promise<SeasonInfo> {
     }
     const s = await res.json();
 
-    const now = new Date();
-    const currentStart = new Date(s.regularSeasonStartDate);
-    const currentRegEnd = new Date(s.regularSeasonEndDate);
-    const currentEnd = new Date(s.seasonEndDate);
-    const prevRegEnd = new Date(s.lastRegularSeasonEndDate);
+    const now = toZonedTime(new Date(), timeZone);
+    const currentStart = toZonedTime(
+      parseISO(s.regularSeasonStartDate),
+      timeZone
+    );
+    const prevRegEnd = toZonedTime(
+      parseISO(s.lastRegularSeasonEndDate),
+      timeZone
+    );
 
     // Helper to build SeasonInfo from fields
     const toSeasonInfo = (
@@ -59,9 +67,9 @@ export async function fetchCurrentSeason(): Promise<SeasonInfo> {
       idPrev?: number,
       idTwo?: number
     ): SeasonInfo => {
-      const playoffsStart = new Date(regEnd);
+      const playoffsStart = toZonedTime(parseISO(regEnd), timeZone);
       playoffsStart.setDate(playoffsStart.getDate() + 1);
-      const playoffsEnd = new Date(end);
+      const playoffsEnd = toZonedTime(parseISO(end), timeZone);
       return {
         id,
         startDate: start,
@@ -110,17 +118,35 @@ export async function fetchCurrentSeason(): Promise<SeasonInfo> {
     const data = await response.json();
     const currentSeason = data.data[0];
     const previousSeason = data.data[1];
-    const nextSeason = data.data[2];
-    const now = new Date();
-    const startDate = new Date(currentSeason.startDate);
-    const prevEndDate = new Date(previousSeason.regularSeasonEndDate);
-    const playoffsStartDate = new Date(currentSeason.regularSeasonEndDate);
-    playoffsStartDate.setDate(playoffsStartDate.getDate() + 1);
-    const playoffsEndDate = new Date(currentSeason.endDate);
+    // This is a bug, it's actually two seasons ago.
+    // const nextSeason = data.data[2];
 
-    const prevPlayoffsStartDate = new Date(previousSeason.regularSeasonEndDate);
+    const now = toZonedTime(new Date(), timeZone);
+    const startDate = toZonedTime(parseISO(currentSeason.startDate), timeZone);
+    const prevEndDate = toZonedTime(
+      parseISO(previousSeason.regularSeasonEndDate),
+      timeZone
+    );
+
+    const playoffsStartDate = toZonedTime(
+      parseISO(currentSeason.regularSeasonEndDate),
+      timeZone
+    );
+    playoffsStartDate.setDate(playoffsStartDate.getDate() + 1);
+    const playoffsEndDate = toZonedTime(
+      parseISO(currentSeason.endDate),
+      timeZone
+    );
+
+    const prevPlayoffsStartDate = toZonedTime(
+      parseISO(previousSeason.regularSeasonEndDate),
+      timeZone
+    );
     prevPlayoffsStartDate.setDate(prevPlayoffsStartDate.getDate() + 1);
-    const prevPlayoffsEndDate = new Date(previousSeason.endDate);
+    const prevPlayoffsEndDate = toZonedTime(
+      parseISO(previousSeason.endDate),
+      timeZone
+    );
 
     if (now < startDate && now > prevEndDate) {
       return {
@@ -130,8 +156,7 @@ export async function fetchCurrentSeason(): Promise<SeasonInfo> {
         endDate: previousSeason.endDate,
         playoffsStartDate: prevPlayoffsStartDate.getTime(),
         playoffsEndDate: prevPlayoffsEndDate.getTime(),
-        previousSeason,
-        nextSeason
+        previousSeason
       } as SeasonInfo;
     } else {
       return {
@@ -141,8 +166,7 @@ export async function fetchCurrentSeason(): Promise<SeasonInfo> {
         endDate: currentSeason.endDate,
         playoffsStartDate: playoffsStartDate.getTime(),
         playoffsEndDate: playoffsEndDate.getTime(),
-        idPrev: previousSeason.id,
-        idTwo: nextSeason.id
+        idPrev: previousSeason.id
       } as SeasonInfo;
     }
   }

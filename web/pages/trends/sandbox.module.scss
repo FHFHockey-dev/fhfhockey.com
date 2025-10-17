@@ -170,6 +170,31 @@
   background: rgba(v.$primary-color, 0.2);
 }
 
+.bandWindowButtons {
+  display: flex;
+  gap: v.$space-xs;
+  flex-wrap: wrap;
+}
+
+.bandWindowButton,
+.bandWindowButtonActive {
+  border: 1px solid v.$border-secondary;
+  background: color.change(v.$background-dark, $alpha: 0.6);
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+  padding: v.$space-xxs v.$space-sm;
+  border-radius: 999px;
+  transition: all 150ms ease;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.bandWindowButtonActive {
+  border-color: v.$primary-color;
+  color: v.$color-white;
+  background: rgba(v.$primary-color, 0.2);
+}
+
 .summary {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -195,6 +220,291 @@
       color: v.$text-primary;
     }
   }
+}
+
+.bandSection {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-sm;
+  margin-top: v.$space-md;
+}
+
+.bandHeader {
+  display: flex;
+  align-items: baseline;
+  gap: v.$space-sm;
+
+  h2 {
+    font-family: v.$font-family-accent, sans-serif;
+    font-size: v.$font-size-lg;
+    font-weight: 700;
+    color: v.$text-primary;
+    margin: 0;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+}
+
+.bandStatus {
+  font-size: v.$font-size-xs;
+  color: v.$text-secondary;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.bandGrid {
+  display: grid;
+  gap: v.$space-sm;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.bandCard {
+  border: 1px solid rgba(v.$border-secondary, 0.6);
+  border-radius: v.$border-radius-md;
+  padding: v.$space-sm v.$space-md;
+  background: color.change(v.$background-medium, $alpha: 0.4);
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-xxs;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.bandMetric {
+  font-size: v.$font-size-xs;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: v.$text-secondary;
+}
+
+.bandValue {
+  font-size: v.$font-size-lg;
+  font-weight: 700;
+  color: v.$text-primary;
+}
+
+.bandRange,
+.bandBaseline,
+.bandDelta,
+.bandWindow {
+  font-size: v.$font-size-xs;
+  color: v.$text-secondary;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.bandWindow {
+  margin-top: v.$space-xxs;
+}
+
+.bandDelta {
+  font-weight: 600;
+}
+
+.bandHot {
+  border-color: rgba(v.$danger-color, 0.6);
+  box-shadow: 0 8px 24px rgba(v.$danger-color, 0.15);
+}
+
+.bandCold {
+  border-color: rgba(v.$primary-color, 0.6);
+  box-shadow: 0 8px 24px rgba(v.$primary-color, 0.2);
+}
+
+.bandNeutral {
+  border-color: rgba(v.$success-color, 0.45);
+  box-shadow: 0 8px 20px rgba(v.$success-color, 0.12);
+}
+
+.bandEmpty {
+  padding: v.$space-md;
+  border: 1px dashed v.$border-secondary;
+  border-radius: v.$border-radius-md;
+  text-align: center;
+  font-size: v.$font-size-sm;
+  color: v.$text-secondary;
+}
+
+.bandChartSection {
+  margin-top: v.$space-lg;
+  @include v.glass-panel;
+  padding: v.$space-md;
+}
+
+.bandChart {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-sm;
+}
+
+.bandChartHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: v.$space-sm;
+}
+
+.bandChartTitleBlock {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-xxs;
+}
+
+.bandChartMetric {
+  font-size: v.$font-size-sm;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: v.$text-secondary;
+}
+
+.bandChartWindow {
+  font-size: v.$font-size-xxs;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(v.$text-secondary, 0.8);
+}
+
+.bandChartLatest {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  text-align: right;
+}
+
+.bandChartLatestValue {
+  font-size: v.$font-size-lg;
+  font-weight: 700;
+  color: v.$text-primary;
+}
+
+.bandChartLatestStatus {
+  font-size: v.$font-size-xxs;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.bandChartLatestHot {
+  background: rgba(v.$danger-color, 0.2);
+  color: v.$danger-color;
+}
+
+.bandChartLatestCold {
+  background: rgba(v.$primary-color, 0.2);
+  color: v.$primary-color;
+}
+
+.bandChartLatestNeutral {
+  background: rgba(v.$success-color, 0.16);
+  color: v.$success-color;
+}
+
+.bandChartLatestRange,
+.bandChartLatestBaseline {
+  font-size: v.$font-size-xxs;
+  color: v.$text-secondary;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.bandChartMessage {
+  padding: v.$space-sm;
+  font-size: v.$font-size-xs;
+  color: v.$text-secondary;
+  text-align: center;
+  border: 1px dashed rgba(v.$border-secondary, 0.6);
+  border-radius: v.$border-radius-md;
+}
+
+.bandChartError {
+  color: #f87171;
+  border-color: rgba(#f87171, 0.5);
+}
+
+.bandChartWrapper {
+  position: relative;
+  width: 100%;
+  min-height: 320px;
+  background: rgba(v.$background-medium, 0.35);
+  border: 1px solid rgba(v.$border-secondary, 0.6);
+  border-radius: v.$border-radius-md;
+  overflow: hidden;
+}
+
+.bandChartSvg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.bandChartPlot {
+  fill: rgba(v.$background-medium, 0.22);
+  stroke: rgba(v.$border-secondary, 0.35);
+  stroke-width: 1;
+}
+
+.bandChartArea {
+  fill: rgba(v.$primary-color, 0.18);
+}
+
+.bandChartLine {
+  stroke: v.$color-white;
+  stroke-width: 2;
+  fill: none;
+}
+
+.bandChartBaseline {
+  stroke: rgba(v.$text-secondary, 0.65);
+  stroke-width: 1.2;
+  stroke-dasharray: 4 2;
+  fill: none;
+}
+
+.bandChartGridline {
+  stroke: rgba(v.$border-secondary, 0.3);
+  stroke-width: 0.75;
+}
+
+.bandChartGridlineVertical {
+  stroke: rgba(v.$border-secondary, 0.2);
+  stroke-width: 0.7;
+  stroke-dasharray: 3 3;
+}
+
+.bandChartAxisText {
+  font-size: v.$font-size-xxs;
+  fill: rgba(v.$text-secondary, 0.9);
+  letter-spacing: 0.04em;
+}
+
+.bandChartAxisTextY {
+  text-transform: uppercase;
+}
+
+.bandChartAxisTextX {
+  text-transform: uppercase;
+}
+
+.bandChartDot {
+  stroke: rgba(v.$background-dark, 0.9);
+  stroke-width: 1;
+}
+
+.bandChartDotHot {
+  fill: rgba(v.$danger-color, 0.92);
+}
+
+.bandChartDotCold {
+  fill: rgba(v.$primary-color, 0.92);
+}
+
+.bandChartDotNeutral {
+  fill: rgba(v.$success-color, 0.88);
 }
 
 .error {

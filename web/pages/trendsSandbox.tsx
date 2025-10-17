@@ -3,6 +3,8 @@ import * as d3 from "d3";
 import { format } from "date-fns";
 import supabase from "lib/supabase/client";
 import type { Database } from "lib/supabase/database-generated.types";
+import type { SustainabilityMetricKey } from "lib/sustainability/bands";
+import type { WindowCode } from "lib/sustainability/windows";
 import type {
   ChartPoint,
   GameLogRow,
@@ -25,6 +27,45 @@ type GameRow = Database["public"]["Tables"]["games"]["Row"];
 type PlayerRow = Database["public"]["Tables"]["players"]["Row"];
 
 type SupabaseError = { message: string };
+
+type TrendBandRow = {
+  player_id: number;
+  season_id: number | null;
+  snapshot_date: string;
+  metric_key: string;
+  window_code: "l3" | "l5" | "l10" | "l20";
+  baseline: number | null;
+  ewma: number | null;
+  value: number;
+  ci_lower: number;
+  ci_upper: number;
+  n_eff: number | null;
+  prior_weight: number | null;
+  z_score: number | null;
+  percentile: number | null;
+  exposure: number | null;
+  distribution?: Record<string, unknown> | null;
+};
+
+const TREND_METRIC_LABELS: Partial<Record<SustainabilityMetricKey, string>> = {
+  shots_per_60: "Shots / 60",
+  icf_per_60: "iCF / 60",
+  ixg_per_60: "ixG / 60",
+  points_per_60_5v5: "Points / 60 (5v5)",
+  pp_goals_per_60: "PP Goals / 60",
+  pp_points_per_60: "PP Points / 60",
+  hits_per_60: "Hits / 60",
+  blocks_per_60: "Blocks / 60",
+  ipp: "IPP",
+  sh_pct: "Shooting %",
+  on_ice_sh_pct: "On-Ice SH%",
+  on_ice_sv_pct: "On-Ice SV%",
+  pp_toi_pct: "PP TOI %",
+  pdo: "PDO",
+  fantasy_score: "Fantasy Score"
+};
+
+const BAND_WINDOW_CODES: WindowCode[] = ["l3", "l5", "l10", "l20"];
 
 const ROLLING_WINDOWS: RollingWindowOption[] = [
   { label: "3-game", value: 3 },
@@ -189,6 +230,334 @@ function HotColdStreakChartPlaceholder() {
   );
 }
 
+interface ElasticityBandChartProps {
+  data: TrendBandRow[];
+  metricLabel: string;
+  windowCode: WindowCode;
+  loading: boolean;
+  error: string | null;
+}
+
+function ElasticityBandChart({
+  data,
+  metricLabel,
+  windowCode,
+  loading,
+  error
+}: ElasticityBandChartProps) {
+  const parsed = useMemo(() => {
+    return data
+      .map((row) => {
+        const date = new Date(row.snapshot_date);
+        if (Number.isNaN(date.getTime())) return null;
+        const status =
+          row.value > row.ci_upper
+            ? "hot"
+            : row.value < row.ci_lower
+              ? "cold"
+              : "neutral";
+        return {
+          date,
+          lower: Number(row.ci_lower),
+          upper: Number(row.ci_upper),
+          value: Number(row.value),
+          baseline: row.baseline != null ? Number(row.baseline) : null,
+          status
+        } as {
+          date: Date;
+          lower: number;
+          upper: number;
+          value: number;
+          baseline: number | null;
+          status: "hot" | "cold" | "neutral";
+        };
+      })
+      .filter(
+        (
+          row
+        ): row is {
+          date: Date;
+          lower: number;
+          upper: number;
+          value: number;
+          baseline: number | null;
+          status: "hot" | "cold" | "neutral";
+        } => row != null
+      )
+      .sort((a, b) => a.date.getTime() - b.date.getTime());
+  }, [data]);
+
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [containerWidth, setContainerWidth] = useState<number>(960);
+  const chartHeight = 320;
+  const margins = useMemo(
+    () => ({ top: 32, right: 24, bottom: 48, left: 64 }),
+    []
+  );
+  const innerWidth = Math.max(
+    containerWidth - margins.left - margins.right,
+    24
+  );
+  const innerHeight = Math.max(chartHeight - margins.top - margins.bottom, 24);
+
+  useEffect(() => {
+    const element = containerRef.current;
+    if (!element) return;
+    const updateWidth = () => {
+      const next = element.clientWidth || 960;
+      setContainerWidth((prev) => (prev !== next ? next : prev));
+    };
+    updateWidth();
+    if (typeof ResizeObserver !== "undefined") {
+      const observer = new ResizeObserver(() => updateWidth());
+      observer.observe(element);
+      return () => observer.disconnect();
+    }
+    const handleResize = () => updateWidth();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const latest = parsed.at(-1) ?? null;
+
+  const geometry = useMemo(() => {
+    if (!parsed.length || innerWidth <= 0 || innerHeight <= 0) {
+      return null;
+    }
+
+    let min = Number.POSITIVE_INFINITY;
+    let max = Number.NEGATIVE_INFINITY;
+    parsed.forEach((row) => {
+      min = Math.min(min, row.lower, row.upper, row.value);
+      if (row.baseline != null) min = Math.min(min, row.baseline);
+      max = Math.max(max, row.lower, row.upper, row.value);
+      if (row.baseline != null) max = Math.max(max, row.baseline);
+    });
+    if (!Number.isFinite(min) || !Number.isFinite(max)) {
+      min = 0;
+      max = 1;
+    }
+    if (max === min) {
+      max += 0.5;
+      min -= 0.5;
+    }
+    const padding = Math.max((max - min) * 0.08, 1e-3);
+    const domain: [number, number] = [min - padding, max + padding];
+
+    const extent = d3.extent(parsed, (row) => row.date);
+    if (!extent[0] || !extent[1]) return null;
+
+    const xScale = d3
+      .scaleTime()
+      .domain([extent[0], extent[1]])
+      .range([0, innerWidth]);
+    const yScale = d3
+      .scaleLinear()
+      .domain(domain)
+      .range([innerHeight, 0])
+      .nice();
+
+    const areaGenerator = d3
+      .area<typeof parsed[number]>()
+      .x((d) => xScale(d.date))
+      .y0((d) => yScale(d.lower))
+      .y1((d) => yScale(d.upper))
+      .curve(d3.curveMonotoneX);
+
+    const lineGenerator = d3
+      .line<{ date: Date; value: number }>()
+      .x((d) => xScale(d.date))
+      .y((d) => yScale(d.value))
+      .curve(d3.curveMonotoneX);
+
+    const valueSeries = parsed.map((row) => ({
+      date: row.date,
+      value: row.value
+    }));
+    const baselineSeries = parsed
+      .filter((row) => row.baseline != null)
+      .map((row) => ({
+        date: row.date,
+        value: row.baseline as number
+      }));
+
+    const areaPath = areaGenerator(parsed) ?? "";
+    const linePath = lineGenerator(valueSeries) ?? "";
+    const baselinePath =
+      baselineSeries.length >= 2 ? lineGenerator(baselineSeries) ?? "" : "";
+
+    const xTicks = xScale.ticks(Math.min(6, parsed.length));
+    const yTicks = yScale.ticks(6);
+
+    return { xScale, yScale, areaPath, linePath, baselinePath, xTicks, yTicks };
+  }, [parsed, innerHeight, innerWidth]);
+
+  const statusLabel =
+    latest?.status === "hot"
+      ? "Running Hot"
+      : latest?.status === "cold"
+        ? "Running Cold"
+        : "Within Band";
+
+  const statusValueClass =
+    latest?.status === "hot"
+      ? styles.bandChartLatestHot
+      : latest?.status === "cold"
+        ? styles.bandChartLatestCold
+        : styles.bandChartLatestNeutral;
+
+  return (
+    <div className={styles.bandChart}>
+      <div className={styles.bandChartHeader}>
+        <div className={styles.bandChartTitleBlock}>
+          <span className={styles.bandChartMetric}>{metricLabel}</span>
+          <span className={styles.bandChartWindow}>
+            Window {windowCode.toUpperCase()}
+          </span>
+        </div>
+        <div className={styles.bandChartLatest}>
+          {latest ? (
+            <>
+              <span className={styles.bandChartLatestValue}>
+                {latest.value.toFixed(2)}
+              </span>
+              <span
+                className={`${styles.bandChartLatestStatus} ${statusValueClass}`}
+              >
+                {statusLabel}
+              </span>
+              <span className={styles.bandChartLatestRange}>
+                Band {latest.lower.toFixed(2)} – {latest.upper.toFixed(2)}
+              </span>
+              {latest.baseline != null && (
+                <span className={styles.bandChartLatestBaseline}>
+                  Baseline {latest.baseline.toFixed(2)}
+                </span>
+              )}
+            </>
+          ) : (
+            <span className={styles.bandChartLatestValue}>—</span>
+          )}
+        </div>
+      </div>
+
+      {loading ? (
+        <div className={styles.bandChartMessage}>Loading band history…</div>
+      ) : error ? (
+        <div className={`${styles.bandChartMessage} ${styles.bandChartError}`}>
+          {error}
+        </div>
+      ) : !parsed.length ? (
+        <div className={styles.bandChartMessage}>
+          No historical band data available yet.
+        </div>
+      ) : !geometry ? (
+        <div className={styles.bandChartMessage}>
+          Not enough room to render the band chart. Try expanding the panel.
+        </div>
+      ) : (
+        <div ref={containerRef} className={styles.bandChartWrapper}>
+          <svg
+            className={styles.bandChartSvg}
+            width={containerWidth}
+            height={chartHeight}
+          >
+            <g transform={`translate(${margins.left},${margins.top})`}>
+              <rect
+                className={styles.bandChartPlot}
+                width={innerWidth}
+                height={innerHeight}
+              />
+              {geometry.yTicks.map((tickValue) => {
+                const y = geometry.yScale(tickValue);
+                return (
+                  <g key={`y-${tickValue}`}>
+                    <line
+                      className={styles.bandChartGridline}
+                      x1={0}
+                      x2={innerWidth}
+                      y1={y}
+                      y2={y}
+                    />
+                    <text
+                      className={`${styles.bandChartAxisText} ${styles.bandChartAxisTextY}`}
+                      x={-12}
+                      y={y}
+                      dy="0.32em"
+                      textAnchor="end"
+                    >
+                      {tickValue.toFixed(2)}
+                    </text>
+                  </g>
+                );
+              })}
+              {geometry.xTicks.map((tickDate) => {
+                const x = geometry.xScale(tickDate);
+                return (
+                  <g
+                    key={`x-${tickDate.getTime()}`}
+                    transform={`translate(${x},0)`}
+                  >
+                    <line
+                      className={styles.bandChartGridlineVertical}
+                      x1={0}
+                      x2={0}
+                      y1={0}
+                      y2={innerHeight}
+                    />
+                    <text
+                      className={`${styles.bandChartAxisText} ${styles.bandChartAxisTextX}`}
+                      x={0}
+                      y={innerHeight + 16}
+                      textAnchor="middle"
+                    >
+                      {format(
+                        tickDate,
+                        parsed.length > 24 ? "MMM" : "MMM d"
+                      )}
+                    </text>
+                  </g>
+                );
+              })}
+              {geometry.areaPath && (
+                <path className={styles.bandChartArea} d={geometry.areaPath} />
+              )}
+              {geometry.baselinePath && (
+                <path
+                  className={styles.bandChartBaseline}
+                  d={geometry.baselinePath}
+                />
+              )}
+              {geometry.linePath && (
+                <path className={styles.bandChartLine} d={geometry.linePath} />
+              )}
+              {parsed.map((point, index) => {
+                const dotClass =
+                  point.status === "hot"
+                    ? styles.bandChartDotHot
+                    : point.status === "cold"
+                      ? styles.bandChartDotCold
+                      : styles.bandChartDotNeutral;
+                const cx = geometry.xScale(point.date);
+                const cy = geometry.yScale(point.value);
+                return (
+                  <circle
+                    key={`${point.date.getTime()}-${index}`}
+                    className={`${styles.bandChartDot} ${dotClass}`}
+                    cx={cx}
+                    cy={cy}
+                    r={3.2}
+                  />
+                );
+              })}
+            </g>
+          </svg>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function TrendsSandboxPage() {
   const [playerQuery, setPlayerQuery] = useState("");
   const [playerResults, setPlayerResults] = useState<PlayerOption[]>([]);
@@ -208,6 +577,16 @@ export default function TrendsSandboxPage() {
   const [loadingSeasonData, setLoadingSeasonData] = useState(false);
   const [loadingGameLog, setLoadingGameLog] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [trendBands, setTrendBands] = useState<TrendBandRow[]>([]);
+  const [loadingTrendBands, setLoadingTrendBands] = useState(false);
+  const [trendBandError, setTrendBandError] = useState<string | null>(null);
+  const [selectedBandMetric, setSelectedBandMetric] =
+    useState<SustainabilityMetricKey>("ixg_per_60");
+  const [selectedBandWindow, setSelectedBandWindow] =
+    useState<WindowCode>("l5");
+  const [bandHistory, setBandHistory] = useState<TrendBandRow[]>([]);
+  const [loadingBandHistory, setLoadingBandHistory] = useState(false);
+  const [bandHistoryError, setBandHistoryError] = useState<string | null>(null);
 
   useEffect(() => {
     if (playerQuery.trim().length < MIN_SEARCH_LENGTH) {
@@ -332,6 +711,97 @@ export default function TrendsSandboxPage() {
     };
   }, [selectedPlayer?.id, selectedSeason]);
 
+  useEffect(() => {
+    if (!selectedPlayer || !gameLogRows.length) {
+      setTrendBands([]);
+      setTrendBandError(null);
+      setLoadingTrendBands(false);
+      return;
+    }
+    const lastGame = gameLogRows.at(-1)?.date;
+    if (!lastGame) return;
+
+    let cancelled = false;
+    setLoadingTrendBands(true);
+    setTrendBandError(null);
+
+    (async () => {
+      try {
+        const response = await fetch("/api/v1/sustainability/trend-bands", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            player_id: selectedPlayer.id,
+            snapshot_date: lastGame
+          })
+        });
+        const json = await response.json();
+        if (cancelled) return;
+        if (!response.ok || !json.success) {
+          throw new Error(json.message || "Failed to load trend bands");
+        }
+        setTrendBands((json.rows ?? []) as TrendBandRow[]);
+      } catch (err: any) {
+        if (!cancelled) {
+          console.error("trend band fetch", err);
+          setTrendBandError(err?.message ?? "Unable to load trend bands.");
+          setTrendBands([]);
+        }
+      } finally {
+        if (!cancelled) setLoadingTrendBands(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedPlayer?.id, gameLogRows]);
+
+  useEffect(() => {
+    if (!selectedPlayer) {
+      setBandHistory([]);
+      setBandHistoryError(null);
+      setLoadingBandHistory(false);
+      return;
+    }
+
+    let cancelled = false;
+    setLoadingBandHistory(true);
+    setBandHistoryError(null);
+
+    const params = new URLSearchParams({
+      player_id: String(selectedPlayer.id),
+      metric: selectedBandMetric,
+      window: selectedBandWindow,
+      limit: "120"
+    });
+
+    fetch(`/api/v1/sustainability/trend-bands?${params.toString()}`)
+      .then(async (response) => {
+        const json = await response.json();
+        if (cancelled) return;
+        if (!response.ok || !json.success) {
+          throw new Error(json.message || "Failed to load trend band history");
+        }
+        const rows = ((json.rows ?? []) as TrendBandRow[]).slice().reverse();
+        setBandHistory(rows);
+      })
+      .catch((err: any) => {
+        if (!cancelled) {
+          console.error("trend band history error", err);
+          setBandHistory([]);
+          setBandHistoryError(err?.message ?? "Unable to load band history.");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingBandHistory(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedPlayer?.id, selectedBandMetric, selectedBandWindow, trendBands]);
+
   const selectedSeasonSummary = useMemo(
     () =>
       seasonSummaries.find((summary) => summary.season === selectedSeason) ??
@@ -407,6 +877,45 @@ export default function TrendsSandboxPage() {
 
   const hasChartData = trendData.chartPoints.length > 0;
 
+  const trendBandSummaries = useMemo(() => {
+    if (!trendBands.length) return [];
+    const byMetric = new Map<string, TrendBandRow[]>();
+    for (const row of trendBands) {
+      if (!byMetric.has(row.metric_key)) {
+        byMetric.set(row.metric_key, []);
+      }
+      byMetric.get(row.metric_key)!.push(row);
+    }
+    const preferredWindows: Array<TrendBandRow["window_code"]> = [
+      "l5",
+      "l3",
+      "l10",
+      "l20"
+    ];
+    const summaries = Array.from(byMetric.entries()).map(([metric, rows]) => {
+      const primary =
+        preferredWindows
+          .map((code) => rows.find((row) => row.window_code === code))
+          .find((row) => row) ?? rows[0];
+      const status =
+        primary.value > primary.ci_upper
+          ? "hot"
+          : primary.value < primary.ci_lower
+            ? "cold"
+            : "neutral";
+      const delta =
+        primary.baseline != null ? primary.value - primary.baseline : null;
+      return {
+        metric,
+        label: TREND_METRIC_LABELS[metric as SustainabilityMetricKey] ?? metric,
+        primary,
+        status,
+        delta
+      };
+    });
+    return summaries.sort((a, b) => a.label.localeCompare(b.label));
+  }, [trendBands]);
+
   const resetState = () => {
     setSelectedPlayer(null);
     setSeasonSummaries([]);
@@ -415,6 +924,14 @@ export default function TrendsSandboxPage() {
     setPlayerQuery("");
     setPlayerResults([]);
     setErrorMessage(null);
+    setTrendBands([]);
+    setTrendBandError(null);
+    setLoadingTrendBands(false);
+    setSelectedBandMetric("ixg_per_60");
+    setSelectedBandWindow("l5");
+    setBandHistory([]);
+    setBandHistoryError(null);
+    setLoadingBandHistory(false);
   };
 
   return (
@@ -511,6 +1028,45 @@ export default function TrendsSandboxPage() {
         </div>
 
         <div className={styles.controlGroup}>
+          <label htmlFor="band-metric-select">Elasticity Metric</label>
+          <select
+            id="band-metric-select"
+            value={selectedBandMetric}
+            onChange={(event) =>
+              setSelectedBandMetric(
+                event.target.value as SustainabilityMetricKey
+              )
+            }
+          >
+            {Object.entries(TREND_METRIC_LABELS).map(([key, label]) => (
+              <option key={key} value={key}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className={styles.controlGroup}>
+          <span>Band Window</span>
+          <div className={styles.bandWindowButtons}>
+            {BAND_WINDOW_CODES.map((code) => (
+              <button
+                key={code}
+                type="button"
+                className={
+                  code === selectedBandWindow
+                    ? styles.bandWindowButtonActive
+                    : styles.bandWindowButton
+                }
+                onClick={() => setSelectedBandWindow(code)}
+              >
+                {code.toUpperCase()}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className={styles.controlGroup}>
           <label htmlFor="snap-toggle" className={styles.inlineLabel}>
             <input
               id="snap-toggle"
@@ -559,6 +1115,77 @@ export default function TrendsSandboxPage() {
             {latestGameDate ? format(latestGameDate, "MMM d, yyyy") : "—"}
           </span>
         </div>
+      </section>
+
+      <section className={styles.bandSection}>
+        <div className={styles.bandHeader}>
+          <h2>Elasticity Snapshot</h2>
+          {loadingTrendBands && (
+            <span className={styles.bandStatus}>Updating…</span>
+          )}
+          {trendBandError && (
+            <span className={styles.error}>{trendBandError}</span>
+          )}
+        </div>
+        <div className={styles.bandGrid}>
+          {trendBandSummaries.length ? (
+            trendBandSummaries.map((summary) => {
+              const statusClass =
+                summary.status === "hot"
+                  ? styles.bandHot
+                  : summary.status === "cold"
+                    ? styles.bandCold
+                    : styles.bandNeutral;
+              return (
+                <div
+                  key={`${summary.metric}-${summary.primary.window_code}`}
+                  className={`${styles.bandCard} ${statusClass}`}
+                >
+                  <div className={styles.bandMetric}>{summary.label}</div>
+                  <div className={styles.bandValue}>
+                    {summary.primary.value.toFixed(2)}
+                  </div>
+                  <div className={styles.bandRange}>
+                    {summary.primary.ci_lower.toFixed(2)} –{" "}
+                    {summary.primary.ci_upper.toFixed(2)}
+                  </div>
+                  {summary.primary.baseline != null && (
+                    <div className={styles.bandBaseline}>
+                      Baseline {summary.primary.baseline.toFixed(2)}
+                    </div>
+                  )}
+                  {summary.delta != null && (
+                    <div className={styles.bandDelta}>
+                      Δ {summary.delta >= 0 ? "+" : ""}
+                      {summary.delta.toFixed(2)}
+                    </div>
+                  )}
+                  <div className={styles.bandWindow}>
+                    Window {summary.primary.window_code.toUpperCase()}
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            <div className={styles.bandEmpty}>
+              {loadingTrendBands
+                ? "Loading elasticity metrics…"
+                : "Select a player to see sustainability bands."}
+            </div>
+          )}
+        </div>
+      </section>
+
+      <section className={styles.bandChartSection}>
+        <ElasticityBandChart
+          data={bandHistory}
+          metricLabel={
+            TREND_METRIC_LABELS[selectedBandMetric] ?? selectedBandMetric
+          }
+          windowCode={selectedBandWindow}
+          loading={loadingBandHistory}
+          error={bandHistoryError}
+        />
       </section>
 
       <section className={styles.chartSection}>

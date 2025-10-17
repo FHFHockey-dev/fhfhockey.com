@@ -475,7 +475,8 @@ export async function fetchPlayerAggregatedStats(
 ): Promise<TableAggregateData[]> {
   console.log(`Workspaceing pre-aggregated stats for Player ID: ${playerId}`);
 
-  const [careerRes, recentRes] = await Promise.all([
+  // Fetch base aggregates plus rates table (authoritative for per-60 by timeframe)
+  const [careerRes, recentRes, ratesRes, totalsRes] = await Promise.all([
     supabase
       .from("wigo_career")
       .select("*")
@@ -485,6 +486,20 @@ export async function fetchPlayerAggregatedStats(
       .from("wigo_recent")
       .select("*")
       .eq("player_id", playerId)
+      .maybeSingle(),
+    supabase
+      .from("wigo_rates")
+      .select("*")
+      .eq("player_id", playerId)
+      .maybeSingle(),
+    supabase
+      .from("wgo_skater_stats_totals")
+      .select(
+        `goals,assists,points,shots,hits,blocked_shots,penalty_minutes,pp_points,season,toi_per_game,pp_toi_pct_per_game`
+      )
+      .eq("player_id", playerId)
+      .order("season", { ascending: false })
+      .limit(1)
       .maybeSingle()
   ]);
 
@@ -496,9 +511,34 @@ export async function fetchPlayerAggregatedStats(
     console.error("Error fetching wigo_recent data:", recentRes.error);
     throw new Error(`Failed to fetch recent stats: ${recentRes.error.message}`);
   }
+  if (ratesRes.error) {
+    console.error("Error fetching wigo_rates data:", ratesRes.error);
+    // Don't throw—some older players may not have rates populated; we'll fallback to career
+  }
+  if (totalsRes.error) {
+    // Non-fatal: totals are only used as an optional fallback for some STD counts
+    console.warn("Totals fallback unavailable:", totalsRes.error.message);
+  }
 
   const careerData = careerRes.data as WigoCareerRow | null;
   const recentData = recentRes.data as WigoRecentRow | null;
+  const ratesData = (
+    ratesRes && !ratesRes.error ? (ratesRes.data as any | null) : null
+  ) as any | null;
+  const totalsData = (
+    totalsRes && !totalsRes.error ? (totalsRes.data as any | null) : null
+  ) as
+    | (Partial<{
+        goals: number | null;
+        assists: number | null;
+        points: number | null;
+        shots: number | null;
+        hits: number | null;
+        blocked_shots: number | null;
+        penalty_minutes: number | null;
+        pp_points: number | null;
+      }> & { season?: string | null })
+    | null;
 
   if (!careerData && !recentData) {
     console.warn(
@@ -542,6 +582,35 @@ export async function fetchPlayerAggregatedStats(
     let l10Value = getValue(recentData, `l10_${baseColName}`);
     let l20Value = getValue(recentData, `l20_${baseColName}`);
 
+    // If this is a per-60 stat, prefer authoritative values from wigo_rates for all windows when available
+    const isPerSixty = label.includes("/60");
+    if (isPerSixty && ratesData) {
+      const pickRate = (suffix: string) => {
+        const key = `${baseColName}_${suffix}`;
+        if (ratesData && Object.prototype.hasOwnProperty.call(ratesData, key)) {
+          const v = ratesData[key];
+          const num = v != null ? Number(v) : null;
+          return isNaN(num as number) ? null : (num as number);
+        }
+        return undefined; // signal no override available for this window
+      };
+      // Override across all windows when rates exist
+      const rStd = pickRate("std");
+      const rLy = pickRate("ly");
+      const rCa = pickRate("ca");
+      const r3ya = pickRate("3ya") ?? pickRate("ya3");
+      const rL5 = pickRate("l5");
+      const rL10 = pickRate("l10");
+      const rL20 = pickRate("l20");
+      if (rStd !== undefined) stdValue = rStd;
+      if (rLy !== undefined) lyValue = rLy;
+      if (rCa !== undefined) caValue = rCa;
+      if (r3ya !== undefined) ya3Value = r3ya;
+      if (rL5 !== undefined) l5Value = rL5;
+      if (rL10 !== undefined) l10Value = rL10;
+      if (rL20 !== undefined) l20Value = rL20;
+    }
+
     // --- Apply conditional unit conversions ---
     if (label === "ATOI") {
       // ... ATOI conversion logic ...
@@ -571,6 +640,90 @@ export async function fetchPlayerAggregatedStats(
       l5Value = transformPct(l5Value);
       l10Value = transformPct(l10Value);
       l20Value = transformPct(l20Value);
+    }
+
+    // --- Per-60 Fallback: derive from counts + ATOI + GP when missing ---
+    if (isPerSixty) {
+      // Map a per-60 base to its corresponding count base in wigo_career
+      const per60ToCountMap: Record<string, string> = {
+        g_per_60: "g",
+        a_per_60: "a",
+        pts_per_60: "pts",
+        sog_per_60: "sog",
+        ixg_per_60: "ixg",
+        icf_per_60: "icf",
+        hit_per_60: "hit",
+        blk_per_60: "blk",
+        pim_per_60: "pim"
+      };
+      const countBase = per60ToCountMap[baseColName];
+      const derivePer60 = (
+        prefix: "std" | "ly" | "ya3" | "ca"
+      ): number | undefined => {
+        if (!careerData || !countBase) return undefined;
+        const count = getValue(careerData, `${prefix}_${countBase}`);
+        const gp = getValue(careerData, `${prefix}_gp`);
+        const atoiMin = getValue(careerData, `${prefix}_atoi`); // avg minutes per game
+        if (
+          typeof count === "number" &&
+          typeof gp === "number" &&
+          gp > 0 &&
+          typeof atoiMin === "number" &&
+          atoiMin > 0
+        ) {
+          const totalMinutes = atoiMin * gp; // minutes
+          if (totalMinutes > 0) {
+            return (count * 60) / totalMinutes;
+          }
+        }
+        return undefined;
+      };
+      if (stdValue == null || isNaN(stdValue)) {
+        const v = derivePer60("std");
+        if (v !== undefined) stdValue = v;
+      }
+      if (lyValue == null || isNaN(lyValue)) {
+        const v = derivePer60("ly");
+        if (v !== undefined) lyValue = v;
+      }
+      if (ya3Value == null || isNaN(ya3Value)) {
+        const v = derivePer60("ya3");
+        if (v !== undefined) ya3Value = v;
+      }
+      if (caValue == null || isNaN(caValue)) {
+        const v = derivePer60("ca");
+        if (v !== undefined) caValue = v;
+      }
+    }
+
+    // --- Fallback for missing STD counts using season totals (best-effort) ---
+    // Only for common count stats; avoids fabricating advanced counts not present in totals
+    if (
+      (label === "Goals" ||
+        label === "Assists" ||
+        label === "Points" ||
+        label === "SOG" ||
+        label === "HIT" ||
+        label === "BLK" ||
+        label === "PIM" ||
+        label === "PPP") &&
+      (stdValue == null || isNaN(stdValue)) &&
+      totalsData
+    ) {
+      const totalsMap: Record<string, number | null | undefined> = {
+        Goals: totalsData.goals,
+        Assists: totalsData.assists,
+        Points: totalsData.points,
+        SOG: totalsData.shots,
+        HIT: totalsData.hits,
+        BLK: totalsData.blocked_shots,
+        PIM: totalsData.penalty_minutes,
+        PPP: totalsData.pp_points
+      };
+      const fallback = totalsMap[label];
+      if (typeof fallback === "number" && !isNaN(fallback)) {
+        stdValue = fallback;
+      }
     }
 
     // --- Create the row data ---

@@ -278,7 +278,7 @@ function getDayColumns(
             <div className={styles.dayToggle}>
               <Toggle
                 size="small"
-                checked={excludedDays.includes(day)}
+                checked={!excludedDays.includes(day)}
                 onChange={onChange}
               />
             </div>

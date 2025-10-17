@@ -30,6 +30,18 @@ import {
   formatCell as formatCellUtil
 } from "components/WiGO/tableUtils";
 
+// Simple viewport check; SSR-safe fallback to desktop
+const useIsMobile = (breakpoint = 768) => {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < breakpoint);
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [breakpoint]);
+  return isMobile;
+};
+
 // --- Dynamically import components (remains the same) ---
 const ChartLoadingPlaceholder = ({ message }: { message: string }) => (
   <div className={styles.chartLoadingPlaceholder}>{message}</div>
@@ -77,6 +89,43 @@ const WigoCharts: React.FC = () => {
   const currentSeasonData = useCurrentSeason();
   const currentSeasonId = currentSeasonData?.seasonId ?? null;
   const router = useRouter();
+  const isMobile = useIsMobile();
+
+  type TabKey = "overview" | "trends" | "percentiles" | "comparison";
+  const validTabs: TabKey[] = [
+    "overview",
+    "trends",
+    "percentiles",
+    "comparison"
+  ];
+  const [activeTab, setActiveTab] = useState<TabKey>("overview");
+
+  // Sync tab from URL on mount/change
+  useEffect(() => {
+    const t = router.query.tab;
+    if (!t) return;
+    const tab = Array.isArray(t) ? t[0] : t;
+    if (validTabs.includes(tab as TabKey)) setActiveTab(tab as TabKey);
+  }, [router.query.tab]);
+
+  // Helper to update URL with tab (and keep playerId)
+  const updateUrlWith = useCallback(
+    (updates: Record<string, string | number | undefined>) => {
+      const nextQuery = { ...router.query } as Record<string, any>;
+      Object.entries(updates).forEach(([k, v]) => {
+        if (v === undefined) delete nextQuery[k];
+        else nextQuery[k] = v;
+      });
+      router.replace(
+        { pathname: router.pathname, query: nextQuery },
+        undefined,
+        {
+          shallow: true
+        }
+      );
+    },
+    [router]
+  );
 
   // Handle player selection (remains the same)
   const handlePlayerSelect = useCallback(
@@ -114,16 +163,9 @@ const WigoCharts: React.FC = () => {
 
       setAggDataError(null); // Clear error
       // Update the URL with the playerId as a query parameter
-      router.replace(
-        {
-          pathname: router.pathname,
-          query: { ...router.query, playerId: player.id }
-        },
-        undefined,
-        { shallow: true }
-      );
+      updateUrlWith({ playerId: player.id });
     },
-    [router]
+    [updateUrlWith]
   );
 
   // Auto-select player if playerId is present in the query
@@ -213,11 +255,38 @@ const WigoCharts: React.FC = () => {
     setRightTimeframe(right as keyof TableAggregateData);
   }, []);
 
+  // Visible columns for mobile table view
+  const mobileVisibleColumns = useMemo(() => {
+    return [leftTimeframe, rightTimeframe] as Array<keyof TableAggregateData>;
+  }, [leftTimeframe, rightTimeframe]);
+
+  // Tab button renderer
+  const renderTabs = () => (
+    <div className={styles.mobileTabsBar}>
+      {validTabs.map((t) => (
+        <button
+          key={t}
+          className={t === activeTab ? styles.activeTab : styles.tabBtn}
+          onClick={() => {
+            setActiveTab(t);
+            updateUrlWith({ tab: t });
+          }}
+        >
+          {t === "overview" && "Overview"}
+          {t === "trends" && "Trends"}
+          {t === "percentiles" && "Percentiles"}
+          {t === "comparison" && "Comparison"}
+        </button>
+      ))}
+    </div>
+  );
+
   return (
     <div className={styles.wigoDashHeader}>
       <div className={styles.wigoDashboardContainer}>
+        {/* Desktop/Grid view (hidden on mobile via CSS) */}
         <div
-          className={styles.wigoDashboardContent} // The Grid Container
+          className={styles.wigoDashboardContent}
           style={
             {
               "--primary-color": teamColors.primaryColor,
@@ -370,11 +439,164 @@ const WigoCharts: React.FC = () => {
           </div>
 
           {/* === Grid Items END === */}
-        </div>{" "}
-        {/* End .wigoDashboardContent */}
-      </div>{" "}
-      {/* End .wigoDashboardContainer */}
-    </div> // End .wigoDashHeader
+        </div>
+
+        {/* Mobile/Tabbed view (hidden on desktop via CSS) */}
+        <div
+          className={styles.mobileContainer}
+          style={
+            {
+              "--primary-color": teamColors.primaryColor,
+              "--secondary-color": teamColors.secondaryColor,
+              "--accent-color": teamColors.accentColor,
+              "--alt-color": teamColors.altColor,
+              "--jersey-color": teamColors.jerseyColor
+            } as React.CSSProperties
+          }
+        >
+          <div className={styles.mobileHeaderRow}>
+            <div className={styles.nameSearchBarContainer}>
+              <NameSearchBar onSelect={handlePlayerSelect} />
+            </div>
+            <div className={styles.wigoHeader}>
+              <div className={styles.headerText}>
+                <span className={styles.spanColorBlue}>WiGO</span>
+                {"\u00A0\u00A0//\u00A0\u00A0"}
+                <span className={styles.spanColorBlue}>W</span>
+                HAT
+                {"\u00A0\u00A0"}
+                <span className={styles.spanColorBlue}>I</span>S{"\u00A0\u00A0"}
+                <span className={styles.spanColorBlue}>G</span>
+                OING
+                {"\u00A0\u00A0"}
+                <span className={styles.spanColorBlue}>O</span>N
+              </div>
+            </div>
+          </div>
+
+          {renderTabs()}
+
+          <div className={styles.mobilePanel}>
+            {activeTab === "overview" && (
+              <>
+                <div className={styles.playerHeaderContainer}>
+                  <PlayerHeader
+                    selectedPlayer={selectedPlayer}
+                    headshotUrl={headshotUrl}
+                    teamName={teamName}
+                    teamAbbreviation={teamAbbreviation}
+                    teamColors={teamColors}
+                    placeholderImage={placeholderImage}
+                  />
+                </div>
+                <div className={styles.playerNameContainer}>
+                  {selectedPlayer ? (
+                    <h2 className={styles.playerName}>
+                      <span className={styles.spanColorBlueName}>
+                        {selectedPlayer.firstName}
+                      </span>{" "}
+                      {selectedPlayer.lastName}
+                    </h2>
+                  ) : (
+                    <div className={styles.chartLoadingPlaceholder}>
+                      Select a player
+                    </div>
+                  )}
+                </div>
+                <div className={styles.perGameStatsContainer}>
+                  <PerGameStatsTable playerId={selectedPlayer?.id} />
+                </div>
+                <div className={styles.opponentLogContainer}>
+                  <OpponentGamelog
+                    teamId={teamIdForLog}
+                    highlightColor={teamColors.primaryColor || "#07aae2"}
+                  />
+                </div>
+                <div className={styles.ratingsContainer}>
+                  {selectedPlayer ? (
+                    <PlayerRatingsDisplay
+                      playerId={selectedPlayer.id}
+                      minGp={minGp}
+                    />
+                  ) : (
+                    <div className={styles.chartLoadingPlaceholder}>
+                      Select player for ratings
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+
+            {activeTab === "trends" && (
+              <>
+                <div className={styles.consistencyAndCategoryWrapper}>
+                  <div className={styles.consistencyRatingContainer}>
+                    {selectedPlayer ? (
+                      <ConsistencyChart playerId={selectedPlayer.id} />
+                    ) : (
+                      <ChartLoadingPlaceholder message="Select a player" />
+                    )}
+                  </div>
+                  <div className={styles.percentileChartContainer}>
+                    <div className={styles.chartTitle}>
+                      <h3 style={{ margin: 0 }}>Percentiles</h3>
+                    </div>
+                    <CategoryCoverageChart
+                      playerId={selectedPlayer?.id}
+                      timeOption="SEASON"
+                    />
+                  </div>
+                </div>
+                <div className={styles.toiChartContainer}>
+                  <ToiLineChart playerId={selectedPlayer?.id} />
+                </div>
+                <div className={styles.ppgChartContainer}>
+                  <PpgLineChart playerId={selectedPlayer?.id} />
+                </div>
+                <div className={styles.gameScoreContainer}>
+                  <GameScoreSection playerId={selectedPlayer?.id} />
+                </div>
+              </>
+            )}
+
+            {activeTab === "percentiles" && (
+              <div className={styles.rateStatBarPercentilesContainer}>
+                <RateStatPercentiles
+                  playerId={selectedPlayer?.id}
+                  minGp={minGp}
+                  onMinGpChange={setMinGp}
+                />
+              </div>
+            )}
+
+            {activeTab === "comparison" && (
+              <div className={styles.timeframeComparisonWrapper}>
+                <TimeframeComparison
+                  initialLeft={leftTimeframe}
+                  initialRight={rightTimeframe}
+                  onCompare={handleTimeframeCompare}
+                />
+                <div className={styles.combinedStatsTableContainer}>
+                  <StatsTable
+                    data={displayDataWithDiff}
+                    isLoading={
+                      isLoadingAggData && displayDataWithDiff.length === 0
+                    }
+                    error={aggDataError}
+                    formatCell={formatCellUtil}
+                    playerId={selectedPlayer?.id ?? 0}
+                    currentSeasonId={currentSeasonId ?? 0}
+                    leftTimeframe={leftTimeframe}
+                    rightTimeframe={rightTimeframe}
+                    visibleColumns={mobileVisibleColumns as any}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 export default WigoCharts;

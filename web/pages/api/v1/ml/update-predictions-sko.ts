@@ -1,7 +1,6 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "lib/supabase/database-generated.types";
-import adminOnly from "utils/adminOnlyMiddleware";
 import serviceRoleClient from "lib/supabase/server";
 
 type PlayerStatsRow = {
@@ -20,9 +19,7 @@ const DEFAULT_HORIZON = 5;
 const MAX_GAMES_PER_PLAYER = 60;
 const UPSERT_BATCH_SIZE = 200;
 
-interface AdminRequest extends NextApiRequest {
-  supabase: SupabaseClient<Database>;
-}
+// Removed admin-only middleware; this route now runs unauthenticated
 
 function parseString(value: unknown): string | undefined {
   if (Array.isArray(value)) return value[0];
@@ -196,7 +193,7 @@ function buildPredictionRecord(
   } satisfies PredictionsInsert;
 }
 
-const handler = async (req: AdminRequest, res: NextApiResponse) => {
+const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   const startWall = Date.now();
   const startHr = process.hrtime.bigint();
   const debugParam = (req.query?.debug ?? (req.body as any)?.debug) as
@@ -209,15 +206,14 @@ const handler = async (req: AdminRequest, res: NextApiResponse) => {
     phases[name] = Date.now() - startWall;
   };
 
-  if (req.method !== "POST") {
-    res.setHeader("Allow", "POST");
+  if (req.method !== "POST" && req.method !== "GET") {
+    res.setHeader("Allow", "GET, POST");
     return res
       .status(405)
       .json({ success: false, message: "Method not allowed" });
   }
 
-  // Provided by adminOnly wrapper (either admin user or cron secret)
-  const _authorizedClient = req.supabase;
+  // Use service role client directly (unauthenticated route)
   const admin = serviceRoleClient;
 
   try {
@@ -407,4 +403,4 @@ const handler = async (req: AdminRequest, res: NextApiResponse) => {
   }
 };
 
-export default adminOnly(handler);
+export default handler;
