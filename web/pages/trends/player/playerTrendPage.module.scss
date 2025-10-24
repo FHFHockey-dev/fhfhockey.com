@@ -1,0 +1,172 @@
+.container {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #0f172a 0%, #020617 100%);
+  color: #e2e8f0;
+}
+
+.inner {
+  margin: 0 auto;
+  max-width: 1100px;
+  padding: 3rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2.75rem;
+}
+
+.backButton {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.25rem;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background-color: rgba(15, 23, 42, 0.7);
+  color: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+
+  &:hover {
+    background-color: rgba(30, 41, 59, 0.8);
+    border-color: rgba(148, 163, 184, 0.6);
+  }
+}
+
+.headerCard {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  border-radius: 32px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(15, 23, 42, 0.7);
+  padding: 2rem;
+  box-shadow: 0 28px 80px rgba(2, 6, 23, 0.55);
+
+  @media (min-width: 768px) {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 2.5rem;
+  }
+}
+
+.title {
+  font-size: clamp(2.2rem, 4vw, 2.8rem);
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0;
+}
+
+.subtitle {
+  margin: 0.5rem 0 0;
+  max-width: 36rem;
+  color: #cbd5f5;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.datasetBadge {
+  display: none;
+  border-radius: 20px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(15, 23, 42, 0.65);
+  padding: 0.9rem 1.25rem;
+  text-align: right;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #94a3b8;
+
+  @media (min-width: 768px) {
+    display: block;
+  }
+}
+
+.datasetLabel {
+  margin: 0;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  color: #818cf8;
+}
+
+.datasetValue {
+  margin: 0.4rem 0 0;
+  color: #34d399;
+  font-size: 0.85rem;
+}
+
+.toggleGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  border-radius: 32px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: rgba(15, 23, 42, 0.65);
+  padding: 1.25rem;
+  box-shadow: 0 18px 40px rgba(2, 6, 23, 0.45);
+}
+
+.metricChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1.3rem;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(15, 23, 42, 0.55);
+  color: #cbd5f5;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease;
+  cursor: pointer;
+
+  &:hover {
+    border-color: rgba(148, 163, 184, 0.5);
+    color: #ffffff;
+  }
+}
+
+.metricChipActive {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(148, 163, 184, 0.6);
+  color: #ffffff;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.65);
+}
+
+.metricChipDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  display: inline-block;
+}
+
+.chartCard {
+  border-radius: 32px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: rgba(15, 23, 42, 0.78);
+  padding: 1.5rem;
+  box-shadow: 0 28px 80px rgba(2, 6, 23, 0.55);
+}
+
+.chartInner {
+  width: 100%;
+  height: 460px;
+}
+
+.chartPlaceholder {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+  color: #94a3b8;
+}
+
+.chartPlaceholder.error {
+  color: #f87171;
+}
+
+.legendLabel {
+  color: #e2e8f0;
+}

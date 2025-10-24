@@ -25,20 +25,39 @@ export default adminOnly(async function handler(req, res) {
     );
 
     const seasonId = season.seasonId;
+
+    // Guard: Ensure seasonId exists in seasons to avoid FK violation
+    if (!seasonId || Number.isNaN(Number(seasonId))) {
+      return res.status(400).json({
+        message:
+          "Invalid or missing seasonId. Provide ?seasonId=YYYYYYYY or run 'Update Seasons' first.",
+        success: false
+      });
+    }
+
+    const { data: seasonRow, error: seasonLookupErr } = await supabase
+      .from("seasons")
+      .select("id")
+      .eq("id", seasonId)
+      .single();
+    if (seasonLookupErr || !seasonRow) {
+      return res.status(400).json({
+        message: `Season ${seasonId} not found in 'seasons'. Run the 'Seasons' update first or pass a valid seasonId.`,
+        success: false
+      });
+    }
     const today = new Date();
-    const formattedDate = today.toISOString().split('T')[0]; // YYYY-MM-DD
+    const formattedDate = today.toISOString().split("T")[0]; // YYYY-MM-DD
 
     // For future seasons, the /team/summary endpoint is not yet populated,
     // so we use the schedule-calendar endpoint for a date in the future season.
-    const { teams } = await get(
-      `/schedule-calendar/${formattedDate}`
-    );
+    const { teams } = await get(`/schedule-calendar/${formattedDate}`);
 
     const { error } = await supabase.from("teams").upsert(
       teams.map((team: any) => ({
         id: team.id,
         name: team.name.default,
-        abbreviation: team.abbrev,
+        abbreviation: team.abbrev
       }))
     );
     if (error) throw error;
@@ -63,10 +82,11 @@ export default adminOnly(async function handler(req, res) {
 
     // Clean up stale team_season rows for this season: remove any teamIds
     // that are no longer in the currentSeasonTeamIds set (prevents duplicates)
-    const { data: existingSeasonRows, error: fetchSeasonRowsError } = await supabase
-      .from("team_season")
-      .select("teamId")
-      .eq("seasonId", seasonId);
+    const { data: existingSeasonRows, error: fetchSeasonRowsError } =
+      await supabase
+        .from("team_season")
+        .select("teamId")
+        .eq("seasonId", seasonId);
     if (fetchSeasonRowsError) throw fetchSeasonRowsError;
     const toDelete = (existingSeasonRows || [])
       .map((r: any) => r.teamId)

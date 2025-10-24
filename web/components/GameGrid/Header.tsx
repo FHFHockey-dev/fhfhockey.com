@@ -7,7 +7,6 @@ import { addDays, formatDate, getDayStr } from "./utils/date-func";
 import Switch from "./Switch";
 import Toggle from "./Toggle";
 import { DAY_ABBREVIATION, TeamDataWithTotals } from "lib/NHL/types";
-import clsx from "clsx";
 
 // Simple hook to detect mobile (<=480px)
 function useIsMobile() {

@@ -27,6 +27,13 @@
  *    The format must be YYYY-MM-DD.
  *    Example: /api/v1/db/update-nst-gamelog?runMode=reverse&startDate=2022-10-10
  *
+ * 3. `overwrite` (optional): Controls whether to re-fetch and overwrite existing dates.
+ *    - Accepted: `yes` | `no` (also `true` | `false`, `1` | `0`)
+ *    - Defaults preserve current behavior:
+ *      - reverse/forward: overwrite defaults to yes (full-refresh)
+ *      - incremental: overwrite defaults to no (skip complete dates)
+ *    Example: /api/v1/db/update-nst-gamelog?runMode=reverse&overwrite=no
+ *
  * --- How It Works ---
  *
  * - The script initiates a connection to a Supabase database to store the scraped data.
@@ -39,8 +46,23 @@
  *   fill in any missing game logs.
  * - The entire process is logged in a `cron_job_audit` table for monitoring and debugging.
  *
+ * --- Quick recipe: Forward daily loop from a specific date ---
+ *
+ * To iterate forward day-by-day starting at a specific date (up to today), use
+ * runMode=incremental with a startDate. Despite the name, this is the intended
+ * way to perform a "forward-from date" loop. Note: runMode=forward ignores startDate
+ * and refreshes the entire current season.
+ *
+ * Example (GET):
+ *   /api/v1/db/update-nst-gamelog?runMode=incremental&startDate=2022-03-25
+ *
+ * Example (POST body):
+ *   { "runMode": "incremental", "startDate": "2024-10-01" }
+ *
  */
 
+//  https://www.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&sit=pk&score=all&stdoi=oi&  rate=y&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-23&td=2025-10-23&tgp=410&lines=single&draftteam=ALL
+// `https://www.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&sit=all&score=all&stdoi=std&rate=n&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-04-17&td=2026-04-17&lines=single&draftteam=ALL&tgp=410
 import type { NextApiRequest, NextApiResponse } from "next";
 import axios from "axios";
 import * as cheerio from "cheerio";
@@ -95,6 +117,51 @@ const playerNameMapping: Record<string, { fullName: string }> = {
 // Global list for players whose IDs couldn't be found during the process
 const troublesomePlayers: string[] = [];
 
+// --- Console formatting helpers ---
+const SEP =
+  "//////////////////////////////////////////////////////////////////////////";
+
+function banner(title: string) {
+  console.log("\n" + SEP);
+  console.log(`|======= ${title} =======|`);
+  console.log("\n" + SEP + "\n");
+}
+
+function section(title: string) {
+  console.log(`\n|======== ${title} ========|\n`);
+}
+
+function keyValuesBlock(
+  lines: Array<[string, string | number | null | undefined]>
+) {
+  console.log("|======= Details =======|");
+  console.log("|");
+  for (const [k, v] of lines) {
+    const val = v === undefined ? "" : String(v);
+    console.log(`| ${k}: ${val}`);
+  }
+  console.log("|");
+  console.log("|======================|");
+}
+
+function logRateLimitWait(
+  waitMs: number,
+  intervalMs: number,
+  elapsedMs: number
+) {
+  section("Rate limit");
+  const secs = (waitMs / 1000).toFixed(1);
+  const intervalSecs = (intervalMs / 1000).toFixed(1);
+  const elapsedSecs = (elapsedMs / 1000).toFixed(1);
+  const eta = new Date(Date.now() + waitMs).toLocaleTimeString();
+  keyValuesBlock([
+    ["Waiting", `${secs}s`],
+    ["Interval", `${intervalSecs}s`],
+    ["Elapsed", `${elapsedSecs}s`],
+    ["ETA", eta]
+  ]);
+}
+
 // --- Global NST rate limiter ---
 let lastNstRequestAt = 0;
 async function nstGet(url: string, timeoutMs = 30000) {
@@ -102,9 +169,7 @@ async function nstGet(url: string, timeoutMs = 30000) {
   const elapsed = now - lastNstRequestAt;
   if (elapsed < REQUEST_INTERVAL_MS) {
     const waitMs = REQUEST_INTERVAL_MS - elapsed;
-    console.log(
-      `NST rate limit: waiting ${(waitMs / 1000).toFixed(1)}s before requesting.`
-    );
+    logRateLimitWait(waitMs, REQUEST_INTERVAL_MS, elapsed);
     await delay(waitMs);
   }
   lastNstRequestAt = Date.now();
@@ -144,7 +209,7 @@ function normalizeName(name: string): string {
 }
 
 function delay(ms: number) {
-  console.log(`Waiting ${ms / 1000} seconds...`);
+  // Silent sleep; specific wait messaging is logged by callers (e.g., rate limiter).
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
@@ -978,8 +1043,8 @@ async function processUrls(
   processedPlayerIds: Set<number>,
   failedUrls: UrlQueueItem[]
 ): Promise<{ totalRowsProcessed: number }> {
-  console.log(
-    `Starting processing for ${urlsQueue.length} URLs. Full Refresh: ${isFullRefresh}`
+  banner(
+    `Starting processing | URLs: ${urlsQueue.length} | Full Refresh: ${isFullRefresh}`
   );
   let totalProcessed = 0;
   let totalRowsProcessed = 0;
@@ -988,10 +1053,12 @@ async function processUrls(
     const item = urlsQueue[i];
     const { datasetType, url, date, seasonId } = item;
 
+    section(`Processing: ${datasetType} for Date: ${date}`);
     console.log(
-      `\n--- [${totalProcessed + 1}/${
-        urlsQueue.length
-      }] Processing: ${datasetType} for Date: ${date} ---`
+      `Progress: [${totalProcessed + 1}/${urlsQueue.length}] /// ${(
+        ((totalProcessed + 1) / urlsQueue.length) *
+        100
+      ).toFixed(1)}%\n`
     );
     console.log(`URL: ${url}`);
 
@@ -1018,7 +1085,11 @@ async function processUrls(
     } else {
       skipReason =
         "Full refresh requested, fetching regardless of existing data.";
-      console.log(skipReason);
+      console.log(
+        `\nFull refresh\nOverwrite = ${isFullRefresh},\nMode = ${
+          isFullRefresh ? "Full" : "Incremental"
+        }\n`
+      );
     }
 
     let fetchSuccess = false;
@@ -1027,6 +1098,7 @@ async function processUrls(
     let upsertedCount = 0;
 
     if (shouldFetch) {
+      console.log("\nFetching NST data from URL\n");
       const fetchParseResponse = await fetchAndParseData(
         url,
         datasetType,
@@ -1041,6 +1113,7 @@ async function processUrls(
           (row) => row.player_id && processedPlayerIds.add(row.player_id)
         );
 
+        console.log(`\nTarget Table: "${getTableName(datasetType)}"`);
         const upsertResponse = await upsertData(datasetType, parseResult);
         upsertSuccess = upsertResponse.success;
         upsertedCount = upsertResponse.count;
@@ -1292,15 +1365,22 @@ function printInfoBlock(params: {
     rowsUpserted
   } = params;
 
+  console.log(SEP);
   console.log(
-    `|--- INFO [${totalUrlCount.current}/${totalUrlCount.total}] ---`
+    `|======= INFO [${totalUrlCount.current}/${totalUrlCount.total}] =======|`
   );
-  console.log(`| Date: ${date}, Type: ${datasetType}`);
+  console.log("|");
+  console.log(`| Date: ${date}`);
+  console.log(`| Type: ${datasetType}`);
   console.log(`| Table: ${tableName}`);
-  console.log(
-    `| Processed: ${rowsProcessed}, Prepared: ${rowsPrepared}, Upserted: ${rowsUpserted}`
-  );
-  console.log(`|--------------------------`);
+  console.log("|");
+  console.log(`| Processed: ${rowsProcessed}`);
+  console.log(`| Prepared: ${rowsPrepared}`);
+  console.log(`| Upserted: ${rowsUpserted}`);
+  console.log(`| Errors: 0`);
+  console.log("|");
+  console.log(`|==============================|`);
+  console.log(SEP);
 }
 
 function printTotalProgress(current: number, total: number) {
@@ -1310,16 +1390,28 @@ function printTotalProgress(current: number, total: number) {
   const bar =
     "Progress: [" + "#".repeat(filled) + ".".repeat(20 - filled) + "]";
   console.log(`${bar} ${percentage.toFixed(1)}% (${current}/${total})`);
+  console.log(
+    "\n|==============================|\n|==============================|\n"
+  );
 }
 
 // --- Main Orchestration Function ---
-async function main(runMode: RunMode, options?: { startDate?: string }) {
+async function main(
+  runMode: RunMode,
+  options?: { startDate?: string; overwrite?: boolean }
+) {
   const isForwardFull = runMode === "forward";
   const isReverseFull = runMode === "reverse";
-  console.log(
-    `--- Script execution started. Mode: ${runMode}. Full Refresh: ${
+  const overwriteRequested = options?.overwrite;
+  // Preserve legacy behavior by default: forward/reverse overwrite=true, incremental overwrite=false
+  const fullRefreshFlag = (mode: RunMode) =>
+    mode === "forward" || mode === "reverse"
+      ? (overwriteRequested ?? true)
+      : (overwriteRequested ?? false);
+  banner(
+    `Script execution started. Mode: ${runMode}. Full Refresh: ${
       isForwardFull || isReverseFull
-    } ---`
+    }`
   );
   const startTime = Date.now();
   troublesomePlayers.length = 0; // Clear troublesome list for this run
@@ -1351,9 +1443,7 @@ async function main(runMode: RunMode, options?: { startDate?: string }) {
           `Reverse mode requested startDate=${requestedStartDateStr}`
         );
       }
-      console.log(
-        `Reverse mode will start from season: ${currentSeasonInfo.id}`
-      );
+      console.log(`Reverse mode start: ${currentSeasonInfo.id}`);
 
       const { data: allSeasons, error: seasonsError } = await supabase
         .from("seasons")
@@ -1364,6 +1454,23 @@ async function main(runMode: RunMode, options?: { startDate?: string }) {
       if (!allSeasons || allSeasons.length === 0) {
         console.log("No seasons found in the database to process.");
         return;
+      }
+
+      // Print current season details if available
+      const currentSeason = allSeasons.find(
+        (s) => s.id === currentSeasonInfo.id
+      );
+      if (currentSeason) {
+        section("Season Data");
+        keyValuesBlock([
+          ["Season ID", currentSeason.id],
+          ["Start Date", (currentSeason as any).startDate],
+          [
+            "Regular Season End Date",
+            (currentSeason as any).regularSeasonEndDate
+          ],
+          ["Playoffs End Date", (currentSeason as any).endDate]
+        ]);
       }
 
       let startingIndex = -1;
@@ -1411,6 +1518,10 @@ async function main(runMode: RunMode, options?: { startDate?: string }) {
       }
 
       const reverseQueue: UrlQueueItem[] = [];
+      // Clamp reverse enumeration to 'today' to avoid requesting future dates that NST may
+      // silently coerce to season-to-date cumulative results.
+      const nowEST = toZonedTime(new Date(), "America/New_York");
+      const todayStr = tzFormat(nowEST, "yyyy-MM-dd");
       for (let idx = 0; idx < seasonsToProcess.length; idx++) {
         const s = seasonsToProcess[idx];
         const seasonStartStr = (s as any).startDate;
@@ -1420,9 +1531,20 @@ async function main(runMode: RunMode, options?: { startDate?: string }) {
           idx === 0 && clampFirstSeasonEndDate
             ? clampFirstSeasonEndDate
             : seasonEndStr;
+        // Final end bound is the earlier of the season end and 'today'
+        const finalEndStr =
+          effectiveEndStr < todayStr ? effectiveEndStr : todayStr;
+        if (seasonStartStr > finalEndStr) {
+          console.log(
+            `Skipping season ${String(
+              s.id
+            )}: start ${seasonStartStr} > endBound ${finalEndStr} (future-only)`
+          );
+          continue;
+        }
         const dates = getDatesBetween(
           parseISO(seasonStartStr),
-          parseISO(effectiveEndStr)
+          parseISO(finalEndStr)
         ).reverse();
         for (const date of dates) {
           const urls = constructUrlsForDate(date, String(s.id), false);
@@ -1439,9 +1561,14 @@ async function main(runMode: RunMode, options?: { startDate?: string }) {
 
       const processedPlayerIds = new Set<number>();
       const failedUrls: UrlQueueItem[] = [];
+      console.log(
+        `Starting for ${reverseQueue.length} URLs. \nFull Refresh: ${fullRefreshFlag(
+          "reverse"
+        )}`
+      );
       const initialResult = await processUrls(
         reverseQueue,
-        true, // It's a full refresh
+        fullRefreshFlag("reverse"),
         processedPlayerIds,
         failedUrls
       );
@@ -1459,7 +1586,7 @@ async function main(runMode: RunMode, options?: { startDate?: string }) {
               60
             ).toFixed(2),
             troublesomePlayersCount: troublesomePlayers.length,
-            isReverseFull: true,
+            isReverseFull: fullRefreshFlag("reverse"),
             endTime: new Date().toISOString()
           }
         }
@@ -1549,7 +1676,11 @@ async function main(runMode: RunMode, options?: { startDate?: string }) {
         // If no start date is provided, fall back to default incremental logic
         const latestDateStr = await getLatestDateSupabase();
         if (latestDateStr) {
-          const latestDateLocal = parse(latestDateStr, "yyyy-MM-dd", new Date());
+          const latestDateLocal = parse(
+            latestDateStr,
+            "yyyy-MM-dd",
+            new Date()
+          );
           startDate = addDays(latestDateLocal, 1);
           startDate = toZonedTime(startDate, timeZone);
           console.log(
@@ -1626,7 +1757,7 @@ async function main(runMode: RunMode, options?: { startDate?: string }) {
     const failedUrls: UrlQueueItem[] = [];
     const initialProcessResult = await processUrls(
       initialUrlsQueue,
-      isForwardFull,
+      fullRefreshFlag(isForwardFull ? "forward" : "incremental"),
       processedPlayerIds,
       failedUrls
     );
@@ -1749,6 +1880,7 @@ export default async function handler(
 
   let runMode: RunMode = "incremental";
   let startDate: string | undefined;
+  let overwrite: boolean | undefined;
 
   if (req.method === "POST") {
     const mode = req.body?.runMode;
@@ -1757,6 +1889,16 @@ export default async function handler(
     }
     if (typeof req.body?.startDate === "string") {
       startDate = req.body.startDate;
+    }
+    if (typeof req.body?.overwrite !== "undefined") {
+      const v = req.body.overwrite;
+      if (typeof v === "string") {
+        overwrite = ["yes", "true", "1"].includes(v.toLowerCase());
+      } else if (typeof v === "number") {
+        overwrite = v === 1;
+      } else if (typeof v === "boolean") {
+        overwrite = v;
+      }
     }
   } else {
     // GET
@@ -1770,14 +1912,27 @@ export default async function handler(
     if (typeof req.query.startDate === "string") {
       startDate = req.query.startDate as string;
     }
+    const ow = req.query.overwrite;
+    if (typeof ow === "string") {
+      overwrite = ["yes", "true", "1"].includes(ow.toLowerCase());
+    }
   }
 
   console.log(
-    `API request received. runMode=${runMode}, startDate=${startDate || "none"}`
+    `API request received. runMode=${runMode}, startDate=${startDate || "none"}, overwrite=${
+      overwrite === undefined ? "default" : overwrite
+    }`
+  );
+  banner(
+    `API request: mode=${runMode} | startDate=${startDate || "none"} | overwrite=${
+      overwrite === undefined ? "default" : overwrite
+    }`
   );
   try {
-    await main(runMode, { startDate });
-    return res.status(200).json({ message: "Done", runMode, startDate });
+    await main(runMode, { startDate, overwrite });
+    return res
+      .status(200)
+      .json({ message: "Done", runMode, startDate, overwrite });
   } catch (err: any) {
     console.error(err);
     return res.status(500).json({ error: err.message });

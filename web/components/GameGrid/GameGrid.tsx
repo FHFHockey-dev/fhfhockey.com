@@ -54,6 +54,7 @@ import {
 import { useTeamsMap } from "hooks/useTeams"; // Import useTeamsMap
 import useCurrentSeason from "hooks/useCurrentSeason";
 import useTeamSummary from "hooks/useTeamSummary";
+import useYahooCurrentMatchupWeek from "hooks/useYahooCurrentMatchupWeek";
 
 import GameGridContext from "./contexts/GameGridContext";
 import { rank } from "d3";
@@ -80,10 +81,6 @@ type TeamWeekData = {
   gamesPlayed: number;
   offNights: number;
   avgOpponentPointPct: number;
-};
-
-type PlayerPickupTableProps = {
-  teamWeekData?: TeamWeekData[];
 };
 
 function useIsMobile() {
@@ -126,6 +123,14 @@ function GameGridInternal({
 
   const season = useCurrentSeason();
   const currentSeasonId = season?.seasonId ?? null;
+  const currentSeasonYear = useMemo(() => {
+    if (!currentSeasonId) return null;
+    return currentSeasonId.toString().slice(0, 4);
+  }, [currentSeasonId]);
+
+  const { weekNumber: currentMatchupWeek } = useYahooCurrentMatchupWeek(
+    currentSeasonYear
+  );
 
   console.log("Current Season ID:", currentSeasonId); // Debugging line
 
@@ -556,6 +561,18 @@ function GameGridInternal({
     return teamDataWithTotals;
   }, [teamDataWithTotals]);
 
+  const playerPickupWeekData = useMemo(() => {
+    return teamDataWithAverages.map((team) => {
+      const week1 = team.weeks.find((w) => w.weekNumber === 1);
+      return {
+        teamAbbreviation: team.teamAbbreviation,
+        gamesPlayed: week1 ? week1.gamesPlayed : team.totals.gamesPlayed,
+        offNights: week1 ? week1.offNights : team.totals.offNights,
+        avgOpponentPointPct: team.avgOpponentPointPct
+      };
+    });
+  }, [teamDataWithAverages]);
+
   // Debugging: Log teamDataWithAverages
   useEffect(() => {
     if (!fourWeekLoading) {
@@ -719,26 +736,14 @@ function GameGridInternal({
           {/* End navAndGrid */}
           {/* Container for the REST of the mobile content, now OUTSIDE navAndGrid */}
           <div className={styles.mobileContainer}>
-            {/* PlayerPickupTable section */}
-            <div className={styles.playerPickupSection}>
-              <PlayerPickupTable
-                teamWeekData={teamDataWithAverages.map((team) => {
-                  const week1 = team.weeks.find((w) => w.weekNumber === 1);
-                  return {
-                    teamAbbreviation: team.teamAbbreviation,
-                    gamesPlayed: week1
-                      ? week1.gamesPlayed
-                      : team.totals.gamesPlayed,
-                    offNights: week1 ? week1.offNights : team.totals.offNights,
-                    avgOpponentPointPct: team.avgOpponentPointPct
-                  };
-                })}
-              />
-            </div>
-
             {/* OpponentMetricsTable section */}
             <div className={styles.opponentMetricsSection}>
               <OpponentMetricsTable teamData={teamDataWithAverages} />
+            </div>
+
+            {/* PlayerPickupTable section */}
+            <div className={styles.playerPickupSection}>
+              <PlayerPickupTable teamWeekData={playerPickupWeekData} />
             </div>
 
             {/* FourWeekGrid section */}
@@ -917,75 +922,87 @@ function GameGridInternal({
                 <Spinner className={styles.spinner} center />
               )}
               <div className={styles.controlsBar}>
-                <div
-                  className={styles.modeToggle}
-                  role="group"
-                  aria-label="Forecast span"
-                >
-                  <button
-                    type="button"
-                    aria-pressed={mode === "7-Day-Forecast"}
-                    className={
-                      mode === "7-Day-Forecast"
-                        ? styles.modeButtonActive
-                        : styles.modeButton
-                    }
-                    onClick={() => setMode("7-Day-Forecast")}
+                <div className={styles.dateCluster}>
+                  <div
+                    className={styles.dateNav}
+                    role="group"
+                    aria-label="Week navigation"
                   >
-                    7-Day
-                  </button>
-                  <button
-                    type="button"
-                    aria-pressed={mode === "10-Day-Forecast"}
-                    className={
-                      mode === "10-Day-Forecast"
-                        ? styles.modeButtonActive
-                        : styles.modeButton
-                    }
-                    onClick={() => setMode("10-Day-Forecast")}
-                  >
-                    10-Day
-                  </button>
+                    <button
+                      type="button"
+                      aria-label="Previous week"
+                      className={styles.dateButtonPrev}
+                      onClick={handleClick("PREV")}
+                    >
+                      Prev
+                    </button>
+                    <span
+                      className={styles.weekRange}
+                      aria-live="polite"
+                      aria-label="Selected week range"
+                    >
+                      {format(new Date(dates[0]), "MMM d")} –{" "}
+                      {format(new Date(dates[1]), "MMM d")}
+                    </span>
+                    <button
+                      type="button"
+                      aria-label="Next week"
+                      className={styles.dateButtonNext}
+                      onClick={handleClick("NEXT")}
+                    >
+                      Next
+                    </button>
+                  </div>
+                  {currentMatchupWeek != null && (
+                    <span
+                      className={styles.weekBadge}
+                      aria-label={`Yahoo matchup week ${currentMatchupWeek}`}
+                    >
+                      Week {currentMatchupWeek}
+                    </span>
+                  )}
                 </div>
-                <div
-                  className={styles.dateNav}
-                  role="group"
-                  aria-label="Week navigation"
-                >
-                  <button
-                    type="button"
-                    aria-label="Previous week"
-                    className={styles.dateButtonPrev}
-                    onClick={handleClick("PREV")}
+                <div className={styles.viewControls}>
+                  <div className={styles.viewToggleWrapper}>
+                    <button
+                      type="button"
+                      aria-label="Toggle orientation"
+                      className={styles.orientationToggleButton}
+                      onClick={handleOrientationToggle}
+                    >
+                      {orientation === "horizontal" ? "Vertical" : "Horizontal"}
+                    </button>
+                  </div>
+                  <div
+                    className={styles.modeToggle}
+                    role="group"
+                    aria-label="Forecast span"
                   >
-                    Prev
-                  </button>
-                  <span
-                    className={styles.weekRange}
-                    aria-live="polite"
-                    aria-label="Selected week range"
-                  >
-                    {format(new Date(dates[0]), "MMM d")} –{" "}
-                    {format(new Date(dates[1]), "MMM d")}
-                  </span>
-                  <button
-                    type="button"
-                    aria-label="Next week"
-                    className={styles.dateButtonNext}
-                    onClick={handleClick("NEXT")}
-                  >
-                    Next
-                  </button>
-                </div>
-                <div className={styles.viewToggleWrapper}>
-                  <button
-                    type="button"
-                    aria-label="Toggle orientation"
-                    className={styles.orientationToggleButton}
-                    onClick={handleOrientationToggle}
-                  >
-                    {orientation === "horizontal" ? "Vertical" : "Horizontal"}
-                  </button>
+                    <button
+                      type="button"
+                      aria-pressed={mode === "7-Day-Forecast"}
+                      className={
+                        mode === "7-Day-Forecast"
+                          ? styles.modeButtonActive
+                          : styles.modeButton
+                      }
+                      onClick={() => setMode("7-Day-Forecast")}
+                    >
+                      7-Day
+                    </button>
+                    <button
+                      type="button"
+                      aria-pressed={mode === "10-Day-Forecast"}
+                      className={
+                        mode === "10-Day-Forecast"
+                          ? styles.modeButtonActive
+                          : styles.modeButton
+                      }
+                      onClick={() => setMode("10-Day-Forecast")}
+                    >
+                      10-Day
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1051,8 +1068,13 @@ function GameGridInternal({
               </div>
             )}
           </div>
-          <div className={styles.opponentStatsContainer}>
-            <OpponentMetricsTable teamData={teamDataWithAverages} />
+          <div
+            className={`${styles.opponentStatsContainer} ${styles.playerPickupSide}`}
+          >
+            <PlayerPickupTable
+              teamWeekData={playerPickupWeekData}
+              layoutVariant="sidebar"
+            />
           </div>
         </div>
         <div className={styles.legendBar} aria-hidden="true">
@@ -1090,23 +1112,8 @@ function GameGridInternal({
               <FourWeekGrid teamDataArray={teamDataWithAverages} />
             </div>
             <div className={styles.bpaAndOppContainer}>
-              <div className={styles.playerPickupContainer}>
-                <PlayerPickupTable
-                  teamWeekData={teamDataWithAverages.map((team) => {
-                    // Only take week1 data
-                    const week1 = team.weeks.find((w) => w.weekNumber === 1);
-                    return {
-                      teamAbbreviation: team.teamAbbreviation,
-                      gamesPlayed: week1
-                        ? week1.gamesPlayed
-                        : team.totals.gamesPlayed,
-                      offNights: week1
-                        ? week1.offNights
-                        : team.totals.offNights,
-                      avgOpponentPointPct: team.avgOpponentPointPct
-                    };
-                  })}
-                />
+              <div className={styles.opponentMetricsContainer}>
+                <OpponentMetricsTable teamData={teamDataWithAverages} />
               </div>
             </div>
           </div>

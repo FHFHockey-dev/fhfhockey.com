@@ -15,6 +15,41 @@ $selected-border-width: 2px; // The width of the indicator
   transition: margin-bottom v.$transition-duration v.$transition-easing;
 }
 
+.sidebarLayout {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-md;
+
+  .filters {
+    gap: v.$space-sm;
+  }
+
+  .tableContainer {
+    margin-top: v.$space-sm;
+    max-height: 60vh;
+    overflow-y: auto;
+
+    &::-webkit-scrollbar {
+      display: block;
+      width: 6px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.25);
+      border-radius: 6px;
+    }
+  }
+
+  .pagination {
+    justify-content: space-between;
+    gap: v.$space-sm;
+  }
+}
+
+.sidebarContent {
+  margin-top: v.$space-sm;
+}
+
 /* --- Filters Styling --- */
 .filters {
   margin: 0 auto 20px auto; // Add consistent bottom margin
@@ -71,6 +106,11 @@ $selected-border-width: 2px; // The width of the indicator
       border-bottom: none;
       margin-bottom: 0; // Remove margin below title
     }
+  }
+
+  &.sidebarFilters {
+    gap: 12px;
+    padding: 12px;
   }
 }
 
@@ -140,6 +180,39 @@ $selected-border-width: 2px; // The width of the indicator
   max-width: 30%; // Prevent excessive stretching
 }
 
+.sidebarFilters {
+  .filterContainer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .filterRow {
+    max-width: none;
+    width: 100%;
+  }
+
+  .filterContainerMobile {
+    gap: 12px;
+  }
+
+  .ownershipTeamContainer {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .filterRowMobileOwnership,
+  .filterRowMobileTeam,
+  .filterRowMobile {
+    width: 100%;
+  }
+
+  .buttonReset {
+    max-width: none;
+    width: 100%;
+  }
+}
+
 .label {
   font-size: 0.9em;
   font-weight: 600;
@@ -152,6 +225,53 @@ $selected-border-width: 2px; // The width of the indicator
   flex-direction: column;
   gap: 15px; // Slightly smaller gap on mobile
   width: 100%;
+}
+
+// Combined compact row for mobile/sidebar filters
+.filterRowMobileCombined {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  background-color: v.$background-medium;
+  border-radius: 8px;
+}
+
+.compactField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 140px;
+  flex: 1 1 180px;
+
+  .labelMobile {
+    font-size: 0.85em;
+  }
+
+  .sliderMobile {
+    max-width: 200px;
+  }
+
+  .selectMobile {
+    max-width: 140px;
+  }
+}
+
+.positionsField {
+  flex: 2 1 260px;
+  .positionCheckboxGroup {
+    justify-content: flex-start;
+    gap: 6px 10px;
+  }
+  .positionCheckbox {
+    font-size: 0.85em;
+    input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+    }
+  }
 }
 
 .ownershipTeamContainer {
@@ -350,8 +470,8 @@ $selected-border-width: 2px; // The width of the indicator
 .metricFilterContainer {
   display: flex;
   flex-direction: column;
-  gap: 5px; // Reduced gap slightly
-  padding: 15px;
+  gap: 6px; // compact
+  padding: 10px;
   background-color: v.$background-medium;
   border-radius: 8px;
 }
@@ -361,14 +481,20 @@ $selected-border-width: 2px; // The width of the indicator
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
 
   .label {
-    font-size: 1em;
+    font-size: 0.95em;
     font-weight: 600;
     color: v.$text-color-secondary;
     margin-right: auto;
   }
+}
+
+// Inline GP% toggle to avoid extra vertical block
+.inlineGpToggle {
+  display: flex;
+  align-items: center;
 }
 
 /* --- Layout Styles --- */
@@ -456,14 +582,62 @@ $selected-border-width: 2px; // The width of the indicator
   }
 }
 
+.sidebarFilters {
+  .metricFilterContainer {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .metricFilterHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+
+    .label {
+      margin-right: 0;
+    }
+  }
+
+  .metricPresetButtons {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: space-between;
+
+    button {
+      flex: 1 1 calc(50% - 6px);
+      min-width: 120px;
+    }
+  }
+}
+
 .skaterGoalieRow {
   display: flex;
   flex-direction: row;
-  gap: 20px;
+  gap: 12px;
 
   @media (max-width: #{v.$breakpoint-tablet - 1px}) {
     flex-direction: column;
     gap: 15px;
+  }
+}
+
+.sidebarFilters {
+  .skaterGoalieRow {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .skaterMetricsColumn,
+  .goalieMetricsColumn {
+    width: 100%;
+  }
+
+  .metricGroup {
+    width: 100%;
+  }
+
+  .metricGroupCheckboxes {
+    justify-content: space-between;
   }
 }
 
@@ -480,7 +654,7 @@ $selected-border-width: 2px; // The width of the indicator
   min-width: 0;
   border: 1px solid v.$primary-color;
   border-radius: 8px;
-  padding: 20px 15px 15px 15px;
+  padding: 10px 10px 10px 10px;
   position: relative;
   margin: 0;
 
@@ -540,8 +714,8 @@ $selected-border-width: 2px; // The width of the indicator
   color: v.$text-color-secondary;
   text-align: center;
   border-bottom: 1px solid v.$border-color-secondary; // Keep the separator look
-  padding-bottom: 3px;
-  margin-bottom: 10px;
+  padding-bottom: 2px;
+  margin-bottom: 6px;
 
   // Button Resets
   background: none;
@@ -564,10 +738,10 @@ $selected-border-width: 2px; // The width of the indicator
 .metricGroupCheckboxes {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px 12px;
+  gap: 6px 10px;
   justify-content: center;
   padding-left: 0;
-  min-height: 40px;
+  min-height: 30px;
 }
 
 .metricCheckbox {
@@ -677,7 +851,7 @@ $selected-border-width: 2px; // The width of the indicator
   width: 100%;
   height: 100%;
   justify-content: center; // Center vertically
-  padding: 2px 0; // Small vertical padding
+  padding: 0; // tighter vertical padding
 }
 .leftNamePart {
   width: 100%;
@@ -692,7 +866,7 @@ $selected-border-width: 2px; // The width of the indicator
   align-items: center;
   justify-content: flex-start; // Align left
   gap: 5px;
-  font-size: 0.8em; // Smaller injury text
+  font-size: 0.75em; // Smaller injury text
   color: v.$text-color-secondary; // Subdued color
   .statusRightInjuryPart {
     font-weight: bold;
@@ -734,6 +908,7 @@ $selected-border-width: 2px; // The width of the indicator
 }
 .table {
   width: 100%;
+  table-layout: fixed; // Enforce consistent column widths
   border-collapse: collapse;
   thead {
     position: sticky; // Cohesive sticky header like other tables
@@ -760,24 +935,59 @@ $selected-border-width: 2px; // The width of the indicator
   tbody {
     tr {
       font-family: v.$font-family-primary;
-      height: 40px; // compact to align with Game Grid tables
       text-align: center;
       transition: background-color v.$transition-duration v.$transition-easing;
-      &:nth-child(even) {
-        background-color: v.$background-light;
-      }
-      &:nth-child(odd) {
-        background-color: v.$background-dark;
-      }
-      &:hover {
-        background-color: color.scale(v.$primary-color, $lightness: -30%);
-      }
+      background-color: transparent;
+
       td {
-        padding: 4px 5px; // Keep padding consistent
+        padding: 6px 6px;
         border: 0.5px solid v.$border-color-secondary;
-        vertical-align: middle; // Crucial for consistent height
-        font-size: 13px; // slightly smaller to match grid density
-        box-sizing: border-box; // Ensure padding/border included in height calc
+        vertical-align: middle;
+        font-size: 13px;
+        box-sizing: border-box;
+      }
+
+      &.primaryRow {
+        position: relative;
+        td {
+          border-bottom: none;
+        }
+
+        &::before {
+          content: "";
+          position: absolute;
+          left: 0;
+          top: 0;
+          bottom: -1px;
+          width: 4px;
+          border-radius: 0 4px 4px 0;
+          background: rgba(v.$secondary-color, 0.6);
+        }
+      }
+
+      &.oddPair.primaryRow::before {
+        background: rgba(v.$primary-color, 0.6);
+      }
+
+      &.secondaryRow {
+        td {
+          border-top: 1px solid rgba(255, 255, 255, 0.1);
+          padding-top: 8px;
+          padding-bottom: 10px;
+        }
+      }
+
+      &.evenPair {
+        background-color: color.adjust(v.$background-dark, $lightness: 4%);
+      }
+
+      &.oddPair {
+        background-color: color.adjust(v.$background-medium, $lightness: 6%);
+      }
+
+      &.primaryRow:hover,
+      &.primaryRow:hover + .secondaryRow {
+        background-color: color.adjust(v.$primary-color, $lightness: -35%);
       }
     }
   }
@@ -787,7 +997,10 @@ $selected-border-width: 2px; // The width of the indicator
     @include panel.first-col-separator(2px); // Unified separator width
     text-align: left;
     padding: v.$table-cell-padding; // Use variable
-    font-size: 16px; // Slightly larger for name
+    font-size: 15px; // Slightly larger for name
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   // Override borders specifically for the Name column header/cells if needed
   thead th:first-child {
@@ -796,17 +1009,48 @@ $selected-border-width: 2px; // The width of the indicator
   tbody tr td:first-child {
     border-bottom: 0.5px solid v.$border-color-secondary; // Match other body cells' bottom border
   }
+
+  tbody tr.secondaryRow td:first-child {
+    border-left: none;
+    padding: 10px;
+    font-size: 13px;
+    text-align: left;
+  }
 }
 
-.percentileFlexContainer {
+// Explicit cell class for Name column to avoid layout glitches
+.nameCell {
+  overflow: hidden;
+}
+
+.primaryRow {}
+.secondaryRow {}
+.evenPair {}
+.oddPair {}
+
+.percentileRow {
   display: flex;
-  justify-content: center;
-  align-items: center; // Align items top baseline
-  flex-wrap: wrap;
-  gap: 0px 6px;
-  padding: 4px 0;
-  // Ensure the container itself doesn't contribute to height changes
-  line-height: 1; // Reset line height just in case
+  flex-wrap: nowrap; // keep to single line
+  gap: 6px;
+  justify-content: flex-start;
+  align-items: stretch;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.rowPairMetric {
+  flex: 0 0 auto; // prevent wrapping per item
+  min-width: 64px;
+}
+
+.emptyPercentile {
+  font-size: 0.85em;
+  color: v.$text-color-secondary;
+}
+
+.scoreCell {
+  font-weight: 700;
+  font-size: 1.0em;
 }
 
 .percentileContainer {
@@ -861,8 +1105,8 @@ $selected-border-width: 2px; // The width of the indicator
   display: flex;
   justify-content: space-evenly;
   align-items: center;
-  margin-top: 20px; // Use consistent spacing
-  padding: 10px 0;
+  margin-top: 12px; // tighter spacing
+  padding: 6px 0;
   gap: 20px;
   button {
     // Align pagination buttons with Game Grid button style
