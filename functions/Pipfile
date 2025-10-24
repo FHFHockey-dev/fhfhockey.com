@@ -7,6 +7,7 @@ name = "pypi"
 psycopg = "*"
 requests = "*"
 beautifulsoup4 = "*"
+flask = "*"
 
 [requires]
 python_version = "3.12"
