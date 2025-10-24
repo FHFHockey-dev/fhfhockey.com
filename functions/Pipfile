@@ -5,6 +5,8 @@ name = "pypi"
 
 [packages]
 psycopg = "*"
+requests = "*"
+beautifulsoup4 = "*"
 
 [requires]
 python_version = "3.12"
