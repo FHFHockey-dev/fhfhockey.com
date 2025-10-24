@@ -561,6 +561,18 @@ function GameGridInternal({
     return teamDataWithTotals;
   }, [teamDataWithTotals]);
 
+  // Map current weekScore by team abbreviation for quick lookup
+  const weekScoreByAbbreviation = useMemo(() => {
+    const map: Record<string, number> = {};
+    filteredColumns.forEach((row) => {
+      const abbr = teams[row.teamId]?.abbreviation;
+      if (abbr != null) {
+        map[abbr] = row.weekScore;
+      }
+    });
+    return map;
+  }, [filteredColumns, teams]);
+
   const playerPickupWeekData = useMemo(() => {
     return teamDataWithAverages.map((team) => {
       const week1 = team.weeks.find((w) => w.weekNumber === 1);
@@ -568,10 +580,11 @@ function GameGridInternal({
         teamAbbreviation: team.teamAbbreviation,
         gamesPlayed: week1 ? week1.gamesPlayed : team.totals.gamesPlayed,
         offNights: week1 ? week1.offNights : team.totals.offNights,
-        avgOpponentPointPct: team.avgOpponentPointPct
+        avgOpponentPointPct: team.avgOpponentPointPct,
+        weekScore: weekScoreByAbbreviation[team.teamAbbreviation] ?? 0
       };
     });
-  }, [teamDataWithAverages]);
+  }, [teamDataWithAverages, weekScoreByAbbreviation]);
 
   // Debugging: Log teamDataWithAverages
   useEffect(() => {

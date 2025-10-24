@@ -230,6 +230,7 @@ export type TeamWeekData = {
   gamesPlayed: number;
   offNights: number;
   avgOpponentPointPct: number;
+  weekScore?: number; // current week's team score (optional)
 };
 export type PlayerPickupTableProps = {
   teamWeekData?: TeamWeekData[];
@@ -417,13 +418,22 @@ function getRankColorStyle(
   percentile: number | undefined | null
 ): React.CSSProperties {
   if (percentile === undefined || percentile === null) {
-    return { backgroundColor: `rgba(128, 128, 128, 0.45)` }; // Grey for undefined/null
+    // expose a var even for undefined to keep CSS stable
+    return {
+      backgroundColor: `rgba(128, 128, 128, 0.45)`,
+      ["--metric-color" as any]: `rgba(128, 128, 128, 0.45)`
+    } as React.CSSProperties;
   }
   const weight = Math.max(0, Math.min(100, percentile)) / 100;
   // Red to Green gradient
   const r = Math.round(255 * (1 - weight));
   const g = Math.round(255 * weight);
-  return { backgroundColor: `rgba(${r}, ${g}, 0, 0.45)` };
+  const color = `rgba(${r}, ${g}, 0, 0.45)`;
+  // set CSS var for use in border-color via SCSS
+  return {
+    backgroundColor: color,
+    ["--metric-color" as any]: color
+  } as React.CSSProperties;
 }
 
 // ---------------------------
@@ -937,15 +947,6 @@ const DesktopTable: React.FC<DesktopTableProps> = ({
   return (
     <div className={styles.tableContainer}>
       <table className={styles.table}>
-        <colgroup>
-          <col style={{ width: "34%" }} />
-          <col style={{ width: "12%" }} />
-          <col style={{ width: "12%" }} />
-          <col style={{ width: "12%" }} />
-          <col style={{ width: "10%" }} />
-          <col style={{ width: "10%" }} />
-          <col style={{ width: "10%" }} />
-        </colgroup>
         <thead>
           <tr>
             <th onClick={() => handleSort("nhl_player_name")}>
@@ -1030,6 +1031,16 @@ const DesktopTable: React.FC<DesktopTableProps> = ({
                   <td className={styles.nameCell}>
                     <div className={styles.nameAndInjuryWrapper}>
                       <div className={styles.leftNamePart}>
+                        {teamAbbr ? (
+                          <span className={styles.teamLogoSmall}>
+                            <Image
+                              src={`/teamLogos/${teamAbbr ?? "default"}.png`}
+                              alt={teamAbbr}
+                              width={20}
+                              height={20}
+                            />
+                          </span>
+                        ) : null}
                         <span className={styles.playerName}>
                           {normalizePlayerName(
                             player.yahoo_player_name || player.nhl_player_name
@@ -1061,12 +1072,7 @@ const DesktopTable: React.FC<DesktopTableProps> = ({
                   </td>
                   <td>
                     {teamAbbr ? (
-                      <Image
-                        src={`/teamLogos/${teamAbbr ?? "default"}.png`}
-                        alt={teamAbbr}
-                        width={30}
-                        height={30}
-                      />
+                      <span className={styles.teamAbbr}>{teamAbbr}</span>
                     ) : (
                       "N/A"
                     )}
@@ -2218,9 +2224,54 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
     return result;
   }, [playersWithPercentiles, selectedMetrics, allPossibleMetrics]);
 
+  // --- Compute team-based multiplier from weekly team scores ---
+  const teamScoreMultiplierMap = useMemo(() => {
+    if (!teamWeekData || teamWeekData.length === 0) return {} as Record<string, number>;
+    const entries = teamWeekData.filter((t) => typeof t.weekScore === "number") as Array<
+      TeamWeekData & { weekScore: number }
+    >;
+    if (entries.length === 0) return {} as Record<string, number>;
+
+    // Normalize scores to 0..1 based on min..max this week
+    let min = Infinity;
+    let max = -Infinity;
+    for (const e of entries) {
+      if (e.weekScore < min) min = e.weekScore;
+      if (e.weekScore > max) max = e.weekScore;
+    }
+    const range = max - min;
+    const intensity = 0.25; // up to ±25% boost/dilution
+    const map: Record<string, number> = {};
+    for (const e of entries) {
+      const norm = range === 0 ? 0.5 : (e.weekScore - min) / range; // 0..1
+      const centered = norm * 2 - 1; // -1..1
+      const multiplier = 1 + centered * intensity; // 0.75..1.25 with intensity=0.25
+      map[e.teamAbbreviation] = Number.isFinite(multiplier) ? multiplier : 1;
+    }
+    return map;
+  }, [teamWeekData]);
+
+  // --- Apply team multiplier to players' display/sort values (non-destructive) ---
+  const playersWithScoresBoosted: PlayerWithScores[] = useMemo(() => {
+    if (!teamWeekData || teamWeekData.length === 0) return playersWithScores;
+    if (!playersWithScores || playersWithScores.length === 0) return playersWithScores;
+    return playersWithScores.map((p) => {
+      const abbr = normalizeTeamAbbreviation(
+        p.current_team_abbreviation || p.yahoo_team,
+        p.yahoo_team
+      );
+      const mult = (abbr && teamScoreMultiplierMap[abbr]) || 1;
+      return {
+        ...p,
+        displayScore: p.displayScore * mult,
+        sortByValue: p.sortByValue * mult
+      };
+    });
+  }, [playersWithScores, teamScoreMultiplierMap, teamWeekData]);
+
   // --- Sorted Players (Logic unchanged) ---
   const sortedPlayers = useMemo(() => {
-    const sortablePlayers = [...playersWithScores];
+    const sortablePlayers = [...playersWithScoresBoosted];
     sortablePlayers.sort((a, b) => {
       let aValue: any;
       let bValue: any;
@@ -2272,7 +2323,7 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
       }
     });
     return sortablePlayers;
-  }, [playersWithScores, sortKey, sortOrder, getOffNightsForPlayer]);
+  }, [playersWithScoresBoosted, sortKey, sortOrder, getOffNightsForPlayer]);
 
   // --- Pagination Calculation (Unchanged) ---
   const totalPages = Math.ceil(sortedPlayers.length / pageSize);

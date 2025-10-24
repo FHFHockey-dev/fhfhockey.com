@@ -892,6 +892,18 @@ $selected-border-width: 2px; // The width of the indicator
   font-weight: bold;
 }
 
+// Small inline team logo shown before the player's name
+.teamLogoSmall {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 6px;
+}
+
+.teamAbbr {
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
 .tableContainer {
   margin-top: 20px; // Consistent spacing
   overflow-x: auto;
@@ -899,6 +911,10 @@ $selected-border-width: 2px; // The width of the indicator
   border-radius: v.$border-radius;
   box-shadow: v.$box-shadow;
   outline: 10px solid v.$background-dark;
+  // Subtle left accent on the first cell that does not affect layout
+  table tr > td:first-child {
+    box-shadow: inset 2px 0 0 rgba(0, 0, 0, 0.06);
+  }
   &::-webkit-scrollbar {
     // Hide scrollbar for webkit
     display: none;
@@ -908,7 +924,6 @@ $selected-border-width: 2px; // The width of the indicator
 }
 .table {
   width: 100%;
-  table-layout: fixed; // Enforce consistent column widths
   border-collapse: collapse;
   thead {
     position: sticky; // Cohesive sticky header like other tables
@@ -952,21 +967,7 @@ $selected-border-width: 2px; // The width of the indicator
         td {
           border-bottom: none;
         }
-
-        &::before {
-          content: "";
-          position: absolute;
-          left: 0;
-          top: 0;
-          bottom: -1px;
-          width: 4px;
-          border-radius: 0 4px 4px 0;
-          background: rgba(v.$secondary-color, 0.6);
-        }
-      }
-
-      &.oddPair.primaryRow::before {
-        background: rgba(v.$primary-color, 0.6);
+        // Removed decorative ::before stripe that caused subtle column misalignment
       }
 
       &.secondaryRow {
@@ -1019,24 +1020,14 @@ $selected-border-width: 2px; // The width of the indicator
 }
 
 // Explicit cell class for Name column to avoid layout glitches
-.nameCell {
-  overflow: hidden;
-}
-
-.primaryRow {
-}
-.secondaryRow {
-}
-.evenPair {
-}
-.oddPair {
-}
+// (no special styles at the moment)
+// .nameCell {}
 
 .percentileRow {
   display: flex;
   flex-wrap: nowrap; // keep to single line
   gap: 6px;
-  justify-content: flex-start;
+  justify-content: space-evenly;
   align-items: stretch;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
@@ -1044,7 +1035,7 @@ $selected-border-width: 2px; // The width of the indicator
 
 .rowPairMetric {
   flex: 0 0 auto; // prevent wrapping per item
-  min-width: 64px;
+  min-width: 40px;
 }
 
 .emptyPercentile {
@@ -1079,7 +1070,10 @@ $selected-border-width: 2px; // The width of the indicator
 
   // Style for selected label is applied directly via class
   &.selectedLabel {
-    color: $metric-border-color; // Use the same color as the border for consistency
+    color: var(
+      --metric-color,
+      $metric-border-color
+    ); // Match the dynamic metric color
     font-weight: bold; // Optional
   }
 }
@@ -1100,7 +1094,10 @@ $selected-border-width: 2px; // The width of the indicator
 
   // Apply border color only when selected class is present
   &.selectedBox {
-    border-color: $metric-border-color; // Change color, not add border/outline
+    border-color: var(
+      --metric-color,
+      $metric-border-color
+    ); // Use the dynamic color
     // outline/offset removed
   }
 }
@@ -1350,7 +1347,7 @@ $selected-border-width: 2px; // The width of the indicator
   transition: color v.$transition-duration v.$transition-easing;
 
   &.selectedLabel {
-    color: $metric-border-color;
+    color: var(--metric-color, $metric-border-color);
   }
 }
 
@@ -1370,7 +1367,10 @@ $selected-border-width: 2px; // The width of the indicator
 
   // Apply border color only when selected class is present
   &.selectedBox {
-    border-color: $metric-border-color; // Change color
+    border-color: var(
+      --metric-color,
+      $metric-border-color
+    ); // Match dynamic color
   }
 }
 
