@@ -1023,10 +1023,14 @@ $selected-border-width: 2px; // The width of the indicator
   overflow: hidden;
 }
 
-.primaryRow {}
-.secondaryRow {}
-.evenPair {}
-.oddPair {}
+.primaryRow {
+}
+.secondaryRow {
+}
+.evenPair {
+}
+.oddPair {
+}
 
 .percentileRow {
   display: flex;
@@ -1050,7 +1054,7 @@ $selected-border-width: 2px; // The width of the indicator
 
 .scoreCell {
   font-weight: 700;
-  font-size: 1.0em;
+  font-size: 1em;
 }
 
 .percentileContainer {

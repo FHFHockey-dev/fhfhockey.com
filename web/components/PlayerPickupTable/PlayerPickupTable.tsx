@@ -695,7 +695,9 @@ const Filters: React.FC<FiltersProps> = ({
                     ))}
                   </select>
                 </div>
-                <div className={clsx(styles.compactField, styles.positionsField)}>
+                <div
+                  className={clsx(styles.compactField, styles.positionsField)}
+                >
                   <span className={styles.labelMobile}>Pos:</span>
                   <div className={styles.positionCheckboxGroup}>
                     {Object.keys(defaultPositions).map((pos) => (
@@ -1109,7 +1111,8 @@ const DesktopTable: React.FC<DesktopTableProps> = ({
                             player.percentiles?.percent_games
                           )}
                         >
-                          {(Math.min(player.percent_games, 1) * 100).toFixed(0)}%
+                          {(Math.min(player.percent_games, 1) * 100).toFixed(0)}
+                          %
                         </div>
                       </div>
                     ) : (
