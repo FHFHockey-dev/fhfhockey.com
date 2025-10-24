@@ -155,8 +155,7 @@ def fetch_team_table(from_season='20242025', thru_season='20242025',
 app = Flask(__name__)
 
 
-@app.route("/", methods=["GET"])
-def fetch_team_table_handler():
+def _handle_fetch_team_table_request():
     from_season = request.args.get('from_season', '20242025')
     thru_season = request.args.get('thru_season', '20242025')
     stype = request.args.get('stype', '2')
@@ -187,6 +186,18 @@ def fetch_team_table_handler():
     )
 
     return jsonify(json.loads(result_json))
+
+
+# Support both styles of routing depending on how Vercel forwards PATH_INFO
+@app.route("/", methods=["GET"])
+def fetch_team_table_handler_root():
+    return _handle_fetch_team_table_request()
+
+
+@app.route("/api/fetch_team_table", methods=["GET"])
+@app.route("/api/fetch_team_table/", methods=["GET"])
+def fetch_team_table_handler_api_path():
+    return _handle_fetch_team_table_request()
 
 
 if __name__ == "__main__":
