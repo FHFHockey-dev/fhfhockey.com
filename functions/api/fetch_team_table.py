@@ -7,6 +7,13 @@ import json
 import argparse
 import re
 from flask import Flask, request, jsonify
+from typing import Optional, Tuple
+
+# Optional DB access for dynamic season discovery
+try:
+    from lib.sustainability.db_adapter import get_conn  # uses SUPABASE_DB_URL
+except Exception:  # pragma: no cover
+    get_conn = None  # type: ignore
 
 def clean_header(header: str) -> str:
     """
@@ -155,9 +162,43 @@ def fetch_team_table(from_season='20242025', thru_season='20242025',
 app = Flask(__name__)
 
 
+def _get_current_and_last_season_ids() -> Tuple[str, str]:
+    """Return (current_season_id, last_season_id) from Supabase 'seasons'.
+
+    Logic mirrors web/lib/NHL/server/getCurrentSeason: pick rows by startDate <= today,
+    ordered by startDate desc limit 2. Falls back to static values if unavailable.
+    """
+    # Safe fallbacks in case DB/env not available
+    fallback_current = '20242025'
+    fallback_last = '20232024'
+    if get_conn is None:
+        return fallback_current, fallback_last
+    try:
+        with get_conn() as conn:  # type: ignore[misc]
+            if conn is None:
+                return fallback_current, fallback_last
+            sql = (
+                'SELECT id, "startDate"\n'
+                'FROM seasons\n'
+                'WHERE "startDate" <= NOW()::date\n'
+                'ORDER BY "startDate" DESC\n'
+                'LIMIT 2'
+            )
+            cur = conn.execute(sql)
+            rows = cur.fetchall()
+            if not rows:
+                return fallback_current, fallback_last
+            current_id = str(rows[0][0])
+            last_id = str(rows[1][0]) if len(rows) > 1 else current_id
+            return current_id, last_id
+    except Exception:
+        return fallback_current, fallback_last
+
+
 def _handle_fetch_team_table_request():
-    from_season = request.args.get('from_season', '20242025')
-    thru_season = request.args.get('thru_season', '20242025')
+    # Accept explicit query params; if missing, derive from DB seasons
+    from_season = request.args.get('from_season')
+    thru_season = request.args.get('thru_season')
     stype = request.args.get('stype', '2')
     sit = request.args.get('sit')
     score = request.args.get('score', 'all')
@@ -168,12 +209,19 @@ def _handle_fetch_team_table_request():
     fd = request.args.get('fd', '')
     td = request.args.get('td', '')
 
+    # Fill season defaults dynamically
+    if not from_season or not thru_season:
+        current_sid, last_sid = _get_current_and_last_season_ids()
+        # If only one is missing, use current for that one; leave explicit ones intact
+        from_season = from_season or current_sid
+        thru_season = thru_season or current_sid
+
     if not sit or not rate:
         return jsonify({"error": "Missing required parameters: 'sit' and 'rate'"}), 400
 
     result_json = fetch_team_table(
-        from_season=from_season,
-        thru_season=thru_season,
+    from_season=from_season,
+    thru_season=thru_season,
         stype=stype,
         sit=sit,
         score=score,
@@ -185,7 +233,13 @@ def _handle_fetch_team_table_request():
         td=td
     )
 
-    return jsonify(json.loads(result_json))
+    payload = json.loads(result_json)
+    # Attach debug hint about resolved seasons when defaults were used
+    if isinstance(payload, dict):
+        dbg = payload.setdefault('debug', {})
+        dbg.setdefault('Resolved from_season', from_season)
+        dbg.setdefault('Resolved thru_season', thru_season)
+    return jsonify(payload)
 
 
 # Support both styles of routing depending on how Vercel forwards PATH_INFO
