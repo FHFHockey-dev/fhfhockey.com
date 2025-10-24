@@ -6,6 +6,7 @@ from bs4 import BeautifulSoup
 import json
 import argparse
 import re
+from flask import Flask, request, jsonify
 
 def clean_header(header: str) -> str:
     """
@@ -149,6 +150,43 @@ def fetch_team_table(from_season='20242025', thru_season='20242025',
     # print(json.dumps(result))
     
     return json.dumps(result)
+
+
+app = Flask(__name__)
+
+
+@app.route("/", methods=["GET"])
+def fetch_team_table_handler():
+    from_season = request.args.get('from_season', '20242025')
+    thru_season = request.args.get('thru_season', '20242025')
+    stype = request.args.get('stype', '2')
+    sit = request.args.get('sit')
+    score = request.args.get('score', 'all')
+    rate = request.args.get('rate')
+    team = request.args.get('team', 'all')
+    loc = request.args.get('loc', 'B')
+    gpf = request.args.get('gpf', '410')
+    fd = request.args.get('fd', '')
+    td = request.args.get('td', '')
+
+    if not sit or not rate:
+        return jsonify({"error": "Missing required parameters: 'sit' and 'rate'"}), 400
+
+    result_json = fetch_team_table(
+        from_season=from_season,
+        thru_season=thru_season,
+        stype=stype,
+        sit=sit,
+        score=score,
+        rate=rate,
+        team=team,
+        loc=loc,
+        gpf=gpf,
+        fd=fd,
+        td=td
+    )
+
+    return jsonify(json.loads(result_json))
 
 
 if __name__ == "__main__":
