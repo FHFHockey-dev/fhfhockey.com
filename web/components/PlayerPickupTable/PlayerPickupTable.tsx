@@ -2226,10 +2226,11 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
 
   // --- Compute team-based multiplier from weekly team scores ---
   const teamScoreMultiplierMap = useMemo(() => {
-    if (!teamWeekData || teamWeekData.length === 0) return {} as Record<string, number>;
-    const entries = teamWeekData.filter((t) => typeof t.weekScore === "number") as Array<
-      TeamWeekData & { weekScore: number }
-    >;
+    if (!teamWeekData || teamWeekData.length === 0)
+      return {} as Record<string, number>;
+    const entries = teamWeekData.filter(
+      (t) => typeof t.weekScore === "number"
+    ) as Array<TeamWeekData & { weekScore: number }>;
     if (entries.length === 0) return {} as Record<string, number>;
 
     // Normalize scores to 0..1 based on min..max this week
@@ -2254,7 +2255,8 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
   // --- Apply team multiplier to players' display/sort values (non-destructive) ---
   const playersWithScoresBoosted: PlayerWithScores[] = useMemo(() => {
     if (!teamWeekData || teamWeekData.length === 0) return playersWithScores;
-    if (!playersWithScores || playersWithScores.length === 0) return playersWithScores;
+    if (!playersWithScores || playersWithScores.length === 0)
+      return playersWithScores;
     return playersWithScores.map((p) => {
       const abbr = normalizeTeamAbbreviation(
         p.current_team_abbreviation || p.yahoo_team,

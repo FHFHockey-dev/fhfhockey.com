@@ -128,9 +128,8 @@ function GameGridInternal({
     return currentSeasonId.toString().slice(0, 4);
   }, [currentSeasonId]);
 
-  const { weekNumber: currentMatchupWeek } = useYahooCurrentMatchupWeek(
-    currentSeasonYear
-  );
+  const { weekNumber: currentMatchupWeek } =
+    useYahooCurrentMatchupWeek(currentSeasonYear);
 
   console.log("Current Season ID:", currentSeasonId); // Debugging line
 
