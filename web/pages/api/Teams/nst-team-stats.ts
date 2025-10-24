@@ -11,6 +11,9 @@ const timeZone = "America/New_York";
 const teamTableFunctionUrl =
   "https://functions-fhfhockey.vercel.app/api/fetch_team_table";
 
+// sit=all&rate=n&from_season=20242025&thru_season=20242025&stype=2&score=all&team=all&loc=B&gpf=410
+// ?fromseason=20252026&thruseason=20252026&stype=2&sit=all&score=all&rate=n&team=all&loc=B&gpf=410&fd=&td=
+
 // For date‑based tables.
 const dateBasedResponseKeys: {
   [key: string]: { situation: string; rate: string };
