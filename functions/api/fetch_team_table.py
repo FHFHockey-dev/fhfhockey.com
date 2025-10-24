@@ -6,7 +6,6 @@ from bs4 import BeautifulSoup
 import json
 import argparse
 import re
-import sys
 
 def clean_header(header: str) -> str:
     """
@@ -81,9 +80,12 @@ def fetch_team_table(from_season='20242025', thru_season='20242025',
         # Locate the table by ID
         table = soup.find('table', id='teams')
         if not table:
-            result["debug"]["Error"] = f"No table found for sit={sit}, rate={rate}"
-            print(json.dumps(result))
-            sys.exit(1)  # Exit with non-zero status
+            result["debug"]["Error"] = (
+                f"No table found for sit={sit}, rate={rate}, fd={fd}, td={td}"
+            )
+            result["debug"]["Status"] = "missing_table"
+            result["data"] = []
+            return json.dumps(result)
 
         # Extract table headers and clean them
         headers = []

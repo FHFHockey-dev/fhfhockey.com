@@ -42,10 +42,13 @@
   - [ ] 1.3 Normalize keys (players.id vs wgo player_id) and dates (WGO `date`, NST `date_scraped`).
     - [ ] 1.3.1 Validate that `wgo_skater_stats.player_id` aligns to `players.id`; if not, add internal non-Yahoo crosswalk.
     - [ ] 1.3.2 Implement date normalization utility and unit tests.
-  - [ ] 1.4 Implement opponent mapping for next 5/10 games via `games` (and team views if needed).
-    - [ ] 1.4.1 Query upcoming schedule for a player’s team and list next 10 games with opponent and dates.
-    - [ ] 1.4.2 Add team strength pulls from `nst_team_stats` and/or `nst_team_all` for opponent adjustments.
-    - [ ] 1.4.3 Expose a function getUpcomingOpponents(playerId, nGames) in `data.ts`.
+- [ ] 1.4 Implement opponent mapping for next 5/10 games via `games` (and team views if needed).
+  - [ ] 1.4.1 Query upcoming schedule for a player’s team and list next 10 games with opponent and dates.
+  - [ ] 1.4.2 Add team strength pulls from `nst_team_stats` and/or `nst_team_all` for opponent adjustments.
+  - [ ] 1.4.3 Expose a function getUpcomingOpponents(playerId, nGames) in `data.ts`.
+- [ ] 1.5 Extend rolling metrics pipeline
+  - [ ] 1.5.1 Persist season-to-date, 3-year, and career averages for every metric tracked in `rolling_player_game_metrics`.
+  - [ ] 1.5.2 Expose additional aggregates in Supabase schema/types and surface them to trend visualizations.
 
 - [ ] 2.0 Feature engineering
   - [ ] 2.1 Compute per-60 rates and recent-vs-career deltas/z-scores for surface and underlying metrics.
@@ -77,6 +80,9 @@
   - [ ] 3.4 Generate explanations (top drivers); simple importance first.
     - [ ] 3.4.1 Map top features to human-readable bullets (e.g., "PP TOI up +40% vs career").
     - [ ] 3.4.2 Include up to 3 reasons with direction and magnitude.
+- [ ] 3.5 Visualization coverage
+  - [ ] 3.5.1 Plot all metrics captured in `rolling_player_game_metrics` with time-frame toggles (3/5/10/20/cumulative).
+  - [ ] 3.5.2 Add trend toggles for career/3-year season baselines to highlight sustained streaks.
 
 - [ ] 4.0 Persistence and API
   - [ ] 4.1 Reuse `sustainability_trend_bands` for metric bands; implement upsert API in `persist.ts`.

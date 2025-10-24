@@ -27,7 +27,7 @@
  *    The format must be YYYY-MM-DD.
  *    Example: /api/v1/db/update-nst-gamelog?runMode=reverse&startDate=2022-10-10
  *
- *                                                         Bookmark:   2025-10-19
+ *                                                         Bookmark:   2025-04-10
  *
  * 3. `overwrite` (optional): Controls whether to re-fetch and overwrite existing dates.
  *    - Accepted: `yes` | `no` (also `true` | `false`, `1` | `0`)

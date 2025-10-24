@@ -53,7 +53,7 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 // --- Base Layout & Containers ---
 
 .mainGridContainer {
-  width: 95%;
+  width: 100%;
   max-width: 1600px;
   margin: v.$space-xl auto;
   display: flex;
@@ -428,6 +428,12 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     margin-top: v.$space-sm;
     gap: v.$space-sm;
   }
+
+  // Keep everything on one line for desktop
+  @media (min-width: 981px) {
+    flex-wrap: nowrap;
+    gap: v.$space-sm; // tighter spacing to reduce overflow
+  }
 }
 
 .dateCluster {
@@ -435,8 +441,10 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   align-items: center;
   gap: v.$space-sm;
   flex-wrap: wrap;
-  flex: 1 1 auto;
   min-width: 0;
+  @media (min-width: 981px) {
+    flex-wrap: nowrap; // inline on desktop
+  }
 }
 
 .modeToggle {
@@ -510,14 +518,28 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   align-items: stretch;
 }
 
-.viewControls {
+.badgeAndWeekNav {
   display: inline-flex;
   align-items: center;
   gap: v.$space-sm;
   flex-wrap: wrap;
-  justify-content: flex-end;
-  flex: 1 1 auto;
   min-width: 0;
+  flex: 2 1 auto;
+  @media (min-width: 981px) {
+    flex-wrap: nowrap;
+  }
+}
+
+.viewControls {
+  display: inline-flex;
+  align-items: center;
+  gap: v.$space-sm;
+  justify-content: space-between;
+  flex: 0 1 auto; // allow shrinking on desktop so it stays on one row
+  min-width: 0;
+  @media (min-width: 981px) {
+    flex-wrap: nowrap;
+  }
 }
 
 .orientationToggleButton {

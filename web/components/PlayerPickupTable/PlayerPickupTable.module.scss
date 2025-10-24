@@ -497,6 +497,12 @@ $selected-border-width: 2px; // The width of the indicator
   align-items: center;
 }
 
+// Inline Team Boost toggle placed near GP% to save vertical space
+.inlineTeamBoostToggle {
+  display: flex;
+  align-items: center;
+}
+
 /* --- Layout Styles --- */
 
 .gpGroupContainer {
