@@ -463,6 +463,9 @@ interface FiltersProps {
     React.SetStateAction<Record<MetricKey, boolean>>
   >;
   layoutVariant?: "full" | "sidebar";
+  // Team boost toggle
+  teamBoostEnabled: boolean;
+  setTeamBoostEnabled: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const Filters: React.FC<FiltersProps> = ({
@@ -481,7 +484,9 @@ const Filters: React.FC<FiltersProps> = ({
   allPossibleMetrics,
   selectedMetrics,
   setSelectedMetrics,
-  layoutVariant = "full"
+  layoutVariant = "full",
+  teamBoostEnabled,
+  setTeamBoostEnabled
 }) => {
   const isCompactSidebar = layoutVariant === "sidebar";
   // --- NEW: Handler for clicking sub-group titles ---
@@ -811,6 +816,17 @@ const Filters: React.FC<FiltersProps> = ({
                     onChange={() => handleMetricChange(gamePlayedKey)}
                   />
                   GP%
+                </label>
+              </div>
+              {/* Inline Team Boost toggle */}
+              <div className={styles.inlineTeamBoostToggle}>
+                <label className={styles.metricCheckbox}>
+                  <input
+                    type="checkbox"
+                    checked={teamBoostEnabled}
+                    onChange={() => setTeamBoostEnabled((v) => !v)}
+                  />
+                  Team boost
                 </label>
               </div>
             </div>
@@ -1567,6 +1583,8 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const pageSize = 25;
   const [isMobileMinimized, setIsMobileMinimized] = useState(false);
+  // Team boost toggle (default ON)
+  const [teamBoostEnabled, setTeamBoostEnabled] = useState<boolean>(true);
 
   // --- Calculate all possible metrics once (for filter UI, presets, state init) ---
   const allPossibleMetrics = useMemo(() => {
@@ -2272,8 +2290,13 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
   }, [playersWithScores, teamScoreMultiplierMap, teamWeekData]);
 
   // --- Sorted Players (Logic unchanged) ---
+  // Choose boosted vs base scores based on toggle
+  const effectivePlayersWithScores = teamBoostEnabled
+    ? playersWithScoresBoosted
+    : playersWithScores;
+
   const sortedPlayers = useMemo(() => {
-    const sortablePlayers = [...playersWithScoresBoosted];
+    const sortablePlayers = [...effectivePlayersWithScores];
     sortablePlayers.sort((a, b) => {
       let aValue: any;
       let bValue: any;
@@ -2325,7 +2348,7 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
       }
     });
     return sortablePlayers;
-  }, [playersWithScoresBoosted, sortKey, sortOrder, getOffNightsForPlayer]);
+  }, [effectivePlayersWithScores, sortKey, sortOrder, getOffNightsForPlayer]);
 
   // --- Pagination Calculation (Unchanged) ---
   const totalPages = Math.ceil(sortedPlayers.length / pageSize);
@@ -2426,6 +2449,8 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
         selectedMetrics={selectedMetrics}
         setSelectedMetrics={setSelectedMetrics}
         layoutVariant={layoutVariant}
+        teamBoostEnabled={teamBoostEnabled}
+        setTeamBoostEnabled={setTeamBoostEnabled}
       />
 
       {/* Table Content Area */}

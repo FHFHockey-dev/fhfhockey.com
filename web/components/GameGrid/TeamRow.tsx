@@ -115,8 +115,6 @@ function TeamRow(props: TeamRowProps) {
       </td>
       {/* Days */}
       {days.map((day, index) => {
-        if (!DAYS.includes(day as DAY_ABBREVIATION)) return null;
-
         const matchUp = props[day];
         const hasMatchUp = matchUp !== undefined;
         const isPreseason = !!matchUp && matchUp.gameType === 1;

@@ -934,37 +934,7 @@ function GameGridInternal({
                 <Spinner className={styles.spinner} center />
               )}
               <div className={styles.controlsBar}>
-                <div className={styles.dateCluster}>
-                  <div
-                    className={styles.dateNav}
-                    role="group"
-                    aria-label="Week navigation"
-                  >
-                    <button
-                      type="button"
-                      aria-label="Previous week"
-                      className={styles.dateButtonPrev}
-                      onClick={handleClick("PREV")}
-                    >
-                      Prev
-                    </button>
-                    <span
-                      className={styles.weekRange}
-                      aria-live="polite"
-                      aria-label="Selected week range"
-                    >
-                      {format(new Date(dates[0]), "MMM d")} –{" "}
-                      {format(new Date(dates[1]), "MMM d")}
-                    </span>
-                    <button
-                      type="button"
-                      aria-label="Next week"
-                      className={styles.dateButtonNext}
-                      onClick={handleClick("NEXT")}
-                    >
-                      Next
-                    </button>
-                  </div>
+                <div className={styles.badgeAndWeekNav}>
                   {currentMatchupWeek != null && (
                     <span
                       className={styles.weekBadge}
@@ -973,6 +943,38 @@ function GameGridInternal({
                       Week {currentMatchupWeek}
                     </span>
                   )}
+                  <div className={styles.dateCluster}>
+                    <div
+                      className={styles.dateNav}
+                      role="group"
+                      aria-label="Week navigation"
+                    >
+                      <button
+                        type="button"
+                        aria-label="Previous week"
+                        className={styles.dateButtonPrev}
+                        onClick={handleClick("PREV")}
+                      >
+                        Prev
+                      </button>
+                      <span
+                        className={styles.weekRange}
+                        aria-live="polite"
+                        aria-label="Selected week range"
+                      >
+                        {format(new Date(dates[0]), "MMM d")} –{" "}
+                        {format(new Date(dates[1]), "MMM d")}
+                      </span>
+                      <button
+                        type="button"
+                        aria-label="Next week"
+                        className={styles.dateButtonNext}
+                        onClick={handleClick("NEXT")}
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
                 </div>
                 <div className={styles.viewControls}>
                   <div className={styles.viewToggleWrapper}>
