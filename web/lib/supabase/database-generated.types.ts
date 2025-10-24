@@ -9366,6 +9366,63 @@ export type Database = {
           },
         ]
       }
+      player_trend_metrics: {
+        Row: {
+          average_value: number | null
+          game_date: string
+          metric_key: string
+          metric_label: string
+          metric_type: string
+          player_id: number
+          position_code: string | null
+          raw_value: number | null
+          rolling_avg_10: number | null
+          rolling_avg_3: number | null
+          rolling_avg_5: number | null
+          sample_size: number
+          season_id: number | null
+          std_dev_value: number | null
+          updated_at: string
+          variance_value: number | null
+        }
+        Insert: {
+          average_value?: number | null
+          game_date: string
+          metric_key: string
+          metric_label: string
+          metric_type: string
+          player_id: number
+          position_code?: string | null
+          raw_value?: number | null
+          rolling_avg_10?: number | null
+          rolling_avg_3?: number | null
+          rolling_avg_5?: number | null
+          sample_size?: number
+          season_id?: number | null
+          std_dev_value?: number | null
+          updated_at?: string
+          variance_value?: number | null
+        }
+        Update: {
+          average_value?: number | null
+          game_date?: string
+          metric_key?: string
+          metric_label?: string
+          metric_type?: string
+          player_id?: number
+          position_code?: string | null
+          raw_value?: number | null
+          rolling_avg_10?: number | null
+          rolling_avg_3?: number | null
+          rolling_avg_5?: number | null
+          sample_size?: number
+          season_id?: number | null
+          std_dev_value?: number | null
+          updated_at?: string
+          variance_value?: number | null
+        }
+        Relationships: []
+      }
       players: {
         Row: {
           birthCity: string | null
@@ -10850,6 +10907,927 @@ export type Database = {
           },
           {
             foreignKeyName: "rolling_games_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rolling_player_game_metrics: {
+        Row: {
+          assists_avg_all: number | null
+          assists_avg_last10: number | null
+          assists_avg_last20: number | null
+          assists_avg_last3: number | null
+          assists_avg_last5: number | null
+          assists_total_all: number | null
+          assists_total_last10: number | null
+          assists_total_last20: number | null
+          assists_total_last3: number | null
+          assists_total_last5: number | null
+          blocks_avg_all: number | null
+          blocks_avg_last10: number | null
+          blocks_avg_last20: number | null
+          blocks_avg_last3: number | null
+          blocks_avg_last5: number | null
+          blocks_total_all: number | null
+          blocks_total_last10: number | null
+          blocks_total_last20: number | null
+          blocks_total_last3: number | null
+          blocks_total_last5: number | null
+          ca_avg_all: number | null
+          ca_avg_last10: number | null
+          ca_avg_last20: number | null
+          ca_avg_last3: number | null
+          ca_avg_last5: number | null
+          ca_total_all: number | null
+          ca_total_last10: number | null
+          ca_total_last20: number | null
+          ca_total_last3: number | null
+          ca_total_last5: number | null
+          cf_avg_all: number | null
+          cf_avg_last10: number | null
+          cf_avg_last20: number | null
+          cf_avg_last3: number | null
+          cf_avg_last5: number | null
+          cf_pct_avg_all: number | null
+          cf_pct_avg_last10: number | null
+          cf_pct_avg_last20: number | null
+          cf_pct_avg_last3: number | null
+          cf_pct_avg_last5: number | null
+          cf_pct_total_all: number | null
+          cf_pct_total_last10: number | null
+          cf_pct_total_last20: number | null
+          cf_pct_total_last3: number | null
+          cf_pct_total_last5: number | null
+          cf_total_all: number | null
+          cf_total_last10: number | null
+          cf_total_last20: number | null
+          cf_total_last3: number | null
+          cf_total_last5: number | null
+          expected_sh_pct_avg_all: number | null
+          expected_sh_pct_avg_last10: number | null
+          expected_sh_pct_avg_last20: number | null
+          expected_sh_pct_avg_last3: number | null
+          expected_sh_pct_avg_last5: number | null
+          expected_sh_pct_total_all: number | null
+          expected_sh_pct_total_last10: number | null
+          expected_sh_pct_total_last20: number | null
+          expected_sh_pct_total_last3: number | null
+          expected_sh_pct_total_last5: number | null
+          fa_avg_all: number | null
+          fa_avg_last10: number | null
+          fa_avg_last20: number | null
+          fa_avg_last3: number | null
+          fa_avg_last5: number | null
+          fa_total_all: number | null
+          fa_total_last10: number | null
+          fa_total_last20: number | null
+          fa_total_last3: number | null
+          fa_total_last5: number | null
+          ff_avg_all: number | null
+          ff_avg_last10: number | null
+          ff_avg_last20: number | null
+          ff_avg_last3: number | null
+          ff_avg_last5: number | null
+          ff_pct_avg_all: number | null
+          ff_pct_avg_last10: number | null
+          ff_pct_avg_last20: number | null
+          ff_pct_avg_last3: number | null
+          ff_pct_avg_last5: number | null
+          ff_pct_total_all: number | null
+          ff_pct_total_last10: number | null
+          ff_pct_total_last20: number | null
+          ff_pct_total_last3: number | null
+          ff_pct_total_last5: number | null
+          ff_total_all: number | null
+          ff_total_last10: number | null
+          ff_total_last20: number | null
+          ff_total_last3: number | null
+          ff_total_last5: number | null
+          game_date: string
+          game_id: number | null
+          games_played: number
+          goals_avg_all: number | null
+          goals_avg_last10: number | null
+          goals_avg_last20: number | null
+          goals_avg_last3: number | null
+          goals_avg_last5: number | null
+          goals_total_all: number | null
+          goals_total_last10: number | null
+          goals_total_last20: number | null
+          goals_total_last3: number | null
+          goals_total_last5: number | null
+          gp_pct_avg_all: number | null
+          gp_pct_avg_last10: number | null
+          gp_pct_avg_last20: number | null
+          gp_pct_avg_last3: number | null
+          gp_pct_avg_last5: number | null
+          gp_pct_total_all: number | null
+          gp_pct_total_last10: number | null
+          gp_pct_total_last20: number | null
+          gp_pct_total_last3: number | null
+          gp_pct_total_last5: number | null
+          hits_avg_all: number | null
+          hits_avg_last10: number | null
+          hits_avg_last20: number | null
+          hits_avg_last3: number | null
+          hits_avg_last5: number | null
+          hits_total_all: number | null
+          hits_total_last10: number | null
+          hits_total_last20: number | null
+          hits_total_last3: number | null
+          hits_total_last5: number | null
+          ihdcf_avg_all: number | null
+          ihdcf_avg_last10: number | null
+          ihdcf_avg_last20: number | null
+          ihdcf_avg_last3: number | null
+          ihdcf_avg_last5: number | null
+          ihdcf_total_all: number | null
+          ihdcf_total_last10: number | null
+          ihdcf_total_last20: number | null
+          ihdcf_total_last3: number | null
+          ihdcf_total_last5: number | null
+          ipp_avg_all: number | null
+          ipp_avg_last10: number | null
+          ipp_avg_last20: number | null
+          ipp_avg_last3: number | null
+          ipp_avg_last5: number | null
+          ipp_total_all: number | null
+          ipp_total_last10: number | null
+          ipp_total_last20: number | null
+          ipp_total_last3: number | null
+          ipp_total_last5: number | null
+          iscf_avg_all: number | null
+          iscf_avg_last10: number | null
+          iscf_avg_last20: number | null
+          iscf_avg_last3: number | null
+          iscf_avg_last5: number | null
+          iscf_total_all: number | null
+          iscf_total_last10: number | null
+          iscf_total_last20: number | null
+          iscf_total_last3: number | null
+          iscf_total_last5: number | null
+          ixg_avg_all: number | null
+          ixg_avg_last10: number | null
+          ixg_avg_last20: number | null
+          ixg_avg_last3: number | null
+          ixg_avg_last5: number | null
+          ixg_per_60_avg_all: number | null
+          ixg_per_60_avg_last10: number | null
+          ixg_per_60_avg_last20: number | null
+          ixg_per_60_avg_last3: number | null
+          ixg_per_60_avg_last5: number | null
+          ixg_per_60_total_all: number | null
+          ixg_per_60_total_last10: number | null
+          ixg_per_60_total_last20: number | null
+          ixg_per_60_total_last3: number | null
+          ixg_per_60_total_last5: number | null
+          ixg_total_all: number | null
+          ixg_total_last10: number | null
+          ixg_total_last20: number | null
+          ixg_total_last3: number | null
+          ixg_total_last5: number | null
+          line_combo_group: string | null
+          line_combo_slot: number | null
+          on_ice_sh_pct_avg_all: number | null
+          on_ice_sh_pct_avg_last10: number | null
+          on_ice_sh_pct_avg_last20: number | null
+          on_ice_sh_pct_avg_last3: number | null
+          on_ice_sh_pct_avg_last5: number | null
+          on_ice_sh_pct_total_all: number | null
+          on_ice_sh_pct_total_last10: number | null
+          on_ice_sh_pct_total_last20: number | null
+          on_ice_sh_pct_total_last3: number | null
+          on_ice_sh_pct_total_last5: number | null
+          oz_start_pct_avg_all: number | null
+          oz_start_pct_avg_last10: number | null
+          oz_start_pct_avg_last20: number | null
+          oz_start_pct_avg_last3: number | null
+          oz_start_pct_avg_last5: number | null
+          oz_start_pct_total_all: number | null
+          oz_start_pct_total_last10: number | null
+          oz_start_pct_total_last20: number | null
+          oz_start_pct_total_last3: number | null
+          oz_start_pct_total_last5: number | null
+          pdo_avg_all: number | null
+          pdo_avg_last10: number | null
+          pdo_avg_last20: number | null
+          pdo_avg_last3: number | null
+          pdo_avg_last5: number | null
+          pdo_total_all: number | null
+          pdo_total_last10: number | null
+          pdo_total_last20: number | null
+          pdo_total_last3: number | null
+          pdo_total_last5: number | null
+          player_id: number
+          points_avg_all: number | null
+          points_avg_last10: number | null
+          points_avg_last20: number | null
+          points_avg_last3: number | null
+          points_avg_last5: number | null
+          points_total_all: number | null
+          points_total_last10: number | null
+          points_total_last20: number | null
+          points_total_last3: number | null
+          points_total_last5: number | null
+          pp_points_avg_all: number | null
+          pp_points_avg_last10: number | null
+          pp_points_avg_last20: number | null
+          pp_points_avg_last3: number | null
+          pp_points_avg_last5: number | null
+          pp_points_total_all: number | null
+          pp_points_total_last10: number | null
+          pp_points_total_last20: number | null
+          pp_points_total_last3: number | null
+          pp_points_total_last5: number | null
+          pp_share_pct_avg_all: number | null
+          pp_share_pct_avg_last10: number | null
+          pp_share_pct_avg_last20: number | null
+          pp_share_pct_avg_last3: number | null
+          pp_share_pct_avg_last5: number | null
+          pp_share_pct_total_all: number | null
+          pp_share_pct_total_last10: number | null
+          pp_share_pct_total_last20: number | null
+          pp_share_pct_total_last3: number | null
+          pp_share_pct_total_last5: number | null
+          pp_unit: number | null
+          primary_points_pct_avg_all: number | null
+          primary_points_pct_avg_last10: number | null
+          primary_points_pct_avg_last20: number | null
+          primary_points_pct_avg_last3: number | null
+          primary_points_pct_avg_last5: number | null
+          primary_points_pct_total_all: number | null
+          primary_points_pct_total_last10: number | null
+          primary_points_pct_total_last20: number | null
+          primary_points_pct_total_last3: number | null
+          primary_points_pct_total_last5: number | null
+          season: number
+          shooting_pct_avg_all: number | null
+          shooting_pct_avg_last10: number | null
+          shooting_pct_avg_last20: number | null
+          shooting_pct_avg_last3: number | null
+          shooting_pct_avg_last5: number | null
+          shooting_pct_total_all: number | null
+          shooting_pct_total_last10: number | null
+          shooting_pct_total_last20: number | null
+          shooting_pct_total_last3: number | null
+          shooting_pct_total_last5: number | null
+          shots_avg_all: number | null
+          shots_avg_last10: number | null
+          shots_avg_last20: number | null
+          shots_avg_last3: number | null
+          shots_avg_last5: number | null
+          shots_total_all: number | null
+          shots_total_last10: number | null
+          shots_total_last20: number | null
+          shots_total_last3: number | null
+          shots_total_last5: number | null
+          sog_per_60_avg_all: number | null
+          sog_per_60_avg_last10: number | null
+          sog_per_60_avg_last20: number | null
+          sog_per_60_avg_last3: number | null
+          sog_per_60_avg_last5: number | null
+          sog_per_60_total_all: number | null
+          sog_per_60_total_last10: number | null
+          sog_per_60_total_last20: number | null
+          sog_per_60_total_last3: number | null
+          sog_per_60_total_last5: number | null
+          strength_state: string
+          team_games_played: number
+          team_id: number | null
+          toi_seconds_avg_all: number | null
+          toi_seconds_avg_last10: number | null
+          toi_seconds_avg_last20: number | null
+          toi_seconds_avg_last3: number | null
+          toi_seconds_avg_last5: number | null
+          toi_seconds_total_all: number | null
+          toi_seconds_total_last10: number | null
+          toi_seconds_total_last20: number | null
+          toi_seconds_total_last3: number | null
+          toi_seconds_total_last5: number | null
+          updated_at: string
+        }
+        Insert: {
+          assists_avg_all?: number | null
+          assists_avg_last10?: number | null
+          assists_avg_last20?: number | null
+          assists_avg_last3?: number | null
+          assists_avg_last5?: number | null
+          assists_total_all?: number | null
+          assists_total_last10?: number | null
+          assists_total_last20?: number | null
+          assists_total_last3?: number | null
+          assists_total_last5?: number | null
+          blocks_avg_all?: number | null
+          blocks_avg_last10?: number | null
+          blocks_avg_last20?: number | null
+          blocks_avg_last3?: number | null
+          blocks_avg_last5?: number | null
+          blocks_total_all?: number | null
+          blocks_total_last10?: number | null
+          blocks_total_last20?: number | null
+          blocks_total_last3?: number | null
+          blocks_total_last5?: number | null
+          ca_avg_all?: number | null
+          ca_avg_last10?: number | null
+          ca_avg_last20?: number | null
+          ca_avg_last3?: number | null
+          ca_avg_last5?: number | null
+          ca_total_all?: number | null
+          ca_total_last10?: number | null
+          ca_total_last20?: number | null
+          ca_total_last3?: number | null
+          ca_total_last5?: number | null
+          cf_avg_all?: number | null
+          cf_avg_last10?: number | null
+          cf_avg_last20?: number | null
+          cf_avg_last3?: number | null
+          cf_avg_last5?: number | null
+          cf_pct_avg_all?: number | null
+          cf_pct_avg_last10?: number | null
+          cf_pct_avg_last20?: number | null
+          cf_pct_avg_last3?: number | null
+          cf_pct_avg_last5?: number | null
+          cf_pct_total_all?: number | null
+          cf_pct_total_last10?: number | null
+          cf_pct_total_last20?: number | null
+          cf_pct_total_last3?: number | null
+          cf_pct_total_last5?: number | null
+          cf_total_all?: number | null
+          cf_total_last10?: number | null
+          cf_total_last20?: number | null
+          cf_total_last3?: number | null
+          cf_total_last5?: number | null
+          expected_sh_pct_avg_all?: number | null
+          expected_sh_pct_avg_last10?: number | null
+          expected_sh_pct_avg_last20?: number | null
+          expected_sh_pct_avg_last3?: number | null
+          expected_sh_pct_avg_last5?: number | null
+          expected_sh_pct_total_all?: number | null
+          expected_sh_pct_total_last10?: number | null
+          expected_sh_pct_total_last20?: number | null
+          expected_sh_pct_total_last3?: number | null
+          expected_sh_pct_total_last5?: number | null
+          fa_avg_all?: number | null
+          fa_avg_last10?: number | null
+          fa_avg_last20?: number | null
+          fa_avg_last3?: number | null
+          fa_avg_last5?: number | null
+          fa_total_all?: number | null
+          fa_total_last10?: number | null
+          fa_total_last20?: number | null
+          fa_total_last3?: number | null
+          fa_total_last5?: number | null
+          ff_avg_all?: number | null
+          ff_avg_last10?: number | null
+          ff_avg_last20?: number | null
+          ff_avg_last3?: number | null
+          ff_avg_last5?: number | null
+          ff_pct_avg_all?: number | null
+          ff_pct_avg_last10?: number | null
+          ff_pct_avg_last20?: number | null
+          ff_pct_avg_last3?: number | null
+          ff_pct_avg_last5?: number | null
+          ff_pct_total_all?: number | null
+          ff_pct_total_last10?: number | null
+          ff_pct_total_last20?: number | null
+          ff_pct_total_last3?: number | null
+          ff_pct_total_last5?: number | null
+          ff_total_all?: number | null
+          ff_total_last10?: number | null
+          ff_total_last20?: number | null
+          ff_total_last3?: number | null
+          ff_total_last5?: number | null
+          game_date: string
+          game_id?: number | null
+          games_played?: number
+          goals_avg_all?: number | null
+          goals_avg_last10?: number | null
+          goals_avg_last20?: number | null
+          goals_avg_last3?: number | null
+          goals_avg_last5?: number | null
+          goals_total_all?: number | null
+          goals_total_last10?: number | null
+          goals_total_last20?: number | null
+          goals_total_last3?: number | null
+          goals_total_last5?: number | null
+          gp_pct_avg_all?: number | null
+          gp_pct_avg_last10?: number | null
+          gp_pct_avg_last20?: number | null
+          gp_pct_avg_last3?: number | null
+          gp_pct_avg_last5?: number | null
+          gp_pct_total_all?: number | null
+          gp_pct_total_last10?: number | null
+          gp_pct_total_last20?: number | null
+          gp_pct_total_last3?: number | null
+          gp_pct_total_last5?: number | null
+          hits_avg_all?: number | null
+          hits_avg_last10?: number | null
+          hits_avg_last20?: number | null
+          hits_avg_last3?: number | null
+          hits_avg_last5?: number | null
+          hits_total_all?: number | null
+          hits_total_last10?: number | null
+          hits_total_last20?: number | null
+          hits_total_last3?: number | null
+          hits_total_last5?: number | null
+          ihdcf_avg_all?: number | null
+          ihdcf_avg_last10?: number | null
+          ihdcf_avg_last20?: number | null
+          ihdcf_avg_last3?: number | null
+          ihdcf_avg_last5?: number | null
+          ihdcf_total_all?: number | null
+          ihdcf_total_last10?: number | null
+          ihdcf_total_last20?: number | null
+          ihdcf_total_last3?: number | null
+          ihdcf_total_last5?: number | null
+          ipp_avg_all?: number | null
+          ipp_avg_last10?: number | null
+          ipp_avg_last20?: number | null
+          ipp_avg_last3?: number | null
+          ipp_avg_last5?: number | null
+          ipp_total_all?: number | null
+          ipp_total_last10?: number | null
+          ipp_total_last20?: number | null
+          ipp_total_last3?: number | null
+          ipp_total_last5?: number | null
+          iscf_avg_all?: number | null
+          iscf_avg_last10?: number | null
+          iscf_avg_last20?: number | null
+          iscf_avg_last3?: number | null
+          iscf_avg_last5?: number | null
+          iscf_total_all?: number | null
+          iscf_total_last10?: number | null
+          iscf_total_last20?: number | null
+          iscf_total_last3?: number | null
+          iscf_total_last5?: number | null
+          ixg_avg_all?: number | null
+          ixg_avg_last10?: number | null
+          ixg_avg_last20?: number | null
+          ixg_avg_last3?: number | null
+          ixg_avg_last5?: number | null
+          ixg_per_60_avg_all?: number | null
+          ixg_per_60_avg_last10?: number | null
+          ixg_per_60_avg_last20?: number | null
+          ixg_per_60_avg_last3?: number | null
+          ixg_per_60_avg_last5?: number | null
+          ixg_per_60_total_all?: number | null
+          ixg_per_60_total_last10?: number | null
+          ixg_per_60_total_last20?: number | null
+          ixg_per_60_total_last3?: number | null
+          ixg_per_60_total_last5?: number | null
+          ixg_total_all?: number | null
+          ixg_total_last10?: number | null
+          ixg_total_last20?: number | null
+          ixg_total_last3?: number | null
+          ixg_total_last5?: number | null
+          line_combo_group?: string | null
+          line_combo_slot?: number | null
+          on_ice_sh_pct_avg_all?: number | null
+          on_ice_sh_pct_avg_last10?: number | null
+          on_ice_sh_pct_avg_last20?: number | null
+          on_ice_sh_pct_avg_last3?: number | null
+          on_ice_sh_pct_avg_last5?: number | null
+          on_ice_sh_pct_total_all?: number | null
+          on_ice_sh_pct_total_last10?: number | null
+          on_ice_sh_pct_total_last20?: number | null
+          on_ice_sh_pct_total_last3?: number | null
+          on_ice_sh_pct_total_last5?: number | null
+          oz_start_pct_avg_all?: number | null
+          oz_start_pct_avg_last10?: number | null
+          oz_start_pct_avg_last20?: number | null
+          oz_start_pct_avg_last3?: number | null
+          oz_start_pct_avg_last5?: number | null
+          oz_start_pct_total_all?: number | null
+          oz_start_pct_total_last10?: number | null
+          oz_start_pct_total_last20?: number | null
+          oz_start_pct_total_last3?: number | null
+          oz_start_pct_total_last5?: number | null
+          pdo_avg_all?: number | null
+          pdo_avg_last10?: number | null
+          pdo_avg_last20?: number | null
+          pdo_avg_last3?: number | null
+          pdo_avg_last5?: number | null
+          pdo_total_all?: number | null
+          pdo_total_last10?: number | null
+          pdo_total_last20?: number | null
+          pdo_total_last3?: number | null
+          pdo_total_last5?: number | null
+          player_id: number
+          points_avg_all?: number | null
+          points_avg_last10?: number | null
+          points_avg_last20?: number | null
+          points_avg_last3?: number | null
+          points_avg_last5?: number | null
+          points_total_all?: number | null
+          points_total_last10?: number | null
+          points_total_last20?: number | null
+          points_total_last3?: number | null
+          points_total_last5?: number | null
+          pp_points_avg_all?: number | null
+          pp_points_avg_last10?: number | null
+          pp_points_avg_last20?: number | null
+          pp_points_avg_last3?: number | null
+          pp_points_avg_last5?: number | null
+          pp_points_total_all?: number | null
+          pp_points_total_last10?: number | null
+          pp_points_total_last20?: number | null
+          pp_points_total_last3?: number | null
+          pp_points_total_last5?: number | null
+          pp_share_pct_avg_all?: number | null
+          pp_share_pct_avg_last10?: number | null
+          pp_share_pct_avg_last20?: number | null
+          pp_share_pct_avg_last3?: number | null
+          pp_share_pct_avg_last5?: number | null
+          pp_share_pct_total_all?: number | null
+          pp_share_pct_total_last10?: number | null
+          pp_share_pct_total_last20?: number | null
+          pp_share_pct_total_last3?: number | null
+          pp_share_pct_total_last5?: number | null
+          pp_unit?: number | null
+          primary_points_pct_avg_all?: number | null
+          primary_points_pct_avg_last10?: number | null
+          primary_points_pct_avg_last20?: number | null
+          primary_points_pct_avg_last3?: number | null
+          primary_points_pct_avg_last5?: number | null
+          primary_points_pct_total_all?: number | null
+          primary_points_pct_total_last10?: number | null
+          primary_points_pct_total_last20?: number | null
+          primary_points_pct_total_last3?: number | null
+          primary_points_pct_total_last5?: number | null
+          season: number
+          shooting_pct_avg_all?: number | null
+          shooting_pct_avg_last10?: number | null
+          shooting_pct_avg_last20?: number | null
+          shooting_pct_avg_last3?: number | null
+          shooting_pct_avg_last5?: number | null
+          shooting_pct_total_all?: number | null
+          shooting_pct_total_last10?: number | null
+          shooting_pct_total_last20?: number | null
+          shooting_pct_total_last3?: number | null
+          shooting_pct_total_last5?: number | null
+          shots_avg_all?: number | null
+          shots_avg_last10?: number | null
+          shots_avg_last20?: number | null
+          shots_avg_last3?: number | null
+          shots_avg_last5?: number | null
+          shots_total_all?: number | null
+          shots_total_last10?: number | null
+          shots_total_last20?: number | null
+          shots_total_last3?: number | null
+          shots_total_last5?: number | null
+          sog_per_60_avg_all?: number | null
+          sog_per_60_avg_last10?: number | null
+          sog_per_60_avg_last20?: number | null
+          sog_per_60_avg_last3?: number | null
+          sog_per_60_avg_last5?: number | null
+          sog_per_60_total_all?: number | null
+          sog_per_60_total_last10?: number | null
+          sog_per_60_total_last20?: number | null
+          sog_per_60_total_last3?: number | null
+          sog_per_60_total_last5?: number | null
+          strength_state: string
+          team_games_played?: number
+          team_id?: number | null
+          toi_seconds_avg_all?: number | null
+          toi_seconds_avg_last10?: number | null
+          toi_seconds_avg_last20?: number | null
+          toi_seconds_avg_last3?: number | null
+          toi_seconds_avg_last5?: number | null
+          toi_seconds_total_all?: number | null
+          toi_seconds_total_last10?: number | null
+          toi_seconds_total_last20?: number | null
+          toi_seconds_total_last3?: number | null
+          toi_seconds_total_last5?: number | null
+          updated_at?: string
+        }
+        Update: {
+          assists_avg_all?: number | null
+          assists_avg_last10?: number | null
+          assists_avg_last20?: number | null
+          assists_avg_last3?: number | null
+          assists_avg_last5?: number | null
+          assists_total_all?: number | null
+          assists_total_last10?: number | null
+          assists_total_last20?: number | null
+          assists_total_last3?: number | null
+          assists_total_last5?: number | null
+          blocks_avg_all?: number | null
+          blocks_avg_last10?: number | null
+          blocks_avg_last20?: number | null
+          blocks_avg_last3?: number | null
+          blocks_avg_last5?: number | null
+          blocks_total_all?: number | null
+          blocks_total_last10?: number | null
+          blocks_total_last20?: number | null
+          blocks_total_last3?: number | null
+          blocks_total_last5?: number | null
+          ca_avg_all?: number | null
+          ca_avg_last10?: number | null
+          ca_avg_last20?: number | null
+          ca_avg_last3?: number | null
+          ca_avg_last5?: number | null
+          ca_total_all?: number | null
+          ca_total_last10?: number | null
+          ca_total_last20?: number | null
+          ca_total_last3?: number | null
+          ca_total_last5?: number | null
+          cf_avg_all?: number | null
+          cf_avg_last10?: number | null
+          cf_avg_last20?: number | null
+          cf_avg_last3?: number | null
+          cf_avg_last5?: number | null
+          cf_pct_avg_all?: number | null
+          cf_pct_avg_last10?: number | null
+          cf_pct_avg_last20?: number | null
+          cf_pct_avg_last3?: number | null
+          cf_pct_avg_last5?: number | null
+          cf_pct_total_all?: number | null
+          cf_pct_total_last10?: number | null
+          cf_pct_total_last20?: number | null
+          cf_pct_total_last3?: number | null
+          cf_pct_total_last5?: number | null
+          cf_total_all?: number | null
+          cf_total_last10?: number | null
+          cf_total_last20?: number | null
+          cf_total_last3?: number | null
+          cf_total_last5?: number | null
+          expected_sh_pct_avg_all?: number | null
+          expected_sh_pct_avg_last10?: number | null
+          expected_sh_pct_avg_last20?: number | null
+          expected_sh_pct_avg_last3?: number | null
+          expected_sh_pct_avg_last5?: number | null
+          expected_sh_pct_total_all?: number | null
+          expected_sh_pct_total_last10?: number | null
+          expected_sh_pct_total_last20?: number | null
+          expected_sh_pct_total_last3?: number | null
+          expected_sh_pct_total_last5?: number | null
+          fa_avg_all?: number | null
+          fa_avg_last10?: number | null
+          fa_avg_last20?: number | null
+          fa_avg_last3?: number | null
+          fa_avg_last5?: number | null
+          fa_total_all?: number | null
+          fa_total_last10?: number | null
+          fa_total_last20?: number | null
+          fa_total_last3?: number | null
+          fa_total_last5?: number | null
+          ff_avg_all?: number | null
+          ff_avg_last10?: number | null
+          ff_avg_last20?: number | null
+          ff_avg_last3?: number | null
+          ff_avg_last5?: number | null
+          ff_pct_avg_all?: number | null
+          ff_pct_avg_last10?: number | null
+          ff_pct_avg_last20?: number | null
+          ff_pct_avg_last3?: number | null
+          ff_pct_avg_last5?: number | null
+          ff_pct_total_all?: number | null
+          ff_pct_total_last10?: number | null
+          ff_pct_total_last20?: number | null
+          ff_pct_total_last3?: number | null
+          ff_pct_total_last5?: number | null
+          ff_total_all?: number | null
+          ff_total_last10?: number | null
+          ff_total_last20?: number | null
+          ff_total_last3?: number | null
+          ff_total_last5?: number | null
+          game_date?: string
+          game_id?: number | null
+          games_played?: number
+          goals_avg_all?: number | null
+          goals_avg_last10?: number | null
+          goals_avg_last20?: number | null
+          goals_avg_last3?: number | null
+          goals_avg_last5?: number | null
+          goals_total_all?: number | null
+          goals_total_last10?: number | null
+          goals_total_last20?: number | null
+          goals_total_last3?: number | null
+          goals_total_last5?: number | null
+          gp_pct_avg_all?: number | null
+          gp_pct_avg_last10?: number | null
+          gp_pct_avg_last20?: number | null
+          gp_pct_avg_last3?: number | null
+          gp_pct_avg_last5?: number | null
+          gp_pct_total_all?: number | null
+          gp_pct_total_last10?: number | null
+          gp_pct_total_last20?: number | null
+          gp_pct_total_last3?: number | null
+          gp_pct_total_last5?: number | null
+          hits_avg_all?: number | null
+          hits_avg_last10?: number | null
+          hits_avg_last20?: number | null
+          hits_avg_last3?: number | null
+          hits_avg_last5?: number | null
+          hits_total_all?: number | null
+          hits_total_last10?: number | null
+          hits_total_last20?: number | null
+          hits_total_last3?: number | null
+          hits_total_last5?: number | null
+          ihdcf_avg_all?: number | null
+          ihdcf_avg_last10?: number | null
+          ihdcf_avg_last20?: number | null
+          ihdcf_avg_last3?: number | null
+          ihdcf_avg_last5?: number | null
+          ihdcf_total_all?: number | null
+          ihdcf_total_last10?: number | null
+          ihdcf_total_last20?: number | null
+          ihdcf_total_last3?: number | null
+          ihdcf_total_last5?: number | null
+          ipp_avg_all?: number | null
+          ipp_avg_last10?: number | null
+          ipp_avg_last20?: number | null
+          ipp_avg_last3?: number | null
+          ipp_avg_last5?: number | null
+          ipp_total_all?: number | null
+          ipp_total_last10?: number | null
+          ipp_total_last20?: number | null
+          ipp_total_last3?: number | null
+          ipp_total_last5?: number | null
+          iscf_avg_all?: number | null
+          iscf_avg_last10?: number | null
+          iscf_avg_last20?: number | null
+          iscf_avg_last3?: number | null
+          iscf_avg_last5?: number | null
+          iscf_total_all?: number | null
+          iscf_total_last10?: number | null
+          iscf_total_last20?: number | null
+          iscf_total_last3?: number | null
+          iscf_total_last5?: number | null
+          ixg_avg_all?: number | null
+          ixg_avg_last10?: number | null
+          ixg_avg_last20?: number | null
+          ixg_avg_last3?: number | null
+          ixg_avg_last5?: number | null
+          ixg_per_60_avg_all?: number | null
+          ixg_per_60_avg_last10?: number | null
+          ixg_per_60_avg_last20?: number | null
+          ixg_per_60_avg_last3?: number | null
+          ixg_per_60_avg_last5?: number | null
+          ixg_per_60_total_all?: number | null
+          ixg_per_60_total_last10?: number | null
+          ixg_per_60_total_last20?: number | null
+          ixg_per_60_total_last3?: number | null
+          ixg_per_60_total_last5?: number | null
+          ixg_total_all?: number | null
+          ixg_total_last10?: number | null
+          ixg_total_last20?: number | null
+          ixg_total_last3?: number | null
+          ixg_total_last5?: number | null
+          line_combo_group?: string | null
+          line_combo_slot?: number | null
+          on_ice_sh_pct_avg_all?: number | null
+          on_ice_sh_pct_avg_last10?: number | null
+          on_ice_sh_pct_avg_last20?: number | null
+          on_ice_sh_pct_avg_last3?: number | null
+          on_ice_sh_pct_avg_last5?: number | null
+          on_ice_sh_pct_total_all?: number | null
+          on_ice_sh_pct_total_last10?: number | null
+          on_ice_sh_pct_total_last20?: number | null
+          on_ice_sh_pct_total_last3?: number | null
+          on_ice_sh_pct_total_last5?: number | null
+          oz_start_pct_avg_all?: number | null
+          oz_start_pct_avg_last10?: number | null
+          oz_start_pct_avg_last20?: number | null
+          oz_start_pct_avg_last3?: number | null
+          oz_start_pct_avg_last5?: number | null
+          oz_start_pct_total_all?: number | null
+          oz_start_pct_total_last10?: number | null
+          oz_start_pct_total_last20?: number | null
+          oz_start_pct_total_last3?: number | null
+          oz_start_pct_total_last5?: number | null
+          pdo_avg_all?: number | null
+          pdo_avg_last10?: number | null
+          pdo_avg_last20?: number | null
+          pdo_avg_last3?: number | null
+          pdo_avg_last5?: number | null
+          pdo_total_all?: number | null
+          pdo_total_last10?: number | null
+          pdo_total_last20?: number | null
+          pdo_total_last3?: number | null
+          pdo_total_last5?: number | null
+          player_id?: number
+          points_avg_all?: number | null
+          points_avg_last10?: number | null
+          points_avg_last20?: number | null
+          points_avg_last3?: number | null
+          points_avg_last5?: number | null
+          points_total_all?: number | null
+          points_total_last10?: number | null
+          points_total_last20?: number | null
+          points_total_last3?: number | null
+          points_total_last5?: number | null
+          pp_points_avg_all?: number | null
+          pp_points_avg_last10?: number | null
+          pp_points_avg_last20?: number | null
+          pp_points_avg_last3?: number | null
+          pp_points_avg_last5?: number | null
+          pp_points_total_all?: number | null
+          pp_points_total_last10?: number | null
+          pp_points_total_last20?: number | null
+          pp_points_total_last3?: number | null
+          pp_points_total_last5?: number | null
+          pp_share_pct_avg_all?: number | null
+          pp_share_pct_avg_last10?: number | null
+          pp_share_pct_avg_last20?: number | null
+          pp_share_pct_avg_last3?: number | null
+          pp_share_pct_avg_last5?: number | null
+          pp_share_pct_total_all?: number | null
+          pp_share_pct_total_last10?: number | null
+          pp_share_pct_total_last20?: number | null
+          pp_share_pct_total_last3?: number | null
+          pp_share_pct_total_last5?: number | null
+          pp_unit?: number | null
+          primary_points_pct_avg_all?: number | null
+          primary_points_pct_avg_last10?: number | null
+          primary_points_pct_avg_last20?: number | null
+          primary_points_pct_avg_last3?: number | null
+          primary_points_pct_avg_last5?: number | null
+          primary_points_pct_total_all?: number | null
+          primary_points_pct_total_last10?: number | null
+          primary_points_pct_total_last20?: number | null
+          primary_points_pct_total_last3?: number | null
+          primary_points_pct_total_last5?: number | null
+          season?: number
+          shooting_pct_avg_all?: number | null
+          shooting_pct_avg_last10?: number | null
+          shooting_pct_avg_last20?: number | null
+          shooting_pct_avg_last3?: number | null
+          shooting_pct_avg_last5?: number | null
+          shooting_pct_total_all?: number | null
+          shooting_pct_total_last10?: number | null
+          shooting_pct_total_last20?: number | null
+          shooting_pct_total_last3?: number | null
+          shooting_pct_total_last5?: number | null
+          shots_avg_all?: number | null
+          shots_avg_last10?: number | null
+          shots_avg_last20?: number | null
+          shots_avg_last3?: number | null
+          shots_avg_last5?: number | null
+          shots_total_all?: number | null
+          shots_total_last10?: number | null
+          shots_total_last20?: number | null
+          shots_total_last3?: number | null
+          shots_total_last5?: number | null
+          sog_per_60_avg_all?: number | null
+          sog_per_60_avg_last10?: number | null
+          sog_per_60_avg_last20?: number | null
+          sog_per_60_avg_last3?: number | null
+          sog_per_60_avg_last5?: number | null
+          sog_per_60_total_all?: number | null
+          sog_per_60_total_last10?: number | null
+          sog_per_60_total_last20?: number | null
+          sog_per_60_total_last3?: number | null
+          sog_per_60_total_last5?: number | null
+          strength_state?: string
+          team_games_played?: number
+          team_id?: number | null
+          toi_seconds_avg_all?: number | null
+          toi_seconds_avg_last10?: number | null
+          toi_seconds_avg_last20?: number | null
+          toi_seconds_avg_last3?: number | null
+          toi_seconds_avg_last5?: number | null
+          toi_seconds_total_all?: number | null
+          toi_seconds_total_last10?: number | null
+          toi_seconds_total_last20?: number | null
+          toi_seconds_total_last3?: number | null
+          toi_seconds_total_last5?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rolling_player_game_metrics_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rolling_player_game_metrics_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rolling_player_game_metrics_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "combined_sos"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "rolling_player_game_metrics_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "power_rankings"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "rolling_player_game_metrics_team_id_fkey"
             columns: ["team_id"]
             isOneToOne: false
             referencedRelation: "teams"
@@ -21497,15 +22475,15 @@ export type Database = {
     Views: {
       admin__column_catalog: {
         Row: {
-          column: unknown | null
+          column: unknown
           column_lc: string | null
           data_type: string | null
           is_nullable: boolean | null
           n_distinct: number | null
           null_frac: number | null
-          schema: unknown | null
-          table: unknown | null
-          udt_name: unknown | null
+          schema: unknown
+          table: unknown
+          udt_name: unknown
         }
         Relationships: []
       }
@@ -21519,8 +22497,8 @@ export type Database = {
           live_rows_children: number | null
           live_rows_effective: number | null
           live_rows_parent: number | null
-          schema: unknown | null
-          table: unknown | null
+          schema: unknown
+          table: unknown
         }
         Relationships: []
       }
@@ -21531,9 +22509,9 @@ export type Database = {
           live_rows: number | null
           rls_enabled: boolean | null
           rls_forced: boolean | null
-          schema: unknown | null
+          schema: unknown
           size_pretty: string | null
-          table: unknown | null
+          table: unknown
         }
         Relationships: []
       }
@@ -21565,7 +22543,7 @@ export type Database = {
         Row: {
           end_time: string | null
           jobid: number | null
-          jobname: unknown | null
+          jobname: unknown
           return_message: string | null
           runid: number | null
           scheduled_time: string | null
@@ -26144,26 +27122,32 @@ export type Database = {
         Args: { _seasonid: number }
         Returns: undefined
       }
-      execute_sql: {
-        Args: { sql_statement: string }
-        Returns: undefined
-      }
-      get_aggregated_player_stats: {
-        Args:
-          | {
+      execute_sql: { Args: { sql_statement: string }; Returns: undefined }
+      get_aggregated_player_stats:
+        | {
+            Args: {
               end_date: string
               player_id_param: number
               season_start_date: string
             }
-          | { player_id_param: number; season_year: number }
-        Returns: {
-          assist_ratio: number
-          o_zone_start_pct: number
-          pdo: number
-          shooting_percentage: number
-          total_peripherals: number
-        }[]
-      }
+            Returns: {
+              assist_ratio: number
+              o_zone_start_pct: number
+              pdo: number
+              shooting_percentage: number
+              total_peripherals: number
+            }[]
+          }
+        | {
+            Args: { player_id_param: number; season_year: number }
+            Returns: {
+              assist_ratio: number
+              o_zone_start_pct: number
+              pdo: number
+              shooting_percentage: number
+              total_peripherals: number
+            }[]
+          }
       get_skater_game_score_by_limit: {
         Args: { num_games: number; player_id: number }
         Returns: {
@@ -26205,41 +27189,18 @@ export type Database = {
         }[]
       }
       get_unprocessed_line_combinations: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           id: number
         }[]
       }
       get_unupdated_games: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           gameid: number
         }[]
       }
-      gtrgm_compress: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gtrgm_decompress: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gtrgm_in: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gtrgm_options: {
-        Args: { "": unknown }
-        Returns: undefined
-      }
-      gtrgm_out: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      immutable_unaccent: {
-        Args: { "": string }
-        Returns: string
-      }
+      immutable_unaccent: { Args: { "": string }; Returns: string }
       rpc_sko_player_series: {
         Args: {
           p_l_cold?: number
@@ -26251,34 +27212,23 @@ export type Database = {
         }
         Returns: Json
       }
-      set_limit: {
-        Args: { "": number }
-        Returns: number
-      }
-      show_limit: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
-      show_trgm: {
-        Args: { "": string }
-        Returns: string[]
-      }
-      unaccent: {
-        Args: { "": string }
-        Returns: string
-      }
-      unaccent_init: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      update_all_wgo_skaters: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      upsert_players_batch: {
-        Args: { players_data: Json[] } | { players_data: Json }
-        Returns: Json
-      }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
+      unaccent: { Args: { "": string }; Returns: string }
+      update_all_wgo_skaters: { Args: never; Returns: undefined }
+      upsert_players_batch:
+        | {
+            Args: { players_data: Json }
+            Returns: {
+              error: true
+            } & "Could not choose the best candidate function between: public.upsert_players_batch(players_data => jsonb), public.upsert_players_batch(players_data => _jsonb). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
+          }
+        | {
+            Args: { players_data: Json[] }
+            Returns: {
+              error: true
+            } & "Could not choose the best candidate function between: public.upsert_players_batch(players_data => jsonb), public.upsert_players_batch(players_data => _jsonb). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
+          }
       upsert_yahoo_players_v3: {
         Args: { players_data: Json[] }
         Returns: undefined

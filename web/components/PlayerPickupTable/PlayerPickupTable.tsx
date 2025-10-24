@@ -230,8 +230,12 @@ export type TeamWeekData = {
   gamesPlayed: number;
   offNights: number;
   avgOpponentPointPct: number;
+  weekScore?: number; // current week's team score (optional)
 };
-export type PlayerPickupTableProps = { teamWeekData?: TeamWeekData[] };
+export type PlayerPickupTableProps = {
+  teamWeekData?: TeamWeekData[];
+  layoutVariant?: "full" | "sidebar";
+};
 
 // ---------------------------
 // Helper Functions & Hooks
@@ -414,13 +418,22 @@ function getRankColorStyle(
   percentile: number | undefined | null
 ): React.CSSProperties {
   if (percentile === undefined || percentile === null) {
-    return { backgroundColor: `rgba(128, 128, 128, 0.45)` }; // Grey for undefined/null
+    // expose a var even for undefined to keep CSS stable
+    return {
+      backgroundColor: `rgba(128, 128, 128, 0.45)`,
+      ["--metric-color" as any]: `rgba(128, 128, 128, 0.45)`
+    } as React.CSSProperties;
   }
   const weight = Math.max(0, Math.min(100, percentile)) / 100;
   // Red to Green gradient
   const r = Math.round(255 * (1 - weight));
   const g = Math.round(255 * weight);
-  return { backgroundColor: `rgba(${r}, ${g}, 0, 0.45)` };
+  const color = `rgba(${r}, ${g}, 0, 0.45)`;
+  // set CSS var for use in border-color via SCSS
+  return {
+    backgroundColor: color,
+    ["--metric-color" as any]: color
+  } as React.CSSProperties;
 }
 
 // ---------------------------
@@ -449,6 +462,7 @@ interface FiltersProps {
   setSelectedMetrics: React.Dispatch<
     React.SetStateAction<Record<MetricKey, boolean>>
   >;
+  layoutVariant?: "full" | "sidebar";
 }
 
 const Filters: React.FC<FiltersProps> = ({
@@ -466,8 +480,10 @@ const Filters: React.FC<FiltersProps> = ({
   // --- Destructure metric props ---
   allPossibleMetrics,
   selectedMetrics,
-  setSelectedMetrics
+  setSelectedMetrics,
+  layoutVariant = "full"
 }) => {
+  const isCompactSidebar = layoutVariant === "sidebar";
   // --- NEW: Handler for clicking sub-group titles ---
   const handleSubGroupPresetClick = (
     keysToSelect: MetricKey[],
@@ -613,12 +629,14 @@ const Filters: React.FC<FiltersProps> = ({
 
   // Handler for title click, only works on mobile
   const handleTitleClick = isMobile ? toggleMobileMinimize : undefined;
+  const useCompactLayout = isMobile || isCompactSidebar;
 
   return (
     <div
       className={clsx(
         styles.filters,
-        isMobile && isMobileMinimized && styles.minimized
+        isMobile && isMobileMinimized && styles.minimized,
+        isCompactSidebar && styles.sidebarFilters
       )}
     >
       <div
@@ -653,12 +671,12 @@ const Filters: React.FC<FiltersProps> = ({
       {(!isMobile || !isMobileMinimized) && (
         <>
           {/* --- Ownership, Team, Position Filters --- */}
-          {/* Conditionally render based on isMobile */}
-          {isMobile ? (
-            // Mobile Layout for Basic Filters
+          {/* Conditionally render based on compact layout */}
+          {useCompactLayout ? (
+            // Compact (mobile/sidebar) Layout for Basic Filters - single combined row
             <div className={styles.filterContainerMobile}>
-              <div className={styles.ownershipTeamContainer}>
-                <div className={styles.filterRowMobileOwnership}>
+              <div className={styles.filterRowMobileCombined}>
+                <div className={styles.compactField}>
                   <label className={styles.labelMobile}>
                     Own %: {ownershipThreshold}%
                   </label>
@@ -673,7 +691,7 @@ const Filters: React.FC<FiltersProps> = ({
                     className={styles.sliderMobile}
                   />
                 </div>
-                <div className={styles.filterRowMobileTeam}>
+                <div className={styles.compactField}>
                   <label className={styles.labelMobile}>Team:</label>
                   <select
                     value={teamFilter}
@@ -687,25 +705,22 @@ const Filters: React.FC<FiltersProps> = ({
                     ))}
                   </select>
                 </div>
-              </div>
-              <div className={styles.filterRowMobile}>
-                <span className={styles.labelMobile}>Positions:</span>
-                <div className={styles.positionCheckboxGroup}>
-                  {Object.keys(defaultPositions).map(
-                    (
-                      pos // Use defaultPositions keys for rendering labels
-                    ) => (
+                <div
+                  className={clsx(styles.compactField, styles.positionsField)}
+                >
+                  <span className={styles.labelMobile}>Pos:</span>
+                  <div className={styles.positionCheckboxGroup}>
+                    {Object.keys(defaultPositions).map((pos) => (
                       <label key={pos} className={styles.positionCheckbox}>
                         <input
                           type="checkbox"
-                          // Use selectedPositions state for checked status
                           checked={selectedPositions[pos] ?? false}
                           onChange={() => handlePositionChange(pos)}
-                        />{" "}
+                        />
                         {pos}
                       </label>
-                    )
-                  )}
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
@@ -787,10 +802,17 @@ const Filters: React.FC<FiltersProps> = ({
                   None
                 </button>
               </div>
-            </div>
-            {/* GP% Group (Full Width) */}
-            <div className={styles.gpGroupContainer}>
-              {renderCheckboxGroup([gamePlayedKey])}
+              {/* Inline GP% toggle to save vertical space */}
+              <div className={styles.inlineGpToggle}>
+                <label className={styles.metricCheckbox}>
+                  <input
+                    type="checkbox"
+                    checked={selectedMetrics[gamePlayedKey] ?? false}
+                    onChange={() => handleMetricChange(gamePlayedKey)}
+                  />
+                  GP%
+                </label>
+              </div>
             </div>
             {/* Skaters and Goalies Row */}
             {/* Skaters and Goalies Row */}
@@ -925,12 +947,6 @@ const DesktopTable: React.FC<DesktopTableProps> = ({
   return (
     <div className={styles.tableContainer}>
       <table className={styles.table}>
-        <colgroup>
-          <col style={{ width: "15%" }} /> <col style={{ width: "5%" }} />
-          <col style={{ width: "5%" }} /> <col style={{ width: "5%" }} />
-          <col style={{ width: "5%" }} /> <col style={{ width: "5%" }} />
-          <col style={{ width: "50%" }} /> <col style={{ width: "10%" }} />
-        </colgroup>
         <thead>
           <tr>
             <th onClick={() => handleSort("nhl_player_name")}>
@@ -975,7 +991,6 @@ const DesktopTable: React.FC<DesktopTableProps> = ({
                   : "▲"
                 : ""}
             </th>
-            <th>Percentile Ranks</th>
             {/* Use dynamic header text, keep sort key as 'composite' for the score column */}
             <th onClick={() => handleSort("composite")}>
               {scoreHeader}{" "}
@@ -988,7 +1003,7 @@ const DesktopTable: React.FC<DesktopTableProps> = ({
           </tr>
         </thead>
         <tbody>
-          {players.map((player) => {
+          {players.map((player, index) => {
             // Use base metric definitions based on player type for display
             const relevantMetrics =
               player.player_type === "skater" ? skaterMetrics : goalieMetrics;
@@ -1004,148 +1019,164 @@ const DesktopTable: React.FC<DesktopTableProps> = ({
               player.filterMode === "single" ||
               player.filterMode === "multiple";
 
+            const percentileMetrics = relevantMetrics.filter(
+              ({ key }) => key !== "percent_games"
+            );
+            const pairClass =
+              index % 2 === 0 ? styles.evenPair : styles.oddPair;
+
             return (
-              <tr key={player.nhl_player_id}>
-                <td>
-                  <div className={styles.nameAndInjuryWrapper}>
-                    <div className={styles.leftNamePart}>
-                      <span className={styles.playerName}>
-                        {normalizePlayerName(
-                          player.yahoo_player_name || player.nhl_player_name
-                        )}
-                      </span>
-                    </div>
-                    {player.status &&
-                      ["IR-LT", "IR", "O", "DTD", "IR-NR"].includes(
-                        player.status
-                      ) && (
-                        <div className={styles.rightInjuryPart}>
-                          <div className={styles.statusRightInjuryPart}>
-                            {player.status}
-                          </div>
-                          <div className={styles.injuryNoteRightInjuryPart}>
-                            {player.injury_note}
-                          </div>
-                          <div className={styles.imageContainer}>
+              <React.Fragment key={player.nhl_player_id}>
+                <tr className={clsx(styles.primaryRow, pairClass)}>
+                  <td className={styles.nameCell}>
+                    <div className={styles.nameAndInjuryWrapper}>
+                      <div className={styles.leftNamePart}>
+                        {teamAbbr ? (
+                          <span className={styles.teamLogoSmall}>
                             <Image
-                              src="/pictures/injured.png"
-                              alt="Injured"
+                              src={`/teamLogos/${teamAbbr ?? "default"}.png`}
+                              alt={teamAbbr}
                               width={20}
                               height={20}
                             />
+                          </span>
+                        ) : null}
+                        <span className={styles.playerName}>
+                          {normalizePlayerName(
+                            player.yahoo_player_name || player.nhl_player_name
+                          )}
+                        </span>
+                      </div>
+                      {player.status &&
+                        ["IR-LT", "IR", "O", "DTD", "IR-NR"].includes(
+                          player.status
+                        ) && (
+                          <div className={styles.rightInjuryPart}>
+                            <div className={styles.statusRightInjuryPart}>
+                              {player.status}
+                            </div>
+                            <div className={styles.injuryNoteRightInjuryPart}>
+                              {player.injury_note}
+                            </div>
+                            <div className={styles.imageContainer}>
+                              <Image
+                                src="/pictures/injured.png"
+                                alt="Injured"
+                                width={20}
+                                height={20}
+                              />
+                            </div>
                           </div>
-                        </div>
-                      )}
-                  </div>
-                </td>
-                <td>
-                  {teamAbbr ? (
-                    <Image
-                      src={`/teamLogos/${teamAbbr ?? "default"}.png`}
-                      alt={teamAbbr}
-                      width={30}
-                      height={30}
-                    />
-                  ) : (
-                    "N/A"
-                  )}
-                </td>
-                <td>
-                  {player.percent_ownership !== null
-                    ? `${player.percent_ownership}%`
-                    : "N/A"}
-                </td>
-                <td>
-                  {player.eligible_positions?.join(", ") ||
-                    (player.player_type === "goalie" ? "G" : "N/A")}
-                </td>
-                <td>{getOffNightsForPlayer(player)}</td>
-                <td>
-                  {player.percent_games !== null ? (
-                    <div
-                      className={clsx(
-                        styles.percentileContainer,
-                        // Apply selected style if GP% is *actively used* in the score
-                        isMetricSelected("percent_games") && styles.selected,
-                        // Apply dimmed style if other filters are active AND GP% is not one of them
-                        isDimmed &&
-                          !isMetricSelected("percent_games") &&
-                          styles.dimmed
-                      )}
-                    >
-                      <div
-                        className={clsx(
-                          styles.percentileLabel,
-                          isMetricSelected("percent_games") &&
-                            styles.selectedLabel // Specific style for selected label
                         )}
-                      >
-                        GP%
-                      </div>
-                      <div
-                        className={clsx(
-                          styles.percentileBox,
-                          isMetricSelected("percent_games") &&
-                            styles.selectedBox // Specific style for selected box
-                        )}
-                        style={getRankColorStyle(
-                          // Check if percentiles object and the specific key exist before accessing
-                          player.percentiles?.percent_games
-                        )}
-                      >
-                        {(Math.min(player.percent_games, 1) * 100).toFixed(0)}%
-                      </div>
                     </div>
-                  ) : (
-                    "N/A"
-                  )}
-                </td>
-                <td>
-                  <div className={styles.percentileFlexContainer}>
-                    {/* Filter out GP% since it has its own column */}
-                    {relevantMetrics
-                      .filter(({ key }) => key !== "percent_games")
-                      .map(({ key, label }) => {
-                        // Check if percentiles object and the specific key exist
-                        const pctVal = player.percentiles?.[key];
-                        const isSelected = isMetricSelected(key);
-
-                        return (
-                          <div
-                            key={key}
-                            className={clsx(
-                              styles.percentileContainer,
-                              isSelected && styles.selected,
-                              isDimmed && !isSelected && styles.dimmed
-                            )}
-                          >
+                  </td>
+                  <td>
+                    {teamAbbr ? (
+                      <span className={styles.teamAbbr}>{teamAbbr}</span>
+                    ) : (
+                      "N/A"
+                    )}
+                  </td>
+                  <td>
+                    {player.percent_ownership !== null
+                      ? `${player.percent_ownership}%`
+                      : "N/A"}
+                  </td>
+                  <td>
+                    {player.eligible_positions?.join(", ") ||
+                      (player.player_type === "goalie" ? "G" : "N/A")}
+                  </td>
+                  <td>{getOffNightsForPlayer(player)}</td>
+                  <td>
+                    {player.percent_games !== null ? (
+                      <div
+                        className={clsx(
+                          styles.percentileContainer,
+                          isMetricSelected("percent_games") && styles.selected,
+                          isDimmed &&
+                            !isMetricSelected("percent_games") &&
+                            styles.dimmed
+                        )}
+                      >
+                        <div
+                          className={clsx(
+                            styles.percentileLabel,
+                            isMetricSelected("percent_games") &&
+                              styles.selectedLabel
+                          )}
+                        >
+                          GP%
+                        </div>
+                        <div
+                          className={clsx(
+                            styles.percentileBox,
+                            isMetricSelected("percent_games") &&
+                              styles.selectedBox
+                          )}
+                          style={getRankColorStyle(
+                            player.percentiles?.percent_games
+                          )}
+                        >
+                          {(Math.min(player.percent_games, 1) * 100).toFixed(0)}
+                          %
+                        </div>
+                      </div>
+                    ) : (
+                      "N/A"
+                    )}
+                  </td>
+                  <td className={styles.scoreCell}>
+                    {player.displayScore.toFixed(1)}
+                  </td>
+                </tr>
+                <tr className={clsx(styles.secondaryRow, pairClass)}>
+                  <td colSpan={7}>
+                    <div className={styles.percentileRow}>
+                      {percentileMetrics.length === 0 ? (
+                        <span className={styles.emptyPercentile}>
+                          No percentile data available
+                        </span>
+                      ) : (
+                        percentileMetrics.map(({ key, label }) => {
+                          const pctVal = player.percentiles?.[key];
+                          const isSelected = isMetricSelected(key);
+                          return (
                             <div
+                              key={key}
                               className={clsx(
-                                styles.percentileLabel,
-                                isSelected && styles.selectedLabel
+                                styles.percentileContainer,
+                                styles.rowPairMetric,
+                                isSelected && styles.selected,
+                                isDimmed && !isSelected && styles.dimmed
                               )}
                             >
-                              {label}
+                              <div
+                                className={clsx(
+                                  styles.percentileLabel,
+                                  isSelected && styles.selectedLabel
+                                )}
+                              >
+                                {label}
+                              </div>
+                              <div
+                                className={clsx(
+                                  styles.percentileBox,
+                                  isSelected && styles.selectedBox
+                                )}
+                                style={getRankColorStyle(pctVal)}
+                              >
+                                {pctVal !== undefined && pctVal !== null
+                                  ? `${pctVal.toFixed(0)}%`
+                                  : "0%"}
+                              </div>
                             </div>
-                            <div
-                              className={clsx(
-                                styles.percentileBox,
-                                isSelected && styles.selectedBox
-                              )}
-                              style={getRankColorStyle(pctVal)} // Pass potentially undefined value
-                            >
-                              {pctVal !== undefined && pctVal !== null
-                                ? `${pctVal.toFixed(0)}%`
-                                : "0%"}{" "}
-                              {/* Handle undefined/null */}
-                            </div>
-                          </div>
-                        );
-                      })}
-                  </div>
-                </td>
-                <td>{player.displayScore.toFixed(1)}</td>
-              </tr>
+                          );
+                        })
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              </React.Fragment>
             );
           })}
         </tbody>
@@ -1495,9 +1526,11 @@ const PaginationControls: React.FC<PaginationControlsProps> = ({
 // Main Component
 // ---------------------------
 const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
-  teamWeekData
+  teamWeekData,
+  layoutVariant = "full"
 }) => {
   const isMobile = useIsMobile();
+  const isSidebarLayout = layoutVariant === "sidebar";
   const currentSeasonInfo = useCurrentSeason();
 
   const yahooSeasonYear = useMemo(() => {
@@ -2191,9 +2224,56 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
     return result;
   }, [playersWithPercentiles, selectedMetrics, allPossibleMetrics]);
 
+  // --- Compute team-based multiplier from weekly team scores ---
+  const teamScoreMultiplierMap = useMemo(() => {
+    if (!teamWeekData || teamWeekData.length === 0)
+      return {} as Record<string, number>;
+    const entries = teamWeekData.filter(
+      (t) => typeof t.weekScore === "number"
+    ) as Array<TeamWeekData & { weekScore: number }>;
+    if (entries.length === 0) return {} as Record<string, number>;
+
+    // Normalize scores to 0..1 based on min..max this week
+    let min = Infinity;
+    let max = -Infinity;
+    for (const e of entries) {
+      if (e.weekScore < min) min = e.weekScore;
+      if (e.weekScore > max) max = e.weekScore;
+    }
+    const range = max - min;
+    const intensity = 0.25; // up to ±25% boost/dilution
+    const map: Record<string, number> = {};
+    for (const e of entries) {
+      const norm = range === 0 ? 0.5 : (e.weekScore - min) / range; // 0..1
+      const centered = norm * 2 - 1; // -1..1
+      const multiplier = 1 + centered * intensity; // 0.75..1.25 with intensity=0.25
+      map[e.teamAbbreviation] = Number.isFinite(multiplier) ? multiplier : 1;
+    }
+    return map;
+  }, [teamWeekData]);
+
+  // --- Apply team multiplier to players' display/sort values (non-destructive) ---
+  const playersWithScoresBoosted: PlayerWithScores[] = useMemo(() => {
+    if (!teamWeekData || teamWeekData.length === 0) return playersWithScores;
+    if (!playersWithScores || playersWithScores.length === 0)
+      return playersWithScores;
+    return playersWithScores.map((p) => {
+      const abbr = normalizeTeamAbbreviation(
+        p.current_team_abbreviation || p.yahoo_team,
+        p.yahoo_team
+      );
+      const mult = (abbr && teamScoreMultiplierMap[abbr]) || 1;
+      return {
+        ...p,
+        displayScore: p.displayScore * mult,
+        sortByValue: p.sortByValue * mult
+      };
+    });
+  }, [playersWithScores, teamScoreMultiplierMap, teamWeekData]);
+
   // --- Sorted Players (Logic unchanged) ---
   const sortedPlayers = useMemo(() => {
-    const sortablePlayers = [...playersWithScores];
+    const sortablePlayers = [...playersWithScoresBoosted];
     sortablePlayers.sort((a, b) => {
       let aValue: any;
       let bValue: any;
@@ -2245,7 +2325,7 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
       }
     });
     return sortablePlayers;
-  }, [playersWithScores, sortKey, sortOrder, getOffNightsForPlayer]);
+  }, [playersWithScoresBoosted, sortKey, sortOrder, getOffNightsForPlayer]);
 
   // --- Pagination Calculation (Unchanged) ---
   const totalPages = Math.ceil(sortedPlayers.length / pageSize);
@@ -2321,13 +2401,14 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
   }, [currentPage, totalPages]);
 
   // --- Render Logic ---
+  const containerClass = clsx(
+    styles.container,
+    isSidebarLayout && styles.sidebarLayout,
+    isMobile && isMobileMinimized && styles.containerMinimized
+  );
+
   return (
-    <div
-      className={clsx(
-        styles.container,
-        isMobile && isMobileMinimized && styles.containerMinimized
-      )}
-    >
+    <div className={containerClass}>
       {/* Pass position state and setter to Filters */}
       <Filters
         ownershipThreshold={ownershipThreshold}
@@ -2344,10 +2425,17 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
         allPossibleMetrics={allPossibleMetrics}
         selectedMetrics={selectedMetrics}
         setSelectedMetrics={setSelectedMetrics}
+        layoutVariant={layoutVariant}
       />
 
       {/* Table Content Area */}
-      <div id="player-table-content" className={styles.collapsibleContent}>
+      <div
+        id="player-table-content"
+        className={clsx(
+          styles.collapsibleContent,
+          isSidebarLayout && styles.sidebarContent
+        )}
+      >
         {loading ? (
           <div className={styles.message}>Loading players...</div>
         ) : paginatedPlayers.length === 0 ? (

@@ -145,6 +145,13 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 }
 
+.playerPickupSide {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-md;
+  overflow: visible;
+}
+
 .fourWeekGridContainerAll {
   @include v.element-wrapper;
   width: 100%;
@@ -159,7 +166,7 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 }
 
-.playerPickupContainer {
+.opponentMetricsContainer {
   @include v.element-wrapper;
 
   // PlayerPickupTable handles its own wrapper
@@ -410,16 +417,26 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
 .controlsBar {
   display: flex;
-  gap: v.$space-md;
-  align-items: center;
   flex-wrap: wrap;
-  justify-content: flex-end;
-  width: 60%;
+  align-items: center;
+  justify-content: space-between;
+  gap: v.$space-md;
+  width: 100%;
+  margin-top: v.$space-xs;
+
   @media (max-width: 980px) {
-    width: 100%;
     margin-top: v.$space-sm;
-    justify-content: flex-start;
+    gap: v.$space-sm;
   }
+}
+
+.dateCluster {
+  display: inline-flex;
+  align-items: center;
+  gap: v.$space-sm;
+  flex-wrap: wrap;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .modeToggle {
@@ -491,6 +508,16 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 .viewToggleWrapper {
   display: flex;
   align-items: stretch;
+}
+
+.viewControls {
+  display: inline-flex;
+  align-items: center;
+  gap: v.$space-sm;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .orientationToggleButton {
@@ -883,6 +910,24 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   align-items: center;
   justify-content: space-between; // create room between "Team" and toggle
   width: 100%;
+}
+
+.weekBadge {
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: v.$space-xs v.$space-md;
+  border-radius: 999px;
+  background: rgba(v.$secondary-color, 0.2);
+  color: v.$text-color-primary;
+  border: 1px solid rgba(v.$secondary-color, 0.4);
+  white-space: nowrap;
+
+  @include respond-to(medium) {
+    font-size: 0.75rem;
+    padding: v.$space-xxs v.$space-sm;
+  }
 }
 
 .preseasonToggle {
@@ -2070,6 +2115,7 @@ $heavy-color: #b64343;
   }
   .scheduleGridContainer,
   .opponentStatsContainer,
+  .opponentMetricsContainer,
   .fourWeekGridContainerAll {
     outline: none !important;
     border: none !important;

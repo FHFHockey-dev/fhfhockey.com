@@ -450,7 +450,7 @@ export const teamsInfo: {
   CBJ: {
     name: "Columbus Blue Jackets",
     shortName: "Blue Jackets",
-    primaryColor: "#002654", // Blue
+    primaryColor: "#  ", // Blue
     secondaryColor: "#7DA1C4", // Light Blue
     jersey: "#ffffff", // White
     accent: "#c8102e", // Red
