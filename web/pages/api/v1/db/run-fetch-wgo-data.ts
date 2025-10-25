@@ -12,26 +12,43 @@ export default async function handler(
   }
 
   // Look at the query parameter "date"
-  // ?date=all  -> processAllDates = true (fetch all dates from season start)
-  // ?date=recent -> processRecentDates = true (fetch only between last processed date and today)
-  // Otherwise (or if absent) use the default behavior (processRecentDates)
-  const dateParam = req.query.date;
-  const processAllDates = dateParam === "all";
-  const processRecentDates = dateParam === "recent" || !dateParam;
+  // ?date=all     -> allDates = true (fetch all dates for each included season)
+  // ?date=recent  -> recent = true (fetch only between last processed date and today)
+  // ?date=YYYY-MM-DD -> date = that specific day only
+  // Otherwise (or if absent) default to recent
+  const dateRaw = Array.isArray(req.query.date)
+    ? req.query.date[0]
+    : (req.query.date as string | undefined);
 
-  console.log(`API called with date param: ${dateParam}`);
-  console.log(
-    `processAllDates: ${processAllDates}, processRecentDates: ${processRecentDates}`
-  );
+  const options: {
+    allDates?: boolean;
+    recent?: boolean;
+    date?: string;
+    allSeasons?: boolean;
+  } = {};
+
+  if (dateRaw === "all") {
+    options.allDates = true;
+  } else if (!dateRaw || dateRaw === "recent") {
+    options.recent = true;
+  } else {
+    options.date = dateRaw;
+  }
+
+  // Optional: include all seasons if explicitly requested (default false for "recent")
+  const allSeasonsRaw = Array.isArray(req.query.allSeasons)
+    ? req.query.allSeasons[0]
+    : (req.query.allSeasons as string | undefined);
+  if (allSeasonsRaw === "true" || allSeasonsRaw === "1") {
+    options.allSeasons = true;
+  }
+
+  console.log(`API called with date param: ${dateRaw}`);
+  console.log("Resolved options for main():", options);
 
   try {
-    // Pass the flags to main as an options object
-    // Set processAllSeasons to true to fetch all game types (preseason, regular, postseason)
-    await main({
-      processAllDates,
-      processRecentDates,
-      processAllSeasons: true // This ensures we fetch all seasons including past ones
-    });
+    // Pass the flags to main with the correct option names expected by fetchWGOdata.js
+    await main(options);
     res.status(200).json({ message: "Data fetch/upsert complete." });
   } catch (err: any) {
     console.error("Error in run-fetch-wgo-data API:", err);

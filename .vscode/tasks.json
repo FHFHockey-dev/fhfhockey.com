@@ -9,6 +9,42 @@
 				"$tsc"
 			],
 			"group": "build"
+		},
+		{
+			"label": "Build web (typecheck)",
+			"type": "shell",
+			"command": "npm run -w web build",
+			"group": "build"
+		},
+		{
+			"label": "Build web (typecheck)",
+			"type": "shell",
+			"command": "npm run -w web build",
+			"group": "build"
+		},
+		{
+			"label": "Build web (typecheck)",
+			"type": "shell",
+			"command": "npm run -w web build",
+			"group": "build"
+		},
+		{
+			"label": "Build web (typecheck)",
+			"type": "shell",
+			"command": "npm run -w web build",
+			"group": "build"
+		},
+		{
+			"label": "Build web (typecheck)",
+			"type": "shell",
+			"command": "npm run -w web build",
+			"group": "build"
+		},
+		{
+			"label": "Build web (typecheck)",
+			"type": "shell",
+			"command": "npm run -w web build",
+			"group": "build"
 		}
 	]
 }

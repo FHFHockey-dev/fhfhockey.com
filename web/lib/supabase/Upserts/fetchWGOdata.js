@@ -9,6 +9,11 @@ import ProgressBar from "progress";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
+if (!supabaseUrl || !supabaseKey) {
+  console.warn(
+    "[fetchWGOdata] Supabase URL or Service Role Key is missing. Upserts will likely fail."
+  );
+}
 
 /**
  * QUERY PARAMETERS:
@@ -155,52 +160,56 @@ async function fetchNHLData(startDate, effectiveEndDate, seasonId, bar) {
     console.time(`Processing ${formattedDate}`);
 
     const statsResponse = await Fetch(
+      //   https://api.nhle.com/stats/rest/en/team/summary?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22points%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22wins%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&cayenneExp=gameDate%3C=%222025-10-15%2023%3A59%3A59%22%20and%20gameDate%3E=%222025-10-15%22%20and%20gameTypeId=2
       `https://api.nhle.com/stats/rest/en/team/summary?isAggregate=true&isGame=true&sort=[{"property":"points","direction":"DESC"},{"property":"wins","direction":"DESC"},{"property":"franchiseId","direction":"ASC"}]&start=0&limit=50&factCayenneExp=gamesPlayed>=1&cayenneExp=gameDate<='${formattedDate}' and gameDate>='${formattedDate}'`
     );
     const miscStatsResponse = await Fetch(
-      `https://api.nhle.com/stats/rest/en/team/realtime?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22hits%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22%20and%20`
+      `https://api.nhle.com/stats/rest/en/team/realtime?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22hits%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22`
     );
     const penaltyResponse = await Fetch(
-      `https://api.nhle.com/stats/rest/en/team/penalties?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22penaltyMinutes%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22%20and%20`
+      `https://api.nhle.com/stats/rest/en/team/penalties?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22penaltyMinutes%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22`
     );
     const penaltyKillResponse = await Fetch(
-      `https://api.nhle.com/stats/rest/en/team/penaltykill?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22penaltyKillPct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22%20and%20`
+      `https://api.nhle.com/stats/rest/en/team/penaltykill?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22penaltyKillPct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22`
     );
     const powerPlayResponse = await Fetch(
-      `https://api.nhle.com/stats/rest/en/team/powerplay?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22powerPlayPct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22%20and%20`
+      `https://api.nhle.com/stats/rest/en/team/powerplay?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22powerPlayPct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22`
     );
     const ppToiResponse = await Fetch(
-      `https://api.nhle.com/stats/rest/en/team/powerplaytime?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22timeOnIcePp%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22%20and%20`
+      `https://api.nhle.com/stats/rest/en/team/powerplaytime?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22timeOnIcePp%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22`
     );
     const pkToiResponse = await Fetch(
-      `https://api.nhle.com/stats/rest/en/team/penaltykilltime?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22timeOnIceShorthanded%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22%20and%20`
+      `https://api.nhle.com/stats/rest/en/team/penaltykilltime?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22timeOnIceShorthanded%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22`
     );
     const shootingResponse = await Fetch(
-      `https://api.nhle.com/stats/rest/en/team/summaryshooting?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22satTotal%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22%20and%20`
+      `https://api.nhle.com/stats/rest/en/team/summaryshooting?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22satTotal%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22`
     );
     const shPercentageResponse = await Fetch(
-      `https://api.nhle.com/stats/rest/en/team/percentages?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22satPct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22%20and%20`
+      `https://api.nhle.com/stats/rest/en/team/percentages?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22satPct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22`
     );
     const faceOffResponse = await Fetch(
-      `https://api.nhle.com/stats/rest/en/team/faceoffpercentages?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22faceoffWinPct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22%20and%20`
+      `https://api.nhle.com/stats/rest/en/team/faceoffpercentages?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22faceoffWinPct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22`
     );
     const faceOffWinLossResponse = await Fetch(
-      `https://api.nhle.com/stats/rest/en/team/faceoffwins?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22faceoffsWon%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22faceoffWinPct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22%20and%20`
+      `https://api.nhle.com/stats/rest/en/team/faceoffwins?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22faceoffsWon%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22faceoffWinPct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22`
     );
 
-    if (
-      statsResponse?.data &&
-      miscStatsResponse?.data &&
-      penaltyResponse?.data &&
-      penaltyKillResponse?.data &&
-      powerPlayResponse?.data &&
-      ppToiResponse?.data &&
-      pkToiResponse?.data &&
-      shootingResponse?.data &&
-      shPercentageResponse?.data &&
-      faceOffResponse?.data &&
-      faceOffWinLossResponse?.data
-    ) {
+    const counts = {
+      summary: statsResponse?.data?.length || 0,
+      realtime: miscStatsResponse?.data?.length || 0,
+      penalties: penaltyResponse?.data?.length || 0,
+      penaltykill: penaltyKillResponse?.data?.length || 0,
+      powerplay: powerPlayResponse?.data?.length || 0,
+      pptoi: ppToiResponse?.data?.length || 0,
+      pktoi: pkToiResponse?.data?.length || 0,
+      shooting: shootingResponse?.data?.length || 0,
+      percentages: shPercentageResponse?.data?.length || 0,
+      faceoff: faceOffResponse?.data?.length || 0,
+      faceoffWins: faceOffWinLossResponse?.data?.length || 0
+    };
+    const allDatasetsPresent = Object.values(counts).every((n) => n > 0);
+    if (allDatasetsPresent) {
+      let upsertsForDate = 0;
       for (const stat of statsResponse.data) {
         const additionalStats = miscStatsResponse.data.find(
           (addStat) => addStat.franchiseId === stat.franchiseId
@@ -261,179 +270,202 @@ async function fetchNHLData(startDate, effectiveEndDate, seasonId, bar) {
           );
         }
 
-        await supabase.from("wgo_team_stats").upsert(
-          {
-            team_id: team.id,
-            franchise_name: stat.franchiseName,
-            date: formattedDate,
-            season_id: seasonId,
-            faceoff_win_pct: stat.faceoffWinPct,
-            games_played: stat.gamesPlayed,
-            goals_against: stat.goalsAgainst,
-            goals_against_per_game: stat.goalsAgainstPerGame,
-            goals_for: stat.goalsFor,
-            goals_for_per_game: stat.goalsForPerGame,
-            losses: stat.losses,
-            ot_losses: stat.otLosses,
-            penalty_kill_net_pct: stat.penaltyKillNetPct,
-            penalty_kill_pct: stat.penaltyKillPct,
-            point_pct: stat.pointPct,
-            points: stat.points,
-            power_play_net_pct: stat.powerPlayNetPct,
-            power_play_pct: stat.powerPlayPct,
-            regulation_and_ot_wins: stat.regulationAndOtWins,
-            shots_against_per_game: stat.shotsAgainstPerGame,
-            shots_for_per_game: stat.shotsForPerGame,
-            wins: stat.wins,
-            wins_in_regulation: stat.winsInRegulation,
-            wins_in_shootout: stat.winsInShootout,
-            // Miscellaneous Stats from miscStatsResponse
-            blocked_shots: additionalStats.blockedShots,
-            blocked_shots_per_60: additionalStats.blockedShotsPer60,
-            empty_net_goals: additionalStats.emptyNetGoals,
-            giveaways: additionalStats.giveaways,
-            giveaways_per_60: additionalStats.giveawaysPer60,
-            hits: additionalStats.hits,
-            hits_per_60: additionalStats.hitsPer60,
-            missed_shots: additionalStats.missedShots,
-            sat_pct: additionalStats.satPct,
-            takeaways: additionalStats.takeaways,
-            takeaways_per_60: additionalStats.takeawaysPer60,
-            time_on_ice_per_game_5v5: additionalStats.timeOnIcePerGame5v5,
-            // Penalty Stats from penaltyResponse
-            bench_minor_penalties: penaltyData.benchMinorPenalties,
-            game_misconducts: penaltyData.gameMisconducts,
-            major_penalties: penaltyData.majors,
-            match_penalties: penaltyData.matchPenalties,
-            minor_penalties: penaltyData.minors,
-            misconduct_penalties: penaltyData.misconducts,
-            net_penalties: penaltyData.netPenalties,
-            net_penalties_per_60: penaltyData.netPenaltiesPer60,
-            penalties: penaltyData.penalties,
-            penalties_drawn_per_60: penaltyData.penaltiesDrawnPer60,
-            penalties_taken_per_60: penaltyData.penaltiesTakenPer60,
-            penalty_minutes: penaltyData.penaltyMinutes,
-            penalty_seconds_per_game: penaltyData.penaltySecondsPerGame,
-            total_penalties_drawn: penaltyData.totalPenaltiesDrawn,
-            // Penalty Kill Stats from penaltyKillResponse
-            pk_net_goals: penaltyKillData.pkNetGoals,
-            pk_net_goals_per_game: penaltyKillData.pkNetGoalsPerGame,
-            pp_goals_against: penaltyKillData.ppGoalsAgainst,
-            pp_goals_against_per_game: penaltyKillData.ppGoalsAgainstPerGame,
-            sh_goals_for: penaltyKillData.shGoalsFor,
-            sh_goals_for_per_game: penaltyKillData.shGoalsForPerGame,
-            times_shorthanded: penaltyKillData.timesShorthanded,
-            times_shorthanded_per_game: penaltyKillData.timesShorthandedPerGame,
-            // Power Play Stats from powerPlayResponse
-            power_play_goals_for: powerPlayData.powerPlayGoalsFor,
-            pp_goals_per_game: powerPlayData.ppGoalsPerGame,
-            pp_net_goals: powerPlayData.ppNetGoals,
-            pp_net_goals_per_game: powerPlayData.ppNetGoalsPerGame,
-            pp_opportunities: powerPlayData.ppOpportunities,
-            pp_opportunities_per_game: powerPlayData.ppOpportunitiesPerGame,
-            pp_time_on_ice_per_game: powerPlayData.ppTimeOnIcePerGame,
-            sh_goals_against: powerPlayData.shGoalsAgainst,
-            sh_goals_against_per_game: powerPlayData.shGoalsAgainstPerGame,
-            // Power Play Time on Ice from ppToiResponse
-            goals_4v3: ppToiData.goals4v3,
-            goals_5v3: ppToiData.goals5v3,
-            goals_5v4: ppToiData.goals5v4,
-            opportunities_4v3: ppToiData.opportunities4v3,
-            opportunities_5v3: ppToiData.opportunities5v3,
-            opportunities_5v4: ppToiData.opportunities5v4,
-            overall_power_play_pct: ppToiData.overallPowerPlayPct,
-            pp_pct_4v3: ppToiData.powerPlayPct4v3,
-            pp_pct_5v3: ppToiData.powerPlayPct5v3,
-            pp_pct_5v4: ppToiData.powerPlayPct5v4,
-            toi_4v3: ppToiData.timeOnIce4v3,
-            toi_5v3: ppToiData.timeOnIce5v3,
-            toi_5v4: ppToiData.timeOnIce5v4,
-            toi_pp: ppToiData.timeOnIcePp,
-            // Penalty Kill Time on Ice from pkToiResponse
-            goals_against_3v4: pkToiData.goalsAgainst3v4,
-            goals_against_3v5: pkToiData.goalsAgainst3v5,
-            goals_against_4v5: pkToiData.goalsAgainst4v5,
-            overall_penalty_kill_pct: pkToiData.overallPenaltyKillPct,
-            pk_3v4_pct: pkToiData.penaltyKillPct3v4,
-            pk_3v5_pct: pkToiData.penaltyKillPct3v5,
-            pk_4v5_pct: pkToiData.penaltyKillPct4v5,
-            toi_3v4: pkToiData.timeOnIce3v4,
-            toi_3v5: pkToiData.timeOnIce3v5,
-            toi_4v5: pkToiData.timeOnIce4v5,
-            toi_shorthanded: pkToiData.timeOnIceShorthanded,
-            times_shorthanded_3v4: pkToiData.timesShorthanded3v4,
-            times_shorthanded_3v5: pkToiData.timesShorthanded3v5,
-            times_shorthanded_4v5: pkToiData.timesShorthanded4v5,
-            // Shooting Stats from shootingResponse
-            sat_against: shootingData.satAgainst,
-            sat_behind: shootingData.satBehind,
-            sat_close: shootingData.satClose,
-            sat_for: shootingData.satFor,
-            sat_tied: shootingData.satTied,
-            sat_total: shootingData.satTotal,
-            shots_5v5: shootingData.shots5v5,
-            usat_against: shootingData.usatAgainst,
-            usat_ahead: shootingData.usatAhead,
-            usat_behind: shootingData.usatBehind,
-            usat_close: shootingData.usatClose,
-            usat_for: shootingData.usatFor,
-            usat_tied: shootingData.usatTied,
-            usat_total: shootingData.usatTotal,
-            // Shooting Percentage Stats from shPercentageResponse
-            goals_for_percentage: shPercentageData.goalsForPct,
-            sat_percentage: shPercentageData.satPct,
-            sat_pct_ahead: shPercentageData.satPctAhead,
-            sat_pct_behind: shPercentageData.satPctBehind,
-            sat_pct_close: shPercentageData.satPctClose,
-            sat_pct_tied: shPercentageData.satPctTied,
-            save_pct_5v5: shPercentageData.savePct5v5,
-            shooting_pct_5v5: shPercentageData.shootingPct5v5,
-            shooting_plus_save_pct_5v5: shPercentageData.shootingPlusSavePct5v5,
-            usat_pct: shPercentageData.usatPct,
-            usat_pct_ahead: shPercentageData.usatPctAhead,
-            usat_pct_behind: shPercentageData.usatPctBehind,
-            usat_pct_close: shPercentageData.usatPctClose,
-            usat_pct_tied: shPercentageData.usatPctTied,
-            zone_start_pct_5v5: shPercentageData.zoneStartPct5v5,
-            // Faceoff Stats from faceOffResponse
-            d_zone_faceoff_pct: faceOffData.defensiveZoneFaceoffPct,
-            d_zone_faceoffs: faceOffData.defensiveZoneFaceoffs,
-            ev_faceoff_pct: faceOffData.evFaceoffPct,
-            ev_faceoffs: faceOffData.evFaceoffs,
-            neutral_zone_faceoff_pct: faceOffData.neutralZoneFaceoffPct,
-            neutral_zone_faceoffs: faceOffData.neutralZoneFaceoffs,
-            o_zone_faceoff_pct: faceOffData.offensiveZoneFaceoffPct,
-            o_zone_faceoffs: faceOffData.offensiveZoneFaceoffs,
-            pp_faceoff_pct: faceOffData.ppFaceoffPct,
-            pp_faceoffs: faceOffData.ppFaceoffs,
-            sh_faceoff_pct: faceOffData.shFaceoffPct,
-            sh_faceoffs: faceOffData.shFaceoffs,
-            total_faceoffs: faceOffData.totalFaceoffs,
-            // Faceoff Win/Loss Stats from faceOffWinLossResponse
-            d_zone_fol: faceOffWinLossData.defensiveZoneFaceoffLosses,
-            d_zone_fow: faceOffWinLossData.defensiveZoneFaceoffWins,
-            d_zone_fo: faceOffWinLossData.defensiveZoneFaceoffs,
-            ev_fo: faceOffWinLossData.evFaceoffs,
-            ev_fol: faceOffWinLossData.evFaceoffsLost,
-            ev_fow: faceOffWinLossData.evFaceoffsWon,
-            faceoffs_lost: faceOffWinLossData.faceoffsLost,
-            faceoffs_won: faceOffWinLossData.faceoffsWon,
-            neutral_zone_fol: faceOffWinLossData.neutralZoneFaceoffLosses,
-            neutral_zone_fow: faceOffWinLossData.neutralZoneFaceoffWins,
-            neutral_zone_fo: faceOffWinLossData.neutralZoneFaceoffs,
-            o_zone_fol: faceOffWinLossData.offensiveZoneFaceoffLosses,
-            o_zone_fow: faceOffWinLossData.offensiveZoneFaceoffWins,
-            o_zone_fo: faceOffWinLossData.offensiveZoneFaceoffs,
-            pp_fol: faceOffWinLossData.ppFaceoffsLost,
-            pp_fow: faceOffWinLossData.ppFaceoffsWon,
-            sh_fol: faceOffWinLossData.shFaceoffsLost,
-            sh_fow: faceOffWinLossData.shFaceoffsWon,
-            game_id: gameId,
-            opponent_id: opponentId
-          },
-          { onConflict: ["season_id", "team_id", "date"] }
-        );
+        const { error: upsertError } = await supabase
+          .from("wgo_team_stats")
+          .upsert(
+            {
+              team_id: team.id,
+              franchise_name: stat.franchiseName,
+              date: formattedDate,
+              season_id: seasonId,
+              faceoff_win_pct: stat.faceoffWinPct,
+              games_played: stat.gamesPlayed,
+              goals_against: stat.goalsAgainst,
+              goals_against_per_game: stat.goalsAgainstPerGame,
+              goals_for: stat.goalsFor,
+              goals_for_per_game: stat.goalsForPerGame,
+              losses: stat.losses,
+              ot_losses: stat.otLosses,
+              penalty_kill_net_pct: stat.penaltyKillNetPct,
+              penalty_kill_pct: stat.penaltyKillPct,
+              point_pct: stat.pointPct,
+              points: stat.points,
+              power_play_net_pct: stat.powerPlayNetPct,
+              power_play_pct: stat.powerPlayPct,
+              regulation_and_ot_wins: stat.regulationAndOtWins,
+              shots_against_per_game: stat.shotsAgainstPerGame,
+              shots_for_per_game: stat.shotsForPerGame,
+              wins: stat.wins,
+              wins_in_regulation: stat.winsInRegulation,
+              wins_in_shootout: stat.winsInShootout,
+              // Miscellaneous Stats from miscStatsResponse
+              blocked_shots: additionalStats.blockedShots,
+              blocked_shots_per_60: additionalStats.blockedShotsPer60,
+              empty_net_goals: additionalStats.emptyNetGoals,
+              giveaways: additionalStats.giveaways,
+              giveaways_per_60: additionalStats.giveawaysPer60,
+              hits: additionalStats.hits,
+              hits_per_60: additionalStats.hitsPer60,
+              missed_shots: additionalStats.missedShots,
+              sat_pct: additionalStats.satPct,
+              takeaways: additionalStats.takeaways,
+              takeaways_per_60: additionalStats.takeawaysPer60,
+              time_on_ice_per_game_5v5: additionalStats.timeOnIcePerGame5v5,
+              // Penalty Stats from penaltyResponse
+              bench_minor_penalties: penaltyData.benchMinorPenalties,
+              game_misconducts: penaltyData.gameMisconducts,
+              major_penalties: penaltyData.majors,
+              match_penalties: penaltyData.matchPenalties,
+              minor_penalties: penaltyData.minors,
+              misconduct_penalties: penaltyData.misconducts,
+              net_penalties: penaltyData.netPenalties,
+              net_penalties_per_60: penaltyData.netPenaltiesPer60,
+              penalties: penaltyData.penalties,
+              penalties_drawn_per_60: penaltyData.penaltiesDrawnPer60,
+              penalties_taken_per_60: penaltyData.penaltiesTakenPer60,
+              penalty_minutes: penaltyData.penaltyMinutes,
+              penalty_seconds_per_game: penaltyData.penaltySecondsPerGame,
+              total_penalties_drawn: penaltyData.totalPenaltiesDrawn,
+              // Penalty Kill Stats from penaltyKillResponse
+              pk_net_goals: penaltyKillData.pkNetGoals,
+              pk_net_goals_per_game: penaltyKillData.pkNetGoalsPerGame,
+              pp_goals_against: penaltyKillData.ppGoalsAgainst,
+              pp_goals_against_per_game: penaltyKillData.ppGoalsAgainstPerGame,
+              sh_goals_for: penaltyKillData.shGoalsFor,
+              sh_goals_for_per_game: penaltyKillData.shGoalsForPerGame,
+              times_shorthanded: penaltyKillData.timesShorthanded,
+              times_shorthanded_per_game:
+                penaltyKillData.timesShorthandedPerGame,
+              // Power Play Stats from powerPlayResponse
+              power_play_goals_for: powerPlayData.powerPlayGoalsFor,
+              pp_goals_per_game: powerPlayData.ppGoalsPerGame,
+              pp_net_goals: powerPlayData.ppNetGoals,
+              pp_net_goals_per_game: powerPlayData.ppNetGoalsPerGame,
+              pp_opportunities: powerPlayData.ppOpportunities,
+              pp_opportunities_per_game: powerPlayData.ppOpportunitiesPerGame,
+              pp_time_on_ice_per_game: powerPlayData.ppTimeOnIcePerGame,
+              sh_goals_against: powerPlayData.shGoalsAgainst,
+              sh_goals_against_per_game: powerPlayData.shGoalsAgainstPerGame,
+              // Power Play Time on Ice from ppToiResponse
+              goals_4v3: ppToiData.goals4v3,
+              goals_5v3: ppToiData.goals5v3,
+              goals_5v4: ppToiData.goals5v4,
+              opportunities_4v3: ppToiData.opportunities4v3,
+              opportunities_5v3: ppToiData.opportunities5v3,
+              opportunities_5v4: ppToiData.opportunities5v4,
+              overall_power_play_pct: ppToiData.overallPowerPlayPct,
+              pp_pct_4v3: ppToiData.powerPlayPct4v3,
+              pp_pct_5v3: ppToiData.powerPlayPct5v3,
+              pp_pct_5v4: ppToiData.powerPlayPct5v4,
+              toi_4v3: ppToiData.timeOnIce4v3,
+              toi_5v3: ppToiData.timeOnIce5v3,
+              toi_5v4: ppToiData.timeOnIce5v4,
+              toi_pp: ppToiData.timeOnIcePp,
+              // Penalty Kill Time on Ice from pkToiResponse
+              goals_against_3v4: pkToiData.goalsAgainst3v4,
+              goals_against_3v5: pkToiData.goalsAgainst3v5,
+              goals_against_4v5: pkToiData.goalsAgainst4v5,
+              overall_penalty_kill_pct: pkToiData.overallPenaltyKillPct,
+              pk_3v4_pct: pkToiData.penaltyKillPct3v4,
+              pk_3v5_pct: pkToiData.penaltyKillPct3v5,
+              pk_4v5_pct: pkToiData.penaltyKillPct4v5,
+              toi_3v4: pkToiData.timeOnIce3v4,
+              toi_3v5: pkToiData.timeOnIce3v5,
+              toi_4v5: pkToiData.timeOnIce4v5,
+              toi_shorthanded: pkToiData.timeOnIceShorthanded,
+              times_shorthanded_3v4: pkToiData.timesShorthanded3v4,
+              times_shorthanded_3v5: pkToiData.timesShorthanded3v5,
+              times_shorthanded_4v5: pkToiData.timesShorthanded4v5,
+              // Shooting Stats from shootingResponse
+              sat_against: shootingData.satAgainst,
+              sat_behind: shootingData.satBehind,
+              sat_close: shootingData.satClose,
+              sat_for: shootingData.satFor,
+              sat_tied: shootingData.satTied,
+              sat_total: shootingData.satTotal,
+              shots_5v5: shootingData.shots5v5,
+              usat_against: shootingData.usatAgainst,
+              usat_ahead: shootingData.usatAhead,
+              usat_behind: shootingData.usatBehind,
+              usat_close: shootingData.usatClose,
+              usat_for: shootingData.usatFor,
+              usat_tied: shootingData.usatTied,
+              usat_total: shootingData.usatTotal,
+              // Shooting Percentage Stats from shPercentageResponse
+              goals_for_percentage: shPercentageData.goalsForPct,
+              sat_percentage: shPercentageData.satPct,
+              sat_pct_ahead: shPercentageData.satPctAhead,
+              sat_pct_behind: shPercentageData.satPctBehind,
+              sat_pct_close: shPercentageData.satPctClose,
+              sat_pct_tied: shPercentageData.satPctTied,
+              save_pct_5v5: shPercentageData.savePct5v5,
+              shooting_pct_5v5: shPercentageData.shootingPct5v5,
+              shooting_plus_save_pct_5v5:
+                shPercentageData.shootingPlusSavePct5v5,
+              usat_pct: shPercentageData.usatPct,
+              usat_pct_ahead: shPercentageData.usatPctAhead,
+              usat_pct_behind: shPercentageData.usatPctBehind,
+              usat_pct_close: shPercentageData.usatPctClose,
+              usat_pct_tied: shPercentageData.usatPctTied,
+              zone_start_pct_5v5: shPercentageData.zoneStartPct5v5,
+              // Faceoff Stats from faceOffResponse
+              d_zone_faceoff_pct: faceOffData.defensiveZoneFaceoffPct,
+              d_zone_faceoffs: faceOffData.defensiveZoneFaceoffs,
+              ev_faceoff_pct: faceOffData.evFaceoffPct,
+              ev_faceoffs: faceOffData.evFaceoffs,
+              neutral_zone_faceoff_pct: faceOffData.neutralZoneFaceoffPct,
+              neutral_zone_faceoffs: faceOffData.neutralZoneFaceoffs,
+              o_zone_faceoff_pct: faceOffData.offensiveZoneFaceoffPct,
+              o_zone_faceoffs: faceOffData.offensiveZoneFaceoffs,
+              pp_faceoff_pct: faceOffData.ppFaceoffPct,
+              pp_faceoffs: faceOffData.ppFaceoffs,
+              sh_faceoff_pct: faceOffData.shFaceoffPct,
+              sh_faceoffs: faceOffData.shFaceoffs,
+              total_faceoffs: faceOffData.totalFaceoffs,
+              // Faceoff Win/Loss Stats from faceOffWinLossResponse
+              d_zone_fol: faceOffWinLossData.defensiveZoneFaceoffLosses,
+              d_zone_fow: faceOffWinLossData.defensiveZoneFaceoffWins,
+              d_zone_fo: faceOffWinLossData.defensiveZoneFaceoffs,
+              ev_fo: faceOffWinLossData.evFaceoffs,
+              ev_fol: faceOffWinLossData.evFaceoffsLost,
+              ev_fow: faceOffWinLossData.evFaceoffsWon,
+              faceoffs_lost: faceOffWinLossData.faceoffsLost,
+              faceoffs_won: faceOffWinLossData.faceoffsWon,
+              neutral_zone_fol: faceOffWinLossData.neutralZoneFaceoffLosses,
+              neutral_zone_fow: faceOffWinLossData.neutralZoneFaceoffWins,
+              neutral_zone_fo: faceOffWinLossData.neutralZoneFaceoffs,
+              o_zone_fol: faceOffWinLossData.offensiveZoneFaceoffLosses,
+              o_zone_fow: faceOffWinLossData.offensiveZoneFaceoffWins,
+              o_zone_fo: faceOffWinLossData.offensiveZoneFaceoffs,
+              pp_fol: faceOffWinLossData.ppFaceoffsLost,
+              pp_fow: faceOffWinLossData.ppFaceoffsWon,
+              sh_fol: faceOffWinLossData.shFaceoffsLost,
+              sh_fow: faceOffWinLossData.shFaceoffsWon,
+              game_id: gameId,
+              opponent_id: opponentId
+            },
+            { onConflict: ["season_id", "team_id", "date"] }
+          );
+        if (upsertError) {
+          console.error(
+            `Upsert error for team ${team.id} on ${formattedDate} (season ${seasonId}):`,
+            upsertError
+          );
+        } else {
+          upsertsForDate++;
+        }
       }
+      console.log(
+        `Upserts for ${formattedDate} (season ${seasonId}): ${upsertsForDate}`
+      );
+    } else {
+      const missing = Object.entries(counts)
+        .filter(([, n]) => n === 0)
+        .map(([k]) => k)
+        .join(", ");
+      console.warn(
+        `Skipping upserts for ${formattedDate} (season ${seasonId}) due to missing datasets: ${missing}`
+      );
     }
 
     bar.tick();
@@ -578,7 +610,8 @@ async function main(options = {}) {
           const { data: processedDates, error } = await supabase
             .from("wgo_team_stats")
             .select("date")
-            .eq("season_id", season.id)
+            // season_id is stored as a string; ensure we compare apples to apples
+            .eq("season_id", season.id.toString())
             .order("date", { ascending: false })
             .limit(1);
 

@@ -55,6 +55,27 @@ type ChartDatasetRow = {
 const formatPercent = (value: number) => `${value.toFixed(1)}%`;
 const DEFAULT_TEAM_LOGO = "/teamLogos/default.png";
 
+function lightenHexColor(hex: string, amount = 0.3): string {
+  if (!hex || typeof hex !== "string" || !hex.startsWith("#")) return hex;
+  let normalized = hex.replace("#", "");
+  if (normalized.length === 3) {
+    normalized = normalized
+      .split("")
+      .map((c) => c + c)
+      .join("");
+  }
+  if (normalized.length !== 6) return hex;
+  const num = parseInt(normalized, 16);
+  if (Number.isNaN(num)) return hex;
+  const r = (num >> 16) & 255;
+  const g = (num >> 8) & 255;
+  const b = num & 255;
+  const adjust = (channel: number) =>
+    Math.min(255, Math.round(channel + (255 - channel) * amount));
+  const newColor = (adjust(r) << 16) | (adjust(g) << 8) | adjust(b);
+  return `#${newColor.toString(16).padStart(6, "0")}`;
+}
+
 const emptyCategoryResult: CategoryResult = {
   series: {},
   rankings: []
@@ -63,8 +84,8 @@ const emptyCategoryResult: CategoryResult = {
 const CATEGORY_ORDER: TrendCategoryId[] = [
   "offense",
   "defense",
-  "penaltyKill",
-  "powerPlay"
+  "powerPlay",
+  "penaltyKill"
 ];
 
 const CATEGORY_CONFIG_MAP: Record<TrendCategoryId, TrendCategoryDefinition> =
@@ -136,17 +157,33 @@ function CategoryChartCard({
     ? buildChartDataset(result.series)
     : { dataset: [], teamKeys: [] };
   const [hoveredTeam, setHoveredTeam] = useState<string | null>(null);
+  const hoverTimeoutRef = useRef<number | null>(null);
 
-  const handleChartMouseMove = (state: any) => {
-    const payload = state?.activePayload;
-    if (payload && payload.length > 0) {
-      const teamKey = payload[0]?.dataKey;
-      if (teamKey) {
-        setHoveredTeam(teamKey);
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
       }
-    } else if (hoveredTeam) {
-      setHoveredTeam(null);
+    };
+  }, []);
+
+  const clearHover = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
     }
+    setHoveredTeam(null);
+  };
+
+  const scheduleHover = (team: string) => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+    hoverTimeoutRef.current = window.setTimeout(() => {
+      setHoveredTeam(team);
+      hoverTimeoutRef.current = null;
+    }, 1000);
   };
 
   const CustomTooltip = ({
@@ -174,42 +211,45 @@ function CategoryChartCard({
 
   return (
     <div className={styles.chartCard}>
-      <div>
+      <div className={styles.chartHeaderWrapper}>
         <p className={styles.chartHeading}>{config.label}</p>
         <p className={styles.chartDescription}>{config.description}</p>
       </div>
       {hasData && dataset.length > 0 ? (
-        <div className={styles.chartShell}>
+        <div className={`${styles.chartShell} ${styles.chartTheme}`}>
           <ResponsiveContainer width="100%" height="100%">
-            <ReLineChart
-              data={dataset}
-              onMouseMove={handleChartMouseMove}
-              onMouseLeave={() => setHoveredTeam(null)}
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+            <ReLineChart data={dataset} onMouseLeave={clearHover}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
               <XAxis
                 dataKey="gp"
-                tick={{ fontSize: 11, fill: "#94a3b8" }}
+                tick={{ fontSize: 11, fill: "var(--chart-tick)" }}
                 label={{
                   value: "GP",
                   position: "insideBottomRight",
                   offset: -6,
-                  fill: "#94a3b8",
+                  fill: "var(--chart-tick)",
                   fontSize: 11
                 }}
               />
               <YAxis
                 domain={[0, 100]}
-                tick={{ fontSize: 11, fill: "#94a3b8" }}
+                tick={{ fontSize: 11, fill: "var(--chart-tick)" }}
                 width={30}
               />
               <Tooltip
                 content={<CustomTooltip />}
-                cursor={{ stroke: "#475569", strokeDasharray: "4 2" }}
+                cursor={{
+                  stroke: "var(--chart-cursor)",
+                  strokeDasharray: "4 2"
+                }}
               />
               {teamKeys.map((team) => {
                 const teamInfo = teamsInfo[team as keyof typeof teamsInfo];
-                const stroke = teamInfo?.primaryColor ?? "#94a3b8";
+                const stroke =
+                  teamInfo?.lightColor ??
+                  (teamInfo?.primaryColor
+                    ? lightenHexColor(teamInfo.primaryColor, 0.35)
+                    : "#a0aec0");
                 const highlight = hoveredTeam
                   ? hoveredTeam === team
                   : topTeams.has(team);
@@ -220,7 +260,7 @@ function CategoryChartCard({
                     dataKey={team}
                     stroke={stroke}
                     strokeWidth={highlight ? 2.4 : 1}
-                    strokeOpacity={highlight ? 1 : 0.15}
+                    strokeOpacity={highlight ? 1 : 0.35}
                     dot={{
                       r: highlight ? 3 : 1.5,
                       fill: stroke,
@@ -232,8 +272,8 @@ function CategoryChartCard({
                       strokeWidth: 0
                     }}
                     isAnimationActive={false}
-                    onMouseEnter={() => setHoveredTeam(team)}
-                    onMouseLeave={() => setHoveredTeam(null)}
+                    onMouseEnter={() => scheduleHover(team)}
+                    onMouseLeave={clearHover}
                   />
                 );
               })}
@@ -264,7 +304,7 @@ function RankingTable({
   return (
     <div className={styles.rankingCard}>
       <div className={styles.rankingHeading}>
-        <p className={styles.rankingTitle}>{config.label} Power</p>
+        <div className={styles.rankingTitle}>{config.label}</div>
         <p className={styles.rankingMeta}>
           Latest percentile vs league (GP {rows[0]?.gp ?? "—"})
         </p>
@@ -278,20 +318,25 @@ function RankingTable({
             return (
               <li key={row.team} className={styles.rankingRow}>
                 <div className={styles.teamCell}>
-                  <span className={styles.rank}>{row.rank}.</span>
-                  <img
-                    src={`/teamLogos/${row.team}.png`}
-                    alt={`${row.team} logo`}
-                    className={styles.teamLogo}
-                    loading="lazy"
-                    onError={handleLogoError}
-                  />
-                  <div className={styles.nameBlock}>
-                    <p className={styles.teamAbbr}>{row.team}</p>
+                  <span className={styles.rank}>{row.rank}</span>
+                  <span className={styles.deltaWrapper}>
+                    <ArrowDelta delta={row.delta} />
+                  </span>
+
+                  <div className={styles.teamLogoWrapper}>
+                    <div className={styles.nameBlock}>
+                      {/* <div className={styles.teamAbbr}>{row.team}</div> */}
+                    </div>
+                    <img
+                      src={`/teamLogos/${row.team}.png`}
+                      alt={`${row.team} logo`}
+                      className={styles.teamLogo}
+                      loading="lazy"
+                      onError={handleLogoError}
+                    />
                   </div>
                 </div>
                 <div className={styles.scoreCell}>
-                  <ArrowDelta delta={row.delta} />
                   <span className={styles.percentile}>
                     {formatPercent(row.percentile)}
                   </span>
@@ -494,10 +539,14 @@ export default function TrendsIndexPage() {
   return (
     <div className={styles.page}>
       <section className={styles.hero}>
-        <h1 className={styles.heroTitle}>Sustainability Trends</h1>
-        <p className={styles.heroSubtitle}>
-          Search for an NHL skater or explore team-wide power metrics.
-        </p>
+        <div className={styles.titleInfo}>
+          <h1 className={styles.heroTitle}>
+            <span className={styles.heroAccent}>Sustainability</span> Trends
+          </h1>
+          <p className={styles.heroSubtitle}>
+            Search for an NHL skater or explore team-wide power metrics.
+          </p>
+        </div>
 
         <form onSubmit={handleSearch} className={styles.searchForm}>
           <div className={styles.searchInputWrapper}>
