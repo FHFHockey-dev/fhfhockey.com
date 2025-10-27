@@ -25,9 +25,9 @@
  *    historical data fetch. The script will identify the season corresponding to this date and begin its reverse
  *    chronological fetch from there. If omitted in `reverse` mode, it starts from the current season.
  *    The format must be YYYY-MM-DD.
- *    Example: /api/v1/db/update-nst-gamelog?runMode=reverse&startDate=2025-03-30
+ *    Example: /api/v1/db/update-nst-gamelog?runMode=reverse&startDate=2024-02-05
  *
- *                                                         Bookmark:  2025-03-30
+ *                                                         Bookmark: 2024-02-05
  *
  * 3. `overwrite` (optional): Controls whether to re-fetch and overwrite existing dates.
  *    - Accepted: `yes` | `no` (also `true` | `false`, `1` | `0`)

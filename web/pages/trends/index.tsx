@@ -3,6 +3,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import supabase from "lib/supabase";
 import { teamsInfo } from "lib/teamsInfo";
 import {
+  DEFAULT_SKATER_LIMIT,
+  SKATER_TREND_CATEGORIES,
+  type SkaterTrendCategoryDefinition,
+  type SkaterTrendCategoryId
+} from "lib/trends/skaterMetricConfig";
+import {
   TEAM_TREND_CATEGORIES,
   type TrendCategoryDefinition,
   type TrendCategoryId
@@ -14,8 +20,10 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
+  Brush,
   Tooltip
 } from "recharts";
+import TopMovers from "components/TopMovers/TopMovers";
 import styles from "./index.module.scss";
 
 type PlayerListItem = {
@@ -52,8 +60,42 @@ type ChartDatasetRow = {
   [team: string]: number;
 };
 
+type PlayerMetadata = {
+  id: number;
+  fullName: string;
+  position: string | null;
+  teamAbbrev: string | null;
+  imageUrl: string | null;
+};
+
+type SkaterRankingRow = {
+  playerId: number;
+  percentile: number;
+  gp: number;
+  rank: number;
+  previousRank: number | null;
+  delta: number;
+  latestValue: number | null;
+};
+
+interface SkaterCategoryResult {
+  series: Record<string, SeriesPoint[]>;
+  rankings: SkaterRankingRow[];
+}
+
+interface SkaterTrendsResponse {
+  seasonId: number;
+  generatedAt: string;
+  positionGroup: "forward" | "defense" | "all";
+  limit: number;
+  windowSize: number;
+  categories: Record<SkaterTrendCategoryId, SkaterCategoryResult>;
+  playerMetadata: Record<string, PlayerMetadata>;
+}
+
 const formatPercent = (value: number) => `${value.toFixed(1)}%`;
 const DEFAULT_TEAM_LOGO = "/teamLogos/default.png";
+const DEFAULT_PLAYER_IMAGE = DEFAULT_TEAM_LOGO;
 
 function lightenHexColor(hex: string, amount = 0.3): string {
   if (!hex || typeof hex !== "string" || !hex.startsWith("#")) return hex;
@@ -76,7 +118,37 @@ function lightenHexColor(hex: string, amount = 0.3): string {
   return `#${newColor.toString(16).padStart(6, "0")}`;
 }
 
+const PLAYER_COLOR_PALETTE = [
+  "#7dd3fc",
+  "#fcd34d",
+  "#fca5a5",
+  "#c4b5fd",
+  "#a5f3fc",
+  "#f9a8d4",
+  "#fbbf24",
+  "#86efac",
+  "#f472b6",
+  "#f97316",
+  "#bef264",
+  "#fda4af"
+];
+
+function getPlayerColor(key: string) {
+  let hash = 0;
+  for (let i = 0; i < key.length; i += 1) {
+    hash = (hash << 5) - hash + key.charCodeAt(i);
+    hash |= 0; // convert to 32bit int
+  }
+  const idx = Math.abs(hash) % PLAYER_COLOR_PALETTE.length;
+  return PLAYER_COLOR_PALETTE[idx];
+}
+
 const emptyCategoryResult: CategoryResult = {
+  series: {},
+  rankings: []
+};
+
+const emptySkaterResult: SkaterCategoryResult = {
   series: {},
   rankings: []
 };
@@ -125,6 +197,39 @@ function buildChartDataset(series: Record<string, SeriesPoint[]>) {
   return { dataset, teamKeys: Object.keys(series) };
 }
 
+/**
+ * Return a new series object where each team's percentiles are replaced
+ * with a simple trailing moving average over `windowSize` points.
+ */
+function computeSmoothedSeries(
+  series: Record<string, SeriesPoint[]>,
+  windowSize: number
+): Record<string, SeriesPoint[]> {
+  if (!series || windowSize <= 1) return series;
+  const out: Record<string, SeriesPoint[]> = {};
+  Object.entries(series).forEach(([team, points]) => {
+    if (!points || points.length === 0) {
+      out[team] = [];
+      return;
+    }
+    const sorted = [...points].sort((a, b) => a.gp - b.gp);
+    const smoothed: SeriesPoint[] = [];
+    for (let i = 0; i < sorted.length; i++) {
+      const start = Math.max(0, i - (windowSize - 1));
+      let sum = 0;
+      let count = 0;
+      for (let j = start; j <= i; j++) {
+        sum += sorted[j].percentile;
+        count += 1;
+      }
+      const avg = count > 0 ? sum / count : sorted[i].percentile;
+      smoothed.push({ gp: sorted[i].gp, percentile: Number(avg) });
+    }
+    out[team] = smoothed;
+  });
+  return out;
+}
+
 function ArrowDelta({ delta }: { delta: number }) {
   if (delta === 0) {
     return <span className={`${styles.delta} ${styles.deltaNeutral}`}>—</span>;
@@ -138,24 +243,56 @@ function ArrowDelta({ delta }: { delta: number }) {
         positive ? styles.deltaPositive : styles.deltaNegative
       }`}
     >
-      {symbol} {prefix}
-      {delta}
+      <span> {symbol}</span>
+      <span>
+        {" "}
+        {prefix} {delta}
+      </span>
     </span>
   );
 }
 
 function CategoryChartCard({
   config,
-  result
+  result,
+  windowSize = 1
 }: {
   config: TrendCategoryDefinition;
   result: CategoryResult;
+  windowSize?: number;
 }) {
   const hasData = Object.keys(result.series || {}).length > 0;
-  const topTeams = new Set(result.rankings.slice(0, 5).map((row) => row.team));
-  const { dataset, teamKeys } = hasData
-    ? buildChartDataset(result.series)
-    : { dataset: [], teamKeys: [] };
+  const seriesForChart = useMemo<Record<string, SeriesPoint[]>>(() => {
+    if (!hasData) {
+      return {};
+    }
+    if (windowSize > 1) {
+      return computeSmoothedSeries(result.series, windowSize);
+    }
+    return result.series;
+  }, [hasData, result.series, windowSize]);
+
+  const { dataset, teamKeys } = useMemo(() => {
+    if (!hasData) {
+      return { dataset: [], teamKeys: [] };
+    }
+    return buildChartDataset(seriesForChart);
+  }, [hasData, seriesForChart]);
+  // brush indices for zooming - default to last 5 games window
+  const [brushStart, setBrushStart] = useState<number | undefined>(undefined);
+  const [brushEnd, setBrushEnd] = useState<number | undefined>(undefined);
+
+  useEffect(() => {
+    if (!dataset || dataset.length === 0) {
+      setBrushStart(undefined);
+      setBrushEnd(undefined);
+      return;
+    }
+    const end = dataset.length - 1;
+    const start = Math.max(0, end - 4);
+    setBrushStart(start);
+    setBrushEnd(end);
+  }, [dataset.length, seriesForChart]);
   const [hoveredTeam, setHoveredTeam] = useState<string | null>(null);
   const hoverTimeoutRef = useRef<number | null>(null);
 
@@ -186,6 +323,23 @@ function CategoryChartCard({
     }, 1000);
   };
 
+  const renderActiveDot =
+    (team: string, strokeColor: string) => (props: any) => {
+      const radius =
+        hoveredTeam === team ? Math.max(props.r ?? 4, 5.5) : (props.r ?? 4);
+      return (
+        <circle
+          {...props}
+          r={radius}
+          fill={strokeColor}
+          stroke={props.stroke ?? strokeColor}
+          strokeWidth={hoveredTeam === team ? 1 : 0.5}
+          onMouseEnter={() => scheduleHover(team)}
+          onMouseLeave={clearHover}
+        />
+      );
+    };
+
   const CustomTooltip = ({
     active,
     payload,
@@ -196,7 +350,11 @@ function CategoryChartCard({
     label?: number;
   }) => {
     if (!active || !payload || payload.length === 0) return null;
-    const [{ dataKey, value }] = payload;
+    const hoveredPayload =
+      (hoveredTeam && payload.find((item) => item.dataKey === hoveredTeam)) ||
+      payload[0];
+    if (!hoveredPayload) return null;
+    const { dataKey, value } = hoveredPayload;
     const teamInfo = teamsInfo[dataKey as keyof typeof teamsInfo];
     return (
       <div className={styles.chartTooltip}>
@@ -209,6 +367,59 @@ function CategoryChartCard({
     );
   };
 
+  const { improved: categoryImproved, degraded: categoryDegraded } =
+    useMemo(() => {
+      // Always compute movers from the RAW series and use a fixed 5GP window
+      const series = result?.series ?? {};
+      const movers: Array<{
+        id: string;
+        name: string;
+        logo?: string;
+        delta: number;
+        current?: number;
+      }> = [];
+
+      Object.entries(series).forEach(([team, points]) => {
+        if (!points || points.length < 2) return;
+        const sorted = [...points].sort((a, b) => a.gp - b.gp);
+        const last = sorted[sorted.length - 1];
+        const targetGp = last.gp - 4; // fixed 5GP delta
+
+        let prior: SeriesPoint | undefined = undefined;
+        for (let i = sorted.length - 1; i >= 0; i--) {
+          if (sorted[i].gp <= targetGp) {
+            prior = sorted[i];
+            break;
+          }
+        }
+        // fallback: earliest point within the last 5 entries
+        if (!prior) {
+          prior = sorted[Math.max(0, sorted.length - 5)];
+        }
+        if (!prior) return;
+
+        const delta = Number((last.percentile - prior.percentile).toFixed(2));
+        movers.push({
+          id: team,
+          name: teamsInfo[team as keyof typeof teamsInfo]?.shortName ?? team,
+          logo: `/teamLogos/${team}.png`,
+          delta,
+          current: last.percentile
+        });
+      });
+
+      const improvedSorted = movers
+        .slice()
+        .sort((a, b) => b.delta - a.delta)
+        .slice(0, 5);
+      const degradedSorted = movers
+        .slice()
+        .sort((a, b) => a.delta - b.delta)
+        .slice(0, 5);
+
+      return { improved: improvedSorted, degraded: degradedSorted };
+    }, [result]);
+
   return (
     <div className={styles.chartCard}>
       <div className={styles.chartHeaderWrapper}>
@@ -216,70 +427,102 @@ function CategoryChartCard({
         <p className={styles.chartDescription}>{config.description}</p>
       </div>
       {hasData && dataset.length > 0 ? (
-        <div className={`${styles.chartShell} ${styles.chartTheme}`}>
-          <ResponsiveContainer width="100%" height="100%">
-            <ReLineChart data={dataset} onMouseLeave={clearHover}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
-              <XAxis
-                dataKey="gp"
-                tick={{ fontSize: 11, fill: "var(--chart-tick)" }}
-                label={{
-                  value: "GP",
-                  position: "insideBottomRight",
-                  offset: -6,
-                  fill: "var(--chart-tick)",
-                  fontSize: 11
-                }}
-              />
-              <YAxis
-                domain={[0, 100]}
-                tick={{ fontSize: 11, fill: "var(--chart-tick)" }}
-                width={30}
-              />
-              <Tooltip
-                content={<CustomTooltip />}
-                cursor={{
-                  stroke: "var(--chart-cursor)",
-                  strokeDasharray: "4 2"
-                }}
-              />
-              {teamKeys.map((team) => {
-                const teamInfo = teamsInfo[team as keyof typeof teamsInfo];
-                const stroke =
-                  teamInfo?.lightColor ??
-                  (teamInfo?.primaryColor
-                    ? lightenHexColor(teamInfo.primaryColor, 0.35)
-                    : "#a0aec0");
-                const highlight = hoveredTeam
-                  ? hoveredTeam === team
-                  : topTeams.has(team);
-                return (
-                  <Line
-                    key={team}
-                    type="linear"
-                    dataKey={team}
-                    stroke={stroke}
-                    strokeWidth={highlight ? 2.4 : 1}
-                    strokeOpacity={highlight ? 1 : 0.35}
-                    dot={{
-                      r: highlight ? 3 : 1.5,
-                      fill: stroke,
-                      strokeWidth: 0
+        <>
+          <div className={`${styles.chartShell} ${styles.chartTheme}`}>
+            <ResponsiveContainer width="100%" height="100%">
+              <ReLineChart data={dataset} onMouseLeave={clearHover}>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="var(--chart-grid)"
+                />
+                <XAxis
+                  dataKey="gp"
+                  tick={{ fontSize: 11, fill: "var(--chart-tick)" }}
+                  label={{
+                    value: "GP",
+                    position: "insideBottomRight",
+                    offset: -6,
+                    fill: "var(--chart-tick)",
+                    fontSize: 11
+                  }}
+                />
+                <YAxis
+                  domain={[0, 100]}
+                  tick={{ fontSize: 11, fill: "var(--chart-tick)" }}
+                  width={30}
+                />
+                <Tooltip
+                  content={<CustomTooltip />}
+                  cursor={{
+                    stroke: "var(--chart-cursor)",
+                    strokeDasharray: "4 2"
+                  }}
+                />
+                {dataset && dataset.length > 0 && (
+                  <Brush
+                    dataKey="gp"
+                    height={28}
+                    stroke="var(--chart-tick)"
+                    travellerWidth={8}
+                    startIndex={brushStart}
+                    endIndex={brushEnd}
+                    onChange={(e: any) => {
+                      // Recharts onChange provides { startIndex, endIndex }
+                      if (!e) return;
+                      const s =
+                        typeof e.startIndex === "number"
+                          ? e.startIndex
+                          : brushStart;
+                      const en =
+                        typeof e.endIndex === "number" ? e.endIndex : brushEnd;
+                      setBrushStart(s);
+                      setBrushEnd(en);
                     }}
-                    activeDot={{
-                      r: 4,
-                      fill: stroke,
-                      strokeWidth: 0
-                    }}
-                    isAnimationActive={false}
-                    onMouseEnter={() => scheduleHover(team)}
-                    onMouseLeave={clearHover}
                   />
-                );
-              })}
-            </ReLineChart>
-          </ResponsiveContainer>
-        </div>
+                )}
+                {teamKeys.map((team) => {
+                  const teamInfo = teamsInfo[team as keyof typeof teamsInfo];
+                  const stroke =
+                    teamInfo?.lightColor ??
+                    (teamInfo?.primaryColor
+                      ? lightenHexColor(teamInfo.primaryColor, 0.35)
+                      : "#a0aec0");
+                  const isHovered = hoveredTeam === team;
+                  const hasFocus = hoveredTeam !== null;
+                  const strokeOpacity = hasFocus ? (isHovered ? 1 : 0.2) : 1;
+                  return (
+                    <Line
+                      key={team}
+                      type="stepAfter"
+                      dataKey={team}
+                      connectNulls
+                      stroke={stroke}
+                      strokeWidth={isHovered ? 3.8 : 2.4}
+                      strokeOpacity={strokeOpacity}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      dot={{
+                        r: isHovered ? 3 : 2,
+                        fill: stroke,
+                        strokeWidth: 0
+                      }}
+                      activeDot={renderActiveDot(team, stroke)}
+                      isAnimationActive={false}
+                      onMouseEnter={() => scheduleHover(team)}
+                      onMouseLeave={clearHover}
+                    />
+                  );
+                })}
+              </ReLineChart>
+            </ResponsiveContainer>
+          </div>
+          <div className={styles.chartMovers}>
+            <TopMovers
+              improved={categoryImproved}
+              degraded={categoryDegraded}
+            />
+          </div>
+        </>
       ) : (
         <div className={styles.chartEmpty}>Trend data not available yet.</div>
       )}
@@ -324,9 +567,6 @@ function RankingTable({
                   </span>
 
                   <div className={styles.teamLogoWrapper}>
-                    <div className={styles.nameBlock}>
-                      {/* <div className={styles.teamAbbr}>{row.team}</div> */}
-                    </div>
                     <img
                       src={`/teamLogos/${row.team}.png`}
                       alt={`${row.team} logo`}
@@ -350,6 +590,336 @@ function RankingTable({
   );
 }
 
+function SkaterRankingTable({
+  config,
+  result,
+  playerMetadata
+}: {
+  config: SkaterTrendCategoryDefinition;
+  result: SkaterCategoryResult;
+  playerMetadata: Record<string, PlayerMetadata>;
+}) {
+  const rows = result.rankings;
+  const handleHeadshotError = (
+    event: React.SyntheticEvent<HTMLImageElement, Event>
+  ) => {
+    event.currentTarget.onerror = null;
+    event.currentTarget.src = DEFAULT_PLAYER_IMAGE;
+  };
+
+  return (
+    <div className={`${styles.chartCard} ${styles.skaterRankingCard}`}>
+      <div className={styles.rankingHeading}>
+        <div className={styles.rankingTitle}>{config.label}</div>
+        <p className={styles.rankingMeta}>Top percentile skaters</p>
+      </div>
+      {rows.length === 0 ? (
+        <p className={styles.chartDescription}>No skater data yet.</p>
+      ) : (
+        <ul className={styles.skaterRankingList}>
+          {rows.map((row) => {
+            const meta = playerMetadata[String(row.playerId)];
+            return (
+              <li key={row.playerId} className={styles.skaterRankingRow}>
+                <div className={styles.skaterInfo}>
+                  <span className={styles.rank}>{row.rank}</span>
+                  <div className={styles.skaterHeadshotWrapper}>
+                    <img
+                      src={meta?.imageUrl ?? DEFAULT_PLAYER_IMAGE}
+                      alt={meta?.fullName ?? `Player ${row.playerId}`}
+                      className={styles.skaterHeadshot}
+                      loading="lazy"
+                      onError={handleHeadshotError}
+                    />
+                  </div>
+                  <div className={styles.skaterText}>
+                    <p className={styles.skaterName}>
+                      {meta?.fullName ?? `Player ${row.playerId}`}
+                    </p>
+                    <p className={styles.skaterMeta}>
+                      {meta?.teamAbbrev ?? "FA"}
+                      {meta?.position ? ` · ${meta.position}` : ""}
+                    </p>
+                  </div>
+                </div>
+                <div className={styles.skaterScore}>
+                  <ArrowDelta delta={row.delta} />
+                  <span className={styles.percentile}>
+                    {formatPercent(row.percentile)}
+                  </span>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function SkaterCategoryChartCard({
+  config,
+  result,
+  playerMetadata
+}: {
+  config: SkaterTrendCategoryDefinition;
+  result: SkaterCategoryResult;
+  playerMetadata: Record<string, PlayerMetadata>;
+}) {
+  const hasData = Object.keys(result.series || {}).length > 0;
+  const seriesForChart = useMemo(() => {
+    if (!hasData) {
+      return {};
+    }
+    return result.series;
+  }, [hasData, result.series]);
+
+  const { dataset, teamKeys } = useMemo(() => {
+    if (!hasData) {
+      return { dataset: [], teamKeys: [] };
+    }
+    return buildChartDataset(seriesForChart);
+  }, [hasData, seriesForChart]);
+  const [brushStart, setBrushStart] = useState<number | undefined>(undefined);
+  const [brushEnd, setBrushEnd] = useState<number | undefined>(undefined);
+  const [hoveredPlayer, setHoveredPlayer] = useState<string | null>(null);
+  const hoverTimeoutRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!dataset || dataset.length === 0) {
+      setBrushStart(undefined);
+      setBrushEnd(undefined);
+      return;
+    }
+    const end = dataset.length - 1;
+    const start = Math.max(0, end - 4);
+    setBrushStart(start);
+    setBrushEnd(end);
+  }, [dataset.length, seriesForChart]);
+
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const clearHover = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+    setHoveredPlayer(null);
+  };
+
+  const scheduleHover = (playerId: string) => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+    hoverTimeoutRef.current = window.setTimeout(() => {
+      setHoveredPlayer(playerId);
+      hoverTimeoutRef.current = null;
+    }, 800);
+  };
+
+  const renderActiveDot =
+    (playerId: string, strokeColor: string) => (props: any) => {
+      const radius =
+        hoveredPlayer === playerId
+          ? Math.max(props.r ?? 4, 5.5)
+          : (props.r ?? 4);
+      return (
+        <circle
+          {...props}
+          r={radius}
+          fill={strokeColor}
+          stroke={props.stroke ?? strokeColor}
+          strokeWidth={hoveredPlayer === playerId ? 1 : 0.5}
+          onMouseEnter={() => scheduleHover(playerId)}
+          onMouseLeave={clearHover}
+        />
+      );
+    };
+
+  const CustomTooltip = ({
+    active,
+    payload,
+    label
+  }: {
+    active?: boolean;
+    payload?: any[];
+    label?: number;
+  }) => {
+    if (!active || !payload || payload.length === 0) return null;
+    const hoveredPayload =
+      (hoveredPlayer &&
+        payload.find((item) => item.dataKey === hoveredPlayer)) ||
+      payload[0];
+    if (!hoveredPayload) return null;
+    const { dataKey, value } = hoveredPayload;
+    const meta = playerMetadata[dataKey];
+    return (
+      <div className={styles.chartTooltip}>
+        <p className={styles.chartTooltipLabel}>GP {label}</p>
+        <p className={styles.chartTooltipTeam}>
+          {meta?.fullName ?? `Player ${dataKey}`}
+        </p>
+        <p className={styles.chartTooltipValue}>{formatPercent(value)}</p>
+      </div>
+    );
+  };
+
+  const { improved: categoryImproved, degraded: categoryDegraded } =
+    useMemo(() => {
+      const movers: Array<{
+        id: string;
+        name: string;
+        logo?: string;
+        delta: number;
+      }> = [];
+      Object.entries(result.series ?? {}).forEach(([playerId, points]) => {
+        if (!points || points.length < 2) return;
+        const sorted = [...points].sort((a, b) => a.gp - b.gp);
+        const last = sorted[sorted.length - 1];
+        const targetGp = last.gp - 4;
+        let prior: SeriesPoint | undefined;
+        for (let i = sorted.length - 1; i >= 0; i -= 1) {
+          if (sorted[i].gp <= targetGp) {
+            prior = sorted[i];
+            break;
+          }
+        }
+        if (!prior) {
+          prior = sorted[Math.max(0, sorted.length - 5)];
+        }
+        if (!prior) return;
+        const delta = Number((last.percentile - prior.percentile).toFixed(2));
+        const meta = playerMetadata[playerId];
+        movers.push({
+          id: playerId,
+          name: meta?.fullName ?? `Player ${playerId}`,
+          logo: meta?.imageUrl ?? DEFAULT_PLAYER_IMAGE,
+          delta
+        });
+      });
+
+      const improvedSorted = movers
+        .slice()
+        .sort((a, b) => b.delta - a.delta)
+        .slice(0, 5);
+      const degradedSorted = movers
+        .slice()
+        .sort((a, b) => a.delta - b.delta)
+        .slice(0, 5);
+      return { improved: improvedSorted, degraded: degradedSorted };
+    }, [playerMetadata, result.series]);
+
+  return (
+    <div className={styles.chartCard}>
+      <div className={styles.chartHeaderWrapper}>
+        <p className={styles.chartHeading}>{config.label}</p>
+        <p className={styles.chartDescription}>{config.description}</p>
+      </div>
+      {hasData && dataset.length > 0 ? (
+        <>
+          <div className={`${styles.chartShell} ${styles.chartTheme}`}>
+            <ResponsiveContainer width="100%" height="100%">
+              <ReLineChart data={dataset} onMouseLeave={clearHover}>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="var(--chart-grid)"
+                />
+                <XAxis
+                  dataKey="gp"
+                  tick={{ fontSize: 11, fill: "var(--chart-tick)" }}
+                  label={{
+                    value: "GP",
+                    position: "insideBottomRight",
+                    offset: -6,
+                    fill: "var(--chart-tick)",
+                    fontSize: 11
+                  }}
+                />
+                <YAxis
+                  domain={[0, 100]}
+                  tick={{ fontSize: 11, fill: "var(--chart-tick)" }}
+                  width={30}
+                />
+                <Tooltip
+                  content={<CustomTooltip />}
+                  cursor={{
+                    stroke: "var(--chart-cursor)",
+                    strokeDasharray: "4 2"
+                  }}
+                />
+                {dataset.length > 0 && (
+                  <Brush
+                    dataKey="gp"
+                    height={28}
+                    stroke="var(--chart-tick)"
+                    travellerWidth={8}
+                    startIndex={brushStart}
+                    endIndex={brushEnd}
+                    onChange={(e: any) => {
+                      if (!e) return;
+                      const s =
+                        typeof e.startIndex === "number"
+                          ? e.startIndex
+                          : brushStart;
+                      const en =
+                        typeof e.endIndex === "number" ? e.endIndex : brushEnd;
+                      setBrushStart(s);
+                      setBrushEnd(en);
+                    }}
+                  />
+                )}
+                {teamKeys.map((playerId) => {
+                  const isHovered = hoveredPlayer === playerId;
+                  const hasFocus = hoveredPlayer !== null;
+                  const strokeOpacity = hasFocus ? (isHovered ? 1 : 0.2) : 1;
+                  const stroke = getPlayerColor(playerId);
+                  return (
+                    <Line
+                      key={playerId}
+                      type="stepAfter"
+                      dataKey={playerId}
+                      connectNulls
+                      stroke={stroke}
+                      strokeWidth={isHovered ? 3.8 : 2.4}
+                      strokeOpacity={strokeOpacity}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      dot={{
+                        r: isHovered ? 3 : 2,
+                        fill: stroke,
+                        strokeWidth: 0
+                      }}
+                      activeDot={renderActiveDot(playerId, stroke)}
+                      isAnimationActive={false}
+                      onMouseEnter={() => scheduleHover(playerId)}
+                      onMouseLeave={clearHover}
+                    />
+                  );
+                })}
+              </ReLineChart>
+            </ResponsiveContainer>
+          </div>
+          <div className={styles.chartMovers}>
+            <TopMovers
+              improved={categoryImproved}
+              degraded={categoryDegraded}
+            />
+          </div>
+        </>
+      ) : (
+        <div className={styles.chartEmpty}>Skater data not available yet.</div>
+      )}
+    </div>
+  );
+}
+
 export default function TrendsIndexPage() {
   const router = useRouter();
   const [query, setQuery] = useState("");
@@ -360,9 +930,23 @@ export default function TrendsIndexPage() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
 
+  // Rolling-average window size. 1 = raw game-by-game granularity. Default to 1GP.
+  const [rollingWindow, setRollingWindow] = useState<number>(1);
+
   const [teamTrends, setTeamTrends] = useState<TeamTrendsResponse | null>(null);
   const [teamTrendsLoading, setTeamTrendsLoading] = useState(true);
   const [teamTrendsError, setTeamTrendsError] = useState<string | null>(null);
+  const [skaterPositionGroup, setSkaterPositionGroup] = useState<
+    "forward" | "defense" | "all"
+  >("forward");
+  const [skaterLimit, setSkaterLimit] = useState<number>(DEFAULT_SKATER_LIMIT);
+  const [skaterTrends, setSkaterTrends] = useState<SkaterTrendsResponse | null>(
+    null
+  );
+  const [skaterTrendsLoading, setSkaterTrendsLoading] = useState(true);
+  const [skaterTrendsError, setSkaterTrendsError] = useState<string | null>(
+    null
+  );
 
   const inputRef = useRef<HTMLInputElement | null>(null);
   const listboxId = "player-suggestions";
@@ -536,6 +1120,54 @@ export default function TrendsIndexPage() {
     };
   }, []);
 
+  useEffect(() => {
+    const controller = new AbortController();
+    let mounted = true;
+
+    async function loadSkaterTrends() {
+      try {
+        setSkaterTrendsLoading(true);
+        const params = new URLSearchParams({
+          position: skaterPositionGroup,
+          limit: String(skaterLimit),
+          window: String(rollingWindow)
+        });
+        const response = await fetch(
+          `/api/v1/trends/skater-power?${params.toString()}`,
+          { signal: controller.signal }
+        );
+        if (!response.ok) {
+          throw new Error(
+            `Skater trend API failed with status ${response.status}: ${response.statusText}`
+          );
+        }
+        const payload = (await response.json()) as SkaterTrendsResponse;
+        if (mounted) {
+          setSkaterTrends(payload);
+          setSkaterTrendsError(null);
+        }
+      } catch (err: any) {
+        if (err.name === "AbortError") return;
+        console.error("Failed to load skater trends", err);
+        if (mounted) {
+          setSkaterTrendsError(
+            err?.message ?? "Unexpected error fetching skater trends."
+          );
+        }
+      } finally {
+        if (mounted) {
+          setSkaterTrendsLoading(false);
+        }
+      }
+    }
+
+    loadSkaterTrends();
+    return () => {
+      mounted = false;
+      controller.abort();
+    };
+  }, [skaterPositionGroup, skaterLimit, rollingWindow]);
+
   return (
     <div className={styles.page}>
       <section className={styles.hero}>
@@ -638,16 +1270,36 @@ export default function TrendsIndexPage() {
       <section className={styles.teamSection}>
         <div className={styles.sectionHeader}>
           <div>
-            <h2 className={styles.sectionTitle}>Team Power Trends</h2>
+            <h2 className={styles.sectionTitle}>Team Trends</h2>
             <p className={styles.sectionSubtitle}>
               Percentile trajectories by game played across four strengths.
             </p>
           </div>
-          <p className={styles.sectionTimestamp}>
-            {teamTrends?.generatedAt
-              ? `Updated ${new Date(teamTrends.generatedAt).toLocaleString()}`
-              : ""}
-          </p>
+          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+            <p className={styles.sectionTimestamp}>
+              {teamTrends?.generatedAt
+                ? `Updated ${new Date(teamTrends.generatedAt).toLocaleString()}`
+                : ""}
+            </p>
+
+            <div
+              className={styles.windowToggle}
+              role="tablist"
+              aria-label="Rolling average window"
+            >
+              {[1, 3, 5, 10].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  className={`${styles.windowButton} ${rollingWindow === n ? styles.windowActive : ""}`}
+                  aria-pressed={rollingWindow === n}
+                  onClick={() => setRollingWindow(n)}
+                >
+                  {n}GP
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
         {teamTrendsError && (
           <div className={styles.teamError}>{teamTrendsError}</div>
@@ -657,37 +1309,108 @@ export default function TrendsIndexPage() {
             Loading team percentile trends…
           </div>
         ) : (
-          <div className={styles.dashboardGrid}>
-            <div className={styles.chartGrid}>
-              {CATEGORY_ORDER.map((categoryId) => {
-                const category = CATEGORY_CONFIG_MAP[categoryId];
-                return (
-                  <CategoryChartCard
-                    key={category.id}
-                    config={category}
-                    result={
-                      teamTrends?.categories?.[categoryId] ??
-                      emptyCategoryResult
-                    }
-                  />
-                );
-              })}
+          <div className={styles.trendGrid}>
+            {CATEGORY_ORDER.flatMap((categoryId) => {
+              const category = CATEGORY_CONFIG_MAP[categoryId];
+              const categoryResult =
+                teamTrends?.categories?.[categoryId] ?? emptyCategoryResult;
+              return [
+                <RankingTable
+                  key={`${category.id}-ranking`}
+                  config={category}
+                  result={categoryResult}
+                />,
+                <CategoryChartCard
+                  key={`${category.id}-chart`}
+                  config={category}
+                  result={categoryResult}
+                  windowSize={rollingWindow}
+                />
+              ];
+            })}
+          </div>
+        )}
+      </section>
+
+      <section className={styles.teamSection}>
+        <div className={styles.sectionHeader}>
+          <div>
+            <h2 className={styles.sectionTitle}>Skater Trends</h2>
+            <p className={styles.sectionSubtitle}>
+              Top skater percentiles for shot volume, ixG, and usage.
+            </p>
+          </div>
+          <div className={styles.skaterControls}>
+            <div
+              className={styles.windowToggle}
+              role="tablist"
+              aria-label="Skater position group"
+            >
+              {[
+                { value: "forward", label: "Forwards" },
+                { value: "defense", label: "Defense" },
+                { value: "all", label: "All" }
+              ].map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  className={`${styles.windowButton} ${skaterPositionGroup === option.value ? styles.windowActive : ""}`}
+                  aria-pressed={skaterPositionGroup === option.value}
+                  onClick={() =>
+                    setSkaterPositionGroup(
+                      option.value as "forward" | "defense" | "all"
+                    )
+                  }
+                >
+                  {option.label}
+                </button>
+              ))}
             </div>
-            <div className={styles.rankingGrid}>
-              {CATEGORY_ORDER.map((categoryId) => {
-                const category = CATEGORY_CONFIG_MAP[categoryId];
-                return (
-                  <RankingTable
-                    key={`${category.id}-ranking`}
-                    config={category}
-                    result={
-                      teamTrends?.categories?.[categoryId] ??
-                      emptyCategoryResult
-                    }
-                  />
-                );
-              })}
+            <div
+              className={styles.windowToggle}
+              role="tablist"
+              aria-label="Skater cohort size"
+            >
+              {[25, 50].map((count) => (
+                <button
+                  key={count}
+                  type="button"
+                  className={`${styles.windowButton} ${skaterLimit === count ? styles.windowActive : ""}`}
+                  aria-pressed={skaterLimit === count}
+                  onClick={() => setSkaterLimit(count)}
+                >
+                  Top {count}
+                </button>
+              ))}
             </div>
+          </div>
+        </div>
+        {skaterTrendsError && (
+          <div className={styles.teamError}>{skaterTrendsError}</div>
+        )}
+        {skaterTrendsLoading ? (
+          <div className={styles.teamLoading}>Loading skater trends…</div>
+        ) : (
+          <div className={styles.trendGrid}>
+            {SKATER_TREND_CATEGORIES.flatMap((category) => {
+              const categoryResult =
+                skaterTrends?.categories?.[category.id] ?? emptySkaterResult;
+              const playerMetadata = skaterTrends?.playerMetadata ?? {};
+              return [
+                <SkaterRankingTable
+                  key={`${category.id}-skater-ranking`}
+                  config={category}
+                  result={categoryResult}
+                  playerMetadata={playerMetadata}
+                />,
+                <SkaterCategoryChartCard
+                  key={`${category.id}-skater-chart`}
+                  config={category}
+                  result={categoryResult}
+                  playerMetadata={playerMetadata}
+                />
+              ];
+            })}
           </div>
         )}
       </section>

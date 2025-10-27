@@ -1,0 +1,79 @@
+@use "styles/vars" as v;
+
+.panel {
+  @include v.glass-panel;
+  padding: v.$space-sm v.$space-md;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: v.$space-md;
+  align-items: start;
+}
+
+.columnHeader {
+  font-size: 0.85rem;
+  color: v.$text-secondary;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: v.$space-xs;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-xs;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: v.$space-sm;
+  padding: v.$space-xs v.$space-sm;
+  border-radius: v.$border-radius-md;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.01), transparent);
+}
+
+.rank {
+  width: 28px;
+  text-align: center;
+  color: v.$text-secondary;
+  font-weight: 700;
+}
+
+.logo {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  object-fit: contain;
+}
+
+.name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: v.$text-primary;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.delta {
+  margin-left: auto;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.positive {
+  color: v.$success-color;
+}
+
+.negative {
+  color: v.$danger-color;
+}
+
+.empty {
+  color: v.$text-secondary;
+  font-size: 0.9rem;
+}
