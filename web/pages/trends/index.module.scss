@@ -355,6 +355,12 @@
   align-items: center;
 }
 
+.chartTitleGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .chartHeading {
   font-size: 0.85rem;
   letter-spacing: 0.08em;
@@ -362,6 +368,94 @@
   color: v.$primary-color;
   font-weight: 700;
   font-family: v.$font-family-accent;
+}
+
+.infoWrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+.infoButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid rgba(v.$primary-color, 0.5);
+  background: rgba(v.$primary-color, 0.12);
+  color: v.$primary-color;
+  cursor: help;
+  padding: 0;
+  line-height: 1;
+  transition:
+    background 0.15s ease,
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+
+  &:hover,
+  &:focus-visible {
+    outline: none;
+    background: rgba(v.$primary-color, 0.2);
+    box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.25);
+    transform: translateY(-1px);
+  }
+}
+
+.infoIcon {
+  width: 12px;
+  height: 12px;
+}
+
+.infoTooltip {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 20;
+  max-width: 360px;
+  min-width: 240px;
+  padding: v.$space-sm v.$space-md;
+  border-radius: v.$border-radius-md;
+  background: rgba(v.$background-dark, 0.96);
+  color: v.$text-button;
+  border: 1px solid v.$border-secondary;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+  font-size: 0.8rem;
+  line-height: 1.3;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-4px);
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
+
+  &::after {
+    content: "";
+    position: absolute;
+    top: -6px;
+    right: 10px;
+    width: 10px;
+    height: 10px;
+    background: rgba(v.$background-dark, 0.96);
+    border-left: 1px solid v.$border-secondary;
+    border-top: 1px solid v.$border-secondary;
+    transform: rotate(45deg);
+  }
+}
+
+.infoWrapper:hover .infoTooltip,
+.infoWrapper:focus-within .infoTooltip {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.infoList {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  li {
+    margin: 2px 0;
+  }
 }
 
 .chartDescription {
@@ -396,6 +490,13 @@
   justify-content: center;
   color: v.$text-secondary;
   font-size: 0.9rem;
+}
+
+.chartShellLarge {
+  height: 520px;
+  @media (max-width: 600px) {
+    height: 360px;
+  }
 }
 
 .chartTooltip {
@@ -723,6 +824,145 @@
 .percentile {
   font-size: 0.85rem;
   font-weight: 600;
+}
+
+/* Tabs layout for the dashboard */
+.topTabs {
+  display: flex;
+  gap: v.$space-xs;
+  align-items: flex-end;
+  margin-top: v.$space-md;
+  padding: 0 v.$space-xs;
+  border-bottom: 1px solid v.$border-secondary;
+}
+
+.tab {
+  @include v.reset-button;
+  font-family: v.$font-family-accent;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: calc(v.$space-xxs + 2px) v.$space-sm;
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: v.$text-primary;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-bottom: none;
+  border-top-left-radius: v.$border-radius-lg;
+  border-top-right-radius: v.$border-radius-lg;
+  background: linear-gradient(
+    to bottom,
+    color.adjust(v.$background-light, $lightness: 22%),
+    color.adjust(v.$background-light, $lightness: 12%)
+  );
+  box-shadow: 0 -1px 0 rgba(0, 0, 0, 0.12) inset;
+  margin-bottom: -1px; // overlap bar separator
+  cursor: pointer;
+  transition:
+    filter 0.15s ease,
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+
+  &:hover {
+    filter: brightness(1.06);
+  }
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.35);
+  }
+}
+
+.tabActive {
+  z-index: 2;
+  color: v.$text-primary;
+  border-color: rgba(255, 255, 255, 0.2);
+  background: linear-gradient(
+    to bottom,
+    color.adjust(v.$background-light, $lightness: 28%),
+    color.adjust(v.$background-light, $lightness: 16%)
+  );
+  box-shadow:
+    0 -1px 0 rgba(0, 0, 0, 0.18) inset,
+    0 8px 24px rgba(0, 0, 0, 0.18);
+}
+
+.subTabs {
+  display: flex;
+  gap: v.$space-xxs;
+  align-items: flex-end;
+  margin: v.$space-sm 0 v.$space-sm;
+  padding: 0 v.$space-xxs;
+  border-bottom: 1px solid v.$border-secondary;
+  flex-wrap: wrap;
+}
+
+.subTab {
+  @include v.reset-button;
+  font-family: v.$font-family-accent;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: calc(v.$space-xxs + 1px) v.$space-sm;
+  font-weight: 700;
+  font-size: 0.72rem;
+  color: v.$text-primary;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-bottom: none;
+  border-top-left-radius: v.$border-radius-md;
+  border-top-right-radius: v.$border-radius-md;
+  background: linear-gradient(
+    to bottom,
+    color.adjust(v.$background-light, $lightness: 18%),
+    color.adjust(v.$background-light, $lightness: 10%)
+  );
+  box-shadow: 0 -1px 0 rgba(0, 0, 0, 0.1) inset;
+  margin-bottom: -1px;
+  cursor: pointer;
+  transition:
+    filter 0.15s ease,
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+
+  &:hover {
+    filter: brightness(1.05);
+  }
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.35);
+  }
+}
+
+.subTabActive {
+  z-index: 2;
+  color: v.$text-primary;
+  border-color: rgba(255, 255, 255, 0.2);
+  background: linear-gradient(
+    to bottom,
+    color.adjust(v.$background-light, $lightness: 24%),
+    color.adjust(v.$background-light, $lightness: 14%)
+  );
+  box-shadow:
+    0 -1px 0 rgba(0, 0, 0, 0.16) inset,
+    0 6px 18px rgba(0, 0, 0, 0.14);
+}
+
+.dashboardContent {
+  @include v.glass-panel;
+  border-radius: v.$border-radius-lg;
+  padding: v.$space-md;
+  margin-top: v.$space-xs;
+  border: 1px solid v.$border-secondary;
+  background: color.adjust(v.$background-dark, $lightness: 10%);
+}
+
+.hidden {
+  display: none !important;
 }
 
 .legacyLink {

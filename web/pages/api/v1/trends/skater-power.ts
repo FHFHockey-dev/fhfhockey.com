@@ -62,7 +62,10 @@ interface SkaterTrendResponse {
   positionGroup: SkaterPositionGroup;
   limit: number;
   windowSize: SkaterWindowSize;
-  categories: Record<SkaterTrendCategoryId, Omit<CategoryResult, "includedPlayerIds">>;
+  categories: Record<
+    SkaterTrendCategoryId,
+    Omit<CategoryResult, "includedPlayerIds">
+  >;
   playerMetadata: Record<
     string,
     {
@@ -94,7 +97,9 @@ function parseLimit(input: unknown): number {
 }
 
 function parsePositionGroup(input: unknown): SkaterPositionGroup {
-  const value = String(Array.isArray(input) ? input[0] : input || "").toLowerCase();
+  const value = String(
+    Array.isArray(input) ? input[0] : input || ""
+  ).toLowerCase();
   if (value === "defense" || value === "defencemen" || value === "d") {
     return "defense";
   }
@@ -153,7 +158,8 @@ function buildCategoryResult(
 
   rows.forEach((row) => {
     const value = valueForWindow(row, windowSize);
-    if (value === null || value === undefined || !Number.isFinite(value)) return;
+    if (value === null || value === undefined || !Number.isFinite(value))
+      return;
     if (!byPlayer.has(row.player_id)) {
       byPlayer.set(row.player_id, []);
     }
@@ -202,7 +208,8 @@ function buildCategoryResult(
     ([playerId, points]) => {
       const numericId = Number(playerId);
       const latest = points[points.length - 1];
-      const previous = points.length > 1 ? points[points.length - 2] : undefined;
+      const previous =
+        points.length > 1 ? points[points.length - 2] : undefined;
       const sourceList = byPlayer.get(numericId);
       const latestValue =
         sourceList && sourceList.length > 0
@@ -335,7 +342,7 @@ async function fetchPlayerMetadata(playerIds: number[]) {
       position: player.position ?? null,
       teamAbbrev:
         player.team_id !== null && player.team_id !== undefined
-          ? getTeamAbbreviationById(player.team_id)
+          ? (getTeamAbbreviationById(player.team_id) ?? null)
           : null,
       imageUrl: player.image_url ?? null
     };
@@ -362,7 +369,7 @@ export default async function handler(
     const positionGroup = parsePositionGroup(req.query.position);
     const positions = SKATER_POSITION_GROUP_MAP[positionGroup];
 
-    const categories: SkaterTrendResponse["categories"] = {};
+    const categories: Partial<SkaterTrendResponse["categories"]> = {};
     const playerIdsNeeded = new Set<number>();
 
     for (const category of SKATER_TREND_CATEGORIES) {
@@ -390,7 +397,7 @@ export default async function handler(
       positionGroup,
       limit,
       windowSize,
-      categories,
+      categories: categories as SkaterTrendResponse["categories"],
       playerMetadata
     };
 

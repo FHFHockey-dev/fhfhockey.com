@@ -38,7 +38,6 @@ export interface CategoryComputationResult {
   rankings: RankingEntry[];
 }
 
-
 function getSourceKey(metricSource: MetricSource): keyof TeamSnapshot {
   switch (metricSource) {
     case "as":
@@ -58,7 +57,9 @@ function extractMetric(
   metric: MetricDefinition
 ): number | null {
   const sourceKey = getSourceKey(metric.source);
-  const sourceBlock = snapshot[sourceKey];
+  const sourceBlock = snapshot[sourceKey] as
+    | Record<string, number | null>
+    | undefined;
   if (!sourceBlock) return null;
   const value = sourceBlock[metric.key];
   if (value === null || value === undefined) return null;
@@ -134,8 +135,7 @@ function buildRankingsFromSeries(series: CategorySeries): RankingEntry[] {
   Object.entries(series).forEach(([team, points]) => {
     if (!points.length) return;
     const latest = points[points.length - 1];
-    const previous =
-      points.length > 1 ? points[points.length - 2] : undefined;
+    const previous = points.length > 1 ? points[points.length - 2] : undefined;
     latestEntries.push({
       team,
       percentile: latest.percentile,
@@ -149,7 +149,7 @@ function buildRankingsFromSeries(series: CategorySeries): RankingEntry[] {
 
   const prevSorted = latestEntries
     .filter((entry) => entry.previousPercentile !== null)
-    .sort((a, b) => (b.previousPercentile! - a.previousPercentile!));
+    .sort((a, b) => b.previousPercentile! - a.previousPercentile!);
   const prevRankMap = new Map(
     prevSorted.map((entry, idx) => [entry.team, idx + 1])
   );
@@ -157,8 +157,7 @@ function buildRankingsFromSeries(series: CategorySeries): RankingEntry[] {
   latestEntries.forEach((entry, idx) => {
     const currentRank = idx + 1;
     const prevRank = prevRankMap.get(entry.team) ?? null;
-    const delta =
-      prevRank === null ? 0 : prevRank - currentRank; // positive = moved up
+    const delta = prevRank === null ? 0 : prevRank - currentRank; // positive = moved up
     rankings.push({
       team: entry.team,
       percentile: entry.percentile,

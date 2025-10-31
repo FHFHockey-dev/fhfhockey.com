@@ -686,4 +686,3 @@ create table public.wgo_team_stats (
   constraint unique_season_team_date unique (season_id, team_id, date)
 ) TABLESPACE pg_default;
 ```
-

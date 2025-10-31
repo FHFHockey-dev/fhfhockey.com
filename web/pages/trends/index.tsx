@@ -1,5 +1,6 @@
 import { useRouter } from "next/router";
 import { useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import supabase from "lib/supabase";
 import { teamsInfo } from "lib/teamsInfo";
 import {
@@ -153,6 +154,19 @@ const emptySkaterResult: SkaterCategoryResult = {
   rankings: []
 };
 
+// Brief calculation blurbs for team strength categories.
+// These are shown in the chart header tooltip to explain methodology at a high level.
+const TEAM_ALGO_HELP: Record<TrendCategoryId, string> = {
+  offense:
+    "Weighted composite of per-game league percentiles for all-strength creation. We normalize each game vs league, then combine metrics (goals/xG/shots/chances) with weights; higher creation → higher percentile.",
+  defense:
+    "Weighted composite of per-game league percentiles for all-strength suppression. Against/allowed metrics are inverted so better suppression yields a higher percentile; save% contributes positively.",
+  powerPlay:
+    "Weighted composite of PP-specific percentiles plus PP rate context (opportunities/TOI). We normalize per game and combine PP goals/xG/shots/chances with weights for a single PP strength score.",
+  penaltyKill:
+    "Weighted composite of PK suppression percentiles plus situational context (times shorthanded). Against/allowed are inverted so stronger PK reads higher; PK save% contributes positively."
+};
+
 const CATEGORY_ORDER: TrendCategoryId[] = [
   "offense",
   "defense",
@@ -255,11 +269,13 @@ function ArrowDelta({ delta }: { delta: number }) {
 function CategoryChartCard({
   config,
   result,
-  windowSize = 1
+  windowSize = 1,
+  large
 }: {
   config: TrendCategoryDefinition;
   result: CategoryResult;
   windowSize?: number;
+  large?: boolean;
 }) {
   const hasData = Object.keys(result.series || {}).length > 0;
   const seriesForChart = useMemo<Record<string, SeriesPoint[]>>(() => {
@@ -292,7 +308,7 @@ function CategoryChartCard({
     const start = Math.max(0, end - 4);
     setBrushStart(start);
     setBrushEnd(end);
-  }, [dataset.length, seriesForChart]);
+  }, [dataset, seriesForChart]);
   const [hoveredTeam, setHoveredTeam] = useState<string | null>(null);
   const hoverTimeoutRef = useRef<number | null>(null);
 
@@ -323,8 +339,8 @@ function CategoryChartCard({
     }, 1000);
   };
 
-  const renderActiveDot =
-    (team: string, strokeColor: string) => (props: any) => {
+  function renderActiveDot(team: string, strokeColor: string) {
+    function ActiveDot(props: any) {
       const radius =
         hoveredTeam === team ? Math.max(props.r ?? 4, 5.5) : (props.r ?? 4);
       return (
@@ -338,7 +354,10 @@ function CategoryChartCard({
           onMouseLeave={clearHover}
         />
       );
-    };
+    }
+    ActiveDot.displayName = `ActiveDot-${team}`;
+    return ActiveDot;
+  }
 
   const CustomTooltip = ({
     active,
@@ -423,12 +442,105 @@ function CategoryChartCard({
   return (
     <div className={styles.chartCard}>
       <div className={styles.chartHeaderWrapper}>
-        <p className={styles.chartHeading}>{config.label}</p>
+        <div className={styles.chartTitleGroup}>
+          <p className={styles.chartHeading}>{config.label}</p>
+          <div className={styles.infoWrapper}>
+            <button
+              type="button"
+              className={styles.infoButton}
+              aria-label={`How we calculate ${config.label}`}
+              title={`How we calculate ${config.label}`}
+            >
+              <svg
+                className={styles.infoIcon}
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  fill="currentColor"
+                  opacity="0.18"
+                />
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="9"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                />
+                <line
+                  x1="12"
+                  y1="10"
+                  x2="12"
+                  y2="16"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                />
+                <circle cx="12" cy="7.5" r="1.2" fill="currentColor" />
+              </svg>
+            </button>
+            <div className={styles.infoTooltip} role="tooltip">
+              <strong>How we calculate {config.label}</strong>
+              <div style={{ height: 6 }} />
+              <div>
+                {TEAM_ALGO_HELP[config.id as TrendCategoryId] ??
+                  "Weighted composite of per-game league percentiles. Higher values indicate stronger performance."}
+              </div>
+              <div style={{ height: 8 }} />
+              <div style={{ opacity: 0.9 }}>
+                <em>Composite inputs</em>
+              </div>
+              <ul className={styles.infoList}>
+                {config.metrics.map((m) => {
+                  const sourceLabel: Record<string, string> = {
+                    as: "All Strengths",
+                    pp: "Power Play",
+                    pk: "Penalty Kill",
+                    wgo: "Game log rates"
+                  };
+                  const weightLabel = (w: number) =>
+                    w >= 5
+                      ? "High"
+                      : w === 4
+                        ? "Med-High"
+                        : w === 3
+                          ? "Med"
+                          : w === 2
+                            ? "Med-Low"
+                            : "Low";
+                  return (
+                    <li key={m.key}>
+                      {m.label} ({sourceLabel[m.source] ?? m.source}) — weight{" "}
+                      {weightLabel(m.weight)},{" "}
+                      {m.higherIsBetter
+                        ? "higher ↑ is better"
+                        : "lower ↓ is better"}
+                    </li>
+                  );
+                })}
+              </ul>
+              <div style={{ height: 8 }} />
+              <div>
+                We compute per-game league percentiles for each metric, invert
+                when lower is better, then take a weighted average. The line
+                reflects game-by-game results; optional smoothing applies a{" "}
+                {windowSize} GP rolling window.
+              </div>
+            </div>
+          </div>
+        </div>
         <p className={styles.chartDescription}>{config.description}</p>
       </div>
       {hasData && dataset.length > 0 ? (
         <>
-          <div className={`${styles.chartShell} ${styles.chartTheme}`}>
+          <div
+            className={`${styles.chartShell} ${styles.chartTheme} ${large ? styles.chartShellLarge : ""}`}
+          >
             <ResponsiveContainer width="100%" height="100%">
               <ReLineChart data={dataset} onMouseLeave={clearHover}>
                 <CartesianGrid
@@ -567,10 +679,12 @@ function RankingTable({
                   </span>
 
                   <div className={styles.teamLogoWrapper}>
-                    <img
+                    <Image
                       src={`/teamLogos/${row.team}.png`}
                       alt={`${row.team} logo`}
                       className={styles.teamLogo}
+                      width={30}
+                      height={30}
                       loading="lazy"
                       onError={handleLogoError}
                     />
@@ -624,10 +738,12 @@ function SkaterRankingTable({
                 <div className={styles.skaterInfo}>
                   <span className={styles.rank}>{row.rank}</span>
                   <div className={styles.skaterHeadshotWrapper}>
-                    <img
+                    <Image
                       src={meta?.imageUrl ?? DEFAULT_PLAYER_IMAGE}
                       alt={meta?.fullName ?? `Player ${row.playerId}`}
                       className={styles.skaterHeadshot}
+                      width={42}
+                      height={42}
                       loading="lazy"
                       onError={handleHeadshotError}
                     />
@@ -660,11 +776,13 @@ function SkaterRankingTable({
 function SkaterCategoryChartCard({
   config,
   result,
-  playerMetadata
+  playerMetadata,
+  large
 }: {
   config: SkaterTrendCategoryDefinition;
   result: SkaterCategoryResult;
   playerMetadata: Record<string, PlayerMetadata>;
+  large?: boolean;
 }) {
   const hasData = Object.keys(result.series || {}).length > 0;
   const seriesForChart = useMemo(() => {
@@ -695,7 +813,7 @@ function SkaterCategoryChartCard({
     const start = Math.max(0, end - 4);
     setBrushStart(start);
     setBrushEnd(end);
-  }, [dataset.length, seriesForChart]);
+  }, [dataset, seriesForChart]);
 
   useEffect(() => {
     return () => {
@@ -724,8 +842,8 @@ function SkaterCategoryChartCard({
     }, 800);
   };
 
-  const renderActiveDot =
-    (playerId: string, strokeColor: string) => (props: any) => {
+  function renderActiveDot(playerId: string, strokeColor: string) {
+    function ActiveDot(props: any) {
       const radius =
         hoveredPlayer === playerId
           ? Math.max(props.r ?? 4, 5.5)
@@ -741,7 +859,10 @@ function SkaterCategoryChartCard({
           onMouseLeave={clearHover}
         />
       );
-    };
+    }
+    ActiveDot.displayName = `ActiveDot-${playerId}`;
+    return ActiveDot;
+  }
 
   const CustomTooltip = ({
     active,
@@ -824,7 +945,9 @@ function SkaterCategoryChartCard({
       </div>
       {hasData && dataset.length > 0 ? (
         <>
-          <div className={`${styles.chartShell} ${styles.chartTheme}`}>
+          <div
+            className={`${styles.chartShell} ${styles.chartTheme} ${large ? styles.chartShellLarge : ""}`}
+          >
             <ResponsiveContainer width="100%" height="100%">
               <ReLineChart data={dataset} onMouseLeave={clearHover}>
                 <CartesianGrid
@@ -947,6 +1070,17 @@ export default function TrendsIndexPage() {
   const [skaterTrendsError, setSkaterTrendsError] = useState<string | null>(
     null
   );
+  // Dashboard tabs state
+  const [activeTopTab, setActiveTopTab] = useState<"teams" | "skaters">(
+    "teams"
+  );
+  const [activeTeamCategory, setActiveTeamCategory] = useState<TrendCategoryId>(
+    () => CATEGORY_ORDER[0]
+  );
+  const [activeSkaterCategory, setActiveSkaterCategory] =
+    useState<SkaterTrendCategoryId>(
+      () => SKATER_TREND_CATEGORIES[0]?.id as SkaterTrendCategoryId
+    );
 
   const inputRef = useRef<HTMLInputElement | null>(null);
   const listboxId = "player-suggestions";
@@ -1014,7 +1148,7 @@ export default function TrendsIndexPage() {
     }, 200);
 
     return () => clearTimeout(handle);
-  }, [query]);
+  }, [query, teamIdToAbbrev]);
 
   async function handleSearch(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -1267,7 +1401,186 @@ export default function TrendsIndexPage() {
         )}
       </section>
 
-      <section className={styles.teamSection}>
+      {/* Dashboard tabs */}
+      <div className={styles.topTabs} role="tablist" aria-label="Dataset">
+        {(
+          [
+            { id: "teams", label: "Teams" },
+            { id: "skaters", label: "Skaters" }
+          ] as const
+        ).map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            role="tab"
+            aria-selected={activeTopTab === tab.id}
+            className={`${styles.tab} ${activeTopTab === tab.id ? styles.tabActive : ""}`}
+            onClick={() => setActiveTopTab(tab.id)}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {activeTopTab === "teams" ? (
+        <>
+          <div className={styles.subTabs} aria-label="Team categories">
+            {CATEGORY_ORDER.map((cid) => {
+              const cat = CATEGORY_CONFIG_MAP[cid];
+              return (
+                <button
+                  key={cid}
+                  type="button"
+                  className={`${styles.subTab} ${activeTeamCategory === cid ? styles.subTabActive : ""}`}
+                  aria-pressed={activeTeamCategory === cid}
+                  onClick={() => setActiveTeamCategory(cid)}
+                >
+                  {cat.label}
+                </button>
+              );
+            })}
+            <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+              <div className={styles.windowToggle} aria-label="Rolling window">
+                {[1, 3, 5, 10].map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    className={`${styles.windowButton} ${rollingWindow === n ? styles.windowActive : ""}`}
+                    aria-pressed={rollingWindow === n}
+                    onClick={() => setRollingWindow(n)}
+                  >
+                    {n}GP
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div
+            className={styles.dashboardContent}
+            role="region"
+            aria-label="Team chart"
+          >
+            {teamTrendsError && (
+              <div className={styles.teamError}>{teamTrendsError}</div>
+            )}
+            {teamTrendsLoading ? (
+              <div className={styles.teamLoading}>
+                Loading team percentile trends…
+              </div>
+            ) : (
+              (() => {
+                const category = CATEGORY_CONFIG_MAP[activeTeamCategory];
+                const categoryResult =
+                  teamTrends?.categories?.[activeTeamCategory] ??
+                  emptyCategoryResult;
+                return (
+                  <CategoryChartCard
+                    config={category}
+                    result={categoryResult}
+                    windowSize={rollingWindow}
+                    large
+                  />
+                );
+              })()
+            )}
+          </div>
+        </>
+      ) : (
+        <>
+          <div className={styles.subTabs} aria-label="Skater categories">
+            {SKATER_TREND_CATEGORIES.map((cat) => (
+              <button
+                key={cat.id}
+                type="button"
+                className={`${styles.subTab} ${activeSkaterCategory === cat.id ? styles.subTabActive : ""}`}
+                aria-pressed={activeSkaterCategory === cat.id}
+                onClick={() => setActiveSkaterCategory(cat.id)}
+              >
+                {cat.label}
+              </button>
+            ))}
+            <div
+              style={{ marginLeft: "auto" }}
+              className={styles.skaterControls}
+            >
+              <div
+                className={styles.windowToggle}
+                aria-label="Skater position group"
+              >
+                {[
+                  { value: "forward", label: "Forwards" },
+                  { value: "defense", label: "Defense" },
+                  { value: "all", label: "All" }
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    className={`${styles.windowButton} ${skaterPositionGroup === option.value ? styles.windowActive : ""}`}
+                    aria-pressed={skaterPositionGroup === option.value}
+                    onClick={() =>
+                      setSkaterPositionGroup(
+                        option.value as "forward" | "defense" | "all"
+                      )
+                    }
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+              <div
+                className={styles.windowToggle}
+                aria-label="Skater cohort size"
+              >
+                {[25, 50].map((count) => (
+                  <button
+                    key={count}
+                    type="button"
+                    className={`${styles.windowButton} ${skaterLimit === count ? styles.windowActive : ""}`}
+                    aria-pressed={skaterLimit === count}
+                    onClick={() => setSkaterLimit(count)}
+                  >
+                    Top {count}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div
+            className={styles.dashboardContent}
+            role="region"
+            aria-label="Skater chart"
+          >
+            {skaterTrendsError && (
+              <div className={styles.teamError}>{skaterTrendsError}</div>
+            )}
+            {skaterTrendsLoading ? (
+              <div className={styles.teamLoading}>Loading skater trends…</div>
+            ) : (
+              (() => {
+                const category = SKATER_TREND_CATEGORIES.find(
+                  (c) => c.id === activeSkaterCategory
+                )!;
+                const categoryResult =
+                  skaterTrends?.categories?.[activeSkaterCategory] ??
+                  emptySkaterResult;
+                const playerMetadata = skaterTrends?.playerMetadata ?? {};
+                return (
+                  <SkaterCategoryChartCard
+                    config={category}
+                    result={categoryResult}
+                    playerMetadata={playerMetadata}
+                    large
+                  />
+                );
+              })()
+            )}
+          </div>
+        </>
+      )}
+
+      <section className={`${styles.teamSection} ${styles.hidden}`}>
         <div className={styles.sectionHeader}>
           <div>
             <h2 className={styles.sectionTitle}>Team Trends</h2>
@@ -1332,7 +1645,7 @@ export default function TrendsIndexPage() {
         )}
       </section>
 
-      <section className={styles.teamSection}>
+      <section className={`${styles.teamSection} ${styles.hidden}`}>
         <div className={styles.sectionHeader}>
           <div>
             <h2 className={styles.sectionTitle}>Skater Trends</h2>
