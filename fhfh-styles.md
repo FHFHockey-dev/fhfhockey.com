@@ -85,6 +85,35 @@ $border-radius-lg: 12px;
 $box-shadow-panel: 0 4px 16px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05);
 ```
 
+### 2.0 How to import tokens/mixins in SCSS modules
+
+Use SCSS modules with the token namespace so you don’t leak globals. This keeps usage explicit and grep‑friendly.
+
+```scss
+// In a component SCSS module
+@use "../styles/vars.scss" as v;
+
+.panel {
+  @include v.glass-panel; // glass surface + blur + subtle border/shadow
+}
+
+.primaryBtn {
+  @include v.button-style; // primary cyan button
+}
+
+.ghostBtn {
+  @include v.button-ghost($active: false); // ghost/secondary button
+}
+
+.tableBase {
+  @include v.table-base; // dense table baseline (colors, radii, spacing)
+}
+
+.scrollBody {
+  @include v.custom-scrollbar(v.$primary-color, v.$background-medium, 6px);
+}
+```
+
 ### 2.1 Additional Implicit / Observed Tokens & Patterns
 - Extended shadows: contextual variants (soft diffused vs accent glow) often layered: base elevation + colored inner/outer halo.
 - Opacity patterns: success/warning overlays use `rgba(token, ~0.1–0.35)` for backgrounds; intensities escalate alpha steps.
@@ -369,6 +398,245 @@ Below are refined recipes (supersedes earlier minimal section) for reuse.
   content: ""; position: absolute; inset: 0; background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.12) 20%, transparent 40%);
   transform: translateX(-120%); animation: shimmer 3s infinite ease-in-out; pointer-events: none;
 }
+
+## 20. Stats Pages style kit (Index • Player • Team • Game)
+
+This kit codifies the Stats pages’ look and recurring mechanics, aligned to the Draft Dashboard “vibrant glassmorphism.” All snippets assume `@use "styles/vars" as v;` and no hardcoded hex. Prefer CSS variables for team contexts.
+
+### 20.1 Shared patterns and helpers
+- Root containers: use `@include v.component-wrapper;` for panel shells and `@include v.element-wrapper;` for inner elements.
+- Tables: `@include v.table-base;` then apply sticky header, zebra rows, and restrained hover (lightness shift, not glow).
+- Scrollbars: `@include v.custom-scrollbar(v.$primary-color, v.$background-medium, 8px);`
+- Focus: `@include v.focus-ring();` for keyboardable elements; respect `prefers-reduced-motion`.
+- Team theming: set per-page CSS vars based on team context, then consume in accents.
+
+SCSS pattern for team variables
+```scss
+.hasTeamColors {
+  // Provided dynamically on container when team context is available
+  // Values come from runtime via inline style or a team class
+  --primary-color: var(--team-primary);
+  --secondary-color: var(--team-secondary);
+  --jersey: var(--team-jersey);
+  --accent: var(--team-accent);
+  --alt: var(--team-alt);
+}
+```
+
+Opacity guidance (recurring):
+- Glass panels: background linear-gradient white overlay at 0.02–0.06 alpha over dark base.
+- Row highlight: use `rgba(v.$focus-color, 0.08–0.16)`; avoid heavy glow.
+- Quick stats pills: use color-mix with team primary at ~60–75% into #000 for bg; border at ~60–75% into #fff.
+- Heat/Intensity: step alpha 0.15 → 0.9; never mix warning with success in same ramp.
+
+### 20.2 Stats Index page (leaders, filters, teams grid)
+
+Layout shell
+```scss
+.statsPageContainer {
+  width: 100%;
+  margin: 0 auto;
+  @include v.component-wrapper;
+}
+
+.heroSection { // Edge-to-edge on mobile, framed on tablet+
+  @include v.component-wrapper;
+  padding: v.$mobile-space-xl v.$mobile-space-lg;
+  background: v.$background-medium;
+  border: 1px solid v.$border-primary;
+  border-radius: v.$border-radius-lg;
+}
+```
+
+Quick stats tiles
+```scss
+.quickStatCard {
+  background: v.$surface-1;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$radius-md;
+  transition: background-color v.$transition-duration v.$transition-easing;
+
+  &.scoring { border-left: 4px solid v.$primary-color; }
+  &.goaltending { border-left: 4px solid v.$secondary-color; }
+  &.league { border-left: 4px solid v.$warning-color; }
+
+  &:hover { background: v.$surface-2; box-shadow: v.$shadow-hover; transform: translateY(-2px); }
+}
+```
+
+Filter group (keyboardable)
+```scss
+.filterBar { display: flex; gap: v.$space-xs; flex-wrap: wrap; }
+.filterButton { @include v.button-style; background: v.$surface-1; border: 1px solid v.$border-secondary; color: v.$text-secondary; }
+.filterButtonActive { background: v.$primary-color; color: v.$text-button; border-color: v.$primary-color; position: relative; }
+.filterButtonActive::before { content: ""; position: absolute; inset: 0; border-left: 4px solid v.$warning-color; border-radius: inherit; }
+```
+
+Leaderboards & dense tables
+```scss
+.leaderboards { @include v.component-wrapper; }
+.leaderboardTable { @include v.table-base; th { position: sticky; top: 0; } }
+```
+
+Teams grid (with team color pulse)
+```scss
+.teamsGridContainer { position: relative; }
+.teamListItem {
+  background: v.$surface-1; border: 1px solid v.$border-secondary; border-radius: v.$radius-sm;
+  transition: transform v.$transition-duration v.$ease-desktop-standard;
+  &:hover { transform: translateY(-2px); border-color: v.$border-accent; box-shadow: v.$shadow-hover; }
+}
+.teamAbbrev { color: var(--team-secondary, v.$secondary-color); text-shadow: 0 0 6px color.change(var(--team-primary, #{v.$primary-color}), $alpha: 0.6); }
+```
+
+Accessibility notes
+- Provide a roving tabindex or arrow-key cycling for the filter group (already implemented in code).
+- Sticky headers preserve orientation in long lists.
+
+### 20.3 Player Stats page (overview • advanced • trends • calendar)
+
+Navigation and header
+```scss
+.navigationHeader { display: flex; align-items: center; justify-content: space-between; gap: v.$space-sm; }
+.backButton { @include v.button-ghost(false); font-size: v.$font-size-sm; }
+.pageTitle { font-family: v.$font-family-accent; letter-spacing: 0.08em; text-transform: uppercase; }
+
+.playerHeader { @include v.component-wrapper; display: flex; align-items: center; gap: v.$space-xl; padding: v.$space-lg; }
+.playerName { font-size: 2.2rem; letter-spacing: 0.1em; color: v.$text-primary; }
+```
+
+Tabs and controls
+```scss
+%stats-base-button { @include v.button-style; background: transparent; border: 1px solid v.$border-secondary; color: v.$text-secondary; }
+.tabNavigation { display: flex; gap: v.$space-sm; border-bottom: 2px solid v.$border-primary; padding-bottom: v.$space-xs; }
+.tabButton { @extend %stats-base-button; &.active { background: v.$primary-color; color: v.$text-button; border-color: v.$primary-color; } }
+.timeframeButton { @extend %stats-base-button; padding: v.$space-xs v.$space-md; &.active { background: v.$secondary-color; color: v.$text-button; border-color: v.$secondary-color; } }
+.controlsSection { @include v.component-wrapper; padding: v.$space-lg; }
+```
+
+Overview grid and panels
+```scss
+.overviewGrid { display: flex; gap: v.$space-lg; }
+.leftColumn, .rightColumn { display: flex; flex-direction: column; gap: v.$space-md; }
+.radarSection, .insightsSection { @include v.component-wrapper; padding: v.$space-lg; }
+.calendarSection { min-height: 500px; padding: v.$space-sm; outline: 5px solid v.$border-color-primary; border-radius: v.$border-radius-lg * 1.5; }
+```
+
+Tables
+```scss
+.tableWrapper { overflow-x: auto; border-radius: v.$border-radius-md; border: 1px solid v.$border-secondary; &.scrollable { height: 400px; overflow-y: auto; background: v.$background-dark; } }
+.statsTable { width: 100%; border-collapse: collapse; background: v.$background-dark; th, td { padding: v.$space-sm v.$space-md; border-bottom: 1px solid v.$border-secondary; } th { background: v.$background-medium; color: v.$primary-color; position: sticky; top: 0; } tbody tr:hover { background: v.$background-light; } }
+```
+
+Charts and glass wraps
+```scss
+.chartWrapper, .radarWrapper {
+  position: relative; width: 100%; padding: v.$space-md;
+  background: linear-gradient(135deg, rgba(v.$background-dark, 0.8) 0%, rgba(v.$background-medium, 0.9) 100%);
+  border: 1px solid v.$border-secondary; border-radius: v.$border-radius-md; overflow: hidden;
+}
+```
+
+Performance badges & heat cells
+```scss
+.percentile.elite { background-color: rgba(16,185,129,0.2); color: #10b981; }
+.percentile.good  { background-color: rgba(v.$success-color,0.2); color: v.$success-color; }
+.percentile.average { background-color: rgba(v.$warning-color,0.2); color: v.$warning-color; }
+.percentile.poor { background-color: rgba(v.$danger-color,0.2); color: v.$danger-color; }
+
+.heatmapDay.level-0 { background: v.$background-medium; }
+.heatmapDay.level-1 { background: rgba(v.$primary-color, 0.3); }
+.heatmapDay.level-2 { background: rgba(v.$primary-color, 0.5); }
+.heatmapDay.level-3 { background: rgba(v.$primary-color, 0.7); }
+.heatmapDay.level-4 { background: rgba(v.$primary-color, 0.9); }
+```
+
+Parity checklist (Player)
+- Glass panels on all major sections; avoid raw unframed charts/tables.
+- Tabs use compact uppercase with active cyan fill.
+- Sticky headers in tables; zebra rows via dark lightness steps.
+- Calendar/heatmap uses primary ramp opacity steps; no glow.
+- Focus-visible always on nav, tabs, and checkboxes.
+
+### 20.4 Team Stats page (header stripes • quick stats • table • shot viz)
+
+Team header stripes and logo
+```scss
+.teamHeader { position: sticky; top: 0; z-index: 3; box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
+.teamLogoContainer {
+  display: flex; align-items: center; gap: 1rem; padding: 1rem 3rem; height: 100px;
+  background: linear-gradient(
+    180deg,
+    var(--primary-color) 0%, var(--primary-color) 70%,
+    var(--jersey) 70%, var(--jersey) 80%,
+    var(--accent) 80%, var(--accent) 90%,
+    var(--secondary-color) 90%, var(--secondary-color) 100%
+  );
+}
+.teamName { font-family: v.$font-family-accent; text-transform: uppercase; letter-spacing: 0.15em; background: var(--accent); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+```
+
+Quick stats pills
+```scss
+.quickStats { display: flex; gap: v.$space-md; align-items: center; }
+.quickStat { display: flex; flex-direction: column; align-items: center; min-width: 80px;
+  background: color-mix(in srgb, var(--primary-color) 70%, #000);
+  border: 2px solid color-mix(in srgb, var(--primary-color) 70%, #fff);
+  border-radius: 8px; padding: 8px 12px;
+}
+.quickStatValue { color: color-mix(in srgb, var(--primary-color) 70%, #fff); font-weight: 700; }
+.quickStatLabel { color: #ccc; font-size: 0.75rem; }
+```
+
+Team stats table
+```scss
+.teamStatsTable { @include v.table-base; background: #232323; color: #fefefe; border: 5px solid v.$border-color-secondary; outline: 5px solid v.$border-color-primary; border-radius: 0.5rem; min-width: 900px; }
+.teamStatsTable th { background: #181818; color: v.$secondary-color; letter-spacing: 0.05em; position: sticky; top: 0; }
+.teamStatsTable tbody tr:nth-child(even) td { background-color: v.$background-dark; }
+.teamStatsTable tbody tr:nth-child(odd) td { background-color: color.adjust(v.$background-dark, $lightness: 2%); }
+.teamStatsTable tbody tr:hover td { background-color: color.change(color.adjust(v.$focus-color, $lightness: -20%), $alpha: 0.4); color: v.$focus-color; font-weight: 600; border-top: 2px solid v.$focus-color; border-bottom: 2px solid v.$focus-color; }
+```
+
+Shot visualization split panel
+```scss
+.shotVisualizationContainer { display: flex; gap: v.$space-md; background: v.$background-light; border: 5px solid v.$border-color-secondary; border-radius: v.$border-radius-md; padding: v.$space-md; }
+.controlPanel { width: 280px; display: flex; flex-direction: column; }
+.rinkPanel { flex: 1; min-height: 420px; position: relative; }
+```
+
+Parity checklist (Team)
+- Team header uses 4-band vertical stripe gradient driven by team vars.
+- Quick stats pills reflect team primary via color-mix; no pure white text.
+- Tables follow sticky header + zebra + restrained hover emphasis.
+- Shot viz panel uses framed container with border and radius consistent with tables.
+
+### 20.5 Game page (skeleton for future build)
+
+Skeleton layout
+```scss
+.gamePageContainer { @include v.component-wrapper; }
+.gameHeader { @include v.component-wrapper; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; }
+.gamePanels { display: grid; grid-template-columns: 1fr 1fr; gap: v.$space-lg; }
+.gameTable { @include v.table-base; }
+```
+
+Notes
+- Reuse team theming from Team page when viewing a specific matchup; assign both teams’ colors for stripes or badges.
+- Keep intensity/heat scales consistent with Player calendar and Dashboard intensity grid.
+
+### 20.6 Migration and cleanup notes (legacy to tokens)
+- `web/styles/teamStats.module.scss` contains hardcoded hex and shadows; migrate to tokenized colors and team CSS vars. Replace explicit `#07aae2`/`#343434` with `v.$secondary-color` and `v.$background-*` tokens.
+- Prefer `@use "styles/vars" as v;` in all SCSS modules; avoid global imports.
+- Consolidate duplicated table styling by extending `v.table-base` and local modifiers.
+- Ensure all scroll containers use the brand scrollbar mixin.
+
+### 20.7 Stats parity checklist (cross-page)
+- Panel surfaces use glass/dark layering, not raw backgrounds.
+- Accent usage is disciplined: cyan for action/selection, team colors for identity only.
+- Tables: sticky headers, zebra rows, restrained hovers, tabular numerals where needed.
+- Filters/toggles: compact uppercase, arrow-key accessible, focus-visible rings.
+- Scrollbars and focus rings use brand-consistent mixins.
+- Heat/Intensity and progress bars use token ramps and width transitions (240–500ms).
 @keyframes shimmer { 0%{transform:translateX(-120%);}60%,100%{transform:translateX(120%);} }
 ```
 
@@ -376,6 +644,163 @@ Below are refined recipes (supersedes earlier minimal section) for reuse.
 ```scss
 @keyframes pulse-glow { 0%,100% { box-shadow: 0 0 10px rgba($success-color,0.5);} 50% { box-shadow: 0 0 20px rgba($success-color,0.8);} }
 ```
+
+## 19.8 Draft Dashboard style kit (ready-to-use snippets)
+
+Below are production‑ready skeletons extracted from the Draft Dashboard so other pages can mirror the vibe quickly. All snippets assume `@use "../styles/vars.scss" as v;` at the top of the SCSS module.
+
+### A) Dashboard page shell and 3‑panel grid
+```scss
+@use "../styles/vars.scss" as v;
+
+.dashboardShell {
+  background: v.$surface-0;
+  color: v.$text-primary;
+  display: grid;
+  gap: v.$space-lg;
+  grid-template-columns: 2fr 1fr 2fr; // desktop
+  padding: v.$space-lg;
+
+  @media (max-width: v.$breakpoint-desktop) {
+    grid-template-columns: 1fr; // stack on tablet/mobile
+    gap: v.$space-md;
+    padding: v.$space-md;
+  }
+}
+
+.panel {
+  @include v.glass-panel(v.$space-md v.$space-lg, v.$radius-lg);
+}
+
+// Center panel (My Roster) gets a stronger accent frame
+.panelAccent {
+  background: v.$desktop-surface-elevated; // subtle gradient
+  border: 2px solid v.$primary-color;
+  box-shadow:
+    0 0 0 1px rgba(v.$primary-color, 0.35),
+    0 8px 28px -6px rgba(0,0,0,0.6),
+    0 0 32px rgba(v.$primary-color, 0.15);
+}
+```
+
+### B) Panel header strip
+```scss
+@use "../styles/vars.scss" as v;
+
+.panelHeader {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: v.$space-md;
+  padding: v.$space-md v.$space-lg;
+  background: linear-gradient(
+    135deg,
+    v.$background-dark,
+    color.adjust(v.$background-dark, $lightness: 4%)
+  );
+  border-bottom: 2px solid v.$secondary-color;
+}
+.panelTitle { font-family: v.$font-family-accent; letter-spacing: 0.08em; text-transform: uppercase; font-size: v.$font-size-lg; margin: 0; }
+.panelTitleAccent { color: v.$primary-color; }
+.panelActions { display: flex; align-items: center; gap: v.$space-sm; }
+```
+
+### C) Projections table baseline (sticky header + scrollbar)
+```scss
+@use "../styles/vars.scss" as v;
+
+.tableWrap { max-height: 70vh; overflow: auto; @include v.custom-scrollbar(); }
+
+.projectionsTable {
+  @include v.table-base;
+
+  thead th {
+    position: sticky; top: 0; z-index: v.$z-desktop-sticky;
+    background: v.$background-dark;
+    font-family: v.$font-family-primary;
+    font-size: v.$font-size-xxs; letter-spacing: 0.06em; text-transform: uppercase;
+    padding: v.$space-sm v.$space-md;
+    border-bottom: 1px solid v.$border-secondary;
+  }
+  tbody td { padding: v.$space-sm v.$space-md; }
+  tbody tr:nth-child(even) { background: color.adjust(v.$background-dark, $lightness: 3%); }
+  tbody tr:hover { background: color.adjust(v.$background-dark, $lightness: 6%); }
+}
+```
+
+### D) Suggested pick card with neon position stripe + ambient glow
+```scss
+@use "../styles/vars.scss" as v;
+
+.suggestCard {
+  position: relative;
+  @include v.glass-panel(v.$space-md, v.$radius-md);
+  transition: transform .15s ease, box-shadow .2s ease;
+
+  &::before { // position stripe
+    content: ""; position: absolute; inset: 0 0 0 0; border-left: 4px solid v.$secondary-color; opacity: .9;
+  }
+  &::after { // ambient glow
+    content: ""; position: absolute; inset: -6px; pointer-events: none;
+    box-shadow: 0 0 24px rgba(v.$secondary-color, .25);
+  }
+  &:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(0,0,0,.5), 0 0 24px rgba(v.$secondary-color,.2); }
+}
+```
+
+### E) Draft board intensity cells (GitHub‑style grid)
+```scss
+@use "../styles/vars.scss" as v;
+
+.intensity {
+  &.lvl0 { background: color.adjust(v.$background-medium, $lightness: -3%); }
+  &.lvl1 { @include v.schedule-fill(v.$schedule-green, .12); @include v.schedule-outline(v.$schedule-green); }
+  &.lvl2 { @include v.schedule-fill(v.$schedule-green, .2);  @include v.schedule-outline(v.$schedule-green); }
+  &.lvl3 { @include v.schedule-fill(v.$schedule-green, .3);  @include v.schedule-outline(v.$schedule-green); }
+  &.lvl4 { background: v.$schedule-green; color: v.$color-black; }
+}
+```
+
+### F) My Roster progress bars
+```scss
+@use "../styles/vars.scss" as v;
+
+.progressBar { height: 8px; border-radius: 999px; background: color.adjust(v.$background-dark, $lightness: 6%); overflow: hidden; }
+.progressFill { height: 100%; background: linear-gradient(90deg, v.$primary-color, v.$secondary-color); transition: width .35s ease-in-out; }
+```
+
+### G) Toggle groups (ghost buttons)
+```scss
+@use "../styles/vars.scss" as v;
+
+.toggleGroup { display: flex; gap: v.$space-xs; flex-wrap: wrap; }
+.toggleBtn  { @include v.button-ghost($active: false); font-size: v.$font-size-xxs; }
+.toggleBtn--active { @include v.button-ghost($active: true); }
+```
+
+### H) Compare players modal – team theming
+```scss
+// Parent element sets team vars: .team-NJD { --team-primary: #c8102e; --team-secondary: #000; }
+.compareHeader { border-bottom: 2px solid var(--team-primary, currentColor); }
+.winnerGlow { box-shadow: 0 0 24px rgba(var(--team-primary-rgb, 20,162,210), .35); }
+```
+
+### I) Brand‑coherent scrollbars
+```scss
+.scrollArea { @include v.custom-scrollbar(v.$primary-color, v.$background-medium, 6px); }
+```
+
+### J) Focus rings (desktop/mobile)
+```scss
+.btn:focus-visible { @include v.focus-ring-desktop; }
+@media (max-width: 480px) { .btn:focus-visible { @include v.focus-ring-mobile; } }
+```
+
+### Live parity checklist (Draft Dashboard look‑and‑feel)
+- Center panel uses gradient surface + 2px primary border + soft outer glow.
+- Headers: uppercase Train One with cyan accent span; sticky table headers.
+- Dense tables: xx(s)/xs fonts, tight padding, zebra rows, restrained hover.
+- Selective glow only for: current pick, active CTA shimmer, winner highlights.
+- Custom scrollbar on scrollable panes.
+- Team theming via CSS variables; no hardcoded team hex.
 
 ## 20. Dynamic Team Theming Example
 ```scss
@@ -539,8 +964,284 @@ Use this before merging new UI:
 
 ---
 End of FHFHockey.com Design System PRD (Interactive v1.1).
+<!--
+  FHFHockey.com Front-End Product Requirements & Design System Guide (v2.0)
+  Canonical source for the "Vibrant Glassmorphism" analytics aesthetic across Draft Dashboard and Stats pages.
+  Audience: Designers, engineers, and LLMs building new pages/components that must exactly match the production vibe.
+-->
 
+# FHFHockey.com Design System — Vibrant Glassmorphism (Canonical v2.0)
 
+## 0) What to build and how to judge success
+
+This guide is a contract for reproducing the Draft Dashboard and Stats pages look-and-feel exactly.
+
+Success criteria:
+- Dark, layered glass aesthetic with disciplined cyan energy accents
+- Dense, readable analytics (tables, filters, charts) with consistent panel framing
+- Team identity applied via CSS variables without breaking semantic colors
+- Minimal glow, purposeful motion, accessible focus states
+- Styles only from tokens/mixins in `styles/vars.scss` (no hardcoded hex)
+
+Deliverables must pass: visual parity checklist, accessibility focus/keyboard rules, and token-only usage.
+
+## 1) Tokens and imports (single source of truth)
+
+All colors, spacing, radii, typography, shadows, transitions, and elevations come from `styles/vars.scss`.
+Never hardcode hex values. Always import with a namespace.
+
+SCSS module import pattern
+```scss
+@use "styles/vars" as v; // always use a namespace
+```
+
+Core token families (defined in vars.scss)
+- Colors: `$primary-color`, `$secondary-color`, `$success-color`, `$warning-color`, `$danger-color`, `$info-color`, `$focus-color`
+- Surfaces: `$background-dark`, `$background-medium`, `$background-light` (+ optional surface ramp like `$surface-0/1/2` if present)
+- Text: `$text-primary`, `$text-secondary`, `$text-button`
+- Borders: `$border-primary`, `$border-secondary`, `$border-accent`
+- Typography: `$font-family-*`, `$font-size-*`
+- Spacing: `$space-*`
+- Radii: `$border-radius-*` (and `$radius-*` if provided)
+- Shadows & transitions: `$box-shadow-panel`, `$shadow-hover`, `$transition-duration`, `$transition-easing`
+- Breakpoints: `$breakpoint-mobile-max`, `$breakpoint-tablet`, `$breakpoint-desktop`
+- Z-index helpers: e.g., `$z-desktop-sticky` (if present)
+
+Mixins (defined in vars.scss)
+- `@include v.glass-panel;` — glass surface + blur + subtle border/shadow
+- `@include v.button-style;` — primary cyan button baseline
+- `@include v.button-ghost($active: false);` — ghost/secondary button
+- `@include v.table-base;` — dense table baseline (spacing, colors)
+- `@include v.custom-scrollbar(color, track, size);`
+- `@include v.focus-ring();` and device variants if provided
+- Schedule/intensity helpers if present: `@include v.schedule-fill(color, alpha)`, `@include v.schedule-outline(color)`
+
+Note: If a snippet below references a token name not shown in this summary (e.g., `$surface-1`, `$shadow-hover`), it exists in vars.scss. Do not inline values; use the token.
+
+## 2) Visual language and rules
+
+- Layering: dark base canvas → panel shell (glass/diffused) → content → accent overlays
+- Glow: minimal, only for critical focus/active states (current pick, CTA shimmer, winner highlight)
+- Density: small/xxs type for tables and controls; tight padding; clear rhythm via panel headers
+- Team theming: team CSS variables control identity (stripes, badges), never semantics (success/danger)
+- Motion: 150–300ms interactions; 2.5–3s shimmer; avoid continuous ambient animations
+- Accessibility: visible focus rings; keyboardable filters/tabs; sticky headers for orientation
+
+## 3) Typography and color semantics
+
+- Headings: Train One (accent), uppercase, 0.05–0.12em tracking
+- Body/labels: Roboto Condensed for scan-ability
+- Numbers: Martian Mono where alignment matters (tables, logs)
+- Semantic color usage:
+  - Primary/Secondary cyan → action/active/selection
+  - Success/Warning/Danger → outcomes only (not team identity)
+  - Team colors via CSS vars → identity stripes, badges, logo glows
+
+## 4) Layout archetypes (canonical)
+
+- Draft Dashboard (three-panel workspace): grid 2fr 1fr 2fr on desktop; stacked on mobile; center (roster) highlighted
+- Stats pages (index/player/team/game): stacked modular sections; shared panel shell + header strip + dense tables + charts/heatmaps
+
+## 5) Canonical patterns and recipes
+
+### 5.1 Panels and headers
+```scss
+@use "styles/vars" as v;
+
+.panel { @include v.glass-panel; }
+
+.panelHeader {
+  display: flex; align-items: center; justify-content: space-between; gap: v.$space-md;
+  padding: v.$space-md v.$space-lg;
+  background: linear-gradient(135deg, v.$background-dark, color.adjust(v.$background-dark, $lightness: 4%));
+  border-bottom: 2px solid v.$secondary-color;
+}
+.panelTitle { font-family: v.$font-family-accent; letter-spacing: .08em; text-transform: uppercase; font-size: v.$font-size-lg; margin: 0; }
+.panelTitleAccent { color: v.$primary-color; }
+```
+
+### 5.2 Dense tables
+```scss
+.tableWrap { max-height: 70vh; overflow: auto; @include v.custom-scrollbar(v.$primary-color, v.$background-medium, 6px); }
+
+.dataTable { @include v.table-base; background: v.$background-dark; border-radius: v.$border-radius-md; }
+.dataTable thead th {
+  position: sticky; top: 0; z-index: 1;
+  background: v.$background-medium; color: v.$primary-color;
+  font-size: v.$font-size-xxs; letter-spacing: .06em; text-transform: uppercase;
+}
+.dataTable tbody tr:hover { background: v.$background-light; }
+```
+
+### 5.3 Toggle groups and buttons
+```scss
+%toggleBase { @include v.button-style; background: transparent; border: 1px solid v.$border-secondary; color: v.$text-secondary; }
+.toggleBar { display: flex; gap: v.$space-xs; flex-wrap: wrap; }
+.toggleBtn { @extend %toggleBase; font-size: v.$font-size-xxs; }
+.toggleBtn.active { background: v.$primary-color; color: v.$text-button; border-color: v.$primary-color; }
+```
+
+### 5.4 Scrollbars and focus
+```scss
+.scrollArea { @include v.custom-scrollbar(v.$primary-color, v.$background-medium, 8px); }
+:focus-visible { @include v.focus-ring(); }
+```
+
+### 5.5 Intensity and progress
+```scss
+.intensity0 { background: color.adjust(v.$background-medium, $lightness: -3%); }
+.intensity1 { @include v.schedule-fill(v.$success-color, .12); @include v.schedule-outline(v.$success-color); }
+.intensity2 { @include v.schedule-fill(v.$success-color, .2);  @include v.schedule-outline(v.$success-color); }
+.intensity3 { @include v.schedule-fill(v.$success-color, .3);  @include v.schedule-outline(v.$success-color); }
+.intensity4 { background: v.$success-color; color: #000; }
+
+.progressBar { height: 8px; border-radius: 999px; background: color.adjust(v.$background-dark, $lightness: 6%); overflow: hidden; }
+.progressFill { height: 100%; background: linear-gradient(90deg, v.$primary-color, v.$secondary-color); transition: width .35s ease-in-out; }
+```
+
+### 5.6 Shimmer CTA (sparingly)
+```scss
+.ctaShimmer { position: relative; overflow: hidden; }
+.ctaShimmer::after { content: ""; position: absolute; inset: 0; background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,.12) 20%, transparent 40%); transform: translateX(-120%); animation: shimmer 3s infinite ease-in-out; pointer-events: none; }
+@keyframes shimmer { 0%{transform:translateX(-120%);} 60%,100%{transform:translateX(120%);} }
+```
+
+## 6) Dynamic team theming pattern
+
+1) Apply a team class on the container or set CSS variables inline.
+```scss
+// team class approach (preferred)
+.team-ABBR {
+  --team-primary: <hex>;
+  --team-secondary: <hex>;
+  --team-jersey: <hex>;
+  --team-accent: <hex>;
+  --team-alt: <hex>;
+}
+```
+2) Consume variables inside components only for identity accents.
+```scss
+.teamName { background: var(--team-accent); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.logoGlow { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--team-secondary) 70%, #000)); }
+```
+Rule: Do not use team colors for success/warning/danger semantics.
+
+## 7) Draft Dashboard style kit (production extract)
+
+- Page shell: grid 2fr 1fr 2fr (desktop), stacked on mobile; gap uses `$space-lg`/`$space-md`
+- Center panel accent: gradient surface + 2px primary border + soft outer glow
+- Panel header: accent strip with uppercase Train One title and cyan span
+- Projections table: sticky header, zebra rows, custom scrollbar; numeric columns use tabular-nums
+- Suggested pick card: left neon stripe + ambient glow on hover; small lift
+- Intensity grid: `.intensity0–4` ramp using success color; optional outline mixin
+- Progress bars: gradient primary→secondary; width transitions 240–500ms
+
+Minimal code
+```scss
+.dashboardShell { display: grid; gap: v.$space-lg; grid-template-columns: 2fr 1fr 2fr; }
+.panelAccent { border: 2px solid v.$primary-color; box-shadow: 0 0 0 1px rgba(v.$primary-color,.35), 0 8px 28px -6px rgba(0,0,0,.6), 0 0 32px rgba(v.$primary-color,.15); }
+.projectionsTable { @include v.table-base; }
+```
+
+## 8) Stats pages style kit (Index • Player • Team • Game)
+
+Shared rules
+- Use `@include v.component-wrapper;` for major sections and `@include v.element-wrapper;` for inner frames when available
+- Tables extend `v.table-base` and use sticky headers; scroll containers use brand scrollbar
+- Filters/toggles are compact, uppercase, keyboardable; active uses cyan fill
+- Heat/Calendar uses primary ramp via opacity (0.3→0.9) — no glow
+
+### 8.1 Stats Index (leaders, filters, teams grid)
+- Hero: framed panel (background-medium, border primary)
+- Quick stats: card with left accent (scoring/goaltending/league)
+- Filters: `.filterBar` group with roving focus or arrow-key cycling
+- Teams grid: tiles with light lift on hover; abbrev uses team secondary; subtle logo glow
+
+### 8.2 Player page (overview • advanced • trends • calendar)
+- Navigation header with back button (ghost) + search
+- Player header: glass panel with photo, info, large accent name
+- Tabs: compact uppercase; active cyan fill
+- Overview grid: radar panel + insights panel; calendar panel framed with outline
+- Tables: sticky headers; restrained hover; tabular-nums where needed
+- Percentile pills: unified tier mapping (elite/good/average/below/poor)
+
+### 8.3 Team page (header stripes • quick stats • table • shot viz)
+- Header stripe band: gradient bands from team vars (primary→jersey→accent→secondary)
+- Quick stats pills: color-mix team primary ~70% for bg and border; readable text color
+- Team table: sticky headers, zebra, restrained hover emphasis (focus tint)
+- Shot viz: split panel with framed control column and rink canvas panel
+
+### 8.4 Game page (skeleton)
+- Header: grid 1fr auto 1fr; identity badges for both teams
+- Panels: two-column stats layout; tables reuse `v.table-base`
+
+## 9) Accessibility rules (do not omit)
+
+- Always provide visible focus (`:focus-visible`) with brand ring mixin
+- Keyboard: arrow-key cycling for filter groups; ESC closes drawers; Enter/Space activate buttons
+- Sticky headers for long tables; provide aria-sort on sortable headers
+- Respect `prefers-reduced-motion`: disable shimmer/pulse loops
+
+## 10) Acceptance criteria and parity checklists
+
+A) Global parity
+- Panel surfaces use glass/dark layering; consistent header pattern
+- Cyan accents only for action/selection; team colors only for identity
+- Custom scrollbar on all scroll containers; no native default
+- Minimal glow limited to active/focus states
+
+B) Tables
+- Sticky thead; zebra rows via dark lightness steps
+- Hover = lightness shift (no strong glow)
+- Numeric columns aligned with tabular-nums
+
+C) Filters/tabs
+- Compact uppercase; active cyan fill; arrow-key accessible; focus-visible ring present
+
+D) Heat/Intensity/Progress
+- Intensity ramp via opacity steps; consistent success ramp
+- Progress bars animate width (240–500ms), not color
+
+## 11) LLM prompt template (copy/paste)
+
+Use this verbatim when asking an LLM to build a new page/component.
+
+```
+You are implementing a new FHFHockey.com analytics feature called <Feature Name>.
+Follow the FHFHockey Vibrant Glassmorphism system strictly:
+- Import tokens/mixins with: @use "styles/vars" as v;
+- Panels use glass-panel; headers use the canonical header pattern (uppercase Train One + cyan span)
+- Tables extend v.table-base; sticky header; zebra rows; tabular numerals for numeric columns
+- Filters/toggles are compact uppercase; active cyan fill; keyboard arrow navigation and focus-visible rings
+- Use CSS team variables for identity accents; never for success/warning/danger semantics
+- Heat/Intensity use opacity steps; progress bars animate width (240–500ms)
+- Minimal glow (CTA shimmer or current state pulse only); respect prefers-reduced-motion
+- No hardcoded hex; only tokens from vars.scss
+Output: React + SCSS module referencing existing tokens/mixins (do not re-declare tokens).
+```
+
+## 12) Migration notes (clean up legacy SCSS)
+
+- Replace hardcoded hex (e.g., `#07aae2`, `#343434`) with tokens
+- Add `@use "styles/vars" as v;` to all SCSS modules
+- Consolidate duplicate table styles behind `v.table-base` with local modifiers
+- Apply `v.custom-scrollbar` and `v.focus-ring` consistently
+
+## 13) Appendix — token cheat sheet (names only)
+
+Colors: `$primary-color`, `$secondary-color`, `$success-color`, `$warning-color`, `$danger-color`, `$info-color`, `$focus-color`
+Surfaces: `$background-dark`, `$background-medium`, `$background-light`, `$surface-0/1/2` (if present)
+Text: `$text-primary`, `$text-secondary`, `$text-button`
+Borders: `$border-primary`, `$border-secondary`, `$border-accent`
+Typography: `$font-family-primary`, `$font-family-accent`, `$font-family-numbers`, `$font-size-xxs..xl`
+Spacing: `$space-xs..xl`
+Radii: `$border-radius-sm..lg` (and `$radius-*` if present)
+Shadows/Transitions: `$box-shadow-panel`, `$shadow-hover`, `$transition-duration`, `$transition-easing`
+Breakpoints: `$breakpoint-mobile-max`, `$breakpoint-tablet`, `$breakpoint-desktop`
+Utilities/Mixins: `glass-panel`, `button-style`, `button-ghost`, `table-base`, `custom-scrollbar`, `focus-ring`, `schedule-fill`, `schedule-outline`
+
+---
+This v2.0 guide supersedes previous fragments. If a prior rule contradicts this document, this document wins.
 ## Component Recipes
 
 Use the following recipes to construct standard UI elements.

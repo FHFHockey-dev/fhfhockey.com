@@ -9,32 +9,19 @@ import PanelStatus from "components/common/PanelStatus";
 
 // It's best practice to move this interface to a shared types file (e.g., lib/NHL/types.ts)
 // to avoid duplication. It is included here for completeness.
+// Snapshot row from public.nst_team_all
 export interface TeamStats {
-  id: number;
-  team_id: number | null;
-  franchise_name: string;
-  date: string;
-  games_played: number | null;
-  wins: number | null;
-  losses: number | null;
-  ot_losses: number | null;
+  team_abbreviation: string;
+  team_name: string;
+  gp: number | null;
+  sf: number | null;
+  sa: number | null;
+  gf: number | null;
+  ga: number | null;
+  xgf: number | null;
+  xga: number | null;
   points: number | null;
-  goals_for: number | null;
-  goals_against: number | null;
-  goals_for_per_game: number | null;
-  goals_against_per_game: number | null;
-  point_pct: number | null;
-  regulation_and_ot_wins: number | null;
-  wins_in_regulation: number | null;
-  wins_in_shootout: number | null;
-  faceoff_win_pct: number | null;
-  power_play_pct: number | null;
-  penalty_kill_pct: number | null;
-  shots_for_per_game: number | null;
-  shots_against_per_game: number | null;
-  season_id: number | null;
-  game_id: number | null;
-  opponent_id: number | null;
+  date: string; // YYYY-MM-DD
 }
 
 // --- Re-add useIsMobile hook ---
@@ -83,46 +70,51 @@ export default function OpponentMetricsTable({
     const fetchAndProcessAllStats = async () => {
       setStatsLoading(true);
 
-      const { data: allStatsData, error } = await supabase
-        .from("wgo_team_stats")
-        .select("*");
+      // Pull from NST daily team table using the most recent date per team.
+      // Strategy: order by date desc, and take the first row we see per team_abbreviation.
+      const { data, error } = await supabase
+        .from("nst_team_all")
+        .select(
+          [
+            "team_abbreviation",
+            "team_name",
+            "gp",
+            "sf",
+            "sa",
+            "gf",
+            "ga",
+            "xgf",
+            "xga",
+            "points",
+            "date"
+          ].join(",")
+        )
+        .order("date", { ascending: false });
 
       if (error) {
-        console.error("Failed to fetch all team stats:", error);
+        console.error("Failed to fetch team stats:", error);
         setStatsLoading(false);
         return;
       }
 
-      if (allStatsData) {
-        // Create a map from team_id to abbreviation using the teamData prop.
-        // NOTE: This assumes the `teamData` prop contains every team that might
-        // appear as an opponent. A more robust solution involves having a
-        // dedicated 'teams' table in your database that maps IDs to abbreviations.
-        const teamIdToAbbrMap = new Map<number, string>();
-        teamData.forEach((team) => {
-          if (team.teamId && team.teamAbbreviation) {
-            teamIdToAbbrMap.set(
-              team.teamId,
-              team.teamAbbreviation.toUpperCase()
-            );
-          }
-        });
+      const rows: TeamStats[] = (data ?? []) as unknown as TeamStats[];
 
-        const statsByAbbr = allStatsData.reduce<{ [key: string]: TeamStats }>(
+      if (rows && rows.length > 0) {
+        // Keep first encounter per team_abbreviation (most recent date due to DESC order)
+        const statsByAbbr = rows.reduce<{ [key: string]: TeamStats }>(
           (acc, stat) => {
-            const abbr = teamIdToAbbrMap.get(stat.team_id!);
-            if (abbr) {
-              // This will overwrite, keeping the last fetched stat for a team.
-              // If your table has multiple entries per team, you may need to
-              // add logic here to select the most recent one.
+            const abbr = stat.team_abbreviation?.toUpperCase();
+            if (!abbr) return acc;
+            if (!acc[abbr]) {
               acc[abbr] = stat;
             }
             return acc;
           },
           {}
         );
-
         setAllTeamStats(statsByAbbr);
+      } else {
+        setAllTeamStats({});
       }
       setStatsLoading(false);
     };
@@ -160,14 +152,20 @@ export default function OpponentMetricsTable({
           const key = opp.abbreviation.toUpperCase();
           const stats = allTeamStats[key]; // Use the new state object
           if (stats) {
-            // Ensure stats exist before summing
-            acc.xgf += stats.shots_for_per_game ?? 0; // Assuming xgf maps to this
-            acc.xga += stats.shots_against_per_game ?? 0; // Assuming xga maps to this
-            acc.sf += stats.shots_for_per_game ?? 0;
-            acc.sa += stats.shots_against_per_game ?? 0;
-            acc.gf += stats.goals_for_per_game ?? 0;
-            acc.ga += stats.goals_against_per_game ?? 0;
-            acc.winPct += stats.point_pct ?? 0; // Assuming win_pctg is point_pct
+            const gp = stats.gp ?? 0;
+            const denom = gp > 0 ? gp : 0;
+            const perGame = (value: number | null | undefined) =>
+              denom > 0 ? (value ?? 0) / denom : 0;
+            // Use NST per-game rates
+            acc.xgf += perGame(stats.xgf);
+            acc.xga += perGame(stats.xga);
+            acc.sf += perGame(stats.sf);
+            acc.sa += perGame(stats.sa);
+            acc.gf += perGame(stats.gf);
+            acc.ga += perGame(stats.ga);
+            // Compute point pct from points / (gp*2) if possible
+            const points = stats.points ?? 0;
+            acc.winPct += denom > 0 ? points / (denom * 2) : 0;
           }
           return acc;
         },

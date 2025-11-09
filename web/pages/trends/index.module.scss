@@ -1,624 +1,983 @@
 @use "sass:color";
 @use "styles/vars" as v;
 
-// ============================================================================
-// Trends Page Layout (Refined to match Design System v1.1)
-// ============================================================================
-
 .page {
-  background-color: v.$background-dark;
   min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  gap: v.$space-xl;
-  padding: v.$space-lg v.$space-xl;
-  position: relative;
-}
-
-// Skip link (optional future; style placeholder)
-.skipLink {
-  position: absolute;
-  top: -40px;
-  left: 0;
-  background: v.$primary-color;
-  color: v.$text-button;
-  padding: v.$space-xs v.$space-sm;
-  font-size: v.$font-size-xs;
-  text-decoration: none;
-  border-radius: v.$border-radius-sm;
-  &:focus-visible {
-    top: 0;
-  }
-}
-
-// Glass utility (shared with metric cards & controls) – mirrors .glass-panel recipe
-.glassPanel {
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.05),
-    rgba(255, 255, 255, 0.02)
-  );
-  backdrop-filter: blur(12px) saturate(150%);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: v.$desktop-panel-shadow;
-  border-radius: v.$border-radius-lg;
-}
-
-.controlsAndMetrics {
-  display: grid;
-  grid-template-columns: 320px 1fr;
-  gap: v.$space-xl;
-  align-items: start;
-  width: 100%;
-  position: relative;
-}
-
-.controls {
-  display: flex;
-  flex-direction: column;
-  gap: v.$space-lg;
-  position: sticky;
-  top: 80px; // Adjust if global nav height changes
-  padding: v.$space-md;
-  @extend .glassPanel;
-  // Provide a subtle accent top bar
-  &::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, v.$primary-color, v.$secondary-color);
-    box-shadow: 0 0 8px rgba(v.$primary-color, 0.6);
-    border-top-left-radius: inherit;
-    border-top-right-radius: inherit;
-  }
-}
-
-// Grouping containers for alignment similar to DraftSettings
-.controlGroup {
-  display: flex;
-  flex-direction: column;
-  gap: v.$space-sm;
-}
-
-.controlRow {
-  display: flex;
-  align-items: stretch;
-  gap: v.$space-sm;
-}
-
-.searchContainer {
-  flex: 1;
-}
-
-.infoWrapper {
-  width: 100%;
-}
-
-.stepper {
-  width: 100%;
-}
-
-.searchContainer > :global(input) {
-  height: 42px;
-}
-.infoWrapper > :global(button) {
-  height: 42px;
-}
-
-.searchContainer > :global(input) {
-  padding-top: 0;
-  padding-bottom: 0;
-}
-
-.controlsHeader {
-  font-family: v.$font-family-accent;
-  font-size: v.$font-size-sm;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  padding: clamp(v.$space-lg, 4vw, v.$space-xxl);
+  background-color: v.$background-medium;
   color: v.$text-primary;
-  padding: 0 v.$space-xs;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(v.$space-md, 3vw, v.$space-lg);
+}
+
+.hero {
+  @include v.component-wrapper;
+  background-color: color.adjust(v.$background-dark, $lightness: -2%);
+  outline: 15px solid v.$background-dark;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  text-align: center;
+  padding: v.$space-md v.$space-lg;
+}
+
+.titleInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0px;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+.heroTitle {
+  font-size: clamp(2rem, 3vw, 2.25rem);
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-family: v.$font-family-accent;
+  padding: 0;
+  margin: 0;
+}
+
+.heroAccent {
+  color: v.$secondary-color; // single-word blue accent (07aae2)
+  display: inline-block;
+  padding-right: 6px;
+  font-family: v.$font-family-accent;
+  font-weight: 700;
+}
+
+.heroSubtitle {
+  color: v.$text-secondary;
+  font-size: 1rem;
+  text-align: left;
+  width: 100%;
+}
+
+.searchForm {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-md;
+  text-align: left;
+  width: 30%;
+}
+
+.searchInputWrapper {
+  position: relative;
+  width: 100%;
 }
 
 .searchInput {
   width: 100%;
-  background-color: v.$background-dark;
+  border-radius: v.$border-radius-lg;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: color.adjust(v.$background-dark, $lightness: 6%);
   color: v.$text-primary;
-  border: 2px solid v.$border-secondary;
-  border-radius: v.$border-radius-md;
-  padding: v.$space-xs v.$space-sm;
-  font-size: v.$font-size-sm;
+  padding: v.$space-sm v.$space-md;
+  font-size: 1rem;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+
   &:focus {
-    border-color: v.$primary-color;
-    box-shadow: 0 0 0 3px rgba(v.$primary-color, 0.25);
     outline: none;
+    border-color: rgba(v.$primary-color, 0.8);
+    box-shadow: 0 0 0 3px rgba(v.$primary-color, 0.25);
   }
+
   &::placeholder {
     color: v.$text-secondary;
   }
 }
 
-.searchResults {
-  margin-top: v.$space-xs;
-  background: v.$background-dark;
-  border: 1px solid v.$primary-color;
-  border-radius: v.$border-radius-md;
-  max-height: 260px;
-  overflow-y: auto;
-  @include v.custom-scrollbar(v.$primary-color, v.$background-medium, 4px);
-}
-.searchResultItem {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: v.$space-xs v.$space-sm;
-  cursor: pointer;
-  font-size: v.$font-size-xs;
-  color: v.$text-primary;
-  &:hover {
-    background: v.$primary-color;
-    color: v.$color-white;
-  }
-}
-.emptyResult {
-  padding: v.$space-xs v.$space-sm;
-  font-size: v.$font-size-xs;
-  color: v.$text-secondary;
-}
-
-.infoWrapper {
-  justify-content: flex-start;
-}
-
-.infoButton {
-  background: rgba(v.$primary-color, 0.12);
-  border: 1px solid rgba(v.$primary-color, 0.4);
-  color: v.$primary-color;
-  border-radius: v.$border-radius-md;
+.suggestionList {
+  position: absolute;
+  z-index: 10;
+  margin-top: 6px;
   width: 100%;
-  height: 100%;
+  max-height: 300px;
+  overflow-y: auto;
+  border-radius: v.$border-radius-lg;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: color.adjust(v.$background-dark, $lightness: 8%);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  @include v.custom-scrollbar(v.$primary-color, v.$background-medium, 8px);
+}
+
+.suggestionButton {
+  width: 100%;
+  padding: v.$space-xs v.$space-md;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: v.$space-sm;
+  color: inherit;
+  background: transparent;
+  border: none;
+
+  // enforce two-column split: team info | score block
+  .teamCell {
+    flex: 0 0 50%;
+    width: 50%;
+    justify-content: space-between;
+  }
+
+  .scoreCell {
+    flex: 0 0 50%;
+    width: 50%;
+    justify-content: flex-end;
+  }
   cursor: pointer;
-  transition:
-    background 0.2s ease,
-    box-shadow 0.2s ease,
-    color 0.2s ease;
-  font-size: v.$font-size-sm;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  position: relative;
-  &:hover:not(:disabled) {
-    background: rgba(v.$primary-color, 0.28);
-    box-shadow:
-      0 0 0 1px rgba(v.$primary-color, 0.5),
-      0 0 12px rgba(v.$primary-color, 0.35);
+  font-size: 0.9rem;
+  transition: background 0.15s ease;
+  &:hover {
+    background: rgba(v.$primary-color, 0.12);
   }
   &:focus-visible {
-    outline: 2px solid v.$primary-color;
-    outline-offset: 2px;
-    box-shadow: 0 0 0 3px rgba(v.$primary-color, 0.35);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.35);
   }
+}
+
+.suggestionActive {
+  background: rgba(v.$primary-color, 0.12);
+  border-left: 4px solid v.$secondary-color;
+  box-shadow: 0 6px 18px rgba(v.$secondary-color, 0.06);
+}
+
+.searchButton {
+  @include v.button-style;
+  font-family: v.$font-family-accent;
+  text-transform: uppercase;
+  letter-spacing: 0.115rem;
+  border-radius: v.$border-radius-lg;
+  padding: v.$space-sm v.$space-lg;
+  font-weight: 700;
+  background: rgba(v.$primary-color, 0.14);
+  color: v.$primary-color;
+  border: 2px solid v.$primary-color;
+  width: 100%;
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease;
+
   &:disabled {
-    opacity: 0.5;
+    opacity: 0.6;
     cursor: not-allowed;
   }
+
+  &:not(:disabled):hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 24px rgba(v.$primary-color, 0.08);
+  }
 }
 
-// Stepper redesigned to mirror toggle button group aesthetics
-.stepper {
+.errorMessage {
+  margin-top: v.$space-xs;
+  color: v.$danger-color;
+  font-size: 0.9rem;
+}
+
+.resultsPanel {
+  margin-top: v.$space-md;
+  @include v.glass-panel;
+  border-radius: v.$border-radius-lg;
+  padding: v.$space-md;
+}
+
+.resultsList {
+  margin-top: v.$space-sm;
+  display: flex;
+  flex-direction: column;
+  border-radius: v.$border-radius-lg;
+  overflow: hidden;
+  border: 1px solid v.$border-secondary;
+}
+
+.resultRow {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.resultButton {
+  width: 100%;
+  padding: v.$space-sm v.$space-md;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  color: inherit;
+  text-align: left;
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  background: v.$background-dark;
-  border: 1px solid v.$border-secondary;
-  border-radius: v.$border-radius-md;
-  padding: v.$space-xs v.$space-sm;
-  gap: v.$space-sm;
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: rgba(v.$primary-color, 0.08);
+  }
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.35);
+  }
+  &:active,
+  &.active {
+    border-left: 4px solid v.$secondary-color;
+    background: rgba(v.$secondary-color, 0.06);
+  }
 }
 
-.stepperInfo {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.1;
-}
-
-.stepperLabel {
-  font-size: v.$font-size-xxs;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: v.$text-secondary;
-  font-weight: 600;
-}
-
-.stepperDate {
-  font-family: v.$font-family-numbers;
-  font-size: v.$font-size-sm;
-  color: v.$text-primary;
-  font-weight: 600;
-}
-
-.stepperActions {
-  display: flex;
-  align-items: center;
-}
-
-.stepperButton {
-  @include v.button-ghost(true);
-  min-width: 96px;
-}
-
-.infoGlyph {
-  margin-right: v.$space-sm;
-  font-weight: 700;
-  font-family:
-    system-ui,
-    -apple-system,
-    "Segoe UI",
-    Roboto,
-    Ubuntu,
-    "Helvetica Neue",
-    Arial;
-}
-
-.tableActions {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: v.$space-sm;
-  font-size: v.$font-size-xs;
-  color: v.$text-secondary;
-}
-
-.metrics {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(160px, 1fr));
-  gap: v.$space-lg;
-  align-items: stretch;
-}
-
-.metricsWrapper {
-  display: flex;
-  flex-direction: column;
-  gap: v.$space-xl;
-}
-
-.metricComposite {
-  @extend .glassPanel;
-  padding: v.$space-lg;
+.teamSection {
   display: flex;
   flex-direction: column;
   gap: v.$space-md;
-  position: relative;
-  &::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, v.$primary-color, v.$secondary-color);
-  }
 }
 
-.metricCompositeHeader {
+.sectionHeader {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: v.$space-sm;
+  align-items: baseline;
+}
+
+.sectionTitle {
+  font-size: clamp(1.4rem, 2vw, 1.8rem);
+  font-weight: 600;
   font-family: v.$font-family-accent;
-  font-size: v.$font-size-sm;
-  letter-spacing: 0.06em;
   text-transform: uppercase;
-  font-weight: 700;
-  color: v.$text-primary;
+  letter-spacing: 0.08em;
 }
 
-.metricCompositeValue {
-  font-family: v.$font-family-numbers;
-  font-size: v.$font-size-xl;
-  font-weight: 700;
-  color: v.$primary-color;
-  text-shadow: 0 0 10px rgba(v.$primary-color, 0.55);
-  display: flex;
-  flex-direction: column;
-  gap: v.$space-xs;
-}
-
-.metricCompositeSub {
-  font-size: v.$font-size-xs;
+.sectionSubtitle {
   color: v.$text-secondary;
-  font-weight: 400;
+  font-size: 0.95rem;
 }
-.metricBars {
+
+.sectionTimestamp {
+  color: v.$text-secondary;
+  font-size: 0.8rem;
+}
+
+/* Rolling window segmented control */
+.windowToggle {
   display: flex;
-  flex-direction: column;
-  gap: v.$space-sm;
-}
-.metricBar {
-  display: grid;
-  grid-template-columns: 48px 1fr 54px;
-  gap: v.$space-sm;
+  gap: v.$space-xs;
   align-items: center;
 }
-.metricBarLabel {
-  font-size: v.$font-size-xs;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  color: v.$text-secondary;
+
+.windowButton {
+  @include v.button-style;
+  font-family: v.$font-family-accent;
   text-transform: uppercase;
-}
-.metricBarTrack {
-  position: relative;
-  height: 12px;
-  background: color.adjust(v.$background-dark, $lightness: 6%);
-  border: 1px solid v.$border-secondary;
-  border-radius: 6px;
-  overflow: hidden;
-}
-.metricBarFill {
-  position: absolute;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  background: linear-gradient(90deg, v.$primary-color, v.$secondary-color);
-  box-shadow: 0 0 6px rgba(v.$primary-color, 0.5);
-}
-.metricBarValue {
-  font-family: v.$font-family-numbers;
-  font-size: v.$font-size-xs;
-  color: v.$text-primary;
-  text-align: right;
+  letter-spacing: 0.08em;
+  border-radius: v.$border-radius-md;
+  padding: calc(v.$space-xxs) v.$space-sm;
+  font-weight: 700;
+  background: rgba(v.$background-dark, 0.02);
+  color: v.$text-button;
+  border: 1px solid rgba(v.$primary-color, 0.08);
+  font-size: 0.72rem;
+  min-width: 48px;
+  text-align: center;
 }
 
-@media (max-width: 1200px) {
-  .metrics {
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  }
-}
-
-.metricCard {
-  @extend .glassPanel;
-  display: flex;
-  flex-direction: column;
-  gap: v.$space-xs;
-  padding: v.$space-md;
-  position: relative;
-  overflow: hidden;
-  transition:
-    transform 0.25s ease,
-    box-shadow 0.25s ease,
-    background 0.25s ease;
-  isolation: isolate; // ensure glow layering doesn't bleed
-  &::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(
-      circle at 15% 20%,
-      rgba(v.$primary-color, 0.18),
-      transparent 60%
-    );
-    mix-blend-mode: screen;
-    opacity: 0.4;
-    pointer-events: none;
-  }
-  &::after {
-    // accent top bar
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, v.$primary-color, v.$secondary-color);
-    box-shadow: 0 0 6px rgba(v.$primary-color, 0.6);
-  }
-  &:hover:not(.loading) {
-    transform: translateY(-4px);
-    box-shadow:
-      0 8px 28px rgba(0, 0, 0, 0.55),
-      0 0 0 1px rgba(255, 255, 255, 0.12),
-      0 0 24px rgba(v.$primary-color, 0.25);
-  }
-  &:focus-within {
-    box-shadow:
-      0 0 0 2px rgba(v.$primary-color, 0.4),
-      0 0 0 4px rgba(v.$primary-color, 0.15);
-  }
-  &.loading {
-    opacity: 0.6;
-  }
-}
-
-.metricTitle {
-  color: v.$text-primary;
-  font-size: v.$font-size-xs;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  font-weight: 600;
-}
-
-.metricValue {
-  font-family: v.$font-family-numbers;
-  font-size: v.$font-size-lg;
-  font-weight: 600;
+.windowActive {
+  background: rgba(v.$primary-color, 0.12);
   color: v.$primary-color;
-  text-shadow: 0 0 8px rgba(v.$primary-color, 0.5);
-  font-variant-numeric: tabular-nums; // alignment
+  border: 2px solid v.$primary-color;
+  box-shadow: 0 6px 18px rgba(v.$primary-color, 0.06);
+  transform: translateY(-1px);
 }
 
-.metricDetail {
-  color: v.$text-secondary;
-  font-size: v.$font-size-xs;
-}
-
-.tableWrapper {
-  overflow-x: auto;
+.teamError {
   border-radius: v.$border-radius-lg;
-  border: 1px solid v.$border-primary;
-  background-color: v.$background-dark;
-  position: relative;
-  // subtle inner gradient at top for depth under sticky header
-  &::before {
-    content: "";
-    position: sticky;
-    top: 0;
-    display: block;
-    height: 0;
-    box-shadow: 0 2px 0 rgba(255, 255, 255, 0.05);
-  }
+  border: 1px solid rgba(v.$danger-color, 0.35);
+  background: rgba(v.$danger-color, 0.1);
+  padding: v.$space-md;
+  color: v.$danger-color;
 }
 
-.playerTable {
-  width: 100%;
-  border-collapse: collapse;
-  min-width: 720px;
-  font-size: v.$font-size-sm;
-  font-variant-numeric: tabular-nums;
-  thead {
-    position: sticky;
-    top: 0;
-    z-index: 10;
-  }
-  th {
-    background-color: color.adjust(v.$background-dark, $lightness: -5%);
-    color: v.$text-primary;
-    padding: v.$space-sm v.$space-md;
-    font-weight: 700;
-    text-align: left;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    border-bottom: 2px solid v.$border-secondary;
-    white-space: nowrap;
-  }
-  td {
-    padding: v.$space-sm v.$space-md;
-    color: v.$text-secondary;
-    border-bottom: 1px solid v.$border-secondary;
-    height: 56px;
-    vertical-align: middle;
-  }
-  tbody tr:nth-child(odd) {
-    background-color: color.adjust(v.$background-dark, $lightness: -2%);
-  }
-  tbody tr:hover {
-    background-color: color.adjust(v.$background-dark, $lightness: 2%);
-  }
-}
-
-.clickableRow {
-  cursor: pointer;
-}
-
-.playerCell {
-  display: flex;
-  flex-direction: column;
-  justify-content: center; /* Vertical centering */
-}
-
-.playerName {
-  font-weight: 600;
-  color: v.$text-primary;
-}
-
-.playerMeta {
-  color: v.$text-secondary;
-  font-size: v.$font-size-xs;
-}
-
-.sparklineCell {
-  min-width: 120px;
-}
-
-.sparklineSvg {
-  width: 100%;
-  height: 40px;
-}
-
-.sparklineBaseline {
-  stroke: rgba(255, 255, 255, 0.2);
-  stroke-width: 1;
-}
-
-.sparklinePath {
-  fill: none;
-  stroke: v.$primary-color;
-  stroke-width: 2;
-}
-
-.sparklineShade {
-  fill: rgba(v.$primary-color, 0.15);
-}
-
-.placeholder {
-  padding: v.$space-lg;
+.teamLoading {
+  border-radius: v.$border-radius-lg;
+  padding: v.$space-xl;
   text-align: center;
   color: v.$text-secondary;
+  border: 1px solid v.$border-secondary;
+  background: rgba(v.$background-light, 0.15);
 }
 
-.error {
-  background: rgba(v.$danger-color, 0.1);
-  border: 1px solid rgba(v.$danger-color, 0.3);
+.trendGrid {
+  display: grid;
+  gap: v.$space-lg;
+  align-items: stretch;
+  grid-template-columns: repeat(2, minmax(220px, 0.55fr) minmax(320px, 1.45fr));
+
+  @media (max-width: 1400px) {
+    grid-template-columns: minmax(220px, 0.6fr) minmax(0, 1.4fr);
+  }
+
+  @media (max-width: 900px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.chartCard {
+  padding: v.$space-sm v.$space-md;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  height: 100%;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 14px 40px rgba(v.$primary-color, 0.06);
+  }
+  // thick neon left border + soft halo
+  background-color: rgba(v.$secondary-color, 0.06);
+  border: 1px solid v.$secondary-color;
+  border-left: 12px solid v.$secondary-color;
+  border-radius: v.$border-radius-lg;
+  box-shadow:
+    0 6px 24px rgba(v.$secondary-color, 0.05),
+    0 0 18px rgba(v.$secondary-color, 0.03) inset;
+}
+
+.chartHeaderWrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chartTitleGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chartHeading {
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: v.$primary-color;
+  font-weight: 700;
+  font-family: v.$font-family-accent;
+}
+
+.infoWrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+.infoButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid rgba(v.$primary-color, 0.5);
+  background: rgba(v.$primary-color, 0.12);
+  color: v.$primary-color;
+  cursor: help;
+  padding: 0;
+  line-height: 1;
+  transition:
+    background 0.15s ease,
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+
+  &:hover,
+  &:focus-visible {
+    outline: none;
+    background: rgba(v.$primary-color, 0.2);
+    box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.25);
+    transform: translateY(-1px);
+  }
+}
+
+.infoIcon {
+  width: 12px;
+  height: 12px;
+}
+
+.infoTooltip {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 20;
+  max-width: 360px;
+  min-width: 240px;
+  padding: v.$space-sm v.$space-md;
   border-radius: v.$border-radius-md;
-  padding: v.$space-md;
-  color: v.$text-primary;
+  background: rgba(v.$background-dark, 0.96);
+  color: v.$text-button;
+  border: 1px solid v.$border-secondary;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+  font-size: 0.8rem;
+  line-height: 1.3;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-4px);
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
+
+  &::after {
+    content: "";
+    position: absolute;
+    top: -6px;
+    right: 10px;
+    width: 10px;
+    height: 10px;
+    background: rgba(v.$background-dark, 0.96);
+    border-left: 1px solid v.$border-secondary;
+    border-top: 1px solid v.$border-secondary;
+    transform: rotate(45deg);
+  }
 }
 
-.loading {
+.infoWrapper:hover .infoTooltip,
+.infoWrapper:focus-within .infoTooltip {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.infoList {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  li {
+    margin: 2px 0;
+  }
+}
+
+.chartDescription {
+  font-size: 0.8rem;
   color: v.$text-secondary;
 }
 
-@media (max-width: v.$breakpoint-desktop) {
-  .controlsAndMetrics {
-    grid-template-columns: 1fr;
-    gap: v.$space-lg;
+.chartShell {
+  height: 320px;
+  padding: v.$space-md;
+  border-radius: v.$border-radius-md;
+  background: color.adjust(v.$background-dark, $lightness: 14%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 2px 14px rgba(0, 0, 0, 0.35);
+
+  @media (max-width: 600px) {
+    height: 260px;
+  }
+}
+
+// Chart CSS variables for Recharts props
+.chartTheme {
+  --chart-grid: #{color.adjust(v.$background-light, $lightness: 28%)};
+  --chart-tick: #{color.adjust(v.$secondary-color, $lightness: -5%)};
+  --chart-cursor: #{rgba(v.$primary-color, 0.4)};
+}
+
+.chartEmpty {
+  height: 230px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: v.$text-secondary;
+  font-size: 0.9rem;
+}
+
+.chartShellLarge {
+  height: 520px;
+  @media (max-width: 600px) {
+    height: 360px;
+  }
+}
+
+.chartTooltip {
+  background: rgba(v.$background-dark, 0.95);
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-md;
+  padding: v.$space-sm v.$space-md;
+  font-size: 0.8rem;
+  color: v.$text-button;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
+}
+
+.chartTooltipLabel {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.7rem;
+  color: v.$text-secondary;
+}
+
+.chartTooltipTeam {
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.chartTooltipValue {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.chartMovers {
+  margin-top: v.$space-sm;
+}
+
+.rankingCard {
+  @include v.glass-panel;
+  padding: v.$space-sm v.$space-md;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: v.$space-xs;
+  border: 1px solid v.$secondary-color;
+  border-left: 12px solid v.$secondary-color;
+  border-radius: v.$border-radius-lg;
+  background-color: rgba(v.$secondary-color, 0.06);
+}
+
+.rankingHeading {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+}
+
+.rankingTitle {
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: v.$primary-color;
+}
+
+.rankingMeta {
+  font-size: 0.6rem;
+  color: v.$text-secondary;
+  margin: 0;
+}
+
+.rankingList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-sm;
+  height: 100%;
+}
+
+.rankingRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: v.$space-xs v.$space-sm v.$space-xs v.$space-xs;
+  border-radius: v.$border-radius-md;
+  background-color: rgba(v.$secondary-color, 0.2);
+  border: 1px solid rgba(v.$primary-color, 0.3);
+  border-bottom: 8px solid rgba(v.$primary-color, 0.8);
+  height: 10%;
+}
+
+.skaterControls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: v.$space-sm;
+}
+
+.skaterRankingCard {
+  border-left-color: v.$primary-color;
+  border-left-width: 12px;
+  background-color: rgba(v.$primary-color, 0.08);
+  gap: v.$space-sm;
+}
+
+.skaterRankingList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-sm;
+  max-height: 565px;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding-right: 4px;
+  @include v.custom-scrollbar(v.$primary-color, transparent, 6px);
+}
+
+.skaterRankingRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: v.$space-sm;
+  padding: v.$space-xs v.$space-sm;
+  border-radius: v.$border-radius-md;
+  border: 1px solid rgba(v.$primary-color, 0.3);
+  background-color: rgba(v.$secondary-color, 0.12);
+}
+
+.skaterInfo {
+  display: flex;
+  align-items: center;
+  gap: v.$space-sm;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.skaterHeadshotWrapper {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  flex-shrink: 0;
+}
+
+.skaterHeadshot {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.skaterText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.skaterName {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: v.$text-primary;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.skaterMeta {
+  margin: 0;
+  font-size: 0.75rem;
+  color: v.$text-secondary;
+}
+
+.skaterScore {
+  display: flex;
+  align-items: center;
+  gap: v.$space-xs;
+}
+
+.teamCell {
+  display: flex;
+  align-items: center;
+  flex: 0 0 60%;
+  width: 60%;
+
+  // make each direct child (rank, deltaWrapper, teamLogoWrapper) equal width
+  > * {
+    flex: 1 1 0;
+    min-width: 0; // allow truncation
+  }
+}
+
+// target recharts brush SVG elements — make the slide/rect look white but derived from theme tokens
+.recharts-brush {
+  // the dimmed background (outside of selection)
+  .recharts-brush-background,
+  .recharts-brush-rect {
+    fill: rgba(v.$color-white, 0.03);
+    stroke: rgba(v.$color-white, 0.08);
+    stroke-width: 0.5px;
   }
 
-  .controls {
-    position: static;
-    flex-direction: row;
-    flex-wrap: wrap;
-    background: transparent;
-    backdrop-filter: none;
+  // the highlighted selected area (slide) should read as a translucent white overlay
+  .recharts-brush-slide {
+    fill: rgba(v.$color-white, 0.06);
+    stroke: rgba(v.$color-white, 0.12);
+    stroke-width: 0.6px;
+  }
+
+  // traveller handles (drag grips)
+  .recharts-traveller {
+    fill: v.$color-white;
+    stroke: rgba(v.$background-dark, 0.18);
+    opacity: 0.96;
+    cursor: grab;
+    filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.45));
+  }
+
+  .recharts-brush-text {
+    fill: var(--chart-tick);
+    font-size: 0.72rem;
+  }
+  // Recharts sometimes injects inline style attributes on <rect> elements which are hard to override.
+  // Use a high-specificity rule and !important to ensure our theme values take precedence.
+  rect {
+    /* selected slide / rect */
+    fill: rgba(v.$color-white, 0.06) !important;
+    stroke: rgba(v.$color-white, 0.12) !important;
+    fill-opacity: 0.06 !important;
+  }
+
+  // extra-high-specificity fallbacks to beat inline styles in some browsers / versions
+  // target the svg path where Recharts mounts the brush rect
+  & > svg rect[style],
+  svg .recharts-brush-rect[style],
+  rect.recharts-brush-rect[style],
+  rect[style].recharts-brush-rect {
+    fill: rgba(v.$color-white, 0.06) !important;
+    stroke: rgba(v.$color-white, 0.12) !important;
+    fill-opacity: 0.06 !important;
+  }
+}
+
+.teamLogo {
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  display: block;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.45));
+}
+
+/* Ensure the logo block sits at the far-right of the teamCell so all logos align */
+.teamLogoWrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+/* unified .teamLogo defined above */
+
+.rank {
+  /* share width equally within .teamCell */
+  flex: 1 1 0;
+  width: auto;
+  font-weight: 600;
+  color: v.$text-secondary;
+  min-width: 0;
+  text-align: center;
+  padding-right: 10%;
+}
+
+.teamAbbr {
+  font-size: 0.75rem;
+  color: v.$text-secondary;
+}
+
+.scoreCell {
+  display: flex;
+  align-items: center;
+  flex: 0 0 30%;
+  width: 30%;
+  justify-content: center;
+}
+
+.deltaWrapper {
+  /* share width equally within .teamCell */
+  flex: 1 1 0;
+  width: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+}
+
+.delta {
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-direction: column;
+}
+
+.deltaPositive {
+  color: v.$success-color;
+}
+
+.deltaNegative {
+  color: v.$danger-color;
+}
+
+.deltaNeutral {
+  color: v.$text-secondary;
+}
+
+.percentile {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* Tabs layout for the dashboard */
+.topTabs {
+  display: flex;
+  gap: v.$space-xs;
+  align-items: flex-end;
+  margin-top: v.$space-md;
+  padding: 0 v.$space-xs;
+  border-bottom: 1px solid v.$border-secondary;
+}
+
+.tab {
+  @include v.reset-button;
+  font-family: v.$font-family-accent;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: calc(v.$space-xxs + 2px) v.$space-sm;
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: v.$text-primary;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-bottom: none;
+  border-top-left-radius: v.$border-radius-lg;
+  border-top-right-radius: v.$border-radius-lg;
+  background: linear-gradient(
+    to bottom,
+    color.adjust(v.$background-light, $lightness: 22%),
+    color.adjust(v.$background-light, $lightness: 12%)
+  );
+  box-shadow: 0 -1px 0 rgba(0, 0, 0, 0.12) inset;
+  margin-bottom: -1px; // overlap bar separator
+  cursor: pointer;
+  transition:
+    filter 0.15s ease,
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+
+  &:hover {
+    filter: brightness(1.06);
+  }
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.35);
+  }
+}
+
+.tabActive {
+  z-index: 2;
+  color: v.$text-primary;
+  border-color: rgba(255, 255, 255, 0.2);
+  background: linear-gradient(
+    to bottom,
+    color.adjust(v.$background-light, $lightness: 28%),
+    color.adjust(v.$background-light, $lightness: 16%)
+  );
+  box-shadow:
+    0 -1px 0 rgba(0, 0, 0, 0.18) inset,
+    0 8px 24px rgba(0, 0, 0, 0.18);
+}
+
+.subTabs {
+  display: flex;
+  gap: v.$space-xxs;
+  align-items: flex-end;
+  margin: v.$space-sm 0 v.$space-sm;
+  padding: 0 v.$space-xxs;
+  border-bottom: 1px solid v.$border-secondary;
+  flex-wrap: wrap;
+}
+
+.subTab {
+  @include v.reset-button;
+  font-family: v.$font-family-accent;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: calc(v.$space-xxs + 1px) v.$space-sm;
+  font-weight: 700;
+  font-size: 0.72rem;
+  color: v.$text-primary;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-bottom: none;
+  border-top-left-radius: v.$border-radius-md;
+  border-top-right-radius: v.$border-radius-md;
+  background: linear-gradient(
+    to bottom,
+    color.adjust(v.$background-light, $lightness: 18%),
+    color.adjust(v.$background-light, $lightness: 10%)
+  );
+  box-shadow: 0 -1px 0 rgba(0, 0, 0, 0.1) inset;
+  margin-bottom: -1px;
+  cursor: pointer;
+  transition:
+    filter 0.15s ease,
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+
+  &:hover {
+    filter: brightness(1.05);
+  }
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.35);
+  }
+}
+
+.subTabActive {
+  z-index: 2;
+  color: v.$text-primary;
+  border-color: rgba(255, 255, 255, 0.2);
+  background: linear-gradient(
+    to bottom,
+    color.adjust(v.$background-light, $lightness: 24%),
+    color.adjust(v.$background-light, $lightness: 14%)
+  );
+  box-shadow:
+    0 -1px 0 rgba(0, 0, 0, 0.16) inset,
+    0 6px 18px rgba(0, 0, 0, 0.14);
+}
+
+.dashboardContent {
+  @include v.glass-panel;
+  border-radius: v.$border-radius-lg;
+  padding: v.$space-md;
+  margin-top: v.$space-xs;
+  border: 1px solid v.$border-secondary;
+  background: color.adjust(v.$background-dark, $lightness: 10%);
+}
+
+.hidden {
+  display: none !important;
+}
+
+.legacyLink {
+  text-align: center;
+  font-size: 0.8rem;
+  color: v.$text-secondary;
+
+  button {
+    color: v.$primary-color;
     border: none;
-    box-shadow: none;
+    background: none;
     padding: 0;
-    &::before {
-      display: none;
-    }
-  }
-
-  .controlGroup {
-    flex: 1 1 280px;
-  }
-  .stepper {
-    flex: 1 1 auto;
-  }
-
-  .searchContainer {
-    min-width: 260px;
-    flex-grow: 1;
-  }
-}
-
-@media (max-width: v.$breakpoint-tablet) {
-  .page {
-    padding: v.$space-md;
-  }
-
-  .controls {
-    flex-direction: column;
-    align-items: stretch;
-  }
-}
-
-// Reduced motion support
-@media (prefers-reduced-motion: reduce) {
-  .metricCard,
-  .infoButton {
-    transition: none;
-    transform: none !important;
-  }
-  .metricCard:hover {
-    box-shadow: v.$desktop-panel-shadow;
+    margin-left: 4px;
+    cursor: pointer;
+    text-decoration: underline;
+    font-weight: 600;
   }
 }

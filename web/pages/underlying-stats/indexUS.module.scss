@@ -1,0 +1,397 @@
+@import "../../styles/vars.scss";
+
+.page {
+  background: $surface-0;
+  min-height: 100vh;
+  padding: 2.5rem clamp(1rem, 4vw, 3rem) 4rem;
+  color: $color-white;
+}
+
+.header {
+  max-width: 1200px;
+  margin: 0 auto 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.title {
+  font-size: clamp(2rem, 3.5vw, 2.75rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: $color-white;
+}
+
+.description {
+  max-width: 760px;
+  line-height: 1.65;
+  color: $color-grey-text;
+  font-size: 1rem;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.5rem;
+}
+
+.controlLabel {
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: $color-grey-text-sec;
+}
+
+.controlHint {
+  font-size: 0.85rem;
+  color: $color-grey-text-sec;
+}
+
+.dateSelect {
+  appearance: none;
+  border-radius: 10px;
+  border: 1px solid $color-grey-dark;
+  background: $surface-2;
+  color: $color-white;
+  padding: 0.6rem 2.5rem 0.6rem 1rem;
+  font-size: 1rem;
+  position: relative;
+  min-width: 220px;
+  transition: border 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover,
+  &:focus {
+    border-color: $primary-color;
+    box-shadow: 0 0 0 1px rgba($primary-color, 0.35);
+    outline: none;
+  }
+}
+
+.summaryGrid {
+  max-width: 1200px;
+  margin: 0 auto 2.5rem;
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.summaryCard {
+  background: linear-gradient(
+      120deg,
+      rgba($primary-color, 0.2),
+      rgba($primary-color, 0)
+    ),
+    $surface-1;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: $shadow-hover;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.summaryRank {
+  position: absolute;
+  top: 1rem;
+  right: 1.5rem;
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: rgba($color-white, 0.12);
+}
+
+.summaryHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  z-index: 1;
+}
+
+.summaryTeam {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.summaryTeamName {
+  font-size: 0.95rem;
+  color: $color-grey-text;
+}
+
+.summaryMetricGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  z-index: 1;
+}
+
+.summaryPower {
+  font-size: 1.9rem;
+  font-weight: 700;
+  color: $primary-color;
+}
+
+.summaryMetricRow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+
+  div {
+    background: rgba($surface-2, 0.6);
+    border-radius: 10px;
+    padding: 0.5rem 0.75rem;
+    font-weight: 600;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    font-size: 1.05rem;
+  }
+}
+
+.summaryMetricLabel {
+  display: block;
+  font-size: 0.8rem;
+  color: $color-grey-text-sec;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.summarySubLabel {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: $color-grey-text-sec;
+}
+
+.summaryDetails {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.4rem;
+  z-index: 1;
+
+  li {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    color: $color-grey-text;
+
+    strong {
+      font-weight: 600;
+      color: $color-white;
+    }
+  }
+}
+
+.tierInline {
+  color: $primary-color;
+  font-weight: 600;
+}
+
+.summaryEmpty {
+  background: $surface-1;
+  padding: 2rem;
+  border-radius: 16px;
+  text-align: center;
+  color: $color-grey-text;
+}
+
+.legendSection {
+  max-width: 1200px;
+  margin: 0 auto 1.5rem;
+}
+
+.legend {
+  background: rgba($surface-1, 0.85);
+  border-radius: 14px;
+  border: 1px solid rgba($primary-color, 0.15);
+  padding: 0.85rem 1rem;
+  color: $color-grey-text;
+}
+
+.legendSummary {
+  cursor: pointer;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: $primary-color;
+}
+
+.legendContent {
+  margin-top: 0.75rem;
+  display: grid;
+  gap: 0.65rem;
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.tableSection {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.tableWrapper {
+  background: $surface-1;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: $shadow-hover;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 960px;
+
+  thead {
+    background: rgba($primary-color, 0.12);
+  }
+
+  th,
+  td {
+    padding: 0.9rem 1rem;
+    text-align: left;
+    font-size: 0.95rem;
+  }
+
+  th {
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.08em;
+    color: $color-grey-text;
+    border-bottom: 1px solid rgba($color-grey-dark, 0.45);
+    background: rgba($surface-2, 0.6);
+  }
+
+  tbody tr {
+    transition: background 0.2s ease;
+
+    &:nth-of-type(even) {
+      background: rgba($surface-2, 0.45);
+    }
+
+    &:hover {
+      background: rgba($primary-color, 0.08);
+    }
+  }
+}
+
+.rankCell {
+  width: 54px;
+  font-weight: 700;
+  color: rgba($color-white, 0.7);
+}
+
+.powerCell {
+  font-weight: 700;
+  color: $primary-color;
+}
+
+.teamCell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.teamName {
+  font-weight: 600;
+  font-size: 1rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.teamMeta {
+  font-size: 0.85rem;
+  color: $color-grey-text;
+}
+
+.trendCell {
+  font-weight: 600;
+}
+
+.trendPositive {
+  color: #4ade80;
+}
+
+.trendNegative {
+  color: #f97375;
+}
+
+.trendNeutral {
+  color: $color-grey-text;
+}
+
+.tierBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: $color-white;
+}
+
+.tier1 {
+  background: rgba(#4ade80, 0.18);
+  color: #86efac;
+}
+
+.tier2 {
+  background: rgba(#fde047, 0.2);
+  color: #facc15;
+}
+
+.tier3 {
+  background: rgba(#fb7185, 0.2);
+  color: #fb7185;
+}
+
+.loadingBanner,
+.errorBanner,
+.emptyState {
+  padding: 1rem 1.25rem;
+  border-radius: 12px;
+  margin-bottom: 1.25rem;
+  font-size: 0.95rem;
+}
+
+.loadingBanner {
+  background: rgba($primary-color, 0.15);
+  color: $primary-color;
+}
+
+.errorBanner {
+  background: rgba($danger-color, 0.18);
+  color: $danger-color;
+}
+
+.emptyState {
+  background: rgba($surface-1, 0.85);
+  color: $color-grey-text;
+  text-align: center;
+}
+
+@media (max-width: $breakpoint-tablet) {
+  .page {
+    padding: 2rem 1.25rem 3rem;
+  }
+
+  .controls {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .tableWrapper {
+    border-radius: 12px;
+  }
+
+  .summaryGrid {
+    grid-template-columns: 1fr;
+  }
+}

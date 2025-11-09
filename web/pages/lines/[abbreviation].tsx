@@ -96,7 +96,7 @@ export default function TeamLC({
   teamName,
   teams,
   lineCombinations,
-  lastUpdated,
+  lastUpdated
 }: Props) {
   const router = useRouter();
   const { abbreviation } = router.query;
@@ -161,7 +161,7 @@ export default function TeamLC({
             option={abbreviation as string}
             options={teams.map((team) => ({
               label: team.abbreviation,
-              value: team.abbreviation,
+              value: team.abbreviation
             }))}
             onOptionChange={onTeamChange}
           />
@@ -238,7 +238,7 @@ export default function TeamLC({
                 type="goalies"
                 players={[
                   ...lineCombinations.goalies.line1,
-                  ...lineCombinations.goalies.line2,
+                  ...lineCombinations.goalies.line2
                 ]}
               />
             </section>
@@ -273,7 +273,7 @@ export default function TeamLC({
                 type="goalies"
                 players={[
                   ...lineCombinations.goalies.line1,
-                  ...lineCombinations.goalies.line2,
+                  ...lineCombinations.goalies.line2
                 ]}
               />
             </section>
@@ -317,9 +317,9 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
         teamName: team.name,
         lastUpdated: lineCombinations.game.startTime,
         lineCombinations,
-        teams,
+        teams
       },
-      revalidate: 60, // In seconds
+      revalidate: 60 // In seconds
     };
   } catch (error) {
     // If UTA doesn't have enough current-season data yet, try last season with prior team ID
@@ -336,9 +336,9 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
             teamName: team.name,
             lastUpdated: lineCombinations.game.startTime,
             lineCombinations,
-            teams,
+            teams
           },
-          revalidate: 60,
+          revalidate: 60
         };
       } catch (fallbackError) {
         console.error(
@@ -351,6 +351,15 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
       `Failed to get line combinations for team ${mappedAbbreviation}:`,
       error
     );
+
+    // Instead of returning notFound immediately, check if this is a data availability issue
+    const errorMessage = error?.toString() || "";
+    if (errorMessage.includes("Cannot find at least 2 games")) {
+      // Return notFound but allow ISR to retry later as more data becomes available
+      console.warn(
+        `Insufficient line combination data for ${mappedAbbreviation} at build time. Will retry on-demand.`
+      );
+    }
     return { notFound: true };
   }
 };
@@ -358,12 +367,12 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
 export const getStaticPaths: GetStaticPaths = async () => {
   const teams = await getTeams();
   const paths = teams.map((team) => ({
-    params: { abbreviation: team.abbreviation },
+    params: { abbreviation: team.abbreviation }
   }));
 
   return {
     paths,
-    fallback: false,
+    fallback: "blocking" // Allow pages to be generated on-demand if they fail at build time
   };
 };
 
@@ -380,7 +389,7 @@ function Header({
   teamAbbreviation,
   lastUpdated,
   sourceUrl,
-  onTeamLogoClick,
+  onTeamLogoClick
 }: HeaderProps) {
   const names = teamName.split(" ");
   const abbreviation = teamAbbreviation;
@@ -391,7 +400,7 @@ function Header({
       className={styles.header}
       style={{
         backgroundColor: color.primary,
-        color: color.secondary,
+        color: color.secondary
       }}
     >
       <div className={styles.left}>
@@ -413,7 +422,7 @@ function Header({
             style={{
               width: 120,
               height: 72,
-              objectFit: "contain",
+              objectFit: "contain"
             }}
           />
         </div>
@@ -425,7 +434,7 @@ function Header({
             style={{
               width: 60,
               height: 35,
-              objectFit: "contain",
+              objectFit: "contain"
             }}
           />
         </div>
