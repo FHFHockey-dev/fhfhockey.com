@@ -2,7 +2,7 @@
 
 export const mapTeamAbbreviation = (abbrev: string): string => {
   const aliasMap: { [key: string]: string } = {
-    ARI: "UTA", // Map ARI to UTA
+    ARI: "UTA" // Map ARI to UTA
     // Add other aliases if necessary
   };
 

@@ -1,0 +1,78 @@
+[
+  {
+    "teamAbbr": "BOS",
+    "date": "2025-02-10",
+    "offRating": 112.4,
+    "defRating": 108.9,
+    "paceRating": 104.2,
+    "ppTier": 1,
+    "pkTier": 1,
+    "trend10": 6.7,
+    "components": {
+      "xgf60": 3.21,
+      "gf60": 3.09,
+      "sf60": 34.5,
+      "xga60": 2.45,
+      "ga60": 2.11,
+      "sa60": 27.8,
+      "pace60": 99.2
+    }
+  },
+  {
+    "teamAbbr": "VAN",
+    "date": "2025-02-10",
+    "offRating": 101.6,
+    "defRating": 97.8,
+    "paceRating": 107.1,
+    "ppTier": 2,
+    "pkTier": 3,
+    "trend10": -1.8,
+    "components": {
+      "xgf60": 2.88,
+      "gf60": 2.74,
+      "sf60": 31.2,
+      "xga60": 2.98,
+      "ga60": 3.06,
+      "sa60": 30.9,
+      "pace60": 102.4
+    }
+  },
+  {
+    "teamAbbr": "DAL",
+    "date": "2025-02-10",
+    "offRating": 95.3,
+    "defRating": 102.5,
+    "paceRating": 96.8,
+    "ppTier": 2,
+    "pkTier": 2,
+    "trend10": 2.2,
+    "components": {
+      "xgf60": 2.54,
+      "gf60": 2.39,
+      "sf60": 29.1,
+      "xga60": 2.35,
+      "ga60": 2.47,
+      "sa60": 28.6,
+      "pace60": 97.5
+    }
+  },
+  {
+    "teamAbbr": "SEA",
+    "date": "2025-02-10",
+    "offRating": 88.9,
+    "defRating": 93.1,
+    "paceRating": 91.7,
+    "ppTier": 3,
+    "pkTier": 2,
+    "trend10": -4.3,
+    "components": {
+      "xgf60": 2.12,
+      "gf60": 1.96,
+      "sf60": 26.4,
+      "xga60": 3.22,
+      "ga60": 3.08,
+      "sa60": 33.5,
+      "pace60": 93.8
+    }
+  }
+]

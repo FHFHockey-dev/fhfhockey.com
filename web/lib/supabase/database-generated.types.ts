@@ -8489,6 +8489,2790 @@ export type Database = {
         }
         Relationships: []
       }
+      nst_team_gamelogs_as_counts: {
+        Row: {
+          ca: number | null
+          ca_per_60: number | null
+          cf: number | null
+          cf_pct: number | null
+          cf_per_60: number | null
+          created_at: string
+          date: string
+          fa: number | null
+          fa_per_60: number | null
+          ff: number | null
+          ff_pct: number | null
+          ff_per_60: number | null
+          ga: number | null
+          ga_per_60: number | null
+          gf: number | null
+          gf_pct: number | null
+          gf_per_60: number | null
+          gp: number | null
+          hdca: number | null
+          hdca_per_60: number | null
+          hdcf: number | null
+          hdcf_pct: number | null
+          hdcf_per_60: number | null
+          hdga: number | null
+          hdga_per_60: number | null
+          hdgf: number | null
+          hdgf_pct: number | null
+          hdgf_per_60: number | null
+          hdsa: number | null
+          hdsa_per_60: number | null
+          hdsf: number | null
+          hdsf_pct: number | null
+          hdsf_per_60: number | null
+          hdsh_pct: number | null
+          hdsv_pct: number | null
+          id: number
+          ldca: number | null
+          ldca_per_60: number | null
+          ldcf: number | null
+          ldcf_pct: number | null
+          ldcf_per_60: number | null
+          ldga: number | null
+          ldga_per_60: number | null
+          ldgf: number | null
+          ldgf_pct: number | null
+          ldgf_per_60: number | null
+          ldsa: number | null
+          ldsa_per_60: number | null
+          ldsf: number | null
+          ldsf_pct: number | null
+          ldsf_per_60: number | null
+          ldsh_pct: number | null
+          ldsv_pct: number | null
+          losses: number | null
+          mdca: number | null
+          mdca_per_60: number | null
+          mdcf: number | null
+          mdcf_pct: number | null
+          mdcf_per_60: number | null
+          mdga: number | null
+          mdga_per_60: number | null
+          mdgf: number | null
+          mdgf_pct: number | null
+          mdgf_per_60: number | null
+          mdsa: number | null
+          mdsa_per_60: number | null
+          mdsf: number | null
+          mdsf_pct: number | null
+          mdsf_per_60: number | null
+          mdsh_pct: number | null
+          mdsv_pct: number | null
+          otl: number | null
+          pdo: number | null
+          point_pct: number | null
+          points: number | null
+          row_wins: number | null
+          sa: number | null
+          sa_per_60: number | null
+          sca: number | null
+          sca_per_60: number | null
+          scf: number | null
+          scf_pct: number | null
+          scf_per_60: number | null
+          scga: number | null
+          scga_per_60: number | null
+          scgf: number | null
+          scgf_pct: number | null
+          scgf_per_60: number | null
+          scsa: number | null
+          scsa_per_60: number | null
+          scsf: number | null
+          scsf_pct: number | null
+          scsf_per_60: number | null
+          scsh_pct: number | null
+          scsv_pct: number | null
+          season_id: number
+          sf: number | null
+          sf_pct: number | null
+          sf_per_60: number | null
+          sh_pct: number | null
+          situation: string
+          sv_pct: number | null
+          team_abbreviation: string
+          team_name: string
+          toi_per_gp_seconds: number | null
+          toi_seconds: number | null
+          updated_at: string
+          wins: number | null
+          xga: number | null
+          xga_per_60: number | null
+          xgf: number | null
+          xgf_pct: number | null
+          xgf_per_60: number | null
+        }
+        Insert: {
+          ca?: number | null
+          ca_per_60?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          cf_per_60?: number | null
+          created_at?: string
+          date: string
+          fa?: number | null
+          fa_per_60?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ff_per_60?: number | null
+          ga?: number | null
+          ga_per_60?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gf_per_60?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdca_per_60?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdcf_per_60?: number | null
+          hdga?: number | null
+          hdga_per_60?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdgf_per_60?: number | null
+          hdsa?: number | null
+          hdsa_per_60?: number | null
+          hdsf?: number | null
+          hdsf_pct?: number | null
+          hdsf_per_60?: number | null
+          hdsh_pct?: number | null
+          hdsv_pct?: number | null
+          id?: number
+          ldca?: number | null
+          ldca_per_60?: number | null
+          ldcf?: number | null
+          ldcf_pct?: number | null
+          ldcf_per_60?: number | null
+          ldga?: number | null
+          ldga_per_60?: number | null
+          ldgf?: number | null
+          ldgf_pct?: number | null
+          ldgf_per_60?: number | null
+          ldsa?: number | null
+          ldsa_per_60?: number | null
+          ldsf?: number | null
+          ldsf_pct?: number | null
+          ldsf_per_60?: number | null
+          ldsh_pct?: number | null
+          ldsv_pct?: number | null
+          losses?: number | null
+          mdca?: number | null
+          mdca_per_60?: number | null
+          mdcf?: number | null
+          mdcf_pct?: number | null
+          mdcf_per_60?: number | null
+          mdga?: number | null
+          mdga_per_60?: number | null
+          mdgf?: number | null
+          mdgf_pct?: number | null
+          mdgf_per_60?: number | null
+          mdsa?: number | null
+          mdsa_per_60?: number | null
+          mdsf?: number | null
+          mdsf_pct?: number | null
+          mdsf_per_60?: number | null
+          mdsh_pct?: number | null
+          mdsv_pct?: number | null
+          otl?: number | null
+          pdo?: number | null
+          point_pct?: number | null
+          points?: number | null
+          row_wins?: number | null
+          sa?: number | null
+          sa_per_60?: number | null
+          sca?: number | null
+          sca_per_60?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          scf_per_60?: number | null
+          scga?: number | null
+          scga_per_60?: number | null
+          scgf?: number | null
+          scgf_pct?: number | null
+          scgf_per_60?: number | null
+          scsa?: number | null
+          scsa_per_60?: number | null
+          scsf?: number | null
+          scsf_pct?: number | null
+          scsf_per_60?: number | null
+          scsh_pct?: number | null
+          scsv_pct?: number | null
+          season_id: number
+          sf?: number | null
+          sf_pct?: number | null
+          sf_per_60?: number | null
+          sh_pct?: number | null
+          situation?: string
+          sv_pct?: number | null
+          team_abbreviation: string
+          team_name: string
+          toi_per_gp_seconds?: number | null
+          toi_seconds?: number | null
+          updated_at?: string
+          wins?: number | null
+          xga?: number | null
+          xga_per_60?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+          xgf_per_60?: number | null
+        }
+        Update: {
+          ca?: number | null
+          ca_per_60?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          cf_per_60?: number | null
+          created_at?: string
+          date?: string
+          fa?: number | null
+          fa_per_60?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ff_per_60?: number | null
+          ga?: number | null
+          ga_per_60?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gf_per_60?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdca_per_60?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdcf_per_60?: number | null
+          hdga?: number | null
+          hdga_per_60?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdgf_per_60?: number | null
+          hdsa?: number | null
+          hdsa_per_60?: number | null
+          hdsf?: number | null
+          hdsf_pct?: number | null
+          hdsf_per_60?: number | null
+          hdsh_pct?: number | null
+          hdsv_pct?: number | null
+          id?: number
+          ldca?: number | null
+          ldca_per_60?: number | null
+          ldcf?: number | null
+          ldcf_pct?: number | null
+          ldcf_per_60?: number | null
+          ldga?: number | null
+          ldga_per_60?: number | null
+          ldgf?: number | null
+          ldgf_pct?: number | null
+          ldgf_per_60?: number | null
+          ldsa?: number | null
+          ldsa_per_60?: number | null
+          ldsf?: number | null
+          ldsf_pct?: number | null
+          ldsf_per_60?: number | null
+          ldsh_pct?: number | null
+          ldsv_pct?: number | null
+          losses?: number | null
+          mdca?: number | null
+          mdca_per_60?: number | null
+          mdcf?: number | null
+          mdcf_pct?: number | null
+          mdcf_per_60?: number | null
+          mdga?: number | null
+          mdga_per_60?: number | null
+          mdgf?: number | null
+          mdgf_pct?: number | null
+          mdgf_per_60?: number | null
+          mdsa?: number | null
+          mdsa_per_60?: number | null
+          mdsf?: number | null
+          mdsf_pct?: number | null
+          mdsf_per_60?: number | null
+          mdsh_pct?: number | null
+          mdsv_pct?: number | null
+          otl?: number | null
+          pdo?: number | null
+          point_pct?: number | null
+          points?: number | null
+          row_wins?: number | null
+          sa?: number | null
+          sa_per_60?: number | null
+          sca?: number | null
+          sca_per_60?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          scf_per_60?: number | null
+          scga?: number | null
+          scga_per_60?: number | null
+          scgf?: number | null
+          scgf_pct?: number | null
+          scgf_per_60?: number | null
+          scsa?: number | null
+          scsa_per_60?: number | null
+          scsf?: number | null
+          scsf_pct?: number | null
+          scsf_per_60?: number | null
+          scsh_pct?: number | null
+          scsv_pct?: number | null
+          season_id?: number
+          sf?: number | null
+          sf_pct?: number | null
+          sf_per_60?: number | null
+          sh_pct?: number | null
+          situation?: string
+          sv_pct?: number | null
+          team_abbreviation?: string
+          team_name?: string
+          toi_per_gp_seconds?: number | null
+          toi_seconds?: number | null
+          updated_at?: string
+          wins?: number | null
+          xga?: number | null
+          xga_per_60?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+          xgf_per_60?: number | null
+        }
+        Relationships: []
+      }
+      nst_team_gamelogs_as_rates: {
+        Row: {
+          ca: number | null
+          ca_per_60: number | null
+          cf: number | null
+          cf_pct: number | null
+          cf_per_60: number | null
+          created_at: string
+          date: string
+          fa: number | null
+          fa_per_60: number | null
+          ff: number | null
+          ff_pct: number | null
+          ff_per_60: number | null
+          ga: number | null
+          ga_per_60: number | null
+          gf: number | null
+          gf_pct: number | null
+          gf_per_60: number | null
+          gp: number | null
+          hdca: number | null
+          hdca_per_60: number | null
+          hdcf: number | null
+          hdcf_pct: number | null
+          hdcf_per_60: number | null
+          hdga: number | null
+          hdga_per_60: number | null
+          hdgf: number | null
+          hdgf_pct: number | null
+          hdgf_per_60: number | null
+          hdsa: number | null
+          hdsa_per_60: number | null
+          hdsf: number | null
+          hdsf_pct: number | null
+          hdsf_per_60: number | null
+          hdsh_pct: number | null
+          hdsv_pct: number | null
+          id: number
+          ldca: number | null
+          ldca_per_60: number | null
+          ldcf: number | null
+          ldcf_pct: number | null
+          ldcf_per_60: number | null
+          ldga: number | null
+          ldga_per_60: number | null
+          ldgf: number | null
+          ldgf_pct: number | null
+          ldgf_per_60: number | null
+          ldsa: number | null
+          ldsa_per_60: number | null
+          ldsf: number | null
+          ldsf_pct: number | null
+          ldsf_per_60: number | null
+          ldsh_pct: number | null
+          ldsv_pct: number | null
+          losses: number | null
+          mdca: number | null
+          mdca_per_60: number | null
+          mdcf: number | null
+          mdcf_pct: number | null
+          mdcf_per_60: number | null
+          mdga: number | null
+          mdga_per_60: number | null
+          mdgf: number | null
+          mdgf_pct: number | null
+          mdgf_per_60: number | null
+          mdsa: number | null
+          mdsa_per_60: number | null
+          mdsf: number | null
+          mdsf_pct: number | null
+          mdsf_per_60: number | null
+          mdsh_pct: number | null
+          mdsv_pct: number | null
+          otl: number | null
+          pdo: number | null
+          point_pct: number | null
+          points: number | null
+          row_wins: number | null
+          sa: number | null
+          sa_per_60: number | null
+          sca: number | null
+          sca_per_60: number | null
+          scf: number | null
+          scf_pct: number | null
+          scf_per_60: number | null
+          scga: number | null
+          scga_per_60: number | null
+          scgf: number | null
+          scgf_pct: number | null
+          scgf_per_60: number | null
+          scsa: number | null
+          scsa_per_60: number | null
+          scsf: number | null
+          scsf_pct: number | null
+          scsf_per_60: number | null
+          scsh_pct: number | null
+          scsv_pct: number | null
+          season_id: number
+          sf: number | null
+          sf_pct: number | null
+          sf_per_60: number | null
+          sh_pct: number | null
+          situation: string
+          sv_pct: number | null
+          team_abbreviation: string
+          team_name: string
+          toi_per_gp_seconds: number | null
+          toi_seconds: number | null
+          updated_at: string
+          wins: number | null
+          xga: number | null
+          xga_per_60: number | null
+          xgf: number | null
+          xgf_pct: number | null
+          xgf_per_60: number | null
+        }
+        Insert: {
+          ca?: number | null
+          ca_per_60?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          cf_per_60?: number | null
+          created_at?: string
+          date: string
+          fa?: number | null
+          fa_per_60?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ff_per_60?: number | null
+          ga?: number | null
+          ga_per_60?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gf_per_60?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdca_per_60?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdcf_per_60?: number | null
+          hdga?: number | null
+          hdga_per_60?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdgf_per_60?: number | null
+          hdsa?: number | null
+          hdsa_per_60?: number | null
+          hdsf?: number | null
+          hdsf_pct?: number | null
+          hdsf_per_60?: number | null
+          hdsh_pct?: number | null
+          hdsv_pct?: number | null
+          id?: number
+          ldca?: number | null
+          ldca_per_60?: number | null
+          ldcf?: number | null
+          ldcf_pct?: number | null
+          ldcf_per_60?: number | null
+          ldga?: number | null
+          ldga_per_60?: number | null
+          ldgf?: number | null
+          ldgf_pct?: number | null
+          ldgf_per_60?: number | null
+          ldsa?: number | null
+          ldsa_per_60?: number | null
+          ldsf?: number | null
+          ldsf_pct?: number | null
+          ldsf_per_60?: number | null
+          ldsh_pct?: number | null
+          ldsv_pct?: number | null
+          losses?: number | null
+          mdca?: number | null
+          mdca_per_60?: number | null
+          mdcf?: number | null
+          mdcf_pct?: number | null
+          mdcf_per_60?: number | null
+          mdga?: number | null
+          mdga_per_60?: number | null
+          mdgf?: number | null
+          mdgf_pct?: number | null
+          mdgf_per_60?: number | null
+          mdsa?: number | null
+          mdsa_per_60?: number | null
+          mdsf?: number | null
+          mdsf_pct?: number | null
+          mdsf_per_60?: number | null
+          mdsh_pct?: number | null
+          mdsv_pct?: number | null
+          otl?: number | null
+          pdo?: number | null
+          point_pct?: number | null
+          points?: number | null
+          row_wins?: number | null
+          sa?: number | null
+          sa_per_60?: number | null
+          sca?: number | null
+          sca_per_60?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          scf_per_60?: number | null
+          scga?: number | null
+          scga_per_60?: number | null
+          scgf?: number | null
+          scgf_pct?: number | null
+          scgf_per_60?: number | null
+          scsa?: number | null
+          scsa_per_60?: number | null
+          scsf?: number | null
+          scsf_pct?: number | null
+          scsf_per_60?: number | null
+          scsh_pct?: number | null
+          scsv_pct?: number | null
+          season_id: number
+          sf?: number | null
+          sf_pct?: number | null
+          sf_per_60?: number | null
+          sh_pct?: number | null
+          situation?: string
+          sv_pct?: number | null
+          team_abbreviation: string
+          team_name: string
+          toi_per_gp_seconds?: number | null
+          toi_seconds?: number | null
+          updated_at?: string
+          wins?: number | null
+          xga?: number | null
+          xga_per_60?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+          xgf_per_60?: number | null
+        }
+        Update: {
+          ca?: number | null
+          ca_per_60?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          cf_per_60?: number | null
+          created_at?: string
+          date?: string
+          fa?: number | null
+          fa_per_60?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ff_per_60?: number | null
+          ga?: number | null
+          ga_per_60?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gf_per_60?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdca_per_60?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdcf_per_60?: number | null
+          hdga?: number | null
+          hdga_per_60?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdgf_per_60?: number | null
+          hdsa?: number | null
+          hdsa_per_60?: number | null
+          hdsf?: number | null
+          hdsf_pct?: number | null
+          hdsf_per_60?: number | null
+          hdsh_pct?: number | null
+          hdsv_pct?: number | null
+          id?: number
+          ldca?: number | null
+          ldca_per_60?: number | null
+          ldcf?: number | null
+          ldcf_pct?: number | null
+          ldcf_per_60?: number | null
+          ldga?: number | null
+          ldga_per_60?: number | null
+          ldgf?: number | null
+          ldgf_pct?: number | null
+          ldgf_per_60?: number | null
+          ldsa?: number | null
+          ldsa_per_60?: number | null
+          ldsf?: number | null
+          ldsf_pct?: number | null
+          ldsf_per_60?: number | null
+          ldsh_pct?: number | null
+          ldsv_pct?: number | null
+          losses?: number | null
+          mdca?: number | null
+          mdca_per_60?: number | null
+          mdcf?: number | null
+          mdcf_pct?: number | null
+          mdcf_per_60?: number | null
+          mdga?: number | null
+          mdga_per_60?: number | null
+          mdgf?: number | null
+          mdgf_pct?: number | null
+          mdgf_per_60?: number | null
+          mdsa?: number | null
+          mdsa_per_60?: number | null
+          mdsf?: number | null
+          mdsf_pct?: number | null
+          mdsf_per_60?: number | null
+          mdsh_pct?: number | null
+          mdsv_pct?: number | null
+          otl?: number | null
+          pdo?: number | null
+          point_pct?: number | null
+          points?: number | null
+          row_wins?: number | null
+          sa?: number | null
+          sa_per_60?: number | null
+          sca?: number | null
+          sca_per_60?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          scf_per_60?: number | null
+          scga?: number | null
+          scga_per_60?: number | null
+          scgf?: number | null
+          scgf_pct?: number | null
+          scgf_per_60?: number | null
+          scsa?: number | null
+          scsa_per_60?: number | null
+          scsf?: number | null
+          scsf_pct?: number | null
+          scsf_per_60?: number | null
+          scsh_pct?: number | null
+          scsv_pct?: number | null
+          season_id?: number
+          sf?: number | null
+          sf_pct?: number | null
+          sf_per_60?: number | null
+          sh_pct?: number | null
+          situation?: string
+          sv_pct?: number | null
+          team_abbreviation?: string
+          team_name?: string
+          toi_per_gp_seconds?: number | null
+          toi_seconds?: number | null
+          updated_at?: string
+          wins?: number | null
+          xga?: number | null
+          xga_per_60?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+          xgf_per_60?: number | null
+        }
+        Relationships: []
+      }
+      nst_team_gamelogs_es_counts: {
+        Row: {
+          ca: number | null
+          ca_per_60: number | null
+          cf: number | null
+          cf_pct: number | null
+          cf_per_60: number | null
+          created_at: string
+          date: string
+          fa: number | null
+          fa_per_60: number | null
+          ff: number | null
+          ff_pct: number | null
+          ff_per_60: number | null
+          ga: number | null
+          ga_per_60: number | null
+          gf: number | null
+          gf_pct: number | null
+          gf_per_60: number | null
+          gp: number | null
+          hdca: number | null
+          hdca_per_60: number | null
+          hdcf: number | null
+          hdcf_pct: number | null
+          hdcf_per_60: number | null
+          hdga: number | null
+          hdga_per_60: number | null
+          hdgf: number | null
+          hdgf_pct: number | null
+          hdgf_per_60: number | null
+          hdsa: number | null
+          hdsa_per_60: number | null
+          hdsf: number | null
+          hdsf_pct: number | null
+          hdsf_per_60: number | null
+          hdsh_pct: number | null
+          hdsv_pct: number | null
+          id: number
+          ldca: number | null
+          ldca_per_60: number | null
+          ldcf: number | null
+          ldcf_pct: number | null
+          ldcf_per_60: number | null
+          ldga: number | null
+          ldga_per_60: number | null
+          ldgf: number | null
+          ldgf_pct: number | null
+          ldgf_per_60: number | null
+          ldsa: number | null
+          ldsa_per_60: number | null
+          ldsf: number | null
+          ldsf_pct: number | null
+          ldsf_per_60: number | null
+          ldsh_pct: number | null
+          ldsv_pct: number | null
+          losses: number | null
+          mdca: number | null
+          mdca_per_60: number | null
+          mdcf: number | null
+          mdcf_pct: number | null
+          mdcf_per_60: number | null
+          mdga: number | null
+          mdga_per_60: number | null
+          mdgf: number | null
+          mdgf_pct: number | null
+          mdgf_per_60: number | null
+          mdsa: number | null
+          mdsa_per_60: number | null
+          mdsf: number | null
+          mdsf_pct: number | null
+          mdsf_per_60: number | null
+          mdsh_pct: number | null
+          mdsv_pct: number | null
+          otl: number | null
+          pdo: number | null
+          point_pct: number | null
+          points: number | null
+          row_wins: number | null
+          sa: number | null
+          sa_per_60: number | null
+          sca: number | null
+          sca_per_60: number | null
+          scf: number | null
+          scf_pct: number | null
+          scf_per_60: number | null
+          scga: number | null
+          scga_per_60: number | null
+          scgf: number | null
+          scgf_pct: number | null
+          scgf_per_60: number | null
+          scsa: number | null
+          scsa_per_60: number | null
+          scsf: number | null
+          scsf_pct: number | null
+          scsf_per_60: number | null
+          scsh_pct: number | null
+          scsv_pct: number | null
+          season_id: number
+          sf: number | null
+          sf_pct: number | null
+          sf_per_60: number | null
+          sh_pct: number | null
+          situation: string
+          sv_pct: number | null
+          team_abbreviation: string
+          team_name: string
+          toi_per_gp_seconds: number | null
+          toi_seconds: number | null
+          updated_at: string
+          wins: number | null
+          xga: number | null
+          xga_per_60: number | null
+          xgf: number | null
+          xgf_pct: number | null
+          xgf_per_60: number | null
+        }
+        Insert: {
+          ca?: number | null
+          ca_per_60?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          cf_per_60?: number | null
+          created_at?: string
+          date: string
+          fa?: number | null
+          fa_per_60?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ff_per_60?: number | null
+          ga?: number | null
+          ga_per_60?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gf_per_60?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdca_per_60?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdcf_per_60?: number | null
+          hdga?: number | null
+          hdga_per_60?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdgf_per_60?: number | null
+          hdsa?: number | null
+          hdsa_per_60?: number | null
+          hdsf?: number | null
+          hdsf_pct?: number | null
+          hdsf_per_60?: number | null
+          hdsh_pct?: number | null
+          hdsv_pct?: number | null
+          id?: number
+          ldca?: number | null
+          ldca_per_60?: number | null
+          ldcf?: number | null
+          ldcf_pct?: number | null
+          ldcf_per_60?: number | null
+          ldga?: number | null
+          ldga_per_60?: number | null
+          ldgf?: number | null
+          ldgf_pct?: number | null
+          ldgf_per_60?: number | null
+          ldsa?: number | null
+          ldsa_per_60?: number | null
+          ldsf?: number | null
+          ldsf_pct?: number | null
+          ldsf_per_60?: number | null
+          ldsh_pct?: number | null
+          ldsv_pct?: number | null
+          losses?: number | null
+          mdca?: number | null
+          mdca_per_60?: number | null
+          mdcf?: number | null
+          mdcf_pct?: number | null
+          mdcf_per_60?: number | null
+          mdga?: number | null
+          mdga_per_60?: number | null
+          mdgf?: number | null
+          mdgf_pct?: number | null
+          mdgf_per_60?: number | null
+          mdsa?: number | null
+          mdsa_per_60?: number | null
+          mdsf?: number | null
+          mdsf_pct?: number | null
+          mdsf_per_60?: number | null
+          mdsh_pct?: number | null
+          mdsv_pct?: number | null
+          otl?: number | null
+          pdo?: number | null
+          point_pct?: number | null
+          points?: number | null
+          row_wins?: number | null
+          sa?: number | null
+          sa_per_60?: number | null
+          sca?: number | null
+          sca_per_60?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          scf_per_60?: number | null
+          scga?: number | null
+          scga_per_60?: number | null
+          scgf?: number | null
+          scgf_pct?: number | null
+          scgf_per_60?: number | null
+          scsa?: number | null
+          scsa_per_60?: number | null
+          scsf?: number | null
+          scsf_pct?: number | null
+          scsf_per_60?: number | null
+          scsh_pct?: number | null
+          scsv_pct?: number | null
+          season_id: number
+          sf?: number | null
+          sf_pct?: number | null
+          sf_per_60?: number | null
+          sh_pct?: number | null
+          situation?: string
+          sv_pct?: number | null
+          team_abbreviation: string
+          team_name: string
+          toi_per_gp_seconds?: number | null
+          toi_seconds?: number | null
+          updated_at?: string
+          wins?: number | null
+          xga?: number | null
+          xga_per_60?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+          xgf_per_60?: number | null
+        }
+        Update: {
+          ca?: number | null
+          ca_per_60?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          cf_per_60?: number | null
+          created_at?: string
+          date?: string
+          fa?: number | null
+          fa_per_60?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ff_per_60?: number | null
+          ga?: number | null
+          ga_per_60?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gf_per_60?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdca_per_60?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdcf_per_60?: number | null
+          hdga?: number | null
+          hdga_per_60?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdgf_per_60?: number | null
+          hdsa?: number | null
+          hdsa_per_60?: number | null
+          hdsf?: number | null
+          hdsf_pct?: number | null
+          hdsf_per_60?: number | null
+          hdsh_pct?: number | null
+          hdsv_pct?: number | null
+          id?: number
+          ldca?: number | null
+          ldca_per_60?: number | null
+          ldcf?: number | null
+          ldcf_pct?: number | null
+          ldcf_per_60?: number | null
+          ldga?: number | null
+          ldga_per_60?: number | null
+          ldgf?: number | null
+          ldgf_pct?: number | null
+          ldgf_per_60?: number | null
+          ldsa?: number | null
+          ldsa_per_60?: number | null
+          ldsf?: number | null
+          ldsf_pct?: number | null
+          ldsf_per_60?: number | null
+          ldsh_pct?: number | null
+          ldsv_pct?: number | null
+          losses?: number | null
+          mdca?: number | null
+          mdca_per_60?: number | null
+          mdcf?: number | null
+          mdcf_pct?: number | null
+          mdcf_per_60?: number | null
+          mdga?: number | null
+          mdga_per_60?: number | null
+          mdgf?: number | null
+          mdgf_pct?: number | null
+          mdgf_per_60?: number | null
+          mdsa?: number | null
+          mdsa_per_60?: number | null
+          mdsf?: number | null
+          mdsf_pct?: number | null
+          mdsf_per_60?: number | null
+          mdsh_pct?: number | null
+          mdsv_pct?: number | null
+          otl?: number | null
+          pdo?: number | null
+          point_pct?: number | null
+          points?: number | null
+          row_wins?: number | null
+          sa?: number | null
+          sa_per_60?: number | null
+          sca?: number | null
+          sca_per_60?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          scf_per_60?: number | null
+          scga?: number | null
+          scga_per_60?: number | null
+          scgf?: number | null
+          scgf_pct?: number | null
+          scgf_per_60?: number | null
+          scsa?: number | null
+          scsa_per_60?: number | null
+          scsf?: number | null
+          scsf_pct?: number | null
+          scsf_per_60?: number | null
+          scsh_pct?: number | null
+          scsv_pct?: number | null
+          season_id?: number
+          sf?: number | null
+          sf_pct?: number | null
+          sf_per_60?: number | null
+          sh_pct?: number | null
+          situation?: string
+          sv_pct?: number | null
+          team_abbreviation?: string
+          team_name?: string
+          toi_per_gp_seconds?: number | null
+          toi_seconds?: number | null
+          updated_at?: string
+          wins?: number | null
+          xga?: number | null
+          xga_per_60?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+          xgf_per_60?: number | null
+        }
+        Relationships: []
+      }
+      nst_team_gamelogs_es_rates: {
+        Row: {
+          ca: number | null
+          ca_per_60: number | null
+          cf: number | null
+          cf_pct: number | null
+          cf_per_60: number | null
+          created_at: string
+          date: string
+          fa: number | null
+          fa_per_60: number | null
+          ff: number | null
+          ff_pct: number | null
+          ff_per_60: number | null
+          ga: number | null
+          ga_per_60: number | null
+          gf: number | null
+          gf_pct: number | null
+          gf_per_60: number | null
+          gp: number | null
+          hdca: number | null
+          hdca_per_60: number | null
+          hdcf: number | null
+          hdcf_pct: number | null
+          hdcf_per_60: number | null
+          hdga: number | null
+          hdga_per_60: number | null
+          hdgf: number | null
+          hdgf_pct: number | null
+          hdgf_per_60: number | null
+          hdsa: number | null
+          hdsa_per_60: number | null
+          hdsf: number | null
+          hdsf_pct: number | null
+          hdsf_per_60: number | null
+          hdsh_pct: number | null
+          hdsv_pct: number | null
+          id: number
+          ldca: number | null
+          ldca_per_60: number | null
+          ldcf: number | null
+          ldcf_pct: number | null
+          ldcf_per_60: number | null
+          ldga: number | null
+          ldga_per_60: number | null
+          ldgf: number | null
+          ldgf_pct: number | null
+          ldgf_per_60: number | null
+          ldsa: number | null
+          ldsa_per_60: number | null
+          ldsf: number | null
+          ldsf_pct: number | null
+          ldsf_per_60: number | null
+          ldsh_pct: number | null
+          ldsv_pct: number | null
+          losses: number | null
+          mdca: number | null
+          mdca_per_60: number | null
+          mdcf: number | null
+          mdcf_pct: number | null
+          mdcf_per_60: number | null
+          mdga: number | null
+          mdga_per_60: number | null
+          mdgf: number | null
+          mdgf_pct: number | null
+          mdgf_per_60: number | null
+          mdsa: number | null
+          mdsa_per_60: number | null
+          mdsf: number | null
+          mdsf_pct: number | null
+          mdsf_per_60: number | null
+          mdsh_pct: number | null
+          mdsv_pct: number | null
+          otl: number | null
+          pdo: number | null
+          point_pct: number | null
+          points: number | null
+          row_wins: number | null
+          sa: number | null
+          sa_per_60: number | null
+          sca: number | null
+          sca_per_60: number | null
+          scf: number | null
+          scf_pct: number | null
+          scf_per_60: number | null
+          scga: number | null
+          scga_per_60: number | null
+          scgf: number | null
+          scgf_pct: number | null
+          scgf_per_60: number | null
+          scsa: number | null
+          scsa_per_60: number | null
+          scsf: number | null
+          scsf_pct: number | null
+          scsf_per_60: number | null
+          scsh_pct: number | null
+          scsv_pct: number | null
+          season_id: number
+          sf: number | null
+          sf_pct: number | null
+          sf_per_60: number | null
+          sh_pct: number | null
+          situation: string
+          sv_pct: number | null
+          team_abbreviation: string
+          team_name: string
+          toi_per_gp_seconds: number | null
+          toi_seconds: number | null
+          updated_at: string
+          wins: number | null
+          xga: number | null
+          xga_per_60: number | null
+          xgf: number | null
+          xgf_pct: number | null
+          xgf_per_60: number | null
+        }
+        Insert: {
+          ca?: number | null
+          ca_per_60?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          cf_per_60?: number | null
+          created_at?: string
+          date: string
+          fa?: number | null
+          fa_per_60?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ff_per_60?: number | null
+          ga?: number | null
+          ga_per_60?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gf_per_60?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdca_per_60?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdcf_per_60?: number | null
+          hdga?: number | null
+          hdga_per_60?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdgf_per_60?: number | null
+          hdsa?: number | null
+          hdsa_per_60?: number | null
+          hdsf?: number | null
+          hdsf_pct?: number | null
+          hdsf_per_60?: number | null
+          hdsh_pct?: number | null
+          hdsv_pct?: number | null
+          id?: number
+          ldca?: number | null
+          ldca_per_60?: number | null
+          ldcf?: number | null
+          ldcf_pct?: number | null
+          ldcf_per_60?: number | null
+          ldga?: number | null
+          ldga_per_60?: number | null
+          ldgf?: number | null
+          ldgf_pct?: number | null
+          ldgf_per_60?: number | null
+          ldsa?: number | null
+          ldsa_per_60?: number | null
+          ldsf?: number | null
+          ldsf_pct?: number | null
+          ldsf_per_60?: number | null
+          ldsh_pct?: number | null
+          ldsv_pct?: number | null
+          losses?: number | null
+          mdca?: number | null
+          mdca_per_60?: number | null
+          mdcf?: number | null
+          mdcf_pct?: number | null
+          mdcf_per_60?: number | null
+          mdga?: number | null
+          mdga_per_60?: number | null
+          mdgf?: number | null
+          mdgf_pct?: number | null
+          mdgf_per_60?: number | null
+          mdsa?: number | null
+          mdsa_per_60?: number | null
+          mdsf?: number | null
+          mdsf_pct?: number | null
+          mdsf_per_60?: number | null
+          mdsh_pct?: number | null
+          mdsv_pct?: number | null
+          otl?: number | null
+          pdo?: number | null
+          point_pct?: number | null
+          points?: number | null
+          row_wins?: number | null
+          sa?: number | null
+          sa_per_60?: number | null
+          sca?: number | null
+          sca_per_60?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          scf_per_60?: number | null
+          scga?: number | null
+          scga_per_60?: number | null
+          scgf?: number | null
+          scgf_pct?: number | null
+          scgf_per_60?: number | null
+          scsa?: number | null
+          scsa_per_60?: number | null
+          scsf?: number | null
+          scsf_pct?: number | null
+          scsf_per_60?: number | null
+          scsh_pct?: number | null
+          scsv_pct?: number | null
+          season_id: number
+          sf?: number | null
+          sf_pct?: number | null
+          sf_per_60?: number | null
+          sh_pct?: number | null
+          situation?: string
+          sv_pct?: number | null
+          team_abbreviation: string
+          team_name: string
+          toi_per_gp_seconds?: number | null
+          toi_seconds?: number | null
+          updated_at?: string
+          wins?: number | null
+          xga?: number | null
+          xga_per_60?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+          xgf_per_60?: number | null
+        }
+        Update: {
+          ca?: number | null
+          ca_per_60?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          cf_per_60?: number | null
+          created_at?: string
+          date?: string
+          fa?: number | null
+          fa_per_60?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ff_per_60?: number | null
+          ga?: number | null
+          ga_per_60?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gf_per_60?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdca_per_60?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdcf_per_60?: number | null
+          hdga?: number | null
+          hdga_per_60?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdgf_per_60?: number | null
+          hdsa?: number | null
+          hdsa_per_60?: number | null
+          hdsf?: number | null
+          hdsf_pct?: number | null
+          hdsf_per_60?: number | null
+          hdsh_pct?: number | null
+          hdsv_pct?: number | null
+          id?: number
+          ldca?: number | null
+          ldca_per_60?: number | null
+          ldcf?: number | null
+          ldcf_pct?: number | null
+          ldcf_per_60?: number | null
+          ldga?: number | null
+          ldga_per_60?: number | null
+          ldgf?: number | null
+          ldgf_pct?: number | null
+          ldgf_per_60?: number | null
+          ldsa?: number | null
+          ldsa_per_60?: number | null
+          ldsf?: number | null
+          ldsf_pct?: number | null
+          ldsf_per_60?: number | null
+          ldsh_pct?: number | null
+          ldsv_pct?: number | null
+          losses?: number | null
+          mdca?: number | null
+          mdca_per_60?: number | null
+          mdcf?: number | null
+          mdcf_pct?: number | null
+          mdcf_per_60?: number | null
+          mdga?: number | null
+          mdga_per_60?: number | null
+          mdgf?: number | null
+          mdgf_pct?: number | null
+          mdgf_per_60?: number | null
+          mdsa?: number | null
+          mdsa_per_60?: number | null
+          mdsf?: number | null
+          mdsf_pct?: number | null
+          mdsf_per_60?: number | null
+          mdsh_pct?: number | null
+          mdsv_pct?: number | null
+          otl?: number | null
+          pdo?: number | null
+          point_pct?: number | null
+          points?: number | null
+          row_wins?: number | null
+          sa?: number | null
+          sa_per_60?: number | null
+          sca?: number | null
+          sca_per_60?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          scf_per_60?: number | null
+          scga?: number | null
+          scga_per_60?: number | null
+          scgf?: number | null
+          scgf_pct?: number | null
+          scgf_per_60?: number | null
+          scsa?: number | null
+          scsa_per_60?: number | null
+          scsf?: number | null
+          scsf_pct?: number | null
+          scsf_per_60?: number | null
+          scsh_pct?: number | null
+          scsv_pct?: number | null
+          season_id?: number
+          sf?: number | null
+          sf_pct?: number | null
+          sf_per_60?: number | null
+          sh_pct?: number | null
+          situation?: string
+          sv_pct?: number | null
+          team_abbreviation?: string
+          team_name?: string
+          toi_per_gp_seconds?: number | null
+          toi_seconds?: number | null
+          updated_at?: string
+          wins?: number | null
+          xga?: number | null
+          xga_per_60?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+          xgf_per_60?: number | null
+        }
+        Relationships: []
+      }
+      nst_team_gamelogs_pk_counts: {
+        Row: {
+          ca: number | null
+          ca_per_60: number | null
+          cf: number | null
+          cf_pct: number | null
+          cf_per_60: number | null
+          created_at: string
+          date: string
+          fa: number | null
+          fa_per_60: number | null
+          ff: number | null
+          ff_pct: number | null
+          ff_per_60: number | null
+          ga: number | null
+          ga_per_60: number | null
+          gf: number | null
+          gf_pct: number | null
+          gf_per_60: number | null
+          gp: number | null
+          hdca: number | null
+          hdca_per_60: number | null
+          hdcf: number | null
+          hdcf_pct: number | null
+          hdcf_per_60: number | null
+          hdga: number | null
+          hdga_per_60: number | null
+          hdgf: number | null
+          hdgf_pct: number | null
+          hdgf_per_60: number | null
+          hdsa: number | null
+          hdsa_per_60: number | null
+          hdsf: number | null
+          hdsf_pct: number | null
+          hdsf_per_60: number | null
+          hdsh_pct: number | null
+          hdsv_pct: number | null
+          id: number
+          ldca: number | null
+          ldca_per_60: number | null
+          ldcf: number | null
+          ldcf_pct: number | null
+          ldcf_per_60: number | null
+          ldga: number | null
+          ldga_per_60: number | null
+          ldgf: number | null
+          ldgf_pct: number | null
+          ldgf_per_60: number | null
+          ldsa: number | null
+          ldsa_per_60: number | null
+          ldsf: number | null
+          ldsf_pct: number | null
+          ldsf_per_60: number | null
+          ldsh_pct: number | null
+          ldsv_pct: number | null
+          losses: number | null
+          mdca: number | null
+          mdca_per_60: number | null
+          mdcf: number | null
+          mdcf_pct: number | null
+          mdcf_per_60: number | null
+          mdga: number | null
+          mdga_per_60: number | null
+          mdgf: number | null
+          mdgf_pct: number | null
+          mdgf_per_60: number | null
+          mdsa: number | null
+          mdsa_per_60: number | null
+          mdsf: number | null
+          mdsf_pct: number | null
+          mdsf_per_60: number | null
+          mdsh_pct: number | null
+          mdsv_pct: number | null
+          otl: number | null
+          pdo: number | null
+          point_pct: number | null
+          points: number | null
+          row_wins: number | null
+          sa: number | null
+          sa_per_60: number | null
+          sca: number | null
+          sca_per_60: number | null
+          scf: number | null
+          scf_pct: number | null
+          scf_per_60: number | null
+          scga: number | null
+          scga_per_60: number | null
+          scgf: number | null
+          scgf_pct: number | null
+          scgf_per_60: number | null
+          scsa: number | null
+          scsa_per_60: number | null
+          scsf: number | null
+          scsf_pct: number | null
+          scsf_per_60: number | null
+          scsh_pct: number | null
+          scsv_pct: number | null
+          season_id: number
+          sf: number | null
+          sf_pct: number | null
+          sf_per_60: number | null
+          sh_pct: number | null
+          situation: string
+          sv_pct: number | null
+          team_abbreviation: string
+          team_name: string
+          toi_per_gp_seconds: number | null
+          toi_seconds: number | null
+          updated_at: string
+          wins: number | null
+          xga: number | null
+          xga_per_60: number | null
+          xgf: number | null
+          xgf_pct: number | null
+          xgf_per_60: number | null
+        }
+        Insert: {
+          ca?: number | null
+          ca_per_60?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          cf_per_60?: number | null
+          created_at?: string
+          date: string
+          fa?: number | null
+          fa_per_60?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ff_per_60?: number | null
+          ga?: number | null
+          ga_per_60?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gf_per_60?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdca_per_60?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdcf_per_60?: number | null
+          hdga?: number | null
+          hdga_per_60?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdgf_per_60?: number | null
+          hdsa?: number | null
+          hdsa_per_60?: number | null
+          hdsf?: number | null
+          hdsf_pct?: number | null
+          hdsf_per_60?: number | null
+          hdsh_pct?: number | null
+          hdsv_pct?: number | null
+          id?: number
+          ldca?: number | null
+          ldca_per_60?: number | null
+          ldcf?: number | null
+          ldcf_pct?: number | null
+          ldcf_per_60?: number | null
+          ldga?: number | null
+          ldga_per_60?: number | null
+          ldgf?: number | null
+          ldgf_pct?: number | null
+          ldgf_per_60?: number | null
+          ldsa?: number | null
+          ldsa_per_60?: number | null
+          ldsf?: number | null
+          ldsf_pct?: number | null
+          ldsf_per_60?: number | null
+          ldsh_pct?: number | null
+          ldsv_pct?: number | null
+          losses?: number | null
+          mdca?: number | null
+          mdca_per_60?: number | null
+          mdcf?: number | null
+          mdcf_pct?: number | null
+          mdcf_per_60?: number | null
+          mdga?: number | null
+          mdga_per_60?: number | null
+          mdgf?: number | null
+          mdgf_pct?: number | null
+          mdgf_per_60?: number | null
+          mdsa?: number | null
+          mdsa_per_60?: number | null
+          mdsf?: number | null
+          mdsf_pct?: number | null
+          mdsf_per_60?: number | null
+          mdsh_pct?: number | null
+          mdsv_pct?: number | null
+          otl?: number | null
+          pdo?: number | null
+          point_pct?: number | null
+          points?: number | null
+          row_wins?: number | null
+          sa?: number | null
+          sa_per_60?: number | null
+          sca?: number | null
+          sca_per_60?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          scf_per_60?: number | null
+          scga?: number | null
+          scga_per_60?: number | null
+          scgf?: number | null
+          scgf_pct?: number | null
+          scgf_per_60?: number | null
+          scsa?: number | null
+          scsa_per_60?: number | null
+          scsf?: number | null
+          scsf_pct?: number | null
+          scsf_per_60?: number | null
+          scsh_pct?: number | null
+          scsv_pct?: number | null
+          season_id: number
+          sf?: number | null
+          sf_pct?: number | null
+          sf_per_60?: number | null
+          sh_pct?: number | null
+          situation?: string
+          sv_pct?: number | null
+          team_abbreviation: string
+          team_name: string
+          toi_per_gp_seconds?: number | null
+          toi_seconds?: number | null
+          updated_at?: string
+          wins?: number | null
+          xga?: number | null
+          xga_per_60?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+          xgf_per_60?: number | null
+        }
+        Update: {
+          ca?: number | null
+          ca_per_60?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          cf_per_60?: number | null
+          created_at?: string
+          date?: string
+          fa?: number | null
+          fa_per_60?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ff_per_60?: number | null
+          ga?: number | null
+          ga_per_60?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gf_per_60?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdca_per_60?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdcf_per_60?: number | null
+          hdga?: number | null
+          hdga_per_60?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdgf_per_60?: number | null
+          hdsa?: number | null
+          hdsa_per_60?: number | null
+          hdsf?: number | null
+          hdsf_pct?: number | null
+          hdsf_per_60?: number | null
+          hdsh_pct?: number | null
+          hdsv_pct?: number | null
+          id?: number
+          ldca?: number | null
+          ldca_per_60?: number | null
+          ldcf?: number | null
+          ldcf_pct?: number | null
+          ldcf_per_60?: number | null
+          ldga?: number | null
+          ldga_per_60?: number | null
+          ldgf?: number | null
+          ldgf_pct?: number | null
+          ldgf_per_60?: number | null
+          ldsa?: number | null
+          ldsa_per_60?: number | null
+          ldsf?: number | null
+          ldsf_pct?: number | null
+          ldsf_per_60?: number | null
+          ldsh_pct?: number | null
+          ldsv_pct?: number | null
+          losses?: number | null
+          mdca?: number | null
+          mdca_per_60?: number | null
+          mdcf?: number | null
+          mdcf_pct?: number | null
+          mdcf_per_60?: number | null
+          mdga?: number | null
+          mdga_per_60?: number | null
+          mdgf?: number | null
+          mdgf_pct?: number | null
+          mdgf_per_60?: number | null
+          mdsa?: number | null
+          mdsa_per_60?: number | null
+          mdsf?: number | null
+          mdsf_pct?: number | null
+          mdsf_per_60?: number | null
+          mdsh_pct?: number | null
+          mdsv_pct?: number | null
+          otl?: number | null
+          pdo?: number | null
+          point_pct?: number | null
+          points?: number | null
+          row_wins?: number | null
+          sa?: number | null
+          sa_per_60?: number | null
+          sca?: number | null
+          sca_per_60?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          scf_per_60?: number | null
+          scga?: number | null
+          scga_per_60?: number | null
+          scgf?: number | null
+          scgf_pct?: number | null
+          scgf_per_60?: number | null
+          scsa?: number | null
+          scsa_per_60?: number | null
+          scsf?: number | null
+          scsf_pct?: number | null
+          scsf_per_60?: number | null
+          scsh_pct?: number | null
+          scsv_pct?: number | null
+          season_id?: number
+          sf?: number | null
+          sf_pct?: number | null
+          sf_per_60?: number | null
+          sh_pct?: number | null
+          situation?: string
+          sv_pct?: number | null
+          team_abbreviation?: string
+          team_name?: string
+          toi_per_gp_seconds?: number | null
+          toi_seconds?: number | null
+          updated_at?: string
+          wins?: number | null
+          xga?: number | null
+          xga_per_60?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+          xgf_per_60?: number | null
+        }
+        Relationships: []
+      }
+      nst_team_gamelogs_pk_rates: {
+        Row: {
+          ca: number | null
+          ca_per_60: number | null
+          cf: number | null
+          cf_pct: number | null
+          cf_per_60: number | null
+          created_at: string
+          date: string
+          fa: number | null
+          fa_per_60: number | null
+          ff: number | null
+          ff_pct: number | null
+          ff_per_60: number | null
+          ga: number | null
+          ga_per_60: number | null
+          gf: number | null
+          gf_pct: number | null
+          gf_per_60: number | null
+          gp: number | null
+          hdca: number | null
+          hdca_per_60: number | null
+          hdcf: number | null
+          hdcf_pct: number | null
+          hdcf_per_60: number | null
+          hdga: number | null
+          hdga_per_60: number | null
+          hdgf: number | null
+          hdgf_pct: number | null
+          hdgf_per_60: number | null
+          hdsa: number | null
+          hdsa_per_60: number | null
+          hdsf: number | null
+          hdsf_pct: number | null
+          hdsf_per_60: number | null
+          hdsh_pct: number | null
+          hdsv_pct: number | null
+          id: number
+          ldca: number | null
+          ldca_per_60: number | null
+          ldcf: number | null
+          ldcf_pct: number | null
+          ldcf_per_60: number | null
+          ldga: number | null
+          ldga_per_60: number | null
+          ldgf: number | null
+          ldgf_pct: number | null
+          ldgf_per_60: number | null
+          ldsa: number | null
+          ldsa_per_60: number | null
+          ldsf: number | null
+          ldsf_pct: number | null
+          ldsf_per_60: number | null
+          ldsh_pct: number | null
+          ldsv_pct: number | null
+          losses: number | null
+          mdca: number | null
+          mdca_per_60: number | null
+          mdcf: number | null
+          mdcf_pct: number | null
+          mdcf_per_60: number | null
+          mdga: number | null
+          mdga_per_60: number | null
+          mdgf: number | null
+          mdgf_pct: number | null
+          mdgf_per_60: number | null
+          mdsa: number | null
+          mdsa_per_60: number | null
+          mdsf: number | null
+          mdsf_pct: number | null
+          mdsf_per_60: number | null
+          mdsh_pct: number | null
+          mdsv_pct: number | null
+          otl: number | null
+          pdo: number | null
+          point_pct: number | null
+          points: number | null
+          row_wins: number | null
+          sa: number | null
+          sa_per_60: number | null
+          sca: number | null
+          sca_per_60: number | null
+          scf: number | null
+          scf_pct: number | null
+          scf_per_60: number | null
+          scga: number | null
+          scga_per_60: number | null
+          scgf: number | null
+          scgf_pct: number | null
+          scgf_per_60: number | null
+          scsa: number | null
+          scsa_per_60: number | null
+          scsf: number | null
+          scsf_pct: number | null
+          scsf_per_60: number | null
+          scsh_pct: number | null
+          scsv_pct: number | null
+          season_id: number
+          sf: number | null
+          sf_pct: number | null
+          sf_per_60: number | null
+          sh_pct: number | null
+          situation: string
+          sv_pct: number | null
+          team_abbreviation: string
+          team_name: string
+          toi_per_gp_seconds: number | null
+          toi_seconds: number | null
+          updated_at: string
+          wins: number | null
+          xga: number | null
+          xga_per_60: number | null
+          xgf: number | null
+          xgf_pct: number | null
+          xgf_per_60: number | null
+        }
+        Insert: {
+          ca?: number | null
+          ca_per_60?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          cf_per_60?: number | null
+          created_at?: string
+          date: string
+          fa?: number | null
+          fa_per_60?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ff_per_60?: number | null
+          ga?: number | null
+          ga_per_60?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gf_per_60?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdca_per_60?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdcf_per_60?: number | null
+          hdga?: number | null
+          hdga_per_60?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdgf_per_60?: number | null
+          hdsa?: number | null
+          hdsa_per_60?: number | null
+          hdsf?: number | null
+          hdsf_pct?: number | null
+          hdsf_per_60?: number | null
+          hdsh_pct?: number | null
+          hdsv_pct?: number | null
+          id?: number
+          ldca?: number | null
+          ldca_per_60?: number | null
+          ldcf?: number | null
+          ldcf_pct?: number | null
+          ldcf_per_60?: number | null
+          ldga?: number | null
+          ldga_per_60?: number | null
+          ldgf?: number | null
+          ldgf_pct?: number | null
+          ldgf_per_60?: number | null
+          ldsa?: number | null
+          ldsa_per_60?: number | null
+          ldsf?: number | null
+          ldsf_pct?: number | null
+          ldsf_per_60?: number | null
+          ldsh_pct?: number | null
+          ldsv_pct?: number | null
+          losses?: number | null
+          mdca?: number | null
+          mdca_per_60?: number | null
+          mdcf?: number | null
+          mdcf_pct?: number | null
+          mdcf_per_60?: number | null
+          mdga?: number | null
+          mdga_per_60?: number | null
+          mdgf?: number | null
+          mdgf_pct?: number | null
+          mdgf_per_60?: number | null
+          mdsa?: number | null
+          mdsa_per_60?: number | null
+          mdsf?: number | null
+          mdsf_pct?: number | null
+          mdsf_per_60?: number | null
+          mdsh_pct?: number | null
+          mdsv_pct?: number | null
+          otl?: number | null
+          pdo?: number | null
+          point_pct?: number | null
+          points?: number | null
+          row_wins?: number | null
+          sa?: number | null
+          sa_per_60?: number | null
+          sca?: number | null
+          sca_per_60?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          scf_per_60?: number | null
+          scga?: number | null
+          scga_per_60?: number | null
+          scgf?: number | null
+          scgf_pct?: number | null
+          scgf_per_60?: number | null
+          scsa?: number | null
+          scsa_per_60?: number | null
+          scsf?: number | null
+          scsf_pct?: number | null
+          scsf_per_60?: number | null
+          scsh_pct?: number | null
+          scsv_pct?: number | null
+          season_id: number
+          sf?: number | null
+          sf_pct?: number | null
+          sf_per_60?: number | null
+          sh_pct?: number | null
+          situation?: string
+          sv_pct?: number | null
+          team_abbreviation: string
+          team_name: string
+          toi_per_gp_seconds?: number | null
+          toi_seconds?: number | null
+          updated_at?: string
+          wins?: number | null
+          xga?: number | null
+          xga_per_60?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+          xgf_per_60?: number | null
+        }
+        Update: {
+          ca?: number | null
+          ca_per_60?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          cf_per_60?: number | null
+          created_at?: string
+          date?: string
+          fa?: number | null
+          fa_per_60?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ff_per_60?: number | null
+          ga?: number | null
+          ga_per_60?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gf_per_60?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdca_per_60?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdcf_per_60?: number | null
+          hdga?: number | null
+          hdga_per_60?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdgf_per_60?: number | null
+          hdsa?: number | null
+          hdsa_per_60?: number | null
+          hdsf?: number | null
+          hdsf_pct?: number | null
+          hdsf_per_60?: number | null
+          hdsh_pct?: number | null
+          hdsv_pct?: number | null
+          id?: number
+          ldca?: number | null
+          ldca_per_60?: number | null
+          ldcf?: number | null
+          ldcf_pct?: number | null
+          ldcf_per_60?: number | null
+          ldga?: number | null
+          ldga_per_60?: number | null
+          ldgf?: number | null
+          ldgf_pct?: number | null
+          ldgf_per_60?: number | null
+          ldsa?: number | null
+          ldsa_per_60?: number | null
+          ldsf?: number | null
+          ldsf_pct?: number | null
+          ldsf_per_60?: number | null
+          ldsh_pct?: number | null
+          ldsv_pct?: number | null
+          losses?: number | null
+          mdca?: number | null
+          mdca_per_60?: number | null
+          mdcf?: number | null
+          mdcf_pct?: number | null
+          mdcf_per_60?: number | null
+          mdga?: number | null
+          mdga_per_60?: number | null
+          mdgf?: number | null
+          mdgf_pct?: number | null
+          mdgf_per_60?: number | null
+          mdsa?: number | null
+          mdsa_per_60?: number | null
+          mdsf?: number | null
+          mdsf_pct?: number | null
+          mdsf_per_60?: number | null
+          mdsh_pct?: number | null
+          mdsv_pct?: number | null
+          otl?: number | null
+          pdo?: number | null
+          point_pct?: number | null
+          points?: number | null
+          row_wins?: number | null
+          sa?: number | null
+          sa_per_60?: number | null
+          sca?: number | null
+          sca_per_60?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          scf_per_60?: number | null
+          scga?: number | null
+          scga_per_60?: number | null
+          scgf?: number | null
+          scgf_pct?: number | null
+          scgf_per_60?: number | null
+          scsa?: number | null
+          scsa_per_60?: number | null
+          scsf?: number | null
+          scsf_pct?: number | null
+          scsf_per_60?: number | null
+          scsh_pct?: number | null
+          scsv_pct?: number | null
+          season_id?: number
+          sf?: number | null
+          sf_pct?: number | null
+          sf_per_60?: number | null
+          sh_pct?: number | null
+          situation?: string
+          sv_pct?: number | null
+          team_abbreviation?: string
+          team_name?: string
+          toi_per_gp_seconds?: number | null
+          toi_seconds?: number | null
+          updated_at?: string
+          wins?: number | null
+          xga?: number | null
+          xga_per_60?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+          xgf_per_60?: number | null
+        }
+        Relationships: []
+      }
+      nst_team_gamelogs_pp_counts: {
+        Row: {
+          ca: number | null
+          ca_per_60: number | null
+          cf: number | null
+          cf_pct: number | null
+          cf_per_60: number | null
+          created_at: string
+          date: string
+          fa: number | null
+          fa_per_60: number | null
+          ff: number | null
+          ff_pct: number | null
+          ff_per_60: number | null
+          ga: number | null
+          ga_per_60: number | null
+          gf: number | null
+          gf_pct: number | null
+          gf_per_60: number | null
+          gp: number | null
+          hdca: number | null
+          hdca_per_60: number | null
+          hdcf: number | null
+          hdcf_pct: number | null
+          hdcf_per_60: number | null
+          hdga: number | null
+          hdga_per_60: number | null
+          hdgf: number | null
+          hdgf_pct: number | null
+          hdgf_per_60: number | null
+          hdsa: number | null
+          hdsa_per_60: number | null
+          hdsf: number | null
+          hdsf_pct: number | null
+          hdsf_per_60: number | null
+          hdsh_pct: number | null
+          hdsv_pct: number | null
+          id: number
+          ldca: number | null
+          ldca_per_60: number | null
+          ldcf: number | null
+          ldcf_pct: number | null
+          ldcf_per_60: number | null
+          ldga: number | null
+          ldga_per_60: number | null
+          ldgf: number | null
+          ldgf_pct: number | null
+          ldgf_per_60: number | null
+          ldsa: number | null
+          ldsa_per_60: number | null
+          ldsf: number | null
+          ldsf_pct: number | null
+          ldsf_per_60: number | null
+          ldsh_pct: number | null
+          ldsv_pct: number | null
+          losses: number | null
+          mdca: number | null
+          mdca_per_60: number | null
+          mdcf: number | null
+          mdcf_pct: number | null
+          mdcf_per_60: number | null
+          mdga: number | null
+          mdga_per_60: number | null
+          mdgf: number | null
+          mdgf_pct: number | null
+          mdgf_per_60: number | null
+          mdsa: number | null
+          mdsa_per_60: number | null
+          mdsf: number | null
+          mdsf_pct: number | null
+          mdsf_per_60: number | null
+          mdsh_pct: number | null
+          mdsv_pct: number | null
+          otl: number | null
+          pdo: number | null
+          point_pct: number | null
+          points: number | null
+          row_wins: number | null
+          sa: number | null
+          sa_per_60: number | null
+          sca: number | null
+          sca_per_60: number | null
+          scf: number | null
+          scf_pct: number | null
+          scf_per_60: number | null
+          scga: number | null
+          scga_per_60: number | null
+          scgf: number | null
+          scgf_pct: number | null
+          scgf_per_60: number | null
+          scsa: number | null
+          scsa_per_60: number | null
+          scsf: number | null
+          scsf_pct: number | null
+          scsf_per_60: number | null
+          scsh_pct: number | null
+          scsv_pct: number | null
+          season_id: number
+          sf: number | null
+          sf_pct: number | null
+          sf_per_60: number | null
+          sh_pct: number | null
+          situation: string
+          sv_pct: number | null
+          team_abbreviation: string
+          team_name: string
+          toi_per_gp_seconds: number | null
+          toi_seconds: number | null
+          updated_at: string
+          wins: number | null
+          xga: number | null
+          xga_per_60: number | null
+          xgf: number | null
+          xgf_pct: number | null
+          xgf_per_60: number | null
+        }
+        Insert: {
+          ca?: number | null
+          ca_per_60?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          cf_per_60?: number | null
+          created_at?: string
+          date: string
+          fa?: number | null
+          fa_per_60?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ff_per_60?: number | null
+          ga?: number | null
+          ga_per_60?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gf_per_60?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdca_per_60?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdcf_per_60?: number | null
+          hdga?: number | null
+          hdga_per_60?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdgf_per_60?: number | null
+          hdsa?: number | null
+          hdsa_per_60?: number | null
+          hdsf?: number | null
+          hdsf_pct?: number | null
+          hdsf_per_60?: number | null
+          hdsh_pct?: number | null
+          hdsv_pct?: number | null
+          id?: number
+          ldca?: number | null
+          ldca_per_60?: number | null
+          ldcf?: number | null
+          ldcf_pct?: number | null
+          ldcf_per_60?: number | null
+          ldga?: number | null
+          ldga_per_60?: number | null
+          ldgf?: number | null
+          ldgf_pct?: number | null
+          ldgf_per_60?: number | null
+          ldsa?: number | null
+          ldsa_per_60?: number | null
+          ldsf?: number | null
+          ldsf_pct?: number | null
+          ldsf_per_60?: number | null
+          ldsh_pct?: number | null
+          ldsv_pct?: number | null
+          losses?: number | null
+          mdca?: number | null
+          mdca_per_60?: number | null
+          mdcf?: number | null
+          mdcf_pct?: number | null
+          mdcf_per_60?: number | null
+          mdga?: number | null
+          mdga_per_60?: number | null
+          mdgf?: number | null
+          mdgf_pct?: number | null
+          mdgf_per_60?: number | null
+          mdsa?: number | null
+          mdsa_per_60?: number | null
+          mdsf?: number | null
+          mdsf_pct?: number | null
+          mdsf_per_60?: number | null
+          mdsh_pct?: number | null
+          mdsv_pct?: number | null
+          otl?: number | null
+          pdo?: number | null
+          point_pct?: number | null
+          points?: number | null
+          row_wins?: number | null
+          sa?: number | null
+          sa_per_60?: number | null
+          sca?: number | null
+          sca_per_60?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          scf_per_60?: number | null
+          scga?: number | null
+          scga_per_60?: number | null
+          scgf?: number | null
+          scgf_pct?: number | null
+          scgf_per_60?: number | null
+          scsa?: number | null
+          scsa_per_60?: number | null
+          scsf?: number | null
+          scsf_pct?: number | null
+          scsf_per_60?: number | null
+          scsh_pct?: number | null
+          scsv_pct?: number | null
+          season_id: number
+          sf?: number | null
+          sf_pct?: number | null
+          sf_per_60?: number | null
+          sh_pct?: number | null
+          situation?: string
+          sv_pct?: number | null
+          team_abbreviation: string
+          team_name: string
+          toi_per_gp_seconds?: number | null
+          toi_seconds?: number | null
+          updated_at?: string
+          wins?: number | null
+          xga?: number | null
+          xga_per_60?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+          xgf_per_60?: number | null
+        }
+        Update: {
+          ca?: number | null
+          ca_per_60?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          cf_per_60?: number | null
+          created_at?: string
+          date?: string
+          fa?: number | null
+          fa_per_60?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ff_per_60?: number | null
+          ga?: number | null
+          ga_per_60?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gf_per_60?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdca_per_60?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdcf_per_60?: number | null
+          hdga?: number | null
+          hdga_per_60?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdgf_per_60?: number | null
+          hdsa?: number | null
+          hdsa_per_60?: number | null
+          hdsf?: number | null
+          hdsf_pct?: number | null
+          hdsf_per_60?: number | null
+          hdsh_pct?: number | null
+          hdsv_pct?: number | null
+          id?: number
+          ldca?: number | null
+          ldca_per_60?: number | null
+          ldcf?: number | null
+          ldcf_pct?: number | null
+          ldcf_per_60?: number | null
+          ldga?: number | null
+          ldga_per_60?: number | null
+          ldgf?: number | null
+          ldgf_pct?: number | null
+          ldgf_per_60?: number | null
+          ldsa?: number | null
+          ldsa_per_60?: number | null
+          ldsf?: number | null
+          ldsf_pct?: number | null
+          ldsf_per_60?: number | null
+          ldsh_pct?: number | null
+          ldsv_pct?: number | null
+          losses?: number | null
+          mdca?: number | null
+          mdca_per_60?: number | null
+          mdcf?: number | null
+          mdcf_pct?: number | null
+          mdcf_per_60?: number | null
+          mdga?: number | null
+          mdga_per_60?: number | null
+          mdgf?: number | null
+          mdgf_pct?: number | null
+          mdgf_per_60?: number | null
+          mdsa?: number | null
+          mdsa_per_60?: number | null
+          mdsf?: number | null
+          mdsf_pct?: number | null
+          mdsf_per_60?: number | null
+          mdsh_pct?: number | null
+          mdsv_pct?: number | null
+          otl?: number | null
+          pdo?: number | null
+          point_pct?: number | null
+          points?: number | null
+          row_wins?: number | null
+          sa?: number | null
+          sa_per_60?: number | null
+          sca?: number | null
+          sca_per_60?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          scf_per_60?: number | null
+          scga?: number | null
+          scga_per_60?: number | null
+          scgf?: number | null
+          scgf_pct?: number | null
+          scgf_per_60?: number | null
+          scsa?: number | null
+          scsa_per_60?: number | null
+          scsf?: number | null
+          scsf_pct?: number | null
+          scsf_per_60?: number | null
+          scsh_pct?: number | null
+          scsv_pct?: number | null
+          season_id?: number
+          sf?: number | null
+          sf_pct?: number | null
+          sf_per_60?: number | null
+          sh_pct?: number | null
+          situation?: string
+          sv_pct?: number | null
+          team_abbreviation?: string
+          team_name?: string
+          toi_per_gp_seconds?: number | null
+          toi_seconds?: number | null
+          updated_at?: string
+          wins?: number | null
+          xga?: number | null
+          xga_per_60?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+          xgf_per_60?: number | null
+        }
+        Relationships: []
+      }
+      nst_team_gamelogs_pp_rates: {
+        Row: {
+          ca: number | null
+          ca_per_60: number | null
+          cf: number | null
+          cf_pct: number | null
+          cf_per_60: number | null
+          created_at: string
+          date: string
+          fa: number | null
+          fa_per_60: number | null
+          ff: number | null
+          ff_pct: number | null
+          ff_per_60: number | null
+          ga: number | null
+          ga_per_60: number | null
+          gf: number | null
+          gf_pct: number | null
+          gf_per_60: number | null
+          gp: number | null
+          hdca: number | null
+          hdca_per_60: number | null
+          hdcf: number | null
+          hdcf_pct: number | null
+          hdcf_per_60: number | null
+          hdga: number | null
+          hdga_per_60: number | null
+          hdgf: number | null
+          hdgf_pct: number | null
+          hdgf_per_60: number | null
+          hdsa: number | null
+          hdsa_per_60: number | null
+          hdsf: number | null
+          hdsf_pct: number | null
+          hdsf_per_60: number | null
+          hdsh_pct: number | null
+          hdsv_pct: number | null
+          id: number
+          ldca: number | null
+          ldca_per_60: number | null
+          ldcf: number | null
+          ldcf_pct: number | null
+          ldcf_per_60: number | null
+          ldga: number | null
+          ldga_per_60: number | null
+          ldgf: number | null
+          ldgf_pct: number | null
+          ldgf_per_60: number | null
+          ldsa: number | null
+          ldsa_per_60: number | null
+          ldsf: number | null
+          ldsf_pct: number | null
+          ldsf_per_60: number | null
+          ldsh_pct: number | null
+          ldsv_pct: number | null
+          losses: number | null
+          mdca: number | null
+          mdca_per_60: number | null
+          mdcf: number | null
+          mdcf_pct: number | null
+          mdcf_per_60: number | null
+          mdga: number | null
+          mdga_per_60: number | null
+          mdgf: number | null
+          mdgf_pct: number | null
+          mdgf_per_60: number | null
+          mdsa: number | null
+          mdsa_per_60: number | null
+          mdsf: number | null
+          mdsf_pct: number | null
+          mdsf_per_60: number | null
+          mdsh_pct: number | null
+          mdsv_pct: number | null
+          otl: number | null
+          pdo: number | null
+          point_pct: number | null
+          points: number | null
+          row_wins: number | null
+          sa: number | null
+          sa_per_60: number | null
+          sca: number | null
+          sca_per_60: number | null
+          scf: number | null
+          scf_pct: number | null
+          scf_per_60: number | null
+          scga: number | null
+          scga_per_60: number | null
+          scgf: number | null
+          scgf_pct: number | null
+          scgf_per_60: number | null
+          scsa: number | null
+          scsa_per_60: number | null
+          scsf: number | null
+          scsf_pct: number | null
+          scsf_per_60: number | null
+          scsh_pct: number | null
+          scsv_pct: number | null
+          season_id: number
+          sf: number | null
+          sf_pct: number | null
+          sf_per_60: number | null
+          sh_pct: number | null
+          situation: string
+          sv_pct: number | null
+          team_abbreviation: string
+          team_name: string
+          toi_per_gp_seconds: number | null
+          toi_seconds: number | null
+          updated_at: string
+          wins: number | null
+          xga: number | null
+          xga_per_60: number | null
+          xgf: number | null
+          xgf_pct: number | null
+          xgf_per_60: number | null
+        }
+        Insert: {
+          ca?: number | null
+          ca_per_60?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          cf_per_60?: number | null
+          created_at?: string
+          date: string
+          fa?: number | null
+          fa_per_60?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ff_per_60?: number | null
+          ga?: number | null
+          ga_per_60?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gf_per_60?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdca_per_60?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdcf_per_60?: number | null
+          hdga?: number | null
+          hdga_per_60?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdgf_per_60?: number | null
+          hdsa?: number | null
+          hdsa_per_60?: number | null
+          hdsf?: number | null
+          hdsf_pct?: number | null
+          hdsf_per_60?: number | null
+          hdsh_pct?: number | null
+          hdsv_pct?: number | null
+          id?: number
+          ldca?: number | null
+          ldca_per_60?: number | null
+          ldcf?: number | null
+          ldcf_pct?: number | null
+          ldcf_per_60?: number | null
+          ldga?: number | null
+          ldga_per_60?: number | null
+          ldgf?: number | null
+          ldgf_pct?: number | null
+          ldgf_per_60?: number | null
+          ldsa?: number | null
+          ldsa_per_60?: number | null
+          ldsf?: number | null
+          ldsf_pct?: number | null
+          ldsf_per_60?: number | null
+          ldsh_pct?: number | null
+          ldsv_pct?: number | null
+          losses?: number | null
+          mdca?: number | null
+          mdca_per_60?: number | null
+          mdcf?: number | null
+          mdcf_pct?: number | null
+          mdcf_per_60?: number | null
+          mdga?: number | null
+          mdga_per_60?: number | null
+          mdgf?: number | null
+          mdgf_pct?: number | null
+          mdgf_per_60?: number | null
+          mdsa?: number | null
+          mdsa_per_60?: number | null
+          mdsf?: number | null
+          mdsf_pct?: number | null
+          mdsf_per_60?: number | null
+          mdsh_pct?: number | null
+          mdsv_pct?: number | null
+          otl?: number | null
+          pdo?: number | null
+          point_pct?: number | null
+          points?: number | null
+          row_wins?: number | null
+          sa?: number | null
+          sa_per_60?: number | null
+          sca?: number | null
+          sca_per_60?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          scf_per_60?: number | null
+          scga?: number | null
+          scga_per_60?: number | null
+          scgf?: number | null
+          scgf_pct?: number | null
+          scgf_per_60?: number | null
+          scsa?: number | null
+          scsa_per_60?: number | null
+          scsf?: number | null
+          scsf_pct?: number | null
+          scsf_per_60?: number | null
+          scsh_pct?: number | null
+          scsv_pct?: number | null
+          season_id: number
+          sf?: number | null
+          sf_pct?: number | null
+          sf_per_60?: number | null
+          sh_pct?: number | null
+          situation?: string
+          sv_pct?: number | null
+          team_abbreviation: string
+          team_name: string
+          toi_per_gp_seconds?: number | null
+          toi_seconds?: number | null
+          updated_at?: string
+          wins?: number | null
+          xga?: number | null
+          xga_per_60?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+          xgf_per_60?: number | null
+        }
+        Update: {
+          ca?: number | null
+          ca_per_60?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          cf_per_60?: number | null
+          created_at?: string
+          date?: string
+          fa?: number | null
+          fa_per_60?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ff_per_60?: number | null
+          ga?: number | null
+          ga_per_60?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gf_per_60?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdca_per_60?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdcf_per_60?: number | null
+          hdga?: number | null
+          hdga_per_60?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdgf_per_60?: number | null
+          hdsa?: number | null
+          hdsa_per_60?: number | null
+          hdsf?: number | null
+          hdsf_pct?: number | null
+          hdsf_per_60?: number | null
+          hdsh_pct?: number | null
+          hdsv_pct?: number | null
+          id?: number
+          ldca?: number | null
+          ldca_per_60?: number | null
+          ldcf?: number | null
+          ldcf_pct?: number | null
+          ldcf_per_60?: number | null
+          ldga?: number | null
+          ldga_per_60?: number | null
+          ldgf?: number | null
+          ldgf_pct?: number | null
+          ldgf_per_60?: number | null
+          ldsa?: number | null
+          ldsa_per_60?: number | null
+          ldsf?: number | null
+          ldsf_pct?: number | null
+          ldsf_per_60?: number | null
+          ldsh_pct?: number | null
+          ldsv_pct?: number | null
+          losses?: number | null
+          mdca?: number | null
+          mdca_per_60?: number | null
+          mdcf?: number | null
+          mdcf_pct?: number | null
+          mdcf_per_60?: number | null
+          mdga?: number | null
+          mdga_per_60?: number | null
+          mdgf?: number | null
+          mdgf_pct?: number | null
+          mdgf_per_60?: number | null
+          mdsa?: number | null
+          mdsa_per_60?: number | null
+          mdsf?: number | null
+          mdsf_pct?: number | null
+          mdsf_per_60?: number | null
+          mdsh_pct?: number | null
+          mdsv_pct?: number | null
+          otl?: number | null
+          pdo?: number | null
+          point_pct?: number | null
+          points?: number | null
+          row_wins?: number | null
+          sa?: number | null
+          sa_per_60?: number | null
+          sca?: number | null
+          sca_per_60?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          scf_per_60?: number | null
+          scga?: number | null
+          scga_per_60?: number | null
+          scgf?: number | null
+          scgf_pct?: number | null
+          scgf_per_60?: number | null
+          scsa?: number | null
+          scsa_per_60?: number | null
+          scsf?: number | null
+          scsf_pct?: number | null
+          scsf_per_60?: number | null
+          scsh_pct?: number | null
+          scsv_pct?: number | null
+          season_id?: number
+          sf?: number | null
+          sf_pct?: number | null
+          sf_per_60?: number | null
+          sh_pct?: number | null
+          situation?: string
+          sv_pct?: number | null
+          team_abbreviation?: string
+          team_name?: string
+          toi_per_gp_seconds?: number | null
+          toi_seconds?: number | null
+          updated_at?: string
+          wins?: number | null
+          xga?: number | null
+          xga_per_60?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+          xgf_per_60?: number | null
+        }
+        Relationships: []
+      }
       nst_team_pk: {
         Row: {
           ca: number | null
@@ -26516,6 +29300,27 @@ export type Database = {
         }
         Relationships: []
       }
+      team_power_ratings_daily: {
+        Row: {
+          created_at: string | null
+          date: string | null
+          def_rating: number | null
+          ga60: number | null
+          gf60: number | null
+          off_rating: number | null
+          pace_rating: number | null
+          pace60: number | null
+          pk_tier: number | null
+          pp_tier: number | null
+          sa60: number | null
+          sf60: number | null
+          team_abbreviation: string | null
+          trend10: number | null
+          xga60: number | null
+          xgf60: number | null
+        }
+        Relationships: []
+      }
       vw_active_teams: {
         Row: {
           app_abbrev: string | null
@@ -27201,6 +30006,10 @@ export type Database = {
         }[]
       }
       immutable_unaccent: { Args: { "": string }; Returns: string }
+      refresh_team_power_ratings: {
+        Args: { date_from?: string; date_to?: string }
+        Returns: undefined
+      }
       rpc_sko_player_series: {
         Args: {
           p_l_cold?: number

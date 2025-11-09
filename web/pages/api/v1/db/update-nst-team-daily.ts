@@ -8,6 +8,39 @@ import { toZonedTime, format as tzFormat } from "date-fns-tz";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
 import { teamNameToAbbreviationMap, teamsInfo } from "lib/teamsInfo";
 
+/**
+ * URL Examples:
+ *
+ * Incremental mode (default - processes new dates since last update):
+ * GET /api/v1/db/update-nst-team-daily
+ * POST /api/v1/db/update-nst-team-daily
+ *
+ * Forward mode (processes dates from start of season or specified date forward):
+ * GET /api/v1/db/update-nst-team-daily?runMode=forward
+ * GET /api/v1/db/update-nst-team-daily?runMode=forward&startDate=2024-10-01
+ * GET /api/v1/db/update-nst-team-daily?runMode=forward&startDate=2024-10-01&endDate=2024-11-05
+ *
+ * Reverse mode (processes dates from today or specified date backward):
+ * GET /api/v1/db/update-nst-team-daily?runMode=reverse
+ * GET /api/v1/db/update-nst-team-daily?runMode=reverse&startDate=2024-11-05&endDate=2024-10-01
+ *
+ * With overwrite flag (force update existing data):
+ * GET /api/v1/db/update-nst-team-daily?runMode=forward&overwrite=true
+ * GET /api/v1/db/update-nst-team-daily?startDate=2024-11-01&endDate=2024-11-05&overwrite=true
+ *
+ * Single date processing:
+ * GET /api/v1/db/update-nst-team-daily?runMode=forward&startDate=2024-11-05&endDate=2024-11-05
+ *
+ * Parameters:
+ * - runMode: "incremental" | "forward" | "reverse" (default: "incremental")
+ * - startDate: YYYY-MM-DD format (ISO 8601)
+ * - endDate: YYYY-MM-DD format (ISO 8601)
+ * - overwrite: "true" | "false" | "1" | "0" | "yes" | "y" (default varies by runMode)
+ *
+ * Methods supported: GET, POST
+ * For POST requests, parameters can be sent in the request body as JSON
+ */
+
 dotenv.config({ path: "./../../../.env.local" });
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -398,7 +431,9 @@ function parseTeamTable(html: string): RawRow[] {
   return rows;
 }
 
-function resolveTeam(teamLabel: string): { abbreviation: string; name: string } | null {
+function resolveTeam(
+  teamLabel: string
+): { abbreviation: string; name: string } | null {
   const trimmed = teamLabel.trim();
   const direct = teamNameToAbbreviationMap[trimmed];
   const normalized = normalizeTeamName(trimmed);
@@ -406,7 +441,9 @@ function resolveTeam(teamLabel: string): { abbreviation: string; name: string } 
   const abbreviation = direct || fallback;
   if (!abbreviation) {
     if (!unknownTeams.has(trimmed)) {
-      console.warn(`Unable to match team name "${trimmed}" to an abbreviation.`);
+      console.warn(
+        `Unable to match team name "${trimmed}" to an abbreviation.`
+      );
       unknownTeams.add(trimmed);
     }
     return null;
@@ -422,7 +459,11 @@ function buildHeaderMap(isRateTable: boolean): Record<string, string> {
   return { ...sharedHeaderMap, ...countsHeaderMap };
 }
 
-function buildDatasetUrl(date: string, dataset: DatasetConfig, seasonId: string) {
+function buildDatasetUrl(
+  date: string,
+  dataset: DatasetConfig,
+  seasonId: string
+) {
   const query = new URLSearchParams({
     fromseason: seasonId,
     thruseason: seasonId,
@@ -494,9 +535,7 @@ function buildDateQueue(
 
   if (runMode === "reverse") {
     const start = clampToToday(startDateInput ?? todayDate);
-    const end = endDateInput
-      ? endDateInput
-      : seasonStartDate;
+    const end = endDateInput ? endDateInput : seasonStartDate;
     if (isBefore(start, end)) {
       return [];
     }
@@ -553,10 +592,7 @@ function mapRowToInsert(
   for (const [headerKey, columnName] of Object.entries(headerMap)) {
     const value = raw[headerKey];
     if (value === undefined) continue;
-    if (
-      columnName === "toi_seconds" ||
-      columnName === "toi_per_gp_seconds"
-    ) {
+    if (columnName === "toi_seconds" || columnName === "toi_per_gp_seconds") {
       row[columnName] = convertTimeToSeconds(value);
     } else if (headerKey.includes("%")) {
       row[columnName] = parsePercentage(value);
@@ -632,7 +668,7 @@ export default async function handler(
     return res.status(405).json({ message: "Method not allowed" });
   }
 
-  const params = req.method === "GET" ? req.query : req.body ?? {};
+  const params = req.method === "GET" ? req.query : (req.body ?? {});
   const runModeParam = coerceParam(params.runMode)?.toLowerCase();
   const runMode: RunMode = (runModeParam as RunMode) || "incremental";
   if (!["incremental", "forward", "reverse"].includes(runMode)) {
@@ -692,7 +728,11 @@ export default async function handler(
       totalDates: targetDates.length,
       processedDates: 0,
       skippedDates: 0,
-      datasetResults: [] as Array<{ date: string; table: string; inserted: number }>,
+      datasetResults: [] as Array<{
+        date: string;
+        table: string;
+        inserted: number;
+      }>,
       errors: [] as string[]
     };
 
