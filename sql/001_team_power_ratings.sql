@@ -308,6 +308,19 @@ team_name_map AS (
         ('Phoenix Coyotes', 'UTA')
     ) AS t(franchise_name, team_abbreviation)
 ),
+team_universe AS (
+    SELECT DISTINCT team_abbreviation FROM base_games
+),
+date_universe AS (
+    SELECT DISTINCT date FROM base_games
+),
+wgo_calendar AS (
+    SELECT
+        t.team_abbreviation,
+        d.date
+    FROM team_universe t
+    CROSS JOIN date_universe d
+),
 wgo_base AS (
     SELECT
         COALESCE(ti.team_abbreviation, tn.team_abbreviation) AS team_abbreviation,
@@ -321,6 +334,29 @@ wgo_base AS (
       ON tn.franchise_name = w.franchise_name
     WHERE COALESCE(ti.team_abbreviation, tn.team_abbreviation) IS NOT NULL
 ),
+wgo_filled AS (
+    SELECT
+        cal.team_abbreviation,
+        cal.date,
+        latest.power_play_pct,
+        latest.penalty_kill_pct,
+        latest.source_date
+    FROM wgo_calendar cal
+    LEFT JOIN LATERAL (
+        SELECT
+            b.power_play_pct,
+            b.penalty_kill_pct,
+            b.date AS source_date
+        FROM wgo_base b
+        WHERE b.team_abbreviation = cal.team_abbreviation
+          AND b.date <= cal.date
+        ORDER BY b.date DESC
+        LIMIT 1
+    ) AS latest
+      ON TRUE
+    WHERE latest.source_date IS NOT NULL
+      AND cal.date - latest.source_date <= INTERVAL '7 days'
+),
 wgo_percentiles AS (
     SELECT
         date,
@@ -328,28 +364,28 @@ wgo_percentiles AS (
         percentile_cont(0.67) WITHIN GROUP (ORDER BY power_play_pct) FILTER (WHERE power_play_pct IS NOT NULL) AS pp_pct67,
         percentile_cont(0.33) WITHIN GROUP (ORDER BY penalty_kill_pct) FILTER (WHERE penalty_kill_pct IS NOT NULL) AS pk_pct33,
         percentile_cont(0.67) WITHIN GROUP (ORDER BY penalty_kill_pct) FILTER (WHERE penalty_kill_pct IS NOT NULL) AS pk_pct67
-    FROM wgo_base
+    FROM wgo_filled
     GROUP BY date
 ),
 wgo_tiers AS (
     SELECT
-        b.team_abbreviation,
-        b.date,
+        f.team_abbreviation,
+        f.date,
         CASE
-            WHEN b.power_play_pct IS NULL THEN NULL
-            WHEN b.power_play_pct >= p.pp_pct67 THEN 1
-            WHEN b.power_play_pct >= p.pp_pct33 THEN 2
+            WHEN f.power_play_pct IS NULL THEN NULL
+            WHEN f.power_play_pct >= p.pp_pct67 THEN 1
+            WHEN f.power_play_pct >= p.pp_pct33 THEN 2
             ELSE 3
         END AS pp_tier,
         CASE
-            WHEN b.penalty_kill_pct IS NULL THEN NULL
-            WHEN b.penalty_kill_pct >= p.pk_pct67 THEN 1
-            WHEN b.penalty_kill_pct >= p.pk_pct33 THEN 2
+            WHEN f.penalty_kill_pct IS NULL THEN NULL
+            WHEN f.penalty_kill_pct >= p.pk_pct67 THEN 1
+            WHEN f.penalty_kill_pct >= p.pk_pct33 THEN 2
             ELSE 3
         END AS pk_tier
-    FROM wgo_base b
+    FROM wgo_filled f
     LEFT JOIN wgo_percentiles p
-      ON p.date = b.date
+      ON p.date = f.date
 ),
 ratings_with_special AS (
     SELECT
