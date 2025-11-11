@@ -560,7 +560,9 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   --focus-ring: 0 0 0 3px rgba(7, 170, 226, 0.4);
 }
 .gridScrollOuter {
-  overflow: auto;
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
   max-width: 100%;
   scrollbar-width: thin;
   scrollbar-color: v.$secondary-color rgba(255, 255, 255, 0.1);
@@ -568,8 +570,6 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative; // anchor continuous separator lines
   // Mirror container rounding so inner background doesn't visually square off
   border-radius: inherit;
-  // Ensure internal absolutely positioned lines are clipped
-  overflow: hidden;
   --separator-color: v.$primary-color;
   &::before,
   &::after,
@@ -580,21 +580,23 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   &::before {
     content: "";
     position: absolute;
-    top: 0;
-    bottom: 0;
+    top: 4px;
+    bottom: 4px;
     width: 2px;
     left: var(--team-col-right, 0); // fallback before JS sets precise value
     background: var(--separator-color);
+    border-radius: $border-radius-md;
   }
   // Left edge of stats (GP) column
   &::after {
     content: "";
     position: absolute;
-    top: 0;
-    bottom: 0;
+    top: 4px;
+    bottom: 4px;
     width: 2px;
     left: var(--stats-start-left, 0);
     background: var(--separator-color);
+    border-radius: $border-radius-md;
   }
   // Solid line under header row
   .headerBottomLine {
@@ -1441,7 +1443,6 @@ $heavy-color: #b64343;
   // --- Modern Table Header (thead) ---
   thead {
     // Nested under .scheduleGrid
-    position: sticky;
     top: 0;
     z-index: 3; // Increase z-index relative to sticky cells
     border-radius: 0;
@@ -2335,7 +2336,34 @@ $heavy-color: #b64343;
     outline: 8px solid v.$background-dark;
     outline-offset: -8px; // Align with header outline
     max-width: 100vw;
-    overflow-x: hidden; // The inner table wrapper will handle horizontal scroll
+    overflow: visible; // Preserve sticky behavior and allow inner scroller to manage overflow
+  }
+
+  // Disable sticky first column / footer on tablet widths to avoid flicker
+  .scheduleGrid {
+    th:first-child,
+    td:first-child {
+      position: static;
+      left: auto;
+      z-index: auto;
+      box-shadow: none;
+    }
+  }
+
+  .totalGamesPerDayRow {
+    position: relative;
+    bottom: auto;
+    box-shadow: none;
+
+    td {
+      position: static;
+      box-shadow: none;
+    }
+    td.title {
+      position: relative;
+      z-index: auto;
+      box-shadow: none;
+    }
   }
 
   // Subtle column separators to reduce visual noise but aid scanning
