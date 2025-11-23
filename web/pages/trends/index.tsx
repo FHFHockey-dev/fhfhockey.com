@@ -14,6 +14,7 @@ import {
   type TrendCategoryDefinition,
   type TrendCategoryId
 } from "lib/trends/teamMetricConfig";
+import { type CtpiScore } from "lib/trends/ctpi";
 import {
   ResponsiveContainer,
   LineChart as ReLineChart,
@@ -61,6 +62,26 @@ type ChartDatasetRow = {
   [team: string]: number;
 };
 
+type CategorySnapshot = {
+  percentile: number;
+  gp: number;
+  delta: number | null;
+};
+
+type PowerBoardRow = {
+  team: string;
+  name: string;
+  logo: string;
+  overall: number;
+  specialTeams: number | null;
+  momentum: number | null;
+  snapshots: Partial<Record<TrendCategoryId, CategorySnapshot>>;
+  topDriver?: TrendCategoryId;
+  drag?: TrendCategoryId;
+  reason: string;
+  ctpi?: CtpiScore;
+};
+
 type PlayerMetadata = {
   id: number;
   fullName: string;
@@ -95,54 +116,54 @@ interface SkaterTrendsResponse {
 }
 
 const formatPercent = (value: number) => `${value.toFixed(1)}%`;
+const formatSigned = (value: number | null | undefined, digits = 2) => {
+  if (value === null || value === undefined || Number.isNaN(value)) return "—";
+  const sign = value > 0 ? "+" : "";
+  return `${sign}${value.toFixed(digits)}`;
+};
 const DEFAULT_TEAM_LOGO = "/teamLogos/default.png";
 const DEFAULT_PLAYER_IMAGE = DEFAULT_TEAM_LOGO;
 
-function lightenHexColor(hex: string, amount = 0.3): string {
-  if (!hex || typeof hex !== "string" || !hex.startsWith("#")) return hex;
-  let normalized = hex.replace("#", "");
-  if (normalized.length === 3) {
-    normalized = normalized
-      .split("")
-      .map((c) => c + c)
-      .join("");
-  }
-  if (normalized.length !== 6) return hex;
-  const num = parseInt(normalized, 16);
-  if (Number.isNaN(num)) return hex;
-  const r = (num >> 16) & 255;
-  const g = (num >> 8) & 255;
-  const b = num & 255;
-  const adjust = (channel: number) =>
-    Math.min(255, Math.round(channel + (255 - channel) * amount));
-  const newColor = (adjust(r) << 16) | (adjust(g) << 8) | adjust(b);
-  return `#${newColor.toString(16).padStart(6, "0")}`;
-}
-
-const PLAYER_COLOR_PALETTE = [
-  "#7dd3fc",
-  "#fcd34d",
-  "#fca5a5",
-  "#c4b5fd",
-  "#a5f3fc",
-  "#f9a8d4",
-  "#fbbf24",
-  "#86efac",
-  "#f472b6",
-  "#f97316",
-  "#bef264",
-  "#fda4af"
+const CHART_COLOR_PALETTE = [
+  "#07aae2", // $secondary-color
+  "#4bc0c0", // $color-teal
+  "#ff9f40", // $color-orange
+  "#ff6384", // $danger-color
+  "#9b59b6", // $color-purple
+  "#ffcc33", // $warning-color
+  "#3b82f6", // $info-color
+  "#00ff99", // $success-color
+  "#cccccc", // $text-primary
+  "#a0aec0" // grey
 ];
 
-function getPlayerColor(key: string) {
+function getChartColor(key: string): string {
   let hash = 0;
+  if (!key) return CHART_COLOR_PALETTE[0];
   for (let i = 0; i < key.length; i += 1) {
     hash = (hash << 5) - hash + key.charCodeAt(i);
     hash |= 0; // convert to 32bit int
   }
-  const idx = Math.abs(hash) % PLAYER_COLOR_PALETTE.length;
-  return PLAYER_COLOR_PALETTE[idx];
+  const idx = Math.abs(hash) % CHART_COLOR_PALETTE.length;
+  return CHART_COLOR_PALETTE[idx];
 }
+
+const clampBrush = (
+  length: number,
+  start: number | undefined,
+  end: number | undefined,
+  window: number
+): { start: number; end: number } => {
+  if (length === 0) return { start: 0, end: 0 };
+  const safeEnd = Number.isFinite(end)
+    ? Math.min(length - 1, end!)
+    : length - 1;
+  const fallbackStart = Math.max(0, safeEnd - (window - 1));
+  const safeStart = Number.isFinite(start)
+    ? Math.min(Math.max(0, start!), safeEnd)
+    : fallbackStart;
+  return { start: safeStart, end: safeEnd };
+};
 
 const emptyCategoryResult: CategoryResult = {
   series: {},
@@ -182,6 +203,13 @@ const CATEGORY_CONFIG_MAP: Record<TrendCategoryId, TrendCategoryDefinition> =
     },
     {} as Record<TrendCategoryId, TrendCategoryDefinition>
   );
+
+const POWER_WEIGHTS: Record<TrendCategoryId, number> = {
+  offense: 0.35,
+  defense: 0.35,
+  powerPlay: 0.15,
+  penaltyKill: 0.15
+};
 
 function buildChartDataset(series: Record<string, SeriesPoint[]>) {
   const gpSet = new Set<number>();
@@ -244,6 +272,262 @@ function computeSmoothedSeries(
   return out;
 }
 
+function computeFiveGameDelta(points: SeriesPoint[]): number | null {
+  if (!points || points.length < 2) return null;
+  const sorted = [...points].sort((a, b) => a.gp - b.gp);
+  const last = sorted[sorted.length - 1];
+  const targetGp = last.gp - 4;
+  let prior: SeriesPoint | undefined;
+  for (let i = sorted.length - 1; i >= 0; i -= 1) {
+    if (sorted[i].gp <= targetGp) {
+      prior = sorted[i];
+      break;
+    }
+  }
+  if (!prior) {
+    prior = sorted[Math.max(0, sorted.length - 5)];
+  }
+  if (!prior) return null;
+  return Number((last.percentile - prior.percentile).toFixed(2));
+}
+
+function describeRowReason(
+  snapshots: Partial<Record<TrendCategoryId, CategorySnapshot>>,
+  momentum: number | null
+): string {
+  const entries = CATEGORY_ORDER.map((id) => ({
+    id,
+    snap: snapshots[id]
+  })).filter(
+    (entry): entry is { id: TrendCategoryId; snap: CategorySnapshot } =>
+      Boolean(entry.snap)
+  );
+
+  if (!entries.length) return "Waiting on games played.";
+
+  const top = entries.reduce((acc, entry) =>
+    !acc || entry.snap.percentile > acc.snap.percentile ? entry : acc
+  );
+  const drag = entries.reduce((acc, entry) =>
+    !acc || entry.snap.percentile < acc.snap.percentile ? entry : acc
+  );
+  const bestDelta = entries
+    .filter((entry) => entry.snap.delta !== null)
+    .sort((a, b) => (b.snap.delta ?? 0) - (a.snap.delta ?? 0))[0];
+  const worstDelta = entries
+    .filter((entry) => entry.snap.delta !== null)
+    .sort((a, b) => (a.snap.delta ?? 0) - (b.snap.delta ?? 0))[0];
+
+  const pieces: string[] = [];
+  if (top) {
+    pieces.push(
+      `${CATEGORY_CONFIG_MAP[top.id]?.label ?? top.id} leading (${top.snap.percentile.toFixed(1)}p)`
+    );
+  }
+  if (bestDelta?.snap.delta !== undefined && bestDelta.snap.delta !== null) {
+    if (bestDelta.snap.delta >= 1.2) {
+      pieces.push(
+        `${CATEGORY_CONFIG_MAP[bestDelta.id]?.label ?? bestDelta.id} heating (+${bestDelta.snap.delta} last 5GP)`
+      );
+    }
+  }
+  if (
+    worstDelta?.snap.delta !== undefined &&
+    worstDelta.snap.delta !== null &&
+    worstDelta.snap.delta <= -1
+  ) {
+    pieces.push(
+      `${CATEGORY_CONFIG_MAP[worstDelta.id]?.label ?? worstDelta.id} cooling (${worstDelta.snap.delta})`
+    );
+  } else if (drag && pieces.length < 2) {
+    pieces.push(
+      `${CATEGORY_CONFIG_MAP[drag.id]?.label ?? drag.id} lagging (${drag.snap.percentile.toFixed(1)}p)`
+    );
+  } else if (momentum !== null && pieces.length === 0) {
+    pieces.push(momentum >= 0 ? "Trending up slightly" : "Trending down");
+  }
+
+  if (!pieces.length) return "Balanced profile.";
+  return pieces.slice(0, 2).join(" · ");
+}
+
+function buildPowerBoard(
+  teamTrends: TeamTrendsResponse | null
+): PowerBoardRow[] {
+  if (!teamTrends?.categories) return [];
+
+  const teams = new Set<string>();
+  CATEGORY_ORDER.forEach((cid) => {
+    const series = teamTrends.categories[cid]?.series ?? {};
+    Object.keys(series).forEach((team) => teams.add(team));
+  });
+
+  const rows: PowerBoardRow[] = [];
+
+  teams.forEach((team) => {
+    const snapshots: Partial<Record<TrendCategoryId, CategorySnapshot>> = {};
+
+    CATEGORY_ORDER.forEach((cid) => {
+      const series = teamTrends.categories[cid]?.series?.[team] ?? [];
+      if (!series.length) return;
+      const sorted = [...series].sort((a, b) => a.gp - b.gp);
+      const latest = sorted[sorted.length - 1];
+      snapshots[cid] = {
+        percentile: latest.percentile,
+        gp: latest.gp,
+        delta: computeFiveGameDelta(sorted)
+      };
+    });
+
+    const availableWeight = CATEGORY_ORDER.reduce((sum, cid) => {
+      if (snapshots[cid]) {
+        return sum + POWER_WEIGHTS[cid];
+      }
+      return sum;
+    }, 0);
+
+    if (availableWeight === 0) return;
+
+    const weightedSum = CATEGORY_ORDER.reduce((sum, cid) => {
+      const snap = snapshots[cid];
+      if (!snap) return sum;
+      return sum + POWER_WEIGHTS[cid] * snap.percentile;
+    }, 0);
+    const overall = weightedSum / availableWeight;
+
+    const deltaWeight = CATEGORY_ORDER.reduce((sum, cid) => {
+      const snap = snapshots[cid];
+      if (!snap || snap.delta === null) return sum;
+      return sum + POWER_WEIGHTS[cid];
+    }, 0);
+
+    const momentum =
+      deltaWeight > 0
+        ? CATEGORY_ORDER.reduce((sum, cid) => {
+            const snap = snapshots[cid];
+            if (!snap || snap.delta === null) return sum;
+            return sum + POWER_WEIGHTS[cid] * snap.delta;
+          }, 0) / deltaWeight
+        : null;
+
+    const specialValues = [
+      snapshots.powerPlay?.percentile,
+      snapshots.penaltyKill?.percentile
+    ].filter((value): value is number => typeof value === "number");
+    const specialTeams =
+      specialValues.length > 0
+        ? specialValues.reduce((a, b) => a + b, 0) / specialValues.length
+        : null;
+
+    const topDriver = CATEGORY_ORDER.reduce<TrendCategoryId | undefined>(
+      (acc, cid) => {
+        const snap = snapshots[cid];
+        if (!snap) return acc;
+        if (!acc || snap.percentile > (snapshots[acc]?.percentile ?? -1)) {
+          return cid;
+        }
+        return acc;
+      },
+      undefined
+    );
+
+    const drag = CATEGORY_ORDER.reduce<TrendCategoryId | undefined>(
+      (acc, cid) => {
+        const snap = snapshots[cid];
+        if (!snap) return acc;
+        if (!acc || snap.percentile < (snapshots[acc]?.percentile ?? 101)) {
+          return cid;
+        }
+        return acc;
+      },
+      undefined
+    );
+
+    rows.push({
+      team,
+      name: teamsInfo[team as keyof typeof teamsInfo]?.shortName ?? team,
+      logo: `/teamLogos/${team}.png`,
+      overall: Number(overall.toFixed(1)),
+      specialTeams:
+        specialTeams !== null ? Number(specialTeams.toFixed(1)) : null,
+      momentum: momentum !== null ? Number(momentum.toFixed(1)) : null,
+      snapshots,
+      topDriver,
+      drag,
+      reason: describeRowReason(snapshots, momentum)
+    });
+  });
+
+  return rows.sort((a, b) => b.overall - a.overall);
+}
+
+function resolveMomentumTone(momentum: number | null | undefined): {
+  label: string;
+  toneClass: string;
+} {
+  if (momentum === null || momentum === undefined || Number.isNaN(momentum)) {
+    return { label: "Steady", toneClass: styles.momentumNeutral };
+  }
+  const rounded = Number(momentum.toFixed(1));
+  if (rounded >= 3) {
+    return {
+      label: `Hot ${rounded > 0 ? "+" : ""}${rounded}`,
+      toneClass: styles.momentumHot
+    };
+  }
+  if (rounded >= 1) {
+    return {
+      label: `Warming ${rounded > 0 ? "+" : ""}${rounded}`,
+      toneClass: styles.momentumWarm
+    };
+  }
+  if (rounded <= -3) {
+    return { label: `Cold ${rounded}`, toneClass: styles.momentumCold };
+  }
+  if (rounded <= -1) {
+    return { label: `Cooling ${rounded}`, toneClass: styles.momentumCool };
+  }
+  return {
+    label: `Steady ${rounded > 0 ? "+" : ""}${rounded}`,
+    toneClass: styles.momentumNeutral
+  };
+}
+
+function selectTopDriver(ctpi?: CtpiScore): TrendCategoryId | undefined {
+  if (!ctpi) return undefined;
+  const entries: Array<{ id: TrendCategoryId; value: number }> = [
+    { id: "offense", value: ctpi.offense },
+    { id: "defense", value: ctpi.defense },
+    { id: "powerPlay", value: ctpi.specialTeams },
+    { id: "penaltyKill", value: ctpi.specialTeams }
+  ];
+  entries.sort((a, b) => b.value - a.value);
+  return entries[0]?.id;
+}
+
+function ratingToneClass(value: number | null | undefined): string | undefined {
+  if (value === null || value === undefined || Number.isNaN(value)) {
+    return styles.tierNeutral;
+  }
+  if (value >= 1.5) return styles.tierElite;
+  if (value >= 0.5) return styles.tierGood;
+  if (value <= -1.5) return styles.tierPoor;
+  if (value <= -0.5) return styles.tierCaution;
+  return styles.tierNeutral;
+}
+
+function formatDriverLabel(
+  driver: TrendCategoryId | undefined,
+  percentile: number | undefined
+): string {
+  if (!driver) return "Balanced profile";
+  const label = CATEGORY_CONFIG_MAP[driver]?.label ?? driver;
+  if (percentile === undefined || percentile === null) {
+    return `${label} leading`;
+  }
+  return `${label} leading (${percentile.toFixed(1)}p)`;
+}
+
 function ArrowDelta({ delta }: { delta: number }) {
   if (delta === 0) {
     return <span className={`${styles.delta} ${styles.deltaNeutral}`}>—</span>;
@@ -304,11 +588,10 @@ function CategoryChartCard({
       setBrushEnd(undefined);
       return;
     }
-    const end = dataset.length - 1;
-    const start = Math.max(0, end - 4);
+    const { start, end } = clampBrush(dataset.length, brushStart, brushEnd, 5);
     setBrushStart(start);
     setBrushEnd(end);
-  }, [dataset, seriesForChart]);
+  }, [dataset, seriesForChart, brushStart, brushEnd]);
   const [hoveredTeam, setHoveredTeam] = useState<string | null>(null);
   const hoverTimeoutRef = useRef<number | null>(null);
 
@@ -336,7 +619,17 @@ function CategoryChartCard({
     hoverTimeoutRef.current = window.setTimeout(() => {
       setHoveredTeam(team);
       hoverTimeoutRef.current = null;
-    }, 1000);
+    }, 100);
+  };
+
+  const handleMouseMove = (state: any) => {
+    const teamKey =
+      state?.activePayload && state.activePayload[0]
+        ? state.activePayload[0].dataKey
+        : null;
+    if (teamKey) {
+      setHoveredTeam(String(teamKey));
+    }
   };
 
   function renderActiveDot(team: string, strokeColor: string) {
@@ -350,8 +643,6 @@ function CategoryChartCard({
           fill={strokeColor}
           stroke={props.stroke ?? strokeColor}
           strokeWidth={hoveredTeam === team ? 1 : 0.5}
-          onMouseEnter={() => scheduleHover(team)}
-          onMouseLeave={clearHover}
         />
       );
     }
@@ -369,19 +660,38 @@ function CategoryChartCard({
     label?: number;
   }) => {
     if (!active || !payload || payload.length === 0) return null;
-    const hoveredPayload =
+
+    const hoveredData =
       (hoveredTeam && payload.find((item) => item.dataKey === hoveredTeam)) ||
-      payload[0];
-    if (!hoveredPayload) return null;
-    const { dataKey, value } = hoveredPayload;
+      payload.sort((a, b) => b.value - a.value)[0];
+
+    if (!hoveredData) return null;
+
+    const { dataKey, value, stroke } = hoveredData;
     const teamInfo = teamsInfo[dataKey as keyof typeof teamsInfo];
+
     return (
       <div className={styles.chartTooltip}>
-        <p className={styles.chartTooltipLabel}>GP {label}</p>
-        <p className={styles.chartTooltipTeam}>
-          {teamInfo?.shortName ?? dataKey}
-        </p>
+        <div className={styles.chartTooltipHeader}>
+          <div className={styles.teamLogoWrapper}>
+            <Image
+              src={`/teamLogos/${dataKey}.png`}
+              alt={`${dataKey} logo`}
+              className={styles.teamLogo}
+              width={24}
+              height={24}
+              onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = DEFAULT_TEAM_LOGO;
+              }}
+            />
+          </div>
+          <span style={{ color: stroke }}>
+            {teamInfo?.shortName ?? dataKey}
+          </span>
+        </div>
         <p className={styles.chartTooltipValue}>{formatPercent(value)}</p>
+        <p className={styles.chartTooltipLabel}>Game: {label}</p>
       </div>
     );
   };
@@ -542,7 +852,11 @@ function CategoryChartCard({
             className={`${styles.chartShell} ${styles.chartTheme} ${large ? styles.chartShellLarge : ""}`}
           >
             <ResponsiveContainer width="100%" height="100%">
-              <ReLineChart data={dataset} onMouseLeave={clearHover}>
+              <ReLineChart
+                data={dataset}
+                onMouseLeave={clearHover}
+                onMouseMove={handleMouseMove}
+              >
                 <CartesianGrid
                   strokeDasharray="3 3"
                   stroke="var(--chart-grid)"
@@ -581,43 +895,36 @@ function CategoryChartCard({
                     onChange={(e: any) => {
                       // Recharts onChange provides { startIndex, endIndex }
                       if (!e) return;
-                      const s =
+                      const { start, end } = clampBrush(
+                        dataset.length,
                         typeof e.startIndex === "number"
                           ? e.startIndex
-                          : brushStart;
-                      const en =
-                        typeof e.endIndex === "number" ? e.endIndex : brushEnd;
-                      setBrushStart(s);
-                      setBrushEnd(en);
+                          : brushStart,
+                        typeof e.endIndex === "number" ? e.endIndex : brushEnd,
+                        5
+                      );
+                      setBrushStart(start);
+                      setBrushEnd(end);
                     }}
                   />
                 )}
                 {teamKeys.map((team) => {
-                  const teamInfo = teamsInfo[team as keyof typeof teamsInfo];
-                  const stroke =
-                    teamInfo?.lightColor ??
-                    (teamInfo?.primaryColor
-                      ? lightenHexColor(teamInfo.primaryColor, 0.35)
-                      : "#a0aec0");
+                  const stroke = getChartColor(team);
                   const isHovered = hoveredTeam === team;
                   const hasFocus = hoveredTeam !== null;
-                  const strokeOpacity = hasFocus ? (isHovered ? 1 : 0.2) : 1;
+                  const strokeOpacity = hasFocus ? (isHovered ? 1 : 0.2) : 0.9;
                   return (
                     <Line
                       key={team}
-                      type="stepAfter"
+                      type="monotone"
                       dataKey={team}
                       connectNulls
                       stroke={stroke}
-                      strokeWidth={isHovered ? 3.8 : 2.4}
+                      strokeWidth={isHovered ? 3 : 2}
                       strokeOpacity={strokeOpacity}
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                      dot={{
-                        r: isHovered ? 3 : 2,
-                        fill: stroke,
-                        strokeWidth: 0
-                      }}
+                      dot={false}
                       activeDot={renderActiveDot(team, stroke)}
                       isAnimationActive={false}
                       onMouseEnter={() => scheduleHover(team)}
@@ -809,11 +1116,10 @@ function SkaterCategoryChartCard({
       setBrushEnd(undefined);
       return;
     }
-    const end = dataset.length - 1;
-    const start = Math.max(0, end - 4);
+    const { start, end } = clampBrush(dataset.length, brushStart, brushEnd, 5);
     setBrushStart(start);
     setBrushEnd(end);
-  }, [dataset, seriesForChart]);
+  }, [dataset, seriesForChart, brushStart, brushEnd]);
 
   useEffect(() => {
     return () => {
@@ -839,7 +1145,7 @@ function SkaterCategoryChartCard({
     hoverTimeoutRef.current = window.setTimeout(() => {
       setHoveredPlayer(playerId);
       hoverTimeoutRef.current = null;
-    }, 800);
+    }, 100);
   };
 
   function renderActiveDot(playerId: string, strokeColor: string) {
@@ -855,8 +1161,6 @@ function SkaterCategoryChartCard({
           fill={strokeColor}
           stroke={props.stroke ?? strokeColor}
           strokeWidth={hoveredPlayer === playerId ? 1 : 0.5}
-          onMouseEnter={() => scheduleHover(playerId)}
-          onMouseLeave={clearHover}
         />
       );
     }
@@ -874,20 +1178,39 @@ function SkaterCategoryChartCard({
     label?: number;
   }) => {
     if (!active || !payload || payload.length === 0) return null;
-    const hoveredPayload =
+
+    const hoveredData =
       (hoveredPlayer &&
         payload.find((item) => item.dataKey === hoveredPlayer)) ||
-      payload[0];
-    if (!hoveredPayload) return null;
-    const { dataKey, value } = hoveredPayload;
+      payload.sort((a, b) => b.value - a.value)[0];
+
+    if (!hoveredData) return null;
+
+    const { dataKey, value, stroke } = hoveredData;
     const meta = playerMetadata[dataKey];
+
     return (
       <div className={styles.chartTooltip}>
-        <p className={styles.chartTooltipLabel}>GP {label}</p>
-        <p className={styles.chartTooltipTeam}>
-          {meta?.fullName ?? `Player ${dataKey}`}
-        </p>
+        <div className={styles.chartTooltipHeader}>
+          <div className={styles.skaterHeadshotWrapper}>
+            <Image
+              src={meta?.imageUrl ?? DEFAULT_PLAYER_IMAGE}
+              alt={meta?.fullName ?? `Player ${dataKey}`}
+              className={styles.skaterHeadshot}
+              width={28}
+              height={28}
+              onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = DEFAULT_PLAYER_IMAGE;
+              }}
+            />
+          </div>
+          <span style={{ color: stroke }}>
+            {meta?.fullName ?? `Player ${dataKey}`}
+          </span>
+        </div>
         <p className={styles.chartTooltipValue}>{formatPercent(value)}</p>
+        <p className={styles.chartTooltipLabel}>Game: {label}</p>
       </div>
     );
   };
@@ -987,38 +1310,36 @@ function SkaterCategoryChartCard({
                     endIndex={brushEnd}
                     onChange={(e: any) => {
                       if (!e) return;
-                      const s =
+                      const { start, end } = clampBrush(
+                        dataset.length,
                         typeof e.startIndex === "number"
                           ? e.startIndex
-                          : brushStart;
-                      const en =
-                        typeof e.endIndex === "number" ? e.endIndex : brushEnd;
-                      setBrushStart(s);
-                      setBrushEnd(en);
+                          : brushStart,
+                        typeof e.endIndex === "number" ? e.endIndex : brushEnd,
+                        5
+                      );
+                      setBrushStart(start);
+                      setBrushEnd(end);
                     }}
                   />
                 )}
                 {teamKeys.map((playerId) => {
                   const isHovered = hoveredPlayer === playerId;
                   const hasFocus = hoveredPlayer !== null;
-                  const strokeOpacity = hasFocus ? (isHovered ? 1 : 0.2) : 1;
-                  const stroke = getPlayerColor(playerId);
+                  const strokeOpacity = hasFocus ? (isHovered ? 1 : 0.25) : 0.9;
+                  const stroke = getChartColor(playerId);
                   return (
                     <Line
                       key={playerId}
-                      type="stepAfter"
+                      type="monotone"
                       dataKey={playerId}
                       connectNulls
                       stroke={stroke}
-                      strokeWidth={isHovered ? 3.8 : 2.4}
+                      strokeWidth={isHovered ? 3 : 2}
                       strokeOpacity={strokeOpacity}
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                      dot={{
-                        r: isHovered ? 3 : 2,
-                        fill: stroke,
-                        strokeWidth: 0
-                      }}
+                      dot={false}
                       activeDot={renderActiveDot(playerId, stroke)}
                       isAnimationActive={false}
                       onMouseEnter={() => scheduleHover(playerId)}
@@ -1059,6 +1380,9 @@ export default function TrendsIndexPage() {
   const [teamTrends, setTeamTrends] = useState<TeamTrendsResponse | null>(null);
   const [teamTrendsLoading, setTeamTrendsLoading] = useState(true);
   const [teamTrendsError, setTeamTrendsError] = useState<string | null>(null);
+  const [ctpiScores, setCtpiScores] = useState<CtpiScore[] | null>(null);
+  const [ctpiLoading, setCtpiLoading] = useState(true);
+  const [ctpiError, setCtpiError] = useState<string | null>(null);
   const [skaterPositionGroup, setSkaterPositionGroup] = useState<
     "forward" | "defense" | "all"
   >("forward");
@@ -1095,6 +1419,41 @@ export default function TrendsIndexPage() {
   const disabled = useMemo(
     () => loading || query.trim().length < 2,
     [loading, query]
+  );
+
+  const powerBoard = useMemo(() => {
+    const base = buildPowerBoard(teamTrends);
+    if (!ctpiScores || ctpiScores.length === 0) return base;
+    const ctpiMap = new Map(ctpiScores.map((c) => [c.team, c]));
+    return base
+      .map((row) => {
+        const ctpi = ctpiMap.get(row.team);
+        if (!ctpi) return row;
+        return {
+          ...row,
+          overall: Number(ctpi.ctpi_0_to_100.toFixed(1)),
+          specialTeams: Number(ctpi.specialTeams.toFixed(2)),
+          topDriver: selectTopDriver(ctpi),
+          ctpi
+        };
+      })
+      .sort((a, b) => b.overall - a.overall);
+  }, [ctpiScores, teamTrends]);
+  const hotTeams = useMemo(
+    () =>
+      powerBoard
+        .filter((row) => row.momentum !== null && row.momentum !== undefined)
+        .sort((a, b) => (b.momentum ?? 0) - (a.momentum ?? 0))
+        .slice(0, 5),
+    [powerBoard]
+  );
+  const coldTeams = useMemo(
+    () =>
+      powerBoard
+        .filter((row) => row.momentum !== null && row.momentum !== undefined)
+        .sort((a, b) => (a.momentum ?? 0) - (b.momentum ?? 0))
+        .slice(0, 5),
+    [powerBoard]
   );
 
   // Normalize name parts to Title Case to better match stored fullName values
@@ -1257,6 +1616,46 @@ export default function TrendsIndexPage() {
   useEffect(() => {
     const controller = new AbortController();
     let mounted = true;
+    async function loadCtpi() {
+      try {
+        setCtpiLoading(true);
+        const response = await fetch("/api/v1/trends/team-ctpi", {
+          signal: controller.signal
+        });
+        if (!response.ok) {
+          throw new Error(
+            `CTPI API failed with status ${response.status}: ${response.statusText}`
+          );
+        }
+        const payload = (await response.json()) as {
+          teams: CtpiScore[];
+        };
+        if (mounted) {
+          setCtpiScores(payload.teams ?? []);
+          setCtpiError(null);
+        }
+      } catch (err: any) {
+        if (err.name === "AbortError") return;
+        console.error("Failed to load CTPI", err);
+        if (mounted) {
+          setCtpiError(err?.message ?? "Unexpected error fetching CTPI.");
+        }
+      } finally {
+        if (mounted) {
+          setCtpiLoading(false);
+        }
+      }
+    }
+    loadCtpi();
+    return () => {
+      mounted = false;
+      controller.abort();
+    };
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    let mounted = true;
 
     async function loadSkaterTrends() {
       try {
@@ -1401,6 +1800,262 @@ export default function TrendsIndexPage() {
         )}
       </section>
 
+      <section className={styles.powerSection}>
+        <div className={styles.sectionHeader}>
+          <div>
+            <h2 className={styles.sectionTitle}>
+              <span className={styles.heroAccent}>League</span> Power Ladder
+            </h2>
+            <p className={styles.sectionSubtitle}>
+              Weighted blend of offense (35%), defense (35%), power play (15%),
+              and penalty kill (15%), plus a 5-game momentum check to surface
+              which teams are heating up or cooling off.
+            </p>
+          </div>
+          <div className={styles.sectionMeta}>
+            <span>
+              {teamTrends?.generatedAt
+                ? `Updated ${new Date(teamTrends.generatedAt).toLocaleString()}`
+                : "Nightly update"}
+            </span>
+            <span>Momentum = last 5GP delta</span>
+          </div>
+        </div>
+        {teamTrendsLoading || ctpiLoading ? (
+          <div className={styles.teamLoading}>Building composite ladder…</div>
+        ) : teamTrendsError || ctpiError ? (
+          <div className={styles.teamError}>
+            {teamTrendsError || ctpiError}
+          </div>
+        ) : powerBoard.length === 0 ? (
+          <div className={styles.chartEmpty}>
+            No composite trend data available yet.
+          </div>
+        ) : (
+          <div className={styles.powerGrid}>
+            <div className={styles.powerTableWrapper}>
+              <div className={styles.powerTableHead}>
+                <span>Rank</span>
+                <span>Team</span>
+                <span>Driver</span>
+                <span>CTPI</span>
+                <span>Off</span>
+                <span>Def</span>
+                <span>ST</span>
+                <span>Goalie</span>
+                <span>Luck</span>
+                <span>Heat</span>
+                <span>Final</span>
+              </div>
+              <ul className={styles.powerTable} role="list">
+                {powerBoard.map((row, index) => {
+                  const momentumTone = resolveMomentumTone(row.momentum);
+                  const driverPercentile = row.topDriver
+                    ? row.snapshots[row.topDriver]?.percentile
+                    : row.ctpi
+                      ? Math.max(
+                          row.ctpi.offense,
+                          row.ctpi.defense,
+                          row.ctpi.specialTeams
+                        )
+                      : undefined;
+                  const handleLogoError = (
+                    event: React.SyntheticEvent<HTMLImageElement, Event>
+                  ) => {
+                    event.currentTarget.onerror = null;
+                    event.currentTarget.src = DEFAULT_TEAM_LOGO;
+                  };
+                  return (
+                    <li key={row.team} className={styles.powerRow}>
+                      <span className={styles.powerRank}>#{index + 1}</span>
+                      <div className={styles.powerTeamCell}>
+                        <div
+                          className={`${styles.teamLogoWrapper} ${styles.powerTeamLogo}`}
+                        >
+                          <Image
+                            src={row.logo}
+                            alt={`${row.team} logo`}
+                            className={styles.teamLogo}
+                            width={34}
+                            height={34}
+                            loading="lazy"
+                            onError={handleLogoError}
+                          />
+                        </div>
+                        <div className={styles.powerTeamText}>
+                          <p className={styles.powerTeamName}>{row.name}</p>
+                          <p className={styles.powerTeamMeta}>
+                            GP{" "}
+                            {row.snapshots[row.topDriver ?? "offense"]?.gp ??
+                              "—"}
+                          </p>
+                        </div>
+                      </div>
+                      <div className={styles.powerDriverCell}>
+                        <span
+                          className={`${styles.driverPill} ${ratingToneClass(driverPercentile)}`}
+                        >
+                          {formatDriverLabel(row.topDriver, driverPercentile)}
+                        </span>
+                      </div>
+                      <div className={styles.powerScoreCell}>
+                        <span
+                          className={`${styles.driverTag} ${ratingToneClass(row.overall)}`}
+                        >
+                          Composite
+                        </span>
+                        <span className={styles.percentileBare}>
+                          {formatPercent(row.overall)}
+                        </span>
+                      </div>
+                      <div className={styles.powerValueCell}>
+                        <span
+                          className={`${styles.valuePill} ${ratingToneClass(row.ctpi ? row.ctpi.offense : row.snapshots.offense?.percentile)}`}
+                        >
+                          {row.ctpi
+                            ? formatSigned(row.ctpi.offense, 2)
+                            : row.snapshots.offense
+                              ? formatPercent(row.snapshots.offense.percentile)
+                              : "—"}
+                        </span>
+                      </div>
+                      <div className={styles.powerValueCell}>
+                        <span
+                          className={`${styles.valuePill} ${ratingToneClass(row.ctpi ? row.ctpi.defense : row.snapshots.defense?.percentile)}`}
+                        >
+                          {row.ctpi
+                            ? formatSigned(row.ctpi.defense, 2)
+                            : row.snapshots.defense
+                              ? formatPercent(row.snapshots.defense.percentile)
+                              : "—"}
+                        </span>
+                      </div>
+                      <div className={styles.powerValueCell}>
+                        <span
+                          className={`${styles.valuePill} ${ratingToneClass(row.ctpi ? row.ctpi.specialTeams : row.specialTeams)}`}
+                        >
+                          {row.ctpi
+                            ? formatSigned(row.ctpi.specialTeams, 2)
+                            : row.specialTeams !== null &&
+                                row.specialTeams !== undefined
+                              ? formatPercent(row.specialTeams)
+                              : "—"}
+                        </span>
+                      </div>
+                      <div className={styles.momentumCell}>
+                        <span
+                          className={`${styles.momentumPill} ${momentumTone.toneClass}`}
+                        >
+                          {momentumTone.label}
+                        </span>
+                        <span className={styles.momentumReason}>
+                          {row.reason}
+                        </span>
+                      </div>
+                      <div className={styles.powerValueCell}>
+                        <span
+                          className={`${styles.valuePill} ${ratingToneClass(row.ctpi?.goaltending)}`}
+                        >
+                          {row.ctpi ? formatSigned(row.ctpi.goaltending, 2) : "—"}
+                        </span>
+                      </div>
+                      <div className={styles.powerValueCell}>
+                        <span
+                          className={`${styles.valuePill} ${ratingToneClass(row.ctpi?.luck)}`}
+                        >
+                          {row.ctpi ? formatSigned(row.ctpi.luck, 2) : "—"}
+                        </span>
+                      </div>
+                      <div className={styles.powerScoreCell}>
+                        <span
+                          className={`${styles.driverTag} ${ratingToneClass(row.ctpi?.ctpi_raw)}`}
+                        >
+                          Final
+                        </span>
+                        <span className={styles.percentileBare}>
+                          {row.ctpi ? formatPercent(row.ctpi.ctpi_0_to_100) : "—"}
+                        </span>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+            <div className={styles.powerSidebar}>
+              <div className={styles.hotColdCard}>
+                <p className={styles.sectionSubtitle}>Hot streaks</p>
+                <ul>
+                  {hotTeams.map((row) => {
+                    const tone = resolveMomentumTone(row.momentum);
+                    return (
+                      <li key={`hot-${row.team}`} className={styles.hotColdRow}>
+                        <div className={styles.hotColdTeam}>
+                          <div className={styles.teamLogoWrapper}>
+                            <Image
+                              src={row.logo}
+                              alt={`${row.team} logo`}
+                              className={styles.teamLogo}
+                              width={28}
+                              height={28}
+                              loading="lazy"
+                            />
+                          </div>
+                          <div>
+                            <p className={styles.powerTeamName}>{row.name}</p>
+                            <p className={styles.hotColdMeta}>{row.reason}</p>
+                          </div>
+                        </div>
+                        <span
+                          className={`${styles.momentumPill} ${tone.toneClass}`}
+                        >
+                          {tone.label}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+              <div className={styles.hotColdCard}>
+                <p className={styles.sectionSubtitle}>Cold streaks</p>
+                <ul>
+                  {coldTeams.map((row) => {
+                    const tone = resolveMomentumTone(row.momentum);
+                    return (
+                      <li
+                        key={`cold-${row.team}`}
+                        className={styles.hotColdRow}
+                      >
+                        <div className={styles.hotColdTeam}>
+                          <div className={styles.teamLogoWrapper}>
+                            <Image
+                              src={row.logo}
+                              alt={`${row.team} logo`}
+                              className={styles.teamLogo}
+                              width={28}
+                              height={28}
+                              loading="lazy"
+                            />
+                          </div>
+                          <div>
+                            <p className={styles.powerTeamName}>{row.name}</p>
+                            <p className={styles.hotColdMeta}>{row.reason}</p>
+                          </div>
+                        </div>
+                        <span
+                          className={`${styles.momentumPill} ${tone.toneClass}`}
+                        >
+                          {tone.label}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
+      </section>
+
       {/* Dashboard tabs */}
       <div className={styles.topTabs} role="tablist" aria-label="Dataset">
         {(
@@ -1500,10 +2155,7 @@ export default function TrendsIndexPage() {
                 {cat.label}
               </button>
             ))}
-            <div
-              style={{ marginLeft: "auto" }}
-              className={styles.skaterControls}
-            >
+            <div className={styles.skaterControls}>
               <div
                 className={styles.windowToggle}
                 aria-label="Skater position group"
@@ -1567,166 +2219,25 @@ export default function TrendsIndexPage() {
                   emptySkaterResult;
                 const playerMetadata = skaterTrends?.playerMetadata ?? {};
                 return (
-                  <SkaterCategoryChartCard
-                    config={category}
-                    result={categoryResult}
-                    playerMetadata={playerMetadata}
-                    large
-                  />
+                  <div className={styles.trendGrid}>
+                    <SkaterRankingTable
+                      config={category}
+                      result={categoryResult}
+                      playerMetadata={playerMetadata}
+                    />
+                    <SkaterCategoryChartCard
+                      config={category}
+                      result={categoryResult}
+                      playerMetadata={playerMetadata}
+                      large
+                    />
+                  </div>
                 );
               })()
             )}
           </div>
         </>
       )}
-
-      <section className={`${styles.teamSection} ${styles.hidden}`}>
-        <div className={styles.sectionHeader}>
-          <div>
-            <h2 className={styles.sectionTitle}>Team Trends</h2>
-            <p className={styles.sectionSubtitle}>
-              Percentile trajectories by game played across four strengths.
-            </p>
-          </div>
-          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-            <p className={styles.sectionTimestamp}>
-              {teamTrends?.generatedAt
-                ? `Updated ${new Date(teamTrends.generatedAt).toLocaleString()}`
-                : ""}
-            </p>
-
-            <div
-              className={styles.windowToggle}
-              role="tablist"
-              aria-label="Rolling average window"
-            >
-              {[1, 3, 5, 10].map((n) => (
-                <button
-                  key={n}
-                  type="button"
-                  className={`${styles.windowButton} ${rollingWindow === n ? styles.windowActive : ""}`}
-                  aria-pressed={rollingWindow === n}
-                  onClick={() => setRollingWindow(n)}
-                >
-                  {n}GP
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-        {teamTrendsError && (
-          <div className={styles.teamError}>{teamTrendsError}</div>
-        )}
-        {teamTrendsLoading ? (
-          <div className={styles.teamLoading}>
-            Loading team percentile trends…
-          </div>
-        ) : (
-          <div className={styles.trendGrid}>
-            {CATEGORY_ORDER.flatMap((categoryId) => {
-              const category = CATEGORY_CONFIG_MAP[categoryId];
-              const categoryResult =
-                teamTrends?.categories?.[categoryId] ?? emptyCategoryResult;
-              return [
-                <RankingTable
-                  key={`${category.id}-ranking`}
-                  config={category}
-                  result={categoryResult}
-                />,
-                <CategoryChartCard
-                  key={`${category.id}-chart`}
-                  config={category}
-                  result={categoryResult}
-                  windowSize={rollingWindow}
-                />
-              ];
-            })}
-          </div>
-        )}
-      </section>
-
-      <section className={`${styles.teamSection} ${styles.hidden}`}>
-        <div className={styles.sectionHeader}>
-          <div>
-            <h2 className={styles.sectionTitle}>Skater Trends</h2>
-            <p className={styles.sectionSubtitle}>
-              Top skater percentiles for shot volume, ixG, and usage.
-            </p>
-          </div>
-          <div className={styles.skaterControls}>
-            <div
-              className={styles.windowToggle}
-              role="tablist"
-              aria-label="Skater position group"
-            >
-              {[
-                { value: "forward", label: "Forwards" },
-                { value: "defense", label: "Defense" },
-                { value: "all", label: "All" }
-              ].map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  className={`${styles.windowButton} ${skaterPositionGroup === option.value ? styles.windowActive : ""}`}
-                  aria-pressed={skaterPositionGroup === option.value}
-                  onClick={() =>
-                    setSkaterPositionGroup(
-                      option.value as "forward" | "defense" | "all"
-                    )
-                  }
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-            <div
-              className={styles.windowToggle}
-              role="tablist"
-              aria-label="Skater cohort size"
-            >
-              {[25, 50].map((count) => (
-                <button
-                  key={count}
-                  type="button"
-                  className={`${styles.windowButton} ${skaterLimit === count ? styles.windowActive : ""}`}
-                  aria-pressed={skaterLimit === count}
-                  onClick={() => setSkaterLimit(count)}
-                >
-                  Top {count}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-        {skaterTrendsError && (
-          <div className={styles.teamError}>{skaterTrendsError}</div>
-        )}
-        {skaterTrendsLoading ? (
-          <div className={styles.teamLoading}>Loading skater trends…</div>
-        ) : (
-          <div className={styles.trendGrid}>
-            {SKATER_TREND_CATEGORIES.flatMap((category) => {
-              const categoryResult =
-                skaterTrends?.categories?.[category.id] ?? emptySkaterResult;
-              const playerMetadata = skaterTrends?.playerMetadata ?? {};
-              return [
-                <SkaterRankingTable
-                  key={`${category.id}-skater-ranking`}
-                  config={category}
-                  result={categoryResult}
-                  playerMetadata={playerMetadata}
-                />,
-                <SkaterCategoryChartCard
-                  key={`${category.id}-skater-chart`}
-                  config={category}
-                  result={categoryResult}
-                  playerMetadata={playerMetadata}
-                />
-              ];
-            })}
-          </div>
-        )}
-      </section>
 
       <p className={styles.legacyLink}>
         Looking for classic sustainability tables?{" "}

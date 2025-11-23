@@ -29321,6 +29321,33 @@ export type Database = {
         }
         Relationships: []
       }
+      team_power_ratings_daily__new: {
+        Row: {
+          created_at: string | null
+          danger_rating: number | null
+          date: string | null
+          def_rating: number | null
+          discipline_rating: number | null
+          finishing_rating: number | null
+          ga60: number | null
+          gf60: number | null
+          goalie_rating: number | null
+          off_rating: number | null
+          pace_rating: number | null
+          pace60: number | null
+          pk_tier: number | null
+          pp_tier: number | null
+          sa60: number | null
+          sf60: number | null
+          special_rating: number | null
+          team_abbreviation: string | null
+          trend10: number | null
+          variance_flag: number | null
+          xga60: number | null
+          xgf60: number | null
+        }
+        Relationships: []
+      }
       vw_active_teams: {
         Row: {
           app_abbrev: string | null

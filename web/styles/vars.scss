@@ -306,6 +306,18 @@ $transition-easing: ease; // Definition 1
 // =============================================
 // Chart Colors (All definitions preserved)
 // =============================================
+// New, dedicated line chart palette
+$chart-color-1: #07aae2; // $secondary-color
+$chart-color-2: #4bc0c0; // $color-teal
+$chart-color-3: #ff9f40; // $color-orange
+$chart-color-4: #ff6384; // $danger-color
+$chart-color-5: #9b59b6; // $color-purple
+$chart-color-6: #ffcc33; // $warning-color
+$chart-color-7: #3b82f6; // $info-color
+$chart-color-8: #00ff99; // $success-color
+$chart-color-9: #cccccc; // $text-primary
+$chart-color-10: #d3d3d3; // $color-grey-light
+
 // --- Chart Color Palette Block ---
 $chart-color-1: $primary-color; // Definition 1 (Uses $primary-color Def 1 value)
 $chart-color-2: $secondary-color; // Definition 1 (Uses $secondary-color Def 1 value)
