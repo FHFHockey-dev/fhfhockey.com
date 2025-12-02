@@ -476,7 +476,12 @@ CREATE INDEX IF NOT EXISTS idx_tprd_new_date
   ON public.team_power_ratings_daily__new (date);
 
 -- === 3) Load the data without blocking readers (must be run outside a TX) ====
-REFRESH MATERIALIZED VIEW CONCURRENTLY public.team_power_ratings_daily__new;
+-- REFRESH MATERIALIZED VIEW CONCURRENTLY public.team_power_ratings_daily__new;
+-- Note: CONCURRENTLY requires the view to be populated first. Since we created it WITH NO DATA,
+-- we must run a standard REFRESH first. However, standard REFRESH can timeout on large datasets.
+-- If you hit timeouts, try running this script in sections or increasing the statement timeout.
+REFRESH MATERIALIZED VIEW public.team_power_ratings_daily__new;
+
 
 -- === 4) Swap into place =======================================================
 DO $$

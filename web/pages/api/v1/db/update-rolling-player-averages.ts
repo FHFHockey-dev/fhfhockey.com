@@ -1,3 +1,25 @@
+/**
+ * Update Rolling Player Averages Endpoint
+ *
+ * This endpoint calculates and updates rolling averages for player statistics.
+ * It supports various query parameters to control the scope and behavior of the update.
+ *
+ * Query Parameters:
+ * - playerId (number, optional): Specific player ID to process. If omitted, processes all players (subject to other filters).
+ * - season (number, optional): Filter games by season ID (e.g., 20232024).
+ * - startDate (string, optional): Filter games starting from this date (YYYY-MM-DD).
+ * - endDate (string, optional): Filter games up to this date (YYYY-MM-DD).
+ * - resumeFrom (number, optional): Resume processing from a specific player ID (exclusive). Useful for continuing interrupted batch jobs.
+ * - fullRefresh (boolean, optional): If true, clears existing data for the target scope and reprocesses everything. Defaults to false.
+ * - deleteChunkSize (number, optional): Batch size for deleting rows during a full refresh. Defaults to 50000.
+ *
+ * Example URLs:
+ * - Process a single player: /api/v1/db/update-rolling-player-averages?playerId=8478402
+ * - Process a specific season: /api/v1/db/update-rolling-player-averages?season=20232024
+ * - Full refresh for all players: /api/v1/db/update-rolling-player-averages?fullRefresh=true
+ * - Resume from a player ID: /api/v1/db/update-rolling-player-averages?resumeFrom=8477000
+ * - Date range: /api/v1/db/update-rolling-player-averages?startDate=2023-10-01&endDate=2023-11-01
+ */
 // /api/v1/db/update-rolling-player-averages
 
 // 8473548
@@ -24,6 +46,23 @@ function parseStringParam(
   return Array.isArray(param) ? param[0] : param;
 }
 
+function parseBooleanParam(
+  param: string | string[] | undefined
+): boolean | undefined {
+  const value = parseStringParam(param);
+  if (value === undefined) return undefined;
+  return ["1", "true", "yes", "y"].includes(value.toLowerCase());
+}
+
+function parsePositiveInt(
+  param: string | string[] | undefined
+): number | undefined {
+  const parsed = parseNumberParam(param);
+  if (parsed === undefined) return undefined;
+  if (!Number.isInteger(parsed) || parsed <= 0) return undefined;
+  return parsed;
+}
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<ResponseBody>
@@ -45,6 +84,8 @@ export default async function handler(
     const startDate = parseStringParam(req.query.startDate);
     const endDate = parseStringParam(req.query.endDate);
     const resumeFrom = parseNumberParam(req.query.resumeFrom);
+    const fullRefresh = parseBooleanParam(req.query.fullRefresh);
+    const deleteChunkSize = parsePositiveInt(req.query.deleteChunkSize);
 
     const { main } = await import(
       "lib/supabase/Upserts/fetchRollingPlayerAverages"
@@ -52,7 +93,7 @@ export default async function handler(
 
     console.info(
       "[update-rolling-player-averages] Triggered",
-      JSON.stringify({ playerId, season, startDate, endDate })
+      JSON.stringify({ playerId, season, startDate, endDate, fullRefresh })
     );
     const timerLabel = `[update-rolling-player-averages] total ${Date.now()}`;
     console.time(timerLabel);
@@ -63,7 +104,9 @@ export default async function handler(
         season,
         startDate,
         endDate,
-        resumePlayerId: resumeFrom
+        resumePlayerId: resumeFrom,
+        forceFullRefresh: fullRefresh,
+        fullRefreshDeleteChunkSize: deleteChunkSize
       });
     } finally {
       console.timeEnd(timerLabel);

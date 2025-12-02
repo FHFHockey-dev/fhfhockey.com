@@ -28,7 +28,9 @@ const GoalieTrends = () => {
     const url = `https://api.nhle.com/stats/rest/en/season?sort=[{"property":"id","direction":"DESC"}]`;
     try {
       const response = await Fetch(url).then((res) => res.json());
-      setCurrentSeasonInfo(response.data[0]);
+      if (response?.data && response.data.length > 0) {
+        setCurrentSeasonInfo(response.data[0]);
+      }
     } catch (error) {
       console.error("Failed to fetch current NHL season info:", error);
     }

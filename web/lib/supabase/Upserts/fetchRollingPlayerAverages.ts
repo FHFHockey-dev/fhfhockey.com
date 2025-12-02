@@ -8,8 +8,8 @@ type StrengthState = "all" | "ev" | "pp" | "pk";
 type RollingWindow = 3 | 5 | 10 | 20;
 
 const ROLLING_WINDOWS: RollingWindow[] = [3, 5, 10, 20];
-const MAX_RETRIES = 3;
-const RETRY_BASE_DELAY_MS = 500;
+const MAX_RETRIES = 5;
+const RETRY_BASE_DELAY_MS = 1000;
 
 function normalizeNumericFields<T extends Record<string, any>>(row: T): T {
   const normalized: Record<string, any> = {};
@@ -90,6 +90,8 @@ interface FetchOptions {
   startDate?: string;
   endDate?: string;
   resumePlayerId?: number;
+  forceFullRefresh?: boolean;
+  fullRefreshDeleteChunkSize?: number;
 }
 
 interface WgoSkaterRow {
@@ -467,12 +469,33 @@ async function executeWithRetry<T>(
 }
 
 function getToiSeconds(game: PlayerGameData): number | null {
-  if (game.counts?.toi != null) return game.counts.toi;
-  const countsOiToi = game.countsOi?.toi;
-  if (countsOiToi != null) return countsOiToi;
-  if (game.fallbackToiSeconds != null) return game.fallbackToiSeconds;
+  const sanitizeSeconds = (value: number | null | undefined): number | null => {
+    if (value === null || value === undefined) return null;
+    const num = Number(value);
+    if (!Number.isFinite(num) || num <= 0) return null;
+    // Ignore absurd TOI values that indicate bad source data (e.g., 60x inflation).
+    // Cap well below marathon values; 4000s (~66 minutes) is a generous upper bound for a skater.
+    if (num >= 4000) return null;
+    return num;
+  };
+
+  const countsToi = sanitizeSeconds(game.counts?.toi);
+  if (countsToi !== null) return countsToi;
+  const countsOiToi = sanitizeSeconds(game.countsOi?.toi);
+  if (countsOiToi !== null) return countsOiToi;
+  const fallbackToi = sanitizeSeconds(game.fallbackToiSeconds);
+  if (fallbackToi !== null) return fallbackToi;
   const wgoToiMinutes = game.wgo?.toi_per_game;
-  if (wgoToiMinutes != null) return Math.round(wgoToiMinutes * 60);
+  if (wgoToiMinutes != null) {
+    const toiValue = Number(wgoToiMinutes);
+    if (!Number.isFinite(toiValue)) return null;
+    // Some WGO ingests already store seconds; anything well above realistic
+    // per-game minutes (e.g., >200) is treated as seconds to avoid 60x blowups.
+    const alreadySeconds = toiValue > 200;
+    const seconds = Math.round(alreadySeconds ? toiValue : toiValue * 60);
+    if (seconds <= 0 || seconds >= 4000) return null;
+    return seconds;
+  }
   return null;
 }
 
@@ -1049,24 +1072,11 @@ async function processPlayer(
     const strengthLabel = `[fetchRollingPlayerAverages] player:${playerId} strength:${config.state}`;
     console.time(strengthLabel);
     try {
-      const countsRows = await fetchCounts(
-        config.countsTable,
-        playerId,
-        startDate,
-        endDate
-      );
-      const ratesRows = await fetchRates(
-        config.ratesTable,
-        playerId,
-        startDate,
-        endDate
-      );
-      const countsOiRows = await fetchCountsOi(
-        config.countsOiTable,
-        playerId,
-        startDate,
-        endDate
-      );
+      const [countsRows, ratesRows, countsOiRows] = await Promise.all([
+        fetchCounts(config.countsTable, playerId, startDate, endDate),
+        fetchRates(config.ratesTable, playerId, startDate, endDate),
+        fetchCountsOi(config.countsOiTable, playerId, startDate, endDate)
+      ]);
 
       const countsByDate = groupByDate(countsRows);
       const ratesByDate = groupByDate(ratesRows);
@@ -1116,9 +1126,10 @@ async function processPlayer(
         const playedThisGame =
           config.state === "all"
             ? 1
-            : game.counts && (game.counts.toi ?? 0) > 0
-              ? 1
-              : 0;
+            : (() => {
+                const toiSeconds = getToiSeconds(game);
+                return toiSeconds && toiSeconds > 0 ? 1 : 0;
+              })();
 
         if (playedThisGame > 0) {
           gamesPlayed += 1;
@@ -1239,13 +1250,54 @@ export async function main(options: FetchOptions = {}): Promise<void> {
   const playerIds = await fetchPlayerIds(options);
 
   let resumePlayerId = options.resumePlayerId;
-  if (
-    resumePlayerId === undefined &&
+  const autoResumeEnabled =
+    !options.forceFullRefresh &&
     options.playerId === undefined &&
     options.season === undefined &&
     options.startDate === undefined &&
-    options.endDate === undefined
-  ) {
+    options.endDate === undefined;
+
+  if (options.forceFullRefresh) {
+    console.info(
+      "[fetchRollingPlayerAverages] Full refresh requested: clearing rolling_player_game_metrics and skipping auto-resume."
+    );
+    try {
+      const chunkSize =
+        options.fullRefreshDeleteChunkSize &&
+        options.fullRefreshDeleteChunkSize > 0
+          ? options.fullRefreshDeleteChunkSize
+          : 50000;
+
+      while (true) {
+        const { data: firstRow, error: firstErr } = await supabase
+          .from("rolling_player_game_metrics")
+          .select("player_id")
+          .order("player_id", { ascending: true })
+          .limit(1)
+          .maybeSingle();
+        if (firstErr) throw firstErr;
+        if (!firstRow?.player_id) break;
+        const lower = Number(firstRow.player_id);
+        const upper = lower + chunkSize - 1;
+        const { error, count } = await supabase
+          .from("rolling_player_game_metrics")
+          .delete({ count: "exact" })
+          .gte("player_id", lower)
+          .lte("player_id", upper);
+        if (error) throw error;
+        console.info(
+          `[fetchRollingPlayerAverages] Cleared chunk player_id ${lower}-${upper}, rows:${count}`
+        );
+        // small pause to reduce lock contention
+        await delay(20);
+      }
+    } catch (err: any) {
+      console.warn(
+        "[fetchRollingPlayerAverages] Failed to clear rolling_player_game_metrics; proceeding with full recompute + upsert overwrite instead.",
+        err?.message ?? err
+      );
+    }
+  } else if (resumePlayerId === undefined && autoResumeEnabled) {
     const { data: resumeRow, error: resumeError } = await supabase
       .from("rolling_player_game_metrics")
       .select("player_id")
@@ -1296,16 +1348,23 @@ export async function main(options: FetchOptions = {}): Promise<void> {
 
       for (let i = 0; i < rows.length; i += batchSize) {
         const batch = rows.slice(i, i + batchSize);
-        const { error } = await supabase
-          .from("rolling_player_game_metrics")
-          .upsert(batch, {
-            onConflict: "player_id,game_date,strength_state"
-          });
-        if (error) {
-          throw error;
-        }
+        await executeWithRetry(
+          `upsert player:${playerId} batch:${i / batchSize}`,
+          async () => {
+            const { error } = await supabase
+              .from("rolling_player_game_metrics")
+              .upsert(batch, {
+                onConflict: "player_id,game_date,strength_state"
+              });
+            if (error) {
+              throw error;
+            }
+          }
+        );
         rowsUpserted += batch.length;
       }
+      // Add a small delay to prevent overwhelming the connection
+      await delay(50);
     } finally {
       console.timeEnd(playerLabel);
     }

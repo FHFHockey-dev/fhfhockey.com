@@ -1,81 +1,74 @@
+@use "sass:color";
+@use "styles/vars" as v;
+
 .container {
   min-height: 100vh;
-  background: linear-gradient(180deg, #0f172a 0%, #020617 100%);
-  color: #e2e8f0;
+  background-color: v.$background-dark;
+  color: v.$text-primary;
+  padding: clamp(v.$space-lg, 4vw, v.$space-xxl);
 }
 
 .inner {
   margin: 0 auto;
-  max-width: 1100px;
-  padding: 3rem 1.5rem;
+  max-width: 1200px;
   display: flex;
   flex-direction: column;
-  gap: 2.75rem;
+  gap: v.$space-xl;
 }
 
 .backButton {
+  @include v.button-ghost(false);
   align-self: flex-start;
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.6rem 1.25rem;
-  border-radius: 999px;
-  border: 1px solid rgba(148, 163, 184, 0.35);
-  background-color: rgba(15, 23, 42, 0.7);
-  color: inherit;
-  font-size: 0.9rem;
-  font-weight: 500;
-  transition: border-color 0.2s ease, background-color 0.2s ease;
-
-  &:hover {
-    background-color: rgba(30, 41, 59, 0.8);
-    border-color: rgba(148, 163, 184, 0.6);
-  }
+  gap: v.$space-xs;
+  padding: v.$space-xs v.$space-md;
+  font-size: v.$font-size-sm;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-family: v.$font-family-accent;
 }
 
 .headerCard {
+  @include v.glass-panel(v.$space-lg, v.$border-radius-lg);
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  border-radius: 32px;
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  background: rgba(15, 23, 42, 0.7);
-  padding: 2rem;
-  box-shadow: 0 28px 80px rgba(2, 6, 23, 0.55);
+  gap: v.$space-md;
 
   @media (min-width: 768px) {
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
-    padding: 2.5rem;
   }
 }
 
 .title {
-  font-size: clamp(2.2rem, 4vw, 2.8rem);
-  font-weight: 600;
-  color: #ffffff;
+  font-family: v.$font-family-accent;
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 700;
+  color: v.$color-white;
   margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  text-shadow: 0 0 20px rgba(v.$primary-color, 0.3);
 }
 
 .subtitle {
-  margin: 0.5rem 0 0;
-  max-width: 36rem;
-  color: #cbd5f5;
-  font-size: 0.95rem;
+  margin: v.$space-sm 0 0;
+  max-width: 40rem;
+  color: v.$text-secondary;
+  font-size: v.$font-size-base;
   line-height: 1.6;
+  font-family: v.$font-family-primary;
 }
 
 .datasetBadge {
   display: none;
-  border-radius: 20px;
-  border: 1px solid rgba(148, 163, 184, 0.25);
-  background: rgba(15, 23, 42, 0.65);
-  padding: 0.9rem 1.25rem;
+  border-radius: v.$border-radius-md;
+  border: 1px solid v.$border-primary;
+  background: rgba(v.$background-dark, 0.5);
+  padding: v.$space-sm v.$space-md;
   text-align: right;
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: #94a3b8;
 
   @media (min-width: 768px) {
     display: block;
@@ -84,74 +77,77 @@
 
 .datasetLabel {
   margin: 0;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  font-size: 0.7rem;
-  color: #818cf8;
+  font-size: v.$font-size-xs;
+  color: v.$text-secondary;
+  font-family: v.$font-family-accent;
 }
 
 .datasetValue {
-  margin: 0.4rem 0 0;
-  color: #34d399;
-  font-size: 0.85rem;
+  margin: v.$space-xxs 0 0;
+  color: v.$success-color;
+  font-size: v.$font-size-sm;
+  font-family: v.$font-family-numbers;
+  font-weight: 700;
 }
 
 .toggleGroup {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
-  border-radius: 32px;
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  background: rgba(15, 23, 42, 0.65);
-  padding: 1.25rem;
-  box-shadow: 0 18px 40px rgba(2, 6, 23, 0.45);
+  gap: v.$space-sm;
+  @include v.component-wrapper;
+  padding: v.$space-md;
+  background-color: v.$background-medium;
 }
 
 .metricChip {
+  @include v.reset-button;
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.55rem 1.3rem;
-  border-radius: 999px;
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  background: rgba(15, 23, 42, 0.55);
-  color: #cbd5f5;
-  font-size: 0.85rem;
-  font-weight: 500;
-  transition: border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease;
-  cursor: pointer;
+  gap: v.$space-xs;
+  padding: v.$space-xs v.$space-md;
+  border-radius: v.$border-radius-sm;
+  border: 1px solid v.$border-primary;
+  background: rgba(v.$background-dark, 0.5);
+  color: v.$text-secondary;
+  font-size: v.$font-size-sm;
+  font-family: v.$font-family-primary;
+  transition: all 0.2s ease;
 
   &:hover {
-    border-color: rgba(148, 163, 184, 0.5);
-    color: #ffffff;
+    border-color: v.$primary-color;
+    color: v.$text-primary;
+    box-shadow: 0 0 10px rgba(v.$primary-color, 0.1);
+    transform: translateY(-1px);
   }
 }
 
 .metricChipActive {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(148, 163, 184, 0.6);
-  color: #ffffff;
-  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.65);
+  background: rgba(v.$primary-color, 0.1);
+  border-color: v.$primary-color;
+  color: v.$color-white;
+  box-shadow: 0 0 15px rgba(v.$primary-color, 0.15);
 }
 
 .metricChipDot {
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
   display: inline-block;
+  box-shadow: 0 0 8px currentColor;
 }
 
 .chartCard {
-  border-radius: 32px;
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  background: rgba(15, 23, 42, 0.78);
-  padding: 1.5rem;
-  box-shadow: 0 28px 80px rgba(2, 6, 23, 0.55);
+  @include v.component-wrapper;
+  padding: v.$space-lg;
+  background-color: v.$background-dark;
+  border: 1px solid v.$border-primary;
 }
 
 .chartInner {
   width: 100%;
-  height: 460px;
+  height: 500px;
 }
 
 .chartPlaceholder {
@@ -159,14 +155,26 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.95rem;
-  color: #94a3b8;
+  font-size: v.$font-size-base;
+  color: v.$text-secondary;
+  font-family: v.$font-family-primary;
 }
 
 .chartPlaceholder.error {
-  color: #f87171;
+  color: v.$danger-color;
 }
 
 .legendLabel {
-  color: #e2e8f0;
+  color: v.$text-primary;
+  font-family: v.$font-family-primary;
+  font-size: v.$font-size-sm;
+  margin-left: v.$space-xs;
+}
+
+// Tooltip styles (applied via inline styles in Recharts, but we can try to override or use a custom component class)
+.tooltipContainer {
+  @include v.glass-panel(v.$space-sm, v.$border-radius-md);
+  border: 1px solid v.$border-primary !important;
+  background-color: rgba(v.$background-dark, 0.95) !important;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
 }

@@ -9,6 +9,11 @@
   padding: clamp(v.$space-lg, 4vw, v.$space-xxl);
   background-color: v.$background-dark;
   color: v.$text-primary;
+}
+
+.pageContent {
+  margin: 0 auto;
+  width: 90%;
   display: flex;
   flex-direction: column;
   gap: v.$space-xl;
@@ -132,7 +137,11 @@
 
 .searchButton {
   @include v.button-style;
-  background: linear-gradient(135deg, v.$primary-color 0%, v.$secondary-color 100%);
+  background: linear-gradient(
+    135deg,
+    v.$primary-color 0%,
+    v.$secondary-color 100%
+  );
   color: v.$color-white;
   border: none;
   font-family: v.$font-family-accent, sans-serif;
@@ -219,9 +228,20 @@
   margin: 0;
 }
 
-.sectionSubtitle {
+.sectionDescription {
   color: v.$text-secondary;
-  font-size: v.$font-size-base;
+  font-size: v.$font-size-lg;
+  font-variant-caps: all-petite-caps;
+  max-width: 65ch;
+  margin: v.$space-xs 0 0;
+}
+
+.sectionSubtitle {
+  color: v.$primary-color;
+  font-size: v.$font-size-md;
+  font-family: v.$font-family-accent;
+  margin: 0;
+  text-transform: uppercase;
   max-width: 65ch;
   margin: v.$space-xs 0 0;
 }
@@ -240,87 +260,97 @@
 .powerGrid {
   display: grid;
   gap: v.$space-lg;
-  grid-template-columns: minmax(0, 1.5fr) minmax(0, 0.8fr);
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.75fr);
   align-items: start;
 }
 
 .powerTableWrapper {
-  @include v.glass-panel(v.$space-sm, v.$border-radius-lg);
+  @include v.glass-panel(0, v.$border-radius-lg);
+  overflow: hidden;
+  border: 1px solid v.$border-primary;
 }
 
 .powerTableHead {
   display: grid;
-  grid-template-columns:
-    40px /* rank */
-    1.4fr /* team */
-    1fr /* driver */
-    0.9fr /* ctpi */
-    0.8fr /* off */
-    0.8fr /* def */
-    0.8fr /* st */
-    0.9fr /* goalie */
-    0.8fr /* luck */
-    0.9fr /* heat */
-    0.9fr; /* final */
-  gap: v.$space-md;
-  padding: v.$space-sm v.$space-md;
-  color: v.$text-secondary;
-  font-size: v.$font-size-xs;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-family: v.$font-family-accent, sans-serif;
+  grid-template-columns: 70px 2.4fr repeat(8, 1.2fr);
+  gap: v.$space-sm;
+  padding: v.$space-md v.$space-lg;
+  background-color: rgba(v.$background-dark, 0.8);
   border-bottom: 1px solid v.$border-primary;
+  align-items: center;
+
+  span,
+  .sortButton {
+    font-family: v.$font-family-accent;
+    font-size: v.$font-size-xs;
+    color: v.$text-secondary;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-align: center;
+
+    &:nth-child(2) {
+      // Team column
+      text-align: left;
+    }
+  }
+}
+
+.sortButton {
+  @include v.reset-button;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+
+  &:hover {
+    color: v.$primary-color;
+    text-shadow: 0 0 8px rgba(v.$primary-color, 0.5);
+  }
 }
 
 .powerTable {
   list-style: none;
   margin: 0;
   padding: 0;
+  width: 100%;
 }
 
 .powerRow {
   display: grid;
-  grid-template-columns:
-    40px
-    1.4fr
-    1fr
-    0.9fr
-    0.8fr
-    0.8fr
-    0.8fr
-    0.9fr
-    0.8fr
-    0.9fr
-    0.9fr;
-  gap: v.$space-md;
-  align-items: center;
+  grid-template-columns: 70px 2.4fr repeat(8, 1.2fr);
+  gap: v.$space-sm;
   padding: v.$space-sm v.$space-md;
-  border-radius: v.$border-radius-md;
-  transition: all 0.15s ease;
-  border-bottom: 1px solid v.$border-primary;
+  align-items: center;
+  border-bottom: 1px solid rgba(v.$border-primary, 0.5);
+  transition: background-color 0.2s ease;
 
   &:last-child {
     border-bottom: none;
   }
 
   &:hover {
-    background-color: rgba(v.$primary-color, 0.06);
-    transform: scale(1.01);
+    background-color: rgba(v.$primary-color, 0.05);
   }
 }
 
 .powerRank {
-  font-family: v.$font-family-accent, sans-serif;
-  font-size: v.$font-size-md;
-  color: v.$text-secondary;
+  font-family: v.$font-family-numbers;
+  font-size: v.$font-size-lg;
   font-weight: 700;
+  color: v.$text-secondary;
   text-align: center;
 }
 
 .powerTeamCell {
   display: flex;
   align-items: center;
-  gap: v.$space-sm;
+  gap: v.$space-md;
+}
+
+.powerTeamLogo {
+  filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.5));
 }
 
 .powerTeamText {
@@ -329,14 +359,16 @@
 }
 
 .powerTeamName {
-  margin: 0;
+  font-family: v.$font-family-primary;
   font-weight: 700;
+  color: v.$text-primary;
+  font-size: v.$font-size-base;
+  margin: v.$space-xs;
 }
 
 .powerTeamMeta {
-  margin: 0;
-  color: v.$text-secondary;
   font-size: v.$font-size-xs;
+  color: v.$text-secondary;
 }
 
 .teamLogoWrapper {
@@ -351,74 +383,71 @@
   object-fit: contain;
 }
 
-.driverPill {
-  display: inline-flex;
-  align-items: center;
-  padding: v.$space-xxs v.$space-xs;
-  border-radius: v.$border-radius-sm;
-  font-size: v.$font-size-xs;
-  font-weight: 700;
-  border: 1px solid;
-}
-
 .powerScoreCell {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+  justify-content: center;
 }
 
-.percentileBare {
-  font-family: v.$font-family-numbers, monospace;
-  font-size: v.$font-size-base;
+.driverTag {
+  font-family: v.$font-family-numbers;
   font-weight: 700;
+  font-size: v.$font-size-lg;
+  padding: v.$space-xxs v.$space-sm;
+  border-radius: v.$border-radius-sm;
+  min-width: 60px;
+  text-align: center;
+
+  // Default/Neutral
+  background: rgba(v.$text-secondary, 0.1);
+  color: v.$text-primary;
+  border: 1px solid rgba(v.$text-secondary, 0.2);
 }
 
 .powerValueCell {
   display: flex;
-  align-items: center;
+  justify-content: center;
 }
 
 .valuePill {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: v.$space-xxs v.$space-xs;
-  min-width: 60px;
-  border-radius: v.$border-radius-sm;
-  font-weight: 700;
-  font-family: v.$font-family-numbers, monospace;
+  font-family: v.$font-family-numbers;
   font-size: v.$font-size-sm;
-  border: 1px solid;
+  color: v.$text-secondary;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.2);
+  min-width: 50px;
+  text-align: center;
 }
 
 .tierElite {
-  background-color: rgba(v.$success-color, 0.1);
-  color: v.$success-color;
-  border-color: rgba(v.$success-color, 0.3);
+  background: rgba(v.$primary-color, 0.15);
+  color: v.$primary-color;
+  border: 1px solid rgba(v.$primary-color, 0.4);
+  box-shadow: 0 0 10px rgba(v.$primary-color, 0.1);
 }
 
 .tierGood {
-  background-color: rgba(v.$primary-color, 0.1);
-  color: v.$primary-color;
-  border-color: rgba(v.$primary-color, 0.3);
+  background-color: rgba(v.$success-color, 0.1);
+  color: v.$success-color;
+  border: 1px solid rgba(v.$success-color, 0.3);
 }
 
 .tierCaution {
   background-color: rgba(v.$warning-color, 0.1);
   color: v.$warning-color;
-  border-color: rgba(v.$warning-color, 0.3);
+  border: 1px solid rgba(v.$warning-color, 0.3);
 }
 
 .tierPoor {
   background-color: rgba(v.$danger-color, 0.1);
   color: v.$danger-color;
-  border-color: rgba(v.$danger-color, 0.3);
+  border: 1px solid rgba(v.$danger-color, 0.3);
 }
 
 .tierNeutral {
-  background-color: v.$background-dark;
+  background-color: rgba(v.$color-white, 0.1);
   color: v.$text-secondary;
-  border-color: v.$border-primary;
+  border: 1px solid v.$color-white;
 }
 
 .momentumCell {
@@ -466,13 +495,21 @@
 
 .hotColdCard {
   @include v.glass-panel(v.$space-md, v.$border-radius-lg);
+
+  ul {
+    display: block;
+    list-style-type: disc;
+    margin-block-start: 0;
+    margin-block-end: 0;
+    padding-inline-start: 0;
+  }
 }
 
 .hotColdRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: v.$space-md;
+  gap: v.$space-lg;
   padding: v.$space-sm 0;
   border-bottom: 1px solid v.$border-primary;
 
@@ -484,13 +521,71 @@
 .hotColdTeam {
   display: flex;
   align-items: center;
-  gap: v.$space-sm;
+  gap: v.$space-md;
 }
 
 .hotColdMeta {
   color: v.$text-secondary;
   font-size: v.$font-size-xs;
-  max-width: 280px;
+  max-width: 240px;
+  margin: v.$space-xs;
+}
+
+.sparkCell {
+  margin-left: auto;
+  min-width: 90px;
+  @include v.glass-panel;
+  padding: 2px 4px;
+  border-radius: 6px;
+  border: 1px solid v.$border-secondary;
+  background: rgba(255, 255, 255, 0.03);
+  box-shadow: 0 0 6px rgba(v.$primary-color, 0.2);
+}
+
+.sparkHot {
+  border-color: v.$success-color;
+  box-shadow: 0 0 8px rgba(v.$success-color, 0.35);
+  background-color: rgba(v.$success-color, 0.08);
+}
+
+.sparkCold {
+  border-color: v.$danger-color;
+  box-shadow: 0 0 8px rgba(v.$danger-color, 0.35);
+  background-color: rgba(v.$danger-color, 0.1);
+}
+
+.sparkSvg {
+  width: 100%;
+  height: 40px;
+}
+
+.sparkBaseline {
+  stroke: rgba(v.$text-secondary, 0.35);
+  stroke-width: 1;
+}
+
+.sparkArea {
+  fill: rgba(v.$primary-color, 0.08);
+}
+
+.sparkPath {
+  stroke-width: 2;
+  fill: none;
+}
+
+.rise {
+  stroke: v.$success-color;
+  fill: rgba(v.$success-color, 0.16);
+}
+
+.fall {
+  stroke: v.$danger-color;
+  fill: rgba(v.$danger-color, 0.18);
+}
+
+.sparkEmpty {
+  color: v.$text-secondary;
+  font-size: 0.85rem;
 }
 
 // =============================================
@@ -655,7 +750,8 @@
     pointer-events: auto;
   }
 
-  strong, b {
+  strong,
+  b {
     color: v.$text-primary;
     font-weight: 600;
   }
@@ -891,6 +987,62 @@
 }
 
 // =============================================
+// Luck Badges
+// =============================================
+.luckWrapper {
+  display: grid;
+  place-items: center;
+  position: relative;
+}
+
+.luckWrapper > * {
+  grid-area: 1 / 1;
+}
+
+.luckWrapper .valuePill {
+  transition: opacity 0.5s ease;
+}
+
+.luckBadge {
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.05em;
+  min-width: 50px;
+  width: 100%;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  z-index: 2;
+}
+
+.hasBadge:hover .luckBadge {
+  opacity: 1;
+}
+
+.hasBadge:hover .valuePill {
+  opacity: 0;
+}
+
+.luckLucky {
+  background-color: rgba(v.$success-color, 0.2);
+  color: v.$success-color;
+  border: 1px solid rgba(v.$success-color, 0.4);
+}
+
+.luckUnlucky {
+  background-color: rgba(v.$danger-color, 0.2);
+  color: v.$danger-color;
+  border: 1px solid rgba(v.$danger-color, 0.4);
+}
+
+// =============================================
 // Responsive
 // =============================================
 @media (max-width: v.$breakpoint-desktop) {
@@ -914,11 +1066,12 @@
   .searchForm {
     max-width: none;
   }
-  .powerRow, .powerTableHead {
+  .powerRow,
+  .powerTableHead {
     grid-template-columns: 32px 1fr 1fr;
     .powerDriverCell,
     .powerScoreCell,
-    .powerValueCell:nth-child(n+5),
+    .powerValueCell:nth-child(n + 5),
     .momentumCell {
       display: none;
     }
