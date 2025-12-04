@@ -32,7 +32,7 @@ type RollingMetrics = {
 type TeamRatingRow = {
   team_abbreviation: string;
   date: string;
-  xga_per_60: number | null;
+  xga60: number | null;
 };
 
 const clamp = (val: number, min: number, max: number) =>
@@ -45,7 +45,7 @@ function findAbbrev(teamId: number): string | null {
 
 function computeMatchupMultiplier(rating: TeamRatingRow | undefined) {
   if (!rating) return { shotMult: 1, grade: 50 };
-  const xga = rating.xga_per_60 ?? 2.7; // league-ish xGA/60
+  const xga = rating.xga60 ?? 2.7; // league-ish xGA/60
   const shotMult = clamp((xga / 2.7) || 1, 0.75, 1.25); // use xGA as a proxy if CA is unavailable
   // Higher xGA -> friendlier matchup; invert and scale to 0-100
   const grade = clamp(100 - (xga - 2.5) * 22.5, 5, 95);
@@ -120,7 +120,29 @@ export default async function handler(
       .json({ error: "Date is required (YYYY-MM-DD) via query or body." });
   }
 
-  try {
+  const initialDate =
+    (req.method === "GET"
+      ? (req.query.date as string | undefined)
+      : req.body?.date) ||
+    new Date().toISOString().slice(0, 10);
+
+  if (!initialDate || typeof initialDate !== "string") {
+    res.setHeader("Allow", ["GET", "POST"]);
+    return res
+      .status(400)
+      .json({ error: "Date is required (YYYY-MM-DD) via query or body." });
+  }
+
+  const prevDate = (dateStr: string) => {
+    const d = new Date(dateStr);
+    d.setDate(d.getDate() - 1);
+    return d.toISOString().slice(0, 10);
+  };
+
+  const processDate = async (
+    date: string,
+    allowFallback: boolean
+  ): Promise<{ status: number; body: Record<string, any> }> => {
     // 1) Fetch games for the target date
     const { data: games, error: gamesError } = await supabase
       .from("games")
@@ -128,9 +150,13 @@ export default async function handler(
       .eq("date", date);
     if (gamesError) throw gamesError;
     if (!games || games.length === 0) {
-      return res
-        .status(200)
-        .json({ message: "No games found for date", date, projections: 0 });
+      if (allowFallback) {
+        return processDate(prevDate(date), false);
+      }
+      return {
+        status: 200,
+        body: { message: "No games found for date", date, projections: 0 }
+      };
     }
 
     // 2) Fetch line combinations to derive expected skaters
@@ -165,7 +191,7 @@ export default async function handler(
     if (opponentAbbrevs.length > 0) {
       const { data: ratingRows, error: ratingError } = await supabase
         .from("team_power_ratings_daily")
-        .select("team_abbreviation, date, xga_per_60")
+        .select("team_abbreviation, date, xga60")
         .in("team_abbreviation", opponentAbbrevs)
         .lte("date", date)
         .order("team_abbreviation", { ascending: true })
@@ -185,14 +211,20 @@ export default async function handler(
       .select("game_id, team_id, projected_gsaa_per_60, start_probability")
       .in("game_id", gameIds);
     if (goalieError) throw goalieError;
-    const goalieByGameTeam = new Map<string, number | null>();
+    const goalieByGameTeam = new Map<
+      string,
+      { prob: number; gsaa: number | null }
+    >();
     (goalieRows ?? []).forEach((g) => {
       const key = `${g.game_id}|${g.team_id}`;
       const existing = goalieByGameTeam.get(key);
       const prob = Number(g.start_probability ?? 0);
       // keep the highest start_probability row
-      if (existing == null || prob > existing) {
-        goalieByGameTeam.set(key, g.projected_gsaa_per_60 ?? null);
+      if (!existing || prob > existing.prob) {
+        goalieByGameTeam.set(key, {
+          prob,
+          gsaa: g.projected_gsaa_per_60 ?? null
+        });
       }
     });
 
@@ -214,7 +246,7 @@ export default async function handler(
           : undefined;
         const matchup = computeMatchupMultiplier(rating);
         const goalieSuppression = computeGoalieSuppression(
-          goalieByGameTeam.get(`${game.id}|${opponentId}`)
+          goalieByGameTeam.get(`${game.id}|${opponentId}`)?.gsaa ?? null
         );
 
         for (const playerId of playerSet) {
@@ -249,12 +281,18 @@ export default async function handler(
     }
 
     if (upserts.length === 0) {
-      return res.status(200).json({
-        message:
-          "No players found in lineCombinations for the date; nothing to upsert.",
-        date,
-        projections: 0
-      });
+      if (allowFallback) {
+        return processDate(prevDate(date), false);
+      }
+      return {
+        status: 200,
+        body: {
+          message:
+            "No players found in lineCombinations for the date; nothing to upsert.",
+          date,
+          projections: 0
+        }
+      };
     }
 
     // 6) Upsert into player_projections
@@ -263,11 +301,19 @@ export default async function handler(
       .upsert(upserts, { onConflict: "player_id, game_id" });
     if (upsertError) throw upsertError;
 
-    return res.status(200).json({
-      message: "Start Chart projections updated",
-      date,
-      projections: upserts.length
-    });
+    return {
+      status: 200,
+      body: {
+        message: "Start Chart projections updated",
+        date,
+        projections: upserts.length
+      }
+    };
+  };
+
+  try {
+    const result = await processDate(initialDate, true);
+    return res.status(result.status).json(result.body);
   } catch (err: any) {
     console.error("update-start-chart-projections error", err);
     return res
