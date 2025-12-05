@@ -59,18 +59,45 @@
   text-overflow: ellipsis;
 }
 
+.deltaGroup {
+  display: grid;
+  gap: 4px;
+  min-width: 110px;
+}
+
+.deltaBar {
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    rgba(v.$primary-color, 0.12),
+    rgba(v.$primary-color, 0.4)
+  );
+  box-shadow: 0 6px 18px rgba(v.$primary-color, 0.12);
+}
+
 .delta {
-  margin-left: auto;
   font-weight: 700;
   font-size: 0.9rem;
+  text-align: right;
 }
 
 .positive {
   color: v.$success-color;
+  background: linear-gradient(
+    90deg,
+    rgba(v.$success-color, 0.1),
+    rgba(v.$success-color, 0.4)
+  );
 }
 
 .negative {
   color: v.$danger-color;
+  background: linear-gradient(
+    90deg,
+    rgba(v.$danger-color, 0.1),
+    rgba(v.$danger-color, 0.35)
+  );
 }
 
 .empty {

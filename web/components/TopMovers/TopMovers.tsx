@@ -9,6 +9,9 @@ type Mover = {
   current?: number;
 };
 
+const clampWidth = (delta: number) =>
+  Math.min(100, Math.max(12, Math.abs(delta) * 8));
+
 export default function TopMovers({
   improved,
   degraded
@@ -33,8 +36,15 @@ export default function TopMovers({
                   className={styles.logo}
                 />
                 <div className={styles.name}>{m.name}</div>
-                <div className={`${styles.delta} ${styles.positive}`}>
-                  ▲{Math.abs(m.delta).toFixed(1)}%
+                <div className={styles.deltaGroup}>
+                  <div
+                    className={`${styles.deltaBar} ${styles.positive}`}
+                    style={{ width: `${clampWidth(m.delta)}%` }}
+                    aria-hidden
+                  />
+                  <div className={`${styles.delta} ${styles.positive}`}>
+                    ▲{Math.abs(m.delta).toFixed(1)}%
+                  </div>
                 </div>
               </li>
             ))}
@@ -57,8 +67,15 @@ export default function TopMovers({
                   className={styles.logo}
                 />
                 <div className={styles.name}>{m.name}</div>
-                <div className={`${styles.delta} ${styles.negative}`}>
-                  ▼{Math.abs(m.delta).toFixed(1)}%
+                <div className={styles.deltaGroup}>
+                  <div
+                    className={`${styles.deltaBar} ${styles.negative}`}
+                    style={{ width: `${clampWidth(m.delta)}%` }}
+                    aria-hidden
+                  />
+                  <div className={`${styles.delta} ${styles.negative}`}>
+                    ▼{Math.abs(m.delta).toFixed(1)}%
+                  </div>
                 </div>
               </li>
             ))}

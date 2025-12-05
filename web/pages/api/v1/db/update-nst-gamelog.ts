@@ -36,6 +36,11 @@
  *      - incremental: overwrite defaults to no (skip complete dates)
  *    Example: /api/v1/db/update-nst-gamelog?runMode=reverse&overwrite=no
  *
+ * 4. `datasetType` (optional): Filters the operation to a specific dataset type.
+ *    Useful for debugging or targeting a specific table.
+ *    Example: /api/v1/db/update-nst-gamelog?runMode=forward&datasetType=penaltyKillRatesOi
+ *    Example from Date: /api/v1/db/update-nst-gamelog?runMode=forward&datasetType=penaltyKillRatesOi&startDate=2025-05-25
+ *
  * --- How It Works ---
  *
  * - The script initiates a connection to a Supabase database to store the scraped data.
@@ -510,6 +515,7 @@ async function getLatestDateSupabase(): Promise<string | null> {
         isAfter(currentDate, parse(latestDate, "yyyy-MM-dd", new Date()))
       ) {
         latestDate = data.date_scraped;
+        console.log(`Found new latest date ${latestDate} in table: ${table}`);
       }
     }
   }
@@ -747,6 +753,15 @@ async function upsertData(
 
 // --- Data Fetching and Parsing (NST) ---
 
+function getDateFromUrl(url: string): string | null {
+  try {
+    const urlObj = new URL(url);
+    return urlObj.searchParams.get("fd");
+  } catch (e) {
+    return null;
+  }
+}
+
 async function fetchAndParseData(
   url: string,
   datasetType: string,
@@ -754,6 +769,15 @@ async function fetchAndParseData(
   seasonId: string,
   retries: number = 2
 ): Promise<{ success: boolean; data: any[] }> {
+  const dateFromUrl = getDateFromUrl(url);
+  const effectiveDate = dateFromUrl || date;
+
+  if (dateFromUrl && dateFromUrl !== date) {
+    console.warn(
+      `Date mismatch detected! URL has ${dateFromUrl}, but function arg is ${date}. Using URL date: ${effectiveDate}`
+    );
+  }
+
   for (let attempt = 1; attempt <= retries; attempt++) {
     console.log(
       `Fetching NST data from: ${url} (Attempt ${attempt}/${retries})`
@@ -917,7 +941,7 @@ async function fetchAndParseData(
         ) {
           rowData["_player_full_name_temp"] = playerFullName;
           rowData["_player_position_temp"] = playerPosition;
-          rowData["date_scraped"] = date;
+          rowData["date_scraped"] = effectiveDate;
           rowData["season"] = parseInt(seasonId, 10);
           dataRowsCollected.push(rowData);
         }
@@ -1400,11 +1424,17 @@ function printTotalProgress(current: number, total: number) {
 // --- Main Orchestration Function ---
 async function main(
   runMode: RunMode,
-  options?: { startDate?: string; overwrite?: boolean }
+  options?: {
+    startDate?: string;
+    overwrite?: boolean;
+    datasetType?: string;
+  }
 ) {
   const isForwardFull = runMode === "forward";
   const isReverseFull = runMode === "reverse";
   const overwriteRequested = options?.overwrite;
+  const targetDataset = options?.datasetType;
+
   // Preserve legacy behavior by default: forward/reverse overwrite=true, incremental overwrite=false
   const fullRefreshFlag = (mode: RunMode) =>
     mode === "forward" || mode === "reverse"
@@ -1413,7 +1443,7 @@ async function main(
   banner(
     `Script execution started. Mode: ${runMode}. Full Refresh: ${
       isForwardFull || isReverseFull
-    }`
+    } | Target Dataset: ${targetDataset || "ALL"}`
   );
   const startTime = Date.now();
   troublesomePlayers.length = 0; // Clear troublesome list for this run
@@ -1551,6 +1581,9 @@ async function main(
         for (const date of dates) {
           const urls = constructUrlsForDate(date, String(s.id), false);
           for (const [datasetType, url] of Object.entries(urls)) {
+            if (targetDataset && targetDataset !== datasetType) {
+              continue;
+            }
             reverseQueue.push({
               datasetType,
               url,
@@ -1703,6 +1736,7 @@ async function main(
       }
     }
 
+    console.log(`Debug: todayEST is ${tzFormat(todayEST, "yyyy-MM-dd")}`);
     const scrapingEndDate = todayEST;
     console.log(
       `Effective scraping end date: ${tzFormat(scrapingEndDate, "yyyy-MM-dd")}`
@@ -1747,6 +1781,9 @@ async function main(
       const { seasonId, isPlayoffs } = seasonInfoForDate;
       const urls = constructUrlsForDate(date, seasonId, isPlayoffs);
       for (const [datasetType, url] of Object.entries(urls)) {
+        if (targetDataset && targetDataset !== datasetType) {
+          continue;
+        }
         initialUrlsQueue.push({ datasetType, url, date, seasonId });
       }
     }
@@ -1883,6 +1920,7 @@ export default async function handler(
   let runMode: RunMode = "incremental";
   let startDate: string | undefined;
   let overwrite: boolean | undefined;
+  let datasetType: string | undefined;
 
   if (req.method === "POST") {
     const mode = req.body?.runMode;
@@ -1892,6 +1930,14 @@ export default async function handler(
     if (typeof req.body?.startDate === "string") {
       startDate = req.body.startDate;
     }
+    if (typeof req.body?.datasetType === "string") {
+      datasetType = req.body.datasetType;
+    }
+    // Support 'table' alias for datasetType
+    if (typeof req.body?.table === "string") {
+      datasetType = req.body.table;
+    }
+
     if (typeof req.body?.overwrite !== "undefined") {
       const v = req.body.overwrite;
       if (typeof v === "string") {
@@ -1914,6 +1960,14 @@ export default async function handler(
     if (typeof req.query.startDate === "string") {
       startDate = req.query.startDate as string;
     }
+    if (typeof req.query.datasetType === "string") {
+      datasetType = req.query.datasetType as string;
+    }
+    // Support 'table' alias for datasetType
+    if (typeof req.query.table === "string") {
+      datasetType = req.query.table as string;
+    }
+
     const ow = req.query.overwrite;
     if (typeof ow === "string") {
       overwrite = ["yes", "true", "1"].includes(ow.toLowerCase());
@@ -1921,20 +1975,24 @@ export default async function handler(
   }
 
   console.log(
-    `API request received. runMode=${runMode}, startDate=${startDate || "none"}, overwrite=${
+    `API request received. runMode=${runMode}, startDate=${
+      startDate || "none"
+    }, overwrite=${
       overwrite === undefined ? "default" : overwrite
-    }`
+    }, datasetType=${datasetType || "ALL"}`
   );
   banner(
-    `API request: mode=${runMode} | startDate=${startDate || "none"} | overwrite=${
+    `API request: mode=${runMode} | startDate=${
+      startDate || "none"
+    } | overwrite=${
       overwrite === undefined ? "default" : overwrite
-    }`
+    } | datasetType=${datasetType || "ALL"}`
   );
   try {
-    await main(runMode, { startDate, overwrite });
+    await main(runMode, { startDate, overwrite, datasetType });
     return res
       .status(200)
-      .json({ message: "Done", runMode, startDate, overwrite });
+      .json({ message: "Done", runMode, startDate, overwrite, datasetType });
   } catch (err: any) {
     console.error(err);
     return res.status(500).json({ error: err.message });

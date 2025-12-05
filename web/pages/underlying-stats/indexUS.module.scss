@@ -1,394 +1,853 @@
-@import "../../styles/vars.scss";
+@use "sass:color";
+@use "styles/vars" as v;
+@use "styles/panel" as p;
 
+// =============================================
+// Page Container
+// =============================================
 .page {
-  background: $surface-0;
+  background-color: v.$background-dark;
   min-height: 100vh;
-  padding: 2.5rem clamp(1rem, 4vw, 3rem) 4rem;
-  color: $color-white;
+  padding: v.$space-lg clamp(1rem, 4vw, 3rem) v.$space-xxl;
+  color: v.$text-primary;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-xl;
+  font-family: v.$font-family-primary;
+}
+
+// =============================================
+// Header & Controls Panel
+// =============================================
+.headerPanel {
+  // Using the "Standard Panel" style from the design system
+  background-color: v.$background-medium;
+  padding: v.$space-lg;
+  border-radius: v.$border-radius-lg;
+  border: 1px solid v.$border-secondary;
+  box-shadow: v.$box-shadow-default;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+
+  // Subtle top highlight
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.1),
+      transparent
+    );
+  }
 }
 
 .header {
-  max-width: 1200px;
-  margin: 0 auto 2rem;
   display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: v.$space-lg;
+  flex-wrap: wrap;
 }
 
 .title {
-  font-size: clamp(2rem, 3.5vw, 2.75rem);
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: clamp(1.75rem, 3.5vw, 2.5rem);
   font-weight: 700;
-  letter-spacing: -0.03em;
-  color: $color-white;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: v.$color-white;
+  margin: 0;
+  text-shadow: 0 0 20px rgba(v.$primary-color, 0.3);
 }
 
 .description {
-  max-width: 760px;
-  line-height: 1.65;
-  color: $color-grey-text;
-  font-size: 1rem;
+  line-height: 1.6;
+  color: v.$text-secondary;
+  font-size: v.$font-size-base;
+  max-width: 65ch;
+  margin-top: v.$space-sm;
 }
 
 .controls {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.75rem 1.5rem;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: v.$space-sm;
+  flex-shrink: 0;
 }
 
 .controlLabel {
-  font-size: 0.9rem;
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: v.$font-size-xs;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: $color-grey-text-sec;
+  color: v.$primary-color;
 }
 
 .controlHint {
-  font-size: 0.85rem;
-  color: $color-grey-text-sec;
+  font-size: v.$font-size-xs;
+  color: v.$text-secondary;
+  text-align: right;
+  font-family: v.$font-family-numbers;
 }
 
 .dateSelect {
   appearance: none;
-  border-radius: 10px;
-  border: 1px solid $color-grey-dark;
-  background: $surface-2;
-  color: $color-white;
-  padding: 0.6rem 2.5rem 0.6rem 1rem;
-  font-size: 1rem;
-  position: relative;
-  min-width: 220px;
-  transition: border 0.2s ease, box-shadow 0.2s ease;
+  border-radius: v.$border-radius-md;
+  border: 1px solid v.$border-secondary;
+  background-color: v.$background-dark;
+  color: v.$text-primary;
+  padding: v.$space-sm v.$space-lg v.$space-sm v.$space-md;
+  font-size: v.$font-size-base;
+  font-family: v.$font-family-numbers;
+  min-width: 240px;
+  transition: all 0.2s ease;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2314a2d2' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.75rem center;
+  background-repeat: no-repeat;
+  background-size: 1.25em 1.25em;
+  cursor: pointer;
 
-  &:hover,
+  &:hover {
+    border-color: v.$primary-color;
+    box-shadow: 0 0 10px rgba(v.$primary-color, 0.1);
+  }
+
   &:focus {
-    border-color: $primary-color;
-    box-shadow: 0 0 0 1px rgba($primary-color, 0.35);
+    border-color: v.$primary-color;
+    box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.2);
     outline: none;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 }
 
+// =============================================
+// Summary Cards (Top 3)
+// =============================================
 .summaryGrid {
   max-width: 1200px;
-  margin: 0 auto 2.5rem;
+  margin: 0 auto;
+  width: 100%;
   display: grid;
-  gap: 1.25rem;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: v.$space-lg;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 }
 
 .summaryCard {
-  background: linear-gradient(
-      120deg,
-      rgba($primary-color, 0.2),
-      rgba($primary-color, 0)
-    ),
-    $surface-1;
-  border-radius: 16px;
-  padding: 1.5rem;
-  box-shadow: $shadow-hover;
+  // Implementing the "Card" style from the design system
+  position: relative;
+  background:
+    linear-gradient(180deg, rgba(v.$primary-color, 0.05) 0%, transparent 100%),
+    linear-gradient(
+      145deg,
+      color.adjust(v.$background-medium, $lightness: 2%) 0%,
+      v.$background-dark 100%
+    );
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-lg;
+  padding: v.$space-lg;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  position: relative;
+  gap: v.$space-md;
   overflow: hidden;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+
+  // Neon Strip
+  &::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 6px;
+    background: v.$primary-color;
+    box-shadow: 0 0 12px v.$primary-color;
+    transition: width 0.2s ease;
+  }
+
+  &:hover {
+    transform: translateY(-4px);
+    border-color: v.$primary-color;
+    box-shadow:
+      0 12px 24px rgba(0, 0, 0, 0.4),
+      0 0 20px rgba(v.$primary-color, 0.1);
+
+    &::before {
+      width: 8px;
+    }
+  }
+
+  // Rank specific styling (Gold, Silver, Bronze-ish)
+  &:nth-child(1) {
+    --card-accent: #ffd700;
+    &::before {
+      background: var(--card-accent);
+      box-shadow: 0 0 15px var(--card-accent);
+    }
+    .summaryPower {
+      color: var(--card-accent);
+      text-shadow: 0 0 10px rgba(var(--card-accent), 0.4);
+    }
+    .summaryRank {
+      color: rgba(var(--card-accent), 0.15);
+    }
+  }
+
+  &:nth-child(2) {
+    --card-accent: #c0c0c0;
+    &::before {
+      background: var(--card-accent);
+      box-shadow: 0 0 15px var(--card-accent);
+    }
+    .summaryPower {
+      color: var(--card-accent);
+    }
+    .summaryRank {
+      color: rgba(var(--card-accent), 0.15);
+    }
+  }
+
+  &:nth-child(3) {
+    --card-accent: #cd7f32;
+    &::before {
+      background: var(--card-accent);
+      box-shadow: 0 0 15px var(--card-accent);
+    }
+    .summaryPower {
+      color: var(--card-accent);
+    }
+    .summaryRank {
+      color: rgba(var(--card-accent), 0.15);
+    }
+  }
 }
 
 .summaryRank {
   position: absolute;
-  top: 1rem;
-  right: 1.5rem;
-  font-size: 2.5rem;
+  top: -10px;
+  right: v.$space-md;
+  font-size: 5rem;
+  font-family: v.$font-family-accent, sans-serif;
   font-weight: 700;
-  color: rgba($color-white, 0.12);
+  color: rgba(v.$primary-color, 0.1);
+  line-height: 1;
+  pointer-events: none;
+  z-index: 0;
 }
 
 .summaryHeader {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: v.$space-xxs;
   z-index: 1;
+  padding-left: v.$space-xs; // Offset for neon strip visual balance
 }
 
 .summaryTeam {
-  font-size: 1.75rem;
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: 2rem;
   font-weight: 700;
   letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: v.$color-white;
+  line-height: 1;
 }
 
 .summaryTeamName {
-  font-size: 0.95rem;
-  color: $color-grey-text;
+  font-size: v.$font-size-sm;
+  color: v.$text-secondary;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
 }
 
 .summaryMetricGroup {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: v.$space-md;
   z-index: 1;
+  margin-top: v.$space-sm;
 }
 
 .summaryPower {
-  font-size: 1.9rem;
+  font-size: 3rem;
   font-weight: 700;
-  color: $primary-color;
-}
-
-.summaryMetricRow {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.5rem;
-
-  div {
-    background: rgba($surface-2, 0.6);
-    border-radius: 10px;
-    padding: 0.5rem 0.75rem;
-    font-weight: 600;
-    display: flex;
-    flex-direction: column;
-    gap: 0.2rem;
-    font-size: 1.05rem;
-  }
+  font-family: v.$font-family-numbers, monospace;
+  color: v.$primary-color;
+  line-height: 1;
+  display: flex;
+  align-items: baseline;
+  gap: v.$space-sm;
 }
 
 .summaryMetricLabel {
   display: block;
-  font-size: 0.8rem;
-  color: $color-grey-text-sec;
-  font-weight: 500;
+  font-size: v.$font-size-xs;
+  color: v.$text-secondary;
+  font-weight: 400;
   text-transform: uppercase;
   letter-spacing: 0.08em;
+  font-family: v.$font-family-primary, sans-serif;
+}
+
+.summaryMetricRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: v.$space-sm;
+
+  div {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid v.$border-secondary;
+    border-radius: v.$border-radius-sm;
+    padding: v.$space-sm;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: v.$space-xxs;
+    font-family: v.$font-family-numbers, monospace;
+    font-size: v.$font-size-lg;
+    font-weight: 700;
+    color: v.$text-primary;
+  }
 }
 
 .summarySubLabel {
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: $color-grey-text-sec;
+  color: v.$text-secondary;
+  font-family: v.$font-family-primary;
+  font-weight: 400;
 }
 
 .summaryDetails {
   list-style: none;
-  padding: 0;
-  margin: 0;
+  padding: v.$space-md 0 0;
+  margin: v.$space-md 0 0;
+  border-top: 1px solid v.$border-secondary;
   display: grid;
-  gap: 0.4rem;
+  gap: v.$space-xs;
   z-index: 1;
+  font-size: v.$font-size-sm;
 
   li {
     display: flex;
     justify-content: space-between;
-    font-size: 0.9rem;
-    color: $color-grey-text;
+    color: v.$text-secondary;
 
     strong {
       font-weight: 600;
-      color: $color-white;
+      color: v.$text-primary;
+      font-family: v.$font-family-numbers;
     }
   }
 }
 
 .tierInline {
-  color: $primary-color;
   font-weight: 600;
+  color: v.$primary-color !important;
 }
 
 .summaryEmpty {
-  background: $surface-1;
-  padding: 2rem;
-  border-radius: 16px;
+  @include v.component-wrapper;
+  background-color: v.$background-medium;
+  padding: v.$space-xl;
   text-align: center;
-  color: $color-grey-text;
+  color: v.$text-secondary;
+  grid-column: 1 / -1;
+  border: 1px dashed v.$border-secondary;
 }
 
-.legendSection {
+// =============================================
+// Legend & Sub-Ratings
+// =============================================
+.secondaryPanels {
   max-width: 1200px;
-  margin: 0 auto 1.5rem;
+  margin: 0 auto;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: v.$space-xl;
 }
 
 .legend {
-  background: rgba($surface-1, 0.85);
-  border-radius: 14px;
-  border: 1px solid rgba($primary-color, 0.15);
-  padding: 0.85rem 1rem;
-  color: $color-grey-text;
+  // Glassmorphism style for the legend
+  @include p.panel-container($blur: 12px);
+  padding: v.$space-lg;
+  color: v.$text-primary;
+
+  details {
+    width: 100%;
+  }
 }
 
 .legendSummary {
   cursor: pointer;
-  font-weight: 600;
+  font-weight: 700;
+  font-family: v.$font-family-accent, sans-serif;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: $primary-color;
+  color: v.$primary-color;
+  font-size: v.$font-size-md;
+  display: flex;
+  align-items: center;
+  gap: v.$space-sm;
+
+  &:hover {
+    color: v.$secondary-color;
+    text-shadow: 0 0 8px rgba(v.$primary-color, 0.4);
+  }
 }
 
 .legendContent {
-  margin-top: 0.75rem;
+  margin-top: v.$space-md;
   display: grid;
-  gap: 0.65rem;
-  font-size: 0.9rem;
-  line-height: 1.55;
+  gap: v.$space-sm;
+  font-size: v.$font-size-sm;
+  line-height: 1.6;
+  color: v.$text-secondary;
+  padding-top: v.$space-md;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+
+  strong,
+  b {
+    color: v.$color-white;
+    font-weight: 600;
+    font-family: v.$font-family-primary;
+  }
+
+  em {
+    color: v.$primary-color;
+    font-style: normal;
+  }
 }
 
+.subRatings {
+  // Standard Panel style
+  background-color: v.$background-medium;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-lg;
+  padding: v.$space-lg;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-md;
+  box-shadow: v.$box-shadow-default;
+}
+
+.subRatingsHeader {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: v.$space-md;
+  border-bottom: 2px solid v.$border-secondary;
+  padding-bottom: v.$space-md;
+
+  h2 {
+    font-family: v.$font-family-accent, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 0;
+    font-size: v.$font-size-lg;
+    color: v.$color-white;
+  }
+
+  p {
+    margin: v.$space-xs 0 0;
+    color: v.$text-secondary;
+    font-size: v.$font-size-sm;
+    max-width: 50ch;
+  }
+}
+
+.subRatingsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: v.$space-md;
+}
+
+.subRatingCard {
+  background: v.$background-dark;
+  border-radius: v.$border-radius-md;
+  padding: v.$space-md;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-xs;
+  border: 1px solid v.$border-primary;
+  transition: border-color 0.2s;
+
+  &:hover {
+    border-color: v.$primary-color;
+  }
+}
+
+.subRatingLabel {
+  font-size: v.$font-size-xs;
+  color: v.$text-secondary;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+}
+
+.subRatingValue {
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-family: v.$font-family-numbers, monospace;
+  color: v.$primary-color;
+  text-shadow: 0 0 10px rgba(v.$primary-color, 0.2);
+}
+
+.subRatingHint {
+  font-size: 0.7rem;
+  color: v.$text-secondary;
+  opacity: 0.8;
+}
+
+.varianceFlagBadge {
+  align-self: center;
+  background: rgba(v.$warning-color, 0.15);
+  color: v.$warning-color;
+  border: 1px solid rgba(v.$warning-color, 0.3);
+  border-radius: v.$border-radius-sm;
+  padding: v.$space-xs v.$space-sm;
+  font-size: v.$font-size-xs;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  box-shadow: 0 0 10px rgba(v.$warning-color, 0.1);
+}
+
+// =============================================
+// Main Table
+// =============================================
 .tableSection {
   max-width: 1200px;
   margin: 0 auto;
+  width: 100%;
 }
 
 .tableWrapper {
-  background: $surface-1;
-  border-radius: 18px;
+  background-color: v.$background-medium;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-lg;
+  padding: 0; // Remove padding to let table fill
   overflow: hidden;
-  box-shadow: $shadow-hover;
+  box-shadow: v.$box-shadow-default;
 }
 
 .table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 960px;
+  table-layout: fixed;
 
   thead {
-    background: rgba($primary-color, 0.12);
+    background-color: color.adjust(v.$background-dark, $lightness: -2%);
+    border-bottom: 2px solid v.$border-secondary;
+
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background-color: inherit; // Keep sticky header opaque
+    }
   }
 
   th,
   td {
-    padding: 0.9rem 1rem;
+    padding: v.$space-sm v.$space-md;
     text-align: left;
-    font-size: 0.95rem;
+    font-size: v.$font-size-sm;
+    white-space: nowrap;
   }
 
   th {
+    font-family: v.$font-family-accent, sans-serif;
     text-transform: uppercase;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     letter-spacing: 0.08em;
-    color: $color-grey-text;
-    border-bottom: 1px solid rgba($color-grey-dark, 0.45);
-    background: rgba($surface-2, 0.6);
+    color: v.$text-secondary;
+    font-weight: 400;
+    padding-top: v.$space-md;
+    padding-bottom: v.$space-md;
   }
 
   tbody tr {
-    transition: background 0.2s ease;
+    border-bottom: 1px solid v.$border-primary;
+    transition: background-color 0.1s ease;
 
-    &:nth-of-type(even) {
-      background: rgba($surface-2, 0.45);
+    &:last-child {
+      border-bottom: none;
     }
 
     &:hover {
-      background: rgba($primary-color, 0.08);
+      background-color: rgba(v.$primary-color, 0.05);
+      td {
+        color: v.$color-white;
+      }
     }
   }
 }
 
 .rankCell {
-  width: 54px;
+  width: 60px;
   font-weight: 700;
-  color: rgba($color-white, 0.7);
+  font-family: v.$font-family-numbers, monospace;
+  color: v.$text-secondary;
+  text-align: center;
+  border-right: 1px solid v.$border-primary;
 }
 
 .powerCell {
   font-weight: 700;
-  color: $primary-color;
+  font-family: v.$font-family-numbers, monospace;
+  color: v.$primary-color;
+  font-size: 1.1em;
+  text-shadow: 0 0 8px rgba(v.$primary-color, 0.2);
 }
 
 .teamCell {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: 2px;
 }
 
 .teamName {
-  font-weight: 600;
-  font-size: 1rem;
-  letter-spacing: 0.05em;
+  font-weight: 700;
+  font-size: v.$font-size-base;
+  color: v.$text-primary;
   text-transform: uppercase;
+  font-family: v.$font-family-accent;
+  letter-spacing: 0.05em;
 }
 
 .teamMeta {
-  font-size: 0.85rem;
-  color: $color-grey-text;
+  font-size: 0.7rem;
+  color: v.$text-secondary;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.varianceFlagInline {
+  margin-left: v.$space-xs;
+  color: v.$warning-color;
+  font-size: v.$font-size-sm;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
 }
 
 .trendCell {
-  font-weight: 600;
+  font-weight: 700;
+  font-family: v.$font-family-numbers, monospace;
 }
 
 .trendPositive {
-  color: #4ade80;
+  color: v.$success-color;
 }
 
 .trendNegative {
-  color: #f97375;
+  color: v.$danger-color;
 }
 
 .trendNeutral {
-  color: $color-grey-text;
+  color: v.$text-secondary;
+}
+
+.componentCell {
+  text-align: center;
+  font-family: v.$font-family-numbers, monospace;
+}
+
+.componentBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 0.75rem;
+  min-width: 40px;
+}
+
+.componentPositive {
+  background-color: rgba(v.$success-color, 0.15);
+  color: v.$success-color;
+  border: 1px solid rgba(v.$success-color, 0.2);
+}
+
+.componentNegative {
+  background-color: rgba(v.$danger-color, 0.15);
+  color: v.$danger-color;
+  border: 1px solid rgba(v.$danger-color, 0.2);
+}
+
+.componentNeutral {
+  background-color: transparent;
+  color: v.$text-secondary;
 }
 
 .tierBadge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.35rem 0.75rem;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: $color-white;
+  min-width: 80px;
 }
 
 .tier1 {
-  background: rgba(#4ade80, 0.18);
-  color: #86efac;
+  background-color: rgba(v.$success-color, 0.15);
+  color: v.$success-color;
+  border: 1px solid rgba(v.$success-color, 0.3);
+  box-shadow: 0 0 8px rgba(v.$success-color, 0.1);
 }
 
 .tier2 {
-  background: rgba(#fde047, 0.2);
-  color: #facc15;
+  background-color: rgba(v.$warning-color, 0.15);
+  color: v.$warning-color;
+  border: 1px solid rgba(v.$warning-color, 0.3);
 }
 
 .tier3 {
-  background: rgba(#fb7185, 0.2);
-  color: #fb7185;
+  background-color: rgba(v.$danger-color, 0.15);
+  color: v.$danger-color;
+  border: 1px solid rgba(v.$danger-color, 0.3);
 }
 
-.loadingBanner,
-.errorBanner,
-.emptyState {
-  padding: 1rem 1.25rem;
-  border-radius: 12px;
-  margin-bottom: 1.25rem;
-  font-size: 0.95rem;
-}
-
-.loadingBanner {
-  background: rgba($primary-color, 0.15);
-  color: $primary-color;
-}
-
-.errorBanner {
-  background: rgba($danger-color, 0.18);
-  color: $danger-color;
-}
-
-.emptyState {
-  background: rgba($surface-1, 0.85);
-  color: $color-grey-text;
+.varianceCell {
   text-align: center;
 }
 
-@media (max-width: $breakpoint-tablet) {
+.variancePill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 60px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.varianceHigh {
+  background-color: rgba(v.$warning-color, 0.15);
+  color: v.$warning-color;
+  border: 1px solid rgba(v.$warning-color, 0.3);
+}
+
+.varianceStable {
+  background-color: rgba(v.$text-secondary, 0.1);
+  color: v.$text-secondary;
+}
+
+// =============================================
+// Loading / Error States
+// =============================================
+.loadingBanner,
+.errorBanner,
+.emptyState {
+  padding: v.$space-lg;
+  border-radius: v.$border-radius-md;
+  margin-bottom: v.$space-lg;
+  font-size: v.$font-size-base;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  text-align: center;
+  font-family: v.$font-family-accent;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.loadingBanner {
+  background-color: rgba(v.$primary-color, 0.1);
+  color: v.$primary-color;
+  border: 1px solid rgba(v.$primary-color, 0.3);
+  box-shadow: 0 0 20px rgba(v.$primary-color, 0.1);
+}
+
+.errorBanner {
+  background-color: rgba(v.$danger-color, 0.1);
+  color: v.$danger-color;
+  border: 1px solid rgba(v.$danger-color, 0.3);
+}
+
+.emptyState {
+  background-color: v.$background-medium;
+  color: v.$text-secondary;
+  border: 1px dashed v.$border-secondary;
+}
+
+// =============================================
+// Responsive
+// =============================================
+@media (max-width: v.$breakpoint-desktop) {
+  .secondaryPanels {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: v.$breakpoint-tablet) {
   .page {
-    padding: 2rem 1.25rem 3rem;
+    padding: v.$space-lg v.$space-md v.$space-xl;
+    gap: v.$space-lg;
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   .controls {
     flex-direction: column;
     align-items: flex-start;
+    width: 100%;
+  }
+
+  .dateSelect {
+    width: 100%;
   }
 
   .tableWrapper {
-    border-radius: 12px;
+    border-radius: v.$border-radius-md;
+    padding: 0;
+  }
+
+  .table {
+    & th,
+    & td {
+      white-space: normal;
+    }
   }
 
   .summaryGrid {

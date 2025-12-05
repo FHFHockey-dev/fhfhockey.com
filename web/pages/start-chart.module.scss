@@ -1,0 +1,168 @@
+@use "styles/vars" as v;
+@use "sass:color";
+
+.page {
+  padding: v.$space-lg;
+  color: v.$text-primary;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-lg;
+  background: v.$background-dark;
+  min-height: 100vh;
+}
+
+.chartPanel {
+  @include v.glass-panel(
+    $padding: v.$space-md,
+    $radius: v.$radius-lg
+  );
+  height: 25vh;
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+}
+
+.chartHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: v.$space-sm;
+}
+
+.chartTitle {
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: v.$font-size-md;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: v.$color-white;
+}
+
+.filters {
+  @include v.glass-panel(
+    $padding: v.$space-md,
+    $radius: v.$radius-lg
+  );
+  display: flex;
+  flex-wrap: wrap;
+  gap: v.$space-md;
+  align-items: center;
+}
+
+.filterGroup {
+  display: flex;
+  align-items: center;
+  gap: v.$space-xs;
+  color: v.$text-secondary;
+  font-size: v.$font-size-sm;
+}
+
+.checkboxRow {
+  display: flex;
+  align-items: center;
+  gap: v.$space-sm;
+}
+
+.search {
+  background: v.$background-medium;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$radius-md;
+  color: v.$text-primary;
+  padding: v.$space-xs v.$space-sm;
+  min-width: 220px;
+
+  &:focus {
+    outline: none;
+    border-color: v.$primary-color;
+    box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.25);
+  }
+}
+
+.rangeInput {
+  accent-color: v.$primary-color;
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: v.$space-md;
+}
+
+.column {
+  @include v.glass-panel(
+    $padding: v.$space-md,
+    $radius: v.$radius-md
+  );
+  border-top: 4px solid var(--accent, v.$primary-color);
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-sm;
+}
+
+.columnHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: v.$text-primary;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.pill {
+  background: v.$background-medium;
+  color: v.$color-white;
+  padding: 2px 8px;
+  border-radius: v.$radius-sm;
+  font-size: v.$font-size-xs;
+}
+
+.card {
+  background: v.$background-medium;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$radius-md;
+  padding: v.$space-sm;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: v.$space-xs;
+}
+
+.name {
+  font-weight: 700;
+  color: v.$color-white;
+}
+
+.meta {
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+}
+
+.statRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: v.$font-size-xs;
+  color: v.$text-primary;
+}
+
+.posC {
+  --accent: #{v.$info-color};
+}
+.posLW {
+  --accent: #{v.$color-orange};
+}
+.posRW {
+  --accent: #{v.$success-color};
+}
+.posD {
+  --accent: #{v.$warning-color};
+}
+.posG {
+  --accent: #{v.$danger-color};
+}
+
+.emptyState {
+  color: v.$text-secondary;
+  font-style: italic;
+  padding: v.$space-sm;
+}

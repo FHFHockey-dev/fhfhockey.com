@@ -22,6 +22,12 @@ export type TeamRating = {
   pkTier: SpecialTeamTier;
   trend10: number;
   components: RatingComponents;
+  finishingRating: number | null;
+  goalieRating: number | null;
+  dangerRating: number | null;
+  specialRating: number | null;
+  disciplineRating: number | null;
+  varianceFlag: number | null;
 };
 
 type CacheEntry = {
@@ -52,7 +58,31 @@ const mapRowToTeamRating = (row: Record<string, unknown>): TeamRating => ({
     ga60: Number(row.ga60),
     sa60: Number(row.sa60),
     pace60: Number(row.pace60)
-  }
+  },
+  finishingRating:
+    row.finishing_rating !== undefined && row.finishing_rating !== null
+      ? Number(row.finishing_rating)
+      : null,
+  goalieRating:
+    row.goalie_rating !== undefined && row.goalie_rating !== null
+      ? Number(row.goalie_rating)
+      : null,
+  dangerRating:
+    row.danger_rating !== undefined && row.danger_rating !== null
+      ? Number(row.danger_rating)
+      : null,
+  specialRating:
+    row.special_rating !== undefined && row.special_rating !== null
+      ? Number(row.special_rating)
+      : null,
+  disciplineRating:
+    row.discipline_rating !== undefined && row.discipline_rating !== null
+      ? Number(row.discipline_rating)
+      : null,
+  varianceFlag:
+    row.variance_flag !== undefined && row.variance_flag !== null
+      ? Number(row.variance_flag)
+      : null
 });
 
 export const isValidIsoDate = (value: string): boolean =>
@@ -72,39 +102,108 @@ export const fetchTeamRatings = async (
 
   const supabase = supabaseServer;
 
-  let query = supabase
-    .from("team_power_ratings_daily")
-    .select(
-      [
-        "team_abbreviation",
-        "date",
-        "off_rating",
-        "def_rating",
-        "pace_rating",
-        "pp_tier",
-        "pk_tier",
-        "trend10",
-        "xgf60",
-        "gf60",
-        "sf60",
-        "xga60",
-        "ga60",
-        "sa60",
-        "pace60"
-      ].join(",")
-    )
-    .eq("date", date)
-    .order("off_rating", { ascending: false })
-    .order("team_abbreviation", { ascending: true });
+  const coreColumns = [
+    "team_abbreviation",
+    "date",
+    "off_rating",
+    "def_rating",
+    "pace_rating",
+    "pp_tier",
+    "pk_tier",
+    "trend10",
+    "xgf60",
+    "gf60",
+    "sf60",
+    "xga60",
+    "ga60",
+    "sa60",
+    "pace60"
+  ];
 
-  if (normalizedTeamAbbr) {
-    query = query.eq("team_abbreviation", normalizedTeamAbbr);
+  const extendedColumns = [
+    "finishing_rating",
+    "goalie_rating",
+    "danger_rating",
+    "special_rating",
+    "discipline_rating",
+    "variance_flag"
+  ];
+
+  const selectColumns = (includeExtended: boolean): string =>
+    includeExtended
+      ? [...coreColumns, ...extendedColumns].join(",")
+      : coreColumns.join(",");
+
+  const runQuery = async (
+    tableName: "team_power_ratings_daily" | "team_power_ratings_daily__new",
+    includeExtended: boolean
+  ) => {
+    let query = supabase
+      .from(tableName)
+      .select(selectColumns(includeExtended))
+      .eq("date", date)
+      .order("off_rating", { ascending: false })
+      .order("team_abbreviation", { ascending: true });
+
+    if (normalizedTeamAbbr) {
+      query = query.eq("team_abbreviation", normalizedTeamAbbr);
+    }
+
+    return query;
+  };
+
+  const isMissingColumnError = (err: { message?: string } | null): boolean =>
+    Boolean(
+      err?.message &&
+        err.message.includes("column") &&
+        err.message.includes("does not exist")
+    );
+
+  const isMissingRelationError = (err: { message?: string } | null): boolean =>
+    Boolean(
+      err?.message &&
+        err.message.includes("does not exist") &&
+        (err.message.includes("relation") || err.message.includes("table"))
+    );
+
+  const tablesWithExtended: Array<
+    "team_power_ratings_daily" | "team_power_ratings_daily__new"
+  > = ["team_power_ratings_daily", "team_power_ratings_daily__new"];
+
+  let data: unknown[] | null = null;
+  let error: { message?: string } | null = null;
+  let fetchedExtended = false;
+
+  for (const tableName of tablesWithExtended) {
+    const response = await runQuery(tableName, true);
+    data = response.data;
+    error = response.error;
+
+    if (!error) {
+      fetchedExtended = true;
+      break;
+    }
+
+    if (isMissingRelationError(error) || isMissingColumnError(error)) {
+      data = null;
+      error = null;
+      continue;
+    }
+
+    throw error;
   }
 
-  const { data, error } = await query;
+  if (!fetchedExtended) {
+    const fallbackResponse = await runQuery(
+      "team_power_ratings_daily",
+      false
+    );
+    data = fallbackResponse.data;
+    error = fallbackResponse.error;
 
-  if (error) {
-    throw error;
+    if (error) {
+      throw error;
+    }
   }
 
   const rows = Array.isArray(data) ? data : [];

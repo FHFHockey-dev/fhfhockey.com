@@ -1,67 +1,74 @@
 @use "sass:color";
 @use "styles/vars" as v;
 
+// =============================================
+// Page Container
+// =============================================
 .page {
   min-height: 100vh;
   padding: clamp(v.$space-lg, 4vw, v.$space-xxl);
-  background-color: v.$background-medium;
+  background-color: v.$background-dark;
   color: v.$text-primary;
-  display: flex;
-  flex-direction: column;
-  gap: clamp(v.$space-md, 3vw, v.$space-lg);
 }
 
+.pageContent {
+  margin: 0 auto;
+  width: 90%;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-xl;
+}
+
+// =============================================
+// Hero & Search Section
+// =============================================
 .hero {
   @include v.component-wrapper;
-  background-color: color.adjust(v.$background-dark, $lightness: -2%);
-  outline: 15px solid v.$background-dark;
+  background-color: v.$background-medium;
   display: flex;
   justify-content: space-between;
   align-items: center;
   width: 100%;
-  text-align: center;
-  padding: v.$space-md v.$space-lg;
+  padding: v.$space-lg;
+  gap: v.$space-xl;
 }
 
 .titleInfo {
   display: flex;
   flex-direction: column;
-  gap: 0px;
-  justify-content: flex-start;
-  align-items: center;
+  gap: v.$space-sm;
+  text-align: left;
 }
 
 .heroTitle {
-  font-size: clamp(2rem, 3vw, 2.25rem);
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: clamp(2rem, 3vw, 2.5rem);
   text-transform: uppercase;
   font-weight: 700;
-  letter-spacing: -0.02em;
-  font-family: v.$font-family-accent;
+  letter-spacing: 0.08em;
   padding: 0;
   margin: 0;
 }
 
 .heroAccent {
-  color: v.$secondary-color; // single-word blue accent (07aae2)
+  color: v.$primary-color;
   display: inline-block;
-  padding-right: 6px;
-  font-family: v.$font-family-accent;
-  font-weight: 700;
+  padding-right: v.$space-sm;
 }
 
 .heroSubtitle {
   color: v.$text-secondary;
-  font-size: 1rem;
-  text-align: left;
-  width: 100%;
+  font-size: v.$font-size-base;
+  max-width: 50ch;
 }
 
 .searchForm {
   display: flex;
   flex-direction: column;
-  gap: v.$space-md;
-  text-align: left;
-  width: 30%;
+  gap: v.$space-sm;
+  width: 100%;
+  max-width: 400px;
+  flex-shrink: 0;
 }
 
 .searchInputWrapper {
@@ -71,20 +78,18 @@
 
 .searchInput {
   width: 100%;
-  border-radius: v.$border-radius-lg;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: color.adjust(v.$background-dark, $lightness: 6%);
+  border-radius: v.$border-radius-md;
+  border: 1px solid v.$border-primary;
+  background: v.$background-dark;
   color: v.$text-primary;
   padding: v.$space-sm v.$space-md;
-  font-size: 1rem;
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
+  font-size: v.$font-size-base;
+  transition: all 0.2s ease;
 
   &:focus {
     outline: none;
-    border-color: rgba(v.$primary-color, 0.8);
-    box-shadow: 0 0 0 3px rgba(v.$primary-color, 0.25);
+    border-color: v.$primary-color;
+    box-shadow: v.$focus-ring-desktop;
   }
 
   &::placeholder {
@@ -93,281 +98,616 @@
 }
 
 .suggestionList {
+  @include v.glass-panel(v.$space-xs, v.$border-radius-md);
   position: absolute;
   z-index: 10;
-  margin-top: 6px;
+  margin-top: v.$space-xs;
   width: 100%;
   max-height: 300px;
   overflow-y: auto;
-  border-radius: v.$border-radius-lg;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: color.adjust(v.$background-dark, $lightness: 8%);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-  @include v.custom-scrollbar(v.$primary-color, v.$background-medium, 8px);
+  @include v.custom-scrollbar(v.$primary-color, transparent, 6px);
 }
 
 .suggestionButton {
+  @include v.reset-button;
   width: 100%;
-  padding: v.$space-xs v.$space-md;
+  padding: v.$space-sm v.$space-md;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: v.$space-sm;
-  color: inherit;
-  background: transparent;
-  border: none;
+  gap: v.$space-md;
+  border-radius: v.$border-radius-sm;
+  font-size: v.$font-size-sm;
+  transition: background-color 0.15s ease;
 
-  // enforce two-column split: team info | score block
-  .teamCell {
-    flex: 0 0 50%;
-    width: 50%;
-    justify-content: space-between;
-  }
-
-  .scoreCell {
-    flex: 0 0 50%;
-    width: 50%;
-    justify-content: flex-end;
-  }
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: background 0.15s ease;
   &:hover {
-    background: rgba(v.$primary-color, 0.12);
+    background-color: rgba(v.$primary-color, 0.1);
   }
-  &:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.35);
+
+  & > span:last-child {
+    color: v.$text-secondary;
   }
 }
 
 .suggestionActive {
-  background: rgba(v.$primary-color, 0.12);
-  border-left: 4px solid v.$secondary-color;
-  box-shadow: 0 6px 18px rgba(v.$secondary-color, 0.06);
+  background-color: rgba(v.$primary-color, 0.15);
+  color: v.$primary-color;
+  font-weight: 600;
 }
 
 .searchButton {
   @include v.button-style;
-  font-family: v.$font-family-accent;
-  text-transform: uppercase;
-  letter-spacing: 0.115rem;
-  border-radius: v.$border-radius-lg;
-  padding: v.$space-sm v.$space-lg;
+  background: linear-gradient(
+    135deg,
+    v.$primary-color 0%,
+    v.$secondary-color 100%
+  );
+  color: v.$color-white;
+  border: none;
+  font-family: v.$font-family-accent, sans-serif;
   font-weight: 700;
-  background: rgba(v.$primary-color, 0.14);
-  color: v.$primary-color;
-  border: 2px solid v.$primary-color;
-  width: 100%;
-  transition:
-    transform 0.16s ease,
-    box-shadow 0.16s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: v.$space-sm v.$space-lg;
 
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(v.$primary-color, 0.3);
   }
 
-  &:not(:disabled):hover {
-    transform: translateY(-1px);
-    box-shadow: 0 10px 24px rgba(v.$primary-color, 0.08);
+  &:disabled {
+    background: v.$color-grey-medium;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
   }
 }
 
 .errorMessage {
-  margin-top: v.$space-xs;
+  margin-top: v.$space-sm;
   color: v.$danger-color;
-  font-size: 0.9rem;
+  font-size: v.$font-size-sm;
+  text-align: center;
 }
 
 .resultsPanel {
-  margin-top: v.$space-md;
-  @include v.glass-panel;
-  border-radius: v.$border-radius-lg;
-  padding: v.$space-md;
+  margin-top: v.$space-lg;
+  @include v.glass-panel(v.$space-lg, v.$border-radius-lg);
 }
 
 .resultsList {
-  margin-top: v.$space-sm;
+  margin-top: v.$space-md;
   display: flex;
   flex-direction: column;
-  border-radius: v.$border-radius-lg;
-  overflow: hidden;
-  border: 1px solid v.$border-secondary;
-}
-
-.resultRow {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  &:last-child {
-    border-bottom: none;
-  }
 }
 
 .resultButton {
+  @include v.reset-button;
   width: 100%;
   padding: v.$space-sm v.$space-md;
-  background: transparent;
-  border: none;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  color: inherit;
   text-align: left;
   display: flex;
   justify-content: space-between;
-  cursor: pointer;
-  transition: background 0.15s ease;
+  border-radius: v.$border-radius-md;
+  transition: background-color 0.15s ease;
 
   &:hover {
-    background: rgba(v.$primary-color, 0.08);
+    background-color: rgba(v.$primary-color, 0.08);
   }
-  &:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.35);
-  }
-  &:active,
-  &.active {
-    border-left: 4px solid v.$secondary-color;
-    background: rgba(v.$secondary-color, 0.06);
+
+  & > span:last-child {
+    color: v.$text-secondary;
   }
 }
 
-.teamSection {
+// =============================================
+// Power Ladder Section
+// =============================================
+.powerSection {
+  @include v.component-wrapper;
   display: flex;
   flex-direction: column;
-  gap: v.$space-md;
+  gap: v.$space-lg;
+  padding: v.$space-lg;
 }
 
 .sectionHeader {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
-  gap: v.$space-sm;
-  align-items: baseline;
+  gap: v.$space-md;
+  align-items: flex-start;
 }
 
 .sectionTitle {
-  font-size: clamp(1.4rem, 2vw, 1.8rem);
-  font-weight: 600;
-  font-family: v.$font-family-accent;
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: clamp(1.5rem, 2vw, 2rem);
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
+  margin: 0;
+}
+
+.sectionDescription {
+  color: v.$text-secondary;
+  font-size: v.$font-size-lg;
+  font-variant-caps: all-petite-caps;
+  max-width: 65ch;
+  margin: v.$space-xs 0 0;
 }
 
 .sectionSubtitle {
-  color: v.$text-secondary;
-  font-size: 0.95rem;
+  color: v.$primary-color;
+  font-size: v.$font-size-md;
+  font-family: v.$font-family-accent;
+  margin: 0;
+  text-transform: uppercase;
+  max-width: 65ch;
+  margin: v.$space-xs 0 0;
 }
 
-.sectionTimestamp {
+.sectionMeta {
+  display: flex;
+  gap: v.$space-lg;
   color: v.$text-secondary;
-  font-size: 0.8rem;
+  font-size: v.$font-size-xs;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+  text-align: right;
 }
 
-/* Rolling window segmented control */
-.windowToggle {
+.powerGrid {
+  display: grid;
+  gap: v.$space-lg;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.75fr);
+  align-items: start;
+}
+
+.powerTableWrapper {
+  @include v.glass-panel(0, v.$border-radius-lg);
+  overflow: hidden;
+  border: 1px solid v.$border-primary;
+}
+
+.powerTableHead {
+  display: grid;
+  grid-template-columns: 70px 2.4fr repeat(8, 1.2fr);
+  gap: v.$space-sm;
+  padding: v.$space-md v.$space-lg;
+  background-color: rgba(v.$background-dark, 0.8);
+  border-bottom: 1px solid v.$border-primary;
+  align-items: center;
+
+  span,
+  .sortButton {
+    font-family: v.$font-family-accent;
+    font-size: v.$font-size-xs;
+    color: v.$text-secondary;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-align: center;
+
+    &:nth-child(2) {
+      // Team column
+      text-align: left;
+    }
+  }
+}
+
+.sortButton {
+  @include v.reset-button;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+
+  &:hover {
+    color: v.$primary-color;
+    text-shadow: 0 0 8px rgba(v.$primary-color, 0.5);
+  }
+}
+
+.powerTable {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+
+.powerRow {
+  display: grid;
+  grid-template-columns: 70px 2.4fr repeat(8, 1.2fr);
+  gap: v.$space-sm;
+  padding: v.$space-sm v.$space-md;
+  align-items: center;
+  border-bottom: 1px solid rgba(v.$border-primary, 0.5);
+  transition: background-color 0.2s ease;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background-color: rgba(v.$primary-color, 0.05);
+  }
+}
+
+.powerRank {
+  font-family: v.$font-family-numbers;
+  font-size: v.$font-size-lg;
+  font-weight: 700;
+  color: v.$text-secondary;
+  text-align: center;
+}
+
+.powerTeamCell {
+  display: flex;
+  align-items: center;
+  gap: v.$space-md;
+}
+
+.powerTeamLogo {
+  filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.5));
+}
+
+.powerTeamText {
+  display: flex;
+  flex-direction: column;
+}
+
+.powerTeamName {
+  font-family: v.$font-family-primary;
+  font-weight: 700;
+  color: v.$text-primary;
+  font-size: v.$font-size-base;
+  margin: v.$space-xs;
+}
+
+.powerTeamMeta {
+  font-size: v.$font-size-xs;
+  color: v.$text-secondary;
+}
+
+.teamLogoWrapper {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+}
+
+.teamLogo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.powerScoreCell {
+  display: flex;
+  justify-content: center;
+}
+
+.driverTag {
+  font-family: v.$font-family-numbers;
+  font-weight: 700;
+  font-size: v.$font-size-lg;
+  padding: v.$space-xxs v.$space-sm;
+  border-radius: v.$border-radius-sm;
+  min-width: 60px;
+  text-align: center;
+
+  // Default/Neutral
+  background: rgba(v.$text-secondary, 0.1);
+  color: v.$text-primary;
+  border: 1px solid rgba(v.$text-secondary, 0.2);
+}
+
+.powerValueCell {
+  display: flex;
+  justify-content: center;
+}
+
+.valuePill {
+  font-family: v.$font-family-numbers;
+  font-size: v.$font-size-sm;
+  color: v.$text-secondary;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.2);
+  min-width: 50px;
+  text-align: center;
+}
+
+.tierElite {
+  background: rgba(v.$primary-color, 0.15);
+  color: v.$primary-color;
+  border: 1px solid rgba(v.$primary-color, 0.4);
+  box-shadow: 0 0 10px rgba(v.$primary-color, 0.1);
+}
+
+.tierGood {
+  background-color: rgba(v.$success-color, 0.1);
+  color: v.$success-color;
+  border: 1px solid rgba(v.$success-color, 0.3);
+}
+
+.tierCaution {
+  background-color: rgba(v.$warning-color, 0.1);
+  color: v.$warning-color;
+  border: 1px solid rgba(v.$warning-color, 0.3);
+}
+
+.tierPoor {
+  background-color: rgba(v.$danger-color, 0.1);
+  color: v.$danger-color;
+  border: 1px solid rgba(v.$danger-color, 0.3);
+}
+
+.tierNeutral {
+  background-color: rgba(v.$color-white, 0.1);
+  color: v.$text-secondary;
+  border: 1px solid v.$color-white;
+}
+
+.momentumCell {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-xxs;
+}
+
+.momentumPill {
+  display: inline-flex;
+  align-items: center;
+  gap: v.$space-xs;
+  font-weight: 700;
+  border-radius: v.$border-radius-sm;
+  padding: v.$space-xxs v.$space-xs;
+  font-size: v.$font-size-xs;
+  border: 1px solid;
+}
+
+.momentumHot {
+  @extend .tierElite;
+}
+.momentumWarm {
+  @extend .tierGood;
+}
+.momentumNeutral {
+  @extend .tierNeutral;
+}
+.momentumCool {
+  @extend .tierCaution;
+}
+.momentumCold {
+  @extend .tierPoor;
+}
+
+.momentumReason {
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+}
+
+.powerSidebar {
+  display: grid;
+  gap: v.$space-lg;
+}
+
+.hotColdCard {
+  @include v.glass-panel(v.$space-md, v.$border-radius-lg);
+
+  ul {
+    display: block;
+    list-style-type: disc;
+    margin-block-start: 0;
+    margin-block-end: 0;
+    padding-inline-start: 0;
+  }
+}
+
+.hotColdRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: v.$space-lg;
+  padding: v.$space-sm 0;
+  border-bottom: 1px solid v.$border-primary;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.hotColdTeam {
+  display: flex;
+  align-items: center;
+  gap: v.$space-md;
+}
+
+.hotColdMeta {
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+  max-width: 240px;
+  margin: v.$space-xs;
+}
+
+.sparkCell {
+  margin-left: auto;
+  min-width: 90px;
+  @include v.glass-panel;
+  padding: 2px 4px;
+  border-radius: 6px;
+  border: 1px solid v.$border-secondary;
+  background: rgba(255, 255, 255, 0.03);
+  box-shadow: 0 0 6px rgba(v.$primary-color, 0.2);
+}
+
+.sparkHot {
+  border-color: v.$success-color;
+  box-shadow: 0 0 8px rgba(v.$success-color, 0.35);
+  background-color: rgba(v.$success-color, 0.08);
+}
+
+.sparkCold {
+  border-color: v.$danger-color;
+  box-shadow: 0 0 8px rgba(v.$danger-color, 0.35);
+  background-color: rgba(v.$danger-color, 0.1);
+}
+
+.sparkSvg {
+  width: 100%;
+  height: 40px;
+}
+
+.sparkBaseline {
+  stroke: rgba(v.$text-secondary, 0.35);
+  stroke-width: 1;
+}
+
+.sparkArea {
+  fill: rgba(v.$primary-color, 0.08);
+}
+
+.sparkPath {
+  stroke-width: 2;
+  fill: none;
+}
+
+.rise {
+  stroke: v.$success-color;
+  fill: rgba(v.$success-color, 0.16);
+}
+
+.fall {
+  stroke: v.$danger-color;
+  fill: rgba(v.$danger-color, 0.18);
+}
+
+.sparkEmpty {
+  color: v.$text-secondary;
+  font-size: 0.85rem;
+}
+
+// =============================================
+// Dashboard Tabs & Charts
+// =============================================
+.topTabs {
   display: flex;
   gap: v.$space-xs;
+  padding: 0 v.$space-xs;
+  border-bottom: 1px solid v.$border-primary;
+}
+
+.tab {
+  @include v.reset-button;
+  font-family: v.$font-family-accent, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: v.$space-sm v.$space-md;
+  font-size: v.$font-size-base;
+  color: v.$text-secondary;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: all 0.2s ease;
+
+  &:hover:not([aria-selected="true"]) {
+    color: v.$text-primary;
+    border-bottom-color: rgba(v.$primary-color, 0.3);
+  }
+}
+
+.tabActive {
+  color: v.$primary-color;
+  font-weight: 700;
+  border-bottom-color: v.$primary-color;
+}
+
+.subTabs {
+  display: flex;
+  gap: v.$space-sm;
   align-items: center;
+  flex-wrap: wrap;
+  padding-bottom: v.$space-md;
+  border-bottom: 1px solid v.$border-primary;
+}
+
+.subTab {
+  @include v.button-ghost(false);
+}
+
+.subTabActive {
+  @include v.button-ghost(true);
+}
+
+.windowToggle {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
 }
 
 .windowButton {
-  @include v.button-style;
-  font-family: v.$font-family-accent;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  border-radius: v.$border-radius-md;
-  padding: calc(v.$space-xxs) v.$space-sm;
-  font-weight: 700;
-  background: rgba(v.$background-dark, 0.02);
-  color: v.$text-button;
-  border: 1px solid rgba(v.$primary-color, 0.08);
-  font-size: 0.72rem;
+  @include v.button-ghost(false);
+  padding: v.$space-xs;
   min-width: 48px;
-  text-align: center;
 }
 
 .windowActive {
-  background: rgba(v.$primary-color, 0.12);
-  color: v.$primary-color;
-  border: 2px solid v.$primary-color;
-  box-shadow: 0 6px 18px rgba(v.$primary-color, 0.06);
-  transform: translateY(-1px);
+  @include v.button-ghost(true);
 }
 
-.teamError {
-  border-radius: v.$border-radius-lg;
-  border: 1px solid rgba(v.$danger-color, 0.35);
-  background: rgba(v.$danger-color, 0.1);
-  padding: v.$space-md;
-  color: v.$danger-color;
+.skaterControls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: v.$space-sm;
+  margin-left: auto;
+
+  select {
+    @extend .searchInput; // reuse style from hero
+    padding-right: v.$space-xl;
+  }
 }
 
-.teamLoading {
-  border-radius: v.$border-radius-lg;
-  padding: v.$space-xl;
-  text-align: center;
-  color: v.$text-secondary;
-  border: 1px solid v.$border-secondary;
-  background: rgba(v.$background-light, 0.15);
+.dashboardContent {
+  @include v.component-wrapper;
+  padding: v.$space-lg;
+  background-color: v.$background-medium;
 }
 
 .trendGrid {
   display: grid;
   gap: v.$space-lg;
-  align-items: stretch;
-  grid-template-columns: repeat(2, minmax(220px, 0.55fr) minmax(320px, 1.45fr));
-
-  @media (max-width: 1400px) {
-    grid-template-columns: minmax(220px, 0.6fr) minmax(0, 1.4fr);
-  }
-
-  @media (max-width: 900px) {
-    grid-template-columns: minmax(0, 1fr);
-  }
+  grid-template-columns: minmax(320px, 0.8fr) minmax(0, 1.2fr);
 }
 
 .chartCard {
-  padding: v.$space-sm v.$space-md;
+  @include v.component-wrapper;
+  padding: v.$space-lg;
+  background-color: v.$background-dark;
   display: flex;
   flex-direction: column;
-  position: relative;
-  height: 100%;
-  transition:
-    transform 0.18s ease,
-    box-shadow 0.18s ease;
-
-  &:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 14px 40px rgba(v.$primary-color, 0.06);
-  }
-  // thick neon left border + soft halo
-  background-color: rgba(v.$secondary-color, 0.06);
-  border: 1px solid v.$secondary-color;
-  border-left: 12px solid v.$secondary-color;
-  border-radius: v.$border-radius-lg;
-  box-shadow:
-    0 6px 24px rgba(v.$secondary-color, 0.05),
-    0 0 18px rgba(v.$secondary-color, 0.03) inset;
+  gap: v.$space-md;
 }
 
 .chartHeaderWrapper {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  gap: v.$space-xs;
 }
 
 .chartTitleGroup {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: v.$space-sm;
 }
 
 .chartHeading {
-  font-size: 0.85rem;
-  letter-spacing: 0.08em;
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: v.$font-size-lg;
   text-transform: uppercase;
+  letter-spacing: 0.08em;
   color: v.$primary-color;
-  font-weight: 700;
-  font-family: v.$font-family-accent;
 }
 
 .infoWrapper {
@@ -376,193 +716,147 @@
 }
 
 .infoButton {
+  @include v.reset-button;
   display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  border: 1px solid rgba(v.$primary-color, 0.5);
-  background: rgba(v.$primary-color, 0.12);
-  color: v.$primary-color;
-  cursor: help;
-  padding: 0;
-  line-height: 1;
-  transition:
-    background 0.15s ease,
-    transform 0.15s ease,
-    box-shadow 0.15s ease;
-
-  &:hover,
-  &:focus-visible {
-    outline: none;
-    background: rgba(v.$primary-color, 0.2);
-    box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.25);
-    transform: translateY(-1px);
+  color: v.$text-secondary;
+  &:hover {
+    color: v.$primary-color;
   }
 }
 
 .infoIcon {
-  width: 12px;
-  height: 12px;
+  width: 18px;
+  height: 18px;
 }
 
 .infoTooltip {
+  @include v.glass-panel(v.$space-md, v.$border-radius-md);
   position: absolute;
   top: calc(100% + 8px);
-  right: 0;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 20;
-  max-width: 360px;
-  min-width: 240px;
-  padding: v.$space-sm v.$space-md;
-  border-radius: v.$border-radius-md;
-  background: rgba(v.$background-dark, 0.96);
-  color: v.$text-button;
-  border: 1px solid v.$border-secondary;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
-  font-size: 0.8rem;
-  line-height: 1.3;
+  width: 320px;
+  font-size: v.$font-size-sm;
+  line-height: 1.5;
   opacity: 0;
   pointer-events: none;
-  transform: translateY(-4px);
-  transition:
-    opacity 0.15s ease,
-    transform 0.15s ease;
+  transition: all 0.2s ease;
 
-  &::after {
-    content: "";
-    position: absolute;
-    top: -6px;
-    right: 10px;
-    width: 10px;
-    height: 10px;
-    background: rgba(v.$background-dark, 0.96);
-    border-left: 1px solid v.$border-secondary;
-    border-top: 1px solid v.$border-secondary;
-    transform: rotate(45deg);
+  .infoWrapper:hover &,
+  .infoWrapper:focus-within & {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+    pointer-events: auto;
+  }
+
+  strong,
+  b {
+    color: v.$text-primary;
+    font-weight: 600;
   }
 }
 
-.infoWrapper:hover .infoTooltip,
-.infoWrapper:focus-within .infoTooltip {
-  opacity: 1;
-  transform: translateY(0);
-  pointer-events: auto;
-}
-
 .infoList {
-  margin: 6px 0 0;
-  padding-left: 18px;
+  margin: v.$space-sm 0 0;
+  padding-left: v.$space-md;
   li {
-    margin: 2px 0;
+    margin-bottom: v.$space-xs;
   }
 }
 
 .chartDescription {
-  font-size: 0.8rem;
+  font-size: v.$font-size-sm;
   color: v.$text-secondary;
 }
 
 .chartShell {
   height: 320px;
-  padding: v.$space-md;
-  border-radius: v.$border-radius-md;
-  background: color.adjust(v.$background-dark, $lightness: 14%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: inset 0 2px 14px rgba(0, 0, 0, 0.35);
-
-  @media (max-width: 600px) {
-    height: 260px;
-  }
 }
 
-// Chart CSS variables for Recharts props
 .chartTheme {
-  --chart-grid: #{color.adjust(v.$background-light, $lightness: 28%)};
-  --chart-tick: #{color.adjust(v.$secondary-color, $lightness: -5%)};
+  --chart-grid: #{v.$border-primary};
+  --chart-tick: #{v.$text-secondary};
   --chart-cursor: #{rgba(v.$primary-color, 0.4)};
 }
 
-.chartEmpty {
-  height: 230px;
+.chartEmpty,
+.teamLoading,
+.teamError {
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
   color: v.$text-secondary;
-  font-size: 0.9rem;
+  font-size: v.$font-size-base;
+  border: 1px dashed v.$border-primary;
+  border-radius: v.$border-radius-md;
+}
+
+.teamError {
+  background-color: rgba(v.$danger-color, 0.1);
+  color: v.$danger-color;
+  border-color: rgba(v.$danger-color, 0.3);
 }
 
 .chartShellLarge {
   height: 520px;
-  @media (max-width: 600px) {
-    height: 360px;
-  }
 }
 
 .chartTooltip {
-  background: rgba(v.$background-dark, 0.95);
-  border: 1px solid v.$border-secondary;
-  border-radius: v.$border-radius-md;
-  padding: v.$space-sm v.$space-md;
-  font-size: 0.8rem;
-  color: v.$text-button;
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
+  @include v.glass-panel(v.$space-sm, v.$border-radius-md);
+  min-width: 150px;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-xs;
+}
+
+.chartTooltipHeader {
+  display: flex;
+  align-items: center;
+  gap: v.$space-sm;
+  font-weight: 700;
+  font-size: v.$font-size-base;
+}
+
+.chartTooltipValue {
+  font-size: v.$font-size-lg;
+  font-family: v.$font-family-numbers, monospace;
+  font-weight: 700;
+  color: v.$text-primary;
 }
 
 .chartTooltipLabel {
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  font-size: 0.7rem;
+  font-size: v.$font-size-xs;
   color: v.$text-secondary;
 }
 
-.chartTooltipTeam {
-  font-weight: 600;
-  margin-top: 2px;
-}
-
-.chartTooltipValue {
-  font-size: 0.9rem;
-  font-weight: 600;
-  margin-top: 4px;
-}
-
 .chartMovers {
-  margin-top: v.$space-sm;
+  margin-top: v.$space-md;
 }
 
 .rankingCard {
-  @include v.glass-panel;
-  padding: v.$space-sm v.$space-md;
+  @include v.component-wrapper;
+  background-color: v.$background-dark;
+  padding: v.$space-lg;
   display: flex;
   flex-direction: column;
-  height: 100%;
-  gap: v.$space-xs;
-  border: 1px solid v.$secondary-color;
-  border-left: 12px solid v.$secondary-color;
-  border-radius: v.$border-radius-lg;
-  background-color: rgba(v.$secondary-color, 0.06);
+  gap: v.$space-md;
 }
 
 .rankingHeading {
   display: flex;
-  flex-direction: row;
-  justify-content: center;
-  align-items: center;
-  gap: 4px;
+  flex-direction: column;
 }
 
 .rankingTitle {
-  font-size: 0.85rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: v.$primary-color;
+  @extend .chartHeading;
 }
 
 .rankingMeta {
-  font-size: 0.6rem;
-  color: v.$text-secondary;
-  margin: 0;
+  @extend .chartDescription;
 }
 
 .rankingList {
@@ -572,66 +866,38 @@
   display: flex;
   flex-direction: column;
   gap: v.$space-sm;
-  height: 100%;
 }
 
 .rankingRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: v.$space-xs v.$space-sm v.$space-xs v.$space-xs;
+  padding: v.$space-sm;
   border-radius: v.$border-radius-md;
-  background-color: rgba(v.$secondary-color, 0.2);
-  border: 1px solid rgba(v.$primary-color, 0.3);
-  border-bottom: 8px solid rgba(v.$primary-color, 0.8);
-  height: 10%;
-}
-
-.skaterControls {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
-  gap: v.$space-sm;
+  background-color: v.$background-medium;
+  border: 1px solid v.$border-primary;
 }
 
 .skaterRankingCard {
-  border-left-color: v.$primary-color;
-  border-left-width: 12px;
-  background-color: rgba(v.$primary-color, 0.08);
-  gap: v.$space-sm;
+  @extend .chartCard;
 }
 
 .skaterRankingList {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: v.$space-sm;
-  max-height: 565px;
-  flex: 1 1 auto;
+  @extend .rankingList;
+  max-height: 500px;
   overflow-y: auto;
-  padding-right: 4px;
+  padding-right: v.$space-xs;
   @include v.custom-scrollbar(v.$primary-color, transparent, 6px);
 }
 
 .skaterRankingRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: v.$space-sm;
-  padding: v.$space-xs v.$space-sm;
-  border-radius: v.$border-radius-md;
-  border: 1px solid rgba(v.$primary-color, 0.3);
-  background-color: rgba(v.$secondary-color, 0.12);
+  @extend .rankingRow;
 }
 
 .skaterInfo {
   display: flex;
   align-items: center;
-  gap: v.$space-sm;
-  flex: 1 1 auto;
+  gap: v.$space-md;
   min-width: 0;
 }
 
@@ -640,8 +906,8 @@
   height: 42px;
   border-radius: 50%;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: v.$background-dark;
+  border: 1px solid v.$border-primary;
   flex-shrink: 0;
 }
 
@@ -649,21 +915,17 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  display: block;
 }
 
 .skaterText {
   display: flex;
   flex-direction: column;
-  gap: 2px;
   min-width: 0;
 }
 
 .skaterName {
   margin: 0;
-  font-size: 0.9rem;
   font-weight: 600;
-  color: v.$text-primary;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -671,313 +933,147 @@
 
 .skaterMeta {
   margin: 0;
-  font-size: 0.75rem;
+  font-size: v.$font-size-sm;
   color: v.$text-secondary;
 }
 
 .skaterScore {
   display: flex;
   align-items: center;
-  gap: v.$space-xs;
+  gap: v.$space-md;
+  font-family: v.$font-family-numbers, monospace;
 }
 
 .teamCell {
   display: flex;
   align-items: center;
-  flex: 0 0 60%;
-  width: 60%;
-
-  // make each direct child (rank, deltaWrapper, teamLogoWrapper) equal width
-  > * {
-    flex: 1 1 0;
-    min-width: 0; // allow truncation
-  }
+  gap: v.$space-sm;
 }
-
-// target recharts brush SVG elements — make the slide/rect look white but derived from theme tokens
-.recharts-brush {
-  // the dimmed background (outside of selection)
-  .recharts-brush-background,
-  .recharts-brush-rect {
-    fill: rgba(v.$color-white, 0.03);
-    stroke: rgba(v.$color-white, 0.08);
-    stroke-width: 0.5px;
-  }
-
-  // the highlighted selected area (slide) should read as a translucent white overlay
-  .recharts-brush-slide {
-    fill: rgba(v.$color-white, 0.06);
-    stroke: rgba(v.$color-white, 0.12);
-    stroke-width: 0.6px;
-  }
-
-  // traveller handles (drag grips)
-  .recharts-traveller {
-    fill: v.$color-white;
-    stroke: rgba(v.$background-dark, 0.18);
-    opacity: 0.96;
-    cursor: grab;
-    filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.45));
-  }
-
-  .recharts-brush-text {
-    fill: var(--chart-tick);
-    font-size: 0.72rem;
-  }
-  // Recharts sometimes injects inline style attributes on <rect> elements which are hard to override.
-  // Use a high-specificity rule and !important to ensure our theme values take precedence.
-  rect {
-    /* selected slide / rect */
-    fill: rgba(v.$color-white, 0.06) !important;
-    stroke: rgba(v.$color-white, 0.12) !important;
-    fill-opacity: 0.06 !important;
-  }
-
-  // extra-high-specificity fallbacks to beat inline styles in some browsers / versions
-  // target the svg path where Recharts mounts the brush rect
-  & > svg rect[style],
-  svg .recharts-brush-rect[style],
-  rect.recharts-brush-rect[style],
-  rect[style].recharts-brush-rect {
-    fill: rgba(v.$color-white, 0.06) !important;
-    stroke: rgba(v.$color-white, 0.12) !important;
-    fill-opacity: 0.06 !important;
-  }
-}
-
-.teamLogo {
-  flex: 0 0 30px;
-  width: 30px;
-  height: 30px;
-  display: block;
-  object-fit: contain;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.45));
-}
-
-/* Ensure the logo block sits at the far-right of the teamCell so all logos align */
-.teamLogoWrapper {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-}
-
-/* unified .teamLogo defined above */
 
 .rank {
-  /* share width equally within .teamCell */
-  flex: 1 1 0;
-  width: auto;
-  font-weight: 600;
+  font-weight: 700;
   color: v.$text-secondary;
-  min-width: 0;
+  width: 24px;
   text-align: center;
-  padding-right: 10%;
-}
-
-.teamAbbr {
-  font-size: 0.75rem;
-  color: v.$text-secondary;
-}
-
-.scoreCell {
-  display: flex;
-  align-items: center;
-  flex: 0 0 30%;
-  width: 30%;
-  justify-content: center;
 }
 
 .deltaWrapper {
-  /* share width equally within .teamCell */
-  flex: 1 1 0;
-  width: auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-width: 0;
+  width: 40px;
+  text-align: center;
 }
 
 .delta {
-  font-size: 0.65rem;
-  font-weight: 600;
-  text-align: center;
+  font-size: v.$font-size-xs;
+  font-weight: 700;
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  flex-direction: column;
+  gap: v.$space-xxs;
 }
 
 .deltaPositive {
   color: v.$success-color;
 }
-
 .deltaNegative {
   color: v.$danger-color;
 }
-
 .deltaNeutral {
   color: v.$text-secondary;
 }
 
 .percentile {
-  font-size: 0.85rem;
-  font-weight: 600;
-}
-
-/* Tabs layout for the dashboard */
-.topTabs {
-  display: flex;
-  gap: v.$space-xs;
-  align-items: flex-end;
-  margin-top: v.$space-md;
-  padding: 0 v.$space-xs;
-  border-bottom: 1px solid v.$border-secondary;
-}
-
-.tab {
-  @include v.reset-button;
-  font-family: v.$font-family-accent;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: calc(v.$space-xxs + 2px) v.$space-sm;
+  font-size: v.$font-size-base;
   font-weight: 700;
-  font-size: 0.8rem;
-  color: v.$text-primary;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-bottom: none;
-  border-top-left-radius: v.$border-radius-lg;
-  border-top-right-radius: v.$border-radius-lg;
-  background: linear-gradient(
-    to bottom,
-    color.adjust(v.$background-light, $lightness: 22%),
-    color.adjust(v.$background-light, $lightness: 12%)
-  );
-  box-shadow: 0 -1px 0 rgba(0, 0, 0, 0.12) inset;
-  margin-bottom: -1px; // overlap bar separator
-  cursor: pointer;
-  transition:
-    filter 0.15s ease,
-    transform 0.15s ease,
-    box-shadow 0.15s ease;
-
-  &:hover {
-    filter: brightness(1.06);
-  }
-  &:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.35);
-  }
+  font-family: v.$font-family-numbers, monospace;
 }
 
-.tabActive {
-  z-index: 2;
-  color: v.$text-primary;
-  border-color: rgba(255, 255, 255, 0.2);
-  background: linear-gradient(
-    to bottom,
-    color.adjust(v.$background-light, $lightness: 28%),
-    color.adjust(v.$background-light, $lightness: 16%)
-  );
-  box-shadow:
-    0 -1px 0 rgba(0, 0, 0, 0.18) inset,
-    0 8px 24px rgba(0, 0, 0, 0.18);
-}
-
-.subTabs {
-  display: flex;
-  gap: v.$space-xxs;
-  align-items: flex-end;
-  margin: v.$space-sm 0 v.$space-sm;
-  padding: 0 v.$space-xxs;
-  border-bottom: 1px solid v.$border-secondary;
-  flex-wrap: wrap;
-}
-
-.subTab {
-  @include v.reset-button;
-  font-family: v.$font-family-accent;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+// =============================================
+// Luck Badges
+// =============================================
+.luckWrapper {
+  display: grid;
+  place-items: center;
   position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: calc(v.$space-xxs + 1px) v.$space-sm;
-  font-weight: 700;
-  font-size: 0.72rem;
-  color: v.$text-primary;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-bottom: none;
-  border-top-left-radius: v.$border-radius-md;
-  border-top-right-radius: v.$border-radius-md;
-  background: linear-gradient(
-    to bottom,
-    color.adjust(v.$background-light, $lightness: 18%),
-    color.adjust(v.$background-light, $lightness: 10%)
-  );
-  box-shadow: 0 -1px 0 rgba(0, 0, 0, 0.1) inset;
-  margin-bottom: -1px;
-  cursor: pointer;
-  transition:
-    filter 0.15s ease,
-    transform 0.15s ease,
-    box-shadow 0.15s ease;
-
-  &:hover {
-    filter: brightness(1.05);
-  }
-  &:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.35);
-  }
 }
 
-.subTabActive {
-  z-index: 2;
-  color: v.$text-primary;
-  border-color: rgba(255, 255, 255, 0.2);
-  background: linear-gradient(
-    to bottom,
-    color.adjust(v.$background-light, $lightness: 24%),
-    color.adjust(v.$background-light, $lightness: 14%)
-  );
-  box-shadow:
-    0 -1px 0 rgba(0, 0, 0, 0.16) inset,
-    0 6px 18px rgba(0, 0, 0, 0.14);
+.luckWrapper > * {
+  grid-area: 1 / 1;
 }
 
-.dashboardContent {
-  @include v.glass-panel;
-  border-radius: v.$border-radius-lg;
-  padding: v.$space-md;
-  margin-top: v.$space-xs;
-  border: 1px solid v.$border-secondary;
-  background: color.adjust(v.$background-dark, $lightness: 10%);
+.luckWrapper .valuePill {
+  transition: opacity 0.5s ease;
 }
 
-.hidden {
-  display: none !important;
-}
-
-.legacyLink {
+.luckBadge {
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.05em;
+  min-width: 50px;
+  width: 100%;
   text-align: center;
-  font-size: 0.8rem;
-  color: v.$text-secondary;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  z-index: 2;
+}
 
-  button {
-    color: v.$primary-color;
-    border: none;
-    background: none;
-    padding: 0;
-    margin-left: 4px;
-    cursor: pointer;
-    text-decoration: underline;
-    font-weight: 600;
+.hasBadge:hover .luckBadge {
+  opacity: 1;
+}
+
+.hasBadge:hover .valuePill {
+  opacity: 0;
+}
+
+.luckLucky {
+  background-color: rgba(v.$success-color, 0.2);
+  color: v.$success-color;
+  border: 1px solid rgba(v.$success-color, 0.4);
+}
+
+.luckUnlucky {
+  background-color: rgba(v.$danger-color, 0.2);
+  color: v.$danger-color;
+  border: 1px solid rgba(v.$danger-color, 0.4);
+}
+
+// =============================================
+// Responsive
+// =============================================
+@media (max-width: v.$breakpoint-desktop) {
+  .powerGrid {
+    grid-template-columns: 1fr;
+  }
+  .trendGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: v.$breakpoint-tablet) {
+  .page {
+    padding: v.$space-lg v.$space-md;
+  }
+  .hero {
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+  }
+  .searchForm {
+    max-width: none;
+  }
+  .powerRow,
+  .powerTableHead {
+    grid-template-columns: 32px 1fr 1fr;
+    .powerDriverCell,
+    .powerScoreCell,
+    .powerValueCell:nth-child(n + 5),
+    .momentumCell {
+      display: none;
+    }
   }
 }

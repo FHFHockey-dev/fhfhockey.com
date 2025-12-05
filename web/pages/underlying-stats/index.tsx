@@ -21,8 +21,43 @@ type PageProps = {
 const tierLabels: Record<SpecialTeamTier, string> = {
   1: "Tier 1 · Elite",
   2: "Tier 2 · Middle",
-  3: "Tier 3 · Needs Work"
+  3: "Tier 3 · Subpar"
 };
+
+const COMPONENT_RATING_FIELDS = [
+  {
+    key: "finishingRating",
+    label: "Finishing",
+    tableLabel: "Finish",
+    description: "GF60 vs xGF60"
+  },
+  {
+    key: "goalieRating",
+    label: "Goaltending",
+    tableLabel: "Goalie",
+    description: "xGA60 vs GA60"
+  },
+  {
+    key: "dangerRating",
+    label: "Danger Mix",
+    tableLabel: "Danger",
+    description: "High-danger share"
+  },
+  {
+    key: "specialRating",
+    label: "Special Teams",
+    tableLabel: "Special",
+    description: "PP xGF + PK suppression"
+  },
+  {
+    key: "disciplineRating",
+    label: "Discipline",
+    tableLabel: "Disc",
+    description: "Drawn vs taken penalties"
+  }
+] as const;
+
+type ComponentRatingKey = (typeof COMPONENT_RATING_FIELDS)[number]["key"];
 
 const formatDateLabel = (isoDate: string): string => {
   try {
@@ -37,14 +72,19 @@ const formatPer60 = (value: number): string => value.toFixed(2);
 const formatTrend = (value: number): string =>
   `${value > 0 ? "+" : ""}${value.toFixed(1)}`;
 const formatPower = (value: number): string => value.toFixed(1);
+const formatOptionalRating = (value: number | null): string => {
+  if (typeof value !== "number" || Number.isNaN(value)) {
+    return "—";
+  }
+  return formatRating(value);
+};
 
 const getTeamName = (abbr: string): string =>
   teamsInfo[abbr as keyof typeof teamsInfo]?.name ?? abbr;
 
 const SPECIAL_TEAM_STEP = 1.5;
 const computePowerScore = (team: TeamRating): number => {
-  const base =
-    (team.offRating + team.defRating + team.paceRating) / 3;
+  const base = (team.offRating + team.defRating + team.paceRating) / 3;
   const ppAdj = (3 - team.ppTier) * SPECIAL_TEAM_STEP;
   const pkAdj = (3 - team.pkTier) * SPECIAL_TEAM_STEP;
   return base + ppAdj + pkAdj;
@@ -118,16 +158,50 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
 
   const rankedRatings = useMemo(
     () =>
-      [...ratings].sort(
-        (a, b) => computePowerScore(b) - computePowerScore(a)
-      ),
+      [...ratings].sort((a, b) => computePowerScore(b) - computePowerScore(a)),
     [ratings]
   );
 
-  const topTeams = useMemo(
-    () => rankedRatings.slice(0, 3),
-    [rankedRatings]
-  );
+  const topTeams = useMemo(() => rankedRatings.slice(0, 3), [rankedRatings]);
+
+  const getComponentBadgeClass = (value: number | null): string => {
+    if (typeof value !== "number" || Number.isNaN(value)) {
+      return styles.componentNeutral;
+    }
+    if (value >= 105) {
+      return styles.componentPositive;
+    }
+    if (value <= 95) {
+      return styles.componentNegative;
+    }
+    return styles.componentNeutral;
+  };
+
+  type SubRatingMetric = {
+    key: ComponentRatingKey;
+    label: string;
+    value: number | null;
+    description: string;
+  };
+
+  const subRatingMetrics = useMemo(() => {
+    const leader = rankedRatings[0];
+    if (!leader) return [];
+    const items: SubRatingMetric[] = COMPONENT_RATING_FIELDS.map(
+      ({ key, label, description }) => ({
+        key,
+        label,
+        description,
+        value: leader[key]
+      })
+    );
+    return items.filter(
+      (entry): entry is SubRatingMetric & { value: number } =>
+        typeof entry.value === "number" && !Number.isNaN(entry.value)
+    );
+  }, [rankedRatings]);
+
+  const shouldShowSubRatings = subRatingMetrics.length > 0;
 
   const handleDateChange = (event: ChangeEvent<HTMLSelectElement>) => {
     const value = event.target.value;
@@ -169,64 +243,112 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
         />
       </Head>
       <main className={styles.page}>
-        <section className={styles.header}>
-          <div>
-            <h1 className={styles.title}>Team Power Rankings</h1>
-            <p className={styles.description}>
-              Offense, defense, and pace scores are normalized to a 100-point
-              league average using per-60 expected and actual results blended
-              with an EWMA + shrinkage model. Special teams tiers come from
-              daily power-play and penalty-kill percentiles, while the trend
-              reflects movement versus each club&apos;s 10-game baseline.
-            </p>
-          </div>
-          <div className={styles.controls}>
-            <label className={styles.controlLabel} htmlFor="date-select">
-              Snapshot date
-            </label>
-            <select
-              id="date-select"
-              className={styles.dateSelect}
-              value={selectedDate}
-              onChange={handleDateChange}
-              disabled={!dateOptions.length}
-            >
-              {dateOptions.map((date) => (
-                <option key={date} value={date}>
-                  {formatDateLabel(date)}
-                </option>
-              ))}
-            </select>
-            <span className={styles.controlHint}>
-              Showing {ratings.length} teams · Updated nightly after new games
-            </span>
+        <section className={styles.headerPanel}>
+          <div className={styles.header}>
+            <div>
+              <h1 className={styles.title}>Team Power Rankings</h1>
+              <p className={styles.description}>
+                Offense, defense, and pace scores are normalized to a 100-point
+                league average using per-60 expected and actual results blended
+                with an EWMA + shrinkage model. Special teams tiers come from
+                daily power-play and penalty-kill percentiles, while the trend
+                reflects movement versus each club&apos;s 10-game baseline.
+              </p>
+            </div>
+            <div className={styles.controls}>
+              <label className={styles.controlLabel} htmlFor="date-select">
+                Snapshot date
+              </label>
+              <select
+                id="date-select"
+                className={styles.dateSelect}
+                value={selectedDate}
+                onChange={handleDateChange}
+                disabled={!dateOptions.length}
+              >
+                {dateOptions.map((date) => (
+                  <option key={date} value={date}>
+                    {formatDateLabel(date)}
+                  </option>
+                ))}
+              </select>
+              <span className={styles.controlHint}>
+                Showing {ratings.length} teams · Updated nightly after new games
+              </span>
+            </div>
           </div>
         </section>
 
-        <section className={styles.legendSection}>
+        <section className={styles.secondaryPanels}>
           <details className={styles.legend}>
             <summary className={styles.legendSummary}>
               Metric legend &amp; formulas
             </summary>
             <div className={styles.legendContent}>
               <p>
-                <strong>Power Score</strong> averages the offense, defense,
-                and pace indices, then adds 1.5 points for each special
-                teams tier step (Tier&nbsp;1 → +3, Tier&nbsp;2 → +1.5,
-                Tier&nbsp;3 → 0) for both PP and PK.
+                <strong>Power Score</strong> averages the offense, defense, and
+                pace indices, then adds 1.5 points for each special teams tier
+                step (Tier&nbsp;1 → +3, Tier&nbsp;2 → +1.5, Tier&nbsp;3 → 0) for
+                both PP and PK.
               </p>
               <p>
-                <strong>Offense / Defense / Pace</strong> originate from the
-                materialized view: offense blends xGF60, SF60, GF60; defense
-                inverts xGA60, SA60, GA60; pace normalizes ((CF60 + CA60) / 2).
+                <strong>Offense</strong> = 100 + 15 × Z(<em>0.7×z(xGF60)</em> +
+                <em>0.2×z(SF60)</em> + <em>0.1×z(GF60)</em>).{" "}
+                <strong>Defense</strong> = 100 + 15 × Z(<em>0.7×z(-xGA60)</em> +
+                <em>0.2×z(-SA60)</em> + <em>0.1×z(-GA60)</em>).{" "}
+                <strong>Pace</strong> = 100 + 15 × Z(<em>((CF60+CA60)/2)</em>).
               </p>
               <p>
                 <strong>Trend</strong> compares today’s offense index against
                 each club’s 10-game baseline. <strong>Pace60</strong> is the
                 underlying per-60 pace metric from the view.
               </p>
+              <p>
+                <strong>Component Ratings</strong> turn the newly appended
+                finishing, goalie, danger-mix, special teams, and discipline
+                columns into the same 100-point scale (105 = strong, 95 = weak)
+                for quick trend checks.
+              </p>
             </div>
           </details>
+
+          {shouldShowSubRatings && (
+            <section className={styles.subRatings}>
+              <div className={styles.subRatingsHeader}>
+                <div>
+                  <h2>Sub-Ratings Spotlight</h2>
+                  <p>
+                    League-relative scores (100 = average) for the top-ranked
+                    club across finishing, goaltending, danger mix, special
+                    teams, and discipline.
+                  </p>
+                </div>
+                {rankedRatings[0]?.varianceFlag === 1 && (
+                  <span
+                    className={styles.varianceFlagBadge}
+                    title="PDO variance warning: performance may regress toward expected levels."
+                  >
+                    ⚠︎ High Variance
+                  </span>
+                )}
+              </div>
+              <div className={styles.subRatingsGrid}>
+                {subRatingMetrics.map((metric) => (
+                  <article key={metric.key} className={styles.subRatingCard}>
+                    <span className={styles.subRatingLabel}>
+                      {metric.label}
+                    </span>
+                    <span className={styles.subRatingValue}>
+                      {formatRating(metric.value)}
+                    </span>
+                    <span className={styles.subRatingHint}>
+                      {metric.description}
+                    </span>
+                  </article>
+                ))}
+              </div>
+            </section>
+          )}
         </section>
 
         <section className={styles.summaryGrid} aria-label="Top teams overview">
@@ -319,6 +441,12 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
                     <th scope="col">xGF60</th>
                     <th scope="col">xGA60</th>
                     <th scope="col">Pace60</th>
+                    {COMPONENT_RATING_FIELDS.map(({ key, tableLabel }) => (
+                      <th scope="col" key={key}>
+                        {tableLabel}
+                      </th>
+                    ))}
+                    <th scope="col">Variance</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -329,6 +457,14 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
                         <span className={styles.teamName}>{team.teamAbbr}</span>
                         <span className={styles.teamMeta}>
                           {getTeamName(team.teamAbbr)}
+                          {team.varianceFlag === 1 && (
+                            <span
+                              className={styles.varianceFlagInline}
+                              title="PDO variance warning: recent results may regress toward expected levels."
+                            >
+                              ⚠︎
+                            </span>
+                          )}
                         </span>
                       </td>
                       <td className={styles.powerCell}>
@@ -365,6 +501,41 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
                       <td>{formatPer60(team.components.xgf60)}</td>
                       <td>{formatPer60(team.components.xga60)}</td>
                       <td>{formatPer60(team.components.pace60)}</td>
+                      {COMPONENT_RATING_FIELDS.map(({ key }) => {
+                        const value = team[key];
+                        return (
+                          <td
+                            key={`${team.teamAbbr}-${key}`}
+                            className={styles.componentCell}
+                          >
+                            <span
+                              className={`${styles.componentBadge} ${getComponentBadgeClass(
+                                value
+                              )}`}
+                            >
+                              {formatOptionalRating(value)}
+                            </span>
+                          </td>
+                        );
+                      })}
+                      <td className={styles.varianceCell}>
+                        {team.varianceFlag === null ||
+                        team.varianceFlag === undefined ? (
+                          "—"
+                        ) : team.varianceFlag === 1 ? (
+                          <span
+                            className={`${styles.variancePill} ${styles.varianceHigh}`}
+                          >
+                            High
+                          </span>
+                        ) : (
+                          <span
+                            className={`${styles.variancePill} ${styles.varianceStable}`}
+                          >
+                            Stable
+                          </span>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

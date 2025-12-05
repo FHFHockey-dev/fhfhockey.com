@@ -5,6 +5,32 @@ import supabase from "lib/supabase";
 import { teamsInfo } from "lib/teamsInfo";
 import { getDateRangeForGames } from "./utilities"; // Import the helper function
 
+// Type definition for shift chart data
+type ShiftChartRow = {
+  game_id: number;
+  game_type: string | null;
+  player_id: number | null;
+  player_first_name: string | null;
+  player_last_name: string | null;
+  team_id: number | null;
+  team_abbreviation: string | null;
+  game_toi: string | null;
+  home_or_away: string | null;
+  opponent_team_abbreviation: string | null;
+  opponent_team_id: number | null;
+  display_position: string | null;
+  primary_position: string | null;
+  time_spent_with: any;
+  percent_toi_with: any;
+  time_spent_with_mixed: any;
+  percent_toi_with_mixed: any;
+  game_length: string | null;
+  line_combination: number | null;
+  pairing_combination: number | null;
+  season_id: number | null;
+  player_type: string | null;
+};
+
 // Function to fetch all data for a team within a date range
 async function fetchAllDataForTeam(
   teamId: number,
@@ -14,7 +40,7 @@ async function fetchAllDataForTeam(
 ) {
   const PAGE_SIZE = 1000;
   let offset = 0;
-  let allData: { game_id: string; game_type: string; player_id: number }[] = [];
+  let allData: ShiftChartRow[] = [];
   let fetchMore = true;
 
   const fieldsToSelect =
@@ -49,8 +75,7 @@ async function fetchAllDataForTeam(
     if (!data || data.length === 0) {
       fetchMore = false;
     } else {
-      // @ts-expect-error
-      allData = allData.concat(data);
+      allData = allData.concat(data as unknown as ShiftChartRow[]);
       offset += PAGE_SIZE;
     }
   }
@@ -68,7 +93,7 @@ async function fetchDataForPlayer(
 ) {
   const PAGE_SIZE = 1000;
   let offset = 0;
-  let allData: any[] = [];
+  let allData: ShiftChartRow[] = [];
   let fetchMore = true;
 
   const fieldsToSelect = [
@@ -92,7 +117,7 @@ async function fetchDataForPlayer(
     "line_combination",
     "pairing_combination",
     "season_id",
-    "player_type",
+    "player_type"
   ];
 
   while (fetchMore) {
@@ -117,7 +142,7 @@ async function fetchDataForPlayer(
     if (!data || data.length === 0) {
       fetchMore = false;
     } else {
-      allData = allData.concat(data);
+      allData = allData.concat(data as unknown as ShiftChartRow[]);
       offset += PAGE_SIZE;
     }
   }
@@ -150,7 +175,7 @@ export async function fetchAggregatedData(
     if (dateRange) {
       calculatedDateRange = {
         startDate: dateRange.startDate,
-        endDate: dateRange.endDate,
+        endDate: dateRange.endDate
       };
     }
   }
@@ -162,7 +187,7 @@ export async function fetchAggregatedData(
     calculatedDateRange.endDate,
     {
       homeOrAway: homeOrAway || undefined,
-      opponentTeamAbbreviation: opponentTeamAbbreviation || undefined,
+      opponentTeamAbbreviation: opponentTeamAbbreviation || undefined
     }
   );
 
@@ -221,7 +246,7 @@ function processData(data: any[], seasonType: "regularSeason" | "playoffs") {
           percentToiWithMixed: {} as Record<string, number>,
           percentOfSeason: {} as Record<string, number>,
           timesOnLine: { 1: 0, 2: 0, 3: 0, 4: 0 },
-          timesOnPair: { 1: 0, 2: 0, 3: 0 },
+          timesOnPair: { 1: 0, 2: 0, 3: 0 }
         },
         playoffData: {
           totalTOI: 0,
@@ -239,8 +264,8 @@ function processData(data: any[], seasonType: "regularSeason" | "playoffs") {
           percentToiWithMixed: {} as Record<string, number>,
           percentOfSeason: {} as Record<string, number>,
           timesOnLine: { 1: 0, 2: 0, 3: 0, 4: 0 },
-          timesOnPair: { 1: 0, 2: 0, 3: 0 },
-        },
+          timesOnPair: { 1: 0, 2: 0, 3: 0 }
+        }
       };
     }
 

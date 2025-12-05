@@ -20,42 +20,42 @@ const METRIC_CONFIG = [
     rollingKey: "goals_avg_last5",
     baselineKey: "goals_avg_all",
     label: "Goals (L5 Avg)",
-    color: "#ff7043"
+    color: "#ff9f40" // Orange
   },
   {
     key: "assists",
     rollingKey: "assists_avg_last5",
     baselineKey: "assists_avg_all",
     label: "Assists (L5 Avg)",
-    color: "#29b6f6"
+    color: "#3b82f6" // Blue
   },
   {
     key: "points",
     rollingKey: "points_avg_last5",
     baselineKey: "points_avg_all",
     label: "Points (L5 Avg)",
-    color: "#ab47bc"
+    color: "#9b59b6" // Purple
   },
   {
     key: "sog_per_60",
     rollingKey: "sog_per_60_avg_last5",
     baselineKey: "sog_per_60_avg_all",
     label: "Shots/60 (L5 Avg)",
-    color: "#26a69a"
+    color: "#4bc0c0" // Teal
   },
   {
     key: "ixg_per_60",
     rollingKey: "ixg_per_60_avg_last5",
     baselineKey: "ixg_per_60_avg_all",
     label: "ixG/60 (L5 Avg)",
-    color: "#ffa726"
+    color: "#00ff99" // Green
   },
   {
     key: "toi_seconds",
     rollingKey: "toi_seconds_avg_last5",
     baselineKey: "toi_seconds_avg_all",
     label: "TOI Seconds (L5 Avg)",
-    color: "#7e57c2"
+    color: "#ffcc33" // Yellow
   }
 ] as const;
 
@@ -244,9 +244,9 @@ export default function PlayerTrendPage() {
           <div>
             <h1 className={styles.title}>{playerName || "Player Trends"}</h1>
             <p className={styles.subtitle}>
-              Rolling 5-game averages compared against this season&apos;s baseline.
-              Watch how far each metric deviates above or below the player&apos;s
-              normal level of play.
+              Rolling 5-game averages compared against this season&apos;s
+              baseline. Watch how far each metric deviates above or below the
+              player&apos;s normal level of play.
             </p>
           </div>
           <div className={styles.datasetBadge}>
@@ -303,26 +303,50 @@ export default function PlayerTrendPage() {
                   data={rechartsData}
                   margin={{ top: 24, right: 32, left: 8, bottom: 48 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#47556940" />
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="rgba(255,255,255,0.1)"
+                  />
                   <XAxis
                     dataKey="gameDate"
                     tickFormatter={(value) =>
                       new Date(value as string).toLocaleDateString()
                     }
                     minTickGap={16}
-                    stroke="#cbd5f5"
+                    stroke="#aaaaaa"
+                    tick={{
+                      fill: "#aaaaaa",
+                      fontSize: 12,
+                      fontFamily: "'Martian Mono', monospace"
+                    }}
                   />
                   <YAxis
-                    stroke="#cbd5f5"
+                    stroke="#aaaaaa"
                     tickFormatter={(value) => `${value}%`}
+                    tick={{
+                      fill: "#aaaaaa",
+                      fontSize: 12,
+                      fontFamily: "'Martian Mono', monospace"
+                    }}
                   />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: "#0f172a",
-                      border: "1px solid rgba(148,163,184,0.35)",
-                      borderRadius: "1rem",
-                      color: "#e2e8f0",
-                      padding: "1rem"
+                      backgroundColor: "rgba(26, 29, 33, 0.95)",
+                      border: "1px solid #505050",
+                      borderRadius: "8px",
+                      color: "#cccccc",
+                      padding: "12px",
+                      boxShadow: "0 8px 32px rgba(0, 0, 0, 0.4)"
+                    }}
+                    itemStyle={{
+                      fontFamily: "'Martian Mono', monospace",
+                      fontSize: "12px"
+                    }}
+                    labelStyle={{
+                      color: "#ffffff",
+                      fontFamily: "'Train One', sans-serif",
+                      marginBottom: "8px",
+                      letterSpacing: "0.05em"
                     }}
                     labelFormatter={(value) =>
                       new Date(value as string).toLocaleString()
@@ -374,8 +398,14 @@ export default function PlayerTrendPage() {
                       dataKey={`${metric.key}_delta`}
                       name={`${metric.label} vs Season % Δ`}
                       stroke={metric.color}
-                      strokeWidth={2.25}
+                      strokeWidth={2.5}
                       dot={false}
+                      activeDot={{
+                        r: 6,
+                        strokeWidth: 0,
+                        fill: metric.color,
+                        filter: `drop-shadow(0 0 6px ${metric.color})`
+                      }}
                       connectNulls
                       isAnimationActive={false}
                     />
@@ -383,7 +413,8 @@ export default function PlayerTrendPage() {
                   <Brush
                     dataKey="gameDate"
                     height={34}
-                    stroke="#6366f1"
+                    stroke="#14a2d2"
+                    fill="#24282e"
                     travellerWidth={12}
                     tickFormatter={(value) =>
                       new Date(value as string).toLocaleDateString()
