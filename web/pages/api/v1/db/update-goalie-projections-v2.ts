@@ -49,6 +49,23 @@ function calculateStartDate(gameDates: string[], targetDate: string) {
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+// Helper to process items in batches with concurrency limit
+async function processBatched<T, R>(
+  items: T[],
+  batchSize: number,
+  fn: (item: T) => Promise<R>
+): Promise<R[]> {
+  const results: R[] = [];
+  for (let i = 0; i < items.length; i += batchSize) {
+    const batch = items.slice(i, i + batchSize);
+    const batchResults = await Promise.all(batch.map(fn));
+    results.push(...batchResults);
+    // Delay between batches to be nice to the API
+    if (i + batchSize < items.length) await sleep(2000);
+  }
+  return results;
+}
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
@@ -66,21 +83,19 @@ export default async function handler(
     const today = new Date().toISOString().split("T")[0];
 
     // 1. Determine Start Date for Processing
-    // Check the most recent game_id in our projections table to see where we left off.
-    // We join with games table to get the date.
+    // Check the most recent game_date in our projections table to see where we left off.
     const { data: lastProjection } = await supabase
       .from("goalie_start_projections" as any)
-      .select("game_id, games(date)")
-      .order("game_id", { ascending: false }) // Assuming higher game_id = later date, but date sort is safer if we could
+      .select("game_date")
+      .order("game_date", { ascending: false })
       .limit(1)
       .single();
 
     let processingStartDate = seasonStartDate;
 
     // If we have data, start from the date of the last projection (to overwrite/update it)
-    // or the day after? The prompt says "overwrite most recent date".
-    if (lastProjection && (lastProjection as any).games) {
-      processingStartDate = (lastProjection as any).games.date;
+    if (lastProjection && (lastProjection as any).game_date) {
+      processingStartDate = (lastProjection as any).game_date;
       console.log(
         `Found existing projections. Resuming/Overwriting from ${processingStartDate}`
       );
@@ -91,7 +106,6 @@ export default async function handler(
     }
 
     // 2. Fetch all games from processingStartDate to Today (inclusive)
-    // We need to process day-by-day to ensure the "L10" window is correct for THAT day.
     const { data: gamesToProcess, error: gamesError } = await supabase
       .from("games")
       .select("id, homeTeamId, awayTeamId, date")
@@ -110,127 +124,277 @@ export default async function handler(
       `Found ${gamesToProcess.length} games to process from ${processingStartDate} to ${today}.`
     );
 
-    const updates = [];
-
-    // Cache team schedules to avoid re-fetching for every game
-    const teamSchedules: Record<string, string[]> = {};
-
+    // Group games by date
+    const gamesByDate: Record<string, typeof gamesToProcess> = {};
     for (const game of gamesToProcess) {
-      const teams = [game.homeTeamId, game.awayTeamId];
+      if (!gamesByDate[game.date]) {
+        gamesByDate[game.date] = [];
+      }
+      gamesByDate[game.date].push(game);
+    }
 
-      for (const teamId of teams) {
-        // Get team info from local map
-        const teamData = teamIdMap[teamId];
+    const sortedDates = Object.keys(gamesByDate).sort();
+    const teamSchedules: Record<string, string[]> = {};
+    let totalUpserted = 0;
+    const loopStart = Date.now();
 
-        if (!teamData) {
-          console.warn(`Team ID ${teamId} not found in teamsInfo.`);
-          continue;
-        }
+    // 3. Process Day by Day
+    for (const date of sortedDates) {
+      const dateStart = Date.now();
+      const gamesOnDate = gamesByDate[date];
+      const tasks = [];
 
-        const abbreviation = teamData.abbrev;
-        const franchiseId = teamData.franchiseId;
+      // Prepare tasks (Team + Game context)
+      for (const game of gamesOnDate) {
+        tasks.push({ game, teamId: game.homeTeamId, type: "home" });
+        tasks.push({ game, teamId: game.awayTeamId, type: "away" });
+      }
 
-        // Fetch schedule if not cached
-        if (!teamSchedules[abbreviation]) {
-          teamSchedules[abbreviation] = await fetchGameDatesForTeam(
-            abbreviation,
-            seasonId
-          );
-        }
+      console.log(`[${date}] Processing ${tasks.length} team-games...`);
 
-        // 1. Calculate L10 Window relative to THIS game's date
-        const startDate = calculateStartDate(
-          teamSchedules[abbreviation],
-          game.date
-        );
+      // Process tasks in parallel batches
+      const results = await processBatched(
+        tasks,
+        2,
+        async ({ game, teamId }) => {
+          try {
+            const teamData = teamIdMap[teamId];
+            if (!teamData) {
+              console.warn(`Team ID ${teamId} not found in teamsInfo.`);
+              return [];
+            }
 
-        if (!startDate) {
-          // console.log(`No past games found for ${abbreviation} before ${game.date}`);
-          continue;
-        }
+            const abbreviation = teamData.abbrev;
+            const franchiseId = teamData.franchiseId;
 
-        // 2. Fetch Goalie Stats for L10 window
-        // Note: gameDate < game.date ensures we only look at PAST games relative to the game being predicted
-        const params = new URLSearchParams();
-        params.append("isAggregate", "true");
-        params.append("isGame", "true");
-        params.append("start", "0");
-        params.append("limit", "50");
-        params.append("factCayenneExp", "gamesPlayed>=1");
-        params.append(
-          "cayenneExp",
-          `franchiseId=${franchiseId} and gameDate<"${game.date}" and gameDate>="${startDate}" and gameTypeId=2`
-        );
+            // Fetch schedule if not cached
+            if (!teamSchedules[abbreviation]) {
+              teamSchedules[abbreviation] = await fetchGameDatesForTeam(
+                abbreviation,
+                seasonId
+              );
+            }
 
-        const queryString = params.toString().replace(/\+/g, "%20");
-        const url = `https://api.nhle.com/stats/rest/en/goalie/summary?${queryString}`;
+            // Calculate L10 Window
+            let startDate = calculateStartDate(
+              teamSchedules[abbreviation],
+              game.date
+            );
 
-        let res;
-        let attempts = 0;
-        while (attempts < 3) {
-          // Add a small delay to avoid rate limiting
-          await sleep(250);
-          res = await Fetch(url);
-          if (res.status === 429) {
-            console.warn(`Rate limited (429). Retrying in 2s...`);
-            await sleep(2000);
-            attempts++;
-          } else {
-            break;
+            // If no past games (start of season), use season start date or game date
+            if (!startDate) {
+              startDate = seasonStartDate;
+            }
+
+            // Fetch Goalie Stats (Season to Date + Current Game)
+            // We fetch individual game logs (no aggregation) to calculate both Season and L10 stats
+            const params = new URLSearchParams();
+            params.append("isGame", "true");
+            params.append("start", "0");
+            params.append("limit", "200"); // Cover full season of games
+            params.append("factCayenneExp", "gamesPlayed>=1");
+            params.append(
+              "cayenneExp",
+              `franchiseId=${franchiseId} and gameDate<="${game.date}" and gameDate>="${seasonStartDate}" and gameTypeId=2`
+            );
+
+            const queryString = params.toString().replace(/\+/g, "%20");
+            const url = `https://api.nhle.com/stats/rest/en/goalie/summary?${queryString}`;
+
+            let res;
+            let attempts = 0;
+            while (attempts < 5) {
+              // Add jitter/delay to avoid thundering herd with concurrency
+              await sleep(1000 + Math.random() * 1000);
+
+              try {
+                res = await Fetch(url);
+                if (res.status === 429) {
+                  console.warn(
+                    `Rate limited (429) for ${abbreviation} on ${game.date}. Retrying (Attempt ${attempts + 1})...`
+                  );
+                  await sleep(2000 * (attempts + 1));
+                  attempts++;
+                } else if (res.status >= 500) {
+                  console.warn(
+                    `Server error (${res.status}) for ${abbreviation} on ${game.date}. Retrying (Attempt ${attempts + 1})...`
+                  );
+                  await sleep(1000 * (attempts + 1));
+                  attempts++;
+                } else {
+                  break;
+                }
+              } catch (e) {
+                console.error(
+                  `Network error fetching ${abbreviation} on ${game.date}:`,
+                  e
+                );
+                await sleep(1000);
+                attempts++;
+              }
+            }
+
+            if (!res || !res.ok) {
+              const status = res ? res.status : "No Response";
+              const text = res ? await res.text() : "Unknown error";
+              console.error(
+                `Failed to fetch goalie stats for ${abbreviation} on ${game.date}. Status: ${status}. Response: ${text.slice(0, 200)}`
+              );
+              return [];
+            }
+
+            const goalieStatsRes = await res.json();
+            const allLogs = goalieStatsRes.data || [];
+
+            // Split logs into Past (for projection) and Current (for actual result)
+            // Split logs into Past (for projection) and Current (for actual result)
+            // User wants "rolling tally" including the current game for the stats columns
+            const logsForStats = allLogs; // Includes current game if played
+            const currentLogs = allLogs.filter(
+              (log: any) => log.gameDate === game.date
+            );
+
+            // 1. Calculate Season Stats
+            // Count unique gameDates to get total team games played
+            const uniqueDates = new Set(
+              logsForStats.map((l: any) => l.gameDate)
+            );
+            const totalSeasonGames = uniqueDates.size;
+
+            // 2. Calculate L10 Stats
+            // We already have startDate for L10 window
+            const l10Logs = logsForStats.filter(
+              (log: any) => log.gameDate >= startDate!
+            );
+            const uniqueL10Dates = new Set(l10Logs.map((l: any) => l.gameDate));
+            const totalL10Games = uniqueL10Dates.size;
+
+            // Group stats by player
+            const playerStats: Record<number, any> = {};
+
+            // Initialize with all goalies found in history
+            logsForStats.forEach((log: any) => {
+              if (!playerStats[log.playerId]) {
+                playerStats[log.playerId] = {
+                  name: log.goalieFullName,
+                  seasonStarts: 0,
+                  l10Starts: 0,
+                  gamesPlayed: 0,
+                  saves: 0,
+                  shots: 0,
+                  minutes: 0
+                };
+              }
+              playerStats[log.playerId].seasonStarts += log.gamesStarted;
+              playerStats[log.playerId].gamesPlayed += log.gamesPlayed;
+              playerStats[log.playerId].saves += log.saves;
+              playerStats[log.playerId].shots += log.shotsAgainst;
+              playerStats[log.playerId].minutes += log.timeOnIce / 60;
+            });
+
+            // Add L10 starts
+            l10Logs.forEach((log: any) => {
+              if (playerStats[log.playerId]) {
+                playerStats[log.playerId].l10Starts += log.gamesStarted;
+              }
+            });
+
+            const teamUpdates = [];
+            let projectedStarterName = "Unknown";
+            let maxProb = -1;
+
+            for (const playerIdStr in playerStats) {
+              const stats = playerStats[playerIdStr];
+              const playerId = parseInt(playerIdStr);
+
+              // Calculate Percentages
+              const seasonPct =
+                totalSeasonGames > 0
+                  ? stats.seasonStarts / totalSeasonGames
+                  : 0;
+              const l10Pct =
+                totalL10Games > 0 ? stats.l10Starts / totalL10Games : 0;
+
+              // Use L10 % as the primary start probability, fallback to Season % if L10 is 0 (e.g. start of season)
+              // or maybe just use L10. Let's use L10 as requested for "10 game start percentage".
+              // If totalL10Games is 0 (first game), probability is 0.
+              const startProb = l10Pct;
+
+              if (startProb > maxProb) {
+                maxProb = startProb;
+                projectedStarterName = stats.name;
+              }
+
+              // Calculate GSAA/60 (Season Aggregate)
+              const leagueSvPct = 0.9;
+              const gsaa = stats.saves - stats.shots * leagueSvPct;
+              const gsaaPer60 =
+                stats.minutes > 0 ? (gsaa / stats.minutes) * 60 : 0;
+
+              teamUpdates.push({
+                game_id: game.id,
+                game_date: game.date,
+                team_id: teamId,
+                player_id: playerId,
+                start_probability: startProb,
+                l10_start_pct: l10Pct,
+                season_start_pct: seasonPct,
+                games_played: stats.gamesPlayed,
+                projected_gsaa_per_60: gsaaPer60,
+                confirmed_status: false
+              });
+            }
+
+            // Determine Actual Starter (for logging)
+            const actualStarterLog = currentLogs.find(
+              (l: any) => l.gamesStarted > 0
+            );
+            const actualStarter = actualStarterLog
+              ? actualStarterLog.goalieFullName
+              : "TBD/Unknown";
+
+            console.log(
+              `[${game.date}] ${abbreviation}: Projected ${projectedStarterName} (${(maxProb * 100).toFixed(0)}%). Actual: ${actualStarter}. (Season G: ${totalSeasonGames}, L10 G: ${totalL10Games})`
+            );
+
+            return teamUpdates;
+          } catch (err) {
+            console.error(
+              `Error processing team ${teamId} for game ${game.id}:`,
+              err
+            );
+            return [];
           }
         }
+      );
 
-        if (!res || !res.ok) {
-          console.error(`Failed to fetch goalie stats. URL: ${url}`);
-          const text = res ? await res.text() : "No response";
-          throw new Error(
-            `NHL API Error: ${res?.status} - ${text.substring(0, 100)}`
-          );
-        }
-        const goalieStatsRes = await res.json();
-        const goalieStats = goalieStatsRes.data || [];
+      const flatUpdates = results.flat();
 
-        // 3. Calculate Shares
-        const totalStarts = goalieStats.reduce(
-          (sum: number, g: any) => sum + g.gamesStarted,
-          0
-        );
+      if (flatUpdates.length > 0) {
+        const { error: upsertError } = await supabase
+          .from("goalie_start_projections" as any)
+          .upsert(flatUpdates, { onConflict: "game_id, player_id" });
 
-        for (const goalie of goalieStats) {
-          const startProb =
-            totalStarts > 0 ? goalie.gamesStarted / totalStarts : 0;
-
-          // Calculate GSAA/60 (Simplified)
-          const leagueSvPct = 0.9;
-          const gsaa = goalie.saves - goalie.shotsAgainst * leagueSvPct;
-          const minutes = goalie.timeOnIce / 60;
-          const gsaaPer60 = minutes > 0 ? (gsaa / minutes) * 60 : 0;
-
-          updates.push({
-            game_id: game.id,
-            team_id: teamId,
-            player_id: goalie.playerId,
-            start_probability: startProb,
-            projected_gsaa_per_60: gsaaPer60,
-            confirmed_status: false // Default
-          });
+        if (upsertError) {
+          console.error(`Error upserting for date ${date}:`, upsertError);
+        } else {
+          totalUpserted += flatUpdates.length;
         }
       }
+
+      const duration = ((Date.now() - dateStart) / 1000).toFixed(2);
+      console.log(
+        `[${date}] Completed. Processed: ${tasks.length}, Upserted: ${flatUpdates.length}. Took ${duration}s`
+      );
     }
 
-    // 4. Bulk Upsert
-    if (updates.length > 0) {
-      const { error: upsertError } = await supabase
-        .from("goalie_start_projections" as any)
-        .upsert(updates, { onConflict: "game_id, player_id" });
-
-      if (upsertError) throw upsertError;
-    }
+    const totalDuration = ((Date.now() - loopStart) / 1000).toFixed(2);
+    console.log(`Total processing time: ${totalDuration}s`);
 
     return res.status(200).json({
       success: true,
-      message: `Updated projections for ${updates.length} goalie-game combinations.`,
-      updates: updates.length
+      message: `Updated projections. Total upserted: ${totalUpserted}`,
+      updates: totalUpserted
     });
   } catch (err: any) {
     console.error("Error updating goalie projections:", err);
