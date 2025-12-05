@@ -46,7 +46,7 @@ function findAbbrev(teamId: number): string | null {
 function computeMatchupMultiplier(rating: TeamRatingRow | undefined) {
   if (!rating) return { shotMult: 1, grade: 50 };
   const xga = rating.xga60 ?? 2.7; // league-ish xGA/60
-  const shotMult = clamp((xga / 2.7) || 1, 0.75, 1.25); // use xGA as a proxy if CA is unavailable
+  const shotMult = clamp(xga / 2.7 || 1, 0.75, 1.25); // use xGA as a proxy if CA is unavailable
   // Higher xGA -> friendlier matchup; invert and scale to 0-100
   const grade = clamp(100 - (xga - 2.5) * 22.5, 5, 95);
   return { shotMult, grade };
@@ -110,8 +110,7 @@ export default async function handler(
   const date =
     (req.method === "GET"
       ? (req.query.date as string | undefined)
-      : req.body?.date) ||
-    new Date().toISOString().slice(0, 10);
+      : req.body?.date) || new Date().toISOString().slice(0, 10);
 
   if (!date || typeof date !== "string") {
     res.setHeader("Allow", ["GET", "POST"]);
@@ -123,8 +122,7 @@ export default async function handler(
   const initialDate =
     (req.method === "GET"
       ? (req.query.date as string | undefined)
-      : req.body?.date) ||
-    new Date().toISOString().slice(0, 10);
+      : req.body?.date) || new Date().toISOString().slice(0, 10);
 
   if (!initialDate || typeof initialDate !== "string") {
     res.setHeader("Allow", ["GET", "POST"]);
@@ -199,8 +197,8 @@ export default async function handler(
       if (ratingError) throw ratingError;
       ratingsByTeam = new Map();
       (ratingRows ?? []).forEach((r) => {
-        if (!ratingsByTeam.has(r.team_abbreviation)) {
-          ratingsByTeam.set(r.team_abbreviation, r);
+        if (r.team_abbreviation && !ratingsByTeam.has(r.team_abbreviation)) {
+          ratingsByTeam.set(r.team_abbreviation, r as TeamRatingRow);
         }
       });
     }
