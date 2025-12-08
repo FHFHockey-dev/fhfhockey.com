@@ -286,7 +286,10 @@ export default function StartChartPage() {
 
     if (min > max) return [0, 100]; // No data
 
-    return [Math.max(0, Math.floor(min - 5)), Math.min(100, Math.ceil(max + 5))];
+    return [
+      Math.max(0, Math.floor(min - 5)),
+      Math.min(100, Math.ceil(max + 5))
+    ];
   }, [ctpiData, teamsPlaying]);
 
   const togglePos = (pos: string) =>
@@ -306,11 +309,7 @@ export default function StartChartPage() {
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={ctpiData}>
             <XAxis dataKey="date" tick={{ fill: "#9ea7b3" }} />
-            <YAxis
-              domain={yAxisDomain}
-              width={30}
-              tick={{ fill: "#9ea7b3" }}
-            />
+            <YAxis domain={yAxisDomain} width={30} tick={{ fill: "#9ea7b3" }} />
             <Tooltip
               contentStyle={{
                 background: "rgba(0,0,0,0.8)",
@@ -330,11 +329,7 @@ export default function StartChartPage() {
                   dot={(props: any) => {
                     const isLast = props.index === ctpiData.length - 1;
                     return (
-                      <CustomDot
-                        {...props}
-                        dataKey={abbrev}
-                        isLast={isLast}
-                      />
+                      <CustomDot {...props} dataKey={abbrev} isLast={isLast} />
                     );
                   }}
                   activeDot={{ r: 4 }}
