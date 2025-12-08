@@ -64,13 +64,70 @@ type ApiResponse = {
   dateUsed: string;
   projections: number;
   players: StartChartPlayer[];
-  ctpi: { date: string; value: number | null }[];
+  ctpi: ({ date: string } & Record<string, number | null>)[];
   games: GameRow[];
 };
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 const POSITION_ORDER = ["C", "LW", "RW", "D", "G"] as const;
+
+// Helper to calculate color distance
+const getColorDistance = (hex1: string, hex2: string) => {
+  const r1 = parseInt(hex1.slice(1, 3), 16);
+  const g1 = parseInt(hex1.slice(3, 5), 16);
+  const b1 = parseInt(hex1.slice(5, 7), 16);
+  const r2 = parseInt(hex2.slice(1, 3), 16);
+  const g2 = parseInt(hex2.slice(3, 5), 16);
+  const b2 = parseInt(hex2.slice(5, 7), 16);
+  return Math.sqrt(
+    Math.pow(r1 - r2, 2) + Math.pow(g1 - g2, 2) + Math.pow(b1 - b2, 2)
+  );
+};
+
+// Helper to adjust color brightness
+const adjustBrightness = (hex: string, percent: number) => {
+  const num = parseInt(hex.replace("#", ""), 16);
+  const amt = Math.round(2.55 * percent);
+  const R = (num >> 16) + amt;
+  const G = ((num >> 8) & 0x00ff) + amt;
+  const B = (num & 0x0000ff) + amt;
+  return (
+    "#" +
+    (
+      0x1000000 +
+      (R < 255 ? (R < 1 ? 0 : R) : 255) * 0x10000 +
+      (G < 255 ? (G < 1 ? 0 : G) : 255) * 0x100 +
+      (B < 255 ? (B < 1 ? 0 : B) : 255)
+    )
+      .toString(16)
+      .slice(1)
+  );
+};
+
+const CustomDot = (props: any) => {
+  const { cx, cy, index, dataKey, payload } = props;
+  // Only render for the last data point
+  // We need to know the total length of the data array.
+  // Recharts passes `points` array in some contexts, but here we might need to check payload or index.
+  // However, `payload` is the data object for this point.
+  // A simpler way is to check if this is the last point in the dataset.
+  // But `props` doesn't directly give us `data.length`.
+  // We can pass `dataLength` as a custom prop if we wrap this.
+  // Alternatively, we can check if the date matches the last date in the dataset.
+
+  if (!props.isLast) return null;
+
+  return (
+    <image
+      x={cx - 10}
+      y={cy - 10}
+      width={20}
+      height={20}
+      href={`/teamLogos/${dataKey}.png`}
+    />
+  );
+};
 
 export default function StartChartPage() {
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
@@ -162,8 +219,75 @@ export default function StartChartPage() {
 
   const ctpiData = useMemo(() => {
     if (!data?.ctpi) return [];
-    return data.ctpi.filter((d) => d.value != null);
+    return data.ctpi;
   }, [data?.ctpi]);
+
+  const teamsPlaying = useMemo(() => {
+    if (!data?.games) return [];
+    const teams = new Set<string>();
+    data.games.forEach((g) => {
+      const home = Object.values(teamsInfo).find((t) => t.id === g.homeTeamId);
+      const away = Object.values(teamsInfo).find((t) => t.id === g.awayTeamId);
+      if (home?.abbrev) teams.add(home.abbrev);
+      if (away?.abbrev) teams.add(away.abbrev);
+    });
+    return Array.from(teams);
+  }, [data?.games]);
+
+  const teamColors = useMemo(() => {
+    const colors: Record<string, string> = {};
+    const usedColors: string[] = [];
+
+    teamsPlaying.forEach((abbrev) => {
+      const team = Object.values(teamsInfo).find((t) => t.abbrev === abbrev);
+      if (!team) return;
+
+      let color = team.primaryColor;
+      let isTooClose = usedColors.some((c) => getColorDistance(c, color) < 50);
+
+      if (isTooClose) {
+        // Try secondary
+        color = team.secondaryColor;
+        isTooClose = usedColors.some((c) => getColorDistance(c, color) < 50);
+      }
+
+      if (isTooClose) {
+        // Try lightening primary
+        color = adjustBrightness(team.primaryColor, 40);
+        isTooClose = usedColors.some((c) => getColorDistance(c, color) < 50);
+      }
+
+      if (isTooClose) {
+        // Try darkening primary
+        color = adjustBrightness(team.primaryColor, -40);
+      }
+
+      colors[abbrev] = color;
+      usedColors.push(color);
+    });
+
+    return colors;
+  }, [teamsPlaying]);
+
+  const yAxisDomain = useMemo(() => {
+    if (!ctpiData || ctpiData.length === 0) return [0, 100];
+    let min = 100;
+    let max = 0;
+
+    ctpiData.forEach((row) => {
+      teamsPlaying.forEach((team) => {
+        const val = row[team];
+        if (typeof val === "number") {
+          if (val < min) min = val;
+          if (val > max) max = val;
+        }
+      });
+    });
+
+    if (min > max) return [0, 100]; // No data
+
+    return [Math.max(0, Math.floor(min - 5)), Math.min(100, Math.ceil(max + 5))];
+  }, [ctpiData, teamsPlaying]);
 
   const togglePos = (pos: string) =>
     setPosFilter((prev) => ({ ...prev, [pos]: !prev[pos] }));
@@ -182,7 +306,11 @@ export default function StartChartPage() {
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={ctpiData}>
             <XAxis dataKey="date" tick={{ fill: "#9ea7b3" }} />
-            <YAxis domain={[0, 100]} width={30} tick={{ fill: "#9ea7b3" }} />
+            <YAxis
+              domain={yAxisDomain}
+              width={30}
+              tick={{ fill: "#9ea7b3" }}
+            />
             <Tooltip
               contentStyle={{
                 background: "rgba(0,0,0,0.8)",
@@ -191,14 +319,29 @@ export default function StartChartPage() {
               }}
               labelStyle={{ color: "#fff" }}
             />
-            <Line
-              type="monotone"
-              dataKey="value"
-              stroke="var(--primary-color, #3bd4ae)"
-              strokeWidth={2}
-              dot={false}
-              activeDot={{ r: 4 }}
-            />
+            {teamsPlaying.map((abbrev) => {
+              return (
+                <Line
+                  key={abbrev}
+                  type="monotone"
+                  dataKey={abbrev}
+                  stroke={teamColors[abbrev] ?? "#fff"}
+                  strokeWidth={2}
+                  dot={(props: any) => {
+                    const isLast = props.index === ctpiData.length - 1;
+                    return (
+                      <CustomDot
+                        {...props}
+                        dataKey={abbrev}
+                        isLast={isLast}
+                      />
+                    );
+                  }}
+                  activeDot={{ r: 4 }}
+                  name={abbrev}
+                />
+              );
+            })}
           </LineChart>
         </ResponsiveContainer>
       </section>
@@ -364,32 +507,21 @@ export default function StartChartPage() {
         </section>
       )}
 
-      {/* Legend */}
-      <section className={styles.legend}>
-        <div className={styles.legendItem}>
-          <strong>CTPI (Cumulative Team Power Index):</strong> Measures overall
-          team strength based on recent performance metrics like xG, Corsi, and
-          PDO.
-        </div>
-        <div className={styles.legendItem}>
-          <strong>PTS (Fantasy Points):</strong> Projected fantasy points based
-          on standard scoring (G=3, A=2, SOG=0.4, etc.).
-        </div>
-        <div className={styles.legendItem}>
-          <strong>MATCHUP:</strong> A 0-100 grade indicating the favorability of
-          the opponent (100 = easiest matchup).
-        </div>
-        <div className={styles.legendItem}>
-          <strong>G / A / SOG:</strong> Projected Goals, Assists, and Shots on
-          Goal for this specific game.
-        </div>
-      </section>
-
       <section className={styles.filters}>
+        <div className={styles.filterGroup}>
+          <input
+            className={styles.search}
+            placeholder="Player name..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+
         <div className={styles.filterGroup}>
           <label>Date</label>
           <input
             type="date"
+            className={styles.dateInput}
             value={date}
             onChange={(e) => setDate(e.target.value)}
           />
@@ -423,14 +555,27 @@ export default function StartChartPage() {
           />
         </div>
 
-        <div className={styles.filterGroup}>
-          <label>Search</label>
-          <input
-            className={styles.search}
-            placeholder="Player name..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+        <div className={styles.legendContainer}>
+          <div className={styles.legendIcon}>i</div>
+          <div className={styles.legendTooltip}>
+            <div className={styles.legendItem}>
+              <strong>CTPI (Cumulative Team Power Index):</strong> Measures
+              overall team strength based on recent performance metrics like xG,
+              Corsi, and PDO.
+            </div>
+            <div className={styles.legendItem}>
+              <strong>PTS (Fantasy Points):</strong> Projected fantasy points
+              based on standard scoring (G=3, A=2, SOG=0.4, etc.).
+            </div>
+            <div className={styles.legendItem}>
+              <strong>MATCHUP:</strong> A 0-100 grade indicating the
+              favorability of the opponent (100 = easiest matchup).
+            </div>
+            <div className={styles.legendItem}>
+              <strong>G / A / SOG:</strong> Projected Goals, Assists, and Shots
+              on Goal for this specific game.
+            </div>
+          </div>
         </div>
       </section>
 
@@ -466,104 +611,125 @@ export default function StartChartPage() {
                 <span>{pos}</span>
                 <span className={styles.pill}>{list.length}</span>
               </div>
-              {isLoading ? (
-                <div className={styles.meta}>Loading...</div>
-              ) : list.length === 0 ? (
-                <div className={styles.emptyState}>No players.</div>
-              ) : (
-                list.map((p) => (
-                  <div className={styles.card} key={`${pos}-${p.player_id}`}>
-                    <div className={styles.header}>
-                      <div className={styles.name} title={p.name}>
-                        {p.name}
-                      </div>
-                      <div className={styles.meta}>
-                        <span>
-                          {p.team_abbrev ?? "??"} vs {p.opponent_abbrev ?? "??"}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className={styles.statsContainer}>
-                      {pos === "G" ? (
-                        <>
-                          <div className={styles.statBox}>
-                            <div className={styles.statLabel}>Start %</div>
-                            <div className={styles.statValue}>
-                              {p.start_probability != null
-                                ? `${(p.start_probability * 100).toFixed(0)}%`
-                                : "--"}
-                            </div>
-                          </div>
-                          <div className={styles.statBox}>
-                            <div className={styles.statLabel}>GSAA</div>
-                            <div className={styles.statValue}>
-                              {(p.projected_gsaa ?? 0).toFixed(2)}
-                            </div>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <div className={styles.statBox}>
-                            <div className={styles.statLabel}>PTS</div>
-                            <div className={styles.statValue}>
-                              {(p.proj_fantasy_points ?? 0).toFixed(2)}
-                            </div>
-                          </div>
-
-                          {/* Combined G/A/SOG Box */}
-                          <div className={styles.statBox}>
-                            <div className={styles.splitStatRow}>
-                              <div className={styles.splitStatItem}>
-                                <div className={styles.statLabel}>G</div>
-                                <div className={styles.statValue}>
-                                  {(p.proj_goals ?? 0).toFixed(1)}
-                                </div>
-                              </div>
-                              <div className={styles.splitStatDivider} />
-                              <div className={styles.splitStatItem}>
-                                <div className={styles.statLabel}>A</div>
-                                <div className={styles.statValue}>
-                                  {(p.proj_assists ?? 0).toFixed(1)}
-                                </div>
-                              </div>
-                              <div className={styles.splitStatDivider} />
-                              <div className={styles.splitStatItem}>
-                                <div className={styles.statLabel}>S</div>
-                                <div className={styles.statValue}>
-                                  {(p.proj_shots ?? 0).toFixed(1)}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </>
-                      )}
-
-                      <div className={styles.statBox}>
-                        <div className={styles.statLabel}>Matchup</div>
-                        <div className={styles.statValue}>
-                          {p.matchup_grade != null
-                            ? p.matchup_grade.toFixed(0)
-                            : "--"}
+              <div className={styles.cardList}>
+                {isLoading ? (
+                  <div className={styles.meta}>Loading...</div>
+                ) : list.length === 0 ? (
+                  <div className={styles.emptyState}>No players.</div>
+                ) : (
+                  list.map((p) => (
+                    <div className={styles.card} key={`${pos}-${p.player_id}`}>
+                      <div className={styles.header}>
+                        <div className={styles.name} title={p.name}>
+                          {p.name}
+                        </div>
+                        <div className={styles.meta}>
+                          <span>
+                            {p.team_abbrev ?? "??"} vs{" "}
+                            {p.opponent_abbrev ?? "??"}
+                          </span>
                         </div>
                       </div>
-                    </div>
 
-                    <div className={styles.meta} style={{ marginTop: "auto" }}>
-                      <span>
-                        Own:{" "}
-                        {p.percent_ownership != null
-                          ? `${p.percent_ownership.toFixed(0)}%`
-                          : "n/a"}
-                      </span>
-                    </div>
+                      <div className={styles.statsContainer}>
+                        {pos === "G" ? (
+                          <>
+                            <div className={styles.statBox}>
+                              <div className={styles.statLabel}>Start %</div>
+                              <div className={styles.statValue}>
+                                {p.start_probability != null
+                                  ? `${(p.start_probability * 100).toFixed(0)}%`
+                                  : "--"}
+                              </div>
+                            </div>
+                            <div className={styles.statBox}>
+                              <div className={styles.statLabel}>GSAA</div>
+                              <div className={styles.statValue}>
+                                {(p.projected_gsaa ?? 0).toFixed(2)}
+                              </div>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className={styles.statBox}>
+                              <div className={styles.statLabel}>PTS</div>
+                              <div className={styles.statValue}>
+                                {(p.proj_fantasy_points ?? 0).toFixed(2)}
+                              </div>
+                            </div>
 
-                    <div className={styles.gamesRemaining}>
-                      {p.games_remaining_week} Games Remaining
+                            {/* Combined G/A/SOG Box */}
+                            <div className={styles.statBox}>
+                              <div className={styles.splitStatRow}>
+                                <div className={styles.splitStatItem}>
+                                  <div className={styles.statLabel}>G</div>
+                                  <div className={styles.statValue}>
+                                    {(p.proj_goals ?? 0).toFixed(1)}
+                                  </div>
+                                </div>
+                                <div className={styles.splitStatDivider} />
+                                <div className={styles.splitStatItem}>
+                                  <div className={styles.statLabel}>A</div>
+                                  <div className={styles.statValue}>
+                                    {(p.proj_assists ?? 0).toFixed(1)}
+                                  </div>
+                                </div>
+                                <div className={styles.splitStatDivider} />
+                                <div className={styles.splitStatItem}>
+                                  <div className={styles.statLabel}>S</div>
+                                  <div className={styles.statValue}>
+                                    {(p.proj_shots ?? 0).toFixed(1)}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </>
+                        )}
+
+                        <div className={styles.statBox}>
+                          <div className={styles.statLabel}>Matchup</div>
+                          <div className={styles.statValue}>
+                            {p.matchup_grade != null
+                              ? p.matchup_grade.toFixed(0)
+                              : "--"}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div
+                        className={styles.meta}
+                        style={{ marginTop: "auto" }}
+                      >
+                        <span>
+                          Own:{" "}
+                          {p.percent_ownership != null
+                            ? `${p.percent_ownership.toFixed(0)}%`
+                            : "n/a"}
+                        </span>
+                      </div>
+
+                      <div className={styles.gamesRemaining}>
+                        <span
+                          className={
+                            p.games_remaining_week === 4
+                              ? styles.gamesRemaining4
+                              : p.games_remaining_week === 3
+                                ? styles.gamesRemaining3
+                                : p.games_remaining_week === 2
+                                  ? styles.gamesRemaining2
+                                  : p.games_remaining_week === 1
+                                    ? styles.gamesRemaining1
+                                    : ""
+                          }
+                        >
+                          {p.games_remaining_week} Games Remaining
+                        </span>{" "}
+                        <span style={{ color: "#fff" }}>This Week</span>
+                      </div>
                     </div>
-                  </div>
-                ))
-              )}
+                  ))
+                )}
+              </div>
             </div>
           );
         })}

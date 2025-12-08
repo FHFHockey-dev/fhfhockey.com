@@ -211,10 +211,28 @@ export default async function handler(
     const todayIso = new Date().toISOString().slice(0, 10);
     const seasonEnd = season.endDate || season.regularSeasonEndDate || todayIso;
     const endDate = seasonEnd > todayIso ? todayIso : seasonEnd;
-    const startDate = await resolveStartDate(
-      seasonId,
-      season.startDate.slice(0, 10)
-    );
+    const startParam =
+      typeof req.query.start === "string" ? req.query.start.slice(0, 10) : undefined;
+    const startCandidate = startParam
+      ? startParam
+      : await resolveStartDate(seasonId, season.startDate.slice(0, 10));
+    const startDate =
+      startCandidate > endDate
+        ? endDate
+        : startCandidate < season.startDate.slice(0, 10)
+          ? season.startDate.slice(0, 10)
+          : startCandidate;
+
+    if (startDate > endDate) {
+      return res.status(200).json({
+        message: "No dates to process (start is after today/season end).",
+        startDate,
+        endDate,
+        rowsUpserted: 0,
+        datesComputed: 0
+      });
+    }
+
     const dates = buildDateRange(startDate, endDate);
 
     const allRows = await fetchGameRows(seasonId);

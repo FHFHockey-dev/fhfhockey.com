@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import supabase from "lib/supabase";
+import supabase from "lib/supabase/server";
 import { teamsInfo } from "lib/teamsInfo";
 
 type GameRow = {
@@ -143,15 +143,8 @@ export default async function handler(
       .json({ error: "Date is required (YYYY-MM-DD) via query or body." });
   }
 
-  const prevDate = (dateStr: string) => {
-    const d = new Date(dateStr);
-    d.setDate(d.getDate() - 1);
-    return d.toISOString().slice(0, 10);
-  };
-
   const processDate = async (
-    date: string,
-    allowFallback: boolean
+    date: string
   ): Promise<{ status: number; body: Record<string, any> }> => {
     // 1) Fetch games for the target date
     const { data: games, error: gamesError } = await supabase
@@ -160,9 +153,6 @@ export default async function handler(
       .eq("date", date);
     if (gamesError) throw gamesError;
     if (!games || games.length === 0) {
-      if (allowFallback) {
-        return processDate(prevDate(date), false);
-      }
       return {
         status: 200,
         body: { message: "No games found for date", date, projections: 0 }
@@ -349,9 +339,6 @@ export default async function handler(
     }
 
     if (upserts.length === 0) {
-      if (allowFallback) {
-        return processDate(prevDate(date), false);
-      }
       return {
         status: 200,
         body: {
@@ -380,7 +367,7 @@ export default async function handler(
   };
 
   try {
-    const result = await processDate(date, true);
+    const result = await processDate(date);
     return res.status(result.status).json(result.body);
   } catch (err: any) {
     console.error("update-start-chart-projections error", err);
