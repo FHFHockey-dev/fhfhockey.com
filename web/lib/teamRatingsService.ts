@@ -194,10 +194,7 @@ export const fetchTeamRatings = async (
   }
 
   if (!fetchedExtended) {
-    const fallbackResponse = await runQuery(
-      "team_power_ratings_daily",
-      false
-    );
+    const fallbackResponse = await runQuery("team_power_ratings_daily", false);
     data = fallbackResponse.data;
     error = fallbackResponse.error;
 

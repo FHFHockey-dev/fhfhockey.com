@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-dotenv.config({ path: "../../../.env.local" });
+dotenv.config({ path: "../../../../.env.local" });
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { parseISO, isBefore, isAfter } from "date-fns";
 
@@ -47,7 +47,24 @@ type Play = {
 };
 
 type GameData = {
+  id: number;
+  season: number;
+  gameType: number;
   gameDate: string;
+  venue: { default: string };
+  startTimeUTC: string;
+  awayTeam: {
+    id: number;
+    abbrev: string;
+    commonName: { default: string };
+    score: number;
+  };
+  homeTeam: {
+    id: number;
+    abbrev: string;
+    commonName: { default: string };
+    score: number;
+  };
   plays: Play[];
 };
 
@@ -150,6 +167,38 @@ async function fetchPlayByPlayData(
 }
 
 /**
+ * Upsert game info into pbp_games table.
+ */
+async function upsertGameInfo(gameData: GameData): Promise<void> {
+  const gameInfo = {
+    id: gameData.id,
+    date: gameData.gameDate,
+    starttime: gameData.startTimeUTC,
+    type: gameData.gameType,
+    season: gameData.season,
+    hometeamid: gameData.homeTeam.id,
+    awayteamid: gameData.awayTeam.id,
+    hometeamname: gameData.homeTeam.commonName.default,
+    hometeamabbrev: gameData.homeTeam.abbrev,
+    hometeamscore: gameData.homeTeam.score,
+    awayteamname: gameData.awayTeam.commonName.default,
+    awayteamabbrev: gameData.awayTeam.abbrev,
+    awayteamscore: gameData.awayTeam.score,
+    location: gameData.venue?.default || null,
+    // outcome: null, // Not available directly
+    created_at: new Date().toISOString()
+  };
+
+  const { error } = await supabase.from("pbp_games").upsert(gameInfo);
+  if (error) {
+    console.error(
+      `Error upserting game info for game ${gameData.id}:`,
+      error.message
+    );
+  }
+}
+
+/**
  * Bulk upsert play-by-play data into Supabase for one game.
  * Each play record now gets a "game_date" field from gameData.gameDate.
  */
@@ -243,12 +292,17 @@ async function getSelectedSeasons(): Promise<{
   if (error) {
     throw new Error("Error fetching seasons from Supabase: " + error.message);
   }
+
+  console.log(`Fetched ${seasonsData.length} seasons from Supabase.`);
+
   // For fetchPbP, you might limit to a slice (e.g., the most recent 6 seasons)
   const sortedSeasons = seasonsData.sort((a, b) =>
     a.startDate < b.startDate ? 1 : -1
   );
   // Adjust slice as needed
   const forcedSeasonIds = sortedSeasons.slice(0, 6).map((s) => s.id.toString());
+
+  console.log(`Selected seasons: ${forcedSeasonIds.join(", ")}`);
 
   // Build a map of boundaries { seasonId: { startDate, endDate } }
   const seasonBoundaries: Record<string, { start: string; end: string }> = {};
@@ -269,10 +323,15 @@ async function getSelectedSeasons(): Promise<{
  *
  * @param {boolean} fullProcess - If true, process all games back to the backlog
  *                                and overwrite all data. If false, process only today's games.
+ * @param {string} [gameId] - Optional game ID to process a specific game.
+ * @param {string} [startDate] - Optional start date for processing (YYYY-MM-DD).
+ * @param {string} [endDate] - Optional end date for processing (YYYY-MM-DD).
  */
 async function processPlayByPlayData(
   fullProcess = false,
-  gameId?: string
+  gameId?: string,
+  startDate?: string,
+  endDate?: string
 ): Promise<void> {
   const { seasonIds, seasonBoundaries } = await getSelectedSeasons();
   const selectedSeasons: string[] = seasonIds;
@@ -286,8 +345,8 @@ async function processPlayByPlayData(
       .maybeSingle();
     const { data: alreadyProcessedGames } = await supabase
       .from("pbp_games")
-      .select("gameid")
-      .eq("gameid", gameId)
+      .select("id")
+      .eq("id", gameId)
       .maybeSingle();
     if (alreadyProcessedPlays || alreadyProcessedGames) {
       console.log(`Game ${gameId} already processed. Skipping.`);
@@ -306,12 +365,119 @@ async function processPlayByPlayData(
     // Fetch and upsert play-by-play for this game
     const gameData = await fetchPlayByPlayData(gameId);
     if (gameData && gameData.plays && gameData.plays.length > 0) {
+      await upsertGameInfo(gameData);
       await upsertPlayByPlayData(gameId, gameData);
       console.log(
         `Processed game ${gameId} with ${gameData.plays.length} plays.`
       );
     } else {
       console.warn(`No play-by-play data found for game ${gameId}.`);
+    }
+    return;
+  }
+
+  if (startDate) {
+    // Forward processing from startDate to endDate (or today)
+    let currentDate = new Date(startDate);
+    let currentDateStr = currentDate.toISOString().split("T")[0];
+    const targetEndDate = endDate || new Date().toISOString().split("T")[0];
+
+    console.log(
+      `Starting forward processing from ${currentDateStr} to ${targetEndDate}`
+    );
+
+    while (currentDateStr <= targetEndDate) {
+      // Check if currentDateStr is within at least one selected season's boundaries.
+      const validForSomeSeason = selectedSeasons.some((sid) => {
+        const { start, end } = seasonBoundaries[sid];
+        return currentDateStr >= start && currentDateStr <= end;
+      });
+
+      if (!validForSomeSeason) {
+        console.log(
+          `Date ${currentDateStr} is not within any season boundaries. Skipping.`
+        );
+        // Move to next day and continue.
+        currentDate.setDate(currentDate.getDate() + 1);
+        currentDateStr = currentDate.toISOString().split("T")[0];
+        continue;
+      }
+
+      console.log(`\n--- Processing date: ${currentDateStr} ---`);
+      const dayStartTime = Date.now();
+
+      const { data: gamesForDay, error: errorForDay } = await supabase
+        .from("games")
+        .select("id, date, seasonId")
+        .in("seasonId", selectedSeasons)
+        .eq("date", currentDateStr)
+        .order("date", { ascending: false });
+
+      if (errorForDay) {
+        console.error(
+          `Error fetching games for date ${currentDateStr}:`,
+          errorForDay.message
+        );
+        // Move to next day and continue.
+        currentDate.setDate(currentDate.getDate() + 1);
+        currentDateStr = currentDate.toISOString().split("T")[0];
+        continue;
+      }
+
+      if (!gamesForDay || gamesForDay.length === 0) {
+        console.log(`No games found for date ${currentDateStr}. Skipping.`);
+        currentDate.setDate(currentDate.getDate() + 1);
+        currentDateStr = currentDate.toISOString().split("T")[0];
+        continue;
+      }
+
+      // Process all games for the day sequentially to avoid rate limits
+      for (const game of gamesForDay) {
+        // Check if already processed if not fullProcess?
+        // Assuming if startDate is provided we want to process regardless or maybe check?
+        // Let's check if already processed to be safe unless fullProcess is true
+        if (!fullProcess) {
+          const { data: alreadyProcessed } = await supabase
+            .from("pbp_plays")
+            .select("gameid")
+            .eq("gameid", game.id)
+            .maybeSingle();
+          if (alreadyProcessed) {
+            console.log(`Game ${game.id} already processed. Skipping.`);
+            continue;
+          }
+        }
+
+        console.log(`Processing game ${game.id} on ${currentDateStr}...`);
+        const gameData = await fetchPlayByPlayData(game.id);
+        if (gameData) {
+          console.log(
+            `Game ${game.id} on ${currentDateStr} returned ${gameData.plays.length} plays.`
+          );
+          if (gameData.plays && gameData.plays.length > 0) {
+            await upsertGameInfo(gameData);
+            await upsertPlayByPlayData(game.id, gameData);
+          }
+        } else {
+          console.warn(
+            `No play-by-play data found for game ${game.id} on ${currentDateStr}.`
+          );
+        }
+        // Add a small delay between games
+        await delay(1000);
+      }
+
+      const dayEndTime = Date.now();
+      const dayDuration = dayEndTime - dayStartTime;
+      console.log(
+        `Finished processing for date ${currentDateStr}. Time taken: ${(
+          dayDuration / 1000
+        ).toFixed(2)} seconds.`
+      );
+
+      // Move to the next day.
+      currentDate.setDate(currentDate.getDate() + 1);
+      currentDateStr = currentDate.toISOString().split("T")[0];
     }
     return;
   }
@@ -371,24 +537,25 @@ async function processPlayByPlayData(
       } already processed games.`
     );
 
-    await Promise.all(
-      gamesToProcess.map(async (game) => {
-        console.log(`Processing game ${game.id} on ${today}...`);
-        const gameData = await fetchPlayByPlayData(game.id);
-        if (gameData) {
-          console.log(
-            `Game ${game.id} on ${today} returned ${gameData.plays.length} plays.`
-          );
-          if (gameData.plays && gameData.plays.length > 0) {
-            await upsertPlayByPlayData(game.id, gameData);
-          }
-        } else {
-          console.warn(
-            `No play-by-play data found for game ${game.id} on ${today}.`
-          );
+    for (const game of gamesToProcess) {
+      console.log(`Processing game ${game.id} on ${today}...`);
+      const gameData = await fetchPlayByPlayData(game.id);
+      if (gameData) {
+        console.log(
+          `Game ${game.id} on ${today} returned ${gameData.plays.length} plays.`
+        );
+        if (gameData.plays && gameData.plays.length > 0) {
+          await upsertGameInfo(gameData);
+          await upsertPlayByPlayData(game.id, gameData);
         }
-      })
-    );
+      } else {
+        console.warn(
+          `No play-by-play data found for game ${game.id} on ${today}.`
+        );
+      }
+      // Add a small delay between games
+      await delay(1000);
+    }
 
     const dayEndTime = Date.now();
     const dayDuration = dayEndTime - dayStartTime;
@@ -464,24 +631,25 @@ async function processPlayByPlayData(
       }
 
       // In fullProcess mode, always update (overwrite) all games for the day.
-      await Promise.all(
-        gamesForDay.map(async (game) => {
-          console.log(`Processing game ${game.id} on ${currentDateStr}...`);
-          const gameData = await fetchPlayByPlayData(game.id);
-          if (gameData) {
-            console.log(
-              `Game ${game.id} on ${currentDateStr} returned ${gameData.plays.length} plays.`
-            );
-            if (gameData.plays && gameData.plays.length > 0) {
-              await upsertPlayByPlayData(game.id, gameData);
-            }
-          } else {
-            console.warn(
-              `No play-by-play data found for game ${game.id} on ${currentDateStr}.`
-            );
+      for (const game of gamesForDay) {
+        console.log(`Processing game ${game.id} on ${currentDateStr}...`);
+        const gameData = await fetchPlayByPlayData(game.id);
+        if (gameData) {
+          console.log(
+            `Game ${game.id} on ${currentDateStr} returned ${gameData.plays.length} plays.`
+          );
+          if (gameData.plays && gameData.plays.length > 0) {
+            await upsertGameInfo(gameData);
+            await upsertPlayByPlayData(game.id, gameData);
           }
-        })
-      );
+        } else {
+          console.warn(
+            `No play-by-play data found for game ${game.id} on ${currentDateStr}.`
+          );
+        }
+        // Add a small delay between games
+        await delay(1000);
+      }
 
       const dayEndTime = Date.now();
       const dayDuration = dayEndTime - dayStartTime;
@@ -501,9 +669,11 @@ async function processPlayByPlayData(
 // Main function now accepts a parameter to choose processing mode.
 export async function main(
   fullProcess = false,
-  gameId?: string
+  gameId?: string,
+  startDate?: string,
+  endDate?: string
 ): Promise<void> {
-  await processPlayByPlayData(fullProcess, gameId);
+  await processPlayByPlayData(fullProcess, gameId, startDate, endDate);
 }
 
 if (require.main === module) {

@@ -7,12 +7,19 @@ export default async function handler(
   res: NextApiResponse
 ) {
   const startTime = Date.now();
+  const { fullRefresh } = req.query;
 
   try {
-    // 1. Get all seasons from the Supabase seasons table.
-    const { data: seasons, error: seasonsError } = await supabase
-      .from("seasons")
-      .select("*");
+    // 1. Get seasons from the Supabase seasons table.
+    let query = supabase.from("seasons").select("*");
+
+    // If not a full refresh, only fetch the most recent season (by ID descending)
+    if (fullRefresh !== "true") {
+      query = query.order("id", { ascending: false }).limit(1);
+    }
+
+    const { data: seasons, error: seasonsError } = await query;
+
     if (seasonsError) throw seasonsError;
     if (!seasons || seasons.length === 0) {
       return res

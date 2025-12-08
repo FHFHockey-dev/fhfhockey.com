@@ -1,6 +1,7 @@
-@use "styles/vars" as v;
 @use "sass:color";
+@use "styles/vars" as v;
 
+/* =================== Page Layout =================== */
 .page {
   padding: v.$space-lg;
   color: v.$text-primary;
@@ -11,11 +12,9 @@
   min-height: 100vh;
 }
 
+/* =================== Chart Panel =================== */
 .chartPanel {
-  @include v.glass-panel(
-    $padding: v.$space-md,
-    $radius: v.$radius-lg
-  );
+  @include v.glass-panel($padding: v.$space-md, $radius: v.$radius-lg);
   height: 25vh;
   min-height: 220px;
   display: flex;
@@ -38,11 +37,245 @@
   color: v.$color-white;
 }
 
+/* =================== Game Strip =================== */
+.gameStrip {
+  display: flex;
+  gap: v.$space-sm;
+  overflow-x: auto;
+  padding-bottom: v.$space-xs;
+
+  /* Hide scrollbar but allow scroll */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.gameCard {
+  @include v.glass-panel($padding: v.$space-sm, $radius: v.$radius-md);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: v.$space-sm;
+  flex: 0 0 auto;
+  min-width: 260px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow:
+    0 -4px 12px -6px var(--away-color),
+    0 4px 12px -6px var(--home-color);
+  background: rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, var(--away-color), var(--home-color));
+    opacity: 0.1;
+    transition: opacity 0.2s ease;
+  }
+
+  &:hover {
+    border-color: v.$text-secondary;
+    &::before {
+      opacity: 0.2;
+    }
+  }
+
+  &.selected {
+    border-color: v.$primary-color;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+    &::before {
+      opacity: 0.25;
+    }
+  }
+
+  > * {
+    position: relative;
+    z-index: 1;
+  }
+}
+
+.teamRow {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.reverse {
+  flex-direction: row-reverse !important;
+  text-align: right;
+  justify-content: space-between;
+}
+
+.teamRowHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.teamIdentity {
+  display: flex;
+  align-items: center;
+  gap: v.$space-xs;
+}
+
+.teamLogo {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.5));
+}
+
+.teamAbbrev {
+  font-weight: 800;
+  font-size: v.$font-size-md;
+  color: v.$text-primary;
+  letter-spacing: 0.05em;
+}
+
+.teamRating {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 11px;
+  color: v.$text-secondary;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 4px 6px;
+  border-radius: 4px;
+  min-width: 60px;
+
+  &.glowGreen .ratingValue {
+    color: #4ade80;
+    text-shadow: 0 0 8px rgba(74, 222, 128, 0.6);
+  }
+
+  &.glowRed .ratingValue {
+    color: #f87171;
+    text-shadow: 0 0 8px rgba(248, 113, 113, 0.6);
+  }
+}
+
+.ratingRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ratingLabel {
+  opacity: 0.7;
+  font-weight: 600;
+}
+
+.gameDivider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  opacity: 0.6;
+  margin: 2px 0;
+}
+
+.dividerLine {
+  flex: 1;
+  height: 1px;
+  background: v.$border-secondary;
+}
+
+.vsCircle {
+  font-size: 10px;
+  font-weight: 700;
+  color: v.$text-secondary;
+  text-transform: uppercase;
+  border: 1px solid v.$border-secondary;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.ratingValue {
+  font-weight: 700;
+  color: v.$text-primary;
+}
+
+/* Removed old .goalieInfo, .goalieName, .goalieProb, .vsColumn, .vs */
+
+.goalieBarContainer {
+  margin-top: auto;
+  display: flex;
+  width: 100%;
+  height: 24px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
+}
+
+.goalieSegment {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  cursor: help;
+  position: relative;
+  border-width: 2px;
+  border-style: solid;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2);
+
+  &:hover {
+    filter: brightness(1.2);
+    z-index: 2;
+  }
+
+  &:not(:last-child) {
+    border-right: none;
+  }
+}
+
+.goalieSegmentText {
+  font-size: 10px;
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+/* =================== Legend =================== */
+.legend {
+  @include v.glass-panel($padding: v.$space-sm, $radius: v.$radius-md);
+  display: flex;
+  flex-wrap: wrap;
+  gap: v.$space-lg;
+  font-size: v.$font-size-xs;
+  color: v.$text-secondary;
+  border: 1px solid v.$border-secondary;
+}
+
+.legendItem {
+  strong {
+    color: v.$primary-color;
+    margin-right: v.$space-xs;
+  }
+}
+
+/* =================== Filters =================== */
 .filters {
-  @include v.glass-panel(
-    $padding: v.$space-md,
-    $radius: v.$radius-lg
-  );
+  @include v.glass-panel($padding: v.$space-md, $radius: v.$radius-lg);
   display: flex;
   flex-wrap: wrap;
   gap: v.$space-md;
@@ -82,18 +315,42 @@
   accent-color: v.$primary-color;
 }
 
+/* =================== Columns Grid =================== */
 .columns {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: v.$space-md;
 }
 
+/* =================== Position Accents =================== */
+/* Matches SuggestedPicks.module.scss */
+.posC {
+  --accent: #{v.$info-color};
+  --accent-soft: #{rgba(v.$info-color, 0.14)};
+}
+.posLW {
+  --accent: #{v.$color-orange};
+  --accent-soft: #{rgba(v.$color-orange, 0.14)};
+}
+.posRW {
+  --accent: #{v.$color-purple};
+  --accent-soft: #{rgba(v.$color-purple, 0.14)};
+}
+.posD {
+  --accent: #{v.$color-teal};
+  --accent-soft: #{rgba(v.$color-teal, 0.14)};
+}
+.posG {
+  --accent: #{v.$success-color};
+  --accent-soft: #{rgba(v.$success-color, 0.5)};
+}
+
+/* =================== Column =================== */
 .column {
-  @include v.glass-panel(
-    $padding: v.$space-md,
-    $radius: v.$radius-md
-  );
-  border-top: 4px solid var(--accent, v.$primary-color);
+  /* We remove the glass panel from the column itself to let cards pop, 
+     or we can keep it subtle. Let's keep it subtle but remove the top border 
+     since cards have their own accents now. */
+  @include v.glass-panel($padding: v.$space-md, $radius: v.$radius-md);
   display: flex;
   flex-direction: column;
   gap: v.$space-sm;
@@ -107,62 +364,212 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
+  margin-bottom: v.$space-xs;
+
+  /* Use the accent color for the header text */
+  color: var(--accent);
 }
 
 .pill {
-  background: v.$background-medium;
+  background: rgba(255, 255, 255, 0.1);
   color: v.$color-white;
   padding: 2px 8px;
   border-radius: v.$radius-sm;
   font-size: v.$font-size-xs;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+/* =================== Card (New Style) =================== */
+$neon-strip-width: 8px;
+
 .card {
-  background: v.$background-medium;
-  border: 1px solid v.$border-secondary;
+  position: relative;
+  overflow: hidden;
+  /* Futuristic glass panel surface */
+  background:
+    /* neon accent tint layer */
+    linear-gradient(180deg, var(--accent-soft) 0%, rgba(0, 0, 0, 0) 100%),
+    /* base glass gradient */
+    linear-gradient(
+        145deg,
+        color.adjust(v.$background-dark, $lightness: 4%) 0%,
+        color.adjust(v.$background-dark, $lightness: -2%) 100%
+      );
+  border: 2px solid var(--accent);
   border-radius: v.$radius-md;
-  padding: v.$space-sm;
-  display: grid;
-  grid-template-columns: 1fr auto;
+
+  /* Padding accommodates the neon strip on the left */
+  padding: v.$space-sm calc(v.$space-sm) v.$space-sm
+    calc(v.$space-sm + #{$neon-strip-width} + v.$space-xs);
+
+  display: flex;
+  flex-direction: column;
   gap: v.$space-xs;
+
+  box-shadow: v.$desktop-panel-shadow;
+  backdrop-filter: blur(v.$blur-backdrop-soft) saturate(160%);
+  -webkit-backdrop-filter: blur(v.$blur-backdrop-soft) saturate(160%);
+  transition:
+    transform 240ms v.$ease-desktop-standard,
+    box-shadow 240ms v.$ease-desktop-standard,
+    border-color 240ms v.$ease-desktop-standard,
+    background 240ms v.$ease-desktop-standard;
+
+  /* Left neon strip */
+  &::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: $neon-strip-width;
+    background: var(--accent);
+    border-top-left-radius: inherit;
+    border-bottom-left-radius: inherit;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    box-shadow:
+      0 0 10px var(--accent),
+      0 0 20px var(--accent);
+    pointer-events: none;
+  }
+
+  /* Ambient glow backdrop */
+  &::after {
+    content: "";
+    position: absolute;
+    inset: -30%;
+    background:
+      radial-gradient(60% 40% at 20% 0%, var(--accent-soft), transparent 60%),
+      radial-gradient(60% 40% at 100% 100%, var(--accent-soft), transparent 60%);
+    filter: blur(14px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 360ms v.$ease-desktop-standard;
+  }
+
+  &:hover {
+    transform: translateX(2px);
+    box-shadow:
+      0 10px 30px rgba(0, 0, 0, 0.45),
+      0 0 0 1px rgba(v.$primary-color, 0.15) inset,
+      v.$desktop-panel-shadow;
+    border-color: color.adjust(v.$border-secondary, $lightness: 10%);
+
+    &::after {
+      opacity: 1;
+    }
+  }
 }
 
 .name {
-  font-weight: 700;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
   color: v.$color-white;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
+  font-size: v.$font-size-sm;
+  @include v.truncate(1);
 }
 
 .meta {
   color: v.$text-secondary;
   font-size: v.$font-size-xs;
+  display: flex;
+  justify-content: space-between;
 }
 
-.statRow {
+/* =================== Stats =================== */
+.statsContainer {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: v.$space-xs;
+  margin-top: v.$space-xs;
+}
+
+.statBox {
+  background: linear-gradient(
+    180deg,
+    rgba(v.$background-light, 0.65) 0%,
+    rgba(v.$background-dark, 0.7) 100%
+  );
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  border-radius: v.$radius-sm;
+  padding: 4px;
+  text-align: center;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 0 0 1px rgba(255, 255, 255, 0.02);
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.statLabel {
+  font-size: 9px;
+  color: v.$text-secondary;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  margin-bottom: 2px;
+}
+
+.statValue {
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  font-size: v.$font-size-sm;
+  color: var(--accent);
+  text-shadow:
+    0 0 8px var(--accent),
+    0 0 2px rgba(0, 0, 0, 0.5);
+  white-space: nowrap;
+}
+
+.splitStatRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: v.$font-size-xs;
-  color: v.$text-primary;
+  width: 100%;
+  height: 100%;
 }
 
-.posC {
-  --accent: #{v.$info-color};
+.splitStatItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+
+  .statLabel {
+    font-size: 8px;
+    margin-bottom: 0;
+  }
+
+  .statValue {
+    font-size: 11px; // Slightly smaller to fit
+  }
 }
-.posLW {
-  --accent: #{v.$color-orange};
-}
-.posRW {
-  --accent: #{v.$success-color};
-}
-.posD {
-  --accent: #{v.$warning-color};
-}
-.posG {
-  --accent: #{v.$danger-color};
+
+.splitStatDivider {
+  width: 1px;
+  height: 70%;
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .emptyState {
   color: v.$text-secondary;
   font-style: italic;
   padding: v.$space-sm;
+}
+
+.gamesRemaining {
+  margin-top: v.$space-sm;
+  padding-top: v.$space-xs;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: v.$font-size-xs;
+  color: v.$text-secondary;
+  text-align: center;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
