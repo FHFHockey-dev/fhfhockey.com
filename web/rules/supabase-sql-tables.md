@@ -1,4 +1,4 @@
-wgo_skater_stats_totals table:
+## wgo_skater_stats_totals table:
 ```sql
 create table public.wgo_skater_stats_totals (
   player_id integer not null,
@@ -215,7 +215,8 @@ create table public.wgo_skater_stats_totals (
 create unique INDEX IF not exists idx_wgo_skater_stats_totals_player_season on public.wgo_skater_stats_totals using btree (player_id, season) TABLESPACE pg_default;
 ```
 
-`player_stats_unified` materialized view:
+# `player_stats_unified` materialized view:
+
 ```sql 
  SELECT w.player_id,
     w.date,

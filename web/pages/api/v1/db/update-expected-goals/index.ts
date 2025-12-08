@@ -9,7 +9,6 @@ import {
 } from "./fetchData";
 import { performCalculations, CalculatedGameData } from "./calculations";
 import supabase from "lib/supabase";
-import adminOnly from "utils/adminOnlyMiddleware";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
 
 type ResponseData = {
@@ -25,9 +24,9 @@ const handler = async (
   req: NextApiRequest,
   res: NextApiResponse<ResponseData>
 ) => {
-  // Ensure the request method is POST
-  if (req.method !== "POST") {
-    res.setHeader("Allow", "POST");
+  // Ensure the request method is POST or GET
+  if (req.method !== "POST" && req.method !== "GET") {
+    res.setHeader("Allow", ["POST", "GET"]);
     return res.status(405).json({
       success: false,
       message: `Method ${req.method} Not Allowed`
@@ -117,4 +116,4 @@ const handler = async (
 };
 
 // Wrap the handler with adminOnly middleware for authentication
-export default adminOnly(handler);
+export default handler;

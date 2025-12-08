@@ -107,24 +107,36 @@ export default async function handler(
     return res.status(405).json({ error: "Method not allowed" });
   }
 
+  // Helper to get "Tomorrow" in EST (default behavior is to project for tomorrow)
+  const getTomorrowEST = () => {
+    const now = new Date();
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/New_York",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    }).formatToParts(now);
+
+    const y = parts.find((p) => p.type === "year")?.value;
+    const m = parts.find((p) => p.type === "month")?.value;
+    const d = parts.find((p) => p.type === "day")?.value;
+
+    // Treat as UTC to safely add 1 day without DST issues
+    const today = new Date(`${y}-${m}-${d}T00:00:00Z`);
+    const tomorrow = new Date(today);
+    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+
+    return tomorrow.toISOString().slice(0, 10);
+  };
+
+  const defaultDate = getTomorrowEST();
+
   const date =
     (req.method === "GET"
       ? (req.query.date as string | undefined)
-      : req.body?.date) || new Date().toISOString().slice(0, 10);
+      : req.body?.date) || defaultDate;
 
   if (!date || typeof date !== "string") {
-    res.setHeader("Allow", ["GET", "POST"]);
-    return res
-      .status(400)
-      .json({ error: "Date is required (YYYY-MM-DD) via query or body." });
-  }
-
-  const initialDate =
-    (req.method === "GET"
-      ? (req.query.date as string | undefined)
-      : req.body?.date) || new Date().toISOString().slice(0, 10);
-
-  if (!initialDate || typeof initialDate !== "string") {
     res.setHeader("Allow", ["GET", "POST"]);
     return res
       .status(400)
@@ -158,12 +170,28 @@ export default async function handler(
     }
 
     // 2) Fetch line combinations to derive expected skaters
+    // We need to find the MOST RECENT line combination for each team playing today.
+    // We cannot just query by today's gameIds because lineCombinations are only created AFTER a game is played.
     const gameIds = games.map((g) => g.id);
-    const { data: lineRows, error: lineError } = await supabase
-      .from("lineCombinations")
-      .select("gameId, teamId, forwards, defensemen")
-      .in("gameId", gameIds);
-    if (lineError) throw lineError;
+    const teamIds = games.flatMap((g) => [g.homeTeamId, g.awayTeamId]);
+
+    const lineRows = (
+      await Promise.all(
+        teamIds.map(async (teamId) => {
+          const { data } = await supabase
+            .from("lineCombinations")
+            .select(
+              "gameId, teamId, forwards, defensemen, games!inner(date, startTime)"
+            )
+            .eq("teamId", teamId)
+            .lt("games.date", date) // Get most recent PAST game
+            .order("games(startTime)", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          return data;
+        })
+      )
+    ).filter(Boolean) as LineCombinationRow[];
 
     // Build team -> players mapping
     const teamPlayers = new Map<number, Set<number>>();
@@ -177,7 +205,7 @@ export default async function handler(
       players.forEach((p) => set.add(p));
     });
 
-    // 3) Fetch opponent ratings once for all teams
+    // 3) Fetch opponent ratings (Optimized: Limit to last 30 days to avoid 1000 row limit)
     const opponentAbbrevs = Array.from(
       new Set(
         games
@@ -185,15 +213,23 @@ export default async function handler(
           .filter(Boolean) as string[]
       )
     );
+
     let ratingsByTeam = new Map<string, TeamRatingRow>();
     if (opponentAbbrevs.length > 0) {
+      // Calculate date 30 days ago
+      const d = new Date(date);
+      d.setDate(d.getDate() - 30);
+      const thirtyDaysAgo = d.toISOString().slice(0, 10);
+
       const { data: ratingRows, error: ratingError } = await supabase
         .from("team_power_ratings_daily")
         .select("team_abbreviation, date, xga60")
         .in("team_abbreviation", opponentAbbrevs)
         .lte("date", date)
+        .gte("date", thirtyDaysAgo) // Optimization: Prevent fetching full history
         .order("team_abbreviation", { ascending: true })
         .order("date", { ascending: false });
+
       if (ratingError) throw ratingError;
       ratingsByTeam = new Map();
       (ratingRows ?? []).forEach((r) => {
@@ -226,8 +262,17 @@ export default async function handler(
       }
     });
 
-    // 5) Build projections
+    // 5) Build projections (Optimized: Parallel Processing)
     const upserts: any[] = [];
+    const playerTasks: Array<{
+      playerId: number;
+      gameId: number;
+      opponentId: number;
+      matchup: { shotMult: number; grade: number };
+      goalieSuppression: number;
+    }> = [];
+
+    // Prepare tasks
     for (const game of games as GameRow[]) {
       const pairs: Array<{ teamId: number; opponentId: number }> = [
         { teamId: game.homeTeamId, opponentId: game.awayTeamId },
@@ -248,34 +293,59 @@ export default async function handler(
         );
 
         for (const playerId of playerSet) {
+          playerTasks.push({
+            playerId,
+            gameId: game.id,
+            opponentId,
+            matchup,
+            goalieSuppression
+          });
+        }
+      }
+    }
+
+    // Process tasks in batches to avoid timeouts and overwhelm
+    const BATCH_SIZE = 20;
+    for (let i = 0; i < playerTasks.length; i += BATCH_SIZE) {
+      const batch = playerTasks.slice(i, i + BATCH_SIZE);
+
+      await Promise.all(
+        batch.map(async (task) => {
           const { data: metricRow, error: metricError } = await supabase
             .from("rolling_player_game_metrics")
             .select(
               "goals_avg_last5, goals_avg_all, assists_avg_last5, assists_avg_all, points_avg_last5, points_avg_all, sog_per_60_avg_last5, sog_per_60_avg_all, toi_seconds_avg_last5, toi_seconds_avg_all"
             )
-            .eq("player_id", playerId)
+            .eq("player_id", task.playerId)
             .eq("strength_state", "all")
             .lte("game_date", date)
             .order("game_date", { ascending: false })
             .limit(1)
             .maybeSingle();
-          if (metricError) throw metricError;
+
+          if (metricError) {
+            console.error(
+              `Error fetching metrics for player ${task.playerId}`,
+              metricError
+            );
+            return;
+          }
 
           const projections = projectFromRolling(
             (metricRow as RollingMetrics | null) ?? null,
-            matchup.shotMult,
-            goalieSuppression
+            task.matchup.shotMult,
+            task.goalieSuppression
           );
 
           upserts.push({
-            player_id: playerId,
-            game_id: game.id,
-            opponent_team_id: opponentId,
-            matchup_grade: matchup.grade,
+            player_id: task.playerId,
+            game_id: task.gameId,
+            opponent_team_id: task.opponentId,
+            matchup_grade: task.matchup.grade,
             ...projections
           });
-        }
-      }
+        })
+      );
     }
 
     if (upserts.length === 0) {
@@ -310,7 +380,7 @@ export default async function handler(
   };
 
   try {
-    const result = await processDate(initialDate, true);
+    const result = await processDate(date, true);
     return res.status(result.status).json(result.body);
   } catch (err: any) {
     console.error("update-start-chart-projections error", err);

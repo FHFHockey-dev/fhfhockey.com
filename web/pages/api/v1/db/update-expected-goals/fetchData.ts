@@ -150,9 +150,27 @@ export async function fetchAllGamesInRangeIterative(
     currentDate.setDate(currentDate.getDate() + 1);
   }
 
-  // Fetch all dates in parallel
-  const fetchPromises = dates.map((date) => fetchGamesByDate(date));
-  const gamesResponses = await Promise.all(fetchPromises);
+  // Fetch in batches to avoid rate limits
+  const BATCH_SIZE = 3;
+  const DELAY_MS = 1000;
+  const gamesResponses: GamesResponse[] = [];
+
+  for (let i = 0; i < dates.length; i += BATCH_SIZE) {
+    const batch = dates.slice(i, i + BATCH_SIZE);
+    const promises = batch.map((date) => fetchGamesByDate(date));
+
+    try {
+      const results = await Promise.all(promises);
+      gamesResponses.push(...results);
+    } catch (error) {
+      console.error(`Error fetching batch starting ${dates[i]}:`, error);
+      throw error;
+    }
+
+    if (i + BATCH_SIZE < dates.length) {
+      await new Promise((resolve) => setTimeout(resolve, DELAY_MS));
+    }
+  }
 
   const allGames = gamesResponses.flatMap((response) =>
     response.games.filter((game) => game.gameType === 2)
