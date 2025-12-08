@@ -509,12 +509,16 @@ export default async function handler(
       const homeGoalies = gameGoalies
         .filter((gr) => gr.team_id === g.homeTeamId)
         .map(processGoalie)
-        .sort((a, b) => (b.start_probability ?? 0) - (a.start_probability ?? 0));
+        .sort(
+          (a, b) => (b.start_probability ?? 0) - (a.start_probability ?? 0)
+        );
 
       const awayGoalies = gameGoalies
         .filter((gr) => gr.team_id === g.awayTeamId)
         .map(processGoalie)
-        .sort((a, b) => (b.start_probability ?? 0) - (a.start_probability ?? 0));
+        .sort(
+          (a, b) => (b.start_probability ?? 0) - (a.start_probability ?? 0)
+        );
 
       return {
         ...g,

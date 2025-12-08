@@ -53,10 +53,7 @@
 }
 
 .gameCard {
-  @include v.glass-panel(
-    $padding: v.$space-sm,
-    $radius: v.$radius-md
-  );
+  @include v.glass-panel($padding: v.$space-sm, $radius: v.$radius-md);
   display: flex;
   flex-direction: column;
   justify-content: flex-start;

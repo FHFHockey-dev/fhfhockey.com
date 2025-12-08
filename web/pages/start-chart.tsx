@@ -226,9 +226,12 @@ export default function StartChartPage() {
 
                     // Color logic
                     let barColor = "#ef476f"; // redish
-                    if (prob >= 80) barColor = "#3bd4ae"; // green
-                    else if (prob >= 50) barColor = "#ffd166"; // yellow
-                    else if (prob >= 30) barColor = "#118ab2"; // blueish
+                    if (prob >= 80)
+                      barColor = "#3bd4ae"; // green
+                    else if (prob >= 50)
+                      barColor = "#ffd166"; // yellow
+                    else if (prob >= 30)
+                      barColor = "#118ab2"; // blueish
                     else barColor = "#6c757d"; // gray
 
                     const name = g.name.split(" ").pop();
