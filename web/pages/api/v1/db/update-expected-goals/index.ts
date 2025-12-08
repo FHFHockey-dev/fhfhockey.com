@@ -8,7 +8,7 @@ import {
   Game
 } from "./fetchData";
 import { performCalculations, CalculatedGameData } from "./calculations";
-import supabase from "lib/supabase";
+import supabase from "lib/supabase/server";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
 
 type ResponseData = {

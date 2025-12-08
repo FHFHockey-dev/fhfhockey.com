@@ -234,6 +234,13 @@ export default function StartChartPage() {
                       barColor = "#118ab2"; // blueish
                     else barColor = "#6c757d"; // gray
 
+                    const hexToRgba = (hex: string, alpha: number) => {
+                      const r = parseInt(hex.slice(1, 3), 16);
+                      const g = parseInt(hex.slice(3, 5), 16);
+                      const b = parseInt(hex.slice(5, 7), 16);
+                      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+                    };
+
                     const name = g.name.split(" ").pop();
                     const showText = i === 0; // Only show text for the top goalie
 
@@ -243,7 +250,8 @@ export default function StartChartPage() {
                         className={styles.goalieSegment}
                         style={{
                           width: `${prob}%`,
-                          backgroundColor: barColor
+                          backgroundColor: hexToRgba(barColor, 0.4),
+                          borderColor: barColor
                         }}
                         title={`${g.name} (${prob.toFixed(0)}%)`}
                       >
@@ -259,10 +267,25 @@ export default function StartChartPage() {
               );
             };
 
-            const renderRating = (rating?: TeamRating) => {
+            const renderRating = (
+              rating?: TeamRating,
+              opponentRating?: TeamRating
+            ) => {
               if (!rating) return null;
+
+              const myTotal = rating.offRating + rating.defRating;
+              const oppTotal = opponentRating
+                ? opponentRating.offRating + opponentRating.defRating
+                : 0;
+
+              let glowClass = "";
+              if (opponentRating) {
+                if (myTotal > oppTotal) glowClass = styles.glowGreen;
+                else if (myTotal < oppTotal) glowClass = styles.glowRed;
+              }
+
               return (
-                <div className={styles.teamRating}>
+                <div className={`${styles.teamRating} ${glowClass}`}>
                   <div className={styles.ratingRow}>
                     <span className={styles.ratingLabel}>OFF</span>
                     <span className={styles.ratingValue}>
@@ -306,7 +329,7 @@ export default function StartChartPage() {
                       )}
                       <span className={styles.teamAbbrev}>{away?.abbrev}</span>
                     </div>
-                    {renderRating(g.awayRating)}
+                    {renderRating(g.awayRating, g.homeRating)}
                   </div>
                   {renderGoalie(g.awayGoalies)}
                 </div>
@@ -320,8 +343,8 @@ export default function StartChartPage() {
 
                 {/* Home Team */}
                 <div className={styles.teamRow}>
-                  <div className={styles.teamRowHeader}>
-                    <div className={styles.teamIdentity}>
+                  <div className={`${styles.teamRowHeader} ${styles.reverse}`}>
+                    <div className={`${styles.teamIdentity} ${styles.reverse}`}>
                       {home?.abbrev && (
                         <img
                           src={`/teamLogos/${home.abbrev}.png`}
@@ -331,7 +354,7 @@ export default function StartChartPage() {
                       )}
                       <span className={styles.teamAbbrev}>{home?.abbrev}</span>
                     </div>
-                    {renderRating(g.homeRating)}
+                    {renderRating(g.homeRating, g.awayRating)}
                   </div>
                   {renderGoalie(g.homeGoalies)}
                 </div>
