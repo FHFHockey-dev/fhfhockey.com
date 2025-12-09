@@ -135,16 +135,21 @@ export function getTeamLogo(teamAbbreviation: string | undefined) {
  * @returns
  */
 export async function getCurrentSeason(): Promise<Season> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("seasons")
     .select("*")
     .lte("startDate", new Date().toISOString()) // ensure season has started
     .order("startDate", { ascending: false })
     .limit(2);
-  if (data === null) throw Error("Cannot find the current season");
+  if (error) {
+    throw new Error(`Cannot fetch seasons: ${error.message}`);
+  }
+  if (!data || data.length === 0) {
+    throw new Error("Cannot find the current season (no rows in seasons table).");
+  }
 
   const currentSeason = data[0];
-  const lastSeason = data[1];
+  const lastSeason = data[1] ?? data[0]; // fallback to current if no prior season
 
   return {
     seasonId: currentSeason.id,

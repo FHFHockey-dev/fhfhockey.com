@@ -129,6 +129,100 @@ const CustomDot = (props: any) => {
   );
 };
 
+const RenderGoalie = ({ goalies }: { goalies?: GoalieInfo[] }) => {
+  if (!goalies || goalies.length === 0) return null;
+
+  return (
+    <div className={styles.goalieBarContainer}>
+      {goalies.map((g, i) => {
+        const prob = (g.start_probability ?? 0) * 100;
+        if (prob < 5) return null; // Hide < 5% to avoid clutter
+
+        // Color logic
+        let barColor = "#ef476f"; // redish
+        if (prob >= 80)
+          barColor = "#3bd4ae"; // green
+        else if (prob >= 50)
+          barColor = "#ffd166"; // yellow
+        else if (prob >= 30)
+          barColor = "#118ab2"; // blueish
+        else barColor = "#6c757d"; // gray
+
+        const hexToRgba = (hex: string, alpha: number) => {
+          const r = parseInt(hex.slice(1, 3), 16);
+          const g = parseInt(hex.slice(3, 5), 16);
+          const b = parseInt(hex.slice(5, 7), 16);
+          return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        };
+
+        const name = g.name.split(" ").pop();
+        const showText = i === 0; // Only show text for the top goalie
+
+        return (
+          <div
+            key={g.player_id}
+            className={styles.goalieSegment}
+            style={{
+              width: `${prob}%`,
+              backgroundColor: hexToRgba(barColor, 0.4),
+              borderColor: barColor
+            }}
+            title={`${g.name} (${prob.toFixed(0)}%)`}
+          >
+            {showText && prob > 20 && (
+              <span className={styles.goalieSegmentText}>
+                {name} {prob.toFixed(0)}%
+              </span>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+const RenderRating = ({
+  rating,
+  opponentRating
+}: {
+  rating?: TeamRating;
+  opponentRating?: TeamRating;
+}) => {
+  if (!rating) return null;
+
+  let offClass = "";
+  let defClass = "";
+
+  if (opponentRating) {
+    if (rating.offRating > opponentRating.offRating)
+      offClass = styles.glowGreen;
+    else if (rating.offRating < opponentRating.offRating)
+      offClass = styles.glowRed;
+
+    if (rating.defRating > opponentRating.defRating)
+      defClass = styles.glowGreen;
+    else if (rating.defRating < opponentRating.defRating)
+      defClass = styles.glowRed;
+  }
+
+  return (
+    <div className={styles.teamRating}>
+      <div className={styles.ratingRow}>
+        <span className={styles.ratingLabel}>OFF</span>
+        <span className={`${styles.ratingValue} ${offClass}`}>
+          {rating.offRating.toFixed(0)}
+        </span>
+      </div>
+      <div className={styles.ratingRow}>
+        <span className={styles.ratingLabel}>DEF</span>
+        <span className={`${styles.ratingValue} ${defClass}`}>
+          {rating.defRating.toFixed(0)}
+        </span>
+      </div>
+    </div>
+  );
+};
+
 export default function StartChartPage() {
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const [date, setDate] = useState(today);
@@ -307,8 +401,12 @@ export default function StartChartPage() {
           <div className={styles.meta}>Date: {data?.dateUsed ?? date}</div>
         </div>
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={ctpiData}>
-            <XAxis dataKey="date" tick={{ fill: "#9ea7b3" }} />
+          <LineChart data={ctpiData} margin={{ right: 20 }}>
+            <XAxis
+              dataKey="date"
+              tick={{ fill: "#9ea7b3" }}
+              padding={{ right: 20 }}
+            />
             <YAxis domain={yAxisDomain} width={30} tick={{ fill: "#9ea7b3" }} />
             <Tooltip
               contentStyle={{
@@ -353,93 +451,6 @@ export default function StartChartPage() {
             );
             const isSelected = selectedGameId === g.id;
 
-            const renderGoalie = (goalies?: GoalieInfo[]) => {
-              if (!goalies || goalies.length === 0) return null;
-
-              return (
-                <div className={styles.goalieBarContainer}>
-                  {goalies.map((g, i) => {
-                    const prob = (g.start_probability ?? 0) * 100;
-                    if (prob < 5) return null; // Hide < 5% to avoid clutter
-
-                    // Color logic
-                    let barColor = "#ef476f"; // redish
-                    if (prob >= 80)
-                      barColor = "#3bd4ae"; // green
-                    else if (prob >= 50)
-                      barColor = "#ffd166"; // yellow
-                    else if (prob >= 30)
-                      barColor = "#118ab2"; // blueish
-                    else barColor = "#6c757d"; // gray
-
-                    const hexToRgba = (hex: string, alpha: number) => {
-                      const r = parseInt(hex.slice(1, 3), 16);
-                      const g = parseInt(hex.slice(3, 5), 16);
-                      const b = parseInt(hex.slice(5, 7), 16);
-                      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-                    };
-
-                    const name = g.name.split(" ").pop();
-                    const showText = i === 0; // Only show text for the top goalie
-
-                    return (
-                      <div
-                        key={g.player_id}
-                        className={styles.goalieSegment}
-                        style={{
-                          width: `${prob}%`,
-                          backgroundColor: hexToRgba(barColor, 0.4),
-                          borderColor: barColor
-                        }}
-                        title={`${g.name} (${prob.toFixed(0)}%)`}
-                      >
-                        {showText && prob > 20 && (
-                          <span className={styles.goalieSegmentText}>
-                            {name} {prob.toFixed(0)}%
-                          </span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              );
-            };
-
-            const renderRating = (
-              rating?: TeamRating,
-              opponentRating?: TeamRating
-            ) => {
-              if (!rating) return null;
-
-              const myTotal = rating.offRating + rating.defRating;
-              const oppTotal = opponentRating
-                ? opponentRating.offRating + opponentRating.defRating
-                : 0;
-
-              let glowClass = "";
-              if (opponentRating) {
-                if (myTotal > oppTotal) glowClass = styles.glowGreen;
-                else if (myTotal < oppTotal) glowClass = styles.glowRed;
-              }
-
-              return (
-                <div className={`${styles.teamRating} ${glowClass}`}>
-                  <div className={styles.ratingRow}>
-                    <span className={styles.ratingLabel}>OFF</span>
-                    <span className={styles.ratingValue}>
-                      {rating.offRating.toFixed(0)}
-                    </span>
-                  </div>
-                  <div className={styles.ratingRow}>
-                    <span className={styles.ratingLabel}>DEF</span>
-                    <span className={styles.ratingValue}>
-                      {rating.defRating.toFixed(0)}
-                    </span>
-                  </div>
-                </div>
-              );
-            };
-
             return (
               <div
                 key={g.id}
@@ -467,9 +478,12 @@ export default function StartChartPage() {
                       )}
                       <span className={styles.teamAbbrev}>{away?.abbrev}</span>
                     </div>
-                    {renderRating(g.awayRating, g.homeRating)}
+                    <RenderRating
+                      rating={g.awayRating}
+                      opponentRating={g.homeRating}
+                    />
                   </div>
-                  {renderGoalie(g.awayGoalies)}
+                  <RenderGoalie goalies={g.awayGoalies} />
                 </div>
 
                 {/* Divider */}
@@ -492,9 +506,12 @@ export default function StartChartPage() {
                       )}
                       <span className={styles.teamAbbrev}>{home?.abbrev}</span>
                     </div>
-                    {renderRating(g.homeRating, g.awayRating)}
+                    <RenderRating
+                      rating={g.homeRating}
+                      opponentRating={g.awayRating}
+                    />
                   </div>
-                  {renderGoalie(g.homeGoalies)}
+                  <RenderGoalie goalies={g.homeGoalies} />
                 </div>
               </div>
             );

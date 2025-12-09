@@ -66,6 +66,7 @@ interface DatasetConfig {
 }
 
 const DEFAULT_REQUEST_INTERVAL_MS = 0;
+const SMALL_MULTI_REQUEST_INTERVAL_MS = 3000;
 const MULTI_DATE_REQUEST_INTERVAL_MS = 30000;
 const NST_BASE_URL = "https://www.naturalstattrick.com/teamtable.php";
 const TIME_ZONE = "America/New_York";
@@ -663,6 +664,7 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  const startedAt = Date.now();
   if (req.method !== "GET" && req.method !== "POST") {
     res.setHeader("Allow", "GET,POST");
     return res.status(405).json({ message: "Method not allowed" });
@@ -718,9 +720,11 @@ export default async function handler(
     }
 
     currentRequestIntervalMs =
-      targetDates.length > 1
-        ? MULTI_DATE_REQUEST_INTERVAL_MS
-        : DEFAULT_REQUEST_INTERVAL_MS;
+      targetDates.length <= 1
+        ? DEFAULT_REQUEST_INTERVAL_MS
+        : targetDates.length <= 2
+          ? SMALL_MULTI_REQUEST_INTERVAL_MS
+          : MULTI_DATE_REQUEST_INTERVAL_MS;
 
     const summary = {
       runMode,
@@ -768,12 +772,14 @@ export default async function handler(
     const statusCode = summary.errors.length > 0 ? 207 : 200;
     return res.status(statusCode).json({
       message: `Processed ${summary.processedDates} day(s); ${summary.skippedDates} skipped.`,
+      durationMs: Date.now() - startedAt,
       summary
     });
   } catch (error: any) {
     console.error("update-nst-team-daily failed:", error);
     return res.status(500).json({
       message: "Unexpected error while updating NST team gamelogs.",
+      durationMs: Date.now() - startedAt,
       error: error?.message ?? error
     });
   }
