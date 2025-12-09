@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import supabase from "lib/supabase";
+import supabase from "lib/supabase/server";
 import { fetchCurrentSeason } from "../../../../utils/fetchCurrentSeason";
 import {
   fetchGameLogs,

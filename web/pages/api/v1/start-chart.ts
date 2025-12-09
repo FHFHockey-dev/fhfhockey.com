@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import supabase from "lib/supabase";
+import supabase from "lib/supabase/server";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
 import { teamsInfo } from "lib/teamsInfo";
 import { fetchTeamRatings } from "lib/teamRatingsService";
@@ -416,21 +416,20 @@ export default async function handler(
         : 0
     }));
 
-    // CTPI sparkline (league average by date, last 30 days)
-    const startRange = shiftDate(initialDate, -30); // last 30 days for sparkline
+    // CTPI sparkline (history for teams playing on dateUsed)
+    const startRange = shiftDate(dateUsed, -30); // last 30 days for sparkline
 
-    // Fetch games in range to filter CTPI to only teams playing
-    const { data: rangeGames } = await supabase
-      .from("games")
-      .select("date, homeTeamId, awayTeamId")
-      .gte("date", startRange);
+    // Identify teams playing on the target date (dateUsed)
+    const teamsPlayingTodayIds = new Set<number>();
+    (gameRows ?? []).forEach((g: any) => {
+      teamsPlayingTodayIds.add(g.homeTeamId);
+      teamsPlayingTodayIds.add(g.awayTeamId);
+    });
 
-    const teamsPlayingByDate = new Map<string, Set<number>>();
-    (rangeGames ?? []).forEach((g: any) => {
-      if (!teamsPlayingByDate.has(g.date))
-        teamsPlayingByDate.set(g.date, new Set());
-      teamsPlayingByDate.get(g.date)?.add(g.homeTeamId);
-      teamsPlayingByDate.get(g.date)?.add(g.awayTeamId);
+    const teamsPlayingTodayAbbrevs = new Set<string>();
+    teamsPlayingTodayIds.forEach((id) => {
+      const abbrev = findAbbrev(id);
+      if (abbrev) teamsPlayingTodayAbbrevs.add(abbrev);
     });
 
     const { data: ctpiRows, error: ctpiError } = await supabase
@@ -440,49 +439,26 @@ export default async function handler(
       .order("date", { ascending: true });
     if (ctpiError) throw ctpiError;
 
-    const ctpiByDate = new Map<string, number[]>();
+    const ctpiMap = new Map<string, Record<string, number>>(); // date -> { team: value }
+
     (ctpiRows as any[] | null)?.forEach((row) => {
-      if (!row.date) return;
+      if (!row.date || !row.team) return;
+      if (!teamsPlayingTodayAbbrevs.has(row.team)) return; // Only care about teams playing today
 
-      // Filter: Only include if team is playing on this date
-      // Note: row.team is Abbrev (e.g. "CHI"), but games use ID.
-      // We need to map Abbrev -> ID or ID -> Abbrev.
-      // teamsInfo has ID -> Abbrev.
-      // Let's map ID -> Abbrev in the set.
+      if (!ctpiMap.has(row.date)) ctpiMap.set(row.date, {});
+      const dateEntry = ctpiMap.get(row.date)!;
 
-      // Actually, let's just build the set of playing abbrevs.
-      // But wait, I built teamsPlayingByDate with IDs.
-      // I need to check if row.team (Abbrev) corresponds to an ID in the set.
-      // This is inefficient to do inside the loop if I don't have a reverse map.
-      // But teamsInfo is small (32 teams).
-
-      const playingIds = teamsPlayingByDate.get(row.date);
-      if (!playingIds) return; // No games that day?
-
-      // Find ID for this team abbrev
-      const teamEntry = Object.values(teamsInfo).find(
-        (t) => t.abbrev === row.team
-      );
-      if (!teamEntry) return;
-
-      if (playingIds.has(teamEntry.id)) {
-        const list = ctpiByDate.get(row.date) ?? [];
-        if (typeof row.ctpi_0_to_100 === "number") {
-          list.push(row.ctpi_0_to_100);
-          ctpiByDate.set(row.date, list);
-        }
+      if (typeof row.ctpi_0_to_100 === "number") {
+        dateEntry[row.team] = row.ctpi_0_to_100;
       }
     });
 
-    const ctpi = Array.from(ctpiByDate.entries()).map(([date, vals]) => ({
-      date,
-      value:
-        vals.length > 0
-          ? Number(
-              (vals.reduce((sum, v) => sum + v, 0) / vals.length).toFixed(2)
-            )
-          : null
-    }));
+    const ctpi = Array.from(ctpiMap.entries())
+      .map(([date, values]) => ({
+        date,
+        ...values
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
 
     // Fetch team ratings
     const ratings = await fetchTeamRatings(dateUsed);

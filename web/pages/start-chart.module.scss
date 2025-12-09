@@ -60,6 +60,13 @@
   gap: v.$space-sm;
   flex: 0 0 auto;
   min-width: 260px;
+
+  /* If <= 7 items, allow them to grow to fill the container */
+  &:first-child:nth-last-child(-n + 7),
+  &:first-child:nth-last-child(-n + 7) ~ & {
+    flex: 1 0 auto;
+  }
+
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow:
     0 -4px 12px -6px var(--away-color),
@@ -149,16 +156,6 @@
   padding: 4px 6px;
   border-radius: 4px;
   min-width: 60px;
-
-  &.glowGreen .ratingValue {
-    color: #4ade80;
-    text-shadow: 0 0 8px rgba(74, 222, 128, 0.6);
-  }
-
-  &.glowRed .ratingValue {
-    color: #f87171;
-    text-shadow: 0 0 8px rgba(248, 113, 113, 0.6);
-  }
 }
 
 .ratingRow {
@@ -205,6 +202,16 @@
 .ratingValue {
   font-weight: 700;
   color: v.$text-primary;
+
+  &.glowGreen {
+    color: #4ade80;
+    text-shadow: 0 0 8px rgba(74, 222, 128, 0.6);
+  }
+
+  &.glowRed {
+    color: #f87171;
+    text-shadow: 0 0 8px rgba(248, 113, 113, 0.6);
+  }
 }
 
 /* Removed old .goalieInfo, .goalieName, .goalieProb, .vsColumn, .vs */
@@ -256,20 +263,87 @@
 }
 
 /* =================== Legend =================== */
-.legend {
-  @include v.glass-panel($padding: v.$space-sm, $radius: v.$radius-md);
+.legendContainer {
+  position: relative;
+  margin-left: auto;
   display: flex;
-  flex-wrap: wrap;
-  gap: v.$space-lg;
-  font-size: v.$font-size-xs;
+  align-items: center;
+}
+
+.legendIcon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid v.$text-secondary;
   color: v.$text-secondary;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: serif;
+  font-weight: 700;
+  font-style: italic;
+  cursor: help;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: v.$primary-color;
+    color: v.$primary-color;
+    background: rgba(v.$primary-color, 0.1);
+  }
+
+  &:hover + .legendTooltip {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+}
+
+.legendTooltip {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 10px);
+  width: 320px;
+  background: v.$background-dark;
   border: 1px solid v.$border-secondary;
+  border-radius: v.$radius-md;
+  padding: v.$space-md;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  z-index: 100;
+  opacity: 0;
+  transform: translateY(-5px);
+  transition: all 0.2s ease;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: -6px;
+    right: 8px;
+    width: 10px;
+    height: 10px;
+    background: v.$background-dark;
+    border-left: 1px solid v.$border-secondary;
+    border-top: 1px solid v.$border-secondary;
+    transform: rotate(45deg);
+  }
 }
 
 .legendItem {
+  font-size: v.$font-size-xs;
+  color: v.$text-secondary;
+  margin-bottom: v.$space-sm;
+  line-height: 1.4;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
   strong {
     color: v.$primary-color;
     margin-right: v.$space-xs;
+    display: block;
+    margin-bottom: 2px;
   }
 }
 
@@ -308,6 +382,22 @@
     outline: none;
     border-color: v.$primary-color;
     box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.25);
+  }
+}
+
+.dateInput {
+  @extend .search;
+  min-width: auto;
+  font-family: inherit;
+
+  &::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    opacity: 0.6;
+    cursor: pointer;
+
+    &:hover {
+      opacity: 1;
+    }
   }
 }
 
@@ -356,6 +446,31 @@
   gap: v.$space-sm;
 }
 
+.cardList {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-sm;
+  overflow-y: auto;
+  max-height: 960px; /* Approx 6 cards */
+  padding-right: v.$space-xs;
+
+  /* Custom scrollbar */
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  &::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+    &:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+  }
+}
+
 .columnHeader {
   display: flex;
   align-items: center;
@@ -385,6 +500,7 @@ $neon-strip-width: 8px;
 .card {
   position: relative;
   overflow: hidden;
+  flex-shrink: 0; /* Prevent card from shrinking in scrollable list */
   /* Futuristic glass panel surface */
   background:
     /* neon accent tint layer */
@@ -572,4 +688,119 @@ $neon-strip-width: 8px;
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
+}
+
+.gamesRemaining4 {
+  color: #3bd4ae;
+  text-shadow: 0 0 8px rgba(59, 212, 174, 0.6);
+}
+
+.gamesRemaining3 {
+  color: #ccff00;
+  text-shadow: 0 0 8px rgba(204, 255, 0, 0.6);
+}
+
+.gamesRemaining2 {
+  color: #ff9f1c;
+  text-shadow: 0 0 8px rgba(255, 159, 28, 0.6);
+}
+
+.gamesRemaining1 {
+  color: #ef476f;
+  text-shadow: 0 0 8px rgba(239, 71, 111, 0.6);
+}
+
+/* =================== Mobile Optimizations =================== */
+@media (max-width: 768px) {
+  .page {
+    padding: v.$space-sm;
+    gap: v.$space-md;
+  }
+
+  .chartPanel {
+    padding: v.$space-sm;
+    min-height: 200px;
+    height: 30vh;
+
+    .chartHeader {
+      margin-bottom: 0;
+      .chartTitle {
+        font-size: v.$font-size-sm;
+      }
+      .meta {
+        font-size: v.$font-size-xs;
+      }
+    }
+  }
+
+  .gameStrip {
+    gap: v.$space-xs;
+  }
+
+  .gameCard {
+    min-width: 260px;
+    padding: v.$space-sm;
+
+    .teamLogo {
+      width: 24px;
+      height: 24px;
+    }
+
+    .teamAbbrev {
+      font-size: v.$font-size-sm;
+    }
+  }
+
+  .filters {
+    padding: v.$space-sm;
+    gap: v.$space-sm;
+
+    .filterGroup {
+      width: 100%;
+      justify-content: space-between;
+
+      label {
+        font-size: v.$font-size-xs;
+      }
+    }
+
+    .search,
+    .dateInput {
+      width: 100%;
+      min-width: 0;
+    }
+
+    .checkboxRow {
+      width: 100%;
+      justify-content: space-between;
+      label {
+        font-size: v.$font-size-xs;
+      }
+    }
+
+    .legendContainer {
+      width: 100%;
+      justify-content: flex-end;
+      margin-left: 0;
+    }
+
+    .legendTooltip {
+      width: 260px;
+      right: 0;
+      padding: v.$space-sm;
+    }
+  }
+
+  .columns {
+    grid-template-columns: 1fr;
+    gap: v.$space-sm;
+  }
+
+  .column {
+    padding: v.$space-sm;
+  }
+
+  .cardList {
+    max-height: 400px;
+  }
 }

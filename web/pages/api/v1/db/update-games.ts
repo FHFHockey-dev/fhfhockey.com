@@ -1,6 +1,9 @@
 import { get } from "lib/NHL/base";
 import { getCurrentSeason } from "lib/NHL/server";
-import supabase from "lib/supabase";
+import type { NextApiRequest, NextApiResponse } from "next";
+import supabase from "lib/supabase/server";
+import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
+
 import adminOnly from "utils/adminOnlyMiddleware";
 
 export default adminOnly(async (req, res) => {
