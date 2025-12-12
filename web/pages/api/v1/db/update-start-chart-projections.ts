@@ -102,6 +102,7 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  const startTime = Date.now();
   if (req.method !== "POST" && req.method !== "GET") {
     res.setHeader("Allow", ["GET", "POST"]);
     return res.status(405).json({ error: "Method not allowed" });
@@ -368,7 +369,13 @@ export default async function handler(
 
   try {
     const result = await processDate(date);
-    return res.status(result.status).json(result.body);
+    const endTime = Date.now();
+    const durationMs = endTime - startTime;
+    const minutes = Math.floor(durationMs / 60000);
+    const seconds = ((durationMs % 60000) / 1000).toFixed(2);
+    const executionTime = `${minutes}m ${seconds}s`;
+
+    return res.status(result.status).json({ ...result.body, executionTime });
   } catch (err: any) {
     console.error("update-start-chart-projections error", err);
     return res

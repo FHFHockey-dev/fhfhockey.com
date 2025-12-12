@@ -41,9 +41,12 @@ type CtpiRow = {
 };
 
 async function ensureTable(): Promise<void> {
-  const { error } = await supabase.rpc("noop"); // cheap call to keep client warm
+  // Cheap, schema-independent call to keep the client warm.
+  const { error } = await supabase
+    .from(DEST_TABLE)
+    .select("season_id", { head: true, count: "exact" });
   if (error) {
-    console.error("Supabase warmup failed (noop rpc)", error.message);
+    console.error("Supabase warmup failed", error.message);
   }
 }
 

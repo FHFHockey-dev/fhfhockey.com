@@ -5,14 +5,17 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  if (req.method !== "POST") {
-    res.setHeader("Allow", "POST");
+  if (req.method !== "POST" && req.method !== "GET") {
+    res.setHeader("Allow", ["GET", "POST"]);
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { date } = req.body;
+  const date =
+    req.method === "GET"
+      ? (req.query.date as string | undefined)
+      : req.body?.date;
 
-  if (!date) {
+  if (!date || typeof date !== "string") {
     return res.status(400).json({ error: "Date is required (YYYY-MM-DD)" });
   }
 
