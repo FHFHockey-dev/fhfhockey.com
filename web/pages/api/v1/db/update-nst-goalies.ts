@@ -1,5 +1,6 @@
 // /Users/tim/Desktop/FHFH/fhfhockey.com/web/pages/api/v1/db/update-nst-goalies.ts
 
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import type { NextApiRequest, NextApiResponse } from "next";
 import axios from "axios";
 import * as cheerio from "cheerio";
@@ -513,7 +514,7 @@ async function main() {
   }
 }
 
-export default async function handler(
+async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
@@ -562,3 +563,5 @@ async function getLatestDateSupabase(): Promise<string | null> {
   }
   return latestDate;
 }
+
+export default withCronJobAudit(handler);

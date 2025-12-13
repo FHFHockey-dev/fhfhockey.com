@@ -1,4 +1,5 @@
 // /Users/tim/Desktop/fhfhockey.com/web/pages/api/v1/db/upsert-csv.ts
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import type { NextApiRequest, NextApiResponse } from "next";
 import adminOnly from "utils/adminOnlyMiddleware";
 import { SupabaseClient } from "@supabase/supabase-js";
@@ -294,7 +295,7 @@ async function getPlayerIdByFullName(
   }
 }
 
-export default adminOnly(
+export default withCronJobAudit(adminOnly(
   async (
     req: NextApiRequest & { supabase: SupabaseClient },
     res: NextApiResponse
@@ -570,4 +571,4 @@ export default adminOnly(
       });
     }
   }
-);
+));

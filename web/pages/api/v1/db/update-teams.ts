@@ -1,10 +1,11 @@
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\pages\api\v1\db\update-teams.ts
 
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { get } from "lib/NHL/base";
 import { getCurrentSeason } from "lib/NHL/server";
 import adminOnly from "utils/adminOnlyMiddleware";
 
-export default adminOnly(async function handler(req, res) {
+export default withCronJobAudit(adminOnly(async function handler(req, res) {
   try {
     const { supabase } = req;
     let season = { seasonId: 0 };
@@ -110,4 +111,4 @@ export default adminOnly(async function handler(req, res) {
   } catch (e: any) {
     res.status(400).json({ message: e.message, success: false });
   }
-});
+}));

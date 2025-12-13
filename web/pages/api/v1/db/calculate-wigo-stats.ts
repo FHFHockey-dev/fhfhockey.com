@@ -1,4 +1,5 @@
 // API endpoint for calculating WIGO statistics
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { NextApiRequest, NextApiResponse } from "next";
 import supabase from "lib/supabase"; // Supabase client instance
 import { getCurrentSeason } from "lib/NHL/server"; // NHL season helper function
@@ -198,7 +199,7 @@ async function fetchAllPlayerIds(
 // --- END PAGINATION HELPER ---
 
 // --- Main Handler ---
-export default async function handler(
+export default withCronJobAudit(async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
@@ -1271,3 +1272,4 @@ export default async function handler(
     });
   }
 }
+);

@@ -13,6 +13,52 @@ const supabase = createClient(
 
 const resend = new Resend(process.env.RESEND_API_KEY!);
 
+type NormalizedStatus = "success" | "failure" | "unknown";
+type JobSummary = {
+  jobName: string;
+  lastStatus: NormalizedStatus;
+  lastStatusSource: "audit" | "cron" | "unknown";
+  lastTimeDisplay: string;
+  message: string | null;
+  runsCount: number;
+  auditRunsCount: number;
+  auditSuccesses: number;
+  auditFailures: number;
+  rowsLast: number | null;
+  rowsTotal: number | null;
+};
+
+function normalizeStatus(value: unknown): NormalizedStatus {
+  const v = String(value ?? "").toLowerCase().trim();
+  if (!v) return "unknown";
+  if (["success", "succeeded", "ok", "passed"].includes(v)) return "success";
+  if (["failure", "failed", "error", "errored"].includes(v)) return "failure";
+  return "unknown";
+}
+
+function extractDetailsMessage(details: unknown): string | null {
+  if (!details) return null;
+  if (typeof details === "string") return details;
+  if (typeof details !== "object") return String(details);
+
+  const asAny = details as any;
+  const direct =
+    asAny.message ??
+    asAny.error ??
+    asAny.err ??
+    asAny.reason ??
+    asAny.return_message ??
+    asAny.returnMessage;
+  if (typeof direct === "string" && direct.trim()) return direct;
+
+  try {
+    const json = JSON.stringify(details);
+    return json === "{}" ? null : json;
+  } catch {
+    return null;
+  }
+}
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
@@ -27,7 +73,7 @@ export default async function handler(
   // 1. Fetch data for job_run_details (cron_job_report)
   const { data: runs, error: runErr } = await supabase
     .from("cron_job_report")
-    .select("jobname, scheduled_time, status")
+    .select("jobname, scheduled_time, status, return_message, end_time, sql_text")
     .gte("scheduled_time", since)
     .order("scheduled_time", { ascending: true });
 
@@ -40,7 +86,7 @@ export default async function handler(
   // 2. Fetch data for cron_job_audit
   const { data: audits, error: auditErr } = await supabase
     .from("cron_job_audit")
-    .select("job_name, run_time, rows_affected")
+    .select("job_name, run_time, rows_affected, status, details")
     .gte("run_time", since)
     .order("run_time", { ascending: true });
 
@@ -49,20 +95,139 @@ export default async function handler(
     errors.push(`Failed to fetch cron job audit: ${auditErr.message}`);
   }
 
+  const auditRows = (audits ?? []).map((a: any) => ({
+    jobName: String(a.job_name ?? ""),
+    time: String(a.run_time ?? ""),
+    rowsAffected: (a.rows_affected ?? null) as number | null,
+    rawStatus: a.status as unknown,
+    status: normalizeStatus(a.status),
+    details: a.details as unknown,
+    detailsMessage: extractDetailsMessage(a.details)
+  }));
+
+  const runRows = (runs ?? []).map((r: any) => ({
+    jobName: String(r.jobname ?? ""),
+    time: String(r.scheduled_time ?? ""),
+    rawStatus: r.status as unknown,
+    status: normalizeStatus(r.status),
+    returnMessage: (r.return_message ?? null) as string | null,
+    sqlText: (r.sql_text ?? null) as string | null,
+    endTime: (r.end_time ?? null) as string | null
+  }));
+
+  const jobNames = new Set<string>([
+    ...auditRows.map((a) => a.jobName).filter(Boolean),
+    ...runRows.map((r) => r.jobName).filter(Boolean)
+  ]);
+
+  const jobSummaries: JobSummary[] = Array.from(jobNames)
+    .map((jobName): JobSummary => {
+      const jobAudits = auditRows
+        .filter((a) => a.jobName === jobName)
+        .sort((a, b) => Date.parse(b.time) - Date.parse(a.time));
+      const jobRuns = runRows
+        .filter((r) => r.jobName === jobName)
+        .sort((a, b) => Date.parse(b.time) - Date.parse(a.time));
+
+      const lastAudit = jobAudits[0] ?? null;
+      const lastRun = jobRuns[0] ?? null;
+
+      const auditSuccesses = jobAudits.filter((a) => a.status === "success")
+        .length;
+      const auditFailures = jobAudits.filter((a) => a.status === "failure")
+        .length;
+      const rowsTotalCounted = jobAudits.filter(
+        (a) => typeof a.rowsAffected === "number"
+      ).length;
+      const rowsTotal =
+        rowsTotalCounted > 0
+          ? jobAudits.reduce((acc, a) => acc + (a.rowsAffected ?? 0), 0)
+          : null;
+
+      const lastStatus: NormalizedStatus =
+        lastAudit?.status ?? lastRun?.status ?? "unknown";
+      const lastStatusSource: JobSummary["lastStatusSource"] = lastAudit
+        ? "audit"
+        : lastRun
+          ? "cron"
+          : "unknown";
+      const lastMessage =
+        lastAudit?.detailsMessage ??
+        lastRun?.returnMessage ??
+        null;
+
+      const lastTimeIso = lastAudit?.time ?? lastRun?.time ?? null;
+
+      return {
+        jobName,
+        lastStatus,
+        lastStatusSource,
+        lastTimeDisplay: lastTimeIso
+          ? new Date(lastTimeIso).toLocaleString()
+          : "—",
+        message: lastMessage,
+        runsCount: jobRuns.length,
+        auditRunsCount: jobAudits.length,
+        auditSuccesses,
+        auditFailures,
+        rowsLast: lastAudit?.rowsAffected ?? null,
+        rowsTotal
+      };
+    })
+    .sort((a, b) => {
+      if (a.lastStatus !== b.lastStatus) {
+        if (a.lastStatus === "failure") return -1;
+        if (b.lastStatus === "failure") return 1;
+      }
+      return a.jobName.localeCompare(b.jobName);
+    });
+
+  const failures = auditRows
+    .filter((a) => a.status === "failure")
+    .sort((a, b) => Date.parse(b.time) - Date.parse(a.time))
+    .map((a) => ({
+      jobName: a.jobName,
+      runTimeDisplay: new Date(a.time).toLocaleString(),
+      rowsAffected: a.rowsAffected,
+      message: a.detailsMessage ?? "—"
+    }));
+
+  const counts = {
+    jobs: jobSummaries.length,
+    auditRuns: auditRows.length,
+    auditSuccesses: auditRows.filter((a) => a.status === "success").length,
+    auditFailures: auditRows.filter((a) => a.status === "failure").length,
+    auditUnknown: auditRows.filter((a) => a.status === "unknown").length,
+    jobsOkLast: jobSummaries.filter((j) => j.lastStatus === "success").length,
+    jobsFailingLast: jobSummaries.filter((j) => j.lastStatus === "failure")
+      .length,
+    jobsUnknownLast: jobSummaries.filter((j) => j.lastStatus === "unknown")
+      .length
+  };
+
   // 3. Send Cron Job Audit Email
-  if (audits && audits.length > 0) {
-    const formattedAudits = audits.map((a) => ({
-      job_name: a.job_name,
-      run_time: a.run_time, // Keep as ISO string, component can format
-      rows_affected: a.rows_affected
+  if (auditRows.length > 0) {
+    const formattedAudits = auditRows.map((a) => ({
+      job_name: a.jobName,
+      run_time: a.time,
+      rows_affected: a.rowsAffected,
+      status: a.status,
+      message: a.detailsMessage
     }));
 
     try {
       const { data, error } = await resend.emails.send({
         from: "audit-report@fhfhockey.com",
         to: emailRecipient,
-        subject: "✅ Cron Job Audit",
-        react: CronAuditEmail({ audits: formattedAudits, sinceDate: since })
+        subject:
+          counts.auditFailures > 0
+            ? `❌ Cron Job Audit — ${counts.auditFailures} failures`
+            : `✅ Cron Job Audit — ${counts.auditSuccesses} successes`,
+        react: CronAuditEmail({
+          audits: formattedAudits,
+          sinceDate: since,
+          summary: counts
+        })
       });
 
       if (error) {
@@ -82,33 +247,22 @@ export default async function handler(
   }
 
   // 4. Prepare and Send Job Run Details Email (similar to your original logic)
-  if (runs && runs.length > 0) {
-    const jobRunDetailsRows = (runs ?? []).map((r) => {
-      // You can choose to link with audits here if needed, or keep it purely run data
-      const match = (audits ?? []).find(
-        // This links runs to audits
-        (a) =>
-          a.job_name === r.jobname &&
-          Math.abs(
-            new Date(a.run_time).getTime() -
-              new Date(r.scheduled_time).getTime()
-          ) <
-            5 * 60 * 1000 // 5 minutes tolerance
-      );
-      return {
-        jobname: r.jobname,
-        scheduled: new Date(r.scheduled_time).toLocaleString(),
-        status: r.status,
-        rowsAffected: match?.rows_affected ?? null
-      };
-    });
-
+  if (runRows.length > 0 || auditRows.length > 0) {
     try {
       const { data, error } = await resend.emails.send({
         from: "job-status@fhfhockey.com", // Can be a different 'from' address
         to: emailRecipient,
-        subject: "🥅 Daily Job Runs",
-        react: CronReportEmail({ rows: jobRunDetailsRows }) // Using your existing component
+        subject:
+          counts.jobsFailingLast > 0
+            ? `❌ Daily Job Runs — ${counts.jobsFailingLast} failing jobs`
+            : "✅ Daily Job Runs",
+        react: CronReportEmail({
+          sinceDate: since,
+          summary: counts,
+          jobs: jobSummaries,
+          recentFailures: failures,
+          fetchErrors: errors
+        })
       });
 
       if (error) {

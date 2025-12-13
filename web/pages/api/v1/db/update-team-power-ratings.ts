@@ -1,3 +1,4 @@
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import type { NextApiRequest, NextApiResponse } from "next";
 import supabase from "lib/supabase/server";
 import { fetchCurrentSeason } from "../../../../utils/fetchCurrentSeason";
@@ -21,7 +22,7 @@ import {
   FinalRating
 } from "../../../../lib/power-ratings";
 
-export default async function handler(
+async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
@@ -290,3 +291,5 @@ export default async function handler(
     return res.status(500).json({ error: err.message });
   }
 }
+
+export default withCronJobAudit(handler);

@@ -1,5 +1,6 @@
 // /web/pages/api/v1/db/update-yahoo-players.ts
 
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import YahooFantasy from "yahoo-fantasy";
@@ -191,7 +192,7 @@ function prepareRpcPayload(
   };
 }
 
-export default async function handler(
+async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
@@ -511,3 +512,5 @@ export default async function handler(
     return res.status(500).json({ success: false, message: errorMessage });
   }
 }
+
+export default withCronJobAudit(handler);

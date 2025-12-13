@@ -1,5 +1,6 @@
 // web/pages/api/v1/db/update-yahoo-weeks.ts
 
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import YahooFantasy from "yahoo-fantasy";
@@ -29,7 +30,7 @@ async function getYahooAPICredentials(
   return data;
 }
 
-export default async function handler(
+async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
@@ -127,3 +128,5 @@ export default async function handler(
       .json({ success: false, message: err.message || String(err) });
   }
 }
+
+export default withCronJobAudit(handler);

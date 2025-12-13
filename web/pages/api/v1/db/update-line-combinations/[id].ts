@@ -1,5 +1,6 @@
 // C:\Users\timbr\Desktop\FHFH\fhfhockey.com-3\web\pages\api\v1\db\update-line-combinations\[id].ts
 
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { SupabaseClient } from "@supabase/supabase-js";
 import {
   TOIData,
@@ -11,7 +12,7 @@ import {
 } from "components/LinemateMatrix";
 import adminOnly from "utils/adminOnlyMiddleware";
 
-export default adminOnly(async (req, res) => {
+export default withCronJobAudit(adminOnly(async (req, res) => {
   const supabase = req.supabase;
   const gameId = Number(req.query.id);
   try {
@@ -28,7 +29,7 @@ export default adminOnly(async (req, res) => {
     console.error(e);
     res.status(400).json({ message: e.message, success: false });
   }
-});
+}));
 
 export async function updateLineCombos(id: number, supabase: SupabaseClient) {
   const lineCombos = await getLineCombos(id);

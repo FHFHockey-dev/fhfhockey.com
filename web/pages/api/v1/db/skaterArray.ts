@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import type { NextApiRequest, NextApiResponse } from "next";
 import supabase from "lib/supabase";
 
@@ -646,7 +647,7 @@ async function fetchSkaterStats(playerId: string): Promise<PlayerStats | null> {
   return playerStats;
 }
 
-export default async function handler(
+async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
@@ -668,3 +669,5 @@ export default async function handler(
     res.status(500).json({ error: "Failed to fetch skater stats" });
   }
 }
+
+export default withCronJobAudit(handler);

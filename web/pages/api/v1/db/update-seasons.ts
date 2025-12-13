@@ -1,8 +1,9 @@
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { Season } from "lib/NHL/types";
 import { restGet } from "lib/NHL/base";
 import adminOnly from "utils/adminOnlyMiddleware";
 
-export default adminOnly(async function handler(req, res) {
+export default withCronJobAudit(adminOnly(async function handler(req, res) {
   try {
     const { supabase } = req;
     const seasons = await getSeasons();
@@ -24,7 +25,7 @@ export default adminOnly(async function handler(req, res) {
   } catch (e: any) {
     res.status(400).json({ message: e.message, success: false });
   }
-});
+}));
 
 async function getSeasons(): Promise<Season[]> {
   const data = (await restGet(`/season`)).data.map((item) => ({

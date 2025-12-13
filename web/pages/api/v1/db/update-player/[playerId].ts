@@ -1,9 +1,10 @@
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { differenceInYears } from "date-fns";
 import { get } from "lib/NHL/base";
 import adminOnly from "utils/adminOnlyMiddleware";
 
-export default adminOnly(async (req, res) => {
+export default withCronJobAudit(adminOnly(async (req, res) => {
   const { supabase } = req;
   const playerId = Number(req.query.playerId);
   try {
@@ -19,7 +20,7 @@ export default adminOnly(async (req, res) => {
       success: false
     });
   }
-});
+}));
 
 /**
  * Update the player in supabase db

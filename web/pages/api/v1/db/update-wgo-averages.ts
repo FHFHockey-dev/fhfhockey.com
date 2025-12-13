@@ -1,5 +1,6 @@
 // pages/api/v1/db/calculate-player-averages.ts
 
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { NextApiRequest, NextApiResponse } from "next";
 import supabase from "lib/supabase"; // Adjust path as needed
 import { PostgrestError } from "@supabase/supabase-js"; // Import for type safety
@@ -425,7 +426,7 @@ const fetchAllPages = async <
   return allData;
 };
 
-export default async function handler(
+async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
@@ -1138,3 +1139,5 @@ export default async function handler(
     });
   }
 }
+
+export default withCronJobAudit(handler);

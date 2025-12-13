@@ -1,5 +1,6 @@
 // C:\Users\timbr\Desktop\FHFH\fhfhockey.com-3\web\pages\api\v1\db\powerPlayTimeFrame.ts
 
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { get } from "lib/NHL/base";
 import { getCurrentSeason } from "lib/NHL/server";
@@ -8,7 +9,7 @@ import adminOnly from "utils/adminOnlyMiddleware";
 import getPowerPlayBlocks, { Block } from "utils/getPowerPlayBlocks"; // Adjust the import path as necessary
 import { extractPowerPlayDetails, PowerPlay } from "utils/extractPPDetails"; // Import the new function
 
-export default adminOnly(async (req, res) => {
+export default withCronJobAudit(adminOnly(async (req, res) => {
   const { supabase } = req;
 
   // Correctly extract gameId from req.query
@@ -218,7 +219,7 @@ export default adminOnly(async (req, res) => {
       success: false,
     });
   }
-});
+}));
 
 /**
  * Determines the home side ("left" or "right") based on play-by-play data.

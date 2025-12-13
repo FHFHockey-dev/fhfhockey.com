@@ -1,3 +1,4 @@
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import type { NextApiRequest, NextApiResponse } from "next";
 import supabase from "lib/supabase/server";
 import { teamsInfo } from "lib/teamsInfo";
@@ -98,10 +99,10 @@ function projectFromRolling(
   };
 }
 
-export default async function handler(
+const handler = async (
   req: NextApiRequest,
   res: NextApiResponse
-) {
+) => {
   const startTime = Date.now();
   if (req.method !== "POST" && req.method !== "GET") {
     res.setHeader("Allow", ["GET", "POST"]);
@@ -382,4 +383,6 @@ export default async function handler(
       .status(500)
       .json({ error: err?.message ?? "Failed to update projections" });
   }
-}
+};
+
+export default withCronJobAudit(handler);

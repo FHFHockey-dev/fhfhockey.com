@@ -1,3 +1,4 @@
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
@@ -198,10 +199,10 @@ async function upsertRows(rows: CtpiRow[]) {
   }
 }
 
-export default async function handler(
+const handler = async (
   req: NextApiRequest,
   res: NextApiResponse
-) {
+) => {
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET");
     return res.status(405).json({ message: "Method not allowed" });
@@ -291,4 +292,8 @@ export default async function handler(
       error: error?.message ?? "Unknown error"
     });
   }
-}
+};
+
+export default withCronJobAudit(handler, {
+  jobName: "/api/v1/db/update-team-ctpi-daily"
+});

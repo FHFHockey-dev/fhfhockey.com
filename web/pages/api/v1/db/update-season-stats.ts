@@ -1,5 +1,6 @@
 // pages/api/v1/db/update-stats-by-season.ts
 
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import supabase from "lib/supabase";
@@ -161,7 +162,7 @@ type PlayerCounts = { [playerId: number]: number };
 
 /////////////// API Route Logic //////////////////
 
-export default async function handler(
+async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
@@ -945,3 +946,5 @@ function getPlayersGameStats(
     goalies
   };
 }
+
+export default withCronJobAudit(handler);
