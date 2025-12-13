@@ -16,7 +16,8 @@ function walk(dir) {
 }
 
 function insertImport(source) {
-  const importLine = 'import { withCronJobAudit } from "lib/cron/withCronJobAudit";';
+  const importLine =
+    'import { withCronJobAudit } from "lib/cron/withCronJobAudit";';
   const lines = source.split("\n");
 
   // Remove any stray copies first (the earlier version could insert inside multiline imports).
@@ -92,9 +93,15 @@ function wrapDefaultFunctionExport(source) {
   const re = /export default (async )?function handler\s*\(/;
   if (!re.test(source)) return source;
 
-  let out = source.replace(re, (_m, asyncPart) => `${asyncPart ? "async " : ""}function handler(`);
+  let out = source.replace(
+    re,
+    (_m, asyncPart) => `${asyncPart ? "async " : ""}function handler(`
+  );
   if (!out.includes("export default withCronJobAudit(handler);")) {
-    out = out.replace(/\n*$/, "\n\nexport default withCronJobAudit(handler);\n");
+    out = out.replace(
+      /\n*$/,
+      "\n\nexport default withCronJobAudit(handler);\n"
+    );
   }
   return out;
 }
