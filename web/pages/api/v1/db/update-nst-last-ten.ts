@@ -1,5 +1,6 @@
 // pages/api/v1/db/update-nst-gamelog.ts
 
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import type { NextApiRequest, NextApiResponse } from "next";
 import axios from "axios";
 import * as cheerio from "cheerio";
@@ -935,7 +936,7 @@ async function main() {
   }
 }
 
-export default async function handler(
+async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
@@ -952,3 +953,5 @@ export default async function handler(
     res.status(500).json({ message: "Internal Server Error" });
   }
 }
+
+export default withCronJobAudit(handler);

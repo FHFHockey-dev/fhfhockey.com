@@ -1,10 +1,11 @@
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { getCurrentSeason, getTeams } from "lib/NHL/server";
 import { differenceInYears } from "date-fns";
 import { get } from "lib/NHL/base";
 import adminOnly from "utils/adminOnlyMiddleware";
 import { Database } from "lib/supabase/database-generated.types";
 
-export default adminOnly(async function handler(req, res) {
+export default withCronJobAudit(adminOnly(async function handler(req, res) {
   try {
     const { supabase } = req;
     const season = await getCurrentSeason();
@@ -57,7 +58,7 @@ export default adminOnly(async function handler(req, res) {
 
     console.table(e);
   }
-});
+}));
 
 type Player = {
   id: number;

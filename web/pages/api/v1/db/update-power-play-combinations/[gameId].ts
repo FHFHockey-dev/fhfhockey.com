@@ -1,3 +1,4 @@
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import adminOnly from "utils/adminOnlyMiddleware";
 import { SupabaseType } from "lib/supabase/client";
 import {
@@ -9,7 +10,7 @@ import {
 } from "components/LinemateMatrix";
 import { getAvg } from "components/LinemateMatrix/utilities";
 
-export default adminOnly(async (req, res) => {
+export default withCronJobAudit(adminOnly(async (req, res) => {
   const { supabase } = req;
   const gameId = Number(req.query.gameId);
   if (!gameId) {
@@ -32,7 +33,7 @@ export default adminOnly(async (req, res) => {
       success: false
     });
   }
-});
+}));
 
 async function updatePowerPlayCombinations(
   gameId: number,

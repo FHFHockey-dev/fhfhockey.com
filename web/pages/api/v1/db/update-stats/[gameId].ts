@@ -1,5 +1,6 @@
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\pages\api\v1\db\update-stats\[gameId].ts
 
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { HTMLElement, parse } from "node-html-parser";
 import { get } from "lib/NHL/base"; // Assuming 'get' fetches and parses JSON
@@ -176,7 +177,7 @@ type PlayerCounts = { [playerId: number]: number };
 
 // --- API Route Logic ---
 
-export default adminOnly(async (req, res) => {
+export default withCronJobAudit(adminOnly(async (req, res) => {
   const { supabase } = req;
   const gameId = Number(req.query.gameId);
 
@@ -203,7 +204,7 @@ export default adminOnly(async (req, res) => {
       success: false
     });
   }
-});
+}));
 
 // --- Core Stat Update Logic ---
 

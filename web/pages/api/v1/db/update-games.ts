@@ -1,3 +1,4 @@
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { get } from "lib/NHL/base";
 import { getCurrentSeason } from "lib/NHL/server";
 import type { NextApiRequest, NextApiResponse } from "next";
@@ -6,7 +7,7 @@ import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
 
 import adminOnly from "utils/adminOnlyMiddleware";
 
-export default adminOnly(async (req, res) => {
+export default withCronJobAudit(adminOnly(async (req, res) => {
   const { supabase } = req;
   let season = { seasonId: 0 };
   if (req.query.seasonId) {
@@ -62,7 +63,7 @@ export default adminOnly(async (req, res) => {
       success: false
     });
   }
-});
+}));
 
 async function getGamesByTeam(abbreviation: string, season: number) {
   const { games } = await get(

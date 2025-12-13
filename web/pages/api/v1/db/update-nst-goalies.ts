@@ -1,5 +1,6 @@
 // /Users/tim/Desktop/FHFH/fhfhockey.com/web/pages/api/v1/db/update-nst-goalies.ts
 
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import type { NextApiRequest, NextApiResponse } from "next";
 import axios from "axios";
 import * as cheerio from "cheerio";
@@ -145,7 +146,8 @@ function getDatesBetween(start: Date, end: Date): string[] {
 
 // --- Name Mapping for Goalies ---
 const goalieNameMapping: Record<string, { fullName: string }> = {
-  "Jacob Markstrom": { fullName: "Jacob Markstrom" }
+  "Jacob Markstrom": { fullName: "Jacob Markstrom" },
+  "Sam Montembeault": { fullName: "Samuel Montembeault" }
   // Add additional goalie mappings here if needed.
 };
 
@@ -513,10 +515,7 @@ async function main() {
   }
 }
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "GET") {
     res.status(405).json({ message: "Method Not Allowed" });
     return;
@@ -562,3 +561,5 @@ async function getLatestDateSupabase(): Promise<string | null> {
   }
   return latestDate;
 }
+
+export default withCronJobAudit(handler);

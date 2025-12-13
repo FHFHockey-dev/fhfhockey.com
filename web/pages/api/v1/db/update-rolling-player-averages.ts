@@ -24,6 +24,7 @@
 
 // 8473548
 
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import type { NextApiRequest, NextApiResponse } from "next";
 
 type ResponseBody = {
@@ -63,7 +64,7 @@ function parsePositiveInt(
   return parsed;
 }
 
-export default async function handler(
+async function handler(
   req: NextApiRequest,
   res: NextApiResponse<ResponseBody>
 ) {
@@ -123,3 +124,5 @@ export default async function handler(
     });
   }
 }
+
+export default withCronJobAudit(handler);

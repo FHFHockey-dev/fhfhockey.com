@@ -1,4 +1,5 @@
 // rebuild-baselines.ts
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { NextApiRequest, NextApiResponse } from "next";
 import supabase from "lib/supabase/server";
 import {
@@ -110,7 +111,7 @@ async function fetchAllFromView(
   return out;
 }
 
-export default async function handler(
+async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
@@ -342,3 +343,5 @@ export default async function handler(
       .json({ success: false, message: error?.message || String(error) });
   }
 }
+
+export default withCronJobAudit(handler);

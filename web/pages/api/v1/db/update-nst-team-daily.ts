@@ -1,3 +1,4 @@
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import type { NextApiRequest, NextApiResponse } from "next";
 import axios from "axios";
 import * as cheerio from "cheerio";
@@ -660,10 +661,10 @@ function parseBooleanParam(
   return ["true", "1", "yes", "y"].includes(value.toLowerCase());
 }
 
-export default async function handler(
+const handler = async (
   req: NextApiRequest,
   res: NextApiResponse
-) {
+) => {
   const startedAt = Date.now();
   if (req.method !== "GET" && req.method !== "POST") {
     res.setHeader("Allow", "GET,POST");
@@ -783,4 +784,6 @@ export default async function handler(
       error: error?.message ?? error
     });
   }
-}
+};
+
+export default withCronJobAudit(handler);

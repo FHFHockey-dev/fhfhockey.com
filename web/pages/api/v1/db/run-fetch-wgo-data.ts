@@ -1,8 +1,9 @@
 // /Users/tim/Desktop/FHFH/fhfhockey.com/web/pages/api/v1/db/run-fetch-wgo-data.ts
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { main } from "lib/supabase/Upserts/fetchWGOdata.js";
 
-export default async function handler(
+async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
@@ -55,3 +56,5 @@ export default async function handler(
     res.status(500).json({ error: err.message });
   }
 }
+
+export default withCronJobAudit(handler);

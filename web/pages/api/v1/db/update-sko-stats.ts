@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { NextApiRequest, NextApiResponse } from "next";
 import supabase from "lib/supabase";
 import Fetch from "lib/cors-fetch";
@@ -1507,7 +1508,7 @@ async function fetchDataForPlayer(
   };
 }
 
-export default async function handler(
+async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
@@ -1568,3 +1569,5 @@ export default async function handler(
     });
   }
 }
+
+export default withCronJobAudit(handler);

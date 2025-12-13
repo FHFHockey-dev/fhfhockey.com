@@ -1,8 +1,9 @@
 // /pages/api/v1/db/update-rolling-games.ts
 
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import type { NextApiRequest, NextApiResponse } from "next";
 
-export default async function handler(
+async function handler(
   req: NextApiRequest,
   res: NextApiResponse<{ message: string }>
 ) {
@@ -21,3 +22,5 @@ export default async function handler(
     res.status(500).json({ message: `Error: ${error.message}` });
   }
 }
+
+export default withCronJobAudit(handler);

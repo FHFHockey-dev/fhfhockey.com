@@ -1,3 +1,4 @@
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import type { NextApiRequest, NextApiResponse } from "next";
 import supabase from "lib/supabase/server";
 import { teamsInfo } from "lib/teamsInfo";
@@ -38,10 +39,10 @@ async function processBatched<T, R>(
   return results;
 }
 
-export default async function handler(
+const handler = async (
   req: NextApiRequest,
   res: NextApiResponse
-) {
+) => {
   if (req.method !== "POST" && req.method !== "GET") {
     res.setHeader("Allow", ["POST", "GET"]);
     return res.status(405).json({ error: "Method not allowed" });
@@ -277,4 +278,6 @@ export default async function handler(
     console.error("Error updating goalie projections:", err);
     return res.status(500).json({ error: err.message });
   }
-}
+};
+
+export default withCronJobAudit(handler);

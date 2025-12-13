@@ -6,6 +6,7 @@
 // FIGURE OUT HOW I CAN GET ONLY THE MOST RECENT OR CURRENT SEASON STD TOTALS FROM NST
 // Create a table that fetches each season, then the total from wgo_skater_stats_totals??
 
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import type { NextApiRequest, NextApiResponse } from "next";
 import axios from "axios";
 import * as cheerio from "cheerio";
@@ -786,7 +787,7 @@ async function main() {
 }
 
 // --- API Route Handler ---
-export default async function handler(
+async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
@@ -814,3 +815,5 @@ export default async function handler(
       "Player report update process initiated. Check server logs for progress."
   });
 }
+
+export default withCronJobAudit(handler);

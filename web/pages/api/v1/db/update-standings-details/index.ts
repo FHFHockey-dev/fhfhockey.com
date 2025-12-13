@@ -1,12 +1,13 @@
 // PATH: /Users/tim/Desktop/FHFH/fhfhockey.com/web/pages/api/v1/db/update-standings-details/index.ts
 
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { NextApiRequest, NextApiResponse } from "next";
 import adminOnly from "utils/adminOnlyMiddleware";
 import { format, parseISO, addDays } from "date-fns";
 import { getCurrentSeason } from "lib/NHL/server";
 import { SupabaseClient } from "@supabase/supabase-js";
 
-export default adminOnly(async function handler(
+export default withCronJobAudit(adminOnly(async function handler(
   req: NextApiRequest & { supabase?: SupabaseClient },
   res: NextApiResponse
 ) {
@@ -113,7 +114,7 @@ export default adminOnly(async function handler(
       message: error.message
     });
   }
-});
+}));
 
 // Iterate from startDate to endDate (inclusive), updating each day
 async function updateStandingsDateRange(

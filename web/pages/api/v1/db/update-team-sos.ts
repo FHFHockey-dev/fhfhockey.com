@@ -1,3 +1,4 @@
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
@@ -178,7 +179,7 @@ async function resolveStartDate(
   return lastDate.slice(0, 10);
 }
 
-export default async function handler(
+async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
@@ -330,3 +331,5 @@ export default async function handler(
     });
   }
 }
+
+export default withCronJobAudit(handler);

@@ -1,9 +1,10 @@
 // pages/api/v1/db/manual-refresh-token.ts
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { NextApiRequest, NextApiResponse } from "next";
 import { createClient } from "@supabase/supabase-js";
 import YahooFantasy from "yahoo-fantasy";
 
-export default async function handler(
+export default withCronJobAudit(async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
@@ -54,3 +55,4 @@ export default async function handler(
     return res.status(500).json({ error: e.message || e.toString() });
   }
 }
+);

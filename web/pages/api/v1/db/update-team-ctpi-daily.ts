@@ -1,3 +1,4 @@
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
@@ -41,9 +42,12 @@ type CtpiRow = {
 };
 
 async function ensureTable(): Promise<void> {
-  const { error } = await supabase.rpc("noop"); // cheap call to keep client warm
+  // Cheap, schema-independent call to keep the client warm.
+  const { error } = await supabase
+    .from(DEST_TABLE)
+    .select("season_id", { head: true, count: "exact" });
   if (error) {
-    console.error("Supabase warmup failed (noop rpc)", error.message);
+    console.error("Supabase warmup failed", error.message);
   }
 }
 
@@ -195,10 +199,10 @@ async function upsertRows(rows: CtpiRow[]) {
   }
 }
 
-export default async function handler(
+const handler = async (
   req: NextApiRequest,
   res: NextApiResponse
-) {
+) => {
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET");
     return res.status(405).json({ message: "Method not allowed" });
@@ -288,4 +292,8 @@ export default async function handler(
       error: error?.message ?? "Unknown error"
     });
   }
-}
+};
+
+export default withCronJobAudit(handler, {
+  jobName: "/api/v1/db/update-team-ctpi-daily"
+});

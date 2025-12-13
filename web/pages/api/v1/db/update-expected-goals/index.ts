@@ -1,5 +1,6 @@
 // pages/api/v1/db/update-expected-goals/index.ts
 
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import type { NextApiRequest, NextApiResponse } from "next";
 import {
   fetchAllGamesInRangeIterative,
@@ -116,4 +117,4 @@ const handler = async (
 };
 
 // Wrap the handler with adminOnly middleware for authentication
-export default handler;
+export default withCronJobAudit(handler);

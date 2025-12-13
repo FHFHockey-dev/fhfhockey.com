@@ -1,7 +1,8 @@
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import adminOnly from "utils/adminOnlyMiddleware";
 import { updateStats } from "../update-stats/[gameId]";
 
-export default adminOnly(async (req, res) => {
+export default withCronJobAudit(adminOnly(async (req, res) => {
   const { supabase } = req;
   const count = req.query.count ? Number(req.query.count) : 5;
   try {
@@ -63,7 +64,7 @@ export default adminOnly(async (req, res) => {
   } catch (e: any) {
     res.status(400).json({ message: e.message, success: false });
   }
-});
+}));
 
 function setDifference<T>(setA: Set<T>, setB: Set<T>): Set<T> {
   const difference = new Set<T>();

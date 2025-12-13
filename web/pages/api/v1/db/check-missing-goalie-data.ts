@@ -1,5 +1,6 @@
 // /pages/api/v1/db/check-missing-goalie-data.ts
 
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import type { NextApiRequest, NextApiResponse } from "next";
 import axios from "axios";
 import * as cheerio from "cheerio";
@@ -460,7 +461,7 @@ async function checkMissingDatesAndFetch() {
   }
 }
 
-export default async function handler(
+export default withCronJobAudit(async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
@@ -478,3 +479,4 @@ export default async function handler(
     res.status(500).json({ message: "Internal Server Error" });
   }
 }
+);
