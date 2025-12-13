@@ -1,4 +1,61 @@
-// web/pages/api/v1/db/cron-report.ts
+/**
+ * Cron Report Coverage
+ *
+ * Any API route that writes to Supabase `cron_job_audit` (either directly, or via `withCronJobAudit`)
+ * will appear in the Cron Report / briefing emails.
+ *
+ * Included routes (currently 50):
+ * - web/pages/api/v1/db/calculate-wigo-stats.ts
+ * - web/pages/api/v1/db/check-missing-goalie-data.ts
+ * - web/pages/api/v1/db/cron/update-stats-cron.ts
+ * - web/pages/api/v1/db/manual-refresh-yahoo-token.ts
+ * - web/pages/api/v1/db/powerPlayTimeFrame.ts
+ * - web/pages/api/v1/db/run-fetch-wgo-data.ts
+ * - web/pages/api/v1/db/shift-charts.ts
+ * - web/pages/api/v1/db/skaterArray.ts
+ * - web/pages/api/v1/db/sustainability/rebuild-baselines.ts
+ * - web/pages/api/v1/db/update-PbP.ts
+ * - web/pages/api/v1/db/update-expected-goals/index.ts
+ * - web/pages/api/v1/db/update-games.ts
+ * - web/pages/api/v1/db/update-goalie-projections-v2.ts
+ * - web/pages/api/v1/db/update-goalie-projections.ts
+ * - web/pages/api/v1/db/update-last-7-14-30.ts
+ * - web/pages/api/v1/db/update-line-combinations/[id].ts
+ * - web/pages/api/v1/db/update-line-combinations/index.ts
+ * - web/pages/api/v1/db/update-nst-current-season.ts
+ * - web/pages/api/v1/db/update-nst-gamelog.ts
+ * - web/pages/api/v1/db/update-nst-goalies.ts
+ * - web/pages/api/v1/db/update-nst-last-ten.ts
+ * - web/pages/api/v1/db/update-nst-player-reports.ts
+ * - web/pages/api/v1/db/update-nst-team-daily.ts
+ * - web/pages/api/v1/db/update-player/[playerId].ts
+ * - web/pages/api/v1/db/update-players.ts
+ * - web/pages/api/v1/db/update-power-play-combinations/[gameId].ts
+ * - web/pages/api/v1/db/update-power-rankings.ts
+ * - web/pages/api/v1/db/update-rolling-games.ts
+ * - web/pages/api/v1/db/update-rolling-player-averages.ts
+ * - web/pages/api/v1/db/update-season-stats.ts
+ * - web/pages/api/v1/db/update-seasons.ts
+ * - web/pages/api/v1/db/update-sko-stats.ts
+ * - web/pages/api/v1/db/update-standings-details/index.ts
+ * - web/pages/api/v1/db/update-start-chart-projections.ts
+ * - web/pages/api/v1/db/update-stats/[gameId].ts
+ * - web/pages/api/v1/db/update-team-ctpi-daily.ts
+ * - web/pages/api/v1/db/update-team-power-ratings-new.ts
+ * - web/pages/api/v1/db/update-team-power-ratings.ts
+ * - web/pages/api/v1/db/update-team-sos.ts
+ * - web/pages/api/v1/db/update-team-yearly-summary.ts
+ * - web/pages/api/v1/db/update-teams.ts
+ * - web/pages/api/v1/db/update-wgo-averages.ts
+ * - web/pages/api/v1/db/update-wgo-goalie-totals.ts
+ * - web/pages/api/v1/db/update-wgo-goalies.ts
+ * - web/pages/api/v1/db/update-wgo-ly.ts
+ * - web/pages/api/v1/db/update-wgo-skaters.ts
+ * - web/pages/api/v1/db/update-wgo-totals.ts
+ * - web/pages/api/v1/db/update-yahoo-players.ts
+ * - web/pages/api/v1/db/update-yahoo-weeks.ts
+ * - web/pages/api/v1/db/upsert-csv.ts
+ */
 
 import type { NextApiRequest, NextApiResponse } from "next";
 import { createClient } from "@supabase/supabase-js";

@@ -146,7 +146,8 @@ function getDatesBetween(start: Date, end: Date): string[] {
 
 // --- Name Mapping for Goalies ---
 const goalieNameMapping: Record<string, { fullName: string }> = {
-  "Jacob Markstrom": { fullName: "Jacob Markstrom" }
+  "Jacob Markstrom": { fullName: "Jacob Markstrom" },
+  "Sam Montembeault": { fullName: "Samuel Montembeault" }
   // Add additional goalie mappings here if needed.
 };
 
@@ -514,10 +515,7 @@ async function main() {
   }
 }
 
-async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "GET") {
     res.status(405).json({ message: "Method Not Allowed" });
     return;
