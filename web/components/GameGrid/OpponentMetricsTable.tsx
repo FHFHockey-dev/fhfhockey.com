@@ -6,6 +6,7 @@ import supabase from "lib/supabase"; // Import the Supabase client
 import styles from "./OpponentMetricsTable.module.scss";
 import clsx from "clsx";
 import PanelStatus from "components/common/PanelStatus";
+import { useTeamsMap } from "hooks/useTeams";
 
 // It's best practice to move this interface to a shared types file (e.g., lib/NHL/types.ts)
 // to avoid duplication. It is included here for completeness.
@@ -64,6 +65,11 @@ export default function OpponentMetricsTable({
 
   const isMobile = useIsMobile();
   const [isMobileMinimized, setIsMobileMinimized] = useState(false);
+  const teamsMap = useTeamsMap();
+  const [sortConfig, setSortConfig] = useState<{
+    key: keyof Averages | "teamName";
+    direction: "ascending" | "descending";
+  } | null>(null);
 
   // Effect to fetch and process stats for all teams on component mount
   useEffect(() => {
@@ -186,21 +192,157 @@ export default function OpponentMetricsTable({
       : [];
   }, [teamData, allTeamStats]); // Use allTeamStats as a dependency
 
-  const sortedTeamsAverages = useMemo(() => {
-    return [...teamsAverages].sort((a, b) =>
-      a.team.teamAbbreviation.localeCompare(b.team.teamAbbreviation)
-    );
-  }, [teamsAverages]);
+  const handleSort = (key: keyof Averages | "teamName") => {
+    let direction: "ascending" | "descending" = "ascending";
+    if (
+      sortConfig &&
+      sortConfig.key === key &&
+      sortConfig.direction === "ascending"
+    ) {
+      direction = "descending";
+    }
+    if (key === "teamName" && (!sortConfig || sortConfig.key !== "teamName")) {
+      direction = "ascending";
+    } else if (key !== "teamName" && (!sortConfig || sortConfig.key !== key)) {
+      direction = "descending";
+    }
+    setSortConfig({ key, direction });
+  };
 
-  const metricColumns: { label: string; key: keyof Averages }[] = [
-    { label: "xGF", key: "avgXgf" },
-    { label: "xGA", key: "avgXga" },
-    { label: "SF", key: "avgSf" },
-    { label: "SA", key: "avgSa" },
-    { label: "GF", key: "avgGoalFor" },
-    { label: "GA", key: "avgGoalAgainst" },
-    { label: "W%", key: "avgWinPct" }
-  ];
+  const sortedTeamsAverages = useMemo(() => {
+    const currentSortKey = sortConfig?.key;
+    const currentDirection = sortConfig?.direction;
+    const sortable = [...teamsAverages];
+
+    if (!currentSortKey || !currentDirection) return sortable;
+
+    sortable.sort((a, b) => {
+      if (currentSortKey === "teamName") {
+        const aName =
+          teamsMap[a.team.teamId]?.name?.toLowerCase() ??
+          a.team.teamAbbreviation?.toLowerCase() ??
+          "";
+        const bName =
+          teamsMap[b.team.teamId]?.name?.toLowerCase() ??
+          b.team.teamAbbreviation?.toLowerCase() ??
+          "";
+        if (aName < bName) return currentDirection === "ascending" ? -1 : 1;
+        if (aName > bName) return currentDirection === "ascending" ? 1 : -1;
+        return 0;
+      }
+
+      const aValue = a.averages[currentSortKey];
+      const bValue = b.averages[currentSortKey];
+      const aNum =
+        aValue == null
+          ? currentDirection === "ascending"
+            ? Infinity
+            : -Infinity
+          : aValue;
+      const bNum =
+        bValue == null
+          ? currentDirection === "ascending"
+            ? Infinity
+            : -Infinity
+          : bValue;
+
+      if (aNum < bNum) return currentDirection === "ascending" ? -1 : 1;
+      if (aNum > bNum) return currentDirection === "ascending" ? 1 : -1;
+      return 0;
+    });
+
+    return sortable;
+  }, [teamsAverages, sortConfig, teamsMap]);
+
+  const metricColumns = useMemo(
+    (): { label: string; key: keyof Averages }[] => [
+      { label: "xGF", key: "avgXgf" },
+      { label: "xGA", key: "avgXga" },
+      { label: "SF", key: "avgSf" },
+      { label: "SA", key: "avgSa" },
+      { label: "GF", key: "avgGoalFor" },
+      { label: "GA", key: "avgGoalAgainst" },
+      { label: "W%", key: "avgWinPct" }
+    ],
+    []
+  );
+
+  const leagueAverages = useMemo(() => {
+    const sums: Partial<Record<keyof Averages, number>> = {};
+    const counts: Partial<Record<keyof Averages, number>> = {};
+    metricColumns.forEach(({ key }) => {
+      sums[key] = 0;
+      counts[key] = 0;
+    });
+
+    sortedTeamsAverages.forEach(({ averages }) => {
+      metricColumns.forEach(({ key }) => {
+        const value = averages[key];
+        if (typeof value === "number") {
+          sums[key] = (sums[key] ?? 0) + value;
+          counts[key] = (counts[key] ?? 0) + 1;
+        }
+      });
+    });
+
+    const result: Partial<Record<keyof Averages, number | null>> = {};
+    metricColumns.forEach(({ key }) => {
+      const count = counts[key] ?? 0;
+      result[key] = count > 0 ? (sums[key] ?? 0) / count : null;
+    });
+    return result as Record<keyof Averages, number | null>;
+  }, [sortedTeamsAverages, metricColumns]);
+
+  type TeamNumeric = { teamId: number; value: number };
+  const toRankMaps = (entries: TeamNumeric[], bestDirection: "asc" | "desc") => {
+    const sorted = [...entries].sort((a, b) =>
+      bestDirection === "asc" ? a.value - b.value : b.value - a.value
+    );
+    const best = new Map<number, number>();
+    const worst = new Map<number, number>();
+    sorted.slice(0, 10).forEach((e, i) => best.set(e.teamId, i + 1));
+    sorted
+      .slice(Math.max(sorted.length - 10, 0))
+      .forEach((e, i) => worst.set(e.teamId, i + 1));
+    return { best, worst };
+  };
+
+  const rankMaps = useMemo(() => {
+    const directions: Record<keyof Averages, "asc" | "desc"> = {
+      avgXgf: "asc",
+      avgXga: "desc",
+      avgSf: "asc",
+      avgSa: "desc",
+      avgGoalFor: "asc",
+      avgGoalAgainst: "desc",
+      avgWinPct: "asc"
+    };
+
+    return metricColumns.reduce<
+      Record<keyof Averages, { best: Map<number, number>; worst: Map<number, number> }>
+    >((acc, { key }) => {
+      const entries: TeamNumeric[] = [];
+      sortedTeamsAverages.forEach(({ team, averages }) => {
+        const value = averages[key];
+        if (typeof value === "number") entries.push({ teamId: team.teamId, value });
+      });
+      acc[key] = toRankMaps(entries, directions[key]);
+      return acc;
+    }, {} as Record<keyof Averages, { best: Map<number, number>; worst: Map<number, number> }>);
+  }, [sortedTeamsAverages, metricColumns]);
+
+  const getRankClass = (
+    key: keyof Averages,
+    teamId: number,
+    value: number | null
+  ): string | undefined => {
+    if (typeof value !== "number") return undefined;
+    const rank = rankMaps[key]?.best.get(teamId);
+    if (rank != null) return (styles as any)[`rankGood${rank}`];
+    const worstRank = rankMaps[key]?.worst.get(teamId);
+    if (worstRank != null) return (styles as any)[`rankBad${worstRank}`];
+    return undefined;
+  };
 
   const handleTitleClick = isMobile ? toggleMobileMinimize : undefined;
   const hasData = sortedTeamsAverages.length > 0;
@@ -245,30 +387,83 @@ export default function OpponentMetricsTable({
           <table className={styles.table}>
             <thead>
               <tr>
-                <th>Team</th>
+                <th>
+                  <button
+                    type="button"
+                    onClick={() => handleSort("teamName")}
+                    className={styles.sortButton}
+                    aria-label={`Sort by Team ${
+                      sortConfig?.key === "teamName" &&
+                      sortConfig.direction === "ascending"
+                        ? "descending"
+                        : "ascending"
+                    }`}
+                  >
+                    Team{" "}
+                    {sortConfig?.key === "teamName" &&
+                      (sortConfig.direction === "ascending" ? " ▲" : " ▼")}
+                  </button>
+                </th>
                 {metricColumns.map((metric) => (
-                  <th key={metric.key}>{metric.label}</th>
+                  <th key={metric.key}>
+                    <button
+                      type="button"
+                      onClick={() => handleSort(metric.key)}
+                      className={styles.sortButton}
+                      aria-label={`Sort by ${metric.label} ${
+                        sortConfig?.key === metric.key &&
+                        sortConfig.direction === "descending"
+                          ? "ascending"
+                          : "descending"
+                      }`}
+                    >
+                      {metric.label}{" "}
+                      {sortConfig?.key === metric.key &&
+                        (sortConfig.direction === "ascending" ? " ▲" : " ▼")}
+                    </button>
+                  </th>
                 ))}
               </tr>
             </thead>
             <tbody>
+              <tr className={styles.averagesRow}>
+                <td>AVG:</td>
+                {metricColumns.map((metric) => {
+                  const value = leagueAverages[metric.key];
+                  return (
+                    <td key={metric.key}>
+                      {value != null
+                        ? metric.key === "avgWinPct"
+                          ? `${(value * 100).toFixed(1)}%`
+                          : value.toFixed(2)
+                        : "-"}
+                    </td>
+                  );
+                })}
+              </tr>
               {sortedTeamsAverages.map(({ team, averages }) => (
                 <tr key={team.teamId}>
                   <td>
-                    <Image
-                      src={`/teamLogos/${team.teamAbbreviation ?? "default"}.png`}
-                      alt={team.teamAbbreviation || "Team Logo"}
-                      width={24}
-                      height={24}
-                    />
+                    <div className={styles.teamInfo}>
+                      <Image
+                        src={`/teamLogos/${team.teamAbbreviation ?? "default"}.png`}
+                        alt={team.teamAbbreviation || "Team Logo"}
+                        width={24}
+                        height={24}
+                        className={styles.teamLogo}
+                      />
+                    </div>
                   </td>
                   {metricColumns.map((metric) => {
                     const value = averages[metric.key];
                     return (
-                      <td key={metric.key}>
+                      <td
+                        key={metric.key}
+                        className={getRankClass(metric.key, team.teamId, value)}
+                      >
                         {value != null
                           ? metric.key === "avgWinPct"
-                            ? (value * 100).toFixed(1)
+                            ? `${(value * 100).toFixed(1)}%`
                             : value.toFixed(1)
                           : "-"}
                       </td>

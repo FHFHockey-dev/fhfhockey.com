@@ -17,9 +17,7 @@ function GameGridPage({ initialMode }: { initialMode: GameGridMode }) {
   const [mode, setMode] = useState<GameGridMode>(
     initialMode ?? "7-Day-Forecast"
   );
-  const [orientation, setOrientation] = useState<"horizontal" | "vertical">(
-    "horizontal"
-  );
+
   useEffect(() => {
     Router.replace({
       query: {
@@ -30,7 +28,7 @@ function GameGridPage({ initialMode }: { initialMode: GameGridMode }) {
   }, [mode]);
 
   return (
-    <Container>
+    <Container contentVariant="full">
       <NextSeo
         title="FHFH | Game Grid"
         description="Five Hole Fantasy Hockey Podcast Game Grid."
@@ -47,12 +45,7 @@ function GameGridPage({ initialMode }: { initialMode: GameGridMode }) {
         >
           {MODE_TO_LABEL[mode]}
         </button>
-        <GameGrid
-          mode={mode}
-          setMode={setMode}
-          orientation={orientation}
-          setOrientation={setOrientation}
-        />
+        <GameGrid mode={mode} setMode={setMode} />
       </div>
       <div style={{ marginBottom: "30px" }} />
     </Container>

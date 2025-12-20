@@ -4,19 +4,19 @@
 // Modern design tokens
 $toggle-sizes: (
   small: (
-    width: 32px,
+    width: 29px,
     height: 16px,
     thumb-size: 12px,
     thumb-offset: 2px
   ),
   medium: (
-    width: 44px,
+    width: 41px,
     height: 22px,
     thumb-size: 18px,
     thumb-offset: 2px
   ),
   large: (
-    width: 56px,
+    width: 53px,
     height: 28px,
     thumb-size: 24px,
     thumb-offset: 2px
@@ -136,7 +136,6 @@ $transition-timing: cubic-bezier(0.4, 0, 0.2, 1);
 
       // Thumb position when checked
       &::before {
-        transform: translateX(calc(100% - 100% + 100%)) translateY(-50%);
         background: linear-gradient(
           135deg,
           rgba(255, 255, 255, 0.98),
@@ -157,6 +156,7 @@ $transition-timing: cubic-bezier(0.4, 0, 0.2, 1);
       .slider {
         width: $width;
         height: $height;
+        left: 0;
 
         &::before {
           width: $thumb-size;
@@ -166,10 +166,8 @@ $transition-timing: cubic-bezier(0.4, 0, 0.2, 1);
 
         // Adjust thumb position for checked state
         &[aria-checked="true"]::before {
-          transform: translateX(
-              calc(#{$width} - #{$thumb-size} - #{$thumb-offset})
-            )
-            translateY(-50%);
+          transform: translateY(-50%)
+            translateX(calc(#{$width} - #{$thumb-size} - #{2 * $thumb-offset}));
         }
       }
     }

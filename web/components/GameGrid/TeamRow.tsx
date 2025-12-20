@@ -1,6 +1,6 @@
 // components/GameGrid/TeamRow.tsx
 
-import Image from "next/legacy/image";
+import Image from "next/image";
 import { formatWinOdds, calculateBlendedWinOdds } from "./utils/calcWinOdds";
 import { formatWeekScore } from "./utils/calcWeekScore";
 import { useTeam } from "./contexts/GameGridContext";
@@ -16,6 +16,7 @@ import PoissonHeatmap from "./PDHC/PoissonHeatMap";
 import styles from "./GameGrid.module.scss";
 import clsx from "clsx";
 import { useEffect, useState } from "react";
+import { teamsInfo } from "lib/teamsInfo";
 
 export type MatchUpCellData = {
   home: boolean;
@@ -98,19 +99,39 @@ function TeamRow(props: TeamRowProps) {
     <tr className={clsx(styles.teamRow, props.rowHighlightClass)}>
       {/* First column: show abbreviation on desktop, logo on mobile */}
       <td className={styles.firstColumnContent}>
-        <span className={styles.desktopTeamAbbreviation}>
+        <span
+          className={styles.desktopTeamAbbreviation}
+          style={
+            {
+              "--team-primary-color":
+                teamsInfo[team.abbreviation]?.primaryColor ?? undefined,
+              "--team-secondary-color":
+                teamsInfo[team.abbreviation]?.secondaryColor ?? undefined,
+              "--team-accent-color":
+                teamsInfo[team.abbreviation]?.accent ?? undefined,
+              "--team-light-color":
+                teamsInfo[team.abbreviation]?.lightColor ?? undefined,
+              "--team-dark-color":
+                teamsInfo[team.abbreviation]?.darkColor ?? undefined,
+              "--team-jersey-color":
+                teamsInfo[team.abbreviation]?.jersey ?? undefined
+            } as React.CSSProperties
+          }
+        >
           {team.abbreviation}
         </span>
         <span className={styles.mobileTeamLogo}>
-          <Image
-            objectFit="contain"
-            alt={`${team.name} logo`}
-            width={24}
-            height={24}
-            src={team.logo}
-            title={team.name}
-            className={styles.teamLogo24}
-          />
+          <span className={styles.firstColumnLogo}>
+            <Image
+              alt={`${team.name} logo`}
+              src={team.logo}
+              title={team.name}
+              fill
+              sizes="40px"
+              className={styles.teamLogo24}
+              style={{ objectFit: "contain" }}
+            />
+          </span>
         </span>
       </td>
       {/* Days */}
@@ -233,6 +254,16 @@ function MatchUpCell({
     return <div>Data unavailable</div>;
   }
 
+  const opponentColors = teamsInfo[opponentTeam.abbreviation];
+  const matchupCellStyle = {
+    "--opponent-primary-color": opponentColors?.primaryColor,
+    "--opponent-secondary-color": opponentColors?.secondaryColor,
+    "--opponent-accent-color": opponentColors?.accent,
+    "--opponent-light-color": opponentColors?.lightColor,
+    "--opponent-dark-color": opponentColors?.darkColor,
+    "--opponent-jersey-color": opponentColors?.jersey
+  } as React.CSSProperties;
+
   // Proceed with rendering
   const hasResult = us.score !== undefined && opponent.score !== undefined;
   let text = "";
@@ -263,7 +294,7 @@ function MatchUpCell({
 
   return (
     <Tooltip content={tooltipContent}>
-      <div className={styles.matchupCell}>
+      <div className={styles.matchupCell} style={matchupCellStyle}>
         {isMobile ? (
           <div
             className={clsx(
@@ -297,25 +328,41 @@ function MatchUpCell({
           </div>
         ) : (
           <>
-            <Image
+            <span
               className={clsx(
-                home ? styles["home-shadow"] : styles["away-shadow"],
+                styles.matchupOpponentLogo,
                 excluded ? styles.excludedStateDesktop : undefined
               )}
-              objectFit="contain"
-              alt={`${opponentTeam.name} logo`}
-              width={28}
-              height={28}
-              src={opponentTeam.logo}
-              title={opponentTeam.name}
-            />
-            <span className={styles.homeAwayIconDesktopWrapper}>
+            >
               <Image
-                src={home ? "/pictures/homeIcon.png" : "/pictures/awayIcon.png"}
+                alt={`${opponentTeam.name} logo`}
+                src={opponentTeam.logo}
+                title={opponentTeam.name}
+                fill
+                sizes="44px"
+                className={clsx(
+                  styles.opponentLogoDesktop,
+                  home ? styles["home-shadow"] : styles["away-shadow"]
+                )}
+                style={{ objectFit: "contain" }}
+              />
+            </span>
+            <span
+              className={clsx(
+                styles.matchupHomeAwayIcon,
+                home ? styles.homeAwayBadgeHome : styles.homeAwayBadgeAway,
+                excluded ? styles.excludedGrayscale : undefined
+              )}
+            >
+              <Image
+                src={
+                  home ? "/pictures/homeIcon3.png" : "/pictures/awayIcon3.png"
+                }
                 alt={home ? "Home" : "Away"}
-                width={18}
-                height={18}
-                className={styles.homeAwayIconDesktopImg}
+                fill
+                sizes="24px"
+                className={styles.matchupHomeAwayIconImg}
+                style={{ objectFit: "contain" }}
               />
             </span>
           </>

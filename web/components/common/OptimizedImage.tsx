@@ -22,7 +22,9 @@ export interface OptimizedImageProps extends Omit<ImageProps, "src" | "alt"> {
 const OptimizedImage: React.FC<OptimizedImageProps> = ({
   src,
   alt,
-  fallbackSrc = "/teamLogos/default.png",
+  // Keep the default fallback pointed at a known existing local asset.
+  // (A previous default of `/teamLogos/default.png` did not exist.)
+  fallbackSrc = "/teamLogos/FHFH.png",
   safeAlt = "Image",
   priority,
   ...rest

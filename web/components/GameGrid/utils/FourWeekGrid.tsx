@@ -5,7 +5,6 @@ import styles from "./FourWeekGrid.module.scss";
 import Image from "next/image"; // Use next/image instead of legacy
 import { TeamDataWithTotals, TeamWithScore } from "lib/NHL/types"; // Consolidate type imports
 import { useTeamsMap } from "hooks/useTeams";
-import classNames from "classnames"; // Use classnames (or clsx)
 import clsx from "clsx";
 
 // --- useIsMobile hook ---
@@ -175,28 +174,59 @@ const FourWeekGrid: React.FC<FourWeekGridProps> = ({ teamDataArray }) => {
     return sortableTeams;
   }, [teamsWithScore, sortConfig, teamsMap]);
 
-  // --- Color Mapping Logic (remains largely the same) ---
-  const belowAvgGPValues = useMemo(() => {
-    /* ... */
-  }, [sortedTeams, roundedAvgGP]);
-  const belowAvgOFFValues = useMemo(() => {
-    /* ... */
-  }, [sortedTeams, roundedAvgOFF]);
-  const aboveAvgOPPValues = useMemo(() => {
-    /* ... */
-  }, [sortedTeams, averages.avgOpponentPointPct]);
-  const gpColorMap = useMemo(() => {
-    const map: { [key: number]: string } = {};
-    return map;
-  }, [belowAvgGPValues]);
-  const offColorMap = useMemo(() => {
-    const map: { [key: number]: string } = {};
-    return map;
-  }, [belowAvgOFFValues]);
-  const oppColorMap = useMemo(() => {
-    const map: { [key: number]: string } = {};
-    return map;
-  }, [aboveAvgOPPValues]);
+  type TeamNumeric = { teamId: number; value: number };
+  const toRankMaps = (entries: TeamNumeric[], bestDirection: "asc" | "desc") => {
+    const sorted = [...entries].sort((a, b) =>
+      bestDirection === "asc" ? a.value - b.value : b.value - a.value
+    );
+    const best = new Map<number, number>();
+    const worst = new Map<number, number>();
+    sorted.slice(0, 10).forEach((e, i) => best.set(e.teamId, i + 1));
+    sorted
+      .slice(Math.max(sorted.length - 10, 0))
+      .forEach((e, i) => worst.set(e.teamId, i + 1));
+    return { best, worst };
+  };
+
+  const rankMaps = useMemo(() => {
+    const gpEntries: TeamNumeric[] = [];
+    const offEntries: TeamNumeric[] = [];
+    const oppEntries: TeamNumeric[] = [];
+    const scoreEntries: TeamNumeric[] = [];
+
+    teamsWithScore.forEach((t) => {
+      const gp = t.totals?.gamesPlayed;
+      const off = t.totals?.offNights;
+      const opp = t.avgOpponentPointPct;
+      const score = t.score;
+
+      if (typeof gp === "number") gpEntries.push({ teamId: t.teamId, value: gp });
+      if (typeof off === "number")
+        offEntries.push({ teamId: t.teamId, value: off });
+      if (typeof opp === "number")
+        oppEntries.push({ teamId: t.teamId, value: opp });
+      if (typeof score === "number")
+        scoreEntries.push({ teamId: t.teamId, value: score });
+    });
+
+    return {
+      gamesPlayed: toRankMaps(gpEntries, "desc"),
+      offNights: toRankMaps(offEntries, "desc"),
+      avgOpponentPointPct: toRankMaps(oppEntries, "asc"),
+      score: toRankMaps(scoreEntries, "desc")
+    };
+  }, [teamsWithScore]);
+
+  const getRankClass = (
+    key: keyof typeof rankMaps,
+    teamId: number
+  ): string | undefined => {
+    const rank = rankMaps[key].best.get(teamId);
+    if (rank != null) return (styles as any)[`rankGood${rank}`];
+    const worstRank = rankMaps[key].worst.get(teamId);
+    if (worstRank != null) return (styles as any)[`rankBad${worstRank}`];
+    return undefined;
+  };
 
   // --- Render ---
   const handleTitleClick = isMobile ? toggleMobileMinimize : undefined;
@@ -360,37 +390,10 @@ const FourWeekGrid: React.FC<FourWeekGridProps> = ({ teamDataArray }) => {
                 const oppPct = team.avgOpponentPointPct;
                 const score = team.score;
 
-                // Determine color classes
-                const isGPAbove = typeof gp === "number" && gp > roundedAvgGP;
-                const isGPBelow = typeof gp === "number" && gp < roundedAvgGP;
-                const isOFFAbove =
-                  typeof off === "number" && off > roundedAvgOFF;
-                const isOFFBelow =
-                  typeof off === "number" && off < roundedAvgOFF;
-                const isOPPBelow =
-                  typeof oppPct === "number" &&
-                  oppPct < averages.avgOpponentPointPct;
-                const isOPPAbove =
-                  typeof oppPct === "number" &&
-                  oppPct > averages.avgOpponentPointPct;
-
-                const gpClass = classNames({
-                  [styles.green]: isGPAbove,
-                  [styles[gpColorMap[gp as number] ?? "grey"]]: isGPBelow
-                });
-                const offClass = classNames({
-                  [styles.green]: isOFFAbove,
-                  [styles[offColorMap[off as number] ?? "grey"]]: isOFFBelow
-                });
-                const oppClass = classNames({
-                  [styles.green]: isOPPBelow,
-                  [styles[oppColorMap[oppPct as number] ?? "grey"]]: isOPPAbove
-                });
-                // Score coloring (example - positive is green, negative red)
-                const scoreClass = classNames({
-                  [styles.green]: score > 0.1,
-                  [styles.red]: score < -0.1
-                });
+                const gpClass = getRankClass("gamesPlayed", team.teamId);
+                const offClass = getRankClass("offNights", team.teamId);
+                const oppClass = getRankClass("avgOpponentPointPct", team.teamId);
+                const scoreClass = getRankClass("score", team.teamId);
 
                 return (
                   <tr key={team.teamId}>
@@ -399,8 +402,8 @@ const FourWeekGrid: React.FC<FourWeekGridProps> = ({ teamDataArray }) => {
                         <Image
                           src={teamInfo.logo}
                           alt={`${teamInfo.name} logo`}
-                          width={28}
-                          height={28}
+                          width={24}
+                          height={24}
                           className={styles.teamLogo}
                         />
                         {/* Optional: Add team name/abbr here on wider screens */}

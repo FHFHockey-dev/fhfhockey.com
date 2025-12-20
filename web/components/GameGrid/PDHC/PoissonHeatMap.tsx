@@ -82,6 +82,25 @@ const PoissonHeatmap: React.FC<PoissonHeatmapProps> = ({
     [awayTeamId]
   );
 
+  const fallbackLogo = "/teamLogos/FHFH.png";
+  const homeTeamSafe = homeTeam ?? {
+    id: homeTeamId,
+    name: homeTeamInfo?.name ?? "Home",
+    abbreviation: homeTeamInfo?.abbrev ?? "",
+    logo: homeTeamInfo?.abbrev
+      ? `/teamLogos/${homeTeamInfo.abbrev}.png`
+      : fallbackLogo
+  };
+
+  const awayTeamSafe = awayTeam ?? {
+    id: awayTeamId,
+    name: awayTeamInfo?.name ?? "Away",
+    abbreviation: awayTeamInfo?.abbrev ?? "",
+    logo: awayTeamInfo?.abbrev
+      ? `/teamLogos/${awayTeamInfo.abbrev}.png`
+      : fallbackLogo
+  };
+
   // Memoized CSS variables
   const cssVariables = useMemo(
     (): React.CSSProperties & { [key: string]: string } => ({
@@ -261,7 +280,7 @@ const PoissonHeatmap: React.FC<PoissonHeatmapProps> = ({
           fontWeight="bold"
           fill="#FFF"
         >
-          {awayTeam.name}
+          {awayTeamSafe.name}
         </text>
 
         {/* Home Team Name on Y-axis */}
@@ -282,11 +301,11 @@ const PoissonHeatmap: React.FC<PoissonHeatmapProps> = ({
           })`}
           fill="#FFF"
         >
-          {homeTeam.name}
+          {homeTeamSafe.name}
         </text>
       </>
     ),
-    [homeTeam.name, awayTeam.name]
+    [homeTeamSafe.name, awayTeamSafe.name]
   );
 
   const renderHeatmapCells = useCallback(
@@ -304,8 +323,8 @@ const PoissonHeatmap: React.FC<PoissonHeatmapProps> = ({
             strokeWidth="0.5"
           >
             <title>
-              {`${homeTeam.abbreviation}: ${axisLabels[i]} goals, ${
-                awayTeam.abbreviation
+              {`${homeTeamSafe.abbreviation}: ${axisLabels[i]} goals, ${
+                awayTeamSafe.abbreviation
               }: ${axisLabels[j]} goals\nProbability: ${(value * 100).toFixed(
                 2
               )}%`}
@@ -313,7 +332,13 @@ const PoissonHeatmap: React.FC<PoissonHeatmapProps> = ({
           </rect>
         ))
       ),
-    [data, colorScale, homeTeam.abbreviation, awayTeam.abbreviation, axisLabels]
+    [
+      data,
+      colorScale,
+      homeTeamSafe.abbreviation,
+      awayTeamSafe.abbreviation,
+      axisLabels
+    ]
   );
 
   // Loading and error states
@@ -350,16 +375,16 @@ const PoissonHeatmap: React.FC<PoissonHeatmapProps> = ({
     <div className={styles.chartContainer}>
       <h4 className={styles.pdchTitle} style={cssVariables}>
         <Image
-          src={homeTeam.logo}
-          alt={homeTeam.abbreviation}
+          src={homeTeamSafe.logo}
+          alt={homeTeamSafe.abbreviation}
           className={styles.pdchTitleLogo}
           width={45}
           height={45}
         />{" "}
         vs.{" "}
         <Image
-          src={awayTeam.logo}
-          alt={awayTeam.abbreviation}
+          src={awayTeamSafe.logo}
+          alt={awayTeamSafe.abbreviation}
           className={styles.pdchTitleLogo}
           width={45}
           height={45}

@@ -1,8 +1,17 @@
 const CMS_URL = process.env.CMS_URL;
+const isProd = process.env.NODE_ENV === "production";
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
+    // If the image optimizer is failing in dev (common when sharp/libvips mismatches),
+    // bypass it so local development isn't blocked.
+    unoptimized: !isProd,
+    // We intentionally allow SVGs because we use NHL-provided SVG team logos
+    // (e.g. https://assets.nhle.com/logos/nhl/svg/TOR_light.svg) throughout the site.
+    // Without this, `next/image` returns 400 for any `.svg` source.
+    dangerouslyAllowSVG: true,
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
     remotePatterns: [
       {
         protocol: "https",

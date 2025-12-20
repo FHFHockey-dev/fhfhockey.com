@@ -14,3 +14,15 @@
     padding-bottom: 0;
   }
 }
+
+// Full-width page content (no horizontal padding, no overflow constraints)
+// Used for cockpit-style layouts that need sticky rails.
+.pageContentFull {
+  flex: 1;
+  padding: 0;
+  overflow: visible;
+  padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+  @media only screen and (min-width: $screen-large) {
+    padding-bottom: 0;
+  }
+}

@@ -83,6 +83,20 @@ type TeamWeekData = {
   avgOpponentPointPct: number;
 };
 
+export type GameGridMode = "7-Day-Forecast" | "10-Day-Forecast";
+
+type GameGridProps = {
+  mode: GameGridMode;
+  setMode: (newMode: GameGridMode) => void;
+};
+
+type GameGridInternalProps = GameGridProps & {
+  orientation: "horizontal" | "vertical";
+  setOrientation: (newOrientation: "horizontal" | "vertical") => void;
+  isCondensed: boolean;
+  setIsCondensed: (isCondensed: boolean) => void;
+};
+
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false);
 
@@ -102,8 +116,10 @@ function GameGridInternal({
   mode,
   setMode,
   orientation,
-  setOrientation
-}: GameGridProps) {
+  setOrientation,
+  isCondensed,
+  setIsCondensed
+}: GameGridInternalProps) {
   const router = useRouter();
 
   // [startDate, endDate]
@@ -557,8 +573,19 @@ function GameGridInternal({
   }, [fourWeekSchedule, teams, teamPointPctMap]);
 
   const teamDataWithAverages: TeamDataWithTotals[] = useMemo(() => {
-    return teamDataWithTotals;
-  }, [teamDataWithTotals]);
+    // Create a map of teamId -> index from sortedTeams
+    const sortMap = new Map<number, number>();
+    sortedTeams.forEach((team, index) => {
+      sortMap.set(team.teamId, index);
+    });
+
+    // Sort teamDataWithTotals based on the map
+    return [...teamDataWithTotals].sort((a, b) => {
+      const indexA = sortMap.get(a.teamId) ?? 999;
+      const indexB = sortMap.get(b.teamId) ?? 999;
+      return indexA - indexB;
+    });
+  }, [teamDataWithTotals, sortedTeams]);
 
   // Map current weekScore by team abbreviation for quick lookup
   const weekScoreByAbbreviation = useMemo(() => {
@@ -594,6 +621,7 @@ function GameGridInternal({
 
   const isMobile = useIsMobile();
   const [showMobileTips, setShowMobileTips] = useState(false);
+  const [isBottomDrawerOpen, setIsBottomDrawerOpen] = useState(false);
 
   // UX: Close legend on Escape and lock body scroll while open
   useEffect(() => {
@@ -612,6 +640,25 @@ function GameGridInternal({
       };
     }
   }, [showMobileTips]);
+
+  // UX: Close bottom drawer on Escape and lock body scroll while open
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setIsBottomDrawerOpen(false);
+      }
+    }
+
+    if (isBottomDrawerOpen) {
+      document.addEventListener("keydown", onKeyDown);
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.removeEventListener("keydown", onKeyDown);
+        document.body.style.overflow = prevOverflow;
+      };
+    }
+  }, [isBottomDrawerOpen]);
 
   if (isMobile) {
     // *** MOBILE VIEW ***
@@ -698,6 +745,10 @@ function GameGridInternal({
                   <table
                     className={`${styles.scheduleGrid} ${styles.mobileCompactTable}`}
                   >
+                    <colgroup>
+                      <col className={styles.gridColFirst} />
+                      <col span={10} className={styles.gridColOther} />
+                    </colgroup>
                     <Header
                       start={dates[0]}
                       end={dates[1]}
@@ -801,27 +852,43 @@ function GameGridInternal({
                       Opponent logo indicates who your team plays. A subtle icon
                       appears behind the logo:
                       <span className={styles.inlineChip}>
-                        <picture>
-                          <img
-                            src="/pictures/homeIcon.png"
-                            alt="Home"
-                            width={16}
-                            height={16}
-                            loading="lazy"
-                          />
-                        </picture>
+                        <span
+                          className={
+                            styles.homeAwayBadge +
+                            " " +
+                            styles.homeAwayBadgeHome
+                          }
+                        >
+                          <picture>
+                            <img
+                              src="/pictures/homeIcon3.png"
+                              alt="Home"
+                              width={10}
+                              height={10}
+                              loading="lazy"
+                            />
+                          </picture>
+                        </span>
                       </span>{" "}
                       = Home,{" "}
                       <span className={styles.inlineChip}>
-                        <picture>
-                          <img
-                            src="/pictures/awayIcon.png"
-                            alt="Away"
-                            width={16}
-                            height={16}
-                            loading="lazy"
-                          />
-                        </picture>
+                        <span
+                          className={
+                            styles.homeAwayBadge +
+                            " " +
+                            styles.homeAwayBadgeAway
+                          }
+                        >
+                          <picture>
+                            <img
+                              src="/pictures/awayIcon3.png"
+                              alt="Away"
+                              width={10}
+                              height={10}
+                              loading="lazy"
+                            />
+                          </picture>
+                        </span>
                       </span>{" "}
                       = Away.
                     </li>
@@ -918,221 +985,305 @@ function GameGridInternal({
   return (
     <>
       <div className={styles.mainGridContainer}>
-        <div className={styles.gridWrapper}>
-          <div className={styles.scheduleGridContainer}>
-            {/* Header content moved here */}
-            <div className={styles.gameGridHeaderContent}>
-              <div className={styles.titleBlock}>
-                <h1 className={styles.gameGridTitle}>
-                  Game <span className={styles.spanColorBlue}>Grid</span>
-                </h1>
-                <p className={styles.subTitle}>
-                  Weekly NHL schedule, off-nights & matchups
-                </p>
-              </div>
-              {(currentLoading || fourWeekLoading) && (
-                <Spinner className={styles.spinner} center />
-              )}
-              <div className={styles.controlsBar}>
-                <div className={styles.badgeAndWeekNav}>
-                  {currentMatchupWeek != null && (
-                    <span
-                      className={styles.weekBadge}
-                      aria-label={`Yahoo matchup week ${currentMatchupWeek}`}
-                    >
-                      Week {currentMatchupWeek}
-                    </span>
-                  )}
-                  <div className={styles.dateCluster}>
-                    <div
-                      className={styles.dateNav}
-                      role="group"
-                      aria-label="Week navigation"
-                    >
-                      <button
-                        type="button"
-                        aria-label="Previous week"
-                        className={styles.dateButtonPrev}
-                        onClick={handleClick("PREV")}
-                      >
-                        Prev
-                      </button>
-                      <span
-                        className={styles.weekRange}
-                        aria-live="polite"
-                        aria-label="Selected week range"
-                      >
-                        {format(new Date(dates[0]), "MMM d")} –{" "}
-                        {format(new Date(dates[1]), "MMM d")}
-                      </span>
-                      <button
-                        type="button"
-                        aria-label="Next week"
-                        className={styles.dateButtonNext}
-                        onClick={handleClick("NEXT")}
-                      >
-                        Next
-                      </button>
-                    </div>
-                  </div>
+        <div className={styles.dashboardHeader}>
+          <div className={styles.gameGridHeaderContent}>
+            {currentMatchupWeek != null && (
+              <span
+                className={styles.weekBadge}
+                aria-label={`Yahoo matchup week ${currentMatchupWeek}`}
+              >
+                Week {currentMatchupWeek}
+              </span>
+            )}
+            <div className={styles.titleBlock}>
+              <h1 className={styles.gameGridTitle}>
+                Game <span className={styles.spanColorBlue}>Grid</span>
+              </h1>
+              <p className={styles.subTitle}>
+                Weekly NHL schedule, off-nights & matchup maximizer
+              </p>
+            </div>
+            {(currentLoading || fourWeekLoading) && (
+              <Spinner className={styles.spinner} center />
+            )}
+            <div className={styles.controlsBar}>
+              <div className={styles.leftControls}>
+                <div className={styles.viewToggleWrapper}>
+                  <button
+                    type="button"
+                    className={styles.panelControlButton}
+                    onClick={() => setIsBottomDrawerOpen((v) => !v)}
+                    aria-pressed={isBottomDrawerOpen}
+                    aria-controls="gg-bottom-drawer"
+                  >
+                    Pickups
+                  </button>
                 </div>
-                <div className={styles.viewControls}>
-                  <div className={styles.viewToggleWrapper}>
+                <div className={styles.viewToggleWrapper}>
+                  {/* Condensed Toggle */}
+                  {setIsCondensed && (
                     <button
                       type="button"
-                      aria-label="Toggle orientation"
-                      className={styles.orientationToggleButton}
-                      onClick={handleOrientationToggle}
+                      className={
+                        isCondensed
+                          ? styles.modeButtonActive
+                          : styles.modeButton
+                      }
+                      onClick={() => setIsCondensed(!isCondensed)}
                     >
-                      {orientation === "horizontal" ? "Vertical" : "Horizontal"}
+                      {isCondensed ? "Expand" : "Condense"}
                     </button>
-                  </div>
+                  )}
+                  <button
+                    type="button"
+                    aria-label="Toggle orientation"
+                    className={styles.orientationToggleButton}
+                    onClick={handleOrientationToggle}
+                  >
+                    {orientation === "horizontal" ? "Vertical" : "Horizontal"}
+                  </button>
+                </div>
+              </div>
+
+              <div className={styles.badgeAndWeekNav}>
+                <div className={styles.dateCluster}>
                   <div
-                    className={styles.modeToggle}
+                    className={styles.dateNav}
                     role="group"
-                    aria-label="Forecast span"
+                    aria-label="Week navigation"
                   >
                     <button
                       type="button"
-                      aria-pressed={mode === "7-Day-Forecast"}
-                      className={
-                        mode === "7-Day-Forecast"
-                          ? styles.modeButtonActive
-                          : styles.modeButton
-                      }
-                      onClick={() => setMode("7-Day-Forecast")}
+                      aria-label="Previous week"
+                      className={styles.dateButtonPrev}
+                      onClick={handleClick("PREV")}
                     >
-                      7-Day
+                      Prev
                     </button>
+                    <span
+                      className={styles.weekRange}
+                      aria-live="polite"
+                      aria-label="Selected week range"
+                    >
+                      {format(new Date(dates[0]), "MMM d")} –{" "}
+                      {format(new Date(dates[1]), "MMM d")}
+                    </span>
                     <button
                       type="button"
-                      aria-pressed={mode === "10-Day-Forecast"}
-                      className={
-                        mode === "10-Day-Forecast"
-                          ? styles.modeButtonActive
-                          : styles.modeButton
-                      }
-                      onClick={() => setMode("10-Day-Forecast")}
+                      aria-label="Next week"
+                      className={styles.dateButtonNext}
+                      onClick={handleClick("NEXT")}
                     >
-                      10-Day
+                      Next
                     </button>
                   </div>
                 </div>
               </div>
-            </div>
-            {orientation === "vertical" ? (
-              <TransposedGrid
-                sortedTeams={sortedTeams}
-                games={currentNumGamesPerDay}
-                excludedDays={excludedDays}
-                setExcludedDays={setExcludedDays}
-                extended={mode === "10-Day-Forecast"}
-                start={dates[0]}
-                mode={mode === "10-Day-Forecast" ? "10-Day-Forecast" : "7-Day"}
-              />
-            ) : (
-              <div className={styles.gridScrollOuter}>
-                <table
-                  className={styles.scheduleGrid}
-                  aria-describedby="weekScoreDesc"
+
+              <div
+                className={styles.modeToggle}
+                role="group"
+                aria-label="Forecast span"
+              >
+                <button
+                  type="button"
+                  aria-pressed={mode === "7-Day-Forecast"}
+                  className={
+                    mode === "7-Day-Forecast"
+                      ? styles.modeButtonActive
+                      : styles.modeButton
+                  }
+                  onClick={() => setMode("7-Day-Forecast")}
                 >
-                  <Header
-                    start={dates[0]}
-                    end={dates[1]}
-                    extended={mode === "10-Day-Forecast"}
-                    setSortKeys={setSortKeys}
-                    excludedDays={excludedDays}
-                    setExcludedDays={setExcludedDays}
-                    weekData={teamDataWithAverages}
-                    gamesPerDay={currentNumGamesPerDay}
-                    hasPreseason={hasPreseason}
-                    hidePreseason={hidePreseason}
-                    setHidePreseason={setHidePreseason}
-                  />
-                  <tbody key={dates[0]} className={styles.fadeEnterActive}>
-                    <TotalGamesPerDayRow
-                      games={currentNumGamesPerDay}
-                      excludedDays={excludedDays}
-                      extended={mode === "10-Day-Forecast"}
-                      weekData={teamDataWithAverages}
-                    />
-                    {sortedTeams.map(({ teamId, ...rest }) => {
-                      const highlightClass = top10TeamIds.has(teamId)
-                        ? styles.rowBest10
-                        : bottom10TeamIds.has(teamId)
-                          ? styles.rowWorst10
-                          : "";
-                      const rank = scoreRankMap.get(teamId) ?? 16;
-                      return (
-                        <TeamRow
-                          key={teamId}
-                          teamId={teamId}
-                          extended={mode === "10-Day-Forecast"}
-                          excludedDays={excludedDays}
-                          rowHighlightClass={highlightClass}
-                          games={currentNumGamesPerDay}
-                          hidePreseason={hidePreseason}
-                          rank={rank}
-                          {...rest}
-                        />
-                      );
-                    })}
-                  </tbody>
-                </table>
+                  7-Day
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={mode === "10-Day-Forecast"}
+                  className={
+                    mode === "10-Day-Forecast"
+                      ? styles.modeButtonActive
+                      : styles.modeButton
+                  }
+                  onClick={() => setMode("10-Day-Forecast")}
+                >
+                  10-Day
+                </button>
               </div>
-            )}
-          </div>
-          <div
-            className={`${styles.opponentStatsContainer} ${styles.playerPickupSide}`}
-          >
-            <PlayerPickupTable
-              teamWeekData={playerPickupWeekData}
-              layoutVariant="sidebar"
-            />
+            </div>
           </div>
         </div>
-        <div className={styles.legendBar} aria-hidden="true">
-          <ul>
-            <li>
-              <span
-                className={styles.legendSwatch + " " + styles.legendOffNight}
-              ></span>{" "}
-              Off-night (≤8 GP)
-            </li>
-            <li>
-              <span
-                className={styles.legendSwatch + " " + styles.legendHeavy}
-              ></span>{" "}
-              Heavy (≥9 GP)
-            </li>
-            <li>
-              <span
-                className={styles.legendSwatch + " " + styles.legendBest}
-              ></span>{" "}
-              Top 10 score
-            </li>
-            <li>
-              <span
-                className={styles.legendSwatch + " " + styles.legendWorst}
-              ></span>{" "}
-              Bottom 10 score
-            </li>
-          </ul>
-        </div>
-        {/* New lower grid container for FourWeekGrid and PlayerPickupTable */}
-        <div className={styles.fourWeekAndBPAtableContainer}>
-          <div className={styles.lowerGridHorizontal}>
+
+        {/* New 3-Column Dashboard Layout */}
+        <div className={styles.dashboardLayout}>
+          {/* Left Rail: Opponent Metrics */}
+          <div className={styles.leftRail}>
+            <div className={styles.opponentMetricsContainer}>
+              <OpponentMetricsTable teamData={teamDataWithAverages} />
+            </div>
+          </div>
+
+          {/* Center: Main Game Grid */}
+          <div className={styles.centerGrid}>
+            <div className={styles.scheduleGridContainer}>
+              <div className={styles.legendBar}>
+                <ul>
+                  <li>
+                    <span
+                      className={
+                        styles.legendSwatch + " " + styles.legendOffNight
+                      }
+                    ></span>{" "}
+                    Off-night (≤8 GP)
+                  </li>
+                  <li>
+                    <span
+                      className={styles.legendSwatch + " " + styles.legendHeavy}
+                    ></span>{" "}
+                    Heavy (≥9 GP)
+                  </li>
+                  <li>
+                    <span
+                      className={styles.legendSwatch + " " + styles.legendBest}
+                    ></span>{" "}
+                    Top 10 score
+                  </li>
+                  <li>
+                    <span
+                      className={styles.legendSwatch + " " + styles.legendWorst}
+                    ></span>{" "}
+                    Bottom 10 score
+                  </li>
+                  <li>
+                    <span
+                      className={styles.weekScoreHelpPill}
+                      title="Week Score = (Adjusted Team Games × 6) + (Weighted Off‑Nights × 4) + (Average Win Odds × 0.15). Adjusted Team Games = (Team Games – League Average Games). Weighted Off‑Nights gives larger credit on lighter NHL nights."
+                    >
+                      Week Score{" "}
+                      <span className={styles.weekScoreHelpIcon}>i</span>
+                    </span>
+                  </li>
+                </ul>
+              </div>
+              {orientation === "vertical" ? (
+                <TransposedGrid
+                  sortedTeams={sortedTeams}
+                  games={currentNumGamesPerDay}
+                  excludedDays={excludedDays}
+                  setExcludedDays={setExcludedDays}
+                  extended={mode === "10-Day-Forecast"}
+                  start={dates[0]}
+                  mode={
+                    mode === "10-Day-Forecast" ? "10-Day-Forecast" : "7-Day"
+                  }
+                />
+              ) : (
+                <div className={styles.gridScrollOuter}>
+                  <table
+                    className={`${styles.scheduleGrid} ${
+                      isCondensed ? styles.condensed : ""
+                    }`}
+                    aria-describedby="weekScoreDesc"
+                  >
+                    <colgroup>
+                      <col className={styles.gridColFirst} />
+                      <col span={10} className={styles.gridColOther} />
+                    </colgroup>
+                    <Header
+                      start={dates[0]}
+                      end={dates[1]}
+                      extended={mode === "10-Day-Forecast"}
+                      setSortKeys={setSortKeys}
+                      excludedDays={excludedDays}
+                      setExcludedDays={setExcludedDays}
+                      weekData={teamDataWithAverages}
+                      gamesPerDay={currentNumGamesPerDay}
+                      hasPreseason={hasPreseason}
+                      hidePreseason={hidePreseason}
+                      setHidePreseason={setHidePreseason}
+                    />
+                    <tbody key={dates[0]} className={styles.fadeEnterActive}>
+                      <TotalGamesPerDayRow
+                        games={currentNumGamesPerDay}
+                        excludedDays={excludedDays}
+                        extended={mode === "10-Day-Forecast"}
+                        weekData={teamDataWithAverages}
+                      />
+                      {sortedTeams.map(({ teamId, ...rest }) => {
+                        const highlightClass = top10TeamIds.has(teamId)
+                          ? styles.rowBest10
+                          : bottom10TeamIds.has(teamId)
+                            ? styles.rowWorst10
+                            : "";
+                        const rank = scoreRankMap.get(teamId) ?? 16;
+                        return (
+                          <TeamRow
+                            key={teamId}
+                            teamId={teamId}
+                            extended={mode === "10-Day-Forecast"}
+                            excludedDays={excludedDays}
+                            rowHighlightClass={highlightClass}
+                            games={currentNumGamesPerDay}
+                            hidePreseason={hidePreseason}
+                            rank={rank}
+                            {...rest}
+                          />
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Right Rail: Four Week Grid */}
+          <div className={styles.rightRail}>
             <div className={styles.fourWeekGridContainerAll}>
               <FourWeekGrid teamDataArray={teamDataWithAverages} />
-            </div>
-            <div className={styles.bpaAndOppContainer}>
-              <div className={styles.opponentMetricsContainer}>
-                <OpponentMetricsTable teamData={teamDataWithAverages} />
-              </div>
             </div>
           </div>
         </div>
       </div>
+
+      <section
+        id="gg-bottom-drawer"
+        className={[
+          styles.bottomDrawer,
+          isBottomDrawerOpen ? styles.bottomDrawerOpen : ""
+        ]
+          .filter(Boolean)
+          .join(" ")}
+        aria-label="Best available players"
+      >
+        <button
+          type="button"
+          className={styles.bottomDrawerHandle}
+          onClick={() => setIsBottomDrawerOpen((v) => !v)}
+          aria-expanded={isBottomDrawerOpen}
+          aria-controls="gg-bottom-drawer-content"
+        >
+          <span className={styles.bottomDrawerTitle}>
+            <span className={styles.bottomDrawerBadge} aria-hidden="true">
+              BPA
+            </span>
+            Best Players Available
+          </span>
+          <span className={styles.bottomDrawerHint}>
+            {isBottomDrawerOpen ? "Close" : "Open"}
+          </span>
+        </button>
+        <div
+          id="gg-bottom-drawer-content"
+          className={styles.bottomDrawerContent}
+          hidden={!isBottomDrawerOpen}
+        >
+          <PlayerPickupTable
+            teamWeekData={playerPickupWeekData}
+            layoutVariant="full"
+          />
+        </div>
+      </section>
 
       {/* Loading and error states */}
       {(summaryLoading || fourWeekLoading) && (
@@ -1167,19 +1318,12 @@ function getDaysBeforeToday() {
   return DAYS.slice(0, mondayBasedIndex);
 }
 
-export type GameGridMode = "7-Day-Forecast" | "10-Day-Forecast";
-
-type GameGridProps = {
-  mode: GameGridMode;
-  setMode: (newMode: GameGridMode) => void;
-  orientation: "horizontal" | "vertical";
-  setOrientation: (newOrientation: "horizontal" | "vertical") => void;
-};
-
 export default function GameGrid({ mode, setMode }: GameGridProps) {
   const [orientation, setOrientation] = useState<"horizontal" | "vertical">(
     "horizontal"
   );
+  // Default to condensed mode
+  const [isCondensed, setIsCondensed] = useState(true);
 
   return (
     <GameGridContext>
@@ -1188,6 +1332,8 @@ export default function GameGrid({ mode, setMode }: GameGridProps) {
         setMode={setMode}
         orientation={orientation}
         setOrientation={setOrientation}
+        isCondensed={isCondensed}
+        setIsCondensed={setIsCondensed}
       />
     </GameGridContext>
   );

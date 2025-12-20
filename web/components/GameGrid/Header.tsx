@@ -142,14 +142,6 @@ function Header({
             <div className={styles.headerLabel}>
               <span className={styles.desktopText}>
                 Score
-                <span
-                  className={styles.weekScoreHelp}
-                  title="Week Score formula explanation"
-                  aria-label="About Week Score formula"
-                  role="img"
-                >
-                  i
-                </span>
               </span>
               <span className={styles.switchContainer}>
                 <Switch
