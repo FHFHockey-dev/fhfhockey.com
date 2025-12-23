@@ -53,6 +53,7 @@
   - Skater TOI splits: `shift_charts.total_es_toi` + `shift_charts.total_pp_toi` (PK split deferred unless/ until available).
   - Shots/goals/assists by strength: derive from `pbp_plays` using `typeDescKey` + `situationCode` + shooter/scorer/assist ids.
   - Goalie SA/GA/saves: `goaliesGameStats` for per-game values (season priors can come from `wgo_goalie_stats`/`wgo_goalie_stats_totals` later), with starter probabilities from `goalie_start_projections` and overrides from `roster_events`.
+- Data quality (Task 2.7): `projection_runs_v2.metrics.data_quality` tracks missing PbP/shift totals/line combos, missing rolling metrics, and TOI scaling diagnostics for each projection run.
 
 ### Workflow (per `web/rules/process-task-list.mdc`)
 
@@ -77,7 +78,7 @@
 - [x] 2.4 Build derived-table builder for `player_game_strength` (TOI ES/PP/PK, shots/goals/assists splits) from the chosen raw sources
 - [x] 2.5 Build derived-table builder for `team_game_strength` (minutes/shots/goals by strength) and reconcile against sums of player aggregates (pre-checks)
 - [x] 2.6 Build derived-table builder for `goalie_game` (SA, GA, saves, TOI) and map goalie ids to `players`
-- [ ] 2.7 Add data quality checks (missing games, TOI sanity, duplicate rows, team totals vs player totals) and persist run-level metrics to `projection_runs.metrics`
+- [x] 2.7 Add data quality checks (missing games, TOI sanity, duplicate rows, team totals vs player totals) and persist run-level metrics to `projection_runs.metrics`
 - [ ] 3.0 Implement horizon=1 projection engine (team opportunities → player shares → conversion) + reconciliation
 - [ ] 3.1 Define MVP feature set + priors (rolling windows, season baselines) and document how each is computed (outside SQL)
 - [ ] 3.2 Implement team opportunity baseline model by strength (minutes + shots), using existing NST/WGO team tables as inputs where appropriate

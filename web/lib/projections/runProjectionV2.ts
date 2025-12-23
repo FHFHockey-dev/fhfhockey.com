@@ -59,6 +59,27 @@ function computeRate(numerator: number, denom: number, fallback: number): number
   return numerator / denom;
 }
 
+async function hasPbpGame(gameId: number): Promise<boolean> {
+  assertSupabase();
+  const { data, error } = await supabase
+    .from("pbp_games")
+    .select("id")
+    .eq("id", gameId)
+    .maybeSingle();
+  if (error) throw error;
+  return Boolean((data as any)?.id);
+}
+
+async function hasShiftTotals(gameId: number): Promise<boolean> {
+  assertSupabase();
+  const { count, error } = await supabase
+    .from("shift_charts")
+    .select("id", { count: "exact", head: true })
+    .eq("game_id", gameId);
+  if (error) throw error;
+  return (count ?? 0) > 0;
+}
+
 async function fetchLineCombinations(gameId: number): Promise<LineCombinationRow[]> {
   assertSupabase();
   const { data, error } = await supabase
@@ -143,6 +164,17 @@ export async function runProjectionV2ForDate(asOfDate: string): Promise<{
     player_rows: 0,
     team_rows: 0,
     goalie_rows: 0,
+    data_quality: {
+      missing_pbp_games: 0,
+      missing_shift_totals: 0,
+      missing_line_combos: 0,
+      empty_skater_rosters: 0,
+      missing_ev_metrics_players: 0,
+      missing_pp_metrics_players: 0,
+      toi_scaled_teams: 0,
+      toi_scale_min: null as number | null,
+      toi_scale_max: null as number | null
+    },
     warnings: [] as string[]
   };
 
@@ -158,6 +190,9 @@ export async function runProjectionV2ForDate(asOfDate: string): Promise<{
     let goalieRowsUpserted = 0;
 
     for (const game of (games ?? []) as GameRow[]) {
+      if (!(await hasPbpGame(game.id))) metrics.data_quality.missing_pbp_games += 1;
+      if (!(await hasShiftTotals(game.id))) metrics.data_quality.missing_shift_totals += 1;
+
       const lineCombos = await fetchLineCombinations(game.id);
       const byTeam = new Map<number, LineCombinationRow>();
       for (const row of lineCombos) byTeam.set(row.teamId, row);
@@ -175,6 +210,7 @@ export async function runProjectionV2ForDate(asOfDate: string): Promise<{
         const opponentTeamId = teamId === game.homeTeamId ? game.awayTeamId : game.homeTeamId;
         if (!lc) {
           metrics.warnings.push(`missing lineCombinations for game=${game.id} team=${teamId}`);
+          metrics.data_quality.missing_line_combos += 1;
           continue;
         }
 
@@ -185,6 +221,7 @@ export async function runProjectionV2ForDate(asOfDate: string): Promise<{
 
         if (skaterIds.length === 0) {
           metrics.warnings.push(`empty skaterIds for game=${game.id} team=${teamId}`);
+          metrics.data_quality.empty_skater_rosters += 1;
           continue;
         }
 
@@ -200,8 +237,17 @@ export async function runProjectionV2ForDate(asOfDate: string): Promise<{
           const ev = evLatest.get(playerId);
           const pp = ppLatest.get(playerId);
 
-          const toiEs = safeNumber(ev?.toi_seconds_avg_last5, safeNumber(ev?.toi_seconds_avg_all, 700));
-          const toiPp = safeNumber(pp?.toi_seconds_avg_last5, safeNumber(pp?.toi_seconds_avg_all, 120));
+          if (!ev) metrics.data_quality.missing_ev_metrics_players += 1;
+          if (!pp) metrics.data_quality.missing_pp_metrics_players += 1;
+
+          const toiEs = safeNumber(
+            ev?.toi_seconds_avg_last5,
+            safeNumber(ev?.toi_seconds_avg_all, 700)
+          );
+          const toiPp = safeNumber(
+            pp?.toi_seconds_avg_last5,
+            safeNumber(pp?.toi_seconds_avg_all, 120)
+          );
 
           const sogPer60Ev = safeNumber(ev?.sog_per_60_avg_last5, safeNumber(ev?.sog_per_60_avg_all, 6));
           const sogPer60Pp = safeNumber(pp?.sog_per_60_avg_last5, safeNumber(pp?.sog_per_60_avg_all, 8));
@@ -223,6 +269,18 @@ export async function runProjectionV2ForDate(asOfDate: string): Promise<{
         const targetSkaterSeconds = 60 * 60 * 5;
         const totalToi = Array.from(projected.values()).reduce((acc, p) => acc + p.toiEs + p.toiPp, 0);
         const toiScale = totalToi > 0 ? targetSkaterSeconds / totalToi : 1;
+
+        if (Math.abs(toiScale - 1) > 0.01) {
+          metrics.data_quality.toi_scaled_teams += 1;
+          metrics.data_quality.toi_scale_min =
+            metrics.data_quality.toi_scale_min == null
+              ? toiScale
+              : Math.min(metrics.data_quality.toi_scale_min, toiScale);
+          metrics.data_quality.toi_scale_max =
+            metrics.data_quality.toi_scale_max == null
+              ? toiScale
+              : Math.max(metrics.data_quality.toi_scale_max, toiScale);
+        }
 
         for (const [playerId, p] of projected.entries()) {
           p.toiEs = Math.round(p.toiEs * toiScale);
