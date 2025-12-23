@@ -71,7 +71,7 @@
 - [x] 1.5 Add projection output tables (players/teams/goalies) keyed by `(run_id, game_id, entity_id, horizon_games)` and include `uncertainty` JSONB for quantiles
 - [x] 1.6 Add indexes for common API access patterns (by date/game/team/player/run_id) and constraints to enforce idempotent upserts
 - [x] 1.7 Update/regen `web/lib/supabase/database-generated.types.ts` to include new tables (and verify existing code still compiles)
-- [ ] 2.0 Build/standardize ingestion adapters + derived per-game strength aggregates
+- [x] 2.0 Build/standardize ingestion adapters + derived per-game strength aggregates
 - [x] 2.1 Inventory current ingestion coverage (WGO, PbP, shifts) and confirm which sources are authoritative for MVP stats (TOI/shot/goal/assist splits, goalie SA/GA)
 - [x] 2.2 Define adapter interfaces (schedule, boxscore, pbp, shifts) and implement a first concrete version reusing existing `web/lib/supabase/Upserts/*` code where possible
 - [x] 2.3 Implement an incremental ingestion/orchestration job (date-based, rerunnable) that fills gaps and backfills as needed
