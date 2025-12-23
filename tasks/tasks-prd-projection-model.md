@@ -44,7 +44,7 @@
 
 ## Tasks
 
-- [ ] 1.0 Finalize projection-engine schema & migrations (runs, derived aggregates, outputs)
+- [x] 1.0 Finalize projection-engine schema & migrations (runs, derived aggregates, outputs)
 - [x] 1.1 Decide table naming/versioning strategy (extend existing `player_projections` vs create `player_projections_v2` and new `team_projections`/`goalie_projections`)
 - [x] 1.2 Add `projection_runs` table (run_id, as_of_date, status, git_sha, metrics JSONB, timestamps) and any lightweight status enums
 - [x] 1.3 Add derived per-game strength aggregate tables (e.g., `player_game_strength`, `team_game_strength`, `goalie_game`) with strict PKs and required columns for MVP stats
