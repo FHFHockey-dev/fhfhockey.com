@@ -26,6 +26,13 @@
 - `web/pages/api/v1/runs/trigger.ts` - Proposed admin endpoint to trigger a compute run (new).
 - `web/pages/api/v1/events/index.ts` - Proposed admin endpoint for `roster_events` CRUD (new).
 - `web/lib/projections/` - Proposed home for projection-engine logic shared across jobs/endpoints (new).
+- `web/lib/projections/adapters/types.ts` - Adapter interfaces and minimal row shapes for schedule/PbP/shifts/goalies.
+- `web/lib/projections/adapters/supabaseAdapters.ts` - First concrete adapter implementation backed by Supabase reads.
+- `web/lib/projections/ingest/nhleFetch.ts` - Fetch helper with retries/timeouts for NHL endpoints.
+- `web/lib/projections/ingest/time.ts` - Clock parsing/format helpers for shift interval math.
+- `web/lib/projections/ingest/pbp.ts` - Minimal PbP fetch + upsert into `pbp_games`/`pbp_plays`.
+- `web/lib/projections/ingest/shifts.ts` - Minimal shiftcharts fetch + PP/ES split via `situationCode` segments, upsert into `shift_charts` totals.
+- `web/pages/api/v1/db/ingest-projection-inputs.ts` - Date-range incremental ingestion endpoint (PbP + shift totals).
 - `web/lib/projections/reconcile.test.ts` - Unit tests for reconciliation constraints (new, Vitest).
 
 ### Notes
@@ -35,6 +42,11 @@
 - PRD constraint: Supabase/Postgres is storage + serving only; feature engineering/projections run in a compute layer.
 - Tests in `web/` run via `cd web && npm test` (Vitest).
 - Decision (Task 1.1): keep existing Start Chart `player_projections` unchanged; add new “engine” tables with `*_v2` names (or new names) to avoid breaking current endpoints and allow phased migration.
+- Decision (Task 2.1, MVP inputs):
+  - Schedule/games: `games` (already ingested).
+  - Skater TOI splits: `shift_charts.total_es_toi` + `shift_charts.total_pp_toi` (PK split deferred unless/ until available).
+  - Shots/goals/assists by strength: derive from `pbp_plays` using `typeDescKey` + `situationCode` + shooter/scorer/assist ids.
+  - Goalie SA/GA/saves: `goaliesGameStats` for per-game values (season priors can come from `wgo_goalie_stats`/`wgo_goalie_stats_totals` later), with starter probabilities from `goalie_start_projections` and overrides from `roster_events`.
 
 ### Workflow (per `web/rules/process-task-list.mdc`)
 
@@ -53,9 +65,9 @@
 - [x] 1.6 Add indexes for common API access patterns (by date/game/team/player/run_id) and constraints to enforce idempotent upserts
 - [x] 1.7 Update/regen `web/lib/supabase/database-generated.types.ts` to include new tables (and verify existing code still compiles)
 - [ ] 2.0 Build/standardize ingestion adapters + derived per-game strength aggregates
-- [ ] 2.1 Inventory current ingestion coverage (WGO, PbP, shifts) and confirm which sources are authoritative for MVP stats (TOI/shot/goal/assist splits, goalie SA/GA)
-- [ ] 2.2 Define adapter interfaces (schedule, boxscore, pbp, shifts) and implement a first concrete version reusing existing `web/lib/supabase/Upserts/*` code where possible
-- [ ] 2.3 Implement an incremental ingestion/orchestration job (date-based, rerunnable) that fills gaps and backfills as needed
+- [x] 2.1 Inventory current ingestion coverage (WGO, PbP, shifts) and confirm which sources are authoritative for MVP stats (TOI/shot/goal/assist splits, goalie SA/GA)
+- [x] 2.2 Define adapter interfaces (schedule, boxscore, pbp, shifts) and implement a first concrete version reusing existing `web/lib/supabase/Upserts/*` code where possible
+- [x] 2.3 Implement an incremental ingestion/orchestration job (date-based, rerunnable) that fills gaps and backfills as needed
 - [ ] 2.4 Build derived-table builder for `player_game_strength` (TOI ES/PP/PK, shots/goals/assists splits) from the chosen raw sources
 - [ ] 2.5 Build derived-table builder for `team_game_strength` (minutes/shots/goals by strength) and reconcile against sums of player aggregates (pre-checks)
 - [ ] 2.6 Build derived-table builder for `goalie_game` (SA, GA, saves, TOI) and map goalie ids to `players`
