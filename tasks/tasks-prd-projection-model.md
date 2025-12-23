@@ -33,6 +33,10 @@
 - `web/lib/projections/ingest/pbp.ts` - Minimal PbP fetch + upsert into `pbp_games`/`pbp_plays`.
 - `web/lib/projections/ingest/shifts.ts` - Minimal shiftcharts fetch + PP/ES split via `situationCode` segments, upsert into `shift_charts` totals.
 - `web/pages/api/v1/db/ingest-projection-inputs.ts` - Date-range incremental ingestion endpoint (PbP + shift totals).
+- `web/lib/projections/derived/situation.ts` - Decodes `situationCode` and maps to ES/PP/PK for a given team.
+- `web/lib/projections/derived/buildStrengthTablesV2.ts` - Builds `player_game_strength_v2` and `team_game_strength_v2` from `shift_charts` + `pbp_plays`.
+- `web/lib/projections/derived/buildGoalieGameV2.ts` - Builds `goalie_game_v2` from PbP (SA/GA/saves; TOI deferred).
+- `web/pages/api/v1/db/build-projection-derived-v2.ts` - Date-range endpoint to populate derived v2 strength tables.
 - `web/lib/projections/reconcile.test.ts` - Unit tests for reconciliation constraints (new, Vitest).
 
 ### Notes
@@ -68,9 +72,9 @@
 - [x] 2.1 Inventory current ingestion coverage (WGO, PbP, shifts) and confirm which sources are authoritative for MVP stats (TOI/shot/goal/assist splits, goalie SA/GA)
 - [x] 2.2 Define adapter interfaces (schedule, boxscore, pbp, shifts) and implement a first concrete version reusing existing `web/lib/supabase/Upserts/*` code where possible
 - [x] 2.3 Implement an incremental ingestion/orchestration job (date-based, rerunnable) that fills gaps and backfills as needed
-- [ ] 2.4 Build derived-table builder for `player_game_strength` (TOI ES/PP/PK, shots/goals/assists splits) from the chosen raw sources
-- [ ] 2.5 Build derived-table builder for `team_game_strength` (minutes/shots/goals by strength) and reconcile against sums of player aggregates (pre-checks)
-- [ ] 2.6 Build derived-table builder for `goalie_game` (SA, GA, saves, TOI) and map goalie ids to `players`
+- [x] 2.4 Build derived-table builder for `player_game_strength` (TOI ES/PP/PK, shots/goals/assists splits) from the chosen raw sources
+- [x] 2.5 Build derived-table builder for `team_game_strength` (minutes/shots/goals by strength) and reconcile against sums of player aggregates (pre-checks)
+- [x] 2.6 Build derived-table builder for `goalie_game` (SA, GA, saves, TOI) and map goalie ids to `players`
 - [ ] 2.7 Add data quality checks (missing games, TOI sanity, duplicate rows, team totals vs player totals) and persist run-level metrics to `projection_runs.metrics`
 - [ ] 3.0 Implement horizon=1 projection engine (team opportunities → player shares → conversion) + reconciliation
 - [ ] 3.1 Define MVP feature set + priors (rolling windows, season baselines) and document how each is computed (outside SQL)
