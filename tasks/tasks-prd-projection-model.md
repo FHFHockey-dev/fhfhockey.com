@@ -37,6 +37,8 @@
 - `web/lib/projections/derived/buildStrengthTablesV2.ts` - Builds `player_game_strength_v2` and `team_game_strength_v2` from `shift_charts` + `pbp_plays`.
 - `web/lib/projections/derived/buildGoalieGameV2.ts` - Builds `goalie_game_v2` from PbP (SA/GA/saves; TOI deferred).
 - `web/pages/api/v1/db/build-projection-derived-v2.ts` - Date-range endpoint to populate derived v2 strength tables.
+- `web/lib/projections/runProjectionV2.ts` - Baseline horizon=1 projection runner writing `*_projections_v2` and `projection_runs_v2`.
+- `web/pages/api/v1/db/run-projection-v2.ts` - Endpoint to trigger a projection run for a date.
 - `web/lib/projections/reconcile.test.ts` - Unit tests for reconciliation constraints (new, Vitest).
 
 ### Notes
@@ -84,6 +86,7 @@
 - [ ] 3.5 Implement goalie layer (starter probability from `goalie_start_projections`/`roster_events`; SA from opponent/team context; GA from SA×(1-sv%))
 - [ ] 3.6 Implement reconciliation pass (hard constraints for team TOI + shots; optional goals constraint) and write unit tests for these invariants
 - [ ] 3.7 Write the run orchestrator that reads derived tables + events, writes projections for all games on a target date, and upserts under a new `projection_runs` row
+- [x] 3.8 Baseline run orchestrator (rolling metrics) writing v2 projections + run logs
 - [ ] 4.0 Add uncertainty simulation (p10/p50/p90) + horizon>1 schedule scaffolding
 - [ ] 4.1 Define uncertainty inputs and distributions (team opportunity noise, player share noise, conversion noise, goalie scenario noise)
 - [ ] 4.2 Implement simulation loop for horizon=1 and extract quantiles per stat into `uncertainty` JSONB (p10/p50/p90 at minimum)

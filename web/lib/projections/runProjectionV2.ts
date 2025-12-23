@@ -1,0 +1,404 @@
+import supabase from "lib/supabase/server";
+
+type GameRow = {
+  id: number;
+  date: string;
+  homeTeamId: number;
+  awayTeamId: number;
+};
+
+type LineCombinationRow = {
+  gameId: number;
+  teamId: number;
+  forwards: number[] | null;
+  defensemen: number[] | null;
+  goalies: number[] | null;
+};
+
+type RollingRow = {
+  player_id: number;
+  strength_state: string;
+  game_date: string;
+  toi_seconds_avg_last5: number | null;
+  toi_seconds_avg_all: number | null;
+  sog_per_60_avg_last5: number | null;
+  sog_per_60_avg_all: number | null;
+  goals_total_all: number | null;
+  shots_total_all: number | null;
+  assists_total_all: number | null;
+};
+
+function assertSupabase() {
+  if (!supabase) throw new Error("Supabase server client not available");
+}
+
+function clamp(n: number, lo: number, hi: number): number {
+  return Math.min(hi, Math.max(lo, n));
+}
+
+function pickLatestByPlayer(rows: RollingRow[]): Map<number, RollingRow> {
+  const byPlayer = new Map<number, RollingRow>();
+  for (const r of rows) {
+    const existing = byPlayer.get(r.player_id);
+    if (!existing || r.game_date > existing.game_date) byPlayer.set(r.player_id, r);
+  }
+  return byPlayer;
+}
+
+function safeNumber(n: number | null | undefined, fallback: number): number {
+  return typeof n === "number" && Number.isFinite(n) ? n : fallback;
+}
+
+function computeShotsFromRate(toiSeconds: number, sogPer60: number): number {
+  const toiMinutes = toiSeconds / 60;
+  return (sogPer60 / 60) * toiMinutes;
+}
+
+function computeRate(numerator: number, denom: number, fallback: number): number {
+  if (!Number.isFinite(numerator) || !Number.isFinite(denom) || denom <= 0) return fallback;
+  return numerator / denom;
+}
+
+async function fetchLineCombinations(gameId: number): Promise<LineCombinationRow[]> {
+  assertSupabase();
+  const { data, error } = await supabase
+    .from("lineCombinations")
+    .select("gameId,teamId,forwards,defensemen,goalies")
+    .eq("gameId", gameId);
+  if (error) throw error;
+  return (data ?? []) as any;
+}
+
+async function fetchRollingRows(
+  playerIds: number[],
+  strengthState: "ev" | "pp",
+  cutoffDate: string
+): Promise<RollingRow[]> {
+  assertSupabase();
+  if (playerIds.length === 0) return [];
+  const { data, error } = await supabase
+    .from("rolling_player_game_metrics")
+    .select(
+      "player_id,strength_state,game_date,toi_seconds_avg_last5,toi_seconds_avg_all,sog_per_60_avg_last5,sog_per_60_avg_all,goals_total_all,shots_total_all,assists_total_all"
+    )
+    .in("player_id", playerIds)
+    .eq("strength_state", strengthState)
+    .lt("game_date", cutoffDate)
+    .order("game_date", { ascending: false })
+    .limit(5000);
+  if (error) throw error;
+  return (data ?? []) as any;
+}
+
+async function createRun(asOfDate: string): Promise<string> {
+  assertSupabase();
+  const { data, error } = await supabase
+    .from("projection_runs_v2")
+    .insert({
+      as_of_date: asOfDate,
+      status: "running",
+      git_sha: process.env.VERCEL_GIT_COMMIT_SHA ?? process.env.GIT_SHA ?? null,
+      metrics: {}
+    })
+    .select("run_id")
+    .single();
+  if (error) throw error;
+  return (data as any).run_id as string;
+}
+
+async function finalizeRun(runId: string, status: "succeeded" | "failed", metrics: any) {
+  assertSupabase();
+  const { error } = await supabase
+    .from("projection_runs_v2")
+    .update({ status, metrics, updated_at: new Date().toISOString() })
+    .eq("run_id", runId);
+  if (error) throw error;
+}
+
+type ProjectionTotals = {
+  toiEsSeconds: number;
+  toiPpSeconds: number;
+  shotsEs: number;
+  shotsPp: number;
+  goalsEs: number;
+  goalsPp: number;
+  assistsEs: number;
+  assistsPp: number;
+};
+
+export async function runProjectionV2ForDate(asOfDate: string): Promise<{
+  runId: string;
+  gamesProcessed: number;
+  playerRowsUpserted: number;
+  teamRowsUpserted: number;
+  goalieRowsUpserted: number;
+}> {
+  assertSupabase();
+  const runId = await createRun(asOfDate);
+
+  const metrics: any = {
+    as_of_date: asOfDate,
+    started_at: new Date().toISOString(),
+    games: 0,
+    player_rows: 0,
+    team_rows: 0,
+    goalie_rows: 0,
+    warnings: [] as string[]
+  };
+
+  try {
+    const { data: games, error: gamesErr } = await supabase
+      .from("games")
+      .select("id,date,homeTeamId,awayTeamId")
+      .eq("date", asOfDate);
+    if (gamesErr) throw gamesErr;
+
+    let playerRowsUpserted = 0;
+    let teamRowsUpserted = 0;
+    let goalieRowsUpserted = 0;
+
+    for (const game of (games ?? []) as GameRow[]) {
+      const lineCombos = await fetchLineCombinations(game.id);
+      const byTeam = new Map<number, LineCombinationRow>();
+      for (const row of lineCombos) byTeam.set(row.teamId, row);
+
+      const teamShotsByTeamId = new Map<number, { shotsEs: number; shotsPp: number }>();
+      const goalieCandidates: Array<{
+        teamId: number;
+        opponentTeamId: number;
+        goalieId: number;
+        starterProb: number;
+      }> = [];
+
+      for (const teamId of [game.homeTeamId, game.awayTeamId]) {
+        const lc = byTeam.get(teamId);
+        const opponentTeamId = teamId === game.homeTeamId ? game.awayTeamId : game.homeTeamId;
+        if (!lc) {
+          metrics.warnings.push(`missing lineCombinations for game=${game.id} team=${teamId}`);
+          continue;
+        }
+
+        const skaterIds = [
+          ...(lc.forwards ?? []),
+          ...(lc.defensemen ?? [])
+        ].filter((n) => typeof n === "number");
+
+        if (skaterIds.length === 0) {
+          metrics.warnings.push(`empty skaterIds for game=${game.id} team=${teamId}`);
+          continue;
+        }
+
+        const evRows = await fetchRollingRows(skaterIds, "ev", asOfDate);
+        const ppRows = await fetchRollingRows(skaterIds, "pp", asOfDate);
+        const evLatest = pickLatestByPlayer(evRows);
+        const ppLatest = pickLatestByPlayer(ppRows);
+
+        // Initial per-player TOI estimates (seconds)
+        const projected = new Map<number, { toiEs: number; toiPp: number; shotsEs: number; shotsPp: number; goalRate: number; assistRate: number }>();
+
+        for (const playerId of skaterIds) {
+          const ev = evLatest.get(playerId);
+          const pp = ppLatest.get(playerId);
+
+          const toiEs = safeNumber(ev?.toi_seconds_avg_last5, safeNumber(ev?.toi_seconds_avg_all, 700));
+          const toiPp = safeNumber(pp?.toi_seconds_avg_last5, safeNumber(pp?.toi_seconds_avg_all, 120));
+
+          const sogPer60Ev = safeNumber(ev?.sog_per_60_avg_last5, safeNumber(ev?.sog_per_60_avg_all, 6));
+          const sogPer60Pp = safeNumber(pp?.sog_per_60_avg_last5, safeNumber(pp?.sog_per_60_avg_all, 8));
+
+          const shotsEs = computeShotsFromRate(toiEs, sogPer60Ev);
+          const shotsPp = computeShotsFromRate(toiPp, sogPer60Pp);
+
+          // Simple conversion priors from totals (all-strength) to avoid overfitting.
+          const goalsTotal = safeNumber(ev?.goals_total_all, 0);
+          const shotsTotal = safeNumber(ev?.shots_total_all, 0);
+          const assistsTotal = safeNumber(ev?.assists_total_all, 0);
+          const goalRate = clamp(computeRate(goalsTotal + 2, shotsTotal + 40, 0.1), 0.03, 0.25);
+          const assistRate = clamp(computeRate(assistsTotal + 3, (goalsTotal + 3) * 2, 0.7), 0.2, 1.4);
+
+          projected.set(playerId, { toiEs, toiPp, shotsEs, shotsPp, goalRate, assistRate });
+        }
+
+        // Reconcile TOI to team-level total skater-seconds (5 skaters * 60 min).
+        const targetSkaterSeconds = 60 * 60 * 5;
+        const totalToi = Array.from(projected.values()).reduce((acc, p) => acc + p.toiEs + p.toiPp, 0);
+        const toiScale = totalToi > 0 ? targetSkaterSeconds / totalToi : 1;
+
+        for (const [playerId, p] of projected.entries()) {
+          p.toiEs = Math.round(p.toiEs * toiScale);
+          p.toiPp = Math.round(p.toiPp * toiScale);
+          p.shotsEs = p.shotsEs * toiScale;
+          p.shotsPp = p.shotsPp * toiScale;
+          projected.set(playerId, p);
+        }
+
+        const playerUpserts = [];
+        const teamTotals: ProjectionTotals = {
+          toiEsSeconds: 0,
+          toiPpSeconds: 0,
+          shotsEs: 0,
+          shotsPp: 0,
+          goalsEs: 0,
+          goalsPp: 0,
+          assistsEs: 0,
+          assistsPp: 0
+        };
+
+        for (const [playerId, p] of projected.entries()) {
+          const shotsEs = p.shotsEs;
+          const shotsPp = p.shotsPp;
+          const goalsEs = shotsEs * p.goalRate;
+          const goalsPp = shotsPp * p.goalRate;
+          const assistsEs = goalsEs * p.assistRate;
+          const assistsPp = goalsPp * p.assistRate;
+
+          teamTotals.toiEsSeconds += p.toiEs;
+          teamTotals.toiPpSeconds += p.toiPp;
+          teamTotals.shotsEs += shotsEs;
+          teamTotals.shotsPp += shotsPp;
+          teamTotals.goalsEs += goalsEs;
+          teamTotals.goalsPp += goalsPp;
+          teamTotals.assistsEs += assistsEs;
+          teamTotals.assistsPp += assistsPp;
+
+          playerUpserts.push({
+            run_id: runId,
+            as_of_date: asOfDate,
+            horizon_games: 1,
+            game_id: game.id,
+            player_id: playerId,
+            team_id: teamId,
+            opponent_team_id: opponentTeamId,
+            proj_toi_es_seconds: p.toiEs,
+            proj_toi_pp_seconds: p.toiPp,
+            proj_toi_pk_seconds: null,
+            proj_shots_es: Number(shotsEs.toFixed(3)),
+            proj_shots_pp: Number(shotsPp.toFixed(3)),
+            proj_shots_pk: null,
+            proj_goals_es: Number(goalsEs.toFixed(3)),
+            proj_goals_pp: Number(goalsPp.toFixed(3)),
+            proj_goals_pk: null,
+            proj_assists_es: Number(assistsEs.toFixed(3)),
+            proj_assists_pp: Number(assistsPp.toFixed(3)),
+            proj_assists_pk: null,
+            uncertainty: {},
+            updated_at: new Date().toISOString()
+          });
+        }
+
+        const { error: playerErr } = await supabase
+          .from("player_projections_v2")
+          .upsert(playerUpserts, { onConflict: "run_id,game_id,player_id,horizon_games" });
+        if (playerErr) throw playerErr;
+        playerRowsUpserted += playerUpserts.length;
+
+        const teamUpsert = {
+          run_id: runId,
+          as_of_date: asOfDate,
+          horizon_games: 1,
+          game_id: game.id,
+          team_id: teamId,
+          opponent_team_id: opponentTeamId,
+          proj_toi_es_seconds: teamTotals.toiEsSeconds,
+          proj_toi_pp_seconds: teamTotals.toiPpSeconds,
+          proj_toi_pk_seconds: null,
+          proj_shots_es: Number(teamTotals.shotsEs.toFixed(3)),
+          proj_shots_pp: Number(teamTotals.shotsPp.toFixed(3)),
+          proj_shots_pk: null,
+          proj_goals_es: Number(teamTotals.goalsEs.toFixed(3)),
+          proj_goals_pp: Number(teamTotals.goalsPp.toFixed(3)),
+          proj_goals_pk: null,
+          uncertainty: {},
+          updated_at: new Date().toISOString()
+        };
+
+        const { error: teamErr } = await supabase
+          .from("team_projections_v2")
+          .upsert(teamUpsert, { onConflict: "run_id,game_id,team_id,horizon_games" });
+        if (teamErr) throw teamErr;
+        teamRowsUpserted += 1;
+
+        teamShotsByTeamId.set(teamId, {
+          shotsEs: Number(teamUpsert.proj_shots_es ?? 0),
+          shotsPp: Number(teamUpsert.proj_shots_pp ?? 0)
+        });
+
+        // Goalie: pick the highest probability starter from goalie_start_projections if available.
+        const { data: goalieStarts, error: gsErr } = await supabase
+          .from("goalie_start_projections")
+          .select("player_id,start_probability")
+          .eq("game_id", game.id)
+          .eq("team_id", teamId)
+          .order("start_probability", { ascending: false })
+          .limit(1);
+        if (gsErr) throw gsErr;
+        const goalieId =
+          (goalieStarts?.[0] as any)?.player_id ??
+          (lc.goalies?.[0] ?? null);
+
+        if (goalieId != null) {
+          const starterProb = Number((goalieStarts?.[0] as any)?.start_probability ?? 0.5);
+          goalieCandidates.push({ teamId, opponentTeamId, goalieId, starterProb });
+        }
+      }
+
+      // Create goalie projections after both teams are projected so we can use opponent shots.
+      for (const c of goalieCandidates) {
+        const oppShots = teamShotsByTeamId.get(c.opponentTeamId);
+        if (!oppShots) {
+          metrics.warnings.push(`missing opponent shots for game=${game.id} team=${c.teamId}`);
+          continue;
+        }
+        const shotsAgainst = Number((oppShots.shotsEs + oppShots.shotsPp).toFixed(3));
+
+        // Baseline league save% until we wire goalie priors.
+        const svPct = 0.9;
+        const goalsAllowed = shotsAgainst * (1 - svPct);
+        const saves = shotsAgainst - goalsAllowed;
+
+        const goalieUpsert = {
+          run_id: runId,
+          as_of_date: asOfDate,
+          horizon_games: 1,
+          game_id: game.id,
+          goalie_id: c.goalieId,
+          team_id: c.teamId,
+          opponent_team_id: c.opponentTeamId,
+          starter_probability: Number(c.starterProb),
+          proj_shots_against: shotsAgainst,
+          proj_goals_allowed: Number(goalsAllowed.toFixed(3)),
+          proj_saves: Number(saves.toFixed(3)),
+          uncertainty: {},
+          updated_at: new Date().toISOString()
+        };
+
+        const { error: goalieErr } = await supabase
+          .from("goalie_projections_v2")
+          .upsert(goalieUpsert, { onConflict: "run_id,game_id,goalie_id,horizon_games" });
+        if (goalieErr) throw goalieErr;
+        goalieRowsUpserted += 1;
+      }
+
+      metrics.games += 1;
+    }
+
+    metrics.player_rows = playerRowsUpserted;
+    metrics.team_rows = teamRowsUpserted;
+    metrics.goalie_rows = goalieRowsUpserted;
+    metrics.finished_at = new Date().toISOString();
+
+    await finalizeRun(runId, "succeeded", metrics);
+    return {
+      runId,
+      gamesProcessed: metrics.games,
+      playerRowsUpserted,
+      teamRowsUpserted,
+      goalieRowsUpserted
+    };
+  } catch (e) {
+    metrics.finished_at = new Date().toISOString();
+    metrics.error = (e as any)?.message ?? String(e);
+    await finalizeRun(runId, "failed", metrics);
+    throw e;
+  }
+}
