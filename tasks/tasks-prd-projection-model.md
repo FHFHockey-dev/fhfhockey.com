@@ -39,6 +39,11 @@
 - `web/pages/api/v1/db/build-projection-derived-v2.ts` - Date-range endpoint to populate derived v2 strength tables.
 - `web/lib/projections/runProjectionV2.ts` - Baseline horizon=1 projection runner writing `*_projections_v2` and `projection_runs_v2`.
 - `web/pages/api/v1/db/run-projection-v2.ts` - Endpoint to trigger a projection run for a date.
+- `web/pages/api/v1/projections/_helpers.ts` - Shared query parsing and “latest run” resolution for projections endpoints.
+- `web/pages/api/v1/projections/players.ts` - Read endpoint for v2 player projections (filters + defaults to latest succeeded run).
+- `web/pages/api/v1/projections/teams.ts` - Read endpoint for v2 team projections (filters + defaults to latest succeeded run).
+- `web/pages/api/v1/projections/goalies.ts` - Read endpoint for v2 goalie projections (filters + defaults to latest succeeded run).
+- `web/pages/api/v1/runs/latest.ts` - Read endpoint for latest `projection_runs_v2` row (optionally by date).
 - `web/lib/projections/reconcile.test.ts` - Unit tests for reconciliation constraints (new, Vitest).
 
 ### Notes
@@ -97,6 +102,7 @@
 - [ ] 5.0 Ship API + ops (read endpoints, admin triggers/events, nightly scheduler, backtest report)
 - [ ] 5.1 Implement read endpoints for player/team/goalie projections with filtering (date, game_id, team_id, player_id, horizon, run_id) and stable response schemas
 - [ ] 5.2 Implement run metadata endpoints (`/runs/latest`, `/runs/{run_id}`) and ensure pagination/limits for large queries
+- [x] 5.2a Add v2 read endpoints (players/teams/goalies + runs/latest)
 - [ ] 5.3 Implement admin endpoints: trigger run for a date, create/update `roster_events`, and (optional) set confirmed starters
 - [ ] 5.4 Add nightly scheduler (Vercel Cron or GitHub Actions) that triggers the run + persists `cron_job_audit` via `withCronJobAudit`
 - [ ] 5.5 Add observability: structured logs, `projection_runs.status` transitions, failure capture, and run metrics summaries
