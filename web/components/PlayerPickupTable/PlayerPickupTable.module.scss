@@ -9,15 +9,39 @@ $selected-border-width: 2px; // The width of the indicator
 
 .container {
   width: 100%;
-  margin: 0px auto;
+  margin: 0;
   color: v.$text-color-primary;
   font-family: v.$font-family-primary;
   transition: margin-bottom v.$transition-duration v.$transition-easing;
+  display: flex;
+  align-items: flex-start;
+  gap: v.$space-md;
+}
+
+.container > .filters {
+  flex: 0 0 25%;
+  width: 25%;
+  margin: 0;
+  margin-bottom: 0;
+  border-radius: v.$border-radius-lg;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.16);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.container > .collapsibleContent {
+  flex: 0 0 calc(75% - #{v.$space-md});
+  width: calc(75% - #{v.$space-md});
+  min-width: 0;
+  border-radius: v.$border-radius-lg;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.16);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
 .sidebarLayout {
-  display: flex;
-  flex-direction: column;
   gap: v.$space-md;
 
   .filters {
@@ -47,21 +71,36 @@ $selected-border-width: 2px; // The width of the indicator
 }
 
 .sidebarContent {
-  margin-top: v.$space-sm;
+  margin-top: 0;
+}
+
+@media (max-width: #{v.$breakpoint-tablet - 1px}) {
+  .container {
+    flex-direction: column;
+  }
+
+  .container > .filters {
+    flex: 0 0 auto;
+    width: 100%;
+    margin-bottom: v.$space-md;
+  }
+
+  .container > .collapsibleContent {
+    flex: 0 0 auto;
+    width: 100%;
+  }
 }
 
 /* --- Filters Styling --- */
 .filters {
-  margin: 0 auto 20px auto; // Add consistent bottom margin
-  margin-bottom: v.$panel-gap; // Override explicit magic number with token
+  margin: 0;
   color: v.$text-color-primary;
   overflow: hidden;
-  width: 100%;
   position: relative; // For icon
   display: flex;
   flex-direction: column;
   gap: 15px; // Consistent gap between sections (title, basic filters, metric filters, reset)
-  @include panel.panel-container($padding: 15px);
+  padding: 15px;
 
   // Transition for filter content height/visibility
   .filterContainer, // Basic filter rows (desktop)
@@ -911,12 +950,12 @@ $selected-border-width: 2px; // The width of the indicator
 }
 
 .tableContainer {
-  margin-top: 20px; // Consistent spacing
+  margin-top: 0;
   overflow-x: auto;
-  background-color: v.$background-medium;
-  border-radius: v.$border-radius;
-  box-shadow: v.$box-shadow;
-  outline: 10px solid v.$background-dark;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  outline: none;
   // Subtle left accent on the first cell that does not affect layout
   table tr > td:first-child {
     box-shadow: inset 2px 0 0 rgba(0, 0, 0, 0.06);
@@ -1209,11 +1248,11 @@ $selected-border-width: 2px; // The width of the indicator
 .containerMobile {
   // Wrapper for mobile table
   overflow-x: auto; // Allow horizontal scroll if needed, though less likely now
-  outline: 8px solid v.$background-dark;
-  background-color: v.$background-dark;
-  border: 3px solid v.$background-light;
-  border-radius: v.$border-radius;
-  margin-top: 20px; // Consistent spacing
+  outline: none;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  margin-top: 0;
 }
 .tableMobile {
   width: 100%;
@@ -1419,6 +1458,8 @@ $selected-border-width: 2px; // The width of the indicator
   opacity: 1;
   visibility: visible;
   overflow: visible; // Allow potential box shadows etc to show from table container
+  width: 100%;
+  padding: v.$space-md;
 
   // Styles when filters are minimized (applied via parent .containerMinimized)
   .containerMinimized & {

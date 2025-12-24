@@ -8,34 +8,47 @@
 /* --- Main Container --- */
 .container {
   width: 100%;
-  margin: 0 auto;
-  transition: margin-bottom v.$transition-duration v.$transition-easing;
-  overflow: hidden; // Keep overflow hidden
-  @include panel.panel-container();
+  margin: 0;
+  // transition: margin-bottom v.$transition-duration v.$transition-easing;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden; // Add overflow hidden for radius clipping
+  outline: none;
+  border: none;
+  border-radius: inherit;
+  background: transparent;
 
   // --- Mobile Specific Framing & Styling ---
   @media (max-width: #{v.$breakpoint-tablet - 1px}) {
-    outline: 8px solid v.$background-dark; // Mobile Frame Outline
-    border: 3px solid v.$background-light; // Mobile Frame Border
-    border-radius: v.$border-radius; // Mobile Frame Radius
-    // Padding is handled by titleHeader now
+    outline: none;
+    border: none;
+    border-radius: inherit;
+    height: auto; // Reset height on mobile unless explicitly needed
 
     // Mobile Minimized State
     &.minimized {
-      margin-bottom: 10px; // Keep margin reduction
+      margin-bottom: 10px;
       // Ensure title border is hidden when minimized on mobile
       .titleHeader {
-        border-bottom-color: transparent !important; // Override general rule if needed
+        border-bottom-color: transparent !important;
       }
     }
   }
 
-  // --- Desktop Height Filling ---
+  // On desktop, allow filling parent height when NOT minimized
   @media (min-width: v.$breakpoint-desktop) {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    // No outline/border needed on desktop if parent provides structure
+    // The GameGrid dashboard provides the unified framing on desktop.
+    outline: none;
+    border-radius: 0;
+    border: none;
+    background: transparent;
+    &:not(.minimized) {
+      height: 100%;
+    }
+    &.minimized {
+      height: auto; // Reset height when minimized on desktop too
+    }
   }
 }
 
@@ -47,13 +60,12 @@
 .titleText {
   font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-size: clamp(1.2rem, 4vw, 1.5rem);
+  letter-spacing: 0.3em;
+  font-size: 1rem; // Reduced font size
   // Inherit weight from panel-title (300) for cohesion with Game Grid
   color: v.$text-color-primary;
   flex-grow: 1;
-  text-align: left;
-  padding-right: 30px; // Make space for the icon like in PlayerPickupTable
+  text-align: center;
 }
 
 .spanColorBlue {
@@ -80,15 +92,13 @@
 /* --- Table Wrapper (Handles Minimize Collapse) --- */
 .tableWrapper {
   @include panel.panel-scroll-wrapper;
-  @media (min-width: v.$breakpoint-desktop) {
-    flex-grow: 1;
-    overflow-y: auto;
-    &::-webkit-scrollbar {
-      display: none;
-    }
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+  flex-grow: 1;
+  overflow-y: auto;
+  &::-webkit-scrollbar {
+    display: none;
   }
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 /* --- Base Table Styling --- */
@@ -118,9 +128,9 @@
   background-color: v.$background-dark;
   color: v.$text-color-secondary;
   font-weight: 600;
-  padding: 8px 4px;
+  padding: 6px 4px; // Standardized to 6px 4px
   font-family: v.$font-family-primary;
-  font-size: 12px; // align with PlayerPickup/GameGrid compact headers
+  font-size: 12px; // Standardized to 12px
   text-transform: uppercase;
   letter-spacing: 0.3px;
   border: 0.5px solid v.$border-color-secondary;
@@ -128,6 +138,7 @@
   white-space: normal;
   vertical-align: middle;
   width: 12.57%; // (100 - 12) / 7 columns
+  height: 30px; // Standardized height
 
   @media (max-width: #{v.$breakpoint-tablet - 1px}) {
     padding: 6px 3px;
@@ -154,10 +165,32 @@
   border-right: none;
 }
 
+/* --- Sort Button Styling (match FourWeekGrid) --- */
+.sortButton {
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  width: 100%;
+  justify-content: center;
+  &:focus {
+    outline: 1px dotted v.$primary-color;
+    outline-offset: 2px;
+  }
+  th:first-child & {
+    justify-content: flex-start;
+  } // Align team sort left
+}
+
 /* --- Table Body Styling --- */
 .table tbody tr {
   transition: background-color v.$transition-duration v.$transition-easing;
-  height: 40px; // align row height with PlayerPickup/GameGrid
+  height: 30px; // Condensed height
   &:nth-child(even) {
     background-color: v.$background-light;
   }
@@ -171,11 +204,11 @@
 
 .table td {
   border: 0.5px solid v.$border-color-secondary;
-  padding: 5px 4px; // Slight tighten
+  padding: 0; // Condensed padding
   font-family: v.$font-family-primary;
   vertical-align: middle;
-  font-size: 13px; // match PlayerPickup compact body text
-  word-break: break-word;
+  font-size: 12px; // Standardized to 12px
+  height: 30px; // Standardized height
 
   @media (max-width: #{v.$breakpoint-tablet - 1px}) {
     padding: 3px 2px; // compact mobile
@@ -188,17 +221,46 @@
   border-left: none;
   @include panel.first-col-separator(2px);
   text-align: center;
-  padding: 5px;
+  padding: 4px; // Standardized to 4px
   width: 12%;
-  img {
+
+  .teamInfo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 28px;
+  }
+
+  .teamLogo {
     display: block;
-    margin: 0 auto;
-    max-width: 25px;
+    max-width: 24px;
+    height: auto;
+    filter: drop-shadow(0 0 1px v.$text-color-primary);
   }
 }
 // No border on last data cell
 .table td:last-child {
   border-right: none;
+}
+
+/* --- Averages Row Styling --- */
+.averagesRow td {
+  background-color: color.adjust(v.$background-dark, $lightness: -5%);
+  color: v.$text-color-secondary;
+  font-weight: bold;
+  font-size: 10.5px;
+  border-top: 2px solid v.$border-color-secondary;
+  padding: 4px 4px;
+  height: 30px;
+
+  &:first-child {
+    text-align: left;
+    padding-left: 10px;
+    border-right: 2px solid v.$secondary-color;
+    @media (max-width: #{v.$breakpoint-tablet - 1px}) {
+      padding-left: 8px;
+    }
+  }
 }
 
 /* Color utility classes removed (now global via styles/_panel.scss) */
@@ -210,4 +272,16 @@
   color: v.$text-color-secondary;
   background-color: v.$background-dark;
   // No radius needed as it's inside the main container now
+}
+
+// Top/bottom-10 cell shading (rank 1 = strongest intensity)
+@for $i from 1 through 10 {
+  .rankGood#{$i} {
+    $alpha: 0.32 - ($i - 1) * 0.02;
+    background-color: rgba(v.$schedule-green, $alpha);
+  }
+  .rankBad#{$i} {
+    $alpha: 0.32 - ($i - 1) * 0.02;
+    background-color: rgba(v.$schedule-red, $alpha);
+  }
 }

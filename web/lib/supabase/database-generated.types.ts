@@ -426,6 +426,834 @@ export type Database = {
           }
         ];
       };
+      forge_goalie_game: {
+        Row: {
+          created_at: string;
+          game_date: string;
+          game_id: number;
+          goalie_id: number;
+          goals_allowed: number | null;
+          opponent_team_id: number | null;
+          saves: number | null;
+          shots_against: number | null;
+          team_id: number;
+          toi_seconds: number | null;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          game_date: string;
+          game_id: number;
+          goalie_id: number;
+          goals_allowed?: number | null;
+          opponent_team_id?: number | null;
+          saves?: number | null;
+          shots_against?: number | null;
+          team_id: number;
+          toi_seconds?: number | null;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          game_date?: string;
+          game_id?: number;
+          goalie_id?: number;
+          goals_allowed?: number | null;
+          opponent_team_id?: number | null;
+          saves?: number | null;
+          shots_against?: number | null;
+          team_id?: number;
+          toi_seconds?: number | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "goalie_game_v2_game_id_fkey";
+            columns: ["game_id"];
+            isOneToOne: false;
+            referencedRelation: "games";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "goalie_game_v2_goalie_id_fkey";
+            columns: ["goalie_id"];
+            isOneToOne: false;
+            referencedRelation: "players";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "goalie_game_v2_opponent_team_id_fkey";
+            columns: ["opponent_team_id"];
+            isOneToOne: false;
+            referencedRelation: "combined_sos";
+            referencedColumns: ["team_id"];
+          },
+          {
+            foreignKeyName: "goalie_game_v2_opponent_team_id_fkey";
+            columns: ["opponent_team_id"];
+            isOneToOne: false;
+            referencedRelation: "power_rankings";
+            referencedColumns: ["team_id"];
+          },
+          {
+            foreignKeyName: "goalie_game_v2_opponent_team_id_fkey";
+            columns: ["opponent_team_id"];
+            isOneToOne: false;
+            referencedRelation: "teams";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "goalie_game_v2_team_id_fkey";
+            columns: ["team_id"];
+            isOneToOne: false;
+            referencedRelation: "combined_sos";
+            referencedColumns: ["team_id"];
+          },
+          {
+            foreignKeyName: "goalie_game_v2_team_id_fkey";
+            columns: ["team_id"];
+            isOneToOne: false;
+            referencedRelation: "power_rankings";
+            referencedColumns: ["team_id"];
+          },
+          {
+            foreignKeyName: "goalie_game_v2_team_id_fkey";
+            columns: ["team_id"];
+            isOneToOne: false;
+            referencedRelation: "teams";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      forge_goalie_projections: {
+        Row: {
+          as_of_date: string;
+          created_at: string;
+          game_id: number;
+          goalie_id: number;
+          horizon_games: number;
+          opponent_team_id: number;
+          proj_goals_allowed: number | null;
+          proj_saves: number | null;
+          proj_shots_against: number | null;
+          run_id: string;
+          starter_probability: number | null;
+          team_id: number;
+          uncertainty: Json;
+          updated_at: string;
+        };
+        Insert: {
+          as_of_date: string;
+          created_at?: string;
+          game_id: number;
+          goalie_id: number;
+          horizon_games: number;
+          opponent_team_id: number;
+          proj_goals_allowed?: number | null;
+          proj_saves?: number | null;
+          proj_shots_against?: number | null;
+          run_id: string;
+          starter_probability?: number | null;
+          team_id: number;
+          uncertainty?: Json;
+          updated_at?: string;
+        };
+        Update: {
+          as_of_date?: string;
+          created_at?: string;
+          game_id?: number;
+          goalie_id?: number;
+          horizon_games?: number;
+          opponent_team_id?: number;
+          proj_goals_allowed?: number | null;
+          proj_saves?: number | null;
+          proj_shots_against?: number | null;
+          run_id?: string;
+          starter_probability?: number | null;
+          team_id?: number;
+          uncertainty?: Json;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "goalie_projections_v2_game_id_fkey";
+            columns: ["game_id"];
+            isOneToOne: false;
+            referencedRelation: "games";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "goalie_projections_v2_goalie_id_fkey";
+            columns: ["goalie_id"];
+            isOneToOne: false;
+            referencedRelation: "players";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "goalie_projections_v2_opponent_team_id_fkey";
+            columns: ["opponent_team_id"];
+            isOneToOne: false;
+            referencedRelation: "combined_sos";
+            referencedColumns: ["team_id"];
+          },
+          {
+            foreignKeyName: "goalie_projections_v2_opponent_team_id_fkey";
+            columns: ["opponent_team_id"];
+            isOneToOne: false;
+            referencedRelation: "power_rankings";
+            referencedColumns: ["team_id"];
+          },
+          {
+            foreignKeyName: "goalie_projections_v2_opponent_team_id_fkey";
+            columns: ["opponent_team_id"];
+            isOneToOne: false;
+            referencedRelation: "teams";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "goalie_projections_v2_run_id_fkey";
+            columns: ["run_id"];
+            isOneToOne: false;
+            referencedRelation: "forge_runs";
+            referencedColumns: ["run_id"];
+          },
+          {
+            foreignKeyName: "goalie_projections_v2_team_id_fkey";
+            columns: ["team_id"];
+            isOneToOne: false;
+            referencedRelation: "combined_sos";
+            referencedColumns: ["team_id"];
+          },
+          {
+            foreignKeyName: "goalie_projections_v2_team_id_fkey";
+            columns: ["team_id"];
+            isOneToOne: false;
+            referencedRelation: "power_rankings";
+            referencedColumns: ["team_id"];
+          },
+          {
+            foreignKeyName: "goalie_projections_v2_team_id_fkey";
+            columns: ["team_id"];
+            isOneToOne: false;
+            referencedRelation: "teams";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      forge_player_game_strength: {
+        Row: {
+          assists_es: number | null;
+          assists_pk: number | null;
+          assists_pp: number | null;
+          blocks: number | null;
+          created_at: string;
+          game_date: string;
+          game_id: number;
+          goals_es: number | null;
+          goals_pk: number | null;
+          goals_pp: number | null;
+          hits: number | null;
+          opponent_team_id: number | null;
+          pim: number | null;
+          player_id: number;
+          plus_minus: number | null;
+          shots_es: number | null;
+          shots_pk: number | null;
+          shots_pp: number | null;
+          team_id: number;
+          toi_es_seconds: number | null;
+          toi_pk_seconds: number | null;
+          toi_pp_seconds: number | null;
+          updated_at: string;
+        };
+        Insert: {
+          assists_es?: number | null;
+          assists_pk?: number | null;
+          assists_pp?: number | null;
+          blocks?: number | null;
+          created_at?: string;
+          game_date: string;
+          game_id: number;
+          goals_es?: number | null;
+          goals_pk?: number | null;
+          goals_pp?: number | null;
+          hits?: number | null;
+          opponent_team_id?: number | null;
+          pim?: number | null;
+          player_id: number;
+          plus_minus?: number | null;
+          shots_es?: number | null;
+          shots_pk?: number | null;
+          shots_pp?: number | null;
+          team_id: number;
+          toi_es_seconds?: number | null;
+          toi_pk_seconds?: number | null;
+          toi_pp_seconds?: number | null;
+          updated_at?: string;
+        };
+        Update: {
+          assists_es?: number | null;
+          assists_pk?: number | null;
+          assists_pp?: number | null;
+          blocks?: number | null;
+          created_at?: string;
+          game_date?: string;
+          game_id?: number;
+          goals_es?: number | null;
+          goals_pk?: number | null;
+          goals_pp?: number | null;
+          hits?: number | null;
+          opponent_team_id?: number | null;
+          pim?: number | null;
+          player_id?: number;
+          plus_minus?: number | null;
+          shots_es?: number | null;
+          shots_pk?: number | null;
+          shots_pp?: number | null;
+          team_id?: number;
+          toi_es_seconds?: number | null;
+          toi_pk_seconds?: number | null;
+          toi_pp_seconds?: number | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "player_game_strength_v2_game_id_fkey";
+            columns: ["game_id"];
+            isOneToOne: false;
+            referencedRelation: "games";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "player_game_strength_v2_opponent_team_id_fkey";
+            columns: ["opponent_team_id"];
+            isOneToOne: false;
+            referencedRelation: "combined_sos";
+            referencedColumns: ["team_id"];
+          },
+          {
+            foreignKeyName: "player_game_strength_v2_opponent_team_id_fkey";
+            columns: ["opponent_team_id"];
+            isOneToOne: false;
+            referencedRelation: "power_rankings";
+            referencedColumns: ["team_id"];
+          },
+          {
+            foreignKeyName: "player_game_strength_v2_opponent_team_id_fkey";
+            columns: ["opponent_team_id"];
+            isOneToOne: false;
+            referencedRelation: "teams";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "player_game_strength_v2_player_id_fkey";
+            columns: ["player_id"];
+            isOneToOne: false;
+            referencedRelation: "players";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "player_game_strength_v2_team_id_fkey";
+            columns: ["team_id"];
+            isOneToOne: false;
+            referencedRelation: "combined_sos";
+            referencedColumns: ["team_id"];
+          },
+          {
+            foreignKeyName: "player_game_strength_v2_team_id_fkey";
+            columns: ["team_id"];
+            isOneToOne: false;
+            referencedRelation: "power_rankings";
+            referencedColumns: ["team_id"];
+          },
+          {
+            foreignKeyName: "player_game_strength_v2_team_id_fkey";
+            columns: ["team_id"];
+            isOneToOne: false;
+            referencedRelation: "teams";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      forge_player_projections: {
+        Row: {
+          as_of_date: string;
+          created_at: string;
+          game_id: number;
+          horizon_games: number;
+          opponent_team_id: number;
+          player_id: number;
+          proj_assists_es: number | null;
+          proj_assists_pk: number | null;
+          proj_assists_pp: number | null;
+          proj_blocks: number | null;
+          proj_goals_es: number | null;
+          proj_goals_pk: number | null;
+          proj_goals_pp: number | null;
+          proj_hits: number | null;
+          proj_pim: number | null;
+          proj_plus_minus: number | null;
+          proj_shots_es: number | null;
+          proj_shots_pk: number | null;
+          proj_shots_pp: number | null;
+          proj_toi_es_seconds: number | null;
+          proj_toi_pk_seconds: number | null;
+          proj_toi_pp_seconds: number | null;
+          run_id: string;
+          team_id: number;
+          uncertainty: Json;
+          updated_at: string;
+        };
+        Insert: {
+          as_of_date: string;
+          created_at?: string;
+          game_id: number;
+          horizon_games: number;
+          opponent_team_id: number;
+          player_id: number;
+          proj_assists_es?: number | null;
+          proj_assists_pk?: number | null;
+          proj_assists_pp?: number | null;
+          proj_blocks?: number | null;
+          proj_goals_es?: number | null;
+          proj_goals_pk?: number | null;
+          proj_goals_pp?: number | null;
+          proj_hits?: number | null;
+          proj_pim?: number | null;
+          proj_plus_minus?: number | null;
+          proj_shots_es?: number | null;
+          proj_shots_pk?: number | null;
+          proj_shots_pp?: number | null;
+          proj_toi_es_seconds?: number | null;
+          proj_toi_pk_seconds?: number | null;
+          proj_toi_pp_seconds?: number | null;
+          run_id: string;
+          team_id: number;
+          uncertainty?: Json;
+          updated_at?: string;
+        };
+        Update: {
+          as_of_date?: string;
+          created_at?: string;
+          game_id?: number;
+          horizon_games?: number;
+          opponent_team_id?: number;
+          player_id?: number;
+          proj_assists_es?: number | null;
+          proj_assists_pk?: number | null;
+          proj_assists_pp?: number | null;
+          proj_blocks?: number | null;
+          proj_goals_es?: number | null;
+          proj_goals_pk?: number | null;
+          proj_goals_pp?: number | null;
+          proj_hits?: number | null;
+          proj_pim?: number | null;
+          proj_plus_minus?: number | null;
+          proj_shots_es?: number | null;
+          proj_shots_pk?: number | null;
+          proj_shots_pp?: number | null;
+          proj_toi_es_seconds?: number | null;
+          proj_toi_pk_seconds?: number | null;
+          proj_toi_pp_seconds?: number | null;
+          run_id?: string;
+          team_id?: number;
+          uncertainty?: Json;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "player_projections_v2_game_id_fkey";
+            columns: ["game_id"];
+            isOneToOne: false;
+            referencedRelation: "games";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "player_projections_v2_opponent_team_id_fkey";
+            columns: ["opponent_team_id"];
+            isOneToOne: false;
+            referencedRelation: "combined_sos";
+            referencedColumns: ["team_id"];
+          },
+          {
+            foreignKeyName: "player_projections_v2_opponent_team_id_fkey";
+            columns: ["opponent_team_id"];
+            isOneToOne: false;
+            referencedRelation: "power_rankings";
+            referencedColumns: ["team_id"];
+          },
+          {
+            foreignKeyName: "player_projections_v2_opponent_team_id_fkey";
+            columns: ["opponent_team_id"];
+            isOneToOne: false;
+            referencedRelation: "teams";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "player_projections_v2_player_id_fkey";
+            columns: ["player_id"];
+            isOneToOne: false;
+            referencedRelation: "players";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "player_projections_v2_run_id_fkey";
+            columns: ["run_id"];
+            isOneToOne: false;
+            referencedRelation: "forge_runs";
+            referencedColumns: ["run_id"];
+          },
+          {
+            foreignKeyName: "player_projections_v2_team_id_fkey";
+            columns: ["team_id"];
+            isOneToOne: false;
+            referencedRelation: "combined_sos";
+            referencedColumns: ["team_id"];
+          },
+          {
+            foreignKeyName: "player_projections_v2_team_id_fkey";
+            columns: ["team_id"];
+            isOneToOne: false;
+            referencedRelation: "power_rankings";
+            referencedColumns: ["team_id"];
+          },
+          {
+            foreignKeyName: "player_projections_v2_team_id_fkey";
+            columns: ["team_id"];
+            isOneToOne: false;
+            referencedRelation: "teams";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      forge_roster_events: {
+        Row: {
+          confidence: number;
+          created_at: string;
+          effective_from: string;
+          effective_to: string | null;
+          event_id: number;
+          event_type: string;
+          payload: Json;
+          player_id: number | null;
+          source_text: string | null;
+          team_id: number | null;
+          updated_at: string;
+        };
+        Insert: {
+          confidence?: number;
+          created_at?: string;
+          effective_from?: string;
+          effective_to?: string | null;
+          event_id?: number;
+          event_type: string;
+          payload?: Json;
+          player_id?: number | null;
+          source_text?: string | null;
+          team_id?: number | null;
+          updated_at?: string;
+        };
+        Update: {
+          confidence?: number;
+          created_at?: string;
+          effective_from?: string;
+          effective_to?: string | null;
+          event_id?: number;
+          event_type?: string;
+          payload?: Json;
+          player_id?: number | null;
+          source_text?: string | null;
+          team_id?: number | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "roster_events_player_id_fkey";
+            columns: ["player_id"];
+            isOneToOne: false;
+            referencedRelation: "players";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "roster_events_team_id_fkey";
+            columns: ["team_id"];
+            isOneToOne: false;
+            referencedRelation: "combined_sos";
+            referencedColumns: ["team_id"];
+          },
+          {
+            foreignKeyName: "roster_events_team_id_fkey";
+            columns: ["team_id"];
+            isOneToOne: false;
+            referencedRelation: "power_rankings";
+            referencedColumns: ["team_id"];
+          },
+          {
+            foreignKeyName: "roster_events_team_id_fkey";
+            columns: ["team_id"];
+            isOneToOne: false;
+            referencedRelation: "teams";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      forge_runs: {
+        Row: {
+          as_of_date: string;
+          created_at: string;
+          git_sha: string | null;
+          metrics: Json;
+          notes: string | null;
+          run_id: string;
+          status: string;
+          updated_at: string;
+        };
+        Insert: {
+          as_of_date: string;
+          created_at?: string;
+          git_sha?: string | null;
+          metrics?: Json;
+          notes?: string | null;
+          run_id?: string;
+          status?: string;
+          updated_at?: string;
+        };
+        Update: {
+          as_of_date?: string;
+          created_at?: string;
+          git_sha?: string | null;
+          metrics?: Json;
+          notes?: string | null;
+          run_id?: string;
+          status?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      forge_team_game_strength: {
+        Row: {
+          created_at: string;
+          game_date: string;
+          game_id: number;
+          goals_es: number | null;
+          goals_pk: number | null;
+          goals_pp: number | null;
+          opponent_team_id: number | null;
+          shots_es: number | null;
+          shots_pk: number | null;
+          shots_pp: number | null;
+          team_id: number;
+          toi_es_seconds: number | null;
+          toi_pk_seconds: number | null;
+          toi_pp_seconds: number | null;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          game_date: string;
+          game_id: number;
+          goals_es?: number | null;
+          goals_pk?: number | null;
+          goals_pp?: number | null;
+          opponent_team_id?: number | null;
+          shots_es?: number | null;
+          shots_pk?: number | null;
+          shots_pp?: number | null;
+          team_id: number;
+          toi_es_seconds?: number | null;
+          toi_pk_seconds?: number | null;
+          toi_pp_seconds?: number | null;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          game_date?: string;
+          game_id?: number;
+          goals_es?: number | null;
+          goals_pk?: number | null;
+          goals_pp?: number | null;
+          opponent_team_id?: number | null;
+          shots_es?: number | null;
+          shots_pk?: number | null;
+          shots_pp?: number | null;
+          team_id?: number;
+          toi_es_seconds?: number | null;
+          toi_pk_seconds?: number | null;
+          toi_pp_seconds?: number | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "team_game_strength_v2_game_id_fkey";
+            columns: ["game_id"];
+            isOneToOne: false;
+            referencedRelation: "games";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "team_game_strength_v2_opponent_team_id_fkey";
+            columns: ["opponent_team_id"];
+            isOneToOne: false;
+            referencedRelation: "combined_sos";
+            referencedColumns: ["team_id"];
+          },
+          {
+            foreignKeyName: "team_game_strength_v2_opponent_team_id_fkey";
+            columns: ["opponent_team_id"];
+            isOneToOne: false;
+            referencedRelation: "power_rankings";
+            referencedColumns: ["team_id"];
+          },
+          {
+            foreignKeyName: "team_game_strength_v2_opponent_team_id_fkey";
+            columns: ["opponent_team_id"];
+            isOneToOne: false;
+            referencedRelation: "teams";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "team_game_strength_v2_team_id_fkey";
+            columns: ["team_id"];
+            isOneToOne: false;
+            referencedRelation: "combined_sos";
+            referencedColumns: ["team_id"];
+          },
+          {
+            foreignKeyName: "team_game_strength_v2_team_id_fkey";
+            columns: ["team_id"];
+            isOneToOne: false;
+            referencedRelation: "power_rankings";
+            referencedColumns: ["team_id"];
+          },
+          {
+            foreignKeyName: "team_game_strength_v2_team_id_fkey";
+            columns: ["team_id"];
+            isOneToOne: false;
+            referencedRelation: "teams";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      forge_team_projections: {
+        Row: {
+          as_of_date: string;
+          created_at: string;
+          game_id: number;
+          horizon_games: number;
+          opponent_team_id: number;
+          proj_goals_es: number | null;
+          proj_goals_pk: number | null;
+          proj_goals_pp: number | null;
+          proj_shots_es: number | null;
+          proj_shots_pk: number | null;
+          proj_shots_pp: number | null;
+          proj_toi_es_seconds: number | null;
+          proj_toi_pk_seconds: number | null;
+          proj_toi_pp_seconds: number | null;
+          run_id: string;
+          team_id: number;
+          uncertainty: Json;
+          updated_at: string;
+        };
+        Insert: {
+          as_of_date: string;
+          created_at?: string;
+          game_id: number;
+          horizon_games: number;
+          opponent_team_id: number;
+          proj_goals_es?: number | null;
+          proj_goals_pk?: number | null;
+          proj_goals_pp?: number | null;
+          proj_shots_es?: number | null;
+          proj_shots_pk?: number | null;
+          proj_shots_pp?: number | null;
+          proj_toi_es_seconds?: number | null;
+          proj_toi_pk_seconds?: number | null;
+          proj_toi_pp_seconds?: number | null;
+          run_id: string;
+          team_id: number;
+          uncertainty?: Json;
+          updated_at?: string;
+        };
+        Update: {
+          as_of_date?: string;
+          created_at?: string;
+          game_id?: number;
+          horizon_games?: number;
+          opponent_team_id?: number;
+          proj_goals_es?: number | null;
+          proj_goals_pk?: number | null;
+          proj_goals_pp?: number | null;
+          proj_shots_es?: number | null;
+          proj_shots_pk?: number | null;
+          proj_shots_pp?: number | null;
+          proj_toi_es_seconds?: number | null;
+          proj_toi_pk_seconds?: number | null;
+          proj_toi_pp_seconds?: number | null;
+          run_id?: string;
+          team_id?: number;
+          uncertainty?: Json;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "team_projections_v2_game_id_fkey";
+            columns: ["game_id"];
+            isOneToOne: false;
+            referencedRelation: "games";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "team_projections_v2_opponent_team_id_fkey";
+            columns: ["opponent_team_id"];
+            isOneToOne: false;
+            referencedRelation: "combined_sos";
+            referencedColumns: ["team_id"];
+          },
+          {
+            foreignKeyName: "team_projections_v2_opponent_team_id_fkey";
+            columns: ["opponent_team_id"];
+            isOneToOne: false;
+            referencedRelation: "power_rankings";
+            referencedColumns: ["team_id"];
+          },
+          {
+            foreignKeyName: "team_projections_v2_opponent_team_id_fkey";
+            columns: ["opponent_team_id"];
+            isOneToOne: false;
+            referencedRelation: "teams";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "team_projections_v2_run_id_fkey";
+            columns: ["run_id"];
+            isOneToOne: false;
+            referencedRelation: "forge_runs";
+            referencedColumns: ["run_id"];
+          },
+          {
+            foreignKeyName: "team_projections_v2_team_id_fkey";
+            columns: ["team_id"];
+            isOneToOne: false;
+            referencedRelation: "combined_sos";
+            referencedColumns: ["team_id"];
+          },
+          {
+            foreignKeyName: "team_projections_v2_team_id_fkey";
+            columns: ["team_id"];
+            isOneToOne: false;
+            referencedRelation: "power_rankings";
+            referencedColumns: ["team_id"];
+          },
+          {
+            foreignKeyName: "team_projections_v2_team_id_fkey";
+            columns: ["team_id"];
+            isOneToOne: false;
+            referencedRelation: "teams";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
       gamelog_game_map: {
         Row: {
           created_at: string;
@@ -631,9 +1459,13 @@ export type Database = {
         Row: {
           confirmed_status: boolean | null;
           created_at: string | null;
+          game_date: string | null;
           game_id: number;
+          games_played: number | null;
+          l10_start_pct: number | null;
           player_id: number;
           projected_gsaa_per_60: number | null;
+          season_start_pct: number | null;
           start_probability: number | null;
           team_id: number;
           updated_at: string | null;
@@ -641,9 +1473,13 @@ export type Database = {
         Insert: {
           confirmed_status?: boolean | null;
           created_at?: string | null;
+          game_date?: string | null;
           game_id: number;
+          games_played?: number | null;
+          l10_start_pct?: number | null;
           player_id: number;
           projected_gsaa_per_60?: number | null;
+          season_start_pct?: number | null;
           start_probability?: number | null;
           team_id: number;
           updated_at?: string | null;
@@ -651,9 +1487,13 @@ export type Database = {
         Update: {
           confirmed_status?: boolean | null;
           created_at?: string | null;
+          game_date?: string | null;
           game_id?: number;
+          games_played?: number | null;
+          l10_start_pct?: number | null;
           player_id?: number;
           projected_gsaa_per_60?: number | null;
+          season_start_pct?: number | null;
           start_probability?: number | null;
           team_id?: number;
           updated_at?: string | null;
@@ -16173,6 +17013,156 @@ export type Database = {
         };
         Relationships: [];
       };
+      team_power_ratings_daily: {
+        Row: {
+          created_at: string | null;
+          danger_rating: number | null;
+          date: string;
+          def_rating: number | null;
+          discipline_rating: number | null;
+          finishing_rating: number | null;
+          ga60: number | null;
+          gf60: number | null;
+          goalie_rating: number | null;
+          off_rating: number | null;
+          pace_rating: number | null;
+          pace60: number | null;
+          pk_tier: number | null;
+          pp_tier: number | null;
+          sa60: number | null;
+          sf60: number | null;
+          special_rating: number | null;
+          team_abbreviation: string;
+          trend10: number | null;
+          variance_flag: number | null;
+          xga60: number | null;
+          xgf60: number | null;
+        };
+        Insert: {
+          created_at?: string | null;
+          danger_rating?: number | null;
+          date: string;
+          def_rating?: number | null;
+          discipline_rating?: number | null;
+          finishing_rating?: number | null;
+          ga60?: number | null;
+          gf60?: number | null;
+          goalie_rating?: number | null;
+          off_rating?: number | null;
+          pace_rating?: number | null;
+          pace60?: number | null;
+          pk_tier?: number | null;
+          pp_tier?: number | null;
+          sa60?: number | null;
+          sf60?: number | null;
+          special_rating?: number | null;
+          team_abbreviation: string;
+          trend10?: number | null;
+          variance_flag?: number | null;
+          xga60?: number | null;
+          xgf60?: number | null;
+        };
+        Update: {
+          created_at?: string | null;
+          danger_rating?: number | null;
+          date?: string;
+          def_rating?: number | null;
+          discipline_rating?: number | null;
+          finishing_rating?: number | null;
+          ga60?: number | null;
+          gf60?: number | null;
+          goalie_rating?: number | null;
+          off_rating?: number | null;
+          pace_rating?: number | null;
+          pace60?: number | null;
+          pk_tier?: number | null;
+          pp_tier?: number | null;
+          sa60?: number | null;
+          sf60?: number | null;
+          special_rating?: number | null;
+          team_abbreviation?: string;
+          trend10?: number | null;
+          variance_flag?: number | null;
+          xga60?: number | null;
+          xgf60?: number | null;
+        };
+        Relationships: [];
+      };
+      team_power_ratings_daily__new: {
+        Row: {
+          created_at: string | null;
+          danger_rating: number | null;
+          date: string;
+          def_rating: number | null;
+          discipline_rating: number | null;
+          finishing_rating: number | null;
+          ga60: number | null;
+          gf60: number | null;
+          goalie_rating: number | null;
+          off_rating: number | null;
+          pace_rating: number | null;
+          pace60: number | null;
+          pk_tier: number | null;
+          pp_tier: number | null;
+          sa60: number | null;
+          sf60: number | null;
+          special_rating: number | null;
+          team_abbreviation: string;
+          trend10: number | null;
+          variance_flag: number | null;
+          xga60: number | null;
+          xgf60: number | null;
+        };
+        Insert: {
+          created_at?: string | null;
+          danger_rating?: number | null;
+          date: string;
+          def_rating?: number | null;
+          discipline_rating?: number | null;
+          finishing_rating?: number | null;
+          ga60?: number | null;
+          gf60?: number | null;
+          goalie_rating?: number | null;
+          off_rating?: number | null;
+          pace_rating?: number | null;
+          pace60?: number | null;
+          pk_tier?: number | null;
+          pp_tier?: number | null;
+          sa60?: number | null;
+          sf60?: number | null;
+          special_rating?: number | null;
+          team_abbreviation: string;
+          trend10?: number | null;
+          variance_flag?: number | null;
+          xga60?: number | null;
+          xgf60?: number | null;
+        };
+        Update: {
+          created_at?: string | null;
+          danger_rating?: number | null;
+          date?: string;
+          def_rating?: number | null;
+          discipline_rating?: number | null;
+          finishing_rating?: number | null;
+          ga60?: number | null;
+          gf60?: number | null;
+          goalie_rating?: number | null;
+          off_rating?: number | null;
+          pace_rating?: number | null;
+          pace60?: number | null;
+          pk_tier?: number | null;
+          pp_tier?: number | null;
+          sa60?: number | null;
+          sf60?: number | null;
+          special_rating?: number | null;
+          team_abbreviation?: string;
+          trend10?: number | null;
+          variance_flag?: number | null;
+          xga60?: number | null;
+          xgf60?: number | null;
+        };
+        Relationships: [];
+      };
       team_season: {
         Row: {
           created_at: string;
@@ -29474,60 +30464,6 @@ export type Database = {
         };
         Relationships: [];
       };
-      team_power_ratings_daily: {
-        Row: {
-          created_at: string | null;
-          danger_rating: number | null;
-          date: string | null;
-          def_rating: number | null;
-          discipline_rating: number | null;
-          finishing_rating: number | null;
-          ga60: number | null;
-          gf60: number | null;
-          goalie_rating: number | null;
-          off_rating: number | null;
-          pace_rating: number | null;
-          pace60: number | null;
-          pk_tier: number | null;
-          pp_tier: number | null;
-          sa60: number | null;
-          sf60: number | null;
-          special_rating: number | null;
-          team_abbreviation: string | null;
-          trend10: number | null;
-          variance_flag: number | null;
-          xga60: number | null;
-          xgf60: number | null;
-        };
-        Relationships: [];
-      };
-      team_power_ratings_daily__new: {
-        Row: {
-          created_at: string | null;
-          danger_rating: number | null;
-          date: string | null;
-          def_rating: number | null;
-          discipline_rating: number | null;
-          finishing_rating: number | null;
-          ga60: number | null;
-          gf60: number | null;
-          goalie_rating: number | null;
-          off_rating: number | null;
-          pace_rating: number | null;
-          pace60: number | null;
-          pk_tier: number | null;
-          pp_tier: number | null;
-          sa60: number | null;
-          sf60: number | null;
-          special_rating: number | null;
-          team_abbreviation: string | null;
-          trend10: number | null;
-          variance_flag: number | null;
-          xga60: number | null;
-          xgf60: number | null;
-        };
-        Relationships: [];
-      };
       vw_active_teams: {
         Row: {
           app_abbrev: string | null;
@@ -30127,8 +31063,10 @@ export type Database = {
     };
     Functions: {
       calculate_goalie_start_projections: {
-        Args: { target_date: string };
-        Returns: undefined;
+        Args: {
+          target_date: string;
+        };
+        Returns: void;
       };
       acquire_lock: {
         Args: { job_name_param: string; timeout_interval: unknown };

@@ -11,6 +11,9 @@ interface CronReportEmailProps {
     jobsOkLast: number;
     jobsFailingLast: number;
     jobsUnknownLast: number;
+    warnZeroRows: number;
+    warnUnknown: number;
+    warnSlow: number;
   };
   jobs: Array<{
     jobName: string;
@@ -24,14 +27,23 @@ interface CronReportEmailProps {
     auditFailures: number;
     rowsLast: number | null;
     rowsTotal: number | null;
+    lastDurationMs: number | null;
+    avgDurationMs: number | null;
   }>;
   recentFailures: Array<{
     jobName: string;
     runTimeDisplay: string;
     rowsAffected: number | null;
     message: string;
+    durationMs: number | null;
   }>;
   fetchErrors: string[];
+  warnings: {
+    slowMsThreshold: number;
+    zeroRowsJobs: string[];
+    unknownStatusJobs: string[];
+    slowJobs: Array<{ jobName: string; durationMs: number }>;
+  };
 }
 
 export const CronReportEmail: React.FC<CronReportEmailProps> = ({
@@ -39,7 +51,8 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
   summary,
   jobs,
   recentFailures,
-  fetchErrors
+  fetchErrors,
+  warnings
 }) => {
   const container: React.CSSProperties = {
     fontFamily: "system-ui, sans-serif",
@@ -110,6 +123,38 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
         {summary.auditUnknown ? ` • ${summary.auditUnknown} unknown` : ""}
       </div>
 
+      {summary.warnZeroRows + summary.warnUnknown + summary.warnSlow > 0 ? (
+        <div style={{ margin: "0 0 16px" }}>
+          <div style={{ fontWeight: 800 }}>Warnings</div>
+          <div style={{ marginTop: 6, color: "#374151" }}>
+            {summary.warnZeroRows ? `${summary.warnZeroRows} zero-row` : ""}
+            {summary.warnZeroRows && (summary.warnUnknown || summary.warnSlow)
+              ? " • "
+              : ""}
+            {summary.warnUnknown ? `${summary.warnUnknown} unknown` : ""}
+            {summary.warnUnknown && summary.warnSlow ? " • " : ""}
+            {summary.warnSlow
+              ? `${summary.warnSlow} slow (>${Math.round(
+                  warnings.slowMsThreshold / 1000
+                )}s)`
+              : ""}
+          </div>
+          <ul style={{ margin: "8px 0 0", paddingLeft: 18 }}>
+            {warnings.zeroRowsJobs.slice(0, 6).map((j) => (
+              <li key={`zero-${j}`}>Zero rows: {j}</li>
+            ))}
+            {warnings.unknownStatusJobs.slice(0, 6).map((j) => (
+              <li key={`unk-${j}`}>Unknown status: {j}</li>
+            ))}
+            {warnings.slowJobs.slice(0, 6).map((j) => (
+              <li key={`slow-${j.jobName}`}>
+                Slow: {j.jobName} ({Math.round(j.durationMs / 1000)}s)
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
       {fetchErrors.length > 0 ? (
         <div style={{ margin: "0 0 16px" }}>
           <div style={{ fontWeight: 700, color: "#991B1B" }}>
@@ -134,6 +179,7 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
                 <tr style={{ background: "#F9FAFB" }}>
                   <th align="left">Job</th>
                   <th align="left">Run Time</th>
+                  <th align="right">Duration</th>
                   <th align="right">Rows</th>
                   <th align="left">Message</th>
                 </tr>
@@ -143,6 +189,11 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
                   <tr key={`${f.jobName}-${f.runTimeDisplay}-${i}`}>
                     <td style={{ fontWeight: 700 }}>{f.jobName}</td>
                     <td>{f.runTimeDisplay}</td>
+                    <td align="right">
+                      {typeof f.durationMs === "number"
+                        ? `${Math.round(f.durationMs / 1000)}s`
+                        : "—"}
+                    </td>
                     <td align="right">{f.rowsAffected ?? "—"}</td>
                     <td style={{ color: "#991B1B" }}>{f.message}</td>
                   </tr>
@@ -165,6 +216,7 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
               <th align="left">Status</th>
               <th align="left">Job</th>
               <th align="left">Last Run</th>
+              <th align="right">Duration</th>
               <th align="right">Rows (last)</th>
               <th align="right">Rows (24h)</th>
               <th align="right">OK</th>
@@ -185,6 +237,11 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
                 <td>{badge(j.lastStatus, j.lastStatusSource)}</td>
                 <td style={{ fontWeight: 700 }}>{j.jobName}</td>
                 <td>{j.lastTimeDisplay}</td>
+                <td align="right">
+                  {typeof j.lastDurationMs === "number"
+                    ? `${Math.round(j.lastDurationMs / 1000)}s`
+                    : "—"}
+                </td>
                 <td align="right">{j.rowsLast ?? "—"}</td>
                 <td align="right">{j.rowsTotal ?? "—"}</td>
                 <td align="right">{j.auditSuccesses}</td>

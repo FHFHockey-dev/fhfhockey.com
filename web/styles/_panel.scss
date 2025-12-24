@@ -40,8 +40,8 @@
 
 // Shared title header style (modernized to mirror GameGrid aesthetic)
 @mixin panel-title(
-  $padding-y: 16px,
-  $padding-x: 18px,
+  $padding-y: 4px,
+  $padding-x: 5px,
   $gradient-dark: v.$background-dark,
   $gradient-light: #{"#{v.$background-dark}"}
 ) {
@@ -54,11 +54,10 @@
   position: relative;
   width: 100%;
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
   font-weight: 300;
   font-size: clamp(1.15rem, 3.5vw, 1.4rem);
   border-bottom: 2px solid transparent;

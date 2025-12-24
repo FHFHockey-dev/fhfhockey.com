@@ -7,6 +7,7 @@ interface AuditEntry {
   rows_affected: number | null;
   status: "success" | "failure" | "unknown";
   message: string | null;
+  duration_ms?: number | null;
 }
 
 interface CronAuditEmailProps {
@@ -74,6 +75,7 @@ export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({
           <th align="left">Status</th>
           <th align="left">Job</th>
           <th align="left">Run Time</th>
+          <th align="right">Duration</th>
           <th align="right">Rows</th>
           <th align="left">Message</th>
         </tr>
@@ -91,6 +93,11 @@ export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({
             <td>{badge(a.status)}</td>
             <td style={{ fontWeight: 600 }}>{a.job_name}</td>
             <td>{new Date(a.run_time).toLocaleString()}</td>
+            <td align="right">
+              {typeof a.duration_ms === "number"
+                ? `${Math.round(a.duration_ms / 1000)}s`
+                : "—"}
+            </td>
             <td align="right">{a.rows_affected ?? "—"}</td>
             <td>{a.message ?? "—"}</td>
           </tr>

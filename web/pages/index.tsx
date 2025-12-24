@@ -287,8 +287,6 @@ const Home: NextPage = ({
 
     return (
       <tr key={`${injury.player?.id ?? idx}-${idx}`}>
-        {" "}
-        {/* More robust key */}
         <td className={styles.dateColumn}>
           {injury.date ? moment(injury.date).format("M/D/YY") : "N/A"}
         </td>

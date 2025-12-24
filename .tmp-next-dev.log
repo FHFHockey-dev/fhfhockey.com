@@ -1,0 +1,71 @@
+   ▲ Next.js 15.5.9 (Turbopack)
+   - Local:        http://127.0.0.1:3015
+   - Network:      http://127.0.0.1:3015
+   - Environments: .env.local, .env.development
+   - Experiments (use with caution):
+     ✓ externalDir
+
+ ✓ Starting...
+ ⚠ Duplicate page detected. pages/api/WGOAverages/calculateAverages.js and pages/api/WGOAverages/calculateAverages.ts resolve to /api/WGOAverages/calculateAverages
+ ⚠ Duplicate page detected. pages/api/WGOAverages/calculateAverages.js and pages/api/WGOAverages/calculateAverages.ts resolve to /api/WGOAverages/calculateAverages
+ ✓ Ready in 601ms
+ ○ Compiling / ...
+ ✓ Compiled / in 1260ms
+ ⚠ ./components/Layout/MobileMenu/MobileMenu.module.scss
+Issue while running loader
+SassWarning: Deprecation Warning on line 24, column 4 of file:///Users/tim/Desktop/fhfhockey.com/web/components/Layout/MobileMenu/MobileMenu.module.scss:24:4:
+Global built-in functions are deprecated and will be removed in Dart Sass 3.0.0.
+Use color.adjust instead.
+
+More info and automated migrator: https://sass-lang.com/d/import
+
+24 |     darken(v.$bg-dark, 5%) 100%
+
+
+components/Layout/MobileMenu/MobileMenu.module.scss 25:5  root stylesheet
+
+
+Import trace:
+  SSR:
+    ./components/Layout/MobileMenu/MobileMenu.module.scss
+    ./components/Layout/MobileMenu/MobileMenu.tsx
+    ./components/Layout/Header/Header.tsx
+    ./components/Layout/Layout.tsx
+    ./pages/_app.tsx
+
+
+ ⚠ ./components/Layout/MobileMenu/MobileMenu.module.scss
+Issue while running loader
+SassWarning: Deprecation Warning on line 24, column 4 of file:///Users/tim/Desktop/fhfhockey.com/web/components/Layout/MobileMenu/MobileMenu.module.scss:24:4:
+darken() is deprecated. Suggestions:
+
+color.scale($color, $lightness: -39.84375%)
+color.adjust($color, $lightness: -5%)
+
+More info: https://sass-lang.com/d/color-functions
+
+24 |     darken(v.$bg-dark, 5%) 100%
+
+
+components/Layout/MobileMenu/MobileMenu.module.scss 25:5  root stylesheet
+
+
+Import trace:
+  SSR:
+    ./components/Layout/MobileMenu/MobileMenu.module.scss
+    ./components/Layout/MobileMenu/MobileMenu.tsx
+    ./components/Layout/Header/Header.tsx
+    ./components/Layout/Layout.tsx
+    ./pages/_app.tsx
+
+
+Fetching current season...
+[season] GET http://localhost:3000/api/v1/season
+Found games for today (2025-12-17)
+Fetching current season...
+[season] GET http://localhost:3000/api/v1/season
+Server passed nextGameDate: 2025-12-17
+Client moment().format('YYYY-MM-DD'): 2025-12-17
+Client currentDate initialized to: 2025-12-17
+ GET / 200 in 2248ms
+[?25h

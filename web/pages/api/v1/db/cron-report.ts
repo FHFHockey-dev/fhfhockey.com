@@ -83,6 +83,8 @@ type JobSummary = {
   auditFailures: number;
   rowsLast: number | null;
   rowsTotal: number | null;
+  lastDurationMs: number | null;
+  avgDurationMs: number | null;
 };
 
 function normalizeStatus(value: unknown): NormalizedStatus {
@@ -114,6 +116,51 @@ function extractDetailsMessage(details: unknown): string | null {
   } catch {
     return null;
   }
+}
+
+type ParsedAuditDetails = {
+  durationMs: number | null;
+  statusCode: number | null;
+  url: string | null;
+  method: string | null;
+  error: string | null;
+};
+
+function parseAuditDetails(details: unknown): ParsedAuditDetails {
+  const empty: ParsedAuditDetails = {
+    durationMs: null,
+    statusCode: null,
+    url: null,
+    method: null,
+    error: null
+  };
+
+  if (!details) return empty;
+
+  let obj: any = details;
+  if (typeof details === "string") {
+    try {
+      obj = JSON.parse(details);
+    } catch {
+      return empty;
+    }
+  }
+
+  if (!obj || typeof obj !== "object") return empty;
+
+  return {
+    durationMs:
+      typeof obj.durationMs === "number" && Number.isFinite(obj.durationMs)
+        ? obj.durationMs
+        : null,
+    statusCode:
+      typeof obj.statusCode === "number" && Number.isFinite(obj.statusCode)
+        ? obj.statusCode
+        : null,
+    url: typeof obj.url === "string" ? obj.url : null,
+    method: typeof obj.method === "string" ? obj.method : null,
+    error: typeof obj.error === "string" ? obj.error : null
+  };
 }
 
 export default async function handler(
@@ -159,7 +206,8 @@ export default async function handler(
     rawStatus: a.status as unknown,
     status: normalizeStatus(a.status),
     details: a.details as unknown,
-    detailsMessage: extractDetailsMessage(a.details)
+    detailsMessage: extractDetailsMessage(a.details),
+    parsed: parseAuditDetails(a.details)
   }));
 
   const runRows = (runs ?? []).map((r: any) => ({
@@ -201,6 +249,14 @@ export default async function handler(
           ? jobAudits.reduce((acc, a) => acc + (a.rowsAffected ?? 0), 0)
           : null;
 
+      const durations = jobAudits
+        .map((a) => a.parsed.durationMs)
+        .filter((d): d is number => typeof d === "number" && Number.isFinite(d));
+      const avgDurationMs =
+        durations.length > 0
+          ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length)
+          : null;
+
       const lastStatus: NormalizedStatus =
         lastAudit?.status ?? lastRun?.status ?? "unknown";
       const lastStatusSource: JobSummary["lastStatusSource"] = lastAudit
@@ -228,7 +284,9 @@ export default async function handler(
         auditSuccesses,
         auditFailures,
         rowsLast: lastAudit?.rowsAffected ?? null,
-        rowsTotal
+        rowsTotal,
+        lastDurationMs: lastAudit?.parsed.durationMs ?? null,
+        avgDurationMs
       };
     })
     .sort((a, b) => {
@@ -246,8 +304,20 @@ export default async function handler(
       jobName: a.jobName,
       runTimeDisplay: new Date(a.time).toLocaleString(),
       rowsAffected: a.rowsAffected,
-      message: a.detailsMessage ?? "—"
+      message: a.detailsMessage ?? "—",
+      durationMs: a.parsed.durationMs
     }));
+
+  const WARN_ZERO_ROWS = jobSummaries
+    .filter((j) => j.rowsLast === 0 && j.lastStatus !== "failure")
+    .map((j) => j.jobName);
+  const WARN_UNKNOWN = jobSummaries
+    .filter((j) => j.lastStatus === "unknown")
+    .map((j) => j.jobName);
+  const WARN_SLOW_MS = 60_000;
+  const WARN_SLOW = jobSummaries
+    .filter((j) => (j.lastDurationMs ?? 0) > WARN_SLOW_MS)
+    .map((j) => ({ jobName: j.jobName, durationMs: j.lastDurationMs! }));
 
   const counts = {
     jobs: jobSummaries.length,
@@ -259,7 +329,10 @@ export default async function handler(
     jobsFailingLast: jobSummaries.filter((j) => j.lastStatus === "failure")
       .length,
     jobsUnknownLast: jobSummaries.filter((j) => j.lastStatus === "unknown")
-      .length
+      .length,
+    warnZeroRows: WARN_ZERO_ROWS.length,
+    warnUnknown: WARN_UNKNOWN.length,
+    warnSlow: WARN_SLOW.length
   };
 
   // 3. Send Cron Job Audit Email
@@ -269,7 +342,8 @@ export default async function handler(
       run_time: a.time,
       rows_affected: a.rowsAffected,
       status: a.status,
-      message: a.detailsMessage
+      message: a.detailsMessage,
+      duration_ms: a.parsed.durationMs
     }));
 
     try {
@@ -318,7 +392,13 @@ export default async function handler(
           summary: counts,
           jobs: jobSummaries,
           recentFailures: failures,
-          fetchErrors: errors
+          fetchErrors: errors,
+          warnings: {
+            slowMsThreshold: WARN_SLOW_MS,
+            zeroRowsJobs: WARN_ZERO_ROWS,
+            unknownStatusJobs: WARN_UNKNOWN,
+            slowJobs: WARN_SLOW
+          }
         })
       });
 

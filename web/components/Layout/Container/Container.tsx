@@ -5,13 +5,22 @@ import styles from "./Container.module.scss";
 
 type ContainerProps = {
   className?: string;
+  contentVariant?: "default" | "full";
   children: React.ReactNode;
 };
 
 const Container = forwardRef<HTMLElement, ContainerProps>(
-  ({ children, className }, ref) => {
+  ({ children, className, contentVariant = "default" }, ref) => {
     return (
-      <main ref={ref} className={classNames(styles.pageContent, className)}>
+      <main
+        ref={ref}
+        className={classNames(
+          contentVariant === "full"
+            ? styles.pageContentFull
+            : styles.pageContent,
+          className
+        )}
+      >
         {children}
       </main>
     );

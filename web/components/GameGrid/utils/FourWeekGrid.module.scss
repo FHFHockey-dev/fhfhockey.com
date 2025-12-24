@@ -8,19 +8,22 @@
 /* --- Main Container --- */
 .container {
   width: 100%;
-  margin: 0 auto;
+  margin: 0;
   // transition: margin-bottom v.$transition-duration v.$transition-easing;
   display: flex;
   flex-direction: column;
   height: 100%;
   overflow: hidden; // Add overflow hidden for radius clipping
-  @include panel.panel-container();
+  outline: none;
+  border: none;
+  border-radius: inherit;
+  background: transparent;
 
   // --- Mobile Specific Framing & Styling ---
   @media (max-width: #{v.$breakpoint-tablet - 1px}) {
-    outline: 8px solid v.$background-dark; // Mobile Frame Outline
-    border: 3px solid v.$background-light; // Mobile Frame Border
-    border-radius: v.$border-radius; // Mobile Frame Radius
+    outline: none;
+    border: none;
+    border-radius: inherit;
     height: auto; // Reset height on mobile unless explicitly needed
 
     // Mobile Minimized State
@@ -35,6 +38,11 @@
 
   // On desktop, allow filling parent height when NOT minimized
   @media (min-width: v.$breakpoint-desktop) {
+    // The GameGrid dashboard provides the unified framing on desktop.
+    outline: none;
+    border-radius: 0;
+    border: none;
+    background: transparent;
     &:not(.minimized) {
       height: 100%;
     }
@@ -48,17 +56,24 @@
 .titleHeader {
   @include panel.panel-title;
   flex-shrink: 0;
+  text-align: center;
+  // Reverse the default panel-title header gradient direction for 4WG.
+  background-image: linear-gradient(
+    315deg,
+    v.$background-dark,
+    color.adjust(v.$background-dark, $lightness: 4%)
+  );
 }
 
 .titleText {
   font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-size: clamp(1.2rem, 4vw, 1.5rem);
-  // Inherit weight from panel-title (300) to match Game Grid
+  letter-spacing: 0.3em;
+  font-size: 1rem; // Reduced font size
+  // Inherit weight from panel-title (300) for cohesion with Game Grid
   color: v.$text-color-primary;
   flex-grow: 1;
-  text-align: left;
+  text-align: center;
 }
 
 .spanColorBlue {
@@ -91,6 +106,8 @@
   &::-webkit-scrollbar {
     display: none;
   }
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 /* --- Base Table Styling --- */
@@ -120,14 +137,14 @@
   font-weight: 600;
   padding: 6px 4px; // tighter
   font-family: v.$font-family-primary;
-  font-size: 11px;
+  font-size: 12px; // Standardized to 12px
   text-transform: uppercase;
   letter-spacing: 0.3px;
   border: 0.5px solid v.$border-color-secondary;
   border-top: none;
   white-space: normal;
   vertical-align: middle;
-  height: 34px;
+  height: 30px; // Condensed height
 
   // Column Widths: Team (20%) + 4 Metrics (20% each) = 100%
   width: 20%;
@@ -181,6 +198,7 @@
 /* --- Table Body Styling --- */
 .table tbody tr {
   transition: background-color v.$transition-duration v.$transition-easing;
+  height: 30px; // Match OpponentMetricsTable for aligned panel heights
   &:nth-child(even) {
     background-color: v.$background-light;
   }
@@ -194,11 +212,11 @@
 
 .table td {
   border: 0.5px solid v.$border-color-secondary;
-  padding: 5px 4px;
+  padding: 0; // Condensed padding
   font-family: v.$font-family-primary;
   vertical-align: middle;
-  font-size: 11.5px;
-  height: 32px;
+  font-size: 12px; // Standardized to 12px
+  height: 30px; // Condensed height
 
   @media (max-width: #{v.$breakpoint-tablet - 1px}) {
     padding: 3px 2px;
@@ -241,7 +259,7 @@
   font-size: 10.5px;
   border-top: 2px solid v.$border-color-secondary;
   padding: 4px 4px;
-  height: 26px;
+  height: 30px;
 
   &:first-child {
     text-align: left;
@@ -260,4 +278,16 @@
   text-align: center;
   color: v.$text-color-secondary;
   background-color: v.$background-dark;
+}
+
+// Top/bottom-10 cell shading (rank 1 = strongest intensity)
+@for $i from 1 through 10 {
+  .rankGood#{$i} {
+    $alpha: 0.32 - ($i - 1) * 0.02;
+    background-color: rgba(v.$schedule-green, $alpha);
+  }
+  .rankBad#{$i} {
+    $alpha: 0.32 - ($i - 1) * 0.02;
+    background-color: rgba(v.$schedule-red, $alpha);
+  }
 }

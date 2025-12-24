@@ -3,6 +3,7 @@
 import { useTeamsMap } from "hooks/useTeams";
 
 import React, { createContext, useContext } from "react";
+import type { Team } from "lib/NHL/types";
 
 type ContextValue = {
   teams: ReturnType<typeof useTeamsMap>;
@@ -26,7 +27,7 @@ export function useTeams() {
   return teams;
 }
 
-export function useTeam(id: number) {
+export function useTeam(id: number): Team | undefined {
   const { teams } = useContext(context);
-  return teams[id] ?? {};
+  return teams[id];
 }

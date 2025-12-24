@@ -1336,10 +1336,8 @@ const MobileTable: React.FC<MobileTableProps> = ({
             return (
               <React.Fragment key={player.nhl_player_id}>
                 <tr>
-                  {" "}
                   {/* Main Row */}
                   <td>
-                    {" "}
                     {/* Expand Button */}
                     <button
                       onClick={() => toggleExpand(player.nhl_player_id)}
