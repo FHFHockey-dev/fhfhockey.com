@@ -1,4 +1,5 @@
-export function parseClockToSeconds(clock: string): number {
+export function parseClockToSeconds(clock: string | null | undefined): number {
+  if (typeof clock !== "string") return 0;
   const trimmed = clock.trim();
   if (!trimmed) return 0;
   const parts = trimmed.split(":");
@@ -15,4 +16,3 @@ export function formatSecondsToClock(totalSeconds: number): string {
   const seconds = clamped % 60;
   return `${minutes}:${String(seconds).padStart(2, "0")}`;
 }
-
