@@ -31062,6 +31062,12 @@ export type Database = {
       }
     }
     Functions: {
+      calculate_goalie_start_projections: {
+        Args: {
+          target_date: string
+        }
+        Returns: void
+      }
       acquire_lock: {
         Args: { job_name_param: string; timeout_interval: unknown }
         Returns: boolean
