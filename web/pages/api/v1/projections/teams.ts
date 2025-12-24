@@ -30,6 +30,7 @@ function parseQuery(req: NextApiRequest) {
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const startedAt = Date.now();
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET");
     return res.status(405).json({ error: "Method not allowed" });
@@ -54,6 +55,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (error) throw error;
 
     return res.status(200).json({
+      durationMs: Date.now() - startedAt,
       runId,
       asOfDate: q.date,
       horizonGames: q.horizon,
@@ -62,6 +64,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   } catch (e) {
     const statusCode = (e as any)?.statusCode ?? 500;
     return res.status(statusCode).json({
+      durationMs: Date.now() - startedAt,
       error: (e as any)?.message ?? String(e),
       details: (e as any)?.details
     });

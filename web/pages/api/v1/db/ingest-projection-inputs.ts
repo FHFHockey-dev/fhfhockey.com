@@ -9,6 +9,9 @@ type Result = {
   success: boolean;
   startDate: string;
   endDate: string;
+  durationMs: number;
+  timedOut: boolean;
+  maxDurationMs: number;
   gamesProcessed: number;
   pbpGamesUpserted: number;
   pbpPlaysUpserted: number;
@@ -65,12 +68,16 @@ async function listGamesInRange(startDate: string, endDate: string) {
 }
 
 async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
+  const startedAt = Date.now();
   if (req.method !== "POST" && req.method !== "GET") {
     res.setHeader("Allow", ["GET", "POST"]);
     return res.status(405).json({
       success: false,
       startDate: "",
       endDate: "",
+      durationMs: Date.now() - startedAt,
+      timedOut: false,
+      maxDurationMs: 0,
       gamesProcessed: 0,
       pbpGamesUpserted: 0,
       pbpPlaysUpserted: 0,
@@ -83,6 +90,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
   const startDate = getParam(req, "startDate") ?? isoDateOnly(new Date().toISOString());
   const endDate = getParam(req, "endDate") ?? startDate;
   const force = (getParam(req, "force") ?? "false").toLowerCase() === "true";
+  const maxDurationMs = Number(getParam(req, "maxDurationMs") ?? 270_000); // safety: 4.5 minutes
+  const deadlineMs = startedAt + (Number.isFinite(maxDurationMs) ? maxDurationMs : 270_000);
 
   const games = await listGamesInRange(startDate, endDate);
 
@@ -90,6 +99,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
     success: true,
     startDate,
     endDate,
+    durationMs: 0,
+    timedOut: false,
+    maxDurationMs: Number.isFinite(maxDurationMs) ? maxDurationMs : 270_000,
     gamesProcessed: 0,
     pbpGamesUpserted: 0,
     pbpPlaysUpserted: 0,
@@ -99,6 +111,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
   };
 
   for (const g of games) {
+    if (Date.now() > deadlineMs) {
+      result.success = false;
+      result.timedOut = true;
+      break;
+    }
     try {
       const gameId = g.id;
       const pbpExists = force ? false : await hasPbp(gameId);
@@ -133,10 +150,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
     }
   }
 
+  result.durationMs = Date.now() - startedAt;
   return res.status(200).json(result);
 }
 
 export default withCronJobAudit(handler, {
   jobName: "ingest-projection-inputs"
 });
-

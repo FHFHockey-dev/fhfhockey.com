@@ -25,6 +25,7 @@ function isoDateOnly(d: string): string {
 }
 
 async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
+  const startedAt = Date.now();
   if (req.method !== "POST" && req.method !== "GET") {
     res.setHeader("Allow", ["GET", "POST"]);
     return res.status(405).json({ success: false, error: "Method not allowed" });
@@ -34,7 +35,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
 
   try {
     const out = await runProjectionV2ForDate(asOfDate);
-    return res.status(200).json({ success: true, asOfDate, ...out });
+    return res
+      .status(200)
+      .json({ success: true, asOfDate, durationMs: Date.now() - startedAt, ...out });
   } catch (e) {
     return res
       .status(500)
@@ -43,4 +46,3 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
 }
 
 export default withCronJobAudit(handler, { jobName: "run-projection-v2" });
-

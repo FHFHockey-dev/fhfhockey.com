@@ -19,6 +19,7 @@ function getQueryStringParam(
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const startedAt = Date.now();
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET");
     return res.status(405).json({ error: "Method not allowed" });
@@ -45,9 +46,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { data, error } = await query.maybeSingle();
     if (error) throw error;
 
-    if (!data) return res.status(404).json({ error: "No runs found" });
-    return res.status(200).json({ data });
+    if (!data) return res.status(404).json({ durationMs: Date.now() - startedAt, error: "No runs found" });
+    return res.status(200).json({ durationMs: Date.now() - startedAt, data });
   } catch (e) {
-    return res.status(500).json({ error: (e as any)?.message ?? String(e) });
+    return res
+      .status(500)
+      .json({ durationMs: Date.now() - startedAt, error: (e as any)?.message ?? String(e) });
   }
 }

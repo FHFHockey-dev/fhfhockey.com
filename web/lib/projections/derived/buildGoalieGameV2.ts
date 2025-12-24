@@ -25,9 +25,10 @@ function isShotAgainstEvent(typeDescKey: string | null): boolean {
 export async function buildGoalieGameV2ForDateRange(opts: {
   startDate: string;
   endDate: string;
+  deadlineMs?: number;
 }): Promise<{ gamesProcessed: number; rowsUpserted: number }> {
   assertSupabase();
-  const { startDate, endDate } = opts;
+  const { startDate, endDate, deadlineMs } = opts;
 
   const { data: games, error: gamesErr } = await supabase
     .from("games")
@@ -40,6 +41,7 @@ export async function buildGoalieGameV2ForDateRange(opts: {
   let rowsUpserted = 0;
 
   for (const game of (games ?? []) as GameRow[]) {
+    if (deadlineMs != null && Date.now() > deadlineMs) break;
     const { data: plays, error: playsErr } = await supabase
       .from("pbp_plays")
       .select("gameid,typedesckey,eventownerteamid,goalieinnetid")

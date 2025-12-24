@@ -60,9 +60,10 @@ function addToSplit(split: SplitCounts, strength: "es" | "pp" | "pk", n = 1) {
 export async function buildPlayerGameStrengthV2ForDateRange(opts: {
   startDate: string;
   endDate: string;
+  deadlineMs?: number;
 }): Promise<{ gamesProcessed: number; rowsUpserted: number }> {
   assertSupabase();
-  const { startDate, endDate } = opts;
+  const { startDate, endDate, deadlineMs } = opts;
 
   const { data: games, error: gamesErr } = await supabase
     .from("games")
@@ -75,6 +76,7 @@ export async function buildPlayerGameStrengthV2ForDateRange(opts: {
   let rowsUpserted = 0;
 
   for (const game of (games ?? []) as GameRow[]) {
+    if (deadlineMs != null && Date.now() > deadlineMs) break;
     const gameId = game.id;
     const gameDate = game.date;
 
@@ -197,9 +199,10 @@ export async function buildPlayerGameStrengthV2ForDateRange(opts: {
 export async function buildTeamGameStrengthV2ForDateRange(opts: {
   startDate: string;
   endDate: string;
+  deadlineMs?: number;
 }): Promise<{ gamesProcessed: number; rowsUpserted: number }> {
   assertSupabase();
-  const { startDate, endDate } = opts;
+  const { startDate, endDate, deadlineMs } = opts;
 
   const { data: games, error: gamesErr } = await supabase
     .from("games")
@@ -212,6 +215,7 @@ export async function buildTeamGameStrengthV2ForDateRange(opts: {
   let rowsUpserted = 0;
 
   for (const game of (games ?? []) as GameRow[]) {
+    if (deadlineMs != null && Date.now() > deadlineMs) break;
     const gameId = game.id;
     const gameDate = game.date;
 
