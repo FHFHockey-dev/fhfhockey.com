@@ -12,11 +12,26 @@ type Result = {
   durationMs: number;
   timedOut: boolean;
   maxDurationMs: number;
+  gamesTotal: number;
   gamesProcessed: number;
   pbpGamesUpserted: number;
   pbpPlaysUpserted: number;
   shiftRowsUpserted: number;
   skipped: number;
+  skipReasons: {
+    alreadyHadPbpAndShifts: number;
+    alreadyHadPbpOnly: number;
+    alreadyHadShiftTotalsOnly: number;
+  };
+  debug?: {
+    sampled: Array<{
+      gameId: number;
+      date: string;
+      pbpExists: boolean;
+      shiftTotalsExist: boolean;
+      action: "skipped" | "ingested";
+    }>;
+  };
   errors: Array<{ gameId: number; message: string }>;
 };
 
@@ -78,11 +93,17 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
       durationMs: Date.now() - startedAt,
       timedOut: false,
       maxDurationMs: 0,
+      gamesTotal: 0,
       gamesProcessed: 0,
       pbpGamesUpserted: 0,
       pbpPlaysUpserted: 0,
       shiftRowsUpserted: 0,
       skipped: 0,
+      skipReasons: {
+        alreadyHadPbpAndShifts: 0,
+        alreadyHadPbpOnly: 0,
+        alreadyHadShiftTotalsOnly: 0
+      },
       errors: [{ gameId: -1 as any, message: "Method not allowed" }]
     });
   }
@@ -90,6 +111,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
   const startDate = getParam(req, "startDate") ?? isoDateOnly(new Date().toISOString());
   const endDate = getParam(req, "endDate") ?? startDate;
   const force = (getParam(req, "force") ?? "false").toLowerCase() === "true";
+  const debug = (getParam(req, "debug") ?? "false").toLowerCase() === "true";
+  const debugLimit = Number(getParam(req, "debugLimit") ?? 50);
   const maxDurationMs = Number(getParam(req, "maxDurationMs") ?? 270_000); // safety: 4.5 minutes
   const deadlineMs = startedAt + (Number.isFinite(maxDurationMs) ? maxDurationMs : 270_000);
 
@@ -102,11 +125,24 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
     durationMs: 0,
     timedOut: false,
     maxDurationMs: Number.isFinite(maxDurationMs) ? maxDurationMs : 270_000,
+    gamesTotal: games.length,
     gamesProcessed: 0,
     pbpGamesUpserted: 0,
     pbpPlaysUpserted: 0,
     shiftRowsUpserted: 0,
     skipped: 0,
+    skipReasons: {
+      alreadyHadPbpAndShifts: 0,
+      alreadyHadPbpOnly: 0,
+      alreadyHadShiftTotalsOnly: 0
+    },
+    ...(debug
+      ? {
+          debug: {
+            sampled: []
+          }
+        }
+      : {}),
     errors: []
   };
 
@@ -123,8 +159,25 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
 
       if (pbpExists && shiftsExist) {
         result.skipped += 1;
+        result.skipReasons.alreadyHadPbpAndShifts += 1;
+        if (
+          debug &&
+          result.debug &&
+          result.debug.sampled.length < (Number.isFinite(debugLimit) ? debugLimit : 50)
+        ) {
+          result.debug.sampled.push({
+            gameId,
+            date: g.date,
+            pbpExists,
+            shiftTotalsExist: shiftsExist,
+            action: "skipped"
+          });
+        }
         continue;
       }
+
+      if (pbpExists && !shiftsExist) result.skipReasons.alreadyHadPbpOnly += 1;
+      if (!pbpExists && shiftsExist) result.skipReasons.alreadyHadShiftTotalsOnly += 1;
 
       let pbpPlaysUpserted = 0;
       if (!pbpExists) {
@@ -141,6 +194,20 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
       }
 
       result.gamesProcessed += 1;
+
+      if (
+        debug &&
+        result.debug &&
+        result.debug.sampled.length < (Number.isFinite(debugLimit) ? debugLimit : 50)
+      ) {
+        result.debug.sampled.push({
+          gameId,
+          date: g.date,
+          pbpExists,
+          shiftTotalsExist: shiftsExist,
+          action: "ingested"
+        });
+      }
     } catch (e) {
       result.success = false;
       result.errors.push({
