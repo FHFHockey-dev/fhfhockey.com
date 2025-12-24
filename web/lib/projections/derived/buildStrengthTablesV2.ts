@@ -184,7 +184,7 @@ export async function buildPlayerGameStrengthV2ForDateRange(opts: {
     if (upserts.length === 0) continue;
 
     const { error: upErr } = await supabase
-      .from("player_game_strength_v2")
+      .from("forge_player_game_strength")
       .upsert(upserts, { onConflict: "game_id,player_id" });
     if (upErr) throw upErr;
 
@@ -216,7 +216,7 @@ export async function buildTeamGameStrengthV2ForDateRange(opts: {
     const gameDate = game.date;
 
     const { data: rows, error } = await supabase
-      .from("player_game_strength_v2")
+      .from("forge_player_game_strength")
       .select(
         "game_id,team_id,opponent_team_id,game_date,toi_es_seconds,toi_pp_seconds,toi_pk_seconds,shots_es,shots_pp,shots_pk,goals_es,goals_pp,goals_pk"
       )
@@ -267,7 +267,7 @@ export async function buildTeamGameStrengthV2ForDateRange(opts: {
     if (upserts.length === 0) continue;
 
     const { error: upErr } = await supabase
-      .from("team_game_strength_v2")
+      .from("forge_team_game_strength")
       .upsert(upserts, { onConflict: "game_id,team_id" });
     if (upErr) throw upErr;
 
@@ -276,4 +276,3 @@ export async function buildTeamGameStrengthV2ForDateRange(opts: {
 
   return { gamesProcessed: (games ?? []).length, rowsUpserted };
 }
-

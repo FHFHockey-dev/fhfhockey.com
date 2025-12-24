@@ -114,7 +114,7 @@ async function fetchRollingRows(
 async function createRun(asOfDate: string): Promise<string> {
   assertSupabase();
   const { data, error } = await supabase
-    .from("projection_runs_v2")
+    .from("forge_runs")
     .insert({
       as_of_date: asOfDate,
       status: "running",
@@ -130,7 +130,7 @@ async function createRun(asOfDate: string): Promise<string> {
 async function finalizeRun(runId: string, status: "succeeded" | "failed", metrics: any) {
   assertSupabase();
   const { error } = await supabase
-    .from("projection_runs_v2")
+    .from("forge_runs")
     .update({ status, metrics, updated_at: new Date().toISOString() })
     .eq("run_id", runId);
   if (error) throw error;
@@ -345,7 +345,7 @@ export async function runProjectionV2ForDate(asOfDate: string): Promise<{
         }
 
         const { error: playerErr } = await supabase
-          .from("player_projections_v2")
+          .from("forge_player_projections")
           .upsert(playerUpserts, { onConflict: "run_id,game_id,player_id,horizon_games" });
         if (playerErr) throw playerErr;
         playerRowsUpserted += playerUpserts.length;
@@ -371,7 +371,7 @@ export async function runProjectionV2ForDate(asOfDate: string): Promise<{
         };
 
         const { error: teamErr } = await supabase
-          .from("team_projections_v2")
+          .from("forge_team_projections")
           .upsert(teamUpsert, { onConflict: "run_id,game_id,team_id,horizon_games" });
         if (teamErr) throw teamErr;
         teamRowsUpserted += 1;
@@ -431,7 +431,7 @@ export async function runProjectionV2ForDate(asOfDate: string): Promise<{
         };
 
         const { error: goalieErr } = await supabase
-          .from("goalie_projections_v2")
+          .from("forge_goalie_projections")
           .upsert(goalieUpsert, { onConflict: "run_id,game_id,goalie_id,horizon_games" });
         if (goalieErr) throw goalieErr;
         goalieRowsUpserted += 1;

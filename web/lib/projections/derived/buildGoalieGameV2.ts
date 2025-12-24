@@ -93,7 +93,7 @@ export async function buildGoalieGameV2ForDateRange(opts: {
     if (upserts.length === 0) continue;
 
     const { error: upErr } = await supabase
-      .from("goalie_game_v2")
+      .from("forge_goalie_game")
       .upsert(upserts, { onConflict: "game_id,goalie_id" });
     if (upErr) throw upErr;
 
@@ -102,4 +102,3 @@ export async function buildGoalieGameV2ForDateRange(opts: {
 
   return { gamesProcessed: (games ?? []).length, rowsUpserted };
 }
-

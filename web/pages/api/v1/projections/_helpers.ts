@@ -17,7 +17,7 @@ export function getQueryStringParam(
 export async function requireLatestSucceededRunId(asOfDate: string): Promise<string> {
   if (!supabase) throw new Error("Supabase server client not available");
   const { data, error } = await supabase
-    .from("projection_runs_v2")
+    .from("forge_runs")
     .select("run_id")
     .eq("as_of_date", asOfDate)
     .eq("status", "succeeded")
@@ -34,4 +34,3 @@ export async function requireLatestSucceededRunId(asOfDate: string): Promise<str
   }
   return runId;
 }
-

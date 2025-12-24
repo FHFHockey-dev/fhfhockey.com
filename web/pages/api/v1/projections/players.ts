@@ -43,7 +43,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const runId = q.runId ?? (await requireLatestSucceededRunId(q.date));
 
     let query = supabase
-      .from("player_projections_v2")
+      .from("forge_player_projections")
       .select("*")
       .eq("run_id", runId)
       .eq("as_of_date", q.date)
@@ -70,4 +70,3 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   }
 }
-

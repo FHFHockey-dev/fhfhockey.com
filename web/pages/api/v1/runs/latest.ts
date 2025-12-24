@@ -35,7 +35,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     let query = supabase
-      .from("projection_runs_v2")
+      .from("forge_runs")
       .select("*")
       .order("created_at", { ascending: false })
       .limit(1);
@@ -51,4 +51,3 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(500).json({ error: (e as any)?.message ?? String(e) });
   }
 }
-

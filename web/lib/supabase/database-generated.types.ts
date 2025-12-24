@@ -660,7 +660,7 @@ export type Database = {
         };
         Relationships: [];
       };
-      goalie_game_v2: {
+      forge_goalie_game: {
         Row: {
           created_at: string;
           game_date: string;
@@ -702,7 +702,7 @@ export type Database = {
         };
         Relationships: [];
       };
-      goalie_projections_v2: {
+      forge_goalie_projections: {
         Row: {
           as_of_date: string;
           created_at: string;
@@ -12276,7 +12276,7 @@ export type Database = {
           }
         ];
       };
-      player_game_strength_v2: {
+      forge_player_game_strength: {
         Row: {
           assists_es: number | null;
           assists_pk: number | null;
@@ -12354,7 +12354,7 @@ export type Database = {
         };
         Relationships: [];
       };
-      player_projections_v2: {
+      forge_player_projections: {
         Row: {
           as_of_date: string;
           created_at: string;
@@ -12441,7 +12441,7 @@ export type Database = {
         };
         Relationships: [];
       };
-      projection_runs_v2: {
+      forge_runs: {
         Row: {
           as_of_date: string;
           created_at: string;
@@ -14994,7 +14994,7 @@ export type Database = {
           }
         ];
       };
-      roster_events: {
+      forge_roster_events: {
         Row: {
           confidence: number;
           created_at: string;
@@ -16482,7 +16482,7 @@ export type Database = {
         };
         Relationships: [];
       };
-      team_game_strength_v2: {
+      forge_team_game_strength: {
         Row: {
           created_at: string;
           game_date: string;
@@ -16536,7 +16536,7 @@ export type Database = {
         };
         Relationships: [];
       };
-      team_projections_v2: {
+      forge_team_projections: {
         Row: {
           as_of_date: string;
           created_at: string;

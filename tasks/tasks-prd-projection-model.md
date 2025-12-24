@@ -17,6 +17,7 @@
 - `migrations/20251223_create_roster_events.sql` - Adds `roster_events` for structured lineup/news overrides.
 - `migrations/20251223_create_projection_outputs_v2.sql` - Adds projection output tables (`*_projections_v2`) keyed by run/game/entity/horizon.
 - `migrations/20251223_add_projection_indexes_and_constraints_v2.sql` - Adds query indexes and sanity constraints for v2 tables.
+- `migrations/20251224_rename_projection_tables_to_forge.sql` - Renames the v2 tables to a shared `forge_` prefix for Supabase grouping.
 - `web/lib/supabase/database-generated.types.ts` - Updated to include the new v2 tables and `roster_events`.
 - `functions/` - Optional home for a compute-layer pipeline (Python) if we keep projection compute out of Next.js routes.
 - `web/pages/api/v1/projections/players.ts` - Proposed read endpoint for player projections (new).
@@ -53,6 +54,7 @@
 - PRD constraint: Supabase/Postgres is storage + serving only; feature engineering/projections run in a compute layer.
 - Tests in `web/` run via `cd web && npm test` (Vitest).
 - Decision (Task 1.1): keep existing Start Chart `player_projections` unchanged; add new “engine” tables with `*_v2` names (or new names) to avoid breaking current endpoints and allow phased migration.
+- Naming: projection engine tables use the `forge_` prefix (FORGE — Forecasting & Outcome Reconciliation Game Engine).
 - Decision (Task 2.1, MVP inputs):
   - Schedule/games: `games` (already ingested).
   - Skater TOI splits: `shift_charts.total_es_toi` + `shift_charts.total_pp_toi` (PK split deferred unless/ until available).
