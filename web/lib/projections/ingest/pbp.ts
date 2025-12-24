@@ -85,7 +85,7 @@ export async function upsertPbpGameAndPlays(game: PbpResponse): Promise<{
       timeremaining: play.timeRemaining ?? null,
       situationcode: play.situationCode ?? null,
       typedesckey: play.typeDescKey ?? null,
-      typecode: play.typeCode ?? null,
+      typecode: play.typeCode != null ? Number(play.typeCode) : null,
       hometeamdefendingside: play.homeTeamDefendingSide ?? null,
       sortorder: play.sortOrder ?? null,
       eventownerteamid: details.eventOwnerTeamId ?? null,
@@ -126,4 +126,3 @@ export async function upsertPbpGameAndPlays(game: PbpResponse): Promise<{
 
   return { playsUpserted: plays.length };
 }
-
