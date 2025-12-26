@@ -23,22 +23,14 @@ $selected-border-width: 2px; // The width of the indicator
   width: 25%;
   margin: 0;
   margin-bottom: 0;
-  border-radius: v.$border-radius-lg;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(0, 0, 0, 0.16);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  @include panel.panel-container($radius: v.$border-radius-lg, $padding: 0);
 }
 
 .container > .collapsibleContent {
   flex: 0 0 calc(75% - #{v.$space-md});
   width: calc(75% - #{v.$space-md});
   min-width: 0;
-  border-radius: v.$border-radius-lg;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(0, 0, 0, 0.16);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  @include panel.panel-container($radius: v.$border-radius-lg, $padding: 0);
 }
 
 .sidebarLayout {

@@ -58,8 +58,9 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: v.$space-xl;
+  gap: 0;
   position: relative;
+  min-height: 100dvh;
 
   // Removed glassmorphism from main container to allow gaps
 
@@ -101,7 +102,7 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       minmax(0, 5fr)
       minmax(280px, 2fr);
     align-items: stretch;
-    gap: v.$space-md;
+    gap: v.$space-lg;
     flex: 1 1 auto;
     min-height: 0;
   }
@@ -111,9 +112,15 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   // Container for OMT
   display: flex;
   flex-direction: column;
-  gap: v.$space-md;
+  gap: v.$space-lg;
   min-width: 0; // Prevent flex blowout
   width: 100%;
+  min-height: 0;
+  border-right: 10px solid rgba(v.$primary-color, 1);
+  border-bottom: 10px solid rgba(v.$primary-color, 1);
+  background-color: v.$primary-color;
+  border-bottom-right-radius: v.$border-radius-xl;
+  filter: drop-shadow(0 4px 4px v.$primary-color);
 
   @media (min-width: v.$breakpoint-desktop) {
     height: auto;
@@ -129,9 +136,26 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   width: 100%;
   position: relative;
   padding: 0;
+  min-height: 0;
+  background-color: v.$primary-color;
+  border-radius: v.$border-radius-xl * 2;
 
   @media (min-width: v.$breakpoint-desktop) {
     height: auto;
+    margin-top: v.$space-lg; // visually "drops" main content below rails
+  }
+
+  @media (min-width: v.$breakpoint-desktop) {
+    &::before,
+    &::after {
+      opacity: 1;
+    }
+    &::before {
+      left: 0;
+    }
+    &::after {
+      right: 0;
+    }
   }
 }
 
@@ -142,6 +166,12 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   gap: v.$space-md;
   min-width: 0;
   width: 100%;
+  min-height: 0;
+  border-left: 10px solid rgba(v.$primary-color, 1);
+  border-bottom: 10px solid rgba(v.$primary-color, 1);
+  background-color: v.$primary-color;
+  border-bottom-left-radius: v.$border-radius-xl;
+  filter: drop-shadow(0 4px 4px v.$primary-color);
 
   @media (min-width: v.$breakpoint-desktop) {
     height: auto;
@@ -174,13 +204,20 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   flex-grow: 1;
   height: 100%; // Force full height
   // @include v.element-wrapper;
-  border-radius: v.$border-radius-lg;
+  border-radius: v.$border-radius-xl * 2;
   overflow: hidden;
-  border: 1px solid rgba(7, 170, 226, 0.22);
-  background: rgba(0, 0, 0, 0.18);
+  border: 2px solid v.$color-white;
+  border: 10px solid rgba(v.$primary-color-opaque, 0.75);
+  filter: drop-shadow(0 0 4px v.$primary-color);
+  background: linear-gradient(
+    180deg,
+    color.adjust(v.$background-medium, $lightness: 2%),
+    v.$background-dark
+  );
   box-shadow:
-    0 4px 22px rgba(0, 0, 0, 0.18),
-    0 0 0 1px rgba(7, 170, 226, 0.06) inset;
+    v.$box-shadow-default,
+    0 0 0 1px rgba(255, 255, 255, 0.04) inset,
+    0 0 24px rgba(v.$primary-color, 0.08);
   // Previously visible allowed internal absolutely positioned separator
   // lines to extend past the rounded bottom-left corner. Hide overflow so
   // the vertical team column separator and any negative-offset pseudo
@@ -216,23 +253,48 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     left: 0;
     right: 0;
     bottom: 0;
-    height: 56px;
-    background: rgba(0, 0, 0, 0.86);
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 -10px 25px rgba(0, 0, 0, 0.35);
+    height: 64px;
+    background: linear-gradient(
+      180deg,
+      rgba(v.$secondary-color, 0.16),
+      rgba(0, 0, 0, 0.92) 55%
+    );
+    border-top: 1px solid rgba(v.$secondary-color, 0.4);
+    box-shadow:
+      0 -18px 40px rgba(0, 0, 0, 0.6),
+      0 -2px 22px rgba(v.$secondary-color, 0.22);
     z-index: 60;
     backdrop-filter: blur(10px);
     overflow: hidden;
     transition: height $transition-normal;
+
+    // neon rail across the top edge
+    &::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      height: 2px;
+      background: linear-gradient(
+        90deg,
+        rgba(v.$primary-color, 0),
+        rgba(v.$primary-color, 0.85),
+        rgba(v.$secondary-color, 0.85),
+        rgba(v.$secondary-color, 0)
+      );
+      box-shadow: 0 0 18px rgba(v.$secondary-color, 0.3);
+      pointer-events: none;
+    }
   }
 
   .bottomDrawerOpen {
-    height: 68vh;
+    height: 70vh;
   }
 
   .bottomDrawerHandle {
     width: 100%;
-    height: 56px;
+    height: 64px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -240,9 +302,34 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     padding: 0 v.$space-lg;
     border: 0;
     border-top: 0;
-    background: transparent;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.06),
+      rgba(255, 255, 255, 0.02)
+    );
     color: v.$text-color-primary;
     cursor: pointer;
+    transition:
+      transform $transition-fast,
+      box-shadow $transition-fast,
+      background $transition-fast;
+
+    &:hover {
+      box-shadow:
+        0 0 0 1px rgba(v.$secondary-color, 0.22) inset,
+        0 12px 30px rgba(0, 0, 0, 0.35),
+        0 0 22px rgba(v.$secondary-color, 0.18);
+      background: linear-gradient(
+        135deg,
+        rgba(v.$secondary-color, 0.14),
+        rgba(255, 255, 255, 0.03)
+      );
+    }
+
+    &:focus-visible {
+      outline: 2px solid rgba(v.$secondary-color, 0.75);
+      outline-offset: -2px;
+    }
   }
 
   .bottomDrawerTitle {
@@ -265,7 +352,7 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .bottomDrawerContent {
-    height: calc(100% - 56px);
+    height: calc(100% - 64px);
     overflow: auto;
     padding: v.$space-md;
   }
@@ -301,18 +388,23 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 .fourWeekGridContainerAll {
   width: 100%;
   flex-grow: 1; // Fill the rail height
-  border-radius: 0; // Squared off for sidebar feel
+  border-radius: 0 0 0 v.$border-radius-lg; // only inside bottom corner
   overflow: hidden;
+  min-height: 0;
 
-  // Neon Sidebar Style
-  border: 1px solid v.$primary-color;
-  background: rgba(20, 162, 210, 0.15);
-  box-shadow: 0 0 15px rgba(20, 162, 210, 0.1); // Subtle glow
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: v.$background-medium;
+  box-shadow:
+    v.$box-shadow-default,
+    inset -10px 0 0 rgba(v.$secondary-color, 0.85),
+    0 0 22px rgba(v.$secondary-color, 0.1);
 
   @media (min-width: v.$breakpoint-desktop) {
     width: 100%; // Full width of the rail
     display: flex;
     flex-direction: column;
+    height: 100%;
+    border-left: 0; // let the center separator read as the shared boundary
   }
 }
 
@@ -322,10 +414,18 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   flex-direction: column;
   min-height: 0;
-  border-radius: 0; // Squared off for sidebar feel
-  border: 1px solid v.$primary-color;
-  background: rgba(20, 162, 210, 0.15);
-  box-shadow: 0 0 15px rgba(20, 162, 210, 0.1); // Subtle glow
+  border-radius: 0 0 v.$border-radius-lg 0; // only inside bottom corner
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: v.$background-medium;
+  box-shadow:
+    v.$box-shadow-default,
+    inset 10px 0 0 rgba(v.$primary-color, 0.85),
+    0 0 22px rgba(v.$primary-color, 0.1);
+
+  @media (min-width: v.$breakpoint-desktop) {
+    height: 100%;
+    border-right: 0; // let the center separator read as the shared boundary
+  }
 }
 
 .bpaAndOppContainer {
@@ -538,6 +638,14 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       transform: none;
     }
   }
+
+  .navSpinner {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: v.$space-xs;
+    transform: translateY(1px);
+  }
 }
 
 .activePanelControlButton,
@@ -575,12 +683,13 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   justify-content: space-between;
   align-items: center;
   flex-shrink: 0;
-  border-bottom: 2px solid v.$secondary-color;
+  border-bottom: 5px solid v.$primary-color;
   font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   margin-bottom: 0;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  filter: drop-shadow(0 0 4px v.$primary-color);
 }
 
 .gameGridHeaderContent {
@@ -658,14 +767,17 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 .gameGridTitle {
   font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
   text-transform: uppercase;
-  letter-spacing: 0.7em;
-  font-size: clamp(1.8rem, 4vw, 1.5rem);
+  letter-spacing: 0.08em;
+  font-size: clamp(1.5rem, 4vw, 1.9rem);
   font-weight: 900;
   color: v.$text-color-primary;
   flex-grow: 1;
   text-align: left;
   margin: 0;
   width: 100%;
+  text-shadow:
+    0 0 10px rgba(v.$primary-color, 0.18),
+    0 0 24px rgba(v.$secondary-color, 0.12);
 }
 
 // --- New header enhancements ---
@@ -678,7 +790,7 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
 .subTitle {
   font-size: 0.9rem;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   text-align: right;
   color: v.$text-secondary;
@@ -846,7 +958,9 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   background-color: v.$color-bg-dark-2; // darkest canvas for visible gaps
   position: relative; // anchor continuous separator lines
   // Mirror container rounding so inner background doesn't visually square off
-  border-radius: inherit;
+  border-radius: v.$border-radius-xl * 2;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
   flex: 1 1 auto;
   min-height: 0;
   display: flex;
@@ -1335,6 +1449,11 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   align-items: center;
   justify-content: space-between; // create room between "Team" and toggle
   width: 100%;
+
+  span {
+    margin: auto;
+    font-weight: 600;
+  }
 }
 
 .weekBadge {
@@ -1592,7 +1711,6 @@ $heavy-color: #b64343;
 
     .titleRow {
       // Kept for backward-compat when nested, but main styles added below at root
-      text-align: left;
       margin-bottom: 0;
       padding: v.$space-md v.$space-md;
     }
@@ -1708,12 +1826,17 @@ $heavy-color: #b64343;
       }
     }
 
-    .spinner {
-      position: absolute;
-      right: v.$space-md;
-      top: v.$space-sm;
-      transform: none;
-      bottom: auto;
+    .mobileNavSpinner {
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 v.$space-sm 0 v.$space-xs;
+      pointer-events: none;
+      opacity: 0.95;
+      // Keep the row height stable with the buttons
+      height: 40px;
+      filter: drop-shadow(0 0 10px rgba(v.$secondary-color, 0.25));
     }
 
     .logoWithIconWrapper {
@@ -2151,6 +2274,7 @@ $heavy-color: #b64343;
   }
 
   .desktopText {
+    margin: auto;
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -2190,6 +2314,7 @@ $heavy-color: #b64343;
       font-size: 1em;
       border-bottom: 1px solid rgba(255, 255, 255, 0.1);
       min-height: 16px;
+      margin-right: v.$space-xs;
     }
 
     .switchContainer {
@@ -2365,8 +2490,8 @@ $heavy-color: #b64343;
     // --- Sticky First Column TD - Modernized ---
     td:first-child {
       // Nested under tbody (implicitly under tr)
-      text-align: left;
-      padding-left: v.$space-lg;
+      text-align: right;
+      padding-right: v.$space-lg;
       border-right: 2px solid v.$primary-color;
       position: sticky;
       left: 0;
@@ -2679,7 +2804,7 @@ $heavy-color: #b64343;
   td,
   th {
     padding: 0 !important;
-    height: 32px !important;
+    height: 34px !important;
     font-size: 0.7rem; // Slightly smaller text
   }
 
@@ -2837,18 +2962,18 @@ $heavy-color: #b64343;
     width: 100%;
     margin: 0 auto;
     padding: 0 v.$space-md;
-    gap: v.$space-md;
+    gap: v.$space-xl;
     flex-direction: column;
   }
 
   .dashboardLayout {
-    gap: v.$space-md;
+    gap: v.$space-xl;
   }
 
   .leftRail,
   .centerGrid,
   .rightRail {
-    gap: v.$space-md;
+    gap: v.$space-xl;
   }
 
   // On mobile/tablet, let each section be its own card; remove extra "frame"
@@ -2934,7 +3059,6 @@ $heavy-color: #b64343;
   .firstColumnContent {
     display: flex !important;
     align-items: center !important;
-    // gap: 2px !important;
     padding-left: 0 !important;
     .mobileTeamLogo {
       display: inline-flex !important;

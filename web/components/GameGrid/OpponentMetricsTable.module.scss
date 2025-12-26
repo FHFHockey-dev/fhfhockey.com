@@ -42,9 +42,9 @@
   @media (min-width: v.$breakpoint-desktop) {
     // The GameGrid dashboard provides the unified framing on desktop.
     outline: none;
-    border-radius: 0;
+    border-radius: inherit;
     border: none;
-    background: #050505; // Dark background for sidebar feel
+    background: transparent; // Framing handled by parent panel
     &:not(.minimized) {
       height: 100%;
     }
@@ -56,25 +56,22 @@
 
 /* --- Title Header Styling --- */
 .titleHeader {
-  display: flex;
-  align-items: center;
+  @include panel.panel-title($padding-y: v.$space-sm, $padding-x: v.$space-md);
+  min-height: 44px;
   justify-content: center;
-  padding: v.$space-sm v.$space-md;
-  background: #0a0a0a; // Very dark header
-  border-bottom: 1px solid #333;
-  min-height: 40px;
-  position: relative;
+  text-align: center;
 }
 
 .titleText {
   font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
   text-transform: uppercase;
-  letter-spacing: 0.3em;
-  font-size: 1rem; // Reduced font size
-  // Inherit weight from panel-title (300) for cohesion with Game Grid
+  letter-spacing: 0.08em;
+  font-size: 0.95rem;
+  font-weight: 300;
   color: v.$text-color-primary;
   flex-grow: 1;
   text-align: center;
+  text-shadow: 0 0 12px rgba(v.$secondary-color, 0.18);
 }
 
 .spanColorBlue {
@@ -85,7 +82,7 @@
 .minimizeToggleIcon {
   font-size: 1.2rem; // Match size
   position: absolute;
-  right: 15px; // *** ALIGNED Positioning with .filters *** (adjust if needed based on padding)
+  right: v.$space-md; // *** ALIGNED Positioning with .filters ***
   top: 50%; // Center vertically
   transform: translateY(-50%) rotate(0deg); // Center + initial rotation
   color: v.$secondary-color;
@@ -142,7 +139,8 @@
   font-size: 12px; // Standardized to 12px
   text-transform: uppercase;
   letter-spacing: 0.3px;
-  border: 0.5px solid v.$border-color-secondary;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   border-top: none;
   white-space: normal;
   vertical-align: middle;
@@ -212,7 +210,8 @@
 }
 
 .table td {
-  border: 0.5px solid v.$border-color-secondary;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   padding: 0; // Condensed padding
   font-family: v.$font-family-primary;
   vertical-align: middle;
@@ -258,18 +257,24 @@
   color: v.$text-color-secondary;
   font-weight: bold;
   font-size: 10.5px;
-  border-top: 2px solid v.$border-color-secondary;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
   padding: 4px 4px;
   height: 30px;
 
   &:first-child {
     text-align: left;
     padding-left: 10px;
-    border-right: 2px solid v.$secondary-color;
+    @include panel.first-col-separator(2px);
     @media (max-width: #{v.$breakpoint-tablet - 1px}) {
       padding-left: 8px;
     }
   }
+}
+
+/* Use monospaced numbers for numeric columns */
+.table td:not(:first-child) {
+  font-family: v.$font-family-numbers;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Color utility classes removed (now global via styles/_panel.scss) */

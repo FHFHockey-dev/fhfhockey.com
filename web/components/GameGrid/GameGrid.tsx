@@ -140,8 +140,10 @@ function GameGridInternal({
     return currentSeasonId.toString().slice(0, 4);
   }, [currentSeasonId]);
 
-  const { weekNumber: currentMatchupWeek } =
-    useYahooCurrentMatchupWeek(currentSeasonYear);
+  const { weekNumber: currentMatchupWeek } = useYahooCurrentMatchupWeek(
+    currentSeasonYear,
+    dates[0]
+  );
 
   console.log("Current Season ID:", currentSeasonId); // Debugging line
 
@@ -742,10 +744,12 @@ function GameGridInternal({
                 >
                   NEXT
                 </button>
+                {(currentLoading || fourWeekLoading) && (
+                  <span className={styles.mobileNavSpinner} aria-hidden="true">
+                    <Spinner />
+                  </span>
+                )}
               </div>
-              {(currentLoading || fourWeekLoading) && (
-                <Spinner className={styles.spinner} center />
-              )}
             </div>{" "}
             {/* End mobileHeaderActions */}
             {/* Schedule Grid section MOVED directly inside navAndGrid */}
@@ -1026,9 +1030,6 @@ function GameGridInternal({
                 Weekly NHL schedule, off-nights & matchup maximizer
               </p>
             </div>
-            {(currentLoading || fourWeekLoading) && (
-              <Spinner className={styles.spinner} center />
-            )}
             <div className={styles.controlsBar}>
               <div className={styles.leftControls}>
                 <div className={styles.viewToggleWrapper}>
@@ -1085,6 +1086,9 @@ function GameGridInternal({
                     >
                       Next
                     </button>
+                    {(currentLoading || fourWeekLoading) && (
+                      <Spinner className={styles.navSpinner} />
+                    )}
                   </div>
                 </div>
               </div>
