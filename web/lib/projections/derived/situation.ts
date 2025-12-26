@@ -1,9 +1,9 @@
 type Strength = "es" | "pp" | "pk";
 
 export type SituationDigits = {
+  awayGoalie: number;
   awaySkaters: number;
   homeSkaters: number;
-  awayGoalie: number;
   homeGoalie: number;
 };
 
@@ -13,9 +13,13 @@ export function parseSituationDigits(
   if (!situationCode) return null;
   const s = situationCode.trim();
   if (s.length !== 4) return null;
-  const awaySkaters = Number(s[0]);
-  const homeSkaters = Number(s[1]);
-  const awayGoalie = Number(s[2]);
+  // NHL "situationCode" format: A G / A S / H S / H G
+  // Examples:
+  // - "1551" => away goalie=1, away skaters=5, home skaters=5, home goalie=1 (5v5)
+  // - "1541" => away on PP (5v4), home on PK (4v5)
+  const awayGoalie = Number(s[0]);
+  const awaySkaters = Number(s[1]);
+  const homeSkaters = Number(s[2]);
   const homeGoalie = Number(s[3]);
   if (
     !Number.isFinite(awaySkaters) ||
@@ -25,7 +29,7 @@ export function parseSituationDigits(
   ) {
     return null;
   }
-  return { awaySkaters, homeSkaters, awayGoalie, homeGoalie };
+  return { awayGoalie, awaySkaters, homeSkaters, homeGoalie };
 }
 
 export function strengthForTeam(
@@ -42,4 +46,3 @@ export function strengthForTeam(
   if (mySkaters < oppSkaters) return "pk";
   return "es";
 }
-

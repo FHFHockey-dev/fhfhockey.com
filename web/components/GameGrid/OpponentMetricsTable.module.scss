@@ -15,9 +15,11 @@
   height: 100%;
   overflow: hidden; // Add overflow hidden for radius clipping
   outline: none;
-  border: none;
   border-radius: inherit;
-  background: transparent;
+
+  // Neon Style - Handled by parent container now to avoid double borders
+  // border: 1px solid v.$primary-color;
+  // background: rgba(20, 162, 210, 0.15);
 
   // --- Mobile Specific Framing & Styling ---
   @media (max-width: #{v.$breakpoint-tablet - 1px}) {
@@ -42,7 +44,7 @@
     outline: none;
     border-radius: 0;
     border: none;
-    background: transparent;
+    background: #050505; // Dark background for sidebar feel
     &:not(.minimized) {
       height: 100%;
     }
@@ -54,7 +56,14 @@
 
 /* --- Title Header Styling --- */
 .titleHeader {
-  @include panel.panel-title;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: v.$space-sm v.$space-md;
+  background: #0a0a0a; // Very dark header
+  border-bottom: 1px solid #333;
+  min-height: 40px;
+  position: relative;
 }
 
 .titleText {
@@ -192,10 +201,10 @@
   transition: background-color v.$transition-duration v.$transition-easing;
   height: 30px; // Condensed height
   &:nth-child(even) {
-    background-color: v.$background-light;
+    background-color: rgba(0, 0, 0, 0.4); // Darker even rows
   }
   &:nth-child(odd) {
-    background-color: v.$background-dark;
+    background-color: rgba(0, 0, 0, 0.6); // Even darker odd rows
   }
   &:hover {
     background-color: color.scale(v.$primary-color, $lightness: -30%);

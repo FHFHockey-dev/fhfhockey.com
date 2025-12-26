@@ -1,4 +1,5 @@
 import supabase from "lib/supabase/server";
+import { reconcileTeamToPlayers } from "lib/projections/reconcile";
 
 type GameRow = {
   id: number;
@@ -26,6 +27,17 @@ type RollingRow = {
   goals_total_all: number | null;
   shots_total_all: number | null;
   assists_total_all: number | null;
+};
+
+type RosterEventRow = {
+  event_id: number;
+  team_id: number | null;
+  player_id: number | null;
+  event_type: string;
+  confidence: number;
+  payload: any;
+  effective_from: string;
+  effective_to: string | null;
 };
 
 function assertSupabase() {
@@ -57,6 +69,62 @@ function computeShotsFromRate(toiSeconds: number, sogPer60: number): number {
 function computeRate(numerator: number, denom: number, fallback: number): number {
   if (!Number.isFinite(numerator) || !Number.isFinite(denom) || denom <= 0) return fallback;
   return numerator / denom;
+}
+
+type TeamStrengthAverages = {
+  toiEsSecondsAvg: number | null;
+  toiPpSecondsAvg: number | null;
+  shotsEsAvg: number | null;
+  shotsPpAvg: number | null;
+};
+
+function meanOrNull(nums: Array<number | null | undefined>): number | null {
+  const vals = nums.filter((n): n is number => typeof n === "number" && Number.isFinite(n));
+  if (vals.length === 0) return null;
+  return vals.reduce((a, b) => a + b, 0) / vals.length;
+}
+
+async function fetchTeamStrengthAverages(teamId: number, cutoffDate: string): Promise<TeamStrengthAverages> {
+  assertSupabase();
+  const { data, error } = await supabase
+    .from("forge_team_game_strength")
+    .select("game_date,toi_es_seconds,toi_pp_seconds,shots_es,shots_pp")
+    .eq("team_id", teamId)
+    .lt("game_date", cutoffDate)
+    .order("game_date", { ascending: false })
+    .limit(10);
+  if (error) throw error;
+
+  const rows = (data ?? []) as any[];
+  return {
+    toiEsSecondsAvg: meanOrNull(rows.map((r) => (r?.toi_es_seconds == null ? null : Number(r.toi_es_seconds)))),
+    toiPpSecondsAvg: meanOrNull(rows.map((r) => (r?.toi_pp_seconds == null ? null : Number(r.toi_pp_seconds)))),
+    shotsEsAvg: meanOrNull(rows.map((r) => (r?.shots_es == null ? null : Number(r.shots_es)))),
+    shotsPpAvg: meanOrNull(rows.map((r) => (r?.shots_pp == null ? null : Number(r.shots_pp))))
+  };
+}
+
+function toDayBoundsUtc(dateOnly: string): { startTs: string; endTs: string } {
+  return {
+    startTs: `${dateOnly}T00:00:00.000Z`,
+    endTs: `${dateOnly}T23:59:59.999Z`
+  };
+}
+
+function availabilityMultiplierForEvent(eventType: string, confidence: number): number | null {
+  const c = typeof confidence === "number" && Number.isFinite(confidence) ? confidence : 0.5;
+  switch (eventType) {
+    case "INJURY_OUT":
+    case "SENDDOWN":
+      return 0;
+    case "DTD":
+      return clamp(1 - 0.6 * c, 0.2, 1);
+    case "RETURN":
+    case "CALLUP":
+      return 1;
+    default:
+      return null;
+  }
 }
 
 async function hasPbpGame(gameId: number): Promise<boolean> {
@@ -147,12 +215,16 @@ type ProjectionTotals = {
   assistsPp: number;
 };
 
-export async function runProjectionV2ForDate(asOfDate: string): Promise<{
+export async function runProjectionV2ForDate(
+  asOfDate: string,
+  opts?: { deadlineMs?: number }
+): Promise<{
   runId: string;
   gamesProcessed: number;
   playerRowsUpserted: number;
   teamRowsUpserted: number;
   goalieRowsUpserted: number;
+  timedOut: boolean;
 }> {
   assertSupabase();
   const runId = await createRun(asOfDate);
@@ -185,11 +257,74 @@ export async function runProjectionV2ForDate(asOfDate: string): Promise<{
       .eq("date", asOfDate);
     if (gamesErr) throw gamesErr;
 
+    const teamStrengthCache = new Map<number, TeamStrengthAverages>();
+    const { startTs, endTs } = toDayBoundsUtc(asOfDate);
+
+    const teamIds = Array.from(
+      new Set(
+        ((games ?? []) as GameRow[]).flatMap((g) => [g.homeTeamId, g.awayTeamId]).filter((n) => n != null)
+      )
+    );
+
+    const playerAvailabilityMultiplier = new Map<number, number>();
+    const goalieOverrideByTeamId = new Map<number, { goalieId: number; starterProb: number }>();
+
+    if (teamIds.length > 0) {
+      const { data: events, error: evErr } = await supabase
+        .from("forge_roster_events")
+        .select("event_id,team_id,player_id,event_type,confidence,payload,effective_from,effective_to")
+        .in("team_id", teamIds)
+        .lte("effective_from", endTs)
+        .order("effective_from", { ascending: false })
+        .limit(5000);
+      if (evErr) throw evErr;
+
+      const bestAvailabilityEventByPlayer = new Map<number, RosterEventRow>();
+
+      for (const e of (events ?? []) as any[]) {
+        const row = e as RosterEventRow;
+        if (row.effective_to != null && row.effective_to < startTs) continue;
+        if (row.player_id != null) {
+          const mult = availabilityMultiplierForEvent(row.event_type, row.confidence);
+          if (mult != null) {
+            const existing = bestAvailabilityEventByPlayer.get(row.player_id);
+            if (!existing || row.effective_from > existing.effective_from) {
+              bestAvailabilityEventByPlayer.set(row.player_id, row);
+            }
+          }
+        }
+
+        if (
+          row.team_id != null &&
+          row.player_id != null &&
+          (row.event_type === "GOALIE_START_CONFIRMED" || row.event_type === "GOALIE_START_LIKELY")
+        ) {
+          const starterProb = row.event_type === "GOALIE_START_CONFIRMED" ? 1 : clamp(row.confidence ?? 0.75, 0.5, 1);
+          const existing = goalieOverrideByTeamId.get(row.team_id);
+          if (!existing || starterProb > existing.starterProb) {
+            goalieOverrideByTeamId.set(row.team_id, { goalieId: row.player_id, starterProb });
+          }
+        }
+      }
+
+      for (const [playerId, ev] of bestAvailabilityEventByPlayer.entries()) {
+        const mult = availabilityMultiplierForEvent(ev.event_type, ev.confidence);
+        if (mult != null) playerAvailabilityMultiplier.set(playerId, mult);
+      }
+    }
+
+    const deadlineMs = safeNumber(opts?.deadlineMs, Number.POSITIVE_INFINITY);
+    let timedOut = false;
+
     let playerRowsUpserted = 0;
     let teamRowsUpserted = 0;
     let goalieRowsUpserted = 0;
 
-    for (const game of (games ?? []) as GameRow[]) {
+    gamesLoop: for (const game of (games ?? []) as GameRow[]) {
+      if (Date.now() > deadlineMs) {
+        timedOut = true;
+        break gamesLoop;
+      }
       if (!(await hasPbpGame(game.id))) metrics.data_quality.missing_pbp_games += 1;
       if (!(await hasShiftTotals(game.id))) metrics.data_quality.missing_shift_totals += 1;
 
@@ -206,6 +341,10 @@ export async function runProjectionV2ForDate(asOfDate: string): Promise<{
       }> = [];
 
       for (const teamId of [game.homeTeamId, game.awayTeamId]) {
+        if (Date.now() > deadlineMs) {
+          timedOut = true;
+          break gamesLoop;
+        }
         const lc = byTeam.get(teamId);
         const opponentTeamId = teamId === game.homeTeamId ? game.awayTeamId : game.homeTeamId;
         if (!lc) {
@@ -214,10 +353,12 @@ export async function runProjectionV2ForDate(asOfDate: string): Promise<{
           continue;
         }
 
-        const skaterIds = [
+        const rawSkaterIds = [
           ...(lc.forwards ?? []),
           ...(lc.defensemen ?? [])
         ].filter((n) => typeof n === "number");
+
+        const skaterIds = rawSkaterIds.filter((playerId) => (playerAvailabilityMultiplier.get(playerId) ?? 1) > 0);
 
         if (skaterIds.length === 0) {
           metrics.warnings.push(`empty skaterIds for game=${game.id} team=${teamId}`);
@@ -262,13 +403,67 @@ export async function runProjectionV2ForDate(asOfDate: string): Promise<{
           const goalRate = clamp(computeRate(goalsTotal + 2, shotsTotal + 40, 0.1), 0.03, 0.25);
           const assistRate = clamp(computeRate(assistsTotal + 3, (goalsTotal + 3) * 2, 0.7), 0.2, 1.4);
 
-          projected.set(playerId, { toiEs, toiPp, shotsEs, shotsPp, goalRate, assistRate });
+          const availabilityMultiplier = playerAvailabilityMultiplier.get(playerId) ?? 1;
+          projected.set(playerId, {
+            toiEs: toiEs * availabilityMultiplier,
+            toiPp: toiPp * availabilityMultiplier,
+            shotsEs: shotsEs * availabilityMultiplier,
+            shotsPp: shotsPp * availabilityMultiplier,
+            goalRate,
+            assistRate
+          });
         }
 
-        // Reconcile TOI to team-level total skater-seconds (5 skaters * 60 min).
+        // Task 3.6 reconciliation: hard constraints for team TOI + shots (by strength).
         const targetSkaterSeconds = 60 * 60 * 5;
-        const totalToi = Array.from(projected.values()).reduce((acc, p) => acc + p.toiEs + p.toiPp, 0);
-        const toiScale = totalToi > 0 ? targetSkaterSeconds / totalToi : 1;
+        const strengthAverages =
+          teamStrengthCache.get(teamId) ??
+          (await fetchTeamStrengthAverages(teamId, asOfDate));
+        teamStrengthCache.set(teamId, strengthAverages);
+
+        const initialToiEs = Array.from(projected.values()).reduce((acc, p) => acc + p.toiEs, 0);
+        const initialToiPp = Array.from(projected.values()).reduce((acc, p) => acc + p.toiPp, 0);
+        const initialShotsEs = Array.from(projected.values()).reduce((acc, p) => acc + p.shotsEs, 0);
+        const initialShotsPp = Array.from(projected.values()).reduce((acc, p) => acc + p.shotsPp, 0);
+
+        const avgToiEs = strengthAverages.toiEsSecondsAvg;
+        const avgToiPp = strengthAverages.toiPpSecondsAvg;
+        const toiDenom =
+          (typeof avgToiEs === "number" ? avgToiEs : 0) + (typeof avgToiPp === "number" ? avgToiPp : 0);
+        const fallbackDenom = initialToiEs + initialToiPp;
+
+        const ppShare =
+          toiDenom > 0
+            ? safeNumber(avgToiPp, 0) / toiDenom
+            : fallbackDenom > 0
+              ? initialToiPp / fallbackDenom
+              : 0.1;
+
+        const toiPpTarget = Math.round(clamp(ppShare, 0, 0.5) * targetSkaterSeconds);
+        const toiEsTarget = targetSkaterSeconds - toiPpTarget;
+
+        const shotsEsTarget = safeNumber(strengthAverages.shotsEsAvg, initialShotsEs);
+        const shotsPpTarget = safeNumber(strengthAverages.shotsPpAvg, initialShotsPp);
+
+        const { players: reconciledPlayers, report } = reconcileTeamToPlayers({
+          players: Array.from(projected.entries()).map(([playerId, p]) => ({
+            playerId,
+            toiEsSeconds: p.toiEs,
+            toiPpSeconds: p.toiPp,
+            shotsEs: p.shotsEs,
+            shotsPp: p.shotsPp
+          })),
+          targets: {
+            toiEsSeconds: toiEsTarget,
+            toiPpSeconds: toiPpTarget,
+            shotsEs: shotsEsTarget,
+            shotsPp: shotsPpTarget
+          }
+        });
+
+        const totalToiBefore = initialToiEs + initialToiPp;
+        const totalToiAfter = report.toiEs.after + report.toiPp.after;
+        const toiScale = totalToiBefore > 0 ? totalToiAfter / totalToiBefore : 1;
 
         if (Math.abs(toiScale - 1) > 0.01) {
           metrics.data_quality.toi_scaled_teams += 1;
@@ -282,12 +477,14 @@ export async function runProjectionV2ForDate(asOfDate: string): Promise<{
               : Math.max(metrics.data_quality.toi_scale_max, toiScale);
         }
 
-        for (const [playerId, p] of projected.entries()) {
-          p.toiEs = Math.round(p.toiEs * toiScale);
-          p.toiPp = Math.round(p.toiPp * toiScale);
-          p.shotsEs = p.shotsEs * toiScale;
-          p.shotsPp = p.shotsPp * toiScale;
-          projected.set(playerId, p);
+        for (const rp of reconciledPlayers) {
+          const cur = projected.get(rp.playerId);
+          if (!cur) continue;
+          cur.toiEs = rp.toiEsSeconds;
+          cur.toiPp = rp.toiPpSeconds;
+          cur.shotsEs = rp.shotsEs;
+          cur.shotsPp = rp.shotsPp;
+          projected.set(rp.playerId, cur);
         }
 
         const playerUpserts = [];
@@ -382,6 +579,7 @@ export async function runProjectionV2ForDate(asOfDate: string): Promise<{
         });
 
         // Goalie: pick the highest probability starter from goalie_start_projections if available.
+        const goalieOverride = goalieOverrideByTeamId.get(teamId);
         const { data: goalieStarts, error: gsErr } = await supabase
           .from("goalie_start_projections")
           .select("player_id,start_probability")
@@ -390,18 +588,20 @@ export async function runProjectionV2ForDate(asOfDate: string): Promise<{
           .order("start_probability", { ascending: false })
           .limit(1);
         if (gsErr) throw gsErr;
-        const goalieId =
-          (goalieStarts?.[0] as any)?.player_id ??
-          (lc.goalies?.[0] ?? null);
+        const goalieId = goalieOverride?.goalieId ?? (goalieStarts?.[0] as any)?.player_id ?? (lc.goalies?.[0] ?? null);
 
         if (goalieId != null) {
-          const starterProb = Number((goalieStarts?.[0] as any)?.start_probability ?? 0.5);
+          const starterProb = goalieOverride?.starterProb ?? Number((goalieStarts?.[0] as any)?.start_probability ?? 0.5);
           goalieCandidates.push({ teamId, opponentTeamId, goalieId, starterProb });
         }
       }
 
       // Create goalie projections after both teams are projected so we can use opponent shots.
       for (const c of goalieCandidates) {
+        if (Date.now() > deadlineMs) {
+          timedOut = true;
+          break gamesLoop;
+        }
         const oppShots = teamShotsByTeamId.get(c.opponentTeamId);
         if (!oppShots) {
           metrics.warnings.push(`missing opponent shots for game=${game.id} team=${c.teamId}`);
@@ -444,14 +644,16 @@ export async function runProjectionV2ForDate(asOfDate: string): Promise<{
     metrics.team_rows = teamRowsUpserted;
     metrics.goalie_rows = goalieRowsUpserted;
     metrics.finished_at = new Date().toISOString();
+    metrics.timed_out = timedOut;
 
-    await finalizeRun(runId, "succeeded", metrics);
+    await finalizeRun(runId, timedOut ? "failed" : "succeeded", metrics);
     return {
       runId,
       gamesProcessed: metrics.games,
       playerRowsUpserted,
       teamRowsUpserted,
-      goalieRowsUpserted
+      goalieRowsUpserted,
+      timedOut
     };
   } catch (e) {
     metrics.finished_at = new Date().toISOString();

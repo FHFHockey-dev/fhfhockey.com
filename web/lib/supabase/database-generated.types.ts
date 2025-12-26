@@ -15666,6 +15666,7 @@ export type Database = {
           time_spent_with: Json | null;
           time_spent_with_mixed: Json | null;
           total_es_toi: string | null;
+          total_pk_toi: string | null;
           total_pp_toi: string | null;
           updated_at: string;
         };
@@ -15704,6 +15705,7 @@ export type Database = {
           time_spent_with?: Json | null;
           time_spent_with_mixed?: Json | null;
           total_es_toi?: string | null;
+          total_pk_toi?: string | null;
           total_pp_toi?: string | null;
           updated_at?: string;
         };
@@ -15742,6 +15744,7 @@ export type Database = {
           time_spent_with?: Json | null;
           time_spent_with_mixed?: Json | null;
           total_es_toi?: string | null;
+          total_pk_toi?: string | null;
           total_pp_toi?: string | null;
           updated_at?: string;
         };

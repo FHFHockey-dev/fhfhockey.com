@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { z } from "zod";
 
 import supabase from "lib/supabase/server";
+import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
 
 const querySchema = z.object({
   date: z
@@ -46,11 +47,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { data, error } = await query.maybeSingle();
     if (error) throw error;
 
-    if (!data) return res.status(404).json({ durationMs: Date.now() - startedAt, error: "No runs found" });
-    return res.status(200).json({ durationMs: Date.now() - startedAt, data });
+    if (!data) {
+      return res
+        .status(404)
+        .json({ durationMs: formatDurationMsToMMSS(Date.now() - startedAt), error: "No runs found" });
+    }
+    return res.status(200).json({ durationMs: formatDurationMsToMMSS(Date.now() - startedAt), data });
   } catch (e) {
     return res
       .status(500)
-      .json({ durationMs: Date.now() - startedAt, error: (e as any)?.message ?? String(e) });
+      .json({ durationMs: formatDurationMsToMMSS(Date.now() - startedAt), error: (e as any)?.message ?? String(e) });
   }
 }

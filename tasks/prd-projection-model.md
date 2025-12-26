@@ -297,16 +297,5 @@ The ingest endpoint considers a game “complete” and will skip when:
 - If ingestion returns many `"Cannot read properties of null (reading 'trim')"` errors, ensure `web/lib/projections/ingest/time.ts` includes the null-safe `parseClockToSeconds(clock: string | null | undefined)` fix.
 - If ingestion reports `skipped > 0` with `gamesProcessed: 0`, that usually means PbP and shift totals already exist for all games in the date range (use `debug=true` to confirm per-game).
 
-## 18) Handoff prompt (start next Codex chat with this)
 
-Copy/paste:
 
-> We have an NHL projections engine named FORGE. Supabase tables are prefixed `forge_` and migrations are applied.
->
-> Cron-friendly endpoints (GET/POST; all return `durationMs`):
-> - `web/pages/api/v1/db/ingest-projection-inputs.ts` (PbP + shift totals; supports `startDate`, `endDate`, `force`, `maxDurationMs`, `debug`, `debugLimit`)
-> - `web/pages/api/v1/db/build-projection-derived-v2.ts` (builds `forge_*_game_strength` + `forge_goalie_game`; supports `startDate`, `endDate`, `maxDurationMs`)
-> - `web/pages/api/v1/db/run-projection-v2.ts` (baseline horizon=1 projections + `forge_runs` logging; query `date`)
-> - Read endpoints: `web/pages/api/v1/projections/*` and `web/pages/api/v1/runs/latest.ts`
->
-> Please implement Task 3.6 reconciliation (TOI+shots totals by strength must match team totals), add unit tests, then wire `forge_roster_events` into the projection runner. Keep each endpoint under Vercel’s 5-minute limit and preserve `durationMs` in responses.

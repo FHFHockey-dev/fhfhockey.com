@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { runProjectionV2ForDate } from "lib/projections/runProjectionV2";
+import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
 
 type Result =
   | {
@@ -11,9 +12,23 @@ type Result =
       playerRowsUpserted: number;
       teamRowsUpserted: number;
       goalieRowsUpserted: number;
-      durationMs: number;
+      timedOut: false;
+      maxDurationMs: string;
+      durationMs: string;
     }
-  | { success: false; error: string };
+  | {
+      success: false;
+      asOfDate: string;
+      timedOut: boolean;
+      maxDurationMs: string;
+      durationMs: string;
+      runId?: string;
+      gamesProcessed?: number;
+      playerRowsUpserted?: number;
+      teamRowsUpserted?: number;
+      goalieRowsUpserted?: number;
+      error: string;
+    };
 
 function getParam(req: NextApiRequest, key: string): string | null {
   const v = req.query[key];
@@ -31,26 +46,64 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
     res.setHeader("Allow", ["GET", "POST"]);
     return res
       .status(405)
-      .json({ success: false, error: "Method not allowed" });
+      .json({
+        success: false,
+        asOfDate: "",
+        timedOut: false,
+        maxDurationMs: formatDurationMsToMMSS(0),
+        durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
+        error: "Method not allowed"
+      });
   }
 
   const asOfDate =
     getParam(req, "date") ?? isoDateOnly(new Date().toISOString());
+  const maxDurationMs = Number(getParam(req, "maxDurationMs") ?? 270_000);
+  const budgetMs = Number.isFinite(maxDurationMs) ? maxDurationMs : 270_000;
+  const deadlineMs = startedAt + budgetMs;
 
   try {
-    const out = await runProjectionV2ForDate(asOfDate);
+    const out = await runProjectionV2ForDate(asOfDate, { deadlineMs });
+    if (out.timedOut) {
+      return res.status(200).json({
+        success: false,
+        asOfDate,
+        timedOut: true,
+        maxDurationMs: formatDurationMsToMMSS(budgetMs),
+        durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
+        runId: out.runId,
+        gamesProcessed: out.gamesProcessed,
+        playerRowsUpserted: out.playerRowsUpserted,
+        teamRowsUpserted: out.teamRowsUpserted,
+        goalieRowsUpserted: out.goalieRowsUpserted,
+        error: "Timed out"
+      });
+    }
     return res
       .status(200)
       .json({
         success: true,
         asOfDate,
-        durationMs: Date.now() - startedAt,
-        ...out
+        timedOut: false,
+        maxDurationMs: formatDurationMsToMMSS(budgetMs),
+        durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
+        runId: out.runId,
+        gamesProcessed: out.gamesProcessed,
+        playerRowsUpserted: out.playerRowsUpserted,
+        teamRowsUpserted: out.teamRowsUpserted,
+        goalieRowsUpserted: out.goalieRowsUpserted
       });
   } catch (e) {
     return res
       .status(500)
-      .json({ success: false, error: (e as any)?.message ?? String(e) });
+      .json({
+        success: false,
+        asOfDate,
+        timedOut: false,
+        maxDurationMs: formatDurationMsToMMSS(budgetMs),
+        durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
+        error: (e as any)?.message ?? String(e)
+      });
   }
 }
 

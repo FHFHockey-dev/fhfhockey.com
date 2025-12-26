@@ -93,8 +93,6 @@ type GameGridProps = {
 type GameGridInternalProps = GameGridProps & {
   orientation: "horizontal" | "vertical";
   setOrientation: (newOrientation: "horizontal" | "vertical") => void;
-  isCondensed: boolean;
-  setIsCondensed: (isCondensed: boolean) => void;
 };
 
 function useIsMobile() {
@@ -116,9 +114,7 @@ function GameGridInternal({
   mode,
   setMode,
   orientation,
-  setOrientation,
-  isCondensed,
-  setIsCondensed
+  setOrientation
 }: GameGridInternalProps) {
   const router = useRouter();
 
@@ -215,6 +211,11 @@ function GameGridInternal({
       weekScore: number;
     })[] = [];
     const totalGP = calcTotalGP(regularNumGamesPerDay, excludedDays);
+
+    // Helper to track seen teams and handle duplicates (e.g. UTA)
+    // We key by abbreviation to catch cases where different teamIds map to the same team (e.g. moved franchises)
+    const seenTeams = new Map<string, (typeof copy)[0]>();
+
     adjustedSchedule.forEach((row) => {
       // add Total GP for each team
       const totalGamesPlayed = getTotalGamePlayed(row, excludedDays);
@@ -249,9 +250,31 @@ function GameGridInternal({
         totalOffNights,
         weekScore
       };
-      copy.push(newRow);
+
+      const abbr = teams[newRow.teamId]?.abbreviation;
+
+      if (abbr) {
+        if (seenTeams.has(abbr)) {
+          const existing = seenTeams.get(abbr)!;
+          // If existing has no games but new one does, replace it.
+          // Also prefer the one with a higher ID if both have games (often newer franchise ID)
+          if (
+            (existing.totalGamesPlayed === 0 && newRow.totalGamesPlayed > 0) ||
+            (existing.totalGamesPlayed === newRow.totalGamesPlayed &&
+              newRow.teamId > existing.teamId)
+          ) {
+            seenTeams.set(abbr, newRow);
+          }
+        } else {
+          seenTeams.set(abbr, newRow);
+        }
+      } else {
+        // Fallback if no abbreviation found (shouldn't happen)
+        seenTeams.set(String(newRow.teamId), newRow);
+      }
     });
-    return copy;
+
+    return Array.from(seenTeams.values());
   }, [
     excludedDays,
     currentSchedule,
@@ -1020,20 +1043,6 @@ function GameGridInternal({
                   </button>
                 </div>
                 <div className={styles.viewToggleWrapper}>
-                  {/* Condensed Toggle */}
-                  {setIsCondensed && (
-                    <button
-                      type="button"
-                      className={
-                        isCondensed
-                          ? styles.modeButtonActive
-                          : styles.modeButton
-                      }
-                      onClick={() => setIsCondensed(!isCondensed)}
-                    >
-                      {isCondensed ? "Expand" : "Condense"}
-                    </button>
-                  )}
                   <button
                     type="button"
                     aria-label="Toggle orientation"
@@ -1180,9 +1189,7 @@ function GameGridInternal({
               ) : (
                 <div className={styles.gridScrollOuter}>
                   <table
-                    className={`${styles.scheduleGrid} ${
-                      isCondensed ? styles.condensed : ""
-                    }`}
+                    className={`${styles.scheduleGrid} ${styles.condensed}`}
                     aria-describedby="weekScoreDesc"
                   >
                     <colgroup>
@@ -1322,8 +1329,6 @@ export default function GameGrid({ mode, setMode }: GameGridProps) {
   const [orientation, setOrientation] = useState<"horizontal" | "vertical">(
     "horizontal"
   );
-  // Default to condensed mode
-  const [isCondensed, setIsCondensed] = useState(true);
 
   return (
     <GameGridContext>
@@ -1332,8 +1337,6 @@ export default function GameGrid({ mode, setMode }: GameGridProps) {
         setMode={setMode}
         orientation={orientation}
         setOrientation={setOrientation}
-        isCondensed={isCondensed}
-        setIsCondensed={setIsCondensed}
       />
     </GameGridContext>
   );

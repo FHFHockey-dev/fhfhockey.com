@@ -172,6 +172,7 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
 .scheduleGridContainer {
   flex-grow: 1;
+  height: 100%; // Force full height
   // @include v.element-wrapper;
   border-radius: v.$border-radius-lg;
   overflow: hidden;
@@ -197,9 +198,10 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
   @media (min-width: v.$breakpoint-desktop) {
     width: 100%; // Full width of the center column
-    flex-grow: 0;
-    height: auto;
+    flex-grow: 1; // Allow it to grow to fill height
+    height: 100%; // Ensure it takes full height of parent
   }
+  height: 100%; // Force full height
 }
 
 // Bottom drawer (desktop): keeps BPA accessible without making the page a long scroll.
@@ -278,6 +280,7 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   @media (min-width: v.$breakpoint-desktop) {
     // Removed component-wrapper to avoid double bordering/outlining
     width: 100%; // Full width of the rail
+    height: 100%; // Fill the rail height
     flex-basis: auto;
     display: flex;
     flex-direction: column;
@@ -297,33 +300,32 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
 .fourWeekGridContainerAll {
   width: 100%;
-  border-radius: v.$border-radius-lg;
+  flex-grow: 1; // Fill the rail height
+  border-radius: 0; // Squared off for sidebar feel
   overflow: hidden;
-  border: 1px solid rgba(v.$schedule-yellow, 0.22);
-  background: rgba(0, 0, 0, 0.18);
-  box-shadow:
-    0 4px 22px rgba(0, 0, 0, 0.18),
-    0 0 0 1px rgba(v.$schedule-yellow, 0.06) inset;
+
+  // Neon Sidebar Style
+  border: 1px solid v.$primary-color;
+  background: rgba(20, 162, 210, 0.15);
+  box-shadow: 0 0 15px rgba(20, 162, 210, 0.1); // Subtle glow
 
   @media (min-width: v.$breakpoint-desktop) {
     width: 100%; // Full width of the rail
     display: flex;
-    height: auto;
+    flex-direction: column;
   }
 }
 
 .opponentMetricsContainer {
   width: 100%;
-  height: auto;
+  flex-grow: 1; // Fill the rail height
   display: flex;
+  flex-direction: column;
   min-height: 0;
-  border-radius: v.$border-radius-lg;
-  overflow: hidden;
-  border: 1px solid rgba(v.$schedule-green, 0.22);
-  background: rgba(0, 0, 0, 0.18);
-  box-shadow:
-    0 4px 22px rgba(0, 0, 0, 0.18),
-    0 0 0 1px rgba(v.$schedule-green, 0.06) inset;
+  border-radius: 0; // Squared off for sidebar feel
+  border: 1px solid v.$primary-color;
+  background: rgba(20, 162, 210, 0.15);
+  box-shadow: 0 0 15px rgba(20, 162, 210, 0.1); // Subtle glow
 }
 
 .bpaAndOppContainer {
@@ -847,6 +849,9 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border-radius: inherit;
   flex: 1 1 auto;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%; // Ensure it fills the container
   --separator-color: v.$primary-color;
   &::before,
   &::after,
@@ -1811,6 +1816,7 @@ $heavy-color: #b64343;
 // --- Schedule Grid Table Styling (Modernized) ---
 .scheduleGrid {
   @extend .theme-colors;
+  height: 100%; // Force table to fill container
   border-collapse: separate;
   // Gaps between cells (increase to make matchup cells appear smaller and more isolated)
   border-spacing: 2px 1px;
@@ -2759,7 +2765,7 @@ $heavy-color: #b64343;
       font-style: italic;
       font-weight: 800;
       letter-spacing: 0.25em;
-      color: v.$color-bg-dark-4;
+      color: color-mix(in srgb, var(--team-dark-color) 50%, transparent);
       -webkit-text-stroke: 1px var(--team-light-color, #{v.$primary-color});
     }
     .mobileTeamLogo {
