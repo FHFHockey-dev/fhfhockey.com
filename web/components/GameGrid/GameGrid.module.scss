@@ -1503,31 +1503,31 @@ $off-night-color: #1b9b68;
 $mid-color: #c7a441;
 $heavy-color: #b64343;
 
-// Base gutter helper (applied to tr) – sets positioning context
-.rowGutterHighlight {
-  position: relative;
-  // Ensure pseudo element sits below cell content but above table background
-  &::before {
-    content: "";
-    position: absolute;
-    left: -7px; // extend slightly further into gap for thicker presence
-    top: 2px; // tighter vertical insets to visually elongate
-    bottom: 2px;
-    width: 6px; // thicker gutter bar per Option A (thicker variant)
-    border-radius: 6px;
-    background: linear-gradient(
-      180deg,
-      rgba(255, 255, 255, 0.25),
-      rgba(255, 255, 255, 0)
-    );
-    opacity: 0; // default off; only visible when specific modifier sets color
-    transition:
-      opacity $transition-fast,
-      box-shadow $transition-fast,
-      background $transition-fast;
-    pointer-events: none;
-  }
-}
+// // Base gutter helper (applied to tr) – sets positioning context
+// .rowGutterHighlight {
+//   position: relative;
+//   // Ensure pseudo element sits below cell content but above table background
+//   &::before {
+//     content: "";
+//     position: absolute;
+//     left: -7px; // extend slightly further into gap for thicker presence
+//     top: 2px; // tighter vertical insets to visually elongate
+//     bottom: 2px;
+//     width: 6px; // thicker gutter bar per Option A (thicker variant)
+//     border-radius: 6px;
+//     background: linear-gradient(
+//       180deg,
+//       rgba(255, 255, 255, 0.25),
+//       rgba(255, 255, 255, 0)
+//     );
+//     opacity: 0; // default off; only visible when specific modifier sets color
+//     transition:
+//       opacity $transition-fast,
+//       box-shadow $transition-fast,
+//       background $transition-fast;
+//     pointer-events: none;
+//   }
+// }
 
 // Top 10 best schedule row
 .rowBest10 {
@@ -1537,8 +1537,14 @@ $heavy-color: #b64343;
     display: none !important;
   }
   > td:first-child {
-    background: rgba($best-accent, v.$fill-opacity-strong) !important;
+    background: rgba($best-accent, v.$fill-opacity-subtle) !important;
     @include v.schedule-outline($best-accent);
+    border-top: 2px solid $best-accent;
+    border-left: 2px solid $best-accent;
+    border-bottom: 2px solid $best-accent;
+    border-right: none !important;
+    border-top-left-radius: v.$border-radius-sm;
+    border-bottom-left-radius: v.$border-radius-sm;
   }
   > td:first-child .firstColumnContent {
     background: transparent !important;
@@ -1553,7 +1559,14 @@ $heavy-color: #b64343;
     display: none !important;
   }
   > td:first-child {
-    background: rgba($worst-accent, v.$fill-opacity-strong) !important;
+    background: rgba($worst-accent, v.$fill-opacity-subtle) !important;
+    border-top: 2px solid $worst-accent;
+    border-bottom: 2px solid $worst-accent;
+    border-left: 2px solid $worst-accent;
+    border-right: none !important;
+    outline-offset: -2px;
+    border-top-left-radius: v.$border-radius-sm;
+    border-bottom-left-radius: v.$border-radius-sm;
     @include v.schedule-outline($worst-accent);
   }
   > td:first-child .firstColumnContent {
@@ -2871,6 +2884,7 @@ $heavy-color: #b64343;
   }
   .mobileTeamLogo {
     display: inline-flex;
+    z-index: 4;
   }
 
   @media (min-width: v.$breakpoint-desktop) {
@@ -2900,6 +2914,7 @@ $heavy-color: #b64343;
       transform: translateY(-50%);
       height: 100%;
       pointer-events: none;
+      z-index: 4;
     }
   }
   @media (max-width: 480px) {
