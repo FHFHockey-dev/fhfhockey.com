@@ -18,6 +18,7 @@
 - `migrations/20251223_create_projection_outputs_v2.sql` - Adds projection output tables (`*_projections_v2`) keyed by run/game/entity/horizon.
 - `migrations/20251223_add_projection_indexes_and_constraints_v2.sql` - Adds query indexes and sanity constraints for v2 tables.
 - `migrations/20251224_rename_projection_tables_to_forge.sql` - Renames the v2 tables to a shared `forge_` prefix for Supabase grouping.
+- `migrations/20251226_add_shift_charts_pk_toi.sql` - Adds `shift_charts.total_pk_toi` so PK TOI can be derived reliably.
 - `web/lib/supabase/database-generated.types.ts` - Updated to include the new v2 tables and `roster_events`.
 - `functions/` - Optional home for a compute-layer pipeline (Python) if we keep projection compute out of Next.js routes.
 - `web/pages/api/v1/projections/players.ts` - Proposed read endpoint for player projections (new).
@@ -32,7 +33,7 @@
 - `web/lib/projections/ingest/nhleFetch.ts` - Fetch helper with retries/timeouts for NHL endpoints.
 - `web/lib/projections/ingest/time.ts` - Clock parsing/format helpers for shift interval math.
 - `web/lib/projections/ingest/pbp.ts` - Minimal PbP fetch + upsert into `pbp_games`/`pbp_plays`.
-- `web/lib/projections/ingest/shifts.ts` - Minimal shiftcharts fetch + PP/ES split via `situationCode` segments, upsert into `shift_charts` totals.
+- `web/lib/projections/ingest/shifts.ts` - Minimal shiftcharts fetch + ES/PP/PK split via `situationCode` segments, upsert into `shift_charts` totals.
 - `web/pages/api/v1/db/ingest-projection-inputs.ts` - Date-range incremental ingestion endpoint (PbP + shift totals).
 - `web/lib/projections/derived/situation.ts` - Decodes `situationCode` and maps to ES/PP/PK for a given team.
 - `web/lib/projections/derived/buildStrengthTablesV2.ts` - Builds `player_game_strength_v2` and `team_game_strength_v2` from `shift_charts` + `pbp_plays`.
@@ -57,7 +58,7 @@
 - Naming: projection engine tables use the `forge_` prefix (FORGE — Forecasting & Outcome Reconciliation Game Engine).
 - Decision (Task 2.1, MVP inputs):
   - Schedule/games: `games` (already ingested).
-  - Skater TOI splits: `shift_charts.total_es_toi` + `shift_charts.total_pp_toi` (PK split deferred unless/ until available).
+  - Skater TOI splits: `shift_charts.total_es_toi` + `shift_charts.total_pp_toi` + `shift_charts.total_pk_toi`.
   - Shots/goals/assists by strength: derive from `pbp_plays` using `typeDescKey` + `situationCode` + shooter/scorer/assist ids.
   - Goalie SA/GA/saves: `goaliesGameStats` for per-game values (season priors can come from `wgo_goalie_stats`/`wgo_goalie_stats_totals` later), with starter probabilities from `goalie_start_projections` and overrides from `roster_events`.
 - Data quality (Task 2.7): `projection_runs_v2.metrics.data_quality` tracks missing PbP/shift totals/line combos, missing rolling metrics, and TOI scaling diagnostics for each projection run.
@@ -92,7 +93,7 @@
 - [ ] 3.3 Implement player usage/share model by strength (TOI share, shot share, PP usage), leveraging `lineCombinations`/shift signals when available
 - [ ] 3.4 Implement conversion models (shots→goals, goals→assists) with shrinkage/priors and guardrails for small samples
 - [ ] 3.5 Implement goalie layer (starter probability from `goalie_start_projections`/`roster_events`; SA from opponent/team context; GA from SA×(1-sv%))
-- [ ] 3.6 Implement reconciliation pass (hard constraints for team TOI + shots; optional goals constraint) and write unit tests for these invariants
+- [x] 3.6 Implement reconciliation pass (hard constraints for team TOI + shots; optional goals constraint) and write unit tests for these invariants
 - [ ] 3.7 Write the run orchestrator that reads derived tables + events, writes projections for all games on a target date, and upserts under a new `projection_runs` row
 - [x] 3.8 Baseline run orchestrator (rolling metrics) writing v2 projections + run logs
 - [ ] 4.0 Add uncertainty simulation (p10/p50/p90) + horizon>1 schedule scaffolding

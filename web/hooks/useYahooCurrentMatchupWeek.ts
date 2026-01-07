@@ -20,13 +20,27 @@ export type CurrentMatchupWeekState = {
   error: string | null;
 };
 
+const toLocalYmd = (value: string | Date): string => {
+  if (value instanceof Date) {
+    return format(value, "yyyy-MM-dd");
+  }
+
+  // If already in yyyy-MM-dd, avoid Date parsing timezone gotchas.
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return value;
+  }
+
+  return format(new Date(value), "yyyy-MM-dd");
+};
+
 /**
  * Fetches the current Yahoo matchup week for the provided season.
- * The lookup uses the user's local date (based on the browser timezone) and
- * returns the week whose start/end dates contain today's date (inclusive).
+ * The lookup uses the provided `referenceDate` (or the user's local "today"
+ * when omitted) and returns the week whose start/end dates contain it (inclusive).
  */
 export default function useYahooCurrentMatchupWeek(
-  season: string | null
+  season: string | null,
+  referenceDate?: string | Date | null
 ): CurrentMatchupWeekState {
   const [weekNumber, setWeekNumber] = useState<number | null>(null);
   const [dateRange, setDateRange] = useState<DateRange | null>(null);
@@ -49,13 +63,14 @@ export default function useYahooCurrentMatchupWeek(
       setError(null);
 
       try {
-        const todayLocal = format(new Date(), "yyyy-MM-dd");
+        const referenceLocal =
+          referenceDate == null ? format(new Date(), "yyyy-MM-dd") : toLocalYmd(referenceDate);
         const { data, error: queryError } = await supabase
           .from("yahoo_matchup_weeks")
           .select("week,start_date,end_date")
           .eq("season", season)
-          .lte("start_date", todayLocal)
-          .gte("end_date", todayLocal)
+          .lte("start_date", referenceLocal)
+          .gte("end_date", referenceLocal)
           .order("week", { ascending: true })
           .limit(1)
           .maybeSingle<YahooMatchupWeek>();
@@ -91,7 +106,7 @@ export default function useYahooCurrentMatchupWeek(
     return () => {
       isCancelled = true;
     };
-  }, [season]);
+  }, [season, referenceDate]);
 
   return {
     weekNumber,

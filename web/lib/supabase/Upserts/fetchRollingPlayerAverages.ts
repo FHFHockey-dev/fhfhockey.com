@@ -294,6 +294,25 @@ const METRICS: MetricDefinition[] = [
     getValue: (game) => getToiSeconds(game)
   },
   {
+    key: "hits_per_60",
+    getValue: (game) => {
+      const hits = game.counts?.hits ?? game.wgo?.hits ?? null;
+      const toiSeconds = getToiSeconds(game);
+      if (hits == null || toiSeconds == null || toiSeconds === 0) return null;
+      return (hits * 3600) / toiSeconds;
+    }
+  },
+  {
+    key: "blocks_per_60",
+    getValue: (game) => {
+      const blocks =
+        game.counts?.shots_blocked ?? game.wgo?.blocked_shots ?? null;
+      const toiSeconds = getToiSeconds(game);
+      if (blocks == null || toiSeconds == null || toiSeconds === 0) return null;
+      return (blocks * 3600) / toiSeconds;
+    }
+  },
+  {
     key: "oz_start_pct",
     getValue: ({ countsOi }) => countsOi?.off_zone_start_pct ?? null
   },

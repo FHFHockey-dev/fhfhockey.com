@@ -26,9 +26,9 @@ type ShiftchartsResponse = {
 type Strength = "es" | "pp" | "pk";
 
 type SituationDigits = {
+  awayGoalie: number;
   awaySkaters: number;
   homeSkaters: number;
-  awayGoalie: number;
   homeGoalie: number;
 };
 
@@ -40,9 +40,9 @@ function parseSituationDigits(situationCode: string | null | undefined): Situati
   if (!situationCode) return null;
   const s = situationCode.trim();
   if (s.length !== 4) return null;
-  const awaySkaters = Number(s[0]);
-  const homeSkaters = Number(s[1]);
-  const awayGoalie = Number(s[2]);
+  const awayGoalie = Number(s[0]);
+  const awaySkaters = Number(s[1]);
+  const homeSkaters = Number(s[2]);
   const homeGoalie = Number(s[3]);
   if (
     !Number.isFinite(awaySkaters) ||
@@ -52,7 +52,7 @@ function parseSituationDigits(situationCode: string | null | undefined): Situati
   ) {
     return null;
   }
-  return { awaySkaters, homeSkaters, awayGoalie, homeGoalie };
+  return { awayGoalie, awaySkaters, homeSkaters, homeGoalie };
 }
 
 function strengthForTeam(
@@ -155,11 +155,20 @@ export async function upsertShiftTotalsForGame(gameId: number): Promise<{
     player_last_name: string;
     total_es_toi: string;
     total_pp_toi: string;
+    total_pk_toi: string;
     home_or_away: "home" | "away";
     updated_at: string;
   };
 
-  const totalsByPlayer = new Map<number, { es: number; pp: number; pk: number; meta: Omit<Totals, "total_es_toi" | "total_pp_toi"> }>();
+  const totalsByPlayer = new Map<
+    number,
+    {
+      es: number;
+      pp: number;
+      pk: number;
+      meta: Omit<Totals, "total_es_toi" | "total_pp_toi" | "total_pk_toi">;
+    }
+  >();
 
   for (const shift of shiftRows) {
     const playerId = shift.playerId;
@@ -208,7 +217,7 @@ export async function upsertShiftTotalsForGame(gameId: number): Promise<{
       player_last_name: shift.lastName,
       home_or_away: homeOrAway,
       updated_at: new Date().toISOString()
-    } satisfies Omit<Totals, "total_es_toi" | "total_pp_toi">;
+    } satisfies Omit<Totals, "total_es_toi" | "total_pp_toi" | "total_pk_toi">;
 
     if (!existing) {
       totalsByPlayer.set(playerId, { es, pp, pk, meta });
@@ -220,11 +229,12 @@ export async function upsertShiftTotalsForGame(gameId: number): Promise<{
   }
 
   const upserts: Totals[] = [];
-  for (const { es, pp, meta } of totalsByPlayer.values()) {
+  for (const { es, pp, pk, meta } of totalsByPlayer.values()) {
     upserts.push({
       ...meta,
       total_es_toi: formatSecondsToClock(es),
-      total_pp_toi: formatSecondsToClock(pp)
+      total_pp_toi: formatSecondsToClock(pp),
+      total_pk_toi: formatSecondsToClock(pk)
     });
   }
 
@@ -237,4 +247,3 @@ export async function upsertShiftTotalsForGame(gameId: number): Promise<{
 
   return { rowsUpserted: upserts.length };
 }
-

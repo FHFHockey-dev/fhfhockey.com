@@ -57,7 +57,6 @@ import useTeamSummary from "hooks/useTeamSummary";
 import useYahooCurrentMatchupWeek from "hooks/useYahooCurrentMatchupWeek";
 
 import GameGridContext from "./contexts/GameGridContext";
-import { rank } from "d3";
 
 type SortKey = {
   key: "totalOffNights" | "totalGamesPlayed" | "weekScore";
@@ -93,8 +92,6 @@ type GameGridProps = {
 type GameGridInternalProps = GameGridProps & {
   orientation: "horizontal" | "vertical";
   setOrientation: (newOrientation: "horizontal" | "vertical") => void;
-  isCondensed: boolean;
-  setIsCondensed: (isCondensed: boolean) => void;
 };
 
 function useIsMobile() {
@@ -116,9 +113,7 @@ function GameGridInternal({
   mode,
   setMode,
   orientation,
-  setOrientation,
-  isCondensed,
-  setIsCondensed
+  setOrientation
 }: GameGridInternalProps) {
   const router = useRouter();
 
@@ -144,8 +139,10 @@ function GameGridInternal({
     return currentSeasonId.toString().slice(0, 4);
   }, [currentSeasonId]);
 
-  const { weekNumber: currentMatchupWeek } =
-    useYahooCurrentMatchupWeek(currentSeasonYear);
+  const { weekNumber: currentMatchupWeek } = useYahooCurrentMatchupWeek(
+    currentSeasonYear,
+    dates[0]
+  );
 
   console.log("Current Season ID:", currentSeasonId); // Debugging line
 
@@ -215,6 +212,11 @@ function GameGridInternal({
       weekScore: number;
     })[] = [];
     const totalGP = calcTotalGP(regularNumGamesPerDay, excludedDays);
+
+    // Helper to track seen teams and handle duplicates (e.g. UTA)
+    // We key by abbreviation to catch cases where different teamIds map to the same team (e.g. moved franchises)
+    const seenTeams = new Map<string, (typeof copy)[0]>();
+
     adjustedSchedule.forEach((row) => {
       // add Total GP for each team
       const totalGamesPlayed = getTotalGamePlayed(row, excludedDays);
@@ -249,9 +251,31 @@ function GameGridInternal({
         totalOffNights,
         weekScore
       };
-      copy.push(newRow);
+
+      const abbr = teams[newRow.teamId]?.abbreviation;
+
+      if (abbr) {
+        if (seenTeams.has(abbr)) {
+          const existing = seenTeams.get(abbr)!;
+          // If existing has no games but new one does, replace it.
+          // Also prefer the one with a higher ID if both have games (often newer franchise ID)
+          if (
+            (existing.totalGamesPlayed === 0 && newRow.totalGamesPlayed > 0) ||
+            (existing.totalGamesPlayed === newRow.totalGamesPlayed &&
+              newRow.teamId > existing.teamId)
+          ) {
+            seenTeams.set(abbr, newRow);
+          }
+        } else {
+          seenTeams.set(abbr, newRow);
+        }
+      } else {
+        // Fallback if no abbreviation found (shouldn't happen)
+        seenTeams.set(String(newRow.teamId), newRow);
+      }
     });
-    return copy;
+
+    return Array.from(seenTeams.values());
   }, [
     excludedDays,
     currentSchedule,
@@ -719,10 +743,12 @@ function GameGridInternal({
                 >
                   NEXT
                 </button>
+                {(currentLoading || fourWeekLoading) && (
+                  <span className={styles.mobileNavSpinner} aria-hidden="true">
+                    <Spinner />
+                  </span>
+                )}
               </div>
-              {(currentLoading || fourWeekLoading) && (
-                <Spinner className={styles.spinner} center />
-              )}
             </div>{" "}
             {/* End mobileHeaderActions */}
             {/* Schedule Grid section MOVED directly inside navAndGrid */}
@@ -773,8 +799,8 @@ function GameGridInternal({
                         const highlightClass = top10TeamIds.has(teamId)
                           ? styles.rowBest10
                           : bottom10TeamIds.has(teamId)
-                            ? styles.rowWorst10
-                            : "";
+                          ? styles.rowWorst10
+                          : "";
                         const rank = scoreRankMap.get(teamId) ?? 16;
                         return (
                           <TeamRow
@@ -1003,9 +1029,6 @@ function GameGridInternal({
                 Weekly NHL schedule, off-nights & matchup maximizer
               </p>
             </div>
-            {(currentLoading || fourWeekLoading) && (
-              <Spinner className={styles.spinner} center />
-            )}
             <div className={styles.controlsBar}>
               <div className={styles.leftControls}>
                 <div className={styles.viewToggleWrapper}>
@@ -1020,20 +1043,6 @@ function GameGridInternal({
                   </button>
                 </div>
                 <div className={styles.viewToggleWrapper}>
-                  {/* Condensed Toggle */}
-                  {setIsCondensed && (
-                    <button
-                      type="button"
-                      className={
-                        isCondensed
-                          ? styles.modeButtonActive
-                          : styles.modeButton
-                      }
-                      onClick={() => setIsCondensed(!isCondensed)}
-                    >
-                      {isCondensed ? "Expand" : "Condense"}
-                    </button>
-                  )}
                   <button
                     type="button"
                     aria-label="Toggle orientation"
@@ -1076,6 +1085,9 @@ function GameGridInternal({
                     >
                       Next
                     </button>
+                    {(currentLoading || fourWeekLoading) && (
+                      <Spinner className={styles.navSpinner} />
+                    )}
                   </div>
                 </div>
               </div>
@@ -1180,9 +1192,7 @@ function GameGridInternal({
               ) : (
                 <div className={styles.gridScrollOuter}>
                   <table
-                    className={`${styles.scheduleGrid} ${
-                      isCondensed ? styles.condensed : ""
-                    }`}
+                    className={`${styles.scheduleGrid} ${styles.condensed}`}
                     aria-describedby="weekScoreDesc"
                   >
                     <colgroup>
@@ -1213,8 +1223,8 @@ function GameGridInternal({
                         const highlightClass = top10TeamIds.has(teamId)
                           ? styles.rowBest10
                           : bottom10TeamIds.has(teamId)
-                            ? styles.rowWorst10
-                            : "";
+                          ? styles.rowWorst10
+                          : "";
                         const rank = scoreRankMap.get(teamId) ?? 16;
                         return (
                           <TeamRow
@@ -1265,7 +1275,7 @@ function GameGridInternal({
         >
           <span className={styles.bottomDrawerTitle}>
             <span className={styles.bottomDrawerBadge} aria-hidden="true">
-              BPA
+              BPA |
             </span>
             Best Players Available
           </span>
@@ -1322,8 +1332,6 @@ export default function GameGrid({ mode, setMode }: GameGridProps) {
   const [orientation, setOrientation] = useState<"horizontal" | "vertical">(
     "horizontal"
   );
-  // Default to condensed mode
-  const [isCondensed, setIsCondensed] = useState(true);
 
   return (
     <GameGridContext>
@@ -1332,8 +1340,6 @@ export default function GameGrid({ mode, setMode }: GameGridProps) {
         setMode={setMode}
         orientation={orientation}
         setOrientation={setOrientation}
-        isCondensed={isCondensed}
-        setIsCondensed={setIsCondensed}
       />
     </GameGridContext>
   );

@@ -23,8 +23,8 @@ interface CronReportEmailProps {
     message: string | null;
     runsCount: number;
     auditRunsCount: number;
-    auditSuccesses: number;
-    auditFailures: number;
+    okCount24h: number;
+    failCount24h: number;
     rowsLast: number | null;
     rowsTotal: number | null;
     lastDurationMs: number | null;
@@ -244,9 +244,12 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
                 </td>
                 <td align="right">{j.rowsLast ?? "—"}</td>
                 <td align="right">{j.rowsTotal ?? "—"}</td>
-                <td align="right">{j.auditSuccesses}</td>
-                <td align="right" style={{ color: j.auditFailures ? "#991B1B" : undefined }}>
-                  {j.auditFailures}
+                <td align="right">{j.okCount24h}</td>
+                <td
+                  align="right"
+                  style={{ color: j.failCount24h ? "#991B1B" : undefined }}
+                >
+                  {j.failCount24h}
                 </td>
                 <td>{j.message ?? "—"}</td>
               </tr>

@@ -23,17 +23,12 @@ $transition-duration: 0.2s;
   padding: 0;
   outline: none;
 
-  // Modern focus states
-  &:focus-visible {
-    outline: 2px solid v.$primary-color;
-    outline-offset: 2px;
-    box-shadow: 0 0 0 4px rgba(7, 170, 226, 0.2);
-  }
+  @include v.focus-ring-desktop;
 
   // Hover effects
   &:hover:not(.disabled) {
     transform: scale(1.1);
-    box-shadow: 0 4px 12px rgba(7, 170, 226, 0.3);
+    box-shadow: 0 4px 12px rgba(v.$secondary-color, 0.3);
   }
 
   // Active state

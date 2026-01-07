@@ -15,9 +15,13 @@
   height: 100%;
   overflow: hidden; // Add overflow hidden for radius clipping
   outline: none;
-  border: none;
-  border-radius: inherit;
-  background: transparent;
+
+  // Apply Glass Panel Style
+  @include panel.panel-container($radius: v.$border-radius-lg);
+
+  // Neon Style - Handled by parent container now to avoid double borders
+  // border: 1px solid v.$primary-color;
+  // background: rgba(20, 162, 210, 0.15);
 
   // --- Mobile Specific Framing & Styling ---
   @media (max-width: #{v.$breakpoint-tablet - 1px}) {
@@ -40,9 +44,9 @@
   @media (min-width: v.$breakpoint-desktop) {
     // The GameGrid dashboard provides the unified framing on desktop.
     outline: none;
-    border-radius: 0;
+    border-radius: inherit;
     border: none;
-    background: transparent;
+    background: transparent; // Framing handled by parent panel
     &:not(.minimized) {
       height: 100%;
     }
@@ -54,26 +58,22 @@
 
 /* --- Title Header Styling --- */
 .titleHeader {
-  @include panel.panel-title;
-  flex-shrink: 0;
+  @include panel.panel-title($padding-y: v.$space-sm, $padding-x: v.$space-md);
+  min-height: 44px;
+  justify-content: center;
   text-align: center;
-  // Reverse the default panel-title header gradient direction for 4WG.
-  background-image: linear-gradient(
-    315deg,
-    v.$background-dark,
-    color.adjust(v.$background-dark, $lightness: 4%)
-  );
 }
 
 .titleText {
   font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
   text-transform: uppercase;
-  letter-spacing: 0.3em;
-  font-size: 1rem; // Reduced font size
-  // Inherit weight from panel-title (300) for cohesion with Game Grid
+  letter-spacing: 0.08em;
+  font-size: 0.95rem;
+  font-weight: 300;
   color: v.$text-color-primary;
   flex-grow: 1;
   text-align: center;
+  text-shadow: 0 0 12px rgba(v.$secondary-color, 0.18);
 }
 
 .spanColorBlue {
@@ -84,7 +84,7 @@
 .minimizeToggleIcon {
   font-size: 1.2rem; // Match size
   position: absolute;
-  right: 15px; // *** ALIGNED Positioning ***
+  right: v.$space-md; // *** ALIGNED Positioning ***
   top: 50%;
   transform: translateY(-50%) rotate(0deg); // Center + initial rotation
   color: v.$secondary-color;
@@ -102,12 +102,7 @@
   @include panel.panel-scroll-wrapper;
   flex-grow: 1;
   overflow-y: auto;
-
-  &::-webkit-scrollbar {
-    display: none;
-  }
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+  @include v.custom-scrollbar(v.$secondary-color, v.$background-medium);
 }
 
 /* --- Base Table Styling --- */
@@ -140,7 +135,8 @@
   font-size: 12px; // Standardized to 12px
   text-transform: uppercase;
   letter-spacing: 0.3px;
-  border: 0.5px solid v.$border-color-secondary;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   border-top: none;
   white-space: normal;
   vertical-align: middle;
@@ -161,7 +157,7 @@
   text-align: left;
   padding-left: 10px;
   border-left: none;
-  border-right: 2px solid v.$secondary-color;
+  @include panel.first-col-separator(2px);
   width: 20%; // Team column width
   white-space: nowrap;
   @media (max-width: #{v.$breakpoint-tablet - 1px}) {
@@ -186,9 +182,9 @@
   align-items: center;
   width: 100%;
   justify-content: center;
-  &:focus {
-    outline: 1px dotted v.$primary-color;
-    outline-offset: 2px;
+  &:focus-visible {
+    outline: none;
+    box-shadow: v.$focus-ring-desktop;
   }
   th:first-child & {
     justify-content: flex-start;
@@ -200,18 +196,19 @@
   transition: background-color v.$transition-duration v.$transition-easing;
   height: 30px; // Match OpponentMetricsTable for aligned panel heights
   &:nth-child(even) {
-    background-color: v.$background-light;
+    background-color: color.adjust(v.$background-dark, $lightness: -2%);
   }
   &:nth-child(odd) {
-    background-color: v.$background-dark;
+    background-color: color.adjust(v.$background-dark, $lightness: -4%);
   }
   &:hover {
-    background-color: color.scale(v.$primary-color, $lightness: -30%);
+    background-color: rgba(v.$primary-color, 0.16);
   }
 }
 
 .table td {
-  border: 0.5px solid v.$border-color-secondary;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   padding: 0; // Condensed padding
   font-family: v.$font-family-primary;
   vertical-align: middle;
@@ -228,7 +225,7 @@
 .table td:first-child {
   // Team Data Cell
   border-left: none;
-  border-right: 2px solid v.$secondary-color;
+  @include panel.first-col-separator(2px);
   text-align: center;
   padding: 4px; // Less padding around logo
   width: 20%; // Match header width
@@ -257,18 +254,24 @@
   color: v.$text-color-secondary;
   font-weight: bold;
   font-size: 10.5px;
-  border-top: 2px solid v.$border-color-secondary;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
   padding: 4px 4px;
   height: 30px;
 
   &:first-child {
     text-align: left;
     padding-left: 10px;
-    border-right: 2px solid v.$secondary-color;
+    @include panel.first-col-separator(2px);
     @media (max-width: #{v.$breakpoint-tablet - 1px}) {
       padding-left: 8px;
     }
   }
+}
+
+/* Use monospaced numbers for numeric columns */
+.table td:not(:first-child) {
+  font-family: v.$font-family-numbers;
+  font-variant-numeric: tabular-nums;
 }
 
 /* --- Color-Coding & Message --- */

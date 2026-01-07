@@ -220,71 +220,6 @@ Admin endpoints (protected):
   - missing games/players detection
 - Performance: MVP should run nightly within reasonable time on a small server.
 
-## 13) Current implementation status (repo reality)
-
-### Shipped (as of now)
-- Supabase migrations for FORGE tables exist under `migrations/` and have been applied.
-- A minimal ingestion endpoint exists (cron-friendly; GET or POST) to populate PbP + shift totals:
-  - `web/pages/api/v1/db/ingest-projection-inputs.ts`
-  - Supports `startDate`, `endDate`, `force`, and `maxDurationMs` (default 270000).
-  - Returns `durationMs` in JSON for Vercel 5-minute monitoring.
-- Derived-table builders exist to populate strength aggregates:
-  - `web/pages/api/v1/db/build-projection-derived-v2.ts`
-  - Builds `forge_player_game_strength`, `forge_team_game_strength`, `forge_goalie_game`
-  - Supports `startDate`, `endDate`, and `maxDurationMs` (default 270000) + returns `durationMs`.
-- Baseline horizon=1 projection runner exists (writes FORGE outputs + run logs):
-  - `web/pages/api/v1/db/run-projection-v2.ts`
-  - Writes `forge_runs` + `forge_player_projections`/`forge_team_projections`/`forge_goalie_projections`
-  - Returns `durationMs` and persists `metrics.data_quality` in `forge_runs.metrics`.
-- Read endpoints exist for v2/forge data:
-  - `web/pages/api/v1/projections/players.ts`
-  - `web/pages/api/v1/projections/teams.ts`
-  - `web/pages/api/v1/projections/goalies.ts`
-  - `web/pages/api/v1/runs/latest.ts`
-  - Each returns `durationMs` and defaults to “latest succeeded run” for that date if `runId` not provided.
-
-### Known limitations (intentional for MVP scaffolding)
-- PK TOI split is currently not populated (PP/ES split is computed; PK deferred).
-- `forge_goalie_game.toi_seconds` is not populated yet.
-- Baseline projection runner uses `rolling_player_game_metrics` + `lineCombinations` and simple priors; it does not yet fully use the derived strength tables or `forge_roster_events` overrides.
-- Reconciliation is not yet implemented as a strict invariant (Task 3.6 remains).
-
-## 14) Cron-first execution model (Vercel)
-
-The project triggers compute via URL hits (GET or POST). Each endpoint includes `durationMs` in its JSON response to monitor Vercel’s ~5 minute limit.
-
-Suggested nightly sequence for a given date:
-1. Ingest inputs:
-   - `/api/v1/db/ingest-projection-inputs?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD`
-2. Build derived:
-   - `/api/v1/db/build-projection-derived-v2?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD`
-3. Run projections:
-   - `/api/v1/db/run-projection-v2?date=YYYY-MM-DD`
-
-## 15) Updated MVP definition (what’s left)
-
-### Must ship next (highest priority)
-1. **Reconciliation (Task 3.6)**:
-   - Enforce hard constraints so `forge_team_projections` equals sum of `forge_player_projections` for TOI + shots (by strength) per game/team.
-   - Add unit tests for reconciliation invariants.
-2. **`forge_roster_events` integration**:
-   - Use roster events to adjust player availability/usage (and goalie starter probability) before projection.
-3. **Uncertainty outputs**:
-   - Add simulation and quantiles (p10/p50/p90) into `uncertainty` JSONB fields.
-4. **Backtest report**:
-   - Automated report (last 30 days) with MAE + interval coverage and run-level summary metrics stored in `forge_runs.metrics`.
-
-## 16) Handoff prompt (start next Codex chat with this)
-
-Copy/paste:
-
-> We have an NHL projections engine named FORGE. Supabase tables are prefixed `forge_` and migrations are applied. The cron-friendly endpoints are:
-> - `web/pages/api/v1/db/ingest-projection-inputs.ts` (PbP + shift totals; durationMs + maxDurationMs)
-> - `web/pages/api/v1/db/build-projection-derived-v2.ts` (builds forge_*_game_strength + forge_goalie_game)
-> - `web/pages/api/v1/db/run-projection-v2.ts` (baseline horizon=1 projections + forge_runs logging)
-> - Read endpoints under `web/pages/api/v1/projections/*` and `web/pages/api/v1/runs/latest.ts`
->
-> Please implement Task 3.6 reconciliation (TOI+shots totals by strength), add unit tests, then wire `forge_roster_events` into the projection runner. Keep endpoints under the Vercel 5-minute limit and include `durationMs` in responses.
 ## 13) Acceptance criteria (definition of done)
 MVP is considered done when:
 - A nightly run writes projections for all scheduled games on the next day.
@@ -292,52 +227,97 @@ MVP is considered done when:
 - API returns stable schemas and has basic pagination/filtering.
 - Backtest report exists and is generated automatically (at minimum: MAE for shots/goals, calibration check for intervals).
 
-## 14) Implementation plan & task breakdown (Codex should execute in this order)
-### Phase A — Foundations
-- Create repo structure: /ingest, /compute, /api, /shared, /ops
-- Define canonical IDs and entity models
-- Implement Supabase client + migration scripts (tables above)
+## 14) Current implementation status (repo reality)
 
-### Phase B — Ingestion
-- Implement adapters for schedule, boxscore, pbp, shifts
-- Store raw artifacts (object storage or raw_game_blobs)
-- Build “derived table builder” that outputs player_game_strength/team_game_strength/goalie_game
+### Shipped (as of now)
+- Supabase migrations for FORGE tables exist under `migrations/` and have been applied.
+- A minimal ingestion endpoint exists (cron-friendly; GET or POST) to populate PbP + shift totals:
+  - `web/pages/api/v1/db/ingest-projection-inputs.ts`
+  - Supports `startDate`, `endDate`, `force`, `maxDurationMs` (default 270000), and `debug`/`debugLimit`.
+  - Returns `durationMs` (MM:SS), `gamesTotal`, and `skipReasons` to explain “skipped” behavior.
+- Derived-table builders exist to populate strength aggregates:
+  - `web/pages/api/v1/db/build-projection-derived-v2.ts`
+  - Builds `forge_player_game_strength`, `forge_team_game_strength`, `forge_goalie_game`
+  - Supports `startDate`, `endDate`, and `maxDurationMs` (default 270000) + returns `durationMs` (MM:SS).
+- Baseline horizon=1 projection runner exists (writes FORGE outputs + run logs):
+  - `web/pages/api/v1/db/run-projection-v2.ts`
+  - Writes `forge_runs` + `forge_player_projections`/`forge_team_projections`/`forge_goalie_projections`
+  - Returns `durationMs` (MM:SS) and persists `metrics.data_quality` in `forge_runs.metrics` (missing inputs, TOI scaling diagnostics).
+  - Includes Task 3.6 reconciliation (team ES/PP TOI + shots are hard-constrained to match player sums) and applies basic `forge_roster_events` overrides (skater availability + goalie starter override).
+- Read endpoints exist for v2/forge data:
+  - `web/pages/api/v1/projections/players.ts`
+  - `web/pages/api/v1/projections/teams.ts`
+  - `web/pages/api/v1/projections/goalies.ts`
+  - `web/pages/api/v1/runs/latest.ts`
+  - Each returns `durationMs` (MM:SS) and defaults to “latest succeeded run” for that date if `runId` not provided.
 
-### Phase C — Projection engine v1 (horizon=1)
-- Team opportunity model (very simple baseline first)
-- Player share models (baseline: recent rolling averages + shrinkage)
-- Conversion model for goals/assists (baseline: shots * rate with priors)
-- Goalie layer (starter prob from events + baseline otherwise; GA from shots and save%)
-- Reconciliation pass (TOI + shots minimum)
+### Known limitations (intentional for MVP scaffolding)
+- `forge_goalie_game.toi_seconds` is not populated yet.
+- Baseline projection runner uses `rolling_player_game_metrics` + `lineCombinations` and simple priors; it does not yet fully use the derived strength tables for opportunity baselines.
+- PK TOI requires `shift_charts.total_pk_toi` (added in `migrations/20251226_add_shift_charts_pk_toi.sql`) + a rebuild/backfill run.
 
-### Phase D — Uncertainty
-- Implement simulation + quantile extraction for outputs
+## 15) Cron-first execution model (Vercel)
 
-### Phase E — API + Ops
-- Implement read endpoints
-- Implement run triggers + run logging
-- Add scheduler (cron/GitHub Actions/server job)
+The project triggers compute via URL hits (GET or POST). Each endpoint includes `durationMs` (MM:SS) in its JSON response to monitor Vercel’s ~5 minute limit.
 
-### Phase F — Backtesting
-- Automated daily/weekly report with MAE + interval coverage
+### End-to-end call order (append-only runbook)
+This is the canonical “start to finish” order of API calls for a single-date run. We will append to this list as new steps are added (e.g., backtests, horizon>1, simulations).
 
-## 15) Engineering preferences / style
-- Keep compute logic in a dedicated compute layer (Python or Node/TS acceptable).
-- Prefer columnar files (Parquet) for intermediate artifacts if needed.
-- Avoid SQL computations; Postgres is used like a key-value + relational store for serving data.
-- Write clear unit tests for:
-  - reconciliation constraints
-  - feature builders
-  - projection schema outputs
+1. **Ingest inputs (PbP + shift totals)**
+   - `/api/v1/db/ingest-projection-inputs?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD`
+   - Optional flags:
+     - `force=true` (re-fetch + overwrite for that date range)
+     - `debug=true&debugLimit=50` (sampling/trace)
+     - `maxDurationMs=270000` (budget; stay under Vercel limit)
 
-## 16) Open questions (Codex may implement sensible defaults)
-- Exact data source endpoints/format details (choose one stable source; wrap behind adapter)
-- Exact shrinkage strategy (start with simple empirical Bayes / weighted rolling averages)
-- Line combination inference method from shifts (start simple: last N games most common partners)
+2. **Build derived strength tables**
+   - `/api/v1/db/build-projection-derived-v2?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD`
+   - Optional flags:
+     - `maxDurationMs=270000`
 
-## 17) Deliverables
-- Working nightly pipeline
-- Supabase schema + migrations
-- Compute pipeline producing projections + uncertainty
-- API endpoints returning projections
-- Run logs + minimal backtest outputs
+3. **Run projections (horizon=1)**
+   - `/api/v1/db/run-projection-v2?date=YYYY-MM-DD`
+   - Optional flags:
+     - `maxDurationMs=270000`
+
+4. **Read outputs (latest succeeded run by default)**
+   - `/api/v1/runs/latest?date=YYYY-MM-DD`
+   - `/api/v1/projections/teams?date=YYYY-MM-DD&horizon=1`
+   - `/api/v1/projections/players?date=YYYY-MM-DD&horizon=1`
+   - `/api/v1/projections/goalies?date=YYYY-MM-DD&horizon=1`
+
+Suggested nightly sequence for a given date:
+1. Ingest inputs:
+   - `/api/v1/db/ingest-projection-inputs?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD`
+2. Update rolling averages (required for MVP baseline):
+   - `/api/v1/db/update-rolling-player-averages?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD`
+3. Build derived:
+   - `/api/v1/db/build-projection-derived-v2?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD`
+4. Run projections:
+   - `/api/v1/db/run-projection-v2?date=YYYY-MM-DD`
+
+### Runbook (recommended flags)
+- Incremental/default: no `force=true` (skips games that already have PbP + shift totals).
+- Debug ingestion decisions: add `&debug=true` (optional `&debugLimit=50`).
+- Rebuild after a bugfix/backfill: add `&force=true` for a small date range (stay under 5 minutes).
+- Keep within Vercel limit: `&maxDurationMs=270000` (default) and check `timedOut` in the response.
+
+### Interpreting ingestion “skip”
+The ingest endpoint considers a game “complete” and will skip when:
+- `pbp_games` already contains the game row, and
+- `shift_charts` already has at least one row for that `game_id`.
+
+## 16) Updated MVP definition (what’s left)
+
+### Must ship next (highest priority)
+1. **Uncertainty outputs**:
+   - Add simulation and quantiles (p10/p50/p90) into `uncertainty` JSONB fields.
+   - Baseline quantile scaffolding is implemented (approximate p10/p50/p90 around means); simulation-based uncertainty is still TBD.
+2. **Backtest report**:
+   - Automated report (last 30 days) with MAE + interval coverage and run-level summary metrics stored in `forge_runs.metrics`.
+
+## 17) Troubleshooting notes
+
+- If ingestion returns many `"Cannot read properties of null (reading 'trim')"` errors, ensure `web/lib/projections/ingest/time.ts` includes the null-safe `parseClockToSeconds(clock: string | null | undefined)` fix.
+- If ingestion reports `skipped > 0` with `gamesProcessed: 0`, that usually means PbP and shift totals already exist for all games in the date range (use `debug=true` to confirm per-game).
+- If derived ES/PP/PK splits look wrong (e.g., ES shots all 0), ensure `situationCode` parsing is correct and re-run ingestion + derived builds for the affected dates.

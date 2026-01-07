@@ -79,8 +79,8 @@ type JobSummary = {
   message: string | null;
   runsCount: number;
   auditRunsCount: number;
-  auditSuccesses: number;
-  auditFailures: number;
+  okCount24h: number;
+  failCount24h: number;
   rowsLast: number | null;
   rowsTotal: number | null;
   lastDurationMs: number | null;
@@ -163,6 +163,46 @@ function parseAuditDetails(details: unknown): ParsedAuditDetails {
   };
 }
 
+function parseRowsAffectedFromReturnMessage(
+  returnMessage: string | null
+): number | null {
+  if (!returnMessage) return null;
+  const msg = String(returnMessage);
+  const toFiniteNumber = (value: string) => {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : null;
+  };
+
+  const insertMatch = msg.match(/INSERT\s+\d+\s+(\d+)/i);
+  if (insertMatch?.[1]) return toFiniteNumber(insertMatch[1]);
+
+  const updateMatch = msg.match(/UPDATE\s+(\d+)/i);
+  if (updateMatch?.[1]) return toFiniteNumber(updateMatch[1]);
+
+  const deleteMatch = msg.match(/DELETE\s+(\d+)/i);
+  if (deleteMatch?.[1]) return toFiniteNumber(deleteMatch[1]);
+
+  const selectMatch = msg.match(/SELECT\s+(\d+)/i);
+  if (selectMatch?.[1]) return toFiniteNumber(selectMatch[1]);
+
+  const copyMatch = msg.match(/COPY\s+(\d+)/i);
+  if (copyMatch?.[1]) return toFiniteNumber(copyMatch[1]);
+
+  const rowWordMatch = msg.match(/(\d+)\s+row(s)?\b/i);
+  if (rowWordMatch?.[1]) return toFiniteNumber(rowWordMatch[1]);
+
+  return null;
+}
+
+function safeDurationMs(startIso: string | null, endIso: string | null) {
+  if (!startIso || !endIso) return null;
+  const start = Date.parse(startIso);
+  const end = Date.parse(endIso);
+  if (!Number.isFinite(start) || !Number.isFinite(end)) return null;
+  const duration = end - start;
+  return duration >= 0 ? duration : null;
+}
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
@@ -217,7 +257,14 @@ export default async function handler(
     status: normalizeStatus(r.status),
     returnMessage: (r.return_message ?? null) as string | null,
     sqlText: (r.sql_text ?? null) as string | null,
-    endTime: (r.end_time ?? null) as string | null
+    endTime: (r.end_time ?? null) as string | null,
+    rowsAffected: parseRowsAffectedFromReturnMessage(
+      (r.return_message ?? null) as string | null
+    ),
+    durationMs: safeDurationMs(
+      (r.scheduled_time ?? null) as string | null,
+      (r.end_time ?? null) as string | null
+    )
   }));
 
   const jobNames = new Set<string>([
@@ -241,21 +288,24 @@ export default async function handler(
         .length;
       const auditFailures = jobAudits.filter((a) => a.status === "failure")
         .length;
+
+      const runSuccesses = jobRuns.filter((r) => r.status === "success").length;
+      const runFailures = jobRuns.filter((r) => r.status === "failure").length;
+      const hasAnyAudit = jobAudits.length > 0;
+
       const rowsTotalCounted = jobAudits.filter(
         (a) => typeof a.rowsAffected === "number"
       ).length;
-      const rowsTotal =
-        rowsTotalCounted > 0
-          ? jobAudits.reduce((acc, a) => acc + (a.rowsAffected ?? 0), 0)
-          : null;
+      const runRowsCounted = jobRuns.filter(
+        (r) => typeof r.rowsAffected === "number"
+      ).length;
 
       const durations = jobAudits
         .map((a) => a.parsed.durationMs)
         .filter((d): d is number => typeof d === "number" && Number.isFinite(d));
-      const avgDurationMs =
-        durations.length > 0
-          ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length)
-          : null;
+      const runDurations = jobRuns
+        .map((r) => r.durationMs)
+        .filter((d): d is number => typeof d === "number" && Number.isFinite(d));
 
       const lastStatus: NormalizedStatus =
         lastAudit?.status ?? lastRun?.status ?? "unknown";
@@ -271,6 +321,30 @@ export default async function handler(
 
       const lastTimeIso = lastAudit?.time ?? lastRun?.time ?? null;
 
+      const rowsLast =
+        (typeof lastAudit?.rowsAffected === "number"
+          ? lastAudit.rowsAffected
+          : null) ??
+        (typeof lastRun?.rowsAffected === "number" ? lastRun.rowsAffected : null);
+      const rowsTotal =
+        rowsTotalCounted > 0
+          ? jobAudits.reduce((acc, a) => acc + (a.rowsAffected ?? 0), 0)
+          : runRowsCounted > 0
+            ? jobRuns.reduce((acc, r) => acc + (r.rowsAffected ?? 0), 0)
+            : null;
+
+      const avgDurationMs =
+        durations.length > 0
+          ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length)
+          : runDurations.length > 0
+            ? Math.round(
+                runDurations.reduce((a, b) => a + b, 0) / runDurations.length
+              )
+            : null;
+
+      const okCount24h = hasAnyAudit ? auditSuccesses : runSuccesses;
+      const failCount24h = hasAnyAudit ? auditFailures : runFailures;
+
       return {
         jobName,
         lastStatus,
@@ -281,11 +355,11 @@ export default async function handler(
         message: lastMessage,
         runsCount: jobRuns.length,
         auditRunsCount: jobAudits.length,
-        auditSuccesses,
-        auditFailures,
-        rowsLast: lastAudit?.rowsAffected ?? null,
+        okCount24h,
+        failCount24h,
+        rowsLast,
         rowsTotal,
-        lastDurationMs: lastAudit?.parsed.durationMs ?? null,
+        lastDurationMs: lastAudit?.parsed.durationMs ?? lastRun?.durationMs ?? null,
         avgDurationMs
       };
     })
@@ -297,16 +371,29 @@ export default async function handler(
       return a.jobName.localeCompare(b.jobName);
     });
 
-  const failures = auditRows
+  const auditFailuresList = auditRows
     .filter((a) => a.status === "failure")
-    .sort((a, b) => Date.parse(b.time) - Date.parse(a.time))
     .map((a) => ({
       jobName: a.jobName,
+      time: a.time,
       runTimeDisplay: new Date(a.time).toLocaleString(),
       rowsAffected: a.rowsAffected,
       message: a.detailsMessage ?? "—",
       durationMs: a.parsed.durationMs
     }));
+  const cronFailuresList = runRows
+    .filter((r) => r.status === "failure")
+    .map((r) => ({
+      jobName: r.jobName,
+      time: r.time,
+      runTimeDisplay: new Date(r.time).toLocaleString(),
+      rowsAffected: r.rowsAffected,
+      message: r.returnMessage ?? "—",
+      durationMs: r.durationMs
+    }));
+  const failures = [...auditFailuresList, ...cronFailuresList]
+    .sort((a, b) => Date.parse(b.time) - Date.parse(a.time))
+    .map(({ time, ...rest }) => rest);
 
   const WARN_ZERO_ROWS = jobSummaries
     .filter((j) => j.rowsLast === 0 && j.lastStatus !== "failure")

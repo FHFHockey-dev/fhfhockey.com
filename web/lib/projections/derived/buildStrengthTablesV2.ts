@@ -18,6 +18,7 @@ type ShiftTotalsRow = {
   game_date: string | null;
   total_es_toi: string | null;
   total_pp_toi: string | null;
+  total_pk_toi: string | null;
 };
 
 type PbpPlayRow = {
@@ -82,7 +83,7 @@ export async function buildPlayerGameStrengthV2ForDateRange(opts: {
 
     const { data: shifts, error: shiftsErr } = await supabase
       .from("shift_charts")
-      .select("game_id,player_id,team_id,opponent_team_id,game_date,total_es_toi,total_pp_toi")
+      .select("game_id,player_id,team_id,opponent_team_id,game_date,total_es_toi,total_pp_toi,total_pk_toi")
       .eq("game_id", gameId);
     if (shiftsErr) throw shiftsErr;
 
@@ -146,6 +147,7 @@ export async function buildPlayerGameStrengthV2ForDateRange(opts: {
 
         const toiEsSeconds = r.total_es_toi ? parseClockToSeconds(r.total_es_toi) : null;
         const toiPpSeconds = r.total_pp_toi ? parseClockToSeconds(r.total_pp_toi) : null;
+        const toiPkSeconds = r.total_pk_toi ? parseClockToSeconds(r.total_pk_toi) : null;
 
         const shots = shotSplitsByPlayer.get(playerId) ?? emptySplit();
         const goals = goalSplitsByPlayer.get(playerId) ?? emptySplit();
@@ -160,7 +162,7 @@ export async function buildPlayerGameStrengthV2ForDateRange(opts: {
 
           toi_es_seconds: toiEsSeconds,
           toi_pp_seconds: toiPpSeconds,
-          toi_pk_seconds: null,
+          toi_pk_seconds: toiPkSeconds,
 
           shots_es: shots.es,
           shots_pp: shots.pp,

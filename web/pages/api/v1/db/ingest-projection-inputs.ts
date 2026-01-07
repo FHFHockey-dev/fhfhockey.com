@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import supabase from "lib/supabase/server";
+import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
 
 import { fetchPbpGame, upsertPbpGameAndPlays } from "lib/projections/ingest/pbp";
 import { upsertShiftTotalsForGame } from "lib/projections/ingest/shifts";
@@ -9,9 +10,9 @@ type Result = {
   success: boolean;
   startDate: string;
   endDate: string;
-  durationMs: number;
+  durationMs: string;
   timedOut: boolean;
-  maxDurationMs: number;
+  maxDurationMs: string;
   gamesTotal: number;
   gamesProcessed: number;
   pbpGamesUpserted: number;
@@ -90,9 +91,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
       success: false,
       startDate: "",
       endDate: "",
-      durationMs: Date.now() - startedAt,
+      durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
       timedOut: false,
-      maxDurationMs: 0,
+      maxDurationMs: formatDurationMsToMMSS(0),
       gamesTotal: 0,
       gamesProcessed: 0,
       pbpGamesUpserted: 0,
@@ -114,7 +115,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
   const debug = (getParam(req, "debug") ?? "false").toLowerCase() === "true";
   const debugLimit = Number(getParam(req, "debugLimit") ?? 50);
   const maxDurationMs = Number(getParam(req, "maxDurationMs") ?? 270_000); // safety: 4.5 minutes
-  const deadlineMs = startedAt + (Number.isFinite(maxDurationMs) ? maxDurationMs : 270_000);
+  const budgetMs = Number.isFinite(maxDurationMs) ? maxDurationMs : 270_000;
+  const deadlineMs = startedAt + budgetMs;
 
   const games = await listGamesInRange(startDate, endDate);
 
@@ -122,9 +124,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
     success: true,
     startDate,
     endDate,
-    durationMs: 0,
+    durationMs: formatDurationMsToMMSS(0),
     timedOut: false,
-    maxDurationMs: Number.isFinite(maxDurationMs) ? maxDurationMs : 270_000,
+    maxDurationMs: formatDurationMsToMMSS(budgetMs),
     gamesTotal: games.length,
     gamesProcessed: 0,
     pbpGamesUpserted: 0,
@@ -217,7 +219,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
     }
   }
 
-  result.durationMs = Date.now() - startedAt;
+  result.durationMs = formatDurationMsToMMSS(Date.now() - startedAt);
   return res.status(200).json(result);
 }
 

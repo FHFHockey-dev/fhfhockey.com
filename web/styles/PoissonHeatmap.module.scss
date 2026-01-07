@@ -1,18 +1,16 @@
 /* styles/PoissonHeatmap.module.scss */
 
+@use "styles/vars" as v;
+
 .chartContainer {
   width: 100%;
   max-width: 400px;
   height: auto;
-  background-color: var(
-    --background-color,
-    #404040
-  ); /* Optional: Define a background color variable */
-  border-radius: 8px;
-  border: #07aae2 2px solid;
-
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  color: var(--text-color, #fff); /* Use text color variable */
+  background-color: var(--background-color, #{v.$background-medium});
+  border-radius: v.$radius-lg;
+  border: 1px solid v.$desktop-panel-border;
+  box-shadow: v.$desktop-panel-shadow;
+  color: var(--text-color, #{v.$text-primary});
 }
 
 .pdchTitle {
@@ -22,7 +20,7 @@
   margin: 0 auto;
   text-align: center;
   border-radius: 6px 6px 0 0;
-  border-bottom: #fff 2px solid;
+  border-bottom: 2px solid rgba(v.$color-white, 0.7);
 
   padding: 20px;
   background: linear-gradient(
@@ -36,18 +34,18 @@
     var(--home-accent-color) 13%,
     var(--home-accent-color) 16%,
 
-    #fff 16%,
-    #fff 19%,
+    #{v.$color-white} 16%,
+    #{v.$color-white} 19%,
     var(--home-jersey-color) 19%,
     var(--home-jersey-color) 25%,
-    #101010 25%,
-    #101010 30%,
-    #101010 70%,
-    #101010 75%,
+    #{v.$background-dark} 25%,
+    #{v.$background-dark} 30%,
+    #{v.$background-dark} 70%,
+    #{v.$background-dark} 75%,
     var(--away-jersey-color) 75%,
     var(--away-jersey-color) 81%,
-    #fff 81%,
-    #fff 84%,
+    #{v.$color-white} 81%,
+    #{v.$color-white} 84%,
 
     var(--away-accent-color) 84%,
     var(--away-accent-color) 87%,
@@ -62,7 +60,7 @@
   margin-bottom: 10px;
   font-size: 1.2rem;
   font-weight: bold;
-  color: var(--title-color, #fff); /* Use a CSS variable for title color */
+  color: var(--title-color, #{v.$color-white});
 }
 
 .pdchTitleLogo {
@@ -77,7 +75,7 @@
   justify-content: center;
   align-items: center;
   margin-bottom: 10px;
-  color: var(--win-odds-color, #fff); /* Use a CSS variable for win odds text */
+  color: var(--win-odds-color, #{v.$color-white});
 }
 
 .winOddsLabelsHome {
@@ -85,19 +83,19 @@
 }
 
 .winOddsLabelsAway {
-  color: var(--away-primary-color, #fff); /* Away team accent color */
+  color: var(--away-primary-color, #{v.$color-white}); /* Away team accent color */
 }
 
 .winOddsLabelsDivider {
   margin: 0 10px;
-  color: var(--divider-color, #fff); /* Divider color */
+  color: var(--divider-color, #{v.$color-white});
 }
 
 /* Responsive Styles */
 @media (max-width: 600px) {
   .chartContainer {
-    outline: #101010 4px solid;
-    border: #fff 2px solid;
+    outline: 4px solid v.$background-dark;
+    border: 2px solid rgba(v.$color-white, 0.7);
   }
 
   .pdchTitle {
@@ -121,7 +119,7 @@
   }
 
   .winOddsLabelsDivider {
-    color: #07aae2;
+    color: v.$secondary-color;
   }
 
   .poissonSvg {

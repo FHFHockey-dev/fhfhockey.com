@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { z } from "zod";
 
 import supabase from "lib/supabase/server";
+import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
 import { dateSchema, getQueryStringParam, requireLatestSucceededRunId } from "./_helpers";
 
 const querySchema = z.object({
@@ -55,7 +56,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (error) throw error;
 
     return res.status(200).json({
-      durationMs: Date.now() - startedAt,
+      durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
       runId,
       asOfDate: q.date,
       horizonGames: q.horizon,
@@ -64,7 +65,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   } catch (e) {
     const statusCode = (e as any)?.statusCode ?? 500;
     return res.status(statusCode).json({
-      durationMs: Date.now() - startedAt,
+      durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
       error: (e as any)?.message ?? String(e),
       details: (e as any)?.details
     });
