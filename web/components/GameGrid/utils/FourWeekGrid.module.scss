@@ -15,7 +15,9 @@
   height: 100%;
   overflow: hidden; // Add overflow hidden for radius clipping
   outline: none;
-  border-radius: inherit;
+
+  // Apply Glass Panel Style
+  @include panel.panel-container($radius: v.$border-radius-lg);
 
   // Neon Style - Handled by parent container now to avoid double borders
   // border: 1px solid v.$primary-color;
@@ -100,12 +102,7 @@
   @include panel.panel-scroll-wrapper;
   flex-grow: 1;
   overflow-y: auto;
-
-  &::-webkit-scrollbar {
-    display: none;
-  }
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+  @include v.custom-scrollbar(v.$secondary-color, v.$background-medium);
 }
 
 /* --- Base Table Styling --- */
@@ -185,9 +182,9 @@
   align-items: center;
   width: 100%;
   justify-content: center;
-  &:focus {
-    outline: 1px dotted v.$primary-color;
-    outline-offset: 2px;
+  &:focus-visible {
+    outline: none;
+    box-shadow: v.$focus-ring-desktop;
   }
   th:first-child & {
     justify-content: flex-start;
@@ -199,13 +196,13 @@
   transition: background-color v.$transition-duration v.$transition-easing;
   height: 30px; // Match OpponentMetricsTable for aligned panel heights
   &:nth-child(even) {
-    background-color: rgba(0, 0, 0, 0.4); // Darker even rows
+    background-color: color.adjust(v.$background-dark, $lightness: -2%);
   }
   &:nth-child(odd) {
-    background-color: rgba(0, 0, 0, 0.6); // Even darker odd rows
+    background-color: color.adjust(v.$background-dark, $lightness: -4%);
   }
   &:hover {
-    background-color: color.scale(v.$primary-color, $lightness: -30%);
+    background-color: rgba(v.$primary-color, 0.16);
   }
 }
 

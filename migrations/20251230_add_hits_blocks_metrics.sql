@@ -1,0 +1,22 @@
+ALTER TABLE rolling_player_game_metrics
+ADD COLUMN IF NOT EXISTS hits_per_60_total_all numeric,
+ADD COLUMN IF NOT EXISTS hits_per_60_avg_all numeric,
+ADD COLUMN IF NOT EXISTS hits_per_60_total_last3 numeric,
+ADD COLUMN IF NOT EXISTS hits_per_60_avg_last3 numeric,
+ADD COLUMN IF NOT EXISTS hits_per_60_total_last5 numeric,
+ADD COLUMN IF NOT EXISTS hits_per_60_avg_last5 numeric,
+ADD COLUMN IF NOT EXISTS hits_per_60_total_last10 numeric,
+ADD COLUMN IF NOT EXISTS hits_per_60_avg_last10 numeric,
+ADD COLUMN IF NOT EXISTS hits_per_60_total_last20 numeric,
+ADD COLUMN IF NOT EXISTS hits_per_60_avg_last20 numeric,
+
+ADD COLUMN IF NOT EXISTS blocks_per_60_total_all numeric,
+ADD COLUMN IF NOT EXISTS blocks_per_60_avg_all numeric,
+ADD COLUMN IF NOT EXISTS blocks_per_60_total_last3 numeric,
+ADD COLUMN IF NOT EXISTS blocks_per_60_avg_last3 numeric,
+ADD COLUMN IF NOT EXISTS blocks_per_60_total_last5 numeric,
+ADD COLUMN IF NOT EXISTS blocks_per_60_avg_last5 numeric,
+ADD COLUMN IF NOT EXISTS blocks_per_60_total_last10 numeric,
+ADD COLUMN IF NOT EXISTS blocks_per_60_avg_last10 numeric,
+ADD COLUMN IF NOT EXISTS blocks_per_60_total_last20 numeric,
+ADD COLUMN IF NOT EXISTS blocks_per_60_avg_last20 numeric;

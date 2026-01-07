@@ -171,13 +171,20 @@ function logRateLimitWait(
 
 // --- Global NST rate limiter ---
 let lastNstRequestAt = 0;
-async function nstGet(url: string, timeoutMs = 30000) {
+async function nstGet(
+  url: string,
+  timeoutMs = 30000,
+  options?: { bypassRateLimit?: boolean }
+) {
   const now = Date.now();
-  const elapsed = now - lastNstRequestAt;
-  if (elapsed < REQUEST_INTERVAL_MS) {
-    const waitMs = REQUEST_INTERVAL_MS - elapsed;
-    logRateLimitWait(waitMs, REQUEST_INTERVAL_MS, elapsed);
-    await delay(waitMs);
+  const bypassRateLimit = options?.bypassRateLimit === true;
+  if (!bypassRateLimit) {
+    const elapsed = now - lastNstRequestAt;
+    if (elapsed < REQUEST_INTERVAL_MS) {
+      const waitMs = REQUEST_INTERVAL_MS - elapsed;
+      logRateLimitWait(waitMs, REQUEST_INTERVAL_MS, elapsed);
+      await delay(waitMs);
+    }
   }
   lastNstRequestAt = Date.now();
   // Many sites (including NST) return generic 404s for non-browser requests.
@@ -767,7 +774,8 @@ async function fetchAndParseData(
   datasetType: string,
   date: string,
   seasonId: string,
-  retries: number = 2
+  retries: number = 2,
+  options?: { bypassRateLimit?: boolean }
 ): Promise<{ success: boolean; data: any[] }> {
   const dateFromUrl = getDateFromUrl(url);
   const effectiveDate = dateFromUrl || date;
@@ -783,7 +791,7 @@ async function fetchAndParseData(
       `Fetching NST data from: ${url} (Attempt ${attempt}/${retries})`
     );
     try {
-      const response = await nstGet(url, 30000);
+      const response = await nstGet(url, 30000, options);
 
       if (!response.data) {
         console.warn(
@@ -1067,7 +1075,8 @@ async function processUrls(
   urlsQueue: UrlQueueItem[],
   isFullRefresh: boolean,
   processedPlayerIds: Set<number>,
-  failedUrls: UrlQueueItem[]
+  failedUrls: UrlQueueItem[],
+  options?: { bypassRateLimit?: boolean }
 ): Promise<{ totalRowsProcessed: number }> {
   banner(
     `Starting processing | URLs: ${urlsQueue.length} | Full Refresh: ${isFullRefresh}`
@@ -1129,7 +1138,9 @@ async function processUrls(
         url,
         datasetType,
         date,
-        seasonId
+        seasonId,
+        2,
+        options
       );
       fetchSuccess = fetchParseResponse.success;
       parseResult = fetchParseResponse.data;
@@ -1605,7 +1616,8 @@ async function main(
         reverseQueue,
         fullRefreshFlag("reverse"),
         processedPlayerIds,
-        failedUrls
+        failedUrls,
+        { bypassRateLimit: false }
       );
       totalRowsAffected += initialResult.totalRowsProcessed || 0;
 
@@ -1794,11 +1806,14 @@ async function main(
 
     const processedPlayerIds = new Set<number>();
     const failedUrls: UrlQueueItem[] = [];
+    const uniqueDatesToScrape = new Set(initialUrlsQueue.map((q) => q.date));
+    const bypassRateLimit = uniqueDatesToScrape.size === 1;
     const initialProcessResult = await processUrls(
       initialUrlsQueue,
       fullRefreshFlag(isForwardFull ? "forward" : "incremental"),
       processedPlayerIds,
-      failedUrls
+      failedUrls,
+      { bypassRateLimit }
     );
 
     totalRowsAffected += initialProcessResult.totalRowsProcessed || 0;
@@ -1823,11 +1838,14 @@ async function main(
       failedUrls.length = 0;
       const retryProcessedIds = new Set<number>();
       const retryFailedUrls: UrlQueueItem[] = [];
+      const retryUniqueDates = new Set(failedUrlsRetryCopy.map((q) => q.date));
+      const retryBypassRateLimit = retryUniqueDates.size === 1;
       const retryResult = await processUrls(
         failedUrlsRetryCopy,
         true,
         retryProcessedIds,
-        retryFailedUrls
+        retryFailedUrls,
+        { bypassRateLimit: retryBypassRateLimit }
       );
 
       totalRowsAffected += retryResult.totalRowsProcessed || 0;

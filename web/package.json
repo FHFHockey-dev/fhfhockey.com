@@ -40,6 +40,7 @@
     "chartjs-plugin-zoom": "^2.2.0",
     "cheerio": "^1.0.0",
     "classnames": "^2.3.1",
+    "clsx": "^2.1.1",
     "d3": "^7.9.0",
     "d3-hexbin": "^0.2.2",
     "date-fns": "^4.1.0",
@@ -127,6 +128,6 @@
     "ts-node": "^10.9.2",
     "typescript": "5.7.3",
     "vite-tsconfig-paths": "^4.3.1",
-    "vitest": "^3.0.7"
+    "vitest": "^3.2.4"
   }
 }

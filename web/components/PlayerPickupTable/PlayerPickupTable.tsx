@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import supabase from "lib/supabase"; // Assuming lib/supabase is configured
 import styles from "./PlayerPickupTable.module.scss";
 import Image from "next/image";
@@ -240,6 +240,18 @@ export type PlayerPickupTableProps = {
 // ---------------------------
 // Helper Functions & Hooks
 // ---------------------------
+
+const getNhlSeasonIdFromYahooSeasonYear = (yahooSeasonYear: number): string =>
+  `${yahooSeasonYear - 1}${yahooSeasonYear}`;
+
+const chunkArray = <T,>(items: T[], chunkSize: number): T[][] => {
+  if (items.length === 0) return [];
+  const result: T[][] = [];
+  for (let i = 0; i < items.length; i += chunkSize) {
+    result.push(items.slice(i, i + chunkSize));
+  }
+  return result;
+};
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false);
@@ -656,9 +668,18 @@ const Filters: React.FC<FiltersProps> = ({
         <span className={styles.titleContent}>
           <span className={styles.acronym}>BPA</span>
           <span>-</span>
-          <span className={styles.acronym}>B</span>est
-          <span className={styles.acronym}>P</span>layer
-          <span className={styles.acronym}>A</span>vailable
+          <span className={styles.titleWord}>
+            <span className={styles.acronym}>B</span>
+            <span>est</span>
+          </span>
+          <span className={styles.titleWord}>
+            <span className={styles.acronym}>P</span>
+            <span>layer</span>
+          </span>
+          <span className={styles.titleWord}>
+            <span className={styles.acronym}>A</span>
+            <span>vailable</span>
+          </span>
         </span>
         {isMobile && (
           <span
@@ -673,47 +694,109 @@ const Filters: React.FC<FiltersProps> = ({
         )}
       </div>
 
-      {(!isMobile || !isMobileMinimized) && (
-        <>
-          {/* --- Ownership, Team, Position Filters --- */}
-          {/* Conditionally render based on compact layout */}
-          {useCompactLayout ? (
-            // Compact (mobile/sidebar) Layout for Basic Filters - single combined row
-            <div className={styles.filterContainerMobile}>
-              <div className={styles.filterRowMobileCombined}>
-                <div className={styles.compactField}>
-                  <label className={styles.labelMobile}>
-                    Own %: {ownershipThreshold}%
-                  </label>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={ownershipThreshold}
-                    onChange={(e) =>
-                      setOwnershipThreshold(Number(e.target.value))
-                    }
-                    className={styles.sliderMobile}
-                  />
-                </div>
-                <div className={styles.compactField}>
-                  <label className={styles.labelMobile}>Team:</label>
-                  <select
-                    value={teamFilter}
-                    onChange={(e) => setTeamFilter(e.target.value)}
-                    className={styles.selectMobile}
+      <div
+        className={styles.filtersBody}
+        hidden={isMobile && isMobileMinimized}
+      >
+        {(!isMobile || !isMobileMinimized) && (
+          <>
+            {/* --- Ownership, Team, Position Filters --- */}
+            {/* Conditionally render based on compact layout */}
+            {useCompactLayout ? (
+              // Compact (mobile/sidebar) Layout for Basic Filters - single combined row
+              <div className={styles.filterContainerMobile}>
+                <div className={styles.filterRowMobileCombined}>
+                  <div className={styles.compactField}>
+                    <label className={styles.labelMobile}>
+                      Own %: {ownershipThreshold}%
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={ownershipThreshold}
+                      onChange={(e) =>
+                        setOwnershipThreshold(Number(e.target.value))
+                      }
+                      className={styles.sliderMobile}
+                    />
+                  </div>
+                  <div
+                    className={clsx(
+                      styles.compactField,
+                      styles.compactFieldInline
+                    )}
                   >
-                    {teamOptions.map((team) => (
-                      <option key={team} value={team}>
-                        {team}
-                      </option>
-                    ))}
-                  </select>
+                    <label className={styles.labelMobile}>Team:</label>
+                    <select
+                      value={teamFilter}
+                      onChange={(e) => setTeamFilter(e.target.value)}
+                      className={styles.selectMobile}
+                    >
+                      {teamOptions.map((team) => (
+                        <option key={team} value={team}>
+                          {team}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div
+                    className={clsx(styles.compactField, styles.positionsField)}
+                  >
+                    <span className={styles.labelMobile}>Pos:</span>
+                    <div className={styles.positionCheckboxGroup}>
+                      {Object.keys(defaultPositions).map((pos) => (
+                        <label key={pos} className={styles.positionCheckbox}>
+                          <input
+                            type="checkbox"
+                            checked={selectedPositions[pos] ?? false}
+                            onChange={() => handlePositionChange(pos)}
+                          />
+                          {pos}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              // Desktop Layout for Basic Filters
+              <div className={styles.filterContainer}>
+                <div className={styles.filterRowGridTop}>
+                  <div className={styles.filterRow}>
+                    <label className={styles.label}>
+                      Ownership %: {ownershipThreshold}%
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={ownershipThreshold}
+                      onChange={(e) =>
+                        setOwnershipThreshold(Number(e.target.value))
+                      }
+                      className={styles.slider}
+                    />
+                  </div>
+                  <div className={clsx(styles.filterRow, styles.filterRowTeam)}>
+                    <label className={styles.label}>Team:</label>
+                    <select
+                      value={teamFilter}
+                      onChange={(e) => setTeamFilter(e.target.value)}
+                      className={styles.select}
+                    >
+                      {teamOptions.map((team) => (
+                        <option key={team} value={team}>
+                          {team}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
                 <div
-                  className={clsx(styles.compactField, styles.positionsField)}
+                  className={clsx(styles.filterRow, styles.filterRowPositions)}
                 >
-                  <span className={styles.labelMobile}>Pos:</span>
+                  <span className={styles.label}>Positions:</span>
                   <div className={styles.positionCheckboxGroup}>
                     {Object.keys(defaultPositions).map((pos) => (
                       <label key={pos} className={styles.positionCheckbox}>
@@ -721,198 +804,148 @@ const Filters: React.FC<FiltersProps> = ({
                           type="checkbox"
                           checked={selectedPositions[pos] ?? false}
                           onChange={() => handlePositionChange(pos)}
-                        />
+                        />{" "}
                         {pos}
                       </label>
                     ))}
                   </div>
                 </div>
               </div>
-            </div>
-          ) : (
-            // Desktop Layout for Basic Filters
-            <div className={styles.filterContainer}>
-              <div className={styles.filterRow}>
-                <label className={styles.label}>
-                  Ownership %: {ownershipThreshold}%
-                </label>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={ownershipThreshold}
-                  onChange={(e) =>
-                    setOwnershipThreshold(Number(e.target.value))
-                  }
-                  className={styles.slider}
-                />
-              </div>
-              <div className={styles.filterRow}>
-                <label className={styles.label}>Team:</label>
-                <select
-                  value={teamFilter}
-                  onChange={(e) => setTeamFilter(e.target.value)}
-                  className={styles.select}
-                >
-                  {teamOptions.map((team) => (
-                    <option key={team} value={team}>
-                      {team}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className={styles.filterRow}>
-                <span className={styles.label}>Positions:</span>
-                <div className={styles.positionCheckboxGroup}>
-                  {Object.keys(defaultPositions).map(
-                    (
-                      pos // Use defaultPositions keys for rendering labels
-                    ) => (
-                      <label key={pos} className={styles.positionCheckbox}>
-                        <input
-                          type="checkbox"
-                          // Use selectedPositions state for checked status
-                          checked={selectedPositions[pos] ?? false}
-                          onChange={() => handlePositionChange(pos)}
-                        />{" "}
-                        {pos}
-                      </label>
-                    )
-                  )}
+            )}
+            <div className={styles.metricFilterContainer}>
+              {/* Header: Label + Preset Buttons */}
+              <div className={styles.metricFilterHeader}>
+                <span className={styles.label}>Filter by Metrics:</span>
+                <div className={styles.metricPresetButtons}>
+                  <button
+                    onClick={() => handleSelectPreset("all")}
+                    disabled={isAllSelected}
+                  >
+                    All
+                  </button>
+                  <button onClick={() => handleSelectPreset("skater")}>
+                    Skaters
+                  </button>
+                  <button onClick={() => handleSelectPreset("goalie")}>
+                    Goalies
+                  </button>
+                  <button
+                    onClick={() => handleSelectPreset("none")}
+                    disabled={isNoneSelected}
+                  >
+                    None
+                  </button>
+                </div>
+                {/* Inline GP% toggle to save vertical space */}
+                <div className={styles.inlineGpToggle}>
+                  <label className={styles.metricCheckbox}>
+                    <input
+                      type="checkbox"
+                      checked={selectedMetrics[gamePlayedKey] ?? false}
+                      onChange={() => handleMetricChange(gamePlayedKey)}
+                    />
+                    GP%
+                  </label>
+                </div>
+                {/* Inline Team Boost toggle */}
+                <div className={styles.inlineTeamBoostToggle}>
+                  <label className={styles.metricCheckbox}>
+                    <input
+                      type="checkbox"
+                      checked={teamBoostEnabled}
+                      onChange={() => setTeamBoostEnabled((v) => !v)}
+                    />
+                    Team boost
+                  </label>
                 </div>
               </div>
-            </div>
-          )}
-          <div className={styles.metricFilterContainer}>
-            {/* Header: Label + Preset Buttons */}
-            <div className={styles.metricFilterHeader}>
-              <span className={styles.label}>Filter by Metrics:</span>
-              <div className={styles.metricPresetButtons}>
-                <button
-                  onClick={() => handleSelectPreset("all")}
-                  disabled={isAllSelected}
-                >
-                  All
-                </button>
-                <button onClick={() => handleSelectPreset("skater")}>
-                  Skaters
-                </button>
-                <button onClick={() => handleSelectPreset("goalie")}>
-                  Goalies
-                </button>
-                <button
-                  onClick={() => handleSelectPreset("none")}
-                  disabled={isNoneSelected}
-                >
-                  None
-                </button>
-              </div>
-              {/* Inline GP% toggle to save vertical space */}
-              <div className={styles.inlineGpToggle}>
-                <label className={styles.metricCheckbox}>
-                  <input
-                    type="checkbox"
-                    checked={selectedMetrics[gamePlayedKey] ?? false}
-                    onChange={() => handleMetricChange(gamePlayedKey)}
-                  />
-                  GP%
-                </label>
-              </div>
-              {/* Inline Team Boost toggle */}
-              <div className={styles.inlineTeamBoostToggle}>
-                <label className={styles.metricCheckbox}>
-                  <input
-                    type="checkbox"
-                    checked={teamBoostEnabled}
-                    onChange={() => setTeamBoostEnabled((v) => !v)}
-                  />
-                  Team boost
-                </label>
-              </div>
-            </div>
-            {/* Skaters and Goalies Row */}
-            {/* Skaters and Goalies Row */}
-            <div className={styles.skaterGoalieRow}>
-              {/* Skaters Column */}
-              <fieldset className={styles.skaterMetricsColumn}>
-                <legend className={styles.columnLabel}>Skaters</legend>
-                <div className={styles.skaterSubGroupsRow}>
-                  <div className={styles.metricGroup}>
-                    {" "}
-                    {/* Points Group */}
-                    <button
-                      type="button" // Prevent form submission if wrapped in form
-                      className={styles.metricGroupTitle}
-                      onClick={() =>
-                        handleSubGroupPresetClick(skaterPointKeys, "skater")
-                      }
-                    >
-                      Points
-                    </button>
-                    {renderCheckboxGroup(skaterPointKeys)}
+              {/* Skaters and Goalies Row */}
+              {/* Skaters and Goalies Row */}
+              <div className={styles.skaterGoalieRow}>
+                {/* Skaters Column */}
+                <fieldset className={styles.skaterMetricsColumn}>
+                  <legend className={styles.columnLabel}>Skaters</legend>
+                  <div className={styles.skaterSubGroupsRow}>
+                    <div className={styles.metricGroup}>
+                      {" "}
+                      {/* Points Group */}
+                      <button
+                        type="button" // Prevent form submission if wrapped in form
+                        className={styles.metricGroupTitle}
+                        onClick={() =>
+                          handleSubGroupPresetClick(skaterPointKeys, "skater")
+                        }
+                      >
+                        Points
+                      </button>
+                      {renderCheckboxGroup(skaterPointKeys)}
+                    </div>
+                    <div className={styles.metricGroup}>
+                      {" "}
+                      {/* Peripherals Group */}
+                      <button
+                        type="button"
+                        className={styles.metricGroupTitle}
+                        onClick={() =>
+                          handleSubGroupPresetClick(
+                            skaterPeripheralKeys,
+                            "skater"
+                          )
+                        }
+                      >
+                        Peripherals
+                      </button>
+                      {renderCheckboxGroup(skaterPeripheralKeys)}
+                    </div>
                   </div>
-                  <div className={styles.metricGroup}>
-                    {" "}
-                    {/* Peripherals Group */}
-                    <button
-                      type="button"
-                      className={styles.metricGroupTitle}
-                      onClick={() =>
-                        handleSubGroupPresetClick(
-                          skaterPeripheralKeys,
-                          "skater"
-                        )
-                      }
-                    >
-                      Peripherals
-                    </button>
-                    {renderCheckboxGroup(skaterPeripheralKeys)}
-                  </div>
-                </div>
-              </fieldset>
+                </fieldset>
 
-              {/* Goalies Column */}
-              <fieldset className={styles.goalieMetricsColumn}>
-                <legend className={styles.columnLabel}>Goalies</legend>
-                <div className={styles.goalieSubGroupsRow}>
-                  <div className={styles.metricGroup}>
-                    {" "}
-                    {/* Quality Group */}
-                    <button
-                      type="button"
-                      className={styles.metricGroupTitle}
-                      onClick={() =>
-                        handleSubGroupPresetClick(goalieQualityKeys, "goalie")
-                      }
-                    >
-                      Quality
-                    </button>
-                    {renderCheckboxGroup(goalieQualityKeys)}
+                {/* Goalies Column */}
+                <fieldset className={styles.goalieMetricsColumn}>
+                  <legend className={styles.columnLabel}>Goalies</legend>
+                  <div className={styles.goalieSubGroupsRow}>
+                    <div className={styles.metricGroup}>
+                      {" "}
+                      {/* Quality Group */}
+                      <button
+                        type="button"
+                        className={styles.metricGroupTitle}
+                        onClick={() =>
+                          handleSubGroupPresetClick(goalieQualityKeys, "goalie")
+                        }
+                      >
+                        Quality
+                      </button>
+                      {renderCheckboxGroup(goalieQualityKeys)}
+                    </div>
+                    <div className={styles.metricGroup}>
+                      {" "}
+                      {/* Quantity Group */}
+                      {/* UPDATED: Title is now a button */}
+                      <button
+                        type="button"
+                        className={styles.metricGroupTitle}
+                        onClick={() =>
+                          handleSubGroupPresetClick(
+                            goalieQuantityKeys,
+                            "goalie"
+                          )
+                        }
+                      >
+                        Quantity
+                      </button>
+                      {renderCheckboxGroup(goalieQuantityKeys)}
+                    </div>
                   </div>
-                  <div className={styles.metricGroup}>
-                    {" "}
-                    {/* Quantity Group */}
-                    {/* UPDATED: Title is now a button */}
-                    <button
-                      type="button"
-                      className={styles.metricGroupTitle}
-                      onClick={() =>
-                        handleSubGroupPresetClick(goalieQuantityKeys, "goalie")
-                      }
-                    >
-                      Quantity
-                    </button>
-                    {renderCheckboxGroup(goalieQuantityKeys)}
-                  </div>
-                </div>
-              </fieldset>
+                </fieldset>
+              </div>{" "}
             </div>{" "}
-          </div>{" "}
-          <button className={styles.buttonReset} onClick={resetFilters}>
-            Reset Filters
-          </button>
-        </>
-      )}
+            <button className={styles.buttonReset} onClick={resetFilters}>
+              Reset Filters
+            </button>
+          </>
+        )}
+      </div>
     </div>
   );
 };
@@ -1007,6 +1040,7 @@ const DesktopTable: React.FC<DesktopTableProps> = ({
                   : "▲"
                 : ""}
             </th>
+            <th>Metrics</th>
             {/* Use dynamic header text, keep sort key as 'composite' for the score column */}
             <th onClick={() => handleSort("composite")}>
               {scoreHeader}{" "}
@@ -1041,9 +1075,21 @@ const DesktopTable: React.FC<DesktopTableProps> = ({
             const pairClass =
               index % 2 === 0 ? styles.evenPair : styles.oddPair;
 
+            // Determine primary position for styling
+            let primaryPos = "C";
+            if (player.player_type === "goalie") primaryPos = "G";
+            else if (
+              player.eligible_positions &&
+              player.eligible_positions.length > 0
+            ) {
+              // Simple heuristic: take the first position
+              primaryPos = player.eligible_positions[0];
+            }
+            const posClass = styles[`pos${primaryPos}`] || styles.posC;
+
             return (
               <React.Fragment key={player.nhl_player_id}>
-                <tr className={clsx(styles.primaryRow, pairClass)}>
+                <tr className={clsx(styles.primaryRow, pairClass, posClass)}>
                   <td className={styles.nameCell}>
                     <div className={styles.nameAndInjuryWrapper}>
                       <div className={styles.leftNamePart}>
@@ -1093,17 +1139,19 @@ const DesktopTable: React.FC<DesktopTableProps> = ({
                       "N/A"
                     )}
                   </td>
-                  <td>
+                  <td className={styles.numCell}>
                     {player.percent_ownership !== null
                       ? `${player.percent_ownership}%`
                       : "N/A"}
                   </td>
-                  <td>
+                  <td className={styles.positionsCell}>
                     {player.eligible_positions?.join(", ") ||
                       (player.player_type === "goalie" ? "G" : "N/A")}
                   </td>
-                  <td>{getOffNightsForPlayer(player)}</td>
-                  <td>
+                  <td className={styles.numCell}>
+                    {getOffNightsForPlayer(player)}
+                  </td>
+                  <td className={styles.numCell}>
                     {player.percent_games !== null ? (
                       <div
                         className={clsx(
@@ -1141,12 +1189,7 @@ const DesktopTable: React.FC<DesktopTableProps> = ({
                       "N/A"
                     )}
                   </td>
-                  <td className={styles.scoreCell}>
-                    {player.displayScore.toFixed(1)}
-                  </td>
-                </tr>
-                <tr className={clsx(styles.secondaryRow, pairClass)}>
-                  <td colSpan={7}>
+                  <td className={styles.metricsCell}>
                     <div className={styles.percentileRow}>
                       {percentileMetrics.length === 0 ? (
                         <span className={styles.emptyPercentile}>
@@ -1190,6 +1233,9 @@ const DesktopTable: React.FC<DesktopTableProps> = ({
                         })
                       )}
                     </div>
+                  </td>
+                  <td className={styles.scoreCell}>
+                    {player.displayScore.toFixed(1)}
                   </td>
                 </tr>
               </React.Fragment>
@@ -1546,6 +1592,16 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
   const isMobile = useIsMobile();
   const isSidebarLayout = layoutVariant === "sidebar";
   const currentSeasonInfo = useCurrentSeason();
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [isInBottomDrawer, setIsInBottomDrawer] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const root = containerRef.current;
+    if (!root) return;
+    const drawerContent = document.getElementById("gg-bottom-drawer-content");
+    setIsInBottomDrawer(!!drawerContent && drawerContent.contains(root));
+  }, []);
 
   const yahooSeasonYear = useMemo(() => {
     if (!currentSeasonInfo?.seasonId) return null;
@@ -1583,6 +1639,12 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
   const [isMobileMinimized, setIsMobileMinimized] = useState(false);
   // Team boost toggle (default ON)
   const [teamBoostEnabled, setTeamBoostEnabled] = useState<boolean>(true);
+  const [teamGamesPlayedByAbbr, setTeamGamesPlayedByAbbr] = useState<
+    Record<string, number>
+  >({});
+  const [playerGamesPlayedById, setPlayerGamesPlayedById] = useState<
+    Record<string, number>
+  >({});
 
   // --- Calculate all possible metrics once (for filter UI, presets, state init) ---
   const allPossibleMetrics = useMemo(() => {
@@ -1954,6 +2016,163 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
     };
   }, [yahooSeasonYear]);
 
+  // Fetch latest team games played for the season (used to compute GP%).
+  useEffect(() => {
+    if (yahooSeasonYear === null) return;
+
+    let isCancelled = false;
+    const nhlSeasonIdString = getNhlSeasonIdFromYahooSeasonYear(yahooSeasonYear);
+    const nhlSeasonIdNumber = Number(nhlSeasonIdString);
+    if (Number.isNaN(nhlSeasonIdNumber)) return;
+
+    const fetchTeamGamesPlayed = async () => {
+      try {
+        const { data: latest, error: latestError } = await supabase
+          .from("nhl_standings_details")
+          .select("date")
+          .eq("season_id", nhlSeasonIdNumber)
+          .order("date", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (latestError) throw latestError;
+        const latestDate = latest?.date;
+        if (!latestDate) {
+          if (!isCancelled) setTeamGamesPlayedByAbbr({});
+          return;
+        }
+
+        const { data: rows, error: rowsError } = await supabase
+          .from("nhl_standings_details")
+          .select("team_abbrev,games_played")
+          .eq("season_id", nhlSeasonIdNumber)
+          .eq("date", latestDate);
+
+        if (rowsError) throw rowsError;
+
+        const map: Record<string, number> = {};
+        (rows as any[] | null)?.forEach((row) => {
+          const abbr =
+            typeof row?.team_abbrev === "string" ? row.team_abbrev : null;
+          const gamesPlayed =
+            typeof row?.games_played === "number"
+              ? row.games_played
+              : row?.games_played != null
+                ? Number(row.games_played)
+                : NaN;
+          if (!abbr || Number.isNaN(gamesPlayed)) return;
+          map[abbr] = gamesPlayed;
+        });
+
+        if (!isCancelled) setTeamGamesPlayedByAbbr(map);
+      } catch (err) {
+        console.warn("Failed to fetch nhl_standings_details for GP%:", err);
+        if (!isCancelled) setTeamGamesPlayedByAbbr({});
+      }
+    };
+
+    fetchTeamGamesPlayed();
+    return () => {
+      isCancelled = true;
+    };
+  }, [yahooSeasonYear]);
+
+  // Fetch player games played totals for the season (skaters + goalies).
+  useEffect(() => {
+    if (yahooSeasonYear === null) return;
+
+    if (playersData.length === 0) {
+      setPlayerGamesPlayedById({});
+      return;
+    }
+
+    let isCancelled = false;
+
+    const nhlSeasonIdString = getNhlSeasonIdFromYahooSeasonYear(yahooSeasonYear);
+    const nhlSeasonIdNumber = Number(nhlSeasonIdString);
+    if (Number.isNaN(nhlSeasonIdNumber)) return;
+
+    const skaterIds = Array.from(
+      new Set(
+        playersData
+          .filter((p) => p.player_type === "skater")
+          .map((p) => Number(p.nhl_player_id))
+          .filter((n) => Number.isFinite(n))
+      )
+    );
+
+    const goalieIds = Array.from(
+      new Set(
+        playersData
+          .filter((p) => p.player_type === "goalie")
+          .map((p) => Number(p.nhl_player_id))
+          .filter((n) => Number.isFinite(n))
+      )
+    );
+
+    const fetchPlayerGamesPlayed = async () => {
+      try {
+        const combined: Record<string, number> = {};
+
+        for (const chunk of chunkArray(skaterIds, 500)) {
+          const { data, error } = await supabase
+            .from("wgo_skater_stats_totals")
+            .select("player_id,games_played")
+            .eq("season", nhlSeasonIdString)
+            .in("player_id", chunk);
+          if (error) throw error;
+          (data as any[] | null)?.forEach((row) => {
+            const playerId =
+              row?.player_id !== null && row?.player_id !== undefined
+                ? String(row.player_id)
+                : null;
+            const gamesPlayed =
+              typeof row?.games_played === "number"
+                ? row.games_played
+                : row?.games_played != null
+                  ? Number(row.games_played)
+                  : NaN;
+            if (!playerId || Number.isNaN(gamesPlayed)) return;
+            combined[playerId] = gamesPlayed;
+          });
+        }
+
+        for (const chunk of chunkArray(goalieIds, 500)) {
+          const { data, error } = await supabase
+            .from("wgo_goalie_stats_totals")
+            .select("goalie_id,games_played")
+            .eq("season_id", nhlSeasonIdNumber)
+            .in("goalie_id", chunk);
+          if (error) throw error;
+          (data as any[] | null)?.forEach((row) => {
+            const goalieId =
+              row?.goalie_id !== null && row?.goalie_id !== undefined
+                ? String(row.goalie_id)
+                : null;
+            const gamesPlayed =
+              typeof row?.games_played === "number"
+                ? row.games_played
+                : row?.games_played != null
+                  ? Number(row.games_played)
+                  : NaN;
+            if (!goalieId || Number.isNaN(gamesPlayed)) return;
+            combined[goalieId] = gamesPlayed;
+          });
+        }
+
+        if (!isCancelled) setPlayerGamesPlayedById(combined);
+      } catch (err) {
+        console.warn("Failed to fetch wgo_*_stats_totals for GP%:", err);
+        if (!isCancelled) setPlayerGamesPlayedById({});
+      }
+    };
+
+    fetchPlayerGamesPlayed();
+    return () => {
+      isCancelled = true;
+    };
+  }, [playersData, yahooSeasonYear]);
+
   // ---------------------------
   // Memoized Calculations (Unchanged logic, but dependencies ensure updates)
   // ---------------------------
@@ -1981,9 +2200,40 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
     [teamWeekData]
   );
 
+  const playersDataWithComputedGp = useMemo(() => {
+    if (playersData.length === 0) return playersData;
+
+    return playersData.map((player) => {
+      const teamAbbr = normalizeTeamAbbreviation(
+        player.current_team_abbreviation || player.yahoo_team,
+        player.yahoo_team
+      );
+
+      const playerGamesPlayed =
+        playerGamesPlayedById[player.nhl_player_id] ?? null;
+
+      const teamGamesPlayed =
+        teamAbbr && teamGamesPlayedByAbbr[teamAbbr] != null
+          ? teamGamesPlayedByAbbr[teamAbbr]
+          : null;
+
+      const computed =
+        playerGamesPlayed !== null &&
+        teamGamesPlayed !== null &&
+        teamGamesPlayed > 0
+          ? Math.max(0, Math.min(1, playerGamesPlayed / teamGamesPlayed))
+          : null;
+
+      return {
+        ...player,
+        percent_games: computed ?? player.percent_games
+      };
+    });
+  }, [playersData, playerGamesPlayedById, teamGamesPlayedByAbbr]);
+
   // --- Filtered Players (Now depends on selectedPositions state) ---
   const filteredPlayers = useMemo(() => {
-    const result = playersData.filter((player) => {
+    const result = playersDataWithComputedGp.filter((player) => {
       // Ownership filter
       if (
         player.percent_ownership === null ||
@@ -2020,7 +2270,7 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
     });
     return result;
     // Dependency on selectedPositions is key here!
-  }, [playersData, ownershipThreshold, teamFilter, selectedPositions]);
+  }, [playersDataWithComputedGp, ownershipThreshold, teamFilter, selectedPositions]);
 
   // --- Compute Percentiles (Logic unchanged) ---
   const playersWithPercentiles: PlayerWithPercentiles[] = useMemo(() => {
@@ -2425,11 +2675,12 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
   const containerClass = clsx(
     styles.container,
     isSidebarLayout && styles.sidebarLayout,
-    isMobile && isMobileMinimized && styles.containerMinimized
+    isMobile && isMobileMinimized && styles.containerMinimized,
+    isInBottomDrawer && styles.inBottomDrawer
   );
 
   return (
-    <div className={containerClass}>
+    <div ref={containerRef} className={containerClass}>
       {/* Pass position state and setter to Filters */}
       <Filters
         ownershipThreshold={ownershipThreshold}
@@ -2459,6 +2710,29 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
           isSidebarLayout && styles.sidebarContent
         )}
       >
+        {isInBottomDrawer && !isMobile && (
+          <div className={styles.tableToolbar}>
+            <div className={styles.tableToolbarLeft}>
+              <span className={styles.tableToolbarTitle}>
+                Best Available{" "}
+                <span className={styles.tableToolbarAccent}>Players</span>
+              </span>
+              <span className={styles.tableToolbarMeta}>
+                {sortedPlayers.length.toLocaleString()} results
+              </span>
+            </div>
+            <div className={styles.tableToolbarRight}>
+              <button
+                type="button"
+                className={styles.toolbarButton}
+                onClick={resetFilters}
+              >
+                Reset
+              </button>
+            </div>
+          </div>
+        )}
+
         {loading ? (
           <div className={styles.message}>Loading players...</div>
         ) : paginatedPlayers.length === 0 ? (

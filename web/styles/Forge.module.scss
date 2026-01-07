@@ -1,0 +1,278 @@
+@use "styles/vars" as v;
+@use "sass:color";
+
+.container {
+  background-color: v.$background-dark;
+  color: v.$text-primary;
+  min-height: 100vh;
+  padding: 0 v.$space-lg;
+}
+
+.main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: v.$space-xl 0;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: v.$space-xl;
+}
+
+.logoContainer {
+  margin-bottom: v.$space-md;
+
+  img {
+    filter: drop-shadow(0 0 6px rgba(v.$color-white, 0.7));
+  }
+}
+
+.title {
+  font-family: v.$font-family-accent;
+  font-size: 3rem;
+  color: v.$color-white;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  text-align: center;
+  margin-bottom: v.$space-md;
+
+  .highlight {
+    color: v.$primary-color;
+  }
+}
+
+.controlsContainer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: v.$space-lg;
+  margin-bottom: v.$space-xl;
+  align-items: center;
+}
+
+.filterGroup {
+  display: flex;
+  align-items: center;
+}
+
+.searchInput {
+  width: 300px;
+  padding: v.$space-sm v.$space-md;
+  font-size: 1rem;
+  font-family: v.$font-family-primary;
+  color: v.$text-primary;
+  background-color: v.$background-medium;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-md;
+  transition: border-color 0.2s ease;
+
+  &:focus {
+    outline: none;
+    border-color: v.$primary-color;
+    box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.2);
+  }
+}
+
+.teamSelect {
+  padding: v.$space-sm v.$space-md;
+  font-size: 1rem;
+  font-family: v.$font-family-primary;
+  color: v.$text-primary;
+  background-color: v.$background-medium;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-md;
+  cursor: pointer;
+  min-width: 150px;
+
+  &:focus {
+    outline: none;
+    border-color: v.$primary-color;
+  }
+}
+
+.positionButtons {
+  display: flex;
+  background-color: v.$background-medium;
+  border-radius: v.$border-radius-md;
+  padding: 4px;
+  border: 1px solid v.$border-secondary;
+  gap: 4px;
+}
+
+.positionButton {
+  @include v.button-style;
+  background-color: transparent;
+  color: v.$text-secondary;
+  border: none;
+  padding: v.$space-xs v.$space-md;
+  font-family: v.$font-family-accent, sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: v.$border-radius-sm;
+  transition: all 0.2s ease;
+  cursor: pointer;
+
+  &:hover {
+    color: v.$text-primary;
+    background-color: rgba(v.$color-white, 0.05);
+  }
+
+  &.active {
+    background-color: v.$primary-color;
+    color: v.$background-dark;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: v.$space-lg;
+}
+
+.card {
+  position: relative;
+  background:
+    linear-gradient(180deg, rgba(v.$primary-color, 0.12) 0%, transparent 100%),
+    linear-gradient(145deg, #202020 0%, #1a1d21 100%);
+  border: 1px solid rgba(v.$primary-color, 0.3);
+  border-radius: v.$border-radius-md;
+  padding: v.$space-md;
+  transition: all 0.2s ease-in-out;
+
+  &::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 8px;
+    background-color: v.$primary-color;
+    box-shadow: 0 0 14px v.$primary-color;
+    border-top-left-radius: v.$border-radius-md;
+    border-bottom-left-radius: v.$border-radius-md;
+  }
+
+  // Position Accents
+  &.pos-C {
+    border-color: rgba(v.$info-color, 0.3);
+    background:
+      linear-gradient(180deg, rgba(v.$info-color, 0.12) 0%, transparent 100%),
+      linear-gradient(145deg, #202020 0%, #1a1d21 100%);
+    &::before {
+      background-color: v.$info-color;
+      box-shadow: 0 0 14px v.$info-color;
+    }
+  }
+  &.pos-L,
+  &.pos-LW {
+    $color-orange: #ff9f40;
+    border-color: rgba($color-orange, 0.3);
+    background:
+      linear-gradient(180deg, rgba($color-orange, 0.12) 0%, transparent 100%),
+      linear-gradient(145deg, #202020 0%, #1a1d21 100%);
+    &::before {
+      background-color: $color-orange;
+      box-shadow: 0 0 14px $color-orange;
+    }
+  }
+  &.pos-R,
+  &.pos-RW {
+    $color-purple: #9b59b6;
+    border-color: rgba($color-purple, 0.3);
+    background:
+      linear-gradient(180deg, rgba($color-purple, 0.12) 0%, transparent 100%),
+      linear-gradient(145deg, #202020 0%, #1a1d21 100%);
+    &::before {
+      background-color: $color-purple;
+      box-shadow: 0 0 14px $color-purple;
+    }
+  }
+  &.pos-D {
+    $color-teal: #4bc0c0;
+    border-color: rgba($color-teal, 0.3);
+    background:
+      linear-gradient(180deg, rgba($color-teal, 0.12) 0%, transparent 100%),
+      linear-gradient(145deg, #202020 0%, #1a1d21 100%);
+    &::before {
+      background-color: $color-teal;
+      box-shadow: 0 0 14px $color-teal;
+    }
+  }
+  &.pos-G {
+    border-color: rgba(v.$success-color, 0.3);
+    background:
+      linear-gradient(
+        180deg,
+        rgba(v.$success-color, 0.12) 0%,
+        transparent 100%
+      ),
+      linear-gradient(145deg, #202020 0%, #1a1d21 100%);
+    &::before {
+      background-color: v.$success-color;
+      box-shadow: 0 0 14px v.$success-color;
+    }
+  }
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(v.$primary-color, 0.2);
+    border-color: rgba(v.$primary-color, 0.7);
+  }
+
+  h2 {
+    font-family: v.$font-family-accent;
+    font-size: 1.5rem;
+    color: v.$color-white;
+    margin: 0 0 v.$space-sm;
+    text-transform: uppercase;
+  }
+
+  p {
+    font-family: v.$font-family-primary;
+    color: v.$text-secondary;
+    margin: 0 0 v.$space-md;
+  }
+
+  ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    font-family: v.$font-family-numbers;
+
+    li {
+      display: flex;
+      justify-content: space-between;
+      padding: v.$space-xs 0;
+      border-bottom: 1px solid v.$border-secondary;
+
+      &:last-child {
+        border-bottom: none;
+      }
+    }
+  }
+
+  .uncertainty {
+    margin-top: v.$space-md;
+    padding-top: v.$space-md;
+    border-top: 1px solid v.$border-secondary;
+
+    h3 {
+      font-family: v.$font-family-accent;
+      color: v.$primary-color;
+      font-size: 1.1rem;
+      margin: 0 0 v.$space-sm;
+      text-transform: uppercase;
+    }
+
+    ul {
+      li {
+        font-size: 0.9rem;
+        color: v.$text-secondary;
+      }
+    }
+  }
+}

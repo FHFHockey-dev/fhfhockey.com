@@ -57,7 +57,6 @@ import useTeamSummary from "hooks/useTeamSummary";
 import useYahooCurrentMatchupWeek from "hooks/useYahooCurrentMatchupWeek";
 
 import GameGridContext from "./contexts/GameGridContext";
-import { rank } from "d3";
 
 type SortKey = {
   key: "totalOffNights" | "totalGamesPlayed" | "weekScore";
@@ -800,8 +799,8 @@ function GameGridInternal({
                         const highlightClass = top10TeamIds.has(teamId)
                           ? styles.rowBest10
                           : bottom10TeamIds.has(teamId)
-                            ? styles.rowWorst10
-                            : "";
+                          ? styles.rowWorst10
+                          : "";
                         const rank = scoreRankMap.get(teamId) ?? 16;
                         return (
                           <TeamRow
@@ -1224,8 +1223,8 @@ function GameGridInternal({
                         const highlightClass = top10TeamIds.has(teamId)
                           ? styles.rowBest10
                           : bottom10TeamIds.has(teamId)
-                            ? styles.rowWorst10
-                            : "";
+                          ? styles.rowWorst10
+                          : "";
                         const rank = scoreRankMap.get(teamId) ?? 16;
                         return (
                           <TeamRow
@@ -1276,7 +1275,7 @@ function GameGridInternal({
         >
           <span className={styles.bottomDrawerTitle}>
             <span className={styles.bottomDrawerBadge} aria-hidden="true">
-              BPA
+              BPA |
             </span>
             Best Players Available
           </span>

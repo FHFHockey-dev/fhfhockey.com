@@ -2,53 +2,7 @@
 @use "styles/vars" as v;
 @use "sass:color";
 @use "sass:math";
-
-// Modern breakpoints
-$breakpoint-small: 320px;
-$breakpoint-medium: 480px;
-$breakpoint-large: 768px;
-$breakpoint-xl: 1024px;
-$breakpoint-2xl: 1440px;
-
-// Modern mixins
-@mixin respond-to($breakpoint) {
-  @if $breakpoint == small {
-    @media (max-width: $breakpoint-small) {
-      @content;
-    }
-  } @else if $breakpoint == medium {
-    @media (max-width: $breakpoint-medium) {
-      @content;
-    }
-  } @else if $breakpoint == large {
-    @media (max-width: $breakpoint-large) {
-      @content;
-    }
-  } @else if $breakpoint == xl {
-    @media (max-width: $breakpoint-xl) {
-      @content;
-    }
-  } @else if $breakpoint == 2xl {
-    @media (max-width: $breakpoint-2xl) {
-      @content;
-    }
-  }
-}
-
-// Modern design tokens
-$border-radius-sm: 6px;
-$border-radius-md: 8px;
-$border-radius-lg: 12px;
-$border-radius-xl: 16px;
-
-$shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-$shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
-$shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
-$shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.15);
-
-$transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-$transition-normal: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-$transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+@use "styles/panel" as panel;
 
 // --- Base Layout & Containers ---
 
@@ -116,11 +70,7 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   min-width: 0; // Prevent flex blowout
   width: 100%;
   min-height: 0;
-  border-right: 10px solid rgba(v.$primary-color, 1);
-  border-bottom: 10px solid rgba(v.$primary-color, 1);
-  background-color: v.$primary-color;
-  border-bottom-right-radius: v.$border-radius-xl;
-  filter: drop-shadow(0 4px 4px v.$primary-color);
+  @include v.glass-panel(0, v.$border-radius-xl);
 
   @media (min-width: v.$breakpoint-desktop) {
     height: auto;
@@ -137,7 +87,11 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   padding: 0;
   min-height: 0;
-  background-color: v.$primary-color;
+  @include v.glass-panel(0, v.$border-radius-xl * 2);
+  border: 2px solid rgba(v.$primary-color, 0.55);
+  box-shadow:
+    v.$desktop-panel-shadow,
+    0 0 24px rgba(v.$primary-color, 0.12);
   border-radius: v.$border-radius-xl * 2;
 
   @media (min-width: v.$breakpoint-desktop) {
@@ -167,11 +121,7 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   min-width: 0;
   width: 100%;
   min-height: 0;
-  border-left: 10px solid rgba(v.$primary-color, 1);
-  border-bottom: 10px solid rgba(v.$primary-color, 1);
-  background-color: v.$primary-color;
-  border-bottom-left-radius: v.$border-radius-xl;
-  filter: drop-shadow(0 4px 4px v.$primary-color);
+  @include v.glass-panel(0, v.$border-radius-xl);
 
   @media (min-width: v.$breakpoint-desktop) {
     height: auto;
@@ -206,24 +156,23 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   // @include v.element-wrapper;
   border-radius: v.$border-radius-xl * 2;
   overflow: hidden;
-  border: 2px solid v.$color-white;
-  border: 10px solid rgba(v.$primary-color-opaque, 0.75);
-  filter: drop-shadow(0 0 4px v.$primary-color);
+  border: 1px solid v.$desktop-panel-border;
   background: linear-gradient(
     180deg,
-    color.adjust(v.$background-medium, $lightness: 2%),
-    v.$background-dark
+    rgba(color.adjust(v.$background-medium, $lightness: 2%), 0.95),
+    rgba(v.$background-dark, 0.95)
   );
   box-shadow:
-    v.$box-shadow-default,
-    0 0 0 1px rgba(255, 255, 255, 0.04) inset,
+    v.$desktop-panel-shadow,
+    0 0 0 1px rgba(v.$color-white, 0.04) inset,
     0 0 24px rgba(v.$primary-color, 0.08);
   // Previously visible allowed internal absolutely positioned separator
   // lines to extend past the rounded bottom-left corner. Hide overflow so
   // the vertical team column separator and any negative-offset pseudo
   // elements are clipped to the container's radius.
   position: relative;
-  backdrop-filter: none;
+  backdrop-filter: blur(v.$blur-backdrop-soft) saturate(150%);
+  -webkit-backdrop-filter: blur(v.$blur-backdrop-soft) saturate(150%);
   display: flex;
   flex-direction: column;
   min-height: 0; // allow inner scroll areas to size correctly
@@ -246,6 +195,15 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: none;
 }
 
+.bottomDrawerBadge {
+  font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  margin-right: v.$space-sm;
+  color: v.$secondary-color;
+}
+
 @media (min-width: v.$breakpoint-desktop) {
   .bottomDrawer {
     display: block;
@@ -266,7 +224,7 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 60;
     backdrop-filter: blur(10px);
     overflow: hidden;
-    transition: height $transition-normal;
+    transition: height v.$transition-duration v.$ease-desktop-standard;
 
     // neon rail across the top edge
     &::before {
@@ -310,9 +268,9 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     color: v.$text-color-primary;
     cursor: pointer;
     transition:
-      transform $transition-fast,
-      box-shadow $transition-fast,
-      background $transition-fast;
+      transform 0.15s v.$ease-desktop-emphasized,
+      box-shadow 0.15s v.$ease-desktop-emphasized,
+      background 0.15s v.$ease-desktop-emphasized;
 
     &:hover {
       box-shadow:
@@ -536,7 +494,7 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   letter-spacing: 0.05em;
   font-size: v.$font-size-sm;
   font-weight: 600;
-  border-radius: $border-radius-md;
+  border-radius: v.$border-radius-md;
   padding: v.$space-xs v.$space-md;
   background: linear-gradient(
     135deg,
@@ -546,7 +504,7 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   color: v.$text-secondary;
   border: 1px solid rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(12px);
-  transition: all $transition-normal;
+  transition: all v.$transition-duration v.$ease-desktop-standard;
   position: relative;
   overflow: hidden;
 
@@ -557,11 +515,11 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     inset: 0;
     background: linear-gradient(
       135deg,
-      rgba(7, 170, 226, 0.1),
-      rgba(18, 144, 187, 0.05)
+      rgba(v.$secondary-color, 0.1),
+      rgba(v.$primary-color, 0.05)
     );
     opacity: 0;
-    transition: opacity $transition-normal;
+    transition: opacity v.$transition-duration v.$ease-desktop-standard;
   }
 
   &:hover:not(:disabled) {
@@ -571,10 +529,10 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       rgba(255, 255, 255, 0.08)
     );
     color: v.$text-color-primary;
-    border-color: rgba(7, 170, 226, 0.3);
+    border-color: rgba(v.$secondary-color, 0.3);
     box-shadow:
-      $shadow-lg,
-      0 0 20px rgba(7, 170, 226, 0.2);
+      v.$shadow-hover,
+      0 0 20px rgba(v.$secondary-color, 0.2);
 
     &::before {
       opacity: 1;
@@ -583,14 +541,14 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
   &:active:not(:disabled) {
     transform: translateY(0);
-    transition: transform $transition-fast;
+    transition: transform 0.15s v.$ease-desktop-emphasized;
   }
 
   &:focus-visible {
     outline: 2px solid v.$primary-color;
     outline-offset: 2px;
     z-index: 2;
-    box-shadow: 0 0 0 4px rgba(7, 170, 226, 0.2);
+    box-shadow: v.$focus-ring-desktop;
   }
 
   &:disabled {
@@ -657,13 +615,13 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   color: v.$color-white;
   border-color: v.$primary-color;
   font-weight: 600;
-  box-shadow: 0 2px 8px rgba(7, 170, 226, 0.3);
+  box-shadow: 0 2px 8px rgba(v.$secondary-color, 0.3);
 
   &:hover {
     background-color: color.adjust(v.$primary-color, $lightness: -5%);
     border-color: color.adjust(v.$primary-color, $lightness: -5%);
     transform: translateY(-1px);
-    box-shadow: 0 4px 16px rgba(7, 170, 226, 0.4);
+    box-shadow: 0 4px 16px rgba(v.$secondary-color, 0.4);
   }
 }
 
@@ -739,7 +697,7 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     transform: translateX(-50%);
     width: var(--week-notch-width);
     height: var(--week-notch-depth);
-    background: #101010
+    background: v.$background-dark
       linear-gradient(
         135deg,
         rgba(255, 255, 255, 0.035),
@@ -897,11 +855,11 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   font-family: v.$font-family-numbers, v.$font-family-primary, sans-serif;
   background: linear-gradient(
     135deg,
-    rgba(7, 170, 226, 0.12),
-    rgba(7, 170, 226, 0.08)
+    rgba(v.$secondary-color, 0.12),
+    rgba(v.$secondary-color, 0.08)
   );
   color: v.$primary-color;
-  border: 1px solid rgba(7, 170, 226, 0.25);
+  border: 1px solid rgba(v.$secondary-color, 0.25);
   backdrop-filter: blur(8px);
 }
 
@@ -938,15 +896,15 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 // --- Grid layout improvements ---
 .theme-colors {
   /* WCAG-adjusted palette tokens */
-  --color-off-night: #1b9b68; /* darkened for contrast */
-  --color-off-night-bg: rgba(27, 155, 104, 0.18);
-  --color-heavy: #b64343; /* slightly brighter mid-tone red */
-  --color-heavy-bg: rgba(182, 67, 67, 0.18);
-  --color-mid: #c7a441;
-  --color-mid-bg: rgba(199, 164, 65, 0.18);
-  --color-rank-top: #1d8dd6;
-  --color-rank-bottom: #6a2c2c;
-  --focus-ring: 0 0 0 3px rgba(7, 170, 226, 0.4);
+  --color-off-night: #{v.$schedule-green};
+  --color-off-night-bg: #{rgba(v.$schedule-green, 0.18)};
+  --color-heavy: #{v.$schedule-red};
+  --color-heavy-bg: #{rgba(v.$schedule-red, 0.18)};
+  --color-mid: #{v.$schedule-yellow};
+  --color-mid-bg: #{rgba(v.$schedule-yellow, 0.18)};
+  --color-rank-top: #{v.$rank-good};
+  --color-rank-bottom: #{v.$rank-bad};
+  --focus-ring: #{v.$focus-ring-desktop};
 }
 .gridScrollOuter {
   overflow-x: auto;
@@ -954,7 +912,7 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   -webkit-overflow-scrolling: touch;
   max-width: 100%;
   scrollbar-width: thin;
-  scrollbar-color: v.$secondary-color rgba(255, 255, 255, 0.1);
+  scrollbar-color: v.$secondary-color rgba(v.$color-white, 0.1);
   background-color: v.$color-bg-dark-2; // darkest canvas for visible gaps
   position: relative; // anchor continuous separator lines
   // Mirror container rounding so inner background doesn't visually square off
@@ -981,7 +939,7 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     width: 2px;
     left: var(--team-col-right, 0); // fallback before JS sets precise value
     background: var(--separator-color);
-    border-radius: $border-radius-md;
+    border-radius: v.$border-radius-md;
   }
   // Left edge of stats (GP) column
   &::after {
@@ -992,7 +950,7 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     width: 2px;
     left: var(--stats-start-left, 0);
     background: var(--separator-color);
-    border-radius: $border-radius-md;
+    border-radius: v.$border-radius-md;
   }
   // Solid line under header row
   .headerBottomLine {
@@ -1159,8 +1117,8 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   height: 24px;
   display: block;
   transition:
-    opacity $transition-fast,
-    filter $transition-fast;
+    opacity 0.15s v.$ease-desktop-emphasized,
+    filter 0.15s v.$ease-desktop-emphasized;
 }
 
 .homeAwayIconMobile {
@@ -1281,12 +1239,12 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
 // Home/Away icon badge colors
 .homeAwayBadgeHome {
-  --ha-border-color: #00cc22;
-  --ha-bg-color: rgba(0, 204, 34, 0.2);
+  --ha-border-color: #{v.$schedule-green};
+  --ha-bg-color: #{rgba(v.$schedule-green, 0.2)};
 }
 .homeAwayBadgeAway {
-  --ha-border-color: #cc3300;
-  --ha-bg-color: rgba(204, 51, 0, 0.2);
+  --ha-border-color: #{v.$schedule-red};
+  --ha-bg-color: #{rgba(v.$schedule-red, 0.2)};
 }
 
 // Inline badge (used in legend)
@@ -1392,7 +1350,7 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
   .mobileCompactTable tbody tr {
     height: 34px; // slightly tighter
-    transition: filter $transition-fast; // smooth brightness change
+    transition: filter 0.15s v.$ease-desktop-emphasized; // smooth brightness change
   }
   .mobileCompactTable tbody tr:hover {
     filter: brightness(1.03);
@@ -1475,7 +1433,7 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     0 0 5px rgba(v.$color-white, 0.25),
     0 1px 2px rgba(0, 0, 0, 0.6);
 
-  @include respond-to(medium) {
+  @media (max-width: v.$breakpoint-mobile-max) {
     font-size: 0.75rem;
     padding: 0;
   }
@@ -1493,15 +1451,6 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 // Row Pattern A: Left gutter bar for top 10 (best) and bottom 10 (worst)
 // We apply a pseudo-element on the tr via a utility class to avoid adding extra markup.
 // Keep it subtle to not overpower day density backgrounds.
-
-// Color tokens (migrated to vars.scss unified schedule tokens)
-$best-accent: v.$schedule-green;
-$worst-accent: v.$schedule-red;
-
-// Mirror CSS custom properties as SASS variables for header accent bars (avoid using color functions on CSS vars)
-$off-night-color: #1b9b68;
-$mid-color: #c7a441;
-$heavy-color: #b64343;
 
 // // Base gutter helper (applied to tr) – sets positioning context
 // .rowGutterHighlight {
@@ -1537,11 +1486,11 @@ $heavy-color: #b64343;
     display: none !important;
   }
   > td:first-child {
-    background: rgba($best-accent, v.$fill-opacity-subtle) !important;
-    @include v.schedule-outline($best-accent);
-    border-top: 2px solid $best-accent;
-    border-left: 2px solid $best-accent;
-    border-bottom: 2px solid $best-accent;
+    background: rgba(v.$schedule-green, v.$fill-opacity-subtle) !important;
+    @include v.schedule-outline(v.$schedule-green);
+    border-top: 2px solid v.$schedule-green;
+    border-left: 2px solid v.$schedule-green;
+    border-bottom: 2px solid v.$schedule-green;
     border-right: none !important;
     border-top-left-radius: v.$border-radius-sm;
     border-bottom-left-radius: v.$border-radius-sm;
@@ -1559,15 +1508,15 @@ $heavy-color: #b64343;
     display: none !important;
   }
   > td:first-child {
-    background: rgba($worst-accent, v.$fill-opacity-subtle) !important;
-    border-top: 2px solid $worst-accent;
-    border-bottom: 2px solid $worst-accent;
-    border-left: 2px solid $worst-accent;
+    background: rgba(v.$schedule-red, v.$fill-opacity-subtle) !important;
+    border-top: 2px solid v.$schedule-red;
+    border-bottom: 2px solid v.$schedule-red;
+    border-left: 2px solid v.$schedule-red;
     border-right: none !important;
     outline-offset: -2px;
     border-top-left-radius: v.$border-radius-sm;
     border-bottom-left-radius: v.$border-radius-sm;
-    @include v.schedule-outline($worst-accent);
+    @include v.schedule-outline(v.$schedule-red);
   }
   > td:first-child .firstColumnContent {
     background: transparent !important;
@@ -1636,7 +1585,7 @@ $heavy-color: #b64343;
   font-weight: 600;
   line-height: 1;
   background: v.$primary-color;
-  color: #000; // high contrast against primary
+  color: v.$color-black; // high contrast against primary
   border-radius: 50%;
   cursor: help;
   box-shadow:
@@ -1645,9 +1594,9 @@ $heavy-color: #b64343;
   text-transform: none;
   letter-spacing: 0;
   transition:
-    background $transition-fast,
-    box-shadow $transition-fast,
-    transform $transition-fast;
+    background 0.15s v.$ease-desktop-emphasized,
+    box-shadow 0.15s v.$ease-desktop-emphasized,
+    transform 0.15s v.$ease-desktop-emphasized;
 
   &:hover,
   &:focus-visible {
@@ -1667,8 +1616,8 @@ $heavy-color: #b64343;
   opacity: 1;
   transform: translateY(0);
   transition:
-    opacity $transition-normal,
-    transform $transition-normal;
+    opacity v.$transition-duration v.$ease-desktop-standard,
+    transform v.$transition-duration v.$ease-desktop-standard;
 }
 .fadeExit {
   opacity: 1;
@@ -1677,8 +1626,8 @@ $heavy-color: #b64343;
   opacity: 0;
   transform: translateY(-4px);
   transition:
-    opacity $transition-fast,
-    transform $transition-fast;
+    opacity 0.15s v.$ease-desktop-emphasized,
+    transform 0.15s v.$ease-desktop-emphasized;
 }
 
 // Collapsible no-games group
@@ -1741,38 +1690,38 @@ $heavy-color: #b64343;
     .navButtonRow {
       display: flex;
       width: 100%;
-      border-top-right-radius: $border-radius-lg;
-      border-top-left-radius: $border-radius-lg;
+      border-top-right-radius: v.$border-radius-lg;
+      border-top-left-radius: v.$border-radius-lg;
       background: linear-gradient(
         135deg,
-        rgba(7, 170, 226, 0.15),
-        rgba(18, 144, 187, 0.1)
+        rgba(v.$secondary-color, 0.15),
+        rgba(v.$primary-color, 0.1)
       );
       color: v.$primary-color;
-      border: 1px solid rgba(7, 170, 226, 0.25);
+      border: 1px solid rgba(v.$secondary-color, 0.25);
       backdrop-filter: blur(8px);
-      box-shadow: $shadow-sm;
+      box-shadow: v.$box-shadow-default;
 
       button {
         @include v.button-style;
         background: linear-gradient(
           135deg,
-          rgba(7, 170, 226, 0.12),
-          rgba(7, 170, 226, 0.08)
+          rgba(v.$secondary-color, 0.12),
+          rgba(v.$secondary-color, 0.08)
         );
         color: v.$primary-color;
         flex: 1 1 auto;
         height: 40px;
         font-size: v.$font-size-small * 0.8;
         border-radius: 0;
-        border: 1px solid rgba(7, 170, 226, 0.25);
+        border: 1px solid rgba(v.$secondary-color, 0.25);
         margin: 0;
         white-space: nowrap;
         min-width: none;
         padding: v.$space-sm;
         text-align: center;
         text-transform: uppercase;
-        transition: all $transition-normal;
+        transition: all v.$transition-duration v.$ease-desktop-standard;
         backdrop-filter: blur(8px);
         position: relative;
         overflow: hidden;
@@ -1784,21 +1733,21 @@ $heavy-color: #b64343;
           inset: 0;
           background: linear-gradient(
             135deg,
-            rgba(7, 170, 226, 0.2),
-            rgba(18, 144, 187, 0.1)
+            rgba(v.$secondary-color, 0.2),
+            rgba(v.$primary-color, 0.1)
           );
           opacity: 0;
-          transition: opacity $transition-normal;
+          transition: opacity v.$transition-duration v.$ease-desktop-standard;
         }
 
         &:hover {
           background: linear-gradient(
             135deg,
-            rgba(7, 170, 226, 0.2),
-            rgba(7, 170, 226, 0.15)
+            rgba(v.$secondary-color, 0.2),
+            rgba(v.$secondary-color, 0.15)
           );
           color: v.$text-color-primary;
-          box-shadow: $shadow-md;
+          box-shadow: v.$box-shadow-default;
 
           &::before {
             opacity: 1;
@@ -1807,19 +1756,19 @@ $heavy-color: #b64343;
 
         &:active {
           transform: translateY(0);
-          transition: transform $transition-fast;
+          transition: transform 0.15s v.$ease-desktop-emphasized;
         }
 
         &:focus-visible {
           outline-offset: -2px;
           z-index: 2;
-          box-shadow: 0 0 0 3px rgba(7, 170, 226, 0.3);
+          box-shadow: v.$focus-ring-desktop;
         }
       }
 
       button:first-child {
         // Apply to first button (.dateButtonPrev)
-        border-top-left-radius: 11px;
+        border-top-left-radius: v.$border-radius-lg;
         flex-grow: 0;
         flex-basis: 15%;
         padding: v.$space-sm v.$space-xs;
@@ -1829,7 +1778,7 @@ $heavy-color: #b64343;
       }
       button:last-child {
         // Apply to last button (.dateButtonNext)
-        border-top-right-radius: 11px;
+        border-top-right-radius: v.$border-radius-lg;
         border-left: none;
         flex-grow: 0;
         flex-basis: 15%;
@@ -1906,10 +1855,10 @@ $heavy-color: #b64343;
     border-left: 12px solid v.$secondary-color;
     background: linear-gradient(
       135deg,
-      rgba(7, 170, 226, 0.1),
-      rgba(18, 144, 187, 0.1)
+      rgba(v.$secondary-color, 0.1),
+      rgba(v.$primary-color, 0.1)
     );
-    border-radius: 8px;
+    border-radius: v.$border-radius-md;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 
     // Inline layout: title on the left, tips button on the right
@@ -2003,30 +1952,30 @@ $heavy-color: #b64343;
   td,
   th {
     transition:
-      background $transition-fast,
-      color $transition-fast,
-      box-shadow $transition-fast;
+      background 0.15s v.$ease-desktop-emphasized,
+      color 0.15s v.$ease-desktop-emphasized,
+      box-shadow 0.15s v.$ease-desktop-emphasized;
   }
 
   thead th:first-child {
-    border-top-left-radius: $border-radius-md;
+    border-top-left-radius: v.$border-radius-md;
     overflow: hidden;
   }
 
   thead th:last-child {
-    border-top-right-radius: $border-radius-md;
+    border-top-right-radius: v.$border-radius-md;
     overflow: hidden;
   }
 
   // Give bottom-left cell a matching radius so its sticky background doesn't square off corner
   tbody tr:last-of-type td:first-child {
-    border-bottom-left-radius: $border-radius-md;
+    border-bottom-left-radius: v.$border-radius-md;
     overflow: hidden;
   }
 
   // Give bottom-left cell a matching radius so its sticky background doesn't square off corner
   tbody tr:last-of-type td:last-child {
-    border-bottom-right-radius: $border-radius-md;
+    border-bottom-right-radius: v.$border-radius-md;
     overflow: hidden;
   }
 
@@ -2073,23 +2022,20 @@ $heavy-color: #b64343;
     border-top-left-radius: v.$border-radius-lg;
     border-top-right-radius: v.$border-radius-lg;
 
-    background: linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.05),
-      rgba(255, 255, 255, 0.02)
-    );
-    color: v.$text-color-secondary;
-    font-weight: 600;
-    font-family: v.$font-family-primary;
+    background: color.adjust(v.$background-dark, $lightness: -2%);
+    color: v.$color-white;
+    font-weight: 900;
+    font-family: v.$font-family-accent, sans-serif; // Industrial Look
     font-size: 14px;
     text-transform: uppercase;
-    letter-spacing: 0.3px;
+    letter-spacing: 0.08em;
     border: none;
     white-space: normal;
     vertical-align: middle;
-    box-shadow: $shadow-md;
+    box-shadow: v.$box-shadow-default;
     backdrop-filter: blur(8px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 2px solid v.$secondary-color;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 
     @media (max-width: 480px) {
       height: 30px;
@@ -2115,16 +2061,16 @@ $heavy-color: #b64343;
 
       // Apply data-intensity background directly to th
       &[data-intensity="low"] {
-        background-color: rgba(226, 43, 7, 0.25); // Red
+        background-color: rgba(v.$schedule-red, v.$fill-opacity);
       }
       &[data-intensity="medium-low"] {
-        background-color: rgba(226, 63, 7, 0.25); // Orange
+        background-color: rgba(v.$schedule-yellow, v.$fill-opacity);
       }
       &[data-intensity="medium-high"] {
-        background-color: rgba(255, 193, 8, 0.4); // Yellow
+        background-color: rgba(v.$schedule-yellow, v.$fill-opacity-strong);
       }
       &[data-intensity="high"] {
-        background-color: rgba(107, 191, 58, 0.25); // Green
+        background-color: rgba(v.$schedule-green, v.$fill-opacity);
       }
 
       // Sortable Header Styling
@@ -2180,22 +2126,19 @@ $heavy-color: #b64343;
     // Sticky First Header Cell (Team)
     th:first-child {
       // Nested under thead
-      font-family: v.$font-family-primary;
+      font-family: v.$font-family-accent, sans-serif;
       font-size: 14px;
-      color: v.$text-color-primary;
+      color: v.$color-white;
       text-align: center;
       position: sticky;
       left: 0;
       z-index: 4; // Higher than body sticky cells
       min-width: 65px;
       width: 10%;
-      background: linear-gradient(
-        135deg,
-        v.$background-dark,
-        color.adjust(v.$background-dark, $lightness: 3%)
-      );
+      background: color.adjust(v.$background-dark, $lightness: -2%);
       // Removed cell border in favor of continuous overlay line
       box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+      border-right: 2px solid v.$secondary-color; // Match header bottom border color for corner
 
       @media (max-width: 480px) {
         width: 100%;
@@ -2333,7 +2276,7 @@ $heavy-color: #b64343;
     .switchContainer {
       width: 100%;
       display: flex;
-      background-color: rgba(7, 170, 226, 0.1);
+      background-color: rgba(v.$secondary-color, 0.1);
       align-items: center;
       justify-content: center;
       min-height: 18px;
@@ -2363,7 +2306,7 @@ $heavy-color: #b64343;
     tr {
       height: 55px;
       // Nested under tbody
-      transition: all $transition-normal;
+      transition: all v.$transition-duration v.$ease-desktop-standard;
       position: relative;
 
       &:last-child {
@@ -2397,12 +2340,15 @@ $heavy-color: #b64343;
         // Remove dark overlay; simply boost existing row background brightness
         filter: brightness(1.4);
         z-index: 1;
-        border-radius: $border-radius-sm;
+        border-radius: v.$border-radius-sm;
+        box-shadow: 0 0 15px rgba(v.$primary-color, 0.15);
+        border-top: 1px solid rgba(v.$primary-color, 0.3);
+        border-bottom: 1px solid rgba(v.$primary-color, 0.3);
       }
 
       td:first-child {
         border-right: 2px solid v.$primary-color;
-        box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+        box-shadow: 2px 0 8px rgba(v.$primary-color, 0.25);
       }
 
       // (Deprecated) previous row highlight styles removed in favor of left gutter bar (.rowBest10 / .rowWorst10)
@@ -2419,7 +2365,7 @@ $heavy-color: #b64343;
       border-collapse: collapse;
       border-spacing: 0; // kept for safety, but gaps now controlled at table level
       min-width: 37px;
-      transition: all $transition-normal;
+      transition: all v.$transition-duration v.$ease-desktop-standard;
       position: relative;
 
       &:nth-child(9) {
@@ -2441,16 +2387,16 @@ $heavy-color: #b64343;
 
       // Apply data-intensity background directly to td
       &[data-intensity="low"] {
-        background-color: rgba(226, 43, 7, 0.15);
+        background-color: rgba(v.$schedule-red, v.$fill-opacity-subtle);
       }
       &[data-intensity="medium-low"] {
-        background-color: rgba(255, 165, 0, 0.15);
+        background-color: rgba(v.$schedule-yellow, v.$fill-opacity-subtle);
       }
       &[data-intensity="medium-high"] {
-        background-color: rgba(255, 255, 0, 0.15);
+        background-color: rgba(v.$schedule-yellow, v.$fill-opacity-subtle);
       }
       &[data-intensity="high"] {
-        background-color: rgba(0, 128, 0, 0.15);
+        background-color: rgba(v.$schedule-green, v.$fill-opacity-subtle);
       }
 
       // RANK COLOR STYLES
@@ -2471,8 +2417,8 @@ $heavy-color: #b64343;
         box-shadow: none; // remove outline so only natural background color defines chip
         background-clip: padding-box;
         transition:
-          background-color $transition-fast,
-          box-shadow $transition-fast;
+          background-color 0.15s v.$ease-desktop-emphasized,
+          box-shadow 0.15s v.$ease-desktop-emphasized;
 
         &:hover {
           filter: brightness(1.08);
@@ -2538,9 +2484,9 @@ $heavy-color: #b64343;
     position: sticky;
     bottom: 0;
     z-index: 3; // Above body cells, same level as header
-    box-shadow: $shadow-md;
+    box-shadow: v.$box-shadow-default;
     backdrop-filter: blur(8px);
-    border-top: 2px solid rgba(7, 170, 226, 0.3);
+    border-top: 2px solid rgba(v.$secondary-color, 0.3);
 
     td {
       // Nested under .totalGamesPerDayRow
@@ -2557,26 +2503,26 @@ $heavy-color: #b64343;
 
       // Apply data-intensity background directly to th
       &[data-intensity="low"] {
-        background-color: rgba(226, 43, 7, 0.25); // Red
+        background-color: rgba(v.$schedule-red, v.$fill-opacity);
       }
       &[data-intensity="medium-low"] {
-        background-color: rgba(226, 63, 7, 0.25); // Orange
+        background-color: rgba(v.$schedule-yellow, v.$fill-opacity);
       }
       &[data-intensity="medium-high"] {
-        background-color: rgba(255, 193, 8, 0.4); // Yellow
+        background-color: rgba(v.$schedule-yellow, v.$fill-opacity-strong);
       }
       &[data-intensity="high"] {
-        background-color: rgba(107, 191, 58, 0.25); // Green
+        background-color: rgba(v.$schedule-green, v.$fill-opacity);
       }
 
       // Overlay (nested is fine)
       .excludedOverlay {
-        background-color: rgba(80, 80, 80, 0.65);
+        background-color: rgba(v.$background-dark, 0.7);
         position: absolute;
         inset: 0;
         z-index: 1;
         pointer-events: none;
-        border-radius: 4px;
+        border-radius: v.$border-radius-sm;
       }
     }
 
@@ -2776,16 +2722,16 @@ $heavy-color: #b64343;
         // Apply intensity colors
         // Apply data-intensity background directly to th
         &[data-intensity="low"] {
-          background-color: rgba(226, 43, 7, 0.25); // Red
+          background-color: rgba(v.$schedule-red, v.$fill-opacity);
         }
         &[data-intensity="medium-low"] {
-          background-color: rgba(226, 63, 7, 0.25); // Orange
+          background-color: rgba(v.$schedule-yellow, v.$fill-opacity);
         }
         &[data-intensity="medium-high"] {
-          background-color: rgba(255, 193, 8, 0.4); // Yellow
+          background-color: rgba(v.$schedule-yellow, v.$fill-opacity-strong);
         }
         &[data-intensity="high"] {
-          background-color: rgba(107, 191, 58, 0.25); // Green
+          background-color: rgba(v.$schedule-green, v.$fill-opacity);
         }
       }
       td.title {
@@ -3111,19 +3057,19 @@ $heavy-color: #b64343;
     border: 1px solid rgba(255, 255, 255, 0.1);
     background: linear-gradient(
       145deg,
-      rgba(7, 170, 226, 0.1),
-      rgba(18, 144, 187, 0.1)
+      rgba(v.$secondary-color, 0.1),
+      rgba(v.$primary-color, 0.1)
     );
     transition: all 0.2s ease;
     &:hover:not(:disabled) {
-      background-color: rgba(7, 170, 226, 0.2);
+      background-color: rgba(v.$secondary-color, 0.2);
       color: v.$primary-color;
       border-color: rgba(255, 255, 255, 0.2);
       transform: translateY(-1px);
     }
     &:focus-visible {
-      outline: 2px solid v.$primary-color;
-      outline-offset: 2px;
+      outline: none;
+      box-shadow: v.$focus-ring-desktop;
       z-index: 2;
     }
     &:disabled {
@@ -3384,13 +3330,13 @@ $heavy-color: #b64343;
     vertical-align: -2px;
   }
   .offNight {
-    background-color: rgba(0, 128, 0, 0.25);
+    background-color: rgba(v.$schedule-green, v.$fill-opacity);
   }
   .mediumHeavy {
-    background-color: rgba(255, 165, 0, 0.25);
+    background-color: rgba(v.$schedule-yellow, v.$fill-opacity);
   }
   .heavy {
-    background-color: rgba(226, 43, 7, 0.25);
+    background-color: rgba(v.$schedule-red, v.$fill-opacity);
   }
   .inlineChip {
     display: inline-flex;
@@ -3469,20 +3415,19 @@ $heavy-color: #b64343;
 
 // --- Modern Focus States ---
 .focus-visible {
-  outline: 2px solid v.$primary-color;
-  outline-offset: 2px;
-  box-shadow: 0 0 0 4px rgba(7, 170, 226, 0.2);
+  outline: none;
+  box-shadow: v.$focus-ring-desktop;
 }
 
 // --- Modern Hover Effects ---
 .hover-lift {
   transition:
-    transform $transition-normal,
-    box-shadow $transition-normal;
+    transform v.$transition-duration v.$ease-desktop-standard,
+    box-shadow v.$transition-duration v.$ease-desktop-standard;
 
   &:hover {
     transform: translateY(-4px);
-    box-shadow: $shadow-xl;
+    box-shadow: v.$desktop-panel-shadow;
   }
 }
 
@@ -3491,14 +3436,14 @@ $heavy-color: #b64343;
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: $shadow-md;
+  box-shadow: v.$box-shadow-default;
 }
 
 .glass-dark {
   background: rgba(0, 0, 0, 0.2);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: $shadow-md;
+  box-shadow: v.$box-shadow-default;
 }
 
 // Small mobile (<= 360px) - Modernized
@@ -3529,7 +3474,7 @@ $heavy-color: #b64343;
     &:hover {
       background-color: color.adjust(v.$primary-color, $lightness: -5%);
       transform: translateY(-1px);
-      box-shadow: 0 2px 8px rgba(7, 170, 226, 0.3);
+      box-shadow: 0 2px 8px rgba(v.$secondary-color, 0.3);
       border: 2px solid v.$primary-color;
     }
   }
