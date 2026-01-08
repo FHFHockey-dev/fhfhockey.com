@@ -84,7 +84,7 @@ import {
   parse,
   format as dateFnsFormat // Use alias to avoid conflict
 } from "date-fns";
-import { toZonedTime, format as tzFormat } from "date-fns-tz";
+import { toZonedTime, format as tzFormat, fromZonedTime } from "date-fns-tz";
 
 type RunMode = "incremental" | "forward" | "reverse";
 
@@ -228,6 +228,12 @@ function normalizeName(name: string): string {
 function delay(ms: number) {
   // Silent sleep; specific wait messaging is logged by callers (e.g., rate limiter).
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function parseDateInTimeZone(dateStr: string, timeZone: string): Date {
+  // Interpret `YYYY-MM-DD` as midnight in the provided time zone.
+  // This avoids the "UTC midnight => previous day in America/New_York" pitfall.
+  return fromZonedTime(`${dateStr}T00:00:00`, timeZone);
 }
 
 function getDatesBetween(start: Date, end: Date): string[] {
@@ -564,10 +570,12 @@ async function checkDataExists(
   const tableName = getTableName(datasetType);
   if (tableName === "unknown_table") return false; // Already warned in getTableName
 
-  const { count, error } = await supabase
+  // Existence check only: avoid `count: "exact"` (expensive) and avoid HEAD-only calls.
+  const { data, error } = await supabase
     .from(tableName)
-    .select("player_id", { count: "exact", head: true }) // More efficient count query
-    .eq("date_scraped", date);
+    .select("player_id")
+    .eq("date_scraped", date)
+    .limit(1);
 
   if (error) {
     console.error(
@@ -577,8 +585,7 @@ async function checkDataExists(
     return false; // Assume not exists on error to allow processing attempt
   }
 
-  const exists = count !== null && count > 0;
-  return exists;
+  return (data?.length ?? 0) > 0;
 }
 
 function cleanHeader(h: string): string {
@@ -590,6 +597,53 @@ function cleanHeader(h: string): string {
     .trim();
 }
 
+type PlayerCacheRow = { id: number; position: string };
+let playerIdCache: Map<string, PlayerCacheRow[]> | null = null;
+const playerIdMemo = new Map<string, number | null>();
+
+async function loadPlayerIdCache(): Promise<Map<string, PlayerCacheRow[]>> {
+  if (playerIdCache) return playerIdCache;
+
+  const cache = new Map<string, PlayerCacheRow[]>();
+  const PAGE_SIZE = 1000;
+  let from = 0;
+
+  while (true) {
+    const to = from + PAGE_SIZE - 1;
+    const { data, error } = await supabase
+      .from("players")
+      .select("id,fullName,position")
+      .range(from, to);
+
+    if (error) {
+      throw new Error(`Failed to build playerIdCache: ${error.message}`);
+    }
+
+    const rows = (data ?? []) as Array<{
+      id: number;
+      fullName: string;
+      position: string;
+    }>;
+
+    for (const r of rows) {
+      if (!r?.id || !r?.fullName) continue;
+      const key = r.fullName;
+      const existing = cache.get(key) ?? [];
+      existing.push({
+        id: r.id,
+        position: String(r.position ?? "").toUpperCase()
+      });
+      cache.set(key, existing);
+    }
+
+    if (!rows || rows.length < PAGE_SIZE) break;
+    from += PAGE_SIZE;
+  }
+
+  playerIdCache = cache;
+  return cache;
+}
+
 async function getPlayerIdByName(
   fullName: string,
   position: string
@@ -597,9 +651,34 @@ async function getPlayerIdByName(
   const mappedInfo = playerNameMapping[fullName];
   const searchName = mappedInfo ? mappedInfo.fullName : fullName;
 
+  const memoKey = `${searchName}|${String(position ?? "").toUpperCase()}`;
+  if (playerIdMemo.has(memoKey)) return playerIdMemo.get(memoKey) ?? null;
+
   const requiresPositionCheck = ["Elias Pettersson", "Sebastian Aho"].includes(
     searchName
   );
+
+  try {
+    const cache = await loadPlayerIdCache();
+    const candidates = cache.get(searchName);
+    if (candidates && candidates.length > 0) {
+      if (candidates.length === 1 && !requiresPositionCheck) {
+        playerIdMemo.set(memoKey, candidates[0].id);
+        return candidates[0].id;
+      }
+      const pos = String(position ?? "").toUpperCase();
+      const match = candidates.find((c) => c.position === pos);
+      if (match) {
+        playerIdMemo.set(memoKey, match.id);
+        return match.id;
+      }
+      // Ambiguous or missing-position match. Fall through to DB query.
+    }
+  } catch (e: any) {
+    console.warn(
+      `Player cache lookup failed for "${searchName}" (${position}); falling back to DB query: ${e?.message ?? e}`
+    );
+  }
 
   let query = supabase.from("players").select("id").eq("fullName", searchName);
 
@@ -613,6 +692,7 @@ async function getPlayerIdByName(
     console.error(
       `Error fetching player ID for ${searchName} (${position}): ${error.message}`
     );
+    playerIdMemo.set(memoKey, null);
     return null;
   }
 
@@ -622,9 +702,11 @@ async function getPlayerIdByName(
         `${fullName} (${position}) [Mapped: ${searchName}]`
       );
     }
+    playerIdMemo.set(memoKey, null);
     return null;
   }
 
+  playerIdMemo.set(memoKey, data.id);
   return data.id;
 }
 
@@ -1683,16 +1765,16 @@ async function main(
     }
 
     const getSeasonInfoForDate = (dateStr: string) => {
-      const date = toZonedTime(parseISO(dateStr), timeZone);
+      const date = parseDateInTimeZone(dateStr, timeZone);
       const season = allSeasons.find((s) => {
-        const start = toZonedTime(parseISO(s.startDate), timeZone);
-        const end = toZonedTime(parseISO(s.endDate), timeZone);
+        const start = parseDateInTimeZone(String(s.startDate).slice(0, 10), timeZone);
+        const end = parseDateInTimeZone(String(s.endDate).slice(0, 10), timeZone);
         return date >= start && date <= end;
       });
 
       if (season) {
-        const regEnd = toZonedTime(
-          parseISO(season.regularSeasonEndDate),
+        const regEnd = parseDateInTimeZone(
+          String(season.regularSeasonEndDate).slice(0, 10),
           timeZone
         );
         return {
@@ -1718,7 +1800,10 @@ async function main(
       } else {
         seasonToRefresh = allSeasons[allSeasons.length - 1];
       }
-      startDate = toZonedTime(parseISO(seasonToRefresh!.startDate), timeZone);
+      startDate = parseDateInTimeZone(
+        String(seasonToRefresh!.startDate).slice(0, 10),
+        timeZone
+      );
       console.log(
         `Full Refresh: Starting from season start date: ${tzFormat(
           startDate,
@@ -1730,7 +1815,10 @@ async function main(
       const requestedStartDateStr = options?.startDate;
       if (requestedStartDateStr) {
         try {
-          startDate = toZonedTime(parseISO(requestedStartDateStr), timeZone);
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(requestedStartDateStr)) {
+            throw new Error("startDate must be YYYY-MM-DD");
+          }
+          startDate = parseDateInTimeZone(requestedStartDateStr, timeZone);
           console.log(
             `Incremental Update: User specified start date. Starting from ${tzFormat(
               startDate,
@@ -1746,13 +1834,7 @@ async function main(
         // If no start date is provided, fall back to default incremental logic
         const latestDateStr = await getLatestDateSupabase();
         if (latestDateStr) {
-          const latestDateLocal = parse(
-            latestDateStr,
-            "yyyy-MM-dd",
-            new Date()
-          );
-          startDate = addDays(latestDateLocal, 1);
-          startDate = toZonedTime(startDate, timeZone);
+          startDate = addDays(parseDateInTimeZone(latestDateStr, timeZone), 1);
           console.log(
             `Incremental Update: Latest date is ${latestDateStr}. Starting from ${tzFormat(
               startDate,
@@ -1760,7 +1842,10 @@ async function main(
             )}.`
           );
         } else {
-          startDate = toZonedTime(parseISO(allSeasons[0].startDate), timeZone);
+          startDate = parseDateInTimeZone(
+            String(allSeasons[0].startDate).slice(0, 10),
+            timeZone
+          );
           console.log(
             `Incremental Update: No existing data. Starting from first season start date ${tzFormat(
               startDate,
@@ -1771,10 +1856,14 @@ async function main(
       }
     }
 
-    console.log(`Debug: todayEST is ${tzFormat(todayEST, "yyyy-MM-dd")}`);
-    const scrapingEndDate = todayEST;
     console.log(
-      `Effective scraping end date: ${tzFormat(scrapingEndDate, "yyyy-MM-dd")}`
+      `Debug: todayEST is ${tzFormat(todayEST, "yyyy-MM-dd", { timeZone })}`
+    );
+    const scrapingEndDate = new Date();
+    console.log(
+      `Effective scraping end date: ${tzFormat(scrapingEndDate, "yyyy-MM-dd", {
+        timeZone
+      })}`
     );
 
     const allDatesToScrape = getDatesBetween(startDate, scrapingEndDate);
