@@ -41,8 +41,13 @@ export async function getTeams(seasonId?: number): Promise<Team[]> {
  * @param startDate e.g., 2023-11-06
  * @returns
  */
-export async function getSchedule(startDate: string): Promise<ScheduleData> {
-  return await get(`/schedule/${startDate}`);
+export async function getSchedule(
+  startDate: string,
+  opts: { includeOdds?: boolean } = {}
+): Promise<ScheduleData> {
+  const includeOdds = opts.includeOdds !== false;
+  const query = includeOdds ? "" : "?includeOdds=0";
+  return await get(`/schedule/${startDate}${query}`);
 }
 
 export async function getPlayer(id: number): Promise<Player> {

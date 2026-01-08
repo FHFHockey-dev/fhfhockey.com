@@ -27,7 +27,7 @@ type HeaderProps = {
   setSortKeys: Dispatch<
     SetStateAction<
       {
-        key: "totalOffNights" | "totalGamesPlayed" | "weekScore";
+        key: "teamName" | "totalOffNights" | "totalGamesPlayed" | "weekScore";
         ascending: boolean;
       }[]
     >
@@ -42,7 +42,7 @@ type HeaderProps = {
 };
 
 type SortKey = {
-  key: "totalOffNights" | "totalGamesPlayed" | "weekScore";
+  key: "teamName" | "totalOffNights" | "totalGamesPlayed" | "weekScore";
   ascending: boolean;
 };
 
@@ -82,7 +82,8 @@ function Header({
   const isMobile = useIsMobile();
 
   const handleSortToggle = (
-    key: "totalOffNights" | "totalGamesPlayed" | "weekScore"
+    key: "teamName" | "totalOffNights" | "totalGamesPlayed" | "weekScore",
+    defaultAscending: boolean
   ) => {
     setCurrentSortKey((prev) => {
       if (prev && prev.key === key) {
@@ -91,8 +92,7 @@ function Header({
         setSortKeys([newSortKey]); // Replace sortKeys with the new sort key
         return newSortKey;
       } else {
-        // Set to descending by default on first click
-        const newSortKey = { key, ascending: false };
+        const newSortKey = { key, ascending: defaultAscending };
         setSortKeys([newSortKey]); // Replace sortKeys with the new sort key
         return newSortKey;
       }
@@ -113,7 +113,6 @@ function Header({
                     currentSortKey?.key === "totalGamesPlayed" &&
                     currentSortKey.ascending
                   }
-                  onClick={() => handleSortToggle("totalGamesPlayed")}
                 />
               </span>
             </div>
@@ -130,7 +129,6 @@ function Header({
                     currentSortKey?.key === "totalOffNights" &&
                     currentSortKey.ascending
                   }
-                  onClick={() => handleSortToggle("totalOffNights")}
                 />
               </span>
             </div>
@@ -149,7 +147,6 @@ function Header({
                     currentSortKey?.key === "weekScore" &&
                     currentSortKey.ascending
                   }
-                  onClick={() => handleSortToggle("weekScore")}
                 />
               </span>
             </div>
@@ -170,10 +167,34 @@ function Header({
   return (
     <thead>
       <tr>
-        <th scope="col" aria-label="Team">
+        <th
+          scope="col"
+          aria-label="Team"
+          role="button"
+          tabIndex={0}
+          aria-sort={
+            currentSortKey?.key === "teamName"
+              ? currentSortKey.ascending
+                ? "ascending"
+                : "descending"
+              : undefined
+          }
+          className={styles.sortableHeader}
+          onClick={() => handleSortToggle("teamName", true)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              handleSortToggle("teamName", true);
+            }
+          }}
+        >
           <div className={styles.teamHeaderContent}>
             {!extended && hasPreseason && setHidePreseason && (
-              <span className={styles.preseasonToggle}>
+              <span
+                className={styles.preseasonToggle}
+                onClick={(e) => e.stopPropagation()}
+                onKeyDown={(e) => e.stopPropagation()}
+              >
                 <span>Pre</span>
                 <Toggle
                   size="small"
@@ -183,6 +204,14 @@ function Header({
               </span>
             )}
             <span>Team</span>
+            <div className={styles.teamSortSwitch}>
+              <Switch
+                checked={
+                  currentSortKey?.key === "teamName" && currentSortKey.ascending
+                }
+                aria-label="Sort by team"
+              />
+            </div>
           </div>
         </th>
         {dayColumns.map((col) => (
@@ -208,8 +237,24 @@ function Header({
               scope="col"
               aria-sort={ariaSort}
               className={
-                col.id === "totalGamesPlayed" ? styles.statsStart : undefined
+                [
+                  styles.sortableHeader,
+                  col.id === "totalGamesPlayed" ? styles.statsStart : undefined
+                ]
+                  .filter(Boolean)
+                  .join(" ") || undefined
               }
+              role="button"
+              tabIndex={0}
+              onClick={() =>
+                handleSortToggle(col.id as SortKey["key"], false)
+              }
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  handleSortToggle(col.id as SortKey["key"], false);
+                }
+              }}
             >
               {col.label}
             </th>

@@ -262,7 +262,11 @@ type GameWeek = {
  * @param startDate e.g., 2023-11-06
  * @returns
  */
-export async function getSchedule(startDate: string) {
+export async function getSchedule(
+  startDate: string,
+  opts: { includeOdds?: boolean } = {}
+) {
+  const includeOdds = opts.includeOdds !== false;
   const { gameWeek } = await get<{ gameWeek: GameWeek }>(
     `/schedule/${startDate}`
   );
@@ -281,34 +285,33 @@ export async function getSchedule(startDate: string) {
     );
   });
 
-  // Collect all game IDs
-  const gameIds: number[] = [];
-  gameWeek.forEach((day) => {
-    day.games.forEach((game) => {
-      gameIds.push(game.id);
+  const oddsByGameId: Record<number, any> = {};
+  if (includeOdds) {
+    // Collect all game IDs
+    const gameIds: number[] = [];
+    gameWeek.forEach((day) => {
+      day.games.forEach((game) => {
+        gameIds.push(game.id);
+      });
     });
-  });
 
-  // Fetch win odds from 'expected_goals' table
-  const { data: oddsData, error } = await supabase
-    .from("expected_goals")
-    .select(
-      "game_id, home_win_odds, away_win_odds, home_api_win_odds, away_api_win_odds"
-    )
-    .in("game_id", gameIds);
+    // Fetch win odds from 'expected_goals' table
+    const { data: oddsData, error } = await supabase
+      .from("expected_goals")
+      .select(
+        "game_id, home_win_odds, away_win_odds, home_api_win_odds, away_api_win_odds"
+      )
+      .in("game_id", gameIds);
 
-  if (error) {
-    console.error("Error fetching win odds data:", error);
+    if (error) {
+      console.error("Error fetching win odds data:", error);
+    }
+
+    // Map odds data by game_id
+    (oddsData || []).forEach((item) => {
+      oddsByGameId[item.game_id] = item;
+    });
   }
-
-  // Map odds data by game_id
-  const oddsByGameId = (oddsData || []).reduce(
-    (acc, item) => {
-      acc[item.game_id] = item;
-      return acc;
-    },
-    {} as Record<number, any>
-  );
 
   const tasksForOneWeek = gameWeek.map((day) => async () => {
     const tasksForOneDay = day.games.map((game) => async () => {
@@ -318,19 +321,12 @@ export async function getSchedule(startDate: string) {
       // and the client can provide fallback team metadata via teamsInfo/useTeamsMap.
       // Keeping this logic ensures we don't drop entire games (which also hides the opponent's entry).
 
-      // Fetch win odds from the oddsByGameId
-      const odds = oddsByGameId[game.id];
-      let homeWinOdds = null;
-      let awayWinOdds = null;
-      let homeApiWinOdds = null;
-      let awayApiWinOdds = null;
-
-      if (odds) {
-        homeWinOdds = odds.home_win_odds;
-        awayWinOdds = odds.away_win_odds;
-        homeApiWinOdds = odds.home_api_win_odds;
-        awayApiWinOdds = odds.away_api_win_odds;
-      }
+      // Fetch win odds from the oddsByGameId (optional)
+      const odds = includeOdds ? oddsByGameId[game.id] : null;
+      const homeWinOdds = odds?.home_win_odds ?? null;
+      const awayWinOdds = odds?.away_win_odds ?? null;
+      const homeApiWinOdds = odds?.home_api_win_odds ?? null;
+      const awayApiWinOdds = odds?.away_api_win_odds ?? null;
 
       const derivedGameType = Math.floor(game.id / 10000) % 100;
       const gameData: GameData = {

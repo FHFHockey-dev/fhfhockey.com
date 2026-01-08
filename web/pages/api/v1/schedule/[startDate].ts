@@ -8,7 +8,19 @@ export default async function handler(
   res: NextApiResponse
 ) {
   const { startDate } = req.query;
-  const data = await getSchedule(startDate as string);
+  const includeOddsParam =
+    typeof req.query.includeOdds === "string"
+      ? req.query.includeOdds
+      : Array.isArray(req.query.includeOdds)
+        ? req.query.includeOdds[0]
+        : undefined;
+  const includeOdds =
+    includeOddsParam === undefined
+      ? true
+      : includeOddsParam === "1" ||
+        includeOddsParam === "true" ||
+        includeOddsParam === "yes";
+  const data = await getSchedule(startDate as string, { includeOdds });
   res.setHeader("Cache-Control", "max-age=600");
   res.status(200).json(data);
 }
