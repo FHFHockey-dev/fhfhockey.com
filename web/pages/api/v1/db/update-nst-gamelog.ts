@@ -174,15 +174,18 @@ let lastNstRequestAt = 0;
 async function nstGet(
   url: string,
   timeoutMs = 30000,
-  options?: { bypassRateLimit?: boolean }
+  options?: { bypassRateLimit?: boolean; minIntervalMs?: number }
 ) {
   const now = Date.now();
-  const bypassRateLimit = options?.bypassRateLimit === true;
-  if (!bypassRateLimit) {
+  const intervalMs =
+    options?.bypassRateLimit === true
+      ? 0
+      : (options?.minIntervalMs ?? REQUEST_INTERVAL_MS);
+  if (intervalMs > 0) {
     const elapsed = now - lastNstRequestAt;
-    if (elapsed < REQUEST_INTERVAL_MS) {
-      const waitMs = REQUEST_INTERVAL_MS - elapsed;
-      logRateLimitWait(waitMs, REQUEST_INTERVAL_MS, elapsed);
+    if (elapsed < intervalMs) {
+      const waitMs = intervalMs - elapsed;
+      logRateLimitWait(waitMs, intervalMs, elapsed);
       await delay(waitMs);
     }
   }
@@ -251,15 +254,35 @@ function getDatesBetween(start: Date, end: Date): string[] {
 }
 
 async function dateIsComplete(table: string, date: string): Promise<boolean> {
+  // Must be schema-agnostic across counts/rates/on-ice tables.
+  // The previous implementation queried `goals_per_60`, which doesn't exist for many
+  // tables, causing false "incomplete" signals and endless re-fetching.
   const { data, error } = await supabase
     .from(table)
-    .select("player_id, goals_per_60")
+    .select("*")
     .eq("date_scraped", date)
     .limit(10);
   if (error) return false;
   if (!data || data.length < 5) return false;
-  // If all 10 are null in a key column, treat as incomplete
-  return data.some((r) => r.goals_per_60 !== null);
+
+  const ignoredKeys = new Set([
+    "player_id",
+    "date_scraped",
+    "player_name",
+    "team",
+    "position",
+    "season"
+  ]);
+
+  const hasAnyStatValue = (row: Record<string, any>) => {
+    for (const [k, v] of Object.entries(row)) {
+      if (ignoredKeys.has(k)) continue;
+      if (v !== null && typeof v !== "undefined") return true;
+    }
+    return false;
+  };
+
+  return data.some((r: any) => hasAnyStatValue(r));
 }
 
 function mapHeaderToColumn(headerRaw: string): string | null {
@@ -775,7 +798,7 @@ async function fetchAndParseData(
   date: string,
   seasonId: string,
   retries: number = 2,
-  options?: { bypassRateLimit?: boolean }
+  options?: { bypassRateLimit?: boolean; minIntervalMs?: number }
 ): Promise<{ success: boolean; data: any[] }> {
   const dateFromUrl = getDateFromUrl(url);
   const effectiveDate = dateFromUrl || date;
@@ -1076,7 +1099,7 @@ async function processUrls(
   isFullRefresh: boolean,
   processedPlayerIds: Set<number>,
   failedUrls: UrlQueueItem[],
-  options?: { bypassRateLimit?: boolean }
+  options?: { bypassRateLimit?: boolean; minIntervalMs?: number }
 ): Promise<{ totalRowsProcessed: number }> {
   banner(
     `Starting processing | URLs: ${urlsQueue.length} | Full Refresh: ${isFullRefresh}`
@@ -1807,13 +1830,19 @@ async function main(
     const processedPlayerIds = new Set<number>();
     const failedUrls: UrlQueueItem[] = [];
     const uniqueDatesToScrape = new Set(initialUrlsQueue.map((q) => q.date));
-    const bypassRateLimit = uniqueDatesToScrape.size <= 2;
+    const uniqueDateCount = uniqueDatesToScrape.size;
+    const nstPacing =
+      uniqueDateCount <= 2
+        ? { bypassRateLimit: true }
+        : uniqueDateCount === 3
+          ? { minIntervalMs: 2000 }
+          : { bypassRateLimit: false };
     const initialProcessResult = await processUrls(
       initialUrlsQueue,
       fullRefreshFlag(isForwardFull ? "forward" : "incremental"),
       processedPlayerIds,
       failedUrls,
-      { bypassRateLimit }
+      nstPacing
     );
 
     totalRowsAffected += initialProcessResult.totalRowsProcessed || 0;
@@ -1839,13 +1868,19 @@ async function main(
       const retryProcessedIds = new Set<number>();
       const retryFailedUrls: UrlQueueItem[] = [];
       const retryUniqueDates = new Set(failedUrlsRetryCopy.map((q) => q.date));
-      const retryBypassRateLimit = retryUniqueDates.size <= 2;
+      const retryUniqueDateCount = retryUniqueDates.size;
+      const retryNstPacing =
+        retryUniqueDateCount <= 2
+          ? { bypassRateLimit: true }
+          : retryUniqueDateCount === 3
+            ? { minIntervalMs: 2000 }
+            : { bypassRateLimit: false };
       const retryResult = await processUrls(
         failedUrlsRetryCopy,
         true,
         retryProcessedIds,
         retryFailedUrls,
-        { bypassRateLimit: retryBypassRateLimit }
+        retryNstPacing
       );
 
       totalRowsAffected += retryResult.totalRowsProcessed || 0;
