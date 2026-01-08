@@ -1807,7 +1807,7 @@ async function main(
     const processedPlayerIds = new Set<number>();
     const failedUrls: UrlQueueItem[] = [];
     const uniqueDatesToScrape = new Set(initialUrlsQueue.map((q) => q.date));
-    const bypassRateLimit = uniqueDatesToScrape.size === 1;
+    const bypassRateLimit = uniqueDatesToScrape.size <= 2;
     const initialProcessResult = await processUrls(
       initialUrlsQueue,
       fullRefreshFlag(isForwardFull ? "forward" : "incremental"),
@@ -1839,7 +1839,7 @@ async function main(
       const retryProcessedIds = new Set<number>();
       const retryFailedUrls: UrlQueueItem[] = [];
       const retryUniqueDates = new Set(failedUrlsRetryCopy.map((q) => q.date));
-      const retryBypassRateLimit = retryUniqueDates.size === 1;
+      const retryBypassRateLimit = retryUniqueDates.size <= 2;
       const retryResult = await processUrls(
         failedUrlsRetryCopy,
         true,
