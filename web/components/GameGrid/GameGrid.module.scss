@@ -171,8 +171,6 @@
   // the vertical team column separator and any negative-offset pseudo
   // elements are clipped to the container's radius.
   position: relative;
-  backdrop-filter: blur(v.$blur-backdrop-soft) saturate(150%);
-  -webkit-backdrop-filter: blur(v.$blur-backdrop-soft) saturate(150%);
   display: flex;
   flex-direction: column;
   min-height: 0; // allow inner scroll areas to size correctly
@@ -1414,6 +1412,169 @@
   }
 }
 
+.teamSortSwitch {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin: 0;
+}
+
+.sortableHeader {
+  cursor: pointer;
+}
+
+.dateRangeOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  padding: v.$space-lg;
+  background: rgba(0, 0, 0, 0.72);
+}
+
+.dateRangeModal {
+  width: min(520px, 92vw);
+  border-radius: v.$border-radius-lg;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.06),
+    rgba(255, 255, 255, 0.02)
+  );
+  box-shadow:
+    v.$desktop-panel-shadow,
+    0 0 22px rgba(v.$primary-color, 0.15);
+  overflow: hidden;
+}
+
+.dateRangeHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: v.$space-md v.$space-lg;
+  background: color.adjust(v.$background-dark, $lightness: -2%);
+  border-bottom: 2px solid rgba(v.$secondary-color, 0.35);
+}
+
+.dateRangeTitle {
+  margin: 0;
+  font-family: v.$font-family-accent, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 1.1rem;
+  color: v.$color-white;
+}
+
+.dateRangeClose {
+  @include v.button-style;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: v.$text-primary;
+  height: 34px;
+  padding: 0 v.$space-sm;
+  border-radius: v.$border-radius-md;
+
+  &:hover {
+    border-color: rgba(v.$primary-color, 0.55);
+    color: v.$primary-color;
+    background: rgba(v.$primary-color, 0.08);
+  }
+}
+
+.dateRangeBody {
+  padding: v.$space-lg;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: v.$space-md;
+
+  @media (max-width: 520px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.dateRangeField {
+  display: grid;
+  gap: v.$space-xs;
+}
+
+.dateRangeLabel {
+  font-family: v.$font-family-primary, sans-serif;
+  font-size: v.$font-size-sm;
+  color: v.$text-secondary;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.dateRangeInput {
+  width: 100%;
+  height: 40px;
+  padding: 0 v.$space-sm;
+  border-radius: v.$border-radius-md;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.35);
+  color: v.$text-primary;
+  font-family: v.$font-family-numbers, v.$font-family-primary, sans-serif;
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: v.$focus-ring-desktop;
+    border-color: rgba(v.$primary-color, 0.55);
+  }
+}
+
+.dateRangeError {
+  grid-column: 1 / -1;
+  padding: v.$space-sm;
+  border-radius: v.$border-radius-md;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.12);
+  color: #ffd0d0;
+  font-size: v.$font-size-sm;
+}
+
+.dateRangeActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: v.$space-sm;
+  padding: v.$space-md v.$space-lg;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.dateRangeCancel {
+  @include v.button-style;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: v.$text-primary;
+  height: 40px;
+  padding: 0 v.$space-md;
+  border-radius: v.$border-radius-md;
+
+  &:hover {
+    border-color: rgba(v.$primary-color, 0.55);
+    color: v.$primary-color;
+    background: rgba(v.$primary-color, 0.08);
+  }
+}
+
+.dateRangeSubmit {
+  @include v.button-style;
+  height: 40px;
+  padding: 0 v.$space-lg;
+  border-radius: v.$border-radius-md;
+  background: linear-gradient(to right, v.$primary-color, v.$secondary-color);
+  color: v.$color-white;
+  border: 1px solid rgba(v.$primary-color, 0.45);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 16px rgba(v.$primary-color, 0.22);
+  }
+}
+
 .weekBadge {
   position: absolute;
   top: 5%;
@@ -1923,7 +2084,6 @@
     position: sticky;
     top: 0;
     background: rgba(0, 0, 0, 0.72); // flattened header surface
-    backdrop-filter: blur(8px);
     z-index: 3;
   }
 
@@ -1932,7 +2092,6 @@
     position: sticky;
     left: 0;
     background: rgba(0, 0, 0, 0.7); // unified dark surface
-    backdrop-filter: blur(6px);
     z-index: 2;
   }
 
@@ -2033,7 +2192,6 @@
     white-space: normal;
     vertical-align: middle;
     box-shadow: v.$box-shadow-default;
-    backdrop-filter: blur(8px);
     border-bottom: 2px solid v.$secondary-color;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 
@@ -2306,7 +2464,9 @@
     tr {
       height: 55px;
       // Nested under tbody
-      transition: all v.$transition-duration v.$ease-desktop-standard;
+      transition:
+        background-color 0.12s v.$ease-desktop-emphasized,
+        box-shadow 0.12s v.$ease-desktop-emphasized;
       position: relative;
 
       &:last-child {
@@ -2337,13 +2497,11 @@
 
       // Enhanced hover effect with glow
       &:hover {
-        // Remove dark overlay; simply boost existing row background brightness
-        filter: brightness(1.4);
         z-index: 1;
         border-radius: v.$border-radius-sm;
-        box-shadow: 0 0 15px rgba(v.$primary-color, 0.15);
-        border-top: 1px solid rgba(v.$primary-color, 0.3);
-        border-bottom: 1px solid rgba(v.$primary-color, 0.3);
+        box-shadow:
+          0 0 0 1px rgba(v.$primary-color, 0.22) inset,
+          0 0 12px rgba(v.$primary-color, 0.12);
       }
 
       td:first-child {
@@ -2365,7 +2523,10 @@
       border-collapse: collapse;
       border-spacing: 0; // kept for safety, but gaps now controlled at table level
       min-width: 37px;
-      transition: all v.$transition-duration v.$ease-desktop-standard;
+      transition:
+        background-color 0.15s v.$ease-desktop-emphasized,
+        box-shadow 0.15s v.$ease-desktop-emphasized,
+        color 0.15s v.$ease-desktop-emphasized;
       position: relative;
 
       &:nth-child(9) {
@@ -2421,7 +2582,7 @@
           box-shadow 0.15s v.$ease-desktop-emphasized;
 
         &:hover {
-          filter: brightness(1.08);
+          box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12) inset;
         }
 
         @media (max-width: 480px) {
@@ -2455,7 +2616,7 @@
       position: sticky;
       left: 0;
       z-index: 2; // Above normal cells, below header
-      background-color: inherit; // Inherits from TR for alternating colors/hover
+      background: rgba(0, 0, 0, 0.7); // Solid surface to avoid scroll "white flashes"
       min-width: 65px;
       box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
     }
@@ -2485,7 +2646,6 @@
     bottom: 0;
     z-index: 3; // Above body cells, same level as header
     box-shadow: v.$box-shadow-default;
-    backdrop-filter: blur(8px);
     border-top: 2px solid rgba(v.$secondary-color, 0.3);
 
     td {
@@ -2823,7 +2983,6 @@
   position: relative;
   overflow: hidden; // allow logo to overflow but clip to the cell shape
   background: rgba(0, 0, 0, 0.64); // flattened from prior gradient
-  backdrop-filter: blur(6px);
 
   .desktopTeamAbbreviation {
     display: none;

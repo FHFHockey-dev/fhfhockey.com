@@ -21,10 +21,10 @@
       rgba(v.$secondary-color, 0) 55%
     ),
     rgba(v.$color-black, 0.6);
-  backdrop-filter: blur(v.$blur-backdrop-strong) saturate(150%);
   z-index: 9999; /* Below the tooltip content */
   opacity: 0;
   transition: opacity 0.3s ease;
+  will-change: opacity;
   pointer-events: none; /* Initially not interactive */
 }
 
@@ -58,6 +58,7 @@
   left: 50%;
   z-index: 10000; /* Above the backdrop */
   outline: none;
+  will-change: transform, opacity;
 }
 
 .tooltipContent.visible {

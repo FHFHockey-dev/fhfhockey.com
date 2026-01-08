@@ -1,0 +1,318 @@
+@use "sass:color";
+@use "styles/vars" as v;
+
+.page {
+  width: 100%;
+  min-height: 100vh;
+  background: v.$background-dark;
+  color: v.$text-primary;
+}
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding: v.$space-md v.$space-lg;
+  background: color.adjust(v.$background-dark, $lightness: -2%);
+  border-bottom: 1px solid rgba(v.$secondary-color, 0.25);
+}
+
+.headerBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: v.$space-md;
+  flex-wrap: wrap;
+}
+
+.title {
+  margin: 0;
+  font-family: v.$font-family-accent, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: v.$color-white;
+  font-size: 1.15rem;
+}
+
+.subtitle {
+  margin: 2px 0 0;
+  font-family: v.$font-family-primary, sans-serif;
+  color: v.$text-secondary;
+  font-size: v.$font-size-sm;
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: v.$space-xs;
+  padding: 8px 12px;
+  border-radius: v.$border-radius-md;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: v.$text-primary;
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: 0.85rem;
+  background: rgba(255, 255, 255, 0.04);
+
+  &:hover {
+    color: v.$primary-color;
+    border-color: rgba(v.$primary-color, 0.6);
+    background: rgba(v.$primary-color, 0.08);
+  }
+}
+
+.content {
+  padding: v.$space-lg;
+}
+
+.tableScroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  border-radius: v.$border-radius-lg;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: v.$background-medium;
+  box-shadow: v.$box-shadow-default;
+}
+
+.tableInner {
+  position: relative;
+  width: max-content;
+}
+
+.monthDividerOverlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.monthDivider {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: rgba(v.$secondary-color, 0.65);
+  box-shadow: 0 0 8px rgba(v.$secondary-color, 0.25);
+}
+
+.rangeTable {
+  --col-team: 88px;
+  --col-metric: 52px;
+  --cell: 18px;
+  --gap-x: 2px;
+  --gap-y: 1px;
+
+  width: max-content;
+  border-collapse: separate;
+  border-spacing: var(--gap-x) var(--gap-y);
+  padding: v.$space-sm;
+  font-family: v.$font-family-primary, sans-serif;
+  position: relative;
+  z-index: 1;
+}
+
+.rangeTable th,
+.rangeTable td {
+  padding: 0;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.rangeTable thead th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  height: 28px;
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  color: v.$text-secondary;
+  font-family: v.$font-family-numbers, v.$font-family-primary, sans-serif;
+  font-size: 0.7rem;
+}
+
+.dayCol {
+  width: var(--cell);
+  min-width: var(--cell);
+}
+
+.dayHeaderCell {
+  width: var(--cell);
+  min-width: var(--cell);
+}
+
+.sortableMetricHeader {
+  cursor: pointer;
+  user-select: none;
+
+  &:hover {
+    border-color: rgba(v.$primary-color, 0.5);
+    box-shadow: 0 0 0 1px rgba(v.$primary-color, 0.18) inset;
+  }
+}
+
+.dayHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.monthMarker {
+  font-size: 0.55rem;
+  color: v.$secondary-color;
+  font-family: v.$font-family-accent, sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 1px;
+}
+
+.dayNumber {
+  font-size: 0.7rem;
+  color: v.$text-secondary;
+}
+
+.rangeTable thead th:nth-child(1),
+.rangeTable tbody td:nth-child(1) {
+  position: sticky;
+  left: 0;
+  z-index: 4;
+  width: var(--col-team);
+  min-width: var(--col-team);
+  background: rgba(0, 0, 0, 0.72);
+}
+
+.rangeTable thead th:nth-child(2),
+.rangeTable tbody td:nth-child(2) {
+  position: sticky;
+  left: var(--col-team);
+  z-index: 4;
+  width: var(--col-metric);
+  min-width: var(--col-metric);
+  background: rgba(0, 0, 0, 0.72);
+}
+
+.rangeTable thead th:nth-child(3),
+.rangeTable tbody td:nth-child(3) {
+  position: sticky;
+  left: calc(var(--col-team) + var(--col-metric));
+  z-index: 4;
+  width: var(--col-metric);
+  min-width: var(--col-metric);
+  background: rgba(0, 0, 0, 0.72);
+}
+
+.rangeTable thead th:nth-child(4),
+.rangeTable tbody td:nth-child(4) {
+  position: sticky;
+  left: calc(var(--col-team) + (var(--col-metric) * 2));
+  z-index: 4;
+  width: var(--col-metric);
+  min-width: var(--col-metric);
+  background: rgba(0, 0, 0, 0.72);
+}
+
+.rangeTable thead th:nth-child(5),
+.rangeTable tbody td:nth-child(5) {
+  position: sticky;
+  left: calc(var(--col-team) + (var(--col-metric) * 3));
+  z-index: 4;
+  width: var(--col-metric);
+  min-width: var(--col-metric);
+  background: rgba(0, 0, 0, 0.72);
+}
+
+.teamCell {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: v.$space-xxs;
+  padding: 0 v.$space-sm;
+  height: 24px;
+}
+
+.teamName {
+  font-family: v.$font-family-accent, sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  color: v.$color-white;
+}
+
+.metricCell {
+  height: 24px;
+  display: grid;
+  place-items: center;
+  font-family: v.$font-family-numbers, v.$font-family-primary, sans-serif;
+  font-size: 0.8rem;
+  color: v.$text-primary;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+}
+
+.dayCellWrapper {
+  width: var(--cell);
+  height: var(--cell);
+  display: grid;
+  place-items: center;
+  position: relative;
+  padding: 0;
+}
+
+.dayCell {
+  width: 100%;
+  height: 100%;
+  border-radius: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.offNight {
+  background: rgba(v.$schedule-green, 0.22);
+  border-color: rgba(v.$schedule-green, 0.42);
+}
+
+.mediumNight {
+  background: rgba(v.$schedule-yellow, 0.18);
+  border-color: rgba(v.$schedule-yellow, 0.38);
+}
+
+.heavyNight {
+  background: rgba(v.$schedule-red, 0.2);
+  border-color: rgba(v.$schedule-red, 0.38);
+}
+
+.normalNight {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.preseasonGame {
+  background: rgba(v.$primary-color, 0.22);
+  border-color: rgba(v.$primary-color, 0.45);
+}
+
+.postseasonGame {
+  background: rgba(v.$secondary-color, 0.22);
+  border-color: rgba(v.$secondary-color, 0.45);
+}
+
+.stateRow {
+  padding: v.$space-xl;
+  text-align: center;
+  color: v.$text-secondary;
+}
+
+.error {
+  padding: v.$space-md;
+  border-radius: v.$border-radius-md;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.12);
+  color: #ffd0d0;
+}

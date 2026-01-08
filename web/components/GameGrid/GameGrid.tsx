@@ -59,7 +59,7 @@ import useYahooCurrentMatchupWeek from "hooks/useYahooCurrentMatchupWeek";
 import GameGridContext from "./contexts/GameGridContext";
 
 type SortKey = {
-  key: "totalOffNights" | "totalGamesPlayed" | "weekScore";
+  key: "teamName" | "totalOffNights" | "totalGamesPlayed" | "weekScore";
   ascending: boolean;
 };
 
@@ -171,7 +171,7 @@ function GameGridInternal({
   const [hidePreseason, setHidePreseason] = useState(false);
   const [sortKeys, setSortKeys] = useState<
     {
-      key: "totalOffNights" | "totalGamesPlayed" | "weekScore";
+      key: "teamName" | "totalOffNights" | "totalGamesPlayed" | "weekScore";
       ascending: boolean;
     }[]
   >([]);
@@ -298,6 +298,14 @@ function GameGridInternal({
       sorted.sort((a, b) => {
         for (let sortKey of sortKeys) {
           const { key, ascending } = sortKey;
+          if (key === "teamName") {
+            const teamA = teams[a.teamId]?.name.toUpperCase() || "";
+            const teamB = teams[b.teamId]?.name.toUpperCase() || "";
+            if (teamA < teamB) return ascending ? -1 : 1;
+            if (teamA > teamB) return ascending ? 1 : -1;
+            continue;
+          }
+
           const valA = a[key];
           const valB = b[key];
 
@@ -646,6 +654,12 @@ function GameGridInternal({
   const isMobile = useIsMobile();
   const [showMobileTips, setShowMobileTips] = useState(false);
   const [isBottomDrawerOpen, setIsBottomDrawerOpen] = useState(false);
+  const [isDateRangeOpen, setIsDateRangeOpen] = useState(false);
+  const [dateRangeDraft, setDateRangeDraft] = useState(() => ({
+    start: format(new Date(dates[0]), "yyyy-MM-dd"),
+    end: format(new Date(dates[1]), "yyyy-MM-dd")
+  }));
+  const [dateRangeError, setDateRangeError] = useState<string | null>(null);
 
   // UX: Close legend on Escape and lock body scroll while open
   useEffect(() => {
@@ -683,6 +697,52 @@ function GameGridInternal({
       };
     }
   }, [isBottomDrawerOpen]);
+
+  // UX: Close date range modal on Escape and lock body scroll while open
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setIsDateRangeOpen(false);
+      }
+    }
+
+    if (isDateRangeOpen) {
+      document.addEventListener("keydown", onKeyDown);
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.removeEventListener("keydown", onKeyDown);
+        document.body.style.overflow = prevOverflow;
+      };
+    }
+  }, [isDateRangeOpen]);
+
+  const openDateRange = () => {
+    setDateRangeError(null);
+    setDateRangeDraft({
+      start: format(new Date(dates[0]), "yyyy-MM-dd"),
+      end: format(new Date(dates[1]), "yyyy-MM-dd")
+    });
+    setIsDateRangeOpen(true);
+  };
+
+  const submitDateRange = () => {
+    const start = dateRangeDraft.start;
+    const end = dateRangeDraft.end;
+    if (!start || !end) {
+      setDateRangeError("Please select both a start and end date.");
+      return;
+    }
+    if (new Date(start) > new Date(end)) {
+      setDateRangeError("Start date must be before end date.");
+      return;
+    }
+    setIsDateRangeOpen(false);
+    router.push({
+      pathname: "/game-grid/dateRange",
+      query: { start, end }
+    });
+  };
 
   if (isMobile) {
     // *** MOBILE VIEW ***
@@ -732,9 +792,9 @@ function GameGridInternal({
                 </button>
                 <button
                   className={styles.orientationToggleButton}
-                  onClick={handleOrientationToggle}
+                  onClick={openDateRange}
                 >
-                  {orientation === "horizontal" ? "Vertical" : "Horizontal"}
+                  DATE RANGE
                 </button>
                 <button
                   className={styles.dateButtonNext}
@@ -755,70 +815,56 @@ function GameGridInternal({
             {/* Note: Removed the wrapping gameGridSection div as it might be redundant here */}
             <div className={styles.scheduleGridContainer}>
               <div className={styles.tableScrollWrapper}>
-                {orientation === "vertical" ? (
-                  <TransposedGrid
-                    sortedTeams={sortedTeams}
-                    games={currentNumGamesPerDay}
+                <table
+                  className={`${styles.scheduleGrid} ${styles.mobileCompactTable}`}
+                >
+                  <colgroup>
+                    <col className={styles.gridColFirst} />
+                    <col span={10} className={styles.gridColOther} />
+                  </colgroup>
+                  <Header
+                    start={dates[0]}
+                    end={dates[1]}
+                    extended={mode === "10-Day-Forecast"}
+                    setSortKeys={setSortKeys}
                     excludedDays={excludedDays}
                     setExcludedDays={setExcludedDays}
-                    extended={mode === "10-Day-Forecast"}
-                    start={dates[0]}
-                    mode={
-                      mode === "10-Day-Forecast" ? "10-Day-Forecast" : "7-Day"
-                    }
+                    weekData={teamDataWithAverages}
+                    gamesPerDay={currentNumGamesPerDay}
+                    hasPreseason={hasPreseason}
+                    hidePreseason={hidePreseason}
+                    setHidePreseason={setHidePreseason}
                   />
-                ) : (
-                  <table
-                    className={`${styles.scheduleGrid} ${styles.mobileCompactTable}`}
-                  >
-                    <colgroup>
-                      <col className={styles.gridColFirst} />
-                      <col span={10} className={styles.gridColOther} />
-                    </colgroup>
-                    <Header
-                      start={dates[0]}
-                      end={dates[1]}
-                      extended={mode === "10-Day-Forecast"}
-                      setSortKeys={setSortKeys}
+                  <tbody>
+                    <TotalGamesPerDayRow
+                      games={currentNumGamesPerDay}
                       excludedDays={excludedDays}
-                      setExcludedDays={setExcludedDays}
+                      extended={mode === "10-Day-Forecast"}
                       weekData={teamDataWithAverages}
-                      gamesPerDay={currentNumGamesPerDay}
-                      hasPreseason={hasPreseason}
-                      hidePreseason={hidePreseason}
-                      setHidePreseason={setHidePreseason}
                     />
-                    <tbody>
-                      <TotalGamesPerDayRow
-                        games={currentNumGamesPerDay}
-                        excludedDays={excludedDays}
-                        extended={mode === "10-Day-Forecast"}
-                        weekData={teamDataWithAverages}
-                      />
-                      {sortedTeams.map(({ teamId, ...rest }) => {
-                        const highlightClass = top10TeamIds.has(teamId)
-                          ? styles.rowBest10
-                          : bottom10TeamIds.has(teamId)
-                          ? styles.rowWorst10
-                          : "";
-                        const rank = scoreRankMap.get(teamId) ?? 16;
-                        return (
-                          <TeamRow
-                            key={teamId}
-                            teamId={teamId}
-                            rank={rank}
-                            extended={mode === "10-Day-Forecast"}
-                            excludedDays={excludedDays}
-                            rowHighlightClass={highlightClass}
-                            games={currentNumGamesPerDay}
-                            hidePreseason={hidePreseason}
-                            {...rest}
-                          />
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                )}
+                    {sortedTeams.map(({ teamId, ...rest }) => {
+                      const highlightClass = top10TeamIds.has(teamId)
+                        ? styles.rowBest10
+                        : bottom10TeamIds.has(teamId)
+                        ? styles.rowWorst10
+                        : "";
+                      const rank = scoreRankMap.get(teamId) ?? 16;
+                      return (
+                        <TeamRow
+                          key={teamId}
+                          teamId={teamId}
+                          rank={rank}
+                          extended={mode === "10-Day-Forecast"}
+                          excludedDays={excludedDays}
+                          rowHighlightClass={highlightClass}
+                          games={currentNumGamesPerDay}
+                          hidePreseason={hidePreseason}
+                          {...rest}
+                        />
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             </div>{" "}
           </div>{" "}
@@ -1004,6 +1050,92 @@ function GameGridInternal({
             <p>Error loading team summaries. Please try again later.</p>
           </div>
         )}
+
+        {isDateRangeOpen && (
+          <div
+            className={styles.dateRangeOverlay}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="gg-date-range-title"
+            onClick={() => setIsDateRangeOpen(false)}
+          >
+            <div
+              className={styles.dateRangeModal}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className={styles.dateRangeHeader}>
+                <h2 id="gg-date-range-title" className={styles.dateRangeTitle}>
+                  Date Range
+                </h2>
+                <button
+                  type="button"
+                  className={styles.dateRangeClose}
+                  onClick={() => setIsDateRangeOpen(false)}
+                  aria-label="Close"
+                >
+                  Close
+                </button>
+              </div>
+              <div className={styles.dateRangeBody}>
+                <div className={styles.dateRangeField}>
+                  <label className={styles.dateRangeLabel} htmlFor="gg-dr-start">
+                    Start
+                  </label>
+                  <input
+                    id="gg-dr-start"
+                    type="date"
+                    className={styles.dateRangeInput}
+                    value={dateRangeDraft.start}
+                    onChange={(e) =>
+                      setDateRangeDraft((prev) => ({
+                        ...prev,
+                        start: e.target.value
+                      }))
+                    }
+                  />
+                </div>
+                <div className={styles.dateRangeField}>
+                  <label className={styles.dateRangeLabel} htmlFor="gg-dr-end">
+                    End
+                  </label>
+                  <input
+                    id="gg-dr-end"
+                    type="date"
+                    className={styles.dateRangeInput}
+                    value={dateRangeDraft.end}
+                    onChange={(e) =>
+                      setDateRangeDraft((prev) => ({
+                        ...prev,
+                        end: e.target.value
+                      }))
+                    }
+                  />
+                </div>
+                {dateRangeError && (
+                  <div className={styles.dateRangeError} role="alert">
+                    {dateRangeError}
+                  </div>
+                )}
+              </div>
+              <div className={styles.dateRangeActions}>
+                <button
+                  type="button"
+                  className={styles.dateRangeCancel}
+                  onClick={() => setIsDateRangeOpen(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className={styles.dateRangeSubmit}
+                  onClick={submitDateRange}
+                >
+                  View
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </>
     );
   }
@@ -1040,6 +1172,15 @@ function GameGridInternal({
                     aria-controls="gg-bottom-drawer"
                   >
                     Pickups
+                  </button>
+                </div>
+                <div className={styles.viewToggleWrapper}>
+                  <button
+                    type="button"
+                    className={styles.panelControlButton}
+                    onClick={openDateRange}
+                  >
+                    Date Range
                   </button>
                 </div>
                 <div className={styles.viewToggleWrapper}>
@@ -1312,6 +1453,92 @@ function GameGridInternal({
       {summaryError && (
         <div className={styles.error}>
           <p>Error loading team summaries. Please try again later.</p>
+        </div>
+      )}
+
+      {isDateRangeOpen && (
+        <div
+          className={styles.dateRangeOverlay}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="gg-date-range-title"
+          onClick={() => setIsDateRangeOpen(false)}
+        >
+          <div
+            className={styles.dateRangeModal}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className={styles.dateRangeHeader}>
+              <h2 id="gg-date-range-title" className={styles.dateRangeTitle}>
+                Date Range
+              </h2>
+              <button
+                type="button"
+                className={styles.dateRangeClose}
+                onClick={() => setIsDateRangeOpen(false)}
+                aria-label="Close"
+              >
+                Close
+              </button>
+            </div>
+            <div className={styles.dateRangeBody}>
+              <div className={styles.dateRangeField}>
+                <label className={styles.dateRangeLabel} htmlFor="gg-dr-start">
+                  Start
+                </label>
+                <input
+                  id="gg-dr-start"
+                  type="date"
+                  className={styles.dateRangeInput}
+                  value={dateRangeDraft.start}
+                  onChange={(e) =>
+                    setDateRangeDraft((prev) => ({
+                      ...prev,
+                      start: e.target.value
+                    }))
+                  }
+                />
+              </div>
+              <div className={styles.dateRangeField}>
+                <label className={styles.dateRangeLabel} htmlFor="gg-dr-end">
+                  End
+                </label>
+                <input
+                  id="gg-dr-end"
+                  type="date"
+                  className={styles.dateRangeInput}
+                  value={dateRangeDraft.end}
+                  onChange={(e) =>
+                    setDateRangeDraft((prev) => ({
+                      ...prev,
+                      end: e.target.value
+                    }))
+                  }
+                />
+              </div>
+              {dateRangeError && (
+                <div className={styles.dateRangeError} role="alert">
+                  {dateRangeError}
+                </div>
+              )}
+            </div>
+            <div className={styles.dateRangeActions}>
+              <button
+                type="button"
+                className={styles.dateRangeCancel}
+                onClick={() => setIsDateRangeOpen(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className={styles.dateRangeSubmit}
+                onClick={submitDateRange}
+              >
+                View
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </>
