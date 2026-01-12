@@ -1,3 +1,53 @@
+/**
+ * API Endpoint: /api/v1/db/build-projection-derived-v2
+ *
+ * Description:
+ * This endpoint constructs derived projection data tables, specifically focusing on player, team, and goalie game-level strength metrics.
+ * It processes game data within a specified date range to generate these analytics. The resulting tables are fundamental for more complex projection models.
+ * This endpoint is designed for asynchronous execution, often triggered by a cron job, and includes safeguards against long execution times.
+ *
+ * ---
+ *
+ * URL Query Parameters:
+ *
+ * 1. `startDate` (optional)
+ *    - Description: The start date for the data processing window, in `YYYY-MM-DD` format.
+ *    - If omitted, the system defaults to the current date.
+ *    - Example: `?startDate=2025-10-05`
+ *
+ * 2. `endDate` (optional)
+ *    - Description: The end date for the data processing window, in `YYYY-MM-DD` format.
+ *    - If omitted, it defaults to the `startDate`, effectively processing a single day.
+ *    - Example: `?startDate=2025-10-05&endDate=2025-10-12`
+ *
+ * 3. `maxDurationMs` (optional)
+ *    - Description: The maximum allowed execution time for the job in milliseconds. This acts as a server-side timeout.
+ *    - If the process exceeds this duration, it will halt and return a timeout error.
+ *    - Defaults to `270000` (4.5 minutes) if not specified.
+ *    - Example: `?maxDurationMs=60000`
+ *
+ * ---
+ *
+ * Usage Examples:
+ *
+ * - To build data for a single day (today):
+ *   `GET /api/v1/db/build-projection-derived-v2`
+ *
+ * - To build data for a specific day:
+ *   `GET /api/v1/db/build-projection-derived-v2?startDate=2025-11-20`
+ *
+ * - To build data for a date range with a custom timeout:
+ *   `POST /api/v1/db/build-projection-derived-v2?startDate=2025-11-01&endDate=2025-11-30&maxDurationMs=180000`
+ *
+ * ---
+ *
+ * Notes:
+ *
+ * - The endpoint supports both `GET` and `POST` methods. There is no difference in functionality between them.
+ * - The process is broken down into three main parts: player strength, team strength, and goalie game logs. Each part may fail or succeed independently.
+ * - The response payload will detail the outcome of each part, including the number of games processed and rows upserted.
+ * - A `207 Multi-Status` response will be returned if any part of the process encounters an error.
+ */
 import type { NextApiRequest, NextApiResponse } from "next";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
@@ -49,7 +99,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
     });
   }
 
-  const startDate = getParam(req, "startDate") ?? isoDateOnly(new Date().toISOString());
+  const startDate =
+    getParam(req, "startDate") ?? isoDateOnly(new Date().toISOString());
   const endDate = getParam(req, "endDate") ?? startDate;
   const maxDurationMs = Number(getParam(req, "maxDurationMs") ?? 270_000);
   const budgetMs = Number.isFinite(maxDurationMs) ? maxDurationMs : 270_000;
@@ -107,4 +158,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
   });
 }
 
-export default withCronJobAudit(handler, { jobName: "build-projection-derived-v2" });
+export default withCronJobAudit(handler, {
+  jobName: "build-projection-derived-v2"
+});

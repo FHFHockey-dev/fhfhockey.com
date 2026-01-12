@@ -74,6 +74,38 @@
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: v.$background-medium;
   box-shadow: v.$box-shadow-default;
+  @include v.custom-scrollbar(
+    rgba(v.$primary-color, 0.9),
+    rgba(v.$background-dark, 0.65),
+    10px
+  );
+  scrollbar-width: thin;
+  scrollbar-color: rgba(v.$primary-color, 0.9) rgba(v.$background-dark, 0.65);
+
+  &::-webkit-scrollbar-track {
+    background: linear-gradient(
+      180deg,
+      rgba(v.$background-dark, 0.55),
+      rgba(v.$background-medium, 0.55)
+    );
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: linear-gradient(
+      180deg,
+      rgba(v.$primary-color, 0.85),
+      rgba(v.$secondary-color, 0.85)
+    );
+    box-shadow: 0 0 10px rgba(v.$primary-color, 0.18);
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(
+      180deg,
+      rgba(v.$primary-color, 0.95),
+      rgba(v.$secondary-color, 0.95)
+    );
+  }
 }
 
 .tableInner {
@@ -100,9 +132,9 @@
 .rangeTable {
   --col-team: 88px;
   --col-metric: 52px;
-  --cell: 18px;
-  --gap-x: 2px;
-  --gap-y: 1px;
+  --cell: 25px;
+  --gap-x: 3px;
+  --gap-y: 2px;
 
   width: max-content;
   border-collapse: separate;
