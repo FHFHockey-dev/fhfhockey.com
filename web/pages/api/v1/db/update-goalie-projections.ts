@@ -2,6 +2,8 @@ import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import type { NextApiRequest, NextApiResponse } from "next";
 import supabase from "lib/supabase";
 
+// test 2 3
+
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method !== "POST" && req.method !== "GET") {
     res.setHeader("Allow", ["GET", "POST"]);
