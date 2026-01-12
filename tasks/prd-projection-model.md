@@ -198,6 +198,73 @@ For each upcoming game:
 - Full xG modeling
 - Public UI
 
+## Addendum: Projection Accountability + Learning Constraints
+### A) Accountability metrics (daily + rolling + per-player)
+We need a consistent way to score “accuracy” when projections are fractional.
+Define a single scoring target per player/game, then compare predicted vs actual:
+
+**Primary target: Fantasy Points (FP)**
+- Compute FP from actual boxscore using a fixed scoring map.
+- Compute projected FP from `forge_player_projections` using the same map.
+- Accuracy is a bounded error score (e.g., 1 - normalized error).
+
+**Suggested FP map (example; make configurable):**
+- Goals: 3.0
+- Assists: 2.0
+- Shots: 0.5
+- PP points: 1.0 (optional add-on)
+- Hits: 0.2 (optional)
+- Blocks: 0.2 (optional)
+- Goalies: separate map (Saves, GA, Wins if available)
+  - Note: WINS_GOALIE and SHUTOUTS_GOALIE require a game outcome model and are deferred.
+
+**Accuracy scoring (choose one, keep stable):**
+- `accuracy = 1 - min(1, abs(pred - actual) / max(1, actual, pred))`
+  - Bounded [0,1]; handles fractional predictions.
+- Also track MAE and RMSE for diagnostics.
+
+**Outputs required:**
+- Daily accuracy (overall): weighted average across all players who played.
+- Rolling accuracy: 7/14/30-day rolling average.
+- Per-player accuracy: daily and rolling (per player_id).
+
+### B) Required tables (proposed)
+- `forge_projection_results`
+  - game_id, player_id, team_id, opponent_team_id, as_of_date (projection date),
+    actual_date (game date), predicted_fp, actual_fp, error_abs, error_sq, accuracy
+  - source_run_id (forge_runs.run_id), created_at
+- `forge_projection_accuracy_daily`
+  - date, scope ('overall' | 'skater' | 'goalie'), accuracy_avg, mae, rmse, player_count
+- `forge_projection_accuracy_player`
+  - date, player_id, accuracy_avg, mae, rmse, games_count
+
+### C) Data pipeline for accountability
+1) For each completed game date:
+   - join `forge_player_projections` (as_of_date = prior day, horizon_games=1)
+     to actual boxscore stats for that game.
+2) Compute FP + error metrics.
+3) Store results in accountability tables.
+4) Aggregate to daily + rolling summary tables.
+
+### D) “Learn as it goes” (bounded, non-ML first)
+Start with lightweight online adjustments that fit the Vercel 4-minute limit:
+- Maintain per-player bias terms (last N games) and apply as a correction factor.
+- Maintain per-metric shrinkage factors (e.g., shots/goals calibration).
+- Update nightly using a single pass over last 7–30 days.
+- Persist calibration parameters in a small table, e.g., `forge_calibration_params`.
+
+### E) ML/NN addendum (must fit Vercel 4-minute constraint)
+If we introduce ML/NN:
+- Training must be offline or incremental; no full retrains in Vercel.
+- Runtime inference must complete within 4 minutes total.
+- Prefer small, interpretable models:
+  - linear regression / ridge / elastic net
+  - gradient-boosted trees with shallow depth
+  - tiny neural nets (1–2 hidden layers) only if cached and fast
+- All features must be precomputed (no heavy joins).
+- Use a fixed feature store table (e.g., `forge_feature_cache`).
+- Enforce a strict timeout: if exceeded, fall back to the non-ML heuristic model.
+
 ## 11) API requirements
 Read-only endpoints (REST or server functions):
 - GET /projections/players?date=YYYY-MM-DD&horizon=1
