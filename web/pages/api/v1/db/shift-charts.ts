@@ -1,3 +1,43 @@
+/**
+ * API Endpoint: /api/v1/db/shift-charts
+ * HTTP Method: POST
+ *
+ * Description:
+ * This endpoint is responsible for fetching, processing, and storing detailed shift chart data from the NHL's public APIs
+ * into the Supabase `shift_charts` table. It is designed to be run incrementally without any parameters. It automatically
+ * detects the most recently processed game and fetches data for all subsequent finished games, ensuring that the database
+ * stays up-to-date.
+ *
+ * ---
+ *
+ * URL Query Parameters:
+ *
+ * This endpoint does not accept any URL query parameters. Its behavior is entirely automatic.
+ *
+ * ---
+ *
+ * Usage Examples:
+ *
+ * To trigger the incremental update, send a POST request to the endpoint. This can be done via a cron job, a manual
+ * trigger from a frontend, or a command-line tool like cURL.
+ *
+ * - Example using cURL:
+ *   `curl -X POST http://localhost:3000/api/v1/db/shift-charts`
+ *
+ *   When executed, this command will:
+ *   1. Check the `shift_charts` table for the latest game date it has processed.
+ *   2. Fetch the NHL schedule for the current season.
+ *   3. Identify all games that have a `gameState` of "FINAL" or "OFF" and a `gameDate` after the latest one in the database.
+ *   4. For each new, finished game, it fetches the detailed shift data, processes it, and upserts it into the database.
+ *
+ * ---
+ *
+ * Notes:
+ *
+ * - This endpoint is protected by `adminOnly` middleware and requires proper authentication.
+ * - It is idempotent; running it multiple times will not create duplicate data. It will only add data for new games.
+ * - This is a critical data ingestion step required for calculating player time on ice (TOI) and line combinations.
+ */
 // C:\Users\timbr\Desktop\FHFH\fhfhockey.com\web\pages\api\v1\db\shift-charts.ts
 // @ts-nocheck
 import { NextApiRequest, NextApiResponse } from "next";
