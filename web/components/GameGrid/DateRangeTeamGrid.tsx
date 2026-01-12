@@ -23,8 +23,9 @@ type DateRangeTeamGridProps = {
 type SortKey = "off" | "b2b" | "home" | "away";
 type SortDirection = "ascending" | "descending";
 
-function getOpponentTeamId(teamId: number, game: GameData) {
-  if (game.homeTeam.id === teamId) return game.awayTeam.id;
+function getOpponentTeamId(teamIds: Set<number>, game: GameData) {
+  if (teamIds.has(game.homeTeam.id)) return game.awayTeam.id;
+  if (teamIds.has(game.awayTeam.id)) return game.homeTeam.id;
   return game.homeTeam.id;
 }
 
@@ -46,7 +47,10 @@ function classForDay(game: GameData | undefined, meta: DateMeta | undefined) {
   return styles.normalNight;
 }
 
-function computeBackToBacks(dates: string[], gamesByDate: Record<string, GameData>) {
+function computeBackToBacks(
+  dates: string[],
+  gamesByDate: Record<string, GameData>
+) {
   let count = 0;
   for (let i = 0; i < dates.length - 1; i++) {
     const a = gamesByDate[dates[i]];
@@ -56,7 +60,10 @@ function computeBackToBacks(dates: string[], gamesByDate: Record<string, GameDat
   return count;
 }
 
-export default function DateRangeTeamGrid({ start, end }: DateRangeTeamGridProps) {
+export default function DateRangeTeamGrid({
+  start,
+  end
+}: DateRangeTeamGridProps) {
   const teams = useTeamsMap();
   const { dates, teamDateGames, dateMetaByDate, loading, error } =
     useDateRangeTeamGrid(start, end);
@@ -71,7 +78,10 @@ export default function DateRangeTeamGrid({ start, end }: DateRangeTeamGridProps
     try {
       const startDate = parseISO(start);
       const endDate = parseISO(end);
-      if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+      if (
+        Number.isNaN(startDate.getTime()) ||
+        Number.isNaN(endDate.getTime())
+      ) {
         return null;
       }
       return { startDate, endDate };
@@ -80,26 +90,41 @@ export default function DateRangeTeamGrid({ start, end }: DateRangeTeamGridProps
     }
   }, [start, end]);
 
-  const teamIds = useMemo(() => {
-    return Object.values(teams)
-      .map((t) => t.id)
-      .sort((a, b) => {
-        const nameA = teams[a]?.name?.toUpperCase() ?? "";
-        const nameB = teams[b]?.name?.toUpperCase() ?? "";
-        return nameA.localeCompare(nameB);
-      });
-  }, [teams]);
+  const canonicalTeams = useMemo(() => {
+    return Object.entries(teamsInfo)
+      .map(([abbreviation, info]) => ({
+        abbreviation,
+        info
+      }))
+      .sort((a, b) => a.info.name.localeCompare(b.info.name));
+  }, []);
 
   const teamRows = useMemo(() => {
-    return teamIds.map((teamId) => {
-      const t = teams[teamId];
-      const gamesByDate: Record<string, GameData> =
-        (teamDateGames as TeamDateGames)[teamId] ?? {};
+    return canonicalTeams.map(({ abbreviation, info }) => {
+      const canonicalId = info.id;
+      const t = teams[canonicalId] ?? {
+        id: canonicalId,
+        name: info.name,
+        abbreviation: info.abbrev ?? abbreviation,
+        logo: `/teamLogos/${(info.abbrev ?? abbreviation).toUpperCase()}.png`
+      };
+
+      const sourceIds = [canonicalId, ...(info.legacyIds ?? [])];
+      const sourceIdSet = new Set<number>(sourceIds);
+      const gamesByDate: Record<string, GameData> = {};
+      sourceIds.forEach((id) => {
+        const byDate = (teamDateGames as TeamDateGames)[id];
+        if (!byDate) return;
+        Object.entries(byDate).forEach(([d, g]) => {
+          gamesByDate[d] = g;
+        });
+      });
 
       const off = dates.reduce((acc, d) => {
         const g = gamesByDate[d];
         const meta = dateMetaByDate[d];
-        if (g?.gameType === 2 && (meta?.regularSeasonGames ?? 0) <= 8) return acc + 1;
+        if (g?.gameType === 2 && (meta?.regularSeasonGames ?? 0) <= 8)
+          return acc + 1;
         return acc;
       }, 0);
 
@@ -109,16 +134,25 @@ export default function DateRangeTeamGrid({ start, end }: DateRangeTeamGridProps
         (acc, d) => {
           const g = gamesByDate[d];
           if (!g?.id) return acc;
-          if (g.homeTeam.id === teamId) acc.home++;
-          if (g.awayTeam.id === teamId) acc.away++;
+          if (sourceIdSet.has(g.homeTeam.id)) acc.home++;
+          if (sourceIdSet.has(g.awayTeam.id)) acc.away++;
           return acc;
         },
         { home: 0, away: 0 }
       );
 
-      return { teamId, team: t, gamesByDate, off, b2b, home, away };
+      return {
+        teamId: canonicalId,
+        team: t,
+        gamesByDate,
+        off,
+        b2b,
+        home,
+        away,
+        sourceIdSet
+      };
     });
-  }, [teamIds, teams, teamDateGames, dates, dateMetaByDate]);
+  }, [canonicalTeams, teams, teamDateGames, dates, dateMetaByDate]);
 
   const sortedTeamRows = useMemo(() => {
     const rows = [...teamRows];
@@ -132,8 +166,8 @@ export default function DateRangeTeamGrid({ start, end }: DateRangeTeamGridProps
       if (aVal > bVal) return direction === "ascending" ? 1 : -1;
 
       // tie-breaker: alphabetical team name
-      const nameA = a.team?.name?.toUpperCase() ?? "";
-      const nameB = b.team?.name?.toUpperCase() ?? "";
+      const nameA = a.team.name.toUpperCase();
+      const nameB = b.team.name.toUpperCase();
       return nameA.localeCompare(nameB);
     });
     return rows;
@@ -171,7 +205,9 @@ export default function DateRangeTeamGrid({ start, end }: DateRangeTeamGridProps
     const compute = () => {
       const lefts: number[] = [];
       monthStartDates.forEach((d) => {
-        const th = table.querySelector<HTMLTableCellElement>(`th[data-date="${d}"]`);
+        const th = table.querySelector<HTMLTableCellElement>(
+          `th[data-date="${d}"]`
+        );
         if (!th) return;
         lefts.push(th.offsetLeft);
       });
@@ -316,106 +352,111 @@ export default function DateRangeTeamGrid({ start, end }: DateRangeTeamGridProps
                       const dt = parseISO(d);
                       const dayLabel = format(dt, "d");
                       const isMonthStart = dt.getDate() === 1;
-                    const monthLabel = isMonthStart ? format(dt, "MMM") : "";
-                    return (
-                      <th
-                        key={d}
-                        data-date={d}
-                        title={format(dt, "MMM d, yyyy")}
-                        className={[
-                          styles.dayHeaderCell,
-                          isMonthStart ? styles.monthStartHeader : ""
-                        ]
-                          .filter(Boolean)
-                          .join(" ")}
-                      >
-                        <div className={styles.dayHeader}>
-                          {monthLabel && (
-                            <span className={styles.monthMarker}>{monthLabel}</span>
-                          )}
-                          <span className={styles.dayNumber}>{dayLabel}</span>
-                        </div>
-                      </th>
-                    );
-                  })}
-                </tr>
+                      const monthLabel = isMonthStart ? format(dt, "MMM") : "";
+                      return (
+                        <th
+                          key={d}
+                          data-date={d}
+                          title={format(dt, "MMM d, yyyy")}
+                          className={[
+                            styles.dayHeaderCell,
+                            isMonthStart ? styles.monthStartHeader : ""
+                          ]
+                            .filter(Boolean)
+                            .join(" ")}
+                        >
+                          <div className={styles.dayHeader}>
+                            {monthLabel && (
+                              <span className={styles.monthMarker}>
+                                {monthLabel}
+                              </span>
+                            )}
+                            <span className={styles.dayNumber}>{dayLabel}</span>
+                          </div>
+                        </th>
+                      );
+                    })}
+                  </tr>
                 </thead>
                 <tbody>
-                {sortedTeamRows.map((row) => {
-                  if (!row.team) return null;
+                  {sortedTeamRows.map((row) => {
+                    return (
+                      <tr key={row.teamId}>
+                        <td>
+                          <div className={styles.teamCell}>
+                            <span className={styles.teamName}>
+                              {row.team.abbreviation}
+                            </span>
+                            <Image
+                              src={getTeamLogo(row.teamId, teams)}
+                              alt={`${row.team.name} logo`}
+                              width={22}
+                              height={22}
+                              style={{ objectFit: "contain" }}
+                            />
+                          </div>
+                        </td>
+                        <td>
+                          <div className={styles.metricCell}>{row.off}</div>
+                        </td>
+                        <td>
+                          <div className={styles.metricCell}>{row.b2b}</div>
+                        </td>
+                        <td>
+                          <div className={styles.metricCell}>{row.home}</div>
+                        </td>
+                        <td>
+                          <div className={styles.metricCell}>{row.away}</div>
+                        </td>
 
-                  return (
-                    <tr key={row.teamId}>
-                      <td>
-                        <div className={styles.teamCell}>
-                          <span className={styles.teamName}>
-                            {row.team.abbreviation}
-                          </span>
-                          <Image
-                            src={getTeamLogo(row.teamId, teams)}
-                            alt={`${row.team.name} logo`}
-                            width={18}
-                            height={18}
-                            style={{ objectFit: "contain" }}
-                          />
-                        </div>
-                      </td>
-                      <td>
-                        <div className={styles.metricCell}>{row.off}</div>
-                      </td>
-                      <td>
-                        <div className={styles.metricCell}>{row.b2b}</div>
-                      </td>
-                      <td>
-                        <div className={styles.metricCell}>{row.home}</div>
-                      </td>
-                      <td>
-                        <div className={styles.metricCell}>{row.away}</div>
-                      </td>
+                        {dates.map((d) => {
+                          const g = row.gamesByDate[d];
+                          const meta = dateMetaByDate[d];
+                          const cls = classForDay(g, meta);
+                          const wrapperClass = styles.dayCellWrapper;
 
-                      {dates.map((d) => {
-                        const g = row.gamesByDate[d];
-                        const meta = dateMetaByDate[d];
-                        const cls = classForDay(g, meta);
-                        const wrapperClass = styles.dayCellWrapper;
+                          if (!g?.id) {
+                            return (
+                              <td key={`${row.teamId}-${d}`}>
+                                <div className={wrapperClass}>
+                                  <div className={`${styles.dayCell} ${cls}`} />
+                                </div>
+                              </td>
+                            );
+                          }
 
-                        if (!g?.id) {
+                          const opponentId = getOpponentTeamId(
+                            row.sourceIdSet,
+                            g
+                          );
+                          const opponentLogo = getTeamLogo(opponentId, teams);
+                          const opponent = teams[opponentId];
+                          const title = opponent
+                            ? `${d}: vs ${opponent.abbreviation}`
+                            : d;
+
                           return (
                             <td key={`${row.teamId}-${d}`}>
-                              <div className={wrapperClass}>
-                                <div className={`${styles.dayCell} ${cls}`} />
+                              <div className={wrapperClass} title={title}>
+                                <div className={`${styles.dayCell} ${cls}`}>
+                                  <Image
+                                    src={opponentLogo}
+                                    alt={
+                                      opponent ? opponent.name : "Opponent logo"
+                                    }
+                                    width={22}
+                                    height={22}
+                                    style={{ objectFit: "contain" }}
+                                  />
+                                </div>
                               </div>
                             </td>
                           );
-                        }
-
-                        const opponentId = getOpponentTeamId(row.teamId, g);
-                        const opponentLogo = getTeamLogo(opponentId, teams);
-                        const opponent = teams[opponentId];
-                        const title = opponent
-                          ? `${d}: vs ${opponent.abbreviation}`
-                          : d;
-
-                        return (
-                          <td key={`${row.teamId}-${d}`}>
-                            <div className={wrapperClass} title={title}>
-                              <div className={`${styles.dayCell} ${cls}`}>
-                                <Image
-                                  src={opponentLogo}
-                                  alt={opponent ? opponent.name : "Opponent logo"}
-                                  width={14}
-                                  height={14}
-                                  style={{ objectFit: "contain" }}
-                                />
-                              </div>
-                            </div>
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  );
-                })}
-              </tbody>
+                        })}
+                      </tr>
+                    );
+                  })}
+                </tbody>
               </table>
             </div>
           </div>
