@@ -243,6 +243,9 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
         />
       </Head>
       <main className={styles.page}>
+        <div style={{ marginBottom: "1rem" }}>
+          <a href="/trends">Visit the unified dashboard →</a>
+        </div>
         <section className={styles.headerPanel}>
           <div className={styles.header}>
             <div>

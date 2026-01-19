@@ -4,13 +4,16 @@
  * Any API route that writes to Supabase `cron_job_audit` (either directly, or via `withCronJobAudit`)
  * will appear in the Cron Report / briefing emails.
  *
- * Included routes (currently 50):
+ * Included routes (currently 53):
+ * - web/pages/api/v1/db/build-projection-derived-v2.ts
  * - web/pages/api/v1/db/calculate-wigo-stats.ts
  * - web/pages/api/v1/db/check-missing-goalie-data.ts
  * - web/pages/api/v1/db/cron/update-stats-cron.ts
  * - web/pages/api/v1/db/manual-refresh-yahoo-token.ts
  * - web/pages/api/v1/db/powerPlayTimeFrame.ts
  * - web/pages/api/v1/db/run-fetch-wgo-data.ts
+ * - web/pages/api/v1/db/run-projection-accuracy.ts
+ * - web/pages/api/v1/db/run-projection-v2.ts
  * - web/pages/api/v1/db/shift-charts.ts
  * - web/pages/api/v1/db/skaterArray.ts
  * - web/pages/api/v1/db/sustainability/rebuild-baselines.ts

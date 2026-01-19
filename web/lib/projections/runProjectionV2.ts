@@ -57,6 +57,23 @@ function clamp(n: number, lo: number, hi: number): number {
   return Math.min(hi, Math.max(lo, n));
 }
 
+function computeWinProbability(goalsFor: number, goalsAgainst: number): number {
+  if (!Number.isFinite(goalsFor) || !Number.isFinite(goalsAgainst)) return 0.5;
+  const goalDiff = goalsFor - goalsAgainst;
+  const scale = 1.25;
+  const winProb = 1 / (1 + Math.exp(-goalDiff / scale));
+  return clamp(winProb, 0.01, 0.99);
+}
+
+function computeShutoutProbability(
+  goalsAgainst: number,
+  winProb: number
+): number {
+  const ga = Math.max(0, goalsAgainst);
+  const shutoutBase = Math.exp(-ga);
+  return clamp(shutoutBase * winProb, 0, 1);
+}
+
 function pickLatestByPlayer(rows: RollingRow[]): Map<number, RollingRow> {
   const byPlayer = new Map<number, RollingRow>();
   for (const r of rows) {
@@ -229,6 +246,31 @@ async function fetchLatestLineCombinationForTeam(
     defensemen: data.defensemen,
     goalies: data.goalies
   };
+}
+
+async function fetchLatestGoalieForTeam(
+  teamId: number,
+  asOfDate: string
+): Promise<number | null> {
+  assertSupabase();
+  const { data, error } = await supabase
+    .from("forge_goalie_game")
+    .select("goalie_id,game_date")
+    .eq("team_id", teamId)
+    .lt("game_date", asOfDate)
+    .order("game_date", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) {
+    console.warn(
+      `Error fetching latest goalie game for team ${teamId} before ${asOfDate}:`,
+      error
+    );
+    return null;
+  }
+  return Number.isFinite((data as any)?.goalie_id)
+    ? Number((data as any).goalie_id)
+    : null;
 }
 
 async function fetchRollingRows(
@@ -443,6 +485,8 @@ export async function runProjectionV2ForDate(
         number,
         { shotsEs: number; shotsPp: number }
       >();
+      const teamGoalsByTeamId = new Map<number, number>();
+      const fallbackGoalieByTeamId = new Map<number, number | null>();
       const goalieCandidates: Array<{
         teamId: number;
         opponentTeamId: number;
@@ -795,6 +839,10 @@ export async function runProjectionV2ForDate(
           shotsEs: Number(teamUpsert.proj_shots_es ?? 0),
           shotsPp: Number(teamUpsert.proj_shots_pp ?? 0)
         });
+        teamGoalsByTeamId.set(
+          teamId,
+          Number(teamTotals.goalsEs + teamTotals.goalsPp)
+        );
 
         // Goalie: pick the highest probability starter from goalie_start_projections if available.
         const goalieOverride = goalieOverrideByTeamId.get(teamId);
@@ -806,10 +854,18 @@ export async function runProjectionV2ForDate(
           .order("start_probability", { ascending: false })
           .limit(1);
         if (gsErr) throw gsErr;
+        if (!fallbackGoalieByTeamId.has(teamId)) {
+          fallbackGoalieByTeamId.set(
+            teamId,
+            await fetchLatestGoalieForTeam(teamId, asOfDate)
+          );
+        }
+        const fallbackGoalieId = fallbackGoalieByTeamId.get(teamId) ?? null;
         const goalieId =
           goalieOverride?.goalieId ??
           (goalieStarts?.[0] as any)?.player_id ??
           lc.goalies?.[0] ??
+          fallbackGoalieId ??
           null;
 
         if (goalieId != null) {
@@ -846,6 +902,14 @@ export async function runProjectionV2ForDate(
         const svPct = 0.9;
         const goalsAllowed = shotsAgainst * (1 - svPct);
         const saves = shotsAgainst - goalsAllowed;
+        const teamGoalsFor = teamGoalsByTeamId.get(c.teamId) ?? 0;
+        const baseWinProb = computeWinProbability(teamGoalsFor, goalsAllowed);
+        const winProb = clamp(baseWinProb * c.starterProb, 0, 1);
+        const shutoutProb = clamp(
+          computeShutoutProbability(goalsAllowed, baseWinProb) * c.starterProb,
+          0,
+          1
+        );
 
         const goalieUpsert = {
           run_id: runId,
@@ -859,6 +923,8 @@ export async function runProjectionV2ForDate(
           proj_shots_against: shotsAgainst,
           proj_goals_allowed: Number(goalsAllowed.toFixed(3)),
           proj_saves: Number(saves.toFixed(3)),
+          proj_win_prob: Number(winProb.toFixed(4)),
+          proj_shutout_prob: Number(shutoutProb.toFixed(4)),
           uncertainty: buildGoalieUncertainty({
             shotsAgainst,
             goalsAllowed,

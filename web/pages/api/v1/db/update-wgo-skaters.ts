@@ -565,6 +565,44 @@ async function fetchDataForGameType(
   formattedDate: string,
   limit: number = 100
 ): Promise<AllSkaterStats> {
+  const fetchJsonWithDiagnostics = async (
+    url: string,
+    label: string
+  ): Promise<NHLApiResponse> => {
+    const response = await Fetch(url);
+    const contentType = response.headers.get("content-type") || "";
+
+    if (!response.ok || !contentType.includes("application/json")) {
+      const bodyPreview = (await response.text()).slice(0, 200);
+      throw new Error(
+        `NHL API non-JSON response for ${label} (${response.status} ${response.statusText}). ` +
+          `content-type=${contentType}. body="${bodyPreview}"`
+      );
+    }
+
+    return (await response.json()) as NHLApiResponse;
+  };
+  const fetchJsonWithRetry = async (
+    url: string,
+    label: string,
+    maxRetries: number = 3
+  ): Promise<NHLApiResponse> => {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        return await fetchJsonWithDiagnostics(url, label);
+      } catch (error: any) {
+        const message = String(error?.message || "");
+        const isRateLimit =
+          message.includes(" 429 ") || message.includes("429 Too Many Requests");
+        if (!isRateLimit || attempt === maxRetries) {
+          throw error;
+        }
+        const backoffMs = 500 * Math.pow(2, attempt - 1);
+        await sleep(backoffMs);
+      }
+    }
+    throw new Error(`NHL API retry exhausted for ${label}`);
+  };
   let start = 0;
   let moreDataAvailable = true;
   const allData: AllSkaterStats = {
@@ -659,11 +697,20 @@ async function fetchDataForGameType(
         '[{"property":"timeOnIce","direction":"DESC"},{"property":"playerId","direction":"ASC"}]'
       )
     };
-    const responses = await Promise.all(
-      Object.values(urls).map((url) =>
-        Fetch(url).then((res) => res.json() as Promise<NHLApiResponse>)
-      )
-    );
+    const NHL_REQUEST_CONCURRENCY = 4;
+    const NHL_BATCH_DELAY_MS = 250;
+    const entries = Object.entries(urls);
+    const responses: NHLApiResponse[] = [];
+    for (let i = 0; i < entries.length; i += NHL_REQUEST_CONCURRENCY) {
+      const batch = entries.slice(i, i + NHL_REQUEST_CONCURRENCY);
+      const batchResponses = await Promise.all(
+        batch.map(([label, url]) => fetchJsonWithRetry(url, label))
+      );
+      responses.push(...batchResponses);
+      if (i + NHL_REQUEST_CONCURRENCY < entries.length) {
+        await sleep(NHL_BATCH_DELAY_MS);
+      }
+    }
     const [
       skaterStatsResponse,
       bioStatsResponse,
@@ -756,6 +803,7 @@ async function processAndUpsertGameTypeData(
 
   if (recordsToUpsert.length > 0) {
     const CHUNK_SIZE = 100;
+    const UPSERT_DELAY_MS = 250;
     for (let i = 0; i < recordsToUpsert.length; i += CHUNK_SIZE) {
       const chunk = recordsToUpsert.slice(i, i + CHUNK_SIZE);
 
@@ -771,6 +819,10 @@ async function processAndUpsertGameTypeData(
         throw new Error(
           `Supabase upsert failed for ${tableName} (chunk starting at index ${i}): ${error.message}`
         );
+      }
+
+      if (i + CHUNK_SIZE < recordsToUpsert.length) {
+        await sleep(UPSERT_DELAY_MS);
       }
     }
     console.log(

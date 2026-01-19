@@ -73,7 +73,7 @@ $mobile-column-short: 30px;
     flex-direction: row;
     justify-content: space-between; // Center on mobile
     align-items: center;
-    height: 60px;
+    height: 52px;
   }
 }
 
@@ -150,7 +150,7 @@ $mobile-column-short: 30px;
   }
 
   @media (max-width: #{v.$breakpoint-tablet - 1px}) {
-    padding: v.$space-xs 0 0 0;
+    padding: v.$space-xxs 0 0 0;
     font-size: clamp(1.3rem, 4vw, 1.8rem); // Slightly smaller on mobile
   }
 }
@@ -171,7 +171,7 @@ $mobile-column-short: 30px;
   @media (max-width: #{v.$breakpoint-tablet - 1px}) {
     font-size: v.$font-size-small * 0.8; // Adjust for mobile
     margin-top: v.$space-xs;
-    padding: 0 0 v.$space-sm 0; // Adjust padding for mobile
+    padding: 0 0 v.$space-xs 0; // Adjust padding for mobile
   }
 }
 
@@ -337,18 +337,27 @@ $mobile-column-short: 30px;
   background-color: v.$background-medium;
   align-items: stretch;
   justify-content: space-between;
-  border: 1px solid v.$border-color-primary;
-  border-radius: v.$border-radius-sm;
+  // border: 1px solid v.$border-color-primary;
+  border-radius: v.$border-radius ;
   overflow: hidden;
   color: v.$text-color-primary;
-  min-height: 96px; // Reduce height to tighten space between label/logo/record
+  // min-height: 96px; // Reduce height to tighten space between label/logo/record
   position: relative;
+}
+
+.gameColumnLabels {
+  display: none;
+}
+
+.teamRecordMobile {
+  display: none;
 }
 
 // Team Logo Sections (Home/Away)
 .homeTeamLogo,
 .awayTeamLogo {
   flex: 0 0 86px; // width of logo columns
+  height: 100%;
   display: flex;
   flex-direction: column;
   justify-content: space-between; // top label, middle logo, bottom record
@@ -360,22 +369,52 @@ $mobile-column-short: 30px;
   &::before {
     content: "";
     position: absolute;
-    top: 0;
-    left: 0;
     width: 100%;
     height: 100%;
     z-index: 0;
+    top: 0;
+    left: 0;
   }
 }
 
+.homeTeamLogo {
+    border: 3px solid var(--home-primary-light-color);
+    border-top-left-radius: v.$border-radius;
+    border-bottom-left-radius: v.$border-radius;
+      
+    
+}
+
+.awayTeamLogo {
+    border: 3px solid var(--away-primary-light-color);
+    border-top-right-radius: v.$border-radius;
+    border-bottom-right-radius: v.$border-radius;
+}
+
 .homeTeamLogo::before {
-  background-color: var(--home-primary-color);
-  border-right: 1px solid v.$border-color-primary;
+  background-color: color-mix(
+    in srgb,
+    var(--home-primary-light-color) 20%,
+    transparent
+  );
+  box-shadow:
+    0 0 6px color-mix(in srgb, var(--home-primary-color) 40%, transparent),
+    0 0 10px rgba(0, 0, 0, 0.35);
+  border-bottom-left-radius: v.$border-radius;
+  border-top-left-radius: v.$border-radius;
 }
 
 .awayTeamLogo::before {
-  background-color: var(--away-primary-color);
-  border-left: 1px solid v.$border-color-primary;
+  background-color: color-mix(
+    in srgb,
+    var(--away-primary-light-color) 20%,
+    transparent
+  );
+  box-shadow:
+    0 0 6px color-mix(in srgb, var(--away-primary-color) 40%, transparent),
+    0 0 10px rgba(0, 0, 0, 0.35);
+  border-bottom-right-radius: v.$border-radius * 0.35;
+  border-top-right-radius: v.$border-radius * 0.35;
 }
 
 .leftImage,
@@ -405,19 +444,18 @@ $mobile-column-short: 30px;
   position: relative;
   z-index: 1;
   font-family: v.$font-family-primary;
-  font-size: 0.6rem;
+  font-size: 0.7rem;
+  font-weight: 900;
   text-transform: uppercase;
-  letter-spacing: 0.6px;
-  color: v.$text-color-primary;
-  opacity: 0.9;
+  letter-spacing: 4px;
 }
 
 // Team-colored labels
 .homeTeamLogo .homeAwayLabel {
-  color: var(--home-secondary-color);
+  color: var(--home-primary-light-color);
 }
 .awayTeamLogo .homeAwayLabel {
-  color: var(--away-secondary-color);
+  color: var(--away-primary-light-color);
 }
 
 // Middle Game Info Section
@@ -428,43 +466,58 @@ $mobile-column-short: 30px;
   align-items: center;
   padding: 0 v.$space-sm;
   // height: 100%; // Implicit with align-items: stretch
-  background: linear-gradient(
-    135deg,
-    var(--home-primary-color) 0%,
-    var(--home-primary-color) 7%,
-    var(--home-secondary-color) 7%,
-    var(--home-secondary-color) 10%,
-    var(--home-primary-color) 10%,
-    var(--home-primary-color) 13%,
-    var(--home-secondary-color) 13%,
-    var(--home-secondary-color) 16%,
+  background-image: linear-gradient(
+      90deg,
+      var(--home-primary-light-color) 0 20%,
+      v.$background-darker 40% 60%,
+      var(--away-primary-light-color) 80% 100%
+    ),
+    linear-gradient(
+      90deg,
+      var(--home-primary-light-color) 0 20%,
+      v.$background-darker 40% 60%,
+      var(--away-primary-light-color) 80% 100%
+    ),
+    linear-gradient(
+      135deg,
+      var(--home-primary-color) 0%,
+      var(--home-primary-color) 7%,
+      var(--home-secondary-color) 7%,
+      var(--home-secondary-color) 10%,
+      var(--home-primary-color) 10%,
+      var(--home-primary-color) 13%,
+      var(--home-secondary-color) 13%,
+      var(--home-secondary-color) 16%,
 
-    v.$text-color-primary 16%,
-    // Use variable for white
-    v.$text-color-primary 19%,
-    // Use variable for white
-    var(--home-jersey-color) 19%,
-    var(--home-jersey-color) 20%,
-    v.$background-light 20%,
-    // Use variable for middle background
-    v.$background-light 80%,
-    // Use variable for middle background
-    var(--away-jersey-color) 80%,
-    var(--away-jersey-color) 81%,
-    v.$text-color-primary 81%,
-    // Use variable for white
-    v.$text-color-primary 84%,
+      v.$text-color-primary 16%,
+      // Use variable for white
+      v.$text-color-primary 19%,
+      // Use variable for white
+      var(--home-jersey-color) 19%,
+      var(--home-jersey-color) 20%,
+      v.$background-medium 20%,
+      // Use variable for middle background
+      v.$background-medium 80%,
+      // Use variable for middle background
+      var(--away-jersey-color) 80%,
+      var(--away-jersey-color) 81%,
+      v.$text-color-primary 81%,
+      // Use variable for white
+      v.$text-color-primary 84%,
 
-    // Use variable for white
-    var(--away-secondary-color) 84%,
-    var(--away-secondary-color) 87%,
-    var(--away-primary-color) 87%,
-    var(--away-primary-color) 90%,
-    var(--away-secondary-color) 90%,
-    var(--away-secondary-color) 93%,
-    var(--away-primary-color) 93%,
-    var(--away-primary-color) 100%
-  );
+      // Use variable for white
+      var(--away-secondary-color) 84%,
+      var(--away-secondary-color) 87%,
+      var(--away-primary-color) 87%,
+      var(--away-primary-color) 90%,
+      var(--away-secondary-color) 90%,
+      var(--away-secondary-color) 93%,
+      var(--away-primary-color) 93%,
+      var(--away-primary-color) 100%
+    );
+  background-size: 100% 3px, 100% 3px, 100% 100%;
+  background-position: top, bottom, center;
+  background-repeat: no-repeat;
 }
 
 .homeScore,
@@ -766,9 +819,25 @@ $mobile-column-short: 30px;
   flex-shrink: 0; // Prevent shrinking
 
   button {
-    @include v.button-style; // Apply standard button style
+    font-size: v.$font-size-xs;
+    font-family: v.$font-family-accent, sans-serif;
+    letter-spacing: 0.06em;
+    padding: 4px 10px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid v.$border-secondary;
+    border-radius: 4px;
+    cursor: pointer;
+    color: v.$border-secondary;
     min-width: 100px; // Ensure decent button width
-    padding: v.$space-sm v.$space-lg;
+    box-sizing: border-box;
+    transition: all 0.2s ease;
+    &:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
   }
 }
 
@@ -887,7 +956,7 @@ $mobile-column-short: 30px;
 
   .gamesHeader button {
     min-width: 44px;
-    min-height: 44px;
+    // min-height: 44px;
     padding: v.$space-xs v.$space-sm;
     font-size: 1rem;
   }
@@ -897,45 +966,168 @@ $mobile-column-short: 30px;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    gap: v.$space-sm;
-    padding: v.$space-sm;
+    gap: v.$space-xs;
+    padding: v.$space-xs;
     > * {
       max-width: 95%;
-      margin: v.$space-sm;
+      margin: v.$space-xs;
     }
   }
 
+  .gameColumnLabels {
+    display: grid;
+    grid-template-columns: 28px 44px 28px 1fr 28px 44px 28px;
+    align-items: center;
+    width: 100%;
+    padding: 0 v.$space-xs;
+    margin-bottom: v.$space-xxs;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    font-size: 0.5rem;
+    color: v.$text-color-secondary;
+  }
+
+  .homeLabel {
+    grid-column: 1 / span 3;
+    justify-self: start;
+  }
+
+  .awayLabel {
+    grid-column: 5 / span 3;
+    justify-self: end;
+  }
+
   .combinedGameCard {
-    min-height: 90px; // Allow room for label + logo + record on mobile
-    border: 2px solid v.$border-color-secondary;
-    border-radius: v.$border-radius * 0.5;
+    min-height: 34px; // ~65% height reduction for mobile
+    height: 48px;
+    align-items: center;
+    border-radius: v.$border-radius;
+    overflow: visible;
   }
   .homeTeamLogo,
   .awayTeamLogo {
-    flex-basis: 60px;
-    padding: v.$space-sm v.$space-xxs; // maintain vertical padding for absolute elements
+    flex: 0 0 34px;
+    // padding: v.$space-xxs; // tighter vertical padding
+    gap: 0;
+    height: 100%;
+    justify-content: center;
   }
+
+  .homeTeamLogo {
+    border: 3px solid var(--home-primary-light-color);
+    border-top-left-radius: v.$border-radius;
+    border-bottom-left-radius: v.$border-radius;
+
+}
+
+.awayTeamLogo {
+    border: 3px solid var(--away-primary-light-color);
+    border-top-right-radius: v.$border-radius;
+    border-bottom-right-radius: v.$border-radius;
+}
+
+.homeTeamLogo::before {
+  background-color: color-mix(
+    in srgb,
+    var(--home-primary-light-color) 20%,
+    transparent
+  );
+  box-shadow:
+    0 0 6px color-mix(in srgb, var(--home-primary-color) 40%, transparent),
+    0 0 10px rgba(0, 0, 0, 0.35);
+  border-bottom-left-radius: v.$border-radius * 0.75;
+  border-top-left-radius: v.$border-radius * 0.75;
+}
+
+.awayTeamLogo::before {
+  background-color: color-mix(
+    in srgb,
+    var(--away-primary-light-color) 20%,
+    transparent
+  );
+  box-shadow:
+    0 0 6px color-mix(in srgb, var(--away-primary-color) 40%, transparent),
+    0 0 10px rgba(0, 0, 0, 0.35);
+  border-bottom-right-radius: v.$border-radius * 0.75;
+  border-top-right-radius: v.$border-radius * 0.75;
+}
+
   .leftImage,
   .rightImage {
-    max-width: 50px;
-    max-height: 50px;
-    margin: v.$space-xxs 0; // breathing room from labels
+    width: 48px;
+    height: 48px;
+    margin: -7px 0; // allow logo to visually exceed card height
   }
   .teamRecord {
-    font-size: 0.65rem;
+    display: none;
   }
   .homeAwayLabel {
-    font-size: 0.55rem;
+    display: none;
   }
   .homeScore,
   .awayScore {
-    font-size: 1.2rem;
+    font-size: 0.7rem;
+    line-height: 1;
   }
   .gameState {
-    font-size: 0.6rem;
+    font-size: 0.45rem;
   }
+
+  .gameTimeInfo {
+    text-align: center;
+    align-items: center; // already in your styles
+    justify-content: center;
+    order: 4;
+    padding: 0 v.$space-xxs;
+  }
+
   .gameTimeText {
-    font-size: 0.7rem;
+    display: block;
+    width: 100%;
+    text-align: center;
+  }
+
+
+  .teamRecordMobile {
+    display: block;
+    font-family: v.$font-family-primary;
+    font-size: 0.65rem;
+    color: v.$text-color-primary;
+    line-height: 1;
+    text-align: center;
+    min-width: 44px;
+    padding: 0 v.$space-sm;
+  }
+
+  .homeRecord {
+    order: 2;
+  }
+
+  .awayRecord {
+    order: 6;
+  }
+
+  .homeTeamLogo {
+    order: 1;
+  }
+
+  .awayTeamLogo {
+    order: 7;
+  }
+
+  .gameTimeSection {
+    display: contents;
+
+  }
+
+  .homeScore {
+    order: 3;
+  }
+
+
+
+  .awayScore {
+    order: 5;
   }
 
   .standingsInjuriesContainer {
@@ -945,35 +1137,44 @@ $mobile-column-short: 30px;
   .standingsHeader,
   .injuriesHeader {
     padding: v.$space-sm;
+    font-family: v.$font-family-accent;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+
+    h2 {
+      font-size: clamp(1rem, 3.2vw, 1.4rem);
+      margin: v.$space-xs;
+    }
   }
 
   .standingsHeader h1,
   .injuriesHeader h1 {
     font-size: clamp(1.2rem, 4vw, 1.5rem);
-    padding: v.$space-sm;
+    padding: v.$space-xs;
   }
 
   .standingsTable,
   .injuryTable {
     thead th {
       font-variant: all-small-caps;
-      font-size: 18px;
-      padding: v.$space-xs v.$space-xs;
+      font-size: 12px;
+      padding: 2px 4px;
+      letter-spacing: 0.3px;
       &:first-child {
-        padding-left: v.$space-xs * 1.5;
+        padding-left: v.$space-xs;
       }
       &:last-child {
-        padding-right: v.$space-sm;
+        padding-right: v.$space-xs;
       }
     }
     tbody td {
       font-variant: all-small-caps;
-      font-size: 16px;
+      font-size: 14px;
       font-family: v.$font-family-primary;
-      font-weight: 900;
+      font-weight: 700;
 
-      line-height: 1;
-      padding: v.$space-sm v.$space-xs;
+      line-height: 1.1;
+      padding: v.$space-xs v.$space-xs;
       &:first-child {
         padding-left: v.$space-xs;
       }
@@ -981,6 +1182,13 @@ $mobile-column-short: 30px;
   }
 
   .standingsTable {
+    tbody tr {
+      height: 32px;
+    }
+    tbody td {
+      padding: v.$space-xxs v.$space-xs;
+      font-size: 13px;
+    }
     th:nth-child(1),
     td:nth-child(1) {
       width: 10%;
@@ -1103,10 +1311,20 @@ $mobile-column-short: 30px;
   .pagination {
     padding: v.$space-xs v.$space-sm;
     button {
-      min-width: 44px;
-      min-height: 44px;
-      padding: v.$space-xs v.$space-sm;
-      font-size: 1rem;
+      min-width: 100px;
+      padding: 6px 10px;
+      font-size: v.$font-size-xs;
+      border: 1px solid v.$primary-color;
+      background-color: rgba( v.$primary-color, 0.3 );
+      color: v.$primary-color;
+      text-transform: uppercase;
+    }
+
+    :disabled {
+      opacity: 0.6;
+      border: 2px solid v.$border-color-secondary;
+      background-color: rgba( v.$border-color-secondary, 0.2 );
+      color: v.$border-color-secondary;
     }
   }
 }

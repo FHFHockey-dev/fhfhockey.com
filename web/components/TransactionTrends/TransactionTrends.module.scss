@@ -10,10 +10,11 @@
   min-width: 0; // allow children to shrink within viewport
   box-sizing: border-box;
   @media (max-width: #{v.$breakpoint-mobile-lg}) {
-    padding: v.$mobile-space-md;
+    padding: 0;
     overflow-x: hidden;
     // Avoid sticky bottom nav overlap on mobile
     padding-bottom: 0;
+    gap: 0;
   }
 }
 
@@ -23,6 +24,7 @@
   justify-content: space-between;
   flex-wrap: wrap;
   gap: v.$space-md;
+  margin-bottom: v.$space-md;
 }
 
 .headerControls {
@@ -53,7 +55,7 @@
     font-size: v.$font-size-xs;
     font-family: v.$font-family-accent, sans-serif;
     letter-spacing: 0.06em;
-    padding: 6px 10px;
+    padding: 4px 10px;
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid v.$border-secondary;
     border-radius: 4px;
@@ -91,7 +93,7 @@
     font-size: v.$font-size-xs;
     font-family: v.$font-family-accent, sans-serif;
     letter-spacing: 0.06em;
-    padding: 6px 10px;
+    padding: 4px 10px;
     background: rgba(255, 255, 255, 0.06);
     border: 1px solid v.$border-secondary;
     border-radius: 4px;
@@ -122,7 +124,7 @@
 .tablesWrapper {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: v.$space-xxl;
+  gap: v.$space-lg;
   width: 100%;
   max-width: 100%;
   min-width: 0;
@@ -135,6 +137,14 @@
     grid-template-columns: minmax(0, 1fr);
     gap: v.$space-lg;
   }
+}
+
+.desktopTables {
+  display: grid;
+}
+
+.mobileTabs {
+  display: none;
 }
 
 .panel {
@@ -174,9 +184,11 @@
 
 .risersPanel {
   border-color: rgba(v.$success-color, 0.4);
+  // background: rgba(v.$success-color, 0.12);
 }
 .fallersPanel {
   border-color: rgba(v.$danger-color, 0.4);
+  // background: rgba(v.$danger-color, 0.12);
 }
 
 .tableTitle {
@@ -189,6 +201,45 @@
   align-items: center;
   gap: v.$space-sm;
   color: v.$text-primary;
+}
+
+.tableTabs {
+  display: inline-flex;
+  gap: v.$space-xs;
+  width: calc(100% + (v.$space-lg * 2));
+  margin: calc(-1 * v.$space-md) calc(-1 * v.$space-lg) v.$space-sm;
+  margin-bottom: v.$space-sm;
+  align-items: center;
+}
+
+.tabButton {
+  font-size: v.$font-size-xs;
+  letter-spacing: 0.06em;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid v.$border-secondary;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  &.active,
+  &.isActive,
+  :global(.active) & {
+    border-color: v.$primary-color;
+    background-color: v.$primary-color-opaque;
+    color: v.$primary-color;
+    box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.35);
+  }
+}
+
+.riseTab {
+}
+
+.fallTab {
 }
 
 .dataTable {
@@ -460,6 +511,14 @@ tbody tr:hover .neonBox.fall {
 
 // Mobile optimizations
 @media (max-width: #{v.$breakpoint-mobile-lg}) {
+  .desktopTables {
+    display: none;
+  }
+
+  .mobileTabs {
+    display: grid;
+  }
+
   // Only swap to abbreviation on mobile when a row actually has an abbrev
   .playerMeta.hasAbbrev {
     .teamFullName {
@@ -473,6 +532,8 @@ tbody tr:hover .neonBox.fall {
     padding: v.$mobile-space-md;
     // Prevent horizontal scroll; we trim columns instead
     overflow-x: hidden;
+    outline: none;
+    box-shadow: none;
   }
   .risersPanel::before,
   .fallersPanel::before {
@@ -503,14 +564,14 @@ tbody tr:hover .neonBox.fall {
   }
   .timeframeButtons button,
   .posButtons button {
-    min-height: v.$touch-target-min;
-    padding: 8px 12px;
+    padding: 6px 10px;
     width: 100%;
   }
   .dataTable {
     font-size: v.$mobile-font-size-xs;
-    --row-h: 44px;
+    --row-h: 40px;
     table-layout: fixed; // prevent content from forcing overflow
+    border-spacing: 0;
   }
   .dataTable thead th {
     padding: 6px;
@@ -518,9 +579,12 @@ tbody tr:hover .neonBox.fall {
   .dataTable tbody td,
   .dataTable tbody th {
     padding: 4px 6px;
+    height: 50px;
+    border-bottom: none;
   }
   .rankCell {
     width: 20px;
+    font-size: 0.7em;
   }
   .ownCell,
   .ownCellHeader {
@@ -557,12 +621,28 @@ tbody tr:hover .neonBox.fall {
   .neonBox {
     padding: 2px 3px;
   }
+  .pager {
+    margin-top: v.$mobile-space-md;
+    padding-top: v.$mobile-space-sm;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: v.$space-md;
+    flex-wrap: wrap;
+
+  }
+  .footNote {
+    font-size: v.$mobile-font-size-xxs;
+    margin-top: v.$mobile-space-sm;
+    margin-bottom: 0;
+  
+  }
 }
 
 // Extra-narrow phones: hide sparkline to prioritize name/own/delta
 @media (max-width: #{v.$breakpoint-mobile-sm}) {
   .dataTable {
-    --row-h: 40px;
+    --row-h: 36px;
   }
   .sparkCell {
     display: none;
@@ -576,3 +656,78 @@ tbody tr:hover .neonBox.fall {
     border-left-width: 6px;
   }
 }
+  .tableTabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: calc(100% + (v.$mobile-space-md * 2) - 8px);
+    margin: calc(-1 * v.$mobile-space-md)
+      calc(-1 * v.$mobile-space-md)
+      v.$space-sm
+      calc(-1 * v.$mobile-space-md + 8px);
+    gap: 0;
+    align-items: end;
+  }
+
+  .tabButton {
+    letter-spacing: 0.08em;
+    padding: 8px 12px 6px;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 0;
+    border-bottom: none;
+    text-transform: uppercase;
+    font-family: v.$font-family-accent, sans-serif;
+    position: relative;
+    width: 100%;
+    min-height: 38px;
+    box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.12);
+
+    &:first-child {
+      border-top-left-radius: 0;
+    }
+    &:last-child {
+      border-top-right-radius: 12px;
+    }
+
+    &.active,
+    &.isActive,
+    :global(.active) & {
+      background-color: rgba(255, 255, 255, 0.16);
+      box-shadow:
+        inset 0 -2px 0 rgba(0, 0, 0, 0.2),
+        0 8px 14px rgba(0, 0, 0, 0.25);
+      transform: translateY(1px);
+      z-index: 1;
+    }
+  }
+
+  .riseTab {
+    border-color: v.$success-color;
+    color: v.$success-color;
+    background: rgba(v.$success-color, 0.14);
+
+    &.active,
+    &.isActive,
+    :global(.active) & {
+      background: rgba(v.$success-color, 0.28);
+      color: v.$success-color;
+      box-shadow:
+        inset 0 -2px 0 rgba(v.$success-color, 0.6),
+        0 8px 14px rgba(0, 0, 0, 0.2);
+    }
+  }
+
+  .fallTab {
+    border-color: v.$danger-color;
+    color: v.$danger-color;
+    background: rgba(v.$danger-color, 0.14);
+
+    &.active,
+    &.isActive,
+    :global(.active) & {
+      background: rgba(v.$danger-color, 0.28);
+      color: v.$danger-color;
+      box-shadow:
+        inset 0 -2px 0 rgba(v.$danger-color, 0.6),
+        0 8px 14px rgba(0, 0, 0, 0.2);
+    }
+  }

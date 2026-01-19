@@ -14,7 +14,7 @@
       "resolveJsonModule": true,
       "isolatedModules": true,
       "jsx": "preserve",
-      "incremental": true
+      "incremental": false
     },
     "include": ["next-env.d.ts", "yahoo-fantasy.d.ts", "**/*.ts", "**/*.tsx", "vitest.config.mts", "lib/supabase/GoaliePage/calculateAverages.js", "components/TeamLandingPage/teamLandingPage.js"],
     "exclude": ["node_modules"]

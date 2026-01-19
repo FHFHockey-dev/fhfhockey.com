@@ -40,6 +40,8 @@ create table public.forge_goalie_projections (
   proj_shots_against numeric null,
   proj_saves numeric null,
   proj_goals_allowed numeric null,
+  proj_win_prob numeric null,
+  proj_shutout_prob numeric null,
   uncertainty jsonb not null default '{}'::jsonb,
   created_at timestamp with time zone not null default now(),
   updated_at timestamp with time zone not null default now(),
@@ -335,4 +337,25 @@ create index IF not exists idx_team_projections_v2_team on public.forge_team_pro
 create index IF not exists idx_team_projections_v2_date_horizon on public.forge_team_projections using btree (as_of_date, horizon_games) TABLESPACE pg_default;
 
 create index IF not exists idx_team_projections_v2_date_team_horizon on public.forge_team_projections using btree (as_of_date, team_id, horizon_games) TABLESPACE pg_default;
+```
+
+# forge_projection_accuracy_stat_daily
+
+```sql
+create table public.forge_projection_accuracy_stat_daily (
+  date date not null,
+  scope text not null,
+  stat_key text not null,
+  mae numeric not null,
+  rmse numeric not null,
+  player_count integer not null,
+  error_abs_sum numeric not null,
+  error_sq_sum numeric not null,
+  updated_at timestamp with time zone not null default now(),
+  constraint forge_projection_accuracy_stat_daily_pkey primary key (date, scope, stat_key)
+) TABLESPACE pg_default;
+
+create index IF not exists idx_projection_accuracy_stat_daily_date on public.forge_projection_accuracy_stat_daily using btree (date) TABLESPACE pg_default;
+
+create index IF not exists idx_projection_accuracy_stat_daily_scope on public.forge_projection_accuracy_stat_daily using btree (scope) TABLESPACE pg_default;
 ```

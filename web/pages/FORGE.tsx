@@ -139,6 +139,9 @@ const FORGEPage: NextPage = () => {
       </Head>
 
       <main className={styles.main}>
+        <div style={{ marginBottom: "1rem" }}>
+          <a href="/trends">Visit the unified dashboard →</a>
+        </div>
         <div className={styles.header}>
           {/* 3. Logo */}
           <div className={styles.logoContainer}>

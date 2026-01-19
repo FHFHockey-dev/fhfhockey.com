@@ -1,1661 +1,418 @@
-import { useRouter } from "next/router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import Image from "next/image";
-import supabase from "lib/supabase";
-import { teamsInfo } from "lib/teamsInfo";
-import React from "react";
-import {
-  DEFAULT_SKATER_LIMIT,
-  SKATER_TREND_CATEGORIES,
-  type SkaterTrendCategoryDefinition,
-  type SkaterTrendCategoryId
-} from "lib/trends/skaterMetricConfig";
+import type { GetServerSideProps, NextPage } from "next";
+import Head from "next/head";
+import { useDashboardData } from "hooks/useDashboardData";
+import type { DashboardData } from "lib/dashboard/dataFetchers";
+import TopMovers from "components/TopMovers/TopMovers";
+import { getTeamMetaById } from "lib/dashboard/teamMetadata";
 import {
   TEAM_TREND_CATEGORIES,
-  type TrendCategoryDefinition,
   type TrendCategoryId
 } from "lib/trends/teamMetricConfig";
-import { type CtpiScore } from "lib/trends/ctpi";
 import {
-  ResponsiveContainer,
-  LineChart as ReLineChart,
+  SKATER_TREND_CATEGORIES,
+  type SkaterTrendCategoryId,
+  type SkaterPositionGroup,
+  type SkaterWindowSize
+} from "lib/trends/skaterMetricConfig";
+import { useRouter } from "next/router";
+import supabase from "lib/supabase";
+import { getTeamAbbreviationById } from "lib/teamsInfo";
+import { fetchTeamRatings, type TeamRating } from "lib/teamRatingsService";
+import {
+  LineChart,
   Line,
+  ResponsiveContainer,
   XAxis,
   YAxis,
-  CartesianGrid,
+  Tooltip,
   Brush,
-  Tooltip
+  Legend
 } from "recharts";
-import TopMovers from "components/TopMovers/TopMovers";
-import styles from "./index.module.scss";
+import styles from "./dashboard.module.scss";
 
-type PlayerListItem = {
-  id: number;
-  fullName: string;
-  position: string;
-  team_abbrev: string | null;
-};
-
-type SeriesPoint = { gp: number; percentile: number };
-
-type RankingRow = {
-  team: string;
-  percentile: number;
-  gp: number;
-  rank: number;
-  previousRank: number | null;
-  delta: number;
-};
-
-interface CategoryResult {
-  series: Record<string, SeriesPoint[]>;
-  rankings: RankingRow[];
-}
-
-interface TeamTrendsResponse {
-  seasonId: number;
-  generatedAt: string;
-  categories: Record<TrendCategoryId, CategoryResult>;
-}
-
-type ChartDatasetRow = {
-  gp: number;
-  [team: string]: number;
-};
-
-type CategorySnapshot = {
-  percentile: number;
-  gp: number;
-  delta: number | null;
-};
-
-type PowerBoardRow = {
-  team: string;
-  name: string;
-  logo: string;
-  overall: number;
-  specialTeams: number | null;
-  momentum: number | null;
-  snapshots: Partial<Record<TrendCategoryId, CategorySnapshot>>;
-  topDriver?: TrendCategoryId;
-  drag?: TrendCategoryId;
-  reason: string;
-  ctpi?: CtpiScore;
-  ctpiDelta?: number | null;
-  sosPastPct?: number | null;
-  sosFuturePct?: number | null;
-  sosPastRecord?: string;
-  sosFutureRecord?: string;
-};
-
-type PlayerMetadata = {
-  id: number;
-  fullName: string;
-  position: string | null;
-  teamAbbrev: string | null;
-  imageUrl: string | null;
-};
-
-type SkaterRankingRow = {
-  playerId: number;
-  percentile: number;
-  gp: number;
-  rank: number;
-  previousRank: number | null;
-  delta: number;
-  latestValue: number | null;
-};
-
-interface SkaterCategoryResult {
-  series: Record<string, SeriesPoint[]>;
-  rankings: SkaterRankingRow[];
-}
-
-interface SkaterTrendsResponse {
-  seasonId: number;
-  generatedAt: string;
-  positionGroup: "forward" | "defense" | "all";
-  limit: number;
-  windowSize: number;
-  categories: Record<SkaterTrendCategoryId, SkaterCategoryResult>;
-  playerMetadata: Record<string, PlayerMetadata>;
-}
-
-const formatPercent = (value: number) => `${value.toFixed(1)}%`;
-const formatSigned = (value: number | null | undefined, digits = 2) => {
-  if (value === null || value === undefined || Number.isNaN(value)) return "—";
-  const sign = value > 0 ? "+" : "";
-  return `${sign}${value.toFixed(digits)}`;
-};
-const formatPct = (value: number | null | undefined) => {
-  if (value === null || value === undefined || Number.isNaN(value)) return "—";
-  return `${(value * 100).toFixed(1)}%`;
+type TeamPowerRow = {
+  teamAbbr: string;
+  teamName: string;
+  powerScore: number;
+  ctpiScore: number | null;
+  sosScore: number | null;
 };
 
 type SparkPoint = { date: string; value: number };
 
-type SosRating = {
-  team: string;
-  past: { wins: number; losses: number; otl: number };
-  future: { wins: number; losses: number; otl: number };
+type ForgeProjectionRow = {
+  player_id: number;
+  player_name: string;
+  team_name: string;
+  position: string;
+  g: number;
+  a: number;
+  pts: number;
+  ppp: number;
+  sog: number;
+  hit: number;
+  blk: number;
+  opponent?: string | null;
+  gamesRemaining?: number | null;
+  uncertainty?: Record<string, unknown> | null;
 };
 
-function SparkMini({
-  points,
-  variant
-}: {
-  points: SparkPoint[];
-  variant: "hot" | "cold";
-}) {
-  const data = React.useMemo(() => {
-    if (!points || points.length === 0) return null;
-    const series = points.slice(-10);
-    const values = series.map((p) => p.value);
-    let min = Math.min(...values);
-    let max = Math.max(...values);
-    if (min === max) {
-      min -= 0.5;
-      max += 0.5;
-    }
-    const range = max - min || 1;
-    const norm = series.map((p, i) => ({
-      x: series.length === 1 ? 0 : (i / (series.length - 1)) * 100,
-      y: 38 - ((p.value - min) / range) * 30 - 2
-    }));
-    const line = norm.map((n) => `${n.x},${n.y.toFixed(2)}`).join(" ");
-    const area = `0,40 ${line} 100,40`;
-    const baseVal = series[0].value;
-    const baselineY = 38 - ((baseVal - min) / range) * 30 - 2;
-    return {
-      line,
-      area,
-      baselineY: Math.min(38, Math.max(2, baselineY))
-    };
-  }, [points]);
+type StartChartPlayer = {
+  player_id: number;
+  name: string;
+  positions: string[];
+  team_abbrev: string | null;
+  opponent_abbrev: string | null;
+  start_probability?: number | null;
+  projected_gsaa?: number | null;
+  games_remaining_week?: number;
+  proj_fantasy_points?: number | null;
+  proj_goals?: number | null;
+  proj_assists?: number | null;
+  proj_shots?: number | null;
+  proj_pp_points?: number | null;
+  proj_hits?: number | null;
+  proj_blocks?: number | null;
+};
 
-  if (!data) return <div className={styles.sparkEmpty}>—</div>;
+type ForgeGoalieRow = {
+  goalie_id: number;
+  team_id: number;
+  opponent_team_id: number;
+  proj_win_prob: number | null;
+  proj_shutout_prob: number | null;
+  starter_probability: number | null;
+  uncertainty?: Record<string, unknown> | null;
+};
 
+type GoalieDisplayRow = {
+  goalieId: number;
+  name: string;
+  team: string;
+  opponent: string;
+  startProb: number | null;
+  winProb: number | null;
+  shutoutProb: number | null;
+  uncertainty?: Record<string, unknown> | null;
+};
+
+type PlayerSearchRow = {
+  id: number;
+  fullName: string;
+  position: string | null;
+  teamAbbrev: string | null;
+};
+
+const getTodayEt = (): string => {
+  const now = new Date();
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(now);
+  const y = parts.find((p) => p.type === "year")?.value;
+  const m = parts.find((p) => p.type === "month")?.value;
+  const d = parts.find((p) => p.type === "day")?.value;
+  return `${y}-${m}-${d}`;
+};
+
+const SPECIAL_TEAM_STEP = 1.5;
+const computePowerScore = (rating: {
+  offRating: number;
+  defRating: number;
+  paceRating: number;
+  ppTier: number;
+  pkTier: number;
+}): number => {
+  const base = (rating.offRating + rating.defRating + rating.paceRating) / 3;
+  const ppAdj = (3 - rating.ppTier) * SPECIAL_TEAM_STEP;
+  const pkAdj = (3 - rating.pkTier) * SPECIAL_TEAM_STEP;
+  return base + ppAdj + pkAdj;
+};
+
+const formatOptional = (value: number | null | undefined): string => {
+  if (value === null || value === undefined || Number.isNaN(value)) return "—";
+  return value.toFixed(1);
+};
+
+const renderSparkline = (points: SparkPoint[]) => {
+  if (!points || points.length === 0) return "—";
+  const series = points.slice(-10);
+  const values = series.map((p) => p.value);
+  let min = Math.min(...values);
+  let max = Math.max(...values);
+  if (min === max) {
+    min -= 0.5;
+    max += 0.5;
+  }
+  const range = max - min || 1;
+  const line = series
+    .map((p, i) => {
+      const x = series.length === 1 ? 0 : (i / (series.length - 1)) * 100;
+      const y = 30 - ((p.value - min) / range) * 24;
+      return `${x},${y.toFixed(2)}`;
+    })
+    .join(" ");
   return (
-    <svg
-      className={styles.sparkSvg}
-      viewBox="0 0 100 40"
-      preserveAspectRatio="none"
-    >
-      <polyline
-        className={styles.sparkBaseline}
-        points={`0,${data.baselineY} 100,${data.baselineY}`}
-      />
-      <polygon
-        className={`${styles.sparkArea} ${variant === "hot" ? styles.rise : styles.fall}`}
-        points={data.area}
-      />
-      <polyline
-        className={`${styles.sparkPath} ${variant === "hot" ? styles.rise : styles.fall}`}
-        points={data.line}
-      />
+    <svg viewBox="0 0 100 32" width={120} height={32}>
+      <polyline points={line} fill="none" stroke="#2d6cdf" strokeWidth={2} />
     </svg>
   );
-}
-const DEFAULT_TEAM_LOGO = "/teamLogos/default.png";
-const DEFAULT_PLAYER_IMAGE = DEFAULT_TEAM_LOGO;
-
-const CHART_COLOR_PALETTE = [
-  "#07aae2", // $secondary-color
-  "#4bc0c0", // $color-teal
-  "#ff9f40", // $color-orange
-  "#ff6384", // $danger-color
-  "#9b59b6", // $color-purple
-  "#ffcc33", // $warning-color
-  "#3b82f6", // $info-color
-  "#00ff99", // $success-color
-  "#cccccc", // $text-primary
-  "#a0aec0" // grey
-];
-
-function getChartColor(key: string): string {
-  let hash = 0;
-  if (!key) return CHART_COLOR_PALETTE[0];
-  for (let i = 0; i < key.length; i += 1) {
-    hash = (hash << 5) - hash + key.charCodeAt(i);
-    hash |= 0; // convert to 32bit int
-  }
-  const idx = Math.abs(hash) % CHART_COLOR_PALETTE.length;
-  return CHART_COLOR_PALETTE[idx];
-}
-
-const clampBrush = (
-  length: number,
-  start: number | undefined,
-  end: number | undefined,
-  window: number
-): { start: number; end: number } => {
-  if (length === 0) return { start: 0, end: 0 };
-  const safeEnd = Number.isFinite(end)
-    ? Math.min(length - 1, end!)
-    : length - 1;
-  const fallbackStart = Math.max(0, safeEnd - (window - 1));
-  const safeStart = Number.isFinite(start)
-    ? Math.min(Math.max(0, start!), safeEnd)
-    : fallbackStart;
-  return { start: safeStart, end: safeEnd };
 };
 
-const emptyCategoryResult: CategoryResult = {
-  series: {},
-  rankings: []
+const formatUncertaintyBand = (
+  uncertainty: Record<string, unknown> | null | undefined,
+  keys: string[],
+  formatAsPercent = false
+): string => {
+  if (!uncertainty) return "—";
+  for (const key of keys) {
+    const candidate = uncertainty[key] as
+      | { p10?: number; p90?: number }
+      | undefined;
+    if (
+      candidate &&
+      typeof candidate.p10 === "number" &&
+      typeof candidate.p90 === "number"
+    ) {
+      const p10 = formatAsPercent ? candidate.p10 * 100 : candidate.p10;
+      const p90 = formatAsPercent ? candidate.p90 * 100 : candidate.p90;
+      const suffix = formatAsPercent ? "%" : "";
+      return `${p10.toFixed(2)}${suffix}–${p90.toFixed(2)}${suffix}`;
+    }
+  }
+  return "—";
 };
 
-const emptySkaterResult: SkaterCategoryResult = {
-  series: {},
-  rankings: []
+const CHART_COLORS = ["#2563eb", "#16a34a", "#f97316", "#ef4444", "#8b5cf6"];
+
+const getChartColor = (index: number): string =>
+  CHART_COLORS[index % CHART_COLORS.length];
+
+type TrendsPageProps = {
+  initialDate: string;
+  initialTeamRatings: TeamRating[];
 };
 
-// Brief calculation blurbs for team strength categories.
-// These are shown in the chart header tooltip to explain methodology at a high level.
-const TEAM_ALGO_HELP: Record<TrendCategoryId, string> = {
-  offense:
-    "Weighted composite of per-game league percentiles for all-strength creation. We normalize each game vs league, then combine metrics (goals/xG/shots/chances) with weights; higher creation → higher percentile.",
-  defense:
-    "Weighted composite of per-game league percentiles for all-strength suppression. Against/allowed metrics are inverted so better suppression yields a higher percentile; save% contributes positively.",
-  powerPlay:
-    "Weighted composite of PP-specific percentiles plus PP rate context (opportunities/TOI). We normalize per game and combine PP goals/xG/shots/chances with weights for a single PP strength score.",
-  penaltyKill:
-    "Weighted composite of PK suppression percentiles plus situational context (times shorthanded). Against/allowed are inverted so stronger PK reads higher; PK save% contributes positively."
-};
-
-const CTPI_TOOLTIPS = {
-  offense: `Formula:
-    Offense = 0.50 * Z(xGF/60) + 0.30 * Z(HDCF/60) + 0.20 * Z(GF/60)
-
-What it means:
-Offense measures how well a team creates scoring chances at 5-on-5. It leans heavily on expected goals (xGF/60) and high-danger chances (HDCF/60), which capture "how many good chances you create," and then lightly includes actual goals scored (GF/60) to account for real finishing talent. Higher Offense means the team consistently drives dangerous offense, not just riding a hot shooting streak.`,
-  defense: `Formula:
-    Defense = 0.50 * (-Z(xGA/60)) + 0.30 * (-Z(HDCA/60)) + 0.20 * (-Z(CA/60))
-
-What it means:
-Defense measures how well a team limits chances against at 5-on-5. Because lower defensive numbers are better, we flip the Z-scores with a negative sign. It prioritizes expected goals against (xGA/60) and high-danger chances against (HDCA/60), with shot volume against (CA/60) as a supporting factor. Higher Defense means the team keeps opponents away from dangerous areas and limits overall pressure.`,
-  specialTeams: `Formula:
-    SpecialTeams = 0.55 * Z(PP_xGF/60) + 0.45 * (-Z(PK_xGA/60))
-
-What it means:
-SpecialTeams captures how strong a team is on the power play and penalty kill. On the power play, we look at expected goals for per 60 (PP xGF/60): how many quality chances they create with the man advantage. On the penalty kill, we look at expected goals against per 60 (PK xGA/60), flipped so that allowing fewer chances is rewarded. Higher SpecialTeams means your team tilts games in its favor when penalties are called, by creating more and allowing less than an average team.`,
-  goaltending: `Formula:
-    Goaltending = 0.40 * Z(season_GSAx/60) + 0.60 * Z(last10_GSAx/60)
-
-What it means:
-Goaltending measures how much your goalies are outperforming (or underperforming) expectation, after adjusting for shot quality. GSAx/60 (Goals Saved Above Expected per 60) tells us how many goals your goalies save beyond what an average goalie would. The formula blends the full-season performance with recent form, giving a little extra weight to the last 10 games. Higher Goaltending means your crease is a real strength, not just protected by team defense.`,
-  luck: `Formula:
-    Luck = Z(PDO)
-
-What it means:
-Luck is a measure of how "hot" or "cold" a team is running based on PDO (Shooting % + Save %). A high positive score means the team has a high PDO (Lucky), suggesting their current results might be inflated by good fortune. A low negative score means the team has a low PDO (Unlucky), suggesting they are playing better than their results indicate.`,
-  trend: `Formula (example over 10 games):
-    TrendWeighted_Metric =
-        (1.0 * M1 + 0.9 * M2 + ... + 0.1 * M10) / Sum(Weights)
-
-What it means:
-Trend controls how much recent games matter. For any metric (like xGF/60 or xGA/60), we take a weighted average of the last 10 games, where the most recent game gets the highest weight. This trend-weighted value is then used to compute the Z-score that feeds into Offense, Defense, Goaltending, and SpecialTeams. In simple terms: recent performance pulls the ranking more than what happened months ago, without completely ignoring the full season.`
-};
-
-const CATEGORY_ORDER: TrendCategoryId[] = [
-  "offense",
-  "defense",
-  "powerPlay",
-  "penaltyKill"
-];
-
-const CATEGORY_CONFIG_MAP: Record<TrendCategoryId, TrendCategoryDefinition> =
-  TEAM_TREND_CATEGORIES.reduce(
-    (acc, category) => {
-      acc[category.id] = category;
-      return acc;
-    },
-    {} as Record<TrendCategoryId, TrendCategoryDefinition>
+const TrendsDashboardPage: NextPage<TrendsPageProps> = ({
+  initialDate,
+  initialTeamRatings
+}) => {
+  const [date] = useState(initialDate ?? getTodayEt);
+  const [projectionSource, setProjectionSource] = useState<"forge" | "legacy">(
+    "forge"
   );
-
-const POWER_WEIGHTS: Record<TrendCategoryId, number> = {
-  offense: 0.35,
-  defense: 0.35,
-  powerPlay: 0.15,
-  penaltyKill: 0.15
-};
-
-function buildChartDataset(series: Record<string, SeriesPoint[]>) {
-  const gpSet = new Set<number>();
-  const teamMaps: Record<string, Map<number, number>> = {};
-
-  Object.entries(series).forEach(([team, points]) => {
-    const map = new Map<number, number>();
-    points.forEach((point) => {
-      gpSet.add(point.gp);
-      map.set(point.gp, point.percentile);
-    });
-    teamMaps[team] = map;
-  });
-
-  const sortedGps = Array.from(gpSet).sort((a, b) => a - b);
-  const dataset: ChartDatasetRow[] = sortedGps.map((gp) => {
-    const row: ChartDatasetRow = { gp };
-    Object.entries(teamMaps).forEach(([team, map]) => {
-      const value = map.get(gp);
-      if (value !== undefined) {
-        row[team] = Number(value.toFixed(2));
-      }
-    });
-    return row;
-  });
-
-  return { dataset, teamKeys: Object.keys(series) };
-}
-
-/**
- * Return a new series object where each team's percentiles are replaced
- * with a simple trailing moving average over `windowSize` points.
- */
-function computeSmoothedSeries(
-  series: Record<string, SeriesPoint[]>,
-  windowSize: number
-): Record<string, SeriesPoint[]> {
-  if (!series || windowSize <= 1) return series;
-  const out: Record<string, SeriesPoint[]> = {};
-  Object.entries(series).forEach(([team, points]) => {
-    if (!points || points.length === 0) {
-      out[team] = [];
-      return;
-    }
-    const sorted = [...points].sort((a, b) => a.gp - b.gp);
-    const smoothed: SeriesPoint[] = [];
-    for (let i = 0; i < sorted.length; i++) {
-      const start = Math.max(0, i - (windowSize - 1));
-      let sum = 0;
-      let count = 0;
-      for (let j = start; j <= i; j++) {
-        sum += sorted[j].percentile;
-        count += 1;
-      }
-      const avg = count > 0 ? sum / count : sorted[i].percentile;
-      smoothed.push({ gp: sorted[i].gp, percentile: Number(avg) });
-    }
-    out[team] = smoothed;
-  });
-  return out;
-}
-
-function computeFiveGameDelta(points: SeriesPoint[]): number | null {
-  if (!points || points.length < 2) return null;
-  const sorted = [...points].sort((a, b) => a.gp - b.gp);
-  const last = sorted[sorted.length - 1];
-  const targetGp = last.gp - 4;
-  let prior: SeriesPoint | undefined;
-  for (let i = sorted.length - 1; i >= 0; i -= 1) {
-    if (sorted[i].gp <= targetGp) {
-      prior = sorted[i];
-      break;
-    }
-  }
-  if (!prior) {
-    prior = sorted[Math.max(0, sorted.length - 5)];
-  }
-  if (!prior) return null;
-  return Number((last.percentile - prior.percentile).toFixed(2));
-}
-
-function describeRowReason(
-  snapshots: Partial<Record<TrendCategoryId, CategorySnapshot>>,
-  momentum: number | null
-): string {
-  const entries = CATEGORY_ORDER.map((id) => ({
-    id,
-    snap: snapshots[id]
-  })).filter(
-    (entry): entry is { id: TrendCategoryId; snap: CategorySnapshot } =>
-      Boolean(entry.snap)
-  );
-
-  if (!entries.length) return "Waiting on games played.";
-
-  const top = entries.reduce((acc, entry) =>
-    !acc || entry.snap.percentile > acc.snap.percentile ? entry : acc
-  );
-  const drag = entries.reduce((acc, entry) =>
-    !acc || entry.snap.percentile < acc.snap.percentile ? entry : acc
-  );
-  const bestDelta = entries
-    .filter((entry) => entry.snap.delta !== null)
-    .sort((a, b) => (b.snap.delta ?? 0) - (a.snap.delta ?? 0))[0];
-  const worstDelta = entries
-    .filter((entry) => entry.snap.delta !== null)
-    .sort((a, b) => (a.snap.delta ?? 0) - (b.snap.delta ?? 0))[0];
-
-  const pieces: string[] = [];
-  if (top) {
-    // piece: strongest current category by percentile
-    pieces.push(
-      `${CATEGORY_CONFIG_MAP[top.id]?.label ?? top.id} strong (${top.snap.percentile.toFixed(1)}p)`
-    );
-  }
-  if (bestDelta?.snap.delta !== undefined && bestDelta.snap.delta !== null) {
-    if (bestDelta.snap.delta >= 1.2) {
-      // piece: fastest improving category over last 5GP
-      pieces.push(
-        `${CATEGORY_CONFIG_MAP[bestDelta.id]?.label ?? bestDelta.id} heating (+${bestDelta.snap.delta} last 5GP)`
-      );
-    }
-  }
-  if (
-    worstDelta?.snap.delta !== undefined &&
-    worstDelta.snap.delta !== null &&
-    worstDelta.snap.delta <= -1
-  ) {
-    // piece: largest drop over last 5GP
-    pieces.push(
-      `${CATEGORY_CONFIG_MAP[worstDelta.id]?.label ?? worstDelta.id} cooling (${worstDelta.snap.delta})`
-    );
-  } else if (drag && pieces.length < 2) {
-    // piece: weakest current category by percentile
-    pieces.push(
-      `${CATEGORY_CONFIG_MAP[drag.id]?.label ?? drag.id} lagging (${drag.snap.percentile.toFixed(1)}p)`
-    );
-  } else if (momentum !== null && pieces.length === 0) {
-    // fallback: light direction if no other signals
-    pieces.push(momentum >= 0 ? "Trending up slightly" : "Trending down");
-  }
-
-  if (!pieces.length) return "Balanced profile.";
-  return pieces.slice(0, 2).join(" · ");
-}
-
-function buildPowerBoard(
-  teamTrends: TeamTrendsResponse | null
-): PowerBoardRow[] {
-  if (!teamTrends?.categories) return [];
-
-  const teams = new Set<string>();
-  CATEGORY_ORDER.forEach((cid) => {
-    const series = teamTrends.categories[cid]?.series ?? {};
-    Object.keys(series).forEach((team) => teams.add(team));
-  });
-
-  const rows: PowerBoardRow[] = [];
-
-  teams.forEach((team) => {
-    const snapshots: Partial<Record<TrendCategoryId, CategorySnapshot>> = {};
-
-    CATEGORY_ORDER.forEach((cid) => {
-      const series = teamTrends.categories[cid]?.series?.[team] ?? [];
-      if (!series.length) return;
-      const sorted = [...series].sort((a, b) => a.gp - b.gp);
-      const latest = sorted[sorted.length - 1];
-      snapshots[cid] = {
-        percentile: latest.percentile,
-        gp: latest.gp,
-        delta: computeFiveGameDelta(sorted)
-      };
-    });
-
-    const availableWeight = CATEGORY_ORDER.reduce((sum, cid) => {
-      if (snapshots[cid]) {
-        return sum + POWER_WEIGHTS[cid];
-      }
-      return sum;
-    }, 0);
-
-    if (availableWeight === 0) return;
-
-    const weightedSum = CATEGORY_ORDER.reduce((sum, cid) => {
-      const snap = snapshots[cid];
-      if (!snap) return sum;
-      return sum + POWER_WEIGHTS[cid] * snap.percentile;
-    }, 0);
-    const overall = weightedSum / availableWeight;
-
-    const deltaWeight = CATEGORY_ORDER.reduce((sum, cid) => {
-      const snap = snapshots[cid];
-      if (!snap || snap.delta === null) return sum;
-      return sum + POWER_WEIGHTS[cid];
-    }, 0);
-
-    const momentum =
-      deltaWeight > 0
-        ? CATEGORY_ORDER.reduce((sum, cid) => {
-            const snap = snapshots[cid];
-            if (!snap || snap.delta === null) return sum;
-            return sum + POWER_WEIGHTS[cid] * snap.delta;
-          }, 0) / deltaWeight
-        : null;
-
-    const specialValues = [
-      snapshots.powerPlay?.percentile,
-      snapshots.penaltyKill?.percentile
-    ].filter((value): value is number => typeof value === "number");
-    const specialTeams =
-      specialValues.length > 0
-        ? specialValues.reduce((a, b) => a + b, 0) / specialValues.length
-        : null;
-
-    const topDriver = CATEGORY_ORDER.reduce<TrendCategoryId | undefined>(
-      (acc, cid) => {
-        const snap = snapshots[cid];
-        if (!snap) return acc;
-        if (!acc || snap.percentile > (snapshots[acc]?.percentile ?? -1)) {
-          return cid;
-        }
-        return acc;
-      },
-      undefined
-    );
-
-    const drag = CATEGORY_ORDER.reduce<TrendCategoryId | undefined>(
-      (acc, cid) => {
-        const snap = snapshots[cid];
-        if (!snap) return acc;
-        if (!acc || snap.percentile < (snapshots[acc]?.percentile ?? 101)) {
-          return cid;
-        }
-        return acc;
-      },
-      undefined
-    );
-
-    rows.push({
-      team,
-      name: teamsInfo[team as keyof typeof teamsInfo]?.shortName ?? team,
-      logo: `/teamLogos/${team}.png`,
-      overall: Number(overall.toFixed(1)),
-      specialTeams:
-        specialTeams !== null ? Number(specialTeams.toFixed(1)) : null,
-      momentum: momentum !== null ? Number(momentum.toFixed(1)) : null,
-      snapshots,
-      topDriver,
-      drag,
-      reason: describeRowReason(snapshots, momentum)
-    });
-  });
-
-  return rows.sort((a, b) => b.overall - a.overall);
-}
-
-function resolveMomentumTone(momentum: number | null | undefined): {
-  label: string;
-  toneClass: string;
-} {
-  if (momentum === null || momentum === undefined || Number.isNaN(momentum)) {
-    return { label: "Steady", toneClass: styles.momentumNeutral };
-  }
-  const rounded = Number(momentum.toFixed(1));
-  if (rounded >= 3) {
-    return {
-      label: `Hot ${rounded > 0 ? "+" : ""}${rounded}`,
-      toneClass: styles.momentumHot
-    };
-  }
-  if (rounded >= 1) {
-    return {
-      label: `Warming ${rounded > 0 ? "+" : ""}${rounded}`,
-      toneClass: styles.momentumWarm
-    };
-  }
-  if (rounded <= -3) {
-    return { label: `Cold ${rounded}`, toneClass: styles.momentumCold };
-  }
-  if (rounded <= -1) {
-    return { label: `Cooling ${rounded}`, toneClass: styles.momentumCool };
-  }
-  return {
-    label: `Steady ${rounded > 0 ? "+" : ""}${rounded}`,
-    toneClass: styles.momentumNeutral
-  };
-}
-
-function selectTopDriver(ctpi?: CtpiScore): TrendCategoryId | undefined {
-  if (!ctpi) return undefined;
-  const entries: Array<{ id: TrendCategoryId; value: number }> = [
-    { id: "offense", value: ctpi.offense },
-    { id: "defense", value: ctpi.defense },
-    { id: "powerPlay", value: ctpi.specialTeams },
-    { id: "penaltyKill", value: ctpi.specialTeams }
-  ];
-  entries.sort((a, b) => b.value - a.value);
-  return entries[0]?.id;
-}
-
-function ratingToneClass(value: number | null | undefined): string | undefined {
-  if (value === null || value === undefined || Number.isNaN(value)) {
-    return styles.tierNeutral;
-  }
-  if (value >= 1.5) return styles.tierElite;
-  if (value >= 0.5) return styles.tierGood;
-  if (value <= -1.5) return styles.tierPoor;
-  if (value <= -0.5) return styles.tierCaution;
-  return styles.tierNeutral;
-}
-
-function formatDriverLabel(
-  driver: TrendCategoryId | undefined,
-  percentile: number | undefined
-): string {
-  if (!driver) return "Balanced profile";
-  const label = CATEGORY_CONFIG_MAP[driver]?.label ?? driver;
-  if (percentile === undefined || percentile === null) {
-    return `${label} leading`;
-  }
-  return `${label} leading (${percentile.toFixed(1)}p)`;
-}
-
-function ArrowDelta({ delta }: { delta: number }) {
-  if (delta === 0) {
-    return <span className={`${styles.delta} ${styles.deltaNeutral}`}>—</span>;
-  }
-  const positive = delta > 0;
-  const symbol = positive ? "▲" : "▼";
-  const prefix = positive ? "+" : "";
-  return (
-    <span
-      className={`${styles.delta} ${
-        positive ? styles.deltaPositive : styles.deltaNegative
-      }`}
-    >
-      <span> {symbol}</span>
-      <span>
-        {" "}
-        {prefix} {delta}
-      </span>
-    </span>
-  );
-}
-
-function CategoryChartCard({
-  config,
-  result,
-  windowSize = 1,
-  large
-}: {
-  config: TrendCategoryDefinition;
-  result: CategoryResult;
-  windowSize?: number;
-  large?: boolean;
-}) {
-  const hasData = Object.keys(result.series || {}).length > 0;
-  const seriesForChart = useMemo<Record<string, SeriesPoint[]>>(() => {
-    if (!hasData) {
-      return {};
-    }
-    if (windowSize > 1) {
-      return computeSmoothedSeries(result.series, windowSize);
-    }
-    return result.series;
-  }, [hasData, result.series, windowSize]);
-
-  const { dataset, teamKeys } = useMemo(() => {
-    if (!hasData) {
-      return { dataset: [], teamKeys: [] };
-    }
-    return buildChartDataset(seriesForChart);
-  }, [hasData, seriesForChart]);
-  // brush indices for zooming - default to last 5 games window
-  const [brushStart, setBrushStart] = useState<number | undefined>(undefined);
-  const [brushEnd, setBrushEnd] = useState<number | undefined>(undefined);
-
-  useEffect(() => {
-    if (!dataset || dataset.length === 0) {
-      setBrushStart(undefined);
-      setBrushEnd(undefined);
-      return;
-    }
-    const { start, end } = clampBrush(dataset.length, brushStart, brushEnd, 5);
-    setBrushStart(start);
-    setBrushEnd(end);
-  }, [dataset, seriesForChart, brushStart, brushEnd]);
-  const [hoveredTeam, setHoveredTeam] = useState<string | null>(null);
-  const hoverTimeoutRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  const clearHover = () => {
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current);
-      hoverTimeoutRef.current = null;
-    }
-    setHoveredTeam(null);
-  };
-
-  const scheduleHover = (team: string) => {
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current);
-      hoverTimeoutRef.current = null;
-    }
-    hoverTimeoutRef.current = window.setTimeout(() => {
-      setHoveredTeam(team);
-      hoverTimeoutRef.current = null;
-    }, 100);
-  };
-
-  const handleMouseMove = (state: any) => {
-    const teamKey =
-      state?.activePayload && state.activePayload[0]
-        ? state.activePayload[0].dataKey
-        : null;
-    if (teamKey) {
-      setHoveredTeam(String(teamKey));
-    }
-  };
-
-  function renderActiveDot(team: string, strokeColor: string) {
-    function ActiveDot(props: any) {
-      const radius =
-        hoveredTeam === team ? Math.max(props.r ?? 4, 5.5) : (props.r ?? 4);
-      return (
-        <circle
-          {...props}
-          r={radius}
-          fill={strokeColor}
-          stroke={props.stroke ?? strokeColor}
-          strokeWidth={hoveredTeam === team ? 1 : 0.5}
-        />
-      );
-    }
-    ActiveDot.displayName = `ActiveDot-${team}`;
-    return ActiveDot;
-  }
-
-  const CustomTooltip = ({
-    active,
-    payload,
-    label
-  }: {
-    active?: boolean;
-    payload?: any[];
-    label?: number;
-  }) => {
-    if (!active || !payload || payload.length === 0) return null;
-
-    const hoveredData =
-      (hoveredTeam && payload.find((item) => item.dataKey === hoveredTeam)) ||
-      payload.sort((a, b) => b.value - a.value)[0];
-
-    if (!hoveredData) return null;
-
-    const { dataKey, value, stroke } = hoveredData;
-    const teamInfo = teamsInfo[dataKey as keyof typeof teamsInfo];
-
-    return (
-      <div className={styles.chartTooltip}>
-        <div className={styles.chartTooltipHeader}>
-          <div className={styles.teamLogoWrapper}>
-            <Image
-              src={`/teamLogos/${dataKey}.png`}
-              alt={`${dataKey} logo`}
-              className={styles.teamLogo}
-              width={24}
-              height={24}
-              onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-                e.currentTarget.onerror = null;
-                e.currentTarget.src = DEFAULT_TEAM_LOGO;
-              }}
-            />
-          </div>
-          <span style={{ color: stroke }}>
-            {teamInfo?.shortName ?? dataKey}
-          </span>
-        </div>
-        <p className={styles.chartTooltipValue}>{formatPercent(value)}</p>
-        <p className={styles.chartTooltipLabel}>Game: {label}</p>
-      </div>
-    );
-  };
-
-  const { improved: categoryImproved, degraded: categoryDegraded } =
-    useMemo(() => {
-      // Always compute movers from the RAW series and use a fixed 5GP window
-      const series = result?.series ?? {};
-      const movers: Array<{
-        id: string;
-        name: string;
-        logo?: string;
-        delta: number;
-        current?: number;
-      }> = [];
-
-      Object.entries(series).forEach(([team, points]) => {
-        if (!points || points.length < 2) return;
-        const sorted = [...points].sort((a, b) => a.gp - b.gp);
-        const last = sorted[sorted.length - 1];
-        const targetGp = last.gp - 4; // fixed 5GP delta
-
-        let prior: SeriesPoint | undefined = undefined;
-        for (let i = sorted.length - 1; i >= 0; i--) {
-          if (sorted[i].gp <= targetGp) {
-            prior = sorted[i];
-            break;
-          }
-        }
-        // fallback: earliest point within the last 5 entries
-        if (!prior) {
-          prior = sorted[Math.max(0, sorted.length - 5)];
-        }
-        if (!prior) return;
-
-        const delta = Number((last.percentile - prior.percentile).toFixed(2));
-        movers.push({
-          id: team,
-          name: teamsInfo[team as keyof typeof teamsInfo]?.shortName ?? team,
-          logo: `/teamLogos/${team}.png`,
-          delta,
-          current: last.percentile
-        });
-      });
-
-      const improvedSorted = movers
-        .slice()
-        .sort((a, b) => b.delta - a.delta)
-        .slice(0, 5);
-      const degradedSorted = movers
-        .slice()
-        .sort((a, b) => a.delta - b.delta)
-        .slice(0, 5);
-
-      return { improved: improvedSorted, degraded: degradedSorted };
-    }, [result]);
-
-  return (
-    <div className={styles.chartCard}>
-      <div className={styles.chartHeaderWrapper}>
-        <div className={styles.chartTitleGroup}>
-          <p className={styles.chartHeading}>{config.label}</p>
-          <div className={styles.infoWrapper}>
-            <button
-              type="button"
-              className={styles.infoButton}
-              aria-label={`How we calculate ${config.label}`}
-              title={`How we calculate ${config.label}`}
-            >
-              <svg
-                className={styles.infoIcon}
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-                focusable="false"
-              >
-                <circle
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  fill="currentColor"
-                  opacity="0.18"
-                />
-                <circle
-                  cx="12"
-                  cy="12"
-                  r="9"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                />
-                <line
-                  x1="12"
-                  y1="10"
-                  x2="12"
-                  y2="16"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                />
-                <circle cx="12" cy="7.5" r="1.2" fill="currentColor" />
-              </svg>
-            </button>
-            <div className={styles.infoTooltip} role="tooltip">
-              <strong>How we calculate {config.label}</strong>
-              <div style={{ height: 6 }} />
-              <div>
-                {TEAM_ALGO_HELP[config.id as TrendCategoryId] ??
-                  "Weighted composite of per-game league percentiles. Higher values indicate stronger performance."}
-              </div>
-              <div style={{ height: 8 }} />
-              <div style={{ opacity: 0.9 }}>
-                <em>Composite inputs</em>
-              </div>
-              <ul className={styles.infoList}>
-                {config.metrics.map((m) => {
-                  const sourceLabel: Record<string, string> = {
-                    as: "All Strengths",
-                    pp: "Power Play",
-                    pk: "Penalty Kill",
-                    wgo: "Game log rates"
-                  };
-                  const weightLabel = (w: number) =>
-                    w >= 5
-                      ? "High"
-                      : w === 4
-                        ? "Med-High"
-                        : w === 3
-                          ? "Med"
-                          : w === 2
-                            ? "Med-Low"
-                            : "Low";
-                  return (
-                    <li key={m.key}>
-                      {m.label} ({sourceLabel[m.source] ?? m.source}) — weight{" "}
-                      {weightLabel(m.weight)},{" "}
-                      {m.higherIsBetter
-                        ? "higher ↑ is better"
-                        : "lower ↓ is better"}
-                    </li>
-                  );
-                })}
-              </ul>
-              <div style={{ height: 8 }} />
-              <div>
-                We compute per-game league percentiles for each metric, invert
-                when lower is better, then take a weighted average. The line
-                reflects game-by-game results; optional smoothing applies a{" "}
-                {windowSize} GP rolling window.
-              </div>
-            </div>
-          </div>
-        </div>
-        <p className={styles.chartDescription}>{config.description}</p>
-      </div>
-      {hasData && dataset.length > 0 ? (
-        <>
-          <div
-            className={`${styles.chartShell} ${styles.chartTheme} ${large ? styles.chartShellLarge : ""}`}
-          >
-            <ResponsiveContainer width="100%" height="100%">
-              <ReLineChart
-                data={dataset}
-                onMouseLeave={clearHover}
-                onMouseMove={handleMouseMove}
-              >
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke="var(--chart-grid)"
-                />
-                <XAxis
-                  dataKey="gp"
-                  tick={{ fontSize: 11, fill: "var(--chart-tick)" }}
-                  label={{
-                    value: "GP",
-                    position: "insideBottomRight",
-                    offset: -6,
-                    fill: "var(--chart-tick)",
-                    fontSize: 11
-                  }}
-                />
-                <YAxis
-                  domain={[0, 100]}
-                  tick={{ fontSize: 11, fill: "var(--chart-tick)" }}
-                  width={30}
-                />
-                <Tooltip
-                  content={<CustomTooltip />}
-                  cursor={{
-                    stroke: "var(--chart-cursor)",
-                    strokeDasharray: "4 2"
-                  }}
-                />
-                {dataset && dataset.length > 0 && (
-                  <Brush
-                    dataKey="gp"
-                    height={28}
-                    stroke="var(--chart-tick)"
-                    travellerWidth={8}
-                    startIndex={brushStart}
-                    endIndex={brushEnd}
-                    onChange={(e: any) => {
-                      // Recharts onChange provides { startIndex, endIndex }
-                      if (!e) return;
-                      const { start, end } = clampBrush(
-                        dataset.length,
-                        typeof e.startIndex === "number"
-                          ? e.startIndex
-                          : brushStart,
-                        typeof e.endIndex === "number" ? e.endIndex : brushEnd,
-                        5
-                      );
-                      setBrushStart(start);
-                      setBrushEnd(end);
-                    }}
-                  />
-                )}
-                {teamKeys.map((team) => {
-                  const stroke = getChartColor(team);
-                  const isHovered = hoveredTeam === team;
-                  const hasFocus = hoveredTeam !== null;
-                  const strokeOpacity = hasFocus ? (isHovered ? 1 : 0.2) : 0.9;
-                  return (
-                    <Line
-                      key={team}
-                      type="monotone"
-                      dataKey={team}
-                      connectNulls
-                      stroke={stroke}
-                      strokeWidth={isHovered ? 3 : 2}
-                      strokeOpacity={strokeOpacity}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      dot={false}
-                      activeDot={renderActiveDot(team, stroke)}
-                      isAnimationActive={false}
-                      onMouseEnter={() => scheduleHover(team)}
-                      onMouseLeave={clearHover}
-                    />
-                  );
-                })}
-              </ReLineChart>
-            </ResponsiveContainer>
-          </div>
-          <div className={styles.chartMovers}>
-            <TopMovers
-              improved={categoryImproved}
-              degraded={categoryDegraded}
-            />
-          </div>
-        </>
-      ) : (
-        <div className={styles.chartEmpty}>Trend data not available yet.</div>
-      )}
-    </div>
-  );
-}
-
-function RankingTable({
-  config,
-  result
-}: {
-  config: TrendCategoryDefinition;
-  result: CategoryResult;
-}) {
-  const rows = result.rankings.slice(0, 10);
-  const handleLogoError = (
-    event: React.SyntheticEvent<HTMLImageElement, Event>
-  ) => {
-    event.currentTarget.onerror = null;
-    event.currentTarget.src = DEFAULT_TEAM_LOGO;
-  };
-  return (
-    <div className={styles.rankingCard}>
-      <div className={styles.rankingHeading}>
-        <div className={styles.rankingTitle}>{config.label}</div>
-        <p className={styles.rankingMeta}>
-          Latest percentile vs league (GP {rows[0]?.gp ?? "—"})
-        </p>
-      </div>
-      {rows.length === 0 ? (
-        <p className={styles.chartDescription}>No ranking data yet.</p>
-      ) : (
-        <ul className={styles.rankingList}>
-          {rows.map((row) => {
-            const info = teamsInfo[row.team as keyof typeof teamsInfo];
-            return (
-              <li key={row.team} className={styles.rankingRow}>
-                <div className={styles.teamCell}>
-                  <span className={styles.rank}>{row.rank}</span>
-                  <span className={styles.deltaWrapper}>
-                    <ArrowDelta delta={row.delta} />
-                  </span>
-
-                  <div className={styles.teamLogoWrapper}>
-                    <Image
-                      src={`/teamLogos/${row.team}.png`}
-                      alt={`${row.team} logo`}
-                      className={styles.teamLogo}
-                      width={30}
-                      height={30}
-                      loading="lazy"
-                      onError={handleLogoError}
-                    />
-                  </div>
-                </div>
-                <div className={styles.scoreCell}>
-                  <span className={styles.percentile}>
-                    {formatPercent(row.percentile)}
-                  </span>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </div>
-  );
-}
-
-function SkaterRankingTable({
-  config,
-  result,
-  playerMetadata
-}: {
-  config: SkaterTrendCategoryDefinition;
-  result: SkaterCategoryResult;
-  playerMetadata: Record<string, PlayerMetadata>;
-}) {
-  const rows = result.rankings;
-  const handleHeadshotError = (
-    event: React.SyntheticEvent<HTMLImageElement, Event>
-  ) => {
-    event.currentTarget.onerror = null;
-    event.currentTarget.src = DEFAULT_PLAYER_IMAGE;
-  };
-
-  return (
-    <div className={`${styles.chartCard} ${styles.skaterRankingCard}`}>
-      <div className={styles.rankingHeading}>
-        <div className={styles.rankingTitle}>{config.label}</div>
-        <p className={styles.rankingMeta}>Top percentile skaters</p>
-      </div>
-      {rows.length === 0 ? (
-        <p className={styles.chartDescription}>No skater data yet.</p>
-      ) : (
-        <ul className={styles.skaterRankingList}>
-          {rows.map((row) => {
-            const meta = playerMetadata[String(row.playerId)];
-            return (
-              <li key={row.playerId} className={styles.skaterRankingRow}>
-                <div className={styles.skaterInfo}>
-                  <span className={styles.rank}>{row.rank}</span>
-                  <div className={styles.skaterHeadshotWrapper}>
-                    <Image
-                      src={meta?.imageUrl ?? DEFAULT_PLAYER_IMAGE}
-                      alt={meta?.fullName ?? `Player ${row.playerId}`}
-                      className={styles.skaterHeadshot}
-                      width={42}
-                      height={42}
-                      loading="lazy"
-                      onError={handleHeadshotError}
-                    />
-                  </div>
-                  <div className={styles.skaterText}>
-                    <p className={styles.skaterName}>
-                      {meta?.fullName ?? `Player ${row.playerId}`}
-                    </p>
-                    <p className={styles.skaterMeta}>
-                      {meta?.teamAbbrev ?? "FA"}
-                      {meta?.position ? ` · ${meta.position}` : ""}
-                    </p>
-                  </div>
-                </div>
-                <div className={styles.skaterScore}>
-                  <ArrowDelta delta={row.delta} />
-                  <span className={styles.percentile}>
-                    {formatPercent(row.percentile)}
-                  </span>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </div>
-  );
-}
-
-function SkaterCategoryChartCard({
-  config,
-  result,
-  playerMetadata,
-  large
-}: {
-  config: SkaterTrendCategoryDefinition;
-  result: SkaterCategoryResult;
-  playerMetadata: Record<string, PlayerMetadata>;
-  large?: boolean;
-}) {
-  const hasData = Object.keys(result.series || {}).length > 0;
-  const seriesForChart = useMemo(() => {
-    if (!hasData) {
-      return {};
-    }
-    return result.series;
-  }, [hasData, result.series]);
-
-  const { dataset, teamKeys } = useMemo(() => {
-    if (!hasData) {
-      return { dataset: [], teamKeys: [] };
-    }
-    return buildChartDataset(seriesForChart);
-  }, [hasData, seriesForChart]);
-  const [brushStart, setBrushStart] = useState<number | undefined>(undefined);
-  const [brushEnd, setBrushEnd] = useState<number | undefined>(undefined);
-  const [hoveredPlayer, setHoveredPlayer] = useState<string | null>(null);
-  const hoverTimeoutRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    if (!dataset || dataset.length === 0) {
-      setBrushStart(undefined);
-      setBrushEnd(undefined);
-      return;
-    }
-    const { start, end } = clampBrush(dataset.length, brushStart, brushEnd, 5);
-    setBrushStart(start);
-    setBrushEnd(end);
-  }, [dataset, seriesForChart, brushStart, brushEnd]);
-
-  useEffect(() => {
-    return () => {
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  const clearHover = () => {
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current);
-      hoverTimeoutRef.current = null;
-    }
-    setHoveredPlayer(null);
-  };
-
-  const scheduleHover = (playerId: string) => {
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current);
-      hoverTimeoutRef.current = null;
-    }
-    hoverTimeoutRef.current = window.setTimeout(() => {
-      setHoveredPlayer(playerId);
-      hoverTimeoutRef.current = null;
-    }, 100);
-  };
-
-  function renderActiveDot(playerId: string, strokeColor: string) {
-    function ActiveDot(props: any) {
-      const radius =
-        hoveredPlayer === playerId
-          ? Math.max(props.r ?? 4, 5.5)
-          : (props.r ?? 4);
-      return (
-        <circle
-          {...props}
-          r={radius}
-          fill={strokeColor}
-          stroke={props.stroke ?? strokeColor}
-          strokeWidth={hoveredPlayer === playerId ? 1 : 0.5}
-        />
-      );
-    }
-    ActiveDot.displayName = `ActiveDot-${playerId}`;
-    return ActiveDot;
-  }
-
-  const CustomTooltip = ({
-    active,
-    payload,
-    label
-  }: {
-    active?: boolean;
-    payload?: any[];
-    label?: number;
-  }) => {
-    if (!active || !payload || payload.length === 0) return null;
-
-    const hoveredData =
-      (hoveredPlayer &&
-        payload.find((item) => item.dataKey === hoveredPlayer)) ||
-      payload.sort((a, b) => b.value - a.value)[0];
-
-    if (!hoveredData) return null;
-
-    const { dataKey, value, stroke } = hoveredData;
-    const meta = playerMetadata[dataKey];
-
-    return (
-      <div className={styles.chartTooltip}>
-        <div className={styles.chartTooltipHeader}>
-          <div className={styles.skaterHeadshotWrapper}>
-            <Image
-              src={meta?.imageUrl ?? DEFAULT_PLAYER_IMAGE}
-              alt={meta?.fullName ?? `Player ${dataKey}`}
-              className={styles.skaterHeadshot}
-              width={28}
-              height={28}
-              onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-                e.currentTarget.onerror = null;
-                e.currentTarget.src = DEFAULT_PLAYER_IMAGE;
-              }}
-            />
-          </div>
-          <span style={{ color: stroke }}>
-            {meta?.fullName ?? `Player ${dataKey}`}
-          </span>
-        </div>
-        <p className={styles.chartTooltipValue}>{formatPercent(value)}</p>
-        <p className={styles.chartTooltipLabel}>Game: {label}</p>
-      </div>
-    );
-  };
-
-  const { improved: categoryImproved, degraded: categoryDegraded } =
-    useMemo(() => {
-      const movers: Array<{
-        id: string;
-        name: string;
-        logo?: string;
-        delta: number;
-      }> = [];
-      Object.entries(result.series ?? {}).forEach(([playerId, points]) => {
-        if (!points || points.length < 2) return;
-        const sorted = [...points].sort((a, b) => a.gp - b.gp);
-        const last = sorted[sorted.length - 1];
-        const targetGp = last.gp - 4;
-        let prior: SeriesPoint | undefined;
-        for (let i = sorted.length - 1; i >= 0; i -= 1) {
-          if (sorted[i].gp <= targetGp) {
-            prior = sorted[i];
-            break;
-          }
-        }
-        if (!prior) {
-          prior = sorted[Math.max(0, sorted.length - 5)];
-        }
-        if (!prior) return;
-        const delta = Number((last.percentile - prior.percentile).toFixed(2));
-        const meta = playerMetadata[playerId];
-        movers.push({
-          id: playerId,
-          name: meta?.fullName ?? `Player ${playerId}`,
-          logo: meta?.imageUrl ?? DEFAULT_PLAYER_IMAGE,
-          delta
-        });
-      });
-
-      const improvedSorted = movers
-        .slice()
-        .sort((a, b) => b.delta - a.delta)
-        .slice(0, 5);
-      const degradedSorted = movers
-        .slice()
-        .sort((a, b) => a.delta - b.delta)
-        .slice(0, 5);
-      return { improved: improvedSorted, degraded: degradedSorted };
-    }, [playerMetadata, result.series]);
-
-  return (
-    <div className={styles.chartCard}>
-      <div className={styles.chartHeaderWrapper}>
-        <p className={styles.chartHeading}>{config.label}</p>
-        <p className={styles.chartDescription}>{config.description}</p>
-      </div>
-      {hasData && dataset.length > 0 ? (
-        <>
-          <div
-            className={`${styles.chartShell} ${styles.chartTheme} ${large ? styles.chartShellLarge : ""}`}
-          >
-            <ResponsiveContainer width="100%" height="100%">
-              <ReLineChart data={dataset} onMouseLeave={clearHover}>
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke="var(--chart-grid)"
-                />
-                <XAxis
-                  dataKey="gp"
-                  tick={{ fontSize: 11, fill: "var(--chart-tick)" }}
-                  label={{
-                    value: "GP",
-                    position: "insideBottomRight",
-                    offset: -6,
-                    fill: "var(--chart-tick)",
-                    fontSize: 11
-                  }}
-                />
-                <YAxis
-                  domain={[0, 100]}
-                  tick={{ fontSize: 11, fill: "var(--chart-tick)" }}
-                  width={30}
-                />
-                <Tooltip
-                  content={<CustomTooltip />}
-                  cursor={{
-                    stroke: "var(--chart-cursor)",
-                    strokeDasharray: "4 2"
-                  }}
-                />
-                {dataset.length > 0 && (
-                  <Brush
-                    dataKey="gp"
-                    height={28}
-                    stroke="var(--chart-tick)"
-                    travellerWidth={8}
-                    startIndex={brushStart}
-                    endIndex={brushEnd}
-                    onChange={(e: any) => {
-                      if (!e) return;
-                      const { start, end } = clampBrush(
-                        dataset.length,
-                        typeof e.startIndex === "number"
-                          ? e.startIndex
-                          : brushStart,
-                        typeof e.endIndex === "number" ? e.endIndex : brushEnd,
-                        5
-                      );
-                      setBrushStart(start);
-                      setBrushEnd(end);
-                    }}
-                  />
-                )}
-                {teamKeys.map((playerId) => {
-                  const isHovered = hoveredPlayer === playerId;
-                  const hasFocus = hoveredPlayer !== null;
-                  const strokeOpacity = hasFocus ? (isHovered ? 1 : 0.25) : 0.9;
-                  const stroke = getChartColor(playerId);
-                  return (
-                    <Line
-                      key={playerId}
-                      type="monotone"
-                      dataKey={playerId}
-                      connectNulls
-                      stroke={stroke}
-                      strokeWidth={isHovered ? 3 : 2}
-                      strokeOpacity={strokeOpacity}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      dot={false}
-                      activeDot={renderActiveDot(playerId, stroke)}
-                      isAnimationActive={false}
-                      onMouseEnter={() => scheduleHover(playerId)}
-                      onMouseLeave={clearHover}
-                    />
-                  );
-                })}
-              </ReLineChart>
-            </ResponsiveContainer>
-          </div>
-          <div className={styles.chartMovers}>
-            <TopMovers
-              improved={categoryImproved}
-              degraded={categoryDegraded}
-            />
-          </div>
-        </>
-      ) : (
-        <div className={styles.chartEmpty}>Skater data not available yet.</div>
-      )}
-    </div>
-  );
-}
-
-export default function TrendsIndexPage() {
-  const router = useRouter();
+  const [teamCategory, setTeamCategory] = useState<TrendCategoryId>("offense");
+  const [skaterCategory, setSkaterCategory] =
+    useState<SkaterTrendCategoryId>("shotsPer60");
+  const [skaterPosition, setSkaterPosition] =
+    useState<SkaterPositionGroup>("forward");
+  const [skaterWindow, setSkaterWindow] = useState<SkaterWindowSize>(3);
   const [query, setQuery] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [results, setResults] = useState<PlayerListItem[]>([]);
-  const [suggestions, setSuggestions] = useState<PlayerListItem[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [suggestions, setSuggestions] = useState<PlayerSearchRow[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
+  const [results, setResults] = useState<PlayerSearchRow[]>([]);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const router = useRouter();
+  const { data, error, isLoading } = useDashboardData({
+    date,
+    skaterPosition,
+    skaterWindow
+  });
 
-  // Rolling-average window size. 1 = raw game-by-game granularity. Default to 1GP.
-  const [rollingWindow, setRollingWindow] = useState<number>(1);
+  const teamRows = useMemo<TeamPowerRow[]>(() => {
+    const ratings = data?.teamRatings ?? initialTeamRatings;
+    if (!ratings || ratings.length === 0) return [];
+    const ctpiTeams = data?.teamCtpi?.teams ?? [];
+    const sosTeams = data?.teamSos?.teams ?? [];
+    const metaIndex = data?.teamMeta ?? {};
 
-  const [teamTrends, setTeamTrends] = useState<TeamTrendsResponse | null>(null);
-  const [teamTrendsLoading, setTeamTrendsLoading] = useState(true);
-  const [teamTrendsError, setTeamTrendsError] = useState<string | null>(null);
-  const [ctpiScores, setCtpiScores] = useState<CtpiScore[] | null>(null);
-  const [ctpiLoading, setCtpiLoading] = useState(true);
-  const [ctpiError, setCtpiError] = useState<string | null>(null);
-  const [sosRatings, setSosRatings] = useState<SosRating[] | null>(null);
-  const [sosLoading, setSosLoading] = useState(false);
-  const [sosError, setSosError] = useState<string | null>(null);
-  const [skaterPositionGroup, setSkaterPositionGroup] = useState<
-    "forward" | "defense" | "all"
-  >("forward");
-  const [skaterLimit, setSkaterLimit] = useState<number>(DEFAULT_SKATER_LIMIT);
-  const [skaterTrends, setSkaterTrends] = useState<SkaterTrendsResponse | null>(
-    null
-  );
-  const [skaterTrendsLoading, setSkaterTrendsLoading] = useState(true);
-  const [skaterTrendsError, setSkaterTrendsError] = useState<string | null>(
-    null
-  );
-  // Dashboard tabs state
-  const [activeTopTab, setActiveTopTab] = useState<"teams" | "skaters">(
-    "teams"
-  );
-  const [activeTeamCategory, setActiveTeamCategory] = useState<TrendCategoryId>(
-    () => CATEGORY_ORDER[0]
-  );
-  const [activeSkaterCategory, setActiveSkaterCategory] =
-    useState<SkaterTrendCategoryId>(
-      () => SKATER_TREND_CATEGORIES[0]?.id as SkaterTrendCategoryId
+    const ctpiMap = new Map(
+      ctpiTeams.map((row) => [row.team, row.ctpi_0_to_100])
+    );
+    const sosMap = new Map(sosTeams.map((row) => [row.team, row.sosScore]));
+
+    return ratings
+      .map((rating) => {
+        const meta = metaIndex[rating.teamAbbr];
+        return {
+          teamAbbr: rating.teamAbbr,
+          teamName: meta?.name ?? rating.teamAbbr,
+          powerScore: computePowerScore(rating),
+          ctpiScore: ctpiMap.get(rating.teamAbbr) ?? null,
+          sosScore: sosMap.get(rating.teamAbbr) ?? null
+        };
+      })
+      .sort((a, b) => b.powerScore - a.powerScore);
+  }, [data, initialTeamRatings]);
+
+  const visibleTeamRows = useMemo(() => teamRows.slice(0, 12), [teamRows]);
+
+  const forgeRows = useMemo<ForgeProjectionRow[]>(() => {
+    const raw = data?.forgePlayers?.data ?? [];
+    const startChartSkaters = (data?.startChart?.players ?? []).filter(
+      (row) => !(row as StartChartPlayer).positions?.includes("G")
+    );
+    const startChartMap = new Map<number, StartChartPlayer>();
+    startChartSkaters.forEach((row) => {
+      const player = row as StartChartPlayer;
+      startChartMap.set(player.player_id, player);
+    });
+
+    const parsed = raw
+      .map((row) => {
+        const playerId = Number(row.player_id);
+        const startRow = startChartMap.get(playerId);
+        return {
+          player_id: playerId,
+          player_name: String(row.player_name ?? ""),
+          team_name: String(row.team_name ?? ""),
+          position: String(row.position ?? ""),
+          g: Number(row.g ?? 0),
+          a: Number(row.a ?? 0),
+          pts: Number(row.pts ?? 0),
+          ppp: Number(row.ppp ?? 0),
+          sog: Number(row.sog ?? 0),
+          hit: Number(row.hit ?? 0),
+          blk: Number(row.blk ?? 0),
+          opponent: startRow?.opponent_abbrev ?? null,
+          gamesRemaining:
+            startRow?.games_remaining_week !== undefined
+              ? Number(startRow.games_remaining_week)
+              : null,
+          uncertainty:
+            typeof row.uncertainty === "object" && row.uncertainty !== null
+              ? (row.uncertainty as Record<string, unknown>)
+              : null
+        };
+      })
+      .filter((row) => row.player_id && row.player_name);
+    return parsed.sort((a, b) => b.pts - a.pts).slice(0, 20);
+  }, [data]);
+
+  const legacyRows = useMemo<ForgeProjectionRow[]>(() => {
+    const skaters = (data?.startChart?.players ?? [])
+      .filter((row) => !(row as StartChartPlayer).positions?.includes("G"))
+      .map((row) => row as StartChartPlayer);
+    return skaters
+      .map((row) => ({
+        player_id: row.player_id,
+        player_name: row.name,
+        team_name: row.team_abbrev ?? "",
+        position: row.positions?.[0] ?? "",
+        g: row.proj_goals ?? 0,
+        a: row.proj_assists ?? 0,
+        pts:
+          row.proj_goals != null && row.proj_assists != null
+            ? row.proj_goals + row.proj_assists
+            : (row.proj_fantasy_points ?? 0),
+        ppp: row.proj_pp_points ?? 0,
+        sog: row.proj_shots ?? 0,
+        hit: row.proj_hits ?? 0,
+        blk: row.proj_blocks ?? 0,
+        opponent: row.opponent_abbrev ?? null,
+        gamesRemaining: row.games_remaining_week ?? null
+      }))
+      .sort((a, b) => b.pts - a.pts)
+      .slice(0, 20);
+  }, [data]);
+
+  const projectionRows = projectionSource === "legacy" ? legacyRows : forgeRows;
+
+  const goalieRows = useMemo<GoalieDisplayRow[]>(() => {
+    if (!data) return [];
+    const startChartGoalies = (data.startChart?.players ?? [])
+      .filter((row) => (row as StartChartPlayer).positions?.includes("G"))
+      .map((row) => row as StartChartPlayer);
+
+    const startGoalieMap = new Map<number, StartChartPlayer>();
+    startChartGoalies.forEach((row) => {
+      startGoalieMap.set(row.player_id, row);
+    });
+
+    const forgeGoalies = (data.forgeGoalies?.data ?? []).map(
+      (row) => row as ForgeGoalieRow
     );
 
-  const [sortConfig, setSortConfig] = useState<{
-    key: string;
-    direction: "asc" | "desc";
-  }>({ key: "overall", direction: "desc" });
+    return forgeGoalies
+      .map((row) => {
+        const startRow = startGoalieMap.get(row.goalie_id);
+        const teamMeta = getTeamMetaById(row.team_id);
+        const oppMeta = getTeamMetaById(row.opponent_team_id);
+        const team = startRow?.team_abbrev ?? teamMeta?.abbr ?? "—";
+        const opponent = startRow?.opponent_abbrev ?? oppMeta?.abbr ?? "—";
+        const startProb =
+          startRow?.start_probability ?? row.starter_probability ?? null;
+        return {
+          goalieId: row.goalie_id,
+          name: startRow?.name ?? `Goalie ${row.goalie_id}`,
+          team,
+          opponent,
+          startProb,
+          winProb: row.proj_win_prob ?? null,
+          shutoutProb: row.proj_shutout_prob ?? null,
+          uncertainty:
+            typeof row.uncertainty === "object" && row.uncertainty !== null
+              ? (row.uncertainty as Record<string, unknown>)
+              : null
+        };
+      })
+      .sort((a, b) => (b.startProb ?? 0) - (a.startProb ?? 0))
+      .slice(0, 12);
+  }, [data]);
 
-  const handleSort = (key: string) => {
-    setSortConfig((current) => ({
-      key,
-      direction:
-        current.key === key && current.direction === "desc" ? "asc" : "desc"
-    }));
-  };
+  const visibleGoalieRows = useMemo(() => goalieRows.slice(0, 8), [goalieRows]);
 
-  const inputRef = useRef<HTMLInputElement | null>(null);
-  const listboxId = "player-suggestions";
-  const teamIdToAbbrev = useMemo(() => {
-    const map: Record<number, string> = {};
-    Object.values(teamsInfo).forEach((t) => {
-      map[t.id] = t.abbrev;
+  const visibleProjectionRows = useMemo(
+    () => projectionRows.slice(0, 10),
+    [projectionRows]
+  );
+
+  const ratingMap = useMemo(() => {
+    const map = new Map<string, DashboardData["teamRatings"][number]>();
+    const ratings = data?.teamRatings ?? [];
+    ratings.forEach((row) => {
+      map.set(row.teamAbbr, row);
     });
     return map;
-  }, []);
+  }, [data]);
 
-  const disabled = useMemo(
-    () => loading || query.trim().length < 2,
-    [loading, query]
-  );
+  const teamTrendSeries = useMemo(() => {
+    const category = data?.teamTrends?.categories?.[teamCategory];
+    if (!category) return { series: [], teams: [] as string[] };
+    const rankings = category.rankings ?? [];
+    const topTeams = rankings.slice(0, 5).map((row) => row.team);
 
-  const powerBoard = useMemo(() => {
-    const base = buildPowerBoard(teamTrends);
-    if (!ctpiScores || ctpiScores.length === 0) return base;
-    const ctpiMap = new Map(ctpiScores.map((c) => [c.team, c]));
-    const sosMap = sosRatings
-      ? new Map(sosRatings.map((s) => [s.team, s]))
-      : null;
-    const sosPct = (record?: { wins: number; losses: number; otl: number }) => {
-      if (!record) return null;
-      const gp = record.wins + record.losses + record.otl;
-      if (gp <= 0) return null;
-      // Align with backend: straight win percentage (no half-credit for OTL).
-      return record.wins / gp;
-    };
-    const fmtRecord = (record?: {
-      wins: number;
-      losses: number;
-      otl: number;
-    }) => (record ? `${record.wins}-${record.losses}-${record.otl}` : "");
-    const mapped = base.map((row) => {
-      const ctpi = ctpiMap.get(row.team);
-      if (!ctpi) return row;
-      const ctpiDelta =
-        ctpi.sparkSeries && ctpi.sparkSeries.length > 1
-          ? ctpi.sparkSeries[ctpi.sparkSeries.length - 1].value -
-            ctpi.sparkSeries[0].value
-          : null;
-      return {
-        ...row,
-        overall: Number(ctpi.ctpi_0_to_100.toFixed(1)),
-        specialTeams: Number(ctpi.specialTeams.toFixed(2)),
-        topDriver: selectTopDriver(ctpi),
-        ctpi,
-        ctpiDelta,
-        sosPastPct: sosPct(sosMap?.get(row.team)?.past),
-        sosFuturePct: sosPct(sosMap?.get(row.team)?.future),
-        sosPastRecord: fmtRecord(sosMap?.get(row.team)?.past),
-        sosFutureRecord: fmtRecord(sosMap?.get(row.team)?.future)
-      };
+    const series = category.series ?? {};
+    const gpMap = new Map<number, Record<string, number>>();
+
+    topTeams.forEach((team) => {
+      const points = series[team] ?? [];
+      points.forEach((point) => {
+        if (!gpMap.has(point.gp)) gpMap.set(point.gp, {});
+        gpMap.get(point.gp)![team] = point.percentile;
+      });
     });
 
-    return mapped.sort((a, b) => {
-      const getValue = (item: PowerBoardRow) => {
-        if (sortConfig.key === "team") return item.name;
-        if (sortConfig.key === "overall") return item.overall;
-        if (sortConfig.key === "sosPastPct") return item.sosPastPct ?? -999;
-        if (sortConfig.key === "sosFuturePct") return item.sosFuturePct ?? -999;
-        // Handle CTPI specific fields
-        if (
-          ["offense", "defense", "goaltending", "luck"].includes(sortConfig.key)
-        ) {
-          if (item.ctpi) {
-            return (item.ctpi as any)[sortConfig.key];
-          }
-          // Fallback for non-CTPI rows (shouldn't happen often if CTPI is loaded)
-          if (sortConfig.key === "offense")
-            return item.snapshots.offense?.percentile ?? -999;
-          if (sortConfig.key === "defense")
-            return item.snapshots.defense?.percentile ?? -999;
-          return -999;
-        }
-        if (sortConfig.key === "specialTeams") return item.specialTeams ?? -999;
-        return 0;
-      };
+    const chartData = Array.from(gpMap.entries())
+      .map(([gp, values]) => ({ gp, ...values }))
+      .sort((a, b) => a.gp - b.gp);
 
-      const valA = getValue(a);
-      const valB = getValue(b);
+    return { series: chartData, teams: topTeams };
+  }, [data, teamCategory]);
 
-      if (valA < valB) return sortConfig.direction === "asc" ? -1 : 1;
-      if (valA > valB) return sortConfig.direction === "asc" ? 1 : -1;
-      return 0;
-    });
-  }, [ctpiScores, teamTrends, sortConfig]);
-  const hotTeams = useMemo(
-    () =>
-      powerBoard
-        .filter((row) => (row.ctpiDelta ?? row.momentum) !== null)
-        .sort(
-          (a, b) =>
-            (b.ctpiDelta ?? b.momentum ?? 0) - (a.ctpiDelta ?? a.momentum ?? 0)
-        )
-        .slice(0, 5),
-    [powerBoard]
-  );
-  const coldTeams = useMemo(
-    () =>
-      powerBoard
-        .filter((row) => (row.ctpiDelta ?? row.momentum) !== null)
-        .sort(
-          (a, b) =>
-            (a.ctpiDelta ?? a.momentum ?? 0) - (b.ctpiDelta ?? b.momentum ?? 0)
-        )
-        .slice(0, 5),
-    [powerBoard]
-  );
-
-  // Normalize name parts to Title Case to better match stored fullName values
-  const normalizeName = (str: string) =>
-    str
+  const normalizeName = (value: string) =>
+    value
       .trim()
       .split(/\s+/)
       .map((chunk) => chunk[0]?.toUpperCase() + chunk.slice(1).toLowerCase())
       .join(" ");
 
-  // Debounced autocomplete fetch
   useEffect(() => {
     const q = query.trim();
     if (q.length < 2) {
@@ -1668,29 +425,30 @@ export default function TrendsIndexPage() {
     const handle = setTimeout(async () => {
       try {
         const normalized = normalizeName(q);
-        const { data, error } = await (supabase as any)
+        const { data: players, error: fetchError } = await (supabase as any)
           .from("players")
           .select("id, fullName, position, team_id")
           .ilike("fullName", `%${normalized}%`)
           .order("fullName", { ascending: true })
           .limit(8);
 
-        if (error) throw error;
+        if (fetchError) throw fetchError;
 
-        const mapped = ((data as any[]) ?? []).map((row: any) => ({
+        const mapped = ((players as any[]) ?? []).map((row) => ({
           id: row.id,
           fullName: row.fullName,
           position: row.position,
-          team_abbrev:
-            row.team_id != null ? (teamIdToAbbrev[row.team_id] ?? null) : null
-        })) as PlayerListItem[];
+          teamAbbrev:
+            row.team_id != null
+              ? (getTeamAbbreviationById(row.team_id) ?? null)
+              : null
+        })) as PlayerSearchRow[];
 
         setSuggestions(mapped);
         setShowSuggestions(mapped.length > 0);
         setActiveIndex(-1);
       } catch (err) {
         console.error(err);
-        // Don't show global error for autocomplete; keep suggestions hidden instead
         setSuggestions([]);
         setShowSuggestions(false);
         setActiveIndex(-1);
@@ -1698,893 +456,636 @@ export default function TrendsIndexPage() {
     }, 200);
 
     return () => clearTimeout(handle);
-  }, [query, teamIdToAbbrev]);
+  }, [query]);
 
-  async function handleSearch(event: React.FormEvent<HTMLFormElement>) {
+  const handleSearch = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (disabled) return;
-
     const trimmedQuery = query.trim();
-    setLoading(true);
-    setError(null);
+    if (trimmedQuery.length < 2) return;
+    setSearchLoading(true);
+    setSearchError(null);
     setResults([]);
 
     try {
       const normalized = normalizeName(trimmedQuery);
-
-      const { data, error } = await (supabase as any)
+      const { data: players, error: fetchError } = await (supabase as any)
         .from("players")
         .select("id, fullName, position, team_id")
         .ilike("fullName", `%${normalized}%`)
         .order("fullName", { ascending: true })
         .limit(20);
 
-      if (error) throw error;
+      if (fetchError) throw fetchError;
 
-      if (!data || data.length === 0) {
-        setError("No players found. Try another name.");
+      const mapped = ((players as any[]) ?? []).map((row) => ({
+        id: row.id,
+        fullName: row.fullName,
+        position: row.position,
+        teamAbbrev:
+          row.team_id != null
+            ? (getTeamAbbreviationById(row.team_id) ?? null)
+            : null
+      })) as PlayerSearchRow[];
+
+      if (mapped.length === 1) {
+        router.push(`/trends/player/${mapped[0].id}`);
         return;
       }
 
-      setResults(
-        ((data as any[]) ?? []).map((row: any) => ({
-          id: row.id,
-          fullName: row.fullName,
-          position: row.position,
-          team_abbrev:
-            row.team_id != null ? (teamIdToAbbrev[row.team_id] ?? null) : null
-        })) as PlayerListItem[]
-      );
+      if (mapped.length === 0) {
+        setSearchError("No players found. Try another name.");
+        return;
+      }
+
+      setResults(mapped);
     } catch (err: any) {
       console.error(err);
-      setError(err?.message ?? "Unexpected error searching players.");
+      setSearchError(err?.message ?? "Unexpected error searching players.");
     } finally {
-      setLoading(false);
+      setSearchLoading(false);
     }
-  }
+  };
 
-  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+  const handleSearchKeyDown = (
+    event: React.KeyboardEvent<HTMLInputElement>
+  ) => {
     if (!showSuggestions || suggestions.length === 0) return;
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
       setActiveIndex((idx) => Math.min(idx + 1, suggestions.length - 1));
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
       setActiveIndex((idx) => Math.max(idx - 1, 0));
-    } else if (e.key === "Enter") {
+    } else if (event.key === "Enter") {
       if (activeIndex >= 0 && activeIndex < suggestions.length) {
-        e.preventDefault();
+        event.preventDefault();
         const chosen = suggestions[activeIndex];
         router.push(`/trends/player/${chosen.id}`);
         setShowSuggestions(false);
       }
-    } else if (e.key === "Escape") {
+    } else if (event.key === "Escape") {
       setShowSuggestions(false);
       setActiveIndex(-1);
     }
-  }
+  };
 
-  useEffect(() => {
-    const controller = new AbortController();
-    let mounted = true;
-    async function loadTeamTrends() {
-      try {
-        setTeamTrendsLoading(true);
-        const response = await fetch("/api/v1/trends/team-power", {
-          signal: controller.signal
-        });
-        if (!response.ok) {
-          throw new Error(
-            `Trend API failed with status ${response.status}: ${response.statusText}`
-          );
+  const skaterTrendSeries = useMemo(() => {
+    const categories = data?.skaterTrends?.categories ?? {};
+    const category = categories[skaterCategory] as
+      | {
+          series?: Record<string, Array<{ gp: number; percentile: number }>>;
+          rankings?: Array<{ playerId: number }>;
         }
-        const payload = (await response.json()) as TeamTrendsResponse;
-        if (mounted) {
-          setTeamTrends(payload);
-          setTeamTrendsError(null);
-        }
-      } catch (err: any) {
-        if (err.name === "AbortError") return;
-        console.error("Failed to load team trends", err);
-        if (mounted) {
-          setTeamTrendsError(
-            err?.message ?? "Unexpected error fetching team trends."
-          );
-        }
-      } finally {
-        if (mounted) {
-          setTeamTrendsLoading(false);
-        }
-      }
+      | undefined;
+    if (!category) return { series: [], players: [] as string[] };
+
+    const rankings = category.rankings ?? [];
+    const topPlayers = rankings.slice(0, 5).map((row) => String(row.playerId));
+    const series = category.series ?? {};
+    const gpMap = new Map<number, Record<string, number>>();
+
+    topPlayers.forEach((playerId) => {
+      const points = series[playerId] ?? [];
+      points.forEach((point) => {
+        if (!gpMap.has(point.gp)) gpMap.set(point.gp, {});
+        gpMap.get(point.gp)![playerId] = point.percentile;
+      });
+    });
+
+    const chartData = Array.from(gpMap.entries())
+      .map(([gp, values]) => ({ gp, ...values }))
+      .sort((a, b) => a.gp - b.gp);
+
+    return { series: chartData, players: topPlayers };
+  }, [data, skaterCategory]);
+
+  const ctpiMovers = useMemo(() => {
+    if (!data?.teamCtpi?.teams || !data.teamMeta) {
+      return { improved: [], degraded: [] };
     }
-    loadTeamTrends();
-    return () => {
-      mounted = false;
-      controller.abort();
-    };
-  }, []);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    let mounted = true;
-    async function loadCtpi() {
-      try {
-        setCtpiLoading(true);
-        const response = await fetch("/api/v1/trends/team-ctpi", {
-          signal: controller.signal
-        });
-        if (!response.ok) {
-          throw new Error(
-            `CTPI API failed with status ${response.status}: ${response.statusText}`
-          );
-        }
-        const payload = (await response.json()) as {
-          teams: CtpiScore[];
+    const deltas = data.teamCtpi.teams
+      .map((team) => {
+        const spark = team.sparkSeries ?? [];
+        if (spark.length < 2) return null;
+        const window = spark.slice(-5);
+        if (window.length < 2) return null;
+        const delta = window[window.length - 1].value - window[0].value;
+        const meta = data.teamMeta[team.team];
+        return {
+          id: team.team,
+          name: meta?.shortName ?? team.team,
+          logo: meta?.logo,
+          delta,
+          current: team.ctpi_0_to_100
         };
-        if (mounted) {
-          setCtpiScores(payload.teams ?? []);
-          setCtpiError(null);
-        }
-      } catch (err: any) {
-        if (err.name === "AbortError") return;
-        console.error("Failed to load CTPI", err);
-        if (mounted) {
-          setCtpiError(err?.message ?? "Unexpected error fetching CTPI.");
-        }
-      } finally {
-        if (mounted) {
-          setCtpiLoading(false);
-        }
-      }
-    }
-    loadCtpi();
-    return () => {
-      mounted = false;
-      controller.abort();
-    };
-  }, []);
+      })
+      .filter((row): row is NonNullable<typeof row> => Boolean(row));
 
-  useEffect(() => {
-    const controller = new AbortController();
-    let mounted = true;
-    async function loadSos() {
-      try {
-        setSosLoading(true);
-        const response = await fetch("/api/v1/trends/team-sos", {
-          signal: controller.signal
-        });
-        if (!response.ok) {
-          throw new Error(
-            `SOS API failed with status ${response.status}: ${response.statusText}`
-          );
-        }
-        const payload = (await response.json()) as { teams: SosRating[] };
-        if (mounted) {
-          setSosRatings(payload.teams ?? []);
-          setSosError(null);
-        }
-      } catch (err: any) {
-        if (err.name === "AbortError") return;
-        console.error("Failed to load SOS", err);
-        if (mounted) {
-          setSosError(err?.message ?? "Unexpected error fetching SOS.");
-        }
-      } finally {
-        if (mounted) {
-          setSosLoading(false);
-        }
-      }
-    }
-    loadSos();
-    return () => {
-      mounted = false;
-      controller.abort();
-    };
-  }, []);
+    const improved = [...deltas].sort((a, b) => b.delta - a.delta).slice(0, 5);
+    const degraded = [...deltas].sort((a, b) => a.delta - b.delta).slice(0, 5);
+    return { improved, degraded };
+  }, [data]);
 
-  useEffect(() => {
-    const controller = new AbortController();
-    let mounted = true;
-
-    async function loadSkaterTrends() {
-      try {
-        setSkaterTrendsLoading(true);
-        const params = new URLSearchParams({
-          position: skaterPositionGroup,
-          limit: String(skaterLimit),
-          window: String(rollingWindow)
-        });
-        const response = await fetch(
-          `/api/v1/trends/skater-power?${params.toString()}`,
-          { signal: controller.signal }
-        );
-        if (!response.ok) {
-          throw new Error(
-            `Skater trend API failed with status ${response.status}: ${response.statusText}`
-          );
-        }
-        const payload = (await response.json()) as SkaterTrendsResponse;
-        if (mounted) {
-          setSkaterTrends(payload);
-          setSkaterTrendsError(null);
-        }
-      } catch (err: any) {
-        if (err.name === "AbortError") return;
-        console.error("Failed to load skater trends", err);
-        if (mounted) {
-          setSkaterTrendsError(
-            err?.message ?? "Unexpected error fetching skater trends."
-          );
-        }
-      } finally {
-        if (mounted) {
-          setSkaterTrendsLoading(false);
-        }
-      }
-    }
-
-    loadSkaterTrends();
-    return () => {
-      mounted = false;
-      controller.abort();
-    };
-  }, [skaterPositionGroup, skaterLimit, rollingWindow]);
+  const ctpiSparkRows = useMemo(() => {
+    if (!data?.teamCtpi?.teams) return [];
+    return [...data.teamCtpi.teams]
+      .sort((a, b) => (b.ctpi_0_to_100 ?? 0) - (a.ctpi_0_to_100 ?? 0))
+      .slice(0, 5)
+      .map((row) => {
+        const meta = data.teamMeta?.[row.team];
+        return {
+          team: row.team,
+          name: meta?.shortName ?? row.team,
+          ctpi: row.ctpi_0_to_100,
+          spark: row.sparkSeries ?? []
+        };
+      });
+  }, [data]);
 
   return (
-    <div className={styles.page}>
-      <div className={styles.pageContent}>
-        <section className={styles.hero}>
-          <div className={styles.titleInfo}>
-            <h1 className={styles.heroTitle}>
-              <span className={styles.heroAccent}>Sustainability</span> Trends
-            </h1>
-            <p className={styles.heroSubtitle}>
-              Search for an NHL skater or explore team-wide power metrics.
-            </p>
-          </div>
-
-          <form onSubmit={handleSearch} className={styles.searchForm}>
-            <div className={styles.searchInputWrapper}>
-              <input
-                ref={inputRef}
-                type="text"
-                autoFocus
-                role="combobox"
-                aria-expanded={showSuggestions}
-                aria-controls={listboxId}
-                aria-autocomplete="list"
-                placeholder="Search by player name (e.g., Connor McDavid)"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                onKeyDown={handleKeyDown}
-                onFocus={() => setShowSuggestions(suggestions.length > 0)}
-                onBlur={() => setTimeout(() => setShowSuggestions(false), 120)}
-                className={styles.searchInput}
-              />
-
-              {showSuggestions && suggestions.length > 0 && (
-                <ul
-                  id={listboxId}
-                  role="listbox"
-                  className={styles.suggestionList}
-                >
-                  {suggestions.map((player, idx) => (
-                    <li
-                      key={player.id}
-                      role="option"
-                      aria-selected={idx === activeIndex}
-                    >
-                      <button
-                        type="button"
-                        className={`${styles.suggestionButton} ${
-                          idx === activeIndex ? styles.suggestionActive : ""
-                        }`}
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          router.push(`/trends/player/${player.id}`);
-                          setShowSuggestions(false);
-                        }}
-                      >
-                        <span>{player.fullName}</span>
-                        <span>
-                          {player.team_abbrev ?? "FA"} · {player.position}
-                        </span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-
-            <button
-              type="submit"
-              disabled={disabled}
-              className={styles.searchButton}
-            >
-              {loading ? "Searching…" : "Find Player"}
-            </button>
-          </form>
-
-          {error && <p className={styles.errorMessage}>{error}</p>}
-
-          {!error && results.length > 0 && (
-            <div className={styles.resultsPanel}>
-              <h2 className={styles.sectionSubtitle}>Select a player</h2>
-              <ul className={styles.resultsList}>
-                {results.map((player) => (
-                  <li key={player.id} className={styles.resultRow}>
-                    <button
-                      type="button"
-                      onClick={() => router.push(`/trends/player/${player.id}`)}
-                      className={styles.resultButton}
-                    >
-                      <span>{player.fullName}</span>
-                      <span>
-                        {player.team_abbrev ?? "FA"} · {player.position}
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </section>
-
-        <section className={styles.powerSection}>
-          <div className={styles.sectionHeader}>
-            <div>
-              <h2 className={styles.sectionTitle}>
-                <span className={styles.heroAccent}>League</span> Power Ladder
-              </h2>
-              <p className={styles.sectionDescription}>
-                Weighted blend of offense (35%), defense (30%), goaltending
-                (20%), special teams (15%), and a luck adjustment. Recent games
-                are weighted more heavily to reflect current form.
+    <>
+      <Head>
+        <title>FHFH Dashboard | FHFHockey</title>
+        <meta
+          name="description"
+          content="Unified FORGE, Trends, and Start Chart dashboard."
+        />
+      </Head>
+      <div className={styles.page}>
+        <main className={styles.main}>
+          <header className={styles.header}>
+            <div className={styles.trendsHeaderSection}>
+              <h1 className={styles.title}>Trends Dashboard</h1>
+              <p className={styles.subtitle}>
+                Sustainability dashboard, team power, and player trends.
               </p>
             </div>
-            <div className={styles.sectionMeta}>
-              <span>
-                {teamTrends?.generatedAt
-                  ? `Updated ${new Date(teamTrends.generatedAt).toLocaleString()}`
-                  : "Nightly update"}
-              </span>
-              <span>Momentum = last 5GP delta</span>
-            </div>
-          </div>
-          {teamTrendsLoading || ctpiLoading ? (
-            <div className={styles.teamLoading}>Building composite ladder…</div>
-          ) : teamTrendsError || ctpiError ? (
-            <div className={styles.teamError}>
-              {teamTrendsError || ctpiError}
-            </div>
-          ) : powerBoard.length === 0 ? (
-            <div className={styles.chartEmpty}>
-              No composite trend data available yet.
-            </div>
-          ) : (
-            <div className={styles.powerGrid}>
-              <div className={styles.powerTableWrapper}>
-                <div className={styles.powerTableHead}>
-                  <span>Rank</span>
-                  <button
-                    type="button"
-                    className={styles.sortButton}
-                    onClick={() => handleSort("team")}
-                  >
-                    Team{" "}
-                    {sortConfig.key === "team" &&
-                      (sortConfig.direction === "asc" ? "↑" : "↓")}
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.sortButton}
-                    onClick={() => handleSort("overall")}
-                  >
-                    CTPI{" "}
-                    {sortConfig.key === "overall" &&
-                      (sortConfig.direction === "asc" ? "↑" : "↓")}
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.sortButton}
-                    onClick={() => handleSort("offense")}
-                    title={CTPI_TOOLTIPS.offense}
-                  >
-                    Offense{" "}
-                    {sortConfig.key === "offense" &&
-                      (sortConfig.direction === "asc" ? "↑" : "↓")}
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.sortButton}
-                    onClick={() => handleSort("defense")}
-                    title={CTPI_TOOLTIPS.defense}
-                  >
-                    Defense{" "}
-                    {sortConfig.key === "defense" &&
-                      (sortConfig.direction === "asc" ? "↑" : "↓")}
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.sortButton}
-                    onClick={() => handleSort("goaltending")}
-                    title={CTPI_TOOLTIPS.goaltending}
-                  >
-                    Goaltending{" "}
-                    {sortConfig.key === "goaltending" &&
-                      (sortConfig.direction === "asc" ? "↑" : "↓")}
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.sortButton}
-                    onClick={() => handleSort("specialTeams")}
-                    title={CTPI_TOOLTIPS.specialTeams}
-                  >
-                    Special Teams{" "}
-                    {sortConfig.key === "specialTeams" &&
-                      (sortConfig.direction === "asc" ? "↑" : "↓")}
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.sortButton}
-                    onClick={() => handleSort("luck")}
-                    title={CTPI_TOOLTIPS.luck}
-                  >
-                    Luck{" "}
-                    {sortConfig.key === "luck" &&
-                      (sortConfig.direction === "asc" ? "↑" : "↓")}
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.sortButton}
-                    onClick={() => handleSort("sosPastPct")}
-                    title="Opponents' win% so far"
-                  >
-                    Past SOS{" "}
-                    {sortConfig.key === "sosPastPct" &&
-                      (sortConfig.direction === "asc" ? "↑" : "↓")}
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.sortButton}
-                    onClick={() => handleSort("sosFuturePct")}
-                    title="Opponents' win% upcoming"
-                  >
-                    Future SOS{" "}
-                    {sortConfig.key === "sosFuturePct" &&
-                      (sortConfig.direction === "asc" ? "↑" : "↓")}
-                  </button>
-                </div>
-                <ul className={styles.powerTable} role="list">
-                  {powerBoard.map((row, index) => {
-                    const handleLogoError = (
-                      event: React.SyntheticEvent<HTMLImageElement, Event>
-                    ) => {
-                      event.currentTarget.onerror = null;
-                      event.currentTarget.src = DEFAULT_TEAM_LOGO;
-                    };
-                    return (
-                      <li key={row.team} className={styles.powerRow}>
-                        <span className={styles.powerRank}>#{index + 1}</span>
-                        <div className={styles.powerTeamCell}>
-                          <div
-                            className={`${styles.teamLogoWrapper} ${styles.powerTeamLogo}`}
-                          >
-                            <Image
-                              src={row.logo}
-                              alt={`${row.team} logo`}
-                              className={styles.teamLogo}
-                              width={34}
-                              height={34}
-                              loading="lazy"
-                              onError={handleLogoError}
-                            />
-                          </div>
-                          <div className={styles.powerTeamText}>
-                            <div className={styles.powerTeamName}>
-                              {row.name}
-                            </div>
-                            <div className={styles.powerTeamMeta}>
-                              GP{" "}
-                              {row.snapshots[row.topDriver ?? "offense"]?.gp ??
-                                "—"}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className={styles.powerScoreCell}>
-                          <span
-                            className={`${styles.driverTag} ${ratingToneClass(row.overall)}`}
-                          >
-                            {row.ctpi
-                              ? row.ctpi.ctpi_0_to_100.toFixed(1)
-                              : formatPercent(row.overall)}
-                          </span>
-                        </div>
-
-                        <div className={styles.powerValueCell}>
-                          <span
-                            title={CTPI_TOOLTIPS.offense}
-                            className={`${styles.valuePill} ${ratingToneClass(row.ctpi ? row.ctpi.offense : row.snapshots.offense?.percentile)}`}
-                          >
-                            {row.ctpi
-                              ? formatSigned(row.ctpi.offense, 2)
-                              : row.snapshots.offense
-                                ? formatPercent(
-                                    row.snapshots.offense.percentile
-                                  )
-                                : "—"}
-                          </span>
-                        </div>
-
-                        <div className={styles.powerValueCell}>
-                          <span
-                            title={CTPI_TOOLTIPS.defense}
-                            className={`${styles.valuePill} ${ratingToneClass(row.ctpi ? row.ctpi.defense : row.snapshots.defense?.percentile)}`}
-                          >
-                            {row.ctpi
-                              ? formatSigned(row.ctpi.defense, 2)
-                              : row.snapshots.defense
-                                ? formatPercent(
-                                    row.snapshots.defense.percentile
-                                  )
-                                : "—"}
-                          </span>
-                        </div>
-
-                        <div className={styles.powerValueCell}>
-                          <span
-                            title={CTPI_TOOLTIPS.goaltending}
-                            className={`${styles.valuePill} ${ratingToneClass(row.ctpi?.goaltending)}`}
-                          >
-                            {row.ctpi
-                              ? formatSigned(row.ctpi.goaltending, 2)
-                              : "—"}
-                          </span>
-                        </div>
-
-                        <div className={styles.powerValueCell}>
-                          <span
-                            title={CTPI_TOOLTIPS.specialTeams}
-                            className={`${styles.valuePill} ${ratingToneClass(row.ctpi ? row.ctpi.specialTeams : row.specialTeams)}`}
-                          >
-                            {row.ctpi
-                              ? formatSigned(row.ctpi.specialTeams, 2)
-                              : row.specialTeams !== null &&
-                                  row.specialTeams !== undefined
-                                ? formatPercent(row.specialTeams)
-                                : "—"}
-                          </span>
-                        </div>
-
-                        <div className={styles.powerValueCell}>
-                          <div
-                            title={CTPI_TOOLTIPS.luck}
-                            className={`${styles.luckWrapper} ${row.ctpi && Math.abs(row.ctpi.luck) > 0.5 ? styles.hasBadge : ""}`}
-                          >
-                            {row.ctpi && Math.abs(row.ctpi.luck) > 0.5 && (
-                              <span
-                                className={`${styles.luckBadge} ${row.ctpi.luck > 0 ? styles.luckLucky : styles.luckUnlucky}`}
-                              >
-                                {row.ctpi.luck > 0 ? "LUCKY" : "UNLUCKY"}
-                              </span>
-                            )}
-                            <span
-                              className={`${styles.valuePill} ${ratingToneClass(row.ctpi?.luck)}`}
-                            >
-                              {row.ctpi ? formatSigned(row.ctpi.luck, 2) : "—"}
-                            </span>
-                          </div>
-                        </div>
-                        <div className={styles.powerValueCell}>
-                          <span
-                            title={
-                              row.sosPastRecord
-                                ? `Past opponents: ${row.sosPastRecord}`
-                                : "Past strength of schedule (points %)"
-                            }
-                            className={`${styles.valuePill} ${ratingToneClass(row.sosPastPct)}`}
-                          >
-                            {formatPct(row.sosPastPct)}
-                          </span>
-                        </div>
-                        <div className={styles.powerValueCell}>
-                          <span
-                            title={
-                              row.sosFutureRecord
-                                ? `Future opponents: ${row.sosFutureRecord}`
-                                : "Future strength of schedule (points %)"
-                            }
-                            className={`${styles.valuePill} ${ratingToneClass(row.sosFuturePct)}`}
-                          >
-                            {formatPct(row.sosFuturePct)}
-                          </span>
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
+            <div className={styles.searchPanel}>
+              <div className={styles.panelHeader}>
+                <h2 className={styles.panelTitle}>Player Search</h2>
+                <span className={styles.panelMeta}>Trends lookup</span>
               </div>
-              <div className={styles.powerSidebar}>
-                <div className={styles.hotColdCard}>
-                  <p className={styles.sectionSubtitle}>Hot streaks</p>
-                  <ul>
-                    {hotTeams.map((row) => {
-                      const tone = resolveMomentumTone(
-                        row.ctpiDelta ?? row.momentum
-                      );
-                      const sparkPoints = row.ctpi?.sparkSeries ?? [];
-                      return (
-                        <li
-                          key={`hot-${row.team}`}
-                          className={styles.hotColdRow}
-                        >
-                          <div className={styles.hotColdTeam}>
-                            <div className={styles.teamLogoWrapper}>
-                              <Image
-                                src={row.logo}
-                                alt={`${row.team} logo`}
-                                className={styles.teamLogo}
-                                width={28}
-                                height={28}
-                                loading="lazy"
-                              />
-                            </div>
-                            <div>
-                              <p className={styles.powerTeamName}>{row.name}</p>
-                              <p className={styles.hotColdMeta}>{row.reason}</p>
-                            </div>
-                          </div>
-                          <div
-                            className={`${styles.sparkCell} ${styles.sparkHot}`}
-                          >
-                            <SparkMini points={sparkPoints} variant="hot" />
-                          </div>
-                          <span
-                            className={`${styles.momentumPill} ${tone.toneClass}`}
-                          >
-                            {tone.label}
-                          </span>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-                <div className={styles.hotColdCard}>
-                  <p className={styles.sectionSubtitle}>Cold streaks</p>
-                  <ul>
-                    {coldTeams.map((row) => {
-                      const tone = resolveMomentumTone(
-                        row.ctpiDelta ?? row.momentum
-                      );
-                      const sparkPoints = row.ctpi?.sparkSeries ?? [];
-                      return (
-                        <li
-                          key={`cold-${row.team}`}
-                          className={styles.hotColdRow}
-                        >
-                          <div className={styles.hotColdTeam}>
-                            <div className={styles.teamLogoWrapper}>
-                              <Image
-                                src={row.logo}
-                                alt={`${row.team} logo`}
-                                className={styles.teamLogo}
-                                width={28}
-                                height={28}
-                                loading="lazy"
-                              />
-                            </div>
-                            <div>
-                              <p className={styles.powerTeamName}>{row.name}</p>
-                              <p className={styles.hotColdMeta}>{row.reason}</p>
-                            </div>
-                          </div>
-                          <div
-                            className={`${styles.sparkCell} ${styles.sparkCold}`}
-                          >
-                            <SparkMini points={sparkPoints} variant="cold" />
-                          </div>
-                          <span
-                            className={`${styles.momentumPill} ${tone.toneClass}`}
-                          >
-                            {tone.label}
-                          </span>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              </div>
-            </div>
-          )}
-        </section>
-
-        {/* Dashboard tabs */}
-        <div className={styles.topTabs} role="tablist" aria-label="Dataset">
-          {(
-            [
-              { id: "teams", label: "Teams" },
-              { id: "skaters", label: "Skaters" }
-            ] as const
-          ).map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              role="tab"
-              aria-selected={activeTopTab === tab.id}
-              className={`${styles.tab} ${activeTopTab === tab.id ? styles.tabActive : ""}`}
-              onClick={() => setActiveTopTab(tab.id)}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
-        {activeTopTab === "teams" ? (
-          <>
-            <div className={styles.subTabs} aria-label="Team categories">
-              {CATEGORY_ORDER.map((cid) => {
-                const cat = CATEGORY_CONFIG_MAP[cid];
-                return (
-                  <button
-                    key={cid}
-                    type="button"
-                    className={`${styles.subTab} ${activeTeamCategory === cid ? styles.subTabActive : ""}`}
-                    aria-pressed={activeTeamCategory === cid}
-                    onClick={() => setActiveTeamCategory(cid)}
-                  >
-                    {cat.label}
-                  </button>
-                );
-              })}
-              <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
-                <div
-                  className={styles.windowToggle}
-                  aria-label="Rolling window"
-                >
-                  {[1, 3, 5, 10].map((n) => (
-                    <button
-                      key={n}
-                      type="button"
-                      className={`${styles.windowButton} ${rollingWindow === n ? styles.windowActive : ""}`}
-                      aria-pressed={rollingWindow === n}
-                      onClick={() => setRollingWindow(n)}
-                    >
-                      {n}GP
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div
-              className={styles.dashboardContent}
-              role="region"
-              aria-label="Team chart"
-            >
-              {teamTrendsError && (
-                <div className={styles.teamError}>{teamTrendsError}</div>
-              )}
-              {teamTrendsLoading ? (
-                <div className={styles.teamLoading}>
-                  Loading team percentile trends…
-                </div>
-              ) : (
-                (() => {
-                  const category = CATEGORY_CONFIG_MAP[activeTeamCategory];
-                  const categoryResult =
-                    teamTrends?.categories?.[activeTeamCategory] ??
-                    emptyCategoryResult;
-                  return (
-                    <CategoryChartCard
-                      config={category}
-                      result={categoryResult}
-                      windowSize={rollingWindow}
-                      large
-                    />
-                  );
-                })()
-              )}
-            </div>
-          </>
-        ) : (
-          <>
-            <div className={styles.subTabs} aria-label="Skater categories">
-              {SKATER_TREND_CATEGORIES.map((cat) => (
-                <button
-                  key={cat.id}
-                  type="button"
-                  className={`${styles.subTab} ${activeSkaterCategory === cat.id ? styles.subTabActive : ""}`}
-                  aria-pressed={activeSkaterCategory === cat.id}
-                  onClick={() => setActiveSkaterCategory(cat.id)}
-                >
-                  {cat.label}
-                </button>
-              ))}
-              <div className={styles.skaterControls}>
-                <div
-                  className={styles.windowToggle}
-                  aria-label="Skater position group"
-                >
-                  {[
-                    { value: "forward", label: "Forwards" },
-                    { value: "defense", label: "Defense" },
-                    { value: "all", label: "All" }
-                  ].map((option) => (
-                    <button
-                      key={option.value}
-                      type="button"
-                      className={`${styles.windowButton} ${skaterPositionGroup === option.value ? styles.windowActive : ""}`}
-                      aria-pressed={skaterPositionGroup === option.value}
-                      onClick={() =>
-                        setSkaterPositionGroup(
-                          option.value as "forward" | "defense" | "all"
-                        )
+              <div className={styles.searchBoxButton}>
+                <form onSubmit={handleSearch} className={styles.searchForm}>
+                  <div className={styles.searchInputWrap}>
+                    <input
+                      ref={inputRef}
+                      type="text"
+                      placeholder="Search by player name"
+                      value={query}
+                      onChange={(event) => setQuery(event.target.value)}
+                      onKeyDown={handleSearchKeyDown}
+                      onFocus={() => setShowSuggestions(suggestions.length > 0)}
+                      onBlur={() =>
+                        setTimeout(() => setShowSuggestions(false), 120)
                       }
-                    >
-                      {option.label}
-                    </button>
-                  ))}
+                      className={styles.searchInput}
+                    />
+                    {showSuggestions && suggestions.length > 0 && (
+                      <div className={styles.suggestionPanel}>
+                        {suggestions.map((player, idx) => (
+                          <button
+                            key={player.id}
+                            type="button"
+                            className={`${styles.suggestionItem} ${
+                              idx === activeIndex ? styles.suggestionActive : ""
+                            }`}
+                            onMouseDown={(event) => {
+                              event.preventDefault();
+                              router.push(`/trends/player/${player.id}`);
+                              setShowSuggestions(false);
+                            }}
+                          >
+                            {player.fullName} · {player.teamAbbrev ?? "FA"} ·{" "}
+                            {player.position ?? "—"}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <button type="submit" className={styles.primaryButton}>
+                    {searchLoading ? "Searching…" : "Find Player"}
+                  </button>
+                </form>
+                {searchError && (
+                  <p className={styles.errorText}>{searchError}</p>
+                )}
+                {!searchError && results.length > 0 && (
+                  <div className={styles.searchResults}>
+                    {results.map((player) => (
+                      <button
+                        key={player.id}
+                        type="button"
+                        onClick={() =>
+                          router.push(`/trends/player/${player.id}`)
+                        }
+                        className={styles.resultButton}
+                      >
+                        {player.fullName} · {player.teamAbbrev ?? "FA"} ·{" "}
+                        {player.position ?? "—"}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </header>
+
+          <div className={styles.grid}>
+            <section id="team-power" className={styles.panel}>
+              <div className={styles.panelHeader}>
+                <h2 className={styles.panelTitle}>Team Power</h2>
+                <span className={styles.panelMeta}>Top 12 snapshot</span>
+              </div>
+              <div className={styles.panelBody}>
+                {error && teamRows.length === 0 ? (
+                  <p className={styles.errorText}>
+                    Failed to load team power: {error.message}
+                  </p>
+                ) : teamRows.length === 0 && isLoading ? (
+                  <p className={styles.loadingText}>
+                    Loading team power snapshot…
+                  </p>
+                ) : teamRows.length === 0 ? (
+                  <p className={styles.emptyText}>
+                    No team power data for the selected date.
+                  </p>
+                ) : (
+                  <>
+                    {isLoading && (
+                      <p className={styles.refreshText}>
+                        Refreshing team power…
+                      </p>
+                    )}
+                    <table className={styles.table}>
+                      <thead>
+                        <tr>
+                          <th className={styles.thLeft}>Team</th>
+                          <th className={styles.thRight}>Power</th>
+                          <th className={styles.thRight}>CTPI</th>
+                          <th className={styles.thRight}>SOS</th>
+                          <th className={styles.thLeft}>Comp</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {visibleTeamRows.map((row) => {
+                          const rating = ratingMap.get(row.teamAbbr);
+                          return (
+                            <tr key={row.teamAbbr}>
+                              <td className={styles.tdLeft}>
+                                {row.teamName} ({row.teamAbbr})
+                              </td>
+                              <td className={styles.tdRight}>
+                                {row.powerScore.toFixed(1)}
+                              </td>
+                              <td className={styles.tdRight}>
+                                {row.ctpiScore !== null
+                                  ? row.ctpiScore.toFixed(1)
+                                  : "—"}
+                              </td>
+                              <td className={styles.tdRight}>
+                                {row.sosScore !== null
+                                  ? row.sosScore.toFixed(1)
+                                  : "—"}
+                              </td>
+                              <td className={styles.tdLeft}>
+                                F {formatOptional(rating?.finishingRating)} · G{" "}
+                                {formatOptional(rating?.goalieRating)} · D{" "}
+                                {formatOptional(rating?.dangerRating)}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </>
+                )}
+              </div>
+            </section>
+
+            <section className={styles.panel}>
+              <div className={styles.panelHeader}>
+                <h2 className={styles.panelTitle}>CTPI Movers</h2>
+                <span className={styles.panelMeta}>Last 5 GP</span>
+              </div>
+              <div className={styles.panelBody}>
+                {ctpiMovers.improved.length === 0 && isLoading ? (
+                  <p className={styles.loadingText}>Loading CTPI movers…</p>
+                ) : ctpiMovers.improved.length === 0 ? (
+                  <p className={styles.emptyText}>No CTPI mover data yet.</p>
+                ) : (
+                  <TopMovers
+                    improved={ctpiMovers.improved}
+                    degraded={ctpiMovers.degraded}
+                  />
+                )}
+              </div>
+            </section>
+
+            <section id="projections" className={styles.panel}>
+              <div className={styles.panelHeader}>
+                <h2 className={styles.panelTitle}>
+                  Projections ({projectionSource.toUpperCase()})
+                </h2>
+                <div className={styles.tabRow}>
+                  <button
+                    type="button"
+                    onClick={() => setProjectionSource("forge")}
+                    disabled={projectionSource === "forge"}
+                    className={styles.tabButton}
+                  >
+                    FORGE
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setProjectionSource("legacy")}
+                    disabled={projectionSource === "legacy"}
+                    className={styles.tabButton}
+                  >
+                    Legacy
+                  </button>
                 </div>
-                <div
-                  className={styles.windowToggle}
-                  aria-label="Skater cohort size"
-                >
-                  {[25, 50].map((count) => (
+              </div>
+              <div className={styles.panelBody}>
+                {error && projectionRows.length === 0 ? (
+                  <p className={styles.errorText}>
+                    Failed to load projections: {error.message}
+                  </p>
+                ) : projectionRows.length === 0 && isLoading ? (
+                  <p className={styles.loadingText}>Loading projections…</p>
+                ) : projectionRows.length === 0 ? (
+                  <p className={styles.emptyText}>
+                    No projections available for this date.
+                  </p>
+                ) : (
+                  <>
+                    {isLoading && (
+                      <p className={styles.refreshText}>
+                        Refreshing projections…
+                      </p>
+                    )}
+                    <table className={styles.table}>
+                      <thead>
+                        <tr>
+                          <th className={styles.thLeft}>Player</th>
+                          <th className={styles.thLeft}>Team</th>
+                          <th className={styles.thLeft}>Pos</th>
+                          <th className={styles.thLeft}>Opp</th>
+                          <th className={styles.thRight}>GR</th>
+                          <th className={styles.thRight}>PTS</th>
+                          <th className={styles.thRight}>SOG</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {visibleProjectionRows.map((row) => (
+                          <tr key={row.player_id}>
+                            <td className={styles.tdLeft}>{row.player_name}</td>
+                            <td className={styles.tdLeft}>{row.team_name}</td>
+                            <td className={styles.tdLeft}>{row.position}</td>
+                            <td className={styles.tdLeft}>
+                              {row.opponent ?? "—"}
+                            </td>
+                            <td className={styles.tdRight}>
+                              {row.gamesRemaining ?? "—"}
+                            </td>
+                            <td className={styles.tdRight}>
+                              {row.pts.toFixed(2)}
+                            </td>
+                            <td className={styles.tdRight}>
+                              {row.sog.toFixed(2)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </>
+                )}
+              </div>
+            </section>
+
+            <section id="goalie-starts" className={styles.panel}>
+              <div className={styles.panelHeader}>
+                <h2 className={styles.panelTitle}>Goalie Starts</h2>
+                <span className={styles.panelMeta}>Top 8</span>
+              </div>
+              <div className={styles.panelBody}>
+                {error && goalieRows.length === 0 ? (
+                  <p className={styles.errorText}>
+                    Failed to load goalie starts: {error.message}
+                  </p>
+                ) : goalieRows.length === 0 && isLoading ? (
+                  <p className={styles.loadingText}>Loading goalie starts…</p>
+                ) : goalieRows.length === 0 ? (
+                  <p className={styles.emptyText}>
+                    No goalie start data available for this date.
+                  </p>
+                ) : (
+                  <>
+                    {isLoading && (
+                      <p className={styles.refreshText}>
+                        Refreshing goalie starts…
+                      </p>
+                    )}
+                    <table className={styles.table}>
+                      <thead>
+                        <tr>
+                          <th className={styles.thLeft}>Goalie</th>
+                          <th className={styles.thLeft}>Matchup</th>
+                          <th className={styles.thRight}>Start</th>
+                          <th className={styles.thRight}>Win</th>
+                          <th className={styles.thRight}>SO</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {visibleGoalieRows.map((row) => (
+                          <tr key={row.goalieId}>
+                            <td className={styles.tdLeft}>{row.name}</td>
+                            <td className={styles.tdLeft}>
+                              {row.team} vs {row.opponent}
+                            </td>
+                            <td className={styles.tdRight}>
+                              {row.startProb !== null
+                                ? `${(row.startProb * 100).toFixed(0)}%`
+                                : "—"}
+                            </td>
+                            <td className={styles.tdRight}>
+                              {row.winProb !== null
+                                ? `${(row.winProb * 100).toFixed(0)}%`
+                                : "—"}
+                            </td>
+                            <td className={styles.tdRight}>
+                              {row.shutoutProb !== null
+                                ? `${(row.shutoutProb * 100).toFixed(0)}%`
+                                : "—"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </>
+                )}
+              </div>
+            </section>
+
+            <section id="team-trends" className={styles.panel}>
+              <div className={styles.panelHeader}>
+                <h2 className={styles.panelTitle}>Team Trends</h2>
+                <div className={styles.tabRow}>
+                  {TEAM_TREND_CATEGORIES.map((category) => (
                     <button
-                      key={count}
+                      key={category.id}
                       type="button"
-                      className={`${styles.windowButton} ${skaterLimit === count ? styles.windowActive : ""}`}
-                      aria-pressed={skaterLimit === count}
-                      onClick={() => setSkaterLimit(count)}
+                      onClick={() => setTeamCategory(category.id)}
+                      disabled={teamCategory === category.id}
+                      className={styles.tabButton}
                     >
-                      Top {count}
+                      {category.label}
                     </button>
                   ))}
                 </div>
               </div>
-            </div>
+              <div className={styles.panelBody}>
+                {error && teamTrendSeries.series.length === 0 ? (
+                  <p className={styles.errorText}>
+                    Failed to load team trends: {error.message}
+                  </p>
+                ) : teamTrendSeries.series.length === 0 && isLoading ? (
+                  <p className={styles.loadingText}>Loading trend charts…</p>
+                ) : teamTrendSeries.series.length === 0 ? (
+                  <p className={styles.emptyText}>No trend history yet.</p>
+                ) : (
+                  <>
+                    {isLoading && (
+                      <p className={styles.refreshText}>
+                        Refreshing trend charts…
+                      </p>
+                    )}
+                    <ResponsiveContainer width="100%" height={220}>
+                      <LineChart data={teamTrendSeries.series}>
+                        <XAxis dataKey="gp" />
+                        <YAxis domain={[0, 100]} />
+                        <Tooltip />
+                        <Legend />
+                        {teamTrendSeries.teams.map((team, idx) => (
+                          <Line
+                            key={team}
+                            type="monotone"
+                            dataKey={team}
+                            dot={false}
+                            stroke={getChartColor(idx)}
+                          />
+                        ))}
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </>
+                )}
+              </div>
+            </section>
 
-            <div
-              className={styles.dashboardContent}
-              role="region"
-              aria-label="Skater chart"
-            >
-              {skaterTrendsError && (
-                <div className={styles.teamError}>{skaterTrendsError}</div>
-              )}
-              {skaterTrendsLoading ? (
-                <div className={styles.teamLoading}>Loading skater trends…</div>
-              ) : (
-                (() => {
-                  const category = SKATER_TREND_CATEGORIES.find(
-                    (c) => c.id === activeSkaterCategory
-                  )!;
-                  const categoryResult =
-                    skaterTrends?.categories?.[activeSkaterCategory] ??
-                    emptySkaterResult;
-                  const playerMetadata = skaterTrends?.playerMetadata ?? {};
-                  return (
-                    <div className={styles.trendGrid}>
-                      <SkaterRankingTable
-                        config={category}
-                        result={categoryResult}
-                        playerMetadata={playerMetadata}
-                      />
-                      <SkaterCategoryChartCard
-                        config={category}
-                        result={categoryResult}
-                        playerMetadata={playerMetadata}
-                        large
-                      />
-                    </div>
-                  );
-                })()
-              )}
-            </div>
-          </>
-        )}
+            <section id="skater-trends" className={styles.panel}>
+              <div className={styles.panelHeader}>
+                <h2 className={styles.panelTitle}>Skater Trends</h2>
+                <div className={styles.tabRow}>
+                  {SKATER_TREND_CATEGORIES.map((category) => (
+                    <button
+                      key={category.id}
+                      type="button"
+                      onClick={() => setSkaterCategory(category.id)}
+                      disabled={skaterCategory === category.id}
+                      className={styles.tabButton}
+                    >
+                      {category.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className={styles.panelBody}>
+                <div className={styles.tabRow}>
+                  {(["forward", "defense", "all"] as SkaterPositionGroup[]).map(
+                    (group) => (
+                      <button
+                        key={group}
+                        type="button"
+                        onClick={() => setSkaterPosition(group)}
+                        disabled={skaterPosition === group}
+                        className={styles.tabButton}
+                      >
+                        {group === "all"
+                          ? "All"
+                          : group === "forward"
+                            ? "Forwards"
+                            : "Defense"}
+                      </button>
+                    )
+                  )}
+                  {([1, 3, 5, 10] as SkaterWindowSize[]).map((windowSize) => (
+                    <button
+                      key={windowSize}
+                      type="button"
+                      onClick={() => setSkaterWindow(windowSize)}
+                      disabled={skaterWindow === windowSize}
+                      className={styles.tabButton}
+                    >
+                      {windowSize} GP
+                    </button>
+                  ))}
+                </div>
+                {error && skaterTrendSeries.series.length === 0 ? (
+                  <p className={styles.errorText}>
+                    Failed to load skater trends: {error.message}
+                  </p>
+                ) : skaterTrendSeries.series.length === 0 && isLoading ? (
+                  <p className={styles.loadingText}>Loading skater trends…</p>
+                ) : skaterTrendSeries.series.length === 0 ? (
+                  <p className={styles.emptyText}>
+                    No skater trend history yet.
+                  </p>
+                ) : (
+                  <>
+                    {isLoading && (
+                      <p className={styles.refreshText}>
+                        Refreshing skater trends…
+                      </p>
+                    )}
+                    <ResponsiveContainer width="100%" height={220}>
+                      <LineChart data={skaterTrendSeries.series}>
+                        <XAxis dataKey="gp" />
+                        <YAxis domain={[0, 100]} />
+                        <Tooltip />
+                        <Legend />
+                        {skaterTrendSeries.players.map((playerId, idx) => (
+                          <Line
+                            key={playerId}
+                            type="monotone"
+                            dataKey={playerId}
+                            dot={false}
+                            stroke={getChartColor(idx)}
+                          />
+                        ))}
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </>
+                )}
+              </div>
+            </section>
+          </div>
+        </main>
       </div>
-    </div>
+    </>
   );
-}
+};
+
+export default TrendsDashboardPage;
+
+export const getServerSideProps: GetServerSideProps<
+  TrendsPageProps
+> = async () => {
+  const date = getTodayEt();
+  const initialTeamRatings = await fetchTeamRatings(date);
+  return {
+    props: {
+      initialDate: date,
+      initialTeamRatings
+    }
+  };
+};
