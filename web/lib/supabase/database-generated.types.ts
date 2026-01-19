@@ -535,7 +535,9 @@ export type Database = {
           opponent_team_id: number;
           proj_goals_allowed: number | null;
           proj_saves: number | null;
+          proj_shutout_prob: number | null;
           proj_shots_against: number | null;
+          proj_win_prob: number | null;
           run_id: string;
           starter_probability: number | null;
           team_id: number;
@@ -551,7 +553,9 @@ export type Database = {
           opponent_team_id: number;
           proj_goals_allowed?: number | null;
           proj_saves?: number | null;
+          proj_shutout_prob?: number | null;
           proj_shots_against?: number | null;
+          proj_win_prob?: number | null;
           run_id: string;
           starter_probability?: number | null;
           team_id: number;
@@ -567,7 +571,9 @@ export type Database = {
           opponent_team_id?: number;
           proj_goals_allowed?: number | null;
           proj_saves?: number | null;
+          proj_shutout_prob?: number | null;
           proj_shots_against?: number | null;
+          proj_win_prob?: number | null;
           run_id?: string;
           starter_probability?: number | null;
           team_id?: number;
@@ -1015,6 +1021,42 @@ export type Database = {
           player_id?: number;
           player_type?: string;
           rmse?: number;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      forge_projection_accuracy_stat_daily: {
+        Row: {
+          date: string;
+          error_abs_sum: number;
+          error_sq_sum: number;
+          mae: number;
+          player_count: number;
+          rmse: number;
+          scope: string;
+          stat_key: string;
+          updated_at: string;
+        };
+        Insert: {
+          date: string;
+          error_abs_sum: number;
+          error_sq_sum: number;
+          mae: number;
+          player_count: number;
+          rmse: number;
+          scope: string;
+          stat_key: string;
+          updated_at?: string;
+        };
+        Update: {
+          date?: string;
+          error_abs_sum?: number;
+          error_sq_sum?: number;
+          mae?: number;
+          player_count?: number;
+          rmse?: number;
+          scope?: string;
+          stat_key?: string;
           updated_at?: string;
         };
         Relationships: [];

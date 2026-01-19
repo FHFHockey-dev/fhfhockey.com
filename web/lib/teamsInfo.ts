@@ -246,7 +246,7 @@ export const teamsInfo: {
     secondaryColor: "#C8102E", // Red
     jersey: "#FFFFFF", // White
     accent: "#A2AAAD", // Silver
-    lightColor: "#103a75", // Lighter Blue
+    lightColor: "#1352aa", // Lighter Blue
     darkColor: "#011f4a", // Darker Blue
     alt: "#103a75",
     franchiseId: 24,
@@ -450,7 +450,7 @@ export const teamsInfo: {
   CBJ: {
     name: "Columbus Blue Jackets",
     shortName: "Blue Jackets",
-    primaryColor: "#  ", // Blue
+    primaryColor: "#041E42", // Navy
     secondaryColor: "#7DA1C4", // Light Blue
     jersey: "#ffffff", // White
     accent: "#c8102e", // Red

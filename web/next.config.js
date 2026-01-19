@@ -3,6 +3,7 @@ const isProd = process.env.NODE_ENV === "production";
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  cleanDistDir: false, // Prevent Next.js from cleaning the dist directory to avoid conflicts with iCloud
   images: {
     // If the image optimizer is failing in dev (common when sharp/libvips mismatches),
     // bypass it so local development isn't blocked.
@@ -32,6 +33,7 @@ const nextConfig = {
     ]
   },
   reactStrictMode: true,
+  // swcMinify: false, // Default is true, sticking to standard
   experimental: {
     externalDir: true
   },

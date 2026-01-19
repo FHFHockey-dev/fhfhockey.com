@@ -395,6 +395,10 @@ export default function StartChartPage() {
         <title>Start Chart</title>
       </Head>
 
+      <div style={{ marginBottom: "1rem" }}>
+        <a href="/trends">Visit the unified dashboard →</a>
+      </div>
+
       <section className={styles.chartPanel}>
         <div className={styles.chartHeader}>
           <div className={styles.chartTitle}>CTPI Pulse</div>

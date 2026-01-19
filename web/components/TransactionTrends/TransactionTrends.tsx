@@ -100,6 +100,9 @@ export default function TransactionTrends() {
   const [data, setData] = useState<ApiResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [activeTable, setActiveTable] = useState<"risers" | "fallers">(
+    "risers"
+  );
 
   useEffect(() => {
     let active = true;
@@ -135,6 +138,10 @@ export default function TransactionTrends() {
   useEffect(() => {
     setOffset(0);
   }, [windowDays, pos]);
+
+  useEffect(() => {
+    setOffset(0);
+  }, [activeTable]);
 
   return (
     <section
@@ -184,238 +191,424 @@ export default function TransactionTrends() {
       )}
       {error && <div className={styles.errorMsg}>{error}</div>}
       {data && (
-        <div className={styles.tablesWrapper}>
-          <div className={`${styles.panel} ${styles.risersPanel}`}>
-            <h3 className={styles.tableTitle}>
-              Top Risers (% Change Δ {data.windowDays}D)
-            </h3>
-            <table
-              className={styles.dataTable}
-              aria-label="Top ownership risers"
-            >
-              <thead>
-                <tr>
-                  <th scope="col" className={styles.rankCell}>
-                    #
-                  </th>
-                  <th scope="col">Player</th>
-                  <th scope="col" className={styles.ownCellHeader}>
-                    Own
-                  </th>
-                  <th scope="col" className={styles.sparkCell}>
-                    Trend
-                  </th>
-                  <th scope="col" style={{ textAlign: "right" }}>
-                    % Change Δ
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.risers.map((p, idx) => (
-                  <tr key={p.playerKey} className={styles.riseRow}>
-                    <th scope="row" className={styles.rankCell}>
-                      {offset + idx + 1}
+        <>
+          <div className={`${styles.tablesWrapper} ${styles.desktopTables}`}>
+            <div className={`${styles.panel} ${styles.risersPanel}`}>
+              <h3 className={styles.tableTitle}>
+                Top Risers (% Change Δ {data.windowDays}D)
+              </h3>
+              <table
+                className={styles.dataTable}
+                aria-label="Top ownership risers"
+              >
+                <thead>
+                  <tr>
+                    <th scope="col" className={styles.rankCell}>
+                      #
                     </th>
-                    <td className={styles.playerCell}>
-                      <div className={styles.rowBox}>
-                        {p.headshot ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={p.headshot}
-                            alt=""
-                            className={styles.headshot}
-                            loading="lazy"
-                          />
-                        ) : (
-                          <div
-                            className={styles.headshot}
-                            style={{ background: "#333" }}
-                          />
-                        )}
-                        <div className={styles.playerTextWrap}>
-                          <span className={styles.playerText}>
-                            <span className={styles.playerName}>{p.name}</span>
-                            {(p.displayPosition ||
-                              p.teamFullName ||
-                              p.teamAbbrev ||
-                              p.eligiblePositions ||
-                              p.uniformNumber !== undefined) && (
-                              <span
-                                className={`${styles.playerMeta} ${p.teamAbbrev ? styles.hasAbbrev : ""}`}
-                              >
-                                {Array.isArray(p.eligiblePositions) &&
-                                p.eligiblePositions.length
-                                  ? p.eligiblePositions.join(", ")
-                                  : p.displayPosition || ""}
-                                {(p.teamFullName || p.teamAbbrev) &&
-                                (p.displayPosition ||
-                                  (p.eligiblePositions &&
-                                    p.eligiblePositions.length))
-                                  ? " • "
-                                  : ""}
-                                {p.teamFullName ? (
-                                  <span className={styles.teamFullName}>
-                                    {p.teamFullName}
-                                  </span>
-                                ) : null}
-                                {p.teamAbbrev ? (
-                                  <span className={styles.teamAbbrev}>
-                                    {p.teamAbbrev}
-                                  </span>
-                                ) : null}
-                                {typeof p.uniformNumber === "number"
-                                  ? ` • #${p.uniformNumber}`
-                                  : ""}
-                              </span>
-                            )}
-                          </span>
+                    <th scope="col">Player</th>
+                    <th scope="col" className={styles.ownCellHeader}>
+                      Own
+                    </th>
+                    <th scope="col" className={styles.sparkCell}>
+                      Trend
+                    </th>
+                    <th scope="col" style={{ textAlign: "right" }}>
+                      % Change Δ
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.risers.map((p, idx) => (
+                    <tr key={p.playerKey} className={styles.riseRow}>
+                      <th scope="row" className={styles.rankCell}>
+                        {offset + idx + 1}
+                      </th>
+                      <td className={styles.playerCell}>
+                        <div className={styles.rowBox}>
+                          {p.headshot ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={p.headshot}
+                              alt=""
+                              className={styles.headshot}
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div
+                              className={styles.headshot}
+                              style={{ background: "#333" }}
+                            />
+                          )}
+                          <div className={styles.playerTextWrap}>
+                            <span className={styles.playerText}>
+                              <span className={styles.playerName}>{p.name}</span>
+                              {(p.displayPosition ||
+                                p.teamFullName ||
+                                p.teamAbbrev ||
+                                p.eligiblePositions ||
+                                p.uniformNumber !== undefined) && (
+                                <span
+                                  className={`${styles.playerMeta} ${p.teamAbbrev ? styles.hasAbbrev : ""}`}
+                                >
+                                  {Array.isArray(p.eligiblePositions) &&
+                                  p.eligiblePositions.length
+                                    ? p.eligiblePositions.join(", ")
+                                    : p.displayPosition || ""}
+                                  {(p.teamFullName || p.teamAbbrev) &&
+                                  (p.displayPosition ||
+                                    (p.eligiblePositions &&
+                                      p.eligiblePositions.length))
+                                    ? " • "
+                                    : ""}
+                                  {p.teamFullName ? (
+                                    <span className={styles.teamFullName}>
+                                      {p.teamFullName}
+                                    </span>
+                                  ) : null}
+                                  {p.teamAbbrev ? (
+                                    <span className={styles.teamAbbrev}>
+                                      {p.teamAbbrev}
+                                    </span>
+                                  ) : null}
+                                  {typeof p.uniformNumber === "number"
+                                    ? ` • #${p.uniformNumber}`
+                                    : ""}
+                                </span>
+                              )}
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className={styles.ownCell}>
-                      <div className={`${styles.neonBox} ${styles.rise}`}>
-                        {p.latest.toFixed(1)}%
-                      </div>
-                    </td>
-                    <td className={styles.sparkCell}>
-                      <div className={`${styles.neonBox} ${styles.rise}`}>
-                        <Spark points={p.sparkline} variant="rise" />
-                      </div>
-                    </td>
-                    <td className={styles.deltaCell}>
-                      <div
-                        className={`${styles.neonBox} ${styles.rise} ${styles.deltaBox}`}
-                      >
-                        <div className={styles.deltaSparkBackdrop}>
+                      </td>
+                      <td className={styles.ownCell}>
+                        <div className={`${styles.neonBox} ${styles.rise}`}>
+                          {p.latest.toFixed(1)}%
+                        </div>
+                      </td>
+                      <td className={styles.sparkCell}>
+                        <div className={`${styles.neonBox} ${styles.rise}`}>
                           <Spark points={p.sparkline} variant="rise" />
                         </div>
-                        <div className={styles.deltaContent}>
-                          {p.delta > 0
-                            ? `+${p.delta.toFixed(1)}%`
-                            : `${p.delta.toFixed(1)}%`}
+                      </td>
+                      <td className={styles.deltaCell}>
+                        <div
+                          className={`${styles.neonBox} ${styles.rise} ${styles.deltaBox}`}
+                        >
+                          <div className={styles.deltaSparkBackdrop}>
+                            <Spark points={p.sparkline} variant="rise" />
+                          </div>
+                          <div className={styles.deltaContent}>
+                            {p.delta > 0
+                              ? `+${p.delta.toFixed(1)}%`
+                              : `${p.delta.toFixed(1)}%`}
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className={`${styles.panel} ${styles.fallersPanel}`}>
-            <h3 className={styles.tableTitle}>
-              Top Fallers (% Change Δ {data.windowDays}D)
-            </h3>
-            <table
-              className={styles.dataTable}
-              aria-label="Top ownership fallers"
-            >
-              <thead>
-                <tr>
-                  <th scope="col" className={styles.rankCell}>
-                    #
-                  </th>
-                  <th scope="col">Player</th>
-                  <th scope="col" className={styles.ownCellHeader}>
-                    Own
-                  </th>
-                  <th scope="col" className={styles.sparkCell}>
-                    Trend
-                  </th>
-                  <th scope="col" style={{ textAlign: "right" }}>
-                    % Change Δ
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.fallers.map((p, idx) => (
-                  <tr key={p.playerKey} className={styles.fallRow}>
-                    <th scope="row" className={styles.rankCell}>
-                      {offset + idx + 1}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className={`${styles.panel} ${styles.fallersPanel}`}>
+              <h3 className={styles.tableTitle}>
+                Top Fallers (% Change Δ {data.windowDays}D)
+              </h3>
+              <table
+                className={styles.dataTable}
+                aria-label="Top ownership fallers"
+              >
+                <thead>
+                  <tr>
+                    <th scope="col" className={styles.rankCell}>
+                      #
                     </th>
-                    <td className={styles.playerCell}>
-                      <div className={styles.rowBox}>
-                        {p.headshot ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={p.headshot}
-                            alt=""
-                            className={styles.headshot}
-                            loading="lazy"
-                          />
-                        ) : (
-                          <div
-                            className={styles.headshot}
-                            style={{ background: "#333" }}
-                          />
-                        )}
-                        <div className={styles.playerTextWrap}>
-                          <span className={styles.playerText}>
-                            <span className={styles.playerName}>{p.name}</span>
-                            {(p.displayPosition ||
-                              p.teamFullName ||
-                              p.teamAbbrev ||
-                              p.eligiblePositions ||
-                              p.uniformNumber !== undefined) && (
-                              <span
-                                className={`${styles.playerMeta} ${p.teamAbbrev ? styles.hasAbbrev : ""}`}
-                              >
-                                {Array.isArray(p.eligiblePositions) &&
-                                p.eligiblePositions.length
-                                  ? p.eligiblePositions.join(", ")
-                                  : p.displayPosition || ""}
-                                {(p.teamFullName || p.teamAbbrev) &&
-                                (p.displayPosition ||
-                                  (p.eligiblePositions &&
-                                    p.eligiblePositions.length))
-                                  ? " • "
-                                  : ""}
-                                {p.teamFullName ? (
-                                  <span className={styles.teamFullName}>
-                                    {p.teamFullName}
-                                  </span>
-                                ) : null}
-                                {p.teamAbbrev ? (
-                                  <span className={styles.teamAbbrev}>
-                                    {p.teamAbbrev}
-                                  </span>
-                                ) : null}
-                                {typeof p.uniformNumber === "number"
-                                  ? ` • #${p.uniformNumber}`
-                                  : ""}
-                              </span>
-                            )}
-                          </span>
+                    <th scope="col">Player</th>
+                    <th scope="col" className={styles.ownCellHeader}>
+                      Own
+                    </th>
+                    <th scope="col" className={styles.sparkCell}>
+                      Trend
+                    </th>
+                    <th scope="col" style={{ textAlign: "right" }}>
+                      % Change Δ
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.fallers.map((p, idx) => (
+                    <tr key={p.playerKey} className={styles.fallRow}>
+                      <th scope="row" className={styles.rankCell}>
+                        {offset + idx + 1}
+                      </th>
+                      <td className={styles.playerCell}>
+                        <div className={styles.rowBox}>
+                          {p.headshot ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={p.headshot}
+                              alt=""
+                              className={styles.headshot}
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div
+                              className={styles.headshot}
+                              style={{ background: "#333" }}
+                            />
+                          )}
+                          <div className={styles.playerTextWrap}>
+                            <span className={styles.playerText}>
+                              <span className={styles.playerName}>{p.name}</span>
+                              {(p.displayPosition ||
+                                p.teamFullName ||
+                                p.teamAbbrev ||
+                                p.eligiblePositions ||
+                                p.uniformNumber !== undefined) && (
+                                <span
+                                  className={`${styles.playerMeta} ${p.teamAbbrev ? styles.hasAbbrev : ""}`}
+                                >
+                                  {Array.isArray(p.eligiblePositions) &&
+                                  p.eligiblePositions.length
+                                    ? p.eligiblePositions.join(", ")
+                                    : p.displayPosition || ""}
+                                  {(p.teamFullName || p.teamAbbrev) &&
+                                  (p.displayPosition ||
+                                    (p.eligiblePositions &&
+                                      p.eligiblePositions.length))
+                                    ? " • "
+                                    : ""}
+                                  {p.teamFullName ? (
+                                    <span className={styles.teamFullName}>
+                                      {p.teamFullName}
+                                    </span>
+                                  ) : null}
+                                  {p.teamAbbrev ? (
+                                    <span className={styles.teamAbbrev}>
+                                      {p.teamAbbrev}
+                                    </span>
+                                  ) : null}
+                                  {typeof p.uniformNumber === "number"
+                                    ? ` • #${p.uniformNumber}`
+                                    : ""}
+                                </span>
+                              )}
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className={styles.ownCell}>
-                      <div className={`${styles.neonBox} ${styles.fall}`}>
-                        {p.latest.toFixed(1)}%
-                      </div>
-                    </td>
-                    <td className={styles.sparkCell}>
-                      <div className={`${styles.neonBox} ${styles.fall}`}>
-                        <Spark points={p.sparkline} variant="fall" />
-                      </div>
-                    </td>
-                    <td className={styles.deltaCell}>
-                      <div
-                        className={`${styles.neonBox} ${styles.fall} ${styles.deltaBox}`}
-                      >
-                        <div className={styles.deltaSparkBackdrop}>
+                      </td>
+                      <td className={styles.ownCell}>
+                        <div className={`${styles.neonBox} ${styles.fall}`}>
+                          {p.latest.toFixed(1)}%
+                        </div>
+                      </td>
+                      <td className={styles.sparkCell}>
+                        <div className={`${styles.neonBox} ${styles.fall}`}>
                           <Spark points={p.sparkline} variant="fall" />
                         </div>
-                        <div className={styles.deltaContent}>
-                          {p.delta.toFixed(1)}%
+                      </td>
+                      <td className={styles.deltaCell}>
+                        <div
+                          className={`${styles.neonBox} ${styles.fall} ${styles.deltaBox}`}
+                        >
+                          <div className={styles.deltaSparkBackdrop}>
+                            <Spark points={p.sparkline} variant="fall" />
+                          </div>
+                          <div className={styles.deltaContent}>
+                            {p.delta.toFixed(1)}%
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+          <div className={`${styles.tablesWrapper} ${styles.mobileTabs}`}>
+            <div
+              className={`${styles.panel} ${
+                activeTable === "risers"
+                  ? styles.risersPanel
+                  : styles.fallersPanel
+              }`}
+            >
+              <div className={styles.tableTabs} role="tablist">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTable === "risers"}
+                  className={`${styles.tabButton} ${styles.riseTab} ${
+                    activeTable === "risers" ? "active" : ""
+                  }`}
+                  onClick={() => setActiveTable("risers")}
+                >
+                  Risers
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTable === "fallers"}
+                  className={`${styles.tabButton} ${styles.fallTab} ${
+                    activeTable === "fallers" ? "active" : ""
+                  }`}
+                  onClick={() => setActiveTable("fallers")}
+                >
+                  Fallers
+                </button>
+              </div>
+              <h3 className={styles.tableTitle}>
+                {activeTable === "risers"
+                  ? `Top Risers (% Change Δ ${data.windowDays}D)`
+                  : `Top Fallers (% Change Δ ${data.windowDays}D)`}
+              </h3>
+              <table
+                className={styles.dataTable}
+                aria-label={
+                  activeTable === "risers"
+                    ? "Top ownership risers"
+                    : "Top ownership fallers"
+                }
+              >
+                <thead>
+                  <tr>
+                    <th scope="col" className={styles.rankCell}>
+                      #
+                    </th>
+                    <th scope="col">Player</th>
+                    <th scope="col" className={styles.ownCellHeader}>
+                      Own
+                    </th>
+                    <th scope="col" className={styles.sparkCell}>
+                      Trend
+                    </th>
+                    <th scope="col" style={{ textAlign: "right" }}>
+                      % Change Δ
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(activeTable === "risers" ? data.risers : data.fallers).map(
+                    (p, idx) => (
+                      <tr key={p.playerKey}>
+                        <th scope="row" className={styles.rankCell}>
+                          {offset + idx + 1}
+                        </th>
+                        <td className={styles.playerCell}>
+                          <div className={styles.rowBox}>
+                            {p.headshot ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={p.headshot}
+                                alt=""
+                                className={styles.headshot}
+                                loading="lazy"
+                              />
+                            ) : (
+                              <div
+                                className={styles.headshot}
+                                style={{ background: "#333" }}
+                              />
+                            )}
+                            <div className={styles.playerTextWrap}>
+                              <span className={styles.playerText}>
+                                <span className={styles.playerName}>
+                                  {p.name}
+                                </span>
+                                {(p.displayPosition ||
+                                  p.teamFullName ||
+                                  p.teamAbbrev ||
+                                  p.eligiblePositions ||
+                                  p.uniformNumber !== undefined) && (
+                                  <span
+                                    className={`${styles.playerMeta} ${p.teamAbbrev ? styles.hasAbbrev : ""}`}
+                                  >
+                                    {Array.isArray(p.eligiblePositions) &&
+                                    p.eligiblePositions.length
+                                      ? p.eligiblePositions.join(", ")
+                                      : p.displayPosition || ""}
+                                    {(p.teamFullName || p.teamAbbrev) &&
+                                    (p.displayPosition ||
+                                      (p.eligiblePositions &&
+                                        p.eligiblePositions.length))
+                                      ? " • "
+                                      : ""}
+                                    {p.teamFullName ? (
+                                      <span className={styles.teamFullName}>
+                                        {p.teamFullName}
+                                      </span>
+                                    ) : null}
+                                    {p.teamAbbrev ? (
+                                      <span className={styles.teamAbbrev}>
+                                        {p.teamAbbrev}
+                                      </span>
+                                    ) : null}
+                                    {typeof p.uniformNumber === "number"
+                                      ? ` • #${p.uniformNumber}`
+                                      : ""}
+                                  </span>
+                                )}
+                              </span>
+                            </div>
+                          </div>
+                        </td>
+                        <td className={styles.ownCell}>
+                          <div
+                            className={`${styles.neonBox} ${
+                              activeTable === "risers"
+                                ? styles.rise
+                                : styles.fall
+                            }`}
+                          >
+                            {p.latest.toFixed(1)}%
+                          </div>
+                        </td>
+                        <td className={styles.sparkCell}>
+                          <div
+                            className={`${styles.neonBox} ${
+                              activeTable === "risers"
+                                ? styles.rise
+                                : styles.fall
+                            }`}
+                          >
+                            <Spark
+                              points={p.sparkline}
+                              variant={
+                                activeTable === "risers" ? "rise" : "fall"
+                              }
+                            />
+                          </div>
+                        </td>
+                        <td className={styles.deltaCell}>
+                          <div
+                            className={`${styles.neonBox} ${
+                              activeTable === "risers"
+                                ? styles.rise
+                                : styles.fall
+                            } ${styles.deltaBox}`}
+                          >
+                            <div className={styles.deltaSparkBackdrop}>
+                              <Spark
+                                points={p.sparkline}
+                                variant={
+                                  activeTable === "risers" ? "rise" : "fall"
+                                }
+                              />
+                            </div>
+                            <div className={styles.deltaContent}>
+                              {activeTable === "risers" && p.delta > 0
+                                ? `+${p.delta.toFixed(1)}%`
+                                : `${p.delta.toFixed(1)}%`}
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
       )}
       {data && (
         <div className={styles.pager} role="navigation" aria-label="Pagination">
@@ -442,10 +635,9 @@ export default function TransactionTrends() {
               onClick={() => setOffset((o) => o + limit)}
               disabled={
                 !!(
-                  data.totalRisers !== undefined &&
-                  offset + limit >= data.totalRisers &&
-                  data.totalFallers !== undefined &&
-                  offset + limit >= data.totalFallers
+                  (activeTable === "risers"
+                    ? data.totalRisers ?? data.risers.length
+                    : data.totalFallers ?? data.fallers.length) <= offset + limit
                 )
               }
             >

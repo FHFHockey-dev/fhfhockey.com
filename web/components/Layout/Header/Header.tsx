@@ -209,6 +209,7 @@ function Header() {
       >
         {/* logo */}
         <Link href="/" className={styles.logo}>
+          {/* Main Logo Image */}
           <Image
             src={LOGO}
             alt="FHFH logo"

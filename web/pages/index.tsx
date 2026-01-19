@@ -461,122 +461,147 @@ const Home: NextPage = ({
           </div>
           <div className={styles.gamesContainer}>
             {games.length > 0 ? (
-              games.map((game) => {
-                const homeTeam = game.homeTeam;
-                const homeTeamInfo = teamsInfo[homeTeam.abbrev] || {};
-                const awayTeam = game.awayTeam;
-                const awayTeamInfo = teamsInfo[awayTeam.abbrev] || {};
+              <>
+                <div className={styles.gameColumnLabels}>
+                  <span className={styles.homeLabel}>Home</span>
+                  <span className={styles.awayLabel}>Away</span>
+                </div>
+                {games.map((game) => {
+                  const homeTeam = game.homeTeam;
+                  const homeTeamInfo = teamsInfo[homeTeam.abbrev] || {};
+                  const awayTeam = game.awayTeam;
+                  const awayTeamInfo = teamsInfo[awayTeam.abbrev] || {};
 
-                if (!homeTeam?.abbrev || !awayTeam?.abbrev) return null;
+                  if (!homeTeam?.abbrev || !awayTeam?.abbrev) return null;
 
-                return (
-                  <Link
-                    key={game.id}
-                    href={`/game/${game.id}`}
-                    className={styles.gameLink}
-                    passHref
-                  >
-                    <div
-                      className={styles.combinedGameCard}
-                      style={
-                        {
-                          "--home-primary-color":
-                            homeTeamInfo.primaryColor || "#888888",
-                          "--home-secondary-color":
-                            homeTeamInfo.secondaryColor || "#555555",
-                          "--home-jersey-color":
-                            homeTeamInfo.jersey || "#cccccc",
-                          "--away-primary-color":
-                            awayTeamInfo.primaryColor || "#888888",
-                          "--away-secondary-color":
-                            awayTeamInfo.secondaryColor || "#555555",
-                          "--away-jersey-color":
-                            awayTeamInfo.jersey || "#cccccc"
-                        } as React.CSSProperties
-                      }
+                  return (
+                    <Link
+                      key={game.id}
+                      href={`/game/${game.id}`}
+                      className={styles.gameLink}
+                      passHref
                     >
                       <div
-                        className={styles.homeTeamLogo}
-                        title={`HOME ${homeTeam?.abbrev ?? ""} record: ${homeTeam?.record ?? "n/a"}`}
+                        className={styles.combinedGameCard}
+                        style={
+                          {
+                            "--home-primary-color":
+                              homeTeamInfo.primaryColor || "#888888",
+                            "--home-secondary-color":
+                              homeTeamInfo.secondaryColor || "#555555",
+                            "--home-jersey-color":
+                              homeTeamInfo.jersey || "#cccccc",
+                            "--away-primary-color":
+                              awayTeamInfo.primaryColor || "#888888",
+                            "--away-secondary-color":
+                              awayTeamInfo.secondaryColor || "#555555",
+                            "--away-jersey-color":
+                              awayTeamInfo.jersey || "#cccccc",
+                            "--home-primary-light-color":
+                              homeTeamInfo.lightColor || "#aaaaaa",
+                            "--away-primary-light-color":
+                              awayTeamInfo.lightColor || "#aaaaaa"
+                          } as React.CSSProperties
+                        }
                       >
-                        <div className={styles.homeAwayLabel}>HOME</div>
-                        <OptimizedImage
-                          src={getTeamLogoSvg(homeTeam.abbrev)}
-                          className={styles.leftImage}
-                          alt={`${homeTeam.abbrev} logo`}
-                          width={70}
-                          height={70}
-                          priority={false}
-                          fallbackSrc={fallbackNHLLogo}
-                        />
-                        <div className={styles.teamRecord}>
+                        <div
+                          className={styles.homeTeamLogo}
+                          title={`HOME ${homeTeam?.abbrev ?? ""} record: ${homeTeam?.record ?? "n/a"}`}
+                        >
+                          <div className={styles.homeAwayLabel}>HOME</div>
+                          <OptimizedImage
+                            src={getTeamLogoSvg(homeTeam.abbrev)}
+                            className={styles.leftImage}
+                            alt={`${homeTeam.abbrev} logo`}
+                            width={70}
+                            height={70}
+                            priority={false}
+                            fallbackSrc={fallbackNHLLogo}
+                          />
+                          <div className={styles.teamRecord}>
+                            {typeof homeTeam?.record === "string"
+                              ? homeTeam.record
+                              : ""}
+                          </div>
+                        </div>
+                        <div
+                          className={`${styles.teamRecordMobile} ${styles.homeRecord}`}
+                        >
                           {typeof homeTeam?.record === "string"
                             ? homeTeam.record
                             : ""}
                         </div>
-                      </div>
-                      <div className={styles.gameTimeSection}>
-                        <div className={styles.homeScore}>
-                          {homeTeam.score ?? "-"}
-                        </div>
-                        <div className={styles.gameTimeInfo}>
-                          <span className={styles.gameState}>
-                            {game.gameState === "LIVE"
-                              ? formatPeriodText(
-                                  game?.periodDescriptor?.number ??
-                                    game?.period,
-                                  game?.periodDescriptor?.periodType ??
-                                    game?.periodType,
-                                  game?.clock &&
-                                    game.clock.inIntermission !== undefined
-                                    ? game.clock.inIntermission
-                                    : (game as any)?.inIntermission
-                                )
-                              : getDisplayGameState(game.gameState)}
-                          </span>
-                          <ClientOnly>
-                            <span className={styles.gameTimeText}>
+                        <div className={styles.gameTimeSection}>
+                          <div className={styles.homeScore}>
+                            {homeTeam.score ?? "-"}
+                          </div>
+                          <div className={styles.gameTimeInfo}>
+                            <span className={styles.gameState}>
                               {game.gameState === "LIVE"
-                                ? !(game?.clock &&
-                                  game.clock.inIntermission !== undefined
-                                    ? game.clock.inIntermission
-                                    : (game as any)?.inIntermission)
-                                  ? (game?.clock && game.clock.timeRemaining) ||
-                                    (game as any)?.timeRemaining ||
-                                    "--:--"
-                                  : ""
-                                : formatLocalStartTime(game.startTimeUTC)}
+                                ? formatPeriodText(
+                                    game?.periodDescriptor?.number ??
+                                      game?.period,
+                                    game?.periodDescriptor?.periodType ??
+                                      game?.periodType,
+                                    game?.clock &&
+                                      game.clock.inIntermission !== undefined
+                                      ? game.clock.inIntermission
+                                      : (game as any)?.inIntermission
+                                  )
+                                : getDisplayGameState(game.gameState)}
                             </span>
-                          </ClientOnly>
+                            <ClientOnly>
+                              <span className={styles.gameTimeText}>
+                                {game.gameState === "LIVE"
+                                  ? !(game?.clock &&
+                                    game.clock.inIntermission !== undefined
+                                      ? game.clock.inIntermission
+                                      : (game as any)?.inIntermission)
+                                    ? (game?.clock &&
+                                        game.clock.timeRemaining) ||
+                                      (game as any)?.timeRemaining ||
+                                      "--:--"
+                                    : ""
+                                  : formatLocalStartTime(game.startTimeUTC)}
+                              </span>
+                            </ClientOnly>
+                          </div>
+                          <div className={styles.awayScore}>
+                            {awayTeam.score ?? "-"}
+                          </div>
                         </div>
-                        <div className={styles.awayScore}>
-                          {awayTeam.score ?? "-"}
-                        </div>
-                      </div>
-                      <div
-                        className={styles.awayTeamLogo}
-                        title={`AWAY ${awayTeam?.abbrev ?? ""} record: ${awayTeam?.record ?? "n/a"}`}
-                      >
-                        <div className={styles.homeAwayLabel}>AWAY</div>
-                        <OptimizedImage
-                          src={getTeamLogoSvg(awayTeam.abbrev)}
-                          className={styles.rightImage}
-                          alt={`${awayTeam.abbrev} logo`}
-                          width={70}
-                          height={70}
-                          priority={false}
-                          fallbackSrc={fallbackNHLLogo}
-                        />
-                        <div className={styles.teamRecord}>
+                        <div
+                          className={`${styles.teamRecordMobile} ${styles.awayRecord}`}
+                        >
                           {typeof awayTeam?.record === "string"
                             ? awayTeam.record
                             : ""}
                         </div>
+                        <div
+                          className={styles.awayTeamLogo}
+                          title={`AWAY ${awayTeam?.abbrev ?? ""} record: ${awayTeam?.record ?? "n/a"}`}
+                        >
+                          <div className={styles.homeAwayLabel}>AWAY</div>
+                          <OptimizedImage
+                            src={getTeamLogoSvg(awayTeam.abbrev)}
+                            className={styles.rightImage}
+                            alt={`${awayTeam.abbrev} logo`}
+                            width={70}
+                            height={70}
+                            priority={false}
+                            fallbackSrc={fallbackNHLLogo}
+                          />
+                          <div className={styles.teamRecord}>
+                            {typeof awayTeam?.record === "string"
+                              ? awayTeam.record
+                              : ""}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </Link>
-                );
-              })
+                    </Link>
+                  );
+                })}
+              </>
             ) : (
               <p className={styles.noGamesMessage}>
                 No games scheduled for{" "}
