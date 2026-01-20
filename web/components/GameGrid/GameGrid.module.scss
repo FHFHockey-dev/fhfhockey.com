@@ -97,9 +97,6 @@
   @media (min-width: v.$breakpoint-desktop) {
     height: auto;
     margin-top: v.$space-lg; // visually "drops" main content below rails
-  }
-
-  @media (min-width: v.$breakpoint-desktop) {
     &::before,
     &::after {
       opacity: 1;
@@ -185,7 +182,6 @@
     flex-grow: 1; // Allow it to grow to fill height
     height: 100%; // Ensure it takes full height of parent
   }
-  height: 100%; // Force full height
 }
 
 // Bottom drawer (desktop): keeps BPA accessible without making the page a long scroll.
@@ -403,15 +399,15 @@
   width: 100%;
   padding-top: v.$space-xl;
 
+  // Legacy override block (kept, consolidated from a duplicate definition)
+  gap: v.$space-xxl;
+  padding-top: 30px;
+
   @media (min-width: v.$breakpoint-desktop) {
     flex-direction: row;
     gap: v.$space-lg;
     align-items: stretch;
   }
-
-  // Legacy override block (kept, consolidated from a duplicate definition)
-  gap: v.$space-xxl;
-  padding-top: 30px;
   @media (min-width: v.$breakpoint-desktop) {
     gap: v.$space-xxl;
   }
@@ -1321,8 +1317,8 @@
     min-height: 20px;
   }
   .mobileLogoSize {
-    width: 18px !important;
-    height: 18px !important;
+    width: 24px !important;
+    height: 24px !important;
   }
 
   .mobileCompactTable {
@@ -1367,8 +1363,8 @@
     padding: 1px !important;
   }
   .mobileCompactTable .matchupCell img {
-    max-width: 18px;
-    max-height: 18px;
+    max-width: 24px;
+    max-height: 24px;
   }
   .mobileCompactTable td[data-intensity] {
     // soften intensity backgrounds slightly for less visual noise
@@ -1387,8 +1383,6 @@
 // Shrink logos slightly for tighter appearance
 .mobileLogoSize {
   z-index: 1;
-  width: 20px !important;
-  height: 20px !important;
   width: 24px;
   height: 24px;
 }
@@ -1409,6 +1403,11 @@
   span {
     margin: auto;
     font-weight: 600;
+  }
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+    gap: 0;
   }
 }
 
@@ -2144,7 +2143,6 @@
   border-radius: 0; // OVERRIDE mixin's border-radius
   table-layout: fixed; // Keep columns consistent (paired with <colgroup>)
   // Do NOT override earlier border-spacing / transparent background (set in primary definition)
-  background: transparent;
   // Re-assert spacing so mixin or later overrides don't collapse gaps
   border-collapse: separate;
   border-spacing: 3px 2px;
@@ -2197,6 +2195,7 @@
 
     @media (max-width: 480px) {
       height: 30px;
+      font-family: v.$font-family-primary, sans-serif;
     }
 
     th {
@@ -2301,6 +2300,7 @@
       @media (max-width: 480px) {
         width: 100%;
         height: auto;
+        font-family: v.$font-family-primary, sans-serif;
       }
     }
 
@@ -2739,6 +2739,7 @@
       line-height: 1.05;
       box-sizing: border-box;
       position: relative; // allow subtle column separators
+      border-left: 1px solid rgba(255, 255, 255, 0.181);
     }
 
     th,
@@ -2787,17 +2788,17 @@
       box-shadow: none;
     }
 
-    // Subtle column separators to reduce visual noise but aid scanning
-    tbody td:not(:first-child)::after {
-      content: "";
-      position: absolute;
-      top: 6px;
-      bottom: 6px;
-      left: 0;
-      width: 1px;
-      background: rgba(255, 255, 255, 0.06);
-      pointer-events: none;
-    }
+    // // Subtle column separators to reduce visual noise but aid scanning
+    // tbody td:not(:first-child)::after {
+    //   content: "";
+    //   position: absolute;
+    //   top: 6px;
+    //   bottom: 6px;
+    //   left: 0;
+    //   width: 1px;
+    //   background: rgba(255, 255, 255, 0.06);
+    //   pointer-events: none;
+    // }
   }
 
   // Small mobile (<= 360px) - Modernized (consolidated from a duplicate selector block)
@@ -2911,6 +2912,12 @@
 .gridColOther {
   width: 8.6956522%;
 }
+.gridColMiddle {
+  width: 8.6956522%;
+}
+.gridColEnd {
+  width: 8.6956522%;
+}
 
 // --- Condensed Mode Styles ---
 .condensed {
@@ -2992,6 +2999,8 @@
     z-index: 4;
   }
 
+
+
   @media (min-width: v.$breakpoint-desktop) {
     .desktopTeamAbbreviation {
       display: inline-block;
@@ -3029,6 +3038,12 @@
     .mobileTeamLogo img {
       width: 24px;
       height: 24px;
+    }
+    .firstColumnContent {
+      justify-content: center;
+      padding-left: v.$space-sm;
+      padding-right: v.$space-sm;
+      min-width: none;
     }
   }
 }
@@ -3143,6 +3158,18 @@
 
 // Mobile (<= 480px) - Modernized
 @media (max-width: 480px) {
+  .gridColFirst {
+    width: 10%;
+  }
+
+  .gridColMiddle {
+    width: 9.85%;
+  }
+
+  .gridColEnd {
+    width: 7%;
+  }
+
   .mainGridContainer {
     width: 100%;
     margin: 0 auto;

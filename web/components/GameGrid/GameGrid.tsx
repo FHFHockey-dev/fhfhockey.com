@@ -820,7 +820,8 @@ function GameGridInternal({
                 >
                   <colgroup>
                     <col className={styles.gridColFirst} />
-                    <col span={10} className={styles.gridColOther} />
+                    <col span={7} className={styles.gridColMiddle} />
+                    <col span={3} className={styles.gridColEnd} />
                   </colgroup>
                   <Header
                     start={dates[0]}
@@ -1336,10 +1337,11 @@ function GameGridInternal({
                     className={`${styles.scheduleGrid} ${styles.condensed}`}
                     aria-describedby="weekScoreDesc"
                   >
-                    <colgroup>
-                      <col className={styles.gridColFirst} />
-                      <col span={10} className={styles.gridColOther} />
-                    </colgroup>
+                  <colgroup>
+                    <col className={styles.gridColFirst} />
+                    <col span={7} className={styles.gridColMiddle} />
+                    <col span={3} className={styles.gridColEnd} />
+                  </colgroup>
                     <Header
                       start={dates[0]}
                       end={dates[1]}
