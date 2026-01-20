@@ -6,6 +6,12 @@
 .tooltipWrapper {
   display: inline-block;
   cursor: pointer; /* Indicate that the element is clickable */
+  height: 100%;
+  position: relative;
+  width: 100%;
+
+          // style={{ position: "relative", display: "inline-block", width: "100%" }}
+
 }
 
 .backdrop {

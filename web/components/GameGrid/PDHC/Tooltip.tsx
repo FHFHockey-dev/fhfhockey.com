@@ -129,7 +129,6 @@ const Tooltip: React.FC<TooltipProps> = ({ content, children, teamId }) => {
         className={styles.tooltipWrapper}
         onClick={toggleTooltip} // Toggle on click
         ref={targetRef}
-        style={{ position: "relative", display: "inline-block", width: "100%" }}
         tabIndex={0}
         aria-describedby="tooltip-content"
       >
