@@ -1188,7 +1188,7 @@
   align-items: center;
   justify-content: center;
   gap: 2px;
-  min-height: 24px; // ensure consistent row height
+  min-height: 32px; // ensure consistent row height
   position: relative;
   overflow: hidden; // clip oversized logos
   border-radius: 6px;
@@ -1314,7 +1314,7 @@
     position: relative; // ensure anchor on mobile override too
   }
   .matchupCell {
-    min-height: 20px;
+    min-height: 32px;
   }
   .mobileLogoSize {
     width: 24px !important;
@@ -1651,9 +1651,13 @@
     border-top: 2px solid v.$schedule-green;
     border-left: 2px solid v.$schedule-green;
     border-bottom: 2px solid v.$schedule-green;
-    border-right: none !important;
     border-top-left-radius: v.$border-radius-sm;
     border-bottom-left-radius: v.$border-radius-sm;
+
+    @media (max-width: 480px) {
+      border-top-left-radius: 0;
+      border-bottom-left-radius: 0;
+  }
   }
   > td:first-child .firstColumnContent {
     background: transparent !important;
@@ -1672,12 +1676,19 @@
     border-top: 2px solid v.$schedule-red;
     border-bottom: 2px solid v.$schedule-red;
     border-left: 2px solid v.$schedule-red;
-    border-right: none !important;
+
     outline-offset: -2px;
     border-top-left-radius: v.$border-radius-sm;
     border-bottom-left-radius: v.$border-radius-sm;
     @include v.schedule-outline(v.$schedule-red);
+        @media (max-width: 480px) {
+      border-top-left-radius: 0;
+      border-bottom-left-radius: 0;
   }
+  
+  }
+
+  
   > td:first-child .firstColumnContent {
     background: transparent !important;
   }
@@ -2018,7 +2029,7 @@
       rgba(v.$secondary-color, 0.1),
       rgba(v.$primary-color, 0.1)
     );
-    border-radius: v.$border-radius-md;
+    border-radius: v.$border-radius-sm;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 
     // Inline layout: title on the left, tips button on the right
@@ -2127,15 +2138,16 @@
 
   // Give bottom-left cell a matching radius so its sticky background doesn't square off corner
   tbody tr:last-of-type td:first-child {
-    border-bottom-left-radius: v.$border-radius-md;
+    border-bottom-left-radius: v.$border-radius-sm;
     overflow: hidden;
+
+    @media (max-width: 480px) {
+      border-bottom-left-radius: v.$border-radius-md;
+    }
+
   }
 
-  // Give bottom-left cell a matching radius so its sticky background doesn't square off corner
-  tbody tr:last-of-type td:last-child {
-    border-bottom-right-radius: v.$border-radius-md;
-    overflow: hidden;
-  }
+
 
   @include v.table-base; // Apply base table styles from mixin
   text-align: center; // OVERRIDE mixin's text-align: left for default cell alignment
@@ -2210,10 +2222,17 @@
 
       @media (max-width: 480px) {
         padding: 0 !important;
+        background: linear-gradient(
+          135deg,
+          rgba(v.$secondary-color, 0.12),
+          rgba(v.$secondary-color, 0.08)
+        );
+        color: v.$primary-color;
       }
 
       &:last-child {
-        border-right: 0;
+        border-right: 2px solid v.$primary-color; // match header bottom border for corner
+        border-radius: 0;
       }
 
       // Apply data-intensity background directly to th
@@ -2285,14 +2304,23 @@
       // Nested under thead
       font-family: v.$font-family-accent, sans-serif;
       font-size: 14px;
-      color: v.$color-white;
+      // color: v.$color-white;
       text-align: center;
       position: sticky;
       left: 0;
       z-index: 4; // Higher than body sticky cells
       min-width: 65px;
       width: 10%;
-      background: color.adjust(v.$background-dark, $lightness: -2%);
+      border-radius: 0;
+      border-top: 2px solid v.$primary-color;
+      border-left: 2px solid v.$primary-color;
+      // background: color.adjust(v.$background-dark, $lightness: -2%);
+      background: linear-gradient(
+          135deg,
+          rgba(v.$secondary-color, 0.12),
+          rgba(v.$secondary-color, 0.08)
+        );
+        color: v.$primary-color;
       // Removed cell border in favor of continuous overlay line
       box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
       border-right: 2px solid v.$secondary-color; // Match header bottom border color for corner
@@ -2365,8 +2393,10 @@
 
     @media (max-width: 480px) {
       width: 100%;
+      height: 100%;
       align-items: center;
       justify-content: center;
+      margin-bottom: 4px;
     }
   }
 
@@ -2446,6 +2476,7 @@
       .desktopText {
         font-size: 0.95em;
         padding: 0;
+
       }
       .switchContainer {
         padding: 0;
@@ -2522,7 +2553,7 @@
       border-radius: 0;
       border-collapse: collapse;
       border-spacing: 0; // kept for safety, but gaps now controlled at table level
-      min-width: 37px;
+      min-width: 40px;
       transition:
         background-color 0.15s v.$ease-desktop-emphasized,
         box-shadow 0.15s v.$ease-desktop-emphasized,
@@ -2617,7 +2648,6 @@
       left: 0;
       z-index: 2; // Above normal cells, below header
       background: rgba(0, 0, 0, 0.7); // Solid surface to avoid scroll "white flashes"
-      min-width: 65px;
       box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
     }
 
@@ -2732,8 +2762,6 @@
 
     td {
       width: 9.09% !important; // 11 columns layout
-      min-width: 0 !important;
-      max-width: none !important;
       padding: 2px 2px !important; // tighter vertical padding
       font-size: 12px !important;
       line-height: 1.05;
@@ -2745,8 +2773,6 @@
     th,
     td {
       width: 9.09% !important;
-      min-width: 0 !important;
-      max-width: none !important;
       font-size: 11px !important;
       box-sizing: border-box;
       height: auto;
@@ -2756,7 +2782,7 @@
     td:first-child,
     th:last-child,
     td:last-child {
-      width: auto !important;
+      height: 34px !important;
     }
 
     // Subtle separation for sticky header/footer on mobile
@@ -2936,7 +2962,7 @@
 
   // Matchup Cell Specifics for Condensed Mode
   .matchupCell {
-    min-height: 30px;
+    min-height: 32px;
     position: relative;
     overflow: hidden; // Clip the overflowing logo
     justify-content: center; // Keep text centered
@@ -3170,6 +3196,8 @@
     width: 7%;
   }
 
+  // 10 + ( 7 * 3 ) + ( 9.85 * 7 ) = 100%
+
   .mainGridContainer {
     width: 100%;
     margin: 0 auto;
@@ -3364,64 +3392,14 @@
     pointer-events: none;
     // Dog-ear triangle base
     clip-path: polygon(100% 0, 0 0, 100% 100%);
-    background: transparent; // actual color via gradient layers per variant
+    background: var(--corner-badge-bg, rgba(255, 255, 255, 0.15));
     mix-blend-mode: normal;
-    // Provide subtle layered depth via pseudo elements
-    &::before,
-    &::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      clip-path: inherit;
-      border-top-right-radius: 0; // ensure no rounding interfering
-      // Put triangle layers behind the letter
-      z-index: -1;
-    }
-    // Outer translucent layer
-    &::before {
-      opacity: 0.65; // ~65% overall tint
-    }
-    // Inner inset smaller triangle for nested effect
-    &::after {
-      inset: 2px 2px 0 0; // inset left a bit to preserve right/top edge alignment
-      clip-path: polygon(100% 0, 0 0, 100% 100%);
-      opacity: 0.9;
-      box-shadow: 0 0 2px rgba(0, 0, 0, 0.4) inset;
-    }
-    // Slight shadow along hypotenuse
-    filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.55));
   }
   .homeBadge {
-    &::before {
-      background: linear-gradient(
-        135deg,
-        rgba(v.$schedule-green, 0.65),
-        rgba(color.scale(v.$schedule-green, $lightness: -10%), 0.55)
-      );
-    }
-    &::after {
-      background: linear-gradient(
-        135deg,
-        rgba(color.scale(v.$schedule-green, $lightness: 5%), 0.9),
-        rgba(color.scale(v.$schedule-green, $lightness: -15%), 0.85)
-      );
-    }
+    --corner-badge-bg: #{v.$schedule-green};
   }
   .awayBadge {
-    &::before {
-      background: linear-gradient(
-        135deg,
-        rgba(v.$danger-color, 0.65),
-        rgba(color.scale(v.$danger-color, $lightness: -12%), 0.55)
-      );
-    }
-    &::after {
-      background: linear-gradient(
-        135deg,
-        rgba(color.scale(v.$danger-color, $lightness: 5%), 0.9),
-        rgba(color.scale(v.$danger-color, $lightness: -18%), 0.85)
-      );
-    }
+    --corner-badge-bg: #{v.$danger-color};
   }
 
   // Harmonize badge colors with existing palette accents if variables available
