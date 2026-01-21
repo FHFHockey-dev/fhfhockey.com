@@ -2326,7 +2326,7 @@
       border-right: 2px solid v.$secondary-color; // Match header bottom border color for corner
 
       @media (max-width: 480px) {
-        width: 100%;
+        width: auto;
         height: auto;
         font-family: v.$font-family-primary, sans-serif;
       }
@@ -2761,7 +2761,6 @@
     }
 
     td {
-      width: 9.09% !important; // 11 columns layout
       padding: 2px 2px !important; // tighter vertical padding
       font-size: 12px !important;
       line-height: 1.05;
@@ -2772,10 +2771,21 @@
 
     th,
     td {
-      width: 9.09% !important;
       font-size: 11px !important;
       box-sizing: border-box;
       height: auto;
+      min-width: 0; // allow colgroup percentages to control width
+    }
+
+    thead th {
+      min-width: 0; // override header min-widths for mobile colgroup sizing
+    }
+    thead th:first-child {
+      min-width: 0; // override sticky header min-width on mobile
+    }
+
+    tbody td {
+      min-width: 0; // override body min-widths for mobile colgroup sizing
     }
 
     th:first-child,
