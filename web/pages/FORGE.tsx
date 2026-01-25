@@ -11,6 +11,11 @@ type StatUncertainty = {
   p90: number;
 };
 
+type AccuracyPoint = {
+  date: string;
+  accuracy: number;
+};
+
 type PlayerProjection = {
   player_id: number;
   player_name: string;
@@ -57,6 +62,13 @@ const getPositionClass = (position: string) => {
   }
 };
 
+const formatUncertaintyValue = (value?: number) => {
+  if (value === null || value === undefined || Number.isNaN(value)) return "--";
+  return value.toFixed(2);
+};
+
+const clampPercent = (value: number) => Math.max(0, Math.min(100, value));
+
 const FORGEPage: NextPage = () => {
   const [projections, setProjections] = useState<PlayerProjection[]>([]);
   const [loading, setLoading] = useState(true);
@@ -64,6 +76,10 @@ const FORGEPage: NextPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTeam, setSelectedTeam] = useState("");
   const [selectedPosition, setSelectedPosition] = useState("");
+  const [accuracySeries, setAccuracySeries] = useState<AccuracyPoint[]>([]);
+  const [accuracyLoading, setAccuracyLoading] = useState(true);
+  const [accuracyError, setAccuracyError] = useState<string | null>(null);
+  const [accuracyPlaceholder, setAccuracyPlaceholder] = useState(false);
 
   useEffect(() => {
     const fetchProjections = async () => {
@@ -93,6 +109,74 @@ const FORGEPage: NextPage = () => {
 
     fetchProjections();
   }, []);
+
+  useEffect(() => {
+    const fetchAccuracy = async () => {
+      try {
+        const res = await fetch("/api/v1/forge/accuracy");
+        if (!res.ok) {
+          throw new Error("Failed to fetch accuracy data");
+        }
+        const data = await res.json();
+        const series = (data.data ?? []).map((point: AccuracyPoint) => ({
+          date: point.date,
+          accuracy: clampPercent(point.accuracy)
+        }));
+        if (!series.length) {
+          throw new Error("No accuracy data available");
+        }
+        setAccuracySeries(series);
+      } catch (err) {
+        const fallbackSeries: AccuracyPoint[] = [
+          { date: "Day 1", accuracy: 62 },
+          { date: "Day 2", accuracy: 64 },
+          { date: "Day 3", accuracy: 66 },
+          { date: "Day 4", accuracy: 63 },
+          { date: "Day 5", accuracy: 67 },
+          { date: "Day 6", accuracy: 69 },
+          { date: "Day 7", accuracy: 71 }
+        ];
+        setAccuracySeries(fallbackSeries);
+        setAccuracyPlaceholder(true);
+        if (err instanceof Error) {
+          setAccuracyError(err.message);
+        } else {
+          setAccuracyError("Accuracy data unavailable");
+        }
+      } finally {
+        setAccuracyLoading(false);
+      }
+    };
+
+    fetchAccuracy();
+  }, []);
+
+  const accuracyChart = useMemo(() => {
+    if (accuracySeries.length < 2) return null;
+    const width = 600;
+    const height = 160;
+    const padding = 16;
+    const min = 0;
+    const max = 100;
+    const range = max - min || 1;
+    const step = (width - padding * 2) / (accuracySeries.length - 1);
+    const points = accuracySeries.map((point, index) => {
+      const x = padding + step * index;
+      const y =
+        padding +
+        ((max - clampPercent(point.accuracy)) / range) *
+          (height - padding * 2);
+      return `${x},${y}`;
+    });
+    const path = `M ${points[0]} L ${points.slice(1).join(" L ")}`;
+    const lastPoint = points[points.length - 1];
+    return {
+      width,
+      height,
+      path,
+      lastPoint
+    };
+  }, [accuracySeries]);
 
   const uniqueTeams = useMemo(() => {
     const teams = new Set(projections.map((p) => p.team_name));
@@ -163,6 +247,81 @@ const FORGEPage: NextPage = () => {
             <span className={styles.highlight}>E</span>ngine
           </h1>
         </div>
+
+        <section className={styles.accuracySection}>
+          <div className={styles.accuracyHeader}>
+            <div>
+              <h2>Model Accuracy (Last 30 Days)</h2>
+              <p>
+                This line shows how close recent projections were to actual
+                results. Higher is better.
+              </p>
+            </div>
+            {accuracySeries.length > 0 && (
+              <div className={styles.accuracyValue}>
+                <span>Latest</span>
+                <strong>
+                  {clampPercent(
+                    accuracySeries[accuracySeries.length - 1]?.accuracy ?? 0
+                  )}
+                  %
+                </strong>
+              </div>
+            )}
+          </div>
+
+          {accuracyLoading && <p>Loading accuracy...</p>}
+          {!accuracyLoading && accuracyChart && (
+            <div className={styles.accuracyChart}>
+              <svg
+                viewBox={`0 0 ${accuracyChart.width} ${accuracyChart.height}`}
+                role="img"
+                aria-label="Accuracy line chart from 0 to 100 percent"
+              >
+                <line
+                  x1="0"
+                  y1={accuracyChart.height - 16}
+                  x2={accuracyChart.width}
+                  y2={accuracyChart.height - 16}
+                  className={styles.accuracyAxis}
+                />
+                <line
+                  x1="0"
+                  y1="16"
+                  x2={accuracyChart.width}
+                  y2="16"
+                  className={styles.accuracyAxis}
+                />
+                <path d={accuracyChart.path} className={styles.accuracyLine} />
+                <circle
+                  cx={Number(accuracyChart.lastPoint.split(",")[0])}
+                  cy={Number(accuracyChart.lastPoint.split(",")[1])}
+                  r="4"
+                  className={styles.accuracyDot}
+                />
+              </svg>
+              <div className={styles.accuracyLabels}>
+                <span>0%</span>
+                <span>100%</span>
+              </div>
+            </div>
+          )}
+
+          {!accuracyLoading && !accuracyChart && (
+            <p>No accuracy data yet.</p>
+          )}
+
+          {accuracyPlaceholder && (
+            <p className={styles.accuracyNote}>
+              Placeholder accuracy data shown until the live feed is connected.
+            </p>
+          )}
+          {accuracyError && !accuracyPlaceholder && (
+            <p className={styles.accuracyError}>
+              Accuracy data unavailable: {accuracyError}
+            </p>
+          )}
+        </section>
 
         {/* 2. Search UI */}
         <div className={styles.controlsContainer}>
@@ -262,51 +421,38 @@ const FORGEPage: NextPage = () => {
                 </ul>
                 {p.uncertainty && (
                   <div className={styles.uncertainty}>
-                    <h3>Uncertainty (P10 - P50 - P90)</h3>
-                    {p.uncertainty.pts && (
-                      <ul>
-                        <li>
-                          <span>Points</span>
-                          <span>
-                            {p.uncertainty.pts.p10} - {p.uncertainty.pts.p50} -{" "}
-                            {p.uncertainty.pts.p90}
-                          </span>
-                        </li>
-                      </ul>
-                    )}
-                    {p.uncertainty.g && (
-                      <ul>
-                        <li>
-                          <span>Goals</span>
-                          <span>
-                            {p.uncertainty.g.p10} - {p.uncertainty.g.p50} -{" "}
-                            {p.uncertainty.g.p90}
-                          </span>
-                        </li>
-                      </ul>
-                    )}
-                    {p.uncertainty.a && (
-                      <ul>
-                        <li>
-                          <span>Assists</span>
-                          <span>
-                            {p.uncertainty.a.p10} - {p.uncertainty.a.p50} -{" "}
-                            {p.uncertainty.a.p90}
-                          </span>
-                        </li>
-                      </ul>
-                    )}
-                    {p.uncertainty.sog && (
-                      <ul>
-                        <li>
-                          <span>SOG</span>
-                          <span>
-                            {p.uncertainty.sog.p10} - {p.uncertainty.sog.p50} -{" "}
-                            {p.uncertainty.sog.p90}
-                          </span>
-                        </li>
-                      </ul>
-                    )}
+                    <div className={styles.uncertaintyHeader}>
+                      <h3>Uncertainty Range (Low / Typical / High)</h3>
+                      <abbr
+                        className={styles.uncertaintyLegend}
+                        title="Low/Typical/High represent the 10th/50th/90th percentile outcomes."
+                      >
+                        ?
+                      </abbr>
+                    </div>
+                    <p className={styles.uncertaintyNote}>
+                      Low/Typical/High is a conservative, expected, and
+                      optimistic range for one game.
+                    </p>
+                    <ul>
+                      {[
+                        { label: "Points", value: p.uncertainty.pts },
+                        { label: "Goals", value: p.uncertainty.g },
+                        { label: "Assists", value: p.uncertainty.a },
+                        { label: "SOG", value: p.uncertainty.sog }
+                      ]
+                        .filter((item) => item.value)
+                        .map((item) => (
+                          <li key={item.label}>
+                            <span>{item.label}</span>
+                            <span className={styles.uncertaintyValues}>
+                              <span>Low {formatUncertaintyValue(item.value?.p10)}</span>
+                              <span>Typical {formatUncertaintyValue(item.value?.p50)}</span>
+                              <span>High {formatUncertaintyValue(item.value?.p90)}</span>
+                            </span>
+                          </li>
+                        ))}
+                    </ul>
                   </div>
                 )}
               </div>

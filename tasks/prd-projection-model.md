@@ -490,6 +490,27 @@ The ingest endpoint considers a game “complete” and will skip when:
 2. **Backtest report**:
    - Automated report (last 30 days) with MAE + interval coverage and run-level summary metrics stored in `forge_runs.metrics`.
 
+## 17) Task list (FORGE model + UI)
+
+### Task 1: Make uncertainty and outputs understandable to laypeople
+- [x] Translate uncertainty ranges into plain-language labels and explanations on the FORGE page.
+- [x] Replace raw P10/P50/P90 blocks with a short "low/typical/high" presentation and a tooltip/legend.
+
+### Task 2: Add model accuracy transparency (priority)
+- [x] Add a 0–100% accuracy line chart section on the FORGE page (data wiring + placeholder if needed).
+- [x] Add API/service wiring to surface accuracy data for the chart.
+
+### Task 3: Introduce learn-as-it-goes ML updates
+- [ ] Define a simple online-learning loop (rolling reweighting / Bayesian update) for player rates.
+- [ ] Persist learning metadata in `forge_runs.metrics` and/or a new table for model update history.
+
+## Relevant files
+- `tasks/prd-projection-model.md` - PRD and tracked task list for FORGE model work.
+- `web/pages/FORGE.tsx` - FORGE projections page UI.
+- `web/pages/api/v1/forge/accuracy.ts` - API endpoint for accuracy series data.
+- `web/styles/Forge.module.scss` - Styling for the FORGE projections page.
+- `web/rules/forge-tables.md` - Supabase table definitions for FORGE outputs.
+
 ## 17) Troubleshooting notes
 
 - If ingestion returns many `"Cannot read properties of null (reading 'trim')"` errors, ensure `web/lib/projections/ingest/time.ts` includes the null-safe `parseClockToSeconds(clock: string | null | undefined)` fix.
