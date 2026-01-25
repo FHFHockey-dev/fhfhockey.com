@@ -221,13 +221,532 @@
   background: rgba(v.$primary-color, 0.08);
 }
 
-.grid {
+.dashboardGrid {
   display: grid;
-  grid-template-columns: 1.6fr 1.2fr 1.2fr;
-  grid-template-rows: repeat(2, minmax(0, 1fr));
-  gap: v.$space-md;
+  grid-template-columns: repeat(11, minmax(0, 1fr));
+  grid-template-rows: repeat(4, minmax(0, 1fr));
+  gap: 0;
   flex: 1;
   min-height: 0;
+}
+
+.chartPanel {
+  @include v.glass-panel($padding: v.$space-md, $radius: v.$radius-lg);
+  grid-area: 1 / 1 / 2 / 12;
+  display: flex;
+  flex-direction: column;
+  min-height: 220px;
+}
+
+.chartHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: v.$space-sm;
+  margin-bottom: v.$space-sm;
+}
+
+.chartTitle {
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: v.$font-size-md;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: v.$color-white;
+}
+
+.chartBody {
+  flex: 1;
+  min-height: 0;
+}
+
+.topMoversPanel {
+  @include v.glass-panel($padding: v.$space-md, $radius: v.$radius-lg);
+  grid-area: 2 / 6 / 3 / 12;
+  display: flex;
+  flex-direction: column;
+  min-height: 220px;
+}
+
+.topMoversBody {
+  flex: 1;
+  min-height: 0;
+}
+
+.powerPanel {
+  grid-area: 2 / 1 / 5 / 6;
+  min-height: 0;
+}
+
+.powerPanel .panelBody {
+  flex: 1;
+  min-height: 0;
+}
+
+.goaliePanel {
+  grid-area: 4 / 9 / 5 / 12;
+  min-height: 0;
+}
+
+.projectionsPanel {
+  grid-area: 3 / 9 / 4 / 12;
+  min-height: 0;
+}
+
+.projectionsPanel .table th,
+.projectionsPanel .table td {
+  padding: 0.25rem 0.35rem;
+}
+
+.trendsPanel {
+  grid-area: 3 / 6 / 5 / 9;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-sm;
+  min-height: 0;
+}
+
+.powerTableWrapper {
+  @include v.glass-panel(0, v.$border-radius-lg);
+  overflow: hidden;
+  border: 1px solid v.$border-primary;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.powerTableHead {
+  display: grid;
+  grid-template-columns: 70px 2.2fr repeat(3, 1fr) 1.6fr;
+  gap: v.$space-sm;
+  padding: v.$space-sm v.$space-md;
+  background-color: rgba(v.$background-dark, 0.8);
+  border-bottom: 1px solid v.$border-primary;
+  align-items: center;
+
+  span {
+    font-family: v.$font-family-accent;
+    font-size: v.$font-size-xs;
+    color: v.$text-secondary;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-align: center;
+
+    &:nth-child(2) {
+      text-align: left;
+    }
+  }
+}
+
+.powerTable {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  overflow-y: auto;
+  flex: 1;
+  @include v.custom-scrollbar(v.$primary-color, transparent, 6px);
+}
+
+.powerRow {
+  display: grid;
+  grid-template-columns: 70px 2.2fr repeat(3, 1fr) 1.6fr;
+  gap: v.$space-sm;
+  padding: 2px v.$space-sm;
+  align-items: center;
+  border-bottom: 1px solid rgba(v.$border-primary, 0.5);
+  transition: background-color 0.2s ease;
+  position: relative;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background-color: rgba(v.$primary-color, 0.05);
+  }
+}
+
+.powerRank {
+  font-family: v.$font-family-numbers;
+  height: 100%;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: v.$text-secondary;
+  text-align: center;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.rankLogoWrapper {
+  width: 28px;
+  height: 28px;
+  position: absolute;
+  left: -6px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1;
+}
+
+.rankLogo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transform: scale(1.7);
+  transform-origin: left center;
+  -webkit-mask-image: linear-gradient(
+    to right,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(0, 0, 0, 0.5) 50%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(0, 0, 0, 0.5) 50%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+}
+
+.rankText {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  padding-left: 35%;
+  width: 100%;
+}
+
+.powerTeamCell {
+  display: flex;
+  align-items: center;
+  gap: v.$space-xs;
+}
+
+.powerTeamText {
+  display: flex;
+  flex-direction: column;
+}
+
+.powerTeamName {
+  font-family: v.$font-family-primary;
+  font-weight: 700;
+  color: v.$text-primary;
+  font-size: v.$font-size-sm;
+  line-height: 1.1;
+}
+
+.powerTeamMeta {
+  font-size: 0.6rem;
+  color: v.$text-secondary;
+}
+
+
+.powerScoreCell {
+  display: flex;
+  justify-content: center;
+}
+
+.driverTag {
+  font-family: v.$font-family-numbers;
+  font-weight: 700;
+  font-size: 1rem;
+  padding: 1px 6px;
+  border-radius: v.$border-radius-sm;
+  min-width: 48px;
+  text-align: center;
+  background: rgba(v.$text-secondary, 0.1);
+  color: v.$text-primary;
+  border: 1px solid rgba(v.$text-secondary, 0.2);
+}
+
+.powerValueCell {
+  display: flex;
+  justify-content: center;
+}
+
+.valuePill {
+  font-family: v.$font-family-numbers;
+  font-size: 1rem;
+  color: v.$text-secondary;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.2);
+  min-width: 40px;
+  text-align: center;
+}
+
+.compPill {
+  font-family: v.$font-family-primary;
+  font-size: 0.6rem;
+  color: v.$text-secondary;
+  text-align: left;
+}
+
+.tierElite {
+  background: rgba(v.$primary-color, 0.15);
+  color: v.$primary-color;
+  border: 1px solid rgba(v.$primary-color, 0.4);
+  box-shadow: 0 0 10px rgba(v.$primary-color, 0.1);
+}
+
+.tierGood {
+  background-color: rgba(v.$success-color, 0.1);
+  color: v.$success-color;
+  border: 1px solid rgba(v.$success-color, 0.3);
+}
+
+.tierCaution {
+  background-color: rgba(v.$warning-color, 0.1);
+  color: v.$warning-color;
+  border: 1px solid rgba(v.$warning-color, 0.3);
+}
+
+.tierPoor {
+  background-color: rgba(v.$danger-color, 0.1);
+  color: v.$danger-color;
+  border: 1px solid rgba(v.$danger-color, 0.3);
+}
+
+.tierNeutral {
+  background-color: rgba(v.$color-white, 0.1);
+  color: v.$text-secondary;
+  border: 1px solid v.$color-white;
+}
+
+.topTabs {
+  display: flex;
+  gap: v.$space-xs;
+  padding: 0 v.$space-xs;
+  border-bottom: 1px solid v.$border-primary;
+}
+
+.tab {
+  @include v.reset-button;
+  font-family: v.$font-family-accent, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: v.$space-sm v.$space-md;
+  font-size: v.$font-size-base;
+  color: v.$text-secondary;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: all 0.2s ease;
+
+  &:hover:not([aria-selected="true"]) {
+    color: v.$text-primary;
+    border-bottom-color: rgba(v.$primary-color, 0.3);
+  }
+}
+
+.tabActive {
+  color: v.$primary-color;
+  font-weight: 700;
+  border-bottom-color: v.$primary-color;
+}
+
+.subTabs {
+  display: flex;
+  gap: v.$space-sm;
+  align-items: center;
+  flex-wrap: wrap;
+  padding-bottom: v.$space-md;
+  border-bottom: 1px solid v.$border-primary;
+}
+
+.subTab {
+  @include v.button-ghost(false);
+}
+
+.subTabActive {
+  @include v.button-ghost(true);
+}
+
+.windowToggle {
+  display: flex;
+  align-items: center;
+}
+
+.windowButton {
+  @include v.button-ghost(false);
+  padding: v.$space-xs;
+  min-width: 48px;
+}
+
+.windowActive {
+  @include v.button-ghost(true);
+}
+
+.skaterControls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: v.$space-sm;
+  margin-left: auto;
+}
+
+.dashboardContent {
+  @include v.component-wrapper;
+  padding: v.$space-lg;
+  background-color: v.$background-medium;
+  min-height: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.trendGrid {
+  display: grid;
+  gap: v.$space-lg;
+  grid-template-columns: minmax(280px, 0.7fr) minmax(0, 1.3fr);
+  min-height: 0;
+}
+
+.chartCard {
+  @include v.component-wrapper;
+  padding: v.$space-lg;
+  background-color: v.$background-dark;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-md;
+  min-height: 0;
+}
+
+.rankingHeading {
+  display: flex;
+  flex-direction: column;
+}
+
+.rankingTitle {
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: v.$font-size-lg;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: v.$primary-color;
+}
+
+.rankingMeta {
+  color: v.$text-secondary;
+  font-size: v.$font-size-sm;
+  margin: v.$space-xxs 0 0;
+}
+
+.skaterRankingCard {
+  @extend .chartCard;
+}
+
+.skaterRankingList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-sm;
+  max-height: 500px;
+  overflow-y: auto;
+  padding-right: v.$space-xs;
+  @include v.custom-scrollbar(v.$primary-color, transparent, 6px);
+}
+
+.skaterRankingRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: v.$space-sm;
+  border-radius: v.$border-radius-md;
+  background-color: v.$background-medium;
+  border: 1px solid v.$border-primary;
+}
+
+.skaterInfo {
+  display: flex;
+  align-items: center;
+  gap: v.$space-md;
+  min-width: 0;
+}
+
+.rank {
+  font-weight: 700;
+  color: v.$text-secondary;
+  width: 24px;
+  text-align: center;
+}
+
+.skaterHeadshotWrapper {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: v.$background-dark;
+  border: 1px solid v.$border-primary;
+  flex-shrink: 0;
+}
+
+.skaterHeadshot {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.skaterText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.skaterName {
+  margin: 0;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.skaterMeta {
+  margin: 0;
+  font-size: v.$font-size-sm;
+  color: v.$text-secondary;
+}
+
+.skaterScore {
+  display: flex;
+  align-items: center;
+  gap: v.$space-md;
+  font-family: v.$font-family-numbers, monospace;
+}
+
+.delta {
+  font-size: v.$font-size-xs;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: v.$space-xxs;
+}
+
+.deltaPositive {
+  color: v.$success-color;
+}
+
+.deltaNegative {
+  color: v.$danger-color;
+}
+
+.deltaNeutral {
+  color: v.$text-secondary;
+}
+
+.percentile {
+  font-size: v.$font-size-base;
+  font-weight: 700;
+  font-family: v.$font-family-numbers, monospace;
 }
 
 .sidePanel {
@@ -342,8 +861,17 @@
     grid-template-columns: 1fr;
   }
 
-  .grid {
+  .dashboardGrid {
     grid-template-columns: 1fr;
     grid-template-rows: auto;
+  }
+
+  .chartPanel,
+  .topMoversPanel,
+  .powerPanel,
+  .goaliePanel,
+  .projectionsPanel,
+  .trendsPanel {
+    grid-area: auto;
   }
 }

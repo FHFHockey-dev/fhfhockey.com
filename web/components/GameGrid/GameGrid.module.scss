@@ -2461,6 +2461,10 @@
       margin-right: v.$space-xs;
     }
 
+    .scoreHeaderText {
+      font-size: 0.8em;
+    }
+
     .switchContainer {
       width: 100%;
       display: flex;
@@ -2477,6 +2481,9 @@
         font-size: 0.95em;
         padding: 0;
 
+      }
+      .scoreHeaderText {
+        font-size: 0.8em;
       }
       .switchContainer {
         padding: 0;
@@ -3009,7 +3016,6 @@
     padding-left: v.$space-sm;
 
     .desktopTeamAbbreviation {
-      font-size: 1.4rem;
       z-index: 9;
     }
   }
@@ -3050,7 +3056,7 @@
         "Helvetica Neue",
         Arial,
         sans-serif;
-      font-size: 1.4rem;
+      font-size: clamp(1rem, calc(0.6vw + 1rem), 1.4rem);
       font-style: italic;
       font-weight: 800;
       letter-spacing: 0.25em;
@@ -3081,6 +3087,34 @@
       padding-right: v.$space-sm;
       min-width: none;
     }
+  }
+}
+
+@media (max-width: 1400px) and (min-width: v.$breakpoint-desktop) {
+  .firstColumnLogo {
+    width: 28px;
+    height: 28px;
+  }
+
+  .firstColumnContent .firstColumnLogo img {
+    transform: scale(1.5);
+  }
+}
+
+@media (max-width: 1200px) and (min-width: v.$breakpoint-desktop) {
+  .firstColumnLogo {
+    width: 24px;
+    height: 24px;
+  }
+
+  .firstColumnContent .firstColumnLogo img {
+    transform: scale(1.35);
+  }
+}
+
+@media (max-width: 1600px) and (min-width: v.$breakpoint-desktop) {
+  .firstColumnContent .desktopTeamAbbreviation {
+    font-size: calc(0.2rem + 1.2vw);
   }
 }
 

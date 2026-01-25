@@ -138,7 +138,9 @@ function Header({
         {
           label: (
             <div className={styles.headerLabel}>
-              <span className={styles.desktopText}>
+              <span
+                className={`${styles.desktopText} ${styles.scoreHeaderText}`}
+              >
                 Score
               </span>
               <span className={styles.switchContainer}>

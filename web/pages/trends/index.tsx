@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { GetServerSideProps, NextPage } from "next";
 import Head from "next/head";
+import Image from "next/image";
 import { useDashboardData } from "hooks/useDashboardData";
 import type { DashboardData } from "lib/dashboard/dataFetchers";
 import TopMovers from "components/TopMovers/TopMovers";
@@ -26,7 +27,6 @@ import {
   XAxis,
   YAxis,
   Tooltip,
-  Brush,
   Legend
 } from "recharts";
 import styles from "./dashboard.module.scss";
@@ -104,6 +104,21 @@ type PlayerSearchRow = {
   teamAbbrev: string | null;
 };
 
+type SkaterRankingRow = {
+  playerId: number;
+  percentile: number;
+  gp: number;
+  rank: number;
+  previousRank: number | null;
+  delta: number;
+  latestValue: number | null;
+};
+
+type SkaterCategoryResult = {
+  series?: Record<string, Array<{ gp: number; percentile: number }>>;
+  rankings?: SkaterRankingRow[];
+};
+
 const getTodayEt = (): string => {
   const now = new Date();
   const parts = new Intl.DateTimeFormat("en-US", {
@@ -137,59 +152,16 @@ const formatOptional = (value: number | null | undefined): string => {
   return value.toFixed(1);
 };
 
-const renderSparkline = (points: SparkPoint[]) => {
-  if (!points || points.length === 0) return "—";
-  const series = points.slice(-10);
-  const values = series.map((p) => p.value);
-  let min = Math.min(...values);
-  let max = Math.max(...values);
-  if (min === max) {
-    min -= 0.5;
-    max += 0.5;
-  }
-  const range = max - min || 1;
-  const line = series
-    .map((p, i) => {
-      const x = series.length === 1 ? 0 : (i / (series.length - 1)) * 100;
-      const y = 30 - ((p.value - min) / range) * 24;
-      return `${x},${y.toFixed(2)}`;
-    })
-    .join(" ");
-  return (
-    <svg viewBox="0 0 100 32" width={120} height={32}>
-      <polyline points={line} fill="none" stroke="#2d6cdf" strokeWidth={2} />
-    </svg>
-  );
-};
-
-const formatUncertaintyBand = (
-  uncertainty: Record<string, unknown> | null | undefined,
-  keys: string[],
-  formatAsPercent = false
-): string => {
-  if (!uncertainty) return "—";
-  for (const key of keys) {
-    const candidate = uncertainty[key] as
-      | { p10?: number; p90?: number }
-      | undefined;
-    if (
-      candidate &&
-      typeof candidate.p10 === "number" &&
-      typeof candidate.p90 === "number"
-    ) {
-      const p10 = formatAsPercent ? candidate.p10 * 100 : candidate.p10;
-      const p90 = formatAsPercent ? candidate.p90 * 100 : candidate.p90;
-      const suffix = formatAsPercent ? "%" : "";
-      return `${p10.toFixed(2)}${suffix}–${p90.toFixed(2)}${suffix}`;
-    }
-  }
-  return "—";
-};
-
 const CHART_COLORS = ["#2563eb", "#16a34a", "#f97316", "#ef4444", "#8b5cf6"];
 
 const getChartColor = (index: number): string =>
   CHART_COLORS[index % CHART_COLORS.length];
+
+const DEFAULT_TEAM_LOGO = "/teamLogos/default.png";
+const DEFAULT_PLAYER_IMAGE = DEFAULT_TEAM_LOGO;
+const TREND_LINE_LIMIT = 8;
+
+const formatPercent = (value: number) => `${value.toFixed(1)}%`;
 
 type TrendsPageProps = {
   initialDate: string;
@@ -207,6 +179,9 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({
   const [teamCategory, setTeamCategory] = useState<TrendCategoryId>("offense");
   const [skaterCategory, setSkaterCategory] =
     useState<SkaterTrendCategoryId>("shotsPer60");
+  const [activeTrendTab, setActiveTrendTab] = useState<"teams" | "skaters">(
+    "teams"
+  );
   const [skaterPosition, setSkaterPosition] =
     useState<SkaterPositionGroup>("forward");
   const [skaterWindow, setSkaterWindow] = useState<SkaterWindowSize>(3);
@@ -250,8 +225,6 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({
       })
       .sort((a, b) => b.powerScore - a.powerScore);
   }, [data, initialTeamRatings]);
-
-  const visibleTeamRows = useMemo(() => teamRows.slice(0, 12), [teamRows]);
 
   const forgeRows = useMemo<ForgeProjectionRow[]>(() => {
     const raw = data?.forgePlayers?.data ?? [];
@@ -386,7 +359,7 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({
     const category = data?.teamTrends?.categories?.[teamCategory];
     if (!category) return { series: [], teams: [] as string[] };
     const rankings = category.rankings ?? [];
-    const topTeams = rankings.slice(0, 5).map((row) => row.team);
+    const topTeams = rankings.slice(0, TREND_LINE_LIMIT).map((row) => row.team);
 
     const series = category.series ?? {};
     const gpMap = new Map<number, Record<string, number>>();
@@ -529,19 +502,30 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({
     }
   };
 
-  const skaterTrendSeries = useMemo(() => {
+  const skaterCategoryData = useMemo(() => {
     const categories = data?.skaterTrends?.categories ?? {};
     const category = categories[skaterCategory] as
-      | {
-          series?: Record<string, Array<{ gp: number; percentile: number }>>;
-          rankings?: Array<{ playerId: number }>;
-        }
+      | SkaterCategoryResult
       | undefined;
-    if (!category) return { series: [], players: [] as string[] };
+    return {
+      series: category?.series ?? {},
+      rankings: category?.rankings ?? []
+    };
+  }, [data, skaterCategory]);
 
-    const rankings = category.rankings ?? [];
-    const topPlayers = rankings.slice(0, 5).map((row) => String(row.playerId));
-    const series = category.series ?? {};
+  const activeSkaterLabel = useMemo(() => {
+    return (
+      SKATER_TREND_CATEGORIES.find((category) => category.id === skaterCategory)
+        ?.label ?? "Skater Rankings"
+    );
+  }, [skaterCategory]);
+
+  const skaterTrendSeries = useMemo(() => {
+    const rankings = skaterCategoryData.rankings ?? [];
+    const topPlayers = rankings
+      .slice(0, TREND_LINE_LIMIT)
+      .map((row) => String(row.playerId));
+    const series = skaterCategoryData.series ?? {};
     const gpMap = new Map<number, Record<string, number>>();
 
     topPlayers.forEach((playerId) => {
@@ -557,7 +541,7 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({
       .sort((a, b) => a.gp - b.gp);
 
     return { series: chartData, players: topPlayers };
-  }, [data, skaterCategory]);
+  }, [skaterCategoryData]);
 
   const ctpiMovers = useMemo(() => {
     if (!data?.teamCtpi?.teams || !data.teamMeta) {
@@ -586,21 +570,125 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({
     return { improved, degraded };
   }, [data]);
 
-  const ctpiSparkRows = useMemo(() => {
-    if (!data?.teamCtpi?.teams) return [];
-    return [...data.teamCtpi.teams]
-      .sort((a, b) => (b.ctpi_0_to_100 ?? 0) - (a.ctpi_0_to_100 ?? 0))
-      .slice(0, 5)
-      .map((row) => {
-        const meta = data.teamMeta?.[row.team];
-        return {
-          team: row.team,
-          name: meta?.shortName ?? row.team,
-          ctpi: row.ctpi_0_to_100,
-          spark: row.sparkSeries ?? []
-        };
+  const ctpiChartSeries = useMemo(() => {
+    if (!data?.teamCtpi?.teams) return { series: [], teams: [] as string[] };
+    const sorted = [...data.teamCtpi.teams].sort(
+      (a, b) => (b.ctpi_0_to_100 ?? 0) - (a.ctpi_0_to_100 ?? 0)
+    );
+    const selected = sorted.slice(0, TREND_LINE_LIMIT);
+    const teams = selected.map((row) => row.team);
+    const teamSeriesMap = new Map<string, SparkPoint[]>();
+    selected.forEach((row) => {
+      teamSeriesMap.set(row.team, row.sparkSeries ?? []);
+    });
+
+    const dateMap = new Map<string, Record<string, number>>();
+    teams.forEach((team) => {
+      const points = teamSeriesMap.get(team) ?? [];
+      points.forEach((point) => {
+        if (!dateMap.has(point.date)) dateMap.set(point.date, {});
+        dateMap.get(point.date)![team] = point.value;
       });
+    });
+
+    const series = Array.from(dateMap.entries())
+      .map(([dateKey, values]) => ({ date: dateKey, ...values }))
+      .sort(
+        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+      );
+    return { series, teams };
   }, [data]);
+
+  const getTierClass = (value: number | null | undefined): string => {
+    if (value === null || value === undefined || Number.isNaN(value)) {
+      return styles.tierNeutral;
+    }
+    if (value >= 70) return styles.tierElite;
+    if (value >= 60) return styles.tierGood;
+    if (value <= 30) return styles.tierPoor;
+    if (value <= 40) return styles.tierCaution;
+    return styles.tierNeutral;
+  };
+
+  const ArrowDelta = ({ delta }: { delta: number }) => {
+    if (delta === 0) {
+      return <span className={`${styles.delta} ${styles.deltaNeutral}`}>—</span>;
+    }
+    const positive = delta > 0;
+    const symbol = positive ? "▲" : "▼";
+    const prefix = positive ? "+" : "";
+    return (
+      <span
+        className={`${styles.delta} ${
+          positive ? styles.deltaPositive : styles.deltaNegative
+        }`}
+      >
+        <span>{symbol}</span>
+        <span>
+          {prefix}
+          {delta}
+        </span>
+      </span>
+    );
+  };
+
+  const SkaterRankingCard = ({
+    rows
+  }: {
+    rows: SkaterRankingRow[];
+  }) => {
+    const playerMetadata = data?.skaterTrends?.playerMetadata ?? {};
+
+    return (
+      <div className={styles.skaterRankingCard}>
+        <div className={styles.rankingHeading}>
+          <div className={styles.rankingTitle}>{activeSkaterLabel}</div>
+          <p className={styles.rankingMeta}>Top percentile skaters</p>
+        </div>
+        {rows.length === 0 ? (
+          <p className={styles.emptyText}>No skater data yet.</p>
+        ) : (
+          <ul className={styles.skaterRankingList}>
+            {rows.map((row) => {
+              const meta = playerMetadata[String(row.playerId)];
+              return (
+                <li key={row.playerId} className={styles.skaterRankingRow}>
+                  <div className={styles.skaterInfo}>
+                    <span className={styles.rank}>{row.rank}</span>
+                    <div className={styles.skaterHeadshotWrapper}>
+                      <Image
+                        src={meta?.imageUrl ?? DEFAULT_PLAYER_IMAGE}
+                        alt={meta?.fullName ?? `Player ${row.playerId}`}
+                        className={styles.skaterHeadshot}
+                        width={42}
+                        height={42}
+                        loading="lazy"
+                      />
+                    </div>
+                    <div className={styles.skaterText}>
+                      <p className={styles.skaterName}>
+                        {meta?.fullName ?? `Player ${row.playerId}`}
+                      </p>
+                      <p className={styles.skaterMeta}>
+                        {meta?.teamAbbrev ?? "FA"}
+                        {meta?.position ? ` · ${meta.position}` : ""}
+                      </p>
+                    </div>
+                  </div>
+                  <div className={styles.skaterScore}>
+                    <ArrowDelta delta={row.delta} />
+                    <span className={styles.percentile}>
+                      {formatPercent(row.percentile)}
+                    </span>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+    );
+  };
 
   return (
     <>
@@ -691,11 +779,62 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({
             </div>
           </header>
 
-          <div className={styles.grid}>
-            <section id="team-power" className={styles.panel}>
+          <div className={styles.dashboardGrid}>
+            <section className={styles.chartPanel}>
+              <div className={styles.chartHeader}>
+                <div className={styles.chartTitle}>CTPI Pulse</div>
+                <div className={styles.panelMeta}>Date {date}</div>
+              </div>
+              <div className={styles.chartBody}>
+                {ctpiChartSeries.series.length === 0 && isLoading ? (
+                  <p className={styles.loadingText}>Loading CTPI pulse…</p>
+                ) : ctpiChartSeries.series.length === 0 ? (
+                  <p className={styles.emptyText}>No CTPI history yet.</p>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={ctpiChartSeries.series}>
+                      <XAxis dataKey="date" />
+                      <YAxis domain={[0, 100]} />
+                      <Tooltip />
+                      <Legend />
+                      {ctpiChartSeries.teams.map((team, idx) => (
+                        <Line
+                          key={team}
+                          type="monotone"
+                          dataKey={team}
+                          dot={false}
+                          stroke={getChartColor(idx)}
+                        />
+                      ))}
+                    </LineChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+            </section>
+
+            <section className={styles.topMoversPanel}>
+              <div className={styles.chartHeader}>
+                <div className={styles.chartTitle}>CTPI Movers</div>
+                <span className={styles.panelMeta}>Last 5 GP</span>
+              </div>
+              <div className={styles.topMoversBody}>
+                {ctpiMovers.improved.length === 0 && isLoading ? (
+                  <p className={styles.loadingText}>Loading CTPI movers…</p>
+                ) : ctpiMovers.improved.length === 0 ? (
+                  <p className={styles.emptyText}>No CTPI mover data yet.</p>
+                ) : (
+                  <TopMovers
+                    improved={ctpiMovers.improved}
+                    degraded={ctpiMovers.degraded}
+                  />
+                )}
+              </div>
+            </section>
+
+            <section id="team-power" className={`${styles.panel} ${styles.powerPanel}`}>
               <div className={styles.panelHeader}>
                 <h2 className={styles.panelTitle}>Team Power</h2>
-                <span className={styles.panelMeta}>Top 12 snapshot</span>
+                <span className={styles.panelMeta}>All 32</span>
               </div>
               <div className={styles.panelBody}>
                 {error && teamRows.length === 0 ? (
@@ -711,78 +850,95 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({
                     No team power data for the selected date.
                   </p>
                 ) : (
-                  <>
-                    {isLoading && (
-                      <p className={styles.refreshText}>
-                        Refreshing team power…
-                      </p>
-                    )}
-                    <table className={styles.table}>
-                      <thead>
-                        <tr>
-                          <th className={styles.thLeft}>Team</th>
-                          <th className={styles.thRight}>Power</th>
-                          <th className={styles.thRight}>CTPI</th>
-                          <th className={styles.thRight}>SOS</th>
-                          <th className={styles.thLeft}>Comp</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {visibleTeamRows.map((row) => {
-                          const rating = ratingMap.get(row.teamAbbr);
-                          return (
-                            <tr key={row.teamAbbr}>
-                              <td className={styles.tdLeft}>
-                                {row.teamName} ({row.teamAbbr})
-                              </td>
-                              <td className={styles.tdRight}>
+                  <div className={styles.powerTableWrapper}>
+                    <div className={styles.powerTableHead}>
+                      <span>Rank</span>
+                      <span>Team</span>
+                      <span>Power</span>
+                      <span>CTPI</span>
+                      <span>SOS</span>
+                      <span>Comp</span>
+                    </div>
+                    <ul className={styles.powerTable} role="list">
+                      {teamRows.map((row, index) => {
+                        const rating = ratingMap.get(row.teamAbbr);
+                        const meta = data?.teamMeta?.[row.teamAbbr];
+                        const powerPercentile =
+                          teamRows.length > 1
+                            ? 100 * (1 - index / (teamRows.length - 1))
+                            : 100;
+                        return (
+                          <li key={row.teamAbbr} className={styles.powerRow}>
+                            <span className={styles.powerRank}>
+                              <span className={styles.rankLogoWrapper}>
+                                <Image
+                                  src={meta?.logo ?? DEFAULT_TEAM_LOGO}
+                                  alt={`${row.teamName} logo`}
+                                  className={styles.rankLogo}
+                                  width={34}
+                                  height={34}
+                                  loading="lazy"
+                                />
+                              </span>
+                              <span className={styles.rankText}>
+                                #{index + 1}
+                              </span>
+                            </span>
+                            <div className={styles.powerTeamCell}>
+                              <div className={styles.powerTeamText}>
+                                <div className={styles.powerTeamName}>
+                                  {row.teamName}
+                                </div>
+                                <div className={styles.powerTeamMeta}>
+                                  {row.teamAbbr}
+                                </div>
+                              </div>
+                            </div>
+                            <div className={styles.powerScoreCell}>
+                              <span
+                                className={`${styles.driverTag} ${getTierClass(powerPercentile)}`}
+                              >
                                 {row.powerScore.toFixed(1)}
-                              </td>
-                              <td className={styles.tdRight}>
+                              </span>
+                            </div>
+                            <div className={styles.powerValueCell}>
+                              <span
+                                className={`${styles.valuePill} ${getTierClass(row.ctpiScore)}`}
+                              >
                                 {row.ctpiScore !== null
                                   ? row.ctpiScore.toFixed(1)
                                   : "—"}
-                              </td>
-                              <td className={styles.tdRight}>
+                              </span>
+                            </div>
+                            <div className={styles.powerValueCell}>
+                              <span
+                                className={`${styles.valuePill} ${getTierClass(row.sosScore)}`}
+                              >
                                 {row.sosScore !== null
                                   ? row.sosScore.toFixed(1)
                                   : "—"}
-                              </td>
-                              <td className={styles.tdLeft}>
+                              </span>
+                            </div>
+                            <div className={styles.powerValueCell}>
+                              <span className={styles.compPill}>
                                 F {formatOptional(rating?.finishingRating)} · G{" "}
                                 {formatOptional(rating?.goalieRating)} · D{" "}
                                 {formatOptional(rating?.dangerRating)}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </>
+                              </span>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
                 )}
               </div>
             </section>
 
-            <section className={styles.panel}>
-              <div className={styles.panelHeader}>
-                <h2 className={styles.panelTitle}>CTPI Movers</h2>
-                <span className={styles.panelMeta}>Last 5 GP</span>
-              </div>
-              <div className={styles.panelBody}>
-                {ctpiMovers.improved.length === 0 && isLoading ? (
-                  <p className={styles.loadingText}>Loading CTPI movers…</p>
-                ) : ctpiMovers.improved.length === 0 ? (
-                  <p className={styles.emptyText}>No CTPI mover data yet.</p>
-                ) : (
-                  <TopMovers
-                    improved={ctpiMovers.improved}
-                    degraded={ctpiMovers.degraded}
-                  />
-                )}
-              </div>
-            </section>
-
-            <section id="projections" className={styles.panel}>
+            <section
+              id="projections"
+              className={`${styles.panel} ${styles.projectionsPanel}`}
+            >
               <div className={styles.panelHeader}>
                 <h2 className={styles.panelTitle}>
                   Projections ({projectionSource.toUpperCase()})
@@ -863,7 +1019,10 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({
               </div>
             </section>
 
-            <section id="goalie-starts" className={styles.panel}>
+            <section
+              id="goalie-starts"
+              className={`${styles.panel} ${styles.goaliePanel}`}
+            >
               <div className={styles.panelHeader}>
                 <h2 className={styles.panelTitle}>Goalie Starts</h2>
                 <span className={styles.panelMeta}>Top 8</span>
@@ -927,146 +1086,211 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({
               </div>
             </section>
 
-            <section id="team-trends" className={styles.panel}>
-              <div className={styles.panelHeader}>
-                <h2 className={styles.panelTitle}>Team Trends</h2>
-                <div className={styles.tabRow}>
-                  {TEAM_TREND_CATEGORIES.map((category) => (
-                    <button
-                      key={category.id}
-                      type="button"
-                      onClick={() => setTeamCategory(category.id)}
-                      disabled={teamCategory === category.id}
-                      className={styles.tabButton}
-                    >
-                      {category.label}
-                    </button>
-                  ))}
-                </div>
+            <section className={styles.trendsPanel}>
+              <div className={styles.topTabs} role="tablist" aria-label="Dataset">
+                {(
+                  [
+                    { id: "teams", label: "Teams" },
+                    { id: "skaters", label: "Skaters" }
+                  ] as const
+                ).map((tab) => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={activeTrendTab === tab.id}
+                    className={`${styles.tab} ${
+                      activeTrendTab === tab.id ? styles.tabActive : ""
+                    }`}
+                    onClick={() => setActiveTrendTab(tab.id)}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
               </div>
-              <div className={styles.panelBody}>
-                {error && teamTrendSeries.series.length === 0 ? (
-                  <p className={styles.errorText}>
-                    Failed to load team trends: {error.message}
-                  </p>
-                ) : teamTrendSeries.series.length === 0 && isLoading ? (
-                  <p className={styles.loadingText}>Loading trend charts…</p>
-                ) : teamTrendSeries.series.length === 0 ? (
-                  <p className={styles.emptyText}>No trend history yet.</p>
-                ) : (
-                  <>
-                    {isLoading && (
-                      <p className={styles.refreshText}>
-                        Refreshing trend charts…
-                      </p>
-                    )}
-                    <ResponsiveContainer width="100%" height={220}>
-                      <LineChart data={teamTrendSeries.series}>
-                        <XAxis dataKey="gp" />
-                        <YAxis domain={[0, 100]} />
-                        <Tooltip />
-                        <Legend />
-                        {teamTrendSeries.teams.map((team, idx) => (
-                          <Line
-                            key={team}
-                            type="monotone"
-                            dataKey={team}
-                            dot={false}
-                            stroke={getChartColor(idx)}
-                          />
-                        ))}
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </>
-                )}
-              </div>
-            </section>
 
-            <section id="skater-trends" className={styles.panel}>
-              <div className={styles.panelHeader}>
-                <h2 className={styles.panelTitle}>Skater Trends</h2>
-                <div className={styles.tabRow}>
-                  {SKATER_TREND_CATEGORIES.map((category) => (
-                    <button
-                      key={category.id}
-                      type="button"
-                      onClick={() => setSkaterCategory(category.id)}
-                      disabled={skaterCategory === category.id}
-                      className={styles.tabButton}
-                    >
-                      {category.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className={styles.panelBody}>
-                <div className={styles.tabRow}>
-                  {(["forward", "defense", "all"] as SkaterPositionGroup[]).map(
-                    (group) => (
+              {activeTrendTab === "teams" ? (
+                <>
+                  <div className={styles.subTabs} aria-label="Team categories">
+                    {TEAM_TREND_CATEGORIES.map((category) => (
                       <button
-                        key={group}
+                        key={category.id}
                         type="button"
-                        onClick={() => setSkaterPosition(group)}
-                        disabled={skaterPosition === group}
-                        className={styles.tabButton}
+                        className={`${styles.subTab} ${
+                          teamCategory === category.id
+                            ? styles.subTabActive
+                            : ""
+                        }`}
+                        aria-pressed={teamCategory === category.id}
+                        onClick={() => setTeamCategory(category.id)}
                       >
-                        {group === "all"
-                          ? "All"
-                          : group === "forward"
-                            ? "Forwards"
-                            : "Defense"}
+                        {category.label}
                       </button>
-                    )
-                  )}
-                  {([1, 3, 5, 10] as SkaterWindowSize[]).map((windowSize) => (
-                    <button
-                      key={windowSize}
-                      type="button"
-                      onClick={() => setSkaterWindow(windowSize)}
-                      disabled={skaterWindow === windowSize}
-                      className={styles.tabButton}
-                    >
-                      {windowSize} GP
-                    </button>
-                  ))}
-                </div>
-                {error && skaterTrendSeries.series.length === 0 ? (
-                  <p className={styles.errorText}>
-                    Failed to load skater trends: {error.message}
-                  </p>
-                ) : skaterTrendSeries.series.length === 0 && isLoading ? (
-                  <p className={styles.loadingText}>Loading skater trends…</p>
-                ) : skaterTrendSeries.series.length === 0 ? (
-                  <p className={styles.emptyText}>
-                    No skater trend history yet.
-                  </p>
-                ) : (
-                  <>
-                    {isLoading && (
-                      <p className={styles.refreshText}>
-                        Refreshing skater trends…
+                    ))}
+                  </div>
+                  <div
+                    className={styles.dashboardContent}
+                    role="region"
+                    aria-label="Team chart"
+                  >
+                    {error && teamTrendSeries.series.length === 0 ? (
+                      <p className={styles.errorText}>
+                        Failed to load team trends: {error.message}
                       </p>
+                    ) : teamTrendSeries.series.length === 0 && isLoading ? (
+                      <p className={styles.loadingText}>
+                        Loading trend charts…
+                      </p>
+                    ) : teamTrendSeries.series.length === 0 ? (
+                      <p className={styles.emptyText}>No trend history yet.</p>
+                    ) : (
+                      <>
+                        {isLoading && (
+                          <p className={styles.refreshText}>
+                            Refreshing trend charts…
+                          </p>
+                        )}
+                        <ResponsiveContainer width="100%" height={260}>
+                          <LineChart data={teamTrendSeries.series}>
+                            <XAxis dataKey="gp" />
+                            <YAxis domain={[0, 100]} />
+                            <Tooltip />
+                            <Legend />
+                            {teamTrendSeries.teams.map((team, idx) => (
+                              <Line
+                                key={team}
+                                type="monotone"
+                                dataKey={team}
+                                dot={false}
+                                stroke={getChartColor(idx)}
+                              />
+                            ))}
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </>
                     )}
-                    <ResponsiveContainer width="100%" height={220}>
-                      <LineChart data={skaterTrendSeries.series}>
-                        <XAxis dataKey="gp" />
-                        <YAxis domain={[0, 100]} />
-                        <Tooltip />
-                        <Legend />
-                        {skaterTrendSeries.players.map((playerId, idx) => (
-                          <Line
-                            key={playerId}
-                            type="monotone"
-                            dataKey={playerId}
-                            dot={false}
-                            stroke={getChartColor(idx)}
-                          />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className={styles.subTabs} aria-label="Skater categories">
+                    {SKATER_TREND_CATEGORIES.map((category) => (
+                      <button
+                        key={category.id}
+                        type="button"
+                        className={`${styles.subTab} ${
+                          skaterCategory === category.id
+                            ? styles.subTabActive
+                            : ""
+                        }`}
+                        aria-pressed={skaterCategory === category.id}
+                        onClick={() => setSkaterCategory(category.id)}
+                      >
+                        {category.label}
+                      </button>
+                    ))}
+                    <div className={styles.skaterControls}>
+                      <div
+                        className={styles.windowToggle}
+                        aria-label="Skater position group"
+                      >
+                        {(
+                          ["forward", "defense", "all"] as SkaterPositionGroup[]
+                        ).map((group) => (
+                          <button
+                            key={group}
+                            type="button"
+                            className={`${styles.windowButton} ${
+                              skaterPosition === group
+                                ? styles.windowActive
+                                : ""
+                            }`}
+                            aria-pressed={skaterPosition === group}
+                            onClick={() => setSkaterPosition(group)}
+                          >
+                            {group === "all"
+                              ? "All"
+                              : group === "forward"
+                                ? "Forwards"
+                                : "Defense"}
+                          </button>
                         ))}
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </>
-                )}
-              </div>
+                      </div>
+                      <div
+                        className={styles.windowToggle}
+                        aria-label="Skater window size"
+                      >
+                        {([1, 3, 5, 10] as SkaterWindowSize[]).map(
+                          (windowSize) => (
+                            <button
+                              key={windowSize}
+                              type="button"
+                              className={`${styles.windowButton} ${
+                                skaterWindow === windowSize
+                                  ? styles.windowActive
+                                  : ""
+                              }`}
+                              aria-pressed={skaterWindow === windowSize}
+                              onClick={() => setSkaterWindow(windowSize)}
+                            >
+                              {windowSize} GP
+                            </button>
+                          )
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    className={styles.dashboardContent}
+                    role="region"
+                    aria-label="Skater chart"
+                  >
+                    {error && skaterTrendSeries.series.length === 0 ? (
+                      <p className={styles.errorText}>
+                        Failed to load skater trends: {error.message}
+                      </p>
+                    ) : skaterTrendSeries.series.length === 0 && isLoading ? (
+                      <p className={styles.loadingText}>
+                        Loading skater trends…
+                      </p>
+                    ) : skaterTrendSeries.series.length === 0 ? (
+                      <p className={styles.emptyText}>
+                        No skater trend history yet.
+                      </p>
+                    ) : (
+                      <div className={styles.trendGrid}>
+                        <SkaterRankingCard
+                          rows={skaterCategoryData.rankings}
+                        />
+                        <div className={styles.chartCard}>
+                          {isLoading && (
+                            <p className={styles.refreshText}>
+                              Refreshing skater trends…
+                            </p>
+                          )}
+                          <ResponsiveContainer width="100%" height={260}>
+                            <LineChart data={skaterTrendSeries.series}>
+                              <XAxis dataKey="gp" />
+                              <YAxis domain={[0, 100]} />
+                              <Tooltip />
+                              <Legend />
+                              {skaterTrendSeries.players.map((playerId, idx) => (
+                                <Line
+                                  key={playerId}
+                                  type="monotone"
+                                  dataKey={playerId}
+                                  dot={false}
+                                  stroke={getChartColor(idx)}
+                                />
+                              ))}
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
             </section>
           </div>
         </main>
