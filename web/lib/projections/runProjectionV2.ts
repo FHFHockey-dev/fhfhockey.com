@@ -29,6 +29,9 @@ type RollingRow = {
   toi_seconds_avg_all: number | null;
   sog_per_60_avg_last5: number | null;
   sog_per_60_avg_all: number | null;
+  goals_total_last5: number | null;
+  shots_total_last5: number | null;
+  assists_total_last5: number | null;
   goals_total_all: number | null;
   shots_total_all: number | null;
   assists_total_all: number | null;
@@ -101,6 +104,35 @@ function computeRate(
   if (!Number.isFinite(numerator) || !Number.isFinite(denom) || denom <= 0)
     return fallback;
   return numerator / denom;
+}
+
+function blendOnlineRate(opts: {
+  recentNumerator: number;
+  recentDenom: number;
+  baseNumerator: number;
+  baseDenom: number;
+  fallback: number;
+  priorStrength: number;
+  minRate: number;
+  maxRate: number;
+}): number {
+  const baseRate = computeRate(
+    opts.baseNumerator + opts.fallback * opts.priorStrength,
+    opts.baseDenom + opts.priorStrength,
+    opts.fallback
+  );
+  const recentRate = computeRate(
+    opts.recentNumerator,
+    opts.recentDenom,
+    baseRate
+  );
+  const weight = clamp(
+    opts.recentDenom / (opts.recentDenom + opts.priorStrength),
+    0,
+    1
+  );
+  const blended = baseRate + weight * (recentRate - baseRate);
+  return clamp(blended, opts.minRate, opts.maxRate);
 }
 
 type TeamStrengthAverages = {
@@ -291,7 +323,7 @@ async function fetchRollingRows(
   const { data, error } = await supabase
     .from("rolling_player_game_metrics")
     .select(
-      "player_id,strength_state,game_date,toi_seconds_avg_last5,toi_seconds_avg_all,sog_per_60_avg_last5,sog_per_60_avg_all,goals_total_all,shots_total_all,assists_total_all,hits_per_60_avg_last5,hits_per_60_avg_all,blocks_per_60_avg_last5,blocks_per_60_avg_all"
+      "player_id,strength_state,game_date,toi_seconds_avg_last5,toi_seconds_avg_all,sog_per_60_avg_last5,sog_per_60_avg_all,goals_total_last5,shots_total_last5,assists_total_last5,goals_total_all,shots_total_all,assists_total_all,hits_per_60_avg_last5,hits_per_60_avg_all,blocks_per_60_avg_last5,blocks_per_60_avg_all"
     )
     .in("player_id", playerIds)
     .eq("strength_state", strengthState)
@@ -364,6 +396,16 @@ export async function runProjectionV2ForDate(
     player_rows: 0,
     team_rows: 0,
     goalie_rows: 0,
+    learning: {
+      recent_window_games: 5,
+      goal_rate_prior_strength: 40,
+      assist_rate_prior_strength: 20,
+      players_considered: 0,
+      goal_rate_recent_players: 0,
+      assist_rate_recent_players: 0,
+      goal_rate_recent_share: 0,
+      assist_rate_recent_share: 0
+    },
     data_quality: {
       missing_pbp_games: 0,
       missing_shift_totals: 0,
@@ -401,6 +443,11 @@ export async function runProjectionV2ForDate(
       number,
       { goalieId: number; starterProb: number }
     >();
+    const learningCounters = {
+      players: 0,
+      goalRecent: 0,
+      assistRecent: 0
+    };
 
     if (teamIds.length > 0) {
       const { data: events, error: evErr } = await supabase
@@ -595,20 +642,39 @@ export async function runProjectionV2ForDate(
           const shotsEs = computeShotsFromRate(toiEs, sogPer60Ev);
           const shotsPp = computeShotsFromRate(toiPp, sogPer60Pp);
 
-          // Simple conversion priors from totals (all-strength) to avoid overfitting.
+          // Online learning: blend recent and season-long conversion rates.
           const goalsTotal = safeNumber(ev?.goals_total_all, 0);
           const shotsTotal = safeNumber(ev?.shots_total_all, 0);
           const assistsTotal = safeNumber(ev?.assists_total_all, 0);
-          const goalRate = clamp(
-            computeRate(goalsTotal + 2, shotsTotal + 40, 0.1),
-            0.03,
-            0.25
-          );
-          const assistRate = clamp(
-            computeRate(assistsTotal + 3, (goalsTotal + 3) * 2, 0.7),
-            0.2,
-            1.4
-          );
+          const goalsRecent = safeNumber(ev?.goals_total_last5, 0);
+          const shotsRecent = safeNumber(ev?.shots_total_last5, 0);
+          const assistsRecent = safeNumber(ev?.assists_total_last5, 0);
+
+          learningCounters.players += 1;
+          if (shotsRecent > 0) learningCounters.goalRecent += 1;
+          if (goalsRecent > 0) learningCounters.assistRecent += 1;
+
+          const goalRate = blendOnlineRate({
+            recentNumerator: goalsRecent,
+            recentDenom: shotsRecent,
+            baseNumerator: goalsTotal,
+            baseDenom: shotsTotal,
+            fallback: 0.1,
+            priorStrength: 40,
+            minRate: 0.03,
+            maxRate: 0.25
+          });
+
+          const assistRate = blendOnlineRate({
+            recentNumerator: assistsRecent,
+            recentDenom: goalsRecent * 2,
+            baseNumerator: assistsTotal,
+            baseDenom: goalsTotal * 2,
+            fallback: 0.7,
+            priorStrength: 20,
+            minRate: 0.2,
+            maxRate: 1.4
+          });
 
           const availabilityMultiplier =
             playerAvailabilityMultiplier.get(playerId) ?? 1;
@@ -948,6 +1014,14 @@ export async function runProjectionV2ForDate(
     metrics.player_rows = playerRowsUpserted;
     metrics.team_rows = teamRowsUpserted;
     metrics.goalie_rows = goalieRowsUpserted;
+    const learningPlayers = learningCounters.players;
+    metrics.learning.players_considered = learningPlayers;
+    metrics.learning.goal_rate_recent_players = learningCounters.goalRecent;
+    metrics.learning.assist_rate_recent_players = learningCounters.assistRecent;
+    metrics.learning.goal_rate_recent_share =
+      learningPlayers > 0 ? learningCounters.goalRecent / learningPlayers : 0;
+    metrics.learning.assist_rate_recent_share =
+      learningPlayers > 0 ? learningCounters.assistRecent / learningPlayers : 0;
     metrics.finished_at = new Date().toISOString();
     metrics.timed_out = timedOut;
 

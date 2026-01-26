@@ -504,8 +504,8 @@ The ingest endpoint considers a game “complete” and will skip when:
 
 ### Task 3: Introduce learn-as-it-goes ML updates
 - [ ] Parent task complete.
-- [ ] Define a simple online-learning loop (rolling reweighting / Bayesian update) for player rates.
-- [ ] Persist learning metadata in `forge_runs.metrics` and/or a new table for model update history.
+- [x] Define a simple online-learning loop (rolling reweighting / Bayesian update) for player rates.
+- [x] Persist learning metadata in `forge_runs.metrics` and/or a new table for model update history.
 
 ## Relevant files
 - `tasks/prd-projection-model.md` - PRD and tracked task list for FORGE model work.
