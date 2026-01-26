@@ -503,7 +503,7 @@ The ingest endpoint considers a game “complete” and will skip when:
 - [x] Add API/service wiring to surface accuracy data for the chart.
 
 ### Task 3: Introduce learn-as-it-goes ML updates
-- [ ] Parent task complete.
+- [x] Parent task complete.
 - [x] Define a simple online-learning loop (rolling reweighting / Bayesian update) for player rates.
 - [x] Persist learning metadata in `forge_runs.metrics` and/or a new table for model update history.
 
