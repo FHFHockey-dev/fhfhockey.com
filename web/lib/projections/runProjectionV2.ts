@@ -321,6 +321,8 @@ function sigmoid(x: number): number {
   return 1 / (1 + Math.exp(-x));
 }
 
+export type StarterContextForTest = TeamGoalieStarterContext;
+
 type TeamGoalieStarterContext = {
   startsByGoalie: Map<number, number>;
   lastPlayedDateByGoalie: Map<number, string>;
@@ -331,6 +333,14 @@ type TeamGoalieStarterContext = {
 
 const GOALIE_STALE_SOFT_DAYS = 30;
 const GOALIE_STALE_HARD_DAYS = 75;
+const B2B_REPEAT_STARTER_PENALTY = 2.75;
+const B2B_ALTERNATE_GOALIE_BOOST = 0.65;
+const TEAM_STRENGTH_WEAKER_GAP = 0.35;
+const WEAK_OPPONENT_GF_THRESHOLD = 2.6;
+const WEAKER_TEAM_B2B_PRIMARY_PENALTY = 1.1;
+const WEAKER_TEAM_B2B_BACKUP_BOOST = 0.45;
+const WEAK_OPPONENT_PRIMARY_REST_PENALTY = 0.7;
+const WEAK_OPPONENT_BACKUP_BOOST = 0.3;
 
 async function fetchTeamGoalieStarterContext(
   teamId: number,
@@ -418,7 +428,57 @@ async function fetchCurrentTeamGoalieIds(teamId: number): Promise<Set<number>> {
   return new Set((data ?? []).map((r: any) => Number(r.id)).filter((n) => Number.isFinite(n)));
 }
 
-function computeStarterProbabilities(opts: {
+export function selectStarterCandidateGoalieIds(opts: {
+  asOfDate: string;
+  rawCandidateGoalieIds: number[];
+  currentTeamGoalieIds: Set<number>;
+  context: TeamGoalieStarterContext;
+  goalieOverrideGoalieId?: number | null;
+  limit?: number;
+  priorStartProbByGoalieId?: Map<number, number>;
+  confirmedStarterByGoalieId?: Map<number, boolean>;
+}): number[] {
+  const priorStartProbByGoalieId = opts.priorStartProbByGoalieId ?? new Map();
+  const confirmedStarterByGoalieId = opts.confirmedStarterByGoalieId ?? new Map();
+  const goalieOverrideGoalieId = opts.goalieOverrideGoalieId ?? null;
+  const limit = Number.isFinite(opts.limit) ? Math.max(1, Number(opts.limit)) : 3;
+
+  return Array.from(new Set(opts.rawCandidateGoalieIds))
+    .filter((goalieId) => {
+      if (!Number.isFinite(goalieId)) return false;
+      if (goalieOverrideGoalieId === goalieId) return true;
+      if (opts.currentTeamGoalieIds.size > 0 && !opts.currentTeamGoalieIds.has(goalieId)) {
+        return false;
+      }
+      const lastPlayed = opts.context.lastPlayedDateByGoalie.get(goalieId);
+      if (!lastPlayed) return true;
+      const daysSinceLastPlayed = Math.max(0, daysBetweenDates(opts.asOfDate, lastPlayed));
+      return daysSinceLastPlayed <= GOALIE_STALE_HARD_DAYS;
+    })
+    .sort((a, b) => {
+      const score = (goalieId: number) => {
+        const starts = opts.context.startsByGoalie.get(goalieId) ?? 0;
+        const priorProb = priorStartProbByGoalieId.get(goalieId) ?? 0.5;
+        const isConfirmed = confirmedStarterByGoalieId.get(goalieId) ?? false;
+        const lastPlayed = opts.context.lastPlayedDateByGoalie.get(goalieId);
+        const daysSinceLastPlayed =
+          lastPlayed != null ? Math.max(0, daysBetweenDates(opts.asOfDate, lastPlayed)) : 999;
+        const isOverride = goalieOverrideGoalieId === goalieId;
+
+        let s = 0;
+        if (isOverride) s += 100;
+        if (isConfirmed) s += 25;
+        s += priorProb * 10;
+        s += starts * 1.5;
+        s -= Math.min(daysSinceLastPlayed, 120) / 30;
+        return s;
+      };
+      return score(b) - score(a);
+    })
+    .slice(0, limit);
+}
+
+export function computeStarterProbabilities(opts: {
   asOfDate: string;
   candidateGoalieIds: number[];
   starterContext: TeamGoalieStarterContext;
@@ -438,8 +498,9 @@ function computeStarterProbabilities(opts: {
 
   const starts = opts.starterContext.startsByGoalie;
   const totalGames = Math.max(1, opts.starterContext.totalGames);
-  const teamIsWeaker = opts.teamGoalsFor + 0.2 < opts.opponentGoalsFor;
-  const opponentIsWeak = opts.opponentGoalsFor <= 2.6;
+  const teamIsWeaker =
+    opts.teamGoalsFor + TEAM_STRENGTH_WEAKER_GAP < opts.opponentGoalsFor;
+  const opponentIsWeak = opts.opponentGoalsFor <= WEAK_OPPONENT_GF_THRESHOLD;
   const previousGameDate = opts.starterContext.previousGameDate;
   const isB2B =
     previousGameDate != null &&
@@ -464,16 +525,27 @@ function computeStarterProbabilities(opts: {
     score += 0.7 * Math.log(priorProb / (1 - priorProb));
 
     // Back-to-back: goalie from game 1 is heavily discounted for game 2.
-    if (playedYesterday) score -= 2.25;
-    if (isB2B && !playedYesterday) score += 0.55;
+    if (playedYesterday) {
+      score -= B2B_REPEAT_STARTER_PENALTY;
+    } else if (isB2B && previousStarter != null) {
+      score += B2B_ALTERNATE_GOALIE_BOOST;
+    }
 
     // Weaker teams on B2B tend to lean backup usage.
-    if (isB2B && teamIsWeaker && isPrimary) score -= 0.85;
-    if (isB2B && teamIsWeaker && !isPrimary) score += 0.35;
+    if (isB2B && teamIsWeaker && isPrimary) {
+      score -= WEAKER_TEAM_B2B_PRIMARY_PENALTY;
+    }
+    if (isB2B && teamIsWeaker && !isPrimary) {
+      score += WEAKER_TEAM_B2B_BACKUP_BOOST;
+    }
 
     // Starter on a soft matchup can be rested for backup.
-    if (opponentIsWeak && isPrimary) score -= 0.55;
-    if (opponentIsWeak && !isPrimary) score += 0.25;
+    if (opponentIsWeak && isPrimary) {
+      score -= WEAK_OPPONENT_PRIMARY_REST_PENALTY;
+    }
+    if (opponentIsWeak && !isPrimary) {
+      score += WEAK_OPPONENT_BACKUP_BOOST;
+    }
 
     // Recency guardrail: goalies inactive for long stretches should be near-eliminated.
     if (daysSinceLastPlayed > GOALIE_STALE_HARD_DAYS) score -= 6;
@@ -1179,7 +1251,7 @@ export async function runProjectionV2ForDate(
         const goalieOverride = goalieOverrideByTeamId.get(teamId);
         const { data: goalieStarts, error: gsErr } = await supabase
           .from("goalie_start_projections")
-          .select("player_id,start_probability")
+          .select("player_id,start_probability,confirmed_status,l10_start_pct")
           .eq("game_id", game.id)
           .eq("team_id", teamId)
           .order("start_probability", { ascending: false })
@@ -1210,12 +1282,17 @@ export async function runProjectionV2ForDate(
         const currentTeamGoalieIds = currentTeamGoalieIdsCache.get(teamId) as Set<number>;
 
         const priorStartProbByGoalieId = new Map<number, number>();
+        const confirmedStarterByGoalieId = new Map<number, boolean>();
         for (const row of goalieStarts ?? []) {
           const goalieId = Number((row as any)?.player_id);
           if (!Number.isFinite(goalieId)) continue;
           priorStartProbByGoalieId.set(
             goalieId,
             clamp(Number((row as any)?.start_probability ?? 0.5), 0.01, 0.99)
+          );
+          confirmedStarterByGoalieId.set(
+            goalieId,
+            Boolean((row as any)?.confirmed_status)
           );
         }
 
@@ -1231,34 +1308,16 @@ export async function runProjectionV2ForDate(
             ].filter((n): n is number => Number.isFinite(n))
           )
         );
-        const candidateGoalieIds = rawCandidateGoalieIds
-          .filter((goalieId) => {
-            if (goalieOverride?.goalieId === goalieId) return true;
-            // Keep only current-team goalies to prevent stale historical carry-over.
-            if (currentTeamGoalieIds.size > 0 && !currentTeamGoalieIds.has(goalieId)) {
-              return false;
-            }
-            const lastPlayed = context.lastPlayedDateByGoalie.get(goalieId);
-            if (!lastPlayed) return true;
-            const daysSinceLastPlayed = Math.max(
-              0,
-              daysBetweenDates(asOfDate, lastPlayed)
-            );
-            return daysSinceLastPlayed <= GOALIE_STALE_HARD_DAYS;
-          })
-          .sort((a, b) => {
-            const startsA = context.startsByGoalie.get(a) ?? 0;
-            const startsB = context.startsByGoalie.get(b) ?? 0;
-            const lastA = context.lastPlayedDateByGoalie.get(a);
-            const lastB = context.lastPlayedDateByGoalie.get(b);
-            const daysA =
-              lastA != null ? Math.max(0, daysBetweenDates(asOfDate, lastA)) : 999;
-            const daysB =
-              lastB != null ? Math.max(0, daysBetweenDates(asOfDate, lastB)) : 999;
-            if (startsB !== startsA) return startsB - startsA;
-            return daysA - daysB;
-          })
-          .slice(0, 3);
+        const candidateGoalieIds = selectStarterCandidateGoalieIds({
+          asOfDate,
+          rawCandidateGoalieIds,
+          currentTeamGoalieIds,
+          context,
+          goalieOverrideGoalieId: goalieOverride?.goalieId ?? null,
+          priorStartProbByGoalieId,
+          confirmedStarterByGoalieId,
+          limit: 3
+        });
 
         if (candidateGoalieIds.length > 0) {
           goalieCandidates.push({
@@ -1296,7 +1355,16 @@ export async function runProjectionV2ForDate(
           selectedGoalieId = c.override.goalieId;
           starterProb = c.override.starterProb;
           starterModelMeta = {
-            source: "roster_event_override"
+            source: "roster_event_override",
+            selected_goalie_id: selectedGoalieId,
+            selected_goalie_probability: Number(starterProb.toFixed(4)),
+            candidate_goalies: [
+              {
+                goalie_id: selectedGoalieId,
+                probability: Number(starterProb.toFixed(4)),
+                override: true
+              }
+            ]
           };
         } else {
           const starterContext =
@@ -1304,6 +1372,12 @@ export async function runProjectionV2ForDate(
             (await fetchTeamGoalieStarterContext(c.teamId, asOfDate));
           teamGoalieStarterContextCache.set(c.teamId, starterContext);
           const opponentGoalsFor = teamGoalsByTeamId.get(c.opponentTeamId) ?? 0;
+          const teamIsWeaker =
+            teamGoalsFor + TEAM_STRENGTH_WEAKER_GAP < opponentGoalsFor;
+          const opponentIsWeak = opponentGoalsFor <= WEAK_OPPONENT_GF_THRESHOLD;
+          const isB2B =
+            starterContext.previousGameDate != null &&
+            daysBetweenDates(asOfDate, starterContext.previousGameDate) === 1;
           const probs = computeStarterProbabilities({
             asOfDate,
             candidateGoalieIds: c.candidateGoalieIds,
@@ -1319,6 +1393,18 @@ export async function runProjectionV2ForDate(
           }
           starterModelMeta = {
             source: "heuristic_starter_model",
+            selected_goalie_id: selectedGoalieId,
+            selected_goalie_probability: Number(starterProb.toFixed(4)),
+            model_context: {
+              as_of_date: asOfDate,
+              previous_game_date: starterContext.previousGameDate,
+              previous_game_starter_goalie_id:
+                starterContext.previousGameStarterGoalieId,
+              is_back_to_back: isB2B,
+              team_is_weaker: teamIsWeaker,
+              opponent_is_weak: opponentIsWeak,
+              l10_games_available: starterContext.totalGames
+            },
             candidate_goalies: ranked.map(([goalieId, probability]) => ({
               goalie_id: goalieId,
               probability: Number(probability.toFixed(4)),
