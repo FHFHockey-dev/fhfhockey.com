@@ -59,6 +59,22 @@ type CoverageAccumulator = {
   in_range: number;
 };
 
+type ErrorStats = {
+  count: number;
+  error_abs_sum: number;
+  error_sq_sum: number;
+};
+
+type MetricComparison = {
+  sample_count: number;
+  model_mae: number;
+  model_rmse: number;
+  baseline_mae: number;
+  baseline_rmse: number;
+  mae_delta_vs_baseline: number;
+  rmse_delta_vs_baseline: number;
+};
+
 const DEFAULT_OFFSET_DAYS = 1;
 const DEFAULT_RANGE_BUDGET_MS = 240_000;
 const BATCH_SIZE = 800;
@@ -201,6 +217,44 @@ function finalizeCoverage(map: Map<string, CoverageAccumulator>) {
     };
   }
   return out;
+}
+
+function initErrorStats(): ErrorStats {
+  return {
+    count: 0,
+    error_abs_sum: 0,
+    error_sq_sum: 0
+  };
+}
+
+function updateErrorStats(stats: ErrorStats, predicted: number, actual: number) {
+  const p = Number.isFinite(predicted) ? predicted : 0;
+  const a = Number.isFinite(actual) ? actual : 0;
+  const err = p - a;
+  stats.count += 1;
+  stats.error_abs_sum += Math.abs(err);
+  stats.error_sq_sum += err * err;
+}
+
+function finalizeMetricComparison(
+  model: ErrorStats,
+  baseline: ErrorStats
+): MetricComparison {
+  const modelCount = Math.max(1, model.count);
+  const baselineCount = Math.max(1, baseline.count);
+  const modelMae = model.error_abs_sum / modelCount;
+  const modelRmse = Math.sqrt(model.error_sq_sum / modelCount);
+  const baselineMae = baseline.error_abs_sum / baselineCount;
+  const baselineRmse = Math.sqrt(baseline.error_sq_sum / baselineCount);
+  return {
+    sample_count: Math.min(model.count, baseline.count),
+    model_mae: Number(modelMae.toFixed(4)),
+    model_rmse: Number(modelRmse.toFixed(4)),
+    baseline_mae: Number(baselineMae.toFixed(4)),
+    baseline_rmse: Number(baselineRmse.toFixed(4)),
+    mae_delta_vs_baseline: Number((modelMae - baselineMae).toFixed(4)),
+    rmse_delta_vs_baseline: Number((modelRmse - baselineRmse).toFixed(4))
+  };
 }
 
 async function updateRunCalibrationMetrics(
@@ -361,6 +415,11 @@ async function runAccuracyForDate(
     goalieMatchedByPlayer: number;
     goalieActualFallbackCount: number;
   };
+  goalieHoldoutComparison: {
+    baseline_definition: string;
+    saves: MetricComparison;
+    goals_against: MetricComparison;
+  };
   durationMs: string;
 }> {
   const startedAt = Date.now();
@@ -512,7 +571,7 @@ async function runAccuracyForDate(
   const { data: goalieProjections, error: goalieErr } = await supabase
     .from("forge_goalie_projections")
     .select(
-      "game_id,goalie_id,team_id,opponent_team_id,starter_probability,proj_saves,proj_goals_allowed,proj_win_prob,proj_shutout_prob,uncertainty"
+      "game_id,goalie_id,team_id,opponent_team_id,starter_probability,proj_shots_against,proj_saves,proj_goals_allowed,proj_win_prob,proj_shutout_prob,uncertainty"
     )
     .eq("run_id", runId)
     .eq("as_of_date", projectionDate)
@@ -535,6 +594,10 @@ async function runAccuracyForDate(
   const goalieResults: AccuracyResultRow[] = [];
   const goalieStatAggregates = new Map<string, StatAggregate>();
   const goalieCoverage = new Map<string, CoverageAccumulator>();
+  const savesModelStats = initErrorStats();
+  const savesBaselineStats = initErrorStats();
+  const goalsAgainstModelStats = initErrorStats();
+  const goalsAgainstBaselineStats = initErrorStats();
   const goalieActualCount = await fetchGoalieActualCount(actualDate);
 
   for (const row of goalieProjectionRows) {
@@ -556,6 +619,11 @@ async function runAccuracyForDate(
     const projectedShutouts = row.proj_shutout_prob ?? 0;
     const projectedSaves = row.proj_saves ?? 0;
     const projectedGoalsAgainst = row.proj_goals_allowed ?? 0;
+    const projectedShotsAgainst =
+      row.proj_shots_against ?? Math.max(0, projectedSaves + projectedGoalsAgainst);
+    const baselineSavePct = 0.9;
+    const baselineGoalsAgainst = projectedShotsAgainst * (1 - baselineSavePct);
+    const baselineSaves = Math.max(0, projectedShotsAgainst - baselineGoalsAgainst);
 
     updateStatAggregate(
       goalieStatAggregates,
@@ -580,6 +648,18 @@ async function runAccuracyForDate(
       "shutouts",
       projectedShutouts,
       actual.shutouts ?? 0
+    );
+    updateErrorStats(savesModelStats, projectedSaves, actual.saves ?? 0);
+    updateErrorStats(savesBaselineStats, baselineSaves, actual.saves ?? 0);
+    updateErrorStats(
+      goalsAgainstModelStats,
+      projectedGoalsAgainst,
+      actual.goals_against ?? 0
+    );
+    updateErrorStats(
+      goalsAgainstBaselineStats,
+      baselineGoalsAgainst,
+      actual.goals_against ?? 0
     );
 
     const goalieUncertainty = row.uncertainty ?? {};
@@ -776,6 +856,14 @@ async function runAccuracyForDate(
       goalieMatchedByPlayer,
       goalieActualFallbackCount: goalieActualsFallback.size
     },
+    goalieHoldoutComparison: {
+      baseline_definition: "fixed_save_pct_0.900_using_projected_shots_against",
+      saves: finalizeMetricComparison(savesModelStats, savesBaselineStats),
+      goals_against: finalizeMetricComparison(
+        goalsAgainstModelStats,
+        goalsAgainstBaselineStats
+      )
+    },
     durationMs: formatDurationMsToMMSS(Date.now() - startedAt)
   };
 }
@@ -861,6 +949,7 @@ export default withCronJobAudit(async function handler(
       goalieRows: result.goalieRows,
       totalRows: result.totalRows,
       goalieMatchDiagnostics: result.goalieMatchDiagnostics,
+      goalieHoldoutComparison: result.goalieHoldoutComparison,
       durationMs: formatDurationMsToMMSS(Date.now() - startedAt)
     });
   } catch (e) {

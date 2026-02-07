@@ -33,13 +33,13 @@
   - [x] 1.5 Add team-strength matchup heuristic (weaker team on B2B more likely backup, weak-opponent rest spot for starter).
   - [x] 1.6 Persist starter-selection diagnostics in uncertainty metadata (`source`, candidate list, l10_starts, recency fields).
   - [x] 1.7 Add unit tests for starter probability edge cases (B2B, stale goalies, legacy team goalie contamination).
-- [ ] 2.0 Upgrade goalie projection quality (SA, SV%, GA) with context-aware features and calibration
-  - [ ] 2.1 Add team defensive environment features (rolling SA/CA proxies, xGA proxies if available) into goalie SA estimation.
-  - [ ] 2.2 Add opponent offense/context features (rolling GF/shot generation, home/away split, rest) to GA/SV% modeling inputs.
-  - [ ] 2.3 Add workload/fatigue features (starts in last 7/14 days, B2B flags, travel proxy if available).
-  - [ ] 2.4 Rework save% prior blending to weight multi-season baseline + current-season signal + recency with sample-size-dependent shrinkage.
-  - [ ] 2.5 Add guardrails for small samples (stronger regression and confidence downgrades for low-shot windows).
-  - [ ] 2.6 Validate uplift with holdout comparisons against current baseline (MAE/RMSE on saves/GA).
+- [x] 2.0 Upgrade goalie projection quality (SA, SV%, GA) with context-aware features and calibration
+  - [x] 2.1 Add team defensive environment features (rolling SA/CA proxies, xGA proxies if available) into goalie SA estimation.
+  - [x] 2.2 Add opponent offense/context features (rolling GF/shot generation, home/away split, rest) to GA/SV% modeling inputs.
+  - [x] 2.3 Add workload/fatigue features (starts in last 7/14 days, B2B flags, travel proxy if available).
+  - [x] 2.4 Rework save% prior blending to weight multi-season baseline + current-season signal + recency with sample-size-dependent shrinkage.
+  - [x] 2.5 Add guardrails for small samples (stronger regression and confidence downgrades for low-shot windows).
+  - [x] 2.6 Validate uplift with holdout comparisons against current baseline (MAE/RMSE on saves/GA).
 - [ ] 3.0 Implement multi-scenario (top-2) goalie forecasting and distribution blending for next-5 outputs
   - [ ] 3.1 Generate top-2 goalie starter scenarios per team/game with normalized probabilities.
   - [ ] 3.2 Compute scenario-level goalie projections (SA, saves, GA, win/shutout) independently per candidate.

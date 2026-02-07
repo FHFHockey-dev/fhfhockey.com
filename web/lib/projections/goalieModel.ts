@@ -7,6 +7,9 @@ export type GoalieEvidence = {
   recentStarts: number;
   recentShotsAgainst: number;
   recentGoalsAllowed: number;
+  seasonStarts: number;
+  seasonShotsAgainst: number;
+  seasonGoalsAllowed: number;
   baselineStarts: number;
   baselineShotsAgainst: number;
   baselineGoalsAllowed: number;
@@ -106,22 +109,48 @@ export function computeGoalieProjectionModel(
 
   const recentShots = Math.max(0, input.evidence.recentShotsAgainst);
   const recentGoals = Math.max(0, input.evidence.recentGoalsAllowed);
+  const seasonShots = Math.max(
+    0,
+    input.evidence.seasonShotsAgainst ?? input.evidence.baselineShotsAgainst
+  );
+  const seasonGoals = Math.max(
+    0,
+    input.evidence.seasonGoalsAllowed ?? input.evidence.baselineGoalsAllowed
+  );
   const baselineShots = Math.max(0, input.evidence.baselineShotsAgainst);
   const baselineGoals = Math.max(0, input.evidence.baselineGoalsAllowed);
 
   const recentSvPct = 1 - safeRate(recentGoals, recentShots, 1 - leagueSavePct);
+  const seasonSvPct = 1 - safeRate(seasonGoals, seasonShots, 1 - leagueSavePct);
   const baselineSvPct =
     1 - safeRate(baselineGoals, baselineShots, 1 - leagueSavePct);
 
-  const recentWeight = clamp(recentShots / (recentShots + 500), 0, 1);
-  const evidenceSvPct =
-    baselineSvPct + recentWeight * (recentSvPct - baselineSvPct);
+  const lowRecentSamplePenalty = clamp((140 - recentShots) / 140, 0, 1);
+  const lowSeasonSamplePenalty = clamp((420 - seasonShots) / 420, 0, 1);
+  const smallSamplePenalty = clamp(
+    lowRecentSamplePenalty * 0.6 + lowSeasonSamplePenalty * 0.4,
+    0,
+    1
+  );
 
-  const priorShots = clamp(850 - baselineShots * 0.25, 350, 900);
+  // Multi-layer prior blending:
+  // 1) season towards career baseline, 2) recency towards season anchor, 3) league shrinkage by total evidence.
+  const seasonWeight = clamp(seasonShots / (seasonShots + 900), 0, 1) * (1 - 0.35 * smallSamplePenalty);
+  const seasonAnchor = baselineSvPct + seasonWeight * (seasonSvPct - baselineSvPct);
+
+  const recentWeight = clamp(recentShots / (recentShots + 300), 0, 1) * (1 - 0.55 * smallSamplePenalty);
+  const recencyAdjusted = seasonAnchor + recentWeight * (recentSvPct - seasonAnchor);
+
+  const totalEvidenceShots = baselineShots + seasonShots + recentShots;
+  const priorShots = clamp(
+    1100 - totalEvidenceShots * 0.2 + smallSamplePenalty * 220,
+    350,
+    1250
+  );
   const priorSaves = priorShots * leagueSavePct;
   const posteriorSvPct = safeRate(
-    evidenceSvPct * (baselineShots + recentShots) + priorSaves,
-    baselineShots + recentShots + priorShots,
+    recencyAdjusted * Math.max(1, totalEvidenceShots) + priorSaves,
+    Math.max(1, totalEvidenceShots) + priorShots,
     leagueSavePct
   );
   const modeledSavePct = clamp(posteriorSvPct, 0.85, 0.94);
@@ -143,11 +172,18 @@ export function computeGoalieProjectionModel(
   const shutoutBase = Math.exp(-projectedGoalsAllowed);
   const shutoutProbability = clamp(shutoutBase * starterProbability, 0, 1);
 
-  const baselineSampleConfidence = clamp(baselineShots / 1200, 0, 1);
+  const baselineSampleConfidence = clamp(baselineShots / 1400, 0, 1);
+  const seasonSampleConfidence = clamp(seasonShots / 900, 0, 1);
   const recentSampleConfidence = clamp(recentShots / 300, 0, 1);
   const volatilityPenalty = clamp(volatilityIndex / 2, 0, 1) * 0.35;
+  const samplePenalty = smallSamplePenalty * 0.22;
   const confidenceScore = clamp(
-    0.2 + baselineSampleConfidence * 0.5 + recentSampleConfidence * 0.3 - volatilityPenalty,
+    0.18 +
+      baselineSampleConfidence * 0.4 +
+      seasonSampleConfidence * 0.25 +
+      recentSampleConfidence * 0.17 -
+      volatilityPenalty -
+      samplePenalty,
     0,
     1
   );

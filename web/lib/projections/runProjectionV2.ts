@@ -60,6 +60,7 @@ type GoalieGameHistoryRow = {
   game_date?: string | null;
   goalie_id?: number | null;
   toi_seconds?: number | null;
+  game_id?: number | null;
 };
 
 function assertSupabase() {
@@ -331,6 +332,25 @@ type TeamGoalieStarterContext = {
   previousGameStarterGoalieId: number | null;
 };
 
+type TeamDefensiveEnvironment = {
+  avgShotsAgainstLast10: number | null;
+  avgShotsAgainstLast5: number | null;
+};
+
+type TeamOffenseEnvironment = {
+  avgShotsForLast10: number | null;
+  avgShotsForLast5: number | null;
+  avgGoalsForLast10: number | null;
+  avgGoalsForLast5: number | null;
+};
+
+type GoalieWorkloadContext = {
+  startsLast7Days: number;
+  startsLast14Days: number;
+  daysSinceLastStart: number | null;
+  isGoalieBackToBack: boolean;
+};
+
 const GOALIE_STALE_SOFT_DAYS = 30;
 const GOALIE_STALE_HARD_DAYS = 75;
 const B2B_REPEAT_STARTER_PENALTY = 2.75;
@@ -341,6 +361,14 @@ const WEAKER_TEAM_B2B_PRIMARY_PENALTY = 1.1;
 const WEAKER_TEAM_B2B_BACKUP_BOOST = 0.45;
 const WEAK_OPPONENT_PRIMARY_REST_PENALTY = 0.7;
 const WEAK_OPPONENT_BACKUP_BOOST = 0.3;
+const OPPONENT_RESTED_BOOST = 0.03;
+const OPPONENT_B2B_PENALTY = 0.04;
+const DEFENSE_B2B_FATIGUE_BOOST = 0.02;
+const OPPONENT_HOME_BOOST = 0.02;
+const OPPONENT_AWAY_PENALTY = 0.01;
+const GOALIE_HEAVY_WORKLOAD_PENALTY = 0.025;
+const GOALIE_VERY_HEAVY_WORKLOAD_PENALTY = 0.04;
+const GOALIE_BACK_TO_BACK_PENALTY = 0.03;
 
 async function fetchTeamGoalieStarterContext(
   teamId: number,
@@ -426,6 +454,144 @@ async function fetchCurrentTeamGoalieIds(teamId: number): Promise<Set<number>> {
     .eq("position", "G");
   if (error) throw error;
   return new Set((data ?? []).map((r: any) => Number(r.id)).filter((n) => Number.isFinite(n)));
+}
+
+async function fetchTeamDefensiveEnvironment(
+  teamId: number,
+  asOfDate: string
+): Promise<TeamDefensiveEnvironment> {
+  assertSupabase();
+  const { data, error } = await supabase
+    .from("forge_goalie_game")
+    .select("game_id,game_date,shots_against")
+    .eq("team_id", teamId)
+    .lt("game_date", asOfDate)
+    .order("game_date", { ascending: false })
+    .limit(30);
+  if (error) throw error;
+
+  const byGameId = new Map<number, { gameDate: string; shotsAgainst: number }>();
+  for (const row of (data ?? []) as GoalieGameHistoryRow[]) {
+    const gameId = row.game_id;
+    const gameDate = row.game_date;
+    if (!Number.isFinite(gameId) || !gameDate) continue;
+    const shotsAgainst = safeNumber(row.shots_against, 0);
+    const existing = byGameId.get(gameId as number);
+    if (!existing) {
+      byGameId.set(gameId as number, { gameDate, shotsAgainst });
+      continue;
+    }
+    // If multiple goalies appeared in one game, sum to team total SA.
+    byGameId.set(gameId as number, {
+      gameDate,
+      shotsAgainst: existing.shotsAgainst + shotsAgainst
+    });
+  }
+
+  const recentGames = Array.from(byGameId.values())
+    .sort((a, b) => b.gameDate.localeCompare(a.gameDate))
+    .slice(0, 10);
+  const avg10 = meanOrNull(recentGames.map((g) => g.shotsAgainst));
+  const avg5 = meanOrNull(recentGames.slice(0, 5).map((g) => g.shotsAgainst));
+  return {
+    avgShotsAgainstLast10: avg10,
+    avgShotsAgainstLast5: avg5
+  };
+}
+
+async function fetchTeamOffenseEnvironment(
+  teamId: number,
+  asOfDate: string
+): Promise<TeamOffenseEnvironment> {
+  assertSupabase();
+  const { data, error } = await supabase
+    .from("forge_team_game_strength")
+    .select("game_date,shots_es,shots_pp,goals_es,goals_pp")
+    .eq("team_id", teamId)
+    .lt("game_date", asOfDate)
+    .order("game_date", { ascending: false })
+    .limit(10);
+  if (error) throw error;
+
+  const rows = (data ?? []) as Array<{
+    game_date: string;
+    shots_es: number | null;
+    shots_pp: number | null;
+    goals_es: number | null;
+    goals_pp: number | null;
+  }>;
+  const shotsByGame = rows.map(
+    (r) => safeNumber(r.shots_es, 0) + safeNumber(r.shots_pp, 0)
+  );
+  const goalsByGame = rows.map(
+    (r) => safeNumber(r.goals_es, 0) + safeNumber(r.goals_pp, 0)
+  );
+
+  return {
+    avgShotsForLast10: meanOrNull(shotsByGame),
+    avgShotsForLast5: meanOrNull(shotsByGame.slice(0, 5)),
+    avgGoalsForLast10: meanOrNull(goalsByGame),
+    avgGoalsForLast5: meanOrNull(goalsByGame.slice(0, 5))
+  };
+}
+
+async function fetchTeamRestDays(
+  teamId: number,
+  asOfDate: string
+): Promise<number | null> {
+  assertSupabase();
+  const { data, error } = await supabase
+    .from("games")
+    .select("date")
+    .or(`homeTeamId.eq.${teamId},awayTeamId.eq.${teamId}`)
+    .lt("date", asOfDate)
+    .order("date", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  const previousDate = (data as any)?.date as string | null;
+  if (!previousDate) return null;
+  return Math.max(0, daysBetweenDates(asOfDate, previousDate));
+}
+
+async function fetchGoalieWorkloadContext(
+  goalieId: number,
+  asOfDate: string
+): Promise<GoalieWorkloadContext> {
+  assertSupabase();
+  const { data, error } = await supabase
+    .from("forge_goalie_game")
+    .select("game_date")
+    .eq("goalie_id", goalieId)
+    .lt("game_date", asOfDate)
+    .order("game_date", { ascending: false })
+    .limit(30);
+  if (error) throw error;
+
+  const uniqueDates = Array.from(
+    new Set(
+      ((data ?? []) as Array<{ game_date: string | null }>)
+        .map((r) => r.game_date)
+        .filter((d): d is string => typeof d === "string")
+    )
+  ).sort((a, b) => b.localeCompare(a));
+
+  const startsLast7Days = uniqueDates.filter(
+    (d) => daysBetweenDates(asOfDate, d) <= 7
+  ).length;
+  const startsLast14Days = uniqueDates.filter(
+    (d) => daysBetweenDates(asOfDate, d) <= 14
+  ).length;
+  const lastStartDate = uniqueDates[0] ?? null;
+  const daysSinceLastStart =
+    lastStartDate != null ? Math.max(0, daysBetweenDates(asOfDate, lastStartDate)) : null;
+
+  return {
+    startsLast7Days,
+    startsLast14Days,
+    daysSinceLastStart,
+    isGoalieBackToBack: daysSinceLastStart === 1
+  };
 }
 
 export function selectStarterCandidateGoalieIds(opts: {
@@ -578,7 +744,12 @@ async function fetchGoalieEvidence(
   asOfDate: string
 ): Promise<GoalieEvidence> {
   assertSupabase();
-  const [recentRes, baselineRes] = await Promise.all([
+  const asOf = new Date(`${asOfDate}T00:00:00.000Z`);
+  const year = asOf.getUTCFullYear();
+  const month = asOf.getUTCMonth() + 1;
+  const seasonStartYear = month >= 7 ? year : year - 1;
+  const seasonStartDate = `${seasonStartYear}-07-01`;
+  const [recentRes, seasonRes, baselineRes] = await Promise.all([
     supabase
       .from("forge_goalie_game")
       .select("shots_against,goals_allowed,saves")
@@ -590,15 +761,25 @@ async function fetchGoalieEvidence(
       .from("forge_goalie_game")
       .select("shots_against,goals_allowed,saves")
       .eq("goalie_id", goalieId)
+      .gte("game_date", seasonStartDate)
+      .lt("game_date", asOfDate)
+      .order("game_date", { ascending: false })
+      .limit(120),
+    supabase
+      .from("forge_goalie_game")
+      .select("shots_against,goals_allowed,saves")
+      .eq("goalie_id", goalieId)
       .lt("game_date", asOfDate)
       .order("game_date", { ascending: false })
       .limit(200)
   ]);
 
   if (recentRes.error) throw recentRes.error;
+  if (seasonRes.error) throw seasonRes.error;
   if (baselineRes.error) throw baselineRes.error;
 
   const recentRows = (recentRes.data ?? []) as GoalieGameHistoryRow[];
+  const seasonRows = (seasonRes.data ?? []) as GoalieGameHistoryRow[];
   const baselineRows = (baselineRes.data ?? []) as GoalieGameHistoryRow[];
 
   const sumRecent = recentRows.reduce(
@@ -611,6 +792,14 @@ async function fetchGoalieEvidence(
   );
 
   const sumBaseline = baselineRows.reduce(
+    (acc, row) => {
+      acc.shots += safeNumber(row.shots_against, 0);
+      acc.goals += safeNumber(row.goals_allowed, 0);
+      return acc;
+    },
+    { shots: 0, goals: 0 }
+  );
+  const sumSeason = seasonRows.reduce(
     (acc, row) => {
       acc.shots += safeNumber(row.shots_against, 0);
       acc.goals += safeNumber(row.goals_allowed, 0);
@@ -631,6 +820,9 @@ async function fetchGoalieEvidence(
     recentStarts: recentRows.length,
     recentShotsAgainst: sumRecent.shots,
     recentGoalsAllowed: sumRecent.goals,
+    seasonStarts: seasonRows.length,
+    seasonShotsAgainst: sumSeason.shots,
+    seasonGoalsAllowed: sumSeason.goals,
     baselineStarts: baselineRows.length,
     baselineShotsAgainst: sumBaseline.shots,
     baselineGoalsAllowed: sumBaseline.goals,
@@ -869,6 +1061,10 @@ export async function runProjectionV2ForDate(
       const teamGoalsByTeamId = new Map<number, number>();
       const fallbackGoalieByTeamId = new Map<number, number | null>();
       const teamGoalieStarterContextCache = new Map<number, TeamGoalieStarterContext>();
+      const teamDefensiveEnvironmentCache = new Map<number, TeamDefensiveEnvironment>();
+      const teamOffenseEnvironmentCache = new Map<number, TeamOffenseEnvironment>();
+      const teamRestDaysCache = new Map<number, number | null>();
+      const goalieWorkloadContextCache = new Map<number, GoalieWorkloadContext>();
       const currentTeamGoalieIdsCache = new Map<number, Set<number>>();
       const goalieCandidates: Array<{
         teamId: number;
@@ -1343,10 +1539,78 @@ export async function runProjectionV2ForDate(
           );
           continue;
         }
-        const shotsAgainst = Number(
+        const opponentProjectedShotsAgainst = Number(
           (oppShots.shotsEs + oppShots.shotsPp).toFixed(3)
         );
+        if (!teamDefensiveEnvironmentCache.has(c.teamId)) {
+          teamDefensiveEnvironmentCache.set(
+            c.teamId,
+            await fetchTeamDefensiveEnvironment(c.teamId, asOfDate)
+          );
+        }
+        const defensiveEnv = teamDefensiveEnvironmentCache.get(
+          c.teamId
+        ) as TeamDefensiveEnvironment;
+        const teamSaAvg10 = defensiveEnv.avgShotsAgainstLast10;
+        const teamSaAvg5 = defensiveEnv.avgShotsAgainstLast5;
+        const trendAdj =
+          teamSaAvg10 != null && teamSaAvg5 != null
+            ? clamp((teamSaAvg5 - teamSaAvg10) * 0.25, -3, 3)
+            : 0;
+        const blendedShotsAgainst =
+          teamSaAvg10 != null
+            ? 0.65 * opponentProjectedShotsAgainst + 0.35 * teamSaAvg10 + trendAdj
+            : opponentProjectedShotsAgainst;
+        const baseShotsAgainst = Number(Math.max(0, blendedShotsAgainst).toFixed(3));
         const teamGoalsFor = teamGoalsByTeamId.get(c.teamId) ?? 0;
+        if (!teamOffenseEnvironmentCache.has(c.opponentTeamId)) {
+          teamOffenseEnvironmentCache.set(
+            c.opponentTeamId,
+            await fetchTeamOffenseEnvironment(c.opponentTeamId, asOfDate)
+          );
+        }
+        if (!teamRestDaysCache.has(c.teamId)) {
+          teamRestDaysCache.set(c.teamId, await fetchTeamRestDays(c.teamId, asOfDate));
+        }
+        if (!teamRestDaysCache.has(c.opponentTeamId)) {
+          teamRestDaysCache.set(
+            c.opponentTeamId,
+            await fetchTeamRestDays(c.opponentTeamId, asOfDate)
+          );
+        }
+        const opponentOffense = teamOffenseEnvironmentCache.get(
+          c.opponentTeamId
+        ) as TeamOffenseEnvironment;
+        const defendingRestDays = teamRestDaysCache.get(c.teamId) ?? null;
+        const opponentRestDays = teamRestDaysCache.get(c.opponentTeamId) ?? null;
+        const opponentIsHome = c.opponentTeamId === game.homeTeamId;
+
+        const oppShots10 = opponentOffense.avgShotsForLast10;
+        const oppShots5 = opponentOffense.avgShotsForLast5;
+        const oppGoals10 = opponentOffense.avgGoalsForLast10;
+        const oppGoals5 = opponentOffense.avgGoalsForLast5;
+        const shotsTrendPct =
+          baseShotsAgainst > 0 && oppShots5 != null
+            ? clamp((oppShots5 - baseShotsAgainst) / baseShotsAgainst, -0.12, 0.18)
+            : 0;
+        const goalsTrendPct =
+          oppGoals10 != null && oppGoals5 != null && oppGoals10 > 0
+            ? clamp((oppGoals5 - oppGoals10) / oppGoals10, -0.1, 0.15)
+            : 0;
+
+        let contextPct = 0;
+        contextPct += shotsTrendPct * 0.45;
+        contextPct += goalsTrendPct * 0.35;
+        if (opponentRestDays != null && opponentRestDays >= 2) contextPct += OPPONENT_RESTED_BOOST;
+        if (opponentRestDays === 1) contextPct -= OPPONENT_B2B_PENALTY;
+        if (defendingRestDays === 1) contextPct += DEFENSE_B2B_FATIGUE_BOOST;
+        contextPct += opponentIsHome ? OPPONENT_HOME_BOOST : -OPPONENT_AWAY_PENALTY;
+        contextPct = clamp(contextPct, -0.15, 0.2);
+
+        const shotsAgainst = Number(
+          Math.max(0, baseShotsAgainst * (1 + contextPct)).toFixed(3)
+        );
+        const leagueSavePct = clamp(0.9 - contextPct * 0.04, 0.88, 0.92);
 
         let selectedGoalieId: number | null = null;
         let starterProb = 0.5;
@@ -1405,6 +1669,25 @@ export async function runProjectionV2ForDate(
               opponent_is_weak: opponentIsWeak,
               l10_games_available: starterContext.totalGames
             },
+            shots_against_context: {
+              opponent_projected_shots_against: opponentProjectedShotsAgainst,
+              team_avg_shots_against_last10: teamSaAvg10,
+              team_avg_shots_against_last5: teamSaAvg5,
+              trend_adjustment: Number(trendAdj.toFixed(3)),
+              pre_context_projected_shots_against: baseShotsAgainst,
+              blended_projected_shots_against: shotsAgainst
+            },
+            opponent_offense_context: {
+              opponent_is_home: opponentIsHome,
+              opponent_avg_shots_for_last10: oppShots10,
+              opponent_avg_shots_for_last5: oppShots5,
+              opponent_avg_goals_for_last10: oppGoals10,
+              opponent_avg_goals_for_last5: oppGoals5,
+              defending_team_rest_days: defendingRestDays,
+              opponent_rest_days: opponentRestDays,
+              context_adjustment_pct: Number(contextPct.toFixed(4)),
+              league_save_pct_used: Number(leagueSavePct.toFixed(4))
+            },
             candidate_goalies: ranked.map(([goalieId, probability]) => ({
               goalie_id: goalieId,
               probability: Number(probability.toFixed(4)),
@@ -1427,12 +1710,36 @@ export async function runProjectionV2ForDate(
             await fetchGoalieEvidence(selectedGoalieId, asOfDate)
           );
         }
+        if (!goalieWorkloadContextCache.has(selectedGoalieId)) {
+          goalieWorkloadContextCache.set(
+            selectedGoalieId,
+            await fetchGoalieWorkloadContext(selectedGoalieId, asOfDate)
+          );
+        }
         const evidence = goalieEvidenceCache.get(selectedGoalieId) as GoalieEvidence;
+        const workload = goalieWorkloadContextCache.get(
+          selectedGoalieId
+        ) as GoalieWorkloadContext;
+        let workloadSavePctPenalty = 0;
+        if (workload.startsLast14Days >= 6) {
+          workloadSavePctPenalty += GOALIE_VERY_HEAVY_WORKLOAD_PENALTY;
+        } else if (workload.startsLast14Days >= 5) {
+          workloadSavePctPenalty += GOALIE_HEAVY_WORKLOAD_PENALTY;
+        }
+        if (workload.isGoalieBackToBack) {
+          workloadSavePctPenalty += GOALIE_BACK_TO_BACK_PENALTY;
+        }
+        const adjustedLeagueSavePct = clamp(
+          leagueSavePct - workloadSavePctPenalty,
+          0.86,
+          0.92
+        );
         const goalieModel = computeGoalieProjectionModel({
           projectedShotsAgainst: shotsAgainst,
           starterProbability: starterProb,
           projectedGoalsFor: teamGoalsFor,
-          evidence
+          evidence,
+          leagueSavePct: adjustedLeagueSavePct
         });
 
         const goalsAllowed = goalieModel.projectedGoalsAllowed;
@@ -1456,8 +1763,18 @@ export async function runProjectionV2ForDate(
             evidence: {
               recent_starts: evidence.recentStarts,
               recent_shots: evidence.recentShotsAgainst,
+              season_starts: evidence.seasonStarts,
+              season_shots: evidence.seasonShotsAgainst,
               baseline_starts: evidence.baselineStarts,
               baseline_shots: evidence.baselineShotsAgainst
+            },
+            workload_context: {
+              starts_last_7_days: workload.startsLast7Days,
+              starts_last_14_days: workload.startsLast14Days,
+              days_since_last_start: workload.daysSinceLastStart,
+              goalie_back_to_back: workload.isGoalieBackToBack,
+              workload_save_pct_penalty: Number(workloadSavePctPenalty.toFixed(4)),
+              league_save_pct_used: Number(adjustedLeagueSavePct.toFixed(4))
             },
             starter_selection: starterModelMeta
           }
