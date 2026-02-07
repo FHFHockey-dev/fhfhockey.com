@@ -6,7 +6,7 @@ import Fetch from "lib/cors-fetch";
 import { teamsInfo } from "lib/teamsInfo";
 import PoissonDistributionChart from "components/PoissonDistributionChart";
 import Image from "next/image";
-import styles from "./GamePage.scss";
+import styles from "./GamePage.module.scss";
 import Link from "next/link";
 
 export default function Page() {
@@ -59,7 +59,7 @@ export default function Page() {
     const statsURL = `https://api.nhle.com/stats/rest/en/team/summary?isAggregate=false&isGame=false&sort=[{"property":"points","direction":"DESC"},{"property":"wins","direction":"DESC"},{"property":"teamId","direction":"ASC"}]&start=0&limit=50&factCayenneExp=gamesPlayed>=1&cayenneExp=franchiseId=${franchiseId} and gameTypeId=2 and seasonId<=20232024 and seasonId>=20232024`;
     try {
       const response = await Fetch(statsURL).then((res) => res.json());
-      const statsData = response.data[0]; // Assuming the first object contains the relevant stats
+      const statsData = response.data[0] || {}; // Assuming the first object contains the relevant stats
       if (teamType === "home") {
         setHomeTeamStats(statsData);
       } else {
@@ -292,27 +292,29 @@ export default function Page() {
         ].filter(Boolean);
 
     const renderTeamCard = (side, teamName, abbrev, record, logo) => (
-      <div className={`teamCard teamCard--${side}`}>
-        <div className="teamCard__glow" />
-        <div className="teamCard__inner">
-          <div className="teamCard__logoWrap">
+      <div
+        className={`${styles["teamCard"]} ${side === "away" ? styles["teamCard--away"] : ""}`}
+      >
+        <div className={styles["teamCard__glow"]} />
+        <div className={styles["teamCard__inner"]}>
+          <div className={styles["teamCard__logoWrap"]}>
             {logo ? (
               <Image
                 src={logo}
                 alt={`${teamName} logo`}
                 width={82}
                 height={82}
-                className="teamCard__logo"
+                className={styles["teamCard__logo"]}
               />
             ) : (
-              <span className="teamCard__placeholder">{abbrev}</span>
+              <span className={styles["teamCard__placeholder"]}>{abbrev}</span>
             )}
           </div>
-          <div className="teamCard__details">
-            <span className="teamCard__abbr">{abbrev}</span>
-            <span className="teamCard__name">{teamName}</span>
+          <div className={styles["teamCard__details"]}>
+            <span className={styles["teamCard__abbr"]}>{abbrev}</span>
+            <span className={styles["teamCard__name"]}>{teamName}</span>
             {record ? (
-              <span className="teamCard__record">{record}</span>
+              <span className={styles["teamCard__record"]}>{record}</span>
             ) : null}
           </div>
         </div>
@@ -320,27 +322,34 @@ export default function Page() {
     );
 
     return (
-      <section className="gameHero">
-        <div className="gameHero__backdrop" />
-        <header className="gameHero__header">
+      <section className={styles["gameHero"]}>
+        <div className={styles["gameHero__backdrop"]} />
+        <header className={styles["gameHero__header"]}>
           <span
-            className={`statusPill ${
-              isLive ? "is-live" : isFinal ? "is-final" : "is-scheduled"
+            className={`${styles.statusPill} ${
+              isLive
+                ? styles["is-live"]
+                : isFinal
+                  ? styles["is-final"]
+                  : styles["is-scheduled"] || "is-scheduled"
             }`}
           >
             {statusLabel}
           </span>
           {heroMetaItems.length ? (
-            <div className="gameHero__meta">
+            <div className={styles["gameHero__meta"]}>
               {heroMetaItems.map((item, index) => (
-                <span key={`${item}-${index}`} className="gameHero__metaItem">
+                <span
+                  key={`${item}-${index}`}
+                  className={styles["gameHero__metaItem"]}
+                >
                   {item}
                 </span>
               ))}
             </div>
           ) : null}
         </header>
-        <div className="gameHero__scoreboard">
+        <div className={styles["gameHero__scoreboard"]}>
           {renderTeamCard(
             "home",
             homeTeamName,
@@ -353,25 +362,32 @@ export default function Page() {
               showScores ? "gameHero__score--final" : ""
             }`}
           >
-            <div className="gameHero__scoreGlyph">
+            <div className={styles["gameHero__scoreGlyph"]}>
               {showScores ? (
                 <>
-                  <span className="scoreValue scoreValue--home">
+                  <span
+                    className={`${styles["scoreValue"]} ${styles["scoreValue--home"]}`}
+                  >
                     {homeScoreDisplay}
                   </span>
-                  <span className="scoreDivider">:</span>
-                  <span className="scoreValue scoreValue--away">
+                  <span className={styles["scoreDivider"]}>:</span>
+                  <span
+                    className={`${styles["scoreValue"]} ${styles["scoreValue--away"]}`}
+                  >
                     {awayScoreDisplay}
                   </span>
                 </>
               ) : (
-                <span className="scoreGlyph">VS</span>
+                <span className={styles["scoreGlyph"]}>VS</span>
               )}
             </div>
             {scoreboardMeta.length ? (
-              <div className="gameHero__scoreMeta">
+              <div className={styles["gameHero__scoreMeta"]}>
                 {scoreboardMeta.map((item, index) => (
-                  <span key={`${item}-${index}`} className="scoreMeta__item">
+                  <span
+                    key={`${item}-${index}`}
+                    className={styles["scoreMeta__item"]}
+                  >
                     {item}
                   </span>
                 ))}
@@ -421,18 +437,22 @@ export default function Page() {
       advantageTeam !== "tie" ? `is-${advantageTeam}` : "is-tie";
 
     return (
-      <div className={`statRow ${advantageClass}`}>
-        <div className="statRowHeader">
-          <span className="statValue statValue--home">
+      <div className={`${styles.statRow} ${styles[advantageClass]}`}>
+        <div className={styles["statRowHeader"]}>
+          <span
+            className={`${styles["statValue"]} ${styles["statValue--home"]}`}
+          >
             {homeStat ?? "—"}
           </span>
-          <span className="statLabel">{statLabel}</span>
-          <span className="statValue statValue--away">
+          <span className={styles["statLabel"]}>{statLabel}</span>
+          <span
+            className={`${styles["statValue"]} ${styles["statValue--away"]}`}
+          >
             {awayStat ?? "—"}
           </span>
         </div>
         <div
-          className="comparisonBar"
+          className={styles["comparisonBar"]}
           style={{ "--home-share": `${homePercentage}` }}
           data-winner={advantageTeam}
         />
@@ -605,421 +625,450 @@ export default function Page() {
     gameLandingDetails?.gameState === "PRE"
   ) {
     return (
-      <div className="game-page" style={themeStyles}>
+      <div className={styles["game-page"]} style={themeStyles}>
         {gameDetails ? (
           <>
             {renderGameHero()}
 
-            <section className="gameContent">
-              <div className="statsAndPlayerCompContainer">
-              {/* ///////////////////////////////// STAT ROW ///////////////////////////////////////////////////////// */}
-              <div className="gamePageVsTableContainer">
-                <h1 className="tableHeader">
-                  Team <span className="spanColorBlue">Advantage</span>
-                </h1>
+            <section className={styles["gameContent"]}>
+              <div className={styles["statsAndPlayerCompContainer"]}>
+                {/* ///////////////////////////////// STAT ROW ///////////////////////////////////////////////////////// */}
+                <div className={styles["gamePageVsTableContainer"]}>
+                  <h1 className={styles["tableHeader"]}>
+                    Team{" "}
+                    <span className={styles["spanColorBlue"]}>Advantage</span>
+                  </h1>
 
-                <div className="gamePageVsTable">
-                  <div className="statTableHeader">
-                    <div className="statTableLeft">
-                      <Image
-                        className="teamLogoHomeStatTable"
-                        src={gameDetails.homeTeam.logo}
-                        alt={`${gameDetails.homeTeam.commonName.default} logo`}
-                        width={60}
-                        height={60}
-                      />
-                    </div>
-                    <span className="advantageHeaderText">VS</span>
+                  <div className={styles["gamePageVsTable"]}>
+                    <div className={styles["statTableHeader"]}>
+                      <div className={styles["statTableLeft"]}>
+                        <Image
+                          className={styles["teamLogoHomeStatTable"]}
+                          src={gameDetails.homeTeam.logo}
+                          alt={`${gameDetails.homeTeam.commonName.default} logo`}
+                          width={60}
+                          height={60}
+                        />
+                      </div>
+                      <span className={styles["advantageHeaderText"]}>VS</span>
 
-                    <div className="statTableRight">
-                      <Image
-                        className="teamLogoAwayStatTable"
-                        src={gameDetails.awayTeam.logo}
-                        alt={`${gameDetails.awayTeam.commonName.default} logo`}
-                        width={60}
-                        height={60}
-                      />
+                      <div className={styles["statTableRight"]}>
+                        <Image
+                          className={styles["teamLogoAwayStatTable"]}
+                          src={gameDetails.awayTeam.logo}
+                          alt={`${gameDetails.awayTeam.commonName.default} logo`}
+                          width={60}
+                          height={60}
+                        />
+                      </div>
                     </div>
+                    {/* Use StatRow for each statistic you want to display */}
+                    <StatRow
+                      statLabel="WINS"
+                      homeStat={homeTeamStats?.wins}
+                      awayStat={awayTeamStats?.wins}
+                    />
+                    <StatRow
+                      statLabel="GF/GM"
+                      homeStat={formatNumber(homeTeamStats?.goalsForPerGame, 2)}
+                      awayStat={formatNumber(awayTeamStats?.goalsForPerGame, 2)}
+                    />
+                    <StatRow
+                      statLabel="GA/GM"
+                      homeStat={formatNumber(
+                        homeTeamStats?.goalsAgainstPerGame,
+                        2
+                      )}
+                      awayStat={formatNumber(
+                        awayTeamStats?.goalsAgainstPerGame,
+                        2
+                      )}
+                      isLowerBetter // Lower is better for goals against
+                    />
+                    <StatRow
+                      statLabel="PP%"
+                      homeStat={formatPercentValue(
+                        homeTeamPowerPlayStats?.powerPlayPct,
+                        1
+                      )}
+                      awayStat={formatPercentValue(
+                        awayTeamPowerPlayStats?.powerPlayPct,
+                        1
+                      )}
+                    />
+                    <StatRow
+                      statLabel="PK%"
+                      homeStat={formatPercentValue(
+                        homeTeamStats?.penaltyKillPct,
+                        1
+                      )}
+                      awayStat={formatPercentValue(
+                        awayTeamStats?.penaltyKillPct,
+                        1
+                      )}
+                    />
+                    <StatRow
+                      statLabel="SF/GM"
+                      homeStat={formatNumber(homeTeamStats?.shotsForPerGame, 1)}
+                      awayStat={formatNumber(awayTeamStats?.shotsForPerGame, 1)}
+                    />
+                    <StatRow
+                      statLabel="SA/GM"
+                      homeStat={formatNumber(
+                        homeTeamStats?.shotsAgainstPerGame,
+                        1
+                      )}
+                      awayStat={formatNumber(
+                        awayTeamStats?.shotsAgainstPerGame,
+                        1
+                      )}
+                      isLowerBetter // Lower is better for shots against
+                    />
+                    <StatRow
+                      statLabel="PPO/GM"
+                      homeStat={formatNumber(
+                        homeTeamPowerPlayStats?.ppOpportunitiesPerGame,
+                        2
+                      )}
+                      awayStat={formatNumber(
+                        awayTeamPowerPlayStats?.ppOpportunitiesPerGame,
+                        2
+                      )}
+                    />
+                    <StatRow
+                      statLabel="PPG/GM"
+                      homeStat={formatNumber(
+                        homeTeamPowerPlayStats?.ppGoalsPerGame,
+                        2
+                      )}
+                      awayStat={formatNumber(
+                        awayTeamPowerPlayStats?.ppGoalsPerGame,
+                        2
+                      )}
+                    />
+                    <StatRow
+                      statLabel="S%"
+                      homeStat={formatRate(
+                        homeTeamStats?.goalsForPerGame,
+                        homeTeamStats?.shotsForPerGame,
+                        100,
+                        1,
+                        "%"
+                      )}
+                      awayStat={formatRate(
+                        awayTeamStats?.goalsForPerGame,
+                        awayTeamStats?.shotsForPerGame,
+                        100,
+                        1,
+                        "%"
+                      )}
+                    />
+                    <StatRow
+                      statLabel="SV%"
+                      homeStat={formatSavePercentage(
+                        homeTeamStats?.goalsAgainstPerGame,
+                        homeTeamStats?.shotsAgainstPerGame
+                      )}
+                      awayStat={formatSavePercentage(
+                        awayTeamStats?.goalsAgainstPerGame,
+                        awayTeamStats?.shotsAgainstPerGame
+                      )}
+                    />
                   </div>
-                  {/* Use StatRow for each statistic you want to display */}
-                  <StatRow
-                    statLabel="WINS"
-                    homeStat={homeTeamStats.wins}
-                    awayStat={awayTeamStats.wins}
-                  />
-                  <StatRow
-                    statLabel="GF/GM"
-                    homeStat={formatNumber(
-                      homeTeamStats.goalsForPerGame,
-                      2
-                    )}
-                    awayStat={formatNumber(
-                      awayTeamStats.goalsForPerGame,
-                      2
-                    )}
-                  />
-                  <StatRow
-                    statLabel="GA/GM"
-                    homeStat={formatNumber(
-                      homeTeamStats.goalsAgainstPerGame,
-                      2
-                    )}
-                    awayStat={formatNumber(
-                      awayTeamStats.goalsAgainstPerGame,
-                      2
-                    )}
-                    isLowerBetter // Lower is better for goals against
-                  />
-                  <StatRow
-                    statLabel="PP%"
-                    homeStat={formatPercentValue(
-                      homeTeamPowerPlayStats.powerPlayPct,
-                      1
-                    )}
-                    awayStat={formatPercentValue(
-                      awayTeamPowerPlayStats.powerPlayPct,
-                      1
-                    )}
-                  />
-                  <StatRow
-                    statLabel="PK%"
-                    homeStat={formatPercentValue(
-                      homeTeamStats.penaltyKillPct,
-                      1
-                    )}
-                    awayStat={formatPercentValue(
-                      awayTeamStats.penaltyKillPct,
-                      1
-                    )}
-                  />
-                  <StatRow
-                    statLabel="SF/GM"
-                    homeStat={formatNumber(
-                      homeTeamStats.shotsForPerGame,
-                      1
-                    )}
-                    awayStat={formatNumber(
-                      awayTeamStats.shotsForPerGame,
-                      1
-                    )}
-                  />
-                  <StatRow
-                    statLabel="SA/GM"
-                    homeStat={formatNumber(
-                      homeTeamStats.shotsAgainstPerGame,
-                      1
-                    )}
-                    awayStat={formatNumber(
-                      awayTeamStats.shotsAgainstPerGame,
-                      1
-                    )}
-                    isLowerBetter // Lower is better for shots against
-                  />
-                  <StatRow
-                    statLabel="PPO/GM"
-                    homeStat={formatNumber(
-                      homeTeamPowerPlayStats.ppOpportunitiesPerGame,
-                      2
-                    )}
-                    awayStat={formatNumber(
-                      awayTeamPowerPlayStats.ppOpportunitiesPerGame,
-                      2
-                    )}
-                  />
-                  <StatRow
-                    statLabel="PPG/GM"
-                    homeStat={formatNumber(
-                      homeTeamPowerPlayStats.ppGoalsPerGame,
-                      2
-                    )}
-                    awayStat={formatNumber(
-                      awayTeamPowerPlayStats.ppGoalsPerGame,
-                      2
-                    )}
-                  />
-                  <StatRow
-                    statLabel="S%"
-                    homeStat={formatRate(
-                      homeTeamStats.goalsForPerGame,
-                      homeTeamStats.shotsForPerGame,
-                      100,
-                      1,
-                      "%"
-                    )}
-                    awayStat={formatRate(
-                      awayTeamStats.goalsForPerGame,
-                      awayTeamStats.shotsForPerGame,
-                      100,
-                      1,
-                      "%"
-                    )}
-                  />
-                  <StatRow
-                    statLabel="SV%"
-                    homeStat={formatSavePercentage(
-                      homeTeamStats.goalsAgainstPerGame,
-                      homeTeamStats.shotsAgainstPerGame
-                    )}
-                    awayStat={formatSavePercentage(
-                      awayTeamStats.goalsAgainstPerGame,
-                      awayTeamStats.shotsAgainstPerGame
-                    )}
-                  />
                 </div>
-              </div>
 
-              <div className="statsPlayerAndGoalieCompContainer">
-                <h1 className="tableHeader">
-                  Last <span className="spanColorBlue">5 Games</span>
-                </h1>
-                <div className="playerCompContainer">
-                  <div className="playerCompHeader">
-                    <div className="playerCompHeaderLeft">
-                      <Image
-                        className="teamLogoHomePC"
-                        src={gameDetails.homeTeam.logo}
-                        alt={`${gameDetails.homeTeam.commonName.default} logo`}
-                        width={75}
-                        height={75}
-                      />
-                    </div>
+                <div className={styles["statsPlayerAndGoalieCompContainer"]}>
+                  <h1 className={styles["tableHeader"]}>
+                    Last{" "}
+                    <span className={styles["spanColorBlue"]}>5 Games</span>
+                  </h1>
+                  <div className={styles["playerCompContainer"]}>
+                    <div className={styles["playerCompHeader"]}>
+                      <div className={styles["playerCompHeaderLeft"]}>
+                        <Image
+                          className={styles["teamLogoHomePC"]}
+                          src={gameDetails.homeTeam.logo}
+                          alt={`${gameDetails.homeTeam.commonName.default} logo`}
+                          width={75}
+                          height={75}
+                        />
+                      </div>
 
-                    <p>Leaders</p>
-                    <div className="playerCompHeaderRight">
-                      <Image
-                        className="teamLogoAwayPC"
-                        src={gameDetails.awayTeam.logo}
-                        alt={`${gameDetails.awayTeam.commonName.default} logo`}
-                        width={75}
-                        height={75}
-                      />
+                      <p>Leaders</p>
+                      <div className={styles["playerCompHeaderRight"]}>
+                        <Image
+                          className={styles["teamLogoAwayPC"]}
+                          src={gameDetails.awayTeam.logo}
+                          alt={`${gameDetails.awayTeam.commonName.default} logo`}
+                          width={75}
+                          height={75}
+                        />
+                      </div>
                     </div>
-                  </div>
-                  {gameLandingDetails?.matchup?.skaterComparison?.leaders
-                    ?.filter(
-                      (leader) => leader.category.toLowerCase() !== "plusminus"
-                    )
-                    .map((leader, index) => (
-                      <div className="playerCompDetails" key={index}>
-                        {/* Home player side */}
-                        <div className="playerDetail homePlayer">
-                          <Link
-                            href={`/stats/player/${leader.homeLeader.playerId}`}
+                    {gameLandingDetails?.matchup?.skaterComparison?.leaders
+                      ?.filter(
+                        (leader) =>
+                          leader.category.toLowerCase() !== "plusminus"
+                      )
+                      .map((leader, index) => (
+                        <div
+                          className={styles["playerCompDetails"]}
+                          key={index}
+                        >
+                          {/* Home player side */}
+                          <div
+                            className={`${styles["playerDetail"]} ${styles["homePlayer"]}`}
                           >
-                            <Image
-                              src={leader.homeLeader.headshot}
-                              alt="Home player headshot"
-                              className="playerHeadshot interactive"
-                              width={50}
-                              height={50}
-                            />
-                          </Link>
-
-                          <div className="playerStats">
-                            <span>{leader.homeLeader.firstName.default}</span>
-                            <span className="lastName">
-                              {leader.homeLeader.lastName.default}
-                            </span>
-                            <span>
-                              #{leader.homeLeader.sweaterNumber} •{" "}
-                              {leader.homeLeader.positionCode}
-                            </span>
-                          </div>
-                          <span className="value">
-                            {leader.homeLeader.value}
-                          </span>
-                        </div>
-
-                        {/* Vertical text between players */}
-                        <div className="verticalText">
-                          {leader.category.toUpperCase()}
-                        </div>
-
-                        {/* Away player side */}
-                        <div className="playerDetail awayPlayer">
-                          <span className="value">
-                            {leader.awayLeader.value}
-                          </span>
-                          <div className="playerStats">
-                            <span>{leader.awayLeader.firstName.default}</span>
-                            <span className="lastName">
-                              {leader.awayLeader.lastName.default}
-                            </span>
-                            <span>
-                              {leader.awayLeader.positionCode} • #
-                              {leader.awayLeader.sweaterNumber}
-                            </span>
                             <Link
-                              href={`/stats/player/${leader.awayLeader.playerId}`}
+                              href={`/stats/player/${leader.homeLeader.playerId}`}
                             >
                               <Image
-                                src={leader.awayLeader.headshot}
-                                alt="Away player headshot"
-                                className="playerHeadshot interactive"
+                                src={leader.homeLeader.headshot}
+                                alt="Home player headshot"
+                                className={`${styles["playerHeadshot"]} ${styles["interactive"]}`}
                                 width={50}
                                 height={50}
                               />
                             </Link>
+
+                            <div className={styles["playerStats"]}>
+                              <span>{leader.homeLeader.firstName.default}</span>
+                              <span className={styles["lastName"]}>
+                                {leader.homeLeader.lastName.default}
+                              </span>
+                              <span>
+                                #{leader.homeLeader.sweaterNumber} •{" "}
+                                {leader.homeLeader.positionCode}
+                              </span>
+                            </div>
+                            <span className={styles["value"]}>
+                              {leader.homeLeader.value}
+                            </span>
+                          </div>
+
+                          {/* Vertical text between players */}
+                          <div className={styles["verticalText"]}>
+                            {leader.category.toUpperCase()}
+                          </div>
+
+                          {/* Away player side */}
+                          <div
+                            className={`${styles["playerDetail"]} ${styles["awayPlayer"]}`}
+                          >
+                            <span className={styles["value"]}>
+                              {leader.awayLeader.value}
+                            </span>
+                            <div className={styles["playerStats"]}>
+                              <span>{leader.awayLeader.firstName.default}</span>
+                              <span className={styles["lastName"]}>
+                                {leader.awayLeader.lastName.default}
+                              </span>
+                              <span>
+                                {leader.awayLeader.positionCode} • #
+                                {leader.awayLeader.sweaterNumber}
+                              </span>
+                              <Link
+                                href={`/stats/player/${leader.awayLeader.playerId}`}
+                              >
+                                <Image
+                                  src={leader.awayLeader.headshot}
+                                  alt="Away player headshot"
+                                  className={`${styles["playerHeadshot"]} ${styles["interactive"]}`}
+                                  width={50}
+                                  height={50}
+                                />
+                              </Link>
+                            </div>
                           </div>
                         </div>
+                      ))}
+                  </div>
+
+                  {/* Goalie Comparison Container */}
+                  <h1 className={styles["tableHeader"]}>
+                    Goalie{" "}
+                    <span className={styles["spanColorBlue"]}>Comparison</span>
+                  </h1>
+                  <div className={styles["goalieCompContainer"]}>
+                    {" "}
+                    {/* Add some margin for spacing */}
+                    <div className={styles["goalieCompHeader"]}>
+                      <div className={styles["goalieCompHeaderLeft"]}>
+                        <Image
+                          className={styles["teamLogoHomePC"]}
+                          src={gameDetails.homeTeam.logo}
+                          alt={`${gameDetails.homeTeam.commonName.default} logo`}
+                          width={75}
+                          height={75}
+                        />
                       </div>
-                    ))}
-                </div>
-
-                {/* Goalie Comparison Container */}
-                <h1 className="tableHeader">
-                  Goalie <span className="spanColorBlue">Comparison</span>
-                </h1>
-                <div className="goalieCompContainer">
-                  {" "}
-                  {/* Add some margin for spacing */}
-                  <div className="goalieCompHeader">
-                    <div className="goalieCompHeaderLeft">
-                      <Image
-                        className="teamLogoHomePC"
-                        src={gameDetails.homeTeam.logo}
-                        alt={`${gameDetails.homeTeam.commonName.default} logo`}
-                        width={75}
-                        height={75}
-                      />
+                      <div className={styles["goalieCompHeaderMiddle"]}>
+                        Goalies
+                      </div>
+                      <div className={styles["goalieCompHeaderRight"]}>
+                        <Image
+                          className={styles["teamLogoAwayPC"]}
+                          src={gameDetails.awayTeam.logo}
+                          alt={`${gameDetails.awayTeam.commonName.default} logo`}
+                          width={75}
+                          height={75}
+                        />
+                      </div>
                     </div>
-                    <div className="goalieCompHeaderMiddle">Goalies</div>
-                    <div className="goalieCompHeaderRight">
-                      <Image
-                        className="teamLogoAwayPC"
-                        src={gameDetails.awayTeam.logo}
-                        alt={`${gameDetails.awayTeam.commonName.default} logo`}
-                        width={75}
-                        height={75}
-                      />
+                    <div className={styles["goalieStatsContainer"]}>
+                      <div className={styles["homeGoalies"]}>
+                        {gameLandingDetails?.matchup?.goalieComparison?.homeTeam?.leaders?.map(
+                          (goalie) => (
+                            <div
+                              key={goalie.playerId}
+                              className={styles["goalieStatRow"]}
+                            >
+                              <div className={styles["goalieImage"]}>
+                                <Image
+                                  src={goalie.headshot}
+                                  alt={`Headshot of ${goalie.name.default}`}
+                                  width={60}
+                                  height={60}
+                                />
+                              </div>
+                              <div className={styles["goalieName"]}>
+                                <span>
+                                  {goalie.firstName.default}{" "}
+                                  <span className={styles["goalieLastName"]}>
+                                    {goalie.lastName.default}
+                                  </span>
+                                </span>{" "}
+                                <span className={styles["goalieSweaterNumber"]}>
+                                  #{goalie.sweaterNumber} •{" "}
+                                  {goalie.positionCode}
+                                </span>
+                              </div>
+                              <div
+                                className={styles["homeGoalieStatHighlight"]}
+                              >
+                                <div className={styles["goalieStatDetails"]}>
+                                  <span className={styles["spanGoalieValue"]}>
+                                    Record:
+                                  </span>
+                                  <span className={styles["spanGoalieStat"]}>
+                                    {goalie.record}
+                                  </span>
+                                </div>
+                                <div className={styles["goalieStatDetails"]}>
+                                  <span className={styles["spanGoalieValue"]}>
+                                    GAA:
+                                  </span>
+                                  <span className={styles["spanGoalieStat"]}>
+                                    {goalie?.gaa?.toFixed(2) ?? "-"}
+                                  </span>
+                                </div>
+                                <div className={styles["goalieStatDetails"]}>
+                                  <span className={styles["spanGoalieValue"]}>
+                                    SV%:
+                                  </span>
+                                  <span className={styles["spanGoalieStat"]}>
+                                    {goalie?.savePctg
+                                      ?.toFixed(3)
+                                      ?.replace(/^0+/, "")}
+                                    %
+                                  </span>
+                                </div>
+                                <div className={styles["goalieStatDetails"]}>
+                                  <span className={styles["spanGoalieValue"]}>
+                                    SO:
+                                  </span>
+                                  <span className={styles["spanGoalieStat"]}>
+                                    {goalie?.shutouts}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        )}
+                      </div>
+                      <div className={styles["awayGoalies"]}>
+                        {gameLandingDetails?.matchup?.goalieComparison?.awayTeam?.leaders?.map(
+                          (goalie) => (
+                            <div
+                              key={goalie.playerId}
+                              className={styles["goalieStatRow"]}
+                            >
+                              <div
+                                className={styles["awayGoalieStatHighlight"]}
+                              >
+                                <div className={styles["goalieStatDetails"]}>
+                                  <span className={styles["spanGoalieValue"]}>
+                                    Record:
+                                  </span>
+                                  <span className={styles["spanGoalieStat"]}>
+                                    {goalie.record}
+                                  </span>
+                                </div>
+                                <div className={styles["goalieStatDetails"]}>
+                                  <span className={styles["spanGoalieValue"]}>
+                                    GAA:
+                                  </span>
+                                  <span className={styles["spanGoalieStat"]}>
+                                    {goalie.gaa != null
+                                      ? goalie.gaa.toFixed(2)
+                                      : "-"}
+                                  </span>
+                                </div>
+                                <div className={styles["goalieStatDetails"]}>
+                                  <span className={styles["spanGoalieValue"]}>
+                                    SV%:
+                                  </span>
+                                  <span className={styles["spanGoalieStat"]}>
+                                    {goalie.savePctg != null
+                                      ? goalie.savePctg
+                                          .toFixed(3)
+                                          .replace(/^0+/, "")
+                                      : "-"}
+                                    %
+                                  </span>
+                                </div>
+                                <div className={styles["goalieStatDetails"]}>
+                                  <span className={styles["spanGoalieValue"]}>
+                                    SO:
+                                  </span>
+                                  <span className={styles["spanGoalieStat"]}>
+                                    {goalie.shutouts ?? "-"}{" "}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className={styles["goalieName"]}>
+                                <span>
+                                  {goalie.firstName.default}{" "}
+                                  <span className={styles["goalieLastName"]}>
+                                    {goalie.lastName.default}
+                                  </span>
+                                </span>{" "}
+                                {/* First Name */}{" "}
+                                <span className={styles["goalieSweaterNumber"]}>
+                                  #{goalie.sweaterNumber} •{" "}
+                                  {goalie.positionCode}
+                                </span>
+                              </div>
+
+                              <div className={styles["goalieImage"]}>
+                                <Image
+                                  src={goalie.headshot}
+                                  alt={`Headshot of ${goalie.name.default}`}
+                                  width={60}
+                                  height={60}
+                                />
+                              </div>
+                            </div>
+                          )
+                        )}
+                      </div>
                     </div>
                   </div>
-                  <div className="goalieStatsContainer">
-                    <div className="homeGoalies">
-                      {gameLandingDetails?.matchup?.goalieComparison?.homeTeam?.leaders?.map(
-                        (goalie) => (
-                          <div key={goalie.playerId} className="goalieStatRow">
-                            <div className="goalieImage">
-                              <Image
-                                src={goalie.headshot}
-                                alt={`Headshot of ${goalie.name.default}`}
-                                width={60}
-                                height={60}
-                              />
-                            </div>
-                            <div className="goalieName">
-                              <span>
-                                {goalie.firstName.default}{" "}
-                                <span className="goalieLastName">
-                                  {goalie.lastName.default}
-                                </span>
-                              </span>{" "}
-                              <span className="goalieSweaterNumber">
-                                #{goalie.sweaterNumber} • {goalie.positionCode}
-                              </span>
-                            </div>
-                            <div className="homeGoalieStatHighlight">
-                              <div className="goalieStatDetails">
-                                <span className="spanGoalieValue">Record:</span>
-                                <span className="spanGoalieStat">
-                                  {goalie.record}
-                                </span>
-                              </div>
-                              <div className="goalieStatDetails">
-                                <span className="spanGoalieValue">GAA:</span>
-                                <span className="spanGoalieStat">
-                                  {goalie?.gaa?.toFixed(2) ?? "-"}
-                                </span>
-                              </div>
-                              <div className="goalieStatDetails">
-                                <span className="spanGoalieValue">SV%:</span>
-                                <span className="spanGoalieStat">
-                                  {goalie?.savePctg
-                                    ?.toFixed(3)
-                                    ?.replace(/^0+/, "")}
-                                  %
-                                </span>
-                              </div>
-                              <div className="goalieStatDetails">
-                                <span className="spanGoalieValue">SO:</span>
-                                <span className="spanGoalieStat">
-                                  {goalie?.shutouts}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        )
-                      )}
-                    </div>
-                    <div className="awayGoalies">
-                      {gameLandingDetails?.matchup?.goalieComparison?.awayTeam?.leaders?.map(
-                        (goalie) => (
-                          <div key={goalie.playerId} className="goalieStatRow">
-                            <div className="awayGoalieStatHighlight">
-                              <div className="goalieStatDetails">
-                                <span className="spanGoalieValue">Record:</span>
-                                <span className="spanGoalieStat">
-                                  {goalie.record}
-                                </span>
-                              </div>
-                              <div className="goalieStatDetails">
-                                <span className="spanGoalieValue">GAA:</span>
-                                <span className="spanGoalieStat">
-                                  {goalie.gaa != null
-                                    ? goalie.gaa.toFixed(2)
-                                    : "-"}
-                                </span>
-                              </div>
-                              <div className="goalieStatDetails">
-                                <span className="spanGoalieValue">SV%:</span>
-                                <span className="spanGoalieStat">
-                                  {goalie.savePctg != null
-                                    ? goalie.savePctg
-                                        .toFixed(3)
-                                        .replace(/^0+/, "")
-                                    : "-"}
-                                  %
-                                </span>
-                              </div>
-                              <div className="goalieStatDetails">
-                                <span className="spanGoalieValue">SO:</span>
-                                <span className="spanGoalieStat">
-                                  {goalie.shutouts ?? "-"}{" "}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="goalieName">
-                              <span>
-                                {goalie.firstName.default}{" "}
-                                <span className="goalieLastName">
-                                  {goalie.lastName.default}
-                                </span>
-                              </span>{" "}
-                              {/* First Name */}{" "}
-                              <span className="goalieSweaterNumber">
-                                #{goalie.sweaterNumber} • {goalie.positionCode}
-                              </span>
-                            </div>
-
-                            <div className="goalieImage">
-                              <Image
-                                src={goalie.headshot}
-                                alt={`Headshot of ${goalie.name.default}`}
-                                width={60}
-                                height={60}
-                              />
-                            </div>
-                          </div>
-                        )
-                      )}
-                    </div>
-                  </div>
                 </div>
-              </div>
               </div>
               {/* Conditionally render PoissonDistributionChart if all data is loaded */}
               {isDataLoaded ? (
-                <div className="poissonChartContainer">
+                <div className={styles["poissonChartContainer"]}>
                   <PoissonDistributionChart chartData={chartData} />
                 </div>
               ) : (
@@ -1038,160 +1087,158 @@ export default function Page() {
     gameLandingDetails?.gameState === "FINAL"
   ) {
     return (
-      <div className="gameOverPage" style={themeStyles}>
+      <div className={styles["gameOverPage"]} style={themeStyles}>
         {gameDetails ? (
           <>
             {renderGameHero()}
 
-            <section className="gameContent">
-              <div className="gameOverPageContainer">
-                <div className="gameOverFlexContainer">
-                  <div className="gameOverStatsContainer">
-                    <div className="GOtable">
+            <section className={styles["gameContent"]}>
+              <div className={styles["gameOverPageContainer"]}>
+                <div className={styles["gameOverFlexContainer"]}>
+                  <div className={styles["gameOverStatsContainer"]}>
+                    <div className={styles["GOtable"]}>
                       <table>
-                      <thead className="gameOverHeader">
-                        <tr>
-                          <th className="GOTLHcell">
-                            <Image
-                              className="GOteamLogoHome"
-                              src={gameDetails.homeTeam.logo}
-                              alt={`${gameDetails.homeTeam.commonName.default} logo`}
-                              width={75}
-                              height={75}
-                            />
-                          </th>
-                          <th className="GOgameDetailsCell">Game Details</th>
-                          <th className="GOTLAcell">
-                            <Image
-                              className="GOteamLogoAway"
-                              src={gameDetails.awayTeam.logo}
-                              alt={`${gameDetails.awayTeam.commonName.default} logo`}
-                              width={75}
-                              height={75}
-                            />
-                          </th>
-                        </tr>
-                      </thead>
+                        <thead className={styles["gameOverHeader"]}>
+                          <tr>
+                            <th className={styles["GOTLHcell"]}>
+                              <Image
+                                className={styles["GOteamLogoHome"]}
+                                src={gameDetails.homeTeam.logo}
+                                alt={`${gameDetails.homeTeam.commonName.default} logo`}
+                                width={75}
+                                height={75}
+                              />
+                            </th>
+                            <th className={styles["GOgameDetailsCell"]}>
+                              Game Details
+                            </th>
+                            <th className={styles["GOTLAcell"]}>
+                              <Image
+                                className={styles["GOteamLogoAway"]}
+                                src={gameDetails.awayTeam.logo}
+                                alt={`${gameDetails.awayTeam.commonName.default} logo`}
+                                width={75}
+                                height={75}
+                              />
+                            </th>
+                          </tr>
+                        </thead>
 
-                      <tbody>
-                        <tr>
-                          <td>{gameDetails.homeTeam.sog}</td>
-                          <td>SOG</td>
-                          <td>{gameDetails.awayTeam.sog}</td>
-                        </tr>
-                        <tr>
-                          <td>
-                            {hitsStat?.homeValue ?? "N/A"}
-                          </td>
-                          <td>HIT</td>
-                          <td>
-                            {hitsStat?.awayValue ?? "N/A"}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td>
-                            {blockedShotsStat?.homeValue ?? "N/A"}
-                          </td>
-                          <td>BLK</td>
-                          <td>
-                            {blockedShotsStat?.awayValue ?? "N/A"}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td>
-                            {penaltyMinutesStat?.homeValue ?? "N/A"}
-                          </td>
-                          <td>PIM</td>
-                          <td>
-                            {penaltyMinutesStat?.awayValue ?? "N/A"}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td>
-                            {faceoffStat?.homeValue != null
-                              ? `${(faceoffStat.homeValue * 100).toFixed(2)}%`
-                              : "N/A"}
-                          </td>
-                          <td>FO%</td>
-                          <td>
-                            {faceoffStat?.awayValue != null
-                              ? `${(faceoffStat.awayValue * 100).toFixed(2)}%`
-                              : "N/A"}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td>
-                            {powerPlayPctgStat?.homeValue != null
-                              ? `${(powerPlayPctgStat.homeValue * 100).toFixed(2)}%`
-                              : "N/A"}
-                          </td>
-                          <td>PPG</td>
-                          <td>
-                            {powerPlayPctgStat?.awayValue != null
-                              ? `${(powerPlayPctgStat.awayValue * 100).toFixed(2)}%`
-                              : "N/A"}
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
+                        <tbody>
+                          <tr>
+                            <td>{gameDetails.homeTeam.sog}</td>
+                            <td>SOG</td>
+                            <td>{gameDetails.awayTeam.sog}</td>
+                          </tr>
+                          <tr>
+                            <td>{hitsStat?.homeValue ?? "N/A"}</td>
+                            <td>HIT</td>
+                            <td>{hitsStat?.awayValue ?? "N/A"}</td>
+                          </tr>
+                          <tr>
+                            <td>{blockedShotsStat?.homeValue ?? "N/A"}</td>
+                            <td>BLK</td>
+                            <td>{blockedShotsStat?.awayValue ?? "N/A"}</td>
+                          </tr>
+                          <tr>
+                            <td>{penaltyMinutesStat?.homeValue ?? "N/A"}</td>
+                            <td>PIM</td>
+                            <td>{penaltyMinutesStat?.awayValue ?? "N/A"}</td>
+                          </tr>
+                          <tr>
+                            <td>
+                              {faceoffStat?.homeValue != null
+                                ? `${(faceoffStat.homeValue * 100).toFixed(2)}%`
+                                : "N/A"}
+                            </td>
+                            <td>FO%</td>
+                            <td>
+                              {faceoffStat?.awayValue != null
+                                ? `${(faceoffStat.awayValue * 100).toFixed(2)}%`
+                                : "N/A"}
+                            </td>
+                          </tr>
+                          <tr>
+                            <td>
+                              {powerPlayPctgStat?.homeValue != null
+                                ? `${(powerPlayPctgStat.homeValue * 100).toFixed(2)}%`
+                                : "N/A"}
+                            </td>
+                            <td>PPG</td>
+                            <td>
+                              {powerPlayPctgStat?.awayValue != null
+                                ? `${(powerPlayPctgStat.awayValue * 100).toFixed(2)}%`
+                                : "N/A"}
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
-                </div>
-                <div className="threeStarsContainer">
-                  <div className="threeStarsHeader">
-                    <span>Three Stars of the Game</span>
-                  </div>
-                  {threeStars.map((star, index) => (
-                    <div className="starRow" key={index}>
-                      <Image
-                        src={star.headshot}
-                        alt={`${star.name}\'s headshot`}
-                        width={75}
-                        height={75}
-                      />
-                      <div className="starStats">
-                        <span>{`${star.goals}G, ${star.assists}A, ${star.points}P`}</span>
-                        <span>{`${star.sweaterNo} | ${star.position}`}</span>
+                  <div className={styles["threeStarsContainer"]}>
+                    <div className={styles["threeStarsHeader"]}>
+                      <span>Three Stars of the Game</span>
+                    </div>
+                    {threeStars.map((star, index) => (
+                      <div className={styles["starRow"]} key={index}>
+                        <Image
+                          src={star.headshot}
+                          alt={`${star.name}\'s headshot`}
+                          width={75}
+                          height={75}
+                        />
+                        <div className={styles["starStats"]}>
+                          <span>{`${star.goals}G, ${star.assists}A, ${star.points}P`}</span>
+                          <span>{`${star.sweaterNo} | ${star.position}`}</span>
+                        </div>
+                        <span className={styles["starName"]}>
+                          {star.name}
+                        </span>{" "}
                       </div>
-                      <span className="starName">{star.name}</span>{" "}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <div className="gameOverScratchesContainer">
-              <div className="GOscratches">
-                <div className="GOscratchHeader">
-                  <span>Scratches</span>
-                </div>
-                <div className="GOscratchDetails">
-                  <div className="GOhomeScratches">
-                    <div className="GOscratchHomeHeader">
-                      <span>{gameDetails.homeTeam.commonName.default}</span>
-                    </div>
-                    {homeScratches.map((player) => (
-                      <span className="scratchesName" key={player.id}>
-                        -{" "}
-                        {`${player.firstName.default} ${player.lastName.default}`}
-                        <br />
-                      </span>
                     ))}
                   </div>
+                </div>
+              </div>
+              <div className={styles["gameOverScratchesContainer"]}>
+                <div className={styles["GOscratches"]}>
+                  <div className={styles["GOscratchHeader"]}>
+                    <span>Scratches</span>
+                  </div>
+                  <div className={styles["GOscratchDetails"]}>
+                    <div className={styles["GOhomeScratches"]}>
+                      <div className={styles["GOscratchHomeHeader"]}>
+                        <span>{gameDetails.homeTeam.commonName.default}</span>
+                      </div>
+                      {homeScratches.map((player) => (
+                        <span
+                          className={styles["scratchesName"]}
+                          key={player.id}
+                        >
+                          -{" "}
+                          {`${player.firstName.default} ${player.lastName.default}`}
+                          <br />
+                        </span>
+                      ))}
+                    </div>
 
-                  <div className="GOawayScratches">
-                    <div className="GOscratchAwayHeader">
-                      <span>{gameDetails.awayTeam.commonName.default}</span>
+                    <div className={styles["GOawayScratches"]}>
+                      <div className={styles["GOscratchAwayHeader"]}>
+                        <span>{gameDetails.awayTeam.commonName.default}</span>
+                      </div>
+                      {awayScratches.map((player) => (
+                        <span
+                          className={styles["scratchesName"]}
+                          key={player.id}
+                        >
+                          -{" "}
+                          {`${player.firstName.default} ${player.lastName.default}`}
+                          <br />
+                        </span>
+                      ))}
                     </div>
-                    {awayScratches.map((player) => (
-                      <span className="scratchesName" key={player.id}>
-                        -{" "}
-                        {`${player.firstName.default} ${player.lastName.default}`}
-                        <br />
-                      </span>
-                    ))}
                   </div>
                 </div>
               </div>
-            </div>
             </section>
           </>
         ) : (
@@ -1201,7 +1248,7 @@ export default function Page() {
     );
   } else {
     return (
-      <div className="game-page" style={themeStyles}>
+      <div className={styles["game-page"]} style={themeStyles}>
         <p>Game details are not available.</p>
       </div>
     );

@@ -46,6 +46,12 @@ function getParam(req: NextApiRequest, key: string): string | null {
   return null;
 }
 
+function parseBooleanParam(value: string | null): boolean {
+  if (!value) return false;
+  const normalized = value.trim().toLowerCase();
+  return normalized === "1" || normalized === "true" || normalized === "yes";
+}
+
 function isoDateOnly(d: string): string {
   return d.slice(0, 10);
 }
@@ -114,9 +120,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
   const force = (getParam(req, "force") ?? "false").toLowerCase() === "true";
   const debug = (getParam(req, "debug") ?? "false").toLowerCase() === "true";
   const debugLimit = Number(getParam(req, "debugLimit") ?? 50);
+  const bypassMaxDuration = parseBooleanParam(
+    getParam(req, "bypassMaxDuration")
+  );
   const maxDurationMs = Number(getParam(req, "maxDurationMs") ?? 270_000); // safety: 4.5 minutes
-  const budgetMs = Number.isFinite(maxDurationMs) ? maxDurationMs : 270_000;
-  const deadlineMs = startedAt + budgetMs;
+  const budgetMs =
+    Number.isFinite(maxDurationMs) && maxDurationMs > 0 ? maxDurationMs : 270_000;
+  const deadlineMs = bypassMaxDuration ? Number.POSITIVE_INFINITY : startedAt + budgetMs;
 
   const games = await listGamesInRange(startDate, endDate);
 
@@ -126,7 +136,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
     endDate,
     durationMs: formatDurationMsToMMSS(0),
     timedOut: false,
-    maxDurationMs: formatDurationMsToMMSS(budgetMs),
+    maxDurationMs: bypassMaxDuration
+      ? "bypassed"
+      : formatDurationMsToMMSS(budgetMs),
     gamesTotal: games.length,
     gamesProcessed: 0,
     pbpGamesUpserted: 0,

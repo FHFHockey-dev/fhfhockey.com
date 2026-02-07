@@ -54,6 +54,11 @@ type StatAggregateRow = {
   updated_at: string;
 };
 
+type CoverageAccumulator = {
+  total: number;
+  in_range: number;
+};
+
 const DEFAULT_OFFSET_DAYS = 1;
 const DEFAULT_RANGE_BUDGET_MS = 240_000;
 const BATCH_SIZE = 800;
@@ -166,6 +171,67 @@ function finalizeStatAggregates(
       updated_at: new Date().toISOString()
     };
   });
+}
+
+function updateCoverage(
+  map: Map<string, CoverageAccumulator>,
+  statKey: string,
+  actual: number,
+  interval: { p10?: number; p90?: number } | null | undefined
+) {
+  if (!interval) return;
+  const p10 = interval.p10;
+  const p90 = interval.p90;
+  if (!Number.isFinite(actual) || !Number.isFinite(p10) || !Number.isFinite(p90)) return;
+  const existing = map.get(statKey) ?? { total: 0, in_range: 0 };
+  existing.total += 1;
+  if (actual >= (p10 as number) && actual <= (p90 as number)) {
+    existing.in_range += 1;
+  }
+  map.set(statKey, existing);
+}
+
+function finalizeCoverage(map: Map<string, CoverageAccumulator>) {
+  const out: Record<string, { total: number; in_range: number; coverage: number }> = {};
+  for (const [key, value] of map.entries()) {
+    out[key] = {
+      total: value.total,
+      in_range: value.in_range,
+      coverage: value.total > 0 ? value.in_range / value.total : 0
+    };
+  }
+  return out;
+}
+
+async function updateRunCalibrationMetrics(
+  runId: string,
+  actualDate: string,
+  calibration: Record<string, any>
+) {
+  if (!supabase) return;
+  const { data, error } = await supabase
+    .from("forge_runs")
+    .select("metrics")
+    .eq("run_id", runId)
+    .maybeSingle();
+  if (error) throw error;
+  const metrics = (data as any)?.metrics ?? {};
+  const existing = metrics.accuracy_calibration ?? {};
+  const updated = {
+    ...metrics,
+    accuracy_calibration: {
+      ...existing,
+      [actualDate]: {
+        ...calibration,
+        updated_at: new Date().toISOString()
+      }
+    }
+  };
+  const { error: updateErr } = await supabase
+    .from("forge_runs")
+    .update({ metrics: updated, updated_at: new Date().toISOString() })
+    .eq("run_id", runId);
+  if (updateErr) throw updateErr;
 }
 
 async function fetchGameDates(gameIds: number[]): Promise<Map<number, string>> {
@@ -303,7 +369,7 @@ async function runAccuracyForDate(
   const { data: projections, error: projErr } = await supabase
     .from("forge_player_projections")
     .select(
-      "game_id,player_id,team_id,opponent_team_id,proj_goals_es,proj_goals_pp,proj_goals_pk,proj_assists_es,proj_assists_pp,proj_assists_pk,proj_shots_es,proj_shots_pp,proj_shots_pk,proj_hits,proj_blocks"
+      "game_id,player_id,team_id,opponent_team_id,proj_goals_es,proj_goals_pp,proj_goals_pk,proj_assists_es,proj_assists_pp,proj_assists_pk,proj_shots_es,proj_shots_pp,proj_shots_pk,proj_hits,proj_blocks,uncertainty"
     )
     .eq("run_id", runId)
     .eq("as_of_date", projectionDate)
@@ -338,6 +404,7 @@ async function runAccuracyForDate(
 
   const skaterResults: AccuracyResultRow[] = [];
   const skaterStatAggregates = new Map<string, StatAggregate>();
+  const skaterCoverage = new Map<string, CoverageAccumulator>();
   for (const row of playerProjections) {
     const gameId = Number(row.game_id);
     if (!validGameIds.has(gameId)) continue;
@@ -393,6 +460,17 @@ async function runAccuracyForDate(
       actual.blocked_shots ?? 0
     );
 
+    const skaterUncertainty = row.uncertainty ?? {};
+    updateCoverage(skaterCoverage, "g", actual.goals ?? 0, skaterUncertainty.g);
+    updateCoverage(skaterCoverage, "a", actual.assists ?? 0, skaterUncertainty.a);
+    updateCoverage(
+      skaterCoverage,
+      "pts",
+      (actual.goals ?? 0) + (actual.assists ?? 0),
+      skaterUncertainty.pts
+    );
+    updateCoverage(skaterCoverage, "sog", actual.shots ?? 0, skaterUncertainty.sog);
+
     const predicted = computeSkaterFantasyPoints({
       goals: predictedGoals,
       assists: predictedAssists,
@@ -434,7 +512,7 @@ async function runAccuracyForDate(
   const { data: goalieProjections, error: goalieErr } = await supabase
     .from("forge_goalie_projections")
     .select(
-      "game_id,goalie_id,team_id,opponent_team_id,starter_probability,proj_saves,proj_goals_allowed,proj_win_prob,proj_shutout_prob"
+      "game_id,goalie_id,team_id,opponent_team_id,starter_probability,proj_saves,proj_goals_allowed,proj_win_prob,proj_shutout_prob,uncertainty"
     )
     .eq("run_id", runId)
     .eq("as_of_date", projectionDate)
@@ -456,6 +534,7 @@ async function runAccuracyForDate(
   );
   const goalieResults: AccuracyResultRow[] = [];
   const goalieStatAggregates = new Map<string, StatAggregate>();
+  const goalieCoverage = new Map<string, CoverageAccumulator>();
   const goalieActualCount = await fetchGoalieActualCount(actualDate);
 
   for (const row of goalieProjectionRows) {
@@ -501,6 +580,28 @@ async function runAccuracyForDate(
       "shutouts",
       projectedShutouts,
       actual.shutouts ?? 0
+    );
+
+    const goalieUncertainty = row.uncertainty ?? {};
+    const actualShotsAgainst =
+      (actual.saves ?? 0) + (actual.goals_against ?? 0);
+    updateCoverage(
+      goalieCoverage,
+      "shots_against",
+      actualShotsAgainst,
+      goalieUncertainty.shots_against
+    );
+    updateCoverage(
+      goalieCoverage,
+      "goals_allowed",
+      actual.goals_against ?? 0,
+      goalieUncertainty.goals_allowed
+    );
+    updateCoverage(
+      goalieCoverage,
+      "saves",
+      actual.saves ?? 0,
+      goalieUncertainty.saves
     );
 
     const predicted = computeGoalieFantasyPoints({
@@ -648,6 +749,14 @@ async function runAccuracyForDate(
       .upsert(statDailyRows, { onConflict: "date,scope,stat_key" });
     if (error) throw error;
   }
+
+  const calibrationSummary = {
+    actual_date: actualDate,
+    projection_date: projectionDate,
+    skater: finalizeCoverage(skaterCoverage),
+    goalie: finalizeCoverage(goalieCoverage)
+  };
+  await updateRunCalibrationMetrics(runId, actualDate, calibrationSummary);
 
   const goalieMatchedByPlayer = goalieProjectionRows.filter((row) => {
     const goalieId = Number(row.goalie_id);

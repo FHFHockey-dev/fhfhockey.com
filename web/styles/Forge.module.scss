@@ -146,6 +146,30 @@
   }
 }
 
+.modeSwitch {
+  display: inline-flex;
+  margin: 0 0 v.$space-lg;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-md;
+  overflow: hidden;
+}
+
+.modeButton {
+  @include v.button-style;
+  border: none;
+  padding: v.$space-sm v.$space-lg;
+  background-color: v.$background-medium;
+  color: v.$text-secondary;
+  font-family: v.$font-family-accent;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.activeModeButton {
+  background-color: v.$primary-color;
+  color: v.$background-dark;
+}
+
 .controlsContainer {
   display: flex;
   flex-wrap: wrap;
@@ -414,5 +438,22 @@
       justify-content: flex-end;
       text-align: right;
     }
+  }
+}
+
+.goalieMetaRow {
+  margin-top: v.$space-sm;
+  display: flex;
+  flex-wrap: wrap;
+  gap: v.$space-xs;
+
+  span {
+    border: 1px solid v.$border-secondary;
+    border-radius: 999px;
+    padding: 0.2rem 0.55rem;
+    font-size: 0.75rem;
+    letter-spacing: 0.03em;
+    color: v.$text-secondary;
+    background-color: rgba(v.$color-white, 0.03);
   }
 }

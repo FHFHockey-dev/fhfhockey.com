@@ -507,10 +507,24 @@ The ingest endpoint considers a game “complete” and will skip when:
 - [x] Define a simple online-learning loop (rolling reweighting / Bayesian update) for player rates.
 - [x] Persist learning metadata in `forge_runs.metrics` and/or a new table for model update history.
 
+### Task 4: Uncertainty simulation + horizon>1 scaffolding
+- [x] Define uncertainty inputs and distributions (team opportunity noise, player share noise, conversion noise, goalie scenario noise).
+- [x] Implement simulation loop for horizon=1 and extract p10/p50/p90 into `uncertainty` JSONB.
+- [x] Extend simulation to horizon 2–10 by iterating over schedule slices (home/away/rest placeholders OK).
+- [x] Add interval calibration checks to backtests and store summary metrics.
+- [ ] Validate performance (batching, chunked upserts) so nightly runs stay within time limits.
+
+### Task 5: Ops + backtest reporting
+- [ ] Implement `/runs/{run_id}` detail endpoint for run metadata.
+- [ ] Implement admin endpoints for run triggers and `forge_roster_events` CRUD.
+- [ ] Add nightly scheduler wiring (Vercel cron or GitHub Actions) with `withCronJobAudit`.
+- [ ] Implement backtest report job (last 30 days, MAE + interval coverage) and store a report artifact.
 ## Relevant files
 - `tasks/prd-projection-model.md` - PRD and tracked task list for FORGE model work.
 - `web/pages/FORGE.tsx` - FORGE projections page UI.
 - `web/pages/api/v1/forge/accuracy.ts` - API endpoint for accuracy series data.
+- `web/lib/projections/uncertainty.ts` - Uncertainty bands + simulation quantiles for FORGE projections.
+- `web/pages/api/v1/db/run-projection-accuracy.ts` - Backtest/accuracy job with interval calibration metrics.
 - `web/styles/Forge.module.scss` - Styling for the FORGE projections page.
 - `web/rules/forge-tables.md` - Supabase table definitions for FORGE outputs.
 

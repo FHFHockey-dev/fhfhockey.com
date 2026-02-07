@@ -77,6 +77,12 @@ function getParam(req: NextApiRequest, key: string): string | null {
   return null;
 }
 
+function parseBooleanParam(value: string | null): boolean {
+  if (!value) return false;
+  const normalized = value.trim().toLowerCase();
+  return normalized === "1" || normalized === "true" || normalized === "yes";
+}
+
 function isoDateOnly(d: string): string {
   return d.slice(0, 10);
 }
@@ -102,9 +108,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
   const startDate =
     getParam(req, "startDate") ?? isoDateOnly(new Date().toISOString());
   const endDate = getParam(req, "endDate") ?? startDate;
+  const bypassMaxDuration = parseBooleanParam(
+    getParam(req, "bypassMaxDuration")
+  );
   const maxDurationMs = Number(getParam(req, "maxDurationMs") ?? 270_000);
-  const budgetMs = Number.isFinite(maxDurationMs) ? maxDurationMs : 270_000;
-  const deadlineMs = startedAt + budgetMs;
+  const budgetMs =
+    Number.isFinite(maxDurationMs) && maxDurationMs > 0 ? maxDurationMs : 270_000;
+  const deadlineMs = bypassMaxDuration ? Number.POSITIVE_INFINITY : startedAt + budgetMs;
 
   const errors: string[] = [];
   let player = { gamesProcessed: 0, rowsUpserted: 0 };
@@ -150,7 +160,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
     endDate,
     durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
     timedOut,
-    maxDurationMs: formatDurationMsToMMSS(budgetMs),
+    maxDurationMs: bypassMaxDuration
+      ? "bypassed"
+      : formatDurationMsToMMSS(budgetMs),
     player,
     team,
     goalie,

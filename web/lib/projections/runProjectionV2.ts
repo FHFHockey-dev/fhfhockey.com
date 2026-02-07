@@ -5,6 +5,7 @@ import {
   buildPlayerUncertainty,
   buildTeamUncertainty
 } from "lib/projections/uncertainty";
+import { computeGoalieProjectionModel, type GoalieEvidence } from "lib/projections/goalieModel";
 
 type GameRow = {
   id: number;
@@ -52,29 +53,21 @@ type RosterEventRow = {
   effective_to: string | null;
 };
 
+type GoalieGameHistoryRow = {
+  shots_against: number | null;
+  goals_allowed: number | null;
+  saves: number | null;
+  game_date?: string | null;
+  goalie_id?: number | null;
+  toi_seconds?: number | null;
+};
+
 function assertSupabase() {
   if (!supabase) throw new Error("Supabase server client not available");
 }
 
 function clamp(n: number, lo: number, hi: number): number {
   return Math.min(hi, Math.max(lo, n));
-}
-
-function computeWinProbability(goalsFor: number, goalsAgainst: number): number {
-  if (!Number.isFinite(goalsFor) || !Number.isFinite(goalsAgainst)) return 0.5;
-  const goalDiff = goalsFor - goalsAgainst;
-  const scale = 1.25;
-  const winProb = 1 / (1 + Math.exp(-goalDiff / scale));
-  return clamp(winProb, 0.01, 0.99);
-}
-
-function computeShutoutProbability(
-  goalsAgainst: number,
-  winProb: number
-): number {
-  const ga = Math.max(0, goalsAgainst);
-  const shutoutBase = Math.exp(-ga);
-  return clamp(shutoutBase * winProb, 0, 1);
 }
 
 function pickLatestByPlayer(rows: RollingRow[]): Map<number, RollingRow> {
@@ -305,6 +298,274 @@ async function fetchLatestGoalieForTeam(
     : null;
 }
 
+function safeStdDev(values: number[]): number {
+  if (values.length <= 1) return 0;
+  const mean = values.reduce((acc, n) => acc + n, 0) / values.length;
+  const variance =
+    values.reduce((acc, n) => acc + (n - mean) ** 2, 0) / (values.length - 1);
+  return Math.sqrt(Math.max(variance, 0));
+}
+
+function toUtcDateMs(dateOnly: string): number {
+  return new Date(`${dateOnly}T00:00:00.000Z`).getTime();
+}
+
+function daysBetweenDates(a: string, b: string): number {
+  const aMs = toUtcDateMs(a);
+  const bMs = toUtcDateMs(b);
+  if (!Number.isFinite(aMs) || !Number.isFinite(bMs)) return 99;
+  return Math.round((aMs - bMs) / (24 * 60 * 60 * 1000));
+}
+
+function sigmoid(x: number): number {
+  return 1 / (1 + Math.exp(-x));
+}
+
+type TeamGoalieStarterContext = {
+  startsByGoalie: Map<number, number>;
+  lastPlayedDateByGoalie: Map<number, string>;
+  totalGames: number;
+  previousGameDate: string | null;
+  previousGameStarterGoalieId: number | null;
+};
+
+const GOALIE_STALE_SOFT_DAYS = 30;
+const GOALIE_STALE_HARD_DAYS = 75;
+
+async function fetchTeamGoalieStarterContext(
+  teamId: number,
+  asOfDate: string
+): Promise<TeamGoalieStarterContext> {
+  assertSupabase();
+  const [goalieGamesRes, previousTeamGameRes] = await Promise.all([
+    supabase
+      .from("forge_goalie_game")
+      .select("game_date,goalie_id,toi_seconds")
+      .eq("team_id", teamId)
+      .lt("game_date", asOfDate)
+      .order("game_date", { ascending: false })
+      .limit(80),
+    supabase
+      .from("games")
+      .select("date")
+      .or(`homeTeamId.eq.${teamId},awayTeamId.eq.${teamId}`)
+      .lt("date", asOfDate)
+      .order("date", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+  ]);
+
+  if (goalieGamesRes.error) throw goalieGamesRes.error;
+  if (previousTeamGameRes.error) throw previousTeamGameRes.error;
+
+  const rows = (goalieGamesRes.data ?? []) as GoalieGameHistoryRow[];
+  const byDate = new Map<string, { goalieId: number; toi: number }>();
+  for (const row of rows) {
+    const gameDate = row.game_date;
+    const goalieId = row.goalie_id;
+    if (!gameDate || !Number.isFinite(goalieId)) continue;
+    const toi = safeNumber(row.toi_seconds, 0);
+    const existing = byDate.get(gameDate);
+    if (!existing || toi > existing.toi) {
+      byDate.set(gameDate, { goalieId: Number(goalieId), toi });
+    }
+  }
+
+  const lastDates = Array.from(byDate.keys()).sort().reverse().slice(0, 10);
+  const startsByGoalie = new Map<number, number>();
+  const lastPlayedDateByGoalie = new Map<number, string>();
+  for (const d of lastDates) {
+    const starter = byDate.get(d);
+    if (!starter) continue;
+    startsByGoalie.set(
+      starter.goalieId,
+      (startsByGoalie.get(starter.goalieId) ?? 0) + 1
+    );
+    if (!lastPlayedDateByGoalie.has(starter.goalieId)) {
+      lastPlayedDateByGoalie.set(starter.goalieId, d);
+    }
+  }
+
+  for (const [date, info] of byDate.entries()) {
+    if (!lastPlayedDateByGoalie.has(info.goalieId)) {
+      lastPlayedDateByGoalie.set(info.goalieId, date);
+    }
+  }
+
+  const previousGameDate = (previousTeamGameRes.data as any)?.date ?? null;
+  const previousGameStarterGoalieId =
+    previousGameDate != null
+      ? (byDate.get(previousGameDate)?.goalieId ?? null)
+      : null;
+
+  return {
+    startsByGoalie,
+    lastPlayedDateByGoalie,
+    totalGames: lastDates.length,
+    previousGameDate,
+    previousGameStarterGoalieId
+  };
+}
+
+async function fetchCurrentTeamGoalieIds(teamId: number): Promise<Set<number>> {
+  assertSupabase();
+  const { data, error } = await supabase
+    .from("players")
+    .select("id")
+    .eq("team_id", teamId)
+    .eq("position", "G");
+  if (error) throw error;
+  return new Set((data ?? []).map((r: any) => Number(r.id)).filter((n) => Number.isFinite(n)));
+}
+
+function computeStarterProbabilities(opts: {
+  asOfDate: string;
+  candidateGoalieIds: number[];
+  starterContext: TeamGoalieStarterContext;
+  priorStartProbByGoalieId: Map<number, number>;
+  teamGoalsFor: number;
+  opponentGoalsFor: number;
+}): Map<number, number> {
+  const probs = new Map<number, number>();
+  const candidates = Array.from(new Set(opts.candidateGoalieIds)).filter((id) =>
+    Number.isFinite(id)
+  );
+  if (candidates.length === 0) return probs;
+  if (candidates.length === 1) {
+    probs.set(candidates[0], 1);
+    return probs;
+  }
+
+  const starts = opts.starterContext.startsByGoalie;
+  const totalGames = Math.max(1, opts.starterContext.totalGames);
+  const teamIsWeaker = opts.teamGoalsFor + 0.2 < opts.opponentGoalsFor;
+  const opponentIsWeak = opts.opponentGoalsFor <= 2.6;
+  const previousGameDate = opts.starterContext.previousGameDate;
+  const isB2B =
+    previousGameDate != null &&
+    daysBetweenDates(opts.asOfDate, previousGameDate) === 1;
+  const previousStarter = opts.starterContext.previousGameStarterGoalieId;
+  const lastPlayedMap = opts.starterContext.lastPlayedDateByGoalie;
+
+  const scores = candidates.map((goalieId) => {
+    const l10Starts = starts.get(goalieId) ?? 0;
+    const l10Share = l10Starts / totalGames;
+    const priorProb = clamp(opts.priorStartProbByGoalieId.get(goalieId) ?? 0.5, 0.01, 0.99);
+    const isPrimary = l10Share >= 0.6;
+    const playedYesterday = isB2B && previousStarter === goalieId;
+    const lastPlayed = lastPlayedMap.get(goalieId) ?? null;
+    const daysSinceLastPlayed =
+      lastPlayed != null ? Math.max(0, daysBetweenDates(opts.asOfDate, lastPlayed)) : 999;
+
+    let score = 0;
+    // Core usage signal: if a goalie started 7/10, this pushes probability up materially.
+    score += 2.4 * (l10Share - 0.5);
+    // Preserve external prior signal when available.
+    score += 0.7 * Math.log(priorProb / (1 - priorProb));
+
+    // Back-to-back: goalie from game 1 is heavily discounted for game 2.
+    if (playedYesterday) score -= 2.25;
+    if (isB2B && !playedYesterday) score += 0.55;
+
+    // Weaker teams on B2B tend to lean backup usage.
+    if (isB2B && teamIsWeaker && isPrimary) score -= 0.85;
+    if (isB2B && teamIsWeaker && !isPrimary) score += 0.35;
+
+    // Starter on a soft matchup can be rested for backup.
+    if (opponentIsWeak && isPrimary) score -= 0.55;
+    if (opponentIsWeak && !isPrimary) score += 0.25;
+
+    // Recency guardrail: goalies inactive for long stretches should be near-eliminated.
+    if (daysSinceLastPlayed > GOALIE_STALE_HARD_DAYS) score -= 6;
+    else if (daysSinceLastPlayed > GOALIE_STALE_SOFT_DAYS) score -= 3;
+    else if (daysSinceLastPlayed > 14) score -= 0.8;
+    if (daysSinceLastPlayed <= 7) score += 0.2;
+
+    return { goalieId, score, daysSinceLastPlayed, lastPlayed };
+  });
+
+  if (scores.length === 2) {
+    const [a, b] = scores;
+    const pA = clamp(sigmoid(a.score - b.score), 0.02, 0.98);
+    probs.set(a.goalieId, pA);
+    probs.set(b.goalieId, 1 - pA);
+    return probs;
+  }
+
+  const maxScore = Math.max(...scores.map((s) => s.score));
+  const exps = scores.map((s) => Math.exp(s.score - maxScore));
+  const denom = exps.reduce((acc, v) => acc + v, 0) || 1;
+  scores.forEach((s, i) => {
+    probs.set(s.goalieId, clamp(exps[i] / denom, 0.01, 0.98));
+  });
+  return probs;
+}
+
+async function fetchGoalieEvidence(
+  goalieId: number,
+  asOfDate: string
+): Promise<GoalieEvidence> {
+  assertSupabase();
+  const [recentRes, baselineRes] = await Promise.all([
+    supabase
+      .from("forge_goalie_game")
+      .select("shots_against,goals_allowed,saves")
+      .eq("goalie_id", goalieId)
+      .lt("game_date", asOfDate)
+      .order("game_date", { ascending: false })
+      .limit(20),
+    supabase
+      .from("forge_goalie_game")
+      .select("shots_against,goals_allowed,saves")
+      .eq("goalie_id", goalieId)
+      .lt("game_date", asOfDate)
+      .order("game_date", { ascending: false })
+      .limit(200)
+  ]);
+
+  if (recentRes.error) throw recentRes.error;
+  if (baselineRes.error) throw baselineRes.error;
+
+  const recentRows = (recentRes.data ?? []) as GoalieGameHistoryRow[];
+  const baselineRows = (baselineRes.data ?? []) as GoalieGameHistoryRow[];
+
+  const sumRecent = recentRows.reduce(
+    (acc, row) => {
+      acc.shots += safeNumber(row.shots_against, 0);
+      acc.goals += safeNumber(row.goals_allowed, 0);
+      return acc;
+    },
+    { shots: 0, goals: 0 }
+  );
+
+  const sumBaseline = baselineRows.reduce(
+    (acc, row) => {
+      acc.shots += safeNumber(row.shots_against, 0);
+      acc.goals += safeNumber(row.goals_allowed, 0);
+      return acc;
+    },
+    { shots: 0, goals: 0 }
+  );
+
+  const leagueSvPct = 0.9;
+  const residuals = recentRows.map((row) => {
+    const shots = safeNumber(row.shots_against, 0);
+    const goals = safeNumber(row.goals_allowed, 0);
+    const expectedGoals = shots * (1 - leagueSvPct);
+    return goals - expectedGoals;
+  });
+
+  return {
+    recentStarts: recentRows.length,
+    recentShotsAgainst: sumRecent.shots,
+    recentGoalsAllowed: sumRecent.goals,
+    baselineStarts: baselineRows.length,
+    baselineShotsAgainst: sumBaseline.shots,
+    baselineGoalsAllowed: sumBaseline.goals,
+    residualStdDev: safeStdDev(residuals)
+  };
+}
+
 async function fetchRollingRows(
   playerIds: number[],
   strengthState: "ev" | "pp",
@@ -439,6 +700,7 @@ export async function runProjectionV2ForDate(
     );
 
     const playerAvailabilityMultiplier = new Map<number, number>();
+    const goalieEvidenceCache = new Map<number, GoalieEvidence>();
     const goalieOverrideByTeamId = new Map<
       number,
       { goalieId: number; starterProb: number }
@@ -534,11 +796,14 @@ export async function runProjectionV2ForDate(
       >();
       const teamGoalsByTeamId = new Map<number, number>();
       const fallbackGoalieByTeamId = new Map<number, number | null>();
+      const teamGoalieStarterContextCache = new Map<number, TeamGoalieStarterContext>();
+      const currentTeamGoalieIdsCache = new Map<number, Set<number>>();
       const goalieCandidates: Array<{
         teamId: number;
         opponentTeamId: number;
-        goalieId: number;
-        starterProb: number;
+        candidateGoalieIds: number[];
+        priorStartProbByGoalieId: Map<number, number>;
+        override: { goalieId: number; starterProb: number } | null;
       }> = [];
 
       for (const teamId of [game.homeTeamId, game.awayTeamId]) {
@@ -918,7 +1183,7 @@ export async function runProjectionV2ForDate(
           .eq("game_id", game.id)
           .eq("team_id", teamId)
           .order("start_probability", { ascending: false })
-          .limit(1);
+          .limit(6);
         if (gsErr) throw gsErr;
         if (!fallbackGoalieByTeamId.has(teamId)) {
           fallbackGoalieByTeamId.set(
@@ -927,22 +1192,81 @@ export async function runProjectionV2ForDate(
           );
         }
         const fallbackGoalieId = fallbackGoalieByTeamId.get(teamId) ?? null;
-        const goalieId =
-          goalieOverride?.goalieId ??
-          (goalieStarts?.[0] as any)?.player_id ??
-          lc.goalies?.[0] ??
-          fallbackGoalieId ??
-          null;
+        if (!teamGoalieStarterContextCache.has(teamId)) {
+          teamGoalieStarterContextCache.set(
+            teamId,
+            await fetchTeamGoalieStarterContext(teamId, asOfDate)
+          );
+        }
+        if (!currentTeamGoalieIdsCache.has(teamId)) {
+          currentTeamGoalieIdsCache.set(
+            teamId,
+            await fetchCurrentTeamGoalieIds(teamId)
+          );
+        }
+        const context = teamGoalieStarterContextCache.get(
+          teamId
+        ) as TeamGoalieStarterContext;
+        const currentTeamGoalieIds = currentTeamGoalieIdsCache.get(teamId) as Set<number>;
 
-        if (goalieId != null) {
-          const starterProb =
-            goalieOverride?.starterProb ??
-            Number((goalieStarts?.[0] as any)?.start_probability ?? 0.5);
+        const priorStartProbByGoalieId = new Map<number, number>();
+        for (const row of goalieStarts ?? []) {
+          const goalieId = Number((row as any)?.player_id);
+          if (!Number.isFinite(goalieId)) continue;
+          priorStartProbByGoalieId.set(
+            goalieId,
+            clamp(Number((row as any)?.start_probability ?? 0.5), 0.01, 0.99)
+          );
+        }
+
+        const contextGoalies = Array.from(context.startsByGoalie.keys()).slice(0, 4);
+        const rawCandidateGoalieIds = Array.from(
+          new Set(
+            [
+              goalieOverride?.goalieId ?? null,
+              ...(goalieStarts ?? []).map((r: any) => Number(r.player_id)),
+              ...(lc.goalies ?? []),
+              ...contextGoalies,
+              fallbackGoalieId
+            ].filter((n): n is number => Number.isFinite(n))
+          )
+        );
+        const candidateGoalieIds = rawCandidateGoalieIds
+          .filter((goalieId) => {
+            if (goalieOverride?.goalieId === goalieId) return true;
+            // Keep only current-team goalies to prevent stale historical carry-over.
+            if (currentTeamGoalieIds.size > 0 && !currentTeamGoalieIds.has(goalieId)) {
+              return false;
+            }
+            const lastPlayed = context.lastPlayedDateByGoalie.get(goalieId);
+            if (!lastPlayed) return true;
+            const daysSinceLastPlayed = Math.max(
+              0,
+              daysBetweenDates(asOfDate, lastPlayed)
+            );
+            return daysSinceLastPlayed <= GOALIE_STALE_HARD_DAYS;
+          })
+          .sort((a, b) => {
+            const startsA = context.startsByGoalie.get(a) ?? 0;
+            const startsB = context.startsByGoalie.get(b) ?? 0;
+            const lastA = context.lastPlayedDateByGoalie.get(a);
+            const lastB = context.lastPlayedDateByGoalie.get(b);
+            const daysA =
+              lastA != null ? Math.max(0, daysBetweenDates(asOfDate, lastA)) : 999;
+            const daysB =
+              lastB != null ? Math.max(0, daysBetweenDates(asOfDate, lastB)) : 999;
+            if (startsB !== startsA) return startsB - startsA;
+            return daysA - daysB;
+          })
+          .slice(0, 3);
+
+        if (candidateGoalieIds.length > 0) {
           goalieCandidates.push({
             teamId,
             opponentTeamId,
-            goalieId,
-            starterProb
+            candidateGoalieIds,
+            priorStartProbByGoalieId,
+            override: goalieOverride ?? null
           });
         }
       }
@@ -963,39 +1287,111 @@ export async function runProjectionV2ForDate(
         const shotsAgainst = Number(
           (oppShots.shotsEs + oppShots.shotsPp).toFixed(3)
         );
-
-        // Baseline league save% until we wire goalie priors.
-        const svPct = 0.9;
-        const goalsAllowed = shotsAgainst * (1 - svPct);
-        const saves = shotsAgainst - goalsAllowed;
         const teamGoalsFor = teamGoalsByTeamId.get(c.teamId) ?? 0;
-        const baseWinProb = computeWinProbability(teamGoalsFor, goalsAllowed);
-        const winProb = clamp(baseWinProb * c.starterProb, 0, 1);
-        const shutoutProb = clamp(
-          computeShutoutProbability(goalsAllowed, baseWinProb) * c.starterProb,
-          0,
-          1
-        );
+
+        let selectedGoalieId: number | null = null;
+        let starterProb = 0.5;
+        let starterModelMeta: any = {};
+        if (c.override) {
+          selectedGoalieId = c.override.goalieId;
+          starterProb = c.override.starterProb;
+          starterModelMeta = {
+            source: "roster_event_override"
+          };
+        } else {
+          const starterContext =
+            teamGoalieStarterContextCache.get(c.teamId) ??
+            (await fetchTeamGoalieStarterContext(c.teamId, asOfDate));
+          teamGoalieStarterContextCache.set(c.teamId, starterContext);
+          const opponentGoalsFor = teamGoalsByTeamId.get(c.opponentTeamId) ?? 0;
+          const probs = computeStarterProbabilities({
+            asOfDate,
+            candidateGoalieIds: c.candidateGoalieIds,
+            starterContext,
+            priorStartProbByGoalieId: c.priorStartProbByGoalieId,
+            teamGoalsFor,
+            opponentGoalsFor
+          });
+          const ranked = Array.from(probs.entries()).sort((a, b) => b[1] - a[1]);
+          if (ranked.length > 0) {
+            selectedGoalieId = ranked[0][0];
+            starterProb = ranked[0][1];
+          }
+          starterModelMeta = {
+            source: "heuristic_starter_model",
+            candidate_goalies: ranked.map(([goalieId, probability]) => ({
+              goalie_id: goalieId,
+              probability: Number(probability.toFixed(4)),
+              last_played_date:
+                starterContext.lastPlayedDateByGoalie.get(goalieId) ?? null,
+              days_since_last_played: (() => {
+                const d = starterContext.lastPlayedDateByGoalie.get(goalieId);
+                if (!d) return null;
+                return Math.max(0, daysBetweenDates(asOfDate, d));
+              })(),
+              l10_starts: starterContext.startsByGoalie.get(goalieId) ?? 0
+            }))
+          };
+        }
+
+        if (selectedGoalieId == null) continue;
+        if (!goalieEvidenceCache.has(selectedGoalieId)) {
+          goalieEvidenceCache.set(
+            selectedGoalieId,
+            await fetchGoalieEvidence(selectedGoalieId, asOfDate)
+          );
+        }
+        const evidence = goalieEvidenceCache.get(selectedGoalieId) as GoalieEvidence;
+        const goalieModel = computeGoalieProjectionModel({
+          projectedShotsAgainst: shotsAgainst,
+          starterProbability: starterProb,
+          projectedGoalsFor: teamGoalsFor,
+          evidence
+        });
+
+        const goalsAllowed = goalieModel.projectedGoalsAllowed;
+        const saves = goalieModel.projectedSaves;
+        const winProb = goalieModel.winProbability;
+        const shutoutProb = goalieModel.shutoutProbability;
+        const goalieUncertainty = {
+          ...buildGoalieUncertainty({
+            shotsAgainst,
+            goalsAllowed,
+            saves
+          }),
+          model: {
+            save_pct: Number(goalieModel.modeledSavePct.toFixed(4)),
+            volatility_index: Number(goalieModel.volatilityIndex.toFixed(3)),
+            blowup_risk: Number(goalieModel.blowupRisk.toFixed(4)),
+            confidence_tier: goalieModel.confidenceTier,
+            quality_tier: goalieModel.qualityTier,
+            reliability_tier: goalieModel.reliabilityTier,
+            recommendation: goalieModel.recommendation,
+            evidence: {
+              recent_starts: evidence.recentStarts,
+              recent_shots: evidence.recentShotsAgainst,
+              baseline_starts: evidence.baselineStarts,
+              baseline_shots: evidence.baselineShotsAgainst
+            },
+            starter_selection: starterModelMeta
+          }
+        };
 
         const goalieUpsert = {
           run_id: runId,
           as_of_date: asOfDate,
           horizon_games: 1,
           game_id: game.id,
-          goalie_id: c.goalieId,
+          goalie_id: selectedGoalieId,
           team_id: c.teamId,
           opponent_team_id: c.opponentTeamId,
-          starter_probability: Number(c.starterProb),
+          starter_probability: Number(starterProb.toFixed(4)),
           proj_shots_against: shotsAgainst,
           proj_goals_allowed: Number(goalsAllowed.toFixed(3)),
           proj_saves: Number(saves.toFixed(3)),
           proj_win_prob: Number(winProb.toFixed(4)),
           proj_shutout_prob: Number(shutoutProb.toFixed(4)),
-          uncertainty: buildGoalieUncertainty({
-            shotsAgainst,
-            goalsAllowed,
-            saves
-          }),
+          uncertainty: goalieUncertainty as any,
           updated_at: new Date().toISOString()
         };
 

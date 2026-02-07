@@ -1,0 +1,595 @@
+@use "sass:color";
+@use "sass:math";
+@use "styles/vars" as v;
+@use "styles/_panel" as panel;
+
+// Map global vars to local CSS custom properties for dynamic usage
+.game-page,
+.gameOverPage {
+  --fhfh-primary-color: #{v.$primary-color};
+  --fhfh-secondary-color: #{v.$secondary-color};
+  --fhfh-surface-base: #{v.$background-light};
+  --fhfh-border-accent: #{v.$border-accent};
+
+  min-height: 100vh;
+  width: 100%;
+  padding: v.$space-xl v.$space-xxl;
+  background:
+    radial-gradient(
+      120% 110% at 50% -20%,
+      rgba(v.$secondary-color, 0.22),
+      transparent 60%
+    ),
+    radial-gradient(
+      140% 130% at 80% -30%,
+      rgba(v.$primary-color, 0.18),
+      transparent 55%
+    ),
+    v.$background-dark;
+  color: v.$text-primary;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: v.$space-xl;
+  font-family: v.$font-family-primary;
+  position: relative;
+  overflow-x: hidden;
+
+  @media (max-width: v.$breakpoint-desktop) {
+    padding: v.$space-lg;
+    gap: v.$space-lg;
+  }
+
+  @media (max-width: v.$breakpoint-tablet) {
+    padding: v.$space-md;
+    gap: v.$space-md;
+  }
+
+  > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+      circle at 18% 8%,
+      rgba(v.$primary-color, 0.22),
+      transparent 45%
+    );
+    opacity: 0.6;
+    pointer-events: none;
+    z-index: 0;
+  }
+}
+
+// Mixins
+@mixin glass-panel($padding: v.$space-lg, $radius: v.$border-radius-lg) {
+  @include panel.panel-container($padding: $padding, $radius: $radius);
+  background: linear-gradient(
+    145deg,
+    rgba(v.$background-medium, 0.92),
+    rgba(v.$background-light, 0.78)
+  );
+  border: 1px solid rgba(v.$border-secondary, 0.6);
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.35),
+    0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+@mixin section-title {
+  font-family: v.$font-family-accent;
+  font-size: v.$font-size-lg;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0 0 v.$space-md;
+  display: inline-flex;
+  align-items: center;
+  gap: v.$space-sm;
+  color: v.$text-primary;
+}
+
+// Layout Containers
+.gameDetailsContainer,
+.gameOverDetailsContainer {
+  width: min(1200px, 96%);
+  display: flex;
+  justify-content: center;
+}
+
+.gameContent,
+.gameOverPageContainer,
+.statsAndPlayerCompContainer {
+  width: min(1200px, 96%);
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-xl;
+
+  @media (max-width: v.$breakpoint-desktop) {
+    gap: v.$space-lg;
+  }
+}
+
+.statsAndPlayerCompContainer {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+
+  @media (max-width: v.$breakpoint-desktop) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.gamePageVsTableContainer,
+.statsPlayerAndGoalieCompContainer {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-lg;
+}
+
+// Component: Game Hero
+.gameHero {
+  position: relative;
+  width: min(1200px, 98%);
+  margin-bottom: v.$space-xl;
+  @include glass-panel($padding: v.$space-xl, $radius: v.$border-radius-lg);
+  overflow: hidden;
+}
+
+.gameHero__backdrop {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      90% 90% at 12% 20%,
+      color-mix(in srgb, var(--home-primary-color, #{v.$primary-color}) 45%, transparent) 0%,
+      transparent 65%
+    ),
+    radial-gradient(
+      100% 100% at 88% 25%,
+      color-mix(in srgb, var(--away-primary-color, #{v.$secondary-color}) 40%, transparent) 0%,
+      transparent 60%
+    ),
+    linear-gradient(135deg, rgba(v.$background-medium, 0.65), rgba(v.$background-light, 0.45));
+  opacity: 0.8;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.gameHero__header {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: v.$space-md;
+}
+
+.statusPill {
+  font-family: v.$font-family-accent;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: v.$space-xs v.$space-md;
+  border-radius: 999px;
+  border: 1px solid rgba(v.$border-secondary, 0.5);
+  background: rgba(255, 255, 255, 0.06);
+  color: v.$text-button;
+  box-shadow: 0 0 12px rgba(v.$secondary-color, 0.25);
+
+  &.is-live {
+    background: color-mix(in srgb, var(--away-primary-color, #{v.$secondary-color}) 25%, rgba(255, 255, 255, 0.08));
+    border-color: color-mix(in srgb, var(--away-primary-color, #{v.$secondary-color}) 60%, transparent);
+    box-shadow: 0 0 18px rgba(v.$secondary-color, 0.3);
+  }
+
+  &.is-final {
+    background: color-mix(in srgb, var(--home-primary-color, #{v.$primary-color}) 20%, rgba(255, 255, 255, 0.06));
+    border-color: color-mix(in srgb, var(--home-primary-color, #{v.$primary-color}) 55%, transparent);
+  }
+}
+
+.gameHero__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: v.$space-sm;
+}
+
+.gameHero__metaItem {
+  font-size: v.$font-size-xs;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: math.div(v.$space-xs, 1.5) v.$space-sm;
+  border-radius: v.$border-radius-sm;
+  border: 1px solid rgba(v.$border-secondary, 0.35);
+  background: rgba(0, 0, 0, 0.25);
+  color: v.$text-secondary;
+}
+
+.gameHero__scoreboard {
+  position: relative;
+  z-index: 1;
+  margin-top: v.$space-lg;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: v.$space-lg;
+  align-items: stretch;
+
+  @media (max-width: v.$breakpoint-tablet) {
+    grid-template-columns: 1fr;
+  }
+}
+
+// Component: Team Card
+.teamCard {
+  position: relative;
+  border-radius: v.$border-radius-lg;
+  border: 1px solid rgba(v.$border-secondary, 0.45);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+  padding: v.$space-md v.$space-lg;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.teamCard__glow {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle at 20% 20%, color-mix(in srgb, var(--home-primary-color, #{v.$primary-color}) 35%, transparent), transparent 65%);
+  opacity: 0.7;
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+
+.teamCard--away .teamCard__glow {
+  background: radial-gradient(circle at 80% 20%, color-mix(in srgb, var(--away-primary-color, #{v.$secondary-color}) 35%, transparent), transparent 65%);
+}
+
+.teamCard__inner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: v.$space-md;
+  align-items: center;
+}
+
+.teamCard__logoWrap {
+  width: 84px;
+  height: 84px;
+  border-radius: v.$border-radius-lg;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.35);
+  display: grid;
+  place-items: center;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.45);
+}
+
+.teamCard__logo {
+  width: 70px;
+  height: 70px;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.45));
+}
+
+.teamCard__details {
+  display: flex;
+  flex-direction: column;
+  gap: math.div(v.$space-xs, 1.5);
+}
+
+.teamCard__abbr {
+  font-family: v.$font-family-accent;
+  font-size: v.$font-size-sm;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(v.$text-button, 0.8);
+}
+
+.teamCard__name {
+  font-family: v.$font-family-accent;
+  font-size: clamp(1.3rem, 3vw, 1.8rem);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: v.$text-button;
+}
+
+.teamCard__record {
+  font-size: v.$font-size-xs;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(v.$text-button, 0.65);
+}
+
+// Component: Score
+.gameHero__score {
+  position: relative;
+  border-radius: v.$border-radius-lg;
+  padding: v.$space-lg;
+  border: 1px solid rgba(v.$border-secondary, 0.4);
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.4), rgba(255, 255, 255, 0.04));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: v.$space-md;
+  min-height: 100%;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05), 0 18px 38px rgba(0, 0, 0, 0.45);
+}
+
+.gameHero__score--final {
+  border-color: color-mix(in srgb, var(--home-accent-color, v.$success-color) 60%, transparent);
+}
+
+.gameHero__scoreGlyph {
+  display: flex;
+  align-items: baseline;
+  gap: v.$space-sm;
+  font-family: v.$font-family-numbers;
+}
+
+.scoreValue {
+  font-size: clamp(2.6rem, 6vw, 3.6rem);
+  line-height: 1;
+  color: v.$text-button;
+  text-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+
+  &--home {
+    color: color-mix(in srgb, var(--home-primary-color, #{v.$primary-color}) 70%, v.$text-button 30%);
+  }
+
+  &--away {
+    color: color-mix(in srgb, var(--away-primary-color, #{v.$secondary-color}) 70%, v.$text-button 30%);
+  }
+}
+
+.scoreDivider {
+  font-size: clamp(2rem, 4vw, 2.8rem);
+  color: rgba(v.$text-button, 0.65);
+}
+
+.gameHero__scoreMeta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: v.$space-xs;
+  font-size: v.$font-size-xs;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: rgba(v.$text-secondary, 0.85);
+}
+
+// Stats & Tables
+.gamePageVsTable {
+  @include glass-panel($padding: v.$space-lg, $radius: v.$border-radius-lg);
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-md;
+}
+
+.tableHeader {
+  @include section-title;
+}
+
+.spanColorBlue {
+  color: v.$primary-color;
+}
+
+.statTableHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: v.$space-lg;
+  padding: v.$space-sm v.$space-md;
+  border-radius: v.$border-radius-md;
+  background: linear-gradient(
+    110deg,
+    color-mix(in srgb, var(--home-primary-color, #{v.$primary-color}) 38%, rgba(0, 0, 0, 0.75)) 0%,
+    rgba(0, 0, 0, 0.45) 50%,
+    color-mix(in srgb, var(--away-primary-color, #{v.$secondary-color}) 38%, rgba(0, 0, 0, 0.75)) 100%
+  );
+  border: 1px solid rgba(v.$border-secondary, 0.45);
+}
+
+.advantageHeaderText {
+  font-family: v.$font-family-accent;
+  font-size: v.$font-size-sm;
+  letter-spacing: 0.12em;
+  color: v.$text-button;
+  text-transform: uppercase;
+}
+
+.statRow {
+  @include glass-panel($padding: v.$space-sm v.$space-md, $radius: v.$border-radius-md);
+  gap: v.$space-xs;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.35);
+  }
+
+  &.is-home {
+    border-color: color-mix(in srgb, var(--home-accent-color, v.$success-color) 60%, transparent);
+    box-shadow: 0 0 24px rgba(v.$success-color, 0.18);
+  }
+
+  &.is-away {
+    border-color: color-mix(in srgb, var(--away-accent-color, v.$warning-color) 60%, transparent);
+    box-shadow: 0 0 24px rgba(v.$warning-color, 0.18);
+  }
+}
+
+.statRowHeader {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: v.$space-md;
+  font-variant-numeric: tabular-nums;
+}
+
+.statValue {
+  font-family: v.$font-family-numbers;
+  font-size: v.$font-size-md;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  text-transform: uppercase;
+
+  &--home {
+    justify-content: flex-start;
+    color: color-mix(in srgb, var(--home-primary-color, v.$primary-color) 75%, v.$text-primary 25%);
+  }
+
+  &--away {
+    justify-content: flex-end;
+    color: color-mix(in srgb, var(--away-primary-color, #{v.$secondary-color}) 75%, v.$text-primary 25%);
+  }
+}
+
+.statLabel {
+  font-size: v.$font-size-sm;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: v.$space-xs v.$space-sm;
+  border-radius: v.$border-radius-sm;
+  color: v.$text-secondary;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(v.$border-secondary, 0.4);
+  text-align: center;
+}
+
+.comparisonBar {
+  position: relative;
+  height: 12px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: linear-gradient(
+    115deg,
+    color-mix(in srgb, var(--home-primary-color, #{v.$primary-color}) 65%, transparent) calc((var(--home-share, 50) * 1%) - 4%),
+    rgba(255, 255, 255, 0.08) calc((var(--home-share, 50) * 1%) - 4%),
+    rgba(255, 255, 255, 0.08) calc((var(--home-share, 50) * 1%) + 4%),
+    color-mix(in srgb, var(--away-primary-color, #{v.$secondary-color}) 65%, transparent) calc((var(--home-share, 50) * 1%) + 4%)
+  );
+  box-shadow: inset 0 0 0 1px rgba(v.$border-secondary, 0.45);
+
+  &[data-winner="home"] {
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--home-accent-color, v.$success-color) 60%, transparent), 0 0 14px rgba(v.$success-color, 0.28);
+  }
+
+  &[data-winner="away"] {
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--away-accent-color, v.$warning-color) 60%, transparent), 0 0 14px rgba(v.$warning-color, 0.28);
+  }
+}
+
+.playerCompContainer {
+  @include glass-panel($padding: v.$space-lg, $radius: v.$border-radius-lg);
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-md;
+}
+
+.playerCompHeader {
+  @include panel.panel-title($padding-y: v.$space-sm, $padding-x: v.$space-lg);
+  justify-content: center;
+  border-bottom: 1px solid rgba(v.$border-secondary, 0.45);
+  font-size: v.$font-size-md;
+  background: linear-gradient(115deg, color-mix(in srgb, var(--home-primary-color, #{v.$primary-color}) 40%, rgba(0, 0, 0, 0.78)) 0%, color-mix(in srgb, var(--away-primary-color, #{v.$secondary-color}) 40%, rgba(0, 0, 0, 0.78)) 100%);
+}
+
+.playerCompDetails {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: v.$space-md;
+  align-items: center;
+  padding: v.$space-sm v.$space-md;
+  border-radius: v.$border-radius-md;
+  background: rgba(v.$background-dark, 0.55);
+  border: 1px solid rgba(v.$border-secondary, 0.35);
+
+  & + & {
+    margin-top: v.$space-sm;
+  }
+}
+
+.playerDetail {
+  display: flex;
+  align-items: center;
+  gap: v.$space-sm;
+
+  &.homePlayer .playerStats { align-items: flex-start; text-align: left; }
+  &.awayPlayer { flex-direction: row-reverse; .playerStats { align-items: flex-end; text-align: right; } }
+}
+
+.playerStats {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-xs;
+  font-size: v.$font-size-sm;
+  color: v.$text-secondary;
+  
+  .lastName { font-size: v.$font-size-md; color: v.$text-primary; text-transform: uppercase; letter-spacing: 0.04em; }
+}
+
+.playerHeadshot {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+  object-fit: cover;
+}
+
+.value {
+  font-family: v.$font-family-numbers;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: v.$text-button;
+  text-shadow: 0 6px 12px rgba(0, 0, 0, 0.6);
+}
+
+.verticalText {
+  font-family: v.$font-family-accent;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: v.$font-size-xxs;
+  color: v.$text-secondary;
+  opacity: 0.75;
+  writing-mode: vertical-rl;
+}
+
+// Scratches & 3 Stars
+.gameOverStatsContainer, .threeStarsContainer, .GOscratches {
+  @include glass-panel($padding: v.$space-lg, $radius: v.$border-radius-lg);
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-md;
+}
+
+.starRow {
+  display: flex;
+  align-items: center;
+  gap: v.$space-md;
+  padding: v.$space-sm v.$space-md;
+  border-radius: v.$border-radius-md;
+  background: rgba(v.$background-medium, 0.6);
+  border: 1px solid rgba(v.$border-secondary, 0.35);
+  
+  & + & { margin-top: v.$space-sm; }
+}
+
+.starName {
+  margin-left: auto;
+  font-family: v.$font-family-accent;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: v.$text-button;
+}
+
+// Ensure remaining classes are present
+.teamLogoHomeStatTable,
+.teamLogoAwayStatTable {
+  width: 72px; height: 72px; object-fit: contain; filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.45));
+}

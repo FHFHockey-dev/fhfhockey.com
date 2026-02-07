@@ -16,7 +16,6 @@ import "../styles/globals.css";
 import "../styles/vars.scss";
 
 import "../styles/Home.module.scss";
-import "pages/game/GamePage.scss";
 import "components/TeamLandingPage/teamLandingPage.scss";
 
 const queryClient = new QueryClient();

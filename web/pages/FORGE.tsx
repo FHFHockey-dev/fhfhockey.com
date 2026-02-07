@@ -43,6 +43,32 @@ type PlayerProjection = {
   };
 };
 
+type GoalieProjection = {
+  goalie_id: number;
+  goalie_name: string;
+  team_name: string;
+  team_abbreviation: string;
+  opponent_team_name: string;
+  opponent_team_abbreviation: string;
+  starter_probability: number;
+  proj_shots_against: number;
+  proj_saves: number;
+  proj_goals_allowed: number;
+  proj_win_prob: number;
+  proj_shutout_prob: number;
+  modeled_save_pct: number | null;
+  volatility_index: number | null;
+  blowup_risk: number | null;
+  confidence_tier: string | null;
+  quality_tier: string | null;
+  reliability_tier: string | null;
+  recommendation: string | null;
+  uncertainty: {
+    saves?: StatUncertainty;
+    goals_allowed?: StatUncertainty;
+  };
+};
+
 const getPositionClass = (position: string) => {
   switch (position) {
     case "C":
@@ -67,12 +93,21 @@ const formatUncertaintyValue = (value?: number) => {
   return value.toFixed(2);
 };
 
+const formatPercent = (value: number | null | undefined) => {
+  if (value == null || Number.isNaN(value)) return "--";
+  return `${(value * 100).toFixed(1)}%`;
+};
+
 const clampPercent = (value: number) => Math.max(0, Math.min(100, value));
 
 const FORGEPage: NextPage = () => {
+  const [viewMode, setViewMode] = useState<"skaters" | "goalies">("skaters");
   const [projections, setProjections] = useState<PlayerProjection[]>([]);
+  const [goalieProjections, setGoalieProjections] = useState<GoalieProjection[]>([]);
   const [loading, setLoading] = useState(true);
+  const [goalieLoading, setGoalieLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [goalieError, setGoalieError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTeam, setSelectedTeam] = useState("");
   const [selectedPosition, setSelectedPosition] = useState("");
@@ -86,11 +121,10 @@ const FORGEPage: NextPage = () => {
       try {
         const res = await fetch("/api/v1/forge/players");
         if (!res.ok) {
-          throw new Error("Failed to fetch projections");
+          throw new Error("Failed to fetch skater projections");
         }
         const data = await res.json();
-        // Normalize positions (L->LW, R->RW)
-        const normalizedData = data.data.map((p: PlayerProjection) => ({
+        const normalizedData = (data.data ?? []).map((p: PlayerProjection) => ({
           ...p,
           position:
             p.position === "L" ? "LW" : p.position === "R" ? "RW" : p.position
@@ -111,9 +145,31 @@ const FORGEPage: NextPage = () => {
   }, []);
 
   useEffect(() => {
+    const fetchGoalies = async () => {
+      try {
+        const res = await fetch("/api/v1/forge/goalies");
+        if (!res.ok) throw new Error("Failed to fetch goalie projections");
+        const data = await res.json();
+        setGoalieProjections(data.data ?? []);
+      } catch (err) {
+        if (err instanceof Error) setGoalieError(err.message);
+        else setGoalieError("An unknown error occurred");
+      } finally {
+        setGoalieLoading(false);
+      }
+    };
+
+    fetchGoalies();
+  }, []);
+
+  useEffect(() => {
     const fetchAccuracy = async () => {
       try {
-        const res = await fetch("/api/v1/forge/accuracy");
+        setAccuracyLoading(true);
+        setAccuracyPlaceholder(false);
+        setAccuracyError(null);
+        const scope = viewMode === "goalies" ? "goalie" : "skater";
+        const res = await fetch(`/api/v1/forge/accuracy?scope=${scope}`);
         if (!res.ok) {
           throw new Error("Failed to fetch accuracy data");
         }
@@ -149,7 +205,7 @@ const FORGEPage: NextPage = () => {
     };
 
     fetchAccuracy();
-  }, []);
+  }, [viewMode]);
 
   const accuracyChart = useMemo(() => {
     if (accuracySeries.length < 2) return null;
@@ -179,38 +235,51 @@ const FORGEPage: NextPage = () => {
   }, [accuracySeries]);
 
   const uniqueTeams = useMemo(() => {
+    if (viewMode === "goalies") {
+      const teams = new Set(goalieProjections.map((g) => g.team_name));
+      return Array.from(teams).sort();
+    }
     const teams = new Set(projections.map((p) => p.team_name));
     return Array.from(teams).sort();
-  }, [projections]);
+  }, [goalieProjections, projections, viewMode]);
 
   const filteredProjections = useMemo(() => {
     const query = searchQuery.toLowerCase();
     return projections
       .filter((p) => {
-        // 1. Filter for active players (simple heuristic: projected points > 0 or goalie)
-        // Adjust this logic if "active" means something else in your domain
         const isActive = p.pts > 0 || p.position === "G";
         if (!isActive) return false;
 
-        // 2. Search filter (Player Name)
         if (query && !p.player_name.toLowerCase().includes(query)) {
           return false;
         }
 
-        // 3. Team Filter
         if (selectedTeam && p.team_name !== selectedTeam) {
           return false;
         }
 
-        // 4. Position Filter
         if (selectedPosition && p.position !== selectedPosition) {
           return false;
         }
 
         return true;
       })
-      .sort((a, b) => b.pts - a.pts); // 5. Sort by highest totals (Points)
+      .sort((a, b) => b.pts - a.pts);
   }, [projections, searchQuery, selectedTeam, selectedPosition]);
+
+  const filteredGoalies = useMemo(() => {
+    const query = searchQuery.toLowerCase();
+    return goalieProjections
+      .filter((g) => {
+        if (query && !g.goalie_name.toLowerCase().includes(query)) return false;
+        if (selectedTeam && g.team_name !== selectedTeam) return false;
+        return true;
+      })
+      .sort((a, b) => b.starter_probability - a.starter_probability);
+  }, [goalieProjections, searchQuery, selectedTeam]);
+
+  const isLoading = viewMode === "goalies" ? goalieLoading : loading;
+  const activeError = viewMode === "goalies" ? goalieError : error;
 
   return (
     <div className={styles.container}>
@@ -227,7 +296,6 @@ const FORGEPage: NextPage = () => {
           <a href="/trends">Visit the unified dashboard →</a>
         </div>
         <div className={styles.header}>
-          {/* 3. Logo */}
           <div className={styles.logoContainer}>
             <Image
               src="/pictures/FORGE.png"
@@ -238,7 +306,6 @@ const FORGEPage: NextPage = () => {
             />
           </div>
 
-          {/* 5. Highlighted Title */}
           <h1 className={styles.title}>
             <span className={styles.highlight}>F</span>orecasting &{" "}
             <span className={styles.highlight}>O</span>utcome{" "}
@@ -248,10 +315,38 @@ const FORGEPage: NextPage = () => {
           </h1>
         </div>
 
+        <div className={styles.modeSwitch}>
+          <button
+            className={classNames(styles.modeButton, {
+              [styles.activeModeButton]: viewMode === "skaters"
+            })}
+            onClick={() => {
+              setViewMode("skaters");
+              setSelectedPosition("");
+            }}
+          >
+            Skaters
+          </button>
+          <button
+            className={classNames(styles.modeButton, {
+              [styles.activeModeButton]: viewMode === "goalies"
+            })}
+            onClick={() => {
+              setViewMode("goalies");
+              setSelectedPosition("");
+            }}
+          >
+            Goalies
+          </button>
+        </div>
+
         <section className={styles.accuracySection}>
           <div className={styles.accuracyHeader}>
             <div>
-              <h2>Model Accuracy (Last 30 Days)</h2>
+              <h2>
+                Model Accuracy ({viewMode === "goalies" ? "Goalie" : "Skater"}, Last
+                30 Days)
+              </h2>
               <p>
                 This line shows how close recent projections were to actual
                 results. Higher is better.
@@ -307,9 +402,7 @@ const FORGEPage: NextPage = () => {
             </div>
           )}
 
-          {!accuracyLoading && !accuracyChart && (
-            <p>No accuracy data yet.</p>
-          )}
+          {!accuracyLoading && !accuracyChart && <p>No accuracy data yet.</p>}
 
           {accuracyPlaceholder && (
             <p className={styles.accuracyNote}>
@@ -323,20 +416,17 @@ const FORGEPage: NextPage = () => {
           )}
         </section>
 
-        {/* 2. Search UI */}
         <div className={styles.controlsContainer}>
-          {/* Player Search */}
           <div className={styles.filterGroup}>
             <input
               type="text"
-              placeholder="Search players..."
+              placeholder={viewMode === "goalies" ? "Search goalies..." : "Search players..."}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className={styles.searchInput}
             />
           </div>
 
-          {/* Team Search */}
           <div className={styles.filterGroup}>
             <select
               value={selectedTeam}
@@ -352,30 +442,31 @@ const FORGEPage: NextPage = () => {
             </select>
           </div>
 
-          {/* Position Search */}
-          <div className={styles.filterGroup}>
-            <div className={styles.positionButtons}>
-              {["C", "LW", "RW", "D", "G"].map((pos) => (
-                <button
-                  key={pos}
-                  className={classNames(styles.positionButton, {
-                    [styles.active]: selectedPosition === pos
-                  })}
-                  onClick={() =>
-                    setSelectedPosition(selectedPosition === pos ? "" : pos)
-                  }
-                >
-                  {pos}
-                </button>
-              ))}
+          {viewMode === "skaters" && (
+            <div className={styles.filterGroup}>
+              <div className={styles.positionButtons}>
+                {["C", "LW", "RW", "D", "G"].map((pos) => (
+                  <button
+                    key={pos}
+                    className={classNames(styles.positionButton, {
+                      [styles.active]: selectedPosition === pos
+                    })}
+                    onClick={() =>
+                      setSelectedPosition(selectedPosition === pos ? "" : pos)
+                    }
+                  >
+                    {pos}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
-        {loading && <p>Loading projections...</p>}
-        {error && <p>Error: {error}</p>}
+        {isLoading && <p>Loading projections...</p>}
+        {activeError && <p>Error: {activeError}</p>}
 
-        {!loading && !error && (
+        {!isLoading && !activeError && viewMode === "skaters" && (
           <div className={styles.grid}>
             {filteredProjections.map((p) => (
               <div
@@ -440,6 +531,83 @@ const FORGEPage: NextPage = () => {
                         { label: "Goals", value: p.uncertainty.g },
                         { label: "Assists", value: p.uncertainty.a },
                         { label: "SOG", value: p.uncertainty.sog }
+                      ]
+                        .filter((item) => item.value)
+                        .map((item) => (
+                          <li key={item.label}>
+                            <span>{item.label}</span>
+                            <span className={styles.uncertaintyValues}>
+                              <span>Low {formatUncertaintyValue(item.value?.p10)}</span>
+                              <span>Typical {formatUncertaintyValue(item.value?.p50)}</span>
+                              <span>High {formatUncertaintyValue(item.value?.p90)}</span>
+                            </span>
+                          </li>
+                        ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!isLoading && !activeError && viewMode === "goalies" && (
+          <div className={styles.grid}>
+            {filteredGoalies.map((g) => (
+              <div
+                key={g.goalie_id}
+                className={classNames(styles.card, styles["pos-G"])}
+              >
+                <h2>{g.goalie_name}</h2>
+                <p>
+                  G - {g.team_abbreviation || g.team_name} vs {g.opponent_team_abbreviation || g.opponent_team_name}
+                </p>
+                <ul>
+                  <li>
+                    <span>Starter Prob</span>
+                    <span>{formatPercent(g.starter_probability)}</span>
+                  </li>
+                  <li>
+                    <span>Saves</span>
+                    <span>{g.proj_saves?.toFixed(2)}</span>
+                  </li>
+                  <li>
+                    <span>GA</span>
+                    <span>{g.proj_goals_allowed?.toFixed(2)}</span>
+                  </li>
+                  <li>
+                    <span>Win Prob</span>
+                    <span>{formatPercent(g.proj_win_prob)}</span>
+                  </li>
+                  <li>
+                    <span>SO Prob</span>
+                    <span>{formatPercent(g.proj_shutout_prob)}</span>
+                  </li>
+                  <li>
+                    <span>Modeled Sv%</span>
+                    <span>{formatPercent(g.modeled_save_pct)}</span>
+                  </li>
+                </ul>
+
+                <div className={styles.goalieMetaRow}>
+                  <span>{g.quality_tier ?? "--"}</span>
+                  <span>{g.reliability_tier ?? "--"}</span>
+                  <span>{g.confidence_tier ?? "--"}</span>
+                </div>
+                <div className={styles.goalieMetaRow}>
+                  <span>Risk: {formatPercent(g.blowup_risk)}</span>
+                  <span>Call: {g.recommendation ?? "--"}</span>
+                </div>
+
+                {g.uncertainty && (
+                  <div className={styles.uncertainty}>
+                    <div className={styles.uncertaintyHeader}>
+                      <h3>Uncertainty Range (Low / Typical / High)</h3>
+                    </div>
+                    <ul>
+                      {[
+                        { label: "Saves", value: g.uncertainty.saves },
+                        { label: "Goals Allowed", value: g.uncertainty.goals_allowed }
                       ]
                         .filter((item) => item.value)
                         .map((item) => (
