@@ -25,7 +25,7 @@
 
 ## Tasks
 
-- [ ] 1.0 Harden goalie starter probability modeling and candidate hygiene
+- [x] 1.0 Harden goalie starter probability modeling and candidate hygiene
   - [x] 1.1 Add strict candidate filtering to current-team active goalies (`players.team_id` + `position='G'`) with explicit override exceptions.
   - [x] 1.2 Add recency controls (`last_played_date`) with soft penalty after 30 days and near-elimination/hard exclusion for stale goalies.
   - [x] 1.3 Cap and rank candidate sets (target: max 2-3) using last-10 starts, recency, and confirmed/likely starter events.
