@@ -54,6 +54,97 @@ type StatAggregateRow = {
   updated_at: string;
 };
 
+type RollingWindowStats = {
+  days: number;
+  player_count: number;
+  mae: number;
+  rmse: number;
+};
+
+type GoalieStatDiagnostics = Record<
+  "saves" | "goals_against" | "win_prob" | "shutout_prob",
+  {
+    daily: { player_count: number; mae: number; rmse: number };
+    rolling_7d: RollingWindowStats;
+    rolling_30d: RollingWindowStats;
+  }
+>;
+
+type CalibrationBinAccumulator = {
+  count: number;
+  predicted_sum: number;
+  observed_sum: number;
+};
+
+type CalibrationAccumulator = {
+  count: number;
+  brier_sum: number;
+  bins: CalibrationBinAccumulator[];
+};
+
+type ReliabilityBin = {
+  bin_index: number;
+  bin_start: number;
+  bin_end: number;
+  sample_count: number;
+  avg_predicted: number;
+  observed_rate: number;
+};
+
+type ProbabilityCalibrationSummary = {
+  sample_count: number;
+  brier_score: number;
+  reliability_bins: ReliabilityBin[];
+};
+
+type IntervalCoverageSummary = Record<
+  string,
+  {
+    sample_count: number;
+    p10_p90_in_range: number;
+    p10_p90_hit_rate: number;
+  }
+>;
+
+type GoalieMissAttributionDiagnostics = {
+  sample_count: number;
+  total_abs_fp_error: number;
+  total_abs_ga_error: number;
+  starter_uncertainty: {
+    contribution: number;
+    share_of_explainable_error: number;
+  };
+  shots_against: {
+    contribution: number;
+    share_of_explainable_error: number;
+  };
+  save_pct: {
+    contribution: number;
+    share_of_explainable_error: number;
+  };
+  primary_driver: "STARTER" | "SHOTS_AGAINST" | "SAVE_PCT" | "MIXED";
+};
+
+type LaunchGateStatus = "PASS" | "FAIL";
+
+type LaunchGateEvaluation = {
+  gate_key: string;
+  description: string;
+  status: LaunchGateStatus;
+  actual_value: number;
+  threshold: { operator: "<=" | ">=" | "between"; value: number | [number, number] };
+};
+
+type GoalieLaunchGates = {
+  window_days: 30;
+  generated_for_date: string;
+  overall_status: LaunchGateStatus;
+  pass_count: number;
+  fail_count: number;
+  thresholds: Record<string, number | [number, number]>;
+  gates: LaunchGateEvaluation[];
+};
+
 type CoverageAccumulator = {
   total: number;
   in_range: number;
@@ -78,6 +169,16 @@ type MetricComparison = {
 const DEFAULT_OFFSET_DAYS = 1;
 const DEFAULT_RANGE_BUDGET_MS = 240_000;
 const BATCH_SIZE = 800;
+const GOALIE_LAUNCH_GATE_THRESHOLDS = {
+  min_sample_count_30d: 100,
+  saves_mae_max_30d: 4.5,
+  goals_against_mae_max_30d: 1.4,
+  starter_brier_max_30d: 0.2,
+  win_brier_max_30d: 0.22,
+  shutout_brier_max_30d: 0.08,
+  saves_interval_hit_rate_30d_range: [0.72, 0.9] as [number, number],
+  goals_allowed_interval_hit_rate_30d_range: [0.72, 0.9] as [number, number]
+} as const;
 
 function isoDateOnly(d: Date): string {
   return d.toISOString().slice(0, 10);
@@ -219,6 +320,186 @@ function finalizeCoverage(map: Map<string, CoverageAccumulator>) {
   return out;
 }
 
+function toIntervalCoverageSummary(
+  coverage: Record<string, { total: number; in_range: number; coverage: number }>
+): IntervalCoverageSummary {
+  const out: IntervalCoverageSummary = {};
+  for (const [key, value] of Object.entries(coverage)) {
+    out[key] = {
+      sample_count: value.total,
+      p10_p90_in_range: value.in_range,
+      p10_p90_hit_rate: round4(value.coverage)
+    };
+  }
+  return out;
+}
+
+function initMissAttributionAccumulator() {
+  return {
+    sampleCount: 0,
+    totalAbsFpError: 0,
+    totalAbsGaError: 0,
+    starterContribution: 0,
+    shotsAgainstContribution: 0,
+    savePctContribution: 0
+  };
+}
+
+function finalizeMissAttributionDiagnostics(acc: {
+  sampleCount: number;
+  totalAbsFpError: number;
+  totalAbsGaError: number;
+  starterContribution: number;
+  shotsAgainstContribution: number;
+  savePctContribution: number;
+}): GoalieMissAttributionDiagnostics {
+  const explainable =
+    acc.starterContribution + acc.shotsAgainstContribution + acc.savePctContribution;
+  const starterShare = explainable > 0 ? acc.starterContribution / explainable : 0;
+  const saShare = explainable > 0 ? acc.shotsAgainstContribution / explainable : 0;
+  const svShare = explainable > 0 ? acc.savePctContribution / explainable : 0;
+  const top = Math.max(starterShare, saShare, svShare);
+  const countTop = [starterShare, saShare, svShare].filter((v) => top - v < 0.05).length;
+  const primary =
+    countTop > 1
+      ? "MIXED"
+      : top === starterShare
+        ? "STARTER"
+        : top === saShare
+          ? "SHOTS_AGAINST"
+          : "SAVE_PCT";
+
+  return {
+    sample_count: acc.sampleCount,
+    total_abs_fp_error: round4(acc.totalAbsFpError),
+    total_abs_ga_error: round4(acc.totalAbsGaError),
+    starter_uncertainty: {
+      contribution: round4(acc.starterContribution),
+      share_of_explainable_error: round4(starterShare)
+    },
+    shots_against: {
+      contribution: round4(acc.shotsAgainstContribution),
+      share_of_explainable_error: round4(saShare)
+    },
+    save_pct: {
+      contribution: round4(acc.savePctContribution),
+      share_of_explainable_error: round4(svShare)
+    },
+    primary_driver: primary
+  };
+}
+
+function buildGoalieLaunchGates(args: {
+  actualDate: string;
+  goalieStatDiagnostics: GoalieStatDiagnostics;
+  goalieProbabilityCalibration: {
+    starter_probability: ProbabilityCalibrationSummary;
+    win_probability: ProbabilityCalibrationSummary;
+    shutout_probability: ProbabilityCalibrationSummary;
+  };
+  goalieIntervalCoverageDiagnostics: IntervalCoverageSummary;
+}): GoalieLaunchGates {
+  const t = GOALIE_LAUNCH_GATE_THRESHOLDS;
+  const evaluations: LaunchGateEvaluation[] = [];
+  const addGate = (gate: LaunchGateEvaluation) => evaluations.push(gate);
+
+  const sampleCount = args.goalieStatDiagnostics.saves.rolling_30d.player_count;
+  addGate({
+    gate_key: "min_sample_count_30d",
+    description: "Minimum goalie sample in last 30 days",
+    status: sampleCount >= t.min_sample_count_30d ? "PASS" : "FAIL",
+    actual_value: sampleCount,
+    threshold: { operator: ">=", value: t.min_sample_count_30d }
+  });
+
+  const savesMae30 = args.goalieStatDiagnostics.saves.rolling_30d.mae;
+  addGate({
+    gate_key: "saves_mae_max_30d",
+    description: "30d MAE on goalie saves projection",
+    status: savesMae30 <= t.saves_mae_max_30d ? "PASS" : "FAIL",
+    actual_value: savesMae30,
+    threshold: { operator: "<=", value: t.saves_mae_max_30d }
+  });
+
+  const gaMae30 = args.goalieStatDiagnostics.goals_against.rolling_30d.mae;
+  addGate({
+    gate_key: "goals_against_mae_max_30d",
+    description: "30d MAE on goalie goals-against projection",
+    status: gaMae30 <= t.goals_against_mae_max_30d ? "PASS" : "FAIL",
+    actual_value: gaMae30,
+    threshold: { operator: "<=", value: t.goals_against_mae_max_30d }
+  });
+
+  const starterBrier = args.goalieProbabilityCalibration.starter_probability.brier_score;
+  addGate({
+    gate_key: "starter_brier_max_30d",
+    description: "Starter probability Brier score over 30d window",
+    status: starterBrier <= t.starter_brier_max_30d ? "PASS" : "FAIL",
+    actual_value: starterBrier,
+    threshold: { operator: "<=", value: t.starter_brier_max_30d }
+  });
+
+  const winBrier = args.goalieProbabilityCalibration.win_probability.brier_score;
+  addGate({
+    gate_key: "win_brier_max_30d",
+    description: "Win probability Brier score over 30d window",
+    status: winBrier <= t.win_brier_max_30d ? "PASS" : "FAIL",
+    actual_value: winBrier,
+    threshold: { operator: "<=", value: t.win_brier_max_30d }
+  });
+
+  const shutoutBrier = args.goalieProbabilityCalibration.shutout_probability.brier_score;
+  addGate({
+    gate_key: "shutout_brier_max_30d",
+    description: "Shutout probability Brier score over 30d window",
+    status: shutoutBrier <= t.shutout_brier_max_30d ? "PASS" : "FAIL",
+    actual_value: shutoutBrier,
+    threshold: { operator: "<=", value: t.shutout_brier_max_30d }
+  });
+
+  const savesCoverage = args.goalieIntervalCoverageDiagnostics.saves?.p10_p90_hit_rate ?? 0;
+  addGate({
+    gate_key: "saves_interval_hit_rate_30d_range",
+    description: "P10/P90 interval hit-rate for saves in acceptable calibration band",
+    status:
+      savesCoverage >= t.saves_interval_hit_rate_30d_range[0] &&
+      savesCoverage <= t.saves_interval_hit_rate_30d_range[1]
+        ? "PASS"
+        : "FAIL",
+    actual_value: savesCoverage,
+    threshold: { operator: "between", value: t.saves_interval_hit_rate_30d_range }
+  });
+
+  const goalsCoverage =
+    args.goalieIntervalCoverageDiagnostics.goals_allowed?.p10_p90_hit_rate ?? 0;
+  addGate({
+    gate_key: "goals_allowed_interval_hit_rate_30d_range",
+    description:
+      "P10/P90 interval hit-rate for goals allowed in acceptable calibration band",
+    status:
+      goalsCoverage >= t.goals_allowed_interval_hit_rate_30d_range[0] &&
+      goalsCoverage <= t.goals_allowed_interval_hit_rate_30d_range[1]
+        ? "PASS"
+        : "FAIL",
+    actual_value: goalsCoverage,
+    threshold: { operator: "between", value: t.goals_allowed_interval_hit_rate_30d_range }
+  });
+
+  const passCount = evaluations.filter((g) => g.status === "PASS").length;
+  const failCount = evaluations.length - passCount;
+  return {
+    window_days: 30,
+    generated_for_date: args.actualDate,
+    overall_status: failCount === 0 ? "PASS" : "FAIL",
+    pass_count: passCount,
+    fail_count: failCount,
+    thresholds: {
+      ...t
+    },
+    gates: evaluations
+  };
+}
+
 function initErrorStats(): ErrorStats {
   return {
     count: 0,
@@ -257,6 +538,184 @@ function finalizeMetricComparison(
   };
 }
 
+function round4(n: number): number {
+  return Number(n.toFixed(4));
+}
+
+function initRollingWindow(days: number): RollingWindowStats {
+  return {
+    days,
+    player_count: 0,
+    mae: 0,
+    rmse: 0
+  };
+}
+
+function aggregateRollingWindow(
+  rows: Array<{
+    error_abs_sum: number | null;
+    error_sq_sum: number | null;
+    player_count: number | null;
+  }>,
+  days: number
+): RollingWindowStats {
+  let count = 0;
+  let errAbs = 0;
+  let errSq = 0;
+  for (const row of rows) {
+    const c = Math.max(0, Number(row.player_count ?? 0));
+    const abs = Math.max(0, Number(row.error_abs_sum ?? 0));
+    const sq = Math.max(0, Number(row.error_sq_sum ?? 0));
+    count += c;
+    errAbs += abs;
+    errSq += sq;
+  }
+  if (count <= 0) return initRollingWindow(days);
+  return {
+    days,
+    player_count: count,
+    mae: round4(errAbs / count),
+    rmse: round4(Math.sqrt(errSq / count))
+  };
+}
+
+function initCalibrationAccumulator(binCount = 10): CalibrationAccumulator {
+  return {
+    count: 0,
+    brier_sum: 0,
+    bins: Array.from({ length: binCount }, () => ({
+      count: 0,
+      predicted_sum: 0,
+      observed_sum: 0
+    }))
+  };
+}
+
+function updateCalibrationAccumulator(
+  acc: CalibrationAccumulator,
+  predicted: number,
+  observed: number
+) {
+  const p = Math.max(0, Math.min(1, Number.isFinite(predicted) ? predicted : 0));
+  const o = Math.max(0, Math.min(1, Number.isFinite(observed) ? observed : 0));
+  acc.count += 1;
+  acc.brier_sum += (p - o) ** 2;
+
+  const binCount = acc.bins.length;
+  const rawIdx = Math.floor(p * binCount);
+  const idx = Math.max(0, Math.min(binCount - 1, rawIdx));
+  const bin = acc.bins[idx];
+  bin.count += 1;
+  bin.predicted_sum += p;
+  bin.observed_sum += o;
+}
+
+function finalizeCalibrationAccumulator(
+  acc: CalibrationAccumulator
+): ProbabilityCalibrationSummary {
+  const binCount = acc.bins.length;
+  return {
+    sample_count: acc.count,
+    brier_score: acc.count > 0 ? round4(acc.brier_sum / acc.count) : 0,
+    reliability_bins: acc.bins.map((bin, idx) => {
+      const binStart = idx / binCount;
+      const binEnd = (idx + 1) / binCount;
+      return {
+        bin_index: idx,
+        bin_start: round4(binStart),
+        bin_end: round4(binEnd),
+        sample_count: bin.count,
+        avg_predicted:
+          bin.count > 0 ? round4(bin.predicted_sum / bin.count) : 0,
+        observed_rate:
+          bin.count > 0 ? round4(bin.observed_sum / bin.count) : 0
+      };
+    })
+  };
+}
+
+async function fetchGoalieStatDiagnostics(
+  actualDate: string,
+  dailyGoalieStatRows: StatAggregateRow[]
+): Promise<GoalieStatDiagnostics> {
+  const statKeyByDiagnosticKey = {
+    saves: "saves",
+    goals_against: "goals_against",
+    win_prob: "win_prob",
+    shutout_prob: "shutout_prob"
+  } as const;
+  const diagnostics = {
+    saves: {
+      daily: { player_count: 0, mae: 0, rmse: 0 },
+      rolling_7d: initRollingWindow(7),
+      rolling_30d: initRollingWindow(30)
+    },
+    goals_against: {
+      daily: { player_count: 0, mae: 0, rmse: 0 },
+      rolling_7d: initRollingWindow(7),
+      rolling_30d: initRollingWindow(30)
+    },
+    win_prob: {
+      daily: { player_count: 0, mae: 0, rmse: 0 },
+      rolling_7d: initRollingWindow(7),
+      rolling_30d: initRollingWindow(30)
+    },
+    shutout_prob: {
+      daily: { player_count: 0, mae: 0, rmse: 0 },
+      rolling_7d: initRollingWindow(7),
+      rolling_30d: initRollingWindow(30)
+    }
+  } satisfies GoalieStatDiagnostics;
+
+  for (const [diagnosticKey, statKey] of Object.entries(statKeyByDiagnosticKey) as Array<
+    [keyof GoalieStatDiagnostics, string]
+  >) {
+    const dailyRow = dailyGoalieStatRows.find((r) => r.stat_key === statKey);
+    diagnostics[diagnosticKey].daily = {
+      player_count: Math.max(0, Number(dailyRow?.player_count ?? 0)),
+      mae: round4(Number(dailyRow?.mae ?? 0)),
+      rmse: round4(Number(dailyRow?.rmse ?? 0))
+    };
+  }
+
+  if (!supabase) return diagnostics;
+
+  const statKeys = Object.values(statKeyByDiagnosticKey);
+  const windowStart30d = addDays(actualDate, -29);
+  const { data, error } = await supabase
+    .from("forge_projection_accuracy_stat_daily")
+    .select("date,stat_key,error_abs_sum,error_sq_sum,player_count")
+    .eq("scope", "goalie")
+    .in("stat_key", statKeys)
+    .gte("date", windowStart30d)
+    .lte("date", actualDate)
+    .order("date", { ascending: false });
+  if (error) throw error;
+
+  const rows = (data ?? []) as Array<{
+    date: string | null;
+    stat_key: string | null;
+    error_abs_sum: number | null;
+    error_sq_sum: number | null;
+    player_count: number | null;
+  }>;
+
+  for (const [diagnosticKey, statKey] of Object.entries(statKeyByDiagnosticKey) as Array<
+    [keyof GoalieStatDiagnostics, string]
+  >) {
+    const statRows = rows.filter((r) => r.stat_key === statKey);
+    const rows7d = statRows.filter((r) => {
+      const d = r.date;
+      if (!d) return false;
+      return d >= addDays(actualDate, -6) && d <= actualDate;
+    });
+    diagnostics[diagnosticKey].rolling_7d = aggregateRollingWindow(rows7d, 7);
+    diagnostics[diagnosticKey].rolling_30d = aggregateRollingWindow(statRows, 30);
+  }
+
+  return diagnostics;
+}
+
 async function updateRunCalibrationMetrics(
   runId: string,
   actualDate: string,
@@ -286,6 +745,82 @@ async function updateRunCalibrationMetrics(
     .update({ metrics: updated, updated_at: new Date().toISOString() })
     .eq("run_id", runId);
   if (updateErr) throw updateErr;
+}
+
+async function persistGoalieCalibrationSnapshots(args: {
+  runId: string;
+  actualDate: string;
+  projectionDate: string;
+  goalieStatDiagnostics: GoalieStatDiagnostics;
+  goalieProbabilityCalibration: {
+    starter_probability: ProbabilityCalibrationSummary;
+    win_probability: ProbabilityCalibrationSummary;
+    shutout_probability: ProbabilityCalibrationSummary;
+  };
+  goalieIntervalCoverageDiagnostics: IntervalCoverageSummary;
+  goalieMissAttributionDiagnostics: GoalieMissAttributionDiagnostics;
+  goalieLaunchGates: GoalieLaunchGates;
+}) {
+  if (!supabase) return;
+  const rows = [
+    {
+      date: args.actualDate,
+      projection_date: args.projectionDate,
+      scope: "goalie_probability_calibration",
+      source_run_id: args.runId,
+      metrics: args.goalieProbabilityCalibration,
+      updated_at: new Date().toISOString()
+    },
+    {
+      date: args.actualDate,
+      projection_date: args.projectionDate,
+      scope: "goalie_interval_coverage",
+      source_run_id: args.runId,
+      metrics: args.goalieIntervalCoverageDiagnostics,
+      updated_at: new Date().toISOString()
+    },
+    {
+      date: args.actualDate,
+      projection_date: args.projectionDate,
+      scope: "goalie_stat_diagnostics",
+      source_run_id: args.runId,
+      metrics: args.goalieStatDiagnostics,
+      updated_at: new Date().toISOString()
+    },
+    {
+      date: args.actualDate,
+      projection_date: args.projectionDate,
+      scope: "goalie_calibration_summary",
+      source_run_id: args.runId,
+      metrics: {
+        probability: args.goalieProbabilityCalibration,
+        intervals: args.goalieIntervalCoverageDiagnostics,
+        stats: args.goalieStatDiagnostics,
+        miss_attribution: args.goalieMissAttributionDiagnostics
+      },
+      updated_at: new Date().toISOString()
+    },
+    {
+      date: args.actualDate,
+      projection_date: args.projectionDate,
+      scope: "goalie_miss_attribution",
+      source_run_id: args.runId,
+      metrics: args.goalieMissAttributionDiagnostics,
+      updated_at: new Date().toISOString()
+    },
+    {
+      date: args.actualDate,
+      projection_date: args.projectionDate,
+      scope: "goalie_launch_gates",
+      source_run_id: args.runId,
+      metrics: args.goalieLaunchGates,
+      updated_at: new Date().toISOString()
+    }
+  ];
+  const { error } = await (supabase as any)
+    .from("forge_projection_calibration_daily")
+    .upsert(rows, { onConflict: "date,scope" });
+  if (error) throw error;
 }
 
 async function fetchGameDates(gameIds: number[]): Promise<Map<number, string>> {
@@ -420,6 +955,15 @@ async function runAccuracyForDate(
     saves: MetricComparison;
     goals_against: MetricComparison;
   };
+  goalieStatDiagnostics: GoalieStatDiagnostics;
+  goalieProbabilityCalibration: {
+    starter_probability: ProbabilityCalibrationSummary;
+    win_probability: ProbabilityCalibrationSummary;
+    shutout_probability: ProbabilityCalibrationSummary;
+  };
+  goalieIntervalCoverageDiagnostics: IntervalCoverageSummary;
+  goalieMissAttributionDiagnostics: GoalieMissAttributionDiagnostics;
+  goalieLaunchGates: GoalieLaunchGates;
   durationMs: string;
 }> {
   const startedAt = Date.now();
@@ -599,6 +1143,10 @@ async function runAccuracyForDate(
   const goalsAgainstModelStats = initErrorStats();
   const goalsAgainstBaselineStats = initErrorStats();
   const goalieActualCount = await fetchGoalieActualCount(actualDate);
+  const starterProbabilityCalibration = initCalibrationAccumulator();
+  const winProbabilityCalibration = initCalibrationAccumulator();
+  const shutoutProbabilityCalibration = initCalibrationAccumulator();
+  const missAttribution = initMissAttributionAccumulator();
 
   for (const row of goalieProjectionRows) {
     const playerId = Number(row.goalie_id);
@@ -613,10 +1161,25 @@ async function runAccuracyForDate(
             shutouts: 0
           }
         : null);
+    updateCalibrationAccumulator(
+      starterProbabilityCalibration,
+      Number(row.starter_probability ?? 0),
+      actual ? 1 : 0
+    );
     if (!actual) continue;
 
     const projectedWins = row.proj_win_prob ?? 0;
     const projectedShutouts = row.proj_shutout_prob ?? 0;
+    updateCalibrationAccumulator(
+      winProbabilityCalibration,
+      Number(projectedWins),
+      (actual.wins ?? 0) > 0 ? 1 : 0
+    );
+    updateCalibrationAccumulator(
+      shutoutProbabilityCalibration,
+      Number(projectedShutouts),
+      (actual.shutouts ?? 0) > 0 ? 1 : 0
+    );
     const projectedSaves = row.proj_saves ?? 0;
     const projectedGoalsAgainst = row.proj_goals_allowed ?? 0;
     const projectedShotsAgainst =
@@ -639,13 +1202,13 @@ async function runAccuracyForDate(
     );
     updateStatAggregate(
       goalieStatAggregates,
-      "wins",
+      "win_prob",
       projectedWins,
       actual.wins ?? 0
     );
     updateStatAggregate(
       goalieStatAggregates,
-      "shutouts",
+      "shutout_prob",
       projectedShutouts,
       actual.shutouts ?? 0
     );
@@ -700,6 +1263,29 @@ async function runAccuracyForDate(
 
     const errorAbs = Math.abs(predicted - actualFp);
     const errorSq = Math.pow(predicted - actualFp, 2);
+    const modeledSavePctFromMeta = Number((row.uncertainty as any)?.model?.save_pct);
+    const modeledSavePct =
+      Number.isFinite(modeledSavePctFromMeta)
+        ? Math.max(0, Math.min(1, modeledSavePctFromMeta))
+        : projectedShotsAgainst > 0
+          ? Math.max(0, Math.min(1, projectedSaves / projectedShotsAgainst))
+          : 0.9;
+    const actualSavePct =
+      actualShotsAgainst > 0
+        ? Math.max(0, Math.min(1, (actual.saves ?? 0) / actualShotsAgainst))
+        : modeledSavePct;
+    const starterProb = Math.max(0, Math.min(1, Number(row.starter_probability ?? 0)));
+    const gaErrorAbs = Math.abs(projectedGoalsAgainst - (actual.goals_against ?? 0));
+    missAttribution.sampleCount += 1;
+    missAttribution.totalAbsFpError += errorAbs;
+    missAttribution.totalAbsGaError += gaErrorAbs;
+    missAttribution.starterContribution += (1 - starterProb) * gaErrorAbs;
+    missAttribution.shotsAgainstContribution += Math.abs(
+      (projectedShotsAgainst - actualShotsAgainst) * (1 - modeledSavePct)
+    );
+    missAttribution.savePctContribution += Math.abs(
+      actualShotsAgainst * (modeledSavePct - actualSavePct)
+    );
     goalieResults.push({
       as_of_date: projectionDate,
       actual_date: actualDate,
@@ -829,14 +1415,53 @@ async function runAccuracyForDate(
       .upsert(statDailyRows, { onConflict: "date,scope,stat_key" });
     if (error) throw error;
   }
+  const dailyGoalieStatRows = statDailyRows.filter((r) => r.scope === "goalie");
+  const goalieStatDiagnostics = await fetchGoalieStatDiagnostics(
+    actualDate,
+    dailyGoalieStatRows
+  );
+
+  const skaterCoverageSummary = finalizeCoverage(skaterCoverage);
+  const goalieCoverageSummary = finalizeCoverage(goalieCoverage);
+  const goalieIntervalCoverageDiagnostics =
+    toIntervalCoverageSummary(goalieCoverageSummary);
+
+  const goalieProbabilityCalibration = {
+    starter_probability: finalizeCalibrationAccumulator(starterProbabilityCalibration),
+    win_probability: finalizeCalibrationAccumulator(winProbabilityCalibration),
+    shutout_probability: finalizeCalibrationAccumulator(shutoutProbabilityCalibration)
+  };
+  const goalieMissAttributionDiagnostics =
+    finalizeMissAttributionDiagnostics(missAttribution);
+  const goalieLaunchGates = buildGoalieLaunchGates({
+    actualDate,
+    goalieStatDiagnostics,
+    goalieProbabilityCalibration,
+    goalieIntervalCoverageDiagnostics
+  });
 
   const calibrationSummary = {
     actual_date: actualDate,
     projection_date: projectionDate,
-    skater: finalizeCoverage(skaterCoverage),
-    goalie: finalizeCoverage(goalieCoverage)
+    skater: skaterCoverageSummary,
+    goalie: goalieCoverageSummary,
+    goalie_interval_coverage_diagnostics: goalieIntervalCoverageDiagnostics,
+    goalie_stat_diagnostics: goalieStatDiagnostics,
+    goalie_probability_calibration: goalieProbabilityCalibration,
+    goalie_miss_attribution_diagnostics: goalieMissAttributionDiagnostics,
+    goalie_launch_gates: goalieLaunchGates
   };
   await updateRunCalibrationMetrics(runId, actualDate, calibrationSummary);
+  await persistGoalieCalibrationSnapshots({
+    runId,
+    actualDate,
+    projectionDate,
+    goalieStatDiagnostics,
+    goalieProbabilityCalibration,
+    goalieIntervalCoverageDiagnostics,
+    goalieMissAttributionDiagnostics,
+    goalieLaunchGates
+  });
 
   const goalieMatchedByPlayer = goalieProjectionRows.filter((row) => {
     const goalieId = Number(row.goalie_id);
@@ -864,6 +1489,11 @@ async function runAccuracyForDate(
         goalsAgainstBaselineStats
       )
     },
+    goalieStatDiagnostics,
+    goalieProbabilityCalibration,
+    goalieIntervalCoverageDiagnostics,
+    goalieMissAttributionDiagnostics,
+    goalieLaunchGates,
     durationMs: formatDurationMsToMMSS(Date.now() - startedAt)
   };
 }
@@ -950,6 +1580,12 @@ export default withCronJobAudit(async function handler(
       totalRows: result.totalRows,
       goalieMatchDiagnostics: result.goalieMatchDiagnostics,
       goalieHoldoutComparison: result.goalieHoldoutComparison,
+      goalieStatDiagnostics: result.goalieStatDiagnostics,
+      goalieProbabilityCalibration: result.goalieProbabilityCalibration,
+      goalieIntervalCoverageDiagnostics:
+        result.goalieIntervalCoverageDiagnostics,
+      goalieMissAttributionDiagnostics: result.goalieMissAttributionDiagnostics,
+      goalieLaunchGates: result.goalieLaunchGates,
       durationMs: formatDurationMsToMMSS(Date.now() - startedAt)
     });
   } catch (e) {

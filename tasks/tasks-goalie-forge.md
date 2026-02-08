@@ -47,13 +47,13 @@
   - [x] 3.4 Extend uncertainty simulation to scenario mixtures so p10/p50/p90 reflect starter uncertainty.
   - [x] 3.5 Add horizon=5 support (or scaffold) with sequential schedule application and widening uncertainty bands.
   - [x] 3.6 Persist scenario metadata in `uncertainty.model` for explainability and debugging.
-- [ ] 4.0 Strengthen goalie accuracy measurement, diagnostics, and calibration feedback loops
-  - [ ] 4.1 Expand goalie stat-level diagnostics in accuracy pipeline (`saves`, `GA`, `win_prob`, `shutout_prob`) with daily and rolling aggregates.
-  - [ ] 4.2 Add probability calibration outputs (Brier score + reliability bins) for starter, win, and shutout probabilities.
-  - [ ] 4.3 Add interval coverage diagnostics for goalie uncertainty bands (`p10/p90` hit rates).
-  - [ ] 4.4 Store calibration snapshots in run metadata and/or dedicated tables for trend monitoring.
-  - [ ] 4.5 Add endpoint-level diagnostics payload to identify whether misses are driven by starter, SA, or SV% components.
-  - [ ] 4.6 Define acceptance thresholds for launch gates (minimum calibration + error targets over last 30 days).
+- [x] 4.0 Strengthen goalie accuracy measurement, diagnostics, and calibration feedback loops
+  - [x] 4.1 Expand goalie stat-level diagnostics in accuracy pipeline (`saves`, `GA`, `win_prob`, `shutout_prob`) with daily and rolling aggregates.
+  - [x] 4.2 Add probability calibration outputs (Brier score + reliability bins) for starter, win, and shutout probabilities.
+  - [x] 4.3 Add interval coverage diagnostics for goalie uncertainty bands (`p10/p90` hit rates).
+  - [x] 4.4 Store calibration snapshots in run metadata and/or dedicated tables for trend monitoring.
+  - [x] 4.5 Add endpoint-level diagnostics payload to identify whether misses are driven by starter, SA, or SV% components.
+  - [x] 4.6 Define acceptance thresholds for launch gates (minimum calibration + error targets over last 30 days).
 - [ ] 5.0 Improve data pipeline reliability and freshness guarantees for goalie FORGE dependencies
   - [ ] 5.1 Codify refresh order and dependency checks (games/teams/players → line combos → ingest → derived → goalie starts → projection run → accuracy run).
   - [ ] 5.2 Add preflight checks in run endpoint for required upstream freshness windows (with actionable errors).
