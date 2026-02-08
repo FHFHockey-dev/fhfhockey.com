@@ -4,8 +4,13 @@ import {
   buildSequentialHorizonScalarsFromDates,
   blendTopStarterScenarioOutputs,
   buildTopStarterScenarios,
+  computeGoalieRestSplitSavePctAdjustment,
+  computeNstOpponentDangerAdjustment,
+  computeTeamFiveOnFiveContextAdjustment,
+  computeTeamStrengthContextAdjustment,
   computeStarterProbabilities,
   selectStarterCandidateGoalieIds,
+  toGoalieRestSplitBucket,
   type StarterContextForTest
 } from "./runProjectionV2";
 
@@ -84,6 +89,55 @@ describe("starter probability heuristics", () => {
 
     expect((probs.get(stale) ?? 0)).toBeLessThan(0.2);
     expect((probs.get(active) ?? 0)).toBeGreaterThan(0.8);
+  });
+
+  it("applies line-combo recency prior as a soft starter boost", () => {
+    const goalieA = 2101;
+    const goalieB = 2102;
+    const context = buildContext({
+      startsByGoalie: new Map([
+        [goalieA, 5],
+        [goalieB, 5]
+      ]),
+      lastPlayedDateByGoalie: new Map([
+        [goalieA, "2026-02-05"],
+        [goalieB, "2026-02-05"]
+      ]),
+      previousGameDate: "2026-02-05",
+      previousGameStarterGoalieId: goalieA
+    });
+
+    const withoutLineCombo = computeStarterProbabilities({
+      asOfDate: "2026-02-07",
+      candidateGoalieIds: [goalieA, goalieB],
+      starterContext: context,
+      priorStartProbByGoalieId: new Map([
+        [goalieA, 0.5],
+        [goalieB, 0.5]
+      ]),
+      teamGoalsFor: 3,
+      opponentGoalsFor: 3
+    });
+    const withLineCombo = computeStarterProbabilities({
+      asOfDate: "2026-02-07",
+      candidateGoalieIds: [goalieA, goalieB],
+      starterContext: context,
+      priorStartProbByGoalieId: new Map([
+        [goalieA, 0.5],
+        [goalieB, 0.5]
+      ]),
+      lineComboPriorByGoalieId: new Map([
+        [goalieA, 0.85],
+        [goalieB, 0.15]
+      ]),
+      teamGoalsFor: 3,
+      opponentGoalsFor: 3
+    });
+
+    expect((withLineCombo.get(goalieA) ?? 0)).toBeGreaterThan(
+      withoutLineCombo.get(goalieA) ?? 0
+    );
+    expect((withLineCombo.get(goalieA) ?? 0)).toBeLessThan(0.95);
   });
 });
 
@@ -208,5 +262,151 @@ describe("horizon scalars", () => {
     expect(scalars[0]).toBeCloseTo(1, 5);
     expect(scalars[1]).toBeLessThan(scalars[0] ?? 1);
     expect(scalars[2]).toBeGreaterThan(scalars[1] ?? 0);
+  });
+});
+
+describe("goalie rest-split adjustments", () => {
+  it("maps days-since-start into expected rest buckets", () => {
+    expect(toGoalieRestSplitBucket(0)).toBe("0");
+    expect(toGoalieRestSplitBucket(1)).toBe("1");
+    expect(toGoalieRestSplitBucket(2)).toBe("2");
+    expect(toGoalieRestSplitBucket(3)).toBe("3");
+    expect(toGoalieRestSplitBucket(4)).toBe("4_plus");
+    expect(toGoalieRestSplitBucket(null)).toBe("4_plus");
+  });
+
+  it("applies sample-weighted positive adjustments and ignores low-sample buckets", () => {
+    const profile = {
+      sourceDate: "2026-02-05",
+      savePctByBucket: {
+        "0": 0.88,
+        "1": 0.912,
+        "2": 0.922,
+        "3": 0.915,
+        "4_plus": 0.905
+      },
+      gamesByBucket: {
+        "0": 3,
+        "1": 5,
+        "2": 1,
+        "3": 2,
+        "4_plus": 4
+      }
+    };
+
+    const day1Adj = computeGoalieRestSplitSavePctAdjustment({
+      profile,
+      daysSinceLastStart: 1
+    });
+    const day2Adj = computeGoalieRestSplitSavePctAdjustment({
+      profile,
+      daysSinceLastStart: 2
+    });
+
+    expect(day1Adj).toBeGreaterThan(0);
+    expect(day2Adj).toBe(0);
+  });
+});
+
+describe("team strength priors", () => {
+  it("increases shots-against and opponent goal context when defense xGA and opponent xGF are elevated", () => {
+    const adjustment = computeTeamStrengthContextAdjustment({
+      defendingTeamPrior: {
+        sourceDate: "2026-02-08",
+        xga: 172,
+        xgaPerGame: 3.35,
+        xgfPerGame: 3.05
+      },
+      opponentTeamPrior: {
+        sourceDate: "2026-02-08",
+        xga: 164,
+        xgaPerGame: 3.12,
+        xgfPerGame: 3.28
+      }
+    });
+
+    expect(adjustment.sampleWeight).toBeGreaterThan(0.9);
+    expect(adjustment.shotsAgainstPctAdjustment).toBeGreaterThan(0);
+    expect(adjustment.opponentGoalsForPctAdjustment).toBeGreaterThan(0);
+  });
+
+  it("returns neutral adjustments when no team priors are available", () => {
+    const adjustment = computeTeamStrengthContextAdjustment({
+      defendingTeamPrior: null,
+      opponentTeamPrior: null
+    });
+
+    expect(adjustment.sampleWeight).toBe(0);
+    expect(adjustment.shotsAgainstPctAdjustment).toBe(0);
+    expect(adjustment.teamGoalsForPctAdjustment).toBe(0);
+    expect(adjustment.opponentGoalsForPctAdjustment).toBe(0);
+  });
+});
+
+describe("team 5v5 context priors", () => {
+  it("boosts league save context for strong 5v5 save profiles", () => {
+    const adjustment = computeTeamFiveOnFiveContextAdjustment({
+      defendingTeamProfile: {
+        sourceDate: "2026-02-08",
+        gamesPlayed: 52,
+        savePct5v5: 0.934,
+        shootingPlusSavePct5v5: 1.03
+      },
+      opponentTeamProfile: {
+        sourceDate: "2026-02-08",
+        gamesPlayed: 52,
+        savePct5v5: 0.915,
+        shootingPlusSavePct5v5: 0.99
+      }
+    });
+
+    expect(adjustment.sampleWeight).toBeGreaterThan(0.9);
+    expect(adjustment.leagueSavePctAdjustment).toBeGreaterThan(0);
+    expect(Math.abs(adjustment.contextPctAdjustment)).toBeLessThan(0.03);
+  });
+
+  it("returns neutral values when no 5v5 profile is available", () => {
+    const adjustment = computeTeamFiveOnFiveContextAdjustment({
+      defendingTeamProfile: null,
+      opponentTeamProfile: null
+    });
+
+    expect(adjustment.sampleWeight).toBe(0);
+    expect(adjustment.leagueSavePctAdjustment).toBe(0);
+    expect(adjustment.contextPctAdjustment).toBe(0);
+  });
+});
+
+describe("NST opponent danger context", () => {
+  it("raises shot-danger context when defending team has elevated NST xGA/60", () => {
+    const adjustment = computeNstOpponentDangerAdjustment({
+      defendingTeamProfile: {
+        source: "nst_team_all",
+        sourceDate: "2026-02-08",
+        gamesPlayed: 51,
+        xga: 140,
+        xgaPer60: 2.9
+      },
+      opponentTeamProfile: {
+        source: "nst_team_all",
+        sourceDate: "2026-02-08",
+        gamesPlayed: 51,
+        xga: 122,
+        xgaPer60: 2.55
+      }
+    });
+
+    expect(adjustment.sampleWeight).toBeGreaterThan(0.7);
+    expect(adjustment.contextPctAdjustment).toBeGreaterThan(0);
+  });
+
+  it("returns neutral adjustments when NST profiles are unavailable", () => {
+    const adjustment = computeNstOpponentDangerAdjustment({
+      defendingTeamProfile: null,
+      opponentTeamProfile: null
+    });
+
+    expect(adjustment.sampleWeight).toBe(0);
+    expect(adjustment.contextPctAdjustment).toBe(0);
   });
 });

@@ -74,18 +74,22 @@
   - [x] 6.4 Add visual indicators for confidence tier and volatility/risk classes with tooltips for definitions.
   - [x] 6.5 Add disclosure panel in FORGE goalie view for model limitations and data source caveats.
   - [x] 6.6 Add regression tests/snapshots for API response shape and key UI rendering states.
-- [ ] 7.0 Integrate additional Supabase goalie/team context signals discovered during schema audit
-  - [ ] 7.1 Add goalie rest-split performance features from `wgo_goalie_stats` (`save_pct_days_rest_*`, `games_played_days_rest_*`) into save% adjustments.
-  - [ ] 7.2 Add goalie quality-start stability features (`quality_starts`, `quality_starts_pct`) into volatility and confidence modeling.
-  - [ ] 7.3 Add team strength priors from `nhl_team_data` (`xga`, `xga_per_game`, `xgf_per_game`) to shots-against and win context.
-  - [ ] 7.4 Add team 5v5 environment features from `wgo_team_stats` (`save_pct_5v5`, `shooting_plus_save_pct_5v5`) to goalie context blending.
-  - [ ] 7.5 Add NST team expected-goals context (`nst_team_stats` / `nst_team_all`: `xga`, `xga_per_60`) to opponent shot-danger adjustments.
-  - [ ] 7.6 Add recency-weighted `lineCombinations.goalies` prior as a soft candidate boost (never hard-include stale/non-roster goalies).
+- [x] 7.0 Integrate additional Supabase goalie/team context signals discovered during schema audit
+  - [x] 7.1 Add goalie rest-split performance features from `wgo_goalie_stats` (`save_pct_days_rest_*`, `games_played_days_rest_*`) into save% adjustments.
+  - [x] 7.2 Add goalie quality-start stability features (`quality_starts`, `quality_starts_pct`) into volatility and confidence modeling.
+  - [x] 7.3 Add team strength priors from `nhl_team_data` (`xga`, `xga_per_game`, `xgf_per_game`) to shots-against and win context.
+  - [x] 7.4 Add team 5v5 environment features from `wgo_team_stats` (`save_pct_5v5`, `shooting_plus_save_pct_5v5`) to goalie context blending.
+  - [x] 7.5 Add NST team expected-goals context (`nst_team_stats` / `nst_team_all`: `xga`, `xga_per_60`) to opponent shot-danger adjustments.
+  - [x] 7.6 Add recency-weighted `lineCombinations.goalies` prior as a soft candidate boost (never hard-include stale/non-roster goalies).
+- [ ] 8.0 Additional FORGE polish and probability consistency updates
+  - [ ] 8.1 Add a game ticker above `.goalieDisclosure` showing all games for the selected day, modeled after `.gameStrip` in `web/pages/start-chart.tsx`.
+  - [ ] 8.2 Ensure opposing goalies' likely-starter `proj_win_prob` sums to 100% per game (or explicitly allocate residual starter mass to backup scenarios).
+  - [ ] 8.3 Rename uncertainty label text from `(Low/Typical/High)` to `(Floor/Typical/Ceiling)` in goalie and skater uncertainty blocks.
 
 ## Progress Snapshot (For Next Codex Chat)
 
-- Completed: `1.0`, `2.0`, `3.0`, `4.0`, `5.1`, `5.2`, `5.3`, `5.4`, `5.5`, `5.6`, `6.1`, `6.2`, `6.3`, `6.4`, `6.5`, `6.6`.
-- Next sub-task to execute: `7.1`.
+- Completed: `1.0`, `2.0`, `3.0`, `4.0`, `5.1`, `5.2`, `5.3`, `5.4`, `5.5`, `5.6`, `6.1`, `6.2`, `6.3`, `6.4`, `6.5`, `6.6`, `7.0`.
+- Next sub-task to execute: `8.1`.
 - In-progress uncommitted work currently includes:
 - `web/pages/api/v1/db/run-projection-v2.ts`
 - `web/pages/api/v1/db/ingest-projection-inputs.ts`
@@ -163,14 +167,14 @@ Continue this project from `tasks/tasks-goalie-forge.md` using `web/rules/proces
 
 Requirements:
 - Execute one sub-task at a time.
-- Start from the next unchecked task (`7.1`).
+- Start from the next unchecked task (`7.2`).
 - After each sub-task: update checklist, run relevant lint/tests/typecheck, summarize concrete file changes, and pause for my confirmation.
 - When all sub-tasks under a parent are complete: run `cd web && npm test`, commit with conventional commit message, mark parent complete, then pause.
 - Do not revert unrelated local changes.
 
 Current status context:
-- Completed: `1.0`, `2.0`, `3.0`, `4.0`, `5.1`, `5.2`, `5.3`, `5.4`, `5.5`, `5.6`, `6.1`, `6.2`, `6.3`, `6.4`, `6.5`, `6.6`.
-- Pending: `7.x`.
+- Completed: `1.0`, `2.0`, `3.0`, `4.0`, `5.1`, `5.2`, `5.3`, `5.4`, `5.5`, `5.6`, `6.1`, `6.2`, `6.3`, `6.4`, `6.5`, `6.6`, `7.1`.
+- Pending: `7.2-7.6`, `8.x`.
 - Existing local modifications include:
   - `tasks/goalie-forge.md`
   - `web/lib/supabase/database-generated.types.ts`
@@ -182,7 +186,7 @@ Current status context:
   - `web/lib/projections/goaliePipeline.test.ts`
 
 Primary objective now:
-- Complete `7.1` (add goalie rest-split performance features from `wgo_goalie_stats`), then proceed sequentially.
+- Complete `7.2` (add goalie quality-start stability features), then proceed sequentially.
 ```
 
 

@@ -14,6 +14,8 @@ export type GoalieEvidence = {
   baselineShotsAgainst: number;
   baselineGoalsAllowed: number;
   residualStdDev: number;
+  qualityStarts?: number | null;
+  qualityStartsPct?: number | null;
 };
 
 export type GoalieModelInput = {
@@ -46,6 +48,14 @@ function safeRate(numerator: number, denominator: number, fallback: number): num
   if (!Number.isFinite(numerator) || !Number.isFinite(denominator) || denominator <= 0)
     return fallback;
   return numerator / denominator;
+}
+
+function normalizePct(value: number | null | undefined): number | null {
+  if (!Number.isFinite(value)) return null;
+  const raw = Number(value);
+  if (raw < 0) return null;
+  if (raw > 1 && raw <= 100) return raw / 100;
+  return clamp(raw, 0, 1);
 }
 
 function poissonCdf(k: number, lambda: number): number {
@@ -158,7 +168,18 @@ export function computeGoalieProjectionModel(
   const projectedGoalsAllowed = projectedShotsAgainst * (1 - modeledSavePct);
   const projectedSaves = Math.max(0, projectedShotsAgainst - projectedGoalsAllowed);
 
-  const volatilityIndex = clamp(input.evidence.residualStdDev / 1.2, 0, 2);
+  const qualityStarts = Math.max(0, input.evidence.qualityStarts ?? 0);
+  const qualityStartsPct = normalizePct(input.evidence.qualityStartsPct);
+  const qualityStartsWeight = clamp(qualityStarts / (qualityStarts + 16), 0, 1);
+  const qualityStabilityDelta =
+    qualityStartsPct == null
+      ? 0
+      : clamp(qualityStartsPct - 0.53, -0.25, 0.25) * qualityStartsWeight;
+  const volatilityIndex = clamp(
+    input.evidence.residualStdDev / 1.2 - qualityStabilityDelta * 1.25,
+    0,
+    2
+  );
   const blowupLambda = projectedGoalsAllowed * (1 + 0.35 * volatilityIndex);
   const blowupRisk = clamp(
     (1 - poissonCdf(3, blowupLambda)) * starterProbability,
@@ -177,13 +198,15 @@ export function computeGoalieProjectionModel(
   const recentSampleConfidence = clamp(recentShots / 300, 0, 1);
   const volatilityPenalty = clamp(volatilityIndex / 2, 0, 1) * 0.35;
   const samplePenalty = smallSamplePenalty * 0.22;
+  const qualityStabilityBoost = clamp(qualityStabilityDelta * 0.4, -0.06, 0.06);
   const confidenceScore = clamp(
     0.18 +
       baselineSampleConfidence * 0.4 +
       seasonSampleConfidence * 0.25 +
       recentSampleConfidence * 0.17 -
       volatilityPenalty -
-      samplePenalty,
+      samplePenalty +
+      qualityStabilityBoost,
     0,
     1
   );

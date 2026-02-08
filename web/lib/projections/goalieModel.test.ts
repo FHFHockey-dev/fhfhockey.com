@@ -115,4 +115,49 @@ describe("computeGoalieProjectionModel", () => {
     );
     expect(lowSample.confidenceTier).not.toBe("HIGH");
   });
+
+  it("uses quality-start stability to reduce volatility and blowup risk", () => {
+    const lowQuality = computeGoalieProjectionModel({
+      projectedShotsAgainst: 31,
+      starterProbability: 0.82,
+      projectedGoalsFor: 3,
+      evidence: {
+        recentStarts: 10,
+        recentShotsAgainst: 300,
+        recentGoalsAllowed: 28,
+        seasonStarts: 28,
+        seasonShotsAgainst: 860,
+        seasonGoalsAllowed: 79,
+        baselineStarts: 50,
+        baselineShotsAgainst: 1500,
+        baselineGoalsAllowed: 132,
+        residualStdDev: 1.05,
+        qualityStarts: 34,
+        qualityStartsPct: 0.44
+      }
+    });
+
+    const highQuality = computeGoalieProjectionModel({
+      projectedShotsAgainst: 31,
+      starterProbability: 0.82,
+      projectedGoalsFor: 3,
+      evidence: {
+        recentStarts: 10,
+        recentShotsAgainst: 300,
+        recentGoalsAllowed: 28,
+        seasonStarts: 28,
+        seasonShotsAgainst: 860,
+        seasonGoalsAllowed: 79,
+        baselineStarts: 50,
+        baselineShotsAgainst: 1500,
+        baselineGoalsAllowed: 132,
+        residualStdDev: 1.05,
+        qualityStarts: 34,
+        qualityStartsPct: 0.63
+      }
+    });
+
+    expect(highQuality.volatilityIndex).toBeLessThan(lowQuality.volatilityIndex);
+    expect(highQuality.blowupRisk).toBeLessThan(lowQuality.blowupRisk);
+  });
 });

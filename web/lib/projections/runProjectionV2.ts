@@ -274,6 +274,60 @@ async function fetchLatestLineCombinationForTeam(
   };
 }
 
+async function fetchTeamLineComboGoaliePrior(
+  teamId: number,
+  asOfDate: string
+): Promise<Map<number, number>> {
+  assertSupabase();
+  const { data, error } = await supabase
+    .from("lineCombinations")
+    .select(
+      `
+      gameId,
+      goalies,
+      games!inner (
+        date
+      )
+    `
+    )
+    .eq("teamId", teamId)
+    .lt("games.date", asOfDate)
+    .order("date", { foreignTable: "games", ascending: false })
+    .limit(12);
+  if (error) {
+    console.warn(
+      `Error fetching line-combo goalie prior for team ${teamId} before ${asOfDate}:`,
+      error
+    );
+    return new Map();
+  }
+
+  const rows = (data ?? []) as Array<any>;
+  if (rows.length === 0) return new Map();
+  const weightedByGoalie = new Map<number, number>();
+  let totalWeight = 0;
+  for (let i = 0; i < rows.length; i += 1) {
+    const row = rows[i];
+    const goalies = Array.isArray(row?.goalies)
+      ? row.goalies.filter((n: any) => Number.isFinite(n)).map((n: any) => Number(n))
+      : [];
+    if (goalies.length === 0) continue;
+    const weight = Math.pow(LINE_COMBO_RECENCY_DECAY, i);
+    totalWeight += weight;
+    for (const goalieId of goalies) {
+      weightedByGoalie.set(goalieId, (weightedByGoalie.get(goalieId) ?? 0) + weight);
+    }
+  }
+  if (totalWeight <= 0) return new Map();
+
+  const prior = new Map<number, number>();
+  for (const [goalieId, weightedMass] of weightedByGoalie.entries()) {
+    const p = clamp(weightedMass / totalWeight, 0, 1);
+    prior.set(goalieId, Number(p.toFixed(4)));
+  }
+  return prior;
+}
+
 async function fetchLatestGoalieForTeam(
   teamId: number,
   asOfDate: string
@@ -350,11 +404,41 @@ type TeamOffenseEnvironment = {
   avgGoalsForLast5: number | null;
 };
 
+type TeamStrengthPrior = {
+  sourceDate: string | null;
+  xga: number | null;
+  xgaPerGame: number | null;
+  xgfPerGame: number | null;
+};
+
+type TeamFiveOnFiveProfile = {
+  sourceDate: string | null;
+  gamesPlayed: number;
+  savePct5v5: number | null;
+  shootingPlusSavePct5v5: number | null;
+};
+
+type TeamNstExpectedGoalsProfile = {
+  source: "nst_team_all" | "nst_team_stats";
+  sourceDate: string | null;
+  gamesPlayed: number;
+  xga: number | null;
+  xgaPer60: number | null;
+};
+
 type GoalieWorkloadContext = {
   startsLast7Days: number;
   startsLast14Days: number;
   daysSinceLastStart: number | null;
   isGoalieBackToBack: boolean;
+};
+
+type GoalieRestSplitBucket = "0" | "1" | "2" | "3" | "4_plus";
+
+type GoalieRestSplitProfile = {
+  sourceDate: string | null;
+  savePctByBucket: Partial<Record<GoalieRestSplitBucket, number>>;
+  gamesByBucket: Partial<Record<GoalieRestSplitBucket, number>>;
 };
 
 type StarterScenarioProjection = {
@@ -369,6 +453,7 @@ type StarterScenarioProjection = {
   proj_shutout_prob: number;
   modeled_save_pct: number;
   workload_save_pct_penalty: number;
+  rest_split_save_pct_adjustment?: number;
 };
 
 const GOALIE_STALE_SOFT_DAYS = 30;
@@ -381,6 +466,8 @@ const WEAKER_TEAM_B2B_PRIMARY_PENALTY = 1.1;
 const WEAKER_TEAM_B2B_BACKUP_BOOST = 0.45;
 const WEAK_OPPONENT_PRIMARY_REST_PENALTY = 0.7;
 const WEAK_OPPONENT_BACKUP_BOOST = 0.3;
+const LINE_COMBO_RECENCY_DECAY = 0.82;
+const LINE_COMBO_PRIOR_LOGIT_WEIGHT = 0.45;
 const OPPONENT_RESTED_BOOST = 0.03;
 const OPPONENT_B2B_PENALTY = 0.04;
 const DEFENSE_B2B_FATIGUE_BOOST = 0.02;
@@ -389,6 +476,18 @@ const OPPONENT_AWAY_PENALTY = 0.01;
 const GOALIE_HEAVY_WORKLOAD_PENALTY = 0.025;
 const GOALIE_VERY_HEAVY_WORKLOAD_PENALTY = 0.04;
 const GOALIE_BACK_TO_BACK_PENALTY = 0.03;
+const GOALIE_REST_SPLIT_MIN_GAMES = 2;
+const GOALIE_REST_SPLIT_MAX_ADJUSTMENT = 0.012;
+const TEAM_XG_BASELINE_PER_GAME = 2.95;
+const TEAM_XG_SHOTS_AGAINST_MAX_PCT = 0.09;
+const TEAM_XG_WIN_CONTEXT_MAX_PCT = 0.1;
+const TEAM_5V5_SAVE_PCT_BASELINE = 0.922;
+const TEAM_5V5_PDO_BASELINE = 1;
+const TEAM_5V5_MIN_SAMPLE_GAMES = 8;
+const TEAM_5V5_MAX_LEAGUE_SAVE_PCT_ADJ = 0.01;
+const TEAM_5V5_MAX_CONTEXT_PCT_ADJ = 0.035;
+const TEAM_NST_XGA_PER60_BASELINE = 2.5;
+const TEAM_NST_MAX_CONTEXT_PCT_ADJ = 0.05;
 const MAX_SUPPORTED_HORIZON_GAMES = 5;
 const HORIZON_DECAY_PER_GAME = 0.015;
 const HORIZON_B2B_PENALTY = 0.08;
@@ -406,6 +505,259 @@ function computeWorkloadSavePctPenalty(workload: GoalieWorkloadContext): number 
     penalty += GOALIE_BACK_TO_BACK_PENALTY;
   }
   return penalty;
+}
+
+export function toGoalieRestSplitBucket(
+  daysSinceLastStart: number | null
+): GoalieRestSplitBucket {
+  if (daysSinceLastStart == null) return "4_plus";
+  if (daysSinceLastStart <= 0) return "0";
+  if (daysSinceLastStart === 1) return "1";
+  if (daysSinceLastStart === 2) return "2";
+  if (daysSinceLastStart === 3) return "3";
+  return "4_plus";
+}
+
+export function computeGoalieRestSplitSavePctAdjustment(args: {
+  profile: GoalieRestSplitProfile | null;
+  daysSinceLastStart: number | null;
+}): number {
+  const { profile, daysSinceLastStart } = args;
+  if (!profile) return 0;
+
+  const bucket = toGoalieRestSplitBucket(daysSinceLastStart);
+  const bucketGames = profile.gamesByBucket[bucket] ?? 0;
+  const bucketSavePct = profile.savePctByBucket[bucket];
+  if (
+    !Number.isFinite(bucketGames) ||
+    bucketGames < GOALIE_REST_SPLIT_MIN_GAMES ||
+    !Number.isFinite(bucketSavePct)
+  ) {
+    return 0;
+  }
+
+  let weightedSavePctSum = 0;
+  let weightedGames = 0;
+  const buckets: GoalieRestSplitBucket[] = ["0", "1", "2", "3", "4_plus"];
+  for (const b of buckets) {
+    const games = profile.gamesByBucket[b] ?? 0;
+    const savePct = profile.savePctByBucket[b];
+    if (
+      Number.isFinite(games) &&
+      games > 0 &&
+      Number.isFinite(savePct) &&
+      savePct != null
+    ) {
+      weightedSavePctSum += games * savePct;
+      weightedGames += games;
+    }
+  }
+  if (weightedGames <= 0) return 0;
+
+  const baselineSavePct = weightedSavePctSum / weightedGames;
+  const sampleWeight = clamp(bucketGames / (bucketGames + 6), 0, 1);
+  const delta = (bucketSavePct as number) - baselineSavePct;
+  return clamp(
+    delta * sampleWeight,
+    -GOALIE_REST_SPLIT_MAX_ADJUSTMENT,
+    GOALIE_REST_SPLIT_MAX_ADJUSTMENT
+  );
+}
+
+export function computeTeamStrengthContextAdjustment(args: {
+  defendingTeamPrior: TeamStrengthPrior | null;
+  opponentTeamPrior: TeamStrengthPrior | null;
+}): {
+  shotsAgainstPctAdjustment: number;
+  teamGoalsForPctAdjustment: number;
+  opponentGoalsForPctAdjustment: number;
+  sampleWeight: number;
+} {
+  const defending = args.defendingTeamPrior;
+  const opponent = args.opponentTeamPrior;
+  if (!defending && !opponent) {
+    return {
+      shotsAgainstPctAdjustment: 0,
+      teamGoalsForPctAdjustment: 0,
+      opponentGoalsForPctAdjustment: 0,
+      sampleWeight: 0
+    };
+  }
+
+  const defendingXgaPerGame = defending?.xgaPerGame ?? TEAM_XG_BASELINE_PER_GAME;
+  const defendingXgfPerGame = defending?.xgfPerGame ?? TEAM_XG_BASELINE_PER_GAME;
+  const opponentXgaPerGame = opponent?.xgaPerGame ?? TEAM_XG_BASELINE_PER_GAME;
+  const opponentXgfPerGame = opponent?.xgfPerGame ?? TEAM_XG_BASELINE_PER_GAME;
+  const defendingXgaRaw = Math.max(0, defending?.xga ?? 0);
+  const opponentXgaRaw = Math.max(0, opponent?.xga ?? 0);
+  const sampleWeight = clamp((defendingXgaRaw + opponentXgaRaw) / 280, 0, 1);
+
+  const defenseLiabilityEdge = clamp(
+    (defendingXgaPerGame - TEAM_XG_BASELINE_PER_GAME) / TEAM_XG_BASELINE_PER_GAME,
+    -0.2,
+    0.2
+  );
+  const opponentOffenseEdge = clamp(
+    (opponentXgfPerGame - TEAM_XG_BASELINE_PER_GAME) / TEAM_XG_BASELINE_PER_GAME,
+    -0.2,
+    0.2
+  );
+  const teamOffenseEdge = clamp(
+    (defendingXgfPerGame - TEAM_XG_BASELINE_PER_GAME) / TEAM_XG_BASELINE_PER_GAME,
+    -0.2,
+    0.2
+  );
+  const opponentDefenseEdge = clamp(
+    (opponentXgaPerGame - TEAM_XG_BASELINE_PER_GAME) / TEAM_XG_BASELINE_PER_GAME,
+    -0.2,
+    0.2
+  );
+
+  const shotsAgainstPctAdjustment = clamp(
+    (defenseLiabilityEdge * 0.32 + opponentOffenseEdge * 0.36) * sampleWeight,
+    -TEAM_XG_SHOTS_AGAINST_MAX_PCT,
+    TEAM_XG_SHOTS_AGAINST_MAX_PCT
+  );
+  const teamGoalsForPctAdjustment = clamp(
+    (teamOffenseEdge * 0.3 - opponentDefenseEdge * 0.24) * sampleWeight,
+    -TEAM_XG_WIN_CONTEXT_MAX_PCT,
+    TEAM_XG_WIN_CONTEXT_MAX_PCT
+  );
+  const opponentGoalsForPctAdjustment = clamp(
+    (opponentOffenseEdge * 0.28 + defenseLiabilityEdge * 0.22) * sampleWeight,
+    -TEAM_XG_WIN_CONTEXT_MAX_PCT,
+    TEAM_XG_WIN_CONTEXT_MAX_PCT
+  );
+
+  return {
+    shotsAgainstPctAdjustment,
+    teamGoalsForPctAdjustment,
+    opponentGoalsForPctAdjustment,
+    sampleWeight
+  };
+}
+
+function normalizeRateOrPercent(
+  value: number | null | undefined
+): number | null {
+  if (!Number.isFinite(value)) return null;
+  const raw = Number(value);
+  if (raw < 0) return null;
+  if (raw > 2 && raw <= 200) return raw / 100;
+  return raw;
+}
+
+export function computeTeamFiveOnFiveContextAdjustment(args: {
+  defendingTeamProfile: TeamFiveOnFiveProfile | null;
+  opponentTeamProfile: TeamFiveOnFiveProfile | null;
+}): {
+  sampleWeight: number;
+  leagueSavePctAdjustment: number;
+  contextPctAdjustment: number;
+} {
+  const defending = args.defendingTeamProfile;
+  const opponent = args.opponentTeamProfile;
+  if (!defending && !opponent) {
+    return {
+      sampleWeight: 0,
+      leagueSavePctAdjustment: 0,
+      contextPctAdjustment: 0
+    };
+  }
+
+  const defendingSavePct =
+    normalizeRateOrPercent(defending?.savePct5v5) ?? TEAM_5V5_SAVE_PCT_BASELINE;
+  const defendingSpsv =
+    normalizeRateOrPercent(defending?.shootingPlusSavePct5v5) ?? TEAM_5V5_PDO_BASELINE;
+  const opponentSpsv =
+    normalizeRateOrPercent(opponent?.shootingPlusSavePct5v5) ?? TEAM_5V5_PDO_BASELINE;
+  const defendingGames = Math.max(0, defending?.gamesPlayed ?? 0);
+  const opponentGames = Math.max(0, opponent?.gamesPlayed ?? 0);
+  const sampleWeight = clamp(
+    (defendingGames + opponentGames) /
+      (defendingGames + opponentGames + TEAM_5V5_MIN_SAMPLE_GAMES),
+    0,
+    1
+  );
+
+  const saveEdge = clamp(
+    defendingSavePct - TEAM_5V5_SAVE_PCT_BASELINE,
+    -0.03,
+    0.03
+  );
+  const defendingPdoEdge = clamp(
+    defendingSpsv - TEAM_5V5_PDO_BASELINE,
+    -0.08,
+    0.08
+  );
+  const opponentPdoEdge = clamp(
+    opponentSpsv - TEAM_5V5_PDO_BASELINE,
+    -0.08,
+    0.08
+  );
+
+  const leagueSavePctAdjustment = clamp(
+    (saveEdge * 0.75 + defendingPdoEdge * 0.2) * sampleWeight,
+    -TEAM_5V5_MAX_LEAGUE_SAVE_PCT_ADJ,
+    TEAM_5V5_MAX_LEAGUE_SAVE_PCT_ADJ
+  );
+  const contextPctAdjustment = clamp(
+    (-saveEdge * 0.45 + opponentPdoEdge * 0.2) * sampleWeight,
+    -TEAM_5V5_MAX_CONTEXT_PCT_ADJ,
+    TEAM_5V5_MAX_CONTEXT_PCT_ADJ
+  );
+
+  return {
+    sampleWeight,
+    leagueSavePctAdjustment,
+    contextPctAdjustment
+  };
+}
+
+export function computeNstOpponentDangerAdjustment(args: {
+  defendingTeamProfile: TeamNstExpectedGoalsProfile | null;
+  opponentTeamProfile: TeamNstExpectedGoalsProfile | null;
+}): { sampleWeight: number; contextPctAdjustment: number } {
+  const defending = args.defendingTeamProfile;
+  const opponent = args.opponentTeamProfile;
+  if (!defending && !opponent) {
+    return { sampleWeight: 0, contextPctAdjustment: 0 };
+  }
+
+  const defendingXgaPer60 =
+    defending?.xgaPer60 ?? TEAM_NST_XGA_PER60_BASELINE;
+  const opponentXgaPer60 = opponent?.xgaPer60 ?? TEAM_NST_XGA_PER60_BASELINE;
+  const defendingGames = Math.max(0, defending?.gamesPlayed ?? 0);
+  const opponentGames = Math.max(0, opponent?.gamesPlayed ?? 0);
+  const sampleWeight = clamp(
+    (defendingGames + opponentGames) / (defendingGames + opponentGames + 30),
+    0,
+    1
+  );
+
+  const defendingDangerEdge = clamp(
+    (defendingXgaPer60 - TEAM_NST_XGA_PER60_BASELINE) /
+      TEAM_NST_XGA_PER60_BASELINE,
+    -0.25,
+    0.25
+  );
+  const paceProxyEdge = clamp(
+    (opponentXgaPer60 - TEAM_NST_XGA_PER60_BASELINE) /
+      TEAM_NST_XGA_PER60_BASELINE,
+    -0.2,
+    0.2
+  );
+
+  const contextPctAdjustment = clamp(
+    (defendingDangerEdge * 0.32 + paceProxyEdge * 0.12) * sampleWeight,
+    -TEAM_NST_MAX_CONTEXT_PCT_ADJ,
+    TEAM_NST_MAX_CONTEXT_PCT_ADJ
+  );
+
+  return {
+    sampleWeight,
+    contextPctAdjustment
+  };
 }
 
 function clampHorizonGames(horizonGames: number): number {
@@ -594,6 +946,169 @@ async function fetchCurrentTeamGoalieIds(teamId: number): Promise<Set<number>> {
   return new Set((data ?? []).map((r: any) => Number(r.id)).filter((n) => Number.isFinite(n)));
 }
 
+async function fetchTeamAbbreviationMap(
+  teamIds: number[]
+): Promise<Map<number, string>> {
+  assertSupabase();
+  if (teamIds.length === 0) return new Map();
+  const { data, error } = await supabase
+    .from("teams")
+    .select("id,abbreviation")
+    .in("id", teamIds);
+  if (error) throw error;
+  return new Map(
+    (data ?? [])
+      .map((row: any) => {
+        const id = Number(row?.id);
+        const abbreviation =
+          typeof row?.abbreviation === "string" ? row.abbreviation : null;
+        if (!Number.isFinite(id) || !abbreviation) return null;
+        return [id, abbreviation] as const;
+      })
+      .filter((entry): entry is readonly [number, string] => entry != null)
+  );
+}
+
+async function fetchTeamStrengthPrior(
+  teamAbbrev: string,
+  asOfDate: string
+): Promise<TeamStrengthPrior | null> {
+  assertSupabase();
+  const normalizedAbbrev = teamAbbrev.trim().toUpperCase();
+  if (!normalizedAbbrev) return null;
+
+  const historical = await supabase
+    .from("nhl_team_data")
+    .select("date,xga,xga_per_game,xgf_per_game")
+    .eq("team_abbrev", normalizedAbbrev)
+    .lte("date", asOfDate)
+    .order("date", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (historical.error) throw historical.error;
+
+  let row = (historical.data as any) ?? null;
+  if (!row) {
+    const latest = await supabase
+      .from("nhl_team_data")
+      .select("date,xga,xga_per_game,xgf_per_game")
+      .eq("team_abbrev", normalizedAbbrev)
+      .order("date", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (latest.error) throw latest.error;
+    row = (latest.data as any) ?? null;
+  }
+  if (!row) return null;
+
+  const toFiniteOrNull = (value: any): number | null =>
+    typeof value === "number" && Number.isFinite(value) ? Number(value) : null;
+
+  return {
+    sourceDate: typeof row.date === "string" ? row.date : null,
+    xga: toFiniteOrNull(row.xga),
+    xgaPerGame: toFiniteOrNull(row.xga_per_game),
+    xgfPerGame: toFiniteOrNull(row.xgf_per_game)
+  };
+}
+
+async function fetchTeamFiveOnFiveProfile(
+  teamId: number,
+  asOfDate: string
+): Promise<TeamFiveOnFiveProfile | null> {
+  assertSupabase();
+  const { data, error } = await supabase
+    .from("wgo_team_stats")
+    .select("date,games_played,save_pct_5v5,shooting_plus_save_pct_5v5")
+    .eq("team_id", teamId)
+    .lte("date", asOfDate)
+    .order("date", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  const row = data as any;
+  return {
+    sourceDate: typeof row.date === "string" ? row.date : null,
+    gamesPlayed: Number.isFinite(row.games_played) ? Number(row.games_played) : 0,
+    savePct5v5:
+      typeof row.save_pct_5v5 === "number" && Number.isFinite(row.save_pct_5v5)
+        ? Number(row.save_pct_5v5)
+        : null,
+    shootingPlusSavePct5v5:
+      typeof row.shooting_plus_save_pct_5v5 === "number" &&
+      Number.isFinite(row.shooting_plus_save_pct_5v5)
+        ? Number(row.shooting_plus_save_pct_5v5)
+        : null
+  };
+}
+
+async function fetchTeamNstExpectedGoalsProfile(
+  teamAbbrev: string,
+  asOfDate: string
+): Promise<TeamNstExpectedGoalsProfile | null> {
+  assertSupabase();
+  const normalizedAbbrev = teamAbbrev.trim().toUpperCase();
+  if (!normalizedAbbrev) return null;
+  const calcPer60 = (xga: number | null, toi: number | null): number | null => {
+    if (!Number.isFinite(xga) || !Number.isFinite(toi) || (toi as number) <= 0) {
+      return null;
+    }
+    return Number((Number(xga) * 60 / Number(toi)).toFixed(4));
+  };
+  const toFiniteOrNull = (value: any): number | null =>
+    typeof value === "number" && Number.isFinite(value) ? Number(value) : null;
+
+  const allRes = await supabase
+    .from("nst_team_all")
+    .select("date,gp,toi,xga")
+    .eq("team_abbreviation", normalizedAbbrev)
+    .eq("situation", "all")
+    .lte("date", asOfDate)
+    .order("date", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (allRes.error) throw allRes.error;
+  if (allRes.data) {
+    const row = allRes.data as any;
+    const xga = toFiniteOrNull(row.xga);
+    const toi = toFiniteOrNull(row.toi);
+    return {
+      source: "nst_team_all",
+      sourceDate: typeof row.date === "string" ? row.date : null,
+      gamesPlayed: Number.isFinite(row.gp) ? Number(row.gp) : 0,
+      xga,
+      xgaPer60: calcPer60(xga, toi)
+    };
+  }
+
+  const asOf = new Date(`${asOfDate}T00:00:00.000Z`);
+  const year = asOf.getUTCFullYear();
+  const month = asOf.getUTCMonth() + 1;
+  const season = month >= 7 ? year : year - 1;
+  const statsRes = await supabase
+    .from("nst_team_stats")
+    .select("season,gp,toi,xga")
+    .eq("team_abbreviation", normalizedAbbrev)
+    .eq("situation", "all")
+    .lte("season", season)
+    .order("season", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (statsRes.error) throw statsRes.error;
+  if (!statsRes.data) return null;
+  const row = statsRes.data as any;
+  const xga = toFiniteOrNull(row.xga);
+  const toi = toFiniteOrNull(row.toi);
+  return {
+    source: "nst_team_stats",
+    sourceDate: Number.isFinite(row.season) ? String(row.season) : null,
+    gamesPlayed: Number.isFinite(row.gp) ? Number(row.gp) : 0,
+    xga,
+    xgaPer60: calcPer60(xga, toi)
+  };
+}
+
 async function fetchTeamDefensiveEnvironment(
   teamId: number,
   asOfDate: string
@@ -732,6 +1247,43 @@ async function fetchGoalieWorkloadContext(
   };
 }
 
+async function fetchGoalieRestSplitProfile(
+  goalieId: number,
+  asOfDate: string
+): Promise<GoalieRestSplitProfile | null> {
+  assertSupabase();
+  const { data, error } = await supabase
+    .from("wgo_goalie_stats")
+    .select(
+      "date,save_pct_days_rest_0,save_pct_days_rest_1,save_pct_days_rest_2,save_pct_days_rest_3,save_pct_days_rest_4_plus,games_played_days_rest_0,games_played_days_rest_1,games_played_days_rest_2,games_played_days_rest_3,games_played_days_rest_4_plus"
+    )
+    .eq("goalie_id", goalieId)
+    .lte("date", asOfDate)
+    .order("date", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  const row = data as any;
+  return {
+    sourceDate: typeof row.date === "string" ? row.date : null,
+    savePctByBucket: {
+      "0": safeNumber(row.save_pct_days_rest_0, NaN),
+      "1": safeNumber(row.save_pct_days_rest_1, NaN),
+      "2": safeNumber(row.save_pct_days_rest_2, NaN),
+      "3": safeNumber(row.save_pct_days_rest_3, NaN),
+      "4_plus": safeNumber(row.save_pct_days_rest_4_plus, NaN)
+    },
+    gamesByBucket: {
+      "0": safeNumber(row.games_played_days_rest_0, 0),
+      "1": safeNumber(row.games_played_days_rest_1, 0),
+      "2": safeNumber(row.games_played_days_rest_2, 0),
+      "3": safeNumber(row.games_played_days_rest_3, 0),
+      "4_plus": safeNumber(row.games_played_days_rest_4_plus, 0)
+    }
+  };
+}
+
 export function selectStarterCandidateGoalieIds(opts: {
   asOfDate: string;
   rawCandidateGoalieIds: number[];
@@ -787,6 +1339,7 @@ export function computeStarterProbabilities(opts: {
   candidateGoalieIds: number[];
   starterContext: TeamGoalieStarterContext;
   priorStartProbByGoalieId: Map<number, number>;
+  lineComboPriorByGoalieId?: Map<number, number>;
   teamGoalsFor: number;
   opponentGoalsFor: number;
 }): Map<number, number> {
@@ -801,6 +1354,7 @@ export function computeStarterProbabilities(opts: {
   }
 
   const starts = opts.starterContext.startsByGoalie;
+  const lineComboPriorByGoalieId = opts.lineComboPriorByGoalieId ?? new Map();
   const totalGames = Math.max(1, opts.starterContext.totalGames);
   const teamIsWeaker =
     opts.teamGoalsFor + TEAM_STRENGTH_WEAKER_GAP < opts.opponentGoalsFor;
@@ -816,6 +1370,11 @@ export function computeStarterProbabilities(opts: {
     const l10Starts = starts.get(goalieId) ?? 0;
     const l10Share = l10Starts / totalGames;
     const priorProb = clamp(opts.priorStartProbByGoalieId.get(goalieId) ?? 0.5, 0.01, 0.99);
+    const lineComboPrior = clamp(
+      lineComboPriorByGoalieId.get(goalieId) ?? 0.5,
+      0.05,
+      0.95
+    );
     const isPrimary = l10Share >= 0.6;
     const playedYesterday = isB2B && previousStarter === goalieId;
     const lastPlayed = lastPlayedMap.get(goalieId) ?? null;
@@ -827,6 +1386,8 @@ export function computeStarterProbabilities(opts: {
     score += 2.4 * (l10Share - 0.5);
     // Preserve external prior signal when available.
     score += 0.7 * Math.log(priorProb / (1 - priorProb));
+    // Recency-weighted line-combo goalie tags as a soft prior only.
+    score += LINE_COMBO_PRIOR_LOGIT_WEIGHT * Math.log(lineComboPrior / (1 - lineComboPrior));
 
     // Back-to-back: goalie from game 1 is heavily discounted for game 2.
     if (playedYesterday) {
@@ -910,7 +1471,7 @@ async function fetchGoalieEvidence(
   const month = asOf.getUTCMonth() + 1;
   const seasonStartYear = month >= 7 ? year : year - 1;
   const seasonStartDate = `${seasonStartYear}-07-01`;
-  const [recentRes, seasonRes, baselineRes] = await Promise.all([
+  const [recentRes, seasonRes, baselineRes, qualityStartRes] = await Promise.all([
     supabase
       .from("forge_goalie_game")
       .select("shots_against,goals_allowed,saves")
@@ -932,12 +1493,21 @@ async function fetchGoalieEvidence(
       .eq("goalie_id", goalieId)
       .lt("game_date", asOfDate)
       .order("game_date", { ascending: false })
-      .limit(200)
+      .limit(200),
+    supabase
+      .from("wgo_goalie_stats")
+      .select("date,quality_starts,quality_starts_pct")
+      .eq("goalie_id", goalieId)
+      .lte("date", asOfDate)
+      .order("date", { ascending: false })
+      .limit(1)
+      .maybeSingle()
   ]);
 
   if (recentRes.error) throw recentRes.error;
   if (seasonRes.error) throw seasonRes.error;
   if (baselineRes.error) throw baselineRes.error;
+  if (qualityStartRes.error) throw qualityStartRes.error;
 
   const recentRows = (recentRes.data ?? []) as GoalieGameHistoryRow[];
   const seasonRows = (seasonRes.data ?? []) as GoalieGameHistoryRow[];
@@ -976,6 +1546,13 @@ async function fetchGoalieEvidence(
     const expectedGoals = shots * (1 - leagueSvPct);
     return goals - expectedGoals;
   });
+  const qualityStartRow = (qualityStartRes.data as any) ?? null;
+  const qualityStarts = safeNumber(qualityStartRow?.quality_starts, 0);
+  const qualityStartsPctRaw = qualityStartRow?.quality_starts_pct;
+  const qualityStartsPct =
+    typeof qualityStartsPctRaw === "number" && Number.isFinite(qualityStartsPctRaw)
+      ? Number(qualityStartsPctRaw)
+      : null;
 
   return {
     recentStarts: recentRows.length,
@@ -987,7 +1564,9 @@ async function fetchGoalieEvidence(
     baselineStarts: baselineRows.length,
     baselineShotsAgainst: sumBaseline.shots,
     baselineGoalsAllowed: sumBaseline.goals,
-    residualStdDev: safeStdDev(residuals)
+    residualStdDev: safeStdDev(residuals),
+    qualityStarts,
+    qualityStartsPct
   };
 }
 
@@ -1125,6 +1704,7 @@ export async function runProjectionV2ForDate(
           .filter((n) => n != null)
       )
     );
+    const teamAbbreviationById = await fetchTeamAbbreviationMap(teamIds);
 
     const playerAvailabilityMultiplier = new Map<number, number>();
     const goalieEvidenceCache = new Map<number, GoalieEvidence>();
@@ -1228,13 +1808,22 @@ export async function runProjectionV2ForDate(
       const teamDefensiveEnvironmentCache = new Map<number, TeamDefensiveEnvironment>();
       const teamOffenseEnvironmentCache = new Map<number, TeamOffenseEnvironment>();
       const teamRestDaysCache = new Map<number, number | null>();
+      const teamStrengthPriorCache = new Map<number, TeamStrengthPrior | null>();
+      const teamFiveOnFiveProfileCache = new Map<number, TeamFiveOnFiveProfile | null>();
+      const teamNstExpectedGoalsCache = new Map<
+        number,
+        TeamNstExpectedGoalsProfile | null
+      >();
+      const teamLineComboGoaliePriorCache = new Map<number, Map<number, number>>();
       const goalieWorkloadContextCache = new Map<number, GoalieWorkloadContext>();
+      const goalieRestSplitProfileCache = new Map<number, GoalieRestSplitProfile | null>();
       const currentTeamGoalieIdsCache = new Map<number, Set<number>>();
       const goalieCandidates: Array<{
         teamId: number;
         opponentTeamId: number;
         candidateGoalieIds: number[];
         priorStartProbByGoalieId: Map<number, number>;
+        lineComboPriorByGoalieId: Map<number, number>;
         override: { goalieId: number; starterProb: number } | null;
       }> = [];
 
@@ -1650,10 +2239,18 @@ export async function runProjectionV2ForDate(
             await fetchCurrentTeamGoalieIds(teamId)
           );
         }
+        if (!teamLineComboGoaliePriorCache.has(teamId)) {
+          teamLineComboGoaliePriorCache.set(
+            teamId,
+            await fetchTeamLineComboGoaliePrior(teamId, asOfDate)
+          );
+        }
         const context = teamGoalieStarterContextCache.get(
           teamId
         ) as TeamGoalieStarterContext;
         const currentTeamGoalieIds = currentTeamGoalieIdsCache.get(teamId) as Set<number>;
+        const lineComboPriorByGoalieId =
+          teamLineComboGoaliePriorCache.get(teamId) ?? new Map<number, number>();
 
         const priorStartProbByGoalieId = new Map<number, number>();
         const confirmedStarterByGoalieId = new Map<number, boolean>();
@@ -1699,6 +2296,7 @@ export async function runProjectionV2ForDate(
             opponentTeamId,
             candidateGoalieIds,
             priorStartProbByGoalieId,
+            lineComboPriorByGoalieId,
             override: goalieOverride ?? null
           });
         }
@@ -1720,6 +2318,76 @@ export async function runProjectionV2ForDate(
         const opponentProjectedShotsAgainst = Number(
           (oppShots.shotsEs + oppShots.shotsPp).toFixed(3)
         );
+        const defendingTeamAbbrev = teamAbbreviationById.get(c.teamId) ?? null;
+        const opponentTeamAbbrev = teamAbbreviationById.get(c.opponentTeamId) ?? null;
+        if (!teamStrengthPriorCache.has(c.teamId)) {
+          teamStrengthPriorCache.set(
+            c.teamId,
+            defendingTeamAbbrev
+              ? await fetchTeamStrengthPrior(defendingTeamAbbrev, asOfDate)
+              : null
+          );
+        }
+        if (!teamStrengthPriorCache.has(c.opponentTeamId)) {
+          teamStrengthPriorCache.set(
+            c.opponentTeamId,
+            opponentTeamAbbrev
+              ? await fetchTeamStrengthPrior(opponentTeamAbbrev, asOfDate)
+              : null
+          );
+        }
+        const defendingStrengthPrior = teamStrengthPriorCache.get(c.teamId) ?? null;
+        const opponentStrengthPrior =
+          teamStrengthPriorCache.get(c.opponentTeamId) ?? null;
+        const teamStrengthContextAdjustment = computeTeamStrengthContextAdjustment({
+          defendingTeamPrior: defendingStrengthPrior,
+          opponentTeamPrior: opponentStrengthPrior
+        });
+        if (!teamFiveOnFiveProfileCache.has(c.teamId)) {
+          teamFiveOnFiveProfileCache.set(
+            c.teamId,
+            await fetchTeamFiveOnFiveProfile(c.teamId, asOfDate)
+          );
+        }
+        if (!teamFiveOnFiveProfileCache.has(c.opponentTeamId)) {
+          teamFiveOnFiveProfileCache.set(
+            c.opponentTeamId,
+            await fetchTeamFiveOnFiveProfile(c.opponentTeamId, asOfDate)
+          );
+        }
+        const defendingFiveOnFiveProfile =
+          teamFiveOnFiveProfileCache.get(c.teamId) ?? null;
+        const opponentFiveOnFiveProfile =
+          teamFiveOnFiveProfileCache.get(c.opponentTeamId) ?? null;
+        const teamFiveOnFiveContextAdjustment =
+          computeTeamFiveOnFiveContextAdjustment({
+            defendingTeamProfile: defendingFiveOnFiveProfile,
+            opponentTeamProfile: opponentFiveOnFiveProfile
+          });
+        if (!teamNstExpectedGoalsCache.has(c.teamId)) {
+          teamNstExpectedGoalsCache.set(
+            c.teamId,
+            defendingTeamAbbrev
+              ? await fetchTeamNstExpectedGoalsProfile(defendingTeamAbbrev, asOfDate)
+              : null
+          );
+        }
+        if (!teamNstExpectedGoalsCache.has(c.opponentTeamId)) {
+          teamNstExpectedGoalsCache.set(
+            c.opponentTeamId,
+            opponentTeamAbbrev
+              ? await fetchTeamNstExpectedGoalsProfile(opponentTeamAbbrev, asOfDate)
+              : null
+          );
+        }
+        const defendingNstExpectedGoalsProfile =
+          teamNstExpectedGoalsCache.get(c.teamId) ?? null;
+        const opponentNstExpectedGoalsProfile =
+          teamNstExpectedGoalsCache.get(c.opponentTeamId) ?? null;
+        const nstOpponentDangerAdjustment = computeNstOpponentDangerAdjustment({
+          defendingTeamProfile: defendingNstExpectedGoalsProfile,
+          opponentTeamProfile: opponentNstExpectedGoalsProfile
+        });
         if (!teamDefensiveEnvironmentCache.has(c.teamId)) {
           teamDefensiveEnvironmentCache.set(
             c.teamId,
@@ -1739,7 +2407,10 @@ export async function runProjectionV2ForDate(
           teamSaAvg10 != null
             ? 0.65 * opponentProjectedShotsAgainst + 0.35 * teamSaAvg10 + trendAdj
             : opponentProjectedShotsAgainst;
-        const baseShotsAgainst = Number(Math.max(0, blendedShotsAgainst).toFixed(3));
+        const adjustedBaseShotsAgainst = blendedShotsAgainst * (
+          1 + teamStrengthContextAdjustment.shotsAgainstPctAdjustment
+        );
+        const baseShotsAgainst = Number(Math.max(0, adjustedBaseShotsAgainst).toFixed(3));
         const teamGoalsFor = teamGoalsByTeamId.get(c.teamId) ?? 0;
         if (!teamOffenseEnvironmentCache.has(c.opponentTeamId)) {
           teamOffenseEnvironmentCache.set(
@@ -1783,12 +2454,26 @@ export async function runProjectionV2ForDate(
         if (opponentRestDays === 1) contextPct -= OPPONENT_B2B_PENALTY;
         if (defendingRestDays === 1) contextPct += DEFENSE_B2B_FATIGUE_BOOST;
         contextPct += opponentIsHome ? OPPONENT_HOME_BOOST : -OPPONENT_AWAY_PENALTY;
+        contextPct += teamFiveOnFiveContextAdjustment.contextPctAdjustment;
+        contextPct += nstOpponentDangerAdjustment.contextPctAdjustment;
         contextPct = clamp(contextPct, -0.15, 0.2);
 
         const shotsAgainst = Number(
           Math.max(0, baseShotsAgainst * (1 + contextPct)).toFixed(3)
         );
-        const leagueSavePct = clamp(0.9 - contextPct * 0.04, 0.88, 0.92);
+        const leagueSavePct = clamp(
+          0.9 -
+            contextPct * 0.04 +
+            teamFiveOnFiveContextAdjustment.leagueSavePctAdjustment,
+          0.88,
+          0.92
+        );
+        const adjustedTeamGoalsFor = Number(
+          Math.max(
+            0,
+            teamGoalsFor * (1 + teamStrengthContextAdjustment.teamGoalsForPctAdjustment)
+          ).toFixed(3)
+        );
 
         let selectedGoalieId: number | null = null;
         let starterProb = 0.5;
@@ -1830,9 +2515,16 @@ export async function runProjectionV2ForDate(
             teamGoalieStarterContextCache.get(c.teamId) ??
             (await fetchTeamGoalieStarterContext(c.teamId, asOfDate));
           teamGoalieStarterContextCache.set(c.teamId, starterContext);
-          const opponentGoalsFor = teamGoalsByTeamId.get(c.opponentTeamId) ?? 0;
+          const opponentGoalsForRaw = teamGoalsByTeamId.get(c.opponentTeamId) ?? 0;
+          const opponentGoalsFor = Number(
+            Math.max(
+              0,
+              opponentGoalsForRaw *
+                (1 + teamStrengthContextAdjustment.opponentGoalsForPctAdjustment)
+            ).toFixed(3)
+          );
           const teamIsWeaker =
-            teamGoalsFor + TEAM_STRENGTH_WEAKER_GAP < opponentGoalsFor;
+            adjustedTeamGoalsFor + TEAM_STRENGTH_WEAKER_GAP < opponentGoalsFor;
           const opponentIsWeak = opponentGoalsFor <= WEAK_OPPONENT_GF_THRESHOLD;
           const isB2B =
             starterContext.previousGameDate != null &&
@@ -1842,7 +2534,8 @@ export async function runProjectionV2ForDate(
             candidateGoalieIds: c.candidateGoalieIds,
             starterContext,
             priorStartProbByGoalieId: c.priorStartProbByGoalieId,
-            teamGoalsFor,
+            lineComboPriorByGoalieId: c.lineComboPriorByGoalieId,
+            teamGoalsFor: adjustedTeamGoalsFor,
             opponentGoalsFor
           });
           const ranked = Array.from(probs.entries()).sort((a, b) => b[1] - a[1]);
@@ -1873,6 +2566,15 @@ export async function runProjectionV2ForDate(
               team_avg_shots_against_last10: teamSaAvg10,
               team_avg_shots_against_last5: teamSaAvg5,
               trend_adjustment: Number(trendAdj.toFixed(3)),
+              nhl_team_data_pct_adjustment: Number(
+                teamStrengthContextAdjustment.shotsAgainstPctAdjustment.toFixed(4)
+              ),
+              wgo_team_stats_5v5_context_pct_adjustment: Number(
+                teamFiveOnFiveContextAdjustment.contextPctAdjustment.toFixed(4)
+              ),
+              nst_opponent_danger_context_pct_adjustment: Number(
+                nstOpponentDangerAdjustment.contextPctAdjustment.toFixed(4)
+              ),
               pre_context_projected_shots_against: baseShotsAgainst,
               blended_projected_shots_against: shotsAgainst
             },
@@ -1884,6 +2586,52 @@ export async function runProjectionV2ForDate(
               opponent_avg_goals_for_last5: oppGoals5,
               defending_team_rest_days: defendingRestDays,
               opponent_rest_days: opponentRestDays,
+              nhl_team_data_sample_weight: Number(
+                teamStrengthContextAdjustment.sampleWeight.toFixed(4)
+              ),
+              wgo_5v5_sample_weight: Number(
+                teamFiveOnFiveContextAdjustment.sampleWeight.toFixed(4)
+              ),
+              nst_opponent_danger_sample_weight: Number(
+                nstOpponentDangerAdjustment.sampleWeight.toFixed(4)
+              ),
+              defending_team_nst_xga:
+                defendingNstExpectedGoalsProfile?.xga ?? null,
+              defending_team_nst_xga_per_60:
+                defendingNstExpectedGoalsProfile?.xgaPer60 ?? null,
+              defending_team_nst_source:
+                defendingNstExpectedGoalsProfile?.source ?? null,
+              defending_team_nst_source_date:
+                defendingNstExpectedGoalsProfile?.sourceDate ?? null,
+              opponent_team_nst_xga: opponentNstExpectedGoalsProfile?.xga ?? null,
+              opponent_team_nst_xga_per_60:
+                opponentNstExpectedGoalsProfile?.xgaPer60 ?? null,
+              opponent_team_nst_source:
+                opponentNstExpectedGoalsProfile?.source ?? null,
+              opponent_team_nst_source_date:
+                opponentNstExpectedGoalsProfile?.sourceDate ?? null,
+              defending_team_save_pct_5v5:
+                defendingFiveOnFiveProfile?.savePct5v5 ?? null,
+              defending_team_shooting_plus_save_pct_5v5:
+                defendingFiveOnFiveProfile?.shootingPlusSavePct5v5 ?? null,
+              opponent_team_shooting_plus_save_pct_5v5:
+                opponentFiveOnFiveProfile?.shootingPlusSavePct5v5 ?? null,
+              wgo_team_stats_5v5_league_save_pct_adjustment: Number(
+                teamFiveOnFiveContextAdjustment.leagueSavePctAdjustment.toFixed(4)
+              ),
+              defending_team_xga: defendingStrengthPrior?.xga ?? null,
+              defending_team_xga_per_game: defendingStrengthPrior?.xgaPerGame ?? null,
+              defending_team_xgf_per_game: defendingStrengthPrior?.xgfPerGame ?? null,
+              opponent_team_xga: opponentStrengthPrior?.xga ?? null,
+              opponent_team_xga_per_game: opponentStrengthPrior?.xgaPerGame ?? null,
+              opponent_team_xgf_per_game: opponentStrengthPrior?.xgfPerGame ?? null,
+              team_goals_for_pre_strength_adjustment: Number(teamGoalsFor.toFixed(3)),
+              team_goals_for_post_strength_adjustment: Number(
+                adjustedTeamGoalsFor.toFixed(3)
+              ),
+              opponent_goals_for_post_strength_adjustment: Number(
+                opponentGoalsFor.toFixed(3)
+              ),
               context_adjustment_pct: Number(contextPct.toFixed(4)),
               league_save_pct_used: Number(leagueSavePct.toFixed(4))
             },
@@ -1897,7 +2645,9 @@ export async function runProjectionV2ForDate(
                 if (!d) return null;
                 return Math.max(0, daysBetweenDates(asOfDate, d));
               })(),
-              l10_starts: starterContext.startsByGoalie.get(goalieId) ?? 0
+              l10_starts: starterContext.startsByGoalie.get(goalieId) ?? 0,
+              line_combinations_recency_prior:
+                c.lineComboPriorByGoalieId.get(goalieId) ?? null
             })),
             starter_scenarios_top2: topStarterScenarios.map((s) => ({
               goalie_id: s.goalieId,
@@ -1911,13 +2661,23 @@ export async function runProjectionV2ForDate(
                 if (!d) return null;
                 return Math.max(0, daysBetweenDates(asOfDate, d));
               })(),
-              l10_starts: starterContext.startsByGoalie.get(s.goalieId) ?? 0
+              l10_starts: starterContext.startsByGoalie.get(s.goalieId) ?? 0,
+              line_combinations_recency_prior:
+                c.lineComboPriorByGoalieId.get(s.goalieId) ?? null
             })),
             top2_probability_mass: Number(
               topStarterScenarios
                 .reduce((sum, s) => sum + s.rawProbability, 0)
                 .toFixed(4)
-            )
+            ),
+            line_combinations_prior: ranked
+              .filter(([goalieId]) => c.lineComboPriorByGoalieId.has(goalieId))
+              .map(([goalieId]) => ({
+                goalie_id: goalieId,
+                prior: Number(
+                  (c.lineComboPriorByGoalieId.get(goalieId) ?? 0).toFixed(4)
+                )
+              }))
           };
         }
 
@@ -1934,27 +2694,38 @@ export async function runProjectionV2ForDate(
             await fetchGoalieWorkloadContext(selectedGoalieId, asOfDate)
           );
         }
+        if (!goalieRestSplitProfileCache.has(selectedGoalieId)) {
+          goalieRestSplitProfileCache.set(
+            selectedGoalieId,
+            await fetchGoalieRestSplitProfile(selectedGoalieId, asOfDate)
+          );
+        }
         const evidence = goalieEvidenceCache.get(selectedGoalieId) as GoalieEvidence;
         const workload = goalieWorkloadContextCache.get(
           selectedGoalieId
         ) as GoalieWorkloadContext;
+        const restSplitProfile = goalieRestSplitProfileCache.get(selectedGoalieId) ?? null;
         const workloadSavePctPenalty = computeWorkloadSavePctPenalty(workload);
+        const restSplitSavePctAdjustment = computeGoalieRestSplitSavePctAdjustment({
+          profile: restSplitProfile,
+          daysSinceLastStart: workload.daysSinceLastStart
+        });
         const adjustedLeagueSavePct = clamp(
-          leagueSavePct - workloadSavePctPenalty,
+          leagueSavePct - workloadSavePctPenalty + restSplitSavePctAdjustment,
           0.86,
           0.92
         );
         const goalieModel = computeGoalieProjectionModel({
           projectedShotsAgainst: shotsAgainst,
           starterProbability: starterProb,
-          projectedGoalsFor: teamGoalsFor,
+          projectedGoalsFor: adjustedTeamGoalsFor,
           evidence,
           leagueSavePct: adjustedLeagueSavePct
         });
         const selectedGoalieFullStartModel = computeGoalieProjectionModel({
           projectedShotsAgainst: shotsAgainst,
           starterProbability: 1,
-          projectedGoalsFor: teamGoalsFor,
+          projectedGoalsFor: adjustedTeamGoalsFor,
           evidence,
           leagueSavePct: adjustedLeagueSavePct
         });
@@ -1973,23 +2744,36 @@ export async function runProjectionV2ForDate(
               await fetchGoalieWorkloadContext(scenario.goalieId, asOfDate)
             );
           }
+          if (!goalieRestSplitProfileCache.has(scenario.goalieId)) {
+            goalieRestSplitProfileCache.set(
+              scenario.goalieId,
+              await fetchGoalieRestSplitProfile(scenario.goalieId, asOfDate)
+            );
+          }
           const scenarioEvidence = goalieEvidenceCache.get(
             scenario.goalieId
           ) as GoalieEvidence;
           const scenarioWorkload = goalieWorkloadContextCache.get(
             scenario.goalieId
           ) as GoalieWorkloadContext;
+          const scenarioRestSplitProfile =
+            goalieRestSplitProfileCache.get(scenario.goalieId) ?? null;
           const scenarioWorkloadPenalty =
             computeWorkloadSavePctPenalty(scenarioWorkload);
+          const scenarioRestSplitAdjustment =
+            computeGoalieRestSplitSavePctAdjustment({
+              profile: scenarioRestSplitProfile,
+              daysSinceLastStart: scenarioWorkload.daysSinceLastStart
+            });
           const scenarioLeagueSavePct = clamp(
-            leagueSavePct - scenarioWorkloadPenalty,
+            leagueSavePct - scenarioWorkloadPenalty + scenarioRestSplitAdjustment,
             0.86,
             0.92
           );
           const scenarioModel = computeGoalieProjectionModel({
             projectedShotsAgainst: shotsAgainst,
             starterProbability: 1,
-            projectedGoalsFor: teamGoalsFor,
+            projectedGoalsFor: adjustedTeamGoalsFor,
             evidence: scenarioEvidence,
             leagueSavePct: scenarioLeagueSavePct
           });
@@ -2004,7 +2788,10 @@ export async function runProjectionV2ForDate(
             proj_win_prob: Number(scenarioModel.winProbability.toFixed(4)),
             proj_shutout_prob: Number(scenarioModel.shutoutProbability.toFixed(4)),
             modeled_save_pct: Number(scenarioModel.modeledSavePct.toFixed(4)),
-            workload_save_pct_penalty: Number(scenarioWorkloadPenalty.toFixed(4))
+            workload_save_pct_penalty: Number(scenarioWorkloadPenalty.toFixed(4)),
+            rest_split_save_pct_adjustment: Number(
+              scenarioRestSplitAdjustment.toFixed(4)
+            )
           });
         }
         const blendedProjection = blendTopStarterScenarioOutputs({
@@ -2020,7 +2807,10 @@ export async function runProjectionV2ForDate(
               selectedGoalieFullStartModel.shutoutProbability.toFixed(4)
             ),
             modeled_save_pct: Number(selectedGoalieFullStartModel.modeledSavePct.toFixed(4)),
-            workload_save_pct_penalty: Number(workloadSavePctPenalty.toFixed(4))
+            workload_save_pct_penalty: Number(workloadSavePctPenalty.toFixed(4)),
+            rest_split_save_pct_adjustment: Number(
+              restSplitSavePctAdjustment.toFixed(4)
+            )
           }
         });
 
@@ -2067,6 +2857,11 @@ export async function runProjectionV2ForDate(
           return Number(((d + o) / 2).toFixed(4));
         });
         const goalieHorizonTotalScalar = goalieHorizonScalars.reduce((sum, v) => sum + v, 0);
+        const restSplitBucket = toGoalieRestSplitBucket(workload.daysSinceLastStart);
+        const restSplitBucketGames =
+          restSplitProfile?.gamesByBucket?.[restSplitBucket] ?? null;
+        const restSplitBucketSavePct =
+          restSplitProfile?.savePctByBucket?.[restSplitBucket] ?? null;
         const goalieUncertainty = {
           ...buildGoalieUncertainty({
             shotsAgainst,
@@ -2087,7 +2882,9 @@ export async function runProjectionV2ForDate(
               season_starts: evidence.seasonStarts,
               season_shots: evidence.seasonShotsAgainst,
               baseline_starts: evidence.baselineStarts,
-              baseline_shots: evidence.baselineShotsAgainst
+              baseline_shots: evidence.baselineShotsAgainst,
+              quality_starts: evidence.qualityStarts ?? null,
+              quality_starts_pct: evidence.qualityStartsPct ?? null
             },
             workload_context: {
               starts_last_7_days: workload.startsLast7Days,
@@ -2095,6 +2892,17 @@ export async function runProjectionV2ForDate(
               days_since_last_start: workload.daysSinceLastStart,
               goalie_back_to_back: workload.isGoalieBackToBack,
               workload_save_pct_penalty: Number(workloadSavePctPenalty.toFixed(4)),
+              rest_split_bucket: restSplitBucket,
+              rest_split_games: Number.isFinite(restSplitBucketGames)
+                ? Number(restSplitBucketGames)
+                : null,
+              rest_split_save_pct: Number.isFinite(restSplitBucketSavePct)
+                ? Number(restSplitBucketSavePct)
+                : null,
+              rest_split_save_pct_adjustment: Number(
+                restSplitSavePctAdjustment.toFixed(4)
+              ),
+              rest_split_source_date: restSplitProfile?.sourceDate ?? null,
               league_save_pct_used: Number(adjustedLeagueSavePct.toFixed(4))
             },
             scenario_metadata: {
