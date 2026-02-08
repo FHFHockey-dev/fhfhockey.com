@@ -211,4 +211,86 @@ describe("/api/v1/forge/goalies", () => {
 
     expect(res.body).toMatchSnapshot();
   });
+
+  it("normalizes opposing likely-starter win probabilities to sum to 100% per matchup", async () => {
+    fromMock.mockImplementation((table: string) => {
+      if (table === "forge_goalie_projections") {
+        return createQueryBuilder(() => ({
+          data: [
+            {
+              goalie_id: 1001,
+              team_id: 1,
+              opponent_team_id: 2,
+              players: { fullName: "Goalie A" },
+              teams: { name: "Team A", abbreviation: "TMA" },
+              opponent: { name: "Team B", abbreviation: "TMB" },
+              starter_probability: 0.62,
+              proj_shots_against: 28.1,
+              proj_saves: 25.2,
+              proj_goals_allowed: 2.9,
+              proj_win_prob: 0.384,
+              proj_shutout_prob: 0.04,
+              uncertainty: {}
+            },
+            {
+              goalie_id: 1002,
+              team_id: 2,
+              opponent_team_id: 1,
+              players: { fullName: "Goalie B" },
+              teams: { name: "Team B", abbreviation: "TMB" },
+              opponent: { name: "Team A", abbreviation: "TMA" },
+              starter_probability: 0.58,
+              proj_shots_against: 29.4,
+              proj_saves: 26.1,
+              proj_goals_allowed: 3.3,
+              proj_win_prob: 0.419,
+              proj_shutout_prob: 0.03,
+              uncertainty: {}
+            }
+          ],
+          error: null
+        }));
+      }
+      if (table === "forge_runs") {
+        return createQueryBuilder(() => ({
+          data: {
+            run_id: "run-123",
+            as_of_date: "2026-02-07",
+            status: "succeeded",
+            created_at: "2026-02-07T10:05:00.000Z",
+            metrics: { goalie_rows: 2 }
+          },
+          error: null
+        }));
+      }
+      if (table === "games") {
+        return createQueryBuilder(() => ({ count: 1, error: null }));
+      }
+      if (table === "forge_projection_calibration_daily") {
+        return createQueryBuilder(() => ({ data: null, error: null }));
+      }
+      return createQueryBuilder(() => ({ data: [], error: null }));
+    });
+
+    const req: any = {
+      method: "GET",
+      query: {
+        date: "2026-02-07",
+        horizon: "1"
+      }
+    };
+    const res = createMockRes();
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.data).toHaveLength(2);
+    const sum = res.body.data.reduce(
+      (acc: number, row: any) => acc + Number(row.proj_win_prob ?? 0),
+      0
+    );
+    expect(sum).toBeCloseTo(1, 4);
+    expect(res.body.diagnostics.notes.join(" ")).toContain(
+      "Normalized likely-starter win probabilities"
+    );
+  });
 });

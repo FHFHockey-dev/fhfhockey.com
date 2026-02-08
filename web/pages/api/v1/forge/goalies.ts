@@ -133,6 +133,64 @@ function parseFiniteNumber(value: unknown): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+function normalizeLikelyStarterWinProbabilities<T extends {
+  team_id: number;
+  opponent_team_id: number;
+  starter_probability: number;
+  proj_win_prob: number;
+}>(rows: T[]): { rows: T[]; adjustedMatchups: number } {
+  const normalizedRows = rows.map((row) => ({ ...row }));
+  const matchupIndexMap = new Map<string, number[]>();
+
+  normalizedRows.forEach((row, idx) => {
+    const teams = [row.team_id, row.opponent_team_id].sort((a, b) => a - b);
+    const key = `${teams[0]}__${teams[1]}`;
+    const existing = matchupIndexMap.get(key) ?? [];
+    existing.push(idx);
+    matchupIndexMap.set(key, existing);
+  });
+
+  let adjustedMatchups = 0;
+  for (const indices of matchupIndexMap.values()) {
+    if (indices.length < 2) continue;
+    const positiveMass = indices.reduce(
+      (sum, idx) => sum + Math.max(0, Number(normalizedRows[idx].proj_win_prob ?? 0)),
+      0
+    );
+    const starterMass = indices.reduce(
+      (sum, idx) => sum + Math.max(0, Number(normalizedRows[idx].starter_probability ?? 0)),
+      0
+    );
+    const denominator = positiveMass > 0 ? positiveMass : starterMass > 0 ? starterMass : 0;
+    if (denominator <= 0) {
+      const equalProb = 1 / indices.length;
+      indices.forEach((idx) => {
+        normalizedRows[idx].proj_win_prob = Number(equalProb.toFixed(4));
+      });
+      adjustedMatchups += 1;
+      continue;
+    }
+
+    let running = 0;
+    indices.forEach((idx, listIdx) => {
+      const sourceValue =
+        positiveMass > 0
+          ? Math.max(0, Number(normalizedRows[idx].proj_win_prob ?? 0))
+          : Math.max(0, Number(normalizedRows[idx].starter_probability ?? 0));
+      const normalized =
+        listIdx === indices.length - 1
+          ? Math.max(0, 1 - running)
+          : Math.max(0, sourceValue / denominator);
+      const rounded = Number(normalized.toFixed(4));
+      running += rounded;
+      normalizedRows[idx].proj_win_prob = rounded;
+    });
+    adjustedMatchups += 1;
+  }
+
+  return { rows: normalizedRows, adjustedMatchups };
+}
+
 async function fetchGoalieCalibrationHints(
   projectionDate: string
 ): Promise<CalibrationHints | null> {
@@ -318,7 +376,7 @@ export default async function handler(
       throw err;
     }
 
-    const rows = data.map((row: any) => {
+    const rawRows = data.map((row: any) => {
       const model = extractModel(row.uncertainty);
       return {
         goalie_id: row.goalie_id,
@@ -345,6 +403,8 @@ export default async function handler(
         uncertainty: row.uncertainty
       };
     });
+    const normalizationResult = normalizeLikelyStarterWinProbabilities(rawRows);
+    const rows = normalizationResult.rows;
     const scenarioMeta = rows.map((row) => extractScenarioMetadata(row.uncertainty));
     const modelVersions = scenarioMeta
       .map((meta) => meta.modelVersion)
@@ -400,6 +460,11 @@ export default async function handler(
     }
     if (!calibrationHints) {
       notes.push("No goalie calibration hints available for the resolved projection date.");
+    }
+    if (normalizationResult.adjustedMatchups > 0) {
+      notes.push(
+        `Normalized likely-starter win probabilities across ${normalizationResult.adjustedMatchups} matchup(s) to total 100%.`
+      );
     }
 
     return res.status(200).json({

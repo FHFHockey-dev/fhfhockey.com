@@ -81,15 +81,15 @@
   - [x] 7.4 Add team 5v5 environment features from `wgo_team_stats` (`save_pct_5v5`, `shooting_plus_save_pct_5v5`) to goalie context blending.
   - [x] 7.5 Add NST team expected-goals context (`nst_team_stats` / `nst_team_all`: `xga`, `xga_per_60`) to opponent shot-danger adjustments.
   - [x] 7.6 Add recency-weighted `lineCombinations.goalies` prior as a soft candidate boost (never hard-include stale/non-roster goalies).
-- [ ] 8.0 Additional FORGE polish and probability consistency updates
-  - [ ] 8.1 Add a game ticker above `.goalieDisclosure` showing all games for the selected day, modeled after `.gameStrip` in `web/pages/start-chart.tsx`.
-  - [ ] 8.2 Ensure opposing goalies' likely-starter `proj_win_prob` sums to 100% per game (or explicitly allocate residual starter mass to backup scenarios).
-  - [ ] 8.3 Rename uncertainty label text from `(Low/Typical/High)` to `(Floor/Typical/Ceiling)` in goalie and skater uncertainty blocks.
+- [x] 8.0 Additional FORGE polish and probability consistency updates
+  - [x] 8.1 Add a game ticker above `.goalieDisclosure` showing all games for the selected day, modeled after `.gameStrip` in `web/pages/start-chart.tsx`.
+  - [x] 8.2 Ensure opposing goalies' likely-starter `proj_win_prob` sums to 100% per game (or explicitly allocate residual starter mass to backup scenarios).
+  - [x] 8.3 Rename uncertainty label text from `(Low/Typical/High)` to `(Floor/Typical/Ceiling)` in goalie and skater uncertainty blocks.
 
 ## Progress Snapshot (For Next Codex Chat)
 
-- Completed: `1.0`, `2.0`, `3.0`, `4.0`, `5.1`, `5.2`, `5.3`, `5.4`, `5.5`, `5.6`, `6.1`, `6.2`, `6.3`, `6.4`, `6.5`, `6.6`, `7.0`.
-- Next sub-task to execute: `8.1`.
+- Completed: `1.0`, `2.0`, `3.0`, `4.0`, `5.1`, `5.2`, `5.3`, `5.4`, `5.5`, `5.6`, `6.1`, `6.2`, `6.3`, `6.4`, `6.5`, `6.6`, `7.0`, `8.0`.
+- Next sub-task to execute: `none`.
 - In-progress uncommitted work currently includes:
 - `web/pages/api/v1/db/run-projection-v2.ts`
 - `web/pages/api/v1/db/ingest-projection-inputs.ts`

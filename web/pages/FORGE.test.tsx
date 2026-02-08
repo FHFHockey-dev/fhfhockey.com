@@ -14,6 +14,7 @@ vi.mock("next/head", () => ({
 }));
 
 import FORGEPage from "./FORGE";
+import { teamsInfo } from "lib/teamsInfo";
 
 function mockFetchResponse(data: unknown, ok = true) {
   return {
@@ -28,6 +29,13 @@ describe("FORGE goalie UI states", () => {
   });
 
   it("renders goalie disclosure and starter confidence blocks", async () => {
+    const njdTeam =
+      Object.values(teamsInfo).find((team) => team.abbrev === "NJD") ??
+      Object.values(teamsInfo)[0];
+    const nyiTeam =
+      Object.values(teamsInfo).find((team) => team.abbrev === "NYI") ??
+      Object.values(teamsInfo)[1];
+
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
       if (url.includes("/api/v1/forge/players")) {
@@ -94,6 +102,39 @@ describe("FORGE goalie UI states", () => {
           ]
         });
       }
+      if (url.includes("/api/v1/start-chart")) {
+        return mockFetchResponse({
+          dateUsed: "2026-02-08",
+          games: [
+            {
+              id: 1,
+              date: "2026-02-08",
+              homeTeamId: njdTeam?.id,
+              awayTeamId: nyiTeam?.id,
+              homeRating: { offRating: 82, defRating: 77 },
+              awayRating: { offRating: 79, defRating: 81 },
+              homeGoalies: [
+                {
+                  player_id: 8474593,
+                  name: "Jacob Markstrom",
+                  start_probability: 0.72,
+                  projected_gsaa_per_60: 0.1,
+                  confirmed_status: false
+                }
+              ],
+              awayGoalies: [
+                {
+                  player_id: 8478406,
+                  name: "Ilya Sorokin",
+                  start_probability: 0.81,
+                  projected_gsaa_per_60: 0.2,
+                  confirmed_status: false
+                }
+              ]
+            }
+          ]
+        });
+      }
       return mockFetchResponse({}, false);
     });
 
@@ -107,6 +148,15 @@ describe("FORGE goalie UI states", () => {
       expect(screen.getByText("Goalie Model Disclosure")).toBeTruthy();
     });
 
+    expect(screen.getByText(/Today's Slate/i)).toBeTruthy();
+    expect(screen.getAllByText("OFF").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("DEF").length).toBeGreaterThan(0);
+    if (njdTeam?.abbrev) {
+      expect(screen.getByAltText(njdTeam.abbrev)).toBeTruthy();
+    }
+    if (nyiTeam?.abbrev) {
+      expect(screen.getByAltText(nyiTeam.abbrev)).toBeTruthy();
+    }
     expect(screen.getByText("Starter Confidence Drivers")).toBeTruthy();
     expect(screen.getByText("Recency")).toBeTruthy();
     expect(screen.getByText("L10 Starts")).toBeTruthy();

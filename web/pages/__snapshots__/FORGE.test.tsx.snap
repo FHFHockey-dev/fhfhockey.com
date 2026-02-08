@@ -189,6 +189,176 @@ exports[`FORGE goalie UI states > renders goalie disclosure and starter confiden
         </div>
       </div>
       <section
+        aria-label="Goalie game ticker"
+        class="_goalieGameStrip_509581"
+      >
+        <h3>
+          Today's Slate (2026-02-08)
+        </h3>
+        <div
+          class="_goalieGameStripTrack_509581"
+        >
+          <div
+            class="_goalieGameCard_509581"
+            style="--away-color: #003087; --home-color: #000000;"
+          >
+            <div
+              class="_gameStripTeamRow_509581"
+            >
+              <div
+                class="_gameStripTeamRowHeader_509581"
+              >
+                <div
+                  class="_gameStripTeamIdentity_509581"
+                >
+                  <img
+                    alt="NYI"
+                    class="_gameStripTeamLogo_509581"
+                    src="/teamLogos/NYI.png"
+                  />
+                  <span
+                    class="_gameStripTeamAbbrev_509581"
+                  >
+                    NYI
+                  </span>
+                </div>
+                <div
+                  class="_gameStripTeamRating_509581"
+                >
+                  <div
+                    class="_gameStripRatingRow_509581"
+                  >
+                    <span
+                      class="_gameStripRatingLabel_509581"
+                    >
+                      OFF
+                    </span>
+                    <span
+                      class="_gameStripRatingValue_509581 _glowRed_509581"
+                    >
+                      79
+                    </span>
+                  </div>
+                  <div
+                    class="_gameStripRatingRow_509581"
+                  >
+                    <span
+                      class="_gameStripRatingLabel_509581"
+                    >
+                      DEF
+                    </span>
+                    <span
+                      class="_gameStripRatingValue_509581 _glowGreen_509581"
+                    >
+                      81
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div
+                class="_goalieBarContainer_509581"
+              >
+                <div
+                  class="_goalieSegment_509581"
+                  style="width: 81%; background-color: rgba(59, 212, 174, 0.4); border-color: #3bd4ae;"
+                  title="Ilya Sorokin (81%)"
+                >
+                  <span
+                    class="_goalieSegmentText_509581"
+                  >
+                    Sorokin 81%
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div
+              class="_gameStripDivider_509581"
+            >
+              <div
+                class="_gameStripDividerLine_509581"
+              />
+              <div
+                class="_gameStripVsCircle_509581"
+              >
+                vs
+              </div>
+              <div
+                class="_gameStripDividerLine_509581"
+              />
+            </div>
+            <div
+              class="_gameStripTeamRow_509581"
+            >
+              <div
+                class="_gameStripTeamRowHeader_509581 _gameStripReverse_509581"
+              >
+                <div
+                  class="_gameStripTeamIdentity_509581 _gameStripReverse_509581"
+                >
+                  <img
+                    alt="NJD"
+                    class="_gameStripTeamLogo_509581"
+                    src="/teamLogos/NJD.png"
+                  />
+                  <span
+                    class="_gameStripTeamAbbrev_509581"
+                  >
+                    NJD
+                  </span>
+                </div>
+                <div
+                  class="_gameStripTeamRating_509581"
+                >
+                  <div
+                    class="_gameStripRatingRow_509581"
+                  >
+                    <span
+                      class="_gameStripRatingLabel_509581"
+                    >
+                      OFF
+                    </span>
+                    <span
+                      class="_gameStripRatingValue_509581 _glowGreen_509581"
+                    >
+                      82
+                    </span>
+                  </div>
+                  <div
+                    class="_gameStripRatingRow_509581"
+                  >
+                    <span
+                      class="_gameStripRatingLabel_509581"
+                    >
+                      DEF
+                    </span>
+                    <span
+                      class="_gameStripRatingValue_509581 _glowRed_509581"
+                    >
+                      77
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div
+                class="_goalieBarContainer_509581"
+              >
+                <div
+                  class="_goalieSegment_509581"
+                  style="width: 72%; background-color: rgba(255, 209, 102, 0.4); border-color: #ffd166;"
+                  title="Jacob Markstrom (72%)"
+                >
+                  <span
+                    class="_goalieSegmentText_509581"
+                  >
+                    Markstrom 72%
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section
         class="_goalieDisclosure_509581"
       >
         <h3>
@@ -376,7 +546,7 @@ exports[`FORGE goalie UI states > renders goalie disclosure and starter confiden
               class="_uncertaintyHeader_509581"
             >
               <h3>
-                Uncertainty Range (Low / Typical / High)
+                Uncertainty Range (Floor / Typical / Ceiling)
               </h3>
             </div>
             <ul>
@@ -388,13 +558,13 @@ exports[`FORGE goalie UI states > renders goalie disclosure and starter confiden
                   class="_uncertaintyValues_509581"
                 >
                   <span>
-                    Low 18.00
+                    Floor 18.00
                   </span>
                   <span>
                     Typical 24.00
                   </span>
                   <span>
-                    High 31.00
+                    Ceiling 31.00
                   </span>
                 </span>
               </li>
@@ -406,13 +576,13 @@ exports[`FORGE goalie UI states > renders goalie disclosure and starter confiden
                   class="_uncertaintyValues_509581"
                 >
                   <span>
-                    Low 1.00
+                    Floor 1.00
                   </span>
                   <span>
                     Typical 3.00
                   </span>
                   <span>
-                    High 5.00
+                    Ceiling 5.00
                   </span>
                 </span>
               </li>

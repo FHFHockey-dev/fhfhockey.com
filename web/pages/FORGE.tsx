@@ -1,9 +1,10 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, type CSSProperties } from "react";
 import type { NextPage } from "next";
 import Head from "next/head";
 import Image from "next/image";
 import styles from "styles/Forge.module.scss";
 import classNames from "classnames";
+import { teamsInfo } from "lib/teamsInfo";
 
 type StatUncertainty = {
   p10: number;
@@ -108,6 +109,39 @@ type GoalieProjection = {
     };
     [key: string]: unknown;
   };
+};
+
+type TeamRating = {
+  offRating: number;
+  defRating: number;
+  paceRating: number;
+  ppTier: number;
+  pkTier: number;
+  trend10: number;
+};
+
+type StartChartGoalieInfo = {
+  player_id: number;
+  name: string;
+  start_probability: number | null;
+  projected_gsaa_per_60: number | null;
+  confirmed_status: boolean | null;
+};
+
+type StartChartGameRow = {
+  id: number;
+  date: string;
+  homeTeamId: number;
+  awayTeamId: number;
+  homeRating?: TeamRating;
+  awayRating?: TeamRating;
+  homeGoalies?: StartChartGoalieInfo[];
+  awayGoalies?: StartChartGoalieInfo[];
+};
+
+type GoalieGameStripData = {
+  dateUsed: string;
+  games: StartChartGameRow[];
 };
 
 const getPositionClass = (position: string) => {
@@ -252,6 +286,86 @@ function getRiskClass(blowupRisk: number | null) {
   };
 }
 
+const RenderRating = ({
+  rating,
+  opponentRating
+}: {
+  rating?: TeamRating;
+  opponentRating?: TeamRating;
+}) => {
+  if (!rating) return null;
+  let offClass = "";
+  let defClass = "";
+  if (opponentRating) {
+    if (rating.offRating > opponentRating.offRating) offClass = styles.glowGreen;
+    else if (rating.offRating < opponentRating.offRating) offClass = styles.glowRed;
+    if (rating.defRating > opponentRating.defRating) defClass = styles.glowGreen;
+    else if (rating.defRating < opponentRating.defRating) defClass = styles.glowRed;
+  }
+
+  return (
+    <div className={styles.gameStripTeamRating}>
+      <div className={styles.gameStripRatingRow}>
+        <span className={styles.gameStripRatingLabel}>OFF</span>
+        <span className={classNames(styles.gameStripRatingValue, offClass)}>
+          {rating.offRating.toFixed(0)}
+        </span>
+      </div>
+      <div className={styles.gameStripRatingRow}>
+        <span className={styles.gameStripRatingLabel}>DEF</span>
+        <span className={classNames(styles.gameStripRatingValue, defClass)}>
+          {rating.defRating.toFixed(0)}
+        </span>
+      </div>
+    </div>
+  );
+};
+
+const RenderGoalieBar = ({ goalies }: { goalies?: StartChartGoalieInfo[] }) => {
+  if (!goalies || goalies.length === 0) return null;
+
+  const toRgba = (hex: string, alpha: number) => {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  };
+
+  return (
+    <div className={styles.goalieBarContainer}>
+      {goalies.map((goalie, idx) => {
+        const probability = (goalie.start_probability ?? 0) * 100;
+        if (probability < 5) return null;
+        let barColor = "#ef476f";
+        if (probability >= 80) barColor = "#3bd4ae";
+        else if (probability >= 50) barColor = "#ffd166";
+        else if (probability >= 30) barColor = "#118ab2";
+        else barColor = "#6c757d";
+        const displayName = goalie.name.split(" ").pop();
+        const showText = idx === 0 && probability > 20;
+        return (
+          <div
+            key={goalie.player_id}
+            className={styles.goalieSegment}
+            style={{
+              width: `${probability}%`,
+              backgroundColor: toRgba(barColor, 0.4),
+              borderColor: barColor
+            }}
+            title={`${goalie.name} (${probability.toFixed(0)}%)`}
+          >
+            {showText && (
+              <span className={styles.goalieSegmentText}>
+                {displayName} {probability.toFixed(0)}%
+              </span>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
 const clampPercent = (value: number) => Math.max(0, Math.min(100, value));
 
 const FORGEPage: NextPage = () => {
@@ -275,6 +389,8 @@ const FORGEPage: NextPage = () => {
     calibrationHints: null,
     diagnosticsNotes: []
   });
+  const [goalieGameStripData, setGoalieGameStripData] =
+    useState<GoalieGameStripData | null>(null);
 
   useEffect(() => {
     const fetchProjections = async () => {
@@ -335,6 +451,27 @@ const FORGEPage: NextPage = () => {
     };
 
     fetchGoalies();
+  }, []);
+
+  useEffect(() => {
+    const fetchGoalieGameStrip = async () => {
+      try {
+        const today = new Date().toISOString().slice(0, 10);
+        const res = await fetch(`/api/v1/start-chart?date=${today}`);
+        if (!res.ok) throw new Error("Failed to fetch game strip data");
+        const data = await res.json();
+        const games = Array.isArray(data?.games)
+          ? (data.games as StartChartGameRow[])
+          : [];
+        const dateUsed =
+          typeof data?.dateUsed === "string" ? data.dateUsed : today;
+        setGoalieGameStripData({ dateUsed, games });
+      } catch (_err) {
+        setGoalieGameStripData(null);
+      }
+    };
+
+    fetchGoalieGameStrip();
   }, []);
 
   useEffect(() => {
@@ -452,6 +589,25 @@ const FORGEPage: NextPage = () => {
       })
       .sort((a, b) => b.starter_probability - a.starter_probability);
   }, [goalieProjections, searchQuery, selectedTeam]);
+
+  const goalieGameStripGames = useMemo(() => {
+    if (!goalieGameStripData?.games?.length) return [];
+    const modeledTeamAbbrevs = new Set(
+      goalieProjections
+        .map((g) => g.team_abbreviation)
+        .filter((abbr): abbr is string => typeof abbr === "string" && abbr.length > 0)
+    );
+    if (!modeledTeamAbbrevs.size) return goalieGameStripData.games;
+
+    return goalieGameStripData.games.filter((game) => {
+      const home = Object.values(teamsInfo).find((team) => team.id === game.homeTeamId);
+      const away = Object.values(teamsInfo).find((team) => team.id === game.awayTeamId);
+      return Boolean(
+        (home?.abbrev && modeledTeamAbbrevs.has(home.abbrev)) ||
+          (away?.abbrev && modeledTeamAbbrevs.has(away.abbrev))
+      );
+    });
+  }, [goalieGameStripData, goalieProjections]);
 
   const isLoading = viewMode === "goalies" ? goalieLoading : loading;
   const activeError = viewMode === "goalies" ? goalieError : error;
@@ -688,16 +844,16 @@ const FORGEPage: NextPage = () => {
                 {p.uncertainty && (
                   <div className={styles.uncertainty}>
                     <div className={styles.uncertaintyHeader}>
-                      <h3>Uncertainty Range (Low / Typical / High)</h3>
+                      <h3>Uncertainty Range (Floor / Typical / Ceiling)</h3>
                       <abbr
                         className={styles.uncertaintyLegend}
-                        title="Low/Typical/High represent the 10th/50th/90th percentile outcomes."
+                        title="Floor/Typical/Ceiling represent the 10th/50th/90th percentile outcomes."
                       >
                         ?
                       </abbr>
                     </div>
                     <p className={styles.uncertaintyNote}>
-                      Low/Typical/High is a conservative, expected, and
+                      Floor/Typical/Ceiling is a conservative, expected, and
                       optimistic range for one game.
                     </p>
                     <ul>
@@ -712,9 +868,9 @@ const FORGEPage: NextPage = () => {
                           <li key={item.label}>
                             <span>{item.label}</span>
                             <span className={styles.uncertaintyValues}>
-                              <span>Low {formatUncertaintyValue(item.value?.p10)}</span>
+                              <span>Floor {formatUncertaintyValue(item.value?.p10)}</span>
                               <span>Typical {formatUncertaintyValue(item.value?.p50)}</span>
-                              <span>High {formatUncertaintyValue(item.value?.p90)}</span>
+                              <span>Ceiling {formatUncertaintyValue(item.value?.p90)}</span>
                             </span>
                           </li>
                         ))}
@@ -728,6 +884,93 @@ const FORGEPage: NextPage = () => {
 
         {!isLoading && !activeError && viewMode === "goalies" && (
           <>
+            {goalieGameStripGames.length > 0 && (
+              <section className={styles.goalieGameStrip} aria-label="Goalie game ticker">
+                <h3>Today's Slate ({goalieGameStripData?.dateUsed ?? "N/A"})</h3>
+                <div className={styles.goalieGameStripTrack}>
+                  {goalieGameStripGames.map((game) => {
+                    const home = Object.values(teamsInfo).find(
+                      (team) => team.id === game.homeTeamId
+                    );
+                    const away = Object.values(teamsInfo).find(
+                      (team) => team.id === game.awayTeamId
+                    );
+                    return (
+                      <div
+                        key={game.id}
+                        className={styles.goalieGameCard}
+                        style={
+                          {
+                            "--away-color": away?.primaryColor ?? "#333",
+                            "--home-color": home?.primaryColor ?? "#333"
+                          } as CSSProperties
+                        }
+                      >
+                        <div className={styles.gameStripTeamRow}>
+                          <div className={styles.gameStripTeamRowHeader}>
+                            <div className={styles.gameStripTeamIdentity}>
+                              {away?.abbrev && (
+                                <img
+                                  src={`/teamLogos/${away.abbrev}.png`}
+                                  alt={away.abbrev}
+                                  className={styles.gameStripTeamLogo}
+                                />
+                              )}
+                              <span className={styles.gameStripTeamAbbrev}>
+                                {away?.abbrev}
+                              </span>
+                            </div>
+                            <RenderRating
+                              rating={game.awayRating}
+                              opponentRating={game.homeRating}
+                            />
+                          </div>
+                          <RenderGoalieBar goalies={game.awayGoalies} />
+                        </div>
+
+                        <div className={styles.gameStripDivider}>
+                          <div className={styles.gameStripDividerLine} />
+                          <div className={styles.gameStripVsCircle}>vs</div>
+                          <div className={styles.gameStripDividerLine} />
+                        </div>
+
+                        <div className={styles.gameStripTeamRow}>
+                          <div
+                            className={classNames(
+                              styles.gameStripTeamRowHeader,
+                              styles.gameStripReverse
+                            )}
+                          >
+                            <div
+                              className={classNames(
+                                styles.gameStripTeamIdentity,
+                                styles.gameStripReverse
+                              )}
+                            >
+                              {home?.abbrev && (
+                                <img
+                                  src={`/teamLogos/${home.abbrev}.png`}
+                                  alt={home.abbrev}
+                                  className={styles.gameStripTeamLogo}
+                                />
+                              )}
+                              <span className={styles.gameStripTeamAbbrev}>
+                                {home?.abbrev}
+                              </span>
+                            </div>
+                            <RenderRating
+                              rating={game.homeRating}
+                              opponentRating={game.awayRating}
+                            />
+                          </div>
+                          <RenderGoalieBar goalies={game.homeGoalies} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
             <section className={styles.goalieDisclosure}>
               <h3>Goalie Model Disclosure</h3>
               <div className={styles.disclosureMeta}>
@@ -864,7 +1107,7 @@ const FORGEPage: NextPage = () => {
                 {g.uncertainty && (
                   <div className={styles.uncertainty}>
                     <div className={styles.uncertaintyHeader}>
-                      <h3>Uncertainty Range (Low / Typical / High)</h3>
+                      <h3>Uncertainty Range (Floor / Typical / Ceiling)</h3>
                     </div>
                     <ul>
                       {[
@@ -876,9 +1119,9 @@ const FORGEPage: NextPage = () => {
                           <li key={item.label}>
                             <span>{item.label}</span>
                             <span className={styles.uncertaintyValues}>
-                              <span>Low {formatUncertaintyValue(item.value?.p10)}</span>
+                              <span>Floor {formatUncertaintyValue(item.value?.p10)}</span>
                               <span>Typical {formatUncertaintyValue(item.value?.p50)}</span>
-                              <span>High {formatUncertaintyValue(item.value?.p90)}</span>
+                              <span>Ceiling {formatUncertaintyValue(item.value?.p90)}</span>
                             </span>
                           </li>
                         ))}
