@@ -64,6 +64,7 @@ type Result =
       success: true;
       runId: string;
       asOfDate: string;
+      horizonGames: number;
       gamesProcessed: number;
       playerRowsUpserted: number;
       teamRowsUpserted: number;
@@ -85,6 +86,7 @@ type Result =
   | {
       success: false;
       asOfDate: string;
+      horizonGames: number;
       timedOut: boolean;
       maxDurationMs: string;
       durationMs: string;
@@ -132,8 +134,15 @@ function buildDateRange(start: string, end: string): string[] {
   return out;
 }
 
+function parseHorizonGames(value: string | null): number {
+  const n = Number(value ?? 1);
+  if (!Number.isFinite(n)) return 1;
+  return Math.max(1, Math.min(5, Math.floor(n)));
+}
+
 async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
   const startedAt = Date.now();
+  const horizonGames = parseHorizonGames(getParam(req, "horizonGames"));
   if (req.method !== "POST" && req.method !== "GET") {
     res.setHeader("Allow", ["GET", "POST"]);
     return res
@@ -141,6 +150,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
       .json({
         success: false,
         asOfDate: "",
+        horizonGames,
         timedOut: false,
         maxDurationMs: formatDurationMsToMMSS(0),
         durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
@@ -169,6 +179,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
     return res.status(400).json({
       success: false,
       asOfDate: "",
+      horizonGames,
       timedOut: false,
       maxDurationMs: formatDurationMsToMMSS(0),
       durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
@@ -196,6 +207,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
           return res.status(200).json({
             success: false,
             asOfDate: date,
+            horizonGames,
             timedOut: true,
             maxDurationMs: formatDurationMsToMMSS(budgetMs),
             durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
@@ -204,7 +216,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
             processedDates: results.map((r) => r.asOfDate)
           });
         }
-        const out = await runProjectionV2ForDate(date, { deadlineMs });
+        const out = await runProjectionV2ForDate(date, {
+          deadlineMs,
+          horizonGames
+        });
         results.push({
           asOfDate: date,
           runId: out.runId,
@@ -219,6 +234,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
       return res.status(200).json({
         success: true,
         asOfDate: last?.asOfDate ?? asOfDate,
+        horizonGames,
         timedOut: false,
         maxDurationMs: formatDurationMsToMMSS(budgetMs),
         durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
@@ -232,11 +248,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
       });
     }
 
-    const out = await runProjectionV2ForDate(asOfDate, { deadlineMs });
+    const out = await runProjectionV2ForDate(asOfDate, {
+      deadlineMs,
+      horizonGames
+    });
     if (out.timedOut) {
       return res.status(200).json({
         success: false,
         asOfDate,
+        horizonGames,
         timedOut: true,
         maxDurationMs: formatDurationMsToMMSS(budgetMs),
         durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
@@ -253,6 +273,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
       .json({
         success: true,
         asOfDate,
+        horizonGames,
         timedOut: false,
         maxDurationMs: formatDurationMsToMMSS(budgetMs),
         durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
@@ -268,6 +289,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
       .json({
         success: false,
         asOfDate,
+        horizonGames,
         timedOut: false,
         maxDurationMs: formatDurationMsToMMSS(budgetMs),
         durationMs: formatDurationMsToMMSS(Date.now() - startedAt),

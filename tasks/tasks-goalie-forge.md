@@ -40,13 +40,13 @@
   - [x] 2.4 Rework save% prior blending to weight multi-season baseline + current-season signal + recency with sample-size-dependent shrinkage.
   - [x] 2.5 Add guardrails for small samples (stronger regression and confidence downgrades for low-shot windows).
   - [x] 2.6 Validate uplift with holdout comparisons against current baseline (MAE/RMSE on saves/GA).
-- [ ] 3.0 Implement multi-scenario (top-2) goalie forecasting and distribution blending for next-5 outputs
-  - [ ] 3.1 Generate top-2 goalie starter scenarios per team/game with normalized probabilities.
-  - [ ] 3.2 Compute scenario-level goalie projections (SA, saves, GA, win/shutout) independently per candidate.
-  - [ ] 3.3 Blend scenario outputs into final projections using starter probabilities instead of hard top-1 only.
-  - [ ] 3.4 Extend uncertainty simulation to scenario mixtures so p10/p50/p90 reflect starter uncertainty.
-  - [ ] 3.5 Add horizon=5 support (or scaffold) with sequential schedule application and widening uncertainty bands.
-  - [ ] 3.6 Persist scenario metadata in `uncertainty.model` for explainability and debugging.
+- [x] 3.0 Implement multi-scenario (top-2) goalie forecasting and distribution blending for next-5 outputs
+  - [x] 3.1 Generate top-2 goalie starter scenarios per team/game with normalized probabilities.
+  - [x] 3.2 Compute scenario-level goalie projections (SA, saves, GA, win/shutout) independently per candidate.
+  - [x] 3.3 Blend scenario outputs into final projections using starter probabilities instead of hard top-1 only.
+  - [x] 3.4 Extend uncertainty simulation to scenario mixtures so p10/p50/p90 reflect starter uncertainty.
+  - [x] 3.5 Add horizon=5 support (or scaffold) with sequential schedule application and widening uncertainty bands.
+  - [x] 3.6 Persist scenario metadata in `uncertainty.model` for explainability and debugging.
 - [ ] 4.0 Strengthen goalie accuracy measurement, diagnostics, and calibration feedback loops
   - [ ] 4.1 Expand goalie stat-level diagnostics in accuracy pipeline (`saves`, `GA`, `win_prob`, `shutout_prob`) with daily and rolling aggregates.
   - [ ] 4.2 Add probability calibration outputs (Brier score + reliability bins) for starter, win, and shutout probabilities.
@@ -68,3 +68,10 @@
   - [ ] 6.4 Add visual indicators for confidence tier and volatility/risk classes with tooltips for definitions.
   - [ ] 6.5 Add disclosure panel in FORGE goalie view for model limitations and data source caveats.
   - [ ] 6.6 Add regression tests/snapshots for API response shape and key UI rendering states.
+- [ ] 7.0 Integrate additional Supabase goalie/team context signals discovered during schema audit
+  - [ ] 7.1 Add goalie rest-split performance features from `wgo_goalie_stats` (`save_pct_days_rest_*`, `games_played_days_rest_*`) into save% adjustments.
+  - [ ] 7.2 Add goalie quality-start stability features (`quality_starts`, `quality_starts_pct`) into volatility and confidence modeling.
+  - [ ] 7.3 Add team strength priors from `nhl_team_data` (`xga`, `xga_per_game`, `xgf_per_game`) to shots-against and win context.
+  - [ ] 7.4 Add team 5v5 environment features from `wgo_team_stats` (`save_pct_5v5`, `shooting_plus_save_pct_5v5`) to goalie context blending.
+  - [ ] 7.5 Add NST team expected-goals context (`nst_team_stats` / `nst_team_all`: `xga`, `xga_per_60`) to opponent shot-danger adjustments.
+  - [ ] 7.6 Add recency-weighted `lineCombinations.goalies` prior as a soft candidate boost (never hard-include stale/non-roster goalies).

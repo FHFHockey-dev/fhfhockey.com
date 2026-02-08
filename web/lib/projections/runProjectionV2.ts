@@ -323,6 +323,12 @@ function sigmoid(x: number): number {
 }
 
 export type StarterContextForTest = TeamGoalieStarterContext;
+export type StarterScenario = {
+  goalieId: number;
+  probability: number;
+  rawProbability: number;
+  rank: number;
+};
 
 type TeamGoalieStarterContext = {
   startsByGoalie: Map<number, number>;
@@ -351,6 +357,20 @@ type GoalieWorkloadContext = {
   isGoalieBackToBack: boolean;
 };
 
+type StarterScenarioProjection = {
+  goalie_id: number;
+  rank: number;
+  starter_probability_raw: number;
+  starter_probability_top2_normalized: number;
+  proj_shots_against: number;
+  proj_saves: number;
+  proj_goals_allowed: number;
+  proj_win_prob: number;
+  proj_shutout_prob: number;
+  modeled_save_pct: number;
+  workload_save_pct_penalty: number;
+};
+
 const GOALIE_STALE_SOFT_DAYS = 30;
 const GOALIE_STALE_HARD_DAYS = 75;
 const B2B_REPEAT_STARTER_PENALTY = 2.75;
@@ -369,6 +389,124 @@ const OPPONENT_AWAY_PENALTY = 0.01;
 const GOALIE_HEAVY_WORKLOAD_PENALTY = 0.025;
 const GOALIE_VERY_HEAVY_WORKLOAD_PENALTY = 0.04;
 const GOALIE_BACK_TO_BACK_PENALTY = 0.03;
+const MAX_SUPPORTED_HORIZON_GAMES = 5;
+const HORIZON_DECAY_PER_GAME = 0.015;
+const HORIZON_B2B_PENALTY = 0.08;
+const HORIZON_ZERO_REST_PENALTY = 0.12;
+const HORIZON_LONG_REST_BOOST = 0.03;
+
+function computeWorkloadSavePctPenalty(workload: GoalieWorkloadContext): number {
+  let penalty = 0;
+  if (workload.startsLast14Days >= 6) {
+    penalty += GOALIE_VERY_HEAVY_WORKLOAD_PENALTY;
+  } else if (workload.startsLast14Days >= 5) {
+    penalty += GOALIE_HEAVY_WORKLOAD_PENALTY;
+  }
+  if (workload.isGoalieBackToBack) {
+    penalty += GOALIE_BACK_TO_BACK_PENALTY;
+  }
+  return penalty;
+}
+
+function clampHorizonGames(horizonGames: number): number {
+  if (!Number.isFinite(horizonGames)) return 1;
+  return clamp(Math.floor(horizonGames), 1, MAX_SUPPORTED_HORIZON_GAMES);
+}
+
+export function buildSequentialHorizonScalarsFromDates(
+  gameDates: string[],
+  horizonGames: number
+): number[] {
+  const horizon = clampHorizonGames(horizonGames);
+  const uniqueSortedDates = Array.from(
+    new Set(gameDates.filter((d) => typeof d === "string" && d.length >= 10))
+  )
+    .map((d) => d.slice(0, 10))
+    .sort((a, b) => a.localeCompare(b));
+
+  const scalars: number[] = [];
+  let previousDate: string | null = null;
+  for (let i = 0; i < horizon; i += 1) {
+    const date = uniqueSortedDates[i] ?? null;
+    const restDays =
+      previousDate && date ? Math.max(0, daysBetweenDates(date, previousDate)) : null;
+    let scalar = 1 - i * HORIZON_DECAY_PER_GAME;
+    if (restDays === 0) scalar -= HORIZON_ZERO_REST_PENALTY;
+    if (restDays === 1) scalar -= HORIZON_B2B_PENALTY;
+    if (restDays != null && restDays >= 3) scalar += HORIZON_LONG_REST_BOOST;
+    scalars.push(clamp(scalar, 0.75, 1.08));
+    if (date) previousDate = date;
+  }
+  return scalars;
+}
+
+async function fetchTeamHorizonScalars(
+  teamId: number,
+  asOfDate: string,
+  horizonGames: number
+): Promise<number[]> {
+  assertSupabase();
+  const horizon = clampHorizonGames(horizonGames);
+  if (horizon <= 1) return [1];
+
+  const { data, error } = await supabase
+    .from("games")
+    .select("date")
+    .or(`homeTeamId.eq.${teamId},awayTeamId.eq.${teamId}`)
+    .gte("date", asOfDate)
+    .order("date", { ascending: true })
+    .limit(horizon);
+  if (error) throw error;
+  const dates = ((data ?? []) as Array<{ date: string | null }>)
+    .map((r) => r.date)
+    .filter((d): d is string => typeof d === "string");
+  return buildSequentialHorizonScalarsFromDates(dates, horizon);
+}
+
+export function blendTopStarterScenarioOutputs(opts: {
+  scenarioProjections: StarterScenarioProjection[];
+  fallbackProjection: Omit<
+    StarterScenarioProjection,
+    "goalie_id" | "rank" | "starter_probability_raw" | "starter_probability_top2_normalized"
+  >;
+}) {
+  const weighted = {
+    proj_shots_against: 0,
+    proj_saves: 0,
+    proj_goals_allowed: 0,
+    proj_win_prob: 0,
+    proj_shutout_prob: 0,
+    modeled_save_pct: 0
+  };
+  let probabilityMass = 0;
+  for (const s of opts.scenarioProjections) {
+    const w = clamp(s.starter_probability_raw, 0, 1);
+    probabilityMass += w;
+    weighted.proj_shots_against += w * s.proj_shots_against;
+    weighted.proj_saves += w * s.proj_saves;
+    weighted.proj_goals_allowed += w * s.proj_goals_allowed;
+    weighted.proj_win_prob += w * s.proj_win_prob;
+    weighted.proj_shutout_prob += w * s.proj_shutout_prob;
+    weighted.modeled_save_pct += w * s.modeled_save_pct;
+  }
+
+  const clampedMass = clamp(probabilityMass, 0, 1);
+  const residualMass = 1 - clampedMass;
+  const fallback = opts.fallbackProjection;
+  return {
+    probability_mass: Number(clampedMass.toFixed(4)),
+    residual_probability_mass: Number(residualMass.toFixed(4)),
+    proj_shots_against: weighted.proj_shots_against + residualMass * fallback.proj_shots_against,
+    proj_saves: weighted.proj_saves + residualMass * fallback.proj_saves,
+    proj_goals_allowed:
+      weighted.proj_goals_allowed + residualMass * fallback.proj_goals_allowed,
+    proj_win_prob: weighted.proj_win_prob + residualMass * fallback.proj_win_prob,
+    proj_shutout_prob:
+      weighted.proj_shutout_prob + residualMass * fallback.proj_shutout_prob,
+    modeled_save_pct:
+      weighted.modeled_save_pct + residualMass * fallback.modeled_save_pct
+  };
+}
 
 async function fetchTeamGoalieStarterContext(
   teamId: number,
@@ -739,6 +877,29 @@ export function computeStarterProbabilities(opts: {
   return probs;
 }
 
+export function buildTopStarterScenarios(opts: {
+  probabilitiesByGoalieId: Map<number, number>;
+  maxScenarios?: number;
+}): StarterScenario[] {
+  const maxScenarios = Number.isFinite(opts.maxScenarios)
+    ? Math.max(1, Number(opts.maxScenarios))
+    : 2;
+  const ranked = Array.from(opts.probabilitiesByGoalieId.entries())
+    .filter(([goalieId, probability]) => Number.isFinite(goalieId) && Number.isFinite(probability))
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, maxScenarios);
+  if (ranked.length === 0) return [];
+
+  const rawMass = ranked.reduce((sum, [, probability]) => sum + Math.max(0, probability), 0);
+  const denom = rawMass > 0 ? rawMass : ranked.length;
+  return ranked.map(([goalieId, rawProbability], idx) => ({
+    goalieId,
+    rawProbability,
+    probability: clamp(Math.max(0, rawProbability) / denom, 0, 1),
+    rank: idx + 1
+  }));
+}
+
 async function fetchGoalieEvidence(
   goalieId: number,
   asOfDate: string
@@ -902,7 +1063,7 @@ type ProjectionTotals = {
 
 export async function runProjectionV2ForDate(
   asOfDate: string,
-  opts?: { deadlineMs?: number }
+  opts?: { deadlineMs?: number; horizonGames?: number }
 ): Promise<{
   runId: string;
   gamesProcessed: number;
@@ -916,6 +1077,7 @@ export async function runProjectionV2ForDate(
 
   const metrics: any = {
     as_of_date: asOfDate,
+    horizon_games: clampHorizonGames(opts?.horizonGames ?? 1),
     started_at: new Date().toISOString(),
     games: 0,
     player_rows: 0,
@@ -946,6 +1108,7 @@ export async function runProjectionV2ForDate(
   };
 
   try {
+    const horizonGames = clampHorizonGames(opts?.horizonGames ?? 1);
     const { data: games, error: gamesErr } = await supabase
       .from("games")
       .select("id,date,homeTeamId,awayTeamId")
@@ -1040,6 +1203,7 @@ export async function runProjectionV2ForDate(
     let playerRowsUpserted = 0;
     let teamRowsUpserted = 0;
     let goalieRowsUpserted = 0;
+    const teamHorizonScalarsCache = new Map<number, number[]>();
 
     gamesLoop: for (const game of (games ?? []) as GameRow[]) {
       if (Date.now() > deadlineMs) {
@@ -1085,6 +1249,14 @@ export async function runProjectionV2ForDate(
 
         const opponentTeamId =
           teamId === game.homeTeamId ? game.awayTeamId : game.homeTeamId;
+        if (!teamHorizonScalarsCache.has(teamId)) {
+          teamHorizonScalarsCache.set(
+            teamId,
+            await fetchTeamHorizonScalars(teamId, asOfDate, horizonGames)
+          );
+        }
+        const teamHorizonScalars = teamHorizonScalarsCache.get(teamId) ?? [1];
+        const teamHorizonTotalScalar = teamHorizonScalars.reduce((sum, v) => sum + v, 0);
         if (!lc) {
           metrics.warnings.push(
             `missing lineCombinations for game=${game.id} team=${teamId} (using latest before ${asOfDate})`
@@ -1362,30 +1534,30 @@ export async function runProjectionV2ForDate(
             assistsPp,
             hits: projHits,
             blocks: projBlocks
-          });
+          }, horizonGames, teamHorizonScalars);
 
           playerUpserts.push({
             run_id: runId,
             as_of_date: asOfDate,
-            horizon_games: 1,
+            horizon_games: horizonGames,
             game_id: game.id,
             player_id: playerId,
             team_id: teamId,
             opponent_team_id: opponentTeamId,
-            proj_toi_es_seconds: p.toiEs,
-            proj_toi_pp_seconds: p.toiPp,
+            proj_toi_es_seconds: Number((p.toiEs * teamHorizonTotalScalar).toFixed(3)),
+            proj_toi_pp_seconds: Number((p.toiPp * teamHorizonTotalScalar).toFixed(3)),
             proj_toi_pk_seconds: null,
-            proj_shots_es: Number(shotsEs.toFixed(3)),
-            proj_shots_pp: Number(shotsPp.toFixed(3)),
+            proj_shots_es: Number((shotsEs * teamHorizonTotalScalar).toFixed(3)),
+            proj_shots_pp: Number((shotsPp * teamHorizonTotalScalar).toFixed(3)),
             proj_shots_pk: null,
-            proj_goals_es: Number(goalsEs.toFixed(3)),
-            proj_goals_pp: Number(goalsPp.toFixed(3)),
+            proj_goals_es: Number((goalsEs * teamHorizonTotalScalar).toFixed(3)),
+            proj_goals_pp: Number((goalsPp * teamHorizonTotalScalar).toFixed(3)),
             proj_goals_pk: null,
-            proj_assists_es: Number(assistsEs.toFixed(3)),
-            proj_assists_pp: Number(assistsPp.toFixed(3)),
+            proj_assists_es: Number((assistsEs * teamHorizonTotalScalar).toFixed(3)),
+            proj_assists_pp: Number((assistsPp * teamHorizonTotalScalar).toFixed(3)),
             proj_assists_pk: null,
-            proj_hits: Number(projHits.toFixed(3)),
-            proj_blocks: Number(projBlocks.toFixed(3)),
+            proj_hits: Number((projHits * teamHorizonTotalScalar).toFixed(3)),
+            proj_blocks: Number((projBlocks * teamHorizonTotalScalar).toFixed(3)),
             uncertainty,
             updated_at: new Date().toISOString()
           });
@@ -1402,18 +1574,22 @@ export async function runProjectionV2ForDate(
         const teamUpsert = {
           run_id: runId,
           as_of_date: asOfDate,
-          horizon_games: 1,
+          horizon_games: horizonGames,
           game_id: game.id,
           team_id: teamId,
           opponent_team_id: opponentTeamId,
-          proj_toi_es_seconds: teamTotals.toiEsSeconds,
-          proj_toi_pp_seconds: teamTotals.toiPpSeconds,
+          proj_toi_es_seconds: Number(
+            (teamTotals.toiEsSeconds * teamHorizonTotalScalar).toFixed(3)
+          ),
+          proj_toi_pp_seconds: Number(
+            (teamTotals.toiPpSeconds * teamHorizonTotalScalar).toFixed(3)
+          ),
           proj_toi_pk_seconds: null,
-          proj_shots_es: Number(teamTotals.shotsEs.toFixed(3)),
-          proj_shots_pp: Number(teamTotals.shotsPp.toFixed(3)),
+          proj_shots_es: Number((teamTotals.shotsEs * teamHorizonTotalScalar).toFixed(3)),
+          proj_shots_pp: Number((teamTotals.shotsPp * teamHorizonTotalScalar).toFixed(3)),
           proj_shots_pk: null,
-          proj_goals_es: Number(teamTotals.goalsEs.toFixed(3)),
-          proj_goals_pp: Number(teamTotals.goalsPp.toFixed(3)),
+          proj_goals_es: Number((teamTotals.goalsEs * teamHorizonTotalScalar).toFixed(3)),
+          proj_goals_pp: Number((teamTotals.goalsPp * teamHorizonTotalScalar).toFixed(3)),
           proj_goals_pk: null,
           uncertainty: buildTeamUncertainty({
             toiEsSeconds: teamTotals.toiEsSeconds,
@@ -1422,7 +1598,7 @@ export async function runProjectionV2ForDate(
             shotsPp: teamTotals.shotsPp,
             goalsEs: teamTotals.goalsEs,
             goalsPp: teamTotals.goalsPp
-          }),
+          }, horizonGames, teamHorizonScalars),
           updated_at: new Date().toISOString()
         };
 
@@ -1440,7 +1616,9 @@ export async function runProjectionV2ForDate(
         });
         teamGoalsByTeamId.set(
           teamId,
-          Number(teamTotals.goalsEs + teamTotals.goalsPp)
+          Number(
+            ((teamTotals.goalsEs + teamTotals.goalsPp) * teamHorizonTotalScalar).toFixed(3)
+          )
         );
 
         // Goalie: pick the highest probability starter from goalie_start_projections if available.
@@ -1615,9 +1793,18 @@ export async function runProjectionV2ForDate(
         let selectedGoalieId: number | null = null;
         let starterProb = 0.5;
         let starterModelMeta: any = {};
+        let topStarterScenarios: StarterScenario[] = [];
         if (c.override) {
           selectedGoalieId = c.override.goalieId;
           starterProb = c.override.starterProb;
+          topStarterScenarios = [
+            {
+              goalieId: selectedGoalieId,
+              rank: 1,
+              rawProbability: starterProb,
+              probability: 1
+            }
+          ];
           starterModelMeta = {
             source: "roster_event_override",
             selected_goalie_id: selectedGoalieId,
@@ -1628,7 +1815,15 @@ export async function runProjectionV2ForDate(
                 probability: Number(starterProb.toFixed(4)),
                 override: true
               }
-            ]
+            ],
+            starter_scenarios_top2: topStarterScenarios.map((s) => ({
+              goalie_id: s.goalieId,
+              rank: s.rank,
+              raw_probability: Number(s.rawProbability.toFixed(4)),
+              probability: Number(s.probability.toFixed(4)),
+              override: true
+            })),
+            top2_probability_mass: Number(starterProb.toFixed(4))
           };
         } else {
           const starterContext =
@@ -1651,6 +1846,10 @@ export async function runProjectionV2ForDate(
             opponentGoalsFor
           });
           const ranked = Array.from(probs.entries()).sort((a, b) => b[1] - a[1]);
+          topStarterScenarios = buildTopStarterScenarios({
+            probabilitiesByGoalieId: probs,
+            maxScenarios: 2
+          });
           if (ranked.length > 0) {
             selectedGoalieId = ranked[0][0];
             starterProb = ranked[0][1];
@@ -1699,7 +1898,26 @@ export async function runProjectionV2ForDate(
                 return Math.max(0, daysBetweenDates(asOfDate, d));
               })(),
               l10_starts: starterContext.startsByGoalie.get(goalieId) ?? 0
-            }))
+            })),
+            starter_scenarios_top2: topStarterScenarios.map((s) => ({
+              goalie_id: s.goalieId,
+              rank: s.rank,
+              raw_probability: Number(s.rawProbability.toFixed(4)),
+              probability: Number(s.probability.toFixed(4)),
+              last_played_date:
+                starterContext.lastPlayedDateByGoalie.get(s.goalieId) ?? null,
+              days_since_last_played: (() => {
+                const d = starterContext.lastPlayedDateByGoalie.get(s.goalieId);
+                if (!d) return null;
+                return Math.max(0, daysBetweenDates(asOfDate, d));
+              })(),
+              l10_starts: starterContext.startsByGoalie.get(s.goalieId) ?? 0
+            })),
+            top2_probability_mass: Number(
+              topStarterScenarios
+                .reduce((sum, s) => sum + s.rawProbability, 0)
+                .toFixed(4)
+            )
           };
         }
 
@@ -1720,15 +1938,7 @@ export async function runProjectionV2ForDate(
         const workload = goalieWorkloadContextCache.get(
           selectedGoalieId
         ) as GoalieWorkloadContext;
-        let workloadSavePctPenalty = 0;
-        if (workload.startsLast14Days >= 6) {
-          workloadSavePctPenalty += GOALIE_VERY_HEAVY_WORKLOAD_PENALTY;
-        } else if (workload.startsLast14Days >= 5) {
-          workloadSavePctPenalty += GOALIE_HEAVY_WORKLOAD_PENALTY;
-        }
-        if (workload.isGoalieBackToBack) {
-          workloadSavePctPenalty += GOALIE_BACK_TO_BACK_PENALTY;
-        }
+        const workloadSavePctPenalty = computeWorkloadSavePctPenalty(workload);
         const adjustedLeagueSavePct = clamp(
           leagueSavePct - workloadSavePctPenalty,
           0.86,
@@ -1741,19 +1951,130 @@ export async function runProjectionV2ForDate(
           evidence,
           leagueSavePct: adjustedLeagueSavePct
         });
+        const selectedGoalieFullStartModel = computeGoalieProjectionModel({
+          projectedShotsAgainst: shotsAgainst,
+          starterProbability: 1,
+          projectedGoalsFor: teamGoalsFor,
+          evidence,
+          leagueSavePct: adjustedLeagueSavePct
+        });
 
-        const goalsAllowed = goalieModel.projectedGoalsAllowed;
-        const saves = goalieModel.projectedSaves;
-        const winProb = goalieModel.winProbability;
-        const shutoutProb = goalieModel.shutoutProbability;
+        const scenarioProjections: StarterScenarioProjection[] = [];
+        for (const scenario of topStarterScenarios) {
+          if (!goalieEvidenceCache.has(scenario.goalieId)) {
+            goalieEvidenceCache.set(
+              scenario.goalieId,
+              await fetchGoalieEvidence(scenario.goalieId, asOfDate)
+            );
+          }
+          if (!goalieWorkloadContextCache.has(scenario.goalieId)) {
+            goalieWorkloadContextCache.set(
+              scenario.goalieId,
+              await fetchGoalieWorkloadContext(scenario.goalieId, asOfDate)
+            );
+          }
+          const scenarioEvidence = goalieEvidenceCache.get(
+            scenario.goalieId
+          ) as GoalieEvidence;
+          const scenarioWorkload = goalieWorkloadContextCache.get(
+            scenario.goalieId
+          ) as GoalieWorkloadContext;
+          const scenarioWorkloadPenalty =
+            computeWorkloadSavePctPenalty(scenarioWorkload);
+          const scenarioLeagueSavePct = clamp(
+            leagueSavePct - scenarioWorkloadPenalty,
+            0.86,
+            0.92
+          );
+          const scenarioModel = computeGoalieProjectionModel({
+            projectedShotsAgainst: shotsAgainst,
+            starterProbability: 1,
+            projectedGoalsFor: teamGoalsFor,
+            evidence: scenarioEvidence,
+            leagueSavePct: scenarioLeagueSavePct
+          });
+          scenarioProjections.push({
+            goalie_id: scenario.goalieId,
+            rank: scenario.rank,
+            starter_probability_raw: Number(scenario.rawProbability.toFixed(4)),
+            starter_probability_top2_normalized: Number(scenario.probability.toFixed(4)),
+            proj_shots_against: shotsAgainst,
+            proj_saves: Number(scenarioModel.projectedSaves.toFixed(3)),
+            proj_goals_allowed: Number(scenarioModel.projectedGoalsAllowed.toFixed(3)),
+            proj_win_prob: Number(scenarioModel.winProbability.toFixed(4)),
+            proj_shutout_prob: Number(scenarioModel.shutoutProbability.toFixed(4)),
+            modeled_save_pct: Number(scenarioModel.modeledSavePct.toFixed(4)),
+            workload_save_pct_penalty: Number(scenarioWorkloadPenalty.toFixed(4))
+          });
+        }
+        const blendedProjection = blendTopStarterScenarioOutputs({
+          scenarioProjections,
+          fallbackProjection: {
+            proj_shots_against: shotsAgainst,
+            proj_saves: Number(selectedGoalieFullStartModel.projectedSaves.toFixed(3)),
+            proj_goals_allowed: Number(
+              selectedGoalieFullStartModel.projectedGoalsAllowed.toFixed(3)
+            ),
+            proj_win_prob: Number(selectedGoalieFullStartModel.winProbability.toFixed(4)),
+            proj_shutout_prob: Number(
+              selectedGoalieFullStartModel.shutoutProbability.toFixed(4)
+            ),
+            modeled_save_pct: Number(selectedGoalieFullStartModel.modeledSavePct.toFixed(4)),
+            workload_save_pct_penalty: Number(workloadSavePctPenalty.toFixed(4))
+          }
+        });
+
+        const goalsAllowed = blendedProjection.proj_goals_allowed;
+        const saves = blendedProjection.proj_saves;
+        const winProb = blendedProjection.proj_win_prob;
+        const shutoutProb = blendedProjection.proj_shutout_prob;
+        const uncertaintyScenarioMixture = [
+          ...scenarioProjections.map((s) => ({
+            weight: s.starter_probability_raw,
+            shotsAgainst: s.proj_shots_against,
+            goalsAllowed: s.proj_goals_allowed,
+            saves: s.proj_saves
+          })),
+          ...(blendedProjection.residual_probability_mass > 0
+            ? [
+                {
+                  weight: blendedProjection.residual_probability_mass,
+                  shotsAgainst,
+                  goalsAllowed: Number(
+                    selectedGoalieFullStartModel.projectedGoalsAllowed.toFixed(3)
+                  ),
+                  saves: Number(selectedGoalieFullStartModel.projectedSaves.toFixed(3))
+                }
+              ]
+            : [])
+        ];
+        starterModelMeta.scenario_projections_top2 = scenarioProjections;
+        starterModelMeta.scenario_projection_count = scenarioProjections.length;
+        starterModelMeta.scenario_projection_blend = {
+          probability_mass: blendedProjection.probability_mass,
+          residual_probability_mass: blendedProjection.residual_probability_mass,
+          proj_saves: Number(saves.toFixed(3)),
+          proj_goals_allowed: Number(goalsAllowed.toFixed(3)),
+          proj_win_prob: Number(winProb.toFixed(4)),
+          proj_shutout_prob: Number(shutoutProb.toFixed(4)),
+          modeled_save_pct: Number(blendedProjection.modeled_save_pct.toFixed(4))
+        };
+        const defendingTeamScalars = teamHorizonScalarsCache.get(c.teamId) ?? [1];
+        const opponentTeamScalars = teamHorizonScalarsCache.get(c.opponentTeamId) ?? [1];
+        const goalieHorizonScalars = Array.from({ length: horizonGames }, (_, idx) => {
+          const d = defendingTeamScalars[idx] ?? 1;
+          const o = opponentTeamScalars[idx] ?? 1;
+          return Number(((d + o) / 2).toFixed(4));
+        });
+        const goalieHorizonTotalScalar = goalieHorizonScalars.reduce((sum, v) => sum + v, 0);
         const goalieUncertainty = {
           ...buildGoalieUncertainty({
             shotsAgainst,
             goalsAllowed,
             saves
-          }),
+          }, horizonGames, goalieHorizonScalars, uncertaintyScenarioMixture),
           model: {
-            save_pct: Number(goalieModel.modeledSavePct.toFixed(4)),
+            save_pct: Number(blendedProjection.modeled_save_pct.toFixed(4)),
             volatility_index: Number(goalieModel.volatilityIndex.toFixed(3)),
             blowup_risk: Number(goalieModel.blowupRisk.toFixed(4)),
             confidence_tier: goalieModel.confidenceTier,
@@ -1776,6 +2097,38 @@ export async function runProjectionV2ForDate(
               workload_save_pct_penalty: Number(workloadSavePctPenalty.toFixed(4)),
               league_save_pct_used: Number(adjustedLeagueSavePct.toFixed(4))
             },
+            scenario_metadata: {
+              model_version: "starter-scenario-v1",
+              horizon_games: horizonGames,
+              horizon_scalars: goalieHorizonScalars,
+              selected_goalie_id: selectedGoalieId,
+              selected_goalie_starter_probability: Number(starterProb.toFixed(4)),
+              top2_scenario_count: scenarioProjections.length,
+              top2_probability_mass: Number(
+                scenarioProjections
+                  .reduce((sum, s) => sum + s.starter_probability_raw, 0)
+                  .toFixed(4)
+              ),
+              residual_probability_mass: blendedProjection.residual_probability_mass,
+              blended_projection: {
+                proj_shots_against: Number(
+                  (shotsAgainst * goalieHorizonTotalScalar).toFixed(3)
+                ),
+                proj_saves: Number(
+                  (blendedProjection.proj_saves * goalieHorizonTotalScalar).toFixed(3)
+                ),
+                proj_goals_allowed: Number(
+                  (blendedProjection.proj_goals_allowed * goalieHorizonTotalScalar).toFixed(3)
+                ),
+                proj_win_prob: Number(
+                  (blendedProjection.proj_win_prob * goalieHorizonTotalScalar).toFixed(4)
+                ),
+                proj_shutout_prob: Number(
+                  (blendedProjection.proj_shutout_prob * goalieHorizonTotalScalar).toFixed(4)
+                ),
+                modeled_save_pct: Number(blendedProjection.modeled_save_pct.toFixed(4))
+              }
+            },
             starter_selection: starterModelMeta
           }
         };
@@ -1783,17 +2136,17 @@ export async function runProjectionV2ForDate(
         const goalieUpsert = {
           run_id: runId,
           as_of_date: asOfDate,
-          horizon_games: 1,
+          horizon_games: horizonGames,
           game_id: game.id,
           goalie_id: selectedGoalieId,
           team_id: c.teamId,
           opponent_team_id: c.opponentTeamId,
           starter_probability: Number(starterProb.toFixed(4)),
-          proj_shots_against: shotsAgainst,
-          proj_goals_allowed: Number(goalsAllowed.toFixed(3)),
-          proj_saves: Number(saves.toFixed(3)),
-          proj_win_prob: Number(winProb.toFixed(4)),
-          proj_shutout_prob: Number(shutoutProb.toFixed(4)),
+          proj_shots_against: Number((shotsAgainst * goalieHorizonTotalScalar).toFixed(3)),
+          proj_goals_allowed: Number((goalsAllowed * goalieHorizonTotalScalar).toFixed(3)),
+          proj_saves: Number((saves * goalieHorizonTotalScalar).toFixed(3)),
+          proj_win_prob: Number((winProb * goalieHorizonTotalScalar).toFixed(4)),
+          proj_shutout_prob: Number((shutoutProb * goalieHorizonTotalScalar).toFixed(4)),
           uncertainty: goalieUncertainty as any,
           updated_at: new Date().toISOString()
         };

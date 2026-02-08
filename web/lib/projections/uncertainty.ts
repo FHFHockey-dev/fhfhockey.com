@@ -451,12 +451,18 @@ export function buildTeamUncertainty(
 
 export function buildGoalieUncertainty(
   u: {
-  shotsAgainst: number;
-  goalsAllowed: number;
-  saves: number;
+    shotsAgainst: number;
+    goalsAllowed: number;
+    saves: number;
   },
   horizonGames = 1,
-  perGameScalars?: number[]
+  perGameScalars?: number[],
+  scenarioMixture?: Array<{
+    weight: number;
+    shotsAgainst: number;
+    goalsAllowed: number;
+    saves: number;
+  }>
 ) {
   const effectiveHorizon = Math.max(1, Math.floor(horizonGames));
   const scalars =
@@ -474,11 +480,38 @@ export function buildGoalieUncertainty(
   }
 
   const rand = createRng(
-    seedFromValues([u.shotsAgainst, u.goalsAllowed, u.saves])
+    seedFromValues([
+      u.shotsAgainst,
+      u.goalsAllowed,
+      u.saves,
+      ...(scenarioMixture ?? []).flatMap((s) => [
+        s.weight,
+        s.shotsAgainst,
+        s.goalsAllowed,
+        s.saves
+      ])
+    ])
   );
   const baseShots = Math.max(0, u.shotsAgainst);
   const baseGoals = Math.max(0, u.goalsAllowed);
   const baseSaves = Math.max(0, u.saves);
+  const validMixture =
+    scenarioMixture
+      ?.map((s) => ({
+        weight: clampNonNegative(s.weight),
+        shotsAgainst: Math.max(0, s.shotsAgainst),
+        goalsAllowed: Math.max(0, s.goalsAllowed),
+        saves: Math.max(0, s.saves)
+      }))
+      .filter((s) => s.weight > 0) ?? [];
+  const mixtureWeightTotal = validMixture.reduce((sum, s) => sum + s.weight, 0);
+  const normalizedMixture =
+    mixtureWeightTotal > 0
+      ? validMixture.map((s) => ({
+          ...s,
+          weight: s.weight / mixtureWeightTotal
+        }))
+      : [];
 
   const samplesShots: number[] = [];
   const samplesGoals: number[] = [];
@@ -488,22 +521,35 @@ export function buildGoalieUncertainty(
     let totalShots = 0;
     let totalGoals = 0;
     let totalSaves = 0;
+    const sampledScenario = (() => {
+      if (normalizedMixture.length === 0) return null;
+      const r = rand();
+      let cumulative = 0;
+      for (const s of normalizedMixture) {
+        cumulative += s.weight;
+        if (r <= cumulative) return s;
+      }
+      return normalizedMixture[normalizedMixture.length - 1] ?? null;
+    })();
+    const scenarioShots = sampledScenario?.shotsAgainst ?? baseShots;
+    const scenarioGoals = sampledScenario?.goalsAllowed ?? baseGoals;
+    const scenarioSaves = sampledScenario?.saves ?? baseSaves;
 
     for (let g = 0; g < effectiveHorizon; g += 1) {
       const scalar = scalars[g] ?? 1;
-      const shotsMean = baseShots * scalar;
+      const shotsMean = scenarioShots * scalar;
       const shots = samplePoisson(shotsMean, rand);
-      const baseShotsScaled = baseShots * scalar;
+      const baseShotsScaled = scenarioShots * scalar;
       const goalsMean =
         baseShotsScaled > 0
-          ? baseGoals * scalar * (shots / baseShotsScaled)
-          : baseGoals * scalar;
+          ? scenarioGoals * scalar * (shots / baseShotsScaled)
+          : scenarioGoals * scalar;
       const goals = samplePoisson(goalsMean, rand);
       const saves = Math.max(0, shots - goals);
 
       totalShots += shots;
       totalGoals += goals;
-      totalSaves += baseSaves > 0 ? saves : Math.max(0, shots - goals);
+      totalSaves += scenarioSaves > 0 ? saves : Math.max(0, shots - goals);
     }
 
     samplesShots.push(totalShots);
