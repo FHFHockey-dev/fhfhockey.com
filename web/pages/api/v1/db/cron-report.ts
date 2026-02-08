@@ -86,6 +86,8 @@ type JobSummary = {
   failCount24h: number;
   rowsLast: number | null;
   rowsTotal: number | null;
+  goalieRowsLast: number | null;
+  goalieWarningsLast: number;
   lastDurationMs: number | null;
   avgDurationMs: number | null;
 };
@@ -127,6 +129,8 @@ type ParsedAuditDetails = {
   url: string | null;
   method: string | null;
   error: string | null;
+  goalieRowsProcessed: number | null;
+  dataQualityWarningCount: number;
 };
 
 function parseAuditDetails(details: unknown): ParsedAuditDetails {
@@ -135,7 +139,9 @@ function parseAuditDetails(details: unknown): ParsedAuditDetails {
     statusCode: null,
     url: null,
     method: null,
-    error: null
+    error: null,
+    goalieRowsProcessed: null,
+    dataQualityWarningCount: 0
   };
 
   if (!details) return empty;
@@ -150,6 +156,23 @@ function parseAuditDetails(details: unknown): ParsedAuditDetails {
   }
 
   if (!obj || typeof obj !== "object") return empty;
+  let goalieRowsProcessed: number | null = null;
+  let dataQualityWarningCount = 0;
+  try {
+    const responseRaw = typeof obj.response === "string" ? obj.response : null;
+    if (responseRaw) {
+      const response = JSON.parse(responseRaw) as any;
+      const observability = response?.observability;
+      if (typeof observability?.goalieRowsProcessed === "number") {
+        goalieRowsProcessed = observability.goalieRowsProcessed;
+      }
+      if (Array.isArray(observability?.dataQualityWarnings)) {
+        dataQualityWarningCount = observability.dataQualityWarnings.length;
+      }
+    }
+  } catch {
+    // ignore malformed/truncated serialized response payloads
+  }
 
   return {
     durationMs:
@@ -162,7 +185,9 @@ function parseAuditDetails(details: unknown): ParsedAuditDetails {
         : null,
     url: typeof obj.url === "string" ? obj.url : null,
     method: typeof obj.method === "string" ? obj.method : null,
-    error: typeof obj.error === "string" ? obj.error : null
+    error: typeof obj.error === "string" ? obj.error : null,
+    goalieRowsProcessed,
+    dataQualityWarningCount
   };
 }
 
@@ -335,6 +360,8 @@ export default async function handler(
           : runRowsCounted > 0
             ? jobRuns.reduce((acc, r) => acc + (r.rowsAffected ?? 0), 0)
             : null;
+      const goalieRowsLast = lastAudit?.parsed.goalieRowsProcessed ?? null;
+      const goalieWarningsLast = lastAudit?.parsed.dataQualityWarningCount ?? 0;
 
       const avgDurationMs =
         durations.length > 0
@@ -362,6 +389,8 @@ export default async function handler(
         failCount24h,
         rowsLast,
         rowsTotal,
+        goalieRowsLast,
+        goalieWarningsLast,
         lastDurationMs: lastAudit?.parsed.durationMs ?? lastRun?.durationMs ?? null,
         avgDurationMs
       };
@@ -408,6 +437,9 @@ export default async function handler(
   const WARN_SLOW = jobSummaries
     .filter((j) => (j.lastDurationMs ?? 0) > WARN_SLOW_MS)
     .map((j) => ({ jobName: j.jobName, durationMs: j.lastDurationMs! }));
+  const WARN_GOALIE_QUALITY = jobSummaries
+    .filter((j) => j.goalieWarningsLast > 0)
+    .map((j) => ({ jobName: j.jobName, warningCount: j.goalieWarningsLast }));
 
   const counts = {
     jobs: jobSummaries.length,
@@ -422,7 +454,8 @@ export default async function handler(
       .length,
     warnZeroRows: WARN_ZERO_ROWS.length,
     warnUnknown: WARN_UNKNOWN.length,
-    warnSlow: WARN_SLOW.length
+    warnSlow: WARN_SLOW.length,
+    warnGoalieQuality: WARN_GOALIE_QUALITY.length
   };
 
   // 3. Send Cron Job Audit Email
@@ -487,7 +520,8 @@ export default async function handler(
             slowMsThreshold: WARN_SLOW_MS,
             zeroRowsJobs: WARN_ZERO_ROWS,
             unknownStatusJobs: WARN_UNKNOWN,
-            slowJobs: WARN_SLOW
+            slowJobs: WARN_SLOW,
+            goalieQualityJobs: WARN_GOALIE_QUALITY
           }
         })
       });

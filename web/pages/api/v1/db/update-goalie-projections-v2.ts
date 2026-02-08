@@ -122,10 +122,15 @@ const handler = async (
     // 4. Fetch ALL goalie logs for these teams for the entire season (up to today)
     // We do this ONCE per team to avoid N^2 API calls
     const teamLogsMap: Record<number, any[]> = {};
+    let missingTeamMetadata = 0;
+    let failedTeamLogFetches = 0;
 
     await processBatched(Array.from(teamIds), 5, async (teamId) => {
       const teamData = teamIdMap[teamId];
-      if (!teamData) return;
+      if (!teamData) {
+        missingTeamMetadata += 1;
+        return;
+      }
 
       const franchiseId = teamData.franchiseId;
       const params = new URLSearchParams();
@@ -148,14 +153,19 @@ const handler = async (
           const json = await res.json();
           teamLogsMap[teamId] = json.data || [];
         } else {
+          failedTeamLogFetches += 1;
           console.error(
             `Failed to fetch logs for team ${teamId}: ${res.status}`
           );
         }
       } catch (e) {
+        failedTeamLogFetches += 1;
         console.error(`Error fetching logs for team ${teamId}:`, e);
       }
     });
+    const teamsWithNoLogs = Array.from(teamIds).filter(
+      (teamId) => (teamLogsMap[teamId]?.length ?? 0) === 0
+    ).length;
 
     console.log("Finished fetching team logs. Starting processing...");
 
@@ -272,7 +282,48 @@ const handler = async (
     return res.status(200).json({
       success: true,
       message: `Updated projections. Total upserted: ${totalUpserted}`,
-      updates: totalUpserted
+      updates: totalUpserted,
+      observability: {
+        goalieRowsProcessed: totalUpserted,
+        dataQualityWarnings: [
+          ...(filteredGames.length > 0 && totalUpserted === 0
+            ? [
+                {
+                  code: "goalie_start_rows_zero",
+                  message:
+                    "Processed games but wrote zero goalie_start_projections rows."
+                }
+              ]
+            : []),
+          ...(teamsWithNoLogs > 0
+            ? [
+                {
+                  code: "team_goalie_logs_missing",
+                  message: "One or more teams had no goalie logs during fetch.",
+                  detail: `teams_with_no_logs=${teamsWithNoLogs}`
+                }
+              ]
+            : []),
+          ...(failedTeamLogFetches > 0
+            ? [
+                {
+                  code: "team_goalie_log_fetch_failed",
+                  message: "Failed to fetch goalie logs for one or more teams.",
+                  detail: `failed_fetches=${failedTeamLogFetches}`
+                }
+              ]
+            : []),
+          ...(missingTeamMetadata > 0
+            ? [
+                {
+                  code: "team_metadata_missing",
+                  message: "Team metadata missing for one or more team IDs.",
+                  detail: `missing_team_metadata=${missingTeamMetadata}`
+                }
+              ]
+            : [])
+        ]
+      }
     });
   } catch (err: any) {
     console.error("Error updating goalie projections:", err);

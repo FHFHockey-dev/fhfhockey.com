@@ -14,6 +14,7 @@ interface CronReportEmailProps {
     warnZeroRows: number;
     warnUnknown: number;
     warnSlow: number;
+    warnGoalieQuality: number;
   };
   jobs: Array<{
     jobName: string;
@@ -27,6 +28,8 @@ interface CronReportEmailProps {
     failCount24h: number;
     rowsLast: number | null;
     rowsTotal: number | null;
+    goalieRowsLast: number | null;
+    goalieWarningsLast: number;
     lastDurationMs: number | null;
     avgDurationMs: number | null;
   }>;
@@ -43,6 +46,7 @@ interface CronReportEmailProps {
     zeroRowsJobs: string[];
     unknownStatusJobs: string[];
     slowJobs: Array<{ jobName: string; durationMs: number }>;
+    goalieQualityJobs: Array<{ jobName: string; warningCount: number }>;
   };
 }
 
@@ -123,7 +127,11 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
         {summary.auditUnknown ? ` • ${summary.auditUnknown} unknown` : ""}
       </div>
 
-      {summary.warnZeroRows + summary.warnUnknown + summary.warnSlow > 0 ? (
+      {summary.warnZeroRows +
+      summary.warnUnknown +
+      summary.warnSlow +
+      summary.warnGoalieQuality >
+      0 ? (
         <div style={{ margin: "0 0 16px" }}>
           <div style={{ fontWeight: 800 }}>Warnings</div>
           <div style={{ marginTop: 6, color: "#374151" }}>
@@ -138,6 +146,13 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
                   warnings.slowMsThreshold / 1000
                 )}s)`
               : ""}
+            {(summary.warnZeroRows || summary.warnUnknown || summary.warnSlow) &&
+            summary.warnGoalieQuality
+              ? " • "
+              : ""}
+            {summary.warnGoalieQuality
+              ? `${summary.warnGoalieQuality} goalie-quality`
+              : ""}
           </div>
           <ul style={{ margin: "8px 0 0", paddingLeft: 18 }}>
             {warnings.zeroRowsJobs.slice(0, 6).map((j) => (
@@ -149,6 +164,11 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
             {warnings.slowJobs.slice(0, 6).map((j) => (
               <li key={`slow-${j.jobName}`}>
                 Slow: {j.jobName} ({Math.round(j.durationMs / 1000)}s)
+              </li>
+            ))}
+            {warnings.goalieQualityJobs.slice(0, 6).map((j) => (
+              <li key={`goalie-quality-${j.jobName}`}>
+                Goalie data-quality warnings: {j.jobName} ({j.warningCount})
               </li>
             ))}
           </ul>
@@ -218,6 +238,8 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
               <th align="left">Last Run</th>
               <th align="right">Duration</th>
               <th align="right">Rows (last)</th>
+              <th align="right">Goalie Rows</th>
+              <th align="right">Goalie Warn</th>
               <th align="right">Rows (24h)</th>
               <th align="right">OK</th>
               <th align="right">Fail</th>
@@ -243,6 +265,15 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
                     : "—"}
                 </td>
                 <td align="right">{j.rowsLast ?? "—"}</td>
+                <td align="right">{j.goalieRowsLast ?? "—"}</td>
+                <td
+                  align="right"
+                  style={{
+                    color: j.goalieWarningsLast > 0 ? "#991B1B" : undefined
+                  }}
+                >
+                  {j.goalieWarningsLast}
+                </td>
                 <td align="right">{j.rowsTotal ?? "—"}</td>
                 <td align="right">{j.okCount24h}</td>
                 <td
