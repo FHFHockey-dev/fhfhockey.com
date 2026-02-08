@@ -124,6 +124,55 @@
   font-size: 0.85rem;
 }
 
+.goalieDisclosure {
+  margin-bottom: v.$space-lg;
+  padding: v.$space-md;
+  border-radius: v.$border-radius-md;
+  border: 1px solid rgba(v.$success-color, 0.35);
+  background:
+    linear-gradient(160deg, rgba(v.$success-color, 0.14) 0%, transparent 65%),
+    linear-gradient(180deg, #1a1f1b 0%, #171b18 100%);
+
+  h3 {
+    margin: 0 0 v.$space-sm;
+    font-family: v.$font-family-accent;
+    font-size: 1.1rem;
+    text-transform: uppercase;
+  }
+
+  ul {
+    margin: v.$space-sm 0 0;
+    padding-left: 1.1rem;
+    color: v.$text-secondary;
+
+    li {
+      margin-bottom: 0.25rem;
+      line-height: 1.35;
+    }
+  }
+}
+
+.disclosureMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: v.$space-xs;
+
+  span {
+    border: 1px solid rgba(v.$color-white, 0.15);
+    background-color: rgba(v.$color-white, 0.04);
+    border-radius: 999px;
+    padding: 0.2rem 0.55rem;
+    font-size: 0.78rem;
+    color: v.$text-secondary;
+  }
+}
+
+.disclosureNotes {
+  margin: v.$space-sm 0 0;
+  font-size: 0.8rem;
+  color: v.$text-secondary;
+}
+
 .logoContainer {
   margin-bottom: v.$space-md;
 
@@ -455,5 +504,106 @@
     letter-spacing: 0.03em;
     color: v.$text-secondary;
     background-color: rgba(v.$color-white, 0.03);
+  }
+}
+
+.indicatorBadge {
+  font-weight: 600;
+}
+
+.confidenceHigh {
+  border-color: rgba(v.$success-color, 0.5) !important;
+  background-color: rgba(v.$success-color, 0.12) !important;
+  color: color.scale(v.$success-color, $lightness: 30%);
+}
+
+.confidenceMedium {
+  border-color: rgba(v.$warning-color, 0.5) !important;
+  background-color: rgba(v.$warning-color, 0.12) !important;
+  color: color.scale(v.$warning-color, $lightness: 30%);
+}
+
+.confidenceLow {
+  border-color: rgba(v.$danger-color, 0.5) !important;
+  background-color: rgba(v.$danger-color, 0.12) !important;
+  color: color.scale(v.$danger-color, $lightness: 30%);
+}
+
+.volatilityStable {
+  border-color: rgba(v.$info-color, 0.5) !important;
+  background-color: rgba(v.$info-color, 0.12) !important;
+  color: color.scale(v.$info-color, $lightness: 30%);
+}
+
+.volatilityModerate {
+  border-color: rgba(v.$warning-color, 0.45) !important;
+  background-color: rgba(v.$warning-color, 0.1) !important;
+  color: color.scale(v.$warning-color, $lightness: 25%);
+}
+
+.volatilityHigh {
+  border-color: rgba(v.$danger-color, 0.5) !important;
+  background-color: rgba(v.$danger-color, 0.12) !important;
+  color: color.scale(v.$danger-color, $lightness: 25%);
+}
+
+.riskLow {
+  border-color: rgba(v.$success-color, 0.5) !important;
+  background-color: rgba(v.$success-color, 0.12) !important;
+  color: color.scale(v.$success-color, $lightness: 30%);
+}
+
+.riskMedium {
+  border-color: rgba(v.$warning-color, 0.5) !important;
+  background-color: rgba(v.$warning-color, 0.12) !important;
+  color: color.scale(v.$warning-color, $lightness: 25%);
+}
+
+.riskHigh {
+  border-color: rgba(v.$danger-color, 0.5) !important;
+  background-color: rgba(v.$danger-color, 0.12) !important;
+  color: color.scale(v.$danger-color, $lightness: 25%);
+}
+
+.starterDrivers {
+  margin-top: v.$space-md;
+  padding: v.$space-sm;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-sm;
+  background-color: rgba(v.$color-white, 0.02);
+
+  h3 {
+    margin: 0 0 v.$space-xs;
+    font-family: v.$font-family-accent;
+    font-size: 0.9rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: v.$text-primary;
+  }
+
+  ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li {
+    display: flex;
+    justify-content: space-between;
+    gap: v.$space-sm;
+    padding: 0.25rem 0;
+    border-bottom: 1px dashed rgba(v.$color-white, 0.08);
+    font-size: 0.84rem;
+    color: v.$text-secondary;
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+
+  strong {
+    color: v.$text-primary;
+    font-weight: 600;
+    text-align: right;
   }
 }

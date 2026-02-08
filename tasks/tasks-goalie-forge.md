@@ -16,8 +16,11 @@
 - `web/components/CronReportEmail/CronReportEmail.tsx` - Cron report email renderer with goalie row and goalie warning visibility.
 - `web/pages/api/v1/db/run-projection-accuracy.ts` - Accuracy scoring pipeline and calibration metrics persistence.
 - `web/pages/api/v1/forge/goalies.ts` - Goalie FORGE read endpoint and diagnostics output.
+- `web/pages/api/v1/forge/goalies.test.ts` - Regression test for goalie API response shape, model/scenario metadata, and calibration hints snapshot.
 - `web/pages/api/v1/forge/accuracy.ts` - Accuracy-series endpoint used by FORGE UI.
+- `web/pages/api/v1/forge/players.ts` - Skater FORGE read endpoint; includes fallback to latest run with data when requested date has no succeeded run.
 - `web/pages/FORGE.tsx` - FORGE UI surface for skater/goalie projections and uncertainty display.
+- `web/pages/FORGE.test.tsx` - Regression test for goalie-view UI rendering states including disclosure and starter-confidence blocks.
 - `web/styles/Forge.module.scss` - Styling for goalie cards, labels, and mode-specific UI controls.
 
 ### Notes
@@ -64,13 +67,13 @@
   - [x] 5.4 Add stale-data detectors (e.g., missing recent goalie game rows, outdated players team assignments).
   - [x] 5.5 Add cron/job observability for goalie-specific rows processed and data quality warnings.
   - [x] 5.6 Document manual operator runbook with timeout bypass usage and validation checklist.
-- [ ] 6.0 Expand API/UI transparency for goalie risk, confidence, and model explainability
-  - [ ] 6.1 Extend `/api/v1/forge/goalies` response schema with explicit model version, scenario count, and calibration hints.
-  - [ ] 6.2 Add API diagnostics for empty results (requested date/run vs fallback date/run, games scheduled, run metrics).
-  - [ ] 6.3 Add UI display blocks for starter confidence drivers (recency, l10 starts, B2B, opponent strength).
-  - [ ] 6.4 Add visual indicators for confidence tier and volatility/risk classes with tooltips for definitions.
-  - [ ] 6.5 Add disclosure panel in FORGE goalie view for model limitations and data source caveats.
-  - [ ] 6.6 Add regression tests/snapshots for API response shape and key UI rendering states.
+- [x] 6.0 Expand API/UI transparency for goalie risk, confidence, and model explainability
+  - [x] 6.1 Extend `/api/v1/forge/goalies` response schema with explicit model version, scenario count, and calibration hints.
+  - [x] 6.2 Add API diagnostics for empty results (requested date/run vs fallback date/run, games scheduled, run metrics).
+  - [x] 6.3 Add UI display blocks for starter confidence drivers (recency, l10 starts, B2B, opponent strength).
+  - [x] 6.4 Add visual indicators for confidence tier and volatility/risk classes with tooltips for definitions.
+  - [x] 6.5 Add disclosure panel in FORGE goalie view for model limitations and data source caveats.
+  - [x] 6.6 Add regression tests/snapshots for API response shape and key UI rendering states.
 - [ ] 7.0 Integrate additional Supabase goalie/team context signals discovered during schema audit
   - [ ] 7.1 Add goalie rest-split performance features from `wgo_goalie_stats` (`save_pct_days_rest_*`, `games_played_days_rest_*`) into save% adjustments.
   - [ ] 7.2 Add goalie quality-start stability features (`quality_starts`, `quality_starts_pct`) into volatility and confidence modeling.
@@ -81,8 +84,8 @@
 
 ## Progress Snapshot (For Next Codex Chat)
 
-- Completed: `1.0`, `2.0`, `3.0`, `4.0`, `5.1`, `5.2`, `5.3`, `5.4`, `5.5`, `5.6`.
-- Next sub-task to execute: `6.1`.
+- Completed: `1.0`, `2.0`, `3.0`, `4.0`, `5.1`, `5.2`, `5.3`, `5.4`, `5.5`, `5.6`, `6.1`, `6.2`, `6.3`, `6.4`, `6.5`, `6.6`.
+- Next sub-task to execute: `7.1`.
 - In-progress uncommitted work currently includes:
 - `web/pages/api/v1/db/run-projection-v2.ts`
 - `web/pages/api/v1/db/ingest-projection-inputs.ts`
@@ -160,14 +163,14 @@ Continue this project from `tasks/tasks-goalie-forge.md` using `web/rules/proces
 
 Requirements:
 - Execute one sub-task at a time.
-- Start from the next unchecked task (`6.1`).
+- Start from the next unchecked task (`7.1`).
 - After each sub-task: update checklist, run relevant lint/tests/typecheck, summarize concrete file changes, and pause for my confirmation.
 - When all sub-tasks under a parent are complete: run `cd web && npm test`, commit with conventional commit message, mark parent complete, then pause.
 - Do not revert unrelated local changes.
 
 Current status context:
-- Completed: `1.0`, `2.0`, `3.0`, `4.0`, `5.1`, `5.2`, `5.3`, `5.4`, `5.5`, `5.6`.
-- Pending: `6.x`, `7.x`.
+- Completed: `1.0`, `2.0`, `3.0`, `4.0`, `5.1`, `5.2`, `5.3`, `5.4`, `5.5`, `5.6`, `6.1`, `6.2`, `6.3`, `6.4`, `6.5`, `6.6`.
+- Pending: `7.x`.
 - Existing local modifications include:
   - `tasks/goalie-forge.md`
   - `web/lib/supabase/database-generated.types.ts`
@@ -179,7 +182,7 @@ Current status context:
   - `web/lib/projections/goaliePipeline.test.ts`
 
 Primary objective now:
-- Complete `6.1` (extend `/api/v1/forge/goalies` response schema with model version, scenario count, and calibration hints), then proceed sequentially.
+- Complete `7.1` (add goalie rest-split performance features from `wgo_goalie_stats`), then proceed sequentially.
 ```
 
 

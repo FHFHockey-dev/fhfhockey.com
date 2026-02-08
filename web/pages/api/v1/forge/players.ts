@@ -4,6 +4,24 @@ import supabase from "lib/supabase/server";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
 import { requireLatestSucceededRunId } from "pages/api/v1/projections/_helpers";
 
+async function fetchFallbackRunWithPlayerData(
+  targetDate: string
+): Promise<{ runId: string; asOfDate: string } | null> {
+  if (!supabase) throw new Error("Supabase server client not available");
+  const { data, error } = await supabase
+    .from("forge_player_projections")
+    .select("run_id,as_of_date")
+    .lte("as_of_date", targetDate)
+    .order("as_of_date", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  const runId = (data as any)?.run_id as string | undefined;
+  const asOfDate = (data as any)?.as_of_date as string | undefined;
+  if (!runId || !asOfDate) return null;
+  return { runId, asOfDate };
+}
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
@@ -19,7 +37,19 @@ export default async function handler(
 
     const dateParam = req.query.date as string | undefined;
     const targetDate = dateParam || new Date().toISOString().split("T")[0];
-    const runId = await requireLatestSucceededRunId(targetDate);
+    let resolvedDate = targetDate;
+    let runId: string | null = null;
+    let fallbackApplied = false;
+    try {
+      runId = await requireLatestSucceededRunId(targetDate);
+    } catch (e) {
+      if ((e as any)?.statusCode !== 404) throw e;
+      const fallback = await fetchFallbackRunWithPlayerData(targetDate);
+      if (!fallback) throw e;
+      runId = fallback.runId;
+      resolvedDate = fallback.asOfDate;
+      fallbackApplied = true;
+    }
 
     const { data, error } = await supabase
       .from("forge_player_projections")
@@ -87,7 +117,9 @@ export default async function handler(
     return res.status(200).json({
       durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
       runId,
-      asOfDate: targetDate,
+      asOfDate: resolvedDate,
+      requestedDate: targetDate,
+      fallbackApplied,
       data: projections
     });
   } catch (e) {

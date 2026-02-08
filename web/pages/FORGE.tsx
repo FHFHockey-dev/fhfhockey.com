@@ -11,9 +11,46 @@ type StatUncertainty = {
   p90: number;
 };
 
+type StarterSelectionMeta = {
+  model_context?: {
+    is_back_to_back?: boolean;
+    opponent_is_weak?: boolean;
+    team_is_weaker?: boolean;
+  };
+  opponent_offense_context?: {
+    context_adjustment_pct?: number;
+  };
+  candidate_goalies?: Array<{
+    goalie_id?: number;
+    last_played_date?: string | null;
+    days_since_last_played?: number | null;
+    l10_starts?: number | null;
+  }>;
+};
+
 type AccuracyPoint = {
   date: string;
   accuracy: number;
+};
+
+type GoalieCalibrationHints = {
+  sourceDate: string | null;
+  projectionDate: string | null;
+  sampleCount30d: number | null;
+  starterBrier: number | null;
+  winBrier: number | null;
+  shutoutBrier: number | null;
+  savesMae30d: number | null;
+  goalsAgainstMae30d: number | null;
+  savesIntervalHitRate: number | null;
+  goalsAllowedIntervalHitRate: number | null;
+};
+
+type GoalieApiMeta = {
+  modelVersion: string | null;
+  scenarioCount: number | null;
+  calibrationHints: GoalieCalibrationHints | null;
+  diagnosticsNotes: string[];
 };
 
 type PlayerProjection = {
@@ -66,6 +103,10 @@ type GoalieProjection = {
   uncertainty: {
     saves?: StatUncertainty;
     goals_allowed?: StatUncertainty;
+    model?: {
+      starter_selection?: StarterSelectionMeta;
+    };
+    [key: string]: unknown;
   };
 };
 
@@ -98,6 +139,119 @@ const formatPercent = (value: number | null | undefined) => {
   return `${(value * 100).toFixed(1)}%`;
 };
 
+const formatSignedPercent = (value: number | null | undefined) => {
+  if (value == null || Number.isNaN(value)) return "--";
+  const pct = value * 100;
+  const sign = pct > 0 ? "+" : "";
+  return `${sign}${pct.toFixed(1)}%`;
+};
+
+function getStarterDriverRows(goalie: GoalieProjection) {
+  const starterSelection = goalie.uncertainty?.model?.starter_selection;
+  const selectedGoalie = starterSelection?.candidate_goalies?.find(
+    (candidate) => candidate.goalie_id === goalie.goalie_id
+  );
+
+  const recencyText =
+    selectedGoalie?.days_since_last_played != null
+      ? `${selectedGoalie.days_since_last_played}d ago`
+      : selectedGoalie?.last_played_date
+        ? selectedGoalie.last_played_date
+        : "Unavailable";
+  const l10StartsText =
+    selectedGoalie?.l10_starts != null ? `${selectedGoalie.l10_starts}/10` : "Unavailable";
+  const b2bText =
+    starterSelection?.model_context?.is_back_to_back == null
+      ? "Unavailable"
+      : starterSelection.model_context.is_back_to_back
+        ? "Yes"
+        : "No";
+
+  const opponentContext = starterSelection?.opponent_offense_context;
+  const opponentStrengthBits: string[] = [];
+  if (starterSelection?.model_context?.opponent_is_weak != null) {
+    opponentStrengthBits.push(
+      starterSelection.model_context.opponent_is_weak
+        ? "Weak opponent"
+        : "Neutral/strong opponent"
+    );
+  }
+  if (opponentContext?.context_adjustment_pct != null) {
+    opponentStrengthBits.push(
+      `Context ${formatSignedPercent(opponentContext.context_adjustment_pct)}`
+    );
+  }
+  const opponentStrengthText =
+    opponentStrengthBits.length > 0 ? opponentStrengthBits.join(" • ") : "Unavailable";
+
+  return [
+    { label: "Recency", value: recencyText },
+    { label: "L10 Starts", value: l10StartsText },
+    { label: "Back-to-Back", value: b2bText },
+    { label: "Opponent Context", value: opponentStrengthText }
+  ];
+}
+
+function getConfidenceBadgeClass(confidenceTier: string | null) {
+  const tier = (confidenceTier ?? "").toUpperCase();
+  if (tier === "HIGH") return styles.confidenceHigh;
+  if (tier === "MEDIUM") return styles.confidenceMedium;
+  if (tier === "LOW") return styles.confidenceLow;
+  return "";
+}
+
+function getVolatilityClass(volatilityIndex: number | null) {
+  if (volatilityIndex == null || Number.isNaN(volatilityIndex)) {
+    return { label: "Unknown", className: "", tooltip: "Volatility data unavailable." };
+  }
+  if (volatilityIndex <= 0.95) {
+    return {
+      label: "Stable",
+      className: styles.volatilityStable,
+      tooltip:
+        "Stable volatility profile: outcomes are more consistent than average."
+    };
+  }
+  if (volatilityIndex <= 1.2) {
+    return {
+      label: "Moderate",
+      className: styles.volatilityModerate,
+      tooltip: "Moderate volatility profile: normal spread of outcomes."
+    };
+  }
+  return {
+    label: "Volatile",
+    className: styles.volatilityHigh,
+    tooltip:
+      "High volatility profile: wider outcome spread and larger downside tails."
+  };
+}
+
+function getRiskClass(blowupRisk: number | null) {
+  if (blowupRisk == null || Number.isNaN(blowupRisk)) {
+    return { label: "Unknown", className: "", tooltip: "Blowup risk unavailable." };
+  }
+  if (blowupRisk < 0.15) {
+    return {
+      label: "Low Risk",
+      className: styles.riskLow,
+      tooltip: "Low blowup risk: lower chance of severe downside start."
+    };
+  }
+  if (blowupRisk < 0.25) {
+    return {
+      label: "Medium Risk",
+      className: styles.riskMedium,
+      tooltip: "Medium blowup risk: downside risk is present but not extreme."
+    };
+  }
+  return {
+    label: "High Risk",
+    className: styles.riskHigh,
+    tooltip: "High blowup risk: elevated chance of severe downside start."
+  };
+}
+
 const clampPercent = (value: number) => Math.max(0, Math.min(100, value));
 
 const FORGEPage: NextPage = () => {
@@ -115,6 +269,12 @@ const FORGEPage: NextPage = () => {
   const [accuracyLoading, setAccuracyLoading] = useState(true);
   const [accuracyError, setAccuracyError] = useState<string | null>(null);
   const [accuracyPlaceholder, setAccuracyPlaceholder] = useState(false);
+  const [goalieApiMeta, setGoalieApiMeta] = useState<GoalieApiMeta>({
+    modelVersion: null,
+    scenarioCount: null,
+    calibrationHints: null,
+    diagnosticsNotes: []
+  });
 
   useEffect(() => {
     const fetchProjections = async () => {
@@ -151,6 +311,21 @@ const FORGEPage: NextPage = () => {
         if (!res.ok) throw new Error("Failed to fetch goalie projections");
         const data = await res.json();
         setGoalieProjections(data.data ?? []);
+        setGoalieApiMeta({
+          modelVersion:
+            typeof data.modelVersion === "string" ? data.modelVersion : null,
+          scenarioCount:
+            Number.isFinite(data.scenarioCount) && Number(data.scenarioCount) >= 0
+              ? Number(data.scenarioCount)
+              : null,
+          calibrationHints:
+            data.calibrationHints && typeof data.calibrationHints === "object"
+              ? (data.calibrationHints as GoalieCalibrationHints)
+              : null,
+          diagnosticsNotes: Array.isArray(data?.diagnostics?.notes)
+            ? data.diagnostics.notes.filter((n: unknown) => typeof n === "string")
+            : []
+        });
       } catch (err) {
         if (err instanceof Error) setGoalieError(err.message);
         else setGoalieError("An unknown error occurred");
@@ -552,12 +727,54 @@ const FORGEPage: NextPage = () => {
         )}
 
         {!isLoading && !activeError && viewMode === "goalies" && (
-          <div className={styles.grid}>
-            {filteredGoalies.map((g) => (
-              <div
-                key={g.goalie_id}
-                className={classNames(styles.card, styles["pos-G"])}
-              >
+          <>
+            <section className={styles.goalieDisclosure}>
+              <h3>Goalie Model Disclosure</h3>
+              <div className={styles.disclosureMeta}>
+                <span>Model: {goalieApiMeta.modelVersion ?? "Unavailable"}</span>
+                <span>
+                  Starter scenarios:{" "}
+                  {goalieApiMeta.scenarioCount != null
+                    ? goalieApiMeta.scenarioCount
+                    : "Unavailable"}
+                </span>
+                <span>
+                  Starter calibration (Brier):{" "}
+                  {goalieApiMeta.calibrationHints?.starterBrier != null
+                    ? goalieApiMeta.calibrationHints.starterBrier.toFixed(3)
+                    : "Unavailable"}
+                </span>
+              </div>
+              <ul>
+                <li>
+                  Starter probabilities are model estimates, not confirmed lineup locks.
+                </li>
+                <li>
+                  Public data cannot fully capture pre-shot movement, traffic/screening, or coaching intent.
+                </li>
+                <li>
+                  Calibration hints summarize recent historical performance and do not guarantee single-game outcomes.
+                </li>
+                <li>
+                  Back-to-back, recency, and opponent context are heuristic signals and can be overridden by late news.
+                </li>
+              </ul>
+              {goalieApiMeta.diagnosticsNotes.length > 0 && (
+                <p className={styles.disclosureNotes}>
+                  Diagnostics: {goalieApiMeta.diagnosticsNotes.slice(0, 2).join(" | ")}
+                </p>
+              )}
+            </section>
+
+            <div className={styles.grid}>
+              {filteredGoalies.map((g) => {
+              const volatilityBadge = getVolatilityClass(g.volatility_index);
+              const riskBadge = getRiskClass(g.blowup_risk);
+              return (
+                <div
+                  key={g.goalie_id}
+                  className={classNames(styles.card, styles["pos-G"])}
+                >
                 <h2>{g.goalie_name}</h2>
                 <p>
                   G - {g.team_abbreviation || g.team_name} vs {g.opponent_team_abbreviation || g.opponent_team_name}
@@ -590,13 +807,58 @@ const FORGEPage: NextPage = () => {
                 </ul>
 
                 <div className={styles.goalieMetaRow}>
-                  <span>{g.quality_tier ?? "--"}</span>
-                  <span>{g.reliability_tier ?? "--"}</span>
-                  <span>{g.confidence_tier ?? "--"}</span>
+                  <span
+                    title="Quality tier summarizes modeled goalie performance level versus league baseline."
+                  >
+                    {g.quality_tier ?? "--"}
+                  </span>
+                  <span
+                    title="Reliability tier summarizes expected consistency of goalie outcomes."
+                  >
+                    {g.reliability_tier ?? "--"}
+                  </span>
+                  <span
+                    className={classNames(
+                      styles.indicatorBadge,
+                      getConfidenceBadgeClass(g.confidence_tier)
+                    )}
+                    title="Confidence tier indicates model confidence level based on evidence sample size and stability."
+                  >
+                    Confidence: {g.confidence_tier ?? "--"}
+                  </span>
                 </div>
                 <div className={styles.goalieMetaRow}>
-                  <span>Risk: {formatPercent(g.blowup_risk)}</span>
+                  <span
+                    className={classNames(
+                      styles.indicatorBadge,
+                      volatilityBadge.className
+                    )}
+                    title={volatilityBadge.tooltip}
+                  >
+                    Volatility: {volatilityBadge.label}
+                  </span>
+                  <span
+                    className={classNames(
+                      styles.indicatorBadge,
+                      riskBadge.className
+                    )}
+                    title={`${riskBadge.tooltip} (${formatPercent(g.blowup_risk)})`}
+                  >
+                    Risk: {riskBadge.label}
+                  </span>
                   <span>Call: {g.recommendation ?? "--"}</span>
+                </div>
+
+                <div className={styles.starterDrivers}>
+                  <h3>Starter Confidence Drivers</h3>
+                  <ul>
+                    {getStarterDriverRows(g).map((driver) => (
+                      <li key={driver.label}>
+                        <span>{driver.label}</span>
+                        <strong>{driver.value}</strong>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
 
                 {g.uncertainty && (
@@ -624,8 +886,10 @@ const FORGEPage: NextPage = () => {
                   </div>
                 )}
               </div>
-            ))}
-          </div>
+            );
+              })}
+            </div>
+          </>
         )}
       </main>
     </div>
