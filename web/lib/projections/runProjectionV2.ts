@@ -74,6 +74,64 @@ type PlayerTeamPositionRow = {
   position: string | null;
 };
 
+type WgoSkaterDeploymentProfile = {
+  toiPerGameSec: number | null;
+  esToiPerGameSec: number | null;
+  ppToiPerGameSec: number | null;
+};
+
+type SkaterShotQualityProfile = {
+  sourceDate: string | null;
+  nstShotsPer60: number | null;
+  nstIxgPer60: number | null;
+  nstRushAttemptsPer60: number | null;
+  nstReboundsCreatedPer60: number | null;
+};
+
+type SkaterOnIceContextProfile = {
+  sourceDate: string | null;
+  nstOiXgfPer60: number | null;
+  nstOiXgaPer60: number | null;
+  nstOiCfPct: number | null;
+  possessionPctSafe: number | null;
+};
+
+type SkaterTeamLevelContextAdjustment = {
+  sampleWeight: number;
+  shotRateMultiplier: number;
+  goalRateMultiplier: number;
+  assistRateMultiplier: number;
+  paceEdge: number;
+  opponentDefenseEdge: number;
+};
+
+type OpponentGoalieContext = {
+  source: "goalie_start_projections";
+  weightedProjectedGsaaPer60: number | null;
+  topStarterProbability: number;
+  probabilityMass: number;
+  isConfirmedStarter: boolean;
+};
+
+type SkaterRestScheduleAdjustment = {
+  sampleWeight: number;
+  toiMultiplier: number;
+  shotRateMultiplier: number;
+  goalRateMultiplier: number;
+  assistRateMultiplier: number;
+  restDelta: number;
+  teamRestDays: number | null;
+  opponentRestDays: number | null;
+};
+
+type SkaterSampleShrinkageAdjustment = {
+  sampleWeight: number;
+  isLowSample: boolean;
+  usedCallupFallback: boolean;
+  evidenceToiSeconds: number;
+  evidenceShots: number;
+};
+
 function assertSupabase() {
   if (!supabase) throw new Error("Supabase server client not available");
 }
@@ -96,9 +154,36 @@ function safeNumber(n: number | null | undefined, fallback: number): number {
   return typeof n === "number" && Number.isFinite(n) ? n : fallback;
 }
 
+function finiteOrNull(n: number | null | undefined): number | null {
+  return typeof n === "number" && Number.isFinite(n) ? n : null;
+}
+
 function computeShotsFromRate(toiSeconds: number, sogPer60: number): number {
   const toiMinutes = toiSeconds / 60;
   return (sogPer60 / 60) * toiMinutes;
+}
+
+export function normalizeWgoToiToSeconds(value: number | null | undefined): number | null {
+  const n = finiteOrNull(value);
+  if (n == null || n <= 0) return null;
+  // WGO TOI/game fields are typically in minutes, but tolerate second-like values.
+  if (n <= 60) return Number((n * 60).toFixed(3));
+  if (n <= 3600) return Number(n.toFixed(3));
+  return 3600;
+}
+
+export function blendToiSecondsWithDeploymentPrior(args: {
+  rollingSeconds: number | null;
+  deploymentPriorSeconds: number | null;
+  rollingWeight: number;
+}): number | null {
+  const rolling = finiteOrNull(args.rollingSeconds);
+  const prior = finiteOrNull(args.deploymentPriorSeconds);
+  const rollingWeight = clamp(args.rollingWeight, 0, 1);
+  if (rolling == null && prior == null) return null;
+  if (rolling == null) return prior;
+  if (prior == null) return rolling;
+  return Number((rollingWeight * rolling + (1 - rollingWeight) * prior).toFixed(3));
 }
 
 function computeRate(
@@ -630,6 +715,42 @@ const HORIZON_DECAY_PER_GAME = 0.015;
 const HORIZON_B2B_PENALTY = 0.08;
 const HORIZON_ZERO_REST_PENALTY = 0.12;
 const HORIZON_LONG_REST_BOOST = 0.03;
+const SKATER_IXG_PER_SHOT_BASELINE = 0.09;
+const SKATER_RUSH_REBOUND_PER60_BASELINE = 1.1;
+const SKATER_SHOT_QUALITY_MIN_MULTIPLIER = 0.82;
+const SKATER_SHOT_QUALITY_MAX_MULTIPLIER = 1.2;
+const SKATER_CONVERSION_MIN_MULTIPLIER = 0.78;
+const SKATER_CONVERSION_MAX_MULTIPLIER = 1.3;
+const SKATER_ON_ICE_XG_PER60_BASELINE = 2.45;
+const SKATER_ON_ICE_POSSESSION_BASELINE = 0.5;
+const SKATER_ON_ICE_SHOT_ENV_MIN_MULTIPLIER = 0.86;
+const SKATER_ON_ICE_SHOT_ENV_MAX_MULTIPLIER = 1.16;
+const SKATER_ON_ICE_GOAL_ENV_MIN_MULTIPLIER = 0.84;
+const SKATER_ON_ICE_GOAL_ENV_MAX_MULTIPLIER = 1.2;
+const SKATER_ON_ICE_ASSIST_ENV_MIN_MULTIPLIER = 0.82;
+const SKATER_ON_ICE_ASSIST_ENV_MAX_MULTIPLIER = 1.22;
+const SKATER_TEAM_LEVEL_SHOT_MIN_MULTIPLIER = 0.86;
+const SKATER_TEAM_LEVEL_SHOT_MAX_MULTIPLIER = 1.18;
+const SKATER_TEAM_LEVEL_GOAL_MIN_MULTIPLIER = 0.82;
+const SKATER_TEAM_LEVEL_GOAL_MAX_MULTIPLIER = 1.2;
+const SKATER_TEAM_LEVEL_ASSIST_MIN_MULTIPLIER = 0.84;
+const SKATER_TEAM_LEVEL_ASSIST_MAX_MULTIPLIER = 1.2;
+const SKATER_OPP_GOALIE_GOAL_MIN_MULTIPLIER = 0.82;
+const SKATER_OPP_GOALIE_GOAL_MAX_MULTIPLIER = 1.22;
+const SKATER_OPP_GOALIE_ASSIST_MIN_MULTIPLIER = 0.86;
+const SKATER_OPP_GOALIE_ASSIST_MAX_MULTIPLIER = 1.18;
+const SKATER_REST_TOI_MIN_MULTIPLIER = 0.88;
+const SKATER_REST_TOI_MAX_MULTIPLIER = 1.1;
+const SKATER_REST_SHOT_MIN_MULTIPLIER = 0.86;
+const SKATER_REST_SHOT_MAX_MULTIPLIER = 1.14;
+const SKATER_REST_GOAL_MIN_MULTIPLIER = 0.85;
+const SKATER_REST_GOAL_MAX_MULTIPLIER = 1.16;
+const SKATER_REST_ASSIST_MIN_MULTIPLIER = 0.86;
+const SKATER_REST_ASSIST_MAX_MULTIPLIER = 1.15;
+const SKATER_SMALL_SAMPLE_TOI_SECONDS_SCALE = 900;
+const SKATER_SMALL_SAMPLE_SHOTS_SCALE = 45;
+const SKATER_SMALL_SAMPLE_LOW_WEIGHT_THRESHOLD = 0.45;
+const SKATER_SMALL_SAMPLE_CALLUP_WEIGHT_THRESHOLD = 0.22;
 
 type ActiveSkaterFilterResult = {
   eligibleSkaterIds: number[];
@@ -926,6 +1047,462 @@ export function filterActiveSkaterCandidateIds(args: {
     eligibleSkaterIds,
     recencyMultiplierByPlayerId,
     stats
+  };
+}
+
+export function computeSkaterShotQualityAdjustments(args: {
+  profile: SkaterShotQualityProfile | null;
+}): {
+  sampleWeight: number;
+  shotRateMultiplier: number;
+  goalRateMultiplier: number;
+  qualityPerShot: number | null;
+  rushReboundPer60: number | null;
+} {
+  const profile = args.profile;
+  if (!profile) {
+    return {
+      sampleWeight: 0,
+      shotRateMultiplier: 1,
+      goalRateMultiplier: 1,
+      qualityPerShot: null,
+      rushReboundPer60: null
+    };
+  }
+
+  const shotsPer60 = finiteOrNull(profile.nstShotsPer60);
+  const ixgPer60 = finiteOrNull(profile.nstIxgPer60);
+  const rushPer60 = Math.max(0, finiteOrNull(profile.nstRushAttemptsPer60) ?? 0);
+  const reboundsPer60 = Math.max(
+    0,
+    finiteOrNull(profile.nstReboundsCreatedPer60) ?? 0
+  );
+  const qualityPerShot =
+    shotsPer60 != null && shotsPer60 > 0 && ixgPer60 != null
+      ? ixgPer60 / shotsPer60
+      : null;
+  const rushReboundPer60 = rushPer60 + reboundsPer60;
+
+  const shotsSignal = Math.max(0, shotsPer60 ?? 0);
+  const sampleWeight = clamp(shotsSignal / (shotsSignal + 5), 0, 1);
+  const qualityEdge =
+    qualityPerShot != null
+      ? clamp(
+          (qualityPerShot - SKATER_IXG_PER_SHOT_BASELINE) /
+            SKATER_IXG_PER_SHOT_BASELINE,
+          -0.35,
+          0.35
+        )
+      : 0;
+  const rushReboundEdge = clamp(
+    (rushReboundPer60 - SKATER_RUSH_REBOUND_PER60_BASELINE) /
+      SKATER_RUSH_REBOUND_PER60_BASELINE,
+    -0.5,
+    0.5
+  );
+
+  const shotRateMultiplier = clamp(
+    1 + sampleWeight * (qualityEdge * 0.05 + rushReboundEdge * 0.08),
+    SKATER_SHOT_QUALITY_MIN_MULTIPLIER,
+    SKATER_SHOT_QUALITY_MAX_MULTIPLIER
+  );
+  const goalRateMultiplier = clamp(
+    1 + sampleWeight * (qualityEdge * 0.26 + rushReboundEdge * 0.07),
+    SKATER_CONVERSION_MIN_MULTIPLIER,
+    SKATER_CONVERSION_MAX_MULTIPLIER
+  );
+
+  return {
+    sampleWeight: Number(sampleWeight.toFixed(4)),
+    shotRateMultiplier: Number(shotRateMultiplier.toFixed(4)),
+    goalRateMultiplier: Number(goalRateMultiplier.toFixed(4)),
+    qualityPerShot:
+      qualityPerShot == null ? null : Number(qualityPerShot.toFixed(4)),
+    rushReboundPer60: Number(rushReboundPer60.toFixed(4))
+  };
+}
+
+export function computeSkaterOnIceContextAdjustments(args: {
+  profile: SkaterOnIceContextProfile | null;
+}): {
+  sampleWeight: number;
+  shotEnvironmentMultiplier: number;
+  goalEnvironmentMultiplier: number;
+  assistEnvironmentMultiplier: number;
+  possessionPct: number | null;
+} {
+  const profile = args.profile;
+  if (!profile) {
+    return {
+      sampleWeight: 0,
+      shotEnvironmentMultiplier: 1,
+      goalEnvironmentMultiplier: 1,
+      assistEnvironmentMultiplier: 1,
+      possessionPct: null
+    };
+  }
+
+  const xgfPer60 = finiteOrNull(profile.nstOiXgfPer60);
+  const xgaPer60 = finiteOrNull(profile.nstOiXgaPer60);
+  const possessionPct =
+    normalizeRateOrPercent(profile.nstOiCfPct) ??
+    normalizeRateOrPercent(profile.possessionPctSafe);
+  const xgSignal = Math.max(0, (xgfPer60 ?? 0) + (xgaPer60 ?? 0));
+  const sampleWeight = clamp(xgSignal / (xgSignal + 2.5), 0, 1);
+
+  const offenseEdge =
+    xgfPer60 != null
+      ? clamp(
+          (xgfPer60 - SKATER_ON_ICE_XG_PER60_BASELINE) /
+            SKATER_ON_ICE_XG_PER60_BASELINE,
+          -0.3,
+          0.3
+        )
+      : 0;
+  const defenseDrag =
+    xgaPer60 != null
+      ? clamp(
+          (xgaPer60 - SKATER_ON_ICE_XG_PER60_BASELINE) /
+            SKATER_ON_ICE_XG_PER60_BASELINE,
+          -0.3,
+          0.3
+        )
+      : 0;
+  const possessionEdge =
+    possessionPct != null
+      ? clamp(
+          (possessionPct - SKATER_ON_ICE_POSSESSION_BASELINE) /
+            SKATER_ON_ICE_POSSESSION_BASELINE,
+          -0.25,
+          0.25
+        )
+      : 0;
+
+  const shotEnvironmentMultiplier = clamp(
+    1 + sampleWeight * (offenseEdge * 0.14 + possessionEdge * 0.1 - defenseDrag * 0.05),
+    SKATER_ON_ICE_SHOT_ENV_MIN_MULTIPLIER,
+    SKATER_ON_ICE_SHOT_ENV_MAX_MULTIPLIER
+  );
+  const goalEnvironmentMultiplier = clamp(
+    1 + sampleWeight * (offenseEdge * 0.18 + possessionEdge * 0.07 - defenseDrag * 0.06),
+    SKATER_ON_ICE_GOAL_ENV_MIN_MULTIPLIER,
+    SKATER_ON_ICE_GOAL_ENV_MAX_MULTIPLIER
+  );
+  const assistEnvironmentMultiplier = clamp(
+    1 + sampleWeight * (offenseEdge * 0.2 + possessionEdge * 0.13 - defenseDrag * 0.04),
+    SKATER_ON_ICE_ASSIST_ENV_MIN_MULTIPLIER,
+    SKATER_ON_ICE_ASSIST_ENV_MAX_MULTIPLIER
+  );
+
+  return {
+    sampleWeight: Number(sampleWeight.toFixed(4)),
+    shotEnvironmentMultiplier: Number(shotEnvironmentMultiplier.toFixed(4)),
+    goalEnvironmentMultiplier: Number(goalEnvironmentMultiplier.toFixed(4)),
+    assistEnvironmentMultiplier: Number(assistEnvironmentMultiplier.toFixed(4)),
+    possessionPct:
+      possessionPct == null ? null : Number(possessionPct.toFixed(4))
+  };
+}
+
+export function computeSkaterTeamLevelContextAdjustments(args: {
+  teamStrengthPrior: TeamStrengthPrior | null;
+  opponentStrengthPrior: TeamStrengthPrior | null;
+  teamFiveOnFiveProfile: TeamFiveOnFiveProfile | null;
+  opponentFiveOnFiveProfile: TeamFiveOnFiveProfile | null;
+  teamNstProfile: TeamNstExpectedGoalsProfile | null;
+  opponentNstProfile: TeamNstExpectedGoalsProfile | null;
+}): SkaterTeamLevelContextAdjustment {
+  const teamStrength = args.teamStrengthPrior;
+  const opponentStrength = args.opponentStrengthPrior;
+  const teamFiveOnFive = args.teamFiveOnFiveProfile;
+  const opponentFiveOnFive = args.opponentFiveOnFiveProfile;
+  const teamNst = args.teamNstProfile;
+  const opponentNst = args.opponentNstProfile;
+
+  if (
+    !teamStrength &&
+    !opponentStrength &&
+    !teamFiveOnFive &&
+    !opponentFiveOnFive &&
+    !teamNst &&
+    !opponentNst
+  ) {
+    return {
+      sampleWeight: 0,
+      shotRateMultiplier: 1,
+      goalRateMultiplier: 1,
+      assistRateMultiplier: 1,
+      paceEdge: 0,
+      opponentDefenseEdge: 0
+    };
+  }
+
+  const teamXgfPerGame = teamStrength?.xgfPerGame ?? TEAM_XG_BASELINE_PER_GAME;
+  const opponentXgaPerGame =
+    opponentStrength?.xgaPerGame ?? TEAM_XG_BASELINE_PER_GAME;
+  const teamPdo =
+    normalizeRateOrPercent(teamFiveOnFive?.shootingPlusSavePct5v5) ??
+    TEAM_5V5_PDO_BASELINE;
+  const opponentSavePct5v5 =
+    normalizeRateOrPercent(opponentFiveOnFive?.savePct5v5) ??
+    TEAM_5V5_SAVE_PCT_BASELINE;
+  const teamNstXgaPer60 = teamNst?.xgaPer60 ?? TEAM_NST_XGA_PER60_BASELINE;
+  const opponentNstXgaPer60 =
+    opponentNst?.xgaPer60 ?? TEAM_NST_XGA_PER60_BASELINE;
+  const nstPaceProxy = (teamNstXgaPer60 + opponentNstXgaPer60) / 2;
+
+  const strengthSampleRaw =
+    Math.max(0, teamStrength?.xga ?? 0) + Math.max(0, opponentStrength?.xga ?? 0);
+  const fiveOnFiveSampleRaw =
+    Math.max(0, teamFiveOnFive?.gamesPlayed ?? 0) +
+    Math.max(0, opponentFiveOnFive?.gamesPlayed ?? 0);
+  const nstSampleRaw =
+    Math.max(0, teamNst?.gamesPlayed ?? 0) + Math.max(0, opponentNst?.gamesPlayed ?? 0);
+  const sampleWeight = clamp(
+    strengthSampleRaw / (strengthSampleRaw + 260) * 0.35 +
+      fiveOnFiveSampleRaw / (fiveOnFiveSampleRaw + 18) * 0.3 +
+      nstSampleRaw / (nstSampleRaw + 40) * 0.35,
+    0,
+    1
+  );
+
+  const offenseEdge = clamp(
+    (teamXgfPerGame - TEAM_XG_BASELINE_PER_GAME) / TEAM_XG_BASELINE_PER_GAME,
+    -0.22,
+    0.22
+  );
+  const defenseLiabilityEdge = clamp(
+    (opponentXgaPerGame - TEAM_XG_BASELINE_PER_GAME) / TEAM_XG_BASELINE_PER_GAME,
+    -0.22,
+    0.22
+  );
+  const paceEdge = clamp(
+    (nstPaceProxy - TEAM_NST_XGA_PER60_BASELINE) / TEAM_NST_XGA_PER60_BASELINE,
+    -0.2,
+    0.2
+  );
+  const pdoEdge = clamp(
+    teamPdo - TEAM_5V5_PDO_BASELINE,
+    -0.08,
+    0.08
+  );
+  const opponentSaveEdge = clamp(
+    TEAM_5V5_SAVE_PCT_BASELINE - opponentSavePct5v5,
+    -0.03,
+    0.03
+  );
+
+  const shotRateMultiplier = clamp(
+    1 +
+      sampleWeight *
+        (offenseEdge * 0.14 +
+          defenseLiabilityEdge * 0.18 +
+          paceEdge * 0.2 +
+          pdoEdge * 0.06),
+    SKATER_TEAM_LEVEL_SHOT_MIN_MULTIPLIER,
+    SKATER_TEAM_LEVEL_SHOT_MAX_MULTIPLIER
+  );
+  const goalRateMultiplier = clamp(
+    1 +
+      sampleWeight *
+        (offenseEdge * 0.16 +
+          defenseLiabilityEdge * 0.22 +
+          opponentSaveEdge * 2.3 +
+          paceEdge * 0.08),
+    SKATER_TEAM_LEVEL_GOAL_MIN_MULTIPLIER,
+    SKATER_TEAM_LEVEL_GOAL_MAX_MULTIPLIER
+  );
+  const assistRateMultiplier = clamp(
+    1 +
+      sampleWeight *
+        (offenseEdge * 0.18 +
+          defenseLiabilityEdge * 0.16 +
+          paceEdge * 0.12 +
+          pdoEdge * 0.08),
+    SKATER_TEAM_LEVEL_ASSIST_MIN_MULTIPLIER,
+    SKATER_TEAM_LEVEL_ASSIST_MAX_MULTIPLIER
+  );
+
+  return {
+    sampleWeight: Number(sampleWeight.toFixed(4)),
+    shotRateMultiplier: Number(shotRateMultiplier.toFixed(4)),
+    goalRateMultiplier: Number(goalRateMultiplier.toFixed(4)),
+    assistRateMultiplier: Number(assistRateMultiplier.toFixed(4)),
+    paceEdge: Number(paceEdge.toFixed(4)),
+    opponentDefenseEdge: Number(defenseLiabilityEdge.toFixed(4))
+  };
+}
+
+export function computeSkaterOpponentGoalieContextAdjustments(args: {
+  context: OpponentGoalieContext | null;
+}): {
+  sampleWeight: number;
+  goalRateMultiplier: number;
+  assistRateMultiplier: number;
+  weightedProjectedGsaaPer60: number | null;
+  starterCertainty: number;
+} {
+  const context = args.context;
+  if (!context) {
+    return {
+      sampleWeight: 0,
+      goalRateMultiplier: 1,
+      assistRateMultiplier: 1,
+      weightedProjectedGsaaPer60: null,
+      starterCertainty: 0
+    };
+  }
+
+  const weightedGsaa = finiteOrNull(context.weightedProjectedGsaaPer60);
+  const starterCertainty = context.isConfirmedStarter
+    ? 1
+    : clamp(context.topStarterProbability, 0, 1);
+  const probabilityMass = clamp(context.probabilityMass, 0, 1);
+  const sampleWeight = clamp(
+    probabilityMass * (0.45 + 0.55 * starterCertainty),
+    0,
+    1
+  );
+  const qualityEdge =
+    weightedGsaa != null ? clamp(weightedGsaa / GOALIE_GSAA_PRIOR_MAX_ABS, -1, 1) : 0;
+
+  const goalRateMultiplier = clamp(
+    1 + sampleWeight * (-qualityEdge * 0.18),
+    SKATER_OPP_GOALIE_GOAL_MIN_MULTIPLIER,
+    SKATER_OPP_GOALIE_GOAL_MAX_MULTIPLIER
+  );
+  const assistRateMultiplier = clamp(
+    1 + sampleWeight * (-qualityEdge * 0.11),
+    SKATER_OPP_GOALIE_ASSIST_MIN_MULTIPLIER,
+    SKATER_OPP_GOALIE_ASSIST_MAX_MULTIPLIER
+  );
+
+  return {
+    sampleWeight: Number(sampleWeight.toFixed(4)),
+    goalRateMultiplier: Number(goalRateMultiplier.toFixed(4)),
+    assistRateMultiplier: Number(assistRateMultiplier.toFixed(4)),
+    weightedProjectedGsaaPer60:
+      weightedGsaa == null ? null : Number(weightedGsaa.toFixed(4)),
+    starterCertainty: Number(starterCertainty.toFixed(4))
+  };
+}
+
+export function computeSkaterRestScheduleAdjustments(args: {
+  teamRestDays: number | null;
+  opponentRestDays: number | null;
+  isHome: boolean;
+}): SkaterRestScheduleAdjustment {
+  const teamRestDays =
+    Number.isFinite(args.teamRestDays) && args.teamRestDays != null
+      ? Math.max(0, Number(args.teamRestDays))
+      : null;
+  const opponentRestDays =
+    Number.isFinite(args.opponentRestDays) && args.opponentRestDays != null
+      ? Math.max(0, Number(args.opponentRestDays))
+      : null;
+
+  if (teamRestDays == null && opponentRestDays == null) {
+    return {
+      sampleWeight: 0,
+      toiMultiplier: 1,
+      shotRateMultiplier: 1,
+      goalRateMultiplier: 1,
+      assistRateMultiplier: 1,
+      restDelta: 0,
+      teamRestDays: null,
+      opponentRestDays: null
+    };
+  }
+
+  const teamRest = teamRestDays ?? 1;
+  const oppRest = opponentRestDays ?? 1;
+  const restDelta = clamp((teamRest - oppRest) / 3, -1, 1);
+  const teamFatiguePenalty = teamRest <= 0 ? 0.11 : teamRest === 1 ? 0.035 : 0;
+  const teamRecoveryBoost = teamRest >= 3 ? 0.03 : teamRest === 2 ? 0.012 : 0;
+  const opponentFatigueBoost = oppRest <= 0 ? 0.055 : oppRest === 1 ? 0.018 : 0;
+  const homeIceEdge = args.isHome ? 0.012 : -0.004;
+
+  const toiMultiplier = clamp(
+    1 -
+      teamFatiguePenalty +
+      teamRecoveryBoost +
+      restDelta * 0.03 +
+      homeIceEdge * 0.6,
+    SKATER_REST_TOI_MIN_MULTIPLIER,
+    SKATER_REST_TOI_MAX_MULTIPLIER
+  );
+  const shotRateMultiplier = clamp(
+    1 +
+      opponentFatigueBoost -
+      teamFatiguePenalty * 0.35 +
+      restDelta * 0.045 +
+      homeIceEdge * 0.45,
+    SKATER_REST_SHOT_MIN_MULTIPLIER,
+    SKATER_REST_SHOT_MAX_MULTIPLIER
+  );
+  const goalRateMultiplier = clamp(
+    1 +
+      opponentFatigueBoost * 0.72 -
+      teamFatiguePenalty * 0.25 +
+      restDelta * 0.035 +
+      homeIceEdge * 0.8,
+    SKATER_REST_GOAL_MIN_MULTIPLIER,
+    SKATER_REST_GOAL_MAX_MULTIPLIER
+  );
+  const assistRateMultiplier = clamp(
+    1 +
+      opponentFatigueBoost * 0.5 -
+      teamFatiguePenalty * 0.2 +
+      restDelta * 0.04 +
+      homeIceEdge * 0.55,
+    SKATER_REST_ASSIST_MIN_MULTIPLIER,
+    SKATER_REST_ASSIST_MAX_MULTIPLIER
+  );
+
+  return {
+    sampleWeight: 1,
+    toiMultiplier: Number(toiMultiplier.toFixed(4)),
+    shotRateMultiplier: Number(shotRateMultiplier.toFixed(4)),
+    goalRateMultiplier: Number(goalRateMultiplier.toFixed(4)),
+    assistRateMultiplier: Number(assistRateMultiplier.toFixed(4)),
+    restDelta: Number(restDelta.toFixed(4)),
+    teamRestDays,
+    opponentRestDays
+  };
+}
+
+export function computeSkaterSampleShrinkageAdjustments(args: {
+  evToiSecondsAll: number | null;
+  ppToiSecondsAll: number | null;
+  evShotsAll: number | null;
+  ppShotsAll: number | null;
+}): SkaterSampleShrinkageAdjustment {
+  const evToi = Math.max(0, finiteOrNull(args.evToiSecondsAll) ?? 0);
+  const ppToi = Math.max(0, finiteOrNull(args.ppToiSecondsAll) ?? 0);
+  const evShots = Math.max(0, finiteOrNull(args.evShotsAll) ?? 0);
+  const ppShots = Math.max(0, finiteOrNull(args.ppShotsAll) ?? 0);
+  const evidenceToiSeconds = evToi + ppToi;
+  const evidenceShots = evShots + ppShots;
+
+  const toiEvidenceWeight = clamp(
+    evidenceToiSeconds / (evidenceToiSeconds + SKATER_SMALL_SAMPLE_TOI_SECONDS_SCALE),
+    0,
+    1
+  );
+  const shotEvidenceWeight = clamp(
+    evidenceShots / (evidenceShots + SKATER_SMALL_SAMPLE_SHOTS_SCALE),
+    0,
+    1
+  );
+  const sampleWeight = Number(
+    clamp(toiEvidenceWeight * 0.58 + shotEvidenceWeight * 0.42, 0, 1).toFixed(4)
+  );
+  return {
+    sampleWeight,
+    isLowSample: sampleWeight < SKATER_SMALL_SAMPLE_LOW_WEIGHT_THRESHOLD,
+    usedCallupFallback: sampleWeight < SKATER_SMALL_SAMPLE_CALLUP_WEIGHT_THRESHOLD,
+    evidenceToiSeconds: Number(evidenceToiSeconds.toFixed(3)),
+    evidenceShots: Number(evidenceShots.toFixed(3))
   };
 }
 
@@ -2099,6 +2676,201 @@ async function fetchRollingRows(
   return (data ?? []) as any;
 }
 
+async function fetchLatestWgoSkaterDeploymentProfiles(
+  playerIds: number[],
+  cutoffDate: string
+): Promise<Map<number, WgoSkaterDeploymentProfile>> {
+  assertSupabase();
+  if (playerIds.length === 0) return new Map();
+
+  const oneYearAgo = new Date(
+    new Date(cutoffDate).getTime() - 365 * 24 * 60 * 60 * 1000
+  )
+    .toISOString()
+    .split("T")[0];
+
+  const { data, error } = await supabase
+    .from("wgo_skater_stats")
+    .select("player_id,date,toi_per_game,es_toi_per_game,pp_toi_per_game")
+    .in("player_id", playerIds)
+    .lt("date", cutoffDate)
+    .gte("date", oneYearAgo)
+    .order("date", { ascending: false })
+    .limit(5000);
+  if (error) throw error;
+
+  const latestByPlayer = new Map<number, any>();
+  for (const row of (data ?? []) as any[]) {
+    const playerId = Number(row?.player_id);
+    if (!Number.isFinite(playerId)) continue;
+    if (!latestByPlayer.has(playerId)) latestByPlayer.set(playerId, row);
+  }
+
+  const profiles = new Map<number, WgoSkaterDeploymentProfile>();
+  for (const [playerId, row] of latestByPlayer.entries()) {
+    const totalToiSec = normalizeWgoToiToSeconds(row?.toi_per_game);
+    const esToiSecRaw = normalizeWgoToiToSeconds(row?.es_toi_per_game);
+    const ppToiSecRaw = normalizeWgoToiToSeconds(row?.pp_toi_per_game);
+    const ppToiSec = ppToiSecRaw != null ? clamp(ppToiSecRaw, 0, 1200) : null;
+    const esToiSec =
+      esToiSecRaw != null
+        ? clamp(esToiSecRaw, 0, 2400)
+        : totalToiSec != null && ppToiSec != null
+          ? clamp(totalToiSec - ppToiSec, 0, 2400)
+          : null;
+
+    profiles.set(playerId, {
+      toiPerGameSec: totalToiSec,
+      esToiPerGameSec: esToiSec,
+      ppToiPerGameSec: ppToiSec
+    });
+  }
+
+  return profiles;
+}
+
+async function fetchLatestSkaterShotQualityProfiles(
+  playerIds: number[],
+  cutoffDate: string
+): Promise<Map<number, SkaterShotQualityProfile>> {
+  assertSupabase();
+  if (playerIds.length === 0) return new Map();
+
+  const oneYearAgo = new Date(
+    new Date(cutoffDate).getTime() - 365 * 24 * 60 * 60 * 1000
+  )
+    .toISOString()
+    .split("T")[0];
+
+  const { data, error } = await supabase
+    .from("player_stats_unified")
+    .select(
+      "player_id,date,nst_shots_per_60,nst_ixg_per_60,nst_rush_attempts_per_60,nst_rebounds_created_per_60"
+    )
+    .in("player_id", playerIds)
+    .lte("date", cutoffDate)
+    .gte("date", oneYearAgo)
+    .order("date", { ascending: false })
+    .limit(5000);
+  if (error) throw error;
+
+  const latestByPlayer = new Map<number, any>();
+  for (const row of (data ?? []) as any[]) {
+    const playerId = Number(row?.player_id);
+    if (!Number.isFinite(playerId)) continue;
+    if (!latestByPlayer.has(playerId)) latestByPlayer.set(playerId, row);
+  }
+
+  const profiles = new Map<number, SkaterShotQualityProfile>();
+  for (const [playerId, row] of latestByPlayer.entries()) {
+    profiles.set(playerId, {
+      sourceDate: typeof row?.date === "string" ? row.date : null,
+      nstShotsPer60: finiteOrNull(row?.nst_shots_per_60),
+      nstIxgPer60: finiteOrNull(row?.nst_ixg_per_60),
+      nstRushAttemptsPer60: finiteOrNull(row?.nst_rush_attempts_per_60),
+      nstReboundsCreatedPer60: finiteOrNull(row?.nst_rebounds_created_per_60)
+    });
+  }
+  return profiles;
+}
+
+async function fetchLatestSkaterOnIceContextProfiles(
+  playerIds: number[],
+  cutoffDate: string
+): Promise<Map<number, SkaterOnIceContextProfile>> {
+  assertSupabase();
+  if (playerIds.length === 0) return new Map();
+
+  const oneYearAgo = new Date(
+    new Date(cutoffDate).getTime() - 365 * 24 * 60 * 60 * 1000
+  )
+    .toISOString()
+    .split("T")[0];
+
+  const { data, error } = await supabase
+    .from("player_stats_unified")
+    .select(
+      "player_id,date,nst_oi_xgf_per_60,nst_oi_xga_per_60,nst_oi_cf_pct_rates,nst_oi_cf_pct,possession_pct_safe"
+    )
+    .in("player_id", playerIds)
+    .lte("date", cutoffDate)
+    .gte("date", oneYearAgo)
+    .order("date", { ascending: false })
+    .limit(5000);
+  if (error) throw error;
+
+  const latestByPlayer = new Map<number, any>();
+  for (const row of (data ?? []) as any[]) {
+    const playerId = Number(row?.player_id);
+    if (!Number.isFinite(playerId)) continue;
+    if (!latestByPlayer.has(playerId)) latestByPlayer.set(playerId, row);
+  }
+
+  const profiles = new Map<number, SkaterOnIceContextProfile>();
+  for (const [playerId, row] of latestByPlayer.entries()) {
+    profiles.set(playerId, {
+      sourceDate: typeof row?.date === "string" ? row.date : null,
+      nstOiXgfPer60: finiteOrNull(row?.nst_oi_xgf_per_60),
+      nstOiXgaPer60: finiteOrNull(row?.nst_oi_xga_per_60),
+      nstOiCfPct:
+        finiteOrNull(row?.nst_oi_cf_pct_rates) ?? finiteOrNull(row?.nst_oi_cf_pct),
+      possessionPctSafe: finiteOrNull(row?.possession_pct_safe)
+    });
+  }
+  return profiles;
+}
+
+async function fetchOpponentGoalieContextForGame(args: {
+  gameId: number;
+  opponentTeamId: number;
+}): Promise<OpponentGoalieContext | null> {
+  assertSupabase();
+  const { data, error } = await supabase
+    .from("goalie_start_projections")
+    .select("player_id,start_probability,confirmed_status,projected_gsaa_per_60")
+    .eq("game_id", args.gameId)
+    .eq("team_id", args.opponentTeamId)
+    .order("start_probability", { ascending: false })
+    .limit(3);
+  if (error) throw error;
+
+  const rows = (data ?? []) as Array<any>;
+  if (rows.length === 0) return null;
+
+  let probabilityMass = 0;
+  let weightedGsaa = 0;
+  let weightedGsaaMass = 0;
+  let topStarterProbability = 0;
+  let isConfirmedStarter = false;
+  for (let i = 0; i < rows.length; i += 1) {
+    const row = rows[i];
+    const p = clamp(Number(row?.start_probability ?? 0), 0, 1);
+    if (i === 0) {
+      topStarterProbability = p;
+      isConfirmedStarter = Boolean(row?.confirmed_status);
+    }
+    probabilityMass += p;
+    const gsaa = Number(row?.projected_gsaa_per_60);
+    if (Number.isFinite(gsaa)) {
+      weightedGsaa += p * gsaa;
+      weightedGsaaMass += p;
+    }
+  }
+  const weightedProjectedGsaaPer60 =
+    weightedGsaaMass > 0 ? weightedGsaa / weightedGsaaMass : null;
+
+  return {
+    source: "goalie_start_projections",
+    weightedProjectedGsaaPer60:
+      weightedProjectedGsaaPer60 == null
+        ? null
+        : Number(weightedProjectedGsaaPer60.toFixed(4)),
+    topStarterProbability: Number(clamp(topStarterProbability, 0, 1).toFixed(4)),
+    probabilityMass: Number(clamp(probabilityMass, 0, 1).toFixed(4)),
+    isConfirmedStarter
+  };
+}
+
 async function createRun(asOfDate: string): Promise<string> {
   assertSupabase();
   const { data, error } = await supabase
@@ -2190,6 +2962,21 @@ export async function runProjectionV2ForDate(
       skater_unavailable_filtered: 0,
       missing_ev_metrics_players: 0,
       missing_pp_metrics_players: 0,
+      deployment_prior_profiles_found: 0,
+      deployment_prior_toi_blends_applied: 0,
+      shot_quality_profiles_found: 0,
+      shot_quality_adjustments_applied: 0,
+      on_ice_context_profiles_found: 0,
+      on_ice_context_adjustments_applied: 0,
+      team_level_context_teams_with_signal: 0,
+      team_level_context_adjustments_applied: 0,
+      opponent_goalie_context_profiles_found: 0,
+      opponent_goalie_context_adjustments_applied: 0,
+      rest_schedule_teams_with_signal: 0,
+      rest_schedule_adjustments_applied: 0,
+      small_sample_players: 0,
+      small_sample_shrinkage_applied: 0,
+      small_sample_callup_fallbacks: 0,
       toi_scaled_teams: 0,
       toi_scale_min: null as number | null,
       toi_scale_max: null as number | null
@@ -2488,6 +3275,113 @@ export async function runProjectionV2ForDate(
           metrics.data_quality.empty_skater_rosters += 1;
           continue;
         }
+        const teamAbbrev = teamAbbreviationById.get(teamId) ?? null;
+        const opponentAbbrev = teamAbbreviationById.get(opponentTeamId) ?? null;
+        if (!teamStrengthPriorCache.has(teamId)) {
+          teamStrengthPriorCache.set(
+            teamId,
+            teamAbbrev
+              ? await fetchTeamStrengthPrior(teamAbbrev, asOfDate)
+              : null
+          );
+        }
+        if (!teamStrengthPriorCache.has(opponentTeamId)) {
+          teamStrengthPriorCache.set(
+            opponentTeamId,
+            opponentAbbrev
+              ? await fetchTeamStrengthPrior(opponentAbbrev, asOfDate)
+              : null
+          );
+        }
+        if (!teamFiveOnFiveProfileCache.has(teamId)) {
+          teamFiveOnFiveProfileCache.set(
+            teamId,
+            await fetchTeamFiveOnFiveProfile(teamId, asOfDate)
+          );
+        }
+        if (!teamFiveOnFiveProfileCache.has(opponentTeamId)) {
+          teamFiveOnFiveProfileCache.set(
+            opponentTeamId,
+            await fetchTeamFiveOnFiveProfile(opponentTeamId, asOfDate)
+          );
+        }
+        if (!teamNstExpectedGoalsCache.has(teamId)) {
+          teamNstExpectedGoalsCache.set(
+            teamId,
+            teamAbbrev
+              ? await fetchTeamNstExpectedGoalsProfile(teamAbbrev, asOfDate)
+              : null
+          );
+        }
+        if (!teamNstExpectedGoalsCache.has(opponentTeamId)) {
+          teamNstExpectedGoalsCache.set(
+            opponentTeamId,
+            opponentAbbrev
+              ? await fetchTeamNstExpectedGoalsProfile(opponentAbbrev, asOfDate)
+              : null
+          );
+        }
+        const teamLevelContextAdjustment = computeSkaterTeamLevelContextAdjustments({
+          teamStrengthPrior: teamStrengthPriorCache.get(teamId) ?? null,
+          opponentStrengthPrior: teamStrengthPriorCache.get(opponentTeamId) ?? null,
+          teamFiveOnFiveProfile: teamFiveOnFiveProfileCache.get(teamId) ?? null,
+          opponentFiveOnFiveProfile:
+            teamFiveOnFiveProfileCache.get(opponentTeamId) ?? null,
+          teamNstProfile: teamNstExpectedGoalsCache.get(teamId) ?? null,
+          opponentNstProfile: teamNstExpectedGoalsCache.get(opponentTeamId) ?? null
+        });
+        if (teamLevelContextAdjustment.sampleWeight > 0) {
+          metrics.data_quality.team_level_context_teams_with_signal += 1;
+          metrics.data_quality.team_level_context_adjustments_applied += 1;
+        }
+        const opponentGoalieContext = await fetchOpponentGoalieContextForGame({
+          gameId: game.id,
+          opponentTeamId
+        });
+        if (opponentGoalieContext != null) {
+          metrics.data_quality.opponent_goalie_context_profiles_found += 1;
+        }
+        const opponentGoalieContextAdjustment =
+          computeSkaterOpponentGoalieContextAdjustments({
+            context: opponentGoalieContext
+          });
+        if (opponentGoalieContextAdjustment.sampleWeight > 0) {
+          metrics.data_quality.opponent_goalie_context_adjustments_applied += 1;
+        }
+        if (!teamRestDaysCache.has(teamId)) {
+          teamRestDaysCache.set(teamId, await fetchTeamRestDays(teamId, asOfDate));
+        }
+        if (!teamRestDaysCache.has(opponentTeamId)) {
+          teamRestDaysCache.set(
+            opponentTeamId,
+            await fetchTeamRestDays(opponentTeamId, asOfDate)
+          );
+        }
+        const restScheduleAdjustment = computeSkaterRestScheduleAdjustments({
+          teamRestDays: teamRestDaysCache.get(teamId) ?? null,
+          opponentRestDays: teamRestDaysCache.get(opponentTeamId) ?? null,
+          isHome: teamId === game.homeTeamId
+        });
+        if (restScheduleAdjustment.sampleWeight > 0) {
+          metrics.data_quality.rest_schedule_teams_with_signal += 1;
+          metrics.data_quality.rest_schedule_adjustments_applied += 1;
+        }
+        const deploymentPriorByPlayerId =
+          await fetchLatestWgoSkaterDeploymentProfiles(skaterIds, asOfDate);
+        const shotQualityByPlayerId = await fetchLatestSkaterShotQualityProfiles(
+          skaterIds,
+          asOfDate
+        );
+        const onIceContextByPlayerId = await fetchLatestSkaterOnIceContextProfiles(
+          skaterIds,
+          asOfDate
+        );
+        metrics.data_quality.deployment_prior_profiles_found +=
+          deploymentPriorByPlayerId.size;
+        metrics.data_quality.shot_quality_profiles_found +=
+          shotQualityByPlayerId.size;
+        metrics.data_quality.on_ice_context_profiles_found +=
+          onIceContextByPlayerId.size;
         if (!teamSkaterRoleHistoryCache.has(teamId)) {
           teamSkaterRoleHistoryCache.set(
             teamId,
@@ -2517,6 +3411,42 @@ export async function runProjectionV2ForDate(
             latestMetricDate: string | null;
             daysSinceLastMetric: number | null;
             recencyMultiplier: number;
+            shotQualityProfileSourceDate: string | null;
+            shotQualitySampleWeight: number;
+            shotRateMultiplier: number;
+            goalRateMultiplier: number;
+            qualityPerShot: number | null;
+            rushReboundPer60: number | null;
+            onIceContextSourceDate: string | null;
+            onIceContextSampleWeight: number;
+            shotEnvironmentMultiplier: number;
+            goalEnvironmentMultiplier: number;
+            assistEnvironmentMultiplier: number;
+            onIcePossessionPct: number | null;
+            teamLevelSampleWeight: number;
+            teamLevelShotRateMultiplier: number;
+            teamLevelGoalRateMultiplier: number;
+            teamLevelAssistRateMultiplier: number;
+            teamLevelPaceEdge: number;
+            teamLevelOpponentDefenseEdge: number;
+            opponentGoalieSampleWeight: number;
+            opponentGoalieGoalRateMultiplier: number;
+            opponentGoalieAssistRateMultiplier: number;
+            opponentGoalieWeightedGsaaPer60: number | null;
+            opponentGoalieStarterCertainty: number;
+            restScheduleSampleWeight: number;
+            restScheduleToiMultiplier: number;
+            restScheduleShotRateMultiplier: number;
+            restScheduleGoalRateMultiplier: number;
+            restScheduleAssistRateMultiplier: number;
+            restScheduleRestDelta: number;
+            restScheduleTeamRestDays: number | null;
+            restScheduleOpponentRestDays: number | null;
+            smallSampleWeight: number;
+            smallSampleIsLow: boolean;
+            smallSampleUsedCallupFallback: boolean;
+            smallSampleEvidenceToiSeconds: number;
+            smallSampleEvidenceShots: number;
           }
         >();
 
@@ -2543,14 +3473,105 @@ export async function runProjectionV2ForDate(
             pp?.toi_seconds_avg_last5,
             safeNumber(pp?.toi_seconds_avg_all, 120)
           );
+          const deploymentPrior = deploymentPriorByPlayerId.get(playerId) ?? null;
+          const shotQualityProfile = shotQualityByPlayerId.get(playerId) ?? null;
+          const onIceContextProfile = onIceContextByPlayerId.get(playerId) ?? null;
+          const toiEsDeploymentPrior = deploymentPrior?.esToiPerGameSec ?? null;
+          const toiPpDeploymentPrior = deploymentPrior?.ppToiPerGameSec ?? null;
+          const toiRollingWeightEs = ev != null ? 0.8 : 0.45;
+          const toiRollingWeightPp = pp != null ? 0.8 : 0.45;
+          const blendedToiEs =
+            blendToiSecondsWithDeploymentPrior({
+              rollingSeconds: toiEs,
+              deploymentPriorSeconds: toiEsDeploymentPrior,
+              rollingWeight: toiRollingWeightEs
+            }) ?? toiEs;
+          const blendedToiPp =
+            blendToiSecondsWithDeploymentPrior({
+              rollingSeconds: toiPp,
+              deploymentPriorSeconds: toiPpDeploymentPrior,
+              rollingWeight: toiRollingWeightPp
+            }) ?? toiPp;
+          const adjustedToiEs = clamp(
+            blendedToiEs * restScheduleAdjustment.toiMultiplier,
+            0,
+            2600
+          );
+          const adjustedToiPp = clamp(
+            blendedToiPp * restScheduleAdjustment.toiMultiplier,
+            0,
+            1300
+          );
+          if (toiEsDeploymentPrior != null || toiPpDeploymentPrior != null) {
+            metrics.data_quality.deployment_prior_toi_blends_applied += 1;
+          }
+          const sampleShrinkage = computeSkaterSampleShrinkageAdjustments({
+            evToiSecondsAll: finiteOrNull(ev?.toi_seconds_avg_all),
+            ppToiSecondsAll: finiteOrNull(pp?.toi_seconds_avg_all),
+            evShotsAll: finiteOrNull(ev?.shots_total_all),
+            ppShotsAll: finiteOrNull(pp?.shots_total_all)
+          });
+          if (sampleShrinkage.isLowSample) {
+            metrics.data_quality.small_sample_players += 1;
+            metrics.data_quality.small_sample_shrinkage_applied += 1;
+          }
+          if (sampleShrinkage.usedCallupFallback) {
+            metrics.data_quality.small_sample_callup_fallbacks += 1;
+          }
+          const sampleWeight = sampleShrinkage.sampleWeight;
+          const shrunkToiEs = Number(
+            (
+              sampleWeight * adjustedToiEs +
+              (1 - sampleWeight) * safeNumber(ev?.toi_seconds_avg_all, 700)
+            ).toFixed(3)
+          );
+          const shrunkToiPp = Number(
+            (
+              sampleWeight * adjustedToiPp +
+              (1 - sampleWeight) * safeNumber(pp?.toi_seconds_avg_all, 120)
+            ).toFixed(3)
+          );
+          const shotQualityAdjustment =
+            computeSkaterShotQualityAdjustments({ profile: shotQualityProfile });
+          if (shotQualityProfile != null) {
+            metrics.data_quality.shot_quality_adjustments_applied += 1;
+          }
+          const onIceContextAdjustment = computeSkaterOnIceContextAdjustments({
+            profile: onIceContextProfile
+          });
+          if (onIceContextProfile != null) {
+            metrics.data_quality.on_ice_context_adjustments_applied += 1;
+          }
 
-          const sogPer60Ev = safeNumber(
+          const sogPer60EvRaw = safeNumber(
             ev?.sog_per_60_avg_last5,
             safeNumber(ev?.sog_per_60_avg_all, 6)
           );
-          const sogPer60Pp = safeNumber(
+          const sogPer60PpRaw = safeNumber(
             pp?.sog_per_60_avg_last5,
             safeNumber(pp?.sog_per_60_avg_all, 8)
+          );
+          const sogPer60Ev = clamp(
+            (sogPer60EvRaw *
+              shotQualityAdjustment.shotRateMultiplier *
+              onIceContextAdjustment.shotEnvironmentMultiplier *
+              teamLevelContextAdjustment.shotRateMultiplier *
+              restScheduleAdjustment.shotRateMultiplier) *
+              sampleWeight +
+              (1 - sampleWeight) * 6,
+            1.5,
+            20
+          );
+          const sogPer60Pp = clamp(
+            (sogPer60PpRaw *
+              shotQualityAdjustment.shotRateMultiplier *
+              onIceContextAdjustment.shotEnvironmentMultiplier *
+              teamLevelContextAdjustment.shotRateMultiplier *
+              restScheduleAdjustment.shotRateMultiplier) *
+              sampleWeight +
+              (1 - sampleWeight) * 8,
+            2,
+            28
           );
 
           const hitsPer60 = safeNumber(
@@ -2562,8 +3583,8 @@ export async function runProjectionV2ForDate(
             safeNumber(ev?.blocks_per_60_avg_all, 0.5)
           );
 
-          const shotsEs = computeShotsFromRate(toiEs, sogPer60Ev);
-          const shotsPp = computeShotsFromRate(toiPp, sogPer60Pp);
+          const shotsEs = computeShotsFromRate(shrunkToiEs, sogPer60Ev);
+          const shotsPp = computeShotsFromRate(shrunkToiPp, sogPer60Pp);
 
           // Online learning: blend recent and season-long conversion rates.
           const goalsTotal = safeNumber(ev?.goals_total_all, 0);
@@ -2577,7 +3598,7 @@ export async function runProjectionV2ForDate(
           if (shotsRecent > 0) learningCounters.goalRecent += 1;
           if (goalsRecent > 0) learningCounters.assistRecent += 1;
 
-          const goalRate = blendOnlineRate({
+          const goalRateRaw = blendOnlineRate({
             recentNumerator: goalsRecent,
             recentDenom: shotsRecent,
             baseNumerator: goalsTotal,
@@ -2587,8 +3608,20 @@ export async function runProjectionV2ForDate(
             minRate: 0.03,
             maxRate: 0.25
           });
+          const goalRate = clamp(
+            (goalRateRaw *
+              shotQualityAdjustment.goalRateMultiplier *
+              onIceContextAdjustment.goalEnvironmentMultiplier *
+              teamLevelContextAdjustment.goalRateMultiplier *
+              opponentGoalieContextAdjustment.goalRateMultiplier *
+              restScheduleAdjustment.goalRateMultiplier) *
+              sampleWeight +
+              (1 - sampleWeight) * 0.1,
+            0.03,
+            0.3
+          );
 
-          const assistRate = blendOnlineRate({
+          const assistRateRaw = blendOnlineRate({
             recentNumerator: assistsRecent,
             recentDenom: goalsRecent * 2,
             baseNumerator: assistsTotal,
@@ -2598,6 +3631,17 @@ export async function runProjectionV2ForDate(
             minRate: 0.2,
             maxRate: 1.4
           });
+          const assistRate = clamp(
+            (assistRateRaw *
+              onIceContextAdjustment.assistEnvironmentMultiplier *
+              teamLevelContextAdjustment.assistRateMultiplier *
+              opponentGoalieContextAdjustment.assistRateMultiplier *
+              restScheduleAdjustment.assistRateMultiplier) *
+              sampleWeight +
+              (1 - sampleWeight) * 0.7,
+            0.2,
+            1.6
+          );
 
           const roleTag = skaterRoleTags.get(playerId) ?? null;
           const roleContinuity =
@@ -2635,8 +3679,8 @@ export async function runProjectionV2ForDate(
             roleStabilityMultiplier;
           if (availabilityMultiplier <= 0) continue;
           projected.set(playerId, {
-            toiEs: toiEs * availabilityMultiplier,
-            toiPp: toiPp * availabilityMultiplier,
+            toiEs: shrunkToiEs * availabilityMultiplier,
+            toiPp: shrunkToiPp * availabilityMultiplier,
             shotsEs: shotsEs * availabilityMultiplier,
             shotsPp: shotsPp * availabilityMultiplier,
             goalRate,
@@ -2650,7 +3694,56 @@ export async function runProjectionV2ForDate(
             availabilityEvent: availabilityEventByPlayer.get(playerId) ?? null,
             latestMetricDate,
             daysSinceLastMetric,
-            recencyMultiplier
+            recencyMultiplier,
+            shotQualityProfileSourceDate: shotQualityProfile?.sourceDate ?? null,
+            shotQualitySampleWeight: shotQualityAdjustment.sampleWeight,
+            shotRateMultiplier: shotQualityAdjustment.shotRateMultiplier,
+            goalRateMultiplier: shotQualityAdjustment.goalRateMultiplier,
+            qualityPerShot: shotQualityAdjustment.qualityPerShot,
+            rushReboundPer60: shotQualityAdjustment.rushReboundPer60,
+            onIceContextSourceDate: onIceContextProfile?.sourceDate ?? null,
+            onIceContextSampleWeight: onIceContextAdjustment.sampleWeight,
+            shotEnvironmentMultiplier: onIceContextAdjustment.shotEnvironmentMultiplier,
+            goalEnvironmentMultiplier: onIceContextAdjustment.goalEnvironmentMultiplier,
+            assistEnvironmentMultiplier:
+              onIceContextAdjustment.assistEnvironmentMultiplier,
+            onIcePossessionPct: onIceContextAdjustment.possessionPct,
+            teamLevelSampleWeight: teamLevelContextAdjustment.sampleWeight,
+            teamLevelShotRateMultiplier:
+              teamLevelContextAdjustment.shotRateMultiplier,
+            teamLevelGoalRateMultiplier:
+              teamLevelContextAdjustment.goalRateMultiplier,
+            teamLevelAssistRateMultiplier:
+              teamLevelContextAdjustment.assistRateMultiplier,
+            teamLevelPaceEdge: teamLevelContextAdjustment.paceEdge,
+            teamLevelOpponentDefenseEdge:
+              teamLevelContextAdjustment.opponentDefenseEdge,
+            opponentGoalieSampleWeight:
+              opponentGoalieContextAdjustment.sampleWeight,
+            opponentGoalieGoalRateMultiplier:
+              opponentGoalieContextAdjustment.goalRateMultiplier,
+            opponentGoalieAssistRateMultiplier:
+              opponentGoalieContextAdjustment.assistRateMultiplier,
+            opponentGoalieWeightedGsaaPer60:
+              opponentGoalieContextAdjustment.weightedProjectedGsaaPer60,
+            opponentGoalieStarterCertainty:
+              opponentGoalieContextAdjustment.starterCertainty,
+            restScheduleSampleWeight: restScheduleAdjustment.sampleWeight,
+            restScheduleToiMultiplier: restScheduleAdjustment.toiMultiplier,
+            restScheduleShotRateMultiplier:
+              restScheduleAdjustment.shotRateMultiplier,
+            restScheduleGoalRateMultiplier:
+              restScheduleAdjustment.goalRateMultiplier,
+            restScheduleAssistRateMultiplier:
+              restScheduleAdjustment.assistRateMultiplier,
+            restScheduleRestDelta: restScheduleAdjustment.restDelta,
+            restScheduleTeamRestDays: restScheduleAdjustment.teamRestDays,
+            restScheduleOpponentRestDays: restScheduleAdjustment.opponentRestDays,
+            smallSampleWeight: sampleShrinkage.sampleWeight,
+            smallSampleIsLow: sampleShrinkage.isLowSample,
+            smallSampleUsedCallupFallback: sampleShrinkage.usedCallupFallback,
+            smallSampleEvidenceToiSeconds: sampleShrinkage.evidenceToiSeconds,
+            smallSampleEvidenceShots: sampleShrinkage.evidenceShots
           });
         }
 
@@ -2860,7 +3953,84 @@ export async function runProjectionV2ForDate(
                         p.eventAvailabilityMultiplier.toFixed(4)
                       )
                     }
-                  : null
+                  : null,
+                shot_quality: {
+                  source_date: p.shotQualityProfileSourceDate,
+                  sample_weight: Number(p.shotQualitySampleWeight.toFixed(4)),
+                  shot_rate_multiplier: Number(p.shotRateMultiplier.toFixed(4)),
+                  goal_rate_multiplier: Number(p.goalRateMultiplier.toFixed(4)),
+                  quality_per_shot: p.qualityPerShot,
+                  rush_rebound_per_60: p.rushReboundPer60
+                },
+                on_ice_context: {
+                  source_date: p.onIceContextSourceDate,
+                  sample_weight: Number(p.onIceContextSampleWeight.toFixed(4)),
+                  shot_environment_multiplier: Number(
+                    p.shotEnvironmentMultiplier.toFixed(4)
+                  ),
+                  goal_environment_multiplier: Number(
+                    p.goalEnvironmentMultiplier.toFixed(4)
+                  ),
+                  assist_environment_multiplier: Number(
+                    p.assistEnvironmentMultiplier.toFixed(4)
+                  ),
+                  possession_pct: p.onIcePossessionPct
+                },
+                team_level_context: {
+                  sample_weight: Number(p.teamLevelSampleWeight.toFixed(4)),
+                  shot_rate_multiplier: Number(
+                    p.teamLevelShotRateMultiplier.toFixed(4)
+                  ),
+                  goal_rate_multiplier: Number(
+                    p.teamLevelGoalRateMultiplier.toFixed(4)
+                  ),
+                  assist_rate_multiplier: Number(
+                    p.teamLevelAssistRateMultiplier.toFixed(4)
+                  ),
+                  pace_edge: Number(p.teamLevelPaceEdge.toFixed(4)),
+                  opponent_defense_edge: Number(
+                    p.teamLevelOpponentDefenseEdge.toFixed(4)
+                  )
+                },
+                opponent_goalie_context: {
+                  sample_weight: Number(p.opponentGoalieSampleWeight.toFixed(4)),
+                  goal_rate_multiplier: Number(
+                    p.opponentGoalieGoalRateMultiplier.toFixed(4)
+                  ),
+                  assist_rate_multiplier: Number(
+                    p.opponentGoalieAssistRateMultiplier.toFixed(4)
+                  ),
+                  weighted_projected_gsaa_per_60:
+                    p.opponentGoalieWeightedGsaaPer60,
+                  starter_certainty: Number(
+                    p.opponentGoalieStarterCertainty.toFixed(4)
+                  )
+                },
+                rest_schedule: {
+                  sample_weight: Number(p.restScheduleSampleWeight.toFixed(4)),
+                  team_rest_days: p.restScheduleTeamRestDays,
+                  opponent_rest_days: p.restScheduleOpponentRestDays,
+                  rest_delta: Number(p.restScheduleRestDelta.toFixed(4)),
+                  toi_multiplier: Number(p.restScheduleToiMultiplier.toFixed(4)),
+                  shot_rate_multiplier: Number(
+                    p.restScheduleShotRateMultiplier.toFixed(4)
+                  ),
+                  goal_rate_multiplier: Number(
+                    p.restScheduleGoalRateMultiplier.toFixed(4)
+                  ),
+                  assist_rate_multiplier: Number(
+                    p.restScheduleAssistRateMultiplier.toFixed(4)
+                  )
+                },
+                small_sample: {
+                  sample_weight: Number(p.smallSampleWeight.toFixed(4)),
+                  is_low_sample: p.smallSampleIsLow,
+                  used_callup_fallback: p.smallSampleUsedCallupFallback,
+                  evidence_toi_seconds: Number(
+                    p.smallSampleEvidenceToiSeconds.toFixed(3)
+                  ),
+                  evidence_shots: Number(p.smallSampleEvidenceShots.toFixed(3))
+                }
               }
             }
           };

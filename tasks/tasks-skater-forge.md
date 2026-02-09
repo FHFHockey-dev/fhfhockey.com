@@ -37,14 +37,14 @@
   - [x] 1.6 Persist skater-selection diagnostics in uncertainty metadata (source rows, role, recency, fallback path).
   - [x] 1.7 Add unit tests for stale lineup, inactive skater, and emergency fallback edge cases.
 
-- [ ] 2.0 Expand skater feature set using available Supabase/NST/WGO signals
-  - [ ] 2.1 Integrate `wgo_skater_stats` deployment features (TOI/GP, ES TOI, PP TOI share) into TOI projection priors.
-  - [ ] 2.2 Integrate shot-quality features (`ixg`, `ixg_per_60`, rush/rebound chance rates where available).
-  - [ ] 2.3 Integrate on-ice context (`nst_oi_xgf_per_60`, `nst_oi_xga_per_60`, possession rates) into scoring environment.
-  - [ ] 2.4 Integrate team-level context (`wgo_team_stats`, `nhl_team_data`, `nst_team_*`) for pace and defensive strength.
-  - [ ] 2.5 Add opponent-goalie context multiplier (starter quality/uncertainty-aware) to skater scoring conversion.
-  - [ ] 2.6 Add rest/schedule features (team rest, B2B, travel proxy if available) for TOI and conversion adjustments.
-  - [ ] 2.7 Add small-sample shrinkage guards and fallback priors for low-minute / call-up players.
+- [x] 2.0 Expand skater feature set using available Supabase/NST/WGO signals
+  - [x] 2.1 Integrate `wgo_skater_stats` deployment features (TOI/GP, ES TOI, PP TOI share) into TOI projection priors.
+  - [x] 2.2 Integrate shot-quality features (`ixg`, `ixg_per_60`, rush/rebound chance rates where available).
+  - [x] 2.3 Integrate on-ice context (`nst_oi_xgf_per_60`, `nst_oi_xga_per_60`, possession rates) into scoring environment.
+  - [x] 2.4 Integrate team-level context (`wgo_team_stats`, `nhl_team_data`, `nst_team_*`) for pace and defensive strength.
+  - [x] 2.5 Add opponent-goalie context multiplier (starter quality/uncertainty-aware) to skater scoring conversion.
+  - [x] 2.6 Add rest/schedule features (team rest, B2B, travel proxy if available) for TOI and conversion adjustments.
+  - [x] 2.7 Add small-sample shrinkage guards and fallback priors for low-minute / call-up players.
 
 - [ ] 3.0 Upgrade skater projection math and rate modeling
   - [ ] 3.1 Split conversion modeling into separate ES and PP goal/assist processes instead of one shared rate.
@@ -100,7 +100,14 @@
 - Completed: `1.5` (expanded roster-event availability weighting, unavailable filtering counters, and skater availability event metadata in uncertainty payloads).
 - Completed: `1.6` (skater-selection diagnostics now persisted with source rows, fallback path, active-pool counts, line-combo recency class, and per-player metric recency details).
 - Completed: `1.7` (added edge-case tests for stale lineup boundaries, inactive skater filtering, and emergency fallback role assignment).
-- Next sub-task to execute: `2.1`.
+- Completed: `2.1` (`wgo_skater_stats` deployment TOI priors now blend with rolling EV/PP TOI in `runProjectionV2`, with data-quality counters and helper tests).
+- Completed: `2.2` (added `player_stats_unified` shot-quality priors using `nst_ixg_per_60`, `nst_shots_per_60`, rush/rebound rates to adjust shot generation and conversion with bounded multipliers + diagnostics/tests).
+- Completed: `2.3` (added `player_stats_unified` on-ice context priors using `nst_oi_xgf_per_60`, `nst_oi_xga_per_60`, and possession rates to adjust shot/goal/assist environment with bounded multipliers + diagnostics/tests).
+- Completed: `2.4` (added team-level pace/defense context from `nhl_team_data`, `wgo_team_stats`, and `nst_team_*` into skater shot/goal/assist multipliers with diagnostics/tests).
+- Completed: `2.5` (added opponent-goalie quality/uncertainty multiplier from `goalie_start_projections` to skater goal/assist conversion with diagnostics/tests).
+- Completed: `2.6` (added rest/schedule multipliers from team/opponent rest days + home/away proxy to TOI, shot rate, goal rate, and assist rate with diagnostics/tests).
+- Completed: `2.7` (added explicit small-sample shrinkage and call-up fallback priors for TOI, shot rates, and conversion rates using evidence-weighted blending + diagnostics/tests).
+- Next sub-task to execute: `3.1`.
 - Suggested first implementation file: `web/lib/projections/runProjectionV2.ts` (candidate/role hygiene foundation).
 
 ## Process Rules (Use `process-task-list.mdc`)

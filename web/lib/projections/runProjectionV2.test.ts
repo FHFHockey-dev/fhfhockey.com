@@ -10,6 +10,14 @@ import {
   computeTeamStrengthContextAdjustment,
   assessLineCombinationRecency,
   buildSkaterRoleTags,
+  normalizeWgoToiToSeconds,
+  blendToiSecondsWithDeploymentPrior,
+  computeSkaterShotQualityAdjustments,
+  computeSkaterOnIceContextAdjustments,
+  computeSkaterTeamLevelContextAdjustments,
+  computeSkaterOpponentGoalieContextAdjustments,
+  computeSkaterRestScheduleAdjustments,
+  computeSkaterSampleShrinkageAdjustments,
   summarizeSkaterRoleContinuity,
   computeSkaterRoleStabilityMultiplier,
   availabilityMultiplierForEvent,
@@ -230,6 +238,347 @@ describe("starter candidate filtering", () => {
     expect(candidates).toContain(activeGoalie);
     expect(candidates).not.toContain(legacyGoalie);
     expect(candidates).not.toContain(staleGoalie);
+  });
+});
+
+describe("deployment TOI prior helpers", () => {
+  it("normalizes minute-based WGO TOI values to seconds", () => {
+    expect(normalizeWgoToiToSeconds(15)).toBe(900);
+    expect(normalizeWgoToiToSeconds(22.5)).toBe(1350);
+  });
+
+  it("keeps second-like WGO TOI values in seconds", () => {
+    expect(normalizeWgoToiToSeconds(960)).toBe(960);
+  });
+
+  it("returns null for invalid or non-positive WGO TOI values", () => {
+    expect(normalizeWgoToiToSeconds(null)).toBeNull();
+    expect(normalizeWgoToiToSeconds(undefined)).toBeNull();
+    expect(normalizeWgoToiToSeconds(0)).toBeNull();
+    expect(normalizeWgoToiToSeconds(-5)).toBeNull();
+  });
+
+  it("blends rolling TOI with deployment prior using provided weight", () => {
+    const blended = blendToiSecondsWithDeploymentPrior({
+      rollingSeconds: 900,
+      deploymentPriorSeconds: 780,
+      rollingWeight: 0.8
+    });
+    expect(blended).toBe(876);
+  });
+
+  it("falls back to whichever source exists when one side is missing", () => {
+    expect(
+      blendToiSecondsWithDeploymentPrior({
+        rollingSeconds: null,
+        deploymentPriorSeconds: 720,
+        rollingWeight: 0.8
+      })
+    ).toBe(720);
+    expect(
+      blendToiSecondsWithDeploymentPrior({
+        rollingSeconds: 840,
+        deploymentPriorSeconds: null,
+        rollingWeight: 0.8
+      })
+    ).toBe(840);
+  });
+});
+
+describe("skater shot-quality adjustments", () => {
+  it("returns neutral multipliers when no profile exists", () => {
+    const result = computeSkaterShotQualityAdjustments({ profile: null });
+    expect(result.shotRateMultiplier).toBe(1);
+    expect(result.goalRateMultiplier).toBe(1);
+    expect(result.sampleWeight).toBe(0);
+  });
+
+  it("boosts goal conversion and shot rate for strong ixG + rush/rebound profiles", () => {
+    const result = computeSkaterShotQualityAdjustments({
+      profile: {
+        sourceDate: "2026-02-05",
+        nstShotsPer60: 10.2,
+        nstIxgPer60: 1.15,
+        nstRushAttemptsPer60: 0.9,
+        nstReboundsCreatedPer60: 0.7
+      }
+    });
+    expect(result.sampleWeight).toBeGreaterThan(0.6);
+    expect(result.shotRateMultiplier).toBeGreaterThan(1);
+    expect(result.goalRateMultiplier).toBeGreaterThan(1);
+    expect(result.qualityPerShot).toBeGreaterThan(0.1);
+  });
+
+  it("penalizes weak shot-quality profiles", () => {
+    const result = computeSkaterShotQualityAdjustments({
+      profile: {
+        sourceDate: "2026-02-05",
+        nstShotsPer60: 7.4,
+        nstIxgPer60: 0.45,
+        nstRushAttemptsPer60: 0.2,
+        nstReboundsCreatedPer60: 0.1
+      }
+    });
+    expect(result.goalRateMultiplier).toBeLessThan(1);
+    expect(result.shotRateMultiplier).toBeLessThanOrEqual(1);
+  });
+});
+
+describe("skater on-ice context adjustments", () => {
+  it("returns neutral multipliers without a profile", () => {
+    const result = computeSkaterOnIceContextAdjustments({ profile: null });
+    expect(result.shotEnvironmentMultiplier).toBe(1);
+    expect(result.goalEnvironmentMultiplier).toBe(1);
+    expect(result.assistEnvironmentMultiplier).toBe(1);
+    expect(result.sampleWeight).toBe(0);
+  });
+
+  it("boosts environment multipliers for strong on-ice xG and possession", () => {
+    const result = computeSkaterOnIceContextAdjustments({
+      profile: {
+        sourceDate: "2026-02-05",
+        nstOiXgfPer60: 3.1,
+        nstOiXgaPer60: 2.0,
+        nstOiCfPct: 56.2,
+        possessionPctSafe: null
+      }
+    });
+    expect(result.sampleWeight).toBeGreaterThan(0.6);
+    expect(result.shotEnvironmentMultiplier).toBeGreaterThan(1);
+    expect(result.goalEnvironmentMultiplier).toBeGreaterThan(1);
+    expect(result.assistEnvironmentMultiplier).toBeGreaterThan(1);
+  });
+
+  it("penalizes environment for poor on-ice xG and possession", () => {
+    const result = computeSkaterOnIceContextAdjustments({
+      profile: {
+        sourceDate: "2026-02-05",
+        nstOiXgfPer60: 1.9,
+        nstOiXgaPer60: 3.0,
+        nstOiCfPct: 44.1,
+        possessionPctSafe: null
+      }
+    });
+    expect(result.shotEnvironmentMultiplier).toBeLessThan(1);
+    expect(result.goalEnvironmentMultiplier).toBeLessThan(1);
+    expect(result.assistEnvironmentMultiplier).toBeLessThan(1);
+  });
+});
+
+describe("skater team-level context adjustments", () => {
+  it("returns neutral multipliers when no team context is available", () => {
+    const result = computeSkaterTeamLevelContextAdjustments({
+      teamStrengthPrior: null,
+      opponentStrengthPrior: null,
+      teamFiveOnFiveProfile: null,
+      opponentFiveOnFiveProfile: null,
+      teamNstProfile: null,
+      opponentNstProfile: null
+    });
+    expect(result.sampleWeight).toBe(0);
+    expect(result.shotRateMultiplier).toBe(1);
+    expect(result.goalRateMultiplier).toBe(1);
+    expect(result.assistRateMultiplier).toBe(1);
+  });
+
+  it("boosts multipliers in favorable offense + opponent-defense environments", () => {
+    const result = computeSkaterTeamLevelContextAdjustments({
+      teamStrengthPrior: {
+        sourceDate: "2026-02-05",
+        xga: 120,
+        xgaPerGame: 2.7,
+        xgfPerGame: 3.35
+      },
+      opponentStrengthPrior: {
+        sourceDate: "2026-02-05",
+        xga: 140,
+        xgaPerGame: 3.45,
+        xgfPerGame: 2.85
+      },
+      teamFiveOnFiveProfile: {
+        sourceDate: "2026-02-05",
+        gamesPlayed: 50,
+        savePct5v5: 0.922,
+        shootingPlusSavePct5v5: 1.03
+      },
+      opponentFiveOnFiveProfile: {
+        sourceDate: "2026-02-05",
+        gamesPlayed: 50,
+        savePct5v5: 0.905,
+        shootingPlusSavePct5v5: 0.98
+      },
+      teamNstProfile: {
+        source: "nst_team_all",
+        sourceDate: "2026-02-05",
+        gamesPlayed: 50,
+        xga: 125,
+        xgaPer60: 2.8
+      },
+      opponentNstProfile: {
+        source: "nst_team_all",
+        sourceDate: "2026-02-05",
+        gamesPlayed: 50,
+        xga: 132,
+        xgaPer60: 2.95
+      }
+    });
+    expect(result.sampleWeight).toBeGreaterThan(0.6);
+    expect(result.shotRateMultiplier).toBeGreaterThan(1);
+    expect(result.goalRateMultiplier).toBeGreaterThan(1);
+    expect(result.assistRateMultiplier).toBeGreaterThan(1);
+  });
+
+  it("penalizes multipliers in weak offense + strong-opponent-defense environments", () => {
+    const result = computeSkaterTeamLevelContextAdjustments({
+      teamStrengthPrior: {
+        sourceDate: "2026-02-05",
+        xga: 120,
+        xgaPerGame: 2.9,
+        xgfPerGame: 2.45
+      },
+      opponentStrengthPrior: {
+        sourceDate: "2026-02-05",
+        xga: 115,
+        xgaPerGame: 2.35,
+        xgfPerGame: 3.1
+      },
+      teamFiveOnFiveProfile: {
+        sourceDate: "2026-02-05",
+        gamesPlayed: 50,
+        savePct5v5: 0.918,
+        shootingPlusSavePct5v5: 0.97
+      },
+      opponentFiveOnFiveProfile: {
+        sourceDate: "2026-02-05",
+        gamesPlayed: 50,
+        savePct5v5: 0.935,
+        shootingPlusSavePct5v5: 1.02
+      },
+      teamNstProfile: {
+        source: "nst_team_all",
+        sourceDate: "2026-02-05",
+        gamesPlayed: 50,
+        xga: 116,
+        xgaPer60: 2.2
+      },
+      opponentNstProfile: {
+        source: "nst_team_all",
+        sourceDate: "2026-02-05",
+        gamesPlayed: 50,
+        xga: 115,
+        xgaPer60: 2.1
+      }
+    });
+    expect(result.shotRateMultiplier).toBeLessThan(1);
+    expect(result.goalRateMultiplier).toBeLessThan(1);
+    expect(result.assistRateMultiplier).toBeLessThan(1);
+  });
+});
+
+describe("skater opponent-goalie context adjustments", () => {
+  it("returns neutral multipliers with no opponent goalie context", () => {
+    const result = computeSkaterOpponentGoalieContextAdjustments({
+      context: null
+    });
+    expect(result.sampleWeight).toBe(0);
+    expect(result.goalRateMultiplier).toBe(1);
+    expect(result.assistRateMultiplier).toBe(1);
+  });
+
+  it("penalizes scoring when likely opponent starter projects strong", () => {
+    const result = computeSkaterOpponentGoalieContextAdjustments({
+      context: {
+        source: "goalie_start_projections",
+        weightedProjectedGsaaPer60: 0.32,
+        topStarterProbability: 0.82,
+        probabilityMass: 0.95,
+        isConfirmedStarter: true
+      }
+    });
+    expect(result.sampleWeight).toBeGreaterThan(0.8);
+    expect(result.goalRateMultiplier).toBeLessThan(1);
+    expect(result.assistRateMultiplier).toBeLessThan(1);
+  });
+
+  it("boosts scoring when likely opponent starter projects weak", () => {
+    const result = computeSkaterOpponentGoalieContextAdjustments({
+      context: {
+        source: "goalie_start_projections",
+        weightedProjectedGsaaPer60: -0.28,
+        topStarterProbability: 0.74,
+        probabilityMass: 0.92,
+        isConfirmedStarter: false
+      }
+    });
+    expect(result.sampleWeight).toBeGreaterThan(0.5);
+    expect(result.goalRateMultiplier).toBeGreaterThan(1);
+    expect(result.assistRateMultiplier).toBeGreaterThan(1);
+  });
+});
+
+describe("skater rest/schedule adjustments", () => {
+  it("returns neutral multipliers when rest context is unavailable", () => {
+    const result = computeSkaterRestScheduleAdjustments({
+      teamRestDays: null,
+      opponentRestDays: null,
+      isHome: false
+    });
+    expect(result.sampleWeight).toBe(0);
+    expect(result.toiMultiplier).toBe(1);
+    expect(result.shotRateMultiplier).toBe(1);
+    expect(result.goalRateMultiplier).toBe(1);
+    expect(result.assistRateMultiplier).toBe(1);
+  });
+
+  it("penalizes on second leg of back-to-back against rested opponent", () => {
+    const result = computeSkaterRestScheduleAdjustments({
+      teamRestDays: 0,
+      opponentRestDays: 2,
+      isHome: false
+    });
+    expect(result.sampleWeight).toBe(1);
+    expect(result.toiMultiplier).toBeLessThan(1);
+    expect(result.shotRateMultiplier).toBeLessThan(1);
+    expect(result.goalRateMultiplier).toBeLessThan(1);
+    expect(result.assistRateMultiplier).toBeLessThan(1);
+  });
+
+  it("boosts rested home team versus opponent on back-to-back", () => {
+    const result = computeSkaterRestScheduleAdjustments({
+      teamRestDays: 2,
+      opponentRestDays: 0,
+      isHome: true
+    });
+    expect(result.toiMultiplier).toBeGreaterThan(1);
+    expect(result.shotRateMultiplier).toBeGreaterThan(1);
+    expect(result.goalRateMultiplier).toBeGreaterThan(1);
+    expect(result.assistRateMultiplier).toBeGreaterThan(1);
+  });
+});
+
+describe("skater small-sample shrinkage adjustments", () => {
+  it("flags low sample and callup fallback with sparse evidence", () => {
+    const result = computeSkaterSampleShrinkageAdjustments({
+      evToiSecondsAll: 210,
+      ppToiSecondsAll: 40,
+      evShotsAll: 5,
+      ppShotsAll: 1
+    });
+    expect(result.sampleWeight).toBeLessThan(0.25);
+    expect(result.isLowSample).toBe(true);
+    expect(result.usedCallupFallback).toBe(true);
+  });
+
+  it("returns strong sample weight for established skaters", () => {
+    const result = computeSkaterSampleShrinkageAdjustments({
+      evToiSecondsAll: 1450,
+      ppToiSecondsAll: 380,
+      evShotsAll: 85,
+      ppShotsAll: 22
+    });
+    expect(result.sampleWeight).toBeGreaterThan(0.6);
+    expect(result.isLowSample).toBe(false);
+    expect(result.usedCallupFallback).toBe(false);
   });
 });
 
