@@ -8,6 +8,12 @@ import {
   computeNstOpponentDangerAdjustment,
   computeTeamFiveOnFiveContextAdjustment,
   computeTeamStrengthContextAdjustment,
+  assessLineCombinationRecency,
+  buildSkaterRoleTags,
+  summarizeSkaterRoleContinuity,
+  computeSkaterRoleStabilityMultiplier,
+  availabilityMultiplierForEvent,
+  filterActiveSkaterCandidateIds,
   computeStarterProbabilities,
   selectStarterCandidateGoalieIds,
   toGoalieRestSplitBucket,
@@ -139,6 +145,60 @@ describe("starter probability heuristics", () => {
     );
     expect((withLineCombo.get(goalieA) ?? 0)).toBeLessThan(0.95);
   });
+
+  it("uses projected GSAA/60 and season start share as soft priors", () => {
+    const goalieA = 2201;
+    const goalieB = 2202;
+    const context = buildContext({
+      startsByGoalie: new Map([
+        [goalieA, 5],
+        [goalieB, 5]
+      ]),
+      lastPlayedDateByGoalie: new Map([
+        [goalieA, "2026-02-05"],
+        [goalieB, "2026-02-05"]
+      ])
+    });
+
+    const base = computeStarterProbabilities({
+      asOfDate: "2026-02-07",
+      candidateGoalieIds: [goalieA, goalieB],
+      starterContext: context,
+      priorStartProbByGoalieId: new Map([
+        [goalieA, 0.5],
+        [goalieB, 0.5]
+      ]),
+      teamGoalsFor: 3,
+      opponentGoalsFor: 3
+    });
+    const withQualityPriors = computeStarterProbabilities({
+      asOfDate: "2026-02-07",
+      candidateGoalieIds: [goalieA, goalieB],
+      starterContext: context,
+      priorStartProbByGoalieId: new Map([
+        [goalieA, 0.5],
+        [goalieB, 0.5]
+      ]),
+      projectedGsaaPer60ByGoalieId: new Map([
+        [goalieA, 0.28],
+        [goalieB, -0.2]
+      ]),
+      seasonStartPctByGoalieId: new Map([
+        [goalieA, 0.66],
+        [goalieB, 0.41]
+      ]),
+      seasonGamesPlayedByGoalieId: new Map([
+        [goalieA, 36],
+        [goalieB, 14]
+      ]),
+      teamGoalsFor: 3,
+      opponentGoalsFor: 3
+    });
+
+    expect((withQualityPriors.get(goalieA) ?? 0)).toBeGreaterThan(
+      base.get(goalieA) ?? 0
+    );
+  });
 });
 
 describe("starter candidate filtering", () => {
@@ -170,6 +230,251 @@ describe("starter candidate filtering", () => {
     expect(candidates).toContain(activeGoalie);
     expect(candidates).not.toContain(legacyGoalie);
     expect(candidates).not.toContain(staleGoalie);
+  });
+});
+
+describe("active skater filtering", () => {
+  it("filters out non-team and goalie-position candidates", () => {
+    const result = filterActiveSkaterCandidateIds({
+      asOfDate: "2026-02-07",
+      teamId: 5,
+      rawSkaterIds: [1, 2, 3],
+      playerMetaById: new Map([
+        [1, { id: 1, team_id: 5, position: "C" }],
+        [2, { id: 2, team_id: 8, position: "RW" }],
+        [3, { id: 3, team_id: 5, position: "G" }]
+      ]),
+      latestMetricDateByPlayerId: new Map([[1, "2026-02-06"]])
+    });
+
+    expect(result.eligibleSkaterIds).toEqual([1]);
+    expect(result.stats.filteredByTeamOrPosition).toBe(2);
+  });
+
+  it("hard-filters skaters with stale metrics beyond threshold and soft-penalizes mid-stale skaters", () => {
+    const result = filterActiveSkaterCandidateIds({
+      asOfDate: "2026-02-07",
+      teamId: 5,
+      rawSkaterIds: [11, 12, 13],
+      playerMetaById: new Map([
+        [11, { id: 11, team_id: 5, position: "LW" }],
+        [12, { id: 12, team_id: 5, position: "RW" }],
+        [13, { id: 13, team_id: 5, position: "D" }]
+      ]),
+      latestMetricDateByPlayerId: new Map([
+        [11, "2026-02-06"],
+        [12, "2026-01-10"],
+        [13, "2025-11-20"]
+      ])
+    });
+
+    expect(result.eligibleSkaterIds).toContain(11);
+    expect(result.eligibleSkaterIds).toContain(12);
+    expect(result.eligibleSkaterIds).not.toContain(13);
+    expect(result.recencyMultiplierByPlayerId.get(11)).toBe(1);
+    expect((result.recencyMultiplierByPlayerId.get(12) ?? 1)).toBeLessThan(1);
+    expect(result.stats.softStalePenalized).toBe(1);
+    expect(result.stats.filteredHardStale).toBe(1);
+  });
+
+  it("treats players with no recent metrics as inactive and excludes them", () => {
+    const result = filterActiveSkaterCandidateIds({
+      asOfDate: "2026-02-07",
+      teamId: 10,
+      rawSkaterIds: [51, 52],
+      playerMetaById: new Map([
+        [51, { id: 51, team_id: 10, position: "C" }],
+        [52, { id: 52, team_id: 10, position: "LW" }]
+      ]),
+      latestMetricDateByPlayerId: new Map([[52, "2026-02-05"]])
+    });
+
+    expect(result.eligibleSkaterIds).toEqual([52]);
+    expect(result.stats.filteredMissingRecentMetrics).toBe(1);
+  });
+});
+
+describe("line-combination recency assessment", () => {
+  it("marks missing line combinations as hard stale", () => {
+    const result = assessLineCombinationRecency({
+      asOfDate: "2026-02-07",
+      sourceGameDate: null
+    });
+
+    expect(result.isMissing).toBe(true);
+    expect(result.isHardStale).toBe(true);
+    expect(result.daysStale).toBeNull();
+  });
+
+  it("marks moderately old line combinations as soft stale only", () => {
+    const result = assessLineCombinationRecency({
+      asOfDate: "2026-02-07",
+      sourceGameDate: "2026-01-27"
+    });
+
+    expect(result.isMissing).toBe(false);
+    expect(result.isSoftStale).toBe(true);
+    expect(result.isHardStale).toBe(false);
+    expect(result.daysStale).toBe(11);
+  });
+
+  it("marks very old line combinations as hard stale", () => {
+    const result = assessLineCombinationRecency({
+      asOfDate: "2026-02-07",
+      sourceGameDate: "2026-01-15"
+    });
+
+    expect(result.isSoftStale).toBe(true);
+    expect(result.isHardStale).toBe(true);
+    expect(result.daysStale).toBe(23);
+  });
+
+  it("keeps boundary-day line combinations out of hard-stale bucket", () => {
+    const result = assessLineCombinationRecency({
+      asOfDate: "2026-02-07",
+      sourceGameDate: "2026-01-17"
+    });
+
+    expect(result.daysStale).toBe(21);
+    expect(result.isSoftStale).toBe(true);
+    expect(result.isHardStale).toBe(false);
+  });
+});
+
+describe("skater role tagging", () => {
+  it("assigns line/pair roles from line-combination ordering", () => {
+    const roles = buildSkaterRoleTags({
+      lineCombination: {
+        gameId: 1,
+        teamId: 55,
+        forwards: [101, 102, 103, 104, 105, 106],
+        defensemen: [201, 202, 203, 204],
+        goalies: [301]
+      },
+      useFallbackRoles: false,
+      fallbackRankedSkaterIds: [],
+      teamId: 55,
+      playerMetaById: new Map([
+        [101, { id: 101, team_id: 55, position: "C" }],
+        [102, { id: 102, team_id: 55, position: "LW" }],
+        [103, { id: 103, team_id: 55, position: "RW" }],
+        [104, { id: 104, team_id: 55, position: "C" }],
+        [105, { id: 105, team_id: 55, position: "LW" }],
+        [106, { id: 106, team_id: 55, position: "RW" }],
+        [201, { id: 201, team_id: 55, position: "D" }],
+        [202, { id: 202, team_id: 55, position: "D" }],
+        [203, { id: 203, team_id: 55, position: "D" }],
+        [204, { id: 204, team_id: 55, position: "D" }]
+      ])
+    });
+
+    expect(roles.get(101)?.esRole).toBe("L1");
+    expect(roles.get(104)?.esRole).toBe("L2");
+    expect(roles.get(201)?.esRole).toBe("D1");
+    expect(roles.get(203)?.esRole).toBe("D2");
+    expect(roles.get(101)?.source).toBe("line_combination");
+  });
+
+  it("falls back to TOI-ranked roles when requested", () => {
+    const roles = buildSkaterRoleTags({
+      lineCombination: null,
+      useFallbackRoles: true,
+      fallbackRankedSkaterIds: [401, 402, 403, 404, 405, 406, 501, 502],
+      teamId: 77,
+      playerMetaById: new Map([
+        [401, { id: 401, team_id: 77, position: "C" }],
+        [402, { id: 402, team_id: 77, position: "LW" }],
+        [403, { id: 403, team_id: 77, position: "RW" }],
+        [404, { id: 404, team_id: 77, position: "C" }],
+        [405, { id: 405, team_id: 77, position: "LW" }],
+        [406, { id: 406, team_id: 77, position: "RW" }],
+        [501, { id: 501, team_id: 77, position: "D" }],
+        [502, { id: 502, team_id: 77, position: "D" }]
+      ])
+    });
+
+    expect(roles.get(401)?.esRole).toBe("L1");
+    expect(roles.get(404)?.esRole).toBe("L2");
+    expect(roles.get(501)?.esRole).toBe("D1");
+    expect(roles.get(401)?.source).toBe("fallback_toi_rank");
+  });
+
+  it("handles emergency fallback skaters with unknown position by assigning depth role", () => {
+    const roles = buildSkaterRoleTags({
+      lineCombination: null,
+      useFallbackRoles: true,
+      fallbackRankedSkaterIds: [9001],
+      teamId: 88,
+      playerMetaById: new Map([
+        [9001, { id: 9001, team_id: 88, position: null }]
+      ])
+    });
+
+    expect(roles.get(9001)?.esRole).toBe("L4");
+    expect(roles.get(9001)?.unitTier).toBe("DEPTH");
+    expect(roles.get(9001)?.source).toBe("fallback_toi_rank");
+  });
+});
+
+describe("skater role continuity", () => {
+  it("computes continuity and volatility summaries from recent role history", () => {
+    const summary = summarizeSkaterRoleContinuity({
+      currentRole: "L1",
+      recentRoles: ["L1", "L1", "L2", "L1", "L2", "L1"],
+      windowGames: 6
+    });
+
+    expect(summary.appearancesTracked).toBe(6);
+    expect(summary.gamesInCurrentRole).toBe(4);
+    expect(summary.continuityShare).toBeCloseTo(0.6667, 4);
+    expect(summary.roleChangeRate).toBeGreaterThan(0);
+    expect(summary.volatilityIndex).toBeCloseTo(0.3333, 4);
+  });
+
+  it("penalizes volatile role histories and mildly boosts stable roles", () => {
+    const volatile = computeSkaterRoleStabilityMultiplier({
+      windowGames: 8,
+      appearancesTracked: 8,
+      gamesInCurrentRole: 2,
+      continuityShare: 0.25,
+      roleChangeRate: 0.8,
+      volatilityIndex: 0.75
+    });
+    const stable = computeSkaterRoleStabilityMultiplier({
+      windowGames: 8,
+      appearancesTracked: 8,
+      gamesInCurrentRole: 7,
+      continuityShare: 0.875,
+      roleChangeRate: 0.1,
+      volatilityIndex: 0.25
+    });
+
+    expect(volatile).toBeLessThan(1);
+    expect(stable).toBeGreaterThanOrEqual(1);
+    expect(stable).toBeGreaterThan(volatile);
+  });
+});
+
+describe("roster-event availability weighting", () => {
+  it("fully removes unavailable event types and restores on return/callup", () => {
+    expect(availabilityMultiplierForEvent("INJURY_OUT", 1)).toBe(0);
+    expect(availabilityMultiplierForEvent("IR", 0.8)).toBe(0);
+    expect(availabilityMultiplierForEvent("LTIR", 0.6)).toBe(0);
+    expect(availabilityMultiplierForEvent("SUSPENSION", 0.9)).toBe(0);
+    expect(availabilityMultiplierForEvent("RETURN", 0.2)).toBe(1);
+    expect(availabilityMultiplierForEvent("CALLUP", 0.7)).toBe(1);
+  });
+
+  it("applies confidence-weighted penalties for partial-availability events", () => {
+    const dtdLow = availabilityMultiplierForEvent("DTD", 0.2) ?? 1;
+    const dtdHigh = availabilityMultiplierForEvent("DTD", 0.9) ?? 1;
+    const scratch = availabilityMultiplierForEvent("SCRATCH", 0.8) ?? 1;
+    const benching = availabilityMultiplierForEvent("BENCHING", 0.8) ?? 1;
+
+    expect(dtdHigh).toBeLessThan(dtdLow);
+    expect(scratch).toBeLessThan(benching);
+    expect(scratch).toBeLessThan(1);
+    expect(benching).toBeLessThan(1);
   });
 });
 
