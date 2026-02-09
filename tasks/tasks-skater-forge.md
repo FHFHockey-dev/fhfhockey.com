@@ -28,7 +28,7 @@
 
 ## Tasks
 
-- [ ] 1.0 Harden skater candidate and role assignment hygiene
+- [x] 1.0 Harden skater candidate and role assignment hygiene
   - [x] 1.1 Add active-skater filtering guards so stale/inactive skaters are near-eliminated from projection pools.
   - [x] 1.2 Add line-combination recency validation (hard fail/soft fallback) for teams with stale or missing lines.
   - [x] 1.3 Add role tagging (L1/L2/L3/L4, PP1/PP2, D1/D2/D3) from latest line combos with fallback rules.
