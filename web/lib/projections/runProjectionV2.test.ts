@@ -18,6 +18,15 @@ import {
   computeSkaterOpponentGoalieContextAdjustments,
   computeSkaterRestScheduleAdjustments,
   computeSkaterSampleShrinkageAdjustments,
+  computeStrengthSplitConversionRates,
+  allocatePpToiByTeamOpportunity,
+  computeTeammateAssistCoupling,
+  applyRoleSpecificUsageBounds,
+  validateReconciledPlayerDistribution,
+  buildSkaterRoleScenarios,
+  blendSkaterScenarioStatLines,
+  blendSkaterScenarioStatLinesAcrossHorizon,
+  buildSkaterScenarioMetadata,
   summarizeSkaterRoleContinuity,
   computeSkaterRoleStabilityMultiplier,
   availabilityMultiplierForEvent,
@@ -579,6 +588,480 @@ describe("skater small-sample shrinkage adjustments", () => {
     expect(result.sampleWeight).toBeGreaterThan(0.6);
     expect(result.isLowSample).toBe(false);
     expect(result.usedCallupFallback).toBe(false);
+  });
+});
+
+describe("strength-split conversion rates", () => {
+  it("models PP goal rate above ES goal rate when PP shot conversion evidence is stronger", () => {
+    const result = computeStrengthSplitConversionRates({
+      evGoalsRecent: 1,
+      evShotsRecent: 16,
+      evGoalsAll: 8,
+      evShotsAll: 120,
+      evAssistsRecent: 2,
+      evAssistsAll: 18,
+      ppGoalsRecent: 2,
+      ppShotsRecent: 10,
+      ppGoalsAll: 9,
+      ppShotsAll: 52,
+      ppAssistsRecent: 2,
+      ppAssistsAll: 11,
+      goalRateMultiplier: 1,
+      assistRateMultiplier: 1
+    });
+    expect(result.goalRatePp).toBeGreaterThan(result.goalRateEs);
+  });
+
+  it("applies external multipliers independently to split rates", () => {
+    const base = computeStrengthSplitConversionRates({
+      evGoalsRecent: 1,
+      evShotsRecent: 14,
+      evGoalsAll: 7,
+      evShotsAll: 110,
+      evAssistsRecent: 2,
+      evAssistsAll: 16,
+      ppGoalsRecent: 1,
+      ppShotsRecent: 8,
+      ppGoalsAll: 6,
+      ppShotsAll: 45,
+      ppAssistsRecent: 2,
+      ppAssistsAll: 10,
+      goalRateMultiplier: 1,
+      assistRateMultiplier: 1
+    });
+    const boosted = computeStrengthSplitConversionRates({
+      evGoalsRecent: 1,
+      evShotsRecent: 14,
+      evGoalsAll: 7,
+      evShotsAll: 110,
+      evAssistsRecent: 2,
+      evAssistsAll: 16,
+      ppGoalsRecent: 1,
+      ppShotsRecent: 8,
+      ppGoalsAll: 6,
+      ppShotsAll: 45,
+      ppAssistsRecent: 2,
+      ppAssistsAll: 10,
+      goalRateMultiplier: 1.1,
+      assistRateMultiplier: 1.08
+    });
+    expect(boosted.goalRateEs).toBeGreaterThan(base.goalRateEs);
+    expect(boosted.goalRatePp).toBeGreaterThan(base.goalRatePp);
+    expect(boosted.assistRateEs).toBeGreaterThan(base.assistRateEs);
+    expect(boosted.assistRatePp).toBeGreaterThan(base.assistRatePp);
+  });
+
+  it("applies stronger shrinkage for tiny samples than for established samples", () => {
+    const lowSample = computeStrengthSplitConversionRates({
+      evGoalsRecent: 1,
+      evShotsRecent: 1,
+      evGoalsAll: 1,
+      evShotsAll: 1,
+      evAssistsRecent: 0,
+      evAssistsAll: 0,
+      ppGoalsRecent: 1,
+      ppShotsRecent: 1,
+      ppGoalsAll: 1,
+      ppShotsAll: 1,
+      ppAssistsRecent: 0,
+      ppAssistsAll: 0,
+      goalRateMultiplier: 1,
+      assistRateMultiplier: 1
+    });
+    const established = computeStrengthSplitConversionRates({
+      evGoalsRecent: 1,
+      evShotsRecent: 1,
+      evGoalsAll: 18,
+      evShotsAll: 95,
+      evAssistsRecent: 0,
+      evAssistsAll: 20,
+      ppGoalsRecent: 1,
+      ppShotsRecent: 1,
+      ppGoalsAll: 10,
+      ppShotsAll: 48,
+      ppAssistsRecent: 0,
+      ppAssistsAll: 12,
+      goalRateMultiplier: 1,
+      assistRateMultiplier: 1
+    });
+
+    expect(lowSample.goalRateEs).toBeLessThan(established.goalRateEs);
+    expect(lowSample.goalRatePp).toBeLessThan(established.goalRatePp);
+  });
+});
+
+describe("pp opportunity allocation", () => {
+  it("allocates team PP TOI target across skaters using role-weighted shares", () => {
+    const allocation = allocatePpToiByTeamOpportunity({
+      projectedByPlayer: new Map([
+        [
+          1,
+          {
+            toiPp: 220,
+            roleTag: {
+              esRole: "L1",
+              unitTier: "TOP",
+              roleRank: 1,
+              source: "line_combination"
+            }
+          }
+        ],
+        [
+          2,
+          {
+            toiPp: 120,
+            roleTag: {
+              esRole: "L2",
+              unitTier: "MIDDLE",
+              roleRank: 5,
+              source: "line_combination"
+            }
+          }
+        ],
+        [
+          3,
+          {
+            toiPp: 35,
+            roleTag: {
+              esRole: "L4",
+              unitTier: "DEPTH",
+              roleRank: 11,
+              source: "line_combination"
+            }
+          }
+        ]
+      ]),
+      targetTeamPpSeconds: 540
+    });
+    const total = Array.from(allocation.perPlayerPpToiSeconds.values()).reduce(
+      (acc, n) => acc + n,
+      0
+    );
+    expect(Math.round(total)).toBe(540);
+    expect((allocation.perPlayerPpToiSeconds.get(1) ?? 0)).toBeGreaterThan(
+      allocation.perPlayerPpToiSeconds.get(2) ?? 0
+    );
+    expect((allocation.perPlayerPpToiSeconds.get(2) ?? 0)).toBeGreaterThan(
+      allocation.perPlayerPpToiSeconds.get(3) ?? 0
+    );
+  });
+});
+
+describe("teammate assist coupling", () => {
+  it("boosts assist dependency for top-unit players with strong line/PP share", () => {
+    const result = computeTeammateAssistCoupling({
+      roleTag: {
+        esRole: "L1",
+        unitTier: "TOP",
+        roleRank: 1,
+        source: "line_combination"
+      },
+      playerShotsEs: 4.2,
+      lineGroupShotsEs: 14.5,
+      teamShotsEs: 30.1,
+      playerPpShare: 0.28
+    });
+    expect(result.dependencyScore).toBeGreaterThan(0.2);
+    expect(result.assistRateEsMultiplier).toBeGreaterThan(1);
+    expect(result.assistRatePpMultiplier).toBeGreaterThan(1);
+  });
+
+  it("penalizes assist dependency for depth players with low teammate context", () => {
+    const result = computeTeammateAssistCoupling({
+      roleTag: {
+        esRole: "L4",
+        unitTier: "DEPTH",
+        roleRank: 12,
+        source: "line_combination"
+      },
+      playerShotsEs: 2.1,
+      lineGroupShotsEs: 3.2,
+      teamShotsEs: 31.8,
+      playerPpShare: 0.03
+    });
+    expect(result.assistRateEsMultiplier).toBeLessThan(1);
+    expect(result.assistRatePpMultiplier).toBeLessThan(1);
+  });
+});
+
+describe("role-specific usage bounds", () => {
+  it("caps depth skater TOI/shot spikes", () => {
+    const bounded = applyRoleSpecificUsageBounds({
+      roleTag: {
+        esRole: "L4",
+        unitTier: "DEPTH",
+        roleRank: 12,
+        source: "line_combination"
+      },
+      toiEsSeconds: 1200,
+      toiPpSeconds: 320,
+      sogPer60Es: 12.1,
+      sogPer60Pp: 18.4
+    });
+    expect(bounded.wasBounded).toBe(true);
+    expect(bounded.toiEsSeconds).toBeLessThanOrEqual(940);
+    expect(bounded.toiPpSeconds).toBeLessThanOrEqual(190);
+    expect(bounded.sogPer60Es).toBeLessThanOrEqual(8.2);
+    expect(bounded.sogPer60Pp).toBeLessThanOrEqual(13);
+  });
+
+  it("preserves top-role usage when already within bounds", () => {
+    const bounded = applyRoleSpecificUsageBounds({
+      roleTag: {
+        esRole: "L1",
+        unitTier: "TOP",
+        roleRank: 1,
+        source: "line_combination"
+      },
+      toiEsSeconds: 1080,
+      toiPpSeconds: 230,
+      sogPer60Es: 10.4,
+      sogPer60Pp: 14.2
+    });
+    expect(bounded.wasBounded).toBe(false);
+    expect(bounded.toiEsSeconds).toBe(1080);
+    expect(bounded.toiPpSeconds).toBe(230);
+  });
+});
+
+describe("reconciliation distribution validation", () => {
+  it("keeps reconciled vectors unchanged when concentration is within limits", () => {
+    const baseline = [
+      { playerId: 1, toiEsSeconds: 560, toiPpSeconds: 145, shotsEs: 2.3, shotsPp: 0.75 },
+      { playerId: 2, toiEsSeconds: 510, toiPpSeconds: 130, shotsEs: 2.0, shotsPp: 0.64 },
+      { playerId: 3, toiEsSeconds: 460, toiPpSeconds: 115, shotsEs: 1.8, shotsPp: 0.57 },
+      { playerId: 4, toiEsSeconds: 420, toiPpSeconds: 95, shotsEs: 1.6, shotsPp: 0.49 },
+      { playerId: 5, toiEsSeconds: 330, toiPpSeconds: 70, shotsEs: 1.2, shotsPp: 0.38 },
+      { playerId: 6, toiEsSeconds: 260, toiPpSeconds: 45, shotsEs: 0.9, shotsPp: 0.26 }
+    ];
+    const result = validateReconciledPlayerDistribution({
+      baselinePlayers: baseline,
+      reconciledPlayers: baseline,
+      targets: {
+        toiEsSeconds: 2540,
+        toiPpSeconds: 600,
+        shotsEs: 9.8,
+        shotsPp: 3.09
+      }
+    });
+    expect(result.wasAdjusted).toBe(false);
+    expect(result.players[0].toiEsSeconds).toBe(560);
+  });
+
+  it("blends and renormalizes when one player dominates ES/PP share", () => {
+    const baseline = [
+      { playerId: 1, toiEsSeconds: 980, toiPpSeconds: 260, shotsEs: 4.2, shotsPp: 1.4 },
+      { playerId: 2, toiEsSeconds: 840, toiPpSeconds: 210, shotsEs: 3.4, shotsPp: 1.0 },
+      { playerId: 3, toiEsSeconds: 720, toiPpSeconds: 170, shotsEs: 2.8, shotsPp: 0.8 }
+    ];
+    const extreme = [
+      { playerId: 1, toiEsSeconds: 1800, toiPpSeconds: 520, shotsEs: 8.2, shotsPp: 2.5 },
+      { playerId: 2, toiEsSeconds: 420, toiPpSeconds: 55, shotsEs: 1.5, shotsPp: 0.35 },
+      { playerId: 3, toiEsSeconds: 320, toiPpSeconds: 25, shotsEs: 1.1, shotsPp: 0.2 }
+    ];
+    const result = validateReconciledPlayerDistribution({
+      baselinePlayers: baseline,
+      reconciledPlayers: extreme,
+      targets: {
+        toiEsSeconds: 2540,
+        toiPpSeconds: 600,
+        shotsEs: 10.8,
+        shotsPp: 3.2
+      }
+    });
+    const totalEs = result.players.reduce((acc, p) => acc + p.toiEsSeconds, 0);
+    const totalPp = result.players.reduce((acc, p) => acc + p.toiPpSeconds, 0);
+    expect(result.wasAdjusted).toBe(true);
+    expect(Math.round(totalEs)).toBe(2540);
+    expect(Math.round(totalPp)).toBe(600);
+    expect(result.topEsShareAfter).toBeLessThan(0.6);
+  });
+});
+
+describe("skater role scenarios", () => {
+  it("builds normalized top scenarios from role continuity", () => {
+    const scenarios = buildSkaterRoleScenarios({
+      roleTag: {
+        esRole: "L1",
+        unitTier: "TOP",
+        roleRank: 1,
+        source: "line_combination"
+      },
+      roleContinuity: {
+        windowGames: 10,
+        appearancesTracked: 10,
+        gamesInCurrentRole: 8,
+        continuityShare: 0.8,
+        roleChangeRate: 0.2,
+        volatilityIndex: 0.2
+      }
+    });
+    const total = scenarios.reduce((acc, s) => acc + s.probability, 0);
+    expect(scenarios.length).toBeGreaterThan(1);
+    expect(Math.round(total * 1000)).toBe(1000);
+    expect(scenarios[0].role).toBe("L1");
+  });
+
+  it("produces meaningful alternate scenarios under volatility", () => {
+    const scenarios = buildSkaterRoleScenarios({
+      roleTag: {
+        esRole: "D2",
+        unitTier: "MIDDLE",
+        roleRank: 4,
+        source: "line_combination"
+      },
+      roleContinuity: {
+        windowGames: 8,
+        appearancesTracked: 8,
+        gamesInCurrentRole: 3,
+        continuityShare: 0.375,
+        roleChangeRate: 0.57,
+        volatilityIndex: 0.5
+      }
+    });
+    expect(scenarios.some((s) => s.role === "D3")).toBe(true);
+    expect((scenarios[0]?.probability ?? 0)).toBeLessThan(0.8);
+  });
+});
+
+describe("skater scenario stat blending", () => {
+  it("returns base outputs when scenarios are absent", () => {
+    const result = blendSkaterScenarioStatLines({
+      currentRole: "L2",
+      scenarios: [],
+      baseGoalsEs: 0.42,
+      baseGoalsPp: 0.16,
+      baseAssistsEs: 0.33,
+      baseAssistsPp: 0.18
+    });
+    expect(result.blended.goalsEs).toBe(0.42);
+    expect(result.blended.goalsPp).toBe(0.16);
+    expect(result.scenarioLines.length).toBe(0);
+  });
+
+  it("blends scenario lines by probability", () => {
+    const result = blendSkaterScenarioStatLines({
+      currentRole: "L2",
+      scenarios: [
+        { role: "L2", probability: 0.7, source: "current_role" },
+        { role: "L1", probability: 0.3, source: "adjacent_role" }
+      ],
+      baseGoalsEs: 0.5,
+      baseGoalsPp: 0.2,
+      baseAssistsEs: 0.45,
+      baseAssistsPp: 0.25
+    });
+    expect(result.scenarioLines.length).toBe(2);
+    expect(result.blended.goalsEs).toBeGreaterThan(0.5);
+    expect(result.blended.assistsEs).toBeGreaterThan(0.45);
+  });
+
+  it("matches exact weighted expectation for explicit two-scenario mixture", () => {
+    const result = blendSkaterScenarioStatLines({
+      currentRole: "L2",
+      scenarios: [
+        { role: "L2", probability: 0.6, source: "current_role" },
+        { role: "L3", probability: 0.4, source: "adjacent_role" }
+      ],
+      baseGoalsEs: 0.5,
+      baseGoalsPp: 0.25,
+      baseAssistsEs: 0.4,
+      baseAssistsPp: 0.2
+    });
+    // L2 keeps baseline (multiplier 1). L3 is one rank lower (goal*0.93 assist*0.91).
+    const expectedGoalsEs = 0.6 * 0.5 + 0.4 * (0.5 * 0.93);
+    const expectedAssistsEs = 0.6 * 0.4 + 0.4 * (0.4 * 0.91);
+    expect(result.blended.goalsEs).toBeCloseTo(expectedGoalsEs, 4);
+    expect(result.blended.assistsEs).toBeCloseTo(expectedAssistsEs, 4);
+  });
+});
+
+describe("horizon scenario propagation", () => {
+  it("returns per-game scenario summaries matching horizon length", () => {
+    const result = blendSkaterScenarioStatLinesAcrossHorizon({
+      currentRole: "L1",
+      scenarios: [
+        { role: "L1", probability: 0.78, source: "current_role" },
+        { role: "L2", probability: 0.22, source: "adjacent_role" }
+      ],
+      baseGoalsEs: 0.65,
+      baseGoalsPp: 0.26,
+      baseAssistsEs: 0.61,
+      baseAssistsPp: 0.33,
+      horizonScalars: [1, 0.92, 0.84],
+      roleContinuity: {
+        windowGames: 10,
+        appearancesTracked: 10,
+        gamesInCurrentRole: 7,
+        continuityShare: 0.7,
+        roleChangeRate: 0.2,
+        volatilityIndex: 0.25
+      }
+    });
+    expect(result.horizonScenarioSummaries.length).toBe(3);
+    expect(result.horizonScenarioSummaries[0]?.topRole).toBe("L1");
+  });
+
+  it("softens top-role certainty deeper into horizon", () => {
+    const result = blendSkaterScenarioStatLinesAcrossHorizon({
+      currentRole: "L1",
+      scenarios: [
+        { role: "L1", probability: 0.88, source: "current_role" },
+        { role: "L2", probability: 0.12, source: "adjacent_role" }
+      ],
+      baseGoalsEs: 0.6,
+      baseGoalsPp: 0.24,
+      baseAssistsEs: 0.56,
+      baseAssistsPp: 0.29,
+      horizonScalars: [1, 0.91, 0.83, 0.78],
+      roleContinuity: {
+        windowGames: 10,
+        appearancesTracked: 10,
+        gamesInCurrentRole: 8,
+        continuityShare: 0.8,
+        roleChangeRate: 0.1,
+        volatilityIndex: 0.2
+      }
+    });
+    const firstTop = result.horizonScenarioSummaries[0]?.topProbability ?? 0;
+    const lastTop =
+      result.horizonScenarioSummaries[result.horizonScenarioSummaries.length - 1]
+        ?.topProbability ?? 0;
+    expect(lastTop).toBeLessThan(firstTop);
+  });
+
+  it("preserves total blended mass near base means for neutral role scenarios", () => {
+    const result = blendSkaterScenarioStatLinesAcrossHorizon({
+      currentRole: "L2",
+      scenarios: [
+        { role: "L2", probability: 0.5, source: "current_role" },
+        { role: "L2", probability: 0.5, source: "adjacent_role" }
+      ],
+      baseGoalsEs: 0.44,
+      baseGoalsPp: 0.2,
+      baseAssistsEs: 0.38,
+      baseAssistsPp: 0.24,
+      horizonScalars: [1, 0.93, 0.88],
+      roleContinuity: null
+    });
+    expect(result.blended.goalsEs).toBeCloseTo(0.44, 4);
+    expect(result.blended.assistsPp).toBeCloseTo(0.24, 4);
+  });
+});
+
+describe("skater scenario metadata", () => {
+  it("produces model version, count, and sorted top drivers", () => {
+    const metadata = buildSkaterScenarioMetadata({
+      scenarios: [
+        { role: "L2", probability: 0.22, source: "adjacent_role" },
+        { role: "L1", probability: 0.68, source: "current_role" },
+        { role: "L4", probability: 0.1, source: "depth_fallback" }
+      ]
+    });
+    expect(metadata.modelVersion).toBe("skater-role-scenario-v1");
+    expect(metadata.scenarioCount).toBe(3);
+    expect(metadata.topScenarioDrivers[0]?.role).toBe("L1");
+    expect(metadata.topScenarioDrivers.length).toBe(3);
   });
 });
 

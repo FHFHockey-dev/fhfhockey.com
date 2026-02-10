@@ -126,7 +126,16 @@ export type PlayerUncertaintyInput = {
 export function buildPlayerUncertainty(
   u: PlayerUncertaintyInput,
   horizonGames = 1,
-  perGameScalars?: number[]
+  perGameScalars?: number[],
+  scenarioMixture?: Array<{
+    weight: number;
+    goalsEs?: number;
+    goalsPp?: number;
+    assistsEs?: number;
+    assistsPp?: number;
+    shotsEs?: number;
+    shotsPp?: number;
+  }>
 ) {
   const effectiveHorizon = Math.max(1, Math.floor(horizonGames));
   const scalars =
@@ -178,7 +187,16 @@ export function buildPlayerUncertainty(
       u.assistsEs,
       u.assistsPp,
       u.hits,
-      u.blocks
+      u.blocks,
+      ...(scenarioMixture ?? []).flatMap((s) => [
+        s.weight,
+        s.goalsEs ?? 0,
+        s.goalsPp ?? 0,
+        s.assistsEs ?? 0,
+        s.assistsPp ?? 0,
+        s.shotsEs ?? 0,
+        s.shotsPp ?? 0
+      ])
     ])
   );
 
@@ -189,6 +207,26 @@ export function buildPlayerUncertainty(
   const baseGoalsPp = Math.max(0, u.goalsPp);
   const baseAssistsEs = Math.max(0, u.assistsEs);
   const baseAssistsPp = Math.max(0, u.assistsPp);
+  const validMixture =
+    scenarioMixture
+      ?.map((s) => ({
+        weight: clampNonNegative(s.weight),
+        goalsEs: Math.max(0, s.goalsEs ?? baseGoalsEs),
+        goalsPp: Math.max(0, s.goalsPp ?? baseGoalsPp),
+        assistsEs: Math.max(0, s.assistsEs ?? baseAssistsEs),
+        assistsPp: Math.max(0, s.assistsPp ?? baseAssistsPp),
+        shotsEs: Math.max(0, s.shotsEs ?? baseShotsEs),
+        shotsPp: Math.max(0, s.shotsPp ?? baseShotsPp)
+      }))
+      .filter((s) => s.weight > 0) ?? [];
+  const mixtureWeightTotal = validMixture.reduce((sum, s) => sum + s.weight, 0);
+  const normalizedMixture =
+    mixtureWeightTotal > 0
+      ? validMixture.map((s) => ({
+          ...s,
+          weight: s.weight / mixtureWeightTotal
+        }))
+      : [];
 
   const samplesToiEs: number[] = [];
   const samplesToiPp: number[] = [];
@@ -217,6 +255,22 @@ export function buildPlayerUncertainty(
     let totalAssistsPp = 0;
     let totalHits = 0;
     let totalBlocks = 0;
+    const sampledScenario = (() => {
+      if (normalizedMixture.length === 0) return null;
+      const r = rand();
+      let cumulative = 0;
+      for (const s of normalizedMixture) {
+        cumulative += s.weight;
+        if (r <= cumulative) return s;
+      }
+      return normalizedMixture[normalizedMixture.length - 1] ?? null;
+    })();
+    const scenarioShotsEs = sampledScenario?.shotsEs ?? baseShotsEs;
+    const scenarioShotsPp = sampledScenario?.shotsPp ?? baseShotsPp;
+    const scenarioGoalsEs = sampledScenario?.goalsEs ?? baseGoalsEs;
+    const scenarioGoalsPp = sampledScenario?.goalsPp ?? baseGoalsPp;
+    const scenarioAssistsEs = sampledScenario?.assistsEs ?? baseAssistsEs;
+    const scenarioAssistsPp = sampledScenario?.assistsPp ?? baseAssistsPp;
 
     for (let g = 0; g < effectiveHorizon; g += 1) {
       const scalar = scalars[g] ?? 1;
@@ -240,16 +294,24 @@ export function buildPlayerUncertainty(
       const toiScale =
         baseToiScaled > 0 ? (toiEs + toiPp) / baseToiScaled : 1;
 
-      const shotsEsMean = baseShotsEs * scalar * toiScale;
-      const shotsPpMean = baseShotsPp * scalar * toiScale;
+      const shotsEsMean = scenarioShotsEs * scalar * toiScale;
+      const shotsPpMean = scenarioShotsPp * scalar * toiScale;
       const goalsEsMean =
-        baseShotsEs > 0 ? baseGoalsEs * scalar * (shotsEsMean / (baseShotsEs * scalar)) : 0;
+        scenarioShotsEs > 0
+          ? scenarioGoalsEs * scalar * (shotsEsMean / (scenarioShotsEs * scalar))
+          : 0;
       const goalsPpMean =
-        baseShotsPp > 0 ? baseGoalsPp * scalar * (shotsPpMean / (baseShotsPp * scalar)) : 0;
+        scenarioShotsPp > 0
+          ? scenarioGoalsPp * scalar * (shotsPpMean / (scenarioShotsPp * scalar))
+          : 0;
       const assistsEsMean =
-        baseGoalsEs > 0 ? baseAssistsEs * scalar * (goalsEsMean / (baseGoalsEs * scalar)) : 0;
+        scenarioGoalsEs > 0
+          ? scenarioAssistsEs * scalar * (goalsEsMean / (scenarioGoalsEs * scalar))
+          : 0;
       const assistsPpMean =
-        baseGoalsPp > 0 ? baseAssistsPp * scalar * (goalsPpMean / (baseGoalsPp * scalar)) : 0;
+        scenarioGoalsPp > 0
+          ? scenarioAssistsPp * scalar * (goalsPpMean / (scenarioGoalsPp * scalar))
+          : 0;
 
       const shotsEs = samplePoisson(shotsEsMean, rand);
       const shotsPp = samplePoisson(shotsPpMean, rand);

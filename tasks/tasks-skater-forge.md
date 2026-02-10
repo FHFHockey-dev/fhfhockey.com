@@ -47,20 +47,20 @@
   - [x] 2.7 Add small-sample shrinkage guards and fallback priors for low-minute / call-up players.
 
 - [ ] 3.0 Upgrade skater projection math and rate modeling
-  - [ ] 3.1 Split conversion modeling into separate ES and PP goal/assist processes instead of one shared rate.
-  - [ ] 3.2 Add hierarchical/Bayesian blending for each rate with adaptive prior strength by sample size.
-  - [ ] 3.3 Rework PP opportunity modeling using projected team PP time + unit share allocation.
-  - [ ] 3.4 Add teammate context coupling (assist dependency by line/PP unit) to reduce over-independent outputs.
-  - [ ] 3.5 Add role-specific ceilings/floors to curb unrealistic TOI/shot spikes for depth skaters.
-  - [ ] 3.6 Validate team-level reconciliation preserves realistic per-player distributions post-scaling.
+  - [x] 3.1 Split conversion modeling into separate ES and PP goal/assist processes instead of one shared rate.
+  - [x] 3.2 Add hierarchical/Bayesian blending for each rate with adaptive prior strength by sample size.
+  - [x] 3.3 Rework PP opportunity modeling using projected team PP time + unit share allocation.
+  - [x] 3.4 Add teammate context coupling (assist dependency by line/PP unit) to reduce over-independent outputs.
+  - [x] 3.5 Add role-specific ceilings/floors to curb unrealistic TOI/shot spikes for depth skaters.
+  - [x] 3.6 Validate team-level reconciliation preserves realistic per-player distributions post-scaling.
 
-- [ ] 4.0 Add skater scenario modeling and richer uncertainty outputs
-  - [ ] 4.1 Build top role-scenarios per skater (e.g., PP1 vs PP2, top-6 vs middle-6) with probabilities.
-  - [ ] 4.2 Generate scenario-level skater stat lines independently and blend by scenario probability.
-  - [ ] 4.3 Extend uncertainty simulation to include role/start uncertainty (not only Poisson stat noise).
-  - [ ] 4.4 Add horizon >1 game support parity using sequential schedule scalars and scenario propagation.
-  - [ ] 4.5 Persist scenario metadata in `uncertainty.model` (`model_version`, `scenario_count`, top scenario drivers).
-  - [ ] 4.6 Add unit tests for scenario blending correctness and quantile behavior under uncertainty mixtures.
+- [x] 4.0 Add skater scenario modeling and richer uncertainty outputs
+  - [x] 4.1 Build top role-scenarios per skater (e.g., PP1 vs PP2, top-6 vs middle-6) with probabilities.
+  - [x] 4.2 Generate scenario-level skater stat lines independently and blend by scenario probability.
+  - [x] 4.3 Extend uncertainty simulation to include role/start uncertainty (not only Poisson stat noise).
+  - [x] 4.4 Add horizon >1 game support parity using sequential schedule scalars and scenario propagation.
+  - [x] 4.5 Persist scenario metadata in `uncertainty.model` (`model_version`, `scenario_count`, top scenario drivers).
+  - [x] 4.6 Add unit tests for scenario blending correctness and quantile behavior under uncertainty mixtures.
 
 - [ ] 5.0 Strengthen skater accuracy diagnostics, calibration, and launch gates
   - [ ] 5.1 Add skater stat diagnostics by role bucket (top line, middle six, PP1, PP2, defense pair tiers).
@@ -107,7 +107,19 @@
 - Completed: `2.5` (added opponent-goalie quality/uncertainty multiplier from `goalie_start_projections` to skater goal/assist conversion with diagnostics/tests).
 - Completed: `2.6` (added rest/schedule multipliers from team/opponent rest days + home/away proxy to TOI, shot rate, goal rate, and assist rate with diagnostics/tests).
 - Completed: `2.7` (added explicit small-sample shrinkage and call-up fallback priors for TOI, shot rates, and conversion rates using evidence-weighted blending + diagnostics/tests).
-- Next sub-task to execute: `3.1`.
+- Completed: `3.1` (split conversion into ES/PP-specific goal and assist rates, updated projection math/output diagnostics, and added helper tests).
+- Completed: `3.2` (added adaptive Bayesian-style prior strength by sample size for ES/PP goal and assist rates, replacing fixed prior strengths).
+- Completed: `3.3` (reworked PP opportunity modeling by allocating team PP target seconds across skaters using role-weighted unit shares, with diagnostics and tests).
+- Completed: `3.4` (added teammate-context assist coupling using line-group and PP-share dependency, applied to ES/PP assist rates with diagnostics/tests).
+- Completed: `3.5` (added role-specific usage ceilings/floors for TOI and shot rates to curb depth-skater spikes, with diagnostics/tests).
+- Completed: `3.6` (added reconciliation distribution validation/stabilization with share guardrails, renormalization to targets, and observability metrics/tests).
+- Completed: `4.1` (added role-scenario generation per skater with normalized probabilities, plus uncertainty and data-quality diagnostics/tests).
+- Completed: `4.2` (added scenario-level skater stat line generation and probability-weighted blending for goals/assists, with scenario stat-line diagnostics/tests).
+- Completed: `4.3` (extended skater uncertainty simulation with scenario-mixture sampling from role scenario stat-lines, so quantiles reflect role uncertainty in addition to Poisson noise).
+- Completed: `4.4` (added horizon-aware scenario propagation using sequential game scalars and role reversion over horizon, with per-game scenario summaries and tests).
+- Completed: `4.5` (persisted scenario metadata to skater uncertainty model payload: model version, scenario count, and top scenario drivers).
+- Completed: `4.6` (added explicit unit tests for scenario blend math correctness and uncertainty quantile behavior under scenario mixtures).
+- Next sub-task to execute: `5.1`.
 - Suggested first implementation file: `web/lib/projections/runProjectionV2.ts` (candidate/role hygiene foundation).
 
 ## Process Rules (Use `process-task-list.mdc`)

@@ -132,6 +132,80 @@ type SkaterSampleShrinkageAdjustment = {
   evidenceShots: number;
 };
 
+type SkaterPpOpportunityAllocation = {
+  perPlayerPpToiSeconds: Map<number, number>;
+  playersReweighted: number;
+};
+
+type SkaterTeammateAssistCoupling = {
+  assistRateEsMultiplier: number;
+  assistRatePpMultiplier: number;
+  dependencyScore: number;
+};
+
+type SkaterRoleBoundedUsage = {
+  toiEsSeconds: number;
+  toiPpSeconds: number;
+  sogPer60Es: number;
+  sogPer60Pp: number;
+  wasBounded: boolean;
+};
+
+type ReconciledSkaterVector = {
+  playerId: number;
+  toiEsSeconds: number;
+  toiPpSeconds: number;
+  shotsEs: number;
+  shotsPp: number;
+};
+
+type ReconciliationDistributionValidation = {
+  players: ReconciledSkaterVector[];
+  wasAdjusted: boolean;
+  topEsShareAfter: number;
+  topPpShareAfter: number;
+};
+
+type SkaterRoleScenario = {
+  role: string;
+  probability: number;
+  source: "current_role" | "adjacent_role" | "depth_fallback";
+};
+
+type SkaterScenarioStatLine = {
+  role: string;
+  probability: number;
+  goalsEs: number;
+  goalsPp: number;
+  assistsEs: number;
+  assistsPp: number;
+};
+
+type SkaterScenarioHorizonBlendResult = {
+  blended: {
+    goalsEs: number;
+    goalsPp: number;
+    assistsEs: number;
+    assistsPp: number;
+  };
+  scenarioLines: SkaterScenarioStatLine[];
+  horizonScenarioSummaries: Array<{
+    gameIndex: number;
+    topRole: string;
+    topProbability: number;
+  }>;
+};
+
+type SkaterScenarioMetadata = {
+  modelVersion: string;
+  scenarioCount: number;
+  topScenarioDrivers: Array<{
+    role: string;
+    probability: number;
+    source: SkaterRoleScenario["source"];
+  }>;
+};
+
 function assertSupabase() {
   if (!supabase) throw new Error("Supabase server client not available");
 }
@@ -751,6 +825,33 @@ const SKATER_SMALL_SAMPLE_TOI_SECONDS_SCALE = 900;
 const SKATER_SMALL_SAMPLE_SHOTS_SCALE = 45;
 const SKATER_SMALL_SAMPLE_LOW_WEIGHT_THRESHOLD = 0.45;
 const SKATER_SMALL_SAMPLE_CALLUP_WEIGHT_THRESHOLD = 0.22;
+const SKATER_TEAMMATE_ASSIST_ES_MIN_MULTIPLIER = 0.82;
+const SKATER_TEAMMATE_ASSIST_ES_MAX_MULTIPLIER = 1.2;
+const SKATER_TEAMMATE_ASSIST_PP_MIN_MULTIPLIER = 0.8;
+const SKATER_TEAMMATE_ASSIST_PP_MAX_MULTIPLIER = 1.24;
+const SKATER_ROLE_TOP_TOI_ES_MIN = 780;
+const SKATER_ROLE_TOP_TOI_ES_MAX = 1500;
+const SKATER_ROLE_TOP_TOI_PP_MIN = 120;
+const SKATER_ROLE_TOP_TOI_PP_MAX = 560;
+const SKATER_ROLE_MIDDLE_TOI_ES_MIN = 560;
+const SKATER_ROLE_MIDDLE_TOI_ES_MAX = 1180;
+const SKATER_ROLE_MIDDLE_TOI_PP_MIN = 40;
+const SKATER_ROLE_MIDDLE_TOI_PP_MAX = 360;
+const SKATER_ROLE_DEPTH_TOI_ES_MIN = 260;
+const SKATER_ROLE_DEPTH_TOI_ES_MAX = 940;
+const SKATER_ROLE_DEPTH_TOI_PP_MIN = 0;
+const SKATER_ROLE_DEPTH_TOI_PP_MAX = 190;
+const SKATER_ROLE_TOP_SOG_ES_MAX = 15;
+const SKATER_ROLE_TOP_SOG_PP_MAX = 21;
+const SKATER_ROLE_MIDDLE_SOG_ES_MAX = 11.5;
+const SKATER_ROLE_MIDDLE_SOG_PP_MAX = 17;
+const SKATER_ROLE_DEPTH_SOG_ES_MAX = 8.2;
+const SKATER_ROLE_DEPTH_SOG_PP_MAX = 13;
+const RECON_TOP_ES_SHARE_MAX = 0.24;
+const RECON_TOP_PP_SHARE_MAX = 0.58;
+const RECON_BLEND_TO_BASELINE = 0.4;
+const ROLE_SCENARIO_REVERSION_PER_GAME = 0.18;
+const ROLE_SCENARIO_VOLATILE_REVERSION_BONUS = 0.12;
 
 type ActiveSkaterFilterResult = {
   eligibleSkaterIds: number[];
@@ -980,6 +1081,347 @@ export function computeSkaterRoleStabilityMultiplier(
   }
 
   return clamp(Number((1 - penalty + bonus).toFixed(4)), 0.7, 1.05);
+}
+
+function adjacentRole(role: string): string {
+  if (role.startsWith("L")) {
+    const n = Number(role.slice(1));
+    if (Number.isFinite(n)) return `L${Math.min(4, Math.max(1, n + 1))}`;
+  }
+  if (role.startsWith("D")) {
+    const n = Number(role.slice(1));
+    if (Number.isFinite(n)) return `D${Math.min(3, Math.max(1, n + 1))}`;
+  }
+  return "L4";
+}
+
+export function buildSkaterRoleScenarios(args: {
+  roleTag: SkaterRoleTag | null;
+  roleContinuity: SkaterRoleContinuitySummary | null;
+  maxScenarios?: number;
+}): SkaterRoleScenario[] {
+  const maxScenarios = Number.isFinite(args.maxScenarios)
+    ? Math.max(1, Math.floor(Number(args.maxScenarios)))
+    : 3;
+  const currentRole = args.roleTag?.esRole ?? "L4";
+  const continuityShare = args.roleContinuity?.continuityShare ?? 0.55;
+  const volatility = args.roleContinuity?.volatilityIndex ?? 0.4;
+
+  const currentProb = clamp(
+    0.55 + continuityShare * 0.3 - volatility * 0.2,
+    0.45,
+    0.9
+  );
+  const adjacentProb = clamp(
+    0.28 - continuityShare * 0.12 + volatility * 0.18,
+    0.08,
+    0.42
+  );
+  const depthProb = clamp(1 - currentProb - adjacentProb, 0.03, 0.25);
+  const scenarios: SkaterRoleScenario[] = [
+    {
+      role: currentRole,
+      probability: currentProb,
+      source: "current_role"
+    },
+    {
+      role: adjacentRole(currentRole),
+      probability: adjacentProb,
+      source: "adjacent_role"
+    },
+    {
+      role: currentRole.startsWith("D") ? "D3" : "L4",
+      probability: depthProb,
+      source: "depth_fallback"
+    }
+  ];
+
+  const merged = new Map<string, SkaterRoleScenario>();
+  for (const s of scenarios) {
+    const existing = merged.get(s.role);
+    if (!existing) {
+      merged.set(s.role, { ...s });
+      continue;
+    }
+    existing.probability += s.probability;
+    merged.set(s.role, existing);
+  }
+  const normalized = Array.from(merged.values())
+    .sort((a, b) => b.probability - a.probability)
+    .slice(0, maxScenarios);
+  const sum = normalized.reduce((acc, s) => acc + s.probability, 0);
+  return normalized.map((s) => ({
+    ...s,
+    probability: Number(
+      (sum > 0 ? s.probability / sum : 1 / normalized.length).toFixed(4)
+    )
+  }));
+}
+
+function parseRoleRank(role: string): {
+  family: "L" | "D" | null;
+  rank: number | null;
+} {
+  if (role.startsWith("L")) {
+    const rank = Number(role.slice(1));
+    return { family: "L", rank: Number.isFinite(rank) ? rank : null };
+  }
+  if (role.startsWith("D")) {
+    const rank = Number(role.slice(1));
+    return { family: "D", rank: Number.isFinite(rank) ? rank : null };
+  }
+  return { family: null, rank: null };
+}
+
+function scenarioRoleScoringMultiplier(
+  currentRole: string | null,
+  scenarioRole: string
+): {
+  goal: number;
+  assist: number;
+} {
+  const current = currentRole
+    ? parseRoleRank(currentRole)
+    : { family: null, rank: null };
+  const scenario = parseRoleRank(scenarioRole);
+  if (
+    current.family == null ||
+    scenario.family == null ||
+    current.rank == null ||
+    scenario.rank == null ||
+    current.family !== scenario.family
+  ) {
+    return { goal: 0.97, assist: 0.97 };
+  }
+  const delta = current.rank - scenario.rank;
+  const goal = clamp(1 + delta * 0.07, 0.82, 1.2);
+  const assist = clamp(1 + delta * 0.09, 0.8, 1.24);
+  return { goal: Number(goal.toFixed(4)), assist: Number(assist.toFixed(4)) };
+}
+
+export function blendSkaterScenarioStatLines(args: {
+  currentRole: string | null;
+  scenarios: SkaterRoleScenario[];
+  baseGoalsEs: number;
+  baseGoalsPp: number;
+  baseAssistsEs: number;
+  baseAssistsPp: number;
+}): {
+  blended: {
+    goalsEs: number;
+    goalsPp: number;
+    assistsEs: number;
+    assistsPp: number;
+  };
+  scenarioLines: SkaterScenarioStatLine[];
+} {
+  if (args.scenarios.length === 0) {
+    return {
+      blended: {
+        goalsEs: args.baseGoalsEs,
+        goalsPp: args.baseGoalsPp,
+        assistsEs: args.baseAssistsEs,
+        assistsPp: args.baseAssistsPp
+      },
+      scenarioLines: []
+    };
+  }
+  const scenarioLines: SkaterScenarioStatLine[] = [];
+  let blendedGoalsEs = 0;
+  let blendedGoalsPp = 0;
+  let blendedAssistsEs = 0;
+  let blendedAssistsPp = 0;
+  for (const scenario of args.scenarios) {
+    const p = clamp(scenario.probability, 0, 1);
+    const mult = scenarioRoleScoringMultiplier(args.currentRole, scenario.role);
+    const goalsEs = args.baseGoalsEs * mult.goal;
+    const goalsPp = args.baseGoalsPp * mult.goal;
+    const assistsEs = args.baseAssistsEs * mult.assist;
+    const assistsPp = args.baseAssistsPp * mult.assist;
+    blendedGoalsEs += p * goalsEs;
+    blendedGoalsPp += p * goalsPp;
+    blendedAssistsEs += p * assistsEs;
+    blendedAssistsPp += p * assistsPp;
+    scenarioLines.push({
+      role: scenario.role,
+      probability: Number(p.toFixed(4)),
+      goalsEs: Number(goalsEs.toFixed(4)),
+      goalsPp: Number(goalsPp.toFixed(4)),
+      assistsEs: Number(assistsEs.toFixed(4)),
+      assistsPp: Number(assistsPp.toFixed(4))
+    });
+  }
+  return {
+    blended: {
+      goalsEs: Number(blendedGoalsEs.toFixed(4)),
+      goalsPp: Number(blendedGoalsPp.toFixed(4)),
+      assistsEs: Number(blendedAssistsEs.toFixed(4)),
+      assistsPp: Number(blendedAssistsPp.toFixed(4))
+    },
+    scenarioLines
+  };
+}
+
+export function blendSkaterScenarioStatLinesAcrossHorizon(args: {
+  currentRole: string | null;
+  scenarios: SkaterRoleScenario[];
+  baseGoalsEs: number;
+  baseGoalsPp: number;
+  baseAssistsEs: number;
+  baseAssistsPp: number;
+  horizonScalars: number[];
+  roleContinuity: SkaterRoleContinuitySummary | null;
+}): SkaterScenarioHorizonBlendResult {
+  const scalars = args.horizonScalars.length > 0 ? args.horizonScalars : [1];
+  const scenarioSeed =
+    args.scenarios.length > 0
+      ? args.scenarios
+      : [
+          {
+            role: args.currentRole ?? "L4",
+            probability: 1,
+            source: "current_role" as const
+          }
+        ];
+  const baseNormDenom = scenarioSeed.reduce(
+    (acc, s) => acc + Math.max(0, s.probability),
+    0
+  );
+  const baseNorm = scenarioSeed.map((s) => ({
+    ...s,
+    probability:
+      baseNormDenom > 0
+        ? clamp(s.probability / baseNormDenom, 0, 1)
+        : 1 / scenarioSeed.length
+  }));
+  const baseUniformProb = 1 / baseNorm.length;
+  const volatility = args.roleContinuity?.volatilityIndex ?? 0.35;
+
+  let blendedGoalsEs = 0;
+  let blendedGoalsPp = 0;
+  let blendedAssistsEs = 0;
+  let blendedAssistsPp = 0;
+  const scenarioLineByRole = new Map<string, SkaterScenarioStatLine>();
+  const horizonScenarioSummaries: Array<{
+    gameIndex: number;
+    topRole: string;
+    topProbability: number;
+  }> = [];
+  const scalarTotal = scalars.reduce((acc, s) => acc + Math.max(0, s), 0) || 1;
+
+  for (let gameIndex = 0; gameIndex < scalars.length; gameIndex += 1) {
+    const scalar = Math.max(0, scalars[gameIndex] ?? 0);
+    const reversion = clamp(
+      gameIndex * ROLE_SCENARIO_REVERSION_PER_GAME +
+        volatility * ROLE_SCENARIO_VOLATILE_REVERSION_BONUS,
+      0,
+      0.75
+    );
+    const gameScenarios = baseNorm.map((s) => ({
+      ...s,
+      probability: clamp(
+        (1 - reversion) * s.probability + reversion * baseUniformProb,
+        0,
+        1
+      )
+    }));
+    const gameProbDenom =
+      gameScenarios.reduce((acc, s) => acc + s.probability, 0) || 1;
+    const normalizedGameScenarios = gameScenarios.map((s) => ({
+      ...s,
+      probability: s.probability / gameProbDenom
+    }));
+    const top = normalizedGameScenarios
+      .slice()
+      .sort((a, b) => b.probability - a.probability)[0];
+    horizonScenarioSummaries.push({
+      gameIndex,
+      topRole: top?.role ?? args.currentRole ?? "L4",
+      topProbability: Number((top?.probability ?? 1).toFixed(4))
+    });
+
+    for (const scenario of normalizedGameScenarios) {
+      const p = clamp(scenario.probability, 0, 1);
+      const mult = scenarioRoleScoringMultiplier(
+        args.currentRole,
+        scenario.role
+      );
+      const goalsEs = args.baseGoalsEs * mult.goal;
+      const goalsPp = args.baseGoalsPp * mult.goal;
+      const assistsEs = args.baseAssistsEs * mult.assist;
+      const assistsPp = args.baseAssistsPp * mult.assist;
+      const weightedScalar = scalar / scalarTotal;
+      blendedGoalsEs += weightedScalar * p * goalsEs;
+      blendedGoalsPp += weightedScalar * p * goalsPp;
+      blendedAssistsEs += weightedScalar * p * assistsEs;
+      blendedAssistsPp += weightedScalar * p * assistsPp;
+      const existing = scenarioLineByRole.get(scenario.role);
+      if (!existing) {
+        scenarioLineByRole.set(scenario.role, {
+          role: scenario.role,
+          probability: weightedScalar * p,
+          goalsEs: weightedScalar * goalsEs,
+          goalsPp: weightedScalar * goalsPp,
+          assistsEs: weightedScalar * assistsEs,
+          assistsPp: weightedScalar * assistsPp
+        });
+      } else {
+        existing.probability += weightedScalar * p;
+        existing.goalsEs += weightedScalar * goalsEs;
+        existing.goalsPp += weightedScalar * goalsPp;
+        existing.assistsEs += weightedScalar * assistsEs;
+        existing.assistsPp += weightedScalar * assistsPp;
+        scenarioLineByRole.set(scenario.role, existing);
+      }
+    }
+  }
+
+  const scenarioLines = Array.from(scenarioLineByRole.values())
+    .sort((a, b) => b.probability - a.probability)
+    .map((s) => ({
+      role: s.role,
+      probability: Number(s.probability.toFixed(4)),
+      goalsEs: Number(s.goalsEs.toFixed(4)),
+      goalsPp: Number(s.goalsPp.toFixed(4)),
+      assistsEs: Number(s.assistsEs.toFixed(4)),
+      assistsPp: Number(s.assistsPp.toFixed(4))
+    }));
+
+  return {
+    blended: {
+      goalsEs: Number(blendedGoalsEs.toFixed(4)),
+      goalsPp: Number(blendedGoalsPp.toFixed(4)),
+      assistsEs: Number(blendedAssistsEs.toFixed(4)),
+      assistsPp: Number(blendedAssistsPp.toFixed(4))
+    },
+    scenarioLines,
+    horizonScenarioSummaries
+  };
+}
+
+export function buildSkaterScenarioMetadata(args: {
+  scenarios: SkaterRoleScenario[];
+  modelVersion?: string;
+  topK?: number;
+}): SkaterScenarioMetadata {
+  const topK = Number.isFinite(args.topK)
+    ? Math.max(1, Math.floor(Number(args.topK)))
+    : 3;
+  const modelVersion = args.modelVersion ?? "skater-role-scenario-v1";
+  const normalized = args.scenarios
+    .slice()
+    .sort((a, b) => b.probability - a.probability)
+    .slice(0, topK)
+    .map((s) => ({
+      role: s.role,
+      probability: Number(clamp(s.probability, 0, 1).toFixed(4)),
+      source: s.source
+    }));
+  return {
+    modelVersion,
+    scenarioCount: args.scenarios.length,
+    topScenarioDrivers: normalized
+  };
 }
 
 function computeSkaterRecencyMultiplier(daysSinceLastMetric: number): number {
@@ -1503,6 +1945,430 @@ export function computeSkaterSampleShrinkageAdjustments(args: {
     usedCallupFallback: sampleWeight < SKATER_SMALL_SAMPLE_CALLUP_WEIGHT_THRESHOLD,
     evidenceToiSeconds: Number(evidenceToiSeconds.toFixed(3)),
     evidenceShots: Number(evidenceShots.toFixed(3))
+  };
+}
+
+export function computeStrengthSplitConversionRates(args: {
+  evGoalsRecent: number;
+  evShotsRecent: number;
+  evGoalsAll: number;
+  evShotsAll: number;
+  evAssistsRecent: number;
+  evAssistsAll: number;
+  ppGoalsRecent: number;
+  ppShotsRecent: number;
+  ppGoalsAll: number;
+  ppShotsAll: number;
+  ppAssistsRecent: number;
+  ppAssistsAll: number;
+  goalRateMultiplier: number;
+  assistRateMultiplier: number;
+}): {
+  goalRateEs: number;
+  goalRatePp: number;
+  assistRateEs: number;
+  assistRatePp: number;
+} {
+  const adaptivePriorStrength = (opts: {
+    baseStrength: number;
+    evidenceDenom: number;
+    evidenceScale: number;
+    minStrength: number;
+    maxStrength: number;
+  }): number => {
+    const denom = Math.max(0, opts.evidenceDenom);
+    const shrinkFactor = opts.evidenceScale / (denom + opts.evidenceScale);
+    const scaled = opts.baseStrength * (0.35 + 1.35 * shrinkFactor);
+    return clamp(scaled, opts.minStrength, opts.maxStrength);
+  };
+
+  const evGoalPriorStrength = adaptivePriorStrength({
+    baseStrength: 42,
+    evidenceDenom:
+      Math.max(0, args.evShotsAll) + Math.max(0, args.evShotsRecent),
+    evidenceScale: 70,
+    minStrength: 12,
+    maxStrength: 72
+  });
+  const ppGoalPriorStrength = adaptivePriorStrength({
+    baseStrength: 26,
+    evidenceDenom:
+      Math.max(0, args.ppShotsAll) + Math.max(0, args.ppShotsRecent),
+    evidenceScale: 40,
+    minStrength: 9,
+    maxStrength: 54
+  });
+  const evAssistPriorStrength = adaptivePriorStrength({
+    baseStrength: 22,
+    evidenceDenom:
+      Math.max(0, args.evGoalsAll * 2) + Math.max(0, args.evGoalsRecent * 2),
+    evidenceScale: 36,
+    minStrength: 8,
+    maxStrength: 40
+  });
+  const ppAssistPriorStrength = adaptivePriorStrength({
+    baseStrength: 16,
+    evidenceDenom:
+      Math.max(0, args.ppGoalsAll * 2) + Math.max(0, args.ppGoalsRecent * 2),
+    evidenceScale: 24,
+    minStrength: 6,
+    maxStrength: 30
+  });
+
+  const goalRateEsRaw = blendOnlineRate({
+    recentNumerator: args.evGoalsRecent,
+    recentDenom: args.evShotsRecent,
+    baseNumerator: args.evGoalsAll,
+    baseDenom: args.evShotsAll,
+    fallback: 0.095,
+    priorStrength: evGoalPriorStrength,
+    minRate: 0.025,
+    maxRate: 0.24
+  });
+  const goalRatePpRaw = blendOnlineRate({
+    recentNumerator: args.ppGoalsRecent,
+    recentDenom: args.ppShotsRecent,
+    baseNumerator: args.ppGoalsAll,
+    baseDenom: args.ppShotsAll,
+    fallback: 0.145,
+    priorStrength: ppGoalPriorStrength,
+    minRate: 0.04,
+    maxRate: 0.36
+  });
+  const assistRateEsRaw = blendOnlineRate({
+    recentNumerator: args.evAssistsRecent,
+    recentDenom: args.evGoalsRecent * 2,
+    baseNumerator: args.evAssistsAll,
+    baseDenom: args.evGoalsAll * 2,
+    fallback: 0.72,
+    priorStrength: evAssistPriorStrength,
+    minRate: 0.2,
+    maxRate: 1.45
+  });
+  const assistRatePpRaw = blendOnlineRate({
+    recentNumerator: args.ppAssistsRecent,
+    recentDenom: args.ppGoalsRecent * 2,
+    baseNumerator: args.ppAssistsAll,
+    baseDenom: args.ppGoalsAll * 2,
+    fallback: 0.95,
+    priorStrength: ppAssistPriorStrength,
+    minRate: 0.3,
+    maxRate: 1.8
+  });
+
+  return {
+    goalRateEs: clamp(goalRateEsRaw * args.goalRateMultiplier, 0.02, 0.3),
+    goalRatePp: clamp(goalRatePpRaw * args.goalRateMultiplier, 0.03, 0.45),
+    assistRateEs: clamp(assistRateEsRaw * args.assistRateMultiplier, 0.2, 1.7),
+    assistRatePp: clamp(assistRatePpRaw * args.assistRateMultiplier, 0.3, 2)
+  };
+}
+
+function roleBasedPpShareWeight(roleTag: SkaterRoleTag | null): number {
+  if (!roleTag) return 0.65;
+  if (roleTag.unitTier === "TOP") return 1.8;
+  if (roleTag.unitTier === "MIDDLE") return 1.05;
+  return 0.35;
+}
+
+export function allocatePpToiByTeamOpportunity(args: {
+  projectedByPlayer: Map<
+    number,
+    {
+      toiPp: number;
+      roleTag: SkaterRoleTag | null;
+    }
+  >;
+  targetTeamPpSeconds: number;
+}): SkaterPpOpportunityAllocation {
+  const players = Array.from(args.projectedByPlayer.entries());
+  if (players.length === 0 || args.targetTeamPpSeconds <= 0) {
+    return {
+      perPlayerPpToiSeconds: new Map<number, number>(),
+      playersReweighted: 0
+    };
+  }
+
+  const weighted = players.map(([playerId, p]) => {
+    const basePpToi = Math.max(0, p.toiPp);
+    const opportunityEvidence = Math.sqrt(basePpToi + 1);
+    const roleWeight = roleBasedPpShareWeight(p.roleTag);
+    const weight = roleWeight * opportunityEvidence;
+    return { playerId, basePpToi, weight };
+  });
+  const weightSum = weighted.reduce((acc, cur) => acc + cur.weight, 0);
+  if (!Number.isFinite(weightSum) || weightSum <= 0) {
+    return {
+      perPlayerPpToiSeconds: new Map<number, number>(),
+      playersReweighted: 0
+    };
+  }
+
+  const perPlayerPpToiSeconds = new Map<number, number>();
+  let playersReweighted = 0;
+  for (const row of weighted) {
+    const allocated = (row.weight / weightSum) * args.targetTeamPpSeconds;
+    const value = Number(clamp(allocated, 0, 1400).toFixed(3));
+    perPlayerPpToiSeconds.set(row.playerId, value);
+    if (Math.abs(value - row.basePpToi) > 1e-3) playersReweighted += 1;
+  }
+  return { perPlayerPpToiSeconds, playersReweighted };
+}
+
+function roleGroupKeyForTeammateCoupling(
+  roleTag: SkaterRoleTag | null
+): string | null {
+  if (!roleTag) return null;
+  if (roleTag.esRole.startsWith("L")) return roleTag.esRole;
+  if (roleTag.esRole.startsWith("D")) return roleTag.esRole;
+  return null;
+}
+
+export function computeTeammateAssistCoupling(args: {
+  roleTag: SkaterRoleTag | null;
+  playerShotsEs: number;
+  lineGroupShotsEs: number;
+  teamShotsEs: number;
+  playerPpShare: number;
+}): SkaterTeammateAssistCoupling {
+  const roleTag = args.roleTag;
+  const teamShotsEs = Math.max(0, args.teamShotsEs);
+  const playerShotsEs = Math.max(0, args.playerShotsEs);
+  const lineGroupShotsEs = Math.max(0, args.lineGroupShotsEs);
+  const playerPpShare = clamp(args.playerPpShare, 0, 1);
+
+  if (teamShotsEs <= 0) {
+    return {
+      assistRateEsMultiplier: 1,
+      assistRatePpMultiplier: 1,
+      dependencyScore: 0
+    };
+  }
+
+  const playerEsShare = clamp(playerShotsEs / teamShotsEs, 0, 0.5);
+  const lineShare = clamp(lineGroupShotsEs / teamShotsEs, 0, 0.85);
+  const lineMateShare = clamp(lineShare - playerEsShare, 0, 0.75);
+  const tierWeight =
+    roleTag?.unitTier === "TOP"
+      ? 1
+      : roleTag?.unitTier === "MIDDLE"
+        ? 0.72
+        : 0.48;
+  const lineDependency = clamp(lineMateShare * 1.65 * tierWeight, 0, 0.5);
+  const ppDependency = clamp(
+    playerPpShare * (0.9 + 0.35 * tierWeight),
+    0,
+    0.65
+  );
+  const dependencyScore = clamp(
+    lineDependency * 0.6 + ppDependency * 0.4,
+    0,
+    1
+  );
+
+  const assistRateEsMultiplier = clamp(
+    1 + (lineDependency - 0.14) * 0.62,
+    SKATER_TEAMMATE_ASSIST_ES_MIN_MULTIPLIER,
+    SKATER_TEAMMATE_ASSIST_ES_MAX_MULTIPLIER
+  );
+  const assistRatePpMultiplier = clamp(
+    1 + (ppDependency - 0.18) * 0.75,
+    SKATER_TEAMMATE_ASSIST_PP_MIN_MULTIPLIER,
+    SKATER_TEAMMATE_ASSIST_PP_MAX_MULTIPLIER
+  );
+
+  return {
+    assistRateEsMultiplier: Number(assistRateEsMultiplier.toFixed(4)),
+    assistRatePpMultiplier: Number(assistRatePpMultiplier.toFixed(4)),
+    dependencyScore: Number(dependencyScore.toFixed(4))
+  };
+}
+
+export function applyRoleSpecificUsageBounds(args: {
+  roleTag: SkaterRoleTag | null;
+  toiEsSeconds: number;
+  toiPpSeconds: number;
+  sogPer60Es: number;
+  sogPer60Pp: number;
+}): SkaterRoleBoundedUsage {
+  const tier = args.roleTag?.unitTier ?? "DEPTH";
+  const limits =
+    tier === "TOP"
+      ? {
+          toiEsMin: SKATER_ROLE_TOP_TOI_ES_MIN,
+          toiEsMax: SKATER_ROLE_TOP_TOI_ES_MAX,
+          toiPpMin: SKATER_ROLE_TOP_TOI_PP_MIN,
+          toiPpMax: SKATER_ROLE_TOP_TOI_PP_MAX,
+          sogEsMax: SKATER_ROLE_TOP_SOG_ES_MAX,
+          sogPpMax: SKATER_ROLE_TOP_SOG_PP_MAX
+        }
+      : tier === "MIDDLE"
+        ? {
+            toiEsMin: SKATER_ROLE_MIDDLE_TOI_ES_MIN,
+            toiEsMax: SKATER_ROLE_MIDDLE_TOI_ES_MAX,
+            toiPpMin: SKATER_ROLE_MIDDLE_TOI_PP_MIN,
+            toiPpMax: SKATER_ROLE_MIDDLE_TOI_PP_MAX,
+            sogEsMax: SKATER_ROLE_MIDDLE_SOG_ES_MAX,
+            sogPpMax: SKATER_ROLE_MIDDLE_SOG_PP_MAX
+          }
+        : {
+            toiEsMin: SKATER_ROLE_DEPTH_TOI_ES_MIN,
+            toiEsMax: SKATER_ROLE_DEPTH_TOI_ES_MAX,
+            toiPpMin: SKATER_ROLE_DEPTH_TOI_PP_MIN,
+            toiPpMax: SKATER_ROLE_DEPTH_TOI_PP_MAX,
+            sogEsMax: SKATER_ROLE_DEPTH_SOG_ES_MAX,
+            sogPpMax: SKATER_ROLE_DEPTH_SOG_PP_MAX
+          };
+
+  const boundedToiEs = clamp(
+    args.toiEsSeconds,
+    limits.toiEsMin,
+    limits.toiEsMax
+  );
+  const boundedToiPp = clamp(
+    args.toiPpSeconds,
+    limits.toiPpMin,
+    limits.toiPpMax
+  );
+  const boundedSogEs = clamp(args.sogPer60Es, 1.2, limits.sogEsMax);
+  const boundedSogPp = clamp(args.sogPer60Pp, 1.5, limits.sogPpMax);
+
+  const wasBounded =
+    Math.abs(boundedToiEs - args.toiEsSeconds) > 1e-6 ||
+    Math.abs(boundedToiPp - args.toiPpSeconds) > 1e-6 ||
+    Math.abs(boundedSogEs - args.sogPer60Es) > 1e-6 ||
+    Math.abs(boundedSogPp - args.sogPer60Pp) > 1e-6;
+  return {
+    toiEsSeconds: Number(boundedToiEs.toFixed(3)),
+    toiPpSeconds: Number(boundedToiPp.toFixed(3)),
+    sogPer60Es: Number(boundedSogEs.toFixed(3)),
+    sogPer60Pp: Number(boundedSogPp.toFixed(3)),
+    wasBounded
+  };
+}
+
+export function validateReconciledPlayerDistribution(args: {
+  baselinePlayers: ReconciledSkaterVector[];
+  reconciledPlayers: ReconciledSkaterVector[];
+  targets: {
+    toiEsSeconds: number;
+    toiPpSeconds: number;
+    shotsEs: number;
+    shotsPp: number;
+  };
+}): ReconciliationDistributionValidation {
+  const byBaselineId = new Map<number, ReconciledSkaterVector>();
+  for (const p of args.baselinePlayers) byBaselineId.set(p.playerId, p);
+  const players = args.reconciledPlayers.map((p) => ({ ...p }));
+  if (players.length === 0) {
+    return {
+      players,
+      wasAdjusted: false,
+      topEsShareAfter: 0,
+      topPpShareAfter: 0
+    };
+  }
+
+  const totalEs = players.reduce(
+    (acc, p) => acc + Math.max(0, p.toiEsSeconds),
+    0
+  );
+  const totalPp = players.reduce(
+    (acc, p) => acc + Math.max(0, p.toiPpSeconds),
+    0
+  );
+  const topEsShareAfter =
+    totalEs > 0
+      ? Math.max(...players.map((p) => Math.max(0, p.toiEsSeconds) / totalEs))
+      : 0;
+  const topPpShareAfter =
+    totalPp > 0
+      ? Math.max(...players.map((p) => Math.max(0, p.toiPpSeconds) / totalPp))
+      : 0;
+  const needsAdjustment =
+    topEsShareAfter > RECON_TOP_ES_SHARE_MAX ||
+    topPpShareAfter > RECON_TOP_PP_SHARE_MAX;
+  if (!needsAdjustment) {
+    return {
+      players,
+      wasAdjusted: false,
+      topEsShareAfter: Number(topEsShareAfter.toFixed(4)),
+      topPpShareAfter: Number(topPpShareAfter.toFixed(4))
+    };
+  }
+
+  const blended = players.map((p) => {
+    const baseline = byBaselineId.get(p.playerId) ?? p;
+    return {
+      ...p,
+      toiEsSeconds: Number(
+        (
+          (1 - RECON_BLEND_TO_BASELINE) * p.toiEsSeconds +
+          RECON_BLEND_TO_BASELINE * baseline.toiEsSeconds
+        ).toFixed(3)
+      ),
+      toiPpSeconds: Number(
+        (
+          (1 - RECON_BLEND_TO_BASELINE) * p.toiPpSeconds +
+          RECON_BLEND_TO_BASELINE * baseline.toiPpSeconds
+        ).toFixed(3)
+      ),
+      shotsEs: Number(
+        (
+          (1 - RECON_BLEND_TO_BASELINE) * p.shotsEs +
+          RECON_BLEND_TO_BASELINE * baseline.shotsEs
+        ).toFixed(3)
+      ),
+      shotsPp: Number(
+        (
+          (1 - RECON_BLEND_TO_BASELINE) * p.shotsPp +
+          RECON_BLEND_TO_BASELINE * baseline.shotsPp
+        ).toFixed(3)
+      )
+    };
+  });
+
+  const renormalize = (
+    key: "toiEsSeconds" | "toiPpSeconds" | "shotsEs" | "shotsPp",
+    target: number
+  ) => {
+    const sum = blended.reduce((acc, p) => acc + Math.max(0, p[key]), 0);
+    const scale = sum > 0 ? target / sum : 1;
+    for (const p of blended) {
+      p[key] = Number((Math.max(0, p[key]) * scale).toFixed(3));
+    }
+  };
+  renormalize("toiEsSeconds", args.targets.toiEsSeconds);
+  renormalize("toiPpSeconds", args.targets.toiPpSeconds);
+  renormalize("shotsEs", args.targets.shotsEs);
+  renormalize("shotsPp", args.targets.shotsPp);
+
+  const adjustedTotalEs = blended.reduce(
+    (acc, p) => acc + Math.max(0, p.toiEsSeconds),
+    0
+  );
+  const adjustedTotalPp = blended.reduce(
+    (acc, p) => acc + Math.max(0, p.toiPpSeconds),
+    0
+  );
+  const adjustedTopEsShare =
+    adjustedTotalEs > 0
+      ? Math.max(
+          ...blended.map((p) => Math.max(0, p.toiEsSeconds) / adjustedTotalEs)
+        )
+      : 0;
+  const adjustedTopPpShare =
+    adjustedTotalPp > 0
+      ? Math.max(
+          ...blended.map((p) => Math.max(0, p.toiPpSeconds) / adjustedTotalPp)
+        )
+      : 0;
+
+  return {
+    players: blended,
+    wasAdjusted: true,
+    topEsShareAfter: Number(adjustedTopEsShare.toFixed(4)),
+    topPpShareAfter: Number(adjustedTopPpShare.toFixed(4))
   };
 }
 
@@ -2935,8 +3801,8 @@ export async function runProjectionV2ForDate(
     goalie_rows: 0,
     learning: {
       recent_window_games: 5,
-      goal_rate_prior_strength: 40,
-      assist_rate_prior_strength: 20,
+      goal_rate_prior_strength: "adaptive",
+      assist_rate_prior_strength: "adaptive",
       players_considered: 0,
       goal_rate_recent_players: 0,
       assist_rate_recent_players: 0,
@@ -2977,6 +3843,18 @@ export async function runProjectionV2ForDate(
       small_sample_players: 0,
       small_sample_shrinkage_applied: 0,
       small_sample_callup_fallbacks: 0,
+      missing_pp_conversion_samples: 0,
+      pp_opportunity_teams_modeled: 0,
+      pp_opportunity_players_reweighted: 0,
+      teammate_coupling_players_adjusted: 0,
+      role_usage_bounds_applied: 0,
+      reconciliation_distribution_adjustments: 0,
+      reconciliation_top_es_share_max: null as number | null,
+      reconciliation_top_pp_share_max: null as number | null,
+      role_scenarios_players_modeled: 0,
+      role_scenarios_avg_count: null as number | null,
+      role_scenario_blends_applied: 0,
+      role_scenario_horizon_games_modeled: 0,
       toi_scaled_teams: 0,
       toi_scale_min: null as number | null,
       toi_scale_max: null as number | null
@@ -3399,8 +4277,10 @@ export async function runProjectionV2ForDate(
             toiPp: number;
             shotsEs: number;
             shotsPp: number;
-            goalRate: number;
-            assistRate: number;
+            goalRateEs: number;
+            goalRatePp: number;
+            assistRateEs: number;
+            assistRatePp: number;
             hitsRate: number;
             blocksRate: number;
             roleTag: SkaterRoleTag | null;
@@ -3447,8 +4327,20 @@ export async function runProjectionV2ForDate(
             smallSampleUsedCallupFallback: boolean;
             smallSampleEvidenceToiSeconds: number;
             smallSampleEvidenceShots: number;
+            ppOpportunityTeamTargetSeconds: number | null;
+            ppOpportunityAllocatedShare: number | null;
+            teammateAssistEsMultiplier: number;
+            teammateAssistPpMultiplier: number;
+            teammateDependencyScore: number;
+            roleUsageBoundsApplied: boolean;
+            boundedSogPer60Es: number;
+            boundedSogPer60Pp: number;
+            roleScenarios: SkaterRoleScenario[];
+            roleScenarioTopProbability: number;
           }
         >();
+        let roleScenarioPlayersModeled = 0;
+        let roleScenarioCountTotal = 0;
 
         for (const playerId of skaterIds) {
           const ev = evLatest.get(playerId);
@@ -3531,6 +4423,7 @@ export async function runProjectionV2ForDate(
               (1 - sampleWeight) * safeNumber(pp?.toi_seconds_avg_all, 120)
             ).toFixed(3)
           );
+          const roleTag = skaterRoleTags.get(playerId) ?? null;
           const shotQualityAdjustment =
             computeSkaterShotQualityAdjustments({ profile: shotQualityProfile });
           if (shotQualityProfile != null) {
@@ -3551,28 +4444,42 @@ export async function runProjectionV2ForDate(
             pp?.sog_per_60_avg_last5,
             safeNumber(pp?.sog_per_60_avg_all, 8)
           );
-          const sogPer60Ev = clamp(
-            (sogPer60EvRaw *
+          const sogPer60EvPreBound = clamp(
+            sogPer60EvRaw *
               shotQualityAdjustment.shotRateMultiplier *
               onIceContextAdjustment.shotEnvironmentMultiplier *
               teamLevelContextAdjustment.shotRateMultiplier *
-              restScheduleAdjustment.shotRateMultiplier) *
+              restScheduleAdjustment.shotRateMultiplier *
               sampleWeight +
               (1 - sampleWeight) * 6,
             1.5,
             20
           );
-          const sogPer60Pp = clamp(
-            (sogPer60PpRaw *
+          const sogPer60PpPreBound = clamp(
+            sogPer60PpRaw *
               shotQualityAdjustment.shotRateMultiplier *
               onIceContextAdjustment.shotEnvironmentMultiplier *
               teamLevelContextAdjustment.shotRateMultiplier *
-              restScheduleAdjustment.shotRateMultiplier) *
+              restScheduleAdjustment.shotRateMultiplier *
               sampleWeight +
               (1 - sampleWeight) * 8,
             2,
             28
           );
+          const boundedUsage = applyRoleSpecificUsageBounds({
+            roleTag,
+            toiEsSeconds: shrunkToiEs,
+            toiPpSeconds: shrunkToiPp,
+            sogPer60Es: sogPer60EvPreBound,
+            sogPer60Pp: sogPer60PpPreBound
+          });
+          if (boundedUsage.wasBounded) {
+            metrics.data_quality.role_usage_bounds_applied += 1;
+          }
+          const boundedToiEs = boundedUsage.toiEsSeconds;
+          const boundedToiPp = boundedUsage.toiPpSeconds;
+          const sogPer60Ev = boundedUsage.sogPer60Es;
+          const sogPer60Pp = boundedUsage.sogPer60Pp;
 
           const hitsPer60 = safeNumber(
             ev?.hits_per_60_avg_last5,
@@ -3583,8 +4490,8 @@ export async function runProjectionV2ForDate(
             safeNumber(ev?.blocks_per_60_avg_all, 0.5)
           );
 
-          const shotsEs = computeShotsFromRate(shrunkToiEs, sogPer60Ev);
-          const shotsPp = computeShotsFromRate(shrunkToiPp, sogPer60Pp);
+          const shotsEs = computeShotsFromRate(boundedToiEs, sogPer60Ev);
+          const shotsPp = computeShotsFromRate(boundedToiPp, sogPer60Pp);
 
           // Online learning: blend recent and season-long conversion rates.
           const goalsTotal = safeNumber(ev?.goals_total_all, 0);
@@ -3593,57 +4500,66 @@ export async function runProjectionV2ForDate(
           const goalsRecent = safeNumber(ev?.goals_total_last5, 0);
           const shotsRecent = safeNumber(ev?.shots_total_last5, 0);
           const assistsRecent = safeNumber(ev?.assists_total_last5, 0);
+          const ppGoalsTotal = safeNumber(pp?.goals_total_all, 0);
+          const ppShotsTotal = safeNumber(pp?.shots_total_all, 0);
+          const ppAssistsTotal = safeNumber(pp?.assists_total_all, 0);
+          const ppGoalsRecent = safeNumber(pp?.goals_total_last5, 0);
+          const ppShotsRecent = safeNumber(pp?.shots_total_last5, 0);
+          const ppAssistsRecent = safeNumber(pp?.assists_total_last5, 0);
+          if (ppShotsTotal <= 0 && ppShotsRecent <= 0) {
+            metrics.data_quality.missing_pp_conversion_samples += 1;
+          }
 
           learningCounters.players += 1;
           if (shotsRecent > 0) learningCounters.goalRecent += 1;
           if (goalsRecent > 0) learningCounters.assistRecent += 1;
 
-          const goalRateRaw = blendOnlineRate({
-            recentNumerator: goalsRecent,
-            recentDenom: shotsRecent,
-            baseNumerator: goalsTotal,
-            baseDenom: shotsTotal,
-            fallback: 0.1,
-            priorStrength: 40,
-            minRate: 0.03,
-            maxRate: 0.25
-          });
-          const goalRate = clamp(
-            (goalRateRaw *
+          const splitRates = computeStrengthSplitConversionRates({
+            evGoalsRecent: goalsRecent,
+            evShotsRecent: shotsRecent,
+            evGoalsAll: goalsTotal,
+            evShotsAll: shotsTotal,
+            evAssistsRecent: assistsRecent,
+            evAssistsAll: assistsTotal,
+            ppGoalsRecent,
+            ppShotsRecent,
+            ppGoalsAll: ppGoalsTotal,
+            ppShotsAll: ppShotsTotal,
+            ppAssistsRecent,
+            ppAssistsAll: ppAssistsTotal,
+            goalRateMultiplier:
               shotQualityAdjustment.goalRateMultiplier *
               onIceContextAdjustment.goalEnvironmentMultiplier *
               teamLevelContextAdjustment.goalRateMultiplier *
               opponentGoalieContextAdjustment.goalRateMultiplier *
-              restScheduleAdjustment.goalRateMultiplier) *
-              sampleWeight +
-              (1 - sampleWeight) * 0.1,
-            0.03,
-            0.3
-          );
-
-          const assistRateRaw = blendOnlineRate({
-            recentNumerator: assistsRecent,
-            recentDenom: goalsRecent * 2,
-            baseNumerator: assistsTotal,
-            baseDenom: goalsTotal * 2,
-            fallback: 0.7,
-            priorStrength: 20,
-            minRate: 0.2,
-            maxRate: 1.4
-          });
-          const assistRate = clamp(
-            (assistRateRaw *
+              restScheduleAdjustment.goalRateMultiplier,
+            assistRateMultiplier:
               onIceContextAdjustment.assistEnvironmentMultiplier *
               teamLevelContextAdjustment.assistRateMultiplier *
               opponentGoalieContextAdjustment.assistRateMultiplier *
-              restScheduleAdjustment.assistRateMultiplier) *
-              sampleWeight +
-              (1 - sampleWeight) * 0.7,
+              restScheduleAdjustment.assistRateMultiplier
+          });
+          const goalRateEs = clamp(
+            splitRates.goalRateEs * sampleWeight + (1 - sampleWeight) * 0.095,
+            0.025,
+            0.3
+          );
+          const goalRatePp = clamp(
+            splitRates.goalRatePp * sampleWeight + (1 - sampleWeight) * 0.145,
+            0.04,
+            0.45
+          );
+          const assistRateEs = clamp(
+            splitRates.assistRateEs * sampleWeight + (1 - sampleWeight) * 0.72,
             0.2,
-            1.6
+            1.7
+          );
+          const assistRatePp = clamp(
+            splitRates.assistRatePp * sampleWeight + (1 - sampleWeight) * 0.95,
+            0.3,
+            2
           );
 
-          const roleTag = skaterRoleTags.get(playerId) ?? null;
           const roleContinuity =
             roleTag != null
               ? summarizeSkaterRoleContinuity({
@@ -3655,6 +4571,14 @@ export async function runProjectionV2ForDate(
             roleContinuity != null
               ? computeSkaterRoleStabilityMultiplier(roleContinuity)
               : 1;
+          const roleScenarios = buildSkaterRoleScenarios({
+            roleTag,
+            roleContinuity,
+            maxScenarios: 3
+          });
+          const roleScenarioTopProbability = roleScenarios[0]?.probability ?? 1;
+          roleScenarioPlayersModeled += 1;
+          roleScenarioCountTotal += roleScenarios.length;
           if (roleStabilityMultiplier < 1) {
             metrics.data_quality.role_volatility_penalties_applied += 1;
           } else if (roleStabilityMultiplier > 1) {
@@ -3679,12 +4603,14 @@ export async function runProjectionV2ForDate(
             roleStabilityMultiplier;
           if (availabilityMultiplier <= 0) continue;
           projected.set(playerId, {
-            toiEs: shrunkToiEs * availabilityMultiplier,
-            toiPp: shrunkToiPp * availabilityMultiplier,
+            toiEs: boundedToiEs * availabilityMultiplier,
+            toiPp: boundedToiPp * availabilityMultiplier,
             shotsEs: shotsEs * availabilityMultiplier,
             shotsPp: shotsPp * availabilityMultiplier,
-            goalRate,
-            assistRate,
+            goalRateEs,
+            goalRatePp,
+            assistRateEs,
+            assistRatePp,
             hitsRate: hitsPer60,
             blocksRate: blocksPer60,
             roleTag,
@@ -3695,7 +4621,8 @@ export async function runProjectionV2ForDate(
             latestMetricDate,
             daysSinceLastMetric,
             recencyMultiplier,
-            shotQualityProfileSourceDate: shotQualityProfile?.sourceDate ?? null,
+            shotQualityProfileSourceDate:
+              shotQualityProfile?.sourceDate ?? null,
             shotQualitySampleWeight: shotQualityAdjustment.sampleWeight,
             shotRateMultiplier: shotQualityAdjustment.shotRateMultiplier,
             goalRateMultiplier: shotQualityAdjustment.goalRateMultiplier,
@@ -3703,8 +4630,10 @@ export async function runProjectionV2ForDate(
             rushReboundPer60: shotQualityAdjustment.rushReboundPer60,
             onIceContextSourceDate: onIceContextProfile?.sourceDate ?? null,
             onIceContextSampleWeight: onIceContextAdjustment.sampleWeight,
-            shotEnvironmentMultiplier: onIceContextAdjustment.shotEnvironmentMultiplier,
-            goalEnvironmentMultiplier: onIceContextAdjustment.goalEnvironmentMultiplier,
+            shotEnvironmentMultiplier:
+              onIceContextAdjustment.shotEnvironmentMultiplier,
+            goalEnvironmentMultiplier:
+              onIceContextAdjustment.goalEnvironmentMultiplier,
             assistEnvironmentMultiplier:
               onIceContextAdjustment.assistEnvironmentMultiplier,
             onIcePossessionPct: onIceContextAdjustment.possessionPct,
@@ -3738,13 +4667,33 @@ export async function runProjectionV2ForDate(
               restScheduleAdjustment.assistRateMultiplier,
             restScheduleRestDelta: restScheduleAdjustment.restDelta,
             restScheduleTeamRestDays: restScheduleAdjustment.teamRestDays,
-            restScheduleOpponentRestDays: restScheduleAdjustment.opponentRestDays,
+            restScheduleOpponentRestDays:
+              restScheduleAdjustment.opponentRestDays,
             smallSampleWeight: sampleShrinkage.sampleWeight,
             smallSampleIsLow: sampleShrinkage.isLowSample,
             smallSampleUsedCallupFallback: sampleShrinkage.usedCallupFallback,
             smallSampleEvidenceToiSeconds: sampleShrinkage.evidenceToiSeconds,
-            smallSampleEvidenceShots: sampleShrinkage.evidenceShots
+            smallSampleEvidenceShots: sampleShrinkage.evidenceShots,
+            ppOpportunityTeamTargetSeconds: null,
+            ppOpportunityAllocatedShare: null,
+            teammateAssistEsMultiplier: 1,
+            teammateAssistPpMultiplier: 1,
+            teammateDependencyScore: 0,
+            roleUsageBoundsApplied: boundedUsage.wasBounded,
+            boundedSogPer60Es: boundedUsage.sogPer60Es,
+            boundedSogPer60Pp: boundedUsage.sogPer60Pp,
+            roleScenarios,
+            roleScenarioTopProbability
           });
+        }
+        if (roleScenarioPlayersModeled > 0) {
+          metrics.data_quality.role_scenarios_players_modeled +=
+            roleScenarioPlayersModeled;
+          const avgCount = roleScenarioCountTotal / roleScenarioPlayersModeled;
+          metrics.data_quality.role_scenarios_avg_count =
+            metrics.data_quality.role_scenarios_avg_count == null
+              ? avgCount
+              : (metrics.data_quality.role_scenarios_avg_count + avgCount) / 2;
         }
 
         // Task 3.6 reconciliation: hard constraints for team TOI + shots (by strength).
@@ -3753,6 +4702,122 @@ export async function runProjectionV2ForDate(
           teamStrengthCache.get(teamId) ??
           (await fetchTeamStrengthAverages(teamId, asOfDate));
         teamStrengthCache.set(teamId, strengthAverages);
+
+        const preAllocationToiEs = Array.from(projected.values()).reduce(
+          (acc, p) => acc + p.toiEs,
+          0
+        );
+        const preAllocationToiPp = Array.from(projected.values()).reduce(
+          (acc, p) => acc + p.toiPp,
+          0
+        );
+        const avgToiEs = strengthAverages.toiEsSecondsAvg;
+        const avgToiPp = strengthAverages.toiPpSecondsAvg;
+        const toiDenom =
+          (typeof avgToiEs === "number" ? avgToiEs : 0) +
+          (typeof avgToiPp === "number" ? avgToiPp : 0);
+        const fallbackDenom = preAllocationToiEs + preAllocationToiPp;
+
+        const ppShare =
+          toiDenom > 0
+            ? safeNumber(avgToiPp, 0) / toiDenom
+            : fallbackDenom > 0
+              ? preAllocationToiPp / fallbackDenom
+              : 0.1;
+
+        const toiPpTarget = Math.round(
+          clamp(ppShare, 0, 0.5) * targetSkaterSeconds
+        );
+        const toiEsTarget = targetSkaterSeconds - toiPpTarget;
+
+        const ppAllocation = allocatePpToiByTeamOpportunity({
+          projectedByPlayer: new Map(
+            Array.from(projected.entries()).map(([playerId, p]) => [
+              playerId,
+              { toiPp: p.toiPp, roleTag: p.roleTag }
+            ])
+          ),
+          targetTeamPpSeconds: toiPpTarget
+        });
+        if (ppAllocation.perPlayerPpToiSeconds.size > 0) {
+          metrics.data_quality.pp_opportunity_teams_modeled += 1;
+          metrics.data_quality.pp_opportunity_players_reweighted +=
+            ppAllocation.playersReweighted;
+          for (const [
+            playerId,
+            allocatedPpToi
+          ] of ppAllocation.perPlayerPpToiSeconds) {
+            const cur = projected.get(playerId);
+            if (!cur) continue;
+            const oldPpToi = Math.max(0, cur.toiPp);
+            const shotScale =
+              oldPpToi > 0 ? clamp(allocatedPpToi / oldPpToi, 0.25, 4) : 1;
+            cur.toiPp = allocatedPpToi;
+            cur.shotsPp = Number((cur.shotsPp * shotScale).toFixed(3));
+            cur.ppOpportunityTeamTargetSeconds = toiPpTarget;
+            cur.ppOpportunityAllocatedShare =
+              toiPpTarget > 0
+                ? Number((allocatedPpToi / toiPpTarget).toFixed(4))
+                : null;
+            projected.set(playerId, cur);
+          }
+        }
+
+        const teamShotsEsForCoupling = Array.from(projected.values()).reduce(
+          (acc, p) => acc + p.shotsEs,
+          0
+        );
+        const teamPpToiForCoupling = Array.from(projected.values()).reduce(
+          (acc, p) => acc + p.toiPp,
+          0
+        );
+        const lineGroupShotsEs = new Map<string, number>();
+        for (const p of projected.values()) {
+          const groupKey = roleGroupKeyForTeammateCoupling(p.roleTag);
+          if (!groupKey) continue;
+          lineGroupShotsEs.set(
+            groupKey,
+            (lineGroupShotsEs.get(groupKey) ?? 0) + p.shotsEs
+          );
+        }
+        for (const [playerId, p] of projected.entries()) {
+          const groupKey = roleGroupKeyForTeammateCoupling(p.roleTag);
+          const groupShots =
+            groupKey != null
+              ? (lineGroupShotsEs.get(groupKey) ?? p.shotsEs)
+              : p.shotsEs;
+          const playerPpShare =
+            teamPpToiForCoupling > 0 ? p.toiPp / teamPpToiForCoupling : 0;
+          const teammateCoupling = computeTeammateAssistCoupling({
+            roleTag: p.roleTag,
+            playerShotsEs: p.shotsEs,
+            lineGroupShotsEs: groupShots,
+            teamShotsEs: teamShotsEsForCoupling,
+            playerPpShare
+          });
+          if (
+            Math.abs(teammateCoupling.assistRateEsMultiplier - 1) > 1e-3 ||
+            Math.abs(teammateCoupling.assistRatePpMultiplier - 1) > 1e-3
+          ) {
+            metrics.data_quality.teammate_coupling_players_adjusted += 1;
+          }
+          p.assistRateEs = clamp(
+            p.assistRateEs * teammateCoupling.assistRateEsMultiplier,
+            0.2,
+            1.8
+          );
+          p.assistRatePp = clamp(
+            p.assistRatePp * teammateCoupling.assistRatePpMultiplier,
+            0.3,
+            2.1
+          );
+          p.teammateAssistEsMultiplier =
+            teammateCoupling.assistRateEsMultiplier;
+          p.teammateAssistPpMultiplier =
+            teammateCoupling.assistRatePpMultiplier;
+          p.teammateDependencyScore = teammateCoupling.dependencyScore;
+          projected.set(playerId, p);
+        }
 
         const initialToiEs = Array.from(projected.values()).reduce(
           (acc, p) => acc + p.toiEs,
@@ -3771,25 +4836,6 @@ export async function runProjectionV2ForDate(
           0
         );
 
-        const avgToiEs = strengthAverages.toiEsSecondsAvg;
-        const avgToiPp = strengthAverages.toiPpSecondsAvg;
-        const toiDenom =
-          (typeof avgToiEs === "number" ? avgToiEs : 0) +
-          (typeof avgToiPp === "number" ? avgToiPp : 0);
-        const fallbackDenom = initialToiEs + initialToiPp;
-
-        const ppShare =
-          toiDenom > 0
-            ? safeNumber(avgToiPp, 0) / toiDenom
-            : fallbackDenom > 0
-              ? initialToiPp / fallbackDenom
-              : 0.1;
-
-        const toiPpTarget = Math.round(
-          clamp(ppShare, 0, 0.5) * targetSkaterSeconds
-        );
-        const toiEsTarget = targetSkaterSeconds - toiPpTarget;
-
         const shotsEsTarget = safeNumber(
           strengthAverages.shotsEsAvg,
           initialShotsEs
@@ -3799,14 +4845,23 @@ export async function runProjectionV2ForDate(
           initialShotsPp
         );
 
-        const { players: reconciledPlayers, report } = reconcileTeamToPlayers({
-          players: Array.from(projected.entries()).map(([playerId, p]) => ({
+        const reconcileInputs = Array.from(projected.entries()).map(
+          ([playerId, p]) => ({
             playerId,
             toiEsSeconds: p.toiEs,
             toiPpSeconds: p.toiPp,
             shotsEs: p.shotsEs,
             shotsPp: p.shotsPp
-          })),
+          })
+        );
+        const reconcileTargets = {
+          toiEsSeconds: toiEsTarget,
+          toiPpSeconds: toiPpTarget,
+          shotsEs: shotsEsTarget,
+          shotsPp: shotsPpTarget
+        };
+        const { players: reconciledPlayersRaw } = reconcileTeamToPlayers({
+          players: reconcileInputs,
           targets: {
             toiEsSeconds: toiEsTarget,
             toiPpSeconds: toiPpTarget,
@@ -3814,9 +4869,35 @@ export async function runProjectionV2ForDate(
             shotsPp: shotsPpTarget
           }
         });
+        const reconciledValidation = validateReconciledPlayerDistribution({
+          baselinePlayers: reconcileInputs,
+          reconciledPlayers: reconciledPlayersRaw,
+          targets: reconcileTargets
+        });
+        const reconciledPlayers = reconciledValidation.players;
+        if (reconciledValidation.wasAdjusted) {
+          metrics.data_quality.reconciliation_distribution_adjustments += 1;
+        }
+        metrics.data_quality.reconciliation_top_es_share_max =
+          metrics.data_quality.reconciliation_top_es_share_max == null
+            ? reconciledValidation.topEsShareAfter
+            : Math.max(
+                metrics.data_quality.reconciliation_top_es_share_max,
+                reconciledValidation.topEsShareAfter
+              );
+        metrics.data_quality.reconciliation_top_pp_share_max =
+          metrics.data_quality.reconciliation_top_pp_share_max == null
+            ? reconciledValidation.topPpShareAfter
+            : Math.max(
+                metrics.data_quality.reconciliation_top_pp_share_max,
+                reconciledValidation.topPpShareAfter
+              );
 
         const totalToiBefore = initialToiEs + initialToiPp;
-        const totalToiAfter = report.toiEs.after + report.toiPp.after;
+        const totalToiAfter = reconciledPlayers.reduce(
+          (acc, p) => acc + p.toiEsSeconds + p.toiPpSeconds,
+          0
+        );
         const toiScale =
           totalToiBefore > 0 ? totalToiAfter / totalToiBefore : 1;
 
@@ -3857,10 +4938,29 @@ export async function runProjectionV2ForDate(
         for (const [playerId, p] of projected.entries()) {
           const shotsEs = p.shotsEs;
           const shotsPp = p.shotsPp;
-          const goalsEs = shotsEs * p.goalRate;
-          const goalsPp = shotsPp * p.goalRate;
-          const assistsEs = goalsEs * p.assistRate;
-          const assistsPp = goalsPp * p.assistRate;
+          const baseGoalsEs = shotsEs * p.goalRateEs;
+          const baseGoalsPp = shotsPp * p.goalRatePp;
+          const baseAssistsEs = baseGoalsEs * p.assistRateEs;
+          const baseAssistsPp = baseGoalsPp * p.assistRatePp;
+          const scenarioBlend = blendSkaterScenarioStatLinesAcrossHorizon({
+            currentRole: p.roleTag?.esRole ?? null,
+            scenarios: p.roleScenarios,
+            baseGoalsEs,
+            baseGoalsPp,
+            baseAssistsEs,
+            baseAssistsPp,
+            horizonScalars: teamHorizonScalars,
+            roleContinuity: p.roleContinuity
+          });
+          if (p.roleScenarios.length > 0) {
+            metrics.data_quality.role_scenario_blends_applied += 1;
+            metrics.data_quality.role_scenario_horizon_games_modeled +=
+              teamHorizonScalars.length;
+          }
+          const goalsEs = scenarioBlend.blended.goalsEs;
+          const goalsPp = scenarioBlend.blended.goalsPp;
+          const assistsEs = scenarioBlend.blended.assistsEs;
+          const assistsPp = scenarioBlend.blended.assistsPp;
 
           const totalToiMinutes = (p.toiEs + p.toiPp) / 60;
           const projHits = (totalToiMinutes / 60) * p.hitsRate;
@@ -3875,18 +4975,34 @@ export async function runProjectionV2ForDate(
           teamTotals.assistsEs += assistsEs;
           teamTotals.assistsPp += assistsPp;
 
-          const uncertainty = buildPlayerUncertainty({
-            toiEsSeconds: p.toiEs,
-            toiPpSeconds: p.toiPp,
-            shotsEs,
-            shotsPp,
-            goalsEs,
-            goalsPp,
-            assistsEs,
-            assistsPp,
-            hits: projHits,
-            blocks: projBlocks
-          }, horizonGames, teamHorizonScalars);
+          const uncertainty = buildPlayerUncertainty(
+            {
+              toiEsSeconds: p.toiEs,
+              toiPpSeconds: p.toiPp,
+              shotsEs,
+              shotsPp,
+              goalsEs,
+              goalsPp,
+              assistsEs,
+              assistsPp,
+              hits: projHits,
+              blocks: projBlocks
+            },
+            horizonGames,
+            teamHorizonScalars,
+            scenarioBlend.scenarioLines.map((s) => ({
+              weight: s.probability,
+              goalsEs: s.goalsEs,
+              goalsPp: s.goalsPp,
+              assistsEs: s.assistsEs,
+              assistsPp: s.assistsPp,
+              shotsEs,
+              shotsPp
+            }))
+          );
+          const scenarioMetadata = buildSkaterScenarioMetadata({
+            scenarios: p.roleScenarios
+          });
           const roleTag = p.roleTag;
           const uncertaintyWithRole = {
             ...uncertainty,
@@ -3900,7 +5016,8 @@ export async function runProjectionV2ForDate(
                 used_line_combo_fallback: usedLineComboFallback,
                 source_rows: {
                   line_combination_game_id: lc?.gameId ?? null,
-                  line_combination_source_date: lcContext.sourceGameDate ?? null,
+                  line_combination_source_date:
+                    lcContext.sourceGameDate ?? null,
                   roster_event_id: p.availabilityEvent?.event_id ?? null
                 },
                 fallback_path: {
@@ -3920,8 +5037,10 @@ export async function runProjectionV2ForDate(
                 },
                 active_pool: {
                   raw_candidate_count: Array.from(new Set(rawSkaterIds)).length,
-                  team_position_candidate_count: teamPositionFilteredSkaterIds.length,
-                  eligible_candidate_count: activeSkaterFilter.eligibleSkaterIds.length
+                  team_position_candidate_count:
+                    teamPositionFilteredSkaterIds.length,
+                  eligible_candidate_count:
+                    activeSkaterFilter.eligibleSkaterIds.length
                 },
                 recency: {
                   latest_metric_date: p.latestMetricDate,
@@ -3932,13 +5051,49 @@ export async function runProjectionV2ForDate(
                   ? {
                       window_games: p.roleContinuity.windowGames,
                       appearances_tracked: p.roleContinuity.appearancesTracked,
-                      games_in_current_role: p.roleContinuity.gamesInCurrentRole,
+                      games_in_current_role:
+                        p.roleContinuity.gamesInCurrentRole,
                       continuity_share: p.roleContinuity.continuityShare,
                       role_change_rate: p.roleContinuity.roleChangeRate,
                       volatility_index: p.roleContinuity.volatilityIndex,
                       stability_multiplier: p.roleStabilityMultiplier
                     }
                   : null,
+                role_scenarios: {
+                  top_probability: Number(
+                    p.roleScenarioTopProbability.toFixed(4)
+                  ),
+                  scenario_metadata: {
+                    model_version: scenarioMetadata.modelVersion,
+                    scenario_count: scenarioMetadata.scenarioCount,
+                    top_scenario_drivers:
+                      scenarioMetadata.topScenarioDrivers.map((d) => ({
+                        role: d.role,
+                        probability: Number(d.probability.toFixed(4)),
+                        source: d.source
+                      }))
+                  },
+                  scenarios: p.roleScenarios.map((s) => ({
+                    role: s.role,
+                    probability: Number(s.probability.toFixed(4)),
+                    source: s.source
+                  })),
+                  scenario_stat_lines: scenarioBlend.scenarioLines.map((s) => ({
+                    role: s.role,
+                    probability: Number(s.probability.toFixed(4)),
+                    goals_es: Number(s.goalsEs.toFixed(4)),
+                    goals_pp: Number(s.goalsPp.toFixed(4)),
+                    assists_es: Number(s.assistsEs.toFixed(4)),
+                    assists_pp: Number(s.assistsPp.toFixed(4))
+                  })),
+                  horizon_summaries: scenarioBlend.horizonScenarioSummaries.map(
+                    (s) => ({
+                      game_index: s.gameIndex,
+                      top_role: s.topRole,
+                      top_probability: Number(s.topProbability.toFixed(4))
+                    })
+                  )
+                },
                 availability: p.availabilityEvent
                   ? {
                       event_type: p.availabilityEvent.event_type,
@@ -3947,7 +5102,8 @@ export async function runProjectionV2ForDate(
                         Number.isFinite(p.availabilityEvent.confidence)
                           ? Number(p.availabilityEvent.confidence)
                           : null,
-                      effective_from: p.availabilityEvent.effective_from ?? null,
+                      effective_from:
+                        p.availabilityEvent.effective_from ?? null,
                       effective_to: p.availabilityEvent.effective_to ?? null,
                       event_multiplier: Number(
                         p.eventAvailabilityMultiplier.toFixed(4)
@@ -3993,7 +5149,9 @@ export async function runProjectionV2ForDate(
                   )
                 },
                 opponent_goalie_context: {
-                  sample_weight: Number(p.opponentGoalieSampleWeight.toFixed(4)),
+                  sample_weight: Number(
+                    p.opponentGoalieSampleWeight.toFixed(4)
+                  ),
                   goal_rate_multiplier: Number(
                     p.opponentGoalieGoalRateMultiplier.toFixed(4)
                   ),
@@ -4011,7 +5169,9 @@ export async function runProjectionV2ForDate(
                   team_rest_days: p.restScheduleTeamRestDays,
                   opponent_rest_days: p.restScheduleOpponentRestDays,
                   rest_delta: Number(p.restScheduleRestDelta.toFixed(4)),
-                  toi_multiplier: Number(p.restScheduleToiMultiplier.toFixed(4)),
+                  toi_multiplier: Number(
+                    p.restScheduleToiMultiplier.toFixed(4)
+                  ),
                   shot_rate_multiplier: Number(
                     p.restScheduleShotRateMultiplier.toFixed(4)
                   ),
@@ -4030,6 +5190,32 @@ export async function runProjectionV2ForDate(
                     p.smallSampleEvidenceToiSeconds.toFixed(3)
                   ),
                   evidence_shots: Number(p.smallSampleEvidenceShots.toFixed(3))
+                },
+                conversion_rates: {
+                  goal_rate_es: Number(p.goalRateEs.toFixed(4)),
+                  goal_rate_pp: Number(p.goalRatePp.toFixed(4)),
+                  assist_rate_es: Number(p.assistRateEs.toFixed(4)),
+                  assist_rate_pp: Number(p.assistRatePp.toFixed(4))
+                },
+                pp_opportunity: {
+                  team_pp_target_seconds: p.ppOpportunityTeamTargetSeconds,
+                  allocated_player_pp_share: p.ppOpportunityAllocatedShare
+                },
+                teammate_context: {
+                  dependency_score: Number(
+                    p.teammateDependencyScore.toFixed(4)
+                  ),
+                  assist_rate_es_multiplier: Number(
+                    p.teammateAssistEsMultiplier.toFixed(4)
+                  ),
+                  assist_rate_pp_multiplier: Number(
+                    p.teammateAssistPpMultiplier.toFixed(4)
+                  )
+                },
+                role_usage_bounds: {
+                  applied: p.roleUsageBoundsApplied,
+                  bounded_sog_per_60_es: Number(p.boundedSogPer60Es.toFixed(3)),
+                  bounded_sog_per_60_pp: Number(p.boundedSogPer60Pp.toFixed(3))
                 }
               }
             }
