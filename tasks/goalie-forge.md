@@ -325,6 +325,25 @@ Each goalie gets two orthogonal labels:
 - Rolling 3-year goalie prior only (no context)
 - Last-5 heuristic (should generally be worse; prove it)
 
+### 13.4 Accuracy Improvement Plan (Prioritized)
+1. **Measure by scope + stat before tuning**
+   - Split evaluation for `goalie` vs `skater`.
+   - Track per-stat MAE/RMSE and identify largest goalie error drivers first (`saves`, `GA`, `win_prob`, `shutout_prob`).
+2. **Improve starter modeling (largest goalie lift)**
+   - Keep top-2 starter scenarios and blend outputs by starter probability instead of hard top-1 selection only.
+   - Calibrate starter probabilities weekly using reliability curves / Brier score.
+3. **Improve shots-against forecast**
+   - Add direct goalie-facing environment features (recent CA/xGA proxies, rest, home/away), not only reconciled skater-shot inheritance.
+4. **Improve goals-allowed / save% model**
+   - Add opponent strength + fatigue/back-to-back effects to save% priors.
+   - Increase regression strength for low-sample goalies to reduce small-sample overreaction.
+5. **Calibrate probabilities**
+   - Recalibrate `win_prob` and `shutout_prob` against realized outcomes (post-model calibration layer).
+   - Persist and monitor calibration drift in run metadata.
+6. **Data freshness and pipeline reliability**
+   - Enforce strict pipeline order: players/teams/games → line combos → ingest inputs → derived tables → goalie starts → projection run → accuracy run.
+   - Treat stale/missing upstream data as first-order accuracy risk and surface explicit diagnostics.
+
 ---
 
 ## 14) MVP Release Plan (Phased)
@@ -373,3 +392,8 @@ A probabilistic goalie decision engine that:
 - and **does** translate evidence into actionable next-5 recommendations with transparent assumptions.
 
 > In short: the edge is not “predicting the hot hand,” it’s **pricing the chaos correctly**.
+
+
+Please update [tasks-goalie-forge.md](tasks/tasks-goalie-forge.md) with progress, context, and anything that could be useful to my next chat window with Codex including the instructions to use [process-task-list.mdc](web/rules/process-task-list.mdc) 
+
+At the end of the [tasks-goalie-forge.md](tasks/tasks-goalie-forge.md) please include a handoff prompt that I can use to give to the next chat with Codex 5.3 that would seamlessly pickup where you are leaving off - include anything that you would want inside of a prompt if you were to be the one picking up this project at this very point. 

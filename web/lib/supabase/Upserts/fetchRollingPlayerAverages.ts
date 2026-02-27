@@ -11,6 +11,92 @@ const ROLLING_WINDOWS: RollingWindow[] = [3, 5, 10, 20];
 const MAX_RETRIES = 5;
 const RETRY_BASE_DELAY_MS = 1000;
 
+function formatDuration(ms: number): string {
+  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  if (hours > 0) return `${hours}h ${minutes}m ${seconds}s`;
+  if (minutes > 0) return `${minutes}m ${seconds}s`;
+  return `${seconds}s`;
+}
+
+function createProgressLogger(options: {
+  label: string;
+  total?: number;
+  width?: number;
+  minIntervalMs?: number;
+}) {
+  const { label, total, width = 24, minIntervalMs = 1000 } = options;
+  const startTime = Date.now();
+  let lastLogTime = 0;
+  let lastRenderedLength = 0;
+  let finished = false;
+  const isTty = Boolean(process.stdout?.isTTY);
+
+  const render = (current: number, detail?: string) => {
+    const elapsedMs = Date.now() - startTime;
+    const baseDetail = detail ? ` ${detail}` : "";
+
+    if (!total || total <= 0) {
+      return `[${label}] ${current}${baseDetail} elapsed:${formatDuration(elapsedMs)}`;
+    }
+
+    const safeCurrent = Math.max(0, Math.min(current, total));
+    const ratio = total > 0 ? safeCurrent / total : 0;
+    const filled = Math.round(ratio * width);
+    const bar = `${"#".repeat(filled)}${"-".repeat(Math.max(width - filled, 0))}`;
+    const percent = (ratio * 100).toFixed(1).padStart(5, " ");
+    const ratePerSec = elapsedMs > 0 ? safeCurrent / (elapsedMs / 1000) : 0;
+    const remaining = Math.max(total - safeCurrent, 0);
+    const etaMs =
+      safeCurrent > 0 && ratePerSec > 0 ? (remaining / ratePerSec) * 1000 : 0;
+    const etaLabel =
+      safeCurrent > 0 && safeCurrent < total ? ` eta:${formatDuration(etaMs)}` : "";
+    return `[${label}] [${bar}] ${percent}% (${safeCurrent}/${total})${baseDetail} elapsed:${formatDuration(elapsedMs)}${etaLabel}`;
+  };
+
+  const write = (line: string, force = false) => {
+    const now = Date.now();
+    if (!force && now - lastLogTime < minIntervalMs) return;
+    lastLogTime = now;
+
+    if (isTty) {
+      const padded =
+        line.length < lastRenderedLength
+          ? line + " ".repeat(lastRenderedLength - line.length)
+          : line;
+      process.stdout.write(`\r${padded}`);
+      lastRenderedLength = padded.length;
+      return;
+    }
+
+    console.info(line);
+  };
+
+  return {
+    update(current: number, detail?: string) {
+      if (finished) return;
+      write(render(current, detail));
+    },
+    finish(current: number, detail?: string) {
+      if (finished) return;
+      finished = true;
+      const line = render(current, detail);
+      if (isTty) {
+        const padded =
+          line.length < lastRenderedLength
+            ? line + " ".repeat(lastRenderedLength - line.length)
+            : line;
+        process.stdout.write(`\r${padded}\n`);
+        lastRenderedLength = 0;
+      } else {
+        console.info(line);
+      }
+    }
+  };
+}
+
 function normalizeNumericFields<T extends Record<string, any>>(row: T): T {
   const normalized: Record<string, any> = {};
   for (const key of Object.keys(row)) {
@@ -92,6 +178,8 @@ interface FetchOptions {
   resumePlayerId?: number;
   forceFullRefresh?: boolean;
   fullRefreshDeleteChunkSize?: number;
+  playerConcurrency?: number;
+  upsertBatchSize?: number;
 }
 
 interface WgoSkaterRow {
@@ -1286,6 +1374,26 @@ export async function main(options: FetchOptions = {}): Promise<void> {
         options.fullRefreshDeleteChunkSize > 0
           ? options.fullRefreshDeleteChunkSize
           : 50000;
+      let deleteProgressTotal: number | undefined;
+      try {
+        const { count, error: countError } = await supabase
+          .from("rolling_player_game_metrics")
+          .select("player_id", { count: "exact", head: true });
+        if (countError) throw countError;
+        deleteProgressTotal =
+          typeof count === "number" && count >= 0 ? count : undefined;
+      } catch (countErr: any) {
+        console.warn(
+          "[fetchRollingPlayerAverages] Could not fetch row count for delete progress:",
+          countErr?.message ?? countErr
+        );
+      }
+      const deleteProgress = createProgressLogger({
+        label: "rolling_player_game_metrics delete",
+        total: deleteProgressTotal,
+        minIntervalMs: 500
+      });
+      let deletedRows = 0;
 
       while (true) {
         const { data: firstRow, error: firstErr } = await supabase
@@ -1304,12 +1412,18 @@ export async function main(options: FetchOptions = {}): Promise<void> {
           .gte("player_id", lower)
           .lte("player_id", upper);
         if (error) throw error;
+        deletedRows += typeof count === "number" ? count : 0;
+        deleteProgress.update(
+          deletedRows,
+          `lastRange:${lower}-${upper} lastRows:${count ?? "?"}`
+        );
         console.info(
           `[fetchRollingPlayerAverages] Cleared chunk player_id ${lower}-${upper}, rows:${count}`
         );
         // small pause to reduce lock contention
         await delay(20);
       }
+      deleteProgress.finish(deletedRows, "delete phase complete");
     } catch (err: any) {
       console.warn(
         "[fetchRollingPlayerAverages] Failed to clear rolling_player_game_metrics; proceeding with full recompute + upsert overwrite instead.",
@@ -1356,42 +1470,93 @@ export async function main(options: FetchOptions = {}): Promise<void> {
     filteredPlayerIds.length
   );
 
-  const batchSize = 500;
-  let rowsUpserted = 0;
-  for (const playerId of filteredPlayerIds) {
-    const playerLabel = `[fetchRollingPlayerAverages] player:${playerId}`;
-    console.time(playerLabel);
-    try {
-      const rows = await processPlayer(playerId, ledger, knownGameIds, options);
-      if (!rows.length) continue;
+  const defaultConcurrency = options.forceFullRefresh ? 6 : 1;
+  const playerConcurrency = Math.min(
+    Math.max(options.playerConcurrency ?? defaultConcurrency, 1),
+    16
+  );
+  const batchSize = Math.min(
+    Math.max(options.upsertBatchSize ?? (options.forceFullRefresh ? 1500 : 500), 1),
+    5000
+  );
+  console.info(
+    "[fetchRollingPlayerAverages] Execution settings",
+    JSON.stringify({ playerConcurrency, batchSize })
+  );
 
-      for (let i = 0; i < rows.length; i += batchSize) {
-        const batch = rows.slice(i, i + batchSize);
-        await executeWithRetry(
-          `upsert player:${playerId} batch:${i / batchSize}`,
-          async () => {
-            const { error } = await supabase
-              .from("rolling_player_game_metrics")
-              .upsert(batch, {
-                onConflict: "player_id,game_date,strength_state"
-              });
-            if (error) {
-              throw error;
+  let rowsUpserted = 0;
+  let processedPlayers = 0;
+  let playersWithRows = 0;
+  const playerProgress = createProgressLogger({
+    label: "players",
+    total: filteredPlayerIds.length,
+    minIntervalMs: 1000
+  });
+  let nextPlayerIndex = 0;
+  const runPlayerWorker = async () => {
+    while (true) {
+      const currentIndex = nextPlayerIndex;
+      if (currentIndex >= filteredPlayerIds.length) return;
+      nextPlayerIndex += 1;
+      const playerId = filteredPlayerIds[currentIndex];
+
+      const playerLabel = `[fetchRollingPlayerAverages] player:${playerId}`;
+      console.time(playerLabel);
+      try {
+        const rows = await processPlayer(playerId, ledger, knownGameIds, options);
+        if (!rows.length) {
+          processedPlayers += 1;
+          playerProgress.update(
+            processedPlayers,
+            `player:${playerId} rowsUpserted:${rowsUpserted}`
+          );
+          continue;
+        }
+        playersWithRows += 1;
+
+        for (let i = 0; i < rows.length; i += batchSize) {
+          const batch = rows.slice(i, i + batchSize);
+          await executeWithRetry(
+            `upsert player:${playerId} batch:${i / batchSize}`,
+            async () => {
+              const { error } = await supabase
+                .from("rolling_player_game_metrics")
+                .upsert(batch, {
+                  onConflict: "player_id,game_date,strength_state"
+                });
+              if (error) {
+                throw error;
+              }
             }
-          }
+          );
+          rowsUpserted += batch.length;
+        }
+        // Keep a tiny pause between players to reduce lock contention spikes.
+        await delay(20);
+        processedPlayers += 1;
+        playerProgress.update(
+          processedPlayers,
+          `player:${playerId} rowsUpserted:${rowsUpserted}`
         );
-        rowsUpserted += batch.length;
+      } finally {
+        console.timeEnd(playerLabel);
       }
-      // Add a small delay to prevent overwhelming the connection
-      await delay(50);
-    } finally {
-      console.timeEnd(playerLabel);
     }
-  }
+  };
+
+  const workerCount = Math.min(playerConcurrency, filteredPlayerIds.length);
+  await Promise.all(
+    Array.from({ length: workerCount }, () => runPlayerWorker())
+  );
+
+  playerProgress.finish(
+    processedPlayers,
+    `rowsUpserted:${rowsUpserted} playersWithRows:${playersWithRows}`
+  );
 
   console.info(
     "[fetchRollingPlayerAverages] Completed run",
-    JSON.stringify({ rowsUpserted })
+    JSON.stringify({ rowsUpserted, processedPlayers, playersWithRows })
   );
 }
 

@@ -12,6 +12,8 @@
  * - resumeFrom (number, optional): Resume processing from a specific player ID (exclusive). Useful for continuing interrupted batch jobs.
  * - fullRefresh (boolean, optional): If true, clears existing data for the target scope and reprocesses everything. Defaults to false.
  * - deleteChunkSize (number, optional): Batch size for deleting rows during a full refresh. Defaults to 50000.
+ * - playerConcurrency (number, optional): Number of players to process in parallel. Defaults to 1 (or higher in full refresh mode).
+ * - upsertBatchSize (number, optional): Batch size for upserts into rolling_player_game_metrics. Defaults to 500.
  *
  * Example URLs:
  * - Process a single player: /api/v1/db/update-rolling-player-averages?playerId=8478402
@@ -87,6 +89,8 @@ async function handler(
     const resumeFrom = parseNumberParam(req.query.resumeFrom);
     const fullRefresh = parseBooleanParam(req.query.fullRefresh);
     const deleteChunkSize = parsePositiveInt(req.query.deleteChunkSize);
+    const playerConcurrency = parsePositiveInt(req.query.playerConcurrency);
+    const upsertBatchSize = parsePositiveInt(req.query.upsertBatchSize);
 
     const { main } = await import(
       "lib/supabase/Upserts/fetchRollingPlayerAverages"
@@ -94,7 +98,15 @@ async function handler(
 
     console.info(
       "[update-rolling-player-averages] Triggered",
-      JSON.stringify({ playerId, season, startDate, endDate, fullRefresh })
+      JSON.stringify({
+        playerId,
+        season,
+        startDate,
+        endDate,
+        fullRefresh,
+        playerConcurrency,
+        upsertBatchSize
+      })
     );
     const timerLabel = `[update-rolling-player-averages] total ${Date.now()}`;
     console.time(timerLabel);
@@ -107,7 +119,9 @@ async function handler(
         endDate,
         resumePlayerId: resumeFrom,
         forceFullRefresh: fullRefresh,
-        fullRefreshDeleteChunkSize: deleteChunkSize
+        fullRefreshDeleteChunkSize: deleteChunkSize,
+        playerConcurrency,
+        upsertBatchSize
       });
     } finally {
       console.timeEnd(timerLabel);

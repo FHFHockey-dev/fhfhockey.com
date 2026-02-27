@@ -22,6 +22,8 @@ import {
   allocatePpToiByTeamOpportunity,
   computeTeammateAssistCoupling,
   applyRoleSpecificUsageBounds,
+  mergeSkaterCandidatePoolForRecovery,
+  computeSkaterTeamToiTargetWithPoolGuard,
   validateReconciledPlayerDistribution,
   buildSkaterRoleScenarios,
   blendSkaterScenarioStatLines,
@@ -824,6 +826,38 @@ describe("role-specific usage bounds", () => {
   });
 });
 
+describe("skater pool recovery safeguards", () => {
+  it("merges supplemental skaters without dropping original ordering", () => {
+    const merged = mergeSkaterCandidatePoolForRecovery({
+      baseSkaterIds: [1, 2, 3, 4],
+      supplementalSkaterIds: [3, 5, 6, 7, 8],
+      targetCount: 7
+    });
+    expect(merged).toEqual([1, 2, 3, 4, 5, 6, 7]);
+  });
+
+  it("caps team skater TOI target when projected pool is undersized", () => {
+    const guarded = computeSkaterTeamToiTargetWithPoolGuard({
+      canonicalTargetSeconds: 18000,
+      projectedSkaterCount: 7,
+      ppShare: 0.11
+    });
+    expect(guarded.wasCapped).toBe(true);
+    expect(guarded.targetSeconds).toBeLessThan(18000);
+    expect(guarded.targetSeconds).toBeLessThanOrEqual(8400);
+  });
+
+  it("keeps canonical team skater TOI target for normal projected pool sizes", () => {
+    const guarded = computeSkaterTeamToiTargetWithPoolGuard({
+      canonicalTargetSeconds: 18000,
+      projectedSkaterCount: 18,
+      ppShare: 0.11
+    });
+    expect(guarded.wasCapped).toBe(false);
+    expect(guarded.targetSeconds).toBe(18000);
+  });
+});
+
 describe("reconciliation distribution validation", () => {
   it("keeps reconciled vectors unchanged when concentration is within limits", () => {
     const baseline = [
@@ -1123,6 +1157,7 @@ describe("active skater filtering", () => {
 
     expect(result.eligibleSkaterIds).toEqual([52]);
     expect(result.stats.filteredMissingRecentMetrics).toBe(1);
+    expect(result.excludedSkaterIdsByReason.missingRecentMetrics).toEqual([51]);
   });
 });
 

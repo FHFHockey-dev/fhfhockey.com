@@ -40,21 +40,16 @@ export default async function handler(
     let resolvedDate = targetDate;
     let runId: string | null = null;
     let fallbackApplied = false;
+    let projectionsRaw: any[] = [];
+
+    // 1. Try to find a run for the requested date
     try {
       runId = await requireLatestSucceededRunId(targetDate);
     } catch (e) {
       if ((e as any)?.statusCode !== 404) throw e;
-      const fallback = await fetchFallbackRunWithPlayerData(targetDate);
-      if (!fallback) throw e;
-      runId = fallback.runId;
-      resolvedDate = fallback.asOfDate;
-      fallbackApplied = true;
     }
 
-    const { data, error } = await supabase
-      .from("forge_player_projections")
-      .select(
-        `
+    const selectQuery = `
         player_id,
         players!player_id (
           fullName,
@@ -75,13 +70,52 @@ export default async function handler(
         proj_hits,
         proj_blocks,
         uncertainty
-      `
-      )
-      .eq("run_id", runId);
+      `;
 
-    if (error) throw error;
+    // 2. If run found, fetch data
+    if (runId) {
+      const { data, error } = await supabase
+        .from("forge_player_projections")
+        .select(selectQuery)
+        .eq("run_id", runId);
 
-    const projections = (data ?? []).map((row: any) => {
+      if (error) throw error;
+      projectionsRaw = data ?? [];
+    }
+
+    // 3. Fallback logic: If no run found OR run produced 0 players (e.g., no games), try finding the latest date with players
+    if (!runId || projectionsRaw.length === 0) {
+      const fallback = await fetchFallbackRunWithPlayerData(targetDate);
+
+      // Only switch if we found a fallback request
+      if (fallback) {
+        // Optimization check: if fallback points to same run (unlikely if today has 0 rows), don't fetch again
+        if (fallback.runId !== runId) {
+          runId = fallback.runId;
+          resolvedDate = fallback.asOfDate;
+          fallbackApplied = resolvedDate !== targetDate;
+
+          const { data, error } = await supabase
+            .from("forge_player_projections")
+            .select(selectQuery)
+            .eq("run_id", runId);
+
+          if (error) throw error;
+          projectionsRaw = data ?? [];
+        }
+      } else {
+        // No fallback found. If we never had a runId, throw 404.
+        if (!runId) {
+          const err = new Error(
+            `No succeeded projection run found for date=${targetDate}`
+          );
+          (err as any).statusCode = 404;
+          throw err;
+        }
+      }
+    }
+
+    const projections = projectionsRaw.map((row: any) => {
       const g =
         (row.proj_goals_es ?? 0) +
         (row.proj_goals_pp ?? 0) +

@@ -852,6 +852,11 @@ const RECON_TOP_PP_SHARE_MAX = 0.58;
 const RECON_BLEND_TO_BASELINE = 0.4;
 const ROLE_SCENARIO_REVERSION_PER_GAME = 0.18;
 const ROLE_SCENARIO_VOLATILE_REVERSION_BONUS = 0.12;
+const SKATER_POOL_TARGET_COUNT = 18;
+const SKATER_POOL_MIN_VALID_COUNT = 15;
+const SKATER_POOL_SUPPLEMENTAL_FETCH_COUNT = 24;
+const SKATER_POOL_EMERGENCY_MAX_SINGLE_TOI_SECONDS = 2100;
+const SKATER_POOL_EMERGENCY_MAX_AVG_TOI_SECONDS = 1200;
 
 type ActiveSkaterFilterResult = {
   eligibleSkaterIds: number[];
@@ -861,6 +866,11 @@ type ActiveSkaterFilterResult = {
     filteredMissingRecentMetrics: number;
     filteredHardStale: number;
     softStalePenalized: number;
+  };
+  excludedSkaterIdsByReason: {
+    teamOrPosition: number[];
+    missingRecentMetrics: number[];
+    hardStale: number[];
   };
 };
 
@@ -1454,6 +1464,11 @@ export function filterActiveSkaterCandidateIds(args: {
     filteredHardStale: 0,
     softStalePenalized: 0
   };
+  const excludedSkaterIdsByReason = {
+    teamOrPosition: [] as number[],
+    missingRecentMetrics: [] as number[],
+    hardStale: [] as number[]
+  };
 
   for (const playerId of uniqueRaw) {
     const meta = args.playerMetaById.get(playerId);
@@ -1461,12 +1476,14 @@ export function filterActiveSkaterCandidateIds(args: {
     const isOnTeam = Boolean(meta && meta.team_id != null && meta.team_id === args.teamId);
     if (!isSkater || !isOnTeam) {
       stats.filteredByTeamOrPosition += 1;
+      excludedSkaterIdsByReason.teamOrPosition.push(playerId);
       continue;
     }
 
     const latestMetricDate = args.latestMetricDateByPlayerId.get(playerId) ?? null;
     if (!latestMetricDate) {
       stats.filteredMissingRecentMetrics += 1;
+      excludedSkaterIdsByReason.missingRecentMetrics.push(playerId);
       continue;
     }
 
@@ -1477,6 +1494,7 @@ export function filterActiveSkaterCandidateIds(args: {
     const recencyMultiplier = computeSkaterRecencyMultiplier(daysSinceLastMetric);
     if (recencyMultiplier <= 0) {
       stats.filteredHardStale += 1;
+      excludedSkaterIdsByReason.hardStale.push(playerId);
       continue;
     }
 
@@ -1488,7 +1506,88 @@ export function filterActiveSkaterCandidateIds(args: {
   return {
     eligibleSkaterIds,
     recencyMultiplierByPlayerId,
-    stats
+    stats,
+    excludedSkaterIdsByReason
+  };
+}
+
+export function mergeSkaterCandidatePoolForRecovery(args: {
+  baseSkaterIds: number[];
+  supplementalSkaterIds: number[];
+  targetCount?: number;
+}): number[] {
+  const targetCount = Number.isFinite(args.targetCount)
+    ? Math.max(1, Math.floor(Number(args.targetCount)))
+    : SKATER_POOL_TARGET_COUNT;
+  const out: number[] = [];
+  const seen = new Set<number>();
+  for (const id of [...args.baseSkaterIds, ...args.supplementalSkaterIds]) {
+    if (!Number.isFinite(id) || seen.has(id)) continue;
+    seen.add(id);
+    out.push(id);
+    if (out.length >= targetCount) break;
+  }
+  return out;
+}
+
+export function computeSkaterTeamToiTargetWithPoolGuard(args: {
+  canonicalTargetSeconds: number;
+  projectedSkaterCount: number;
+  ppShare: number;
+  minValidSkaterCount?: number;
+  maxSingleSkaterToiSeconds?: number;
+  maxAvgToiPerProjectedSkaterSeconds?: number;
+}): {
+  targetSeconds: number;
+  wasCapped: boolean;
+  capReason: "undersized_projected_pool" | null;
+} {
+  const canonicalTarget = Math.max(
+    0,
+    Math.floor(Number(args.canonicalTargetSeconds) || 0)
+  );
+  const projectedSkaterCount = Math.max(
+    0,
+    Math.floor(Number(args.projectedSkaterCount) || 0)
+  );
+  const minValidSkaterCount = Number.isFinite(args.minValidSkaterCount)
+    ? Math.max(1, Math.floor(Number(args.minValidSkaterCount)))
+    : SKATER_POOL_MIN_VALID_COUNT;
+  if (projectedSkaterCount >= minValidSkaterCount || canonicalTarget <= 0) {
+    return {
+      targetSeconds: canonicalTarget,
+      wasCapped: false,
+      capReason: null
+    };
+  }
+
+  const ppShare = clamp(args.ppShare, 0, 0.5);
+  const maxSingleSkaterToiSeconds = Number.isFinite(args.maxSingleSkaterToiSeconds)
+    ? Math.max(600, Math.floor(Number(args.maxSingleSkaterToiSeconds)))
+    : SKATER_POOL_EMERGENCY_MAX_SINGLE_TOI_SECONDS;
+  const maxAvgToiPerProjectedSkaterSeconds = Number.isFinite(
+    args.maxAvgToiPerProjectedSkaterSeconds
+  )
+    ? Math.max(300, Math.floor(Number(args.maxAvgToiPerProjectedSkaterSeconds)))
+    : SKATER_POOL_EMERGENCY_MAX_AVG_TOI_SECONDS;
+
+  const blendedTopShare =
+    RECON_TOP_ES_SHARE_MAX * (1 - ppShare) + RECON_TOP_PP_SHARE_MAX * ppShare;
+  const capByTopShare =
+    blendedTopShare > 0
+      ? Math.floor(maxSingleSkaterToiSeconds / blendedTopShare)
+      : canonicalTarget;
+  const capByAvgToi =
+    projectedSkaterCount > 0
+      ? projectedSkaterCount * maxAvgToiPerProjectedSkaterSeconds
+      : 0;
+  const emergencyCap = Math.max(1800, Math.min(capByTopShare, capByAvgToi));
+  const targetSeconds = Math.min(canonicalTarget, emergencyCap);
+
+  return {
+    targetSeconds,
+    wasCapped: targetSeconds < canonicalTarget,
+    capReason: targetSeconds < canonicalTarget ? "undersized_projected_pool" : null
   };
 }
 
@@ -3826,6 +3925,20 @@ export async function runProjectionV2ForDate(
       role_continuity_boosts_applied: 0,
       skater_availability_penalties_applied: 0,
       skater_unavailable_filtered: 0,
+      skater_pool_recovery_attempts: 0,
+      skater_pool_recovery_activated: 0,
+      skater_pool_recovery_restored: 0,
+      skater_pool_recovery_failed: 0,
+      skater_pool_recovery_candidates_added: 0,
+      skater_pool_emergency_missing_metrics_included: 0,
+      skater_pool_players_dropped_no_ev_pp_gate: 0,
+      skater_pool_projected_teams: 0,
+      skater_pool_projected_count_min: null as number | null,
+      skater_pool_projected_count_max: null as number | null,
+      skater_pool_projected_count_sum: 0,
+      skater_pool_projected_count_avg: null as number | null,
+      skater_pool_underfilled_projected_teams: 0,
+      skater_pool_emergency_toi_target_caps_applied: 0,
       missing_ev_metrics_players: 0,
       missing_pp_metrics_players: 0,
       deployment_prior_profiles_found: 0,
@@ -4083,15 +4196,15 @@ export async function runProjectionV2ForDate(
           }
         }
 
-        const playerMetaById = await fetchPlayerMetaByIds(rawSkaterIds);
-        const skaterRoleTags = buildSkaterRoleTags({
+        let playerMetaById = await fetchPlayerMetaByIds(rawSkaterIds);
+        let skaterRoleTags = buildSkaterRoleTags({
           lineCombination: lc,
           useFallbackRoles: usedLineComboFallback,
           fallbackRankedSkaterIds: rawSkaterIds,
           playerMetaById,
           teamId
         });
-        const teamPositionFilteredSkaterIds = Array.from(new Set(rawSkaterIds)).filter(
+        let teamPositionFilteredSkaterIds = Array.from(new Set(rawSkaterIds)).filter(
           (playerId) => {
             const meta = playerMetaById.get(playerId);
             if (!meta) return false;
@@ -4099,11 +4212,11 @@ export async function runProjectionV2ForDate(
           }
         );
 
-        const evRows = await fetchRollingRows(teamPositionFilteredSkaterIds, "ev", asOfDate);
-        const ppRows = await fetchRollingRows(teamPositionFilteredSkaterIds, "pp", asOfDate);
-        const evLatest = pickLatestByPlayer(evRows);
-        const ppLatest = pickLatestByPlayer(ppRows);
-        const latestMetricDateByPlayerId = new Map<number, string>();
+        let evRows = await fetchRollingRows(teamPositionFilteredSkaterIds, "ev", asOfDate);
+        let ppRows = await fetchRollingRows(teamPositionFilteredSkaterIds, "pp", asOfDate);
+        let evLatest = pickLatestByPlayer(evRows);
+        let ppLatest = pickLatestByPlayer(ppRows);
+        let latestMetricDateByPlayerId = new Map<number, string>();
         for (const playerId of teamPositionFilteredSkaterIds) {
           const evDate = evLatest.get(playerId)?.game_date ?? null;
           const ppDate = ppLatest.get(playerId)?.game_date ?? null;
@@ -4112,13 +4225,146 @@ export async function runProjectionV2ForDate(
           if (latestDate) latestMetricDateByPlayerId.set(playerId, latestDate);
         }
 
-        const activeSkaterFilter = filterActiveSkaterCandidateIds({
+        let activeSkaterFilter = filterActiveSkaterCandidateIds({
           asOfDate,
           teamId,
           rawSkaterIds,
           playerMetaById,
           latestMetricDateByPlayerId
         });
+        let skaterPoolRecoveryPath:
+          | "none"
+          | "supplemental_fallback_union"
+          | "missing_metrics_emergency_inclusion"
+          | "supplemental_plus_missing_metrics"
+          = "none";
+        let skaterPoolRecoverySupplementalAdded = 0;
+        let skaterPoolRecoveryEmergencyIncluded = 0;
+
+        let unavailableSkaters = activeSkaterFilter.eligibleSkaterIds.filter(
+          (playerId) => (playerAvailabilityMultiplier.get(playerId) ?? 1) <= 0
+        );
+        let skaterIds = activeSkaterFilter.eligibleSkaterIds.filter(
+          (playerId) => (playerAvailabilityMultiplier.get(playerId) ?? 1) > 0
+        );
+
+        if (skaterIds.length < SKATER_POOL_MIN_VALID_COUNT) {
+          metrics.data_quality.skater_pool_recovery_attempts += 1;
+          const supplementalFallbackSkaterIds = await fetchFallbackSkaterIdsForTeam(
+            teamId,
+            asOfDate,
+            SKATER_POOL_SUPPLEMENTAL_FETCH_COUNT
+          );
+          const mergedRawSkaterIds = mergeSkaterCandidatePoolForRecovery({
+            baseSkaterIds: rawSkaterIds,
+            supplementalSkaterIds: supplementalFallbackSkaterIds,
+            targetCount: SKATER_POOL_SUPPLEMENTAL_FETCH_COUNT
+          });
+          const baseUniqueCount = Array.from(new Set(rawSkaterIds)).length;
+          const mergedUniqueCount = Array.from(new Set(mergedRawSkaterIds)).length;
+          if (mergedUniqueCount > baseUniqueCount) {
+            const previousRawSkaterIds = new Set(rawSkaterIds);
+            rawSkaterIds = mergedRawSkaterIds;
+            skaterPoolRecoverySupplementalAdded = rawSkaterIds.filter(
+              (id) => !previousRawSkaterIds.has(id)
+            ).length;
+
+            playerMetaById = await fetchPlayerMetaByIds(rawSkaterIds);
+            const roleTagsFromSource = buildSkaterRoleTags({
+              lineCombination: lc,
+              useFallbackRoles: usedLineComboFallback,
+              fallbackRankedSkaterIds: rawSkaterIds,
+              playerMetaById,
+              teamId
+            });
+            const fallbackRecoveryRoleTags = buildSkaterRoleTags({
+              lineCombination: null,
+              useFallbackRoles: true,
+              fallbackRankedSkaterIds: rawSkaterIds,
+              playerMetaById,
+              teamId
+            });
+            skaterRoleTags = roleTagsFromSource;
+            for (const [playerId, roleTag] of fallbackRecoveryRoleTags.entries()) {
+              if (!skaterRoleTags.has(playerId)) {
+                skaterRoleTags.set(playerId, roleTag);
+              }
+            }
+            teamPositionFilteredSkaterIds = Array.from(new Set(rawSkaterIds)).filter(
+              (playerId) => {
+                const meta = playerMetaById.get(playerId);
+                if (!meta) return false;
+                return meta.position !== "G" && meta.team_id === teamId;
+              }
+            );
+
+            evRows = await fetchRollingRows(teamPositionFilteredSkaterIds, "ev", asOfDate);
+            ppRows = await fetchRollingRows(teamPositionFilteredSkaterIds, "pp", asOfDate);
+            evLatest = pickLatestByPlayer(evRows);
+            ppLatest = pickLatestByPlayer(ppRows);
+            latestMetricDateByPlayerId = new Map<number, string>();
+            for (const playerId of teamPositionFilteredSkaterIds) {
+              const evDate = evLatest.get(playerId)?.game_date ?? null;
+              const ppDate = ppLatest.get(playerId)?.game_date ?? null;
+              const latestDate =
+                evDate && ppDate
+                  ? (evDate > ppDate ? evDate : ppDate)
+                  : evDate ?? ppDate;
+              if (latestDate) latestMetricDateByPlayerId.set(playerId, latestDate);
+            }
+            activeSkaterFilter = filterActiveSkaterCandidateIds({
+              asOfDate,
+              teamId,
+              rawSkaterIds,
+              playerMetaById,
+              latestMetricDateByPlayerId
+            });
+            unavailableSkaters = activeSkaterFilter.eligibleSkaterIds.filter(
+              (playerId) => (playerAvailabilityMultiplier.get(playerId) ?? 1) <= 0
+            );
+            skaterIds = activeSkaterFilter.eligibleSkaterIds.filter(
+              (playerId) => (playerAvailabilityMultiplier.get(playerId) ?? 1) > 0
+            );
+            skaterPoolRecoveryPath = "supplemental_fallback_union";
+          }
+        }
+
+        if (skaterIds.length < SKATER_POOL_MIN_VALID_COUNT) {
+          const missingMetricEmergencyCandidates =
+            activeSkaterFilter.excludedSkaterIdsByReason.missingRecentMetrics.filter(
+              (playerId) =>
+                (playerAvailabilityMultiplier.get(playerId) ?? 1) > 0 &&
+                !skaterIds.includes(playerId)
+            );
+          const emergencyNeeded = Math.max(0, SKATER_POOL_TARGET_COUNT - skaterIds.length);
+          if (emergencyNeeded > 0 && missingMetricEmergencyCandidates.length > 0) {
+            const emergencyAddedIds = missingMetricEmergencyCandidates.slice(
+              0,
+              emergencyNeeded
+            );
+            skaterIds = [...skaterIds, ...emergencyAddedIds];
+            skaterPoolRecoveryEmergencyIncluded = emergencyAddedIds.length;
+            skaterPoolRecoveryPath =
+              skaterPoolRecoveryPath === "supplemental_fallback_union"
+                ? "supplemental_plus_missing_metrics"
+                : "missing_metrics_emergency_inclusion";
+          }
+        }
+
+        if (skaterPoolRecoveryPath !== "none") {
+          metrics.data_quality.skater_pool_recovery_activated += 1;
+          metrics.data_quality.skater_pool_recovery_candidates_added +=
+            skaterPoolRecoverySupplementalAdded + skaterPoolRecoveryEmergencyIncluded;
+          if (skaterIds.length >= SKATER_POOL_MIN_VALID_COUNT) {
+            metrics.data_quality.skater_pool_recovery_restored += 1;
+          } else {
+            metrics.data_quality.skater_pool_recovery_failed += 1;
+          }
+          metrics.warnings.push(
+            `skater pool recovery used for game=${game.id} team=${teamId}; path=${skaterPoolRecoveryPath} supplemental_added=${skaterPoolRecoverySupplementalAdded} missing_metrics_added=${skaterPoolRecoveryEmergencyIncluded} final_active_count=${skaterIds.length}`
+          );
+        }
+
         if (
           usedLineComboFallback &&
           activeSkaterFilter.eligibleSkaterIds.length === 0
@@ -4137,13 +4383,11 @@ export async function runProjectionV2ForDate(
           activeSkaterFilter.stats.filteredHardStale;
         metrics.data_quality.soft_stale_skater_penalties +=
           activeSkaterFilter.stats.softStalePenalized;
-
-        const unavailableSkaters = activeSkaterFilter.eligibleSkaterIds.filter(
-          (playerId) => (playerAvailabilityMultiplier.get(playerId) ?? 1) <= 0
-        );
         metrics.data_quality.skater_unavailable_filtered += unavailableSkaters.length;
-        const skaterIds = activeSkaterFilter.eligibleSkaterIds.filter(
-          (playerId) => (playerAvailabilityMultiplier.get(playerId) ?? 1) > 0
+        const emergencyMissingMetricSkaterIdSet = new Set(
+          activeSkaterFilter.excludedSkaterIdsByReason.missingRecentMetrics.filter((id) =>
+            skaterIds.includes(id)
+          )
         );
 
         if (skaterIds.length === 0) {
@@ -4341,17 +4585,23 @@ export async function runProjectionV2ForDate(
         >();
         let roleScenarioPlayersModeled = 0;
         let roleScenarioCountTotal = 0;
+        let noMetricsPlayersSkipped = 0;
+        let noMetricsPlayersEmergencyIncluded = 0;
 
         for (const playerId of skaterIds) {
           const ev = evLatest.get(playerId);
           const pp = ppLatest.get(playerId);
-
-          // Filter out players who have no recent EV stats (likely retired or inactive)
-          // We check if they have ANY rolling stats. If not, we skip them.
-          if (!ev && !pp) {
-            // Double check if they are a goalie (sometimes goalies are in skater lists by mistake or emergency backup)
-            // But for now, if no stats, we assume inactive.
+          const isEmergencyMissingMetricsInclusion =
+            !ev &&
+            !pp &&
+            emergencyMissingMetricSkaterIdSet.has(playerId);
+          if (!ev && !pp && !isEmergencyMissingMetricsInclusion) {
+            noMetricsPlayersSkipped += 1;
             continue;
+          }
+          if (isEmergencyMissingMetricsInclusion) {
+            noMetricsPlayersEmergencyIncluded += 1;
+            metrics.data_quality.skater_pool_emergency_missing_metrics_included += 1;
           }
 
           if (!ev) metrics.data_quality.missing_ev_metrics_players += 1;
@@ -4695,9 +4945,13 @@ export async function runProjectionV2ForDate(
               ? avgCount
               : (metrics.data_quality.role_scenarios_avg_count + avgCount) / 2;
         }
+        if (noMetricsPlayersSkipped > 0) {
+          metrics.data_quality.skater_pool_players_dropped_no_ev_pp_gate +=
+            noMetricsPlayersSkipped;
+        }
 
         // Task 3.6 reconciliation: hard constraints for team TOI + shots (by strength).
-        const targetSkaterSeconds = 60 * 60 * 5;
+        const targetSkaterSecondsCanonical = 60 * 60 * 5;
         const strengthAverages =
           teamStrengthCache.get(teamId) ??
           (await fetchTeamStrengthAverages(teamId, asOfDate));
@@ -4725,9 +4979,39 @@ export async function runProjectionV2ForDate(
               ? preAllocationToiPp / fallbackDenom
               : 0.1;
 
-        const toiPpTarget = Math.round(
-          clamp(ppShare, 0, 0.5) * targetSkaterSeconds
-        );
+        const projectedSkaterCount = projected.size;
+        metrics.data_quality.skater_pool_projected_teams += 1;
+        metrics.data_quality.skater_pool_projected_count_min =
+          metrics.data_quality.skater_pool_projected_count_min == null
+            ? projectedSkaterCount
+            : Math.min(
+                metrics.data_quality.skater_pool_projected_count_min,
+                projectedSkaterCount
+              );
+        metrics.data_quality.skater_pool_projected_count_max =
+          metrics.data_quality.skater_pool_projected_count_max == null
+            ? projectedSkaterCount
+            : Math.max(
+                metrics.data_quality.skater_pool_projected_count_max,
+                projectedSkaterCount
+              );
+        metrics.data_quality.skater_pool_projected_count_sum += projectedSkaterCount;
+        if (projectedSkaterCount < SKATER_POOL_MIN_VALID_COUNT) {
+          metrics.data_quality.skater_pool_underfilled_projected_teams += 1;
+        }
+        const guardedTeamToiTarget = computeSkaterTeamToiTargetWithPoolGuard({
+          canonicalTargetSeconds: targetSkaterSecondsCanonical,
+          projectedSkaterCount,
+          ppShare
+        });
+        if (guardedTeamToiTarget.wasCapped) {
+          metrics.data_quality.skater_pool_emergency_toi_target_caps_applied += 1;
+          metrics.warnings.push(
+            `skater pool emergency TOI cap for game=${game.id} team=${teamId}; projected_count=${projectedSkaterCount} canonical_target=${targetSkaterSecondsCanonical} capped_target=${guardedTeamToiTarget.targetSeconds}`
+          );
+        }
+        const targetSkaterSeconds = guardedTeamToiTarget.targetSeconds;
+        const toiPpTarget = Math.round(clamp(ppShare, 0, 0.5) * targetSkaterSeconds);
         const toiEsTarget = targetSkaterSeconds - toiPpTarget;
 
         const ppAllocation = allocatePpToiByTeamOpportunity({
@@ -5040,7 +5324,30 @@ export async function runProjectionV2ForDate(
                   team_position_candidate_count:
                     teamPositionFilteredSkaterIds.length,
                   eligible_candidate_count:
-                    activeSkaterFilter.eligibleSkaterIds.length
+                    activeSkaterFilter.eligibleSkaterIds.length,
+                  available_candidate_count: skaterIds.length,
+                  projected_candidate_count: projectedSkaterCount,
+                  dropped_candidate_counts: {
+                    team_or_position:
+                      activeSkaterFilter.stats.filteredByTeamOrPosition,
+                    missing_recent_metrics:
+                      activeSkaterFilter.stats.filteredMissingRecentMetrics,
+                    hard_stale: activeSkaterFilter.stats.filteredHardStale,
+                    unavailable: unavailableSkaters.length,
+                    no_ev_pp_gate: noMetricsPlayersSkipped
+                  },
+                  fallback_recovery: {
+                    path:
+                      skaterPoolRecoveryPath === "none"
+                        ? null
+                        : skaterPoolRecoveryPath,
+                    supplemental_candidates_added:
+                      skaterPoolRecoverySupplementalAdded,
+                    missing_metrics_emergency_included:
+                      skaterPoolRecoveryEmergencyIncluded,
+                    no_metrics_emergency_modeled:
+                      noMetricsPlayersEmergencyIncluded
+                  }
                 },
                 recency: {
                   latest_metric_date: p.latestMetricDate,
@@ -6124,6 +6431,15 @@ export async function runProjectionV2ForDate(
       learningPlayers > 0 ? learningCounters.goalRecent / learningPlayers : 0;
     metrics.learning.assist_rate_recent_share =
       learningPlayers > 0 ? learningCounters.assistRecent / learningPlayers : 0;
+    metrics.data_quality.skater_pool_projected_count_avg =
+      metrics.data_quality.skater_pool_projected_teams > 0
+        ? Number(
+            (
+              metrics.data_quality.skater_pool_projected_count_sum /
+              metrics.data_quality.skater_pool_projected_teams
+            ).toFixed(3)
+          )
+        : null;
     metrics.finished_at = new Date().toISOString();
     metrics.timed_out = timedOut;
 

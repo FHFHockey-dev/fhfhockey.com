@@ -63,10 +63,10 @@
   - [x] 4.6 Add unit tests for scenario blending correctness and quantile behavior under uncertainty mixtures.
 
 - [ ] 5.0 Strengthen skater accuracy diagnostics, calibration, and launch gates
-  - [ ] 5.1 Add skater stat diagnostics by role bucket (top line, middle six, PP1, PP2, defense pair tiers).
-  - [ ] 5.2 Add component-level miss attribution (TOI miss vs shot-rate miss vs conversion miss).
-  - [ ] 5.3 Add interval calibration diagnostics by stat (`g`, `a`, `pts`, `sog`, `ppp`) and role bucket.
-  - [ ] 5.4 Add rolling 7/14/30-day skater dashboards in calibration snapshots for trend monitoring.
+  - [x] 5.1 Add skater stat diagnostics by role bucket (top line, middle six, PP1, PP2, defense pair tiers).
+  - [x] 5.2 Add component-level miss attribution (TOI miss vs shot-rate miss vs conversion miss).
+  - [x] 5.3 Add interval calibration diagnostics by stat (`g`, `a`, `pts`, `sog`, `ppp`) and role bucket.
+  - [x] 5.4 Add rolling 7/14/30-day skater dashboards in calibration snapshots for trend monitoring.
   - [ ] 5.5 Define skater launch gates (sample floor, MAE/RMSE thresholds, coverage/calibration bands).
   - [ ] 5.6 Add holdout comparison reports versus current baseline and versus naive prior baselines.
 
@@ -119,7 +119,11 @@
 - Completed: `4.4` (added horizon-aware scenario propagation using sequential game scalars and role reversion over horizon, with per-game scenario summaries and tests).
 - Completed: `4.5` (persisted scenario metadata to skater uncertainty model payload: model version, scenario count, and top scenario drivers).
 - Completed: `4.6` (added explicit unit tests for scenario blend math correctness and uncertainty quantile behavior under scenario mixtures).
-- Next sub-task to execute: `5.1`.
+- Completed: `5.1` (added skater role-bucket diagnostics to projection-accuracy pipeline with MAE/RMSE by bucket/stat, calibration summary persistence, and calibration snapshot scope).
+- Completed: `5.2` (added skater component-level miss attribution in projection accuracy: TOI miss vs shot-rate miss vs conversion miss, included in calibration summary, daily calibration snapshots, and endpoint response payload).
+- Completed: `5.3` (added role-bucket interval calibration diagnostics for `g/a/pts/sog/ppp`, persisted in calibration snapshots, included in run calibration summary, and surfaced in API response).
+- Completed: `5.4` (added skater rolling dashboard diagnostics with 7/14/30-day stat windows, persisted in daily calibration snapshots, and surfaced in calibration summary/API response; also added skater stat-daily rows for `points` and `pp_points` to support rolling windows).
+- Next sub-task to execute: `5.5`.
 - Suggested first implementation file: `web/lib/projections/runProjectionV2.ts` (candidate/role hygiene foundation).
 
 ## Process Rules (Use `process-task-list.mdc`)
