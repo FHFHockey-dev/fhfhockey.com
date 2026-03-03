@@ -44,7 +44,7 @@
   - [x] 2.3 Extract constants into `web/lib/projections/constants/projection-weights.ts` and sibling constant modules (windows, priors, clamps, multipliers, thresholds, horizon constants). [Deps: 2.1] [Files: `web/lib/projections/constants/*.ts`] [AC: constant values match monolith exactly with no numeric drift]
   - [x] 2.4 Update orchestrator/module imports to consume extracted types/constants with no execution-order or default-value changes. [Deps: 2.2, 2.3] [Files: `web/lib/projections/run-forge-projections.ts`, extracted modules] [AC: compile succeeds and test snapshots remain unchanged]
 
-- [ ] 3.0 Phase 3 - Extract Pure Utilities And Builders
+- [x] 3.0 Phase 3 - Extract Pure Utilities And Builders
   - [x] 3.1 Extract numeric helpers (`clamp`, safe conversions, rate/stddev helpers) into `web/lib/projections/utils/number-utils.ts`. [Deps: 2.4] [Files: `web/lib/projections/utils/number-utils.ts`] [AC: helper unit tests cover edge/null/NaN behavior parity]
   - [x] 3.2 Extract date/horizon helpers into `web/lib/projections/utils/date-utils.ts` while preserving current parsing and recency boundaries. [Deps: 2.4] [Files: `web/lib/projections/utils/date-utils.ts`] [AC: no change to stale-window or deadline semantics]
   - [x] 3.3 Extract collection helpers (latest-by-player, merge/reconcile helpers) into `web/lib/projections/utils/collection-utils.ts`. [Deps: 2.4] [Files: `web/lib/projections/utils/collection-utils.ts`] [AC: duplicate-resolution behavior matches baseline fixtures]
