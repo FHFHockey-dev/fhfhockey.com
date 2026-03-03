@@ -72,7 +72,7 @@
   - [x] 6.2 Verify API route naming remains stable (`run-projection-v2.ts` endpoint unchanged) while import path points to new orchestrator module. [Deps: 1.4, 5.4] [Files: `web/pages/api/v1/db/run-projection-v2.ts`] [AC: endpoint contract/backward compatibility preserved]
   - [x] 6.3 Create explicit post-parity backlog entries for approved/non-approved math or accuracy improvements listed in PRD (assist recency counter fix, uncertainty calibration, configurable weights, recency-decay refinements, goalie context linkage). [Deps: 6.1] [Files: `tasks/prd-run-forge-projections-modularization.md` or dedicated follow-up task doc] [AC: no accuracy-change work is included in parity-phase implementation tasks]
 
-- [ ] 7.0 Phase 7 - Validation, Parity Evidence, And Execution Readiness
+- [x] 7.0 Phase 7 - Validation, Parity Evidence, And Execution Readiness
   - [x] 7.1 Run targeted unit/module tests for extracted utils, queries, calculators, and orchestrator entrypoint imports. [Deps: 5.4] [Files: test files under `web/lib/projections/**`] [AC: targeted tests pass with updated paths]
   - [x] 7.2 Run deterministic parity checks comparing baseline vs modularized outputs for fixed fixture dates, covering `forge_player_projections`, `forge_team_projections`, `forge_goalie_projections`, and uncertainty metadata payload keys. [Deps: 7.1] [Files: parity test artifacts] [AC: no meaningful drift; any tolerated epsilon must be explicitly documented and approved]
   - [x] 7.3 Run repository-level type/import integrity validation (`tsc`/build/lint as applicable) to confirm no unresolved imports after rename and extraction. [Deps: 7.1] [Files: repo config + touched modules] [AC: zero unresolved import/type errors in touched scope]
