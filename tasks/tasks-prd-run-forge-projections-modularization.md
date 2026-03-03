@@ -1,6 +1,6 @@
 ## Relevant Files
 
-- `web/lib/projections/runProjectionV2.ts` - Current monolith source to be renamed and decomposed; keep as parity baseline during extraction.
+- `web/lib/projections/run-forge-projections.ts` - Current orchestrator source after rename and decomposition.
 - `web/lib/projections/run-forge-projections.ts` - New orchestrator entrypoint after rename; stage-composition only.
 - `web/lib/projections/runProjectionV2.test.ts` - Existing test suite importing monolith helpers; update imports and/or rename test file.
 - `web/lib/projections/types/*.ts` - Extracted projection row/result/contract types used across modules.
@@ -20,11 +20,11 @@
 - `web/lib/projections/calculators/*.ts` - Extracted skater/goalie/team/scenario calculators.
 - `web/lib/projections/calculators/skater-adjustments.ts` - Extracted skater adjustment calculators (shot quality, on-ice/team/opponent context, rest, small-sample shrinkage, strength split conversion rates).
 - `web/pages/api/v1/db/run-projection-v2.ts` - API route must keep behavior and endpoint name, but update runner import path.
-- `fix_terminal.sh` - Hardcoded source path currently points to old file name.
+- `fix_terminal.sh` - Script reference should point to the renamed runner source path.
 - `FORGE_EXPLAINED.md` - Update stale source-file references to new runner filename.
 - `FORGE_ECOSYSTEM_ELI5_AUDIT.md` - Update stale references to runner filename and architecture description.
 - `tasks/prd-run-forge-projections-modularization.md` - Source PRD; maintain alignment for scope guardrails and follow-up phase labeling.
-- `tasks/*.md` - Task/docs files that reference `runProjectionV2.ts`; update where needed to prevent stale onboarding context.
+- `tasks/*.md` - Task/docs files that referenced `runProjectionV2.ts`; update where needed to prevent stale onboarding context.
 - `tasks/tasks-prd-run-forge-projections-modularization.md` - Active execution checklist, dependency tracking, and frozen reference inventory for this workflow.
 
 ### Notes
@@ -68,9 +68,9 @@
   - [x] 5.4 Refactor `runProjectionV2ForDate` implementation into stage-oriented orchestration in `run-forge-projections.ts` (preflight/context load, per-game skater stage, goalie stage, persistence stage, metrics finalization). [Deps: 5.1, 5.2, 5.3] [Files: `web/lib/projections/run-forge-projections.ts`] [AC: orchestrator becomes top-down composition; deadlines/timeouts unchanged]
 
 - [ ] 6.0 Phase 6 - Reference Hygiene And Post-Parity Follow-Up Separation
-  - [ ] 6.1 Update internal docs/tasks/script references from `runProjectionV2.ts` to `run-forge-projections.ts` where they describe source file location (excluding intentional historical mentions). [Deps: 5.4] [Files: `FORGE_EXPLAINED.md`, `FORGE_ECOSYSTEM_ELI5_AUDIT.md`, `tasks/*.md`, `fix_terminal.sh`] [AC: no misleading active-path references remain]
-  - [ ] 6.2 Verify API route naming remains stable (`run-projection-v2.ts` endpoint unchanged) while import path points to new orchestrator module. [Deps: 1.4, 5.4] [Files: `web/pages/api/v1/db/run-projection-v2.ts`] [AC: endpoint contract/backward compatibility preserved]
-  - [ ] 6.3 Create explicit post-parity backlog entries for approved/non-approved math or accuracy improvements listed in PRD (assist recency counter fix, uncertainty calibration, configurable weights, recency-decay refinements, goalie context linkage). [Deps: 6.1] [Files: `tasks/prd-run-forge-projections-modularization.md` or dedicated follow-up task doc] [AC: no accuracy-change work is included in parity-phase implementation tasks]
+  - [x] 6.1 Update internal docs/tasks/script references from `runProjectionV2.ts` to `run-forge-projections.ts` where they describe source file location (excluding intentional historical mentions). [Deps: 5.4] [Files: `FORGE_EXPLAINED.md`, `FORGE_ECOSYSTEM_ELI5_AUDIT.md`, `tasks/*.md`, `fix_terminal.sh`] [AC: no misleading active-path references remain]
+  - [x] 6.2 Verify API route naming remains stable (`run-projection-v2.ts` endpoint unchanged) while import path points to new orchestrator module. [Deps: 1.4, 5.4] [Files: `web/pages/api/v1/db/run-projection-v2.ts`] [AC: endpoint contract/backward compatibility preserved]
+  - [x] 6.3 Create explicit post-parity backlog entries for approved/non-approved math or accuracy improvements listed in PRD (assist recency counter fix, uncertainty calibration, configurable weights, recency-decay refinements, goalie context linkage). [Deps: 6.1] [Files: `tasks/prd-run-forge-projections-modularization.md` or dedicated follow-up task doc] [AC: no accuracy-change work is included in parity-phase implementation tasks]
 
 - [ ] 7.0 Phase 7 - Validation, Parity Evidence, And Execution Readiness
   - [ ] 7.1 Run targeted unit/module tests for extracted utils, queries, calculators, and orchestrator entrypoint imports. [Deps: 5.4] [Files: test files under `web/lib/projections/**`] [AC: targeted tests pass with updated paths]
@@ -84,11 +84,11 @@
   - `web/pages/api/v1/db/run-projection-v2.ts:59` imports `runProjectionV2ForDate` from `lib/projections/runProjectionV2`.
   - `web/pages/api/v1/db/run-projection-v2.ts:725` and `:802` invoke `runProjectionV2ForDate(...)`.
 - Source export definition:
-  - `web/lib/projections/runProjectionV2.ts:4130` exports `runProjectionV2ForDate`.
+  - `web/lib/projections/runProjectionV2.ts:4130` exported `runProjectionV2ForDate` (historical pre-rename snapshot).
 - Test import coverage:
   - `web/lib/projections/runProjectionV2.test.ts:41` imports from `./runProjectionV2`.
 - Script hardcoded path coverage:
-  - `fix_terminal.sh:2` references `web/lib/projections/runProjectionV2.ts`.
+  - `fix_terminal.sh:2` referenced `web/lib/projections/runProjectionV2.ts` (historical pre-rename snapshot).
 - Docs/task references requiring review for active-path staleness:
   - `FORGE_EXPLAINED.md`
   - `FORGE_ECOSYSTEM_ELI5_AUDIT.md`

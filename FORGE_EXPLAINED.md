@@ -68,7 +68,7 @@ The goalie-slate waiter.
 
 ## The Brains (Main FORGE logic and math)
 
-### `web/lib/projections/runProjectionV2.ts` (The Boss / Big Brain)
+### `web/lib/projections/run-forge-projections.ts` (The Boss / Big Brain)
 This is the big manager file.
 
 It:

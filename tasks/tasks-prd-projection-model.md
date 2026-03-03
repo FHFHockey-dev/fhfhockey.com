@@ -39,7 +39,7 @@
 - `web/lib/projections/derived/buildStrengthTablesV2.ts` - Builds `player_game_strength_v2` and `team_game_strength_v2` from `shift_charts` + `pbp_plays`.
 - `web/lib/projections/derived/buildGoalieGameV2.ts` - Builds `goalie_game_v2` from PbP (SA/GA/saves; TOI deferred).
 - `web/pages/api/v1/db/build-projection-derived-v2.ts` - Date-range endpoint to populate derived v2 strength tables.
-- `web/lib/projections/runProjectionV2.ts` - Baseline horizon=1 projection runner writing `*_projections_v2` and `projection_runs_v2`.
+- `web/lib/projections/run-forge-projections.ts` - Baseline horizon=1 projection runner writing `*_projections_v2` and `projection_runs_v2`.
 - `web/pages/api/v1/db/run-projection-v2.ts` - Endpoint to trigger a projection run for a date.
 - `web/pages/api/v1/projections/_helpers.ts` - Shared query parsing and “latest run” resolution for projections endpoints.
 - `web/pages/api/v1/projections/players.ts` - Read endpoint for v2 player projections (filters + defaults to latest succeeded run).

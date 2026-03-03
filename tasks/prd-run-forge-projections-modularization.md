@@ -116,6 +116,17 @@ This PRD is written to be used directly with ChatGPT 5.3 Codex in VS Code.
 4. Add recency decay curves by stat family (shots/goals/assists) instead of shared decay patterns.
 5. Introduce stronger goalie context linkage between confirmed starters and opponent skater scoring adjustments.
 
+### Explicit Post-Parity Backlog (Tracking Only)
+All items below are explicitly out of scope for structural parity refactor implementation and must be executed only in a separate post-parity phase.
+
+| Backlog ID | Improvement | Approval For Parity Phase | Post-Parity Backlog Status | Notes |
+| --- | --- | --- | --- | --- |
+| PP-ACC-001 | Fix `assistRecent` learning counter to use assist-recency signal (not goals-recency signal). | Not approved | Approved for follow-up tracking | Behavioral/math change; requires parity baseline lock before implementation. |
+| PP-ACC-002 | Calibrate uncertainty scenario-mixture weights against realized outcomes. | Not approved | Approved for follow-up tracking | Requires backtest design and acceptance thresholds. |
+| PP-ACC-003 | Move fixed heuristic weights to configuration-driven calibrated weight sets. | Not approved | Approved for follow-up tracking | Requires config schema + tuning workflow + guardrails. |
+| PP-ACC-004 | Introduce stat-family-specific recency decay curves (shots/goals/assists). | Not approved | Approved for follow-up tracking | Expected output drift; must be isolated from modularization commits. |
+| PP-ACC-005 | Strengthen confirmed-starter goalie context linkage into opponent skater adjustments. | Not approved | Approved for follow-up tracking | Coupled skater/goalie logic update; requires targeted parity deltas and rollback plan. |
+
 ### Optimization Opportunities
 1. Parallelize compatible Supabase queries inside per-team stage.
 2. Move repeated metadata object construction into factory helpers to reduce allocations and surface errors earlier.

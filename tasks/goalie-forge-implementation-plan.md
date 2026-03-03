@@ -6,7 +6,7 @@
   - volatility index + blowup risk
   - confidence, quality, reliability tiers
   - recommendation label (`START`, `SIT`, `STREAM_TARGET`, `AVOID`)
-- Integrate helper into `runProjectionV2` goalie path so goalie projections are no longer fixed at league-average save%.
+- Integrate helper into `runProjectionV2ForDate` in `web/lib/projections/run-forge-projections.ts` so goalie projections are no longer fixed at league-average save%.
 - Persist model metadata in `forge_goalie_projections.uncertainty.model`.
 - Add `GET /api/v1/forge/goalies` for FORGE page consumption.
 - Update `web/pages/FORGE.tsx` with Skaters/Goalies mode switch and goalie-specific cards.

@@ -4,7 +4,7 @@
 - `tasks/goalie-forge.md` - Reference for parity expectations between goalie and skater modeling sophistication.
 - `tasks/tasks-goalie-forge.md` - Process template for phased checklist execution and handoff hygiene.
 - `tasks/tasks-skater-forge.md` - Skater optimization checklist and execution log for sequential implementation.
-- `web/lib/projections/runProjectionV2.ts` - Main skater + goalie projection orchestrator; current skater model logic lives here.
+- `web/lib/projections/run-forge-projections.ts` - Main skater + goalie projection orchestrator; current skater model logic lives here.
 - `web/lib/projections/runProjectionV2.test.ts` - Unit tests for skater/goalie projection helpers and regression coverage.
 - `web/lib/projections/reconcile.ts` - Team-to-player reconciliation constraints for TOI and shot distributions.
 - `web/lib/projections/uncertainty.ts` - Skater uncertainty simulation and quantile output.
@@ -100,7 +100,7 @@
 - Completed: `1.5` (expanded roster-event availability weighting, unavailable filtering counters, and skater availability event metadata in uncertainty payloads).
 - Completed: `1.6` (skater-selection diagnostics now persisted with source rows, fallback path, active-pool counts, line-combo recency class, and per-player metric recency details).
 - Completed: `1.7` (added edge-case tests for stale lineup boundaries, inactive skater filtering, and emergency fallback role assignment).
-- Completed: `2.1` (`wgo_skater_stats` deployment TOI priors now blend with rolling EV/PP TOI in `runProjectionV2`, with data-quality counters and helper tests).
+- Completed: `2.1` (`wgo_skater_stats` deployment TOI priors now blend with rolling EV/PP TOI in `runProjectionV2ForDate`, with data-quality counters and helper tests).
 - Completed: `2.2` (added `player_stats_unified` shot-quality priors using `nst_ixg_per_60`, `nst_shots_per_60`, rush/rebound rates to adjust shot generation and conversion with bounded multipliers + diagnostics/tests).
 - Completed: `2.3` (added `player_stats_unified` on-ice context priors using `nst_oi_xgf_per_60`, `nst_oi_xga_per_60`, and possession rates to adjust shot/goal/assist environment with bounded multipliers + diagnostics/tests).
 - Completed: `2.4` (added team-level pace/defense context from `nhl_team_data`, `wgo_team_stats`, and `nst_team_*` into skater shot/goal/assist multipliers with diagnostics/tests).
@@ -124,7 +124,7 @@
 - Completed: `5.3` (added role-bucket interval calibration diagnostics for `g/a/pts/sog/ppp`, persisted in calibration snapshots, included in run calibration summary, and surfaced in API response).
 - Completed: `5.4` (added skater rolling dashboard diagnostics with 7/14/30-day stat windows, persisted in daily calibration snapshots, and surfaced in calibration summary/API response; also added skater stat-daily rows for `points` and `pp_points` to support rolling windows).
 - Next sub-task to execute: `5.5`.
-- Suggested first implementation file: `web/lib/projections/runProjectionV2.ts` (candidate/role hygiene foundation).
+- Suggested first implementation file: `web/lib/projections/run-forge-projections.ts` (candidate/role hygiene foundation).
 
 ## Process Rules (Use `process-task-list.mdc`)
 

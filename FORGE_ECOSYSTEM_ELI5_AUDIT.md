@@ -48,7 +48,7 @@ This is a file-by-file map of the **`web/pages/FORGE.tsx` ecosystem**: page UI, 
 - `web/lib/supabase/index.ts` - Browser/public Supabase client plus token-based client creation used by admin middleware/auditing paths.
 
 ### E) Core FORGE math/model files
-- `web/lib/projections/runProjectionV2.ts` - The large “brain” file that combines context, usage, reconciliation, uncertainty, and goalie modeling to write FORGE projection outputs.
+- `web/lib/projections/run-forge-projections.ts` - The large “brain” file that combines context, usage, reconciliation, uncertainty, and goalie modeling to write FORGE projection outputs.
 - `web/lib/projections/reconcile.ts` - Ensures player-level totals add up to team-level targets (TOI/shots consistency).
 - `web/lib/projections/uncertainty.ts` - Simulation/quantile helpers that generate floor/typical/ceiling uncertainty bands.
 - `web/lib/projections/goalieModel.ts` - Goalie-specific model for save%, GA, saves, win/shutout probability, volatility, and recommendation tiers.

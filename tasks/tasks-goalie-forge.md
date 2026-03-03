@@ -2,7 +2,7 @@
 
 - `tasks/goalie-forge.md` - Source PRD for goalie modeling requirements, standards, and release phases.
 - `tasks/goalie-forge-operator-runbook.md` - Manual operator runbook for refresh/backfill order, timeout bypass usage, and validation checklist.
-- `web/lib/projections/runProjectionV2.ts` - Main FORGE projection orchestrator where goalie starter and projection logic runs.
+- `web/lib/projections/run-forge-projections.ts` - Main FORGE projection orchestrator where goalie starter and projection logic runs.
 - `web/lib/projections/runProjectionV2.test.ts` - Unit tests for starter candidate filtering and probability edge-cases (B2B, stale goalies, legacy team leakage).
 - `web/lib/projections/goalieModel.ts` - Goalie-specific modeling logic for priors, volatility, risk, and recommendations.
 - `web/lib/projections/goalieModel.test.ts` - Unit tests for goalie model behavior and regression/volatility rules.
