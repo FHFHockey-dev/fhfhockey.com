@@ -34,7 +34,7 @@
   - [x] 1.3 Rename `web/lib/projections/runProjectionV2.ts` to `web/lib/projections/run-forge-projections.ts` with compatibility export strategy if needed for temporary import continuity during migration. [Deps: 1.2] [Files: `web/lib/projections/run-forge-projections.ts`, optional shim file] [AC: build resolves runner exports without behavior change]
   - [x] 1.4 Update direct runtime/script/test references to new filename, including `web/pages/api/v1/db/run-projection-v2.ts`, `web/lib/projections/runProjectionV2.test.ts` (or renamed test), and `fix_terminal.sh`. [Deps: 1.3] [Files: listed explicit files] [AC: `rg` finds no stale direct imports or hardcoded paths in runtime/test scripts]
 
-- [ ] 2.0 Phase 2 - Extract Types And Constants Without Logic Changes
+- [x] 2.0 Phase 2 - Extract Types And Constants Without Logic Changes
   - [x] 2.1 Create `web/lib/projections/types/` modules for row types, adjustment/result payload types, orchestrator IO contracts, and uncertainty metadata structures. [Deps: 1.4] [Files: `web/lib/projections/types/*.ts`] [AC: no `any` in migrated type surfaces unless documented as unavoidable]
   - [x] 2.2 Introduce typed Supabase row decoders/adapters and replace broad `any` casts in touched extraction seams. [Deps: 2.1] [Files: `web/lib/projections/types/*.ts`, `web/lib/projections/queries/*.ts`, orchestrator imports] [AC: decoded row contracts compile and preserve current null/optional behavior]
   - [x] 2.3 Extract constants into `web/lib/projections/constants/projection-weights.ts` and sibling constant modules (windows, priors, clamps, multipliers, thresholds, horizon constants). [Deps: 2.1] [Files: `web/lib/projections/constants/*.ts`] [AC: constant values match monolith exactly with no numeric drift]
