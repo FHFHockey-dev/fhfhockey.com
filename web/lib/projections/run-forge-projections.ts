@@ -173,43 +173,37 @@ import {
   TREND_BAND_METRIC_PRIORITY,
   TREND_BAND_WINDOW_PRIORITY,
 } from "./constants/projection-weights";
+import {
+  blendOnlineRate,
+  clamp,
+  computeRate,
+  computeShotsFromRate,
+  finiteOrNull,
+  safeNumber,
+  safeStdDev,
+  sigmoid
+} from "./utils/number-utils";
+import {
+  buildSequentialHorizonScalarsFromDates,
+  clampHorizonGames,
+  daysBetweenDates,
+  parseDateOnly,
+  toDayBoundsUtc
+} from "./utils/date-utils";
+import {
+  pickLatestByPlayer,
+  toFiniteNumberArray
+} from "./utils/collection-utils";
+import {
+  augmentStarterModelMetaWithScenarioProjections,
+  buildGoalieUncertaintyWithModel,
+  buildSkaterUncertaintyWithModel,
+  buildStarterHeuristicMetadata,
+  buildStarterOverrideMetadata
+} from "./utils/projection-metadata-builders";
 
 function assertSupabase() {
   if (!supabase) throw new Error("Supabase server client not available");
-}
-
-function clamp(n: number, lo: number, hi: number): number {
-  return Math.min(hi, Math.max(lo, n));
-}
-
-function pickLatestByPlayer(rows: RollingRow[]): Map<number, RollingRow> {
-  const byPlayer = new Map<number, RollingRow>();
-  for (const r of rows) {
-    const existing = byPlayer.get(r.player_id);
-    if (!existing || r.game_date > existing.game_date)
-      byPlayer.set(r.player_id, r);
-  }
-  return byPlayer;
-}
-
-function safeNumber(n: number | null | undefined, fallback: number): number {
-  return typeof n === "number" && Number.isFinite(n) ? n : fallback;
-}
-
-function finiteOrNull(n: number | null | undefined): number | null {
-  return typeof n === "number" && Number.isFinite(n) ? n : null;
-}
-
-function toFiniteNumberArray(value: unknown): number[] {
-  if (!Array.isArray(value)) return [];
-  return value
-    .map((entry) => Number(entry))
-    .filter((n) => Number.isFinite(n));
-}
-
-function computeShotsFromRate(toiSeconds: number, sogPer60: number): number {
-  const toiMinutes = toiSeconds / 60;
-  return (sogPer60 / 60) * toiMinutes;
 }
 
 export function normalizeWgoToiToSeconds(value: number | null | undefined): number | null {
@@ -233,45 +227,6 @@ export function blendToiSecondsWithDeploymentPrior(args: {
   if (rolling == null) return prior;
   if (prior == null) return rolling;
   return Number((rollingWeight * rolling + (1 - rollingWeight) * prior).toFixed(3));
-}
-
-function computeRate(
-  numerator: number,
-  denom: number,
-  fallback: number
-): number {
-  if (!Number.isFinite(numerator) || !Number.isFinite(denom) || denom <= 0)
-    return fallback;
-  return numerator / denom;
-}
-
-function blendOnlineRate(opts: {
-  recentNumerator: number;
-  recentDenom: number;
-  baseNumerator: number;
-  baseDenom: number;
-  fallback: number;
-  priorStrength: number;
-  minRate: number;
-  maxRate: number;
-}): number {
-  const baseRate = computeRate(
-    opts.baseNumerator + opts.fallback * opts.priorStrength,
-    opts.baseDenom + opts.priorStrength,
-    opts.fallback
-  );
-  const recentRate = computeRate(
-    opts.recentNumerator,
-    opts.recentDenom,
-    baseRate
-  );
-  const weight = clamp(
-    opts.recentDenom / (opts.recentDenom + opts.priorStrength),
-    0,
-    1
-  );
-  const blended = baseRate + weight * (recentRate - baseRate);
-  return clamp(blended, opts.minRate, opts.maxRate);
 }
 
 type TeamStrengthAverages = {
@@ -321,13 +276,6 @@ async function fetchTeamStrengthAverages(
     shotsPpAvg: meanOrNull(
       rows.map((r) => (r?.shots_pp == null ? null : Number(r.shots_pp)))
     )
-  };
-}
-
-function toDayBoundsUtc(dateOnly: string): { startTs: string; endTs: string } {
-  return {
-    startTs: `${dateOnly}T00:00:00.000Z`,
-    endTs: `${dateOnly}T23:59:59.999Z`
   };
 }
 
@@ -663,34 +611,6 @@ async function fetchLatestGoalieForTeam(
   }
   const goalieId = data?.goalie_id;
   return Number.isFinite(goalieId) ? Number(goalieId) : null;
-}
-
-function safeStdDev(values: number[]): number {
-  if (values.length <= 1) return 0;
-  const mean = values.reduce((acc, n) => acc + n, 0) / values.length;
-  const variance =
-    values.reduce((acc, n) => acc + (n - mean) ** 2, 0) / (values.length - 1);
-  return Math.sqrt(Math.max(variance, 0));
-}
-
-function toUtcDateMs(dateOnly: string): number {
-  return new Date(`${dateOnly}T00:00:00.000Z`).getTime();
-}
-
-function daysBetweenDates(a: string, b: string): number {
-  const aMs = toUtcDateMs(a);
-  const bMs = toUtcDateMs(b);
-  if (!Number.isFinite(aMs) || !Number.isFinite(bMs)) return 99;
-  return Math.round((aMs - bMs) / (24 * 60 * 60 * 1000));
-}
-
-function sigmoid(x: number): number {
-  return 1 / (1 + Math.exp(-x));
-}
-
-function parseDateOnly(value: string | null | undefined): string | null {
-  if (typeof value !== "string" || value.length === 0) return null;
-  return value.length >= 10 ? value.slice(0, 10) : null;
 }
 
 function getErrorMessage(error: unknown): string {
@@ -2655,37 +2575,7 @@ export function computeNstOpponentDangerAdjustment(args: {
   };
 }
 
-function clampHorizonGames(horizonGames: number): number {
-  if (!Number.isFinite(horizonGames)) return 1;
-  return clamp(Math.floor(horizonGames), 1, MAX_SUPPORTED_HORIZON_GAMES);
-}
-
-export function buildSequentialHorizonScalarsFromDates(
-  gameDates: string[],
-  horizonGames: number
-): number[] {
-  const horizon = clampHorizonGames(horizonGames);
-  const uniqueSortedDates = Array.from(
-    new Set(gameDates.filter((d) => typeof d === "string" && d.length >= 10))
-  )
-    .map((d) => d.slice(0, 10))
-    .sort((a, b) => a.localeCompare(b));
-
-  const scalars: number[] = [];
-  let previousDate: string | null = null;
-  for (let i = 0; i < horizon; i += 1) {
-    const date = uniqueSortedDates[i] ?? null;
-    const restDays =
-      previousDate && date ? Math.max(0, daysBetweenDates(date, previousDate)) : null;
-    let scalar = 1 - i * HORIZON_DECAY_PER_GAME;
-    if (restDays === 0) scalar -= HORIZON_ZERO_REST_PENALTY;
-    if (restDays === 1) scalar -= HORIZON_B2B_PENALTY;
-    if (restDays != null && restDays >= 3) scalar += HORIZON_LONG_REST_BOOST;
-    scalars.push(clamp(scalar, 0.75, 1.08));
-    if (date) previousDate = date;
-  }
-  return scalars;
-}
+export { buildSequentialHorizonScalarsFromDates } from "./utils/date-utils";
 
 async function fetchTeamHorizonScalars(
   teamId: number,
@@ -5306,8 +5196,8 @@ export async function runProjectionV2ForDate(
             scenarios: p.roleScenarios
           });
           const roleTag = p.roleTag;
-          const uncertaintyWithRole = {
-            ...uncertainty,
+          const uncertaintyWithRole = buildSkaterUncertaintyWithModel({
+            uncertainty,
             model: {
               source: "heuristic_skater_role_model",
               skater_selection: {
@@ -5599,7 +5489,7 @@ export async function runProjectionV2ForDate(
                 }
               }
             }
-          };
+          });
 
           playerUpserts.push({
             run_id: runId,
@@ -5976,7 +5866,7 @@ export async function runProjectionV2ForDate(
 
         let selectedGoalieId: number | null = null;
         let starterProb = 0.5;
-        let starterModelMeta: any = {};
+        let starterModelMeta: Record<string, unknown> = {};
         let topStarterScenarios: StarterScenario[] = [];
         if (c.override) {
           selectedGoalieId = c.override.goalieId;
@@ -5989,26 +5879,11 @@ export async function runProjectionV2ForDate(
               probability: 1
             }
           ];
-          starterModelMeta = {
-            source: "roster_event_override",
-            selected_goalie_id: selectedGoalieId,
-            selected_goalie_probability: Number(starterProb.toFixed(4)),
-            candidate_goalies: [
-              {
-                goalie_id: selectedGoalieId,
-                probability: Number(starterProb.toFixed(4)),
-                override: true
-              }
-            ],
-            starter_scenarios_top2: topStarterScenarios.map((s) => ({
-              goalie_id: s.goalieId,
-              rank: s.rank,
-              raw_probability: Number(s.rawProbability.toFixed(4)),
-              probability: Number(s.probability.toFixed(4)),
-              override: true
-            })),
-            top2_probability_mass: Number(starterProb.toFixed(4))
-          };
+          starterModelMeta = buildStarterOverrideMetadata({
+            selectedGoalieId,
+            starterProb,
+            topStarterScenarios
+          });
         } else {
           const starterContext =
             teamGoalieStarterContextCache.get(c.teamId) ??
@@ -6049,158 +5924,53 @@ export async function runProjectionV2ForDate(
             selectedGoalieId = ranked[0][0];
             starterProb = ranked[0][1];
           }
-          starterModelMeta = {
-            source: "heuristic_starter_model",
-            selected_goalie_id: selectedGoalieId,
-            selected_goalie_probability: Number(starterProb.toFixed(4)),
-            model_context: {
-              as_of_date: asOfDate,
-              previous_game_date: starterContext.previousGameDate,
-              previous_game_starter_goalie_id:
-                starterContext.previousGameStarterGoalieId,
-              is_back_to_back: isB2B,
-              team_is_weaker: teamIsWeaker,
-              opponent_is_weak: opponentIsWeak,
-              l10_games_available: starterContext.totalGames
+          starterModelMeta = buildStarterHeuristicMetadata({
+            asOfDate,
+            selectedGoalieId,
+            starterProb,
+            rankedGoalies: ranked,
+            topStarterScenarios,
+            starterContext,
+            priorMaps: {
+              projectedGsaaPer60ByGoalieId: c.projectedGsaaPer60ByGoalieId,
+              seasonStartPctByGoalieId: c.seasonStartPctByGoalieId,
+              seasonGamesPlayedByGoalieId: c.seasonGamesPlayedByGoalieId,
+              lineComboPriorByGoalieId: c.lineComboPriorByGoalieId
             },
-            shots_against_context: {
-              opponent_projected_shots_against: opponentProjectedShotsAgainst,
-              team_avg_shots_against_last10: teamSaAvg10,
-              team_avg_shots_against_last5: teamSaAvg5,
-              trend_adjustment: Number(trendAdj.toFixed(3)),
-              nhl_team_data_pct_adjustment: Number(
-                teamStrengthContextAdjustment.shotsAgainstPctAdjustment.toFixed(4)
-              ),
-              wgo_team_stats_5v5_context_pct_adjustment: Number(
-                teamFiveOnFiveContextAdjustment.contextPctAdjustment.toFixed(4)
-              ),
-              nst_opponent_danger_context_pct_adjustment: Number(
-                nstOpponentDangerAdjustment.contextPctAdjustment.toFixed(4)
-              ),
-              pre_context_projected_shots_against: baseShotsAgainst,
-              blended_projected_shots_against: shotsAgainst
+            daysBetweenDates,
+            isBackToBack: isB2B,
+            teamIsWeaker,
+            opponentIsWeak,
+            opponentProjectedShotsAgainst,
+            teamSaAvg10,
+            teamSaAvg5,
+            trendAdj,
+            teamStrengthContextAdjustment,
+            teamFiveOnFiveContextAdjustment,
+            nstOpponentDangerAdjustment,
+            baseShotsAgainst,
+            shotsAgainst,
+            opponentContext: {
+              opponentIsHome,
+              oppShots10,
+              oppShots5,
+              oppGoals10,
+              oppGoals5,
+              defendingRestDays,
+              opponentRestDays
             },
-            opponent_offense_context: {
-              opponent_is_home: opponentIsHome,
-              opponent_avg_shots_for_last10: oppShots10,
-              opponent_avg_shots_for_last5: oppShots5,
-              opponent_avg_goals_for_last10: oppGoals10,
-              opponent_avg_goals_for_last5: oppGoals5,
-              defending_team_rest_days: defendingRestDays,
-              opponent_rest_days: opponentRestDays,
-              nhl_team_data_sample_weight: Number(
-                teamStrengthContextAdjustment.sampleWeight.toFixed(4)
-              ),
-              wgo_5v5_sample_weight: Number(
-                teamFiveOnFiveContextAdjustment.sampleWeight.toFixed(4)
-              ),
-              nst_opponent_danger_sample_weight: Number(
-                nstOpponentDangerAdjustment.sampleWeight.toFixed(4)
-              ),
-              defending_team_nst_xga:
-                defendingNstExpectedGoalsProfile?.xga ?? null,
-              defending_team_nst_xga_per_60:
-                defendingNstExpectedGoalsProfile?.xgaPer60 ?? null,
-              defending_team_nst_source:
-                defendingNstExpectedGoalsProfile?.source ?? null,
-              defending_team_nst_source_date:
-                defendingNstExpectedGoalsProfile?.sourceDate ?? null,
-              opponent_team_nst_xga: opponentNstExpectedGoalsProfile?.xga ?? null,
-              opponent_team_nst_xga_per_60:
-                opponentNstExpectedGoalsProfile?.xgaPer60 ?? null,
-              opponent_team_nst_source:
-                opponentNstExpectedGoalsProfile?.source ?? null,
-              opponent_team_nst_source_date:
-                opponentNstExpectedGoalsProfile?.sourceDate ?? null,
-              defending_team_save_pct_5v5:
-                defendingFiveOnFiveProfile?.savePct5v5 ?? null,
-              defending_team_shooting_plus_save_pct_5v5:
-                defendingFiveOnFiveProfile?.shootingPlusSavePct5v5 ?? null,
-              opponent_team_shooting_plus_save_pct_5v5:
-                opponentFiveOnFiveProfile?.shootingPlusSavePct5v5 ?? null,
-              wgo_team_stats_5v5_league_save_pct_adjustment: Number(
-                teamFiveOnFiveContextAdjustment.leagueSavePctAdjustment.toFixed(4)
-              ),
-              defending_team_xga: defendingStrengthPrior?.xga ?? null,
-              defending_team_xga_per_game: defendingStrengthPrior?.xgaPerGame ?? null,
-              defending_team_xgf_per_game: defendingStrengthPrior?.xgfPerGame ?? null,
-              opponent_team_xga: opponentStrengthPrior?.xga ?? null,
-              opponent_team_xga_per_game: opponentStrengthPrior?.xgaPerGame ?? null,
-              opponent_team_xgf_per_game: opponentStrengthPrior?.xgfPerGame ?? null,
-              team_goals_for_pre_strength_adjustment: Number(teamGoalsFor.toFixed(3)),
-              team_goals_for_post_strength_adjustment: Number(
-                adjustedTeamGoalsFor.toFixed(3)
-              ),
-              opponent_goals_for_post_strength_adjustment: Number(
-                opponentGoalsFor.toFixed(3)
-              ),
-              context_adjustment_pct: Number(contextPct.toFixed(4)),
-              league_save_pct_used: Number(leagueSavePct.toFixed(4))
-            },
-            candidate_goalies: ranked.map(([goalieId, probability]) => ({
-              goalie_id: goalieId,
-              probability: Number(probability.toFixed(4)),
-              last_played_date:
-                starterContext.lastPlayedDateByGoalie.get(goalieId) ?? null,
-              days_since_last_played: (() => {
-                const d = starterContext.lastPlayedDateByGoalie.get(goalieId);
-                if (!d) return null;
-                return Math.max(0, daysBetweenDates(asOfDate, d));
-              })(),
-              l10_starts: starterContext.startsByGoalie.get(goalieId) ?? 0,
-              projected_gsaa_per_60:
-                c.projectedGsaaPer60ByGoalieId.get(goalieId) ?? null,
-              season_start_pct:
-                c.seasonStartPctByGoalieId.get(goalieId) ?? null,
-              season_games_played:
-                c.seasonGamesPlayedByGoalieId.get(goalieId) ?? null,
-              line_combinations_recency_prior:
-                c.lineComboPriorByGoalieId.get(goalieId) ?? null
-            })),
-            starter_scenarios_top2: topStarterScenarios.map((s) => ({
-              goalie_id: s.goalieId,
-              rank: s.rank,
-              raw_probability: Number(s.rawProbability.toFixed(4)),
-              probability: Number(s.probability.toFixed(4)),
-              last_played_date:
-                starterContext.lastPlayedDateByGoalie.get(s.goalieId) ?? null,
-              days_since_last_played: (() => {
-                const d = starterContext.lastPlayedDateByGoalie.get(s.goalieId);
-                if (!d) return null;
-                return Math.max(0, daysBetweenDates(asOfDate, d));
-              })(),
-              l10_starts: starterContext.startsByGoalie.get(s.goalieId) ?? 0,
-              projected_gsaa_per_60:
-                c.projectedGsaaPer60ByGoalieId.get(s.goalieId) ?? null,
-              season_start_pct:
-                c.seasonStartPctByGoalieId.get(s.goalieId) ?? null,
-              season_games_played:
-                c.seasonGamesPlayedByGoalieId.get(s.goalieId) ?? null,
-              line_combinations_recency_prior:
-                c.lineComboPriorByGoalieId.get(s.goalieId) ?? null
-            })),
-            top2_probability_mass: Number(
-              topStarterScenarios
-                .reduce((sum, s) => sum + s.rawProbability, 0)
-                .toFixed(4)
-            ),
-            line_combinations_prior: ranked
-              .filter(([goalieId]) => c.lineComboPriorByGoalieId.has(goalieId))
-              .map(([goalieId]) => ({
-                goalie_id: goalieId,
-                prior: Number(
-                  (c.lineComboPriorByGoalieId.get(goalieId) ?? 0).toFixed(4)
-                )
-              })),
-            projected_gsaa_per_60_prior: ranked
-              .filter(([goalieId]) => c.projectedGsaaPer60ByGoalieId.has(goalieId))
-              .map(([goalieId]) => ({
-                goalie_id: goalieId,
-                projected_gsaa_per_60: Number(
-                  (c.projectedGsaaPer60ByGoalieId.get(goalieId) ?? 0).toFixed(4)
-                )
-              }))
-          };
+            defendingNstExpectedGoalsProfile,
+            opponentNstExpectedGoalsProfile,
+            defendingFiveOnFiveProfile,
+            opponentFiveOnFiveProfile,
+            defendingStrengthPrior,
+            opponentStrengthPrior,
+            teamGoalsFor,
+            adjustedTeamGoalsFor,
+            opponentGoalsFor,
+            contextPct,
+            leagueSavePct
+          });
         }
 
         if (selectedGoalieId == null) continue;
@@ -6360,17 +6130,11 @@ export async function runProjectionV2ForDate(
               ]
             : [])
         ];
-        starterModelMeta.scenario_projections_top2 = scenarioProjections;
-        starterModelMeta.scenario_projection_count = scenarioProjections.length;
-        starterModelMeta.scenario_projection_blend = {
-          probability_mass: blendedProjection.probability_mass,
-          residual_probability_mass: blendedProjection.residual_probability_mass,
-          proj_saves: Number(saves.toFixed(3)),
-          proj_goals_allowed: Number(goalsAllowed.toFixed(3)),
-          proj_win_prob: Number(winProb.toFixed(4)),
-          proj_shutout_prob: Number(shutoutProb.toFixed(4)),
-          modeled_save_pct: Number(blendedProjection.modeled_save_pct.toFixed(4))
-        };
+        starterModelMeta = augmentStarterModelMetaWithScenarioProjections({
+          starterModelMeta,
+          scenarioProjections,
+          blendedProjection
+        });
         const defendingTeamScalars = teamHorizonScalarsCache.get(c.teamId) ?? [1];
         const opponentTeamScalars = teamHorizonScalarsCache.get(c.opponentTeamId) ?? [1];
         const goalieHorizonScalars = Array.from({ length: horizonGames }, (_, idx) => {
@@ -6384,84 +6148,32 @@ export async function runProjectionV2ForDate(
           restSplitProfile?.gamesByBucket?.[restSplitBucket] ?? null;
         const restSplitBucketSavePct =
           restSplitProfile?.savePctByBucket?.[restSplitBucket] ?? null;
-        const goalieUncertainty = {
-          ...buildGoalieUncertainty({
+        const goalieUncertainty = buildGoalieUncertaintyWithModel({
+          baseGoalieUncertainty: buildGoalieUncertainty({
             shotsAgainst,
             goalsAllowed,
             saves
           }, horizonGames, goalieHorizonScalars, uncertaintyScenarioMixture),
-          model: {
-            save_pct: Number(blendedProjection.modeled_save_pct.toFixed(4)),
-            volatility_index: Number(goalieModel.volatilityIndex.toFixed(3)),
-            blowup_risk: Number(goalieModel.blowupRisk.toFixed(4)),
-            confidence_tier: goalieModel.confidenceTier,
-            quality_tier: goalieModel.qualityTier,
-            reliability_tier: goalieModel.reliabilityTier,
-            recommendation: goalieModel.recommendation,
-            evidence: {
-              recent_starts: evidence.recentStarts,
-              recent_shots: evidence.recentShotsAgainst,
-              season_starts: evidence.seasonStarts,
-              season_shots: evidence.seasonShotsAgainst,
-              baseline_starts: evidence.baselineStarts,
-              baseline_shots: evidence.baselineShotsAgainst,
-              quality_starts: evidence.qualityStarts ?? null,
-              quality_starts_pct: evidence.qualityStartsPct ?? null
-            },
-            workload_context: {
-              starts_last_7_days: workload.startsLast7Days,
-              starts_last_14_days: workload.startsLast14Days,
-              days_since_last_start: workload.daysSinceLastStart,
-              goalie_back_to_back: workload.isGoalieBackToBack,
-              workload_save_pct_penalty: Number(workloadSavePctPenalty.toFixed(4)),
-              rest_split_bucket: restSplitBucket,
-              rest_split_games: Number.isFinite(restSplitBucketGames)
-                ? Number(restSplitBucketGames)
-                : null,
-              rest_split_save_pct: Number.isFinite(restSplitBucketSavePct)
-                ? Number(restSplitBucketSavePct)
-                : null,
-              rest_split_save_pct_adjustment: Number(
-                restSplitSavePctAdjustment.toFixed(4)
-              ),
-              rest_split_source_date: restSplitProfile?.sourceDate ?? null,
-              league_save_pct_used: Number(adjustedLeagueSavePct.toFixed(4))
-            },
-            scenario_metadata: {
-              model_version: "starter-scenario-v1",
-              horizon_games: horizonGames,
-              horizon_scalars: goalieHorizonScalars,
-              selected_goalie_id: selectedGoalieId,
-              selected_goalie_starter_probability: Number(starterProb.toFixed(4)),
-              top2_scenario_count: scenarioProjections.length,
-              top2_probability_mass: Number(
-                scenarioProjections
-                  .reduce((sum, s) => sum + s.starter_probability_raw, 0)
-                  .toFixed(4)
-              ),
-              residual_probability_mass: blendedProjection.residual_probability_mass,
-              blended_projection: {
-                proj_shots_against: Number(
-                  (shotsAgainst * goalieHorizonTotalScalar).toFixed(3)
-                ),
-                proj_saves: Number(
-                  (blendedProjection.proj_saves * goalieHorizonTotalScalar).toFixed(3)
-                ),
-                proj_goals_allowed: Number(
-                  (blendedProjection.proj_goals_allowed * goalieHorizonTotalScalar).toFixed(3)
-                ),
-                proj_win_prob: Number(
-                  (blendedProjection.proj_win_prob * goalieHorizonTotalScalar).toFixed(4)
-                ),
-                proj_shutout_prob: Number(
-                  (blendedProjection.proj_shutout_prob * goalieHorizonTotalScalar).toFixed(4)
-                ),
-                modeled_save_pct: Number(blendedProjection.modeled_save_pct.toFixed(4))
-              }
-            },
-            starter_selection: starterModelMeta
-          }
-        };
+          blendedProjection,
+          goalieModel,
+          evidence,
+          workload,
+          workloadSavePctPenalty,
+          restSplitBucket,
+          restSplitBucketGames,
+          restSplitBucketSavePct,
+          restSplitSavePctAdjustment,
+          restSplitProfile,
+          adjustedLeagueSavePct,
+          horizonGames,
+          goalieHorizonScalars,
+          selectedGoalieId,
+          starterProb,
+          scenarioProjections,
+          goalieHorizonTotalScalar,
+          shotsAgainst,
+          starterModelMeta
+        });
 
         const goalieUpsert = {
           run_id: runId,

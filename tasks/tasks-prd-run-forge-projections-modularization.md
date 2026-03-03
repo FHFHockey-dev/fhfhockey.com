@@ -8,6 +8,10 @@
 - `web/lib/projections/constants/projection-weights.ts` - Extracted projection constants (windows, priors, clamps, multipliers, thresholds).
 - `web/lib/projections/constants/projection-weights.ts` - Source-of-truth module for extracted FORGE projection constants imported by orchestrator/calculators.
 - `web/lib/projections/utils/*.ts` - Extracted pure helpers for numeric/date/collection logic.
+- `web/lib/projections/utils/number-utils.ts` - Extracted numeric/rate/stat helpers (`clamp`, conversions, rate blend, stddev/sigmoid) reused by the orchestrator.
+- `web/lib/projections/utils/date-utils.ts` - Extracted date/day-bound/horizon-scalar helpers preserving stale-window and rest-day semantics.
+- `web/lib/projections/utils/collection-utils.ts` - Extracted collection helpers for latest-by-player and normalized numeric-array merges.
+- `web/lib/projections/utils/projection-metadata-builders.ts` - Typed builders for skater/goalie uncertainty metadata and starter-model metadata assembly.
 - `web/lib/projections/queries/*.ts` - Supabase data-access layer and run lifecycle query helpers.
 - `web/lib/projections/calculators/*.ts` - Extracted skater/goalie/team/scenario calculators.
 - `web/pages/api/v1/db/run-projection-v2.ts` - API route must keep behavior and endpoint name, but update runner import path.
@@ -41,10 +45,10 @@
   - [x] 2.4 Update orchestrator/module imports to consume extracted types/constants with no execution-order or default-value changes. [Deps: 2.2, 2.3] [Files: `web/lib/projections/run-forge-projections.ts`, extracted modules] [AC: compile succeeds and test snapshots remain unchanged]
 
 - [ ] 3.0 Phase 3 - Extract Pure Utilities And Builders
-  - [ ] 3.1 Extract numeric helpers (`clamp`, safe conversions, rate/stddev helpers) into `web/lib/projections/utils/number-utils.ts`. [Deps: 2.4] [Files: `web/lib/projections/utils/number-utils.ts`] [AC: helper unit tests cover edge/null/NaN behavior parity]
-  - [ ] 3.2 Extract date/horizon helpers into `web/lib/projections/utils/date-utils.ts` while preserving current parsing and recency boundaries. [Deps: 2.4] [Files: `web/lib/projections/utils/date-utils.ts`] [AC: no change to stale-window or deadline semantics]
-  - [ ] 3.3 Extract collection helpers (latest-by-player, merge/reconcile helpers) into `web/lib/projections/utils/collection-utils.ts`. [Deps: 2.4] [Files: `web/lib/projections/utils/collection-utils.ts`] [AC: duplicate-resolution behavior matches baseline fixtures]
-  - [ ] 3.4 Replace large inline uncertainty/starter metadata object assembly with typed builder helpers. [Deps: 3.1, 3.2, 3.3] [Files: `web/lib/projections/utils/*` or `web/lib/projections/calculators/*`] [AC: metadata key set and shape are byte-for-byte equivalent in parity outputs]
+  - [x] 3.1 Extract numeric helpers (`clamp`, safe conversions, rate/stddev helpers) into `web/lib/projections/utils/number-utils.ts`. [Deps: 2.4] [Files: `web/lib/projections/utils/number-utils.ts`] [AC: helper unit tests cover edge/null/NaN behavior parity]
+  - [x] 3.2 Extract date/horizon helpers into `web/lib/projections/utils/date-utils.ts` while preserving current parsing and recency boundaries. [Deps: 2.4] [Files: `web/lib/projections/utils/date-utils.ts`] [AC: no change to stale-window or deadline semantics]
+  - [x] 3.3 Extract collection helpers (latest-by-player, merge/reconcile helpers) into `web/lib/projections/utils/collection-utils.ts`. [Deps: 2.4] [Files: `web/lib/projections/utils/collection-utils.ts`] [AC: duplicate-resolution behavior matches baseline fixtures]
+  - [x] 3.4 Replace large inline uncertainty/starter metadata object assembly with typed builder helpers. [Deps: 3.1, 3.2, 3.3] [Files: `web/lib/projections/utils/*` or `web/lib/projections/calculators/*`] [AC: metadata key set and shape are byte-for-byte equivalent in parity outputs]
 
 - [ ] 4.0 Phase 4 - Extract Query Layer And Preserve Run Lifecycle Contracts
   - [ ] 4.1 Create `web/lib/projections/queries/skater-queries.ts` for skater fetch paths currently embedded in monolith. [Deps: 3.4] [Files: `web/lib/projections/queries/skater-queries.ts`] [AC: same filtering, joins, and fallback behavior as baseline]
