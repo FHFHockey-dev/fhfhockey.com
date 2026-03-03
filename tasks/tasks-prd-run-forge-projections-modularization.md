@@ -26,7 +26,7 @@
 
 ## Tasks
 
-- [ ] 1.0 Phase 1 - Rename Entrypoint And Build Safety Net
+- [x] 1.0 Phase 1 - Rename Entrypoint And Build Safety Net
   - [x] 1.1 Inventory all repository references to `runProjectionV2.ts` / `runProjectionV2ForDate` and freeze a checklist for code, tests, scripts, and docs updates. [Deps: none] [Files: `web/**`, `tasks/**`, `*.md`, `fix_terminal.sh`] [AC: checklist enumerates every affected reference class and is attached in this task file or implementation notes]
   - [x] 1.2 Add/confirm parity harness inputs (fixed-date fixtures and deterministic run settings) before structural edits begin. [Deps: 1.1] [Files: `web/lib/projections/runProjectionV2.test.ts` or new parity test file] [AC: test plan asserts old-vs-refactor output parity for player/team/goalie payload fields]
   - [x] 1.3 Rename `web/lib/projections/runProjectionV2.ts` to `web/lib/projections/run-forge-projections.ts` with compatibility export strategy if needed for temporary import continuity during migration. [Deps: 1.2] [Files: `web/lib/projections/run-forge-projections.ts`, optional shim file] [AC: build resolves runner exports without behavior change]
