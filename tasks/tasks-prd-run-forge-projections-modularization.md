@@ -61,7 +61,7 @@
   - [x] 4.3 Create `web/lib/projections/queries/run-lifecycle-queries.ts` for `createRun`/`finalizeRun` and related persistence lifecycle helpers. [Deps: 3.4] [Files: `web/lib/projections/queries/run-lifecycle-queries.ts`] [AC: `forge_runs` writes preserve status fields, timestamps, and error handling semantics]
   - [x] 4.4 Add safe memoization boundaries by `(teamId, asOfDate)` and `(playerId, asOfDate)` where PRD marks as optimization-safe, without changing result order/content. [Deps: 4.1, 4.2] [Files: query modules/orchestrator wiring] [AC: deterministic output parity retained; repeated fetch overhead reduced or equal]
 
-- [ ] 5.0 Phase 5 - Extract Calculators And Recompose Orchestrator Stages
+- [x] 5.0 Phase 5 - Extract Calculators And Recompose Orchestrator Stages
   - [x] 5.1 Extract skater adjustment calculators into `web/lib/projections/calculators/skater-adjustments.ts`. [Deps: 4.4] [Files: `web/lib/projections/calculators/skater-adjustments.ts`] [AC: rounding points and clamps exactly preserved]
   - [x] 5.2 Extract goalie starter/save-pct/context calculators into dedicated goalie calculator modules. [Deps: 4.4] [Files: `web/lib/projections/calculators/goalie-*.ts`] [AC: starter probabilities, uncertainty shape, and context adjustments remain parity-consistent]
   - [x] 5.3 Extract team context and scenario blending/reconciliation validators into dedicated calculator helpers. [Deps: 4.4] [Files: `web/lib/projections/calculators/team-context-adjustments.ts`, `web/lib/projections/calculators/scenario-blending.ts`] [AC: reconciliation guard behavior and output contracts unchanged]
