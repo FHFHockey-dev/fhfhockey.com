@@ -6,232 +6,173 @@ import {
   buildTeamUncertainty
 } from "lib/projections/uncertainty";
 import { computeGoalieProjectionModel, type GoalieEvidence } from "lib/projections/goalieModel";
-
-type GameRow = {
-  id: number;
-  date: string;
-  homeTeamId: number;
-  awayTeamId: number;
-};
-
-type LineCombinationRow = {
-  gameId: number;
-  teamId: number;
-  forwards: number[] | null;
-  defensemen: number[] | null;
-  goalies: number[] | null;
-};
-
-type LineCombinationContext = {
-  lineCombination: LineCombinationRow | null;
-  sourceGameDate: string | null;
-};
-
-type RollingRow = {
-  player_id: number;
-  strength_state: string;
-  game_date: string;
-  toi_seconds_avg_last5: number | null;
-  toi_seconds_avg_all: number | null;
-  sog_per_60_avg_last5: number | null;
-  sog_per_60_avg_all: number | null;
-  goals_total_last5: number | null;
-  shots_total_last5: number | null;
-  assists_total_last5: number | null;
-  goals_total_all: number | null;
-  shots_total_all: number | null;
-  assists_total_all: number | null;
-  hits_per_60_avg_last5: number | null;
-  hits_per_60_avg_all: number | null;
-  blocks_per_60_avg_last5: number | null;
-  blocks_per_60_avg_all: number | null;
-};
-
-type RosterEventRow = {
-  event_id: number;
-  team_id: number | null;
-  player_id: number | null;
-  event_type: string;
-  confidence: number;
-  payload: any;
-  effective_from: string;
-  effective_to: string | null;
-};
-
-type GoalieGameHistoryRow = {
-  shots_against: number | null;
-  goals_allowed: number | null;
-  saves: number | null;
-  game_date?: string | null;
-  goalie_id?: number | null;
-  toi_seconds?: number | null;
-  game_id?: number | null;
-};
-
-type PlayerTeamPositionRow = {
-  id: number;
-  team_id: number | null;
-  position: string | null;
-};
-
-type WgoSkaterDeploymentProfile = {
-  toiPerGameSec: number | null;
-  esToiPerGameSec: number | null;
-  ppToiPerGameSec: number | null;
-};
-
-type SkaterShotQualityProfile = {
-  sourceDate: string | null;
-  nstShotsPer60: number | null;
-  nstIxgPer60: number | null;
-  nstRushAttemptsPer60: number | null;
-  nstReboundsCreatedPer60: number | null;
-};
-
-type SkaterOnIceContextProfile = {
-  sourceDate: string | null;
-  nstOiXgfPer60: number | null;
-  nstOiXgaPer60: number | null;
-  nstOiCfPct: number | null;
-  possessionPctSafe: number | null;
-};
-
-type SkaterTeamLevelContextAdjustment = {
-  sampleWeight: number;
-  shotRateMultiplier: number;
-  goalRateMultiplier: number;
-  assistRateMultiplier: number;
-  paceEdge: number;
-  opponentDefenseEdge: number;
-};
-
-type OpponentGoalieContext = {
-  source: "goalie_start_projections";
-  weightedProjectedGsaaPer60: number | null;
-  topStarterProbability: number;
-  probabilityMass: number;
-  isConfirmedStarter: boolean;
-};
-
-type SkaterRestScheduleAdjustment = {
-  sampleWeight: number;
-  toiMultiplier: number;
-  shotRateMultiplier: number;
-  goalRateMultiplier: number;
-  assistRateMultiplier: number;
-  restDelta: number;
-  teamRestDays: number | null;
-  opponentRestDays: number | null;
-};
-
-type SkaterSampleShrinkageAdjustment = {
-  sampleWeight: number;
-  isLowSample: boolean;
-  usedCallupFallback: boolean;
-  evidenceToiSeconds: number;
-  evidenceShots: number;
-};
-
-type SkaterPpOpportunityAllocation = {
-  perPlayerPpToiSeconds: Map<number, number>;
-  playersReweighted: number;
-};
-
-type SkaterTeammateAssistCoupling = {
-  assistRateEsMultiplier: number;
-  assistRatePpMultiplier: number;
-  dependencyScore: number;
-};
-
-type SkaterRoleBoundedUsage = {
-  toiEsSeconds: number;
-  toiPpSeconds: number;
-  sogPer60Es: number;
-  sogPer60Pp: number;
-  wasBounded: boolean;
-};
-
-type ReconciledSkaterVector = {
-  playerId: number;
-  toiEsSeconds: number;
-  toiPpSeconds: number;
-  shotsEs: number;
-  shotsPp: number;
-};
-
-type ReconciliationDistributionValidation = {
-  players: ReconciledSkaterVector[];
-  wasAdjusted: boolean;
-  topEsShareAfter: number;
-  topPpShareAfter: number;
-};
-
-type SkaterRoleScenario = {
-  role: string;
-  probability: number;
-  source: "current_role" | "adjacent_role" | "depth_fallback";
-};
-
-type SkaterScenarioStatLine = {
-  role: string;
-  probability: number;
-  goalsEs: number;
-  goalsPp: number;
-  assistsEs: number;
-  assistsPp: number;
-};
-
-type SkaterScenarioHorizonBlendResult = {
-  blended: {
-    goalsEs: number;
-    goalsPp: number;
-    assistsEs: number;
-    assistsPp: number;
-  };
-  scenarioLines: SkaterScenarioStatLine[];
-  horizonScenarioSummaries: Array<{
-    gameIndex: number;
-    topRole: string;
-    topProbability: number;
-  }>;
-};
-
-type SkaterScenarioMetadata = {
-  modelVersion: string;
-  scenarioCount: number;
-  topScenarioDrivers: Array<{
-    role: string;
-    probability: number;
-    source: SkaterRoleScenario["source"];
-  }>;
-};
-
-type SustainabilityTrendBandRow = {
-  player_id: number;
-  snapshot_date: string;
-  metric_key: string;
-  window_code: string;
-  value: number | null;
-  ci_lower: number | null;
-  ci_upper: number | null;
-  n_eff: number | null;
-};
-
-type SkaterTrendAdjustment = {
-  metricKey: string;
-  windowCode: string;
-  snapshotDate: string;
-  value: number;
-  ciLower: number;
-  ciUpper: number;
-  nEff: number | null;
-  confidence: number;
-  signedDistance: number;
-  shotRateMultiplier: number;
-  goalRateMultiplier: number;
-  assistRateMultiplier: number;
-  uncertaintyVolatilityMultiplier: number;
-};
+import type {
+  GameRow,
+  ForgeTeamGameStrengthRow,
+  GoalieGameHistoryRow,
+  GoalieRestSplitBucket,
+  GoalieRestSplitProfile,
+  GoalieWorkloadContext,
+  LineCombinationContext,
+  LineCombinationWithGameDateRow,
+  LineCombinationRow,
+  OpponentGoalieContext,
+  PbpGameIdRow,
+  PlayerTeamPositionRow,
+  ReconciledSkaterVector,
+  ReconciliationDistributionValidation,
+  RollingSkaterMetricRow,
+  RosterPlayerIdRow,
+  RollingRow,
+  RosterEventRow,
+  RunProjectionOptions,
+  RunProjectionResult,
+  SeasonIdRow,
+  SkaterOnIceContextProfile,
+  SkaterPpOpportunityAllocation,
+  SkaterRestScheduleAdjustment,
+  SkaterRoleBoundedUsage,
+  SkaterRoleScenario,
+  SkaterSampleShrinkageAdjustment,
+  SkaterScenarioHorizonBlendResult,
+  SkaterScenarioMetadata,
+  SkaterScenarioStatLine,
+  SkaterShotQualityProfile,
+  SkaterTeamLevelContextAdjustment,
+  SkaterTeammateAssistCoupling,
+  SkaterTrendAdjustment,
+  StarterScenario,
+  StarterScenarioProjection,
+  SustainabilityTrendBandRow,
+  TeamDefensiveEnvironment,
+  TeamFiveOnFiveProfile,
+  TeamGoalieStarterContext,
+  TeamNstExpectedGoalsProfile,
+  TeamOffenseEnvironment,
+  TeamStrengthPrior,
+  WgoSkaterDeploymentProfile,
+  ProjectionTotals
+} from "./types/run-forge-projections.types";
+import {
+  GOALIE_STALE_SOFT_DAYS,
+  GOALIE_STALE_HARD_DAYS,
+  SKATER_STALE_SOFT_DAYS,
+  SKATER_STALE_HARD_DAYS,
+  SKATER_SOFT_STALE_MIN_MULTIPLIER,
+  LINE_COMBO_STALE_SOFT_DAYS,
+  LINE_COMBO_STALE_HARD_DAYS,
+  SKATER_ROLE_HISTORY_WINDOW_GAMES,
+  B2B_REPEAT_STARTER_PENALTY,
+  B2B_ALTERNATE_GOALIE_BOOST,
+  TEAM_STRENGTH_WEAKER_GAP,
+  WEAK_OPPONENT_GF_THRESHOLD,
+  WEAKER_TEAM_B2B_PRIMARY_PENALTY,
+  WEAKER_TEAM_B2B_BACKUP_BOOST,
+  WEAK_OPPONENT_PRIMARY_REST_PENALTY,
+  WEAK_OPPONENT_BACKUP_BOOST,
+  LINE_COMBO_RECENCY_DECAY,
+  LINE_COMBO_PRIOR_LOGIT_WEIGHT,
+  GOALIE_GSAA_PRIOR_MAX_ABS,
+  GOALIE_GSAA_PRIOR_WEIGHT,
+  GOALIE_SEASON_START_PCT_WEIGHT,
+  GOALIE_SEASON_START_PCT_BASELINE,
+  GOALIE_SEASON_GAMES_PLAYED_WEIGHT,
+  OPPONENT_RESTED_BOOST,
+  OPPONENT_B2B_PENALTY,
+  DEFENSE_B2B_FATIGUE_BOOST,
+  OPPONENT_HOME_BOOST,
+  OPPONENT_AWAY_PENALTY,
+  GOALIE_HEAVY_WORKLOAD_PENALTY,
+  GOALIE_VERY_HEAVY_WORKLOAD_PENALTY,
+  GOALIE_BACK_TO_BACK_PENALTY,
+  GOALIE_REST_SPLIT_MIN_GAMES,
+  GOALIE_REST_SPLIT_MAX_ADJUSTMENT,
+  TEAM_XG_BASELINE_PER_GAME,
+  TEAM_XG_SHOTS_AGAINST_MAX_PCT,
+  TEAM_XG_WIN_CONTEXT_MAX_PCT,
+  TEAM_5V5_SAVE_PCT_BASELINE,
+  TEAM_5V5_PDO_BASELINE,
+  TEAM_5V5_MIN_SAMPLE_GAMES,
+  TEAM_5V5_MAX_LEAGUE_SAVE_PCT_ADJ,
+  TEAM_5V5_MAX_CONTEXT_PCT_ADJ,
+  TEAM_NST_XGA_PER60_BASELINE,
+  TEAM_NST_MAX_CONTEXT_PCT_ADJ,
+  MAX_SUPPORTED_HORIZON_GAMES,
+  HORIZON_DECAY_PER_GAME,
+  HORIZON_B2B_PENALTY,
+  HORIZON_ZERO_REST_PENALTY,
+  HORIZON_LONG_REST_BOOST,
+  SKATER_IXG_PER_SHOT_BASELINE,
+  SKATER_RUSH_REBOUND_PER60_BASELINE,
+  SKATER_SHOT_QUALITY_MIN_MULTIPLIER,
+  SKATER_SHOT_QUALITY_MAX_MULTIPLIER,
+  SKATER_CONVERSION_MIN_MULTIPLIER,
+  SKATER_CONVERSION_MAX_MULTIPLIER,
+  SKATER_ON_ICE_XG_PER60_BASELINE,
+  SKATER_ON_ICE_POSSESSION_BASELINE,
+  SKATER_ON_ICE_SHOT_ENV_MIN_MULTIPLIER,
+  SKATER_ON_ICE_SHOT_ENV_MAX_MULTIPLIER,
+  SKATER_ON_ICE_GOAL_ENV_MIN_MULTIPLIER,
+  SKATER_ON_ICE_GOAL_ENV_MAX_MULTIPLIER,
+  SKATER_ON_ICE_ASSIST_ENV_MIN_MULTIPLIER,
+  SKATER_ON_ICE_ASSIST_ENV_MAX_MULTIPLIER,
+  SKATER_TEAM_LEVEL_SHOT_MIN_MULTIPLIER,
+  SKATER_TEAM_LEVEL_SHOT_MAX_MULTIPLIER,
+  SKATER_TEAM_LEVEL_GOAL_MIN_MULTIPLIER,
+  SKATER_TEAM_LEVEL_GOAL_MAX_MULTIPLIER,
+  SKATER_TEAM_LEVEL_ASSIST_MIN_MULTIPLIER,
+  SKATER_TEAM_LEVEL_ASSIST_MAX_MULTIPLIER,
+  SKATER_OPP_GOALIE_GOAL_MIN_MULTIPLIER,
+  SKATER_OPP_GOALIE_GOAL_MAX_MULTIPLIER,
+  SKATER_OPP_GOALIE_ASSIST_MIN_MULTIPLIER,
+  SKATER_OPP_GOALIE_ASSIST_MAX_MULTIPLIER,
+  SKATER_REST_TOI_MIN_MULTIPLIER,
+  SKATER_REST_TOI_MAX_MULTIPLIER,
+  SKATER_REST_SHOT_MIN_MULTIPLIER,
+  SKATER_REST_SHOT_MAX_MULTIPLIER,
+  SKATER_REST_GOAL_MIN_MULTIPLIER,
+  SKATER_REST_GOAL_MAX_MULTIPLIER,
+  SKATER_REST_ASSIST_MIN_MULTIPLIER,
+  SKATER_REST_ASSIST_MAX_MULTIPLIER,
+  SKATER_SMALL_SAMPLE_TOI_SECONDS_SCALE,
+  SKATER_SMALL_SAMPLE_SHOTS_SCALE,
+  SKATER_SMALL_SAMPLE_LOW_WEIGHT_THRESHOLD,
+  SKATER_SMALL_SAMPLE_CALLUP_WEIGHT_THRESHOLD,
+  SKATER_TEAMMATE_ASSIST_ES_MIN_MULTIPLIER,
+  SKATER_TEAMMATE_ASSIST_ES_MAX_MULTIPLIER,
+  SKATER_TEAMMATE_ASSIST_PP_MIN_MULTIPLIER,
+  SKATER_TEAMMATE_ASSIST_PP_MAX_MULTIPLIER,
+  SKATER_ROLE_TOP_TOI_ES_MIN,
+  SKATER_ROLE_TOP_TOI_ES_MAX,
+  SKATER_ROLE_TOP_TOI_PP_MIN,
+  SKATER_ROLE_TOP_TOI_PP_MAX,
+  SKATER_ROLE_MIDDLE_TOI_ES_MIN,
+  SKATER_ROLE_MIDDLE_TOI_ES_MAX,
+  SKATER_ROLE_MIDDLE_TOI_PP_MIN,
+  SKATER_ROLE_MIDDLE_TOI_PP_MAX,
+  SKATER_ROLE_DEPTH_TOI_ES_MIN,
+  SKATER_ROLE_DEPTH_TOI_ES_MAX,
+  SKATER_ROLE_DEPTH_TOI_PP_MIN,
+  SKATER_ROLE_DEPTH_TOI_PP_MAX,
+  SKATER_ROLE_TOP_SOG_ES_MAX,
+  SKATER_ROLE_TOP_SOG_PP_MAX,
+  SKATER_ROLE_MIDDLE_SOG_ES_MAX,
+  SKATER_ROLE_MIDDLE_SOG_PP_MAX,
+  SKATER_ROLE_DEPTH_SOG_ES_MAX,
+  SKATER_ROLE_DEPTH_SOG_PP_MAX,
+  RECON_TOP_ES_SHARE_MAX,
+  RECON_TOP_PP_SHARE_MAX,
+  RECON_BLEND_TO_BASELINE,
+  ROLE_SCENARIO_REVERSION_PER_GAME,
+  ROLE_SCENARIO_VOLATILE_REVERSION_BONUS,
+  SKATER_POOL_TARGET_COUNT,
+  SKATER_POOL_MIN_VALID_COUNT,
+  SKATER_POOL_SUPPLEMENTAL_FETCH_COUNT,
+  SKATER_POOL_EMERGENCY_MAX_SINGLE_TOI_SECONDS,
+  SKATER_POOL_EMERGENCY_MAX_AVG_TOI_SECONDS,
+  TREND_BAND_METRIC_PRIORITY,
+  TREND_BAND_WINDOW_PRIORITY,
+} from "./constants/projection-weights";
 
 function assertSupabase() {
   if (!supabase) throw new Error("Supabase server client not available");
@@ -257,6 +198,13 @@ function safeNumber(n: number | null | undefined, fallback: number): number {
 
 function finiteOrNull(n: number | null | undefined): number | null {
   return typeof n === "number" && Number.isFinite(n) ? n : null;
+}
+
+function toFiniteNumberArray(value: unknown): number[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((entry) => Number(entry))
+    .filter((n) => Number.isFinite(n));
 }
 
 function computeShotsFromRate(toiSeconds: number, sogPer60: number): number {
@@ -355,7 +303,7 @@ async function fetchTeamStrengthAverages(
     .limit(10);
   if (error) throw error;
 
-  const rows = (data ?? []) as any[];
+  const rows = (data ?? []) as ForgeTeamGameStrengthRow[];
   return {
     toiEsSecondsAvg: meanOrNull(
       rows.map((r) =>
@@ -420,9 +368,9 @@ async function hasPbpGame(gameId: number): Promise<boolean> {
     .from("pbp_games")
     .select("id")
     .eq("id", gameId)
-    .maybeSingle();
+    .maybeSingle<PbpGameIdRow>();
   if (error) throw error;
-  return Boolean((data as any)?.id);
+  return Number.isFinite(data?.id);
 }
 
 async function hasShiftTotals(gameId: number): Promise<boolean> {
@@ -459,7 +407,7 @@ async function fetchLatestLineCombinationForTeam(
     .lt("games.date", asOfDate)
     .order("date", { foreignTable: "games", ascending: false })
     .limit(1)
-    .maybeSingle();
+    .maybeSingle<LineCombinationWithGameDateRow>();
 
   if (error) {
     console.warn(
@@ -473,16 +421,14 @@ async function fetchLatestLineCombinationForTeam(
 
   return {
     lineCombination: {
-      gameId: data.gameId,
-      teamId: data.teamId,
-      forwards: data.forwards,
-      defensemen: data.defensemen,
-      goalies: data.goalies
+      gameId: Number(data.gameId),
+      teamId: Number(data.teamId ?? teamId),
+      forwards: toFiniteNumberArray(data.forwards),
+      defensemen: toFiniteNumberArray(data.defensemen),
+      goalies: toFiniteNumberArray(data.goalies)
     },
     sourceGameDate:
-      typeof (data as any)?.games?.date === "string"
-        ? (data as any).games.date
-        : null
+      typeof data.games?.date === "string" ? data.games.date : null
   };
 }
 
@@ -510,13 +456,13 @@ async function fetchFallbackSkaterIdsForTeam(
   if (error) throw error;
 
   const latestByPlayer = new Map<number, { gameDate: string; toi: number }>();
-  for (const row of (data ?? []) as Array<any>) {
-    const playerId = Number(row?.player_id);
-    const gameDate = typeof row?.game_date === "string" ? row.game_date : null;
+  for (const row of (data ?? []) as RollingSkaterMetricRow[]) {
+    const playerId = Number(row.player_id);
+    const gameDate = typeof row.game_date === "string" ? row.game_date : null;
     if (!Number.isFinite(playerId) || !gameDate) continue;
     const toi = safeNumber(
-      row?.toi_seconds_avg_last5,
-      safeNumber(row?.toi_seconds_avg_all, 0)
+      row.toi_seconds_avg_last5,
+      safeNumber(row.toi_seconds_avg_all, 0)
     );
     const existing = latestByPlayer.get(playerId);
     if (!existing || gameDate > existing.gameDate) {
@@ -543,9 +489,9 @@ async function fetchCurrentSeasonIdForDate(asOfDate: string): Promise<number> {
     .lte("startDate", asOfTimestamp)
     .order("startDate", { ascending: false })
     .limit(1)
-    .maybeSingle();
+    .maybeSingle<SeasonIdRow>();
   if (error) throw error;
-  const seasonId = Number((data as any)?.id);
+  const seasonId = Number(data?.id);
   if (!Number.isFinite(seasonId)) {
     throw new Error(`Unable to resolve season id for as_of_date=${asOfDate}`);
   }
@@ -567,13 +513,9 @@ async function fetchActiveRosterSkaterIdsForTeamSeason(
     .limit(Math.max(1, Math.floor(maxPlayers)));
   if (error) throw error;
 
-  return Array.from(
-    new Set(
-      ((data ?? []) as Array<any>)
-        .map((row) => Number(row?.playerId))
-        .filter((id) => Number.isFinite(id))
-    )
-  );
+  return Array.from(new Set((data ?? [])
+    .map((row: RosterPlayerIdRow) => Number(row.playerId))
+    .filter((id) => Number.isFinite(id))));
 }
 
 export function constrainSkaterIdsToActiveRoster(args: {
@@ -623,14 +565,10 @@ async function fetchTeamSkaterRoleHistory(
   if (error) throw error;
 
   const roleHistoryByPlayer = new Map<number, string[]>();
-  const rows = (data ?? []) as Array<any>;
+  const rows = (data ?? []) as LineCombinationWithGameDateRow[];
   for (const row of rows) {
-    const forwards = Array.isArray(row?.forwards)
-      ? row.forwards.filter((id: any) => Number.isFinite(id)).map((id: any) => Number(id))
-      : [];
-    const defensemen = Array.isArray(row?.defensemen)
-      ? row.defensemen.filter((id: any) => Number.isFinite(id)).map((id: any) => Number(id))
-      : [];
+    const forwards = toFiniteNumberArray(row.forwards);
+    const defensemen = toFiniteNumberArray(row.defensemen);
 
     forwards.forEach((playerId: number, idx: number) => {
       const line = Math.floor(idx / 3) + 1;
@@ -679,15 +617,13 @@ async function fetchTeamLineComboGoaliePrior(
     return new Map();
   }
 
-  const rows = (data ?? []) as Array<any>;
+  const rows = (data ?? []) as LineCombinationWithGameDateRow[];
   if (rows.length === 0) return new Map();
   const weightedByGoalie = new Map<number, number>();
   let totalWeight = 0;
   for (let i = 0; i < rows.length; i += 1) {
     const row = rows[i];
-    const goalies = Array.isArray(row?.goalies)
-      ? row.goalies.filter((n: any) => Number.isFinite(n)).map((n: any) => Number(n))
-      : [];
+    const goalies = toFiniteNumberArray(row.goalies);
     if (goalies.length === 0) continue;
     const weight = Math.pow(LINE_COMBO_RECENCY_DECAY, i);
     totalWeight += weight;
@@ -717,7 +653,7 @@ async function fetchLatestGoalieForTeam(
     .lt("game_date", asOfDate)
     .order("game_date", { ascending: false })
     .limit(1)
-    .maybeSingle();
+    .maybeSingle<{ goalie_id: number | null }>();
   if (error) {
     console.warn(
       `Error fetching latest goalie game for team ${teamId} before ${asOfDate}:`,
@@ -725,9 +661,8 @@ async function fetchLatestGoalieForTeam(
     );
     return null;
   }
-  return Number.isFinite((data as any)?.goalie_id)
-    ? Number((data as any).goalie_id)
-    : null;
+  const goalieId = data?.goalie_id;
+  return Number.isFinite(goalieId) ? Number(goalieId) : null;
 }
 
 function safeStdDev(values: number[]): number {
@@ -756,6 +691,13 @@ function sigmoid(x: number): number {
 function parseDateOnly(value: string | null | undefined): string | null {
   if (typeof value !== "string" || value.length === 0) return null;
   return value.length >= 10 ? value.slice(0, 10) : null;
+}
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error && typeof error.message === "string") {
+    return error.message;
+  }
+  return String(error);
 }
 
 function computeSkaterTrendAdjustment(args: {
@@ -831,209 +773,8 @@ function computeSkaterTrendAdjustment(args: {
   };
 }
 
-export type StarterContextForTest = TeamGoalieStarterContext;
-export type StarterScenario = {
-  goalieId: number;
-  probability: number;
-  rawProbability: number;
-  rank: number;
-};
+export type { StarterContextForTest, StarterScenario } from "./types/run-forge-projections.types";
 
-type TeamGoalieStarterContext = {
-  startsByGoalie: Map<number, number>;
-  lastPlayedDateByGoalie: Map<number, string>;
-  totalGames: number;
-  previousGameDate: string | null;
-  previousGameStarterGoalieId: number | null;
-};
-
-type TeamDefensiveEnvironment = {
-  avgShotsAgainstLast10: number | null;
-  avgShotsAgainstLast5: number | null;
-};
-
-type TeamOffenseEnvironment = {
-  avgShotsForLast10: number | null;
-  avgShotsForLast5: number | null;
-  avgGoalsForLast10: number | null;
-  avgGoalsForLast5: number | null;
-};
-
-type TeamStrengthPrior = {
-  sourceDate: string | null;
-  xga: number | null;
-  xgaPerGame: number | null;
-  xgfPerGame: number | null;
-};
-
-type TeamFiveOnFiveProfile = {
-  sourceDate: string | null;
-  gamesPlayed: number;
-  savePct5v5: number | null;
-  shootingPlusSavePct5v5: number | null;
-};
-
-type TeamNstExpectedGoalsProfile = {
-  source: "nst_team_all" | "nst_team_stats";
-  sourceDate: string | null;
-  gamesPlayed: number;
-  xga: number | null;
-  xgaPer60: number | null;
-};
-
-type GoalieWorkloadContext = {
-  startsLast7Days: number;
-  startsLast14Days: number;
-  daysSinceLastStart: number | null;
-  isGoalieBackToBack: boolean;
-};
-
-type GoalieRestSplitBucket = "0" | "1" | "2" | "3" | "4_plus";
-
-type GoalieRestSplitProfile = {
-  sourceDate: string | null;
-  savePctByBucket: Partial<Record<GoalieRestSplitBucket, number>>;
-  gamesByBucket: Partial<Record<GoalieRestSplitBucket, number>>;
-};
-
-type StarterScenarioProjection = {
-  goalie_id: number;
-  rank: number;
-  starter_probability_raw: number;
-  starter_probability_top2_normalized: number;
-  proj_shots_against: number;
-  proj_saves: number;
-  proj_goals_allowed: number;
-  proj_win_prob: number;
-  proj_shutout_prob: number;
-  modeled_save_pct: number;
-  workload_save_pct_penalty: number;
-  rest_split_save_pct_adjustment?: number;
-};
-
-const GOALIE_STALE_SOFT_DAYS = 30;
-const GOALIE_STALE_HARD_DAYS = 75;
-const SKATER_STALE_SOFT_DAYS = 21;
-const SKATER_STALE_HARD_DAYS = 45;
-const SKATER_SOFT_STALE_MIN_MULTIPLIER = 0.15;
-const LINE_COMBO_STALE_SOFT_DAYS = 10;
-const LINE_COMBO_STALE_HARD_DAYS = 21;
-const SKATER_ROLE_HISTORY_WINDOW_GAMES = 10;
-const B2B_REPEAT_STARTER_PENALTY = 2.75;
-const B2B_ALTERNATE_GOALIE_BOOST = 0.65;
-const TEAM_STRENGTH_WEAKER_GAP = 0.35;
-const WEAK_OPPONENT_GF_THRESHOLD = 2.6;
-const WEAKER_TEAM_B2B_PRIMARY_PENALTY = 1.1;
-const WEAKER_TEAM_B2B_BACKUP_BOOST = 0.45;
-const WEAK_OPPONENT_PRIMARY_REST_PENALTY = 0.7;
-const WEAK_OPPONENT_BACKUP_BOOST = 0.3;
-const LINE_COMBO_RECENCY_DECAY = 0.82;
-const LINE_COMBO_PRIOR_LOGIT_WEIGHT = 0.45;
-const GOALIE_GSAA_PRIOR_MAX_ABS = 0.6;
-const GOALIE_GSAA_PRIOR_WEIGHT = 0.5;
-const GOALIE_SEASON_START_PCT_WEIGHT = 0.28;
-const GOALIE_SEASON_START_PCT_BASELINE = 0.5;
-const GOALIE_SEASON_GAMES_PLAYED_WEIGHT = 0.2;
-const OPPONENT_RESTED_BOOST = 0.03;
-const OPPONENT_B2B_PENALTY = 0.04;
-const DEFENSE_B2B_FATIGUE_BOOST = 0.02;
-const OPPONENT_HOME_BOOST = 0.02;
-const OPPONENT_AWAY_PENALTY = 0.01;
-const GOALIE_HEAVY_WORKLOAD_PENALTY = 0.025;
-const GOALIE_VERY_HEAVY_WORKLOAD_PENALTY = 0.04;
-const GOALIE_BACK_TO_BACK_PENALTY = 0.03;
-const GOALIE_REST_SPLIT_MIN_GAMES = 2;
-const GOALIE_REST_SPLIT_MAX_ADJUSTMENT = 0.012;
-const TEAM_XG_BASELINE_PER_GAME = 2.95;
-const TEAM_XG_SHOTS_AGAINST_MAX_PCT = 0.09;
-const TEAM_XG_WIN_CONTEXT_MAX_PCT = 0.1;
-const TEAM_5V5_SAVE_PCT_BASELINE = 0.922;
-const TEAM_5V5_PDO_BASELINE = 1;
-const TEAM_5V5_MIN_SAMPLE_GAMES = 8;
-const TEAM_5V5_MAX_LEAGUE_SAVE_PCT_ADJ = 0.01;
-const TEAM_5V5_MAX_CONTEXT_PCT_ADJ = 0.035;
-const TEAM_NST_XGA_PER60_BASELINE = 2.5;
-const TEAM_NST_MAX_CONTEXT_PCT_ADJ = 0.05;
-const MAX_SUPPORTED_HORIZON_GAMES = 5;
-const HORIZON_DECAY_PER_GAME = 0.015;
-const HORIZON_B2B_PENALTY = 0.08;
-const HORIZON_ZERO_REST_PENALTY = 0.12;
-const HORIZON_LONG_REST_BOOST = 0.03;
-const SKATER_IXG_PER_SHOT_BASELINE = 0.09;
-const SKATER_RUSH_REBOUND_PER60_BASELINE = 1.1;
-const SKATER_SHOT_QUALITY_MIN_MULTIPLIER = 0.82;
-const SKATER_SHOT_QUALITY_MAX_MULTIPLIER = 1.2;
-const SKATER_CONVERSION_MIN_MULTIPLIER = 0.78;
-const SKATER_CONVERSION_MAX_MULTIPLIER = 1.3;
-const SKATER_ON_ICE_XG_PER60_BASELINE = 2.45;
-const SKATER_ON_ICE_POSSESSION_BASELINE = 0.5;
-const SKATER_ON_ICE_SHOT_ENV_MIN_MULTIPLIER = 0.86;
-const SKATER_ON_ICE_SHOT_ENV_MAX_MULTIPLIER = 1.16;
-const SKATER_ON_ICE_GOAL_ENV_MIN_MULTIPLIER = 0.84;
-const SKATER_ON_ICE_GOAL_ENV_MAX_MULTIPLIER = 1.2;
-const SKATER_ON_ICE_ASSIST_ENV_MIN_MULTIPLIER = 0.82;
-const SKATER_ON_ICE_ASSIST_ENV_MAX_MULTIPLIER = 1.22;
-const SKATER_TEAM_LEVEL_SHOT_MIN_MULTIPLIER = 0.86;
-const SKATER_TEAM_LEVEL_SHOT_MAX_MULTIPLIER = 1.18;
-const SKATER_TEAM_LEVEL_GOAL_MIN_MULTIPLIER = 0.82;
-const SKATER_TEAM_LEVEL_GOAL_MAX_MULTIPLIER = 1.2;
-const SKATER_TEAM_LEVEL_ASSIST_MIN_MULTIPLIER = 0.84;
-const SKATER_TEAM_LEVEL_ASSIST_MAX_MULTIPLIER = 1.2;
-const SKATER_OPP_GOALIE_GOAL_MIN_MULTIPLIER = 0.82;
-const SKATER_OPP_GOALIE_GOAL_MAX_MULTIPLIER = 1.22;
-const SKATER_OPP_GOALIE_ASSIST_MIN_MULTIPLIER = 0.86;
-const SKATER_OPP_GOALIE_ASSIST_MAX_MULTIPLIER = 1.18;
-const SKATER_REST_TOI_MIN_MULTIPLIER = 0.88;
-const SKATER_REST_TOI_MAX_MULTIPLIER = 1.1;
-const SKATER_REST_SHOT_MIN_MULTIPLIER = 0.86;
-const SKATER_REST_SHOT_MAX_MULTIPLIER = 1.14;
-const SKATER_REST_GOAL_MIN_MULTIPLIER = 0.85;
-const SKATER_REST_GOAL_MAX_MULTIPLIER = 1.16;
-const SKATER_REST_ASSIST_MIN_MULTIPLIER = 0.86;
-const SKATER_REST_ASSIST_MAX_MULTIPLIER = 1.15;
-const SKATER_SMALL_SAMPLE_TOI_SECONDS_SCALE = 900;
-const SKATER_SMALL_SAMPLE_SHOTS_SCALE = 45;
-const SKATER_SMALL_SAMPLE_LOW_WEIGHT_THRESHOLD = 0.45;
-const SKATER_SMALL_SAMPLE_CALLUP_WEIGHT_THRESHOLD = 0.22;
-const SKATER_TEAMMATE_ASSIST_ES_MIN_MULTIPLIER = 0.82;
-const SKATER_TEAMMATE_ASSIST_ES_MAX_MULTIPLIER = 1.2;
-const SKATER_TEAMMATE_ASSIST_PP_MIN_MULTIPLIER = 0.8;
-const SKATER_TEAMMATE_ASSIST_PP_MAX_MULTIPLIER = 1.24;
-const SKATER_ROLE_TOP_TOI_ES_MIN = 780;
-const SKATER_ROLE_TOP_TOI_ES_MAX = 1500;
-const SKATER_ROLE_TOP_TOI_PP_MIN = 120;
-const SKATER_ROLE_TOP_TOI_PP_MAX = 560;
-const SKATER_ROLE_MIDDLE_TOI_ES_MIN = 560;
-const SKATER_ROLE_MIDDLE_TOI_ES_MAX = 1180;
-const SKATER_ROLE_MIDDLE_TOI_PP_MIN = 40;
-const SKATER_ROLE_MIDDLE_TOI_PP_MAX = 360;
-const SKATER_ROLE_DEPTH_TOI_ES_MIN = 260;
-const SKATER_ROLE_DEPTH_TOI_ES_MAX = 940;
-const SKATER_ROLE_DEPTH_TOI_PP_MIN = 0;
-const SKATER_ROLE_DEPTH_TOI_PP_MAX = 190;
-const SKATER_ROLE_TOP_SOG_ES_MAX = 15;
-const SKATER_ROLE_TOP_SOG_PP_MAX = 21;
-const SKATER_ROLE_MIDDLE_SOG_ES_MAX = 11.5;
-const SKATER_ROLE_MIDDLE_SOG_PP_MAX = 17;
-const SKATER_ROLE_DEPTH_SOG_ES_MAX = 8.2;
-const SKATER_ROLE_DEPTH_SOG_PP_MAX = 13;
-const RECON_TOP_ES_SHARE_MAX = 0.24;
-const RECON_TOP_PP_SHARE_MAX = 0.58;
-const RECON_BLEND_TO_BASELINE = 0.4;
-const ROLE_SCENARIO_REVERSION_PER_GAME = 0.18;
-const ROLE_SCENARIO_VOLATILE_REVERSION_BONUS = 0.12;
-const SKATER_POOL_TARGET_COUNT = 18;
-const SKATER_POOL_MIN_VALID_COUNT = 15;
-const SKATER_POOL_SUPPLEMENTAL_FETCH_COUNT = 24;
-const SKATER_POOL_EMERGENCY_MAX_SINGLE_TOI_SECONDS = 2100;
-const SKATER_POOL_EMERGENCY_MAX_AVG_TOI_SECONDS = 1200;
-const TREND_BAND_METRIC_PRIORITY = [
-  "fantasy_score",
-  "ixg_per_60",
-  "shots_per_60",
-  "points_per_60_5v5"
-] as const;
-const TREND_BAND_WINDOW_PRIORITY = ["l5", "l10"] as const;
 
 type ActiveSkaterFilterResult = {
   eligibleSkaterIds: number[];
@@ -4098,9 +3839,9 @@ async function createRun(asOfDate: string): Promise<string> {
       metrics: {}
     })
     .select("run_id")
-    .single();
+    .single<{ run_id: string }>();
   if (error) throw error;
-  return (data as any).run_id as string;
+  return data.run_id;
 }
 
 async function finalizeRun(
@@ -4116,32 +3857,14 @@ async function finalizeRun(
   if (error) throw error;
 }
 
-type ProjectionTotals = {
-  toiEsSeconds: number;
-  toiPpSeconds: number;
-  shotsEs: number;
-  shotsPp: number;
-  goalsEs: number;
-  goalsPp: number;
-  assistsEs: number;
-  assistsPp: number;
-};
-
 export async function runProjectionV2ForDate(
   asOfDate: string,
-  opts?: { deadlineMs?: number; horizonGames?: number }
-): Promise<{
-  runId: string;
-  gamesProcessed: number;
-  playerRowsUpserted: number;
-  teamRowsUpserted: number;
-  goalieRowsUpserted: number;
-  timedOut: boolean;
-}> {
+  opts?: RunProjectionOptions
+): Promise<RunProjectionResult> {
   assertSupabase();
   const runId = await createRun(asOfDate);
 
-  const metrics: any = {
+  const metrics: Record<string, any> = {
     as_of_date: asOfDate,
     horizon_games: clampHorizonGames(opts?.horizonGames ?? 1),
     started_at: new Date().toISOString(),
@@ -6804,7 +6527,7 @@ export async function runProjectionV2ForDate(
     };
   } catch (e) {
     metrics.finished_at = new Date().toISOString();
-    metrics.error = (e as any)?.message ?? String(e);
+    metrics.error = getErrorMessage(e);
     await finalizeRun(runId, "failed", metrics);
     throw e;
   }

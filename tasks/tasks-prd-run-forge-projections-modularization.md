@@ -4,7 +4,9 @@
 - `web/lib/projections/run-forge-projections.ts` - New orchestrator entrypoint after rename; stage-composition only.
 - `web/lib/projections/runProjectionV2.test.ts` - Existing test suite importing monolith helpers; update imports and/or rename test file.
 - `web/lib/projections/types/*.ts` - Extracted projection row/result/contract types used across modules.
+- `web/lib/projections/types/run-forge-projections.types.ts` - Centralized extracted row, adjustment, starter, and orchestrator IO contract types for parity-safe modularization.
 - `web/lib/projections/constants/projection-weights.ts` - Extracted projection constants (windows, priors, clamps, multipliers, thresholds).
+- `web/lib/projections/constants/projection-weights.ts` - Source-of-truth module for extracted FORGE projection constants imported by orchestrator/calculators.
 - `web/lib/projections/utils/*.ts` - Extracted pure helpers for numeric/date/collection logic.
 - `web/lib/projections/queries/*.ts` - Supabase data-access layer and run lifecycle query helpers.
 - `web/lib/projections/calculators/*.ts` - Extracted skater/goalie/team/scenario calculators.
@@ -33,10 +35,10 @@
   - [x] 1.4 Update direct runtime/script/test references to new filename, including `web/pages/api/v1/db/run-projection-v2.ts`, `web/lib/projections/runProjectionV2.test.ts` (or renamed test), and `fix_terminal.sh`. [Deps: 1.3] [Files: listed explicit files] [AC: `rg` finds no stale direct imports or hardcoded paths in runtime/test scripts]
 
 - [ ] 2.0 Phase 2 - Extract Types And Constants Without Logic Changes
-  - [ ] 2.1 Create `web/lib/projections/types/` modules for row types, adjustment/result payload types, orchestrator IO contracts, and uncertainty metadata structures. [Deps: 1.4] [Files: `web/lib/projections/types/*.ts`] [AC: no `any` in migrated type surfaces unless documented as unavoidable]
-  - [ ] 2.2 Introduce typed Supabase row decoders/adapters and replace broad `any` casts in touched extraction seams. [Deps: 2.1] [Files: `web/lib/projections/types/*.ts`, `web/lib/projections/queries/*.ts`, orchestrator imports] [AC: decoded row contracts compile and preserve current null/optional behavior]
-  - [ ] 2.3 Extract constants into `web/lib/projections/constants/projection-weights.ts` and sibling constant modules (windows, priors, clamps, multipliers, thresholds, horizon constants). [Deps: 2.1] [Files: `web/lib/projections/constants/*.ts`] [AC: constant values match monolith exactly with no numeric drift]
-  - [ ] 2.4 Update orchestrator/module imports to consume extracted types/constants with no execution-order or default-value changes. [Deps: 2.2, 2.3] [Files: `web/lib/projections/run-forge-projections.ts`, extracted modules] [AC: compile succeeds and test snapshots remain unchanged]
+  - [x] 2.1 Create `web/lib/projections/types/` modules for row types, adjustment/result payload types, orchestrator IO contracts, and uncertainty metadata structures. [Deps: 1.4] [Files: `web/lib/projections/types/*.ts`] [AC: no `any` in migrated type surfaces unless documented as unavoidable]
+  - [x] 2.2 Introduce typed Supabase row decoders/adapters and replace broad `any` casts in touched extraction seams. [Deps: 2.1] [Files: `web/lib/projections/types/*.ts`, `web/lib/projections/queries/*.ts`, orchestrator imports] [AC: decoded row contracts compile and preserve current null/optional behavior]
+  - [x] 2.3 Extract constants into `web/lib/projections/constants/projection-weights.ts` and sibling constant modules (windows, priors, clamps, multipliers, thresholds, horizon constants). [Deps: 2.1] [Files: `web/lib/projections/constants/*.ts`] [AC: constant values match monolith exactly with no numeric drift]
+  - [x] 2.4 Update orchestrator/module imports to consume extracted types/constants with no execution-order or default-value changes. [Deps: 2.2, 2.3] [Files: `web/lib/projections/run-forge-projections.ts`, extracted modules] [AC: compile succeeds and test snapshots remain unchanged]
 
 - [ ] 3.0 Phase 3 - Extract Pure Utilities And Builders
   - [ ] 3.1 Extract numeric helpers (`clamp`, safe conversions, rate/stddev helpers) into `web/lib/projections/utils/number-utils.ts`. [Deps: 2.4] [Files: `web/lib/projections/utils/number-utils.ts`] [AC: helper unit tests cover edge/null/NaN behavior parity]
