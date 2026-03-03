@@ -18,6 +18,7 @@
 - `web/lib/projections/queries/team-context-queries.ts` - Extracted team context/prior/environment fetchers used by skater and goalie stages.
 - `web/lib/projections/queries/run-lifecycle-queries.ts` - Extracted run lifecycle persistence helpers (`createRun`, `finalizeRun`) for `forge_runs` semantics.
 - `web/lib/projections/calculators/*.ts` - Extracted skater/goalie/team/scenario calculators.
+- `web/lib/projections/calculators/skater-adjustments.ts` - Extracted skater adjustment calculators (shot quality, on-ice/team/opponent context, rest, small-sample shrinkage, strength split conversion rates).
 - `web/pages/api/v1/db/run-projection-v2.ts` - API route must keep behavior and endpoint name, but update runner import path.
 - `fix_terminal.sh` - Hardcoded source path currently points to old file name.
 - `FORGE_EXPLAINED.md` - Update stale source-file references to new runner filename.
@@ -61,10 +62,10 @@
   - [x] 4.4 Add safe memoization boundaries by `(teamId, asOfDate)` and `(playerId, asOfDate)` where PRD marks as optimization-safe, without changing result order/content. [Deps: 4.1, 4.2] [Files: query modules/orchestrator wiring] [AC: deterministic output parity retained; repeated fetch overhead reduced or equal]
 
 - [ ] 5.0 Phase 5 - Extract Calculators And Recompose Orchestrator Stages
-  - [ ] 5.1 Extract skater adjustment calculators into `web/lib/projections/calculators/skater-adjustments.ts`. [Deps: 4.4] [Files: `web/lib/projections/calculators/skater-adjustments.ts`] [AC: rounding points and clamps exactly preserved]
-  - [ ] 5.2 Extract goalie starter/save-pct/context calculators into dedicated goalie calculator modules. [Deps: 4.4] [Files: `web/lib/projections/calculators/goalie-*.ts`] [AC: starter probabilities, uncertainty shape, and context adjustments remain parity-consistent]
-  - [ ] 5.3 Extract team context and scenario blending/reconciliation validators into dedicated calculator helpers. [Deps: 4.4] [Files: `web/lib/projections/calculators/team-context-adjustments.ts`, `web/lib/projections/calculators/scenario-blending.ts`] [AC: reconciliation guard behavior and output contracts unchanged]
-  - [ ] 5.4 Refactor `runProjectionV2ForDate` implementation into stage-oriented orchestration in `run-forge-projections.ts` (preflight/context load, per-game skater stage, goalie stage, persistence stage, metrics finalization). [Deps: 5.1, 5.2, 5.3] [Files: `web/lib/projections/run-forge-projections.ts`] [AC: orchestrator becomes top-down composition; deadlines/timeouts unchanged]
+  - [x] 5.1 Extract skater adjustment calculators into `web/lib/projections/calculators/skater-adjustments.ts`. [Deps: 4.4] [Files: `web/lib/projections/calculators/skater-adjustments.ts`] [AC: rounding points and clamps exactly preserved]
+  - [x] 5.2 Extract goalie starter/save-pct/context calculators into dedicated goalie calculator modules. [Deps: 4.4] [Files: `web/lib/projections/calculators/goalie-*.ts`] [AC: starter probabilities, uncertainty shape, and context adjustments remain parity-consistent]
+  - [x] 5.3 Extract team context and scenario blending/reconciliation validators into dedicated calculator helpers. [Deps: 4.4] [Files: `web/lib/projections/calculators/team-context-adjustments.ts`, `web/lib/projections/calculators/scenario-blending.ts`] [AC: reconciliation guard behavior and output contracts unchanged]
+  - [x] 5.4 Refactor `runProjectionV2ForDate` implementation into stage-oriented orchestration in `run-forge-projections.ts` (preflight/context load, per-game skater stage, goalie stage, persistence stage, metrics finalization). [Deps: 5.1, 5.2, 5.3] [Files: `web/lib/projections/run-forge-projections.ts`] [AC: orchestrator becomes top-down composition; deadlines/timeouts unchanged]
 
 - [ ] 6.0 Phase 6 - Reference Hygiene And Post-Parity Follow-Up Separation
   - [ ] 6.1 Update internal docs/tasks/script references from `runProjectionV2.ts` to `run-forge-projections.ts` where they describe source file location (excluding intentional historical mentions). [Deps: 5.4] [Files: `FORGE_EXPLAINED.md`, `FORGE_ECOSYSTEM_ELI5_AUDIT.md`, `tasks/*.md`, `fix_terminal.sh`] [AC: no misleading active-path references remain]

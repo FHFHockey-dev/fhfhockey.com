@@ -227,6 +227,38 @@ import {
   type TeamStrengthAverages
 } from "./queries/team-context-queries";
 import { createRun, finalizeRun } from "./queries/run-lifecycle-queries";
+import {
+  computeSkaterOnIceContextAdjustments,
+  computeSkaterOpponentGoalieContextAdjustments,
+  computeSkaterRestScheduleAdjustments,
+  computeSkaterSampleShrinkageAdjustments,
+  computeSkaterShotQualityAdjustments,
+  computeSkaterTeamLevelContextAdjustments,
+  computeStrengthSplitConversionRates
+} from "./calculators/skater-adjustments";
+import {
+  blendTopStarterScenarioOutputs,
+  buildTopStarterScenarios,
+  computeStarterProbabilities,
+  selectStarterCandidateGoalieIds
+} from "./calculators/goalie-starter";
+import {
+  computeGoalieRestSplitSavePctAdjustment,
+  computeWorkloadSavePctPenalty,
+  toGoalieRestSplitBucket
+} from "./calculators/goalie-save-pct-context";
+import {
+  blendSkaterScenarioStatLines,
+  blendSkaterScenarioStatLinesAcrossHorizon,
+  buildSkaterScenarioMetadata,
+  computeSkaterTeamToiTargetWithPoolGuard,
+  validateReconciledPlayerDistribution
+} from "./calculators/scenario-blending";
+import {
+  computeNstOpponentDangerAdjustment,
+  computeTeamFiveOnFiveContextAdjustment,
+  computeTeamStrengthContextAdjustment
+} from "./calculators/team-context-adjustments";
 
 function assertSupabase() {
   if (!supabase) throw new Error("Supabase server client not available");
@@ -520,7 +552,64 @@ function getErrorMessage(error: unknown): string {
   return String(error);
 }
 
+async function runProjectionPreflightStage<T>(
+  stage: () => Promise<T>
+): Promise<T> {
+  return stage();
+}
+
+async function runPerGameSkaterStage<T>(
+  stage: () => Promise<T>
+): Promise<T> {
+  return stage();
+}
+
+async function runPerGameGoalieStage<T>(
+  stage: () => Promise<T>
+): Promise<T> {
+  return stage();
+}
+
+function runMetricsFinalizationStage(stage: () => void): void {
+  stage();
+}
+
+async function runPersistenceStage<T>(stage: () => Promise<T>): Promise<T> {
+  return stage();
+}
+
 export type { StarterContextForTest, StarterScenario } from "./types/run-forge-projections.types";
+export {
+  computeSkaterOnIceContextAdjustments,
+  computeSkaterOpponentGoalieContextAdjustments,
+  computeSkaterRestScheduleAdjustments,
+  computeSkaterSampleShrinkageAdjustments,
+  computeSkaterShotQualityAdjustments,
+  computeSkaterTeamLevelContextAdjustments,
+  computeStrengthSplitConversionRates
+} from "./calculators/skater-adjustments";
+export {
+  blendTopStarterScenarioOutputs,
+  buildTopStarterScenarios,
+  computeStarterProbabilities,
+  selectStarterCandidateGoalieIds
+} from "./calculators/goalie-starter";
+export {
+  computeGoalieRestSplitSavePctAdjustment,
+  toGoalieRestSplitBucket
+} from "./calculators/goalie-save-pct-context";
+export {
+  blendSkaterScenarioStatLines,
+  blendSkaterScenarioStatLinesAcrossHorizon,
+  buildSkaterScenarioMetadata,
+  computeSkaterTeamToiTargetWithPoolGuard,
+  validateReconciledPlayerDistribution
+} from "./calculators/scenario-blending";
+export {
+  computeNstOpponentDangerAdjustment,
+  computeTeamFiveOnFiveContextAdjustment,
+  computeTeamStrengthContextAdjustment
+} from "./calculators/team-context-adjustments";
 
 
 type ActiveSkaterFilterResult = {
@@ -833,272 +922,6 @@ export function buildSkaterRoleScenarios(args: {
   }));
 }
 
-function parseRoleRank(role: string): {
-  family: "L" | "D" | null;
-  rank: number | null;
-} {
-  if (role.startsWith("L")) {
-    const rank = Number(role.slice(1));
-    return { family: "L", rank: Number.isFinite(rank) ? rank : null };
-  }
-  if (role.startsWith("D")) {
-    const rank = Number(role.slice(1));
-    return { family: "D", rank: Number.isFinite(rank) ? rank : null };
-  }
-  return { family: null, rank: null };
-}
-
-function scenarioRoleScoringMultiplier(
-  currentRole: string | null,
-  scenarioRole: string
-): {
-  goal: number;
-  assist: number;
-} {
-  const current = currentRole
-    ? parseRoleRank(currentRole)
-    : { family: null, rank: null };
-  const scenario = parseRoleRank(scenarioRole);
-  if (
-    current.family == null ||
-    scenario.family == null ||
-    current.rank == null ||
-    scenario.rank == null ||
-    current.family !== scenario.family
-  ) {
-    return { goal: 0.97, assist: 0.97 };
-  }
-  const delta = current.rank - scenario.rank;
-  const goal = clamp(1 + delta * 0.07, 0.82, 1.2);
-  const assist = clamp(1 + delta * 0.09, 0.8, 1.24);
-  return { goal: Number(goal.toFixed(4)), assist: Number(assist.toFixed(4)) };
-}
-
-export function blendSkaterScenarioStatLines(args: {
-  currentRole: string | null;
-  scenarios: SkaterRoleScenario[];
-  baseGoalsEs: number;
-  baseGoalsPp: number;
-  baseAssistsEs: number;
-  baseAssistsPp: number;
-}): {
-  blended: {
-    goalsEs: number;
-    goalsPp: number;
-    assistsEs: number;
-    assistsPp: number;
-  };
-  scenarioLines: SkaterScenarioStatLine[];
-} {
-  if (args.scenarios.length === 0) {
-    return {
-      blended: {
-        goalsEs: args.baseGoalsEs,
-        goalsPp: args.baseGoalsPp,
-        assistsEs: args.baseAssistsEs,
-        assistsPp: args.baseAssistsPp
-      },
-      scenarioLines: []
-    };
-  }
-  const scenarioLines: SkaterScenarioStatLine[] = [];
-  let blendedGoalsEs = 0;
-  let blendedGoalsPp = 0;
-  let blendedAssistsEs = 0;
-  let blendedAssistsPp = 0;
-  for (const scenario of args.scenarios) {
-    const p = clamp(scenario.probability, 0, 1);
-    const mult = scenarioRoleScoringMultiplier(args.currentRole, scenario.role);
-    const goalsEs = args.baseGoalsEs * mult.goal;
-    const goalsPp = args.baseGoalsPp * mult.goal;
-    const assistsEs = args.baseAssistsEs * mult.assist;
-    const assistsPp = args.baseAssistsPp * mult.assist;
-    blendedGoalsEs += p * goalsEs;
-    blendedGoalsPp += p * goalsPp;
-    blendedAssistsEs += p * assistsEs;
-    blendedAssistsPp += p * assistsPp;
-    scenarioLines.push({
-      role: scenario.role,
-      probability: Number(p.toFixed(4)),
-      goalsEs: Number(goalsEs.toFixed(4)),
-      goalsPp: Number(goalsPp.toFixed(4)),
-      assistsEs: Number(assistsEs.toFixed(4)),
-      assistsPp: Number(assistsPp.toFixed(4))
-    });
-  }
-  return {
-    blended: {
-      goalsEs: Number(blendedGoalsEs.toFixed(4)),
-      goalsPp: Number(blendedGoalsPp.toFixed(4)),
-      assistsEs: Number(blendedAssistsEs.toFixed(4)),
-      assistsPp: Number(blendedAssistsPp.toFixed(4))
-    },
-    scenarioLines
-  };
-}
-
-export function blendSkaterScenarioStatLinesAcrossHorizon(args: {
-  currentRole: string | null;
-  scenarios: SkaterRoleScenario[];
-  baseGoalsEs: number;
-  baseGoalsPp: number;
-  baseAssistsEs: number;
-  baseAssistsPp: number;
-  horizonScalars: number[];
-  roleContinuity: SkaterRoleContinuitySummary | null;
-}): SkaterScenarioHorizonBlendResult {
-  const scalars = args.horizonScalars.length > 0 ? args.horizonScalars : [1];
-  const scenarioSeed =
-    args.scenarios.length > 0
-      ? args.scenarios
-      : [
-          {
-            role: args.currentRole ?? "L4",
-            probability: 1,
-            source: "current_role" as const
-          }
-        ];
-  const baseNormDenom = scenarioSeed.reduce(
-    (acc, s) => acc + Math.max(0, s.probability),
-    0
-  );
-  const baseNorm = scenarioSeed.map((s) => ({
-    ...s,
-    probability:
-      baseNormDenom > 0
-        ? clamp(s.probability / baseNormDenom, 0, 1)
-        : 1 / scenarioSeed.length
-  }));
-  const baseUniformProb = 1 / baseNorm.length;
-  const volatility = args.roleContinuity?.volatilityIndex ?? 0.35;
-
-  let blendedGoalsEs = 0;
-  let blendedGoalsPp = 0;
-  let blendedAssistsEs = 0;
-  let blendedAssistsPp = 0;
-  const scenarioLineByRole = new Map<string, SkaterScenarioStatLine>();
-  const horizonScenarioSummaries: Array<{
-    gameIndex: number;
-    topRole: string;
-    topProbability: number;
-  }> = [];
-  const scalarTotal = scalars.reduce((acc, s) => acc + Math.max(0, s), 0) || 1;
-
-  for (let gameIndex = 0; gameIndex < scalars.length; gameIndex += 1) {
-    const scalar = Math.max(0, scalars[gameIndex] ?? 0);
-    const reversion = clamp(
-      gameIndex * ROLE_SCENARIO_REVERSION_PER_GAME +
-        volatility * ROLE_SCENARIO_VOLATILE_REVERSION_BONUS,
-      0,
-      0.75
-    );
-    const gameScenarios = baseNorm.map((s) => ({
-      ...s,
-      probability: clamp(
-        (1 - reversion) * s.probability + reversion * baseUniformProb,
-        0,
-        1
-      )
-    }));
-    const gameProbDenom =
-      gameScenarios.reduce((acc, s) => acc + s.probability, 0) || 1;
-    const normalizedGameScenarios = gameScenarios.map((s) => ({
-      ...s,
-      probability: s.probability / gameProbDenom
-    }));
-    const top = normalizedGameScenarios
-      .slice()
-      .sort((a, b) => b.probability - a.probability)[0];
-    horizonScenarioSummaries.push({
-      gameIndex,
-      topRole: top?.role ?? args.currentRole ?? "L4",
-      topProbability: Number((top?.probability ?? 1).toFixed(4))
-    });
-
-    for (const scenario of normalizedGameScenarios) {
-      const p = clamp(scenario.probability, 0, 1);
-      const mult = scenarioRoleScoringMultiplier(
-        args.currentRole,
-        scenario.role
-      );
-      const goalsEs = args.baseGoalsEs * mult.goal;
-      const goalsPp = args.baseGoalsPp * mult.goal;
-      const assistsEs = args.baseAssistsEs * mult.assist;
-      const assistsPp = args.baseAssistsPp * mult.assist;
-      const weightedScalar = scalar / scalarTotal;
-      blendedGoalsEs += weightedScalar * p * goalsEs;
-      blendedGoalsPp += weightedScalar * p * goalsPp;
-      blendedAssistsEs += weightedScalar * p * assistsEs;
-      blendedAssistsPp += weightedScalar * p * assistsPp;
-      const existing = scenarioLineByRole.get(scenario.role);
-      if (!existing) {
-        scenarioLineByRole.set(scenario.role, {
-          role: scenario.role,
-          probability: weightedScalar * p,
-          goalsEs: weightedScalar * goalsEs,
-          goalsPp: weightedScalar * goalsPp,
-          assistsEs: weightedScalar * assistsEs,
-          assistsPp: weightedScalar * assistsPp
-        });
-      } else {
-        existing.probability += weightedScalar * p;
-        existing.goalsEs += weightedScalar * goalsEs;
-        existing.goalsPp += weightedScalar * goalsPp;
-        existing.assistsEs += weightedScalar * assistsEs;
-        existing.assistsPp += weightedScalar * assistsPp;
-        scenarioLineByRole.set(scenario.role, existing);
-      }
-    }
-  }
-
-  const scenarioLines = Array.from(scenarioLineByRole.values())
-    .sort((a, b) => b.probability - a.probability)
-    .map((s) => ({
-      role: s.role,
-      probability: Number(s.probability.toFixed(4)),
-      goalsEs: Number(s.goalsEs.toFixed(4)),
-      goalsPp: Number(s.goalsPp.toFixed(4)),
-      assistsEs: Number(s.assistsEs.toFixed(4)),
-      assistsPp: Number(s.assistsPp.toFixed(4))
-    }));
-
-  return {
-    blended: {
-      goalsEs: Number(blendedGoalsEs.toFixed(4)),
-      goalsPp: Number(blendedGoalsPp.toFixed(4)),
-      assistsEs: Number(blendedAssistsEs.toFixed(4)),
-      assistsPp: Number(blendedAssistsPp.toFixed(4))
-    },
-    scenarioLines,
-    horizonScenarioSummaries
-  };
-}
-
-export function buildSkaterScenarioMetadata(args: {
-  scenarios: SkaterRoleScenario[];
-  modelVersion?: string;
-  topK?: number;
-}): SkaterScenarioMetadata {
-  const topK = Number.isFinite(args.topK)
-    ? Math.max(1, Math.floor(Number(args.topK)))
-    : 3;
-  const modelVersion = args.modelVersion ?? "skater-role-scenario-v1";
-  const normalized = args.scenarios
-    .slice()
-    .sort((a, b) => b.probability - a.probability)
-    .slice(0, topK)
-    .map((s) => ({
-      role: s.role,
-      probability: Number(clamp(s.probability, 0, 1).toFixed(4)),
-      source: s.source
-    }));
-  return {
-    modelVersion,
-    scenarioCount: args.scenarios.length,
-    topScenarioDrivers: normalized
-  };
-}
-
 function computeSkaterRecencyMultiplier(daysSinceLastMetric: number): number {
   if (daysSinceLastMetric <= SKATER_STALE_SOFT_DAYS) return 1;
   if (daysSinceLastMetric > SKATER_STALE_HARD_DAYS) return 0;
@@ -1193,639 +1016,6 @@ export function mergeSkaterCandidatePoolForRecovery(args: {
     if (out.length >= targetCount) break;
   }
   return out;
-}
-
-export function computeSkaterTeamToiTargetWithPoolGuard(args: {
-  canonicalTargetSeconds: number;
-  projectedSkaterCount: number;
-  ppShare: number;
-  minValidSkaterCount?: number;
-  maxSingleSkaterToiSeconds?: number;
-  maxAvgToiPerProjectedSkaterSeconds?: number;
-}): {
-  targetSeconds: number;
-  wasCapped: boolean;
-  capReason: "undersized_projected_pool" | null;
-} {
-  const canonicalTarget = Math.max(
-    0,
-    Math.floor(Number(args.canonicalTargetSeconds) || 0)
-  );
-  const projectedSkaterCount = Math.max(
-    0,
-    Math.floor(Number(args.projectedSkaterCount) || 0)
-  );
-  const minValidSkaterCount = Number.isFinite(args.minValidSkaterCount)
-    ? Math.max(1, Math.floor(Number(args.minValidSkaterCount)))
-    : SKATER_POOL_MIN_VALID_COUNT;
-  if (projectedSkaterCount >= minValidSkaterCount || canonicalTarget <= 0) {
-    return {
-      targetSeconds: canonicalTarget,
-      wasCapped: false,
-      capReason: null
-    };
-  }
-
-  const ppShare = clamp(args.ppShare, 0, 0.5);
-  const maxSingleSkaterToiSeconds = Number.isFinite(args.maxSingleSkaterToiSeconds)
-    ? Math.max(600, Math.floor(Number(args.maxSingleSkaterToiSeconds)))
-    : SKATER_POOL_EMERGENCY_MAX_SINGLE_TOI_SECONDS;
-  const maxAvgToiPerProjectedSkaterSeconds = Number.isFinite(
-    args.maxAvgToiPerProjectedSkaterSeconds
-  )
-    ? Math.max(300, Math.floor(Number(args.maxAvgToiPerProjectedSkaterSeconds)))
-    : SKATER_POOL_EMERGENCY_MAX_AVG_TOI_SECONDS;
-
-  const blendedTopShare =
-    RECON_TOP_ES_SHARE_MAX * (1 - ppShare) + RECON_TOP_PP_SHARE_MAX * ppShare;
-  const capByTopShare =
-    blendedTopShare > 0
-      ? Math.floor(maxSingleSkaterToiSeconds / blendedTopShare)
-      : canonicalTarget;
-  const capByAvgToi =
-    projectedSkaterCount > 0
-      ? projectedSkaterCount * maxAvgToiPerProjectedSkaterSeconds
-      : 0;
-  const emergencyCap = Math.max(1800, Math.min(capByTopShare, capByAvgToi));
-  const targetSeconds = Math.min(canonicalTarget, emergencyCap);
-
-  return {
-    targetSeconds,
-    wasCapped: targetSeconds < canonicalTarget,
-    capReason: targetSeconds < canonicalTarget ? "undersized_projected_pool" : null
-  };
-}
-
-export function computeSkaterShotQualityAdjustments(args: {
-  profile: SkaterShotQualityProfile | null;
-}): {
-  sampleWeight: number;
-  shotRateMultiplier: number;
-  goalRateMultiplier: number;
-  qualityPerShot: number | null;
-  rushReboundPer60: number | null;
-} {
-  const profile = args.profile;
-  if (!profile) {
-    return {
-      sampleWeight: 0,
-      shotRateMultiplier: 1,
-      goalRateMultiplier: 1,
-      qualityPerShot: null,
-      rushReboundPer60: null
-    };
-  }
-
-  const shotsPer60 = finiteOrNull(profile.nstShotsPer60);
-  const ixgPer60 = finiteOrNull(profile.nstIxgPer60);
-  const rushPer60 = Math.max(0, finiteOrNull(profile.nstRushAttemptsPer60) ?? 0);
-  const reboundsPer60 = Math.max(
-    0,
-    finiteOrNull(profile.nstReboundsCreatedPer60) ?? 0
-  );
-  const qualityPerShot =
-    shotsPer60 != null && shotsPer60 > 0 && ixgPer60 != null
-      ? ixgPer60 / shotsPer60
-      : null;
-  const rushReboundPer60 = rushPer60 + reboundsPer60;
-
-  const shotsSignal = Math.max(0, shotsPer60 ?? 0);
-  const sampleWeight = clamp(shotsSignal / (shotsSignal + 5), 0, 1);
-  const qualityEdge =
-    qualityPerShot != null
-      ? clamp(
-          (qualityPerShot - SKATER_IXG_PER_SHOT_BASELINE) /
-            SKATER_IXG_PER_SHOT_BASELINE,
-          -0.35,
-          0.35
-        )
-      : 0;
-  const rushReboundEdge = clamp(
-    (rushReboundPer60 - SKATER_RUSH_REBOUND_PER60_BASELINE) /
-      SKATER_RUSH_REBOUND_PER60_BASELINE,
-    -0.5,
-    0.5
-  );
-
-  const shotRateMultiplier = clamp(
-    1 + sampleWeight * (qualityEdge * 0.05 + rushReboundEdge * 0.08),
-    SKATER_SHOT_QUALITY_MIN_MULTIPLIER,
-    SKATER_SHOT_QUALITY_MAX_MULTIPLIER
-  );
-  const goalRateMultiplier = clamp(
-    1 + sampleWeight * (qualityEdge * 0.26 + rushReboundEdge * 0.07),
-    SKATER_CONVERSION_MIN_MULTIPLIER,
-    SKATER_CONVERSION_MAX_MULTIPLIER
-  );
-
-  return {
-    sampleWeight: Number(sampleWeight.toFixed(4)),
-    shotRateMultiplier: Number(shotRateMultiplier.toFixed(4)),
-    goalRateMultiplier: Number(goalRateMultiplier.toFixed(4)),
-    qualityPerShot:
-      qualityPerShot == null ? null : Number(qualityPerShot.toFixed(4)),
-    rushReboundPer60: Number(rushReboundPer60.toFixed(4))
-  };
-}
-
-export function computeSkaterOnIceContextAdjustments(args: {
-  profile: SkaterOnIceContextProfile | null;
-}): {
-  sampleWeight: number;
-  shotEnvironmentMultiplier: number;
-  goalEnvironmentMultiplier: number;
-  assistEnvironmentMultiplier: number;
-  possessionPct: number | null;
-} {
-  const profile = args.profile;
-  if (!profile) {
-    return {
-      sampleWeight: 0,
-      shotEnvironmentMultiplier: 1,
-      goalEnvironmentMultiplier: 1,
-      assistEnvironmentMultiplier: 1,
-      possessionPct: null
-    };
-  }
-
-  const xgfPer60 = finiteOrNull(profile.nstOiXgfPer60);
-  const xgaPer60 = finiteOrNull(profile.nstOiXgaPer60);
-  const possessionPct =
-    normalizeRateOrPercent(profile.nstOiCfPct) ??
-    normalizeRateOrPercent(profile.possessionPctSafe);
-  const xgSignal = Math.max(0, (xgfPer60 ?? 0) + (xgaPer60 ?? 0));
-  const sampleWeight = clamp(xgSignal / (xgSignal + 2.5), 0, 1);
-
-  const offenseEdge =
-    xgfPer60 != null
-      ? clamp(
-          (xgfPer60 - SKATER_ON_ICE_XG_PER60_BASELINE) /
-            SKATER_ON_ICE_XG_PER60_BASELINE,
-          -0.3,
-          0.3
-        )
-      : 0;
-  const defenseDrag =
-    xgaPer60 != null
-      ? clamp(
-          (xgaPer60 - SKATER_ON_ICE_XG_PER60_BASELINE) /
-            SKATER_ON_ICE_XG_PER60_BASELINE,
-          -0.3,
-          0.3
-        )
-      : 0;
-  const possessionEdge =
-    possessionPct != null
-      ? clamp(
-          (possessionPct - SKATER_ON_ICE_POSSESSION_BASELINE) /
-            SKATER_ON_ICE_POSSESSION_BASELINE,
-          -0.25,
-          0.25
-        )
-      : 0;
-
-  const shotEnvironmentMultiplier = clamp(
-    1 + sampleWeight * (offenseEdge * 0.14 + possessionEdge * 0.1 - defenseDrag * 0.05),
-    SKATER_ON_ICE_SHOT_ENV_MIN_MULTIPLIER,
-    SKATER_ON_ICE_SHOT_ENV_MAX_MULTIPLIER
-  );
-  const goalEnvironmentMultiplier = clamp(
-    1 + sampleWeight * (offenseEdge * 0.18 + possessionEdge * 0.07 - defenseDrag * 0.06),
-    SKATER_ON_ICE_GOAL_ENV_MIN_MULTIPLIER,
-    SKATER_ON_ICE_GOAL_ENV_MAX_MULTIPLIER
-  );
-  const assistEnvironmentMultiplier = clamp(
-    1 + sampleWeight * (offenseEdge * 0.2 + possessionEdge * 0.13 - defenseDrag * 0.04),
-    SKATER_ON_ICE_ASSIST_ENV_MIN_MULTIPLIER,
-    SKATER_ON_ICE_ASSIST_ENV_MAX_MULTIPLIER
-  );
-
-  return {
-    sampleWeight: Number(sampleWeight.toFixed(4)),
-    shotEnvironmentMultiplier: Number(shotEnvironmentMultiplier.toFixed(4)),
-    goalEnvironmentMultiplier: Number(goalEnvironmentMultiplier.toFixed(4)),
-    assistEnvironmentMultiplier: Number(assistEnvironmentMultiplier.toFixed(4)),
-    possessionPct:
-      possessionPct == null ? null : Number(possessionPct.toFixed(4))
-  };
-}
-
-export function computeSkaterTeamLevelContextAdjustments(args: {
-  teamStrengthPrior: TeamStrengthPrior | null;
-  opponentStrengthPrior: TeamStrengthPrior | null;
-  teamFiveOnFiveProfile: TeamFiveOnFiveProfile | null;
-  opponentFiveOnFiveProfile: TeamFiveOnFiveProfile | null;
-  teamNstProfile: TeamNstExpectedGoalsProfile | null;
-  opponentNstProfile: TeamNstExpectedGoalsProfile | null;
-}): SkaterTeamLevelContextAdjustment {
-  const teamStrength = args.teamStrengthPrior;
-  const opponentStrength = args.opponentStrengthPrior;
-  const teamFiveOnFive = args.teamFiveOnFiveProfile;
-  const opponentFiveOnFive = args.opponentFiveOnFiveProfile;
-  const teamNst = args.teamNstProfile;
-  const opponentNst = args.opponentNstProfile;
-
-  if (
-    !teamStrength &&
-    !opponentStrength &&
-    !teamFiveOnFive &&
-    !opponentFiveOnFive &&
-    !teamNst &&
-    !opponentNst
-  ) {
-    return {
-      sampleWeight: 0,
-      shotRateMultiplier: 1,
-      goalRateMultiplier: 1,
-      assistRateMultiplier: 1,
-      paceEdge: 0,
-      opponentDefenseEdge: 0
-    };
-  }
-
-  const teamXgfPerGame = teamStrength?.xgfPerGame ?? TEAM_XG_BASELINE_PER_GAME;
-  const opponentXgaPerGame =
-    opponentStrength?.xgaPerGame ?? TEAM_XG_BASELINE_PER_GAME;
-  const teamPdo =
-    normalizeRateOrPercent(teamFiveOnFive?.shootingPlusSavePct5v5) ??
-    TEAM_5V5_PDO_BASELINE;
-  const opponentSavePct5v5 =
-    normalizeRateOrPercent(opponentFiveOnFive?.savePct5v5) ??
-    TEAM_5V5_SAVE_PCT_BASELINE;
-  const teamNstXgaPer60 = teamNst?.xgaPer60 ?? TEAM_NST_XGA_PER60_BASELINE;
-  const opponentNstXgaPer60 =
-    opponentNst?.xgaPer60 ?? TEAM_NST_XGA_PER60_BASELINE;
-  const nstPaceProxy = (teamNstXgaPer60 + opponentNstXgaPer60) / 2;
-
-  const strengthSampleRaw =
-    Math.max(0, teamStrength?.xga ?? 0) + Math.max(0, opponentStrength?.xga ?? 0);
-  const fiveOnFiveSampleRaw =
-    Math.max(0, teamFiveOnFive?.gamesPlayed ?? 0) +
-    Math.max(0, opponentFiveOnFive?.gamesPlayed ?? 0);
-  const nstSampleRaw =
-    Math.max(0, teamNst?.gamesPlayed ?? 0) + Math.max(0, opponentNst?.gamesPlayed ?? 0);
-  const sampleWeight = clamp(
-    strengthSampleRaw / (strengthSampleRaw + 260) * 0.35 +
-      fiveOnFiveSampleRaw / (fiveOnFiveSampleRaw + 18) * 0.3 +
-      nstSampleRaw / (nstSampleRaw + 40) * 0.35,
-    0,
-    1
-  );
-
-  const offenseEdge = clamp(
-    (teamXgfPerGame - TEAM_XG_BASELINE_PER_GAME) / TEAM_XG_BASELINE_PER_GAME,
-    -0.22,
-    0.22
-  );
-  const defenseLiabilityEdge = clamp(
-    (opponentXgaPerGame - TEAM_XG_BASELINE_PER_GAME) / TEAM_XG_BASELINE_PER_GAME,
-    -0.22,
-    0.22
-  );
-  const paceEdge = clamp(
-    (nstPaceProxy - TEAM_NST_XGA_PER60_BASELINE) / TEAM_NST_XGA_PER60_BASELINE,
-    -0.2,
-    0.2
-  );
-  const pdoEdge = clamp(
-    teamPdo - TEAM_5V5_PDO_BASELINE,
-    -0.08,
-    0.08
-  );
-  const opponentSaveEdge = clamp(
-    TEAM_5V5_SAVE_PCT_BASELINE - opponentSavePct5v5,
-    -0.03,
-    0.03
-  );
-
-  const shotRateMultiplier = clamp(
-    1 +
-      sampleWeight *
-        (offenseEdge * 0.14 +
-          defenseLiabilityEdge * 0.18 +
-          paceEdge * 0.2 +
-          pdoEdge * 0.06),
-    SKATER_TEAM_LEVEL_SHOT_MIN_MULTIPLIER,
-    SKATER_TEAM_LEVEL_SHOT_MAX_MULTIPLIER
-  );
-  const goalRateMultiplier = clamp(
-    1 +
-      sampleWeight *
-        (offenseEdge * 0.16 +
-          defenseLiabilityEdge * 0.22 +
-          opponentSaveEdge * 2.3 +
-          paceEdge * 0.08),
-    SKATER_TEAM_LEVEL_GOAL_MIN_MULTIPLIER,
-    SKATER_TEAM_LEVEL_GOAL_MAX_MULTIPLIER
-  );
-  const assistRateMultiplier = clamp(
-    1 +
-      sampleWeight *
-        (offenseEdge * 0.18 +
-          defenseLiabilityEdge * 0.16 +
-          paceEdge * 0.12 +
-          pdoEdge * 0.08),
-    SKATER_TEAM_LEVEL_ASSIST_MIN_MULTIPLIER,
-    SKATER_TEAM_LEVEL_ASSIST_MAX_MULTIPLIER
-  );
-
-  return {
-    sampleWeight: Number(sampleWeight.toFixed(4)),
-    shotRateMultiplier: Number(shotRateMultiplier.toFixed(4)),
-    goalRateMultiplier: Number(goalRateMultiplier.toFixed(4)),
-    assistRateMultiplier: Number(assistRateMultiplier.toFixed(4)),
-    paceEdge: Number(paceEdge.toFixed(4)),
-    opponentDefenseEdge: Number(defenseLiabilityEdge.toFixed(4))
-  };
-}
-
-export function computeSkaterOpponentGoalieContextAdjustments(args: {
-  context: OpponentGoalieContext | null;
-}): {
-  sampleWeight: number;
-  goalRateMultiplier: number;
-  assistRateMultiplier: number;
-  weightedProjectedGsaaPer60: number | null;
-  starterCertainty: number;
-} {
-  const context = args.context;
-  if (!context) {
-    return {
-      sampleWeight: 0,
-      goalRateMultiplier: 1,
-      assistRateMultiplier: 1,
-      weightedProjectedGsaaPer60: null,
-      starterCertainty: 0
-    };
-  }
-
-  const weightedGsaa = finiteOrNull(context.weightedProjectedGsaaPer60);
-  const starterCertainty = context.isConfirmedStarter
-    ? 1
-    : clamp(context.topStarterProbability, 0, 1);
-  const probabilityMass = clamp(context.probabilityMass, 0, 1);
-  const sampleWeight = clamp(
-    probabilityMass * (0.45 + 0.55 * starterCertainty),
-    0,
-    1
-  );
-  const qualityEdge =
-    weightedGsaa != null ? clamp(weightedGsaa / GOALIE_GSAA_PRIOR_MAX_ABS, -1, 1) : 0;
-
-  const goalRateMultiplier = clamp(
-    1 + sampleWeight * (-qualityEdge * 0.18),
-    SKATER_OPP_GOALIE_GOAL_MIN_MULTIPLIER,
-    SKATER_OPP_GOALIE_GOAL_MAX_MULTIPLIER
-  );
-  const assistRateMultiplier = clamp(
-    1 + sampleWeight * (-qualityEdge * 0.11),
-    SKATER_OPP_GOALIE_ASSIST_MIN_MULTIPLIER,
-    SKATER_OPP_GOALIE_ASSIST_MAX_MULTIPLIER
-  );
-
-  return {
-    sampleWeight: Number(sampleWeight.toFixed(4)),
-    goalRateMultiplier: Number(goalRateMultiplier.toFixed(4)),
-    assistRateMultiplier: Number(assistRateMultiplier.toFixed(4)),
-    weightedProjectedGsaaPer60:
-      weightedGsaa == null ? null : Number(weightedGsaa.toFixed(4)),
-    starterCertainty: Number(starterCertainty.toFixed(4))
-  };
-}
-
-export function computeSkaterRestScheduleAdjustments(args: {
-  teamRestDays: number | null;
-  opponentRestDays: number | null;
-  isHome: boolean;
-}): SkaterRestScheduleAdjustment {
-  const teamRestDays =
-    Number.isFinite(args.teamRestDays) && args.teamRestDays != null
-      ? Math.max(0, Number(args.teamRestDays))
-      : null;
-  const opponentRestDays =
-    Number.isFinite(args.opponentRestDays) && args.opponentRestDays != null
-      ? Math.max(0, Number(args.opponentRestDays))
-      : null;
-
-  if (teamRestDays == null && opponentRestDays == null) {
-    return {
-      sampleWeight: 0,
-      toiMultiplier: 1,
-      shotRateMultiplier: 1,
-      goalRateMultiplier: 1,
-      assistRateMultiplier: 1,
-      restDelta: 0,
-      teamRestDays: null,
-      opponentRestDays: null
-    };
-  }
-
-  const teamRest = teamRestDays ?? 1;
-  const oppRest = opponentRestDays ?? 1;
-  const restDelta = clamp((teamRest - oppRest) / 3, -1, 1);
-  const teamFatiguePenalty = teamRest <= 0 ? 0.11 : teamRest === 1 ? 0.035 : 0;
-  const teamRecoveryBoost = teamRest >= 3 ? 0.03 : teamRest === 2 ? 0.012 : 0;
-  const opponentFatigueBoost = oppRest <= 0 ? 0.055 : oppRest === 1 ? 0.018 : 0;
-  const homeIceEdge = args.isHome ? 0.012 : -0.004;
-
-  const toiMultiplier = clamp(
-    1 -
-      teamFatiguePenalty +
-      teamRecoveryBoost +
-      restDelta * 0.03 +
-      homeIceEdge * 0.6,
-    SKATER_REST_TOI_MIN_MULTIPLIER,
-    SKATER_REST_TOI_MAX_MULTIPLIER
-  );
-  const shotRateMultiplier = clamp(
-    1 +
-      opponentFatigueBoost -
-      teamFatiguePenalty * 0.35 +
-      restDelta * 0.045 +
-      homeIceEdge * 0.45,
-    SKATER_REST_SHOT_MIN_MULTIPLIER,
-    SKATER_REST_SHOT_MAX_MULTIPLIER
-  );
-  const goalRateMultiplier = clamp(
-    1 +
-      opponentFatigueBoost * 0.72 -
-      teamFatiguePenalty * 0.25 +
-      restDelta * 0.035 +
-      homeIceEdge * 0.8,
-    SKATER_REST_GOAL_MIN_MULTIPLIER,
-    SKATER_REST_GOAL_MAX_MULTIPLIER
-  );
-  const assistRateMultiplier = clamp(
-    1 +
-      opponentFatigueBoost * 0.5 -
-      teamFatiguePenalty * 0.2 +
-      restDelta * 0.04 +
-      homeIceEdge * 0.55,
-    SKATER_REST_ASSIST_MIN_MULTIPLIER,
-    SKATER_REST_ASSIST_MAX_MULTIPLIER
-  );
-
-  return {
-    sampleWeight: 1,
-    toiMultiplier: Number(toiMultiplier.toFixed(4)),
-    shotRateMultiplier: Number(shotRateMultiplier.toFixed(4)),
-    goalRateMultiplier: Number(goalRateMultiplier.toFixed(4)),
-    assistRateMultiplier: Number(assistRateMultiplier.toFixed(4)),
-    restDelta: Number(restDelta.toFixed(4)),
-    teamRestDays,
-    opponentRestDays
-  };
-}
-
-export function computeSkaterSampleShrinkageAdjustments(args: {
-  evToiSecondsAll: number | null;
-  ppToiSecondsAll: number | null;
-  evShotsAll: number | null;
-  ppShotsAll: number | null;
-}): SkaterSampleShrinkageAdjustment {
-  const evToi = Math.max(0, finiteOrNull(args.evToiSecondsAll) ?? 0);
-  const ppToi = Math.max(0, finiteOrNull(args.ppToiSecondsAll) ?? 0);
-  const evShots = Math.max(0, finiteOrNull(args.evShotsAll) ?? 0);
-  const ppShots = Math.max(0, finiteOrNull(args.ppShotsAll) ?? 0);
-  const evidenceToiSeconds = evToi + ppToi;
-  const evidenceShots = evShots + ppShots;
-
-  const toiEvidenceWeight = clamp(
-    evidenceToiSeconds / (evidenceToiSeconds + SKATER_SMALL_SAMPLE_TOI_SECONDS_SCALE),
-    0,
-    1
-  );
-  const shotEvidenceWeight = clamp(
-    evidenceShots / (evidenceShots + SKATER_SMALL_SAMPLE_SHOTS_SCALE),
-    0,
-    1
-  );
-  const sampleWeight = Number(
-    clamp(toiEvidenceWeight * 0.58 + shotEvidenceWeight * 0.42, 0, 1).toFixed(4)
-  );
-  return {
-    sampleWeight,
-    isLowSample: sampleWeight < SKATER_SMALL_SAMPLE_LOW_WEIGHT_THRESHOLD,
-    usedCallupFallback: sampleWeight < SKATER_SMALL_SAMPLE_CALLUP_WEIGHT_THRESHOLD,
-    evidenceToiSeconds: Number(evidenceToiSeconds.toFixed(3)),
-    evidenceShots: Number(evidenceShots.toFixed(3))
-  };
-}
-
-export function computeStrengthSplitConversionRates(args: {
-  evGoalsRecent: number;
-  evShotsRecent: number;
-  evGoalsAll: number;
-  evShotsAll: number;
-  evAssistsRecent: number;
-  evAssistsAll: number;
-  ppGoalsRecent: number;
-  ppShotsRecent: number;
-  ppGoalsAll: number;
-  ppShotsAll: number;
-  ppAssistsRecent: number;
-  ppAssistsAll: number;
-  goalRateMultiplier: number;
-  assistRateMultiplier: number;
-}): {
-  goalRateEs: number;
-  goalRatePp: number;
-  assistRateEs: number;
-  assistRatePp: number;
-} {
-  const adaptivePriorStrength = (opts: {
-    baseStrength: number;
-    evidenceDenom: number;
-    evidenceScale: number;
-    minStrength: number;
-    maxStrength: number;
-  }): number => {
-    const denom = Math.max(0, opts.evidenceDenom);
-    const shrinkFactor = opts.evidenceScale / (denom + opts.evidenceScale);
-    const scaled = opts.baseStrength * (0.35 + 1.35 * shrinkFactor);
-    return clamp(scaled, opts.minStrength, opts.maxStrength);
-  };
-
-  const evGoalPriorStrength = adaptivePriorStrength({
-    baseStrength: 42,
-    evidenceDenom:
-      Math.max(0, args.evShotsAll) + Math.max(0, args.evShotsRecent),
-    evidenceScale: 70,
-    minStrength: 12,
-    maxStrength: 72
-  });
-  const ppGoalPriorStrength = adaptivePriorStrength({
-    baseStrength: 26,
-    evidenceDenom:
-      Math.max(0, args.ppShotsAll) + Math.max(0, args.ppShotsRecent),
-    evidenceScale: 40,
-    minStrength: 9,
-    maxStrength: 54
-  });
-  const evAssistPriorStrength = adaptivePriorStrength({
-    baseStrength: 22,
-    evidenceDenom:
-      Math.max(0, args.evGoalsAll * 2) + Math.max(0, args.evGoalsRecent * 2),
-    evidenceScale: 36,
-    minStrength: 8,
-    maxStrength: 40
-  });
-  const ppAssistPriorStrength = adaptivePriorStrength({
-    baseStrength: 16,
-    evidenceDenom:
-      Math.max(0, args.ppGoalsAll * 2) + Math.max(0, args.ppGoalsRecent * 2),
-    evidenceScale: 24,
-    minStrength: 6,
-    maxStrength: 30
-  });
-
-  const goalRateEsRaw = blendOnlineRate({
-    recentNumerator: args.evGoalsRecent,
-    recentDenom: args.evShotsRecent,
-    baseNumerator: args.evGoalsAll,
-    baseDenom: args.evShotsAll,
-    fallback: 0.095,
-    priorStrength: evGoalPriorStrength,
-    minRate: 0.025,
-    maxRate: 0.24
-  });
-  const goalRatePpRaw = blendOnlineRate({
-    recentNumerator: args.ppGoalsRecent,
-    recentDenom: args.ppShotsRecent,
-    baseNumerator: args.ppGoalsAll,
-    baseDenom: args.ppShotsAll,
-    fallback: 0.145,
-    priorStrength: ppGoalPriorStrength,
-    minRate: 0.04,
-    maxRate: 0.36
-  });
-  const assistRateEsRaw = blendOnlineRate({
-    recentNumerator: args.evAssistsRecent,
-    recentDenom: args.evGoalsRecent * 2,
-    baseNumerator: args.evAssistsAll,
-    baseDenom: args.evGoalsAll * 2,
-    fallback: 0.72,
-    priorStrength: evAssistPriorStrength,
-    minRate: 0.2,
-    maxRate: 1.45
-  });
-  const assistRatePpRaw = blendOnlineRate({
-    recentNumerator: args.ppAssistsRecent,
-    recentDenom: args.ppGoalsRecent * 2,
-    baseNumerator: args.ppAssistsAll,
-    baseDenom: args.ppGoalsAll * 2,
-    fallback: 0.95,
-    priorStrength: ppAssistPriorStrength,
-    minRate: 0.3,
-    maxRate: 1.8
-  });
-
-  return {
-    goalRateEs: clamp(goalRateEsRaw * args.goalRateMultiplier, 0.02, 0.3),
-    goalRatePp: clamp(goalRatePpRaw * args.goalRateMultiplier, 0.03, 0.45),
-    assistRateEs: clamp(assistRateEsRaw * args.assistRateMultiplier, 0.2, 1.7),
-    assistRatePp: clamp(assistRatePpRaw * args.assistRateMultiplier, 0.3, 2)
-  };
 }
 
 function roleBasedPpShareWeight(roleTag: SkaterRoleTag | null): number {
@@ -2011,397 +1201,6 @@ export function applyRoleSpecificUsageBounds(args: {
   };
 }
 
-export function validateReconciledPlayerDistribution(args: {
-  baselinePlayers: ReconciledSkaterVector[];
-  reconciledPlayers: ReconciledSkaterVector[];
-  targets: {
-    toiEsSeconds: number;
-    toiPpSeconds: number;
-    shotsEs: number;
-    shotsPp: number;
-  };
-}): ReconciliationDistributionValidation {
-  const byBaselineId = new Map<number, ReconciledSkaterVector>();
-  for (const p of args.baselinePlayers) byBaselineId.set(p.playerId, p);
-  const players = args.reconciledPlayers.map((p) => ({ ...p }));
-  if (players.length === 0) {
-    return {
-      players,
-      wasAdjusted: false,
-      topEsShareAfter: 0,
-      topPpShareAfter: 0
-    };
-  }
-
-  const totalEs = players.reduce(
-    (acc, p) => acc + Math.max(0, p.toiEsSeconds),
-    0
-  );
-  const totalPp = players.reduce(
-    (acc, p) => acc + Math.max(0, p.toiPpSeconds),
-    0
-  );
-  const topEsShareAfter =
-    totalEs > 0
-      ? Math.max(...players.map((p) => Math.max(0, p.toiEsSeconds) / totalEs))
-      : 0;
-  const topPpShareAfter =
-    totalPp > 0
-      ? Math.max(...players.map((p) => Math.max(0, p.toiPpSeconds) / totalPp))
-      : 0;
-  const needsAdjustment =
-    topEsShareAfter > RECON_TOP_ES_SHARE_MAX ||
-    topPpShareAfter > RECON_TOP_PP_SHARE_MAX;
-  if (!needsAdjustment) {
-    return {
-      players,
-      wasAdjusted: false,
-      topEsShareAfter: Number(topEsShareAfter.toFixed(4)),
-      topPpShareAfter: Number(topPpShareAfter.toFixed(4))
-    };
-  }
-
-  const blended = players.map((p) => {
-    const baseline = byBaselineId.get(p.playerId) ?? p;
-    return {
-      ...p,
-      toiEsSeconds: Number(
-        (
-          (1 - RECON_BLEND_TO_BASELINE) * p.toiEsSeconds +
-          RECON_BLEND_TO_BASELINE * baseline.toiEsSeconds
-        ).toFixed(3)
-      ),
-      toiPpSeconds: Number(
-        (
-          (1 - RECON_BLEND_TO_BASELINE) * p.toiPpSeconds +
-          RECON_BLEND_TO_BASELINE * baseline.toiPpSeconds
-        ).toFixed(3)
-      ),
-      shotsEs: Number(
-        (
-          (1 - RECON_BLEND_TO_BASELINE) * p.shotsEs +
-          RECON_BLEND_TO_BASELINE * baseline.shotsEs
-        ).toFixed(3)
-      ),
-      shotsPp: Number(
-        (
-          (1 - RECON_BLEND_TO_BASELINE) * p.shotsPp +
-          RECON_BLEND_TO_BASELINE * baseline.shotsPp
-        ).toFixed(3)
-      )
-    };
-  });
-
-  const renormalize = (
-    key: "toiEsSeconds" | "toiPpSeconds" | "shotsEs" | "shotsPp",
-    target: number
-  ) => {
-    const sum = blended.reduce((acc, p) => acc + Math.max(0, p[key]), 0);
-    const scale = sum > 0 ? target / sum : 1;
-    for (const p of blended) {
-      p[key] = Number((Math.max(0, p[key]) * scale).toFixed(3));
-    }
-  };
-  renormalize("toiEsSeconds", args.targets.toiEsSeconds);
-  renormalize("toiPpSeconds", args.targets.toiPpSeconds);
-  renormalize("shotsEs", args.targets.shotsEs);
-  renormalize("shotsPp", args.targets.shotsPp);
-
-  const adjustedTotalEs = blended.reduce(
-    (acc, p) => acc + Math.max(0, p.toiEsSeconds),
-    0
-  );
-  const adjustedTotalPp = blended.reduce(
-    (acc, p) => acc + Math.max(0, p.toiPpSeconds),
-    0
-  );
-  const adjustedTopEsShare =
-    adjustedTotalEs > 0
-      ? Math.max(
-          ...blended.map((p) => Math.max(0, p.toiEsSeconds) / adjustedTotalEs)
-        )
-      : 0;
-  const adjustedTopPpShare =
-    adjustedTotalPp > 0
-      ? Math.max(
-          ...blended.map((p) => Math.max(0, p.toiPpSeconds) / adjustedTotalPp)
-        )
-      : 0;
-
-  return {
-    players: blended,
-    wasAdjusted: true,
-    topEsShareAfter: Number(adjustedTopEsShare.toFixed(4)),
-    topPpShareAfter: Number(adjustedTopPpShare.toFixed(4))
-  };
-}
-
-function computeWorkloadSavePctPenalty(workload: GoalieWorkloadContext): number {
-  let penalty = 0;
-  if (workload.startsLast14Days >= 6) {
-    penalty += GOALIE_VERY_HEAVY_WORKLOAD_PENALTY;
-  } else if (workload.startsLast14Days >= 5) {
-    penalty += GOALIE_HEAVY_WORKLOAD_PENALTY;
-  }
-  if (workload.isGoalieBackToBack) {
-    penalty += GOALIE_BACK_TO_BACK_PENALTY;
-  }
-  return penalty;
-}
-
-export function toGoalieRestSplitBucket(
-  daysSinceLastStart: number | null
-): GoalieRestSplitBucket {
-  if (daysSinceLastStart == null) return "4_plus";
-  if (daysSinceLastStart <= 0) return "0";
-  if (daysSinceLastStart === 1) return "1";
-  if (daysSinceLastStart === 2) return "2";
-  if (daysSinceLastStart === 3) return "3";
-  return "4_plus";
-}
-
-export function computeGoalieRestSplitSavePctAdjustment(args: {
-  profile: GoalieRestSplitProfile | null;
-  daysSinceLastStart: number | null;
-}): number {
-  const { profile, daysSinceLastStart } = args;
-  if (!profile) return 0;
-
-  const bucket = toGoalieRestSplitBucket(daysSinceLastStart);
-  const bucketGames = profile.gamesByBucket[bucket] ?? 0;
-  const bucketSavePct = profile.savePctByBucket[bucket];
-  if (
-    !Number.isFinite(bucketGames) ||
-    bucketGames < GOALIE_REST_SPLIT_MIN_GAMES ||
-    !Number.isFinite(bucketSavePct)
-  ) {
-    return 0;
-  }
-
-  let weightedSavePctSum = 0;
-  let weightedGames = 0;
-  const buckets: GoalieRestSplitBucket[] = ["0", "1", "2", "3", "4_plus"];
-  for (const b of buckets) {
-    const games = profile.gamesByBucket[b] ?? 0;
-    const savePct = profile.savePctByBucket[b];
-    if (
-      Number.isFinite(games) &&
-      games > 0 &&
-      Number.isFinite(savePct) &&
-      savePct != null
-    ) {
-      weightedSavePctSum += games * savePct;
-      weightedGames += games;
-    }
-  }
-  if (weightedGames <= 0) return 0;
-
-  const baselineSavePct = weightedSavePctSum / weightedGames;
-  const sampleWeight = clamp(bucketGames / (bucketGames + 6), 0, 1);
-  const delta = (bucketSavePct as number) - baselineSavePct;
-  return clamp(
-    delta * sampleWeight,
-    -GOALIE_REST_SPLIT_MAX_ADJUSTMENT,
-    GOALIE_REST_SPLIT_MAX_ADJUSTMENT
-  );
-}
-
-export function computeTeamStrengthContextAdjustment(args: {
-  defendingTeamPrior: TeamStrengthPrior | null;
-  opponentTeamPrior: TeamStrengthPrior | null;
-}): {
-  shotsAgainstPctAdjustment: number;
-  teamGoalsForPctAdjustment: number;
-  opponentGoalsForPctAdjustment: number;
-  sampleWeight: number;
-} {
-  const defending = args.defendingTeamPrior;
-  const opponent = args.opponentTeamPrior;
-  if (!defending && !opponent) {
-    return {
-      shotsAgainstPctAdjustment: 0,
-      teamGoalsForPctAdjustment: 0,
-      opponentGoalsForPctAdjustment: 0,
-      sampleWeight: 0
-    };
-  }
-
-  const defendingXgaPerGame = defending?.xgaPerGame ?? TEAM_XG_BASELINE_PER_GAME;
-  const defendingXgfPerGame = defending?.xgfPerGame ?? TEAM_XG_BASELINE_PER_GAME;
-  const opponentXgaPerGame = opponent?.xgaPerGame ?? TEAM_XG_BASELINE_PER_GAME;
-  const opponentXgfPerGame = opponent?.xgfPerGame ?? TEAM_XG_BASELINE_PER_GAME;
-  const defendingXgaRaw = Math.max(0, defending?.xga ?? 0);
-  const opponentXgaRaw = Math.max(0, opponent?.xga ?? 0);
-  const sampleWeight = clamp((defendingXgaRaw + opponentXgaRaw) / 280, 0, 1);
-
-  const defenseLiabilityEdge = clamp(
-    (defendingXgaPerGame - TEAM_XG_BASELINE_PER_GAME) / TEAM_XG_BASELINE_PER_GAME,
-    -0.2,
-    0.2
-  );
-  const opponentOffenseEdge = clamp(
-    (opponentXgfPerGame - TEAM_XG_BASELINE_PER_GAME) / TEAM_XG_BASELINE_PER_GAME,
-    -0.2,
-    0.2
-  );
-  const teamOffenseEdge = clamp(
-    (defendingXgfPerGame - TEAM_XG_BASELINE_PER_GAME) / TEAM_XG_BASELINE_PER_GAME,
-    -0.2,
-    0.2
-  );
-  const opponentDefenseEdge = clamp(
-    (opponentXgaPerGame - TEAM_XG_BASELINE_PER_GAME) / TEAM_XG_BASELINE_PER_GAME,
-    -0.2,
-    0.2
-  );
-
-  const shotsAgainstPctAdjustment = clamp(
-    (defenseLiabilityEdge * 0.32 + opponentOffenseEdge * 0.36) * sampleWeight,
-    -TEAM_XG_SHOTS_AGAINST_MAX_PCT,
-    TEAM_XG_SHOTS_AGAINST_MAX_PCT
-  );
-  const teamGoalsForPctAdjustment = clamp(
-    (teamOffenseEdge * 0.3 - opponentDefenseEdge * 0.24) * sampleWeight,
-    -TEAM_XG_WIN_CONTEXT_MAX_PCT,
-    TEAM_XG_WIN_CONTEXT_MAX_PCT
-  );
-  const opponentGoalsForPctAdjustment = clamp(
-    (opponentOffenseEdge * 0.28 + defenseLiabilityEdge * 0.22) * sampleWeight,
-    -TEAM_XG_WIN_CONTEXT_MAX_PCT,
-    TEAM_XG_WIN_CONTEXT_MAX_PCT
-  );
-
-  return {
-    shotsAgainstPctAdjustment,
-    teamGoalsForPctAdjustment,
-    opponentGoalsForPctAdjustment,
-    sampleWeight
-  };
-}
-
-function normalizeRateOrPercent(
-  value: number | null | undefined
-): number | null {
-  if (!Number.isFinite(value)) return null;
-  const raw = Number(value);
-  if (raw < 0) return null;
-  if (raw > 2 && raw <= 200) return raw / 100;
-  return raw;
-}
-
-export function computeTeamFiveOnFiveContextAdjustment(args: {
-  defendingTeamProfile: TeamFiveOnFiveProfile | null;
-  opponentTeamProfile: TeamFiveOnFiveProfile | null;
-}): {
-  sampleWeight: number;
-  leagueSavePctAdjustment: number;
-  contextPctAdjustment: number;
-} {
-  const defending = args.defendingTeamProfile;
-  const opponent = args.opponentTeamProfile;
-  if (!defending && !opponent) {
-    return {
-      sampleWeight: 0,
-      leagueSavePctAdjustment: 0,
-      contextPctAdjustment: 0
-    };
-  }
-
-  const defendingSavePct =
-    normalizeRateOrPercent(defending?.savePct5v5) ?? TEAM_5V5_SAVE_PCT_BASELINE;
-  const defendingSpsv =
-    normalizeRateOrPercent(defending?.shootingPlusSavePct5v5) ?? TEAM_5V5_PDO_BASELINE;
-  const opponentSpsv =
-    normalizeRateOrPercent(opponent?.shootingPlusSavePct5v5) ?? TEAM_5V5_PDO_BASELINE;
-  const defendingGames = Math.max(0, defending?.gamesPlayed ?? 0);
-  const opponentGames = Math.max(0, opponent?.gamesPlayed ?? 0);
-  const sampleWeight = clamp(
-    (defendingGames + opponentGames) /
-      (defendingGames + opponentGames + TEAM_5V5_MIN_SAMPLE_GAMES),
-    0,
-    1
-  );
-
-  const saveEdge = clamp(
-    defendingSavePct - TEAM_5V5_SAVE_PCT_BASELINE,
-    -0.03,
-    0.03
-  );
-  const defendingPdoEdge = clamp(
-    defendingSpsv - TEAM_5V5_PDO_BASELINE,
-    -0.08,
-    0.08
-  );
-  const opponentPdoEdge = clamp(
-    opponentSpsv - TEAM_5V5_PDO_BASELINE,
-    -0.08,
-    0.08
-  );
-
-  const leagueSavePctAdjustment = clamp(
-    (saveEdge * 0.75 + defendingPdoEdge * 0.2) * sampleWeight,
-    -TEAM_5V5_MAX_LEAGUE_SAVE_PCT_ADJ,
-    TEAM_5V5_MAX_LEAGUE_SAVE_PCT_ADJ
-  );
-  const contextPctAdjustment = clamp(
-    (-saveEdge * 0.45 + opponentPdoEdge * 0.2) * sampleWeight,
-    -TEAM_5V5_MAX_CONTEXT_PCT_ADJ,
-    TEAM_5V5_MAX_CONTEXT_PCT_ADJ
-  );
-
-  return {
-    sampleWeight,
-    leagueSavePctAdjustment,
-    contextPctAdjustment
-  };
-}
-
-export function computeNstOpponentDangerAdjustment(args: {
-  defendingTeamProfile: TeamNstExpectedGoalsProfile | null;
-  opponentTeamProfile: TeamNstExpectedGoalsProfile | null;
-}): { sampleWeight: number; contextPctAdjustment: number } {
-  const defending = args.defendingTeamProfile;
-  const opponent = args.opponentTeamProfile;
-  if (!defending && !opponent) {
-    return { sampleWeight: 0, contextPctAdjustment: 0 };
-  }
-
-  const defendingXgaPer60 =
-    defending?.xgaPer60 ?? TEAM_NST_XGA_PER60_BASELINE;
-  const opponentXgaPer60 = opponent?.xgaPer60 ?? TEAM_NST_XGA_PER60_BASELINE;
-  const defendingGames = Math.max(0, defending?.gamesPlayed ?? 0);
-  const opponentGames = Math.max(0, opponent?.gamesPlayed ?? 0);
-  const sampleWeight = clamp(
-    (defendingGames + opponentGames) / (defendingGames + opponentGames + 30),
-    0,
-    1
-  );
-
-  const defendingDangerEdge = clamp(
-    (defendingXgaPer60 - TEAM_NST_XGA_PER60_BASELINE) /
-      TEAM_NST_XGA_PER60_BASELINE,
-    -0.25,
-    0.25
-  );
-  const paceProxyEdge = clamp(
-    (opponentXgaPer60 - TEAM_NST_XGA_PER60_BASELINE) /
-      TEAM_NST_XGA_PER60_BASELINE,
-    -0.2,
-    0.2
-  );
-
-  const contextPctAdjustment = clamp(
-    (defendingDangerEdge * 0.32 + paceProxyEdge * 0.12) * sampleWeight,
-    -TEAM_NST_MAX_CONTEXT_PCT_ADJ,
-    TEAM_NST_MAX_CONTEXT_PCT_ADJ
-  );
-
-  return {
-    sampleWeight,
-    contextPctAdjustment
-  };
-}
-
 export { buildSequentialHorizonScalarsFromDates } from "./utils/date-utils";
 
 async function fetchTeamHorizonScalars(
@@ -2425,51 +1224,6 @@ async function fetchTeamHorizonScalars(
     .map((r) => r.date)
     .filter((d): d is string => typeof d === "string");
   return buildSequentialHorizonScalarsFromDates(dates, horizon);
-}
-
-export function blendTopStarterScenarioOutputs(opts: {
-  scenarioProjections: StarterScenarioProjection[];
-  fallbackProjection: Omit<
-    StarterScenarioProjection,
-    "goalie_id" | "rank" | "starter_probability_raw" | "starter_probability_top2_normalized"
-  >;
-}) {
-  const weighted = {
-    proj_shots_against: 0,
-    proj_saves: 0,
-    proj_goals_allowed: 0,
-    proj_win_prob: 0,
-    proj_shutout_prob: 0,
-    modeled_save_pct: 0
-  };
-  let probabilityMass = 0;
-  for (const s of opts.scenarioProjections) {
-    const w = clamp(s.starter_probability_raw, 0, 1);
-    probabilityMass += w;
-    weighted.proj_shots_against += w * s.proj_shots_against;
-    weighted.proj_saves += w * s.proj_saves;
-    weighted.proj_goals_allowed += w * s.proj_goals_allowed;
-    weighted.proj_win_prob += w * s.proj_win_prob;
-    weighted.proj_shutout_prob += w * s.proj_shutout_prob;
-    weighted.modeled_save_pct += w * s.modeled_save_pct;
-  }
-
-  const clampedMass = clamp(probabilityMass, 0, 1);
-  const residualMass = 1 - clampedMass;
-  const fallback = opts.fallbackProjection;
-  return {
-    probability_mass: Number(clampedMass.toFixed(4)),
-    residual_probability_mass: Number(residualMass.toFixed(4)),
-    proj_shots_against: weighted.proj_shots_against + residualMass * fallback.proj_shots_against,
-    proj_saves: weighted.proj_saves + residualMass * fallback.proj_saves,
-    proj_goals_allowed:
-      weighted.proj_goals_allowed + residualMass * fallback.proj_goals_allowed,
-    proj_win_prob: weighted.proj_win_prob + residualMass * fallback.proj_win_prob,
-    proj_shutout_prob:
-      weighted.proj_shutout_prob + residualMass * fallback.proj_shutout_prob,
-    modeled_save_pct:
-      weighted.modeled_save_pct + residualMass * fallback.modeled_save_pct
-  };
 }
 
 async function fetchPlayerMetaByIds(
@@ -2505,212 +1259,6 @@ async function fetchPlayerMetaByIds(
         (entry): entry is readonly [number, PlayerTeamPositionRow] => entry != null
       )
   );
-}
-
-export function selectStarterCandidateGoalieIds(opts: {
-  asOfDate: string;
-  rawCandidateGoalieIds: number[];
-  currentTeamGoalieIds: Set<number>;
-  context: TeamGoalieStarterContext;
-  goalieOverrideGoalieId?: number | null;
-  limit?: number;
-  priorStartProbByGoalieId?: Map<number, number>;
-  confirmedStarterByGoalieId?: Map<number, boolean>;
-}): number[] {
-  const priorStartProbByGoalieId = opts.priorStartProbByGoalieId ?? new Map();
-  const confirmedStarterByGoalieId = opts.confirmedStarterByGoalieId ?? new Map();
-  const goalieOverrideGoalieId = opts.goalieOverrideGoalieId ?? null;
-  const limit = Number.isFinite(opts.limit) ? Math.max(1, Number(opts.limit)) : 3;
-
-  return Array.from(new Set(opts.rawCandidateGoalieIds))
-    .filter((goalieId) => {
-      if (!Number.isFinite(goalieId)) return false;
-      if (goalieOverrideGoalieId === goalieId) return true;
-      if (opts.currentTeamGoalieIds.size > 0 && !opts.currentTeamGoalieIds.has(goalieId)) {
-        return false;
-      }
-      const lastPlayed = opts.context.lastPlayedDateByGoalie.get(goalieId);
-      if (!lastPlayed) return true;
-      const daysSinceLastPlayed = Math.max(0, daysBetweenDates(opts.asOfDate, lastPlayed));
-      return daysSinceLastPlayed <= GOALIE_STALE_HARD_DAYS;
-    })
-    .sort((a, b) => {
-      const score = (goalieId: number) => {
-        const starts = opts.context.startsByGoalie.get(goalieId) ?? 0;
-        const priorProb = priorStartProbByGoalieId.get(goalieId) ?? 0.5;
-        const isConfirmed = confirmedStarterByGoalieId.get(goalieId) ?? false;
-        const lastPlayed = opts.context.lastPlayedDateByGoalie.get(goalieId);
-        const daysSinceLastPlayed =
-          lastPlayed != null ? Math.max(0, daysBetweenDates(opts.asOfDate, lastPlayed)) : 999;
-        const isOverride = goalieOverrideGoalieId === goalieId;
-
-        let s = 0;
-        if (isOverride) s += 100;
-        if (isConfirmed) s += 25;
-        s += priorProb * 10;
-        s += starts * 1.5;
-        s -= Math.min(daysSinceLastPlayed, 120) / 30;
-        return s;
-      };
-      return score(b) - score(a);
-    })
-    .slice(0, limit);
-}
-
-export function computeStarterProbabilities(opts: {
-  asOfDate: string;
-  candidateGoalieIds: number[];
-  starterContext: TeamGoalieStarterContext;
-  priorStartProbByGoalieId: Map<number, number>;
-  lineComboPriorByGoalieId?: Map<number, number>;
-  projectedGsaaPer60ByGoalieId?: Map<number, number>;
-  seasonStartPctByGoalieId?: Map<number, number>;
-  seasonGamesPlayedByGoalieId?: Map<number, number>;
-  teamGoalsFor: number;
-  opponentGoalsFor: number;
-}): Map<number, number> {
-  const probs = new Map<number, number>();
-  const candidates = Array.from(new Set(opts.candidateGoalieIds)).filter((id) =>
-    Number.isFinite(id)
-  );
-  if (candidates.length === 0) return probs;
-  if (candidates.length === 1) {
-    probs.set(candidates[0], 1);
-    return probs;
-  }
-
-  const starts = opts.starterContext.startsByGoalie;
-  const lineComboPriorByGoalieId = opts.lineComboPriorByGoalieId ?? new Map();
-  const projectedGsaaPer60ByGoalieId =
-    opts.projectedGsaaPer60ByGoalieId ?? new Map();
-  const seasonStartPctByGoalieId = opts.seasonStartPctByGoalieId ?? new Map();
-  const seasonGamesPlayedByGoalieId =
-    opts.seasonGamesPlayedByGoalieId ?? new Map();
-  const totalGames = Math.max(1, opts.starterContext.totalGames);
-  const teamIsWeaker =
-    opts.teamGoalsFor + TEAM_STRENGTH_WEAKER_GAP < opts.opponentGoalsFor;
-  const opponentIsWeak = opts.opponentGoalsFor <= WEAK_OPPONENT_GF_THRESHOLD;
-  const previousGameDate = opts.starterContext.previousGameDate;
-  const isB2B =
-    previousGameDate != null &&
-    daysBetweenDates(opts.asOfDate, previousGameDate) === 1;
-  const previousStarter = opts.starterContext.previousGameStarterGoalieId;
-  const lastPlayedMap = opts.starterContext.lastPlayedDateByGoalie;
-
-  const scores = candidates.map((goalieId) => {
-    const l10Starts = starts.get(goalieId) ?? 0;
-    const l10Share = l10Starts / totalGames;
-    const priorProb = clamp(opts.priorStartProbByGoalieId.get(goalieId) ?? 0.5, 0.01, 0.99);
-    const lineComboPrior = clamp(
-      lineComboPriorByGoalieId.get(goalieId) ?? 0.5,
-      0.05,
-      0.95
-    );
-    const projectedGsaaPer60 = clamp(
-      projectedGsaaPer60ByGoalieId.get(goalieId) ?? 0,
-      -GOALIE_GSAA_PRIOR_MAX_ABS,
-      GOALIE_GSAA_PRIOR_MAX_ABS
-    );
-    const seasonStartPct = clamp(
-      seasonStartPctByGoalieId.get(goalieId) ?? GOALIE_SEASON_START_PCT_BASELINE,
-      0,
-      1
-    );
-    const seasonGamesPlayed = Math.max(0, seasonGamesPlayedByGoalieId.get(goalieId) ?? 0);
-    const seasonGamesWeight = clamp(seasonGamesPlayed / (seasonGamesPlayed + 10), 0, 1);
-    const isPrimary = l10Share >= 0.6;
-    const playedYesterday = isB2B && previousStarter === goalieId;
-    const lastPlayed = lastPlayedMap.get(goalieId) ?? null;
-    const daysSinceLastPlayed =
-      lastPlayed != null ? Math.max(0, daysBetweenDates(opts.asOfDate, lastPlayed)) : 999;
-
-    let score = 0;
-    // Core usage signal: if a goalie started 7/10, this pushes probability up materially.
-    score += 2.4 * (l10Share - 0.5);
-    // Preserve external prior signal when available.
-    score += 0.7 * Math.log(priorProb / (1 - priorProb));
-    // Recency-weighted line-combo goalie tags as a soft prior only.
-    score += LINE_COMBO_PRIOR_LOGIT_WEIGHT * Math.log(lineComboPrior / (1 - lineComboPrior));
-    // Quality prior from projected GSAA/60 (bounded, soft).
-    score += GOALIE_GSAA_PRIOR_WEIGHT * projectedGsaaPer60;
-    // Season starter-share prior, weighted by sample size.
-    score +=
-      GOALIE_SEASON_START_PCT_WEIGHT *
-      (seasonStartPct - GOALIE_SEASON_START_PCT_BASELINE) *
-      seasonGamesWeight;
-    // Mild trust boost for goalies with stronger season sample.
-    score += GOALIE_SEASON_GAMES_PLAYED_WEIGHT * seasonGamesWeight;
-
-    // Back-to-back: goalie from game 1 is heavily discounted for game 2.
-    if (playedYesterday) {
-      score -= B2B_REPEAT_STARTER_PENALTY;
-    } else if (isB2B && previousStarter != null) {
-      score += B2B_ALTERNATE_GOALIE_BOOST;
-    }
-
-    // Weaker teams on B2B tend to lean backup usage.
-    if (isB2B && teamIsWeaker && isPrimary) {
-      score -= WEAKER_TEAM_B2B_PRIMARY_PENALTY;
-    }
-    if (isB2B && teamIsWeaker && !isPrimary) {
-      score += WEAKER_TEAM_B2B_BACKUP_BOOST;
-    }
-
-    // Starter on a soft matchup can be rested for backup.
-    if (opponentIsWeak && isPrimary) {
-      score -= WEAK_OPPONENT_PRIMARY_REST_PENALTY;
-    }
-    if (opponentIsWeak && !isPrimary) {
-      score += WEAK_OPPONENT_BACKUP_BOOST;
-    }
-
-    // Recency guardrail: goalies inactive for long stretches should be near-eliminated.
-    if (daysSinceLastPlayed > GOALIE_STALE_HARD_DAYS) score -= 6;
-    else if (daysSinceLastPlayed > GOALIE_STALE_SOFT_DAYS) score -= 3;
-    else if (daysSinceLastPlayed > 14) score -= 0.8;
-    if (daysSinceLastPlayed <= 7) score += 0.2;
-
-    return { goalieId, score, daysSinceLastPlayed, lastPlayed };
-  });
-
-  if (scores.length === 2) {
-    const [a, b] = scores;
-    const pA = clamp(sigmoid(a.score - b.score), 0.02, 0.98);
-    probs.set(a.goalieId, pA);
-    probs.set(b.goalieId, 1 - pA);
-    return probs;
-  }
-
-  const maxScore = Math.max(...scores.map((s) => s.score));
-  const exps = scores.map((s) => Math.exp(s.score - maxScore));
-  const denom = exps.reduce((acc, v) => acc + v, 0) || 1;
-  scores.forEach((s, i) => {
-    probs.set(s.goalieId, clamp(exps[i] / denom, 0.01, 0.98));
-  });
-  return probs;
-}
-
-export function buildTopStarterScenarios(opts: {
-  probabilitiesByGoalieId: Map<number, number>;
-  maxScenarios?: number;
-}): StarterScenario[] {
-  const maxScenarios = Number.isFinite(opts.maxScenarios)
-    ? Math.max(1, Number(opts.maxScenarios))
-    : 2;
-  const ranked = Array.from(opts.probabilitiesByGoalieId.entries())
-    .filter(([goalieId, probability]) => Number.isFinite(goalieId) && Number.isFinite(probability))
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, maxScenarios);
-  if (ranked.length === 0) return [];
-
-  const rawMass = ranked.reduce((sum, [, probability]) => sum + Math.max(0, probability), 0);
-  const denom = rawMass > 0 ? rawMass : ranked.length;
-  return ranked.map(([goalieId, rawProbability], idx) => ({
-    goalieId,
-    rawProbability,
-    probability: clamp(Math.max(0, rawProbability) / denom, 0, 1),
-    rank: idx + 1
-  }));
 }
 
 export async function runProjectionV2ForDate(
@@ -2809,100 +1357,116 @@ export async function runProjectionV2ForDate(
     const horizonGames = clampHorizonGames(opts?.horizonGames ?? 1);
     const teamDateKey = (teamId: number) => `${teamId}:${asOfDate}`;
     const playerDateKey = (playerId: number) => `${playerId}:${asOfDate}`;
-    const currentSeasonId = await fetchCurrentSeasonIdForDate(asOfDate);
-    const { data: games, error: gamesErr } = await supabase
-      .from("games")
-      .select("id,date,homeTeamId,awayTeamId")
-      .eq("date", asOfDate);
-    if (gamesErr) throw gamesErr;
+    const preflight = await runProjectionPreflightStage(async () => {
+      const currentSeasonId = await fetchCurrentSeasonIdForDate(asOfDate);
+      const { data: games, error: gamesErr } = await supabase
+        .from("games")
+        .select("id,date,homeTeamId,awayTeamId")
+        .eq("date", asOfDate);
+      if (gamesErr) throw gamesErr;
+      const { startTs, endTs } = toDayBoundsUtc(asOfDate);
+      const teamIds = Array.from(
+        new Set(
+          ((games ?? []) as GameRow[])
+            .flatMap((g) => [g.homeTeamId, g.awayTeamId])
+            .filter((n) => n != null)
+        )
+      );
+      const teamAbbreviationById = await fetchTeamAbbreviationMap(teamIds);
+      const playerAvailabilityMultiplier = new Map<number, number>();
+      const availabilityEventByPlayer = new Map<number, RosterEventRow>();
+      const goalieOverrideByTeamId = new Map<
+        number,
+        { goalieId: number; starterProb: number }
+      >();
+      if (teamIds.length > 0) {
+        const { data: events, error: evErr } = await supabase
+          .from("forge_roster_events")
+          .select(
+            "event_id,team_id,player_id,event_type,confidence,payload,effective_from,effective_to"
+          )
+          .in("team_id", teamIds)
+          .lte("effective_from", endTs)
+          .order("effective_from", { ascending: false })
+          .limit(5000);
+        if (evErr) throw evErr;
 
-    const teamStrengthCache = new Map<string, TeamStrengthAverages>();
-    const { startTs, endTs } = toDayBoundsUtc(asOfDate);
+        const bestAvailabilityEventByPlayer = new Map<number, RosterEventRow>();
 
-    const teamIds = Array.from(
-      new Set(
-        ((games ?? []) as GameRow[])
-          .flatMap((g) => [g.homeTeamId, g.awayTeamId])
-          .filter((n) => n != null)
-      )
-    );
-    const teamAbbreviationById = await fetchTeamAbbreviationMap(teamIds);
+        for (const e of (events ?? []) as any[]) {
+          const row = e as RosterEventRow;
+          if (row.effective_to != null && row.effective_to < startTs) continue;
+          if (row.player_id != null) {
+            const mult = availabilityMultiplierForEvent(
+              row.event_type,
+              row.confidence
+            );
+            if (mult != null) {
+              const existing = bestAvailabilityEventByPlayer.get(row.player_id);
+              if (!existing || row.effective_from > existing.effective_from) {
+                bestAvailabilityEventByPlayer.set(row.player_id, row);
+              }
+            }
+          }
 
-    const playerAvailabilityMultiplier = new Map<number, number>();
-    const availabilityEventByPlayer = new Map<number, RosterEventRow>();
+          if (
+            row.team_id != null &&
+            row.player_id != null &&
+            (row.event_type === "GOALIE_START_CONFIRMED" ||
+              row.event_type === "GOALIE_START_LIKELY")
+          ) {
+            const starterProb =
+              row.event_type === "GOALIE_START_CONFIRMED"
+                ? 1
+                : clamp(row.confidence ?? 0.75, 0.5, 1);
+            const existing = goalieOverrideByTeamId.get(row.team_id);
+            if (!existing || starterProb > existing.starterProb) {
+              goalieOverrideByTeamId.set(row.team_id, {
+                goalieId: row.player_id,
+                starterProb
+              });
+            }
+          }
+        }
+
+        for (const [playerId, ev] of bestAvailabilityEventByPlayer.entries()) {
+          const mult = availabilityMultiplierForEvent(
+            ev.event_type,
+            ev.confidence
+          );
+          if (mult != null) {
+            playerAvailabilityMultiplier.set(playerId, mult);
+            availabilityEventByPlayer.set(playerId, ev);
+          }
+        }
+      }
+
+      return {
+        currentSeasonId,
+        games: (games ?? []) as GameRow[],
+        teamIds,
+        teamAbbreviationById,
+        playerAvailabilityMultiplier,
+        availabilityEventByPlayer,
+        goalieOverrideByTeamId
+      };
+    });
+
+    const currentSeasonId = preflight.currentSeasonId;
+    const games = preflight.games;
+    const teamAbbreviationById = preflight.teamAbbreviationById;
+    const playerAvailabilityMultiplier = preflight.playerAvailabilityMultiplier;
+    const availabilityEventByPlayer = preflight.availabilityEventByPlayer;
+    const goalieOverrideByTeamId = preflight.goalieOverrideByTeamId;
+
     const activeRosterSkaterIdsByTeamId = new Map<number, number[]>();
     const goalieEvidenceCache = new Map<string, GoalieEvidence>();
-    const goalieOverrideByTeamId = new Map<
-      number,
-      { goalieId: number; starterProb: number }
-    >();
+    const teamStrengthCache = new Map<string, TeamStrengthAverages>();
     const learningCounters = {
       players: 0,
       goalRecent: 0,
       assistRecent: 0
     };
-
-    if (teamIds.length > 0) {
-      const { data: events, error: evErr } = await supabase
-        .from("forge_roster_events")
-        .select(
-          "event_id,team_id,player_id,event_type,confidence,payload,effective_from,effective_to"
-        )
-        .in("team_id", teamIds)
-        .lte("effective_from", endTs)
-        .order("effective_from", { ascending: false })
-        .limit(5000);
-      if (evErr) throw evErr;
-
-      const bestAvailabilityEventByPlayer = new Map<number, RosterEventRow>();
-
-      for (const e of (events ?? []) as any[]) {
-        const row = e as RosterEventRow;
-        if (row.effective_to != null && row.effective_to < startTs) continue;
-        if (row.player_id != null) {
-          const mult = availabilityMultiplierForEvent(
-            row.event_type,
-            row.confidence
-          );
-          if (mult != null) {
-            const existing = bestAvailabilityEventByPlayer.get(row.player_id);
-            if (!existing || row.effective_from > existing.effective_from) {
-              bestAvailabilityEventByPlayer.set(row.player_id, row);
-            }
-          }
-        }
-
-        if (
-          row.team_id != null &&
-          row.player_id != null &&
-          (row.event_type === "GOALIE_START_CONFIRMED" ||
-            row.event_type === "GOALIE_START_LIKELY")
-        ) {
-          const starterProb =
-            row.event_type === "GOALIE_START_CONFIRMED"
-              ? 1
-              : clamp(row.confidence ?? 0.75, 0.5, 1);
-          const existing = goalieOverrideByTeamId.get(row.team_id);
-          if (!existing || starterProb > existing.starterProb) {
-            goalieOverrideByTeamId.set(row.team_id, {
-              goalieId: row.player_id,
-              starterProb
-            });
-          }
-        }
-      }
-
-      for (const [playerId, ev] of bestAvailabilityEventByPlayer.entries()) {
-        const mult = availabilityMultiplierForEvent(
-          ev.event_type,
-          ev.confidence
-        );
-        if (mult != null) {
-          playerAvailabilityMultiplier.set(playerId, mult);
-          availabilityEventByPlayer.set(playerId, ev);
-        }
-      }
-    }
 
     const deadlineMs = safeNumber(opts?.deadlineMs, Number.POSITIVE_INFINITY);
     let timedOut = false;
@@ -2958,10 +1522,10 @@ export async function runProjectionV2ForDate(
         override: { goalieId: number; starterProb: number } | null;
       }> = [];
 
-      for (const teamId of [game.homeTeamId, game.awayTeamId]) {
+      const skaterStageResult = await runPerGameSkaterStage(async () => {
+        for (const teamId of [game.homeTeamId, game.awayTeamId]) {
         if (Date.now() > deadlineMs) {
-          timedOut = true;
-          break gamesLoop;
+            return { timedOut: true };
         }
 
         // Use the most recent line combination for this team (prior to today).
@@ -4643,13 +3207,19 @@ export async function runProjectionV2ForDate(
             override: goalieOverride ?? null
           });
         }
+        }
+        return { timedOut: false };
+      });
+      if (skaterStageResult.timedOut) {
+        timedOut = true;
+        break gamesLoop;
       }
 
       // Create goalie projections after both teams are projected so we can use opponent shots.
-      for (const c of goalieCandidates) {
+      const goalieStageResult = await runPerGameGoalieStage(async () => {
+        for (const c of goalieCandidates) {
         if (Date.now() > deadlineMs) {
-          timedOut = true;
-          break gamesLoop;
+            return { timedOut: true };
         }
         const oppShots = teamShotsByTeamId.get(c.opponentTeamId);
         if (!oppShots) {
@@ -5129,35 +3699,45 @@ export async function runProjectionV2ForDate(
           });
         if (goalieErr) throw goalieErr;
         goalieRowsUpserted += 1;
+        }
+        return { timedOut: false };
+      });
+      if (goalieStageResult.timedOut) {
+        timedOut = true;
+        break gamesLoop;
       }
 
       metrics.games += 1;
     }
 
-    metrics.player_rows = playerRowsUpserted;
-    metrics.team_rows = teamRowsUpserted;
-    metrics.goalie_rows = goalieRowsUpserted;
-    const learningPlayers = learningCounters.players;
-    metrics.learning.players_considered = learningPlayers;
-    metrics.learning.goal_rate_recent_players = learningCounters.goalRecent;
-    metrics.learning.assist_rate_recent_players = learningCounters.assistRecent;
-    metrics.learning.goal_rate_recent_share =
-      learningPlayers > 0 ? learningCounters.goalRecent / learningPlayers : 0;
-    metrics.learning.assist_rate_recent_share =
-      learningPlayers > 0 ? learningCounters.assistRecent / learningPlayers : 0;
-    metrics.data_quality.skater_pool_projected_count_avg =
-      metrics.data_quality.skater_pool_projected_teams > 0
-        ? Number(
-            (
-              metrics.data_quality.skater_pool_projected_count_sum /
-              metrics.data_quality.skater_pool_projected_teams
-            ).toFixed(3)
-          )
-        : null;
-    metrics.finished_at = new Date().toISOString();
-    metrics.timed_out = timedOut;
+    runMetricsFinalizationStage(() => {
+      metrics.player_rows = playerRowsUpserted;
+      metrics.team_rows = teamRowsUpserted;
+      metrics.goalie_rows = goalieRowsUpserted;
+      const learningPlayers = learningCounters.players;
+      metrics.learning.players_considered = learningPlayers;
+      metrics.learning.goal_rate_recent_players = learningCounters.goalRecent;
+      metrics.learning.assist_rate_recent_players = learningCounters.assistRecent;
+      metrics.learning.goal_rate_recent_share =
+        learningPlayers > 0 ? learningCounters.goalRecent / learningPlayers : 0;
+      metrics.learning.assist_rate_recent_share =
+        learningPlayers > 0 ? learningCounters.assistRecent / learningPlayers : 0;
+      metrics.data_quality.skater_pool_projected_count_avg =
+        metrics.data_quality.skater_pool_projected_teams > 0
+          ? Number(
+              (
+                metrics.data_quality.skater_pool_projected_count_sum /
+                metrics.data_quality.skater_pool_projected_teams
+              ).toFixed(3)
+            )
+          : null;
+      metrics.finished_at = new Date().toISOString();
+      metrics.timed_out = timedOut;
+    });
 
-    await finalizeRun(runId, timedOut ? "failed" : "succeeded", metrics);
+    await runPersistenceStage(() =>
+      finalizeRun(runId, timedOut ? "failed" : "succeeded", metrics)
+    );
     return {
       runId,
       gamesProcessed: metrics.games,
@@ -5169,7 +3749,7 @@ export async function runProjectionV2ForDate(
   } catch (e) {
     metrics.finished_at = new Date().toISOString();
     metrics.error = getErrorMessage(e);
-    await finalizeRun(runId, "failed", metrics);
+    await runPersistenceStage(() => finalizeRun(runId, "failed", metrics));
     throw e;
   }
 }
