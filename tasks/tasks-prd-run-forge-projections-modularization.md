@@ -28,9 +28,9 @@
 
 - [ ] 1.0 Phase 1 - Rename Entrypoint And Build Safety Net
   - [x] 1.1 Inventory all repository references to `runProjectionV2.ts` / `runProjectionV2ForDate` and freeze a checklist for code, tests, scripts, and docs updates. [Deps: none] [Files: `web/**`, `tasks/**`, `*.md`, `fix_terminal.sh`] [AC: checklist enumerates every affected reference class and is attached in this task file or implementation notes]
-  - [ ] 1.2 Add/confirm parity harness inputs (fixed-date fixtures and deterministic run settings) before structural edits begin. [Deps: 1.1] [Files: `web/lib/projections/runProjectionV2.test.ts` or new parity test file] [AC: test plan asserts old-vs-refactor output parity for player/team/goalie payload fields]
-  - [ ] 1.3 Rename `web/lib/projections/runProjectionV2.ts` to `web/lib/projections/run-forge-projections.ts` with compatibility export strategy if needed for temporary import continuity during migration. [Deps: 1.2] [Files: `web/lib/projections/run-forge-projections.ts`, optional shim file] [AC: build resolves runner exports without behavior change]
-  - [ ] 1.4 Update direct runtime/script/test references to new filename, including `web/pages/api/v1/db/run-projection-v2.ts`, `web/lib/projections/runProjectionV2.test.ts` (or renamed test), and `fix_terminal.sh`. [Deps: 1.3] [Files: listed explicit files] [AC: `rg` finds no stale direct imports or hardcoded paths in runtime/test scripts]
+  - [x] 1.2 Add/confirm parity harness inputs (fixed-date fixtures and deterministic run settings) before structural edits begin. [Deps: 1.1] [Files: `web/lib/projections/runProjectionV2.test.ts` or new parity test file] [AC: test plan asserts old-vs-refactor output parity for player/team/goalie payload fields]
+  - [x] 1.3 Rename `web/lib/projections/runProjectionV2.ts` to `web/lib/projections/run-forge-projections.ts` with compatibility export strategy if needed for temporary import continuity during migration. [Deps: 1.2] [Files: `web/lib/projections/run-forge-projections.ts`, optional shim file] [AC: build resolves runner exports without behavior change]
+  - [x] 1.4 Update direct runtime/script/test references to new filename, including `web/pages/api/v1/db/run-projection-v2.ts`, `web/lib/projections/runProjectionV2.test.ts` (or renamed test), and `fix_terminal.sh`. [Deps: 1.3] [Files: listed explicit files] [AC: `rg` finds no stale direct imports or hardcoded paths in runtime/test scripts]
 
 - [ ] 2.0 Phase 2 - Extract Types And Constants Without Logic Changes
   - [ ] 2.1 Create `web/lib/projections/types/` modules for row types, adjustment/result payload types, orchestrator IO contracts, and uncertainty metadata structures. [Deps: 1.4] [Files: `web/lib/projections/types/*.ts`] [AC: no `any` in migrated type surfaces unless documented as unavoidable]
@@ -86,3 +86,28 @@
   - `tasks/tasks-skater-forge.md`
   - `tasks/goalie-forge-implementation-plan.md`
   - `tasks/prd-run-forge-projections-modularization.md` (historical PRD context; keep intentional mentions, update only where needed for active guidance)
+
+### 1.2 Frozen Parity Harness Inputs (Pre-Refactor Baseline)
+
+- Deterministic fixture dates for parity runs:
+  - `2026-01-24` (mid-range date from existing operator runbook flows)
+  - `2026-01-31` (range end fixture from existing operator runbook flows)
+  - `2026-02-08` (single-date fixture from existing operator runbook flows)
+- Deterministic run settings (apply to both baseline and modularized runner):
+  - Endpoint: `/api/v1/db/run-projection-v2`
+  - Query: `date=YYYY-MM-DD&horizonGames=1&maxDurationMs=270000&bypassPreflight=true`
+  - Keep endpoint path and handler behavior unchanged; compare runner internals only.
+- Baseline capture protocol (before structural refactor starts):
+  - Run one projection per fixture date against current `runProjectionV2` implementation.
+  - Persist baseline snapshots keyed by date and entity ID for:
+    - `forge_player_projections` (`as_of_date`, `player_id`)
+    - `forge_team_projections` (`as_of_date`, `team_id`)
+    - `forge_goalie_projections` (`as_of_date`, `goalie_id`)
+  - Include uncertainty metadata payload and key-set snapshots in baseline artifacts.
+- Parity assertions required after modularization:
+  - Row-count parity by table/date.
+  - Identity-key parity by table/date (no missing/extra entity keys).
+  - Field parity for numeric/stat outputs and uncertainty payload shape/keys.
+  - If any numeric epsilon is needed, document and approve explicitly before accepting drift.
+- Current test-suite status note:
+  - `web/lib/projections/runProjectionV2.test.ts` currently covers many pure helpers but does not yet provide full end-to-end old-vs-new table parity coverage; this is intentionally staged under Phase 7 parity execution tasks.

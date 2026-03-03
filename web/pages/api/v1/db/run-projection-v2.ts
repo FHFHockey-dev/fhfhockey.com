@@ -56,7 +56,7 @@
  */
 import type { NextApiRequest, NextApiResponse } from "next";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
-import { runProjectionV2ForDate } from "lib/projections/runProjectionV2";
+import { runProjectionV2ForDate } from "lib/projections/run-forge-projections";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
 import { getGoalieForgePipelineSpec } from "lib/projections/goaliePipeline";
 import supabase from "lib/supabase/server";

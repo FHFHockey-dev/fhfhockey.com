@@ -38,7 +38,7 @@ import {
   selectStarterCandidateGoalieIds,
   toGoalieRestSplitBucket,
   type StarterContextForTest
-} from "./runProjectionV2";
+} from "./run-forge-projections";
 
 function buildContext(
   overrides?: Partial<StarterContextForTest>
