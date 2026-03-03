@@ -43,7 +43,6 @@ import type {
   SkaterTrendAdjustment,
   StarterScenario,
   StarterScenarioProjection,
-  SustainabilityTrendBandRow,
   TeamDefensiveEnvironment,
   TeamFiveOnFiveProfile,
   TeamGoalieStarterContext,
@@ -170,8 +169,6 @@ import {
   SKATER_POOL_SUPPLEMENTAL_FETCH_COUNT,
   SKATER_POOL_EMERGENCY_MAX_SINGLE_TOI_SECONDS,
   SKATER_POOL_EMERGENCY_MAX_AVG_TOI_SECONDS,
-  TREND_BAND_METRIC_PRIORITY,
-  TREND_BAND_WINDOW_PRIORITY,
 } from "./constants/projection-weights";
 import {
   blendOnlineRate,
@@ -201,6 +198,35 @@ import {
   buildStarterHeuristicMetadata,
   buildStarterOverrideMetadata
 } from "./utils/projection-metadata-builders";
+import {
+  fetchLatestSkaterOnIceContextProfiles,
+  fetchLatestSkaterShotQualityProfiles,
+  fetchLatestSkaterTrendAdjustments,
+  fetchLatestWgoSkaterDeploymentProfiles,
+  fetchRollingRows
+} from "./queries/skater-queries";
+import {
+  fetchCurrentTeamGoalieIds,
+  fetchGoalieEvidence,
+  fetchGoalieRestSplitProfile,
+  fetchGoalieWorkloadContext,
+  fetchLatestGoalieForTeam,
+  fetchOpponentGoalieContextForGame,
+  fetchTeamGoalieStarterContext,
+  fetchTeamLineComboGoaliePrior
+} from "./queries/goalie-queries";
+import {
+  fetchTeamAbbreviationMap,
+  fetchTeamDefensiveEnvironment,
+  fetchTeamFiveOnFiveProfile,
+  fetchTeamNstExpectedGoalsProfile,
+  fetchTeamOffenseEnvironment,
+  fetchTeamRestDays,
+  fetchTeamStrengthAverages,
+  fetchTeamStrengthPrior,
+  type TeamStrengthAverages
+} from "./queries/team-context-queries";
+import { createRun, finalizeRun } from "./queries/run-lifecycle-queries";
 
 function assertSupabase() {
   if (!supabase) throw new Error("Supabase server client not available");
@@ -227,56 +253,6 @@ export function blendToiSecondsWithDeploymentPrior(args: {
   if (rolling == null) return prior;
   if (prior == null) return rolling;
   return Number((rollingWeight * rolling + (1 - rollingWeight) * prior).toFixed(3));
-}
-
-type TeamStrengthAverages = {
-  toiEsSecondsAvg: number | null;
-  toiPpSecondsAvg: number | null;
-  shotsEsAvg: number | null;
-  shotsPpAvg: number | null;
-};
-
-function meanOrNull(nums: Array<number | null | undefined>): number | null {
-  const vals = nums.filter(
-    (n): n is number => typeof n === "number" && Number.isFinite(n)
-  );
-  if (vals.length === 0) return null;
-  return vals.reduce((a, b) => a + b, 0) / vals.length;
-}
-
-async function fetchTeamStrengthAverages(
-  teamId: number,
-  cutoffDate: string
-): Promise<TeamStrengthAverages> {
-  assertSupabase();
-  const { data, error } = await supabase
-    .from("forge_team_game_strength")
-    .select("game_date,toi_es_seconds,toi_pp_seconds,shots_es,shots_pp")
-    .eq("team_id", teamId)
-    .lt("game_date", cutoffDate)
-    .order("game_date", { ascending: false })
-    .limit(10);
-  if (error) throw error;
-
-  const rows = (data ?? []) as ForgeTeamGameStrengthRow[];
-  return {
-    toiEsSecondsAvg: meanOrNull(
-      rows.map((r) =>
-        r?.toi_es_seconds == null ? null : Number(r.toi_es_seconds)
-      )
-    ),
-    toiPpSecondsAvg: meanOrNull(
-      rows.map((r) =>
-        r?.toi_pp_seconds == null ? null : Number(r.toi_pp_seconds)
-      )
-    ),
-    shotsEsAvg: meanOrNull(
-      rows.map((r) => (r?.shots_es == null ? null : Number(r.shots_es)))
-    ),
-    shotsPpAvg: meanOrNull(
-      rows.map((r) => (r?.shots_pp == null ? null : Number(r.shots_pp)))
-    )
-  };
 }
 
 export function availabilityMultiplierForEvent(
@@ -537,160 +513,11 @@ async function fetchTeamSkaterRoleHistory(
   return roleHistoryByPlayer;
 }
 
-async function fetchTeamLineComboGoaliePrior(
-  teamId: number,
-  asOfDate: string
-): Promise<Map<number, number>> {
-  assertSupabase();
-  const { data, error } = await supabase
-    .from("lineCombinations")
-    .select(
-      `
-      gameId,
-      goalies,
-      games!inner (
-        date
-      )
-    `
-    )
-    .eq("teamId", teamId)
-    .lt("games.date", asOfDate)
-    .order("date", { foreignTable: "games", ascending: false })
-    .limit(12);
-  if (error) {
-    console.warn(
-      `Error fetching line-combo goalie prior for team ${teamId} before ${asOfDate}:`,
-      error
-    );
-    return new Map();
-  }
-
-  const rows = (data ?? []) as LineCombinationWithGameDateRow[];
-  if (rows.length === 0) return new Map();
-  const weightedByGoalie = new Map<number, number>();
-  let totalWeight = 0;
-  for (let i = 0; i < rows.length; i += 1) {
-    const row = rows[i];
-    const goalies = toFiniteNumberArray(row.goalies);
-    if (goalies.length === 0) continue;
-    const weight = Math.pow(LINE_COMBO_RECENCY_DECAY, i);
-    totalWeight += weight;
-    for (const goalieId of goalies) {
-      weightedByGoalie.set(goalieId, (weightedByGoalie.get(goalieId) ?? 0) + weight);
-    }
-  }
-  if (totalWeight <= 0) return new Map();
-
-  const prior = new Map<number, number>();
-  for (const [goalieId, weightedMass] of weightedByGoalie.entries()) {
-    const p = clamp(weightedMass / totalWeight, 0, 1);
-    prior.set(goalieId, Number(p.toFixed(4)));
-  }
-  return prior;
-}
-
-async function fetchLatestGoalieForTeam(
-  teamId: number,
-  asOfDate: string
-): Promise<number | null> {
-  assertSupabase();
-  const { data, error } = await supabase
-    .from("forge_goalie_game")
-    .select("goalie_id,game_date")
-    .eq("team_id", teamId)
-    .lt("game_date", asOfDate)
-    .order("game_date", { ascending: false })
-    .limit(1)
-    .maybeSingle<{ goalie_id: number | null }>();
-  if (error) {
-    console.warn(
-      `Error fetching latest goalie game for team ${teamId} before ${asOfDate}:`,
-      error
-    );
-    return null;
-  }
-  const goalieId = data?.goalie_id;
-  return Number.isFinite(goalieId) ? Number(goalieId) : null;
-}
-
 function getErrorMessage(error: unknown): string {
   if (error instanceof Error && typeof error.message === "string") {
     return error.message;
   }
   return String(error);
-}
-
-function computeSkaterTrendAdjustment(args: {
-  row: SustainabilityTrendBandRow;
-  asOfDate: string;
-}): SkaterTrendAdjustment | null {
-  const value = finiteOrNull(args.row.value);
-  const ciLower = finiteOrNull(args.row.ci_lower);
-  const ciUpper = finiteOrNull(args.row.ci_upper);
-  const snapshotDate = parseDateOnly(args.row.snapshot_date);
-  if (value == null || ciLower == null || ciUpper == null || !snapshotDate) {
-    return null;
-  }
-
-  const lower = Math.min(ciLower, ciUpper);
-  const upper = Math.max(ciLower, ciUpper);
-  const bandWidth = Math.max(upper - lower, 1e-4);
-  let signedDistance = 0;
-  if (value > upper) {
-    signedDistance = (value - upper) / bandWidth;
-  } else if (value < lower) {
-    signedDistance = -((lower - value) / bandWidth);
-  }
-  const boundedDistance = clamp(signedDistance, -2, 2);
-  if (Math.abs(boundedDistance) < 1e-6) {
-    return {
-      metricKey: args.row.metric_key,
-      windowCode: args.row.window_code,
-      snapshotDate,
-      value,
-      ciLower: lower,
-      ciUpper: upper,
-      nEff: finiteOrNull(args.row.n_eff),
-      confidence: 0,
-      signedDistance: 0,
-      shotRateMultiplier: 1,
-      goalRateMultiplier: 1,
-      assistRateMultiplier: 1,
-      uncertaintyVolatilityMultiplier: 1
-    };
-  }
-
-  const nEff = finiteOrNull(args.row.n_eff);
-  const nEffWeight = nEff == null ? 0.6 : clamp(nEff / 8, 0.35, 1);
-  const ageDays = Math.max(0, daysBetweenDates(args.asOfDate, snapshotDate));
-  const recencyWeight =
-    ageDays <= 3 ? 1 : ageDays >= 28 ? 0.35 : 1 - ((ageDays - 3) / 25) * 0.65;
-  const confidence = clamp(nEffWeight * recencyWeight, 0.2, 1);
-  const weightedSignal = boundedDistance * confidence;
-
-  return {
-    metricKey: args.row.metric_key,
-    windowCode: args.row.window_code,
-    snapshotDate,
-    value,
-    ciLower: lower,
-    ciUpper: upper,
-    nEff,
-    confidence: Number(confidence.toFixed(4)),
-    signedDistance: Number(weightedSignal.toFixed(4)),
-    shotRateMultiplier: Number(
-      clamp(1 + weightedSignal * 0.08, 0.88, 1.12).toFixed(4)
-    ),
-    goalRateMultiplier: Number(
-      clamp(1 + weightedSignal * 0.1, 0.86, 1.14).toFixed(4)
-    ),
-    assistRateMultiplier: Number(
-      clamp(1 + weightedSignal * 0.08, 0.88, 1.12).toFixed(4)
-    ),
-    uncertaintyVolatilityMultiplier: Number(
-      (1 + clamp(Math.abs(weightedSignal) * 0.45, 0, 0.55)).toFixed(4)
-    )
-  };
 }
 
 export type { StarterContextForTest, StarterScenario } from "./types/run-forge-projections.types";
@@ -2645,92 +2472,6 @@ export function blendTopStarterScenarioOutputs(opts: {
   };
 }
 
-async function fetchTeamGoalieStarterContext(
-  teamId: number,
-  asOfDate: string
-): Promise<TeamGoalieStarterContext> {
-  assertSupabase();
-  const [goalieGamesRes, previousTeamGameRes] = await Promise.all([
-    supabase
-      .from("forge_goalie_game")
-      .select("game_date,goalie_id,toi_seconds")
-      .eq("team_id", teamId)
-      .lt("game_date", asOfDate)
-      .order("game_date", { ascending: false })
-      .limit(80),
-    supabase
-      .from("games")
-      .select("date")
-      .or(`homeTeamId.eq.${teamId},awayTeamId.eq.${teamId}`)
-      .lt("date", asOfDate)
-      .order("date", { ascending: false })
-      .limit(1)
-      .maybeSingle()
-  ]);
-
-  if (goalieGamesRes.error) throw goalieGamesRes.error;
-  if (previousTeamGameRes.error) throw previousTeamGameRes.error;
-
-  const rows = (goalieGamesRes.data ?? []) as GoalieGameHistoryRow[];
-  const byDate = new Map<string, { goalieId: number; toi: number }>();
-  for (const row of rows) {
-    const gameDate = row.game_date;
-    const goalieId = row.goalie_id;
-    if (!gameDate || !Number.isFinite(goalieId)) continue;
-    const toi = safeNumber(row.toi_seconds, 0);
-    const existing = byDate.get(gameDate);
-    if (!existing || toi > existing.toi) {
-      byDate.set(gameDate, { goalieId: Number(goalieId), toi });
-    }
-  }
-
-  const lastDates = Array.from(byDate.keys()).sort().reverse().slice(0, 10);
-  const startsByGoalie = new Map<number, number>();
-  const lastPlayedDateByGoalie = new Map<number, string>();
-  for (const d of lastDates) {
-    const starter = byDate.get(d);
-    if (!starter) continue;
-    startsByGoalie.set(
-      starter.goalieId,
-      (startsByGoalie.get(starter.goalieId) ?? 0) + 1
-    );
-    if (!lastPlayedDateByGoalie.has(starter.goalieId)) {
-      lastPlayedDateByGoalie.set(starter.goalieId, d);
-    }
-  }
-
-  for (const [date, info] of byDate.entries()) {
-    if (!lastPlayedDateByGoalie.has(info.goalieId)) {
-      lastPlayedDateByGoalie.set(info.goalieId, date);
-    }
-  }
-
-  const previousGameDate = (previousTeamGameRes.data as any)?.date ?? null;
-  const previousGameStarterGoalieId =
-    previousGameDate != null
-      ? (byDate.get(previousGameDate)?.goalieId ?? null)
-      : null;
-
-  return {
-    startsByGoalie,
-    lastPlayedDateByGoalie,
-    totalGames: lastDates.length,
-    previousGameDate,
-    previousGameStarterGoalieId
-  };
-}
-
-async function fetchCurrentTeamGoalieIds(teamId: number): Promise<Set<number>> {
-  assertSupabase();
-  const { data, error } = await supabase
-    .from("players")
-    .select("id")
-    .eq("team_id", teamId)
-    .eq("position", "G");
-  if (error) throw error;
-  return new Set((data ?? []).map((r: any) => Number(r.id)).filter((n) => Number.isFinite(n)));
-}
-
 async function fetchPlayerMetaByIds(
   playerIds: number[]
 ): Promise<Map<number, PlayerTeamPositionRow>> {
@@ -2764,344 +2505,6 @@ async function fetchPlayerMetaByIds(
         (entry): entry is readonly [number, PlayerTeamPositionRow] => entry != null
       )
   );
-}
-
-async function fetchTeamAbbreviationMap(
-  teamIds: number[]
-): Promise<Map<number, string>> {
-  assertSupabase();
-  if (teamIds.length === 0) return new Map();
-  const { data, error } = await supabase
-    .from("teams")
-    .select("id,abbreviation")
-    .in("id", teamIds);
-  if (error) throw error;
-  return new Map(
-    (data ?? [])
-      .map((row: any) => {
-        const id = Number(row?.id);
-        const abbreviation =
-          typeof row?.abbreviation === "string" ? row.abbreviation : null;
-        if (!Number.isFinite(id) || !abbreviation) return null;
-        return [id, abbreviation] as const;
-      })
-      .filter((entry): entry is readonly [number, string] => entry != null)
-  );
-}
-
-async function fetchTeamStrengthPrior(
-  teamAbbrev: string,
-  asOfDate: string
-): Promise<TeamStrengthPrior | null> {
-  assertSupabase();
-  const normalizedAbbrev = teamAbbrev.trim().toUpperCase();
-  if (!normalizedAbbrev) return null;
-
-  const historical = await supabase
-    .from("nhl_team_data")
-    .select("date,xga,xga_per_game,xgf_per_game")
-    .eq("team_abbrev", normalizedAbbrev)
-    .lte("date", asOfDate)
-    .order("date", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (historical.error) throw historical.error;
-
-  let row = (historical.data as any) ?? null;
-  if (!row) {
-    const latest = await supabase
-      .from("nhl_team_data")
-      .select("date,xga,xga_per_game,xgf_per_game")
-      .eq("team_abbrev", normalizedAbbrev)
-      .order("date", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (latest.error) throw latest.error;
-    row = (latest.data as any) ?? null;
-  }
-  if (!row) return null;
-
-  const toFiniteOrNull = (value: any): number | null =>
-    typeof value === "number" && Number.isFinite(value) ? Number(value) : null;
-
-  return {
-    sourceDate: typeof row.date === "string" ? row.date : null,
-    xga: toFiniteOrNull(row.xga),
-    xgaPerGame: toFiniteOrNull(row.xga_per_game),
-    xgfPerGame: toFiniteOrNull(row.xgf_per_game)
-  };
-}
-
-async function fetchTeamFiveOnFiveProfile(
-  teamId: number,
-  asOfDate: string
-): Promise<TeamFiveOnFiveProfile | null> {
-  assertSupabase();
-  const { data, error } = await supabase
-    .from("wgo_team_stats")
-    .select("date,games_played,save_pct_5v5,shooting_plus_save_pct_5v5")
-    .eq("team_id", teamId)
-    .lte("date", asOfDate)
-    .order("date", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (error) throw error;
-  if (!data) return null;
-  const row = data as any;
-  return {
-    sourceDate: typeof row.date === "string" ? row.date : null,
-    gamesPlayed: Number.isFinite(row.games_played) ? Number(row.games_played) : 0,
-    savePct5v5:
-      typeof row.save_pct_5v5 === "number" && Number.isFinite(row.save_pct_5v5)
-        ? Number(row.save_pct_5v5)
-        : null,
-    shootingPlusSavePct5v5:
-      typeof row.shooting_plus_save_pct_5v5 === "number" &&
-      Number.isFinite(row.shooting_plus_save_pct_5v5)
-        ? Number(row.shooting_plus_save_pct_5v5)
-        : null
-  };
-}
-
-async function fetchTeamNstExpectedGoalsProfile(
-  teamAbbrev: string,
-  asOfDate: string
-): Promise<TeamNstExpectedGoalsProfile | null> {
-  assertSupabase();
-  const normalizedAbbrev = teamAbbrev.trim().toUpperCase();
-  if (!normalizedAbbrev) return null;
-  const calcPer60 = (xga: number | null, toi: number | null): number | null => {
-    if (!Number.isFinite(xga) || !Number.isFinite(toi) || (toi as number) <= 0) {
-      return null;
-    }
-    return Number((Number(xga) * 60 / Number(toi)).toFixed(4));
-  };
-  const toFiniteOrNull = (value: any): number | null =>
-    typeof value === "number" && Number.isFinite(value) ? Number(value) : null;
-
-  const allRes = await supabase
-    .from("nst_team_all")
-    .select("date,gp,toi,xga")
-    .eq("team_abbreviation", normalizedAbbrev)
-    .eq("situation", "all")
-    .lte("date", asOfDate)
-    .order("date", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (allRes.error) throw allRes.error;
-  if (allRes.data) {
-    const row = allRes.data as any;
-    const xga = toFiniteOrNull(row.xga);
-    const toi = toFiniteOrNull(row.toi);
-    return {
-      source: "nst_team_all",
-      sourceDate: typeof row.date === "string" ? row.date : null,
-      gamesPlayed: Number.isFinite(row.gp) ? Number(row.gp) : 0,
-      xga,
-      xgaPer60: calcPer60(xga, toi)
-    };
-  }
-
-  const asOf = new Date(`${asOfDate}T00:00:00.000Z`);
-  const year = asOf.getUTCFullYear();
-  const month = asOf.getUTCMonth() + 1;
-  const season = month >= 7 ? year : year - 1;
-  const statsRes = await supabase
-    .from("nst_team_stats")
-    .select("season,gp,toi,xga")
-    .eq("team_abbreviation", normalizedAbbrev)
-    .eq("situation", "all")
-    .lte("season", season)
-    .order("season", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (statsRes.error) throw statsRes.error;
-  if (!statsRes.data) return null;
-  const row = statsRes.data as any;
-  const xga = toFiniteOrNull(row.xga);
-  const toi = toFiniteOrNull(row.toi);
-  return {
-    source: "nst_team_stats",
-    sourceDate: Number.isFinite(row.season) ? String(row.season) : null,
-    gamesPlayed: Number.isFinite(row.gp) ? Number(row.gp) : 0,
-    xga,
-    xgaPer60: calcPer60(xga, toi)
-  };
-}
-
-async function fetchTeamDefensiveEnvironment(
-  teamId: number,
-  asOfDate: string
-): Promise<TeamDefensiveEnvironment> {
-  assertSupabase();
-  const { data, error } = await supabase
-    .from("forge_goalie_game")
-    .select("game_id,game_date,shots_against")
-    .eq("team_id", teamId)
-    .lt("game_date", asOfDate)
-    .order("game_date", { ascending: false })
-    .limit(30);
-  if (error) throw error;
-
-  const byGameId = new Map<number, { gameDate: string; shotsAgainst: number }>();
-  for (const row of (data ?? []) as GoalieGameHistoryRow[]) {
-    const gameId = row.game_id;
-    const gameDate = row.game_date;
-    if (!Number.isFinite(gameId) || !gameDate) continue;
-    const shotsAgainst = safeNumber(row.shots_against, 0);
-    const existing = byGameId.get(gameId as number);
-    if (!existing) {
-      byGameId.set(gameId as number, { gameDate, shotsAgainst });
-      continue;
-    }
-    // If multiple goalies appeared in one game, sum to team total SA.
-    byGameId.set(gameId as number, {
-      gameDate,
-      shotsAgainst: existing.shotsAgainst + shotsAgainst
-    });
-  }
-
-  const recentGames = Array.from(byGameId.values())
-    .sort((a, b) => b.gameDate.localeCompare(a.gameDate))
-    .slice(0, 10);
-  const avg10 = meanOrNull(recentGames.map((g) => g.shotsAgainst));
-  const avg5 = meanOrNull(recentGames.slice(0, 5).map((g) => g.shotsAgainst));
-  return {
-    avgShotsAgainstLast10: avg10,
-    avgShotsAgainstLast5: avg5
-  };
-}
-
-async function fetchTeamOffenseEnvironment(
-  teamId: number,
-  asOfDate: string
-): Promise<TeamOffenseEnvironment> {
-  assertSupabase();
-  const { data, error } = await supabase
-    .from("forge_team_game_strength")
-    .select("game_date,shots_es,shots_pp,goals_es,goals_pp")
-    .eq("team_id", teamId)
-    .lt("game_date", asOfDate)
-    .order("game_date", { ascending: false })
-    .limit(10);
-  if (error) throw error;
-
-  const rows = (data ?? []) as Array<{
-    game_date: string;
-    shots_es: number | null;
-    shots_pp: number | null;
-    goals_es: number | null;
-    goals_pp: number | null;
-  }>;
-  const shotsByGame = rows.map(
-    (r) => safeNumber(r.shots_es, 0) + safeNumber(r.shots_pp, 0)
-  );
-  const goalsByGame = rows.map(
-    (r) => safeNumber(r.goals_es, 0) + safeNumber(r.goals_pp, 0)
-  );
-
-  return {
-    avgShotsForLast10: meanOrNull(shotsByGame),
-    avgShotsForLast5: meanOrNull(shotsByGame.slice(0, 5)),
-    avgGoalsForLast10: meanOrNull(goalsByGame),
-    avgGoalsForLast5: meanOrNull(goalsByGame.slice(0, 5))
-  };
-}
-
-async function fetchTeamRestDays(
-  teamId: number,
-  asOfDate: string
-): Promise<number | null> {
-  assertSupabase();
-  const { data, error } = await supabase
-    .from("games")
-    .select("date")
-    .or(`homeTeamId.eq.${teamId},awayTeamId.eq.${teamId}`)
-    .lt("date", asOfDate)
-    .order("date", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (error) throw error;
-  const previousDate = (data as any)?.date as string | null;
-  if (!previousDate) return null;
-  return Math.max(0, daysBetweenDates(asOfDate, previousDate));
-}
-
-async function fetchGoalieWorkloadContext(
-  goalieId: number,
-  asOfDate: string
-): Promise<GoalieWorkloadContext> {
-  assertSupabase();
-  const { data, error } = await supabase
-    .from("forge_goalie_game")
-    .select("game_date")
-    .eq("goalie_id", goalieId)
-    .lt("game_date", asOfDate)
-    .order("game_date", { ascending: false })
-    .limit(30);
-  if (error) throw error;
-
-  const uniqueDates = Array.from(
-    new Set(
-      ((data ?? []) as Array<{ game_date: string | null }>)
-        .map((r) => r.game_date)
-        .filter((d): d is string => typeof d === "string")
-    )
-  ).sort((a, b) => b.localeCompare(a));
-
-  const startsLast7Days = uniqueDates.filter(
-    (d) => daysBetweenDates(asOfDate, d) <= 7
-  ).length;
-  const startsLast14Days = uniqueDates.filter(
-    (d) => daysBetweenDates(asOfDate, d) <= 14
-  ).length;
-  const lastStartDate = uniqueDates[0] ?? null;
-  const daysSinceLastStart =
-    lastStartDate != null ? Math.max(0, daysBetweenDates(asOfDate, lastStartDate)) : null;
-
-  return {
-    startsLast7Days,
-    startsLast14Days,
-    daysSinceLastStart,
-    isGoalieBackToBack: daysSinceLastStart === 1
-  };
-}
-
-async function fetchGoalieRestSplitProfile(
-  goalieId: number,
-  asOfDate: string
-): Promise<GoalieRestSplitProfile | null> {
-  assertSupabase();
-  const { data, error } = await supabase
-    .from("wgo_goalie_stats")
-    .select(
-      "date,save_pct_days_rest_0,save_pct_days_rest_1,save_pct_days_rest_2,save_pct_days_rest_3,save_pct_days_rest_4_plus,games_played_days_rest_0,games_played_days_rest_1,games_played_days_rest_2,games_played_days_rest_3,games_played_days_rest_4_plus"
-    )
-    .eq("goalie_id", goalieId)
-    .lte("date", asOfDate)
-    .order("date", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (error) throw error;
-  if (!data) return null;
-  const row = data as any;
-  return {
-    sourceDate: typeof row.date === "string" ? row.date : null,
-    savePctByBucket: {
-      "0": safeNumber(row.save_pct_days_rest_0, NaN),
-      "1": safeNumber(row.save_pct_days_rest_1, NaN),
-      "2": safeNumber(row.save_pct_days_rest_2, NaN),
-      "3": safeNumber(row.save_pct_days_rest_3, NaN),
-      "4_plus": safeNumber(row.save_pct_days_rest_4_plus, NaN)
-    },
-    gamesByBucket: {
-      "0": safeNumber(row.games_played_days_rest_0, 0),
-      "1": safeNumber(row.games_played_days_rest_1, 0),
-      "2": safeNumber(row.games_played_days_rest_2, 0),
-      "3": safeNumber(row.games_played_days_rest_3, 0),
-      "4_plus": safeNumber(row.games_played_days_rest_4_plus, 0)
-    }
-  };
 }
 
 export function selectStarterCandidateGoalieIds(opts: {
@@ -3310,443 +2713,6 @@ export function buildTopStarterScenarios(opts: {
   }));
 }
 
-async function fetchGoalieEvidence(
-  goalieId: number,
-  asOfDate: string
-): Promise<GoalieEvidence> {
-  assertSupabase();
-  const asOf = new Date(`${asOfDate}T00:00:00.000Z`);
-  const year = asOf.getUTCFullYear();
-  const month = asOf.getUTCMonth() + 1;
-  const seasonStartYear = month >= 7 ? year : year - 1;
-  const seasonStartDate = `${seasonStartYear}-07-01`;
-  const [recentRes, seasonRes, baselineRes, qualityStartRes] = await Promise.all([
-    supabase
-      .from("forge_goalie_game")
-      .select("shots_against,goals_allowed,saves")
-      .eq("goalie_id", goalieId)
-      .lt("game_date", asOfDate)
-      .order("game_date", { ascending: false })
-      .limit(20),
-    supabase
-      .from("forge_goalie_game")
-      .select("shots_against,goals_allowed,saves")
-      .eq("goalie_id", goalieId)
-      .gte("game_date", seasonStartDate)
-      .lt("game_date", asOfDate)
-      .order("game_date", { ascending: false })
-      .limit(120),
-    supabase
-      .from("forge_goalie_game")
-      .select("shots_against,goals_allowed,saves")
-      .eq("goalie_id", goalieId)
-      .lt("game_date", asOfDate)
-      .order("game_date", { ascending: false })
-      .limit(200),
-    supabase
-      .from("wgo_goalie_stats")
-      .select("date,quality_start,quality_starts_pct")
-      .eq("goalie_id", goalieId)
-      .lte("date", asOfDate)
-      .order("date", { ascending: false })
-      .limit(1)
-      .maybeSingle()
-  ]);
-
-  if (recentRes.error) throw recentRes.error;
-  if (seasonRes.error) throw seasonRes.error;
-  if (baselineRes.error) throw baselineRes.error;
-  if (qualityStartRes.error) throw qualityStartRes.error;
-
-  const recentRows = (recentRes.data ?? []) as GoalieGameHistoryRow[];
-  const seasonRows = (seasonRes.data ?? []) as GoalieGameHistoryRow[];
-  const baselineRows = (baselineRes.data ?? []) as GoalieGameHistoryRow[];
-
-  const sumRecent = recentRows.reduce(
-    (acc, row) => {
-      acc.shots += safeNumber(row.shots_against, 0);
-      acc.goals += safeNumber(row.goals_allowed, 0);
-      return acc;
-    },
-    { shots: 0, goals: 0 }
-  );
-
-  const sumBaseline = baselineRows.reduce(
-    (acc, row) => {
-      acc.shots += safeNumber(row.shots_against, 0);
-      acc.goals += safeNumber(row.goals_allowed, 0);
-      return acc;
-    },
-    { shots: 0, goals: 0 }
-  );
-  const sumSeason = seasonRows.reduce(
-    (acc, row) => {
-      acc.shots += safeNumber(row.shots_against, 0);
-      acc.goals += safeNumber(row.goals_allowed, 0);
-      return acc;
-    },
-    { shots: 0, goals: 0 }
-  );
-
-  const leagueSvPct = 0.9;
-  const residuals = recentRows.map((row) => {
-    const shots = safeNumber(row.shots_against, 0);
-    const goals = safeNumber(row.goals_allowed, 0);
-    const expectedGoals = shots * (1 - leagueSvPct);
-    return goals - expectedGoals;
-  });
-  const qualityStartRow = (qualityStartRes.data as any) ?? null;
-  const qualityStarts = safeNumber(qualityStartRow?.quality_start, 0);
-  const qualityStartsPctRaw = qualityStartRow?.quality_starts_pct;
-  const qualityStartsPct =
-    typeof qualityStartsPctRaw === "number" && Number.isFinite(qualityStartsPctRaw)
-      ? Number(qualityStartsPctRaw)
-      : null;
-
-  return {
-    recentStarts: recentRows.length,
-    recentShotsAgainst: sumRecent.shots,
-    recentGoalsAllowed: sumRecent.goals,
-    seasonStarts: seasonRows.length,
-    seasonShotsAgainst: sumSeason.shots,
-    seasonGoalsAllowed: sumSeason.goals,
-    baselineStarts: baselineRows.length,
-    baselineShotsAgainst: sumBaseline.shots,
-    baselineGoalsAllowed: sumBaseline.goals,
-    residualStdDev: safeStdDev(residuals),
-    qualityStarts,
-    qualityStartsPct
-  };
-}
-
-async function fetchRollingRows(
-  playerIds: number[],
-  strengthState: "ev" | "pp",
-  cutoffDate: string
-): Promise<RollingRow[]> {
-  assertSupabase();
-  if (playerIds.length === 0) return [];
-
-  // Calculate a "recent" cutoff (e.g., 1 year ago) to filter out stale stats
-  const oneYearAgo = new Date(
-    new Date(cutoffDate).getTime() - 365 * 24 * 60 * 60 * 1000
-  )
-    .toISOString()
-    .split("T")[0];
-
-  const { data, error } = await supabase
-    .from("rolling_player_game_metrics")
-    .select(
-      "player_id,strength_state,game_date,toi_seconds_avg_last5,toi_seconds_avg_all,sog_per_60_avg_last5,sog_per_60_avg_all,goals_total_last5,shots_total_last5,assists_total_last5,goals_total_all,shots_total_all,assists_total_all,hits_per_60_avg_last5,hits_per_60_avg_all,blocks_per_60_avg_last5,blocks_per_60_avg_all"
-    )
-    .in("player_id", playerIds)
-    .eq("strength_state", strengthState)
-    .lt("game_date", cutoffDate)
-    .gt("game_date", oneYearAgo) // Only fetch stats from the last year
-    .order("game_date", { ascending: false })
-    .limit(5000);
-  if (error) throw error;
-  return (data ?? []) as any;
-}
-
-async function fetchLatestWgoSkaterDeploymentProfiles(
-  playerIds: number[],
-  cutoffDate: string
-): Promise<Map<number, WgoSkaterDeploymentProfile>> {
-  assertSupabase();
-  if (playerIds.length === 0) return new Map();
-
-  const oneYearAgo = new Date(
-    new Date(cutoffDate).getTime() - 365 * 24 * 60 * 60 * 1000
-  )
-    .toISOString()
-    .split("T")[0];
-
-  const { data, error } = await supabase
-    .from("wgo_skater_stats")
-    .select("player_id,date,toi_per_game,es_toi_per_game,pp_toi_per_game")
-    .in("player_id", playerIds)
-    .lt("date", cutoffDate)
-    .gte("date", oneYearAgo)
-    .order("date", { ascending: false })
-    .limit(5000);
-  if (error) throw error;
-
-  const latestByPlayer = new Map<number, any>();
-  for (const row of (data ?? []) as any[]) {
-    const playerId = Number(row?.player_id);
-    if (!Number.isFinite(playerId)) continue;
-    if (!latestByPlayer.has(playerId)) latestByPlayer.set(playerId, row);
-  }
-
-  const profiles = new Map<number, WgoSkaterDeploymentProfile>();
-  for (const [playerId, row] of latestByPlayer.entries()) {
-    const totalToiSec = normalizeWgoToiToSeconds(row?.toi_per_game);
-    const esToiSecRaw = normalizeWgoToiToSeconds(row?.es_toi_per_game);
-    const ppToiSecRaw = normalizeWgoToiToSeconds(row?.pp_toi_per_game);
-    const ppToiSec = ppToiSecRaw != null ? clamp(ppToiSecRaw, 0, 1200) : null;
-    const esToiSec =
-      esToiSecRaw != null
-        ? clamp(esToiSecRaw, 0, 2400)
-        : totalToiSec != null && ppToiSec != null
-          ? clamp(totalToiSec - ppToiSec, 0, 2400)
-          : null;
-
-    profiles.set(playerId, {
-      toiPerGameSec: totalToiSec,
-      esToiPerGameSec: esToiSec,
-      ppToiPerGameSec: ppToiSec
-    });
-  }
-
-  return profiles;
-}
-
-async function fetchLatestSkaterShotQualityProfiles(
-  playerIds: number[],
-  cutoffDate: string
-): Promise<Map<number, SkaterShotQualityProfile>> {
-  assertSupabase();
-  if (playerIds.length === 0) return new Map();
-
-  const oneYearAgo = new Date(
-    new Date(cutoffDate).getTime() - 365 * 24 * 60 * 60 * 1000
-  )
-    .toISOString()
-    .split("T")[0];
-
-  const { data, error } = await supabase
-    .from("player_stats_unified")
-    .select(
-      "player_id,date,nst_shots_per_60,nst_ixg_per_60,nst_rush_attempts_per_60,nst_rebounds_created_per_60"
-    )
-    .in("player_id", playerIds)
-    .lte("date", cutoffDate)
-    .gte("date", oneYearAgo)
-    .order("date", { ascending: false })
-    .limit(5000);
-  if (error) throw error;
-
-  const latestByPlayer = new Map<number, any>();
-  for (const row of (data ?? []) as any[]) {
-    const playerId = Number(row?.player_id);
-    if (!Number.isFinite(playerId)) continue;
-    if (!latestByPlayer.has(playerId)) latestByPlayer.set(playerId, row);
-  }
-
-  const profiles = new Map<number, SkaterShotQualityProfile>();
-  for (const [playerId, row] of latestByPlayer.entries()) {
-    profiles.set(playerId, {
-      sourceDate: typeof row?.date === "string" ? row.date : null,
-      nstShotsPer60: finiteOrNull(row?.nst_shots_per_60),
-      nstIxgPer60: finiteOrNull(row?.nst_ixg_per_60),
-      nstRushAttemptsPer60: finiteOrNull(row?.nst_rush_attempts_per_60),
-      nstReboundsCreatedPer60: finiteOrNull(row?.nst_rebounds_created_per_60)
-    });
-  }
-  return profiles;
-}
-
-async function fetchLatestSkaterOnIceContextProfiles(
-  playerIds: number[],
-  cutoffDate: string
-): Promise<Map<number, SkaterOnIceContextProfile>> {
-  assertSupabase();
-  if (playerIds.length === 0) return new Map();
-
-  const oneYearAgo = new Date(
-    new Date(cutoffDate).getTime() - 365 * 24 * 60 * 60 * 1000
-  )
-    .toISOString()
-    .split("T")[0];
-
-  const { data, error } = await supabase
-    .from("player_stats_unified")
-    .select(
-      "player_id,date,nst_oi_xgf_per_60,nst_oi_xga_per_60,nst_oi_cf_pct_rates,nst_oi_cf_pct,possession_pct_safe"
-    )
-    .in("player_id", playerIds)
-    .lte("date", cutoffDate)
-    .gte("date", oneYearAgo)
-    .order("date", { ascending: false })
-    .limit(5000);
-  if (error) throw error;
-
-  const latestByPlayer = new Map<number, any>();
-  for (const row of (data ?? []) as any[]) {
-    const playerId = Number(row?.player_id);
-    if (!Number.isFinite(playerId)) continue;
-    if (!latestByPlayer.has(playerId)) latestByPlayer.set(playerId, row);
-  }
-
-  const profiles = new Map<number, SkaterOnIceContextProfile>();
-  for (const [playerId, row] of latestByPlayer.entries()) {
-    profiles.set(playerId, {
-      sourceDate: typeof row?.date === "string" ? row.date : null,
-      nstOiXgfPer60: finiteOrNull(row?.nst_oi_xgf_per_60),
-      nstOiXgaPer60: finiteOrNull(row?.nst_oi_xga_per_60),
-      nstOiCfPct:
-        finiteOrNull(row?.nst_oi_cf_pct_rates) ?? finiteOrNull(row?.nst_oi_cf_pct),
-      possessionPctSafe: finiteOrNull(row?.possession_pct_safe)
-    });
-  }
-  return profiles;
-}
-
-async function fetchLatestSkaterTrendAdjustments(
-  playerIds: number[],
-  asOfDate: string
-): Promise<Map<number, SkaterTrendAdjustment>> {
-  assertSupabase();
-  const uniquePlayerIds = Array.from(new Set(playerIds)).filter((id) =>
-    Number.isFinite(id)
-  );
-  if (uniquePlayerIds.length === 0) return new Map();
-
-  const { data, error } = await supabase
-    .from("sustainability_trend_bands")
-    .select(
-      "player_id,snapshot_date,metric_key,window_code,value,ci_lower,ci_upper,n_eff"
-    )
-    .in("player_id", uniquePlayerIds)
-    .in("metric_key", [...TREND_BAND_METRIC_PRIORITY])
-    .in("window_code", [...TREND_BAND_WINDOW_PRIORITY])
-    .lte("snapshot_date", asOfDate)
-    .order("snapshot_date", { ascending: false })
-    .limit(12000);
-  if (error) {
-    console.warn(
-      "Error fetching sustainability trend bands for projections:",
-      error
-    );
-    return new Map();
-  }
-
-  const metricPriority = new Map<string, number>(
-    TREND_BAND_METRIC_PRIORITY.map((metric, idx) => [metric, idx])
-  );
-  const windowPriority = new Map<string, number>(
-    TREND_BAND_WINDOW_PRIORITY.map((window, idx) => [window, idx])
-  );
-  const rowsByPlayer = new Map<number, SustainabilityTrendBandRow[]>();
-  for (const raw of (data ?? []) as unknown as SustainabilityTrendBandRow[]) {
-    const playerId = Number(raw.player_id);
-    if (!Number.isFinite(playerId)) continue;
-    if (!metricPriority.has(raw.metric_key)) continue;
-    if (!windowPriority.has(raw.window_code)) continue;
-    const rows = rowsByPlayer.get(playerId) ?? [];
-    rows.push(raw);
-    rowsByPlayer.set(playerId, rows);
-  }
-
-  const out = new Map<number, SkaterTrendAdjustment>();
-  for (const [playerId, rows] of rowsByPlayer.entries()) {
-    const chosen = rows.slice().sort((a, b) => {
-      const metricDelta =
-        (metricPriority.get(a.metric_key) ?? 99) -
-        (metricPriority.get(b.metric_key) ?? 99);
-      if (metricDelta !== 0) return metricDelta;
-      const windowDelta =
-        (windowPriority.get(a.window_code) ?? 99) -
-        (windowPriority.get(b.window_code) ?? 99);
-      if (windowDelta !== 0) return windowDelta;
-      const dateA = parseDateOnly(a.snapshot_date) ?? "";
-      const dateB = parseDateOnly(b.snapshot_date) ?? "";
-      return dateB.localeCompare(dateA);
-    })[0];
-    if (!chosen) continue;
-
-    const adjustment = computeSkaterTrendAdjustment({
-      row: chosen,
-      asOfDate
-    });
-    if (!adjustment) continue;
-    out.set(playerId, adjustment);
-  }
-
-  return out;
-}
-
-async function fetchOpponentGoalieContextForGame(args: {
-  gameId: number;
-  opponentTeamId: number;
-}): Promise<OpponentGoalieContext | null> {
-  assertSupabase();
-  const { data, error } = await supabase
-    .from("goalie_start_projections")
-    .select("player_id,start_probability,confirmed_status,projected_gsaa_per_60")
-    .eq("game_id", args.gameId)
-    .eq("team_id", args.opponentTeamId)
-    .order("start_probability", { ascending: false })
-    .limit(3);
-  if (error) throw error;
-
-  const rows = (data ?? []) as Array<any>;
-  if (rows.length === 0) return null;
-
-  let probabilityMass = 0;
-  let weightedGsaa = 0;
-  let weightedGsaaMass = 0;
-  let topStarterProbability = 0;
-  let isConfirmedStarter = false;
-  for (let i = 0; i < rows.length; i += 1) {
-    const row = rows[i];
-    const p = clamp(Number(row?.start_probability ?? 0), 0, 1);
-    if (i === 0) {
-      topStarterProbability = p;
-      isConfirmedStarter = Boolean(row?.confirmed_status);
-    }
-    probabilityMass += p;
-    const gsaa = Number(row?.projected_gsaa_per_60);
-    if (Number.isFinite(gsaa)) {
-      weightedGsaa += p * gsaa;
-      weightedGsaaMass += p;
-    }
-  }
-  const weightedProjectedGsaaPer60 =
-    weightedGsaaMass > 0 ? weightedGsaa / weightedGsaaMass : null;
-
-  return {
-    source: "goalie_start_projections",
-    weightedProjectedGsaaPer60:
-      weightedProjectedGsaaPer60 == null
-        ? null
-        : Number(weightedProjectedGsaaPer60.toFixed(4)),
-    topStarterProbability: Number(clamp(topStarterProbability, 0, 1).toFixed(4)),
-    probabilityMass: Number(clamp(probabilityMass, 0, 1).toFixed(4)),
-    isConfirmedStarter
-  };
-}
-
-async function createRun(asOfDate: string): Promise<string> {
-  assertSupabase();
-  const { data, error } = await supabase
-    .from("forge_runs")
-    .insert({
-      as_of_date: asOfDate,
-      status: "running",
-      git_sha: process.env.VERCEL_GIT_COMMIT_SHA ?? process.env.GIT_SHA ?? null,
-      metrics: {}
-    })
-    .select("run_id")
-    .single<{ run_id: string }>();
-  if (error) throw error;
-  return data.run_id;
-}
-
-async function finalizeRun(
-  runId: string,
-  status: "succeeded" | "failed",
-  metrics: any
-) {
-  assertSupabase();
-  const { error } = await supabase
-    .from("forge_runs")
-    .update({ status, metrics, updated_at: new Date().toISOString() })
-    .eq("run_id", runId);
-  if (error) throw error;
-}
-
 export async function runProjectionV2ForDate(
   asOfDate: string,
   opts?: RunProjectionOptions
@@ -3841,6 +2807,8 @@ export async function runProjectionV2ForDate(
 
   try {
     const horizonGames = clampHorizonGames(opts?.horizonGames ?? 1);
+    const teamDateKey = (teamId: number) => `${teamId}:${asOfDate}`;
+    const playerDateKey = (playerId: number) => `${playerId}:${asOfDate}`;
     const currentSeasonId = await fetchCurrentSeasonIdForDate(asOfDate);
     const { data: games, error: gamesErr } = await supabase
       .from("games")
@@ -3848,7 +2816,7 @@ export async function runProjectionV2ForDate(
       .eq("date", asOfDate);
     if (gamesErr) throw gamesErr;
 
-    const teamStrengthCache = new Map<number, TeamStrengthAverages>();
+    const teamStrengthCache = new Map<string, TeamStrengthAverages>();
     const { startTs, endTs } = toDayBoundsUtc(asOfDate);
 
     const teamIds = Array.from(
@@ -3863,7 +2831,7 @@ export async function runProjectionV2ForDate(
     const playerAvailabilityMultiplier = new Map<number, number>();
     const availabilityEventByPlayer = new Map<number, RosterEventRow>();
     const activeRosterSkaterIdsByTeamId = new Map<number, number[]>();
-    const goalieEvidenceCache = new Map<number, GoalieEvidence>();
+    const goalieEvidenceCache = new Map<string, GoalieEvidence>();
     const goalieOverrideByTeamId = new Map<
       number,
       { goalieId: number; starterProb: number }
@@ -3942,8 +2910,8 @@ export async function runProjectionV2ForDate(
     let playerRowsUpserted = 0;
     let teamRowsUpserted = 0;
     let goalieRowsUpserted = 0;
-    const teamHorizonScalarsCache = new Map<number, number[]>();
-    const teamSkaterRoleHistoryCache = new Map<number, Map<number, string[]>>();
+    const teamHorizonScalarsCache = new Map<string, number[]>();
+    const teamSkaterRoleHistoryCache = new Map<string, Map<number, string[]>>();
 
     gamesLoop: for (const game of (games ?? []) as GameRow[]) {
       if (Date.now() > deadlineMs) {
@@ -3964,20 +2932,20 @@ export async function runProjectionV2ForDate(
       >();
       const teamGoalsByTeamId = new Map<number, number>();
       const fallbackGoalieByTeamId = new Map<number, number | null>();
-      const teamGoalieStarterContextCache = new Map<number, TeamGoalieStarterContext>();
-      const teamDefensiveEnvironmentCache = new Map<number, TeamDefensiveEnvironment>();
-      const teamOffenseEnvironmentCache = new Map<number, TeamOffenseEnvironment>();
-      const teamRestDaysCache = new Map<number, number | null>();
-      const teamStrengthPriorCache = new Map<number, TeamStrengthPrior | null>();
-      const teamFiveOnFiveProfileCache = new Map<number, TeamFiveOnFiveProfile | null>();
+      const teamGoalieStarterContextCache = new Map<string, TeamGoalieStarterContext>();
+      const teamDefensiveEnvironmentCache = new Map<string, TeamDefensiveEnvironment>();
+      const teamOffenseEnvironmentCache = new Map<string, TeamOffenseEnvironment>();
+      const teamRestDaysCache = new Map<string, number | null>();
+      const teamStrengthPriorCache = new Map<string, TeamStrengthPrior | null>();
+      const teamFiveOnFiveProfileCache = new Map<string, TeamFiveOnFiveProfile | null>();
       const teamNstExpectedGoalsCache = new Map<
-        number,
+        string,
         TeamNstExpectedGoalsProfile | null
       >();
-      const teamLineComboGoaliePriorCache = new Map<number, Map<number, number>>();
-      const goalieWorkloadContextCache = new Map<number, GoalieWorkloadContext>();
-      const goalieRestSplitProfileCache = new Map<number, GoalieRestSplitProfile | null>();
-      const currentTeamGoalieIdsCache = new Map<number, Set<number>>();
+      const teamLineComboGoaliePriorCache = new Map<string, Map<number, number>>();
+      const goalieWorkloadContextCache = new Map<string, GoalieWorkloadContext>();
+      const goalieRestSplitProfileCache = new Map<string, GoalieRestSplitProfile | null>();
+      const currentTeamGoalieIdsCache = new Map<string, Set<number>>();
       const goalieCandidates: Array<{
         teamId: number;
         opponentTeamId: number;
@@ -4006,13 +2974,12 @@ export async function runProjectionV2ForDate(
 
         const opponentTeamId =
           teamId === game.homeTeamId ? game.awayTeamId : game.homeTeamId;
-        if (!teamHorizonScalarsCache.has(teamId)) {
-          teamHorizonScalarsCache.set(
-            teamId,
+        if (!teamHorizonScalarsCache.has(teamDateKey(teamId))) {
+          teamHorizonScalarsCache.set(teamDateKey(teamId),
             await fetchTeamHorizonScalars(teamId, asOfDate, horizonGames)
           );
         }
-        const teamHorizonScalars = teamHorizonScalarsCache.get(teamId) ?? [1];
+        const teamHorizonScalars = teamHorizonScalarsCache.get(teamDateKey(teamId)) ?? [1];
         const teamHorizonTotalScalar = teamHorizonScalars.reduce((sum, v) => sum + v, 0);
         if (lcRecency.isSoftStale && !lcRecency.isHardStale) {
           metrics.data_quality.stale_line_combos_soft += 1;
@@ -4296,58 +3263,52 @@ export async function runProjectionV2ForDate(
         }
         const teamAbbrev = teamAbbreviationById.get(teamId) ?? null;
         const opponentAbbrev = teamAbbreviationById.get(opponentTeamId) ?? null;
-        if (!teamStrengthPriorCache.has(teamId)) {
-          teamStrengthPriorCache.set(
-            teamId,
+        if (!teamStrengthPriorCache.has(teamDateKey(teamId))) {
+          teamStrengthPriorCache.set(teamDateKey(teamId),
             teamAbbrev
               ? await fetchTeamStrengthPrior(teamAbbrev, asOfDate)
               : null
           );
         }
-        if (!teamStrengthPriorCache.has(opponentTeamId)) {
-          teamStrengthPriorCache.set(
-            opponentTeamId,
+        if (!teamStrengthPriorCache.has(teamDateKey(opponentTeamId))) {
+          teamStrengthPriorCache.set(teamDateKey(opponentTeamId),
             opponentAbbrev
               ? await fetchTeamStrengthPrior(opponentAbbrev, asOfDate)
               : null
           );
         }
-        if (!teamFiveOnFiveProfileCache.has(teamId)) {
-          teamFiveOnFiveProfileCache.set(
-            teamId,
+        if (!teamFiveOnFiveProfileCache.has(teamDateKey(teamId))) {
+          teamFiveOnFiveProfileCache.set(teamDateKey(teamId),
             await fetchTeamFiveOnFiveProfile(teamId, asOfDate)
           );
         }
-        if (!teamFiveOnFiveProfileCache.has(opponentTeamId)) {
-          teamFiveOnFiveProfileCache.set(
-            opponentTeamId,
+        if (!teamFiveOnFiveProfileCache.has(teamDateKey(opponentTeamId))) {
+          teamFiveOnFiveProfileCache.set(teamDateKey(opponentTeamId),
             await fetchTeamFiveOnFiveProfile(opponentTeamId, asOfDate)
           );
         }
-        if (!teamNstExpectedGoalsCache.has(teamId)) {
-          teamNstExpectedGoalsCache.set(
-            teamId,
+        if (!teamNstExpectedGoalsCache.has(teamDateKey(teamId))) {
+          teamNstExpectedGoalsCache.set(teamDateKey(teamId),
             teamAbbrev
               ? await fetchTeamNstExpectedGoalsProfile(teamAbbrev, asOfDate)
               : null
           );
         }
-        if (!teamNstExpectedGoalsCache.has(opponentTeamId)) {
-          teamNstExpectedGoalsCache.set(
-            opponentTeamId,
+        if (!teamNstExpectedGoalsCache.has(teamDateKey(opponentTeamId))) {
+          teamNstExpectedGoalsCache.set(teamDateKey(opponentTeamId),
             opponentAbbrev
               ? await fetchTeamNstExpectedGoalsProfile(opponentAbbrev, asOfDate)
               : null
           );
         }
         const teamLevelContextAdjustment = computeSkaterTeamLevelContextAdjustments({
-          teamStrengthPrior: teamStrengthPriorCache.get(teamId) ?? null,
-          opponentStrengthPrior: teamStrengthPriorCache.get(opponentTeamId) ?? null,
-          teamFiveOnFiveProfile: teamFiveOnFiveProfileCache.get(teamId) ?? null,
+          teamStrengthPrior: teamStrengthPriorCache.get(teamDateKey(teamId)) ?? null,
+          opponentStrengthPrior: teamStrengthPriorCache.get(teamDateKey(opponentTeamId)) ?? null,
+          teamFiveOnFiveProfile: teamFiveOnFiveProfileCache.get(teamDateKey(teamId)) ?? null,
           opponentFiveOnFiveProfile:
-            teamFiveOnFiveProfileCache.get(opponentTeamId) ?? null,
-          teamNstProfile: teamNstExpectedGoalsCache.get(teamId) ?? null,
-          opponentNstProfile: teamNstExpectedGoalsCache.get(opponentTeamId) ?? null
+            teamFiveOnFiveProfileCache.get(teamDateKey(opponentTeamId)) ?? null,
+          teamNstProfile: teamNstExpectedGoalsCache.get(teamDateKey(teamId)) ?? null,
+          opponentNstProfile: teamNstExpectedGoalsCache.get(teamDateKey(opponentTeamId)) ?? null
         });
         if (teamLevelContextAdjustment.sampleWeight > 0) {
           metrics.data_quality.team_level_context_teams_with_signal += 1;
@@ -4367,18 +3328,17 @@ export async function runProjectionV2ForDate(
         if (opponentGoalieContextAdjustment.sampleWeight > 0) {
           metrics.data_quality.opponent_goalie_context_adjustments_applied += 1;
         }
-        if (!teamRestDaysCache.has(teamId)) {
-          teamRestDaysCache.set(teamId, await fetchTeamRestDays(teamId, asOfDate));
+        if (!teamRestDaysCache.has(teamDateKey(teamId))) {
+          teamRestDaysCache.set(teamDateKey(teamId), await fetchTeamRestDays(teamId, asOfDate));
         }
-        if (!teamRestDaysCache.has(opponentTeamId)) {
-          teamRestDaysCache.set(
-            opponentTeamId,
+        if (!teamRestDaysCache.has(teamDateKey(opponentTeamId))) {
+          teamRestDaysCache.set(teamDateKey(opponentTeamId),
             await fetchTeamRestDays(opponentTeamId, asOfDate)
           );
         }
         const restScheduleAdjustment = computeSkaterRestScheduleAdjustments({
-          teamRestDays: teamRestDaysCache.get(teamId) ?? null,
-          opponentRestDays: teamRestDaysCache.get(opponentTeamId) ?? null,
+          teamRestDays: teamRestDaysCache.get(teamDateKey(teamId)) ?? null,
+          opponentRestDays: teamRestDaysCache.get(teamDateKey(opponentTeamId)) ?? null,
           isHome: teamId === game.homeTeamId
         });
         if (restScheduleAdjustment.sampleWeight > 0) {
@@ -4403,14 +3363,13 @@ export async function runProjectionV2ForDate(
           shotQualityByPlayerId.size;
         metrics.data_quality.on_ice_context_profiles_found +=
           onIceContextByPlayerId.size;
-        if (!teamSkaterRoleHistoryCache.has(teamId)) {
-          teamSkaterRoleHistoryCache.set(
-            teamId,
+        if (!teamSkaterRoleHistoryCache.has(teamDateKey(teamId))) {
+          teamSkaterRoleHistoryCache.set(teamDateKey(teamId),
             await fetchTeamSkaterRoleHistory(teamId, asOfDate)
           );
         }
         const roleHistoryByPlayerId =
-          teamSkaterRoleHistoryCache.get(teamId) ?? new Map<number, string[]>();
+          teamSkaterRoleHistoryCache.get(teamDateKey(teamId)) ?? new Map<number, string[]>();
 
         // Initial per-player TOI estimates (seconds)
         const projected = new Map<
@@ -4860,9 +3819,9 @@ export async function runProjectionV2ForDate(
         // Task 3.6 reconciliation: hard constraints for team TOI + shots (by strength).
         const targetSkaterSecondsCanonical = 60 * 60 * 5;
         const strengthAverages =
-          teamStrengthCache.get(teamId) ??
+          teamStrengthCache.get(teamDateKey(teamId)) ??
           (await fetchTeamStrengthAverages(teamId, asOfDate));
-        teamStrengthCache.set(teamId, strengthAverages);
+        teamStrengthCache.set(teamDateKey(teamId), strengthAverages);
 
         const preAllocationToiEs = Array.from(projected.values()).reduce(
           (acc, p) => acc + p.toiEs,
@@ -5595,30 +4554,25 @@ export async function runProjectionV2ForDate(
           );
         }
         const fallbackGoalieId = fallbackGoalieByTeamId.get(teamId) ?? null;
-        if (!teamGoalieStarterContextCache.has(teamId)) {
-          teamGoalieStarterContextCache.set(
-            teamId,
+        if (!teamGoalieStarterContextCache.has(teamDateKey(teamId))) {
+          teamGoalieStarterContextCache.set(teamDateKey(teamId),
             await fetchTeamGoalieStarterContext(teamId, asOfDate)
           );
         }
-        if (!currentTeamGoalieIdsCache.has(teamId)) {
-          currentTeamGoalieIdsCache.set(
-            teamId,
+        if (!currentTeamGoalieIdsCache.has(teamDateKey(teamId))) {
+          currentTeamGoalieIdsCache.set(teamDateKey(teamId),
             await fetchCurrentTeamGoalieIds(teamId)
           );
         }
-        if (!teamLineComboGoaliePriorCache.has(teamId)) {
-          teamLineComboGoaliePriorCache.set(
-            teamId,
+        if (!teamLineComboGoaliePriorCache.has(teamDateKey(teamId))) {
+          teamLineComboGoaliePriorCache.set(teamDateKey(teamId),
             await fetchTeamLineComboGoaliePrior(teamId, asOfDate)
           );
         }
-        const context = teamGoalieStarterContextCache.get(
-          teamId
-        ) as TeamGoalieStarterContext;
-        const currentTeamGoalieIds = currentTeamGoalieIdsCache.get(teamId) as Set<number>;
+        const context = teamGoalieStarterContextCache.get(teamDateKey(teamId)) as TeamGoalieStarterContext;
+        const currentTeamGoalieIds = currentTeamGoalieIdsCache.get(teamDateKey(teamId)) as Set<number>;
         const lineComboPriorByGoalieId =
-          teamLineComboGoaliePriorCache.get(teamId) ?? new Map<number, number>();
+          teamLineComboGoaliePriorCache.get(teamDateKey(teamId)) ?? new Map<number, number>();
 
         const priorStartProbByGoalieId = new Map<number, number>();
         const confirmedStarterByGoalieId = new Map<number, boolean>();
@@ -5709,83 +4663,74 @@ export async function runProjectionV2ForDate(
         );
         const defendingTeamAbbrev = teamAbbreviationById.get(c.teamId) ?? null;
         const opponentTeamAbbrev = teamAbbreviationById.get(c.opponentTeamId) ?? null;
-        if (!teamStrengthPriorCache.has(c.teamId)) {
-          teamStrengthPriorCache.set(
-            c.teamId,
+        if (!teamStrengthPriorCache.has(teamDateKey(c.teamId))) {
+          teamStrengthPriorCache.set(teamDateKey(c.teamId),
             defendingTeamAbbrev
               ? await fetchTeamStrengthPrior(defendingTeamAbbrev, asOfDate)
               : null
           );
         }
-        if (!teamStrengthPriorCache.has(c.opponentTeamId)) {
-          teamStrengthPriorCache.set(
-            c.opponentTeamId,
+        if (!teamStrengthPriorCache.has(teamDateKey(c.opponentTeamId))) {
+          teamStrengthPriorCache.set(teamDateKey(c.opponentTeamId),
             opponentTeamAbbrev
               ? await fetchTeamStrengthPrior(opponentTeamAbbrev, asOfDate)
               : null
           );
         }
-        const defendingStrengthPrior = teamStrengthPriorCache.get(c.teamId) ?? null;
+        const defendingStrengthPrior = teamStrengthPriorCache.get(teamDateKey(c.teamId)) ?? null;
         const opponentStrengthPrior =
-          teamStrengthPriorCache.get(c.opponentTeamId) ?? null;
+          teamStrengthPriorCache.get(teamDateKey(c.opponentTeamId)) ?? null;
         const teamStrengthContextAdjustment = computeTeamStrengthContextAdjustment({
           defendingTeamPrior: defendingStrengthPrior,
           opponentTeamPrior: opponentStrengthPrior
         });
-        if (!teamFiveOnFiveProfileCache.has(c.teamId)) {
-          teamFiveOnFiveProfileCache.set(
-            c.teamId,
+        if (!teamFiveOnFiveProfileCache.has(teamDateKey(c.teamId))) {
+          teamFiveOnFiveProfileCache.set(teamDateKey(c.teamId),
             await fetchTeamFiveOnFiveProfile(c.teamId, asOfDate)
           );
         }
-        if (!teamFiveOnFiveProfileCache.has(c.opponentTeamId)) {
-          teamFiveOnFiveProfileCache.set(
-            c.opponentTeamId,
+        if (!teamFiveOnFiveProfileCache.has(teamDateKey(c.opponentTeamId))) {
+          teamFiveOnFiveProfileCache.set(teamDateKey(c.opponentTeamId),
             await fetchTeamFiveOnFiveProfile(c.opponentTeamId, asOfDate)
           );
         }
         const defendingFiveOnFiveProfile =
-          teamFiveOnFiveProfileCache.get(c.teamId) ?? null;
+          teamFiveOnFiveProfileCache.get(teamDateKey(c.teamId)) ?? null;
         const opponentFiveOnFiveProfile =
-          teamFiveOnFiveProfileCache.get(c.opponentTeamId) ?? null;
+          teamFiveOnFiveProfileCache.get(teamDateKey(c.opponentTeamId)) ?? null;
         const teamFiveOnFiveContextAdjustment =
           computeTeamFiveOnFiveContextAdjustment({
             defendingTeamProfile: defendingFiveOnFiveProfile,
             opponentTeamProfile: opponentFiveOnFiveProfile
           });
-        if (!teamNstExpectedGoalsCache.has(c.teamId)) {
-          teamNstExpectedGoalsCache.set(
-            c.teamId,
+        if (!teamNstExpectedGoalsCache.has(teamDateKey(c.teamId))) {
+          teamNstExpectedGoalsCache.set(teamDateKey(c.teamId),
             defendingTeamAbbrev
               ? await fetchTeamNstExpectedGoalsProfile(defendingTeamAbbrev, asOfDate)
               : null
           );
         }
-        if (!teamNstExpectedGoalsCache.has(c.opponentTeamId)) {
-          teamNstExpectedGoalsCache.set(
-            c.opponentTeamId,
+        if (!teamNstExpectedGoalsCache.has(teamDateKey(c.opponentTeamId))) {
+          teamNstExpectedGoalsCache.set(teamDateKey(c.opponentTeamId),
             opponentTeamAbbrev
               ? await fetchTeamNstExpectedGoalsProfile(opponentTeamAbbrev, asOfDate)
               : null
           );
         }
         const defendingNstExpectedGoalsProfile =
-          teamNstExpectedGoalsCache.get(c.teamId) ?? null;
+          teamNstExpectedGoalsCache.get(teamDateKey(c.teamId)) ?? null;
         const opponentNstExpectedGoalsProfile =
-          teamNstExpectedGoalsCache.get(c.opponentTeamId) ?? null;
+          teamNstExpectedGoalsCache.get(teamDateKey(c.opponentTeamId)) ?? null;
         const nstOpponentDangerAdjustment = computeNstOpponentDangerAdjustment({
           defendingTeamProfile: defendingNstExpectedGoalsProfile,
           opponentTeamProfile: opponentNstExpectedGoalsProfile
         });
-        if (!teamDefensiveEnvironmentCache.has(c.teamId)) {
-          teamDefensiveEnvironmentCache.set(
-            c.teamId,
+        if (!teamDefensiveEnvironmentCache.has(teamDateKey(c.teamId))) {
+          teamDefensiveEnvironmentCache.set(teamDateKey(c.teamId),
             await fetchTeamDefensiveEnvironment(c.teamId, asOfDate)
           );
         }
-        const defensiveEnv = teamDefensiveEnvironmentCache.get(
-          c.teamId
-        ) as TeamDefensiveEnvironment;
+        const defensiveEnv = teamDefensiveEnvironmentCache.get(teamDateKey(c.teamId)) as TeamDefensiveEnvironment;
         const teamSaAvg10 = defensiveEnv.avgShotsAgainstLast10;
         const teamSaAvg5 = defensiveEnv.avgShotsAgainstLast5;
         const trendAdj =
@@ -5801,26 +4746,22 @@ export async function runProjectionV2ForDate(
         );
         const baseShotsAgainst = Number(Math.max(0, adjustedBaseShotsAgainst).toFixed(3));
         const teamGoalsFor = teamGoalsByTeamId.get(c.teamId) ?? 0;
-        if (!teamOffenseEnvironmentCache.has(c.opponentTeamId)) {
-          teamOffenseEnvironmentCache.set(
-            c.opponentTeamId,
+        if (!teamOffenseEnvironmentCache.has(teamDateKey(c.opponentTeamId))) {
+          teamOffenseEnvironmentCache.set(teamDateKey(c.opponentTeamId),
             await fetchTeamOffenseEnvironment(c.opponentTeamId, asOfDate)
           );
         }
-        if (!teamRestDaysCache.has(c.teamId)) {
-          teamRestDaysCache.set(c.teamId, await fetchTeamRestDays(c.teamId, asOfDate));
+        if (!teamRestDaysCache.has(teamDateKey(c.teamId))) {
+          teamRestDaysCache.set(teamDateKey(c.teamId), await fetchTeamRestDays(c.teamId, asOfDate));
         }
-        if (!teamRestDaysCache.has(c.opponentTeamId)) {
-          teamRestDaysCache.set(
-            c.opponentTeamId,
+        if (!teamRestDaysCache.has(teamDateKey(c.opponentTeamId))) {
+          teamRestDaysCache.set(teamDateKey(c.opponentTeamId),
             await fetchTeamRestDays(c.opponentTeamId, asOfDate)
           );
         }
-        const opponentOffense = teamOffenseEnvironmentCache.get(
-          c.opponentTeamId
-        ) as TeamOffenseEnvironment;
-        const defendingRestDays = teamRestDaysCache.get(c.teamId) ?? null;
-        const opponentRestDays = teamRestDaysCache.get(c.opponentTeamId) ?? null;
+        const opponentOffense = teamOffenseEnvironmentCache.get(teamDateKey(c.opponentTeamId)) as TeamOffenseEnvironment;
+        const defendingRestDays = teamRestDaysCache.get(teamDateKey(c.teamId)) ?? null;
+        const opponentRestDays = teamRestDaysCache.get(teamDateKey(c.opponentTeamId)) ?? null;
         const opponentIsHome = c.opponentTeamId === game.homeTeamId;
 
         const oppShots10 = opponentOffense.avgShotsForLast10;
@@ -5886,9 +4827,9 @@ export async function runProjectionV2ForDate(
           });
         } else {
           const starterContext =
-            teamGoalieStarterContextCache.get(c.teamId) ??
+            teamGoalieStarterContextCache.get(teamDateKey(c.teamId)) ??
             (await fetchTeamGoalieStarterContext(c.teamId, asOfDate));
-          teamGoalieStarterContextCache.set(c.teamId, starterContext);
+          teamGoalieStarterContextCache.set(teamDateKey(c.teamId), starterContext);
           const opponentGoalsForRaw = teamGoalsByTeamId.get(c.opponentTeamId) ?? 0;
           const opponentGoalsFor = Number(
             Math.max(
@@ -5974,29 +4915,24 @@ export async function runProjectionV2ForDate(
         }
 
         if (selectedGoalieId == null) continue;
-        if (!goalieEvidenceCache.has(selectedGoalieId)) {
-          goalieEvidenceCache.set(
-            selectedGoalieId,
+        if (!goalieEvidenceCache.has(playerDateKey(selectedGoalieId))) {
+          goalieEvidenceCache.set(playerDateKey(selectedGoalieId),
             await fetchGoalieEvidence(selectedGoalieId, asOfDate)
           );
         }
-        if (!goalieWorkloadContextCache.has(selectedGoalieId)) {
-          goalieWorkloadContextCache.set(
-            selectedGoalieId,
+        if (!goalieWorkloadContextCache.has(playerDateKey(selectedGoalieId))) {
+          goalieWorkloadContextCache.set(playerDateKey(selectedGoalieId),
             await fetchGoalieWorkloadContext(selectedGoalieId, asOfDate)
           );
         }
-        if (!goalieRestSplitProfileCache.has(selectedGoalieId)) {
-          goalieRestSplitProfileCache.set(
-            selectedGoalieId,
+        if (!goalieRestSplitProfileCache.has(playerDateKey(selectedGoalieId))) {
+          goalieRestSplitProfileCache.set(playerDateKey(selectedGoalieId),
             await fetchGoalieRestSplitProfile(selectedGoalieId, asOfDate)
           );
         }
-        const evidence = goalieEvidenceCache.get(selectedGoalieId) as GoalieEvidence;
-        const workload = goalieWorkloadContextCache.get(
-          selectedGoalieId
-        ) as GoalieWorkloadContext;
-        const restSplitProfile = goalieRestSplitProfileCache.get(selectedGoalieId) ?? null;
+        const evidence = goalieEvidenceCache.get(playerDateKey(selectedGoalieId)) as GoalieEvidence;
+        const workload = goalieWorkloadContextCache.get(playerDateKey(selectedGoalieId)) as GoalieWorkloadContext;
+        const restSplitProfile = goalieRestSplitProfileCache.get(playerDateKey(selectedGoalieId)) ?? null;
         const workloadSavePctPenalty = computeWorkloadSavePctPenalty(workload);
         const restSplitSavePctAdjustment = computeGoalieRestSplitSavePctAdjustment({
           profile: restSplitProfile,
@@ -6024,32 +4960,25 @@ export async function runProjectionV2ForDate(
 
         const scenarioProjections: StarterScenarioProjection[] = [];
         for (const scenario of topStarterScenarios) {
-          if (!goalieEvidenceCache.has(scenario.goalieId)) {
-            goalieEvidenceCache.set(
-              scenario.goalieId,
+          if (!goalieEvidenceCache.has(playerDateKey(scenario.goalieId))) {
+            goalieEvidenceCache.set(playerDateKey(scenario.goalieId),
               await fetchGoalieEvidence(scenario.goalieId, asOfDate)
             );
           }
-          if (!goalieWorkloadContextCache.has(scenario.goalieId)) {
-            goalieWorkloadContextCache.set(
-              scenario.goalieId,
+          if (!goalieWorkloadContextCache.has(playerDateKey(scenario.goalieId))) {
+            goalieWorkloadContextCache.set(playerDateKey(scenario.goalieId),
               await fetchGoalieWorkloadContext(scenario.goalieId, asOfDate)
             );
           }
-          if (!goalieRestSplitProfileCache.has(scenario.goalieId)) {
-            goalieRestSplitProfileCache.set(
-              scenario.goalieId,
+          if (!goalieRestSplitProfileCache.has(playerDateKey(scenario.goalieId))) {
+            goalieRestSplitProfileCache.set(playerDateKey(scenario.goalieId),
               await fetchGoalieRestSplitProfile(scenario.goalieId, asOfDate)
             );
           }
-          const scenarioEvidence = goalieEvidenceCache.get(
-            scenario.goalieId
-          ) as GoalieEvidence;
-          const scenarioWorkload = goalieWorkloadContextCache.get(
-            scenario.goalieId
-          ) as GoalieWorkloadContext;
+          const scenarioEvidence = goalieEvidenceCache.get(playerDateKey(scenario.goalieId)) as GoalieEvidence;
+          const scenarioWorkload = goalieWorkloadContextCache.get(playerDateKey(scenario.goalieId)) as GoalieWorkloadContext;
           const scenarioRestSplitProfile =
-            goalieRestSplitProfileCache.get(scenario.goalieId) ?? null;
+            goalieRestSplitProfileCache.get(playerDateKey(scenario.goalieId)) ?? null;
           const scenarioWorkloadPenalty =
             computeWorkloadSavePctPenalty(scenarioWorkload);
           const scenarioRestSplitAdjustment =
@@ -6135,8 +5064,8 @@ export async function runProjectionV2ForDate(
           scenarioProjections,
           blendedProjection
         });
-        const defendingTeamScalars = teamHorizonScalarsCache.get(c.teamId) ?? [1];
-        const opponentTeamScalars = teamHorizonScalarsCache.get(c.opponentTeamId) ?? [1];
+        const defendingTeamScalars = teamHorizonScalarsCache.get(teamDateKey(c.teamId)) ?? [1];
+        const opponentTeamScalars = teamHorizonScalarsCache.get(teamDateKey(c.opponentTeamId)) ?? [1];
         const goalieHorizonScalars = Array.from({ length: horizonGames }, (_, idx) => {
           const d = defendingTeamScalars[idx] ?? 1;
           const o = opponentTeamScalars[idx] ?? 1;

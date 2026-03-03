@@ -13,6 +13,10 @@
 - `web/lib/projections/utils/collection-utils.ts` - Extracted collection helpers for latest-by-player and normalized numeric-array merges.
 - `web/lib/projections/utils/projection-metadata-builders.ts` - Typed builders for skater/goalie uncertainty metadata and starter-model metadata assembly.
 - `web/lib/projections/queries/*.ts` - Supabase data-access layer and run lifecycle query helpers.
+- `web/lib/projections/queries/skater-queries.ts` - Extracted skater fetch paths (rolling metrics, deployment priors, shot/on-ice profiles, sustainability trend bands).
+- `web/lib/projections/queries/goalie-queries.ts` - Extracted goalie/starter-context fetch paths and opponent goalie context lookups.
+- `web/lib/projections/queries/team-context-queries.ts` - Extracted team context/prior/environment fetchers used by skater and goalie stages.
+- `web/lib/projections/queries/run-lifecycle-queries.ts` - Extracted run lifecycle persistence helpers (`createRun`, `finalizeRun`) for `forge_runs` semantics.
 - `web/lib/projections/calculators/*.ts` - Extracted skater/goalie/team/scenario calculators.
 - `web/pages/api/v1/db/run-projection-v2.ts` - API route must keep behavior and endpoint name, but update runner import path.
 - `fix_terminal.sh` - Hardcoded source path currently points to old file name.
@@ -51,10 +55,10 @@
   - [x] 3.4 Replace large inline uncertainty/starter metadata object assembly with typed builder helpers. [Deps: 3.1, 3.2, 3.3] [Files: `web/lib/projections/utils/*` or `web/lib/projections/calculators/*`] [AC: metadata key set and shape are byte-for-byte equivalent in parity outputs]
 
 - [ ] 4.0 Phase 4 - Extract Query Layer And Preserve Run Lifecycle Contracts
-  - [ ] 4.1 Create `web/lib/projections/queries/skater-queries.ts` for skater fetch paths currently embedded in monolith. [Deps: 3.4] [Files: `web/lib/projections/queries/skater-queries.ts`] [AC: same filtering, joins, and fallback behavior as baseline]
-  - [ ] 4.2 Create `web/lib/projections/queries/goalie-queries.ts` and `team-context-queries.ts` for goalie/team context access. [Deps: 3.4] [Files: `web/lib/projections/queries/goalie-queries.ts`, `web/lib/projections/queries/team-context-queries.ts`] [AC: no change in eligible-record selection]
-  - [ ] 4.3 Create `web/lib/projections/queries/run-lifecycle-queries.ts` for `createRun`/`finalizeRun` and related persistence lifecycle helpers. [Deps: 3.4] [Files: `web/lib/projections/queries/run-lifecycle-queries.ts`] [AC: `forge_runs` writes preserve status fields, timestamps, and error handling semantics]
-  - [ ] 4.4 Add safe memoization boundaries by `(teamId, asOfDate)` and `(playerId, asOfDate)` where PRD marks as optimization-safe, without changing result order/content. [Deps: 4.1, 4.2] [Files: query modules/orchestrator wiring] [AC: deterministic output parity retained; repeated fetch overhead reduced or equal]
+  - [x] 4.1 Create `web/lib/projections/queries/skater-queries.ts` for skater fetch paths currently embedded in monolith. [Deps: 3.4] [Files: `web/lib/projections/queries/skater-queries.ts`] [AC: same filtering, joins, and fallback behavior as baseline]
+  - [x] 4.2 Create `web/lib/projections/queries/goalie-queries.ts` and `team-context-queries.ts` for goalie/team context access. [Deps: 3.4] [Files: `web/lib/projections/queries/goalie-queries.ts`, `web/lib/projections/queries/team-context-queries.ts`] [AC: no change in eligible-record selection]
+  - [x] 4.3 Create `web/lib/projections/queries/run-lifecycle-queries.ts` for `createRun`/`finalizeRun` and related persistence lifecycle helpers. [Deps: 3.4] [Files: `web/lib/projections/queries/run-lifecycle-queries.ts`] [AC: `forge_runs` writes preserve status fields, timestamps, and error handling semantics]
+  - [x] 4.4 Add safe memoization boundaries by `(teamId, asOfDate)` and `(playerId, asOfDate)` where PRD marks as optimization-safe, without changing result order/content. [Deps: 4.1, 4.2] [Files: query modules/orchestrator wiring] [AC: deterministic output parity retained; repeated fetch overhead reduced or equal]
 
 - [ ] 5.0 Phase 5 - Extract Calculators And Recompose Orchestrator Stages
   - [ ] 5.1 Extract skater adjustment calculators into `web/lib/projections/calculators/skater-adjustments.ts`. [Deps: 4.4] [Files: `web/lib/projections/calculators/skater-adjustments.ts`] [AC: rounding points and clamps exactly preserved]
