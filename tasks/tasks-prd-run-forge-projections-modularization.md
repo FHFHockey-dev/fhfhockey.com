@@ -54,7 +54,7 @@
   - [x] 3.3 Extract collection helpers (latest-by-player, merge/reconcile helpers) into `web/lib/projections/utils/collection-utils.ts`. [Deps: 2.4] [Files: `web/lib/projections/utils/collection-utils.ts`] [AC: duplicate-resolution behavior matches baseline fixtures]
   - [x] 3.4 Replace large inline uncertainty/starter metadata object assembly with typed builder helpers. [Deps: 3.1, 3.2, 3.3] [Files: `web/lib/projections/utils/*` or `web/lib/projections/calculators/*`] [AC: metadata key set and shape are byte-for-byte equivalent in parity outputs]
 
-- [ ] 4.0 Phase 4 - Extract Query Layer And Preserve Run Lifecycle Contracts
+- [x] 4.0 Phase 4 - Extract Query Layer And Preserve Run Lifecycle Contracts
   - [x] 4.1 Create `web/lib/projections/queries/skater-queries.ts` for skater fetch paths currently embedded in monolith. [Deps: 3.4] [Files: `web/lib/projections/queries/skater-queries.ts`] [AC: same filtering, joins, and fallback behavior as baseline]
   - [x] 4.2 Create `web/lib/projections/queries/goalie-queries.ts` and `team-context-queries.ts` for goalie/team context access. [Deps: 3.4] [Files: `web/lib/projections/queries/goalie-queries.ts`, `web/lib/projections/queries/team-context-queries.ts`] [AC: no change in eligible-record selection]
   - [x] 4.3 Create `web/lib/projections/queries/run-lifecycle-queries.ts` for `createRun`/`finalizeRun` and related persistence lifecycle helpers. [Deps: 3.4] [Files: `web/lib/projections/queries/run-lifecycle-queries.ts`] [AC: `forge_runs` writes preserve status fields, timestamps, and error handling semantics]
