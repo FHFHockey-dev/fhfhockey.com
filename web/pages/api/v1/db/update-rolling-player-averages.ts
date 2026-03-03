@@ -11,9 +11,14 @@
  * - endDate (string, optional): Filter games up to this date (YYYY-MM-DD).
  * - resumeFrom (number, optional): Resume processing from a specific player ID (exclusive). Useful for continuing interrupted batch jobs.
  * - fullRefresh (boolean, optional): If true, clears existing data for the target scope and reprocesses everything. Defaults to false.
+ * - fullRefreshMode (string, optional): Strategy for full refresh clear step.
+ *   - rpc_truncate (default): DB-side RPC truncates table quickly.
+ *   - overwrite_only: Skip pre-delete and rely on upsert overwrite.
+ *   - delete: Legacy chunked delete by player_id range.
  * - deleteChunkSize (number, optional): Batch size for deleting rows during a full refresh. Defaults to 50000.
- * - playerConcurrency (number, optional): Number of players to process in parallel. Defaults to 1 (or higher in full refresh mode).
- * - upsertBatchSize (number, optional): Batch size for upserts into rolling_player_game_metrics. Defaults to 500.
+ * - playerConcurrency (number, optional): Number of players to process in parallel. Defaults to 1 (4 in full refresh mode).
+ * - upsertBatchSize (number, optional): Batch size for upserts into rolling_player_game_metrics. Defaults to 500 (800 in full refresh mode).
+ * - upsertConcurrency (number, optional): Number of concurrent upsert requests. Defaults to 1.
  *
  * Example URLs:
  * - Process a single player: /api/v1/db/update-rolling-player-averages?playerId=8478402
@@ -32,6 +37,8 @@ import type { NextApiRequest, NextApiResponse } from "next";
 type ResponseBody = {
   message: string;
 };
+
+type FullRefreshMode = "rpc_truncate" | "overwrite_only" | "delete";
 
 function parseNumberParam(
   param: string | string[] | undefined
@@ -66,6 +73,22 @@ function parsePositiveInt(
   return parsed;
 }
 
+function parseFullRefreshMode(
+  param: string | string[] | undefined
+): FullRefreshMode | undefined {
+  const value = parseStringParam(param);
+  if (!value) return undefined;
+  const normalized = value.toLowerCase();
+  if (
+    normalized === "rpc_truncate" ||
+    normalized === "overwrite_only" ||
+    normalized === "delete"
+  ) {
+    return normalized;
+  }
+  return undefined;
+}
+
 async function handler(
   req: NextApiRequest,
   res: NextApiResponse<ResponseBody>
@@ -88,9 +111,11 @@ async function handler(
     const endDate = parseStringParam(req.query.endDate);
     const resumeFrom = parseNumberParam(req.query.resumeFrom);
     const fullRefresh = parseBooleanParam(req.query.fullRefresh);
+    const fullRefreshMode = parseFullRefreshMode(req.query.fullRefreshMode);
     const deleteChunkSize = parsePositiveInt(req.query.deleteChunkSize);
     const playerConcurrency = parsePositiveInt(req.query.playerConcurrency);
     const upsertBatchSize = parsePositiveInt(req.query.upsertBatchSize);
+    const upsertConcurrency = parsePositiveInt(req.query.upsertConcurrency);
 
     const { main } = await import(
       "lib/supabase/Upserts/fetchRollingPlayerAverages"
@@ -104,8 +129,10 @@ async function handler(
         startDate,
         endDate,
         fullRefresh,
+        fullRefreshMode,
         playerConcurrency,
-        upsertBatchSize
+        upsertBatchSize,
+        upsertConcurrency
       })
     );
     const timerLabel = `[update-rolling-player-averages] total ${Date.now()}`;
@@ -119,9 +146,11 @@ async function handler(
         endDate,
         resumePlayerId: resumeFrom,
         forceFullRefresh: fullRefresh,
+        fullRefreshMode,
         fullRefreshDeleteChunkSize: deleteChunkSize,
         playerConcurrency,
-        upsertBatchSize
+        upsertBatchSize,
+        upsertConcurrency
       });
     } finally {
       console.timeEnd(timerLabel);

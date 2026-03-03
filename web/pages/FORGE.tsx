@@ -675,8 +675,8 @@ const FORGEPage: NextPage = () => {
           <div className={styles.accuracyHeader}>
             <div>
               <h2>
-                Model Accuracy ({viewMode === "goalies" ? "Goalie" : "Skater"}, Last
-                30 Days)
+                Model Accuracy ({viewMode === "goalies" ? "Goalie" : "Skater"},
+                Last 30 Days)
               </h2>
               <p>
                 This line shows how close recent projections were to actual
@@ -751,7 +751,11 @@ const FORGEPage: NextPage = () => {
           <div className={styles.filterGroup}>
             <input
               type="text"
-              placeholder={viewMode === "goalies" ? "Search goalies..." : "Search players..."}
+              placeholder={
+                viewMode === "goalies"
+                  ? "Search goalies..."
+                  : "Search players..."
+              }
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className={styles.searchInput}
@@ -799,9 +803,9 @@ const FORGEPage: NextPage = () => {
 
         {!isLoading && !activeError && viewMode === "skaters" && (
           <div className={styles.grid}>
-            {filteredProjections.map((p) => (
+            {filteredProjections.map((p, index) => (
               <div
-                key={p.player_id}
+                key={`${p.player_id}-${index}`}
                 className={classNames(
                   styles.card,
                   getPositionClass(p.position)
@@ -868,9 +872,17 @@ const FORGEPage: NextPage = () => {
                           <li key={item.label}>
                             <span>{item.label}</span>
                             <span className={styles.uncertaintyValues}>
-                              <span>Floor {formatUncertaintyValue(item.value?.p10)}</span>
-                              <span>Typical {formatUncertaintyValue(item.value?.p50)}</span>
-                              <span>Ceiling {formatUncertaintyValue(item.value?.p90)}</span>
+                              <span>
+                                Floor {formatUncertaintyValue(item.value?.p10)}
+                              </span>
+                              <span>
+                                Typical{" "}
+                                {formatUncertaintyValue(item.value?.p50)}
+                              </span>
+                              <span>
+                                Ceiling{" "}
+                                {formatUncertaintyValue(item.value?.p90)}
+                              </span>
                             </span>
                           </li>
                         ))}
@@ -885,8 +897,13 @@ const FORGEPage: NextPage = () => {
         {!isLoading && !activeError && viewMode === "goalies" && (
           <>
             {goalieGameStripGames.length > 0 && (
-              <section className={styles.goalieGameStrip} aria-label="Goalie game ticker">
-                <h3>Today's Slate ({goalieGameStripData?.dateUsed ?? "N/A"})</h3>
+              <section
+                className={styles.goalieGameStrip}
+                aria-label="Goalie game ticker"
+              >
+                <h3>
+                  Today's Slate ({goalieGameStripData?.dateUsed ?? "N/A"})
+                </h3>
                 <div className={styles.goalieGameStripTrack}>
                   {goalieGameStripGames.map((game) => {
                     const home = Object.values(teamsInfo).find(
@@ -974,7 +991,9 @@ const FORGEPage: NextPage = () => {
             <section className={styles.goalieDisclosure}>
               <h3>Goalie Model Disclosure</h3>
               <div className={styles.disclosureMeta}>
-                <span>Model: {goalieApiMeta.modelVersion ?? "Unavailable"}</span>
+                <span>
+                  Model: {goalieApiMeta.modelVersion ?? "Unavailable"}
+                </span>
                 <span>
                   Starter scenarios:{" "}
                   {goalieApiMeta.scenarioCount != null
@@ -990,146 +1009,160 @@ const FORGEPage: NextPage = () => {
               </div>
               <ul>
                 <li>
-                  Starter probabilities are model estimates, not confirmed lineup locks.
+                  Starter probabilities are model estimates, not confirmed
+                  lineup locks.
                 </li>
                 <li>
-                  Public data cannot fully capture pre-shot movement, traffic/screening, or coaching intent.
+                  Public data cannot fully capture pre-shot movement,
+                  traffic/screening, or coaching intent.
                 </li>
                 <li>
-                  Calibration hints summarize recent historical performance and do not guarantee single-game outcomes.
+                  Calibration hints summarize recent historical performance and
+                  do not guarantee single-game outcomes.
                 </li>
                 <li>
-                  Back-to-back, recency, and opponent context are heuristic signals and can be overridden by late news.
+                  Back-to-back, recency, and opponent context are heuristic
+                  signals and can be overridden by late news.
                 </li>
               </ul>
               {goalieApiMeta.diagnosticsNotes.length > 0 && (
                 <p className={styles.disclosureNotes}>
-                  Diagnostics: {goalieApiMeta.diagnosticsNotes.slice(0, 2).join(" | ")}
+                  Diagnostics:{" "}
+                  {goalieApiMeta.diagnosticsNotes.slice(0, 2).join(" | ")}
                 </p>
               )}
             </section>
 
             <div className={styles.grid}>
-              {filteredGoalies.map((g) => {
-              const volatilityBadge = getVolatilityClass(g.volatility_index);
-              const riskBadge = getRiskClass(g.blowup_risk);
-              return (
-                <div
-                  key={g.goalie_id}
-                  className={classNames(styles.card, styles["pos-G"])}
-                >
-                <h2>{g.goalie_name}</h2>
-                <p>
-                  G - {g.team_abbreviation || g.team_name} vs {g.opponent_team_abbreviation || g.opponent_team_name}
-                </p>
-                <ul>
-                  <li>
-                    <span>Starter Prob</span>
-                    <span>{formatPercent(g.starter_probability)}</span>
-                  </li>
-                  <li>
-                    <span>Saves</span>
-                    <span>{g.proj_saves?.toFixed(2)}</span>
-                  </li>
-                  <li>
-                    <span>GA</span>
-                    <span>{g.proj_goals_allowed?.toFixed(2)}</span>
-                  </li>
-                  <li>
-                    <span>Win Prob</span>
-                    <span>{formatPercent(g.proj_win_prob)}</span>
-                  </li>
-                  <li>
-                    <span>SO Prob</span>
-                    <span>{formatPercent(g.proj_shutout_prob)}</span>
-                  </li>
-                  <li>
-                    <span>Modeled Sv%</span>
-                    <span>{formatPercent(g.modeled_save_pct)}</span>
-                  </li>
-                </ul>
-
-                <div className={styles.goalieMetaRow}>
-                  <span
-                    title="Quality tier summarizes modeled goalie performance level versus league baseline."
+              {filteredGoalies.map((g, index) => {
+                const volatilityBadge = getVolatilityClass(g.volatility_index);
+                const riskBadge = getRiskClass(g.blowup_risk);
+                return (
+                  <div
+                    key={`${g.goalie_id}-${index}`}
+                    className={classNames(styles.card, styles["pos-G"])}
                   >
-                    {g.quality_tier ?? "--"}
-                  </span>
-                  <span
-                    title="Reliability tier summarizes expected consistency of goalie outcomes."
-                  >
-                    {g.reliability_tier ?? "--"}
-                  </span>
-                  <span
-                    className={classNames(
-                      styles.indicatorBadge,
-                      getConfidenceBadgeClass(g.confidence_tier)
-                    )}
-                    title="Confidence tier indicates model confidence level based on evidence sample size and stability."
-                  >
-                    Confidence: {g.confidence_tier ?? "--"}
-                  </span>
-                </div>
-                <div className={styles.goalieMetaRow}>
-                  <span
-                    className={classNames(
-                      styles.indicatorBadge,
-                      volatilityBadge.className
-                    )}
-                    title={volatilityBadge.tooltip}
-                  >
-                    Volatility: {volatilityBadge.label}
-                  </span>
-                  <span
-                    className={classNames(
-                      styles.indicatorBadge,
-                      riskBadge.className
-                    )}
-                    title={`${riskBadge.tooltip} (${formatPercent(g.blowup_risk)})`}
-                  >
-                    Risk: {riskBadge.label}
-                  </span>
-                  <span>Call: {g.recommendation ?? "--"}</span>
-                </div>
-
-                <div className={styles.starterDrivers}>
-                  <h3>Starter Confidence Drivers</h3>
-                  <ul>
-                    {getStarterDriverRows(g).map((driver) => (
-                      <li key={driver.label}>
-                        <span>{driver.label}</span>
-                        <strong>{driver.value}</strong>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                {g.uncertainty && (
-                  <div className={styles.uncertainty}>
-                    <div className={styles.uncertaintyHeader}>
-                      <h3>Uncertainty Range (Floor / Typical / Ceiling)</h3>
-                    </div>
+                    <h2>{g.goalie_name}</h2>
+                    <p>
+                      G - {g.team_abbreviation || g.team_name} vs{" "}
+                      {g.opponent_team_abbreviation || g.opponent_team_name}
+                    </p>
                     <ul>
-                      {[
-                        { label: "Saves", value: g.uncertainty.saves },
-                        { label: "Goals Allowed", value: g.uncertainty.goals_allowed }
-                      ]
-                        .filter((item) => item.value)
-                        .map((item) => (
-                          <li key={item.label}>
-                            <span>{item.label}</span>
-                            <span className={styles.uncertaintyValues}>
-                              <span>Floor {formatUncertaintyValue(item.value?.p10)}</span>
-                              <span>Typical {formatUncertaintyValue(item.value?.p50)}</span>
-                              <span>Ceiling {formatUncertaintyValue(item.value?.p90)}</span>
-                            </span>
+                      <li>
+                        <span>Starter Prob</span>
+                        <span>{formatPercent(g.starter_probability)}</span>
+                      </li>
+                      <li>
+                        <span>Saves</span>
+                        <span>{g.proj_saves?.toFixed(2)}</span>
+                      </li>
+                      <li>
+                        <span>GA</span>
+                        <span>{g.proj_goals_allowed?.toFixed(2)}</span>
+                      </li>
+                      <li>
+                        <span>Win Prob</span>
+                        <span>{formatPercent(g.proj_win_prob)}</span>
+                      </li>
+                      <li>
+                        <span>SO Prob</span>
+                        <span>{formatPercent(g.proj_shutout_prob)}</span>
+                      </li>
+                      <li>
+                        <span>Modeled Sv%</span>
+                        <span>{formatPercent(g.modeled_save_pct)}</span>
+                      </li>
+                    </ul>
+
+                    <div className={styles.goalieMetaRow}>
+                      <span title="Quality tier summarizes modeled goalie performance level versus league baseline.">
+                        {g.quality_tier ?? "--"}
+                      </span>
+                      <span title="Reliability tier summarizes expected consistency of goalie outcomes.">
+                        {g.reliability_tier ?? "--"}
+                      </span>
+                      <span
+                        className={classNames(
+                          styles.indicatorBadge,
+                          getConfidenceBadgeClass(g.confidence_tier)
+                        )}
+                        title="Confidence tier indicates model confidence level based on evidence sample size and stability."
+                      >
+                        Confidence: {g.confidence_tier ?? "--"}
+                      </span>
+                    </div>
+                    <div className={styles.goalieMetaRow}>
+                      <span
+                        className={classNames(
+                          styles.indicatorBadge,
+                          volatilityBadge.className
+                        )}
+                        title={volatilityBadge.tooltip}
+                      >
+                        Volatility: {volatilityBadge.label}
+                      </span>
+                      <span
+                        className={classNames(
+                          styles.indicatorBadge,
+                          riskBadge.className
+                        )}
+                        title={`${riskBadge.tooltip} (${formatPercent(g.blowup_risk)})`}
+                      >
+                        Risk: {riskBadge.label}
+                      </span>
+                      <span>Call: {g.recommendation ?? "--"}</span>
+                    </div>
+
+                    <div className={styles.starterDrivers}>
+                      <h3>Starter Confidence Drivers</h3>
+                      <ul>
+                        {getStarterDriverRows(g).map((driver) => (
+                          <li key={driver.label}>
+                            <span>{driver.label}</span>
+                            <strong>{driver.value}</strong>
                           </li>
                         ))}
-                    </ul>
+                      </ul>
+                    </div>
+
+                    {g.uncertainty && (
+                      <div className={styles.uncertainty}>
+                        <div className={styles.uncertaintyHeader}>
+                          <h3>Uncertainty Range (Floor / Typical / Ceiling)</h3>
+                        </div>
+                        <ul>
+                          {[
+                            { label: "Saves", value: g.uncertainty.saves },
+                            {
+                              label: "Goals Allowed",
+                              value: g.uncertainty.goals_allowed
+                            }
+                          ]
+                            .filter((item) => item.value)
+                            .map((item) => (
+                              <li key={item.label}>
+                                <span>{item.label}</span>
+                                <span className={styles.uncertaintyValues}>
+                                  <span>
+                                    Floor{" "}
+                                    {formatUncertaintyValue(item.value?.p10)}
+                                  </span>
+                                  <span>
+                                    Typical{" "}
+                                    {formatUncertaintyValue(item.value?.p50)}
+                                  </span>
+                                  <span>
+                                    Ceiling{" "}
+                                    {formatUncertaintyValue(item.value?.p90)}
+                                  </span>
+                                </span>
+                              </li>
+                            ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            );
+                );
               })}
             </div>
           </>

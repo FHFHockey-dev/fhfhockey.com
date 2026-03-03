@@ -4,12 +4,40 @@ import { parseISO, subDays, formatISO } from "date-fns";
 import { teamsInfo } from "lib/teamsInfo";
 
 type StrengthState = "all" | "ev" | "pp" | "pk";
+type FullRefreshMode = "rpc_truncate" | "overwrite_only" | "delete";
 
 type RollingWindow = 3 | 5 | 10 | 20;
 
 const ROLLING_WINDOWS: RollingWindow[] = [3, 5, 10, 20];
 const MAX_RETRIES = 5;
 const RETRY_BASE_DELAY_MS = 1000;
+const RETRY_MAX_DELAY_MS = 30000;
+const TRANSIENT_GATEWAY_STATUSES = [502, 503, 504, 520, 522, 524];
+
+function getErrorMessage(error: unknown): string {
+  if (typeof error === "string") return error;
+  if (error && typeof error === "object" && "message" in error) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === "string") return message;
+  }
+  return String(error);
+}
+
+function isTransientGatewayError(error: unknown): boolean {
+  const message = getErrorMessage(error).toLowerCase();
+  if (
+    message.includes("bad gateway") ||
+    message.includes("gateway timeout") ||
+    message.includes("service unavailable") ||
+    message.includes("cloudflare") ||
+    message.includes("<!doctype html>")
+  ) {
+    return true;
+  }
+  return TRANSIENT_GATEWAY_STATUSES.some((status) =>
+    message.includes(` ${status}`) || message.includes(`code ${status}`)
+  );
+}
 
 function formatDuration(ms: number): string {
   const totalSeconds = Math.max(0, Math.floor(ms / 1000));
@@ -177,9 +205,40 @@ interface FetchOptions {
   endDate?: string;
   resumePlayerId?: number;
   forceFullRefresh?: boolean;
+  fullRefreshMode?: FullRefreshMode;
   fullRefreshDeleteChunkSize?: number;
   playerConcurrency?: number;
   upsertBatchSize?: number;
+  upsertConcurrency?: number;
+}
+
+function createConcurrencyLimiter(concurrency: number) {
+  let active = 0;
+  const queue: Array<() => void> = [];
+
+  const acquire = async () => {
+    if (active < concurrency) {
+      active += 1;
+      return;
+    }
+    await new Promise<void>((resolve) => queue.push(resolve));
+    active += 1;
+  };
+
+  const release = () => {
+    active = Math.max(active - 1, 0);
+    const next = queue.shift();
+    if (next) next();
+  };
+
+  return async function limit<T>(fn: () => Promise<T>): Promise<T> {
+    await acquire();
+    try {
+      return await fn();
+    } finally {
+      release();
+    }
+  };
 }
 
 interface WgoSkaterRow {
@@ -265,8 +324,12 @@ interface PowerPlayCombinationRow {
   unit: number | null;
 }
 
-const cachedPowerPlayCombos = new Map<number, PowerPlayCombinationRow>();
-const cachedLineCombos = new Map<number, LineCombinationRow>();
+const cachedPowerPlayCombos = new Map<string, PowerPlayCombinationRow>();
+const cachedLineCombosByGame = new Map<number, LineCombinationRow[]>();
+
+function getPowerPlayCacheKey(playerId: number, gameId: number): string {
+  return `${playerId}:${gameId}`;
+}
 
 interface PlayerGameData {
   playerId: number;
@@ -562,14 +625,27 @@ async function executeWithRetry<T>(
     } catch (error: any) {
       attempt += 1;
       const isLastAttempt = attempt >= MAX_RETRIES;
-      const message = error?.message ?? String(error);
+      const rawMessage = getErrorMessage(error);
+      const message =
+        rawMessage.length > 800
+          ? `${rawMessage.slice(0, 800)}... [truncated ${rawMessage.length - 800} chars]`
+          : rawMessage;
+      const isGatewayTransient = isTransientGatewayError(error);
       console.warn(
-        `[fetchRollingPlayerAverages] ${label} failed (attempt ${attempt}/${MAX_RETRIES}): ${message}`
+        `[fetchRollingPlayerAverages] ${label} failed (attempt ${attempt}/${MAX_RETRIES})${isGatewayTransient ? " [transient-gateway]" : ""}: ${message}`
       );
       if (isLastAttempt) {
         throw error;
       }
-      const waitMs = RETRY_BASE_DELAY_MS * Math.pow(2, attempt - 1);
+      const baseDelay = isGatewayTransient
+        ? RETRY_BASE_DELAY_MS * 5
+        : RETRY_BASE_DELAY_MS;
+      const exponential = baseDelay * Math.pow(2, attempt - 1);
+      const jitter = Math.floor(Math.random() * Math.min(baseDelay, 2000));
+      const waitMs = Math.min(exponential + jitter, RETRY_MAX_DELAY_MS);
+      console.info(
+        `[fetchRollingPlayerAverages] ${label} retrying in ${waitMs}ms`
+      );
       await delay(waitMs);
     }
   }
@@ -990,7 +1066,9 @@ async function fetchPowerPlayCombinations(
   if (gameIds.length === 0) return [];
   const rows: PowerPlayCombinationRow[] = [];
   const chunkSize = 100;
-  const missing = gameIds.filter((id) => !cachedPowerPlayCombos.has(id));
+  const missing = gameIds.filter(
+    (id) => !cachedPowerPlayCombos.has(getPowerPlayCacheKey(playerId, id))
+  );
   for (let i = 0; i < missing.length; i += chunkSize) {
     const chunk = missing.slice(i, i + chunkSize);
     const data = await executeWithRetry<PowerPlayCombinationRow[]>(
@@ -1008,11 +1086,16 @@ async function fetchPowerPlayCombinations(
       }
     );
     for (const row of data) {
-      cachedPowerPlayCombos.set(row.gameId, row);
+      cachedPowerPlayCombos.set(
+        getPowerPlayCacheKey(playerId, row.gameId),
+        row
+      );
     }
   }
   for (const gameId of gameIds) {
-    const cached = cachedPowerPlayCombos.get(gameId);
+    const cached = cachedPowerPlayCombos.get(
+      getPowerPlayCacheKey(playerId, gameId)
+    );
     if (cached) rows.push(cached);
   }
   return rows;
@@ -1024,7 +1107,7 @@ async function fetchLineCombinations(
   if (gameIds.length === 0) return [];
   const rows: LineCombinationRow[] = [];
   const chunkSize = 100;
-  const missing = gameIds.filter((id) => !cachedLineCombos.has(id));
+  const missing = gameIds.filter((id) => !cachedLineCombosByGame.has(id));
   for (let i = 0; i < missing.length; i += chunkSize) {
     const chunk = missing.slice(i, i + chunkSize);
     const data = await executeWithRetry<any[]>(
@@ -1038,20 +1121,27 @@ async function fetchLineCombinations(
         return data ?? [];
       }
     );
+    const grouped = new Map<number, LineCombinationRow[]>();
     for (const row of data) {
-      cachedLineCombos.set(row.gameId, {
+      const normalized: LineCombinationRow = {
         gameId: row.gameId,
         teamId: row.teamId,
         forwards: (row.forwards ?? []).map(Number),
         defensemen: (row.defensemen ?? []).map(Number),
         goalies: (row.goalies ?? []).map(Number)
-      });
+      };
+      const bucket = grouped.get(normalized.gameId) ?? [];
+      bucket.push(normalized);
+      grouped.set(normalized.gameId, bucket);
+    }
+    for (const gameId of chunk) {
+      cachedLineCombosByGame.set(gameId, grouped.get(gameId) ?? []);
     }
   }
 
   for (const gameId of gameIds) {
-    const cached = cachedLineCombos.get(gameId);
-    if (cached) rows.push(cached);
+    const cached = cachedLineCombosByGame.get(gameId);
+    if (cached?.length) rows.push(...cached);
   }
   return rows;
 }
@@ -1365,69 +1455,100 @@ export async function main(options: FetchOptions = {}): Promise<void> {
     options.endDate === undefined;
 
   if (options.forceFullRefresh) {
+    const requestedMode: FullRefreshMode = options.fullRefreshMode ?? "rpc_truncate";
     console.info(
-      "[fetchRollingPlayerAverages] Full refresh requested: clearing rolling_player_game_metrics and skipping auto-resume."
+      `[fetchRollingPlayerAverages] Full refresh requested: mode=${requestedMode}; skipping auto-resume.`
     );
-    try {
-      const chunkSize =
-        options.fullRefreshDeleteChunkSize &&
-        options.fullRefreshDeleteChunkSize > 0
-          ? options.fullRefreshDeleteChunkSize
-          : 50000;
-      let deleteProgressTotal: number | undefined;
-      try {
-        const { count, error: countError } = await supabase
-          .from("rolling_player_game_metrics")
-          .select("player_id", { count: "exact", head: true });
-        if (countError) throw countError;
-        deleteProgressTotal =
-          typeof count === "number" && count >= 0 ? count : undefined;
-      } catch (countErr: any) {
-        console.warn(
-          "[fetchRollingPlayerAverages] Could not fetch row count for delete progress:",
-          countErr?.message ?? countErr
-        );
-      }
-      const deleteProgress = createProgressLogger({
-        label: "rolling_player_game_metrics delete",
-        total: deleteProgressTotal,
-        minIntervalMs: 500
-      });
-      let deletedRows = 0;
+    let mode = requestedMode;
 
-      while (true) {
-        const { data: firstRow, error: firstErr } = await supabase
-          .from("rolling_player_game_metrics")
-          .select("player_id")
-          .order("player_id", { ascending: true })
-          .limit(1)
-          .maybeSingle();
-        if (firstErr) throw firstErr;
-        if (!firstRow?.player_id) break;
-        const lower = Number(firstRow.player_id);
-        const upper = lower + chunkSize - 1;
-        const { error, count } = await supabase
-          .from("rolling_player_game_metrics")
-          .delete({ count: "exact" })
-          .gte("player_id", lower)
-          .lte("player_id", upper);
-        if (error) throw error;
-        deletedRows += typeof count === "number" ? count : 0;
-        deleteProgress.update(
-          deletedRows,
-          `lastRange:${lower}-${upper} lastRows:${count ?? "?"}`
-        );
+    if (mode === "rpc_truncate") {
+      try {
+        await executeWithRetry("truncate rpc", async () => {
+          const { error } = await supabase.rpc(
+            "truncate_rolling_player_game_metrics"
+          );
+          if (error) throw error;
+        });
         console.info(
-          `[fetchRollingPlayerAverages] Cleared chunk player_id ${lower}-${upper}, rows:${count}`
+          "[fetchRollingPlayerAverages] RPC truncate completed for rolling_player_game_metrics."
         );
-        // small pause to reduce lock contention
-        await delay(20);
+      } catch (err: any) {
+        console.warn(
+          "[fetchRollingPlayerAverages] RPC truncate failed; falling back to overwrite-only for this run.",
+          err?.message ?? err
+        );
+        mode = "overwrite_only";
       }
-      deleteProgress.finish(deletedRows, "delete phase complete");
-    } catch (err: any) {
-      console.warn(
-        "[fetchRollingPlayerAverages] Failed to clear rolling_player_game_metrics; proceeding with full recompute + upsert overwrite instead.",
-        err?.message ?? err
+    }
+
+    if (mode === "delete") {
+      try {
+        const chunkSize =
+          options.fullRefreshDeleteChunkSize &&
+          options.fullRefreshDeleteChunkSize > 0
+            ? options.fullRefreshDeleteChunkSize
+            : 50000;
+        let deleteProgressTotal: number | undefined;
+        try {
+          const { count, error: countError } = await supabase
+            .from("rolling_player_game_metrics")
+            .select("player_id", { count: "exact", head: true });
+          if (countError) throw countError;
+          deleteProgressTotal =
+            typeof count === "number" && count >= 0 ? count : undefined;
+        } catch (countErr: any) {
+          console.warn(
+            "[fetchRollingPlayerAverages] Could not fetch row count for delete progress:",
+            countErr?.message ?? countErr
+          );
+        }
+        const deleteProgress = createProgressLogger({
+          label: "rolling_player_game_metrics delete",
+          total: deleteProgressTotal,
+          minIntervalMs: 500
+        });
+        let deletedRows = 0;
+
+        while (true) {
+          const { data: firstRow, error: firstErr } = await supabase
+            .from("rolling_player_game_metrics")
+            .select("player_id")
+            .order("player_id", { ascending: true })
+            .limit(1)
+            .maybeSingle();
+          if (firstErr) throw firstErr;
+          if (!firstRow?.player_id) break;
+          const lower = Number(firstRow.player_id);
+          const upper = lower + chunkSize - 1;
+          const { error, count } = await supabase
+            .from("rolling_player_game_metrics")
+            .delete({ count: "exact" })
+            .gte("player_id", lower)
+            .lte("player_id", upper);
+          if (error) throw error;
+          deletedRows += typeof count === "number" ? count : 0;
+          deleteProgress.update(
+            deletedRows,
+            `lastRange:${lower}-${upper} lastRows:${count ?? "?"}`
+          );
+          console.info(
+            `[fetchRollingPlayerAverages] Cleared chunk player_id ${lower}-${upper}, rows:${count}`
+          );
+          // small pause to reduce lock contention
+          await delay(20);
+        }
+        deleteProgress.finish(deletedRows, "delete phase complete");
+      } catch (err: any) {
+        console.warn(
+          "[fetchRollingPlayerAverages] Legacy delete mode failed; proceeding with overwrite-only for this run.",
+          err?.message ?? err
+        );
+      }
+    }
+
+    if (mode === "overwrite_only") {
+      console.info(
+        "[fetchRollingPlayerAverages] Overwrite-only mode: skipping pre-delete; existing rows will be updated via upsert."
       );
     }
   } else if (resumePlayerId === undefined && autoResumeEnabled) {
@@ -1470,18 +1591,23 @@ export async function main(options: FetchOptions = {}): Promise<void> {
     filteredPlayerIds.length
   );
 
-  const defaultConcurrency = options.forceFullRefresh ? 6 : 1;
+  const defaultConcurrency = options.forceFullRefresh ? 4 : 1;
   const playerConcurrency = Math.min(
     Math.max(options.playerConcurrency ?? defaultConcurrency, 1),
     16
   );
+  const upsertConcurrency = Math.min(
+    Math.max(options.upsertConcurrency ?? 1, 1),
+    4
+  );
   const batchSize = Math.min(
-    Math.max(options.upsertBatchSize ?? (options.forceFullRefresh ? 1500 : 500), 1),
+    Math.max(options.upsertBatchSize ?? (options.forceFullRefresh ? 400 : 500), 1),
     5000
   );
+  const upsertLimit = createConcurrencyLimiter(upsertConcurrency);
   console.info(
     "[fetchRollingPlayerAverages] Execution settings",
-    JSON.stringify({ playerConcurrency, batchSize })
+    JSON.stringify({ playerConcurrency, upsertConcurrency, batchSize })
   );
 
   let rowsUpserted = 0;
@@ -1516,18 +1642,20 @@ export async function main(options: FetchOptions = {}): Promise<void> {
 
         for (let i = 0; i < rows.length; i += batchSize) {
           const batch = rows.slice(i, i + batchSize);
-          await executeWithRetry(
-            `upsert player:${playerId} batch:${i / batchSize}`,
-            async () => {
-              const { error } = await supabase
-                .from("rolling_player_game_metrics")
-                .upsert(batch, {
-                  onConflict: "player_id,game_date,strength_state"
-                });
-              if (error) {
-                throw error;
+          await upsertLimit(async () =>
+            executeWithRetry(
+              `upsert player:${playerId} batch:${i / batchSize}`,
+              async () => {
+                const { error } = await supabase
+                  .from("rolling_player_game_metrics")
+                  .upsert(batch, {
+                    onConflict: "player_id,game_date,strength_state"
+                  });
+                if (error) {
+                  throw error;
+                }
               }
-            }
+            )
           );
           rowsUpserted += batch.length;
         }

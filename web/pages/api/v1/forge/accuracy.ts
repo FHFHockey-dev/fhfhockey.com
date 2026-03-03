@@ -57,6 +57,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }))
       .reverse();
 
+    if (series.length === 0 || series.every((s) => s.accuracy === 0)) {
+      throw new Error("No valid accuracy data available");
+    }
+
     return res.status(200).json({
       durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
       scope: q.scope,

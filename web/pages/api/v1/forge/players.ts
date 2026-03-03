@@ -4,22 +4,79 @@ import supabase from "lib/supabase/server";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
 import { requireLatestSucceededRunId } from "pages/api/v1/projections/_helpers";
 
-async function fetchFallbackRunWithPlayerData(
-  targetDate: string
-): Promise<{ runId: string; asOfDate: string } | null> {
+async function fetchCurrentSeasonIdForDate(asOfDate: string): Promise<number> {
   if (!supabase) throw new Error("Supabase server client not available");
+  const asOfTimestamp = `${asOfDate}T23:59:59.999Z`;
   const { data, error } = await supabase
-    .from("forge_player_projections")
-    .select("run_id,as_of_date")
-    .lte("as_of_date", targetDate)
-    .order("as_of_date", { ascending: false })
+    .from("seasons")
+    .select("id")
+    .lte("startDate", asOfTimestamp)
+    .order("startDate", { ascending: false })
     .limit(1)
     .maybeSingle();
   if (error) throw error;
-  const runId = (data as any)?.run_id as string | undefined;
-  const asOfDate = (data as any)?.as_of_date as string | undefined;
-  if (!runId || !asOfDate) return null;
-  return { runId, asOfDate };
+  const seasonId = Number((data as any)?.id);
+  if (!Number.isFinite(seasonId)) {
+    throw new Error(`Unable to resolve season id for date=${asOfDate}`);
+  }
+  return seasonId;
+}
+
+async function fetchActiveRosterPlayerIdSet(
+  seasonId: number
+): Promise<Set<number>> {
+  if (!supabase) throw new Error("Supabase server client not available");
+  const { data, error } = await supabase
+    .from("rosters")
+    .select("playerId")
+    .eq("seasonId", seasonId);
+  if (error) throw error;
+  return new Set(
+    ((data ?? []) as Array<any>)
+      .map((row) => Number(row?.playerId))
+      .filter((id) => Number.isFinite(id))
+  );
+}
+
+async function fetchFallbackRunWithPlayerData(
+  targetDate: string,
+  horizonGames: number
+): Promise<{ runId: string; asOfDate: string } | null> {
+  if (!supabase) throw new Error("Supabase server client not available");
+  const { data: candidates, error: candidatesError } = await supabase
+    .from("forge_runs")
+    .select("run_id,as_of_date")
+    .eq("status", "succeeded")
+    .lte("as_of_date", targetDate)
+    .order("as_of_date", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(30);
+  if (candidatesError) throw candidatesError;
+
+  const rows = (candidates ?? []) as Array<{
+    run_id: string;
+    as_of_date: string;
+  }>;
+  for (const row of rows) {
+    const { count, error } = await supabase
+      .from("forge_player_projections")
+      .select("player_id", { count: "exact", head: true })
+      .eq("run_id", row.run_id)
+      .eq("horizon_games", horizonGames);
+    if (error) throw error;
+    if ((count ?? 0) > 0) {
+      return { runId: row.run_id, asOfDate: row.as_of_date };
+    }
+  }
+  return null;
+}
+
+function parseHorizonGames(value: string | string[] | undefined): number {
+  const raw = Array.isArray(value) ? value[0] : value;
+  const parsed = Number(raw ?? 1);
+  if (!Number.isFinite(parsed)) return 1;
+  const intValue = Math.floor(parsed);
+  return Math.max(1, Math.min(5, intValue));
 }
 
 export default async function handler(
@@ -37,6 +94,7 @@ export default async function handler(
 
     const dateParam = req.query.date as string | undefined;
     const targetDate = dateParam || new Date().toISOString().split("T")[0];
+    const horizonGames = parseHorizonGames(req.query.horizon);
     let resolvedDate = targetDate;
     let runId: string | null = null;
     let fallbackApplied = false;
@@ -77,7 +135,8 @@ export default async function handler(
       const { data, error } = await supabase
         .from("forge_player_projections")
         .select(selectQuery)
-        .eq("run_id", runId);
+        .eq("run_id", runId)
+        .eq("horizon_games", horizonGames);
 
       if (error) throw error;
       projectionsRaw = data ?? [];
@@ -85,7 +144,10 @@ export default async function handler(
 
     // 3. Fallback logic: If no run found OR run produced 0 players (e.g., no games), try finding the latest date with players
     if (!runId || projectionsRaw.length === 0) {
-      const fallback = await fetchFallbackRunWithPlayerData(targetDate);
+      const fallback = await fetchFallbackRunWithPlayerData(
+        targetDate,
+        horizonGames
+      );
 
       // Only switch if we found a fallback request
       if (fallback) {
@@ -98,7 +160,8 @@ export default async function handler(
           const { data, error } = await supabase
             .from("forge_player_projections")
             .select(selectQuery)
-            .eq("run_id", runId);
+            .eq("run_id", runId)
+            .eq("horizon_games", horizonGames);
 
           if (error) throw error;
           projectionsRaw = data ?? [];
@@ -113,6 +176,16 @@ export default async function handler(
           throw err;
         }
       }
+    }
+
+    const currentSeasonId = await fetchCurrentSeasonIdForDate(resolvedDate);
+    const activeRosterPlayerIds = await fetchActiveRosterPlayerIdSet(
+      currentSeasonId
+    );
+    if (activeRosterPlayerIds.size > 0) {
+      projectionsRaw = projectionsRaw.filter((row: any) =>
+        activeRosterPlayerIds.has(Number(row?.player_id))
+      );
     }
 
     const projections = projectionsRaw.map((row: any) => {
@@ -153,6 +226,7 @@ export default async function handler(
       runId,
       asOfDate: resolvedDate,
       requestedDate: targetDate,
+      horizonGames,
       fallbackApplied,
       data: projections
     });

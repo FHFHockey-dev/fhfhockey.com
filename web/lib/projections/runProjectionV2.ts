@@ -206,6 +206,33 @@ type SkaterScenarioMetadata = {
   }>;
 };
 
+type SustainabilityTrendBandRow = {
+  player_id: number;
+  snapshot_date: string;
+  metric_key: string;
+  window_code: string;
+  value: number | null;
+  ci_lower: number | null;
+  ci_upper: number | null;
+  n_eff: number | null;
+};
+
+type SkaterTrendAdjustment = {
+  metricKey: string;
+  windowCode: string;
+  snapshotDate: string;
+  value: number;
+  ciLower: number;
+  ciUpper: number;
+  nEff: number | null;
+  confidence: number;
+  signedDistance: number;
+  shotRateMultiplier: number;
+  goalRateMultiplier: number;
+  assistRateMultiplier: number;
+  uncertaintyVolatilityMultiplier: number;
+};
+
 function assertSupabase() {
   if (!supabase) throw new Error("Supabase server client not available");
 }
@@ -507,6 +534,71 @@ async function fetchFallbackSkaterIdsForTeam(
     .map(([playerId]) => playerId);
 }
 
+async function fetchCurrentSeasonIdForDate(asOfDate: string): Promise<number> {
+  assertSupabase();
+  const asOfTimestamp = `${asOfDate}T23:59:59.999Z`;
+  const { data, error } = await supabase
+    .from("seasons")
+    .select("id")
+    .lte("startDate", asOfTimestamp)
+    .order("startDate", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  const seasonId = Number((data as any)?.id);
+  if (!Number.isFinite(seasonId)) {
+    throw new Error(`Unable to resolve season id for as_of_date=${asOfDate}`);
+  }
+  return seasonId;
+}
+
+async function fetchActiveRosterSkaterIdsForTeamSeason(
+  teamId: number,
+  seasonId: number,
+  maxPlayers = SKATER_POOL_SUPPLEMENTAL_FETCH_COUNT
+): Promise<number[]> {
+  assertSupabase();
+  const { data, error } = await supabase
+    .from("rosters")
+    .select("playerId")
+    .eq("teamId", teamId)
+    .eq("seasonId", seasonId)
+    .order("playerId", { ascending: true })
+    .limit(Math.max(1, Math.floor(maxPlayers)));
+  if (error) throw error;
+
+  return Array.from(
+    new Set(
+      ((data ?? []) as Array<any>)
+        .map((row) => Number(row?.playerId))
+        .filter((id) => Number.isFinite(id))
+    )
+  );
+}
+
+export function constrainSkaterIdsToActiveRoster(args: {
+  candidateSkaterIds: number[];
+  activeRosterSkaterIds: number[];
+  fallbackCount?: number;
+}): number[] {
+  const fallbackCount = Number.isFinite(args.fallbackCount)
+    ? Math.max(1, Math.floor(Number(args.fallbackCount)))
+    : SKATER_POOL_TARGET_COUNT;
+  const activeSet = new Set(
+    args.activeRosterSkaterIds.filter((id) => Number.isFinite(id))
+  );
+  if (activeSet.size === 0) {
+    return Array.from(new Set(args.candidateSkaterIds)).filter((id) =>
+      Number.isFinite(id)
+    );
+  }
+  const constrained = Array.from(new Set(args.candidateSkaterIds)).filter((id) =>
+    activeSet.has(id)
+  );
+  if (constrained.length > 0) return constrained;
+  return Array.from(activeSet).slice(0, fallbackCount);
+}
+
 async function fetchTeamSkaterRoleHistory(
   teamId: number,
   asOfDate: string,
@@ -659,6 +751,84 @@ function daysBetweenDates(a: string, b: string): number {
 
 function sigmoid(x: number): number {
   return 1 / (1 + Math.exp(-x));
+}
+
+function parseDateOnly(value: string | null | undefined): string | null {
+  if (typeof value !== "string" || value.length === 0) return null;
+  return value.length >= 10 ? value.slice(0, 10) : null;
+}
+
+function computeSkaterTrendAdjustment(args: {
+  row: SustainabilityTrendBandRow;
+  asOfDate: string;
+}): SkaterTrendAdjustment | null {
+  const value = finiteOrNull(args.row.value);
+  const ciLower = finiteOrNull(args.row.ci_lower);
+  const ciUpper = finiteOrNull(args.row.ci_upper);
+  const snapshotDate = parseDateOnly(args.row.snapshot_date);
+  if (value == null || ciLower == null || ciUpper == null || !snapshotDate) {
+    return null;
+  }
+
+  const lower = Math.min(ciLower, ciUpper);
+  const upper = Math.max(ciLower, ciUpper);
+  const bandWidth = Math.max(upper - lower, 1e-4);
+  let signedDistance = 0;
+  if (value > upper) {
+    signedDistance = (value - upper) / bandWidth;
+  } else if (value < lower) {
+    signedDistance = -((lower - value) / bandWidth);
+  }
+  const boundedDistance = clamp(signedDistance, -2, 2);
+  if (Math.abs(boundedDistance) < 1e-6) {
+    return {
+      metricKey: args.row.metric_key,
+      windowCode: args.row.window_code,
+      snapshotDate,
+      value,
+      ciLower: lower,
+      ciUpper: upper,
+      nEff: finiteOrNull(args.row.n_eff),
+      confidence: 0,
+      signedDistance: 0,
+      shotRateMultiplier: 1,
+      goalRateMultiplier: 1,
+      assistRateMultiplier: 1,
+      uncertaintyVolatilityMultiplier: 1
+    };
+  }
+
+  const nEff = finiteOrNull(args.row.n_eff);
+  const nEffWeight = nEff == null ? 0.6 : clamp(nEff / 8, 0.35, 1);
+  const ageDays = Math.max(0, daysBetweenDates(args.asOfDate, snapshotDate));
+  const recencyWeight =
+    ageDays <= 3 ? 1 : ageDays >= 28 ? 0.35 : 1 - ((ageDays - 3) / 25) * 0.65;
+  const confidence = clamp(nEffWeight * recencyWeight, 0.2, 1);
+  const weightedSignal = boundedDistance * confidence;
+
+  return {
+    metricKey: args.row.metric_key,
+    windowCode: args.row.window_code,
+    snapshotDate,
+    value,
+    ciLower: lower,
+    ciUpper: upper,
+    nEff,
+    confidence: Number(confidence.toFixed(4)),
+    signedDistance: Number(weightedSignal.toFixed(4)),
+    shotRateMultiplier: Number(
+      clamp(1 + weightedSignal * 0.08, 0.88, 1.12).toFixed(4)
+    ),
+    goalRateMultiplier: Number(
+      clamp(1 + weightedSignal * 0.1, 0.86, 1.14).toFixed(4)
+    ),
+    assistRateMultiplier: Number(
+      clamp(1 + weightedSignal * 0.08, 0.88, 1.12).toFixed(4)
+    ),
+    uncertaintyVolatilityMultiplier: Number(
+      (1 + clamp(Math.abs(weightedSignal) * 0.45, 0, 0.55)).toFixed(4)
+    )
+  };
 }
 
 export type StarterContextForTest = TeamGoalieStarterContext;
@@ -857,6 +1027,13 @@ const SKATER_POOL_MIN_VALID_COUNT = 15;
 const SKATER_POOL_SUPPLEMENTAL_FETCH_COUNT = 24;
 const SKATER_POOL_EMERGENCY_MAX_SINGLE_TOI_SECONDS = 2100;
 const SKATER_POOL_EMERGENCY_MAX_AVG_TOI_SECONDS = 1200;
+const TREND_BAND_METRIC_PRIORITY = [
+  "fantasy_score",
+  "ixg_per_60",
+  "shots_per_60",
+  "points_per_60_5v5"
+] as const;
+const TREND_BAND_WINDOW_PRIORITY = ["l5", "l10"] as const;
 
 type ActiveSkaterFilterResult = {
   eligibleSkaterIds: number[];
@@ -3785,6 +3962,80 @@ async function fetchLatestSkaterOnIceContextProfiles(
   return profiles;
 }
 
+async function fetchLatestSkaterTrendAdjustments(
+  playerIds: number[],
+  asOfDate: string
+): Promise<Map<number, SkaterTrendAdjustment>> {
+  assertSupabase();
+  const uniquePlayerIds = Array.from(new Set(playerIds)).filter((id) =>
+    Number.isFinite(id)
+  );
+  if (uniquePlayerIds.length === 0) return new Map();
+
+  const { data, error } = await supabase
+    .from("sustainability_trend_bands")
+    .select(
+      "player_id,snapshot_date,metric_key,window_code,value,ci_lower,ci_upper,n_eff"
+    )
+    .in("player_id", uniquePlayerIds)
+    .in("metric_key", [...TREND_BAND_METRIC_PRIORITY])
+    .in("window_code", [...TREND_BAND_WINDOW_PRIORITY])
+    .lte("snapshot_date", asOfDate)
+    .order("snapshot_date", { ascending: false })
+    .limit(12000);
+  if (error) {
+    console.warn(
+      "Error fetching sustainability trend bands for projections:",
+      error
+    );
+    return new Map();
+  }
+
+  const metricPriority = new Map<string, number>(
+    TREND_BAND_METRIC_PRIORITY.map((metric, idx) => [metric, idx])
+  );
+  const windowPriority = new Map<string, number>(
+    TREND_BAND_WINDOW_PRIORITY.map((window, idx) => [window, idx])
+  );
+  const rowsByPlayer = new Map<number, SustainabilityTrendBandRow[]>();
+  for (const raw of (data ?? []) as unknown as SustainabilityTrendBandRow[]) {
+    const playerId = Number(raw.player_id);
+    if (!Number.isFinite(playerId)) continue;
+    if (!metricPriority.has(raw.metric_key)) continue;
+    if (!windowPriority.has(raw.window_code)) continue;
+    const rows = rowsByPlayer.get(playerId) ?? [];
+    rows.push(raw);
+    rowsByPlayer.set(playerId, rows);
+  }
+
+  const out = new Map<number, SkaterTrendAdjustment>();
+  for (const [playerId, rows] of rowsByPlayer.entries()) {
+    const chosen = rows.slice().sort((a, b) => {
+      const metricDelta =
+        (metricPriority.get(a.metric_key) ?? 99) -
+        (metricPriority.get(b.metric_key) ?? 99);
+      if (metricDelta !== 0) return metricDelta;
+      const windowDelta =
+        (windowPriority.get(a.window_code) ?? 99) -
+        (windowPriority.get(b.window_code) ?? 99);
+      if (windowDelta !== 0) return windowDelta;
+      const dateA = parseDateOnly(a.snapshot_date) ?? "";
+      const dateB = parseDateOnly(b.snapshot_date) ?? "";
+      return dateB.localeCompare(dateA);
+    })[0];
+    if (!chosen) continue;
+
+    const adjustment = computeSkaterTrendAdjustment({
+      row: chosen,
+      asOfDate
+    });
+    if (!adjustment) continue;
+    out.set(playerId, adjustment);
+  }
+
+  return out;
+}
+
 async function fetchOpponentGoalieContextForGame(args: {
   gameId: number;
   opponentTeamId: number;
@@ -3977,6 +4228,7 @@ export async function runProjectionV2ForDate(
 
   try {
     const horizonGames = clampHorizonGames(opts?.horizonGames ?? 1);
+    const currentSeasonId = await fetchCurrentSeasonIdForDate(asOfDate);
     const { data: games, error: gamesErr } = await supabase
       .from("games")
       .select("id,date,homeTeamId,awayTeamId")
@@ -3997,6 +4249,7 @@ export async function runProjectionV2ForDate(
 
     const playerAvailabilityMultiplier = new Map<number, number>();
     const availabilityEventByPlayer = new Map<number, RosterEventRow>();
+    const activeRosterSkaterIdsByTeamId = new Map<number, number[]>();
     const goalieEvidenceCache = new Map<number, GoalieEvidence>();
     const goalieOverrideByTeamId = new Map<
       number,
@@ -4163,6 +4416,19 @@ export async function runProjectionV2ForDate(
             ? [...(lc.forwards ?? []), ...(lc.defensemen ?? [])]
             : []
         ).filter((n) => typeof n === "number");
+        if (!activeRosterSkaterIdsByTeamId.has(teamId)) {
+          activeRosterSkaterIdsByTeamId.set(
+            teamId,
+            await fetchActiveRosterSkaterIdsForTeamSeason(
+              teamId,
+              currentSeasonId,
+              SKATER_POOL_SUPPLEMENTAL_FETCH_COUNT
+            )
+          );
+        }
+        const activeRosterSkaterIds =
+          activeRosterSkaterIdsByTeamId.get(teamId) ?? [];
+
         let usedLineComboFallback = false;
         let lineComboFallbackReason: "missing" | "hard_stale" | "empty" | null = null;
         let fallbackCandidateCount = 0;
@@ -4195,6 +4461,10 @@ export async function runProjectionV2ForDate(
             continue;
           }
         }
+        rawSkaterIds = constrainSkaterIdsToActiveRoster({
+          candidateSkaterIds: rawSkaterIds,
+          activeRosterSkaterIds
+        });
 
         let playerMetaById = await fetchPlayerMetaByIds(rawSkaterIds);
         let skaterRoleTags = buildSkaterRoleTags({
@@ -4235,9 +4505,9 @@ export async function runProjectionV2ForDate(
         let skaterPoolRecoveryPath:
           | "none"
           | "supplemental_fallback_union"
+          | "supplemental_fallback_plus_roster_union"
           | "missing_metrics_emergency_inclusion"
-          | "supplemental_plus_missing_metrics"
-          = "none";
+          | "supplemental_plus_missing_metrics" = "none";
         let skaterPoolRecoverySupplementalAdded = 0;
         let skaterPoolRecoveryEmergencyIncluded = 0;
 
@@ -4255,16 +4525,27 @@ export async function runProjectionV2ForDate(
             asOfDate,
             SKATER_POOL_SUPPLEMENTAL_FETCH_COUNT
           );
+          const supplementalRosterSkaterIds = activeRosterSkaterIds;
           const mergedRawSkaterIds = mergeSkaterCandidatePoolForRecovery({
             baseSkaterIds: rawSkaterIds,
-            supplementalSkaterIds: supplementalFallbackSkaterIds,
+            supplementalSkaterIds: [
+              ...supplementalFallbackSkaterIds,
+              ...supplementalRosterSkaterIds
+            ],
             targetCount: SKATER_POOL_SUPPLEMENTAL_FETCH_COUNT
           });
+          const mergedConstrainedRawSkaterIds = constrainSkaterIdsToActiveRoster({
+            candidateSkaterIds: mergedRawSkaterIds,
+            activeRosterSkaterIds,
+            fallbackCount: SKATER_POOL_SUPPLEMENTAL_FETCH_COUNT
+          });
           const baseUniqueCount = Array.from(new Set(rawSkaterIds)).length;
-          const mergedUniqueCount = Array.from(new Set(mergedRawSkaterIds)).length;
+          const mergedUniqueCount = Array.from(
+            new Set(mergedConstrainedRawSkaterIds)
+          ).length;
           if (mergedUniqueCount > baseUniqueCount) {
             const previousRawSkaterIds = new Set(rawSkaterIds);
-            rawSkaterIds = mergedRawSkaterIds;
+            rawSkaterIds = mergedConstrainedRawSkaterIds;
             skaterPoolRecoverySupplementalAdded = rawSkaterIds.filter(
               (id) => !previousRawSkaterIds.has(id)
             ).length;
@@ -4325,7 +4606,10 @@ export async function runProjectionV2ForDate(
             skaterIds = activeSkaterFilter.eligibleSkaterIds.filter(
               (playerId) => (playerAvailabilityMultiplier.get(playerId) ?? 1) > 0
             );
-            skaterPoolRecoveryPath = "supplemental_fallback_union";
+            skaterPoolRecoveryPath =
+              supplementalRosterSkaterIds.length > 0
+                ? "supplemental_fallback_plus_roster_union"
+                : "supplemental_fallback_union";
           }
         }
 
@@ -4498,6 +4782,8 @@ export async function runProjectionV2ForDate(
           skaterIds,
           asOfDate
         );
+        const trendAdjustmentByPlayerId =
+          await fetchLatestSkaterTrendAdjustments(skaterIds, asOfDate);
         metrics.data_quality.deployment_prior_profiles_found +=
           deploymentPriorByPlayerId.size;
         metrics.data_quality.shot_quality_profiles_found +=
@@ -4581,6 +4867,7 @@ export async function runProjectionV2ForDate(
             boundedSogPer60Pp: number;
             roleScenarios: SkaterRoleScenario[];
             roleScenarioTopProbability: number;
+            trendAdjustment: SkaterTrendAdjustment | null;
           }
         >();
         let roleScenarioPlayersModeled = 0;
@@ -4852,15 +5139,21 @@ export async function runProjectionV2ForDate(
             recencyMultiplier *
             roleStabilityMultiplier;
           if (availabilityMultiplier <= 0) continue;
+          const trendAdjustment =
+            trendAdjustmentByPlayerId.get(playerId) ?? null;
+          const trendShotMultiplier = trendAdjustment?.shotRateMultiplier ?? 1;
+          const trendGoalMultiplier = trendAdjustment?.goalRateMultiplier ?? 1;
+          const trendAssistMultiplier =
+            trendAdjustment?.assistRateMultiplier ?? 1;
           projected.set(playerId, {
             toiEs: boundedToiEs * availabilityMultiplier,
             toiPp: boundedToiPp * availabilityMultiplier,
-            shotsEs: shotsEs * availabilityMultiplier,
-            shotsPp: shotsPp * availabilityMultiplier,
-            goalRateEs,
-            goalRatePp,
-            assistRateEs,
-            assistRatePp,
+            shotsEs: shotsEs * availabilityMultiplier * trendShotMultiplier,
+            shotsPp: shotsPp * availabilityMultiplier * trendShotMultiplier,
+            goalRateEs: clamp(goalRateEs * trendGoalMultiplier, 0.025, 0.3),
+            goalRatePp: clamp(goalRatePp * trendGoalMultiplier, 0.04, 0.45),
+            assistRateEs: clamp(assistRateEs * trendAssistMultiplier, 0.2, 1.7),
+            assistRatePp: clamp(assistRatePp * trendAssistMultiplier, 0.3, 2),
             hitsRate: hitsPer60,
             blocksRate: blocksPer60,
             roleTag,
@@ -4933,7 +5226,8 @@ export async function runProjectionV2ForDate(
             boundedSogPer60Es: boundedUsage.sogPer60Es,
             boundedSogPer60Pp: boundedUsage.sogPer60Pp,
             roleScenarios,
-            roleScenarioTopProbability
+            roleScenarioTopProbability,
+            trendAdjustment
           });
         }
         if (roleScenarioPlayersModeled > 0) {
@@ -5282,7 +5576,8 @@ export async function runProjectionV2ForDate(
               assistsPp: s.assistsPp,
               shotsEs,
               shotsPp
-            }))
+            })),
+            p.trendAdjustment?.uncertaintyVolatilityMultiplier ?? 1
           );
           const scenarioMetadata = buildSkaterScenarioMetadata({
             scenarios: p.roleScenarios
@@ -5353,6 +5648,61 @@ export async function runProjectionV2ForDate(
                   latest_metric_date: p.latestMetricDate,
                   days_since_last_metric: p.daysSinceLastMetric,
                   recency_multiplier: Number(p.recencyMultiplier.toFixed(4))
+                },
+                trend_adjustment: {
+                  applied: Boolean(p.trendAdjustment),
+                  metric_key: p.trendAdjustment?.metricKey ?? null,
+                  window_code: p.trendAdjustment?.windowCode ?? null,
+                  snapshot_date: p.trendAdjustment?.snapshotDate ?? null,
+                  value:
+                    p.trendAdjustment != null
+                      ? Number(p.trendAdjustment.value.toFixed(6))
+                      : null,
+                  ci_lower:
+                    p.trendAdjustment != null
+                      ? Number(p.trendAdjustment.ciLower.toFixed(6))
+                      : null,
+                  ci_upper:
+                    p.trendAdjustment != null
+                      ? Number(p.trendAdjustment.ciUpper.toFixed(6))
+                      : null,
+                  n_eff: p.trendAdjustment?.nEff ?? null,
+                  confidence:
+                    p.trendAdjustment != null
+                      ? Number(p.trendAdjustment.confidence.toFixed(4))
+                      : null,
+                  signed_distance:
+                    p.trendAdjustment != null
+                      ? Number(p.trendAdjustment.signedDistance.toFixed(4))
+                      : null,
+                  multipliers: {
+                    shot_rate:
+                      p.trendAdjustment != null
+                        ? Number(
+                            p.trendAdjustment.shotRateMultiplier.toFixed(4)
+                          )
+                        : 1,
+                    goal_rate:
+                      p.trendAdjustment != null
+                        ? Number(
+                            p.trendAdjustment.goalRateMultiplier.toFixed(4)
+                          )
+                        : 1,
+                    assist_rate:
+                      p.trendAdjustment != null
+                        ? Number(
+                            p.trendAdjustment.assistRateMultiplier.toFixed(4)
+                          )
+                        : 1,
+                    uncertainty_volatility:
+                      p.trendAdjustment != null
+                        ? Number(
+                            p.trendAdjustment.uncertaintyVolatilityMultiplier.toFixed(
+                              4
+                            )
+                          )
+                        : 1
+                  }
                 },
                 role_continuity: p.roleContinuity
                   ? {

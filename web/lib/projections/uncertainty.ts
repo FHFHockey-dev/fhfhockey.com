@@ -86,6 +86,26 @@ function quantilesFromSamples(samples: number[]): {
   };
 }
 
+type QuantileTriple = {
+  p10: number;
+  p50: number;
+  p90: number;
+};
+
+function widenQuantiles(q: QuantileTriple, spreadMultiplier: number): QuantileTriple {
+  const mult = Math.max(0.75, Math.min(1.8, spreadMultiplier));
+  if (Math.abs(mult - 1) < 1e-6) return q;
+  const lowSpread = Math.max(0, q.p50 - q.p10);
+  const highSpread = Math.max(0, q.p90 - q.p50);
+  const p10 = clampNonNegative(q.p50 - lowSpread * mult);
+  const p90 = Math.max(q.p50, q.p50 + highSpread * mult);
+  return {
+    p10: round3(p10),
+    p50: round3(q.p50),
+    p90: round3(p90)
+  };
+}
+
 // Cheap approximation for Poisson quantiles (good enough for MVP uncertainty scaffolding).
 export function poissonQuantilesApprox(lambda: number): {
   p10: number;
@@ -135,7 +155,8 @@ export function buildPlayerUncertainty(
     assistsPp?: number;
     shotsEs?: number;
     shotsPp?: number;
-  }>
+  }>,
+  trendVolatilityMultiplier = 1
 ) {
   const effectiveHorizon = Math.max(1, Math.floor(horizonGames));
   const scalars =
@@ -144,35 +165,59 @@ export function buildPlayerUncertainty(
       : Array.from({ length: effectiveHorizon }, () => 1);
   const samples = UNCERTAINTY_CONFIG.simulationSamples;
   const totalScalar = scalars.reduce((acc, v) => acc + v, 0);
+  const volatilityMultiplier = Math.max(
+    0.75,
+    Math.min(1.8, trendVolatilityMultiplier)
+  );
+  const applyVolatility = (q: QuantileTriple) =>
+    widenQuantiles(q, volatilityMultiplier);
   if (samples <= 1) {
     return {
-      toi_es_seconds: normalBandQuantiles(
-        u.toiEsSeconds * totalScalar,
-        UNCERTAINTY_CONFIG.playerEsToiSdPct *
-          u.toiEsSeconds *
-          Math.sqrt(totalScalar)
+      toi_es_seconds: applyVolatility(
+        normalBandQuantiles(
+          u.toiEsSeconds * totalScalar,
+          UNCERTAINTY_CONFIG.playerEsToiSdPct *
+            u.toiEsSeconds *
+            Math.sqrt(totalScalar)
+        )
       ),
-      toi_pp_seconds: normalBandQuantiles(
-        u.toiPpSeconds * totalScalar,
-        UNCERTAINTY_CONFIG.playerPpToiSdPct *
-          u.toiPpSeconds *
-          Math.sqrt(totalScalar)
+      toi_pp_seconds: applyVolatility(
+        normalBandQuantiles(
+          u.toiPpSeconds * totalScalar,
+          UNCERTAINTY_CONFIG.playerPpToiSdPct *
+            u.toiPpSeconds *
+            Math.sqrt(totalScalar)
+        )
       ),
-      shots_es: poissonQuantilesApprox(u.shotsEs * totalScalar),
-      shots_pp: poissonQuantilesApprox(u.shotsPp * totalScalar),
-      goals_es: poissonQuantilesApprox(u.goalsEs * totalScalar),
-      goals_pp: poissonQuantilesApprox(u.goalsPp * totalScalar),
-      assists_es: poissonQuantilesApprox(u.assistsEs * totalScalar),
-      assists_pp: poissonQuantilesApprox(u.assistsPp * totalScalar),
-      hit: poissonQuantilesApprox(u.hits * totalScalar),
-      blk: poissonQuantilesApprox(u.blocks * totalScalar),
-      g: poissonQuantilesApprox((u.goalsEs + u.goalsPp) * totalScalar),
-      a: poissonQuantilesApprox((u.assistsEs + u.assistsPp) * totalScalar),
-      pts: poissonQuantilesApprox(
-        (u.goalsEs + u.goalsPp + u.assistsEs + u.assistsPp) * totalScalar
+      shots_es: applyVolatility(poissonQuantilesApprox(u.shotsEs * totalScalar)),
+      shots_pp: applyVolatility(poissonQuantilesApprox(u.shotsPp * totalScalar)),
+      goals_es: applyVolatility(poissonQuantilesApprox(u.goalsEs * totalScalar)),
+      goals_pp: applyVolatility(poissonQuantilesApprox(u.goalsPp * totalScalar)),
+      assists_es: applyVolatility(
+        poissonQuantilesApprox(u.assistsEs * totalScalar)
       ),
-      sog: poissonQuantilesApprox((u.shotsEs + u.shotsPp) * totalScalar),
-      ppp: poissonQuantilesApprox((u.goalsPp + u.assistsPp) * totalScalar)
+      assists_pp: applyVolatility(
+        poissonQuantilesApprox(u.assistsPp * totalScalar)
+      ),
+      hit: applyVolatility(poissonQuantilesApprox(u.hits * totalScalar)),
+      blk: applyVolatility(poissonQuantilesApprox(u.blocks * totalScalar)),
+      g: applyVolatility(
+        poissonQuantilesApprox((u.goalsEs + u.goalsPp) * totalScalar)
+      ),
+      a: applyVolatility(
+        poissonQuantilesApprox((u.assistsEs + u.assistsPp) * totalScalar)
+      ),
+      pts: applyVolatility(
+        poissonQuantilesApprox(
+          (u.goalsEs + u.goalsPp + u.assistsEs + u.assistsPp) * totalScalar
+        )
+      ),
+      sog: applyVolatility(
+        poissonQuantilesApprox((u.shotsEs + u.shotsPp) * totalScalar)
+      ),
+      ppp: applyVolatility(
+        poissonQuantilesApprox((u.goalsPp + u.assistsPp) * totalScalar)
+      )
     };
   }
 
@@ -361,21 +406,21 @@ export function buildPlayerUncertainty(
   }
 
   return {
-    toi_es_seconds: quantilesFromSamples(samplesToiEs),
-    toi_pp_seconds: quantilesFromSamples(samplesToiPp),
-    shots_es: quantilesFromSamples(samplesShotsEs),
-    shots_pp: quantilesFromSamples(samplesShotsPp),
-    goals_es: quantilesFromSamples(samplesGoalsEs),
-    goals_pp: quantilesFromSamples(samplesGoalsPp),
-    assists_es: quantilesFromSamples(samplesAssistsEs),
-    assists_pp: quantilesFromSamples(samplesAssistsPp),
-    hit: quantilesFromSamples(samplesHits),
-    blk: quantilesFromSamples(samplesBlocks),
-    g: quantilesFromSamples(samplesGoals),
-    a: quantilesFromSamples(samplesAssists),
-    pts: quantilesFromSamples(samplesPoints),
-    sog: quantilesFromSamples(samplesShots),
-    ppp: quantilesFromSamples(samplesPpp)
+    toi_es_seconds: applyVolatility(quantilesFromSamples(samplesToiEs)),
+    toi_pp_seconds: applyVolatility(quantilesFromSamples(samplesToiPp)),
+    shots_es: applyVolatility(quantilesFromSamples(samplesShotsEs)),
+    shots_pp: applyVolatility(quantilesFromSamples(samplesShotsPp)),
+    goals_es: applyVolatility(quantilesFromSamples(samplesGoalsEs)),
+    goals_pp: applyVolatility(quantilesFromSamples(samplesGoalsPp)),
+    assists_es: applyVolatility(quantilesFromSamples(samplesAssistsEs)),
+    assists_pp: applyVolatility(quantilesFromSamples(samplesAssistsPp)),
+    hit: applyVolatility(quantilesFromSamples(samplesHits)),
+    blk: applyVolatility(quantilesFromSamples(samplesBlocks)),
+    g: applyVolatility(quantilesFromSamples(samplesGoals)),
+    a: applyVolatility(quantilesFromSamples(samplesAssists)),
+    pts: applyVolatility(quantilesFromSamples(samplesPoints)),
+    sog: applyVolatility(quantilesFromSamples(samplesShots)),
+    ppp: applyVolatility(quantilesFromSamples(samplesPpp))
   };
 }
 

@@ -23,6 +23,7 @@ import {
   computeTeammateAssistCoupling,
   applyRoleSpecificUsageBounds,
   mergeSkaterCandidatePoolForRecovery,
+  constrainSkaterIdsToActiveRoster,
   computeSkaterTeamToiTargetWithPoolGuard,
   validateReconciledPlayerDistribution,
   buildSkaterRoleScenarios,
@@ -834,6 +835,35 @@ describe("skater pool recovery safeguards", () => {
       targetCount: 7
     });
     expect(merged).toEqual([1, 2, 3, 4, 5, 6, 7]);
+  });
+
+  it("can restore a collapsed pool toward 18 skaters with supplemental candidates", () => {
+    const merged = mergeSkaterCandidatePoolForRecovery({
+      baseSkaterIds: [1, 2, 3, 4, 5, 6, 7],
+      supplementalSkaterIds: [
+        8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
+      ],
+      targetCount: 18
+    });
+    expect(merged.length).toBe(18);
+    expect(merged.slice(0, 7)).toEqual([1, 2, 3, 4, 5, 6, 7]);
+    expect(merged[17]).toBe(18);
+  });
+
+  it("constrains candidates to active roster skaters", () => {
+    const constrained = constrainSkaterIdsToActiveRoster({
+      candidateSkaterIds: [10, 11, 12, 13],
+      activeRosterSkaterIds: [11, 13, 15]
+    });
+    expect(constrained).toEqual([11, 13]);
+  });
+
+  it("fails open when active roster skaters are unavailable", () => {
+    const constrained = constrainSkaterIdsToActiveRoster({
+      candidateSkaterIds: [20, 21, 22, 22],
+      activeRosterSkaterIds: []
+    });
+    expect(constrained).toEqual([20, 21, 22]);
   });
 
   it("caps team skater TOI target when projected pool is undersized", () => {

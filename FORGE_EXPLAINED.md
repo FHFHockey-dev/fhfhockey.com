@@ -206,3 +206,47 @@ These are the factory workers that prepare the data before FORGE predicts anythi
 
 ## One-Sentence Mental Model
 FORGE is a hockey prediction factory where data-collector workers, math workers, and report-card workers team up so the FORGE webpage can show useful predictions in simple cards.
+
+## FORGE Full Refresh Itinerary (Endpoint Order of Operations)
+Use this order when you want to "fix" or fully refresh FORGE data so frontend outputs are correct and consistent.
+
+### A) Refresh upstream source tables FORGE depends on
+These feed model features used by `runProjectionV2`:
+
+1. `/api/v1/db/update-teams`
+2. `/api/v1/db/update-players`
+3. `/api/v1/db/update-games`
+4. `/api/v1/db/update-wgo-skaters?action=all`
+5. `/api/v1/db/update-wgo-goalies`
+6. `/api/v1/db/update-nst-gamelog?runMode=incremental`
+7. `/api/Teams/nst-team-stats?date=all`
+8. `/api/v1/db/update-rolling-player-averages?fullRefresh=true&fullRefreshMode=rpc_truncate&playerConcurrency=4&upsertConcurrency=1&upsertBatchSize=400`
+
+Notes:
+- Step 8 is critical because FORGE skater projections read `rolling_player_game_metrics`.
+- If you want an even safer write profile, reduce `playerConcurrency` to `2` and `upsertBatchSize` to `300`.
+
+### B) Refresh FORGE pipeline tables in dependency order
+Run these in order for the target date or date range:
+
+1. `/api/v1/db/update-line-combinations`
+2. `/api/v1/db/ingest-projection-inputs?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD`
+3. `/api/v1/db/build-projection-derived-v2?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD`
+4. `/api/v1/db/update-goalie-projections-v2`
+5. `/api/v1/db/run-projection-v2?date=YYYY-MM-DD&horizonGames=1`
+6. `/api/v1/db/run-projection-accuracy?actualDate=YYYY-MM-DD`
+
+Notes:
+- Use `horizonGames=1` for single-game projections shown in most FORGE player views.
+- If running a range, execute steps 2-6 by date window/chunks from oldest to newest.
+
+### C) Verification checkpoints after refresh
+Before trusting UI output:
+
+1. Confirm latest succeeded run exists in `forge_runs` for target date.
+2. Confirm non-zero rows for that run/date in:
+   - `forge_player_projections` with `horizon_games=1`
+   - `forge_team_projections` with `horizon_games=1`
+   - `forge_goalie_projections` with `horizon_games=1`
+3. Confirm `/api/v1/forge/players?date=YYYY-MM-DD&horizon=1` returns expected row count and sane `sog` values.
+4. Confirm `/api/v1/forge/goalies?date=YYYY-MM-DD&horizon=1` returns rows with starter probabilities.
