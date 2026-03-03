@@ -1,0 +1,119 @@
+{
+  "generatedAt": "2026-03-03T18:47:37.930Z",
+  "pairs": [
+    {
+      "date": "2026-01-24",
+      "tables": {
+        "forge_player_projections": {
+          "sharedRows": 260,
+          "numericDiffCount": 160,
+          "nonNumericDiffCount": 0,
+          "maxAbsDiff": 0.005,
+          "maxDiffSample": {
+            "key": "2025020813|8476906|1",
+            "column": "proj_shots_es",
+            "baseline": 2.319,
+            "current": 2.324,
+            "absDiff": 0.004999999999999893
+          }
+        },
+        "forge_team_projections": {
+          "sharedRows": 18,
+          "numericDiffCount": 4,
+          "nonNumericDiffCount": 0,
+          "maxAbsDiff": 0.001,
+          "maxDiffSample": {
+            "key": "2025020813|12|1",
+            "column": "proj_goals_es",
+            "baseline": 2.265,
+            "current": 2.264,
+            "absDiff": 0.001000000000000334
+          }
+        },
+        "forge_goalie_projections": {
+          "sharedRows": 18,
+          "numericDiffCount": 2,
+          "nonNumericDiffCount": 0,
+          "maxAbsDiff": 0.0002,
+          "maxDiffSample": {
+            "key": "2025020816|8475311|1",
+            "column": "proj_win_prob",
+            "baseline": 0.6347,
+            "current": 0.6345,
+            "absDiff": 0.000200000000000089
+          }
+        }
+      }
+    },
+    {
+      "date": "2026-01-31",
+      "tables": {
+        "forge_player_projections": {
+          "sharedRows": 404,
+          "numericDiffCount": 223,
+          "nonNumericDiffCount": 0,
+          "maxAbsDiff": 0.004,
+          "maxDiffSample": {
+            "key": "2025020864|8476906|1",
+            "column": "proj_shots_es",
+            "baseline": 2.704,
+            "current": 2.708,
+            "absDiff": 0.0040000000000000036
+          }
+        },
+        "forge_team_projections": {
+          "sharedRows": 28,
+          "numericDiffCount": 3,
+          "nonNumericDiffCount": 0,
+          "maxAbsDiff": 0.001,
+          "maxDiffSample": {
+            "key": "2025020867|2|1",
+            "column": "proj_goals_pp",
+            "baseline": 0.684,
+            "current": 0.685,
+            "absDiff": 0.0010000000000000009
+          }
+        },
+        "forge_goalie_projections": {
+          "sharedRows": 28,
+          "numericDiffCount": 1,
+          "nonNumericDiffCount": 0,
+          "maxAbsDiff": 0.0002,
+          "maxDiffSample": {
+            "key": "2025020864|8483548|1",
+            "column": "proj_win_prob",
+            "baseline": 0.4793,
+            "current": 0.4791,
+            "absDiff": 0.00019999999999997797
+          }
+        }
+      }
+    },
+    {
+      "date": "2026-02-08",
+      "tables": {
+        "forge_player_projections": {
+          "sharedRows": 0,
+          "numericDiffCount": 0,
+          "nonNumericDiffCount": 0,
+          "maxAbsDiff": 0,
+          "maxDiffSample": null
+        },
+        "forge_team_projections": {
+          "sharedRows": 0,
+          "numericDiffCount": 0,
+          "nonNumericDiffCount": 0,
+          "maxAbsDiff": 0,
+          "maxDiffSample": null
+        },
+        "forge_goalie_projections": {
+          "sharedRows": 0,
+          "numericDiffCount": 0,
+          "nonNumericDiffCount": 0,
+          "maxAbsDiff": 0,
+          "maxDiffSample": null
+        }
+      }
+    }
+  ]
+}

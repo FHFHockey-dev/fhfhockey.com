@@ -73,10 +73,10 @@
   - [x] 6.3 Create explicit post-parity backlog entries for approved/non-approved math or accuracy improvements listed in PRD (assist recency counter fix, uncertainty calibration, configurable weights, recency-decay refinements, goalie context linkage). [Deps: 6.1] [Files: `tasks/prd-run-forge-projections-modularization.md` or dedicated follow-up task doc] [AC: no accuracy-change work is included in parity-phase implementation tasks]
 
 - [ ] 7.0 Phase 7 - Validation, Parity Evidence, And Execution Readiness
-  - [ ] 7.1 Run targeted unit/module tests for extracted utils, queries, calculators, and orchestrator entrypoint imports. [Deps: 5.4] [Files: test files under `web/lib/projections/**`] [AC: targeted tests pass with updated paths]
-  - [ ] 7.2 Run deterministic parity checks comparing baseline vs modularized outputs for fixed fixture dates, covering `forge_player_projections`, `forge_team_projections`, `forge_goalie_projections`, and uncertainty metadata payload keys. [Deps: 7.1] [Files: parity test artifacts] [AC: no meaningful drift; any tolerated epsilon must be explicitly documented and approved]
-  - [ ] 7.3 Run repository-level type/import integrity validation (`tsc`/build/lint as applicable) to confirm no unresolved imports after rename and extraction. [Deps: 7.1] [Files: repo config + touched modules] [AC: zero unresolved import/type errors in touched scope]
-  - [ ] 7.4 Capture migration report summary (files moved/created, import updates, validation outcomes, unresolved risks) and attach to PR/task notes for implementation workflow handoff. [Deps: 7.2, 7.3] [Files: PR description or task notes] [AC: report includes parity evidence and explicit residual-risk list]
+  - [x] 7.1 Run targeted unit/module tests for extracted utils, queries, calculators, and orchestrator entrypoint imports. [Deps: 5.4] [Files: test files under `web/lib/projections/**`] [AC: targeted tests pass with updated paths]
+  - [x] 7.2 Run deterministic parity checks comparing baseline vs modularized outputs for fixed fixture dates, covering `forge_player_projections`, `forge_team_projections`, `forge_goalie_projections`, and uncertainty metadata payload keys. [Deps: 7.1] [Files: parity test artifacts] [AC: no meaningful drift; any tolerated epsilon must be explicitly documented and approved]
+  - [x] 7.3 Run repository-level type/import integrity validation (`tsc`/build/lint as applicable) to confirm no unresolved imports after rename and extraction. [Deps: 7.1] [Files: repo config + touched modules] [AC: zero unresolved import/type errors in touched scope]
+  - [x] 7.4 Capture migration report summary (files moved/created, import updates, validation outcomes, unresolved risks) and attach to PR/task notes for implementation workflow handoff. [Deps: 7.2, 7.3] [Files: PR description or task notes] [AC: report includes parity evidence and explicit residual-risk list]
 
 ### 1.1 Frozen Reference Inventory Checklist
 
@@ -122,3 +122,20 @@
   - If any numeric epsilon is needed, document and approve explicitly before accepting drift.
 - Current test-suite status note:
   - `web/lib/projections/runProjectionV2.test.ts` currently covers many pure helpers but does not yet provide full end-to-end old-vs-new table parity coverage; this is intentionally staged under Phase 7 parity execution tasks.
+
+### 7.2 Parity Evidence (In Progress)
+
+- Artifact files:
+  - `tasks/artifacts/forge-projections-parity-report-2026-fixtures.json`
+  - `tasks/artifacts/forge-projections-parity-delta-summary.json`
+  - `tasks/artifacts/forge-projections-parity-report-2026-fixtures.md`
+- Baseline run source for deterministic comparison: pre-modularization commit `a3f6173` executed against the same current DB state via `/api/v1/db/run-projection-v2`.
+- Current outcome: row-count parity `PASS`, identity-key parity `PASS`, uncertainty key-shape parity `PASS`, scalar exact parity `FAIL` with max absolute scalar delta `0.005`.
+- Approved epsilon for this parity gate: `<= 0.005` absolute scalar delta (user-approved on 2026-03-03), so `7.2` is accepted.
+
+### 7.3 Integrity Evidence
+
+- `npx tsc --noEmit` (in `web`) passed.
+- Stale runtime import scan for `runProjectionV2` paths in `web/**` (excluding markdown) returned no matches.
+- `npx vitest --run lib/projections/module-imports.test.ts` passed.
+- `npm run build` currently fails due pre-existing unrelated lint error(s) outside touched projection scope (for example `pages/FORGE.tsx` `react/no-unescaped-entities`), so build was not used as gating for touched-scope import/type integrity.
