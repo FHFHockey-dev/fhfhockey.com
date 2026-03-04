@@ -29,6 +29,17 @@ const ForgeDashboardPage: NextPage = () => {
   const [selectedDate, setSelectedDate] = useState(todayEt);
   const [selectedTeam, setSelectedTeam] = useState("all");
   const [selectedPosition, setSelectedPosition] = useState<"all" | "f" | "d" | "g">("all");
+  const [moduleResolvedDates, setModuleResolvedDates] = useState<{
+    teamPower: string | null;
+    sustainability: string | null;
+    goalie: string | null;
+    slate: string | null;
+  }>({
+    teamPower: null,
+    sustainability: null,
+    goalie: null,
+    slate: null
+  });
   const teamOptions = useMemo(
     () =>
       Object.values(teamsInfo)
@@ -37,6 +48,34 @@ const ForgeDashboardPage: NextPage = () => {
         .sort((a, b) => a.localeCompare(b)),
     []
   );
+  const driftWarnings = useMemo(() => {
+    const labels: Record<keyof typeof moduleResolvedDates, string> = {
+      teamPower: "Team Power",
+      sustainability: "Sustainability",
+      goalie: "Goalie Risk",
+      slate: "Slate Strip"
+    };
+
+    return Object.entries(moduleResolvedDates)
+      .filter(([, resolvedDate]) => Boolean(resolvedDate && resolvedDate !== selectedDate))
+      .map(([moduleKey, resolvedDate]) => ({
+        module: labels[moduleKey as keyof typeof moduleResolvedDates],
+        resolvedDate: resolvedDate as string
+      }));
+  }, [moduleResolvedDates, selectedDate]);
+
+  const updateModuleResolvedDate = (
+    moduleKey: keyof typeof moduleResolvedDates,
+    resolvedDate: string | null
+  ) => {
+    setModuleResolvedDates((current) => {
+      if (current[moduleKey] === resolvedDate) return current;
+      return {
+        ...current,
+        [moduleKey]: resolvedDate
+      };
+    });
+  };
 
   const handleDateChange = (event: ChangeEvent<HTMLInputElement>) => {
     setSelectedDate(event.target.value);
@@ -123,21 +162,54 @@ const ForgeDashboardPage: NextPage = () => {
             </a>
           </nav>
 
+          {driftWarnings.length > 0 && (
+            <section className={styles.driftBanner} aria-live="polite">
+              <strong>Data date mismatch:</strong>{" "}
+              {driftWarnings
+                .map((entry) => `${entry.module} using ${entry.resolvedDate}`)
+                .join(" • ")}
+            </section>
+          )}
+
           <section className={styles.dashboardGrid} aria-label="Forge dashboard">
             <div className={styles.panel}>
-              <TeamPowerCard date={selectedDate} team={selectedTeam} />
+              <TeamPowerCard
+                date={selectedDate}
+                team={selectedTeam}
+                onResolvedDate={(resolvedDate) =>
+                  updateModuleResolvedDate("teamPower", resolvedDate)
+                }
+              />
             </div>
             <div className={styles.panel}>
-              <SustainabilityCard date={selectedDate} position={selectedPosition} />
+              <SustainabilityCard
+                date={selectedDate}
+                position={selectedPosition}
+                onResolvedDate={(resolvedDate) =>
+                  updateModuleResolvedDate("sustainability", resolvedDate)
+                }
+              />
             </div>
             <div className={styles.panel}>
-              <GoalieRiskCard date={selectedDate} team={selectedTeam} />
+              <GoalieRiskCard
+                date={selectedDate}
+                team={selectedTeam}
+                onResolvedDate={(resolvedDate) =>
+                  updateModuleResolvedDate("goalie", resolvedDate)
+                }
+              />
             </div>
             <div className={styles.panel}>
               <HotColdCard team={selectedTeam} />
             </div>
             <div className={styles.panel}>
-              <SlateStripCard date={selectedDate} team={selectedTeam} />
+              <SlateStripCard
+                date={selectedDate}
+                team={selectedTeam}
+                onResolvedDate={(resolvedDate) =>
+                  updateModuleResolvedDate("slate", resolvedDate)
+                }
+              />
             </div>
             <div className={styles.panel}>
               <TopMoversCard position={selectedPosition} />

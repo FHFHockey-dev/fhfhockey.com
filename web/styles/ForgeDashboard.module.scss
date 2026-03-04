@@ -109,6 +109,16 @@
   }
 }
 
+.driftBanner {
+  border: 1px solid rgba(v.$warning-color, 0.55);
+  border-radius: v.$border-radius-sm;
+  background: rgba(v.$warning-color, 0.1);
+  color: color.adjust(v.$warning-color, $lightness: 8%);
+  padding: v.$space-xs v.$space-sm;
+  font-size: v.$font-size-xs;
+  line-height: 1.35;
+}
+
 .dashboardGrid {
   min-height: 0;
   display: grid;

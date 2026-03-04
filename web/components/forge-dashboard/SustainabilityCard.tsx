@@ -1,29 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
 
 import styles from "styles/ForgeDashboard.module.scss";
+import type {
+  NormalizedSustainabilityResponse,
+  NormalizedSustainabilityRow
+} from "lib/dashboard/normalizers";
+import { normalizeSustainabilityResponse } from "lib/dashboard/normalizers";
+import { fetchCachedJson } from "lib/dashboard/clientFetchCache";
 
 type SustainabilityDirection = "hot" | "cold";
-type ApiRow = {
-  player_id: number;
-  player_name: string | null;
-  position_group: string;
-  position_code: string | null;
-  window_code: string;
-  s_100: number;
-  luck_pressure: number;
-};
-
-type ApiResponse = {
-  success: boolean;
-  snapshot_date: string;
-  window_code: string;
-  direction: SustainabilityDirection;
-  rows: ApiRow[];
-};
 
 type SustainabilityCardProps = {
   date: string;
   position: "all" | "f" | "d" | "g";
+  onResolvedDate?: (resolvedDate: string | null) => void;
 };
 
 const toPosParam = (position: SustainabilityCardProps["position"]): "all" | "F" | "D" => {
@@ -55,7 +45,7 @@ async function fetchDirection(params: {
   pos: "all" | "F" | "D";
   direction: SustainabilityDirection;
   limit: number;
-}): Promise<ApiResponse> {
+}): Promise<NormalizedSustainabilityResponse> {
   const query = new URLSearchParams({
     snapshot_date: params.date,
     window_code: "l10",
@@ -64,17 +54,20 @@ async function fetchDirection(params: {
     limit: String(params.limit)
   });
 
-  const response = await fetch(`/api/v1/sustainability/trends?${query.toString()}`);
-  if (!response.ok) {
-    throw new Error(`Unable to load sustainability (${response.status})`);
-  }
-
-  return (await response.json()) as ApiResponse;
+  return normalizeSustainabilityResponse(
+    await fetchCachedJson<unknown>(`/api/v1/sustainability/trends?${query.toString()}`, {
+      ttlMs: 90_000
+    })
+  );
 }
 
-export default function SustainabilityCard({ date, position }: SustainabilityCardProps) {
-  const [hotRows, setHotRows] = useState<ApiRow[]>([]);
-  const [coldRows, setColdRows] = useState<ApiRow[]>([]);
+export default function SustainabilityCard({
+  date,
+  position,
+  onResolvedDate
+}: SustainabilityCardProps) {
+  const [hotRows, setHotRows] = useState<NormalizedSustainabilityRow[]>([]);
+  const [coldRows, setColdRows] = useState<NormalizedSustainabilityRow[]>([]);
   const [snapshotDate, setSnapshotDate] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -120,12 +113,17 @@ export default function SustainabilityCard({ date, position }: SustainabilityCar
   const sustainableRows = useMemo(() => coldRows.slice(0, 5), [coldRows]);
   const riskRows = useMemo(() => hotRows.slice(0, 5), [hotRows]);
   const isStale = Boolean(snapshotDate && snapshotDate !== date);
+  const metaSnapshot = snapshotDate ?? date;
+
+  useEffect(() => {
+    onResolvedDate?.(snapshotDate);
+  }, [onResolvedDate, snapshotDate]);
 
   return (
     <article className={styles.sustainabilityCard} aria-label="Sustainable versus unsustainable performances">
       <header className={styles.panelHeader}>
         <h3 className={styles.panelTitle}>Sustainable vs Unsustainable</h3>
-        <span className={styles.panelMeta}>Window L10</span>
+        <span className={styles.panelMeta}>L10 • {metaSnapshot}</span>
       </header>
 
       {loading && <p className={styles.panelState}>Loading sustainability signals...</p>}

@@ -2,20 +2,23 @@ import { useEffect, useMemo, useState } from "react";
 
 import styles from "styles/ForgeDashboard.module.scss";
 import { teamsInfo } from "lib/teamsInfo";
-import type { TeamRating } from "lib/teamRatingsService";
+import type { NormalizedTeamRatingRow } from "lib/dashboard/normalizers";
+import { normalizeTeamRatings } from "lib/dashboard/normalizers";
+import { fetchCachedJson } from "lib/dashboard/clientFetchCache";
 
 type TeamPowerCardProps = {
   date: string;
   team: string;
+  onResolvedDate?: (resolvedDate: string | null) => void;
 };
 
-type TeamPowerRow = TeamRating & {
+type TeamPowerRow = NormalizedTeamRatingRow & {
   powerScore: number;
 };
 
 const SPECIAL_TEAM_STEP = 1.5;
 
-const computePowerScore = (team: TeamRating): number => {
+const computePowerScore = (team: NormalizedTeamRatingRow): number => {
   const base = (team.offRating + team.defRating + team.paceRating) / 3;
   const ppAdj = (3 - team.ppTier) * SPECIAL_TEAM_STEP;
   const pkAdj = (3 - team.pkTier) * SPECIAL_TEAM_STEP;
@@ -34,8 +37,12 @@ const getTeamLabel = (abbr: string): string => {
   return meta?.name ?? abbr;
 };
 
-export default function TeamPowerCard({ date, team }: TeamPowerCardProps) {
-  const [rows, setRows] = useState<TeamRating[]>([]);
+export default function TeamPowerCard({
+  date,
+  team,
+  onResolvedDate
+}: TeamPowerCardProps) {
+  const [rows, setRows] = useState<NormalizedTeamRatingRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -44,16 +51,13 @@ export default function TeamPowerCard({ date, team }: TeamPowerCardProps) {
     setLoading(true);
     setError(null);
 
-    fetch(`/api/team-ratings?date=${encodeURIComponent(date)}`)
-      .then(async (response) => {
-        if (!response.ok) {
-          throw new Error(`Unable to load team power (${response.status})`);
-        }
-        return (await response.json()) as TeamRating[];
-      })
+    fetchCachedJson<unknown>(
+      `/api/team-ratings?date=${encodeURIComponent(date)}`,
+      { ttlMs: 60_000 }
+    )
       .then((payload) => {
         if (!active) return;
-        setRows(payload);
+        setRows(normalizeTeamRatings(payload));
       })
       .catch((fetchError: unknown) => {
         if (!active) return;
@@ -86,12 +90,17 @@ export default function TeamPowerCard({ date, team }: TeamPowerCardProps) {
   }, [rows, team]);
   const resolvedDate = rows[0]?.date ?? null;
   const isStale = Boolean(resolvedDate && resolvedDate !== date);
+  const metaDate = resolvedDate ?? date;
+
+  useEffect(() => {
+    onResolvedDate?.(resolvedDate);
+  }, [onResolvedDate, resolvedDate]);
 
   return (
     <article className={styles.teamPowerCard} aria-label="Team power rankings">
       <header className={styles.panelHeader}>
         <h3 className={styles.panelTitle}>Team Power Rankings</h3>
-        <span className={styles.panelMeta}>Snapshot {date}</span>
+        <span className={styles.panelMeta}>Snapshot {metaDate}</span>
       </header>
 
       {loading && <p className={styles.panelState}>Loading team power...</p>}

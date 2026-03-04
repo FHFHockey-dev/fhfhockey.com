@@ -2,29 +2,22 @@ import { useEffect, useMemo, useState } from "react";
 
 import styles from "styles/ForgeDashboard.module.scss";
 import { teamsInfo } from "lib/teamsInfo";
+import { normalizeStartChartResponse } from "lib/dashboard/normalizers";
+import { fetchCachedJson } from "lib/dashboard/clientFetchCache";
 
-type GoalieInfo = {
-  player_id: number;
-  name: string;
-  start_probability: number | null;
-};
-
+type GoalieInfo = { player_id: number; name: string; start_probability: number | null };
 type GameRow = {
   id: number;
   homeTeamId: number;
   awayTeamId: number;
-  homeGoalies?: GoalieInfo[];
-  awayGoalies?: GoalieInfo[];
-};
-
-type StartChartResponse = {
-  dateUsed: string;
-  games: GameRow[];
+  homeGoalies: GoalieInfo[];
+  awayGoalies: GoalieInfo[];
 };
 
 type SlateStripCardProps = {
   date: string;
   team: string;
+  onResolvedDate?: (resolvedDate: string | null) => void;
 };
 
 const findTeamById = (id: number) =>
@@ -56,7 +49,11 @@ function GoalieBar({ goalies }: { goalies?: GoalieInfo[] }) {
   );
 }
 
-export default function SlateStripCard({ date, team }: SlateStripCardProps) {
+export default function SlateStripCard({
+  date,
+  team,
+  onResolvedDate
+}: SlateStripCardProps) {
   const [games, setGames] = useState<GameRow[]>([]);
   const [dateUsed, setDateUsed] = useState<string>(date);
   const [loading, setLoading] = useState(false);
@@ -67,16 +64,13 @@ export default function SlateStripCard({ date, team }: SlateStripCardProps) {
     setLoading(true);
     setError(null);
 
-    fetch(`/api/v1/start-chart?date=${encodeURIComponent(date)}`)
-      .then(async (response) => {
-        if (!response.ok) {
-          throw new Error(`Unable to load slate strip (${response.status})`);
-        }
-        return (await response.json()) as StartChartResponse;
-      })
+    fetchCachedJson<unknown>(`/api/v1/start-chart?date=${encodeURIComponent(date)}`, {
+      ttlMs: 60_000
+    })
+      .then((payload) => normalizeStartChartResponse(payload))
       .then((payload) => {
         if (!active) return;
-        setGames(payload.games ?? []);
+        setGames(payload.games);
         setDateUsed(payload.dateUsed ?? date);
       })
       .catch((fetchError: unknown) => {
@@ -109,6 +103,10 @@ export default function SlateStripCard({ date, team }: SlateStripCardProps) {
       })
       .slice(0, 8);
   }, [games, team]);
+
+  useEffect(() => {
+    onResolvedDate?.(dateUsed);
+  }, [dateUsed, onResolvedDate]);
 
   return (
     <article className={styles.slateStripCard} aria-label="Start-chart slate strip">

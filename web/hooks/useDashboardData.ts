@@ -24,13 +24,17 @@ export const useDashboardData = (
         date: params.date,
         skaterPosition: params.skaterPosition,
         skaterWindow: params.skaterWindow,
-        skaterLimit: params.skaterLimit
+        skaterLimit: params.skaterLimit,
+        sustainabilityWindow: params.sustainabilityWindow,
+        sustainabilityLimit: params.sustainabilityLimit
       }),
     [
       params.date,
       params.skaterPosition,
       params.skaterWindow,
-      params.skaterLimit
+      params.skaterLimit,
+      params.sustainabilityWindow,
+      params.sustainabilityLimit
     ]
   );
   const memoParams = useMemo(() => params, [key]);

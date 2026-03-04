@@ -1,30 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 
 import styles from "styles/ForgeDashboard.module.scss";
-
-type GoalieProjection = {
-  goalie_id: number;
-  goalie_name: string;
-  team_abbreviation: string | null;
-  team_name: string;
-  opponent_team_abbreviation: string | null;
-  opponent_team_name: string;
-  starter_probability: number | null;
-  proj_win_prob: number | null;
-  proj_shutout_prob: number | null;
-  volatility_index: number | null;
-  blowup_risk: number | null;
-  recommendation: string | null;
-};
-
-type GoalieResponse = {
-  asOfDate?: string;
-  data: GoalieProjection[];
-};
+import type { NormalizedGoalieProjectionRow } from "lib/dashboard/normalizers";
+import { normalizeGoalieResponse } from "lib/dashboard/normalizers";
+import { fetchCachedJson } from "lib/dashboard/clientFetchCache";
 
 type GoalieRiskCardProps = {
   date: string;
   team: string;
+  onResolvedDate?: (resolvedDate: string | null) => void;
 };
 
 const formatPercent = (value: number | null | undefined, digits = 0): string => {
@@ -44,8 +28,12 @@ const riskTone = (risk: number | null | undefined): "low" | "med" | "high" => {
   return "high";
 };
 
-export default function GoalieRiskCard({ date, team }: GoalieRiskCardProps) {
-  const [rows, setRows] = useState<GoalieProjection[]>([]);
+export default function GoalieRiskCard({
+  date,
+  team,
+  onResolvedDate
+}: GoalieRiskCardProps) {
+  const [rows, setRows] = useState<NormalizedGoalieProjectionRow[]>([]);
   const [asOfDate, setAsOfDate] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,17 +45,14 @@ export default function GoalieRiskCard({ date, team }: GoalieRiskCardProps) {
 
     const query = new URLSearchParams({ date, horizon: "1" });
 
-    fetch(`/api/v1/forge/goalies?${query.toString()}`)
-      .then(async (response) => {
-        if (!response.ok) {
-          throw new Error(`Unable to load goalie risk (${response.status})`);
-        }
-        return (await response.json()) as GoalieResponse;
-      })
+    fetchCachedJson<unknown>(`/api/v1/forge/goalies?${query.toString()}`, {
+      ttlMs: 60_000
+    })
+      .then((payload) => normalizeGoalieResponse(payload))
       .then((payload) => {
         if (!active) return;
-        setRows(payload.data ?? []);
-        setAsOfDate(payload.asOfDate ?? null);
+        setRows(payload.data);
+        setAsOfDate(payload.asOfDate);
       })
       .catch((fetchError: unknown) => {
         if (!active) return;
@@ -99,6 +84,10 @@ export default function GoalieRiskCard({ date, team }: GoalieRiskCardProps) {
       .sort((a, b) => (b.starter_probability ?? 0) - (a.starter_probability ?? 0))
       .slice(0, 8);
   }, [rows, team]);
+
+  useEffect(() => {
+    onResolvedDate?.(asOfDate);
+  }, [asOfDate, onResolvedDate]);
 
   return (
     <article className={styles.goalieRiskCard} aria-label="Goalie start and risk projections">

@@ -80,11 +80,40 @@ export type StartChartResponse = {
   games: Array<Record<string, unknown>>;
 };
 
+export type SustainabilityDirection = "hot" | "cold";
+export type SustainabilityPosition = "all" | "F" | "D";
+
+export type SustainabilityTrendRow = {
+  player_id: number;
+  player_name: string | null;
+  position_group: string;
+  position_code: string | null;
+  window_code: string;
+  s_100: number;
+  luck_pressure: number;
+  z_shp?: number;
+  z_oishp?: number;
+  z_ipp?: number;
+  z_ppshp?: number;
+};
+
+export type SustainabilityTrendsResponse = {
+  success: boolean;
+  snapshot_date: string;
+  window_code: string;
+  pos: SustainabilityPosition;
+  direction: SustainabilityDirection;
+  limit: number;
+  rows: SustainabilityTrendRow[];
+};
+
 export type DashboardDataParams = {
   date: string;
   skaterPosition?: "forward" | "defense" | "all";
   skaterWindow?: 1 | 3 | 5 | 10;
   skaterLimit?: number;
+  sustainabilityWindow?: "l3" | "l5" | "l10" | "l20";
+  sustainabilityLimit?: number;
 };
 
 export type DashboardData = {
@@ -97,6 +126,10 @@ export type DashboardData = {
   forgePlayers: ForgePlayersResponse;
   forgeGoalies: ForgeGoaliesResponse;
   startChart: StartChartResponse;
+  sustainability: {
+    hot: SustainabilityTrendsResponse;
+    cold: SustainabilityTrendsResponse;
+  };
   teamMeta: Record<
     string,
     {
@@ -257,7 +290,12 @@ export const fetchStartChart = (date: string): Promise<StartChartResponse> =>
 
 export const fetchForgeGoalies = (date: string): Promise<ForgeGoaliesResponse> =>
   cachedFetchJson<ForgeGoaliesResponse>(
-    buildQuery("/api/v1/projections/goalies", { date, horizon: 1 }),
+    // Canonical dashboard goalie endpoint: includes fallback + diagnostics metadata.
+    buildQuery("/api/v1/forge/goalies", {
+      date,
+      horizon: 1,
+      fallbackToLatestWithData: true
+    }),
     SNAPSHOT_TTL_MS
   );
 
@@ -267,12 +305,41 @@ export const fetchTeamRatings = (date: string): Promise<TeamRating[]> =>
     SNAPSHOT_TTL_MS
   );
 
+const toSustainabilityPosition = (
+  skaterPosition: DashboardDataParams["skaterPosition"]
+): SustainabilityPosition => {
+  if (skaterPosition === "defense") return "D";
+  if (skaterPosition === "forward") return "F";
+  return "all";
+};
+
+export const fetchSustainabilityTrends = (params: {
+  date: string;
+  direction: SustainabilityDirection;
+  pos: SustainabilityPosition;
+  window?: "l3" | "l5" | "l10" | "l20";
+  limit?: number;
+}): Promise<SustainabilityTrendsResponse> =>
+  cachedFetchJson<SustainabilityTrendsResponse>(
+    buildQuery("/api/v1/sustainability/trends", {
+      snapshot_date: params.date,
+      direction: params.direction,
+      pos: params.pos,
+      window_code: params.window,
+      limit: params.limit
+    }),
+    TREND_TTL_MS
+  );
+
 export const loadDashboardData = async (
   params: DashboardDataParams
 ): Promise<DashboardData> => {
   const skaterPosition = params.skaterPosition ?? "forward";
   const skaterWindow = params.skaterWindow ?? 1;
   const skaterLimit = params.skaterLimit ?? 25;
+  const sustainabilityWindow = params.sustainabilityWindow ?? "l10";
+  const sustainabilityLimit = params.sustainabilityLimit ?? 15;
+  const sustainabilityPosition = toSustainabilityPosition(skaterPosition);
 
   const [
     teamRatings,
@@ -282,7 +349,9 @@ export const loadDashboardData = async (
     skaterTrends,
     forgePlayers,
     forgeGoalies,
-    startChart
+    startChart,
+    sustainabilityHot,
+    sustainabilityCold
   ] = await Promise.all([
     fetchTeamRatings(params.date),
     fetchTeamTrends(),
@@ -295,7 +364,21 @@ export const loadDashboardData = async (
     }),
     fetchForgePlayers(params.date),
     fetchForgeGoalies(params.date),
-    fetchStartChart(params.date)
+    fetchStartChart(params.date),
+    fetchSustainabilityTrends({
+      date: params.date,
+      direction: "hot",
+      pos: sustainabilityPosition,
+      window: sustainabilityWindow,
+      limit: sustainabilityLimit
+    }),
+    fetchSustainabilityTrends({
+      date: params.date,
+      direction: "cold",
+      pos: sustainabilityPosition,
+      window: sustainabilityWindow,
+      limit: sustainabilityLimit
+    })
   ]);
 
   return {
@@ -308,6 +391,10 @@ export const loadDashboardData = async (
     forgePlayers,
     forgeGoalies,
     startChart,
+    sustainability: {
+      hot: sustainabilityHot,
+      cold: sustainabilityCold
+    },
     teamMeta: buildTeamMetaIndex({
       teamRatings,
       teamCtpi,

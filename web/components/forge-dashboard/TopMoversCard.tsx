@@ -2,39 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 
 import TopMovers from "components/TopMovers/TopMovers";
 import styles from "styles/ForgeDashboard.module.scss";
+import {
+  normalizeSkaterMoversResponse,
+  normalizeTeamMoversResponse
+} from "lib/dashboard/normalizers";
+import { fetchCachedJson } from "lib/dashboard/clientFetchCache";
 
 type Lens = "team" | "skater";
-
-type TeamCtpiRow = {
-  team: string;
-  ctpi_0_to_100: number;
-  sparkSeries?: Array<{ date: string; value: number }>;
-};
-
-type TeamCtpiResponse = {
-  generatedAt?: string;
-  teams: TeamCtpiRow[];
-};
-
-type SkaterRankingRow = {
-  playerId: number;
-  delta: number;
-};
-
-type SkaterMetadata = {
-  fullName: string;
-  imageUrl: string | null;
-};
-
-type SkaterCategory = {
-  rankings?: SkaterRankingRow[];
-};
-
-type SkaterPowerResponse = {
-  generatedAt?: string;
-  categories?: Record<string, SkaterCategory>;
-  playerMetadata?: Record<string, SkaterMetadata>;
-};
 
 type Mover = {
   id: string;
@@ -83,18 +57,12 @@ export default function TopMoversCard({ position }: TopMoversCardProps) {
     });
 
     Promise.all([
-      fetch("/api/v1/trends/team-ctpi").then(async (response) => {
-        if (!response.ok) {
-          throw new Error(`Unable to load team movers (${response.status})`);
-        }
-        return (await response.json()) as TeamCtpiResponse;
-      }),
-      fetch(`/api/v1/trends/skater-power?${skaterParams.toString()}`).then(async (response) => {
-        if (!response.ok) {
-          throw new Error(`Unable to load skater movers (${response.status})`);
-        }
-        return (await response.json()) as SkaterPowerResponse;
-      })
+      fetchCachedJson<unknown>("/api/v1/trends/team-ctpi", {
+        ttlMs: 5 * 60_000
+      }).then((payload) => normalizeTeamMoversResponse(payload)),
+      fetchCachedJson<unknown>(`/api/v1/trends/skater-power?${skaterParams.toString()}`, {
+        ttlMs: 5 * 60_000
+      }).then((payload) => normalizeSkaterMoversResponse(payload))
     ])
       .then(([teamPayload, skaterPayload]) => {
         if (!active) return;
@@ -123,10 +91,8 @@ export default function TopMoversCard({ position }: TopMoversCardProps) {
           degraded: [...teamDeltas].sort((a, b) => a.delta - b.delta).slice(0, 5)
         });
 
-        const categories = skaterPayload.categories ?? {};
-        const firstCategory = Object.values(categories)[0];
-        const rankings = firstCategory?.rankings ?? [];
-        const metadata = skaterPayload.playerMetadata ?? {};
+        const rankings = skaterPayload.rankings;
+        const metadata = skaterPayload.playerMetadata;
 
         const skaterList = rankings
           .map((row) => {
@@ -173,6 +139,7 @@ export default function TopMoversCard({ position }: TopMoversCardProps) {
     [lens, teamMovers, skaterMovers]
   );
   const activeGeneratedAt = lens === "team" ? teamGeneratedAt : skaterGeneratedAt;
+  const metaGenerated = activeGeneratedAt ? activeGeneratedAt.slice(0, 10) : "n/a";
   const isStale = useMemo(() => {
     if (!activeGeneratedAt) return false;
     const ts = new Date(activeGeneratedAt).getTime();
@@ -184,6 +151,7 @@ export default function TopMoversCard({ position }: TopMoversCardProps) {
     <article className={styles.moversCard} aria-label="Top movers">
       <header className={styles.panelHeader}>
         <h3 className={styles.panelTitle}>Top Movers</h3>
+        <span className={styles.panelMeta}>{lens === "team" ? "Team" : "Skater"} • {metaGenerated}</span>
         <div className={styles.moversToggle}>
           <button
             type="button"

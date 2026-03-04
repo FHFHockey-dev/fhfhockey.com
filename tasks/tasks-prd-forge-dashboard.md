@@ -8,6 +8,8 @@
 - `web/styles/_panel.scss` - Shared panel mixins/patterns required for dashboard panel surfaces.
 - `fhfh-styles.md` - Canonical FHFH design language guidance for Neon Noir visual and interaction rules.
 - `web/lib/dashboard/dataFetchers.ts` - Shared dashboard data loader, endpoint calls, and request caching/dedupe.
+- `web/lib/dashboard/clientFetchCache.ts` - Lightweight client-side cache and in-flight dedupe for identical dashboard fetch params.
+- `web/lib/dashboard/normalizers.ts` - Response normalization helpers for null safety and contract consistency across dashboard modules.
 - `web/hooks/useDashboardData.ts` - React hook managing dashboard data loading/error states.
 - `web/components/TopMovers/TopMovers.tsx` - Existing movers component reused in dashboard modules.
 - `web/components/forge-dashboard/TeamPowerCard.tsx` - Team power rankings module.
@@ -57,13 +59,13 @@
   - [x] 2.7 Ensure all modules consume shared filters consistently and update without full-page reload.
   - [x] 2.8 Implement loading, empty, stale-data, and error states for each module.
 
-- [ ] 3.0 Integrate and normalize dashboard data dependencies across endpoints
-  - [ ] 3.1 Extend/adjust `web/lib/dashboard/dataFetchers.ts` to cover all MVP module payloads in one orchestrated loader.
-  - [ ] 3.2 Verify and normalize response contracts used by modules (field names, null handling, numeric parsing).
-  - [ ] 3.3 Resolve goalie endpoint duplication risk by defining a single canonical source for dashboard goalie data.
-  - [ ] 3.4 Add module-level `generatedAt`/`asOfDate` timestamp handling and display rules.
-  - [ ] 3.5 Implement guardrails for cross-endpoint date drift (requested date vs resolved fallback date).
-  - [ ] 3.6 Add lightweight client caching and dedupe to prevent duplicate fetches for identical params.
+- [x] 3.0 Integrate and normalize dashboard data dependencies across endpoints
+  - [x] 3.1 Extend/adjust `web/lib/dashboard/dataFetchers.ts` to cover all MVP module payloads in one orchestrated loader.
+  - [x] 3.2 Verify and normalize response contracts used by modules (field names, null handling, numeric parsing).
+  - [x] 3.3 Resolve goalie endpoint duplication risk by defining a single canonical source for dashboard goalie data.
+  - [x] 3.4 Add module-level `generatedAt`/`asOfDate` timestamp handling and display rules.
+  - [x] 3.5 Implement guardrails for cross-endpoint date drift (requested date vs resolved fallback date).
+  - [x] 3.6 Add lightweight client caching and dedupe to prevent duplicate fetches for identical params.
 
 - [ ] 4.0 Execute full data audit (accuracy, automation, optimization, reliability) for all modules
   - [ ] 4.1 Create module-by-module dependency matrix (component -> endpoint -> Supabase table).

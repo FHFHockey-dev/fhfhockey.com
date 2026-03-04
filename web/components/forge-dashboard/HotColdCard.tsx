@@ -1,29 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 
 import styles from "styles/ForgeDashboard.module.scss";
+import type { NormalizedCtpiTeamRow } from "lib/dashboard/normalizers";
+import { normalizeCtpiResponse } from "lib/dashboard/normalizers";
+import { fetchCachedJson } from "lib/dashboard/clientFetchCache";
 
 type SparkPoint = { date: string; value: number };
-
-type CtpiTeamRow = {
-  team: string;
-  ctpi_0_to_100: number;
-  offense: number;
-  defense: number;
-  luck: number;
-  sparkSeries?: SparkPoint[];
-};
-
-type CtpiResponse = {
-  seasonId: number;
-  generatedAt: string;
-  teams: CtpiTeamRow[];
-};
 
 type HotColdCardProps = {
   team: string;
 };
 
-type MomentumRow = CtpiTeamRow & {
+type MomentumRow = NormalizedCtpiTeamRow & {
   momentum: number;
   spark: SparkPoint[];
 };
@@ -33,7 +21,7 @@ const formatSigned = (value: number): string => {
   return `${sign}${value.toFixed(1)}`;
 };
 
-const shortReason = (row: CtpiTeamRow): string => {
+const shortReason = (row: NormalizedCtpiTeamRow): string => {
   const drivers: string[] = [];
   if (row.offense >= 60) drivers.push("offense surge");
   if (row.defense >= 60) drivers.push("defensive control");
@@ -85,7 +73,7 @@ function SparkMini({ points, variant }: { points: SparkPoint[]; variant: "hot" |
 }
 
 export default function HotColdCard({ team }: HotColdCardProps) {
-  const [rows, setRows] = useState<CtpiTeamRow[]>([]);
+  const [rows, setRows] = useState<NormalizedCtpiTeamRow[]>([]);
   const [generatedAt, setGeneratedAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -95,16 +83,13 @@ export default function HotColdCard({ team }: HotColdCardProps) {
     setLoading(true);
     setError(null);
 
-    fetch("/api/v1/trends/team-ctpi")
-      .then(async (response) => {
-        if (!response.ok) {
-          throw new Error(`Unable to load hot/cold trends (${response.status})`);
-        }
-        return (await response.json()) as CtpiResponse;
-      })
+    fetchCachedJson<unknown>("/api/v1/trends/team-ctpi", {
+      ttlMs: 5 * 60_000
+    })
+      .then((payload) => normalizeCtpiResponse(payload))
       .then((payload) => {
         if (!active) return;
-        setRows(payload.teams ?? []);
+        setRows(payload.teams);
         setGeneratedAt(payload.generatedAt ?? null);
       })
       .catch((fetchError: unknown) => {
@@ -131,7 +116,7 @@ export default function HotColdCard({ team }: HotColdCardProps) {
     return rows
       .filter((row) => (team === "all" ? true : row.team === team.toUpperCase()))
       .map((row) => {
-        const spark = row.sparkSeries?.slice(-10) ?? [];
+        const spark = row.sparkSeries.slice(-10);
         const first = spark[0]?.value ?? row.ctpi_0_to_100;
         const last = spark[spark.length - 1]?.value ?? row.ctpi_0_to_100;
         return {
@@ -151,12 +136,13 @@ export default function HotColdCard({ team }: HotColdCardProps) {
     if (!Number.isFinite(ts)) return false;
     return Date.now() - ts > 36 * 60 * 60 * 1000;
   }, [generatedAt]);
+  const metaGenerated = generatedAt ? generatedAt.slice(0, 10) : "n/a";
 
   return (
     <article className={styles.hotColdCard} aria-label="Team hot and cold streaks">
       <header className={styles.panelHeader}>
         <h3 className={styles.panelTitle}>Hot / Cold Streaks</h3>
-        <span className={styles.panelMeta}>Momentum (last 10)</span>
+        <span className={styles.panelMeta}>Momentum 10G • {metaGenerated}</span>
       </header>
 
       {loading && <p className={styles.panelState}>Loading hot/cold streaks...</p>}
