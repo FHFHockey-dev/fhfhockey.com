@@ -1,0 +1,205 @@
+@use "styles/vars" as v;
+@use "styles/panel" as p;
+@use "sass:color";
+
+.page {
+  min-height: 100dvh;
+  background: v.$background-dark;
+  color: v.$text-primary;
+}
+
+.container {
+  width: min(1400px, 100% - 2rem);
+  margin: 0 auto;
+  padding: v.$space-md 0 v.$space-md;
+  min-height: 100dvh;
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  gap: v.$space-sm;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-xs;
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(1.5rem, 2.2vw, 2.1rem);
+  line-height: 1.1;
+  font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: v.$color-white;
+  text-shadow: 0 0 10px rgba(v.$primary-color, 0.3);
+}
+
+.subtitle {
+  margin: 0;
+  color: v.$text-secondary;
+  font-size: 0.95rem;
+}
+
+.filterBar {
+  display: grid;
+  gap: v.$space-sm;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.filterItem {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-xs;
+  font-size: v.$font-size-xs;
+  color: v.$text-secondary;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.filterInput {
+  width: 100%;
+  border-radius: v.$border-radius-sm;
+  border: 1px solid rgba(v.$border-secondary, 0.9);
+  background: color.adjust(v.$background-medium, $lightness: -2%);
+  color: v.$text-primary;
+  padding: v.$space-sm v.$space-sm;
+  min-height: v.$touch-target-min;
+  transition:
+    border-color v.$transition-duration v.$transition-easing,
+    box-shadow v.$transition-duration v.$transition-easing;
+
+  &:hover {
+    border-color: rgba(v.$primary-color, 0.75);
+  }
+
+  &:focus-visible {
+    outline: none;
+    border-color: v.$primary-color;
+    box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.35);
+  }
+}
+
+.quickLinks {
+  display: flex;
+  align-items: center;
+  gap: v.$space-sm;
+}
+
+.quickLink {
+  color: v.$primary-color;
+  text-decoration: none;
+  border: 1px solid rgba(v.$border-secondary, 0.9);
+  border-radius: v.$border-radius-sm;
+  min-height: v.$touch-target-min;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 v.$space-sm;
+  transition:
+    border-color v.$transition-duration v.$transition-easing,
+    color v.$transition-duration v.$transition-easing,
+    box-shadow v.$transition-duration v.$transition-easing;
+
+  &:hover,
+  &:focus-visible {
+    color: v.$color-white;
+    border-color: rgba(v.$primary-color, 0.95);
+    box-shadow: 0 0 12px rgba(v.$primary-color, 0.28);
+    outline: none;
+  }
+}
+
+.dashboardGrid {
+  min-height: 0;
+  display: grid;
+  gap: v.$space-sm;
+  grid-template-columns: 1fr;
+  grid-template-rows: repeat(6, minmax(130px, auto));
+}
+
+.panel {
+  @include p.panel-container(v.$border-radius-md, v.$space-sm);
+  min-height: 0;
+  font-family: v.$font-family-primary, sans-serif;
+  color: v.$text-primary;
+  transition:
+    border-color v.$transition-duration v.$transition-easing,
+    box-shadow v.$transition-duration v.$transition-easing;
+
+  &:hover {
+    border-color: rgba(v.$secondary-color, 0.7);
+    box-shadow:
+      0 6px 20px rgba(0, 0, 0, 0.45),
+      0 0 0 1px rgba(v.$secondary-color, 0.28);
+  }
+}
+
+@media (max-width: 767px) {
+  .container {
+    width: min(1400px, 100% - 1rem);
+    padding: v.$space-sm 0 v.$space-md;
+    gap: v.$space-sm;
+  }
+
+  .title {
+    font-size: 1.35rem;
+  }
+
+  .subtitle {
+    font-size: 0.9rem;
+  }
+
+  .dashboardGrid {
+    gap: v.$space-sm;
+    grid-template-rows: repeat(6, minmax(120px, auto));
+  }
+
+  .filterBar {
+    grid-template-columns: 1fr;
+  }
+
+  .quickLinks {
+    flex-wrap: wrap;
+  }
+
+  .panel {
+    border-radius: 12px;
+    padding: v.$space-sm;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1279px) {
+  .filterBar {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .dashboardGrid {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: repeat(3, minmax(180px, auto));
+    align-content: start;
+  }
+
+  .panel {
+    min-height: 180px;
+  }
+}
+
+@media (min-width: 1280px) and (min-height: 900px) {
+  .page {
+    overflow: hidden;
+  }
+
+  .container {
+    padding: v.$space-sm 0;
+  }
+
+  .dashboardGrid {
+    height: 100%;
+    grid-template-columns: 1.05fr 1.25fr 1fr;
+    grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .panel {
+    overflow: auto;
+  }
+}

@@ -19,6 +19,15 @@ exports[`FORGE goalie UI states > renders goalie disclosure and starter confiden
         style="margin-bottom: 1rem;"
       >
         <a
+          href="/forge/dashboard"
+        >
+          Visit the Forge dashboard →
+        </a>
+      </div>
+      <div
+        style="margin-bottom: 1rem;"
+      >
+        <a
           href="/trends"
         >
           Visit the unified dashboard →

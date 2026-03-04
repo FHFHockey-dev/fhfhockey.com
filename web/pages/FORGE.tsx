@@ -624,6 +624,9 @@ const FORGEPage: NextPage = () => {
 
       <main className={styles.main}>
         <div style={{ marginBottom: "1rem" }}>
+          <a href="/forge/dashboard">Visit the Forge dashboard →</a>
+        </div>
+        <div style={{ marginBottom: "1rem" }}>
           <a href="/trends">Visit the unified dashboard →</a>
         </div>
         <div className={styles.header}>
