@@ -3,6 +3,13 @@ import type { ChangeEvent, NextPage } from "next";
 import Head from "next/head";
 
 import styles from "styles/ForgeDashboard.module.scss";
+import TeamPowerCard from "components/forge-dashboard/TeamPowerCard";
+import SustainabilityCard from "components/forge-dashboard/SustainabilityCard";
+import HotColdCard from "components/forge-dashboard/HotColdCard";
+import GoalieRiskCard from "components/forge-dashboard/GoalieRiskCard";
+import SlateStripCard from "components/forge-dashboard/SlateStripCard";
+import TopMoversCard from "components/forge-dashboard/TopMoversCard";
+import { teamsInfo } from "lib/teamsInfo";
 
 const ForgeDashboardPage: NextPage = () => {
   const todayEt = useMemo(() => {
@@ -21,7 +28,15 @@ const ForgeDashboardPage: NextPage = () => {
   }, []);
   const [selectedDate, setSelectedDate] = useState(todayEt);
   const [selectedTeam, setSelectedTeam] = useState("all");
-  const [selectedPosition, setSelectedPosition] = useState("all");
+  const [selectedPosition, setSelectedPosition] = useState<"all" | "f" | "d" | "g">("all");
+  const teamOptions = useMemo(
+    () =>
+      Object.values(teamsInfo)
+        .map((team) => team.abbrev)
+        .filter(Boolean)
+        .sort((a, b) => a.localeCompare(b)),
+    []
+  );
 
   const handleDateChange = (event: ChangeEvent<HTMLInputElement>) => {
     setSelectedDate(event.target.value);
@@ -32,7 +47,10 @@ const ForgeDashboardPage: NextPage = () => {
   };
 
   const handlePositionChange = (event: ChangeEvent<HTMLSelectElement>) => {
-    setSelectedPosition(event.target.value);
+    const value = event.target.value;
+    if (value === "all" || value === "f" || value === "d" || value === "g") {
+      setSelectedPosition(value);
+    }
   };
 
   return (
@@ -73,6 +91,11 @@ const ForgeDashboardPage: NextPage = () => {
                 className={styles.filterInput}
               >
                 <option value="all">All Teams</option>
+                {teamOptions.map((abbr) => (
+                  <option key={abbr} value={abbr}>
+                    {abbr}
+                  </option>
+                ))}
               </select>
             </label>
 
@@ -101,12 +124,24 @@ const ForgeDashboardPage: NextPage = () => {
           </nav>
 
           <section className={styles.dashboardGrid} aria-label="Forge dashboard">
-            <div className={styles.panel}>Team Power</div>
-            <div className={styles.panel}>Sustainability</div>
-            <div className={styles.panel}>Goalie Risk</div>
-            <div className={styles.panel}>Hot / Cold</div>
-            <div className={styles.panel}>Slate Strip</div>
-            <div className={styles.panel}>Top Movers</div>
+            <div className={styles.panel}>
+              <TeamPowerCard date={selectedDate} team={selectedTeam} />
+            </div>
+            <div className={styles.panel}>
+              <SustainabilityCard date={selectedDate} position={selectedPosition} />
+            </div>
+            <div className={styles.panel}>
+              <GoalieRiskCard date={selectedDate} team={selectedTeam} />
+            </div>
+            <div className={styles.panel}>
+              <HotColdCard team={selectedTeam} />
+            </div>
+            <div className={styles.panel}>
+              <SlateStripCard date={selectedDate} team={selectedTeam} />
+            </div>
+            <div className={styles.panel}>
+              <TopMoversCard position={selectedPosition} />
+            </div>
           </section>
         </div>
       </main>

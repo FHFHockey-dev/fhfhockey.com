@@ -15,7 +15,7 @@
 - `web/components/forge-dashboard/HotColdCard.tsx` - Hot/cold streak module with reason strings.
 - `web/components/forge-dashboard/GoalieRiskCard.tsx` - Goalie starts, win/shutout, volatility/risk module.
 - `web/components/forge-dashboard/SlateStripCard.tsx` - Start-chart game slate strip module.
-- `web/components/forge-dashboard/SharedFilters.tsx` - Date/team/position controls used across modules.
+- `web/components/forge-dashboard/TopMoversCard.tsx` - Team/skater movers module using shared TopMovers with lens toggle.
 - `web/pages/api/team-ratings.ts` - Team ratings API used by team power module.
 - `web/lib/teamRatingsService.ts` - Team rating table access and fallback handling.
 - `web/pages/api/v1/trends/team-power.ts` - Team trend source for hot/cold and movers context.
@@ -47,15 +47,15 @@
   - [x] 1.4 Add shared dashboard state scaffolding for selected date and global filters.
   - [x] 1.5 Add navigation/linking path between legacy `FORGE.tsx` and new `forge/dashboard` route.
 
-- [ ] 2.0 Implement MVP dashboard modules and shared filter/state wiring
-  - [ ] 2.1 Build Team Power Rankings card using existing team power logic and trend indicators.
-  - [ ] 2.2 Build Sustainable vs Unsustainable players card using trend-band outputs and confidence context.
-  - [ ] 2.3 Build Hot/Cold streaks card with concise reason text and compact sparkline presentation.
-  - [ ] 2.4 Build Goalie Start + Risk card including starter %, win %, shutout %, volatility, and blowup risk.
-  - [ ] 2.5 Build Start-Chart Slate Strip card with matchup context and goalie bars.
-  - [ ] 2.6 Integrate Top Movers card(s) for at least one team and one skater lens.
-  - [ ] 2.7 Ensure all modules consume shared filters consistently and update without full-page reload.
-  - [ ] 2.8 Implement loading, empty, stale-data, and error states for each module.
+- [x] 2.0 Implement MVP dashboard modules and shared filter/state wiring
+  - [x] 2.1 Build Team Power Rankings card using existing team power logic and trend indicators.
+  - [x] 2.2 Build Sustainable vs Unsustainable players card using trend-band outputs and confidence context.
+  - [x] 2.3 Build Hot/Cold streaks card with concise reason text and compact sparkline presentation.
+  - [x] 2.4 Build Goalie Start + Risk card including starter %, win %, shutout %, volatility, and blowup risk.
+  - [x] 2.5 Build Start-Chart Slate Strip card with matchup context and goalie bars.
+  - [x] 2.6 Integrate Top Movers card(s) for at least one team and one skater lens.
+  - [x] 2.7 Ensure all modules consume shared filters consistently and update without full-page reload.
+  - [x] 2.8 Implement loading, empty, stale-data, and error states for each module.
 
 - [ ] 3.0 Integrate and normalize dashboard data dependencies across endpoints
   - [ ] 3.1 Extend/adjust `web/lib/dashboard/dataFetchers.ts` to cover all MVP module payloads in one orchestrated loader.
