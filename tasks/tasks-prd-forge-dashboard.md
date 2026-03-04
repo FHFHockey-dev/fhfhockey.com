@@ -29,7 +29,18 @@
 - `web/pages/api/v1/forge/accuracy.ts` - Model accuracy source for optional confidence context.
 - `web/tests/api/dashboard-endpoints.test.ts` - Automated endpoint contract, invariant, and fallback tests.
 - `web/tests/audit/dashboard-data-audit.spec.ts` - Data-quality audit checks (accuracy/freshness/consistency).
+- `web/lib/dashboard/freshness.ts` - Freshness policy and recency evaluator for dashboard feed timestamps.
+- `web/lib/dashboard/perfBudget.ts` - Endpoint payload/performance budget definitions and budget evaluation helpers.
+- `web/lib/dashboard/reliability.ts` - Reliability evaluators for fallback integrity and degraded runtime state checks.
+- `web/tests/audit/dashboard-freshness-audit.spec.ts` - Freshness/automation recency tests for dashboard sources.
+- `web/tests/audit/dashboard-performance-audit.spec.ts` - Optimization tests for payload budget checks and ordering.
+- `web/tests/audit/dashboard-reliability-audit.spec.ts` - Reliability tests for fallback correctness and module state coherence.
 - `web/tests/pages/forge-dashboard.test.tsx` - Dashboard UI tests for loading/empty/error/interactive states.
+- `tasks/artifacts/forge-dashboard-dependency-matrix.md` - Component-to-endpoint-to-Supabase dependency matrix for module audit traceability.
+- `tasks/artifacts/forge-dashboard-freshness-policy.md` - Endpoint cadence and max-age policy used for freshness audit.
+- `tasks/artifacts/forge-dashboard-optimization-audit.md` - Query scope, payload pressure, and expensive-path optimization assessment.
+- `tasks/artifacts/forge-dashboard-reliability-audit.md` - Fallback/degraded-state reliability audit and operational guidance.
+- `tasks/artifacts/forge-dashboard-audit-outcomes.md` - Consolidated audit results and remediation checklist before launch sign-off.
 - `tasks/prd-forge-dashboard.md` - Source PRD used to derive implementation and audit tasks.
 
 ### Notes
@@ -67,13 +78,13 @@
   - [x] 3.5 Implement guardrails for cross-endpoint date drift (requested date vs resolved fallback date).
   - [x] 3.6 Add lightweight client caching and dedupe to prevent duplicate fetches for identical params.
 
-- [ ] 4.0 Execute full data audit (accuracy, automation, optimization, reliability) for all modules
-  - [ ] 4.1 Create module-by-module dependency matrix (component -> endpoint -> Supabase table).
-  - [ ] 4.2 Validate endpoint accuracy with invariant checks (ranges, monotonic fields, probability bounds, required keys).
-  - [ ] 4.3 Validate freshness/automation by confirming update cadence and timestamp recency expectations per endpoint.
-  - [ ] 4.4 Validate optimization by reviewing query scope, payload size, and expensive path frequency.
-  - [ ] 4.5 Validate reliability through fallback behavior checks, partial failure handling, and degraded UI states.
-  - [ ] 4.6 Document audit outcomes and required remediations before launch sign-off.
+- [x] 4.0 Execute full data audit (accuracy, automation, optimization, reliability) for all modules
+  - [x] 4.1 Create module-by-module dependency matrix (component -> endpoint -> Supabase table).
+  - [x] 4.2 Validate endpoint accuracy with invariant checks (ranges, monotonic fields, probability bounds, required keys).
+  - [x] 4.3 Validate freshness/automation by confirming update cadence and timestamp recency expectations per endpoint.
+  - [x] 4.4 Validate optimization by reviewing query scope, payload size, and expensive path frequency.
+  - [x] 4.5 Validate reliability through fallback behavior checks, partial failure handling, and degraded UI states.
+  - [x] 4.6 Document audit outcomes and required remediations before launch sign-off.
 
 - [ ] 5.0 Add automated endpoint validation tests and dashboard UI state tests
   - [ ] 5.1 Implement endpoint contract tests for: `/api/team-ratings`, `/api/v1/trends/team-power`, `/api/v1/trends/skater-power`, `/api/v1/sustainability/trend-bands`, `/api/v1/start-chart`, `/api/v1/forge/goalies`.
