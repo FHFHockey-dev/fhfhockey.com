@@ -28,6 +28,7 @@
 - `web/pages/api/v1/projections/goalies.ts` - Alternate goalie endpoint to audit and align/retire as needed.
 - `web/pages/api/v1/forge/accuracy.ts` - Model accuracy source for optional confidence context.
 - `web/tests/api/dashboard-endpoints.test.ts` - Automated endpoint contract, invariant, and fallback tests.
+- `web/tests/api/dashboard-endpoints-invariants.test.ts` - Focused endpoint invariant coverage for bounds, required fields, and stable normalized shapes.
 - `web/tests/audit/dashboard-data-audit.spec.ts` - Data-quality audit checks (accuracy/freshness/consistency).
 - `web/lib/dashboard/freshness.ts` - Freshness policy and recency evaluator for dashboard feed timestamps.
 - `web/lib/dashboard/perfBudget.ts` - Endpoint payload/performance budget definitions and budget evaluation helpers.
@@ -86,13 +87,13 @@
   - [x] 4.5 Validate reliability through fallback behavior checks, partial failure handling, and degraded UI states.
   - [x] 4.6 Document audit outcomes and required remediations before launch sign-off.
 
-- [ ] 5.0 Add automated endpoint validation tests and dashboard UI state tests
-  - [ ] 5.1 Implement endpoint contract tests for: `/api/team-ratings`, `/api/v1/trends/team-power`, `/api/v1/trends/skater-power`, `/api/v1/sustainability/trend-bands`, `/api/v1/start-chart`, `/api/v1/forge/goalies`.
-  - [ ] 5.2 Add tests for invalid query params and expected `4xx` behavior on all relevant endpoints.
-  - [ ] 5.3 Add invariant tests for probability bounds, required fields, and stable type shape.
-  - [ ] 5.4 Add fallback tests for no-same-day-data paths where endpoints are expected to backfill.
-  - [ ] 5.5 Add dashboard render tests for loading, empty, error, and partial-data scenarios.
-  - [ ] 5.6 Add interaction tests for global filters and module updates.
+- [x] 5.0 Add automated endpoint validation tests and dashboard UI state tests
+  - [x] 5.1 Implement endpoint contract tests for: `/api/team-ratings`, `/api/v1/trends/team-power`, `/api/v1/trends/skater-power`, `/api/v1/sustainability/trend-bands`, `/api/v1/start-chart`, `/api/v1/forge/goalies`.
+  - [x] 5.2 Add tests for invalid query params and expected `4xx` behavior on all relevant endpoints.
+  - [x] 5.3 Add invariant tests for probability bounds, required fields, and stable type shape.
+  - [x] 5.4 Add fallback tests for no-same-day-data paths where endpoints are expected to backfill.
+  - [x] 5.5 Add dashboard render tests for loading, empty, error, and partial-data scenarios.
+  - [x] 5.6 Add interaction tests for global filters and module updates.
 
 - [ ] 6.0 Complete QA, performance validation, and rollout readiness checks
   - [ ] 6.1 Execute manual QA checklist for desktop no-scroll behavior and visual integrity.

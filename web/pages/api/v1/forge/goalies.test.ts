@@ -293,4 +293,88 @@ describe("/api/v1/forge/goalies", () => {
       "Normalized likely-starter win probabilities"
     );
   });
+
+  it("falls back to the latest prior date with goalie rows when requested date has no data", async () => {
+    let projectionQueryCount = 0;
+    fromMock.mockImplementation((table: string) => {
+      if (table === "forge_goalie_projections") {
+        projectionQueryCount += 1;
+        if (projectionQueryCount === 1) {
+          return createQueryBuilder(() => ({ data: [], error: null }));
+        }
+        if (projectionQueryCount === 2) {
+          return createQueryBuilder(() => ({
+            data: { run_id: "run-122", as_of_date: "2026-02-06" },
+            error: null
+          }));
+        }
+        return createQueryBuilder(() => ({
+          data: [
+            {
+              goalie_id: 5555,
+              team_id: 3,
+              opponent_team_id: 4,
+              players: { fullName: "Fallback Goalie" },
+              teams: { name: "Team C", abbreviation: "TMC" },
+              opponent: { name: "Team D", abbreviation: "TMD" },
+              starter_probability: 0.64,
+              proj_shots_against: 26.8,
+              proj_saves: 24.4,
+              proj_goals_allowed: 2.4,
+              proj_win_prob: 0.57,
+              proj_shutout_prob: 0.08,
+              uncertainty: {}
+            }
+          ],
+          error: null
+        }));
+      }
+      if (table === "forge_runs") {
+        return createQueryBuilder(() => ({
+          data: {
+            run_id: "run-123",
+            as_of_date: "2026-02-07",
+            status: "succeeded",
+            created_at: "2026-02-07T10:05:00.000Z",
+            metrics: { goalie_rows: 0 }
+          },
+          error: null
+        }));
+      }
+      if (table === "games") {
+        return createQueryBuilder(() => ({ count: 6, error: null }));
+      }
+      if (table === "forge_projection_calibration_daily") {
+        return createQueryBuilder(() => ({ data: null, error: null }));
+      }
+      return createQueryBuilder(() => ({ data: [], error: null }));
+    });
+
+    const req: any = {
+      method: "GET",
+      query: {
+        date: "2026-02-07",
+        horizon: "1"
+      }
+    };
+    const res = createMockRes();
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.fallbackApplied).toBe(true);
+    expect(res.body.runId).toBe("run-122");
+    expect(res.body.asOfDate).toBe("2026-02-06");
+    expect(res.body.data).toHaveLength(1);
+    expect(res.body.data[0]).toMatchObject({
+      goalie_id: 5555,
+      goalie_name: "Fallback Goalie"
+    });
+    expect(res.body.diagnostics.fallback).toMatchObject({
+      enabled: true,
+      applied: true,
+      candidateRunId: "run-122",
+      candidateAsOfDate: "2026-02-06",
+      candidateRowCount: 1
+    });
+  });
 });
