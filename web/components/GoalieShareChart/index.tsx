@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Doughnut } from "react-chartjs-2";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, Title } from "chart.js";
 import { teamsInfo } from "../../lib/teamsInfo";
-import fetchWithCache from "../../lib/fetchWithCache";
 import Fetch from "../../lib/cors-fetch";
 import styles from "./GoalieShareChart.module.scss";
 
@@ -56,6 +55,83 @@ const GoalieShareChart: React.FC = () => {
     return sortedTeamAbbrevs[0];
   });
   const [isMobile, setIsMobile] = useState<boolean>(false);
+  const hasInitialized = useRef(false);
+  const hasLoggedRateLimit = useRef(false);
+
+  const inferCurrentSeasonId = (): number => {
+    const now = new Date();
+    const year = now.getUTCFullYear();
+    const month = now.getUTCMonth() + 1;
+    const startYear = month >= 9 ? year : year - 1;
+    const endYear = startYear + 1;
+    return Number(`${startYear}${endYear}`);
+  };
+
+  const unwrapProxyPayload = (payload: any, context: string): any => {
+    if (payload?.success === false) {
+      throw new Error(`${context}: ${payload.message || "Unknown proxy error"}`);
+    }
+    return payload;
+  };
+
+  const sleep = (ms: number) =>
+    new Promise((resolve) => {
+      setTimeout(resolve, ms);
+    });
+
+  const isRateLimitError = (error: unknown): boolean => {
+    if (!(error instanceof Error)) return false;
+    return error.message.includes("429") || error.message.includes("rate limited");
+  };
+
+  const logRateLimitOnce = () => {
+    if (hasLoggedRateLimit.current) return;
+    hasLoggedRateLimit.current = true;
+    console.warn(
+      "NHL API rate-limited some requests (429). Showing partial goalie data."
+    );
+  };
+
+  const fetchJsonWithRetry = async (
+    url: string,
+    context: string,
+    maxAttempts = 2
+  ): Promise<any | null> => {
+    let lastError: unknown = null;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        const response = await Fetch(url);
+        const payload = await response.json().catch(() => {
+          throw new Error(`${context}: response was not valid JSON`);
+        });
+
+        if (response.status === 429) {
+          throw new Error(`${context}: rate limited (429)`);
+        }
+        if (!response.ok) {
+          throw new Error(`${context}: HTTP ${response.status}`);
+        }
+
+        unwrapProxyPayload(payload, context);
+        return payload;
+      } catch (error) {
+        lastError = error;
+        const canRetry = attempt < maxAttempts;
+        if (!canRetry) break;
+
+        // Exponential backoff with small jitter to smooth retries.
+        const delayMs = 500 * 2 ** (attempt - 1) + Math.floor(Math.random() * 250);
+        await sleep(delayMs);
+      }
+    }
+
+    if (isRateLimitError(lastError)) {
+      logRateLimitOnce();
+      return null;
+    }
+    throw lastError;
+  };
 
   // Check if mobile on mount and window resize
   useEffect(() => {
@@ -70,20 +146,53 @@ const GoalieShareChart: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    if (hasInitialized.current) return;
+    hasInitialized.current = true;
+
     const fetchSeasonData = async () => {
       try {
-        const response = await Fetch(
-          'https://api.nhle.com/stats/rest/en/season?sort=[{"property":"id","direction":"DESC"}]'
-        ).then((res) => res.json());
+        const seasonParams = new URLSearchParams({
+          sort: '[{"property":"id","direction":"DESC"}]'
+        });
+        const response = await fetchJsonWithRetry(
+          `https://api.nhle.com/stats/rest/en/season?${seasonParams.toString()}`,
+          "Season request failed"
+        );
+        if (!response) {
+          throw new Error("Season request rate-limited");
+        }
+        const payload = unwrapProxyPayload(response, "Season request failed");
 
-        const firstSeason = response.data[0];
+        const seasons = Array.isArray(payload?.data) ? payload.data : [];
+        const firstSeason = seasons[0];
+        if (!firstSeason?.id || !firstSeason?.startDate) {
+          throw new Error("Season API returned an unexpected payload shape");
+        }
+
         const seasonId = firstSeason.id;
         const startDate = firstSeason.startDate.split("T")[0];
 
         await fetchGameDatesForAllTeams(seasonId);
         setSeasonData({ seasonId, startDate });
       } catch (error) {
-        console.error("Error fetching season data:", error);
+        if (!isRateLimitError(error)) {
+          console.error("Error fetching season data:", error);
+        }
+
+        // Fallback when season endpoint is blocked/rate-limited.
+        const fallbackSeasonId = inferCurrentSeasonId();
+        try {
+          await fetchGameDatesForAllTeams(fallbackSeasonId);
+          setSeasonData({
+            seasonId: fallbackSeasonId,
+            startDate: `${String(fallbackSeasonId).slice(0, 4)}-09-01`
+          });
+        } catch (fallbackError) {
+          if (!isRateLimitError(fallbackError)) {
+            console.error("Fallback season fetch failed:", fallbackError);
+          }
+          setLoading(false);
+        }
       }
     };
 
@@ -98,28 +207,52 @@ const GoalieShareChart: React.FC = () => {
 
   const fetchGameDatesForAllTeams = async (seasonId: number): Promise<void> => {
     const gameData: TeamGameData = {};
-    const fetchPromises = Object.keys(teamsInfo).map(async (teamAbbrev) => {
-      const url = `https://api-web.nhle.com/v1/club-schedule-season/${teamAbbrev}/${seasonId}`;
-      try {
-        const response = await Fetch(url).then((res) => res.json());
-        gameData[teamAbbrev] = response.games
-          .filter((game: any) => game.gameType === 2)
-          .map((game: any) => ({
-            gameId: game.id,
-            gameDate: game.gameDate.split("T")[0]
-          }));
-      } catch (error) {
-        console.error(`Failed to fetch games for ${teamAbbrev}:`, error);
-      }
-    });
+    const teamAbbrevs = Object.keys(teamsInfo);
+    const chunkSize = 2;
 
-    await Promise.all(fetchPromises);
+    for (let i = 0; i < teamAbbrevs.length; i += chunkSize) {
+      const chunk = teamAbbrevs.slice(i, i + chunkSize);
+      await Promise.all(
+        chunk.map(async (teamAbbrev) => {
+          const url = `https://api-web.nhle.com/v1/club-schedule-season/${teamAbbrev}/${seasonId}`;
+          try {
+            const response = await fetchJsonWithRetry(
+              url,
+              `Schedule request failed for ${teamAbbrev}`
+            );
+            if (!response) {
+              return;
+            }
+            const payload = unwrapProxyPayload(
+              response,
+              `Schedule request failed for ${teamAbbrev}`
+            );
+            const games = Array.isArray(payload?.games) ? payload.games : [];
+            gameData[teamAbbrev] = games
+              .filter((game: any) => game.gameType === 2)
+              .map((game: any) => ({
+                gameId: game.id,
+                gameDate: game.gameDate.split("T")[0]
+              }));
+          } catch (error) {
+            if (!isRateLimitError(error)) {
+              console.error(`Failed to fetch games for ${teamAbbrev}:`, error);
+            }
+          }
+        })
+      );
+    }
+
     setTeamGameData(gameData);
   };
 
   const calculateGameSpan = (
     teamGames: GameData[]
   ): { startDate: string; endDate: string } => {
+    if (!teamGames?.length) {
+      return { startDate: "", endDate: "" };
+    }
+
     const today = new Date().toISOString().split("T")[0];
     const gameCount = teamGames.length;
     let startDate: string;
@@ -162,36 +295,45 @@ const GoalieShareChart: React.FC = () => {
     setLoading(true);
     const allGoalieStats: TeamGoalieStats = {};
 
-    const fetchPromises = Object.keys(teamGameData).map(async (teamAbbrev) => {
-      const teamGames = teamGameData[teamAbbrev];
-      const { startDate, endDate } = calculateGameSpan(teamGames);
-      const franchiseId =
-        teamsInfo[teamAbbrev as keyof typeof teamsInfo]?.franchiseId;
+    const teamAbbrevs = Object.keys(teamGameData);
+    const chunkSize = 2;
 
-      if (franchiseId) {
-        try {
-          const goalieData = await fetchGoalieData(
-            franchiseId,
-            startDate,
-            endDate
-          );
-          if (goalieData && goalieData.length > 0) {
-            const totalGames = goalieData.reduce(
-              (sum, goalie) => sum + goalie.gamesPlayed,
-              0
-            );
-            allGoalieStats[teamAbbrev] = {
-              goalies: goalieData,
-              totalGames
-            };
+    for (let i = 0; i < teamAbbrevs.length; i += chunkSize) {
+      const chunk = teamAbbrevs.slice(i, i + chunkSize);
+      await Promise.all(
+        chunk.map(async (teamAbbrev) => {
+          const teamGames = teamGameData[teamAbbrev];
+          const { startDate, endDate } = calculateGameSpan(teamGames);
+          const franchiseId =
+            teamsInfo[teamAbbrev as keyof typeof teamsInfo]?.franchiseId;
+
+          if (franchiseId && startDate && endDate) {
+            try {
+              const goalieData = await fetchGoalieData(
+                franchiseId,
+                startDate,
+                endDate
+              );
+              if (goalieData && goalieData.length > 0) {
+                const totalGames = goalieData.reduce(
+                  (sum, goalie) => sum + goalie.gamesPlayed,
+                  0
+                );
+                allGoalieStats[teamAbbrev] = {
+                  goalies: goalieData,
+                  totalGames
+                };
+              }
+            } catch (error) {
+              if (!isRateLimitError(error)) {
+                console.error(`Error fetching goalie data for ${teamAbbrev}:`, error);
+              }
+            }
           }
-        } catch (error) {
-          console.error(`Error fetching goalie data for ${teamAbbrev}:`, error);
-        }
-      }
-    });
+        })
+      );
+    }
 
-    await Promise.all(fetchPromises);
     setGoalieStats(allGoalieStats);
     setLoading(false);
   };
@@ -201,20 +343,33 @@ const GoalieShareChart: React.FC = () => {
     startDate: string,
     endDate: string
   ): Promise<GoalieData[]> => {
-    const url = `https://api.nhle.com/stats/rest/en/goalie/summary?isAggregate=true&isGame=true&start=0&limit=50&factCayenneExp=gamesPlayed>=1&cayenneExp=franchiseId=${franchiseId} and gameDate<='${endDate}' and gameDate>='${startDate}' and gameTypeId=2`;
+    const cayenneExp = `franchiseId=${franchiseId} and gameDate<="${endDate}" and gameDate>="${startDate}" and gameTypeId=2`;
+    const params = new URLSearchParams({
+      isAggregate: "true",
+      isGame: "true",
+      start: "0",
+      limit: "50",
+      factCayenneExp: "gamesPlayed>=1",
+      cayenneExp
+    });
+    const url = `https://api.nhle.com/stats/rest/en/goalie/summary?${params.toString()}`;
 
     try {
-      const response = await Fetch(url);
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-      const data = await response.json();
-      return data.data || [];
-    } catch (error) {
-      console.error(
-        `Error fetching goalie data for franchiseId ${franchiseId}:`,
-        error
+      const data = unwrapProxyPayload(
+        await fetchJsonWithRetry(
+          url,
+          `Goalie request failed for franchiseId ${franchiseId}`
+        ),
+        `Goalie request failed for franchiseId ${franchiseId}`
       );
+      return Array.isArray(data?.data) ? data.data : [];
+    } catch (error) {
+      if (!isRateLimitError(error)) {
+        console.error(
+          `Error fetching goalie data for franchiseId ${franchiseId}:`,
+          error
+        );
+      }
       return [];
     }
   };
