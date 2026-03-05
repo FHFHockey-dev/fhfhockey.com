@@ -79,6 +79,12 @@ interface SkaterTrendResponse {
 }
 
 const PAGE_SIZE = 2000;
+const RESPONSE_TTL_MS = 60_000;
+const responseCache = new Map<
+  string,
+  { expiresAt: number; payload: SkaterTrendResponse }
+>();
+const inFlight = new Map<string, Promise<SkaterTrendResponse>>();
 
 function parseWindowSize(input: unknown): SkaterWindowSize {
   const candidate = Number(Array.isArray(input) ? input[0] : input);
@@ -360,50 +366,81 @@ export default async function handler(
   }
 
   try {
-    const season = await fetchCurrentSeason();
-    const seasonId = season.id;
-    const seasonStart = season.startDate;
-
     const limit = parseLimit(req.query.limit);
     const windowSize = parseWindowSize(req.query.window);
     const positionGroup = parsePositionGroup(req.query.position);
-    const positions = SKATER_POSITION_GROUP_MAP[positionGroup];
-
-    const categories: Partial<SkaterTrendResponse["categories"]> = {};
-    const playerIdsNeeded = new Set<number>();
-
-    for (const category of SKATER_TREND_CATEGORIES) {
-      const rows = await fetchMetricRows(
-        category,
-        seasonId,
-        seasonStart,
-        positions
-      );
-      const result = buildCategoryResult(rows, category, windowSize, limit);
-      categories[category.id] = {
-        series: result.series,
-        rankings: result.rankings
-      };
-      result.includedPlayerIds.forEach((id) => playerIdsNeeded.add(id));
+    const cacheKey = `${positionGroup}:${windowSize}:${limit}`;
+    const nowMs = Date.now();
+    const cached = responseCache.get(cacheKey);
+    if (cached && cached.expiresAt > nowMs) {
+      res.setHeader("Cache-Control", "s-maxage=900, stale-while-revalidate=60");
+      return res.status(200).json(cached.payload);
     }
 
-    const playerMetadata = await fetchPlayerMetadata(
-      Array.from(playerIdsNeeded)
-    );
+    const pending = inFlight.get(cacheKey);
+    if (pending) {
+      const payload = await pending;
+      res.setHeader("Cache-Control", "s-maxage=900, stale-while-revalidate=60");
+      return res.status(200).json(payload);
+    }
 
-    const response: SkaterTrendResponse = {
-      seasonId,
-      generatedAt: new Date().toISOString(),
-      positionGroup,
-      limit,
-      windowSize,
-      categories: categories as SkaterTrendResponse["categories"],
-      playerMetadata
-    };
+    const loadPromise = (async () => {
+      const season = await fetchCurrentSeason();
+      const seasonId = season.id;
+      const seasonStart = season.startDate;
+
+      const categories: Partial<SkaterTrendResponse["categories"]> = {};
+      const playerIdsNeeded = new Set<number>();
+      const positions = SKATER_POSITION_GROUP_MAP[positionGroup];
+
+      for (const category of SKATER_TREND_CATEGORIES) {
+        const rows = await fetchMetricRows(
+          category,
+          seasonId,
+          seasonStart,
+          positions
+        );
+        const result = buildCategoryResult(rows, category, windowSize, limit);
+        categories[category.id] = {
+          series: result.series,
+          rankings: result.rankings
+        };
+        result.includedPlayerIds.forEach((id) => playerIdsNeeded.add(id));
+      }
+
+      const playerMetadata = await fetchPlayerMetadata(
+        Array.from(playerIdsNeeded)
+      );
+
+      const response: SkaterTrendResponse = {
+        seasonId,
+        generatedAt: new Date().toISOString(),
+        positionGroup,
+        limit,
+        windowSize,
+        categories: categories as SkaterTrendResponse["categories"],
+        playerMetadata
+      };
+
+      responseCache.set(cacheKey, {
+        payload: response,
+        expiresAt: Date.now() + RESPONSE_TTL_MS
+      });
+      return response;
+    })();
+
+    inFlight.set(cacheKey, loadPromise);
+    const response = await loadPromise;
+    inFlight.delete(cacheKey);
 
     res.setHeader("Cache-Control", "s-maxage=900, stale-while-revalidate=60");
     return res.status(200).json(response);
   } catch (error: any) {
+    const limit = parseLimit(req.query.limit);
+    const windowSize = parseWindowSize(req.query.window);
+    const positionGroup = parsePositionGroup(req.query.position);
+    const cacheKey = `${positionGroup}:${windowSize}:${limit}`;
+    inFlight.delete(cacheKey);
     console.error("skater-power API error", error);
     return res.status(500).json({
       message: "Failed to compute skater trends.",

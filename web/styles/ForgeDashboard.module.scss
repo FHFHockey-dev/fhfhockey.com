@@ -3,7 +3,8 @@
 @use "sass:color";
 
 .page {
-  min-height: 100dvh;
+  flex: 1 1 auto;
+  min-height: 0;
   background: v.$background-dark;
   color: v.$text-primary;
 }
@@ -12,7 +13,7 @@
   width: min(1400px, 100% - 2rem);
   margin: 0 auto;
   padding: v.$space-md 0 v.$space-md;
-  min-height: 100dvh;
+  min-height: 100%;
   display: grid;
   grid-template-rows: auto auto 1fr;
   gap: v.$space-sm;
@@ -497,7 +498,7 @@
 }
 
 .moversToggleBtn {
-  min-height: 28px;
+  min-height: v.$touch-target-min;
   padding: 0 v.$space-sm;
   border-radius: 999px;
   border: 1px solid rgba(v.$border-secondary, 0.85);
@@ -609,10 +610,13 @@
 
 @media (min-width: 1280px) and (min-height: 900px) {
   .page {
+    height: calc(100dvh - 130px);
+    max-height: calc(100dvh - 130px);
     overflow: hidden;
   }
 
   .container {
+    height: 100%;
     padding: v.$space-sm 0;
   }
 

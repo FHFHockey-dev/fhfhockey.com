@@ -1,0 +1,16 @@
+[
+  {
+    "url": "http://127.0.0.1:3000/api/v1/trends/skater-power?position=forward&window=3&limit=60",
+    "p50": 3.22,
+    "p95": 3.91,
+    "min": 2.68,
+    "max": 4.21
+  },
+  {
+    "url": "http://127.0.0.1:3000/api/v1/start-chart?date=2026-03-05",
+    "p50": 3.32,
+    "p95": 4.22,
+    "min": 2.91,
+    "max": 4.35
+  }
+]

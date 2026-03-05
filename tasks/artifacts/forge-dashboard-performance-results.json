@@ -1,0 +1,152 @@
+{
+  "measuredAt": "2026-03-05T14:30:14.524Z",
+  "environment": {
+    "baseUrl": "http://127.0.0.1:3000",
+    "mode": "local-next-dev",
+    "notes": "Local machine measurements; useful for regression tracking, not production SLA replacement."
+  },
+  "targets": {
+    "warmInteractiveMs": 2500,
+    "endpointP95Ms": 800
+  },
+  "endpointResults": [
+    {
+      "endpoint": "/api/team-ratings?date=2026-03-05",
+      "samples": 25,
+      "non200": 0,
+      "p50Ms": 2.22,
+      "p95Ms": 3.51,
+      "minMs": 1.74,
+      "maxMs": 3.81
+    },
+    {
+      "endpoint": "/api/v1/trends/team-ctpi",
+      "samples": 25,
+      "non200": 0,
+      "p50Ms": 177.79,
+      "p95Ms": 364.3,
+      "minMs": 143.26,
+      "maxMs": 397.83
+    },
+    {
+      "endpoint": "/api/v1/trends/skater-power?position=forward&window=3&limit=60",
+      "samples": 25,
+      "non200": 0,
+      "p50Ms": 570.07,
+      "p95Ms": 1034.33,
+      "minMs": 374.63,
+      "maxMs": 1282.86
+    },
+    {
+      "endpoint": "/api/v1/sustainability/trends?snapshot_date=2026-03-05&window_code=l10&pos=all&direction=hot&limit=8",
+      "samples": 25,
+      "non200": 0,
+      "p50Ms": 66.86,
+      "p95Ms": 94.68,
+      "minMs": 51.82,
+      "maxMs": 97.96
+    },
+    {
+      "endpoint": "/api/v1/forge/goalies?date=2026-03-05&horizon=1",
+      "samples": 25,
+      "non200": 0,
+      "p50Ms": 321.86,
+      "p95Ms": 576.16,
+      "minMs": 208.1,
+      "maxMs": 589.42
+    },
+    {
+      "endpoint": "/api/v1/start-chart?date=2026-03-05",
+      "samples": 25,
+      "non200": 0,
+      "p50Ms": 836.21,
+      "p95Ms": 1130.37,
+      "minMs": 642.9,
+      "maxMs": 1200.57
+    }
+  ],
+  "pageLoad": {
+    "samples": 10,
+    "warmups": 2,
+    "runs": [
+      {
+        "domInteractiveMs": 289,
+        "domContentLoadedMs": 466,
+        "loadEventEndMs": 466.5,
+        "firstContentfulPaintMs": 0,
+        "readyAfterLoadMs": 966.97
+      },
+      {
+        "domInteractiveMs": 227.4,
+        "domContentLoadedMs": 404.3,
+        "loadEventEndMs": 404.8,
+        "firstContentfulPaintMs": 0,
+        "readyAfterLoadMs": 998.46
+      },
+      {
+        "domInteractiveMs": 227.8,
+        "domContentLoadedMs": 399.5,
+        "loadEventEndMs": 400,
+        "firstContentfulPaintMs": 0,
+        "readyAfterLoadMs": 742.14
+      },
+      {
+        "domInteractiveMs": 228.1,
+        "domContentLoadedMs": 397.5,
+        "loadEventEndMs": 398,
+        "firstContentfulPaintMs": 0,
+        "readyAfterLoadMs": 900.57
+      },
+      {
+        "domInteractiveMs": 226.5,
+        "domContentLoadedMs": 390.3,
+        "loadEventEndMs": 390.9,
+        "firstContentfulPaintMs": 0,
+        "readyAfterLoadMs": 716.6
+      },
+      {
+        "domInteractiveMs": 231.4,
+        "domContentLoadedMs": 405.6,
+        "loadEventEndMs": 406.2,
+        "firstContentfulPaintMs": 0,
+        "readyAfterLoadMs": 603.72
+      },
+      {
+        "domInteractiveMs": 228.1,
+        "domContentLoadedMs": 397,
+        "loadEventEndMs": 397.5,
+        "firstContentfulPaintMs": 0,
+        "readyAfterLoadMs": 702.21
+      },
+      {
+        "domInteractiveMs": 227.4,
+        "domContentLoadedMs": 396.5,
+        "loadEventEndMs": 396.9,
+        "firstContentfulPaintMs": 0,
+        "readyAfterLoadMs": 787.87
+      },
+      {
+        "domInteractiveMs": 230.7,
+        "domContentLoadedMs": 400.1,
+        "loadEventEndMs": 400.6,
+        "firstContentfulPaintMs": 0,
+        "readyAfterLoadMs": 701.15
+      },
+      {
+        "domInteractiveMs": 231.6,
+        "domContentLoadedMs": 404.1,
+        "loadEventEndMs": 404.6,
+        "firstContentfulPaintMs": 0,
+        "readyAfterLoadMs": 738.95
+      }
+    ],
+    "summary": {
+      "fcpP50Ms": 0,
+      "fcpP95Ms": 0,
+      "loadEventEndP50Ms": 400.3,
+      "loadEventEndP95Ms": 466.5,
+      "dashboardReadyP50Ms": 1142.85,
+      "dashboardReadyP95Ms": 1433.47
+    }
+  }
+}

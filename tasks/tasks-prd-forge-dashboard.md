@@ -95,10 +95,10 @@
   - [x] 5.5 Add dashboard render tests for loading, empty, error, and partial-data scenarios.
   - [x] 5.6 Add interaction tests for global filters and module updates.
 
-- [ ] 6.0 Complete QA, performance validation, and rollout readiness checks
-  - [ ] 6.1 Execute manual QA checklist for desktop no-scroll behavior and visual integrity.
-  - [ ] 6.2 Execute manual QA checklist for mobile/tablet usability and interaction quality.
-  - [ ] 6.3 Measure initial dashboard load and key endpoint p95 times against PRD targets.
-  - [ ] 6.4 Fix critical/high-priority defects found during QA or automated testing.
-  - [ ] 6.5 Confirm launch gate: manual QA pass + automated endpoint suite pass.
-  - [ ] 6.6 Publish rollout notes including known limitations and post-launch monitoring actions.
+- [x] 6.0 Complete QA, performance validation, and rollout readiness checks
+  - [x] 6.1 Execute manual QA checklist for desktop no-scroll behavior and visual integrity.
+  - [x] 6.2 Execute manual QA checklist for mobile/tablet usability and interaction quality.
+  - [x] 6.3 Measure initial dashboard load and key endpoint p95 times against PRD targets.
+  - [x] 6.4 Fix critical/high-priority defects found during QA or automated testing.
+  - [x] 6.5 Confirm launch gate: manual QA pass + automated endpoint suite pass.
+  - [x] 6.6 Publish rollout notes including known limitations and post-launch monitoring actions.
