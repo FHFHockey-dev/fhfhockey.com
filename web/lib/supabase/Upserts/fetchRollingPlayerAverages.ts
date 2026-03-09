@@ -2,6 +2,14 @@ import dotenv from "dotenv";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { parseISO, subDays, formatISO } from "date-fns";
 import { teamsInfo } from "lib/teamsInfo";
+import {
+  createHistoricalAverageAccumulator,
+  createHistoricalGpPctAccumulator,
+  getHistoricalAverageSnapshot,
+  getHistoricalGpPctSnapshot,
+  updateHistoricalAverageAccumulator,
+  updateHistoricalGpPctAccumulator
+} from "./rollingHistoricalAverages";
 
 type StrengthState = "all" | "ev" | "pp" | "pk";
 type FullRefreshMode = "rpc_truncate" | "overwrite_only" | "delete";
@@ -307,6 +315,7 @@ interface GameRow {
   date: string;
   homeTeamId: number;
   awayTeamId: number;
+  seasonId: number;
 }
 
 interface LineCombinationRow {
@@ -699,25 +708,31 @@ const abbrevToTeamId = Object.entries(teamsInfo).reduce<Record<string, number>>(
   {}
 );
 
-type TeamGameLedger = Record<number, { date: string; cumulative: number }[]>;
+type TeamGameLedger = Record<
+  string,
+  {
+    date: string;
+    cumulative: number;
+  }[]
+>;
 
 function buildTeamGameLedger(games: GameRow[]): TeamGameLedger {
   const ledger: TeamGameLedger = {};
-  const pushGame = (teamId: number, date: string) => {
-    if (!ledger[teamId]) {
-      ledger[teamId] = [];
+  const pushGame = (teamId: number, seasonId: number, date: string) => {
+    const key = `${teamId}:${seasonId}`;
+    if (!ledger[key]) {
+      ledger[key] = [];
     }
-    ledger[teamId].push({ date, cumulative: 0 });
+    ledger[key].push({ date, cumulative: 0 });
   };
 
   games.forEach((game) => {
-    pushGame(game.homeTeamId, game.date);
-    pushGame(game.awayTeamId, game.date);
+    pushGame(game.homeTeamId, game.seasonId, game.date);
+    pushGame(game.awayTeamId, game.seasonId, game.date);
   });
 
-  for (const teamIdStr of Object.keys(ledger)) {
-    const teamId = Number(teamIdStr);
-    const entries = ledger[teamId];
+  for (const key of Object.keys(ledger)) {
+    const entries = ledger[key];
     entries.sort((a, b) => a.date.localeCompare(b.date));
     let running = 0;
     for (const entry of entries) {
@@ -732,10 +747,11 @@ function buildTeamGameLedger(games: GameRow[]): TeamGameLedger {
 function getTeamGamesPlayed(
   ledger: TeamGameLedger,
   teamId: number | null,
+  seasonId: number,
   date: string
 ): number {
   if (!teamId) return 0;
-  const entries = ledger[teamId];
+  const entries = ledger[`${teamId}:${seasonId}`];
   if (!entries) return 0;
   let left = 0;
   let right = entries.length - 1;
@@ -756,6 +772,7 @@ function getTeamGamesPlayed(
 function getTeamGamesWindowCount(
   ledger: TeamGameLedger,
   teamId: number | null,
+  seasonId: number,
   startDate: string,
   endDate: string
 ): number {
@@ -763,8 +780,8 @@ function getTeamGamesWindowCount(
   const beforeStart = formatISO(subDays(parseISO(startDate), 1), {
     representation: "date"
   });
-  const endCount = getTeamGamesPlayed(ledger, teamId, endDate);
-  const startCount = getTeamGamesPlayed(ledger, teamId, beforeStart);
+  const endCount = getTeamGamesPlayed(ledger, teamId, seasonId, endDate);
+  const startCount = getTeamGamesPlayed(ledger, teamId, seasonId, beforeStart);
   return Math.max(endCount - startCount, 0);
 }
 
@@ -804,10 +821,17 @@ function updateAccumulator(
 
 function deriveOutputs(
   metricsState: Record<string, RollingAccumulator>,
+  historicalMetricsState: Record<
+    string,
+    ReturnType<typeof createHistoricalAverageAccumulator>
+  >,
+  historicalGpPctState: ReturnType<typeof createHistoricalGpPctAccumulator>,
   gamesPlayed: number,
   teamGamesPlayed: number,
   teamGamesWindow: Record<RollingWindow, number>,
-  playerGamesWindow: Record<RollingWindow, number>
+  playerGamesWindow: Record<RollingWindow, number>,
+  currentSeason: number,
+  currentTeamId: number | null
 ) {
   const output: Record<string, number | null> = {};
   for (const metric of METRICS) {
@@ -818,6 +842,14 @@ function deriveOutputs(
       acc.countAll > 0 ? Number(totalAll.toFixed(6)) : null;
     output[`${metric.key}_avg_all`] =
       acc.countAll > 0 ? Number((totalAll / acc.countAll).toFixed(6)) : null;
+    const historical = historicalMetricsState[metric.key];
+    const historicalSnapshot = getHistoricalAverageSnapshot(
+      historical,
+      currentSeason
+    );
+    output[`${metric.key}_avg_season`] = historicalSnapshot.season;
+    output[`${metric.key}_avg_3ya`] = historicalSnapshot.threeYear;
+    output[`${metric.key}_avg_career`] = historicalSnapshot.career;
     ROLLING_WINDOWS.forEach((size) => {
       const window = acc.windows[size];
       const windowSum = Number(window.sum) || 0;
@@ -834,6 +866,14 @@ function deriveOutputs(
       ? Number((gamesPlayed / teamGamesPlayed).toFixed(6))
       : null;
   output.gp_pct_avg_all = output.gp_pct_total_all;
+  const historicalGpPct = getHistoricalGpPctSnapshot(
+    historicalGpPctState,
+    currentSeason,
+    currentTeamId
+  );
+  output.gp_pct_avg_season = historicalGpPct.season;
+  output.gp_pct_avg_3ya = historicalGpPct.threeYear;
+  output.gp_pct_avg_career = historicalGpPct.career;
   ROLLING_WINDOWS.forEach((size) => {
     const teamGames = teamGamesWindow[size] ?? 0;
     const playerGames = playerGamesWindow[size] ?? 0;
@@ -856,7 +896,7 @@ async function fetchGames(): Promise<GameRow[]> {
       async () => {
         const { data, error } = await supabase
           .from("games")
-          .select("id, date, homeTeamId, awayTeamId")
+          .select("id, date, homeTeamId, awayTeamId, seasonId")
           .order("date", { ascending: true })
           .range(from, from + pageSize - 1);
         if (error) throw error;
@@ -1307,9 +1347,15 @@ async function processPlayer(
       );
 
       const metricsState: Record<string, RollingAccumulator> = {};
+      const historicalMetricsState: Record<
+        string,
+        ReturnType<typeof createHistoricalAverageAccumulator>
+      > = {};
       METRICS.forEach((metric) => {
         metricsState[metric.key] = initAccumulator();
+        historicalMetricsState[metric.key] = createHistoricalAverageAccumulator();
       });
+      const historicalGpPctState = createHistoricalGpPctAccumulator();
 
       let gamesPlayed = 0;
       const appearanceDates: string[] = [];
@@ -1318,6 +1364,11 @@ async function processPlayer(
         METRICS.forEach((metric) => {
           const value = metric.getValue(game);
           updateAccumulator(metricsState[metric.key], value);
+          updateHistoricalAverageAccumulator(
+            historicalMetricsState[metric.key],
+            game.season,
+            value
+          );
         });
 
         const playedThisGame =
@@ -1336,8 +1387,15 @@ async function processPlayer(
         const teamGamesPlayed = getTeamGamesPlayed(
           ledger,
           game.teamId ?? null,
+          game.season,
           game.gameDate
         );
+        updateHistoricalGpPctAccumulator(historicalGpPctState, {
+          season: game.season,
+          teamId: game.teamId ?? null,
+          playedThisGame: playedThisGame > 0,
+          teamGamesPlayed
+        });
 
         const teamGamesWindow: Record<RollingWindow, number> = {
           3: 0,
@@ -1365,6 +1423,7 @@ async function processPlayer(
           teamGamesWindow[size] = getTeamGamesWindowCount(
             ledger,
             game.teamId ?? null,
+            game.season,
             windowStart,
             game.gameDate
           );
@@ -1373,10 +1432,14 @@ async function processPlayer(
 
         const metricOutputs = deriveOutputs(
           metricsState,
+          historicalMetricsState,
+          historicalGpPctState,
           gamesPlayed,
           teamGamesPlayed,
           teamGamesWindow,
-          playerGamesWindow
+          playerGamesWindow,
+          game.season,
+          game.teamId ?? null
         );
 
         if (config.state !== "all" && config.state !== "pp") {

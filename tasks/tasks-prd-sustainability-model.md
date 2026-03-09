@@ -18,6 +18,13 @@
 - `web/lib/sustainability/dates.ts` - Shared date normalization helpers for WGO dates, NST `date_scraped`, and snapshot/date query params.
 - `web/lib/sustainability/dates.test.ts` - Unit tests covering date normalization and WGO-vs-NST game date precedence.
 - `web/lib/sustainability/bandService.ts` - Now consumes the shared date helper instead of keeping duplicate inline normalization logic.
+- `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts` - Rolling metrics backfill/upsert pipeline; now also persists explicit season, 3-year, and career averages alongside existing cumulative and rolling-window outputs.
+- `web/lib/supabase/Upserts/rollingHistoricalAverages.ts` - Shared historical-average accumulator utilities for season-to-date, 3-year, and career snapshots used by the rolling metrics pipeline.
+- `web/lib/supabase/Upserts/rollingHistoricalAverages.test.ts` - Unit tests covering historical-average and GP% snapshot aggregation logic across season windows.
+- `migrations/20260309_add_explicit_historical_averages_to_rolling_player_game_metrics.sql` - Adds explicit `*_avg_season`, `*_avg_3ya`, and `*_avg_career` columns to `rolling_player_game_metrics`.
+- `web/lib/supabase/database-generated.types.ts` - Generated Supabase `Database` types; updated so `rolling_player_game_metrics` row/insert/update types include the explicit historical average fields.
+- `web/pages/trends/player/[playerId].tsx` - Player trend chart page; now lets the user compare rolling values against season, 3-year, career, or cumulative baselines.
+- `web/pages/trends/player/playerTrendPage.module.scss` - Styling for the new baseline-mode control on the player trend page.
 - `web/sql/sustainability/*.sql` - Parameterized SQL for metric retrieval and inserts.
 - `web/sql/sustainability/wgo_last_n_games.sql` - Returns last-N game rows from WGO per-player for rolling windows.
 - `web/sql/sustainability/wgo_last_n_aggregate.sql` - Aggregates last-N window for surface stats and TOI splits.
@@ -55,9 +62,9 @@
   - [x] 1.4.1 Query upcoming schedule for a player’s team and list next 10 games with opponent and dates.
   - [x] 1.4.2 Add team strength pulls from `nst_team_stats` and/or `nst_team_all` for opponent adjustments.
   - [x] 1.4.3 Expose a function getUpcomingOpponents(playerId, nGames) in `data.ts`.
-- [ ] 1.5 Extend rolling metrics pipeline
-  - [ ] 1.5.1 Persist season-to-date, 3-year, and career averages for every metric tracked in `rolling_player_game_metrics`.
-  - [ ] 1.5.2 Expose additional aggregates in Supabase schema/types and surface them to trend visualizations.
+- [x] 1.5 Extend rolling metrics pipeline
+  - [x] 1.5.1 Persist season-to-date, 3-year, and career averages for every metric tracked in `rolling_player_game_metrics`.
+  - [x] 1.5.2 Expose additional aggregates in Supabase schema/types and surface them to trend visualizations.
 
 - [ ] 2.0 Feature engineering
   - [ ] 2.1 Compute per-60 rates and recent-vs-career deltas/z-scores for surface and underlying metrics.

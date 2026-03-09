@@ -14,46 +14,49 @@ import {
 import supabase from "lib/supabase";
 import styles from "./playerTrendPage.module.scss";
 
+const BASELINE_OPTIONS = [
+  { key: "avg_season", label: "Season" },
+  { key: "avg_3ya", label: "3-Year" },
+  { key: "avg_career", label: "Career" },
+  { key: "avg_all", label: "Cumulative" }
+] as const;
+
+type BaselineMode = (typeof BASELINE_OPTIONS)[number]["key"];
+
 const METRIC_CONFIG = [
   {
     key: "goals",
     rollingKey: "goals_avg_last5",
-    baselineKey: "goals_avg_all",
     label: "Goals (L5 Avg)",
     color: "#ff9f40" // Orange
   },
   {
     key: "assists",
     rollingKey: "assists_avg_last5",
-    baselineKey: "assists_avg_all",
     label: "Assists (L5 Avg)",
     color: "#3b82f6" // Blue
   },
   {
     key: "points",
     rollingKey: "points_avg_last5",
-    baselineKey: "points_avg_all",
     label: "Points (L5 Avg)",
     color: "#9b59b6" // Purple
   },
   {
     key: "sog_per_60",
     rollingKey: "sog_per_60_avg_last5",
-    baselineKey: "sog_per_60_avg_all",
     label: "Shots/60 (L5 Avg)",
     color: "#4bc0c0" // Teal
   },
   {
     key: "ixg_per_60",
     rollingKey: "ixg_per_60_avg_last5",
-    baselineKey: "ixg_per_60_avg_all",
     label: "ixG/60 (L5 Avg)",
     color: "#00ff99" // Green
   },
   {
     key: "toi_seconds",
     rollingKey: "toi_seconds_avg_last5",
-    baselineKey: "toi_seconds_avg_all",
     label: "TOI Seconds (L5 Avg)",
     color: "#ffcc33" // Yellow
   }
@@ -67,17 +70,39 @@ type RollingMetricRow = {
   game_date: string;
   goals_avg_last5: number | null;
   goals_avg_all: number | null;
+  goals_avg_season: number | null;
+  goals_avg_3ya: number | null;
+  goals_avg_career: number | null;
   assists_avg_last5: number | null;
   assists_avg_all: number | null;
+  assists_avg_season: number | null;
+  assists_avg_3ya: number | null;
+  assists_avg_career: number | null;
   points_avg_last5: number | null;
   points_avg_all: number | null;
+  points_avg_season: number | null;
+  points_avg_3ya: number | null;
+  points_avg_career: number | null;
   sog_per_60_avg_last5: number | null;
   sog_per_60_avg_all: number | null;
+  sog_per_60_avg_season: number | null;
+  sog_per_60_avg_3ya: number | null;
+  sog_per_60_avg_career: number | null;
   ixg_per_60_avg_last5: number | null;
   ixg_per_60_avg_all: number | null;
+  ixg_per_60_avg_season: number | null;
+  ixg_per_60_avg_3ya: number | null;
+  ixg_per_60_avg_career: number | null;
   toi_seconds_avg_last5: number | null;
   toi_seconds_avg_all: number | null;
+  toi_seconds_avg_season: number | null;
+  toi_seconds_avg_3ya: number | null;
+  toi_seconds_avg_career: number | null;
 };
+
+function getBaselineKey(metricKey: MetricKey, baselineMode: BaselineMode) {
+  return `${metricKey}_${baselineMode}` as keyof RollingMetricRow;
+}
 
 export default function PlayerTrendPage() {
   const router = useRouter();
@@ -90,6 +115,7 @@ export default function PlayerTrendPage() {
   const [selectedMetrics, setSelectedMetrics] = useState<MetricKey[]>(
     METRIC_CONFIG.map((metric) => metric.key)
   );
+  const [baselineMode, setBaselineMode] = useState<BaselineMode>("avg_season");
 
   useEffect(() => {
     if (!router.isReady || !playerId) return;
@@ -119,7 +145,7 @@ export default function PlayerTrendPage() {
                 const { data, error } = await supabase
                   .from("rolling_player_game_metrics")
                   .select(
-                    "game_date, goals_avg_last5, goals_avg_all, assists_avg_last5, assists_avg_all, points_avg_last5, points_avg_all, sog_per_60_avg_last5, sog_per_60_avg_all, ixg_per_60_avg_last5, ixg_per_60_avg_all, toi_seconds_avg_last5, toi_seconds_avg_all"
+                    "game_date, goals_avg_last5, goals_avg_all, goals_avg_season, goals_avg_3ya, goals_avg_career, assists_avg_last5, assists_avg_all, assists_avg_season, assists_avg_3ya, assists_avg_career, points_avg_last5, points_avg_all, points_avg_season, points_avg_3ya, points_avg_career, sog_per_60_avg_last5, sog_per_60_avg_all, sog_per_60_avg_season, sog_per_60_avg_3ya, sog_per_60_avg_career, ixg_per_60_avg_last5, ixg_per_60_avg_all, ixg_per_60_avg_season, ixg_per_60_avg_3ya, ixg_per_60_avg_career, toi_seconds_avg_last5, toi_seconds_avg_all, toi_seconds_avg_season, toi_seconds_avg_3ya, toi_seconds_avg_career"
                   )
                   .eq("player_id", idNumber)
                   .eq("strength_state", "all")
@@ -189,7 +215,7 @@ export default function PlayerTrendPage() {
 
       METRIC_CONFIG.forEach((metric) => {
         const rollingRaw = row[metric.rollingKey as keyof RollingMetricRow];
-        const baselineRaw = row[metric.baselineKey as keyof RollingMetricRow];
+        const baselineRaw = row[getBaselineKey(metric.key, baselineMode)];
 
         const rolling =
           rollingRaw === null || rollingRaw === undefined
@@ -201,7 +227,7 @@ export default function PlayerTrendPage() {
             : Number(baselineRaw);
 
         base[metric.rollingKey] = rolling;
-        base[metric.baselineKey] = baseline;
+        base[getBaselineKey(metric.key, baselineMode)] = baseline;
 
         let delta: number | null = null;
         if (rolling !== null && baseline !== null && baseline !== 0) {
@@ -218,7 +244,7 @@ export default function PlayerTrendPage() {
       transformed.slice(0, 3)
     );
     return transformed;
-  }, [data]);
+  }, [baselineMode, data]);
 
   const handleMetricToggle = (metricKey: MetricKey) => {
     setSelectedMetrics((prev) =>
@@ -277,6 +303,33 @@ export default function PlayerTrendPage() {
               </button>
             );
           })}
+        </section>
+
+        <section className={styles.baselinePanel}>
+          <div>
+            <p className={styles.baselineLabel}>Baseline reference</p>
+            <p className={styles.baselineCopy}>
+              Compare the recent rolling window against season-to-date, 3-year,
+              career, or cumulative historical averages.
+            </p>
+          </div>
+          <div className={styles.baselineToggleGroup}>
+            {BASELINE_OPTIONS.map((option) => {
+              const active = baselineMode === option.key;
+              return (
+                <button
+                  key={option.key}
+                  type="button"
+                  onClick={() => setBaselineMode(option.key)}
+                  className={`${styles.baselineToggle} ${
+                    active ? styles.baselineToggleActive : ""
+                  }`}
+                >
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
         </section>
 
         <div className={styles.chartCard}>
@@ -361,13 +414,16 @@ export default function PlayerTrendPage() {
                       const config = METRIC_CONFIG.find(
                         (m) => m.key === metricKey
                       );
+                      const baselineKey = config
+                        ? getBaselineKey(config.key, baselineMode)
+                        : null;
                       const rollingValue =
                         config && props.payload
                           ? props.payload[config.rollingKey]
                           : undefined;
                       const baselineValue =
-                        config && props.payload
-                          ? props.payload[config.baselineKey]
+                        baselineKey && props.payload
+                          ? props.payload[baselineKey]
                           : undefined;
                       const rawDisplay =
                         rollingValue === null || rollingValue === undefined
@@ -396,7 +452,7 @@ export default function PlayerTrendPage() {
                       key={metric.key}
                       type="monotone"
                       dataKey={`${metric.key}_delta`}
-                      name={`${metric.label} vs Season % Δ`}
+                      name={`${metric.label} vs ${BASELINE_OPTIONS.find((option) => option.key === baselineMode)?.label ?? "Baseline"} % Δ`}
                       stroke={metric.color}
                       strokeWidth={2.5}
                       dot={false}

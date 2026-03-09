@@ -14838,6 +14838,9 @@ export type Database = {
       rolling_player_game_metrics: {
         Row: {
           assists_avg_all: number | null
+          assists_avg_3ya: number | null
+          assists_avg_career: number | null
+          assists_avg_season: number | null
           assists_avg_last10: number | null
           assists_avg_last20: number | null
           assists_avg_last3: number | null
@@ -14848,11 +14851,17 @@ export type Database = {
           assists_total_last3: number | null
           assists_total_last5: number | null
           blocks_avg_all: number | null
+          blocks_avg_3ya: number | null
+          blocks_avg_career: number | null
+          blocks_avg_season: number | null
           blocks_avg_last10: number | null
           blocks_avg_last20: number | null
           blocks_avg_last3: number | null
           blocks_avg_last5: number | null
           blocks_per_60_avg_all: number | null
+          blocks_per_60_avg_3ya: number | null
+          blocks_per_60_avg_career: number | null
+          blocks_per_60_avg_season: number | null
           blocks_per_60_avg_last10: number | null
           blocks_per_60_avg_last20: number | null
           blocks_per_60_avg_last3: number | null
@@ -14868,6 +14877,9 @@ export type Database = {
           blocks_total_last3: number | null
           blocks_total_last5: number | null
           ca_avg_all: number | null
+          ca_avg_3ya: number | null
+          ca_avg_career: number | null
+          ca_avg_season: number | null
           ca_avg_last10: number | null
           ca_avg_last20: number | null
           ca_avg_last3: number | null
@@ -14878,11 +14890,17 @@ export type Database = {
           ca_total_last3: number | null
           ca_total_last5: number | null
           cf_avg_all: number | null
+          cf_avg_3ya: number | null
+          cf_avg_career: number | null
+          cf_avg_season: number | null
           cf_avg_last10: number | null
           cf_avg_last20: number | null
           cf_avg_last3: number | null
           cf_avg_last5: number | null
           cf_pct_avg_all: number | null
+          cf_pct_avg_3ya: number | null
+          cf_pct_avg_career: number | null
+          cf_pct_avg_season: number | null
           cf_pct_avg_last10: number | null
           cf_pct_avg_last20: number | null
           cf_pct_avg_last3: number | null
@@ -14898,6 +14916,9 @@ export type Database = {
           cf_total_last3: number | null
           cf_total_last5: number | null
           expected_sh_pct_avg_all: number | null
+          expected_sh_pct_avg_3ya: number | null
+          expected_sh_pct_avg_career: number | null
+          expected_sh_pct_avg_season: number | null
           expected_sh_pct_avg_last10: number | null
           expected_sh_pct_avg_last20: number | null
           expected_sh_pct_avg_last3: number | null
@@ -14908,6 +14929,9 @@ export type Database = {
           expected_sh_pct_total_last3: number | null
           expected_sh_pct_total_last5: number | null
           fa_avg_all: number | null
+          fa_avg_3ya: number | null
+          fa_avg_career: number | null
+          fa_avg_season: number | null
           fa_avg_last10: number | null
           fa_avg_last20: number | null
           fa_avg_last3: number | null
@@ -14918,11 +14942,17 @@ export type Database = {
           fa_total_last3: number | null
           fa_total_last5: number | null
           ff_avg_all: number | null
+          ff_avg_3ya: number | null
+          ff_avg_career: number | null
+          ff_avg_season: number | null
           ff_avg_last10: number | null
           ff_avg_last20: number | null
           ff_avg_last3: number | null
           ff_avg_last5: number | null
           ff_pct_avg_all: number | null
+          ff_pct_avg_3ya: number | null
+          ff_pct_avg_career: number | null
+          ff_pct_avg_season: number | null
           ff_pct_avg_last10: number | null
           ff_pct_avg_last20: number | null
           ff_pct_avg_last3: number | null
@@ -14941,6 +14971,9 @@ export type Database = {
           game_id: number | null
           games_played: number
           goals_avg_all: number | null
+          goals_avg_3ya: number | null
+          goals_avg_career: number | null
+          goals_avg_season: number | null
           goals_avg_last10: number | null
           goals_avg_last20: number | null
           goals_avg_last3: number | null
@@ -14951,6 +14984,9 @@ export type Database = {
           goals_total_last3: number | null
           goals_total_last5: number | null
           gp_pct_avg_all: number | null
+          gp_pct_avg_3ya: number | null
+          gp_pct_avg_career: number | null
+          gp_pct_avg_season: number | null
           gp_pct_avg_last10: number | null
           gp_pct_avg_last20: number | null
           gp_pct_avg_last3: number | null
@@ -14961,11 +14997,17 @@ export type Database = {
           gp_pct_total_last3: number | null
           gp_pct_total_last5: number | null
           hits_avg_all: number | null
+          hits_avg_3ya: number | null
+          hits_avg_career: number | null
+          hits_avg_season: number | null
           hits_avg_last10: number | null
           hits_avg_last20: number | null
           hits_avg_last3: number | null
           hits_avg_last5: number | null
           hits_per_60_avg_all: number | null
+          hits_per_60_avg_3ya: number | null
+          hits_per_60_avg_career: number | null
+          hits_per_60_avg_season: number | null
           hits_per_60_avg_last10: number | null
           hits_per_60_avg_last20: number | null
           hits_per_60_avg_last3: number | null
@@ -14981,6 +15023,9 @@ export type Database = {
           hits_total_last3: number | null
           hits_total_last5: number | null
           ihdcf_avg_all: number | null
+          ihdcf_avg_3ya: number | null
+          ihdcf_avg_career: number | null
+          ihdcf_avg_season: number | null
           ihdcf_avg_last10: number | null
           ihdcf_avg_last20: number | null
           ihdcf_avg_last3: number | null
@@ -14991,6 +15036,9 @@ export type Database = {
           ihdcf_total_last3: number | null
           ihdcf_total_last5: number | null
           ipp_avg_all: number | null
+          ipp_avg_3ya: number | null
+          ipp_avg_career: number | null
+          ipp_avg_season: number | null
           ipp_avg_last10: number | null
           ipp_avg_last20: number | null
           ipp_avg_last3: number | null
@@ -15001,6 +15049,9 @@ export type Database = {
           ipp_total_last3: number | null
           ipp_total_last5: number | null
           iscf_avg_all: number | null
+          iscf_avg_3ya: number | null
+          iscf_avg_career: number | null
+          iscf_avg_season: number | null
           iscf_avg_last10: number | null
           iscf_avg_last20: number | null
           iscf_avg_last3: number | null
@@ -15011,11 +15062,17 @@ export type Database = {
           iscf_total_last3: number | null
           iscf_total_last5: number | null
           ixg_avg_all: number | null
+          ixg_avg_3ya: number | null
+          ixg_avg_career: number | null
+          ixg_avg_season: number | null
           ixg_avg_last10: number | null
           ixg_avg_last20: number | null
           ixg_avg_last3: number | null
           ixg_avg_last5: number | null
           ixg_per_60_avg_all: number | null
+          ixg_per_60_avg_3ya: number | null
+          ixg_per_60_avg_career: number | null
+          ixg_per_60_avg_season: number | null
           ixg_per_60_avg_last10: number | null
           ixg_per_60_avg_last20: number | null
           ixg_per_60_avg_last3: number | null
@@ -15033,6 +15090,9 @@ export type Database = {
           line_combo_group: string | null
           line_combo_slot: number | null
           on_ice_sh_pct_avg_all: number | null
+          on_ice_sh_pct_avg_3ya: number | null
+          on_ice_sh_pct_avg_career: number | null
+          on_ice_sh_pct_avg_season: number | null
           on_ice_sh_pct_avg_last10: number | null
           on_ice_sh_pct_avg_last20: number | null
           on_ice_sh_pct_avg_last3: number | null
@@ -15043,6 +15103,9 @@ export type Database = {
           on_ice_sh_pct_total_last3: number | null
           on_ice_sh_pct_total_last5: number | null
           oz_start_pct_avg_all: number | null
+          oz_start_pct_avg_3ya: number | null
+          oz_start_pct_avg_career: number | null
+          oz_start_pct_avg_season: number | null
           oz_start_pct_avg_last10: number | null
           oz_start_pct_avg_last20: number | null
           oz_start_pct_avg_last3: number | null
@@ -15053,6 +15116,9 @@ export type Database = {
           oz_start_pct_total_last3: number | null
           oz_start_pct_total_last5: number | null
           pdo_avg_all: number | null
+          pdo_avg_3ya: number | null
+          pdo_avg_career: number | null
+          pdo_avg_season: number | null
           pdo_avg_last10: number | null
           pdo_avg_last20: number | null
           pdo_avg_last3: number | null
@@ -15064,6 +15130,9 @@ export type Database = {
           pdo_total_last5: number | null
           player_id: number
           points_avg_all: number | null
+          points_avg_3ya: number | null
+          points_avg_career: number | null
+          points_avg_season: number | null
           points_avg_last10: number | null
           points_avg_last20: number | null
           points_avg_last3: number | null
@@ -15074,6 +15143,9 @@ export type Database = {
           points_total_last3: number | null
           points_total_last5: number | null
           pp_points_avg_all: number | null
+          pp_points_avg_3ya: number | null
+          pp_points_avg_career: number | null
+          pp_points_avg_season: number | null
           pp_points_avg_last10: number | null
           pp_points_avg_last20: number | null
           pp_points_avg_last3: number | null
@@ -15084,6 +15156,9 @@ export type Database = {
           pp_points_total_last3: number | null
           pp_points_total_last5: number | null
           pp_share_pct_avg_all: number | null
+          pp_share_pct_avg_3ya: number | null
+          pp_share_pct_avg_career: number | null
+          pp_share_pct_avg_season: number | null
           pp_share_pct_avg_last10: number | null
           pp_share_pct_avg_last20: number | null
           pp_share_pct_avg_last3: number | null
@@ -15095,6 +15170,9 @@ export type Database = {
           pp_share_pct_total_last5: number | null
           pp_unit: number | null
           primary_points_pct_avg_all: number | null
+          primary_points_pct_avg_3ya: number | null
+          primary_points_pct_avg_career: number | null
+          primary_points_pct_avg_season: number | null
           primary_points_pct_avg_last10: number | null
           primary_points_pct_avg_last20: number | null
           primary_points_pct_avg_last3: number | null
@@ -15106,6 +15184,9 @@ export type Database = {
           primary_points_pct_total_last5: number | null
           season: number
           shooting_pct_avg_all: number | null
+          shooting_pct_avg_3ya: number | null
+          shooting_pct_avg_career: number | null
+          shooting_pct_avg_season: number | null
           shooting_pct_avg_last10: number | null
           shooting_pct_avg_last20: number | null
           shooting_pct_avg_last3: number | null
@@ -15116,6 +15197,9 @@ export type Database = {
           shooting_pct_total_last3: number | null
           shooting_pct_total_last5: number | null
           shots_avg_all: number | null
+          shots_avg_3ya: number | null
+          shots_avg_career: number | null
+          shots_avg_season: number | null
           shots_avg_last10: number | null
           shots_avg_last20: number | null
           shots_avg_last3: number | null
@@ -15126,6 +15210,9 @@ export type Database = {
           shots_total_last3: number | null
           shots_total_last5: number | null
           sog_per_60_avg_all: number | null
+          sog_per_60_avg_3ya: number | null
+          sog_per_60_avg_career: number | null
+          sog_per_60_avg_season: number | null
           sog_per_60_avg_last10: number | null
           sog_per_60_avg_last20: number | null
           sog_per_60_avg_last3: number | null
@@ -15139,6 +15226,9 @@ export type Database = {
           team_games_played: number
           team_id: number | null
           toi_seconds_avg_all: number | null
+          toi_seconds_avg_3ya: number | null
+          toi_seconds_avg_career: number | null
+          toi_seconds_avg_season: number | null
           toi_seconds_avg_last10: number | null
           toi_seconds_avg_last20: number | null
           toi_seconds_avg_last3: number | null
@@ -15152,6 +15242,9 @@ export type Database = {
         }
         Insert: {
           assists_avg_all?: number | null
+          assists_avg_3ya?: number | null
+          assists_avg_career?: number | null
+          assists_avg_season?: number | null
           assists_avg_last10?: number | null
           assists_avg_last20?: number | null
           assists_avg_last3?: number | null
@@ -15162,11 +15255,17 @@ export type Database = {
           assists_total_last3?: number | null
           assists_total_last5?: number | null
           blocks_avg_all?: number | null
+          blocks_avg_3ya?: number | null
+          blocks_avg_career?: number | null
+          blocks_avg_season?: number | null
           blocks_avg_last10?: number | null
           blocks_avg_last20?: number | null
           blocks_avg_last3?: number | null
           blocks_avg_last5?: number | null
           blocks_per_60_avg_all?: number | null
+          blocks_per_60_avg_3ya?: number | null
+          blocks_per_60_avg_career?: number | null
+          blocks_per_60_avg_season?: number | null
           blocks_per_60_avg_last10?: number | null
           blocks_per_60_avg_last20?: number | null
           blocks_per_60_avg_last3?: number | null
@@ -15182,6 +15281,9 @@ export type Database = {
           blocks_total_last3?: number | null
           blocks_total_last5?: number | null
           ca_avg_all?: number | null
+          ca_avg_3ya?: number | null
+          ca_avg_career?: number | null
+          ca_avg_season?: number | null
           ca_avg_last10?: number | null
           ca_avg_last20?: number | null
           ca_avg_last3?: number | null
@@ -15192,11 +15294,17 @@ export type Database = {
           ca_total_last3?: number | null
           ca_total_last5?: number | null
           cf_avg_all?: number | null
+          cf_avg_3ya?: number | null
+          cf_avg_career?: number | null
+          cf_avg_season?: number | null
           cf_avg_last10?: number | null
           cf_avg_last20?: number | null
           cf_avg_last3?: number | null
           cf_avg_last5?: number | null
           cf_pct_avg_all?: number | null
+          cf_pct_avg_3ya?: number | null
+          cf_pct_avg_career?: number | null
+          cf_pct_avg_season?: number | null
           cf_pct_avg_last10?: number | null
           cf_pct_avg_last20?: number | null
           cf_pct_avg_last3?: number | null
@@ -15212,6 +15320,9 @@ export type Database = {
           cf_total_last3?: number | null
           cf_total_last5?: number | null
           expected_sh_pct_avg_all?: number | null
+          expected_sh_pct_avg_3ya?: number | null
+          expected_sh_pct_avg_career?: number | null
+          expected_sh_pct_avg_season?: number | null
           expected_sh_pct_avg_last10?: number | null
           expected_sh_pct_avg_last20?: number | null
           expected_sh_pct_avg_last3?: number | null
@@ -15222,6 +15333,9 @@ export type Database = {
           expected_sh_pct_total_last3?: number | null
           expected_sh_pct_total_last5?: number | null
           fa_avg_all?: number | null
+          fa_avg_3ya?: number | null
+          fa_avg_career?: number | null
+          fa_avg_season?: number | null
           fa_avg_last10?: number | null
           fa_avg_last20?: number | null
           fa_avg_last3?: number | null
@@ -15232,11 +15346,17 @@ export type Database = {
           fa_total_last3?: number | null
           fa_total_last5?: number | null
           ff_avg_all?: number | null
+          ff_avg_3ya?: number | null
+          ff_avg_career?: number | null
+          ff_avg_season?: number | null
           ff_avg_last10?: number | null
           ff_avg_last20?: number | null
           ff_avg_last3?: number | null
           ff_avg_last5?: number | null
           ff_pct_avg_all?: number | null
+          ff_pct_avg_3ya?: number | null
+          ff_pct_avg_career?: number | null
+          ff_pct_avg_season?: number | null
           ff_pct_avg_last10?: number | null
           ff_pct_avg_last20?: number | null
           ff_pct_avg_last3?: number | null
@@ -15255,6 +15375,9 @@ export type Database = {
           game_id?: number | null
           games_played?: number
           goals_avg_all?: number | null
+          goals_avg_3ya?: number | null
+          goals_avg_career?: number | null
+          goals_avg_season?: number | null
           goals_avg_last10?: number | null
           goals_avg_last20?: number | null
           goals_avg_last3?: number | null
@@ -15265,6 +15388,9 @@ export type Database = {
           goals_total_last3?: number | null
           goals_total_last5?: number | null
           gp_pct_avg_all?: number | null
+          gp_pct_avg_3ya?: number | null
+          gp_pct_avg_career?: number | null
+          gp_pct_avg_season?: number | null
           gp_pct_avg_last10?: number | null
           gp_pct_avg_last20?: number | null
           gp_pct_avg_last3?: number | null
@@ -15275,11 +15401,17 @@ export type Database = {
           gp_pct_total_last3?: number | null
           gp_pct_total_last5?: number | null
           hits_avg_all?: number | null
+          hits_avg_3ya?: number | null
+          hits_avg_career?: number | null
+          hits_avg_season?: number | null
           hits_avg_last10?: number | null
           hits_avg_last20?: number | null
           hits_avg_last3?: number | null
           hits_avg_last5?: number | null
           hits_per_60_avg_all?: number | null
+          hits_per_60_avg_3ya?: number | null
+          hits_per_60_avg_career?: number | null
+          hits_per_60_avg_season?: number | null
           hits_per_60_avg_last10?: number | null
           hits_per_60_avg_last20?: number | null
           hits_per_60_avg_last3?: number | null
@@ -15295,6 +15427,9 @@ export type Database = {
           hits_total_last3?: number | null
           hits_total_last5?: number | null
           ihdcf_avg_all?: number | null
+          ihdcf_avg_3ya?: number | null
+          ihdcf_avg_career?: number | null
+          ihdcf_avg_season?: number | null
           ihdcf_avg_last10?: number | null
           ihdcf_avg_last20?: number | null
           ihdcf_avg_last3?: number | null
@@ -15305,6 +15440,9 @@ export type Database = {
           ihdcf_total_last3?: number | null
           ihdcf_total_last5?: number | null
           ipp_avg_all?: number | null
+          ipp_avg_3ya?: number | null
+          ipp_avg_career?: number | null
+          ipp_avg_season?: number | null
           ipp_avg_last10?: number | null
           ipp_avg_last20?: number | null
           ipp_avg_last3?: number | null
@@ -15315,6 +15453,9 @@ export type Database = {
           ipp_total_last3?: number | null
           ipp_total_last5?: number | null
           iscf_avg_all?: number | null
+          iscf_avg_3ya?: number | null
+          iscf_avg_career?: number | null
+          iscf_avg_season?: number | null
           iscf_avg_last10?: number | null
           iscf_avg_last20?: number | null
           iscf_avg_last3?: number | null
@@ -15325,11 +15466,17 @@ export type Database = {
           iscf_total_last3?: number | null
           iscf_total_last5?: number | null
           ixg_avg_all?: number | null
+          ixg_avg_3ya?: number | null
+          ixg_avg_career?: number | null
+          ixg_avg_season?: number | null
           ixg_avg_last10?: number | null
           ixg_avg_last20?: number | null
           ixg_avg_last3?: number | null
           ixg_avg_last5?: number | null
           ixg_per_60_avg_all?: number | null
+          ixg_per_60_avg_3ya?: number | null
+          ixg_per_60_avg_career?: number | null
+          ixg_per_60_avg_season?: number | null
           ixg_per_60_avg_last10?: number | null
           ixg_per_60_avg_last20?: number | null
           ixg_per_60_avg_last3?: number | null
@@ -15347,6 +15494,9 @@ export type Database = {
           line_combo_group?: string | null
           line_combo_slot?: number | null
           on_ice_sh_pct_avg_all?: number | null
+          on_ice_sh_pct_avg_3ya?: number | null
+          on_ice_sh_pct_avg_career?: number | null
+          on_ice_sh_pct_avg_season?: number | null
           on_ice_sh_pct_avg_last10?: number | null
           on_ice_sh_pct_avg_last20?: number | null
           on_ice_sh_pct_avg_last3?: number | null
@@ -15357,6 +15507,9 @@ export type Database = {
           on_ice_sh_pct_total_last3?: number | null
           on_ice_sh_pct_total_last5?: number | null
           oz_start_pct_avg_all?: number | null
+          oz_start_pct_avg_3ya?: number | null
+          oz_start_pct_avg_career?: number | null
+          oz_start_pct_avg_season?: number | null
           oz_start_pct_avg_last10?: number | null
           oz_start_pct_avg_last20?: number | null
           oz_start_pct_avg_last3?: number | null
@@ -15367,6 +15520,9 @@ export type Database = {
           oz_start_pct_total_last3?: number | null
           oz_start_pct_total_last5?: number | null
           pdo_avg_all?: number | null
+          pdo_avg_3ya?: number | null
+          pdo_avg_career?: number | null
+          pdo_avg_season?: number | null
           pdo_avg_last10?: number | null
           pdo_avg_last20?: number | null
           pdo_avg_last3?: number | null
@@ -15378,6 +15534,9 @@ export type Database = {
           pdo_total_last5?: number | null
           player_id: number
           points_avg_all?: number | null
+          points_avg_3ya?: number | null
+          points_avg_career?: number | null
+          points_avg_season?: number | null
           points_avg_last10?: number | null
           points_avg_last20?: number | null
           points_avg_last3?: number | null
@@ -15388,6 +15547,9 @@ export type Database = {
           points_total_last3?: number | null
           points_total_last5?: number | null
           pp_points_avg_all?: number | null
+          pp_points_avg_3ya?: number | null
+          pp_points_avg_career?: number | null
+          pp_points_avg_season?: number | null
           pp_points_avg_last10?: number | null
           pp_points_avg_last20?: number | null
           pp_points_avg_last3?: number | null
@@ -15398,6 +15560,9 @@ export type Database = {
           pp_points_total_last3?: number | null
           pp_points_total_last5?: number | null
           pp_share_pct_avg_all?: number | null
+          pp_share_pct_avg_3ya?: number | null
+          pp_share_pct_avg_career?: number | null
+          pp_share_pct_avg_season?: number | null
           pp_share_pct_avg_last10?: number | null
           pp_share_pct_avg_last20?: number | null
           pp_share_pct_avg_last3?: number | null
@@ -15409,6 +15574,9 @@ export type Database = {
           pp_share_pct_total_last5?: number | null
           pp_unit?: number | null
           primary_points_pct_avg_all?: number | null
+          primary_points_pct_avg_3ya?: number | null
+          primary_points_pct_avg_career?: number | null
+          primary_points_pct_avg_season?: number | null
           primary_points_pct_avg_last10?: number | null
           primary_points_pct_avg_last20?: number | null
           primary_points_pct_avg_last3?: number | null
@@ -15420,6 +15588,9 @@ export type Database = {
           primary_points_pct_total_last5?: number | null
           season: number
           shooting_pct_avg_all?: number | null
+          shooting_pct_avg_3ya?: number | null
+          shooting_pct_avg_career?: number | null
+          shooting_pct_avg_season?: number | null
           shooting_pct_avg_last10?: number | null
           shooting_pct_avg_last20?: number | null
           shooting_pct_avg_last3?: number | null
@@ -15430,6 +15601,9 @@ export type Database = {
           shooting_pct_total_last3?: number | null
           shooting_pct_total_last5?: number | null
           shots_avg_all?: number | null
+          shots_avg_3ya?: number | null
+          shots_avg_career?: number | null
+          shots_avg_season?: number | null
           shots_avg_last10?: number | null
           shots_avg_last20?: number | null
           shots_avg_last3?: number | null
@@ -15440,6 +15614,9 @@ export type Database = {
           shots_total_last3?: number | null
           shots_total_last5?: number | null
           sog_per_60_avg_all?: number | null
+          sog_per_60_avg_3ya?: number | null
+          sog_per_60_avg_career?: number | null
+          sog_per_60_avg_season?: number | null
           sog_per_60_avg_last10?: number | null
           sog_per_60_avg_last20?: number | null
           sog_per_60_avg_last3?: number | null
@@ -15453,6 +15630,9 @@ export type Database = {
           team_games_played?: number
           team_id?: number | null
           toi_seconds_avg_all?: number | null
+          toi_seconds_avg_3ya?: number | null
+          toi_seconds_avg_career?: number | null
+          toi_seconds_avg_season?: number | null
           toi_seconds_avg_last10?: number | null
           toi_seconds_avg_last20?: number | null
           toi_seconds_avg_last3?: number | null
@@ -15466,6 +15646,9 @@ export type Database = {
         }
         Update: {
           assists_avg_all?: number | null
+          assists_avg_3ya?: number | null
+          assists_avg_career?: number | null
+          assists_avg_season?: number | null
           assists_avg_last10?: number | null
           assists_avg_last20?: number | null
           assists_avg_last3?: number | null
@@ -15476,11 +15659,17 @@ export type Database = {
           assists_total_last3?: number | null
           assists_total_last5?: number | null
           blocks_avg_all?: number | null
+          blocks_avg_3ya?: number | null
+          blocks_avg_career?: number | null
+          blocks_avg_season?: number | null
           blocks_avg_last10?: number | null
           blocks_avg_last20?: number | null
           blocks_avg_last3?: number | null
           blocks_avg_last5?: number | null
           blocks_per_60_avg_all?: number | null
+          blocks_per_60_avg_3ya?: number | null
+          blocks_per_60_avg_career?: number | null
+          blocks_per_60_avg_season?: number | null
           blocks_per_60_avg_last10?: number | null
           blocks_per_60_avg_last20?: number | null
           blocks_per_60_avg_last3?: number | null
@@ -15496,6 +15685,9 @@ export type Database = {
           blocks_total_last3?: number | null
           blocks_total_last5?: number | null
           ca_avg_all?: number | null
+          ca_avg_3ya?: number | null
+          ca_avg_career?: number | null
+          ca_avg_season?: number | null
           ca_avg_last10?: number | null
           ca_avg_last20?: number | null
           ca_avg_last3?: number | null
@@ -15506,11 +15698,17 @@ export type Database = {
           ca_total_last3?: number | null
           ca_total_last5?: number | null
           cf_avg_all?: number | null
+          cf_avg_3ya?: number | null
+          cf_avg_career?: number | null
+          cf_avg_season?: number | null
           cf_avg_last10?: number | null
           cf_avg_last20?: number | null
           cf_avg_last3?: number | null
           cf_avg_last5?: number | null
           cf_pct_avg_all?: number | null
+          cf_pct_avg_3ya?: number | null
+          cf_pct_avg_career?: number | null
+          cf_pct_avg_season?: number | null
           cf_pct_avg_last10?: number | null
           cf_pct_avg_last20?: number | null
           cf_pct_avg_last3?: number | null
@@ -15526,6 +15724,9 @@ export type Database = {
           cf_total_last3?: number | null
           cf_total_last5?: number | null
           expected_sh_pct_avg_all?: number | null
+          expected_sh_pct_avg_3ya?: number | null
+          expected_sh_pct_avg_career?: number | null
+          expected_sh_pct_avg_season?: number | null
           expected_sh_pct_avg_last10?: number | null
           expected_sh_pct_avg_last20?: number | null
           expected_sh_pct_avg_last3?: number | null
@@ -15536,6 +15737,9 @@ export type Database = {
           expected_sh_pct_total_last3?: number | null
           expected_sh_pct_total_last5?: number | null
           fa_avg_all?: number | null
+          fa_avg_3ya?: number | null
+          fa_avg_career?: number | null
+          fa_avg_season?: number | null
           fa_avg_last10?: number | null
           fa_avg_last20?: number | null
           fa_avg_last3?: number | null
@@ -15546,11 +15750,17 @@ export type Database = {
           fa_total_last3?: number | null
           fa_total_last5?: number | null
           ff_avg_all?: number | null
+          ff_avg_3ya?: number | null
+          ff_avg_career?: number | null
+          ff_avg_season?: number | null
           ff_avg_last10?: number | null
           ff_avg_last20?: number | null
           ff_avg_last3?: number | null
           ff_avg_last5?: number | null
           ff_pct_avg_all?: number | null
+          ff_pct_avg_3ya?: number | null
+          ff_pct_avg_career?: number | null
+          ff_pct_avg_season?: number | null
           ff_pct_avg_last10?: number | null
           ff_pct_avg_last20?: number | null
           ff_pct_avg_last3?: number | null
@@ -15569,6 +15779,9 @@ export type Database = {
           game_id?: number | null
           games_played?: number
           goals_avg_all?: number | null
+          goals_avg_3ya?: number | null
+          goals_avg_career?: number | null
+          goals_avg_season?: number | null
           goals_avg_last10?: number | null
           goals_avg_last20?: number | null
           goals_avg_last3?: number | null
@@ -15579,6 +15792,9 @@ export type Database = {
           goals_total_last3?: number | null
           goals_total_last5?: number | null
           gp_pct_avg_all?: number | null
+          gp_pct_avg_3ya?: number | null
+          gp_pct_avg_career?: number | null
+          gp_pct_avg_season?: number | null
           gp_pct_avg_last10?: number | null
           gp_pct_avg_last20?: number | null
           gp_pct_avg_last3?: number | null
@@ -15589,11 +15805,17 @@ export type Database = {
           gp_pct_total_last3?: number | null
           gp_pct_total_last5?: number | null
           hits_avg_all?: number | null
+          hits_avg_3ya?: number | null
+          hits_avg_career?: number | null
+          hits_avg_season?: number | null
           hits_avg_last10?: number | null
           hits_avg_last20?: number | null
           hits_avg_last3?: number | null
           hits_avg_last5?: number | null
           hits_per_60_avg_all?: number | null
+          hits_per_60_avg_3ya?: number | null
+          hits_per_60_avg_career?: number | null
+          hits_per_60_avg_season?: number | null
           hits_per_60_avg_last10?: number | null
           hits_per_60_avg_last20?: number | null
           hits_per_60_avg_last3?: number | null
@@ -15609,6 +15831,9 @@ export type Database = {
           hits_total_last3?: number | null
           hits_total_last5?: number | null
           ihdcf_avg_all?: number | null
+          ihdcf_avg_3ya?: number | null
+          ihdcf_avg_career?: number | null
+          ihdcf_avg_season?: number | null
           ihdcf_avg_last10?: number | null
           ihdcf_avg_last20?: number | null
           ihdcf_avg_last3?: number | null
@@ -15619,6 +15844,9 @@ export type Database = {
           ihdcf_total_last3?: number | null
           ihdcf_total_last5?: number | null
           ipp_avg_all?: number | null
+          ipp_avg_3ya?: number | null
+          ipp_avg_career?: number | null
+          ipp_avg_season?: number | null
           ipp_avg_last10?: number | null
           ipp_avg_last20?: number | null
           ipp_avg_last3?: number | null
@@ -15629,6 +15857,9 @@ export type Database = {
           ipp_total_last3?: number | null
           ipp_total_last5?: number | null
           iscf_avg_all?: number | null
+          iscf_avg_3ya?: number | null
+          iscf_avg_career?: number | null
+          iscf_avg_season?: number | null
           iscf_avg_last10?: number | null
           iscf_avg_last20?: number | null
           iscf_avg_last3?: number | null
@@ -15639,11 +15870,17 @@ export type Database = {
           iscf_total_last3?: number | null
           iscf_total_last5?: number | null
           ixg_avg_all?: number | null
+          ixg_avg_3ya?: number | null
+          ixg_avg_career?: number | null
+          ixg_avg_season?: number | null
           ixg_avg_last10?: number | null
           ixg_avg_last20?: number | null
           ixg_avg_last3?: number | null
           ixg_avg_last5?: number | null
           ixg_per_60_avg_all?: number | null
+          ixg_per_60_avg_3ya?: number | null
+          ixg_per_60_avg_career?: number | null
+          ixg_per_60_avg_season?: number | null
           ixg_per_60_avg_last10?: number | null
           ixg_per_60_avg_last20?: number | null
           ixg_per_60_avg_last3?: number | null
@@ -15661,6 +15898,9 @@ export type Database = {
           line_combo_group?: string | null
           line_combo_slot?: number | null
           on_ice_sh_pct_avg_all?: number | null
+          on_ice_sh_pct_avg_3ya?: number | null
+          on_ice_sh_pct_avg_career?: number | null
+          on_ice_sh_pct_avg_season?: number | null
           on_ice_sh_pct_avg_last10?: number | null
           on_ice_sh_pct_avg_last20?: number | null
           on_ice_sh_pct_avg_last3?: number | null
@@ -15671,6 +15911,9 @@ export type Database = {
           on_ice_sh_pct_total_last3?: number | null
           on_ice_sh_pct_total_last5?: number | null
           oz_start_pct_avg_all?: number | null
+          oz_start_pct_avg_3ya?: number | null
+          oz_start_pct_avg_career?: number | null
+          oz_start_pct_avg_season?: number | null
           oz_start_pct_avg_last10?: number | null
           oz_start_pct_avg_last20?: number | null
           oz_start_pct_avg_last3?: number | null
@@ -15681,6 +15924,9 @@ export type Database = {
           oz_start_pct_total_last3?: number | null
           oz_start_pct_total_last5?: number | null
           pdo_avg_all?: number | null
+          pdo_avg_3ya?: number | null
+          pdo_avg_career?: number | null
+          pdo_avg_season?: number | null
           pdo_avg_last10?: number | null
           pdo_avg_last20?: number | null
           pdo_avg_last3?: number | null
@@ -15692,6 +15938,9 @@ export type Database = {
           pdo_total_last5?: number | null
           player_id?: number
           points_avg_all?: number | null
+          points_avg_3ya?: number | null
+          points_avg_career?: number | null
+          points_avg_season?: number | null
           points_avg_last10?: number | null
           points_avg_last20?: number | null
           points_avg_last3?: number | null
@@ -15702,6 +15951,9 @@ export type Database = {
           points_total_last3?: number | null
           points_total_last5?: number | null
           pp_points_avg_all?: number | null
+          pp_points_avg_3ya?: number | null
+          pp_points_avg_career?: number | null
+          pp_points_avg_season?: number | null
           pp_points_avg_last10?: number | null
           pp_points_avg_last20?: number | null
           pp_points_avg_last3?: number | null
@@ -15712,6 +15964,9 @@ export type Database = {
           pp_points_total_last3?: number | null
           pp_points_total_last5?: number | null
           pp_share_pct_avg_all?: number | null
+          pp_share_pct_avg_3ya?: number | null
+          pp_share_pct_avg_career?: number | null
+          pp_share_pct_avg_season?: number | null
           pp_share_pct_avg_last10?: number | null
           pp_share_pct_avg_last20?: number | null
           pp_share_pct_avg_last3?: number | null
@@ -15723,6 +15978,9 @@ export type Database = {
           pp_share_pct_total_last5?: number | null
           pp_unit?: number | null
           primary_points_pct_avg_all?: number | null
+          primary_points_pct_avg_3ya?: number | null
+          primary_points_pct_avg_career?: number | null
+          primary_points_pct_avg_season?: number | null
           primary_points_pct_avg_last10?: number | null
           primary_points_pct_avg_last20?: number | null
           primary_points_pct_avg_last3?: number | null
@@ -15734,6 +15992,9 @@ export type Database = {
           primary_points_pct_total_last5?: number | null
           season?: number
           shooting_pct_avg_all?: number | null
+          shooting_pct_avg_3ya?: number | null
+          shooting_pct_avg_career?: number | null
+          shooting_pct_avg_season?: number | null
           shooting_pct_avg_last10?: number | null
           shooting_pct_avg_last20?: number | null
           shooting_pct_avg_last3?: number | null
@@ -15744,6 +16005,9 @@ export type Database = {
           shooting_pct_total_last3?: number | null
           shooting_pct_total_last5?: number | null
           shots_avg_all?: number | null
+          shots_avg_3ya?: number | null
+          shots_avg_career?: number | null
+          shots_avg_season?: number | null
           shots_avg_last10?: number | null
           shots_avg_last20?: number | null
           shots_avg_last3?: number | null
@@ -15754,6 +16018,9 @@ export type Database = {
           shots_total_last3?: number | null
           shots_total_last5?: number | null
           sog_per_60_avg_all?: number | null
+          sog_per_60_avg_3ya?: number | null
+          sog_per_60_avg_career?: number | null
+          sog_per_60_avg_season?: number | null
           sog_per_60_avg_last10?: number | null
           sog_per_60_avg_last20?: number | null
           sog_per_60_avg_last3?: number | null
@@ -15767,6 +16034,9 @@ export type Database = {
           team_games_played?: number
           team_id?: number | null
           toi_seconds_avg_all?: number | null
+          toi_seconds_avg_3ya?: number | null
+          toi_seconds_avg_career?: number | null
+          toi_seconds_avg_season?: number | null
           toi_seconds_avg_last10?: number | null
           toi_seconds_avg_last20?: number | null
           toi_seconds_avg_last3?: number | null
