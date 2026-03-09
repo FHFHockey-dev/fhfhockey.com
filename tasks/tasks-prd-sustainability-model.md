@@ -100,9 +100,9 @@
   - [x] 3.4 Generate explanations (top drivers); simple importance first.
     - [x] 3.4.1 Map top features to human-readable bullets (e.g., "PP TOI up +40% vs career").
     - [x] 3.4.2 Include up to 3 reasons with direction and magnitude.
-- [ ] 3.5 Visualization coverage
-  - [ ] 3.5.1 Plot all metrics captured in `rolling_player_game_metrics` with time-frame toggles (3/5/10/20/cumulative).
-  - [ ] 3.5.2 Add trend toggles for career/3-year season baselines to highlight sustained streaks.
+  - [x] 3.5 Visualization coverage
+  - [x] 3.5.1 Plot all metrics captured in `rolling_player_game_metrics` with time-frame toggles (3/5/10/20/cumulative).
+  - [x] 3.5.2 Add trend toggles for career/3-year season baselines to highlight sustained streaks.
 
 - [ ] 4.0 Persistence and API
   - [ ] 4.1 Reuse `sustainability_trend_bands` for metric bands; implement upsert API in `persist.ts`.
