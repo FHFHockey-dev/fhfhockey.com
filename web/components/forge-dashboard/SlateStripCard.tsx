@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 
 import styles from "styles/ForgeDashboard.module.scss";
 import { teamsInfo } from "lib/teamsInfo";
@@ -128,23 +128,50 @@ export default function SlateStripCard({
       )}
 
       {!loading && !error && displayGames.length > 0 && (
-        <div className={styles.slateList}>
+        <div className={styles.slateRail}>
           {displayGames.map((game) => {
             const away = findTeamById(game.awayTeamId);
             const home = findTeamById(game.homeTeamId);
             return (
-              <div key={game.id} className={styles.slateRow}>
-                <div className={styles.slateTeams}>
-                  <span>{away?.abbrev ?? "AWY"}</span>
+              <article
+                key={game.id}
+                className={styles.slateRailCard}
+                style={
+                  {
+                    "--away-color": away?.primaryColor ?? "#1f2937",
+                    "--home-color": home?.primaryColor ?? "#0f172a"
+                  } as CSSProperties
+                }
+              >
+                <div className={styles.slateRailTeams}>
+                  <div className={styles.slateRailTeam}>
+                    {away?.abbrev && (
+                      <img
+                        src={`/teamLogos/${away.abbrev}.png`}
+                        alt={away.abbrev}
+                        className={styles.slateRailLogo}
+                      />
+                    )}
+                    <span>{away?.abbrev ?? "AWY"}</span>
+                  </div>
                   <span className={styles.slateVs}>@</span>
-                  <span>{home?.abbrev ?? "HME"}</span>
+                  <div className={styles.slateRailTeam}>
+                    {home?.abbrev && (
+                      <img
+                        src={`/teamLogos/${home.abbrev}.png`}
+                        alt={home.abbrev}
+                        className={styles.slateRailLogo}
+                      />
+                    )}
+                    <span>{home?.abbrev ?? "HME"}</span>
+                  </div>
                 </div>
 
-                <div className={styles.slateGoalies}>
+                <div className={styles.slateRailMeta}>
                   <GoalieBar goalies={game.awayGoalies} />
                   <GoalieBar goalies={game.homeGoalies} />
                 </div>
-              </div>
+              </article>
             );
           })}
         </div>

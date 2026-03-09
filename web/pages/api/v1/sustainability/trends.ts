@@ -54,11 +54,56 @@ type BaselineRow = {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const snapshot = parseDateParam(req.query.snapshot_date);
+    const requestedSnapshot = parseDateParam(req.query.snapshot_date);
     const windowCode = parseEnumParam<WindowCode>(req.query.window_code, WINDOW_CODES, "l10");
     const pos = parseEnumParam<Pos>(req.query.pos, POS_CODES, "all");
     const direction = parseEnumParam<Direction>(req.query.direction, DIRECTIONS, "hot");
     const limit = parseLimitParam(req.query.limit, 50);
+
+    const resolveSnapshotDate = async (): Promise<string | null> => {
+      const baseQuery = (supabase as any)
+        .from("sustainability_scores")
+        .select("snapshot_date")
+        .eq("window_code", windowCode);
+
+      if (pos === "F" || pos === "D") {
+        baseQuery.eq("position_group", pos);
+      }
+
+      const nearest = await baseQuery
+        .lte("snapshot_date", requestedSnapshot)
+        .order("snapshot_date", { ascending: false })
+        .limit(1);
+
+      if (nearest.error) throw nearest.error;
+      const nearestSnapshot = nearest.data?.[0]?.snapshot_date ?? null;
+      if (nearestSnapshot) return nearestSnapshot;
+
+      const latest = await (supabase as any)
+        .from("sustainability_scores")
+        .select("snapshot_date")
+        .eq("window_code", windowCode)
+        .order("snapshot_date", { ascending: false })
+        .limit(1);
+
+      if (latest.error) throw latest.error;
+      return latest.data?.[0]?.snapshot_date ?? null;
+    };
+
+    const snapshot = await resolveSnapshotDate();
+
+    if (!snapshot) {
+      return res.status(200).json({
+        success: true,
+        requested_snapshot_date: requestedSnapshot,
+        snapshot_date: null,
+        window_code: windowCode,
+        pos,
+        direction,
+        limit,
+        rows: []
+      });
+    }
 
     let query = (supabase as any)
       .from("sustainability_scores")
@@ -87,6 +132,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!scores || scores.length === 0) {
       return res.status(200).json({
         success: true,
+        requested_snapshot_date: requestedSnapshot,
         snapshot_date: snapshot,
         window_code: windowCode,
         pos,
@@ -182,6 +228,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return res.status(200).json({
       success: true,
+      requested_snapshot_date: requestedSnapshot,
       snapshot_date: snapshot,
       window_code: windowCode,
       pos,

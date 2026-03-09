@@ -14,7 +14,10 @@ type TeamPowerCardProps = {
 
 type TeamPowerRow = NormalizedTeamRatingRow & {
   powerScore: number;
+  overallRank: number;
 };
+
+type TeamPowerView = "top" | "bottom";
 
 const SPECIAL_TEAM_STEP = 1.5;
 
@@ -26,6 +29,8 @@ const computePowerScore = (team: NormalizedTeamRatingRow): number => {
 };
 
 const formatPower = (value: number): string => value.toFixed(1);
+const formatMetric = (value: number | null | undefined): string =>
+  value == null || Number.isNaN(value) ? "--" : value.toFixed(1);
 
 const formatTrend = (value: number): string => {
   const sign = value > 0 ? "+" : "";
@@ -42,6 +47,7 @@ export default function TeamPowerCard({
   team,
   onResolvedDate
 }: TeamPowerCardProps) {
+  const [view, setView] = useState<TeamPowerView>("top");
   const [rows, setRows] = useState<NormalizedTeamRatingRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -86,8 +92,22 @@ export default function TeamPowerCard({
     return [...filtered]
       .map((row) => ({ ...row, powerScore: computePowerScore(row) }))
       .sort((a, b) => b.powerScore - a.powerScore)
-      .slice(0, 8);
+      .map((row, index) => ({
+        ...row,
+        overallRank: index + 1
+      }));
   }, [rows, team]);
+  const visibleRows = useMemo<TeamPowerRow[]>(() => {
+    if (team !== "all") return rankedRows;
+    if (view === "bottom") {
+      return [...rankedRows].slice(-16).reverse();
+    }
+    return rankedRows.slice(0, 16);
+  }, [rankedRows, team, view]);
+  const allTrendsFlat = useMemo(
+    () => rankedRows.length > 0 && rankedRows.every((row) => Math.abs(row.trend10) < 0.01),
+    [rankedRows]
+  );
   const resolvedDate = rows[0]?.date ?? null;
   const isStale = Boolean(resolvedDate && resolvedDate !== date);
   const metaDate = resolvedDate ?? date;
@@ -117,6 +137,38 @@ export default function TeamPowerCard({
               Showing nearest available snapshot ({resolvedDate}).
             </p>
           )}
+          {allTrendsFlat && (
+            <p className={`${styles.panelState} ${styles.panelStateStale}`}>
+              Trend feed is currently flat in the source snapshot; all teams are reporting 0.0.
+            </p>
+          )}
+          {team === "all" && rankedRows.length > 16 && (
+            <div className={styles.teamPowerControls}>
+              <div className={styles.segmentedToggle} aria-label="Team power ranking range">
+                <button
+                  type="button"
+                  className={`${styles.segmentedToggleBtn} ${
+                    view === "top" ? styles.segmentedToggleBtnActive : ""
+                  }`}
+                  onClick={() => setView("top")}
+                >
+                  Top 16
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.segmentedToggleBtn} ${
+                    view === "bottom" ? styles.segmentedToggleBtnActive : ""
+                  }`}
+                  onClick={() => setView("bottom")}
+                >
+                  Bottom 16
+                </button>
+              </div>
+              <span className={styles.teamPowerControlMeta}>
+                {view === "top" ? "Highest-rated teams" : "Lowest-rated teams"}
+              </span>
+            </div>
+          )}
           <div className={styles.tableWrap}>
             <table className={styles.teamTable}>
               <thead>
@@ -124,11 +176,17 @@ export default function TeamPowerCard({
                   <th scope="col">#</th>
                   <th scope="col">Team</th>
                   <th scope="col">Power</th>
+                  <th scope="col">Off</th>
+                  <th scope="col">Def</th>
+                  <th scope="col">Pace</th>
                   <th scope="col">Trend</th>
+                  <th scope="col">Finish</th>
+                  <th scope="col">Goalie</th>
+                  <th scope="col">Var</th>
                 </tr>
               </thead>
               <tbody>
-                {rankedRows.map((row, index) => {
+                {visibleRows.map((row) => {
                   const trendClass =
                     row.trend10 > 0.5
                       ? styles.trendUp
@@ -137,15 +195,21 @@ export default function TeamPowerCard({
                         : styles.trendFlat;
 
                   return (
-                    <tr key={`${row.teamAbbr}-${index}`}>
-                      <td>{index + 1}</td>
+                    <tr key={`${row.teamAbbr}-${row.overallRank}`}>
+                      <td>{row.overallRank}</td>
                       <td title={getTeamLabel(row.teamAbbr)}>{row.teamAbbr}</td>
                       <td>{formatPower(row.powerScore)}</td>
+                      <td>{formatMetric(row.offRating)}</td>
+                      <td>{formatMetric(row.defRating)}</td>
+                      <td>{formatMetric(row.paceRating)}</td>
                       <td>
                         <span className={`${styles.trendChip} ${trendClass}`}>
                           {formatTrend(row.trend10)}
                         </span>
                       </td>
+                      <td>{formatMetric(row.finishingRating)}</td>
+                      <td>{formatMetric(row.goalieRating)}</td>
+                      <td>{row.varianceFlag === 1 ? "High" : "Stable"}</td>
                     </tr>
                   );
                 })}

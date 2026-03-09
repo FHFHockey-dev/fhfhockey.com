@@ -1,0 +1,126 @@
+## Relevant Files
+
+- `tasks/prd-sustainability-trends-audit.md` - Source PRD that defines the audit scope, validation method, and consolidation goals.
+- `tasks/tasks-prd-sustainability-trends-audit.md` - Execution checklist for the audit work.
+- `web/pages/trends/index.tsx` - Primary trends dashboard page and likely consolidation anchor for trend-related UI.
+- `web/pages/trends/placeholder.tsx` - Older or alternate trends dashboard implementation that may duplicate current logic.
+- `web/pages/trendsSandbox.tsx` - Sandbox page for player trend and sustainability exploration with direct Supabase reads.
+- `web/pages/trendsTestingGrounds.tsx` - Manual testing page for player trend metric rebuilds and fetches.
+- `web/pages/trends/player/[playerId].tsx` - Player-specific trend page that reads rolling metrics and related trend outputs.
+- `web/pages/underlying-stats/index.tsx` - Team power rankings and underlying-stats UI backed by team rating calculations.
+- `web/pages/start-chart.tsx` - Start-chart UI using projections, matchup context, and goalie probabilities.
+- `web/pages/FORGE.tsx` - FORGE dashboard UI for skater and goalie projections, uncertainty, and accuracy trends.
+- `web/pages/stats/player/[playerId].tsx` - Adjacent player stats page with rolling-average logic that may overlap conceptually with trend systems.
+- `web/pages/projections/index.tsx` - Adjacent projections surface that may share projection/baseline assumptions.
+- `web/pages/api/v1/trends/player-trends.ts` - Player trend metric fetch/rebuild endpoint that upserts `player_trend_metrics`.
+- `web/pages/api/v1/trends/skater-power.ts` - Skater trend percentile endpoint for the trends dashboard.
+- `web/pages/api/v1/trends/team-power.ts` - Team trend percentile endpoint for the trends dashboard.
+- `web/pages/api/v1/trends/team-ctpi.ts` - Team CTPI endpoint used alongside trend dashboards.
+- `web/pages/api/v1/trends/team-sos.ts` - Team strength-of-schedule endpoint used alongside trend dashboards.
+- `web/pages/api/v1/sustainability/trends.ts` - Sustainability leaderboard endpoint backed by `sustainability_scores` and `player_baselines`.
+- `web/pages/api/v1/sustainability/trend-bands.ts` - Sustainability trend-band read/recompute endpoint backed by `sustainability_trend_bands`.
+- `web/pages/api/v1/sustainability/rebuild-priors.ts` - Sustainability prior rebuild endpoint.
+- `web/pages/api/v1/sustainability/rebuild-window-z.ts` - Sustainability z-window rebuild endpoint.
+- `web/pages/api/v1/sustainability/rebuild-score.ts` - Sustainability score rebuild endpoint backed by `sustainability_scores`.
+- `web/pages/api/v1/sustainability/rebuild-trend-bands.ts` - Bulk sustainability trend-band rebuild endpoint.
+- `web/pages/api/v1/db/sustainability/rebuild-baselines.ts` - Baseline rebuild endpoint that writes `player_baselines`.
+- `web/pages/api/v1/start-chart.ts` - Start-chart data endpoint reading `player_projections`, `goalie_start_projections`, and team ratings.
+- `web/pages/api/v1/db/update-start-chart-projections.ts` - Legacy start-chart builder that writes `player_projections`.
+- `web/pages/api/v1/db/update-rolling-player-averages.ts` - Rolling-average trigger endpoint for `rolling_player_game_metrics`.
+- `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts` - Main rolling-average builder and upsert path for `rolling_player_game_metrics`.
+- `web/pages/api/v1/db/update-team-power-ratings.ts` - Team power ratings builder writing `team_power_ratings_daily`.
+- `web/pages/api/v1/db/update-team-power-ratings-new.ts` - Alternate/new team power ratings builder writing `team_power_ratings_daily__new`.
+- `web/lib/teamRatingsService.ts` - Shared team-rating fetch layer used by multiple pages and APIs.
+- `web/lib/power-ratings.ts` - Core team power rating math helpers used by the ratings jobs.
+- `web/pages/api/v1/db/update-goalie-projections.ts` - Legacy goalie-start projection trigger using RPC.
+- `web/pages/api/v1/db/update-goalie-projections-v2.ts` - Current goalie-start projection builder writing `goalie_start_projections`.
+- `web/pages/api/v1/db/run-projection-v2.ts` - FORGE projection run endpoint orchestrating projection generation.
+- `web/pages/api/v1/db/run-projection-accuracy.ts` - FORGE accuracy and calibration endpoint writing multiple accuracy tables.
+- `web/pages/api/v1/projections/players.ts` - Read endpoint for `forge_player_projections`.
+- `web/pages/api/v1/projections/teams.ts` - Read endpoint for `forge_team_projections`.
+- `web/pages/api/v1/projections/goalies.ts` - Read endpoint for `forge_goalie_projections`.
+- `web/lib/trends/playerTrendCalculator.ts` - Core player trend metric definitions and rolling average calculations.
+- `web/lib/trends/teamMetricConfig.ts` - Team trend metric definitions and category setup.
+- `web/lib/trends/skaterMetricConfig.ts` - Skater trend metric definitions and category setup.
+- `web/lib/trends/teamPercentiles.ts` - Team trend percentile calculation logic.
+- `web/lib/trends/utils.ts` - Shared trend utility logic and baseline/streak helpers.
+- `web/lib/sustainability/bandService.ts` - Sustainability trend-band orchestration and storage helpers.
+- `web/lib/sustainability/bandCalculator.ts` - Sustainability band calculation logic and metric-specific baseline handling.
+- `web/lib/sustainability/bands.ts` - Sustainability metric definitions and supported metric list.
+- `web/lib/sustainability/priors.ts` - Sustainability prior calculation and upsert logic.
+- `web/lib/sustainability/windows.ts` - Sustainability window/z-score calculation and upsert logic.
+- `web/lib/sustainability/score.ts` - Sustainability score calculation and upsert logic.
+- `web/lib/baselines/aggregations.ts` - Legacy baseline aggregation logic used by baseline rebuilds.
+- `web/lib/projections/run-forge-projections.ts` - Main FORGE engine implementation and projection writes.
+- `web/lib/projections/runProjectionV2.ts` - Compatibility shim pointing to the FORGE runner.
+- `web/lib/projections/goaliePipeline.ts` - Goalie pipeline stage spec and table ownership hints.
+- `web/lib/projections/queries/skater-queries.ts` - FORGE skater query layer reading rolling metrics and sustainability bands.
+- `web/lib/projections/queries/goalie-queries.ts` - FORGE goalie query layer reading goalie-start projections and related inputs.
+- `web/lib/projections/queries/team-context-queries.ts` - FORGE team context query layer for matchup/context adjustments.
+- `web/pages/api/v1/db/calculate-wigo-stats.ts` - Legacy WIGO builder writing `wigo_recent` and `wigo_career`.
+- `web/tests/api/dashboard-endpoints.test.ts` - Existing endpoint contract tests covering trend and sustainability responses.
+- `web/tests/api/dashboard-endpoints-invariants.test.ts` - Existing invariant tests for dashboard trend/sustainability payloads.
+- `web/tests/api/dashboard-endpoints-4xx.test.ts` - Existing 4xx coverage for trend/sustainability endpoints.
+- `web/tests/audit/dashboard-data-audit.spec.ts` - Existing audit-style tests that may inform regression coverage.
+- `web/tests/audit/dashboard-freshness-audit.spec.ts` - Existing freshness audit tests relevant to snapshot/fallback behavior.
+- `web/tests/audit/dashboard-performance-audit.spec.ts` - Existing performance audit tests for dashboard endpoints.
+- `web/tests/audit/dashboard-reliability-audit.spec.ts` - Existing reliability audit tests for trend/sustainability endpoints.
+- `web/sql/tests/sko_trends_validation.sql` - SQL validation asset for sustainability/trend outputs.
+- `web/sql/functions/analytics.rpc_sko_player_series.sql` - SQL function related to sustainability/trend payload composition.
+- `web/lib/supabase/database-generated.types.ts` - Reference for known tables, views, and RPC names used in the audit.
+
+### Notes
+
+- This task list is for executing the audit defined in the PRD, not for implementing the final consolidated engine yet.
+- The audit should proceed one system family at a time and should produce artifacts as it goes instead of waiting until the end.
+- Existing tests should be reused where useful, but the audit will also define additional regression coverage for approved formulas and data paths.
+- SQL validation scripts and API verification steps should be treated as first-class audit outputs, not optional notes.
+
+## Tasks
+
+- [ ] 1.0 Build the master audit inventory and system-family map
+  - [ ] 1.1 Read the PRD and create a working audit worksheet that mirrors the required output sections: page purpose, helpers, APIs, source tables, target tables, validation steps, overlap findings, and consolidation recommendation.
+  - [ ] 1.2 Build the full in-scope file inventory covering pages, APIs, helper libraries, background jobs, SQL assets, and tests for trend, sustainability, baseline, rolling-average, projection, and power-rating logic.
+  - [ ] 1.3 Group the inventory into system families: trends, sustainability, team power/underlying stats, start-chart/rolling metrics, FORGE, and legacy/adjacent systems.
+  - [ ] 1.4 Mark each inventoried file as current production, active experiment, legacy, adjacent dependency, or unclear.
+  - [ ] 1.5 Create the first dependency map linking each page to its APIs, each API to its helper modules, and each helper/job to its read and write tables.
+  - [ ] 1.6 Create a table ownership map that classifies each relevant Supabase table/view as raw source, derived aggregate, snapshot, cached output, presentation output, or unknown/mixed.
+  - [ ] 1.7 Create the audit glossary template that will be reused for each system to define “trend,” “baseline,” “projection,” “typical performance,” sample windows, and output type.
+
+- [ ] 2.0 Audit the trends and sustainability systems end to end
+  - [ ] 2.1 Audit `web/pages/trends/index.tsx`, `web/pages/trends/placeholder.tsx`, `web/pages/trendsSandbox.tsx`, `web/pages/trendsTestingGrounds.tsx`, and `web/pages/trends/player/[playerId].tsx` for user-facing outputs, imports, dependency paths, and overlap.
+  - [ ] 2.2 Audit `web/pages/api/v1/trends/player-trends.ts`, `web/pages/api/v1/trends/skater-power.ts`, `web/pages/api/v1/trends/team-power.ts`, `web/pages/api/v1/trends/team-ctpi.ts`, and `web/pages/api/v1/trends/team-sos.ts` for read paths, write paths, parameters, fallback behavior, and consuming pages.
+  - [ ] 2.3 Audit `web/lib/trends/playerTrendCalculator.ts`, `web/lib/trends/teamPercentiles.ts`, `web/lib/trends/teamMetricConfig.ts`, `web/lib/trends/skaterMetricConfig.ts`, and related trend utilities for actual formulas, windows, percentile logic, and hidden assumptions.
+  - [ ] 2.4 Audit `web/pages/api/v1/sustainability/trends.ts`, `web/pages/api/v1/sustainability/trend-bands.ts`, `web/pages/api/v1/sustainability/rebuild-priors.ts`, `web/pages/api/v1/sustainability/rebuild-window-z.ts`, `web/pages/api/v1/sustainability/rebuild-score.ts`, `web/pages/api/v1/sustainability/rebuild-trend-bands.ts`, and `web/pages/api/v1/db/sustainability/rebuild-baselines.ts`.
+  - [ ] 2.5 Audit `web/lib/sustainability/*` and `web/lib/baselines/*` to document metric definitions, baseline derivation, prior logic, z-score windows, band logic, score construction, and upsert targets.
+  - [ ] 2.6 Produce the trends/sustainability read-write table map for `player_trend_metrics`, `sustainability_priors`, `sustainability_player_priors`, `sustainability_window_z`, `sustainability_scores`, `sustainability_trend_bands`, and `player_baselines`.
+  - [ ] 2.7 Run player-level validation traces for the selected canonical players by pulling raw stats, rebuilding trend/sustainability outputs, and comparing stored rows, API payloads, and visible UI values.
+  - [ ] 2.8 Record definition drift, naming collisions, duplicate formulas, and preferred source-of-truth candidates across trend and sustainability systems.
+
+- [ ] 3.0 Audit the team power, underlying stats, and matchup-context systems end to end
+  - [ ] 3.1 Audit `web/pages/underlying-stats/index.tsx` and the team-power portions of `web/pages/trends/index.tsx` and `web/pages/trends/placeholder.tsx` for displayed metrics, dependency paths, and duplicated concepts.
+  - [ ] 3.2 Audit `web/pages/api/v1/db/update-team-power-ratings.ts`, `web/pages/api/v1/db/update-team-power-ratings-new.ts`, `web/lib/teamRatingsService.ts`, and `web/lib/power-ratings.ts` for formulas, input tables, target tables, fallback logic, and authoritative status.
+  - [ ] 3.3 Audit related matchup and team-context endpoints and helpers, including CTPI and SOS paths, to document how they are calculated and where they enter downstream pages.
+  - [ ] 3.4 Produce the team power/system-family map for `team_power_ratings_daily`, `team_power_ratings_daily__new`, and any supporting team gamelog or WGO tables/views.
+  - [ ] 3.5 Run team-level validation traces for the selected canonical teams by pulling raw game logs, recomputing team ratings where feasible, and comparing persisted rows and UI outputs.
+  - [ ] 3.6 Document whether the old and new team-power paths are redundant, divergent, or intentionally separate.
+  - [ ] 3.7 Record approved, suspect, and legacy formulas for offense, defense, pace, special teams, trend10, CTPI, and SOS-related outputs.
+
+- [ ] 4.0 Audit the start-chart, rolling-average, and legacy baseline systems end to end
+  - [ ] 4.1 Audit `web/pages/start-chart.tsx` for its displayed outputs, fallback logic, and dependencies on projections, team ratings, and goalie-start probabilities.
+  - [ ] 4.2 Audit `web/pages/api/v1/start-chart.ts` and `web/pages/api/v1/db/update-start-chart-projections.ts` to document how `player_projections` are built, read, and surfaced.
+  - [ ] 4.3 Audit `web/pages/api/v1/db/update-rolling-player-averages.ts` and `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts` to document how `rolling_player_game_metrics` are calculated, refreshed, truncated, and reused downstream.
+  - [ ] 4.4 Audit adjacent legacy baseline-style systems including `web/pages/api/v1/db/calculate-wigo-stats.ts`, `wigo_recent`, `wigo_career`, `wgo_skater_stats_last_30`, and any nearby average/recent-performance outputs that overlap with the same problem space.
+  - [ ] 4.5 Produce the read-write map for `rolling_player_game_metrics`, `player_projections`, `goalie_start_projections`, `wigo_recent`, `wigo_career`, and nearby legacy derived tables.
+  - [ ] 4.6 Run validation traces that start from raw player gamelogs, rebuild rolling averages, and confirm how those values propagate into start-chart projections and related outputs.
+  - [ ] 4.7 Document whether start-chart logic should survive as part of the future unified engine, survive as a UI-specific wrapper, or be retired in favor of FORGE equivalents.
+
+- [ ] 5.0 Audit the FORGE projection stack, accuracy reporting, and consolidation path
+  - [ ] 5.1 Audit `web/pages/FORGE.tsx` and its related read APIs to document which outputs are shown, how uncertainty is exposed, and what parts are unique versus overlapping with other pages.
+  - [ ] 5.2 Audit `web/pages/api/v1/projections/players.ts`, `web/pages/api/v1/projections/teams.ts`, and `web/pages/api/v1/projections/goalies.ts` for query behavior, filters, and table dependencies.
+  - [ ] 5.3 Audit `web/pages/api/v1/db/run-projection-v2.ts`, `web/lib/projections/run-forge-projections.ts`, `web/lib/projections/goaliePipeline.ts`, and the projection query/helpers layer to document the full FORGE pipeline from inputs to outputs.
+  - [ ] 5.4 Audit `web/pages/api/v1/db/update-goalie-projections.ts`, `web/pages/api/v1/db/update-goalie-projections-v2.ts`, and `web/pages/api/v1/db/run-projection-accuracy.ts` to document goalie start probabilities, projection accuracy baselines, and calibration outputs.
+  - [ ] 5.5 Produce the read-write map for FORGE tables, including `forge_runs`, `forge_player_game_strength`, `forge_team_game_strength`, `forge_goalie_game`, `forge_player_projections`, `forge_team_projections`, `forge_goalie_projections`, `forge_projection_results`, `forge_projection_accuracy_daily`, `forge_projection_accuracy_player`, `forge_projection_accuracy_stat_daily`, and `forge_projection_calibration_daily`.
+  - [ ] 5.6 Run canonical player/team/goalie validation traces that compare raw inputs and intermediate pipeline assumptions against final FORGE outputs and stored accuracy rows.
+  - [ ] 5.7 Build the final overlap matrix across trends, sustainability, start-chart, team power, FORGE, and legacy systems to identify duplicated concepts, conflicting formulas, and stale paths.
+  - [ ] 5.8 Produce the final consolidation recommendation that identifies the preferred shared engine pieces, deprecated files, required regression tests, and the path toward one future dashboard page with multiple tabs/views.

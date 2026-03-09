@@ -395,4 +395,108 @@ describe("Forge dashboard render states", () => {
       expect(urls.some((u) => u.includes("/api/v1/start-chart?date=2026-02-07"))).toBe(true);
     });
   });
+
+  it("supports top-16 and bottom-16 team power views", async () => {
+    const teamRows = Array.from({ length: 32 }, (_, index) => ({
+      teamAbbr: `T${String(index + 1).padStart(2, "0")}`,
+      date: "2026-02-07",
+      offRating: 132 - index,
+      defRating: 120 - index * 0.5,
+      paceRating: 110 - index * 0.25,
+      ppTier: 2,
+      pkTier: 2,
+      trend10: index % 3 === 0 ? 1.2 : -0.4,
+      finishingRating: 100 - index * 0.2,
+      goalieRating: 98 - index * 0.2,
+      varianceFlag: index % 2
+    }));
+
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/team-ratings")) return jsonResponse(teamRows);
+      if (url.includes("/api/v1/sustainability/trends")) {
+        return jsonResponse({ snapshot_date: "2026-02-07", rows: [] });
+      }
+      if (url.includes("/api/v1/forge/goalies")) {
+        return jsonResponse({ asOfDate: "2026-02-07", data: [] });
+      }
+      if (url.includes("/api/v1/start-chart")) {
+        return jsonResponse({ dateUsed: "2026-02-07", games: [] });
+      }
+      if (url.includes("/api/v1/trends/team-ctpi")) {
+        return jsonResponse({ generatedAt: "2026-02-07T12:00:00.000Z", teams: [] });
+      }
+      if (url.includes("/api/v1/trends/skater-power")) {
+        return jsonResponse({
+          generatedAt: "2026-02-07T12:00:00.000Z",
+          categories: { all: { rankings: [] } },
+          playerMetadata: {}
+        });
+      }
+      return jsonResponse({}, false);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<ForgeDashboardPage />);
+
+    expect(await screen.findByRole("button", { name: "Top 16" })).toBeTruthy();
+    expect(screen.getByText("T01")).toBeTruthy();
+    expect(screen.queryByText("T32")).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Bottom 16" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("T32")).toBeTruthy();
+      expect(screen.queryByText("T01")).toBeNull();
+    });
+  });
+
+  it("renders stale sustainability fallback when latest available snapshot is older than selected date", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/team-ratings")) {
+        return jsonResponse([]);
+      }
+      if (url.includes("/api/v1/sustainability/trends")) {
+        return jsonResponse({
+          requested_snapshot_date: "2026-02-07",
+          snapshot_date: "2025-10-14",
+          rows: [
+            {
+              player_id: 1,
+              player_name: "Test Skater",
+              position_group: "F",
+              position_code: "C",
+              window_code: "l10",
+              s_100: 61.2,
+              luck_pressure: -1.22
+            }
+          ]
+        });
+      }
+      if (url.includes("/api/v1/forge/goalies")) {
+        return jsonResponse({ asOfDate: "2026-02-07", data: [] });
+      }
+      if (url.includes("/api/v1/start-chart")) {
+        return jsonResponse({ dateUsed: "2026-02-07", games: [] });
+      }
+      if (url.includes("/api/v1/trends/team-ctpi")) {
+        return jsonResponse({ generatedAt: "2026-02-07T12:00:00.000Z", teams: [] });
+      }
+      if (url.includes("/api/v1/trends/skater-power")) {
+        return jsonResponse({
+          generatedAt: "2026-02-07T12:00:00.000Z",
+          categories: { all: { rankings: [] } },
+          playerMetadata: {}
+        });
+      }
+      return jsonResponse({}, false);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<ForgeDashboardPage />);
+
+    expect((await screen.findAllByText("Test Skater")).length).toBeGreaterThan(0);
+    expect(screen.getByText("Showing nearest available snapshot (2025-10-14).")).toBeTruthy();
+  });
 });

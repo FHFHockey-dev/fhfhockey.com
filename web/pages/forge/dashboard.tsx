@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, NextPage } from "next";
 import Head from "next/head";
 
@@ -29,6 +29,8 @@ const ForgeDashboardPage: NextPage = () => {
   const [selectedDate, setSelectedDate] = useState(todayEt);
   const [selectedTeam, setSelectedTeam] = useState("all");
   const [selectedPosition, setSelectedPosition] = useState<"all" | "f" | "d" | "g">("all");
+  const titleRef = useRef<HTMLHeadingElement | null>(null);
+  const expansionTextRef = useRef<HTMLSpanElement | null>(null);
   const [moduleResolvedDates, setModuleResolvedDates] = useState<{
     teamPower: string | null;
     sustainability: string | null;
@@ -63,6 +65,39 @@ const ForgeDashboardPage: NextPage = () => {
         resolvedDate: resolvedDate as string
       }));
   }, [moduleResolvedDates, selectedDate]);
+
+  useEffect(() => {
+    const updateExpansionScale = () => {
+      const titleEl = titleRef.current;
+      const expansionEl = expansionTextRef.current;
+      if (!titleEl || !expansionEl) return;
+
+      expansionEl.style.setProperty("--forge-expansion-scale", "1");
+      const titleWidth = titleEl.getBoundingClientRect().width;
+      const textWidth = expansionEl.scrollWidth;
+      if (!titleWidth || !textWidth) return;
+
+      const scale = Math.max(0.7, Math.min(1.3, titleWidth / textWidth));
+      expansionEl.style.setProperty("--forge-expansion-scale", scale.toFixed(4));
+    };
+
+    updateExpansionScale();
+
+    const resizeObserver =
+      typeof ResizeObserver !== "undefined"
+        ? new ResizeObserver(() => updateExpansionScale())
+        : null;
+
+    if (titleRef.current && resizeObserver) {
+      resizeObserver.observe(titleRef.current);
+    }
+
+    window.addEventListener("resize", updateExpansionScale);
+    return () => {
+      resizeObserver?.disconnect();
+      window.removeEventListener("resize", updateExpansionScale);
+    };
+  }, []);
 
   const updateModuleResolvedDate = (
     moduleKey: keyof typeof moduleResolvedDates,
@@ -105,62 +140,73 @@ const ForgeDashboardPage: NextPage = () => {
       <main className={styles.page}>
         <div className={styles.container}>
           <header className={styles.header}>
-            <h1 className={styles.title}>Forge Dashboard</h1>
-            <p className={styles.subtitle}>
-              Daily fantasy hockey command center.
-            </p>
+            <div className={styles.headerTopline}>
+              <div className={styles.titleBlock}>
+                <h1 ref={titleRef} className={styles.title}>FORGE DASHBOARD</h1>
+                <p className={styles.titleExpansion}>
+                  <span ref={expansionTextRef} className={styles.titleExpansionText}>
+                    Forecasting &amp; Outcome Reconciliation Game Engine
+                  </span>
+                </p>
+              </div>
+              <p className={styles.subtitle}>
+                Daily fantasy hockey command center.
+              </p>
+            </div>
           </header>
 
-          <section className={styles.filterBar} aria-label="Global dashboard filters">
-            <label className={styles.filterItem}>
-              <span>Date</span>
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={handleDateChange}
-                className={styles.filterInput}
-              />
-            </label>
+          <section className={styles.controlsRow}>
+            <section className={styles.filterBar} aria-label="Global dashboard filters">
+              <label className={styles.filterItem}>
+                <span>Date</span>
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={handleDateChange}
+                  className={styles.filterInput}
+                />
+              </label>
 
-            <label className={styles.filterItem}>
-              <span>Team</span>
-              <select
-                value={selectedTeam}
-                onChange={handleTeamChange}
-                className={styles.filterInput}
-              >
-                <option value="all">All Teams</option>
-                {teamOptions.map((abbr) => (
-                  <option key={abbr} value={abbr}>
-                    {abbr}
-                  </option>
-                ))}
-              </select>
-            </label>
+              <label className={styles.filterItem}>
+                <span>Team</span>
+                <select
+                  value={selectedTeam}
+                  onChange={handleTeamChange}
+                  className={styles.filterInput}
+                >
+                  <option value="all">All Teams</option>
+                  {teamOptions.map((abbr) => (
+                    <option key={abbr} value={abbr}>
+                      {abbr}
+                    </option>
+                  ))}
+                </select>
+              </label>
 
-            <label className={styles.filterItem}>
-              <span>Position</span>
-              <select
-                value={selectedPosition}
-                onChange={handlePositionChange}
-                className={styles.filterInput}
-              >
-                <option value="all">All Positions</option>
-                <option value="f">Forwards</option>
-                <option value="d">Defense</option>
-                <option value="g">Goalies</option>
-              </select>
-            </label>
+              <label className={styles.filterItem}>
+                <span>Position</span>
+                <select
+                  value={selectedPosition}
+                  onChange={handlePositionChange}
+                  className={styles.filterInput}
+                >
+                  <option value="all">All Positions</option>
+                  <option value="f">Forwards</option>
+                  <option value="d">Defense</option>
+                  <option value="g">Goalies</option>
+                </select>
+              </label>
+            </section>
+
+            <nav className={styles.quickLinks} aria-label="Forge dashboard quick links">
+              <a href="/FORGE" className={styles.quickLink}>
+                Open Legacy FORGE
+              </a>
+              <a href="/trends" className={styles.quickLink}>
+                Open Trends Dashboard
+              </a>
+            </nav>
           </section>
-
-          <nav className={styles.quickLinks} aria-label="Forge dashboard quick links">
-            <a href="/FORGE" className={styles.quickLink}>
-              Open Legacy FORGE
-            </a>
-            <a href="/trends" className={styles.quickLink}>
-              Open Trends Dashboard
-            </a>
-          </nav>
 
           {driftWarnings.length > 0 && (
             <section className={styles.driftBanner} aria-live="polite">
@@ -171,8 +217,18 @@ const ForgeDashboardPage: NextPage = () => {
             </section>
           )}
 
+          <section className={styles.slateRailPanel}>
+            <SlateStripCard
+              date={selectedDate}
+              team={selectedTeam}
+              onResolvedDate={(resolvedDate) =>
+                updateModuleResolvedDate("slate", resolvedDate)
+              }
+            />
+          </section>
+
           <section className={styles.dashboardGrid} aria-label="Forge dashboard">
-            <div className={styles.panel}>
+            <div className={`${styles.panel} ${styles.teamPowerPanel}`}>
               <TeamPowerCard
                 date={selectedDate}
                 team={selectedTeam}
@@ -181,7 +237,7 @@ const ForgeDashboardPage: NextPage = () => {
                 }
               />
             </div>
-            <div className={styles.panel}>
+            <div className={`${styles.panel} ${styles.sustainabilityPanel}`}>
               <SustainabilityCard
                 date={selectedDate}
                 position={selectedPosition}
@@ -190,7 +246,7 @@ const ForgeDashboardPage: NextPage = () => {
                 }
               />
             </div>
-            <div className={styles.panel}>
+            <div className={`${styles.panel} ${styles.goaliePanel}`}>
               <GoalieRiskCard
                 date={selectedDate}
                 team={selectedTeam}
@@ -199,19 +255,10 @@ const ForgeDashboardPage: NextPage = () => {
                 }
               />
             </div>
-            <div className={styles.panel}>
+            <div className={`${styles.panel} ${styles.hotColdPanel}`}>
               <HotColdCard team={selectedTeam} />
             </div>
-            <div className={styles.panel}>
-              <SlateStripCard
-                date={selectedDate}
-                team={selectedTeam}
-                onResolvedDate={(resolvedDate) =>
-                  updateModuleResolvedDate("slate", resolvedDate)
-                }
-              />
-            </div>
-            <div className={styles.panel}>
+            <div className={`${styles.panel} ${styles.moversPanel}`}>
               <TopMoversCard position={selectedPosition} />
             </div>
           </section>

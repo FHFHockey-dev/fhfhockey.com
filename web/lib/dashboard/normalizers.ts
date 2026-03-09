@@ -20,6 +20,12 @@ export type NormalizedTeamRatingRow = {
   ppTier: 1 | 2 | 3;
   pkTier: 1 | 2 | 3;
   trend10: number;
+  finishingRating: number | null;
+  goalieRating: number | null;
+  dangerRating: number | null;
+  specialRating: number | null;
+  disciplineRating: number | null;
+  varianceFlag: number | null;
 };
 
 const toTier = (value: unknown): 1 | 2 | 3 => {
@@ -37,6 +43,18 @@ export const normalizeTeamRatings = (payload: unknown): NormalizedTeamRatingRow[
       const defRating = toFiniteNumber(row.defRating ?? row.def_rating);
       const paceRating = toFiniteNumber(row.paceRating ?? row.pace_rating);
       const trend10 = toFiniteNumber(row.trend10);
+      const finishingRating = toFiniteNumber(
+        row.finishingRating ?? row.finishing_rating
+      );
+      const goalieRating = toFiniteNumber(row.goalieRating ?? row.goalie_rating);
+      const dangerRating = toFiniteNumber(row.dangerRating ?? row.danger_rating);
+      const specialRating = toFiniteNumber(
+        row.specialRating ?? row.special_rating
+      );
+      const disciplineRating = toFiniteNumber(
+        row.disciplineRating ?? row.discipline_rating
+      );
+      const varianceFlag = toFiniteNumber(row.varianceFlag ?? row.variance_flag);
       if (!teamAbbr || !date || offRating == null || defRating == null || paceRating == null) {
         return null;
       }
@@ -49,7 +67,13 @@ export const normalizeTeamRatings = (payload: unknown): NormalizedTeamRatingRow[
         paceRating,
         ppTier: toTier(row.ppTier ?? row.pp_tier),
         pkTier: toTier(row.pkTier ?? row.pk_tier),
-        trend10: trend10 ?? 0
+        trend10: trend10 ?? 0,
+        finishingRating,
+        goalieRating,
+        dangerRating,
+        specialRating,
+        disciplineRating,
+        varianceFlag
       };
     })
     .filter((row): row is NormalizedTeamRatingRow => Boolean(row));
