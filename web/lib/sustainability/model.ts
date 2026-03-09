@@ -88,6 +88,27 @@ export type FeatureImportance = {
 export type ExplanationOptions = {
   topN?: number;
   featureLabels?: string[];
+  featureContexts?: Partial<
+    Record<
+      string,
+      {
+        recent?: number | null;
+        baseline?: number | null;
+        comparisonLabel?: string;
+        format?: "percent" | "raw";
+      }
+    >
+  >;
+};
+
+export type ExplanationBullet = {
+  featureKey: string;
+  featureLabel: string;
+  text: string;
+  direction: "up" | "down" | "flat";
+  magnitude: number | null;
+  magnitudeUnit: "%" | "raw" | null;
+  comparisonLabel: string | null;
 };
 
 export type ProjectableCountMetric =
@@ -157,12 +178,60 @@ export type LogisticFitOptions = {
   calibrationIterations?: number;
 };
 
+export type SustainabilityScoreInput = {
+  probabilities: Partial<Record<SustainabilityLabel, number | null | undefined>>;
+  recentVsBaselineDelta?: number | null | undefined;
+  recentVsBaselineZScore?: number | null | undefined;
+  usageDelta?: number | null | undefined;
+  opponentDefenseScore?: number | null | undefined;
+  precision?: number;
+};
+
+export type SustainabilityScoreResult = {
+  score: number;
+  rawScore: number;
+  components: {
+    probabilityEdge: number;
+    deltaImpact: number;
+    zScoreImpact: number;
+    usageImpact: number;
+    opponentImpact: number;
+  };
+  flags: {
+    overperforming: boolean;
+    underperforming: boolean;
+    state: "overperforming" | "underperforming" | "stable";
+  };
+};
+
+export type PerformanceFlagThresholds = {
+  overperformingScore?: number;
+  underperformingScore?: number;
+  minimumHotProbability?: number;
+  minimumColdProbability?: number;
+  minimumAbsZScore?: number;
+};
+
+export type PerformanceFlags = SustainabilityScoreResult["flags"];
+
 const DEFAULT_ZSCORE_HOT_THRESHOLD = 1;
 const DEFAULT_ZSCORE_COLD_THRESHOLD = -1;
 const DEFAULT_QUANTILE_HOT_THRESHOLD = 0.8;
 const DEFAULT_QUANTILE_COLD_THRESHOLD = 0.2;
 const DEFAULT_EXPLANATION_COUNT = 3;
 const DEFAULT_PROJECTION_HORIZONS = [5, 10];
+const SCORE_PROBABILITY_WEIGHT = 30;
+const SCORE_DELTA_WEIGHT = 8;
+const SCORE_ZSCORE_WEIGHT = 10;
+const SCORE_USAGE_WEIGHT = 6;
+const SCORE_OPPONENT_WEIGHT = 5;
+const DEFAULT_FLAG_THRESHOLDS: Required<PerformanceFlagThresholds> = {
+  overperformingScore: 60,
+  underperformingScore: 40,
+  minimumHotProbability: 0.45,
+  minimumColdProbability: 0.45,
+  minimumAbsZScore: 0.75
+};
 const GOAL_LIKE_METRICS = new Set<ProjectableCountMetric>([
   "goals",
   "points",
@@ -186,6 +255,10 @@ function clampQuantile(value: number): number {
 
 function clampRate(value: number): number {
   return Math.min(1, Math.max(0, value));
+}
+
+function clampScore(value: number): number {
+  return Math.min(100, Math.max(0, value));
 }
 
 function labelToClassIndex(label: SustainabilityLabel): 0 | 1 | 2 {
@@ -568,12 +641,71 @@ export function generateExplanationText(
   predictedLabel: SustainabilityLabel,
   options: ExplanationOptions = {}
 ): string[] {
+  return generateExplanationBullets(importances, predictedLabel, options).map(
+    (bullet) => bullet.text
+  );
+}
+
+export function generateExplanationBullets(
+  importances: FeatureImportance[],
+  predictedLabel: SustainabilityLabel,
+  options: ExplanationOptions = {}
+): ExplanationBullet[] {
   const topN = options.topN ?? DEFAULT_EXPLANATION_COUNT;
   const selected = importances
     .filter((importance) => Math.abs(importance.contribution) > EPSILON)
     .slice(0, topN);
 
   return selected.map((importance) => {
+    const context = options.featureContexts?.[importance.featureKey];
+    if (
+      context &&
+      typeof context.recent === "number" &&
+      Number.isFinite(context.recent) &&
+      typeof context.baseline === "number" &&
+      Number.isFinite(context.baseline)
+    ) {
+      const recent = context.recent;
+      const baseline = context.baseline;
+      const comparisonLabel = context.comparisonLabel ?? "career";
+
+      if (Math.abs(baseline) > EPSILON) {
+        const deltaPct = ((recent - baseline) / Math.abs(baseline)) * 100;
+        const directionWord =
+          deltaPct >= 0
+            ? predictedLabel === "cold"
+              ? "still up"
+              : "up"
+            : predictedLabel === "hot"
+              ? "still down"
+              : "down";
+
+        return {
+          featureKey: importance.featureKey,
+          featureLabel: importance.featureLabel,
+          text: `${importance.featureLabel} ${directionWord} ${Math.abs(deltaPct).toFixed(1)}% vs ${comparisonLabel}`,
+          direction: deltaPct > 0 ? "up" : deltaPct < 0 ? "down" : "flat",
+          magnitude: Number(Math.abs(deltaPct).toFixed(1)),
+          magnitudeUnit: "%",
+          comparisonLabel
+        } satisfies ExplanationBullet;
+      }
+
+      const formatter =
+        context.format === "percent"
+          ? `${(recent * 100).toFixed(1)}%`
+          : recent.toFixed(2);
+      return {
+        featureKey: importance.featureKey,
+        featureLabel: importance.featureLabel,
+        text: `${importance.featureLabel} at ${formatter} vs ${comparisonLabel}`,
+        direction: "flat",
+        magnitude: Number(recent.toFixed(2)),
+        magnitudeUnit: context.format === "percent" ? "%" : "raw",
+        comparisonLabel
+      } satisfies ExplanationBullet;
+    }
+
     const directionWord =
       predictedLabel === "cold"
         ? importance.direction === "negative"
@@ -588,7 +720,20 @@ export function generateExplanationText(
         ? `+${importance.featureValue.toFixed(2)}`
         : importance.featureValue.toFixed(2);
 
-    return `${importance.featureLabel} ${directionWord} (${signedValue}, weight ${importance.weight.toFixed(2)})`;
+    return {
+      featureKey: importance.featureKey,
+      featureLabel: importance.featureLabel,
+      text: `${importance.featureLabel} ${directionWord} (${signedValue}, weight ${importance.weight.toFixed(2)})`,
+      direction:
+        importance.featureValue > 0
+          ? "up"
+          : importance.featureValue < 0
+            ? "down"
+            : "flat",
+      magnitude: Number(Math.abs(importance.featureValue).toFixed(2)),
+      magnitudeUnit: "raw",
+      comparisonLabel: null
+    } satisfies ExplanationBullet;
   });
 }
 
@@ -628,7 +773,7 @@ export function projectCountMetric(
   const perGame = buildCountDistribution({
     mean: expectedPerGame,
     model,
-    overdispersion,
+    dispersion: overdispersion,
     precision
   });
 
@@ -709,5 +854,118 @@ export function projectFaceoffWinPct(
       precision
     ),
     horizons: horizonMap
+  };
+}
+
+export function buildSustainabilityScore(
+  input: SustainabilityScoreInput
+): SustainabilityScoreResult {
+  const precision = input.precision ?? 2;
+  const hotProbability = clampRate(
+    toFiniteNumber(input.probabilities.hot) ?? 0
+  );
+  const coldProbability = clampRate(
+    toFiniteNumber(input.probabilities.cold) ?? 0
+  );
+  const probabilityEdge = hotProbability - coldProbability;
+  const deltaImpact = Math.max(
+    -1,
+    Math.min(1, toFiniteNumber(input.recentVsBaselineDelta) ?? 0)
+  );
+  const zScoreImpact = Math.max(
+    -2,
+    Math.min(2, toFiniteNumber(input.recentVsBaselineZScore) ?? 0)
+  );
+  const usageImpact = Math.max(
+    -0.75,
+    Math.min(0.75, toFiniteNumber(input.usageDelta) ?? 0)
+  );
+  const opponentImpact = Math.max(
+    -0.75,
+    Math.min(0.75, toFiniteNumber(input.opponentDefenseScore) ?? 0)
+  );
+
+  const rawScore =
+    50 +
+    probabilityEdge * SCORE_PROBABILITY_WEIGHT +
+    deltaImpact * SCORE_DELTA_WEIGHT +
+    (zScoreImpact / 2) * SCORE_ZSCORE_WEIGHT +
+    usageImpact * SCORE_USAGE_WEIGHT +
+    opponentImpact * SCORE_OPPONENT_WEIGHT;
+
+  const score = roundProjectionValue(clampScore(rawScore), precision);
+  const flags = derivePerformanceFlags(
+    {
+      score,
+      probabilities: input.probabilities,
+      recentVsBaselineZScore: input.recentVsBaselineZScore
+    },
+    DEFAULT_FLAG_THRESHOLDS
+  );
+
+  return {
+    score,
+    rawScore: roundProjectionValue(rawScore, precision),
+    components: {
+      probabilityEdge: roundProjectionValue(
+        probabilityEdge * SCORE_PROBABILITY_WEIGHT,
+        precision
+      ),
+      deltaImpact: roundProjectionValue(
+        deltaImpact * SCORE_DELTA_WEIGHT,
+        precision
+      ),
+      zScoreImpact: roundProjectionValue(
+        (zScoreImpact / 2) * SCORE_ZSCORE_WEIGHT,
+        precision
+      ),
+      usageImpact: roundProjectionValue(
+        usageImpact * SCORE_USAGE_WEIGHT,
+        precision
+      ),
+      opponentImpact: roundProjectionValue(
+        opponentImpact * SCORE_OPPONENT_WEIGHT,
+        precision
+      )
+    },
+    flags
+  };
+}
+
+export function derivePerformanceFlags(
+  input: {
+    score: number | null | undefined;
+    probabilities: Partial<Record<SustainabilityLabel, number | null | undefined>>;
+    recentVsBaselineZScore?: number | null | undefined;
+  },
+  thresholds: PerformanceFlagThresholds = {}
+): PerformanceFlags {
+  const resolved = {
+    ...DEFAULT_FLAG_THRESHOLDS,
+    ...thresholds
+  };
+  const score = clampScore(toFiniteNumber(input.score) ?? 50);
+  const hotProbability = clampRate(toFiniteNumber(input.probabilities.hot) ?? 0);
+  const coldProbability = clampRate(toFiniteNumber(input.probabilities.cold) ?? 0);
+  const absoluteZScore = Math.abs(toFiniteNumber(input.recentVsBaselineZScore) ?? 0);
+
+  const overperforming =
+    score >= resolved.overperformingScore &&
+    hotProbability >= resolved.minimumHotProbability &&
+    absoluteZScore >= resolved.minimumAbsZScore;
+
+  const underperforming =
+    score <= resolved.underperformingScore &&
+    coldProbability >= resolved.minimumColdProbability &&
+    absoluteZScore >= resolved.minimumAbsZScore;
+
+  return {
+    overperforming,
+    underperforming,
+    state: overperforming
+      ? "overperforming"
+      : underperforming
+        ? "underperforming"
+        : "stable"
   };
 }

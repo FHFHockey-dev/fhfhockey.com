@@ -95,11 +95,11 @@
     - [x] 3.2.1 Compute expected per-game counts from rate×TOI; aggregate to 5/10; include variance.
     - [x] 3.2.2 Handle FO% as a rate with appropriate aggregation and bands.
   - [ ] 3.3 Compute Sustainability Score (0–100) and generate over/underperforming flags.
-    - [ ] 3.3.1 Define score formula combining calibrated streak probs and deltas vs baseline.
-    - [ ] 3.3.2 Set thresholds for over/underperforming; expose flags.
-  - [ ] 3.4 Generate explanations (top drivers); simple importance first.
-    - [ ] 3.4.1 Map top features to human-readable bullets (e.g., "PP TOI up +40% vs career").
-    - [ ] 3.4.2 Include up to 3 reasons with direction and magnitude.
+    - [x] 3.3.1 Define score formula combining calibrated streak probs and deltas vs baseline.
+    - [x] 3.3.2 Set thresholds for over/underperforming; expose flags.
+  - [x] 3.4 Generate explanations (top drivers); simple importance first.
+    - [x] 3.4.1 Map top features to human-readable bullets (e.g., "PP TOI up +40% vs career").
+    - [x] 3.4.2 Include up to 3 reasons with direction and magnitude.
 - [ ] 3.5 Visualization coverage
   - [ ] 3.5.1 Plot all metrics captured in `rolling_player_game_metrics` with time-frame toggles (3/5/10/20/cumulative).
   - [ ] 3.5.2 Add trend toggles for career/3-year season baselines to highlight sustained streaks.

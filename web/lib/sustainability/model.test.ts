@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  buildSustainabilityScore,
   createTrainingTarget,
+  derivePerformanceFlags,
   deriveSustainabilityLabel,
   extractFeatureImportance,
+  generateExplanationBullets,
   generateExplanationText,
   predictSustainabilityProbabilities,
   projectCountMetric,
@@ -174,12 +177,55 @@ describe("sustainability model training targets", () => {
     expect(importance[0]?.featureLabel).toBeTruthy();
 
     const explanation = generateExplanationText(importance, prediction.label, {
-      topN: 2
+      topN: 2,
+      featureContexts: {
+        shots_per_60: {
+          recent: 1.7,
+          baseline: 1.2,
+          comparisonLabel: "career"
+        },
+        ixg_per_60: {
+          recent: 1.2,
+          baseline: 1.1,
+          comparisonLabel: "career"
+        },
+        pp_toi_pct: {
+          recent: 1.8,
+          baseline: 1.3,
+          comparisonLabel: "career"
+        }
+      }
     });
 
     expect(explanation).toHaveLength(2);
-    expect(explanation[0]).toContain("weight");
+    expect(explanation[0]).toMatch(/vs career/);
     expect(explanation.join(" ")).toMatch(/Shots \/ 60|ixG \/ 60|PP TOI %/);
+
+    const bullets = generateExplanationBullets(importance, prediction.label, {
+      topN: 2,
+      featureContexts: {
+        shots_per_60: {
+          recent: 1.7,
+          baseline: 1.2,
+          comparisonLabel: "career"
+        },
+        ixg_per_60: {
+          recent: 1.2,
+          baseline: 1.1,
+          comparisonLabel: "career"
+        },
+        pp_toi_pct: {
+          recent: 1.8,
+          baseline: 1.3,
+          comparisonLabel: "career"
+        }
+      }
+    });
+
+    expect(bullets).toHaveLength(2);
+    expect(bullets[0]?.direction).toMatch(/up|down|flat/);
+    expect(typeof bullets[0]?.magnitude).toBe("number");
+    expect(bullets[0]?.magnitudeUnit).toBe("%");
   });
 
   it("projects expected count outputs from rate x toi with horizon rollups", () => {
@@ -264,5 +310,84 @@ describe("sustainability model training targets", () => {
     expect(projection.expectedWinsPerGame).toBe(0);
     expect(projection.horizons[5].band50.lower).toBe(1);
     expect(projection.horizons[10].band80.upper).toBe(1);
+  });
+
+  it("builds a sustainability score from probabilities and baseline deltas", () => {
+    const score = buildSustainabilityScore({
+      probabilities: {
+        hot: 0.68,
+        normal: 0.22,
+        cold: 0.1
+      },
+      recentVsBaselineDelta: 0.55,
+      recentVsBaselineZScore: 1.4,
+      usageDelta: 0.22,
+      opponentDefenseScore: 0.18
+    });
+
+    expect(score.score).toBeGreaterThan(60);
+    expect(score.flags.overperforming).toBe(true);
+    expect(score.flags.underperforming).toBe(false);
+    expect(score.flags.state).toBe("overperforming");
+    expect(score.components.probabilityEdge).toBeGreaterThan(0);
+    expect(score.components.zScoreImpact).toBeGreaterThan(0);
+  });
+
+  it("flags low-sustainability profiles when cold probability dominates", () => {
+    const score = buildSustainabilityScore({
+      probabilities: {
+        hot: 0.08,
+        normal: 0.22,
+        cold: 0.7
+      },
+      recentVsBaselineDelta: -0.6,
+      recentVsBaselineZScore: -1.8,
+      usageDelta: -0.25,
+      opponentDefenseScore: -0.2
+    });
+
+    expect(score.score).toBeLessThan(40);
+    expect(score.flags.overperforming).toBe(false);
+    expect(score.flags.underperforming).toBe(true);
+    expect(score.flags.state).toBe("underperforming");
+    expect(score.components.probabilityEdge).toBeLessThan(0);
+  });
+
+  it("derives stable vs over/underperforming flags from thresholds", () => {
+    expect(
+      derivePerformanceFlags({
+        score: 63,
+        probabilities: { hot: 0.51, cold: 0.12 },
+        recentVsBaselineZScore: 0.9
+      })
+    ).toEqual({
+      overperforming: true,
+      underperforming: false,
+      state: "overperforming"
+    });
+
+    expect(
+      derivePerformanceFlags({
+        score: 37,
+        probabilities: { hot: 0.09, cold: 0.62 },
+        recentVsBaselineZScore: -1.1
+      })
+    ).toEqual({
+      overperforming: false,
+      underperforming: true,
+      state: "underperforming"
+    });
+
+    expect(
+      derivePerformanceFlags({
+        score: 58,
+        probabilities: { hot: 0.44, cold: 0.16 },
+        recentVsBaselineZScore: 0.5
+      })
+    ).toEqual({
+      overperforming: false,
+      underperforming: false,
+      state: "stable"
+    });
   });
 });
