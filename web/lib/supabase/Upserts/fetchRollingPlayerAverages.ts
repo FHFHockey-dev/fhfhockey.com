@@ -10,6 +10,26 @@ import {
   updateHistoricalAverageAccumulator,
   updateHistoricalGpPctAccumulator
 } from "./rollingHistoricalAverages";
+import {
+  createHistoricalRatioAccumulator,
+  createRatioRollingAccumulator,
+  getHistoricalRatioSnapshot,
+  getRatioRollingSnapshot,
+  updateHistoricalRatioAccumulator,
+  updateRatioRollingAccumulator,
+  type HistoricalRatioAccumulator,
+  type RatioAggregationSpec,
+  type RatioComponents,
+  type RatioRollingAccumulator
+} from "./rollingMetricAggregation";
+import {
+  resolvePer60Components,
+  resolveShareComponents
+} from "./rollingPlayerMetricMath";
+import {
+  summarizeCoverage,
+  summarizeSuspiciousOutputs
+} from "./rollingPlayerPipelineDiagnostics";
 
 type StrengthState = "all" | "ev" | "pp" | "pk";
 type FullRefreshMode = "rpc_truncate" | "overwrite_only" | "delete";
@@ -21,6 +41,7 @@ const MAX_RETRIES = 5;
 const RETRY_BASE_DELAY_MS = 1000;
 const RETRY_MAX_DELAY_MS = 30000;
 const TRANSIENT_GATEWAY_STATUSES = [502, 503, 504, 520, 522, 524];
+const SLOW_OPERATION_WARNING_MS = 15000;
 
 function getErrorMessage(error: unknown): string {
   if (typeof error === "string") return error;
@@ -264,6 +285,8 @@ interface WgoSkaterRow {
   blocked_shots: number | null;
   points: number | null;
   pp_points: number | null;
+  pp_toi: number | null;
+  pp_toi_pct_per_game: number | null;
   toi_per_game: number | null;
 }
 
@@ -299,8 +322,16 @@ interface NstCountsOiRow {
   date_scraped: string;
   season: number;
   toi: number | null;
+  gf: number | null;
+  ga: number | null;
+  sf: number | null;
+  sa: number | null;
+  off_zone_starts: number | null;
+  def_zone_starts: number | null;
+  neu_zone_starts: number | null;
   off_zone_start_pct: number | null;
   on_ice_sh_pct: number | null;
+  on_ice_sv_pct: number | null;
   pdo: number | null;
   cf: number | null;
   ca: number | null;
@@ -330,7 +361,19 @@ interface PowerPlayCombinationRow {
   gameId: number;
   playerId: number;
   percentageOfPP: number | null;
+  PPTOI: number | null;
   unit: number | null;
+}
+
+interface PlayerProcessingDiagnostics {
+  coverageWarningCount: number;
+  suspiciousOutputCount: number;
+  unknownGameIdCount: number;
+}
+
+interface ProcessPlayerResult {
+  rows: any[];
+  diagnostics: PlayerProcessingDiagnostics;
 }
 
 const cachedPowerPlayCombos = new Map<string, PowerPlayCombinationRow>();
@@ -359,10 +402,20 @@ interface PlayerGameData {
   fallbackToiSeconds?: number | null;
 }
 
-interface MetricDefinition {
+interface SimpleMetricDefinition {
   key: string;
+  aggregation: "simple";
   getValue: (game: PlayerGameData) => number | null;
 }
+
+interface RatioMetricDefinition {
+  key: string;
+  aggregation: "ratio";
+  ratioSpec: RatioAggregationSpec;
+  getComponents: (game: PlayerGameData) => RatioComponents | null;
+}
+
+type MetricDefinition = SimpleMetricDefinition | RatioMetricDefinition;
 
 interface RollingAccumulator {
   sumAll: number;
@@ -373,45 +426,128 @@ interface RollingAccumulator {
   >;
 }
 
+function getPoints(game: PlayerGameData): number | null {
+  if (
+    game.counts &&
+    game.counts.total_points !== null &&
+    game.counts.total_points !== undefined
+  ) {
+    return game.counts.total_points;
+  }
+  if (game.strength === "all") {
+    return game.wgo?.points ?? null;
+  }
+  return null;
+}
+
+function getShots(game: PlayerGameData): number | null {
+  if (game.counts && game.counts.shots !== null && game.counts.shots !== undefined) {
+    return game.counts.shots;
+  }
+  if (game.strength === "all") {
+    return game.wgo?.shots ?? null;
+  }
+  return null;
+}
+
+function getGoals(game: PlayerGameData): number | null {
+  if (game.counts && game.counts.goals !== null && game.counts.goals !== undefined) {
+    return game.counts.goals;
+  }
+  if (game.strength === "all") {
+    return game.wgo?.goals ?? null;
+  }
+  return null;
+}
+
+function getAssists(game: PlayerGameData): number | null {
+  if (
+    game.counts &&
+    game.counts.total_assists !== null &&
+    game.counts.total_assists !== undefined
+  ) {
+    return game.counts.total_assists;
+  }
+  if (game.strength === "all") {
+    return game.wgo?.assists ?? null;
+  }
+  return null;
+}
+
+function getHits(game: PlayerGameData): number | null {
+  if (game.counts && game.counts.hits !== null && game.counts.hits !== undefined) {
+    return game.counts.hits;
+  }
+  if (game.strength === "all") {
+    return game.wgo?.hits ?? null;
+  }
+  return null;
+}
+
+function getBlocks(game: PlayerGameData): number | null {
+  if (
+    game.counts &&
+    game.counts.shots_blocked !== null &&
+    game.counts.shots_blocked !== undefined
+  ) {
+    return game.counts.shots_blocked;
+  }
+  if (game.strength === "all") {
+    return game.wgo?.blocked_shots ?? null;
+  }
+  return null;
+}
+
+function getPpShareComponents(game: PlayerGameData): RatioComponents | null {
+  if (game.strength !== "all" && game.strength !== "pp") return null;
+  return resolveShareComponents({
+    numeratorValue: game.wgo?.pp_toi ?? null,
+    share: game.wgo?.pp_toi_pct_per_game ?? null
+  });
+}
+
 const METRICS: MetricDefinition[] = [
   {
     key: "sog_per_60",
-    getValue: (game) => {
-      if (game.rates?.shots_per_60 != null) return game.rates.shots_per_60;
-      const shots = game.counts?.shots ?? game.wgo?.shots ?? null;
-      const toiSeconds = getToiSeconds(game);
-      if (shots == null || toiSeconds == null || toiSeconds === 0) return null;
-      return (shots * 3600) / toiSeconds;
-    }
+    aggregation: "ratio",
+    ratioSpec: {
+      scale: 3600
+    },
+    getComponents: (game) =>
+      resolvePer60Components({
+        rawValue: getShots(game),
+        toiSeconds: getToiSeconds(game),
+        per60Rate: game.rates?.shots_per_60 ?? null
+      })
   },
   {
     key: "ixg_per_60",
-    getValue: (game) => {
-      if (game.rates?.ixg_per_60 != null) return game.rates.ixg_per_60;
-      const ixg = game.counts?.ixg ?? getWgoNumber(game, "ixg");
-      const toiSeconds = getToiSeconds(game);
-      if (ixg == null || toiSeconds == null || toiSeconds === 0) return null;
-      return (ixg * 3600) / toiSeconds;
-    }
+    aggregation: "ratio",
+    ratioSpec: {
+      scale: 3600
+    },
+    getComponents: (game) =>
+      resolvePer60Components({
+        rawValue: game.counts?.ixg ?? getWgoNumber(game, "ixg"),
+        toiSeconds: getToiSeconds(game),
+        per60Rate: game.rates?.ixg_per_60 ?? null
+      })
   },
   {
     key: "shooting_pct",
-    getValue: ({ counts, wgo, strength }) => {
-      if (
-        counts &&
-        counts.sh_percentage !== null &&
-        counts.sh_percentage !== undefined
-      ) {
-        return counts.sh_percentage;
-      }
-      if (strength === "all") {
-        return wgo?.shooting_percentage ?? null;
-      }
-      return null;
-    }
+    aggregation: "ratio",
+    ratioSpec: {
+      scale: 100,
+      zeroWhenNoDenominator: true
+    },
+    getComponents: (game) => ({
+      numerator: getGoals(game),
+      denominator: getShots(game)
+    })
   },
   {
     key: "ixg",
+    aggregation: "simple",
     getValue: (game) => {
       if (game.counts?.ixg != null) return game.counts.ixg;
       return getWgoNumber(game, "ixg");
@@ -419,178 +555,200 @@ const METRICS: MetricDefinition[] = [
   },
   {
     key: "primary_points_pct",
-    getValue: ({ counts }) => {
+    aggregation: "ratio",
+    ratioSpec: {
+      scale: 1,
+      zeroWhenNoDenominator: true
+    },
+    getComponents: ({ counts }) => {
       if (!counts) return null;
-      const goals = counts.goals ?? 0;
-      const firstAssists = counts.first_assists ?? 0;
-      const totalPoints = counts.total_points ?? 0;
-      if (totalPoints === 0) return 0;
-      return (goals + firstAssists) / totalPoints;
+      return {
+        numerator: (counts.goals ?? 0) + (counts.first_assists ?? 0),
+        denominator: counts.total_points ?? 0
+      };
     }
   },
   {
     key: "expected_sh_pct",
-    getValue: (game) => {
-      const ixg = game.counts?.ixg ?? getWgoNumber(game, "ixg");
-      const shots = game.counts?.shots ?? game.wgo?.shots ?? null;
-      if (shots === null || shots === 0 || ixg === null) return null;
-      return ixg / shots;
-    }
+    aggregation: "ratio",
+    ratioSpec: {
+      scale: 1
+    },
+    getComponents: (game) => ({
+      numerator: game.counts?.ixg ?? getWgoNumber(game, "ixg"),
+      denominator: getShots(game)
+    })
   },
   {
     key: "ipp",
-    getValue: ({ counts }) => counts?.ipp ?? null
+    aggregation: "ratio",
+    ratioSpec: {
+      scale: 100,
+      zeroWhenNoDenominator: true
+    },
+    getComponents: (game) => ({
+      numerator: getPoints(game),
+      denominator: game.countsOi?.gf ?? null
+    })
   },
   {
     key: "iscf",
+    aggregation: "simple",
     getValue: ({ counts }) => counts?.iscfs ?? null
   },
   {
     key: "ihdcf",
+    aggregation: "simple",
     getValue: ({ counts }) => counts?.hdcf ?? null
   },
   {
     key: "toi_seconds",
+    aggregation: "simple",
     getValue: (game) => getToiSeconds(game)
   },
   {
     key: "hits_per_60",
-    getValue: (game) => {
-      const hits = game.counts?.hits ?? game.wgo?.hits ?? null;
-      const toiSeconds = getToiSeconds(game);
-      if (hits == null || toiSeconds == null || toiSeconds === 0) return null;
-      return (hits * 3600) / toiSeconds;
-    }
+    aggregation: "ratio",
+    ratioSpec: {
+      scale: 3600
+    },
+    getComponents: (game) =>
+      resolvePer60Components({
+        rawValue: getHits(game),
+        toiSeconds: getToiSeconds(game)
+      })
   },
   {
     key: "blocks_per_60",
-    getValue: (game) => {
-      const blocks =
-        game.counts?.shots_blocked ?? game.wgo?.blocked_shots ?? null;
-      const toiSeconds = getToiSeconds(game);
-      if (blocks == null || toiSeconds == null || toiSeconds === 0) return null;
-      return (blocks * 3600) / toiSeconds;
-    }
+    aggregation: "ratio",
+    ratioSpec: {
+      scale: 3600
+    },
+    getComponents: (game) =>
+      resolvePer60Components({
+        rawValue: getBlocks(game),
+        toiSeconds: getToiSeconds(game)
+      })
   },
   {
     key: "oz_start_pct",
-    getValue: ({ countsOi }) => countsOi?.off_zone_start_pct ?? null
+    aggregation: "ratio",
+    ratioSpec: {
+      scale: 100
+    },
+    getComponents: ({ countsOi }) => ({
+      numerator: countsOi?.off_zone_starts ?? null,
+      denominator:
+        (countsOi?.off_zone_starts ?? 0) + (countsOi?.def_zone_starts ?? 0)
+    })
   },
   {
     key: "pp_share_pct",
-    getValue: ({ ppCombination, strength }) => {
-      if (strength !== "all" && strength !== "pp") return null;
-      if (
-        ppCombination?.percentageOfPP !== null &&
-        ppCombination?.percentageOfPP !== undefined
-      ) {
-        return ppCombination.percentageOfPP;
-      }
-      return null;
-    }
+    aggregation: "ratio",
+    ratioSpec: {
+      scale: 1
+    },
+    getComponents: (game) => getPpShareComponents(game)
   },
   {
     key: "on_ice_sh_pct",
-    getValue: ({ countsOi }) => countsOi?.on_ice_sh_pct ?? null
+    aggregation: "ratio",
+    ratioSpec: {
+      scale: 100
+    },
+    getComponents: ({ countsOi }) => ({
+      numerator: countsOi?.gf ?? null,
+      denominator: countsOi?.sf ?? null
+    })
   },
   {
     key: "pdo",
-    getValue: ({ countsOi }) => countsOi?.pdo ?? null
+    aggregation: "ratio",
+    ratioSpec: {
+      scale: 100,
+      combine: "sum",
+      outputScale: 0.01
+    },
+    getComponents: ({ countsOi }) => ({
+      numerator: countsOi?.gf ?? null,
+      denominator: countsOi?.sf ?? null,
+      secondaryNumerator:
+        countsOi?.sa != null && countsOi?.ga != null
+          ? countsOi.sa - countsOi.ga
+          : null,
+      secondaryDenominator: countsOi?.sa ?? null
+    })
   },
   {
     key: "cf",
+    aggregation: "simple",
     getValue: ({ countsOi }) => countsOi?.cf ?? null
   },
   {
     key: "ca",
+    aggregation: "simple",
     getValue: ({ countsOi }) => countsOi?.ca ?? null
   },
   {
     key: "cf_pct",
-    getValue: ({ countsOi }) => countsOi?.cf_pct ?? null
+    aggregation: "ratio",
+    ratioSpec: {
+      scale: 100
+    },
+    getComponents: ({ countsOi }) => ({
+      numerator: countsOi?.cf ?? null,
+      denominator: (countsOi?.cf ?? 0) + (countsOi?.ca ?? 0)
+    })
   },
   {
     key: "ff",
+    aggregation: "simple",
     getValue: ({ countsOi }) => countsOi?.ff ?? null
   },
   {
     key: "fa",
+    aggregation: "simple",
     getValue: ({ countsOi }) => countsOi?.fa ?? null
   },
   {
     key: "ff_pct",
-    getValue: ({ countsOi }) => countsOi?.ff_pct ?? null
+    aggregation: "ratio",
+    ratioSpec: {
+      scale: 100
+    },
+    getComponents: ({ countsOi }) => ({
+      numerator: countsOi?.ff ?? null,
+      denominator: (countsOi?.ff ?? 0) + (countsOi?.fa ?? 0)
+    })
   },
   {
     key: "goals",
-    getValue: ({ counts, wgo, strength }) => {
-      if (counts && counts.goals !== null && counts.goals !== undefined) {
-        return counts.goals;
-      }
-      if (strength === "all") {
-        return wgo?.goals ?? null;
-      }
-      return null;
-    }
+    aggregation: "simple",
+    getValue: (game) => getGoals(game)
   },
   {
     key: "assists",
-    getValue: ({ counts, wgo, strength }) => {
-      if (
-        counts &&
-        counts.total_assists !== null &&
-        counts.total_assists !== undefined
-      ) {
-        return counts.total_assists;
-      }
-      if (strength === "all") {
-        return wgo?.assists ?? null;
-      }
-      return null;
-    }
+    aggregation: "simple",
+    getValue: (game) => getAssists(game)
   },
   {
     key: "shots",
-    getValue: ({ counts, wgo, strength }) => {
-      if (counts && counts.shots !== null && counts.shots !== undefined) {
-        return counts.shots;
-      }
-      if (strength === "all") {
-        return wgo?.shots ?? null;
-      }
-      return null;
-    }
+    aggregation: "simple",
+    getValue: (game) => getShots(game)
   },
   {
     key: "hits",
-    getValue: ({ counts, wgo, strength }) => {
-      if (counts && counts.hits !== null && counts.hits !== undefined) {
-        return counts.hits;
-      }
-      if (strength === "all") {
-        return wgo?.hits ?? null;
-      }
-      return null;
-    }
+    aggregation: "simple",
+    getValue: (game) => getHits(game)
   },
   {
     key: "blocks",
-    getValue: ({ counts, wgo, strength }) => {
-      if (
-        counts &&
-        counts.shots_blocked !== null &&
-        counts.shots_blocked !== undefined
-      ) {
-        return counts.shots_blocked;
-      }
-      if (strength === "all") {
-        return wgo?.blocked_shots ?? null;
-      }
-      return null;
-    }
+    aggregation: "simple",
+    getValue: (game) => getBlocks(game)
   },
   {
     key: "pp_points",
+    aggregation: "simple",
     getValue: ({ counts, wgo, strength }) => {
       if (strength === "pp") {
         return counts?.total_points ?? null;
@@ -603,19 +761,8 @@ const METRICS: MetricDefinition[] = [
   },
   {
     key: "points",
-    getValue: ({ counts, wgo, strength }) => {
-      if (
-        counts &&
-        counts.total_points !== null &&
-        counts.total_points !== undefined
-      ) {
-        return counts.total_points;
-      }
-      if (strength === "all") {
-        return wgo?.points ?? null;
-      }
-      return null;
-    }
+    aggregation: "simple",
+    getValue: (game) => getPoints(game)
   }
 ];
 
@@ -660,6 +807,33 @@ async function executeWithRetry<T>(
   }
 }
 
+async function executeWithSlowLog<T>(
+  label: string,
+  fn: () => Promise<T>,
+  warnAfterMs = SLOW_OPERATION_WARNING_MS
+): Promise<T> {
+  const startedAt = Date.now();
+  let slowWarningEmitted = false;
+  const timer = setTimeout(() => {
+    slowWarningEmitted = true;
+    console.warn(
+      `[fetchRollingPlayerAverages] Slow operation still running after ${formatDuration(warnAfterMs)}: ${label}`
+    );
+  }, warnAfterMs);
+
+  try {
+    return await fn();
+  } finally {
+    clearTimeout(timer);
+    const durationMs = Date.now() - startedAt;
+    if (slowWarningEmitted || durationMs >= warnAfterMs) {
+      console.info(
+        `[fetchRollingPlayerAverages] Slow operation completed in ${formatDuration(durationMs)}: ${label}`
+      );
+    }
+  }
+}
+
 function getToiSeconds(game: PlayerGameData): number | null {
   const sanitizeSeconds = (value: number | null | undefined): number | null => {
     if (value === null || value === undefined) return null;
@@ -675,6 +849,8 @@ function getToiSeconds(game: PlayerGameData): number | null {
   if (countsToi !== null) return countsToi;
   const countsOiToi = sanitizeSeconds(game.countsOi?.toi);
   if (countsOiToi !== null) return countsOiToi;
+  const ratesToi = sanitizeSeconds(game.rates?.toi_per_gp);
+  if (ratesToi !== null) return ratesToi;
   const fallbackToi = sanitizeSeconds(game.fallbackToiSeconds);
   if (fallbackToi !== null) return fallbackToi;
   const wgoToiMinutes = game.wgo?.toi_per_game;
@@ -820,11 +996,13 @@ function updateAccumulator(
 }
 
 function deriveOutputs(
-  metricsState: Record<string, RollingAccumulator>,
-  historicalMetricsState: Record<
+  simpleMetricsState: Record<string, RollingAccumulator>,
+  ratioMetricsState: Record<string, RatioRollingAccumulator>,
+  historicalSimpleMetricsState: Record<
     string,
     ReturnType<typeof createHistoricalAverageAccumulator>
   >,
+  historicalRatioMetricsState: Record<string, HistoricalRatioAccumulator>,
   historicalGpPctState: ReturnType<typeof createHistoricalGpPctAccumulator>,
   gamesPlayed: number,
   teamGamesPlayed: number,
@@ -835,18 +1013,39 @@ function deriveOutputs(
 ) {
   const output: Record<string, number | null> = {};
   for (const metric of METRICS) {
-    const acc = metricsState[metric.key];
+    if (metric.aggregation === "ratio") {
+      const acc = ratioMetricsState[metric.key];
+      if (!acc) continue;
+      const snapshot = getRatioRollingSnapshot(acc, metric.ratioSpec);
+      output[`${metric.key}_total_all`] = snapshot.all;
+      output[`${metric.key}_avg_all`] = snapshot.all;
+
+      const historical = historicalRatioMetricsState[metric.key];
+      const historicalSnapshot = getHistoricalRatioSnapshot(
+        historical,
+        currentSeason,
+        metric.ratioSpec
+      );
+      output[`${metric.key}_avg_season`] = historicalSnapshot.season;
+      output[`${metric.key}_avg_3ya`] = historicalSnapshot.threeYear;
+      output[`${metric.key}_avg_career`] = historicalSnapshot.career;
+
+      ROLLING_WINDOWS.forEach((size) => {
+        output[`${metric.key}_total_last${size}`] = snapshot.windows[size];
+        output[`${metric.key}_avg_last${size}`] = snapshot.windows[size];
+      });
+      continue;
+    }
+
+    const acc = simpleMetricsState[metric.key];
     if (!acc) continue;
     const totalAll = Number(acc.sumAll) || 0;
     output[`${metric.key}_total_all`] =
       acc.countAll > 0 ? Number(totalAll.toFixed(6)) : null;
     output[`${metric.key}_avg_all`] =
       acc.countAll > 0 ? Number((totalAll / acc.countAll).toFixed(6)) : null;
-    const historical = historicalMetricsState[metric.key];
-    const historicalSnapshot = getHistoricalAverageSnapshot(
-      historical,
-      currentSeason
-    );
+    const historical = historicalSimpleMetricsState[metric.key];
+    const historicalSnapshot = getHistoricalAverageSnapshot(historical, currentSeason);
     output[`${metric.key}_avg_season`] = historicalSnapshot.season;
     output[`${metric.key}_avg_3ya`] = historicalSnapshot.threeYear;
     output[`${metric.key}_avg_career`] = historicalSnapshot.career;
@@ -923,7 +1122,7 @@ async function fetchWgoRowsForPlayer(
     let query = supabase
       .from("wgo_skater_stats")
       .select(
-        "player_id, game_id, date, season_id, team_abbrev, current_team_abbreviation, goals, assists, shots, shooting_percentage, hits, blocked_shots, points, pp_points, toi_per_game"
+        "player_id, game_id, date, season_id, team_abbrev, current_team_abbreviation, goals, assists, shots, shooting_percentage, hits, blocked_shots, points, pp_points, pp_toi, pp_toi_pct_per_game, toi_per_game"
       )
       .eq("player_id", playerId)
       .order("date", { ascending: true })
@@ -1078,7 +1277,7 @@ async function fetchCountsOi(
         const { data, error } = await supabase
           .from(tableName as any)
           .select(
-            "date_scraped, season, toi, off_zone_start_pct, on_ice_sh_pct, pdo, cf, ca, cf_pct, ff, fa, ff_pct"
+            "date_scraped, season, toi, gf, ga, sf, sa, off_zone_starts, def_zone_starts, neu_zone_starts, off_zone_start_pct, on_ice_sh_pct, on_ice_sv_pct, pdo, cf, ca, cf_pct, ff, fa, ff_pct"
           )
           .eq("player_id", playerId)
           .gte("date_scraped", startDate)
@@ -1116,7 +1315,7 @@ async function fetchPowerPlayCombinations(
       async () => {
         const { data, error } = await supabase
           .from("powerPlayCombinations")
-          .select("gameId, playerId, percentageOfPP, unit")
+          .select("gameId, playerId, percentageOfPP, PPTOI, unit")
           .eq("playerId", playerId)
           .in("gameId", chunk);
         if (error) throw error;
@@ -1293,9 +1492,18 @@ async function processPlayer(
   ledger: TeamGameLedger,
   knownGameIds: Set<number>,
   options: FetchOptions
-): Promise<any[]> {
+): Promise<ProcessPlayerResult> {
   const wgoRows = await fetchWgoRowsForPlayer(playerId, options);
-  if (wgoRows.length === 0) return [];
+  if (wgoRows.length === 0) {
+    return {
+      rows: [],
+      diagnostics: {
+        coverageWarningCount: 0,
+        suspiciousOutputCount: 0,
+        unknownGameIdCount: 0
+      }
+    };
+  }
   const startDate = wgoRows[0].date;
   const endDate = wgoRows[wgoRows.length - 1].date;
   const gameIds = wgoRows
@@ -1305,6 +1513,11 @@ async function processPlayer(
   const lineRows = await fetchLineCombinations(gameIds);
 
   const outputs: any[] = [];
+  const diagnostics: PlayerProcessingDiagnostics = {
+    coverageWarningCount: 0,
+    suspiciousOutputCount: 0,
+    unknownGameIdCount: 0
+  };
   for (const config of STRENGTH_CONFIGS) {
     const strengthLabel = `[fetchRollingPlayerAverages] player:${playerId} strength:${config.state}`;
     console.time(strengthLabel);
@@ -1335,6 +1548,20 @@ async function processPlayer(
         );
       }
 
+      const coverageSummary = summarizeCoverage({
+        playerId,
+        strength: config.state,
+        wgoRows,
+        countsRows,
+        ratesRows,
+        countsOiRows,
+        ppRows,
+        knownGameIds
+      });
+      diagnostics.coverageWarningCount += coverageSummary.warnings.length;
+      diagnostics.unknownGameIdCount += coverageSummary.counts.unknownGameIds;
+      coverageSummary.warnings.forEach((warning) => console.warn(warning));
+
       const games = buildGameRecords(
         wgoRows,
         countsByDate,
@@ -1346,14 +1573,24 @@ async function processPlayer(
         knownGameIds
       );
 
-      const metricsState: Record<string, RollingAccumulator> = {};
-      const historicalMetricsState: Record<
+      const simpleMetricsState: Record<string, RollingAccumulator> = {};
+      const ratioMetricsState: Record<string, RatioRollingAccumulator> = {};
+      const historicalSimpleMetricsState: Record<
         string,
         ReturnType<typeof createHistoricalAverageAccumulator>
       > = {};
+      const historicalRatioMetricsState: Record<string, HistoricalRatioAccumulator> =
+        {};
       METRICS.forEach((metric) => {
-        metricsState[metric.key] = initAccumulator();
-        historicalMetricsState[metric.key] = createHistoricalAverageAccumulator();
+        if (metric.aggregation === "ratio") {
+          ratioMetricsState[metric.key] = createRatioRollingAccumulator();
+          historicalRatioMetricsState[metric.key] =
+            createHistoricalRatioAccumulator();
+          return;
+        }
+        simpleMetricsState[metric.key] = initAccumulator();
+        historicalSimpleMetricsState[metric.key] =
+          createHistoricalAverageAccumulator();
       });
       const historicalGpPctState = createHistoricalGpPctAccumulator();
 
@@ -1362,10 +1599,24 @@ async function processPlayer(
 
       for (const game of games) {
         METRICS.forEach((metric) => {
+          if (metric.aggregation === "ratio") {
+            const components = metric.getComponents(game);
+            updateRatioRollingAccumulator(
+              ratioMetricsState[metric.key],
+              components
+            );
+            updateHistoricalRatioAccumulator(
+              historicalRatioMetricsState[metric.key],
+              game.season,
+              components
+            );
+            return;
+          }
+
           const value = metric.getValue(game);
-          updateAccumulator(metricsState[metric.key], value);
+          updateAccumulator(simpleMetricsState[metric.key], value);
           updateHistoricalAverageAccumulator(
-            historicalMetricsState[metric.key],
+            historicalSimpleMetricsState[metric.key],
             game.season,
             value
           );
@@ -1431,8 +1682,10 @@ async function processPlayer(
         });
 
         const metricOutputs = deriveOutputs(
-          metricsState,
-          historicalMetricsState,
+          simpleMetricsState,
+          ratioMetricsState,
+          historicalSimpleMetricsState,
+          historicalRatioMetricsState,
           historicalGpPctState,
           gamesPlayed,
           teamGamesPlayed,
@@ -1463,12 +1716,23 @@ async function processPlayer(
           ...metricOutputs
         });
       }
+
+      const suspiciousRows = outputs.filter(
+        (row) => row.player_id === playerId && row.strength_state === config.state
+      );
+      const suspiciousSummary = summarizeSuspiciousOutputs({
+        playerId,
+        strength: config.state,
+        rows: suspiciousRows
+      });
+      diagnostics.suspiciousOutputCount += suspiciousSummary.issueCount;
+      suspiciousSummary.warnings.forEach((warning) => console.warn(warning));
     } finally {
       console.timeEnd(strengthLabel);
     }
   }
 
-  return outputs;
+  return { rows: outputs, diagnostics };
 }
 
 export async function main(options: FetchOptions = {}): Promise<void> {
@@ -1676,6 +1940,9 @@ export async function main(options: FetchOptions = {}): Promise<void> {
   let rowsUpserted = 0;
   let processedPlayers = 0;
   let playersWithRows = 0;
+  let coverageWarnings = 0;
+  let suspiciousOutputWarnings = 0;
+  let unknownGameIds = 0;
   const playerProgress = createProgressLogger({
     label: "players",
     total: filteredPlayerIds.length,
@@ -1692,42 +1959,64 @@ export async function main(options: FetchOptions = {}): Promise<void> {
       const playerLabel = `[fetchRollingPlayerAverages] player:${playerId}`;
       console.time(playerLabel);
       try {
-        const rows = await processPlayer(playerId, ledger, knownGameIds, options);
+        const { rows, diagnostics } = await processPlayer(
+          playerId,
+          ledger,
+          knownGameIds,
+          options
+        );
+        coverageWarnings += diagnostics.coverageWarningCount;
+        suspiciousOutputWarnings += diagnostics.suspiciousOutputCount;
+        unknownGameIds += diagnostics.unknownGameIdCount;
         if (!rows.length) {
           processedPlayers += 1;
           playerProgress.update(
             processedPlayers,
-            `player:${playerId} rowsUpserted:${rowsUpserted}`
+            `player:${playerId} rowsUpserted:${rowsUpserted} coverageWarn:${coverageWarnings} suspicious:${suspiciousOutputWarnings}`
           );
           continue;
         }
         playersWithRows += 1;
+        const totalBatches = Math.ceil(rows.length / batchSize);
+        playerProgress.update(
+          processedPlayers,
+          `player:${playerId} preparedRows:${rows.length} batches:${totalBatches} rowsUpserted:${rowsUpserted} coverageWarn:${coverageWarnings} suspicious:${suspiciousOutputWarnings}`
+        );
 
         for (let i = 0; i < rows.length; i += batchSize) {
           const batch = rows.slice(i, i + batchSize);
+          const batchNumber = Math.floor(i / batchSize) + 1;
           await upsertLimit(async () =>
-            executeWithRetry(
-              `upsert player:${playerId} batch:${i / batchSize}`,
-              async () => {
-                const { error } = await supabase
-                  .from("rolling_player_game_metrics")
-                  .upsert(batch, {
-                    onConflict: "player_id,game_date,strength_state"
-                  });
-                if (error) {
-                  throw error;
-                }
-              }
+            executeWithSlowLog(
+              `upsert player:${playerId} batch:${batchNumber}/${totalBatches} rows:${batch.length}`,
+              () =>
+                executeWithRetry(
+                  `upsert player:${playerId} batch:${batchNumber}/${totalBatches}`,
+                  async () => {
+                    const { error } = await supabase
+                      .from("rolling_player_game_metrics")
+                      .upsert(batch, {
+                        onConflict: "player_id,game_date,strength_state"
+                      });
+                    if (error) {
+                      throw error;
+                    }
+                  }
+                )
             )
           );
           rowsUpserted += batch.length;
+          playerProgress.update(
+            processedPlayers,
+            `player:${playerId} upsertedBatch:${batchNumber}/${totalBatches} rowsUpserted:${rowsUpserted} coverageWarn:${coverageWarnings} suspicious:${suspiciousOutputWarnings}`
+          );
         }
         // Keep a tiny pause between players to reduce lock contention spikes.
         await delay(20);
         processedPlayers += 1;
         playerProgress.update(
           processedPlayers,
-          `player:${playerId} rowsUpserted:${rowsUpserted}`
+          `player:${playerId} rowsUpserted:${rowsUpserted} coverageWarn:${coverageWarnings} suspicious:${suspiciousOutputWarnings}`
         );
       } finally {
         console.timeEnd(playerLabel);
@@ -1742,12 +2031,19 @@ export async function main(options: FetchOptions = {}): Promise<void> {
 
   playerProgress.finish(
     processedPlayers,
-    `rowsUpserted:${rowsUpserted} playersWithRows:${playersWithRows}`
+    `rowsUpserted:${rowsUpserted} playersWithRows:${playersWithRows} coverageWarn:${coverageWarnings} suspicious:${suspiciousOutputWarnings}`
   );
 
   console.info(
     "[fetchRollingPlayerAverages] Completed run",
-    JSON.stringify({ rowsUpserted, processedPlayers, playersWithRows })
+    JSON.stringify({
+      rowsUpserted,
+      processedPlayers,
+      playersWithRows,
+      coverageWarnings,
+      suspiciousOutputWarnings,
+      unknownGameIds
+    })
   );
 }
 

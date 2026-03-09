@@ -13526,6 +13526,10 @@ export type Database = {
           created_at: string
           gameId: number
           percentageOfPP: number
+          pp_share_of_team: number | null
+          pp_unit_relative_toi: number | null
+          pp_unit_usage_index: number | null
+          pp_vs_unit_avg: number | null
           playerId: number
           PPTOI: number
           unit: number
@@ -13534,6 +13538,10 @@ export type Database = {
           created_at?: string
           gameId: number
           percentageOfPP?: number
+          pp_share_of_team?: number | null
+          pp_unit_relative_toi?: number | null
+          pp_unit_usage_index?: number | null
+          pp_vs_unit_avg?: number | null
           playerId: number
           PPTOI?: number
           unit?: number
@@ -13542,6 +13550,10 @@ export type Database = {
           created_at?: string
           gameId?: number
           percentageOfPP?: number
+          pp_share_of_team?: number | null
+          pp_unit_relative_toi?: number | null
+          pp_unit_usage_index?: number | null
+          pp_vs_unit_avg?: number | null
           playerId?: number
           PPTOI?: number
           unit?: number

@@ -10,6 +10,7 @@
 - `web/lib/sustainability/persist.ts` - Persistence: upsert into sustainability_trend_bands and sustainability_projections.
 - `web/lib/sustainability/persist.test.ts` - Unit tests for persistence helpers and chunked upsert behavior.
 - `web/lib/sustainability/types.ts` - Shared types/interfaces and JSON schemas.
+- `web/sql/sustainability/001_create_sustainability_projections.sql` - Creates the sustainability projection snapshot table used for aggregate and per-opponent projection rows.
 - `web/lib/sustainability/data.ts` - Typed data-access helpers to fetch and aggregate last-N windows from WGO/NST.
 - `web/lib/sustainability/data.ts` - Now includes player team resolution, upcoming schedule retrieval, opponent strength pulls, and `getUpcomingOpponents(playerId, nGames)` for joined schedule/context output.
 - `web/lib/sustainability/priors.ts` - League and player prior builder; now contains explicit rookie/limited-sample fallback toward position-level league averages.
@@ -24,8 +25,15 @@
 - `web/lib/sustainability/model.ts` - Modeling helpers for Hot/Normal/Cold target labeling, future logistic scoring, and projection output shaping.
 - `web/lib/sustainability/model.test.ts` - Unit tests covering canonical sustainability training-target label generation.
 - `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts` - Rolling metrics backfill/upsert pipeline; now also persists explicit season, 3-year, and career averages alongside existing cumulative and rolling-window outputs.
+- `web/lib/supabase/Upserts/rollingMetricAggregation.ts` - Shared rolling ratio accumulator utilities for percentage and composite metrics such as shooting%, IPP, zone-start%, and PDO.
+- `web/lib/supabase/Upserts/rollingMetricAggregation.test.ts` - Unit tests for rolling ratio aggregation and historical ratio snapshots.
+- `web/lib/supabase/Upserts/rollingPlayerMetricMath.ts` - Shared helpers for reconstructing `/60` metric components from raw totals, TOI, and rate fallbacks.
+- `web/lib/supabase/Upserts/rollingPlayerMetricMath.test.ts` - Unit tests for weighted `/60` aggregation and mixed-source fallback behavior.
+- `web/lib/supabase/Upserts/rollingPlayerPipelineDiagnostics.ts` - Source-coverage and suspicious-output diagnostics for rolling player metric runs.
+- `web/lib/supabase/Upserts/rollingPlayerPipelineDiagnostics.test.ts` - Unit tests for rolling pipeline completeness and bounded-metric diagnostics.
 - `web/lib/supabase/Upserts/rollingHistoricalAverages.ts` - Shared historical-average accumulator utilities for season-to-date, 3-year, and career snapshots used by the rolling metrics pipeline.
 - `web/lib/supabase/Upserts/rollingHistoricalAverages.test.ts` - Unit tests covering historical-average and GP% snapshot aggregation logic across season windows.
+- `web/pages/api/v1/db/update-rolling-player-averages.ts` - API entrypoint for full refreshes, resume runs, and runtime controls for rolling player metric recomputation.
 - `migrations/20260309_add_explicit_historical_averages_to_rolling_player_game_metrics.sql` - Adds explicit `*_avg_season`, `*_avg_3ya`, and `*_avg_career` columns to `rolling_player_game_metrics`.
 - `web/lib/supabase/database-generated.types.ts` - Generated Supabase `Database` types; updated so `rolling_player_game_metrics` row/insert/update types include the explicit historical average fields.
 - `web/pages/trends/player/[playerId].tsx` - Player trend chart page; now lets the user compare rolling values against season, 3-year, career, or cumulative baselines.
@@ -105,12 +113,20 @@
   - [x] 3.5.1 Plot all metrics captured in `rolling_player_game_metrics` with time-frame toggles (3/5/10/20/cumulative).
   - [x] 3.5.2 Add trend toggles for career/3-year season baselines to highlight sustained streaks.
 
+- [x] A.0 Rolling Player Metrics Detour
+  - [x] A.1 Audit and correct rolling-player-metric percentage and rate calculations before continuing sustainability persistence work.
+    - [x] A.1.1 Fix percentage metric aggregation in `fetchRollingPlayerAverages.ts` so totals/last-N values are derived from aggregated numerators and denominators rather than summed per-game percentages.
+    - [x] A.1.2 Audit `/60` rate metrics in the rolling pipeline to ensure each one is computed from total metric value and total TOI for the relevant horizon, with unit tests covering edge cases and mixed-source fallbacks.
+    - [x] A.1.3 Investigate `powerPlayCombinations.percentageOfPP` values above `1.0`, determine the correct source definition, and either normalize the data path or explicitly document/guard the source semantics.
+    - [x] A.1.4 Audit the full rolling-player-metrics run path for completeness, logging, retry behavior, batching, null coverage, and accuracy; triage any remaining issues and improve runtime observability where needed.
+    - [x] A.1.5 Re-run targeted validations for `rolling_player_game_metrics`, summarize findings/fixes, and resume the main task list at `4.2.2`.
+
 - [ ] 4.0 Persistence and API
 - [x] 4.1 Reuse `sustainability_trend_bands` for metric bands; implement upsert API in `persist.ts`.
     - [x] 4.1.1 Write insert/upsert helpers for trend bands keyed by (player_id, snapshot_date, metric_key, window_code).
     - [x] 4.1.2 Add unit tests for idempotency and conflict handling.
   - [ ] 4.2 Create `sustainability_projections` table migration (SQL) and types; store snapshots and per-opponent breakdowns.
-    - [ ] 4.2.1 Author SQL migration in `web/sql/sustainability/001_create_sustainability_projections.sql`.
+    - [x] 4.2.1 Author SQL migration in `web/sql/sustainability/001_create_sustainability_projections.sql`.
     - [ ] 4.2.2 Add TS types/interfaces in `types.ts` and serialization helpers in `persist.ts`.
   - [ ] 4.3 Implement POST `/api/v1/sustainability/recompute` endpoint.
     - [ ] 4.3.1 Validate input date; default to yesterday; enforce server-side auth.
