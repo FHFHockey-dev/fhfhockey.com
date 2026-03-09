@@ -9,6 +9,13 @@
 - `web/lib/sustainability/persist.ts` - Persistence: upsert into sustainability_trend_bands and sustainability_projections.
 - `web/lib/sustainability/types.ts` - Shared types/interfaces and JSON schemas.
 - `web/lib/sustainability/data.ts` - Typed data-access helpers to fetch and aggregate last-N windows from WGO/NST.
+- `web/lib/sustainability/priors.ts` - League and player prior builder; now contains explicit rookie/limited-sample fallback toward position-level league averages.
+- `web/lib/sustainability/priors.test.ts` - Unit tests covering the rookie/limited-sample fallback behavior in `priors.ts`.
+- `web/lib/sustainability/identity.ts` - Read-only WGO-to-players alignment validator and known display-name variant list; confirms no ID crosswalk is currently required.
+- `web/lib/sustainability/identity.test.ts` - Unit tests for sustainability player-name normalization and known WGO display variants.
+- `web/lib/sustainability/dates.ts` - Shared date normalization helpers for WGO dates, NST `date_scraped`, and snapshot/date query params.
+- `web/lib/sustainability/dates.test.ts` - Unit tests covering date normalization and WGO-vs-NST game date precedence.
+- `web/lib/sustainability/bandService.ts` - Now consumes the shared date helper instead of keeping duplicate inline normalization logic.
 - `web/sql/sustainability/*.sql` - Parameterized SQL for metric retrieval and inserts.
 - `web/sql/sustainability/wgo_last_n_games.sql` - Returns last-N game rows from WGO per-player for rolling windows.
 - `web/sql/sustainability/wgo_last_n_aggregate.sql` - Aggregates last-N window for surface stats and TOI splits.
@@ -38,10 +45,10 @@
   - [ ] 1.2 Implement career all-strengths baselines from NST seasonlong views and/or seasonal tables.
     - [x] 1.2.1 Create queries to aggregate multi-season career baselines from `nst_seasonlong_as_counts` and `nst_seasonlong_as_rates`.
     - [x] 1.2.2 Implement per-60 baselines and variance estimates (for priors) in `data.ts`.
-    - [ ] 1.2.3 Add fallback for rookies/limited data: shrink toward league-average by position.
-  - [ ] 1.3 Normalize keys (players.id vs wgo player_id) and dates (WGO `date`, NST `date_scraped`).
-    - [ ] 1.3.1 Validate that `wgo_skater_stats.player_id` aligns to `players.id`; if not, add internal non-Yahoo crosswalk.
-    - [ ] 1.3.2 Implement date normalization utility and unit tests.
+    - [x] 1.2.3 Add fallback for rookies/limited data: shrink toward league-average by position.
+  - [x] 1.3 Normalize keys (players.id vs wgo player_id) and dates (WGO `date`, NST `date_scraped`).
+    - [x] 1.3.1 Validate that `wgo_skater_stats.player_id` aligns to `players.id`; if not, add internal non-Yahoo crosswalk.
+    - [x] 1.3.2 Implement date normalization utility and unit tests.
 - [ ] 1.4 Implement opponent mapping for next 5/10 games via `games` (and team views if needed).
   - [ ] 1.4.1 Query upcoming schedule for a player’s team and list next 10 games with opponent and dates.
   - [ ] 1.4.2 Add team strength pulls from `nst_team_stats` and/or `nst_team_all` for opponent adjustments.

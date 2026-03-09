@@ -9,6 +9,10 @@ import {
 } from "./bandCalculator";
 import type { Database } from "lib/supabase/database-generated.types";
 import { WindowCode } from "./windows";
+import {
+  normalizeSustainabilityDate,
+  parseSustainabilityDateParam
+} from "./dates";
 
 type PlayerGameRow =
   Database["public"]["Views"]["player_stats_unified"]["Row"];
@@ -35,11 +39,7 @@ export const DEFAULT_METRICS: SustainabilityMetricKey[] = [
 ];
 
 export function parseDateParam(value: string | string[] | undefined): string {
-  const candidate = Array.isArray(value) ? value[0] : value;
-  if (!candidate) return new Date().toISOString().slice(0, 10);
-  return /^\d{4}-\d{2}-\d{2}$/.test(candidate)
-    ? candidate
-    : new Date().toISOString().slice(0, 10);
+  return parseSustainabilityDateParam(value);
 }
 
 export function parseMetricParam(
@@ -75,13 +75,7 @@ export function parseWindowParam(
 }
 
 function normalizeSnapshotDate(value: string | null | undefined): string {
-  if (!value) {
-    return new Date().toISOString().slice(0, 10);
-  }
-  if (value.length >= 10) {
-    return value.slice(0, 10);
-  }
-  return new Date(value).toISOString().slice(0, 10);
+  return normalizeSustainabilityDate(value);
 }
 
 function normalizeTrendBandRecord(record: TrendBandRecord): TrendBandRecord {
