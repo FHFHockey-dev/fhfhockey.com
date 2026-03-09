@@ -20,6 +20,8 @@
 - `web/lib/sustainability/bandService.ts` - Now consumes the shared date helper instead of keeping duplicate inline normalization logic.
 - `web/lib/sustainability/features.ts` - Typed feature-engineering helpers for rates, z-scores, weighting, shrinkage, usage/context deltas, opponent adjustments, count-distribution rollups, and 50%/80% forecast band + calibration utilities.
 - `web/lib/sustainability/features.test.ts` - Unit tests covering rate helpers, z-score calculations, rolling-window weighting, empirical-Bayes shrinkage, usage/context deltas, opponent adjustment factors, count-distribution rollups, and forecast band calibration.
+- `web/lib/sustainability/model.ts` - Modeling helpers for Hot/Normal/Cold target labeling, future logistic scoring, and projection output shaping.
+- `web/lib/sustainability/model.test.ts` - Unit tests covering canonical sustainability training-target label generation.
 - `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts` - Rolling metrics backfill/upsert pipeline; now also persists explicit season, 3-year, and career averages alongside existing cumulative and rolling-window outputs.
 - `web/lib/supabase/Upserts/rollingHistoricalAverages.ts` - Shared historical-average accumulator utilities for season-to-date, 3-year, and career snapshots used by the rolling metrics pipeline.
 - `web/lib/supabase/Upserts/rollingHistoricalAverages.test.ts` - Unit tests covering historical-average and GP% snapshot aggregation logic across season windows.
@@ -85,10 +87,10 @@
     - [x] 2.4.3 Emit bands (50%/80%) via quantiles; verify calibration with small backtest.
 
 - [ ] 3.0 Modeling and outputs
-  - [ ] 3.1 Implement baseline probability model (logistic) for Hot/Normal/Cold using feature set; add calibration.
-    - [ ] 3.1.1 Define Hot/Cold labels from historical z-scores or quantiles; create training target.
-    - [ ] 3.1.2 Fit logistic regression; add isotonic/Platt calibration; return class probabilities.
-    - [ ] 3.1.3 Add feature importance extraction and simple explanation text generator.
+  - [x] 3.1 Implement baseline probability model (logistic) for Hot/Normal/Cold using feature set; add calibration.
+    - [x] 3.1.1 Define Hot/Cold labels from historical z-scores or quantiles; create training target.
+    - [x] 3.1.2 Fit logistic regression; add isotonic/Platt calibration; return class probabilities.
+    - [x] 3.1.3 Add feature importance extraction and simple explanation text generator.
   - [ ] 3.2 Convert rate expectations to counting projections for goals/assists/points/shots/pp_points/hits/blocks/pim/+/−/fow/fo%.
     - [ ] 3.2.1 Compute expected per-game counts from rate×TOI; aggregate to 5/10; include variance.
     - [ ] 3.2.2 Handle FO% as a rate with appropriate aggregation and bands.
