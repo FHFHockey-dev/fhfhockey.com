@@ -1,4 +1,14 @@
 import { METRIC_SPECS } from "./bands";
+import {
+  aggregateCountDistributions,
+  buildCountDistribution,
+  deriveOpponentAdjustmentFactors,
+  emitForecastBands,
+  type CountDistributionModel,
+  type CountDistributionSummary,
+  type ForecastBands,
+  type OpponentAdjustmentInput
+} from "./features";
 
 export type SustainabilityLabel = "hot" | "normal" | "cold";
 
@@ -80,6 +90,66 @@ export type ExplanationOptions = {
   featureLabels?: string[];
 };
 
+export type ProjectableCountMetric =
+  | "goals"
+  | "assists"
+  | "shots"
+  | "points"
+  | "pp_points"
+  | "hits"
+  | "blocks";
+
+export type CountProjectionInput = {
+  metric: ProjectableCountMetric;
+  ratePer60: number | null | undefined;
+  toiSeconds: number | null | undefined;
+  distribution?: CountDistributionModel;
+  overdispersion?: number | null;
+  precision?: number;
+  horizons?: number[];
+  opponentAdjustment?: OpponentAdjustmentInput | null;
+};
+
+export type CountProjectionResult = {
+  metric: ProjectableCountMetric;
+  expectedPerGame: number;
+  adjustedRatePer60: number;
+  adjustedToiSeconds: number;
+  opponentAdjustment: ReturnType<typeof deriveOpponentAdjustmentFactors>;
+  perGame: CountDistributionSummary;
+  horizons: Record<number, CountDistributionSummary & ForecastBands>;
+};
+
+export type FaceoffRateProjectionInput = {
+  winPct: number | null | undefined;
+  attemptsPerGame: number | null | undefined;
+  precision?: number;
+  horizons?: number[];
+};
+
+export type FaceoffRateBand = {
+  lower: number;
+  mean: number;
+  upper: number;
+};
+
+export type FaceoffRateProjectionResult = {
+  expectedWinPct: number;
+  attemptsPerGame: number;
+  expectedWinsPerGame: number;
+  perGameBand80: FaceoffRateBand;
+  horizons: Record<
+    number,
+    {
+      attempts: number;
+      expectedWins: number;
+      expectedWinPct: number;
+      band50: FaceoffRateBand;
+      band80: FaceoffRateBand;
+    }
+  >;
+};
+
 export type LogisticFitOptions = {
   iterations?: number;
   learningRate?: number;
@@ -92,6 +162,18 @@ const DEFAULT_ZSCORE_COLD_THRESHOLD = -1;
 const DEFAULT_QUANTILE_HOT_THRESHOLD = 0.8;
 const DEFAULT_QUANTILE_COLD_THRESHOLD = 0.2;
 const DEFAULT_EXPLANATION_COUNT = 3;
+const DEFAULT_PROJECTION_HORIZONS = [5, 10];
+const GOAL_LIKE_METRICS = new Set<ProjectableCountMetric>([
+  "goals",
+  "points",
+  "pp_points"
+]);
+const ASSIST_LIKE_METRICS = new Set<ProjectableCountMetric>(["assists"]);
+const SHOT_LIKE_METRICS = new Set<ProjectableCountMetric>([
+  "shots",
+  "hits",
+  "blocks"
+]);
 
 function toFiniteNumber(value: number | null | undefined): number | null {
   if (typeof value !== "number" || !Number.isFinite(value)) return null;
@@ -99,6 +181,10 @@ function toFiniteNumber(value: number | null | undefined): number | null {
 }
 
 function clampQuantile(value: number): number {
+  return Math.min(1, Math.max(0, value));
+}
+
+function clampRate(value: number): number {
   return Math.min(1, Math.max(0, value));
 }
 
@@ -243,6 +329,45 @@ function toFeatureLabel(featureKey: string): string {
     .filter(Boolean)
     .map((token) => token.charAt(0).toUpperCase() + token.slice(1))
     .join(" ");
+}
+
+function roundProjectionValue(value: number, precision: number): number {
+  return Number(value.toFixed(precision));
+}
+
+function toNonNegativeFinite(value: number | null | undefined): number | null {
+  if (typeof value !== "number" || !Number.isFinite(value)) return null;
+  return Math.max(0, value);
+}
+
+function getMetricMultiplier(
+  metric: ProjectableCountMetric,
+  opponentAdjustment: ReturnType<typeof deriveOpponentAdjustmentFactors>
+): number {
+  if (SHOT_LIKE_METRICS.has(metric)) {
+    return opponentAdjustment.shotRateMultiplier;
+  }
+  if (ASSIST_LIKE_METRICS.has(metric)) {
+    return opponentAdjustment.assistRateMultiplier;
+  }
+  if (GOAL_LIKE_METRICS.has(metric)) {
+    return opponentAdjustment.goalRateMultiplier;
+  }
+  return 1;
+}
+
+function buildRateBand(
+  mean: number,
+  variance: number,
+  zScore: number,
+  precision: number
+): FaceoffRateBand {
+  const sd = Math.sqrt(Math.max(variance, 0));
+  return {
+    lower: roundProjectionValue(clampRate(mean - zScore * sd), precision),
+    mean: roundProjectionValue(clampRate(mean), precision),
+    upper: roundProjectionValue(clampRate(mean + zScore * sd), precision)
+  };
 }
 
 export function deriveSustainabilityLabel(
@@ -465,4 +590,124 @@ export function generateExplanationText(
 
     return `${importance.featureLabel} ${directionWord} (${signedValue}, weight ${importance.weight.toFixed(2)})`;
   });
+}
+
+export function projectCountMetric(
+  input: CountProjectionInput
+): CountProjectionResult {
+  const precision = input.precision ?? 4;
+  const baseRatePer60 = toNonNegativeFinite(input.ratePer60) ?? 0;
+  const toiSeconds = toNonNegativeFinite(input.toiSeconds) ?? 0;
+  const model = input.distribution ?? "poisson";
+  const overdispersion = toNonNegativeFinite(input.overdispersion) ?? null;
+  const horizons = input.horizons?.length
+    ? [...new Set(input.horizons.filter((horizon) => Number.isFinite(horizon) && horizon > 0))]
+    : DEFAULT_PROJECTION_HORIZONS;
+
+  const opponentAdjustment = deriveOpponentAdjustmentFactors(
+    input.opponentAdjustment ?? {
+      gamesPlayed: null,
+      xgaPer60: null,
+      caPer60: null,
+      hdcaPer60: null,
+      svPct: null,
+      pkTier: null
+    }
+  );
+
+  const adjustedRatePer60 = roundProjectionValue(
+    baseRatePer60 * getMetricMultiplier(input.metric, opponentAdjustment),
+    precision
+  );
+
+  const expectedPerGame = roundProjectionValue(
+    (adjustedRatePer60 * toiSeconds) / 3600,
+    precision
+  );
+
+  const perGame = buildCountDistribution({
+    mean: expectedPerGame,
+    model,
+    overdispersion,
+    precision
+  });
+
+  const horizonMap = horizons.reduce<
+    Record<number, CountDistributionSummary & ForecastBands>
+  >((acc, horizon) => {
+    const aggregate = aggregateCountDistributions({
+      perGameMeans: Array.from({ length: horizon }, () => perGame.mean),
+      model,
+      dispersion: overdispersion,
+      precision
+    });
+    acc[horizon] = {
+      ...aggregate,
+      ...emitForecastBands(aggregate, precision)
+    };
+    return acc;
+  }, {});
+
+  return {
+    metric: input.metric,
+    expectedPerGame,
+    adjustedRatePer60,
+    adjustedToiSeconds: roundProjectionValue(toiSeconds, precision),
+    opponentAdjustment,
+    perGame,
+    horizons: horizonMap
+  };
+}
+
+export function projectFaceoffWinPct(
+  input: FaceoffRateProjectionInput
+): FaceoffRateProjectionResult {
+  const precision = input.precision ?? 4;
+  const expectedWinPct = clampRate(toNonNegativeFinite(input.winPct) ?? 0);
+  const attemptsPerGame = toNonNegativeFinite(input.attemptsPerGame) ?? 0;
+  const expectedWinsPerGame = roundProjectionValue(
+    expectedWinPct * attemptsPerGame,
+    precision
+  );
+  const perGameVariance =
+    attemptsPerGame > 0
+      ? (expectedWinPct * (1 - expectedWinPct)) / attemptsPerGame
+      : 0;
+  const horizons = input.horizons?.length
+    ? [...new Set(input.horizons.filter((horizon) => Number.isFinite(horizon) && horizon > 0))]
+    : DEFAULT_PROJECTION_HORIZONS;
+
+  const horizonMap = horizons.reduce<FaceoffRateProjectionResult["horizons"]>(
+    (acc, horizon) => {
+      const totalAttempts = attemptsPerGame * horizon;
+      const totalExpectedWins = expectedWinPct * totalAttempts;
+      const rateVariance =
+        totalAttempts > 0
+          ? (expectedWinPct * (1 - expectedWinPct)) / totalAttempts
+          : 0;
+
+      acc[horizon] = {
+        attempts: roundProjectionValue(totalAttempts, precision),
+        expectedWins: roundProjectionValue(totalExpectedWins, precision),
+        expectedWinPct: roundProjectionValue(expectedWinPct, precision),
+        band50: buildRateBand(expectedWinPct, rateVariance, 0.6744897501960817, precision),
+        band80: buildRateBand(expectedWinPct, rateVariance, 1.2815515655446004, precision)
+      };
+      return acc;
+    },
+    {}
+  );
+
+  return {
+    expectedWinPct: roundProjectionValue(expectedWinPct, precision),
+    attemptsPerGame: roundProjectionValue(attemptsPerGame, precision),
+    expectedWinsPerGame,
+    perGameBand80: buildRateBand(
+      expectedWinPct,
+      perGameVariance,
+      1.2815515655446004,
+      precision
+    ),
+    horizons: horizonMap
+  };
 }

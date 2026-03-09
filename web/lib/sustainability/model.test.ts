@@ -6,6 +6,8 @@ import {
   extractFeatureImportance,
   generateExplanationText,
   predictSustainabilityProbabilities,
+  projectCountMetric,
+  projectFaceoffWinPct,
   trainSustainabilityProbabilityModel
 } from "./model";
 
@@ -178,5 +180,89 @@ describe("sustainability model training targets", () => {
     expect(explanation).toHaveLength(2);
     expect(explanation[0]).toContain("weight");
     expect(explanation.join(" ")).toMatch(/Shots \/ 60|ixG \/ 60|PP TOI %/);
+  });
+
+  it("projects expected count outputs from rate x toi with horizon rollups", () => {
+    const projection = projectCountMetric({
+      metric: "shots",
+      ratePer60: 10,
+      toiSeconds: 900,
+      distribution: "poisson",
+      horizons: [5, 10],
+      opponentAdjustment: {
+        gamesPlayed: 60,
+        xgaPer60: 3.1,
+        caPer60: 60,
+        hdcaPer60: 11,
+        svPct: 0.892,
+        pkTier: 20
+      }
+    });
+
+    expect(projection.adjustedRatePer60).toBeGreaterThan(10);
+    expect(projection.expectedPerGame).toBeCloseTo(
+      (projection.adjustedRatePer60 * 900) / 3600,
+      4
+    );
+    expect(projection.perGame.mean).toBe(projection.expectedPerGame);
+    expect(projection.horizons[5].mean).toBeCloseTo(
+      projection.expectedPerGame * 5,
+      4
+    );
+    expect(projection.horizons[10].mean).toBeCloseTo(
+      projection.expectedPerGame * 10,
+      4
+    );
+    expect(projection.horizons[5].band80.upper).toBeGreaterThan(
+      projection.horizons[5].band80.lower
+    );
+  });
+
+  it("handles zero-input count projections without producing negative outputs", () => {
+    const projection = projectCountMetric({
+      metric: "goals",
+      ratePer60: null,
+      toiSeconds: null,
+      distribution: "negbin"
+    });
+
+    expect(projection.expectedPerGame).toBe(0);
+    expect(projection.perGame.mean).toBe(0);
+    expect(projection.horizons[5].mean).toBe(0);
+    expect(projection.horizons[10].band50.lower).toBe(0);
+  });
+
+  it("projects faceoff win percentage with attempt-weighted horizon bands", () => {
+    const projection = projectFaceoffWinPct({
+      winPct: 0.57,
+      attemptsPerGame: 18,
+      horizons: [5, 10]
+    });
+
+    expect(projection.expectedWinPct).toBe(0.57);
+    expect(projection.expectedWinsPerGame).toBe(10.26);
+    expect(projection.horizons[5].attempts).toBe(90);
+    expect(projection.horizons[10].attempts).toBe(180);
+    expect(projection.horizons[5].expectedWinPct).toBe(0.57);
+    expect(projection.horizons[10].band80.upper).toBeGreaterThan(
+      projection.horizons[10].band80.lower
+    );
+    expect(projection.horizons[10].band80.upper - projection.horizons[10].band80.lower)
+      .toBeLessThan(
+        projection.horizons[5].band80.upper - projection.horizons[5].band80.lower
+      );
+  });
+
+  it("clamps and stabilizes faceoff projections with missing attempts", () => {
+    const projection = projectFaceoffWinPct({
+      winPct: 1.4,
+      attemptsPerGame: null
+    });
+
+    expect(projection.expectedWinPct).toBe(1);
+    expect(projection.attemptsPerGame).toBe(0);
+    expect(projection.expectedWinsPerGame).toBe(0);
+    expect(projection.horizons[5].band50.lower).toBe(1);
+    expect(projection.horizons[10].band80.upper).toBe(1);
   });
 });

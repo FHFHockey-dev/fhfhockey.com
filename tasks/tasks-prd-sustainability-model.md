@@ -91,9 +91,9 @@
     - [x] 3.1.1 Define Hot/Cold labels from historical z-scores or quantiles; create training target.
     - [x] 3.1.2 Fit logistic regression; add isotonic/Platt calibration; return class probabilities.
     - [x] 3.1.3 Add feature importance extraction and simple explanation text generator.
-  - [ ] 3.2 Convert rate expectations to counting projections for goals/assists/points/shots/pp_points/hits/blocks/pim/+/−/fow/fo%.
-    - [ ] 3.2.1 Compute expected per-game counts from rate×TOI; aggregate to 5/10; include variance.
-    - [ ] 3.2.2 Handle FO% as a rate with appropriate aggregation and bands.
+  - [x] 3.2 Convert rate expectations to counting projections for goals/assists/points/shots/pp_points/hits/blocks/pim/+/−/fow/fo%.
+    - [x] 3.2.1 Compute expected per-game counts from rate×TOI; aggregate to 5/10; include variance.
+    - [x] 3.2.2 Handle FO% as a rate with appropriate aggregation and bands.
   - [ ] 3.3 Compute Sustainability Score (0–100) and generate over/underperforming flags.
     - [ ] 3.3.1 Define score formula combining calibrated streak probs and deltas vs baseline.
     - [ ] 3.3.2 Set thresholds for over/underperforming; expose flags.
