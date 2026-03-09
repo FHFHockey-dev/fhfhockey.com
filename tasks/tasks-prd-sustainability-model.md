@@ -8,6 +8,7 @@
 - `web/lib/sustainability/features.ts` - Feature engineering: rolling windows, z-scores, priors, shrinkage, usage deltas, opponent adjustments, count distributions, and forecast bands/calibration helpers.
 - `web/lib/sustainability/model.ts` - Modeling functions: probability model, projections, bands, explainability stubs.
 - `web/lib/sustainability/persist.ts` - Persistence: upsert into sustainability_trend_bands and sustainability_projections.
+- `web/lib/sustainability/persist.test.ts` - Unit tests for persistence helpers and chunked upsert behavior.
 - `web/lib/sustainability/types.ts` - Shared types/interfaces and JSON schemas.
 - `web/lib/sustainability/data.ts` - Typed data-access helpers to fetch and aggregate last-N windows from WGO/NST.
 - `web/lib/sustainability/data.ts` - Now includes player team resolution, upcoming schedule retrieval, opponent strength pulls, and `getUpcomingOpponents(playerId, nGames)` for joined schedule/context output.
@@ -105,9 +106,9 @@
   - [x] 3.5.2 Add trend toggles for career/3-year season baselines to highlight sustained streaks.
 
 - [ ] 4.0 Persistence and API
-  - [ ] 4.1 Reuse `sustainability_trend_bands` for metric bands; implement upsert API in `persist.ts`.
-    - [ ] 4.1.1 Write insert/upsert helpers for trend bands keyed by (player_id, snapshot_date, metric_key, window_code).
-    - [ ] 4.1.2 Add unit tests for idempotency and conflict handling.
+- [x] 4.1 Reuse `sustainability_trend_bands` for metric bands; implement upsert API in `persist.ts`.
+    - [x] 4.1.1 Write insert/upsert helpers for trend bands keyed by (player_id, snapshot_date, metric_key, window_code).
+    - [x] 4.1.2 Add unit tests for idempotency and conflict handling.
   - [ ] 4.2 Create `sustainability_projections` table migration (SQL) and types; store snapshots and per-opponent breakdowns.
     - [ ] 4.2.1 Author SQL migration in `web/sql/sustainability/001_create_sustainability_projections.sql`.
     - [ ] 4.2.2 Add TS types/interfaces in `types.ts` and serialization helpers in `persist.ts`.
