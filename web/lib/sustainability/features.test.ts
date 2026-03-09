@@ -8,6 +8,9 @@ import {
   calculateWeightedRate,
   calculateZScore,
   calculateZScores,
+  empiricalBayesBetaShrink,
+  empiricalBayesGammaShrink,
+  empiricalBayesShrinkForMetric,
   getDefaultWindowWeights,
   normalizeWindowWeights
 } from "./features";
@@ -182,5 +185,111 @@ describe("sustainability features rate calculators", () => {
       value: null,
       appliedWeight: 0
     });
+  });
+
+  it("shrinks per-60 rates toward the prior mean", () => {
+    expect(
+      empiricalBayesGammaShrink({
+        observedCount: 6,
+        observedExposure: 60,
+        priorMean: 4,
+        priorStrength: 180
+      })
+    ).toEqual({
+      observed: 6,
+      shrunk: 4.5,
+      priorMean: 4,
+      priorStrength: 180,
+      sampleWeight: 0.25
+    });
+  });
+
+  it("shrinks proportion stats toward the prior mean", () => {
+    expect(
+      empiricalBayesBetaShrink({
+        successes: 4,
+        trials: 10,
+        priorMean: 0.7,
+        priorStrength: 50
+      })
+    ).toEqual({
+      observed: 0.4,
+      shrunk: 0.65,
+      priorMean: 0.7,
+      priorStrength: 50,
+      sampleWeight: 0.166667
+    });
+  });
+
+  it("uses metric presets for EB shrinkage defaults", () => {
+    expect(
+      empiricalBayesShrinkForMetric("shots_per_60", {
+        observedCount: 4,
+        observedExposure: 30,
+        priorMean: 8
+      })
+    ).toEqual({
+      observed: 8,
+      shrunk: 8,
+      priorMean: 8,
+      priorStrength: 360,
+      sampleWeight: 0.076923
+    });
+
+    expect(
+      empiricalBayesShrinkForMetric("ipp", {
+        successes: 2,
+        trials: 4,
+        priorMean: 0.65
+      })
+    ).toEqual({
+      observed: 0.5,
+      shrunk: 0.638889,
+      priorMean: 0.65,
+      priorStrength: 50,
+      sampleWeight: 0.074074
+    });
+  });
+
+  it("leans much harder on the prior for small-N gamma windows than large-N windows", () => {
+    const smallSample = empiricalBayesGammaShrink({
+      observedCount: 3,
+      observedExposure: 15,
+      priorMean: 4,
+      priorStrength: 180
+    });
+    const largeSample = empiricalBayesGammaShrink({
+      observedCount: 60,
+      observedExposure: 600,
+      priorMean: 4,
+      priorStrength: 180
+    });
+
+    expect(smallSample.sampleWeight).toBeLessThan(largeSample.sampleWeight);
+    expect(smallSample.shrunk).toBeGreaterThan(4);
+    expect(smallSample.shrunk).toBeLessThan(largeSample.shrunk ?? Infinity);
+    expect(largeSample.shrunk).toBeCloseTo(5.538462, 6);
+  });
+
+  it("leans much harder on the prior for small-N beta windows than large-N windows", () => {
+    const smallSample = empiricalBayesBetaShrink({
+      successes: 1,
+      trials: 2,
+      priorMean: 0.7,
+      priorStrength: 50
+    });
+    const largeSample = empiricalBayesBetaShrink({
+      successes: 35,
+      trials: 50,
+      priorMean: 0.5,
+      priorStrength: 50
+    });
+
+    expect(smallSample.sampleWeight).toBeLessThan(largeSample.sampleWeight);
+    expect(smallSample.shrunk).toBeCloseTo(0.692308, 6);
+    expect(largeSample.shrunk).toBeCloseTo(0.6, 6);
+    expect(Math.abs((smallSample.shrunk ?? 0) - 0.7)).toBeLessThan(
+      Math.abs((largeSample.shrunk ?? 0) - 0.7)
+    );
   });
 });

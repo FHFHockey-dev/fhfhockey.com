@@ -18,8 +18,8 @@
 - `web/lib/sustainability/dates.ts` - Shared date normalization helpers for WGO dates, NST `date_scraped`, and snapshot/date query params.
 - `web/lib/sustainability/dates.test.ts` - Unit tests covering date normalization and WGO-vs-NST game date precedence.
 - `web/lib/sustainability/bandService.ts` - Now consumes the shared date helper instead of keeping duplicate inline normalization logic.
-- `web/lib/sustainability/features.ts` - Typed feature-engineering helpers for per-60 rates, per-game rates, recent-vs-baseline z-scores, and normalized weighting across rolling windows.
-- `web/lib/sustainability/features.test.ts` - Unit tests covering rate helpers, z-score calculations, and rolling-window weighting behavior, including null/zero edge cases.
+- `web/lib/sustainability/features.ts` - Typed feature-engineering helpers for per-60 rates, per-game rates, recent-vs-baseline z-scores, rolling-window weighting, and empirical-Bayes shrinkage for key sustainability metrics.
+- `web/lib/sustainability/features.test.ts` - Unit tests covering rate helpers, z-score calculations, rolling-window weighting, and empirical-Bayes shrinkage behavior, including explicit small-N vs large-N comparisons.
 - `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts` - Rolling metrics backfill/upsert pipeline; now also persists explicit season, 3-year, and career averages alongside existing cumulative and rolling-window outputs.
 - `web/lib/supabase/Upserts/rollingHistoricalAverages.ts` - Shared historical-average accumulator utilities for season-to-date, 3-year, and career snapshots used by the rolling metrics pipeline.
 - `web/lib/supabase/Upserts/rollingHistoricalAverages.test.ts` - Unit tests covering historical-average and GP% snapshot aggregation logic across season windows.
@@ -73,9 +73,9 @@
     - [x] 2.1.1 Implement per-60 and per-game rate calculators in `features.ts` with type-safe inputs.
     - [x] 2.1.2 Compute z-scores: (recent_rate - career_rate) / career_sd; store alongside raw.
     - [x] 2.1.3 Add window weighting (e.g., greater weight to 3/5 vs 25/50 where configured).
-  - [ ] 2.2 Build Empirical Bayes shrinkage toward career priors with window-weighting.
-    - [ ] 2.2.1 Implement EB shrinker for key rates (goals/60, assists/60, shots/60, ixg/60, SCF/60, HDCF/60, IPP).
-    - [ ] 2.2.2 Unit-test shrinkage behavior for small-N vs large-N windows.
+- [x] 2.2 Build Empirical Bayes shrinkage toward career priors with window-weighting.
+    - [x] 2.2.1 Implement EB shrinker for key rates (goals/60, assists/60, shots/60, ixg/60, SCF/60, HDCF/60, IPP).
+    - [x] 2.2.2 Unit-test shrinkage behavior for small-N vs large-N windows.
   - [ ] 2.3 Compute usage deltas (ΔESTOI/PPTOI/SHTOI) and context features (PDO, oiSH%, OZS%).
     - [ ] 2.3.1 Add usage delta calculators using WGO TOI splits vs career baselines.
     - [ ] 2.3.2 Compute context: PDO, on-ice SH%, OZS% from NST OI tables; compute deltas vs career.

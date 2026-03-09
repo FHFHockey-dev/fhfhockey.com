@@ -1,4 +1,5 @@
 import type { WindowCode } from "./windows";
+import { METRIC_SPECS } from "./bands";
 
 export type NumericLike = number | null | undefined;
 
@@ -34,11 +35,54 @@ export type ZScoreMapInput<TMetric extends string> = {
 
 export type WindowWeightMap = Partial<Record<WindowCode, number>>;
 
+export type EmpiricalBayesRateMetric =
+  | "goals_per_60"
+  | "assists_per_60"
+  | "shots_per_60"
+  | "ixg_per_60"
+  | "scf_per_60"
+  | "hdcf_per_60"
+  | "ipp";
+
+export type EBGammaShrinkInput = {
+  observedCount: NumericLike;
+  observedExposure: NumericLike;
+  priorMean: NumericLike;
+  priorStrength: NumericLike;
+  precision?: number;
+};
+
+export type EBBetaShrinkInput = {
+  successes: NumericLike;
+  trials: NumericLike;
+  priorMean: NumericLike;
+  priorStrength: NumericLike;
+  precision?: number;
+};
+
+export type EBShrinkResult = {
+  observed: number | null;
+  shrunk: number | null;
+  priorMean: number | null;
+  priorStrength: number;
+  sampleWeight: number;
+};
+
 const DEFAULT_WINDOW_WEIGHT_ORDER: Record<WindowCode, number> = {
   l3: 1,
   l5: 0.8,
   l10: 0.55,
   l20: 0.35
+};
+
+const DEFAULT_EB_PRIOR_STRENGTH: Record<EmpiricalBayesRateMetric, number> = {
+  goals_per_60: 180,
+  assists_per_60: 220,
+  shots_per_60: METRIC_SPECS.shots_per_60.priorStrength,
+  ixg_per_60: METRIC_SPECS.ixg_per_60.priorStrength,
+  scf_per_60: 360,
+  hdcf_per_60: 360,
+  ipp: METRIC_SPECS.ipp.priorStrength
 };
 
 function toFiniteNumber(value: NumericLike): number | null {
@@ -242,4 +286,125 @@ export function calculateWeightedRate<TWindow extends string>(args: {
     value: roundRate(weightedSum / appliedWeight, args.precision ?? 6),
     appliedWeight: roundRate(appliedWeight, 6)
   };
+}
+
+export function empiricalBayesGammaShrink(
+  input: EBGammaShrinkInput
+): EBShrinkResult {
+  const observedCount = toFiniteNumber(input.observedCount);
+  const observedExposure = toFiniteNumber(input.observedExposure);
+  const priorMean = toFiniteNumber(input.priorMean);
+  const priorStrength = Math.max(toFiniteNumber(input.priorStrength) ?? 0, 0);
+  const precision = input.precision ?? 6;
+
+  if (
+    observedCount === null ||
+    observedExposure === null ||
+    observedExposure <= 0 ||
+    priorMean === null
+  ) {
+    return {
+      observed: null,
+      shrunk: null,
+      priorMean,
+      priorStrength,
+      sampleWeight: 0
+    };
+  }
+
+  const observed = (observedCount / observedExposure) * 60;
+  const sampleWeight = observedExposure / (observedExposure + priorStrength);
+  const shrunk = sampleWeight * observed + (1 - sampleWeight) * priorMean;
+
+  return {
+    observed: roundRate(observed, precision),
+    shrunk: roundRate(shrunk, precision),
+    priorMean,
+    priorStrength,
+    sampleWeight: roundRate(sampleWeight, precision)
+  };
+}
+
+export function empiricalBayesBetaShrink(
+  input: EBBetaShrinkInput
+): EBShrinkResult {
+  const successes = toFiniteNumber(input.successes);
+  const trials = toFiniteNumber(input.trials);
+  const priorMean = toFiniteNumber(input.priorMean);
+  const priorStrength = Math.max(toFiniteNumber(input.priorStrength) ?? 0, 0);
+  const precision = input.precision ?? 6;
+
+  if (
+    successes === null ||
+    trials === null ||
+    trials <= 0 ||
+    priorMean === null
+  ) {
+    return {
+      observed: null,
+      shrunk: null,
+      priorMean,
+      priorStrength,
+      sampleWeight: 0
+    };
+  }
+
+  const observed = successes / trials;
+  const sampleWeight = trials / (trials + priorStrength);
+  const shrunk = sampleWeight * observed + (1 - sampleWeight) * priorMean;
+
+  return {
+    observed: roundRate(observed, precision),
+    shrunk: roundRate(shrunk, precision),
+    priorMean,
+    priorStrength,
+    sampleWeight: roundRate(sampleWeight, precision)
+  };
+}
+
+export function empiricalBayesShrinkForMetric(
+  metric: EmpiricalBayesRateMetric,
+  input:
+    | {
+        observedCount: NumericLike;
+        observedExposure: NumericLike;
+        priorMean: NumericLike;
+        priorStrength?: NumericLike;
+      }
+    | {
+        successes: NumericLike;
+        trials: NumericLike;
+        priorMean: NumericLike;
+        priorStrength?: NumericLike;
+      }
+): EBShrinkResult {
+  const priorStrength =
+    toFiniteNumber((input as { priorStrength?: NumericLike }).priorStrength) ??
+    DEFAULT_EB_PRIOR_STRENGTH[metric];
+
+  if (metric === "ipp") {
+    const betaInput = input as {
+      successes: NumericLike;
+      trials: NumericLike;
+      priorMean: NumericLike;
+    };
+    return empiricalBayesBetaShrink({
+      successes: betaInput.successes,
+      trials: betaInput.trials,
+      priorMean: betaInput.priorMean,
+      priorStrength
+    });
+  }
+
+  const gammaInput = input as {
+    observedCount: NumericLike;
+    observedExposure: NumericLike;
+    priorMean: NumericLike;
+  };
+  return empiricalBayesGammaShrink({
+    observedCount: gammaInput.observedCount,
+    observedExposure: gammaInput.observedExposure,
+    priorMean: gammaInput.priorMean,
+    priorStrength
+  });
 }
