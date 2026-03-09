@@ -4,11 +4,13 @@
 - `web/pages/api/v1/sustainability/player/[playerId].ts` - API route to fetch score, probabilities, projections, flags, explanations.
 - `web/pages/api/v1/sustainability/upcoming/[playerId].ts` - API route to fetch per-opponent per-game projections and rollups.
 - `web/lib/sustainability/data.ts` - Data access layer: fetch WGO/NST windows, career baselines, joins, opponent context.
+- `web/lib/sustainability/data.test.ts` - Unit tests for sustainability data-access shaping helpers.
 - `web/lib/sustainability/features.ts` - Feature engineering: rolling windows, z-scores, priors, shrinkage, usage deltas.
 - `web/lib/sustainability/model.ts` - Modeling functions: probability model, projections, bands, explainability stubs.
 - `web/lib/sustainability/persist.ts` - Persistence: upsert into sustainability_trend_bands and sustainability_projections.
 - `web/lib/sustainability/types.ts` - Shared types/interfaces and JSON schemas.
 - `web/lib/sustainability/data.ts` - Typed data-access helpers to fetch and aggregate last-N windows from WGO/NST.
+- `web/lib/sustainability/data.ts` - Now includes player team resolution, upcoming schedule retrieval, opponent strength pulls, and `getUpcomingOpponents(playerId, nGames)` for joined schedule/context output.
 - `web/lib/sustainability/priors.ts` - League and player prior builder; now contains explicit rookie/limited-sample fallback toward position-level league averages.
 - `web/lib/sustainability/priors.test.ts` - Unit tests covering the rookie/limited-sample fallback behavior in `priors.ts`.
 - `web/lib/sustainability/identity.ts` - Read-only WGO-to-players alignment validator and known display-name variant list; confirms no ID crosswalk is currently required.
@@ -49,10 +51,10 @@
   - [x] 1.3 Normalize keys (players.id vs wgo player_id) and dates (WGO `date`, NST `date_scraped`).
     - [x] 1.3.1 Validate that `wgo_skater_stats.player_id` aligns to `players.id`; if not, add internal non-Yahoo crosswalk.
     - [x] 1.3.2 Implement date normalization utility and unit tests.
-- [ ] 1.4 Implement opponent mapping for next 5/10 games via `games` (and team views if needed).
-  - [ ] 1.4.1 Query upcoming schedule for a player’s team and list next 10 games with opponent and dates.
-  - [ ] 1.4.2 Add team strength pulls from `nst_team_stats` and/or `nst_team_all` for opponent adjustments.
-  - [ ] 1.4.3 Expose a function getUpcomingOpponents(playerId, nGames) in `data.ts`.
+- [x] 1.4 Implement opponent mapping for next 5/10 games via `games` (and team views if needed).
+  - [x] 1.4.1 Query upcoming schedule for a player’s team and list next 10 games with opponent and dates.
+  - [x] 1.4.2 Add team strength pulls from `nst_team_stats` and/or `nst_team_all` for opponent adjustments.
+  - [x] 1.4.3 Expose a function getUpcomingOpponents(playerId, nGames) in `data.ts`.
 - [ ] 1.5 Extend rolling metrics pipeline
   - [ ] 1.5.1 Persist season-to-date, 3-year, and career averages for every metric tracked in `rolling_player_game_metrics`.
   - [ ] 1.5.2 Expose additional aggregates in Supabase schema/types and surface them to trend visualizations.
