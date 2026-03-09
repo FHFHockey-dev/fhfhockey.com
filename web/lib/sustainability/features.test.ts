@@ -12,6 +12,11 @@ import {
   calculateWeightedRate,
   calculateZScore,
   calculateZScores,
+  aggregateCountDistributions,
+  buildCountDistribution,
+  emitForecastBands,
+  evaluateBandCalibration,
+  deriveOpponentAdjustmentFactors,
   empiricalBayesBetaShrink,
   empiricalBayesGammaShrink,
   empiricalBayesShrinkForMetric,
@@ -417,6 +422,197 @@ describe("sustainability features rate calculators", () => {
         absoluteDelta: 0.045,
         percentDelta: 9.0909
       }
+    });
+  });
+
+  it("derives positive opponent adjustment factors for weak defenses", () => {
+    expect(
+      deriveOpponentAdjustmentFactors({
+        gamesPlayed: 60,
+        xgaPer60: 3,
+        caPer60: 60,
+        hdcaPer60: 12,
+        svPct: 0.895,
+        pkTier: 24
+      })
+    ).toEqual({
+      sampleWeight: 0.705882,
+      shotRateMultiplier: 1.028531,
+      goalRateMultiplier: 1.044827,
+      assistRateMultiplier: 1.004048,
+      defenseScore: 0.065613
+    });
+  });
+
+  it("derives suppressive adjustment factors for strong defenses", () => {
+    expect(
+      deriveOpponentAdjustmentFactors({
+        gamesPlayed: 60,
+        xgaPer60: 2.2,
+        caPer60: 50,
+        hdcaPer60: 8,
+        svPct: 0.915,
+        pkTier: 4
+      })
+    ).toEqual({
+      sampleWeight: 0.705882,
+      shotRateMultiplier: 0.971469,
+      goalRateMultiplier: 0.963997,
+      assistRateMultiplier: 1.003011,
+      defenseScore: -0.051496
+    });
+  });
+
+  it("falls back to neutral factors when opponent context is missing", () => {
+    expect(
+      deriveOpponentAdjustmentFactors({
+        gamesPlayed: null,
+        xgaPer60: null,
+        caPer60: null,
+        hdcaPer60: null,
+        svPct: null,
+        pkTier: null
+      })
+    ).toEqual({
+      sampleWeight: 0,
+      shotRateMultiplier: 1,
+      goalRateMultiplier: 1,
+      assistRateMultiplier: 1,
+      defenseScore: 0
+    });
+  });
+
+  it("builds a poisson count distribution for a single game", () => {
+    expect(
+      buildCountDistribution({
+        mean: 0.8,
+        model: "poisson",
+        precision: 4
+      })
+    ).toEqual({
+      model: "poisson",
+      mean: 0.8,
+      variance: 0.8,
+      p10: 0,
+      p50: 0.8,
+      p90: 1.9463
+    });
+  });
+
+  it("builds a negative-binomial style count distribution when dispersion is present", () => {
+    expect(
+      buildCountDistribution({
+        mean: 2,
+        model: "negbin",
+        dispersion: 0.3,
+        precision: 4
+      })
+    ).toEqual({
+      model: "negbin",
+      mean: 2,
+      variance: 3.2,
+      p10: 0,
+      p50: 2,
+      p90: 4.2925
+    });
+  });
+
+  it("aggregates poisson game means analytically across a horizon", () => {
+    expect(
+      aggregateCountDistributions({
+        perGameMeans: [0.8, 0.7, 1.1, 0.9, 0.6],
+        model: "poisson",
+        precision: 4
+      })
+    ).toEqual({
+      model: "poisson",
+      mean: 4.1,
+      variance: 4.1,
+      p10: 1.5051,
+      p50: 4.1,
+      p90: 6.6949
+    });
+  });
+
+  it("aggregates overdispersed game means across a horizon", () => {
+    expect(
+      aggregateCountDistributions({
+        perGameMeans: [0.4, 0.6, 0.7, 0.8, 0.5, 0.9, 1.1, 0.6, 0.7, 0.8],
+        model: "negbin",
+        dispersion: 0.2,
+        precision: 4
+      })
+    ).toEqual({
+      model: "negbin",
+      mean: 7.1,
+      variance: 8.182,
+      p10: 3.4342,
+      p50: 7.1,
+      p90: 10.7658
+    });
+  });
+
+  it("emits 50% and 80% bands from a count distribution", () => {
+    const distribution = aggregateCountDistributions({
+      perGameMeans: [0.8, 0.7, 1.1, 0.9, 0.6],
+      model: "poisson",
+      precision: 4
+    });
+
+    expect(emitForecastBands(distribution, 4)).toEqual({
+      band50: {
+        lower: 2.7343,
+        median: 4.1,
+        upper: 5.4657
+      },
+      band80: {
+        lower: 1.5051,
+        median: 4.1,
+        upper: 6.6949
+      }
+    });
+  });
+
+  it("computes simple 50%/80% coverage from a small backtest sample", () => {
+    const forecasts = [
+      emitForecastBands(
+        aggregateCountDistributions({
+          perGameMeans: [0.9, 1, 0.8, 0.7, 1.1],
+          model: "poisson",
+          precision: 4
+        }),
+        4
+      ),
+      emitForecastBands(
+        aggregateCountDistributions({
+          perGameMeans: [0.3, 0.4, 0.2, 0.5, 0.4],
+          model: "poisson",
+          precision: 4
+        }),
+        4
+      ),
+      emitForecastBands(
+        aggregateCountDistributions({
+          perGameMeans: [1.2, 1.1, 1, 0.9, 1.3],
+          model: "negbin",
+          dispersion: 0.2,
+          precision: 4
+        }),
+        4
+      ),
+      null
+    ];
+
+    expect(
+      evaluateBandCalibration({
+        forecasts,
+        actuals: [5, 1, 8, 3],
+        precision: 4
+      })
+    ).toEqual({
+      samples: 3,
+      hitRate50: 0.6667,
+      hitRate80: 1
     });
   });
 });

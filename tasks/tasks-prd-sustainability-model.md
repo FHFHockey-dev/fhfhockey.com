@@ -5,7 +5,7 @@
 - `web/pages/api/v1/sustainability/upcoming/[playerId].ts` - API route to fetch per-opponent per-game projections and rollups.
 - `web/lib/sustainability/data.ts` - Data access layer: fetch WGO/NST windows, career baselines, joins, opponent context.
 - `web/lib/sustainability/data.test.ts` - Unit tests for sustainability data-access shaping helpers.
-- `web/lib/sustainability/features.ts` - Feature engineering: rolling windows, z-scores, priors, shrinkage, usage deltas.
+- `web/lib/sustainability/features.ts` - Feature engineering: rolling windows, z-scores, priors, shrinkage, usage deltas, opponent adjustments, count distributions, and forecast bands/calibration helpers.
 - `web/lib/sustainability/model.ts` - Modeling functions: probability model, projections, bands, explainability stubs.
 - `web/lib/sustainability/persist.ts` - Persistence: upsert into sustainability_trend_bands and sustainability_projections.
 - `web/lib/sustainability/types.ts` - Shared types/interfaces and JSON schemas.
@@ -18,8 +18,8 @@
 - `web/lib/sustainability/dates.ts` - Shared date normalization helpers for WGO dates, NST `date_scraped`, and snapshot/date query params.
 - `web/lib/sustainability/dates.test.ts` - Unit tests covering date normalization and WGO-vs-NST game date precedence.
 - `web/lib/sustainability/bandService.ts` - Now consumes the shared date helper instead of keeping duplicate inline normalization logic.
-- `web/lib/sustainability/features.ts` - Typed feature-engineering helpers for per-60 rates, per-game rates, recent-vs-baseline z-scores, rolling-window weighting, empirical-Bayes shrinkage, TOI usage deltas, and context deltas for PDO / oiSH% / OZS%.
-- `web/lib/sustainability/features.test.ts` - Unit tests covering rate helpers, z-score calculations, rolling-window weighting, empirical-Bayes shrinkage, TOI usage delta behavior, and context feature deltas.
+- `web/lib/sustainability/features.ts` - Typed feature-engineering helpers for rates, z-scores, weighting, shrinkage, usage/context deltas, opponent adjustments, count-distribution rollups, and 50%/80% forecast band + calibration utilities.
+- `web/lib/sustainability/features.test.ts` - Unit tests covering rate helpers, z-score calculations, rolling-window weighting, empirical-Bayes shrinkage, usage/context deltas, opponent adjustment factors, count-distribution rollups, and forecast band calibration.
 - `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts` - Rolling metrics backfill/upsert pipeline; now also persists explicit season, 3-year, and career averages alongside existing cumulative and rolling-window outputs.
 - `web/lib/supabase/Upserts/rollingHistoricalAverages.ts` - Shared historical-average accumulator utilities for season-to-date, 3-year, and career snapshots used by the rolling metrics pipeline.
 - `web/lib/supabase/Upserts/rollingHistoricalAverages.test.ts` - Unit tests covering historical-average and GP% snapshot aggregation logic across season windows.
@@ -79,10 +79,10 @@
 - [x] 2.3 Compute usage deltas (ΔESTOI/PPTOI/SHTOI) and context features (PDO, oiSH%, OZS%).
     - [x] 2.3.1 Add usage delta calculators using WGO TOI splits vs career baselines.
     - [x] 2.3.2 Compute context: PDO, on-ice SH%, OZS% from NST OI tables; compute deltas vs career.
-  - [ ] 2.4 Aggregate opponent-adjusted per-game distributions and roll up to 5/10 horizons with uncertainty.
-    - [ ] 2.4.1 Derive opponent adjustment factors from opponent defensive rates (xGA/60, CA/60, PK).
-    - [ ] 2.4.2 Produce per-game Poisson/NegBin approximations for counting stats; simulate or analytically sum to 5/10.
-    - [ ] 2.4.3 Emit bands (50%/80%) via quantiles; verify calibration with small backtest.
+  - [x] 2.4 Aggregate opponent-adjusted per-game distributions and roll up to 5/10 horizons with uncertainty.
+    - [x] 2.4.1 Derive opponent adjustment factors from opponent defensive rates (xGA/60, CA/60, PK).
+    - [x] 2.4.2 Produce per-game Poisson/NegBin approximations for counting stats; simulate or analytically sum to 5/10.
+    - [x] 2.4.3 Emit bands (50%/80%) via quantiles; verify calibration with small backtest.
 
 - [ ] 3.0 Modeling and outputs
   - [ ] 3.1 Implement baseline probability model (logistic) for Hot/Normal/Cold using feature set; add calibration.
