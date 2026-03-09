@@ -22,7 +22,7 @@
 
 ## Tasks
 
-- [ ] 1.0 Inventory the rolling-player-metrics suite and its upstream dependencies
+- [x] 1.0 Inventory the rolling-player-metrics suite and its upstream dependencies
   - [x] 1.1 Read and annotate the primary entry files to map the full recompute flow from API trigger to table upsert.
   - [x] 1.2 Trace all direct helper dependencies used by the rolling pipeline and record what responsibility each helper owns.
   - [x] 1.3 Inventory all upstream tables read by the suite and classify each as authoritative, fallback-only, or derived.
