@@ -3,8 +3,12 @@ import { describe, expect, it } from "vitest";
 import {
   calculatePer60Rate,
   calculatePer60Rates,
+  calculateContextDelta,
+  calculateContextFeatures,
   calculatePerGameRate,
   calculatePerGameRates,
+  calculateUsageDelta,
+  calculateUsageDeltas,
   calculateWeightedRate,
   calculateZScore,
   calculateZScores,
@@ -291,5 +295,128 @@ describe("sustainability features rate calculators", () => {
     expect(Math.abs((smallSample.shrunk ?? 0) - 0.7)).toBeLessThan(
       Math.abs((largeSample.shrunk ?? 0) - 0.7)
     );
+  });
+
+  it("calculates usage deltas for TOI-based splits", () => {
+    expect(calculateUsageDelta(18, 15)).toEqual({
+      recent: 18,
+      baseline: 15,
+      absoluteDelta: 3,
+      percentDelta: 20
+    });
+  });
+
+  it("returns null percent delta when baseline usage is zero", () => {
+    expect(calculateUsageDelta(2, 0)).toEqual({
+      recent: 2,
+      baseline: 0,
+      absoluteDelta: 2,
+      percentDelta: null
+    });
+  });
+
+  it("calculates typed usage delta maps for toi splits", () => {
+    expect(
+      calculateUsageDeltas({
+        recent: {
+          toi: 19.5,
+          es_toi: 14.2,
+          pp_toi: 3.4,
+          sh_toi: 1.1
+        },
+        baseline: {
+          toi: 18,
+          es_toi: 13,
+          pp_toi: 2.8,
+          sh_toi: 1.5
+        },
+        precision: 4
+      })
+    ).toEqual({
+      toi: {
+        recent: 19.5,
+        baseline: 18,
+        absoluteDelta: 1.5,
+        percentDelta: 8.3333
+      },
+      es_toi: {
+        recent: 14.2,
+        baseline: 13,
+        absoluteDelta: 1.2,
+        percentDelta: 9.2308
+      },
+      pp_toi: {
+        recent: 3.4,
+        baseline: 2.8,
+        absoluteDelta: 0.6,
+        percentDelta: 21.4286
+      },
+      sh_toi: {
+        recent: 1.1,
+        baseline: 1.5,
+        absoluteDelta: -0.4,
+        percentDelta: -26.6667
+      }
+    });
+  });
+
+  it("calculates raw context deltas for pdo-style values", () => {
+    expect(calculateContextDelta(1.025, 0.995, { precision: 4 })).toEqual({
+      recent: 1.025,
+      baseline: 0.995,
+      absoluteDelta: 0.03,
+      percentDelta: 3.0151
+    });
+  });
+
+  it("normalizes percent-like context fields before computing deltas", () => {
+    expect(
+      calculateContextDelta(12.5, 10, {
+        precision: 4,
+        normalizePercent: true
+      })
+    ).toEqual({
+      recent: 0.125,
+      baseline: 0.1,
+      absoluteDelta: 0.025,
+      percentDelta: 25
+    });
+  });
+
+  it("calculates context feature maps for pdo, oiSH%, and OZS%", () => {
+    expect(
+      calculateContextFeatures({
+        recent: {
+          pdo: 1.012,
+          onIceShPct: 11.2,
+          ozsPct: 54
+        },
+        baseline: {
+          pdo: 0.998,
+          onIceShPct: 9.8,
+          ozsPct: 49.5
+        },
+        precision: 4
+      })
+    ).toEqual({
+      pdo: {
+        recent: 1.012,
+        baseline: 0.998,
+        absoluteDelta: 0.014,
+        percentDelta: 1.4028
+      },
+      on_ice_sh_pct: {
+        recent: 0.112,
+        baseline: 0.098,
+        absoluteDelta: 0.014,
+        percentDelta: 14.2857
+      },
+      ozs_pct: {
+        recent: 0.54,
+        baseline: 0.495,
+        absoluteDelta: 0.045,
+        percentDelta: 9.0909
+      }
+    });
   });
 });

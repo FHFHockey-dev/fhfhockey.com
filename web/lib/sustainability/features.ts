@@ -68,6 +68,28 @@ export type EBShrinkResult = {
   sampleWeight: number;
 };
 
+export type UsageMetric = "toi" | "es_toi" | "pp_toi" | "sh_toi";
+
+export type UsageDeltaResult = {
+  recent: number | null;
+  baseline: number | null;
+  absoluteDelta: number | null;
+  percentDelta: number | null;
+};
+
+export type UsageDeltaMap = Partial<Record<UsageMetric, UsageDeltaResult>>;
+
+export type ContextMetric = "pdo" | "on_ice_sh_pct" | "ozs_pct";
+
+export type ContextFeatureResult = {
+  recent: number | null;
+  baseline: number | null;
+  absoluteDelta: number | null;
+  percentDelta: number | null;
+};
+
+export type ContextFeatureMap = Partial<Record<ContextMetric, ContextFeatureResult>>;
+
 const DEFAULT_WINDOW_WEIGHT_ORDER: Record<WindowCode, number> = {
   l3: 1,
   l5: 0.8,
@@ -92,6 +114,12 @@ function toFiniteNumber(value: NumericLike): number | null {
 
 function roundRate(value: number, precision: number): number {
   return Number(value.toFixed(precision));
+}
+
+function normalizePercentageLike(value: NumericLike): number | null {
+  const numericValue = toFiniteNumber(value);
+  if (numericValue === null) return null;
+  return numericValue > 1 ? numericValue / 100 : numericValue;
 }
 
 export function calculatePer60Rate(
@@ -407,4 +435,127 @@ export function empiricalBayesShrinkForMetric(
     priorMean: gammaInput.priorMean,
     priorStrength
   });
+}
+
+export function calculateUsageDelta(
+  recent: NumericLike,
+  baseline: NumericLike,
+  precision = 6
+): UsageDeltaResult {
+  const recentValue = toFiniteNumber(recent);
+  const baselineValue = toFiniteNumber(baseline);
+
+  if (recentValue === null || baselineValue === null) {
+    return {
+      recent: recentValue,
+      baseline: baselineValue,
+      absoluteDelta: null,
+      percentDelta: null
+    };
+  }
+
+  const absoluteDelta = recentValue - baselineValue;
+  const percentDelta =
+    baselineValue === 0 ? null : (absoluteDelta / Math.abs(baselineValue)) * 100;
+
+  return {
+    recent: roundRate(recentValue, precision),
+    baseline: roundRate(baselineValue, precision),
+    absoluteDelta: roundRate(absoluteDelta, precision),
+    percentDelta:
+      percentDelta === null ? null : roundRate(percentDelta, precision)
+  };
+}
+
+export function calculateUsageDeltas(input: {
+  recent: Partial<Record<UsageMetric, NumericLike>>;
+  baseline: Partial<Record<UsageMetric, NumericLike>>;
+  precision?: number;
+}): UsageDeltaMap {
+  const output: UsageDeltaMap = {};
+  const metricKeys = new Set<UsageMetric>([
+    ...(Object.keys(input.recent) as UsageMetric[]),
+    ...(Object.keys(input.baseline) as UsageMetric[])
+  ]);
+
+  for (const metric of metricKeys) {
+    output[metric] = calculateUsageDelta(
+      input.recent[metric],
+      input.baseline[metric],
+      input.precision
+    );
+  }
+
+  return output;
+}
+
+export function calculateContextDelta(
+  recent: NumericLike,
+  baseline: NumericLike,
+  options: {
+    precision?: number;
+    normalizePercent?: boolean;
+  } = {}
+): ContextFeatureResult {
+  const precision = options.precision ?? 6;
+  const normalize = options.normalizePercent ?? false;
+  const recentValue = normalize
+    ? normalizePercentageLike(recent)
+    : toFiniteNumber(recent);
+  const baselineValue = normalize
+    ? normalizePercentageLike(baseline)
+    : toFiniteNumber(baseline);
+
+  if (recentValue === null || baselineValue === null) {
+    return {
+      recent: recentValue,
+      baseline: baselineValue,
+      absoluteDelta: null,
+      percentDelta: null
+    };
+  }
+
+  const absoluteDelta = recentValue - baselineValue;
+  const percentDelta =
+    baselineValue === 0 ? null : (absoluteDelta / Math.abs(baselineValue)) * 100;
+
+  return {
+    recent: roundRate(recentValue, precision),
+    baseline: roundRate(baselineValue, precision),
+    absoluteDelta: roundRate(absoluteDelta, precision),
+    percentDelta:
+      percentDelta === null ? null : roundRate(percentDelta, precision)
+  };
+}
+
+export function calculateContextFeatures(input: {
+  recent: {
+    pdo?: NumericLike;
+    onIceShPct?: NumericLike;
+    ozsPct?: NumericLike;
+  };
+  baseline: {
+    pdo?: NumericLike;
+    onIceShPct?: NumericLike;
+    ozsPct?: NumericLike;
+  };
+  precision?: number;
+}): ContextFeatureMap {
+  return {
+    pdo: calculateContextDelta(input.recent.pdo, input.baseline.pdo, {
+      precision: input.precision
+    }),
+    on_ice_sh_pct: calculateContextDelta(
+      input.recent.onIceShPct,
+      input.baseline.onIceShPct,
+      {
+        precision: input.precision,
+        normalizePercent: true
+      }
+    ),
+    ozs_pct: calculateContextDelta(input.recent.ozsPct, input.baseline.ozsPct, {
+      precision: input.precision,
+      normalizePercent: true
+    })
+  };
 }
