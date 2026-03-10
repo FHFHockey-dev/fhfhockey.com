@@ -89,4 +89,61 @@ describe("rollingMetricAggregation", () => {
     expect(snapshot.all).toBe(0);
     expect(snapshot.windows[3]).toBe(0);
   });
+
+  it("anchors rolling ratio windows to fixed appearances when configured", () => {
+    const acc = createRatioRollingAccumulator();
+    const spec: RatioAggregationSpec = { scale: 100 };
+
+    updateRatioRollingAccumulator(
+      acc,
+      { numerator: 1, denominator: 10 },
+      { windowMode: "appearance", anchor: true }
+    );
+    updateRatioRollingAccumulator(
+      acc,
+      { numerator: 2, denominator: 10 },
+      { windowMode: "appearance", anchor: true }
+    );
+    updateRatioRollingAccumulator(
+      acc,
+      { numerator: 0, denominator: 0 },
+      { windowMode: "appearance", anchor: true }
+    );
+    updateRatioRollingAccumulator(
+      acc,
+      { numerator: 1, denominator: 5 },
+      { windowMode: "appearance", anchor: true }
+    );
+
+    const snapshot = getRatioRollingSnapshot(acc, spec);
+
+    expect(snapshot.windows[3]).toBeCloseTo(20, 6);
+    expect(snapshot.all).toBeCloseTo(16, 6);
+  });
+
+  it("does not advance appearance-based ratio windows when the player did not appear", () => {
+    const acc = createRatioRollingAccumulator();
+    const spec: RatioAggregationSpec = { scale: 100 };
+
+    updateRatioRollingAccumulator(
+      acc,
+      { numerator: 1, denominator: 10 },
+      { windowMode: "appearance", anchor: true }
+    );
+    updateRatioRollingAccumulator(
+      acc,
+      { numerator: 4, denominator: 10 },
+      { windowMode: "appearance", anchor: false }
+    );
+    updateRatioRollingAccumulator(
+      acc,
+      { numerator: 2, denominator: 10 },
+      { windowMode: "appearance", anchor: true }
+    );
+
+    const snapshot = getRatioRollingSnapshot(acc, spec);
+
+    expect(snapshot.windows[3]).toBeCloseTo(15, 6);
+    expect(snapshot.all).toBeCloseTo(15, 6);
+  });
 });

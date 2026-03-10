@@ -1,3 +1,8 @@
+import {
+  DEFAULT_ROLLING_WINDOWS,
+  type RollingWindow
+} from "./rollingMetricAggregation";
+
 type SeasonBucket = {
   sum: number;
   count: number;
@@ -25,8 +30,33 @@ export type HistoricalGpPctAccumulator = {
     string,
     {
       season: number;
+      teamId: number | null;
       playerGames: number;
       teamGames: number;
+      appearanceTeamGames: number[];
+    }
+  >;
+};
+
+export type HistoricalGpPctSnapshot = {
+  season: number | null;
+  threeYear: number | null;
+  career: number | null;
+  seasonPlayerGames: number;
+  seasonTeamGames: number;
+  threeYearPlayerGames: number;
+  threeYearTeamGames: number;
+  careerPlayerGames: number;
+  careerTeamGames: number;
+};
+
+export type RollingGpPctSnapshot = {
+  windows: Record<
+    RollingWindow,
+    {
+      playerGames: number;
+      teamGames: number;
+      ratio: number | null;
     }
   >;
 };
@@ -99,11 +129,16 @@ export function updateHistoricalGpPctAccumulator(
   const teamKey = `${args.season}:${args.teamId ?? 0}`;
   const bucket = acc.bySeasonTeam.get(teamKey) ?? {
     season: args.season,
+    teamId: args.teamId ?? null,
     playerGames: 0,
-    teamGames: 0
+    teamGames: 0,
+    appearanceTeamGames: []
   };
   if (args.playedThisGame) {
     bucket.playerGames += 1;
+    if (args.teamGamesPlayed > 0) {
+      bucket.appearanceTeamGames.push(args.teamGamesPlayed);
+    }
   }
   bucket.teamGames = Math.max(bucket.teamGames, args.teamGamesPlayed);
   acc.bySeasonTeam.set(teamKey, bucket);
@@ -116,9 +151,8 @@ function toRatio(playerGames: number, teamGames: number): number | null {
 
 export function getHistoricalGpPctSnapshot(
   acc: HistoricalGpPctAccumulator,
-  currentSeason: number,
-  teamId: number | null
-): HistoricalAverageSnapshot {
+  currentSeason: number
+): HistoricalGpPctSnapshot {
   const currentSeasonKey = getSeasonWindowKey(currentSeason);
   let seasonPlayerGames = 0;
   let seasonTeamGames = 0;
@@ -127,10 +161,8 @@ export function getHistoricalGpPctSnapshot(
   let careerPlayerGames = 0;
   let careerTeamGames = 0;
 
-  for (const [key, bucket] of acc.bySeasonTeam.entries()) {
-    const [seasonStr, teamIdStr] = key.split(":");
-    const bucketSeason = Number(seasonStr);
-    const bucketTeamId = Number(teamIdStr);
+  for (const bucket of acc.bySeasonTeam.values()) {
+    const bucketSeason = bucket.season;
     const bucketSeasonKey = getSeasonWindowKey(bucketSeason);
 
     if (
@@ -143,7 +175,7 @@ export function getHistoricalGpPctSnapshot(
     careerPlayerGames += bucket.playerGames;
     careerTeamGames += bucket.teamGames;
 
-    if (bucketSeason === currentSeason && bucketTeamId === (teamId ?? 0)) {
+    if (bucketSeason === currentSeason) {
       seasonPlayerGames += bucket.playerGames;
       seasonTeamGames += bucket.teamGames;
     }
@@ -152,6 +184,56 @@ export function getHistoricalGpPctSnapshot(
   return {
     season: toRatio(seasonPlayerGames, seasonTeamGames),
     threeYear: toRatio(threeYearPlayerGames, threeYearTeamGames),
-    career: toRatio(careerPlayerGames, careerTeamGames)
+    career: toRatio(careerPlayerGames, careerTeamGames),
+    seasonPlayerGames,
+    seasonTeamGames,
+    threeYearPlayerGames,
+    threeYearTeamGames,
+    careerPlayerGames,
+    careerTeamGames
   };
+}
+
+export function getRollingGpPctSnapshot(
+  acc: HistoricalGpPctAccumulator,
+  args: {
+    currentSeason: number;
+    currentTeamId: number | null;
+    currentTeamGamesPlayed: number;
+    windows?: RollingWindow[];
+  }
+): RollingGpPctSnapshot {
+  const windows = args.windows ?? DEFAULT_ROLLING_WINDOWS;
+  const currentBucket =
+    acc.bySeasonTeam.get(`${args.currentSeason}:${args.currentTeamId ?? 0}`) ??
+    null;
+
+  const snapshot = windows.reduce<RollingGpPctSnapshot["windows"]>(
+    (result, windowSize) => {
+      const teamGames =
+        args.currentTeamGamesPlayed > 0
+          ? Math.min(windowSize, args.currentTeamGamesPlayed)
+          : 0;
+      const startTeamGame =
+        teamGames > 0 ? args.currentTeamGamesPlayed - teamGames + 1 : 0;
+      const playerGames =
+        currentBucket && teamGames > 0
+          ? currentBucket.appearanceTeamGames.filter(
+              (teamGame) =>
+                teamGame >= startTeamGame &&
+                teamGame <= args.currentTeamGamesPlayed
+            ).length
+          : 0;
+
+      result[windowSize] = {
+        playerGames,
+        teamGames,
+        ratio: toRatio(playerGames, teamGames)
+      };
+      return result;
+    },
+    {} as RollingGpPctSnapshot["windows"]
+  );
+
+  return { windows: snapshot };
 }

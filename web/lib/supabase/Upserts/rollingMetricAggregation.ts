@@ -33,7 +33,7 @@ type RatioTotals = {
 };
 
 type RatioWindowTotals = RatioTotals & {
-  values: NormalizedRatioComponents[];
+  entries: Array<NormalizedRatioComponents | null>;
 };
 
 type RatioSeasonBucket = RatioTotals;
@@ -51,6 +51,14 @@ export type HistoricalRatioSnapshot = {
   season: number | null;
   threeYear: number | null;
   career: number | null;
+};
+
+export type RatioRollingWindowMode = "valid_observation" | "appearance";
+
+export type UpdateRatioRollingAccumulatorOptions = {
+  windows?: RollingWindow[];
+  windowMode?: RatioRollingWindowMode;
+  anchor?: boolean;
 };
 
 function createRatioTotals(): RatioTotals {
@@ -115,7 +123,7 @@ export function createRatioRollingAccumulator(
     (acc, window) => {
       acc[window] = {
         ...createRatioTotals(),
-        values: []
+        entries: []
       };
       return acc;
     },
@@ -131,38 +139,50 @@ export function createRatioRollingAccumulator(
 export function updateRatioRollingAccumulator(
   acc: RatioRollingAccumulator,
   components: RatioComponents | null | undefined,
-  windows: RollingWindow[] = DEFAULT_ROLLING_WINDOWS
+  options: UpdateRatioRollingAccumulatorOptions = {}
 ): void {
-  if (!components) return;
+  const windows = options.windows ?? DEFAULT_ROLLING_WINDOWS;
+  const windowMode = options.windowMode ?? "valid_observation";
+  const anchor = options.anchor ?? true;
+  const shouldAdvanceWindow = windowMode === "appearance" ? anchor : true;
 
-  const normalized: NormalizedRatioComponents = {
-    numerator: normalizeComponent(components.numerator),
-    denominator: normalizeComponent(components.denominator),
-    secondaryNumerator: normalizeComponent(components.secondaryNumerator),
-    secondaryDenominator: normalizeComponent(components.secondaryDenominator)
-  };
-
-  if (!hasAnyDenominator(normalized)) {
+  if (!shouldAdvanceWindow) {
     return;
   }
 
-  acc.totals.numerator += normalized.numerator;
-  acc.totals.denominator += normalized.denominator;
-  acc.totals.secondaryNumerator += normalized.secondaryNumerator;
-  acc.totals.secondaryDenominator += normalized.secondaryDenominator;
-  acc.totals.count += 1;
+  const normalized: NormalizedRatioComponents | null = components
+    ? {
+        numerator: normalizeComponent(components.numerator),
+        denominator: normalizeComponent(components.denominator),
+        secondaryNumerator: normalizeComponent(components.secondaryNumerator),
+        secondaryDenominator: normalizeComponent(components.secondaryDenominator)
+      }
+    : null;
+  const isValid = normalized ? hasAnyDenominator(normalized) : false;
+
+  if (isValid && normalized) {
+    acc.totals.numerator += normalized.numerator;
+    acc.totals.denominator += normalized.denominator;
+    acc.totals.secondaryNumerator += normalized.secondaryNumerator;
+    acc.totals.secondaryDenominator += normalized.secondaryDenominator;
+    acc.totals.count += 1;
+  } else if (windowMode !== "appearance") {
+    return;
+  }
 
   windows.forEach((windowSize) => {
     const window = acc.windows[windowSize];
-    window.values.push(normalized);
-    window.numerator += normalized.numerator;
-    window.denominator += normalized.denominator;
-    window.secondaryNumerator += normalized.secondaryNumerator;
-    window.secondaryDenominator += normalized.secondaryDenominator;
-    window.count += 1;
+    window.entries.push(isValid && normalized ? normalized : null);
+    if (isValid && normalized) {
+      window.numerator += normalized.numerator;
+      window.denominator += normalized.denominator;
+      window.secondaryNumerator += normalized.secondaryNumerator;
+      window.secondaryDenominator += normalized.secondaryDenominator;
+      window.count += 1;
+    }
 
-    if (window.values.length > windowSize) {
-      const removed = window.values.shift();
+    if (window.entries.length > windowSize) {
+      const removed = window.entries.shift();
       if (removed) {
         window.numerator -= removed.numerator;
         window.denominator -= removed.denominator;

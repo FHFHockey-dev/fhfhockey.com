@@ -50,3 +50,37 @@ export function resolveShareComponents(args: {
     denominator: numeratorValue / share
   };
 }
+
+export function resolvePreferredShareComponents(args: {
+  primaryNumeratorValue: number | null | undefined;
+  primaryShare: number | null | undefined;
+  fallbackNumeratorValue?: number | null | undefined;
+  fallbackShare?: number | null | undefined;
+}): RatioComponents | null {
+  return (
+    resolveShareComponents({
+      numeratorValue: args.primaryNumeratorValue,
+      share: args.primaryShare
+    }) ??
+    resolveShareComponents({
+      numeratorValue: args.fallbackNumeratorValue,
+      share: args.fallbackShare
+    })
+  );
+}
+
+export function resolveIxgValue(args: {
+  strength: "all" | "ev" | "pp" | "pk";
+  countsIxg: number | null | undefined;
+  wgoIxg: number | null | undefined;
+}): number | null {
+  if (args.countsIxg != null && Number.isFinite(args.countsIxg)) {
+    return Number(args.countsIxg);
+  }
+
+  if (args.strength === "all" && args.wgoIxg != null && Number.isFinite(args.wgoIxg)) {
+    return Number(args.wgoIxg);
+  }
+
+  return null;
+}

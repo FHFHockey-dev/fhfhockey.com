@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  resolveIxgValue,
   resolvePer60Components,
+  resolvePreferredShareComponents,
   resolveShareComponents
 } from "./rollingPlayerMetricMath";
 import {
@@ -86,5 +88,49 @@ describe("resolvePer60Components", () => {
       numerator: 180,
       denominator: 300
     });
+  });
+
+  it("prefers the primary share source before falling back", () => {
+    expect(
+      resolvePreferredShareComponents({
+        primaryNumeratorValue: 90,
+        primaryShare: 0.5,
+        fallbackNumeratorValue: 80,
+        fallbackShare: 0.4
+      })
+    ).toEqual({
+      numerator: 90,
+      denominator: 180
+    });
+
+    expect(
+      resolvePreferredShareComponents({
+        primaryNumeratorValue: null,
+        primaryShare: null,
+        fallbackNumeratorValue: 80,
+        fallbackShare: 0.4
+      })
+    ).toEqual({
+      numerator: 80,
+      denominator: 200
+    });
+  });
+
+  it("only allows WGO ixg fallback for all-strength rows", () => {
+    expect(
+      resolveIxgValue({
+        strength: "all",
+        countsIxg: null,
+        wgoIxg: 1.2
+      })
+    ).toBe(1.2);
+
+    expect(
+      resolveIxgValue({
+        strength: "pp",
+        countsIxg: null,
+        wgoIxg: 1.2
+      })
+    ).toBe(null);
   });
 });

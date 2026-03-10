@@ -12,6 +12,7 @@ type WgoLikeRow = {
 
 type PpLikeRow = {
   gameId: number;
+  pp_share_of_team?: number | null;
 };
 
 type CoverageSample = {
@@ -19,6 +20,7 @@ type CoverageSample = {
   missingRatesDates: string[];
   missingCountsOiDates: string[];
   missingPpGameIds: number[];
+  missingPpShareGameIds: number[];
   unknownGameIds: number[];
 };
 
@@ -32,6 +34,7 @@ export type CoverageSummary = {
     countsOiRows: number;
     ppExpectedGames: number;
     ppRows: number;
+    ppShareMissingGames: number;
     unknownGameIds: number;
   };
 };
@@ -119,6 +122,19 @@ export function summarizeCoverage(params: CoverageParams): CoverageSummary {
         )
       : [];
   const missingPpGameIds = diffNumbers(ppExpectedGameIds, ppGameIds);
+  const missingPpShareGameIds =
+    strength === "all" || strength === "pp"
+      ? uniqueSortedNumbers(
+          ppRows
+            .filter(
+              (row) =>
+                ppExpectedGameIds.includes(row.gameId) &&
+                (row.pp_share_of_team == null ||
+                  !Number.isFinite(Number(row.pp_share_of_team)))
+            )
+            .map((row) => row.gameId)
+        )
+      : [];
 
   const unknownGameIds = uniqueSortedNumbers(
     wgoRows
@@ -134,6 +150,7 @@ export function summarizeCoverage(params: CoverageParams): CoverageSummary {
     formatDateGap("missingRatesDates", missingRatesDates),
     formatDateGap("missingCountsOiDates", missingCountsOiDates),
     formatNumberGap("missingPpGameIds", missingPpGameIds),
+    formatNumberGap("missingPpShareGameIds", missingPpShareGameIds),
     formatNumberGap("unknownGameIds", unknownGameIds)
   ].filter((value): value is string => Boolean(value));
 
@@ -153,6 +170,7 @@ export function summarizeCoverage(params: CoverageParams): CoverageSummary {
       missingRatesDates: missingRatesDates.slice(0, MAX_SAMPLES),
       missingCountsOiDates: missingCountsOiDates.slice(0, MAX_SAMPLES),
       missingPpGameIds: missingPpGameIds.slice(0, MAX_SAMPLES),
+      missingPpShareGameIds: missingPpShareGameIds.slice(0, MAX_SAMPLES),
       unknownGameIds: unknownGameIds.slice(0, MAX_SAMPLES)
     },
     counts: {
@@ -162,6 +180,7 @@ export function summarizeCoverage(params: CoverageParams): CoverageSummary {
       countsOiRows: countsOiRows.length,
       ppExpectedGames: ppExpectedGameIds.length,
       ppRows: ppRows.length,
+      ppShareMissingGames: missingPpShareGameIds.length,
       unknownGameIds: unknownGameIds.length
     }
   };
@@ -193,6 +212,40 @@ export function summarizeSuspiciousOutputs(params: {
 }): { warnings: string[]; issueCount: number } {
   const { playerId, strength, rows } = params;
   const matches: string[] = [];
+  const toFiniteNumber = (value: unknown): number | null =>
+    typeof value === "number" && Number.isFinite(value) ? value : null;
+  const pushRatioMismatch = (
+    gameDate: string,
+    ratioField: string,
+    ratioValue: number | null,
+    numeratorField: string,
+    denominatorField: string,
+    numeratorValue: number | null,
+    denominatorValue: number | null
+  ) => {
+    if (
+      ratioValue == null ||
+      numeratorValue == null ||
+      denominatorValue == null ||
+      denominatorValue <= 0
+    ) {
+      return;
+    }
+
+    if (numeratorValue > denominatorValue) {
+      matches.push(
+        `${gameDate}:${numeratorField}=${numeratorValue}>${denominatorField}=${denominatorValue}`
+      );
+      return;
+    }
+
+    const expected = Number(Math.min(1, numeratorValue / denominatorValue).toFixed(6));
+    if (Math.abs(expected - ratioValue) > 0.000001) {
+      matches.push(
+        `${gameDate}:${ratioField}=${ratioValue} expected:${expected} from ${numeratorField}/${denominatorField}`
+      );
+    }
+  };
 
   for (const row of rows) {
     const gameDate =
@@ -206,6 +259,28 @@ export function summarizeSuspiciousOutputs(params: {
         }
       }
     }
+
+    pushRatioMismatch(
+      gameDate,
+      "gp_pct_total_all",
+      toFiniteNumber(row.gp_pct_total_all),
+      "games_played",
+      "team_games_played",
+      toFiniteNumber(row.games_played),
+      toFiniteNumber(row.team_games_played)
+    );
+
+    (["3", "5", "10", "20"] as const).forEach((size) => {
+      pushRatioMismatch(
+        gameDate,
+        `gp_pct_total_last${size}`,
+        toFiniteNumber(row[`gp_pct_total_last${size}`]),
+        `games_played_last${size}_team_games`,
+        `team_games_available_last${size}`,
+        toFiniteNumber(row[`games_played_last${size}_team_games`]),
+        toFiniteNumber(row[`team_games_available_last${size}`])
+      );
+    });
   }
 
   if (!matches.length) {

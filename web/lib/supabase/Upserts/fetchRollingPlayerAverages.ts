@@ -1,12 +1,12 @@
 import dotenv from "dotenv";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import { parseISO, subDays, formatISO } from "date-fns";
 import { teamsInfo } from "lib/teamsInfo";
 import {
   createHistoricalAverageAccumulator,
   createHistoricalGpPctAccumulator,
   getHistoricalAverageSnapshot,
   getHistoricalGpPctSnapshot,
+  getRollingGpPctSnapshot,
   updateHistoricalAverageAccumulator,
   updateHistoricalGpPctAccumulator
 } from "./rollingHistoricalAverages";
@@ -23,8 +23,9 @@ import {
   type RatioRollingAccumulator
 } from "./rollingMetricAggregation";
 import {
+  resolveIxgValue,
   resolvePer60Components,
-  resolveShareComponents
+  resolvePreferredShareComponents
 } from "./rollingPlayerMetricMath";
 import {
   summarizeCoverage,
@@ -363,6 +364,7 @@ interface PowerPlayCombinationRow {
   percentageOfPP: number | null;
   PPTOI: number | null;
   unit: number | null;
+  pp_share_of_team: number | null;
 }
 
 interface PlayerProcessingDiagnostics {
@@ -500,9 +502,11 @@ function getBlocks(game: PlayerGameData): number | null {
 
 function getPpShareComponents(game: PlayerGameData): RatioComponents | null {
   if (game.strength !== "all" && game.strength !== "pp") return null;
-  return resolveShareComponents({
-    numeratorValue: game.wgo?.pp_toi ?? null,
-    share: game.wgo?.pp_toi_pct_per_game ?? null
+  return resolvePreferredShareComponents({
+    primaryNumeratorValue: game.ppCombination?.PPTOI ?? null,
+    primaryShare: game.ppCombination?.pp_share_of_team ?? null,
+    fallbackNumeratorValue: game.wgo?.pp_toi ?? null,
+    fallbackShare: game.wgo?.pp_toi_pct_per_game ?? null
   });
 }
 
@@ -528,7 +532,11 @@ const METRICS: MetricDefinition[] = [
     },
     getComponents: (game) =>
       resolvePer60Components({
-        rawValue: game.counts?.ixg ?? getWgoNumber(game, "ixg"),
+        rawValue: resolveIxgValue({
+          strength: game.strength,
+          countsIxg: game.counts?.ixg ?? null,
+          wgoIxg: getWgoNumber(game, "ixg")
+        }),
         toiSeconds: getToiSeconds(game),
         per60Rate: game.rates?.ixg_per_60 ?? null
       })
@@ -548,10 +556,12 @@ const METRICS: MetricDefinition[] = [
   {
     key: "ixg",
     aggregation: "simple",
-    getValue: (game) => {
-      if (game.counts?.ixg != null) return game.counts.ixg;
-      return getWgoNumber(game, "ixg");
-    }
+    getValue: (game) =>
+      resolveIxgValue({
+        strength: game.strength,
+        countsIxg: game.counts?.ixg ?? null,
+        wgoIxg: getWgoNumber(game, "ixg")
+      })
   },
   {
     key: "primary_points_pct",
@@ -575,7 +585,11 @@ const METRICS: MetricDefinition[] = [
       scale: 1
     },
     getComponents: (game) => ({
-      numerator: game.counts?.ixg ?? getWgoNumber(game, "ixg"),
+      numerator: resolveIxgValue({
+        strength: game.strength,
+        countsIxg: game.counts?.ixg ?? null,
+        wgoIxg: getWgoNumber(game, "ixg")
+      }),
       denominator: getShots(game)
     })
   },
@@ -945,22 +959,6 @@ function getTeamGamesPlayed(
   return result;
 }
 
-function getTeamGamesWindowCount(
-  ledger: TeamGameLedger,
-  teamId: number | null,
-  seasonId: number,
-  startDate: string,
-  endDate: string
-): number {
-  if (!teamId) return 0;
-  const beforeStart = formatISO(subDays(parseISO(startDate), 1), {
-    representation: "date"
-  });
-  const endCount = getTeamGamesPlayed(ledger, teamId, seasonId, endDate);
-  const startCount = getTeamGamesPlayed(ledger, teamId, seasonId, beforeStart);
-  return Math.max(endCount - startCount, 0);
-}
-
 function initAccumulator(): RollingAccumulator {
   const windows: RollingAccumulator["windows"] = {
     3: { values: [], sum: 0, count: 0 },
@@ -995,6 +993,18 @@ function updateAccumulator(
   });
 }
 
+function didPlayerCountAsAppearance(
+  strength: StrengthState,
+  game: PlayerGameData
+): boolean {
+  if (strength === "all") {
+    return true;
+  }
+
+  const toiSeconds = getToiSeconds(game);
+  return toiSeconds != null && toiSeconds > 0;
+}
+
 function deriveOutputs(
   simpleMetricsState: Record<string, RollingAccumulator>,
   ratioMetricsState: Record<string, RatioRollingAccumulator>,
@@ -1003,13 +1013,9 @@ function deriveOutputs(
     ReturnType<typeof createHistoricalAverageAccumulator>
   >,
   historicalRatioMetricsState: Record<string, HistoricalRatioAccumulator>,
-  historicalGpPctState: ReturnType<typeof createHistoricalGpPctAccumulator>,
-  gamesPlayed: number,
-  teamGamesPlayed: number,
-  teamGamesWindow: Record<RollingWindow, number>,
-  playerGamesWindow: Record<RollingWindow, number>,
-  currentSeason: number,
-  currentTeamId: number | null
+  historicalGpPctSnapshot: ReturnType<typeof getHistoricalGpPctSnapshot>,
+  rollingGpPctSnapshot: ReturnType<typeof getRollingGpPctSnapshot>,
+  currentSeason: number
 ) {
   const output: Record<string, number | null> = {};
   for (const metric of METRICS) {
@@ -1058,28 +1064,29 @@ function deriveOutputs(
         window.count > 0 ? Number((windowSum / window.count).toFixed(6)) : null;
     });
   }
-  output.games_played = gamesPlayed;
-  output.team_games_played = teamGamesPlayed;
-  output.gp_pct_total_all =
-    teamGamesPlayed > 0
-      ? Number((gamesPlayed / teamGamesPlayed).toFixed(6))
-      : null;
+  output.games_played = historicalGpPctSnapshot.seasonPlayerGames;
+  output.team_games_played = historicalGpPctSnapshot.seasonTeamGames;
+  output.season_games_played = historicalGpPctSnapshot.seasonPlayerGames;
+  output.season_team_games_available = historicalGpPctSnapshot.seasonTeamGames;
+  output.three_year_games_played = historicalGpPctSnapshot.threeYearPlayerGames;
+  output.three_year_team_games_available =
+    historicalGpPctSnapshot.threeYearTeamGames;
+  output.career_games_played = historicalGpPctSnapshot.careerPlayerGames;
+  output.career_team_games_available = historicalGpPctSnapshot.careerTeamGames;
+  output.season_availability_pct = historicalGpPctSnapshot.season;
+  output.three_year_availability_pct = historicalGpPctSnapshot.threeYear;
+  output.career_availability_pct = historicalGpPctSnapshot.career;
+  output.gp_pct_total_all = historicalGpPctSnapshot.season;
   output.gp_pct_avg_all = output.gp_pct_total_all;
-  const historicalGpPct = getHistoricalGpPctSnapshot(
-    historicalGpPctState,
-    currentSeason,
-    currentTeamId
-  );
-  output.gp_pct_avg_season = historicalGpPct.season;
-  output.gp_pct_avg_3ya = historicalGpPct.threeYear;
-  output.gp_pct_avg_career = historicalGpPct.career;
+  output.gp_pct_avg_season = historicalGpPctSnapshot.season;
+  output.gp_pct_avg_3ya = historicalGpPctSnapshot.threeYear;
+  output.gp_pct_avg_career = historicalGpPctSnapshot.career;
   ROLLING_WINDOWS.forEach((size) => {
-    const teamGames = teamGamesWindow[size] ?? 0;
-    const playerGames = playerGamesWindow[size] ?? 0;
-    output[`gp_pct_total_last${size}`] =
-      teamGames > 0
-        ? Number(Math.min(1, playerGames / teamGames).toFixed(6))
-        : null;
+    const window = rollingGpPctSnapshot.windows[size];
+    output[`games_played_last${size}_team_games`] = window.playerGames;
+    output[`team_games_available_last${size}`] = window.teamGames;
+    output[`availability_pct_last${size}_team_games`] = window.ratio;
+    output[`gp_pct_total_last${size}`] = window.ratio;
     output[`gp_pct_avg_last${size}`] = output[`gp_pct_total_last${size}`];
   });
   return output;
@@ -1315,7 +1322,7 @@ async function fetchPowerPlayCombinations(
       async () => {
         const { data, error } = await supabase
           .from("powerPlayCombinations")
-          .select("gameId, playerId, percentageOfPP, PPTOI, unit")
+          .select("gameId, playerId, percentageOfPP, PPTOI, unit, pp_share_of_team")
           .eq("playerId", playerId)
           .in("gameId", chunk);
         if (error) throw error;
@@ -1594,16 +1601,19 @@ async function processPlayer(
       });
       const historicalGpPctState = createHistoricalGpPctAccumulator();
 
-      let gamesPlayed = 0;
-      const appearanceDates: string[] = [];
-
       for (const game of games) {
+        const playedThisGame = didPlayerCountAsAppearance(config.state, game);
+
         METRICS.forEach((metric) => {
           if (metric.aggregation === "ratio") {
             const components = metric.getComponents(game);
             updateRatioRollingAccumulator(
               ratioMetricsState[metric.key],
-              components
+              components,
+              {
+                windowMode: "appearance",
+                anchor: playedThisGame
+              }
             );
             updateHistoricalRatioAccumulator(
               historicalRatioMetricsState[metric.key],
@@ -1622,19 +1632,6 @@ async function processPlayer(
           );
         });
 
-        const playedThisGame =
-          config.state === "all"
-            ? 1
-            : (() => {
-                const toiSeconds = getToiSeconds(game);
-                return toiSeconds && toiSeconds > 0 ? 1 : 0;
-              })();
-
-        if (playedThisGame > 0) {
-          gamesPlayed += 1;
-          appearanceDates.push(game.gameDate);
-        }
-
         const teamGamesPlayed = getTeamGamesPlayed(
           ledger,
           game.teamId ?? null,
@@ -1644,55 +1641,31 @@ async function processPlayer(
         updateHistoricalGpPctAccumulator(historicalGpPctState, {
           season: game.season,
           teamId: game.teamId ?? null,
-          playedThisGame: playedThisGame > 0,
+          playedThisGame,
           teamGamesPlayed
         });
 
-        const teamGamesWindow: Record<RollingWindow, number> = {
-          3: 0,
-          5: 0,
-          10: 0,
-          20: 0
-        };
-        const playerGamesWindow: Record<RollingWindow, number> = {
-          3: 0,
-          5: 0,
-          10: 0,
-          20: 0
-        };
-
-        ROLLING_WINDOWS.forEach((size) => {
-          const windowDates = appearanceDates.slice(
-            Math.max(appearanceDates.length - size, 0)
-          );
-          if (windowDates.length === 0) {
-            teamGamesWindow[size] = 0;
-            playerGamesWindow[size] = 0;
-            return;
+        const historicalGpPctSnapshot = getHistoricalGpPctSnapshot(
+          historicalGpPctState,
+          game.season
+        );
+        const rollingGpPctSnapshot = getRollingGpPctSnapshot(
+          historicalGpPctState,
+          {
+            currentSeason: game.season,
+            currentTeamId: game.teamId ?? null,
+            currentTeamGamesPlayed: teamGamesPlayed
           }
-          const windowStart = windowDates[0];
-          teamGamesWindow[size] = getTeamGamesWindowCount(
-            ledger,
-            game.teamId ?? null,
-            game.season,
-            windowStart,
-            game.gameDate
-          );
-          playerGamesWindow[size] = windowDates.length;
-        });
+        );
 
         const metricOutputs = deriveOutputs(
           simpleMetricsState,
           ratioMetricsState,
           historicalSimpleMetricsState,
           historicalRatioMetricsState,
-          historicalGpPctState,
-          gamesPlayed,
-          teamGamesPlayed,
-          teamGamesWindow,
-          playerGamesWindow,
-          game.season,
-          game.teamId ?? null
+          historicalGpPctSnapshot,
+          rollingGpPctSnapshot,
+          game.season
         );
 
         if (config.state !== "all" && config.state !== "pp") {
@@ -1713,6 +1686,8 @@ async function processPlayer(
           line_combo_slot: game.lineCombo?.slot ?? null,
           line_combo_group: game.lineCombo?.positionGroup ?? null,
           pp_unit: game.ppCombination?.unit ?? null,
+          gp_semantic_type:
+            config.state === "all" ? "availability" : "participation",
           ...metricOutputs
         });
       }
