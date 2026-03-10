@@ -108,14 +108,54 @@ describe("summarizeSuspiciousOutputs", () => {
           gp_pct_total_all: 0.6,
           games_played: 6,
           team_games_played: 10,
+          season_availability_pct: 0.6,
+          season_games_played: 6,
+          season_team_games_available: 10,
+          three_year_availability_pct: 0.5,
+          three_year_games_played: 15,
+          three_year_team_games_available: 30,
+          career_availability_pct: 0.5,
+          career_games_played: 40,
+          career_team_games_available: 80,
           gp_pct_total_last3: Number((2 / 3).toFixed(6)),
           games_played_last3_team_games: 2,
-          team_games_available_last3: 3
+          team_games_available_last3: 3,
+          availability_pct_last3_team_games: Number((2 / 3).toFixed(6))
         }
       ]
     });
 
     expect(result.issueCount).toBe(0);
     expect(result.warnings).toEqual([]);
+  });
+
+  it("flags canonical availability ratios when raw support fields disagree", () => {
+    const result = summarizeSuspiciousOutputs({
+      playerId: 5,
+      strength: "all",
+      rows: [
+        {
+          game_date: "2025-12-03",
+          season_availability_pct: 0.9,
+          season_games_played: 3,
+          season_team_games_available: 10,
+          three_year_availability_pct: 0.9,
+          three_year_games_played: 18,
+          three_year_team_games_available: 30,
+          career_availability_pct: 0.2,
+          career_games_played: 40,
+          career_team_games_available: 80,
+          availability_pct_last5_team_games: 0.9,
+          games_played_last5_team_games: 2,
+          team_games_available_last5: 5
+        }
+      ]
+    });
+
+    expect(result.issueCount).toBe(4);
+    expect(result.warnings[0]).toContain("issues:4");
+    expect(result.warnings[0]).toContain("season_availability_pct=0.9");
+    expect(result.warnings[0]).toContain("three_year_availability_pct=0.9");
+    expect(result.warnings[0]).toContain("career_availability_pct=0.2");
   });
 });

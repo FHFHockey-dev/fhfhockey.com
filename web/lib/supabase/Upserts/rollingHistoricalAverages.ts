@@ -2,6 +2,7 @@ import {
   DEFAULT_ROLLING_WINDOWS,
   type RollingWindow
 } from "./rollingMetricAggregation";
+import { ROLLING_PLAYER_AVAILABILITY_CONTRACT } from "./rollingPlayerAvailabilityContract";
 
 type SeasonBucket = {
   sum: number;
@@ -26,6 +27,15 @@ export type HistoricalAverageSnapshot = {
 };
 
 export type HistoricalGpPctAccumulator = {
+  bySeason: Map<
+    number,
+    {
+      playerGames: number;
+      teamGames: number;
+    }
+  >;
+  careerPlayerGames: number;
+  careerTeamGames: number;
   bySeasonTeam: Map<
     string,
     {
@@ -60,6 +70,9 @@ export type RollingGpPctSnapshot = {
     }
   >;
 };
+
+export const HISTORICAL_GP_PCT_CONTRACT =
+  ROLLING_PLAYER_AVAILABILITY_CONTRACT.intendedReplacement;
 
 export function createHistoricalAverageAccumulator(): HistoricalAverageAccumulator {
   return {
@@ -112,7 +125,16 @@ export function getHistoricalAverageSnapshot(
 }
 
 export function createHistoricalGpPctAccumulator(): HistoricalGpPctAccumulator {
+  // Transitional note: the accumulator is still keyed by season/team buckets,
+  // for rolling windows, but cross-stint season / 3YA / career availability is
+  // accumulated explicitly at the season and career levels so the replacement
+  // contract does not depend on reconstructing those scopes from team buckets
+  // later. Keep future GP% changes aligned to
+  // `ROLLING_PLAYER_AVAILABILITY_CONTRACT.intendedReplacement`.
   return {
+    bySeason: new Map(),
+    careerPlayerGames: 0,
+    careerTeamGames: 0,
     bySeasonTeam: new Map()
   };
 }
@@ -134,14 +156,29 @@ export function updateHistoricalGpPctAccumulator(
     teamGames: 0,
     appearanceTeamGames: []
   };
+  const seasonBucket = acc.bySeason.get(args.season) ?? {
+    playerGames: 0,
+    teamGames: 0
+  };
+
+  const previousTeamGames = bucket.teamGames;
   if (args.playedThisGame) {
     bucket.playerGames += 1;
+    seasonBucket.playerGames += 1;
+    acc.careerPlayerGames += 1;
     if (args.teamGamesPlayed > 0) {
       bucket.appearanceTeamGames.push(args.teamGamesPlayed);
     }
   }
   bucket.teamGames = Math.max(bucket.teamGames, args.teamGamesPlayed);
+  const addedTeamGames = bucket.teamGames - previousTeamGames;
+  if (addedTeamGames > 0) {
+    seasonBucket.teamGames += addedTeamGames;
+    acc.careerTeamGames += addedTeamGames;
+  }
+
   acc.bySeasonTeam.set(teamKey, bucket);
+  acc.bySeason.set(args.season, seasonBucket);
 }
 
 function toRatio(playerGames: number, teamGames: number): number | null {
@@ -153,17 +190,21 @@ export function getHistoricalGpPctSnapshot(
   acc: HistoricalGpPctAccumulator,
   currentSeason: number
 ): HistoricalGpPctSnapshot {
+  // The replacement contract requires season / 3YA / career availability to be
+  // interpreted as player-centered aggregates across all stints in scope:
+  // `HISTORICAL_GP_PCT_CONTRACT.*.historicalScope`
+  // is the source of truth for later remediation tasks.
   const currentSeasonKey = getSeasonWindowKey(currentSeason);
-  let seasonPlayerGames = 0;
-  let seasonTeamGames = 0;
+  const seasonBucket = acc.bySeason.get(currentSeason);
+  const seasonPlayerGames = seasonBucket?.playerGames ?? 0;
+  const seasonTeamGames = seasonBucket?.teamGames ?? 0;
   let threeYearPlayerGames = 0;
   let threeYearTeamGames = 0;
-  let careerPlayerGames = 0;
-  let careerTeamGames = 0;
+  const careerPlayerGames = acc.careerPlayerGames;
+  const careerTeamGames = acc.careerTeamGames;
 
-  for (const bucket of acc.bySeasonTeam.values()) {
-    const bucketSeason = bucket.season;
-    const bucketSeasonKey = getSeasonWindowKey(bucketSeason);
+  for (const [season, bucket] of acc.bySeason.entries()) {
+    const bucketSeasonKey = getSeasonWindowKey(season);
 
     if (
       bucketSeasonKey >= currentSeasonKey - 2 &&
@@ -171,13 +212,6 @@ export function getHistoricalGpPctSnapshot(
     ) {
       threeYearPlayerGames += bucket.playerGames;
       threeYearTeamGames += bucket.teamGames;
-    }
-    careerPlayerGames += bucket.playerGames;
-    careerTeamGames += bucket.teamGames;
-
-    if (bucketSeason === currentSeason) {
-      seasonPlayerGames += bucket.playerGames;
-      seasonTeamGames += bucket.teamGames;
     }
   }
 
@@ -203,6 +237,9 @@ export function getRollingGpPctSnapshot(
     windows?: RollingWindow[];
   }
 ): RollingGpPctSnapshot {
+  // Rolling availability is expected to converge on the shared current-team
+  // last-N-team-games contract, even though this helper still operates on the
+  // existing accumulator shape during the remediation transition.
   const windows = args.windows ?? DEFAULT_ROLLING_WINDOWS;
   const currentBucket =
     acc.bySeasonTeam.get(`${args.currentSeason}:${args.currentTeamId ?? 0}`) ??

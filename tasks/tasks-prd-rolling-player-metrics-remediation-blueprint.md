@@ -10,6 +10,7 @@
 - `web/lib/supabase/Upserts/rollingMetricAggregation.test.ts` - Unit tests for ratio-of-aggregates math, fixed appearance-window behavior, null/zero policy, and alias semantics.
 - `web/lib/supabase/Upserts/rollingHistoricalAverages.ts` - Historical simple averages and GP% historical accumulation logic.
 - `web/lib/supabase/Upserts/rollingHistoricalAverages.test.ts` - Unit tests for season, 3YA, career, and cross-stint availability semantics.
+- `web/lib/supabase/Upserts/rollingPlayerAvailabilityContract.ts` - Shared code-level contract for intended availability versus participation semantics across season, rolling, and historical scopes.
 - `web/lib/supabase/Upserts/rollingPlayerMetricMath.ts` - TOI-backed `/60` math, share reconstruction, and ixG fallback logic.
 - `web/lib/supabase/Upserts/rollingPlayerMetricMath.test.ts` - Unit tests for TOI normalization, share-component reconstruction, and ixG fallback behavior.
 - `web/lib/supabase/Upserts/rollingPlayerPipelineDiagnostics.ts` - Coverage, suspicious-output, and run-quality diagnostics for the rolling suite.
@@ -39,7 +40,7 @@
 
 ## Tasks
 
-- [ ] 1.0 Rework the rolling pipeline contract and source-merge foundations
+- [x] 1.0 Rework the rolling pipeline contract and source-merge foundations
   - [x] 1.1 Inventory the current source precedence rules in `fetchRollingPlayerAverages.ts` for WGO, NST counts, NST rates, NST on-ice rows, PP rows, and line-combination rows, then document the authoritative/fallback contract in code comments or nearby docs where the implementation needs it.
   - [x] 1.2 Refactor `buildGameRecords(...)` and adjacent row-construction helpers so missing source components are represented explicitly rather than silently changing row meaning.
   - [x] 1.3 Add structured tracking for source fallback usage during row assembly, including WGO fallbacks for additive stats, rate-based reconstructions, TOI fallback tier usage, and missing upstream component counts.
@@ -48,14 +49,14 @@
   - [x] 1.6 Add pipeline-level tests covering merged row construction, source precedence, null handling, and fallback transparency.
 
 - [ ] 2.0 Redesign GP% and participation semantics across all scopes
-  - [ ] 2.1 Reverse the current GP% implementation assumptions in `fetchRollingPlayerAverages.ts` and `rollingHistoricalAverages.ts` into explicit replacement contracts for all-strength availability, split-strength participation, season scope, rolling scope, 3YA scope, and career scope.
-  - [ ] 2.2 Implement all-strength season availability as a player-centered aggregate across all current-season team stints instead of the current `season:teamId` bucket-only behavior.
-  - [ ] 2.3 Implement rolling availability windows as exact current-team chronological team-game windows for `last3`, `last5`, `last10`, and `last20`.
-  - [ ] 2.4 Redesign split-strength GP% semantics into explicit participation-in-state behavior based on positive TOI, with separate naming or explicit compatibility handling so these fields are not mistaken for ordinary games played.
-  - [ ] 2.5 Decide and implement how legacy GP% fields map to the new contract: replace in place, preserve as compatibility aliases, or deprecate behind new canonical fields.
-  - [ ] 2.6 Add raw numerator and denominator support fields for availability windows and historical availability scopes so post-trade and missed-game behavior can be audited directly.
-  - [ ] 2.7 Update historical GP% accumulation in `rollingHistoricalAverages.ts` to support cross-stint season, 3YA, and career semantics under the new contract.
-  - [ ] 2.8 Add dedicated GP% unit tests for one-team healthy cases, injury/missed-games cases, traded-player season cases, split-strength participation cases, and rolling current-team windows.
+  - [x] 2.1 Reverse the current GP% implementation assumptions in `fetchRollingPlayerAverages.ts` and `rollingHistoricalAverages.ts` into explicit replacement contracts for all-strength availability, split-strength participation, season scope, rolling scope, 3YA scope, and career scope.
+  - [x] 2.2 Implement all-strength season availability as a player-centered aggregate across all current-season team stints instead of the current `season:teamId` bucket-only behavior.
+  - [x] 2.3 Implement rolling availability windows as exact current-team chronological team-game windows for `last3`, `last5`, `last10`, and `last20`.
+  - [x] 2.4 Redesign split-strength GP% semantics into explicit participation-in-state behavior based on positive TOI, with separate naming or explicit compatibility handling so these fields are not mistaken for ordinary games played.
+  - [x] 2.5 Decide and implement how legacy GP% fields map to the new contract: replace in place, preserve as compatibility aliases, or deprecate behind new canonical fields.
+  - [x] 2.6 Add raw numerator and denominator support fields for availability windows and historical availability scopes so post-trade and missed-game behavior can be audited directly.
+  - [x] 2.7 Update historical GP% accumulation in `rollingHistoricalAverages.ts` to support cross-stint season, 3YA, and career semantics under the new contract.
+  - [x] 2.8 Add dedicated GP% unit tests for one-team healthy cases, injury/missed-games cases, traded-player season cases, split-strength participation cases, and rolling current-team windows.
 
 - [ ] 3.0 Redesign ratio-family and `/60` rolling-window semantics
   - [ ] 3.1 Define the canonical `lastN` window rules in code for each metric family class: availability, additive performance, ratio performance, and weighted `/60`.

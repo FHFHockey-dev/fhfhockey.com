@@ -2,14 +2,23 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 
 let buildGameRecords: typeof import("./fetchRollingPlayerAverages").__testables.buildGameRecords;
 let summarizeSourceTracking: typeof import("./fetchRollingPlayerAverages").__testables.summarizeSourceTracking;
+let didPlayerCountAsAppearance: typeof import("./fetchRollingPlayerAverages").__testables.didPlayerCountAsAppearance;
+let applyGpOutputs: typeof import("./fetchRollingPlayerAverages").__testables.applyGpOutputs;
+let getGpOutputCompatibilityMode: typeof import("./fetchRollingPlayerAverages").__testables.getGpOutputCompatibilityMode;
 
 beforeAll(async () => {
   vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
   vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "test-service-role-key");
   vi.resetModules();
-  ({ __testables: { buildGameRecords, summarizeSourceTracking } } = await import(
-    "./fetchRollingPlayerAverages"
-  ));
+  ({
+    __testables: {
+      buildGameRecords,
+      summarizeSourceTracking,
+      didPlayerCountAsAppearance,
+      applyGpOutputs,
+      getGpOutputCompatibilityMode
+    }
+  } = await import("./fetchRollingPlayerAverages"));
 });
 
 describe("fetchRollingPlayerAverages buildGameRecords", () => {
@@ -238,5 +247,141 @@ describe("fetchRollingPlayerAverages buildGameRecords", () => {
     expect(summary.toiSources.fallback).toBe(1);
     expect(summary.toiSources.rates).toBe(1);
     expect(summary.toiFallbackSeeds.wgo).toBe(1);
+  });
+
+  it("treats split-strength appearance as positive-TOI participation", () => {
+    expect(
+      didPlayerCountAsAppearance("all", {
+        strength: "all",
+        sourceContext: {}
+      } as any)
+    ).toBe(true);
+    expect(
+      didPlayerCountAsAppearance("ev", {
+        strength: "ev",
+        counts: { toi: 125 } as any,
+        sourceContext: {}
+      } as any)
+    ).toBe(true);
+    expect(
+      didPlayerCountAsAppearance("ev", {
+        strength: "ev",
+        counts: { toi: 0 } as any,
+        sourceContext: {}
+      } as any)
+    ).toBe(false);
+    expect(
+      didPlayerCountAsAppearance("pp", {
+        strength: "pp",
+        sourceContext: {}
+      } as any)
+    ).toBe(false);
+  });
+
+  it("suppresses availability-named aliases for split-strength participation outputs", () => {
+    const output: Record<string, number | null> = {};
+
+    applyGpOutputs(
+      output,
+      {
+        season: 0.4,
+        threeYear: 0.5,
+        career: 0.6,
+        seasonPlayerGames: 4,
+        seasonTeamGames: 10,
+        threeYearPlayerGames: 15,
+        threeYearTeamGames: 30,
+        careerPlayerGames: 40,
+        careerTeamGames: 80
+      },
+      {
+        windows: {
+          3: { playerGames: 1, teamGames: 3, ratio: Number((1 / 3).toFixed(6)) },
+          5: { playerGames: 2, teamGames: 5, ratio: 0.4 },
+          10: { playerGames: 3, teamGames: 10, ratio: 0.3 },
+          20: { playerGames: 4, teamGames: 10, ratio: 0.4 }
+        }
+      },
+      "ev"
+    );
+
+    expect(getGpOutputCompatibilityMode("ev")).toEqual({
+      semanticType: "participation",
+      emitAvailabilityAliases: false,
+      legacyGpFieldMode: "legacy_gp_fields_only_until_participation_schema"
+    });
+    expect(output.games_played).toBe(4);
+    expect(output.team_games_played).toBe(10);
+    expect(output.season_games_played).toBe(4);
+    expect(output.season_team_games_available).toBe(10);
+    expect(output.three_year_games_played).toBe(15);
+    expect(output.three_year_team_games_available).toBe(30);
+    expect(output.career_games_played).toBe(40);
+    expect(output.career_team_games_available).toBe(80);
+    expect(output.gp_pct_total_all).toBe(0.4);
+    expect(output.gp_pct_total_last3).toBe(Number((1 / 3).toFixed(6)));
+    expect(output.games_played_last5_team_games).toBe(2);
+    expect(output.team_games_available_last5).toBe(5);
+    expect(output.games_played_last20_team_games).toBe(4);
+    expect(output.team_games_available_last20).toBe(10);
+    expect(output.season_availability_pct).toBeNull();
+    expect(output.three_year_availability_pct).toBeNull();
+    expect(output.career_availability_pct).toBeNull();
+    expect(output.availability_pct_last3_team_games).toBeNull();
+    expect(output.availability_pct_last20_team_games).toBeNull();
+  });
+
+  it("derives all-strength legacy gp aliases from canonical availability fields", () => {
+    const output: Record<string, number | null> = {};
+
+    applyGpOutputs(
+      output,
+      {
+        season: 0.7,
+        threeYear: 0.5,
+        career: 0.6,
+        seasonPlayerGames: 7,
+        seasonTeamGames: 10,
+        threeYearPlayerGames: 15,
+        threeYearTeamGames: 30,
+        careerPlayerGames: 40,
+        careerTeamGames: 80
+      },
+      {
+        windows: {
+          3: { playerGames: 2, teamGames: 3, ratio: Number((2 / 3).toFixed(6)) },
+          5: { playerGames: 3, teamGames: 5, ratio: 0.6 },
+          10: { playerGames: 7, teamGames: 10, ratio: 0.7 },
+          20: { playerGames: 7, teamGames: 10, ratio: 0.7 }
+        }
+      },
+      "all"
+    );
+
+    expect(getGpOutputCompatibilityMode("all")).toEqual({
+      semanticType: "availability",
+      emitAvailabilityAliases: true,
+      legacyGpFieldMode: "derived_aliases_from_canonical_availability"
+    });
+    expect(output.season_availability_pct).toBe(0.7);
+    expect(output.three_year_availability_pct).toBe(0.5);
+    expect(output.career_availability_pct).toBe(0.6);
+    expect(output.three_year_games_played).toBe(15);
+    expect(output.three_year_team_games_available).toBe(30);
+    expect(output.career_games_played).toBe(40);
+    expect(output.career_team_games_available).toBe(80);
+    expect(output.availability_pct_last3_team_games).toBe(
+      Number((2 / 3).toFixed(6))
+    );
+    expect(output.games_played_last10_team_games).toBe(7);
+    expect(output.team_games_available_last10).toBe(10);
+    expect(output.gp_pct_total_all).toBe(output.season_availability_pct);
+    expect(output.gp_pct_avg_season).toBe(output.season_availability_pct);
+    expect(output.gp_pct_avg_3ya).toBe(output.three_year_availability_pct);
+    expect(output.gp_pct_avg_career).toBe(output.career_availability_pct);
+    expect(output.gp_pct_total_last3).toBe(
+      output.availability_pct_last3_team_games
+    );
+    expect(output.gp_pct_avg_last3).toBe(output.gp_pct_total_last3);
   });
 });

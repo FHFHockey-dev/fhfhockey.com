@@ -270,11 +270,48 @@ export function summarizeSuspiciousOutputs(params: {
       toFiniteNumber(row.team_games_played)
     );
 
+    pushRatioMismatch(
+      gameDate,
+      "season_availability_pct",
+      toFiniteNumber(row.season_availability_pct),
+      "season_games_played",
+      "season_team_games_available",
+      toFiniteNumber(row.season_games_played),
+      toFiniteNumber(row.season_team_games_available)
+    );
+    pushRatioMismatch(
+      gameDate,
+      "three_year_availability_pct",
+      toFiniteNumber(row.three_year_availability_pct),
+      "three_year_games_played",
+      "three_year_team_games_available",
+      toFiniteNumber(row.three_year_games_played),
+      toFiniteNumber(row.three_year_team_games_available)
+    );
+    pushRatioMismatch(
+      gameDate,
+      "career_availability_pct",
+      toFiniteNumber(row.career_availability_pct),
+      "career_games_played",
+      "career_team_games_available",
+      toFiniteNumber(row.career_games_played),
+      toFiniteNumber(row.career_team_games_available)
+    );
+
     (["3", "5", "10", "20"] as const).forEach((size) => {
       pushRatioMismatch(
         gameDate,
         `gp_pct_total_last${size}`,
         toFiniteNumber(row[`gp_pct_total_last${size}`]),
+        `games_played_last${size}_team_games`,
+        `team_games_available_last${size}`,
+        toFiniteNumber(row[`games_played_last${size}_team_games`]),
+        toFiniteNumber(row[`team_games_available_last${size}`])
+      );
+      pushRatioMismatch(
+        gameDate,
+        `availability_pct_last${size}_team_games`,
+        toFiniteNumber(row[`availability_pct_last${size}_team_games`]),
         `games_played_last${size}_team_games`,
         `team_games_available_last${size}`,
         toFiniteNumber(row[`games_played_last${size}_team_games`]),

@@ -38,6 +38,10 @@ import {
   getShotsValue
 } from "./rollingPlayerSourceSelection";
 import {
+  ROLLING_PLAYER_AVAILABILITY_CONTRACT,
+  type AvailabilitySemanticType
+} from "./rollingPlayerAvailabilityContract";
+import {
   summarizeCoverage,
   summarizeSuspiciousOutputs
 } from "./rollingPlayerPipelineDiagnostics";
@@ -1115,6 +1119,121 @@ function didPlayerCountAsAppearance(
   return toiSeconds != null && toiSeconds > 0;
 }
 
+type GpOutputCompatibilityMode = {
+  semanticType: AvailabilitySemanticType;
+  emitAvailabilityAliases: boolean;
+  legacyGpFieldMode:
+    | "derived_aliases_from_canonical_availability"
+    | "legacy_gp_fields_only_until_participation_schema";
+};
+
+function getGpOutputCompatibilityMode(
+  strength: StrengthState
+): GpOutputCompatibilityMode {
+  if (strength === "all") {
+    return {
+      semanticType:
+        ROLLING_PLAYER_AVAILABILITY_CONTRACT.intendedReplacement.allStrength
+          .semanticType,
+      emitAvailabilityAliases: true,
+      legacyGpFieldMode: "derived_aliases_from_canonical_availability"
+    };
+  }
+
+  return {
+    semanticType:
+      ROLLING_PLAYER_AVAILABILITY_CONTRACT.intendedReplacement.splitStrength
+        .semanticType,
+    emitAvailabilityAliases: false,
+    legacyGpFieldMode: "legacy_gp_fields_only_until_participation_schema"
+  };
+}
+
+function applyLegacyGpAliases(
+  output: Record<string, number | null>,
+  historicalGpPctSnapshot: ReturnType<typeof getHistoricalGpPctSnapshot>,
+  rollingGpPctSnapshot: ReturnType<typeof getRollingGpPctSnapshot>,
+  mode: GpOutputCompatibilityMode
+): void {
+  if (mode.legacyGpFieldMode === "derived_aliases_from_canonical_availability") {
+    // These legacy columns are transitional aliases only. `gp_pct_avg_*` does
+    // not describe a distinct averaging pass; it mirrors the canonical
+    // availability fields until schema cleanup removes the duplicate surface.
+    output.gp_pct_total_all = output.season_availability_pct;
+    output.gp_pct_avg_all = output.gp_pct_total_all;
+    output.gp_pct_avg_season = output.season_availability_pct;
+    output.gp_pct_avg_3ya = output.three_year_availability_pct;
+    output.gp_pct_avg_career = output.career_availability_pct;
+
+    ROLLING_WINDOWS.forEach((size) => {
+      output[`gp_pct_total_last${size}`] =
+        output[`availability_pct_last${size}_team_games`];
+      output[`gp_pct_avg_last${size}`] = output[`gp_pct_total_last${size}`];
+    });
+    return;
+  }
+
+  output.gp_pct_total_all = historicalGpPctSnapshot.season;
+  output.gp_pct_avg_all = output.gp_pct_total_all;
+  output.gp_pct_avg_season = historicalGpPctSnapshot.season;
+  output.gp_pct_avg_3ya = historicalGpPctSnapshot.threeYear;
+  output.gp_pct_avg_career = historicalGpPctSnapshot.career;
+
+  ROLLING_WINDOWS.forEach((size) => {
+    const window = rollingGpPctSnapshot.windows[size];
+    output[`gp_pct_total_last${size}`] = window.ratio;
+    output[`gp_pct_avg_last${size}`] = output[`gp_pct_total_last${size}`];
+  });
+}
+
+function applyGpOutputs(
+  output: Record<string, number | null>,
+  historicalGpPctSnapshot: ReturnType<typeof getHistoricalGpPctSnapshot>,
+  rollingGpPctSnapshot: ReturnType<typeof getRollingGpPctSnapshot>,
+  strength: StrengthState
+): void {
+  const mode = getGpOutputCompatibilityMode(strength);
+
+  output.games_played = historicalGpPctSnapshot.seasonPlayerGames;
+  output.team_games_played = historicalGpPctSnapshot.seasonTeamGames;
+  // Raw numerator / denominator support fields stay populated for every
+  // strength state so traded-player scope, missed games, and split-strength
+  // participation windows can be audited directly from stored rows.
+  output.season_games_played = historicalGpPctSnapshot.seasonPlayerGames;
+  output.season_team_games_available = historicalGpPctSnapshot.seasonTeamGames;
+  output.three_year_games_played = historicalGpPctSnapshot.threeYearPlayerGames;
+  output.three_year_team_games_available =
+    historicalGpPctSnapshot.threeYearTeamGames;
+  output.career_games_played = historicalGpPctSnapshot.careerPlayerGames;
+  output.career_team_games_available = historicalGpPctSnapshot.careerTeamGames;
+
+  if (mode.emitAvailabilityAliases) {
+    // All-strength rows use the replacement availability aliases directly.
+    output.season_availability_pct = historicalGpPctSnapshot.season;
+    output.three_year_availability_pct = historicalGpPctSnapshot.threeYear;
+    output.career_availability_pct = historicalGpPctSnapshot.career;
+  } else {
+    // Split strengths are still stored through legacy GP fields during the
+    // transition. Their ratios mean state participation with positive TOI, not
+    // ordinary games played, so suppress the availability-named aliases until
+    // the participation schema lands in a later migration task.
+    output.season_availability_pct = null;
+    output.three_year_availability_pct = null;
+    output.career_availability_pct = null;
+  }
+
+  ROLLING_WINDOWS.forEach((size) => {
+    const window = rollingGpPctSnapshot.windows[size];
+    output[`games_played_last${size}_team_games`] = window.playerGames;
+    output[`team_games_available_last${size}`] = window.teamGames;
+    output[`availability_pct_last${size}_team_games`] = mode.emitAvailabilityAliases
+      ? window.ratio
+      : null;
+  });
+
+  applyLegacyGpAliases(output, historicalGpPctSnapshot, rollingGpPctSnapshot, mode);
+}
+
 function deriveOutputs(
   simpleMetricsState: Record<string, RollingAccumulator>,
   ratioMetricsState: Record<string, RatioRollingAccumulator>,
@@ -1125,9 +1244,17 @@ function deriveOutputs(
   historicalRatioMetricsState: Record<string, HistoricalRatioAccumulator>,
   historicalGpPctSnapshot: ReturnType<typeof getHistoricalGpPctSnapshot>,
   rollingGpPctSnapshot: ReturnType<typeof getRollingGpPctSnapshot>,
-  currentSeason: number
+  currentSeason: number,
+  strength: StrengthState
 ) {
   const output: Record<string, number | null> = {};
+  // Availability outputs are being migrated away from the legacy `gp_pct_*`
+  // family. The canonical replacement contract is shared in
+  // `rollingPlayerAvailabilityContract.ts`; legacy `gp_pct_*` fields remain as
+  // compatibility aliases until later schema tasks complete the transition.
+  // Split-strength rows intentionally suppress availability-named aliases here
+  // because those rows represent positive-TOI participation, not ordinary
+  // player availability.
   for (const metric of METRICS) {
     if (metric.aggregation === "ratio") {
       const acc = ratioMetricsState[metric.key];
@@ -1174,31 +1301,10 @@ function deriveOutputs(
         window.count > 0 ? Number((windowSum / window.count).toFixed(6)) : null;
     });
   }
-  output.games_played = historicalGpPctSnapshot.seasonPlayerGames;
-  output.team_games_played = historicalGpPctSnapshot.seasonTeamGames;
-  output.season_games_played = historicalGpPctSnapshot.seasonPlayerGames;
-  output.season_team_games_available = historicalGpPctSnapshot.seasonTeamGames;
-  output.three_year_games_played = historicalGpPctSnapshot.threeYearPlayerGames;
-  output.three_year_team_games_available =
-    historicalGpPctSnapshot.threeYearTeamGames;
-  output.career_games_played = historicalGpPctSnapshot.careerPlayerGames;
-  output.career_team_games_available = historicalGpPctSnapshot.careerTeamGames;
-  output.season_availability_pct = historicalGpPctSnapshot.season;
-  output.three_year_availability_pct = historicalGpPctSnapshot.threeYear;
-  output.career_availability_pct = historicalGpPctSnapshot.career;
-  output.gp_pct_total_all = historicalGpPctSnapshot.season;
-  output.gp_pct_avg_all = output.gp_pct_total_all;
-  output.gp_pct_avg_season = historicalGpPctSnapshot.season;
-  output.gp_pct_avg_3ya = historicalGpPctSnapshot.threeYear;
-  output.gp_pct_avg_career = historicalGpPctSnapshot.career;
-  ROLLING_WINDOWS.forEach((size) => {
-    const window = rollingGpPctSnapshot.windows[size];
-    output[`games_played_last${size}_team_games`] = window.playerGames;
-    output[`team_games_available_last${size}`] = window.teamGames;
-    output[`availability_pct_last${size}_team_games`] = window.ratio;
-    output[`gp_pct_total_last${size}`] = window.ratio;
-    output[`gp_pct_avg_last${size}`] = output[`gp_pct_total_last${size}`];
-  });
+  // Season availability is intentionally player-season scoped across all team
+  // stints represented in the accumulator. It should not collapse to the
+  // current team only after a trade.
+  applyGpOutputs(output, historicalGpPctSnapshot, rollingGpPctSnapshot, strength);
   return output;
 }
 
@@ -1970,7 +2076,8 @@ async function processPlayer(
           historicalRatioMetricsState,
           historicalGpPctSnapshot,
           rollingGpPctSnapshot,
-          game.season
+          game.season,
+          config.state
         );
 
         if (config.state !== "all" && config.state !== "pp") {
@@ -1982,6 +2089,10 @@ async function processPlayer(
         }
 
         outputs.push({
+          // The semantic type is intentionally sourced from the shared
+          // availability contract so later GP% remediation tasks can update one
+          // contract definition instead of re-deriving this meaning at call
+          // sites.
           player_id: game.playerId,
           game_id: game.gameId,
           game_date: game.gameDate,
@@ -1991,8 +2102,7 @@ async function processPlayer(
           line_combo_slot: game.lineCombo?.slot ?? null,
           line_combo_group: game.lineCombo?.positionGroup ?? null,
           pp_unit: game.ppCombination?.unit ?? null,
-          gp_semantic_type:
-            config.state === "all" ? "availability" : "participation",
+          gp_semantic_type: getGpOutputCompatibilityMode(config.state).semanticType,
           ...metricOutputs
         });
       }
@@ -2332,7 +2442,10 @@ export async function main(options: FetchOptions = {}): Promise<void> {
 
 export const __testables = {
   buildGameRecords,
-  summarizeSourceTracking
+  summarizeSourceTracking,
+  didPlayerCountAsAppearance,
+  applyGpOutputs,
+  getGpOutputCompatibilityMode
 };
 
 export default { main };
