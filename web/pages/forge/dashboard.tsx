@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import type { ChangeEvent, NextPage } from "next";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
+import type { NextPage } from "next";
 import Head from "next/head";
 
 import styles from "styles/ForgeDashboard.module.scss";
@@ -28,7 +28,9 @@ const ForgeDashboardPage: NextPage = () => {
   }, []);
   const [selectedDate, setSelectedDate] = useState(todayEt);
   const [selectedTeam, setSelectedTeam] = useState("all");
-  const [selectedPosition, setSelectedPosition] = useState<"all" | "f" | "d" | "g">("all");
+  const [selectedPosition, setSelectedPosition] = useState<
+    "all" | "f" | "d" | "g"
+  >("all");
   const titleRef = useRef<HTMLHeadingElement | null>(null);
   const expansionTextRef = useRef<HTMLSpanElement | null>(null);
   const [moduleResolvedDates, setModuleResolvedDates] = useState<{
@@ -59,7 +61,9 @@ const ForgeDashboardPage: NextPage = () => {
     };
 
     return Object.entries(moduleResolvedDates)
-      .filter(([, resolvedDate]) => Boolean(resolvedDate && resolvedDate !== selectedDate))
+      .filter(([, resolvedDate]) =>
+        Boolean(resolvedDate && resolvedDate !== selectedDate)
+      )
       .map(([moduleKey, resolvedDate]) => ({
         module: labels[moduleKey as keyof typeof moduleResolvedDates],
         resolvedDate: resolvedDate as string
@@ -78,7 +82,10 @@ const ForgeDashboardPage: NextPage = () => {
       if (!titleWidth || !textWidth) return;
 
       const scale = Math.max(0.7, Math.min(1.3, titleWidth / textWidth));
-      expansionEl.style.setProperty("--forge-expansion-scale", scale.toFixed(4));
+      expansionEl.style.setProperty(
+        "--forge-expansion-scale",
+        scale.toFixed(4)
+      );
     };
 
     updateExpansionScale();
@@ -142,9 +149,14 @@ const ForgeDashboardPage: NextPage = () => {
           <header className={styles.header}>
             <div className={styles.headerTopline}>
               <div className={styles.titleBlock}>
-                <h1 ref={titleRef} className={styles.title}>FORGE DASHBOARD</h1>
+                <h1 ref={titleRef} className={styles.title}>
+                  FORGE DASHBOARD
+                </h1>
                 <p className={styles.titleExpansion}>
-                  <span ref={expansionTextRef} className={styles.titleExpansionText}>
+                  <span
+                    ref={expansionTextRef}
+                    className={styles.titleExpansionText}
+                  >
                     Forecasting &amp; Outcome Reconciliation Game Engine
                   </span>
                 </p>
@@ -156,7 +168,10 @@ const ForgeDashboardPage: NextPage = () => {
           </header>
 
           <section className={styles.controlsRow}>
-            <section className={styles.filterBar} aria-label="Global dashboard filters">
+            <section
+              className={styles.filterBar}
+              aria-label="Global dashboard filters"
+            >
               <label className={styles.filterItem}>
                 <span>Date</span>
                 <input
@@ -198,7 +213,10 @@ const ForgeDashboardPage: NextPage = () => {
               </label>
             </section>
 
-            <nav className={styles.quickLinks} aria-label="Forge dashboard quick links">
+            <nav
+              className={styles.quickLinks}
+              aria-label="Forge dashboard quick links"
+            >
               <a href="/FORGE" className={styles.quickLink}>
                 Open Legacy FORGE
               </a>
@@ -227,7 +245,10 @@ const ForgeDashboardPage: NextPage = () => {
             />
           </section>
 
-          <section className={styles.dashboardGrid} aria-label="Forge dashboard">
+          <section
+            className={styles.dashboardGrid}
+            aria-label="Forge dashboard"
+          >
             <div className={`${styles.panel} ${styles.teamPowerPanel}`}>
               <TeamPowerCard
                 date={selectedDate}

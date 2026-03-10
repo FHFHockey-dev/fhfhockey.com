@@ -61,7 +61,7 @@
  *     with a specific date.
  *     - **Format**: YYYY-MM-DD
  *     - **Example**:
- *       `/api/v1/db/update-wgo-skaters?action=all&startDate=2023-12-01`
+ *       ` `
  *
  * 6.  `playerFullName` (Optional, String): Used for logging when `playerId` is specified.
  *     - **Example**:
