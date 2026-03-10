@@ -1248,7 +1248,1841 @@ This section is the concrete stored-column inventory for `rolling_player_game_me
 - Any remediation plan may need to distinguish:
   - family-level logic fixes
   - suffix naming fixes
+
+## 5.1 Draft Final `Metric Families` and `Column-by-Column Inventory` Sections
+
+This section converts the earlier inventory work into the structure the final audit should use.
+It is intentionally neutral:
+
+- no status labels
+- no remediation detail
+- no long-form validation narrative
+
+Those belong to later `5.x` sections.
+
+### Draft `Metric Families` Section
+
+#### Row Identity and Context
+
+These fields define the row key, split context, and contextual labels:
+
+- `player_id`
+- `game_date`
+- `game_id`
+- `season`
+- `team_id`
+- `strength_state`
+- `line_combo_slot`
+- `line_combo_group`
+- `pp_unit`
+- `updated_at`
+
+#### Availability / Participation
+
+This family captures row-scope and derived availability state:
+
+- raw counters:
+  - `games_played`
+  - `team_games_played`
+
+- GP% family:
+  - `gp_pct_total_all`
+  - `gp_pct_avg_all`
+  - `gp_pct_total_last3`
+  - `gp_pct_avg_last3`
+  - `gp_pct_total_last5`
+  - `gp_pct_avg_last5`
+  - `gp_pct_total_last10`
+  - `gp_pct_avg_last10`
+  - `gp_pct_total_last20`
+  - `gp_pct_avg_last20`
+  - `gp_pct_avg_season`
+  - `gp_pct_avg_3ya`
+  - `gp_pct_avg_career`
+
+#### Time On Ice
+
+- `toi_seconds`
+
+Coverage pattern:
+
+- `total_all`
+- `avg_all`
+- `total_last3/5/10/20`
+- `avg_last3/5/10/20`
+- `avg_season`
+- `avg_3ya`
+- `avg_career`
+
+#### Surface Counting Stats
+
+- `goals`
+- `assists`
+- `shots`
+- `hits`
+- `blocks`
+- `pp_points`
+- `points`
+
+Coverage pattern for each:
+
+- `total_all`
+- `avg_all`
+- `total_last3/5/10/20`
+- `avg_last3/5/10/20`
+- `avg_season`
+- `avg_3ya`
+- `avg_career`
+
+#### Individual Chance / Opportunity Counting Stats
+
+- `ixg`
+- `iscf`
+- `ihdcf`
+
+Coverage pattern for each:
+
+- `total_all`
+- `avg_all`
+- `total_last3/5/10/20`
+- `avg_last3/5/10/20`
+- `avg_season`
+- `avg_3ya`
+- `avg_career`
+
+#### Weighted `/60` Rate Stats
+
+- `sog_per_60`
+- `ixg_per_60`
+- `hits_per_60`
+- `blocks_per_60`
+
+Coverage pattern for each:
+
+- `total_all`
+- `avg_all`
+- `total_last3/5/10/20`
+- `avg_last3/5/10/20`
+- `avg_season`
+- `avg_3ya`
+- `avg_career`
+
+Important neutral note:
+
+- for `/60` families, `total_*` and `avg_*` currently store the same weighted rate snapshot
+
+#### Finishing / Individual Ratio Stats
+
+- `shooting_pct`
+- `primary_points_pct`
+- `expected_sh_pct`
+
+Coverage pattern for each:
+
+- `total_all`
+- `avg_all`
+- `total_last3/5/10/20`
+- `avg_last3/5/10/20`
+- `avg_season`
+- `avg_3ya`
+- `avg_career`
+
+#### On-Ice Conversion and Puck-Luck Context
+
+- `ipp`
+- `on_ice_sh_pct`
+- `pdo`
+
+Coverage pattern for each:
+
+- `total_all`
+- `avg_all`
+- `total_last3/5/10/20`
+- `avg_last3/5/10/20`
+- `avg_season`
+- `avg_3ya`
+- `avg_career`
+
+#### Zone and Usage Context
+
+- `oz_start_pct`
+- `pp_share_pct`
+
+Coverage pattern for each:
+
+- `total_all`
+- `avg_all`
+- `total_last3/5/10/20`
+- `avg_last3/5/10/20`
+- `avg_season`
+- `avg_3ya`
+- `avg_career`
+
+#### Territorial / Possession Counting Stats
+
+- `cf`
+- `ca`
+- `ff`
+- `fa`
+
+Coverage pattern for each:
+
+- `total_all`
+- `avg_all`
+- `total_last3/5/10/20`
+- `avg_last3/5/10/20`
+- `avg_season`
+- `avg_3ya`
+- `avg_career`
+
+#### Territorial / Possession Ratio Stats
+
+- `cf_pct`
+- `ff_pct`
+
+Coverage pattern for each:
+
+- `total_all`
+- `avg_all`
+- `total_last3/5/10/20`
+- `avg_last3/5/10/20`
+- `avg_season`
+- `avg_3ya`
+- `avg_career`
+
+#### Historical Baseline Layer
+
+These suffixes represent historical baseline fields and should be discussed separately from rolling windows:
+
+- `avg_season`
+- `avg_3ya`
+- `avg_career`
+
+#### Rolling Window Layer
+
+These suffixes represent rolling windows and should be discussed separately from historical baselines:
+
+- `total_last3`
+- `avg_last3`
+- `total_last5`
+- `avg_last5`
+- `total_last10`
+- `avg_last10`
+- `total_last20`
+- `avg_last20`
+
+#### Career-to-Date Layer
+
+These suffixes represent career-to-date or row-to-date cumulative state:
+
+- `total_all`
+- `avg_all`
+
+### Draft `Column-by-Column Inventory` Section
+
+#### Row Identity and Context Columns
+
+- `player_id`
+- `game_date`
+- `game_id`
+- `season`
+- `team_id`
+- `strength_state`
+- `line_combo_slot`
+- `line_combo_group`
+- `pp_unit`
+- `updated_at`
+
+#### Availability / Participation Columns
+
+- `games_played`
+- `team_games_played`
+- `gp_pct_total_all`
+- `gp_pct_avg_all`
+- `gp_pct_total_last3`
+- `gp_pct_avg_last3`
+- `gp_pct_total_last5`
+- `gp_pct_avg_last5`
+- `gp_pct_total_last10`
+- `gp_pct_avg_last10`
+- `gp_pct_total_last20`
+- `gp_pct_avg_last20`
+- `gp_pct_avg_season`
+- `gp_pct_avg_3ya`
+- `gp_pct_avg_career`
+
+#### TOI Columns
+
+- `toi_seconds_total_all`
+- `toi_seconds_avg_all`
+- `toi_seconds_total_last3`
+- `toi_seconds_avg_last3`
+- `toi_seconds_total_last5`
+- `toi_seconds_avg_last5`
+- `toi_seconds_total_last10`
+- `toi_seconds_avg_last10`
+- `toi_seconds_total_last20`
+- `toi_seconds_avg_last20`
+- `toi_seconds_avg_season`
+- `toi_seconds_avg_3ya`
+- `toi_seconds_avg_career`
+
+#### Surface Counting Columns
+
+`goals`
+
+- `goals_total_all`
+- `goals_avg_all`
+- `goals_total_last3`
+- `goals_avg_last3`
+- `goals_total_last5`
+- `goals_avg_last5`
+- `goals_total_last10`
+- `goals_avg_last10`
+- `goals_total_last20`
+- `goals_avg_last20`
+- `goals_avg_season`
+- `goals_avg_3ya`
+- `goals_avg_career`
+
+`assists`
+
+- `assists_total_all`
+- `assists_avg_all`
+- `assists_total_last3`
+- `assists_avg_last3`
+- `assists_total_last5`
+- `assists_avg_last5`
+- `assists_total_last10`
+- `assists_avg_last10`
+- `assists_total_last20`
+- `assists_avg_last20`
+- `assists_avg_season`
+- `assists_avg_3ya`
+- `assists_avg_career`
+
+`shots`
+
+- `shots_total_all`
+- `shots_avg_all`
+- `shots_total_last3`
+- `shots_avg_last3`
+- `shots_total_last5`
+- `shots_avg_last5`
+- `shots_total_last10`
+- `shots_avg_last10`
+- `shots_total_last20`
+- `shots_avg_last20`
+- `shots_avg_season`
+- `shots_avg_3ya`
+- `shots_avg_career`
+
+`hits`
+
+- `hits_total_all`
+- `hits_avg_all`
+- `hits_total_last3`
+- `hits_avg_last3`
+- `hits_total_last5`
+- `hits_avg_last5`
+- `hits_total_last10`
+- `hits_avg_last10`
+- `hits_total_last20`
+- `hits_avg_last20`
+- `hits_avg_season`
+- `hits_avg_3ya`
+- `hits_avg_career`
+
+`blocks`
+
+- `blocks_total_all`
+- `blocks_avg_all`
+- `blocks_total_last3`
+- `blocks_avg_last3`
+- `blocks_total_last5`
+- `blocks_avg_last5`
+- `blocks_total_last10`
+- `blocks_avg_last10`
+- `blocks_total_last20`
+- `blocks_avg_last20`
+- `blocks_avg_season`
+- `blocks_avg_3ya`
+- `blocks_avg_career`
+
+`pp_points`
+
+- `pp_points_total_all`
+- `pp_points_avg_all`
+- `pp_points_total_last3`
+- `pp_points_avg_last3`
+- `pp_points_total_last5`
+- `pp_points_avg_last5`
+- `pp_points_total_last10`
+- `pp_points_avg_last10`
+- `pp_points_total_last20`
+- `pp_points_avg_last20`
+- `pp_points_avg_season`
+- `pp_points_avg_3ya`
+- `pp_points_avg_career`
+
+`points`
+
+- `points_total_all`
+- `points_avg_all`
+- `points_total_last3`
+- `points_avg_last3`
+- `points_total_last5`
+- `points_avg_last5`
+- `points_total_last10`
+- `points_avg_last10`
+- `points_total_last20`
+- `points_avg_last20`
+- `points_avg_season`
+- `points_avg_3ya`
+- `points_avg_career`
+
+#### Individual Chance / Opportunity Counting Columns
+
+`ixg`
+
+- `ixg_total_all`
+- `ixg_avg_all`
+- `ixg_total_last3`
+- `ixg_avg_last3`
+- `ixg_total_last5`
+- `ixg_avg_last5`
+- `ixg_total_last10`
+- `ixg_avg_last10`
+- `ixg_total_last20`
+- `ixg_avg_last20`
+- `ixg_avg_season`
+- `ixg_avg_3ya`
+- `ixg_avg_career`
+
+`iscf`
+
+- `iscf_total_all`
+- `iscf_avg_all`
+- `iscf_total_last3`
+- `iscf_avg_last3`
+- `iscf_total_last5`
+- `iscf_avg_last5`
+- `iscf_total_last10`
+- `iscf_avg_last10`
+- `iscf_total_last20`
+- `iscf_avg_last20`
+- `iscf_avg_season`
+- `iscf_avg_3ya`
+- `iscf_avg_career`
+
+`ihdcf`
+
+- `ihdcf_total_all`
+- `ihdcf_avg_all`
+- `ihdcf_total_last3`
+- `ihdcf_avg_last3`
+- `ihdcf_total_last5`
+- `ihdcf_avg_last5`
+- `ihdcf_total_last10`
+- `ihdcf_avg_last10`
+- `ihdcf_total_last20`
+- `ihdcf_avg_last20`
+- `ihdcf_avg_season`
+- `ihdcf_avg_3ya`
+- `ihdcf_avg_career`
+
+#### Weighted `/60` Rate Columns
+
+`sog_per_60`
+
+- `sog_per_60_total_all`
+- `sog_per_60_avg_all`
+- `sog_per_60_total_last3`
+- `sog_per_60_avg_last3`
+- `sog_per_60_total_last5`
+- `sog_per_60_avg_last5`
+- `sog_per_60_total_last10`
+- `sog_per_60_avg_last10`
+- `sog_per_60_total_last20`
+- `sog_per_60_avg_last20`
+- `sog_per_60_avg_season`
+- `sog_per_60_avg_3ya`
+- `sog_per_60_avg_career`
+
+`ixg_per_60`
+
+- `ixg_per_60_total_all`
+- `ixg_per_60_avg_all`
+- `ixg_per_60_total_last3`
+- `ixg_per_60_avg_last3`
+- `ixg_per_60_total_last5`
+- `ixg_per_60_avg_last5`
+- `ixg_per_60_total_last10`
+- `ixg_per_60_avg_last10`
+- `ixg_per_60_total_last20`
+- `ixg_per_60_avg_last20`
+- `ixg_per_60_avg_season`
+- `ixg_per_60_avg_3ya`
+- `ixg_per_60_avg_career`
+
+`hits_per_60`
+
+- `hits_per_60_total_all`
+- `hits_per_60_avg_all`
+- `hits_per_60_total_last3`
+- `hits_per_60_avg_last3`
+- `hits_per_60_total_last5`
+- `hits_per_60_avg_last5`
+- `hits_per_60_total_last10`
+- `hits_per_60_avg_last10`
+- `hits_per_60_total_last20`
+- `hits_per_60_avg_last20`
+- `hits_per_60_avg_season`
+- `hits_per_60_avg_3ya`
+- `hits_per_60_avg_career`
+
+`blocks_per_60`
+
+- `blocks_per_60_total_all`
+- `blocks_per_60_avg_all`
+- `blocks_per_60_total_last3`
+- `blocks_per_60_avg_last3`
+- `blocks_per_60_total_last5`
+- `blocks_per_60_avg_last5`
+- `blocks_per_60_total_last10`
+- `blocks_per_60_avg_last10`
+- `blocks_per_60_total_last20`
+- `blocks_per_60_avg_last20`
+- `blocks_per_60_avg_season`
+- `blocks_per_60_avg_3ya`
+- `blocks_per_60_avg_career`
+
+#### Finishing / Individual Ratio Columns
+
+`shooting_pct`
+
+- `shooting_pct_total_all`
+- `shooting_pct_avg_all`
+- `shooting_pct_total_last3`
+- `shooting_pct_avg_last3`
+- `shooting_pct_total_last5`
+- `shooting_pct_avg_last5`
+- `shooting_pct_total_last10`
+- `shooting_pct_avg_last10`
+- `shooting_pct_total_last20`
+- `shooting_pct_avg_last20`
+- `shooting_pct_avg_season`
+- `shooting_pct_avg_3ya`
+- `shooting_pct_avg_career`
+
+`primary_points_pct`
+
+- `primary_points_pct_total_all`
+- `primary_points_pct_avg_all`
+- `primary_points_pct_total_last3`
+- `primary_points_pct_avg_last3`
+- `primary_points_pct_total_last5`
+- `primary_points_pct_avg_last5`
+- `primary_points_pct_total_last10`
+- `primary_points_pct_avg_last10`
+- `primary_points_pct_total_last20`
+- `primary_points_pct_avg_last20`
+- `primary_points_pct_avg_season`
+- `primary_points_pct_avg_3ya`
+- `primary_points_pct_avg_career`
+
+`expected_sh_pct`
+
+- `expected_sh_pct_total_all`
+- `expected_sh_pct_avg_all`
+- `expected_sh_pct_total_last3`
+- `expected_sh_pct_avg_last3`
+- `expected_sh_pct_total_last5`
+- `expected_sh_pct_avg_last5`
+- `expected_sh_pct_total_last10`
+- `expected_sh_pct_avg_last10`
+- `expected_sh_pct_total_last20`
+- `expected_sh_pct_avg_last20`
+- `expected_sh_pct_avg_season`
+- `expected_sh_pct_avg_3ya`
+- `expected_sh_pct_avg_career`
+
+#### On-Ice Conversion / Context Ratio Columns
+
+`ipp`
+
+- `ipp_total_all`
+- `ipp_avg_all`
+- `ipp_total_last3`
+- `ipp_avg_last3`
+- `ipp_total_last5`
+- `ipp_avg_last5`
+- `ipp_total_last10`
+- `ipp_avg_last10`
+- `ipp_total_last20`
+- `ipp_avg_last20`
+- `ipp_avg_season`
+- `ipp_avg_3ya`
+- `ipp_avg_career`
+
+`on_ice_sh_pct`
+
+- `on_ice_sh_pct_total_all`
+- `on_ice_sh_pct_avg_all`
+- `on_ice_sh_pct_total_last3`
+- `on_ice_sh_pct_avg_last3`
+- `on_ice_sh_pct_total_last5`
+- `on_ice_sh_pct_avg_last5`
+- `on_ice_sh_pct_total_last10`
+- `on_ice_sh_pct_avg_last10`
+- `on_ice_sh_pct_total_last20`
+- `on_ice_sh_pct_avg_last20`
+- `on_ice_sh_pct_avg_season`
+- `on_ice_sh_pct_avg_3ya`
+- `on_ice_sh_pct_avg_career`
+
+`pdo`
+
+- `pdo_total_all`
+- `pdo_avg_all`
+- `pdo_total_last3`
+- `pdo_avg_last3`
+- `pdo_total_last5`
+- `pdo_avg_last5`
+- `pdo_total_last10`
+- `pdo_avg_last10`
+- `pdo_total_last20`
+- `pdo_avg_last20`
+- `pdo_avg_season`
+- `pdo_avg_3ya`
+- `pdo_avg_career`
+
+#### Zone and Usage Context Ratio Columns
+
+`oz_start_pct`
+
+- `oz_start_pct_total_all`
+- `oz_start_pct_avg_all`
+- `oz_start_pct_total_last3`
+- `oz_start_pct_avg_last3`
+- `oz_start_pct_total_last5`
+- `oz_start_pct_avg_last5`
+- `oz_start_pct_total_last10`
+- `oz_start_pct_avg_last10`
+- `oz_start_pct_total_last20`
+- `oz_start_pct_avg_last20`
+- `oz_start_pct_avg_season`
+- `oz_start_pct_avg_3ya`
+- `oz_start_pct_avg_career`
+
+`pp_share_pct`
+
+- `pp_share_pct_total_all`
+- `pp_share_pct_avg_all`
+- `pp_share_pct_total_last3`
+- `pp_share_pct_avg_last3`
+- `pp_share_pct_total_last5`
+- `pp_share_pct_avg_last5`
+- `pp_share_pct_total_last10`
+- `pp_share_pct_avg_last10`
+- `pp_share_pct_total_last20`
+- `pp_share_pct_avg_last20`
+- `pp_share_pct_avg_season`
+- `pp_share_pct_avg_3ya`
+- `pp_share_pct_avg_career`
+
+#### Territorial Counting Columns
+
+`cf`
+
+- `cf_total_all`
+- `cf_avg_all`
+- `cf_total_last3`
+- `cf_avg_last3`
+- `cf_total_last5`
+- `cf_avg_last5`
+- `cf_total_last10`
+- `cf_avg_last10`
+- `cf_total_last20`
+- `cf_avg_last20`
+- `cf_avg_season`
+- `cf_avg_3ya`
+- `cf_avg_career`
+
+`ca`
+
+- `ca_total_all`
+- `ca_avg_all`
+- `ca_total_last3`
+- `ca_avg_last3`
+- `ca_total_last5`
+- `ca_avg_last5`
+- `ca_total_last10`
+- `ca_avg_last10`
+- `ca_total_last20`
+- `ca_avg_last20`
+- `ca_avg_season`
+- `ca_avg_3ya`
+- `ca_avg_career`
+
+`ff`
+
+- `ff_total_all`
+- `ff_avg_all`
+- `ff_total_last3`
+- `ff_avg_last3`
+- `ff_total_last5`
+- `ff_avg_last5`
+- `ff_total_last10`
+- `ff_avg_last10`
+- `ff_total_last20`
+- `ff_avg_last20`
+- `ff_avg_season`
+- `ff_avg_3ya`
+- `ff_avg_career`
+
+`fa`
+
+- `fa_total_all`
+- `fa_avg_all`
+- `fa_total_last3`
+- `fa_avg_last3`
+- `fa_total_last5`
+- `fa_avg_last5`
+- `fa_total_last10`
+- `fa_avg_last10`
+- `fa_total_last20`
+- `fa_avg_last20`
+- `fa_avg_season`
+- `fa_avg_3ya`
+- `fa_avg_career`
+
+#### Territorial Ratio Columns
+
+`cf_pct`
+
+- `cf_pct_total_all`
+- `cf_pct_avg_all`
+- `cf_pct_total_last3`
+- `cf_pct_avg_last3`
+- `cf_pct_total_last5`
+- `cf_pct_avg_last5`
+- `cf_pct_total_last10`
+- `cf_pct_avg_last10`
+- `cf_pct_total_last20`
+- `cf_pct_avg_last20`
+- `cf_pct_avg_season`
+- `cf_pct_avg_3ya`
+- `cf_pct_avg_career`
+
+`ff_pct`
+
+- `ff_pct_total_all`
+- `ff_pct_avg_all`
+- `ff_pct_total_last3`
+- `ff_pct_avg_last3`
+- `ff_pct_total_last5`
+- `ff_pct_avg_last5`
+- `ff_pct_total_last10`
+- `ff_pct_avg_last10`
+- `ff_pct_total_last20`
+- `ff_pct_avg_last20`
+- `ff_pct_avg_season`
+- `ff_pct_avg_3ya`
+- `ff_pct_avg_career`
+
+### Inventory Summary for Final Audit
+
+- row identity / context columns: `10`
+- one-off availability counters: `2`
+- GP% fields: `13`
+- repeated metric families with suffix sets: `29`
+- standard repeated family footprint: `13` columns
+
+### Main conclusion from 5.1
+
+The final audit now has a ready-made neutral inventory structure:
+
+- `Metric Families`
+- `Column-by-Column Inventory`
+
+The remaining `5.x` work can now reference these sections instead of re-explaining the table shape each time.
+
+## 5.2 Draft `WORKING` Section
+
+These entries are written in the final intended checklist style:
+
+- metric / family
+- emoji
+- shorthand formula
+- short status note only
+
+### WORKING
+
+- ✅ `goals_total_lastN`, `shots_total_lastN`, `points_total_lastN`, `ixg_total_lastN`, `toi_seconds_total_lastN`
+  - formula: additive sum over the qualifying appearance window
+  - note: validated on refreshed rows; additive accumulation matched source reconstruction
+
+- ✅ `goals_avg_*`, `assists_avg_*`, `shots_avg_*`, `hits_avg_*`, `blocks_avg_*`, `pp_points_avg_*`, `points_avg_*`
+  - formula: additive total divided by qualifying row count
+  - note: additive baseline and average behavior is materially healthy in validated examples
+
+- ✅ `sog_per_60_total_lastN`
+  - formula: `sum(shots) / sum(toi_seconds) * 3600`
+  - note: matched source-derived values after refresh
+
+- ✅ `ixg_per_60_total_lastN`
+  - formula: `sum(ixg) / sum(toi_seconds) * 3600`
+  - note: validated examples support the corrected weighted-rate arithmetic
+
+- ✅ `hits_per_60_total_*`, `blocks_per_60_total_*`
+  - formula: `sum(raw count) / sum(toi_seconds) * 3600`
+  - note: weighted-rate implementation is consistent with the intended model
+
+- ✅ `shooting_pct_avg_season`
+  - formula: `season goals / season shots * 100`
+  - note: matched source-derived season snapshots on refreshed rows
+
+- ✅ `sog_per_60_avg_season`
+  - formula: `season shots / season toi_seconds * 3600`
+  - note: matched source-derived season snapshots on refreshed rows
+
+- ✅ `pp_share_pct_avg_season`
+  - formula: `sum(player_pp_toi) / sum(team_pp_toi_inferred_from_share)`
+  - note: season PP-share baseline matched validated source reconstructions
+
+- ✅ `on_ice_sh_pct_total_lastN`
+  - formula: `sum(on_ice_gf) / sum(on_ice_sf) * 100`
+  - note: matched source-derived rolling values in validated examples
+
+- ✅ `pdo_total_lastN`
+  - formula: `((sum(on_ice_gf) / sum(on_ice_sf)) * 100 + (sum(on_ice_sa - on_ice_ga) / sum(on_ice_sa)) * 100) * 0.01`
+  - note: matched source-derived rolling values in validated examples
+
+- ✅ `cf_pct_total_lastN`, `ff_pct_total_lastN`
+  - formula: `sum(for) / (sum(for) + sum(against)) * 100`
+  - note: territorial ratio math matched source reconstruction after refresh
+
+- ✅ `oz_start_pct_total_lastN`
+  - formula: `sum(off_zone_starts) / (sum(off_zone_starts) + sum(def_zone_starts)) * 100`
+  - note: current implementation matches the accepted NST-style OZS definition
+
+- ✅ `pp_share_pct_total_last20` for validated matched cases
+  - formula: `sum(player_pp_toi) / sum(team_pp_toi_inferred_from_share)`
+  - note: matched exactly for Jesper Bratt and Seth Jones after targeted recompute
+
+### Main conclusion from 5.2
+
+The strongest `WORKING` entries are:
+
+- additive counts
+- weighted `/60`
+- validated season baselines
+- on-ice / territorial ratio families that matched post-refresh source reconstructions
+
+The final audit can safely build its `WORKING` section around these evidence-backed items.
+
+## 5.3 Draft `BROKEN` Section
+
+These entries are written in the final intended checklist style:
+
+- metric / family
+- emoji
+- shorthand formula
+- short status note only
+
+### BROKEN
+
+- ❌ `gp_pct_avg_season`
+  - formula: current implementation = `playerGames / teamGames` inside the current `season:teamId` bucket only
+  - note: proven wrong for traded players; Corey Perry post-trade collapsed to `0.028986` on a fresh row
+
+- ❌ current traded-player season GP% semantics
+  - formula: current implementation uses only the latest team bucket instead of aggregating across current-season stints
+  - note: structurally incompatible with intended season availability meaning
+
+### Main conclusion from 5.3
+
+The strongest evidence-backed `BROKEN` item is:
+
+- `gp_pct_avg_season`
+
+The audit has not yet proven a broad set of other columns to be outright broken in the same way.
+Most other problematic families currently fit better in `ALMOST` or `NEEDS REVIEW` because their main defect is semantics, naming, or incomplete validation rather than clearly incorrect arithmetic on refreshed rows.
+
+## 5.4 Draft `ALMOST` Section
+
+These entries are written in the final intended checklist style:
+
+- metric / family
+- emoji
+- shorthand formula
+- short status note only
+
+### ALMOST
+
+- 🔧 `shooting_pct_total_lastN`
+  - formula: `sum(goals) / sum(shots) * 100`
+  - note: ratio arithmetic is sound, but current lastN semantics do not match fixed appearance windows
+
+- 🔧 `primary_points_pct_total_lastN`
+  - formula: `(sum(goals) + sum(first_assists)) / sum(total_points)`
+  - note: close on refreshed rows, but current lastN window membership is semantically wrong
+
+- 🔧 `expected_sh_pct_total_lastN`
+  - formula: `sum(ixg) / sum(shots)`
+  - note: arithmetic is materially healthy, but lastN denominator windows do not match intended appearance windows
+
+- 🔧 `ipp_total_lastN`
+  - formula: `sum(player_points) / sum(on_ice_gf) * 100`
+  - note: source-derived comparisons show surviving lastN semantics mismatch after recompute
+
+- 🔧 ratio-family `lastN` fields broadly
+  - formula: ratio-of-aggregates over the rolling window
+  - note: current implementation uses valid-observation semantics rather than the intended fixed appearance window
+
+- 🔧 `pp_share_pct` family
+  - formula: `sum(player_pp_toi) / sum(team_pp_toi_inferred_from_share)`
+  - note: much healthier after source fixes, but still inherits rolling-window semantics issues in some cases
+
+- 🔧 `pp_share_pct_total_lastN`
+  - formula: `sum(player_pp_toi) / sum(team_pp_toi_inferred_from_share)` over rolling window
+  - note: matched in some validated players, but still showed smaller lastN divergences in others
+
+- 🔧 `ixg_per_60` family
+  - formula: `sum(ixg) / sum(toi_seconds) * 3600`
+  - note: weighted-rate math is correct, but this family remains slightly more fragile because of source fallback / reconstruction paths
+
+- 🔧 historical ratio baselines with naming ambiguity
+  - formula: ratio-of-aggregates historical snapshot
+  - note: mathematically acceptable, but the `avg_*` suffix still implies mean-of-rows rather than snapshot ratio
+
+- 🔧 historical `/60` baselines with naming ambiguity
+  - formula: `sum(metric numerator) / sum(toi_seconds) * 3600`
+  - note: weighted historical snapshots are healthy, but suffix naming remains misleading
+
+### Main conclusion from 5.4
+
+The `ALMOST` bucket is where most of the remaining non-GP% issues belong:
+
+- the formulas are generally close or already corrected
+- but the rolling semantics, source fallback behavior, or suffix naming still keep them from full `WORKING` status
+
+## 5.5 Draft `NEEDS REVIEW` Section
+
+These entries are written in the final intended checklist style:
+
+- metric / family
+- emoji
+- shorthand formula
+- short status note only
+
+### NEEDS REVIEW
+
+- ⚠️ `gp_pct_total_all`
+  - formula: `games_played / team_games_played`
+  - note: improved after refresh, but still needs a final verdict once full cross-team semantics are locked
+
+- ⚠️ `gp_pct_total_last3`, `gp_pct_total_last5`, `gp_pct_total_last10`, `gp_pct_total_last20`
+  - formula: current implementation = appearance-anchored span ratio, intended model = last N chronological team games
+  - note: likely redesign candidates, but final bucket depends on the completed GP% contract decision
+
+- ⚠️ `gp_pct_avg_last3`, `gp_pct_avg_last5`, `gp_pct_avg_last10`, `gp_pct_avg_last20`
+  - formula: current implementation = alias of rolling GP% span ratio
+  - note: likely redundant under redesign, but final treatment depends on schema decisions
+
+- ⚠️ `gp_pct_avg_3ya`, `gp_pct_avg_career`
+  - formula: summed playerGames / summed teamGames across season-team buckets
+  - note: likely directionally useful, but still needs a final traded-player / multi-stint contract decision
+
+- ⚠️ `pp_unit`
+  - formula: upstream contextual label from `powerPlayCombinations.unit`
+  - note: useful, but still needs freshness and semantic validation against builder logic
+
+- ⚠️ `line_combo_slot`
+  - formula: derived context label from `lineCombinations`
+  - note: not numerically audited yet; still needs freshness and sorting-rule validation
+
+- ⚠️ `line_combo_group`
+  - formula: derived context label from `lineCombinations`
+  - note: not numerically audited yet; still needs upstream classification validation
+
+- ⚠️ partial-source-tail players used as validation proxies
+  - formula: not a metric field; audit coverage condition
+  - note: players like Seth Jones still indicate that source-tail freshness can limit final certainty on some windows
+
+### Main conclusion from 5.5
+
+The `NEEDS REVIEW` bucket is mostly:
+
+- unresolved GP% fields awaiting final contract decisions
+- context-label fields that were not fully validated numerically
+- residual source-freshness uncertainty that affects confidence rather than arithmetic
   - schema simplification opportunities
+
+## 5.6 Draft `Explanation / Rationale` Section
+
+This section is intentionally separate from the emoji status lists.
+The goal here is to explain why a family landed in its current bucket without turning the checklist sections into long-form prose.
+
+### Why additive counting families landed in `WORKING`
+
+Additive families are the cleanest part of the suite because the current implementation matches the natural arithmetic model:
+
+- counts are summed directly
+- rolling averages are simple means over qualifying appearance rows
+- season, 3YA, and career baselines for these families are also straightforward accumulated averages
+
+The live validation work showed that these families matched refreshed stored values well for the healthy-control cases.
+The remaining caveats for these families are mostly outside the core arithmetic:
+
+- source precedence between NST and WGO
+- exact appearance-window semantics
+- TOI fallback trust where a count family is later paired with a rate family
+
+That is why the additive families landed in `WORKING` instead of `ALMOST`.
+
+### Why weighted `/60` families mostly landed in `WORKING`
+
+The main `/60` bug had already been corrected before this audit phase:
+
+- the pipeline now aggregates raw numerators and total TOI first
+- then computes the rate as `sum(metric) / sum(toi_seconds) * 3600`
+
+That is the correct weighted-rate model.
+Live comparisons showed that:
+
+- `sog_per_60`
+- `hits_per_60`
+- `blocks_per_60`
+
+were materially matching source reconstructions after refresh.
+
+These families still carry naming awkwardness because `total_*` is not a true additive total for a rate metric, but that is a labeling problem more than a formula problem.
+That is why most `/60` families landed in `WORKING`, while more fallback-sensitive cases like `ixg_per_60` stayed in `ALMOST`.
+
+### Why ratio families landed mostly in `ALMOST` instead of `BROKEN`
+
+The earlier percentage bug was real, but it has already been corrected:
+
+- the rolling path now uses numerator / denominator aggregation for bounded ratios
+- it no longer sums per-game percentage values for fields like `on_ice_sh_pct`, `cf_pct`, or `ff_pct`
+
+After targeted recomputes, the major ratio families looked materially healthier.
+The remaining problem is that the rolling-window semantics are still mixed:
+
+- ratio windows can behave like last N valid observations
+- that is not always the same as last N appearances
+- and it is definitely not the same as last N team games
+
+So these families are not broadly `BROKEN` in the arithmetic sense.
+They are `ALMOST` because:
+
+- the formula engine is mostly right
+- the window contract is still not clean enough to call fully correct
+- the suffix naming (`total_*` vs `avg_*`) still implies distinctions that do not exist
+
+### Why `pp_share_pct` stayed in `ALMOST`
+
+`pp_share_pct` is healthier than it was before the PP semantic cleanup:
+
+- it no longer depends on legacy `percentageOfPP`
+- it now uses WGO share inputs instead of the misleading unit-average index
+
+That fixed the clearest semantic bug.
+It still stayed in `ALMOST` because:
+
+- the denominator is reconstructed from upstream share inputs rather than taken from one obviously authoritative team PP denominator table
+- PP role semantics are split across WGO share, PPTOI, and upstream PP builder context
+- the field family still inherits the same rolling-window and suffix-naming caveats as the other ratio families
+
+So `pp_share_pct` is close, but not yet strong enough to call fully settled.
+
+### Why GP% season landed in `BROKEN`
+
+`gp_pct_avg_season` is the cleanest proven broken item in the whole audit.
+The Corey Perry trade case showed that the field collapses after a team change because the current season baseline logic is bucketed by `season:teamId`, not by player-season across stints.
+
+That means:
+
+- the row can have a sane `gp_pct_total_all`
+- while the season baseline becomes absurdly small immediately after a trade
+
+This is not a naming issue or a mild semantic disagreement.
+It is a structural model failure for traded players, which is why it belongs in `BROKEN`.
+
+### Why the remaining GP% family stayed in `NEEDS REVIEW`
+
+The rest of GP% is more complicated than one broken field.
+The audit showed that the current implementation mixes several concepts:
+
+- row-scope running appearances
+- appearance-anchored rolling span ratios
+- season-team historical buckets
+- split-strength games-with-positive-TOI participation
+
+Some pieces are directionally useful.
+Some are likely redesign candidates.
+But because the intended contract is still being defined, it would be too blunt to mark the whole family `BROKEN` immediately.
+
+That is why the remaining GP% fields stayed in `NEEDS REVIEW`:
+
+- the audit has proven that the current model is semantically messy
+- but the final bucket depends on the redesign contract, especially for career, 3YA, and rolling current-team windows
+
+### Why context-label fields stayed in `NEEDS REVIEW`
+
+Fields like:
+
+- `pp_unit`
+- `line_combo_slot`
+- `line_combo_group`
+
+are not arithmetic metric families.
+They are upstream context labels whose correctness depends on:
+
+- builder freshness
+- builder sorting rules
+- assignment heuristics
+
+The audit so far focused mainly on numeric rolling logic.
+That means these context fields have not yet had the same level of evidence-backed validation as the count, ratio, and rate families.
+
+They stayed in `NEEDS REVIEW` because the current uncertainty is about source semantics and freshness, not because the fields are known to be wrong.
+
+### Main conclusion from 5.6
+
+The status buckets are not arbitrary.
+They separate four distinct failure modes:
+
+- `WORKING`: arithmetic and refreshed validation both look healthy
+- `BROKEN`: the current model is proven wrong by evidence
+- `ALMOST`: the formula path is close, but semantics, naming, or source fallback still need tightening
+- `NEEDS REVIEW`: the contract or evidence is still incomplete enough that a final verdict would be premature
+
+## 5.7 Draft `Suggested Metric Additions` Section
+
+This section is intentionally separate from the status buckets.
+These are not bug labels.
+They are candidate additions that can already be supported from existing upstream data or current upstream builders.
+
+Scope rule for this section:
+
+- only metrics available from the current upstream tables or current upstream derived tables
+- no new ingestion requirements
+- no speculative future-only metrics
+
+### Suggested additions from existing NST on-ice tables
+
+#### 1. `on_ice_sv_pct`
+
+Why add it:
+
+- `pdo` is currently stored, but one half of PDO is not visible directly
+- storing `on_ice_sv_pct` would make PDO explainable instead of opaque
+
+Available from:
+
+- existing `nst_gamelog_*_counts_oi.on_ice_sv_pct`
+
+Suggested shorthand:
+
+- `on_ice_sv_pct_total_lastN = weighted / aggregated on-ice save percentage over the window`
+
+Why it helps:
+
+- supports validation of `pdo`
+- makes luck/context interpretation clearer
+- reduces the need to reverse-engineer PDO components later
+
+#### 2. raw zone-start counts
+
+Suggested fields:
+
+- `oz_starts_total_*`
+- `dz_starts_total_*`
+- `nz_starts_total_*`
+
+Why add them:
+
+- `oz_start_pct` is more trustworthy when the underlying counts are visible
+- current audit work repeatedly needed the raw zone-start numerators and denominators to explain the ratio
+
+Available from:
+
+- existing `nst_gamelog_*_counts_oi.off_zone_starts`
+- existing `nst_gamelog_*_counts_oi.def_zone_starts`
+- existing `nst_gamelog_*_counts_oi.neu_zone_starts`
+
+Why it helps:
+
+- improves auditability
+- improves UI explainability
+- makes denominator disputes obvious instead of hidden
+
+#### 3. raw on-ice goal and shot counts
+
+Suggested fields:
+
+- `oi_gf_total_*`
+- `oi_ga_total_*`
+- `oi_sf_total_*`
+- `oi_sa_total_*`
+
+Why add them:
+
+- they are the real building blocks behind:
+  - `on_ice_sh_pct`
+  - `ipp`
+  - `pdo`
+
+Available from:
+
+- existing `nst_gamelog_*_counts_oi.gf`
+- existing `nst_gamelog_*_counts_oi.ga`
+- existing `nst_gamelog_*_counts_oi.sf`
+- existing `nst_gamelog_*_counts_oi.sa`
+
+Why it helps:
+
+- makes ratio validation easier
+- supports future UI drilldowns
+- reduces reliance on hidden denominator logic
+
+### Suggested additions from existing NST player-rate and count tables
+
+#### 4. `goals_per_60`
+
+Why add it:
+
+- the suite already stores shots, ixG, hits, and blocks per 60
+- goals per 60 is available in current upstream data and fits the same weighted-rate model
+
+Available from:
+
+- existing NST counts plus TOI
+- existing NST rate tables also expose goals-per-60 style fields
+
+Suggested shorthand:
+
+- `goals_per_60_total_lastN = sum(goals) / sum(toi_seconds) * 3600`
+
+Why it helps:
+
+- gives a more direct finishing-rate surface than `shooting_pct` alone
+- complements `ixg_per_60`
+
+#### 5. `assists_per_60`
+
+Why add it:
+
+- points and assists are already stored as counts
+- a weighted assist-rate field would align the table better with the current sustainability / projection work
+
+Available from:
+
+- existing NST counts plus TOI
+- existing NST rate tables include assist-per-60 style fields
+
+Suggested shorthand:
+
+- `assists_per_60_total_lastN = sum(assists) / sum(toi_seconds) * 3600`
+
+Why it helps:
+
+- makes playmaking trends easier to compare across TOI changes
+- reduces pressure on `ipp` to carry too much of the playmaking story
+
+#### 6. first- and second-assist rate families
+
+Suggested fields:
+
+- `primary_assists_per_60_*`
+- `secondary_assists_per_60_*`
+
+Why add them:
+
+- current upstream tables already expose first- and second-assist rate families
+- this would give a cleaner decomposition of assist quality than relying on total assists alone
+
+Available from:
+
+- existing NST rate tables and generated types
+
+Why it helps:
+
+- better isolates real playmaking from secondary-assist noise
+- pairs naturally with `primary_points_pct`
+
+### Suggested additions from existing PP builder semantics
+
+#### 7. PP unit-relative usage fields on rolling rows
+
+Suggested fields:
+
+- `pp_unit_usage_index`
+- `pp_unit_relative_toi`
+- `pp_vs_unit_avg`
+
+Why add them:
+
+- these are already built upstream in `powerPlayCombinations`
+- the rolling table currently keeps `pp_unit`, but not the richer usage context that explains how strong that role actually was
+
+Available from:
+
+- existing `powerPlayCombinations` derived fields
+
+Why it helps:
+
+- separates total team PP share from within-unit role
+- lets the UI explain whether a player is merely on PP1 or actually dominating PP1 deployment
+
+#### 8. true team PP share from builder semantics
+
+Suggested field:
+
+- `pp_share_of_team`
+
+Why add it:
+
+- this field already exists upstream and is a cleaner semantic contract than the current inferred rolling `pp_share_pct`
+
+Available from:
+
+- existing `powerPlayCombinations.pp_share_of_team`
+
+Why it helps:
+
+- provides a more authoritative team-share surface
+- may eventually replace or validate the current WGO-inferred share path
+
+### Suggested additions focused on auditability and schema clarity
+
+#### 9. raw numerator / denominator support fields for ratio families
+
+Suggested examples:
+
+- `shooting_goals_total_*`
+- `shooting_shots_total_*`
+- `expected_shooting_ixg_total_*`
+- `ipp_points_total_*`
+- `ipp_oi_gf_total_*`
+- `pp_toi_total_*`
+- `team_pp_toi_total_*`
+
+Why add them:
+
+- the audit repeatedly showed that ratio fields are much easier to trust when their raw ingredients are visible
+- these ingredients already exist in upstream tables or can be derived from currently available share inputs
+
+Why it helps:
+
+- improves debugability
+- improves UI explainability
+- makes correctness audits much faster
+
+### Priority order for additions
+
+Highest-value additions without new ingestion:
+
+1. `on_ice_sv_pct`
+2. raw zone-start counts
+3. raw on-ice goal / shot counts
+4. `goals_per_60`
+5. `assists_per_60`
+6. PP unit-relative usage fields
+7. `pp_share_of_team`
+
+### Main conclusion from 5.7
+
+The best additions are not exotic new metrics.
+They are mostly:
+
+- missing raw support fields
+- already-available rate families
+- already-built PP context fields
+
+These additions would make the rolling table much easier to audit, explain, and visualize without expanding the source footprint.
+
+## 5.8 Draft `Remediation Plan`
+
+This section is intentionally separate from:
+
+- the emoji status lists
+- the explanation / rationale section
+- the validation examples
+- the schema recommendation list
+- the suggested metric additions list
+
+The goal here is execution order.
+This is the prioritized path for improving correctness, trust, and maintainability after the audit.
+
+### Correctness blockers
+
+These are the items that should be addressed first because they affect whether the stored values can be trusted.
+
+#### 1. Redesign GP% semantics and implementation
+
+Priority:
+
+- highest
+
+Why:
+
+- `gp_pct_avg_season` is proven broken for traded players
+- the rest of GP% currently mixes incompatible concepts
+
+Required actions:
+
+- redesign season GP% to aggregate across player-season stints
+- redefine rolling GP% as current-team chronological team-game windows
+- split all-strength availability from split-strength participation
+- add raw numerator / denominator support for the new GP% contract
+
+Success condition:
+
+- Corey Perry style trade scenarios produce sane season and rolling availability outputs
+
+#### 2. Resolve ratio-family `lastN` semantics explicitly
+
+Priority:
+
+- highest
+
+Why:
+
+- several ratio-family `last20` mismatches survive recompute
+- current behavior is not aligned to one clean product contract
+
+Required actions:
+
+- choose the canonical window rule for ratio families
+- implement that rule consistently across all ratio families
+- rename fields if the current `lastN` labels no longer match behavior
+
+Recommended direction:
+
+- use fixed last-N appearance windows for player performance ratio families
+- aggregate numerators and denominators inside those windows
+
+Success condition:
+
+- source-reconstructed last20 ratio values match refreshed stored rows under one documented contract
+
+#### 3. Tighten `pp_share_pct` denominator authority
+
+Priority:
+
+- high
+
+Why:
+
+- the current field is much healthier than before, but still relies on inferred team PP denominators from WGO share inputs
+
+Required actions:
+
+- compare current WGO-inferred share path against upstream `pp_share_of_team`
+- decide whether rolling `pp_share_pct` should be re-based on the upstream builder field
+- keep unit-relative PP role separate from team-share semantics
+
+Success condition:
+
+- `pp_share_pct` has one clearly authoritative denominator contract
+
+#### 4. Reduce `ixg_per_60` fallback fragility
+
+Priority:
+
+- high
+
+Why:
+
+- `ixg_per_60` remains more fallback-sensitive than the other `/60` families
+
+Required actions:
+
+- verify upstream count availability and fallback ordering
+- document when raw ixG counts exist versus when rate reconstruction is being used
+- prefer direct raw ixG accumulation whenever available
+
+Success condition:
+
+- `ixg_per_60` behaves like the other weighted `/60` families in refreshed comparisons
+
+### Schema redesign items
+
+These are the changes that improve clarity and reduce future ambiguity, even if some current values can still be computed.
+
+#### 5. Remove or deprecate fake `total_* / avg_*` duplication where the values are aliases
+
+Priority:
+
+- high
+
+Why:
+
+- ratio families and weighted `/60` families often store the same value in both fields
+- GP% aliases are especially misleading
+
+Required actions:
+
+- identify alias families explicitly
+- deprecate redundant surfaces in future API / UI contracts
+- keep backward compatibility only where needed
+
+Success condition:
+
+- field naming no longer implies distinctions that do not exist
+
+#### 6. Add raw numerator / denominator support for opaque ratio families
+
+Priority:
+
+- high
+
+Why:
+
+- auditability is poor when only the final ratio is persisted
+
+Required actions:
+
+- persist the raw count ingredients for:
+  - shooting percentage
+  - expected shooting percentage
+  - IPP
+  - on-ice shooting percentage
+  - PDO components
+  - zone-start percentage
+  - PP share
+
+Success condition:
+
+- future audits and UI drilldowns can explain the ratios without reverse-engineering hidden denominators
+
+#### 7. Separate current-team rolling scope from cross-stint season scope
+
+Priority:
+
+- high
+
+Why:
+
+- the current schema hides scope inside implementation details
+- trades expose the ambiguity immediately
+
+Required actions:
+
+- make team-window scope explicit in naming or in raw-support fields
+- separate season-all-stints fields from current-team rolling fields
+
+Success condition:
+
+- scope is visible in the schema instead of inferred from code behavior
+
+### Observability and reliability improvements
+
+These do not directly change metric values, but they materially improve trust in refresh runs and make failures easier to diagnose.
+
+#### 8. Keep and expand coverage diagnostics
+
+Priority:
+
+- high
+
+Why:
+
+- the audit already benefited from the newer coverage and suspicious-output logging
+
+Required actions:
+
+- keep `coverageWarnings`, `suspiciousOutputWarnings`, and `unknownGameIds` in the run summary
+- expand per-family diagnostics for known weak areas:
+  - GP% windows
+  - ratio-family valid-row windows
+  - `/60` fallback reconstruction
+
+Success condition:
+
+- a refresh run can be judged for completeness and data quality without manual spelunking
+
+#### 9. Persist or export audit-friendly run summaries
+
+Priority:
+
+- medium-high
+
+Why:
+
+- terminal-only diagnostics are easy to lose
+
+Required actions:
+
+- add a persisted run-summary surface, or a structured JSON export, for:
+  - processed player count
+  - rows upserted
+  - coverage warnings
+  - suspicious output warnings
+  - unknown game IDs
+  - players with partial source coverage
+
+Success condition:
+
+- refresh runs become comparable over time instead of one-off terminal sessions
+
+#### 10. Improve progress visibility for long full-refresh runs
+
+Priority:
+
+- medium
+
+Why:
+
+- the earlier “hung” perception came from long opaque upsert phases
+
+Required actions:
+
+- keep batch-level upsert logging
+- add clearer phase markers for:
+  - source fetch
+  - merge
+  - derive
+  - upsert
+
+Success condition:
+
+- long runs look slow when they are slow, not dead when they are busy
+
+### Optional additions after correctness work
+
+These are valuable, but they should follow the correctness and schema fixes above.
+
+#### 11. Add high-value missing support metrics
+
+Priority:
+
+- medium
+
+Candidate first wave:
+
+- `on_ice_sv_pct`
+- raw zone-start counts
+- raw on-ice goal / shot counts
+- `goals_per_60`
+- `assists_per_60`
+
+Why:
+
+- these improve transparency and downstream UI usefulness
+- they do not solve the core correctness blockers on their own
+
+#### 12. Add richer PP role fields to the rolling table
+
+Priority:
+
+- medium
+
+Candidate fields:
+
+- `pp_unit_usage_index`
+- `pp_unit_relative_toi`
+- `pp_vs_unit_avg`
+- `pp_share_of_team`
+
+Why:
+
+- they make PP role interpretation much better
+- but they should follow the core team-share contract decision for `pp_share_pct`
+
+### Recommended execution order
+
+If this is turned into implementation work, the most defensible order is:
+
+1. GP% redesign
+2. ratio-family `lastN` contract cleanup
+3. `pp_share_pct` denominator decision
+4. `ixg_per_60` fallback hardening
+5. alias / schema simplification
+6. raw numerator / denominator support fields
+7. observability persistence improvements
+8. optional metric additions
+
+### Main conclusion from 5.8
+
+The audit does not point to one giant rewrite.
+It points to a staged cleanup:
+
+- first fix the proven correctness blockers
+- then simplify the schema contract
+- then improve run observability
+- then add the missing support metrics that make the table easier to explain and use
+
+## 5.9 Draft `Final Output Structure Check`
+
+This section is intentionally administrative.
+It confirms that the final audit deliverable is structured into separate sections rather than mixing findings together.
+
+### Required separated sections present
+
+The current draft keeps the major output types separate:
+
+- `Upstream Tables`
+- `Metric Families`
+- `Column-by-Column Inventory`
+- `WORKING`
+- `BROKEN`
+- `ALMOST`
+- `NEEDS REVIEW`
+- `Explanation / Rationale`
+- `Live Validation Examples`
+- `Schema Change Recommendations`
+- `Suggested Metric Additions`
+- `Remediation Plan`
+
+### Separation check
+
+The current draft is correctly separated in the intended way:
+
+- emoji status lists are checklist-style only
+- rationale is in its own prose section
+- validation evidence is in its own example section
+- schema redesign items are in their own recommendation section
+- suggested additions are not mixed into bug lists
+- remediation sequencing is in its own action plan
+
+### Remaining requirement for the final audit artifact
+
+Before the audit is considered fully complete, the final pass should still:
+
+- cross-reference every status bucket against the full column inventory
+- confirm that no metric family or persisted column has been omitted from the final grouped lists
+
+That is the purpose of `5.10`.
+
+### Main implementation-track note
+
+This rolling-player-metrics audit is a separate detour artifact.
+Once this audit deliverable is completed and cross-checked, the main implementation task track resumes at:
+
+- `4.2.2`
+
+That note should remain explicit in the final audit output so the audit does not get mistaken for a replacement task list.
+
+### Main conclusion from 5.9
+
+The final audit output is now structurally organized the right way.
+The only remaining finish step inside this audit artifact is the completeness cross-check in `5.10`.
+
+## 5.10 Draft `Completeness Cross-Check`
+
+This section is intentionally separate from the status buckets.
+Its job is to confirm whether the grouped `WORKING`, `BROKEN`, `ALMOST`, and `NEEDS REVIEW` lists fully account for the inventory defined in `5.1`.
+
+### Cross-check result
+
+The grouped status lists now cover the major metric families, but they are not yet purely one-line-per-column exhaustive.
+Coverage currently breaks down into three patterns:
+
+- some families are covered explicitly by named columns
+- some families are covered at the family level rather than every individual column
+- some one-off context or operational fields still need explicit status placement
+
+That means the audit is comprehensive at the family level, but only partially explicit at the per-column checklist level.
+
+### Families already accounted for in the status buckets
+
+The current grouped lists do account for these persisted families:
+
+- GP% family
+- TOI family
+- surface counting families
+- individual chance / opportunity counting families
+- weighted `/60` families
+- finishing / individual ratio families
+- on-ice context ratio families
+- zone / usage ratio families
+- territorial counting families
+- territorial ratio families
+- row-context labels that matter operationally:
+  - `pp_unit`
+  - `line_combo_slot`
+  - `line_combo_group`
+
+### Inventory items that are only covered implicitly right now
+
+These fields or families are covered by broad family verdicts, but not yet listed one-by-one in the status sections:
+
+- `assists_total_lastN`
+- `hits_total_lastN`
+- `blocks_total_lastN`
+- `pp_points_total_lastN`
+- `cf_total_lastN`
+- `ca_total_lastN`
+- `ff_total_lastN`
+- `fa_total_lastN`
+- `iscf_total_lastN`
+- `ihdcf_total_lastN`
+- most `*_total_all` and `*_avg_all` additive families
+- most historical additive baseline columns
+- most historical territorial baseline columns
+
+These are not missing from the audit logic.
+They are currently represented by family-level status calls rather than an explicit column-by-column checklist entry.
+
+### One-off fields that still need explicit final treatment
+
+These fields were present in the inventory but were not yet cleanly placed into the emoji lists:
+
+- `player_id`
+- `game_date`
+- `game_id`
+- `season`
+- `team_id`
+- `strength_state`
+- `updated_at`
+- `games_played`
+- `team_games_played`
+
+Recommended treatment:
+
+- row key / operational fields should be kept out of the metric status buckets and documented as non-metric inventory fields
+- `games_played` and `team_games_played` should be given an explicit `NEEDS REVIEW` or redesign-support note because they are central to GP% interpretation
+
+### Explicit final additions needed for a truly exhaustive grouped checklist
+
+To make the final grouped audit output fully exhaustive, the final pass should explicitly add:
+
+1. a note that row key / operational fields are inventory-only and intentionally excluded from status buckets
+2. explicit status placement for:
+   - `games_played`
+   - `team_games_played`
+3. a short statement that additive families are covered by family-level checklist entries rather than duplicating every suffix column line-by-line
+4. a short statement that ratio and `/60` historical baseline columns inherit the same family-level bucket unless specifically overridden
+
+### Final completeness verdict
+
+The audit is now:
+
+- comprehensive at the family level
+- comprehensive on the major disputed metric families
+- not yet perfectly one-line-per-column exhaustive for every additive suffix column
+
+That is acceptable for the audit’s decision-making purpose, but it should be stated explicitly.
+The final artifact should not imply a false level of per-column exhaustiveness where the draft is still using family-level rollups.
+
+### Main conclusion from 5.10
+
+The grouped audit lists do not skip any major metric family.
+The remaining gap is narrower:
+
+- a few one-off non-metric inventory fields need explicit handling
+- many additive columns are represented by family-level checklist entries rather than repeated one-by-one lines
+
+That means the audit is decision-ready, but the final wording should clearly distinguish:
+
+- family-level coverage
+- per-column coverage
+- inventory-only operational fields
 
 ## 2.3 Current Shorthand Formula Inventory
 

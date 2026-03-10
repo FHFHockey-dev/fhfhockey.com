@@ -52,13 +52,14 @@
   - [x] 4.3 Define the intended model for career, season, and rolling GP% windows.
   - [x] 4.4 Determine whether the current schema can represent the intended GP% meaning cleanly or whether new columns are required.
   - [x] 4.5 Produce a separate `Schema Change Recommendations` list for GP% and availability redesign items.
-- [ ] 5.0 Produce the final grouped audit artifact and remediation plan
-  - [ ] 5.1 Write the `Metric Families` section and the `Column-by-Column Inventory` section.
-  - [ ] 5.2 Write the clean checklist-style `WORKING` section with emoji, shorthand formula, and short status note only.
-  - [ ] 5.3 Write the clean checklist-style `BROKEN` section with emoji, shorthand formula, and short status note only.
-  - [ ] 5.4 Write the clean checklist-style `ALMOST` section with emoji, shorthand formula, and short status note only.
-  - [ ] 5.5 Write the clean checklist-style `NEEDS REVIEW` section with emoji, shorthand formula, and short status note only.
-  - [ ] 5.6 Write the separate `Explanation / Rationale` section covering why each family landed in its status bucket.
-  - [ ] 5.7 Write the separate `Suggested Metric Additions` section limited to metrics available from existing upstream data.
-  - [ ] 5.8 Write the prioritized `Remediation Plan`, separating correctness blockers, schema redesign items, observability improvements, and optional additions.
-  - [ ] 5.9 Confirm the final audit output keeps status lists, explanations, validation examples, schema recommendations, and additions in separate sections and explicitly notes that the main implementation track resumes at `4.2.2`.
+- [x] 5.0 Produce the final grouped audit artifact and remediation plan
+  - [x] 5.1 Write the `Metric Families` section and the `Column-by-Column Inventory` section.
+  - [x] 5.2 Write the clean checklist-style `WORKING` section with emoji, shorthand formula, and short status note only.
+  - [x] 5.3 Write the clean checklist-style `BROKEN` section with emoji, shorthand formula, and short status note only.
+  - [x] 5.4 Write the clean checklist-style `ALMOST` section with emoji, shorthand formula, and short status note only.
+  - [x] 5.5 Write the clean checklist-style `NEEDS REVIEW` section with emoji, shorthand formula, and short status note only.
+  - [x] 5.6 Write the separate `Explanation / Rationale` section covering why each family landed in its status bucket.
+  - [x] 5.7 Write the separate `Suggested Metric Additions` section limited to metrics available from existing upstream data.
+  - [x] 5.8 Write the prioritized `Remediation Plan`, separating correctness blockers, schema redesign items, observability improvements, and optional additions.
+  - [x] 5.9 Confirm the final audit output keeps status lists, explanations, validation examples, schema recommendations, and additions in separate sections and explicitly notes that the main implementation track resumes at `4.2.2`.
+  - [x] 5.10 Cross-reference the `WORKING`, `BROKEN`, `ALMOST`, `NEEDS REVIEW` lists of metrics to confirm it is comprehensive, and does not skip any metric families or columns in the `Column-by-Column Inventory` Section.
