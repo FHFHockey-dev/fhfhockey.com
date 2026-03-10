@@ -39,13 +39,13 @@
   - [x] 2.8 Audit historical baseline fields (`*_avg_season`, `*_avg_3ya`, `*_avg_career`) separately from rolling windows.
   - [x] 2.9 Determine whether each metric family currently represents last N team games, last N appearances, or last N valid observations.
   - [x] 2.10 Recommend the canonical `lastN` rule per family and flag any columns whose names no longer match their behavior.
-- [ ] 3.0 Validate live metric outputs against upstream source data
-  - [ ] 3.1 Define the player validation set, including a regular full-season skater, an injury / missed-game case, a partial-team-season case if available, and a heavy PP-role player.
-  - [ ] 3.2 For each major metric family, pull live source rows from the upstream tables and reconstruct the intended calculation manually.
-  - [ ] 3.3 Compare live source-derived values to stored `rolling_player_game_metrics` values and classify mismatches by cause.
-  - [ ] 3.4 Use targeted recomputes where needed to separate stale-row issues from current-code issues.
-  - [ ] 3.5 Capture validation examples in a separate `Live Validation Examples` section for the final audit.
-  - [ ] 3.6 Mark each validated metric family or column as `WORKING`, `BROKEN`, `ALMOST`, or `NEEDS REVIEW` based on evidence.
+- [x] 3.0 Validate live metric outputs against upstream source data
+  - [x] 3.1 Define the player validation set, including a regular full-season skater, an injury / missed-game case, a partial-team-season case if available, and a heavy PP-role player.
+  - [x] 3.2 For each major metric family, pull live source rows from the upstream tables and reconstruct the intended calculation manually.
+  - [x] 3.3 Compare live source-derived values to stored `rolling_player_game_metrics` values and classify mismatches by cause.
+  - [x] 3.4 Use targeted recomputes where needed to separate stale-row issues from current-code issues.
+  - [x] 3.5 Capture validation examples in a separate `Live Validation Examples` section for the final audit.
+  - [x] 3.6 Mark each validated metric family or column as `WORKING`, `BROKEN`, `ALMOST`, or `NEEDS REVIEW` based on evidence.
 - [ ] 4.0 Audit GP% and availability modeling, including schema-fit issues
   - [ ] 4.1 Reverse-engineer current `games_played`, `team_games_played`, `gp_pct_total_*`, and `gp_pct_avg_*` behavior from the current code paths.
   - [ ] 4.2 Compare current GP% behavior against intended team-game availability semantics, including players who missed games.

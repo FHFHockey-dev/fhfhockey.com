@@ -2739,3 +2739,1320 @@ Likely `❌`:
 Likely `⚠️`:
 
 - any metric family where missing-component policy inside a fixed appearance window is still undefined
+
+## 3.1 Live Validation Player Set
+
+The live validation phase should use a small fixed player set so metric comparisons are consistent across families and not cherry-picked per issue.
+
+### Validation Set Goals
+
+The PRD called for four representative buckets:
+
+1. a regular full-season skater
+2. a missed-games / injury case
+3. a partial-team-season case if available
+4. a heavy PP-role player
+
+### Selected Validation Players
+
+#### 1. Brent Burns (`player_id = 8470613`) — regular full-season skater
+
+Why selected:
+
+- regular, high-usage veteran skater
+- current-season source rows run from opening night through the latest refreshed date
+- enough sample to validate additive, ratio, `/60`, and on-ice families without the row being dominated by tiny-sample noise
+
+Current live source evidence:
+
+- team: `COL`
+- first current-season WGO row: `2025-10-07`
+- latest current-season WGO row: `2026-02-04`
+- current-season WGO row count: `55`
+- Colorado team games through that date: `61`
+- latest `pp_toi_pct_per_game`: `0.243`
+
+Why this player is useful:
+
+- good anchor for “normal” player-performance windows
+- enough games played to test last-N appearance semantics cleanly
+- not so PP-dominant that PP share overwhelms the rest of the audit
+
+#### 2. Corey Perry (`player_id = 8470621`) — missed-games / availability edge case
+
+Why selected:
+
+- already surfaced the GP% confusion directly
+- has meaningful missed-team-game exposure
+- also carries a strong PP role, which makes him useful for secondary PP-share validation
+
+Current live source evidence:
+
+- team: `LAK`
+- first current-season WGO row: `2025-10-21`
+- latest current-season WGO row: `2026-02-05`
+- current-season WGO row count: `45`
+- Los Angeles team games through that date: `63`
+- latest `pp_toi_pct_per_game`: `0.695`
+
+Why this player is useful:
+
+- exposes the gap between:
+  - team games available
+  - player appearances
+  - current rolling GP% semantics
+- useful for validating whether “last N games” language matches stored values
+
+#### 3. Seth Jones (`player_id = 8477495`) — partial / incomplete season proxy
+
+Why selected:
+
+- current-season source coverage is materially incomplete relative to team games through the last row date
+- good proxy for partial-season logic, even if the exact root cause is not yet proven from one source table alone
+
+Current live source evidence:
+
+- team: `FLA`
+- first current-season WGO row: `2025-10-07`
+- latest current-season WGO row: `2026-01-02`
+- current-season WGO row count: `40`
+- Florida team games through that date: `47`
+- latest `pp_toi_pct_per_game`: `0.107`
+
+Important caveat:
+
+- this is not yet a conclusively proven traded-player example
+- the current WGO view appears current-team-only, so it is not a reliable single-table proof of team-change history
+- for now, Seth Jones should be treated as the “partial / incomplete season proxy”
+- if a cleaner traded-player example is discovered during `3.2` or `3.4`, this slot can be replaced
+
+Why this player is useful:
+
+- good for checking how the pipeline handles interrupted or incomplete season coverage
+- low PP share makes him a useful contrast against PP-heavy validation players
+
+#### 4. Jesper Bratt (`player_id = 8479407`) — heavy PP-role player
+
+Why selected:
+
+- latest current-season source shows an extreme PP role
+- ideal for validating:
+  - `pp_share_pct`
+  - PP unit semantics
+  - PP-related rolling windows and denominators
+
+Current live source evidence:
+
+- team: `NJD`
+- first current-season WGO row: `2025-10-09`
+- latest current-season WGO row: `2026-02-05`
+- current-season WGO row count: `57`
+- New Jersey team games through that date: `64`
+- latest `pp_toi_pct_per_game`: `1.000`
+
+Why this player is useful:
+
+- strongest obvious PP-share stress test found from live source rows
+- gives the audit a high-confidence PP-heavy example independent of Corey Perry’s broader availability issues
+
+### Validation Set Coverage Summary
+
+This set gives the audit four complementary perspectives:
+
+- Brent Burns
+  - regular recency / baseline behavior
+- Corey Perry
+  - missed-games and GP% behavior
+- Seth Jones
+  - incomplete-season / partial-coverage proxy
+- Jesper Bratt
+  - heavy PP-share behavior
+
+### Constraints and Caveats
+
+1. Current rolling table coverage is incomplete
+- the full refresh is not complete, so stored-row validation will need targeted recomputes in section `3.4`
+
+2. Upstream source shape limits direct traded-player proof
+- current WGO current-season rows do not obviously preserve multi-team history in a way that is easy to prove from a single quick query
+- if a better traded-player example is found during manual reconstruction, it should replace Seth Jones in the final audit
+
+3. This player set is for repeatable validation, not exclusivity
+- section `3.2` can still pull extra spot-check players if a family needs a more specific edge case
+
+### Main Conclusion from 3.1
+
+The audit should proceed with these four primary validation players:
+
+- Brent Burns (`8470613`)
+- Corey Perry (`8470621`)
+- Seth Jones (`8477495`)
+- Jesper Bratt (`8479407`)
+
+This set is good enough to begin live metric reconstruction while still leaving room to swap in a cleaner traded-player example if one emerges later in the audit.
+
+## 3.2 Manual Source Reconstruction by Major Metric Family
+
+This step reconstructs intended values directly from upstream source rows for the primary validation players.
+
+Important scope note:
+
+- this section is about intended source-derived values
+- it is not yet the stored-vs-source mismatch classification step
+- stored-row comparison belongs in `3.3`
+- stale-row vs current-code separation belongs in `3.4`
+
+### Reconstruction Method Used in 3.2
+
+For this step, the manual reconstruction used:
+
+- WGO current-season rows as the appearance spine
+- `nst_gamelog_as_counts` for additive player counts
+- `nst_gamelog_as_rates` for `/60` fallback context
+- `nst_gamelog_as_counts_oi` for on-ice and territorial numerators / denominators
+
+The reconstruction window used for player-performance metrics in this section is:
+
+- last 20 appearances
+
+That choice matches the canonical recommendation from `2.10` for performance families and avoids inheriting the current mixed last-N implementation semantics.
+
+### Formula Conventions Used Here
+
+- `shooting_pct = goals / shots * 100`
+- `sog_per_60 = shots / toi_seconds * 3600`
+- `ixg_per_60 = ixg / toi_seconds * 3600`
+- `primary_points_pct = (goals + first_assists) / total_points`
+- `ipp = total_points / on_ice_gf * 100`
+- `on_ice_sh_pct = on_ice_gf / on_ice_sf * 100`
+- `pdo = ((on_ice_gf / on_ice_sf) * 100 + ((on_ice_sa - on_ice_ga) / on_ice_sa) * 100) * 0.01`
+- `cf_pct = cf / (cf + ca) * 100`
+- `ff_pct = ff / (ff + fa) * 100`
+- `oz_start_pct = off_zone_starts / (off_zone_starts + def_zone_starts) * 100`
+- `expected_sh_pct = ixg / shots`
+- `pp_share_pct = sum(player_pp_toi) / sum(inferred_team_pp_toi from WGO share components)`
+
+### Example A: Corey Perry — additive counts, finishing, on-ice context, and GP% edge-case anchor
+
+Source scope:
+
+- player: `Corey Perry` (`8470621`)
+- current visible upstream team: `LAK`
+- current visible source range: `2025-10-21` through `2026-02-05`
+- last-20 appearance reconstruction date anchor: `2026-02-05`
+
+Manual last-20 appearance totals:
+
+- `goals_last20 = 4`
+- `shots_last20 = 30`
+- `points_last20 = 14`
+- `toi_seconds_last20 = 18269`
+- `ixg_last20 = 6.08`
+
+Manual last-20 derived values:
+
+- `shooting_pct_last20 = 4 / 30 * 100 = 13.333333`
+- `sog_per_60_last20 = 30 / 18269 * 3600 = 5.911654`
+- `ixg_per_60_last20 = 6.08 / 18269 * 3600 = 1.198095`
+- `primary_points_pct_last20 = (4 + first_assists) / 14 = 0.714286`
+- `ipp_last20 = 14 / 22 * 100 = 63.636364`
+- `on_ice_sh_pct_last20 = 22 / 149 * 100 = 14.765101`
+- `pdo_last20 = (14.765101 + 89.999999...) * 0.01 = 1.047651`
+- `cf_pct_last20 = 347 / (347 + 279) * 100 = 55.43131`
+- `ff_pct_last20 = 244 / (244 + 200) * 100 = 54.954955`
+- `oz_start_pct_last20 = 69 / (69 + 22) * 100 = 75.824176`
+- `expected_sh_pct_last20 = 6.08 / 30 = 0.202667`
+- `pp_share_pct_last20 = 0.616859`
+
+Manual season-to-date derived spot checks:
+
+- `shooting_pct_season = 13.580247`
+- `sog_per_60_season = 7.578947`
+- `pp_share_pct_season = 0.554674`
+
+Why this example matters:
+
+- it covers additive counts
+- it covers ratio families
+- it covers `/60`
+- it covers PP share
+- it remains the primary GP% / availability stress case
+
+Important source-freshness caveat:
+
+- you reported that Corey Perry was later traded from `LAK` to `TBL`, with his last LAK game on `2026-03-05`
+- the current upstream rows visible in this quick validation only show `LAK` through `2026-02-05`
+- so the audit now has an explicit freshness / upstream coverage question to carry forward:
+  - is the visible source stale?
+  - or is the rolling refresh slice incomplete relative to more recent source updates?
+
+That trade edge case should remain attached to Corey Perry for later GP% and cross-team validation.
+
+### Example B: Brent Burns — regular high-sample baseline player
+
+Source scope:
+
+- player: `Brent Burns` (`8470613`)
+- team: `COL`
+- source range: `2025-10-07` through `2026-02-04`
+- last-20 appearance reconstruction date anchor: `2026-02-04`
+
+Manual last-20 appearance totals:
+
+- `goals_last20 = 4`
+- `shots_last20 = 47`
+- `points_last20 = 7`
+- `toi_seconds_last20 = 23281`
+- `ixg_last20 = 1.57`
+
+Manual last-20 derived values:
+
+- `shooting_pct_last20 = 8.510638`
+- `sog_per_60_last20 = 7.267729`
+- `ixg_per_60_last20 = 0.242773`
+- `primary_points_pct_last20 = 0.714286`
+- `ipp_last20 = 35`
+- `on_ice_sh_pct_last20 = 9.852217`
+- `pdo_last20 = 1.01109`
+- `cf_pct_last20 = 51.833123`
+- `ff_pct_last20 = 51.52027`
+- `oz_start_pct_last20 = 33.333333`
+- `expected_sh_pct_last20 = 0.033404`
+- `pp_share_pct_last20 = 0.206086`
+
+Manual season-to-date spot checks:
+
+- `shooting_pct_season = 7.563025`
+- `sog_per_60_season = 6.656929`
+- `pp_share_pct_season = 0.148833`
+
+Why this example matters:
+
+- cleaner full-season sample
+- less availability noise than Corey Perry
+- good anchor for validating whether ordinary high-minute skater math is coherent
+
+### Example C: Jesper Bratt — heavy PP-share validation
+
+Source scope:
+
+- player: `Jesper Bratt` (`8479407`)
+- team: `NJD`
+- source range: `2025-10-09` through `2026-02-05`
+- latest visible `pp_toi_pct_per_game = 1.000`
+
+Manual last-20 appearance totals:
+
+- `goals_last20 = 7`
+- `shots_last20 = 44`
+- `points_last20 = 12`
+- `toi_seconds_last20 = 22663`
+- `ixg_last20 = 5.45`
+
+Manual last-20 derived PP and performance values:
+
+- `pp_share_pct_last20 = 0.735552`
+- `pp_share_pct_season = 0.72828`
+- `shooting_pct_last20 = 15.909091`
+- `sog_per_60_last20 = 6.989366`
+- `ipp_last20 = 75`
+- `on_ice_sh_pct_last20 = 6.779661`
+
+Why this example matters:
+
+- best current PP-heavy stress case in the visible source sample
+- useful for validating whether PP-share math behaves plausibly on extreme usage players
+
+### Example D: Seth Jones — incomplete / partial-coverage proxy
+
+Source scope:
+
+- player: `Seth Jones` (`8477495`)
+- team: `FLA`
+- source range: `2025-10-07` through `2026-01-02`
+- current-season source row count: `40`
+- team games through latest visible source date: `47`
+
+Manual last-20 appearance totals:
+
+- `goals_last20 = 3`
+- `shots_last20 = 44`
+- `points_last20 = 13`
+- `toi_seconds_last20 = 28008`
+- `ixg_last20 = 2.27`
+
+Manual last-20 derived values:
+
+- `shooting_pct_last20 = 6.818182`
+- `sog_per_60_last20 = 5.655527`
+- `ixg_per_60_last20 = 0.291774`
+- `primary_points_pct_last20 = 0.461538`
+- `ipp_last20 = 44.827586`
+- `on_ice_sh_pct_last20 = 11.196911`
+- `pdo_last20 = 0.994322`
+- `cf_pct_last20 = 55.841372`
+- `ff_pct_last20 = 54.649499`
+- `oz_start_pct_last20 = 47.530864`
+- `expected_sh_pct_last20 = 0.051591`
+- `pp_share_pct_last20 = 0.604884`
+
+Why this example matters:
+
+- good pressure test for incomplete season coverage
+- useful for spotting whether missing tail coverage changes last-N source reconstruction
+
+### Family-Level Reconstruction Coverage from 3.2
+
+This step now has live source-derived examples for the major families:
+
+- additive player counts
+  - goals, shots, points, ixg, toi_seconds
+- weighted `/60` rates
+  - `sog_per_60`, `ixg_per_60`
+- finishing / individual ratios
+  - `shooting_pct`, `primary_points_pct`, `expected_sh_pct`, `ipp`
+- on-ice context
+  - `on_ice_sh_pct`, `pdo`
+- territorial context
+  - `cf_pct`, `ff_pct`
+- zone / usage context
+  - `oz_start_pct`
+- PP usage
+  - `pp_share_pct`
+
+What is intentionally not finalized yet:
+
+- stored-row mismatch explanation
+- stale-row vs current-code separation
+- GP% redesign conclusions
+
+Those belong to `3.3`, `3.4`, and `4.x`.
+
+### Main Conclusion from 3.2
+
+The audit now has a manual source-derived reconstruction baseline for all major metric families.
+
+The immediate takeaway is:
+
+- the core formulas are now easy to reconstruct directly from source rows
+- the next step is not more formula discovery
+- the next step is comparing these source-derived values to stored rolling rows and classifying any mismatches by cause
+
+## 3.3 Stored vs Source Comparison and Mismatch Cause Classification
+
+This step compares the source-derived values from `3.2` to the currently stored `rolling_player_game_metrics` rows.
+
+Important scope note:
+
+- this section classifies mismatch causes
+- it still does not try to decide whether a mismatch is stale-row-only or current-code-only
+- that separation belongs in `3.4`
+
+### Comparison Results: Brent Burns
+
+Stored row used:
+
+- player: `Brent Burns`
+- row date: `2026-02-04`
+- `strength_state = all`
+
+#### Clear matches
+
+These stored values matched the source-derived reconstruction exactly or to rounding tolerance:
+
+- `goals_total_last20 = 4`
+- `shots_total_last20 = 47`
+- `points_total_last20 = 7`
+- `toi_seconds_total_last20 = 23281`
+- `ixg_total_last20 = 1.57`
+- `sog_per_60_total_last20 = 7.267729`
+- `ixg_per_60_total_last20 = 0.242773`
+- `primary_points_pct_total_last20 = 0.714286`
+- `on_ice_sh_pct_total_last20 = 9.852217`
+- `pdo_total_last20 = 1.01109`
+- `cf_pct_total_last20 = 51.833123`
+- `ff_pct_total_last20 = 51.52027`
+- `oz_start_pct_total_last20 = 33.333333`
+- `shooting_pct_avg_season = 7.563025`
+- `sog_per_60_avg_season = 6.656929`
+- `pp_share_pct_avg_season = 0.148833`
+
+#### Mismatches
+
+- `shooting_pct_total_last20`
+  - source-derived: `8.510638`
+  - stored: `9.803922`
+  - likely cause: current last-20 ratio window semantics, not fixed last-20 appearance semantics
+
+- `ipp_total_last20`
+  - source-derived: `35`
+  - stored: `43.333333`
+  - likely cause: current ratio-family valid-row window behavior
+
+- `expected_sh_pct_total_last20`
+  - source-derived: `0.033404`
+  - stored: `0.031765`
+  - likely cause: current ratio-family last-20 denominator window does not align with fixed appearance window
+
+- `pp_share_pct_total_last20`
+  - source-derived: `0.206086`
+  - stored: `0.146401`
+  - likely cause: PP-share valid-row window / component-availability window mismatch
+
+#### Cause classification for Brent Burns
+
+- additive counts: `MATCH`
+- weighted `/60`: `MATCH`
+- season baseline snapshots checked here: `MATCH`
+- ratio-family `last20` mismatches: most likely `window-definition mismatch`
+- no evidence here that the corrected arithmetic itself is broken for the matched families
+
+### Comparison Results: Corey Perry
+
+Stored row used:
+
+- player: `Corey Perry`
+- row date: `2026-02-05`
+- `strength_state = all`
+
+#### Clear matches
+
+These stored values matched the source-derived reconstruction exactly or to rounding tolerance:
+
+- `goals_total_last20 = 4`
+- `shots_total_last20 = 30`
+- `points_total_last20 = 14`
+- `toi_seconds_total_last20 = 18269`
+- `ixg_total_last20 = 6.08`
+- `sog_per_60_total_last20 = 5.911654`
+- `ixg_per_60_total_last20 = 1.198095`
+- `on_ice_sh_pct_total_last20 = 14.765101`
+- `pdo_total_last20 = 1.047651`
+- `cf_pct_total_last20 = 55.43131`
+- `ff_pct_total_last20 = 54.954955`
+- `oz_start_pct_total_last20 = 75.824176`
+- `shooting_pct_avg_season = 13.580247`
+- `sog_per_60_avg_season = 7.578947`
+- `pp_share_pct_avg_season = 0.554674`
+- `gp_pct_avg_season = 0.714286`
+
+#### Mismatches
+
+- `shooting_pct_total_last20`
+  - source-derived: `13.333333`
+  - stored: `9.52381`
+  - likely cause: current ratio-family last-20 valid-observation semantics
+
+- `primary_points_pct_total_last20`
+  - source-derived: `0.714286`
+  - stored: `0.730769`
+  - likely cause: ratio-family window membership mismatch
+
+- `ipp_total_last20`
+  - source-derived: `63.636364`
+  - stored: `55.172414`
+  - likely cause: valid-row window mismatch for ratio family
+
+- `expected_sh_pct_total_last20`
+  - source-derived: `0.202667`
+  - stored: `0.17881`
+  - likely cause: ratio-family denominator window mismatch
+
+- `pp_share_pct_total_last20`
+  - source-derived: `0.616859`
+  - stored: `0.606081`
+  - likely cause: minor PP-share window/component mismatch
+
+- `gp_pct_total_all`
+  - source-derived expectation for visible LAK source slice: `45 / 63 = 0.714286`
+  - stored: `22.793651`
+  - likely cause: GP% / games-played model bug, not a stale-ratio issue
+
+#### Cause classification for Corey Perry
+
+- additive counts: `MATCH`
+- weighted `/60`: `MATCH`
+- several ratio-family `last20` fields: `window-definition mismatch`
+- `gp_pct_total_all`: `logic / model bug`
+- Corey Perry remains the clearest combined example of:
+  - ratio-window mismatch
+  - GP% modeling problems
+  - upstream freshness / team-change concerns
+
+### Comparison Results: Jesper Bratt
+
+Stored row status:
+
+- no current `rolling_player_game_metrics` all-strength row found in the visible refreshed slice
+
+Cause classification:
+
+- not enough stored data yet for direct stored-vs-source comparison
+- this is currently a `refresh coverage / stale-table visibility` issue, not a metric verdict
+
+Why the player remains in the validation set:
+
+- the source-derived reconstruction is still valuable for PP-share validation
+- once a targeted recompute is run, Jesper Bratt should become the cleanest PP-heavy stored-vs-source comparison
+
+### Comparison Results: Seth Jones
+
+Stored row status:
+
+- no current `rolling_player_game_metrics` all-strength row found in the visible refreshed slice
+
+Cause classification:
+
+- not enough stored data yet for direct stored-vs-source comparison
+- this is currently a `refresh coverage / stale-table visibility` issue, not a metric verdict
+
+Why the player remains in the validation set:
+
+- still useful as the incomplete / partial-coverage proxy
+- likely to become more informative after targeted recompute
+
+### Cross-Family Comparison Summary from 3.3
+
+Current pattern from the refreshed comparable rows:
+
+1. additive count families
+- current stored values match source-derived values well
+
+2. weighted `/60` families
+- current stored values match source-derived values well
+
+3. season baseline spot checks
+- current stored values match the source-derived snapshots that were checked here
+
+4. ratio-family `last20` values
+- several do not match fixed last-20 appearance reconstructions
+- mismatch cause is most plausibly current window semantics rather than broken arithmetic
+
+5. GP%
+- current `gp_pct_total_all` is not trustworthy
+- the Corey Perry row makes that visible immediately
+
+6. refresh coverage
+- Jesper Bratt and Seth Jones show that part of the validation problem is simply missing fresh stored rows
+
+### Preliminary Cause Buckets from 3.3
+
+The comparisons so far fit into these cause buckets:
+
+- `current stored value matches intended formula`
+  - additive counts
+  - weighted `/60`
+  - several season baseline fields
+
+- `current stored value diverges because the implementation window is different from the intended fixed appearance window`
+  - `shooting_pct_total_last20`
+  - `primary_points_pct_total_last20`
+  - `ipp_total_last20`
+  - `expected_sh_pct_total_last20`
+  - `pp_share_pct_total_last20`
+
+- `current stored value diverges because the underlying model is wrong`
+  - `gp_pct_total_all`
+
+- `current stored value cannot yet be judged because the row is not fresh / not present`
+  - Jesper Bratt all-strength row
+  - Seth Jones all-strength row
+
+### Main Conclusion from 3.3
+
+The strongest current read is:
+
+- the corrected arithmetic work appears to be holding for additive counts and weighted `/60`
+- the biggest remaining correctness problem in visible stored rows is GP%
+- the biggest remaining semantics problem in visible stored rows is ratio-family `lastN` window definition
+
+That means `3.4` should focus on targeted recomputes for:
+
+- Jesper Bratt
+- Seth Jones
+- and at least one Corey Perry / Brent Burns spot-check after recompute
+
+## 3.4 Targeted Recomputes to Separate Stale Rows from Current-Code Behavior
+
+This step used targeted endpoint-driven recomputes to determine whether the mismatches from `3.3` were:
+
+- stale-table artifacts
+- or real current-code behavior
+
+### Targeted Recompute Runs Executed
+
+These endpoint calls completed successfully:
+
+- `/api/v1/db/update-rolling-player-averages?playerId=8470621&season=20252026`
+- `/api/v1/db/update-rolling-player-averages?playerId=8470613&season=20252026`
+- `/api/v1/db/update-rolling-player-averages?playerId=8479407&season=20252026`
+- `/api/v1/db/update-rolling-player-averages?playerId=8477495&season=20252026`
+
+All four returned:
+
+- `200`
+- `{\"message\":\"Rolling player averages processed successfully.\"}`
+
+### What the targeted recomputes changed
+
+#### Jesper Bratt
+
+Before targeted recompute:
+
+- no visible all-strength row in the current stored slice
+
+After targeted recompute:
+
+- latest stored all-strength row exists
+- latest row date: `2026-03-08`
+- team: `NJD`
+- `games_played = 62`
+- `team_games_played = 71`
+
+Conclusion:
+
+- Jesper Bratt’s earlier absence was a stale / missing-row problem
+- this was not evidence of a metric-family logic issue by itself
+
+#### Seth Jones
+
+Before targeted recompute:
+
+- no visible all-strength row in the current stored slice
+
+After targeted recompute:
+
+- latest stored all-strength row exists
+- latest row date remains `2026-01-02`
+- team: `FLA`
+- `games_played = 40`
+- `team_games_played = 47`
+
+Conclusion:
+
+- Seth Jones’ earlier absence in the visible stored slice was also a stale / missing-row visibility problem
+- the latest visible source date itself still stops at `2026-01-02`, so source-tail freshness remains a separate question
+
+#### Brent Burns
+
+Before targeted recompute:
+
+- latest stored row date was `2026-02-04`
+- some ratio-family comparisons were already suspicious
+
+After targeted recompute:
+
+- latest stored row date advanced to `2026-03-08`
+- additive and `/60` fields updated coherently with the new source range
+
+Conclusion:
+
+- Brent Burns confirms the stored table was stale before the targeted recompute
+- but he also remains a live example where some ratio-family `last20` values continue to diverge after refresh
+
+#### Corey Perry
+
+Before targeted recompute:
+
+- latest stored row date was `2026-02-05`
+- team was `LAK`
+- `gp_pct_total_all = 22.793651`
+- `gp_pct_avg_season = 0.714286`
+
+After targeted recompute:
+
+- latest stored row date advanced to `2026-03-08`
+- team changed to `TBL`
+- `games_played = 50`
+- `team_games_played = 69`
+- `gp_pct_total_all = 0.724638`
+- `gp_pct_avg_season = 0.028986`
+
+Conclusions:
+
+- the old Corey Perry row was definitely stale
+- the absurd `gp_pct_total_all = 22.793651` was a stale-row artifact, not current code behavior
+- but the new `gp_pct_avg_season = 0.028986` is now the stronger signal:
+  - current GP% season-baseline logic is still wrong for a traded player
+  - the bug survives recompute
+
+### Post-Recompute Source vs Stored Spot Checks
+
+After targeted recompute, the audit re-ran a smaller source-derived comparison against the newly refreshed rows.
+
+#### Families that now clearly look healthy after recompute
+
+These continued to line up well with current source-derived values:
+
+- additive count families
+- weighted `/60` families
+- season baseline spot checks such as:
+  - `shooting_pct_avg_season`
+  - `sog_per_60_avg_season`
+  - `pp_share_pct_avg_season`
+
+Examples:
+
+- Corey Perry
+  - `shooting_pct_avg_season = 13.978495` matched source-derived value
+  - `sog_per_60_avg_season = 7.84277` matched source-derived value
+  - `pp_share_pct_avg_season = 0.546838` matched source-derived value
+
+- Jesper Bratt
+  - `shooting_pct_avg_season = 10.071942` matched source-derived value
+  - `sog_per_60_avg_season = 7.143367` matched source-derived value
+  - `pp_share_pct_avg_season = 0.723749` matched source-derived value
+
+- Seth Jones
+  - `shooting_pct_avg_season = 7.692308` matched source-derived value
+  - `sog_per_60_avg_season = 4.980843` matched source-derived value
+  - `pp_share_pct_avg_season = 0.625051` matched source-derived value
+
+#### Mismatches that survived recompute
+
+These are the most important post-refresh findings, because they now point to current implementation semantics rather than stale rows.
+
+##### Brent Burns
+
+Source-derived last-20 appearance values:
+
+- `shooting_pct_last20 = 9.52381`
+- `primary_points_pct_last20 = 0.857143`
+- `ipp_last20 = 36.842105`
+- `expected_sh_pct_last20 = 0.032857`
+- `pp_share_pct_last20 = 0.199811`
+
+Stored post-refresh values:
+
+- `shooting_pct_total_last20 = 7.692308`
+- `primary_points_pct_total_last20 = 0.714286`
+- `ipp_total_last20 = 37.931034`
+- `expected_sh_pct_total_last20 = 0.0325`
+- `pp_share_pct_total_last20 = 0.166284`
+
+Cause read:
+
+- these surviving mismatches are consistent with current ratio-family window semantics, not stale data
+
+##### Corey Perry
+
+Source-derived last-20 appearance values:
+
+- `shooting_pct_last20 = 16.666667`
+- `primary_points_pct_last20 = 0.8`
+- `ipp_last20 = 57.692308`
+- `expected_sh_pct_last20 = 0.174722`
+- `pp_share_pct_last20 = 0.629725`
+
+Stored post-refresh values:
+
+- `shooting_pct_total_last20 = 14.285714`
+- `primary_points_pct_total_last20 = 0.72`
+- `ipp_total_last20 = 53.333333`
+- `expected_sh_pct_total_last20 = 0.164286`
+- `pp_share_pct_total_last20 = 0.623119`
+
+Cause read:
+
+- these mismatches also survive recompute
+- that means Corey Perry’s ratio-family last-20 divergences are current semantics issues, not stale-row artifacts
+
+##### Jesper Bratt
+
+Source-derived last-20 appearance values:
+
+- `shooting_pct_last20 = 12.820513`
+- `primary_points_pct_last20 = 0.785714`
+- `ipp_last20 = 77.777778`
+- `expected_sh_pct_last20 = 0.140256`
+- `pp_share_pct_last20 = 0.695275`
+
+Stored post-refresh values:
+
+- `shooting_pct_total_last20 = 11.320755`
+- `primary_points_pct_total_last20 = 0.7`
+- `ipp_total_last20 = 66.666667`
+- `expected_sh_pct_total_last20 = 0.129811`
+- `pp_share_pct_total_last20 = 0.695275`
+
+Cause read:
+
+- PP share matched exactly here after recompute
+- the remaining ratio-family divergences again point to current appearance-window vs valid-observation-window semantics
+
+##### Seth Jones
+
+Source-derived last-20 appearance values:
+
+- `shooting_pct_last20 = 6.818182`
+- `primary_points_pct_last20 = 0.461538`
+- `ipp_last20 = 44.827586`
+- `expected_sh_pct_last20 = 0.051591`
+- `pp_share_pct_last20 = 0.604884`
+
+Stored post-refresh values:
+
+- `shooting_pct_total_last20 = 9.615385`
+- `primary_points_pct_total_last20 = 0.5`
+- `ipp_total_last20 = 43.589744`
+- `expected_sh_pct_total_last20 = 0.054615`
+- `pp_share_pct_total_last20 = 0.604884`
+
+Cause read:
+
+- PP share matched exactly here after recompute
+- the remaining ratio-family divergences survive refresh and therefore point to current semantics
+
+### What 3.4 definitively separated
+
+#### Stale-row / missing-row issues
+
+Now clearly stale-row related:
+
+- Corey Perry’s old `LAK` row and absurd `gp_pct_total_all = 22.793651`
+- Jesper Bratt missing all-strength row
+- Seth Jones missing all-strength row in the previously visible stored slice
+- Brent Burns older stored row date ending at `2026-02-04`
+
+#### Current-code / current-semantics issues
+
+Now clearly current behavior after recompute:
+
+- ratio-family `last20` values do not represent fixed last-20 appearance windows
+- `gp_pct_avg_season` breaks badly for Corey Perry after the team change to `TBL`
+
+#### Families that now look materially trustworthy
+
+Post-recompute evidence supports these as materially healthy:
+
+- additive counts
+- weighted `/60` rates
+- several season baseline snapshots
+- `pp_share_pct` season baselines
+- `pp_share_pct_last20` for Jesper Bratt and Seth Jones specifically
+
+### Main Conclusion from 3.4
+
+Targeted recomputes resolved the stale-data ambiguity.
+
+The strongest conclusions are now:
+
+1. stale-row issues were real
+- several missing or obviously wrong rows were simply old / incomplete refresh artifacts
+
+2. ratio-family `lastN` semantics are still a current implementation issue
+- the mismatches survived targeted recompute across multiple players
+
+3. GP% still has a true current-code problem
+- Corey Perry’s post-trade `gp_pct_avg_season = 0.028986` is the clearest proof so far
+
+That means the audit can now move into `3.5` and `3.6` with much higher confidence about which findings are stale-row problems and which are actual logic defects.
+
+## 3.5 Draft `Live Validation Examples` Section
+
+This section packages the strongest evidence from `3.2` through `3.4` into a cleaner final-audit shape.
+The goal is to give the final document a short list of reusable examples rather than forcing readers to reconstruct the narrative from the working notes.
+
+### Example 1: Corey Perry post-trade GP% failure
+
+Player:
+
+- `Corey Perry` (`8470621`)
+
+Stored post-recompute row:
+
+- row date: `2026-03-08`
+- team: `TBL`
+- `games_played = 50`
+- `team_games_played = 69`
+- `gp_pct_total_all = 0.724638`
+- `gp_pct_avg_season = 0.028986`
+
+Why this example matters:
+
+- it proves stale rows were masking the current GP% problem
+- after recompute, the total availability ratio became sane
+- but the season baseline GP% became obviously wrong for a traded player
+
+Validation takeaway:
+
+- `gp_pct_total_all` can now be interpreted after refresh
+- `gp_pct_avg_season` is still a live model bug for team-change scenarios
+
+### Example 2: Corey Perry ratio-family `last20` mismatch that survives recompute
+
+Source-derived last-20 appearance values:
+
+- `shooting_pct_last20 = 16.666667`
+- `primary_points_pct_last20 = 0.8`
+- `ipp_last20 = 57.692308`
+- `expected_sh_pct_last20 = 0.174722`
+- `pp_share_pct_last20 = 0.629725`
+
+Stored post-recompute values:
+
+- `shooting_pct_total_last20 = 14.285714`
+- `primary_points_pct_total_last20 = 0.72`
+- `ipp_total_last20 = 53.333333`
+- `expected_sh_pct_total_last20 = 0.164286`
+- `pp_share_pct_total_last20 = 0.623119`
+
+Why this example matters:
+
+- it isolates a current semantics issue
+- the row is fresh, but the `last20` ratio values still do not match a fixed appearance-window reconstruction
+
+Validation takeaway:
+
+- ratio-family `lastN` mismatch is not just a stale-row problem
+
+### Example 3: Brent Burns as the “healthy control” for counts and `/60`
+
+Player:
+
+- `Brent Burns` (`8470613`)
+
+Post-recompute source and stored agreement:
+
+- additive counts aligned
+- weighted `/60` values aligned
+- season baseline spot checks aligned
+
+Why this example matters:
+
+- it shows the pipeline is not globally broken
+- the corrected additive and weighted-rate arithmetic now behaves credibly on a normal high-sample player
+
+Validation takeaway:
+
+- count-family and `/60` fixes appear materially sound
+
+### Example 4: Jesper Bratt heavy-PP validation after targeted recompute
+
+Player:
+
+- `Jesper Bratt` (`8479407`)
+
+Before recompute:
+
+- no visible all-strength row in the stored slice
+
+After recompute:
+
+- fresh row exists at `2026-03-08`
+- `pp_share_pct_total_last20 = 0.695275`
+- source-derived `pp_share_pct_last20 = 0.695275`
+
+Why this example matters:
+
+- it proves that at least one PP-heavy case now matches perfectly on `pp_share_pct_last20`
+- it also proves the earlier missing-row issue was stale coverage, not absent source data
+
+Validation takeaway:
+
+- PP share appears healthier than some of the other ratio families
+- especially after the earlier source correction away from legacy `percentageOfPP`
+
+### Example 5: Seth Jones incomplete-source-tail example
+
+Player:
+
+- `Seth Jones` (`8477495`)
+
+Stored post-recompute row:
+
+- row date: `2026-01-02`
+- `games_played = 40`
+- `team_games_played = 47`
+
+Why this example matters:
+
+- it separates two concerns:
+  - the row itself can now be refreshed successfully
+  - but the visible source tail still ends early
+
+Validation takeaway:
+
+- some validation limitations are source-tail freshness issues, not rolling arithmetic issues
+
+### Example 6: Brent Burns / Jesper Bratt / Seth Jones as evidence that ratio-family `last20` semantics are current behavior
+
+Common post-recompute pattern:
+
+- source-derived fixed-appearance-window ratio values still diverge from stored `*_total_last20` values
+- this holds across multiple players
+- the pattern affects:
+  - `shooting_pct`
+  - `primary_points_pct`
+  - `ipp`
+  - `expected_sh_pct`
+  - sometimes `pp_share_pct`
+
+Why this example matters:
+
+- it shows the issue is systematic, not player-specific
+- it strongly supports the `2.9` / `2.10` audit conclusion that ratio-family windows are still based on current valid-observation semantics
+
+Validation takeaway:
+
+- this belongs in the final audit as a cross-player example, not just a single-row anomaly
+
+### Draft `Live Validation Examples` Takeaway
+
+The final audit’s `Live Validation Examples` section should include at least these six examples because together they show:
+
+- stale-row failure
+- stale-row recovery
+- current GP% bug
+- healthy additive and `/60` arithmetic
+- healthy PP-share case
+- persistent ratio-window semantics mismatch
+
+## 3.6 Evidence-Based Status Assignment for Validated Families
+
+This step assigns provisional status buckets only for the families and columns that now have live source validation evidence.
+
+Important scope note:
+
+- these are not the final polished `WORKING / BROKEN / ALMOST / NEEDS REVIEW` output sections yet
+- those final clean lists belong in section `5.0`
+- this section is the evidence-to-status bridge so later writing is traceable
+
+### `WORKING` candidates from live validation
+
+These families or columns now have direct post-recompute evidence supporting `WORKING` status:
+
+#### Additive count families
+
+Status:
+
+- `WORKING`
+
+Evidence basis:
+
+- Brent Burns, Corey Perry, Seth Jones, and Jesper Bratt all showed clean agreement on the additive count spot checks that were reconstructed
+- examples included:
+  - `goals_total_last20`
+  - `shots_total_last20`
+  - `points_total_last20`
+  - `ixg_total_last20`
+  - `toi_seconds_total_last20`
+
+Current read:
+
+- additive count accumulation is behaving correctly on refreshed rows
+
+#### Weighted `/60` families
+
+Status:
+
+- `WORKING`
+
+Evidence basis:
+
+- refreshed rows matched source-derived values for:
+  - `sog_per_60_total_last20`
+  - `ixg_per_60_total_last20` in the validated examples where reconstructed
+  - season `/60` baselines that were checked
+
+Current read:
+
+- the earlier weighted-rate fixes appear to be holding
+
+#### Season baseline spot checks for validated families
+
+Status:
+
+- `WORKING`
+
+Evidence basis:
+
+- post-recompute source-derived values aligned on:
+  - `shooting_pct_avg_season`
+  - `sog_per_60_avg_season`
+  - `pp_share_pct_avg_season`
+
+Validated players:
+
+- Corey Perry
+- Jesper Bratt
+- Seth Jones
+- Brent Burns
+
+Current read:
+
+- historical season baseline snapshots are materially healthier than the rolling ratio windows
+
+#### `pp_share_pct_total_last20` in selected cases
+
+Status:
+
+- `WORKING` in validated cases
+
+Evidence basis:
+
+- exact match after recompute for:
+  - Jesper Bratt
+  - Seth Jones
+
+Current read:
+
+- `pp_share_pct` is behaving materially better than the other ratio families in some validated cases
+- this supports keeping it out of `BROKEN`
+
+### `BROKEN` candidates from live validation
+
+These families or columns now have direct post-recompute evidence supporting `BROKEN` status.
+
+#### `gp_pct_avg_season`
+
+Status:
+
+- `BROKEN`
+
+Evidence basis:
+
+- Corey Perry post-trade row after recompute:
+  - `games_played = 50`
+  - `team_games_played = 69`
+  - `gp_pct_total_all = 0.724638`
+  - `gp_pct_avg_season = 0.028986`
+
+Why that matters:
+
+- the row is fresh
+- the team change to `TBL` has been incorporated
+- the season baseline GP% is still nonsensical
+
+Current read:
+
+- this is a live model defect, not a stale-row issue
+
+### `ALMOST` candidates from live validation
+
+These families are close enough that the core arithmetic looks healthy, but current semantics or naming still make them unfit for full `WORKING` status.
+
+#### Ratio-family `last20` windows
+
+Status:
+
+- `ALMOST`
+
+Affected validated families:
+
+- `shooting_pct_total_last20`
+- `primary_points_pct_total_last20`
+- `ipp_total_last20`
+- `expected_sh_pct_total_last20`
+- in some cases `pp_share_pct_total_last20`
+
+Evidence basis:
+
+- mismatches survived targeted recompute across:
+  - Brent Burns
+  - Corey Perry
+  - Jesper Bratt
+  - Seth Jones
+
+Current read:
+
+- the underlying ratio arithmetic is not the main problem anymore
+- the problem is that current `last20` semantics do not match the intended fixed last-20 appearance window
+
+Why `ALMOST` instead of `BROKEN`:
+
+- the values are internally coherent under the current implementation
+- the issue is semantic mismatch and window definition, not obviously corrupted arithmetic
+
+#### `pp_share_pct` as a family
+
+Status:
+
+- `ALMOST`
+
+Evidence basis:
+
+- season baselines matched well across validated players
+- `last20` matched exactly for Jesper Bratt and Seth Jones
+- but Corey Perry and Brent Burns still showed smaller `last20` divergences
+
+Current read:
+
+- this family is healthier than the other ratio families
+- but it still inherits rolling-window semantics questions, so it is not cleanly `WORKING` as a whole
+
+### `NEEDS REVIEW` candidates from live validation
+
+These still need either broader evidence or a more specific audit slice before a hard status call.
+
+#### `gp_pct_total_all`
+
+Status:
+
+- `NEEDS REVIEW`
+
+Evidence basis:
+
+- Corey Perry’s stale row was absurd
+- Corey Perry’s refreshed row is now sane
+- but GP% as a family still has broader team-change and season-bucket problems
+
+Current read:
+
+- `gp_pct_total_all` may be closer to `WORKING` than `gp_pct_avg_season`
+- but it should stay out of `WORKING` until the dedicated section `4.0` fully validates the intended cross-team semantics
+
+#### `gp_pct_total_last*` and `gp_pct_avg_last*`
+
+Status:
+
+- `NEEDS REVIEW`
+
+Evidence basis:
+
+- code audit already showed these windows use appearance-anchored spans rather than literal last N team games
+- live validation so far has focused more on season and all-time GP% than on each rolling GP% window
+
+Current read:
+
+- likely to end up `BROKEN` or require schema redesign
+- but the final call should wait for the dedicated GP% section
+
+#### Context-label fields
+
+Status:
+
+- `NEEDS REVIEW`
+
+Affected fields:
+
+- `pp_unit`
+- `line_combo_slot`
+- `line_combo_group`
+
+Reason:
+
+- current live validation focused on numeric metrics
+- these fields still need freshness and semantic validation against their upstream builders
+
+### Main Status Takeaway from 3.6
+
+The strongest validated status assignments so far are:
+
+- `WORKING`
+  - additive counts
+  - weighted `/60`
+  - validated season baselines
+
+- `BROKEN`
+  - `gp_pct_avg_season`
+
+- `ALMOST`
+  - ratio-family `last20` windows
+  - `pp_share_pct` as a whole family
+
+- `NEEDS REVIEW`
+  - the rest of GP%
+  - context-label fields
+
+This gives the final audit a grounded starting point for the clean status lists in section `5.0`.
