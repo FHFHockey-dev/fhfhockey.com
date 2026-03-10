@@ -28,6 +28,16 @@ import {
   resolvePreferredShareComponents
 } from "./rollingPlayerMetricMath";
 import {
+  getAssistsValue,
+  getBlocksValue,
+  getGoalsValue,
+  getHitsValue,
+  getIxgValue,
+  getPointsValue,
+  getPpPointsValue,
+  getShotsValue
+} from "./rollingPlayerSourceSelection";
+import {
   summarizeCoverage,
   summarizeSuspiciousOutputs
 } from "./rollingPlayerPipelineDiagnostics";
@@ -367,10 +377,42 @@ interface PowerPlayCombinationRow {
   pp_share_of_team: number | null;
 }
 
+type ToiSource = "counts" | "counts_oi" | "rates" | "fallback" | "wgo" | "none";
+
+type SourceTrackingSummary = {
+  missingSources: {
+    counts: number;
+    rates: number;
+    countsOi: number;
+    pp: number;
+    line: number;
+    knownGameId: number;
+  };
+  wgoFallbacks: {
+    goals: number;
+    assists: number;
+    shots: number;
+    hits: number;
+    blocks: number;
+    points: number;
+    ixg: number;
+  };
+  rateReconstructions: {
+    sog_per_60: number;
+    ixg_per_60: number;
+  };
+  toiSources: Record<ToiSource, number>;
+  toiFallbackSeeds: Record<
+    PlayerGameSourceContext["fallbackToiSource"],
+    number
+  >;
+};
+
 interface PlayerProcessingDiagnostics {
   coverageWarningCount: number;
   suspiciousOutputCount: number;
   unknownGameIdCount: number;
+  sourceTracking: SourceTrackingSummary;
 }
 
 interface ProcessPlayerResult {
@@ -384,6 +426,21 @@ const cachedLineCombosByGame = new Map<number, LineCombinationRow[]>();
 function getPowerPlayCacheKey(playerId: number, gameId: number): string {
   return `${playerId}:${gameId}`;
 }
+
+type PlayerGameSourceContext = {
+  rowSpine: "wgo";
+  originalGameId: number | null;
+  hasKnownGameId: boolean;
+  teamAbbrev: string | null;
+  seasonSource: "wgo" | "counts" | "rates" | "missing";
+  countsSourcePresent: boolean;
+  ratesSourcePresent: boolean;
+  countsOiSourcePresent: boolean;
+  ppSourcePresent: boolean;
+  lineSourcePresent: boolean;
+  fallbackToiSource: "counts" | "counts_oi" | "wgo" | "none";
+  resolvedToiSource: ToiSource;
+};
 
 interface PlayerGameData {
   playerId: number;
@@ -402,6 +459,7 @@ interface PlayerGameData {
     positionGroup: "forward" | "defense" | "goalie" | null;
   };
   fallbackToiSeconds?: number | null;
+  sourceContext: PlayerGameSourceContext;
 }
 
 interface SimpleMetricDefinition {
@@ -428,76 +486,44 @@ interface RollingAccumulator {
   >;
 }
 
+// Source precedence contract for rolling player metrics:
+// 1. WGO is the appearance/date spine. Every per-game rolling row starts from a
+//    WGO skater row, even when NST coverage is missing for that date.
+// 2. NST counts tables are authoritative for player event totals whenever raw
+//    values exist. WGO only fills all-strength gaps for a narrow set of surface
+//    stats when NST counts are absent.
+// 3. NST on-ice counts tables are authoritative for territorial and on-ice
+//    context metrics, and they are the secondary TOI source after NST counts.
+// 4. NST rates tables are supplementary only. They may backfill `toi_per_gp`
+//    and reconstruct raw numerators for certain `/60` families, but they should
+//    not override directly observed raw totals.
+// 5. Power-play combination rows provide preferred PP context when available.
+//    Rolling PP share first uses builder-derived team share inputs and only
+//    falls back to WGO PPTOI/share components when the builder row is missing.
+// 6. Line-combination rows are contextual labels only. They affect role fields
+//    such as `line_combo_slot` and `line_combo_group`, not metric math.
 function getPoints(game: PlayerGameData): number | null {
-  if (
-    game.counts &&
-    game.counts.total_points !== null &&
-    game.counts.total_points !== undefined
-  ) {
-    return game.counts.total_points;
-  }
-  if (game.strength === "all") {
-    return game.wgo?.points ?? null;
-  }
-  return null;
+  return getPointsValue(game);
 }
 
 function getShots(game: PlayerGameData): number | null {
-  if (game.counts && game.counts.shots !== null && game.counts.shots !== undefined) {
-    return game.counts.shots;
-  }
-  if (game.strength === "all") {
-    return game.wgo?.shots ?? null;
-  }
-  return null;
+  return getShotsValue(game);
 }
 
 function getGoals(game: PlayerGameData): number | null {
-  if (game.counts && game.counts.goals !== null && game.counts.goals !== undefined) {
-    return game.counts.goals;
-  }
-  if (game.strength === "all") {
-    return game.wgo?.goals ?? null;
-  }
-  return null;
+  return getGoalsValue(game);
 }
 
 function getAssists(game: PlayerGameData): number | null {
-  if (
-    game.counts &&
-    game.counts.total_assists !== null &&
-    game.counts.total_assists !== undefined
-  ) {
-    return game.counts.total_assists;
-  }
-  if (game.strength === "all") {
-    return game.wgo?.assists ?? null;
-  }
-  return null;
+  return getAssistsValue(game);
 }
 
 function getHits(game: PlayerGameData): number | null {
-  if (game.counts && game.counts.hits !== null && game.counts.hits !== undefined) {
-    return game.counts.hits;
-  }
-  if (game.strength === "all") {
-    return game.wgo?.hits ?? null;
-  }
-  return null;
+  return getHitsValue(game);
 }
 
 function getBlocks(game: PlayerGameData): number | null {
-  if (
-    game.counts &&
-    game.counts.shots_blocked !== null &&
-    game.counts.shots_blocked !== undefined
-  ) {
-    return game.counts.shots_blocked;
-  }
-  if (game.strength === "all") {
-    return game.wgo?.blocked_shots ?? null;
-  }
-  return null;
+  return getBlocksValue(game);
 }
 
 function getPpShareComponents(game: PlayerGameData): RatioComponents | null {
@@ -556,12 +582,7 @@ const METRICS: MetricDefinition[] = [
   {
     key: "ixg",
     aggregation: "simple",
-    getValue: (game) =>
-      resolveIxgValue({
-        strength: game.strength,
-        countsIxg: game.counts?.ixg ?? null,
-        wgoIxg: getWgoNumber(game, "ixg")
-      })
+    getValue: (game) => getIxgValue(game)
   },
   {
     key: "primary_points_pct",
@@ -763,15 +784,7 @@ const METRICS: MetricDefinition[] = [
   {
     key: "pp_points",
     aggregation: "simple",
-    getValue: ({ counts, wgo, strength }) => {
-      if (strength === "pp") {
-        return counts?.total_points ?? null;
-      }
-      if (strength === "all") {
-        return wgo?.pp_points ?? null;
-      }
-      return null;
-    }
+    getValue: (game) => getPpPointsValue(game)
   },
   {
     key: "points",
@@ -848,7 +861,16 @@ async function executeWithSlowLog<T>(
   }
 }
 
-function getToiSeconds(game: PlayerGameData): number | null {
+function resolveToiContext(args: {
+  counts?: NstCountsRow;
+  countsOi?: NstCountsOiRow;
+  rates?: NstRatesRow;
+  fallbackToiSeconds?: number | null;
+  wgo?: WgoSkaterRow;
+}): {
+  seconds: number | null;
+  source: ToiSource;
+} {
   const sanitizeSeconds = (value: number | null | undefined): number | null => {
     if (value === null || value === undefined) return null;
     const num = Number(value);
@@ -859,26 +881,45 @@ function getToiSeconds(game: PlayerGameData): number | null {
     return num;
   };
 
-  const countsToi = sanitizeSeconds(game.counts?.toi);
-  if (countsToi !== null) return countsToi;
-  const countsOiToi = sanitizeSeconds(game.countsOi?.toi);
-  if (countsOiToi !== null) return countsOiToi;
-  const ratesToi = sanitizeSeconds(game.rates?.toi_per_gp);
-  if (ratesToi !== null) return ratesToi;
-  const fallbackToi = sanitizeSeconds(game.fallbackToiSeconds);
-  if (fallbackToi !== null) return fallbackToi;
-  const wgoToiMinutes = game.wgo?.toi_per_game;
+  const countsToi = sanitizeSeconds(args.counts?.toi);
+  if (countsToi !== null) return { seconds: countsToi, source: "counts" };
+  const countsOiToi = sanitizeSeconds(args.countsOi?.toi);
+  if (countsOiToi !== null) return { seconds: countsOiToi, source: "counts_oi" };
+  const ratesToi = sanitizeSeconds(args.rates?.toi_per_gp);
+  if (ratesToi !== null) return { seconds: ratesToi, source: "rates" };
+  const fallbackToi = sanitizeSeconds(args.fallbackToiSeconds);
+  if (fallbackToi !== null) return { seconds: fallbackToi, source: "fallback" };
+  const wgoToiMinutes = args.wgo?.toi_per_game;
   if (wgoToiMinutes != null) {
     const toiValue = Number(wgoToiMinutes);
-    if (!Number.isFinite(toiValue)) return null;
+    if (!Number.isFinite(toiValue)) return { seconds: null, source: "none" };
     // Some WGO ingests already store seconds; anything well above realistic
     // per-game minutes (e.g., >200) is treated as seconds to avoid 60x blowups.
     const alreadySeconds = toiValue > 200;
     const seconds = Math.round(alreadySeconds ? toiValue : toiValue * 60);
-    if (seconds <= 0 || seconds >= 4000) return null;
-    return seconds;
+    if (seconds <= 0 || seconds >= 4000) {
+      return { seconds: null, source: "none" };
+    }
+    return { seconds, source: "wgo" };
   }
-  return null;
+  return { seconds: null, source: "none" };
+}
+
+function getToiContext(game: PlayerGameData): {
+  seconds: number | null;
+  source: ToiSource;
+} {
+  return resolveToiContext({
+    counts: game.counts,
+    countsOi: game.countsOi,
+    rates: game.rates,
+    fallbackToiSeconds: game.fallbackToiSeconds,
+    wgo: game.wgo
+  });
+}
+
+function getToiSeconds(game: PlayerGameData): number | null {
+  return getToiContext(game).seconds;
 }
 
 function getWgoNumber(game: PlayerGameData, key: string): number | null {
@@ -967,6 +1008,75 @@ function initAccumulator(): RollingAccumulator {
     20: { values: [], sum: 0, count: 0 }
   };
   return { sumAll: 0, countAll: 0, windows };
+}
+
+function createEmptySourceTrackingSummary(): SourceTrackingSummary {
+  return {
+    missingSources: {
+      counts: 0,
+      rates: 0,
+      countsOi: 0,
+      pp: 0,
+      line: 0,
+      knownGameId: 0
+    },
+    wgoFallbacks: {
+      goals: 0,
+      assists: 0,
+      shots: 0,
+      hits: 0,
+      blocks: 0,
+      points: 0,
+      ixg: 0
+    },
+    rateReconstructions: {
+      sog_per_60: 0,
+      ixg_per_60: 0
+    },
+    toiSources: {
+      counts: 0,
+      counts_oi: 0,
+      rates: 0,
+      fallback: 0,
+      wgo: 0,
+      none: 0
+    },
+    toiFallbackSeeds: {
+      counts: 0,
+      counts_oi: 0,
+      wgo: 0,
+      none: 0
+    }
+  };
+}
+
+function mergeSourceTrackingSummary(
+  target: SourceTrackingSummary,
+  incoming: SourceTrackingSummary
+): void {
+  for (const key of Object.keys(
+    target.missingSources
+  ) as (keyof SourceTrackingSummary["missingSources"])[]) {
+    target.missingSources[key] += incoming.missingSources[key];
+  }
+  for (const key of Object.keys(
+    target.wgoFallbacks
+  ) as (keyof SourceTrackingSummary["wgoFallbacks"])[]) {
+    target.wgoFallbacks[key] += incoming.wgoFallbacks[key];
+  }
+  for (const key of Object.keys(
+    target.rateReconstructions
+  ) as (keyof SourceTrackingSummary["rateReconstructions"])[]) {
+    target.rateReconstructions[key] += incoming.rateReconstructions[key];
+  }
+  for (const key of Object.keys(target.toiSources) as ToiSource[]) {
+    target.toiSources[key] += incoming.toiSources[key];
+  }
+  for (const key of Object.keys(
+    target.toiFallbackSeeds
+  ) as PlayerGameSourceContext["fallbackToiSource"][]) {
+    target.toiFallbackSeeds[key] += incoming.toiFallbackSeeds[key];
+  }
 }
 
 function updateAccumulator(
@@ -1401,17 +1511,47 @@ function groupByDate<T extends { date_scraped: string }>(
   }, {});
 }
 
+function resolveSeasonValue(
+  wgo: WgoSkaterRow,
+  counts?: NstCountsRow,
+  rates?: NstRatesRow
+): { season: number; source: PlayerGameSourceContext["seasonSource"] } {
+  if (wgo.season_id != null) {
+    return { season: wgo.season_id, source: "wgo" };
+  }
+  if (counts?.season != null) {
+    return { season: counts.season, source: "counts" };
+  }
+  if (rates?.season != null) {
+    return { season: rates.season, source: "rates" };
+  }
+  return { season: 0, source: "missing" };
+}
+
 function resolveLineCombo(
   lineRows: LineCombinationRow[],
   gameId: number | null,
   teamId: number | null,
   playerId: number
-): PlayerGameData["lineCombo"] {
-  if (gameId === null || !teamId) return { slot: null, positionGroup: null };
+): {
+  lineCombo: PlayerGameData["lineCombo"];
+  hasSourceRow: boolean;
+} {
+  if (gameId === null || !teamId) {
+    return {
+      lineCombo: { slot: null, positionGroup: null },
+      hasSourceRow: false
+    };
+  }
   const match = lineRows.find(
     (row) => row.gameId === gameId && row.teamId === teamId
   );
-  if (!match) return { slot: null, positionGroup: null };
+  if (!match) {
+    return {
+      lineCombo: { slot: null, positionGroup: null },
+      hasSourceRow: false
+    };
+  }
 
   const findSlot = (list: number[], groupSize: number): number | null => {
     const index = list.findIndex((value) => value === playerId);
@@ -1421,17 +1561,144 @@ function resolveLineCombo(
 
   const forwardSlot = findSlot(match.forwards, 3);
   if (forwardSlot) {
-    return { slot: forwardSlot, positionGroup: "forward" };
+    return {
+      lineCombo: { slot: forwardSlot, positionGroup: "forward" },
+      hasSourceRow: true
+    };
   }
   const defenseSlot = findSlot(match.defensemen, 2);
   if (defenseSlot) {
-    return { slot: defenseSlot, positionGroup: "defense" };
+    return {
+      lineCombo: { slot: defenseSlot, positionGroup: "defense" },
+      hasSourceRow: true
+    };
   }
   const goalieSlot = findSlot(match.goalies, 1);
   if (goalieSlot) {
-    return { slot: goalieSlot, positionGroup: "goalie" };
+    return {
+      lineCombo: { slot: goalieSlot, positionGroup: "goalie" },
+      hasSourceRow: true
+    };
   }
-  return { slot: null, positionGroup: null };
+  return {
+    lineCombo: { slot: null, positionGroup: null },
+    hasSourceRow: true
+  };
+}
+
+function resolveFallbackToiContext(
+  wgo: WgoSkaterRow,
+  counts?: NstCountsRow,
+  countsOi?: NstCountsOiRow
+): {
+  fallbackToiSeconds: number | null;
+  source: PlayerGameSourceContext["fallbackToiSource"];
+} {
+  if (counts?.toi != null) {
+    return {
+      fallbackToiSeconds: counts.toi,
+      source: "counts"
+    };
+  }
+  if ((countsOi as any)?.toi != null) {
+    return {
+      fallbackToiSeconds: (countsOi as any).toi,
+      source: "counts_oi"
+    };
+  }
+  if (wgo.toi_per_game != null) {
+    return {
+      fallbackToiSeconds: Math.round(wgo.toi_per_game * 60),
+      source: "wgo"
+    };
+  }
+  return {
+    fallbackToiSeconds: null,
+    source: "none"
+  };
+}
+
+function summarizeSourceTracking(
+  games: PlayerGameData[],
+  strength: StrengthState
+): SourceTrackingSummary {
+  const summary = createEmptySourceTrackingSummary();
+
+  for (const game of games) {
+    if (!game.sourceContext.countsSourcePresent) summary.missingSources.counts += 1;
+    if (!game.sourceContext.ratesSourcePresent) summary.missingSources.rates += 1;
+    if (!game.sourceContext.countsOiSourcePresent) {
+      summary.missingSources.countsOi += 1;
+    }
+    if (!game.sourceContext.hasKnownGameId) {
+      summary.missingSources.knownGameId += 1;
+    }
+
+    if ((strength === "all" || strength === "pp") && !game.sourceContext.ppSourcePresent) {
+      const wgoPpToi = Number(game.wgo?.pp_toi ?? 0);
+      if (Number.isFinite(wgoPpToi) && wgoPpToi > 0) {
+        summary.missingSources.pp += 1;
+      }
+    }
+
+    if (game.gameId != null && game.teamId != null && !game.sourceContext.lineSourcePresent) {
+      summary.missingSources.line += 1;
+    }
+
+    if (strength === "all") {
+      if (game.counts?.goals == null && game.wgo?.goals != null) {
+        summary.wgoFallbacks.goals += 1;
+      }
+      if (game.counts?.total_assists == null && game.wgo?.assists != null) {
+        summary.wgoFallbacks.assists += 1;
+      }
+      if (game.counts?.shots == null && game.wgo?.shots != null) {
+        summary.wgoFallbacks.shots += 1;
+      }
+      if (game.counts?.hits == null && game.wgo?.hits != null) {
+        summary.wgoFallbacks.hits += 1;
+      }
+      if (game.counts?.shots_blocked == null && game.wgo?.blocked_shots != null) {
+        summary.wgoFallbacks.blocks += 1;
+      }
+      if (game.counts?.total_points == null && game.wgo?.points != null) {
+        summary.wgoFallbacks.points += 1;
+      }
+      if (game.counts?.ixg == null && getWgoNumber(game, "ixg") != null) {
+        summary.wgoFallbacks.ixg += 1;
+      }
+    }
+
+    const toiContext = getToiContext(game);
+    summary.toiSources[game.sourceContext.resolvedToiSource] += 1;
+    if (game.sourceContext.resolvedToiSource === "fallback") {
+      summary.toiFallbackSeeds[game.sourceContext.fallbackToiSource] += 1;
+    }
+
+    const shotsValue = getShots(game);
+    if (
+      toiContext.seconds != null &&
+      shotsValue == null &&
+      game.rates?.shots_per_60 != null
+    ) {
+      summary.rateReconstructions.sog_per_60 += 1;
+    }
+
+    const ixgValue = resolveIxgValue({
+      strength: game.strength,
+      countsIxg: game.counts?.ixg ?? null,
+      wgoIxg: getWgoNumber(game, "ixg")
+    });
+    if (
+      toiContext.seconds != null &&
+      ixgValue == null &&
+      game.rates?.ixg_per_60 != null
+    ) {
+      summary.rateReconstructions.ixg_per_60 += 1;
+    }
+  }
+
+  return summary;
 }
 
 function buildGameRecords(
@@ -1453,34 +1720,46 @@ function buildGameRecords(
   );
 
   return wgoRows.map((wgo) => {
+    // Row assembly intentionally starts from WGO because it is the per-game
+    // appearance spine. NST sources enrich the row when coverage exists, but
+    // they do not decide whether the rolling row exists for that date.
     const teamAbbrev = wgo.team_abbrev ?? wgo.current_team_abbreviation ?? "";
     const teamId = abbrevToTeamId[teamAbbrev] ?? null;
     const counts = countsByDate[wgo.date];
     const rates = ratesByDate[wgo.date];
     const countsOi = countsOiByDate[wgo.date];
     const originalGameId = wgo.game_id;
+    const hasKnownGameId =
+      typeof originalGameId === "number" && knownGameIds.has(originalGameId);
     const ppCombination =
       originalGameId && ppByGameId[originalGameId]
         ? ppByGameId[originalGameId]
         : undefined;
-    const lineCombo = resolveLineCombo(
+    const { lineCombo, hasSourceRow: hasLineSourceRow } = resolveLineCombo(
       lineRows,
       originalGameId,
       teamId,
       wgo.player_id
     );
-    const fallbackToiSeconds =
-      counts?.toi ??
-      (countsOi as any)?.toi ??
-      (wgo?.toi_per_game != null ? Math.round(wgo.toi_per_game * 60) : null);
+    const { season, source: seasonSource } = resolveSeasonValue(
+      wgo,
+      counts,
+      rates
+    );
+    const { fallbackToiSeconds, source: fallbackToiSource } =
+      resolveFallbackToiContext(wgo, counts, countsOi);
+    const resolvedToiSource = resolveToiContext({
+      counts,
+      countsOi,
+      rates,
+      fallbackToiSeconds,
+      wgo
+    }).source;
     return {
       playerId: wgo.player_id,
-      gameId:
-        originalGameId && knownGameIds.has(originalGameId)
-          ? originalGameId
-          : null,
+      gameId: hasKnownGameId ? originalGameId : null,
       gameDate: wgo.date,
-      season: wgo.season_id ?? counts?.season ?? rates?.season ?? 0,
+      season,
       teamId,
       strength,
       counts,
@@ -1489,7 +1768,21 @@ function buildGameRecords(
       wgo,
       ppCombination: ppCombination ?? null,
       lineCombo,
-      fallbackToiSeconds
+      fallbackToiSeconds,
+      sourceContext: {
+        rowSpine: "wgo",
+        originalGameId: originalGameId ?? null,
+        hasKnownGameId,
+        teamAbbrev: teamAbbrev || null,
+        seasonSource,
+        countsSourcePresent: Boolean(counts),
+        ratesSourcePresent: Boolean(rates),
+        countsOiSourcePresent: Boolean(countsOi),
+        ppSourcePresent: Boolean(ppCombination),
+        lineSourcePresent: hasLineSourceRow,
+        fallbackToiSource,
+        resolvedToiSource
+      }
     };
   });
 }
@@ -1507,7 +1800,8 @@ async function processPlayer(
       diagnostics: {
         coverageWarningCount: 0,
         suspiciousOutputCount: 0,
-        unknownGameIdCount: 0
+        unknownGameIdCount: 0,
+        sourceTracking: createEmptySourceTrackingSummary()
       }
     };
   }
@@ -1523,7 +1817,8 @@ async function processPlayer(
   const diagnostics: PlayerProcessingDiagnostics = {
     coverageWarningCount: 0,
     suspiciousOutputCount: 0,
-    unknownGameIdCount: 0
+    unknownGameIdCount: 0,
+    sourceTracking: createEmptySourceTrackingSummary()
   };
   for (const config of STRENGTH_CONFIGS) {
     const strengthLabel = `[fetchRollingPlayerAverages] player:${playerId} strength:${config.state}`;
@@ -1578,6 +1873,16 @@ async function processPlayer(
         ppRows,
         config.state,
         knownGameIds
+      );
+      const sourceTracking = summarizeSourceTracking(games, config.state);
+      mergeSourceTrackingSummary(diagnostics.sourceTracking, sourceTracking);
+      console.info(
+        "[fetchRollingPlayerAverages] sourceTracking",
+        JSON.stringify({
+          playerId,
+          strength: config.state,
+          ...sourceTracking
+        })
       );
 
       const simpleMetricsState: Record<string, RollingAccumulator> = {};
@@ -1918,6 +2223,7 @@ export async function main(options: FetchOptions = {}): Promise<void> {
   let coverageWarnings = 0;
   let suspiciousOutputWarnings = 0;
   let unknownGameIds = 0;
+  const sourceTracking = createEmptySourceTrackingSummary();
   const playerProgress = createProgressLogger({
     label: "players",
     total: filteredPlayerIds.length,
@@ -1943,6 +2249,7 @@ export async function main(options: FetchOptions = {}): Promise<void> {
         coverageWarnings += diagnostics.coverageWarningCount;
         suspiciousOutputWarnings += diagnostics.suspiciousOutputCount;
         unknownGameIds += diagnostics.unknownGameIdCount;
+        mergeSourceTrackingSummary(sourceTracking, diagnostics.sourceTracking);
         if (!rows.length) {
           processedPlayers += 1;
           playerProgress.update(
@@ -2017,9 +2324,15 @@ export async function main(options: FetchOptions = {}): Promise<void> {
       playersWithRows,
       coverageWarnings,
       suspiciousOutputWarnings,
-      unknownGameIds
+      unknownGameIds,
+      sourceTracking
     })
   );
 }
+
+export const __testables = {
+  buildGameRecords,
+  summarizeSourceTracking
+};
 
 export default { main };
