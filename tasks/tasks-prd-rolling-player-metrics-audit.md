@@ -46,12 +46,12 @@
   - [x] 3.4 Use targeted recomputes where needed to separate stale-row issues from current-code issues.
   - [x] 3.5 Capture validation examples in a separate `Live Validation Examples` section for the final audit.
   - [x] 3.6 Mark each validated metric family or column as `WORKING`, `BROKEN`, `ALMOST`, or `NEEDS REVIEW` based on evidence.
-- [ ] 4.0 Audit GP% and availability modeling, including schema-fit issues
-  - [ ] 4.1 Reverse-engineer current `games_played`, `team_games_played`, `gp_pct_total_*`, and `gp_pct_avg_*` behavior from the current code paths.
-  - [ ] 4.2 Compare current GP% behavior against intended team-game availability semantics, including players who missed games.
-  - [ ] 4.3 Define the intended model for career, season, and rolling GP% windows.
-  - [ ] 4.4 Determine whether the current schema can represent the intended GP% meaning cleanly or whether new columns are required.
-  - [ ] 4.5 Produce a separate `Schema Change Recommendations` list for GP% and availability redesign items.
+- [x] 4.0 Audit GP% and availability modeling, including schema-fit issues
+  - [x] 4.1 Reverse-engineer current `games_played`, `team_games_played`, `gp_pct_total_*`, and `gp_pct_avg_*` behavior from the current code paths.
+  - [x] 4.2 Compare current GP% behavior against intended team-game availability semantics, including players who missed games.
+  - [x] 4.3 Define the intended model for career, season, and rolling GP% windows.
+  - [x] 4.4 Determine whether the current schema can represent the intended GP% meaning cleanly or whether new columns are required.
+  - [x] 4.5 Produce a separate `Schema Change Recommendations` list for GP% and availability redesign items.
 - [ ] 5.0 Produce the final grouped audit artifact and remediation plan
   - [ ] 5.1 Write the `Metric Families` section and the `Column-by-Column Inventory` section.
   - [ ] 5.2 Write the clean checklist-style `WORKING` section with emoji, shorthand formula, and short status note only.

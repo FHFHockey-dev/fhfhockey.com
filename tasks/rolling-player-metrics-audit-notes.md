@@ -4056,3 +4056,1236 @@ The strongest validated status assignments so far are:
   - context-label fields
 
 This gives the final audit a grounded starting point for the clean status lists in section `5.0`.
+
+## 4.1 Reverse-Engineered Current GP% and Availability Logic
+
+This step isolates the exact implementation path for:
+
+- `games_played`
+- `team_games_played`
+- `gp_pct_total_all`
+- `gp_pct_avg_all`
+- `gp_pct_total_last3/5/10/20`
+- `gp_pct_avg_last3/5/10/20`
+- `gp_pct_avg_season`
+- `gp_pct_avg_3ya`
+- `gp_pct_avg_career`
+
+### Current GP% write path
+
+The GP% family is built across two files:
+
+1. [fetchRollingPlayerAverages.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts)
+- computes current-row rolling and all-time GP% outputs
+
+2. [rollingHistoricalAverages.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingHistoricalAverages.ts)
+- computes historical GP% snapshots for season / 3YA / career
+
+This is already a warning sign because GP% is not using the same baseline path as other metric families.
+
+### How `games_played` is currently computed
+
+In [fetchRollingPlayerAverages.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts), each processed game row sets:
+
+- `playedThisGame = 1` for `strength_state = all`
+- `playedThisGame = 1` for split strengths only if `getToiSeconds(game) > 0`
+
+Then:
+
+- if `playedThisGame > 0`, increment `gamesPlayed`
+- also push `game.gameDate` into `appearanceDates`
+
+So the current meaning is:
+
+- `games_played`
+  - for `all`: count of processed appearance rows in this source slice
+  - for `ev` / `pp` / `pk`: count of rows with positive TOI in that strength
+
+This means split-strength `games_played` is not literal game participation.
+It is participation-with-positive-TOI in the specific strength state.
+
+### How `team_games_played` is currently computed
+
+For each processed game row:
+
+- `teamGamesPlayed = getTeamGamesPlayed(ledger, teamId, season, gameDate)`
+
+`getTeamGamesPlayed(...)` uses the prebuilt team ledger from `games` and returns:
+
+- cumulative number of team games for that team and season through the row date
+
+So the current meaning is:
+
+- `team_games_played = chronological team games through this row’s date for the row team_id`
+
+This is a clean team-ledger concept by itself.
+
+### How `gp_pct_total_all` and `gp_pct_avg_all` are currently computed
+
+In `deriveOutputs(...)`:
+
+- `gp_pct_total_all = gamesPlayed / teamGamesPlayed`
+- `gp_pct_avg_all = gp_pct_total_all`
+
+So the current meaning is:
+
+- `gp_pct_total_all`
+  - running appearance count divided by current row’s team games through date
+
+This is only straightforward when:
+
+- the player is on one team
+- the processed source rows are complete
+
+It becomes ambiguous or wrong when:
+
+- the player changes teams midseason
+- source coverage is partial
+- split strengths are used
+
+### How rolling `gp_pct_total_last*` and `gp_pct_avg_last*` are currently computed
+
+The rolling path uses `appearanceDates`, not team-game windows directly.
+
+For each `size in [3, 5, 10, 20]`:
+
+1. take the last N dates from `appearanceDates`
+2. let `windowStart = first of those dates`
+3. compute:
+   - `playerGamesWindow[size] = windowDates.length`
+   - `teamGamesWindow[size] = getTeamGamesWindowCount(ledger, teamId, season, windowStart, gameDate)`
+4. set:
+   - `gp_pct_total_lastN = playerGamesWindow / teamGamesWindow`
+   - `gp_pct_avg_lastN = gp_pct_total_lastN`
+
+So the current meaning is:
+
+- pick the player’s last N appearances
+- count how many team games occurred between the first of those appearances and the current row date
+- divide N by that team-game span
+
+This is not:
+
+- last N team games
+- nor purely last N appearances
+
+It is an appearance-anchored span ratio.
+
+### How `gp_pct_avg_season`, `gp_pct_avg_3ya`, and `gp_pct_avg_career` are currently computed
+
+The historical GP% accumulator is separate from all other families.
+
+In [rollingHistoricalAverages.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingHistoricalAverages.ts):
+
+- key = `season:teamId`
+- per processed row:
+  - if `playedThisGame`, increment `playerGames`
+  - set `teamGames = max(teamGames, teamGamesPlayed)`
+
+Then `getHistoricalGpPctSnapshot(...)` returns:
+
+- `season = seasonPlayerGames / seasonTeamGames` only for buckets matching both:
+  - `bucketSeason === currentSeason`
+  - `bucketTeamId === currentTeamId`
+
+- `threeYear = sum(playerGames across season-team buckets in window) / sum(teamGames across season-team buckets in window)`
+- `career = sum(playerGames across all season-team buckets) / sum(teamGames across all season-team buckets)`
+
+This is the most important current semantic detail:
+
+- `gp_pct_avg_season` is not “current season availability across the player’s season”
+- it is “availability within the current row’s current team bucket for this season”
+
+That is exactly why Corey Perry’s post-trade row can produce:
+
+- sane `gp_pct_total_all`
+- broken `gp_pct_avg_season`
+
+because his current row is on `TBL`, and the season snapshot only looks at the `20252026:TBL` bucket.
+
+### Why Corey Perry breaks the current model
+
+For Corey Perry after the trade:
+
+- `games_played = 50`
+- `team_games_played = 69`
+- `gp_pct_total_all = 50 / 69 = 0.724638`
+
+But `gp_pct_avg_season` is computed only from the current `season:teamId` bucket:
+
+- effectively `TBL games played / TBL team games since joining`
+
+That is why the refreshed row showed:
+
+- `gp_pct_avg_season = 0.028986`
+
+This value is internally consistent with the current code path.
+It is not an arithmetic glitch.
+It is the wrong season-bucket model for a traded-player interpretation.
+
+### Reverse-engineered current meanings by field
+
+- `games_played`
+  - running count of appearances in processed rows
+  - split strengths require positive TOI in that strength
+
+- `team_games_played`
+  - chronological team games through row date for current row team
+
+- `gp_pct_total_all`
+  - `games_played / team_games_played`
+
+- `gp_pct_avg_all`
+  - identical to `gp_pct_total_all`
+
+- `gp_pct_total_lastN`
+  - player last-N-appearance count divided by team-game count across the span from first of those appearances to row date
+
+- `gp_pct_avg_lastN`
+  - identical to `gp_pct_total_lastN`
+
+- `gp_pct_avg_season`
+  - historical season ratio inside the current `season:teamId` bucket only
+
+- `gp_pct_avg_3ya`
+  - ratio of summed playerGames to summed teamGames across all season-team buckets in 3YA window
+
+- `gp_pct_avg_career`
+  - ratio of summed playerGames to summed teamGames across all season-team buckets in career
+
+### Main implementation problems exposed by 4.1
+
+1. `avg` naming is misleading
+- GP% fields are not ordinary averages
+- `avg_all` and `avg_lastN` are just aliases of ratio snapshots
+
+2. Season semantics are team-bucketed, not season-bucketed
+- `gp_pct_avg_season` breaks for traded players by design
+
+3. Rolling semantics are appearance-anchored spans
+- `gp_pct_total_lastN` is not last N team games
+
+4. Split-strength GP% changes the meaning of “games played”
+- split strengths really mean “games with positive TOI in that state”
+
+### Main Conclusion from 4.1
+
+The current GP% implementation is not one coherent availability model.
+It is a mix of:
+
+- running appearance ratios
+- appearance-anchored rolling span ratios
+- season-team historical buckets
+
+That mixed model explains why:
+
+- some GP% fields can look sane
+- others can be obviously wrong on the same player row
+
+The next step is to compare this current behavior directly against the intended team-game availability semantics, especially for injuries and team changes.
+
+## 4.2 Current GP% Behavior vs Intended Team-Game Availability Semantics
+
+This step compares the reverse-engineered current GP% model against the product meaning that is actually desirable.
+
+### Intended GP% semantics
+
+The intended availability interpretation is:
+
+- GP% should answer “of the relevant team games available in this window, how many did the player appear in?”
+
+That implies:
+
+#### For `gp_pct_total_all`
+
+- denominator:
+  - total team games available to the player across the full relevant season/career scope
+- numerator:
+  - player appearances across those same team games
+
+#### For `gp_pct_total_lastN`
+
+- denominator:
+  - last N chronological team games available in the relevant team window
+- numerator:
+  - number of those games in which the player appeared
+
+#### For `gp_pct_avg_season`
+
+- intended reading:
+  - season-to-date availability ratio across the player’s season context
+- not:
+  - current-team-only bucket since latest trade
+
+#### For injuries / healthy scratches
+
+- missed team games should remain in the denominator
+- the player simply does not get a numerator increment for those games
+
+#### For traded players
+
+- team context must either:
+  - remain segmented explicitly by team stint
+  - or be aggregated over the player’s full season path in a clearly defined way
+
+The current implementation does neither cleanly.
+
+### Current behavior vs intended meaning
+
+#### `gp_pct_total_all`
+
+Current behavior:
+
+- running appearance count divided by current row’s `team_games_played`
+
+Where it aligns:
+
+- for a one-team player with full source coverage, this is close to the intended season-to-date availability ratio
+
+Where it breaks:
+
+- traded players
+- partial source coverage
+- split-strength states, where “games played” really means “games with positive TOI in that state”
+
+Current verdict at this step:
+
+- partially aligned for simple one-team cases
+- semantically unstable across trades and split strengths
+
+#### `gp_pct_total_lastN`
+
+Current behavior:
+
+- appearance-anchored span ratio
+
+Intended behavior:
+
+- literal last N chronological team games
+
+Gap:
+
+- the current denominator expands or contracts based on when the player’s appearances happened
+- that means two players can both have “last20” GP% values even though the underlying team-game windows are different
+
+Current verdict at this step:
+
+- misaligned with intended last-N team-game semantics
+
+#### `gp_pct_avg_season`
+
+Current behavior:
+
+- current `season:teamId` historical bucket only
+
+Intended behavior:
+
+- season availability ratio for the player’s season context
+
+Gap:
+
+- post-trade rows collapse the season baseline to the current team stint only
+- that destroys the expected meaning of “season” for players who changed teams
+
+Current verdict at this step:
+
+- fundamentally misaligned for traded players
+
+### Corey Perry as the canonical trade / missed-games example
+
+Current source evidence now shows:
+
+- first visible current-season row:
+  - `2025-10-21`, `LAK`
+- last visible current-season row:
+  - `2026-03-08`, `TBL`
+- visible current-season teams:
+  - `LAK`
+  - `TBL`
+- total visible current-season appearances:
+  - `50`
+
+Relevant refreshed stored rows:
+
+#### LAK row before the move
+
+- row date: `2026-03-05`
+- `team_id = 26`
+- `games_played = 48`
+- `team_games_played = 68`
+- `gp_pct_total_all = 0.705882`
+- `gp_pct_avg_season = 0.705882`
+
+Interpretation:
+
+- while the player was still on `LAK`, current all-time and season GP% were aligned because both were still inside the same team bucket
+
+#### TBL rows after the move
+
+- row date: `2026-03-07`
+- `team_id = 14`
+- `games_played = 49`
+- `team_games_played = 68`
+- `gp_pct_total_all = 0.720588`
+- `gp_pct_avg_season = 0.014706`
+
+- row date: `2026-03-08`
+- `team_id = 14`
+- `games_played = 50`
+- `team_games_played = 69`
+- `gp_pct_total_all = 0.724638`
+- `gp_pct_avg_season = 0.028986`
+
+Interpretation:
+
+- `gp_pct_total_all` remained interpretable because it kept using total appearances over current row team games through date
+- `gp_pct_avg_season` collapsed because the season snapshot now only looked at the `TBL` bucket
+
+This is the clearest direct proof that:
+
+- the current GP% model cannot represent traded-player season semantics correctly
+
+### Injury / missed-game semantics vs current implementation
+
+For an injured or scratch-heavy player, the intended model is:
+
+- denominator keeps advancing with team games
+- numerator only advances on appearances
+
+The current implementation partially captures that in `gp_pct_total_all`, but rolling `lastN` windows do not.
+
+Why:
+
+- rolling windows start from last N appearance dates
+- if a player missed multiple games inside the chronological last-20 team-game window, the current code can still report a ratio over a wider or different team-game span
+
+So for injury / missed-game cases:
+
+- `gp_pct_total_all` can still be directionally useful
+- `gp_pct_total_lastN` is not trustworthy if the intended reading is “last N team games”
+
+### Split-strength semantics vs intended GP%
+
+For `ev`, `pp`, and `pk`, the current implementation sets:
+
+- `playedThisGame = 1` only if the player had positive TOI in that strength
+
+That means split-strength GP% currently means:
+
+- share of team games in which the player recorded TOI in that strength
+
+This may be acceptable if explicitly named that way.
+It is not equivalent to:
+
+- general game participation
+
+So the audit should treat split-strength GP% as a separate semantic product decision, not just a technical variant of all-strength GP%.
+
+### Current GP% behavior mapped to intended use cases
+
+#### One-team, healthy regular
+
+Current fit:
+
+- `gp_pct_total_all`: often acceptable
+- `gp_pct_avg_season`: often appears acceptable
+- rolling `gp_pct_lastN`: still semantically wrong if shown as last N team games
+
+#### One-team, missed-games / injury case
+
+Current fit:
+
+- `gp_pct_total_all`: directionally acceptable
+- rolling `gp_pct_lastN`: misaligned because it is appearance-anchored
+
+#### Traded player
+
+Current fit:
+
+- `gp_pct_total_all`: only partially acceptable and still ambiguous across team contexts
+- `gp_pct_avg_season`: broken
+- rolling `gp_pct_lastN`: broken for intended team-game semantics
+
+#### Split-strength participation
+
+Current fit:
+
+- only acceptable if explicitly interpreted as “games with positive TOI in this strength state”
+- not acceptable if product copy implies standard GP%
+
+### Main conclusion from 4.2
+
+Compared to the intended team-game availability model:
+
+- `gp_pct_total_all` is the closest field to being useful, but still needs clearer team-change semantics
+- `gp_pct_total_last*` and `gp_pct_avg_last*` are misaligned with intended last N team-game behavior
+- `gp_pct_avg_season` is clearly broken for traded players
+- split-strength GP% should probably be treated as a separate concept from ordinary games-played percentage
+
+This means the next step is not a small formula tweak.
+It is to define the intended GP% model explicitly for:
+
+- all-strength season
+- all-strength rolling windows
+- career / 3YA
+- team-change cases
+- split-strength participation cases
+
+## 4.3 Intended GP% Model for Career, Season, and Rolling Windows
+
+This step defines the target availability model the audit should use going forward.
+
+The core design principle is:
+
+- GP% should model availability against team games
+- but the relevant team-game scope depends on whether the window is:
+  - career / 3YA
+  - season-to-date
+  - rolling last N
+  - all-strength or split-strength
+
+### Intended all-strength GP% model
+
+#### Intended `games_played`
+
+Definition:
+
+- count of team games in which the player appeared
+
+All-strength rule:
+
+- a game counts if the player has a valid appearance row for that game
+
+This should not depend on:
+
+- whether a stat family is missing for that game
+- whether a particular ratio denominator exists
+
+#### Intended `team_games_played`
+
+Definition:
+
+- count of team games available in the relevant scope
+
+All-strength rule:
+
+- use the team schedule ledger, not appearance rows
+
+### Intended all-strength season model
+
+#### Intended `gp_pct_total_all`
+
+Target meaning:
+
+- season-to-date player availability across the player’s full current season path
+
+Recommended formula:
+
+- numerator:
+  - total appearances in current season across all team stints included in the source scope
+- denominator:
+  - total team games available across those same team stints
+
+Trade handling:
+
+- if a player changed teams, season total availability should span all current-season stints
+- it should not reset or collapse to the current team only
+
+This means Corey Perry’s post-trade season availability should still reflect:
+
+- LAK stint team games before the move
+- plus TBL team games since the move
+
+#### Intended `gp_pct_avg_season`
+
+Target meaning:
+
+- same season-to-date availability concept as `gp_pct_total_all`, unless the schema explicitly chooses to separate:
+  - “season snapshot”
+  - from “running total ratio”
+
+Current audit recommendation:
+
+- there is no useful semantic distinction between `gp_pct_total_all` and `gp_pct_avg_season` under the intended model
+- both are season availability ratios, not ordinary averages
+
+So the intended model is:
+
+- either make them identical intentionally and name them more clearly
+- or remove one of them in a redesign
+
+### Intended all-strength rolling model
+
+#### Intended `gp_pct_total_lastN`
+
+Target meaning:
+
+- of the last N chronological team games available in the relevant team window, what fraction did the player appear in?
+
+Recommended formula:
+
+- denominator:
+  - exactly N team games, unless fewer than N team games exist in scope
+- numerator:
+  - number of those games in which the player appeared
+
+#### Trade handling for rolling last N
+
+The cleanest intended behavior is:
+
+- rolling windows should follow the current team context of the row
+
+That means for a post-trade `TBL` row:
+
+- `gp_pct_total_last10`
+  - should refer to the last 10 `TBL` team games up to that row date
+- not:
+  - the last 10 appearances spread across `LAK` and `TBL`
+
+Reason:
+
+- rolling recency is a current-team usage / availability signal
+- mixing teams in rolling windows makes current-team interpretation much harder
+
+So the intended split is:
+
+- season / career availability
+  - aggregate across stints in the relevant scope
+- rolling availability
+  - current-team window only
+
+#### Intended `gp_pct_avg_lastN`
+
+Current audit recommendation:
+
+- same issue as `gp_pct_avg_season`
+- there is no meaningful “average” interpretation here distinct from the rolling ratio snapshot itself
+
+So the intended model is:
+
+- either keep it as an alias intentionally
+- or remove / rename it in redesign
+
+### Intended career and 3YA GP% model
+
+#### Intended `gp_pct_avg_3ya`
+
+Target meaning:
+
+- player appearances across the last three season windows divided by total team games available across those same three seasons
+
+Trade handling:
+
+- aggregate across all stints within the included seasons
+
+#### Intended `gp_pct_avg_career`
+
+Target meaning:
+
+- total player appearances across career divided by total team games available across all career stints in scope
+
+Trade handling:
+
+- aggregate across all teams and seasons in scope
+
+This means career and 3YA GP% should be:
+
+- player-centered aggregates across stints
+- not current-team-only snapshots
+
+### Intended split-strength GP% model
+
+Split-strength GP% needs separate treatment because it is not ordinary “games played.”
+
+#### Recommended split-strength concept
+
+Target meaning:
+
+- share of team games in which the player recorded positive TOI in that strength state
+
+Examples:
+
+- EV participation rate
+- PP participation rate
+- PK participation rate
+
+Recommended naming interpretation:
+
+- this should not be marketed as standard GP%
+- it is a participation-in-state rate
+
+Recommended denominator:
+
+- team games in the current team window / season scope
+
+Recommended numerator:
+
+- games with positive TOI in that state
+
+Trade handling:
+
+- same split as all-strength
+  - season / career aggregate across stints
+  - rolling windows follow current-team context
+
+### Intended model by field family
+
+#### All-strength season-to-date
+
+- `games_played`
+  - appearances across current-season stints in scope
+- `team_games_played`
+  - team games across current-season stints in scope
+- `gp_pct_total_all`
+  - `games_played / team_games_played`
+- `gp_pct_avg_all`
+  - probably redundant alias unless renamed
+- `gp_pct_avg_season`
+  - same underlying season ratio unless schema redesign chooses otherwise
+
+#### All-strength rolling
+
+- `gp_pct_total_lastN`
+  - current-team last N chronological team games
+- `gp_pct_avg_lastN`
+  - probably redundant alias unless renamed
+
+#### Historical 3YA / career
+
+- `gp_pct_avg_3ya`
+  - player-centered aggregate across included stints
+- `gp_pct_avg_career`
+  - player-centered aggregate across career stints
+
+#### Split strengths
+
+- same window logic as above
+- but numerator means games with positive TOI in that state
+
+### Why this intended model fits the validated examples
+
+#### Corey Perry
+
+Under the intended model:
+
+- season availability after the trade would remain a season-wide ratio
+- rolling `lastN` after the trade would switch cleanly to current-team `TBL` windows
+
+That matches the intuitive product meaning:
+
+- season tells you how available he has been this year overall
+- rolling tells you how available he has been recently for Tampa Bay
+
+#### Injured / missed-games case
+
+Under the intended model:
+
+- season availability remains depressed by missed games
+- rolling availability shows literal recent team-game participation
+
+That matches user intuition much better than appearance-anchored spans.
+
+### Main conclusion from 4.3
+
+The intended GP% model should use this split:
+
+1. season / 3YA / career
+- player-centered availability aggregates across all relevant team stints
+
+2. rolling last N
+- current-team chronological team-game windows
+
+3. split strengths
+- same window logic, but numerator means positive-TOI participation in that state
+
+This gives the audit a concrete target model for the next step:
+
+- determine whether the current schema can represent that cleanly
+
+## 4.4 Can the Current Schema Represent the Intended GP% Model Cleanly?
+
+This step answers a narrower question than “what should GP% mean?”:
+
+- can the current columns express that intended meaning without ambiguity?
+
+Short answer:
+
+- not cleanly
+
+The current schema can partially represent the intended model for some fields, but not for the full design without either:
+
+- semantic overload
+- redundant aliases
+- or new columns / renamed fields
+
+### Current GP% column surface
+
+The GP% family currently has:
+
+- `games_played`
+- `team_games_played`
+- `gp_pct_total_all`
+- `gp_pct_avg_all`
+- `gp_pct_total_last3`
+- `gp_pct_avg_last3`
+- `gp_pct_total_last5`
+- `gp_pct_avg_last5`
+- `gp_pct_total_last10`
+- `gp_pct_avg_last10`
+- `gp_pct_total_last20`
+- `gp_pct_avg_last20`
+- `gp_pct_avg_season`
+- `gp_pct_avg_3ya`
+- `gp_pct_avg_career`
+
+### What the current schema can represent reasonably well
+
+#### `games_played`
+
+Schema fit:
+
+- acceptable as a raw numerator field
+
+Caveat:
+
+- its meaning changes by strength state
+- so it is only clean if the product explicitly accepts:
+  - all-strength appearances
+  - versus split-strength positive-TOI participation counts
+
+#### `team_games_played`
+
+Schema fit:
+
+- acceptable as a raw denominator field for the current row scope
+
+Caveat:
+
+- it only captures the current row’s team-games-through-date context
+- it does not preserve multi-team season denominator structure by itself
+
+#### `gp_pct_total_all`
+
+Schema fit:
+
+- potentially usable if explicitly defined as:
+  - current-scope running availability ratio
+
+Caveat:
+
+- it becomes ambiguous once season totals are meant to span multiple team stints
+
+### What the current schema does not represent cleanly
+
+#### `gp_pct_avg_all`
+
+Schema fit:
+
+- poor
+
+Reason:
+
+- it is just an alias of `gp_pct_total_all`
+- there is no distinct “average” concept here
+
+Conclusion:
+
+- current schema has redundant surface area
+
+#### `gp_pct_total_lastN` vs `gp_pct_avg_lastN`
+
+Schema fit:
+
+- poor
+
+Reason:
+
+- these are also aliases, not distinct concepts
+- if the intended model is a rolling team-game availability ratio, there is no meaningful total-vs-average distinction
+
+Conclusion:
+
+- the suffix pattern is forcing a ratio family into a count-style naming template that does not fit
+
+#### `gp_pct_avg_season`
+
+Schema fit:
+
+- poor under the intended model
+
+Reason:
+
+- the field name suggests a season-level availability concept
+- but current schema has no explicit way to say whether that season concept is:
+  - current-team-only
+  - all-team-stints season aggregate
+  - or something else
+
+Under the intended model:
+
+- this field should represent season-wide availability across stints
+- but the current semantics and naming do not enforce that cleanly
+
+#### Rolling lastN across current team only
+
+Schema fit:
+
+- incomplete
+
+Reason:
+
+- the stored ratio value alone does not indicate:
+  - which team window it used
+  - whether the denominator was exactly N team games
+  - whether it crossed a team-change boundary
+
+If rolling GP% is meant to be current-team-only after a trade, the schema currently relies on row `team_id` plus implementation assumptions rather than explicit window metadata.
+
+### Core schema-fit problems
+
+#### Problem 1: Redundant alias fields
+
+The schema stores both:
+
+- `gp_pct_total_*`
+- `gp_pct_avg_*`
+
+But for GP%, these are not distinct concepts.
+
+This creates:
+
+- naming confusion
+- extra surface area to maintain
+- false implication that both a total and average exist
+
+#### Problem 2: No explicit representation of team-stint scope
+
+The intended model needs to distinguish:
+
+- season aggregate across all current-season stints
+- rolling window against current team only
+
+The current schema has no dedicated fields to encode:
+
+- season-stint denominator totals
+- current-team rolling denominator counts
+- whether a ratio spans multiple teams
+
+So the model is being inferred from implementation rather than represented explicitly.
+
+#### Problem 3: Split-strength participation is overloaded into GP%
+
+For split strengths, `games_played` means:
+
+- games with positive TOI in that strength
+
+That is not the same concept as normal games played.
+The current schema does not distinguish:
+
+- all-strength appearances
+- state-specific participation counts
+
+So the same column names are trying to carry two different semantic models.
+
+#### Problem 4: Historical season vs rolling season naming collision
+
+The intended model needs:
+
+- a season aggregate concept
+- a rolling lastN concept
+
+But the `avg_*` naming pattern makes GP% look like just another metric family when it is actually an availability model with its own rules.
+
+### Minimum conclusion on schema sufficiency
+
+If the goal were only:
+
+- one-team all-strength season availability
+
+then the current schema could be salvaged with documentation and code fixes.
+
+But given the intended model from `4.3`, the current schema is not sufficient to represent all of this cleanly:
+
+- traded-player season aggregates across stints
+- current-team rolling windows
+- split-strength participation semantics
+- removal of fake total-vs-average distinctions
+
+### What likely requires schema changes
+
+At a minimum, one of these must happen:
+
+1. semantic simplification
+- collapse redundant GP% alias columns
+
+2. explicit scope fields or replacement columns
+- distinguish:
+  - season aggregate across stints
+  - current-team rolling availability
+  - split-strength participation availability
+
+3. clearer naming
+- stop pretending GP% has meaningful `total` and `avg` variants in the same way counts do
+
+### Main conclusion from 4.4
+
+The current schema cannot represent the intended GP% model cleanly without redesign.
+
+The most important reasons are:
+
+- redundant alias columns
+- no explicit team-stint scope representation
+- overloading split-strength participation into the same GP% naming family
+
+That means `4.5` should produce explicit schema-change recommendations rather than trying to rescue the current field set with documentation alone.
+
+## 4.5 Draft `Schema Change Recommendations` for GP% and Availability
+
+This section is intentionally separate from the metric status buckets.
+These are redesign recommendations, not status labels.
+
+### Recommendation 1: Stop treating GP% like a normal `total_* / avg_*` metric family
+
+Priority:
+
+- high
+
+Recommendation:
+
+- remove or deprecate the fake GP% total-vs-average duplication
+
+Affected current fields:
+
+- `gp_pct_avg_all`
+- `gp_pct_avg_last3`
+- `gp_pct_avg_last5`
+- `gp_pct_avg_last10`
+- `gp_pct_avg_last20`
+
+Reason:
+
+- these are currently aliases, not distinct concepts
+- keeping both surfaces implies a semantic distinction that does not exist
+
+Preferred outcome:
+
+- keep only one canonical ratio field per GP% window
+- or rename the survivor to a clearer availability-oriented name
+
+### Recommendation 2: Introduce explicit season availability fields that aggregate across team stints
+
+Priority:
+
+- high
+
+Recommendation:
+
+- replace or supplement `gp_pct_avg_season` with a season aggregate that is explicitly player-season scoped across all current-season stints
+
+Suggested replacement concepts:
+
+- `season_availability_pct`
+- `season_games_played`
+- `season_team_games_available`
+
+Why:
+
+- Corey Perry proved the current team-bucketed season snapshot is structurally wrong for traded players
+- the intended season view needs to aggregate across all season stints, not just the current team
+
+### Recommendation 3: Make rolling GP% explicitly current-team and team-game based
+
+Priority:
+
+- high
+
+Recommendation:
+
+- redefine rolling GP% windows around exact team-game windows, not appearance-anchored spans
+
+Suggested replacement concepts:
+
+- `availability_pct_last3_team_games`
+- `availability_pct_last5_team_games`
+- `availability_pct_last10_team_games`
+- `availability_pct_last20_team_games`
+
+Optional denominator fields:
+
+- `team_games_available_last3`
+- `team_games_available_last5`
+- `team_games_available_last10`
+- `team_games_available_last20`
+
+Optional numerator fields:
+
+- `games_played_last3_team_games`
+- `games_played_last5_team_games`
+- `games_played_last10_team_games`
+- `games_played_last20_team_games`
+
+Why:
+
+- the current stored ratio alone hides too much window logic
+- explicit numerator/denominator support makes later debugging and UI explanation much easier
+
+### Recommendation 4: Separate all-strength availability from split-strength participation
+
+Priority:
+
+- high
+
+Recommendation:
+
+- stop overloading one GP% concept across all-strength and split strengths
+
+Suggested concept split:
+
+- all-strength fields keep `games played / team games available`
+- split-strength fields use a different name, for example:
+  - `ev_participation_pct_*`
+  - `pp_participation_pct_*`
+  - `pk_participation_pct_*`
+
+Possible supporting numerator fields:
+
+- `ev_games_with_toi`
+- `pp_games_with_toi`
+- `pk_games_with_toi`
+
+Why:
+
+- split-strength “games played” is really “games with positive TOI in this state”
+- that is a different concept and should be named that way
+
+### Recommendation 5: Preserve raw numerator and denominator fields for GP% windows
+
+Priority:
+
+- medium-high
+
+Recommendation:
+
+- store raw counts alongside ratios
+
+Suggested field concepts:
+
+- season:
+  - `season_games_played`
+  - `season_team_games_available`
+
+- career / 3YA:
+  - `career_games_played`
+  - `career_team_games_available`
+  - `three_year_games_played`
+  - `three_year_team_games_available`
+
+- rolling:
+  - `games_played_lastN_team_games`
+  - `team_games_available_lastN`
+
+Why:
+
+- ratios alone are opaque
+- raw counts make:
+  - UI explanation easier
+  - audit checks easier
+  - debugging after trades or injuries much easier
+
+### Recommendation 6: Treat team-stint scope as explicit metadata, not hidden implementation behavior
+
+Priority:
+
+- medium-high
+
+Recommendation:
+
+- make it explicit whether a GP% field is:
+  - aggregated across season stints
+  - current-team-only
+  - or strength-state participation based
+
+Options:
+
+1. clearer field names
+2. separate columns by scope
+3. explicit metadata fields if the storage model remains wide
+
+Why:
+
+- the current model hides team-stint scope inside the implementation
+- that is what made the Corey Perry trade failure hard to detect quickly
+
+### Recommendation 7: Keep `games_played` and `team_games_played` only if their row-scope meaning is documented clearly
+
+Priority:
+
+- medium
+
+Recommendation:
+
+- keep these raw fields only if they are explicitly documented as row-scope counters
+
+Why:
+
+- they are still useful for debugging and UI readouts
+- but users can misread them as season-final counters rather than row-scope running values
+
+Possible alternative names if redesigned:
+
+- `row_scope_games_played`
+- `row_scope_team_games`
+
+This may be too verbose for the actual schema, but the conceptual distinction matters.
+
+### Recommendation 8: Deprecate current GP% naming in the final API/UI contract
+
+Priority:
+
+- medium
+
+Recommendation:
+
+- even if legacy columns remain for backward compatibility, the UI/API contract should pivot to clearer availability names
+
+Suggested contract language:
+
+- `season availability`
+- `availability over last 10 team games`
+- `PP participation rate`
+
+Not:
+
+- ambiguous `gp_pct_avg_*` style labels
+
+Why:
+
+- most of the confusion here is partly a naming-contract problem, not just a SQL problem
+
+### Recommended redesign direction
+
+If the goal is the cleanest long-term model, the best direction is:
+
+1. keep or expose raw count fields
+- appearances numerator
+- team games denominator
+
+2. define season / career / 3YA as player-centered aggregates across stints
+
+3. define rolling windows as current-team team-game windows
+
+4. split all-strength availability from EV/PP/PK participation
+
+5. deprecate redundant `avg` aliases
+
+### Main conclusion from 4.5
+
+The GP% redesign should not be a one-line bug fix.
+It should include:
+
+- field simplification
+- explicit team-window semantics
+- split-strength renaming
+- and raw numerator / denominator support
+
+These recommendations should feed directly into the final audit’s separate `Schema Change Recommendations` section.
