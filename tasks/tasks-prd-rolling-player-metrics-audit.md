@@ -28,17 +28,17 @@
   - [x] 1.3 Inventory all upstream tables read by the suite and classify each as authoritative, fallback-only, or derived.
   - [x] 1.4 Identify upstream builders whose semantics affect rolling values, especially PP usage and lineup context.
   - [x] 1.5 Produce the `Upstream Tables` section for the audit, including source quirks, scale notes, and dependency mapping.
-- [ ] 2.0 Audit metric family semantics, formulas, and window definitions
-  - [ ] 2.1 Build the metric family inventory for `rolling_player_game_metrics`, grouping persisted columns into logical families.
-  - [ ] 2.2 Build the full column-by-column inventory of persisted fields in `rolling_player_game_metrics`.
-  - [ ] 2.3 Document the current shorthand formula for every metric family and key persisted column.
-  - [ ] 2.4 Audit additive counting stats and baseline fields for correct accumulation and average semantics.
-  - [ ] 2.5 Audit bounded percentage and ratio metrics, including `shooting_pct`, `expected_sh_pct`, `primary_points_pct`, `ipp`, `oz_start_pct`, `pp_share_pct`, `on_ice_sh_pct`, `pdo`, `cf_pct`, and `ff_pct`.
-  - [ ] 2.6 Audit all `/60` rate metrics to verify numerator, denominator, fallback order, and TOI unit handling.
-  - [ ] 2.7 Audit PP usage and role-context metrics, including `pp_unit`, unit-relative fields, and team-share semantics.
-  - [ ] 2.8 Audit historical baseline fields (`*_avg_season`, `*_avg_3ya`, `*_avg_career`) separately from rolling windows.
-  - [ ] 2.9 Determine whether each metric family currently represents last N team games, last N appearances, or last N valid observations.
-  - [ ] 2.10 Recommend the canonical `lastN` rule per family and flag any columns whose names no longer match their behavior.
+- [x] 2.0 Audit metric family semantics, formulas, and window definitions
+  - [x] 2.1 Build the metric family inventory for `rolling_player_game_metrics`, grouping persisted columns into logical families.
+  - [x] 2.2 Build the full column-by-column inventory of persisted fields in `rolling_player_game_metrics`.
+  - [x] 2.3 Document the current shorthand formula for every metric family and key persisted column.
+  - [x] 2.4 Audit additive counting stats and baseline fields for correct accumulation and average semantics.
+  - [x] 2.5 Audit bounded percentage and ratio metrics, including `shooting_pct`, `expected_sh_pct`, `primary_points_pct`, `ipp`, `oz_start_pct`, `pp_share_pct`, `on_ice_sh_pct`, `pdo`, `cf_pct`, and `ff_pct`.
+  - [x] 2.6 Audit all `/60` rate metrics to verify numerator, denominator, fallback order, and TOI unit handling.
+  - [x] 2.7 Audit PP usage and role-context metrics, including `pp_unit`, unit-relative fields, and team-share semantics.
+  - [x] 2.8 Audit historical baseline fields (`*_avg_season`, `*_avg_3ya`, `*_avg_career`) separately from rolling windows.
+  - [x] 2.9 Determine whether each metric family currently represents last N team games, last N appearances, or last N valid observations.
+  - [x] 2.10 Recommend the canonical `lastN` rule per family and flag any columns whose names no longer match their behavior.
 - [ ] 3.0 Validate live metric outputs against upstream source data
   - [ ] 3.1 Define the player validation set, including a regular full-season skater, an injury / missed-game case, a partial-team-season case if available, and a heavy PP-role player.
   - [ ] 3.2 For each major metric family, pull live source rows from the upstream tables and reconstruct the intended calculation manually.
