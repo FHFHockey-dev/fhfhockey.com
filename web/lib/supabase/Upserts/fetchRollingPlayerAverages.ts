@@ -3027,6 +3027,26 @@ async function processPlayer(
   return { rows: outputs, diagnostics };
 }
 
+export async function recomputePlayerRowsForValidation(options: {
+  playerId: number;
+  season?: number;
+  startDate?: string;
+  endDate?: string;
+  skipDiagnostics?: boolean;
+}): Promise<ProcessPlayerResult> {
+  const games = await fetchGames();
+  const ledger = buildTeamGameLedger(games);
+  const knownGameIds = new Set(games.map((game) => game.id));
+
+  return processPlayer(options.playerId, ledger, knownGameIds, {
+    playerId: options.playerId,
+    season: options.season,
+    startDate: options.startDate,
+    endDate: options.endDate,
+    skipDiagnostics: options.skipDiagnostics
+  });
+}
+
 export async function main(options: FetchOptions = {}): Promise<void> {
   console.info(
     "[fetchRollingPlayerAverages] Starting run",
