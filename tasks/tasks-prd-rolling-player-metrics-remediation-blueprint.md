@@ -74,8 +74,8 @@
   - [x] 4.3 Create the new migration file for required schema changes and decide whether the existing `20260310_remediate_rolling_player_metrics_gp_pct.sql` migration should be amended, superseded, or left as historical context.
   - [x] 4.4 Update generated Supabase types to match the new schema surface after migrations are finalized.
   - [x] 4.5 Update row-writing logic in `fetchRollingPlayerAverages.ts` so all new or renamed fields are populated consistently and any deprecated alias behavior is intentional.
-  - [ ] 4.6 Update downstream consumers of `rolling_player_game_metrics` that rely on renamed, deprecated, or newly canonical fields, including trends pages, debug views, and projection queries.
-  - [ ] 4.7 Add migration and compatibility tests or validation scripts that prove legacy consumers still work where backward compatibility is promised.
+  - [x] 4.6 Update downstream consumers of `rolling_player_game_metrics` that rely on renamed, deprecated, or newly canonical fields, including trends pages, debug views, and projection queries.
+  - [x] 4.7 Add migration and compatibility tests or validation scripts that prove legacy consumers still work where backward compatibility is promised.
 
 - [ ] 5.0 Harden PP-share, PP-role, TOI, and helper-specific semantic dependencies
   - [ ] 5.1 Finalize the authoritative denominator contract for `pp_share_pct` by comparing the current WGO-inferred path against upstream `pp_share_of_team` and deciding whether to store one contract or both with distinct names.

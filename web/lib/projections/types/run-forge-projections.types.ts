@@ -26,6 +26,8 @@ export type RollingRow = {
   toi_seconds_avg_all: number | null;
   sog_per_60_last5: number | null;
   sog_per_60_all: number | null;
+  sog_per_60_avg_last5: number | null;
+  sog_per_60_avg_all: number | null;
   goals_total_last5: number | null;
   shots_total_last5: number | null;
   assists_total_last5: number | null;
@@ -36,6 +38,10 @@ export type RollingRow = {
   hits_per_60_all: number | null;
   blocks_per_60_last5: number | null;
   blocks_per_60_all: number | null;
+  hits_per_60_avg_last5: number | null;
+  hits_per_60_avg_all: number | null;
+  blocks_per_60_avg_last5: number | null;
+  blocks_per_60_avg_all: number | null;
 };
 
 export type RosterEventRow = {

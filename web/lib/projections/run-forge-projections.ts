@@ -1,4 +1,5 @@
 import supabase from "lib/supabase/server";
+import { canonicalOrLegacyNullable } from "lib/rollingPlayerMetricCompatibility";
 import { reconcileTeamToPlayers } from "lib/projections/reconcile";
 import {
   buildGoalieUncertainty,
@@ -2110,12 +2111,30 @@ export async function runProjectionV2ForDate(
           }
 
           const sogPer60EvRaw = safeNumber(
-            ev?.sog_per_60_last5,
-            safeNumber(ev?.sog_per_60_all, 6)
+            canonicalOrLegacyNullable(
+              ev?.sog_per_60_last5,
+              ev?.sog_per_60_avg_last5
+            ),
+            safeNumber(
+              canonicalOrLegacyNullable(
+                ev?.sog_per_60_all,
+                ev?.sog_per_60_avg_all
+              ),
+              6
+            )
           );
           const sogPer60PpRaw = safeNumber(
-            pp?.sog_per_60_last5,
-            safeNumber(pp?.sog_per_60_all, 8)
+            canonicalOrLegacyNullable(
+              pp?.sog_per_60_last5,
+              pp?.sog_per_60_avg_last5
+            ),
+            safeNumber(
+              canonicalOrLegacyNullable(
+                pp?.sog_per_60_all,
+                pp?.sog_per_60_avg_all
+              ),
+              8
+            )
           );
           const sogPer60EvPreBound = clamp(
             sogPer60EvRaw *
@@ -2155,12 +2174,30 @@ export async function runProjectionV2ForDate(
           const sogPer60Pp = boundedUsage.sogPer60Pp;
 
           const hitsPer60 = safeNumber(
-            ev?.hits_per_60_last5,
-            safeNumber(ev?.hits_per_60_all, 1)
+            canonicalOrLegacyNullable(
+              ev?.hits_per_60_last5,
+              ev?.hits_per_60_avg_last5
+            ),
+            safeNumber(
+              canonicalOrLegacyNullable(
+                ev?.hits_per_60_all,
+                ev?.hits_per_60_avg_all
+              ),
+              1
+            )
           );
           const blocksPer60 = safeNumber(
-            ev?.blocks_per_60_last5,
-            safeNumber(ev?.blocks_per_60_all, 0.5)
+            canonicalOrLegacyNullable(
+              ev?.blocks_per_60_last5,
+              ev?.blocks_per_60_avg_last5
+            ),
+            safeNumber(
+              canonicalOrLegacyNullable(
+                ev?.blocks_per_60_all,
+                ev?.blocks_per_60_avg_all
+              ),
+              0.5
+            )
           );
 
           const shotsEs = computeShotsFromRate(boundedToiEs, sogPer60Ev);

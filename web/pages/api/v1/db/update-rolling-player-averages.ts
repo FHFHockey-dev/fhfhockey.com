@@ -12,6 +12,7 @@
  * - startDate (string, optional): Filter games starting from this date (YYYY-MM-DD).
  * - endDate (string, optional): Filter games up to this date (YYYY-MM-DD).
  * - resumeFrom (number, optional): Resume processing from a specific player ID (exclusive). Useful for continuing interrupted batch jobs.
+ *   Implicit auto-resume is intentionally disabled; broad runs process the full player set unless `resumeFrom` is provided explicitly.
  * 
  * Refresh Strategy:
  * - fullRefresh (boolean, optional): If true, clears existing data for the target scope and reprocesses everything. Defaults to false.
@@ -25,6 +26,9 @@
  * - playerConcurrency (number, optional): Number of players to process in parallel. Defaults to 1 (4 in full refresh mode).
  * - upsertBatchSize (number, optional): Batch size for upserts into rolling_player_game_metrics. Defaults to 500 (800 in full refresh mode).
  * - upsertConcurrency (number, optional): Number of concurrent upsert requests per batch. Defaults to 1.
+ * - skipDiagnostics (boolean, optional): If true, skips coverage/source-tracking/suspicious-output diagnostics to reduce log volume and CPU overhead.
+ * - fastMode (boolean, optional): Applies speed-oriented defaults when explicit tuning params are omitted:
+ *   playerConcurrency=4, upsertConcurrency=4, skipDiagnostics=true.
  *
  * Example URLs:
  * - Process a single player: /api/v1/db/update-rolling-player-averages?playerId=8478402
@@ -33,6 +37,11 @@
  * - Full refresh with concurrency limit: /api/v1/db/update-rolling-player-averages?fullRefresh=true&playerConcurrency=2&upsertBatchSize=1000
  * - Resume from a player ID: /api/v1/db/update-rolling-player-averages?resumeFrom=8477000
  * - Date range: /api/v1/db/update-rolling-player-averages?startDate=2023-10-01&endDate=2023-11-01
+ * - Faster current-season sweep: /api/v1/db/update-rolling-player-averages?season=20252026&fastMode=true
+ *
+ * Notes:
+ * - Do not combine `playerId` with `fullRefresh=true`; full refresh modes operate on the entire table.
+ * - For targeted backfills or corrections, prefer `playerId`, `season`, or an explicit `resumeFrom` without `fullRefresh=true`.
  */
 // /api/v1/db/update-rolling-player-averages
 
@@ -123,6 +132,15 @@ async function handler(
     const playerConcurrency = parsePositiveInt(req.query.playerConcurrency);
     const upsertBatchSize = parsePositiveInt(req.query.upsertBatchSize);
     const upsertConcurrency = parsePositiveInt(req.query.upsertConcurrency);
+    const skipDiagnostics = parseBooleanParam(req.query.skipDiagnostics);
+    const fastMode = parseBooleanParam(req.query.fastMode);
+
+    const resolvedPlayerConcurrency =
+      playerConcurrency ?? (fastMode ? 4 : undefined);
+    const resolvedUpsertConcurrency =
+      upsertConcurrency ?? (fastMode ? 4 : undefined);
+    const resolvedSkipDiagnostics =
+      skipDiagnostics ?? (fastMode ? true : undefined);
 
     const { main } = await import(
       "lib/supabase/Upserts/fetchRollingPlayerAverages"
@@ -137,9 +155,11 @@ async function handler(
         endDate,
         fullRefresh,
         fullRefreshMode,
-        playerConcurrency,
+        playerConcurrency: resolvedPlayerConcurrency,
         upsertBatchSize,
-        upsertConcurrency
+        upsertConcurrency: resolvedUpsertConcurrency,
+        skipDiagnostics: resolvedSkipDiagnostics,
+        fastMode
       })
     );
     const timerLabel = `[update-rolling-player-averages] total ${Date.now()}`;
@@ -155,9 +175,10 @@ async function handler(
         forceFullRefresh: fullRefresh,
         fullRefreshMode,
         fullRefreshDeleteChunkSize: deleteChunkSize,
-        playerConcurrency,
+        playerConcurrency: resolvedPlayerConcurrency,
         upsertBatchSize,
-        upsertConcurrency
+        upsertConcurrency: resolvedUpsertConcurrency,
+        skipDiagnostics: resolvedSkipDiagnostics
       });
     } finally {
       console.timeEnd(timerLabel);

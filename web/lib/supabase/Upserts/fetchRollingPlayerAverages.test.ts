@@ -14,6 +14,8 @@ let applyGpOutputs: typeof import("./fetchRollingPlayerAverages").__testables.ap
 let getGpOutputCompatibilityMode: typeof import("./fetchRollingPlayerAverages").__testables.getGpOutputCompatibilityMode;
 let deriveOutputs: typeof import("./fetchRollingPlayerAverages").__testables.deriveOutputs;
 let initAccumulator: typeof import("./fetchRollingPlayerAverages").__testables.initAccumulator;
+let shouldWarnAboutDisabledImplicitAutoResume: typeof import("./fetchRollingPlayerAverages").__testables.shouldWarnAboutDisabledImplicitAutoResume;
+let filterPlayerIdsForResume: typeof import("./fetchRollingPlayerAverages").__testables.filterPlayerIdsForResume;
 
 beforeAll(async () => {
   vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
@@ -27,7 +29,9 @@ beforeAll(async () => {
       applyGpOutputs,
       getGpOutputCompatibilityMode,
       deriveOutputs,
-      initAccumulator
+      initAccumulator,
+      shouldWarnAboutDisabledImplicitAutoResume,
+      filterPlayerIdsForResume
     }
   } = await import("./fetchRollingPlayerAverages"));
 });
@@ -577,5 +581,36 @@ describe("fetchRollingPlayerAverages buildGameRecords", () => {
     expect(output.oz_start_pct_off_zone_starts_3ya).toBe(9);
     expect(output.oz_start_pct_def_zone_starts_3ya).toBe(8);
     expect(output.oz_start_pct_neutral_zone_starts_3ya).toBe(7);
+  });
+});
+
+describe("fetchRollingPlayerAverages resume behavior", () => {
+  it("does not infer an implicit auto-resume for broad runs", () => {
+    expect(
+      shouldWarnAboutDisabledImplicitAutoResume({
+        playerId: undefined,
+        season: undefined,
+        startDate: undefined,
+        endDate: undefined,
+        forceFullRefresh: undefined,
+        resumePlayerId: undefined
+      })
+    ).toBe(true);
+    expect(filterPlayerIdsForResume([8478398, 8478402, 8485702])).toEqual([
+      8478398,
+      8478402,
+      8485702
+    ]);
+  });
+
+  it("still honors an explicit resume boundary when requested", () => {
+    expect(
+      shouldWarnAboutDisabledImplicitAutoResume({
+        resumePlayerId: 8478402
+      })
+    ).toBe(false);
+    expect(
+      filterPlayerIdsForResume([8478398, 8478402, 8478403, 8485702], 8478402)
+    ).toEqual([8478403, 8485702]);
   });
 });

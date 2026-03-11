@@ -1,6 +1,7 @@
 import Head from "next/head";
 import { useEffect, useMemo, useState } from "react";
 
+import { canonicalOrLegacyFinite } from "lib/rollingPlayerMetricCompatibility";
 import supabase from "lib/supabase/client";
 import type { Database } from "lib/supabase/database-generated.types";
 import {
@@ -35,14 +36,22 @@ type PlayerDebugSnapshot = {
   gameDate: string;
   metrics: Pick<
     RollingMetricRow,
+    | "sog_per_60_last5"
+    | "sog_per_60_career"
     | "sog_per_60_avg_last5"
     | "sog_per_60_avg_career"
+    | "ixg_per_60_last5"
+    | "ixg_per_60_career"
     | "ixg_per_60_avg_last5"
     | "ixg_per_60_avg_career"
+    | "pp_share_pct_last5"
+    | "pp_share_pct_career"
     | "pp_share_pct_avg_last5"
     | "pp_share_pct_avg_career"
     | "toi_seconds_avg_last5"
     | "toi_seconds_avg_career"
+    | "pdo_last5"
+    | "pdo_career"
     | "pdo_avg_last5"
     | "pdo_avg_career"
     | "goals_avg_last5"
@@ -57,6 +66,8 @@ type PlayerDebugSnapshot = {
     | "hits_avg_career"
     | "blocks_avg_last5"
     | "blocks_avg_career"
+    | "on_ice_sh_pct_last5"
+    | "on_ice_sh_pct_career"
     | "on_ice_sh_pct_avg_last5"
     | "on_ice_sh_pct_avg_career"
   >;
@@ -193,14 +204,22 @@ async function fetchLatestPlayerSnapshot(
       .select(
         [
           "game_date",
+          "sog_per_60_last5",
+          "sog_per_60_career",
           "sog_per_60_avg_last5",
           "sog_per_60_avg_career",
+          "ixg_per_60_last5",
+          "ixg_per_60_career",
           "ixg_per_60_avg_last5",
           "ixg_per_60_avg_career",
+          "pp_share_pct_last5",
+          "pp_share_pct_career",
           "pp_share_pct_avg_last5",
           "pp_share_pct_avg_career",
           "toi_seconds_avg_last5",
           "toi_seconds_avg_career",
+          "pdo_last5",
+          "pdo_career",
           "pdo_avg_last5",
           "pdo_avg_career",
           "goals_avg_last5",
@@ -215,6 +234,8 @@ async function fetchLatestPlayerSnapshot(
           "hits_avg_career",
           "blocks_avg_last5",
           "blocks_avg_career",
+          "on_ice_sh_pct_last5",
+          "on_ice_sh_pct_career",
           "on_ice_sh_pct_avg_last5",
           "on_ice_sh_pct_avg_career"
         ].join(",")
@@ -242,14 +263,22 @@ async function fetchLatestPlayerSnapshot(
   const rollingData = rollingResult.data as unknown as Pick<
     RollingMetricRow,
     | "game_date"
+    | "sog_per_60_last5"
+    | "sog_per_60_career"
     | "sog_per_60_avg_last5"
     | "sog_per_60_avg_career"
+    | "ixg_per_60_last5"
+    | "ixg_per_60_career"
     | "ixg_per_60_avg_last5"
     | "ixg_per_60_avg_career"
+    | "pp_share_pct_last5"
+    | "pp_share_pct_career"
     | "pp_share_pct_avg_last5"
     | "pp_share_pct_avg_career"
     | "toi_seconds_avg_last5"
     | "toi_seconds_avg_career"
+    | "pdo_last5"
+    | "pdo_career"
     | "pdo_avg_last5"
     | "pdo_avg_career"
     | "goals_avg_last5"
@@ -264,6 +293,8 @@ async function fetchLatestPlayerSnapshot(
     | "hits_avg_career"
     | "blocks_avg_last5"
     | "blocks_avg_career"
+    | "on_ice_sh_pct_last5"
+    | "on_ice_sh_pct_career"
     | "on_ice_sh_pct_avg_last5"
     | "on_ice_sh_pct_avg_career"
   >;
@@ -383,15 +414,47 @@ export default function TrendsDebugPage() {
         }
 
         const metrics = snapshot.metrics;
-        const shotsRecent = safeNumber(metrics.sog_per_60_avg_last5);
-        const shotsCareer = safeNumber(metrics.sog_per_60_avg_career);
-        const ixgRecent = safeNumber(metrics.ixg_per_60_avg_last5);
-        const ixgCareer = safeNumber(metrics.ixg_per_60_avg_career);
+        const shotsRecent = safeNumber(
+          canonicalOrLegacyFinite(
+            metrics.sog_per_60_last5,
+            metrics.sog_per_60_avg_last5
+          )
+        );
+        const shotsCareer = safeNumber(
+          canonicalOrLegacyFinite(
+            metrics.sog_per_60_career,
+            metrics.sog_per_60_avg_career
+          )
+        );
+        const ixgRecent = safeNumber(
+          canonicalOrLegacyFinite(
+            metrics.ixg_per_60_last5,
+            metrics.ixg_per_60_avg_last5
+          )
+        );
+        const ixgCareer = safeNumber(
+          canonicalOrLegacyFinite(
+            metrics.ixg_per_60_career,
+            metrics.ixg_per_60_avg_career
+          )
+        );
         const toiRecent = safeNumber(metrics.toi_seconds_avg_last5, 900);
         const toiCareer = safeNumber(metrics.toi_seconds_avg_career, toiRecent);
-        const ppRecent = normalizePercentLike(metrics.pp_share_pct_avg_last5);
-        const ppCareer = normalizePercentLike(metrics.pp_share_pct_avg_career);
-        const pdoRecent = normalizePdo(metrics.pdo_avg_last5);
+        const ppRecent = normalizePercentLike(
+          canonicalOrLegacyFinite(
+            metrics.pp_share_pct_last5,
+            metrics.pp_share_pct_avg_last5
+          )
+        );
+        const ppCareer = normalizePercentLike(
+          canonicalOrLegacyFinite(
+            metrics.pp_share_pct_career,
+            metrics.pp_share_pct_avg_career
+          )
+        );
+        const pdoRecent = normalizePdo(
+          canonicalOrLegacyFinite(metrics.pdo_last5, metrics.pdo_avg_last5)
+        );
         const goalsRecent = toPer60(safeNumber(metrics.goals_avg_last5), toiRecent);
         const assistsRecent = toPer60(
           safeNumber(metrics.assists_avg_last5),
@@ -462,22 +525,52 @@ export default function TrendsDebugPage() {
   const explanationOptions = useMemo<ExplanationOptions>(() => {
     if (!playerSnapshot) return { topN: 3 };
     const metrics = playerSnapshot.metrics;
-    return {
-      topN: 3,
-      featureContexts: {
-        shots_per_60: {
-          recent: safeNumber(metrics.sog_per_60_avg_last5),
-          baseline: safeNumber(metrics.sog_per_60_avg_career),
+        return {
+          topN: 3,
+          featureContexts: {
+            shots_per_60: {
+          recent: safeNumber(
+            canonicalOrLegacyFinite(
+              metrics.sog_per_60_last5,
+              metrics.sog_per_60_avg_last5
+            )
+          ),
+          baseline: safeNumber(
+            canonicalOrLegacyFinite(
+              metrics.sog_per_60_career,
+              metrics.sog_per_60_avg_career
+            )
+          ),
           comparisonLabel: "career"
         },
         ixg_per_60: {
-          recent: safeNumber(metrics.ixg_per_60_avg_last5),
-          baseline: safeNumber(metrics.ixg_per_60_avg_career),
+          recent: safeNumber(
+            canonicalOrLegacyFinite(
+              metrics.ixg_per_60_last5,
+              metrics.ixg_per_60_avg_last5
+            )
+          ),
+          baseline: safeNumber(
+            canonicalOrLegacyFinite(
+              metrics.ixg_per_60_career,
+              metrics.ixg_per_60_avg_career
+            )
+          ),
           comparisonLabel: "career"
         },
         pp_toi_pct: {
-          recent: normalizePercentLike(metrics.pp_share_pct_avg_last5),
-          baseline: normalizePercentLike(metrics.pp_share_pct_avg_career),
+          recent: normalizePercentLike(
+            canonicalOrLegacyFinite(
+              metrics.pp_share_pct_last5,
+              metrics.pp_share_pct_avg_last5
+            )
+          ),
+          baseline: normalizePercentLike(
+            canonicalOrLegacyFinite(
+              metrics.pp_share_pct_career,
+              metrics.pp_share_pct_avg_career
+            )
+          ),
           comparisonLabel: "career",
           format: "percent"
         },
@@ -487,8 +580,12 @@ export default function TrendsDebugPage() {
           comparisonLabel: "career TOI"
         },
         pdo: {
-          recent: normalizePdo(metrics.pdo_avg_last5),
-          baseline: normalizePdo(metrics.pdo_avg_career),
+          recent: normalizePdo(
+            canonicalOrLegacyFinite(metrics.pdo_last5, metrics.pdo_avg_last5)
+          ),
+          baseline: normalizePdo(
+            canonicalOrLegacyFinite(metrics.pdo_career, metrics.pdo_avg_career)
+          ),
           comparisonLabel: "career"
         }
       }
@@ -941,7 +1038,10 @@ export default function TrendsDebugPage() {
                         {playerSnapshot
                           ? formatNumber(
                               safeNumber(
-                                playerSnapshot.metrics.sog_per_60_avg_career
+                                canonicalOrLegacyFinite(
+                                  playerSnapshot.metrics.sog_per_60_career,
+                                  playerSnapshot.metrics.sog_per_60_avg_career
+                                )
                               )
                             )
                           : "—"}
@@ -1100,9 +1200,15 @@ export default function TrendsDebugPage() {
                             playerId: playerSnapshot.playerId,
                             gameDate: playerSnapshot.gameDate,
                             shotsPer60Last5:
-                              playerSnapshot.metrics.sog_per_60_avg_last5,
+                              canonicalOrLegacyFinite(
+                                playerSnapshot.metrics.sog_per_60_last5,
+                                playerSnapshot.metrics.sog_per_60_avg_last5
+                              ),
                             shotsPer60Career:
-                              playerSnapshot.metrics.sog_per_60_avg_career
+                              canonicalOrLegacyFinite(
+                                playerSnapshot.metrics.sog_per_60_career,
+                                playerSnapshot.metrics.sog_per_60_avg_career
+                              )
                           })
                         : "No player loaded"}
                     </strong>

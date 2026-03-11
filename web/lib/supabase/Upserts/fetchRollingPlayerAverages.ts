@@ -258,6 +258,7 @@ interface FetchOptions {
   playerConcurrency?: number;
   upsertBatchSize?: number;
   upsertConcurrency?: number;
+  skipDiagnostics?: boolean;
 }
 
 function createConcurrencyLimiter(concurrency: number) {
@@ -2024,6 +2025,26 @@ async function fetchPlayerIds(options: FetchOptions): Promise<number[]> {
   return Array.from(new Set(ids)).sort((a, b) => a - b);
 }
 
+function shouldWarnAboutDisabledImplicitAutoResume(options: FetchOptions): boolean {
+  return (
+    options.resumePlayerId === undefined &&
+    !options.forceFullRefresh &&
+    options.playerId === undefined &&
+    options.season === undefined &&
+    options.startDate === undefined &&
+    options.endDate === undefined
+  );
+}
+
+function filterPlayerIdsForResume(
+  playerIds: number[],
+  resumePlayerId?: number
+): number[] {
+  return resumePlayerId !== undefined
+    ? playerIds.filter((id) => id > resumePlayerId)
+    : playerIds;
+}
+
 async function fetchCounts(
   tableName: string,
   playerId: number,
@@ -2568,19 +2589,21 @@ async function processPlayer(
         );
       }
 
-      const coverageSummary = summarizeCoverage({
-        playerId,
-        strength: config.state,
-        wgoRows,
-        countsRows,
-        ratesRows,
-        countsOiRows,
-        ppRows,
-        knownGameIds
-      });
-      diagnostics.coverageWarningCount += coverageSummary.warnings.length;
-      diagnostics.unknownGameIdCount += coverageSummary.counts.unknownGameIds;
-      coverageSummary.warnings.forEach((warning) => console.warn(warning));
+      if (!options.skipDiagnostics) {
+        const coverageSummary = summarizeCoverage({
+          playerId,
+          strength: config.state,
+          wgoRows,
+          countsRows,
+          ratesRows,
+          countsOiRows,
+          ppRows,
+          knownGameIds
+        });
+        diagnostics.coverageWarningCount += coverageSummary.warnings.length;
+        diagnostics.unknownGameIdCount += coverageSummary.counts.unknownGameIds;
+        coverageSummary.warnings.forEach((warning) => console.warn(warning));
+      }
 
       const games = buildGameRecords(
         wgoRows,
@@ -2592,16 +2615,18 @@ async function processPlayer(
         config.state,
         knownGameIds
       );
-      const sourceTracking = summarizeSourceTracking(games, config.state);
-      mergeSourceTrackingSummary(diagnostics.sourceTracking, sourceTracking);
-      console.info(
-        "[fetchRollingPlayerAverages] sourceTracking",
-        JSON.stringify({
-          playerId,
-          strength: config.state,
-          ...sourceTracking
-        })
-      );
+      if (!options.skipDiagnostics) {
+        const sourceTracking = summarizeSourceTracking(games, config.state);
+        mergeSourceTrackingSummary(diagnostics.sourceTracking, sourceTracking);
+        console.info(
+          "[fetchRollingPlayerAverages] sourceTracking",
+          JSON.stringify({
+            playerId,
+            strength: config.state,
+            ...sourceTracking
+          })
+        );
+      }
 
       const simpleMetricsState: Record<string, RollingAccumulator> = {};
       const ratioMetricsState: Record<string, RatioRollingAccumulator> = {};
@@ -2632,6 +2657,7 @@ async function processPlayer(
         historicalSupportMetricsState[metric.key] =
           createHistoricalAverageAccumulator();
       });
+      const strengthOutputs: any[] = [];
       const historicalGpPctState = createHistoricalGpPctAccumulator();
 
       for (const game of games) {
@@ -2738,18 +2764,18 @@ async function processPlayer(
           gp_semantic_type: getGpOutputCompatibilityMode(config.state).semanticType,
           ...metricOutputs
         });
+        strengthOutputs.push(outputs[outputs.length - 1]);
       }
 
-      const suspiciousRows = outputs.filter(
-        (row) => row.player_id === playerId && row.strength_state === config.state
-      );
-      const suspiciousSummary = summarizeSuspiciousOutputs({
-        playerId,
-        strength: config.state,
-        rows: suspiciousRows
-      });
-      diagnostics.suspiciousOutputCount += suspiciousSummary.issueCount;
-      suspiciousSummary.warnings.forEach((warning) => console.warn(warning));
+      if (!options.skipDiagnostics) {
+        const suspiciousSummary = summarizeSuspiciousOutputs({
+          playerId,
+          strength: config.state,
+          rows: strengthOutputs
+        });
+        diagnostics.suspiciousOutputCount += suspiciousSummary.issueCount;
+        suspiciousSummary.warnings.forEach((warning) => console.warn(warning));
+      }
     } finally {
       console.timeEnd(strengthLabel);
     }
@@ -2797,12 +2823,6 @@ export async function main(options: FetchOptions = {}): Promise<void> {
   const playerIds = await fetchPlayerIds(options);
 
   let resumePlayerId = options.resumePlayerId;
-  const autoResumeEnabled =
-    !options.forceFullRefresh &&
-    options.playerId === undefined &&
-    options.season === undefined &&
-    options.startDate === undefined &&
-    options.endDate === undefined;
 
   if (options.forceFullRefresh) {
     const requestedMode: FullRefreshMode = options.fullRefreshMode ?? "rpc_truncate";
@@ -2901,20 +2921,10 @@ export async function main(options: FetchOptions = {}): Promise<void> {
         "[fetchRollingPlayerAverages] Overwrite-only mode: skipping pre-delete; existing rows will be updated via upsert."
       );
     }
-  } else if (resumePlayerId === undefined && autoResumeEnabled) {
-    const { data: resumeRow, error: resumeError } = await supabase
-      .from("rolling_player_game_metrics")
-      .select("player_id")
-      .order("player_id", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (!resumeError && resumeRow?.player_id) {
-      resumePlayerId = Number(resumeRow.player_id);
-      console.info(
-        "[fetchRollingPlayerAverages] Auto resume detected, last processed player_id:",
-        resumePlayerId
-      );
-    }
+  } else if (shouldWarnAboutDisabledImplicitAutoResume(options)) {
+    console.info(
+      "[fetchRollingPlayerAverages] Implicit auto-resume is disabled because max-player-id inference can skip missed lower player_ids. Processed the full player set unless resumePlayerId/resumeFrom was provided explicitly."
+    );
   }
 
   if (resumePlayerId !== undefined) {
@@ -2924,10 +2934,7 @@ export async function main(options: FetchOptions = {}): Promise<void> {
     );
   }
 
-  const filteredPlayerIds =
-    resumePlayerId !== undefined
-      ? playerIds.filter((id) => id > resumePlayerId!)
-      : playerIds;
+  const filteredPlayerIds = filterPlayerIdsForResume(playerIds, resumePlayerId);
 
   if (!filteredPlayerIds.length) {
     console.info(
@@ -3080,7 +3087,9 @@ export const __testables = {
   applyGpOutputs,
   getGpOutputCompatibilityMode,
   deriveOutputs,
-  initAccumulator
+  initAccumulator,
+  shouldWarnAboutDisabledImplicitAutoResume,
+  filterPlayerIdsForResume
 };
 
 export default { main };
