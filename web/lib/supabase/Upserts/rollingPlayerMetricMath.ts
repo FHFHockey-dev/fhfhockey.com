@@ -5,6 +5,8 @@ export function resolvePer60Components(args: {
   toiSeconds: number | null | undefined;
   per60Rate?: number | null | undefined;
 }): RatioComponents | null {
+  // `/60` families are stored as weighted rate snapshots derived from raw event
+  // totals and TOI over the selected scope. We never average per-game rates.
   const toiSeconds =
     args.toiSeconds != null && Number.isFinite(args.toiSeconds)
       ? Number(args.toiSeconds)

@@ -21,7 +21,7 @@ type WgoLike = {
   hits?: number | null;
   blocked_shots?: number | null;
   pp_points?: number | null;
-  [key: string]: unknown;
+  ixg?: number | string | null;
 };
 
 export type AdditiveMetricSourceGame = {
@@ -113,4 +113,3 @@ export function getIxgValue(game: AdditiveMetricSourceGame): number | null {
     wgoIxg: getFiniteNumber(game.wgo?.ixg)
   });
 }
-

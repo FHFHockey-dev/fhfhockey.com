@@ -1,3 +1,8 @@
+import {
+  getRollingWindowContractForMetricFamily,
+  type RollingMetricWindowFamily
+} from "./rollingWindowContract";
+
 export type RollingWindow = 3 | 5 | 10 | 20;
 
 export const DEFAULT_ROLLING_WINDOWS: RollingWindow[] = [3, 5, 10, 20];
@@ -13,8 +18,8 @@ export type RatioAggregationSpec = {
   scale?: number;
   combine?: "primary" | "sum";
   outputScale?: number;
-  zeroWhenNoDenominator?: boolean;
-  zeroWhenSecondaryNoDenominator?: boolean;
+  noPrimaryDenominatorBehavior?: "null" | "zero";
+  noSecondaryDenominatorBehavior?: "null" | "zero";
 };
 
 type NormalizedRatioComponents = {
@@ -22,6 +27,11 @@ type NormalizedRatioComponents = {
   denominator: number;
   secondaryNumerator: number;
   secondaryDenominator: number;
+};
+
+type NormalizedRatioWindowEntry = {
+  occupiesSelectedSlot: boolean;
+  aggregatedComponents: NormalizedRatioComponents | null;
 };
 
 type RatioTotals = {
@@ -58,6 +68,7 @@ export type RatioRollingWindowMode = "valid_observation" | "appearance";
 export type UpdateRatioRollingAccumulatorOptions = {
   windows?: RollingWindow[];
   windowMode?: RatioRollingWindowMode;
+  windowFamily?: RollingMetricWindowFamily;
   anchor?: boolean;
 };
 
@@ -90,6 +101,8 @@ function computeRatioValue(
   totals: RatioTotals,
   spec: RatioAggregationSpec
 ): number | null {
+  // Ratio families are always computed from aggregated raw components inside
+  // the selected scope. We never average per-entry ratio outputs.
   const scale = spec.scale ?? 1;
   const combine = spec.combine ?? "primary";
   const outputScale = spec.outputScale ?? 1;
@@ -97,7 +110,7 @@ function computeRatioValue(
   const primary =
     totals.denominator > 0
       ? (totals.numerator / totals.denominator) * scale
-      : spec.zeroWhenNoDenominator
+      : spec.noPrimaryDenominatorBehavior === "zero"
         ? 0
         : null;
 
@@ -108,12 +121,24 @@ function computeRatioValue(
   const secondary =
     totals.secondaryDenominator > 0
       ? (totals.secondaryNumerator / totals.secondaryDenominator) * scale
-      : spec.zeroWhenSecondaryNoDenominator
+      : spec.noSecondaryDenominatorBehavior === "zero"
         ? 0
         : null;
 
   if (primary == null || secondary == null) return null;
   return Number(((primary + secondary) * outputScale).toFixed(6));
+}
+
+function applyNormalizedRatioDelta(
+  target: RatioTotals,
+  components: NormalizedRatioComponents,
+  direction: 1 | -1
+): void {
+  target.numerator += components.numerator * direction;
+  target.denominator += components.denominator * direction;
+  target.secondaryNumerator += components.secondaryNumerator * direction;
+  target.secondaryDenominator += components.secondaryDenominator * direction;
+  target.count += direction;
 }
 
 export function createRatioRollingAccumulator(
@@ -136,13 +161,69 @@ export function createRatioRollingAccumulator(
   };
 }
 
+export function getRatioRollingWindowModeForFamily(
+  family: RollingMetricWindowFamily
+): RatioRollingWindowMode {
+  if (
+    family === "ratio_performance" ||
+    family === "weighted_rate_performance"
+  ) {
+    return "appearance";
+  }
+
+  return "valid_observation";
+}
+
+export function normalizeRatioWindowEntry(
+  components: RatioComponents | null | undefined,
+  family: RollingMetricWindowFamily
+): NormalizedRatioWindowEntry {
+  const contract = getRollingWindowContractForMetricFamily(family);
+
+  if (!components) {
+    return {
+      occupiesSelectedSlot:
+        contract.missingComponentPolicy.selectedWindowSlotBehavior ===
+        "selected_slot_always_counts",
+      aggregatedComponents: null
+    };
+  }
+
+  const denominator = normalizeComponent(components.denominator);
+  const secondaryDenominator = normalizeComponent(components.secondaryDenominator);
+  const hasDenominator = denominator > 0 || secondaryDenominator > 0;
+
+  if (!hasDenominator) {
+    return {
+      occupiesSelectedSlot:
+        contract.missingComponentPolicy.selectedWindowSlotBehavior ===
+        "selected_slot_always_counts",
+      aggregatedComponents: null
+    };
+  }
+
+  return {
+    occupiesSelectedSlot: true,
+    aggregatedComponents: {
+      numerator: normalizeComponent(components.numerator),
+      denominator,
+      secondaryNumerator: normalizeComponent(components.secondaryNumerator),
+      secondaryDenominator
+    }
+  };
+}
+
 export function updateRatioRollingAccumulator(
   acc: RatioRollingAccumulator,
   components: RatioComponents | null | undefined,
   options: UpdateRatioRollingAccumulatorOptions = {}
 ): void {
   const windows = options.windows ?? DEFAULT_ROLLING_WINDOWS;
-  const windowMode = options.windowMode ?? "valid_observation";
+  const windowMode =
+    options.windowMode ??
+    (options.windowFamily
+      ? getRatioRollingWindowModeForFamily(options.windowFamily)
+      : "valid_observation");
   const anchor = options.anchor ?? true;
   const shouldAdvanceWindow = windowMode === "appearance" ? anchor : true;
 
@@ -150,45 +231,29 @@ export function updateRatioRollingAccumulator(
     return;
   }
 
-  const normalized: NormalizedRatioComponents | null = components
-    ? {
-        numerator: normalizeComponent(components.numerator),
-        denominator: normalizeComponent(components.denominator),
-        secondaryNumerator: normalizeComponent(components.secondaryNumerator),
-        secondaryDenominator: normalizeComponent(components.secondaryDenominator)
-      }
-    : null;
-  const isValid = normalized ? hasAnyDenominator(normalized) : false;
+  const normalizedEntry = normalizeRatioWindowEntry(
+    components,
+    options.windowFamily ?? "ratio_performance"
+  );
+  const normalized = normalizedEntry.aggregatedComponents;
 
-  if (isValid && normalized) {
-    acc.totals.numerator += normalized.numerator;
-    acc.totals.denominator += normalized.denominator;
-    acc.totals.secondaryNumerator += normalized.secondaryNumerator;
-    acc.totals.secondaryDenominator += normalized.secondaryDenominator;
-    acc.totals.count += 1;
+  if (normalized) {
+    applyNormalizedRatioDelta(acc.totals, normalized, 1);
   } else if (windowMode !== "appearance") {
     return;
   }
 
   windows.forEach((windowSize) => {
     const window = acc.windows[windowSize];
-    window.entries.push(isValid && normalized ? normalized : null);
-    if (isValid && normalized) {
-      window.numerator += normalized.numerator;
-      window.denominator += normalized.denominator;
-      window.secondaryNumerator += normalized.secondaryNumerator;
-      window.secondaryDenominator += normalized.secondaryDenominator;
-      window.count += 1;
+    window.entries.push(normalizedEntry.occupiesSelectedSlot ? normalized : null);
+    if (normalized) {
+      applyNormalizedRatioDelta(window, normalized, 1);
     }
 
     if (window.entries.length > windowSize) {
       const removed = window.entries.shift();
       if (removed) {
-        window.numerator -= removed.numerator;
-        window.denominator -= removed.denominator;
-        window.secondaryNumerator -= removed.secondaryNumerator;
-        window.secondaryDenominator -= removed.secondaryDenominator;
-        window.count -= 1;
+        applyNormalizedRatioDelta(window, removed, -1);
       }
     }
   });
@@ -241,11 +306,7 @@ export function updateHistoricalRatioAccumulator(
   }
 
   const bucket = acc.bySeason.get(season) ?? createRatioTotals();
-  bucket.numerator += normalized.numerator;
-  bucket.denominator += normalized.denominator;
-  bucket.secondaryNumerator += normalized.secondaryNumerator;
-  bucket.secondaryDenominator += normalized.secondaryDenominator;
-  bucket.count += 1;
+  applyNormalizedRatioDelta(bucket, normalized, 1);
   acc.bySeason.set(season, bucket);
 }
 

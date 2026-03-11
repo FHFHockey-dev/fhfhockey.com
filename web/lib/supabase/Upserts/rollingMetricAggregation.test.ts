@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   createHistoricalRatioAccumulator,
   createRatioRollingAccumulator,
+  getRatioRollingWindowModeForFamily,
   getHistoricalRatioSnapshot,
+  normalizeRatioWindowEntry,
   getRatioRollingSnapshot,
   updateHistoricalRatioAccumulator,
   updateRatioRollingAccumulator,
@@ -79,7 +81,7 @@ describe("rollingMetricAggregation", () => {
     const acc = createRatioRollingAccumulator();
     const spec: RatioAggregationSpec = {
       scale: 100,
-      zeroWhenNoDenominator: true
+      noPrimaryDenominatorBehavior: "zero"
     };
 
     updateRatioRollingAccumulator(acc, { numerator: 0, denominator: 0 });
@@ -97,22 +99,22 @@ describe("rollingMetricAggregation", () => {
     updateRatioRollingAccumulator(
       acc,
       { numerator: 1, denominator: 10 },
-      { windowMode: "appearance", anchor: true }
+      { windowFamily: "ratio_performance", anchor: true }
     );
     updateRatioRollingAccumulator(
       acc,
       { numerator: 2, denominator: 10 },
-      { windowMode: "appearance", anchor: true }
+      { windowFamily: "ratio_performance", anchor: true }
     );
     updateRatioRollingAccumulator(
       acc,
       { numerator: 0, denominator: 0 },
-      { windowMode: "appearance", anchor: true }
+      { windowFamily: "ratio_performance", anchor: true }
     );
     updateRatioRollingAccumulator(
       acc,
       { numerator: 1, denominator: 5 },
-      { windowMode: "appearance", anchor: true }
+      { windowFamily: "ratio_performance", anchor: true }
     );
 
     const snapshot = getRatioRollingSnapshot(acc, spec);
@@ -128,22 +130,226 @@ describe("rollingMetricAggregation", () => {
     updateRatioRollingAccumulator(
       acc,
       { numerator: 1, denominator: 10 },
-      { windowMode: "appearance", anchor: true }
+      { windowFamily: "ratio_performance", anchor: true }
     );
     updateRatioRollingAccumulator(
       acc,
       { numerator: 4, denominator: 10 },
-      { windowMode: "appearance", anchor: false }
+      { windowFamily: "ratio_performance", anchor: false }
     );
     updateRatioRollingAccumulator(
       acc,
       { numerator: 2, denominator: 10 },
-      { windowMode: "appearance", anchor: true }
+      { windowFamily: "ratio_performance", anchor: true }
     );
 
     const snapshot = getRatioRollingSnapshot(acc, spec);
 
     expect(snapshot.windows[3]).toBeCloseTo(15, 6);
     expect(snapshot.all).toBeCloseTo(15, 6);
+  });
+
+  it("derives ratio window mode from the canonical metric family contract", () => {
+    expect(getRatioRollingWindowModeForFamily("ratio_performance")).toBe(
+      "appearance"
+    );
+    expect(getRatioRollingWindowModeForFamily("weighted_rate_performance")).toBe(
+      "appearance"
+    );
+    expect(getRatioRollingWindowModeForFamily("additive_performance")).toBe(
+      "valid_observation"
+    );
+    expect(getRatioRollingWindowModeForFamily("availability")).toBe(
+      "valid_observation"
+    );
+  });
+
+  it("preserves ratio-of-aggregates arithmetic for bounded ratios inside fixed appearance windows", () => {
+    const acc = createRatioRollingAccumulator([3]);
+    const spec: RatioAggregationSpec = {
+      scale: 100,
+      noPrimaryDenominatorBehavior: "zero"
+    };
+
+    updateRatioRollingAccumulator(
+      acc,
+      { numerator: 1, denominator: 2 },
+      { windowFamily: "ratio_performance", windows: [3], anchor: true }
+    );
+    updateRatioRollingAccumulator(
+      acc,
+      { numerator: 4, denominator: 10 },
+      { windowFamily: "ratio_performance", windows: [3], anchor: true }
+    );
+    updateRatioRollingAccumulator(
+      acc,
+      { numerator: null, denominator: null },
+      { windowFamily: "ratio_performance", windows: [3], anchor: true }
+    );
+    updateRatioRollingAccumulator(
+      acc,
+      { numerator: 3, denominator: 12 },
+      { windowFamily: "ratio_performance", windows: [3], anchor: true }
+    );
+
+    const snapshot = getRatioRollingSnapshot(acc, spec, [3]);
+
+    expect(snapshot.windows[3]).toBeCloseTo(31.818182, 6);
+  });
+
+  it("preserves composite ratio-of-aggregates arithmetic for metrics such as PDO", () => {
+    const acc = createRatioRollingAccumulator([3]);
+    const spec: RatioAggregationSpec = {
+      scale: 100,
+      combine: "sum",
+      outputScale: 0.01
+    };
+
+    updateRatioRollingAccumulator(
+      acc,
+      {
+        numerator: 1,
+        denominator: 10,
+        secondaryNumerator: 18,
+        secondaryDenominator: 20
+      },
+      { windowFamily: "ratio_performance", windows: [3], anchor: true }
+    );
+    updateRatioRollingAccumulator(
+      acc,
+      {
+        numerator: 5,
+        denominator: 10,
+        secondaryNumerator: 9,
+        secondaryDenominator: 10
+      },
+      { windowFamily: "ratio_performance", windows: [3], anchor: true }
+    );
+    updateRatioRollingAccumulator(
+      acc,
+      {
+        numerator: null,
+        denominator: null,
+        secondaryNumerator: null,
+        secondaryDenominator: null
+      },
+      { windowFamily: "ratio_performance", windows: [3], anchor: true }
+    );
+    updateRatioRollingAccumulator(
+      acc,
+      {
+        numerator: 1,
+        denominator: 20,
+        secondaryNumerator: 8,
+        secondaryDenominator: 10
+      },
+      { windowFamily: "ratio_performance", windows: [3], anchor: true }
+    );
+
+    const snapshot = getRatioRollingSnapshot(acc, spec, [3]);
+
+    expect(snapshot.windows[3]).toBeCloseTo(1.05, 6);
+  });
+
+  it("preserves weighted /60 arithmetic across fixed appearance windows", () => {
+    const acc = createRatioRollingAccumulator([3]);
+    const spec: RatioAggregationSpec = { scale: 3600 };
+
+    updateRatioRollingAccumulator(
+      acc,
+      { numerator: 4, denominator: 1200 },
+      { windowFamily: "weighted_rate_performance", windows: [3], anchor: true }
+    );
+    updateRatioRollingAccumulator(
+      acc,
+      { numerator: 6, denominator: 1800 },
+      { windowFamily: "weighted_rate_performance", windows: [3], anchor: true }
+    );
+    updateRatioRollingAccumulator(
+      acc,
+      { numerator: null, denominator: null },
+      { windowFamily: "weighted_rate_performance", windows: [3], anchor: true }
+    );
+    updateRatioRollingAccumulator(
+      acc,
+      { numerator: 2, denominator: 600 },
+      { windowFamily: "weighted_rate_performance", windows: [3], anchor: true }
+    );
+
+    const snapshot = getRatioRollingSnapshot(acc, spec, [3]);
+
+    expect(snapshot.windows[3]).toBeCloseTo(12, 6);
+  });
+
+  it("does not let non-appearance rows advance weighted /60 windows", () => {
+    const acc = createRatioRollingAccumulator([3]);
+    const spec: RatioAggregationSpec = { scale: 3600 };
+
+    updateRatioRollingAccumulator(
+      acc,
+      { numerator: 4, denominator: 1200 },
+      { windowFamily: "weighted_rate_performance", windows: [3], anchor: true }
+    );
+    updateRatioRollingAccumulator(
+      acc,
+      { numerator: 8, denominator: 1200 },
+      { windowFamily: "weighted_rate_performance", windows: [3], anchor: false }
+    );
+    updateRatioRollingAccumulator(
+      acc,
+      { numerator: 2, denominator: 600 },
+      { windowFamily: "weighted_rate_performance", windows: [3], anchor: true }
+    );
+
+    const snapshot = getRatioRollingSnapshot(acc, spec, [3]);
+
+    expect(snapshot.windows[3]).toBeCloseTo(12, 6);
+    expect(snapshot.all).toBeCloseTo(12, 6);
+  });
+
+  it("coerces missing numerators to zero when a selected appearance has a denominator", () => {
+    expect(
+      normalizeRatioWindowEntry(
+        { numerator: null, denominator: 5 },
+        "ratio_performance"
+      )
+    ).toEqual({
+      occupiesSelectedSlot: true,
+      aggregatedComponents: {
+        numerator: 0,
+        denominator: 5,
+        secondaryNumerator: 0,
+        secondaryDenominator: 0
+      }
+    });
+  });
+
+  it("keeps the selected appearance slot but excludes aggregated components when denominators are missing", () => {
+    expect(
+      normalizeRatioWindowEntry(
+        { numerator: 2, denominator: null },
+        "weighted_rate_performance"
+      )
+    ).toEqual({
+      occupiesSelectedSlot: true,
+      aggregatedComponents: null
+    });
+  });
+
+  it("distinguishes explicit zero versus null no-denominator product rules", () => {
+    const zeroSpec: RatioAggregationSpec = {
+      scale: 100,
+      noPrimaryDenominatorBehavior: "zero"
+    };
+    const nullSpec: RatioAggregationSpec = {
+      scale: 100,
+      noPrimaryDenominatorBehavior: "null"
+    };
+    const acc = createRatioRollingAccumulator();
+
+    updateRatioRollingAccumulator(acc, { numerator: 0, denominator: 0 });
+
+    expect(getRatioRollingSnapshot(acc, zeroSpec).all).toBe(0);
+    expect(getRatioRollingSnapshot(acc, nullSpec).all).toBeNull();
   });
 });

@@ -45,6 +45,7 @@ import {
   summarizeCoverage,
   summarizeSuspiciousOutputs
 } from "./rollingPlayerPipelineDiagnostics";
+import { type RollingMetricWindowFamily } from "./rollingWindowContract";
 
 type StrengthState = "all" | "ev" | "pp" | "pk";
 type FullRefreshMode = "rpc_truncate" | "overwrite_only" | "delete";
@@ -469,12 +470,14 @@ interface PlayerGameData {
 interface SimpleMetricDefinition {
   key: string;
   aggregation: "simple";
+  windowFamily: RollingMetricWindowFamily;
   getValue: (game: PlayerGameData) => number | null;
 }
 
 interface RatioMetricDefinition {
   key: string;
   aggregation: "ratio";
+  windowFamily: RollingMetricWindowFamily;
   ratioSpec: RatioAggregationSpec;
   getComponents: (game: PlayerGameData) => RatioComponents | null;
 }
@@ -544,8 +547,10 @@ const METRICS: MetricDefinition[] = [
   {
     key: "sog_per_60",
     aggregation: "ratio",
+    windowFamily: "weighted_rate_performance",
     ratioSpec: {
-      scale: 3600
+      scale: 3600,
+      noPrimaryDenominatorBehavior: "null"
     },
     getComponents: (game) =>
       resolvePer60Components({
@@ -557,8 +562,10 @@ const METRICS: MetricDefinition[] = [
   {
     key: "ixg_per_60",
     aggregation: "ratio",
+    windowFamily: "weighted_rate_performance",
     ratioSpec: {
-      scale: 3600
+      scale: 3600,
+      noPrimaryDenominatorBehavior: "null"
     },
     getComponents: (game) =>
       resolvePer60Components({
@@ -574,9 +581,10 @@ const METRICS: MetricDefinition[] = [
   {
     key: "shooting_pct",
     aggregation: "ratio",
+    windowFamily: "ratio_performance",
     ratioSpec: {
       scale: 100,
-      zeroWhenNoDenominator: true
+      noPrimaryDenominatorBehavior: "zero"
     },
     getComponents: (game) => ({
       numerator: getGoals(game),
@@ -586,14 +594,16 @@ const METRICS: MetricDefinition[] = [
   {
     key: "ixg",
     aggregation: "simple",
+    windowFamily: "additive_performance",
     getValue: (game) => getIxgValue(game)
   },
   {
     key: "primary_points_pct",
     aggregation: "ratio",
+    windowFamily: "ratio_performance",
     ratioSpec: {
       scale: 1,
-      zeroWhenNoDenominator: true
+      noPrimaryDenominatorBehavior: "zero"
     },
     getComponents: ({ counts }) => {
       if (!counts) return null;
@@ -606,8 +616,10 @@ const METRICS: MetricDefinition[] = [
   {
     key: "expected_sh_pct",
     aggregation: "ratio",
+    windowFamily: "ratio_performance",
     ratioSpec: {
-      scale: 1
+      scale: 1,
+      noPrimaryDenominatorBehavior: "null"
     },
     getComponents: (game) => ({
       numerator: resolveIxgValue({
@@ -621,9 +633,10 @@ const METRICS: MetricDefinition[] = [
   {
     key: "ipp",
     aggregation: "ratio",
+    windowFamily: "ratio_performance",
     ratioSpec: {
       scale: 100,
-      zeroWhenNoDenominator: true
+      noPrimaryDenominatorBehavior: "zero"
     },
     getComponents: (game) => ({
       numerator: getPoints(game),
@@ -633,23 +646,28 @@ const METRICS: MetricDefinition[] = [
   {
     key: "iscf",
     aggregation: "simple",
+    windowFamily: "additive_performance",
     getValue: ({ counts }) => counts?.iscfs ?? null
   },
   {
     key: "ihdcf",
     aggregation: "simple",
+    windowFamily: "additive_performance",
     getValue: ({ counts }) => counts?.hdcf ?? null
   },
   {
     key: "toi_seconds",
     aggregation: "simple",
+    windowFamily: "additive_performance",
     getValue: (game) => getToiSeconds(game)
   },
   {
     key: "hits_per_60",
     aggregation: "ratio",
+    windowFamily: "weighted_rate_performance",
     ratioSpec: {
-      scale: 3600
+      scale: 3600,
+      noPrimaryDenominatorBehavior: "null"
     },
     getComponents: (game) =>
       resolvePer60Components({
@@ -660,8 +678,10 @@ const METRICS: MetricDefinition[] = [
   {
     key: "blocks_per_60",
     aggregation: "ratio",
+    windowFamily: "weighted_rate_performance",
     ratioSpec: {
-      scale: 3600
+      scale: 3600,
+      noPrimaryDenominatorBehavior: "null"
     },
     getComponents: (game) =>
       resolvePer60Components({
@@ -672,8 +692,10 @@ const METRICS: MetricDefinition[] = [
   {
     key: "oz_start_pct",
     aggregation: "ratio",
+    windowFamily: "ratio_performance",
     ratioSpec: {
-      scale: 100
+      scale: 100,
+      noPrimaryDenominatorBehavior: "null"
     },
     getComponents: ({ countsOi }) => ({
       numerator: countsOi?.off_zone_starts ?? null,
@@ -684,16 +706,20 @@ const METRICS: MetricDefinition[] = [
   {
     key: "pp_share_pct",
     aggregation: "ratio",
+    windowFamily: "ratio_performance",
     ratioSpec: {
-      scale: 1
+      scale: 1,
+      noPrimaryDenominatorBehavior: "null"
     },
     getComponents: (game) => getPpShareComponents(game)
   },
   {
     key: "on_ice_sh_pct",
     aggregation: "ratio",
+    windowFamily: "ratio_performance",
     ratioSpec: {
-      scale: 100
+      scale: 100,
+      noPrimaryDenominatorBehavior: "null"
     },
     getComponents: ({ countsOi }) => ({
       numerator: countsOi?.gf ?? null,
@@ -703,10 +729,13 @@ const METRICS: MetricDefinition[] = [
   {
     key: "pdo",
     aggregation: "ratio",
+    windowFamily: "ratio_performance",
     ratioSpec: {
       scale: 100,
       combine: "sum",
-      outputScale: 0.01
+      outputScale: 0.01,
+      noPrimaryDenominatorBehavior: "null",
+      noSecondaryDenominatorBehavior: "null"
     },
     getComponents: ({ countsOi }) => ({
       numerator: countsOi?.gf ?? null,
@@ -721,18 +750,22 @@ const METRICS: MetricDefinition[] = [
   {
     key: "cf",
     aggregation: "simple",
+    windowFamily: "additive_performance",
     getValue: ({ countsOi }) => countsOi?.cf ?? null
   },
   {
     key: "ca",
     aggregation: "simple",
+    windowFamily: "additive_performance",
     getValue: ({ countsOi }) => countsOi?.ca ?? null
   },
   {
     key: "cf_pct",
     aggregation: "ratio",
+    windowFamily: "ratio_performance",
     ratioSpec: {
-      scale: 100
+      scale: 100,
+      noPrimaryDenominatorBehavior: "null"
     },
     getComponents: ({ countsOi }) => ({
       numerator: countsOi?.cf ?? null,
@@ -742,18 +775,22 @@ const METRICS: MetricDefinition[] = [
   {
     key: "ff",
     aggregation: "simple",
+    windowFamily: "additive_performance",
     getValue: ({ countsOi }) => countsOi?.ff ?? null
   },
   {
     key: "fa",
     aggregation: "simple",
+    windowFamily: "additive_performance",
     getValue: ({ countsOi }) => countsOi?.fa ?? null
   },
   {
     key: "ff_pct",
     aggregation: "ratio",
+    windowFamily: "ratio_performance",
     ratioSpec: {
-      scale: 100
+      scale: 100,
+      noPrimaryDenominatorBehavior: "null"
     },
     getComponents: ({ countsOi }) => ({
       numerator: countsOi?.ff ?? null,
@@ -763,36 +800,43 @@ const METRICS: MetricDefinition[] = [
   {
     key: "goals",
     aggregation: "simple",
+    windowFamily: "additive_performance",
     getValue: (game) => getGoals(game)
   },
   {
     key: "assists",
     aggregation: "simple",
+    windowFamily: "additive_performance",
     getValue: (game) => getAssists(game)
   },
   {
     key: "shots",
     aggregation: "simple",
+    windowFamily: "additive_performance",
     getValue: (game) => getShots(game)
   },
   {
     key: "hits",
     aggregation: "simple",
+    windowFamily: "additive_performance",
     getValue: (game) => getHits(game)
   },
   {
     key: "blocks",
     aggregation: "simple",
+    windowFamily: "additive_performance",
     getValue: (game) => getBlocks(game)
   },
   {
     key: "pp_points",
     aggregation: "simple",
+    windowFamily: "additive_performance",
     getValue: (game) => getPpPointsValue(game)
   },
   {
     key: "points",
     aggregation: "simple",
+    windowFamily: "additive_performance",
     getValue: (game) => getPoints(game)
   }
 ];
@@ -2022,7 +2066,7 @@ async function processPlayer(
               ratioMetricsState[metric.key],
               components,
               {
-                windowMode: "appearance",
+                windowFamily: metric.windowFamily,
                 anchor: playedThisGame
               }
             );

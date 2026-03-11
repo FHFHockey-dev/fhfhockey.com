@@ -48,7 +48,7 @@
   - [x] 1.5 Ensure unknown `game_id` handling, source-gap reporting, and row-spine behavior remain intact while the merge contract is being refactored.
   - [x] 1.6 Add pipeline-level tests covering merged row construction, source precedence, null handling, and fallback transparency.
 
-- [ ] 2.0 Redesign GP% and participation semantics across all scopes
+- [x] 2.0 Redesign GP% and participation semantics across all scopes
   - [x] 2.1 Reverse the current GP% implementation assumptions in `fetchRollingPlayerAverages.ts` and `rollingHistoricalAverages.ts` into explicit replacement contracts for all-strength availability, split-strength participation, season scope, rolling scope, 3YA scope, and career scope.
   - [x] 2.2 Implement all-strength season availability as a player-centered aggregate across all current-season team stints instead of the current `season:teamId` bucket-only behavior.
   - [x] 2.3 Implement rolling availability windows as exact current-team chronological team-game windows for `last3`, `last5`, `last10`, and `last20`.
@@ -59,14 +59,14 @@
   - [x] 2.8 Add dedicated GP% unit tests for one-team healthy cases, injury/missed-games cases, traded-player season cases, split-strength participation cases, and rolling current-team windows.
 
 - [ ] 3.0 Redesign ratio-family and `/60` rolling-window semantics
-  - [ ] 3.1 Define the canonical `lastN` window rules in code for each metric family class: availability, additive performance, ratio performance, and weighted `/60`.
-  - [ ] 3.2 Refactor rolling ratio accumulation so window membership is determined by fixed appearance windows where required, instead of by valid-observation-only qualification.
-  - [ ] 3.3 Define per-family missing-component policy inside fixed appearance windows, including whether missing numerator/denominator pairs become zero, null, or excluded outputs after the window is selected.
-  - [ ] 3.4 Preserve the corrected ratio-of-aggregates arithmetic for bounded ratios and composite metrics while updating the rolling window contract.
-  - [ ] 3.5 Preserve the corrected weighted-rate arithmetic for `/60` families while updating rolling window membership to the canonical appearance-based contract.
-  - [ ] 3.6 Review all ratio-family and `/60` zero-denominator behaviors and standardize them against explicit product rules instead of inherited implementation defaults.
-  - [ ] 3.7 Document or encode scale expectations for each `pct` family so `0-100` and `0-1` metrics are not conflated during validation or downstream consumption.
-  - [ ] 3.8 Add focused tests for `shooting_pct`, `primary_points_pct`, `expected_sh_pct`, `ipp`, `on_ice_sh_pct`, `pdo`, `cf_pct`, `ff_pct`, `sog_per_60`, `ixg_per_60`, `hits_per_60`, and `blocks_per_60` under the new rolling-window contract.
+  - [x] 3.1 Define the canonical `lastN` window rules in code for each metric family class: availability, additive performance, ratio performance, and weighted `/60`.
+  - [x] 3.2 Refactor rolling ratio accumulation so window membership is determined by fixed appearance windows where required, instead of by valid-observation-only qualification.
+  - [x] 3.3 Define per-family missing-component policy inside fixed appearance windows, including whether missing numerator/denominator pairs become zero, null, or excluded outputs after the window is selected.
+  - [x] 3.4 Preserve the corrected ratio-of-aggregates arithmetic for bounded ratios and composite metrics while updating the rolling window contract.
+  - [x] 3.5 Preserve the corrected weighted-rate arithmetic for `/60` families while updating rolling window membership to the canonical appearance-based contract.
+  - [x] 3.6 Review all ratio-family and `/60` zero-denominator behaviors and standardize them against explicit product rules instead of inherited implementation defaults.
+  - [x] 3.7 Document or encode scale expectations for each `pct` family so `0-100` and `0-1` metrics are not conflated during validation or downstream consumption.
+  - [x] 3.8 Add focused tests for `shooting_pct`, `primary_points_pct`, `expected_sh_pct`, `ipp`, `on_ice_sh_pct`, `pdo`, `cf_pct`, `ff_pct`, `sog_per_60`, `ixg_per_60`, `hits_per_60`, and `blocks_per_60` under the new rolling-window contract.
 
 - [ ] 4.0 Implement schema, naming, and storage contract changes
   - [ ] 4.1 Audit the current `rolling_player_game_metrics` column surface and classify which fields are healthy as-is, which are semantically misleading, which are redundant aliases, and which require replacement fields.

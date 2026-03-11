@@ -1,3 +1,5 @@
+import { ROLLING_METRIC_SCALE_CONTRACTS } from "./rollingMetricScaleContract";
+
 type StrengthState = "all" | "ev" | "pp" | "pk";
 
 type DateLikeRow = {
@@ -191,19 +193,8 @@ type SuspiciousMetricSpec = {
   max: number;
 };
 
-const SUSPICIOUS_METRIC_BOUNDS: Record<string, SuspiciousMetricSpec> = {
-  gp_pct: { min: 0, max: 1 },
-  shooting_pct: { min: 0, max: 100 },
-  primary_points_pct: { min: 0, max: 1 },
-  expected_sh_pct: { min: 0, max: 1 },
-  ipp: { min: 0, max: 100 },
-  oz_start_pct: { min: 0, max: 100 },
-  pp_share_pct: { min: 0, max: 1 },
-  on_ice_sh_pct: { min: 0, max: 100 },
-  pdo: { min: 0, max: 2 },
-  cf_pct: { min: 0, max: 100 },
-  ff_pct: { min: 0, max: 100 }
-};
+const SUSPICIOUS_METRIC_BOUNDS: Record<string, SuspiciousMetricSpec> =
+  ROLLING_METRIC_SCALE_CONTRACTS;
 
 export function summarizeSuspiciousOutputs(params: {
   playerId: number;
