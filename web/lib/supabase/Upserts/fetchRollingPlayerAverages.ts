@@ -66,6 +66,8 @@ import {
 } from "./rollingPlayerAvailabilityContract";
 import {
   summarizeCoverage,
+  summarizeDerivedWindowDiagnostics,
+  summarizeSourceTailFreshness,
   summarizeSuspiciousOutputs
 } from "./rollingPlayerPipelineDiagnostics";
 import { type RollingMetricWindowFamily } from "./rollingWindowContract";
@@ -82,6 +84,8 @@ const RETRY_BASE_DELAY_MS = 1000;
 const RETRY_MAX_DELAY_MS = 30000;
 const TRANSIENT_GATEWAY_STATUSES = [502, 503, 504, 520, 522, 524];
 const SLOW_OPERATION_WARNING_MS = 15000;
+type PipelinePhase = "bootstrap" | "fetch" | "merge" | "derive" | "upsert" | "summary";
+type PipelinePhaseStatus = "start" | "complete" | "failed";
 
 function getErrorMessage(error: unknown): string {
   if (typeof error === "string") return error;
@@ -116,6 +120,28 @@ function formatDuration(ms: number): string {
   if (hours > 0) return `${hours}h ${minutes}m ${seconds}s`;
   if (minutes > 0) return `${minutes}m ${seconds}s`;
   return `${seconds}s`;
+}
+
+function logPipelinePhase(args: {
+  phase: PipelinePhase;
+  status: PipelinePhaseStatus;
+  durationMs?: number;
+  details?: Record<string, unknown>;
+}) {
+  console.info(
+    "[fetchRollingPlayerAverages] phase",
+    JSON.stringify({
+      phase: args.phase,
+      status: args.status,
+      ...(typeof args.durationMs === "number"
+        ? {
+            durationMs: args.durationMs,
+            durationLabel: formatDuration(args.durationMs)
+          }
+        : {}),
+      ...(args.details ?? {})
+    })
+  );
 }
 
 function createProgressLogger(options: {
@@ -436,6 +462,7 @@ interface PlayerProcessingDiagnostics {
   coverageWarningCount: number;
   suspiciousOutputCount: number;
   unknownGameIdCount: number;
+  freshnessBlockerCount: number;
   sourceTracking: SourceTrackingSummary;
 }
 
@@ -443,6 +470,17 @@ interface ProcessPlayerResult {
   rows: any[];
   diagnostics: PlayerProcessingDiagnostics;
 }
+
+type RollingPlayerRunSummary = {
+  rowsUpserted: number;
+  processedPlayers: number;
+  playersWithRows: number;
+  coverageWarnings: number;
+  suspiciousOutputWarnings: number;
+  unknownGameIds: number;
+  freshnessBlockers: number;
+  sourceTracking: SourceTrackingSummary;
+};
 
 const cachedPowerPlayCombos = new Map<string, PowerPlayCombinationRow>();
 const cachedLineCombosByGame = new Map<number, LineCombinationRow[]>();
@@ -1720,6 +1758,19 @@ function updateAccumulator(
   });
 }
 
+function buildRunSummary(args: RollingPlayerRunSummary): RollingPlayerRunSummary {
+  return {
+    rowsUpserted: args.rowsUpserted,
+    processedPlayers: args.processedPlayers,
+    playersWithRows: args.playersWithRows,
+    coverageWarnings: args.coverageWarnings,
+    suspiciousOutputWarnings: args.suspiciousOutputWarnings,
+    unknownGameIds: args.unknownGameIds,
+    freshnessBlockers: args.freshnessBlockers,
+    sourceTracking: args.sourceTracking
+  };
+}
+
 function didPlayerCountAsAppearance(
   strength: StrengthState,
   game: PlayerGameData
@@ -2587,6 +2638,7 @@ async function processPlayer(
         coverageWarningCount: 0,
         suspiciousOutputCount: 0,
         unknownGameIdCount: 0,
+        freshnessBlockerCount: 0,
         sourceTracking: createEmptySourceTrackingSummary()
       }
     };
@@ -2604,17 +2656,62 @@ async function processPlayer(
     coverageWarningCount: 0,
     suspiciousOutputCount: 0,
     unknownGameIdCount: 0,
+    freshnessBlockerCount: 0,
     sourceTracking: createEmptySourceTrackingSummary()
   };
   for (const config of STRENGTH_CONFIGS) {
     const strengthLabel = `[fetchRollingPlayerAverages] player:${playerId} strength:${config.state}`;
     console.time(strengthLabel);
     try {
-      const [countsRows, ratesRows, countsOiRows] = await Promise.all([
-        fetchCounts(config.countsTable, playerId, startDate, endDate),
-        fetchRates(config.ratesTable, playerId, startDate, endDate),
-        fetchCountsOi(config.countsOiTable, playerId, startDate, endDate)
-      ]);
+      const fetchPhaseStartedAt = Date.now();
+      logPipelinePhase({
+        phase: "fetch",
+        status: "start",
+        details: {
+          playerId,
+          strength: config.state,
+          startDate,
+          endDate,
+          wgoRows: wgoRows.length,
+          candidateGameIds: gameIds.length
+        }
+      });
+      let countsRows: NstCountsRow[];
+      let ratesRows: NstRatesRow[];
+      let countsOiRows: NstCountsOiRow[];
+      try {
+        [countsRows, ratesRows, countsOiRows] = await Promise.all([
+          fetchCounts(config.countsTable, playerId, startDate, endDate),
+          fetchRates(config.ratesTable, playerId, startDate, endDate),
+          fetchCountsOi(config.countsOiTable, playerId, startDate, endDate)
+        ]);
+      } catch (error) {
+        logPipelinePhase({
+          phase: "fetch",
+          status: "failed",
+          durationMs: Date.now() - fetchPhaseStartedAt,
+          details: {
+            playerId,
+            strength: config.state,
+            error: getErrorMessage(error)
+          }
+        });
+        throw error;
+      }
+      logPipelinePhase({
+        phase: "fetch",
+        status: "complete",
+        durationMs: Date.now() - fetchPhaseStartedAt,
+        details: {
+          playerId,
+          strength: config.state,
+          countsRows: countsRows.length,
+          ratesRows: ratesRows.length,
+          countsOiRows: countsOiRows.length,
+          ppRows: ppRows.length,
+          lineRows: lineRows.length
+        }
+      });
 
       const countsByDate = groupByDate(countsRows);
       const ratesByDate = groupByDate(ratesRows);
@@ -2650,27 +2747,77 @@ async function processPlayer(
         diagnostics.coverageWarningCount += coverageSummary.warnings.length;
         diagnostics.unknownGameIdCount += coverageSummary.counts.unknownGameIds;
         coverageSummary.warnings.forEach((warning) => console.warn(warning));
+        const sourceTailSummary = summarizeSourceTailFreshness({
+          playerId,
+          strength: config.state,
+          wgoRows,
+          countsRows,
+          ratesRows,
+          countsOiRows,
+          ppRows,
+          lineRows
+        });
+        diagnostics.freshnessBlockerCount += sourceTailSummary.warnings.length;
+        sourceTailSummary.warnings.forEach((warning) => console.warn(warning));
       }
 
-      const games = buildGameRecords(
-        wgoRows,
-        countsByDate,
-        ratesByDate,
-        countsOiByDate,
-        lineRows,
-        ppRows,
-        config.state,
-        knownGameIds
-      );
+      const mergePhaseStartedAt = Date.now();
+      logPipelinePhase({
+        phase: "merge",
+        status: "start",
+        details: {
+          playerId,
+          strength: config.state,
+          wgoRows: wgoRows.length,
+          ppRows: ppRows.length,
+          lineRows: lineRows.length
+        }
+      });
+      let games: PlayerGameData[];
+      try {
+        games = buildGameRecords(
+          wgoRows,
+          countsByDate,
+          ratesByDate,
+          countsOiByDate,
+          lineRows,
+          ppRows,
+          config.state,
+          knownGameIds
+        );
+      } catch (error) {
+        logPipelinePhase({
+          phase: "merge",
+          status: "failed",
+          durationMs: Date.now() - mergePhaseStartedAt,
+          details: {
+            playerId,
+            strength: config.state,
+            error: getErrorMessage(error)
+          }
+        });
+        throw error;
+      }
+      logPipelinePhase({
+        phase: "merge",
+        status: "complete",
+        durationMs: Date.now() - mergePhaseStartedAt,
+        details: {
+          playerId,
+          strength: config.state,
+          mergedRows: games.length
+        }
+      });
+      let strengthSourceTracking = createEmptySourceTrackingSummary();
       if (!options.skipDiagnostics) {
-        const sourceTracking = summarizeSourceTracking(games, config.state);
-        mergeSourceTrackingSummary(diagnostics.sourceTracking, sourceTracking);
+        strengthSourceTracking = summarizeSourceTracking(games, config.state);
+        mergeSourceTrackingSummary(diagnostics.sourceTracking, strengthSourceTracking);
         console.info(
           "[fetchRollingPlayerAverages] sourceTracking",
           JSON.stringify({
             playerId,
             strength: config.state,
-            ...sourceTracking
+            ...strengthSourceTracking
           })
         );
       }
@@ -2706,8 +2853,18 @@ async function processPlayer(
       });
       const strengthOutputs: any[] = [];
       const historicalGpPctState = createHistoricalGpPctAccumulator();
-
-      for (const game of games) {
+      const derivePhaseStartedAt = Date.now();
+      logPipelinePhase({
+        phase: "derive",
+        status: "start",
+        details: {
+          playerId,
+          strength: config.state,
+          mergedRows: games.length
+        }
+      });
+      try {
+        for (const game of games) {
         const playedThisGame = didPlayerCountAsAppearance(config.state, game);
 
         METRICS.forEach((metric) => {
@@ -2814,8 +2971,31 @@ async function processPlayer(
           gp_semantic_type: getGpOutputCompatibilityMode(config.state).semanticType,
           ...metricOutputs
         });
-        strengthOutputs.push(outputs[outputs.length - 1]);
+          strengthOutputs.push(outputs[outputs.length - 1]);
+        }
+      } catch (error) {
+        logPipelinePhase({
+          phase: "derive",
+          status: "failed",
+          durationMs: Date.now() - derivePhaseStartedAt,
+          details: {
+            playerId,
+            strength: config.state,
+            error: getErrorMessage(error)
+          }
+        });
+        throw error;
       }
+      logPipelinePhase({
+        phase: "derive",
+        status: "complete",
+        durationMs: Date.now() - derivePhaseStartedAt,
+        details: {
+          playerId,
+          strength: config.state,
+          derivedRows: strengthOutputs.length
+        }
+      });
 
       if (!options.skipDiagnostics) {
         const suspiciousSummary = summarizeSuspiciousOutputs({
@@ -2825,6 +3005,19 @@ async function processPlayer(
         });
         diagnostics.suspiciousOutputCount += suspiciousSummary.issueCount;
         suspiciousSummary.warnings.forEach((warning) => console.warn(warning));
+        console.info(
+          "[fetchRollingPlayerAverages] diagnosticDetail",
+          JSON.stringify({
+            playerId,
+            strength: config.state,
+            ...summarizeDerivedWindowDiagnostics({ rows: strengthOutputs }),
+            toiSources: strengthSourceTracking.toiSources,
+            toiFallbackSeeds: strengthSourceTracking.toiFallbackSeeds,
+            toiTrustTiers: strengthSourceTracking.toiTrustTiers,
+            rateReconstructions: strengthSourceTracking.rateReconstructions,
+            ixgPer60Sources: strengthSourceTracking.ixgPer60Sources
+          })
+        );
       }
     } finally {
       console.timeEnd(strengthLabel);
@@ -2866,12 +3059,47 @@ export async function main(options: FetchOptions = {}): Promise<void> {
   } catch (e) {
     console.warn("[fetchRollingPlayerAverages] Preflight probe threw:", e);
   }
-  const games = await fetchGames();
+  const bootstrapPhaseStartedAt = Date.now();
+  logPipelinePhase({
+    phase: "bootstrap",
+    status: "start",
+    details: {
+      playerId: options.playerId ?? null,
+      season: options.season ?? null,
+      startDate: options.startDate ?? null,
+      endDate: options.endDate ?? null,
+      resumePlayerId: options.resumePlayerId ?? null,
+      forceFullRefresh: Boolean(options.forceFullRefresh)
+    }
+  });
+  let games: GameRow[];
+  let playerIds: number[];
+  try {
+    games = await fetchGames();
+    playerIds = await fetchPlayerIds(options);
+  } catch (error) {
+    logPipelinePhase({
+      phase: "bootstrap",
+      status: "failed",
+      durationMs: Date.now() - bootstrapPhaseStartedAt,
+      details: {
+        error: getErrorMessage(error)
+      }
+    });
+    throw error;
+  }
   const ledger = buildTeamGameLedger(games);
   const knownGameIds = new Set(games.map((game) => game.id));
-
-  const playerIds = await fetchPlayerIds(options);
-
+  logPipelinePhase({
+    phase: "bootstrap",
+    status: "complete",
+    durationMs: Date.now() - bootstrapPhaseStartedAt,
+    details: {
+      games: games.length,
+      players: playerIds.length,
+      knownGameIds: knownGameIds.size
+    }
+  });
   let resumePlayerId = options.resumePlayerId;
 
   if (options.forceFullRefresh) {
@@ -3023,6 +3251,7 @@ export async function main(options: FetchOptions = {}): Promise<void> {
   let coverageWarnings = 0;
   let suspiciousOutputWarnings = 0;
   let unknownGameIds = 0;
+  let freshnessBlockers = 0;
   const sourceTracking = createEmptySourceTrackingSummary();
   const playerProgress = createProgressLogger({
     label: "players",
@@ -3049,56 +3278,94 @@ export async function main(options: FetchOptions = {}): Promise<void> {
         coverageWarnings += diagnostics.coverageWarningCount;
         suspiciousOutputWarnings += diagnostics.suspiciousOutputCount;
         unknownGameIds += diagnostics.unknownGameIdCount;
+        freshnessBlockers += diagnostics.freshnessBlockerCount;
         mergeSourceTrackingSummary(sourceTracking, diagnostics.sourceTracking);
         if (!rows.length) {
           processedPlayers += 1;
           playerProgress.update(
             processedPlayers,
-            `player:${playerId} rowsUpserted:${rowsUpserted} coverageWarn:${coverageWarnings} suspicious:${suspiciousOutputWarnings}`
+            `player:${playerId} rowsUpserted:${rowsUpserted} coverageWarn:${coverageWarnings} suspicious:${suspiciousOutputWarnings} freshness:${freshnessBlockers}`
           );
           continue;
         }
         playersWithRows += 1;
         const totalBatches = Math.ceil(rows.length / batchSize);
+        const upsertPhaseStartedAt = Date.now();
+        logPipelinePhase({
+          phase: "upsert",
+          status: "start",
+          details: {
+            playerId,
+            rows: rows.length,
+            totalBatches,
+            batchSize
+          }
+        });
         playerProgress.update(
           processedPlayers,
-          `player:${playerId} preparedRows:${rows.length} batches:${totalBatches} rowsUpserted:${rowsUpserted} coverageWarn:${coverageWarnings} suspicious:${suspiciousOutputWarnings}`
+          `player:${playerId} preparedRows:${rows.length} batches:${totalBatches} rowsUpserted:${rowsUpserted} coverageWarn:${coverageWarnings} suspicious:${suspiciousOutputWarnings} freshness:${freshnessBlockers}`
         );
-
-        for (let i = 0; i < rows.length; i += batchSize) {
-          const batch = rows.slice(i, i + batchSize);
-          const batchNumber = Math.floor(i / batchSize) + 1;
-          await upsertLimit(async () =>
-            executeWithSlowLog(
-              `upsert player:${playerId} batch:${batchNumber}/${totalBatches} rows:${batch.length}`,
-              () =>
-                executeWithRetry(
-                  `upsert player:${playerId} batch:${batchNumber}/${totalBatches}`,
-                  async () => {
-                    const { error } = await supabase
-                      .from("rolling_player_game_metrics")
-                      .upsert(batch, {
-                        onConflict: "player_id,game_date,strength_state"
-                      });
-                    if (error) {
-                      throw error;
+        try {
+          for (let i = 0; i < rows.length; i += batchSize) {
+            const batch = rows.slice(i, i + batchSize);
+            const batchNumber = Math.floor(i / batchSize) + 1;
+            await upsertLimit(async () =>
+              executeWithSlowLog(
+                `upsert player:${playerId} batch:${batchNumber}/${totalBatches} rows:${batch.length}`,
+                () =>
+                  executeWithRetry(
+                    `upsert player:${playerId} batch:${batchNumber}/${totalBatches}`,
+                    async () => {
+                      const { error } = await supabase
+                        .from("rolling_player_game_metrics")
+                        .upsert(batch, {
+                          onConflict: "player_id,game_date,strength_state"
+                        });
+                      if (error) {
+                        throw error;
+                      }
                     }
-                  }
-                )
-            )
-          );
-          rowsUpserted += batch.length;
-          playerProgress.update(
-            processedPlayers,
-            `player:${playerId} upsertedBatch:${batchNumber}/${totalBatches} rowsUpserted:${rowsUpserted} coverageWarn:${coverageWarnings} suspicious:${suspiciousOutputWarnings}`
-          );
+                  )
+              )
+            );
+            rowsUpserted += batch.length;
+            playerProgress.update(
+              processedPlayers,
+              `player:${playerId} upsertedBatch:${batchNumber}/${totalBatches} rowsUpserted:${rowsUpserted} coverageWarn:${coverageWarnings} suspicious:${suspiciousOutputWarnings} freshness:${freshnessBlockers}`
+            );
+          }
+        } catch (error) {
+          logPipelinePhase({
+            phase: "upsert",
+            status: "failed",
+            durationMs: Date.now() - upsertPhaseStartedAt,
+            details: {
+              playerId,
+              rows: rows.length,
+              totalBatches,
+              rowsUpsertedSoFar: rowsUpserted,
+              error: getErrorMessage(error)
+            }
+          });
+          throw error;
         }
+        logPipelinePhase({
+          phase: "upsert",
+          status: "complete",
+          durationMs: Date.now() - upsertPhaseStartedAt,
+          details: {
+            playerId,
+            rows: rows.length,
+            totalBatches,
+            rowsUpsertedSoFar: rowsUpserted
+          }
+        });
         // Keep a tiny pause between players to reduce lock contention spikes.
         await delay(20);
         processedPlayers += 1;
         playerProgress.update(
           processedPlayers,
-          `player:${playerId} rowsUpserted:${rowsUpserted} coverageWarn:${coverageWarnings} suspicious:${suspiciousOutputWarnings}`
+          `player:${playerId} rowsUpserted:${rowsUpserted} coverageWarn:${coverageWarnings} suspicious:${suspiciousOutputWarnings} freshness:${freshnessBlockers}`
         );
       } finally {
         console.timeEnd(playerLabel);
@@ -3113,25 +3380,51 @@ export async function main(options: FetchOptions = {}): Promise<void> {
 
   playerProgress.finish(
     processedPlayers,
-    `rowsUpserted:${rowsUpserted} playersWithRows:${playersWithRows} coverageWarn:${coverageWarnings} suspicious:${suspiciousOutputWarnings}`
+    `rowsUpserted:${rowsUpserted} playersWithRows:${playersWithRows} coverageWarn:${coverageWarnings} suspicious:${suspiciousOutputWarnings} freshness:${freshnessBlockers}`
   );
 
-  console.info(
-    "[fetchRollingPlayerAverages] Completed run",
-    JSON.stringify({
-      rowsUpserted,
+  logPipelinePhase({
+    phase: "summary",
+    status: "start",
+    details: {
       processedPlayers,
       playersWithRows,
+      rowsUpserted
+    }
+  });
+  console.info(
+    "[fetchRollingPlayerAverages] Completed run",
+    JSON.stringify(
+      buildRunSummary({
+        rowsUpserted,
+        processedPlayers,
+        playersWithRows,
+        coverageWarnings,
+        suspiciousOutputWarnings,
+        unknownGameIds,
+        freshnessBlockers,
+        sourceTracking
+      })
+    )
+  );
+  logPipelinePhase({
+    phase: "summary",
+    status: "complete",
+    details: {
+      processedPlayers,
+      playersWithRows,
+      rowsUpserted,
       coverageWarnings,
       suspiciousOutputWarnings,
       unknownGameIds,
-      sourceTracking
-    })
-  );
+      freshnessBlockers
+    }
+  });
 }
 
 export const __testables = {
   buildGameRecords,
+  buildRunSummary,
   summarizeSourceTracking,
   didPlayerCountAsAppearance,
   applyGpOutputs,

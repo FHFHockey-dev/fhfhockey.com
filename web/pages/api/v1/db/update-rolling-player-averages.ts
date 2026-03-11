@@ -55,6 +55,26 @@ type ResponseBody = {
 };
 
 type FullRefreshMode = "rpc_truncate" | "overwrite_only" | "delete";
+type EndpointPhase = "request" | "execute" | "response";
+
+function logEndpointPhase(args: {
+  phase: EndpointPhase;
+  status: "start" | "complete" | "failed";
+  durationMs?: number;
+  details?: Record<string, unknown>;
+}) {
+  console.info(
+    "[update-rolling-player-averages] phase",
+    JSON.stringify({
+      phase: args.phase,
+      status: args.status,
+      ...(typeof args.durationMs === "number"
+        ? { durationMs: args.durationMs }
+        : {}),
+      ...(args.details ?? {})
+    })
+  );
+}
 
 function parseNumberParam(
   param: string | string[] | undefined
@@ -109,14 +129,37 @@ async function handler(
   req: NextApiRequest,
   res: NextApiResponse<ResponseBody>
 ) {
+  logEndpointPhase({
+    phase: "request",
+    status: "start",
+    details: {
+      method: req.method ?? null
+    }
+  });
   if (req.method === "HEAD") {
     res.setHeader("Allow", "GET, POST, HEAD");
+    logEndpointPhase({
+      phase: "response",
+      status: "complete",
+      details: {
+        method: req.method ?? null,
+        statusCode: 200
+      }
+    });
     res.status(200).json({ message: "Rolling player averages endpoint OK." });
     return;
   }
 
   if (req.method !== "GET" && req.method !== "POST") {
     res.setHeader("Allow", "GET, POST, HEAD");
+    logEndpointPhase({
+      phase: "response",
+      status: "complete",
+      details: {
+        method: req.method ?? null,
+        statusCode: 405
+      }
+    });
     return res.status(405).json({ message: "Method not allowed" });
   }
 
@@ -141,6 +184,24 @@ async function handler(
       upsertConcurrency ?? (fastMode ? 4 : undefined);
     const resolvedSkipDiagnostics =
       skipDiagnostics ?? (fastMode ? true : undefined);
+    logEndpointPhase({
+      phase: "request",
+      status: "complete",
+      details: {
+        playerId,
+        season,
+        startDate,
+        endDate,
+        resumeFrom,
+        fullRefresh,
+        fullRefreshMode,
+        playerConcurrency: resolvedPlayerConcurrency,
+        upsertBatchSize,
+        upsertConcurrency: resolvedUpsertConcurrency,
+        skipDiagnostics: resolvedSkipDiagnostics,
+        fastMode
+      }
+    });
 
     const { main } = await import(
       "lib/supabase/Upserts/fetchRollingPlayerAverages"
@@ -164,6 +225,17 @@ async function handler(
     );
     const timerLabel = `[update-rolling-player-averages] total ${Date.now()}`;
     console.time(timerLabel);
+    const executeStartedAt = Date.now();
+    logEndpointPhase({
+      phase: "execute",
+      status: "start",
+      details: {
+        playerId,
+        season,
+        fullRefresh,
+        fastMode
+      }
+    });
 
     try {
       await main({
@@ -180,15 +252,47 @@ async function handler(
         upsertConcurrency: resolvedUpsertConcurrency,
         skipDiagnostics: resolvedSkipDiagnostics
       });
+      logEndpointPhase({
+        phase: "execute",
+        status: "complete",
+        durationMs: Date.now() - executeStartedAt,
+        details: {
+          playerId,
+          season,
+          fullRefresh,
+          fastMode
+        }
+      });
     } finally {
       console.timeEnd(timerLabel);
     }
 
+    logEndpointPhase({
+      phase: "response",
+      status: "complete",
+      details: {
+        statusCode: 200
+      }
+    });
     res.status(200).json({
       message: "Rolling player averages processed successfully."
     });
   } catch (error: any) {
+    logEndpointPhase({
+      phase: "execute",
+      status: "failed",
+      details: {
+        error: error?.message ?? String(error)
+      }
+    });
     console.error("Error updating rolling player averages:", error);
+    logEndpointPhase({
+      phase: "response",
+      status: "complete",
+      details: {
+        statusCode: 500
+      }
+    });
     res.status(500).json({
       message:
         error?.message ?? "Unknown error updating rolling player averages."

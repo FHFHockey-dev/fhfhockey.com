@@ -8,6 +8,7 @@ import {
 import { createHistoricalAverageAccumulator } from "./rollingHistoricalAverages";
 
 let buildGameRecords: typeof import("./fetchRollingPlayerAverages").__testables.buildGameRecords;
+let buildRunSummary: typeof import("./fetchRollingPlayerAverages").__testables.buildRunSummary;
 let summarizeSourceTracking: typeof import("./fetchRollingPlayerAverages").__testables.summarizeSourceTracking;
 let didPlayerCountAsAppearance: typeof import("./fetchRollingPlayerAverages").__testables.didPlayerCountAsAppearance;
 let applyGpOutputs: typeof import("./fetchRollingPlayerAverages").__testables.applyGpOutputs;
@@ -24,6 +25,7 @@ beforeAll(async () => {
   ({
     __testables: {
       buildGameRecords,
+      buildRunSummary,
       summarizeSourceTracking,
       didPlayerCountAsAppearance,
       applyGpOutputs,
@@ -357,6 +359,106 @@ describe("fetchRollingPlayerAverages buildGameRecords", () => {
     expect(summary.toiSuspiciousReasons.non_finite).toBe(0);
     expect(summary.toiSuspiciousReasons.non_positive).toBe(0);
     expect(summary.toiSuspiciousReasons.above_max_seconds).toBe(0);
+  });
+
+  it("builds an exportable structured run summary with source-tracking detail", () => {
+    const summary = buildRunSummary({
+      rowsUpserted: 5452,
+      processedPlayers: 3,
+      playersWithRows: 2,
+      coverageWarnings: 8,
+      suspiciousOutputWarnings: 211766,
+      unknownGameIds: 27,
+      freshnessBlockers: 4,
+      sourceTracking: {
+        missingSources: {
+          counts: 1176,
+          rates: 1177,
+          countsOi: 1176,
+          pp: 1370,
+          ppUnit: 423,
+          line: 387,
+          lineAssignment: 39,
+          knownGameId: 1056
+        },
+        wgoFallbacks: {
+          goals: 1176,
+          assists: 1176,
+          shots: 1176,
+          hits: 1176,
+          blocks: 1176,
+          points: 1176,
+          ixg: 0
+        },
+        rateReconstructions: {
+          sog_per_60: 2,
+          ixg_per_60: 2
+        },
+        ixgPer60Sources: {
+          counts_raw: 173,
+          wgo_raw: 0,
+          rate_reconstruction: 2,
+          unavailable: 0
+        },
+        toiSources: {
+          counts: 347,
+          counts_oi: 2,
+          rates: 0,
+          fallback: 0,
+          wgo: 1175,
+          none: 1
+        },
+        toiFallbackSeeds: {
+          counts: 0,
+          counts_oi: 0,
+          wgo: 0,
+          none: 0
+        },
+        toiTrustTiers: {
+          authoritative: 347,
+          supplementary: 2,
+          fallback: 1175,
+          none: 1
+        },
+        toiWgoNormalizations: {
+          minutes_to_seconds: 1175,
+          already_seconds: 0,
+          missing: 1,
+          invalid: 0
+        },
+        toiSuspiciousReasons: {
+          non_finite: 0,
+          non_positive: 0,
+          above_max_seconds: 0
+        }
+      }
+    });
+
+    expect(summary).toEqual({
+      rowsUpserted: 5452,
+      processedPlayers: 3,
+      playersWithRows: 2,
+      coverageWarnings: 8,
+      suspiciousOutputWarnings: 211766,
+      unknownGameIds: 27,
+      freshnessBlockers: 4,
+      sourceTracking: expect.objectContaining({
+        wgoFallbacks: expect.objectContaining({
+          goals: 1176,
+          points: 1176
+        }),
+        rateReconstructions: expect.objectContaining({
+          sog_per_60: 2,
+          ixg_per_60: 2
+        }),
+        toiSources: expect.objectContaining({
+          counts: 347,
+          wgo: 1175
+        })
+      })
+    });
+
+    expect(JSON.parse(JSON.stringify(summary))).toEqual(summary);
   });
 
   it("treats split-strength appearance as positive-TOI participation", () => {

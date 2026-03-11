@@ -18,6 +18,10 @@ type PpLikeRow = {
   unit?: number | null;
 };
 
+type LineLikeRow = {
+  gameId: number;
+};
+
 type CoverageSample = {
   missingCountsDates: string[];
   missingRatesDates: string[];
@@ -44,6 +48,48 @@ export type CoverageSummary = {
   };
 };
 
+export type SourceTailFreshnessSummary = {
+  warnings: string[];
+  blockers: {
+    countsTailLag: number;
+    ratesTailLag: number;
+    countsOiTailLag: number;
+    ppTailLag: number;
+    lineTailLag: number;
+  };
+  latest: {
+    wgoDate: string | null;
+    countsDate: string | null;
+    ratesDate: string | null;
+    countsOiDate: string | null;
+    expectedPpGameId: number | null;
+    ppGameId: number | null;
+    expectedLineGameId: number | null;
+    lineGameId: number | null;
+  };
+};
+
+type PairCompletenessSummary = {
+  complete: number;
+  partial: number;
+  absent: number;
+  invalid: number;
+};
+
+type WindowComponentCompletenessSummary = PairCompletenessSummary & {
+  valuePresentWithoutComponents: number;
+};
+
+type ScopeKey = "season" | "3ya" | "career" | "last3" | "last5" | "last10" | "last20";
+
+export type DerivedWindowDiagnosticsSummary = {
+  gpWindows: Record<ScopeKey, PairCompletenessSummary>;
+  ratioWindows: Record<
+    "primary_points_pct" | "ipp" | "on_ice_sh_pct" | "pp_share_pct" | "pdo",
+    Record<"last3" | "last5" | "last10" | "last20", WindowComponentCompletenessSummary>
+  >;
+};
+
 type CoverageParams = {
   playerId: number;
   strength: StrengthState;
@@ -53,6 +99,17 @@ type CoverageParams = {
   countsOiRows: DateLikeRow[];
   ppRows: PpLikeRow[];
   knownGameIds: Set<number>;
+};
+
+type SourceTailFreshnessParams = {
+  playerId: number;
+  strength: StrengthState;
+  wgoRows: WgoLikeRow[];
+  countsRows: DateLikeRow[];
+  ratesRows: DateLikeRow[];
+  countsOiRows: DateLikeRow[];
+  ppRows: PpLikeRow[];
+  lineRows: LineLikeRow[];
 };
 
 const MAX_SAMPLES = 3;
@@ -208,6 +265,319 @@ export function summarizeCoverage(params: CoverageParams): CoverageSummary {
   };
 }
 
+function getLatestDate(rows: DateLikeRow[]): string | null {
+  if (!rows.length) return null;
+  return rows.reduce<string | null>(
+    (latest, row) =>
+      latest == null || row.date_scraped > latest ? row.date_scraped : latest,
+    null
+  );
+}
+
+function countDatesAfter(rows: WgoLikeRow[], latestDate: string | null): number {
+  if (!latestDate) return rows.length;
+  return rows.filter((row) => row.date > latestDate).length;
+}
+
+function countNumbersAfter(values: number[], latest: number | null): number {
+  if (latest == null) return values.length;
+  return values.filter((value) => value > latest).length;
+}
+
+export function summarizeSourceTailFreshness(
+  params: SourceTailFreshnessParams
+): SourceTailFreshnessSummary {
+  const latestWgoDate =
+    params.wgoRows.length > 0 ? params.wgoRows[params.wgoRows.length - 1]?.date ?? null : null;
+  const latestCountsDate = getLatestDate(params.countsRows);
+  const latestRatesDate = getLatestDate(params.ratesRows);
+  const latestCountsOiDate = getLatestDate(params.countsOiRows);
+
+  const countsTailLag = countDatesAfter(params.wgoRows, latestCountsDate);
+  const ratesTailLag = countDatesAfter(params.wgoRows, latestRatesDate);
+  const countsOiTailLag = countDatesAfter(params.wgoRows, latestCountsOiDate);
+
+  const expectedPpGameIds = uniqueSortedNumbers(
+    params.wgoRows
+      .filter((row) => {
+        const ppToi = Number(row.pp_toi ?? 0);
+        return Number.isFinite(ppToi) && ppToi > 0;
+      })
+      .map((row) => row.game_id)
+      .filter((gameId): gameId is number => typeof gameId === "number")
+  );
+  const latestPpGameId = params.ppRows.reduce<number | null>(
+    (latest, row) => (latest == null || row.gameId > latest ? row.gameId : latest),
+    null
+  );
+  const ppTailLag =
+    params.strength === "all" || params.strength === "pp"
+      ? countNumbersAfter(expectedPpGameIds, latestPpGameId)
+      : 0;
+
+  const expectedLineGameIds = uniqueSortedNumbers(
+    params.wgoRows
+      .map((row) => row.game_id)
+      .filter((gameId): gameId is number => typeof gameId === "number")
+  );
+  const latestLineGameId = params.lineRows.reduce<number | null>(
+    (latest, row) => (latest == null || row.gameId > latest ? row.gameId : latest),
+    null
+  );
+  const lineTailLag = countNumbersAfter(expectedLineGameIds, latestLineGameId);
+
+  const warningParts = [
+    countsTailLag > 0
+      ? `countsTailLag:${countsTailLag} latestCountsDate:${latestCountsDate ?? "none"}`
+      : null,
+    ratesTailLag > 0
+      ? `ratesTailLag:${ratesTailLag} latestRatesDate:${latestRatesDate ?? "none"}`
+      : null,
+    countsOiTailLag > 0
+      ? `countsOiTailLag:${countsOiTailLag} latestCountsOiDate:${latestCountsOiDate ?? "none"}`
+      : null,
+    ppTailLag > 0
+      ? `ppTailLag:${ppTailLag} latestPpGameId:${latestPpGameId ?? "none"} expectedPpGameId:${
+          expectedPpGameIds.at(-1) ?? "none"
+        }`
+      : null,
+    lineTailLag > 0
+      ? `lineTailLag:${lineTailLag} latestLineGameId:${latestLineGameId ?? "none"} expectedLineGameId:${
+          expectedLineGameIds.at(-1) ?? "none"
+        }`
+      : null
+  ].filter((value): value is string => Boolean(value));
+
+  const warnings =
+    warningParts.length > 0
+      ? [
+          `[fetchRollingPlayerAverages] source-tail player:${params.playerId} strength:${params.strength} latestWgoDate:${
+            latestWgoDate ?? "none"
+          } ${warningParts.join(" ")}`
+        ]
+      : [];
+
+  return {
+    warnings,
+    blockers: {
+      countsTailLag,
+      ratesTailLag,
+      countsOiTailLag,
+      ppTailLag,
+      lineTailLag
+    },
+    latest: {
+      wgoDate: latestWgoDate,
+      countsDate: latestCountsDate,
+      ratesDate: latestRatesDate,
+      countsOiDate: latestCountsOiDate,
+      expectedPpGameId: expectedPpGameIds.at(-1) ?? null,
+      ppGameId: latestPpGameId,
+      expectedLineGameId: expectedLineGameIds.at(-1) ?? null,
+      lineGameId: latestLineGameId
+    }
+  };
+}
+
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+function createPairSummary(): PairCompletenessSummary {
+  return {
+    complete: 0,
+    partial: 0,
+    absent: 0,
+    invalid: 0
+  };
+}
+
+function createWindowComponentSummary(): WindowComponentCompletenessSummary {
+  return {
+    ...createPairSummary(),
+    valuePresentWithoutComponents: 0
+  };
+}
+
+function updatePairSummary(args: {
+  summary: PairCompletenessSummary;
+  numerator: unknown;
+  denominator: unknown;
+}): void {
+  const numeratorValue = isFiniteNumber(args.numerator) ? args.numerator : null;
+  const denominatorValue = isFiniteNumber(args.denominator)
+    ? args.denominator
+    : null;
+  const numeratorPresent = numeratorValue != null;
+  const denominatorPresent = denominatorValue != null;
+
+  if (!numeratorPresent && !denominatorPresent) {
+    args.summary.absent += 1;
+    return;
+  }
+  if (!numeratorPresent || !denominatorPresent) {
+    args.summary.partial += 1;
+    return;
+  }
+
+  args.summary.complete += 1;
+  if (numeratorValue > denominatorValue) {
+    args.summary.invalid += 1;
+  }
+}
+
+function updateWindowComponentSummary(args: {
+  summary: WindowComponentCompletenessSummary;
+  value: unknown;
+  numerators: unknown[];
+  denominators: unknown[];
+}): void {
+  const valuePresent = isFiniteNumber(args.value);
+  const components = [...args.numerators, ...args.denominators];
+  const presentCount = components.filter(isFiniteNumber).length;
+
+  if (presentCount === 0) {
+    args.summary.absent += 1;
+    if (valuePresent) args.summary.valuePresentWithoutComponents += 1;
+    return;
+  }
+
+  if (presentCount !== components.length) {
+    args.summary.partial += 1;
+    if (valuePresent) args.summary.valuePresentWithoutComponents += 1;
+    return;
+  }
+
+  args.summary.complete += 1;
+  const numeratorTotal = args.numerators.reduce<number>(
+    (sum, value) => sum + (isFiniteNumber(value) ? Number(value) : 0),
+    0
+  );
+  const denominatorTotal = args.denominators.reduce<number>(
+    (sum, value) => sum + (isFiniteNumber(value) ? Number(value) : 0),
+    0
+  );
+  if (numeratorTotal > denominatorTotal) {
+    args.summary.invalid += 1;
+  }
+}
+
+export function summarizeDerivedWindowDiagnostics(params: {
+  rows: Record<string, unknown>[];
+}): DerivedWindowDiagnosticsSummary {
+  const gpWindows: DerivedWindowDiagnosticsSummary["gpWindows"] = {
+    season: createPairSummary(),
+    "3ya": createPairSummary(),
+    career: createPairSummary(),
+    last3: createPairSummary(),
+    last5: createPairSummary(),
+    last10: createPairSummary(),
+    last20: createPairSummary()
+  };
+
+  const ratioWindows: DerivedWindowDiagnosticsSummary["ratioWindows"] = {
+    primary_points_pct: {
+      last3: createWindowComponentSummary(),
+      last5: createWindowComponentSummary(),
+      last10: createWindowComponentSummary(),
+      last20: createWindowComponentSummary()
+    },
+    ipp: {
+      last3: createWindowComponentSummary(),
+      last5: createWindowComponentSummary(),
+      last10: createWindowComponentSummary(),
+      last20: createWindowComponentSummary()
+    },
+    on_ice_sh_pct: {
+      last3: createWindowComponentSummary(),
+      last5: createWindowComponentSummary(),
+      last10: createWindowComponentSummary(),
+      last20: createWindowComponentSummary()
+    },
+    pp_share_pct: {
+      last3: createWindowComponentSummary(),
+      last5: createWindowComponentSummary(),
+      last10: createWindowComponentSummary(),
+      last20: createWindowComponentSummary()
+    },
+    pdo: {
+      last3: createWindowComponentSummary(),
+      last5: createWindowComponentSummary(),
+      last10: createWindowComponentSummary(),
+      last20: createWindowComponentSummary()
+    }
+  };
+
+  for (const row of params.rows) {
+    updatePairSummary({
+      summary: gpWindows.season,
+      numerator: row.season_games_played,
+      denominator: row.season_team_games_available
+    });
+    updatePairSummary({
+      summary: gpWindows["3ya"],
+      numerator: row.three_year_games_played,
+      denominator: row.three_year_team_games_available
+    });
+    updatePairSummary({
+      summary: gpWindows.career,
+      numerator: row.career_games_played,
+      denominator: row.career_team_games_available
+    });
+
+    ([3, 5, 10, 20] as const).forEach((size) => {
+      const scopeKey = `last${size}` as const;
+      updatePairSummary({
+        summary: gpWindows[scopeKey],
+        numerator: row[`games_played_last${size}_team_games`],
+        denominator: row[`team_games_available_last${size}`]
+      });
+
+      updateWindowComponentSummary({
+        summary: ratioWindows.primary_points_pct[scopeKey],
+        value: row[`primary_points_pct_${scopeKey}`],
+        numerators: [row[`primary_points_pct_primary_points_last${size}`]],
+        denominators: [row[`primary_points_pct_points_last${size}`]]
+      });
+      updateWindowComponentSummary({
+        summary: ratioWindows.ipp[scopeKey],
+        value: row[`ipp_${scopeKey}`],
+        numerators: [row[`ipp_points_last${size}`]],
+        denominators: [row[`ipp_on_ice_goals_for_last${size}`]]
+      });
+      updateWindowComponentSummary({
+        summary: ratioWindows.on_ice_sh_pct[scopeKey],
+        value: row[`on_ice_sh_pct_${scopeKey}`],
+        numerators: [row[`on_ice_sh_pct_goals_for_last${size}`]],
+        denominators: [row[`on_ice_sh_pct_shots_for_last${size}`]]
+      });
+      updateWindowComponentSummary({
+        summary: ratioWindows.pp_share_pct[scopeKey],
+        value: row[`pp_share_pct_${scopeKey}`],
+        numerators: [row[`pp_share_pct_player_pp_toi_last${size}`]],
+        denominators: [row[`pp_share_pct_team_pp_toi_last${size}`]]
+      });
+      updateWindowComponentSummary({
+        summary: ratioWindows.pdo[scopeKey],
+        value: row[`pdo_${scopeKey}`],
+        numerators: [
+          row[`pdo_goals_for_last${size}`],
+          row[`pdo_goals_against_last${size}`]
+        ],
+        denominators: [
+          row[`pdo_shots_for_last${size}`],
+          row[`pdo_shots_against_last${size}`]
+        ]
+      });
+    });
+  }
+
+  return {
+    gpWindows,
+    ratioWindows
+  };
+}
+
 type SuspiciousMetricSpec = {
   min: number;
   max: number;
@@ -215,6 +585,69 @@ type SuspiciousMetricSpec = {
 
 const SUSPICIOUS_METRIC_BOUNDS: Record<string, SuspiciousMetricSpec> =
   ROLLING_METRIC_SCALE_CONTRACTS;
+const LEGACY_LAST_N_SUFFIXES = ["3", "5", "10", "20"] as const;
+
+function isScaledMetricSnapshotField(metricKey: string, fieldKey: string): boolean {
+  if (metricKey === "availability_pct") {
+    return (
+      fieldKey === "season_availability_pct" ||
+      fieldKey === "three_year_availability_pct" ||
+      fieldKey === "career_availability_pct" ||
+      LEGACY_LAST_N_SUFFIXES.some(
+        (size) => fieldKey === `availability_pct_last${size}_team_games`
+      )
+    );
+  }
+
+  if (metricKey === "gp_pct") {
+    const explicitLegacyFields = new Set([
+      "gp_pct_total_all",
+      "gp_pct_avg_all",
+      "gp_pct_avg_season",
+      "gp_pct_avg_3ya",
+      "gp_pct_avg_career"
+    ]);
+    if (explicitLegacyFields.has(fieldKey)) {
+      return true;
+    }
+    return LEGACY_LAST_N_SUFFIXES.some(
+      (size) =>
+        fieldKey === `gp_pct_total_last${size}` ||
+        fieldKey === `gp_pct_avg_last${size}`
+    );
+  }
+
+  const canonicalScopes = new Set([
+    `${metricKey}_all`,
+    `${metricKey}_last3`,
+    `${metricKey}_last5`,
+    `${metricKey}_last10`,
+    `${metricKey}_last20`,
+    `${metricKey}_season`,
+    `${metricKey}_3ya`,
+    `${metricKey}_career`
+  ]);
+  if (canonicalScopes.has(fieldKey)) {
+    return true;
+  }
+
+  const explicitLegacyFields = new Set([
+    `${metricKey}_total_all`,
+    `${metricKey}_avg_all`,
+    `${metricKey}_avg_season`,
+    `${metricKey}_avg_3ya`,
+    `${metricKey}_avg_career`
+  ]);
+  if (explicitLegacyFields.has(fieldKey)) {
+    return true;
+  }
+
+  return LEGACY_LAST_N_SUFFIXES.some(
+    (size) =>
+      fieldKey === `${metricKey}_total_last${size}` ||
+      fieldKey === `${metricKey}_avg_last${size}`
+  );
+}
 
 export function summarizeSuspiciousOutputs(params: {
   playerId: number;
@@ -263,7 +696,7 @@ export function summarizeSuspiciousOutputs(params: {
       typeof row.game_date === "string" ? row.game_date : "<unknown-date>";
     for (const [metricKey, bounds] of Object.entries(SUSPICIOUS_METRIC_BOUNDS)) {
       for (const [fieldKey, rawValue] of Object.entries(row)) {
-        if (!fieldKey.startsWith(`${metricKey}_`)) continue;
+        if (!isScaledMetricSnapshotField(metricKey, fieldKey)) continue;
         if (typeof rawValue !== "number" || !Number.isFinite(rawValue)) continue;
         if (rawValue < bounds.min || rawValue > bounds.max) {
           matches.push(`${gameDate}:${fieldKey}=${rawValue}`);

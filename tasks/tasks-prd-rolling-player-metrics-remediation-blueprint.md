@@ -77,7 +77,7 @@
   - [x] 4.6 Update downstream consumers of `rolling_player_game_metrics` that rely on renamed, deprecated, or newly canonical fields, including trends pages, debug views, and projection queries.
   - [x] 4.7 Add migration and compatibility tests or validation scripts that prove legacy consumers still work where backward compatibility is promised.
 
-- [ ] 5.0 Harden PP-share, PP-role, TOI, and helper-specific semantic dependencies
+- [x] 5.0 Harden PP-share, PP-role, TOI, and helper-specific semantic dependencies
   - [x] 5.1 Finalize the authoritative denominator contract for `pp_share_pct` by comparing the current WGO-inferred path against upstream `pp_share_of_team` and deciding whether to store one contract or both with distinct names. 
   - [x] 5.2 Ensure PP team-share semantics remain separate from PP unit-relative semantics such as `percentageOfPP`, `pp_unit_usage_index`, `pp_unit_relative_toi`, and `pp_vs_unit_avg`.
   - [x] 5.3 Review `pp_unit` as a contextual label and define any freshness or validation requirements needed to trust it independently of rolling PP share.
@@ -87,12 +87,12 @@
   - [x] 5.7 Add helper-level tests for PP share resolution, PP-role separation, TOI normalization, and ixG fallback behavior.
 
 - [ ] 6.0 Expand diagnostics, run summaries, and refresh observability
-  - [ ] 6.1 Preserve the existing coverage, suspicious-output, and unknown-game diagnostics while refactoring the metric logic.
-  - [ ] 6.2 Extend diagnostics to report GP% window membership, team-game denominators, fixed appearance-window membership, ratio-component completeness, TOI fallback tier usage, and rate-reconstruction usage.
-  - [ ] 6.3 Add diagnostics for stale or partial source tails so validation can detect incomplete upstream coverage before metric comparisons begin.
-  - [ ] 6.4 Add persisted or exportable structured run summaries containing processed players, rows upserted, coverage warnings, suspicious-output warnings, unknown game IDs, fallback-heavy metrics, and freshness blockers.
-  - [ ] 6.5 Improve long-run progress visibility in the endpoint and pipeline logs with explicit phase markers for source fetch, merge, derive, upsert, and final summary emission.
-  - [ ] 6.6 Add or update diagnostic tests to cover new warning families and structured summary output.
+  - [x] 6.1 Preserve the existing coverage, suspicious-output, and unknown-game diagnostics while refactoring the metric logic.
+  - [x] 6.2 Extend diagnostics to report GP% window membership, team-game denominators, fixed appearance-window membership, ratio-component completeness, TOI fallback tier usage, and rate-reconstruction usage.
+  - [x] 6.3 Add diagnostics for stale or partial source tails so validation can detect incomplete upstream coverage before metric comparisons begin.
+  - [x] 6.4 Add persisted or exportable structured run summaries containing processed players, rows upserted, coverage warnings, suspicious-output warnings, unknown game IDs, fallback-heavy metrics, and freshness blockers.
+  - [x] 6.5 Improve long-run progress visibility in the endpoint and pipeline logs with explicit phase markers for source fetch, merge, derive, upsert, and final summary emission.
+  - [x] 6.6 Add or update diagnostic tests to cover new warning families and structured summary output.
 
 - [ ] 7.0 Execute live-data validation, freshness remediation, and full audit traceability signoff
   - [ ] 7.1 Build the post-implementation validation checklist from the PRD so every metric family and disputed metric has an explicit verification step.
