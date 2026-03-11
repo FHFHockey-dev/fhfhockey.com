@@ -68,7 +68,7 @@
   - [x] 3.7 Document or encode scale expectations for each `pct` family so `0-100` and `0-1` metrics are not conflated during validation or downstream consumption.
   - [x] 3.8 Add focused tests for `shooting_pct`, `primary_points_pct`, `expected_sh_pct`, `ipp`, `on_ice_sh_pct`, `pdo`, `cf_pct`, `ff_pct`, `sog_per_60`, `ixg_per_60`, `hits_per_60`, and `blocks_per_60` under the new rolling-window contract.
 
-- [ ] 4.0 Implement schema, naming, and storage contract changes
+- [x] 4.0 Implement schema, naming, and storage contract changes
   - [x] 4.1 Audit the current `rolling_player_game_metrics` column surface and classify which fields are healthy as-is, which are semantically misleading, which are redundant aliases, and which require replacement fields.
   - [x] 4.2 Design the migration plan for GP% redesign, ratio and `/60` alias cleanup, raw numerator/denominator support fields, and any renamed participation or availability fields.
   - [x] 4.3 Create the new migration file for required schema changes and decide whether the existing `20260310_remediate_rolling_player_metrics_gp_pct.sql` migration should be amended, superseded, or left as historical context.
@@ -78,13 +78,13 @@
   - [x] 4.7 Add migration and compatibility tests or validation scripts that prove legacy consumers still work where backward compatibility is promised.
 
 - [ ] 5.0 Harden PP-share, PP-role, TOI, and helper-specific semantic dependencies
-  - [ ] 5.1 Finalize the authoritative denominator contract for `pp_share_pct` by comparing the current WGO-inferred path against upstream `pp_share_of_team` and deciding whether to store one contract or both with distinct names.
-  - [ ] 5.2 Ensure PP team-share semantics remain separate from PP unit-relative semantics such as `percentageOfPP`, `pp_unit_usage_index`, `pp_unit_relative_toi`, and `pp_vs_unit_avg`.
-  - [ ] 5.3 Review `pp_unit` as a contextual label and define any freshness or validation requirements needed to trust it independently of rolling PP share.
-  - [ ] 5.4 Review `line_combo_slot` and `line_combo_group` as contextual labels and define how freshness and upstream builder behavior affect their trust level.
-  - [ ] 5.5 Harden `getToiSeconds(...)` and adjacent TOI helpers so denominator trust, WGO unit normalization, and suspicious TOI detection are explicit and testable.
-  - [ ] 5.6 Reduce `ixg_per_60` fallback fragility by preferring direct raw ixG accumulation when available and making any rate-based reconstruction clearly diagnosable.
-  - [ ] 5.7 Add helper-level tests for PP share resolution, PP-role separation, TOI normalization, and ixG fallback behavior.
+  - [x] 5.1 Finalize the authoritative denominator contract for `pp_share_pct` by comparing the current WGO-inferred path against upstream `pp_share_of_team` and deciding whether to store one contract or both with distinct names. 
+  - [x] 5.2 Ensure PP team-share semantics remain separate from PP unit-relative semantics such as `percentageOfPP`, `pp_unit_usage_index`, `pp_unit_relative_toi`, and `pp_vs_unit_avg`.
+  - [x] 5.3 Review `pp_unit` as a contextual label and define any freshness or validation requirements needed to trust it independently of rolling PP share.
+  - [x] 5.4 Review `line_combo_slot` and `line_combo_group` as contextual labels and define how freshness and upstream builder behavior affect their trust level.
+  - [x] 5.5 Harden `getToiSeconds(...)` and adjacent TOI helpers so denominator trust, WGO unit normalization, and suspicious TOI detection are explicit and testable.
+  - [x] 5.6 Reduce `ixg_per_60` fallback fragility by preferring direct raw ixG accumulation when available and making any rate-based reconstruction clearly diagnosable.
+  - [x] 5.7 Add helper-level tests for PP share resolution, PP-role separation, TOI normalization, and ixG fallback behavior.
 
 - [ ] 6.0 Expand diagnostics, run summaries, and refresh observability
   - [ ] 6.1 Preserve the existing coverage, suspicious-output, and unknown-game diagnostics while refactoring the metric logic.

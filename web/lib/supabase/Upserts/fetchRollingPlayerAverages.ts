@@ -26,10 +26,30 @@ import {
   type RatioRollingAccumulator
 } from "./rollingMetricAggregation";
 import {
+  type IxgPer60ResolutionSource,
   resolveIxgValue,
+  resolveIxgPer60Components,
   resolvePer60Components,
-  resolvePreferredShareComponents
 } from "./rollingPlayerMetricMath";
+import {
+  type RollingPlayerPpContextRow,
+  toRollingPlayerPpContextRow,
+  resolvePpShareComponents
+} from "./rollingPlayerPpShareContract";
+import {
+  hasTrustedPpUnitContext,
+  resolvePpUnitLabel
+} from "./rollingPlayerPpUnitContract";
+import { resolveTrustedLineAssignment } from "./rollingPlayerLineContextContract";
+import {
+  type RollingPlayerFallbackToiSource,
+  type RollingPlayerToiSource,
+  type RollingPlayerToiSuspiciousReason,
+  type RollingPlayerToiTrustTier,
+  type RollingPlayerWgoToiNormalization,
+  resolveFallbackToiSeed,
+  resolveRollingPlayerToiContext
+} from "./rollingPlayerToiContract";
 import {
   getAssistsValue,
   getBlocksValue,
@@ -52,6 +72,7 @@ import { type RollingMetricWindowFamily } from "./rollingWindowContract";
 
 type StrengthState = "all" | "ev" | "pp" | "pk";
 type FullRefreshMode = "rpc_truncate" | "overwrite_only" | "delete";
+type PowerPlayCombinationRow = RollingPlayerPpContextRow;
 
 type RollingWindow = 3 | 5 | 10 | 20;
 
@@ -377,16 +398,7 @@ interface LineCombinationRow {
   goalies: number[];
 }
 
-interface PowerPlayCombinationRow {
-  gameId: number;
-  playerId: number;
-  percentageOfPP: number | null;
-  PPTOI: number | null;
-  unit: number | null;
-  pp_share_of_team: number | null;
-}
-
-type ToiSource = "counts" | "counts_oi" | "rates" | "fallback" | "wgo" | "none";
+type ToiSource = RollingPlayerToiSource;
 
 type SourceTrackingSummary = {
   missingSources: {
@@ -394,7 +406,9 @@ type SourceTrackingSummary = {
     rates: number;
     countsOi: number;
     pp: number;
+    ppUnit: number;
     line: number;
+    lineAssignment: number;
     knownGameId: number;
   };
   wgoFallbacks: {
@@ -410,11 +424,12 @@ type SourceTrackingSummary = {
     sog_per_60: number;
     ixg_per_60: number;
   };
+  ixgPer60Sources: Record<IxgPer60ResolutionSource, number>;
   toiSources: Record<ToiSource, number>;
-  toiFallbackSeeds: Record<
-    PlayerGameSourceContext["fallbackToiSource"],
-    number
-  >;
+  toiFallbackSeeds: Record<PlayerGameSourceContext["fallbackToiSource"], number>;
+  toiTrustTiers: Record<PlayerGameSourceContext["toiTrustTier"], number>;
+  toiWgoNormalizations: Record<PlayerGameSourceContext["wgoToiNormalization"], number>;
+  toiSuspiciousReasons: Record<RollingPlayerToiSuspiciousReason, number>;
 };
 
 interface PlayerProcessingDiagnostics {
@@ -446,9 +461,13 @@ type PlayerGameSourceContext = {
   ratesSourcePresent: boolean;
   countsOiSourcePresent: boolean;
   ppSourcePresent: boolean;
+  ppUnitSourcePresent: boolean;
   lineSourcePresent: boolean;
-  fallbackToiSource: "counts" | "counts_oi" | "wgo" | "none";
+  lineAssignmentSourcePresent: boolean;
+  fallbackToiSource: RollingPlayerFallbackToiSource;
   resolvedToiSource: ToiSource;
+  toiTrustTier: RollingPlayerToiTrustTier;
+  wgoToiNormalization: RollingPlayerWgoToiNormalization;
 };
 
 interface PlayerGameData {
@@ -514,8 +533,10 @@ interface RollingAccumulator {
 //    and reconstruct raw numerators for certain `/60` families, but they should
 //    not override directly observed raw totals.
 // 5. Power-play combination rows provide preferred PP context when available.
-//    Rolling PP share first uses builder-derived team share inputs and only
-//    falls back to WGO PPTOI/share components when the builder row is missing.
+//    `pp_share_pct` means player share of total team PP TOI only. Builder-derived
+//    `pp_share_of_team` is authoritative, and WGO PPTOI/share reconstruction is
+//    fallback-only when builder coverage is missing. Unit-relative fields such
+//    as `percentageOfPP` are intentionally excluded from this metric contract.
 // 6. Line-combination rows are contextual labels only. They affect role fields
 //    such as `line_combo_slot` and `line_combo_group`, not metric math.
 function getPoints(game: PlayerGameData): number | null {
@@ -544,11 +565,11 @@ function getBlocks(game: PlayerGameData): number | null {
 
 function getPpShareComponents(game: PlayerGameData): RatioComponents | null {
   if (game.strength !== "all" && game.strength !== "pp") return null;
-  return resolvePreferredShareComponents({
-    primaryNumeratorValue: game.ppCombination?.PPTOI ?? null,
-    primaryShare: game.ppCombination?.pp_share_of_team ?? null,
-    fallbackNumeratorValue: game.wgo?.pp_toi ?? null,
-    fallbackShare: game.wgo?.pp_toi_pct_per_game ?? null
+  return resolvePpShareComponents({
+    builderPlayerPpToi: game.ppCombination?.PPTOI ?? null,
+    builderTeamShare: game.ppCombination?.pp_share_of_team ?? null,
+    wgoPlayerPpToi: game.wgo?.pp_toi ?? null,
+    wgoTeamShare: game.wgo?.pp_toi_pct_per_game ?? null
   });
 }
 
@@ -577,15 +598,13 @@ const METRICS: MetricDefinition[] = [
       noPrimaryDenominatorBehavior: "null"
     },
     getComponents: (game) =>
-      resolvePer60Components({
-        rawValue: resolveIxgValue({
-          strength: game.strength,
-          countsIxg: game.counts?.ixg ?? null,
-          wgoIxg: getWgoNumber(game, "ixg")
-        }),
+      resolveIxgPer60Components({
+        strength: game.strength,
+        countsIxg: game.counts?.ixg ?? null,
+        wgoIxg: getWgoNumber(game, "ixg"),
         toiSeconds: getToiSeconds(game),
         per60Rate: game.rates?.ixg_per_60 ?? null
-      })
+      }).components
   },
   {
     key: "shooting_pct",
@@ -934,44 +953,31 @@ function resolveToiContext(args: {
 }): {
   seconds: number | null;
   source: ToiSource;
+  trustTier: RollingPlayerToiTrustTier;
+  rejectedCandidates: {
+    source: Exclude<RollingPlayerToiSource, "none">;
+    reason: RollingPlayerToiSuspiciousReason;
+  }[];
+  wgoNormalization: RollingPlayerWgoToiNormalization;
 } {
-  const sanitizeSeconds = (value: number | null | undefined): number | null => {
-    if (value === null || value === undefined) return null;
-    const num = Number(value);
-    if (!Number.isFinite(num) || num <= 0) return null;
-    // Ignore absurd TOI values that indicate bad source data (e.g., 60x inflation).
-    // Cap well below marathon values; 4000s (~66 minutes) is a generous upper bound for a skater.
-    if (num >= 4000) return null;
-    return num;
-  };
-
-  const countsToi = sanitizeSeconds(args.counts?.toi);
-  if (countsToi !== null) return { seconds: countsToi, source: "counts" };
-  const countsOiToi = sanitizeSeconds(args.countsOi?.toi);
-  if (countsOiToi !== null) return { seconds: countsOiToi, source: "counts_oi" };
-  const ratesToi = sanitizeSeconds(args.rates?.toi_per_gp);
-  if (ratesToi !== null) return { seconds: ratesToi, source: "rates" };
-  const fallbackToi = sanitizeSeconds(args.fallbackToiSeconds);
-  if (fallbackToi !== null) return { seconds: fallbackToi, source: "fallback" };
-  const wgoToiMinutes = args.wgo?.toi_per_game;
-  if (wgoToiMinutes != null) {
-    const toiValue = Number(wgoToiMinutes);
-    if (!Number.isFinite(toiValue)) return { seconds: null, source: "none" };
-    // Some WGO ingests already store seconds; anything well above realistic
-    // per-game minutes (e.g., >200) is treated as seconds to avoid 60x blowups.
-    const alreadySeconds = toiValue > 200;
-    const seconds = Math.round(alreadySeconds ? toiValue : toiValue * 60);
-    if (seconds <= 0 || seconds >= 4000) {
-      return { seconds: null, source: "none" };
-    }
-    return { seconds, source: "wgo" };
-  }
-  return { seconds: null, source: "none" };
+  return resolveRollingPlayerToiContext({
+    countsToi: args.counts?.toi ?? null,
+    countsOiToi: args.countsOi?.toi ?? null,
+    ratesToiPerGp: args.rates?.toi_per_gp ?? null,
+    fallbackToiSeconds: args.fallbackToiSeconds,
+    wgoToiPerGame: args.wgo?.toi_per_game ?? null
+  });
 }
 
 function getToiContext(game: PlayerGameData): {
   seconds: number | null;
   source: ToiSource;
+  trustTier: RollingPlayerToiTrustTier;
+  rejectedCandidates: {
+    source: Exclude<RollingPlayerToiSource, "none">;
+    reason: RollingPlayerToiSuspiciousReason;
+  }[];
+  wgoNormalization: RollingPlayerWgoToiNormalization;
 } {
   return resolveToiContext({
     counts: game.counts,
@@ -1583,7 +1589,9 @@ function createEmptySourceTrackingSummary(): SourceTrackingSummary {
       rates: 0,
       countsOi: 0,
       pp: 0,
+      ppUnit: 0,
       line: 0,
+      lineAssignment: 0,
       knownGameId: 0
     },
     wgoFallbacks: {
@@ -1599,6 +1607,12 @@ function createEmptySourceTrackingSummary(): SourceTrackingSummary {
       sog_per_60: 0,
       ixg_per_60: 0
     },
+    ixgPer60Sources: {
+      counts_raw: 0,
+      wgo_raw: 0,
+      rate_reconstruction: 0,
+      unavailable: 0
+    },
     toiSources: {
       counts: 0,
       counts_oi: 0,
@@ -1612,6 +1626,23 @@ function createEmptySourceTrackingSummary(): SourceTrackingSummary {
       counts_oi: 0,
       wgo: 0,
       none: 0
+    },
+    toiTrustTiers: {
+      authoritative: 0,
+      supplementary: 0,
+      fallback: 0,
+      none: 0
+    },
+    toiWgoNormalizations: {
+      minutes_to_seconds: 0,
+      already_seconds: 0,
+      missing: 0,
+      invalid: 0
+    },
+    toiSuspiciousReasons: {
+      non_finite: 0,
+      non_positive: 0,
+      above_max_seconds: 0
     }
   };
 }
@@ -1635,6 +1666,11 @@ function mergeSourceTrackingSummary(
   ) as (keyof SourceTrackingSummary["rateReconstructions"])[]) {
     target.rateReconstructions[key] += incoming.rateReconstructions[key];
   }
+  for (const key of Object.keys(
+    target.ixgPer60Sources
+  ) as IxgPer60ResolutionSource[]) {
+    target.ixgPer60Sources[key] += incoming.ixgPer60Sources[key];
+  }
   for (const key of Object.keys(target.toiSources) as ToiSource[]) {
     target.toiSources[key] += incoming.toiSources[key];
   }
@@ -1642,6 +1678,21 @@ function mergeSourceTrackingSummary(
     target.toiFallbackSeeds
   ) as PlayerGameSourceContext["fallbackToiSource"][]) {
     target.toiFallbackSeeds[key] += incoming.toiFallbackSeeds[key];
+  }
+  for (const key of Object.keys(
+    target.toiTrustTiers
+  ) as PlayerGameSourceContext["toiTrustTier"][]) {
+    target.toiTrustTiers[key] += incoming.toiTrustTiers[key];
+  }
+  for (const key of Object.keys(
+    target.toiWgoNormalizations
+  ) as PlayerGameSourceContext["wgoToiNormalization"][]) {
+    target.toiWgoNormalizations[key] += incoming.toiWgoNormalizations[key];
+  }
+  for (const key of Object.keys(
+    target.toiSuspiciousReasons
+  ) as RollingPlayerToiSuspiciousReason[]) {
+    target.toiSuspiciousReasons[key] += incoming.toiSuspiciousReasons[key];
   }
 }
 
@@ -2171,12 +2222,12 @@ async function fetchPowerPlayCombinations(
       async () => {
         const { data, error } = await supabase
           .from("powerPlayCombinations")
-          .select("gameId, playerId, percentageOfPP, PPTOI, unit, pp_share_of_team")
+          .select("gameId, playerId, PPTOI, unit, pp_share_of_team")
           .eq("playerId", playerId)
           .in("gameId", chunk);
         if (error) throw error;
-        return ((data ?? []) as PowerPlayCombinationRow[]).map((row) =>
-          normalizeNumericFields(row)
+        return ((data ?? []) as RollingPlayerPpContextRow[]).map((row) =>
+          toRollingPlayerPpContextRow(normalizeNumericFields(row))
         );
       }
     );
@@ -2275,54 +2326,22 @@ function resolveLineCombo(
 ): {
   lineCombo: PlayerGameData["lineCombo"];
   hasSourceRow: boolean;
+  hasTrustedAssignment: boolean;
 } {
   if (gameId === null || !teamId) {
     return {
       lineCombo: { slot: null, positionGroup: null },
-      hasSourceRow: false
+      hasSourceRow: false,
+      hasTrustedAssignment: false
     };
   }
   const match = lineRows.find(
     (row) => row.gameId === gameId && row.teamId === teamId
   );
-  if (!match) {
-    return {
-      lineCombo: { slot: null, positionGroup: null },
-      hasSourceRow: false
-    };
-  }
-
-  const findSlot = (list: number[], groupSize: number): number | null => {
-    const index = list.findIndex((value) => value === playerId);
-    if (index === -1) return null;
-    return Math.floor(index / groupSize) + 1;
-  };
-
-  const forwardSlot = findSlot(match.forwards, 3);
-  if (forwardSlot) {
-    return {
-      lineCombo: { slot: forwardSlot, positionGroup: "forward" },
-      hasSourceRow: true
-    };
-  }
-  const defenseSlot = findSlot(match.defensemen, 2);
-  if (defenseSlot) {
-    return {
-      lineCombo: { slot: defenseSlot, positionGroup: "defense" },
-      hasSourceRow: true
-    };
-  }
-  const goalieSlot = findSlot(match.goalies, 1);
-  if (goalieSlot) {
-    return {
-      lineCombo: { slot: goalieSlot, positionGroup: "goalie" },
-      hasSourceRow: true
-    };
-  }
-  return {
-    lineCombo: { slot: null, positionGroup: null },
-    hasSourceRow: true
-  };
+  return resolveTrustedLineAssignment({
+    row: match ?? null,
+    playerId
+  });
 }
 
 function resolveFallbackToiContext(
@@ -2332,28 +2351,17 @@ function resolveFallbackToiContext(
 ): {
   fallbackToiSeconds: number | null;
   source: PlayerGameSourceContext["fallbackToiSource"];
+  wgoNormalization: RollingPlayerWgoToiNormalization;
 } {
-  if (counts?.toi != null) {
-    return {
-      fallbackToiSeconds: counts.toi,
-      source: "counts"
-    };
-  }
-  if ((countsOi as any)?.toi != null) {
-    return {
-      fallbackToiSeconds: (countsOi as any).toi,
-      source: "counts_oi"
-    };
-  }
-  if (wgo.toi_per_game != null) {
-    return {
-      fallbackToiSeconds: Math.round(wgo.toi_per_game * 60),
-      source: "wgo"
-    };
-  }
+  const seed = resolveFallbackToiSeed({
+    countsToi: counts?.toi ?? null,
+    countsOiToi: countsOi?.toi ?? null,
+    wgoToiPerGame: wgo.toi_per_game ?? null
+  });
   return {
-    fallbackToiSeconds: null,
-    source: "none"
+    fallbackToiSeconds: seed.fallbackToiSeconds,
+    source: seed.source,
+    wgoNormalization: seed.wgoNormalization
   };
 }
 
@@ -2379,9 +2387,26 @@ function summarizeSourceTracking(
         summary.missingSources.pp += 1;
       }
     }
+    if (
+      (strength === "all" || strength === "pp") &&
+      !game.sourceContext.ppUnitSourcePresent
+    ) {
+      const wgoPpToi = Number(game.wgo?.pp_toi ?? 0);
+      if (Number.isFinite(wgoPpToi) && wgoPpToi > 0) {
+        summary.missingSources.ppUnit += 1;
+      }
+    }
 
     if (game.gameId != null && game.teamId != null && !game.sourceContext.lineSourcePresent) {
       summary.missingSources.line += 1;
+    }
+    if (
+      game.gameId != null &&
+      game.teamId != null &&
+      game.sourceContext.lineSourcePresent &&
+      !game.sourceContext.lineAssignmentSourcePresent
+    ) {
+      summary.missingSources.lineAssignment += 1;
     }
 
     if (strength === "all") {
@@ -2410,8 +2435,13 @@ function summarizeSourceTracking(
 
     const toiContext = getToiContext(game);
     summary.toiSources[game.sourceContext.resolvedToiSource] += 1;
+    summary.toiTrustTiers[game.sourceContext.toiTrustTier] += 1;
+    summary.toiWgoNormalizations[game.sourceContext.wgoToiNormalization] += 1;
     if (game.sourceContext.resolvedToiSource === "fallback") {
       summary.toiFallbackSeeds[game.sourceContext.fallbackToiSource] += 1;
+    }
+    for (const rejection of toiContext.rejectedCandidates) {
+      summary.toiSuspiciousReasons[rejection.reason] += 1;
     }
 
     const shotsValue = getShots(game);
@@ -2423,16 +2453,15 @@ function summarizeSourceTracking(
       summary.rateReconstructions.sog_per_60 += 1;
     }
 
-    const ixgValue = resolveIxgValue({
+    const ixgPer60Resolution = resolveIxgPer60Components({
       strength: game.strength,
       countsIxg: game.counts?.ixg ?? null,
-      wgoIxg: getWgoNumber(game, "ixg")
+      wgoIxg: getWgoNumber(game, "ixg"),
+      toiSeconds: toiContext.seconds,
+      per60Rate: game.rates?.ixg_per_60 ?? null
     });
-    if (
-      toiContext.seconds != null &&
-      ixgValue == null &&
-      game.rates?.ixg_per_60 != null
-    ) {
+    summary.ixgPer60Sources[ixgPer60Resolution.source] += 1;
+    if (ixgPer60Resolution.source === "rate_reconstruction") {
       summary.rateReconstructions.ixg_per_60 += 1;
     }
   }
@@ -2452,7 +2481,7 @@ function buildGameRecords(
 ): PlayerGameData[] {
   const ppByGameId = ppRows.reduce<Record<number, PowerPlayCombinationRow>>(
     (acc, row) => {
-      acc[row.gameId] = row;
+      acc[row.gameId] = toRollingPlayerPpContextRow(row);
       return acc;
     },
     {}
@@ -2474,7 +2503,11 @@ function buildGameRecords(
       originalGameId && ppByGameId[originalGameId]
         ? ppByGameId[originalGameId]
         : undefined;
-    const { lineCombo, hasSourceRow: hasLineSourceRow } = resolveLineCombo(
+    const {
+      lineCombo,
+      hasSourceRow: hasLineSourceRow,
+      hasTrustedAssignment: hasTrustedLineAssignment
+    } = resolveLineCombo(
       lineRows,
       originalGameId,
       teamId,
@@ -2485,15 +2518,19 @@ function buildGameRecords(
       counts,
       rates
     );
-    const { fallbackToiSeconds, source: fallbackToiSource } =
+    const {
+      fallbackToiSeconds,
+      source: fallbackToiSource,
+      wgoNormalization: fallbackWgoToiNormalization
+    } =
       resolveFallbackToiContext(wgo, counts, countsOi);
-    const resolvedToiSource = resolveToiContext({
+    const toiContext = resolveToiContext({
       counts,
       countsOi,
       rates,
       fallbackToiSeconds,
       wgo
-    }).source;
+    });
     return {
       playerId: wgo.player_id,
       gameId: hasKnownGameId ? originalGameId : null,
@@ -2518,9 +2555,19 @@ function buildGameRecords(
         ratesSourcePresent: Boolean(rates),
         countsOiSourcePresent: Boolean(countsOi),
         ppSourcePresent: Boolean(ppCombination),
+        ppUnitSourcePresent: hasTrustedPpUnitContext({
+          originalGameId,
+          unit: ppCombination?.unit ?? null
+        }),
         lineSourcePresent: hasLineSourceRow,
+        lineAssignmentSourcePresent: hasTrustedLineAssignment,
         fallbackToiSource,
-        resolvedToiSource
+        resolvedToiSource: toiContext.source,
+        toiTrustTier: toiContext.trustTier,
+        wgoToiNormalization:
+          toiContext.wgoNormalization === "missing"
+            ? fallbackWgoToiNormalization
+            : toiContext.wgoNormalization
       }
     };
   });
@@ -2760,7 +2807,10 @@ async function processPlayer(
           strength_state: config.state,
           line_combo_slot: game.lineCombo?.slot ?? null,
           line_combo_group: game.lineCombo?.positionGroup ?? null,
-          pp_unit: game.ppCombination?.unit ?? null,
+          pp_unit: resolvePpUnitLabel({
+            originalGameId: game.sourceContext.originalGameId,
+            unit: game.ppCombination?.unit ?? null
+          }),
           gp_semantic_type: getGpOutputCompatibilityMode(config.state).semanticType,
           ...metricOutputs
         });

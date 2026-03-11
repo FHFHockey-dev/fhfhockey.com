@@ -56,6 +56,8 @@ export function buildPowerPlayCombinationRows(args: {
     gameId: args.gameId,
     unit: args.unit,
     ...row,
+    // Team-share semantics are stored separately from unit-relative usage so
+    // downstream `pp_share_pct` can use a consistent denominator contract.
     pp_share_of_team:
       args.teamPpToiSeconds && args.teamPpToiSeconds > 0
         ? round(row.PPTOI / args.teamPpToiSeconds)

@@ -48,4 +48,18 @@ describe("powerPlayCombinationMetrics", () => {
 
     expect(rows.map((row) => row.pp_share_of_team)).toEqual([0.6, 0.4]);
   });
+
+  it("keeps unit-relative percentageOfPP distinct from team-share semantics", () => {
+    const [row] = buildPowerPlayCombinationRows({
+      gameId: 100,
+      unit: 1,
+      players: [{ playerId: 1, toiSeconds: 180 }],
+      avgUnitToiSeconds: 150,
+      teamPpToiSeconds: 300
+    });
+
+    expect(row.percentageOfPP).toBe(1.2);
+    expect(row.pp_unit_usage_index).toBe(1.2);
+    expect(row.pp_share_of_team).toBe(0.6);
+  });
 });

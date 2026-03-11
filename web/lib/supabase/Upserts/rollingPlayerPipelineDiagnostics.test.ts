@@ -5,7 +5,7 @@ import {
 } from "./rollingPlayerPipelineDiagnostics";
 
 describe("summarizeCoverage", () => {
-  it("flags missing all-strength source dates and pp rows", () => {
+  it("flags missing all-strength source dates and PP builder row/share/unit gaps", () => {
     const result = summarizeCoverage({
       playerId: 1,
       strength: "all",
@@ -20,7 +20,7 @@ describe("summarizeCoverage", () => {
         { date_scraped: "2025-10-03" }
       ],
       countsOiRows: [{ date_scraped: "2025-10-01" }],
-      ppRows: [{ gameId: 10, pp_share_of_team: null }],
+      ppRows: [{ gameId: 10, pp_share_of_team: null, unit: null }],
       knownGameIds: new Set([10, 11])
     });
 
@@ -35,10 +35,12 @@ describe("summarizeCoverage", () => {
     ]);
     expect(result.sample.missingPpGameIds).toEqual([12]);
     expect(result.sample.missingPpShareGameIds).toEqual([10]);
+    expect(result.sample.missingPpUnitGameIds).toEqual([10]);
     expect(result.sample.unknownGameIds).toEqual([12]);
     expect(result.warnings[0]).toContain("missingCountsDates:2");
     expect(result.warnings[0]).toContain("missingPpGameIds:1");
     expect(result.warnings[0]).toContain("missingPpShareGameIds:1");
+    expect(result.warnings[0]).toContain("missingPpUnitGameIds:1");
   });
 
   it("uses split-source union dates for non-all strengths", () => {
@@ -52,7 +54,7 @@ describe("summarizeCoverage", () => {
       countsRows: [{ date_scraped: "2025-10-01" }],
       ratesRows: [],
       countsOiRows: [{ date_scraped: "2025-10-01" }],
-      ppRows: [{ gameId: 20, pp_share_of_team: 0.5 }],
+      ppRows: [{ gameId: 20, pp_share_of_team: 0.5, unit: 1 }],
       knownGameIds: new Set([20, 21])
     });
 

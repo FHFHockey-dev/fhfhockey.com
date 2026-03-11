@@ -167,7 +167,7 @@ describe("fetchRollingPlayerAverages buildGameRecords", () => {
           percentageOfPP: 1.2,
           unit: 1,
           pp_share_of_team: 0.65
-        }
+        } as any
       ],
       "all",
       new Set([2001])
@@ -180,9 +180,16 @@ describe("fetchRollingPlayerAverages buildGameRecords", () => {
       season: 20252026,
       teamId: 21,
       strength: "all",
-      ppCombination: { unit: 1, pp_share_of_team: 0.65 },
+      ppCombination: {
+        gameId: 2001,
+        playerId: 7,
+        PPTOI: 150,
+        unit: 1,
+        pp_share_of_team: 0.65
+      },
       lineCombo: { slot: 1, positionGroup: "forward" }
     });
+    expect(rows[0].ppCombination).not.toHaveProperty("percentageOfPP");
     expect(rows[0].counts?.goals).toBe(1);
     expect(rows[0].rates?.shots_per_60).toBe(16);
     expect(rows[0].countsOi?.cf).toBe(20);
@@ -191,8 +198,83 @@ describe("fetchRollingPlayerAverages buildGameRecords", () => {
     expect(rows[0].sourceContext.ratesSourcePresent).toBe(true);
     expect(rows[0].sourceContext.countsOiSourcePresent).toBe(true);
     expect(rows[0].sourceContext.ppSourcePresent).toBe(true);
+    expect(rows[0].sourceContext.ppUnitSourcePresent).toBe(true);
     expect(rows[0].sourceContext.lineSourcePresent).toBe(true);
+    expect(rows[0].sourceContext.lineAssignmentSourcePresent).toBe(true);
     expect(rows[0].sourceContext.resolvedToiSource).toBe("counts");
+    expect(rows[0].sourceContext.toiTrustTier).toBe("authoritative");
+    expect(rows[0].sourceContext.wgoToiNormalization).toBe("missing");
+  });
+
+  it("treats pp_unit as an independently trusted contextual label", () => {
+    const rows = buildGameRecords(
+      [
+        {
+          player_id: 7,
+          game_id: 2002,
+          date: "2026-01-18",
+          season_id: 20252026,
+          team_abbrev: "NYR",
+          current_team_abbreviation: "NYR",
+          toi_per_game: 18,
+          pp_toi: 120
+        } as any
+      ],
+      {},
+      {},
+      {},
+      [],
+      [
+        {
+          gameId: 2002,
+          playerId: 7,
+          PPTOI: 120,
+          unit: null,
+          pp_share_of_team: 0.55
+        } as any
+      ],
+      "all",
+      new Set([2002])
+    );
+
+    expect(rows[0].sourceContext.ppSourcePresent).toBe(true);
+    expect(rows[0].sourceContext.ppUnitSourcePresent).toBe(false);
+  });
+
+  it("distinguishes line row presence from trusted player line assignment", () => {
+    const rows = buildGameRecords(
+      [
+        {
+          player_id: 77,
+          game_id: 2003,
+          date: "2026-01-20",
+          season_id: 20252026,
+          team_abbrev: "NYR",
+          current_team_abbreviation: "NYR",
+          toi_per_game: 15,
+          pp_toi: 0
+        } as any
+      ],
+      {},
+      {},
+      {},
+      [
+        {
+          gameId: 2003,
+          teamId: 3,
+          forwards: [1, 2, 3],
+          defensemen: [4, 5],
+          goalies: [6]
+        }
+      ],
+      [],
+      "all",
+      new Set([2003])
+    );
+
+    expect(rows[0].sourceContext.lineSourcePresent).toBe(true);
+    expect(rows[0].sourceContext.lineAssignmentSourcePresent).toBe(false);
+    expect(rows[0].lineCombo).toEqual({ slot: null, positionGroup: null });
   });
 
   it("tracks fallback-heavy rows and null-source gaps through sourceTracking summaries", () => {
@@ -249,7 +331,9 @@ describe("fetchRollingPlayerAverages buildGameRecords", () => {
     expect(summary.missingSources.rates).toBe(1);
     expect(summary.missingSources.countsOi).toBe(2);
     expect(summary.missingSources.pp).toBe(1);
+    expect(summary.missingSources.ppUnit).toBe(1);
     expect(summary.missingSources.line).toBe(2);
+    expect(summary.missingSources.lineAssignment).toBe(0);
     expect(summary.wgoFallbacks.goals).toBe(1);
     expect(summary.wgoFallbacks.assists).toBe(1);
     expect(summary.wgoFallbacks.shots).toBe(1);
@@ -259,9 +343,20 @@ describe("fetchRollingPlayerAverages buildGameRecords", () => {
     expect(summary.wgoFallbacks.ixg).toBe(1);
     expect(summary.rateReconstructions.sog_per_60).toBe(1);
     expect(summary.rateReconstructions.ixg_per_60).toBe(1);
+    expect(summary.ixgPer60Sources.wgo_raw).toBe(1);
+    expect(summary.ixgPer60Sources.rate_reconstruction).toBe(1);
+    expect(summary.ixgPer60Sources.counts_raw).toBe(0);
+    expect(summary.ixgPer60Sources.unavailable).toBe(0);
     expect(summary.toiSources.fallback).toBe(1);
     expect(summary.toiSources.rates).toBe(1);
+    expect(summary.toiTrustTiers.fallback).toBe(1);
+    expect(summary.toiTrustTiers.supplementary).toBe(1);
     expect(summary.toiFallbackSeeds.wgo).toBe(1);
+    expect(summary.toiWgoNormalizations.minutes_to_seconds).toBe(1);
+    expect(summary.toiWgoNormalizations.missing).toBe(1);
+    expect(summary.toiSuspiciousReasons.non_finite).toBe(0);
+    expect(summary.toiSuspiciousReasons.non_positive).toBe(0);
+    expect(summary.toiSuspiciousReasons.above_max_seconds).toBe(0);
   });
 
   it("treats split-strength appearance as positive-TOI participation", () => {

@@ -15,6 +15,7 @@ type WgoLikeRow = {
 type PpLikeRow = {
   gameId: number;
   pp_share_of_team?: number | null;
+  unit?: number | null;
 };
 
 type CoverageSample = {
@@ -23,6 +24,7 @@ type CoverageSample = {
   missingCountsOiDates: string[];
   missingPpGameIds: number[];
   missingPpShareGameIds: number[];
+  missingPpUnitGameIds: number[];
   unknownGameIds: number[];
 };
 
@@ -37,6 +39,7 @@ export type CoverageSummary = {
     ppExpectedGames: number;
     ppRows: number;
     ppShareMissingGames: number;
+    ppUnitMissingGames: number;
     unknownGameIds: number;
   };
 };
@@ -137,6 +140,20 @@ export function summarizeCoverage(params: CoverageParams): CoverageSummary {
             .map((row) => row.gameId)
         )
       : [];
+  const missingPpUnitGameIds =
+    strength === "all" || strength === "pp"
+      ? uniqueSortedNumbers(
+          ppRows
+            .filter(
+              (row) =>
+                ppExpectedGameIds.includes(row.gameId) &&
+                (row.unit == null ||
+                  !Number.isFinite(Number(row.unit)) ||
+                  Number(row.unit) <= 0)
+            )
+            .map((row) => row.gameId)
+        )
+      : [];
 
   const unknownGameIds = uniqueSortedNumbers(
     wgoRows
@@ -153,6 +170,7 @@ export function summarizeCoverage(params: CoverageParams): CoverageSummary {
     formatDateGap("missingCountsOiDates", missingCountsOiDates),
     formatNumberGap("missingPpGameIds", missingPpGameIds),
     formatNumberGap("missingPpShareGameIds", missingPpShareGameIds),
+    formatNumberGap("missingPpUnitGameIds", missingPpUnitGameIds),
     formatNumberGap("unknownGameIds", unknownGameIds)
   ].filter((value): value is string => Boolean(value));
 
@@ -173,6 +191,7 @@ export function summarizeCoverage(params: CoverageParams): CoverageSummary {
       missingCountsOiDates: missingCountsOiDates.slice(0, MAX_SAMPLES),
       missingPpGameIds: missingPpGameIds.slice(0, MAX_SAMPLES),
       missingPpShareGameIds: missingPpShareGameIds.slice(0, MAX_SAMPLES),
+      missingPpUnitGameIds: missingPpUnitGameIds.slice(0, MAX_SAMPLES),
       unknownGameIds: unknownGameIds.slice(0, MAX_SAMPLES)
     },
     counts: {
@@ -183,6 +202,7 @@ export function summarizeCoverage(params: CoverageParams): CoverageSummary {
       ppExpectedGames: ppExpectedGameIds.length,
       ppRows: ppRows.length,
       ppShareMissingGames: missingPpShareGameIds.length,
+      ppUnitMissingGames: missingPpUnitGameIds.length,
       unknownGameIds: unknownGameIds.length
     }
   };

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  resolveIxgPer60Components,
   resolveIxgValue,
   resolvePer60Components,
   resolvePreferredShareComponents,
@@ -132,5 +133,57 @@ describe("resolvePer60Components", () => {
         wgoIxg: 1.2
       })
     ).toBe(null);
+  });
+
+  it("prefers direct raw ixg for ixg_per_60 before rate reconstruction", () => {
+    expect(
+      resolveIxgPer60Components({
+        strength: "all",
+        countsIxg: 0.8,
+        wgoIxg: 1.4,
+        toiSeconds: 1200,
+        per60Rate: 6
+      })
+    ).toEqual({
+      components: {
+        numerator: 0.8,
+        denominator: 1200
+      },
+      source: "counts_raw"
+    });
+
+    expect(
+      resolveIxgPer60Components({
+        strength: "all",
+        countsIxg: null,
+        wgoIxg: 1.4,
+        toiSeconds: 1200,
+        per60Rate: 6
+      })
+    ).toEqual({
+      components: {
+        numerator: 1.4,
+        denominator: 1200
+      },
+      source: "wgo_raw"
+    });
+  });
+
+  it("uses rate reconstruction for ixg_per_60 only when direct raw ixg is unavailable", () => {
+    expect(
+      resolveIxgPer60Components({
+        strength: "pp",
+        countsIxg: null,
+        wgoIxg: 1.4,
+        toiSeconds: 1200,
+        per60Rate: 6
+      })
+    ).toEqual({
+      components: {
+        numerator: 2,
+        denominator: 1200
+      },
+      source: "rate_reconstruction"
+    });
   });
 });
