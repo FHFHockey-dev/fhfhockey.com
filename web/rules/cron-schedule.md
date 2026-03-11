@@ -284,7 +284,7 @@
 -- |||||||||||||||||||||||||||||||||  03:35 EST  |||||||||||||||||||||||||||||||||
 -- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
--- -- WORKING
+-- -- -- NOT WORKING
 -- SELECT cron.schedule(
 --     'update-pbp',
 --     '51 20 * * *', -- 08:35 UTC
@@ -625,61 +625,6 @@
 --      );
 --    $$
 --  );
-```
-
-Timeline (earliest -> latest)
-
-- 07:20 UTC: update-yahoo-matchup-dates
-- 07:25 UTC: update-nst-gamelog
-- 07:30 UTC: update-all-wgo-skaters
-- 07:35 UTC: update-all-wgo-goalies
-- 07:40 UTC: update-all-wgo-skater-totals
-- 07:45 UTC: update-shift-charts (broken) + update-rolling-player-averages (GET)
-- 07:50 UTC: refresh player_stats_unified matview
-- 07:55 UTC: update-power-play-timeframes
-- 08:00 UTC: update-line-combinations-all
-- 08:05 UTC: update-team-yearly-summary
-- 08:10 UTC: update-nst-tables-all
-- 08:15 UTC: update-standings-details
-- 08:20 UTC: update-all-wgo-goalie-totals
-- 08:25 UTC: update-expected-goals
-- 08:30 UTC: update-nst-goalies
-- 08:35 UTC: update-pbp (broken)
-- 08:40 UTC: update-yahoo-players
-- 08:45 UTC: update-nst-current-season
-- 08:50 UTC: update-wigo-table-stats
-- 08:55 UTC: sync-yahoo-players-to-sheet
-- 09:00 UTC: update-rolling-player-averages (POST)
-- 09:05 UTC: refresh goalie_stats_unified matview
-- 09:10 UTC: update-team-ctpi-daily
-
-- 09:12 UTC: update-team-sos (NEW)
-
-- 09:15 UTC: update-team-power-ratings
-- 09:20 UTC: update-team-power-ratings-new
-- 09:30 UTC: update-goalie-projections-v2
-- 09:35 UTC: update-wgo-teams
-- 09:40 UTC: update-start-chart-projections
-
-- 09:45 UTC: ingest-projection-inputs (NEW)
-
-- 09:50 UTC: build-forge-derived-v2
-- 09:55 UTC: update-nst-team-daily
-- 10:00 UTC: refresh yahoo_nhl_player_map_mat
-- 10:05 UTC: run-forge-projection-v2
-- 10:15 UTC: refresh-team-power-ratings-daily
-
-- 11:30 UTC: run-projection-accuracy (NEW)
-
-- 13:00 UTC: daily-cron-report
-
-Gap notes (where new jobs fit)
-- 07:15 UTC: pre-ingestion slot for update-games.
-- 09:12 UTC: between CTPI daily and power ratings for SOS update.
-- 09:45 UTC: between start-chart projections and forge-derived build for ingest-projection-inputs.
-- 11:30 UTC: post-forge projections for run-projection-accuracy.
-
-```sql
 
 ----------------------------------------------------------------------------------
 -- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
@@ -737,3 +682,58 @@ Gap notes (where new jobs fit)
 --     $$
 -- );
 ```
+
+
+# Timeline (earliest -> latest)
+
+- 07:20 UTC: update-yahoo-matchup-dates
+- 07:25 UTC: update-nst-gamelog
+- 07:30 UTC: update-all-wgo-skaters
+- 07:35 UTC: update-all-wgo-goalies
+- 07:40 UTC: update-all-wgo-skater-totals
+- 07:45 UTC: update-shift-charts (broken)
+- 07:45 UTC: update-rolling-player-averages (GET)
+- 07:50 UTC: daily-refresh-player-unified-matview
+- 07:55 UTC: update-power-play-timeframes
+- 08:00 UTC: update-line-combinations-all
+- 08:05 UTC: update-team-yearly-summary
+- 08:10 UTC: update-nst-tables-all
+- 08:15 UTC: update-standings-details
+- 08:20 UTC: update-all-wgo-goalie-totals
+- 08:25 UTC: update-expected-goals
+- 08:30 UTC: update-nst-goalies
+- 08:40 UTC: update-yahoo-players
+- 08:45 UTC: update-nst-current-season
+- 08:50 UTC: update-wigo-table-stats
+- 08:55 UTC: sync-yahoo-players-to-sheet
+- 09:00 UTC: update-rolling-player-averages (POST)
+- 09:05 UTC: daily-refresh-goalie-unified-matview
+- 09:10 UTC: update-team-ctpi-daily
+- 09:12 UTC: update-team-sos
+- 09:15 UTC: update-team-power-ratings
+- 09:20 UTC: update-team-power-ratings-new
+- 09:30 UTC: update-goalie-projections-v2
+- 09:35 UTC: update-wgo-teams
+- 09:40 UTC: update-start-chart-projections
+- 09:45 UTC: ingest-projection-inputs
+- 09:50 UTC: build-forge-derived-v2
+- 09:55 UTC: update-nst-team-daily
+- 10:00 UTC: daily-refresh-matview
+- 10:05 UTC: run-forge-projection-v2
+- 10:15 UTC: refresh-team-power-ratings-daily
+- 11:30 UTC: run-projection-accuracy
+- 13:00 UTC: daily-cron-report
+- 20:51 UTC: update-pbp (broken)
+
+Gap notes (where new jobs fit)
+- 07:15 UTC: pre-ingestion slot for update-games.
+
+# NEED TO ADD:
+
+- `update-season-stats`
+- `update-power-rankings`
+- `update-rolling-games`
+- `update-sko-stats`
+- `rebuild-baselines`
+- `update-wgo-averages`
+- `update-predictions-sko`

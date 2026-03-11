@@ -48,6 +48,14 @@ type RatioWindowTotals = RatioTotals & {
 
 type RatioSeasonBucket = RatioTotals;
 
+export type RatioComponentTotals = {
+  numerator: number;
+  denominator: number;
+  secondaryNumerator: number;
+  secondaryDenominator: number;
+  count: number;
+};
+
 export type RatioRollingAccumulator = {
   totals: RatioTotals;
   windows: Record<RollingWindow, RatioWindowTotals>;
@@ -61,6 +69,17 @@ export type HistoricalRatioSnapshot = {
   season: number | null;
   threeYear: number | null;
   career: number | null;
+};
+
+export type RatioRollingComponentSnapshot = {
+  all: RatioComponentTotals;
+  windows: Record<RollingWindow, RatioComponentTotals>;
+};
+
+export type HistoricalRatioComponentSnapshot = {
+  season: RatioComponentTotals;
+  threeYear: RatioComponentTotals;
+  career: RatioComponentTotals;
 };
 
 export type RatioRollingWindowMode = "valid_observation" | "appearance";
@@ -139,6 +158,16 @@ function applyNormalizedRatioDelta(
   target.secondaryNumerator += components.secondaryNumerator * direction;
   target.secondaryDenominator += components.secondaryDenominator * direction;
   target.count += direction;
+}
+
+function toComponentTotals(source: RatioTotals): RatioComponentTotals {
+  return {
+    numerator: Number(source.numerator.toFixed(6)),
+    denominator: Number(source.denominator.toFixed(6)),
+    secondaryNumerator: Number(source.secondaryNumerator.toFixed(6)),
+    secondaryDenominator: Number(source.secondaryDenominator.toFixed(6)),
+    count: source.count
+  };
 }
 
 export function createRatioRollingAccumulator(
@@ -281,6 +310,24 @@ export function getRatioRollingSnapshot(
   };
 }
 
+export function getRatioRollingComponentSnapshot(
+  acc: RatioRollingAccumulator,
+  windows: RollingWindow[] = DEFAULT_ROLLING_WINDOWS
+): RatioRollingComponentSnapshot {
+  const snapshot = windows.reduce<Record<RollingWindow, RatioComponentTotals>>(
+    (result, windowSize) => {
+      result[windowSize] = toComponentTotals(acc.windows[windowSize]);
+      return result;
+    },
+    {} as Record<RollingWindow, RatioComponentTotals>
+  );
+
+  return {
+    all: toComponentTotals(acc.totals),
+    windows: snapshot
+  };
+}
+
 export function createHistoricalRatioAccumulator(): HistoricalRatioAccumulator {
   return {
     bySeason: new Map()
@@ -341,5 +388,30 @@ export function getHistoricalRatioSnapshot(
     season: seasonBucket ? computeRatioValue(seasonBucket, spec) : null,
     threeYear: computeRatioValue(threeYearBucket, spec),
     career: computeRatioValue(careerBucket, spec)
+  };
+}
+
+export function getHistoricalRatioComponentSnapshot(
+  acc: HistoricalRatioAccumulator,
+  currentSeason: number
+): HistoricalRatioComponentSnapshot {
+  const currentSeasonKey = getSeasonWindowKey(currentSeason);
+  const seasonBucket = acc.bySeason.get(currentSeason) ?? createRatioTotals();
+  const threeYearBucket = createRatioTotals();
+  const careerBucket = createRatioTotals();
+
+  for (const [season, bucket] of acc.bySeason.entries()) {
+    const seasonKey = getSeasonWindowKey(season);
+    if (seasonKey >= currentSeasonKey - 2 && seasonKey <= currentSeasonKey) {
+      applyNormalizedRatioDelta(threeYearBucket, bucket, 1);
+    }
+
+    applyNormalizedRatioDelta(careerBucket, bucket, 1);
+  }
+
+  return {
+    season: toComponentTotals(seasonBucket),
+    threeYear: toComponentTotals(threeYearBucket),
+    career: toComponentTotals(careerBucket)
   };
 }

@@ -5,25 +5,32 @@
  * It supports various query parameters to control the scope and behavior of the update.
  *
  * Query Parameters:
+ * 
+ * Scope & Filtering:
  * - playerId (number, optional): Specific player ID to process. If omitted, processes all players (subject to other filters).
  * - season (number, optional): Filter games by season ID (e.g., 20232024).
  * - startDate (string, optional): Filter games starting from this date (YYYY-MM-DD).
  * - endDate (string, optional): Filter games up to this date (YYYY-MM-DD).
  * - resumeFrom (number, optional): Resume processing from a specific player ID (exclusive). Useful for continuing interrupted batch jobs.
+ * 
+ * Refresh Strategy:
  * - fullRefresh (boolean, optional): If true, clears existing data for the target scope and reprocesses everything. Defaults to false.
  * - fullRefreshMode (string, optional): Strategy for full refresh clear step.
- *   - rpc_truncate (default): DB-side RPC truncates table quickly.
- *   - overwrite_only: Skip pre-delete and rely on upsert overwrite.
- *   - delete: Legacy chunked delete by player_id range.
- * - deleteChunkSize (number, optional): Batch size for deleting rows during a full refresh. Defaults to 50000.
+ *   - "rpc_truncate" (default): DB-side RPC truncates table quickly. Best for complete wipes.
+ *   - "overwrite_only": Skip pre-delete and rely on upsert overwrite. Good for targeted recalculation.
+ *   - "delete": Legacy chunked delete by player_id range.
+ * 
+ * Performance Tuning:
+ * - deleteChunkSize (number, optional): Batch size for deleting rows during a full refresh (legacy delete mode). Defaults to 50000.
  * - playerConcurrency (number, optional): Number of players to process in parallel. Defaults to 1 (4 in full refresh mode).
  * - upsertBatchSize (number, optional): Batch size for upserts into rolling_player_game_metrics. Defaults to 500 (800 in full refresh mode).
- * - upsertConcurrency (number, optional): Number of concurrent upsert requests. Defaults to 1.
+ * - upsertConcurrency (number, optional): Number of concurrent upsert requests per batch. Defaults to 1.
  *
  * Example URLs:
  * - Process a single player: /api/v1/db/update-rolling-player-averages?playerId=8478402
  * - Process a specific season: /api/v1/db/update-rolling-player-averages?season=20232024
  * - Full refresh for all players: /api/v1/db/update-rolling-player-averages?fullRefresh=true
+ * - Full refresh with concurrency limit: /api/v1/db/update-rolling-player-averages?fullRefresh=true&playerConcurrency=2&upsertBatchSize=1000
  * - Resume from a player ID: /api/v1/db/update-rolling-player-averages?resumeFrom=8477000
  * - Date range: /api/v1/db/update-rolling-player-averages?startDate=2023-10-01&endDate=2023-11-01
  */

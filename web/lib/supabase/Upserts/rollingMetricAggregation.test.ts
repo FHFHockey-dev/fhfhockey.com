@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   createHistoricalRatioAccumulator,
   createRatioRollingAccumulator,
+  getHistoricalRatioComponentSnapshot,
   getRatioRollingWindowModeForFamily,
+  getRatioRollingComponentSnapshot,
   getHistoricalRatioSnapshot,
   normalizeRatioWindowEntry,
   getRatioRollingSnapshot,
@@ -74,6 +76,84 @@ describe("rollingMetricAggregation", () => {
       season: 50,
       threeYear: 45,
       career: 45
+    });
+  });
+
+  it("exposes rolling and historical raw ratio component totals for support-field writers", () => {
+    const rolling = createRatioRollingAccumulator([3, 5]);
+    updateRatioRollingAccumulator(
+      rolling,
+      { numerator: 2, denominator: 10, secondaryNumerator: 9, secondaryDenominator: 10 },
+      { windowFamily: "ratio_performance", windows: [3, 5], anchor: true }
+    );
+    updateRatioRollingAccumulator(
+      rolling,
+      { numerator: 1, denominator: 5, secondaryNumerator: 18, secondaryDenominator: 20 },
+      { windowFamily: "ratio_performance", windows: [3, 5], anchor: true }
+    );
+
+    expect(getRatioRollingComponentSnapshot(rolling, [3, 5])).toEqual({
+      all: {
+        numerator: 3,
+        denominator: 15,
+        secondaryNumerator: 27,
+        secondaryDenominator: 30,
+        count: 2
+      },
+      windows: {
+        3: {
+          numerator: 3,
+          denominator: 15,
+          secondaryNumerator: 27,
+          secondaryDenominator: 30,
+          count: 2
+        },
+        5: {
+          numerator: 3,
+          denominator: 15,
+          secondaryNumerator: 27,
+          secondaryDenominator: 30,
+          count: 2
+        }
+      }
+    });
+
+    const historical = createHistoricalRatioAccumulator();
+    updateHistoricalRatioAccumulator(historical, 20232024, {
+      numerator: 4,
+      denominator: 10
+    });
+    updateHistoricalRatioAccumulator(historical, 20242025, {
+      numerator: 3,
+      denominator: 6
+    });
+    updateHistoricalRatioAccumulator(historical, 20252026, {
+      numerator: 2,
+      denominator: 4
+    });
+
+    expect(getHistoricalRatioComponentSnapshot(historical, 20252026)).toEqual({
+      season: {
+        numerator: 2,
+        denominator: 4,
+        secondaryNumerator: 0,
+        secondaryDenominator: 0,
+        count: 1
+      },
+      threeYear: {
+        numerator: 9,
+        denominator: 20,
+        secondaryNumerator: 0,
+        secondaryDenominator: 0,
+        count: 3
+      },
+      career: {
+        numerator: 9,
+        denominator: 20,
+        secondaryNumerator: 0,
+        secondaryDenominator: 0,
+        count: 3
+      }
     });
   });
 

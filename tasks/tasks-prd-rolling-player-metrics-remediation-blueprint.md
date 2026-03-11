@@ -58,7 +58,7 @@
   - [x] 2.7 Update historical GP% accumulation in `rollingHistoricalAverages.ts` to support cross-stint season, 3YA, and career semantics under the new contract.
   - [x] 2.8 Add dedicated GP% unit tests for one-team healthy cases, injury/missed-games cases, traded-player season cases, split-strength participation cases, and rolling current-team windows.
 
-- [ ] 3.0 Redesign ratio-family and `/60` rolling-window semantics
+- [x] 3.0 Redesign ratio-family and `/60` rolling-window semantics
   - [x] 3.1 Define the canonical `lastN` window rules in code for each metric family class: availability, additive performance, ratio performance, and weighted `/60`.
   - [x] 3.2 Refactor rolling ratio accumulation so window membership is determined by fixed appearance windows where required, instead of by valid-observation-only qualification.
   - [x] 3.3 Define per-family missing-component policy inside fixed appearance windows, including whether missing numerator/denominator pairs become zero, null, or excluded outputs after the window is selected.
@@ -69,11 +69,11 @@
   - [x] 3.8 Add focused tests for `shooting_pct`, `primary_points_pct`, `expected_sh_pct`, `ipp`, `on_ice_sh_pct`, `pdo`, `cf_pct`, `ff_pct`, `sog_per_60`, `ixg_per_60`, `hits_per_60`, and `blocks_per_60` under the new rolling-window contract.
 
 - [ ] 4.0 Implement schema, naming, and storage contract changes
-  - [ ] 4.1 Audit the current `rolling_player_game_metrics` column surface and classify which fields are healthy as-is, which are semantically misleading, which are redundant aliases, and which require replacement fields.
-  - [ ] 4.2 Design the migration plan for GP% redesign, ratio and `/60` alias cleanup, raw numerator/denominator support fields, and any renamed participation or availability fields.
-  - [ ] 4.3 Create the new migration file for required schema changes and decide whether the existing `20260310_remediate_rolling_player_metrics_gp_pct.sql` migration should be amended, superseded, or left as historical context.
-  - [ ] 4.4 Update generated Supabase types to match the new schema surface after migrations are finalized.
-  - [ ] 4.5 Update row-writing logic in `fetchRollingPlayerAverages.ts` so all new or renamed fields are populated consistently and any deprecated alias behavior is intentional.
+  - [x] 4.1 Audit the current `rolling_player_game_metrics` column surface and classify which fields are healthy as-is, which are semantically misleading, which are redundant aliases, and which require replacement fields.
+  - [x] 4.2 Design the migration plan for GP% redesign, ratio and `/60` alias cleanup, raw numerator/denominator support fields, and any renamed participation or availability fields.
+  - [x] 4.3 Create the new migration file for required schema changes and decide whether the existing `20260310_remediate_rolling_player_metrics_gp_pct.sql` migration should be amended, superseded, or left as historical context.
+  - [x] 4.4 Update generated Supabase types to match the new schema surface after migrations are finalized.
+  - [x] 4.5 Update row-writing logic in `fetchRollingPlayerAverages.ts` so all new or renamed fields are populated consistently and any deprecated alias behavior is intentional.
   - [ ] 4.6 Update downstream consumers of `rolling_player_game_metrics` that rely on renamed, deprecated, or newly canonical fields, including trends pages, debug views, and projection queries.
   - [ ] 4.7 Add migration and compatibility tests or validation scripts that prove legacy consumers still work where backward compatibility is promised.
 

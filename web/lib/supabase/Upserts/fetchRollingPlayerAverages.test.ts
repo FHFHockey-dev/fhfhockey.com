@@ -1,10 +1,19 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
+import {
+  createHistoricalRatioAccumulator,
+  createRatioRollingAccumulator,
+  updateHistoricalRatioAccumulator,
+  updateRatioRollingAccumulator
+} from "./rollingMetricAggregation";
+import { createHistoricalAverageAccumulator } from "./rollingHistoricalAverages";
 
 let buildGameRecords: typeof import("./fetchRollingPlayerAverages").__testables.buildGameRecords;
 let summarizeSourceTracking: typeof import("./fetchRollingPlayerAverages").__testables.summarizeSourceTracking;
 let didPlayerCountAsAppearance: typeof import("./fetchRollingPlayerAverages").__testables.didPlayerCountAsAppearance;
 let applyGpOutputs: typeof import("./fetchRollingPlayerAverages").__testables.applyGpOutputs;
 let getGpOutputCompatibilityMode: typeof import("./fetchRollingPlayerAverages").__testables.getGpOutputCompatibilityMode;
+let deriveOutputs: typeof import("./fetchRollingPlayerAverages").__testables.deriveOutputs;
+let initAccumulator: typeof import("./fetchRollingPlayerAverages").__testables.initAccumulator;
 
 beforeAll(async () => {
   vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
@@ -16,7 +25,9 @@ beforeAll(async () => {
       summarizeSourceTracking,
       didPlayerCountAsAppearance,
       applyGpOutputs,
-      getGpOutputCompatibilityMode
+      getGpOutputCompatibilityMode,
+      deriveOutputs,
+      initAccumulator
     }
   } = await import("./fetchRollingPlayerAverages"));
 });
@@ -327,6 +338,16 @@ describe("fetchRollingPlayerAverages buildGameRecords", () => {
     expect(output.season_availability_pct).toBeNull();
     expect(output.three_year_availability_pct).toBeNull();
     expect(output.career_availability_pct).toBeNull();
+    expect(output.season_participation_pct).toBe(0.4);
+    expect(output.three_year_participation_pct).toBe(0.5);
+    expect(output.career_participation_pct).toBe(0.6);
+    expect(output.season_participation_games).toBe(4);
+    expect(output.three_year_participation_games).toBe(15);
+    expect(output.career_participation_games).toBe(40);
+    expect(output.participation_pct_last3_team_games).toBe(
+      Number((1 / 3).toFixed(6))
+    );
+    expect(output.participation_games_last20_team_games).toBe(4);
     expect(output.availability_pct_last3_team_games).toBeNull();
     expect(output.availability_pct_last20_team_games).toBeNull();
   });
@@ -375,6 +396,8 @@ describe("fetchRollingPlayerAverages buildGameRecords", () => {
     );
     expect(output.games_played_last10_team_games).toBe(7);
     expect(output.team_games_available_last10).toBe(10);
+    expect(output.season_participation_pct).toBeNull();
+    expect(output.participation_pct_last3_team_games).toBeNull();
     expect(output.gp_pct_total_all).toBe(output.season_availability_pct);
     expect(output.gp_pct_avg_season).toBe(output.season_availability_pct);
     expect(output.gp_pct_avg_3ya).toBe(output.three_year_availability_pct);
@@ -383,5 +406,176 @@ describe("fetchRollingPlayerAverages buildGameRecords", () => {
       output.availability_pct_last3_team_games
     );
     expect(output.gp_pct_avg_last3).toBe(output.gp_pct_total_last3);
+  });
+
+  it("emits canonical ratio snapshot fields and raw support columns from shared accumulators", () => {
+    const ratioMetricsState = {
+      primary_points_pct: createRatioRollingAccumulator()
+    } as Record<string, any>;
+    const historicalRatioMetricsState = {
+      primary_points_pct: createHistoricalRatioAccumulator()
+    } as Record<string, any>;
+
+    updateRatioRollingAccumulator(
+      ratioMetricsState.primary_points_pct,
+      { numerator: 2, denominator: 4 },
+      { windowFamily: "ratio_performance", anchor: true }
+    );
+    updateRatioRollingAccumulator(
+      ratioMetricsState.primary_points_pct,
+      { numerator: 1, denominator: 1 },
+      { windowFamily: "ratio_performance", anchor: true }
+    );
+
+    updateHistoricalRatioAccumulator(historicalRatioMetricsState.primary_points_pct, 20242025, {
+      numerator: 3,
+      denominator: 6
+    });
+    updateHistoricalRatioAccumulator(historicalRatioMetricsState.primary_points_pct, 20252026, {
+      numerator: 2,
+      denominator: 4
+    });
+
+    const output = deriveOutputs(
+      {},
+      ratioMetricsState,
+      {},
+      {},
+      {},
+      historicalRatioMetricsState,
+      {
+        season: 0.7,
+        threeYear: 0.6,
+        career: 0.6,
+        seasonPlayerGames: 7,
+        seasonTeamGames: 10,
+        threeYearPlayerGames: 12,
+        threeYearTeamGames: 20,
+        careerPlayerGames: 12,
+        careerTeamGames: 20
+      },
+      {
+        windows: {
+          3: { playerGames: 2, teamGames: 3, ratio: Number((2 / 3).toFixed(6)) },
+          5: { playerGames: 2, teamGames: 5, ratio: 0.4 },
+          10: { playerGames: 2, teamGames: 10, ratio: 0.2 },
+          20: { playerGames: 2, teamGames: 20, ratio: 0.1 }
+        }
+      },
+      20252026,
+      "all"
+    );
+
+    expect(output.primary_points_pct_all).toBe(0.6);
+    expect(output.primary_points_pct_last3).toBe(0.6);
+    expect(output.primary_points_pct_season).toBe(0.5);
+    expect(output.primary_points_pct_3ya).toBe(0.5);
+    expect(output.primary_points_pct_career).toBe(0.5);
+    expect(output.primary_points_pct_primary_points_all).toBe(3);
+    expect(output.primary_points_pct_points_all).toBe(5);
+    expect(output.primary_points_pct_primary_points_last3).toBe(3);
+    expect(output.primary_points_pct_points_last3).toBe(5);
+    expect(output.primary_points_pct_primary_points_season).toBe(2);
+    expect(output.primary_points_pct_points_season).toBe(4);
+    expect(output.primary_points_pct_primary_points_3ya).toBe(5);
+    expect(output.primary_points_pct_points_3ya).toBe(10);
+  });
+
+  it("stores canonical oz_start_pct support fields including neutral-zone counts", () => {
+    const ratioMetricsState = {
+      oz_start_pct: createRatioRollingAccumulator()
+    } as Record<string, any>;
+    const supportMetricsState = {
+      oz_start_neutral_zone_starts: initAccumulator()
+    } as Record<string, any>;
+    const historicalSupportMetricsState = {
+      oz_start_neutral_zone_starts: createHistoricalAverageAccumulator()
+    } as Record<string, any>;
+    const historicalRatioMetricsState = {
+      oz_start_pct: createHistoricalRatioAccumulator()
+    } as Record<string, any>;
+
+    updateRatioRollingAccumulator(
+      ratioMetricsState.oz_start_pct,
+      { numerator: 3, denominator: 5 },
+      { windowFamily: "ratio_performance", anchor: true }
+    );
+    updateRatioRollingAccumulator(
+      ratioMetricsState.oz_start_pct,
+      { numerator: 1, denominator: 3 },
+      { windowFamily: "ratio_performance", anchor: true }
+    );
+    supportMetricsState.oz_start_neutral_zone_starts.sumAll = 4;
+    supportMetricsState.oz_start_neutral_zone_starts.countAll = 2;
+    supportMetricsState.oz_start_neutral_zone_starts.windows[3].sum = 4;
+    supportMetricsState.oz_start_neutral_zone_starts.windows[3].count = 2;
+    supportMetricsState.oz_start_neutral_zone_starts.windows[5].sum = 4;
+    supportMetricsState.oz_start_neutral_zone_starts.windows[5].count = 2;
+    supportMetricsState.oz_start_neutral_zone_starts.windows[10].sum = 4;
+    supportMetricsState.oz_start_neutral_zone_starts.windows[10].count = 2;
+    supportMetricsState.oz_start_neutral_zone_starts.windows[20].sum = 4;
+    supportMetricsState.oz_start_neutral_zone_starts.windows[20].count = 2;
+    historicalSupportMetricsState.oz_start_neutral_zone_starts.careerSum = 7;
+    historicalSupportMetricsState.oz_start_neutral_zone_starts.careerCount = 3;
+    historicalSupportMetricsState.oz_start_neutral_zone_starts.bySeason.set(20242025, {
+      sum: 3,
+      count: 1
+    });
+    historicalSupportMetricsState.oz_start_neutral_zone_starts.bySeason.set(20252026, {
+      sum: 4,
+      count: 2
+    });
+    updateHistoricalRatioAccumulator(historicalRatioMetricsState.oz_start_pct, 20242025, {
+      numerator: 4,
+      denominator: 9
+    });
+    updateHistoricalRatioAccumulator(historicalRatioMetricsState.oz_start_pct, 20252026, {
+      numerator: 5,
+      denominator: 8
+    });
+
+    const output = deriveOutputs(
+      {},
+      ratioMetricsState,
+      supportMetricsState,
+      {},
+      historicalSupportMetricsState,
+      historicalRatioMetricsState,
+      {
+        season: 0.7,
+        threeYear: 0.6,
+        career: 0.6,
+        seasonPlayerGames: 7,
+        seasonTeamGames: 10,
+        threeYearPlayerGames: 12,
+        threeYearTeamGames: 20,
+        careerPlayerGames: 12,
+        careerTeamGames: 20
+      },
+      {
+        windows: {
+          3: { playerGames: 2, teamGames: 3, ratio: Number((2 / 3).toFixed(6)) },
+          5: { playerGames: 2, teamGames: 5, ratio: 0.4 },
+          10: { playerGames: 2, teamGames: 10, ratio: 0.2 },
+          20: { playerGames: 2, teamGames: 20, ratio: 0.1 }
+        }
+      },
+      20252026,
+      "all"
+    );
+
+    expect(output.oz_start_pct_all).toBe(50);
+    expect(output.oz_start_pct_off_zone_starts_all).toBe(4);
+    expect(output.oz_start_pct_def_zone_starts_all).toBe(4);
+    expect(output.oz_start_pct_neutral_zone_starts_all).toBe(4);
+    expect(output.oz_start_pct_off_zone_starts_last3).toBe(4);
+    expect(output.oz_start_pct_def_zone_starts_last3).toBe(4);
+    expect(output.oz_start_pct_neutral_zone_starts_last3).toBe(4);
+    expect(output.oz_start_pct_off_zone_starts_season).toBe(5);
+    expect(output.oz_start_pct_def_zone_starts_season).toBe(3);
+    expect(output.oz_start_pct_neutral_zone_starts_season).toBe(4);
+    expect(output.oz_start_pct_off_zone_starts_3ya).toBe(9);
+    expect(output.oz_start_pct_def_zone_starts_3ya).toBe(8);
+    expect(output.oz_start_pct_neutral_zone_starts_3ya).toBe(7);
   });
 });

@@ -111,7 +111,7 @@ export async function fetchRollingRows(
   const { data, error } = await supabase
     .from("rolling_player_game_metrics")
     .select(
-      "player_id,strength_state,game_date,toi_seconds_avg_last5,toi_seconds_avg_all,sog_per_60_avg_last5,sog_per_60_avg_all,goals_total_last5,shots_total_last5,assists_total_last5,goals_total_all,shots_total_all,assists_total_all,hits_per_60_avg_last5,hits_per_60_avg_all,blocks_per_60_avg_last5,blocks_per_60_avg_all"
+      "player_id,strength_state,game_date,toi_seconds_avg_last5,toi_seconds_avg_all,sog_per_60_last5,sog_per_60_all,goals_total_last5,shots_total_last5,assists_total_last5,goals_total_all,shots_total_all,assists_total_all,hits_per_60_last5,hits_per_60_all,blocks_per_60_last5,blocks_per_60_all"
     )
     .in("player_id", playerIds)
     .eq("strength_state", strengthState)

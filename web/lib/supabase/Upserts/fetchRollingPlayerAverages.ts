@@ -12,13 +12,16 @@ import {
 } from "./rollingHistoricalAverages";
 import {
   createHistoricalRatioAccumulator,
+  getHistoricalRatioComponentSnapshot,
   createRatioRollingAccumulator,
+  getRatioRollingComponentSnapshot,
   getHistoricalRatioSnapshot,
   getRatioRollingSnapshot,
   updateHistoricalRatioAccumulator,
   updateRatioRollingAccumulator,
   type HistoricalRatioAccumulator,
   type RatioAggregationSpec,
+  type RatioComponentTotals,
   type RatioComponents,
   type RatioRollingAccumulator
 } from "./rollingMetricAggregation";
@@ -484,6 +487,11 @@ interface RatioMetricDefinition {
 
 type MetricDefinition = SimpleMetricDefinition | RatioMetricDefinition;
 
+type SupportMetricDefinition = {
+  key: string;
+  getValue: (game: PlayerGameData) => number | null;
+};
+
 interface RollingAccumulator {
   sumAll: number;
   countAll: number;
@@ -841,6 +849,13 @@ const METRICS: MetricDefinition[] = [
   }
 ];
 
+const SUPPORT_METRICS: SupportMetricDefinition[] = [
+  {
+    key: "oz_start_neutral_zone_starts",
+    getValue: ({ countsOi }) => countsOi?.neu_zone_starts ?? null
+  }
+];
+
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -1058,6 +1073,508 @@ function initAccumulator(): RollingAccumulator {
   return { sumAll: 0, countAll: 0, windows };
 }
 
+function getSeasonWindowKey(season: number): number {
+  if (!Number.isFinite(season)) return season;
+  return season >= 10000000 ? Math.floor(season / 10000) : season;
+}
+
+function toStoredTotal(sum: number, count: number): number | null {
+  if (count <= 0) return null;
+  return Number(sum.toFixed(6));
+}
+
+function getRollingSimpleTotalSnapshot(acc: RollingAccumulator): {
+  all: number | null;
+  windows: Record<RollingWindow, number | null>;
+} {
+  return {
+    all: toStoredTotal(acc.sumAll, acc.countAll),
+    windows: ROLLING_WINDOWS.reduce<Record<RollingWindow, number | null>>(
+      (result, size) => {
+        result[size] = toStoredTotal(acc.windows[size].sum, acc.windows[size].count);
+        return result;
+      },
+      {} as Record<RollingWindow, number | null>
+    )
+  };
+}
+
+function getHistoricalSimpleTotalSnapshot(
+  acc: ReturnType<typeof createHistoricalAverageAccumulator>,
+  currentSeason: number
+): {
+  season: number | null;
+  threeYear: number | null;
+  career: number | null;
+} {
+  const currentSeasonKey = getSeasonWindowKey(currentSeason);
+  const seasonBucket = acc.bySeason.get(currentSeason);
+  let threeYearSum = 0;
+  let threeYearCount = 0;
+
+  for (const [season, bucket] of acc.bySeason.entries()) {
+    const seasonKey = getSeasonWindowKey(season);
+    if (seasonKey < currentSeasonKey - 2 || seasonKey > currentSeasonKey) {
+      continue;
+    }
+    threeYearSum += bucket.sum;
+    threeYearCount += bucket.count;
+  }
+
+  return {
+    season: seasonBucket ? toStoredTotal(seasonBucket.sum, seasonBucket.count) : null,
+    threeYear: toStoredTotal(threeYearSum, threeYearCount),
+    career: toStoredTotal(acc.careerSum, acc.careerCount)
+  };
+}
+
+function applyCanonicalScopedSnapshotOutputs(
+  output: Record<string, number | null>,
+  metricKey: string,
+  rollingSnapshot: {
+    all: number | null;
+    windows: Record<RollingWindow, number | null>;
+  },
+  historicalSnapshot: {
+    season: number | null;
+    threeYear: number | null;
+    career: number | null;
+  }
+): void {
+  output[`${metricKey}_all`] = rollingSnapshot.all;
+  output[`${metricKey}_season`] = historicalSnapshot.season;
+  output[`${metricKey}_3ya`] = historicalSnapshot.threeYear;
+  output[`${metricKey}_career`] = historicalSnapshot.career;
+
+  ROLLING_WINDOWS.forEach((size) => {
+    output[`${metricKey}_last${size}`] = rollingSnapshot.windows[size];
+  });
+}
+
+function getSupportAccumulatorTotal(
+  acc: Record<string, RollingAccumulator>,
+  key: string,
+  size?: RollingWindow
+): number | null {
+  const target = acc[key];
+  if (!target) return null;
+  if (size) {
+    return toStoredTotal(target.windows[size].sum, target.windows[size].count);
+  }
+  return toStoredTotal(target.sumAll, target.countAll);
+}
+
+function getHistoricalSupportAccumulatorTotal(
+  acc: Record<string, ReturnType<typeof createHistoricalAverageAccumulator>>,
+  key: string,
+  currentSeason: number,
+  scope: "season" | "threeYear" | "career"
+): number | null {
+  const target = acc[key];
+  if (!target) return null;
+  const snapshot = getHistoricalSimpleTotalSnapshot(target, currentSeason);
+  if (scope === "season") return snapshot.season;
+  if (scope === "threeYear") return snapshot.threeYear;
+  return snapshot.career;
+}
+
+function getDerivedGoalsAgainstValue(totals: RatioComponentTotals): number | null {
+  if (totals.count <= 0 || totals.secondaryDenominator <= 0) return null;
+  return Number((totals.secondaryDenominator - totals.secondaryNumerator).toFixed(6));
+}
+
+function getRatioComponentValue(
+  totals: RatioComponentTotals,
+  key: keyof RatioComponentTotals
+): number | null {
+  if (totals.count <= 0) return null;
+  return Number(totals[key].toFixed(6));
+}
+
+function applyRatioSupportOutputs(
+  output: Record<string, number | null>,
+  metricKey: string,
+  rollingComponents: {
+    all: RatioComponentTotals;
+    windows: Record<RollingWindow, RatioComponentTotals>;
+  },
+  historicalComponents: {
+    season: RatioComponentTotals;
+    threeYear: RatioComponentTotals;
+    career: RatioComponentTotals;
+  },
+  historicalSimpleMetricsState: Record<
+    string,
+    ReturnType<typeof createHistoricalAverageAccumulator>
+  >,
+  supportMetricsState: Record<string, RollingAccumulator>,
+  historicalSupportMetricsState: Record<
+    string,
+    ReturnType<typeof createHistoricalAverageAccumulator>
+  >,
+  currentSeason: number
+): void {
+  const setWindowPair = (
+    firstPrefix: string,
+    secondPrefix: string,
+    firstKey: keyof RatioComponentTotals,
+    secondKey: keyof RatioComponentTotals
+  ) => {
+    output[`${firstPrefix}_all`] = getRatioComponentValue(
+      rollingComponents.all,
+      firstKey
+    );
+    output[`${secondPrefix}_all`] = getRatioComponentValue(
+      rollingComponents.all,
+      secondKey
+    );
+
+    ROLLING_WINDOWS.forEach((size) => {
+      output[`${
+        firstPrefix
+      }_last${size}`] = getRatioComponentValue(rollingComponents.windows[size], firstKey);
+      output[`${
+        secondPrefix
+      }_last${size}`] = getRatioComponentValue(
+        rollingComponents.windows[size],
+        secondKey
+      );
+    });
+
+    output[`${firstPrefix}_season`] = getRatioComponentValue(
+      historicalComponents.season,
+      firstKey
+    );
+    output[`${secondPrefix}_season`] = getRatioComponentValue(
+      historicalComponents.season,
+      secondKey
+    );
+    output[`${firstPrefix}_3ya`] = getRatioComponentValue(
+      historicalComponents.threeYear,
+      firstKey
+    );
+    output[`${secondPrefix}_3ya`] = getRatioComponentValue(
+      historicalComponents.threeYear,
+      secondKey
+    );
+    output[`${firstPrefix}_career`] = getRatioComponentValue(
+      historicalComponents.career,
+      firstKey
+    );
+    output[`${secondPrefix}_career`] = getRatioComponentValue(
+      historicalComponents.career,
+      secondKey
+    );
+  };
+
+  switch (metricKey) {
+    case "primary_points_pct":
+      setWindowPair(
+        "primary_points_pct_primary_points",
+        "primary_points_pct_points",
+        "numerator",
+        "denominator"
+      );
+      return;
+    case "ipp":
+      setWindowPair("ipp_points", "ipp_on_ice_goals_for", "numerator", "denominator");
+      return;
+    case "on_ice_sh_pct":
+      setWindowPair(
+        "on_ice_sh_pct_goals_for",
+        "on_ice_sh_pct_shots_for",
+        "numerator",
+        "denominator"
+      );
+      return;
+    case "pp_share_pct":
+      setWindowPair(
+        "pp_share_pct_player_pp_toi",
+        "pp_share_pct_team_pp_toi",
+        "numerator",
+        "denominator"
+      );
+      return;
+    case "pdo":
+      output.pdo_goals_for_all = getRatioComponentValue(
+        rollingComponents.all,
+        "numerator"
+      );
+      output.pdo_shots_for_all = getRatioComponentValue(
+        rollingComponents.all,
+        "denominator"
+      );
+      output.pdo_shots_against_all = getRatioComponentValue(
+        rollingComponents.all,
+        "secondaryDenominator"
+      );
+      output.pdo_goals_against_all = getDerivedGoalsAgainstValue(rollingComponents.all);
+      ROLLING_WINDOWS.forEach((size) => {
+        output[`pdo_goals_for_last${size}`] = getRatioComponentValue(
+          rollingComponents.windows[size],
+          "numerator"
+        );
+        output[`pdo_shots_for_last${size}`] = getRatioComponentValue(
+          rollingComponents.windows[size],
+          "denominator"
+        );
+        output[`pdo_shots_against_last${size}`] = getRatioComponentValue(
+          rollingComponents.windows[size],
+          "secondaryDenominator"
+        );
+        output[`pdo_goals_against_last${size}`] = getDerivedGoalsAgainstValue(
+          rollingComponents.windows[size]
+        );
+      });
+      output.pdo_goals_for_season = getRatioComponentValue(
+        historicalComponents.season,
+        "numerator"
+      );
+      output.pdo_shots_for_season = getRatioComponentValue(
+        historicalComponents.season,
+        "denominator"
+      );
+      output.pdo_shots_against_season = getRatioComponentValue(
+        historicalComponents.season,
+        "secondaryDenominator"
+      );
+      output.pdo_goals_against_season = getDerivedGoalsAgainstValue(
+        historicalComponents.season
+      );
+      output.pdo_goals_for_3ya = getRatioComponentValue(
+        historicalComponents.threeYear,
+        "numerator"
+      );
+      output.pdo_shots_for_3ya = getRatioComponentValue(
+        historicalComponents.threeYear,
+        "denominator"
+      );
+      output.pdo_shots_against_3ya = getRatioComponentValue(
+        historicalComponents.threeYear,
+        "secondaryDenominator"
+      );
+      output.pdo_goals_against_3ya = getDerivedGoalsAgainstValue(
+        historicalComponents.threeYear
+      );
+      output.pdo_goals_for_career = getRatioComponentValue(
+        historicalComponents.career,
+        "numerator"
+      );
+      output.pdo_shots_for_career = getRatioComponentValue(
+        historicalComponents.career,
+        "denominator"
+      );
+      output.pdo_shots_against_career = getRatioComponentValue(
+        historicalComponents.career,
+        "secondaryDenominator"
+      );
+      output.pdo_goals_against_career = getDerivedGoalsAgainstValue(
+        historicalComponents.career
+      );
+      return;
+    case "oz_start_pct":
+      output.oz_start_pct_off_zone_starts_all = getRatioComponentValue(
+        rollingComponents.all,
+        "numerator"
+      );
+      output.oz_start_pct_def_zone_starts_all =
+        rollingComponents.all.denominator > 0
+          ? Number(
+              (rollingComponents.all.denominator - rollingComponents.all.numerator).toFixed(
+                6
+              )
+            )
+          : null;
+      output.oz_start_pct_neutral_zone_starts_all = getSupportAccumulatorTotal(
+        supportMetricsState,
+        "oz_start_neutral_zone_starts"
+      );
+      ROLLING_WINDOWS.forEach((size) => {
+        const components = rollingComponents.windows[size];
+        output[`oz_start_pct_off_zone_starts_last${size}`] = getRatioComponentValue(
+          components,
+          "numerator"
+        );
+        output[`oz_start_pct_def_zone_starts_last${size}`] =
+          components.denominator > 0
+            ? Number((components.denominator - components.numerator).toFixed(6))
+            : null;
+        output[`oz_start_pct_neutral_zone_starts_last${size}`] =
+          getSupportAccumulatorTotal(
+            supportMetricsState,
+            "oz_start_neutral_zone_starts",
+            size
+          );
+      });
+      output.oz_start_pct_off_zone_starts_season = getRatioComponentValue(
+        historicalComponents.season,
+        "numerator"
+      );
+      output.oz_start_pct_def_zone_starts_season =
+        historicalComponents.season.denominator > 0
+          ? Number(
+              (
+                historicalComponents.season.denominator -
+                historicalComponents.season.numerator
+              ).toFixed(6)
+            )
+          : null;
+      output.oz_start_pct_neutral_zone_starts_season =
+        getHistoricalSupportAccumulatorTotal(
+          historicalSupportMetricsState,
+          "oz_start_neutral_zone_starts",
+          currentSeason,
+          "season"
+        );
+      output.oz_start_pct_off_zone_starts_3ya = getRatioComponentValue(
+        historicalComponents.threeYear,
+        "numerator"
+      );
+      output.oz_start_pct_def_zone_starts_3ya =
+        historicalComponents.threeYear.denominator > 0
+          ? Number(
+              (
+                historicalComponents.threeYear.denominator -
+                historicalComponents.threeYear.numerator
+              ).toFixed(6)
+            )
+          : null;
+      output.oz_start_pct_neutral_zone_starts_3ya =
+        getHistoricalSupportAccumulatorTotal(
+          historicalSupportMetricsState,
+          "oz_start_neutral_zone_starts",
+          currentSeason,
+          "threeYear"
+        );
+      output.oz_start_pct_off_zone_starts_career = getRatioComponentValue(
+        historicalComponents.career,
+        "numerator"
+      );
+      output.oz_start_pct_def_zone_starts_career =
+        historicalComponents.career.denominator > 0
+          ? Number(
+              (
+                historicalComponents.career.denominator -
+                historicalComponents.career.numerator
+              ).toFixed(6)
+            )
+          : null;
+      output.oz_start_pct_neutral_zone_starts_career =
+        getHistoricalSupportAccumulatorTotal(
+          historicalSupportMetricsState,
+          "oz_start_neutral_zone_starts",
+          currentSeason,
+          "career"
+        );
+      return;
+    case "shooting_pct":
+    case "expected_sh_pct":
+    case "cf_pct":
+    case "ff_pct":
+    case "sog_per_60":
+    case "ixg_per_60":
+    case "hits_per_60":
+    case "blocks_per_60":
+      break;
+    default:
+      return;
+  }
+
+  const simpleSupportPairs: Record<
+    string,
+    { numeratorKey: string; denominatorKey: string; numeratorPrefix: string; denominatorPrefix: string }
+  > = {
+    shooting_pct: {
+      numeratorKey: "goals",
+      denominatorKey: "shots",
+      numeratorPrefix: "shooting_pct_goals",
+      denominatorPrefix: "shooting_pct_shots"
+    },
+    expected_sh_pct: {
+      numeratorKey: "ixg",
+      denominatorKey: "shots",
+      numeratorPrefix: "expected_sh_pct_ixg",
+      denominatorPrefix: "expected_sh_pct_shots"
+    },
+    cf_pct: {
+      numeratorKey: "cf",
+      denominatorKey: "ca",
+      numeratorPrefix: "cf_pct_cf",
+      denominatorPrefix: "cf_pct_ca"
+    },
+    ff_pct: {
+      numeratorKey: "ff",
+      denominatorKey: "fa",
+      numeratorPrefix: "ff_pct_ff",
+      denominatorPrefix: "ff_pct_fa"
+    },
+    sog_per_60: {
+      numeratorKey: "shots",
+      denominatorKey: "toi_seconds",
+      numeratorPrefix: "sog_per_60_shots",
+      denominatorPrefix: "sog_per_60_toi_seconds"
+    },
+    ixg_per_60: {
+      numeratorKey: "ixg",
+      denominatorKey: "toi_seconds",
+      numeratorPrefix: "ixg_per_60_ixg",
+      denominatorPrefix: "ixg_per_60_toi_seconds"
+    },
+    hits_per_60: {
+      numeratorKey: "hits",
+      denominatorKey: "toi_seconds",
+      numeratorPrefix: "hits_per_60_hits",
+      denominatorPrefix: "hits_per_60_toi_seconds"
+    },
+    blocks_per_60: {
+      numeratorKey: "blocks",
+      denominatorKey: "toi_seconds",
+      numeratorPrefix: "blocks_per_60_blocks",
+      denominatorPrefix: "blocks_per_60_toi_seconds"
+    }
+  };
+
+  const pair = simpleSupportPairs[metricKey];
+  if (!pair) return;
+
+  output[`${pair.numeratorPrefix}_season`] = getHistoricalSupportAccumulatorTotal(
+    historicalSimpleMetricsState,
+    pair.numeratorKey,
+    currentSeason,
+    "season"
+  );
+  output[`${pair.denominatorPrefix}_season`] = getHistoricalSupportAccumulatorTotal(
+    historicalSimpleMetricsState,
+    pair.denominatorKey,
+    currentSeason,
+    "season"
+  );
+  output[`${pair.numeratorPrefix}_3ya`] = getHistoricalSupportAccumulatorTotal(
+    historicalSimpleMetricsState,
+    pair.numeratorKey,
+    currentSeason,
+    "threeYear"
+  );
+  output[`${pair.denominatorPrefix}_3ya`] = getHistoricalSupportAccumulatorTotal(
+    historicalSimpleMetricsState,
+    pair.denominatorKey,
+    currentSeason,
+    "threeYear"
+  );
+  output[`${pair.numeratorPrefix}_career`] = getHistoricalSupportAccumulatorTotal(
+    historicalSimpleMetricsState,
+    pair.numeratorKey,
+    currentSeason,
+    "career"
+  );
+  output[`${pair.denominatorPrefix}_career`] = getHistoricalSupportAccumulatorTotal(
+    historicalSimpleMetricsState,
+    pair.denominatorKey,
+    currentSeason,
+    "career"
+  );
+}
+
 function createEmptySourceTrackingSummary(): SourceTrackingSummary {
   return {
     missingSources: {
@@ -1266,13 +1783,38 @@ function applyGpOutputs(
     output.career_availability_pct = null;
   }
 
+  output.season_participation_games = mode.emitAvailabilityAliases
+    ? null
+    : historicalGpPctSnapshot.seasonPlayerGames;
+  output.three_year_participation_games = mode.emitAvailabilityAliases
+    ? null
+    : historicalGpPctSnapshot.threeYearPlayerGames;
+  output.career_participation_games = mode.emitAvailabilityAliases
+    ? null
+    : historicalGpPctSnapshot.careerPlayerGames;
+  output.season_participation_pct = mode.emitAvailabilityAliases
+    ? null
+    : historicalGpPctSnapshot.season;
+  output.three_year_participation_pct = mode.emitAvailabilityAliases
+    ? null
+    : historicalGpPctSnapshot.threeYear;
+  output.career_participation_pct = mode.emitAvailabilityAliases
+    ? null
+    : historicalGpPctSnapshot.career;
+
   ROLLING_WINDOWS.forEach((size) => {
     const window = rollingGpPctSnapshot.windows[size];
     output[`games_played_last${size}_team_games`] = window.playerGames;
     output[`team_games_available_last${size}`] = window.teamGames;
+    output[`participation_games_last${size}_team_games`] = mode.emitAvailabilityAliases
+      ? null
+      : window.playerGames;
     output[`availability_pct_last${size}_team_games`] = mode.emitAvailabilityAliases
       ? window.ratio
       : null;
+    output[`participation_pct_last${size}_team_games`] = mode.emitAvailabilityAliases
+      ? null
+      : window.ratio;
   });
 
   applyLegacyGpAliases(output, historicalGpPctSnapshot, rollingGpPctSnapshot, mode);
@@ -1281,7 +1823,12 @@ function applyGpOutputs(
 function deriveOutputs(
   simpleMetricsState: Record<string, RollingAccumulator>,
   ratioMetricsState: Record<string, RatioRollingAccumulator>,
+  supportMetricsState: Record<string, RollingAccumulator>,
   historicalSimpleMetricsState: Record<
+    string,
+    ReturnType<typeof createHistoricalAverageAccumulator>
+  >,
+  historicalSupportMetricsState: Record<
     string,
     ReturnType<typeof createHistoricalAverageAccumulator>
   >,
@@ -1304,6 +1851,7 @@ function deriveOutputs(
       const acc = ratioMetricsState[metric.key];
       if (!acc) continue;
       const snapshot = getRatioRollingSnapshot(acc, metric.ratioSpec);
+      const componentSnapshot = getRatioRollingComponentSnapshot(acc);
       output[`${metric.key}_total_all`] = snapshot.all;
       output[`${metric.key}_avg_all`] = snapshot.all;
 
@@ -1313,6 +1861,10 @@ function deriveOutputs(
         currentSeason,
         metric.ratioSpec
       );
+      const historicalComponentSnapshot = getHistoricalRatioComponentSnapshot(
+        historical,
+        currentSeason
+      );
       output[`${metric.key}_avg_season`] = historicalSnapshot.season;
       output[`${metric.key}_avg_3ya`] = historicalSnapshot.threeYear;
       output[`${metric.key}_avg_career`] = historicalSnapshot.career;
@@ -1321,6 +1873,22 @@ function deriveOutputs(
         output[`${metric.key}_total_last${size}`] = snapshot.windows[size];
         output[`${metric.key}_avg_last${size}`] = snapshot.windows[size];
       });
+      applyCanonicalScopedSnapshotOutputs(
+        output,
+        metric.key,
+        snapshot,
+        historicalSnapshot
+      );
+      applyRatioSupportOutputs(
+        output,
+        metric.key,
+        componentSnapshot,
+        historicalComponentSnapshot,
+        historicalSimpleMetricsState,
+        supportMetricsState,
+        historicalSupportMetricsState,
+        currentSeason
+      );
       continue;
     }
 
@@ -2037,7 +2605,12 @@ async function processPlayer(
 
       const simpleMetricsState: Record<string, RollingAccumulator> = {};
       const ratioMetricsState: Record<string, RatioRollingAccumulator> = {};
+      const supportMetricsState: Record<string, RollingAccumulator> = {};
       const historicalSimpleMetricsState: Record<
+        string,
+        ReturnType<typeof createHistoricalAverageAccumulator>
+      > = {};
+      const historicalSupportMetricsState: Record<
         string,
         ReturnType<typeof createHistoricalAverageAccumulator>
       > = {};
@@ -2052,6 +2625,11 @@ async function processPlayer(
         }
         simpleMetricsState[metric.key] = initAccumulator();
         historicalSimpleMetricsState[metric.key] =
+          createHistoricalAverageAccumulator();
+      });
+      SUPPORT_METRICS.forEach((metric) => {
+        supportMetricsState[metric.key] = initAccumulator();
+        historicalSupportMetricsState[metric.key] =
           createHistoricalAverageAccumulator();
       });
       const historicalGpPctState = createHistoricalGpPctAccumulator();
@@ -2086,6 +2664,15 @@ async function processPlayer(
             value
           );
         });
+        SUPPORT_METRICS.forEach((metric) => {
+          const value = metric.getValue(game);
+          updateAccumulator(supportMetricsState[metric.key], value);
+          updateHistoricalAverageAccumulator(
+            historicalSupportMetricsState[metric.key],
+            game.season,
+            value
+          );
+        });
 
         const teamGamesPlayed = getTeamGamesPlayed(
           ledger,
@@ -2116,7 +2703,9 @@ async function processPlayer(
         const metricOutputs = deriveOutputs(
           simpleMetricsState,
           ratioMetricsState,
+          supportMetricsState,
           historicalSimpleMetricsState,
+          historicalSupportMetricsState,
           historicalRatioMetricsState,
           historicalGpPctSnapshot,
           rollingGpPctSnapshot,
@@ -2489,7 +3078,9 @@ export const __testables = {
   summarizeSourceTracking,
   didPlayerCountAsAppearance,
   applyGpOutputs,
-  getGpOutputCompatibilityMode
+  getGpOutputCompatibilityMode,
+  deriveOutputs,
+  initAccumulator
 };
 
 export default { main };
