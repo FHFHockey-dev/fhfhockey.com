@@ -89,6 +89,12 @@ Current result:
 
 - `PASS`
 
+Additional verification:
+
+- the formula ledger remains flat-list only through the final pass-2 audit state
+- optional enhancements such as `primary_assists`, `secondary_assists`, `penalties_drawn`, `penalties_drawn_per_60`, and `pp_toi_seconds` appear only in the action backlog and the main audit’s `Suggested Metric Additions` / `Actionable Findings Backlog` sections, not in the formula ledger as action prose
+- no schema cleanup, debug-console optimization, freshness, performance, or test-coverage recommendations appear in the formula ledger
+
 ### Action backlog check
 
 Verified against the current file contents:
@@ -100,6 +106,12 @@ Verified against the current file contents:
 Current result:
 
 - `PASS`
+
+Additional verification:
+
+- schema, observability, freshness, downstream-compatibility, performance, test-coverage, and optional-enhancement follow-ups all remain in the action backlog
+- no backlog entry is being used as a formula-ledger surrogate
+- the main audit summarizes backlog groups without collapsing them back into the formula ledger
 
 ## Ongoing Enforcement Rules
 
