@@ -159,3 +159,69 @@ Each item should use this structure:
 - blocker status: not a blocker for immediate documentation work; blocker for safely shipping the validation console and related observability changes.
 - source of discovery: `tasks/artifacts/rolling-player-pass-2-surface-confirmation.md`, `tasks/artifacts/rolling-player-pass-2-helper-contract-map.md`.
 - status: `open`
+
+### `P0` Freshness / recompute workflow: fix `rolling_player_game_metrics` upsert failure that blocks targeted recomputes
+- category: `freshness / recompute workflow`
+- priority: `P0`
+- affected metrics: all persisted rolling metrics and contextual fields
+- affected fields: entire `rolling_player_game_metrics` row surface
+- affected files:
+  - `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
+  - `web/pages/api/v1/db/update-rolling-player-averages.ts`
+  - `web/lib/supabase/database-generated.types.ts`
+- problem: March 12 targeted recomputes for Brent Burns, Corey Perry, Jesper Bratt, and Seth Jones all completed fetch, merge, and derive phases successfully but failed in the final upsert phase with repeated `Bad Request` responses, which means source freshness work cannot reliably produce new target rows when a stored-row refresh is actually needed.
+- recommended action: capture the exact Supabase error payload for the failed batch, log the offending row shape or column subset, add a dry-run validation mode for upsert payloads, and isolate whether the failure is caused by schema drift, bad nullability assumptions, an over-wide batch payload, or a specific generated column mismatch.
+- expected benefit: restores targeted recompute as a trustworthy validation step, removes the biggest operational blocker in the runbook, and prevents stale-target evidence from lingering when source data is already fresh.
+- blocker status: full blocker for any pass-2 comparison that requires a newly written target row rather than comparison against already-fresh stored rows.
+- source of discovery: `tasks/artifacts/rolling-player-pass-2-refresh-execution-2026-03-12.md`, `tasks/artifacts/rolling-player-pass-2-reconstruction-evidence-2026-03-12.md`.
+- status: `open`
+
+### `P1` Diagnostics / observability: promote coverage and completeness diagnostics to a first-class validation surface
+- category: `diagnostics / observability`
+- priority: `P1`
+- affected metrics: all persisted rolling metrics, with special impact on PP-share, ratio support fields, and GP support fields
+- affected fields: coverage summaries, freshness summaries, GP support counters, ratio support columns, suspicious-output summaries
+- affected files:
+  - `web/lib/supabase/Upserts/rollingPlayerPipelineDiagnostics.ts`
+  - `web/scripts/check-rolling-player-validation-freshness.ts`
+  - `web/pages/api/v1/debug/rolling-player-metrics.ts`
+  - `web/pages/trendsDebug.tsx`
+- problem: only source-tail freshness currently has a dedicated repeatable script, while March 12 coverage, derived-window completeness, and suspicious-output review required an ad hoc `ts-node` snapshot to call the diagnostics helpers against live data, which makes the validation workflow less reproducible than it should be.
+- recommended action: add an official diagnostics script or API payload that returns `summarizeCoverage(...)`, `summarizeSourceTailFreshness(...)`, `summarizeDerivedWindowDiagnostics(...)`, and `summarizeSuspiciousOutputs(...)` together for the selected player and strength, and wire that output directly into `trendsDebug.tsx`.
+- expected benefit: repeatable diagnostics collection, less ad hoc tooling during audit work, and a stable path for freshness / completeness review in both CLI and UI validation flows.
+- blocker status: not a blocker for manual one-off validation, but a blocker for efficient repeatable audit execution and for the intended debug-console workflow.
+- source of discovery: `tasks/artifacts/rolling-player-pass-2-diagnostics-classification-2026-03-12.md`, March 12 live diagnostics snapshot workflow.
+- status: `open`
+
+### `P1` PP context: surface PP builder coverage cautions even when `ppTailLag` is zero
+- category: `PP context`
+- priority: `P1`
+- affected metrics: `pp_share_pct`, `pp_unit`, `pp_share_of_team`, `pp_unit_usage_index`, `pp_unit_relative_toi`, `pp_vs_unit_avg`
+- affected fields: PP context fields, PP-share support columns, freshness summary outputs
+- affected files:
+  - `web/lib/supabase/Upserts/rollingPlayerPipelineDiagnostics.ts`
+  - `web/scripts/check-rolling-player-validation-freshness.ts`
+  - `web/pages/trendsDebug.tsx`
+  - `web/pages/api/v1/debug/rolling-player-metrics.ts`
+- problem: the March 12 diagnostics snapshot showed ready players with `ppTailLag = 0` but still non-empty `missingPpGameIds` or `missingPpShareGameIds`, which means the latest builder game is present while some selected PP rows still lack builder coverage or share population that matters for confidence.
+- recommended action: add explicit `READY WITH CAUTIONS` handling for PP coverage gaps, surface `missingPpGameIds` and `missingPpShareGameIds` in the validation payload and UI, and teach the freshness workflow to distinguish “latest game covered” from “window fully covered.”
+- expected benefit: fewer false assumptions that PP validation is fully clean once `ppTailLag` is zero, clearer PP-share trust labeling, and faster investigation of partial-builder windows.
+- blocker status: not a blocker for every PP comparison, but a blocker for high-confidence PP-share and PP-context signoff when coverage gaps remain in the selected window.
+- source of discovery: `tasks/artifacts/rolling-player-pass-2-diagnostics-classification-2026-03-12.md`, March 12 live diagnostics snapshot for Burns, Perry, Bratt, and Jones.
+- status: `open`
+
+### `P1` Diagnostics / observability: expose ratio-support completeness warnings in the validation console
+- category: `diagnostics / observability`
+- priority: `P1`
+- affected metrics: `primary_points_pct`, `ipp`, `pdo`, `pp_share_pct`
+- affected fields: ratio support columns, `primary_points_pct_*`, `ipp_*`, `pdo_*`, `pp_share_pct_*`
+- affected files:
+  - `web/lib/supabase/Upserts/rollingPlayerPipelineDiagnostics.ts`
+  - `web/pages/trendsDebug.tsx`
+  - `web/pages/api/v1/debug/rolling-player-metrics.ts`
+- problem: March 12 derived-window diagnostics showed widespread `valuePresentWithoutComponents` and some `partial` windows for ratio families even in scopes where arithmetic reconstruction still passed, which means support columns cannot be trusted on their own but that caution is currently too easy to miss.
+- recommended action: add per-metric completeness badges and scope summaries to the validation payload and UI, including `complete`, `partial`, `absent`, `invalid`, and `valuePresentWithoutComponents`, and label support-field-based validation as incomplete whenever those summaries are non-clean.
+- expected benefit: prevents over-trusting support columns, makes it obvious when source reconstruction is still required, and aligns the debug-console trust model with the March 12 diagnostics findings.
+- blocker status: not a blocker for arithmetic validation when source reconstruction is available; blocker for efficient support-field-only inspection and for interpreting ratio support parity correctly.
+- source of discovery: `tasks/artifacts/rolling-player-pass-2-diagnostics-classification-2026-03-12.md`.
+- status: `open`
