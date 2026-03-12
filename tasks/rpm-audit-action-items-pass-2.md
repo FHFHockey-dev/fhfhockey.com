@@ -260,6 +260,37 @@ Each item should use this structure:
 - source of discovery: `tasks/artifacts/rolling-player-pass-2-trendsdebug-validation-panels.md`, `tasks/artifacts/rolling-player-pass-2-trendsdebug-tests.md`, live implementation review during `4.4` through `4.7`.
 - status: `open`
 
+### `P1` Downstream compatibility: migrate the player trends page off legacy-only suffix selection
+- category: `downstream compatibility`
+- priority: `P1`
+- affected metrics: ratio families, weighted-rate families, availability / participation families, any metric shown in `trends/player/[playerId].tsx`
+- affected fields: legacy `avg_*` suffix reads, canonical ratio/weighted-rate aliases, future canonical availability / participation fields
+- affected files:
+  - `web/pages/trends/player/[playerId].tsx`
+  - `web/lib/rollingPlayerMetricCompatibility.ts`
+- problem: the player trends page still encodes legacy suffixes such as `avg_last5`, `avg_season`, and `avg_career` directly into its UI/query model, which makes it a hard blocker for retiring misleading ratio/weighted-rate aliases or exposing canonical availability/participation semantics cleanly.
+- recommended action: redesign the trend-page metric field resolution so ratio and weighted-rate families read canonical-first with compatibility fallback, keep additive/TOI family handling distinct where `avg` versus `total` remains semantically real, and stop using legacy suffixes as the page’s only conceptual model.
+- expected benefit: removes the clearest downstream blocker to schema cleanup, reduces user-facing legacy naming, and aligns the trends page with the validated pass-2 contract.
+- blocker status: blocker for any later ratio/weighted-rate alias retirement or freeze strategy that expects downstream UI adoption of canonical fields.
+- source of discovery: `tasks/artifacts/rolling-player-pass-2-downstream-compatibility-dependencies.md`, `tasks/artifacts/rolling-player-pass-2-schema-change-recommendations.md`.
+- status: `open`
+
+### `P2` Schema / naming: stage a formal alias-freeze and later cleanup migration set for ratio, weighted-rate, and GP compatibility fields
+- category: `schema / naming`
+- priority: `P2`
+- affected metrics: all ratio families, all weighted-rate families, availability / participation compatibility fields
+- affected fields: legacy ratio `*_avg_*`, legacy ratio `*_total_*`, legacy weighted-rate `*_avg_*`, legacy weighted-rate `*_total_*`, `gp_pct_*`, convenience GP mirrors
+- affected files:
+  - `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
+  - `migrations/20260311_add_canonical_rolling_player_metric_contract_fields.sql`
+  - future cleanup migrations touching `rolling_player_game_metrics`
+- problem: pass-2 now has enough evidence to classify several legacy surfaces as compatibility-only, but there is no explicit schema plan yet for how those fields move from “still written” to “frozen” to “later deprecation candidate.”
+- recommended action: document an alias-freeze policy now, prevent new readers from adopting those compatibility-only fields, and prepare a later migration set that can deprecate or stop writing them once downstream compatibility blockers are removed.
+- expected benefit: turns schema cleanup into a staged plan instead of open-ended drift, lowers the odds of new legacy dependencies appearing, and gives later implementation phases a clear migration target.
+- blocker status: not a blocker for current correctness; blocker for finishing pass-2 schema cleanup in a controlled way.
+- source of discovery: `tasks/artifacts/rolling-player-pass-2-authoritative-field-classification.md`, `tasks/artifacts/rolling-player-pass-2-schema-change-recommendations.md`.
+- status: `open`
+
 ### `P2` Performance / efficiency: reduce validation-console overfetch and render weight for repeated metric inspection
 - category: `performance / efficiency`
 - priority: `P2`
@@ -275,4 +306,57 @@ Each item should use this structure:
 - expected benefit: snappier inspection loops, less redundant server work, and a clearer validation-first page architecture.
 - blocker status: not a blocker for correctness; blocker for comfortable high-volume audit usage and future console scalability.
 - source of discovery: `tasks/artifacts/rolling-player-pass-2-trendsdebug-current-surface-audit.md`, `tasks/artifacts/rolling-player-pass-2-trendsdebug-validation-payload-design.md`, `tasks/artifacts/rolling-player-pass-2-trendsdebug-tests.md`.
+- status: `open`
+
+### `P2` Optional enhancement: add additive `primary_assists` and `secondary_assists` rolling families
+- category: `optional enhancement`
+- priority: `P2`
+- affected metrics: `primary_assists`, `secondary_assists`
+- affected fields: new additive rolling fields for `*_total_all`, `*_total_lastN`, `*_avg_all`, `*_avg_lastN`, `*_avg_season`, `*_avg_3ya`, `*_avg_career`
+- affected files:
+  - `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
+  - `web/lib/supabase/database-generated.types.ts`
+  - future migration(s) touching `rolling_player_game_metrics`
+  - `web/pages/trendsDebug.tsx`
+- problem: the rolling table already persists `primary_assists_per_60` and `secondary_assists_per_60`, but it does not persist the additive `first_assists` and `second_assists` families underneath them, which leaves assist decomposition less inspectable than the current source surface allows.
+- recommended action: add additive rolling families for `primary_assists` and `secondary_assists`, wire them into the additive audit/debug surfaces, and surface them in `trendsDebug.tsx` alongside the existing assist-rate metrics.
+- expected benefit: better additive parity under the existing weighted-rate contract, easier validation of `primary_points_pct` and assist-mix behavior, and a cleaner downstream assist decomposition surface.
+- blocker status: not a blocker for pass-2 correctness; optional improvement that should be sequenced after the current audit backlog.
+- source of discovery: `tasks/artifacts/rolling-player-pass-2-suggested-metric-additions-review.md`, `tasks/prd-rolling-player-metrics-audit-pass-2-trends-debug.md`.
+- status: `open`
+
+### `P2` Optional enhancement: add `penalties_drawn` and `penalties_drawn_per_60` from existing NST columns
+- category: `optional enhancement`
+- priority: `P2`
+- affected metrics: `penalties_drawn`, `penalties_drawn_per_60`
+- affected fields: new additive rolling `penalties_drawn_*` fields and matching weighted-rate `penalties_drawn_per_60_*` fields
+- affected files:
+  - `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
+  - `web/lib/supabase/Upserts/rollingPlayerToiContract.ts`
+  - `web/lib/supabase/database-generated.types.ts`
+  - future migration(s) touching `rolling_player_game_metrics`
+  - `web/pages/trendsDebug.tsx`
+- problem: current NST sources already provide `penalties_drawn`, but the rolling table does not persist either the raw draw count or a deployment-adjusted draw rate, leaving a useful role/discipline signal unused despite requiring no new provider.
+- recommended action: add additive `penalties_drawn` rolling families plus `penalties_drawn_per_60` using the existing weighted-rate contract and TOI resolution path, then expose both in `trendsDebug.tsx`.
+- expected benefit: stronger role/context coverage, a new discipline/opportunity-creation lens for downstream consumers, and efficient reuse of source columns already in the ingest surface.
+- blocker status: not a blocker for pass-2 correctness; optional improvement that should be sequenced after the current audit backlog.
+- source of discovery: `tasks/artifacts/rolling-player-pass-2-suggested-metric-additions-review.md`, `tasks/prd-rolling-player-metrics-audit-pass-2-trends-debug.md`.
+- status: `open`
+
+### `P2` Optional enhancement: persist `pp_toi_seconds` for direct PP deployment validation
+- category: `optional enhancement`
+- priority: `P2`
+- affected metrics: `pp_toi_seconds`, `pp_share_pct`
+- affected fields: new `pp_toi_seconds_*` rolling fields and related debug-surface companions
+- affected files:
+  - `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
+  - `web/lib/supabase/Upserts/rollingPlayerPpShareContract.ts`
+  - `web/lib/supabase/database-generated.types.ts`
+  - future migration(s) touching `rolling_player_game_metrics`
+  - `web/pages/trendsDebug.tsx`
+- problem: current PP validation has to infer player PP deployment indirectly through `pp_share_pct` support fields and builder context rather than reading a direct persisted PP TOI metric, even though the necessary builder and fallback source columns already exist.
+- recommended action: add `pp_toi_seconds` for the `all` and `pp` splits using builder `PPTOI` as the primary source and WGO `pp_toi` as fallback-only context, then surface direct PP deployment traces in `trendsDebug.tsx`.
+- expected benefit: easier PP-share validation, clearer PP deployment inspection, and less reverse-engineering of numerator/denominator context during manual audit work.
+- blocker status: not a blocker for pass-2 correctness; optional improvement best sequenced after PP provenance and mixed-source backlog items.
+- source of discovery: `tasks/artifacts/rolling-player-pass-2-suggested-metric-additions-review.md`, `tasks/prd-rolling-player-metrics-audit-pass-2-trends-debug.md`.
 - status: `open`
