@@ -104,7 +104,7 @@
   - [x] 7.7 Record any remaining mismatches with explicit cause buckets: stale source, stale target, logic defect, schema-contract issue, or external blocker.
   - [x] 7.8 Perform a final completeness pass by re-reading `tasks/rolling-player-metrics-audit-notes.md` and confirming every actionable remediation item is implemented, intentionally deferred as optional, or intentionally deferred as follow-up.
 
-- [ ] 8.0 Deliver optional metric additions and follow-up improvements after required remediation is stable
+- [x] 8.0 Deliver optional metric additions and follow-up improvements after required remediation is stable
   - [x] 8.1 Add the highest-priority optional support metrics from the PRD once correctness work is stable: `on_ice_sv_pct`, raw zone-start counts, and raw on-ice goal/shot counts.
   - [x] 8.2 Add optional weighted-rate families such as `goals_per_60`, `assists_per_60`, and assist-decomposition rates if the required remediation work is complete and validated.
   - [x] 8.3 Add optional PP-role context fields to rolling rows, including `pp_unit_usage_index`, `pp_unit_relative_toi`, `pp_vs_unit_avg`, and `pp_share_of_team`, if they are still not part of the required schema contract.
