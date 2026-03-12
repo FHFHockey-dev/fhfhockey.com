@@ -291,7 +291,13 @@ if (!supabaseUrl || !supabaseKey) {
   );
 }
 
-const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
+const supabaseServiceUrl: string = supabaseUrl;
+const supabaseServiceRoleKey: string = supabaseKey;
+const supabase: SupabaseClient = createClient(
+  supabaseServiceUrl,
+  supabaseServiceRoleKey
+);
+const rollingPlayerMetricsRestUrl = `${supabaseServiceUrl.replace(/\/$/, "")}/rest/v1/rolling_player_game_metrics?on_conflict=player_id,game_date,strength_state`;
 
 interface FetchOptions {
   playerId?: number;
@@ -306,6 +312,157 @@ interface FetchOptions {
   upsertBatchSize?: number;
   upsertConcurrency?: number;
   skipDiagnostics?: boolean;
+  dryRunUpsert?: boolean;
+  debugUpsertPayload?: boolean;
+}
+
+type RollingUpsertRow = Record<string, unknown>;
+
+interface RollingRestUpsertError extends Error {
+  code?: string | null;
+  details?: string | null;
+  hint?: string | null;
+  status?: number | null;
+  statusCode?: number | null;
+  responseText?: string | null;
+}
+
+function toSerializableError(error: unknown): Record<string, unknown> {
+  if (!error || typeof error !== "object") {
+    return {
+      message: getErrorMessage(error)
+    };
+  }
+
+  const record = error as Record<string, unknown>;
+  const serialized: Record<string, unknown> = {
+    message: getErrorMessage(error)
+  };
+
+  for (const key of Object.keys(record)) {
+    const value = record[key];
+    if (
+      value === null ||
+      typeof value === "string" ||
+      typeof value === "number" ||
+      typeof value === "boolean"
+    ) {
+      serialized[key] = value;
+      continue;
+    }
+    if (Array.isArray(value)) {
+      serialized[key] = value.slice(0, 10);
+      continue;
+    }
+    if (value && typeof value === "object") {
+      serialized[key] = "[object]";
+    }
+  }
+
+  serialized.ownKeys = Object.keys(record);
+  return serialized;
+}
+
+function summarizeUpsertBatch(batch: RollingUpsertRow[]) {
+  const keyCounts = batch.map((row) => Object.keys(row).length);
+  const firstRow = batch[0] ?? null;
+  const firstRowKeys = firstRow ? Object.keys(firstRow).sort() : [];
+  const firstRowKeySet = new Set(firstRowKeys);
+  const unionKeys = new Set<string>();
+  const keysOutsideFirstRow = new Set<string>();
+  let rowsDifferingFromFirst = 0;
+
+  for (const row of batch) {
+    const rowKeys = Object.keys(row);
+    let differsFromFirst = rowKeys.length !== firstRowKeys.length;
+    for (const key of rowKeys) {
+      unionKeys.add(key);
+      if (!firstRowKeySet.has(key)) {
+        keysOutsideFirstRow.add(key);
+        differsFromFirst = true;
+      }
+    }
+    if (!differsFromFirst) {
+      for (const key of firstRowKeys) {
+        if (!(key in row)) {
+          differsFromFirst = true;
+          break;
+        }
+      }
+    }
+    if (differsFromFirst) {
+      rowsDifferingFromFirst += 1;
+    }
+  }
+
+  return {
+    rowCount: batch.length,
+    keyCountMin: keyCounts.length ? Math.min(...keyCounts) : 0,
+    keyCountMax: keyCounts.length ? Math.max(...keyCounts) : 0,
+    firstRowKeyCount: firstRowKeys.length,
+    unionKeyCount: unionKeys.size,
+    rowsDifferingFromFirst,
+    keysOutsideFirstRow: Array.from(keysOutsideFirstRow).sort(),
+    firstRowIdentity: firstRow
+      ? {
+          player_id: firstRow.player_id ?? null,
+          game_id: firstRow.game_id ?? null,
+          game_date: firstRow.game_date ?? null,
+          season: firstRow.season ?? null,
+          strength_state: firstRow.strength_state ?? null
+        }
+      : null,
+    sampleRowIdentities: batch.slice(0, 3).map((row) => ({
+      player_id: row.player_id ?? null,
+      game_id: row.game_id ?? null,
+      game_date: row.game_date ?? null,
+      season: row.season ?? null,
+      strength_state: row.strength_state ?? null
+    })),
+    firstRowKeyPreview: firstRowKeys.slice(0, 40)
+  };
+}
+
+async function upsertRollingPlayerMetricsBatch(
+  batch: RollingUpsertRow[]
+): Promise<void> {
+  const response = await fetch(rollingPlayerMetricsRestUrl, {
+    method: "POST",
+    headers: {
+      apikey: supabaseServiceRoleKey,
+      Authorization: `Bearer ${supabaseServiceRoleKey}`,
+      "Content-Type": "application/json",
+      Prefer: "resolution=merge-duplicates,return=minimal"
+    },
+    body: JSON.stringify(batch)
+  });
+
+  if (response.ok) {
+    return;
+  }
+
+  const responseText = await response.text();
+  let parsed: Record<string, unknown> | null = null;
+  try {
+    parsed = responseText
+      ? (JSON.parse(responseText) as Record<string, unknown>)
+      : null;
+  } catch {
+    parsed = null;
+  }
+
+  const message =
+    typeof parsed?.message === "string" && parsed.message.trim().length > 0
+      ? parsed.message
+      : `PostgREST upsert failed with ${response.status} ${response.statusText}`;
+  const error = new Error(message) as RollingRestUpsertError;
+  error.code = typeof parsed?.code === "string" ? parsed.code : null;
+  error.details = typeof parsed?.details === "string" ? parsed.details : null;
+  error.hint = typeof parsed?.hint === "string" ? parsed.hint : null;
+  error.status = response.status;
+  error.statusCode = response.status;
+  error.responseText = responseText || null;
+  throw error;
 }
 
 function createConcurrencyLimiter(concurrency: number) {
@@ -3636,6 +3793,26 @@ export async function main(options: FetchOptions = {}): Promise<void> {
           for (let i = 0; i < rows.length; i += batchSize) {
             const batch = rows.slice(i, i + batchSize);
             const batchNumber = Math.floor(i / batchSize) + 1;
+            const batchSummary = summarizeUpsertBatch(batch as RollingUpsertRow[]);
+            if (options.debugUpsertPayload || options.dryRunUpsert) {
+              console.info(
+                "[fetchRollingPlayerAverages] upsertBatchSummary",
+                JSON.stringify({
+                  playerId,
+                  batchNumber,
+                  totalBatches,
+                  dryRunUpsert: Boolean(options.dryRunUpsert),
+                  ...batchSummary
+                })
+              );
+            }
+            if (options.dryRunUpsert) {
+              playerProgress.update(
+                processedPlayers,
+                `player:${playerId} validatedBatch:${batchNumber}/${totalBatches} rowsPrepared:${rows.length} coverageWarn:${coverageWarnings} suspicious:${suspiciousOutputWarnings} freshness:${freshnessBlockers}`
+              );
+              continue;
+            }
             await upsertLimit(async () =>
               executeWithSlowLog(
                 `upsert player:${playerId} batch:${batchNumber}/${totalBatches} rows:${batch.length}`,
@@ -3643,14 +3820,9 @@ export async function main(options: FetchOptions = {}): Promise<void> {
                   executeWithRetry(
                     `upsert player:${playerId} batch:${batchNumber}/${totalBatches}`,
                     async () => {
-                      const { error } = await supabase
-                        .from("rolling_player_game_metrics")
-                        .upsert(batch, {
-                          onConflict: "player_id,game_date,strength_state"
-                        });
-                      if (error) {
-                        throw error;
-                      }
+                      await upsertRollingPlayerMetricsBatch(
+                        batch as RollingUpsertRow[]
+                      );
                     }
                   )
               )
@@ -3662,6 +3834,7 @@ export async function main(options: FetchOptions = {}): Promise<void> {
             );
           }
         } catch (error) {
+          const errorSummary = toSerializableError(error);
           logPipelinePhase({
             phase: "upsert",
             status: "failed",
@@ -3674,6 +3847,18 @@ export async function main(options: FetchOptions = {}): Promise<void> {
               error: getErrorMessage(error)
             }
           });
+          if (options.debugUpsertPayload || !options.skipDiagnostics) {
+            console.error(
+              "[fetchRollingPlayerAverages] upsertFailureDetail",
+              JSON.stringify({
+                playerId,
+                rows: rows.length,
+                totalBatches,
+                rowsUpsertedSoFar: rowsUpserted,
+                error: errorSummary
+              })
+            );
+          }
           throw error;
         }
         logPipelinePhase({
@@ -3760,7 +3945,8 @@ export const __testables = {
   getOptionalPpContextOutputs,
   initAccumulator,
   shouldWarnAboutDisabledImplicitAutoResume,
-  filterPlayerIdsForResume
+  filterPlayerIdsForResume,
+  upsertRollingPlayerMetricsBatch
 };
 
 export default { main };

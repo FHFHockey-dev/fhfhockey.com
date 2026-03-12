@@ -174,7 +174,7 @@ Each item should use this structure:
 - expected benefit: restores targeted recompute as a trustworthy validation step, removes the biggest operational blocker in the runbook, and prevents stale-target evidence from lingering when source data is already fresh.
 - blocker status: full blocker for any pass-2 comparison that requires a newly written target row rather than comparison against already-fresh stored rows.
 - source of discovery: `tasks/artifacts/rolling-player-pass-2-refresh-execution-2026-03-12.md`, `tasks/artifacts/rolling-player-pass-2-reconstruction-evidence-2026-03-12.md`.
-- status: `open`
+- status: `done`
 
 ### `P1` Diagnostics / observability: promote coverage and completeness diagnostics to a first-class validation surface
 - category: `diagnostics / observability`

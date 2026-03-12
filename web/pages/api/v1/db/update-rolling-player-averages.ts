@@ -27,6 +27,8 @@
  * - upsertBatchSize (number, optional): Batch size for upserts into rolling_player_game_metrics. Defaults to 500 (800 in full refresh mode).
  * - upsertConcurrency (number, optional): Number of concurrent upsert requests per batch. Defaults to 1.
  * - skipDiagnostics (boolean, optional): If true, skips coverage/source-tracking/suspicious-output diagnostics to reduce log volume and CPU overhead.
+ * - dryRunUpsert (boolean, optional): If true, derives rows and logs per-batch payload summaries without writing to Supabase.
+ * - debugUpsertPayload (boolean, optional): If true, logs per-batch payload summaries and structured upsert failure details.
  * - fastMode (boolean, optional): Applies speed-oriented defaults when explicit tuning params are omitted:
  *   playerConcurrency=4, upsertConcurrency=4, skipDiagnostics=true.
  *
@@ -176,6 +178,8 @@ async function handler(
     const upsertBatchSize = parsePositiveInt(req.query.upsertBatchSize);
     const upsertConcurrency = parsePositiveInt(req.query.upsertConcurrency);
     const skipDiagnostics = parseBooleanParam(req.query.skipDiagnostics);
+    const dryRunUpsert = parseBooleanParam(req.query.dryRunUpsert);
+    const debugUpsertPayload = parseBooleanParam(req.query.debugUpsertPayload);
     const fastMode = parseBooleanParam(req.query.fastMode);
 
     const resolvedPlayerConcurrency =
@@ -199,6 +203,8 @@ async function handler(
         upsertBatchSize,
         upsertConcurrency: resolvedUpsertConcurrency,
         skipDiagnostics: resolvedSkipDiagnostics,
+        dryRunUpsert,
+        debugUpsertPayload,
         fastMode
       }
     });
@@ -220,6 +226,8 @@ async function handler(
         upsertBatchSize,
         upsertConcurrency: resolvedUpsertConcurrency,
         skipDiagnostics: resolvedSkipDiagnostics,
+        dryRunUpsert,
+        debugUpsertPayload,
         fastMode
       })
     );
@@ -250,7 +258,9 @@ async function handler(
         playerConcurrency: resolvedPlayerConcurrency,
         upsertBatchSize,
         upsertConcurrency: resolvedUpsertConcurrency,
-        skipDiagnostics: resolvedSkipDiagnostics
+        skipDiagnostics: resolvedSkipDiagnostics,
+        dryRunUpsert,
+        debugUpsertPayload
       });
       logEndpointPhase({
         phase: "execute",

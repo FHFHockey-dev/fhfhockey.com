@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import {
   createHistoricalRatioAccumulator,
   createRatioRollingAccumulator,
@@ -21,6 +21,7 @@ let getOptionalPpContextOutputs: typeof import("./fetchRollingPlayerAverages")._
 let initAccumulator: typeof import("./fetchRollingPlayerAverages").__testables.initAccumulator;
 let shouldWarnAboutDisabledImplicitAutoResume: typeof import("./fetchRollingPlayerAverages").__testables.shouldWarnAboutDisabledImplicitAutoResume;
 let filterPlayerIdsForResume: typeof import("./fetchRollingPlayerAverages").__testables.filterPlayerIdsForResume;
+let upsertRollingPlayerMetricsBatch: typeof import("./fetchRollingPlayerAverages").__testables.upsertRollingPlayerMetricsBatch;
 
 beforeAll(async () => {
   vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
@@ -38,9 +39,15 @@ beforeAll(async () => {
       getOptionalPpContextOutputs,
       initAccumulator,
       shouldWarnAboutDisabledImplicitAutoResume,
-      filterPlayerIdsForResume
+      filterPlayerIdsForResume,
+      upsertRollingPlayerMetricsBatch
     }
   } = await import("./fetchRollingPlayerAverages"));
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
 
 describe("fetchRollingPlayerAverages buildGameRecords", () => {
@@ -1110,6 +1117,90 @@ describe("fetchRollingPlayerAverages buildGameRecords", () => {
     expect(output.secondary_assists_per_60_season).toBe(4.8);
     expect(output.secondary_assists_per_60_secondary_assists_career).toBe(4);
     expect(output.secondary_assists_per_60_toi_seconds_career).toBe(3300);
+  });
+});
+
+describe("fetchRollingPlayerAverages upsertRollingPlayerMetricsBatch", () => {
+  it("posts wide rolling metric rows through the direct PostgREST endpoint", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(new Response("", { status: 200, statusText: "OK" }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const batch = [
+      {
+        player_id: 8470613,
+        game_date: "2025-10-07",
+        season: 20252026,
+        strength_state: "all",
+        goals_total_last20: 0,
+        toi_seconds_total_last20: 1210,
+        pp_share_pct_last20: 0.226
+      }
+    ];
+
+    await expect(upsertRollingPlayerMetricsBatch(batch)).resolves.toBeUndefined();
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://example.supabase.co/rest/v1/rolling_player_game_metrics?on_conflict=player_id,game_date,strength_state",
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({
+          apikey: "test-service-role-key",
+          Authorization: "Bearer test-service-role-key",
+          "Content-Type": "application/json",
+          Prefer: "resolution=merge-duplicates,return=minimal"
+        }),
+        body: JSON.stringify(batch)
+      })
+    );
+  });
+
+  it("surfaces structured response details when the direct upsert fails", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          message: "column \"bogus_metric\" of relation \"rolling_player_game_metrics\" does not exist",
+          code: "42703",
+          details: "Failing row contains an unknown column.",
+          hint: "Check generated types and migrations."
+        }),
+        {
+          status: 400,
+          statusText: "Bad Request",
+          headers: {
+            "Content-Type": "application/json"
+          }
+        }
+      )
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      upsertRollingPlayerMetricsBatch([
+        {
+          player_id: 8470613,
+          game_date: "2025-10-07",
+          season: 20252026,
+          strength_state: "all",
+          bogus_metric: 1
+        }
+      ])
+    ).rejects.toSatisfy((error: unknown) => {
+      const typed = error as Record<string, unknown>;
+      expect(error).toBeInstanceOf(Error);
+      expect((error as Error).message).toBe(
+        'column "bogus_metric" of relation "rolling_player_game_metrics" does not exist'
+      );
+      expect(typed.code).toBe("42703");
+      expect(typed.details).toBe("Failing row contains an unknown column.");
+      expect(typed.hint).toBe("Check generated types and migrations.");
+      expect(typed.status).toBe(400);
+      expect(typed.statusCode).toBe(400);
+      expect(String(typed.responseText)).toContain("bogus_metric");
+      return true;
+    });
   });
 });
 
