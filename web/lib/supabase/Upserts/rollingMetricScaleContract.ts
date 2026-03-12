@@ -19,6 +19,7 @@ export type ScaledMetricFamily =
   | "oz_start_pct"
   | "pp_share_pct"
   | "on_ice_sh_pct"
+  | "on_ice_sv_pct"
   | "pdo"
   | "cf_pct"
   | "ff_pct";
@@ -36,6 +37,7 @@ export const ROLLING_METRIC_SCALE_CONTRACTS: Record<
   oz_start_pct: { scale: "percent_0_to_100", min: 0, max: 100 },
   pp_share_pct: { scale: "fraction_0_to_1", min: 0, max: 1 },
   on_ice_sh_pct: { scale: "percent_0_to_100", min: 0, max: 100 },
+  on_ice_sv_pct: { scale: "percent_0_to_100", min: 0, max: 100 },
   pdo: { scale: "index_0_to_2", min: 0, max: 2 },
   cf_pct: { scale: "percent_0_to_100", min: 0, max: 100 },
   ff_pct: { scale: "percent_0_to_100", min: 0, max: 100 }

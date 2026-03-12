@@ -45,12 +45,18 @@ describe("rollingPlayerPpShareContract", () => {
     expect(ROLLING_PLAYER_PP_SHARE_CONTRACT.contextualFields).toEqual([
       "powerPlayCombinations.unit"
     ]);
+    expect(ROLLING_PLAYER_PP_SHARE_CONTRACT.optionalContextFields).toEqual([
+      "powerPlayCombinations.pp_share_of_team",
+      "powerPlayCombinations.pp_unit_usage_index",
+      "powerPlayCombinations.pp_unit_relative_toi",
+      "powerPlayCombinations.pp_vs_unit_avg"
+    ]);
     expect(ROLLING_PLAYER_PP_SHARE_CONTRACT.storagePolicy).toBe(
       "single_team_share_contract_with_fallback"
     );
   });
 
-  it("sanitizes PP builder rows down to rolling team-share inputs plus contextual unit", () => {
+  it("sanitizes PP builder rows down to rolling team-share inputs plus approved contextual fields", () => {
     expect(
       toRollingPlayerPpContextRow({
         gameId: 10,
@@ -68,7 +74,10 @@ describe("rollingPlayerPpShareContract", () => {
       playerId: 7,
       PPTOI: 150,
       unit: 1,
-      pp_share_of_team: 0.6
+      pp_share_of_team: 0.6,
+      pp_unit_usage_index: 1.2,
+      pp_unit_relative_toi: 30,
+      pp_vs_unit_avg: 0.2
     });
   });
 });

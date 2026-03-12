@@ -44,7 +44,10 @@ describe("rolling player helper contracts", () => {
       playerId: 7,
       PPTOI: 180,
       unit: 1,
-      pp_share_of_team: 0.6
+      pp_share_of_team: 0.6,
+      pp_unit_usage_index: 1.2,
+      pp_unit_relative_toi: 30,
+      pp_vs_unit_avg: 0.2
     });
     expect(
       resolvePpUnitLabel({

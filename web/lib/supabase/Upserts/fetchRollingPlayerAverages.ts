@@ -611,6 +611,18 @@ function getPpShareComponents(game: PlayerGameData): RatioComponents | null {
   });
 }
 
+function getOptionalPpContextOutputs(game: PlayerGameData): Record<
+  "pp_share_of_team" | "pp_unit_usage_index" | "pp_unit_relative_toi" | "pp_vs_unit_avg",
+  number | null
+> {
+  return {
+    pp_share_of_team: game.ppCombination?.pp_share_of_team ?? null,
+    pp_unit_usage_index: game.ppCombination?.pp_unit_usage_index ?? null,
+    pp_unit_relative_toi: game.ppCombination?.pp_unit_relative_toi ?? null,
+    pp_vs_unit_avg: game.ppCombination?.pp_vs_unit_avg ?? null
+  };
+}
+
 const METRICS: MetricDefinition[] = [
   {
     key: "sog_per_60",
@@ -643,6 +655,62 @@ const METRICS: MetricDefinition[] = [
         toiSeconds: getToiSeconds(game),
         per60Rate: game.rates?.ixg_per_60 ?? null
       }).components
+  },
+  {
+    key: "goals_per_60",
+    aggregation: "ratio",
+    windowFamily: "weighted_rate_performance",
+    ratioSpec: {
+      scale: 3600,
+      noPrimaryDenominatorBehavior: "null"
+    },
+    getComponents: (game) =>
+      resolvePer60Components({
+        rawValue: getGoals(game),
+        toiSeconds: getToiSeconds(game)
+      })
+  },
+  {
+    key: "assists_per_60",
+    aggregation: "ratio",
+    windowFamily: "weighted_rate_performance",
+    ratioSpec: {
+      scale: 3600,
+      noPrimaryDenominatorBehavior: "null"
+    },
+    getComponents: (game) =>
+      resolvePer60Components({
+        rawValue: game.counts?.total_assists ?? null,
+        toiSeconds: getToiSeconds(game)
+      })
+  },
+  {
+    key: "primary_assists_per_60",
+    aggregation: "ratio",
+    windowFamily: "weighted_rate_performance",
+    ratioSpec: {
+      scale: 3600,
+      noPrimaryDenominatorBehavior: "null"
+    },
+    getComponents: (game) =>
+      resolvePer60Components({
+        rawValue: game.counts?.first_assists ?? null,
+        toiSeconds: getToiSeconds(game)
+      })
+  },
+  {
+    key: "secondary_assists_per_60",
+    aggregation: "ratio",
+    windowFamily: "weighted_rate_performance",
+    ratioSpec: {
+      scale: 3600,
+      noPrimaryDenominatorBehavior: "null"
+    },
+    getComponents: (game) =>
+      resolvePer60Components({
+        rawValue: game.counts?.second_assists ?? null,
+        toiSeconds: getToiSeconds(game)
+      })
   },
   {
     key: "shooting_pct",
@@ -722,6 +790,48 @@ const METRICS: MetricDefinition[] = [
     getValue: ({ counts }) => counts?.hdcf ?? null
   },
   {
+    key: "oz_starts",
+    aggregation: "simple",
+    windowFamily: "additive_performance",
+    getValue: ({ countsOi }) => countsOi?.off_zone_starts ?? null
+  },
+  {
+    key: "dz_starts",
+    aggregation: "simple",
+    windowFamily: "additive_performance",
+    getValue: ({ countsOi }) => countsOi?.def_zone_starts ?? null
+  },
+  {
+    key: "nz_starts",
+    aggregation: "simple",
+    windowFamily: "additive_performance",
+    getValue: ({ countsOi }) => countsOi?.neu_zone_starts ?? null
+  },
+  {
+    key: "oi_gf",
+    aggregation: "simple",
+    windowFamily: "additive_performance",
+    getValue: ({ countsOi }) => countsOi?.gf ?? null
+  },
+  {
+    key: "oi_ga",
+    aggregation: "simple",
+    windowFamily: "additive_performance",
+    getValue: ({ countsOi }) => countsOi?.ga ?? null
+  },
+  {
+    key: "oi_sf",
+    aggregation: "simple",
+    windowFamily: "additive_performance",
+    getValue: ({ countsOi }) => countsOi?.sf ?? null
+  },
+  {
+    key: "oi_sa",
+    aggregation: "simple",
+    windowFamily: "additive_performance",
+    getValue: ({ countsOi }) => countsOi?.sa ?? null
+  },
+  {
     key: "toi_seconds",
     aggregation: "simple",
     windowFamily: "additive_performance",
@@ -790,6 +900,22 @@ const METRICS: MetricDefinition[] = [
     getComponents: ({ countsOi }) => ({
       numerator: countsOi?.gf ?? null,
       denominator: countsOi?.sf ?? null
+    })
+  },
+  {
+    key: "on_ice_sv_pct",
+    aggregation: "ratio",
+    windowFamily: "ratio_performance",
+    ratioSpec: {
+      scale: 100,
+      noPrimaryDenominatorBehavior: "null"
+    },
+    getComponents: ({ countsOi }) => ({
+      numerator:
+        countsOi?.sa != null && countsOi?.ga != null
+          ? countsOi.sa - countsOi.ga
+          : null,
+      denominator: countsOi?.sa ?? null
     })
   },
   {
@@ -911,6 +1037,14 @@ const SUPPORT_METRICS: SupportMetricDefinition[] = [
   {
     key: "oz_start_neutral_zone_starts",
     getValue: ({ countsOi }) => countsOi?.neu_zone_starts ?? null
+  },
+  {
+    key: "primary_assists_per_60_primary_assists",
+    getValue: ({ counts }) => counts?.first_assists ?? null
+  },
+  {
+    key: "secondary_assists_per_60_secondary_assists",
+    getValue: ({ counts }) => counts?.second_assists ?? null
   }
 ];
 
@@ -1518,6 +1652,10 @@ function applyRatioSupportOutputs(
     case "ff_pct":
     case "sog_per_60":
     case "ixg_per_60":
+    case "goals_per_60":
+    case "assists_per_60":
+    case "primary_assists_per_60":
+    case "secondary_assists_per_60":
     case "hits_per_60":
     case "blocks_per_60":
       break;
@@ -1564,6 +1702,30 @@ function applyRatioSupportOutputs(
       denominatorKey: "toi_seconds",
       numeratorPrefix: "ixg_per_60_ixg",
       denominatorPrefix: "ixg_per_60_toi_seconds"
+    },
+    goals_per_60: {
+      numeratorKey: "goals",
+      denominatorKey: "toi_seconds",
+      numeratorPrefix: "goals_per_60_goals",
+      denominatorPrefix: "goals_per_60_toi_seconds"
+    },
+    assists_per_60: {
+      numeratorKey: "assists",
+      denominatorKey: "toi_seconds",
+      numeratorPrefix: "assists_per_60_assists",
+      denominatorPrefix: "assists_per_60_toi_seconds"
+    },
+    primary_assists_per_60: {
+      numeratorKey: "primary_assists_per_60_primary_assists",
+      denominatorKey: "toi_seconds",
+      numeratorPrefix: "primary_assists_per_60_primary_assists",
+      denominatorPrefix: "primary_assists_per_60_toi_seconds"
+    },
+    secondary_assists_per_60: {
+      numeratorKey: "secondary_assists_per_60_secondary_assists",
+      denominatorKey: "toi_seconds",
+      numeratorPrefix: "secondary_assists_per_60_secondary_assists",
+      denominatorPrefix: "secondary_assists_per_60_toi_seconds"
     },
     hits_per_60: {
       numeratorKey: "hits",
@@ -2273,7 +2435,9 @@ async function fetchPowerPlayCombinations(
       async () => {
         const { data, error } = await supabase
           .from("powerPlayCombinations")
-          .select("gameId, playerId, PPTOI, unit, pp_share_of_team")
+          .select(
+            "gameId, playerId, PPTOI, unit, pp_share_of_team, pp_unit_usage_index, pp_unit_relative_toi, pp_vs_unit_avg"
+          )
           .eq("playerId", playerId)
           .in("gameId", chunk);
         if (error) throw error;
@@ -2968,6 +3132,7 @@ async function processPlayer(
             originalGameId: game.sourceContext.originalGameId,
             unit: game.ppCombination?.unit ?? null
           }),
+          ...getOptionalPpContextOutputs(game),
           gp_semantic_type: getGpOutputCompatibilityMode(config.state).semanticType,
           ...metricOutputs
         });
@@ -3450,6 +3615,7 @@ export const __testables = {
   applyGpOutputs,
   getGpOutputCompatibilityMode,
   deriveOutputs,
+  getOptionalPpContextOutputs,
   initAccumulator,
   shouldWarnAboutDisabledImplicitAutoResume,
   filterPlayerIdsForResume

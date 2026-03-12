@@ -79,6 +79,26 @@ const METRIC_GROUPS = [
     label: "Rates",
     metrics: [
       {
+        key: "goals_per_60",
+        label: "Goals / 60",
+        color: "#f97316"
+      },
+      {
+        key: "assists_per_60",
+        label: "Assists / 60",
+        color: "#38bdf8"
+      },
+      {
+        key: "primary_assists_per_60",
+        label: "1A / 60",
+        color: "#8b5cf6"
+      },
+      {
+        key: "secondary_assists_per_60",
+        label: "2A / 60",
+        color: "#ec4899"
+      },
+      {
         key: "sog_per_60",
         label: "Shots / 60",
         color: "#06b6d4"
@@ -120,6 +140,11 @@ const METRIC_GROUPS = [
         color: "#38bdf8"
       },
       {
+        key: "on_ice_sv_pct",
+        label: "On-Ice SV%",
+        color: "#0ea5e9"
+      },
+      {
         key: "pdo",
         label: "PDO",
         color: "#f97316"
@@ -154,6 +179,21 @@ const METRIC_GROUPS = [
         key: "oz_start_pct",
         label: "OZ Start %",
         color: "#6366f1"
+      },
+      {
+        key: "oz_starts",
+        label: "OZ Starts",
+        color: "#4f46e5"
+      },
+      {
+        key: "dz_starts",
+        label: "DZ Starts",
+        color: "#ef4444"
+      },
+      {
+        key: "nz_starts",
+        label: "NZ Starts",
+        color: "#14b8a6"
       }
     ]
   },
@@ -205,6 +245,26 @@ const METRIC_GROUPS = [
         key: "ff_pct",
         label: "FF%",
         color: "#818cf8"
+      },
+      {
+        key: "oi_gf",
+        label: "On-Ice GF",
+        color: "#22c55e"
+      },
+      {
+        key: "oi_ga",
+        label: "On-Ice GA",
+        color: "#f87171"
+      },
+      {
+        key: "oi_sf",
+        label: "On-Ice SF",
+        color: "#0ea5e9"
+      },
+      {
+        key: "oi_sa",
+        label: "On-Ice SA",
+        color: "#f59e0b"
       }
     ]
   }

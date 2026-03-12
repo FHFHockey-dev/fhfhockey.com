@@ -7,6 +7,9 @@ export type RollingPlayerPpContextRow = {
   PPTOI: number | null;
   unit: number | null;
   pp_share_of_team: number | null;
+  pp_unit_usage_index: number | null;
+  pp_unit_relative_toi: number | null;
+  pp_vs_unit_avg: number | null;
 };
 
 type PowerPlayCombinationSourceRow = RollingPlayerPpContextRow & {
@@ -35,6 +38,12 @@ export const ROLLING_PLAYER_PP_SHARE_CONTRACT = {
     "powerPlayCombinations.pp_vs_unit_avg"
   ],
   contextualFields: ["powerPlayCombinations.unit"],
+  optionalContextFields: [
+    "powerPlayCombinations.pp_share_of_team",
+    "powerPlayCombinations.pp_unit_usage_index",
+    "powerPlayCombinations.pp_unit_relative_toi",
+    "powerPlayCombinations.pp_vs_unit_avg"
+  ],
   storagePolicy: "single_team_share_contract_with_fallback"
 } as const;
 
@@ -46,7 +55,10 @@ export function toRollingPlayerPpContextRow(
     playerId: row.playerId,
     PPTOI: row.PPTOI ?? null,
     unit: row.unit ?? null,
-    pp_share_of_team: row.pp_share_of_team ?? null
+    pp_share_of_team: row.pp_share_of_team ?? null,
+    pp_unit_usage_index: row.pp_unit_usage_index ?? null,
+    pp_unit_relative_toi: row.pp_unit_relative_toi ?? null,
+    pp_vs_unit_avg: row.pp_vs_unit_avg ?? null
   };
 }
 

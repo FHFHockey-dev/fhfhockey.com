@@ -5,7 +5,10 @@ import {
   updateHistoricalRatioAccumulator,
   updateRatioRollingAccumulator
 } from "./rollingMetricAggregation";
-import { createHistoricalAverageAccumulator } from "./rollingHistoricalAverages";
+import {
+  createHistoricalAverageAccumulator,
+  updateHistoricalAverageAccumulator
+} from "./rollingHistoricalAverages";
 
 let buildGameRecords: typeof import("./fetchRollingPlayerAverages").__testables.buildGameRecords;
 let buildRunSummary: typeof import("./fetchRollingPlayerAverages").__testables.buildRunSummary;
@@ -14,6 +17,7 @@ let didPlayerCountAsAppearance: typeof import("./fetchRollingPlayerAverages").__
 let applyGpOutputs: typeof import("./fetchRollingPlayerAverages").__testables.applyGpOutputs;
 let getGpOutputCompatibilityMode: typeof import("./fetchRollingPlayerAverages").__testables.getGpOutputCompatibilityMode;
 let deriveOutputs: typeof import("./fetchRollingPlayerAverages").__testables.deriveOutputs;
+let getOptionalPpContextOutputs: typeof import("./fetchRollingPlayerAverages").__testables.getOptionalPpContextOutputs;
 let initAccumulator: typeof import("./fetchRollingPlayerAverages").__testables.initAccumulator;
 let shouldWarnAboutDisabledImplicitAutoResume: typeof import("./fetchRollingPlayerAverages").__testables.shouldWarnAboutDisabledImplicitAutoResume;
 let filterPlayerIdsForResume: typeof import("./fetchRollingPlayerAverages").__testables.filterPlayerIdsForResume;
@@ -31,6 +35,7 @@ beforeAll(async () => {
       applyGpOutputs,
       getGpOutputCompatibilityMode,
       deriveOutputs,
+      getOptionalPpContextOutputs,
       initAccumulator,
       shouldWarnAboutDisabledImplicitAutoResume,
       filterPlayerIdsForResume
@@ -168,7 +173,10 @@ describe("fetchRollingPlayerAverages buildGameRecords", () => {
           PPTOI: 150,
           percentageOfPP: 1.2,
           unit: 1,
-          pp_share_of_team: 0.65
+          pp_share_of_team: 0.65,
+          pp_unit_usage_index: 1.2,
+          pp_unit_relative_toi: 25,
+          pp_vs_unit_avg: 0.2
         } as any
       ],
       "all",
@@ -187,7 +195,10 @@ describe("fetchRollingPlayerAverages buildGameRecords", () => {
         playerId: 7,
         PPTOI: 150,
         unit: 1,
-        pp_share_of_team: 0.65
+        pp_share_of_team: 0.65,
+        pp_unit_usage_index: 1.2,
+        pp_unit_relative_toi: 25,
+        pp_vs_unit_avg: 0.2
       },
       lineCombo: { slot: 1, positionGroup: "forward" }
     });
@@ -206,6 +217,28 @@ describe("fetchRollingPlayerAverages buildGameRecords", () => {
     expect(rows[0].sourceContext.resolvedToiSource).toBe("counts");
     expect(rows[0].sourceContext.toiTrustTier).toBe("authoritative");
     expect(rows[0].sourceContext.wgoToiNormalization).toBe("missing");
+  });
+
+  it("maps optional PP context fields to row outputs without changing pp_share semantics", () => {
+    expect(
+      getOptionalPpContextOutputs({
+        ppCombination: {
+          gameId: 2001,
+          playerId: 7,
+          PPTOI: 150,
+          unit: 1,
+          pp_share_of_team: 0.65,
+          pp_unit_usage_index: 1.2,
+          pp_unit_relative_toi: 25,
+          pp_vs_unit_avg: 0.2
+        }
+      } as any)
+    ).toEqual({
+      pp_share_of_team: 0.65,
+      pp_unit_usage_index: 1.2,
+      pp_unit_relative_toi: 25,
+      pp_vs_unit_avg: 0.2
+    });
   });
 
   it("treats pp_unit as an independently trusted contextual label", () => {
@@ -778,6 +811,305 @@ describe("fetchRollingPlayerAverages buildGameRecords", () => {
     expect(output.oz_start_pct_off_zone_starts_3ya).toBe(9);
     expect(output.oz_start_pct_def_zone_starts_3ya).toBe(8);
     expect(output.oz_start_pct_neutral_zone_starts_3ya).toBe(7);
+  });
+
+  it("emits optional on-ice save percentage, additive support metrics, and weighted-rate families", () => {
+    const simpleMetricsState = {
+      oz_starts: initAccumulator(),
+      dz_starts: initAccumulator(),
+      nz_starts: initAccumulator(),
+      oi_gf: initAccumulator(),
+      oi_ga: initAccumulator(),
+      oi_sf: initAccumulator(),
+      oi_sa: initAccumulator()
+    } as Record<string, any>;
+    const ratioMetricsState = {
+      on_ice_sv_pct: createRatioRollingAccumulator(),
+      goals_per_60: createRatioRollingAccumulator(),
+      assists_per_60: createRatioRollingAccumulator(),
+      primary_assists_per_60: createRatioRollingAccumulator(),
+      secondary_assists_per_60: createRatioRollingAccumulator()
+    } as Record<string, any>;
+    const historicalSimpleMetricsState = {
+      oz_starts: createHistoricalAverageAccumulator(),
+      dz_starts: createHistoricalAverageAccumulator(),
+      nz_starts: createHistoricalAverageAccumulator(),
+      oi_gf: createHistoricalAverageAccumulator(),
+      oi_ga: createHistoricalAverageAccumulator(),
+      oi_sf: createHistoricalAverageAccumulator(),
+      oi_sa: createHistoricalAverageAccumulator(),
+      goals: createHistoricalAverageAccumulator(),
+      assists: createHistoricalAverageAccumulator(),
+      toi_seconds: createHistoricalAverageAccumulator(),
+      primary_assists_per_60_primary_assists: createHistoricalAverageAccumulator(),
+      secondary_assists_per_60_secondary_assists:
+        createHistoricalAverageAccumulator()
+    } as Record<string, any>;
+    const historicalRatioMetricsState = {
+      on_ice_sv_pct: createHistoricalRatioAccumulator(),
+      goals_per_60: createHistoricalRatioAccumulator(),
+      assists_per_60: createHistoricalRatioAccumulator(),
+      primary_assists_per_60: createHistoricalRatioAccumulator(),
+      secondary_assists_per_60: createHistoricalRatioAccumulator()
+    } as Record<string, any>;
+
+    const pushSimple = (acc: any, value: number) => {
+      acc.sumAll += value;
+      acc.countAll += 1;
+      for (const size of [3, 5, 10, 20] as const) {
+        acc.windows[size].values.push(value);
+        acc.windows[size].sum += value;
+        acc.windows[size].count += 1;
+      }
+    };
+
+    pushSimple(simpleMetricsState.oz_starts, 4);
+    pushSimple(simpleMetricsState.oz_starts, 2);
+    pushSimple(simpleMetricsState.dz_starts, 3);
+    pushSimple(simpleMetricsState.dz_starts, 1);
+    pushSimple(simpleMetricsState.nz_starts, 5);
+    pushSimple(simpleMetricsState.nz_starts, 2);
+    pushSimple(simpleMetricsState.oi_gf, 2);
+    pushSimple(simpleMetricsState.oi_gf, 1);
+    pushSimple(simpleMetricsState.oi_ga, 1);
+    pushSimple(simpleMetricsState.oi_ga, 0);
+    pushSimple(simpleMetricsState.oi_sf, 12);
+    pushSimple(simpleMetricsState.oi_sf, 8);
+    pushSimple(simpleMetricsState.oi_sa, 15);
+    pushSimple(simpleMetricsState.oi_sa, 5);
+
+    updateRatioRollingAccumulator(
+      ratioMetricsState.on_ice_sv_pct,
+      { numerator: 14, denominator: 15 },
+      { windowFamily: "ratio_performance", anchor: true }
+    );
+    updateRatioRollingAccumulator(
+      ratioMetricsState.on_ice_sv_pct,
+      { numerator: 5, denominator: 5 },
+      { windowFamily: "ratio_performance", anchor: true }
+    );
+    updateRatioRollingAccumulator(
+      ratioMetricsState.goals_per_60,
+      { numerator: 2, denominator: 1200 },
+      { windowFamily: "weighted_rate_performance", anchor: true }
+    );
+    updateRatioRollingAccumulator(
+      ratioMetricsState.goals_per_60,
+      { numerator: 1, denominator: 600 },
+      { windowFamily: "weighted_rate_performance", anchor: true }
+    );
+    updateRatioRollingAccumulator(
+      ratioMetricsState.assists_per_60,
+      { numerator: 3, denominator: 1200 },
+      { windowFamily: "weighted_rate_performance", anchor: true }
+    );
+    updateRatioRollingAccumulator(
+      ratioMetricsState.assists_per_60,
+      { numerator: 1, denominator: 600 },
+      { windowFamily: "weighted_rate_performance", anchor: true }
+    );
+    updateRatioRollingAccumulator(
+      ratioMetricsState.primary_assists_per_60,
+      { numerator: 2, denominator: 1200 },
+      { windowFamily: "weighted_rate_performance", anchor: true }
+    );
+    updateRatioRollingAccumulator(
+      ratioMetricsState.primary_assists_per_60,
+      { numerator: 1, denominator: 600 },
+      { windowFamily: "weighted_rate_performance", anchor: true }
+    );
+    updateRatioRollingAccumulator(
+      ratioMetricsState.secondary_assists_per_60,
+      { numerator: 1, denominator: 1200 },
+      { windowFamily: "weighted_rate_performance", anchor: true }
+    );
+    updateRatioRollingAccumulator(
+      ratioMetricsState.secondary_assists_per_60,
+      { numerator: 0, denominator: 600 },
+      { windowFamily: "weighted_rate_performance", anchor: true }
+    );
+
+    updateHistoricalAverageAccumulator(historicalSimpleMetricsState.oz_starts, 20242025, 4);
+    updateHistoricalAverageAccumulator(historicalSimpleMetricsState.oz_starts, 20252026, 6);
+    updateHistoricalAverageAccumulator(historicalSimpleMetricsState.dz_starts, 20242025, 4);
+    updateHistoricalAverageAccumulator(historicalSimpleMetricsState.dz_starts, 20252026, 4);
+    updateHistoricalAverageAccumulator(historicalSimpleMetricsState.nz_starts, 20242025, 3);
+    updateHistoricalAverageAccumulator(historicalSimpleMetricsState.nz_starts, 20252026, 7);
+    updateHistoricalAverageAccumulator(historicalSimpleMetricsState.oi_gf, 20242025, 2);
+    updateHistoricalAverageAccumulator(historicalSimpleMetricsState.oi_gf, 20252026, 3);
+    updateHistoricalAverageAccumulator(historicalSimpleMetricsState.oi_ga, 20242025, 2);
+    updateHistoricalAverageAccumulator(historicalSimpleMetricsState.oi_ga, 20252026, 1);
+    updateHistoricalAverageAccumulator(historicalSimpleMetricsState.oi_sf, 20242025, 7);
+    updateHistoricalAverageAccumulator(historicalSimpleMetricsState.oi_sf, 20252026, 20);
+    updateHistoricalAverageAccumulator(historicalSimpleMetricsState.oi_sa, 20242025, 8);
+    updateHistoricalAverageAccumulator(historicalSimpleMetricsState.oi_sa, 20252026, 20);
+    updateHistoricalAverageAccumulator(historicalSimpleMetricsState.goals, 20242025, 3);
+    updateHistoricalAverageAccumulator(historicalSimpleMetricsState.goals, 20252026, 4);
+    updateHistoricalAverageAccumulator(historicalSimpleMetricsState.assists, 20242025, 4);
+    updateHistoricalAverageAccumulator(historicalSimpleMetricsState.assists, 20252026, 5);
+    updateHistoricalAverageAccumulator(
+      historicalSimpleMetricsState.toi_seconds,
+      20242025,
+      1800
+    );
+    updateHistoricalAverageAccumulator(
+      historicalSimpleMetricsState.toi_seconds,
+      20252026,
+      1500
+    );
+    updateHistoricalAverageAccumulator(
+      historicalSimpleMetricsState.primary_assists_per_60_primary_assists,
+      20242025,
+      2
+    );
+    updateHistoricalAverageAccumulator(
+      historicalSimpleMetricsState.primary_assists_per_60_primary_assists,
+      20252026,
+      3
+    );
+    updateHistoricalAverageAccumulator(
+      historicalSimpleMetricsState.secondary_assists_per_60_secondary_assists,
+      20242025,
+      2
+    );
+    updateHistoricalAverageAccumulator(
+      historicalSimpleMetricsState.secondary_assists_per_60_secondary_assists,
+      20252026,
+      2
+    );
+
+    updateHistoricalRatioAccumulator(historicalRatioMetricsState.on_ice_sv_pct, 20242025, {
+      numerator: 18,
+      denominator: 20
+    });
+    updateHistoricalRatioAccumulator(historicalRatioMetricsState.on_ice_sv_pct, 20252026, {
+      numerator: 19,
+      denominator: 20
+    });
+    updateHistoricalRatioAccumulator(historicalRatioMetricsState.goals_per_60, 20242025, {
+      numerator: 3,
+      denominator: 1800
+    });
+    updateHistoricalRatioAccumulator(historicalRatioMetricsState.goals_per_60, 20252026, {
+      numerator: 4,
+      denominator: 1500
+    });
+    updateHistoricalRatioAccumulator(
+      historicalRatioMetricsState.assists_per_60,
+      20242025,
+      {
+        numerator: 4,
+        denominator: 1800
+      }
+    );
+    updateHistoricalRatioAccumulator(
+      historicalRatioMetricsState.assists_per_60,
+      20252026,
+      {
+        numerator: 5,
+        denominator: 1500
+      }
+    );
+    updateHistoricalRatioAccumulator(
+      historicalRatioMetricsState.primary_assists_per_60,
+      20242025,
+      {
+        numerator: 2,
+        denominator: 1800
+      }
+    );
+    updateHistoricalRatioAccumulator(
+      historicalRatioMetricsState.primary_assists_per_60,
+      20252026,
+      {
+        numerator: 3,
+        denominator: 1500
+      }
+    );
+    updateHistoricalRatioAccumulator(
+      historicalRatioMetricsState.secondary_assists_per_60,
+      20242025,
+      {
+        numerator: 2,
+        denominator: 1800
+      }
+    );
+    updateHistoricalRatioAccumulator(
+      historicalRatioMetricsState.secondary_assists_per_60,
+      20252026,
+      {
+        numerator: 2,
+        denominator: 1500
+      }
+    );
+
+    const output = deriveOutputs(
+      simpleMetricsState,
+      ratioMetricsState,
+      {},
+      historicalSimpleMetricsState,
+      {},
+      historicalRatioMetricsState,
+      {
+        season: 0.7,
+        threeYear: 0.6,
+        career: 0.6,
+        seasonPlayerGames: 7,
+        seasonTeamGames: 10,
+        threeYearPlayerGames: 12,
+        threeYearTeamGames: 20,
+        careerPlayerGames: 12,
+        careerTeamGames: 20
+      },
+      {
+        windows: {
+          3: { playerGames: 2, teamGames: 3, ratio: Number((2 / 3).toFixed(6)) },
+          5: { playerGames: 2, teamGames: 5, ratio: 0.4 },
+          10: { playerGames: 2, teamGames: 10, ratio: 0.2 },
+          20: { playerGames: 2, teamGames: 20, ratio: 0.1 }
+        }
+      },
+      20252026,
+      "all"
+    );
+
+    expect(output.on_ice_sv_pct_total_all).toBe(95);
+    expect(output.on_ice_sv_pct_all).toBe(95);
+    expect(output.on_ice_sv_pct_total_last3).toBe(95);
+    expect(output.on_ice_sv_pct_season).toBe(95);
+    expect(output.on_ice_sv_pct_3ya).toBe(Number(((37 / 40) * 100).toFixed(6)));
+    expect(output.oz_starts_total_all).toBe(6);
+    expect(output.oz_starts_avg_all).toBe(3);
+    expect(output.oz_starts_avg_season).toBe(6);
+    expect(output.dz_starts_total_last3).toBe(4);
+    expect(output.nz_starts_avg_career).toBe(5);
+    expect(output.oi_gf_total_all).toBe(3);
+    expect(output.oi_gf_avg_all).toBe(1.5);
+    expect(output.oi_ga_total_all).toBe(1);
+    expect(output.oi_sf_total_all).toBe(20);
+    expect(output.oi_sa_total_all).toBe(20);
+    expect(output.oi_sf_avg_season).toBe(20);
+    expect(output.oi_sa_avg_3ya).toBe(14);
+    expect(output.goals_per_60_total_all).toBe(6);
+    expect(output.goals_per_60_all).toBe(6);
+    expect(output.goals_per_60_season).toBe(9.6);
+    expect(output.goals_per_60_3ya).toBe(Number(((7 / 3300) * 3600).toFixed(6)));
+    expect(output.goals_per_60_goals_season).toBe(4);
+    expect(output.goals_per_60_toi_seconds_season).toBe(1500);
+    expect(output.assists_per_60_total_all).toBe(8);
+    expect(output.assists_per_60_all).toBe(8);
+    expect(output.assists_per_60_season).toBe(12);
+    expect(output.assists_per_60_assists_career).toBe(9);
+    expect(output.assists_per_60_toi_seconds_career).toBe(3300);
+    expect(output.primary_assists_per_60_total_all).toBe(6);
+    expect(output.primary_assists_per_60_all).toBe(6);
+    expect(output.primary_assists_per_60_primary_assists_season).toBe(3);
+    expect(output.primary_assists_per_60_toi_seconds_season).toBe(1500);
+    expect(output.secondary_assists_per_60_total_all).toBe(2);
+    expect(output.secondary_assists_per_60_all).toBe(2);
+    expect(output.secondary_assists_per_60_season).toBe(4.8);
+    expect(output.secondary_assists_per_60_secondary_assists_career).toBe(4);
+    expect(output.secondary_assists_per_60_toi_seconds_career).toBe(3300);
   });
 });
 

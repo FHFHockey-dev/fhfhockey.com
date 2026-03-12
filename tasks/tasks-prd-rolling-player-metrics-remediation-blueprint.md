@@ -94,7 +94,7 @@
   - [x] 6.5 Improve long-run progress visibility in the endpoint and pipeline logs with explicit phase markers for source fetch, merge, derive, upsert, and final summary emission.
   - [x] 6.6 Add or update diagnostic tests to cover new warning families and structured summary output.
 
-- [ ] 7.0 Execute live-data validation, freshness remediation, and full audit traceability signoff
+- [x] 7.0 Execute live-data validation, freshness remediation, and full audit traceability signoff
   - [x] 7.1 Build the post-implementation validation checklist from the PRD so every metric family and disputed metric has an explicit verification step.
   - [x] 7.2 Validate source freshness for Brent Burns, Corey Perry, Jesper Bratt, Seth Jones, and any replacement traded-player case before comparing stored rows.
   - [x] 7.3 Run the required stale-layer refresh actions when validation is blocked, including targeted rolling recomputes, PP-combination refreshes, line-combination refreshes, and any upstream WGO/NST refresh steps needed to advance stale tails.
@@ -105,8 +105,8 @@
   - [x] 7.8 Perform a final completeness pass by re-reading `tasks/rolling-player-metrics-audit-notes.md` and confirming every actionable remediation item is implemented, intentionally deferred as optional, or intentionally deferred as follow-up.
 
 - [ ] 8.0 Deliver optional metric additions and follow-up improvements after required remediation is stable
-  - [ ] 8.1 Add the highest-priority optional support metrics from the PRD once correctness work is stable: `on_ice_sv_pct`, raw zone-start counts, and raw on-ice goal/shot counts.
-  - [ ] 8.2 Add optional weighted-rate families such as `goals_per_60`, `assists_per_60`, and assist-decomposition rates if the required remediation work is complete and validated.
-  - [ ] 8.3 Add optional PP-role context fields to rolling rows, including `pp_unit_usage_index`, `pp_unit_relative_toi`, `pp_vs_unit_avg`, and `pp_share_of_team`, if they are still not part of the required schema contract.
-  - [ ] 8.4 Extend downstream consumers and debug surfaces to expose any approved optional support fields.
-  - [ ] 8.5 Run targeted validation for each optional addition and document whether it remains optional, graduates into the core contract, or is deferred to a later workstream.
+  - [x] 8.1 Add the highest-priority optional support metrics from the PRD once correctness work is stable: `on_ice_sv_pct`, raw zone-start counts, and raw on-ice goal/shot counts.
+  - [x] 8.2 Add optional weighted-rate families such as `goals_per_60`, `assists_per_60`, and assist-decomposition rates if the required remediation work is complete and validated.
+  - [x] 8.3 Add optional PP-role context fields to rolling rows, including `pp_unit_usage_index`, `pp_unit_relative_toi`, `pp_vs_unit_avg`, and `pp_share_of_team`, if they are still not part of the required schema contract.
+  - [x] 8.4 Extend downstream consumers and debug surfaces to expose any approved optional support fields.
+  - [x] 8.5 Run targeted validation for each optional addition and document whether it remains optional, graduates into the core contract, or is deferred to a later workstream.

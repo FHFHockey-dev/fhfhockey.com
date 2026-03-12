@@ -48,12 +48,32 @@ type PlayerDebugSnapshot = {
     | "pp_share_pct_career"
     | "pp_share_pct_avg_last5"
     | "pp_share_pct_avg_career"
+    | "pp_share_of_team"
+    | "pp_unit_usage_index"
+    | "pp_unit_relative_toi"
+    | "pp_vs_unit_avg"
     | "toi_seconds_avg_last5"
     | "toi_seconds_avg_career"
     | "pdo_last5"
     | "pdo_career"
     | "pdo_avg_last5"
     | "pdo_avg_career"
+    | "goals_per_60_last5"
+    | "goals_per_60_career"
+    | "goals_per_60_avg_last5"
+    | "goals_per_60_avg_career"
+    | "assists_per_60_last5"
+    | "assists_per_60_career"
+    | "assists_per_60_avg_last5"
+    | "assists_per_60_avg_career"
+    | "primary_assists_per_60_last5"
+    | "primary_assists_per_60_career"
+    | "primary_assists_per_60_avg_last5"
+    | "primary_assists_per_60_avg_career"
+    | "secondary_assists_per_60_last5"
+    | "secondary_assists_per_60_career"
+    | "secondary_assists_per_60_avg_last5"
+    | "secondary_assists_per_60_avg_career"
     | "goals_avg_last5"
     | "goals_avg_career"
     | "assists_avg_last5"
@@ -70,6 +90,24 @@ type PlayerDebugSnapshot = {
     | "on_ice_sh_pct_career"
     | "on_ice_sh_pct_avg_last5"
     | "on_ice_sh_pct_avg_career"
+    | "on_ice_sv_pct_last5"
+    | "on_ice_sv_pct_career"
+    | "on_ice_sv_pct_avg_last5"
+    | "on_ice_sv_pct_avg_career"
+    | "oz_starts_avg_last5"
+    | "oz_starts_avg_career"
+    | "dz_starts_avg_last5"
+    | "dz_starts_avg_career"
+    | "nz_starts_avg_last5"
+    | "nz_starts_avg_career"
+    | "oi_gf_avg_last5"
+    | "oi_gf_avg_career"
+    | "oi_ga_avg_last5"
+    | "oi_ga_avg_career"
+    | "oi_sf_avg_last5"
+    | "oi_sf_avg_career"
+    | "oi_sa_avg_last5"
+    | "oi_sa_avg_career"
   >;
   faceoffWinPct: number | null;
   faceoffAttemptsPerGame: number | null;
@@ -216,12 +254,32 @@ async function fetchLatestPlayerSnapshot(
           "pp_share_pct_career",
           "pp_share_pct_avg_last5",
           "pp_share_pct_avg_career",
+          "pp_share_of_team",
+          "pp_unit_usage_index",
+          "pp_unit_relative_toi",
+          "pp_vs_unit_avg",
           "toi_seconds_avg_last5",
           "toi_seconds_avg_career",
           "pdo_last5",
           "pdo_career",
           "pdo_avg_last5",
           "pdo_avg_career",
+          "goals_per_60_last5",
+          "goals_per_60_career",
+          "goals_per_60_avg_last5",
+          "goals_per_60_avg_career",
+          "assists_per_60_last5",
+          "assists_per_60_career",
+          "assists_per_60_avg_last5",
+          "assists_per_60_avg_career",
+          "primary_assists_per_60_last5",
+          "primary_assists_per_60_career",
+          "primary_assists_per_60_avg_last5",
+          "primary_assists_per_60_avg_career",
+          "secondary_assists_per_60_last5",
+          "secondary_assists_per_60_career",
+          "secondary_assists_per_60_avg_last5",
+          "secondary_assists_per_60_avg_career",
           "goals_avg_last5",
           "goals_avg_career",
           "assists_avg_last5",
@@ -237,7 +295,25 @@ async function fetchLatestPlayerSnapshot(
           "on_ice_sh_pct_last5",
           "on_ice_sh_pct_career",
           "on_ice_sh_pct_avg_last5",
-          "on_ice_sh_pct_avg_career"
+          "on_ice_sh_pct_avg_career",
+          "on_ice_sv_pct_last5",
+          "on_ice_sv_pct_career",
+          "on_ice_sv_pct_avg_last5",
+          "on_ice_sv_pct_avg_career",
+          "oz_starts_avg_last5",
+          "oz_starts_avg_career",
+          "dz_starts_avg_last5",
+          "dz_starts_avg_career",
+          "nz_starts_avg_last5",
+          "nz_starts_avg_career",
+          "oi_gf_avg_last5",
+          "oi_gf_avg_career",
+          "oi_ga_avg_last5",
+          "oi_ga_avg_career",
+          "oi_sf_avg_last5",
+          "oi_sf_avg_career",
+          "oi_sa_avg_last5",
+          "oi_sa_avg_career"
         ].join(",")
       )
       .eq("player_id", playerId)
@@ -275,12 +351,32 @@ async function fetchLatestPlayerSnapshot(
     | "pp_share_pct_career"
     | "pp_share_pct_avg_last5"
     | "pp_share_pct_avg_career"
+    | "pp_share_of_team"
+    | "pp_unit_usage_index"
+    | "pp_unit_relative_toi"
+    | "pp_vs_unit_avg"
     | "toi_seconds_avg_last5"
     | "toi_seconds_avg_career"
     | "pdo_last5"
     | "pdo_career"
     | "pdo_avg_last5"
     | "pdo_avg_career"
+    | "goals_per_60_last5"
+    | "goals_per_60_career"
+    | "goals_per_60_avg_last5"
+    | "goals_per_60_avg_career"
+    | "assists_per_60_last5"
+    | "assists_per_60_career"
+    | "assists_per_60_avg_last5"
+    | "assists_per_60_avg_career"
+    | "primary_assists_per_60_last5"
+    | "primary_assists_per_60_career"
+    | "primary_assists_per_60_avg_last5"
+    | "primary_assists_per_60_avg_career"
+    | "secondary_assists_per_60_last5"
+    | "secondary_assists_per_60_career"
+    | "secondary_assists_per_60_avg_last5"
+    | "secondary_assists_per_60_avg_career"
     | "goals_avg_last5"
     | "goals_avg_career"
     | "assists_avg_last5"
@@ -297,6 +393,24 @@ async function fetchLatestPlayerSnapshot(
     | "on_ice_sh_pct_career"
     | "on_ice_sh_pct_avg_last5"
     | "on_ice_sh_pct_avg_career"
+    | "on_ice_sv_pct_last5"
+    | "on_ice_sv_pct_career"
+    | "on_ice_sv_pct_avg_last5"
+    | "on_ice_sv_pct_avg_career"
+    | "oz_starts_avg_last5"
+    | "oz_starts_avg_career"
+    | "dz_starts_avg_last5"
+    | "dz_starts_avg_career"
+    | "nz_starts_avg_last5"
+    | "nz_starts_avg_career"
+    | "oi_gf_avg_last5"
+    | "oi_gf_avg_career"
+    | "oi_ga_avg_last5"
+    | "oi_ga_avg_career"
+    | "oi_sf_avg_last5"
+    | "oi_sf_avg_career"
+    | "oi_sa_avg_last5"
+    | "oi_sa_avg_career"
   >;
 
   const totals = totalsResult.data as
@@ -1051,6 +1165,107 @@ export default function TrendsDebugPage() {
                 </article>
 
                 <article className={styles.card}>
+                  <h3>Optional Snapshot Fields</h3>
+                  <div className={styles.statList}>
+                    <div className={styles.statRow}>
+                      <span>Goals / 60 (L5 vs Career)</span>
+                      <strong>
+                        {playerSnapshot
+                          ? `${formatNumber(
+                              safeNumber(
+                                canonicalOrLegacyFinite(
+                                  playerSnapshot.metrics.goals_per_60_last5,
+                                  playerSnapshot.metrics.goals_per_60_avg_last5
+                                )
+                              )
+                            )} / ${formatNumber(
+                              safeNumber(
+                                canonicalOrLegacyFinite(
+                                  playerSnapshot.metrics.goals_per_60_career,
+                                  playerSnapshot.metrics.goals_per_60_avg_career
+                                )
+                              )
+                            )}`
+                          : "—"}
+                      </strong>
+                    </div>
+                    <div className={styles.statRow}>
+                      <span>Assists / 60 (L5 vs Career)</span>
+                      <strong>
+                        {playerSnapshot
+                          ? `${formatNumber(
+                              safeNumber(
+                                canonicalOrLegacyFinite(
+                                  playerSnapshot.metrics.assists_per_60_last5,
+                                  playerSnapshot.metrics.assists_per_60_avg_last5
+                                )
+                              )
+                            )} / ${formatNumber(
+                              safeNumber(
+                                canonicalOrLegacyFinite(
+                                  playerSnapshot.metrics.assists_per_60_career,
+                                  playerSnapshot.metrics.assists_per_60_avg_career
+                                )
+                              )
+                            )}`
+                          : "—"}
+                      </strong>
+                    </div>
+                    <div className={styles.statRow}>
+                      <span>On-Ice SV% (L5 vs Career)</span>
+                      <strong>
+                        {playerSnapshot
+                          ? `${formatNumber(
+                              safeNumber(
+                                canonicalOrLegacyFinite(
+                                  playerSnapshot.metrics.on_ice_sv_pct_last5,
+                                  playerSnapshot.metrics.on_ice_sv_pct_avg_last5
+                                )
+                              )
+                            )} / ${formatNumber(
+                              safeNumber(
+                                canonicalOrLegacyFinite(
+                                  playerSnapshot.metrics.on_ice_sv_pct_career,
+                                  playerSnapshot.metrics.on_ice_sv_pct_avg_career
+                                )
+                              )
+                            )}`
+                          : "—"}
+                      </strong>
+                    </div>
+                    <div className={styles.statRow}>
+                      <span>OZ / DZ / NZ Starts (Career avg)</span>
+                      <strong>
+                        {playerSnapshot
+                          ? `${formatNumber(
+                              safeNumber(playerSnapshot.metrics.oz_starts_avg_career)
+                            )} / ${formatNumber(
+                              safeNumber(playerSnapshot.metrics.dz_starts_avg_career)
+                            )} / ${formatNumber(
+                              safeNumber(playerSnapshot.metrics.nz_starts_avg_career)
+                            )}`
+                          : "—"}
+                      </strong>
+                    </div>
+                    <div className={styles.statRow}>
+                      <span>PP Context</span>
+                      <strong className={styles.mono}>
+                        {playerSnapshot
+                          ? JSON.stringify({
+                              pp_share_of_team: playerSnapshot.metrics.pp_share_of_team,
+                              pp_unit_usage_index:
+                                playerSnapshot.metrics.pp_unit_usage_index,
+                              pp_unit_relative_toi:
+                                playerSnapshot.metrics.pp_unit_relative_toi,
+                              pp_vs_unit_avg: playerSnapshot.metrics.pp_vs_unit_avg
+                            })
+                          : "—"}
+                      </strong>
+                    </div>
+                  </div>
+                </article>
+
+                <article className={styles.card}>
                   <h3>Score Components</h3>
                   <div className={styles.statList}>
                     <div className={styles.statRow}>
@@ -1208,7 +1423,31 @@ export default function TrendsDebugPage() {
                               canonicalOrLegacyFinite(
                                 playerSnapshot.metrics.sog_per_60_career,
                                 playerSnapshot.metrics.sog_per_60_avg_career
-                              )
+                              ),
+                            optional: {
+                              goalsPer60Last5: canonicalOrLegacyFinite(
+                                playerSnapshot.metrics.goals_per_60_last5,
+                                playerSnapshot.metrics.goals_per_60_avg_last5
+                              ),
+                              assistsPer60Last5: canonicalOrLegacyFinite(
+                                playerSnapshot.metrics.assists_per_60_last5,
+                                playerSnapshot.metrics.assists_per_60_avg_last5
+                              ),
+                              onIceSvPctLast5: canonicalOrLegacyFinite(
+                                playerSnapshot.metrics.on_ice_sv_pct_last5,
+                                playerSnapshot.metrics.on_ice_sv_pct_avg_last5
+                              ),
+                              ppContext: {
+                                pp_share_of_team:
+                                  playerSnapshot.metrics.pp_share_of_team,
+                                pp_unit_usage_index:
+                                  playerSnapshot.metrics.pp_unit_usage_index,
+                                pp_unit_relative_toi:
+                                  playerSnapshot.metrics.pp_unit_relative_toi,
+                                pp_vs_unit_avg:
+                                  playerSnapshot.metrics.pp_vs_unit_avg
+                              }
+                            }
                           })
                         : "No player loaded"}
                     </strong>

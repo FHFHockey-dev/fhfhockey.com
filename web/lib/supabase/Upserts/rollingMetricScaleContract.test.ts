@@ -49,6 +49,11 @@ describe("rollingMetricScaleContract", () => {
       min: 0,
       max: 100
     });
+    expect(ROLLING_METRIC_SCALE_CONTRACTS.on_ice_sv_pct).toEqual({
+      scale: "percent_0_to_100",
+      min: 0,
+      max: 100
+    });
     expect(ROLLING_METRIC_SCALE_CONTRACTS.cf_pct).toEqual({
       scale: "percent_0_to_100",
       min: 0,

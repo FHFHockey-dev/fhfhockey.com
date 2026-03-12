@@ -12,6 +12,7 @@
     "check:rolling-player-family-reconstruction": "NODE_PATH=. ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\"}' scripts/check-rolling-player-family-reconstruction.ts",
     "check:rolling-player-validation-freshness": "ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\"}' scripts/check-rolling-player-validation-freshness.ts",
     "check:rolling-player-disputed-metrics": "NODE_PATH=. ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\"}' scripts/check-rolling-player-disputed-metrics.ts",
+    "check:rolling-player-optional-additions": "NODE_PATH=. ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\"}' scripts/check-rolling-player-optional-additions.ts",
     "build": "next build",
     "postbuild": "next-sitemap",
     "start": "next start",
