@@ -54,6 +54,13 @@ This checklist translates the pass-2 PRD into an execution artifact for the audi
 - [ ] Backlog items remain separate from the strict formula ledger.
 - [ ] The main audit artifact summarizes the highest-value backlog items in its `Actionable Findings Backlog` section.
 
+## 3A. Artifact Boundary Gates
+
+- [ ] The current state of the two standalone audit outputs is checked against `/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-artifact-boundary-check.md`.
+- [ ] `tasks/rpm-audit-notes-pass-2.md` contains only formula-ledger entries and no implementation guidance.
+- [ ] `tasks/rpm-audit-action-items-pass-2.md` contains implementation-oriented findings and no formula-ledger-only filler entries.
+- [ ] Any newly discovered correctness, naming, fallback, observability, recompute-friction, performance, compatibility, test, or optional-enhancement finding is written to the backlog file instead of the formula ledger.
+
 ## 4. Validation Evidence Gates
 
 - [ ] The audit defines and uses a player validation matrix that includes:
