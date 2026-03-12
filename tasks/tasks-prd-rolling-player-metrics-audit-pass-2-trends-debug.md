@@ -13,6 +13,15 @@
 - `tasks/artifacts/rolling-player-pass-2-reconstruction-evidence-2026-03-12.md` - Live reconstruction evidence for ready validation cases, including major-family stored-vs-recomputed parity, blocked PK scopes, and the narrow historical weighted-rate stale-target mismatch set.
 - `tasks/artifacts/rolling-player-pass-2-diagnostics-classification-2026-03-12.md` - Diagnostics-driven trust classification for March 12 validation work, covering stale-tail blockers, coverage cautions, suspicious-output checks, derived-window completeness, and comparison trust rules.
 - `tasks/artifacts/rolling-player-pass-2-main-audit.md` - Work-in-progress main audit artifact that will accumulate the required final sections; currently contains the `Live Validation Examples` section backed by March 12 evidence.
+- `tasks/artifacts/rolling-player-pass-2-trendsdebug-current-surface-audit.md` - Current-state audit of `trendsDebug.tsx`, separating sustainability-sandbox-specific behavior from reusable player-search / shell elements and documenting the missing pass-2 validation-console requirements.
+- `tasks/artifacts/rolling-player-pass-2-trendsdebug-validation-payload-design.md` - Proposed server-side validation payload contract for `trendsDebug.tsx`, covering request selectors, stored rows, recomputed rows, source rows, diagnostics, contract metadata, formulas, window membership, diffs, and copy helpers.
+- `tasks/artifacts/rolling-player-pass-2-trendsdebug-server-path.md` - Implementation artifact for the new read-only validation payload route and server-side helper, including current payload sections, readiness behavior, and intentionally deferred sections for later `4.x` tasks.
+- `tasks/artifacts/rolling-player-pass-2-trendsdebug-selector-controls.md` - Implementation artifact for the pass-2 selector and control surface in `trendsDebug.tsx`, covering player, scope, metric, and toggle controls now wired into the validation payload.
+- `tasks/artifacts/rolling-player-pass-2-trendsdebug-validation-panels.md` - Implementation artifact for the pass-2 validation panels now rendered in `trendsDebug.tsx`, including freshness, stored values, formulas, source inputs, windows, support fields, source precedence, TOI trust, PP context, line context, diagnostics, and diff views.
+- `tasks/artifacts/rolling-player-pass-2-trendsdebug-copy-helpers.md` - Implementation artifact for the pass-2 copy-helper surface in `trendsDebug.tsx`, covering formula-ledger output, comparison-block output, refresh-prerequisite output, and clipboard feedback behavior.
+- `tasks/artifacts/rolling-player-pass-2-trendsdebug-tests.md` - Implementation artifact for the pass-2 validation-console test coverage, covering blocked readiness, focused comparisons, copy helpers, and debug-route error handling.
+- `tasks/artifacts/rolling-player-pass-2-trendsdebug-gap-backlog.md` - Implementation artifact capturing the remaining pass-2 debug-surface gaps, payload omissions, and UX/performance blockers that were converted into action-items backlog entries during `4.8`.
+- `tasks/artifacts/rolling-player-pass-2-trendsdebug-copy-helpers.md` - Implementation artifact for the pass-2 copy-helper surface in `trendsDebug.tsx`, covering formula-ledger output, comparison-block output, refresh-prerequisite output, and clipboard feedback behavior.
 - `tasks/artifacts/rolling-player-pass-2-additive-family-audit.md` - Additive-family audit artifact covering source tables, source fields, code paths, formulas, intended meaning, stored behavior, and reconstruction methods for every additive metric family.
 - `tasks/artifacts/rolling-player-pass-2-ratio-family-audit.md` - Ratio-family audit artifact covering source tables, source fields, code paths, formulas, scale semantics, window behavior, and component completeness for every ratio metric family.
 - `tasks/artifacts/rolling-player-pass-2-weighted-rate-family-audit.md` - Weighted-rate-family audit artifact covering source tables, numerator and TOI source paths, code paths, formulas, rate-reconstruction rules, TOI trust semantics, and component completeness for every `/60` family.
@@ -37,6 +46,7 @@
 - `web/lib/supabase/Upserts/rollingPlayerPipelineDiagnostics.ts` - Coverage, stale-tail, suspicious-output, and derived-window diagnostics.
 - `web/lib/supabase/Upserts/rollingMetricScaleContract.ts` - Scale/units guardrail contract used by diagnostics to classify suspicious ratio outputs.
 - `web/lib/supabase/Upserts/rollingPlayerPipelineDiagnostics.test.ts` - Diagnostic contract tests that may need to expand for pass-2 debug visibility and blocker reporting.
+- `web/lib/supabase/Upserts/rollingPlayerValidationPayload.ts` - Server-side payload builder for the pass-2 validation console, combining stored rows, recomputed rows, source rows, diagnostics, readiness, and focused-row comparisons.
 - `web/lib/supabase/Upserts/rollingPlayerHelperContracts.test.ts` - Helper-contract tests covering PP share, PP unit, line context, TOI trust, and ixG fallback behavior.
 - `web/lib/supabase/Upserts/rollingWindowContract.test.ts` - Rolling-window contract tests that anchor family-level `lastN` semantics.
 - `web/lib/supabase/Upserts/rollingPlayerPpShareContract.test.ts` - Contract-specific tests for PP-share semantics and excluded unit-relative fields.
@@ -50,9 +60,9 @@
 - `web/pages/trendsDebug.module.scss` - Styling surface for the pass-2 validation-console layout and panels.
 - `web/lib/rollingPlayerMetricCompatibility.ts` - Canonical-versus-legacy compatibility helper already used by `trendsDebug.tsx` and projection consumers.
 - `web/lib/rollingPlayerMetricCompatibility.test.ts` - Compatibility helper tests that matter for alias-retirement and downstream parity decisions.
-- `web/pages/api/v1/debug/rolling-player-metrics.ts` - Prospective read-only validation payload route for stored rows, recomputed rows, source rows, and diagnostics; not present yet.
-- `web/pages/api/v1/debug/rolling-player-metrics.test.ts` - Prospective endpoint tests for the pass-2 validation payload route; not present yet.
-- `web/pages/trendsDebug.test.tsx` - Prospective UI tests for the validation console; not present yet.
+- `web/pages/api/v1/debug/rolling-player-metrics.ts` - Read-only validation payload route for stored rows, recomputed rows, source rows, diagnostics, readiness, and focused-row comparisons used by the pass-2 validation console.
+- `web/pages/api/v1/debug/rolling-player-metrics.test.ts` - Endpoint tests for the pass-2 validation payload route covering method handling, query validation, and selector parsing.
+- `web/pages/trendsDebug.test.tsx` - UI tests for the validation console, covering blocked readiness, focused comparisons, and copy-helper output.
 - `web/pages/trends/player/[playerId].tsx` - Downstream trends page that may need compatibility updates after audit findings.
 - `web/lib/projections/queries/skater-queries.ts` - Downstream rolling-metric query surface used by projections.
 - `web/lib/projections/queries/skater-queries.test.ts` - Query-layer tests that may need updates if canonical-versus-legacy field selection changes.
@@ -97,7 +107,7 @@
   - [x] 2.6 For every audited metric or field, add or update exactly one formula/status entry in `tasks/rpm-audit-notes-pass-2.md` using only emoji status, metric name, and formula.
   - [x] 2.7 For every concrete improvement opportunity discovered during audit execution, add or update an entry in `tasks/rpm-audit-action-items-pass-2.md` with title, category, priority, affected metrics/fields, affected files, problem summary, recommended action, expected benefit, blocker status, source of discovery, and status.
   - [x] 2.8 Enforce the PRD decision rule that the formula ledger never contains rationale or action items and that the action-items backlog captures correctness, naming, fallback, observability, recompute-friction, performance, compatibility, test, and optional-enhancement findings separately.
-- [ ] 3.0 Produce live validation evidence, freshness workflows, and recompute runbooks
+- [x] 3.0 Produce live validation evidence, freshness workflows, and recompute runbooks
   - [x] 3.1 Trace the exact refresh dependency chain for `games`, `players`, `wgo_skater_stats`, each NST split table, `powerPlayCombinations`, `lineCombinations`, and `rolling_player_game_metrics`, documenting the concrete refresh endpoint or operational command wherever it exists.
   - [x] 3.2 Use targeted refreshes and recomputes to make the selected validation players comparison-ready, including PP-combination refreshes, line-combination refreshes, and rolling-player recomputes.
   - [x] 3.3 Reconstruct stored values from refreshed upstream source rows for each major metric family and for the highest-risk individual persisted fields, recording the source rows used, intended formula, stored value, reconstructed value, and mismatch cause bucket.
@@ -106,14 +116,14 @@
   - [x] 3.6 Write the `Freshness and Recompute Runbook` section in the main audit artifact, including source tables, endpoints/jobs, refresh order, family-specific prerequisites, stale-tail risks, blocker rules, and `trendsDebug.tsx` freshness requirements.
   - [x] 3.7 Convert any refresh friction, missing diagnostics, missing payload fields, or stale-observability gaps discovered during validation into explicit items in `tasks/rpm-audit-action-items-pass-2.md`.
 - [ ] 4.0 Redesign `trendsDebug.tsx` into the primary rolling-metrics validation console
-  - [ ] 4.1 Audit the current `web/pages/trendsDebug.tsx` implementation and document exactly which parts are sustainability-sandbox-specific versus reusable for the pass-2 validation console.
-  - [ ] 4.2 Design the validation payload shape needed by `trendsDebug.tsx`, including stored rolling rows, recomputed rolling rows, source rows, helper-contract metadata, formula metadata, freshness diagnostics, source precedence, fallback usage, and diff outputs.
-  - [ ] 4.3 Implement or prepare the read-only server-side path needed to power the validation console, preferably a dedicated debug endpoint or shared server-side helper rather than ad hoc browser-side joins.
-  - [ ] 4.4 Add the required selectors and controls to `trendsDebug.tsx`: player, strength, season, optional team, game/date range, game-date row, metric family, metric, canonical-versus-legacy toggle, mismatch-only toggle, stale-only toggle, and support-columns toggle.
-  - [ ] 4.5 Build the required validation panels: freshness banner, stored value panel, formula panel, source-input panel, rolling-window membership panel, availability denominator panel, numerator/denominator panel, source precedence/fallback panel, TOI trust panel, PP context panel, line context panel, diagnostics panel, and stored-vs-reconstructed diff panel.
-  - [ ] 4.6 Add copy helpers for formula-only audit entries, stored-vs-reconstructed comparison blocks, and metric-family refresh prerequisites so the page directly supports pass-2 audit work.
-  - [ ] 4.7 Add or update tests for the validation payload path and `trendsDebug.tsx` so the new debug-console behavior, stale blockers, and comparison views are covered.
-  - [ ] 4.8 Record all debug-surface gaps, payload omissions, and UX blockers discovered during implementation in `tasks/rpm-audit-action-items-pass-2.md` under the appropriate categories.
+  - [x] 4.1 Audit the current `web/pages/trendsDebug.tsx` implementation and document exactly which parts are sustainability-sandbox-specific versus reusable for the pass-2 validation console.
+  - [x] 4.2 Design the validation payload shape needed by `trendsDebug.tsx`, including stored rolling rows, recomputed rolling rows, source rows, helper-contract metadata, formula metadata, freshness diagnostics, source precedence, fallback usage, and diff outputs.
+  - [x] 4.3 Implement or prepare the read-only server-side path needed to power the validation console, preferably a dedicated debug endpoint or shared server-side helper rather than ad hoc browser-side joins.
+  - [x] 4.4 Add the required selectors and controls to `trendsDebug.tsx`: player, strength, season, optional team, game/date range, game-date row, metric family, metric, canonical-versus-legacy toggle, mismatch-only toggle, stale-only toggle, and support-columns toggle.
+  - [x] 4.5 Build the required validation panels: freshness banner, stored value panel, formula panel, source-input panel, rolling-window membership panel, availability denominator panel, numerator/denominator panel, source precedence/fallback panel, TOI trust panel, PP context panel, line context panel, diagnostics panel, and stored-vs-reconstructed diff panel.
+  - [x] 4.6 Add copy helpers for formula-only audit entries, stored-vs-reconstructed comparison blocks, and metric-family refresh prerequisites so the page directly supports pass-2 audit work.
+  - [x] 4.7 Add or update tests for the validation payload path and `trendsDebug.tsx` so the new debug-console behavior, stale blockers, and comparison views are covered.
+  - [x] 4.8 Record all debug-surface gaps, payload omissions, and UX blockers discovered during implementation in `tasks/rpm-audit-action-items-pass-2.md` under the appropriate categories.
 - [ ] 5.0 Review schema, compatibility, and downstream consumer implications of pass-2 findings
   - [ ] 5.1 Review canonical-versus-legacy field usage across `fetchRollingPlayerAverages.ts`, `trends/player/[playerId].tsx`, `skater-queries.ts`, `run-forge-projections.ts`, and `update-start-chart-projections.ts` to identify downstream compatibility dependencies.
   - [ ] 5.2 Determine which canonical fields are authoritative after pass-2 validation and which legacy aliases remain required, misleading, frozen-for-compatibility, or candidates for later deprecation.

@@ -225,3 +225,54 @@ Each item should use this structure:
 - blocker status: not a blocker for arithmetic validation when source reconstruction is available; blocker for efficient support-field-only inspection and for interpreting ratio support parity correctly.
 - source of discovery: `tasks/artifacts/rolling-player-pass-2-diagnostics-classification-2026-03-12.md`.
 - status: `open`
+
+### `P1` TrendsDebug.tsx: move formula, window, and contract metadata out of browser derivation and into the validation payload
+- category: `trendsDebug.tsx`
+- priority: `P1`
+- affected metrics: all persisted rolling metrics, with highest impact on ratio, weighted-rate, PP-share, and availability families
+- affected fields: `contracts`, `formulas`, `windows`, `helpers`, selected metric metadata, rolling-window membership output
+- affected files:
+  - `web/lib/supabase/Upserts/rollingPlayerValidationPayload.ts`
+  - `web/pages/api/v1/debug/rolling-player-metrics.ts`
+  - `web/pages/trendsDebug.tsx`
+  - `web/pages/trendsDebug.test.tsx`
+- problem: the current validation payload still returns `contracts`, `formulas`, `windows`, and `helpers` as `null`, so `trendsDebug.tsx` relies on a browser-side formula map, family heuristics, and client-derived rolling-window membership that can drift from the actual helper contracts over time.
+- recommended action: populate server-authoritative formula metadata, helper-contract summaries, window-membership snapshots, and copy-helper strings in the validation payload, then simplify the page to render those payload sections directly instead of reconstructing them in the browser.
+- expected benefit: lower UI drift risk, cleaner contract visibility, thinner page logic, and a validation console that reflects the rolling pipeline contract rather than a duplicated display approximation.
+- blocker status: not a blocker for current targeted inspection; blocker for making the validation console the authoritative long-term audit surface.
+- source of discovery: `tasks/artifacts/rolling-player-pass-2-trendsdebug-server-path.md`, `tasks/artifacts/rolling-player-pass-2-trendsdebug-validation-payload-design.md`, `tasks/artifacts/rolling-player-pass-2-trendsdebug-validation-panels.md`, `tasks/artifacts/rolling-player-pass-2-trendsdebug-copy-helpers.md`.
+- status: `open`
+
+### `P1` TrendsDebug.tsx: add family-wide mismatch summaries instead of only one focused-metric diff
+- category: `trendsDebug.tsx`
+- priority: `P1`
+- affected metrics: all persisted rolling metrics and support fields
+- affected fields: row-level diff summaries, family-level mismatch counts, selected-row comparison output
+- affected files:
+  - `web/lib/supabase/Upserts/rollingPlayerValidationPayload.ts`
+  - `web/pages/api/v1/debug/rolling-player-metrics.ts`
+  - `web/pages/trendsDebug.tsx`
+  - `web/pages/trendsDebug.test.tsx`
+- problem: the current route and page expose only the selected metric diff for the focused row, which means mismatch-only review and metric-by-metric audit sweeps still require repeated manual metric switching rather than showing the complete mismatch footprint for a row or family.
+- recommended action: add per-row mismatch counts, family-wide diff summaries, and a focused-row comparison matrix to the validation payload and UI so validators can see all mismatches in scope before drilling into one metric.
+- expected benefit: faster pass-2 audit execution, easier row triage, and better support for the PRD goal of validating every persisted metric systematically.
+- blocker status: not a blocker for one-off metric inspection; blocker for efficient full-table audit throughput.
+- source of discovery: `tasks/artifacts/rolling-player-pass-2-trendsdebug-validation-panels.md`, `tasks/artifacts/rolling-player-pass-2-trendsdebug-tests.md`, live implementation review during `4.4` through `4.7`.
+- status: `open`
+
+### `P2` Performance / efficiency: reduce validation-console overfetch and render weight for repeated metric inspection
+- category: `performance / efficiency`
+- priority: `P2`
+- affected metrics: all metrics shown in `trendsDebug.tsx`
+- affected fields: full validation payload sections, legacy sustainability sandbox state, selected metric and family pivots
+- affected files:
+  - `web/lib/supabase/Upserts/rollingPlayerValidationPayload.ts`
+  - `web/pages/api/v1/debug/rolling-player-metrics.ts`
+  - `web/pages/trendsDebug.tsx`
+  - `web/pages/trendsDebug.module.scss`
+- problem: the page currently fetches stored rows, recomputed rows, source rows, and diagnostics together on every scope change, and it still keeps the legacy sustainability sandbox mounted on the same route, which adds unnecessary payload and render cost during repeated audit use.
+- recommended action: split the validation payload into a lightweight summary layer plus on-demand heavy detail sections, cache stable scope-level data across metric pivots, and consider moving the sustainability sandbox to a secondary tab or separate route once the audit console is fully established.
+- expected benefit: snappier inspection loops, less redundant server work, and a clearer validation-first page architecture.
+- blocker status: not a blocker for correctness; blocker for comfortable high-volume audit usage and future console scalability.
+- source of discovery: `tasks/artifacts/rolling-player-pass-2-trendsdebug-current-surface-audit.md`, `tasks/artifacts/rolling-player-pass-2-trendsdebug-validation-payload-design.md`, `tasks/artifacts/rolling-player-pass-2-trendsdebug-tests.md`.
+- status: `open`

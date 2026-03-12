@@ -72,7 +72,7 @@ import {
 } from "./rollingPlayerPipelineDiagnostics";
 import { type RollingMetricWindowFamily } from "./rollingWindowContract";
 
-type StrengthState = "all" | "ev" | "pp" | "pk";
+export type StrengthState = "all" | "ev" | "pp" | "pk";
 type FullRefreshMode = "rpc_truncate" | "overwrite_only" | "delete";
 type PowerPlayCombinationRow = RollingPlayerPpContextRow;
 
@@ -337,7 +337,7 @@ function createConcurrencyLimiter(concurrency: number) {
   };
 }
 
-interface WgoSkaterRow {
+export interface WgoSkaterRow {
   player_id: number;
   game_id: number | null;
   date: string;
@@ -357,7 +357,7 @@ interface WgoSkaterRow {
   toi_per_game: number | null;
 }
 
-interface NstCountsRow {
+export interface NstCountsRow {
   date_scraped: string;
   season: number;
   toi: number | null;
@@ -377,7 +377,7 @@ interface NstCountsRow {
   shots_blocked: number | null;
 }
 
-interface NstRatesRow {
+export interface NstRatesRow {
   date_scraped: string;
   season: number;
   shots_per_60: number | null;
@@ -385,7 +385,7 @@ interface NstRatesRow {
   toi_per_gp: number | null;
 }
 
-interface NstCountsOiRow {
+export interface NstCountsOiRow {
   date_scraped: string;
   season: number;
   toi: number | null;
@@ -408,7 +408,7 @@ interface NstCountsOiRow {
   ff_pct: number | null;
 }
 
-interface GameRow {
+export interface GameRow {
   id: number;
   date: string;
   homeTeamId: number;
@@ -416,7 +416,7 @@ interface GameRow {
   seasonId: number;
 }
 
-interface LineCombinationRow {
+export interface LineCombinationRow {
   gameId: number;
   teamId: number;
   forwards: number[];
@@ -426,7 +426,7 @@ interface LineCombinationRow {
 
 type ToiSource = RollingPlayerToiSource;
 
-type SourceTrackingSummary = {
+export type SourceTrackingSummary = {
   missingSources: {
     counts: number;
     rates: number;
@@ -466,10 +466,29 @@ interface PlayerProcessingDiagnostics {
   sourceTracking: SourceTrackingSummary;
 }
 
-interface ProcessPlayerResult {
+export interface ProcessPlayerResult {
   rows: any[];
   diagnostics: PlayerProcessingDiagnostics;
 }
+
+export type RollingPlayerValidationSourceData = {
+  games: GameRow[];
+  knownGameIds: number[];
+  wgoRows: WgoSkaterRow[];
+  ppRows: PowerPlayCombinationRow[];
+  lineRows: LineCombinationRow[];
+  byStrength: Record<
+    StrengthState,
+    {
+      countsRows: NstCountsRow[];
+      ratesRows: NstRatesRow[];
+      countsOiRows: NstCountsOiRow[];
+      mergedGames: PlayerGameData[];
+      coverageSummary: ReturnType<typeof summarizeCoverage>;
+      sourceTailFreshness: ReturnType<typeof summarizeSourceTailFreshness>;
+    }
+  >;
+};
 
 type RollingPlayerRunSummary = {
   rowsUpserted: number;
@@ -508,7 +527,7 @@ type PlayerGameSourceContext = {
   wgoToiNormalization: RollingPlayerWgoToiNormalization;
 };
 
-interface PlayerGameData {
+export interface PlayerGameData {
   playerId: number;
   gameId: number | null;
   gameDate: string;
@@ -3210,6 +3229,129 @@ export async function recomputePlayerRowsForValidation(options: {
     endDate: options.endDate,
     skipDiagnostics: options.skipDiagnostics
   });
+}
+
+export async function fetchPlayerValidationSourceData(options: {
+  playerId: number;
+  season?: number;
+  startDate?: string;
+  endDate?: string;
+}): Promise<RollingPlayerValidationSourceData> {
+  const games = await fetchGames();
+  const knownGameIds = new Set(games.map((game) => game.id));
+  const wgoRows = await fetchWgoRowsForPlayer(options.playerId, {
+    playerId: options.playerId,
+    season: options.season,
+    startDate: options.startDate,
+    endDate: options.endDate
+  });
+
+  const emptyByStrength = STRENGTH_CONFIGS.reduce<
+    RollingPlayerValidationSourceData["byStrength"]
+  >((acc, config) => {
+    acc[config.state] = {
+      countsRows: [],
+      ratesRows: [],
+      countsOiRows: [],
+      mergedGames: [],
+      coverageSummary: summarizeCoverage({
+        playerId: options.playerId,
+        strength: config.state,
+        wgoRows: [],
+        countsRows: [],
+        ratesRows: [],
+        countsOiRows: [],
+        ppRows: [],
+        knownGameIds
+      }),
+      sourceTailFreshness: summarizeSourceTailFreshness({
+        playerId: options.playerId,
+        strength: config.state,
+        wgoRows: [],
+        countsRows: [],
+        ratesRows: [],
+        countsOiRows: [],
+        ppRows: [],
+        lineRows: []
+      })
+    };
+    return acc;
+  }, {} as RollingPlayerValidationSourceData["byStrength"]);
+
+  if (wgoRows.length === 0) {
+    return {
+      games,
+      knownGameIds: Array.from(knownGameIds).sort((a, b) => a - b),
+      wgoRows,
+      ppRows: [],
+      lineRows: [],
+      byStrength: emptyByStrength
+    };
+  }
+
+  const firstDate = wgoRows[0]?.date;
+  const lastDate = wgoRows[wgoRows.length - 1]?.date;
+  const startDate = options.startDate ?? firstDate;
+  const endDate = options.endDate ?? lastDate;
+  const gameIds = wgoRows
+    .map((row) => row.game_id)
+    .filter((gameId): gameId is number => typeof gameId === "number");
+  const ppRows = await fetchPowerPlayCombinations(options.playerId, gameIds);
+  const lineRows = await fetchLineCombinations(gameIds);
+
+  const byStrength = {} as RollingPlayerValidationSourceData["byStrength"];
+  for (const config of STRENGTH_CONFIGS) {
+    const [countsRows, ratesRows, countsOiRows] = await Promise.all([
+      fetchCounts(config.countsTable, options.playerId, startDate, endDate),
+      fetchRates(config.ratesTable, options.playerId, startDate, endDate),
+      fetchCountsOi(config.countsOiTable, options.playerId, startDate, endDate)
+    ]);
+    const mergedGames = buildGameRecords(
+      wgoRows,
+      groupByDate(countsRows),
+      groupByDate(ratesRows),
+      groupByDate(countsOiRows),
+      lineRows,
+      ppRows,
+      config.state,
+      knownGameIds
+    );
+    byStrength[config.state] = {
+      countsRows,
+      ratesRows,
+      countsOiRows,
+      mergedGames,
+      coverageSummary: summarizeCoverage({
+        playerId: options.playerId,
+        strength: config.state,
+        wgoRows,
+        countsRows,
+        ratesRows,
+        countsOiRows,
+        ppRows,
+        knownGameIds
+      }),
+      sourceTailFreshness: summarizeSourceTailFreshness({
+        playerId: options.playerId,
+        strength: config.state,
+        wgoRows,
+        countsRows,
+        ratesRows,
+        countsOiRows,
+        ppRows,
+        lineRows
+      })
+    };
+  }
+
+  return {
+    games,
+    knownGameIds: Array.from(knownGameIds).sort((a, b) => a - b),
+    wgoRows,
+    ppRows,
+    lineRows,
+    byStrength
+  };
 }
 
 export async function main(options: FetchOptions = {}): Promise<void> {

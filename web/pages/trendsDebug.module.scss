@@ -1,10 +1,19 @@
-@use "styles/vars" as v;
 @use "sass:color";
+@use "styles/vars" as v;
+@use "styles/panel" as p;
 
 .page {
   min-height: 100vh;
-  padding: 32px;
-  background-color: v.$background-dark;
+  padding: clamp(10px, 1.4vw, v.$space-md);
+  background:
+    radial-gradient(circle at top left, rgba(v.$primary-color, 0.18), transparent 26%),
+    radial-gradient(circle at top right, rgba(v.$success-color, 0.12), transparent 20%),
+    linear-gradient(
+      180deg,
+      color.adjust(v.$background-dark, $lightness: -2%) 0%,
+      v.$background-dark 45%,
+      color.adjust(v.$background-dark, $lightness: 2%) 100%
+    );
   color: v.$text-primary;
   font-family: v.$font-family-primary;
 }
@@ -13,461 +22,740 @@
   max-width: 1480px;
   margin: 0 auto;
   display: grid;
-  gap: 24px;
+  gap: 14px;
 }
 
 .hero {
+  @include p.panel-container($radius: v.$border-radius-xl, $padding: 18px 20px);
   display: grid;
-  gap: 10px;
+  gap: 6px;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(v.$primary-color, 0.18), transparent 34%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02));
+
+  h1 {
+    margin: 0;
+    font-family: v.$font-family-accent, sans-serif;
+    font-size: clamp(1.8rem, 3.2vw, 3.2rem);
+    line-height: 0.94;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: v.$color-white;
+    text-shadow: 0 0 16px rgba(v.$primary-color, 0.22);
+  }
 }
 
 .eyebrow {
   margin: 0;
-  font-size: 0.82rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: v.$primary-color;
-  font-family: v.$font-family-accent;
-  text-shadow: 0 0 8px rgba(v.$primary-color, 0.4);
-}
-
-.hero h1 {
-  margin: 0;
-  font-size: clamp(2rem, 3.8vw, 3.7rem);
-  line-height: 0.94;
-  letter-spacing: 0.08em;
-  color: v.$color-white;
-  font-family: v.$font-family-accent;
-  text-transform: uppercase;
-  text-shadow: 0 0 10px rgba(v.$primary-color, 0.3);
 }
 
 .lede {
-  max-width: 960px;
+  max-width: 78ch;
   margin: 0;
-  font-size: 1rem;
-  line-height: 1.6;
+  font-size: 0.92rem;
+  line-height: 1.45;
   color: v.$text-secondary;
 }
 
 .layout {
- @use "styles/vars" as v;
-@use "sass:color";
-
-.page {
-  min-height: 100vh;
-  pa  @use "sass:color";
-
-.pas:
-.page {
-  min-he {
-  min-gr  padding: 32px;
-  -m  background-co:   color: v.$text-primary;
-  font-familr-  font-family: v.$font-fw:}
-
-.shell {
-  max-width: 1480px;
-  mcontro  max-wpa  margin: 0 auto;
- ti  display: grid;p:  gap: 24px;
-}
-y:}
-
-.hero {
-p: 20  dispba  gap: 10px;
-}
-ck}
-
-.eyebrowum;
-   margin:1p  font-sizebo  font-weight: 700;
-rd  letter-spacing: bo  text-transform: upperca(  color: v.$primary-color;
-{
-  font-family: v.$font-fa2p  text-shadow: 0 0 8px rgba(v.$primaon}
-
-.hero h1 {
-  margin: 0;
-  font-size: clamp(2remily:   margin:am  font-size
-   line-height: 0.94;
-  letter-spacing: m:  letter-spacing: 0r-  color: v.$color-white;de  font-family: v.$font-bo  text-transform: uponHint {
-  margin:  text-shadow: 0 0 10px rgbco}
-
-.lede {
-  max-width: 960px;
-  margin: 0;
-  font-d;
-    max-2p  margin: 0;
-  fon
-   font-sizeri  line-height: 1.e-  color: v.$text-s m}
-
-.layout {
- @us gap: 12px;
-}
- @use "s
-.@use "sass:color";
-
-.pag g
-.page {
-  min-he}
-
-  min- l  pa  @use "sass:cola
-.pas:
-.page {
-  min-herem.pagfo  min-gh  min-;
-  c  -m  background-co:   ;
-  font-familr-  font-family: v.$font-fw:}
-
-.s-t
-.shell {
-  max-width: 1480px;
-  mcontro.05  max-w.f  mcontro  max-wpa se ti  display: grid;p:  gap: 24px;
-: }
-y:}
-
-.hero {
-p: 20  dispba  gader-
-.conp: 20   }
-ck}
-
-.eyebrowupx;
-  backgr
-.nd:   margin:ourd  letter-spacing: bo  text-transform: uppam{
-  font-family: v.$font-fa2p  text-shadow: 0 0 8ps ease;
+  display: grid;
+  grid-template-columns: minmax(320px, 430px) minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
 }
 
-.field input,
-.f
-.hero h1 {
-  margin: 0;
-  font-size: clamp(2remily:   margin:am ld   margin:us  font-sizele   line-height: 0.94;
-  letter-spacing: m:  lettetl  letter-spacing: m:do  margin:  text-shadow: 0 0 10px rgbco}
-
-.lede {
-  max-width: 960px;
-  margin: 0;
-  font-d;
-    max-2p  margin: 0;
-  fo c
-.lede {
-  max-width: 960px;
-  margin:: v  max--f  margin: 0;
-  fon.r  font-d;
- pa    max-4p  fon
-   font-sizeri  g   f18
-.layout {
- @us gap: 12px;
-}
- @use "s
-.@use "sass:col so @us gapor}
-r-secondary;
-  b.@uer-rad
-.pag g
-.page {
-  ado.page4p  min- r
-  min- , 0.pas:
-.page {
-  min-herem.padi.pagy:  min-
-   c  -m  background-co:   ;
-at(4,  font-familr-  font-famil2p
-.s-t
-.shell {
-  max-width: 1480px;
-  mcord.shra  max-wpx  mcontro.05  max.$ba: }
-y:}
-
-.hero {
-p: 20  dispba  gader-
-.conp: 20   }
-ck}
-
-.eyebrowugrid;
-  gy:: 
-.x;
-p: 20 tr.conp: 20   }
-ck}
-
-.e:ck}
-
-.eyebrote
-.-tr  backgr
-.npe.nd:       font-family: v.$font;
-  color: v.$text-secondary;
-  font-fami}
-
-.field input,
-.f
-.hero h1 {
-  margin: 0;
-  font-sizze: c.f
-.hero h1  2.w,  margin:;
-  font-sizeht  letter-spacing: m:  lettetl  letter-spacing: m:do  margin:  text-shadow: 0 0 10px rgb;
-
-.lede {
-  max-width: 960px;
-  margin: 0;
-  font-d;
-    max-2p  margin: 0;
-  fo c
-.lede {;
-   max-:   margin: 0;
-  fon
-   font-d;
- y:    max--f  fo c
-.lede {
-  max-at.ledeRo  max di  margin:: v  max-:   fon.r  font-d;
- pa    max-4p ll pa    maing: 8px   font-sizeri  gad.layout {
- @us gap: 12 0 @us gap  }
- @use "s
-.@u00;
-.@use "family: v.$font-family-accent;
-   b.@uer-rafo.pag g
-.pagse.pageet  ado.ac  min- , 0.pas border.page {
-  min-an  min-t;   c  -m  background-co:   unat(4,  font-familr-  font-f.1.s-t
-.shell {
-  max-width: 1480p b.sher  max-w v  mcord.shra  max-wboy:}
-
-.hero {
-p: 20  dispba  gader-
-.conp: 202)
-.}
-
-p: 20 ea.conp: 20   }
-ck}
-
-.back}
-
-.eyebroan
-., 0  gy::  color: .x;
-p:orp:rack}
-
-. border-color: v
-.col
-.eyeang.-tr  ba-s.npe.nd: 0 10  color: v.$text-secondary;
-  font-pi  font-fami}
-
-.field inputrg
-.field inpry-color, 0.1);
- .co  margin:ri  font-sizz
- .hero h1  2.w,  .$  font-sizeht  letter-sad
-.lede {
-  max-width: 960px;
-  margin: 0;
-  font-d;
-    max-2p  margin: 0;
-  fo c
-.lede {;
-   max-: epe  max-mi  margin: 0;
-  fonap  font-d;
- .c    max-po  fo c
-.lede {;
-   mave.lede:    max-
-   fon
-   font-d;
- y:dd   fle y:    ma18.lede {
-  max-at.l n  max-ri pa    max-4p ll pa    maing: 8px   font-sizeri  gad.layou18 @us gap: 12 0 @us gap  }
- @use "s
-.@u00;
-.@use "family: v.$   @use "s
-.@u00;
-.@use "f#2.@u00;
-%,.@used2   b.@uer-rafo.pag g
-.pagse.pageet  $p.pagse.pageet  ado.
-   min-an  min-t;   c  -m  background-co:   una: bl.shell {
-  murate(160%);
-  transition: transform 0.2s ease, border-color 0.2s e  max-wx-
-.hero {
-p: 20  dispba  gader-
-.conp: 202)
-.}
-
-p: 20 ea.citip: 20 so.conp: 202)
-.}
-
-p: 2  .}
-p: 0;
-   
-botck}
-
-.back}
-
-.eyebro2p
-.
-  
-.eyekgr., 0  gy$pp:orp:rack}
-
-. border-s
-. border- 14.col
-.eyeang.-trlo.ey0   font-pi  font-fami}
-
-.field inputrg
-.field inpry-color  
-.field inputrg
-.fieiti.field inpry-
-  .co  margin:ri  font-sigr .hero h1  2.w,  .$  font 4.lede {
-  max-width: 960px;
-  margin: 0;
-   t  max-re  margin: 0;
-  fonty  font-d;
- an    max-op  fo c
-.lede {;
-   ma p.leder-   max- n  fonap  font-d;
- .c    max-po form: translateX(-3.lede {;
-   mave.llo   mave(v   fon
-   font-d;
- y);   fobo y:dd   f 0  max-at.l n  max-ri pa    mlo @use "s
-.@u00;
-.@use "family: v.$   @use "s
-.@u00;
-.@use "f#2.@u00;
-%,.@used2   b.@uer-rafo.pag g
-.pags c.@u00;
-.$.@use-w.@u00;
-.@use "f#2.@u00;
-%,.on.@useil%,.@used2   b.@et.pagse.pageet  $p.pagse.paget-   min-an  min-t;   c  -m  backgrouis  murate(160%);
-  transition: transform 0.2s ease, border-}
-  transition: nd.hero {
-p: 20  dispba  gader-
-.conp: 202)
-.}
-
-p: 20 ea.citip: twp: 20  g.conp: 202)
-.}
-
-p: 2em.}
-
-p: 20 
+.panel {
+  @include p.panel-container($radius: v.$border-radius-xl);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.015)),
+    linear-gradient(
+      180deg,
+      rgba(v.$background-medium, 0.96),
+      rgba(color.adjust(v.$background-medium, $lightness: -2%), 0.98)
+    );
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow:
+    0 24px 64px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(v.$primary-color, 0.08);
 }
 
-.s.}
-
-p: 2  .}
-p: 0;
-   
-botck}
-
-ow
-spap: 0;
- -c   
- {bo c
-.bac v.
-.eye-se.
-  ary;
-  f.nt
-. border-s
-. border- 14.comar. border-atRow span:last-chi
-.field inputrg
-.field inpry-color  
-.fam.field $font-fa.field inputrg
-.fieor.fieiti.fieldit  .co  margin:ri  f
-   max-width: 960px;
-  margin: 0;
-   t  max-re  margin: 0;
-  {
-  margin: 0;
-   t rt   t  max-r:   fonty  font-d;
- an   px an    max-op  r-.lede {;
-   ma p.lve   ma prs .c    max-po form: translateX(-3.ledeop   mave.llo   mave(v   fon
-   font-d;
- y g   font-d;
- y);   fobo y:ta y);   fosp.@u00;
-.@use "family: v.$   @use "s
-.@u00;
-.@use "f#2.@u00;l .@useon.@u00;
-.@use "f#2.@u00;
-%,.co.@usehi%,.@used2   b.@ly.pags c.@u00;
-.$.@use-w.@u00
-..$.@use-w.@u
- .@use "f#2.@u0co%,.on.@useil%,.co  transition: transform 0.2s eline-height: 1.45;
+.controls {
+  position: sticky;
+  top: 12px;
+  padding: 14px;
+  display: grid;
+  gap: 14px;
 }
 
-.subtle {
-  color: v.$text-secondary;
-  font-size: 0.88rem;
-  transition: nd.hero {
-p: 20  dispba  gadp:p: 20  dispba  gaden {
- .conp: 202)
-.}
-
-p: 2st.}
-
-p: 20 t:
-spa.}
-
-p: 2em.}
-
-p: 20 
+.results {
+  padding: 14px;
+  display: grid;
+  gap: 12px;
 }
 
-.s.}
+.bannerCard {
+  gap: 12px;
+}
 
-p: 2   g
-p: 
-p: 20  pa}
+.section {
+  display: grid;
+  gap: 8px;
 
-.s: 10p
-p:2pxp: 0;
- de   
-dibo: 
-ow
-s  bsrd -c   
- s {bo v..bac er.eye-sda  ary;
-ac  f.nnd. borns. border- c.fir: v.$text-primary;
-  text-align: left;
-  cu.field inpry-;
-.fam.field $font- 0.2.fieor.fieiti.fieldit  .co  margco   max-width: 960px;
-  margin: 0;
-   t rg  margin: 0;
-   t  ,    t  max-rol  {
-  margin: 0;
-   t r    ox   t rt   t0  an   px an    max-op  r-.lede {;
-  }   ma p.lve   maner {
-  display: g   font-d;
- y g   font-d;
- y);   fobo y:ta y);   fosp.@u00;
-.@use "family: v.$   @usedi y g   fog, y);  255, 255,.@use "family: v.$   @use "s
-.@u 0.@u00;
-.@use "f#2.@u00;l .@rg.@use5,.@use "f#2.@u00;
-%,.co.@usehi%re%,.co.@usehi%,.:b.$.@use-w.@u00
-..$.@use-w.@u
- .@use "f#2.so..$.@use-w.@u:  .@use " 0; ri}
-
-.subtle {
-  color: v.$text-secondary;
-  font-size: 0.88rem;
-  transition: nd.h5, 0.  color:sparent);
+  h2 {
+    margin: 0;
+    font-family: v.$font-family-accent, sans-serif;
+    font-size: 0.9rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: v.$color-white;
   }
 }
 
-.errorText {
-  transition: nd.her: p: 20  dispba  gadp:p:t- .conp: 202)
-.}
-
-p: 2st.}
-
-p: 20 t:
-spa.}(v.}
-
-p: 2st.ng
-, 0
-p: 20 
-.mspa.}
-
- f
-p: family: v.$fo}
-
-.smily-
-p:berp: 
-p: mep:a 
-.s: 10p
-h: p:2pxp)  de   
-diutdibo:  ow
-s tespl s {bo v..ba 1ac  f.nnd. borns. border- c.fsi  text-align: left;
-  cu.field inpry-;
-.fam.fielpl  cu.field inpry-;t(.fam.field $font-);  margin: 0;
-   t rg  margin: 0;
-   t  ,    t  max-rol  {
+.sectionHint {
   margin: 0;
-   th   t rg  ma     t  ,    t  max-g:  margin: 0;
-   t r    d,   t r   ryGr  } 
+  font-size: 0.82rem;
+  line-height: 1.4;
+  color: v.$text-secondary;
+}
+
+.fields {
+  display: grid;
+  gap: 10px;
+}
+
+.fieldGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.field,
+.sliderField {
+  display: grid;
+  gap: 6px;
+}
+
+.field label,
+.sliderField label {
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: v.$text-secondary;
+}
+
+.field input,
+.field select,
+.sliderField input {
+  width: 100%;
+  border-radius: v.$border-radius-md;
+  border: 1px solid rgba(v.$border-secondary, 0.95);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015)),
+    rgba(v.$background-dark, 0.94);
+  color: v.$text-primary;
+  font-family: v.$font-family-primary;
+  transition:
+    border-color v.$transition-duration v.$transition-easing,
+    box-shadow v.$transition-duration v.$transition-easing,
+    transform v.$transition-duration v.$transition-easing,
+    background-color v.$transition-duration v.$transition-easing;
+
+  &:hover {
+    border-color: rgba(v.$primary-color, 0.5);
+  }
+
+  &:focus,
+  &:focus-visible {
+    outline: none;
+    border-color: v.$primary-color;
+    box-shadow: v.$focus-ring-desktop;
+    background-color: rgba(v.$background-dark, 0.98);
+  }
+}
+
+.field input,
+.field select {
+  padding: 9px 10px;
+  font-size: 0.88rem;
+}
+
+.field select {
+  appearance: none;
+}
+
+.sliderField input {
+  min-height: 24px;
+  padding: 0;
+  accent-color: v.$primary-color;
+}
+
+.sliderValue {
+  font-family: v.$font-family-numbers, monospace;
+  font-size: 0.76rem;
+  color: v.$primary-color;
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.metricCard {
+  --accent: #{v.$primary-color};
+  position: relative;
+  overflow: hidden;
+  min-width: 0;
+  padding: 10px 12px 10px 22px;
+  border-radius: v.$border-radius-lg;
+  background:
+    linear-gradient(180deg, rgba(var(--accent-rgb, 20 162 210), 0.12) 0%, transparent 100%),
+    linear-gradient(145deg, #20242a 0%, #171a1f 100%);
+  border: 2px solid rgba(v.$primary-color, 0.42);
+  box-shadow:
+    0 12px 24px rgba(0, 0, 0, 0.26),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+
+  &::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 9px;
+    background: var(--accent);
+    // box-shadow:
+    //   0 0 14px var(--accent),
+    //   0 0 24px var(--accent);
+  }
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: -30%;
+    background: radial-gradient(
+      60% 40% at 20% 0%,
+      rgba(20, 162, 210, 0.18),
+      transparent 60%
+    );
+    opacity: 0;
+    transition: opacity 240ms ease;
+  }
+
+  &:hover {
+    transform: translateX(-2px);
+    border-color: rgba(v.$primary-color, 0.7);
+    box-shadow:
+      0 24px 40px rgba(0, 0, 0, 0.34),
+      0 0 24px rgba(v.$primary-color, 0.14);
+
+    &::after {
+      opacity: 1;
+    }
+  }
+}
+
+.summaryGrid .metricCard:nth-child(2) {
+  --accent: #{v.$warning-color};
+  border-color: rgba(v.$warning-color, 0.5);
+}
+
+.summaryGrid .metricCard:nth-child(3) {
+  --accent: #{v.$success-color};
+  border-color: rgba(v.$success-color, 0.45);
+}
+
+.summaryGrid .metricCard:nth-child(4) {
+  --accent: #{v.$info-color};
+  border-color: rgba(v.$info-color, 0.48);
+}
+
+.metricLabel {
+  position: relative;
+  z-index: 1;
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: v.$text-secondary;
+}
+
+.metricValue {
+  position: relative;
+  z-index: 1;
+  display: block;
+  min-width: 0;
+  font-family: v.$font-family-numbers, monospace;
+  font-size: clamp(0.98rem, 1.45vw, 1.7rem);
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+  font-weight: 700;
+  color: v.$color-white;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.metricDetail {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  font-size: 0.7rem;
+  line-height: 1.2;
+  color: v.$text-secondary;
+  overflow-wrap: anywhere;
+}
+
+.statePillRow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pill {
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(v.$border-secondary, 0.9);
+  background: rgba(v.$background-dark, 0.78);
+  color: v.$text-primary;
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+}
+
+.pillStrong {
+  color: v.$success-color;
+  border-color: rgba(v.$success-color, 0.45);
+  background: rgba(v.$success-color, 0.1);
+  box-shadow: 0 0 18px rgba(v.$success-color, 0.12);
+}
+
+.pillWeak {
+  color: v.$danger-color;
+  border-color: rgba(v.$danger-color, 0.45);
+  background: rgba(v.$danger-color, 0.1);
+  box-shadow: 0 0 18px rgba(v.$danger-color, 0.1);
+}
+
+.pillNeutral {
+  color: v.$primary-color;
+  border-color: rgba(v.$primary-color, 0.45);
+  background: rgba(v.$primary-color, 0.12);
+  box-shadow: 0 0 18px rgba(v.$primary-color, 0.1);
+}
+
+.toggleButton {
+  cursor: pointer;
+}
+
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.cardWide {
+  grid-column: 1 / -1;
+}
+
+.card {
+  --accent: #{v.$primary-color};
+  position: relative;
+  overflow: hidden;
+  padding: 14px 14px 14px 24px;
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(20, 162, 210, 0.12) 0%, transparent 100%),
+    linear-gradient(145deg, #202020 0%, #1a1d21 100%);
+  border: 2px solid rgba(v.$primary-color, 0.5);
+  backdrop-filter: blur(10px) saturate(160%);
+  box-shadow:
+    0 14px 28px rgba(0, 0, 0, 0.26),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  display: grid;
+  gap: 10px;
+  transition:
+    transform 240ms ease,
+    box-shadow 240ms ease,
+    border-color 240ms ease;
+
+  &::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 9px;
+    background: var(--accent);
+    // box-shadow:
+    //   0 0 14px var(--accent),
+    //   0 0 24px var(--accent);
+  }
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: -30%;
+    background: radial-gradient(60% 40% at 20% 0%, rgba(20, 162, 210, 0.18), transparent 60%);
+    opacity: 0;
+    transition: opacity 240ms ease;
+    pointer-events: none;
+  }
+
+  &:hover {
+    transform: translateX(-2px);
+    box-shadow:
+      0 28px 48px rgba(0, 0, 0, 0.36),
+      0 0 24px rgba(v.$primary-color, 0.16);
+
+    &::after {
+      opacity: 1;
+    }
+  }
+
+  h3 {
+    margin: 0;
+    font-family: v.$font-family-accent, sans-serif;
+    font-size: 0.82rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: v.$color-white;
+  }
+}
+
+.cardGrid .card:nth-child(2) {
+  --accent: #{v.$warning-color};
+  border-color: rgba(v.$warning-color, 0.48);
+}
+
+.cardGrid .card:nth-child(3) {
+  --accent: #{v.$success-color};
+  border-color: rgba(v.$success-color, 0.42);
+}
+
+.cardGrid .card:nth-child(4) {
+  --accent: #{v.$info-color};
+  border-color: rgba(v.$info-color, 0.48);
+}
+
+.cardGrid .card:nth-child(5) {
+  --accent: #{v.$color-orange};
+  border-color: rgba(v.$color-orange, 0.5);
+}
+
+.cardGrid .card:nth-child(6) {
+  --accent: #{v.$color-purple};
+  border-color: rgba(v.$color-purple, 0.5);
+}
+
+.statList,
+.bandList,
+.driverList {
+  display: grid;
+  gap: 6px;
+}
+
+.statRow,
+.bandRow,
+.driverRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+}
+
+.statRow,
+.bandRow {
+  padding: 6px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+
+  &:first-child {
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  span:first-child {
+    color: v.$text-secondary;
+    font-size: 0.84rem;
+  }
+
+  span:last-child,
+  strong {
+    font-family: v.$font-family-numbers, monospace;
+    color: v.$color-white;
+    font-size: 0.84rem;
+  }
+}
+
+.driverList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.driverRow {
+  align-items: start;
+  padding: 8px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.driverRow:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.driverMeta {
+  display: grid;
+  gap: 4px;
+}
+
+.driverBadgeStack {
+  display: grid;
+  gap: 4px;
+  justify-items: end;
+}
+
+.driverLabel {
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: v.$color-white;
+}
+
+.driverCopy {
+  margin: 0;
+  color: v.$text-secondary;
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
+.codeBlock {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: v.$border-radius-md;
+  border: 1px solid rgba(v.$border-secondary, 0.7);
+  background: rgba(v.$background-dark, 0.78);
+  color: v.$text-primary;
+  font-family: v.$font-family-numbers, monospace;
+  font-size: 0.74rem;
+  line-height: 1.45;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.copyActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.copyButton {
+  padding: 8px 12px;
+  border-radius: v.$border-radius-md;
+  border: 1px solid rgba(v.$primary-color, 0.45);
+  background:
+    linear-gradient(180deg, rgba(v.$primary-color, 0.16), rgba(v.$primary-color, 0.06)),
+    rgba(v.$background-dark, 0.82);
+  color: v.$color-white;
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+
+  &:hover,
+  &:focus-visible {
+    outline: none;
+    border-color: rgba(v.$primary-color, 0.8);
+    box-shadow:
+      0 10px 24px rgba(0, 0, 0, 0.24),
+      0 0 0 2px rgba(v.$primary-color, 0.12);
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+    box-shadow: none;
+    transform: none;
+  }
+}
+
+.windowGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.windowBlock {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: v.$border-radius-md;
+  border: 1px solid rgba(v.$border-secondary, 0.7);
+  background: rgba(v.$background-dark, 0.66);
+}
+
+.windowTitle {
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: v.$color-white;
+}
+
+.windowList {
+  display: grid;
+  gap: 6px;
+}
+
+.windowRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  font-size: 0.76rem;
+  color: v.$text-secondary;
+}
+
+.subtle {
+  color: v.$text-secondary;
+  font-size: 0.72rem;
+}
+
+.suggestionList {
+  display: grid;
+  gap: 8px;
+}
+
+.suggestion {
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px 10px 16px;
+  border-radius: v.$border-radius-md;
+  border: 2px solid rgba(v.$primary-color, 0.34);
+  background:
+    linear-gradient(180deg, rgba(v.$primary-color, 0.12), transparent 100%),
+    linear-gradient(145deg, #1f2328 0%, #171a1f 100%);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+
+  &::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 6px;
+    background: v.$primary-color;
+    box-shadow: 0 0 12px rgba(v.$primary-color, 0.7);
+  }
+
+  &:hover,
+  &:focus-visible {
+    outline: none;
+    transform: translateX(-2px);
+    border-color: rgba(v.$primary-color, 0.7);
+    box-shadow:
+      0 12px 28px rgba(0, 0, 0, 0.28),
+      0 0 0 2px rgba(v.$primary-color, 0.12);
+  }
+}
+
+.snapshotBanner {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: v.$border-radius-md;
+  background:
+    linear-gradient(180deg, rgba(v.$info-color, 0.12), rgba(v.$info-color, 0.04)),
+    rgba(v.$background-dark, 0.72);
+  border: 1px solid rgba(v.$info-color, 0.28);
+  box-shadow: inset 0 0 0 1px rgba(v.$info-color, 0.06);
+}
+
+.errorText {
+  margin: 0;
+  color: v.$danger-color;
+  font-size: 0.9rem;
+}
+
+.mono {
+  font-family: v.$font-family-numbers, monospace;
+}
+
+@media (max-width: 1120px) {
+  .layout {
     grid-template-columns: 1fr;
+  }
+
+  .controls {
+    position: static;
+  }
+
+  .summaryGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cardGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .windowGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .page {
+    padding: 10px;
+  }
+
+  .hero,
+  .controls,
+  .results {
+    padding: 12px;
+  }
+
+  .fieldGrid,
+  .summaryGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .windowGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .hero h1 {
+    font-size: clamp(1.7rem, 11vw, 2.6rem);
+  }
+
+  .metricCard,
+  .card {
+    padding-left: 20px;
   }
 }
