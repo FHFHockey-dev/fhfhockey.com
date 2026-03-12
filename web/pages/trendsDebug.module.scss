@@ -1,11 +1,12 @@
+@use "styles/vars" as v;
+@use "sass:color";
+
 .page {
   min-height: 100vh;
   padding: 32px;
-  background:
-    radial-gradient(circle at top left, rgba(24, 119, 242, 0.12), transparent 28%),
-    radial-gradient(circle at top right, rgba(16, 185, 129, 0.12), transparent 24%),
-    linear-gradient(180deg, #f5f7fb 0%, #edf2f8 100%);
-  color: #10233f;
+  background-color: v.$background-dark;
+  color: v.$text-primary;
+  font-family: v.$font-family-primary;
 }
 
 .shell {
@@ -26,14 +27,20 @@
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #2563eb;
+  color: v.$primary-color;
+  font-family: v.$font-family-accent;
+  text-shadow: 0 0 8px rgba(v.$primary-color, 0.4);
 }
 
 .hero h1 {
   margin: 0;
   font-size: clamp(2rem, 3.8vw, 3.7rem);
   line-height: 0.94;
-  letter-spacing: -0.05em;
+  letter-spacing: 0.08em;
+  color: v.$color-white;
+  font-family: v.$font-family-accent;
+  text-transform: uppercase;
+  text-shadow: 0 0 10px rgba(v.$primary-color, 0.3);
 }
 
 .lede {
@@ -41,330 +48,426 @@
   margin: 0;
   font-size: 1rem;
   line-height: 1.6;
-  color: #415670;
+  color: v.$text-secondary;
 }
 
 .layout {
-  display: grid;
-  grid-template-columns: minmax(320px, 430px) minmax(0, 1fr);
-  gap: 24px;
-  align-items: start;
-}
+ @use "styles/vars" as v;
+@use "sass:color";
 
-.panel {
-  background: rgba(255, 255, 255, 0.82);
-  border: 1px solid rgba(148, 163, 184, 0.28);
-  border-radius: 24px;
-  box-shadow: 0 22px 60px rgba(15, 23, 42, 0.08);
-  backdrop-filter: blur(18px);
-}
+.page {
+  min-height: 100vh;
+  pa  @use "sass:color";
 
-.controls {
-  padding: 24px;
-  position: sticky;
-  top: 24px;
-  display: grid;
-  gap: 20px;
-}
+.pas:
+.page {
+  min-he {
+  min-gr  padding: 32px;
+  -m  background-co:   color: v.$text-primary;
+  font-familr-  font-family: v.$font-fw:}
 
-.section {
-  display: grid;
-  gap: 12px;
+.shell {
+  max-width: 1480px;
+  mcontro  max-wpa  margin: 0 auto;
+ ti  display: grid;p:  gap: 24px;
 }
+y:}
 
-.section h2 {
+.hero {
+p: 20  dispba  gap: 10px;
+}
+ck}
+
+.eyebrowum;
+   margin:1p  font-sizebo  font-weight: 700;
+rd  letter-spacing: bo  text-transform: upperca(  color: v.$primary-color;
+{
+  font-family: v.$font-fa2p  text-shadow: 0 0 8px rgba(v.$primaon}
+
+.hero h1 {
   margin: 0;
-  font-size: 1rem;
-  letter-spacing: -0.02em;
-}
+  font-size: clamp(2remily:   margin:am  font-size
+   line-height: 0.94;
+  letter-spacing: m:  letter-spacing: 0r-  color: v.$color-white;de  font-family: v.$font-bo  text-transform: uponHint {
+  margin:  text-shadow: 0 0 10px rgbco}
 
-.sectionHint {
+.lede {
+  max-width: 960px;
   margin: 0;
-  font-size: 0.9rem;
-  color: #64748b;
-}
+  font-d;
+    max-2p  margin: 0;
+  fon
+   font-sizeri  line-height: 1.e-  color: v.$text-s m}
 
-.fields {
-  display: grid;
-  gap: 12px;
+.layout {
+ @us gap: 12px;
 }
+ @use "s
+.@use "sass:color";
 
-.fieldGrid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
+.pag g
+.page {
+  min-he}
 
-.field,
-.sliderField {
-  display: grid;
-  gap: 6px;
-}
+  min- l  pa  @use "sass:cola
+.pas:
+.page {
+  min-herem.pagfo  min-gh  min-;
+  c  -m  background-co:   ;
+  font-familr-  font-family: v.$font-fw:}
 
-.field label,
-.sliderField label {
-  font-size: 0.82rem;
-  font-weight: 700;
-  color: #334155;
+.s-t
+.shell {
+  max-width: 1480px;
+  mcontro.05  max-w.f  mcontro  max-wpa se ti  display: grid;p:  gap: 24px;
+: }
+y:}
+
+.hero {
+p: 20  dispba  gader-
+.conp: 20   }
+ck}
+
+.eyebrowupx;
+  backgr
+.nd:   margin:ourd  letter-spacing: bo  text-transform: uppam{
+  font-family: v.$font-fa2p  text-shadow: 0 0 8ps ease;
 }
 
 .field input,
-.field select,
-.sliderField input {
-  width: 100%;
-  border: 1px solid rgba(148, 163, 184, 0.45);
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.96);
-  color: #10233f;
+.f
+.hero h1 {
+  margin: 0;
+  font-size: clamp(2remily:   margin:am ld   margin:us  font-sizele   line-height: 0.94;
+  letter-spacing: m:  lettetl  letter-spacing: m:do  margin:  text-shadow: 0 0 10px rgbco}
+
+.lede {
+  max-width: 960px;
+  margin: 0;
+  font-d;
+    max-2p  margin: 0;
+  fo c
+.lede {
+  max-width: 960px;
+  margin:: v  max--f  margin: 0;
+  fon.r  font-d;
+ pa    max-4p  fon
+   font-sizeri  g   f18
+.layout {
+ @us gap: 12px;
 }
+ @use "s
+.@use "sass:col so @us gapor}
+r-secondary;
+  b.@uer-rad
+.pag g
+.page {
+  ado.page4p  min- r
+  min- , 0.pas:
+.page {
+  min-herem.padi.pagy:  min-
+   c  -m  background-co:   ;
+at(4,  font-familr-  font-famil2p
+.s-t
+.shell {
+  max-width: 1480px;
+  mcord.shra  max-wpx  mcontro.05  max.$ba: }
+y:}
+
+.hero {
+p: 20  dispba  gader-
+.conp: 20   }
+ck}
+
+.eyebrowugrid;
+  gy:: 
+.x;
+p: 20 tr.conp: 20   }
+ck}
+
+.e:ck}
+
+.eyebrote
+.-tr  backgr
+.npe.nd:       font-family: v.$font;
+  color: v.$text-secondary;
+  font-fami}
 
 .field input,
-.field select {
-  padding: 11px 12px;
-  font-size: 0.95rem;
-}
-
-.sliderField input {
-  padding: 0;
-}
-
-.sliderValue {
-  font-size: 0.86rem;
-  color: #475569;
-}
-
-.results {
-  padding: 24px;
-  display: grid;
-  gap: 18px;
-}
-
-.summaryGrid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.metricCard {
-  padding: 16px;
-  border-radius: 18px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(232, 240, 249, 0.92));
-  border: 1px solid rgba(148, 163, 184, 0.24);
-  display: grid;
-  gap: 8px;
-}
-
-.metricLabel {
-  font-size: 0.78rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #64748b;
-}
-
-.metricValue {
-  font-size: clamp(1.5rem, 2vw, 2.25rem);
-  line-height: 1;
-  font-weight: 700;
-}
-
-.metricDetail {
-  font-size: 0.88rem;
-  color: #475569;
-}
-
-.statePillRow {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.pill {
-  padding: 10px 14px;
-  border-radius: 999px;
-  font-size: 0.86rem;
-  font-weight: 700;
-  border: 1px solid transparent;
-}
-
-.pillStrong {
-  background: rgba(16, 185, 129, 0.16);
-  color: #047857;
-  border-color: rgba(5, 150, 105, 0.28);
-}
-
-.pillWeak {
-  background: rgba(239, 68, 68, 0.14);
-  color: #b91c1c;
-  border-color: rgba(220, 38, 38, 0.22);
-}
-
-.pillNeutral {
-  background: rgba(59, 130, 246, 0.1);
-  color: #1d4ed8;
-  border-color: rgba(37, 99, 235, 0.2);
-}
-
-.cardGrid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
-}
-
-.card {
-  padding: 18px;
-  border-radius: 20px;
-  background: rgba(248, 250, 252, 0.94);
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  display: grid;
-  gap: 14px;
-}
-
-.card h3 {
+.f
+.hero h1 {
   margin: 0;
-  font-size: 1rem;
-}
+  font-sizze: c.f
+.hero h1  2.w,  margin:;
+  font-sizeht  letter-spacing: m:  lettetl  letter-spacing: m:do  margin:  text-shadow: 0 0 10px rgb;
 
-.statList,
-.bandList,
-.driverList {
-  display: grid;
-  gap: 10px;
-}
-
-.statRow,
-.bandRow,
-.driverRow {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  align-items: center;
-}
-
-.statRow span:first-child,
-.bandRow span:first-child {
-  color: #64748b;
-}
-
-.driverList {
-  list-style: none;
-  padding: 0;
+.lede {
+  max-width: 960px;
   margin: 0;
-}
+  font-d;
+    max-2p  margin: 0;
+  fo c
+.lede {;
+   max-:   margin: 0;
+  fon
+   font-d;
+ y:    max--f  fo c
+.lede {
+  max-at.ledeRo  max di  margin:: v  max-:   fon.r  font-d;
+ pa    max-4p ll pa    maing: 8px   font-sizeri  gad.layout {
+ @us gap: 12 0 @us gap  }
+ @use "s
+.@u00;
+.@use "family: v.$font-family-accent;
+   b.@uer-rafo.pag g
+.pagse.pageet  ado.ac  min- , 0.pas border.page {
+  min-an  min-t;   c  -m  background-co:   unat(4,  font-familr-  font-f.1.s-t
+.shell {
+  max-width: 1480p b.sher  max-w v  mcord.shra  max-wboy:}
 
-.driverRow {
-  align-items: start;
-  padding: 12px 0;
-  border-top: 1px solid rgba(148, 163, 184, 0.16);
-}
+.hero {
+p: 20  dispba  gader-
+.conp: 202)
+.}
 
-.driverRow:first-child {
-  border-top: 0;
-  padding-top: 0;
-}
+p: 20 ea.conp: 20   }
+ck}
 
-.driverMeta {
-  display: grid;
-  gap: 4px;
-}
+.back}
 
-.driverBadgeStack {
-  display: grid;
-  gap: 4px;
-  justify-items: end;
-}
+.eyebroan
+., 0  gy::  color: .x;
+p:orp:rack}
 
-.driverLabel {
-  font-weight: 700;
-}
+. border-color: v
+.col
+.eyeang.-tr  ba-s.npe.nd: 0 10  color: v.$text-secondary;
+  font-pi  font-fami}
 
-.driverCopy {
+.field inputrg
+.field inpry-color, 0.1);
+ .co  margin:ri  font-sizz
+ .hero h1  2.w,  .$  font-sizeht  letter-sad
+.lede {
+  max-width: 960px;
   margin: 0;
-  color: #475569;
-  font-size: 0.9rem;
-  line-height: 1.45;
+  font-d;
+    max-2p  margin: 0;
+  fo c
+.lede {;
+   max-: epe  max-mi  margin: 0;
+  fonap  font-d;
+ .c    max-po  fo c
+.lede {;
+   mave.lede:    max-
+   fon
+   font-d;
+ y:dd   fle y:    ma18.lede {
+  max-at.l n  max-ri pa    max-4p ll pa    maing: 8px   font-sizeri  gad.layou18 @us gap: 12 0 @us gap  }
+ @use "s
+.@u00;
+.@use "family: v.$   @use "s
+.@u00;
+.@use "f#2.@u00;
+%,.@used2   b.@uer-rafo.pag g
+.pagse.pageet  $p.pagse.pageet  ado.
+   min-an  min-t;   c  -m  background-co:   una: bl.shell {
+  murate(160%);
+  transition: transform 0.2s ease, border-color 0.2s e  max-wx-
+.hero {
+p: 20  dispba  gader-
+.conp: 202)
+.}
+
+p: 20 ea.citip: 20 so.conp: 202)
+.}
+
+p: 2  .}
+p: 0;
+   
+botck}
+
+.back}
+
+.eyebro2p
+.
+  
+.eyekgr., 0  gy$pp:orp:rack}
+
+. border-s
+. border- 14.col
+.eyeang.-trlo.ey0   font-pi  font-fami}
+
+.field inputrg
+.field inpry-color  
+.field inputrg
+.fieiti.field inpry-
+  .co  margin:ri  font-sigr .hero h1  2.w,  .$  font 4.lede {
+  max-width: 960px;
+  margin: 0;
+   t  max-re  margin: 0;
+  fonty  font-d;
+ an    max-op  fo c
+.lede {;
+   ma p.leder-   max- n  fonap  font-d;
+ .c    max-po form: translateX(-3.lede {;
+   mave.llo   mave(v   fon
+   font-d;
+ y);   fobo y:dd   f 0  max-at.l n  max-ri pa    mlo @use "s
+.@u00;
+.@use "family: v.$   @use "s
+.@u00;
+.@use "f#2.@u00;
+%,.@used2   b.@uer-rafo.pag g
+.pags c.@u00;
+.$.@use-w.@u00;
+.@use "f#2.@u00;
+%,.on.@useil%,.@used2   b.@et.pagse.pageet  $p.pagse.paget-   min-an  min-t;   c  -m  backgrouis  murate(160%);
+  transition: transform 0.2s ease, border-}
+  transition: nd.hero {
+p: 20  dispba  gader-
+.conp: 202)
+.}
+
+p: 20 ea.citip: twp: 20  g.conp: 202)
+.}
+
+p: 2em.}
+
+p: 20 
+}
+
+.s.}
+
+p: 2  .}
+p: 0;
+   
+botck}
+
+ow
+spap: 0;
+ -c   
+ {bo c
+.bac v.
+.eye-se.
+  ary;
+  f.nt
+. border-s
+. border- 14.comar. border-atRow span:last-chi
+.field inputrg
+.field inpry-color  
+.fam.field $font-fa.field inputrg
+.fieor.fieiti.fieldit  .co  margin:ri  f
+   max-width: 960px;
+  margin: 0;
+   t  max-re  margin: 0;
+  {
+  margin: 0;
+   t rt   t  max-r:   fonty  font-d;
+ an   px an    max-op  r-.lede {;
+   ma p.lve   ma prs .c    max-po form: translateX(-3.ledeop   mave.llo   mave(v   fon
+   font-d;
+ y g   font-d;
+ y);   fobo y:ta y);   fosp.@u00;
+.@use "family: v.$   @use "s
+.@u00;
+.@use "f#2.@u00;l .@useon.@u00;
+.@use "f#2.@u00;
+%,.co.@usehi%,.@used2   b.@ly.pags c.@u00;
+.$.@use-w.@u00
+..$.@use-w.@u
+ .@use "f#2.@u0co%,.on.@useil%,.co  transition: transform 0.2s eline-height: 1.45;
 }
 
 .subtle {
-  color: #64748b;
+  color: v.$text-secondary;
   font-size: 0.88rem;
+  transition: nd.hero {
+p: 20  dispba  gadp:p: 20  dispba  gaden {
+ .conp: 202)
+.}
+
+p: 2st.}
+
+p: 20 t:
+spa.}
+
+p: 2em.}
+
+p: 20 
 }
 
-.suggestionList {
-  display: grid;
-  gap: 8px;
-}
+.s.}
 
-.suggestion {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  border: 1px solid rgba(148, 163, 184, 0.22);
-  background: rgba(255, 255, 255, 0.94);
-  color: inherit;
+p: 2   g
+p: 
+p: 20  pa}
+
+.s: 10p
+p:2pxp: 0;
+ de   
+dibo: 
+ow
+s  bsrd -c   
+ s {bo v..bac er.eye-sda  ary;
+ac  f.nnd. borns. border- c.fir: v.$text-primary;
   text-align: left;
-  cursor: pointer;
-}
+  cu.field inpry-;
+.fam.field $font- 0.2.fieor.fieiti.fieldit  .co  margco   max-width: 960px;
+  margin: 0;
+   t rg  margin: 0;
+   t  ,    t  max-rol  {
+  margin: 0;
+   t r    ox   t rt   t0  an   px an    max-op  r-.lede {;
+  }   ma p.lve   maner {
+  display: g   font-d;
+ y g   font-d;
+ y);   fobo y:ta y);   fosp.@u00;
+.@use "family: v.$   @usedi y g   fog, y);  255, 255,.@use "family: v.$   @use "s
+.@u 0.@u00;
+.@use "f#2.@u00;l .@rg.@use5,.@use "f#2.@u00;
+%,.co.@usehi%re%,.co.@usehi%,.:b.$.@use-w.@u00
+..$.@use-w.@u
+ .@use "f#2.so..$.@use-w.@u:  .@use " 0; ri}
 
-.suggestion:hover {
-  border-color: rgba(37, 99, 235, 0.32);
-  background: rgba(239, 246, 255, 0.94);
-}
-
-.snapshotBanner {
-  display: grid;
-  gap: 4px;
-  padding: 12px 14px;
-  border-radius: 14px;
-  background: rgba(219, 234, 254, 0.5);
-  border: 1px solid rgba(37, 99, 235, 0.18);
+.subtle {
+  color: v.$text-secondary;
+  font-size: 0.88rem;
+  transition: nd.h5, 0.  color:sparent);
+  }
 }
 
 .errorText {
+  transition: nd.her: p: 20  dispba  gadp:p:t- .conp: 202)
+.}
+
+p: 2st.}
+
+p: 20 t:
+spa.}(v.}
+
+p: 2st.ng
+, 0
+p: 20 
+.mspa.}
+
+ f
+p: family: v.$fo}
+
+.smily-
+p:berp: 
+p: mep:a 
+.s: 10p
+h: p:2pxp)  de   
+diutdibo:  ow
+s tespl s {bo v..ba 1ac  f.nnd. borns. border- c.fsi  text-align: left;
+  cu.field inpry-;
+.fam.fielpl  cu.field inpry-;t(.fam.field $font-);  margin: 0;
+   t rg  margin: 0;
+   t  ,    t  max-rol  {
   margin: 0;
-  color: #b91c1c;
-  font-size: 0.9rem;
-}
-
-.mono {
-  font-family:
-    ui-monospace,
-    SFMono-Regular,
-    SFMono-Regular,
-    Menlo,
-    Monaco,
-    Consolas,
-    "Liberation Mono",
-    monospace;
-}
-
-@media (max-width: 1120px) {
-  .layout {
-    grid-template-columns: 1fr;
-  }
-
-  .controls {
-    position: static;
-  }
-
-  .summaryGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .cardGrid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 700px) {
-  .page {
-    padding: 18px;
-  }
-
-  .fieldGrid,
-  .summaryGrid {
+   th   t rg  ma     t  ,    t  max-g:  margin: 0;
+   t r    d,   t r   ryGr  } 
     grid-template-columns: 1fr;
   }
 }
