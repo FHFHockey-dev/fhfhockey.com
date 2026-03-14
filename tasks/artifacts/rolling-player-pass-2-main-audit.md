@@ -14,8 +14,13 @@ Primary supporting artifacts:
 - [rolling-player-pass-2-reconstruction-evidence-2026-03-12.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-reconstruction-evidence-2026-03-12.md)
 - [rolling-player-pass-2-diagnostics-classification-2026-03-12.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-diagnostics-classification-2026-03-12.md)
 - [rolling-player-pass-2-refresh-dependency-map.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-refresh-dependency-map.md)
+- [rolling-player-pass-2-refresh-dependency-graph-2026-03-14.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-refresh-dependency-graph-2026-03-14.md)
+- [rolling-player-pass-2-operational-surface-decision-2026-03-14.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-operational-surface-decision-2026-03-14.md)
+- [rolling-player-pass-2-orchestration-pattern-reuse-2026-03-14.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-orchestration-pattern-reuse-2026-03-14.md)
+- [rolling-player-pass-2-coordinator-entrypoint-2026-03-14.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-coordinator-entrypoint-2026-03-14.md)
 - [rolling-player-pass-2-schema-change-recommendations.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-schema-change-recommendations.md)
 - [rolling-player-pass-2-suggested-metric-additions-review.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-suggested-metric-additions-review.md)
+- [rolling-player-pass-2-post-optimization-verification-2026-03-14.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-post-optimization-verification-2026-03-14.md)
 - [rpm-audit-notes-pass-2.md](/Users/tim/Code/fhfhockey.com/tasks/rpm-audit-notes-pass-2.md)
 - [rpm-audit-action-items-pass-2.md](/Users/tim/Code/fhfhockey.com/tasks/rpm-audit-action-items-pass-2.md)
 
@@ -110,7 +115,7 @@ Inventory groups:
 
 ## BROKEN
 
-- ❌ `historical weighted-rate legacy alias refreshability` - `sum(raw_events) / sum(resolved_toi_seconds) * 3600` - stored historical subset remains stale while targeted upserts fail
+- ❌ `historical weighted-rate legacy alias refreshability` - `sum(raw_events) / sum(resolved_toi_seconds) * 3600` - legacy historical weighted-rate alias surfaces still carry schema drag and need explicit freeze / cleanup policy
 
 ## ALMOST
 
@@ -128,15 +133,17 @@ Inventory groups:
 
 The strongest current evidence says the rolling pipeline is not broadly arithmetically broken. Fresh, ready rows reconstructed cleanly across additive, ratio, weighted-rate, availability, PP context, and line-context families. The largest remaining pass-2 risks are operational and semantic:
 
-- targeted recomputes still fail during `rolling_player_game_metrics` upsert, so stale target rows can survive even after source refreshes succeed
+- PK-family validation is still blocked for selected retained cases because PK upstream tails lag current WGO coverage
 - ratio, weighted-rate, and GP compatibility aliases still create semantic drag because the old field names imply distinctions that are no longer real
 - support-column parity and source-provenance visibility remain uneven, especially for PP mixed-source windows, TOI trust, and some ratio-support groups
 
 The pass-2 posture is therefore:
 
 - treat ready-scope arithmetic as mostly sound
-- treat freshness and target-write health as mandatory preconditions
-- route most follow-up work into observability, compatibility cleanup, and targeted schema/payload improvements rather than another formula redesign sweep
+- treat freshness as a mandatory precondition, with the current retained-player blockers concentrated in PK source tails rather than target-write failure
+- route most follow-up work into observability, compatibility cleanup, runtime-budget enforcement, and orchestration consolidation rather than another formula redesign sweep
+
+The recommended operating surface is now the consolidated coordinator at [run-rolling-forge-pipeline.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/run-rolling-forge-pipeline.ts), backed by the shared stage graph in [rollingForgePipeline.ts](/Users/tim/Code/fhfhockey.com/web/lib/rollingForgePipeline.ts), rather than the old scattered route list.
 
 ## Live Validation Examples
 
@@ -427,9 +434,13 @@ Primary operational sources:
 - `unknownGameIds > 0` blocks trust in row identity and game-ledger reconstruction
 - target-write failure blocks trust in any comparison that requires a newly refreshed stored row
 
-March 12 blocker state:
+Current retained-player blocker state:
 
 - Corey Perry `pk`:
+  - `countsTailLag = 2`
+  - `ratesTailLag = 2`
+  - `countsOiTailLag = 2`
+- Jesper Bratt `pk`:
   - `countsTailLag = 1`
   - `ratesTailLag = 1`
   - `countsOiTailLag = 1`
@@ -437,8 +448,8 @@ March 12 blocker state:
   - `countsTailLag = 1`
   - `ratesTailLag = 1`
   - `countsOiTailLag = 1`
-- Burns and Bratt retained ready scopes:
-  - all relevant tail lags were `0`
+- Brent Burns retained ready scopes:
+  - all relevant tail lags are `0`
 
 ### Freshness diagnostics that must be checked
 
@@ -447,13 +458,13 @@ March 12 blocker state:
 - `summarizeDerivedWindowDiagnostics(...)`
 - `summarizeSuspiciousOutputs(...)`
 
-March 12 live interpretation:
+Current retained-player interpretation:
 
 - `suspiciousIssueCount = 0` across retained ready players
 - GP windows were coherent
 - ratio support completeness remained weaker than GP support, especially for `primary_points_pct`, `ipp`, and `pdo`
-- targeted PK refreshes improved source coverage but did not clear Perry/Jones PK blockers
-- targeted rolling recomputes still failed on final upsert
+- targeted retained-player reruns restored `targetFreshnessOk: true` for the retained validation set
+- targeted PK refreshes improved source coverage but did not clear Perry, Bratt, or Jones PK blockers
 
 ### `trendsDebug.tsx` freshness requirements
 

@@ -46,20 +46,23 @@ Command:
 
 Result:
 
-- Brent Burns: `BLOCKED`
+- Brent Burns: `READY`
 - Corey Perry: `BLOCKED`
 - Jesper Bratt: `BLOCKED`
 - Seth Jones: `BLOCKED`
 
 Important details:
 
-- Burns, Perry, and Bratt now have fresh upstream tails through `2026-03-12`, but their latest rolling rows still stop before those tails, so `targetFreshnessOk` is currently `false`
-- Perry still has genuine PK source-tail blockers
-- Jones remains limited by older WGO scope and PK source-tail blockers
+- all four retained validation players now have `targetFreshnessOk: true` after the targeted reruns
+- Brent Burns is fully `READY`
+- Perry, Bratt, and Jones remain blocked only by genuine PK source-tail blockers
+- Perry and Bratt have PK counts / rates / countsOi tails stopping at `2026-03-08` while WGO is current through `2026-03-12`
+- Jones remains limited by an older WGO scope plus PK tails stopping at `2025-12-30`
 
 Interpretation:
 
-- the repaired writer is still working, but the retained validation set now needs another rolling recompute pass after the later optional-metric and payload work if the audit artifacts are expected to reflect March 14 freshness
+- the retained validation set no longer has a stale-target problem
+- remaining retained-player blockers are upstream PK freshness problems, not rolling write failures or stale stored rows
 
 ### Targeted Family Reconstruction
 
@@ -69,27 +72,36 @@ Command:
 
 Result:
 
-- Brent Burns and Jesper Bratt both showed:
-  - `missingStoredRows = 4` across families
-  - zero mismatches for most compared families where stored rows exist
-  - historical-baseline mismatch samples concentrated in the newly added optional metric surfaces
-
-Observed mismatch pattern:
-
-- `primary_assists_avg_season`, `primary_assists_avg_3ya`, `primary_assists_avg_career`
-- `secondary_assists_avg_season`, `secondary_assists_avg_3ya`, `secondary_assists_avg_career`
-- `penalties_drawn_avg_season`
-- `penalties_drawn_per_60_avg_season`, `*_avg_3ya`, `*_avg_career`
+- Brent Burns and Jesper Bratt now both show:
+  - `missingStoredRows = 0` across compared families
+  - zero mismatches across compared families
+  - `historical_baselines = MATCH`
 
 Interpretation:
 
 - the new optional metrics are deriving correctly in recompute output
-- stored historical baseline fields for those metrics are still `null` on the sampled earliest rows until a full backfill / recompute refresh is performed
+- the retained ready validation set no longer shows the earlier optional historical baseline stored-null gap
+- targeted reruns were sufficient to backfill the sampled stored rows for the ready comparison set
 
 ## Net Outcome
 
 - `trendsDebug.tsx` optimization work is verified at the source-test and typecheck level
+- the recommended orchestration surface is now the consolidated coordinator:
+  - [run-rolling-forge-pipeline.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/run-rolling-forge-pipeline.ts)
+  - [rollingForgePipeline.ts](/Users/tim/Code/fhfhockey.com/web/lib/rollingForgePipeline.ts)
 - targeted validation scripts still expose the remaining operational follow-ups:
-  - rerun/backfill retained validation-player rolling rows so target freshness catches up to current upstream tails
-  - backfill optional-metric historical baseline fields on stored rows
   - resolve remaining genuine PK source-tail blockers for affected validation scopes
+  - keep audit evidence synchronized with the newer retained-player parity snapshots instead of the older early-March-14 snapshot
+
+## Recommended Job Surface
+
+The recommended operator-facing process is now:
+
+1. `GET /api/v1/db/run-rolling-forge-pipeline?mode=daily_incremental&date=YYYY-MM-DD`
+2. `GET /api/v1/db/run-rolling-forge-pipeline?mode=overnight&startDate=YYYY-MM-DD&endDate=YYYY-MM-DD`
+3. `GET /api/v1/db/cron-report`
+
+Interpretation:
+
+- the old scattered route list remains available as implementation primitives and repair helpers
+- the runbook surface should now prefer the coordinator plus monitoring

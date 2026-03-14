@@ -35,6 +35,10 @@
 - `tasks/artifacts/rolling-player-pass-2-execution-profile-tuning-2026-03-14.md` - Execution-profile policy for separating daily, overnight, and targeted-repair rolling recompute defaults at the route and coordinator layers.
 - `tasks/artifacts/rolling-player-pass-2-runtime-budget-reporting-2026-03-14.md` - Runtime-budget reporting contract for rolling recompute and the consolidated coordinator, including explicit in-budget/out-of-budget summaries.
 - `tasks/artifacts/rolling-player-pass-2-runtime-budget-check-2026-03-14.md` - Script-level enforcement artifact for the live rolling-player runtime budget check, including the verified daily-slice pass result.
+- `tasks/artifacts/rolling-player-pass-2-retained-validation-rerun-2026-03-14.md` - Targeted rerun artifact for Brent Burns, Corey Perry, Jesper Bratt, and Seth Jones after the runtime and optional-metric changes landed.
+- `tasks/artifacts/rolling-player-pass-2-retained-validation-freshness-2026-03-14.md` - Post-rerun freshness artifact confirming which retained validation players are fully ready and which remain blocked only by genuine PK source-tail lag.
+- `tasks/artifacts/rolling-player-pass-2-optional-baseline-backfill-2026-03-14.md` - Verification artifact confirming the retained ready validation set no longer has stored-null gaps for newly added optional historical baseline fields after the targeted reruns.
+- `tasks/artifacts/rolling-player-pass-2-retained-validation-parity-2026-03-14.md` - Combined parity and freshness snapshot for the retained validation set after the optional-baseline backfill confirmation.
 - `web/lib/rollingForgePipeline.ts` - Shared stage graph for the new rolling-player + FORGE coordinator surface.
 - `web/pages/api/v1/db/run-rolling-forge-pipeline.ts` - Consolidated coordinator entrypoint for overnight and daily incremental orchestration.
 - `web/pages/api/v1/db/run-rolling-forge-pipeline.test.ts` - Route-level regression coverage for stage ordering, failure short-circuiting, and daily-mode behavior.
@@ -76,12 +80,12 @@
   - [x] 3.5 Tune batching and concurrency defaults so the daily incremental path targets `4m30s` or less without making the overnight path fragile.
   - [x] 3.6 Add explicit runtime-budget reporting to the rolling/orchestration flow so daily and overnight runs emit comparable timing summaries.
   - [x] 3.7 Add regression coverage or script-level checks that fail clearly when the daily path exceeds the agreed runtime envelope.
-- [ ] 4.0 Backfill retained validation targets and stabilize freshness/readiness reporting
-  - [ ] 4.1 Rerun targeted rolling recomputes for the retained validation players after the optional-metric changes and current orchestration/runtime adjustments land.
-  - [ ] 4.2 Confirm `targetFreshnessOk` status for the retained validation set and document any remaining blockers that are genuine source-tail issues rather than stale targets.
-  - [ ] 4.3 Backfill or recompute the newly added optional historical baseline fields so stored rows no longer show `null` where recomputed values now exist.
-  - [ ] 4.4 Re-run the targeted family-reconstruction and freshness scripts after the backfill to confirm stored-versus-recomputed parity on the retained validation set.
-  - [ ] 4.5 Update the audit, refresh, and verification artifacts so they reflect the new post-backfill state instead of the older March 12/March 14 snapshots.
+- [x] 4.0 Backfill retained validation targets and stabilize freshness/readiness reporting
+  - [x] 4.1 Rerun targeted rolling recomputes for the retained validation players after the optional-metric changes and current orchestration/runtime adjustments land.
+  - [x] 4.2 Confirm `targetFreshnessOk` status for the retained validation set and document any remaining blockers that are genuine source-tail issues rather than stale targets.
+  - [x] 4.3 Backfill or recompute the newly added optional historical baseline fields so stored rows no longer show `null` where recomputed values now exist.
+  - [x] 4.4 Re-run the targeted family-reconstruction and freshness scripts after the backfill to confirm stored-versus-recomputed parity on the retained validation set.
+  - [x] 4.5 Update the audit, refresh, and verification artifacts so they reflect the new post-backfill state instead of the older March 12/March 14 snapshots.
 - [ ] 5.0 Reorganize the pass-2 operational surface for maintainability, including file sprawl, ownership boundaries, and runbook alignment
   - [ ] 5.1 Audit the current rolling-player/FORGE operational files and identify where orchestration logic, refresh policy, diagnostics, and UI/debug responsibilities are unnecessarily spread out.
   - [ ] 5.2 Consolidate organization around a smaller set of ownership boundaries, for example: pipeline contracts, orchestration, diagnostics, validation payloads, and downstream readers.

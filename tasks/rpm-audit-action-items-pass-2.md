@@ -19,17 +19,17 @@ Each item should use this structure:
 
 ## Current Operational Blockers
 
-- `Retained validation-player target freshness is stale`
-  - Brent Burns, Corey Perry, and Jesper Bratt currently have fresher upstream tails than their stored rolling rows, so March 14 stored validation rows are not current signoff evidence.
 - `PK source tails remain genuinely stale for selected validation scopes`
   - Corey Perry `pk`, Jesper Bratt `pk`, and Seth Jones `pk` still have lagging PK counts / rates / counts-on-ice inputs, which blocks PK-family validation even if target-row freshness is repaired.
-- `Optional historical baseline fields still need stored-row backfill`
-  - `primary_assists_avg_*`, `secondary_assists_avg_*`, `penalties_drawn_avg_*`, and `penalties_drawn_per_60_avg_*` derive correctly in recompute output but still show `null` on sampled stored rows.
 
 Resolved non-blocker:
 
 - `Vitest .next artifact discovery`
   - resolved by the Vitest exclusion fix and full-suite rerun on `2026-03-14`
+- `Retained validation-player target freshness`
+  - resolved by the March 14 targeted reruns; retained validation rows now have `targetFreshnessOk: true`
+- `Optional historical baseline stored-row backfill`
+  - resolved for the retained ready validation set; Burns and Bratt now show `historical_baselines = MATCH`
 
 ### `P1` Diagnostics / observability: expose per-row TOI trust trace for weighted-rate validation
 - category: `TOI trust / fallback`
@@ -75,12 +75,12 @@ Resolved non-blocker:
   - `web/pages/api/v1/db/update-rolling-player-averages.ts`
   - `tasks/artifacts/rolling-player-pass-2-main-audit.md`
   - `tasks/artifacts/rolling-player-pass-2-refresh-execution-2026-03-12.md`
-- problem: March 14 targeted validation scripts showed Burns, Perry, and Bratt now have fresher upstream tails than their stored rolling rows, and family reconstruction also shows newly added optional historical baseline fields still `null` on sampled stored rows while recomputed values are present.
-- recommended action: rerun targeted rolling recomputes for the retained validation set after the optional-metric changes land, confirm `targetFreshnessOk`, and refresh the audit evidence artifacts that currently rely on older stored-row snapshots.
-- expected benefit: restores trustworthy stored-vs-recomputed comparisons for the retained players and prevents stale target rows from masking optional-metric rollout completeness.
-- blocker status: blocker for treating March 14 stored validation rows as up-to-date signoff evidence.
-- source of discovery: `tasks/artifacts/rolling-player-pass-2-post-optimization-verification-2026-03-14.md`
-- status: `open`
+- problem: the early March 14 artifacts captured retained validation players before the later targeted reruns, so those artifacts still describe stale targets and optional-baseline backfill gaps that are no longer current.
+- recommended action: keep the retained-player evidence artifacts synchronized with the latest rerun, parity, and freshness snapshots, and treat remaining retained-player blockers as PK-source freshness only.
+- expected benefit: preserves a trustworthy audit trail and prevents older snapshots from overstating stale-target or optional-baseline problems that have already been resolved.
+- blocker status: no longer a recompute blocker; documentation-consistency follow-up only.
+- source of discovery: `tasks/artifacts/rolling-player-pass-2-post-optimization-verification-2026-03-14.md`, `tasks/artifacts/rolling-player-pass-2-retained-validation-parity-2026-03-14.md`
+- status: `done`
 
 ### `P1` Diagnostics / observability: add explicit mixed-source PP-share window tracing
 - category: `PP context`
