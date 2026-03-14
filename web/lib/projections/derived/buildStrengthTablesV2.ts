@@ -102,6 +102,8 @@ export async function buildPlayerGameStrengthV2ForDateRange(opts: {
     for (const play of (plays ?? []) as PbpPlayRow[]) {
       const teamId = play.eventownerteamid;
       if (!teamId) continue;
+      const isGoalPlay = isGoal(play.typedesckey);
+      const isShotPlay = isShotForProjection(play.typedesckey);
       const digits = parseSituationDigits(play.situationcode);
       const strength = strengthForTeam(
         digits,
@@ -110,14 +112,18 @@ export async function buildPlayerGameStrengthV2ForDateRange(opts: {
         game.awayTeamId
       );
 
-      if (isShotForProjection(play.typedesckey) && play.shootingplayerid) {
-        const playerId = play.shootingplayerid;
+      // Goal events should count as SOG. Some goal rows have null shootingplayerid,
+      // so fall back to scoringplayerid for shot attribution.
+      const shotPlayerId =
+        play.shootingplayerid ?? (isGoalPlay ? play.scoringplayerid : null);
+      if (isShotPlay && shotPlayerId) {
+        const playerId = shotPlayerId;
         const split = shotSplitsByPlayer.get(playerId) ?? emptySplit();
         addToSplit(split, strength, 1);
         shotSplitsByPlayer.set(playerId, split);
       }
 
-      if (isGoal(play.typedesckey) && play.scoringplayerid) {
+      if (isGoalPlay && play.scoringplayerid) {
         const scorerId = play.scoringplayerid;
         const split = goalSplitsByPlayer.get(scorerId) ?? emptySplit();
         addToSplit(split, strength, 1);

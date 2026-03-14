@@ -8,6 +8,12 @@ export type PosGroup = "F" | "D";
 
 const FORWARDS = new Set(["C", "LW", "RW"]);
 const EPS = 1e-9;
+export const ROOKIE_FALLBACK_MIN_TRIALS: Record<StatCode, number> = {
+  shp: 100,
+  oishp: 150,
+  ipp: 40,
+  ppshp: 25
+};
 
 export function toPosGroup(position_code: string | null): PosGroup | null {
   if (!position_code) return null;
@@ -260,6 +266,36 @@ export function betaPosterior(
   return { post_alpha, post_beta, post_mean, post_var };
 }
 
+export function applyPositionLeagueFallback(
+  prior: { alpha0: number; beta0: number },
+  stat: StatCode,
+  trials: number,
+  minTrials: Partial<Record<StatCode, number>> = ROOKIE_FALLBACK_MIN_TRIALS
+) {
+  const threshold = Math.max(0, Number(minTrials[stat] ?? 0));
+  if (!Number.isFinite(trials) || trials >= threshold || threshold <= 0) {
+    return {
+      alpha0: prior.alpha0,
+      beta0: prior.beta0,
+      fallback_weight: 0,
+      adjusted_k: prior.alpha0 + prior.beta0
+    };
+  }
+
+  const baseK = Math.max(prior.alpha0 + prior.beta0, EPS);
+  const missingShare = (threshold - Math.max(trials, 0)) / threshold;
+  const boostedK = baseK * (1 + missingShare);
+  const mu = prior.alpha0 / baseK;
+  const { alpha0, beta0 } = betaFromMuK(mu, boostedK);
+
+  return {
+    alpha0,
+    beta0,
+    fallback_weight: Number(missingShare.toFixed(6)),
+    adjusted_k: Number(boostedK.toFixed(6))
+  };
+}
+
 // Upsert league priors
 // priors.ts
 export async function upsertLeaguePriors(
@@ -341,7 +377,13 @@ export async function upsertPlayerPosteriors(
       const b = blended[stat];
       const prior = leagueMap!.get(`${rec.position_group}|${stat}`);
       if (!prior) return;
-      const post = betaPosterior(prior.alpha0, prior.beta0, b.s, b.n);
+      const fallback = applyPositionLeagueFallback(prior, stat, b.n);
+      const post = betaPosterior(
+        fallback.alpha0,
+        fallback.beta0,
+        b.s,
+        b.n
+      );
       upsertRows.push({
         player_id: rec.player_id,
         season_id,
@@ -429,6 +471,7 @@ export default {
   fetchPlayerSeasonCounts,
   blendCounts,
   betaPosterior,
+  applyPositionLeagueFallback,
   upsertLeaguePriors,
   upsertPlayerPosteriors,
   ensureTables

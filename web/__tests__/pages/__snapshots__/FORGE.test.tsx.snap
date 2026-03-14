@@ -1,0 +1,605 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`FORGE goalie UI states > renders goalie disclosure and starter confidence blocks 1`] = `
+<DocumentFragment>
+  <div
+    class="_container_509581"
+  >
+    <title>
+      FORGE Player Projections | FHFHockey
+    </title>
+    <meta
+      content="FORGE Player Projections for the upcoming games."
+      name="description"
+    />
+    <main
+      class="_main_509581"
+    >
+      <div
+        style="margin-bottom: 1rem;"
+      >
+        <a
+          href="/forge/dashboard"
+        >
+          Visit the Forge dashboard →
+        </a>
+      </div>
+      <div
+        style="margin-bottom: 1rem;"
+      >
+        <a
+          href="/trends"
+        >
+          Visit the unified dashboard →
+        </a>
+      </div>
+      <div
+        class="_header_509581"
+      >
+        <div
+          class="_logoContainer_509581"
+        >
+          <img
+            alt="FORGE Logo"
+            height="100"
+            src="/pictures/FORGE.png"
+            width="400"
+          />
+        </div>
+        <h1
+          class="_title_509581"
+        >
+          <span
+            class="_highlight_509581"
+          >
+            F
+          </span>
+          orecasting & 
+          <span
+            class="_highlight_509581"
+          >
+            O
+          </span>
+          utcome 
+          <span
+            class="_highlight_509581"
+          >
+            R
+          </span>
+          econciliation 
+          <span
+            class="_highlight_509581"
+          >
+            G
+          </span>
+          ame 
+          <span
+            class="_highlight_509581"
+          >
+            E
+          </span>
+          ngine
+        </h1>
+      </div>
+      <div
+        class="_modeSwitch_509581"
+      >
+        <button
+          class="_modeButton_509581"
+        >
+          Skaters
+        </button>
+        <button
+          class="_modeButton_509581 _activeModeButton_509581"
+        >
+          Goalies
+        </button>
+      </div>
+      <section
+        class="_accuracySection_509581"
+      >
+        <div
+          class="_accuracyHeader_509581"
+        >
+          <div>
+            <h2>
+              Model Accuracy (Goalie, Last 30 Days)
+            </h2>
+            <p>
+              This line shows how close recent projections were to actual results. Higher is better.
+            </p>
+          </div>
+          <div
+            class="_accuracyValue_509581"
+          >
+            <span>
+              Latest
+            </span>
+            <strong>
+              44%
+            </strong>
+          </div>
+        </div>
+        <div
+          class="_accuracyChart_509581"
+        >
+          <svg
+            aria-label="Accuracy line chart from 0 to 100 percent"
+            role="img"
+            viewBox="0 0 600 160"
+          >
+            <line
+              class="_accuracyAxis_509581"
+              x1="0"
+              x2="600"
+              y1="144"
+              y2="144"
+            />
+            <line
+              class="_accuracyAxis_509581"
+              x1="0"
+              x2="600"
+              y1="16"
+              y2="16"
+            />
+            <path
+              class="_accuracyLine_509581"
+              d="M 16,90.24 L 584,87.68"
+            />
+            <circle
+              class="_accuracyDot_509581"
+              cx="584"
+              cy="87.68"
+              r="4"
+            />
+          </svg>
+          <div
+            class="_accuracyLabels_509581"
+          >
+            <span>
+              0%
+            </span>
+            <span>
+              100%
+            </span>
+          </div>
+        </div>
+      </section>
+      <div
+        class="_controlsContainer_509581"
+      >
+        <div
+          class="_filterGroup_509581"
+        >
+          <input
+            class="_searchInput_509581"
+            placeholder="Search goalies..."
+            type="text"
+            value=""
+          />
+        </div>
+        <div
+          class="_filterGroup_509581"
+        >
+          <select
+            class="_teamSelect_509581"
+          >
+            <option
+              value=""
+            >
+              All Teams
+            </option>
+            <option
+              value="New Jersey Devils"
+            >
+              New Jersey Devils
+            </option>
+          </select>
+        </div>
+      </div>
+      <section
+        aria-label="Goalie game ticker"
+        class="_goalieGameStrip_509581"
+      >
+        <h3>
+          Today's Slate (2026-02-08)
+        </h3>
+        <div
+          class="_goalieGameStripTrack_509581"
+        >
+          <div
+            class="_goalieGameCard_509581"
+            style="--away-color: #003087; --home-color: #000000;"
+          >
+            <div
+              class="_gameStripTeamRow_509581"
+            >
+              <div
+                class="_gameStripTeamRowHeader_509581"
+              >
+                <div
+                  class="_gameStripTeamIdentity_509581"
+                >
+                  <img
+                    alt="NYI"
+                    class="_gameStripTeamLogo_509581"
+                    src="/teamLogos/NYI.png"
+                  />
+                  <span
+                    class="_gameStripTeamAbbrev_509581"
+                  >
+                    NYI
+                  </span>
+                </div>
+                <div
+                  class="_gameStripTeamRating_509581"
+                >
+                  <div
+                    class="_gameStripRatingRow_509581"
+                  >
+                    <span
+                      class="_gameStripRatingLabel_509581"
+                    >
+                      OFF
+                    </span>
+                    <span
+                      class="_gameStripRatingValue_509581 _glowRed_509581"
+                    >
+                      79
+                    </span>
+                  </div>
+                  <div
+                    class="_gameStripRatingRow_509581"
+                  >
+                    <span
+                      class="_gameStripRatingLabel_509581"
+                    >
+                      DEF
+                    </span>
+                    <span
+                      class="_gameStripRatingValue_509581 _glowGreen_509581"
+                    >
+                      81
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div
+                class="_goalieBarContainer_509581"
+              >
+                <div
+                  class="_goalieSegment_509581"
+                  style="width: 81%; background-color: rgba(59, 212, 174, 0.4); border-color: #3bd4ae;"
+                  title="Ilya Sorokin (81%)"
+                >
+                  <span
+                    class="_goalieSegmentText_509581"
+                  >
+                    Sorokin 81%
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div
+              class="_gameStripDivider_509581"
+            >
+              <div
+                class="_gameStripDividerLine_509581"
+              />
+              <div
+                class="_gameStripVsCircle_509581"
+              >
+                vs
+              </div>
+              <div
+                class="_gameStripDividerLine_509581"
+              />
+            </div>
+            <div
+              class="_gameStripTeamRow_509581"
+            >
+              <div
+                class="_gameStripTeamRowHeader_509581 _gameStripReverse_509581"
+              >
+                <div
+                  class="_gameStripTeamIdentity_509581 _gameStripReverse_509581"
+                >
+                  <img
+                    alt="NJD"
+                    class="_gameStripTeamLogo_509581"
+                    src="/teamLogos/NJD.png"
+                  />
+                  <span
+                    class="_gameStripTeamAbbrev_509581"
+                  >
+                    NJD
+                  </span>
+                </div>
+                <div
+                  class="_gameStripTeamRating_509581"
+                >
+                  <div
+                    class="_gameStripRatingRow_509581"
+                  >
+                    <span
+                      class="_gameStripRatingLabel_509581"
+                    >
+                      OFF
+                    </span>
+                    <span
+                      class="_gameStripRatingValue_509581 _glowGreen_509581"
+                    >
+                      82
+                    </span>
+                  </div>
+                  <div
+                    class="_gameStripRatingRow_509581"
+                  >
+                    <span
+                      class="_gameStripRatingLabel_509581"
+                    >
+                      DEF
+                    </span>
+                    <span
+                      class="_gameStripRatingValue_509581 _glowRed_509581"
+                    >
+                      77
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div
+                class="_goalieBarContainer_509581"
+              >
+                <div
+                  class="_goalieSegment_509581"
+                  style="width: 72%; background-color: rgba(255, 209, 102, 0.4); border-color: #ffd166;"
+                  title="Jacob Markstrom (72%)"
+                >
+                  <span
+                    class="_goalieSegmentText_509581"
+                  >
+                    Markstrom 72%
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section
+        class="_goalieDisclosure_509581"
+      >
+        <h3>
+          Goalie Model Disclosure
+        </h3>
+        <div
+          class="_disclosureMeta_509581"
+        >
+          <span>
+            Model: starter-scenario-v1
+          </span>
+          <span>
+            Starter scenarios: 2
+          </span>
+          <span>
+            Starter calibration (Brier): 0.190
+          </span>
+        </div>
+        <ul>
+          <li>
+            Starter probabilities are model estimates, not confirmed lineup locks.
+          </li>
+          <li>
+            Public data cannot fully capture pre-shot movement, traffic/screening, or coaching intent.
+          </li>
+          <li>
+            Calibration hints summarize recent historical performance and do not guarantee single-game outcomes.
+          </li>
+          <li>
+            Back-to-back, recency, and opponent context are heuristic signals and can be overridden by late news.
+          </li>
+        </ul>
+        <p
+          class="_disclosureNotes_509581"
+        >
+          Diagnostics: No NHL games scheduled on requested date.
+        </p>
+      </section>
+      <div
+        class="_grid_509581"
+      >
+        <div
+          class="_card_509581 _pos-G_509581"
+        >
+          <h2>
+            Jacob Markstrom
+          </h2>
+          <p>
+            G - NJD vs NYI
+          </p>
+          <ul>
+            <li>
+              <span>
+                Starter Prob
+              </span>
+              <span>
+                61.0%
+              </span>
+            </li>
+            <li>
+              <span>
+                Saves
+              </span>
+              <span>
+                24.10
+              </span>
+            </li>
+            <li>
+              <span>
+                GA
+              </span>
+              <span>
+                3.10
+              </span>
+            </li>
+            <li>
+              <span>
+                Win Prob
+              </span>
+              <span>
+                53.0%
+              </span>
+            </li>
+            <li>
+              <span>
+                SO Prob
+              </span>
+              <span>
+                5.0%
+              </span>
+            </li>
+            <li>
+              <span>
+                Modeled Sv%
+              </span>
+              <span>
+                89.2%
+              </span>
+            </li>
+          </ul>
+          <div
+            class="_goalieMetaRow_509581"
+          >
+            <span
+              title="Quality tier summarizes modeled goalie performance level versus league baseline."
+            >
+              ABOVE_AVERAGE
+            </span>
+            <span
+              title="Reliability tier summarizes expected consistency of goalie outcomes."
+            >
+              MODERATE
+            </span>
+            <span
+              class="_indicatorBadge_509581 _confidenceMedium_509581"
+              title="Confidence tier indicates model confidence level based on evidence sample size and stability."
+            >
+              Confidence: MEDIUM
+            </span>
+          </div>
+          <div
+            class="_goalieMetaRow_509581"
+          >
+            <span
+              class="_indicatorBadge_509581 _volatilityHigh_509581"
+              title="High volatility profile: wider outcome spread and larger downside tails."
+            >
+              Volatility: Volatile
+            </span>
+            <span
+              class="_indicatorBadge_509581 _riskHigh_509581"
+              title="High blowup risk: elevated chance of severe downside start. (27.0%)"
+            >
+              Risk: High Risk
+            </span>
+            <span>
+              Call: START
+            </span>
+          </div>
+          <div
+            class="_starterDrivers_509581"
+          >
+            <h3>
+              Starter Confidence Drivers
+            </h3>
+            <ul>
+              <li>
+                <span>
+                  Recency
+                </span>
+                <strong>
+                  2d ago
+                </strong>
+              </li>
+              <li>
+                <span>
+                  L10 Starts
+                </span>
+                <strong>
+                  7/10
+                </strong>
+              </li>
+              <li>
+                <span>
+                  Back-to-Back
+                </span>
+                <strong>
+                  No
+                </strong>
+              </li>
+              <li>
+                <span>
+                  Opponent Context
+                </span>
+                <strong>
+                  Weak opponent • Context -4.0%
+                </strong>
+              </li>
+            </ul>
+          </div>
+          <div
+            class="_uncertainty_509581"
+          >
+            <div
+              class="_uncertaintyHeader_509581"
+            >
+              <h3>
+                Uncertainty Range (Floor / Typical / Ceiling)
+              </h3>
+            </div>
+            <ul>
+              <li>
+                <span>
+                  Saves
+                </span>
+                <span
+                  class="_uncertaintyValues_509581"
+                >
+                  <span>
+                    Floor 18.00
+                  </span>
+                  <span>
+                    Typical 24.00
+                  </span>
+                  <span>
+                    Ceiling 31.00
+                  </span>
+                </span>
+              </li>
+              <li>
+                <span>
+                  Goals Allowed
+                </span>
+                <span
+                  class="_uncertaintyValues_509581"
+                >
+                  <span>
+                    Floor 1.00
+                  </span>
+                  <span>
+                    Typical 3.00
+                  </span>
+                  <span>
+                    Ceiling 5.00
+                  </span>
+                </span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</DocumentFragment>
+`;

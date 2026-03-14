@@ -86,20 +86,46 @@ Used for individual items like "Suggested Picks".
 *   **Structure:**
     *   **Neon Strip:** A `12px` wide colored bar on the left edge (using `::before`). Color is determined by the "Position Accent".
     *   **Background:** Vertical gradient from *Accent Color (low opacity)* to *Transparent*, layered over a base dark gradient.
+    *   **Border:** Use a visible body border. Prefer `2px solid` with either a neutral cyan body border or an accent-aware border rather than a faint 1px outline.
+    *   **Padding:** Add enough left padding so the content clears the full neon strip width comfortably.
+    *   **Depth:** Support the card with deep panel shadow and optional backdrop blur for a glass-technical feel.
 *   **Interaction:**
-    *   **Hover:** `transform: translateY(-2px)`, increased shadow, border glow.
+    *   **Hover:** slight directional motion, increased shadow, border glow, and ambient neon bloom.
+*   **Explicit `.card` Rule:**
+    *   `position: relative; overflow: hidden;`
+    *   The base surface should be a layered dark gradient with a low-opacity accent tint wash above it.
+    *   Include a `::before` neon strip on the left edge at `12px` width.
+    *   Include a soft `::after` ambient glow layer that activates on hover or selected state.
+    *   Focus-visible should use the desktop focus ring token and preserve the accent color identity.
 *   **SCSS Snippet:**
     ```scss
     .card {
       position: relative;
-      background: linear-gradient(180deg, rgba($accent, 0.12) 0%, transparent 100%),
-                  linear-gradient(145deg, #202020 0%, #1a1d21 100%);
-      border: 1px solid rgba($accent, 0.3);
+      overflow: hidden;
+      background:
+        linear-gradient(180deg, rgba($accent, 0.12) 0%, transparent 100%),
+        linear-gradient(145deg, #202020 0%, #1a1d21 100%);
+      border: 2px solid rgba($primary-color, 0.5);
+      backdrop-filter: blur(10px) saturate(160%);
       &::before {
         content: "";
         position: absolute; left: 0; top: 0; bottom: 0; width: 12px;
         background: $accent;
-        box-shadow: 0 0 14px $accent; // The Neon Glow
+        box-shadow: 0 0 14px $accent, 0 0 24px $accent;
+      }
+      &::after {
+        content: "";
+        position: absolute;
+        inset: -30%;
+        background: radial-gradient(60% 40% at 20% 0%, rgba($accent, 0.18), transparent 60%);
+        opacity: 0;
+        transition: opacity 240ms ease;
+      }
+      &:hover {
+        transform: translateX(-3px);
+        &::after {
+          opacity: 1;
+        }
       }
     }
     ```
@@ -115,6 +141,27 @@ Used for individual items like "Suggested Picks".
 *   **Background:** Transparent.
 *   **Border:** `1px solid $border-secondary`.
 *   **Hover:** Border becomes `$primary-color`, text becomes `$primary-color`, background becomes `rgba($primary-color, 0.1)`.
+
+**3. Toggle Rail**
+Observed in `DraftSettings .draftTypeToggle`.
+*   **Container:** `display: flex` segmented rail on a dark surface, with `background-color: $background-dark`, `1px solid $border-secondary`, internal padding, and `border-radius: $border-radius-md`.
+*   **Inactive Toggle:** transparent background, muted text, accent font, uppercase, compact pill shape inside the rail.
+*   **Inactive Hover:** text shifts toward `$primary-color`; background gains a faint translucent cyan wash.
+*   **Active Toggle:** this is the canonical selected segmented-control state.
+    *   `background-color: $primary-color-opaque`
+    *   `border: 2px solid $primary-color`
+    *   `color: $secondary-color`
+    *   retains rounded internal pill shape and reads as persistently active, not just hovered
+
+**4. Full Color Border + Semi-Transparent Fill Button**
+Observed from the active state of `DraftSettings .toggleButton.active`.
+*   Use this as the explicit default rule for compact dashboard action buttons and emphasized secondary CTAs.
+*   **Background:** semi-transparent accent fill, typically `$primary-color-opaque` or `rgba($primary-color, 0.18..0.4)`
+*   **Border:** `2px solid $primary-color`
+*   **Text:** accent-bright text, preferably `$secondary-color` or `$color-white` depending on contrast
+*   **Typography:** accent font, uppercase, modest tracking
+*   **Hover:** keep the colored border, deepen the fill slightly, add glow, optional `translateY(-1px)` to `translateY(-2px)`
+*   **Do not:** downgrade this style to a plain transparent ghost button when the action should read as highlighted or dashboard-primary
 
 ### D. Data Tables
 

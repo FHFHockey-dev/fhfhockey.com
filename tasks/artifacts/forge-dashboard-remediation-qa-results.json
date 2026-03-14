@@ -1,0 +1,47 @@
+{
+  "desktop": [
+    {
+      "viewport": "1440x900",
+      "metrics": {
+        "docClientHeight": 900,
+        "docScrollHeight": 900,
+        "hasVerticalScrollbar": false,
+        "scrollYChanged": false,
+        "minMoverHeight": 44
+      }
+    },
+    {
+      "viewport": "1920x1080",
+      "metrics": {
+        "docClientHeight": 1080,
+        "docScrollHeight": 1080,
+        "hasVerticalScrollbar": false,
+        "scrollYChanged": false,
+        "minMoverHeight": 44
+      }
+    }
+  ],
+  "mobileTablet": [
+    {
+      "viewport": "390x844",
+      "metrics": {
+        "minMoverHeight": 44,
+        "minControlHeight": 44
+      }
+    },
+    {
+      "viewport": "430x932",
+      "metrics": {
+        "minMoverHeight": 44,
+        "minControlHeight": 44
+      }
+    },
+    {
+      "viewport": "768x1024",
+      "metrics": {
+        "minMoverHeight": 44,
+        "minControlHeight": 44
+      }
+    }
+  ]
+}

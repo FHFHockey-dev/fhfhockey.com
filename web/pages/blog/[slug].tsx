@@ -9,7 +9,6 @@ import { groq } from "next-sanity";
 import { getClient } from "lib/sanity/sanity.server";
 import { PortableText } from "@portabletext/react";
 import { urlFor } from "lib/sanity/sanity";
-import { gql } from "@apollo/client";
 import { NextSeo } from "next-seo";
 
 import styles from "styles/Post.module.scss";
@@ -22,7 +21,6 @@ import RecentPosts from "components/RecentPosts";
 import Comments from "components/Comments";
 
 import { PostPreviewData } from ".";
-import client from "lib/apollo-client";
 import scrollTop from "utils/scrollTop";
 import Container from "components/Layout/Container";
 
@@ -84,20 +82,13 @@ const postQuery = groq`
   }
 `;
 
-const RECENT_POSTS_QUERY = gql`
-  query GetRecentPosts($slug: String) {
-    recentPosts: allPost(
-      where: { slug: { current: { neq: $slug } } }
-      limit: 3
-      sort: { publishedAt: DESC }
-    ) {
-      slug {
-        current
-      }
-      title
-      summary
-      publishedAt
-    }
+const recentPostsQuery = groq`
+  *[_type == "post" && slug.current != $slug] | order(publishedAt desc)[0...3] {
+    title,
+    summary,
+    mainImage,
+    publishedAt,
+    "slug": slug.current
   }
 `;
 
@@ -114,15 +105,12 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   }
 
   const slug = params.slug as string;
-  const [data, { data: recentPostsData }] = await Promise.all([
+  const [data, recentPostsData] = await Promise.all([
     getClient().fetch(postQuery, {
       slug
     }),
-    client.query({
-      query: RECENT_POSTS_QUERY,
-      variables: {
-        slug
-      }
+    getClient().fetch(recentPostsQuery, {
+      slug
     })
   ]);
 
@@ -149,9 +137,13 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     }
   };
 
-  const recentPosts: PostPreviewData[] = recentPostsData.recentPosts.map(
-    (post: any) => ({ ...post, slug: post.slug.current })
-  );
+  const recentPosts: PostPreviewData[] = recentPostsData.map((post: any) => ({
+    slug: post.slug,
+    title: post.title,
+    summary: post.summary,
+    createdAt: new Date(post.publishedAt).toLocaleDateString("en-US"),
+    imageUrl: urlFor(post.mainImage).url()
+  }));
 
   return {
     props: { post, recentPosts },

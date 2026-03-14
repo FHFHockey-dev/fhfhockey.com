@@ -9,6 +9,11 @@ import {
 } from "./bandCalculator";
 import type { Database } from "lib/supabase/database-generated.types";
 import { WindowCode } from "./windows";
+import {
+  normalizeSustainabilityDate,
+  parseSustainabilityDateParam
+} from "./dates";
+import { upsertTrendBandRows } from "./persist";
 
 type PlayerGameRow =
   Database["public"]["Views"]["player_stats_unified"]["Row"];
@@ -35,11 +40,7 @@ export const DEFAULT_METRICS: SustainabilityMetricKey[] = [
 ];
 
 export function parseDateParam(value: string | string[] | undefined): string {
-  const candidate = Array.isArray(value) ? value[0] : value;
-  if (!candidate) return new Date().toISOString().slice(0, 10);
-  return /^\d{4}-\d{2}-\d{2}$/.test(candidate)
-    ? candidate
-    : new Date().toISOString().slice(0, 10);
+  return parseSustainabilityDateParam(value);
 }
 
 export function parseMetricParam(
@@ -75,13 +76,7 @@ export function parseWindowParam(
 }
 
 function normalizeSnapshotDate(value: string | null | undefined): string {
-  if (!value) {
-    return new Date().toISOString().slice(0, 10);
-  }
-  if (value.length >= 10) {
-    return value.slice(0, 10);
-  }
-  return new Date(value).toISOString().slice(0, 10);
+  return normalizeSustainabilityDate(value);
 }
 
 function normalizeTrendBandRecord(record: TrendBandRecord): TrendBandRecord {
@@ -98,20 +93,6 @@ function normalizeTrendBandRecord(record: TrendBandRecord): TrendBandRecord {
     exposure:
       record.exposure != null ? Number(record.exposure.toFixed(3)) : null
   };
-}
-
-async function upsertTrendBandRows(rows: TrendBandRecord[]): Promise<void> {
-  if (!rows.length) return;
-  const CHUNK_SIZE = 400;
-  for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
-    const chunk = rows.slice(i, i + CHUNK_SIZE);
-    const { error: upsertError } = await (supabase as any)
-      .from("sustainability_trend_bands")
-      .upsert(chunk, {
-        onConflict: "player_id,snapshot_date,metric_key,window_code"
-      });
-    if (upsertError) throw upsertError;
-  }
 }
 
 export async function fetchPlayerGameRows(
@@ -216,7 +197,7 @@ export async function computeAndStoreTrendBands({
   const payload: TrendBandRecord[] = bands.map(normalizeTrendBandRecord);
 
   if (!dry) {
-    await upsertTrendBandRows(payload);
+    await upsertTrendBandRows({ rows: payload });
   }
 
   return { rows: payload, seasonId };
@@ -342,7 +323,7 @@ export async function computeAndStoreTrendBandHistory({
   }
 
   if (!dry) {
-    await upsertTrendBandRows(allRecords);
+    await upsertTrendBandRows({ rows: allRecords });
   }
 
   return {

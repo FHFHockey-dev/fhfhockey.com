@@ -11,73 +11,393 @@ import {
   CartesianGrid,
   Brush
 } from "recharts";
+import {
+  getCompatibilityFieldOrder,
+  type RollingMetricCompatibilityFamily
+} from "lib/rollingPlayerMetricCompatibility";
 import supabase from "lib/supabase";
 import styles from "./playerTrendPage.module.scss";
 
-const METRIC_CONFIG = [
+const BASELINE_OPTIONS = [
+  { key: "season", label: "Season" },
+  { key: "3ya", label: "3-Year" },
+  { key: "career", label: "Career" },
+  { key: "all", label: "Cumulative" }
+] as const;
+
+const ROLLING_WINDOW_OPTIONS = [
+  { key: "last3", label: "3" },
+  { key: "last5", label: "5" },
+  { key: "last10", label: "10" },
+  { key: "last20", label: "20" },
+  { key: "all", label: "Cumulative" }
+] as const;
+
+type BaselineMode = (typeof BASELINE_OPTIONS)[number]["key"];
+type RollingWindowMode = (typeof ROLLING_WINDOW_OPTIONS)[number]["key"];
+
+const METRIC_GROUPS = [
   {
-    key: "goals",
-    rollingKey: "goals_avg_last5",
-    baselineKey: "goals_avg_all",
-    label: "Goals (L5 Avg)",
-    color: "#ff9f40" // Orange
+    id: "surface",
+    label: "Surface",
+    metrics: [
+      {
+        key: "goals",
+        label: "Goals",
+        color: "#ff9f40",
+        compatibilityFamily: "additive_average"
+      },
+      {
+        key: "assists",
+        label: "Assists",
+        color: "#3b82f6",
+        compatibilityFamily: "additive_average"
+      },
+      {
+        key: "points",
+        label: "Points",
+        color: "#9b59b6",
+        compatibilityFamily: "additive_average"
+      },
+      {
+        key: "shots",
+        label: "Shots",
+        color: "#4bc0c0",
+        compatibilityFamily: "additive_average"
+      },
+      {
+        key: "hits",
+        label: "Hits",
+        color: "#ef4444",
+        compatibilityFamily: "additive_average"
+      },
+      {
+        key: "blocks",
+        label: "Blocks",
+        color: "#facc15",
+        compatibilityFamily: "additive_average"
+      },
+      {
+        key: "pp_points",
+        label: "PP Points",
+        color: "#14b8a6",
+        compatibilityFamily: "additive_average"
+      }
+    ]
   },
   {
-    key: "assists",
-    rollingKey: "assists_avg_last5",
-    baselineKey: "assists_avg_all",
-    label: "Assists (L5 Avg)",
-    color: "#3b82f6" // Blue
+    id: "rates",
+    label: "Rates",
+    metrics: [
+      {
+        key: "goals_per_60",
+        label: "Goals / 60",
+        color: "#f97316",
+        compatibilityFamily: "weighted_rate"
+      },
+      {
+        key: "assists_per_60",
+        label: "Assists / 60",
+        color: "#38bdf8",
+        compatibilityFamily: "weighted_rate"
+      },
+      {
+        key: "primary_assists_per_60",
+        label: "1A / 60",
+        color: "#8b5cf6",
+        compatibilityFamily: "weighted_rate"
+      },
+      {
+        key: "secondary_assists_per_60",
+        label: "2A / 60",
+        color: "#ec4899",
+        compatibilityFamily: "weighted_rate"
+      },
+      {
+        key: "sog_per_60",
+        label: "Shots / 60",
+        color: "#06b6d4",
+        compatibilityFamily: "weighted_rate"
+      },
+      {
+        key: "ixg_per_60",
+        label: "ixG / 60",
+        color: "#10b981",
+        compatibilityFamily: "weighted_rate"
+      },
+      {
+        key: "hits_per_60",
+        label: "Hits / 60",
+        color: "#fb7185",
+        compatibilityFamily: "weighted_rate"
+      },
+      {
+        key: "blocks_per_60",
+        label: "Blocks / 60",
+        color: "#f59e0b",
+        compatibilityFamily: "weighted_rate"
+      }
+    ]
   },
   {
-    key: "points",
-    rollingKey: "points_avg_last5",
-    baselineKey: "points_avg_all",
-    label: "Points (L5 Avg)",
-    color: "#9b59b6" // Purple
+    id: "finishing",
+    label: "Finishing",
+    metrics: [
+      {
+        key: "shooting_pct",
+        label: "Shooting %",
+        color: "#22c55e",
+        compatibilityFamily: "ratio"
+      },
+      {
+        key: "expected_sh_pct",
+        label: "Expected SH%",
+        color: "#84cc16",
+        compatibilityFamily: "ratio"
+      },
+      {
+        key: "on_ice_sh_pct",
+        label: "On-Ice SH%",
+        color: "#38bdf8",
+        compatibilityFamily: "ratio"
+      },
+      {
+        key: "on_ice_sv_pct",
+        label: "On-Ice SV%",
+        color: "#0ea5e9",
+        compatibilityFamily: "ratio"
+      },
+      {
+        key: "pdo",
+        label: "PDO",
+        color: "#f97316",
+        compatibilityFamily: "ratio"
+      },
+      {
+        key: "ipp",
+        label: "IPP",
+        color: "#8b5cf6",
+        compatibilityFamily: "ratio"
+      },
+      {
+        key: "primary_points_pct",
+        label: "Primary Points %",
+        color: "#ec4899",
+        compatibilityFamily: "ratio"
+      }
+    ]
   },
   {
-    key: "sog_per_60",
-    rollingKey: "sog_per_60_avg_last5",
-    baselineKey: "sog_per_60_avg_all",
-    label: "Shots/60 (L5 Avg)",
-    color: "#4bc0c0" // Teal
+    id: "usage",
+    label: "Usage",
+    metrics: [
+      {
+        key: "toi_seconds",
+        label: "TOI Seconds",
+        color: "#eab308",
+        compatibilityFamily: "toi_average"
+      },
+      {
+        key: "pp_share_pct",
+        label: "PP Share %",
+        color: "#0ea5e9",
+        compatibilityFamily: "ratio"
+      },
+      {
+        key: "oz_start_pct",
+        label: "OZ Start %",
+        color: "#6366f1",
+        compatibilityFamily: "ratio"
+      },
+      {
+        key: "oz_starts",
+        label: "OZ Starts",
+        color: "#4f46e5",
+        compatibilityFamily: "additive_average"
+      },
+      {
+        key: "dz_starts",
+        label: "DZ Starts",
+        color: "#ef4444",
+        compatibilityFamily: "additive_average"
+      },
+      {
+        key: "nz_starts",
+        label: "NZ Starts",
+        color: "#14b8a6",
+        compatibilityFamily: "additive_average"
+      }
+    ]
   },
   {
-    key: "ixg_per_60",
-    rollingKey: "ixg_per_60_avg_last5",
-    baselineKey: "ixg_per_60_avg_all",
-    label: "ixG/60 (L5 Avg)",
-    color: "#00ff99" // Green
-  },
-  {
-    key: "toi_seconds",
-    rollingKey: "toi_seconds_avg_last5",
-    baselineKey: "toi_seconds_avg_all",
-    label: "TOI Seconds (L5 Avg)",
-    color: "#ffcc33" // Yellow
+    id: "chance",
+    label: "Chance Profile",
+    metrics: [
+      {
+        key: "ixg",
+        label: "ixG",
+        color: "#00ff99",
+        compatibilityFamily: "additive_average"
+      },
+      {
+        key: "iscf",
+        label: "iSCF",
+        color: "#22d3ee",
+        compatibilityFamily: "additive_average"
+      },
+      {
+        key: "ihdcf",
+        label: "iHDCF",
+        color: "#f43f5e",
+        compatibilityFamily: "additive_average"
+      },
+      {
+        key: "cf",
+        label: "CF",
+        color: "#a855f7",
+        compatibilityFamily: "additive_average"
+      },
+      {
+        key: "ca",
+        label: "CA",
+        color: "#f87171",
+        compatibilityFamily: "additive_average"
+      },
+      {
+        key: "cf_pct",
+        label: "CF%",
+        color: "#60a5fa",
+        compatibilityFamily: "ratio"
+      },
+      {
+        key: "ff",
+        label: "FF",
+        color: "#2dd4bf",
+        compatibilityFamily: "additive_average"
+      },
+      {
+        key: "fa",
+        label: "FA",
+        color: "#fb7185",
+        compatibilityFamily: "additive_average"
+      },
+      {
+        key: "ff_pct",
+        label: "FF%",
+        color: "#818cf8",
+        compatibilityFamily: "ratio"
+      },
+      {
+        key: "oi_gf",
+        label: "On-Ice GF",
+        color: "#22c55e",
+        compatibilityFamily: "additive_average"
+      },
+      {
+        key: "oi_ga",
+        label: "On-Ice GA",
+        color: "#f87171",
+        compatibilityFamily: "additive_average"
+      },
+      {
+        key: "oi_sf",
+        label: "On-Ice SF",
+        color: "#0ea5e9",
+        compatibilityFamily: "additive_average"
+      },
+      {
+        key: "oi_sa",
+        label: "On-Ice SA",
+        color: "#f59e0b",
+        compatibilityFamily: "additive_average"
+      }
+    ]
   }
 ] as const;
 
+const METRIC_CONFIG = METRIC_GROUPS.flatMap((group) =>
+  group.metrics.map((metric) => ({
+    ...metric,
+    groupId: group.id,
+    groupLabel: group.label
+  }))
+);
+
 type MetricConfig = (typeof METRIC_CONFIG)[number];
 type MetricKey = MetricConfig["key"];
-type DeltaKey = `${MetricKey}_delta`;
-
 type RollingMetricRow = {
   game_date: string;
-  goals_avg_last5: number | null;
-  goals_avg_all: number | null;
-  assists_avg_last5: number | null;
-  assists_avg_all: number | null;
-  points_avg_last5: number | null;
-  points_avg_all: number | null;
-  sog_per_60_avg_last5: number | null;
-  sog_per_60_avg_all: number | null;
-  ixg_per_60_avg_last5: number | null;
-  ixg_per_60_avg_all: number | null;
-  toi_seconds_avg_last5: number | null;
-  toi_seconds_avg_all: number | null;
+} & Record<string, number | null | string>;
+type StreakSummary = {
+  metricKey: MetricKey;
+  label: string;
+  direction: "hot" | "cold" | "steady";
+  games: number;
+  latestDelta: number;
+  averageDelta: number;
 };
+
+function getMetricField(metricKey: MetricKey, mode: RollingWindowMode | BaselineMode) {
+  return `${metricKey}_${mode}`;
+}
+
+function getLegacyScope(scope: RollingWindowMode | BaselineMode): string {
+  return `avg_${scope}`;
+}
+
+function getMetricFieldCandidates(
+  metric: MetricConfig,
+  scope: RollingWindowMode | BaselineMode
+): string[] {
+  const canonicalField = getMetricField(metric.key, scope);
+  const legacyField = `${metric.key}_${getLegacyScope(scope)}`;
+
+  if (
+    metric.compatibilityFamily === "additive_average" ||
+    metric.compatibilityFamily === "toi_average"
+  ) {
+    return [legacyField];
+  }
+
+  return getCompatibilityFieldOrder({
+    family: metric.compatibilityFamily,
+    canonicalField,
+    legacyField
+  });
+}
+
+function resolveMetricValue(
+  row: RollingMetricRow,
+  metric: MetricConfig,
+  scope: RollingWindowMode | BaselineMode
+): number | null {
+  for (const field of getMetricFieldCandidates(metric, scope)) {
+    const rawValue = row[field];
+    if (rawValue === null || rawValue === undefined) continue;
+    const numericValue = Number(rawValue);
+    if (Number.isFinite(numericValue)) return numericValue;
+  }
+  return null;
+}
+
+function buildSelectClause() {
+  const fields = new Set<string>(["game_date"]);
+  METRIC_CONFIG.forEach((metric) => {
+    ROLLING_WINDOW_OPTIONS.forEach((option) => {
+      getMetricFieldCandidates(metric, option.key).forEach((field) =>
+        fields.add(field)
+      );
+    });
+    BASELINE_OPTIONS.forEach((option) => {
+      getMetricFieldCandidates(metric, option.key).forEach((field) =>
+        fields.add(field)
+      );
+    });
+  });
+  return Array.from(fields).join(", ");
+}
+
+const SELECT_CLAUSE = buildSelectClause();
 
 export default function PlayerTrendPage() {
   const router = useRouter();
@@ -88,7 +408,13 @@ export default function PlayerTrendPage() {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
   const [selectedMetrics, setSelectedMetrics] = useState<MetricKey[]>(
-    METRIC_CONFIG.map((metric) => metric.key)
+    METRIC_GROUPS[0].metrics.map((metric) => metric.key)
+  );
+  const [baselineMode, setBaselineMode] = useState<BaselineMode>("season");
+  const [rollingWindowMode, setRollingWindowMode] =
+    useState<RollingWindowMode>("last5");
+  const [activeGroup, setActiveGroup] = useState<(typeof METRIC_GROUPS)[number]["id"]>(
+    "surface"
   );
 
   useEffect(() => {
@@ -118,16 +444,14 @@ export default function PlayerTrendPage() {
               while (true) {
                 const { data, error } = await supabase
                   .from("rolling_player_game_metrics")
-                  .select(
-                    "game_date, goals_avg_last5, goals_avg_all, assists_avg_last5, assists_avg_all, points_avg_last5, points_avg_all, sog_per_60_avg_last5, sog_per_60_avg_all, ixg_per_60_avg_last5, ixg_per_60_avg_all, toi_seconds_avg_last5, toi_seconds_avg_all"
-                  )
+                  .select(SELECT_CLAUSE)
                   .eq("player_id", idNumber)
                   .eq("strength_state", "all")
                   .order("game_date", { ascending: true })
                   .range(from, from + pageSize - 1);
                 if (error) throw error;
                 if (!data || data.length === 0) break;
-                rows.push(...(data as RollingMetricRow[]));
+                rows.push(...(data as unknown as RollingMetricRow[]));
                 if (data.length < pageSize) break;
                 from += pageSize;
               }
@@ -136,25 +460,11 @@ export default function PlayerTrendPage() {
           ]);
 
         if (!mounted) return;
-
         if (playerError) throw playerError;
-
-        console.debug(
-          "[player trends] fetched player",
-          idNumber,
-          "name:",
-          playerRow?.fullName
-        );
-        console.debug(
-          "[player trends] rolling rows",
-          metricRows.length,
-          metricRows.slice(0, 3)
-        );
 
         setPlayerName(playerRow?.fullName ?? `Player #${idNumber}`);
         setData(metricRows);
       } catch (err: any) {
-        console.error(err);
         setError(err?.message ?? "Failed to load player metrics.");
       } finally {
         mounted && setLoading(false);
@@ -167,58 +477,101 @@ export default function PlayerTrendPage() {
     };
   }, [playerId, router.isReady]);
 
-  const chartDatasets = useMemo(() => {
-    const filtered = METRIC_CONFIG.filter((metric) =>
-      selectedMetrics.includes(metric.key)
-    );
-    console.debug(
-      "[player trends] active metrics",
-      filtered.map((metric) => metric.key)
-    );
-    return filtered;
-  }, [selectedMetrics]);
+  const visibleMetricOptions = useMemo(
+    () => METRIC_CONFIG.filter((metric) => metric.groupId === activeGroup),
+    [activeGroup]
+  );
+
+  const chartDatasets = useMemo(
+    () =>
+      METRIC_CONFIG.filter(
+        (metric) =>
+          metric.groupId === activeGroup && selectedMetrics.includes(metric.key)
+      ),
+    [activeGroup, selectedMetrics]
+  );
 
   const rechartsData = useMemo(() => {
     if (!data.length) return [];
-    const transformed: Record<string, number | null | string>[] = [];
-
-    data.forEach((row) => {
+    return data.map((row) => {
       const base: Record<string, number | null | string> = {
         gameDate: row.game_date
       };
 
       METRIC_CONFIG.forEach((metric) => {
-        const rollingRaw = row[metric.rollingKey as keyof RollingMetricRow];
-        const baselineRaw = row[metric.baselineKey as keyof RollingMetricRow];
+        const rollingField = getMetricField(metric.key, rollingWindowMode);
+        const baselineField = getMetricField(metric.key, baselineMode);
+        const rolling = resolveMetricValue(row, metric, rollingWindowMode);
+        const baseline = resolveMetricValue(row, metric, baselineMode);
 
-        const rolling =
-          rollingRaw === null || rollingRaw === undefined
-            ? null
-            : Number(rollingRaw);
-        const baseline =
-          baselineRaw === null || baselineRaw === undefined
-            ? null
-            : Number(baselineRaw);
-
-        base[metric.rollingKey] = rolling;
-        base[metric.baselineKey] = baseline;
-
-        let delta: number | null = null;
-        if (rolling !== null && baseline !== null && baseline !== 0) {
-          delta = ((rolling - baseline) / Math.abs(baseline)) * 100;
-        }
-        base[`${metric.key}_delta` as DeltaKey] = delta;
+        base[rollingField] = rolling;
+        base[baselineField] = baseline;
+        base[`${metric.key}_absolute`] =
+          rolling !== null && baseline !== null ? rolling - baseline : null;
+        base[`${metric.key}_delta`] =
+          rolling !== null && baseline !== null && baseline !== 0
+            ? ((rolling - baseline) / Math.abs(baseline)) * 100
+            : null;
       });
 
-      transformed.push(base);
+      return base;
     });
+  }, [baselineMode, data, rollingWindowMode]);
 
-    console.debug(
-      "[player trends] baseline delta sample",
-      transformed.slice(0, 3)
-    );
-    return transformed;
-  }, [data]);
+  const streakSummaries = useMemo(() => {
+    if (!rechartsData.length) return [] as StreakSummary[];
+
+    return chartDatasets
+      .map((metric) => {
+        const deltas = rechartsData
+          .map((row) => row[`${metric.key}_delta`])
+          .filter(
+            (value): value is number =>
+              typeof value === "number" && Number.isFinite(value)
+          );
+
+        if (!deltas.length) {
+          return {
+            metricKey: metric.key,
+            label: metric.label,
+            direction: "steady",
+            games: 0,
+            latestDelta: 0,
+            averageDelta: 0
+          } satisfies StreakSummary;
+        }
+
+        const latestDelta = deltas[deltas.length - 1] ?? 0;
+        const direction =
+          latestDelta >= 8 ? "hot" : latestDelta <= -8 ? "cold" : "steady";
+        let games = 0;
+
+        if (direction === "hot") {
+          for (let index = deltas.length - 1; index >= 0; index -= 1) {
+            if ((deltas[index] ?? 0) < 0) break;
+            games += 1;
+          }
+        } else if (direction === "cold") {
+          for (let index = deltas.length - 1; index >= 0; index -= 1) {
+            if ((deltas[index] ?? 0) > 0) break;
+            games += 1;
+          }
+        }
+
+        const averageDelta =
+          deltas.reduce((sum, value) => sum + value, 0) / deltas.length;
+
+        return {
+          metricKey: metric.key,
+          label: metric.label,
+          direction,
+          games,
+          latestDelta,
+          averageDelta
+        } satisfies StreakSummary;
+      })
+      .sort((left, right) => Math.abs(right.latestDelta) - Math.abs(left.latestDelta));
+  }, [chartDatasets, rechartsData]);
 
   const handleMetricToggle = (metricKey: MetricKey) => {
     setSelectedMetrics((prev) =>
@@ -227,6 +580,8 @@ export default function PlayerTrendPage() {
         : [...prev, metricKey]
     );
   };
+
+  const activeGroupMeta = METRIC_GROUPS.find((group) => group.id === activeGroup);
 
   return (
     <div className={styles.container}>
@@ -244,9 +599,11 @@ export default function PlayerTrendPage() {
           <div>
             <h1 className={styles.title}>{playerName || "Player Trends"}</h1>
             <p className={styles.subtitle}>
-              Rolling 5-game averages compared against this season&apos;s
-              baseline. Watch how far each metric deviates above or below the
-              player&apos;s normal level of play.
+              Plot rolling historical averages from
+              <span className={styles.inlineMono}> rolling_player_game_metrics </span>
+              across surface stats, rates, finishing, usage, and chance profile
+              metrics. Switch the recent window and baseline to inspect how a
+              player is moving against different historical anchors.
             </p>
           </div>
           <div className={styles.datasetBadge}>
@@ -257,8 +614,34 @@ export default function PlayerTrendPage() {
           </div>
         </header>
 
+        <section className={styles.groupPanel}>
+          <div>
+            <p className={styles.baselineLabel}>Metric group</p>
+            <p className={styles.baselineCopy}>
+              Focus the chart on a specific family of tracked rolling metrics.
+            </p>
+          </div>
+          <div className={styles.baselineToggleGroup}>
+            {METRIC_GROUPS.map((group) => {
+              const active = activeGroup === group.id;
+              return (
+                <button
+                  key={group.id}
+                  type="button"
+                  onClick={() => setActiveGroup(group.id)}
+                  className={`${styles.baselineToggle} ${
+                    active ? styles.baselineToggleActive : ""
+                  }`}
+                >
+                  {group.label}
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
         <section className={styles.toggleGroup}>
-          {METRIC_CONFIG.map((metric) => {
+          {visibleMetricOptions.map((metric) => {
             const active = selectedMetrics.includes(metric.key);
             return (
               <button
@@ -277,6 +660,127 @@ export default function PlayerTrendPage() {
               </button>
             );
           })}
+        </section>
+
+        <section className={styles.controlsGrid}>
+          <section className={styles.baselinePanel}>
+            <div>
+              <p className={styles.baselineLabel}>Recent rolling window</p>
+              <p className={styles.baselineCopy}>
+                Plot 3/5/10/20-game or cumulative rolling values.
+              </p>
+            </div>
+            <div className={styles.baselineToggleGroup}>
+              {ROLLING_WINDOW_OPTIONS.map((option) => {
+                const active = rollingWindowMode === option.key;
+                return (
+                  <button
+                    key={option.key}
+                    type="button"
+                    onClick={() => setRollingWindowMode(option.key)}
+                    className={`${styles.baselineToggle} ${
+                      active ? styles.baselineToggleActive : ""
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+
+          <section className={styles.baselinePanel}>
+            <div>
+              <p className={styles.baselineLabel}>Baseline reference</p>
+              <p className={styles.baselineCopy}>
+                Compare the chosen rolling window against season-to-date,
+                3-year, career, or cumulative historical averages.
+              </p>
+            </div>
+            <div className={styles.baselineToggleGroup}>
+              {BASELINE_OPTIONS.map((option) => {
+                const active = baselineMode === option.key;
+                return (
+                  <button
+                    key={option.key}
+                    type="button"
+                    onClick={() => setBaselineMode(option.key)}
+                    className={`${styles.baselineToggle} ${
+                      active ? styles.baselineToggleActive : ""
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        </section>
+
+        <section className={styles.summaryStrip}>
+          <div className={styles.summaryCell}>
+            <span className={styles.summaryLabel}>Active group</span>
+            <strong>{activeGroupMeta?.label ?? "Unknown"}</strong>
+          </div>
+          <div className={styles.summaryCell}>
+            <span className={styles.summaryLabel}>Visible metrics</span>
+            <strong>{chartDatasets.length}</strong>
+          </div>
+          <div className={styles.summaryCell}>
+            <span className={styles.summaryLabel}>Rolling window</span>
+            <strong>
+              {ROLLING_WINDOW_OPTIONS.find((option) => option.key === rollingWindowMode)
+                ?.label ?? "—"}
+            </strong>
+          </div>
+          <div className={styles.summaryCell}>
+            <span className={styles.summaryLabel}>Baseline</span>
+            <strong>
+              {BASELINE_OPTIONS.find((option) => option.key === baselineMode)?.label ??
+                "—"}
+            </strong>
+          </div>
+        </section>
+
+        <section className={styles.streakPanel}>
+          <div className={styles.streakHeader}>
+            <div>
+              <p className={styles.baselineLabel}>Sustained streaks</p>
+              <p className={styles.baselineCopy}>
+                These cards react to the active baseline toggle so you can see
+                which metrics stay above or below the chosen historical anchor.
+              </p>
+            </div>
+          </div>
+          <div className={styles.streakGrid}>
+            {streakSummaries.slice(0, 4).map((summary) => (
+              <article
+                key={summary.metricKey}
+                className={`${styles.streakCard} ${
+                  summary.direction === "hot"
+                    ? styles.streakHot
+                    : summary.direction === "cold"
+                      ? styles.streakCold
+                      : styles.streakNeutral
+                }`}
+              >
+                <span className={styles.summaryLabel}>{summary.label}</span>
+                <strong className={styles.streakValue}>
+                  {summary.latestDelta >= 0 ? "+" : ""}
+                  {summary.latestDelta.toFixed(1)}%
+                </strong>
+                <p className={styles.streakMeta}>
+                  {summary.direction === "steady"
+                    ? `steady vs ${BASELINE_OPTIONS.find((option) => option.key === baselineMode)?.label ?? "baseline"}`
+                    : `${summary.games} straight games ${summary.direction === "hot" ? "above" : "below"} ${BASELINE_OPTIONS.find((option) => option.key === baselineMode)?.label ?? "baseline"}`}
+                </p>
+                <p className={styles.streakMeta}>
+                  Avg delta {summary.averageDelta >= 0 ? "+" : ""}
+                  {summary.averageDelta.toFixed(1)}%
+                </p>
+              </article>
+            ))}
+          </div>
         </section>
 
         <div className={styles.chartCard}>
@@ -351,7 +855,7 @@ export default function PlayerTrendPage() {
                     labelFormatter={(value) =>
                       new Date(value as string).toLocaleString()
                     }
-                    formatter={(value: any, name: string, props: any) => {
+                    formatter={(value: unknown, name: string, props: any) => {
                       if (value === null || value === undefined) {
                         return ["N/A", name];
                       }
@@ -359,22 +863,26 @@ export default function PlayerTrendPage() {
                       const deltaKey = props.dataKey as string;
                       const metricKey = deltaKey.replace(/_delta$/, "");
                       const config = METRIC_CONFIG.find(
-                        (m) => m.key === metricKey
+                        (metric) => metric.key === metricKey
                       );
+                      const rollingField = config
+                        ? getMetricField(config.key, rollingWindowMode)
+                        : null;
+                      const baselineField = config
+                        ? getMetricField(config.key, baselineMode)
+                        : null;
                       const rollingValue =
-                        config && props.payload
-                          ? props.payload[config.rollingKey]
+                        rollingField && props.payload
+                          ? props.payload[rollingField]
                           : undefined;
                       const baselineValue =
-                        config && props.payload
-                          ? props.payload[config.baselineKey]
+                        baselineField && props.payload
+                          ? props.payload[baselineField]
                           : undefined;
                       const rawDisplay =
                         rollingValue === null || rollingValue === undefined
                           ? ""
-                          : ` (rolling ${Number(rollingValue).toFixed(
-                              3
-                            )}, baseline ${
+                          : ` (recent ${Number(rollingValue).toFixed(3)}, baseline ${
                               baselineValue === null ||
                               baselineValue === undefined
                                 ? "N/A"
@@ -396,7 +904,10 @@ export default function PlayerTrendPage() {
                       key={metric.key}
                       type="monotone"
                       dataKey={`${metric.key}_delta`}
-                      name={`${metric.label} vs Season % Δ`}
+                      name={`${metric.label} vs ${
+                        BASELINE_OPTIONS.find((option) => option.key === baselineMode)
+                          ?.label ?? "Baseline"
+                      } % Δ`}
                       stroke={metric.color}
                       strokeWidth={2.5}
                       dot={false}

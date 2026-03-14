@@ -1,4 +1,9 @@
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import {
+  getCompatibilityFieldOrder,
+  resolveFiniteCompatibilityValue,
+  resolveNullableCompatibilityValue
+} from "lib/rollingPlayerMetricCompatibility";
 import type { NextApiRequest, NextApiResponse } from "next";
 import supabase from "lib/supabase/server";
 import { teamsInfo } from "lib/teamsInfo";
@@ -24,6 +29,8 @@ type RollingMetrics = {
   assists_avg_all: number | null;
   points_avg_last5: number | null;
   points_avg_all: number | null;
+  sog_per_60_last5: number | null;
+  sog_per_60_all: number | null;
   sog_per_60_avg_last5: number | null;
   sog_per_60_avg_all: number | null;
   toi_seconds_avg_last5: number | null;
@@ -58,6 +65,28 @@ function computeGoalieSuppression(gsaaPer60?: number | null) {
   return clamp(1 - gsaaPer60 / 10, 0.8, 1.2);
 }
 
+export const START_CHART_ROLLING_SELECT_CLAUSE =
+  [
+    "goals_avg_last5",
+    "goals_avg_all",
+    "assists_avg_last5",
+    "assists_avg_all",
+    "points_avg_last5",
+    "points_avg_all",
+    ...getCompatibilityFieldOrder({
+      family: "weighted_rate",
+      canonicalField: "sog_per_60_last5",
+      legacyField: "sog_per_60_avg_last5"
+    }),
+    ...getCompatibilityFieldOrder({
+      family: "weighted_rate",
+      canonicalField: "sog_per_60_all",
+      legacyField: "sog_per_60_avg_all"
+    }),
+    "toi_seconds_avg_last5",
+    "toi_seconds_avg_all"
+  ].join(", ");
+
 function projectFromRolling(
   metrics: RollingMetrics | null,
   matchupMult: number,
@@ -67,12 +96,32 @@ function projectFromRolling(
   const trendGoals = Number(metrics?.goals_avg_last5 ?? baseGoals);
   const baseAssists = Number(metrics?.assists_avg_all ?? 0);
   const trendAssists = Number(metrics?.assists_avg_last5 ?? baseAssists);
-  const shotsPer60Base = Number(metrics?.sog_per_60_avg_all ?? 0);
+  const shotsPer60Base = Number(
+    resolveFiniteCompatibilityValue(
+      "weighted_rate",
+      metrics?.sog_per_60_all,
+      metrics?.sog_per_60_avg_all
+    ) ?? 0
+  );
   const shotsPer60Trend = Number(
-    metrics?.sog_per_60_avg_last5 ?? shotsPer60Base
+    resolveFiniteCompatibilityValue(
+      "weighted_rate",
+      metrics?.sog_per_60_last5,
+      metrics?.sog_per_60_avg_last5
+    ) ?? shotsPer60Base
   );
   const toiSeconds = Number(
-    metrics?.toi_seconds_avg_last5 ?? metrics?.toi_seconds_avg_all ?? 900
+    resolveNullableCompatibilityValue(
+      "toi_average",
+      null,
+      metrics?.toi_seconds_avg_last5
+    ) ??
+      resolveNullableCompatibilityValue(
+        "toi_average",
+        null,
+        metrics?.toi_seconds_avg_all
+      ) ??
+      900
   );
 
   const blend = (recent: number, baseline: number) =>
@@ -305,9 +354,7 @@ const handler = async (
         batch.map(async (task) => {
           const { data: metricRow, error: metricError } = await supabase
             .from("rolling_player_game_metrics")
-            .select(
-              "goals_avg_last5, goals_avg_all, assists_avg_last5, assists_avg_all, points_avg_last5, points_avg_all, sog_per_60_avg_last5, sog_per_60_avg_all, toi_seconds_avg_last5, toi_seconds_avg_all"
-            )
+            .select(START_CHART_ROLLING_SELECT_CLAUSE)
             .eq("player_id", task.playerId)
             .eq("strength_state", "all")
             .lte("game_date", date)
@@ -386,3 +433,8 @@ const handler = async (
 };
 
 export default withCronJobAudit(handler);
+
+export const __testables = {
+  projectFromRolling,
+  START_CHART_ROLLING_SELECT_CLAUSE
+};

@@ -38,6 +38,9 @@ type YahooPlayerRow = {
 };
 
 type CtpiRow = { date: string; ctpi_0_to_100: number | null };
+const RESPONSE_TTL_MS = 60_000;
+const responseCache = new Map<string, { expiresAt: number; payload: any }>();
+const inFlight = new Map<string, Promise<any>>();
 
 const fallbackDate = (dateStr: string) => {
   const d = new Date(dateStr);
@@ -102,13 +105,29 @@ export default async function handler(
   const today = `${y}-${m}-${d}`;
 
   const initialDate = dateParam || today;
+  const cacheKey = `date:${initialDate}`;
 
   try {
-    const season = await fetchCurrentSeason();
-    const yahooSeason = Number(String(season.id).slice(0, 4));
+    const nowMs = Date.now();
+    const cached = responseCache.get(cacheKey);
+    if (cached && cached.expiresAt > nowMs) {
+      res.setHeader("Cache-Control", "s-maxage=300, stale-while-revalidate=60");
+      return res.status(200).json(cached.payload);
+    }
 
-    // manual filter by game dates since there is no FK; fetch games first
-    let dateUsed = initialDate;
+    const pending = inFlight.get(cacheKey);
+    if (pending) {
+      const payload = await pending;
+      res.setHeader("Cache-Control", "s-maxage=300, stale-while-revalidate=60");
+      return res.status(200).json(payload);
+    }
+
+    const loadPromise = (async () => {
+      const season = await fetchCurrentSeason();
+      const yahooSeason = Number(String(season.id).slice(0, 4));
+
+      // manual filter by game dates since there is no FK; fetch games first
+      let dateUsed = initialDate;
 
     const fetchForDate = async (targetDate: string) => {
       const { data: games, error: gErr } = await supabase
@@ -223,18 +242,18 @@ export default async function handler(
       dateUsed = latest.dateUsed ?? dateUsed;
     }
 
-    if (
-      (!projRows || projRows.length === 0) &&
-      (!goalieRows || goalieRows.length === 0) &&
-      (!gameRows || gameRows.length === 0)
-    ) {
-      return res.status(200).json({
-        dateUsed,
-        projections: [],
-        players: [],
-        ctpi: []
-      });
-    }
+      if (
+        (!projRows || projRows.length === 0) &&
+        (!goalieRows || goalieRows.length === 0) &&
+        (!gameRows || gameRows.length === 0)
+      ) {
+        return {
+          dateUsed,
+          projections: [],
+          players: [],
+          ctpi: []
+        };
+      }
 
     // Fetch mapping for the players in projections
     const playerIds = [
@@ -505,14 +524,27 @@ export default async function handler(
       };
     });
 
-    return res.status(200).json({
-      dateUsed,
-      projections: playersWithGames.length,
-      players: playersWithGames,
-      ctpi,
-      games: enrichedGames
+      return {
+        dateUsed,
+        projections: playersWithGames.length,
+        players: playersWithGames,
+        ctpi,
+        games: enrichedGames
+      };
+    })();
+
+    inFlight.set(cacheKey, loadPromise);
+    const payload = await loadPromise;
+    inFlight.delete(cacheKey);
+
+    responseCache.set(cacheKey, {
+      payload,
+      expiresAt: Date.now() + RESPONSE_TTL_MS
     });
+    res.setHeader("Cache-Control", "s-maxage=300, stale-while-revalidate=60");
+    return res.status(200).json(payload);
   } catch (err: any) {
+    inFlight.delete(cacheKey);
     console.error("start-chart API error", err);
     return res.status(500).json({ error: err?.message ?? "Unexpected error" });
   }

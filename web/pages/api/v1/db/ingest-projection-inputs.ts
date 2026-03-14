@@ -10,6 +10,9 @@ type Result = {
   success: boolean;
   startDate: string;
   endDate: string;
+  chunkDays: number;
+  resumeFromDate: string | null;
+  nextStartDate: string | null;
   durationMs: string;
   timedOut: boolean;
   maxDurationMs: string;
@@ -46,8 +49,32 @@ function getParam(req: NextApiRequest, key: string): string | null {
   return null;
 }
 
+function parseBooleanParam(value: string | null): boolean {
+  if (!value) return false;
+  const normalized = value.trim().toLowerCase();
+  return normalized === "1" || normalized === "true" || normalized === "yes";
+}
+
 function isoDateOnly(d: string): string {
   return d.slice(0, 10);
+}
+
+function parseChunkDays(value: string | null): number {
+  const n = Number(value ?? 0);
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  return Math.max(1, Math.floor(n));
+}
+
+function buildDateRange(start: string, end: string): string[] {
+  const out: string[] = [];
+  const startDate = new Date(`${start}T00:00:00.000Z`);
+  const endDate = new Date(`${end}T00:00:00.000Z`);
+  if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime()))
+    return out;
+  for (let d = startDate; d <= endDate; d.setUTCDate(d.getUTCDate() + 1)) {
+    out.push(isoDateOnly(d.toISOString()));
+  }
+  return out;
 }
 
 async function hasPbp(gameId: number): Promise<boolean> {
@@ -91,6 +118,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
       success: false,
       startDate: "",
       endDate: "",
+      chunkDays: 0,
+      resumeFromDate: null,
+      nextStartDate: null,
       durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
       timedOut: false,
       maxDurationMs: formatDurationMsToMMSS(0),
@@ -111,22 +141,47 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
 
   const startDate = getParam(req, "startDate") ?? isoDateOnly(new Date().toISOString());
   const endDate = getParam(req, "endDate") ?? startDate;
+  const chunkDays = parseChunkDays(getParam(req, "chunkDays"));
+  const resumeFromDate = getParam(req, "resumeFromDate")?.slice(0, 10) ?? null;
   const force = (getParam(req, "force") ?? "false").toLowerCase() === "true";
   const debug = (getParam(req, "debug") ?? "false").toLowerCase() === "true";
   const debugLimit = Number(getParam(req, "debugLimit") ?? 50);
+  const bypassMaxDuration = parseBooleanParam(
+    getParam(req, "bypassMaxDuration")
+  );
   const maxDurationMs = Number(getParam(req, "maxDurationMs") ?? 270_000); // safety: 4.5 minutes
-  const budgetMs = Number.isFinite(maxDurationMs) ? maxDurationMs : 270_000;
-  const deadlineMs = startedAt + budgetMs;
+  const budgetMs =
+    Number.isFinite(maxDurationMs) && maxDurationMs > 0 ? maxDurationMs : 270_000;
+  const deadlineMs = bypassMaxDuration ? Number.POSITIVE_INFINITY : startedAt + budgetMs;
 
-  const games = await listGamesInRange(startDate, endDate);
+  const effectiveStartDate =
+    resumeFromDate && resumeFromDate >= startDate && resumeFromDate <= endDate
+      ? resumeFromDate
+      : startDate;
+  const fullRangeDates = buildDateRange(effectiveStartDate, endDate);
+  const limitedRangeDates =
+    chunkDays > 0 ? fullRangeDates.slice(0, chunkDays) : fullRangeDates;
+  const effectiveEndDate =
+    limitedRangeDates[limitedRangeDates.length - 1] ?? effectiveStartDate;
+  const chunkNextStartDate =
+    chunkDays > 0 && fullRangeDates.length > limitedRangeDates.length
+      ? fullRangeDates[limitedRangeDates.length] ?? null
+      : null;
+
+  const games = await listGamesInRange(effectiveStartDate, effectiveEndDate);
 
   const result: Result = {
     success: true,
-    startDate,
-    endDate,
+    startDate: effectiveStartDate,
+    endDate: effectiveEndDate,
+    chunkDays,
+    resumeFromDate,
+    nextStartDate: chunkNextStartDate,
     durationMs: formatDurationMsToMMSS(0),
     timedOut: false,
-    maxDurationMs: formatDurationMsToMMSS(budgetMs),
+    maxDurationMs: bypassMaxDuration
+      ? "bypassed"
+      : formatDurationMsToMMSS(budgetMs),
     gamesTotal: games.length,
     gamesProcessed: 0,
     pbpGamesUpserted: 0,
@@ -152,6 +207,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
     if (Date.now() > deadlineMs) {
       result.success = false;
       result.timedOut = true;
+      result.nextStartDate = g.date;
       break;
     }
     try {

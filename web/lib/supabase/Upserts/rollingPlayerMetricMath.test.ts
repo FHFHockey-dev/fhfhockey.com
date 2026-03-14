@@ -1,0 +1,189 @@
+import { describe, expect, it } from "vitest";
+import {
+  resolveIxgPer60Components,
+  resolveIxgValue,
+  resolvePer60Components,
+  resolvePreferredShareComponents,
+  resolveShareComponents
+} from "./rollingPlayerMetricMath";
+import {
+  createRatioRollingAccumulator,
+  getRatioRollingSnapshot,
+  updateRatioRollingAccumulator
+} from "./rollingMetricAggregation";
+
+describe("resolvePer60Components", () => {
+  it("uses raw totals over TOI when available", () => {
+    expect(
+      resolvePer60Components({
+        rawValue: 4,
+        toiSeconds: 1200,
+        per60Rate: 30
+      })
+    ).toEqual({
+      numerator: 4,
+      denominator: 1200
+    });
+  });
+
+  it("reconstructs implied totals from per-60 rate and TOI when raw totals are missing", () => {
+    expect(
+      resolvePer60Components({
+        rawValue: null,
+        toiSeconds: 900,
+        per60Rate: 12
+      })
+    ).toEqual({
+      numerator: 3,
+      denominator: 900
+    });
+  });
+
+  it("supports weighted horizon aggregation instead of averaging per-game rates", () => {
+    const acc = createRatioRollingAccumulator();
+
+    updateRatioRollingAccumulator(
+      acc,
+      resolvePer60Components({
+        rawValue: null,
+        toiSeconds: 600,
+        per60Rate: 24
+      })
+    );
+    updateRatioRollingAccumulator(
+      acc,
+      resolvePer60Components({
+        rawValue: 4,
+        toiSeconds: 1800
+      })
+    );
+
+    const snapshot = getRatioRollingSnapshot(acc, { scale: 3600 });
+
+    expect(snapshot.all).toBeCloseTo(12, 6);
+  });
+
+  it("returns null when TOI is unavailable or invalid", () => {
+    expect(
+      resolvePer60Components({
+        rawValue: 2,
+        toiSeconds: null
+      })
+    ).toBe(null);
+    expect(
+      resolvePer60Components({
+        rawValue: null,
+        toiSeconds: 0,
+        per60Rate: 10
+      })
+    ).toBe(null);
+  });
+
+  it("reconstructs total-share denominators from numerator and share inputs", () => {
+    expect(
+      resolveShareComponents({
+        numeratorValue: 180,
+        share: 0.6
+      })
+    ).toEqual({
+      numerator: 180,
+      denominator: 300
+    });
+  });
+
+  it("prefers the primary share source before falling back", () => {
+    expect(
+      resolvePreferredShareComponents({
+        primaryNumeratorValue: 90,
+        primaryShare: 0.5,
+        fallbackNumeratorValue: 80,
+        fallbackShare: 0.4
+      })
+    ).toEqual({
+      numerator: 90,
+      denominator: 180
+    });
+
+    expect(
+      resolvePreferredShareComponents({
+        primaryNumeratorValue: null,
+        primaryShare: null,
+        fallbackNumeratorValue: 80,
+        fallbackShare: 0.4
+      })
+    ).toEqual({
+      numerator: 80,
+      denominator: 200
+    });
+  });
+
+  it("only allows WGO ixg fallback for all-strength rows", () => {
+    expect(
+      resolveIxgValue({
+        strength: "all",
+        countsIxg: null,
+        wgoIxg: 1.2
+      })
+    ).toBe(1.2);
+
+    expect(
+      resolveIxgValue({
+        strength: "pp",
+        countsIxg: null,
+        wgoIxg: 1.2
+      })
+    ).toBe(null);
+  });
+
+  it("prefers direct raw ixg for ixg_per_60 before rate reconstruction", () => {
+    expect(
+      resolveIxgPer60Components({
+        strength: "all",
+        countsIxg: 0.8,
+        wgoIxg: 1.4,
+        toiSeconds: 1200,
+        per60Rate: 6
+      })
+    ).toEqual({
+      components: {
+        numerator: 0.8,
+        denominator: 1200
+      },
+      source: "counts_raw"
+    });
+
+    expect(
+      resolveIxgPer60Components({
+        strength: "all",
+        countsIxg: null,
+        wgoIxg: 1.4,
+        toiSeconds: 1200,
+        per60Rate: 6
+      })
+    ).toEqual({
+      components: {
+        numerator: 1.4,
+        denominator: 1200
+      },
+      source: "wgo_raw"
+    });
+  });
+
+  it("uses rate reconstruction for ixg_per_60 only when direct raw ixg is unavailable", () => {
+    expect(
+      resolveIxgPer60Components({
+        strength: "pp",
+        countsIxg: null,
+        wgoIxg: 1.4,
+        toiSeconds: 1200,
+        per60Rate: 6
+      })
+    ).toEqual({
+      components: {
+        numerator: 2,
+        denominator: 1200
+      },
+      source: "rate_reconstruction"
+    });
+  });
+});

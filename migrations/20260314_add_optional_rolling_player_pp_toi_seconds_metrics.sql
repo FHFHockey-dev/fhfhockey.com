@@ -1,0 +1,14 @@
+alter table public.rolling_player_game_metrics
+  add column if not exists pp_toi_seconds_total_all double precision null,
+  add column if not exists pp_toi_seconds_avg_all double precision null,
+  add column if not exists pp_toi_seconds_total_last3 double precision null,
+  add column if not exists pp_toi_seconds_avg_last3 double precision null,
+  add column if not exists pp_toi_seconds_total_last5 double precision null,
+  add column if not exists pp_toi_seconds_avg_last5 double precision null,
+  add column if not exists pp_toi_seconds_total_last10 double precision null,
+  add column if not exists pp_toi_seconds_avg_last10 double precision null,
+  add column if not exists pp_toi_seconds_total_last20 double precision null,
+  add column if not exists pp_toi_seconds_avg_last20 double precision null,
+  add column if not exists pp_toi_seconds_avg_season double precision null,
+  add column if not exists pp_toi_seconds_avg_3ya double precision null,
+  add column if not exists pp_toi_seconds_avg_career double precision null;

@@ -1057,8 +1057,3 @@ export function titleCase(str: string): string {
     })
     .join(" ");
 }
-
-console.log(
-  "!!! nameStandardization.ts LOADED - VERSION 2025-05-07_1800_v1.1 !!!"
-);
-console.log(`!!! MAP HAS ${Object.keys(canonicalNameMap).length} ENTRIES !!!`); // Check if this number matches your expectation

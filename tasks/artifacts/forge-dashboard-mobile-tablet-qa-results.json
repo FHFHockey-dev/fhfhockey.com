@@ -1,0 +1,174 @@
+[
+  {
+    "viewport": {
+      "name": "390x844",
+      "width": 390,
+      "height": 844,
+      "isMobile": true
+    },
+    "metrics": {
+      "viewport": {
+        "innerWidth": 390,
+        "innerHeight": 844
+      },
+      "horizontalOverflow": {
+        "docClientWidth": 390,
+        "docScrollWidth": 390,
+        "hasHorizontalOverflow": false
+      },
+      "layout": {
+        "filterColumns": "374px",
+        "dashboardColumns": "374px",
+        "panelCount": 6,
+        "panelTitles": [
+          "Team Power Rankings",
+          "Sustainable vs Unsustainable",
+          "Goalie Start + Risk",
+          "Hot / Cold Streaks",
+          "Tonight's Slate",
+          "Top Movers"
+        ]
+      },
+      "touchTargets": {
+        "minFilterControlHeight": 44,
+        "minQuickLinkHeight": 44,
+        "minMoverToggleHeight": 28
+      },
+      "filterState": {
+        "date": "2026-03-04",
+        "team": "NJD",
+        "position": "f"
+      }
+    },
+    "screenshotPath": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-dashboard-mobile-tablet-390x844.png"
+  },
+  {
+    "viewport": {
+      "name": "430x932",
+      "width": 430,
+      "height": 932,
+      "isMobile": true
+    },
+    "metrics": {
+      "viewport": {
+        "innerWidth": 430,
+        "innerHeight": 932
+      },
+      "horizontalOverflow": {
+        "docClientWidth": 430,
+        "docScrollWidth": 430,
+        "hasHorizontalOverflow": false
+      },
+      "layout": {
+        "filterColumns": "414px",
+        "dashboardColumns": "414px",
+        "panelCount": 6,
+        "panelTitles": [
+          "Team Power Rankings",
+          "Sustainable vs Unsustainable",
+          "Goalie Start + Risk",
+          "Hot / Cold Streaks",
+          "Tonight's Slate",
+          "Top Movers"
+        ]
+      },
+      "touchTargets": {
+        "minFilterControlHeight": 44,
+        "minQuickLinkHeight": 44,
+        "minMoverToggleHeight": 28
+      },
+      "filterState": {
+        "date": "2026-03-04",
+        "team": "NJD",
+        "position": "f"
+      }
+    },
+    "screenshotPath": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-dashboard-mobile-tablet-430x932.png"
+  },
+  {
+    "viewport": {
+      "name": "768x1024",
+      "width": 768,
+      "height": 1024,
+      "isMobile": false
+    },
+    "metrics": {
+      "viewport": {
+        "innerWidth": 768,
+        "innerHeight": 1024
+      },
+      "horizontalOverflow": {
+        "docClientWidth": 768,
+        "docScrollWidth": 768,
+        "hasHorizontalOverflow": false
+      },
+      "layout": {
+        "filterColumns": "240px 240px 240px",
+        "dashboardColumns": "364px 364px",
+        "panelCount": 6,
+        "panelTitles": [
+          "Team Power Rankings",
+          "Sustainable vs Unsustainable",
+          "Goalie Start + Risk",
+          "Hot / Cold Streaks",
+          "Tonight's Slate",
+          "Top Movers"
+        ]
+      },
+      "touchTargets": {
+        "minFilterControlHeight": 44,
+        "minQuickLinkHeight": 44,
+        "minMoverToggleHeight": 28
+      },
+      "filterState": {
+        "date": "2026-03-04",
+        "team": "NJD",
+        "position": "f"
+      }
+    },
+    "screenshotPath": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-dashboard-mobile-tablet-768x1024.png"
+  },
+  {
+    "viewport": {
+      "name": "834x1194",
+      "width": 834,
+      "height": 1194,
+      "isMobile": false
+    },
+    "metrics": {
+      "viewport": {
+        "innerWidth": 834,
+        "innerHeight": 1194
+      },
+      "horizontalOverflow": {
+        "docClientWidth": 834,
+        "docScrollWidth": 834,
+        "hasHorizontalOverflow": false
+      },
+      "layout": {
+        "filterColumns": "262px 262px 262px",
+        "dashboardColumns": "397px 397px",
+        "panelCount": 6,
+        "panelTitles": [
+          "Team Power Rankings",
+          "Sustainable vs Unsustainable",
+          "Goalie Start + Risk",
+          "Hot / Cold Streaks",
+          "Tonight's Slate",
+          "Top Movers"
+        ]
+      },
+      "touchTargets": {
+        "minFilterControlHeight": 44,
+        "minQuickLinkHeight": 44,
+        "minMoverToggleHeight": 28
+      },
+      "filterState": {
+        "date": "2026-03-04",
+        "team": "NJD",
+        "position": "f"
+      }
+    },
+    "screenshotPath": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-dashboard-mobile-tablet-834x1194.png"
+  }
+]

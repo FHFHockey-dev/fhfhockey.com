@@ -62,6 +62,11 @@
   font-family: v.$font-family-primary;
 }
 
+.inlineMono {
+  font-family: v.$font-family-numbers;
+  color: v.$color-white;
+}
+
 .datasetBadge {
   display: none;
   border-radius: v.$border-radius-md;
@@ -99,6 +104,174 @@
   @include v.component-wrapper;
   padding: v.$space-md;
   background-color: v.$background-medium;
+}
+
+.groupPanel {
+  @include v.component-wrapper;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-md;
+  padding: v.$space-md;
+  background-color: rgba(v.$background-medium, 0.7);
+
+  @media (min-width: 768px) {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.controlsGrid {
+  display: grid;
+  gap: v.$space-md;
+
+  @media (min-width: 960px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.summaryStrip {
+  display: grid;
+  gap: v.$space-sm;
+
+  @media (min-width: 768px) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.summaryCell {
+  @include v.component-wrapper;
+  padding: v.$space-md;
+  background-color: rgba(v.$background-medium, 0.65);
+  display: grid;
+  gap: v.$space-xxs;
+}
+
+.streakPanel {
+  @include v.component-wrapper;
+  padding: v.$space-md;
+  background-color: rgba(v.$background-medium, 0.72);
+  display: grid;
+  gap: v.$space-md;
+}
+
+.streakHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: v.$space-md;
+}
+
+.streakGrid {
+  display: grid;
+  gap: v.$space-sm;
+
+  @media (min-width: 768px) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.streakCard {
+  border-radius: v.$border-radius-md;
+  padding: v.$space-md;
+  border: 1px solid v.$border-primary;
+  display: grid;
+  gap: v.$space-xxs;
+}
+
+.streakHot {
+  background: rgba(v.$success-color, 0.12);
+  border-color: rgba(v.$success-color, 0.35);
+}
+
+.streakCold {
+  background: rgba(v.$danger-color, 0.12);
+  border-color: rgba(v.$danger-color, 0.35);
+}
+
+.streakNeutral {
+  background: rgba(v.$background-dark, 0.45);
+}
+
+.streakValue {
+  font-family: v.$font-family-numbers;
+  font-size: clamp(1.4rem, 2vw, 2rem);
+  color: v.$color-white;
+}
+
+.streakMeta {
+  margin: 0;
+  font-size: v.$font-size-sm;
+  color: v.$text-secondary;
+}
+
+.summaryLabel {
+  margin: 0;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: v.$font-size-xs;
+  color: v.$text-secondary;
+  font-family: v.$font-family-accent;
+}
+
+.baselinePanel {
+  @include v.component-wrapper;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-md;
+  padding: v.$space-md;
+  background-color: rgba(v.$background-medium, 0.7);
+
+  @media (min-width: 768px) {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.baselineLabel {
+  margin: 0;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: v.$font-size-xs;
+  color: v.$text-secondary;
+  font-family: v.$font-family-accent;
+}
+
+.baselineCopy {
+  margin: v.$space-xxs 0 0;
+  color: v.$text-secondary;
+  font-size: v.$font-size-sm;
+  font-family: v.$font-family-primary;
+}
+
+.baselineToggleGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: v.$space-xs;
+}
+
+.baselineToggle {
+  @include v.reset-button;
+  padding: v.$space-xs v.$space-md;
+  border-radius: v.$border-radius-sm;
+  border: 1px solid v.$border-primary;
+  background: rgba(v.$background-dark, 0.55);
+  color: v.$text-secondary;
+  font-size: v.$font-size-sm;
+  font-family: v.$font-family-primary;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: v.$primary-color;
+    color: v.$text-primary;
+  }
+}
+
+.baselineToggleActive {
+  background: rgba(v.$primary-color, 0.12);
+  border-color: v.$primary-color;
+  color: v.$color-white;
+  box-shadow: 0 0 15px rgba(v.$primary-color, 0.15);
 }
 
 .metricChip {

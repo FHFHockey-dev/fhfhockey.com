@@ -21,6 +21,373 @@
   margin-bottom: v.$space-xl;
 }
 
+.accuracySection {
+  margin-bottom: v.$space-xl;
+  padding: v.$space-lg;
+  border-radius: v.$border-radius-md;
+  border: 1px solid rgba(v.$primary-color, 0.35);
+  background:
+    linear-gradient(160deg, rgba(v.$primary-color, 0.12) 0%, transparent 60%),
+    linear-gradient(180deg, #1b1f25 0%, #17191e 100%);
+}
+
+.accuracyHeader {
+  display: flex;
+  flex-wrap: wrap;
+  gap: v.$space-md;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: v.$space-md;
+
+  h2 {
+    font-family: v.$font-family-accent;
+    font-size: 1.6rem;
+    margin: 0 0 v.$space-xs;
+  }
+
+  p {
+    margin: 0;
+    color: v.$text-secondary;
+    max-width: 520px;
+  }
+}
+
+.accuracyValue {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: v.$space-xs;
+  padding: v.$space-sm v.$space-md;
+  border-radius: v.$border-radius-sm;
+  background-color: rgba(v.$color-white, 0.05);
+  border: 1px solid rgba(v.$color-white, 0.08);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+
+  span {
+    font-size: 0.75rem;
+    color: v.$text-secondary;
+  }
+
+  strong {
+    font-size: 1.5rem;
+    color: v.$primary-color;
+  }
+}
+
+.accuracyChart {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-xs;
+
+  svg {
+    width: 100%;
+    height: auto;
+  }
+}
+
+.accuracyAxis {
+  stroke: rgba(v.$color-white, 0.15);
+  stroke-width: 1;
+  stroke-dasharray: 6 6;
+}
+
+.accuracyLine {
+  fill: none;
+  stroke: v.$primary-color;
+  stroke-width: 3;
+  filter: drop-shadow(0 0 6px rgba(v.$primary-color, 0.5));
+}
+
+.accuracyDot {
+  fill: v.$color-white;
+  stroke: v.$primary-color;
+  stroke-width: 2;
+}
+
+.accuracyLabels {
+  display: flex;
+  justify-content: space-between;
+  color: v.$text-secondary;
+  font-size: 0.8rem;
+}
+
+.accuracyNote {
+  margin: v.$space-sm 0 0;
+  color: v.$text-secondary;
+  font-size: 0.85rem;
+}
+
+.accuracyError {
+  margin: v.$space-sm 0 0;
+  color: v.$warning-color;
+  font-size: 0.85rem;
+}
+
+.goalieGameStrip {
+  margin-bottom: v.$space-md;
+  padding: v.$space-sm v.$space-md;
+  border-radius: v.$border-radius-md;
+  border: 1px solid rgba(v.$info-color, 0.32);
+  background:
+    linear-gradient(145deg, rgba(v.$info-color, 0.12) 0%, transparent 65%),
+    linear-gradient(180deg, #1a1d22 0%, #161920 100%);
+
+  h3 {
+    margin: 0 0 v.$space-xs;
+    font-family: v.$font-family-accent;
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: v.$text-primary;
+  }
+}
+
+.goalieGameStripTrack {
+  display: flex;
+  gap: v.$space-sm;
+  overflow-x: auto;
+  padding-bottom: v.$space-xs;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.goalieGameCard {
+  @include v.glass-panel($padding: v.$space-sm, $radius: v.$radius-md);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: v.$space-sm;
+  flex: 0 0 auto;
+  min-width: 260px;
+  border: 1px solid rgba(v.$color-white, 0.1);
+  box-shadow:
+    0 -4px 12px -6px var(--away-color),
+    0 4px 12px -6px var(--home-color);
+  background: rgba(0, 0, 0, 0.4);
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, var(--away-color), var(--home-color));
+    opacity: 0.1;
+    transition: opacity 0.2s ease;
+  }
+
+  > * {
+    position: relative;
+    z-index: 1;
+  }
+}
+
+.gameStripTeamRow {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.gameStripReverse {
+  flex-direction: row-reverse !important;
+  text-align: right;
+  justify-content: space-between;
+}
+
+.gameStripTeamRowHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.gameStripTeamIdentity {
+  display: flex;
+  align-items: center;
+  gap: v.$space-xs;
+}
+
+.gameStripTeamLogo {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.5));
+}
+
+.gameStripTeamAbbrev {
+  font-weight: 800;
+  font-size: v.$font-size-md;
+  color: v.$text-primary;
+  letter-spacing: 0.05em;
+}
+
+.gameStripTeamRating {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 11px;
+  color: v.$text-secondary;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 4px 6px;
+  border-radius: 4px;
+  min-width: 60px;
+}
+
+.gameStripRatingRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.gameStripRatingLabel {
+  opacity: 0.7;
+  font-weight: 600;
+}
+
+.gameStripRatingValue {
+  font-weight: 700;
+  color: v.$text-primary;
+}
+
+.glowGreen {
+  color: #4ade80;
+  text-shadow: 0 0 8px rgba(74, 222, 128, 0.6);
+}
+
+.glowRed {
+  color: #f87171;
+  text-shadow: 0 0 8px rgba(248, 113, 113, 0.6);
+}
+
+.gameStripDivider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  opacity: 0.6;
+  margin: 2px 0;
+}
+
+.gameStripDividerLine {
+  flex: 1;
+  height: 1px;
+  background: v.$border-secondary;
+}
+
+.gameStripVsCircle {
+  font-size: 10px;
+  font-weight: 700;
+  color: v.$text-secondary;
+  text-transform: uppercase;
+  border: 1px solid v.$border-secondary;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.goalieBarContainer {
+  margin-top: auto;
+  display: flex;
+  width: 100%;
+  height: 24px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
+}
+
+.goalieSegment {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  cursor: help;
+  position: relative;
+  border-width: 2px;
+  border-style: solid;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2);
+
+  &:hover {
+    filter: brightness(1.2);
+    z-index: 2;
+  }
+
+  &:not(:last-child) {
+    border-right: none;
+  }
+}
+
+.goalieSegmentText {
+  font-size: 10px;
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.goalieDisclosure {
+  margin-bottom: v.$space-lg;
+  padding: v.$space-md;
+  border-radius: v.$border-radius-md;
+  border: 1px solid rgba(v.$success-color, 0.35);
+  background:
+    linear-gradient(160deg, rgba(v.$success-color, 0.14) 0%, transparent 65%),
+    linear-gradient(180deg, #1a1f1b 0%, #171b18 100%);
+
+  h3 {
+    margin: 0 0 v.$space-sm;
+    font-family: v.$font-family-accent;
+    font-size: 1.1rem;
+    text-transform: uppercase;
+  }
+
+  ul {
+    margin: v.$space-sm 0 0;
+    padding-left: 1.1rem;
+    color: v.$text-secondary;
+
+    li {
+      margin-bottom: 0.25rem;
+      line-height: 1.35;
+    }
+  }
+}
+
+.disclosureMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: v.$space-xs;
+
+  span {
+    border: 1px solid rgba(v.$color-white, 0.15);
+    background-color: rgba(v.$color-white, 0.04);
+    border-radius: 999px;
+    padding: 0.2rem 0.55rem;
+    font-size: 0.78rem;
+    color: v.$text-secondary;
+  }
+}
+
+.disclosureNotes {
+  margin: v.$space-sm 0 0;
+  font-size: 0.8rem;
+  color: v.$text-secondary;
+}
+
 .logoContainer {
   margin-bottom: v.$space-md;
 
@@ -41,6 +408,30 @@
   .highlight {
     color: v.$primary-color;
   }
+}
+
+.modeSwitch {
+  display: inline-flex;
+  margin: 0 0 v.$space-lg;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-md;
+  overflow: hidden;
+}
+
+.modeButton {
+  @include v.button-style;
+  border: none;
+  padding: v.$space-sm v.$space-lg;
+  background-color: v.$background-medium;
+  color: v.$text-secondary;
+  font-family: v.$font-family-accent;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.activeModeButton {
+  background-color: v.$primary-color;
+  color: v.$background-dark;
 }
 
 .controlsContainer {
@@ -260,12 +651,41 @@
     padding-top: v.$space-md;
     border-top: 1px solid v.$border-secondary;
 
+    .uncertaintyHeader {
+      display: flex;
+      align-items: center;
+      gap: v.$space-sm;
+      margin-bottom: v.$space-sm;
+    }
+
     h3 {
       font-family: v.$font-family-accent;
       color: v.$primary-color;
       font-size: 1.1rem;
-      margin: 0 0 v.$space-sm;
+      margin: 0;
       text-transform: uppercase;
+    }
+
+    .uncertaintyLegend {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+      border-radius: 999px;
+      border: 1px solid v.$border-secondary;
+      color: v.$text-secondary;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: help;
+    }
+
+    .uncertaintyNote {
+      margin: 0 0 v.$space-sm;
+      color: v.$text-secondary;
+      font-size: 0.85rem;
+      line-height: 1.4;
     }
 
     ul {
@@ -274,5 +694,131 @@
         color: v.$text-secondary;
       }
     }
+
+    .uncertaintyValues {
+      display: inline-flex;
+      gap: v.$space-xs;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      text-align: right;
+    }
+  }
+}
+
+.goalieMetaRow {
+  margin-top: v.$space-sm;
+  display: flex;
+  flex-wrap: wrap;
+  gap: v.$space-xs;
+
+  span {
+    border: 1px solid v.$border-secondary;
+    border-radius: 999px;
+    padding: 0.2rem 0.55rem;
+    font-size: 0.75rem;
+    letter-spacing: 0.03em;
+    color: v.$text-secondary;
+    background-color: rgba(v.$color-white, 0.03);
+  }
+}
+
+.indicatorBadge {
+  font-weight: 600;
+}
+
+.confidenceHigh {
+  border-color: rgba(v.$success-color, 0.5) !important;
+  background-color: rgba(v.$success-color, 0.12) !important;
+  color: color.scale(v.$success-color, $lightness: 30%);
+}
+
+.confidenceMedium {
+  border-color: rgba(v.$warning-color, 0.5) !important;
+  background-color: rgba(v.$warning-color, 0.12) !important;
+  color: color.scale(v.$warning-color, $lightness: 30%);
+}
+
+.confidenceLow {
+  border-color: rgba(v.$danger-color, 0.5) !important;
+  background-color: rgba(v.$danger-color, 0.12) !important;
+  color: color.scale(v.$danger-color, $lightness: 30%);
+}
+
+.volatilityStable {
+  border-color: rgba(v.$info-color, 0.5) !important;
+  background-color: rgba(v.$info-color, 0.12) !important;
+  color: color.scale(v.$info-color, $lightness: 30%);
+}
+
+.volatilityModerate {
+  border-color: rgba(v.$warning-color, 0.45) !important;
+  background-color: rgba(v.$warning-color, 0.1) !important;
+  color: color.scale(v.$warning-color, $lightness: 25%);
+}
+
+.volatilityHigh {
+  border-color: rgba(v.$danger-color, 0.5) !important;
+  background-color: rgba(v.$danger-color, 0.12) !important;
+  color: color.scale(v.$danger-color, $lightness: 25%);
+}
+
+.riskLow {
+  border-color: rgba(v.$success-color, 0.5) !important;
+  background-color: rgba(v.$success-color, 0.12) !important;
+  color: color.scale(v.$success-color, $lightness: 30%);
+}
+
+.riskMedium {
+  border-color: rgba(v.$warning-color, 0.5) !important;
+  background-color: rgba(v.$warning-color, 0.12) !important;
+  color: color.scale(v.$warning-color, $lightness: 25%);
+}
+
+.riskHigh {
+  border-color: rgba(v.$danger-color, 0.5) !important;
+  background-color: rgba(v.$danger-color, 0.12) !important;
+  color: color.scale(v.$danger-color, $lightness: 25%);
+}
+
+.starterDrivers {
+  margin-top: v.$space-md;
+  padding: v.$space-sm;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-sm;
+  background-color: rgba(v.$color-white, 0.02);
+
+  h3 {
+    margin: 0 0 v.$space-xs;
+    font-family: v.$font-family-accent;
+    font-size: 0.9rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: v.$text-primary;
+  }
+
+  ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li {
+    display: flex;
+    justify-content: space-between;
+    gap: v.$space-sm;
+    padding: 0.25rem 0;
+    border-bottom: 1px dashed rgba(v.$color-white, 0.08);
+    font-size: 0.84rem;
+    color: v.$text-secondary;
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+
+  strong {
+    color: v.$text-primary;
+    font-weight: 600;
+    text-align: right;
   }
 }

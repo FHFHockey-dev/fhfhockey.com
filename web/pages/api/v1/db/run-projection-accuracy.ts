@@ -8,6 +8,7 @@ import {
   computeGoalieFantasyPoints,
   computeSkaterFantasyPoints
 } from "lib/projections/accuracy/fantasyPoints";
+import { DEFAULT_SKATER_FANTASY_POINTS } from "lib/projectionsConfig/fantasyPointsConfig";
 
 type AccuracyResultRow = {
   as_of_date: string;
@@ -54,9 +55,202 @@ type StatAggregateRow = {
   updated_at: string;
 };
 
+type RollingWindowStats = {
+  days: number;
+  player_count: number;
+  mae: number;
+  rmse: number;
+};
+
+type SkaterRoleBucketKey =
+  | "TOP_LINE"
+  | "MIDDLE_SIX"
+  | "DEPTH_FORWARD"
+  | "DEFENSE_PAIR_1"
+  | "DEFENSE_PAIR_2"
+  | "DEFENSE_PAIR_3"
+  | "PP1"
+  | "PP2"
+  | "PP_UNIT_DEPTH"
+  | "UNKNOWN";
+
+type SkaterRoleBucketDiagnostics = Record<
+  SkaterRoleBucketKey,
+  Record<
+    "g" | "a" | "pts" | "sog" | "ppp",
+    { player_count: number; mae: number; rmse: number }
+  >
+>;
+
+type SkaterRoleBucketIntervalCalibrationDiagnostics = Record<
+  SkaterRoleBucketKey,
+  Record<
+    "g" | "a" | "pts" | "sog" | "ppp",
+    { sample_count: number; p10_p90_in_range: number; p10_p90_hit_rate: number }
+  >
+>;
+
+type SkaterStatDiagnostics = Record<
+  "g" | "a" | "pts" | "sog" | "ppp",
+  {
+    daily: { player_count: number; mae: number; rmse: number };
+    rolling_7d: RollingWindowStats;
+    rolling_14d: RollingWindowStats;
+    rolling_30d: RollingWindowStats;
+  }
+>;
+
+type SkaterRollingDashboard = {
+  generated_for_date: string;
+  stat_diagnostics: SkaterStatDiagnostics;
+  interval_coverage_daily: IntervalCoverageSummary;
+  role_bucket_interval_calibration_daily: SkaterRoleBucketIntervalCalibrationDiagnostics;
+  miss_attribution_daily: SkaterComponentMissAttributionDiagnostics;
+};
+
+type GoalieStatDiagnostics = Record<
+  "saves" | "goals_against" | "win_prob" | "shutout_prob",
+  {
+    daily: { player_count: number; mae: number; rmse: number };
+    rolling_7d: RollingWindowStats;
+    rolling_30d: RollingWindowStats;
+  }
+>;
+
+type CalibrationBinAccumulator = {
+  count: number;
+  predicted_sum: number;
+  observed_sum: number;
+};
+
+type CalibrationAccumulator = {
+  count: number;
+  brier_sum: number;
+  bins: CalibrationBinAccumulator[];
+};
+
+type ReliabilityBin = {
+  bin_index: number;
+  bin_start: number;
+  bin_end: number;
+  sample_count: number;
+  avg_predicted: number;
+  observed_rate: number;
+};
+
+type ProbabilityCalibrationSummary = {
+  sample_count: number;
+  brier_score: number;
+  reliability_bins: ReliabilityBin[];
+};
+
+type IntervalCoverageSummary = Record<
+  string,
+  {
+    sample_count: number;
+    p10_p90_in_range: number;
+    p10_p90_hit_rate: number;
+  }
+>;
+
+type GoalieMissAttributionDiagnostics = {
+  sample_count: number;
+  total_abs_fp_error: number;
+  total_abs_ga_error: number;
+  starter_uncertainty: {
+    contribution: number;
+    share_of_explainable_error: number;
+  };
+  shots_against: {
+    contribution: number;
+    share_of_explainable_error: number;
+  };
+  save_pct: {
+    contribution: number;
+    share_of_explainable_error: number;
+  };
+  primary_driver: "STARTER" | "SHOTS_AGAINST" | "SAVE_PCT" | "MIXED";
+};
+
+type SkaterComponentMissAttributionDiagnostics = {
+  sample_count: number;
+  total_abs_fp_error: number;
+  toi_miss: {
+    contribution: number;
+    share_of_explainable_error: number;
+  };
+  shot_rate_miss: {
+    contribution: number;
+    share_of_explainable_error: number;
+  };
+  conversion_miss: {
+    contribution: number;
+    share_of_explainable_error: number;
+  };
+  primary_driver: "TOI" | "SHOT_RATE" | "CONVERSION" | "MIXED";
+};
+
+type LaunchGateStatus = "PASS" | "FAIL";
+
+type LaunchGateEvaluation = {
+  gate_key: string;
+  description: string;
+  status: LaunchGateStatus;
+  actual_value: number;
+  threshold: { operator: "<=" | ">=" | "between"; value: number | [number, number] };
+};
+
+type GoalieLaunchGates = {
+  window_days: 30;
+  generated_for_date: string;
+  overall_status: LaunchGateStatus;
+  pass_count: number;
+  fail_count: number;
+  thresholds: Record<string, number | [number, number]>;
+  gates: LaunchGateEvaluation[];
+};
+
+type CoverageAccumulator = {
+  total: number;
+  in_range: number;
+};
+
+type ErrorStats = {
+  count: number;
+  error_abs_sum: number;
+  error_sq_sum: number;
+};
+
+type ProjectionRowForPpBucketing = {
+  game_id: number | null;
+  team_id: number | null;
+  player_id: number | null;
+  proj_toi_pp_seconds: number | null;
+};
+
+type MetricComparison = {
+  sample_count: number;
+  model_mae: number;
+  model_rmse: number;
+  baseline_mae: number;
+  baseline_rmse: number;
+  mae_delta_vs_baseline: number;
+  rmse_delta_vs_baseline: number;
+};
+
 const DEFAULT_OFFSET_DAYS = 1;
 const DEFAULT_RANGE_BUDGET_MS = 240_000;
 const BATCH_SIZE = 800;
+const GOALIE_LAUNCH_GATE_THRESHOLDS = {
+  min_sample_count_30d: 100,
+  saves_mae_max_30d: 4.5,
+  goals_against_mae_max_30d: 1.4,
+  starter_brier_max_30d: 0.2,
+  win_brier_max_30d: 0.22,
+  shutout_brier_max_30d: 0.08,
+  saves_interval_hit_rate_30d_range: [0.72, 0.9] as [number, number],
+  goals_allowed_interval_hit_rate_30d_range: [0.72, 0.9] as [number, number]
+} as const;
 
 function isoDateOnly(d: Date): string {
   return d.toISOString().slice(0, 10);
@@ -146,6 +340,195 @@ function updateStatAggregate(
   map.set(key, existing);
 }
 
+function initSkaterRoleBucketDiagnosticsMap() {
+  return new Map<SkaterRoleBucketKey, Map<string, StatAggregate>>();
+}
+
+function getSkaterRoleBucketMap(
+  map: Map<SkaterRoleBucketKey, Map<string, StatAggregate>>,
+  bucket: SkaterRoleBucketKey
+) {
+  const existing = map.get(bucket);
+  if (existing) return existing;
+  const next = new Map<string, StatAggregate>();
+  map.set(bucket, next);
+  return next;
+}
+
+function buildPpUnitBucketByPlayer(rows: ProjectionRowForPpBucketing[]) {
+  const out = new Map<string, "PP1" | "PP2" | "PP_UNIT_DEPTH">();
+  const grouped = new Map<string, Array<{ playerId: number; ppToi: number }>>();
+  for (const row of rows) {
+    const gameId = Number(row.game_id);
+    const teamId = Number(row.team_id);
+    const playerId = Number(row.player_id);
+    if (!Number.isFinite(gameId) || !Number.isFinite(teamId) || !Number.isFinite(playerId)) {
+      continue;
+    }
+    const key = `${gameId}:${teamId}`;
+    const list = grouped.get(key) ?? [];
+    list.push({
+      playerId,
+      ppToi: Math.max(0, Number(row.proj_toi_pp_seconds ?? 0))
+    });
+    grouped.set(key, list);
+  }
+  for (const [groupKey, list] of grouped.entries()) {
+    const sorted = list.sort((a, b) => b.ppToi - a.ppToi);
+    sorted.forEach((entry, idx) => {
+      const bucket = idx < 5 ? "PP1" : idx < 10 ? "PP2" : "PP_UNIT_DEPTH";
+      out.set(`${groupKey}:${entry.playerId}`, bucket);
+    });
+  }
+  return out;
+}
+
+function inferRoleBuckets(args: {
+  uncertainty: any;
+  gameId: number;
+  teamId: number | null;
+  playerId: number;
+  ppUnitBucketByPlayer: Map<string, "PP1" | "PP2" | "PP_UNIT_DEPTH">;
+}): SkaterRoleBucketKey[] {
+  const buckets: SkaterRoleBucketKey[] = [];
+  const selection = args?.uncertainty?.model?.skater_selection ?? {};
+  const esRole =
+    typeof selection.es_role === "string" ? selection.es_role.toUpperCase() : null;
+  if (esRole === "L1") buckets.push("TOP_LINE");
+  else if (esRole === "L2" || esRole === "L3") buckets.push("MIDDLE_SIX");
+  else if (esRole === "L4") buckets.push("DEPTH_FORWARD");
+  else if (esRole === "D1") buckets.push("DEFENSE_PAIR_1");
+  else if (esRole === "D2") buckets.push("DEFENSE_PAIR_2");
+  else if (esRole === "D3") buckets.push("DEFENSE_PAIR_3");
+
+  if (args.teamId != null) {
+    const ppBucket =
+      args.ppUnitBucketByPlayer.get(`${args.gameId}:${args.teamId}:${args.playerId}`) ?? null;
+    if (ppBucket === "PP1" || ppBucket === "PP2" || ppBucket === "PP_UNIT_DEPTH") {
+      buckets.push(ppBucket);
+    }
+  }
+
+  if (buckets.length === 0) buckets.push("UNKNOWN");
+  return Array.from(new Set(buckets));
+}
+
+function finalizeSkaterRoleBucketDiagnostics(
+  map: Map<SkaterRoleBucketKey, Map<string, StatAggregate>>
+): SkaterRoleBucketDiagnostics {
+  const buckets: SkaterRoleBucketKey[] = [
+    "TOP_LINE",
+    "MIDDLE_SIX",
+    "DEPTH_FORWARD",
+    "DEFENSE_PAIR_1",
+    "DEFENSE_PAIR_2",
+    "DEFENSE_PAIR_3",
+    "PP1",
+    "PP2",
+    "PP_UNIT_DEPTH",
+    "UNKNOWN"
+  ];
+  const statKeys: Array<"g" | "a" | "pts" | "sog" | "ppp"> = [
+    "g",
+    "a",
+    "pts",
+    "sog",
+    "ppp"
+  ];
+  const out = {} as SkaterRoleBucketDiagnostics;
+  for (const bucket of buckets) {
+    const bucketMap = map.get(bucket) ?? new Map<string, StatAggregate>();
+    out[bucket] = {
+      g: { player_count: 0, mae: 0, rmse: 0 },
+      a: { player_count: 0, mae: 0, rmse: 0 },
+      pts: { player_count: 0, mae: 0, rmse: 0 },
+      sog: { player_count: 0, mae: 0, rmse: 0 },
+      ppp: { player_count: 0, mae: 0, rmse: 0 }
+    };
+    for (const statKey of statKeys) {
+      const agg = bucketMap.get(statKey) ?? { count: 0, error_abs_sum: 0, error_sq_sum: 0 };
+      out[bucket][statKey] = {
+        player_count: agg.count,
+        mae: agg.count > 0 ? round4(agg.error_abs_sum / agg.count) : 0,
+        rmse: agg.count > 0 ? round4(Math.sqrt(agg.error_sq_sum / agg.count)) : 0
+      };
+    }
+  }
+  return out;
+}
+
+function initSkaterRoleBucketCoverageMap() {
+  return new Map<SkaterRoleBucketKey, Map<string, CoverageAccumulator>>();
+}
+
+function getSkaterRoleBucketCoverageStatMap(
+  map: Map<SkaterRoleBucketKey, Map<string, CoverageAccumulator>>,
+  bucket: SkaterRoleBucketKey
+) {
+  const existing = map.get(bucket);
+  if (existing) return existing;
+  const next = new Map<string, CoverageAccumulator>();
+  map.set(bucket, next);
+  return next;
+}
+
+function finalizeSkaterRoleBucketIntervalCalibrationDiagnostics(
+  map: Map<SkaterRoleBucketKey, Map<string, CoverageAccumulator>>
+): SkaterRoleBucketIntervalCalibrationDiagnostics {
+  const buckets: SkaterRoleBucketKey[] = [
+    "TOP_LINE",
+    "MIDDLE_SIX",
+    "DEPTH_FORWARD",
+    "DEFENSE_PAIR_1",
+    "DEFENSE_PAIR_2",
+    "DEFENSE_PAIR_3",
+    "PP1",
+    "PP2",
+    "PP_UNIT_DEPTH",
+    "UNKNOWN"
+  ];
+  const statKeys: Array<"g" | "a" | "pts" | "sog" | "ppp"> = [
+    "g",
+    "a",
+    "pts",
+    "sog",
+    "ppp"
+  ];
+  const out = {} as SkaterRoleBucketIntervalCalibrationDiagnostics;
+  for (const bucket of buckets) {
+    const coverageMap = map.get(bucket) ?? new Map<string, CoverageAccumulator>();
+    const bucketCoverage = toIntervalCoverageSummary(finalizeCoverage(coverageMap));
+    out[bucket] = {
+      g: bucketCoverage.g ?? { sample_count: 0, p10_p90_in_range: 0, p10_p90_hit_rate: 0 },
+      a: bucketCoverage.a ?? { sample_count: 0, p10_p90_in_range: 0, p10_p90_hit_rate: 0 },
+      pts: bucketCoverage.pts ?? {
+        sample_count: 0,
+        p10_p90_in_range: 0,
+        p10_p90_hit_rate: 0
+      },
+      sog: bucketCoverage.sog ?? {
+        sample_count: 0,
+        p10_p90_in_range: 0,
+        p10_p90_hit_rate: 0
+      },
+      ppp: bucketCoverage.ppp ?? {
+        sample_count: 0,
+        p10_p90_in_range: 0,
+        p10_p90_hit_rate: 0
+      }
+    };
+    for (const statKey of statKeys) {
+      const statCoverage = out[bucket][statKey];
+      out[bucket][statKey] = {
+        sample_count: statCoverage.sample_count,
+        p10_p90_in_range: statCoverage.p10_p90_in_range,
+        p10_p90_hit_rate: round4(statCoverage.p10_p90_hit_rate)
+      };
+    }
+  }
+  return out;
+}
+
 function finalizeStatAggregates(
   map: Map<string, StatAggregate>,
   date: string,
@@ -166,6 +549,726 @@ function finalizeStatAggregates(
       updated_at: new Date().toISOString()
     };
   });
+}
+
+function updateCoverage(
+  map: Map<string, CoverageAccumulator>,
+  statKey: string,
+  actual: number,
+  interval: { p10?: number; p90?: number } | null | undefined
+) {
+  if (!interval) return;
+  const p10 = interval.p10;
+  const p90 = interval.p90;
+  if (!Number.isFinite(actual) || !Number.isFinite(p10) || !Number.isFinite(p90)) return;
+  const existing = map.get(statKey) ?? { total: 0, in_range: 0 };
+  existing.total += 1;
+  if (actual >= (p10 as number) && actual <= (p90 as number)) {
+    existing.in_range += 1;
+  }
+  map.set(statKey, existing);
+}
+
+function finalizeCoverage(map: Map<string, CoverageAccumulator>) {
+  const out: Record<string, { total: number; in_range: number; coverage: number }> = {};
+  for (const [key, value] of map.entries()) {
+    out[key] = {
+      total: value.total,
+      in_range: value.in_range,
+      coverage: value.total > 0 ? value.in_range / value.total : 0
+    };
+  }
+  return out;
+}
+
+function toIntervalCoverageSummary(
+  coverage: Record<string, { total: number; in_range: number; coverage: number }>
+): IntervalCoverageSummary {
+  const out: IntervalCoverageSummary = {};
+  for (const [key, value] of Object.entries(coverage)) {
+    out[key] = {
+      sample_count: value.total,
+      p10_p90_in_range: value.in_range,
+      p10_p90_hit_rate: round4(value.coverage)
+    };
+  }
+  return out;
+}
+
+function initMissAttributionAccumulator() {
+  return {
+    sampleCount: 0,
+    totalAbsFpError: 0,
+    totalAbsGaError: 0,
+    starterContribution: 0,
+    shotsAgainstContribution: 0,
+    savePctContribution: 0
+  };
+}
+
+function finalizeMissAttributionDiagnostics(acc: {
+  sampleCount: number;
+  totalAbsFpError: number;
+  totalAbsGaError: number;
+  starterContribution: number;
+  shotsAgainstContribution: number;
+  savePctContribution: number;
+}): GoalieMissAttributionDiagnostics {
+  const explainable =
+    acc.starterContribution + acc.shotsAgainstContribution + acc.savePctContribution;
+  const starterShare = explainable > 0 ? acc.starterContribution / explainable : 0;
+  const saShare = explainable > 0 ? acc.shotsAgainstContribution / explainable : 0;
+  const svShare = explainable > 0 ? acc.savePctContribution / explainable : 0;
+  const top = Math.max(starterShare, saShare, svShare);
+  const countTop = [starterShare, saShare, svShare].filter((v) => top - v < 0.05).length;
+  const primary =
+    countTop > 1
+      ? "MIXED"
+      : top === starterShare
+        ? "STARTER"
+        : top === saShare
+          ? "SHOTS_AGAINST"
+          : "SAVE_PCT";
+
+  return {
+    sample_count: acc.sampleCount,
+    total_abs_fp_error: round4(acc.totalAbsFpError),
+    total_abs_ga_error: round4(acc.totalAbsGaError),
+    starter_uncertainty: {
+      contribution: round4(acc.starterContribution),
+      share_of_explainable_error: round4(starterShare)
+    },
+    shots_against: {
+      contribution: round4(acc.shotsAgainstContribution),
+      share_of_explainable_error: round4(saShare)
+    },
+    save_pct: {
+      contribution: round4(acc.savePctContribution),
+      share_of_explainable_error: round4(svShare)
+    },
+    primary_driver: primary
+  };
+}
+
+function initSkaterMissAttributionAccumulator() {
+  return {
+    sampleCount: 0,
+    totalAbsFpError: 0,
+    toiContribution: 0,
+    shotRateContribution: 0,
+    conversionContribution: 0
+  };
+}
+
+function finalizeSkaterMissAttributionDiagnostics(acc: {
+  sampleCount: number;
+  totalAbsFpError: number;
+  toiContribution: number;
+  shotRateContribution: number;
+  conversionContribution: number;
+}): SkaterComponentMissAttributionDiagnostics {
+  const explainable =
+    acc.toiContribution + acc.shotRateContribution + acc.conversionContribution;
+  const toiShare = explainable > 0 ? acc.toiContribution / explainable : 0;
+  const shotRateShare = explainable > 0 ? acc.shotRateContribution / explainable : 0;
+  const conversionShare = explainable > 0 ? acc.conversionContribution / explainable : 0;
+  const top = Math.max(toiShare, shotRateShare, conversionShare);
+  const tied = [toiShare, shotRateShare, conversionShare].filter((v) => top - v < 0.05).length;
+  const primary =
+    tied > 1
+      ? "MIXED"
+      : top === toiShare
+        ? "TOI"
+        : top === shotRateShare
+          ? "SHOT_RATE"
+          : "CONVERSION";
+
+  return {
+    sample_count: acc.sampleCount,
+    total_abs_fp_error: round4(acc.totalAbsFpError),
+    toi_miss: {
+      contribution: round4(acc.toiContribution),
+      share_of_explainable_error: round4(toiShare)
+    },
+    shot_rate_miss: {
+      contribution: round4(acc.shotRateContribution),
+      share_of_explainable_error: round4(shotRateShare)
+    },
+    conversion_miss: {
+      contribution: round4(acc.conversionContribution),
+      share_of_explainable_error: round4(conversionShare)
+    },
+    primary_driver: primary
+  };
+}
+
+function buildGoalieLaunchGates(args: {
+  actualDate: string;
+  goalieStatDiagnostics: GoalieStatDiagnostics;
+  goalieProbabilityCalibration: {
+    starter_probability: ProbabilityCalibrationSummary;
+    win_probability: ProbabilityCalibrationSummary;
+    shutout_probability: ProbabilityCalibrationSummary;
+  };
+  goalieIntervalCoverageDiagnostics: IntervalCoverageSummary;
+}): GoalieLaunchGates {
+  const t = GOALIE_LAUNCH_GATE_THRESHOLDS;
+  const evaluations: LaunchGateEvaluation[] = [];
+  const addGate = (gate: LaunchGateEvaluation) => evaluations.push(gate);
+
+  const sampleCount = args.goalieStatDiagnostics.saves.rolling_30d.player_count;
+  addGate({
+    gate_key: "min_sample_count_30d",
+    description: "Minimum goalie sample in last 30 days",
+    status: sampleCount >= t.min_sample_count_30d ? "PASS" : "FAIL",
+    actual_value: sampleCount,
+    threshold: { operator: ">=", value: t.min_sample_count_30d }
+  });
+
+  const savesMae30 = args.goalieStatDiagnostics.saves.rolling_30d.mae;
+  addGate({
+    gate_key: "saves_mae_max_30d",
+    description: "30d MAE on goalie saves projection",
+    status: savesMae30 <= t.saves_mae_max_30d ? "PASS" : "FAIL",
+    actual_value: savesMae30,
+    threshold: { operator: "<=", value: t.saves_mae_max_30d }
+  });
+
+  const gaMae30 = args.goalieStatDiagnostics.goals_against.rolling_30d.mae;
+  addGate({
+    gate_key: "goals_against_mae_max_30d",
+    description: "30d MAE on goalie goals-against projection",
+    status: gaMae30 <= t.goals_against_mae_max_30d ? "PASS" : "FAIL",
+    actual_value: gaMae30,
+    threshold: { operator: "<=", value: t.goals_against_mae_max_30d }
+  });
+
+  const starterBrier = args.goalieProbabilityCalibration.starter_probability.brier_score;
+  addGate({
+    gate_key: "starter_brier_max_30d",
+    description: "Starter probability Brier score over 30d window",
+    status: starterBrier <= t.starter_brier_max_30d ? "PASS" : "FAIL",
+    actual_value: starterBrier,
+    threshold: { operator: "<=", value: t.starter_brier_max_30d }
+  });
+
+  const winBrier = args.goalieProbabilityCalibration.win_probability.brier_score;
+  addGate({
+    gate_key: "win_brier_max_30d",
+    description: "Win probability Brier score over 30d window",
+    status: winBrier <= t.win_brier_max_30d ? "PASS" : "FAIL",
+    actual_value: winBrier,
+    threshold: { operator: "<=", value: t.win_brier_max_30d }
+  });
+
+  const shutoutBrier = args.goalieProbabilityCalibration.shutout_probability.brier_score;
+  addGate({
+    gate_key: "shutout_brier_max_30d",
+    description: "Shutout probability Brier score over 30d window",
+    status: shutoutBrier <= t.shutout_brier_max_30d ? "PASS" : "FAIL",
+    actual_value: shutoutBrier,
+    threshold: { operator: "<=", value: t.shutout_brier_max_30d }
+  });
+
+  const savesCoverage = args.goalieIntervalCoverageDiagnostics.saves?.p10_p90_hit_rate ?? 0;
+  addGate({
+    gate_key: "saves_interval_hit_rate_30d_range",
+    description: "P10/P90 interval hit-rate for saves in acceptable calibration band",
+    status:
+      savesCoverage >= t.saves_interval_hit_rate_30d_range[0] &&
+      savesCoverage <= t.saves_interval_hit_rate_30d_range[1]
+        ? "PASS"
+        : "FAIL",
+    actual_value: savesCoverage,
+    threshold: { operator: "between", value: t.saves_interval_hit_rate_30d_range }
+  });
+
+  const goalsCoverage =
+    args.goalieIntervalCoverageDiagnostics.goals_allowed?.p10_p90_hit_rate ?? 0;
+  addGate({
+    gate_key: "goals_allowed_interval_hit_rate_30d_range",
+    description:
+      "P10/P90 interval hit-rate for goals allowed in acceptable calibration band",
+    status:
+      goalsCoverage >= t.goals_allowed_interval_hit_rate_30d_range[0] &&
+      goalsCoverage <= t.goals_allowed_interval_hit_rate_30d_range[1]
+        ? "PASS"
+        : "FAIL",
+    actual_value: goalsCoverage,
+    threshold: { operator: "between", value: t.goals_allowed_interval_hit_rate_30d_range }
+  });
+
+  const passCount = evaluations.filter((g) => g.status === "PASS").length;
+  const failCount = evaluations.length - passCount;
+  return {
+    window_days: 30,
+    generated_for_date: args.actualDate,
+    overall_status: failCount === 0 ? "PASS" : "FAIL",
+    pass_count: passCount,
+    fail_count: failCount,
+    thresholds: {
+      ...t
+    },
+    gates: evaluations
+  };
+}
+
+function initErrorStats(): ErrorStats {
+  return {
+    count: 0,
+    error_abs_sum: 0,
+    error_sq_sum: 0
+  };
+}
+
+function updateErrorStats(stats: ErrorStats, predicted: number, actual: number) {
+  const p = Number.isFinite(predicted) ? predicted : 0;
+  const a = Number.isFinite(actual) ? actual : 0;
+  const err = p - a;
+  stats.count += 1;
+  stats.error_abs_sum += Math.abs(err);
+  stats.error_sq_sum += err * err;
+}
+
+function finalizeMetricComparison(
+  model: ErrorStats,
+  baseline: ErrorStats
+): MetricComparison {
+  const modelCount = Math.max(1, model.count);
+  const baselineCount = Math.max(1, baseline.count);
+  const modelMae = model.error_abs_sum / modelCount;
+  const modelRmse = Math.sqrt(model.error_sq_sum / modelCount);
+  const baselineMae = baseline.error_abs_sum / baselineCount;
+  const baselineRmse = Math.sqrt(baseline.error_sq_sum / baselineCount);
+  return {
+    sample_count: Math.min(model.count, baseline.count),
+    model_mae: Number(modelMae.toFixed(4)),
+    model_rmse: Number(modelRmse.toFixed(4)),
+    baseline_mae: Number(baselineMae.toFixed(4)),
+    baseline_rmse: Number(baselineRmse.toFixed(4)),
+    mae_delta_vs_baseline: Number((modelMae - baselineMae).toFixed(4)),
+    rmse_delta_vs_baseline: Number((modelRmse - baselineRmse).toFixed(4))
+  };
+}
+
+function round4(n: number): number {
+  return Number(n.toFixed(4));
+}
+
+function initRollingWindow(days: number): RollingWindowStats {
+  return {
+    days,
+    player_count: 0,
+    mae: 0,
+    rmse: 0
+  };
+}
+
+function aggregateRollingWindow(
+  rows: Array<{
+    error_abs_sum: number | null;
+    error_sq_sum: number | null;
+    player_count: number | null;
+  }>,
+  days: number
+): RollingWindowStats {
+  let count = 0;
+  let errAbs = 0;
+  let errSq = 0;
+  for (const row of rows) {
+    const c = Math.max(0, Number(row.player_count ?? 0));
+    const abs = Math.max(0, Number(row.error_abs_sum ?? 0));
+    const sq = Math.max(0, Number(row.error_sq_sum ?? 0));
+    count += c;
+    errAbs += abs;
+    errSq += sq;
+  }
+  if (count <= 0) return initRollingWindow(days);
+  return {
+    days,
+    player_count: count,
+    mae: round4(errAbs / count),
+    rmse: round4(Math.sqrt(errSq / count))
+  };
+}
+
+function initCalibrationAccumulator(binCount = 10): CalibrationAccumulator {
+  return {
+    count: 0,
+    brier_sum: 0,
+    bins: Array.from({ length: binCount }, () => ({
+      count: 0,
+      predicted_sum: 0,
+      observed_sum: 0
+    }))
+  };
+}
+
+function updateCalibrationAccumulator(
+  acc: CalibrationAccumulator,
+  predicted: number,
+  observed: number
+) {
+  const p = Math.max(0, Math.min(1, Number.isFinite(predicted) ? predicted : 0));
+  const o = Math.max(0, Math.min(1, Number.isFinite(observed) ? observed : 0));
+  acc.count += 1;
+  acc.brier_sum += (p - o) ** 2;
+
+  const binCount = acc.bins.length;
+  const rawIdx = Math.floor(p * binCount);
+  const idx = Math.max(0, Math.min(binCount - 1, rawIdx));
+  const bin = acc.bins[idx];
+  bin.count += 1;
+  bin.predicted_sum += p;
+  bin.observed_sum += o;
+}
+
+function finalizeCalibrationAccumulator(
+  acc: CalibrationAccumulator
+): ProbabilityCalibrationSummary {
+  const binCount = acc.bins.length;
+  return {
+    sample_count: acc.count,
+    brier_score: acc.count > 0 ? round4(acc.brier_sum / acc.count) : 0,
+    reliability_bins: acc.bins.map((bin, idx) => {
+      const binStart = idx / binCount;
+      const binEnd = (idx + 1) / binCount;
+      return {
+        bin_index: idx,
+        bin_start: round4(binStart),
+        bin_end: round4(binEnd),
+        sample_count: bin.count,
+        avg_predicted:
+          bin.count > 0 ? round4(bin.predicted_sum / bin.count) : 0,
+        observed_rate:
+          bin.count > 0 ? round4(bin.observed_sum / bin.count) : 0
+      };
+    })
+  };
+}
+
+async function fetchGoalieStatDiagnostics(
+  actualDate: string,
+  dailyGoalieStatRows: StatAggregateRow[]
+): Promise<GoalieStatDiagnostics> {
+  const statKeyByDiagnosticKey = {
+    saves: "saves",
+    goals_against: "goals_against",
+    win_prob: "win_prob",
+    shutout_prob: "shutout_prob"
+  } as const;
+  const diagnostics = {
+    saves: {
+      daily: { player_count: 0, mae: 0, rmse: 0 },
+      rolling_7d: initRollingWindow(7),
+      rolling_30d: initRollingWindow(30)
+    },
+    goals_against: {
+      daily: { player_count: 0, mae: 0, rmse: 0 },
+      rolling_7d: initRollingWindow(7),
+      rolling_30d: initRollingWindow(30)
+    },
+    win_prob: {
+      daily: { player_count: 0, mae: 0, rmse: 0 },
+      rolling_7d: initRollingWindow(7),
+      rolling_30d: initRollingWindow(30)
+    },
+    shutout_prob: {
+      daily: { player_count: 0, mae: 0, rmse: 0 },
+      rolling_7d: initRollingWindow(7),
+      rolling_30d: initRollingWindow(30)
+    }
+  } satisfies GoalieStatDiagnostics;
+
+  for (const [diagnosticKey, statKey] of Object.entries(statKeyByDiagnosticKey) as Array<
+    [keyof GoalieStatDiagnostics, string]
+  >) {
+    const dailyRow = dailyGoalieStatRows.find((r) => r.stat_key === statKey);
+    diagnostics[diagnosticKey].daily = {
+      player_count: Math.max(0, Number(dailyRow?.player_count ?? 0)),
+      mae: round4(Number(dailyRow?.mae ?? 0)),
+      rmse: round4(Number(dailyRow?.rmse ?? 0))
+    };
+  }
+
+  if (!supabase) return diagnostics;
+
+  const statKeys = Object.values(statKeyByDiagnosticKey);
+  const windowStart30d = addDays(actualDate, -29);
+  const { data, error } = await supabase
+    .from("forge_projection_accuracy_stat_daily")
+    .select("date,stat_key,error_abs_sum,error_sq_sum,player_count")
+    .eq("scope", "goalie")
+    .in("stat_key", statKeys)
+    .gte("date", windowStart30d)
+    .lte("date", actualDate)
+    .order("date", { ascending: false });
+  if (error) throw error;
+
+  const rows = (data ?? []) as Array<{
+    date: string | null;
+    stat_key: string | null;
+    error_abs_sum: number | null;
+    error_sq_sum: number | null;
+    player_count: number | null;
+  }>;
+
+  for (const [diagnosticKey, statKey] of Object.entries(statKeyByDiagnosticKey) as Array<
+    [keyof GoalieStatDiagnostics, string]
+  >) {
+    const statRows = rows.filter((r) => r.stat_key === statKey);
+    const rows7d = statRows.filter((r) => {
+      const d = r.date;
+      if (!d) return false;
+      return d >= addDays(actualDate, -6) && d <= actualDate;
+    });
+    diagnostics[diagnosticKey].rolling_7d = aggregateRollingWindow(rows7d, 7);
+    diagnostics[diagnosticKey].rolling_30d = aggregateRollingWindow(statRows, 30);
+  }
+
+  return diagnostics;
+}
+
+async function fetchSkaterStatDiagnostics(
+  actualDate: string,
+  dailySkaterStatRows: StatAggregateRow[]
+): Promise<SkaterStatDiagnostics> {
+  const statKeyByDiagnosticKey = {
+    g: "goals",
+    a: "assists",
+    pts: "points",
+    sog: "shots",
+    ppp: "pp_points"
+  } as const;
+  const diagnostics = {
+    g: {
+      daily: { player_count: 0, mae: 0, rmse: 0 },
+      rolling_7d: initRollingWindow(7),
+      rolling_14d: initRollingWindow(14),
+      rolling_30d: initRollingWindow(30)
+    },
+    a: {
+      daily: { player_count: 0, mae: 0, rmse: 0 },
+      rolling_7d: initRollingWindow(7),
+      rolling_14d: initRollingWindow(14),
+      rolling_30d: initRollingWindow(30)
+    },
+    pts: {
+      daily: { player_count: 0, mae: 0, rmse: 0 },
+      rolling_7d: initRollingWindow(7),
+      rolling_14d: initRollingWindow(14),
+      rolling_30d: initRollingWindow(30)
+    },
+    sog: {
+      daily: { player_count: 0, mae: 0, rmse: 0 },
+      rolling_7d: initRollingWindow(7),
+      rolling_14d: initRollingWindow(14),
+      rolling_30d: initRollingWindow(30)
+    },
+    ppp: {
+      daily: { player_count: 0, mae: 0, rmse: 0 },
+      rolling_7d: initRollingWindow(7),
+      rolling_14d: initRollingWindow(14),
+      rolling_30d: initRollingWindow(30)
+    }
+  } satisfies SkaterStatDiagnostics;
+
+  for (const [diagnosticKey, statKey] of Object.entries(statKeyByDiagnosticKey) as Array<
+    [keyof SkaterStatDiagnostics, string]
+  >) {
+    const dailyRow = dailySkaterStatRows.find((r) => r.stat_key === statKey);
+    diagnostics[diagnosticKey].daily = {
+      player_count: Math.max(0, Number(dailyRow?.player_count ?? 0)),
+      mae: round4(Number(dailyRow?.mae ?? 0)),
+      rmse: round4(Number(dailyRow?.rmse ?? 0))
+    };
+  }
+
+  if (!supabase) return diagnostics;
+
+  const statKeys = Object.values(statKeyByDiagnosticKey);
+  const windowStart30d = addDays(actualDate, -29);
+  const { data, error } = await supabase
+    .from("forge_projection_accuracy_stat_daily")
+    .select("date,stat_key,error_abs_sum,error_sq_sum,player_count")
+    .eq("scope", "skater")
+    .in("stat_key", statKeys)
+    .gte("date", windowStart30d)
+    .lte("date", actualDate)
+    .order("date", { ascending: false });
+  if (error) throw error;
+
+  const rows = (data ?? []) as Array<{
+    date: string | null;
+    stat_key: string | null;
+    error_abs_sum: number | null;
+    error_sq_sum: number | null;
+    player_count: number | null;
+  }>;
+
+  for (const [diagnosticKey, statKey] of Object.entries(statKeyByDiagnosticKey) as Array<
+    [keyof SkaterStatDiagnostics, string]
+  >) {
+    const statRows = rows.filter((r) => r.stat_key === statKey);
+    const rows7d = statRows.filter((r) => {
+      const d = r.date;
+      if (!d) return false;
+      return d >= addDays(actualDate, -6) && d <= actualDate;
+    });
+    const rows14d = statRows.filter((r) => {
+      const d = r.date;
+      if (!d) return false;
+      return d >= addDays(actualDate, -13) && d <= actualDate;
+    });
+    diagnostics[diagnosticKey].rolling_7d = aggregateRollingWindow(rows7d, 7);
+    diagnostics[diagnosticKey].rolling_14d = aggregateRollingWindow(rows14d, 14);
+    diagnostics[diagnosticKey].rolling_30d = aggregateRollingWindow(statRows, 30);
+  }
+
+  return diagnostics;
+}
+
+async function updateRunCalibrationMetrics(
+  runId: string,
+  actualDate: string,
+  calibration: Record<string, any>
+) {
+  if (!supabase) return;
+  const { data, error } = await supabase
+    .from("forge_runs")
+    .select("metrics")
+    .eq("run_id", runId)
+    .maybeSingle();
+  if (error) throw error;
+  const metrics = (data as any)?.metrics ?? {};
+  const existing = metrics.accuracy_calibration ?? {};
+  const updated = {
+    ...metrics,
+    accuracy_calibration: {
+      ...existing,
+      [actualDate]: {
+        ...calibration,
+        updated_at: new Date().toISOString()
+      }
+    }
+  };
+  const { error: updateErr } = await supabase
+    .from("forge_runs")
+    .update({ metrics: updated, updated_at: new Date().toISOString() })
+    .eq("run_id", runId);
+  if (updateErr) throw updateErr;
+}
+
+async function persistGoalieCalibrationSnapshots(args: {
+  runId: string;
+  actualDate: string;
+  projectionDate: string;
+  skaterRoleBucketDiagnostics: SkaterRoleBucketDiagnostics;
+  skaterRoleBucketIntervalCalibrationDiagnostics: SkaterRoleBucketIntervalCalibrationDiagnostics;
+  skaterMissAttributionDiagnostics: SkaterComponentMissAttributionDiagnostics;
+  skaterRollingDashboard: SkaterRollingDashboard;
+  goalieStatDiagnostics: GoalieStatDiagnostics;
+  goalieProbabilityCalibration: {
+    starter_probability: ProbabilityCalibrationSummary;
+    win_probability: ProbabilityCalibrationSummary;
+    shutout_probability: ProbabilityCalibrationSummary;
+  };
+  goalieIntervalCoverageDiagnostics: IntervalCoverageSummary;
+  goalieMissAttributionDiagnostics: GoalieMissAttributionDiagnostics;
+  goalieLaunchGates: GoalieLaunchGates;
+}) {
+  if (!supabase) return;
+  const rows = [
+    {
+      date: args.actualDate,
+      projection_date: args.projectionDate,
+      scope: "skater_role_bucket_diagnostics",
+      source_run_id: args.runId,
+      metrics: args.skaterRoleBucketDiagnostics,
+      updated_at: new Date().toISOString()
+    },
+    {
+      date: args.actualDate,
+      projection_date: args.projectionDate,
+      scope: "skater_miss_attribution",
+      source_run_id: args.runId,
+      metrics: args.skaterMissAttributionDiagnostics,
+      updated_at: new Date().toISOString()
+    },
+    {
+      date: args.actualDate,
+      projection_date: args.projectionDate,
+      scope: "skater_role_bucket_interval_calibration",
+      source_run_id: args.runId,
+      metrics: args.skaterRoleBucketIntervalCalibrationDiagnostics,
+      updated_at: new Date().toISOString()
+    },
+    {
+      date: args.actualDate,
+      projection_date: args.projectionDate,
+      scope: "skater_rolling_dashboard",
+      source_run_id: args.runId,
+      metrics: args.skaterRollingDashboard,
+      updated_at: new Date().toISOString()
+    },
+    {
+      date: args.actualDate,
+      projection_date: args.projectionDate,
+      scope: "goalie_probability_calibration",
+      source_run_id: args.runId,
+      metrics: args.goalieProbabilityCalibration,
+      updated_at: new Date().toISOString()
+    },
+    {
+      date: args.actualDate,
+      projection_date: args.projectionDate,
+      scope: "goalie_interval_coverage",
+      source_run_id: args.runId,
+      metrics: args.goalieIntervalCoverageDiagnostics,
+      updated_at: new Date().toISOString()
+    },
+    {
+      date: args.actualDate,
+      projection_date: args.projectionDate,
+      scope: "goalie_stat_diagnostics",
+      source_run_id: args.runId,
+      metrics: args.goalieStatDiagnostics,
+      updated_at: new Date().toISOString()
+    },
+    {
+      date: args.actualDate,
+      projection_date: args.projectionDate,
+      scope: "goalie_calibration_summary",
+      source_run_id: args.runId,
+      metrics: {
+        probability: args.goalieProbabilityCalibration,
+        intervals: args.goalieIntervalCoverageDiagnostics,
+        stats: args.goalieStatDiagnostics,
+        miss_attribution: args.goalieMissAttributionDiagnostics
+      },
+      updated_at: new Date().toISOString()
+    },
+    {
+      date: args.actualDate,
+      projection_date: args.projectionDate,
+      scope: "goalie_miss_attribution",
+      source_run_id: args.runId,
+      metrics: args.goalieMissAttributionDiagnostics,
+      updated_at: new Date().toISOString()
+    },
+    {
+      date: args.actualDate,
+      projection_date: args.projectionDate,
+      scope: "goalie_launch_gates",
+      source_run_id: args.runId,
+      metrics: args.goalieLaunchGates,
+      updated_at: new Date().toISOString()
+    }
+  ];
+  const { error } = await (supabase as any)
+    .from("forge_projection_calibration_daily")
+    .upsert(rows, { onConflict: "date,scope" });
+  if (error) throw error;
 }
 
 async function fetchGameDates(gameIds: number[]): Promise<Map<number, string>> {
@@ -195,7 +1298,9 @@ async function fetchSkaterActualsByPlayerDate(opts: {
   for (const batch of chunk(opts.playerIds, BATCH_SIZE)) {
     const { data, error } = await supabase
       .from("wgo_skater_stats")
-      .select("game_id,player_id,goals,assists,pp_points,shots,hits,blocked_shots,date")
+      .select(
+        "game_id,player_id,goals,assists,pp_points,shots,hits,blocked_shots,date,toi_per_game,ev_time_on_ice,pp_toi,sh_time_on_ice"
+      )
       .eq("date", opts.actualDate)
       .in("player_id", batch);
     if (error) throw error;
@@ -295,6 +1400,24 @@ async function runAccuracyForDate(
     goalieMatchedByPlayer: number;
     goalieActualFallbackCount: number;
   };
+  goalieHoldoutComparison: {
+    baseline_definition: string;
+    saves: MetricComparison;
+    goals_against: MetricComparison;
+  };
+  goalieStatDiagnostics: GoalieStatDiagnostics;
+  goalieProbabilityCalibration: {
+    starter_probability: ProbabilityCalibrationSummary;
+    win_probability: ProbabilityCalibrationSummary;
+    shutout_probability: ProbabilityCalibrationSummary;
+  };
+  goalieIntervalCoverageDiagnostics: IntervalCoverageSummary;
+  goalieMissAttributionDiagnostics: GoalieMissAttributionDiagnostics;
+  goalieLaunchGates: GoalieLaunchGates;
+  skaterRoleBucketDiagnostics: SkaterRoleBucketDiagnostics;
+  skaterRoleBucketIntervalCalibrationDiagnostics: SkaterRoleBucketIntervalCalibrationDiagnostics;
+  skaterMissAttributionDiagnostics: SkaterComponentMissAttributionDiagnostics;
+  skaterRollingDashboard: SkaterRollingDashboard;
   durationMs: string;
 }> {
   const startedAt = Date.now();
@@ -303,7 +1426,7 @@ async function runAccuracyForDate(
   const { data: projections, error: projErr } = await supabase
     .from("forge_player_projections")
     .select(
-      "game_id,player_id,team_id,opponent_team_id,proj_goals_es,proj_goals_pp,proj_goals_pk,proj_assists_es,proj_assists_pp,proj_assists_pk,proj_shots_es,proj_shots_pp,proj_shots_pk,proj_hits,proj_blocks"
+      "game_id,player_id,team_id,opponent_team_id,proj_goals_es,proj_goals_pp,proj_goals_pk,proj_assists_es,proj_assists_pp,proj_assists_pk,proj_shots_es,proj_shots_pp,proj_shots_pk,proj_toi_es_seconds,proj_toi_pp_seconds,proj_toi_pk_seconds,proj_hits,proj_blocks,uncertainty"
     )
     .eq("run_id", runId)
     .eq("as_of_date", projectionDate)
@@ -338,6 +1461,13 @@ async function runAccuracyForDate(
 
   const skaterResults: AccuracyResultRow[] = [];
   const skaterStatAggregates = new Map<string, StatAggregate>();
+  const skaterRoleBucketAggregates = initSkaterRoleBucketDiagnosticsMap();
+  const skaterCoverage = new Map<string, CoverageAccumulator>();
+  const skaterMissAttribution = initSkaterMissAttributionAccumulator();
+  const skaterRoleBucketCoverage = initSkaterRoleBucketCoverageMap();
+  const ppUnitBucketByPlayer = buildPpUnitBucketByPlayer(
+    playerProjections as ProjectionRowForPpBucketing[]
+  );
   for (const row of playerProjections) {
     const gameId = Number(row.game_id);
     if (!validGameIds.has(gameId)) continue;
@@ -376,6 +1506,18 @@ async function runAccuracyForDate(
     );
     updateStatAggregate(
       skaterStatAggregates,
+      "points",
+      predictedGoals + predictedAssists,
+      (actual.goals ?? 0) + (actual.assists ?? 0)
+    );
+    updateStatAggregate(
+      skaterStatAggregates,
+      "pp_points",
+      (row.proj_goals_pp ?? 0) + (row.proj_assists_pp ?? 0),
+      actual.pp_points ?? 0
+    );
+    updateStatAggregate(
+      skaterStatAggregates,
       "shots",
       predictedShots,
       actual.shots ?? 0
@@ -392,6 +1534,67 @@ async function runAccuracyForDate(
       predictedBlocks,
       actual.blocked_shots ?? 0
     );
+    const roleBuckets = inferRoleBuckets({
+      uncertainty: row.uncertainty,
+      gameId,
+      teamId: Number.isFinite(row.team_id) ? Number(row.team_id) : null,
+      playerId,
+      ppUnitBucketByPlayer
+    });
+    const roleBucketStats = [
+      { key: "g", predicted: predictedGoals, actual: actual.goals ?? 0 },
+      { key: "a", predicted: predictedAssists, actual: actual.assists ?? 0 },
+      {
+        key: "pts",
+        predicted: predictedGoals + predictedAssists,
+        actual: (actual.goals ?? 0) + (actual.assists ?? 0)
+      },
+      { key: "sog", predicted: predictedShots, actual: actual.shots ?? 0 },
+      {
+        key: "ppp",
+        predicted: (row.proj_goals_pp ?? 0) + (row.proj_assists_pp ?? 0),
+        actual: actual.pp_points ?? 0
+      }
+    ];
+    for (const bucket of roleBuckets) {
+      const bucketMap = getSkaterRoleBucketMap(skaterRoleBucketAggregates, bucket);
+      for (const stat of roleBucketStats) {
+        updateStatAggregate(bucketMap, stat.key, stat.predicted, stat.actual);
+      }
+    }
+
+    const skaterUncertainty = row.uncertainty ?? {};
+    updateCoverage(skaterCoverage, "g", actual.goals ?? 0, skaterUncertainty.g);
+    updateCoverage(skaterCoverage, "a", actual.assists ?? 0, skaterUncertainty.a);
+    updateCoverage(
+      skaterCoverage,
+      "pts",
+      (actual.goals ?? 0) + (actual.assists ?? 0),
+      skaterUncertainty.pts
+    );
+    updateCoverage(skaterCoverage, "sog", actual.shots ?? 0, skaterUncertainty.sog);
+    updateCoverage(
+      skaterCoverage,
+      "ppp",
+      actual.pp_points ?? 0,
+      skaterUncertainty.ppp
+    );
+    for (const bucket of roleBuckets) {
+      const coverageMap = getSkaterRoleBucketCoverageStatMap(
+        skaterRoleBucketCoverage,
+        bucket
+      );
+      updateCoverage(coverageMap, "g", actual.goals ?? 0, skaterUncertainty.g);
+      updateCoverage(coverageMap, "a", actual.assists ?? 0, skaterUncertainty.a);
+      updateCoverage(
+        coverageMap,
+        "pts",
+        (actual.goals ?? 0) + (actual.assists ?? 0),
+        skaterUncertainty.pts
+      );
+      updateCoverage(coverageMap, "sog", actual.shots ?? 0, skaterUncertainty.sog);
+      updateCoverage(coverageMap, "ppp", actual.pp_points ?? 0, skaterUncertainty.ppp);
+    }
 
     const predicted = computeSkaterFantasyPoints({
       goals: predictedGoals,
@@ -413,6 +1616,61 @@ async function runAccuracyForDate(
 
     const errorAbs = Math.abs(predicted - actualFp);
     const errorSq = Math.pow(predicted - actualFp, 2);
+    const predToiSecondsRaw =
+      Number(row.proj_toi_es_seconds ?? 0) +
+      Number(row.proj_toi_pp_seconds ?? 0) +
+      Number(row.proj_toi_pk_seconds ?? 0);
+    const predictedToiSeconds = Number.isFinite(predToiSecondsRaw)
+      ? Math.max(1, predToiSecondsRaw)
+      : 1;
+    const actualEv = Number(actual.ev_time_on_ice ?? 0);
+    const actualPp = Number(actual.pp_toi ?? 0);
+    const actualSh = Number(actual.sh_time_on_ice ?? 0);
+    const actualToiField = Number(actual.toi_per_game ?? 0);
+    const componentsToiRaw = actualEv + actualPp + actualSh;
+    const sourceToiRaw = componentsToiRaw > 0 ? componentsToiRaw : actualToiField;
+    const actualToiSeconds =
+      sourceToiRaw > 0
+        ? sourceToiRaw <= 80
+          ? sourceToiRaw * 60
+          : sourceToiRaw
+        : predictedToiSeconds;
+    const safeActualToiSeconds = Math.max(1, actualToiSeconds);
+    const predictedShotsSafe = Math.max(0, predictedShots);
+    const actualShotsSafe = Math.max(0, Number(actual.shots ?? 0));
+    const predictedScoringFp =
+      DEFAULT_SKATER_FANTASY_POINTS.GOALS * predictedGoals +
+      DEFAULT_SKATER_FANTASY_POINTS.ASSISTS * predictedAssists +
+      DEFAULT_SKATER_FANTASY_POINTS.PP_POINTS *
+        ((row.proj_goals_pp ?? 0) + (row.proj_assists_pp ?? 0));
+    const actualScoringFp =
+      DEFAULT_SKATER_FANTASY_POINTS.GOALS * Number(actual.goals ?? 0) +
+      DEFAULT_SKATER_FANTASY_POINTS.ASSISTS * Number(actual.assists ?? 0) +
+      DEFAULT_SKATER_FANTASY_POINTS.PP_POINTS * Number(actual.pp_points ?? 0);
+    const predictedShotRate = predictedShotsSafe / predictedToiSeconds;
+    const actualShotRate = actualShotsSafe / safeActualToiSeconds;
+    const predictedFpPerShot =
+      DEFAULT_SKATER_FANTASY_POINTS.SHOTS_ON_GOAL +
+      predictedScoringFp / Math.max(0.1, predictedShotsSafe);
+    const actualFpPerShot =
+      DEFAULT_SKATER_FANTASY_POINTS.SHOTS_ON_GOAL +
+      actualScoringFp / Math.max(0.1, actualShotsSafe);
+    const fpBase = predictedToiSeconds * predictedShotRate * predictedFpPerShot;
+    const fpToiAdjusted =
+      safeActualToiSeconds * predictedShotRate * predictedFpPerShot;
+    const fpShotRateAdjusted =
+      safeActualToiSeconds * actualShotRate * predictedFpPerShot;
+    const fpConversionAdjusted =
+      safeActualToiSeconds * actualShotRate * actualFpPerShot;
+    skaterMissAttribution.sampleCount += 1;
+    skaterMissAttribution.totalAbsFpError += errorAbs;
+    skaterMissAttribution.toiContribution += Math.abs(fpToiAdjusted - fpBase);
+    skaterMissAttribution.shotRateContribution += Math.abs(
+      fpShotRateAdjusted - fpToiAdjusted
+    );
+    skaterMissAttribution.conversionContribution += Math.abs(
+      fpConversionAdjusted - fpShotRateAdjusted
+    );
     skaterResults.push({
       as_of_date: projectionDate,
       actual_date: actualDate,
@@ -434,7 +1692,7 @@ async function runAccuracyForDate(
   const { data: goalieProjections, error: goalieErr } = await supabase
     .from("forge_goalie_projections")
     .select(
-      "game_id,goalie_id,team_id,opponent_team_id,starter_probability,proj_saves,proj_goals_allowed,proj_win_prob,proj_shutout_prob"
+      "game_id,goalie_id,team_id,opponent_team_id,starter_probability,proj_shots_against,proj_saves,proj_goals_allowed,proj_win_prob,proj_shutout_prob,uncertainty"
     )
     .eq("run_id", runId)
     .eq("as_of_date", projectionDate)
@@ -456,7 +1714,16 @@ async function runAccuracyForDate(
   );
   const goalieResults: AccuracyResultRow[] = [];
   const goalieStatAggregates = new Map<string, StatAggregate>();
+  const goalieCoverage = new Map<string, CoverageAccumulator>();
+  const savesModelStats = initErrorStats();
+  const savesBaselineStats = initErrorStats();
+  const goalsAgainstModelStats = initErrorStats();
+  const goalsAgainstBaselineStats = initErrorStats();
   const goalieActualCount = await fetchGoalieActualCount(actualDate);
+  const starterProbabilityCalibration = initCalibrationAccumulator();
+  const winProbabilityCalibration = initCalibrationAccumulator();
+  const shutoutProbabilityCalibration = initCalibrationAccumulator();
+  const missAttribution = initMissAttributionAccumulator();
 
   for (const row of goalieProjectionRows) {
     const playerId = Number(row.goalie_id);
@@ -471,12 +1738,32 @@ async function runAccuracyForDate(
             shutouts: 0
           }
         : null);
+    updateCalibrationAccumulator(
+      starterProbabilityCalibration,
+      Number(row.starter_probability ?? 0),
+      actual ? 1 : 0
+    );
     if (!actual) continue;
 
     const projectedWins = row.proj_win_prob ?? 0;
     const projectedShutouts = row.proj_shutout_prob ?? 0;
+    updateCalibrationAccumulator(
+      winProbabilityCalibration,
+      Number(projectedWins),
+      (actual.wins ?? 0) > 0 ? 1 : 0
+    );
+    updateCalibrationAccumulator(
+      shutoutProbabilityCalibration,
+      Number(projectedShutouts),
+      (actual.shutouts ?? 0) > 0 ? 1 : 0
+    );
     const projectedSaves = row.proj_saves ?? 0;
     const projectedGoalsAgainst = row.proj_goals_allowed ?? 0;
+    const projectedShotsAgainst =
+      row.proj_shots_against ?? Math.max(0, projectedSaves + projectedGoalsAgainst);
+    const baselineSavePct = 0.9;
+    const baselineGoalsAgainst = projectedShotsAgainst * (1 - baselineSavePct);
+    const baselineSaves = Math.max(0, projectedShotsAgainst - baselineGoalsAgainst);
 
     updateStatAggregate(
       goalieStatAggregates,
@@ -492,15 +1779,49 @@ async function runAccuracyForDate(
     );
     updateStatAggregate(
       goalieStatAggregates,
-      "wins",
+      "win_prob",
       projectedWins,
       actual.wins ?? 0
     );
     updateStatAggregate(
       goalieStatAggregates,
-      "shutouts",
+      "shutout_prob",
       projectedShutouts,
       actual.shutouts ?? 0
+    );
+    updateErrorStats(savesModelStats, projectedSaves, actual.saves ?? 0);
+    updateErrorStats(savesBaselineStats, baselineSaves, actual.saves ?? 0);
+    updateErrorStats(
+      goalsAgainstModelStats,
+      projectedGoalsAgainst,
+      actual.goals_against ?? 0
+    );
+    updateErrorStats(
+      goalsAgainstBaselineStats,
+      baselineGoalsAgainst,
+      actual.goals_against ?? 0
+    );
+
+    const goalieUncertainty = row.uncertainty ?? {};
+    const actualShotsAgainst =
+      (actual.saves ?? 0) + (actual.goals_against ?? 0);
+    updateCoverage(
+      goalieCoverage,
+      "shots_against",
+      actualShotsAgainst,
+      goalieUncertainty.shots_against
+    );
+    updateCoverage(
+      goalieCoverage,
+      "goals_allowed",
+      actual.goals_against ?? 0,
+      goalieUncertainty.goals_allowed
+    );
+    updateCoverage(
+      goalieCoverage,
+      "saves",
+      actual.saves ?? 0,
+      goalieUncertainty.saves
     );
 
     const predicted = computeGoalieFantasyPoints({
@@ -519,6 +1840,29 @@ async function runAccuracyForDate(
 
     const errorAbs = Math.abs(predicted - actualFp);
     const errorSq = Math.pow(predicted - actualFp, 2);
+    const modeledSavePctFromMeta = Number((row.uncertainty as any)?.model?.save_pct);
+    const modeledSavePct =
+      Number.isFinite(modeledSavePctFromMeta)
+        ? Math.max(0, Math.min(1, modeledSavePctFromMeta))
+        : projectedShotsAgainst > 0
+          ? Math.max(0, Math.min(1, projectedSaves / projectedShotsAgainst))
+          : 0.9;
+    const actualSavePct =
+      actualShotsAgainst > 0
+        ? Math.max(0, Math.min(1, (actual.saves ?? 0) / actualShotsAgainst))
+        : modeledSavePct;
+    const starterProb = Math.max(0, Math.min(1, Number(row.starter_probability ?? 0)));
+    const gaErrorAbs = Math.abs(projectedGoalsAgainst - (actual.goals_against ?? 0));
+    missAttribution.sampleCount += 1;
+    missAttribution.totalAbsFpError += errorAbs;
+    missAttribution.totalAbsGaError += gaErrorAbs;
+    missAttribution.starterContribution += (1 - starterProb) * gaErrorAbs;
+    missAttribution.shotsAgainstContribution += Math.abs(
+      (projectedShotsAgainst - actualShotsAgainst) * (1 - modeledSavePct)
+    );
+    missAttribution.savePctContribution += Math.abs(
+      actualShotsAgainst * (modeledSavePct - actualSavePct)
+    );
     goalieResults.push({
       as_of_date: projectionDate,
       actual_date: actualDate,
@@ -648,6 +1992,84 @@ async function runAccuracyForDate(
       .upsert(statDailyRows, { onConflict: "date,scope,stat_key" });
     if (error) throw error;
   }
+  const dailyGoalieStatRows = statDailyRows.filter((r) => r.scope === "goalie");
+  const dailySkaterStatRows = statDailyRows.filter((r) => r.scope === "skater");
+  const goalieStatDiagnostics = await fetchGoalieStatDiagnostics(
+    actualDate,
+    dailyGoalieStatRows
+  );
+  const skaterStatDiagnostics = await fetchSkaterStatDiagnostics(
+    actualDate,
+    dailySkaterStatRows
+  );
+
+  const skaterCoverageSummary = finalizeCoverage(skaterCoverage);
+  const skaterRoleBucketDiagnostics = finalizeSkaterRoleBucketDiagnostics(
+    skaterRoleBucketAggregates
+  );
+  const skaterRoleBucketIntervalCalibrationDiagnostics =
+    finalizeSkaterRoleBucketIntervalCalibrationDiagnostics(skaterRoleBucketCoverage);
+  const skaterMissAttributionDiagnostics =
+    finalizeSkaterMissAttributionDiagnostics(skaterMissAttribution);
+  const skaterIntervalCoverageDiagnostics =
+    toIntervalCoverageSummary(skaterCoverageSummary);
+  const skaterRollingDashboard: SkaterRollingDashboard = {
+    generated_for_date: actualDate,
+    stat_diagnostics: skaterStatDiagnostics,
+    interval_coverage_daily: skaterIntervalCoverageDiagnostics,
+    role_bucket_interval_calibration_daily:
+      skaterRoleBucketIntervalCalibrationDiagnostics,
+    miss_attribution_daily: skaterMissAttributionDiagnostics
+  };
+  const goalieCoverageSummary = finalizeCoverage(goalieCoverage);
+  const goalieIntervalCoverageDiagnostics =
+    toIntervalCoverageSummary(goalieCoverageSummary);
+
+  const goalieProbabilityCalibration = {
+    starter_probability: finalizeCalibrationAccumulator(starterProbabilityCalibration),
+    win_probability: finalizeCalibrationAccumulator(winProbabilityCalibration),
+    shutout_probability: finalizeCalibrationAccumulator(shutoutProbabilityCalibration)
+  };
+  const goalieMissAttributionDiagnostics =
+    finalizeMissAttributionDiagnostics(missAttribution);
+  const goalieLaunchGates = buildGoalieLaunchGates({
+    actualDate,
+    goalieStatDiagnostics,
+    goalieProbabilityCalibration,
+    goalieIntervalCoverageDiagnostics
+  });
+
+  const calibrationSummary = {
+    actual_date: actualDate,
+    projection_date: projectionDate,
+    skater: skaterCoverageSummary,
+    skater_role_bucket_diagnostics: skaterRoleBucketDiagnostics,
+    skater_role_bucket_interval_calibration_diagnostics:
+      skaterRoleBucketIntervalCalibrationDiagnostics,
+    skater_miss_attribution_diagnostics: skaterMissAttributionDiagnostics,
+    skater_rolling_dashboard: skaterRollingDashboard,
+    goalie: goalieCoverageSummary,
+    goalie_interval_coverage_diagnostics: goalieIntervalCoverageDiagnostics,
+    goalie_stat_diagnostics: goalieStatDiagnostics,
+    goalie_probability_calibration: goalieProbabilityCalibration,
+    goalie_miss_attribution_diagnostics: goalieMissAttributionDiagnostics,
+    goalie_launch_gates: goalieLaunchGates
+  };
+  await updateRunCalibrationMetrics(runId, actualDate, calibrationSummary);
+  await persistGoalieCalibrationSnapshots({
+    runId,
+    actualDate,
+    projectionDate,
+    skaterRoleBucketDiagnostics,
+    skaterRoleBucketIntervalCalibrationDiagnostics,
+    skaterMissAttributionDiagnostics,
+    skaterRollingDashboard,
+    goalieStatDiagnostics,
+    goalieProbabilityCalibration,
+    goalieIntervalCoverageDiagnostics,
+    goalieMissAttributionDiagnostics,
+    goalieLaunchGates
+  });
 
   const goalieMatchedByPlayer = goalieProjectionRows.filter((row) => {
     const goalieId = Number(row.goalie_id);
@@ -667,6 +2089,23 @@ async function runAccuracyForDate(
       goalieMatchedByPlayer,
       goalieActualFallbackCount: goalieActualsFallback.size
     },
+    goalieHoldoutComparison: {
+      baseline_definition: "fixed_save_pct_0.900_using_projected_shots_against",
+      saves: finalizeMetricComparison(savesModelStats, savesBaselineStats),
+      goals_against: finalizeMetricComparison(
+        goalsAgainstModelStats,
+        goalsAgainstBaselineStats
+      )
+    },
+    goalieStatDiagnostics,
+    goalieProbabilityCalibration,
+    goalieIntervalCoverageDiagnostics,
+    goalieMissAttributionDiagnostics,
+    goalieLaunchGates,
+    skaterRoleBucketDiagnostics,
+    skaterRoleBucketIntervalCalibrationDiagnostics,
+    skaterMissAttributionDiagnostics,
+    skaterRollingDashboard,
     durationMs: formatDurationMsToMMSS(Date.now() - startedAt)
   };
 }
@@ -752,6 +2191,17 @@ export default withCronJobAudit(async function handler(
       goalieRows: result.goalieRows,
       totalRows: result.totalRows,
       goalieMatchDiagnostics: result.goalieMatchDiagnostics,
+      goalieHoldoutComparison: result.goalieHoldoutComparison,
+      goalieStatDiagnostics: result.goalieStatDiagnostics,
+      goalieProbabilityCalibration: result.goalieProbabilityCalibration,
+      goalieIntervalCoverageDiagnostics:
+        result.goalieIntervalCoverageDiagnostics,
+      goalieMissAttributionDiagnostics: result.goalieMissAttributionDiagnostics,
+      goalieLaunchGates: result.goalieLaunchGates,
+      skaterRoleBucketIntervalCalibrationDiagnostics:
+        result.skaterRoleBucketIntervalCalibrationDiagnostics,
+      skaterMissAttributionDiagnostics: result.skaterMissAttributionDiagnostics,
+      skaterRollingDashboard: result.skaterRollingDashboard,
       durationMs: formatDurationMsToMMSS(Date.now() - startedAt)
     });
   } catch (e) {

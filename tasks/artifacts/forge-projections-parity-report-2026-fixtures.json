@@ -1,0 +1,661 @@
+{
+  "generatedAt": "2026-03-03T18:47:01.863Z",
+  "runPairs": [
+    {
+      "date": "2026-01-24",
+      "baselineRunId": "1155cf5c-2949-44fc-b60e-e57fa4badf2b",
+      "currentRunId": "7f9d6b9d-9d9f-42a8-97fb-f7ec55aa8ced",
+      "baselineLabel": "pre-modularization(a3f6173)",
+      "currentLabel": "modularized(current)",
+      "tables": {
+        "forge_player_projections": {
+          "keyColumns": [
+            "game_id",
+            "player_id",
+            "horizon_games"
+          ],
+          "counts": {
+            "baseline": 260,
+            "current": 260
+          },
+          "rowCountParity": true,
+          "identity": {
+            "shared": 260,
+            "missingInCurrentCount": 0,
+            "extraInCurrentCount": 0,
+            "missingInCurrentSample": [],
+            "extraInCurrentSample": [],
+            "parity": true
+          },
+          "scalarFieldParity": false,
+          "scalarDiffCount": 25,
+          "scalarDiffSample": [
+            {
+              "key": "2025020810|8480839|1",
+              "column": "proj_shots_pp",
+              "baseline": 0.348,
+              "current": 0.346
+            },
+            {
+              "key": "2025020810|8480839|1",
+              "column": "proj_goals_pp",
+              "baseline": 0.04,
+              "current": 0.039
+            },
+            {
+              "key": "2025020810|8480839|1",
+              "column": "proj_assists_pp",
+              "baseline": 0.056,
+              "current": 0.055
+            },
+            {
+              "key": "2025020810|8480807|1",
+              "column": "proj_shots_es",
+              "baseline": 1.462,
+              "current": 1.463
+            },
+            {
+              "key": "2025020810|8481524|1",
+              "column": "proj_assists_es",
+              "baseline": 0.145,
+              "current": 0.144
+            },
+            {
+              "key": "2025020810|8479420|1",
+              "column": "proj_shots_pp",
+              "baseline": 0.885,
+              "current": 0.887
+            },
+            {
+              "key": "2025020810|8479982|1",
+              "column": "proj_shots_es",
+              "baseline": 0.622,
+              "current": 0.623
+            },
+            {
+              "key": "2025020810|8479982|1",
+              "column": "proj_shots_pp",
+              "baseline": 0.131,
+              "current": 0.128
+            },
+            {
+              "key": "2025020810|8479982|1",
+              "column": "proj_goals_pp",
+              "baseline": 0.015,
+              "current": 0.014
+            },
+            {
+              "key": "2025020810|8477949|1",
+              "column": "proj_shots_pp",
+              "baseline": 0.749,
+              "current": 0.747
+            },
+            {
+              "key": "2025020810|8477949|1",
+              "column": "proj_goals_pp",
+              "baseline": 0.127,
+              "current": 0.126
+            },
+            {
+              "key": "2025020810|8477949|1",
+              "column": "proj_assists_pp",
+              "baseline": 0.104,
+              "current": 0.103
+            },
+            {
+              "key": "2025020810|8480802|1",
+              "column": "proj_assists_es",
+              "baseline": 0.156,
+              "current": 0.155
+            },
+            {
+              "key": "2025020810|8482097|1",
+              "column": "proj_shots_es",
+              "baseline": 2.187,
+              "current": 2.186
+            },
+            {
+              "key": "2025020810|8475722|1",
+              "column": "proj_shots_es",
+              "baseline": 2.355,
+              "current": 2.354
+            },
+            {
+              "key": "2025020810|8475722|1",
+              "column": "proj_shots_pp",
+              "baseline": 0.461,
+              "current": 0.462
+            },
+            {
+              "key": "2025020810|8475722|1",
+              "column": "proj_assists_es",
+              "baseline": 0.17,
+              "current": 0.169
+            },
+            {
+              "key": "2025020810|8480891|1",
+              "column": "proj_shots_pp",
+              "baseline": 0.258,
+              "current": 0.259
+            },
+            {
+              "key": "2025020810|8480064|1",
+              "column": "proj_shots_pp",
+              "baseline": 0.232,
+              "current": 0.233
+            },
+            {
+              "key": "2025020810|8480064|1",
+              "column": "proj_goals_pp",
+              "baseline": 0.041,
+              "current": 0.042
+            },
+            {
+              "key": "2025020813|8480336|1",
+              "column": "proj_shots_es",
+              "baseline": 2.309,
+              "current": 2.308
+            },
+            {
+              "key": "2025020814|8478460|1",
+              "column": "proj_shots_pp",
+              "baseline": 1.401,
+              "current": 1.403
+            },
+            {
+              "key": "2025020814|8478460|1",
+              "column": "proj_assists_es",
+              "baseline": 0.255,
+              "current": 0.254
+            },
+            {
+              "key": "2025020812|8479325|1",
+              "column": "proj_shots_pp",
+              "baseline": 0.391,
+              "current": 0.389
+            },
+            {
+              "key": "2025020812|8479325|1",
+              "column": "proj_goals_pp",
+              "baseline": 0.066,
+              "current": 0.065
+            }
+          ],
+          "uncertaintyShapeParity": true,
+          "uncertaintyShapeDiffCount": 0,
+          "uncertaintyShapeDiffSample": []
+        },
+        "forge_team_projections": {
+          "keyColumns": [
+            "game_id",
+            "team_id",
+            "horizon_games"
+          ],
+          "counts": {
+            "baseline": 18,
+            "current": 18
+          },
+          "rowCountParity": true,
+          "identity": {
+            "shared": 18,
+            "missingInCurrentCount": 0,
+            "extraInCurrentCount": 0,
+            "missingInCurrentSample": [],
+            "extraInCurrentSample": [],
+            "parity": true
+          },
+          "scalarFieldParity": false,
+          "scalarDiffCount": 4,
+          "scalarDiffSample": [
+            {
+              "key": "2025020812|6|1",
+              "column": "proj_goals_pp",
+              "baseline": 0.801,
+              "current": 0.802
+            },
+            {
+              "key": "2025020813|12|1",
+              "column": "proj_goals_es",
+              "baseline": 2.265,
+              "current": 2.264
+            },
+            {
+              "key": "2025020817|13|1",
+              "column": "proj_goals_es",
+              "baseline": 1.837,
+              "current": 1.836
+            },
+            {
+              "key": "2025020818|15|1",
+              "column": "proj_goals_es",
+              "baseline": 2.055,
+              "current": 2.054
+            }
+          ],
+          "uncertaintyShapeParity": true,
+          "uncertaintyShapeDiffCount": 0,
+          "uncertaintyShapeDiffSample": []
+        },
+        "forge_goalie_projections": {
+          "keyColumns": [
+            "game_id",
+            "goalie_id",
+            "horizon_games"
+          ],
+          "counts": {
+            "baseline": 18,
+            "current": 18
+          },
+          "rowCountParity": true,
+          "identity": {
+            "shared": 18,
+            "missingInCurrentCount": 0,
+            "extraInCurrentCount": 0,
+            "missingInCurrentSample": [],
+            "extraInCurrentSample": [],
+            "parity": true
+          },
+          "scalarFieldParity": false,
+          "scalarDiffCount": 2,
+          "scalarDiffSample": [
+            {
+              "key": "2025020816|8475311|1",
+              "column": "proj_win_prob",
+              "baseline": 0.6347,
+              "current": 0.6345
+            },
+            {
+              "key": "2025020817|8475683|1",
+              "column": "proj_win_prob",
+              "baseline": 0.3446,
+              "current": 0.3445
+            }
+          ],
+          "uncertaintyShapeParity": true,
+          "uncertaintyShapeDiffCount": 0,
+          "uncertaintyShapeDiffSample": []
+        }
+      },
+      "summary": {
+        "rowCountParity": true,
+        "identityKeyParity": true,
+        "scalarFieldParity": false,
+        "uncertaintyShapeParity": true
+      }
+    },
+    {
+      "date": "2026-01-31",
+      "baselineRunId": "831cc6a6-ed66-4fd0-917c-da30c324a37d",
+      "currentRunId": "bd410c75-8c75-4dca-ab59-28d93d41cd3a",
+      "baselineLabel": "pre-modularization(a3f6173)",
+      "currentLabel": "modularized(current)",
+      "tables": {
+        "forge_player_projections": {
+          "keyColumns": [
+            "game_id",
+            "player_id",
+            "horizon_games"
+          ],
+          "counts": {
+            "baseline": 404,
+            "current": 404
+          },
+          "rowCountParity": true,
+          "identity": {
+            "shared": 404,
+            "missingInCurrentCount": 0,
+            "extraInCurrentCount": 0,
+            "missingInCurrentSample": [],
+            "extraInCurrentSample": [],
+            "parity": true
+          },
+          "scalarFieldParity": false,
+          "scalarDiffCount": 25,
+          "scalarDiffSample": [
+            {
+              "key": "2025020861|8471724|1",
+              "column": "proj_shots_pp",
+              "baseline": 0.2,
+              "current": 0.201
+            },
+            {
+              "key": "2025020861|8478450|1",
+              "column": "proj_shots_es",
+              "baseline": 1.258,
+              "current": 1.259
+            },
+            {
+              "key": "2025020861|8478450|1",
+              "column": "proj_assists_es",
+              "baseline": 0.111,
+              "current": 0.11
+            },
+            {
+              "key": "2025020861|8478450|1",
+              "column": "proj_assists_pp",
+              "baseline": 0.044,
+              "current": 0.043
+            },
+            {
+              "key": "2025020861|8474578|1",
+              "column": "proj_assists_es",
+              "baseline": 0.165,
+              "current": 0.164
+            },
+            {
+              "key": "2025020864|8480817|1",
+              "column": "proj_assists_es",
+              "baseline": 0.122,
+              "current": 0.121
+            },
+            {
+              "key": "2025020864|8478970|1",
+              "column": "proj_shots_pp",
+              "baseline": 0.155,
+              "current": 0.156
+            },
+            {
+              "key": "2025020864|8476906|1",
+              "column": "proj_shots_es",
+              "baseline": 2.704,
+              "current": 2.708
+            },
+            {
+              "key": "2025020864|8476422|1",
+              "column": "proj_shots_es",
+              "baseline": 1.59,
+              "current": 1.589
+            },
+            {
+              "key": "2025020864|8476422|1",
+              "column": "proj_shots_pp",
+              "baseline": 0.201,
+              "current": 0.202
+            },
+            {
+              "key": "2025020864|8478427|1",
+              "column": "proj_shots_es",
+              "baseline": 1.051,
+              "current": 1.05
+            },
+            {
+              "key": "2025020864|8478427|1",
+              "column": "proj_shots_pp",
+              "baseline": 0.184,
+              "current": 0.181
+            },
+            {
+              "key": "2025020864|8478427|1",
+              "column": "proj_assists_pp",
+              "baseline": 0.027,
+              "current": 0.026
+            },
+            {
+              "key": "2025020864|8473533|1",
+              "column": "proj_shots_es",
+              "baseline": 1.788,
+              "current": 1.787
+            },
+            {
+              "key": "2025020864|8482093|1",
+              "column": "proj_shots_es",
+              "baseline": 1.714,
+              "current": 1.713
+            },
+            {
+              "key": "2025020864|8482093|1",
+              "column": "proj_shots_pp",
+              "baseline": 0.383,
+              "current": 0.38
+            },
+            {
+              "key": "2025020864|8482093|1",
+              "column": "proj_assists_pp",
+              "baseline": 0.053,
+              "current": 0.052
+            },
+            {
+              "key": "2025020864|8480830|1",
+              "column": "proj_shots_pp",
+              "baseline": 0.46,
+              "current": 0.461
+            },
+            {
+              "key": "2025020864|8480830|1",
+              "column": "proj_goals_pp",
+              "baseline": 0.099,
+              "current": 0.1
+            },
+            {
+              "key": "2025020864|8482100|1",
+              "column": "proj_shots_es",
+              "baseline": 1.706,
+              "current": 1.707
+            },
+            {
+              "key": "2025020864|8477940|1",
+              "column": "proj_shots_es",
+              "baseline": 1.956,
+              "current": 1.955
+            },
+            {
+              "key": "2025020864|8482702|1",
+              "column": "proj_assists_es",
+              "baseline": 0.087,
+              "current": 0.086
+            },
+            {
+              "key": "2025020865|8476875|1",
+              "column": "proj_assists_es",
+              "baseline": 0.141,
+              "current": 0.14
+            },
+            {
+              "key": "2025020865|8480865|1",
+              "column": "proj_shots_pp",
+              "baseline": 1.067,
+              "current": 1.066
+            },
+            {
+              "key": "2025020865|8480865|1",
+              "column": "proj_assists_pp",
+              "baseline": 0.13,
+              "current": 0.129
+            }
+          ],
+          "uncertaintyShapeParity": true,
+          "uncertaintyShapeDiffCount": 0,
+          "uncertaintyShapeDiffSample": []
+        },
+        "forge_team_projections": {
+          "keyColumns": [
+            "game_id",
+            "team_id",
+            "horizon_games"
+          ],
+          "counts": {
+            "baseline": 28,
+            "current": 28
+          },
+          "rowCountParity": true,
+          "identity": {
+            "shared": 28,
+            "missingInCurrentCount": 0,
+            "extraInCurrentCount": 0,
+            "missingInCurrentSample": [],
+            "extraInCurrentSample": [],
+            "parity": true
+          },
+          "scalarFieldParity": false,
+          "scalarDiffCount": 3,
+          "scalarDiffSample": [
+            {
+              "key": "2025020867|2|1",
+              "column": "proj_goals_es",
+              "baseline": 1.741,
+              "current": 1.742
+            },
+            {
+              "key": "2025020867|2|1",
+              "column": "proj_goals_pp",
+              "baseline": 0.684,
+              "current": 0.685
+            },
+            {
+              "key": "2025020861|5|1",
+              "column": "proj_goals_es",
+              "baseline": 3.058,
+              "current": 3.057
+            }
+          ],
+          "uncertaintyShapeParity": true,
+          "uncertaintyShapeDiffCount": 0,
+          "uncertaintyShapeDiffSample": []
+        },
+        "forge_goalie_projections": {
+          "keyColumns": [
+            "game_id",
+            "goalie_id",
+            "horizon_games"
+          ],
+          "counts": {
+            "baseline": 28,
+            "current": 28
+          },
+          "rowCountParity": true,
+          "identity": {
+            "shared": 28,
+            "missingInCurrentCount": 0,
+            "extraInCurrentCount": 0,
+            "missingInCurrentSample": [],
+            "extraInCurrentSample": [],
+            "parity": true
+          },
+          "scalarFieldParity": false,
+          "scalarDiffCount": 1,
+          "scalarDiffSample": [
+            {
+              "key": "2025020864|8483548|1",
+              "column": "proj_win_prob",
+              "baseline": 0.4793,
+              "current": 0.4791
+            }
+          ],
+          "uncertaintyShapeParity": true,
+          "uncertaintyShapeDiffCount": 0,
+          "uncertaintyShapeDiffSample": []
+        }
+      },
+      "summary": {
+        "rowCountParity": true,
+        "identityKeyParity": true,
+        "scalarFieldParity": false,
+        "uncertaintyShapeParity": true
+      }
+    },
+    {
+      "date": "2026-02-08",
+      "baselineRunId": "a4514264-a64e-4285-8c14-c1230d7c309c",
+      "currentRunId": "0c196dee-9860-4499-a3b7-528eccd03e84",
+      "baselineLabel": "pre-modularization(a3f6173)",
+      "currentLabel": "modularized(current)",
+      "tables": {
+        "forge_player_projections": {
+          "keyColumns": [
+            "game_id",
+            "player_id",
+            "horizon_games"
+          ],
+          "counts": {
+            "baseline": 0,
+            "current": 0
+          },
+          "rowCountParity": true,
+          "identity": {
+            "shared": 0,
+            "missingInCurrentCount": 0,
+            "extraInCurrentCount": 0,
+            "missingInCurrentSample": [],
+            "extraInCurrentSample": [],
+            "parity": true
+          },
+          "scalarFieldParity": true,
+          "scalarDiffCount": 0,
+          "scalarDiffSample": [],
+          "uncertaintyShapeParity": true,
+          "uncertaintyShapeDiffCount": 0,
+          "uncertaintyShapeDiffSample": []
+        },
+        "forge_team_projections": {
+          "keyColumns": [
+            "game_id",
+            "team_id",
+            "horizon_games"
+          ],
+          "counts": {
+            "baseline": 0,
+            "current": 0
+          },
+          "rowCountParity": true,
+          "identity": {
+            "shared": 0,
+            "missingInCurrentCount": 0,
+            "extraInCurrentCount": 0,
+            "missingInCurrentSample": [],
+            "extraInCurrentSample": [],
+            "parity": true
+          },
+          "scalarFieldParity": true,
+          "scalarDiffCount": 0,
+          "scalarDiffSample": [],
+          "uncertaintyShapeParity": true,
+          "uncertaintyShapeDiffCount": 0,
+          "uncertaintyShapeDiffSample": []
+        },
+        "forge_goalie_projections": {
+          "keyColumns": [
+            "game_id",
+            "goalie_id",
+            "horizon_games"
+          ],
+          "counts": {
+            "baseline": 0,
+            "current": 0
+          },
+          "rowCountParity": true,
+          "identity": {
+            "shared": 0,
+            "missingInCurrentCount": 0,
+            "extraInCurrentCount": 0,
+            "missingInCurrentSample": [],
+            "extraInCurrentSample": [],
+            "parity": true
+          },
+          "scalarFieldParity": true,
+          "scalarDiffCount": 0,
+          "scalarDiffSample": [],
+          "uncertaintyShapeParity": true,
+          "uncertaintyShapeDiffCount": 0,
+          "uncertaintyShapeDiffSample": []
+        }
+      },
+      "summary": {
+        "rowCountParity": true,
+        "identityKeyParity": true,
+        "scalarFieldParity": true,
+        "uncertaintyShapeParity": true
+      }
+    }
+  ],
+  "criteria": {
+    "scalarFieldParity": "exact",
+    "uncertaintyShapeParity": "exact key-path set",
+    "toleratedEpsilon": null
+  },
+  "overall": {
+    "rowCountParity": true,
+    "identityKeyParity": true,
+    "scalarFieldParity": false,
+    "uncertaintyShapeParity": true
+  }
+}

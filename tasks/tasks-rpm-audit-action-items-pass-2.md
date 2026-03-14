@@ -1,0 +1,106 @@
+## Relevant Files
+
+- `tasks/rpm-audit-action-items-pass-2.md` - Source backlog of open pass-2 action items that now need to be sequenced into implementation work.
+- `tasks/artifacts/rolling-player-pass-2-post-optimization-verification-2026-03-14.md` - Latest verification artifact showing the remaining blockers after the pass-2 optimization work.
+- `tasks/artifacts/rolling-player-pass-2-main-audit.md` - Consolidated audit artifact that should stay aligned with any freshness, orchestration, or compatibility changes.
+- `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts` - Core rolling-player recompute pipeline, batching logic, diagnostics hooks, and current runtime tuning surface.
+- `web/pages/api/v1/db/update-rolling-player-averages.ts` - Rolling-player recompute entrypoint and likely home of orchestration/runtime-budget controls.
+- `web/lib/supabase/Upserts/rollingPlayerPipelineDiagnostics.ts` - Freshness, completeness, and validation diagnostics that should become part of a stable overnight/run-readiness workflow.
+- `web/pages/api/v1/debug/rolling-player-metrics.ts` - Debug/validation payload endpoint that may need to expose orchestration and freshness state more cleanly.
+- `web/pages/trendsDebug.tsx` - Validation console that should stay lean and operator-oriented while orchestration and freshness are tightened.
+- `web/lib/rollingPlayerMetricCompatibility.ts` - Compatibility helper that may be touched if schema cleanup or alias-freeze work is pulled into the same efficiency pass.
+- `web/lib/projections/run-forge-projections.ts` - Central FORGE projection runner whose dependencies and freshness expectations need to stay operationally manageable.
+- `web/pages/api/v1/db/update-start-chart-projections.ts` - Downstream projection refresh surface that should be coordinated with rolling freshness rather than independently proliferating jobs.
+- `web/lib/projections/goaliePipeline.ts` - Existing pipeline-spec style file that can inform consolidation of skater/rolling/FORGE refresh orchestration.
+- `web/lib/cron/withCronJobAudit.ts` - Existing cron-job auditing utility that should be reused instead of adding more disconnected scheduling surfaces.
+- `web/pages/api/v1/db/cron/update-stats-cron.ts` - Existing cron endpoint that may need consolidation or policy alignment if the refresh graph is simplified.
+- `web/pages/api/v1/db/ingest-projection-inputs.ts` - Projection-ingest entrypoint that may need to be folded into a cleaner end-to-end overnight process.
+- `web/pages/api/v1/db/update-nst-gamelog.ts` - Upstream NST refresh endpoint that materially affects rolling freshness and total overnight runtime.
+- `web/pages/api/v1/db/update-power-play-combinations/[gameId].ts` - PP builder refresh surface that should be scheduled through a smaller, more intentional dependency graph.
+- `web/pages/api/v1/db/update-line-combinations/index.ts` - Line-context refresh surface that should be coordinated with rolling refreshes rather than handled ad hoc.
+- `web/vitest.config.*` - Test runner configuration that should exclude compiled artifacts and restore trustworthy one-command verification.
+- `tasks/artifacts/rolling-player-pass-2-vitest-artifact-exclusion-2026-03-14.md` - Artifact for the Vitest config fix that stops `.next` compiled test artifacts from polluting full-suite verification.
+- `tasks/artifacts/rolling-player-pass-2-full-suite-baseline-2026-03-14.md` - Artifact capturing the restored source-only full-suite command and its March 14 passing baseline.
+- `tasks/artifacts/rolling-player-pass-2-script-normalization-2026-03-14.md` - Artifact for the normalized verification script layer that separates full-suite verification from targeted and extended rolling-player validation flows.
+- `tasks/artifacts/rolling-player-pass-2-operational-blockers-2026-03-14.md` - Artifact for the remaining short-list operational blockers after verification cleanup, separating them from longer-horizon cleanup and observability work.
+- `tasks/artifacts/rolling-player-pass-2-refresh-entrypoint-inventory-2026-03-14.md` - Inventory of the actual refresh entrypoints that matter for rolling-player and FORGE freshness, with a consolidation-oriented view of which routes should remain first-class versus helper-only.
+- `tasks/artifacts/rolling-player-pass-2-refresh-dependency-graph-2026-03-14.md` - Explicit phase graph for overnight and daily incremental freshness, reducing the route inventory into a smaller dependency DAG that can drive orchestration work.
+- `tasks/artifacts/rolling-player-pass-2-operational-surface-decision-2026-03-14.md` - Policy decision for which routes remain operator-facing first-class surfaces versus internal/helper steps behind a smaller orchestration layer.
+- `tasks/artifacts/rolling-player-pass-2-orchestration-pattern-reuse-2026-03-14.md` - Design for reusing `withCronJobAudit` and pipeline-spec patterns to support one overnight and one daily incremental coordinator instead of more route-level cron jobs.
+- `tasks/artifacts/rolling-player-pass-2-coordinator-entrypoint-2026-03-14.md` - Implementation artifact for the first consolidated rolling-player + FORGE coordinator route and shared pipeline spec.
+- `tasks/artifacts/rolling-player-pass-2-daily-runtime-benchmark-2026-03-14.md` - Daily-path runtime baseline for the repaired rolling writer, including the current fast-mode-equivalent settings and the remaining full-player-scan inefficiency.
+- `tasks/artifacts/rolling-player-pass-2-overnight-runtime-benchmark-2026-03-14.md` - Overnight/backfill-oriented season-sweep runtime baseline, separating broader rolling recompute cost from the one-day daily incremental path.
+- `tasks/artifacts/rolling-player-pass-2-phase-cost-profile-2026-03-14.md` - Phase-cost profile for rolling recompute, identifying the highest-cost daily and overnight bottlenecks across bootstrap, player selection, fetch, derive, and upsert.
+- `tasks/artifacts/rolling-player-pass-2-daily-scope-narrowing-2026-03-14.md` - Implementation artifact for narrowing date-scoped incremental recomputes to the relevant WGO-backed player slice instead of scanning the full player universe.
+- `tasks/artifacts/rolling-player-pass-2-execution-profile-tuning-2026-03-14.md` - Execution-profile policy for separating daily, overnight, and targeted-repair rolling recompute defaults at the route and coordinator layers.
+- `tasks/artifacts/rolling-player-pass-2-runtime-budget-reporting-2026-03-14.md` - Runtime-budget reporting contract for rolling recompute and the consolidated coordinator, including explicit in-budget/out-of-budget summaries.
+- `tasks/artifacts/rolling-player-pass-2-runtime-budget-check-2026-03-14.md` - Script-level enforcement artifact for the live rolling-player runtime budget check, including the verified daily-slice pass result.
+- `tasks/artifacts/rolling-player-pass-2-retained-validation-rerun-2026-03-14.md` - Targeted rerun artifact for Brent Burns, Corey Perry, Jesper Bratt, and Seth Jones after the runtime and optional-metric changes landed.
+- `tasks/artifacts/rolling-player-pass-2-retained-validation-freshness-2026-03-14.md` - Post-rerun freshness artifact confirming which retained validation players are fully ready and which remain blocked only by genuine PK source-tail lag.
+- `tasks/artifacts/rolling-player-pass-2-optional-baseline-backfill-2026-03-14.md` - Verification artifact confirming the retained ready validation set no longer has stored-null gaps for newly added optional historical baseline fields after the targeted reruns.
+- `tasks/artifacts/rolling-player-pass-2-retained-validation-parity-2026-03-14.md` - Combined parity and freshness snapshot for the retained validation set after the optional-baseline backfill confirmation.
+- `tasks/artifacts/rolling-player-pass-2-operational-surface-audit-2026-03-14.md` - Audit of current rolling-player + FORGE code ownership sprawl across orchestration, compute, diagnostics, validation, and downstream readers.
+- `tasks/artifacts/rolling-player-pass-2-ownership-boundary-consolidation-2026-03-14.md` - Consolidation artifact for the shared operational-policy boundary that now owns execution-profile defaults and runtime budgets.
+- `tasks/artifacts/rolling-player-pass-2-thin-glue-reduction-2026-03-14.md` - Cleanup artifact for centralizing repeated query parsing helpers out of the operator-facing routes.
+- `tasks/artifacts/rolling-player-pass-2-backlog-track-grouping-2026-03-14.md` - Grouping artifact that compresses the remaining open pass-2 backlog into a smaller set of implementation tracks.
+- `tasks/artifacts/rolling-player-pass-2-operator-runbook-2026-03-14.md` - Short operator-facing runbook that states what runs overnight, what runs daily, and the minimal cron/job surface for keeping FORGE fresh.
+- `tasks/artifacts/rolling-player-pass-2-organization-efficiency-closeout-2026-03-14.md` - Final closeout artifact summarizing the reduced operator-facing job surface, runtime budget status, and intentionally deferred cleanup.
+- `web/lib/api/queryParams.ts` - Shared query parsing helper for operator-facing API routes.
+- `web/lib/rollingPlayerOperationalPolicy.ts` - Shared operational-policy module for execution-profile parsing, defaults, inference, and runtime budgets across routes, scripts, and orchestration.
+- `web/lib/rollingForgePipeline.ts` - Shared stage graph for the new rolling-player + FORGE coordinator surface.
+- `web/pages/api/v1/db/run-rolling-forge-pipeline.ts` - Consolidated coordinator entrypoint for overnight and daily incremental orchestration.
+- `web/pages/api/v1/db/run-rolling-forge-pipeline.test.ts` - Route-level regression coverage for stage ordering, failure short-circuiting, and daily-mode behavior.
+- `web/package.json` - Script surface for full-suite verification and possibly consolidated overnight/daily refresh commands.
+- `web/pages/trendsDebug.test.tsx` - Validation-console tests that may need updates if orchestration/freshness status becomes more explicit.
+- `web/pages/api/v1/debug/rolling-player-metrics.test.ts` - Debug-route tests for richer readiness/orchestration state exposure.
+- `web/lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts` - Pipeline-level tests for batching, runtime controls, and recompute behavior.
+- `web/lib/supabase/Upserts/rollingPlayerPipelineDiagnostics.test.ts` - Diagnostics coverage for readiness/freshness states used by the operational workflow.
+
+### Notes
+
+- This task list is derived from the pass-2 action backlog, not from a new PRD.
+- The implementation should bias toward consolidating refresh orchestration and avoiding a large long-term cron surface.
+- Success criteria for this phase should include:
+  - an overnight-capable full refresh flow
+  - a single-day incremental update path at `4m30s` or less
+  - a smaller, more legible dependency graph for keeping FORGE fresh
+- Prefer extending existing orchestration surfaces and pipeline-spec patterns over creating more one-off endpoints or scripts.
+
+## Tasks
+
+- [x] 1.0 Restore trustworthy verification and close immediate post-pass blockers
+  - [x] 1.1 Update Vitest configuration to exclude `.next/**` and any other compiled artifact directories from test discovery.
+  - [x] 1.2 Verify `npm test -- --run` executes only source test files and capture the final passing baseline in a closeout artifact.
+  - [x] 1.3 Review existing `package.json` verification scripts and normalize them so “full suite” versus “targeted rolling validation” commands are explicit and non-overlapping.
+  - [x] 1.4 Identify any remaining post-pass blockers that are operational rather than arithmetic, and move them into a small, explicit blocker section in the action backlog.
+- [ ] 2.0 Consolidate rolling-player and FORGE refresh orchestration into a smaller, explicit dependency graph
+  - [x] 2.1 Inventory the currently relevant refresh entrypoints for rolling-player freshness, PP/line builders, projection inputs, rolling recomputes, and FORGE projection refreshes.
+  - [x] 2.2 Group those entrypoints into a single dependency graph with distinct phases: upstream ingest, contextual builders, rolling recompute, and downstream FORGE/projection refresh.
+  - [x] 2.3 Decide which existing endpoints remain first-class operational surfaces and which should become internal implementation steps behind a smaller orchestration layer.
+  - [x] 2.4 Reuse the existing cron/pipeline patterns (`withCronJobAudit`, pipeline-spec style files) to define one overnight flow and one daily incremental flow instead of adding more ad hoc jobs.
+  - [x] 2.5 Implement a consolidated orchestration surface or coordinator entrypoint that can run the approved dependency graph in the correct order with step-level status reporting.
+  - [x] 2.6 Update the runbook and task artifacts so the recommended job surface reflects the consolidated flow rather than the old scattered endpoints.
+- [x] 3.0 Reduce rolling-player recompute runtime and enforce daily/overnight runtime budgets
+  - [x] 3.1 Benchmark the current rolling-player daily update path using the repaired writer and current fast-mode defaults, capturing player concurrency, upsert concurrency, batch size, and total runtime.
+  - [x] 3.2 Benchmark the current overnight/backfill-oriented flow separately so daily and overnight budgets are tracked independently.
+  - [x] 3.3 Identify the highest-cost phases inside `fetchRollingPlayerAverages.ts` and the surrounding orchestration flow, including fetch, merge, derive, diagnostics, and upsert phases.
+  - [x] 3.4 Reduce avoidable recompute work for daily updates by limiting the processed slice to the minimal freshness window needed for current-day correctness.
+  - [x] 3.5 Tune batching and concurrency defaults so the daily incremental path targets `4m30s` or less without making the overnight path fragile.
+  - [x] 3.6 Add explicit runtime-budget reporting to the rolling/orchestration flow so daily and overnight runs emit comparable timing summaries.
+  - [x] 3.7 Add regression coverage or script-level checks that fail clearly when the daily path exceeds the agreed runtime envelope.
+- [x] 4.0 Backfill retained validation targets and stabilize freshness/readiness reporting
+  - [x] 4.1 Rerun targeted rolling recomputes for the retained validation players after the optional-metric changes and current orchestration/runtime adjustments land.
+  - [x] 4.2 Confirm `targetFreshnessOk` status for the retained validation set and document any remaining blockers that are genuine source-tail issues rather than stale targets.
+  - [x] 4.3 Backfill or recompute the newly added optional historical baseline fields so stored rows no longer show `null` where recomputed values now exist.
+  - [x] 4.4 Re-run the targeted family-reconstruction and freshness scripts after the backfill to confirm stored-versus-recomputed parity on the retained validation set.
+  - [x] 4.5 Update the audit, refresh, and verification artifacts so they reflect the new post-backfill state instead of the older March 12/March 14 snapshots.
+- [x] 5.0 Reorganize the pass-2 operational surface for maintainability, including file sprawl, ownership boundaries, and runbook alignment
+  - [x] 5.1 Audit the current rolling-player/FORGE operational files and identify where orchestration logic, refresh policy, diagnostics, and UI/debug responsibilities are unnecessarily spread out.
+  - [x] 5.2 Consolidate organization around a smaller set of ownership boundaries, for example: pipeline contracts, orchestration, diagnostics, validation payloads, and downstream readers.
+  - [x] 5.3 Move or refactor any thin glue logic that only exists because the pass-2 work accumulated across many files, especially where the same runtime/freshness concepts are repeated.
+  - [x] 5.4 Review whether existing action-backlog items about PP provenance, TOI traceability, GP semantics, and alias cleanup can be grouped into fewer implementation tracks instead of separate mini-projects.
+  - [ ] 5.5 Produce a final operational runbook update that answers three questions clearly:
+    - [x] what runs overnight
+    - [x] what runs in the daily incremental path
+    - [x] what the minimal cron/job surface is for keeping FORGE fresh
+  - [x] 5.6 Add a final organization/efficiency closeout artifact summarizing the reduced job surface, runtime budget status, and any intentionally deferred cleanup.

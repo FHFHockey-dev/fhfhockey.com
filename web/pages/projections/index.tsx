@@ -1321,11 +1321,6 @@ const ProjectionsPage: NextPage = () => {
     }
   }
 
-  console.log(
-    "[ProjectionsPage] currentSeasonId for Context.Provider (transformed):",
-    currentSeasonIdForProvider
-  );
-
   return (
     <>
       <Head>
