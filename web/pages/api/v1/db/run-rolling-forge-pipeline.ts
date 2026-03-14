@@ -1,11 +1,16 @@
+import { parseQueryBoolean } from "lib/api/queryParams";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import supabase from "lib/supabase/server";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
 import {
+  parseRollingExecutionProfile,
+  ROLLING_FORGE_PIPELINE_BUDGETS_MS,
+  type RollingForgePipelineMode
+} from "lib/rollingPlayerOperationalPolicy";
+import {
   getRollingForgePipelineSpec,
   getRollingForgeStagesForMode,
-  type RollingForgePipelineMode,
   type RollingForgePipelineStageId
 } from "lib/rollingForgePipeline";
 
@@ -71,12 +76,6 @@ type ResponseBody = {
   stages: StageResult[];
 };
 
-const PIPELINE_RUNTIME_BUDGETS_MS: Record<RollingForgePipelineMode, number> = {
-  daily_incremental: 270000,
-  overnight: 5400000,
-  targeted_repair: 900000
-};
-
 type RouteHandler = (req: any, res: any) => Promise<void>;
 
 function getParam(req: NextApiRequest, key: string): string | null {
@@ -86,19 +85,12 @@ function getParam(req: NextApiRequest, key: string): string | null {
 }
 
 function parseBooleanParam(value: string | null, fallback = false) {
-  if (!value) return fallback;
-  return ["1", "true", "yes", "y"].includes(value.toLowerCase());
+  const parsed = parseQueryBoolean(value ?? undefined);
+  return parsed ?? fallback;
 }
 
 function parseMode(value: string | null): RollingForgePipelineMode {
-  if (
-    value === "overnight" ||
-    value === "daily_incremental" ||
-    value === "targeted_repair"
-  ) {
-    return value;
-  }
-  return "daily_incremental";
+  return parseRollingExecutionProfile(value);
 }
 
 function isoDateOnly(input: Date | string) {
@@ -121,7 +113,7 @@ function buildRuntimeBudgetSummary(
   mode: RollingForgePipelineMode,
   durationMs: number
 ) {
-  const budgetMs = PIPELINE_RUNTIME_BUDGETS_MS[mode];
+  const budgetMs = ROLLING_FORGE_PIPELINE_BUDGETS_MS[mode];
   return {
     budgetMs,
     budgetLabel: formatDurationMsToMMSS(budgetMs),

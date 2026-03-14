@@ -1,23 +1,9 @@
 import { main } from "lib/supabase/Upserts/fetchRollingPlayerAverages";
-
-type ExecutionProfile = "daily_incremental" | "overnight" | "targeted_repair";
-
-const PROFILE_BUDGETS_MS: Record<ExecutionProfile, number> = {
-  daily_incremental: 270_000,
-  overnight: 1_800_000,
-  targeted_repair: 600_000
-};
-
-function parseProfile(value: unknown): ExecutionProfile {
-  if (
-    value === "daily_incremental" ||
-    value === "overnight" ||
-    value === "targeted_repair"
-  ) {
-    return value;
-  }
-  return "daily_incremental";
-}
+import {
+  parseRollingExecutionProfile,
+  ROLLING_EXECUTION_PROFILE_BUDGETS_MS,
+  ROLLING_EXECUTION_PROFILE_DEFAULTS
+} from "lib/rollingPlayerOperationalPolicy";
 
 function parsePositiveInt(value: unknown): number | undefined {
   const parsed = Number(value);
@@ -57,7 +43,9 @@ function formatDuration(durationMs: number) {
 async function run() {
   const argv = parseArgs(process.argv.slice(2));
 
-  const profile = parseProfile(argv.profile);
+  const profile = parseRollingExecutionProfile(
+    typeof argv.profile === "string" ? argv.profile : undefined
+  );
   const date = typeof argv.date === "string" ? argv.date : undefined;
   const startDate =
     typeof argv.startDate === "string" ? argv.startDate : date;
@@ -72,15 +60,16 @@ async function run() {
 
   const playerConcurrency =
     parsePositiveInt(argv.playerConcurrency) ??
-    (profile === "overnight" ? 4 : 4);
+    ROLLING_EXECUTION_PROFILE_DEFAULTS[profile].playerConcurrency;
   const upsertBatchSize =
     parsePositiveInt(argv.upsertBatchSize) ??
-    (profile === "overnight" ? 250 : 500);
+    ROLLING_EXECUTION_PROFILE_DEFAULTS[profile].upsertBatchSize;
   const upsertConcurrency =
     parsePositiveInt(argv.upsertConcurrency) ??
-    (profile === "overnight" ? 2 : 4);
+    ROLLING_EXECUTION_PROFILE_DEFAULTS[profile].upsertConcurrency;
   const budgetMs =
-    parsePositiveInt(argv.budgetMs) ?? PROFILE_BUDGETS_MS[profile];
+    parsePositiveInt(argv.budgetMs) ??
+    ROLLING_EXECUTION_PROFILE_BUDGETS_MS[profile];
   const skipDiagnostics = argv.skipDiagnostics !== "false";
 
   const startedAt = Date.now();

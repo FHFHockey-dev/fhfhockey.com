@@ -39,6 +39,14 @@
 - `tasks/artifacts/rolling-player-pass-2-retained-validation-freshness-2026-03-14.md` - Post-rerun freshness artifact confirming which retained validation players are fully ready and which remain blocked only by genuine PK source-tail lag.
 - `tasks/artifacts/rolling-player-pass-2-optional-baseline-backfill-2026-03-14.md` - Verification artifact confirming the retained ready validation set no longer has stored-null gaps for newly added optional historical baseline fields after the targeted reruns.
 - `tasks/artifacts/rolling-player-pass-2-retained-validation-parity-2026-03-14.md` - Combined parity and freshness snapshot for the retained validation set after the optional-baseline backfill confirmation.
+- `tasks/artifacts/rolling-player-pass-2-operational-surface-audit-2026-03-14.md` - Audit of current rolling-player + FORGE code ownership sprawl across orchestration, compute, diagnostics, validation, and downstream readers.
+- `tasks/artifacts/rolling-player-pass-2-ownership-boundary-consolidation-2026-03-14.md` - Consolidation artifact for the shared operational-policy boundary that now owns execution-profile defaults and runtime budgets.
+- `tasks/artifacts/rolling-player-pass-2-thin-glue-reduction-2026-03-14.md` - Cleanup artifact for centralizing repeated query parsing helpers out of the operator-facing routes.
+- `tasks/artifacts/rolling-player-pass-2-backlog-track-grouping-2026-03-14.md` - Grouping artifact that compresses the remaining open pass-2 backlog into a smaller set of implementation tracks.
+- `tasks/artifacts/rolling-player-pass-2-operator-runbook-2026-03-14.md` - Short operator-facing runbook that states what runs overnight, what runs daily, and the minimal cron/job surface for keeping FORGE fresh.
+- `tasks/artifacts/rolling-player-pass-2-organization-efficiency-closeout-2026-03-14.md` - Final closeout artifact summarizing the reduced operator-facing job surface, runtime budget status, and intentionally deferred cleanup.
+- `web/lib/api/queryParams.ts` - Shared query parsing helper for operator-facing API routes.
+- `web/lib/rollingPlayerOperationalPolicy.ts` - Shared operational-policy module for execution-profile parsing, defaults, inference, and runtime budgets across routes, scripts, and orchestration.
 - `web/lib/rollingForgePipeline.ts` - Shared stage graph for the new rolling-player + FORGE coordinator surface.
 - `web/pages/api/v1/db/run-rolling-forge-pipeline.ts` - Consolidated coordinator entrypoint for overnight and daily incremental orchestration.
 - `web/pages/api/v1/db/run-rolling-forge-pipeline.test.ts` - Route-level regression coverage for stage ordering, failure short-circuiting, and daily-mode behavior.
@@ -86,13 +94,13 @@
   - [x] 4.3 Backfill or recompute the newly added optional historical baseline fields so stored rows no longer show `null` where recomputed values now exist.
   - [x] 4.4 Re-run the targeted family-reconstruction and freshness scripts after the backfill to confirm stored-versus-recomputed parity on the retained validation set.
   - [x] 4.5 Update the audit, refresh, and verification artifacts so they reflect the new post-backfill state instead of the older March 12/March 14 snapshots.
-- [ ] 5.0 Reorganize the pass-2 operational surface for maintainability, including file sprawl, ownership boundaries, and runbook alignment
-  - [ ] 5.1 Audit the current rolling-player/FORGE operational files and identify where orchestration logic, refresh policy, diagnostics, and UI/debug responsibilities are unnecessarily spread out.
-  - [ ] 5.2 Consolidate organization around a smaller set of ownership boundaries, for example: pipeline contracts, orchestration, diagnostics, validation payloads, and downstream readers.
-  - [ ] 5.3 Move or refactor any thin glue logic that only exists because the pass-2 work accumulated across many files, especially where the same runtime/freshness concepts are repeated.
-  - [ ] 5.4 Review whether existing action-backlog items about PP provenance, TOI traceability, GP semantics, and alias cleanup can be grouped into fewer implementation tracks instead of separate mini-projects.
+- [x] 5.0 Reorganize the pass-2 operational surface for maintainability, including file sprawl, ownership boundaries, and runbook alignment
+  - [x] 5.1 Audit the current rolling-player/FORGE operational files and identify where orchestration logic, refresh policy, diagnostics, and UI/debug responsibilities are unnecessarily spread out.
+  - [x] 5.2 Consolidate organization around a smaller set of ownership boundaries, for example: pipeline contracts, orchestration, diagnostics, validation payloads, and downstream readers.
+  - [x] 5.3 Move or refactor any thin glue logic that only exists because the pass-2 work accumulated across many files, especially where the same runtime/freshness concepts are repeated.
+  - [x] 5.4 Review whether existing action-backlog items about PP provenance, TOI traceability, GP semantics, and alias cleanup can be grouped into fewer implementation tracks instead of separate mini-projects.
   - [ ] 5.5 Produce a final operational runbook update that answers three questions clearly:
-    - [ ] what runs overnight
-    - [ ] what runs in the daily incremental path
-    - [ ] what the minimal cron/job surface is for keeping FORGE fresh
-  - [ ] 5.6 Add a final organization/efficiency closeout artifact summarizing the reduced job surface, runtime budget status, and any intentionally deferred cleanup.
+    - [x] what runs overnight
+    - [x] what runs in the daily incremental path
+    - [x] what the minimal cron/job surface is for keeping FORGE fresh
+  - [x] 5.6 Add a final organization/efficiency closeout artifact summarizing the reduced job surface, runtime budget status, and any intentionally deferred cleanup.

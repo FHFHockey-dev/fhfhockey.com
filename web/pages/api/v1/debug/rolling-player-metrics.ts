@@ -1,5 +1,10 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import {
+  parseQueryBoolean,
+  parseQueryNumber,
+  parseQueryString
+} from "lib/api/queryParams";
+import {
   buildRollingPlayerValidationPayload,
   type RollingPlayerValidationRequest
 } from "lib/supabase/Upserts/rollingPlayerValidationPayload";
@@ -15,34 +20,10 @@ type ResponseBody =
       error: string;
     };
 
-function parseStringParam(
-  param: string | string[] | undefined
-): string | undefined {
-  if (!param) return undefined;
-  return Array.isArray(param) ? param[0] : param;
-}
-
-function parseNumberParam(
-  param: string | string[] | undefined
-): number | undefined {
-  const value = parseStringParam(param);
-  if (!value) return undefined;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : undefined;
-}
-
-function parseBooleanParam(
-  param: string | string[] | undefined
-): boolean | undefined {
-  const value = parseStringParam(param);
-  if (value == null) return undefined;
-  return ["1", "true", "yes", "y"].includes(value.toLowerCase());
-}
-
 function parseStrength(
   param: string | string[] | undefined
 ): RollingPlayerValidationRequest["strength"] {
-  const value = parseStringParam(param);
+  const value = parseQueryString(param);
   if (value === "ev" || value === "pp" || value === "pk") return value;
   return "all";
 }
@@ -50,8 +31,8 @@ function parseStrength(
 function parseRequest(
   req: NextApiRequest
 ): RollingPlayerValidationRequest | { error: string } {
-  const playerId = parseNumberParam(req.query.playerId);
-  const season = parseNumberParam(req.query.season);
+  const playerId = parseQueryNumber(req.query.playerId);
+  const season = parseQueryNumber(req.query.season);
   if (!playerId) {
     return { error: "Missing required query param: playerId" };
   }
@@ -63,17 +44,24 @@ function parseRequest(
     playerId,
     season,
     strength: parseStrength(req.query.strength),
-    teamId: parseNumberParam(req.query.teamId),
-    gameId: parseNumberParam(req.query.gameId),
-    gameDate: parseStringParam(req.query.gameDate),
-    startDate: parseStringParam(req.query.startDate),
-    endDate: parseStringParam(req.query.endDate),
-    metric: parseStringParam(req.query.metric),
-    metricFamily: parseStringParam(req.query.metricFamily),
-    includeStoredRows: parseBooleanParam(req.query.includeStoredRows),
-    includeRecomputedRows: parseBooleanParam(req.query.includeRecomputedRows),
-    includeSourceRows: parseBooleanParam(req.query.includeSourceRows),
-    includeDiagnostics: parseBooleanParam(req.query.includeDiagnostics)
+    teamId: parseQueryNumber(req.query.teamId),
+    gameId: parseQueryNumber(req.query.gameId),
+    gameDate: parseQueryString(req.query.gameDate),
+    startDate: parseQueryString(req.query.startDate),
+    endDate: parseQueryString(req.query.endDate),
+    metric: parseQueryString(req.query.metric),
+    metricFamily: parseQueryString(req.query.metricFamily),
+    includeStoredRows: parseQueryBoolean(req.query.includeStoredRows),
+    includeRecomputedRows: parseQueryBoolean(req.query.includeRecomputedRows),
+    includeSourceRows: parseQueryBoolean(req.query.includeSourceRows),
+    includeDiagnostics: parseQueryBoolean(req.query.includeDiagnostics),
+    includeWindowMembership: parseQueryBoolean(
+      req.query.includeWindowMembership
+    ),
+    includeContractMetadata: parseQueryBoolean(
+      req.query.includeContractMetadata
+    ),
+    includeComparisons: parseQueryBoolean(req.query.includeComparisons)
   };
 }
 

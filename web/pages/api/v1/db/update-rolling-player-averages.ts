@@ -49,12 +49,25 @@
 
 // 8473548
 
+import {
+  parseQueryBoolean,
+  parseQueryNumber,
+  parseQueryPositiveInt,
+  parseQueryString
+} from "lib/api/queryParams";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import {
+  inferRollingExecutionProfile,
+  isRollingExecutionProfile,
+  ROLLING_EXECUTION_PROFILE_BUDGETS_MS,
+  ROLLING_EXECUTION_PROFILE_DEFAULTS,
+  type RollingExecutionProfile
+} from "lib/rollingPlayerOperationalPolicy";
 import type { NextApiRequest, NextApiResponse } from "next";
 
 type ResponseBody = {
   message: string;
-  executionProfile?: ExecutionProfile;
+  executionProfile?: RollingExecutionProfile;
   runtimeBudget?: {
     budgetMs: number;
     budgetLabel: string;
@@ -65,43 +78,7 @@ type ResponseBody = {
 };
 
 type FullRefreshMode = "rpc_truncate" | "overwrite_only" | "delete";
-type ExecutionProfile = "daily_incremental" | "overnight" | "targeted_repair";
 type EndpointPhase = "request" | "execute" | "response";
-
-const EXECUTION_PROFILE_DEFAULTS: Record<
-  ExecutionProfile,
-  {
-    playerConcurrency: number;
-    upsertBatchSize: number;
-    upsertConcurrency: number;
-    skipDiagnostics: boolean;
-  }
-> = {
-  daily_incremental: {
-    playerConcurrency: 4,
-    upsertBatchSize: 500,
-    upsertConcurrency: 4,
-    skipDiagnostics: true
-  },
-  overnight: {
-    playerConcurrency: 4,
-    upsertBatchSize: 250,
-    upsertConcurrency: 2,
-    skipDiagnostics: true
-  },
-  targeted_repair: {
-    playerConcurrency: 4,
-    upsertBatchSize: 500,
-    upsertConcurrency: 4,
-    skipDiagnostics: true
-  }
-};
-
-const EXECUTION_PROFILE_BUDGETS_MS: Record<ExecutionProfile, number> = {
-  daily_incremental: 270000,
-  overnight: 1800000,
-  targeted_repair: 600000
-};
 
 function logEndpointPhase(args: {
   phase: EndpointPhase;
@@ -122,43 +99,10 @@ function logEndpointPhase(args: {
   );
 }
 
-function parseNumberParam(
-  param: string | string[] | undefined
-): number | undefined {
-  if (!param) return undefined;
-  const value = Array.isArray(param) ? param[0] : param;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : undefined;
-}
-
-function parseStringParam(
-  param: string | string[] | undefined
-): string | undefined {
-  if (!param) return undefined;
-  return Array.isArray(param) ? param[0] : param;
-}
-
-function parseBooleanParam(
-  param: string | string[] | undefined
-): boolean | undefined {
-  const value = parseStringParam(param);
-  if (value === undefined) return undefined;
-  return ["1", "true", "yes", "y"].includes(value.toLowerCase());
-}
-
-function parsePositiveInt(
-  param: string | string[] | undefined
-): number | undefined {
-  const parsed = parseNumberParam(param);
-  if (parsed === undefined) return undefined;
-  if (!Number.isInteger(parsed) || parsed <= 0) return undefined;
-  return parsed;
-}
-
 function parseFullRefreshMode(
   param: string | string[] | undefined
 ): FullRefreshMode | undefined {
-  const value = parseStringParam(param);
+  const value = parseQueryString(param);
   if (!value) return undefined;
   const normalized = value.toLowerCase();
   if (
@@ -173,35 +117,10 @@ function parseFullRefreshMode(
 
 function parseExecutionProfile(
   param: string | string[] | undefined
-): ExecutionProfile | undefined {
-  const value = parseStringParam(param);
-  if (
-    value === "daily_incremental" ||
-    value === "overnight" ||
-    value === "targeted_repair"
-  ) {
-    return value;
-  }
+) : RollingExecutionProfile | undefined {
+  const value = parseQueryString(param);
+  if (isRollingExecutionProfile(value)) return value;
   return undefined;
-}
-
-function inferExecutionProfile(args: {
-  playerId?: number;
-  season?: number;
-  startDate?: string;
-  endDate?: string;
-  fullRefresh?: boolean;
-}): ExecutionProfile {
-  if (args.playerId !== undefined) {
-    return "targeted_repair";
-  }
-  if (args.fullRefresh || (args.season !== undefined && !args.startDate && !args.endDate)) {
-    return "overnight";
-  }
-  if (args.startDate !== undefined || args.endDate !== undefined) {
-    return "daily_incremental";
-  }
-  return "overnight";
 }
 
 function formatDurationLabel(durationMs: number) {
@@ -212,10 +131,10 @@ function formatDurationLabel(durationMs: number) {
 }
 
 function buildRuntimeBudgetSummary(
-  executionProfile: ExecutionProfile,
+  executionProfile: RollingExecutionProfile,
   durationMs: number
 ) {
-  const budgetMs = EXECUTION_PROFILE_BUDGETS_MS[executionProfile];
+  const budgetMs = ROLLING_EXECUTION_PROFILE_BUDGETS_MS[executionProfile];
   return {
     budgetMs,
     budgetLabel: formatDurationLabel(budgetMs),
@@ -264,25 +183,25 @@ async function handler(
   }
 
   try {
-    const playerId = parseNumberParam(req.query.playerId);
-    const season = parseNumberParam(req.query.season);
-    const startDate = parseStringParam(req.query.startDate);
-    const endDate = parseStringParam(req.query.endDate);
-    const resumeFrom = parseNumberParam(req.query.resumeFrom);
-    const fullRefresh = parseBooleanParam(req.query.fullRefresh);
+    const playerId = parseQueryNumber(req.query.playerId);
+    const season = parseQueryNumber(req.query.season);
+    const startDate = parseQueryString(req.query.startDate);
+    const endDate = parseQueryString(req.query.endDate);
+    const resumeFrom = parseQueryNumber(req.query.resumeFrom);
+    const fullRefresh = parseQueryBoolean(req.query.fullRefresh);
     const fullRefreshMode = parseFullRefreshMode(req.query.fullRefreshMode);
-    const deleteChunkSize = parsePositiveInt(req.query.deleteChunkSize);
-    const playerConcurrency = parsePositiveInt(req.query.playerConcurrency);
-    const upsertBatchSize = parsePositiveInt(req.query.upsertBatchSize);
-    const upsertConcurrency = parsePositiveInt(req.query.upsertConcurrency);
-    const skipDiagnostics = parseBooleanParam(req.query.skipDiagnostics);
-    const dryRunUpsert = parseBooleanParam(req.query.dryRunUpsert);
-    const debugUpsertPayload = parseBooleanParam(req.query.debugUpsertPayload);
-    const fastMode = parseBooleanParam(req.query.fastMode);
+    const deleteChunkSize = parseQueryPositiveInt(req.query.deleteChunkSize);
+    const playerConcurrency = parseQueryPositiveInt(req.query.playerConcurrency);
+    const upsertBatchSize = parseQueryPositiveInt(req.query.upsertBatchSize);
+    const upsertConcurrency = parseQueryPositiveInt(req.query.upsertConcurrency);
+    const skipDiagnostics = parseQueryBoolean(req.query.skipDiagnostics);
+    const dryRunUpsert = parseQueryBoolean(req.query.dryRunUpsert);
+    const debugUpsertPayload = parseQueryBoolean(req.query.debugUpsertPayload);
+    const fastMode = parseQueryBoolean(req.query.fastMode);
     const executionProfile =
       parseExecutionProfile(req.query.executionProfile) ??
       (fastMode
-        ? inferExecutionProfile({
+        ? inferRollingExecutionProfile({
             playerId,
             season,
             startDate,
@@ -291,7 +210,7 @@ async function handler(
           })
         : undefined);
     const profileDefaults = executionProfile
-      ? EXECUTION_PROFILE_DEFAULTS[executionProfile]
+      ? ROLLING_EXECUTION_PROFILE_DEFAULTS[executionProfile]
       : undefined;
 
     const resolvedPlayerConcurrency =
