@@ -1,6 +1,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\styles\Post.module.scss
 
+@use "sass:color";
 @use "styles/vars" as vars;
 
 .postPage {
@@ -117,7 +118,7 @@
           text-decoration-thickness: 2px;
 
           &:hover {
-            color: mix(#fff, vars.$primary-color, 5%);
+            color: color.mix(#fff, vars.$primary-color, $weight: 5%);
           }
         }
 

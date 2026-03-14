@@ -86,7 +86,7 @@
 }
 .primaryControls {
   display: flex;
-  align-items: end;
+  align-items: flex-end;
   flex-wrap: nowrap;
   width: 100%;
   height: 100%;
@@ -114,7 +114,7 @@
 
 .stackedControlsRow {
   display: flex;
-  align-items: end;
+  align-items: flex-end;
   flex-wrap: nowrap;
   gap: v.$space-md;
   width: 100%;

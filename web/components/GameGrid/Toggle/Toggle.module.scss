@@ -1,5 +1,6 @@
 @use "styles/vars" as v;
 @use "sass:color";
+@use "sass:map";
 
 // Modern design tokens
 $toggle-sizes: (
@@ -146,10 +147,10 @@ $transition-timing: cubic-bezier(0.4, 0, 0.2, 1);
 
   // Size variants
   @each $size, $dimensions in $toggle-sizes {
-    $width: map-get($dimensions, width);
-    $height: map-get($dimensions, height);
-    $thumb-size: map-get($dimensions, thumb-size);
-    $thumb-offset: map-get($dimensions, thumb-offset);
+    $width: map.get($dimensions, width);
+    $height: map.get($dimensions, height);
+    $thumb-size: map.get($dimensions, thumb-size);
+    $thumb-offset: map.get($dimensions, thumb-offset);
 
     &.#{$size} {
       .slider {

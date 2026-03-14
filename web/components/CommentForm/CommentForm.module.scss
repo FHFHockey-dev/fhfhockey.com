@@ -1,5 +1,6 @@
 // /Users/tim/Desktop/FHFH/fhfhockey.com/web/components/CommentForm/CommentForm.module.scss
 
+@use "sass:color";
 @use "styles/vars" as vars;
 
 .form {
@@ -77,7 +78,7 @@
 
       &:hover {
         cursor: pointer;
-        background-color: mix(#000, vars.$primary-color, 5%);
+        background-color: color.mix(#000, vars.$primary-color, $weight: 5%);
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
       }
 
