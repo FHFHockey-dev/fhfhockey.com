@@ -295,11 +295,8 @@ function Stats({
 }
 
 export async function getStaticProps() {
-  console.log("getStaticProps started"); // Server-side log
-
   // 1. Fetch current season's teams
   const teams: Team[] = await getTeams();
-  console.log("Fetched teams:", teams.length);
 
   // 2. Fetch sos_standings data with necessary fields, including game_date
   const sosStandingsData = await fetchAllRows<any>(
@@ -330,8 +327,6 @@ export async function getStaticProps() {
       revalidate: 3600 // Revalidate every hour
     };
   }
-
-  console.log("Fetched sos_standings data:", sosStandingsData.length);
 
   // 3. Group data by team_id
   const sosStandingsPerTeam = new Map<number, any[]>();
@@ -458,16 +453,12 @@ export async function getStaticProps() {
     };
   }
 
-  console.log("Fetched power_rankings data:", powerRankingsData.length);
-
   // 7. Process Power Rankings
   const teamPowerRankings = powerRankingsData.map((team: any) => ({
     team_id: team.team_id,
     team_name: team.team_name,
     power_score: team.power_score
   }));
-
-  console.log("getStaticProps completed"); // Server-side log
 
   return {
     props: {

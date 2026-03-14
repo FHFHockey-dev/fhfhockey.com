@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
-let projectFromRolling: typeof import("./update-start-chart-projections").__testables.projectFromRolling;
-let START_CHART_ROLLING_SELECT_CLAUSE: typeof import("./update-start-chart-projections").START_CHART_ROLLING_SELECT_CLAUSE;
+let projectFromRolling: typeof import("../../../../../pages/api/v1/db/update-start-chart-projections").__testables.projectFromRolling;
+let START_CHART_ROLLING_SELECT_CLAUSE: typeof import("../../../../../pages/api/v1/db/update-start-chart-projections").START_CHART_ROLLING_SELECT_CLAUSE;
 
 beforeAll(async () => {
   vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
@@ -10,7 +10,7 @@ beforeAll(async () => {
   ({
     __testables: { projectFromRolling },
     START_CHART_ROLLING_SELECT_CLAUSE
-  } = await import("./update-start-chart-projections"));
+  } = await import("../../../../../pages/api/v1/db/update-start-chart-projections"));
 });
 
 describe("update-start-chart-projections compatibility", () => {

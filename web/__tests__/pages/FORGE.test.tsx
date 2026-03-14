@@ -13,7 +13,7 @@ vi.mock("next/head", () => ({
   default: ({ children }: { children: React.ReactNode }) => <>{children}</>
 }));
 
-import FORGEPage from "./FORGE";
+import FORGEPage from "../../pages/FORGE";
 import { teamsInfo } from "lib/teamsInfo";
 
 function mockFetchResponse(data: unknown, ok = true) {

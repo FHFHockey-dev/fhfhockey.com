@@ -31,6 +31,14 @@ type LineCombinations = {
   };
 };
 
+const isLineCombinationDebugEnabled = process.env.NODE_ENV !== "production";
+
+function debugLineCombinationsLog(label: string, value: unknown) {
+  if (isLineCombinationDebugEnabled) {
+    console.log(label, value);
+  }
+}
+
 // Type Guard Function
 function isNonEmptyArray(goalie: any[] | null): goalie is any[] {
   return goalie !== null && goalie.length > 0;
@@ -100,8 +108,7 @@ export async function getLineCombinations(
         : [],
     }));
 
-    // **Console Log: Parsed Line Combinations**
-    console.log("Parsed Line Combinations:", lineCombinations);
+    debugLineCombinationsLog("Parsed Line Combinations:", lineCombinations);
 
     // Determine which season to use for downstream queries
     const seasonToUse = seasonId ?? (await getCurrentSeason()).seasonId;
@@ -127,8 +134,10 @@ export async function getLineCombinations(
       })
     );
 
-    // **Console Log: Player ID Info Map**
-    console.log("Player ID Info Map:", Array.from(playerId_Info.entries()));
+    debugLineCombinationsLog(
+      "Player ID Info Map:",
+      Array.from(playerId_Info.entries())
+    );
 
     // Determine promotions and demotions
     const { promotions, demotions } = getLineChanges([
@@ -136,9 +145,8 @@ export async function getLineCombinations(
       lineCombinations[1],
     ]);
 
-    // **Console Log: Promotions and Demotions**
-    console.log("Promotions:", promotions);
-    console.log("Demotions:", demotions);
+    debugLineCombinationsLog("Promotions:", promotions);
+    debugLineCombinationsLog("Demotions:", demotions);
 
     // Aggregate all relevant player IDs (current and previous lines)
     const currentLine = lineCombinations[0];
@@ -153,8 +161,7 @@ export async function getLineCombinations(
       ...previousLine.goalies,
     ]);
 
-    // **Console Log: All Player IDs**
-    console.log("All Player IDs:", Array.from(allPlayerIds));
+    debugLineCombinationsLog("All Player IDs:", Array.from(allPlayerIds));
 
     // Fetch skater stats for all relevant players
     const { data: skaters } = await supabase
@@ -172,8 +179,7 @@ export async function getLineCombinations(
       .returns<SkaterStats[]>()
       .throwOnError();
 
-    // **Console Log: Skaters Data**
-    console.log("Fetched Skater Stats:", skaters);
+    debugLineCombinationsLog("Fetched Skater Stats:", skaters);
 
     // Fetch goalie stats similarly, ensuring all goalies are included
     const allGoalieIds = new Set<number>([
@@ -203,8 +209,7 @@ export async function getLineCombinations(
       )
     );
 
-    // **Console Log: Goalies Stats**
-    console.log("Fetched Goalies Stats:", goaliesStats);
+    debugLineCombinationsLog("Fetched Goalies Stats:", goaliesStats);
 
     // Process goalies stats
     const gameOutcomes = await getGameResults(
@@ -212,16 +217,17 @@ export async function getLineCombinations(
       teamId
     );
 
-    // **Console Log: Game Outcomes**
-    console.log("Game Outcomes:", Array.from(gameOutcomes.entries()));
+    debugLineCombinationsLog(
+      "Game Outcomes:",
+      Array.from(gameOutcomes.entries())
+    );
 
     const goalies = goaliesStats
       .filter(isNonEmptyArray) // Type guard applied here
       .map((goalie) => processGoalie(goalie, gameOutcomes))
       .filter((goalie) => goalie !== null); // Filter out null results
 
-    // **Console Log: Processed Goalies**
-    console.log("Processed Goalies:", goalies);
+    debugLineCombinationsLog("Processed Goalies:", goalies);
 
     if (!skaters) throw new Error("Cannot find the stats for skaters");
 
@@ -244,14 +250,15 @@ export async function getLineCombinations(
       playersStats.set(item.playerId, item);
     });
 
-    // **Console Log: Mapped Player Stats**
-    console.log("Mapped Player Stats:", Array.from(playersStats.entries()));
+    debugLineCombinationsLog(
+      "Mapped Player Stats:",
+      Array.from(playersStats.entries())
+    );
 
     // Convert to lines using current line combination
     const lines = convertToLines(currentLine);
 
-    // **Console Log: Converted Lines**
-    console.log("Converted Lines:", lines);
+    debugLineCombinationsLog("Converted Lines:", lines);
 
     // Map lines to player stats
     const result: LineCombinations = mapToLineCombinations(
@@ -259,14 +266,12 @@ export async function getLineCombinations(
       lines
     ) as any;
 
-    // **Console Log: Mapped Line Combinations**
-    console.log("Mapped Line Combinations:", result);
+    debugLineCombinationsLog("Mapped Line Combinations:", result);
 
     // Order each line by player position L C R
     orderLinesByPosition(result);
 
-    // **Console Log: Ordered Lines**
-    console.log("Ordered Lines:", {
+    debugLineCombinationsLog("Ordered Lines:", {
       forwards: result.forwards,
       defensemen: result.defensemen,
       goalies: result.goalies,
@@ -282,8 +287,7 @@ export async function getLineCombinations(
     result.promotions = promotions;
     result.demotions = demotions;
 
-    // **Console Log: Final Line Combinations Result**
-    console.log("Final Line Combinations Result:", result);
+    debugLineCombinationsLog("Final Line Combinations Result:", result);
 
     return result;
   } catch (error) {
@@ -305,7 +309,7 @@ function mapToLineCombinations(
       result[position][line] = (lineCombo[position][line] as number[])
         .map((playerId) => {
           if (playersStats.get(playerId) === undefined) {
-            console.error(`Missing player ${playerId}`);
+            debugLineCombinationsLog("Missing player", playerId);
           }
           return playersStats.get(playerId);
         })

@@ -16,7 +16,7 @@ vi.mock("lib/supabase/client", () => ({
   }
 }));
 
-import TrendsDebugPage from "./trendsDebug";
+import TrendsDebugPage from "../../pages/trendsDebug";
 
 const validationPayload = {
   generatedAt: "2026-03-12T12:00:00.000Z",

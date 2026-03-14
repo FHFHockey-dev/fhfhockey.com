@@ -8,7 +8,7 @@ vi.mock("lib/supabase/Upserts/rollingPlayerValidationPayload", () => ({
   buildRollingPlayerValidationPayload: buildPayloadMock
 }));
 
-import handler from "./rolling-player-metrics";
+import handler from "../../../../../pages/api/v1/debug/rolling-player-metrics";
 
 function createMockRes() {
   const res: any = {

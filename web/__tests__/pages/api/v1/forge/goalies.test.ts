@@ -60,7 +60,7 @@ vi.mock("lib/supabase/server", () => ({
   }
 }));
 
-import handler from "./goalies";
+import handler from "../../../../../pages/api/v1/forge/goalies";
 
 function createMockRes() {
   const res: any = {

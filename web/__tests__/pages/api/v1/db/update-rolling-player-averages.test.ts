@@ -17,7 +17,7 @@ vi.mock("lib/supabase", () => ({
   }
 }));
 
-import handler from "./update-rolling-player-averages";
+import handler from "../../../../../pages/api/v1/db/update-rolling-player-averages";
 
 function createMockRes() {
   const res: any = {

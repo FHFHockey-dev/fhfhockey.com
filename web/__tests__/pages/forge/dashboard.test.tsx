@@ -8,7 +8,7 @@ vi.mock("next/head", () => ({
   default: ({ children }: { children: React.ReactNode }) => <>{children}</>
 }));
 
-import ForgeDashboardPage from "./dashboard";
+import ForgeDashboardPage from "../../../pages/forge/dashboard";
 
 function jsonResponse(data: unknown, ok = true, status = ok ? 200 : 500): Response {
   return {

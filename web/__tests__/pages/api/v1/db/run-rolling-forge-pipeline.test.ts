@@ -82,41 +82,41 @@ vi.mock("lib/supabase/server", () => ({
   }
 }));
 
-vi.mock("./update-games", () => ({ default: updateGamesMock }));
-vi.mock("./update-teams", () => ({ default: updateTeamsMock }));
-vi.mock("./update-players", () => ({ default: updatePlayersMock }));
-vi.mock("./update-nst-gamelog", () => ({ default: updateNstGamelogMock }));
-vi.mock("./update-wgo-skaters", () => ({ default: updateWgoSkatersMock }));
-vi.mock("./update-wgo-totals", () => ({ default: updateWgoTotalsMock }));
-vi.mock("./update-wgo-averages", () => ({ default: updateWgoAveragesMock }));
-vi.mock("./update-wgo-ly", () => ({ default: updateWgoLyMock }));
-vi.mock("./update-line-combinations", () => ({
+vi.mock("../../../../../pages/api/v1/db/update-games", () => ({ default: updateGamesMock }));
+vi.mock("../../../../../pages/api/v1/db/update-teams", () => ({ default: updateTeamsMock }));
+vi.mock("../../../../../pages/api/v1/db/update-players", () => ({ default: updatePlayersMock }));
+vi.mock("../../../../../pages/api/v1/db/update-nst-gamelog", () => ({ default: updateNstGamelogMock }));
+vi.mock("../../../../../pages/api/v1/db/update-wgo-skaters", () => ({ default: updateWgoSkatersMock }));
+vi.mock("../../../../../pages/api/v1/db/update-wgo-totals", () => ({ default: updateWgoTotalsMock }));
+vi.mock("../../../../../pages/api/v1/db/update-wgo-averages", () => ({ default: updateWgoAveragesMock }));
+vi.mock("../../../../../pages/api/v1/db/update-wgo-ly", () => ({ default: updateWgoLyMock }));
+vi.mock("../../../../../pages/api/v1/db/update-line-combinations", () => ({
   default: updateLineCombinationsMock
 }));
-vi.mock("./update-power-play-combinations/[gameId]", () => ({
+vi.mock("../../../../../pages/api/v1/db/update-power-play-combinations/[gameId]", () => ({
   default: updatePowerPlayCombinationsMock
 }));
-vi.mock("./update-rolling-player-averages", () => ({
+vi.mock("../../../../../pages/api/v1/db/update-rolling-player-averages", () => ({
   default: updateRollingPlayerAveragesMock
 }));
-vi.mock("./ingest-projection-inputs", () => ({
+vi.mock("../../../../../pages/api/v1/db/ingest-projection-inputs", () => ({
   default: ingestProjectionInputsMock
 }));
-vi.mock("./build-projection-derived-v2", () => ({
+vi.mock("../../../../../pages/api/v1/db/build-projection-derived-v2", () => ({
   default: buildProjectionDerivedMock
 }));
-vi.mock("./update-goalie-projections-v2", () => ({
+vi.mock("../../../../../pages/api/v1/db/update-goalie-projections-v2", () => ({
   default: updateGoalieProjectionsV2Mock
 }));
-vi.mock("./run-projection-v2", () => ({ default: runProjectionV2Mock }));
-vi.mock("./run-projection-accuracy", () => ({
+vi.mock("../../../../../pages/api/v1/db/run-projection-v2", () => ({ default: runProjectionV2Mock }));
+vi.mock("../../../../../pages/api/v1/db/run-projection-accuracy", () => ({
   default: runProjectionAccuracyMock
 }));
-vi.mock("./update-start-chart-projections", () => ({
+vi.mock("../../../../../pages/api/v1/db/update-start-chart-projections", () => ({
   default: updateStartChartProjectionsMock
 }));
 
-import handler from "./run-rolling-forge-pipeline";
+import handler from "../../../../../pages/api/v1/db/run-rolling-forge-pipeline";
 
 function createMockRes() {
   const res: any = {
