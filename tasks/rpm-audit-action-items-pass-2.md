@@ -17,6 +17,20 @@ Each item should use this structure:
 - source of discovery:
 - status: `open | planned | deferred | blocked | done`
 
+## Current Operational Blockers
+
+- `Retained validation-player target freshness is stale`
+  - Brent Burns, Corey Perry, and Jesper Bratt currently have fresher upstream tails than their stored rolling rows, so March 14 stored validation rows are not current signoff evidence.
+- `PK source tails remain genuinely stale for selected validation scopes`
+  - Corey Perry `pk`, Jesper Bratt `pk`, and Seth Jones `pk` still have lagging PK counts / rates / counts-on-ice inputs, which blocks PK-family validation even if target-row freshness is repaired.
+- `Optional historical baseline fields still need stored-row backfill`
+  - `primary_assists_avg_*`, `secondary_assists_avg_*`, `penalties_drawn_avg_*`, and `penalties_drawn_per_60_avg_*` derive correctly in recompute output but still show `null` on sampled stored rows.
+
+Resolved non-blocker:
+
+- `Vitest .next artifact discovery`
+  - resolved by the Vitest exclusion fix and full-suite rerun on `2026-03-14`
+
 ### `P1` Diagnostics / observability: expose per-row TOI trust trace for weighted-rate validation
 - category: `TOI trust / fallback`
 - priority: `P1`
@@ -33,6 +47,39 @@ Each item should use this structure:
 - expected benefit: faster `/60` validation, fewer false-positive mismatch investigations, and clearer separation between arithmetic defects and denominator-trust issues.
 - blocker status: blocker for confident weighted-rate validation when counts TOI is missing or disputed; not a blocker for straightforward authoritative-counts cases.
 - source of discovery: `tasks/artifacts/rolling-player-pass-2-weighted-rate-family-audit.md`, `tasks/artifacts/rolling-player-pass-2-helper-contract-map.md`, pass-2 validation matrix notes for Brent Burns.
+- status: `open`
+
+### `P1` Test coverage: stop full Vitest from discovering compiled `.next` test artifacts
+- category: `test coverage`
+- priority: `P1`
+- affected metrics: all pass-2 verification flows indirectly
+- affected fields: none
+- affected files:
+  - `web/vitest.config.*`
+  - `web/package.json`
+  - `.next/server/**/*.test.js`
+- problem: the March 14 full `npm test -- --run` verification failed overall because Vitest discovered compiled `.next/server/**/*.test.js` files as suites, which produced false suite failures and follow-on unhandled errors unrelated to the source test files.
+- recommended action: explicitly exclude `.next/**` from Vitest discovery or ensure the test command runs against source files only, then rerun the full suite to restore a trustworthy one-command verification path.
+- expected benefit: reliable full-suite verification, fewer false negatives during closeout, and cleaner CI/local audit checks.
+- blocker status: blocker for treating raw `npm test -- --run` as authoritative pass/fail until the exclusion is fixed.
+- source of discovery: `tasks/artifacts/rolling-player-pass-2-post-optimization-verification-2026-03-14.md`
+- status: `done`
+
+### `P1` Freshness / recompute workflow: backfill retained validation players after optional-metric additions and March 14 freshness drift
+- category: `freshness / recompute workflow`
+- priority: `P1`
+- affected metrics: all retained validation families, with specific impact on new optional historical baseline metrics
+- affected fields: retained-player latest rolling rows, `primary_assists_avg_*`, `secondary_assists_avg_*`, `penalties_drawn_avg_*`, `penalties_drawn_per_60_avg_*`
+- affected files:
+  - `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
+  - `web/pages/api/v1/db/update-rolling-player-averages.ts`
+  - `tasks/artifacts/rolling-player-pass-2-main-audit.md`
+  - `tasks/artifacts/rolling-player-pass-2-refresh-execution-2026-03-12.md`
+- problem: March 14 targeted validation scripts showed Burns, Perry, and Bratt now have fresher upstream tails than their stored rolling rows, and family reconstruction also shows newly added optional historical baseline fields still `null` on sampled stored rows while recomputed values are present.
+- recommended action: rerun targeted rolling recomputes for the retained validation set after the optional-metric changes land, confirm `targetFreshnessOk`, and refresh the audit evidence artifacts that currently rely on older stored-row snapshots.
+- expected benefit: restores trustworthy stored-vs-recomputed comparisons for the retained players and prevents stale target rows from masking optional-metric rollout completeness.
+- blocker status: blocker for treating March 14 stored validation rows as up-to-date signoff evidence.
+- source of discovery: `tasks/artifacts/rolling-player-pass-2-post-optimization-verification-2026-03-14.md`
 - status: `open`
 
 ### `P1` Diagnostics / observability: add explicit mixed-source PP-share window tracing
@@ -88,7 +135,7 @@ Each item should use this structure:
 - expected benefit: clearer on-ice save-percentage audits, easier PDO debugging, and lower reconstruction friction in the debug console.
 - blocker status: not a blocker for eventual reconstruction because additive companions exist; blocker for efficient manual validation and support-field parity with other ratio families.
 - source of discovery: `tasks/artifacts/rolling-player-pass-2-ratio-family-audit.md`, `tasks/artifacts/rolling-player-pass-2-helper-contract-map.md`.
-- status: `open`
+- status: `done`
 
 ### `P2` Diagnostics / observability: add all-scope support visibility for weighted-rate numerators and denominators
 - category: `diagnostics / observability`
@@ -106,7 +153,7 @@ Each item should use this structure:
 - expected benefit: faster `/60` validation, easier stored-vs-reconstructed diffs, and fewer manual cross-field joins during audit work.
 - blocker status: not a blocker for correctness; blocker for efficient all-scope and lastN inspection.
 - source of discovery: `tasks/artifacts/rolling-player-pass-2-weighted-rate-family-audit.md`.
-- status: `open`
+- status: `done`
 
 ### `P1` Availability / participation semantics: make legacy `gp_pct_*` ambiguity impossible to miss in downstream and debug surfaces
 - category: `availability / participation semantics`
@@ -289,7 +336,7 @@ Each item should use this structure:
 - expected benefit: turns schema cleanup into a staged plan instead of open-ended drift, lowers the odds of new legacy dependencies appearing, and gives later implementation phases a clear migration target.
 - blocker status: not a blocker for current correctness; blocker for finishing pass-2 schema cleanup in a controlled way.
 - source of discovery: `tasks/artifacts/rolling-player-pass-2-authoritative-field-classification.md`, `tasks/artifacts/rolling-player-pass-2-schema-change-recommendations.md`.
-- status: `open`
+- status: `planned`
 
 ### `P2` Performance / efficiency: reduce validation-console overfetch and render weight for repeated metric inspection
 - category: `performance / efficiency`
@@ -316,14 +363,14 @@ Each item should use this structure:
 - affected files:
   - `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
   - `web/lib/supabase/database-generated.types.ts`
-  - future migration(s) touching `rolling_player_game_metrics`
+  - `migrations/20260312_add_optional_rolling_player_additive_assist_metrics.sql`
   - `web/pages/trendsDebug.tsx`
 - problem: the rolling table already persists `primary_assists_per_60` and `secondary_assists_per_60`, but it does not persist the additive `first_assists` and `second_assists` families underneath them, which leaves assist decomposition less inspectable than the current source surface allows.
 - recommended action: add additive rolling families for `primary_assists` and `secondary_assists`, wire them into the additive audit/debug surfaces, and surface them in `trendsDebug.tsx` alongside the existing assist-rate metrics.
 - expected benefit: better additive parity under the existing weighted-rate contract, easier validation of `primary_points_pct` and assist-mix behavior, and a cleaner downstream assist decomposition surface.
 - blocker status: not a blocker for pass-2 correctness; optional improvement that should be sequenced after the current audit backlog.
 - source of discovery: `tasks/artifacts/rolling-player-pass-2-suggested-metric-additions-review.md`, `tasks/prd-rolling-player-metrics-audit-pass-2-trends-debug.md`.
-- status: `open`
+- status: `done`
 
 ### `P2` Optional enhancement: add `penalties_drawn` and `penalties_drawn_per_60` from existing NST columns
 - category: `optional enhancement`
@@ -334,14 +381,14 @@ Each item should use this structure:
   - `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
   - `web/lib/supabase/Upserts/rollingPlayerToiContract.ts`
   - `web/lib/supabase/database-generated.types.ts`
-  - future migration(s) touching `rolling_player_game_metrics`
+  - `migrations/20260314_add_optional_rolling_player_penalties_drawn_metrics.sql`
   - `web/pages/trendsDebug.tsx`
 - problem: current NST sources already provide `penalties_drawn`, but the rolling table does not persist either the raw draw count or a deployment-adjusted draw rate, leaving a useful role/discipline signal unused despite requiring no new provider.
 - recommended action: add additive `penalties_drawn` rolling families plus `penalties_drawn_per_60` using the existing weighted-rate contract and TOI resolution path, then expose both in `trendsDebug.tsx`.
 - expected benefit: stronger role/context coverage, a new discipline/opportunity-creation lens for downstream consumers, and efficient reuse of source columns already in the ingest surface.
 - blocker status: not a blocker for pass-2 correctness; optional improvement that should be sequenced after the current audit backlog.
 - source of discovery: `tasks/artifacts/rolling-player-pass-2-suggested-metric-additions-review.md`, `tasks/prd-rolling-player-metrics-audit-pass-2-trends-debug.md`.
-- status: `open`
+- status: `done`
 
 ### `P2` Optional enhancement: persist `pp_toi_seconds` for direct PP deployment validation
 - category: `optional enhancement`
@@ -352,11 +399,11 @@ Each item should use this structure:
   - `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
   - `web/lib/supabase/Upserts/rollingPlayerPpShareContract.ts`
   - `web/lib/supabase/database-generated.types.ts`
-  - future migration(s) touching `rolling_player_game_metrics`
+  - `migrations/20260314_add_optional_rolling_player_pp_toi_seconds_metrics.sql`
   - `web/pages/trendsDebug.tsx`
 - problem: current PP validation has to infer player PP deployment indirectly through `pp_share_pct` support fields and builder context rather than reading a direct persisted PP TOI metric, even though the necessary builder and fallback source columns already exist.
 - recommended action: add `pp_toi_seconds` for the `all` and `pp` splits using builder `PPTOI` as the primary source and WGO `pp_toi` as fallback-only context, then surface direct PP deployment traces in `trendsDebug.tsx`.
 - expected benefit: easier PP-share validation, clearer PP deployment inspection, and less reverse-engineering of numerator/denominator context during manual audit work.
 - blocker status: not a blocker for pass-2 correctness; optional improvement best sequenced after PP provenance and mixed-source backlog items.
 - source of discovery: `tasks/artifacts/rolling-player-pass-2-suggested-metric-additions-review.md`, `tasks/prd-rolling-player-metrics-audit-pass-2-trends-debug.md`.
-- status: `open`
+- status: `done`
