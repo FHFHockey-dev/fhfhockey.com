@@ -54,10 +54,54 @@ import type { NextApiRequest, NextApiResponse } from "next";
 
 type ResponseBody = {
   message: string;
+  executionProfile?: ExecutionProfile;
+  runtimeBudget?: {
+    budgetMs: number;
+    budgetLabel: string;
+    durationMs: number;
+    durationLabel: string;
+    withinBudget: boolean;
+  };
 };
 
 type FullRefreshMode = "rpc_truncate" | "overwrite_only" | "delete";
+type ExecutionProfile = "daily_incremental" | "overnight" | "targeted_repair";
 type EndpointPhase = "request" | "execute" | "response";
+
+const EXECUTION_PROFILE_DEFAULTS: Record<
+  ExecutionProfile,
+  {
+    playerConcurrency: number;
+    upsertBatchSize: number;
+    upsertConcurrency: number;
+    skipDiagnostics: boolean;
+  }
+> = {
+  daily_incremental: {
+    playerConcurrency: 4,
+    upsertBatchSize: 500,
+    upsertConcurrency: 4,
+    skipDiagnostics: true
+  },
+  overnight: {
+    playerConcurrency: 4,
+    upsertBatchSize: 250,
+    upsertConcurrency: 2,
+    skipDiagnostics: true
+  },
+  targeted_repair: {
+    playerConcurrency: 4,
+    upsertBatchSize: 500,
+    upsertConcurrency: 4,
+    skipDiagnostics: true
+  }
+};
+
+const EXECUTION_PROFILE_BUDGETS_MS: Record<ExecutionProfile, number> = {
+  daily_incremental: 270000,
+  overnight: 1800000,
+  targeted_repair: 600000
+};
 
 function logEndpointPhase(args: {
   phase: EndpointPhase;
@@ -127,6 +171,60 @@ function parseFullRefreshMode(
   return undefined;
 }
 
+function parseExecutionProfile(
+  param: string | string[] | undefined
+): ExecutionProfile | undefined {
+  const value = parseStringParam(param);
+  if (
+    value === "daily_incremental" ||
+    value === "overnight" ||
+    value === "targeted_repair"
+  ) {
+    return value;
+  }
+  return undefined;
+}
+
+function inferExecutionProfile(args: {
+  playerId?: number;
+  season?: number;
+  startDate?: string;
+  endDate?: string;
+  fullRefresh?: boolean;
+}): ExecutionProfile {
+  if (args.playerId !== undefined) {
+    return "targeted_repair";
+  }
+  if (args.fullRefresh || (args.season !== undefined && !args.startDate && !args.endDate)) {
+    return "overnight";
+  }
+  if (args.startDate !== undefined || args.endDate !== undefined) {
+    return "daily_incremental";
+  }
+  return "overnight";
+}
+
+function formatDurationLabel(durationMs: number) {
+  const totalSeconds = Math.max(0, Math.round(durationMs / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}m ${seconds}s`;
+}
+
+function buildRuntimeBudgetSummary(
+  executionProfile: ExecutionProfile,
+  durationMs: number
+) {
+  const budgetMs = EXECUTION_PROFILE_BUDGETS_MS[executionProfile];
+  return {
+    budgetMs,
+    budgetLabel: formatDurationLabel(budgetMs),
+    durationMs,
+    durationLabel: formatDurationLabel(durationMs),
+    withinBudget: durationMs <= budgetMs
+  };
+}
+
 async function handler(
   req: NextApiRequest,
   res: NextApiResponse<ResponseBody>
@@ -181,13 +279,35 @@ async function handler(
     const dryRunUpsert = parseBooleanParam(req.query.dryRunUpsert);
     const debugUpsertPayload = parseBooleanParam(req.query.debugUpsertPayload);
     const fastMode = parseBooleanParam(req.query.fastMode);
+    const executionProfile =
+      parseExecutionProfile(req.query.executionProfile) ??
+      (fastMode
+        ? inferExecutionProfile({
+            playerId,
+            season,
+            startDate,
+            endDate,
+            fullRefresh
+          })
+        : undefined);
+    const profileDefaults = executionProfile
+      ? EXECUTION_PROFILE_DEFAULTS[executionProfile]
+      : undefined;
 
     const resolvedPlayerConcurrency =
-      playerConcurrency ?? (fastMode ? 4 : undefined);
+      playerConcurrency ??
+      profileDefaults?.playerConcurrency ??
+      (fastMode ? 4 : undefined);
+    const resolvedUpsertBatchSize =
+      upsertBatchSize ?? profileDefaults?.upsertBatchSize;
     const resolvedUpsertConcurrency =
-      upsertConcurrency ?? (fastMode ? 4 : undefined);
+      upsertConcurrency ??
+      profileDefaults?.upsertConcurrency ??
+      (fastMode ? 4 : undefined);
     const resolvedSkipDiagnostics =
-      skipDiagnostics ?? (fastMode ? true : undefined);
+      skipDiagnostics ??
+      profileDefaults?.skipDiagnostics ??
+      (fastMode ? true : undefined);
     logEndpointPhase({
       phase: "request",
       status: "complete",
@@ -199,8 +319,9 @@ async function handler(
         resumeFrom,
         fullRefresh,
         fullRefreshMode,
+        executionProfile,
         playerConcurrency: resolvedPlayerConcurrency,
-        upsertBatchSize,
+        upsertBatchSize: resolvedUpsertBatchSize,
         upsertConcurrency: resolvedUpsertConcurrency,
         skipDiagnostics: resolvedSkipDiagnostics,
         dryRunUpsert,
@@ -222,8 +343,9 @@ async function handler(
         endDate,
         fullRefresh,
         fullRefreshMode,
+        executionProfile,
         playerConcurrency: resolvedPlayerConcurrency,
-        upsertBatchSize,
+        upsertBatchSize: resolvedUpsertBatchSize,
         upsertConcurrency: resolvedUpsertConcurrency,
         skipDiagnostics: resolvedSkipDiagnostics,
         dryRunUpsert,
@@ -245,6 +367,9 @@ async function handler(
       }
     });
 
+    let runtimeBudget:
+      | ResponseBody["runtimeBudget"]
+      | undefined;
     try {
       await main({
         playerId,
@@ -256,21 +381,27 @@ async function handler(
         fullRefreshMode,
         fullRefreshDeleteChunkSize: deleteChunkSize,
         playerConcurrency: resolvedPlayerConcurrency,
-        upsertBatchSize,
+        upsertBatchSize: resolvedUpsertBatchSize,
         upsertConcurrency: resolvedUpsertConcurrency,
         skipDiagnostics: resolvedSkipDiagnostics,
         dryRunUpsert,
         debugUpsertPayload
       });
+      const executeDurationMs = Date.now() - executeStartedAt;
+      runtimeBudget = executionProfile
+        ? buildRuntimeBudgetSummary(executionProfile, executeDurationMs)
+        : undefined;
       logEndpointPhase({
         phase: "execute",
         status: "complete",
-        durationMs: Date.now() - executeStartedAt,
+        durationMs: executeDurationMs,
         details: {
           playerId,
           season,
           fullRefresh,
-          fastMode
+          executionProfile,
+          fastMode,
+          runtimeBudget
         }
       });
     } finally {
@@ -285,7 +416,9 @@ async function handler(
       }
     });
     res.status(200).json({
-      message: "Rolling player averages processed successfully."
+      message: "Rolling player averages processed successfully.",
+      executionProfile,
+      runtimeBudget
     });
   } catch (error: any) {
     logEndpointPhase({

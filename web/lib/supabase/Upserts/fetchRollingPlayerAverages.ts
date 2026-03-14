@@ -33,6 +33,7 @@ import {
 } from "./rollingPlayerMetricMath";
 import {
   type RollingPlayerPpContextRow,
+  resolvePlayerPpToiSeconds,
   toRollingPlayerPpContextRow,
   resolvePpShareComponents
 } from "./rollingPlayerPpShareContract";
@@ -56,8 +57,11 @@ import {
   getGoalsValue,
   getHitsValue,
   getIxgValue,
+  getPenaltiesDrawnValue,
   getPointsValue,
+  getPrimaryAssistsValue,
   getPpPointsValue,
+  getSecondaryAssistsValue,
   getShotsValue
 } from "./rollingPlayerSourceSelection";
 import {
@@ -503,6 +507,8 @@ export interface WgoSkaterRow {
   current_team_abbreviation: string | null;
   goals: number | null;
   assists: number | null;
+  total_primary_assists: number | null;
+  total_secondary_assists: number | null;
   shots: number | null;
   shooting_percentage: number | null;
   hits: number | null;
@@ -597,6 +603,8 @@ export type SourceTrackingSummary = {
   wgoFallbacks: {
     goals: number;
     assists: number;
+    primary_assists: number;
+    secondary_assists: number;
     shots: number;
     hits: number;
     blocks: number;
@@ -769,6 +777,18 @@ function getAssists(game: PlayerGameData): number | null {
   return getAssistsValue(game);
 }
 
+function getPrimaryAssists(game: PlayerGameData): number | null {
+  return getPrimaryAssistsValue(game);
+}
+
+function getSecondaryAssists(game: PlayerGameData): number | null {
+  return getSecondaryAssistsValue(game);
+}
+
+function getPenaltiesDrawn(game: PlayerGameData): number | null {
+  return getPenaltiesDrawnValue(game);
+}
+
 function getHits(game: PlayerGameData): number | null {
   return getHitsValue(game);
 }
@@ -784,6 +804,14 @@ function getPpShareComponents(game: PlayerGameData): RatioComponents | null {
     builderTeamShare: game.ppCombination?.pp_share_of_team ?? null,
     wgoPlayerPpToi: game.wgo?.pp_toi ?? null,
     wgoTeamShare: game.wgo?.pp_toi_pct_per_game ?? null
+  });
+}
+
+function getPpToiSeconds(game: PlayerGameData): number | null {
+  return resolvePlayerPpToiSeconds({
+    strength: game.strength,
+    builderPlayerPpToi: game.ppCombination?.PPTOI ?? null,
+    wgoPlayerPpToi: game.wgo?.pp_toi ?? null
   });
 }
 
@@ -861,6 +889,32 @@ const METRICS: MetricDefinition[] = [
       })
   },
   {
+    key: "penalties_drawn_per_60",
+    aggregation: "ratio",
+    windowFamily: "weighted_rate_performance",
+    ratioSpec: {
+      scale: 3600,
+      noPrimaryDenominatorBehavior: "null"
+    },
+    getComponents: (game) =>
+      resolvePer60Components({
+        rawValue: getPenaltiesDrawn(game),
+        toiSeconds: getToiSeconds(game)
+      })
+  },
+  {
+    key: "primary_assists",
+    aggregation: "simple",
+    windowFamily: "additive_performance",
+    getValue: (game) => getPrimaryAssists(game)
+  },
+  {
+    key: "secondary_assists",
+    aggregation: "simple",
+    windowFamily: "additive_performance",
+    getValue: (game) => getSecondaryAssists(game)
+  },
+  {
     key: "primary_assists_per_60",
     aggregation: "ratio",
     windowFamily: "weighted_rate_performance",
@@ -906,6 +960,12 @@ const METRICS: MetricDefinition[] = [
     aggregation: "simple",
     windowFamily: "additive_performance",
     getValue: (game) => getIxgValue(game)
+  },
+  {
+    key: "penalties_drawn",
+    aggregation: "simple",
+    windowFamily: "additive_performance",
+    getValue: (game) => getPenaltiesDrawn(game)
   },
   {
     key: "primary_points_pct",
@@ -1012,6 +1072,12 @@ const METRICS: MetricDefinition[] = [
     aggregation: "simple",
     windowFamily: "additive_performance",
     getValue: (game) => getToiSeconds(game)
+  },
+  {
+    key: "pp_toi_seconds",
+    aggregation: "simple",
+    windowFamily: "additive_performance",
+    getValue: (game) => getPpToiSeconds(game)
   },
   {
     key: "hits_per_60",
@@ -1830,6 +1896,7 @@ function applyRatioSupportOutputs(
     case "ixg_per_60":
     case "goals_per_60":
     case "assists_per_60":
+    case "penalties_drawn_per_60":
     case "primary_assists_per_60":
     case "secondary_assists_per_60":
     case "hits_per_60":
@@ -1890,6 +1957,12 @@ function applyRatioSupportOutputs(
       denominatorKey: "toi_seconds",
       numeratorPrefix: "assists_per_60_assists",
       denominatorPrefix: "assists_per_60_toi_seconds"
+    },
+    penalties_drawn_per_60: {
+      numeratorKey: "penalties_drawn",
+      denominatorKey: "toi_seconds",
+      numeratorPrefix: "penalties_drawn_per_60_penalties_drawn",
+      denominatorPrefix: "penalties_drawn_per_60_toi_seconds"
     },
     primary_assists_per_60: {
       numeratorKey: "primary_assists_per_60_primary_assists",
@@ -1973,6 +2046,8 @@ function createEmptySourceTrackingSummary(): SourceTrackingSummary {
     wgoFallbacks: {
       goals: 0,
       assists: 0,
+      primary_assists: 0,
+      secondary_assists: 0,
       shots: 0,
       hits: 0,
       blocks: 0,
@@ -2398,7 +2473,7 @@ async function fetchWgoRowsForPlayer(
     let query = supabase
       .from("wgo_skater_stats")
       .select(
-        "player_id, game_id, date, season_id, team_abbrev, current_team_abbreviation, goals, assists, shots, shooting_percentage, hits, blocked_shots, points, pp_points, pp_toi, pp_toi_pct_per_game, toi_per_game"
+        "player_id, game_id, date, season_id, team_abbrev, current_team_abbreviation, goals, assists, total_primary_assists, total_secondary_assists, shots, shooting_percentage, hits, blocked_shots, points, pp_points, pp_toi, pp_toi_pct_per_game, toi_per_game"
       )
       .eq("player_id", playerId)
       .order("date", { ascending: true })
@@ -2436,6 +2511,9 @@ async function fetchWgoRowsForPlayer(
 
 async function fetchPlayerIds(options: FetchOptions): Promise<number[]> {
   if (options.playerId) return [options.playerId];
+  if (shouldUseDateScopedPlayerSelection(options)) {
+    return fetchDateScopedPlayerIds(options);
+  }
   const ids: number[] = [];
   const pageSize = 1000;
   let from = 0;
@@ -2462,7 +2540,91 @@ async function fetchPlayerIds(options: FetchOptions): Promise<number[]> {
     from += pageSize;
   }
 
+  return normalizePlayerIdList(ids);
+}
+
+function shouldUseDateScopedPlayerSelection(options: FetchOptions): boolean {
+  return (
+    options.playerId === undefined &&
+    !options.forceFullRefresh &&
+    (options.startDate !== undefined || options.endDate !== undefined)
+  );
+}
+
+function normalizePlayerIdList(ids: number[]): number[] {
   return Array.from(new Set(ids)).sort((a, b) => a - b);
+}
+
+async function fetchDateScopedPlayerIds(options: FetchOptions): Promise<number[]> {
+  const wgoPlayerIds: number[] = [];
+  const pageSize = 1000;
+  let from = 0;
+
+  while (true) {
+    const data = await executeWithRetry<{ player_id: number | null }[]>(
+      `wgo-player-ids offset:${from}`,
+      async () => {
+        let query = supabase
+          .from("wgo_skater_stats")
+          .select("player_id")
+          .order("player_id", { ascending: true })
+          .order("date", { ascending: true })
+          .range(from, from + pageSize - 1);
+
+        if (options.season) {
+          query = query.eq("season_id", options.season);
+        }
+        if (options.startDate) {
+          query = query.gte("date", options.startDate);
+        }
+        if (options.endDate) {
+          query = query.lte("date", options.endDate);
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+        return (data ?? []) as { player_id: number | null }[];
+      }
+    );
+
+    if (!data.length) break;
+    wgoPlayerIds.push(
+      ...data
+        .map((row) => row.player_id)
+        .filter((playerId): playerId is number => typeof playerId === "number")
+    );
+    if (data.length < pageSize) break;
+    from += pageSize;
+  }
+
+  const uniqueWgoPlayerIds = normalizePlayerIdList(wgoPlayerIds);
+  if (!uniqueWgoPlayerIds.length) {
+    return [];
+  }
+
+  const nonGoalieIds: number[] = [];
+  const chunkSize = 500;
+  for (let index = 0; index < uniqueWgoPlayerIds.length; index += chunkSize) {
+    const chunk = uniqueWgoPlayerIds.slice(index, index + chunkSize);
+    const data = await executeWithRetry<{ id: number }[]>(
+      `players-by-id chunk:${Math.floor(index / chunkSize) + 1}`,
+      async () => {
+        const { data, error } = await supabase
+          .from("players")
+          .select("id")
+          .in("id", chunk)
+          .neq("position", "G")
+          .order("id", { ascending: true });
+        if (error) throw error;
+        return (data ?? []) as { id: number }[];
+      }
+    );
+    nonGoalieIds.push(
+      ...data.map((row) => row.id).filter((id) => typeof id === "number")
+    );
+  }
+
+  return normalizePlayerIdList(nonGoalieIds);
 }
 
 function shouldWarnAboutDisabledImplicitAutoResume(options: FetchOptions): boolean {
@@ -2806,6 +2968,18 @@ function summarizeSourceTracking(
       }
       if (game.counts?.total_assists == null && game.wgo?.assists != null) {
         summary.wgoFallbacks.assists += 1;
+      }
+      if (
+        game.counts?.first_assists == null &&
+        game.wgo?.total_primary_assists != null
+      ) {
+        summary.wgoFallbacks.primary_assists += 1;
+      }
+      if (
+        game.counts?.second_assists == null &&
+        game.wgo?.total_secondary_assists != null
+      ) {
+        summary.wgoFallbacks.secondary_assists += 1;
       }
       if (game.counts?.shots == null && game.wgo?.shots != null) {
         summary.wgoFallbacks.shots += 1;
@@ -3944,6 +4118,8 @@ export const __testables = {
   deriveOutputs,
   getOptionalPpContextOutputs,
   initAccumulator,
+  normalizePlayerIdList,
+  shouldUseDateScopedPlayerSelection,
   shouldWarnAboutDisabledImplicitAutoResume,
   filterPlayerIdsForResume,
   upsertRollingPlayerMetricsBatch

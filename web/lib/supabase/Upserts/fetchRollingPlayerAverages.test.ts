@@ -19,6 +19,8 @@ let getGpOutputCompatibilityMode: typeof import("./fetchRollingPlayerAverages").
 let deriveOutputs: typeof import("./fetchRollingPlayerAverages").__testables.deriveOutputs;
 let getOptionalPpContextOutputs: typeof import("./fetchRollingPlayerAverages").__testables.getOptionalPpContextOutputs;
 let initAccumulator: typeof import("./fetchRollingPlayerAverages").__testables.initAccumulator;
+let normalizePlayerIdList: typeof import("./fetchRollingPlayerAverages").__testables.normalizePlayerIdList;
+let shouldUseDateScopedPlayerSelection: typeof import("./fetchRollingPlayerAverages").__testables.shouldUseDateScopedPlayerSelection;
 let shouldWarnAboutDisabledImplicitAutoResume: typeof import("./fetchRollingPlayerAverages").__testables.shouldWarnAboutDisabledImplicitAutoResume;
 let filterPlayerIdsForResume: typeof import("./fetchRollingPlayerAverages").__testables.filterPlayerIdsForResume;
 let upsertRollingPlayerMetricsBatch: typeof import("./fetchRollingPlayerAverages").__testables.upsertRollingPlayerMetricsBatch;
@@ -38,6 +40,8 @@ beforeAll(async () => {
       deriveOutputs,
       getOptionalPpContextOutputs,
       initAccumulator,
+      normalizePlayerIdList,
+      shouldUseDateScopedPlayerSelection,
       shouldWarnAboutDisabledImplicitAutoResume,
       filterPlayerIdsForResume,
       upsertRollingPlayerMetricsBatch
@@ -333,6 +337,8 @@ describe("fetchRollingPlayerAverages buildGameRecords", () => {
           pp_toi: 90,
           goals: 1,
           assists: 2,
+          total_primary_assists: 1,
+          total_secondary_assists: 1,
           shots: 4,
           hits: 3,
           blocked_shots: 2,
@@ -378,6 +384,8 @@ describe("fetchRollingPlayerAverages buildGameRecords", () => {
     expect(summary.missingSources.lineAssignment).toBe(0);
     expect(summary.wgoFallbacks.goals).toBe(1);
     expect(summary.wgoFallbacks.assists).toBe(1);
+    expect(summary.wgoFallbacks.primary_assists).toBe(1);
+    expect(summary.wgoFallbacks.secondary_assists).toBe(1);
     expect(summary.wgoFallbacks.shots).toBe(1);
     expect(summary.wgoFallbacks.hits).toBe(1);
     expect(summary.wgoFallbacks.blocks).toBe(1);
@@ -424,6 +432,8 @@ describe("fetchRollingPlayerAverages buildGameRecords", () => {
         wgoFallbacks: {
           goals: 1176,
           assists: 1176,
+          primary_assists: 0,
+          secondary_assists: 0,
           shots: 1176,
           hits: 1176,
           blocks: 1176,
@@ -485,7 +495,9 @@ describe("fetchRollingPlayerAverages buildGameRecords", () => {
       sourceTracking: expect.objectContaining({
         wgoFallbacks: expect.objectContaining({
           goals: 1176,
-          points: 1176
+          points: 1176,
+          primary_assists: 0,
+          secondary_assists: 0
         }),
         rateReconstructions: expect.objectContaining({
           sog_per_60: 2,
@@ -822,6 +834,10 @@ describe("fetchRollingPlayerAverages buildGameRecords", () => {
 
   it("emits optional on-ice save percentage, additive support metrics, and weighted-rate families", () => {
     const simpleMetricsState = {
+      pp_toi_seconds: initAccumulator(),
+      primary_assists: initAccumulator(),
+      secondary_assists: initAccumulator(),
+      penalties_drawn: initAccumulator(),
       oz_starts: initAccumulator(),
       dz_starts: initAccumulator(),
       nz_starts: initAccumulator(),
@@ -834,6 +850,7 @@ describe("fetchRollingPlayerAverages buildGameRecords", () => {
       on_ice_sv_pct: createRatioRollingAccumulator(),
       goals_per_60: createRatioRollingAccumulator(),
       assists_per_60: createRatioRollingAccumulator(),
+      penalties_drawn_per_60: createRatioRollingAccumulator(),
       primary_assists_per_60: createRatioRollingAccumulator(),
       secondary_assists_per_60: createRatioRollingAccumulator()
     } as Record<string, any>;
@@ -847,6 +864,10 @@ describe("fetchRollingPlayerAverages buildGameRecords", () => {
       oi_sa: createHistoricalAverageAccumulator(),
       goals: createHistoricalAverageAccumulator(),
       assists: createHistoricalAverageAccumulator(),
+      penalties_drawn: createHistoricalAverageAccumulator(),
+      primary_assists: createHistoricalAverageAccumulator(),
+      secondary_assists: createHistoricalAverageAccumulator(),
+      pp_toi_seconds: createHistoricalAverageAccumulator(),
       toi_seconds: createHistoricalAverageAccumulator(),
       primary_assists_per_60_primary_assists: createHistoricalAverageAccumulator(),
       secondary_assists_per_60_secondary_assists:
@@ -856,6 +877,7 @@ describe("fetchRollingPlayerAverages buildGameRecords", () => {
       on_ice_sv_pct: createHistoricalRatioAccumulator(),
       goals_per_60: createHistoricalRatioAccumulator(),
       assists_per_60: createHistoricalRatioAccumulator(),
+      penalties_drawn_per_60: createHistoricalRatioAccumulator(),
       primary_assists_per_60: createHistoricalRatioAccumulator(),
       secondary_assists_per_60: createHistoricalRatioAccumulator()
     } as Record<string, any>;
@@ -870,6 +892,14 @@ describe("fetchRollingPlayerAverages buildGameRecords", () => {
       }
     };
 
+    pushSimple(simpleMetricsState.pp_toi_seconds, 120);
+    pushSimple(simpleMetricsState.pp_toi_seconds, 60);
+    pushSimple(simpleMetricsState.primary_assists, 2);
+    pushSimple(simpleMetricsState.primary_assists, 1);
+    pushSimple(simpleMetricsState.secondary_assists, 1);
+    pushSimple(simpleMetricsState.secondary_assists, 0);
+    pushSimple(simpleMetricsState.penalties_drawn, 1);
+    pushSimple(simpleMetricsState.penalties_drawn, 2);
     pushSimple(simpleMetricsState.oz_starts, 4);
     pushSimple(simpleMetricsState.oz_starts, 2);
     pushSimple(simpleMetricsState.dz_starts, 3);
@@ -916,6 +946,16 @@ describe("fetchRollingPlayerAverages buildGameRecords", () => {
       { windowFamily: "weighted_rate_performance", anchor: true }
     );
     updateRatioRollingAccumulator(
+      ratioMetricsState.penalties_drawn_per_60,
+      { numerator: 1, denominator: 1200 },
+      { windowFamily: "weighted_rate_performance", anchor: true }
+    );
+    updateRatioRollingAccumulator(
+      ratioMetricsState.penalties_drawn_per_60,
+      { numerator: 2, denominator: 600 },
+      { windowFamily: "weighted_rate_performance", anchor: true }
+    );
+    updateRatioRollingAccumulator(
       ratioMetricsState.primary_assists_per_60,
       { numerator: 2, denominator: 1200 },
       { windowFamily: "weighted_rate_performance", anchor: true }
@@ -954,6 +994,46 @@ describe("fetchRollingPlayerAverages buildGameRecords", () => {
     updateHistoricalAverageAccumulator(historicalSimpleMetricsState.goals, 20252026, 4);
     updateHistoricalAverageAccumulator(historicalSimpleMetricsState.assists, 20242025, 4);
     updateHistoricalAverageAccumulator(historicalSimpleMetricsState.assists, 20252026, 5);
+    updateHistoricalAverageAccumulator(
+      historicalSimpleMetricsState.penalties_drawn,
+      20242025,
+      2
+    );
+    updateHistoricalAverageAccumulator(
+      historicalSimpleMetricsState.penalties_drawn,
+      20252026,
+      4
+    );
+    updateHistoricalAverageAccumulator(
+      historicalSimpleMetricsState.primary_assists,
+      20242025,
+      2
+    );
+    updateHistoricalAverageAccumulator(
+      historicalSimpleMetricsState.primary_assists,
+      20252026,
+      3
+    );
+    updateHistoricalAverageAccumulator(
+      historicalSimpleMetricsState.secondary_assists,
+      20242025,
+      2
+    );
+    updateHistoricalAverageAccumulator(
+      historicalSimpleMetricsState.secondary_assists,
+      20252026,
+      2
+    );
+    updateHistoricalAverageAccumulator(
+      historicalSimpleMetricsState.pp_toi_seconds,
+      20242025,
+      90
+    );
+    updateHistoricalAverageAccumulator(
+      historicalSimpleMetricsState.pp_toi_seconds,
+      20252026,
+      120
+    );
     updateHistoricalAverageAccumulator(
       historicalSimpleMetricsState.toi_seconds,
       20242025,
@@ -1014,6 +1094,22 @@ describe("fetchRollingPlayerAverages buildGameRecords", () => {
       20252026,
       {
         numerator: 5,
+        denominator: 1500
+      }
+    );
+    updateHistoricalRatioAccumulator(
+      historicalRatioMetricsState.penalties_drawn_per_60,
+      20242025,
+      {
+        numerator: 2,
+        denominator: 1800
+      }
+    );
+    updateHistoricalRatioAccumulator(
+      historicalRatioMetricsState.penalties_drawn_per_60,
+      20252026,
+      {
+        numerator: 4,
         denominator: 1500
       }
     );
@@ -1108,6 +1204,24 @@ describe("fetchRollingPlayerAverages buildGameRecords", () => {
     expect(output.assists_per_60_season).toBe(12);
     expect(output.assists_per_60_assists_career).toBe(9);
     expect(output.assists_per_60_toi_seconds_career).toBe(3300);
+    expect(output.pp_toi_seconds_total_all).toBe(180);
+    expect(output.pp_toi_seconds_avg_all).toBe(90);
+    expect(output.pp_toi_seconds_avg_season).toBe(120);
+    expect(output.pp_toi_seconds_avg_career).toBe(105);
+    expect(output.penalties_drawn_total_all).toBe(3);
+    expect(output.penalties_drawn_avg_all).toBe(1.5);
+    expect(output.penalties_drawn_avg_season).toBe(4);
+    expect(output.penalties_drawn_per_60_total_all).toBe(6);
+    expect(output.penalties_drawn_per_60_all).toBe(6);
+    expect(output.penalties_drawn_per_60_season).toBe(9.6);
+    expect(output.penalties_drawn_per_60_penalties_drawn_career).toBe(6);
+    expect(output.penalties_drawn_per_60_toi_seconds_career).toBe(3300);
+    expect(output.primary_assists_total_all).toBe(3);
+    expect(output.primary_assists_avg_all).toBe(1.5);
+    expect(output.primary_assists_avg_season).toBe(3);
+    expect(output.secondary_assists_total_all).toBe(1);
+    expect(output.secondary_assists_avg_all).toBe(0.5);
+    expect(output.secondary_assists_avg_career).toBe(2);
     expect(output.primary_assists_per_60_total_all).toBe(6);
     expect(output.primary_assists_per_60_all).toBe(6);
     expect(output.primary_assists_per_60_primary_assists_season).toBe(3);
@@ -1205,6 +1319,47 @@ describe("fetchRollingPlayerAverages upsertRollingPlayerMetricsBatch", () => {
 });
 
 describe("fetchRollingPlayerAverages resume behavior", () => {
+  it("uses date-scoped player selection only for incremental date-bounded runs", () => {
+    expect(
+      shouldUseDateScopedPlayerSelection({
+        startDate: "2026-03-14",
+        endDate: "2026-03-14"
+      })
+    ).toBe(true);
+    expect(
+      shouldUseDateScopedPlayerSelection({
+        season: 20252026,
+        startDate: "2026-03-10",
+        endDate: "2026-03-14"
+      })
+    ).toBe(true);
+    expect(
+      shouldUseDateScopedPlayerSelection({
+        season: 20252026
+      })
+    ).toBe(false);
+    expect(
+      shouldUseDateScopedPlayerSelection({
+        startDate: "2026-03-14",
+        forceFullRefresh: true
+      })
+    ).toBe(false);
+    expect(
+      shouldUseDateScopedPlayerSelection({
+        playerId: 8470613,
+        startDate: "2026-03-14"
+      })
+    ).toBe(false);
+  });
+
+  it("normalizes player-id lists into sorted unique values", () => {
+    expect(normalizePlayerIdList([8470613, 8478398, 8470613, 8485702])).toEqual([
+      8470613,
+      8478398,
+      8485702
+    ]);
+  });
+
   it("does not infer an implicit auto-resume for broad runs", () => {
     expect(
       shouldWarnAboutDisabledImplicitAutoResume({
