@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   ROLLING_PLAYER_PP_SHARE_CONTRACT,
+  resolvePlayerPpToiSeconds,
   resolvePpShareComponents,
   toRollingPlayerPpContextRow
 } from "./rollingPlayerPpShareContract";
@@ -33,6 +34,32 @@ describe("rollingPlayerPpShareContract", () => {
       numerator: 80,
       denominator: 320
     });
+  });
+
+  it("resolves direct player PP TOI as builder-first with WGO fallback for all and pp only", () => {
+    expect(
+      resolvePlayerPpToiSeconds({
+        strength: "all",
+        builderPlayerPpToi: 120,
+        wgoPlayerPpToi: 90
+      })
+    ).toBe(120);
+
+    expect(
+      resolvePlayerPpToiSeconds({
+        strength: "pp",
+        builderPlayerPpToi: null,
+        wgoPlayerPpToi: 80
+      })
+    ).toBe(80);
+
+    expect(
+      resolvePlayerPpToiSeconds({
+        strength: "ev",
+        builderPlayerPpToi: 120,
+        wgoPlayerPpToi: 90
+      })
+    ).toBeNull();
   });
 
   it("records that unit-relative PP fields are excluded from pp_share_pct semantics", () => {

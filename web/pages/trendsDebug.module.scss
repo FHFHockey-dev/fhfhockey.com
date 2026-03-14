@@ -352,6 +352,27 @@
   box-shadow: 0 0 18px rgba(v.$primary-color, 0.1);
 }
 
+.pillReady {
+  color: v.$success-color;
+  border-color: rgba(v.$success-color, 0.55);
+  background: rgba(v.$success-color, 0.16);
+  box-shadow: 0 0 18px rgba(v.$success-color, 0.14);
+}
+
+.pillCaution {
+  color: v.$warning-color;
+  border-color: rgba(v.$warning-color, 0.5);
+  background: rgba(v.$warning-color, 0.14);
+  box-shadow: 0 0 18px rgba(v.$warning-color, 0.12);
+}
+
+.pillBlocked {
+  color: v.$danger-color;
+  border-color: rgba(v.$danger-color, 0.5);
+  background: rgba(v.$danger-color, 0.14);
+  box-shadow: 0 0 18px rgba(v.$danger-color, 0.12);
+}
+
 .toggleButton {
   cursor: pointer;
 }

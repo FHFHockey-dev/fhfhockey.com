@@ -10,6 +10,7 @@
 - `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts` - Primary rolling recompute pipeline and likely home of upsert, source-trace, and support-surface changes.
 - `web/pages/api/v1/db/update-rolling-player-averages.ts` - Target recompute endpoint that currently needs targeted-upsert blocker remediation.
 - `web/lib/supabase/Upserts/rollingPlayerValidationPayload.ts` - Validation payload builder that needs richer formula, window, provenance, and mismatch output.
+- `web/lib/supabase/Upserts/rollingPlayerValidationPayload.test.ts` - Pure-unit coverage for server-side validation payload metadata, formula output, and rolling-window membership behavior.
 - `web/pages/api/v1/debug/rolling-player-metrics.ts` - Read-only debug route that will carry more diagnostics and validation metadata.
 - `web/pages/trendsDebug.tsx` - Primary validation console for the post-audit optimization work.
 - `web/lib/supabase/Upserts/rollingPlayerPipelineDiagnostics.ts` - Diagnostics surface for freshness, completeness, and readiness improvements.
@@ -29,6 +30,41 @@
 - `web/pages/api/v1/debug/rolling-player-metrics.test.ts` - Debug-route tests for richer validation payload output.
 - `web/pages/trendsDebug.test.tsx` - UI tests for the validation console’s new observability and mismatch features.
 - `web/lib/supabase/Upserts/rollingPlayerPipelineDiagnostics.test.ts` - Diagnostics tests to extend for completeness warnings, PP coverage cautions, and readiness labels.
+- `tasks/artifacts/rolling-player-pass-2-validation-metadata-payload-2026-03-12.md` - Artifact for server-authoritative formula metadata, helper-contract summaries, and rolling-window membership output added to the validation payload.
+- `tasks/artifacts/rolling-player-pass-2-toi-source-trace-payload-2026-03-12.md` - Artifact for per-row TOI source-trace output added to the validation payload, including candidate sources, fallback seed, trust tier, and rejected-candidate notes.
+- `tasks/artifacts/rolling-player-pass-2-pp-share-provenance-payload-2026-03-12.md` - Artifact for per-game PP-share provenance and mixed-source window flags added to the validation payload.
+- `tasks/artifacts/rolling-player-pass-2-comparison-matrix-payload-2026-03-12.md` - Artifact for family-wide mismatch summaries and focused-row comparison matrices added to the validation payload.
+- `tasks/artifacts/rolling-player-pass-2-trendsdebug-authoritative-panels-2026-03-12.md` - Artifact for switching `trendsDebug.tsx` validation panels from browser heuristics to server-authoritative formulas, windows, TOI traces, PP provenance, and comparison summaries.
+- `tasks/artifacts/rolling-player-pass-2-readiness-state-ui-2026-03-12.md` - Artifact for explicit `READY`, `READY WITH CAUTIONS`, and `BLOCKED` rendering in `trendsDebug.tsx`, including pill styling and caution/blocker summary copy.
+- `tasks/artifacts/rolling-player-pass-2-validation-console-test-coverage-2026-03-12.md` - Artifact for route and page regression coverage over the richer validation payload contract, mismatch summaries, TOI trust signals, PP provenance, and readiness states.
+- `tasks/artifacts/rolling-player-pass-2-diagnostics-snapshot-surface-2026-03-12.md` - Artifact for the normalized diagnostics snapshot now exposed through the validation payload and rendered in the diagnostics panel.
+- `tasks/artifacts/rolling-player-pass-2-validation-console-overfetch-reduction-2026-03-14.md` - Artifact for splitting `trendsDebug.tsx` validation loads into cached heavy scope payloads plus lightweight detail payloads so metric pivots stop reloading full source/diagnostics history.
+- `tasks/artifacts/rolling-player-pass-2-sandbox-tab-decision-2026-03-14.md` - Artifact for the post-audit decision to keep the legacy sustainability sandbox on `trendsDebug.tsx` only as a secondary tab, with validation remaining the default workspace.
+- `tasks/artifacts/rolling-player-pass-2-post-optimization-verification-2026-03-14.md` - Artifact for the March 14 post-optimization verification pass, including full-suite results, targeted validation-script outcomes, and the remaining follow-ups surfaced by those checks.
+- `tasks/artifacts/rolling-player-pass-2-pp-coverage-cautions-2026-03-12.md` - Artifact for explicit PP latest-game coverage versus full-window coverage cautions across diagnostics, readiness, and `trendsDebug.tsx`.
+- `tasks/artifacts/rolling-player-pass-2-ratio-support-completeness-2026-03-12.md` - Artifact for explicit ratio-support completeness states and selected-metric support-trust rendering in the validation payload and UI.
+- `tasks/artifacts/rolling-player-pass-2-on-ice-sv-pct-support-path-2026-03-12.md` - Artifact for the payload-only `on_ice_sv_pct` support-trace decision and implementation using `oi_sa_*`, `oi_ga_*`, and derived `saves` helpers.
+- `tasks/artifacts/rolling-player-pass-2-weighted-rate-support-path-2026-03-12.md` - Artifact for the payload-only weighted-rate support path that normalizes `all` / `lastN` numerator and TOI traces without adding new persisted columns.
+- `tasks/artifacts/rolling-player-pass-2-diagnostics-regression-coverage-2026-03-12.md` - Artifact for helper-level regression coverage over PP caution states, ratio completeness states, and weighted-rate support-surface behavior.
+- `tasks/artifacts/rolling-player-pass-2-compatibility-helper-policy-2026-03-12.md` - Artifact for the family-aware canonical-first versus legacy-first policy now encoded in `rollingPlayerMetricCompatibility.ts`.
+- `tasks/artifacts/rolling-player-pass-2-trends-player-canonical-migration-2026-03-12.md` - Artifact for migrating the player trends page from hardcoded legacy suffixes to family-aware canonical-first field resolution.
+- `tasks/artifacts/rolling-player-pass-2-projection-reader-policy-alignment-2026-03-12.md` - Artifact for aligning the skater query layer and current projection readers with the audited canonical-first versus legacy-first policy.
+- `tasks/artifacts/rolling-player-pass-2-compatibility-test-coverage-2026-03-12.md` - Artifact for regression coverage over the compatibility helper policy, weighted-rate canonical-first reads, and `gp_semantic_type` interpretation.
+- `tasks/artifacts/rolling-player-pass-2-alias-freeze-stage-1-2026-03-12.md` - Artifact for the first staged alias-freeze follow-up, including the compatibility-only legacy field policy now codified in `rollingPlayerMetricCompatibility.ts`.
+- `tasks/artifacts/rolling-player-pass-2-additive-assist-families-2026-03-12.md` - Artifact for the new additive `primary_assists` / `secondary_assists` rolling families, including storage, fallback policy, validation metadata, and regression coverage.
+- `migrations/20260312_add_optional_rolling_player_additive_assist_metrics.sql` - Migration adding persisted additive rolling fields for `primary_assists` and `secondary_assists`.
+- `tasks/artifacts/rolling-player-pass-2-penalties-drawn-metrics-2026-03-14.md` - Artifact for the new additive `penalties_drawn` and weighted-rate `penalties_drawn_per_60` rolling families, including storage, source policy, validation metadata, and regression coverage.
+- `migrations/20260314_add_optional_rolling_player_penalties_drawn_metrics.sql` - Migration adding persisted additive and weighted-rate rolling fields for `penalties_drawn` and `penalties_drawn_per_60`.
+- `tasks/artifacts/rolling-player-pass-2-pp-toi-seconds-metric-2026-03-14.md` - Artifact for the new additive `pp_toi_seconds` rolling family, including builder-first / WGO-fallback semantics, storage, validation metadata, and regression coverage.
+- `migrations/20260314_add_optional_rolling_player_pp_toi_seconds_metrics.sql` - Migration adding persisted additive rolling fields for `pp_toi_seconds`.
+- `tasks/artifacts/rolling-player-pass-2-optional-metric-compatibility-surface-2026-03-14.md` - Artifact for the compatibility-helper and selector follow-up that keeps authoritative additive legacy optional metrics visible in canonical view while still hiding compatibility-only aliases.
+- `tasks/artifacts/rolling-player-pass-2-optional-metric-test-coverage-2026-03-14.md` - Artifact for the explicit test-coverage sweep over optional metric formulas, selector visibility, and copy-helper output in the validation console.
+- `tasks/artifacts/rolling-player-pass-2-regression-layer-2026-03-14.md` - Artifact for the focused post-audit regression layer covering recompute endpoint forwarding, richer validation payload routing, canonical-first downstream reader protection, and optional metric passthrough.
+- `web/pages/api/v1/db/update-rolling-player-averages.test.ts` - API-route regression coverage for repaired recompute forwarding, dry-run/debug flags, and failure propagation.
+- `web/lib/supabase/Upserts/rollingPlayerSourceSelection.ts` - Additive source-selection helper now extended for primary/secondary assists and their all-strength WGO fallback contract.
+- `web/lib/supabase/Upserts/rollingPlayerSourceSelection.test.ts` - Source-selection regression coverage for the new assist-split additive families.
+- `web/lib/supabase/Upserts/rollingWindowContract.ts` - Canonical rolling-window family map now includes additive `primary_assists` and `secondary_assists`.
+- `web/lib/supabase/Upserts/rollingWindowContract.test.ts` - Regression coverage for additive assist family classification under the canonical rolling-window contract.
 
 ### Notes
 
@@ -38,41 +74,41 @@
 
 ## Tasks
 
-- [ ] 1.0 Restore rolling recompute reliability and close freshness blockers
+- [x] 1.0 Restore rolling recompute reliability and close freshness blockers
   - [x] 1.1 Reproduce the targeted `rolling_player_game_metrics` upsert `Bad Request` failure with a deterministic player/season slice and capture the exact Supabase error payload plus offending row shape.
   - [x] 1.2 Add targeted logging or a dry-run validation path in `fetchRollingPlayerAverages.ts` / `update-rolling-player-averages.ts` so invalid payload columns, nullability mismatches, or over-wide row batches can be isolated without writing rows.
   - [x] 1.3 Fix the root cause of the targeted upsert failure and verify that player-specific recomputes can write fresh rows successfully again.
   - [x] 1.4 Re-run the March 12 blocked recompute examples for Brent Burns, Corey Perry, Jesper Bratt, and Seth Jones and update the freshness evidence once target writes succeed.
   - [x] 1.5 Add regression coverage for the repaired recompute path, including error handling for malformed upsert payloads and successful targeted writes.
 - [ ] 2.0 Expand validation payload and `trendsDebug.tsx` observability for metric-by-metric inspection
-  - [ ] 2.1 Populate server-authoritative formula metadata, helper-contract summaries, and rolling-window membership data in `rollingPlayerValidationPayload.ts` and the debug route.
-  - [ ] 2.2 Add per-row TOI source-trace output to the validation payload, including candidate sources, chosen source, trust tier, rejected candidates, fallback seed, and suspicious-value notes.
-  - [ ] 2.3 Add PP-share provenance output to the validation payload, including per-game builder versus WGO denominator source mix and mixed-source window flags.
-  - [ ] 2.4 Add family-wide mismatch summaries and focused-row comparison matrices to the validation payload so `trendsDebug.tsx` can show all mismatches before drilling into one metric.
-  - [ ] 2.5 Update `trendsDebug.tsx` to render the new server-authoritative formula, window, TOI, PP provenance, and mismatch summary sections instead of relying on browser heuristics.
-  - [ ] 2.6 Add readiness-state refinements in `trendsDebug.tsx` for `READY`, `READY WITH CAUTIONS`, and `BLOCKED`, driven by the richer payload output.
-  - [ ] 2.7 Extend debug-route and page tests to cover the richer payload contract, mismatch summaries, TOI trust panel data, mixed-source PP windows, and updated readiness states.
-- [ ] 3.0 Improve diagnostics, support-surface completeness, and provenance visibility across ratio and weighted-rate families
-  - [ ] 3.1 Promote coverage, freshness, derived-window completeness, and suspicious-output diagnostics into a reusable API/payload surface rather than ad hoc script-only inspection.
-  - [ ] 3.2 Add PP coverage caution reporting that distinguishes `latest game covered` from `window fully covered`, including `missingPpGameIds` and `missingPpShareGameIds`.
-  - [ ] 3.3 Surface ratio-support completeness states such as `complete`, `partial`, `absent`, `invalid`, and `valuePresentWithoutComponents` for ratio families in the validation payload and UI.
-  - [ ] 3.4 Decide whether `on_ice_sv_pct` support parity should be solved with persisted support fields or payload-only helpers, then implement the chosen path.
-  - [ ] 3.5 Decide whether all-scope / `lastN` weighted-rate support completeness should be solved with persisted support fields or payload-level reconstruction helpers, then implement the chosen path.
-  - [ ] 3.6 Add diagnostics regression coverage for PP caution states, ratio completeness states, and any new support-surface outputs or helper behavior.
-- [ ] 4.0 Migrate downstream consumers toward canonical rolling surfaces and formalize compatibility cleanup
-  - [ ] 4.1 Audit and update `rollingPlayerMetricCompatibility.ts` so ratio, weighted-rate, and availability families resolve canonical-first while keeping additive and TOI legacy semantics intact where `avg` versus `total` still matters.
-  - [ ] 4.2 Migrate `web/pages/trends/player/[playerId].tsx` off legacy-only suffix selection and onto canonical-first field resolution with compatibility fallback.
-  - [ ] 4.3 Review and update downstream projection readers in `skater-queries.ts`, `run-forge-projections.ts`, and `update-start-chart-projections.ts` so they follow the audited authoritative-field policy.
-  - [ ] 4.4 Add or update compatibility tests that protect canonical-first reads, legacy fallback behavior, and `gp_semantic_type`-aware GP interpretation.
-  - [ ] 4.5 Document and, if implementation-ready, add the first staged alias-freeze follow-up for compatibility-only ratio / weighted-rate / GP fields without breaking current readers.
-- [ ] 5.0 Implement approved optional metric additions from existing source columns only
-  - [ ] 5.1 Add additive rolling families for `primary_assists` and `secondary_assists`, including storage, writer logic, validation-console exposure, and tests.
-  - [ ] 5.2 Add `penalties_drawn` and `penalties_drawn_per_60` using existing NST columns and the existing weighted-rate TOI contract.
-  - [ ] 5.3 Add `pp_toi_seconds` for `all` and `pp` scopes using builder `PPTOI` with WGO fallback-only context, and expose it in the validation console.
-  - [ ] 5.4 Update generated types, compatibility helpers, validation payload output, and any relevant debug selectors or copy helpers for the new optional metrics.
-  - [ ] 5.5 Add or update tests covering the new optional metric families, their formulas, and their validation-console visibility.
-- [ ] 6.0 Strengthen regression coverage and performance around the post-audit validation workflow
-  - [ ] 6.1 Add focused regression coverage for the repaired recompute path, richer validation payload output, canonical-first downstream reads, and new optional metric families.
-  - [ ] 6.2 Reduce validation-console overfetch by splitting stable summary data from heavy detail payload sections or caching scope-level data across metric pivots.
-  - [ ] 6.3 Reassess whether the legacy sustainability sandbox should stay on `trendsDebug.tsx` or move behind a secondary tab / route once the validation console is fully authoritative.
-  - [ ] 6.4 Run the full Vitest suite and targeted validation flows after the optimization work lands, then update any audit/runbook artifacts that depend on changed behavior.
+  - [x] 2.1 Populate server-authoritative formula metadata, helper-contract summaries, and rolling-window membership data in `rollingPlayerValidationPayload.ts` and the debug route.
+  - [x] 2.2 Add per-row TOI source-trace output to the validation payload, including candidate sources, chosen source, trust tier, rejected candidates, fallback seed, and suspicious-value notes.
+  - [x] 2.3 Add PP-share provenance output to the validation payload, including per-game builder versus WGO denominator source mix and mixed-source window flags.
+  - [x] 2.4 Add family-wide mismatch summaries and focused-row comparison matrices to the validation payload so `trendsDebug.tsx` can show all mismatches before drilling into one metric.
+  - [x] 2.5 Update `trendsDebug.tsx` to render the new server-authoritative formula, window, TOI, PP provenance, and mismatch summary sections instead of relying on browser heuristics.
+  - [x] 2.6 Add readiness-state refinements in `trendsDebug.tsx` for `READY`, `READY WITH CAUTIONS`, and `BLOCKED`, driven by the richer payload output.
+  - [x] 2.7 Extend debug-route and page tests to cover the richer payload contract, mismatch summaries, TOI trust panel data, mixed-source PP windows, and updated readiness states.
+- [x] 3.0 Improve diagnostics, support-surface completeness, and provenance visibility across ratio and weighted-rate families
+  - [x] 3.1 Promote coverage, freshness, derived-window completeness, and suspicious-output diagnostics into a reusable API/payload surface rather than ad hoc script-only inspection.
+  - [x] 3.2 Add PP coverage caution reporting that distinguishes `latest game covered` from `window fully covered`, including `missingPpGameIds` and `missingPpShareGameIds`.
+  - [x] 3.3 Surface ratio-support completeness states such as `complete`, `partial`, `absent`, `invalid`, and `valuePresentWithoutComponents` for ratio families in the validation payload and UI.
+  - [x] 3.4 Decide whether `on_ice_sv_pct` support parity should be solved with persisted support fields or payload-only helpers, then implement the chosen path.
+  - [x] 3.5 Decide whether all-scope / `lastN` weighted-rate support completeness should be solved with persisted support fields or payload-level reconstruction helpers, then implement the chosen path.
+  - [x] 3.6 Add diagnostics regression coverage for PP caution states, ratio completeness states, and any new support-surface outputs or helper behavior.
+- [x] 4.0 Migrate downstream consumers toward canonical rolling surfaces and formalize compatibility cleanup
+  - [x] 4.1 Audit and update `rollingPlayerMetricCompatibility.ts` so ratio, weighted-rate, and availability families resolve canonical-first while keeping additive and TOI legacy semantics intact where `avg` versus `total` still matters.
+  - [x] 4.2 Migrate `web/pages/trends/player/[playerId].tsx` off legacy-only suffix selection and onto canonical-first field resolution with compatibility fallback.
+  - [x] 4.3 Review and update downstream projection readers in `skater-queries.ts`, `run-forge-projections.ts`, and `update-start-chart-projections.ts` so they follow the audited authoritative-field policy.
+  - [x] 4.4 Add or update compatibility tests that protect canonical-first reads, legacy fallback behavior, and `gp_semantic_type`-aware GP interpretation.
+  - [x] 4.5 Document and, if implementation-ready, add the first staged alias-freeze follow-up for compatibility-only ratio / weighted-rate / GP fields without breaking current readers.
+- [x] 5.0 Implement approved optional metric additions from existing source columns only
+  - [x] 5.1 Add additive rolling families for `primary_assists` and `secondary_assists`, including storage, writer logic, validation-console exposure, and tests.
+  - [x] 5.2 Add `penalties_drawn` and `penalties_drawn_per_60` using existing NST columns and the existing weighted-rate TOI contract.
+  - [x] 5.3 Add `pp_toi_seconds` for `all` and `pp` scopes using builder `PPTOI` with WGO fallback-only context, and expose it in the validation console.
+  - [x] 5.4 Update generated types, compatibility helpers, validation payload output, and any relevant debug selectors or copy helpers for the new optional metrics.
+  - [x] 5.5 Add or update tests covering the new optional metric families, their formulas, and their validation-console visibility.
+- [x] 6.0 Strengthen regression coverage and performance around the post-audit validation workflow
+  - [x] 6.1 Add focused regression coverage for the repaired recompute path, richer validation payload output, canonical-first downstream reads, and new optional metric families.
+  - [x] 6.2 Reduce validation-console overfetch by splitting stable summary data from heavy detail payload sections or caching scope-level data across metric pivots.
+  - [x] 6.3 Reassess whether the legacy sustainability sandbox should stay on `trendsDebug.tsx` or move behind a secondary tab / route once the validation console is fully authoritative.
+  - [x] 6.4 Run the full Vitest suite and targeted validation flows after the optimization work lands, then update any audit/runbook artifacts that depend on changed behavior.

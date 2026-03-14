@@ -5,8 +5,11 @@ import {
   getGoalsValue,
   getHitsValue,
   getIxgValue,
+  getPenaltiesDrawnValue,
   getPointsValue,
+  getPrimaryAssistsValue,
   getPpPointsValue,
+  getSecondaryAssistsValue,
   getShotsValue,
   type AdditiveMetricSourceGame
 } from "./rollingPlayerSourceSelection";
@@ -30,6 +33,9 @@ describe("rollingPlayerSourceSelection", () => {
         shots: 6,
         goals: 2,
         total_assists: 3,
+        first_assists: 2,
+        second_assists: 1,
+        penalties_drawn: 2,
         hits: 4,
         shots_blocked: 7,
         ixg: 1.8
@@ -39,6 +45,8 @@ describe("rollingPlayerSourceSelection", () => {
         shots: 60,
         goals: 20,
         assists: 30,
+        total_primary_assists: 11,
+        total_secondary_assists: 19,
         hits: 40,
         blocked_shots: 70,
         ixg: 9.9
@@ -49,6 +57,9 @@ describe("rollingPlayerSourceSelection", () => {
     expect(getShotsValue(game)).toBe(6);
     expect(getGoalsValue(game)).toBe(2);
     expect(getAssistsValue(game)).toBe(3);
+    expect(getPrimaryAssistsValue(game)).toBe(2);
+    expect(getSecondaryAssistsValue(game)).toBe(1);
+    expect(getPenaltiesDrawnValue(game)).toBe(2);
     expect(getHitsValue(game)).toBe(4);
     expect(getBlocksValue(game)).toBe(7);
     expect(getIxgValue(game)).toBe(1.8);
@@ -63,6 +74,8 @@ describe("rollingPlayerSourceSelection", () => {
         shots: 3,
         goals: 1,
         assists: 1,
+        total_primary_assists: 1,
+        total_secondary_assists: 0,
         hits: 4,
         blocked_shots: 5,
         ixg: 0.7,
@@ -74,6 +87,9 @@ describe("rollingPlayerSourceSelection", () => {
     expect(getShotsValue(game)).toBe(3);
     expect(getGoalsValue(game)).toBe(1);
     expect(getAssistsValue(game)).toBe(1);
+    expect(getPrimaryAssistsValue(game)).toBe(1);
+    expect(getSecondaryAssistsValue(game)).toBe(0);
+    expect(getPenaltiesDrawnValue(game)).toBe(null);
     expect(getHitsValue(game)).toBe(4);
     expect(getBlocksValue(game)).toBe(5);
     expect(getIxgValue(game)).toBe(0.7);
@@ -89,6 +105,8 @@ describe("rollingPlayerSourceSelection", () => {
         shots: 3,
         goals: 1,
         assists: 1,
+        total_primary_assists: 1,
+        total_secondary_assists: 0,
         hits: 4,
         blocked_shots: 5,
         ixg: 0.7
@@ -99,6 +117,9 @@ describe("rollingPlayerSourceSelection", () => {
     expect(getShotsValue(game)).toBe(null);
     expect(getGoalsValue(game)).toBe(null);
     expect(getAssistsValue(game)).toBe(null);
+    expect(getPrimaryAssistsValue(game)).toBe(null);
+    expect(getSecondaryAssistsValue(game)).toBe(null);
+    expect(getPenaltiesDrawnValue(game)).toBe(null);
     expect(getHitsValue(game)).toBe(null);
     expect(getBlocksValue(game)).toBe(null);
     expect(getIxgValue(game)).toBe(null);

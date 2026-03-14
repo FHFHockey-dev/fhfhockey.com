@@ -97,8 +97,10 @@ export type RollingMetricKey =
   | "iscf"
   | "ihdcf"
   | "toi_seconds"
+  | "pp_toi_seconds"
   | "hits_per_60"
   | "blocks_per_60"
+  | "penalties_drawn_per_60"
   | "oz_start_pct"
   | "pp_share_pct"
   | "on_ice_sh_pct"
@@ -111,6 +113,9 @@ export type RollingMetricKey =
   | "ff_pct"
   | "goals"
   | "assists"
+  | "primary_assists"
+  | "secondary_assists"
+  | "penalties_drawn"
   | "shots"
   | "hits"
   | "blocks"
@@ -131,8 +136,10 @@ export const ROLLING_METRIC_WINDOW_FAMILIES: Record<
   iscf: "additive_performance",
   ihdcf: "additive_performance",
   toi_seconds: "additive_performance",
+  pp_toi_seconds: "additive_performance",
   hits_per_60: "weighted_rate_performance",
   blocks_per_60: "weighted_rate_performance",
+  penalties_drawn_per_60: "weighted_rate_performance",
   oz_start_pct: "ratio_performance",
   pp_share_pct: "ratio_performance",
   on_ice_sh_pct: "ratio_performance",
@@ -145,6 +152,9 @@ export const ROLLING_METRIC_WINDOW_FAMILIES: Record<
   ff_pct: "ratio_performance",
   goals: "additive_performance",
   assists: "additive_performance",
+  primary_assists: "additive_performance",
+  secondary_assists: "additive_performance",
+  penalties_drawn: "additive_performance",
   shots: "additive_performance",
   hits: "additive_performance",
   blocks: "additive_performance",

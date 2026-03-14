@@ -11,22 +11,26 @@ import {
   CartesianGrid,
   Brush
 } from "recharts";
+import {
+  getCompatibilityFieldOrder,
+  type RollingMetricCompatibilityFamily
+} from "lib/rollingPlayerMetricCompatibility";
 import supabase from "lib/supabase";
 import styles from "./playerTrendPage.module.scss";
 
 const BASELINE_OPTIONS = [
-  { key: "avg_season", label: "Season" },
-  { key: "avg_3ya", label: "3-Year" },
-  { key: "avg_career", label: "Career" },
-  { key: "avg_all", label: "Cumulative" }
+  { key: "season", label: "Season" },
+  { key: "3ya", label: "3-Year" },
+  { key: "career", label: "Career" },
+  { key: "all", label: "Cumulative" }
 ] as const;
 
 const ROLLING_WINDOW_OPTIONS = [
-  { key: "avg_last3", label: "3" },
-  { key: "avg_last5", label: "5" },
-  { key: "avg_last10", label: "10" },
-  { key: "avg_last20", label: "20" },
-  { key: "avg_all", label: "Cumulative" }
+  { key: "last3", label: "3" },
+  { key: "last5", label: "5" },
+  { key: "last10", label: "10" },
+  { key: "last20", label: "20" },
+  { key: "all", label: "Cumulative" }
 ] as const;
 
 type BaselineMode = (typeof BASELINE_OPTIONS)[number]["key"];
@@ -40,37 +44,44 @@ const METRIC_GROUPS = [
       {
         key: "goals",
         label: "Goals",
-        color: "#ff9f40"
+        color: "#ff9f40",
+        compatibilityFamily: "additive_average"
       },
       {
         key: "assists",
         label: "Assists",
-        color: "#3b82f6"
+        color: "#3b82f6",
+        compatibilityFamily: "additive_average"
       },
       {
         key: "points",
         label: "Points",
-        color: "#9b59b6"
+        color: "#9b59b6",
+        compatibilityFamily: "additive_average"
       },
       {
         key: "shots",
         label: "Shots",
-        color: "#4bc0c0"
+        color: "#4bc0c0",
+        compatibilityFamily: "additive_average"
       },
       {
         key: "hits",
         label: "Hits",
-        color: "#ef4444"
+        color: "#ef4444",
+        compatibilityFamily: "additive_average"
       },
       {
         key: "blocks",
         label: "Blocks",
-        color: "#facc15"
+        color: "#facc15",
+        compatibilityFamily: "additive_average"
       },
       {
         key: "pp_points",
         label: "PP Points",
-        color: "#14b8a6"
+        color: "#14b8a6",
+        compatibilityFamily: "additive_average"
       }
     ]
   },
@@ -81,42 +92,50 @@ const METRIC_GROUPS = [
       {
         key: "goals_per_60",
         label: "Goals / 60",
-        color: "#f97316"
+        color: "#f97316",
+        compatibilityFamily: "weighted_rate"
       },
       {
         key: "assists_per_60",
         label: "Assists / 60",
-        color: "#38bdf8"
+        color: "#38bdf8",
+        compatibilityFamily: "weighted_rate"
       },
       {
         key: "primary_assists_per_60",
         label: "1A / 60",
-        color: "#8b5cf6"
+        color: "#8b5cf6",
+        compatibilityFamily: "weighted_rate"
       },
       {
         key: "secondary_assists_per_60",
         label: "2A / 60",
-        color: "#ec4899"
+        color: "#ec4899",
+        compatibilityFamily: "weighted_rate"
       },
       {
         key: "sog_per_60",
         label: "Shots / 60",
-        color: "#06b6d4"
+        color: "#06b6d4",
+        compatibilityFamily: "weighted_rate"
       },
       {
         key: "ixg_per_60",
         label: "ixG / 60",
-        color: "#10b981"
+        color: "#10b981",
+        compatibilityFamily: "weighted_rate"
       },
       {
         key: "hits_per_60",
         label: "Hits / 60",
-        color: "#fb7185"
+        color: "#fb7185",
+        compatibilityFamily: "weighted_rate"
       },
       {
         key: "blocks_per_60",
         label: "Blocks / 60",
-        color: "#f59e0b"
+        color: "#f59e0b",
+        compatibilityFamily: "weighted_rate"
       }
     ]
   },
@@ -127,37 +146,44 @@ const METRIC_GROUPS = [
       {
         key: "shooting_pct",
         label: "Shooting %",
-        color: "#22c55e"
+        color: "#22c55e",
+        compatibilityFamily: "ratio"
       },
       {
         key: "expected_sh_pct",
         label: "Expected SH%",
-        color: "#84cc16"
+        color: "#84cc16",
+        compatibilityFamily: "ratio"
       },
       {
         key: "on_ice_sh_pct",
         label: "On-Ice SH%",
-        color: "#38bdf8"
+        color: "#38bdf8",
+        compatibilityFamily: "ratio"
       },
       {
         key: "on_ice_sv_pct",
         label: "On-Ice SV%",
-        color: "#0ea5e9"
+        color: "#0ea5e9",
+        compatibilityFamily: "ratio"
       },
       {
         key: "pdo",
         label: "PDO",
-        color: "#f97316"
+        color: "#f97316",
+        compatibilityFamily: "ratio"
       },
       {
         key: "ipp",
         label: "IPP",
-        color: "#8b5cf6"
+        color: "#8b5cf6",
+        compatibilityFamily: "ratio"
       },
       {
         key: "primary_points_pct",
         label: "Primary Points %",
-        color: "#ec4899"
+        color: "#ec4899",
+        compatibilityFamily: "ratio"
       }
     ]
   },
@@ -168,32 +194,38 @@ const METRIC_GROUPS = [
       {
         key: "toi_seconds",
         label: "TOI Seconds",
-        color: "#eab308"
+        color: "#eab308",
+        compatibilityFamily: "toi_average"
       },
       {
         key: "pp_share_pct",
         label: "PP Share %",
-        color: "#0ea5e9"
+        color: "#0ea5e9",
+        compatibilityFamily: "ratio"
       },
       {
         key: "oz_start_pct",
         label: "OZ Start %",
-        color: "#6366f1"
+        color: "#6366f1",
+        compatibilityFamily: "ratio"
       },
       {
         key: "oz_starts",
         label: "OZ Starts",
-        color: "#4f46e5"
+        color: "#4f46e5",
+        compatibilityFamily: "additive_average"
       },
       {
         key: "dz_starts",
         label: "DZ Starts",
-        color: "#ef4444"
+        color: "#ef4444",
+        compatibilityFamily: "additive_average"
       },
       {
         key: "nz_starts",
         label: "NZ Starts",
-        color: "#14b8a6"
+        color: "#14b8a6",
+        compatibilityFamily: "additive_average"
       }
     ]
   },
@@ -204,67 +236,80 @@ const METRIC_GROUPS = [
       {
         key: "ixg",
         label: "ixG",
-        color: "#00ff99"
+        color: "#00ff99",
+        compatibilityFamily: "additive_average"
       },
       {
         key: "iscf",
         label: "iSCF",
-        color: "#22d3ee"
+        color: "#22d3ee",
+        compatibilityFamily: "additive_average"
       },
       {
         key: "ihdcf",
         label: "iHDCF",
-        color: "#f43f5e"
+        color: "#f43f5e",
+        compatibilityFamily: "additive_average"
       },
       {
         key: "cf",
         label: "CF",
-        color: "#a855f7"
+        color: "#a855f7",
+        compatibilityFamily: "additive_average"
       },
       {
         key: "ca",
         label: "CA",
-        color: "#f87171"
+        color: "#f87171",
+        compatibilityFamily: "additive_average"
       },
       {
         key: "cf_pct",
         label: "CF%",
-        color: "#60a5fa"
+        color: "#60a5fa",
+        compatibilityFamily: "ratio"
       },
       {
         key: "ff",
         label: "FF",
-        color: "#2dd4bf"
+        color: "#2dd4bf",
+        compatibilityFamily: "additive_average"
       },
       {
         key: "fa",
         label: "FA",
-        color: "#fb7185"
+        color: "#fb7185",
+        compatibilityFamily: "additive_average"
       },
       {
         key: "ff_pct",
         label: "FF%",
-        color: "#818cf8"
+        color: "#818cf8",
+        compatibilityFamily: "ratio"
       },
       {
         key: "oi_gf",
         label: "On-Ice GF",
-        color: "#22c55e"
+        color: "#22c55e",
+        compatibilityFamily: "additive_average"
       },
       {
         key: "oi_ga",
         label: "On-Ice GA",
-        color: "#f87171"
+        color: "#f87171",
+        compatibilityFamily: "additive_average"
       },
       {
         key: "oi_sf",
         label: "On-Ice SF",
-        color: "#0ea5e9"
+        color: "#0ea5e9",
+        compatibilityFamily: "additive_average"
       },
       {
         key: "oi_sa",
         label: "On-Ice SA",
-        color: "#f59e0b"
+        color: "#f59e0b",
+        compatibilityFamily: "additive_average"
       }
     ]
   }
@@ -296,15 +341,58 @@ function getMetricField(metricKey: MetricKey, mode: RollingWindowMode | Baseline
   return `${metricKey}_${mode}`;
 }
 
+function getLegacyScope(scope: RollingWindowMode | BaselineMode): string {
+  return `avg_${scope}`;
+}
+
+function getMetricFieldCandidates(
+  metric: MetricConfig,
+  scope: RollingWindowMode | BaselineMode
+): string[] {
+  const canonicalField = getMetricField(metric.key, scope);
+  const legacyField = `${metric.key}_${getLegacyScope(scope)}`;
+
+  if (
+    metric.compatibilityFamily === "additive_average" ||
+    metric.compatibilityFamily === "toi_average"
+  ) {
+    return [legacyField];
+  }
+
+  return getCompatibilityFieldOrder({
+    family: metric.compatibilityFamily,
+    canonicalField,
+    legacyField
+  });
+}
+
+function resolveMetricValue(
+  row: RollingMetricRow,
+  metric: MetricConfig,
+  scope: RollingWindowMode | BaselineMode
+): number | null {
+  for (const field of getMetricFieldCandidates(metric, scope)) {
+    const rawValue = row[field];
+    if (rawValue === null || rawValue === undefined) continue;
+    const numericValue = Number(rawValue);
+    if (Number.isFinite(numericValue)) return numericValue;
+  }
+  return null;
+}
+
 function buildSelectClause() {
   const fields = new Set<string>(["game_date"]);
   METRIC_CONFIG.forEach((metric) => {
-    ROLLING_WINDOW_OPTIONS.forEach((option) =>
-      fields.add(getMetricField(metric.key, option.key))
-    );
-    BASELINE_OPTIONS.forEach((option) =>
-      fields.add(getMetricField(metric.key, option.key))
-    );
+    ROLLING_WINDOW_OPTIONS.forEach((option) => {
+      getMetricFieldCandidates(metric, option.key).forEach((field) =>
+        fields.add(field)
+      );
+    });
+    BASELINE_OPTIONS.forEach((option) => {
+      getMetricFieldCandidates(metric, option.key).forEach((field) =>
+        fields.add(field)
+      );
+    });
   });
   return Array.from(fields).join(", ");
 }
@@ -322,9 +410,9 @@ export default function PlayerTrendPage() {
   const [selectedMetrics, setSelectedMetrics] = useState<MetricKey[]>(
     METRIC_GROUPS[0].metrics.map((metric) => metric.key)
   );
-  const [baselineMode, setBaselineMode] = useState<BaselineMode>("avg_season");
+  const [baselineMode, setBaselineMode] = useState<BaselineMode>("season");
   const [rollingWindowMode, setRollingWindowMode] =
-    useState<RollingWindowMode>("avg_last5");
+    useState<RollingWindowMode>("last5");
   const [activeGroup, setActiveGroup] = useState<(typeof METRIC_GROUPS)[number]["id"]>(
     "surface"
   );
@@ -413,17 +501,8 @@ export default function PlayerTrendPage() {
       METRIC_CONFIG.forEach((metric) => {
         const rollingField = getMetricField(metric.key, rollingWindowMode);
         const baselineField = getMetricField(metric.key, baselineMode);
-        const rollingRaw = row[rollingField];
-        const baselineRaw = row[baselineField];
-
-        const rolling =
-          rollingRaw === null || rollingRaw === undefined
-            ? null
-            : Number(rollingRaw);
-        const baseline =
-          baselineRaw === null || baselineRaw === undefined
-            ? null
-            : Number(baselineRaw);
+        const rolling = resolveMetricValue(row, metric, rollingWindowMode);
+        const baseline = resolveMetricValue(row, metric, baselineMode);
 
         base[rollingField] = rolling;
         base[baselineField] = baseline;

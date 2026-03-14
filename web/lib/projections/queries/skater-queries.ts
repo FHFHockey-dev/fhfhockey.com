@@ -1,4 +1,5 @@
 import supabase from "lib/supabase/server";
+import { getCompatibilityFieldOrder } from "lib/rollingPlayerMetricCompatibility";
 import {
   TREND_BAND_METRIC_PRIORITY,
   TREND_BAND_WINDOW_PRIORITY
@@ -19,7 +20,49 @@ function assertSupabase() {
 }
 
 export const ROLLING_ROW_SELECT_CLAUSE =
-  "player_id,strength_state,game_date,toi_seconds_avg_last5,toi_seconds_avg_all,sog_per_60_last5,sog_per_60_all,sog_per_60_avg_last5,sog_per_60_avg_all,goals_total_last5,shots_total_last5,assists_total_last5,goals_total_all,shots_total_all,assists_total_all,hits_per_60_last5,hits_per_60_all,hits_per_60_avg_last5,hits_per_60_avg_all,blocks_per_60_last5,blocks_per_60_all,blocks_per_60_avg_last5,blocks_per_60_avg_all";
+  [
+    "player_id",
+    "strength_state",
+    "game_date",
+    "toi_seconds_avg_last5",
+    "toi_seconds_avg_all",
+    ...getCompatibilityFieldOrder({
+      family: "weighted_rate",
+      canonicalField: "sog_per_60_last5",
+      legacyField: "sog_per_60_avg_last5"
+    }),
+    ...getCompatibilityFieldOrder({
+      family: "weighted_rate",
+      canonicalField: "sog_per_60_all",
+      legacyField: "sog_per_60_avg_all"
+    }),
+    "goals_total_last5",
+    "shots_total_last5",
+    "assists_total_last5",
+    "goals_total_all",
+    "shots_total_all",
+    "assists_total_all",
+    ...getCompatibilityFieldOrder({
+      family: "weighted_rate",
+      canonicalField: "hits_per_60_last5",
+      legacyField: "hits_per_60_avg_last5"
+    }),
+    ...getCompatibilityFieldOrder({
+      family: "weighted_rate",
+      canonicalField: "hits_per_60_all",
+      legacyField: "hits_per_60_avg_all"
+    }),
+    ...getCompatibilityFieldOrder({
+      family: "weighted_rate",
+      canonicalField: "blocks_per_60_last5",
+      legacyField: "blocks_per_60_avg_last5"
+    }),
+    ...getCompatibilityFieldOrder({
+      family: "weighted_rate",
+      canonicalField: "blocks_per_60_all",
+      legacyField: "blocks_per_60_avg_all"
+    })
+  ].join(",");
 
 function normalizeWgoToiToSeconds(value: number | null | undefined): number | null {
   const n = finiteOrNull(value);
@@ -121,7 +164,7 @@ export async function fetchRollingRows(
     .order("game_date", { ascending: false })
     .limit(5000);
   if (error) throw error;
-  return (data ?? []) as RollingRow[];
+  return ((data ?? []) as unknown) as RollingRow[];
 }
 
 export async function fetchLatestWgoSkaterDeploymentProfiles(

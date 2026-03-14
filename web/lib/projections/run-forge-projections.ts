@@ -1,5 +1,5 @@
 import supabase from "lib/supabase/server";
-import { canonicalOrLegacyNullable } from "lib/rollingPlayerMetricCompatibility";
+import { resolveNullableCompatibilityValue } from "lib/rollingPlayerMetricCompatibility";
 import { reconcileTeamToPlayers } from "lib/projections/reconcile";
 import {
   buildGoalieUncertainty,
@@ -2111,12 +2111,14 @@ export async function runProjectionV2ForDate(
           }
 
           const sogPer60EvRaw = safeNumber(
-            canonicalOrLegacyNullable(
+            resolveNullableCompatibilityValue(
+              "weighted_rate",
               ev?.sog_per_60_last5,
               ev?.sog_per_60_avg_last5
             ),
             safeNumber(
-              canonicalOrLegacyNullable(
+              resolveNullableCompatibilityValue(
+                "weighted_rate",
                 ev?.sog_per_60_all,
                 ev?.sog_per_60_avg_all
               ),
@@ -2124,12 +2126,14 @@ export async function runProjectionV2ForDate(
             )
           );
           const sogPer60PpRaw = safeNumber(
-            canonicalOrLegacyNullable(
+            resolveNullableCompatibilityValue(
+              "weighted_rate",
               pp?.sog_per_60_last5,
               pp?.sog_per_60_avg_last5
             ),
             safeNumber(
-              canonicalOrLegacyNullable(
+              resolveNullableCompatibilityValue(
+                "weighted_rate",
                 pp?.sog_per_60_all,
                 pp?.sog_per_60_avg_all
               ),
@@ -2174,12 +2178,14 @@ export async function runProjectionV2ForDate(
           const sogPer60Pp = boundedUsage.sogPer60Pp;
 
           const hitsPer60 = safeNumber(
-            canonicalOrLegacyNullable(
+            resolveNullableCompatibilityValue(
+              "weighted_rate",
               ev?.hits_per_60_last5,
               ev?.hits_per_60_avg_last5
             ),
             safeNumber(
-              canonicalOrLegacyNullable(
+              resolveNullableCompatibilityValue(
+                "weighted_rate",
                 ev?.hits_per_60_all,
                 ev?.hits_per_60_avg_all
               ),
@@ -2187,12 +2193,14 @@ export async function runProjectionV2ForDate(
             )
           );
           const blocksPer60 = safeNumber(
-            canonicalOrLegacyNullable(
+            resolveNullableCompatibilityValue(
+              "weighted_rate",
               ev?.blocks_per_60_last5,
               ev?.blocks_per_60_avg_last5
             ),
             safeNumber(
-              canonicalOrLegacyNullable(
+              resolveNullableCompatibilityValue(
+                "weighted_rate",
                 ev?.blocks_per_60_all,
                 ev?.blocks_per_60_avg_all
               ),

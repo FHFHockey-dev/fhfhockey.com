@@ -35,6 +35,16 @@ type CoverageSample = {
 export type CoverageSummary = {
   warnings: string[];
   sample: CoverageSample;
+  ppCoverage: {
+    expectedGameIds: number[];
+    missingPpGameIds: number[];
+    missingPpShareGameIds: number[];
+    latestExpectedPpGameId: number | null;
+    latestBuilderGameCovered: boolean;
+    latestShareGameCovered: boolean;
+    windowBuilderCoverageComplete: boolean;
+    windowShareCoverageComplete: boolean;
+  };
   counts: {
     expectedDates: number;
     countsRows: number;
@@ -250,6 +260,20 @@ export function summarizeCoverage(params: CoverageParams): CoverageSummary {
       missingPpShareGameIds: missingPpShareGameIds.slice(0, MAX_SAMPLES),
       missingPpUnitGameIds: missingPpUnitGameIds.slice(0, MAX_SAMPLES),
       unknownGameIds: unknownGameIds.slice(0, MAX_SAMPLES)
+    },
+    ppCoverage: {
+      expectedGameIds: ppExpectedGameIds,
+      missingPpGameIds,
+      missingPpShareGameIds,
+      latestExpectedPpGameId: ppExpectedGameIds.at(-1) ?? null,
+      latestBuilderGameCovered:
+        ppExpectedGameIds.length === 0 ||
+        !missingPpGameIds.includes(ppExpectedGameIds.at(-1) ?? -1),
+      latestShareGameCovered:
+        ppExpectedGameIds.length === 0 ||
+        !missingPpShareGameIds.includes(ppExpectedGameIds.at(-1) ?? -1),
+      windowBuilderCoverageComplete: missingPpGameIds.length === 0,
+      windowShareCoverageComplete: missingPpShareGameIds.length === 0
     },
     counts: {
       expectedDates: expectedDates.length,

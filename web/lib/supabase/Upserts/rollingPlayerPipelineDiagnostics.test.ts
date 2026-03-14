@@ -38,6 +38,16 @@ describe("summarizeCoverage", () => {
     expect(result.sample.missingPpGameIds).toEqual([12]);
     expect(result.sample.missingPpShareGameIds).toEqual([10]);
     expect(result.sample.missingPpUnitGameIds).toEqual([10]);
+    expect(result.ppCoverage).toMatchObject({
+      expectedGameIds: [10, 12],
+      missingPpGameIds: [12],
+      missingPpShareGameIds: [10],
+      latestExpectedPpGameId: 12,
+      latestBuilderGameCovered: false,
+      latestShareGameCovered: true,
+      windowBuilderCoverageComplete: false,
+      windowShareCoverageComplete: false
+    });
     expect(result.sample.unknownGameIds).toEqual([12]);
     expect(result.warnings[0]).toContain("missingCountsDates:2");
     expect(result.warnings[0]).toContain("missingPpGameIds:1");
@@ -63,6 +73,59 @@ describe("summarizeCoverage", () => {
     expect(result.counts.expectedDates).toBe(1);
     expect(result.sample.missingRatesDates).toEqual(["2025-10-01"]);
     expect(result.sample.missingCountsDates).toEqual([]);
+    expect(result.ppCoverage).toMatchObject({
+      expectedGameIds: [20],
+      missingPpGameIds: [],
+      missingPpShareGameIds: [],
+      latestExpectedPpGameId: 20,
+      latestBuilderGameCovered: true,
+      latestShareGameCovered: true,
+      windowBuilderCoverageComplete: true,
+      windowShareCoverageComplete: true
+    });
+  });
+
+  it("distinguishes latest PP coverage from full-window coverage when only earlier builder/share gaps remain", () => {
+    const result = summarizeCoverage({
+      playerId: 7,
+      strength: "all",
+      wgoRows: [
+        { date: "2025-10-01", game_id: 30, pp_toi: 80 },
+        { date: "2025-10-03", game_id: 31, pp_toi: 90 },
+        { date: "2025-10-05", game_id: 32, pp_toi: 100 }
+      ],
+      countsRows: [
+        { date_scraped: "2025-10-01" },
+        { date_scraped: "2025-10-03" },
+        { date_scraped: "2025-10-05" }
+      ],
+      ratesRows: [
+        { date_scraped: "2025-10-01" },
+        { date_scraped: "2025-10-03" },
+        { date_scraped: "2025-10-05" }
+      ],
+      countsOiRows: [
+        { date_scraped: "2025-10-01" },
+        { date_scraped: "2025-10-03" },
+        { date_scraped: "2025-10-05" }
+      ],
+      ppRows: [
+        { gameId: 31, pp_share_of_team: null, unit: 1 },
+        { gameId: 32, pp_share_of_team: 0.5, unit: 1 }
+      ],
+      knownGameIds: new Set([30, 31, 32])
+    });
+
+    expect(result.ppCoverage).toMatchObject({
+      expectedGameIds: [30, 31, 32],
+      missingPpGameIds: [30],
+      missingPpShareGameIds: [31],
+      latestExpectedPpGameId: 32,
+      latestBuilderGameCovered: true,
+      latestShareGameCovered: true,
+      windowBuilderCoverageComplete: false,
+      windowShareCoverageComplete: false
+    });
   });
 
   it("preserves unknown-game diagnostics even when other source gaps are absent", () => {
@@ -79,6 +142,7 @@ describe("summarizeCoverage", () => {
 
     expect(result.counts.unknownGameIds).toBe(1);
     expect(result.sample.unknownGameIds).toEqual([999]);
+    expect(result.ppCoverage.windowBuilderCoverageComplete).toBe(true);
     expect(result.warnings).toHaveLength(1);
     expect(result.warnings[0]).toContain("player:9");
     expect(result.warnings[0]).toContain("strength:all");
@@ -307,6 +371,88 @@ describe("summarizeDerivedWindowDiagnostics", () => {
       absent: 0,
       invalid: 0,
       valuePresentWithoutComponents: 1
+    });
+  });
+
+  it("classifies ratio windows across complete, partial, absent, invalid, and value-present-without-components states", () => {
+    const result = summarizeDerivedWindowDiagnostics({
+      rows: [
+        {
+          primary_points_pct_last3: 0.5,
+          primary_points_pct_primary_points_last3: 1,
+          primary_points_pct_points_last3: 2,
+          primary_points_pct_last5: null,
+          primary_points_pct_primary_points_last5: 1,
+          primary_points_pct_points_last5: null,
+          primary_points_pct_last10: null,
+          primary_points_pct_primary_points_last10: null,
+          primary_points_pct_points_last10: null,
+          primary_points_pct_last20: 2,
+          primary_points_pct_primary_points_last20: 2,
+          primary_points_pct_points_last20: 1,
+          ipp_last10: 0.7,
+          ipp_points_last10: null,
+          ipp_on_ice_goals_for_last10: null,
+          pp_share_pct_last5: 0.4,
+          pp_share_pct_player_pp_toi_last5: 120,
+          pp_share_pct_team_pp_toi_last5: null,
+          pdo_last20: 1.1,
+          pdo_goals_for_last20: 4,
+          pdo_goals_against_last20: 5,
+          pdo_shots_for_last20: 20,
+          pdo_shots_against_last20: 8
+        }
+      ]
+    });
+
+    expect(result.ratioWindows.primary_points_pct.last3).toEqual({
+      complete: 1,
+      partial: 0,
+      absent: 0,
+      invalid: 0,
+      valuePresentWithoutComponents: 0
+    });
+    expect(result.ratioWindows.primary_points_pct.last5).toEqual({
+      complete: 0,
+      partial: 1,
+      absent: 0,
+      invalid: 0,
+      valuePresentWithoutComponents: 0
+    });
+    expect(result.ratioWindows.primary_points_pct.last10).toEqual({
+      complete: 0,
+      partial: 0,
+      absent: 1,
+      invalid: 0,
+      valuePresentWithoutComponents: 0
+    });
+    expect(result.ratioWindows.primary_points_pct.last20).toEqual({
+      complete: 1,
+      partial: 0,
+      absent: 0,
+      invalid: 1,
+      valuePresentWithoutComponents: 0
+    });
+    expect(result.ratioWindows.ipp.last10).toEqual({
+      complete: 0,
+      partial: 0,
+      absent: 1,
+      invalid: 0,
+      valuePresentWithoutComponents: 1
+    });
+    expect(result.ratioWindows.pp_share_pct.last5).toEqual({
+      complete: 0,
+      partial: 1,
+      absent: 0,
+      invalid: 0,
+      valuePresentWithoutComponents: 1
+    });
+    expect(result.ratioWindows.pdo.last20).toEqual({
+      complete: 1,
+      partial: 0,
+      absent: 0,
+      invalid: 0,
+      valuePresentWithoutComponents: 0
     });
   });
 });

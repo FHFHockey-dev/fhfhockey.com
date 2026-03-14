@@ -14862,6 +14862,45 @@ export type Database = {
           assists_total_last20: number | null
           assists_total_last3: number | null
           assists_total_last5: number | null
+          primary_assists_avg_3ya: number | null
+          primary_assists_avg_all: number | null
+          primary_assists_avg_career: number | null
+          primary_assists_avg_last10: number | null
+          primary_assists_avg_last20: number | null
+          primary_assists_avg_last3: number | null
+          primary_assists_avg_last5: number | null
+          primary_assists_avg_season: number | null
+          primary_assists_total_all: number | null
+          primary_assists_total_last10: number | null
+          primary_assists_total_last20: number | null
+          primary_assists_total_last3: number | null
+          primary_assists_total_last5: number | null
+          secondary_assists_avg_3ya: number | null
+          secondary_assists_avg_all: number | null
+          secondary_assists_avg_career: number | null
+          secondary_assists_avg_last10: number | null
+          secondary_assists_avg_last20: number | null
+          secondary_assists_avg_last3: number | null
+          secondary_assists_avg_last5: number | null
+          secondary_assists_avg_season: number | null
+          secondary_assists_total_all: number | null
+          secondary_assists_total_last10: number | null
+          secondary_assists_total_last20: number | null
+          secondary_assists_total_last3: number | null
+          secondary_assists_total_last5: number | null
+          penalties_drawn_avg_3ya: number | null
+          penalties_drawn_avg_all: number | null
+          penalties_drawn_avg_career: number | null
+          penalties_drawn_avg_last10: number | null
+          penalties_drawn_avg_last20: number | null
+          penalties_drawn_avg_last3: number | null
+          penalties_drawn_avg_last5: number | null
+          penalties_drawn_avg_season: number | null
+          penalties_drawn_total_all: number | null
+          penalties_drawn_total_last10: number | null
+          penalties_drawn_total_last20: number | null
+          penalties_drawn_total_last3: number | null
+          penalties_drawn_total_last5: number | null
           blocks_avg_3ya: number | null
           blocks_avg_all: number | null
           blocks_avg_career: number | null
@@ -15226,6 +15265,19 @@ export type Database = {
           pp_points_total_last20: number | null
           pp_points_total_last3: number | null
           pp_points_total_last5: number | null
+          pp_toi_seconds_avg_3ya: number | null
+          pp_toi_seconds_avg_all: number | null
+          pp_toi_seconds_avg_career: number | null
+          pp_toi_seconds_avg_last10: number | null
+          pp_toi_seconds_avg_last20: number | null
+          pp_toi_seconds_avg_last3: number | null
+          pp_toi_seconds_avg_last5: number | null
+          pp_toi_seconds_avg_season: number | null
+          pp_toi_seconds_total_all: number | null
+          pp_toi_seconds_total_last10: number | null
+          pp_toi_seconds_total_last20: number | null
+          pp_toi_seconds_total_last3: number | null
+          pp_toi_seconds_total_last5: number | null
           pp_share_pct_avg_3ya: number | null
           pp_share_pct_avg_all: number | null
           pp_share_pct_avg_career: number | null
@@ -15478,6 +15530,27 @@ export type Database = {
           assists_per_60_season: number | null
           assists_per_60_3ya: number | null
           assists_per_60_career: number | null
+          penalties_drawn_per_60_avg_3ya: number | null
+          penalties_drawn_per_60_avg_all: number | null
+          penalties_drawn_per_60_avg_career: number | null
+          penalties_drawn_per_60_avg_last10: number | null
+          penalties_drawn_per_60_avg_last20: number | null
+          penalties_drawn_per_60_avg_last3: number | null
+          penalties_drawn_per_60_avg_last5: number | null
+          penalties_drawn_per_60_avg_season: number | null
+          penalties_drawn_per_60_total_all: number | null
+          penalties_drawn_per_60_total_last10: number | null
+          penalties_drawn_per_60_total_last20: number | null
+          penalties_drawn_per_60_total_last3: number | null
+          penalties_drawn_per_60_total_last5: number | null
+          penalties_drawn_per_60_all: number | null
+          penalties_drawn_per_60_last3: number | null
+          penalties_drawn_per_60_last5: number | null
+          penalties_drawn_per_60_last10: number | null
+          penalties_drawn_per_60_last20: number | null
+          penalties_drawn_per_60_season: number | null
+          penalties_drawn_per_60_3ya: number | null
+          penalties_drawn_per_60_career: number | null
           primary_assists_per_60_all: number | null
           primary_assists_per_60_last3: number | null
           primary_assists_per_60_last5: number | null
@@ -15554,6 +15627,12 @@ export type Database = {
           assists_per_60_toi_seconds_3ya: number | null
           assists_per_60_assists_career: number | null
           assists_per_60_toi_seconds_career: number | null
+          penalties_drawn_per_60_penalties_drawn_season: number | null
+          penalties_drawn_per_60_toi_seconds_season: number | null
+          penalties_drawn_per_60_penalties_drawn_3ya: number | null
+          penalties_drawn_per_60_toi_seconds_3ya: number | null
+          penalties_drawn_per_60_penalties_drawn_career: number | null
+          penalties_drawn_per_60_toi_seconds_career: number | null
           primary_assists_per_60_primary_assists_season: number | null
           primary_assists_per_60_toi_seconds_season: number | null
           primary_assists_per_60_primary_assists_3ya: number | null
@@ -15806,6 +15885,45 @@ export type Database = {
           assists_total_last20?: number | null
           assists_total_last3?: number | null
           assists_total_last5?: number | null
+          primary_assists_avg_3ya?: number | null
+          primary_assists_avg_all?: number | null
+          primary_assists_avg_career?: number | null
+          primary_assists_avg_last10?: number | null
+          primary_assists_avg_last20?: number | null
+          primary_assists_avg_last3?: number | null
+          primary_assists_avg_last5?: number | null
+          primary_assists_avg_season?: number | null
+          primary_assists_total_all?: number | null
+          primary_assists_total_last10?: number | null
+          primary_assists_total_last20?: number | null
+          primary_assists_total_last3?: number | null
+          primary_assists_total_last5?: number | null
+          secondary_assists_avg_3ya?: number | null
+          secondary_assists_avg_all?: number | null
+          secondary_assists_avg_career?: number | null
+          secondary_assists_avg_last10?: number | null
+          secondary_assists_avg_last20?: number | null
+          secondary_assists_avg_last3?: number | null
+          secondary_assists_avg_last5?: number | null
+          secondary_assists_avg_season?: number | null
+          secondary_assists_total_all?: number | null
+          secondary_assists_total_last10?: number | null
+          secondary_assists_total_last20?: number | null
+          secondary_assists_total_last3?: number | null
+          secondary_assists_total_last5?: number | null
+          penalties_drawn_avg_3ya?: number | null
+          penalties_drawn_avg_all?: number | null
+          penalties_drawn_avg_career?: number | null
+          penalties_drawn_avg_last10?: number | null
+          penalties_drawn_avg_last20?: number | null
+          penalties_drawn_avg_last3?: number | null
+          penalties_drawn_avg_last5?: number | null
+          penalties_drawn_avg_season?: number | null
+          penalties_drawn_total_all?: number | null
+          penalties_drawn_total_last10?: number | null
+          penalties_drawn_total_last20?: number | null
+          penalties_drawn_total_last3?: number | null
+          penalties_drawn_total_last5?: number | null
           blocks_avg_3ya?: number | null
           blocks_avg_all?: number | null
           blocks_avg_career?: number | null
@@ -16170,6 +16288,19 @@ export type Database = {
           pp_points_total_last20?: number | null
           pp_points_total_last3?: number | null
           pp_points_total_last5?: number | null
+          pp_toi_seconds_avg_3ya?: number | null
+          pp_toi_seconds_avg_all?: number | null
+          pp_toi_seconds_avg_career?: number | null
+          pp_toi_seconds_avg_last10?: number | null
+          pp_toi_seconds_avg_last20?: number | null
+          pp_toi_seconds_avg_last3?: number | null
+          pp_toi_seconds_avg_last5?: number | null
+          pp_toi_seconds_avg_season?: number | null
+          pp_toi_seconds_total_all?: number | null
+          pp_toi_seconds_total_last10?: number | null
+          pp_toi_seconds_total_last20?: number | null
+          pp_toi_seconds_total_last3?: number | null
+          pp_toi_seconds_total_last5?: number | null
           pp_share_pct_avg_3ya?: number | null
           pp_share_pct_avg_all?: number | null
           pp_share_pct_avg_career?: number | null
@@ -16422,6 +16553,27 @@ export type Database = {
           assists_per_60_season?: number | null
           assists_per_60_3ya?: number | null
           assists_per_60_career?: number | null
+          penalties_drawn_per_60_avg_3ya?: number | null
+          penalties_drawn_per_60_avg_all?: number | null
+          penalties_drawn_per_60_avg_career?: number | null
+          penalties_drawn_per_60_avg_last10?: number | null
+          penalties_drawn_per_60_avg_last20?: number | null
+          penalties_drawn_per_60_avg_last3?: number | null
+          penalties_drawn_per_60_avg_last5?: number | null
+          penalties_drawn_per_60_avg_season?: number | null
+          penalties_drawn_per_60_total_all?: number | null
+          penalties_drawn_per_60_total_last10?: number | null
+          penalties_drawn_per_60_total_last20?: number | null
+          penalties_drawn_per_60_total_last3?: number | null
+          penalties_drawn_per_60_total_last5?: number | null
+          penalties_drawn_per_60_all?: number | null
+          penalties_drawn_per_60_last3?: number | null
+          penalties_drawn_per_60_last5?: number | null
+          penalties_drawn_per_60_last10?: number | null
+          penalties_drawn_per_60_last20?: number | null
+          penalties_drawn_per_60_season?: number | null
+          penalties_drawn_per_60_3ya?: number | null
+          penalties_drawn_per_60_career?: number | null
           primary_assists_per_60_all?: number | null
           primary_assists_per_60_last3?: number | null
           primary_assists_per_60_last5?: number | null
@@ -16498,6 +16650,12 @@ export type Database = {
           assists_per_60_toi_seconds_3ya?: number | null
           assists_per_60_assists_career?: number | null
           assists_per_60_toi_seconds_career?: number | null
+          penalties_drawn_per_60_penalties_drawn_season?: number | null
+          penalties_drawn_per_60_toi_seconds_season?: number | null
+          penalties_drawn_per_60_penalties_drawn_3ya?: number | null
+          penalties_drawn_per_60_toi_seconds_3ya?: number | null
+          penalties_drawn_per_60_penalties_drawn_career?: number | null
+          penalties_drawn_per_60_toi_seconds_career?: number | null
           primary_assists_per_60_primary_assists_season?: number | null
           primary_assists_per_60_toi_seconds_season?: number | null
           primary_assists_per_60_primary_assists_3ya?: number | null
@@ -16750,6 +16908,45 @@ export type Database = {
           assists_total_last20?: number | null
           assists_total_last3?: number | null
           assists_total_last5?: number | null
+          primary_assists_avg_3ya?: number | null
+          primary_assists_avg_all?: number | null
+          primary_assists_avg_career?: number | null
+          primary_assists_avg_last10?: number | null
+          primary_assists_avg_last20?: number | null
+          primary_assists_avg_last3?: number | null
+          primary_assists_avg_last5?: number | null
+          primary_assists_avg_season?: number | null
+          primary_assists_total_all?: number | null
+          primary_assists_total_last10?: number | null
+          primary_assists_total_last20?: number | null
+          primary_assists_total_last3?: number | null
+          primary_assists_total_last5?: number | null
+          secondary_assists_avg_3ya?: number | null
+          secondary_assists_avg_all?: number | null
+          secondary_assists_avg_career?: number | null
+          secondary_assists_avg_last10?: number | null
+          secondary_assists_avg_last20?: number | null
+          secondary_assists_avg_last3?: number | null
+          secondary_assists_avg_last5?: number | null
+          secondary_assists_avg_season?: number | null
+          secondary_assists_total_all?: number | null
+          secondary_assists_total_last10?: number | null
+          secondary_assists_total_last20?: number | null
+          secondary_assists_total_last3?: number | null
+          secondary_assists_total_last5?: number | null
+          penalties_drawn_avg_3ya?: number | null
+          penalties_drawn_avg_all?: number | null
+          penalties_drawn_avg_career?: number | null
+          penalties_drawn_avg_last10?: number | null
+          penalties_drawn_avg_last20?: number | null
+          penalties_drawn_avg_last3?: number | null
+          penalties_drawn_avg_last5?: number | null
+          penalties_drawn_avg_season?: number | null
+          penalties_drawn_total_all?: number | null
+          penalties_drawn_total_last10?: number | null
+          penalties_drawn_total_last20?: number | null
+          penalties_drawn_total_last3?: number | null
+          penalties_drawn_total_last5?: number | null
           blocks_avg_3ya?: number | null
           blocks_avg_all?: number | null
           blocks_avg_career?: number | null
@@ -17114,6 +17311,19 @@ export type Database = {
           pp_points_total_last20?: number | null
           pp_points_total_last3?: number | null
           pp_points_total_last5?: number | null
+          pp_toi_seconds_avg_3ya?: number | null
+          pp_toi_seconds_avg_all?: number | null
+          pp_toi_seconds_avg_career?: number | null
+          pp_toi_seconds_avg_last10?: number | null
+          pp_toi_seconds_avg_last20?: number | null
+          pp_toi_seconds_avg_last3?: number | null
+          pp_toi_seconds_avg_last5?: number | null
+          pp_toi_seconds_avg_season?: number | null
+          pp_toi_seconds_total_all?: number | null
+          pp_toi_seconds_total_last10?: number | null
+          pp_toi_seconds_total_last20?: number | null
+          pp_toi_seconds_total_last3?: number | null
+          pp_toi_seconds_total_last5?: number | null
           pp_share_pct_avg_3ya?: number | null
           pp_share_pct_avg_all?: number | null
           pp_share_pct_avg_career?: number | null
@@ -17366,6 +17576,27 @@ export type Database = {
           assists_per_60_season?: number | null
           assists_per_60_3ya?: number | null
           assists_per_60_career?: number | null
+          penalties_drawn_per_60_avg_3ya?: number | null
+          penalties_drawn_per_60_avg_all?: number | null
+          penalties_drawn_per_60_avg_career?: number | null
+          penalties_drawn_per_60_avg_last10?: number | null
+          penalties_drawn_per_60_avg_last20?: number | null
+          penalties_drawn_per_60_avg_last3?: number | null
+          penalties_drawn_per_60_avg_last5?: number | null
+          penalties_drawn_per_60_avg_season?: number | null
+          penalties_drawn_per_60_total_all?: number | null
+          penalties_drawn_per_60_total_last10?: number | null
+          penalties_drawn_per_60_total_last20?: number | null
+          penalties_drawn_per_60_total_last3?: number | null
+          penalties_drawn_per_60_total_last5?: number | null
+          penalties_drawn_per_60_all?: number | null
+          penalties_drawn_per_60_last3?: number | null
+          penalties_drawn_per_60_last5?: number | null
+          penalties_drawn_per_60_last10?: number | null
+          penalties_drawn_per_60_last20?: number | null
+          penalties_drawn_per_60_season?: number | null
+          penalties_drawn_per_60_3ya?: number | null
+          penalties_drawn_per_60_career?: number | null
           primary_assists_per_60_all?: number | null
           primary_assists_per_60_last3?: number | null
           primary_assists_per_60_last5?: number | null
@@ -17442,6 +17673,12 @@ export type Database = {
           assists_per_60_toi_seconds_3ya?: number | null
           assists_per_60_assists_career?: number | null
           assists_per_60_toi_seconds_career?: number | null
+          penalties_drawn_per_60_penalties_drawn_season?: number | null
+          penalties_drawn_per_60_toi_seconds_season?: number | null
+          penalties_drawn_per_60_penalties_drawn_3ya?: number | null
+          penalties_drawn_per_60_toi_seconds_3ya?: number | null
+          penalties_drawn_per_60_penalties_drawn_career?: number | null
+          penalties_drawn_per_60_toi_seconds_career?: number | null
           primary_assists_per_60_primary_assists_season?: number | null
           primary_assists_per_60_toi_seconds_season?: number | null
           primary_assists_per_60_primary_assists_3ya?: number | null

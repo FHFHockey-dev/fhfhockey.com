@@ -43,4 +43,19 @@ describe("update-start-chart-projections compatibility", () => {
     expect(START_CHART_ROLLING_SELECT_CLAUSE).toContain("sog_per_60_avg_last5");
     expect(START_CHART_ROLLING_SELECT_CLAUSE).toContain("sog_per_60_avg_all");
   });
+
+  it("orders weighted-rate fields canonical-first while keeping additive and TOI inputs legacy-shaped", () => {
+    expect(
+      START_CHART_ROLLING_SELECT_CLAUSE.indexOf("sog_per_60_last5")
+    ).toBeLessThan(START_CHART_ROLLING_SELECT_CLAUSE.indexOf("sog_per_60_avg_last5"));
+    expect(
+      START_CHART_ROLLING_SELECT_CLAUSE.indexOf("sog_per_60_all")
+    ).toBeLessThan(START_CHART_ROLLING_SELECT_CLAUSE.indexOf("sog_per_60_avg_all"));
+
+    expect(START_CHART_ROLLING_SELECT_CLAUSE).toContain("goals_avg_last5");
+    expect(START_CHART_ROLLING_SELECT_CLAUSE).toContain("assists_avg_last5");
+    expect(START_CHART_ROLLING_SELECT_CLAUSE).toContain("points_avg_last5");
+    expect(START_CHART_ROLLING_SELECT_CLAUSE).toContain("toi_seconds_avg_last5");
+    expect(START_CHART_ROLLING_SELECT_CLAUSE).not.toContain("toi_seconds_last5");
+  });
 });

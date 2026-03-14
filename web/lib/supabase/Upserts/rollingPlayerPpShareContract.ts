@@ -80,3 +80,19 @@ export function resolvePpShareComponents(args: {
     fallbackShare: args.wgoTeamShare
   });
 }
+
+export function resolvePlayerPpToiSeconds(args: {
+  strength: "all" | "ev" | "pp" | "pk";
+  builderPlayerPpToi: number | null | undefined;
+  wgoPlayerPpToi?: number | null | undefined;
+}): number | null {
+  if (args.strength !== "all" && args.strength !== "pp") {
+    return null;
+  }
+
+  if (args.builderPlayerPpToi != null) {
+    return args.builderPlayerPpToi;
+  }
+
+  return args.wgoPlayerPpToi ?? null;
+}

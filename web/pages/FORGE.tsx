@@ -905,7 +905,7 @@ const FORGEPage: NextPage = () => {
                 aria-label="Goalie game ticker"
               >
                 <h3>
-                  Today's Slate ({goalieGameStripData?.dateUsed ?? "N/A"})
+                  Today&apos;s Slate ({goalieGameStripData?.dateUsed ?? "N/A"})
                 </h3>
                 <div className={styles.goalieGameStripTrack}>
                   {goalieGameStripGames.map((game) => {

@@ -7,6 +7,9 @@ type CountsLike = {
   shots?: number | null;
   goals?: number | null;
   total_assists?: number | null;
+  first_assists?: number | null;
+  second_assists?: number | null;
+  penalties_drawn?: number | null;
   hits?: number | null;
   shots_blocked?: number | null;
   total_points_pp?: number | null;
@@ -18,6 +21,8 @@ type WgoLike = {
   shots?: number | null;
   goals?: number | null;
   assists?: number | null;
+  total_primary_assists?: number | null;
+  total_secondary_assists?: number | null;
   hits?: number | null;
   blocked_shots?: number | null;
   pp_points?: number | null;
@@ -74,6 +79,36 @@ export function getAssistsValue(game: AdditiveMetricSourceGame): number | null {
     return game.wgo?.assists ?? null;
   }
   return null;
+}
+
+export function getPrimaryAssistsValue(
+  game: AdditiveMetricSourceGame
+): number | null {
+  if (game.counts?.first_assists != null) {
+    return game.counts.first_assists;
+  }
+  if (game.strength === "all") {
+    return game.wgo?.total_primary_assists ?? null;
+  }
+  return null;
+}
+
+export function getSecondaryAssistsValue(
+  game: AdditiveMetricSourceGame
+): number | null {
+  if (game.counts?.second_assists != null) {
+    return game.counts.second_assists;
+  }
+  if (game.strength === "all") {
+    return game.wgo?.total_secondary_assists ?? null;
+  }
+  return null;
+}
+
+export function getPenaltiesDrawnValue(
+  game: AdditiveMetricSourceGame
+): number | null {
+  return game.counts?.penalties_drawn ?? null;
 }
 
 export function getHitsValue(game: AdditiveMetricSourceGame): number | null {

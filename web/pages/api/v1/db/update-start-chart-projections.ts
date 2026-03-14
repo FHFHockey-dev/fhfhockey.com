@@ -1,5 +1,9 @@
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
-import { canonicalOrLegacyFinite } from "lib/rollingPlayerMetricCompatibility";
+import {
+  getCompatibilityFieldOrder,
+  resolveFiniteCompatibilityValue,
+  resolveNullableCompatibilityValue
+} from "lib/rollingPlayerMetricCompatibility";
 import type { NextApiRequest, NextApiResponse } from "next";
 import supabase from "lib/supabase/server";
 import { teamsInfo } from "lib/teamsInfo";
@@ -62,7 +66,26 @@ function computeGoalieSuppression(gsaaPer60?: number | null) {
 }
 
 export const START_CHART_ROLLING_SELECT_CLAUSE =
-  "goals_avg_last5, goals_avg_all, assists_avg_last5, assists_avg_all, points_avg_last5, points_avg_all, sog_per_60_last5, sog_per_60_all, sog_per_60_avg_last5, sog_per_60_avg_all, toi_seconds_avg_last5, toi_seconds_avg_all";
+  [
+    "goals_avg_last5",
+    "goals_avg_all",
+    "assists_avg_last5",
+    "assists_avg_all",
+    "points_avg_last5",
+    "points_avg_all",
+    ...getCompatibilityFieldOrder({
+      family: "weighted_rate",
+      canonicalField: "sog_per_60_last5",
+      legacyField: "sog_per_60_avg_last5"
+    }),
+    ...getCompatibilityFieldOrder({
+      family: "weighted_rate",
+      canonicalField: "sog_per_60_all",
+      legacyField: "sog_per_60_avg_all"
+    }),
+    "toi_seconds_avg_last5",
+    "toi_seconds_avg_all"
+  ].join(", ");
 
 function projectFromRolling(
   metrics: RollingMetrics | null,
@@ -74,17 +97,31 @@ function projectFromRolling(
   const baseAssists = Number(metrics?.assists_avg_all ?? 0);
   const trendAssists = Number(metrics?.assists_avg_last5 ?? baseAssists);
   const shotsPer60Base = Number(
-    canonicalOrLegacyFinite(metrics?.sog_per_60_all, metrics?.sog_per_60_avg_all) ??
-      0
+    resolveFiniteCompatibilityValue(
+      "weighted_rate",
+      metrics?.sog_per_60_all,
+      metrics?.sog_per_60_avg_all
+    ) ?? 0
   );
   const shotsPer60Trend = Number(
-    canonicalOrLegacyFinite(
+    resolveFiniteCompatibilityValue(
+      "weighted_rate",
       metrics?.sog_per_60_last5,
       metrics?.sog_per_60_avg_last5
     ) ?? shotsPer60Base
   );
   const toiSeconds = Number(
-    metrics?.toi_seconds_avg_last5 ?? metrics?.toi_seconds_avg_all ?? 900
+    resolveNullableCompatibilityValue(
+      "toi_average",
+      null,
+      metrics?.toi_seconds_avg_last5
+    ) ??
+      resolveNullableCompatibilityValue(
+        "toi_average",
+        null,
+        metrics?.toi_seconds_avg_all
+      ) ??
+      900
   );
 
   const blend = (recent: number, baseline: number) =>

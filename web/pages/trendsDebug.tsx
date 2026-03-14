@@ -1,7 +1,10 @@
 import Head from "next/head";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-import { canonicalOrLegacyFinite } from "lib/rollingPlayerMetricCompatibility";
+import {
+  canonicalOrLegacyFinite,
+  isCompatibilityOnlyLegacyField
+} from "lib/rollingPlayerMetricCompatibility";
 import type { RollingPlayerValidationPayload } from "lib/supabase/Upserts/rollingPlayerValidationPayload";
 import supabase from "lib/supabase/client";
 import type { Database } from "lib/supabase/database-generated.types";
@@ -57,6 +60,7 @@ type NumericInputProps = {
 };
 
 type StrengthState = "all" | "ev" | "pp" | "pk";
+type DebugWorkspace = "validation" | "sandbox";
 
 type MetricFamilyId =
   | "all"
@@ -158,6 +162,7 @@ const IDENTITY_FIELDS = new Set([
 const METRIC_FORMULAS: Record<string, string> = {
   pp_share_pct:
     "sum(player_pp_toi_seconds) / sum(team_pp_toi_seconds_inferred_from_share)",
+  pp_toi_seconds: "sum(player_pp_toi_seconds)",
   on_ice_sh_pct: "sum(on_ice_goals_for) / sum(on_ice_shots_for) * 100",
   on_ice_sv_pct:
     "sum(on_ice_shots_against - on_ice_goals_against) / sum(on_ice_shots_against) * 100",
@@ -167,6 +172,9 @@ const METRIC_FORMULAS: Record<string, string> = {
   primary_points_pct: "sum(goals + first_assists) / sum(points)",
   expected_sh_pct: "sum(ixg) / sum(shots)",
   shooting_pct: "sum(goals) / sum(shots) * 100",
+  primary_assists: "sum(first_assists)",
+  secondary_assists: "sum(second_assists)",
+  penalties_drawn: "sum(penalties_drawn)",
   oz_start_pct: "sum(oz_starts) / sum(oz_starts + dz_starts) * 100",
   cf_pct: "sum(cf) / sum(cf + ca) * 100",
   ff_pct: "sum(ff) / sum(ff + fa) * 100",
@@ -174,6 +182,7 @@ const METRIC_FORMULAS: Record<string, string> = {
   ixg_per_60: "sum(ixg) / sum(toi_seconds) * 3600",
   goals_per_60: "sum(goals) / sum(toi_seconds) * 3600",
   assists_per_60: "sum(assists) / sum(toi_seconds) * 3600",
+  penalties_drawn_per_60: "sum(penalties_drawn) / sum(toi_seconds) * 3600",
   primary_assists_per_60: "sum(primary_assists) / sum(toi_seconds) * 3600",
   secondary_assists_per_60: "sum(secondary_assists) / sum(toi_seconds) * 3600",
   hits_per_60: "sum(hits) / sum(toi_seconds) * 3600",
@@ -326,14 +335,6 @@ function toPer60(countPerGame: number, toiSeconds: number): number {
   return (countPerGame * 3600) / toiSeconds;
 }
 
-function isLegacyField(field: string): boolean {
-  return (
-    field.includes("_avg_") ||
-    field.includes("_total_") ||
-    field.startsWith("gp_pct_")
-  );
-}
-
 function isContextField(field: string): boolean {
   return (
     field === "pp_unit" ||
@@ -401,7 +402,9 @@ function inferMetricFamily(field: string): MetricFamilyId {
   ) {
     return "territorial";
   }
-  if (field.startsWith("pp_share_pct")) return "pp_usage";
+  if (field.startsWith("pp_share_pct") || field.startsWith("pp_toi_seconds")) {
+    return "pp_usage";
+  }
   if (
     field.startsWith("pp_unit") ||
     field === "pp_share_of_team" ||
@@ -420,6 +423,9 @@ function inferMetricFamily(field: string): MetricFamilyId {
   if (
     field.startsWith("goals") ||
     field.startsWith("assists") ||
+    field.startsWith("primary_assists") ||
+    field.startsWith("secondary_assists") ||
+    field.startsWith("penalties_drawn") ||
     field.startsWith("shots") ||
     field.startsWith("hits") ||
     field.startsWith("blocks") ||
@@ -492,8 +498,8 @@ function stringifyCompact(value: unknown): string {
 
 function getMetricBaseKey(metricField: string): string {
   return metricField
-    .replace(/_(all|last3|last5|last10|last20|season|3ya|career)$/, "")
-    .replace(/_(avg|total)_(all|last3|last5|last10|last20|season|3ya|career)$/, "");
+    .replace(/_(avg|total)_(all|last3|last5|last10|last20|season|3ya|career)$/, "")
+    .replace(/_(all|last3|last5|last10|last20|season|3ya|career)$/, "");
 }
 
 function getFormulaForMetric(metricField: string, metricFamily: string | null): string {
@@ -554,6 +560,46 @@ function deriveAuditStatusEmoji(args: {
     return args.readinessStatus === "READY_WITH_CAUTIONS" ? "🔧" : "✅";
   }
   return args.readinessStatus === "READY_WITH_CAUTIONS" ? "🔧" : "❌";
+}
+
+function getReadinessDisplay(
+  readiness: RollingPlayerValidationPayload["readiness"] | null | undefined
+): {
+  label: string;
+  summary: string;
+  pillClass: string;
+} {
+  const status = readiness?.status ?? null;
+  if (status === "BLOCKED") {
+    return {
+      label: "BLOCKED",
+      summary: readiness?.blockerReasons.length
+        ? `${readiness.blockerReasons.length} blocker(s) require refresh or investigation`
+        : "Validation is blocked for the selected scope",
+      pillClass: styles.pillBlocked
+    };
+  }
+  if (status === "READY_WITH_CAUTIONS") {
+    return {
+      label: "READY WITH CAUTIONS",
+      summary: readiness?.cautionReasons.length
+        ? `${readiness.cautionReasons.length} caution(s) should be reviewed before signoff`
+        : "Validation is usable but still has caution-state warnings",
+      pillClass: styles.pillCaution
+    };
+  }
+  if (status === "READY") {
+    return {
+      label: "READY",
+      summary: "Validation inputs and recomputed outputs are inspection-ready",
+      pillClass: styles.pillReady
+    };
+  }
+  return {
+    label: "PENDING",
+    summary: "Validation payload not loaded yet",
+    pillClass: styles.pillNeutral
+  };
 }
 
 async function searchPlayersByName(query: string): Promise<PlayerSearchResult[]> {
@@ -639,9 +685,12 @@ export default function TrendsDebugPage() {
   const [selectedPlayer, setSelectedPlayer] = useState<PlayerSearchResult | null>(
     null
   );
-  const [validationPayload, setValidationPayload] =
+  const [scopeValidationPayload, setScopeValidationPayload] =
     useState<RollingPlayerValidationPayload | null>(null);
-  const [validationLoading, setValidationLoading] = useState(false);
+  const [detailValidationPayload, setDetailValidationPayload] =
+    useState<RollingPlayerValidationPayload | null>(null);
+  const [scopeValidationLoading, setScopeValidationLoading] = useState(false);
+  const [detailValidationLoading, setDetailValidationLoading] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [faceoffTotals, setFaceoffTotals] = useState<{
     faceoffWinPct: number | null;
@@ -682,6 +731,10 @@ export default function TrendsDebugPage() {
   const [oppPkTier, setOppPkTier] = useState(21);
   const [oppGamesPlayed, setOppGamesPlayed] = useState(62);
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
+  const [activeWorkspace, setActiveWorkspace] =
+    useState<DebugWorkspace>("validation");
+  const scopePayloadCacheRef = useRef(new Map<string, RollingPlayerValidationPayload>());
+  const detailPayloadCacheRef = useRef(new Map<string, RollingPlayerValidationPayload>());
 
   async function copyText(label: string, value: string) {
     try {
@@ -731,20 +784,39 @@ export default function TrendsDebugPage() {
     };
   }, [playerQuery]);
 
-  useEffect(() => {
-    let cancelled = false;
-    async function loadValidation() {
-      if (!selectedPlayer) {
-        setValidationPayload(null);
-        setFaceoffTotals(null);
-        return;
-      }
+  const scopeRequest = useMemo(
+    () =>
+      selectedPlayer
+        ? {
+            playerId: selectedPlayer.id,
+            season: selectedSeason,
+            strength: selectedStrength,
+            teamId: selectedTeamId ? Number(selectedTeamId) : undefined,
+            startDate: startDate || undefined,
+            endDate: endDate || undefined,
+            includeStoredRows: true,
+            includeRecomputedRows: true,
+            includeSourceRows: true,
+            includeDiagnostics: true,
+            includeWindowMembership: false,
+            includeContractMetadata: false,
+            includeComparisons: false
+          }
+        : null,
+    [
+      endDate,
+      selectedPlayer,
+      selectedSeason,
+      selectedStrength,
+      selectedTeamId,
+      startDate
+    ]
+  );
 
-      setValidationLoading(true);
-      setValidationError(null);
-      try {
-        const [payload, totals] = await Promise.all([
-          fetchValidationPayload({
+  const detailRequest = useMemo(
+    () =>
+      selectedPlayer
+        ? {
             playerId: selectedPlayer.id,
             season: selectedSeason,
             strength: selectedStrength,
@@ -755,46 +827,156 @@ export default function TrendsDebugPage() {
             metric: selectedMetric || undefined,
             metricFamily:
               selectedMetricFamily === "all" ? undefined : selectedMetricFamily,
-            includeStoredRows: true,
-            includeRecomputedRows: true,
-            includeSourceRows: true,
-            includeDiagnostics: true
-          }),
+            includeStoredRows: false,
+            includeRecomputedRows: false,
+            includeSourceRows: false,
+            includeDiagnostics: false,
+            includeWindowMembership: true,
+            includeContractMetadata: true,
+            includeComparisons: true
+          }
+        : null,
+    [
+      endDate,
+      selectedGameDate,
+      selectedMetric,
+      selectedMetricFamily,
+      selectedPlayer,
+      selectedSeason,
+      selectedStrength,
+      selectedTeamId,
+      startDate
+    ]
+  );
+
+  const scopeRequestKey = useMemo(
+    () => (scopeRequest ? JSON.stringify(scopeRequest) : null),
+    [scopeRequest]
+  );
+  const detailRequestKey = useMemo(
+    () => (detailRequest ? JSON.stringify(detailRequest) : null),
+    [detailRequest]
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadScopePayload() {
+      if (!selectedPlayer || !scopeRequest || !scopeRequestKey) {
+        setScopeValidationPayload(null);
+        setFaceoffTotals(null);
+        return;
+      }
+
+      const cachedPayload = scopePayloadCacheRef.current.get(scopeRequestKey);
+      if (cachedPayload) {
+        setScopeValidationPayload(cachedPayload);
+      } else {
+        setScopeValidationLoading(true);
+      }
+      setValidationError(null);
+
+      try {
+        const [payload, totals] = await Promise.all([
+          cachedPayload
+            ? Promise.resolve(cachedPayload)
+            : fetchValidationPayload(scopeRequest),
           fetchFaceoffTotals(selectedPlayer.id)
         ]);
 
         if (cancelled) return;
-        setValidationPayload(payload);
+        if (!cachedPayload) {
+          scopePayloadCacheRef.current.set(scopeRequestKey, payload);
+        }
+        setScopeValidationPayload(payload);
         setFaceoffTotals(totals);
       } catch (error: any) {
         if (!cancelled) {
-          setValidationPayload(null);
+          setScopeValidationPayload(null);
           setValidationError(
             error?.message ?? "Failed to load rolling validation payload."
           );
         }
       } finally {
         if (!cancelled) {
-          setValidationLoading(false);
+          setScopeValidationLoading(false);
         }
       }
     }
 
-    loadValidation();
+    loadScopePayload();
     return () => {
       cancelled = true;
     };
-  }, [
-    endDate,
-    selectedGameDate,
-    selectedMetric,
-    selectedMetricFamily,
-    selectedPlayer,
-    selectedSeason,
-    selectedStrength,
-    selectedTeamId,
-    startDate
-  ]);
+  }, [scopeRequest, scopeRequestKey, selectedPlayer]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadDetailPayload() {
+      if (!selectedPlayer || !detailRequest || !detailRequestKey) {
+        setDetailValidationPayload(null);
+        return;
+      }
+
+      const cachedPayload = detailPayloadCacheRef.current.get(detailRequestKey);
+      if (cachedPayload) {
+        setDetailValidationPayload(cachedPayload);
+        return;
+      }
+
+      setDetailValidationLoading(true);
+      setValidationError(null);
+      try {
+        const payload = await fetchValidationPayload(detailRequest);
+        if (cancelled) return;
+        detailPayloadCacheRef.current.set(detailRequestKey, payload);
+        setDetailValidationPayload(payload);
+      } catch (error: any) {
+        if (!cancelled) {
+          setDetailValidationPayload(null);
+          setValidationError(
+            error?.message ?? "Failed to load rolling validation payload."
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setDetailValidationLoading(false);
+        }
+      }
+    }
+
+    loadDetailPayload();
+    return () => {
+      cancelled = true;
+    };
+  }, [detailRequest, detailRequestKey, selectedPlayer]);
+
+  const validationPayload = useMemo<RollingPlayerValidationPayload | null>(() => {
+    if (!scopeValidationPayload && !detailValidationPayload) {
+      return null;
+    }
+    if (!scopeValidationPayload) {
+      return detailValidationPayload;
+    }
+    if (!detailValidationPayload) {
+      return scopeValidationPayload;
+    }
+
+    return {
+      ...scopeValidationPayload,
+      generatedAt: detailValidationPayload.generatedAt ?? scopeValidationPayload.generatedAt,
+      request: detailValidationPayload.request ?? scopeValidationPayload.request,
+      selected: detailValidationPayload.selected ?? scopeValidationPayload.selected,
+      readiness: detailValidationPayload.readiness ?? scopeValidationPayload.readiness,
+      contracts: detailValidationPayload.contracts ?? null,
+      formulas: detailValidationPayload.formulas ?? null,
+      windows: detailValidationPayload.windows ?? null,
+      comparisons: detailValidationPayload.comparisons ?? null
+    };
+  }, [detailValidationPayload, scopeValidationPayload]);
+
+  const validationLoading = scopeValidationLoading || detailValidationLoading;
 
   const storedRows = validationPayload?.stored?.rowHistory ?? [];
   const recomputedRows = validationPayload?.recomputed?.rowHistory ?? [];
@@ -895,11 +1077,11 @@ export default function TrendsDebugPage() {
     return Object.keys(row)
       .filter((field) => !IDENTITY_FIELDS.has(field))
       .filter((field) =>
-        selectedMetricFamily === "all"
-          ? true
-          : inferMetricFamily(field) === selectedMetricFamily
+        selectedMetricFamily === "all" ? true : inferMetricFamily(field) === selectedMetricFamily
       )
-      .filter((field) => (showLegacyFields ? true : !isLegacyField(field)))
+      .filter((field) =>
+        showLegacyFields ? true : !isCompatibilityOnlyLegacyField(field)
+      )
       .filter((field) =>
         showSupportColumns
           ? true
@@ -1213,10 +1395,13 @@ export default function TrendsDebugPage() {
       : computed.explicitFlags.state === "underperforming"
         ? styles.pillWeak
         : styles.pillNeutral;
+  const readinessDisplay = getReadinessDisplay(validationPayload?.readiness);
 
-  const focusedMetricDiff = validationPayload?.comparisons?.focusedRow?.selectedMetric?.diff;
+  const focusedSelectedMetricComparison =
+    validationPayload?.comparisons?.focusedRow?.selectedMetric ?? null;
+  const focusedMetricDiff = focusedSelectedMetricComparison?.diff;
   const focusedMetricField =
-    validationPayload?.comparisons?.focusedRow?.selectedMetric?.field ?? selectedMetric;
+    focusedSelectedMetricComparison?.field ?? selectedMetric;
   const selectedMetricFamilyResolved = focusedMetricField
     ? inferMetricFamily(focusedMetricField)
     : null;
@@ -1230,6 +1415,20 @@ export default function TrendsDebugPage() {
   const focusedStoredRow =
     (validationPayload?.stored?.focusedRow as unknown as RowLike | null) ?? null;
   const focusedRecomputedRow = validationPayload?.recomputed?.focusedRow ?? null;
+  const formulaMetadata = validationPayload?.formulas?.selectedMetric ?? null;
+  const contractMetadata = validationPayload?.contracts ?? null;
+  const windowMembership = validationPayload?.windows?.memberships ?? null;
+  const familySummary = validationPayload?.comparisons?.familySummary ?? null;
+  const focusedComparisonMatrix =
+    validationPayload?.comparisons?.focusedRow?.comparisonMatrix ?? [];
+  const focusedCanonicalVsLegacy =
+    validationPayload?.comparisons?.focusedRow?.canonicalVsLegacy ?? [];
+  const focusedSupportComparisons =
+    validationPayload?.comparisons?.focusedRow?.supportComparisons ?? [];
+  const selectedRatioCompleteness =
+    validationPayload?.diagnostics?.snapshot?.categories.completeness.selectedMetric ??
+    null;
+  const selectedRatioStates = selectedRatioCompleteness?.states ?? null;
   const selectedSupportValues = collectFieldValues(
     focusedRow,
     selectedMetricMetadata.supportFields
@@ -1245,16 +1444,6 @@ export default function TrendsDebugPage() {
     )
   );
   const availabilityValues = collectFieldValues(focusedRow, AVAILABILITY_FIELDS);
-  const windowMembership = useMemo(
-    () =>
-      getWindowMembership(
-        (storedRows.length > 0
-          ? (storedRows as unknown as RowLike[])
-          : recomputedRows) as RowLike[],
-        focusedRow
-      ),
-    [focusedRow, recomputedRows, storedRows]
-  );
   const focusedMergedGame = useMemo<RowLike | null>(() => {
     const mergedGames =
       validationPayload?.sourceRows?.selectedStrength?.mergedGames ?? [];
@@ -1271,12 +1460,26 @@ export default function TrendsDebugPage() {
       ) ?? null
     );
   }, [focusedRow, validationPayload]);
-  const focusedFormula = focusedMetricField
-    ? getFormulaForMetric(
-        focusedMetricField,
-        selectedMetricMetadata.family ?? selectedMetricFamilyResolved
-      )
-    : "Select a metric to inspect the reconstruction formula.";
+  const focusedToiTrace = useMemo(() => {
+    const toiTraceRows =
+      validationPayload?.sourceRows?.selectedStrength?.toiTraceRows ?? [];
+    const focusedKey = getRowKey(focusedRow);
+    if (!focusedKey) return null;
+    return toiTraceRows.find((row) => row.rowKey === focusedKey) ?? null;
+  }, [focusedRow, validationPayload]);
+  const focusedPpShareTrace = useMemo(() => {
+    const ppShareTraceRows =
+      validationPayload?.sourceRows?.selectedStrength?.ppShareTraceRows ?? [];
+    const focusedKey = getRowKey(focusedRow);
+    if (!focusedKey) return null;
+    return ppShareTraceRows.find((row) => row.rowKey === focusedKey) ?? null;
+  }, [focusedRow, validationPayload]);
+  const ppShareWindowSummary =
+    validationPayload?.sourceRows?.selectedStrength?.ppShareWindowSummary ?? null;
+  const focusedFormula = formulaMetadata?.formula ??
+    (focusedMetricField
+      ? "Formula metadata missing from validation payload."
+      : "Select a metric to inspect the reconstruction formula.");
   const focusedSourceContext = (focusedMergedGame?.sourceContext ?? null) as RowLike | null;
   const focusedCounts = (focusedMergedGame?.counts ?? null) as RowLike | null;
   const focusedRates = (focusedMergedGame?.rates ?? null) as RowLike | null;
@@ -1285,7 +1488,10 @@ export default function TrendsDebugPage() {
   const focusedLineCombo = (focusedMergedGame?.lineCombo ?? null) as RowLike | null;
   const refreshPrerequisites = (
     REFRESH_PREREQUISITES[
-      (selectedMetricMetadata.family ?? selectedMetricFamilyResolved ?? "other") as string
+      (formulaMetadata?.family ??
+        selectedMetricMetadata.family ??
+        selectedMetricFamilyResolved ??
+        "other") as string
     ] ?? REFRESH_PREREQUISITES.other
   );
   const auditStatusEmoji = deriveAuditStatusEmoji({
@@ -1301,18 +1507,17 @@ export default function TrendsDebugPage() {
         `- season / strength: \`${selectedSeason}\` / \`${selectedStrength}\``,
         `- row: \`${validationPayload?.selected.focusedRow?.rowKey ?? "unknown"}\``,
         `- metric: \`${focusedMetricField}\``,
-        `- stored value: \`${formatValue(
-          validationPayload?.comparisons?.focusedRow?.selectedMetric?.storedValue
-        )}\``,
+        `- stored value: \`${formatValue(focusedSelectedMetricComparison?.storedValue)}\``,
         `- reconstructed value: \`${formatValue(
-          validationPayload?.comparisons?.focusedRow?.selectedMetric?.recomputedValue
+          focusedSelectedMetricComparison?.recomputedValue
         )}\``,
         `- diff: \`${formatValue(focusedMetricDiff)}\``,
+        `- mismatch cause: \`${focusedSelectedMetricComparison?.mismatchCauseBucket ?? "unknown"}\``,
         `- readiness: \`${validationPayload?.readiness.status ?? "unknown"}\``
       ].join("\n")
     : "Select a metric to generate the comparison block.";
   const refreshPrerequisitesBlock = [
-    `- metric family: \`${selectedMetricMetadata.family ?? selectedMetricFamilyResolved ?? "other"}\``,
+    `- metric family: \`${formulaMetadata?.family ?? selectedMetricMetadata.family ?? selectedMetricFamilyResolved ?? "other"}\``,
     ...refreshPrerequisites.map((item) => `- ${item}`)
   ].join("\n");
 
@@ -1331,6 +1536,35 @@ export default function TrendsDebugPage() {
               date range, row, and metric before the deeper panel work lands.
               This page now loads the read-only validation payload instead of
               relying on browser-side rolling joins.
+            </p>
+            <div className={styles.statePillRow}>
+              <button
+                type="button"
+                className={`${styles.pill} ${styles.toggleButton} ${
+                  activeWorkspace === "validation"
+                    ? styles.pillStrong
+                    : styles.pillNeutral
+                }`}
+                onClick={() => setActiveWorkspace("validation")}
+              >
+                Validation Console
+              </button>
+              <button
+                type="button"
+                className={`${styles.pill} ${styles.toggleButton} ${
+                  activeWorkspace === "sandbox"
+                    ? styles.pillStrong
+                    : styles.pillNeutral
+                }`}
+                onClick={() => setActiveWorkspace("sandbox")}
+              >
+                Legacy Sandbox
+              </button>
+            </div>
+            <p className={styles.sectionHint}>
+              Validation stays primary. The legacy sustainability sandbox now
+              lives behind a secondary tab and still hydrates from the selected
+              validation row.
             </p>
           </section>
 
@@ -1386,8 +1620,8 @@ export default function TrendsDebugPage() {
                     <span className={styles.subtle}>
                       {selectedPlayer.position ?? "N/A"}
                     </span>
-                    <span className={styles.subtle}>
-                      readiness {validationPayload?.readiness.status ?? "pending"}
+                    <span className={`${styles.pill} ${readinessDisplay.pillClass}`}>
+                      readiness {readinessDisplay.label}
                     </span>
                   </div>
                 ) : null}
@@ -1486,169 +1720,175 @@ export default function TrendsDebugPage() {
                 </div>
               </section>
 
-              <section className={styles.section}>
-                <h2>Metric Selection</h2>
-                <p className={styles.sectionHint}>
-                  Use the family filter and metric selector to focus upcoming
-                  validation panels and diff views.
-                </p>
-                <div className={styles.fields}>
-                  <div className={styles.field}>
-                    <label htmlFor="validation-family">Metric Family</label>
-                    <select
-                      id="validation-family"
-                      value={selectedMetricFamily}
-                      onChange={(event) =>
-                        setSelectedMetricFamily(
-                          event.target.value as MetricFamilyId
-                        )
-                      }
-                    >
-                      {METRIC_FAMILY_OPTIONS.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className={styles.field}>
-                    <label htmlFor="validation-metric">Metric / Field</label>
-                    <select
-                      id="validation-metric"
-                      value={selectedMetric}
-                      onChange={(event) => setSelectedMetric(event.target.value)}
-                    >
-                      <option value="">Select metric</option>
-                      {availableMetricOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              </section>
+              {activeWorkspace === "validation" ? (
+                <>
+                  <section className={styles.section}>
+                    <h2>Metric Selection</h2>
+                    <p className={styles.sectionHint}>
+                      Use the family filter and metric selector to focus upcoming
+                      validation panels and diff views.
+                    </p>
+                    <div className={styles.fields}>
+                      <div className={styles.field}>
+                        <label htmlFor="validation-family">Metric Family</label>
+                        <select
+                          id="validation-family"
+                          value={selectedMetricFamily}
+                          onChange={(event) =>
+                            setSelectedMetricFamily(
+                              event.target.value as MetricFamilyId
+                            )
+                          }
+                        >
+                          {METRIC_FAMILY_OPTIONS.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className={styles.field}>
+                        <label htmlFor="validation-metric">Metric / Field</label>
+                        <select
+                          id="validation-metric"
+                          value={selectedMetric}
+                          onChange={(event) => setSelectedMetric(event.target.value)}
+                        >
+                          <option value="">Select metric</option>
+                          {availableMetricOptions.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </section>
 
-              <section className={styles.section}>
-                <h2>Visibility Toggles</h2>
-                <p className={styles.sectionHint}>
-                  These toggles already shape the row selector and metric
-                  selector ahead of the deeper validation panels.
-                </p>
-                <div className={styles.statePillRow}>
-                  <button
-                    type="button"
-                    className={`${styles.pill} ${styles.toggleButton} ${
-                      showLegacyFields ? styles.pillStrong : styles.pillNeutral
-                    }`}
-                    onClick={() => setShowLegacyFields((current) => !current)}
-                  >
-                    {showLegacyFields ? "Legacy View On" : "Canonical View"}
-                  </button>
-                  <button
-                    type="button"
-                    className={`${styles.pill} ${styles.toggleButton} ${
-                      mismatchOnly ? styles.pillWeak : styles.pillNeutral
-                    }`}
-                    onClick={() => setMismatchOnly((current) => !current)}
-                  >
-                    {mismatchOnly ? "Mismatches Only" : "All Rows"}
-                  </button>
-                  <button
-                    type="button"
-                    className={`${styles.pill} ${styles.toggleButton} ${
-                      staleOnly ? styles.pillWeak : styles.pillNeutral
-                    }`}
-                    onClick={() => setStaleOnly((current) => !current)}
-                  >
-                    {staleOnly ? "Stale Rows Only" : "All Freshness States"}
-                  </button>
-                  <button
-                    type="button"
-                    className={`${styles.pill} ${styles.toggleButton} ${
-                      showSupportColumns ? styles.pillStrong : styles.pillNeutral
-                    }`}
-                    onClick={() => setShowSupportColumns((current) => !current)}
-                  >
-                    {showSupportColumns ? "Support Fields On" : "Support Fields Off"}
-                  </button>
-                </div>
-              </section>
-
-              <section className={styles.section}>
-                <h2>Legacy Sandbox Inputs</h2>
-                <p className={styles.sectionHint}>
-                  These model inputs now hydrate from the focused validation row
-                  instead of a separate latest-row fetch.
-                </p>
-                <div className={styles.fields}>
-                  <div className={styles.fieldGrid}>
+                  <section className={styles.section}>
+                    <h2>Visibility Toggles</h2>
+                    <p className={styles.sectionHint}>
+                      These toggles already shape the row selector and metric
+                      selector ahead of the deeper validation panels.
+                    </p>
+                    <div className={styles.statePillRow}>
+                      <button
+                        type="button"
+                        className={`${styles.pill} ${styles.toggleButton} ${
+                          showLegacyFields ? styles.pillStrong : styles.pillNeutral
+                        }`}
+                        onClick={() => setShowLegacyFields((current) => !current)}
+                      >
+                        {showLegacyFields ? "Legacy View On" : "Canonical View"}
+                      </button>
+                      <button
+                        type="button"
+                        className={`${styles.pill} ${styles.toggleButton} ${
+                          mismatchOnly ? styles.pillWeak : styles.pillNeutral
+                        }`}
+                        onClick={() => setMismatchOnly((current) => !current)}
+                      >
+                        {mismatchOnly ? "Mismatches Only" : "All Rows"}
+                      </button>
+                      <button
+                        type="button"
+                        className={`${styles.pill} ${styles.toggleButton} ${
+                          staleOnly ? styles.pillWeak : styles.pillNeutral
+                        }`}
+                        onClick={() => setStaleOnly((current) => !current)}
+                      >
+                        {staleOnly ? "Stale Rows Only" : "All Freshness States"}
+                      </button>
+                      <button
+                        type="button"
+                        className={`${styles.pill} ${styles.toggleButton} ${
+                          showSupportColumns ? styles.pillStrong : styles.pillNeutral
+                        }`}
+                        onClick={() => setShowSupportColumns((current) => !current)}
+                      >
+                        {showSupportColumns
+                          ? "Support Fields On"
+                          : "Support Fields Off"}
+                      </button>
+                    </div>
+                  </section>
+                </>
+              ) : (
+                <section className={styles.section}>
+                  <h2>Legacy Sandbox Inputs</h2>
+                  <p className={styles.sectionHint}>
+                    These model inputs now hydrate from the focused validation row
+                    instead of a separate latest-row fetch.
+                  </p>
+                  <div className={styles.fields}>
+                    <div className={styles.fieldGrid}>
+                      <NumericInput
+                        id="shots-per-60"
+                        label="Shots / 60"
+                        value={shotsPer60}
+                        step={0.1}
+                        onChange={setShotsPer60}
+                      />
+                      <NumericInput
+                        id="ixg-per-60"
+                        label="ixG / 60"
+                        value={ixgPer60}
+                        step={0.01}
+                        onChange={setIxgPer60}
+                      />
+                    </div>
+                    <div className={styles.fieldGrid}>
+                      <NumericInput
+                        id="pp-toi-pct"
+                        label="PP Share"
+                        value={ppToiPct}
+                        step={0.01}
+                        min={0}
+                        max={1}
+                        onChange={setPpToiPct}
+                      />
+                      <NumericInput
+                        id="usage-delta"
+                        label="Usage Delta"
+                        value={usageDelta}
+                        step={0.01}
+                        onChange={setUsageDelta}
+                      />
+                    </div>
+                    <div className={styles.fieldGrid}>
+                      <NumericInput
+                        id="pdo"
+                        label="PDO"
+                        value={pdo}
+                        step={0.001}
+                        onChange={setPdo}
+                      />
+                      <NumericInput
+                        id="recent-delta"
+                        label="Aggregate Delta"
+                        value={recentDelta}
+                        step={0.01}
+                        onChange={setRecentDelta}
+                      />
+                    </div>
                     <NumericInput
-                      id="shots-per-60"
-                      label="Shots / 60"
-                      value={shotsPer60}
-                      step={0.1}
-                      onChange={setShotsPer60}
-                    />
-                    <NumericInput
-                      id="ixg-per-60"
-                      label="ixG / 60"
-                      value={ixgPer60}
+                      id="recent-z"
+                      label="Z-Like Momentum"
+                      value={recentZScore}
                       step={0.01}
-                      onChange={setIxgPer60}
+                      onChange={setRecentZScore}
                     />
                   </div>
-                  <div className={styles.fieldGrid}>
-                    <NumericInput
-                      id="pp-toi-pct"
-                      label="PP Share"
-                      value={ppToiPct}
-                      step={0.01}
-                      min={0}
-                      max={1}
-                      onChange={setPpToiPct}
-                    />
-                    <NumericInput
-                      id="usage-delta"
-                      label="Usage Delta"
-                      value={usageDelta}
-                      step={0.01}
-                      onChange={setUsageDelta}
-                    />
-                  </div>
-                  <div className={styles.fieldGrid}>
-                    <NumericInput
-                      id="pdo"
-                      label="PDO"
-                      value={pdo}
-                      step={0.001}
-                      onChange={setPdo}
-                    />
-                    <NumericInput
-                      id="recent-delta"
-                      label="Aggregate Delta"
-                      value={recentDelta}
-                      step={0.01}
-                      onChange={setRecentDelta}
-                    />
-                  </div>
-                  <NumericInput
-                    id="recent-z"
-                    label="Z-Like Momentum"
-                    value={recentZScore}
-                    step={0.01}
-                    onChange={setRecentZScore}
-                  />
-                </div>
-              </section>
+                </section>
+              )}
             </aside>
 
             <section className={`${styles.panel} ${styles.results}`}>
               <div className={`${styles.card} ${styles.bannerCard}`}>
                 <h3>Freshness Banner</h3>
                 <div className={styles.statePillRow}>
-                  <div className={`${styles.pill} ${styles.pillNeutral}`}>
-                    readiness {validationPayload?.readiness.status ?? "pending"}
+                  <div className={`${styles.pill} ${readinessDisplay.pillClass}`}>
+                    readiness {readinessDisplay.label}
                   </div>
                   <div className={`${styles.pill} ${styles.pillNeutral}`}>
                     source tail {latestSourceDate ?? "unknown"}
@@ -1659,13 +1899,16 @@ export default function TrendsDebugPage() {
                   <div className={`${styles.pill} ${styles.pillNeutral}`}>
                     recomputed {validationPayload?.diagnostics?.targetFreshness?.recomputedRowCount ?? 0}
                   </div>
-                  <div className={`${styles.pill} ${activeStateClass}`}>
-                    sandbox {computed.explicitFlags.state}
-                  </div>
+                  {activeWorkspace === "sandbox" ? (
+                    <div className={`${styles.pill} ${activeStateClass}`}>
+                      sandbox {computed.explicitFlags.state}
+                    </div>
+                  ) : null}
                 </div>
                 {copyFeedback ? (
                   <p className={styles.sectionHint}>{copyFeedback}</p>
                 ) : null}
+                <p className={styles.sectionHint}>{readinessDisplay.summary}</p>
                 <div className={styles.statList}>
                   <div className={styles.statRow}>
                     <span>Blockers</span>
@@ -1689,10 +1932,21 @@ export default function TrendsDebugPage() {
                       {validationPayload?.readiness.nextRecommendedAction ?? "None"}
                     </strong>
                   </div>
+                  <div className={styles.statRow}>
+                    <span>Validation state</span>
+                    <strong>{readinessDisplay.label}</strong>
+                  </div>
                 </div>
               </div>
 
               <div className={styles.summaryGrid}>
+                <div className={styles.metricCard}>
+                  <span className={styles.metricLabel}>Readiness State</span>
+                  <strong className={styles.metricValue}>{readinessDisplay.label}</strong>
+                  <span className={styles.metricDetail}>
+                    {readinessDisplay.summary}
+                  </span>
+                </div>
                 <div className={styles.metricCard}>
                   <span className={styles.metricLabel}>Stored Rows</span>
                   <strong className={styles.metricValue}>
@@ -1712,26 +1966,20 @@ export default function TrendsDebugPage() {
                   </span>
                 </div>
                 <div className={styles.metricCard}>
-                  <span className={styles.metricLabel}>Focused Metric Diff</span>
+                  <span className={styles.metricLabel}>Family Mismatches</span>
                   <strong className={styles.metricValue}>
-                    {focusedMetricDiff == null ? "—" : formatNumber(focusedMetricDiff, 6)}
+                    {familySummary?.mismatchFieldCount ?? 0}
                   </strong>
                   <span className={styles.metricDetail}>
-                    {focusedMetricField || "No metric selected"}
-                  </span>
-                </div>
-                <div className={styles.metricCard}>
-                  <span className={styles.metricLabel}>Focused Row</span>
-                  <strong className={styles.metricValue}>
-                    {validationPayload?.selected.focusedRow?.gameDate ?? "—"}
-                  </strong>
-                  <span className={styles.metricDetail}>
-                    {validationPayload?.selected.focusedRow?.rowKey ?? "No row selected"}
+                    {familySummary
+                      ? `${familySummary.mismatchRowCount} row(s) with mismatches`
+                      : "No family summary loaded"}
                   </span>
                 </div>
               </div>
 
-              <div className={styles.cardGrid}>
+              {activeWorkspace === "validation" ? (
+                <div className={styles.cardGrid}>
                 <article className={styles.card}>
                   <h3>Stored Value Panel</h3>
                   <div className={styles.statList}>
@@ -1769,11 +2017,19 @@ export default function TrendsDebugPage() {
                   <div className={styles.statList}>
                     <div className={styles.statRow}>
                       <span>Metric family</span>
-                      <strong>{selectedMetricMetadata.family ?? selectedMetricFamilyResolved ?? "—"}</strong>
+                      <strong>{formulaMetadata?.family ?? selectedMetricMetadata.family ?? selectedMetricFamilyResolved ?? "—"}</strong>
                     </div>
                     <div className={styles.statRow}>
                       <span>Formula</span>
                       <strong className={styles.mono}>{focusedFormula}</strong>
+                    </div>
+                    <div className={styles.statRow}>
+                      <span>Formula source</span>
+                      <strong>{formatValue(formulaMetadata?.formulaSource)}</strong>
+                    </div>
+                    <div className={styles.statRow}>
+                      <span>Window family</span>
+                      <strong>{formatValue(formulaMetadata?.windowFamily)}</strong>
                     </div>
                     <div className={styles.statRow}>
                       <span>Support fields</span>
@@ -1791,7 +2047,29 @@ export default function TrendsDebugPage() {
                           : "none"}
                       </strong>
                     </div>
+                    <div className={styles.statRow}>
+                      <span>Window contract</span>
+                      <strong className={styles.mono}>
+                        {contractMetadata?.windowContract?.contractSummary ?? "none"}
+                      </strong>
+                    </div>
+                    <div className={styles.statRow}>
+                      <span>Support completeness family</span>
+                      <strong>{formatValue(selectedRatioCompleteness?.family)}</strong>
+                    </div>
                   </div>
+                  {selectedRatioStates ? (
+                    <div className={styles.statList}>
+                      {(["last3", "last5", "last10", "last20"] as const).map((key) => (
+                        <div key={key} className={styles.statRow}>
+                          <span>{key} support completeness</span>
+                          <strong>
+                            {formatValue(selectedRatioStates[key]?.state)}
+                          </strong>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
                 </article>
 
                 <article className={styles.card}>
@@ -1860,18 +2138,25 @@ export default function TrendsDebugPage() {
                 <article className={`${styles.card} ${styles.cardWide}`}>
                   <h3>Rolling-Window Membership Panel</h3>
                   <div className={styles.windowGrid}>
-                    {([3, 5, 10, 20] as const).map((size) => (
-                      <div key={size} className={styles.windowBlock}>
-                        <strong className={styles.windowTitle}>{`last${size}`}</strong>
-                        {windowMembership[size].length ? (
+                    {windowMembership ? (
+                      (["last3", "last5", "last10", "last20"] as const).map((key) => {
+                        const window = windowMembership[key];
+                        return (
+                      <div key={key} className={styles.windowBlock}>
+                        <strong className={styles.windowTitle}>{key}</strong>
+                        <p className={styles.sectionHint}>
+                          {window.selectionMode === "team_games"
+                            ? "current-team game ledger"
+                            : "appearance-row window"}
+                        </p>
+                        {window.members.length ? (
                           <div className={styles.windowList}>
-                            {windowMembership[size].map((row) => (
-                              <div key={getRowKey(row)} className={styles.windowRow}>
-                                <span>{getRowGameDate(row) ?? "—"}</span>
+                            {window.members.map((row) => (
+                              <div key={row.rowKey} className={styles.windowRow}>
+                                <span>{row.gameDate ?? "—"}</span>
+                                <span className={styles.mono}>{row.source}</span>
                                 <span className={styles.mono}>
-                                  {focusedMetricField
-                                    ? formatValue(row[focusedMetricField])
-                                    : "select metric"}
+                                  {row.hasPlayerAppearance ? "appearance" : "no appearance"}
                                 </span>
                               </div>
                             ))}
@@ -1880,7 +2165,13 @@ export default function TrendsDebugPage() {
                           <p className={styles.sectionHint}>No rows in window.</p>
                         )}
                       </div>
-                    ))}
+                        );
+                      })
+                    ) : (
+                      <p className={styles.sectionHint}>
+                        No server-authoritative window membership loaded.
+                      </p>
+                    )}
                   </div>
                 </article>
 
@@ -1905,7 +2196,17 @@ export default function TrendsDebugPage() {
                 <article className={styles.card}>
                   <h3>Numerator / Denominator Panel</h3>
                   <div className={styles.statList}>
-                    {selectedSupportValues.length ? (
+                    {focusedSupportComparisons.length ? (
+                      focusedSupportComparisons.map((entry) => (
+                        <div key={entry.field} className={styles.statRow}>
+                          <span>{entry.field}</span>
+                          <strong className={styles.mono}>
+                            stored {formatValue(entry.storedValue)} | recomputed{" "}
+                            {formatValue(entry.recomputedValue)}
+                          </strong>
+                        </div>
+                      ))
+                    ) : selectedSupportValues.length ? (
                       selectedSupportValues.map((entry) => (
                         <div key={entry.field} className={styles.statRow}>
                           <span>{entry.field}</span>
@@ -1918,6 +2219,16 @@ export default function TrendsDebugPage() {
                         <strong>No support fields exposed for the selected metric.</strong>
                       </div>
                     )}
+                    {selectedRatioStates
+                      ? (["last3", "last5", "last10", "last20"] as const).map((key) => (
+                          <div key={`ratio-${key}`} className={styles.statRow}>
+                            <span>{key} completeness counts</span>
+                            <strong className={styles.mono}>
+                              {stringifyCompact(selectedRatioStates[key].counts)}
+                            </strong>
+                          </div>
+                        ))
+                      : null}
                   </div>
                 </article>
 
@@ -1943,6 +2254,13 @@ export default function TrendsDebugPage() {
                     <div className={styles.statRow}>
                       <span>Fallback TOI seed</span>
                       <strong>{formatValue(focusedSourceContext?.fallbackToiSource)}</strong>
+                    </div>
+                    <div className={styles.statRow}>
+                      <span>Additive authority</span>
+                      <strong className={styles.mono}>
+                        {contractMetadata?.helperSummaries.sourceSelection.authoritySummary ??
+                          "none"}
+                      </strong>
                     </div>
                   </div>
                 </article>
@@ -1972,7 +2290,33 @@ export default function TrendsDebugPage() {
                     </div>
                     <div className={styles.statRow}>
                       <span>WGO normalization</span>
-                      <strong>{formatValue(focusedSourceContext?.wgoToiNormalization)}</strong>
+                      <strong>{formatValue(focusedToiTrace?.resolved.wgoNormalization ?? focusedSourceContext?.wgoToiNormalization)}</strong>
+                    </div>
+                    <div className={styles.statRow}>
+                      <span>Resolved source</span>
+                      <strong>{formatValue(focusedToiTrace?.resolved.source ?? focusedSourceContext?.resolvedToiSource)}</strong>
+                    </div>
+                    <div className={styles.statRow}>
+                      <span>Fallback seed source</span>
+                      <strong>{formatValue(focusedToiTrace?.fallbackSeed.source ?? focusedSourceContext?.fallbackToiSource)}</strong>
+                    </div>
+                    <div className={styles.statRow}>
+                      <span>Rejected candidates</span>
+                      <strong className={styles.mono}>
+                        {focusedToiTrace?.resolved.rejectedCandidates.length
+                          ? focusedToiTrace.resolved.rejectedCandidates
+                              .map((entry) => `${entry.source}:${entry.reason}`)
+                              .join(" | ")
+                          : "none"}
+                      </strong>
+                    </div>
+                    <div className={styles.statRow}>
+                      <span>Suspicious notes</span>
+                      <strong className={styles.mono}>
+                        {focusedToiTrace?.suspiciousNotes.length
+                          ? focusedToiTrace.suspiciousNotes.join(" | ")
+                          : "none"}
+                      </strong>
                     </div>
                   </div>
                 </article>
@@ -2000,6 +2344,26 @@ export default function TrendsDebugPage() {
                       <span>WGO PP TOI / share fallback</span>
                       <strong className={styles.mono}>
                         {formatValue(focusedWgoRow?.pp_toi)} / {formatValue(focusedWgoRow?.pp_toi_pct_per_game)}
+                      </strong>
+                    </div>
+                    <div className={styles.statRow}>
+                      <span>Chosen PP-share source</span>
+                      <strong>{formatValue(focusedPpShareTrace?.chosen.source)}</strong>
+                    </div>
+                    <div className={styles.statRow}>
+                      <span>Chosen team PP TOI</span>
+                      <strong className={styles.mono}>
+                        {formatValue(focusedPpShareTrace?.chosen.teamPpToiInferred)}
+                      </strong>
+                    </div>
+                    <div className={styles.statRow}>
+                      <span>Mixed-source windows</span>
+                      <strong className={styles.mono}>
+                        {ppShareWindowSummary
+                          ? (["last3", "last5", "last10", "last20"] as const)
+                              .filter((key) => ppShareWindowSummary[key]?.mixedSourceWindow)
+                              .join(", ") || "none"
+                          : "none"}
                       </strong>
                     </div>
                   </div>
@@ -2037,8 +2401,78 @@ export default function TrendsDebugPage() {
                   <h3>Diagnostics Panel</h3>
                   <div className={styles.statList}>
                     <div className={styles.statRow}>
+                      <span>Diagnostics status</span>
+                      <strong>{formatValue(validationPayload?.diagnostics?.snapshot?.overallStatus)}</strong>
+                    </div>
+                    <div className={styles.statRow}>
+                      <span>Coverage status</span>
+                      <strong>{formatValue(validationPayload?.diagnostics?.snapshot?.categories.coverage.status)}</strong>
+                    </div>
+                    <div className={styles.statRow}>
+                      <span>Freshness status</span>
+                      <strong>{formatValue(validationPayload?.diagnostics?.snapshot?.categories.freshness.status)}</strong>
+                    </div>
+                    <div className={styles.statRow}>
+                      <span>Completeness status</span>
+                      <strong>{formatValue(validationPayload?.diagnostics?.snapshot?.categories.completeness.status)}</strong>
+                    </div>
+                    <div className={styles.statRow}>
                       <span>Coverage warning count</span>
                       <strong>{validationPayload?.diagnostics?.coverage?.warnings.length ?? 0}</strong>
+                    </div>
+                    <div className={styles.statRow}>
+                      <span>Latest PP game covered</span>
+                      <strong>
+                        {formatValue(
+                          validationPayload?.diagnostics?.snapshot?.categories.coverage.ppCoverage
+                            .latestBuilderGameCovered
+                        )}
+                      </strong>
+                    </div>
+                    <div className={styles.statRow}>
+                      <span>PP window fully covered</span>
+                      <strong>
+                        {formatValue(
+                          validationPayload?.diagnostics?.snapshot?.categories.coverage.ppCoverage
+                            .windowBuilderCoverageComplete
+                        )}
+                      </strong>
+                    </div>
+                    <div className={styles.statRow}>
+                      <span>Latest PP share covered</span>
+                      <strong>
+                        {formatValue(
+                          validationPayload?.diagnostics?.snapshot?.categories.coverage.ppCoverage
+                            .latestShareGameCovered
+                        )}
+                      </strong>
+                    </div>
+                    <div className={styles.statRow}>
+                      <span>PP share window fully covered</span>
+                      <strong>
+                        {formatValue(
+                          validationPayload?.diagnostics?.snapshot?.categories.coverage.ppCoverage
+                            .windowShareCoverageComplete
+                        )}
+                      </strong>
+                    </div>
+                    <div className={styles.statRow}>
+                      <span>Missing PP builder game IDs</span>
+                      <strong className={styles.mono}>
+                        {validationPayload?.diagnostics?.snapshot?.categories.coverage.ppCoverage
+                          .missingPpGameIds.length
+                          ? validationPayload?.diagnostics?.snapshot?.categories.coverage.ppCoverage.missingPpGameIds.join(", ")
+                          : "none"}
+                      </strong>
+                    </div>
+                    <div className={styles.statRow}>
+                      <span>Missing PP share game IDs</span>
+                      <strong className={styles.mono}>
+                        {validationPayload?.diagnostics?.snapshot?.categories.coverage.ppCoverage
+                          .missingPpShareGameIds.length
+                          ? validationPayload?.diagnostics?.snapshot?.categories.coverage.ppCoverage.missingPpShareGameIds.join(", ")
+                          : "none"}
+                      </strong>
                     </div>
                     <div className={styles.statRow}>
                       <span>Unknown game IDs</span>
@@ -2050,8 +2484,16 @@ export default function TrendsDebugPage() {
                     </div>
                   </div>
                   <pre className={styles.codeBlock}>
+                    {stringifyCompact(
+                      validationPayload?.diagnostics?.snapshot?.highlights ?? []
+                    )}
+                  </pre>
+                  <pre className={styles.codeBlock}>
                     {stringifyCompact({
+                      snapshot: validationPayload?.diagnostics?.snapshot ?? null,
                       coverage: validationPayload?.diagnostics?.coverage ?? null,
+                      sourceTailFreshness:
+                        validationPayload?.diagnostics?.sourceTailFreshness ?? null,
                       derivedWindowCompleteness:
                         validationPayload?.diagnostics?.derivedWindowCompleteness ?? null,
                       suspiciousOutputs:
@@ -2091,35 +2533,70 @@ export default function TrendsDebugPage() {
                       <span>Diff</span>
                       <strong className={styles.mono}>{formatValue(focusedMetricDiff)}</strong>
                     </div>
-                  </div>
-                </article>
-
-                <article className={styles.card}>
-                  <h3>Legacy Sandbox Outputs</h3>
-                  <div className={styles.statList}>
                     <div className={styles.statRow}>
-                      <span>Predicted State</span>
-                      <strong>{computed.probabilityResult.label}</strong>
+                      <span>Percent diff</span>
+                      <strong className={styles.mono}>
+                        {formatValue(focusedSelectedMetricComparison?.percentDiff)}
+                      </strong>
                     </div>
                     <div className={styles.statRow}>
-                      <span>Sustainability Score</span>
-                      <strong>{formatNumber(computed.score.score)}</strong>
+                      <span>Mismatch cause</span>
+                      <strong>{formatValue(focusedSelectedMetricComparison?.mismatchCauseBucket)}</strong>
                     </div>
                     <div className={styles.statRow}>
-                      <span>{projectionMetric} per game</span>
-                      <strong>{formatNumber(computed.countProjection.expectedPerGame)}</strong>
-                    </div>
-                    <div className={styles.statRow}>
-                      <span>FO Win %</span>
-                      <strong>{formatNumber(computed.faceoffProjection.expectedWinPct * 100)}%</strong>
-                    </div>
-                    <div className={styles.statRow}>
-                      <span>Focused player snapshot</span>
-                      <strong>{playerSnapshot?.gameDate ?? "—"}</strong>
+                      <span>Values match</span>
+                      <strong>{formatValue(focusedSelectedMetricComparison?.valuesMatch)}</strong>
                     </div>
                   </div>
+                  <pre className={styles.codeBlock}>
+                    {stringifyCompact({
+                      familySummary,
+                      comparisonMatrix: focusedComparisonMatrix.slice(0, 12),
+                      canonicalVsLegacy: focusedCanonicalVsLegacy,
+                      supportComparisons: focusedSupportComparisons
+                    })}
+                  </pre>
                 </article>
               </div>
+              ) : (
+                <div className={styles.cardGrid}>
+                  <article className={styles.card}>
+                    <h3>Legacy Sandbox Outputs</h3>
+                    <p className={styles.sectionHint}>
+                      This secondary surface remains available for model
+                      experimentation, but the validation console is the primary
+                      audit workspace.
+                    </p>
+                    <div className={styles.statList}>
+                      <div className={styles.statRow}>
+                        <span>Predicted State</span>
+                        <strong>{computed.probabilityResult.label}</strong>
+                      </div>
+                      <div className={styles.statRow}>
+                        <span>Sustainability Score</span>
+                        <strong>{formatNumber(computed.score.score)}</strong>
+                      </div>
+                      <div className={styles.statRow}>
+                        <span>{projectionMetric} per game</span>
+                        <strong>{formatNumber(computed.countProjection.expectedPerGame)}</strong>
+                      </div>
+                      <div className={styles.statRow}>
+                        <span>FO Win %</span>
+                        <strong>
+                          {formatNumber(
+                            computed.faceoffProjection.expectedWinPct * 100
+                          )}
+                          %
+                        </strong>
+                      </div>
+                      <div className={styles.statRow}>
+                        <span>Focused player snapshot</span>
+                        <strong>{playerSnapshot?.gameDate ?? "—"}</strong>
+                      </div>
+                    </div>
+                  </article>
+                </div>
+              )}
             </section>
           </div>
         </div>
