@@ -16,8 +16,25 @@ const supabase = createClient(
 const resend = new Resend(process.env.RESEND_API_KEY!);
 
 const REPORT_WINDOW_MS = 24 * 60 * 60 * 1000;
-const MATCH_WINDOW_MS = 30 * 60 * 1000;
+const MATCH_WINDOW_MS = 6 * 60 * 60 * 1000;
 const WARN_SLOW_MS = 180_000;
+
+const SCHEDULE_ALIAS_MAP: Record<string, string[]> = {
+  "update-all-wgo-skaters": ["update-wgo-skaters", "/api/v1/db/update-wgo-skaters"],
+  "update-all-wgo-goalies": ["/api/v1/db/update-wgo-goalies"],
+  "update-all-wgo-skater-totals": [
+    "update-skater-totals",
+    "/api/v1/db/update-wgo-totals"
+  ],
+  "update-shift-charts": ["/api/v1/db/shift-charts"],
+  "update-yahoo-matchup-dates": ["/api/v1/db/update-yahoo-weeks"],
+  "update-line-combinations-all": ["/api/v1/db/update-line-combinations"],
+  "update-wgo-teams": ["run-fetch-wgo-data", "/api/v1/db/run-fetch-wgo-data"],
+  "update-wigo-table-stats": [
+    "calculate-wigo-stats",
+    "/api/v1/db/calculate-wigo-stats"
+  ]
+};
 
 type NormalizedStatus = "success" | "failure" | "unknown";
 type ReportJobStatus = NormalizedStatus | "missing";
@@ -736,7 +753,8 @@ async function loadScheduledCronJobs(
             job.name,
             job.route,
             job.routePath,
-            job.url
+            job.url,
+            ...(SCHEDULE_ALIAS_MAP[job.name] ?? [])
           ].filter((value): value is string => Boolean(value))
         )
       )

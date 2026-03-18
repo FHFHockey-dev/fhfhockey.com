@@ -798,6 +798,7 @@ export default async function handler(
   let details: any = {};
   let responseMessage = "";
   let responseData: any = {};
+  let responseBody: any = null;
 
   try {
     const actionParam = req.query.action as string | undefined;
@@ -928,12 +929,13 @@ export default async function handler(
     }
 
     // --- Send successful response ---
-    return res.status(status === "success" ? 200 : 500).json({
+    responseBody = {
       // Use 500 if process finished with errors
       message: responseMessage,
       success: status === "success",
       data: responseData // Include detailed result object
-    });
+    };
+    return res.status(status === "success" ? 200 : 500).json(responseBody);
   } catch (err: any) {
     console.error("Error in handler:", err);
     status = "error";
@@ -944,7 +946,8 @@ export default async function handler(
         err.message.includes("Invalid") || err.message.includes("Missing")
           ? 400
           : 500;
-      res.status(statusCode).json({ message: err.message, success: false });
+      responseBody = { message: err.message, success: false };
+      res.status(statusCode).json(responseBody);
     }
   } finally {
     const elapsedMs = Date.now() - startTime;
@@ -956,7 +959,18 @@ export default async function handler(
           job_name: jobName,
           status,
           rows_affected: rowsAffected,
-          details // Contains more context including action type
+          details: {
+            method: req.method ?? null,
+            url: req.url ?? null,
+            statusCode: res.statusCode,
+            durationMs: elapsedMs,
+            error:
+              status === "error"
+                ? details?.error ?? responseMessage ?? "Unknown error"
+                : null,
+            response: responseBody,
+            context: details
+          }
         }
       ]);
     } catch (auditErr: any) {
