@@ -1283,12 +1283,14 @@ export default adminOnly(async (req: NextApiRequest, res: NextApiResponse) => {
   let status: "success" | "error" = "success";
   let rowsAffected = 0;
   let details: any = {};
+  let responseBody: any = null;
   try {
     if (req.method !== "POST") {
-      return res.status(405).json({
+      responseBody = {
         message: "Method not allowed. Use POST.",
         success: false
-      });
+      };
+      return res.status(405).json(responseBody);
     }
     const result = await fetchAndStoreShiftCharts();
     rowsAffected = result.totalRowsUpserted;
@@ -1297,27 +1299,30 @@ export default adminOnly(async (req: NextApiRequest, res: NextApiResponse) => {
       durationMs: Date.now() - startTime
     };
     if (result.success) {
-      res.status(200).json({
+      responseBody = {
         message: result.message,
         success: true,
         unmatchedNames: result.unmatchedNames
-      });
+      };
+      res.status(200).json(responseBody);
     } else {
       status = "error";
       details.error = result.error?.message || result.message;
-      res.status(500).json({
+      responseBody = {
         message: result.message,
         success: false,
         unmatchedNames: result.unmatchedNames
-      });
+      };
+      res.status(500).json(responseBody);
     }
   } catch (error: any) {
     status = "error";
     details = { ...details, error: error.message };
-    res.status(500).json({
+    responseBody = {
       message: error.message || "An unexpected error occurred.",
       success: false
-    });
+    };
+    res.status(500).json(responseBody);
   } finally {
     try {
       await supabase.from("cron_job_audit").insert([
@@ -1325,7 +1330,15 @@ export default adminOnly(async (req: NextApiRequest, res: NextApiResponse) => {
           job_name: jobName,
           status,
           rows_affected: rowsAffected,
-          details
+          details: {
+            method: req.method ?? null,
+            url: req.url ?? null,
+            statusCode: res.statusCode,
+            durationMs: Date.now() - startTime,
+            error: status === "error" ? details?.error ?? "Unknown error" : null,
+            response: responseBody,
+            context: details
+          }
         }
       ]);
     } catch (auditErr) {

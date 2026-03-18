@@ -1586,10 +1586,17 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  const jobName = "update-wgo-skaters";
+  const startTime = Date.now();
+  const actionParam =
+    typeof req.query.action === "string" ? req.query.action : undefined;
+  const jobName =
+    actionParam === "all" || actionParam === "all_seasons_full_refresh"
+      ? "update-all-wgo-skaters"
+      : "/api/v1/db/update-wgo-skaters";
   let status: "success" | "failure" = "success";
   let details: any = {};
   let totalUpdates = 0;
+  let responseBody: any = null;
 
   try {
     const {
@@ -1613,7 +1620,8 @@ export default async function handler(
       result = await updateAllStatsForAllSeasons();
       totalUpdates = result.totalUpdates;
       details = { message: result.message, failedDates: result.failedDates };
-      res.status(200).json(result);
+      responseBody = result;
+      res.status(200).json(responseBody);
     } else if (action === "all") {
       console.log(
         `Action 'all' triggered. Full refresh: ${fullRefresh}, Start date: ${startDate}`
@@ -1630,7 +1638,8 @@ export default async function handler(
         fullRefresh,
         startDate
       };
-      res.status(200).json({ ...result, fullRefresh, startDate });
+      responseBody = { ...result, fullRefresh, startDate };
+      res.status(200).json(responseBody);
     } else if (date && typeof date === "string") {
       console.log(`Date parameter found: ${date}`);
       const seasonInfo = await getSeasonFromDate(date);
@@ -1650,7 +1659,8 @@ export default async function handler(
       );
       totalUpdates = result.totalUpdates;
       details = { message: result.message };
-      res.status(200).json(result);
+      responseBody = result;
+      res.status(200).json(responseBody);
     } else if (playerId && typeof playerId === "string") {
       console.log(`Player ID parameter found: ${playerId}`);
       const name = playerFullName || `PlayerID ${playerId}`;
@@ -1661,20 +1671,23 @@ export default async function handler(
         data: resultData
       };
       details = { message: result.message, playerId };
-      res.status(200).json(result);
+      responseBody = result;
+      res.status(200).json(responseBody);
     } else {
       status = "failure";
       details = {
         message:
           "Missing or invalid parameters. Provide 'action=all_seasons_full_refresh', 'action=all', 'date', or 'playerId'."
       };
-      res.status(400).json(details);
+      responseBody = details;
+      res.status(400).json(responseBody);
     }
   } catch (e: any) {
     console.error("Handler error:", e);
     status = "failure";
     details = { error: e.message, stack: e.stack };
-    res.status(500).json(details);
+    responseBody = details;
+    res.status(500).json(responseBody);
   } finally {
     if (req.query.action) {
       // Only log cron jobs for actions
@@ -1682,7 +1695,18 @@ export default async function handler(
         job_name: jobName,
         status: status,
         rows_affected: totalUpdates,
-        details: details
+        details: {
+          method: req.method ?? null,
+          url: req.url ?? null,
+          statusCode: res.statusCode,
+          durationMs: Date.now() - startTime,
+          error:
+            status === "failure"
+              ? details?.error ?? details?.message ?? "Unknown error"
+              : null,
+          response: responseBody,
+          context: details
+        }
       });
     }
   }

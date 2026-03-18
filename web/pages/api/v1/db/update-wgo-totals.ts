@@ -660,12 +660,13 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  const jobName = "update-skater-totals";
+  const jobName = "update-all-wgo-skater-totals";
   const startTime = Date.now();
   let status: "success" | "error" = "success";
   let rowsAffected = 0;
   let totalErrors = 0;
   let details: any = {};
+  let responseBody: any = null;
 
   try {
     const seasonParam = Array.isArray(req.query.season)
@@ -680,11 +681,12 @@ export default async function handler(
         seasonsProcessed: result.seasonsProcessed,
         totalTimeInSeconds: result.totalTimeInSeconds
       };
-      return res.json({
+      responseBody = {
         message: `Successfully processed ${result.seasonsProcessed.length} seasons.`,
         success: true,
         ...details
-      });
+      };
+      return res.json(responseBody);
     }
 
     if (!seasonParam || seasonParam.toLowerCase() === "current") {
@@ -700,11 +702,12 @@ export default async function handler(
         totalErrors: result.totalErrors,
         season: seasonValue
       };
-      return res.json({
+      responseBody = {
         message: `Updated ${rowsAffected} players for current season ${seasonValue}.`,
         success: result.updated,
         ...details
-      });
+      };
+      return res.json(responseBody);
     }
 
     const seasonValue = seasonParam!;
@@ -718,17 +721,19 @@ export default async function handler(
       totalErrors: result.totalErrors,
       season: seasonValue
     };
-    return res.json({
+    responseBody = {
       message: `Updated ${rowsAffected} players for ${seasonValue}.`,
       success: result.updated,
       ...details
-    });
+    };
+    return res.json(responseBody);
   } catch (err: any) {
     status = "error";
     totalErrors += 1;
     details = { ...details, error: err.message };
     if (!res.headersSent) {
-      res.status(500).json({ message: err.message, success: false });
+      responseBody = { message: err.message, success: false };
+      res.status(500).json(responseBody);
     }
   } finally {
     const processingTimeMs = Date.now() - startTime;
@@ -740,7 +745,15 @@ export default async function handler(
           job_name: jobName,
           status,
           rows_affected: rowsAffected,
-          details
+          details: {
+            method: req.method ?? null,
+            url: req.url ?? null,
+            statusCode: res.statusCode,
+            durationMs: processingTimeMs,
+            error: status === "error" ? details?.error ?? "Unknown error" : null,
+            response: responseBody,
+            context: details
+          }
         }
       ]);
     } catch (auditErr) {
