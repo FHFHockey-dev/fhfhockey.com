@@ -25,6 +25,22 @@ import {
   WGOSkaterStat
 } from "lib/NHL/types";
 
+/**
+ * Query params:
+ * - runMode: optional `incremental` or `full`; defaults to incremental when no other mode is given.
+ * - full / all: optional truthy flag for a full-season all-player refresh.
+ * - date: optional YYYY-MM-DD single-day refresh.
+ * - playerId: optional targeted player refresh id.
+ * - playerFullName: optional targeted player refresh name.
+ *
+ * Cron-safe default:
+ * - no params => current-season incremental refresh from the latest stored date through today
+ *
+ * Cron-safe static URLs:
+ * - /api/v1/db/update-sko-stats
+ * - /api/v1/db/update-sko-stats?full=1
+ */
+
 // Define the structure of the NHL API response for skater stats
 interface NHLApiResponse {
   data:
@@ -44,6 +60,75 @@ interface NHLApiResponse {
     | WGOScoringCountsSkaterStat[]
     | WGOShotTypeSkaterStat[]
     | WGOToiSkaterStat[];
+}
+
+export function isTruthyQueryFlag(
+  value: string | string[] | undefined
+): boolean {
+  if (typeof value === "string") {
+    return ["1", "true", "all", "full", "yes"].includes(value.toLowerCase());
+  }
+
+  if (Array.isArray(value)) {
+    return value.some((entry) => isTruthyQueryFlag(entry));
+  }
+
+  return false;
+}
+
+export function resolveSkaterIncrementalWindow({
+  seasonStartDate,
+  seasonEndDate,
+  latestStoredDate,
+  today = format(new Date(), "yyyy-MM-dd")
+}: {
+  seasonStartDate: string;
+  seasonEndDate: string;
+  latestStoredDate: string | null;
+  today?: string;
+}): {
+  startDate: string | null;
+  endDate: string;
+  upToDate: boolean;
+} {
+  const endDate = today < seasonEndDate ? today : seasonEndDate;
+  const startDate =
+    latestStoredDate && latestStoredDate >= seasonStartDate
+      ? format(addDays(parseISO(latestStoredDate), 1), "yyyy-MM-dd")
+      : seasonStartDate;
+
+  if (startDate > endDate) {
+    return {
+      startDate: null,
+      endDate,
+      upToDate: true
+    };
+  }
+
+  return {
+    startDate,
+    endDate,
+    upToDate: false
+  };
+}
+
+async function getLatestSkaterStatsDateForSeason(
+  seasonId: number
+): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("sko_skater_stats")
+    .select("date")
+    .eq("season_id", seasonId)
+    .order("date", { ascending: false })
+    .limit(1);
+
+  if (error) {
+    throw new Error(
+      `Failed to determine latest sko_skater_stats date for season ${seasonId}: ${error.message}`
+    );
+  }
+
+  return data?.[0]?.date ?? null;
 }
 
 // Fetch all skater data for a specific date with a limit on the number of records
@@ -254,8 +339,12 @@ async function fetchAllDataForDate(
 }
 
 // Function to update skater stats for a specific date in the Supabase database
-async function updateSkaterStats(date: string): Promise<{
+async function updateSkaterStats(
+  date: string,
+  options?: { seasonId?: number }
+): Promise<{
   updated: boolean;
+  upsertedRows: number;
   skaterStats: WGOSummarySkaterStat[];
   skatersBio: WGOSkatersBio[];
   miscSkaterStats: WGORealtimeSkaterStat[];
@@ -292,6 +381,36 @@ async function updateSkaterStats(date: string): Promise<{
     shotTypeStats,
     timeOnIceStats
   } = await fetchAllDataForDate(formattedDate, 100);
+
+  const playerIds = Array.from(
+    new Set(
+      skaterStats
+        .map((stat) => stat.playerId)
+        .filter((playerId): playerId is number => Number.isFinite(playerId))
+    )
+  );
+  const existingRecordsByPlayerId = new Map<number, any>();
+
+  if (playerIds.length > 0) {
+    const { data: existingRecords, error: existingRecordsError } =
+      await supabase
+        .from("sko_skater_stats")
+        .select("*")
+        .in("player_id", playerIds);
+
+    if (existingRecordsError) {
+      console.error(
+        `Error preloading existing sko_skater_stats records for ${formattedDate}:`,
+        existingRecordsError
+      );
+    } else {
+      for (const existingRecord of existingRecords ?? []) {
+        existingRecordsByPlayerId.set(existingRecord.player_id, existingRecord);
+      }
+    }
+  }
+
+  const mergedRows: Record<string, any>[] = [];
 
   for (const stat of skaterStats) {
     const bioStats = skatersBio.find(
@@ -339,17 +458,7 @@ async function updateSkaterStats(date: string): Promise<{
     const timeOnIceStat = timeOnIceStats.find(
       (aStat) => aStat.playerId === stat.playerId
     );
-
-    const { data: existingRecord, error } = await supabase
-      .from("sko_skater_stats")
-      .select("*")
-      .eq("player_id", stat.playerId)
-      .single();
-
-    if (error) {
-      console.error("Error fetching existing record:", error);
-      continue;
-    }
+    const existingRecord = existingRecordsByPlayerId.get(stat.playerId);
 
     const mergedData = {
       ...existingRecord,
@@ -600,6 +709,11 @@ async function updateSkaterStats(date: string): Promise<{
       shots_on_net_tip_in: shotTypeStat?.shotsOnNetTipIn, // int
       shots_on_net_wrap_around: shotTypeStat?.shotsOnNetWrapAround, // int
       shots_on_net_wrist: shotTypeStat?.shotsOnNetWrist, // int
+      ...(existingRecord?.season_id || options?.seasonId
+        ? {
+            season_id: existingRecord?.season_id ?? options?.seasonId
+          }
+        : {}),
       // time on ice stats from timeOnIceResponse (timeOnIceStat)
       ev_time_on_ice: timeOnIceStat?.evTimeOnIce, // int
       ev_time_on_ice_per_game: timeOnIceStat?.evTimeOnIcePerGame, // float
@@ -609,10 +723,22 @@ async function updateSkaterStats(date: string): Promise<{
       shifts_per_game: timeOnIceStat?.shiftsPerGame, // float
       time_on_ice_per_shift: timeOnIceStat?.timeOnIcePerShift // float
     };
-    await supabase.from("sko_skater_stats").upsert(mergedData);
+    mergedRows.push(mergedData);
   }
+
+  if (mergedRows.length > 0) {
+    const { error: upsertError } = await supabase
+      .from("sko_skater_stats")
+      .upsert(mergedRows);
+
+    if (upsertError) {
+      throw upsertError;
+    }
+  }
+
   return {
     updated: true,
+    upsertedRows: mergedRows.length,
     skaterStats,
     skatersBio,
     miscSkaterStats,
@@ -1299,6 +1425,67 @@ async function updateSkaterStatsForSeason() {
   }
 }
 
+async function resolveDefaultSkaterRefreshWindow() {
+  const currentSeason = await getCurrentSeason();
+  const latestStoredDate = await getLatestSkaterStatsDateForSeason(
+    Number(currentSeason.seasonId)
+  );
+  const window = resolveSkaterIncrementalWindow({
+    seasonStartDate: currentSeason.regularSeasonStartDate,
+    seasonEndDate: currentSeason.regularSeasonEndDate,
+    latestStoredDate
+  });
+
+  return {
+    seasonId: Number(currentSeason.seasonId),
+    latestStoredDate,
+    ...window
+  };
+}
+
+async function updateSkaterStatsForDateWindow(
+  startDate: string,
+  endDate: string,
+  seasonId?: number
+) {
+  if (startDate > endDate) {
+    return {
+      message: "Skater stats are already up to date for the requested window.",
+      success: true,
+      startDate,
+      endDate,
+      totalDaysProcessed: 0,
+      totalUpdates: 0
+    };
+  }
+
+  let currentDate = parseISO(startDate);
+  let totalUpdates = 0;
+  let totalDaysProcessed = 0;
+
+  while (true) {
+    const formattedDate = format(currentDate, "yyyy-MM-dd");
+    if (formattedDate > endDate) {
+      break;
+    }
+
+    console.log(`Updating skater stats for ${formattedDate}`);
+    const result = await updateSkaterStats(formattedDate, { seasonId });
+    totalUpdates += result.upsertedRows;
+    totalDaysProcessed += 1;
+    currentDate = addDays(currentDate, 1);
+  }
+
+  return {
+    message: `Skater stats updated successfully for ${totalDaysProcessed} day(s).`,
+    success: true,
+    startDate,
+    endDate,
+    totalDaysProcessed,
+    totalUpdates
+  };
+}
+
 // Function to fetch data for a specific skater across multiple dates
 async function fetchDataForPlayer(
   playerId: string,
@@ -1515,37 +1702,87 @@ async function handler(
   try {
     const dateParam = req.query.date;
     const playerIdParam = req.query.playerId;
+    const runModeParam = req.query.runMode;
     const fullParam = req.query.full ?? req.query.all; // trigger full-season all-players update
     const date = Array.isArray(dateParam) ? dateParam[0] : dateParam;
     const playerId = Array.isArray(playerIdParam)
       ? playerIdParam[0]
       : playerIdParam;
+    const runMode = Array.isArray(runModeParam)
+      ? runModeParam[0]
+      : runModeParam;
     const playerFullName = Array.isArray(req.query.playerFullName)
       ? req.query.playerFullName[0]
       : req.query.playerFullName || "Unknown Player";
+    const noExplicitMode = !date && !playerId && fullParam === undefined;
 
-    // Full refresh across the entire season for all players
     const runFull =
-      (typeof fullParam === "string" &&
-        ["1", "true", "all"].includes(fullParam.toLowerCase())) ||
-      (Array.isArray(fullParam) &&
-        fullParam.some((v) =>
-          ["1", "true", "all"].includes(String(v).toLowerCase())
-        ));
+      (typeof runMode === "string" && runMode.toLowerCase() === "full") ||
+      isTruthyQueryFlag(fullParam);
 
     if (runFull) {
-      const result = await updateSkaterStatsForSeason();
+      const currentSeason = await getCurrentSeason();
+      const today = format(new Date(), "yyyy-MM-dd");
+      const result = await updateSkaterStatsForDateWindow(
+        currentSeason.regularSeasonStartDate,
+        today < currentSeason.regularSeasonEndDate
+          ? today
+          : currentSeason.regularSeasonEndDate,
+        Number(currentSeason.seasonId)
+      );
       res.json({
         message:
           "Skater stats updated successfully for all players (full-season run).",
         success: true,
+        mode: "full",
         data: result
+      });
+    } else if (noExplicitMode || runMode === "incremental") {
+      if (noExplicitMode) {
+        console.log(
+          "No explicit mode provided; defaulting update-sko-stats to incremental refresh."
+        );
+      }
+      const window = await resolveDefaultSkaterRefreshWindow();
+
+      if (window.upToDate || !window.startDate) {
+        res.json({
+          message:
+            "Skater stats are already current; no incremental refresh was needed.",
+          success: true,
+          mode: "incremental",
+          data: {
+            startDate: window.startDate,
+            endDate: window.endDate,
+            latestStoredDate: window.latestStoredDate,
+            totalDaysProcessed: 0,
+            totalUpdates: 0
+          }
+        });
+        return;
+      }
+
+      const result = await updateSkaterStatsForDateWindow(
+        window.startDate,
+        window.endDate,
+        window.seasonId
+      );
+      res.json({
+        message:
+          "Skater stats updated successfully for the current incremental window.",
+        success: true,
+        mode: "incremental",
+        data: {
+          latestStoredDate: window.latestStoredDate,
+          ...result
+        }
       });
     } else if (date) {
       const result = await updateSkaterStats(date);
       res.json({
         message: `Skater stats updated successfully for ${date}.`,
         success: true,
+        mode: "date",
         data: result
       });
     } else if (playerId && playerFullName) {
@@ -1553,12 +1790,13 @@ async function handler(
       res.json({
         message: `Data fetched successfully for player ${playerFullName}.`,
         success: true,
+        mode: "player",
         data: result
       });
     } else {
       res.status(400).json({
         message:
-          "Missing required parameters. Use one of: ?full=1 for full-season all players; ?date=YYYY-MM-DD for a single day; or ?playerId=...&playerFullName=... for an individual player.",
+          "Invalid parameters. Use one of: no params / ?runMode=incremental for incremental refresh; ?full=1 or ?runMode=full for a full-season run; ?date=YYYY-MM-DD for a single day; or ?playerId=...&playerFullName=... for an individual player.",
         success: false
       });
     }

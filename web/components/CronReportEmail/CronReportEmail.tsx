@@ -1,52 +1,75 @@
 import * as React from "react";
 
+type JobStatus = "success" | "failure" | "unknown" | "missing";
+
+interface JobRow {
+  jobKey: string;
+  displayName: string;
+  lastStatus: JobStatus;
+  lastStatusSource: "audit" | "cron" | "missing" | "unknown";
+  scheduleTimeDisplay: string;
+  expectedRunDisplay: string;
+  lastRunDisplay: string;
+  method: string;
+  route: string | null;
+  statusCode: number | null;
+  why: string | null;
+  note: string | null;
+  okCount24h: number;
+  failCount24h: number;
+  rowsUpsertedLast: number | null;
+  failedRowsLast: number | null;
+  failedRowSamples: string[];
+  lastDurationMs: number | null;
+}
+
+interface RunDigest {
+  key: string;
+  label: string;
+  jobName: string;
+  status: "success" | "failure" | "unknown";
+  runTimeDisplay: string;
+  method: string | null;
+  route: string | null;
+  statusCode: number | null;
+  durationMs: number | null;
+  rowsUpserted: number | null;
+  rowsAffected: number | null;
+  failedRows: number | null;
+  reason: string | null;
+  failedRowSamples: string[];
+}
+
 interface CronReportEmailProps {
   sinceDate: string;
   summary: {
-    jobs: number;
+    scheduledJobs: number;
+    scheduledJobsWithActivity: number;
     auditRuns: number;
     auditSuccesses: number;
     auditFailures: number;
     auditUnknown: number;
     jobsOkLast: number;
     jobsFailingLast: number;
+    jobsMissingLast: number;
     jobsUnknownLast: number;
-    warnZeroRows: number;
-    warnUnknown: number;
+    unscheduledRuns: number;
+    totalRowsUpserted: number;
+    totalFailedRows: number;
     warnSlow: number;
-    warnGoalieQuality: number;
+    warnPartialFailure: number;
+    warnMissingAudit: number;
   };
-  jobs: Array<{
-    jobName: string;
-    lastStatus: "success" | "failure" | "unknown";
-    lastStatusSource: "audit" | "cron" | "unknown";
-    lastTimeDisplay: string;
-    message: string | null;
-    runsCount: number;
-    auditRunsCount: number;
-    okCount24h: number;
-    failCount24h: number;
-    rowsLast: number | null;
-    rowsTotal: number | null;
-    goalieRowsLast: number | null;
-    goalieWarningsLast: number;
-    lastDurationMs: number | null;
-    avgDurationMs: number | null;
-  }>;
-  recentFailures: Array<{
-    jobName: string;
-    runTimeDisplay: string;
-    rowsAffected: number | null;
-    message: string;
-    durationMs: number | null;
-  }>;
+  jobs: JobRow[];
+  failureHighlights: JobRow[];
+  missingJobs: JobRow[];
+  unscheduledRuns: RunDigest[];
   fetchErrors: string[];
   warnings: {
     slowMsThreshold: number;
-    zeroRowsJobs: string[];
-    unknownStatusJobs: string[];
-    slowJobs: Array<{ jobName: string; durationMs: number }>;
-    goalieQualityJobs: Array<{ jobName: string; warningCount: number }>;
+    slowJobs: Array<{ displayName: string; durationMs: number }>;
+    partialFailureJobs: Array<{ displayName: string; failedRows: number }>;
+    missingAuditJobs: string[];
   };
 }
 
@@ -54,7 +77,9 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
   sinceDate,
   summary,
   jobs,
-  recentFailures,
+  failureHighlights,
+  missingJobs,
+  unscheduledRuns,
   fetchErrors,
   warnings
 }) => {
@@ -63,9 +88,19 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
     lineHeight: 1.4
   };
 
+  const renderTable = (children: React.ReactNode) => (
+    <table
+      style={{ borderCollapse: "collapse", width: "100%" }}
+      border={1}
+      cellPadding={6}
+    >
+      {children}
+    </table>
+  );
+
   const badge = (
-    status: "success" | "failure" | "unknown",
-    source: "audit" | "cron" | "unknown"
+    status: JobStatus | RunDigest["status"],
+    source?: "audit" | "cron" | "missing" | "unknown"
   ) => {
     const common: React.CSSProperties = {
       display: "inline-block",
@@ -75,12 +110,25 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
       fontWeight: 700
     };
     const sourceNote =
-      source === "audit" ? " (audit)" : source === "cron" ? " (cron)" : "";
+      source === "audit"
+        ? " (audit)"
+        : source === "cron"
+          ? " (cron)"
+          : source === "missing"
+            ? " (missing)"
+            : "";
 
     if (status === "failure") {
       return (
         <span style={{ ...common, background: "#FEE2E2", color: "#991B1B" }}>
           FAIL{sourceNote}
+        </span>
+      );
+    }
+    if (status === "missing") {
+      return (
+        <span style={{ ...common, background: "#FEF3C7", color: "#92400E" }}>
+          MISSING{sourceNote}
         </span>
       );
     }
@@ -98,77 +146,64 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
     );
   };
 
-  const renderTable = (children: React.ReactNode) => (
-    <table
-      style={{ borderCollapse: "collapse", width: "100%" }}
-      border={1}
-      cellPadding={6}
-    >
-      {children}
-    </table>
+  const renderReasonCell = (
+    reason: string | null,
+    samples: string[],
+    tone: "danger" | "neutral" = "neutral"
+  ) => (
+    <td style={tone === "danger" ? { color: "#991B1B" } : undefined}>
+      <div>{reason ?? "—"}</div>
+      {samples.length > 0 ? (
+        <div style={{ marginTop: 4, fontSize: 12, color: "#4B5563" }}>
+          Samples: {samples.join(" ; ")}
+        </div>
+      ) : null}
+    </td>
   );
 
   return (
     <div style={container}>
-      <h1 style={{ margin: "0 0 8px" }}>Daily Cron Briefing — last 24 hrs</h1>
+      <h1 style={{ margin: "0 0 8px" }}>Daily Cron Summary — last 24 hrs</h1>
       <div style={{ margin: "0 0 12px", color: "#374151" }}>
-        Since {new Date(sinceDate).toLocaleString()} • {summary.jobs} jobs •{" "}
+        Since {new Date(sinceDate).toLocaleString()} • {summary.scheduledJobs} scheduled jobs
+        • {summary.scheduledJobsWithActivity} observed •{" "}
         <span style={{ color: summary.jobsFailingLast ? "#991B1B" : "#166534" }}>
-          {summary.jobsFailingLast} failing jobs
+          {summary.jobsFailingLast} failing
         </span>{" "}
-        • {summary.jobsOkLast} ok
-        {summary.jobsUnknownLast ? ` • ${summary.jobsUnknownLast} unknown` : ""}{" "}
+        • {summary.jobsMissingLast} missing • {summary.jobsOkLast} ok
+        {summary.jobsUnknownLast ? ` • ${summary.jobsUnknownLast} unknown` : ""}
         <br />
-        {summary.auditRuns} audit runs •{" "}
+        {summary.auditRuns} audit runs • {summary.auditSuccesses} successes •{" "}
         <span style={{ color: summary.auditFailures ? "#991B1B" : "#166534" }}>
           {summary.auditFailures} failures
-        </span>{" "}
-        • {summary.auditSuccesses} successes
+        </span>
         {summary.auditUnknown ? ` • ${summary.auditUnknown} unknown` : ""}
+        <br />
+        {summary.totalRowsUpserted.toLocaleString()} rows upserted •{" "}
+        {summary.totalFailedRows.toLocaleString()} failed rows •{" "}
+        {summary.unscheduledRuns} unscheduled observations
       </div>
 
-      {summary.warnZeroRows +
-      summary.warnUnknown +
-      summary.warnSlow +
-      summary.warnGoalieQuality >
-      0 ? (
+      {warnings.slowJobs.length > 0 ||
+      warnings.partialFailureJobs.length > 0 ||
+      warnings.missingAuditJobs.length > 0 ? (
         <div style={{ margin: "0 0 16px" }}>
-          <div style={{ fontWeight: 800 }}>Warnings</div>
-          <div style={{ marginTop: 6, color: "#374151" }}>
-            {summary.warnZeroRows ? `${summary.warnZeroRows} zero-row` : ""}
-            {summary.warnZeroRows && (summary.warnUnknown || summary.warnSlow)
-              ? " • "
-              : ""}
-            {summary.warnUnknown ? `${summary.warnUnknown} unknown` : ""}
-            {summary.warnUnknown && summary.warnSlow ? " • " : ""}
-            {summary.warnSlow
-              ? `${summary.warnSlow} slow (>${Math.round(
-                  warnings.slowMsThreshold / 1000
-                )}s)`
-              : ""}
-            {(summary.warnZeroRows || summary.warnUnknown || summary.warnSlow) &&
-            summary.warnGoalieQuality
-              ? " • "
-              : ""}
-            {summary.warnGoalieQuality
-              ? `${summary.warnGoalieQuality} goalie-quality`
-              : ""}
-          </div>
+          <div style={{ fontWeight: 800 }}>Attention</div>
           <ul style={{ margin: "8px 0 0", paddingLeft: 18 }}>
-            {warnings.zeroRowsJobs.slice(0, 6).map((j) => (
-              <li key={`zero-${j}`}>Zero rows: {j}</li>
-            ))}
-            {warnings.unknownStatusJobs.slice(0, 6).map((j) => (
-              <li key={`unk-${j}`}>Unknown status: {j}</li>
-            ))}
-            {warnings.slowJobs.slice(0, 6).map((j) => (
-              <li key={`slow-${j.jobName}`}>
-                Slow: {j.jobName} ({Math.round(j.durationMs / 1000)}s)
+            {warnings.slowJobs.slice(0, 6).map((job) => (
+              <li key={`slow-${job.displayName}`}>
+                Slow: {job.displayName} ({Math.round(job.durationMs / 1000)}s, threshold{" "}
+                {Math.round(warnings.slowMsThreshold / 1000)}s)
               </li>
             ))}
-            {warnings.goalieQualityJobs.slice(0, 6).map((j) => (
-              <li key={`goalie-quality-${j.jobName}`}>
-                Goalie data-quality warnings: {j.jobName} ({j.warningCount})
+            {warnings.partialFailureJobs.slice(0, 6).map((job) => (
+              <li key={`partial-${job.displayName}`}>
+                Partial success: {job.displayName} returned {job.failedRows} failed rows.
+              </li>
+            ))}
+            {warnings.missingAuditJobs.slice(0, 6).map((job) => (
+              <li key={`missing-audit-${job}`}>
+                No audit row: {job}
               </li>
             ))}
           </ul>
@@ -177,45 +212,56 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
 
       {fetchErrors.length > 0 ? (
         <div style={{ margin: "0 0 16px" }}>
-          <div style={{ fontWeight: 700, color: "#991B1B" }}>
-            Report errors
-          </div>
+          <div style={{ fontWeight: 700, color: "#991B1B" }}>Report errors</div>
           <ul style={{ margin: "6px 0 0", paddingLeft: 18, color: "#991B1B" }}>
-            {fetchErrors.map((e, i) => (
-              <li key={i}>{e}</li>
+            {fetchErrors.map((error, index) => (
+              <li key={index}>{error}</li>
             ))}
           </ul>
         </div>
       ) : null}
 
-      {recentFailures.length > 0 ? (
+      {failureHighlights.length > 0 ? (
         <>
           <h2 style={{ margin: "16px 0 8px", color: "#991B1B" }}>
-            Failures (top priority)
+            Failures requiring attention
           </h2>
           {renderTable(
             <>
               <thead>
                 <tr style={{ background: "#F9FAFB" }}>
-                  <th align="left">Job</th>
-                  <th align="left">Run Time</th>
+                  <th align="left">Scheduled</th>
+                  <th align="left">Expected</th>
+                  <th align="left">Last Run</th>
+                  <th align="left">Route</th>
+                  <th align="right">HTTP</th>
                   <th align="right">Duration</th>
-                  <th align="right">Rows</th>
-                  <th align="left">Message</th>
+                  <th align="right">Upserted</th>
+                  <th align="right">Failed Rows</th>
+                  <th align="left">Why</th>
                 </tr>
               </thead>
               <tbody>
-                {recentFailures.map((f, i) => (
-                  <tr key={`${f.jobName}-${f.runTimeDisplay}-${i}`}>
-                    <td style={{ fontWeight: 700 }}>{f.jobName}</td>
-                    <td>{f.runTimeDisplay}</td>
+                {failureHighlights.map((job) => (
+                  <tr key={job.jobKey} style={{ background: "#FEF2F2" }}>
+                    <td style={{ fontWeight: 700 }}>{job.displayName}</td>
+                    <td>{job.expectedRunDisplay}</td>
+                    <td>{job.lastRunDisplay}</td>
+                    <td>
+                      <div>{job.route ?? "SQL"}</div>
+                      <div style={{ fontSize: 12, color: "#6B7280" }}>
+                        {job.method} • {job.scheduleTimeDisplay}
+                      </div>
+                    </td>
+                    <td align="right">{job.statusCode ?? "—"}</td>
                     <td align="right">
-                      {typeof f.durationMs === "number"
-                        ? `${Math.round(f.durationMs / 1000)}s`
+                      {typeof job.lastDurationMs === "number"
+                        ? `${Math.round(job.lastDurationMs / 1000)}s`
                         : "—"}
                     </td>
-                    <td align="right">{f.rowsAffected ?? "—"}</td>
-                    <td style={{ color: "#991B1B" }}>{f.message}</td>
+                    <td align="right">{job.rowsUpsertedLast ?? "—"}</td>
+                    <td align="right">{job.failedRowsLast ?? "—"}</td>
+                    {renderReasonCell(job.why ?? job.note, job.failedRowSamples, "danger")}
                   </tr>
                 ))}
               </tbody>
@@ -224,65 +270,146 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
         </>
       ) : (
         <div style={{ margin: "12px 0", color: "#166534", fontWeight: 700 }}>
-          No failures reported.
+          No scheduled job failures in this period.
         </div>
       )}
 
-      <h2 style={{ margin: "16px 0 8px" }}>Latest per job</h2>
+      {missingJobs.length > 0 ? (
+        <>
+          <h2 style={{ margin: "16px 0 8px", color: "#92400E" }}>
+            Missing scheduled runs
+          </h2>
+          {renderTable(
+            <>
+              <thead>
+                <tr style={{ background: "#F9FAFB" }}>
+                  <th align="left">Scheduled</th>
+                  <th align="left">Expected</th>
+                  <th align="left">Route</th>
+                  <th align="left">Note</th>
+                </tr>
+              </thead>
+              <tbody>
+                {missingJobs.map((job) => (
+                  <tr key={job.jobKey} style={{ background: "#FFFBEB" }}>
+                    <td style={{ fontWeight: 700 }}>{job.displayName}</td>
+                    <td>{job.expectedRunDisplay}</td>
+                    <td>{job.route ?? "SQL"}</td>
+                    <td>{job.note ?? "No matching cron or audit row was found."}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </>
+          )}
+        </>
+      ) : null}
+
+      {unscheduledRuns.length > 0 ? (
+        <>
+          <h2 style={{ margin: "16px 0 8px" }}>Unscheduled activity</h2>
+          {renderTable(
+            <>
+              <thead>
+                <tr style={{ background: "#F9FAFB" }}>
+                  <th align="left">Status</th>
+                  <th align="left">Observed Job</th>
+                  <th align="left">Run Time</th>
+                  <th align="left">Route</th>
+                  <th align="right">HTTP</th>
+                  <th align="right">Duration</th>
+                  <th align="right">Upserted</th>
+                  <th align="right">Failed Rows</th>
+                  <th align="left">Reason</th>
+                </tr>
+              </thead>
+              <tbody>
+                {unscheduledRuns.slice(0, 12).map((run) => (
+                  <tr key={run.key}>
+                    <td>{badge(run.status)}</td>
+                    <td style={{ fontWeight: 700 }}>{run.jobName}</td>
+                    <td>{run.runTimeDisplay}</td>
+                    <td>
+                      <div>{run.route ?? run.label}</div>
+                      <div style={{ fontSize: 12, color: "#6B7280" }}>
+                        {run.method ?? "—"}
+                      </div>
+                    </td>
+                    <td align="right">{run.statusCode ?? "—"}</td>
+                    <td align="right">
+                      {typeof run.durationMs === "number"
+                        ? `${Math.round(run.durationMs / 1000)}s`
+                        : "—"}
+                    </td>
+                    <td align="right">{run.rowsUpserted ?? run.rowsAffected ?? "—"}</td>
+                    <td align="right">{run.failedRows ?? "—"}</td>
+                    {renderReasonCell(run.reason, run.failedRowSamples)}
+                  </tr>
+                ))}
+              </tbody>
+            </>
+          )}
+        </>
+      ) : null}
+
+      <h2 style={{ margin: "16px 0 8px" }}>Scheduled job status</h2>
       {renderTable(
         <>
           <thead>
             <tr style={{ background: "#F9FAFB" }}>
               <th align="left">Status</th>
-              <th align="left">Job</th>
+              <th align="left">Scheduled</th>
+              <th align="left">Expected</th>
               <th align="left">Last Run</th>
+              <th align="left">Route</th>
+              <th align="right">HTTP</th>
               <th align="right">Duration</th>
-              <th align="right">Rows (last)</th>
-              <th align="right">Goalie Rows</th>
-              <th align="right">Goalie Warn</th>
-              <th align="right">Rows (24h)</th>
+              <th align="right">Upserted</th>
+              <th align="right">Failed Rows</th>
               <th align="right">OK</th>
               <th align="right">Fail</th>
               <th align="left">Note</th>
             </tr>
           </thead>
           <tbody>
-            {jobs.map((j) => (
+            {jobs.map((job) => (
               <tr
-                key={j.jobName}
+                key={job.jobKey}
                 style={
-                  j.lastStatus === "failure"
+                  job.lastStatus === "failure"
                     ? { background: "#FEF2F2" }
-                    : undefined
+                    : job.lastStatus === "missing"
+                      ? { background: "#FFFBEB" }
+                      : undefined
                 }
               >
-                <td>{badge(j.lastStatus, j.lastStatusSource)}</td>
-                <td style={{ fontWeight: 700 }}>{j.jobName}</td>
-                <td>{j.lastTimeDisplay}</td>
+                <td>{badge(job.lastStatus, job.lastStatusSource)}</td>
+                <td style={{ fontWeight: 700 }}>{job.displayName}</td>
+                <td>{job.expectedRunDisplay}</td>
+                <td>{job.lastRunDisplay}</td>
+                <td>
+                  <div>{job.route ?? "SQL"}</div>
+                  <div style={{ fontSize: 12, color: "#6B7280" }}>
+                    {job.method} • {job.scheduleTimeDisplay}
+                  </div>
+                </td>
+                <td align="right">{job.statusCode ?? "—"}</td>
                 <td align="right">
-                  {typeof j.lastDurationMs === "number"
-                    ? `${Math.round(j.lastDurationMs / 1000)}s`
+                  {typeof job.lastDurationMs === "number"
+                    ? `${Math.round(job.lastDurationMs / 1000)}s`
                     : "—"}
                 </td>
-                <td align="right">{j.rowsLast ?? "—"}</td>
-                <td align="right">{j.goalieRowsLast ?? "—"}</td>
-                <td
-                  align="right"
-                  style={{
-                    color: j.goalieWarningsLast > 0 ? "#991B1B" : undefined
-                  }}
-                >
-                  {j.goalieWarningsLast}
+                <td align="right">{job.rowsUpsertedLast ?? "—"}</td>
+                <td align="right">{job.failedRowsLast ?? "—"}</td>
+                <td align="right">{job.okCount24h}</td>
+                <td align="right">{job.failCount24h}</td>
+                <td>
+                  <div>{job.note ?? job.why ?? "—"}</div>
+                  {job.failedRowSamples.length > 0 ? (
+                    <div style={{ marginTop: 4, fontSize: 12, color: "#4B5563" }}>
+                      Samples: {job.failedRowSamples.join(" ; ")}
+                    </div>
+                  ) : null}
                 </td>
-                <td align="right">{j.rowsTotal ?? "—"}</td>
-                <td align="right">{j.okCount24h}</td>
-                <td
-                  align="right"
-                  style={{ color: j.failCount24h ? "#991B1B" : undefined }}
-                >
-                  {j.failCount24h}
-                </td>
-                <td>{j.message ?? "—"}</td>
               </tr>
             ))}
           </tbody>

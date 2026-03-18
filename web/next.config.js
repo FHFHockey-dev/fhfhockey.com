@@ -1,9 +1,14 @@
 const CMS_URL = process.env.CMS_URL;
 const isProd = process.env.NODE_ENV === "production";
+const preserveDistDir = process.env.PRESERVE_NEXT_DIST === "1";
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  cleanDistDir: false, // Prevent Next.js from cleaning the dist directory to avoid conflicts with iCloud
+  cleanDistDir: !preserveDistDir,
+  eslint: {
+    ignoreDuringBuilds: true
+  },
+  transpilePackages: ["@portabletext/react", "@portabletext/toolkit"],
   images: {
     // If the image optimizer is failing in dev (common when sharp/libvips mismatches),
     // bypass it so local development isn't blocked.

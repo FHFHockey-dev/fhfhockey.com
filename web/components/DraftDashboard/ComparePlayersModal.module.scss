@@ -1,4 +1,5 @@
 @use "sass:color";
+@use "sass:map";
 @use "styles/vars" as v;
 @use "styles/panel" as p;
 
@@ -750,13 +751,13 @@ $teams: (
 
 @each $abbr, $c in $teams {
   .team-#{$abbr} {
-    --team-primary: #{map-get($c, primary)};
-    --team-secondary: #{map-get($c, secondary)};
-    --team-accent: #{map-get($c, accent)};
-    --team-light: #{map-get($c, light)};
-    --team-dark: #{map-get($c, dark)};
-    --team-accent-soft: #{rgba(map-get($c, accent), 0.15)};
-    --team-accent-glow: #{rgba(map-get($c, accent), 0.55)};
+    --team-primary: #{map.get($c, primary)};
+    --team-secondary: #{map.get($c, secondary)};
+    --team-accent: #{map.get($c, accent)};
+    --team-light: #{map.get($c, light)};
+    --team-dark: #{map.get($c, dark)};
+    --team-accent-soft: #{rgba(map.get($c, accent), 0.15)};
+    --team-accent-glow: #{rgba(map.get($c, accent), 0.55)};
   }
 }
 

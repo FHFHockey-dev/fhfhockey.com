@@ -20,6 +20,12 @@ type Mover = {
 
 type TopMoversCardProps = {
   position: "all" | "f" | "d" | "g";
+  onStatusChange?: (status: {
+    loading: boolean;
+    error: string | null;
+    staleMessage: string | null;
+    empty: boolean;
+  }) => void;
 };
 
 const DEFAULT_TEAM_LOGO = "/teamLogos/default.png";
@@ -30,7 +36,10 @@ const mapPosition = (position: TopMoversCardProps["position"]): "forward" | "def
   return "all";
 };
 
-export default function TopMoversCard({ position }: TopMoversCardProps) {
+export default function TopMoversCard({
+  position,
+  onStatusChange
+}: TopMoversCardProps) {
   const [lens, setLens] = useState<Lens>("team");
   const [teamMovers, setTeamMovers] = useState<{ improved: Mover[]; degraded: Mover[] }>({
     improved: [],
@@ -146,6 +155,31 @@ export default function TopMoversCard({ position }: TopMoversCardProps) {
     if (!Number.isFinite(ts)) return false;
     return Date.now() - ts > 36 * 60 * 60 * 1000;
   }, [activeGeneratedAt]);
+
+  useEffect(() => {
+    onStatusChange?.({
+      loading,
+      error,
+      staleMessage:
+        !loading && !error && isStale && activeGeneratedAt
+          ? `${lens === "team" ? "Team" : "Skater"} movers using ${activeGeneratedAt.slice(0, 10)}`
+          : null,
+      empty:
+        !loading &&
+        !error &&
+        activeMovers.improved.length === 0 &&
+        activeMovers.degraded.length === 0
+    });
+  }, [
+    activeGeneratedAt,
+    activeMovers.degraded.length,
+    activeMovers.improved.length,
+    error,
+    isStale,
+    lens,
+    loading,
+    onStatusChange
+  ]);
 
   return (
     <article className={styles.moversCard} aria-label="Top movers">

@@ -3,6 +3,21 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "lib/supabase/database-generated.types";
 import serviceRoleClient from "lib/supabase/server";
 
+/**
+ * Query params:
+ * - asOfDate: optional YYYY-MM-DD; defaults to today.
+ * - horizon: optional positive integer; defaults to 5.
+ * - lookbackDays: optional positive integer; defaults to 120.
+ * - stabilityWindow: optional positive integer; defaults to 10.
+ * - batchSize / limitPlayers: optional positive integer limit.
+ * - seasonCutoff: optional YYYY-MM-DD lower bound.
+ * - playerId / playerIds: optional targeted player ids.
+ * - debug: optional truthy flag for timings.
+ *
+ * Cron-safe static URL:
+ * - /api/v1/ml/update-predictions-sko
+ */
+
 type PlayerStatsRow = {
   player_id: number;
   date: string;

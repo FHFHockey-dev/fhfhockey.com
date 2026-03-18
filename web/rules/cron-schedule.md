@@ -737,5 +737,180 @@ Gap notes (where new jobs fit)
 - `rebuild-baselines`
 - `update-wgo-averages`
 - `update-predictions-sko`
+- `update-nst-team-daily`
+- `nst-team-stats`
 
+
+# STATIC CRON SNIPPETS TO ADD
+
+Notes for the URLs below:
+- No daily-changing dates are embedded in any URL.
+- Route defaults now cover the static/no-param cases where needed:
+  - `update-season-stats` defaults to the current season.
+  - `update-sko-stats` defaults to a full-season all-player refresh.
+  - `nst-team-stats` defaults to `date=all` and resumes from the latest stored team date.
+  - `update-nst-team-daily` already defaults to incremental resume-from-latest behavior.
+- `update-rolling-games` keeps one static mode param, `?date=recent`, to avoid a full historical rebuild.
+
+----------------------------------------------------------------------------------
+-- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||  10:20 UTC  |||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||  05:20 EST  |||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
+-- SELECT cron.schedule(
+--     'update-season-stats-current-season',
+--     '20 10 * * *', -- 10:20 UTC
+--     $$
+--         SELECT net.http_get(
+--             url := 'https://fhfhockey.com/api/v1/db/update-season-stats',
+--             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             timeout_milliseconds := 300000
+--         );
+--     $$
+-- );
+
+----------------------------------------------------------------------------------
+-- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||  10:25 UTC  |||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||  05:25 EST  |||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
+-- SELECT cron.schedule(
+--     'update-rolling-games-recent',
+--     '25 10 * * *', -- 10:25 UTC
+--     $$
+--         SELECT net.http_get(
+--             url := 'https://fhfhockey.com/api/v1/db/update-rolling-games?date=recent',
+--             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             timeout_milliseconds := 240000
+--         );
+--     $$
+-- );
+
+----------------------------------------------------------------------------------
+-- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||  10:30 UTC  |||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||  05:30 EST  |||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
+-- SELECT cron.schedule(
+--     'update-sko-stats-full-season',
+--     '30 10 * * *', -- 10:30 UTC
+--     $$
+--         SELECT net.http_get(
+--             url := 'https://fhfhockey.com/api/v1/db/update-sko-stats',
+--             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             timeout_milliseconds := 300000
+--         );
+--     $$
+-- );
+
+----------------------------------------------------------------------------------
+-- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||  10:35 UTC  |||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||  05:35 EST  |||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
+-- SELECT cron.schedule(
+--     'update-wgo-averages',
+--     '35 10 * * *', -- 10:35 UTC
+--     $$
+--         SELECT net.http_get(
+--             url := 'https://fhfhockey.com/api/v1/db/update-wgo-averages',
+--             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             timeout_milliseconds := 300000
+--         );
+--     $$
+-- );
+
+----------------------------------------------------------------------------------
+-- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||  10:40 UTC  |||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||  05:40 EST  |||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
+-- SELECT cron.schedule(
+--     'rebuild-sustainability-baselines',
+--     '40 10 * * *', -- 10:40 UTC
+--     $$
+--         SELECT net.http_get(
+--             url := 'https://fhfhockey.com/api/v1/db/sustainability/rebuild-baselines',
+--             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             timeout_milliseconds := 300000
+--         );
+--     $$
+-- );
+
+----------------------------------------------------------------------------------
+-- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||  10:45 UTC  |||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||  05:45 EST  |||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
+-- SELECT cron.schedule(
+--     'update-predictions-sko',
+--     '45 10 * * *', -- 10:45 UTC
+--     $$
+--         SELECT net.http_get(
+--             url := 'https://fhfhockey.com/api/v1/ml/update-predictions-sko',
+--             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             timeout_milliseconds := 300000
+--         );
+--     $$
+-- );
+
+----------------------------------------------------------------------------------
+-- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||  10:50 UTC  |||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||  05:50 EST  |||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
+-- SELECT cron.schedule(
+--     'update-nst-team-daily-incremental',
+--     '50 10 * * *', -- 10:50 UTC
+--     $$
+--         SELECT net.http_get(
+--             url := 'https://fhfhockey.com/api/v1/db/update-nst-team-daily',
+--             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             timeout_milliseconds := 300000
+--         );
+--     $$
+-- );
+
+----------------------------------------------------------------------------------
+-- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||  10:55 UTC  |||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||  05:55 EST  |||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
+-- SELECT cron.schedule(
+--     'update-nst-team-stats-all',
+--     '55 10 * * *', -- 10:55 UTC
+--     $$
+--         SELECT net.http_get(
+--             url := 'https://fhfhockey.com/api/Teams/nst-team-stats',
+--             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             timeout_milliseconds := 300000
+--         );
+--     $$
+-- );
+
+----------------------------------------------------------------------------------
+-- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||  11:00 UTC  |||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||  06:00 EST  |||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
+-- SELECT cron.schedule(
+--     'update-power-rankings',
+--     '00 11 * * *', -- 11:00 UTC
+--     $$
+--         SELECT net.http_get(
+--             url := 'https://fhfhockey.com/api/v1/db/update-power-rankings',
+--             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             timeout_milliseconds := 240000
+--         );
+--     $$
+-- );
 

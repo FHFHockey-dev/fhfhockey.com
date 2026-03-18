@@ -622,3 +622,11 @@ As of the latest audit:
 1. Sustainability can be restored successfully if the full batch sequence is executed.
 2. Team Power remains dependent on stale or frozen upstream behavior and may require source-pipeline debugging even after rebuild endpoints are run.
 3. The Forge dashboard itself is now correctly reflecting the data it receives; remaining failures are pipeline-level failures unless validation proves otherwise.
+
+
+# Section Fourteen: Refresh Team Trends
+
+1) run update-nst-team-daily.ts
+2) run nst-team-stats.ts
+3) update-team-power-ratings.ts
+4) update-team-power-ratings-new.ts

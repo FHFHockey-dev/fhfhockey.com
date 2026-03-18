@@ -1,4 +1,3 @@
-// rebuild-baselines.ts
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { NextApiRequest, NextApiResponse } from "next";
 import supabase from "lib/supabase/server";
@@ -6,6 +5,15 @@ import {
   buildBaselinePayload,
   computePPControls
 } from "lib/baselines/aggregations";
+
+/**
+ * Query params:
+ * - snapshot_date: optional YYYY-MM-DD snapshot date; defaults to today.
+ * - dry: optional truthy flag for dry-run mode.
+ *
+ * Cron-safe static URL:
+ * - /api/v1/db/sustainability/rebuild-baselines
+ */
 
 // ----------------- Strict Types -----------------
 type PositionCode = "C" | "LW" | "RW" | "D" | "G" | null;

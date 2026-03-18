@@ -18,7 +18,7 @@
     "check:rolling-player-validation-freshness": "ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\"}' scripts/check-rolling-player-validation-freshness.ts",
     "check:rolling-player-disputed-metrics": "NODE_PATH=. ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\"}' scripts/check-rolling-player-disputed-metrics.ts",
     "check:rolling-player-optional-additions": "NODE_PATH=. ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\"}' scripts/check-rolling-player-optional-additions.ts",
-    "build": "next build",
+    "build": "NEXT_TELEMETRY_DISABLED=1 next build",
     "postbuild": "next-sitemap",
     "start": "next start",
     "start:3001": "next start -p 3001",

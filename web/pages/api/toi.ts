@@ -71,6 +71,9 @@ export default async function handler(
 ) {
   let { PlayerId, Season, StartTime, EndTime } = req.body as Input;
   try {
+    if (!Number.isFinite(PlayerId)) {
+      throw new Error("PlayerId is required.");
+    }
     [StartTime, EndTime] = await getInterval(Season, StartTime, EndTime);
     const player = await getPlayer(PlayerId);
     if (player.position === "G")

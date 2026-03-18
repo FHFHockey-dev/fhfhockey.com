@@ -13,6 +13,7 @@
  * - endDate (string, optional): Filter games up to this date (YYYY-MM-DD).
  * - resumeFrom (number, optional): Resume processing from a specific player ID (exclusive). Useful for continuing interrupted batch jobs.
  *   Implicit auto-resume is intentionally disabled; broad runs process the full player set unless `resumeFrom` is provided explicitly.
+ * - maxPlayers (number, optional): Cap the number of players processed in a single run. Useful for bounded serverless invocations.
  * 
  * Refresh Strategy:
  * - fullRefresh (boolean, optional): If true, clears existing data for the target scope and reprocesses everything. Defaults to false.
@@ -75,6 +76,7 @@ type ResponseBody = {
     durationLabel: string;
     withinBudget: boolean;
   };
+  appliedPlayerLimit?: number;
 };
 
 type FullRefreshMode = "rpc_truncate" | "overwrite_only" | "delete";
@@ -188,6 +190,7 @@ async function handler(
     const startDate = parseQueryString(req.query.startDate);
     const endDate = parseQueryString(req.query.endDate);
     const resumeFrom = parseQueryNumber(req.query.resumeFrom);
+    const maxPlayers = parseQueryPositiveInt(req.query.maxPlayers);
     const fullRefresh = parseQueryBoolean(req.query.fullRefresh);
     const fullRefreshMode = parseFullRefreshMode(req.query.fullRefreshMode);
     const deleteChunkSize = parseQueryPositiveInt(req.query.deleteChunkSize);
@@ -200,15 +203,21 @@ async function handler(
     const fastMode = parseQueryBoolean(req.query.fastMode);
     const executionProfile =
       parseExecutionProfile(req.query.executionProfile) ??
-      (fastMode
-        ? inferRollingExecutionProfile({
-            playerId,
-            season,
-            startDate,
-            endDate,
-            fullRefresh
-          })
-        : undefined);
+      (playerId === undefined &&
+      season === undefined &&
+      startDate === undefined &&
+      endDate === undefined &&
+      !fullRefresh
+        ? "daily_incremental"
+        : fastMode
+          ? inferRollingExecutionProfile({
+              playerId,
+              season,
+              startDate,
+              endDate,
+              fullRefresh
+            })
+          : undefined);
     const profileDefaults = executionProfile
       ? ROLLING_EXECUTION_PROFILE_DEFAULTS[executionProfile]
       : undefined;
@@ -236,6 +245,7 @@ async function handler(
         startDate,
         endDate,
         resumeFrom,
+        maxPlayers,
         fullRefresh,
         fullRefreshMode,
         executionProfile,
@@ -296,6 +306,7 @@ async function handler(
         startDate,
         endDate,
         resumePlayerId: resumeFrom,
+        maxPlayers,
         forceFullRefresh: fullRefresh,
         fullRefreshMode,
         fullRefreshDeleteChunkSize: deleteChunkSize,
@@ -337,7 +348,8 @@ async function handler(
     res.status(200).json({
       message: "Rolling player averages processed successfully.",
       executionProfile,
-      runtimeBudget
+      runtimeBudget,
+      appliedPlayerLimit: maxPlayers
     });
   } catch (error: any) {
     logEndpointPhase({

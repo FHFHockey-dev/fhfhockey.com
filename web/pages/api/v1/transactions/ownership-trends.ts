@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 type OwnershipPoint = { date: string; value: number };
 type TrendPlayer = {
   playerKey: string;
+  playerId: number | null;
   name: string;
   headshot: string | null;
   displayPosition?: string | null;
@@ -16,6 +17,21 @@ type TrendPlayer = {
   delta: number;
   deltaPct: number;
   sparkline: OwnershipPoint[];
+};
+
+type OwnershipTrendPayload = {
+  success: boolean;
+  windowDays: number;
+  generatedAt: string;
+  page: number;
+  pageSize: number;
+  offset: number;
+  pos: string | null;
+  totalRisers: number;
+  totalFallers: number;
+  risers: TrendPlayer[];
+  fallers: TrendPlayer[];
+  selectedPlayers?: TrendPlayer[];
 };
 
 const ALLOWED_WINDOWS = [1, 3, 5, 10];
@@ -55,6 +71,15 @@ export default async function handler(
     const posFilterRaw = String(req.query.pos ?? "").trim();
     const posFilter = posFilterRaw ? posFilterRaw.toUpperCase() : null;
     const season = req.query.season ? Number(req.query.season) : undefined;
+    const playerIds = String(req.query.playerIds ?? "")
+      .split(",")
+      .map((value) => Number(value.trim()))
+      .filter((value) => Number.isFinite(value));
+    const playerIdSet =
+      playerIds.length > 0 ? new Set(playerIds) : null;
+    const includeFlat =
+      String(req.query.includeFlat ?? "").toLowerCase() === "1" ||
+      String(req.query.includeFlat ?? "").toLowerCase() === "true";
 
     const { url, key } = resolveKey();
     const supabase = createClient(url, key, {
@@ -62,9 +87,9 @@ export default async function handler(
     });
 
     const selectWithMeta =
-      "player_key, full_name, headshot_url, display_position, editorial_team_full_name, editorial_team_abbreviation, eligible_positions, uniform_number, ownership_timeline";
+      "player_key, player_id, full_name, headshot_url, display_position, editorial_team_full_name, editorial_team_abbreviation, eligible_positions, uniform_number, ownership_timeline";
     const selectMinimal =
-      "player_key, full_name, headshot_url, ownership_timeline";
+      "player_key, player_id, full_name, headshot_url, ownership_timeline";
 
     // Try metadata fields first
     let query = supabase
@@ -111,6 +136,7 @@ export default async function handler(
 
     const risers: TrendPlayer[] = [];
     const fallers: TrendPlayer[] = [];
+    const selectedPlayers: TrendPlayer[] = [];
 
     for (const row of rows) {
       const tl: OwnershipPoint[] = Array.isArray(row.ownership_timeline)
@@ -138,7 +164,7 @@ export default async function handler(
       const latest = Number(latestPoint.value);
       const previous = Number(previousPoint.value);
       const delta = Number((latest - previous).toFixed(2));
-      if (!Number.isFinite(delta) || delta === 0) continue;
+      if (!Number.isFinite(delta)) continue;
 
       const sparkSlice = tl.slice(-Math.max(12, windowDays + 2));
 
@@ -169,6 +195,10 @@ export default async function handler(
 
       const obj: TrendPlayer = {
         playerKey: row.player_key,
+        playerId:
+          row.player_id == null || Number.isNaN(Number(row.player_id))
+            ? null
+            : Number(row.player_id),
         name: row.full_name || row.player_key,
         headshot: row.headshot_url || null,
         displayPosition: row.display_position ?? null,
@@ -184,8 +214,13 @@ export default async function handler(
         sparkline: sparkSlice
       };
 
+      if (playerIdSet?.has(obj.playerId ?? Number.NaN)) {
+        selectedPlayers.push(obj);
+      }
+
       if (delta > 0) risers.push(obj);
-      else fallers.push(obj);
+      else if (delta < 0) fallers.push(obj);
+      else if (!includeFlat) continue;
     }
 
     risers.sort((a, b) => b.delta - a.delta);
@@ -196,7 +231,7 @@ export default async function handler(
     const risersPage = risers.slice(offset, offset + limit);
     const fallersPage = fallers.slice(offset, offset + limit);
 
-    const payload = {
+    const payload: OwnershipTrendPayload = {
       success: true,
       windowDays,
       generatedAt: new Date().toISOString(),
@@ -207,7 +242,8 @@ export default async function handler(
       totalRisers,
       totalFallers,
       risers: risersPage,
-      fallers: fallersPage
+      fallers: fallersPage,
+      ...(playerIdSet ? { selectedPlayers } : {})
     };
     res.setHeader(
       "Cache-Control",

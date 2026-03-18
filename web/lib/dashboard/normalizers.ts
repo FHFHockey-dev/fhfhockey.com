@@ -1,3 +1,5 @@
+import type { TeamPowerSnapshot, TeamPowerSnapshotLike } from "./teamContext";
+
 export const toFiniteNumber = (value: unknown): number | null => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
@@ -11,15 +13,11 @@ export const toArray = <T>(value: unknown): T[] => {
   return Array.isArray(value) ? (value as T[]) : [];
 };
 
-export type NormalizedTeamRatingRow = {
+export type NormalizedTeamRatingRow = TeamPowerSnapshot & {
   teamAbbr: string;
   date: string;
-  offRating: number;
-  defRating: number;
-  paceRating: number;
   ppTier: 1 | 2 | 3;
   pkTier: 1 | 2 | 3;
-  trend10: number;
   finishingRating: number | null;
   goalieRating: number | null;
   dangerRating: number | null;
@@ -87,6 +85,10 @@ export type NormalizedSustainabilityRow = {
   window_code: string;
   s_100: number;
   luck_pressure: number;
+  z_shp: number | null;
+  z_oishp: number | null;
+  z_ipp: number | null;
+  z_ppshp: number | null;
 };
 
 export type NormalizedSustainabilityResponse = {
@@ -111,7 +113,11 @@ export const normalizeSustainabilityResponse = (
         position_code: toStringOrNull(row.position_code),
         window_code: toStringOrNull(row.window_code) ?? "",
         s_100: s100,
-        luck_pressure: luckPressure
+        luck_pressure: luckPressure,
+        z_shp: toFiniteNumber(row.z_shp),
+        z_oishp: toFiniteNumber(row.z_oishp),
+        z_ipp: toFiniteNumber(row.z_ipp),
+        z_ppshp: toFiniteNumber(row.z_ppshp)
       };
     })
     .filter((row): row is NormalizedSustainabilityRow => Boolean(row));
@@ -179,8 +185,20 @@ export type NormalizedGoalieProjectionRow = {
   starter_probability: number | null;
   proj_win_prob: number | null;
   proj_shutout_prob: number | null;
+  modeled_save_pct: number | null;
   volatility_index: number | null;
   blowup_risk: number | null;
+  confidence_tier: string | null;
+  quality_tier: string | null;
+  reliability_tier: string | null;
+  recommendation: string | null;
+  starter_selection: {
+    is_back_to_back: boolean | null;
+    opponent_is_weak: boolean | null;
+    days_since_last_played: number | null;
+    l10_starts: number | null;
+    opponent_context_adjustment_pct: number | null;
+  } | null;
 };
 
 export type NormalizedGoalieResponse = {
@@ -195,6 +213,36 @@ export const normalizeGoalieResponse = (payload: unknown): NormalizedGoalieRespo
       const goalieId = toFiniteNumber(row.goalie_id);
       const goalieName = toStringOrNull(row.goalie_name);
       if (goalieId == null || !goalieName) return null;
+      const model = (
+        row.uncertainty &&
+        typeof row.uncertainty === "object" &&
+        (row.uncertainty as Record<string, unknown>).model &&
+        typeof (row.uncertainty as Record<string, unknown>).model === "object"
+      )
+        ? ((row.uncertainty as Record<string, unknown>).model as Record<string, unknown>)
+        : null;
+      const starterSelection = (
+        model?.starter_selection && typeof model.starter_selection === "object"
+      )
+        ? (model.starter_selection as Record<string, unknown>)
+        : null;
+      const candidateGoalies = toArray<Record<string, unknown>>(
+        starterSelection?.candidate_goalies
+      );
+      const selectedGoalie =
+        candidateGoalies.find(
+          (candidate) => toFiniteNumber(candidate.goalie_id) === goalieId
+        ) ?? null;
+      const modelContext =
+        starterSelection?.model_context &&
+        typeof starterSelection.model_context === "object"
+          ? (starterSelection.model_context as Record<string, unknown>)
+          : null;
+      const opponentContext =
+        starterSelection?.opponent_offense_context &&
+        typeof starterSelection.opponent_offense_context === "object"
+          ? (starterSelection.opponent_offense_context as Record<string, unknown>)
+          : null;
       return {
         goalie_id: goalieId,
         goalie_name: goalieName,
@@ -205,8 +253,30 @@ export const normalizeGoalieResponse = (payload: unknown): NormalizedGoalieRespo
         starter_probability: toFiniteNumber(row.starter_probability),
         proj_win_prob: toFiniteNumber(row.proj_win_prob),
         proj_shutout_prob: toFiniteNumber(row.proj_shutout_prob),
+        modeled_save_pct: toFiniteNumber(row.modeled_save_pct),
         volatility_index: toFiniteNumber(row.volatility_index),
-        blowup_risk: toFiniteNumber(row.blowup_risk)
+        blowup_risk: toFiniteNumber(row.blowup_risk),
+        confidence_tier: toStringOrNull(row.confidence_tier),
+        quality_tier: toStringOrNull(row.quality_tier),
+        reliability_tier: toStringOrNull(row.reliability_tier),
+        recommendation: toStringOrNull(row.recommendation),
+        starter_selection: starterSelection
+          ? {
+              is_back_to_back:
+                typeof modelContext?.is_back_to_back === "boolean"
+                  ? (modelContext.is_back_to_back as boolean)
+                  : null,
+              opponent_is_weak:
+                typeof modelContext?.opponent_is_weak === "boolean"
+                  ? (modelContext.opponent_is_weak as boolean)
+                  : null,
+              days_since_last_played: toFiniteNumber(selectedGoalie?.days_since_last_played),
+              l10_starts: toFiniteNumber(selectedGoalie?.l10_starts),
+              opponent_context_adjustment_pct: toFiniteNumber(
+                opponentContext?.context_adjustment_pct
+              )
+            }
+          : null
       };
     })
     .filter((row): row is NormalizedGoalieProjectionRow => Boolean(row));
@@ -219,10 +289,27 @@ export const normalizeGoalieResponse = (payload: unknown): NormalizedGoalieRespo
 
 export type NormalizedStartChartGameRow = {
   id: number;
+  date: string | null;
   homeTeamId: number;
   awayTeamId: number;
-  homeGoalies: Array<{ player_id: number; name: string; start_probability: number | null }>;
-  awayGoalies: Array<{ player_id: number; name: string; start_probability: number | null }>;
+  homeGoalies: Array<{
+    player_id: number;
+    name: string;
+    start_probability: number | null;
+    projected_gsaa_per_60: number | null;
+    confirmed_status: boolean | null;
+    percent_ownership: number | null;
+  }>;
+  awayGoalies: Array<{
+    player_id: number;
+    name: string;
+    start_probability: number | null;
+    projected_gsaa_per_60: number | null;
+    confirmed_status: boolean | null;
+    percent_ownership: number | null;
+  }>;
+  homeRating: TeamPowerSnapshotLike | null;
+  awayRating: TeamPowerSnapshotLike | null;
 };
 
 export type NormalizedStartChartResponse = {
@@ -248,30 +335,49 @@ export const normalizeStartChartResponse = (
         return {
           player_id: playerId,
           name,
-          start_probability: toFiniteNumber(goalie.start_probability)
+          start_probability: toFiniteNumber(goalie.start_probability),
+          projected_gsaa_per_60: toFiniteNumber(goalie.projected_gsaa_per_60),
+          confirmed_status:
+            typeof goalie.confirmed_status === "boolean"
+              ? goalie.confirmed_status
+              : null,
+          percent_ownership: toFiniteNumber(goalie.percent_ownership)
+        };
+      };
+      type NormalizedGoalie = NonNullable<ReturnType<typeof normalizeGoalie>>;
+
+      const normalizeRating = (rating: unknown) => {
+        const candidate = (rating ?? {}) as Record<string, unknown>;
+        if (Object.keys(candidate).length === 0) return null;
+        return {
+          offRating: toFiniteNumber(candidate.offRating ?? candidate.off_rating),
+          defRating: toFiniteNumber(candidate.defRating ?? candidate.def_rating),
+          paceRating: toFiniteNumber(
+            candidate.paceRating ?? candidate.pace_rating
+          ),
+          trend10: toFiniteNumber(candidate.trend10),
+          ppTier: toFiniteNumber(candidate.ppTier ?? candidate.pp_tier),
+          pkTier: toFiniteNumber(candidate.pkTier ?? candidate.pk_tier)
         };
       };
 
       const homeGoalies = toArray<Record<string, unknown>>(row.homeGoalies)
         .map(normalizeGoalie)
-        .filter(
-          (goalie): goalie is { player_id: number; name: string; start_probability: number | null } =>
-            Boolean(goalie)
-        );
+        .filter((goalie): goalie is NormalizedGoalie => Boolean(goalie));
 
       const awayGoalies = toArray<Record<string, unknown>>(row.awayGoalies)
         .map(normalizeGoalie)
-        .filter(
-          (goalie): goalie is { player_id: number; name: string; start_probability: number | null } =>
-            Boolean(goalie)
-        );
+        .filter((goalie): goalie is NormalizedGoalie => Boolean(goalie));
 
       return {
         id,
+        date: toStringOrNull(row.date),
         homeTeamId,
         awayTeamId,
         homeGoalies,
-        awayGoalies
+        awayGoalies,
+        homeRating: normalizeRating(row.homeRating),
+        awayRating: normalizeRating(row.awayRating)
       };
     })
     .filter((row): row is NormalizedStartChartGameRow => Boolean(row));
@@ -342,6 +448,118 @@ export const normalizeSkaterMoversResponse = (
   return {
     generatedAt: toStringOrNull(root.generatedAt),
     rankings,
+    playerMetadata
+  };
+};
+
+export type NormalizedSkaterTrendRanking = {
+  playerId: number;
+  percentile: number;
+  gp: number;
+  rank: number;
+  previousRank: number | null;
+  delta: number;
+  latestValue: number | null;
+};
+
+export type NormalizedSkaterTrendCategory = {
+  rankings: NormalizedSkaterTrendRanking[];
+  series: Record<string, Array<{ gp: number; percentile: number }>>;
+};
+
+export type NormalizedSkaterTrendResponse = {
+  generatedAt: string | null;
+  categories: Record<string, NormalizedSkaterTrendCategory>;
+  playerMetadata: Record<
+    string,
+    {
+      id: number;
+      fullName: string;
+      position: string | null;
+      teamAbbrev: string | null;
+      imageUrl: string | null;
+    }
+  >;
+};
+
+export const normalizeSkaterTrendResponse = (
+  payload: unknown
+): NormalizedSkaterTrendResponse => {
+  const root = (payload ?? {}) as Record<string, unknown>;
+  const rawCategories = (root.categories ?? {}) as Record<string, unknown>;
+  const categories = Object.entries(rawCategories).reduce<
+    Record<string, NormalizedSkaterTrendCategory>
+  >((acc, [key, value]) => {
+    const category = (value ?? {}) as Record<string, unknown>;
+    const series = Object.entries(
+      (category.series ?? {}) as Record<string, unknown>
+    ).reduce<NormalizedSkaterTrendCategory["series"]>((seriesAcc, [playerId, rawPoints]) => {
+      seriesAcc[playerId] = toArray<Record<string, unknown>>(rawPoints)
+        .map((point) => {
+          const gp = toFiniteNumber(point.gp);
+          const percentile = toFiniteNumber(point.percentile);
+          if (gp == null || percentile == null) return null;
+          return { gp, percentile };
+        })
+        .filter((point): point is { gp: number; percentile: number } => Boolean(point));
+      return seriesAcc;
+    }, {});
+    const rankings = toArray<Record<string, unknown>>(category.rankings)
+      .map((row) => {
+        const playerId = toFiniteNumber(row.playerId);
+        const percentile = toFiniteNumber(row.percentile);
+        const gp = toFiniteNumber(row.gp);
+        const rank = toFiniteNumber(row.rank);
+        const delta = toFiniteNumber(row.delta);
+        if (
+          playerId == null ||
+          percentile == null ||
+          gp == null ||
+          rank == null ||
+          delta == null
+        ) {
+          return null;
+        }
+
+        return {
+          playerId,
+          percentile,
+          gp,
+          rank,
+          previousRank: toFiniteNumber(row.previousRank),
+          delta,
+          latestValue: toFiniteNumber(row.latestValue)
+        };
+      })
+      .filter((row): row is NormalizedSkaterTrendRanking => Boolean(row));
+
+    acc[key] = { rankings, series };
+    return acc;
+  }, {});
+
+  const rawMetadata = (root.playerMetadata ?? {}) as Record<
+    string,
+    Record<string, unknown>
+  >;
+  const playerMetadata = Object.entries(rawMetadata).reduce<
+    NormalizedSkaterTrendResponse["playerMetadata"]
+  >((acc, [key, value]) => {
+    const id = toFiniteNumber(value.id);
+    const fullName = toStringOrNull(value.fullName);
+    if (id == null || !fullName) return acc;
+    acc[key] = {
+      id,
+      fullName,
+      position: toStringOrNull(value.position),
+      teamAbbrev: toStringOrNull(value.teamAbbrev),
+      imageUrl: toStringOrNull(value.imageUrl)
+    };
+    return acc;
+  }, {});
+
+  return {
+    generatedAt: toStringOrNull(root.generatedAt),
+    categories,
     playerMetadata
   };
 };

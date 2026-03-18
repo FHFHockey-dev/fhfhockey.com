@@ -1,6 +1,6 @@
 // components/Projections/ProjectionSourceAnalysis.module.scss
 
-@import "../../styles/vars";
+@use "styles/vars" as *;
 
 .container {
   background: $background-dark;

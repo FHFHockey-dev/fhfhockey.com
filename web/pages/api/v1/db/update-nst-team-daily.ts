@@ -38,6 +38,9 @@ import { teamNameToAbbreviationMap, teamsInfo } from "lib/teamsInfo";
  * - endDate: YYYY-MM-DD format (ISO 8601)
  * - overwrite: "true" | "false" | "1" | "0" | "yes" | "y" (default varies by runMode)
  *
+ * Cron-safe default:
+ * - no params => incremental mode, resuming from the latest stored table date
+ *
  * Methods supported: GET, POST
  * For POST requests, parameters can be sent in the request body as JSON
  */

@@ -87,7 +87,21 @@ const teamsInfo = {
 
 // Helper fetch function
 async function Fetch(url) {
-  const response = await fetch(url);
+  const response = await fetch(url, {
+    headers: {
+      Accept: "application/json",
+      "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)"
+    }
+  });
+  const contentType = response.headers.get("content-type") || "";
+  if (!response.ok) {
+    throw new Error(`Failed to fetch ${url}: HTTP ${response.status}`);
+  }
+  if (!contentType.includes("application/json")) {
+    throw new Error(
+      `Failed to fetch ${url}: expected JSON but got ${contentType || "unknown"}`
+    );
+  }
   return response.json();
 }
 

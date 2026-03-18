@@ -309,6 +309,7 @@ interface FetchOptions {
   startDate?: string;
   endDate?: string;
   resumePlayerId?: number;
+  maxPlayers?: number;
   forceFullRefresh?: boolean;
   fullRefreshMode?: FullRefreshMode;
   fullRefreshDeleteChunkSize?: number;
@@ -3871,8 +3872,12 @@ export async function main(options: FetchOptions = {}): Promise<void> {
   }
 
   const filteredPlayerIds = filterPlayerIdsForResume(playerIds, resumePlayerId);
+  const boundedPlayerIds =
+    options.maxPlayers && options.maxPlayers > 0
+      ? filteredPlayerIds.slice(0, options.maxPlayers)
+      : filteredPlayerIds;
 
-  if (!filteredPlayerIds.length) {
+  if (!boundedPlayerIds.length) {
     console.info(
       "[fetchRollingPlayerAverages] No players to process after applying resume filter."
     );
@@ -3881,8 +3886,22 @@ export async function main(options: FetchOptions = {}): Promise<void> {
 
   console.info(
     "[fetchRollingPlayerAverages] Players to process",
-    filteredPlayerIds.length
+    boundedPlayerIds.length
   );
+  if (
+    options.maxPlayers &&
+    options.maxPlayers > 0 &&
+    filteredPlayerIds.length > boundedPlayerIds.length
+  ) {
+    console.info(
+      "[fetchRollingPlayerAverages] Applied player limit",
+      JSON.stringify({
+        requestedMaxPlayers: options.maxPlayers,
+        totalPlayersAfterResumeFilter: filteredPlayerIds.length,
+        boundedPlayers: boundedPlayerIds.length
+      })
+    );
+  }
 
   const defaultConcurrency = options.forceFullRefresh ? 4 : 1;
   const playerConcurrency = Math.min(
@@ -3913,16 +3932,16 @@ export async function main(options: FetchOptions = {}): Promise<void> {
   const sourceTracking = createEmptySourceTrackingSummary();
   const playerProgress = createProgressLogger({
     label: "players",
-    total: filteredPlayerIds.length,
+    total: boundedPlayerIds.length,
     minIntervalMs: 1000
   });
   let nextPlayerIndex = 0;
   const runPlayerWorker = async () => {
     while (true) {
       const currentIndex = nextPlayerIndex;
-      if (currentIndex >= filteredPlayerIds.length) return;
+      if (currentIndex >= boundedPlayerIds.length) return;
       nextPlayerIndex += 1;
-      const playerId = filteredPlayerIds[currentIndex];
+      const playerId = boundedPlayerIds[currentIndex];
 
       const playerLabel = `[fetchRollingPlayerAverages] player:${playerId}`;
       console.time(playerLabel);
@@ -4059,7 +4078,7 @@ export async function main(options: FetchOptions = {}): Promise<void> {
     }
   };
 
-  const workerCount = Math.min(playerConcurrency, filteredPlayerIds.length);
+  const workerCount = Math.min(playerConcurrency, boundedPlayerIds.length);
   await Promise.all(
     Array.from({ length: workerCount }, () => runPlayerWorker())
   );

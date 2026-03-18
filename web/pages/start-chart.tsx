@@ -12,6 +12,7 @@ import {
 import styles from "./start-chart.module.scss";
 
 import { teamsInfo } from "lib/teamsInfo";
+import type { TeamPowerSnapshotLike } from "lib/dashboard/teamContext";
 
 type StartChartPlayer = {
   player_id: number;
@@ -32,14 +33,7 @@ type StartChartPlayer = {
   games_remaining_week?: number;
 };
 
-type TeamRating = {
-  offRating: number;
-  defRating: number;
-  paceRating: number;
-  ppTier: number;
-  pkTier: number;
-  trend10: number;
-};
+type TeamRating = TeamPowerSnapshotLike;
 
 type GoalieInfo = {
   player_id: number;
@@ -103,6 +97,11 @@ const adjustBrightness = (hex: string, percent: number) => {
       .toString(16)
       .slice(1)
   );
+};
+
+const formatRating = (value: number | null | undefined): string => {
+  if (value == null || Number.isNaN(value)) return "--";
+  return value.toFixed(0);
 };
 
 const CustomDot = (props: any) => {
@@ -194,14 +193,30 @@ const RenderRating = ({
   let defClass = "";
 
   if (opponentRating) {
-    if (rating.offRating > opponentRating.offRating)
+    if (
+      rating.offRating != null &&
+      opponentRating.offRating != null &&
+      rating.offRating > opponentRating.offRating
+    )
       offClass = styles.glowGreen;
-    else if (rating.offRating < opponentRating.offRating)
+    else if (
+      rating.offRating != null &&
+      opponentRating.offRating != null &&
+      rating.offRating < opponentRating.offRating
+    )
       offClass = styles.glowRed;
 
-    if (rating.defRating > opponentRating.defRating)
+    if (
+      rating.defRating != null &&
+      opponentRating.defRating != null &&
+      rating.defRating > opponentRating.defRating
+    )
       defClass = styles.glowGreen;
-    else if (rating.defRating < opponentRating.defRating)
+    else if (
+      rating.defRating != null &&
+      opponentRating.defRating != null &&
+      rating.defRating < opponentRating.defRating
+    )
       defClass = styles.glowRed;
   }
 
@@ -210,13 +225,13 @@ const RenderRating = ({
       <div className={styles.ratingRow}>
         <span className={styles.ratingLabel}>OFF</span>
         <span className={`${styles.ratingValue} ${offClass}`}>
-          {rating.offRating.toFixed(0)}
+          {formatRating(rating.offRating)}
         </span>
       </div>
       <div className={styles.ratingRow}>
         <span className={styles.ratingLabel}>DEF</span>
         <span className={`${styles.ratingValue} ${defClass}`}>
-          {rating.defRating.toFixed(0)}
+          {formatRating(rating.defRating)}
         </span>
       </div>
     </div>

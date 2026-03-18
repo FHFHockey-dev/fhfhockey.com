@@ -1,18 +1,30 @@
-// /Users/tim/Desktop/FHFH/fhfhockey.com/web/pages/api/v1/db/update-power-rankings.ts
-
-// /api/v1/db/update-power-rankings
-
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import type { NextApiRequest, NextApiResponse } from "next";
+import { createRequire } from "module";
+import path from "path";
+
+async function loadLegacyMain() {
+  const require = createRequire(path.join(process.cwd(), "package.json"));
+  const { main } = require(
+    path.join(process.cwd(), "lib/supabase/Upserts/fetchPowerRankings.js")
+  );
+  return main as () => Promise<void>;
+}
+
+/**
+ * Query params:
+ * - none
+ *
+ * Cron-safe static URL:
+ * - /api/v1/db/update-power-rankings
+ */
 
 async function handler(
   req: NextApiRequest,
   res: NextApiResponse<{ message: string }>
 ) {
   try {
-    // Dynamically import the fetchPowerRankings module
-    const { main } = await import("lib/supabase/Upserts/fetchPowerRankings");
-    // Call the main function (pass fullProcess if necessary)
+    const main = await loadLegacyMain();
     await main();
 
     res.status(200).json({

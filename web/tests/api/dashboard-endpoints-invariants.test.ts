@@ -120,7 +120,11 @@ describe("Dashboard Endpoint Invariant Guards", () => {
       position_code: "C",
       window_code: "l10",
       s_100: 73.5,
-      luck_pressure: 0.81
+      luck_pressure: 0.81,
+      z_shp: null,
+      z_oishp: null,
+      z_ipp: null,
+      z_ppshp: null
     });
 
     const audit = auditSustainabilityRows(normalized.rows);
