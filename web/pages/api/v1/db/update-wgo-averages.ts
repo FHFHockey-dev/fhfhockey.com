@@ -1,10 +1,16 @@
-// pages/api/v1/db/calculate-player-averages.ts
-
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { NextApiRequest, NextApiResponse } from "next";
 import supabase from "lib/supabase"; // Adjust path as needed
 import { PostgrestError } from "@supabase/supabase-js"; // Import for type safety
 import { Database } from "lib/supabase/database-generated.types";
+
+/**
+ * Query params:
+ * - none
+ *
+ * Cron-safe static URL:
+ * - /api/v1/db/update-wgo-averages
+ */
 
 type Tables<T extends keyof Database["public"]["Tables"]> =
   Database["public"]["Tables"][T]["Row"];

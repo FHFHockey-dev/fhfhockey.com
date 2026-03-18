@@ -8,9 +8,14 @@
 - `tasks/artifacts/forge-dashboard-component-health-remediation-backlog.md` - Planned running backlog for newly discovered bugs, optimizations, cron gaps, and observability gaps found during the audit.
 - `tasks/artifacts/forge-dashboard-component-reconciliation-checks.md` - Completed reference artifact defining source-to-UI reconciliation methods, comparison paths, and evidence requirements for each component family.
 - `tasks/artifacts/forge-dashboard-component-audit-procedure.md` - Completed step-by-step audit procedure for separating freshness, correctness, degraded-state, observability, and cron-surface failures consistently.
-- `tasks/artifacts/forge-dashboard-slate-health-audit.md` - Planned full-chain audit for the slate hero and start-chart-powered dashboard surfaces.
-- `tasks/artifacts/forge-dashboard-top-adds-health-audit.md` - Planned full-chain audit for Top Adds, Yahoo ownership, ranking, and schedule-aware opportunity logic.
-- `tasks/artifacts/forge-dashboard-team-context-health-audit.md` - Planned full-chain audit for team ratings, CTPI, matchup context, and team drill-ins.
+- `tasks/artifacts/forge-dashboard-slate-health-audit.md` - Completed full-chain slate audit covering Start Chart serving behavior, live source freshness, fallback/degraded-state safety, and the current `red` verdict driven by stale goalie projections.
+- `tasks/artifacts/forge-dashboard-slate-freshness-ownership.md` - Completed ownership trace for the slate refresh chain, documenting the scheduled jobs, runtime expectations, hidden upstream dependencies, and the current `yellow` ownership verdict with a goalie/date-semantics mismatch.
+- `tasks/artifacts/forge-dashboard-slate-reconciliation.md` - Completed source-to-UI reconciliation for the slate chain, separating matchup/date-context accuracy from the current goalie-context failure on a live audited slate date.
+- `tasks/artifacts/forge-dashboard-top-adds-health-audit.md` - Completed full-chain Top Adds audit covering the projection feed, Yahoo ownership APIs, ranking helpers, and the current `red` verdict driven by ownership truncation plus broken stable-ID merges.
+- `tasks/artifacts/forge-dashboard-top-adds-freshness-ownership.md` - Completed Top Adds ownership trace covering projection refresh, Yahoo refresh, week-mode schedule context, missing freshness/budget policy, and the current `yellow` ownership-clarity verdict.
+- `tasks/artifacts/forge-dashboard-top-adds-reconciliation.md` - Completed source-to-UI reconciliation for Top Adds, separating what the rail renders correctly from the current source-coverage, labeling, and position-contract failures that keep the opportunity board `red`.
+- `tasks/artifacts/forge-dashboard-team-context-health-audit.md` - Completed full-chain Team Trend Context audit covering team ratings, CTPI, matchup-edge logic, live mixed-cadence failures, and the current `red` verdict driven by stale CTPI plus flat team-power trend data.
+- `tasks/artifacts/forge-dashboard-team-context-freshness-ownership.md` - Completed Team Trend Context freshness-ownership trace covering team-power, CTPI, matchup-edge, NST/WGO dependencies, runbook ordering, and the current `red` ownership verdict.
 - `tasks/artifacts/forge-dashboard-sustainability-health-audit.md` - Planned full-chain audit for Sustainable vs Unsustainable signals and their source-to-UI mapping.
 - `tasks/artifacts/forge-dashboard-trend-movement-health-audit.md` - Planned full-chain audit for Hot/Cold and Trending Up/Down movement surfaces.
 - `tasks/artifacts/forge-dashboard-goalie-health-audit.md` - Planned full-chain audit for goalie projections, uncertainty drivers, and starter-risk display.
@@ -63,21 +68,21 @@
 
 ## Tasks
 
-- [ ] 1.0 Define the component-health audit framework, inventory, and scoring model for the full FORGE dashboard route family
+- [x] 1.0 Define the component-health audit framework, inventory, and scoring model for the full FORGE dashboard route family
   - [x] 1.1 Create `tasks/artifacts/forge-dashboard-component-health-inventory.md` and enumerate every in-scope FORGE component, route, adapter, serving API, and primary source table.
   - [x] 1.2 Create `tasks/artifacts/forge-dashboard-component-health-scoring-model.md` and define the `green / yellow / red` criteria, required evidence, and per-component acceptance checks.
   - [x] 1.3 Create `tasks/artifacts/forge-dashboard-component-reconciliation-checks.md` and define the required source-to-UI reconciliation method for each component family.
   - [x] 1.4 Map the current cron/runbook ownership from `web/rules/cron-schedule.md` into the inventory so each component has an explicit upstream refresh chain and runtime expectation.
   - [x] 1.5 Document the audit procedure for separating freshness failures, correctness failures, degraded-state failures, observability gaps, and cron-surface gaps so later component reviews stay consistent.
 - [ ] 2.0 Audit the slate, Top Adds, and Team Trend Context components end to end across UI, APIs, source tables, cron ownership, and source-to-UI reconciliation
-  - [ ] 2.1 Audit `SlateStripCard`, `web/pages/api/v1/start-chart.ts`, and the slate surfaces in `web/pages/forge/dashboard.tsx` and `web/pages/FORGE.tsx`, then record findings in `tasks/artifacts/forge-dashboard-slate-health-audit.md`.
-  - [ ] 2.2 Verify slate freshness ownership by tracing the upstream jobs, source tables, fallback behavior, and runtime expectations that keep Start Chart current.
-  - [ ] 2.3 Reconcile the slate UI against the Start Chart API response and authoritative source tables to confirm matchup, goalie, and date-context accuracy.
-  - [ ] 2.4 Audit `TopAddsRail`, `web/pages/api/v1/forge/players.ts`, `web/pages/api/v1/transactions/ownership-trends.ts`, `web/pages/api/v1/transactions/ownership-snapshots.ts`, and related dashboard helpers, then record findings in `tasks/artifacts/forge-dashboard-top-adds-health-audit.md`.
-  - [ ] 2.5 Verify Top Adds freshness ownership by tracing projection refresh, Yahoo ownership refresh, schedule-context dependencies, ranking inputs, and runtime expectations.
-  - [ ] 2.6 Reconcile Top Adds cards against raw projection data, ownership data, ranking logic, and displayed ownership filters to confirm the UI is showing the intended opportunity board.
-  - [ ] 2.7 Audit `TeamPowerCard`, `web/pages/api/team-ratings.ts`, `web/pages/api/v1/trends/team-ctpi.ts`, and related matchup-edge logic, then record findings in `tasks/artifacts/forge-dashboard-team-context-health-audit.md`.
-  - [ ] 2.8 Verify Team Trend Context freshness ownership by tracing team-power, CTPI, matchup-context, and NST/WGO dependencies through their scheduled refresh jobs and runtime expectations.
+  - [x] 2.1 Audit `SlateStripCard`, `web/pages/api/v1/start-chart.ts`, and the slate surfaces in `web/pages/forge/dashboard.tsx` and `web/pages/FORGE.tsx`, then record findings in `tasks/artifacts/forge-dashboard-slate-health-audit.md`.
+  - [x] 2.2 Verify slate freshness ownership by tracing the upstream jobs, source tables, fallback behavior, and runtime expectations that keep Start Chart current.
+  - [x] 2.3 Reconcile the slate UI against the Start Chart API response and authoritative source tables to confirm matchup, goalie, and date-context accuracy.
+  - [x] 2.4 Audit `TopAddsRail`, `web/pages/api/v1/forge/players.ts`, `web/pages/api/v1/transactions/ownership-trends.ts`, `web/pages/api/v1/transactions/ownership-snapshots.ts`, and related dashboard helpers, then record findings in `tasks/artifacts/forge-dashboard-top-adds-health-audit.md`.
+  - [x] 2.5 Verify Top Adds freshness ownership by tracing projection refresh, Yahoo ownership refresh, schedule-context dependencies, ranking inputs, and runtime expectations.
+  - [x] 2.6 Reconcile Top Adds cards against raw projection data, ownership data, ranking logic, and displayed ownership filters to confirm the UI is showing the intended opportunity board.
+  - [x] 2.7 Audit `TeamPowerCard`, `web/pages/api/team-ratings.ts`, `web/pages/api/v1/trends/team-ctpi.ts`, and related matchup-edge logic, then record findings in `tasks/artifacts/forge-dashboard-team-context-health-audit.md`.
+  - [x] 2.8 Verify Team Trend Context freshness ownership by tracing team-power, CTPI, matchup-context, and NST/WGO dependencies through their scheduled refresh jobs and runtime expectations.
   - [ ] 2.9 Reconcile Team Trend Context output against the team ratings API, CTPI API, matchup inputs, and displayed variance/warning behavior to confirm the UI is not silently flattening or mislabeling team signals.
 - [ ] 3.0 Audit the sustainability, hot/cold movement, and goalie components end to end across UI, APIs, source tables, cron ownership, and source-to-UI reconciliation
   - [ ] 3.1 Audit `SustainabilityCard`, `web/pages/api/v1/sustainability/trends.ts`, and the supporting normalizers/helpers, then record findings in `tasks/artifacts/forge-dashboard-sustainability-health-audit.md`.

@@ -76,6 +76,7 @@ const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
 const REQUEST_INTERVAL_MS = 22000; // 22 seconds
 
 const BASE_URL = "https://www.naturalstattrick.com/playerteams.php";
+const DEFAULT_MAX_PENDING_URLS_PER_RUN = 8;
 
 // --- Header Mappings for Goalie Data ---
 const goalieCountsHeaderMap: Record<string, string> = {
@@ -181,6 +182,13 @@ function getGoalieTableName(datasetType: string): string {
 // --- Utility Functions ---
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function parsePositiveIntParam(value: string | string[] | undefined): number | undefined {
+  const raw = Array.isArray(value) ? value[0] : value;
+  if (!raw) return undefined;
+  const parsed = Number.parseInt(raw, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
 }
 
 function getDatesBetween(start: Date, end: Date): string[] {
@@ -461,20 +469,26 @@ async function processUrlsSequentially(
     url: string;
     date: string;
     seasonId: string;
-  }[]
+  }[],
+  options: {
+    requestIntervalMs: number;
+    maxPendingUrls: number;
+  }
 ) {
   const totalUrls = urlsQueue.length;
   let processedCount = 0;
+  let pendingProcessedCount = 0;
+  let stoppedEarly = false;
   for (let i = 0; i < urlsQueue.length; i++) {
     const { datasetType, url, date, seasonId } = urlsQueue[i];
     console.log(
       `\nProcessing URL ${i + 1}/${totalUrls}: ${datasetType} for ${date}`
     );
-    if (i > 0) {
+    if (processedCount > 0 && options.requestIntervalMs > 0) {
       console.log(
-        `Waiting ${REQUEST_INTERVAL_MS / 1000} seconds before next request...`
+        `Waiting ${options.requestIntervalMs / 1000} seconds before next request...`
       );
-      await delay(REQUEST_INTERVAL_MS);
+      await delay(options.requestIntervalMs);
     }
     const dataExists = await checkDataExists(datasetType, date);
     if (!dataExists) {
@@ -487,6 +501,7 @@ async function processUrlsSequentially(
       if (dataRows.length > 0) {
         await upsertData(datasetType, dataRows);
       }
+      pendingProcessedCount++;
     } else {
       console.log(
         `Data already exists for ${datasetType} on ${date}. Skipping.`
@@ -494,10 +509,25 @@ async function processUrlsSequentially(
     }
     processedCount++;
     console.log(`Processed ${processedCount} out of ${totalUrls} URLs.`);
+    if (pendingProcessedCount >= options.maxPendingUrls) {
+      stoppedEarly = i < urlsQueue.length - 1;
+      break;
+    }
   }
+
+  return {
+    processedCount,
+    pendingProcessedCount,
+    stoppedEarly
+  };
 }
 
-async function main() {
+async function main(options: {
+  maxPendingUrls?: number;
+  requestIntervalMs?: number;
+  startDate?: string;
+  maxDays?: number;
+} = {}) {
   try {
     const seasonInfo = await fetchCurrentSeason();
     const seasonId = seasonInfo.id.toString();
@@ -509,27 +539,41 @@ async function main() {
         : new Date(seasonInfo.endDate);
 
     let startDate = seasonStartDate;
-    const latestDateStr = await getLatestDateSupabase();
-    if (latestDateStr) {
-      startDate = new Date(latestDateStr);
-      startDate.setDate(startDate.getDate() + 1);
-      console.log(
-        `Latest date in Supabase is ${latestDateStr}. Starting from ${
-          startDate.toISOString().split("T")[0]
-        }.`
-      );
+    if (options.startDate) {
+      startDate = new Date(options.startDate);
+      console.log(`Using explicit startDate ${options.startDate}.`);
     } else {
-      console.log(
-        `No existing data in Supabase. Starting from season start date ${
-          startDate.toISOString().split("T")[0]
-        }.`
-      );
+      const latestDateStr = await getLatestDateSupabase();
+      if (latestDateStr) {
+        startDate = new Date(latestDateStr);
+        console.log(
+          `Latest date in Supabase is ${latestDateStr}. Resuming from that date to catch partial/incomplete datasets.`
+        );
+      } else {
+        console.log(
+          `No existing data in Supabase. Starting from season start date ${
+            startDate.toISOString().split("T")[0]
+          }.`
+        );
+      }
     }
 
-    const datesToScrape = getDatesBetween(startDate, scrapingEndDate);
+    if (startDate < seasonStartDate) {
+      startDate = seasonStartDate;
+    }
+
+    let datesToScrape = getDatesBetween(startDate, scrapingEndDate);
+    if (options.maxDays && options.maxDays > 0) {
+      datesToScrape = datesToScrape.slice(0, options.maxDays);
+    }
     if (datesToScrape.length === 0) {
       console.log("No new dates to scrape.");
-      return;
+      return {
+        message: "No new dates to scrape.",
+        pendingUrlsProcessed: 0,
+        totalQueuedUrls: 0,
+        stoppedEarly: false
+      };
     }
 
     const urlsQueue: {
@@ -545,15 +589,16 @@ async function main() {
       }
     });
 
-    // CONDITIONAL: Process URLs concurrently if scraping only 1 or 2 days
-    if (datesToScrape.length <= 2) {
-      console.log(
-        "Only one or two days of data to scrape; fetching URLs concurrently without delay."
-      );
-      await Promise.all(urlsQueue.map((item) => processSingleUrl(item)));
-    } else {
-      await processUrlsSequentially(urlsQueue);
-    }
+    const maxPendingUrls =
+      options.maxPendingUrls ?? DEFAULT_MAX_PENDING_URLS_PER_RUN;
+    const requestIntervalMs =
+      options.requestIntervalMs ??
+      (datesToScrape.length <= 2 ? 0 : REQUEST_INTERVAL_MS);
+
+    const result = await processUrlsSequentially(urlsQueue, {
+      requestIntervalMs,
+      maxPendingUrls
+    });
 
     if (troublesomePlayers.length > 0) {
       const uniqueTroublesomePlayers = [...new Set(troublesomePlayers)];
@@ -562,8 +607,22 @@ async function main() {
         uniqueTroublesomePlayers
       );
     }
+
+    return {
+      message: result.stoppedEarly
+        ? "Processed a bounded chunk of NST goalie work. Re-run to continue."
+        : "Goalie data fetching and upsertion completed for queued work.",
+      pendingUrlsProcessed: result.pendingProcessedCount,
+      totalQueuedUrls: urlsQueue.length,
+      stoppedEarly: result.stoppedEarly,
+      datesQueued: datesToScrape.length,
+      requestIntervalMs,
+      maxPendingUrls,
+      nextStartDate: datesToScrape[0] ?? null
+    };
   } catch (error: any) {
     console.error("An error occurred:", error.message);
+    throw error;
   }
 }
 
@@ -573,10 +632,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     return;
   }
   try {
-    await main();
-    res
-      .status(200)
-      .json({ message: "Goalie data fetching and upsertion initiated." });
+    const result = await main({
+      maxPendingUrls: parsePositiveIntParam(req.query.maxUrls),
+      requestIntervalMs: parsePositiveIntParam(req.query.requestIntervalMs),
+      maxDays: parsePositiveIntParam(req.query.maxDays),
+      startDate: Array.isArray(req.query.startDate)
+        ? req.query.startDate[0]
+        : req.query.startDate
+    });
+    res.status(200).json(result);
   } catch (error: any) {
     console.error("Error in API handler:", error.message);
     res.status(500).json({ message: "Internal Server Error" });

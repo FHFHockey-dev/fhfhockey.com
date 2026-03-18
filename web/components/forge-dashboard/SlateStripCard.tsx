@@ -1,34 +1,65 @@
+import Link from "next/link";
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 
-import styles from "styles/ForgeDashboard.module.scss";
-import { teamsInfo } from "lib/teamsInfo";
-import { normalizeStartChartResponse } from "lib/dashboard/normalizers";
+import {
+  normalizeStartChartResponse,
+  type NormalizedStartChartGameRow
+} from "lib/dashboard/normalizers";
 import { fetchCachedJson } from "lib/dashboard/clientFetchCache";
+import { getGamePowerEdge } from "lib/dashboard/teamContext";
+import { getTeamMetaById } from "lib/dashboard/teamMetadata";
+import styles from "styles/ForgeDashboard.module.scss";
 
-type GoalieInfo = { player_id: number; name: string; start_probability: number | null };
-type GameRow = {
-  id: number;
-  homeTeamId: number;
-  awayTeamId: number;
-  homeGoalies: GoalieInfo[];
-  awayGoalies: GoalieInfo[];
-};
+type GoalieInfo = NormalizedStartChartGameRow["homeGoalies"][number];
+type GameRow = NormalizedStartChartGameRow;
 
 type SlateStripCardProps = {
   date: string;
   team: string;
   onResolvedDate?: (resolvedDate: string | null) => void;
+  onStatusChange?: (status: {
+    loading: boolean;
+    error: string | null;
+    staleMessage: string | null;
+    empty: boolean;
+  }) => void;
 };
-
-const findTeamById = (id: number) =>
-  Object.values(teamsInfo).find((team) => team.id === id);
 
 const formatPct = (value: number | null | undefined): string => {
   if (value == null || Number.isNaN(value)) return "--";
   return `${(value * 100).toFixed(0)}%`;
 };
 
-function GoalieBar({ goalies }: { goalies?: GoalieInfo[] }) {
+const formatRating = (value: number | null | undefined): string => {
+  if (value == null || Number.isNaN(value)) return "--";
+  return value.toFixed(0);
+};
+
+const formatSigned = (value: number | null | undefined): string => {
+  if (value == null || Number.isNaN(value)) return "--";
+  const sign = value > 0 ? "+" : "";
+  return `${sign}${value.toFixed(1)}`;
+};
+
+const formatGsaa = (value: number | null | undefined): string => {
+  if (value == null || Number.isNaN(value)) return "--";
+  const sign = value > 0 ? "+" : "";
+  return `${sign}${value.toFixed(2)}`;
+};
+
+const formatPowerEdge = (value: number | null): string => {
+  if (value == null || Number.isNaN(value)) return "--";
+  const sign = value > 0 ? "+" : "";
+  return `${sign}${value.toFixed(1)}`;
+};
+
+function GoalieBar({
+  goalies,
+  emphasis = "compact"
+}: {
+  goalies?: GoalieInfo[];
+  emphasis?: "compact" | "hero";
+}) {
   if (!goalies || goalies.length === 0) {
     return <span className={styles.slateGoalieEmpty}>No goalie probabilities</span>;
   }
@@ -37,13 +68,71 @@ function GoalieBar({ goalies }: { goalies?: GoalieInfo[] }) {
   const prob = Math.max(0, Math.min(1, top.start_probability ?? 0));
 
   return (
-    <div className={styles.slateGoalieBlock}>
+    <div
+      className={
+        emphasis === "hero"
+          ? styles.slateGoalieHeroBlock
+          : styles.slateGoalieBlock
+      }
+    >
       <div className={styles.slateGoalieText}>
         <span>{top.name}</span>
         <span>{formatPct(top.start_probability)}</span>
       </div>
       <div className={styles.slateGoalieTrack}>
         <div className={styles.slateGoalieFill} style={{ width: `${prob * 100}%` }} />
+      </div>
+      {emphasis === "hero" && (
+        <div className={styles.slateGoalieHeroMeta}>
+          <span>
+            GSAA/60 <strong>{formatGsaa(top.projected_gsaa_per_60)}</strong>
+          </span>
+          <span>
+            Own{" "}
+            <strong>
+              {top.percent_ownership == null
+                ? "--"
+                : `${top.percent_ownership.toFixed(0)}%`}
+            </strong>
+          </span>
+          <span>{top.confirmed_status ? "Confirmed" : "Projected"}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TeamSnapshot({
+  teamAbbr,
+  side,
+  rating
+}: {
+  teamAbbr: string | null | undefined;
+  side: "away" | "home";
+  rating: GameRow["homeRating"];
+}) {
+  return (
+    <div className={styles.slateTeamSnapshot}>
+      <div className={styles.slateTeamHeader}>
+        {teamAbbr && (
+          <img
+            src={`/teamLogos/${teamAbbr}.png`}
+            alt={teamAbbr}
+            className={styles.slateFocusLogo}
+          />
+        )}
+        <div className={styles.slateTeamLabel}>
+          <span className={styles.slateFocusSide}>
+            {side === "away" ? "Away" : "Home"}
+          </span>
+          <strong>{teamAbbr ?? "--"}</strong>
+        </div>
+      </div>
+      <div className={styles.slateRatingGrid}>
+        <span>OFF {formatRating(rating?.offRating)}</span>
+        <span>DEF {formatRating(rating?.defRating)}</span>
+        <span>PACE {formatRating(rating?.paceRating)}</span>
+        <span>TREND {formatSigned(rating?.trend10)}</span>
       </div>
     </div>
   );
@@ -52,10 +141,12 @@ function GoalieBar({ goalies }: { goalies?: GoalieInfo[] }) {
 export default function SlateStripCard({
   date,
   team,
-  onResolvedDate
+  onResolvedDate,
+  onStatusChange
 }: SlateStripCardProps) {
   const [games, setGames] = useState<GameRow[]>([]);
   const [dateUsed, setDateUsed] = useState<string>(date);
+  const [selectedGameId, setSelectedGameId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -64,9 +155,12 @@ export default function SlateStripCard({
     setLoading(true);
     setError(null);
 
-    fetchCachedJson<unknown>(`/api/v1/start-chart?date=${encodeURIComponent(date)}`, {
-      ttlMs: 60_000
-    })
+    fetchCachedJson<unknown>(
+      `/api/v1/start-chart?date=${encodeURIComponent(date)}`,
+      {
+        ttlMs: 60_000
+      }
+    )
       .then((payload) => normalizeStartChartResponse(payload))
       .then((payload) => {
         if (!active) return;
@@ -92,21 +186,56 @@ export default function SlateStripCard({
     };
   }, [date]);
 
-  const displayGames = useMemo(() => {
-    return games
-      .filter((game) => {
-        if (team === "all") return true;
-        const home = findTeamById(game.homeTeamId)?.abbrev ?? "";
-        const away = findTeamById(game.awayTeamId)?.abbrev ?? "";
-        const target = team.toUpperCase();
-        return home === target || away === target;
-      })
-      .slice(0, 8);
-  }, [games, team]);
+  const displayGames = useMemo(
+    () =>
+      games
+        .filter((game) => {
+          if (team === "all") return true;
+          const home = getTeamMetaById(game.homeTeamId)?.abbr ?? "";
+          const away = getTeamMetaById(game.awayTeamId)?.abbr ?? "";
+          const target = team.toUpperCase();
+          return home === target || away === target;
+        })
+        .slice(0, 8),
+    [games, team]
+  );
+
+  useEffect(() => {
+    if (displayGames.length === 0) {
+      setSelectedGameId(null);
+      return;
+    }
+
+    setSelectedGameId((current) => {
+      if (current && displayGames.some((game) => game.id === current)) {
+        return current;
+      }
+      return displayGames[0]?.id ?? null;
+    });
+  }, [displayGames]);
+
+  const selectedGame = useMemo(() => {
+    if (displayGames.length === 0) return null;
+    return (
+      displayGames.find((game) => game.id === selectedGameId) ?? displayGames[0]
+    );
+  }, [displayGames, selectedGameId]);
 
   useEffect(() => {
     onResolvedDate?.(dateUsed);
   }, [dateUsed, onResolvedDate]);
+
+  useEffect(() => {
+    onStatusChange?.({
+      loading,
+      error,
+      staleMessage:
+        !loading && !error && dateUsed && dateUsed !== date
+          ? `Slate using ${dateUsed}`
+          : null,
+      empty: !loading && !error && displayGames.length === 0
+    });
+  }, [date, dateUsed, displayGames.length, error, loading, onStatusChange]);
 
   return (
     <article className={styles.slateStripCard} aria-label="Start-chart slate strip">
@@ -127,54 +256,138 @@ export default function SlateStripCard({
         </p>
       )}
 
-      {!loading && !error && displayGames.length > 0 && (
-        <div className={styles.slateRail}>
-          {displayGames.map((game) => {
-            const away = findTeamById(game.awayTeamId);
-            const home = findTeamById(game.homeTeamId);
-            return (
-              <article
-                key={game.id}
-                className={styles.slateRailCard}
-                style={
-                  {
-                    "--away-color": away?.primaryColor ?? "#1f2937",
-                    "--home-color": home?.primaryColor ?? "#0f172a"
-                  } as CSSProperties
-                }
+      {!loading && !error && displayGames.length > 0 && selectedGame && (
+        <>
+          <div className={styles.slateHeroSummary}>
+            <div className={styles.slateSummaryChip}>
+              <span className={styles.slateSummaryLabel}>Games</span>
+              <strong>{displayGames.length}</strong>
+            </div>
+            <div className={styles.slateSummaryChip}>
+              <span className={styles.slateSummaryLabel}>Focus</span>
+              <strong>
+                {(getTeamMetaById(selectedGame.awayTeamId)?.abbr ?? "AWY")} @{" "}
+                {(getTeamMetaById(selectedGame.homeTeamId)?.abbr ?? "HME")}
+              </strong>
+            </div>
+            <div className={styles.slateSummaryChip}>
+              <span className={styles.slateSummaryLabel}>Mode</span>
+              <strong>{team === "all" ? "Full slate" : `${team} filtered`}</strong>
+            </div>
+            <div className={styles.slateSummaryChip}>
+              <span className={styles.slateSummaryLabel}>Power Edge</span>
+              <strong>{formatPowerEdge(getGamePowerEdge(selectedGame))}</strong>
+            </div>
+            <div className={styles.slateSummaryLinks}>
+              <Link
+                href={`/start-chart?date=${dateUsed}`}
+                className={styles.slateActionLink}
               >
-                <div className={styles.slateRailTeams}>
-                  <div className={styles.slateRailTeam}>
-                    {away?.abbrev && (
-                      <img
-                        src={`/teamLogos/${away.abbrev}.png`}
-                        alt={away.abbrev}
-                        className={styles.slateRailLogo}
-                      />
-                    )}
-                    <span>{away?.abbrev ?? "AWY"}</span>
-                  </div>
-                  <span className={styles.slateVs}>@</span>
-                  <div className={styles.slateRailTeam}>
-                    {home?.abbrev && (
-                      <img
-                        src={`/teamLogos/${home.abbrev}.png`}
-                        alt={home.abbrev}
-                        className={styles.slateRailLogo}
-                      />
-                    )}
-                    <span>{home?.abbrev ?? "HME"}</span>
-                  </div>
-                </div>
+                Open Start Chart
+              </Link>
+            </div>
+          </div>
 
-                <div className={styles.slateRailMeta}>
-                  <GoalieBar goalies={game.awayGoalies} />
-                  <GoalieBar goalies={game.homeGoalies} />
-                </div>
-              </article>
-            );
-          })}
-        </div>
+          <div className={styles.slateHeroFocus}>
+            <div className={styles.slateHeroTeams}>
+              <TeamSnapshot
+                side="away"
+                teamAbbr={getTeamMetaById(selectedGame.awayTeamId)?.abbr}
+                rating={selectedGame.awayRating}
+              />
+              <div className={styles.slateHeroVersus}>
+                <span className={styles.slateHeroEyebrow}>Focused Matchup</span>
+                <strong>
+                  {(getTeamMetaById(selectedGame.awayTeamId)?.abbr ?? "AWY")} @{" "}
+                  {(getTeamMetaById(selectedGame.homeTeamId)?.abbr ?? "HME")}
+                </strong>
+                <span className={styles.slateHeroSubcopy}>
+                  Starter confidence and team-power context stay visible in one
+                  slate-first panel.
+                </span>
+                <span className={styles.slateHeroSubcopy}>
+                  Home-side edge: <strong>{formatPowerEdge(getGamePowerEdge(selectedGame))}</strong>
+                </span>
+              </div>
+              <TeamSnapshot
+                side="home"
+                teamAbbr={getTeamMetaById(selectedGame.homeTeamId)?.abbr}
+                rating={selectedGame.homeRating}
+              />
+            </div>
+
+            <div className={styles.slateHeroGoalies}>
+              <div className={styles.slateGoalieColumn}>
+                <span className={styles.slateGoalieColumnLabel}>
+                  {(getTeamMetaById(selectedGame.awayTeamId)?.abbr ?? "AWY")} starter
+                  lane
+                </span>
+                <GoalieBar goalies={selectedGame.awayGoalies} emphasis="hero" />
+              </div>
+              <div className={styles.slateGoalieColumn}>
+                <span className={styles.slateGoalieColumnLabel}>
+                  {(getTeamMetaById(selectedGame.homeTeamId)?.abbr ?? "HME")} starter
+                  lane
+                </span>
+                <GoalieBar goalies={selectedGame.homeGoalies} emphasis="hero" />
+              </div>
+            </div>
+          </div>
+
+          <div className={styles.slateRail}>
+            {displayGames.map((game) => {
+              const away = getTeamMetaById(game.awayTeamId);
+              const home = getTeamMetaById(game.homeTeamId);
+              const isActive = game.id === selectedGame.id;
+
+              return (
+                <button
+                  key={game.id}
+                  type="button"
+                  onClick={() => setSelectedGameId(game.id)}
+                  className={`${styles.slateRailCard} ${isActive ? styles.slateRailCardActive : ""}`}
+                  aria-pressed={isActive}
+                  aria-label={`Focus ${away?.abbr ?? "AWY"} at ${home?.abbr ?? "HME"}`}
+                  style={
+                    {
+                      "--away-color": away?.colors.primary ?? "#1f2937",
+                      "--home-color": home?.colors.primary ?? "#0f172a"
+                    } as CSSProperties
+                  }
+                >
+                  <div className={styles.slateRailTeams}>
+                    <div className={styles.slateRailTeam}>
+                      {away?.abbr && (
+                        <img
+                          src={away.logo}
+                          alt={away.abbr}
+                          className={styles.slateRailLogo}
+                        />
+                      )}
+                      <span>{away?.abbr ?? "AWY"}</span>
+                    </div>
+                    <span className={styles.slateVs}>@</span>
+                    <div className={styles.slateRailTeam}>
+                      {home?.abbr && (
+                        <img
+                          src={home.logo}
+                          alt={home.abbr}
+                          className={styles.slateRailLogo}
+                        />
+                      )}
+                      <span>{home?.abbr ?? "HME"}</span>
+                    </div>
+                  </div>
+
+                  <div className={styles.slateRailMeta}>
+                    <GoalieBar goalies={game.awayGoalies} />
+                    <GoalieBar goalies={game.homeGoalies} />
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </>
       )}
     </article>
   );

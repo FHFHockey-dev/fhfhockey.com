@@ -1,9 +1,10 @@
 ## Relevant Files
 
 - `web/pages/forge/dashboard.tsx` - Main FORGE dashboard page that will be rebuilt around the slate-first layout.
+- `web/styles/ForgeDashboard.module.scss` - Shared page/card stylesheet for the FORGE dashboard shell, layout bands, and dashboard-specific visual treatments.
 - `web/pages/FORGE.tsx` - FORGE landing page that will be rebuilt as the preview and navigation gateway.
-- `web/pages/forge/dashboard.test.tsx` - Page-level tests for the rebuilt dashboard route.
-- `web/pages/FORGE.test.tsx` - Page-level tests for the rebuilt FORGE landing page.
+- `web/__tests__/pages/forge/dashboard.test.tsx` - Page-level tests for the rebuilt dashboard route.
+- `web/__tests__/pages/FORGE.test.tsx` - Page-level tests for the rebuilt FORGE landing page.
 - `web/pages/start-chart.tsx` - Existing slate, matchup, goalie-strip, and ownership-driven UI patterns to reuse or adapt.
 - `web/pages/trends/index.tsx` - Existing team trend, CTPI, Top Movers, search, and trend-chart patterns to reuse or adapt.
 - `web/pages/trends/player/[playerId].tsx` - Existing player trend drill-in route and metric-family interaction model.
@@ -15,14 +16,23 @@
 - `web/styles/_panel.scss` - Shared panel shell mixins for dashboard sections and card containers.
 - `web/components/TopMovers/TopMovers.tsx` - Existing movers component that may be reused or merged into dashboard-specific trend surfaces.
 - `web/components/TransactionTrends/TransactionTrends.tsx` - Existing ownership-trend sparkline and transaction-movement presentation patterns.
+- `web/components/TransactionTrends/OwnershipSparkline.tsx` - Reusable ownership-sparkline primitive extracted for dashboard cards and previews.
 - `web/components/GameGrid/utils/useSchedule.ts` - Existing schedule helper for week-based streaming context.
 - `web/hooks/useTeamSchedule.ts` - Existing team schedule helper for team detail and weekly-streaming context.
 - `web/pages/api/v1/transactions/ownership-trends.ts` - Existing ownership trend API that may be reused or extended for dashboard player cards.
+- `web/pages/api/v1/transactions/ownership-snapshots.ts` - Lightweight Yahoo ownership snapshot route for filtering dashboard player-insight rows by current ownership.
 - `web/pages/api/v1/start-chart.ts` - Existing start-chart data route that powers slate and matchup context.
 - `web/pages/api/team-ratings.ts` - Existing team power data route that can support Team Trend Context.
 - `web/pages/api/v1/forge/players.ts` - Existing player projection route for projection-oriented player cards.
 - `web/pages/api/v1/forge/goalies.ts` - Existing goalie projection route for goalie risk and starter-confidence surfaces.
 - `web/pages/api/v1/sustainability/trend-bands.ts` - Sustainability/trend-band API for sustainable vs unsustainable player modules.
+- `web/lib/dashboard/normalizers.ts` - Shared dashboard payload normalizers for team context, sustainability, slate, goalie, and skater trend responses.
+- `web/lib/dashboard/normalizers.test.ts` - Contract coverage for dashboard normalizers most likely to drift during route and card reuse.
+- `web/lib/dashboard/playerInsightContext.ts` - Shared dashboard-owned insight language for sustainability bands, hot/cold bands, and movement-band labels.
+- `web/lib/dashboard/playerOwnership.ts` - Shared dashboard ownership lookup helper for Yahoo-season derivation and cached playerId-to-ownership snapshot fetches.
+- `web/lib/dashboard/playerOwnership.test.ts` - Contract coverage for Yahoo ownership snapshot/trend merging and season derivation.
+- `web/lib/dashboard/topAddsScheduleContext.ts` - Team-week schedule context adapter used to turn `This Week` Top Adds into a streaming-aware board.
+- `web/lib/dashboard/topAddsScheduleContext.test.ts` - Unit coverage for weekly Top Adds schedule context and off-night counting.
 - `web/lib/trends/teamMetricConfig.ts` - Team trend category configuration used by team-context and drill-in surfaces.
 - `web/lib/trends/skaterMetricConfig.ts` - Skater trend category configuration used by player opportunity and trend surfaces.
 - `web/lib/sustainability/bands.ts` - Sustainability metric definitions and shared trend-band semantics.
@@ -33,10 +43,40 @@
 - `tasks/artifacts/forge-dashboard-component-consolidation-plan.md` - Merge plan for overlapping dashboard UI patterns plus styling-governance references.
 - `tasks/artifacts/forge-dashboard-click-routing-map.md` - Routing contract for nav links, logos, rows, headshots, and card-type-specific drill-ins.
 - `tasks/artifacts/forge-dashboard-stale-state-policy.md` - Section-specific stale-data, fallback, degraded, and blocked-state policy for the refreshed dashboard.
+- `tasks/artifacts/forge-dashboard-band-shell-implementation.md` - Implementation notes for the banded `forge/dashboard` shell and the placeholder card composition used during the first layout pass.
+- `tasks/artifacts/forge-dashboard-control-surface-implementation.md` - Implementation notes for the shared dashboard command surface, compact secondary nav, and resettable global filters.
+- `tasks/artifacts/forge-dashboard-top-band-layout-tuning.md` - Visual-layout notes for restoring slate dominance, preserving rail visibility, and removing compressed viewport behavior from the dashboard.
+- `tasks/artifacts/forge-dashboard-band-state-wrappers.md` - Shared loading/error/stale/empty wrapper contract for dashboard bands and the card-to-page status callbacks that power it.
+- `web/components/forge-dashboard/TopAddsRail.tsx` - Dashboard-owned Top Player Adds rail with ownership-band controls, `Tonight` / `This Week` mode, and merged projection-plus-ownership data.
+- `tasks/artifacts/forge-dashboard-module-composition-replacement.md` - Notes on removing the legacy movers composition from the top rail while preserving a stable dashboard-owned Top Adds slot.
+- `tasks/artifacts/forge-dashboard-slate-hero-implementation.md` - Notes on the upgraded slate hero, focused-matchup panel, and richer start-chart data preserved for the top band.
+- `tasks/artifacts/forge-dashboard-top-adds-rail-implementation.md` - Notes on the real Top Adds rail, ownership slider controls, merged data inputs, and the intentionally provisional ranking behavior prior to `3.3`.
+- `tasks/artifacts/forge-dashboard-top-adds-ranking-formula.md` - The authoritative Top Adds score formula, weight breakdown, sort contract, and schedule-context placeholder for later streaming-aware work.
+- `tasks/artifacts/forge-dashboard-top-adds-ownership-sparkline.md` - The ownership sparkline contract for Top Adds cards, including Yahoo timeline rendering and recent-change presentation.
+- `tasks/artifacts/forge-dashboard-team-trend-context-implementation.md` - Notes on the upgraded Team Trend Context surface, including CTPI, matchup edge, variance treatment, and team-detail drill-ins.
+- `tasks/artifacts/forge-dashboard-sustainable-unsustainable-paired-view.md` - Notes on the default paired sustainability insight view, including richer reason text, player drill-ins, and the dashboard-owned `Sustainable Risers` / `Unsustainable Heaters` framing.
+- `tasks/artifacts/forge-dashboard-hot-cold-trend-movement.md` - Notes on the companion player hot/cold and trending up/down surface, including skater-power normalization, tab semantics, and skater-only empty-state behavior.
+- `tasks/artifacts/forge-dashboard-player-insight-context-adaptation.md` - Notes on adapting sandbox/placeholder elasticity framing, trend-band labels, and compact sparkline cues into dashboard-owned player insight cards.
+- `tasks/artifacts/forge-dashboard-player-insight-ownership-band.md` - Notes on the dedicated `25% - 50%` player-insight ownership band, Yahoo snapshot route, and shared discovery-filter behavior outside Top Adds.
+- `tasks/artifacts/forge-dashboard-chart-budget-pass.md` - Chart-budget contract for keeping the main dashboard in a compact-supporting-chart lane instead of a sparkline-heavy layout.
+- `tasks/artifacts/forge-dashboard-signal-explanation-language.md` - Shared explanation-language contract for `Trustworthy`, `Overheated`, and `Short-term only` player insight labels.
+- `tasks/artifacts/forge-dashboard-goalie-band-implementation.md` - Notes on the rebuilt goalie band, including spotlight cards, richer normalizer fields, and starter-confidence driver treatment.
+- `tasks/artifacts/forge-dashboard-fantasy-workflow-integration.md` - Phase-closeout notes for ownership context outside Top Adds, reused ownership surfaces, weekly streaming context, and the overall fantasy workflow contract.
+- `tasks/artifacts/forge-dashboard-route-surface-implementation.md` - Phase-closeout notes for the rebuilt FORGE landing page, team/player drill-in routes, and equal-access route navigation.
+- `tasks/artifacts/forge-dashboard-responsive-verification-closeout.md` - Final responsive/stale-state/test/build closeout notes for the refreshed dashboard system.
+- `web/pages/api/v1/transactions/ownership-trends.ts` - Ownership-trend API now extended with `playerId` so dashboard adds rows can merge against projection rows reliably.
+- `web/lib/dashboard/topAddsRanking.ts` - Dashboard-owned Top Adds ranking helper that scores and sorts candidates independently of the rail JSX.
+- `web/lib/dashboard/topAddsRanking.test.ts` - Unit coverage for the Top Adds score weights, ownership bias, and schedule-context placeholder behavior.
+- `web/lib/dashboard/teamContext.ts` - Shared team-context contract for team power score, CTPI delta, and slate matchup-edge interpretation across dashboard and source pages.
+- `web/lib/dashboard/teamContext.test.ts` - Unit coverage for the shared team-context contract so the dashboard hero and team-context band do not drift.
+- `web/components/forge-dashboard/GoalieRiskCard.tsx` - Dashboard-owned goalie decision surface with spotlight cards, model recommendation, and starter-confidence drivers.
+- `web/components/forge-dashboard/ForgeRouteNav.tsx` - Compact route-navigation contract shared across the dashboard, landing page, and new team/player drill-ins.
+- `tasks/artifacts/forge-dashboard-team-context-contract-alignment.md` - Notes on consolidating team-context logic across team-ratings, Trends, Start Chart, Underlying Stats, and the dashboard top band.
 - `web/pages/forge/team/[teamId].tsx` - New dedicated team detail route expected by the PRD.
-- `web/pages/forge/team/[teamId].test.tsx` - Tests for the new dedicated team detail route.
+- `web/__tests__/pages/forge/team/[teamId].test.tsx` - Tests for the new dedicated team detail route.
 - `web/pages/forge/player/[playerId].tsx` - Potential new dashboard-specific player detail route for projection/opportunity card destinations.
-- `web/pages/forge/player/[playerId].test.tsx` - Tests for the dashboard-specific player detail route if created.
+- `web/__tests__/pages/forge/player/[playerId].test.tsx` - Tests for the dashboard-specific player detail route if created.
+- `web/next.config.js` - Next build configuration used to keep the production build clean and avoid stale dist-directory route artifacts.
 - `web/components/forge-dashboard/` - Likely home for consolidated dashboard-specific card components, rails, and section shells.
 
 ### Notes
@@ -47,50 +87,50 @@
 
 ## Tasks
 
-- [ ] 1.0 Define the dashboard architecture, navigation model, and component consolidation plan
+- [x] 1.0 Define the dashboard architecture, navigation model, and component consolidation plan
   - [x] 1.1 Audit the current FORGE, Trends, Start Chart, Underlying Stats, Placeholder, and Trends Sandbox pages and map their highest-value sections to the refreshed dashboard bands.
   - [x] 1.2 Produce an explicit section blueprint for the new dashboard covering the top hero, Top Player Adds rail, Team Trend Context, player insight sections, goalie section, and mobile accordion behavior.
   - [x] 1.3 Define the card taxonomy for projection cards, sustainability cards, and streak/trend cards, including the data each card type must show and what interaction it supports.
   - [x] 1.4 Identify overlapping UI patterns that should be merged into singular reusable components, especially for slate strips, team-context cards, player opportunity cards, and trend-signal cards.
   - [x] 1.5 Define the click-routing map for logos, rows, headshots, and cards so team clicks, player clicks, and nav actions resolve to the correct destinations.
   - [x] 1.6 Document section-specific stale-data behavior and warning treatment so the implementation does not improvise inconsistent blocked or stale states.
-- [ ] 2.0 Build the slate-first dashboard shell and shared control system in `web/pages/forge/dashboard.tsx`
-  - [ ] 2.1 Recompose `web/pages/forge/dashboard.tsx` into the new dashboard band structure instead of the existing isolated-card grid.
-  - [ ] 2.2 Add the shared dashboard control surface, including date context, compact secondary nav, and any global filters that should affect multiple sections.
-  - [ ] 2.3 Implement the top-level layout so Tonight's Slate is visually dominant and the Top Player Adds rail remains visible without burying team context.
-  - [ ] 2.4 Add the global section wrappers, loading shells, error shells, and stale-warning containers needed by every major dashboard band.
-  - [ ] 2.5 Remove or replace the current dashboard module composition that no longer matches the PRD while preserving any reusable logic.
-- [ ] 3.0 Implement the top-band experience with Tonight's Slate, Top Player Adds, and Team Trend Context
-  - [ ] 3.1 Build the refreshed slate hero by adapting the best parts of `web/pages/start-chart.tsx` and `web/pages/FORGE.tsx` into a single top-band experience.
-  - [ ] 3.2 Implement the Top Player Adds rail with a default `25%` to `75%` ownership filter, adjustable ownership slider, and `Tonight` / `This Week` toggle.
-  - [ ] 3.3 Define and implement the default Top Player Adds ranking formula using recent trend strength with a low-ownership bias and room for schedule-aware context.
-  - [ ] 3.4 Integrate `yahoo_players` ownership data and `ownership_timeline` sparkline behavior into the Top Player Adds cards.
-  - [ ] 3.5 Build Team Trend Context using team power, CTPI, matchup strength, and variance/sustainability warning signals with direct links into the team detail view.
-  - [ ] 3.6 Reuse or adapt relevant logic from `web/pages/api/team-ratings.ts`, `web/pages/trends/index.tsx`, and `web/pages/start-chart.tsx` so the hero band has consistent data contracts.
-- [ ] 4.0 Implement the main player insight sections for sustainability, fake-hot detection, and trend movement
-  - [ ] 4.1 Build the default paired player insight view for `Sustainable` vs `Unsustainable`, with sustainable risers and unsustainable heaters shown first.
-  - [ ] 4.2 Add the companion `Hot` vs `Cold` trend view and additional `Trending Up` / `Trending Down` states without collapsing them into the same card semantics as sustainability.
-  - [ ] 4.3 Reuse or adapt trend-band, elasticity, and hot/cold logic from `web/pages/trendsSandbox.tsx` and `web/pages/trends/placeholder.tsx` into dashboard-ready components.
-  - [ ] 4.4 Keep player discovery sections outside Top Adds on a default `25%` to `50%` ownership filter with adjustable controls where appropriate.
-  - [ ] 4.5 Ensure the dashboard uses moderate charting only by limiting the main page to a small set of compact supporting charts rather than chart-heavy panels.
-  - [ ] 4.6 Implement explanatory labels, badges, and short reason text so users can understand whether a signal is trustworthy, overheated, or merely short-term.
-- [ ] 5.0 Implement the goalie, ownership, and streaming-context integrations that make the dashboard fantasy-actionable
-  - [ ] 5.1 Build the dashboard goalie section using starter probability, risk/volatility, confidence drivers, and matchup context from existing FORGE and start-chart surfaces.
-  - [ ] 5.2 Integrate ownership trend visuals and recent-change context where relevant beyond Top Adds, without overwhelming non-opportunity card types.
-  - [ ] 5.3 Evaluate and reuse `web/pages/api/v1/transactions/ownership-trends.ts` and `web/components/TransactionTrends/TransactionTrends.tsx` where they fit the new dashboard data model.
-  - [ ] 5.4 Add weekly streaming context to Top Player Adds using existing schedule utilities such as `web/components/GameGrid/utils/useSchedule.ts` and `web/hooks/useTeamSchedule.ts`.
-  - [ ] 5.5 Ensure the `Tonight` / `This Week` toggle changes the player-opportunity logic in a way that fantasy managers can actually use for daily versus weekly adds.
-  - [ ] 5.6 Validate that slate, goalies, and player-opportunity sections present a coherent fantasy workflow instead of three disconnected data blocks.
-- [ ] 6.0 Rebuild `web/pages/FORGE.tsx` as the preview landing page and add drill-in destinations for team and player detail
-  - [ ] 6.1 Replace the current `web/pages/FORGE.tsx` experience with a slim preview landing page containing a slate preview, Top Player Adds preview, sustainability preview, and links into deeper views.
-  - [ ] 6.2 Create the new dedicated team detail route and ensure team logos/rows from dashboard team contexts navigate there consistently.
-  - [ ] 6.3 Decide and implement card-type-specific player destinations, including when to route to the existing trends player page versus a new dashboard-specific player detail page.
-  - [ ] 6.4 Build the dashboard-specific player detail page if required by the card-routing map and ensure projection/opportunity cards have a destination better suited than the trends page.
-  - [ ] 6.5 Ensure the compact nav and clickable dashboard elements give equal access to the dashboard, team detail, player detail, start-chart, and trends views.
-- [ ] 7.0 Add responsive behavior, stale-state handling, and verification coverage for the new dashboard system
-  - [ ] 7.1 Implement desktop and mobile layout behavior, including accordion treatment for heavier mobile sections and the default expanded mobile sections required by the PRD.
-  - [ ] 7.2 Add section-specific stale-state and missing-data handling so stale sections can warn without collapsing the entire dashboard experience.
-  - [ ] 7.3 Add or update tests for `web/pages/forge/dashboard.tsx`, `web/pages/FORGE.tsx`, and any new team/player detail routes.
-  - [ ] 7.4 Add tests or contract coverage for the dashboard data dependencies most likely to drift, including ownership, slate, team context, goalie, and sustainability payloads.
-  - [ ] 7.5 Verify the dashboard nav, card click-throughs, mobile accordions, and ownership filters behave correctly under realistic initial-load states.
-  - [ ] 7.6 Run full regression coverage for the affected dashboard, trends, start-chart, and supporting API/page surfaces before closeout.
+- [x] 2.0 Build the slate-first dashboard shell and shared control system in `web/pages/forge/dashboard.tsx`
+  - [x] 2.1 Recompose `web/pages/forge/dashboard.tsx` into the new dashboard band structure instead of the existing isolated-card grid.
+  - [x] 2.2 Add the shared dashboard control surface, including date context, compact secondary nav, and any global filters that should affect multiple sections.
+  - [x] 2.3 Implement the top-level layout so Tonight's Slate is visually dominant and the Top Player Adds rail remains visible without burying team context.
+  - [x] 2.4 Add the global section wrappers, loading shells, error shells, and stale-warning containers needed by every major dashboard band.
+  - [x] 2.5 Remove or replace the current dashboard module composition that no longer matches the PRD while preserving any reusable logic.
+- [x] 3.0 Implement the top-band experience with Tonight's Slate, Top Player Adds, and Team Trend Context
+  - [x] 3.1 Build the refreshed slate hero by adapting the best parts of `web/pages/start-chart.tsx` and `web/pages/FORGE.tsx` into a single top-band experience.
+  - [x] 3.2 Implement the Top Player Adds rail with a default `25%` to `75%` ownership filter, adjustable ownership slider, and `Tonight` / `This Week` toggle.
+  - [x] 3.3 Define and implement the default Top Player Adds ranking formula using recent trend strength with a low-ownership bias and room for schedule-aware context.
+  - [x] 3.4 Integrate `yahoo_players` ownership data and `ownership_timeline` sparkline behavior into the Top Player Adds cards.
+  - [x] 3.5 Build Team Trend Context using team power, CTPI, matchup strength, and variance/sustainability warning signals with direct links into the team detail view.
+  - [x] 3.6 Reuse or adapt relevant logic from `web/pages/api/team-ratings.ts`, `web/pages/trends/index.tsx`, and `web/pages/start-chart.tsx` so the hero band has consistent data contracts.
+- [x] 4.0 Implement the main player insight sections for sustainability, fake-hot detection, and trend movement
+  - [x] 4.1 Build the default paired player insight view for `Sustainable` vs `Unsustainable`, with sustainable risers and unsustainable heaters shown first.
+  - [x] 4.2 Add the companion `Hot` vs `Cold` trend view and additional `Trending Up` / `Trending Down` states without collapsing them into the same card semantics as sustainability.
+  - [x] 4.3 Reuse or adapt trend-band, elasticity, and hot/cold logic from `web/pages/trendsSandbox.tsx` and `web/pages/trends/placeholder.tsx` into dashboard-ready components.
+  - [x] 4.4 Keep player discovery sections outside Top Adds on a default `25%` to `50%` ownership filter with adjustable controls where appropriate.
+  - [x] 4.5 Ensure the dashboard uses moderate charting only by limiting the main page to a small set of compact supporting charts rather than chart-heavy panels.
+  - [x] 4.6 Implement explanatory labels, badges, and short reason text so users can understand whether a signal is trustworthy, overheated, or merely short-term.
+- [x] 5.0 Implement the goalie, ownership, and streaming-context integrations that make the dashboard fantasy-actionable
+  - [x] 5.1 Build the dashboard goalie section using starter probability, risk/volatility, confidence drivers, and matchup context from existing FORGE and start-chart surfaces.
+  - [x] 5.2 Integrate ownership trend visuals and recent-change context where relevant beyond Top Adds, without overwhelming non-opportunity card types.
+  - [x] 5.3 Evaluate and reuse `web/pages/api/v1/transactions/ownership-trends.ts` and `web/components/TransactionTrends/TransactionTrends.tsx` where they fit the new dashboard data model.
+  - [x] 5.4 Add weekly streaming context to Top Player Adds using existing schedule utilities such as `web/components/GameGrid/utils/useSchedule.ts` and `web/hooks/useTeamSchedule.ts`.
+  - [x] 5.5 Ensure the `Tonight` / `This Week` toggle changes the player-opportunity logic in a way that fantasy managers can actually use for daily versus weekly adds.
+  - [x] 5.6 Validate that slate, goalies, and player-opportunity sections present a coherent fantasy workflow instead of three disconnected data blocks.
+- [x] 6.0 Rebuild `web/pages/FORGE.tsx` as the preview landing page and add drill-in destinations for team and player detail
+  - [x] 6.1 Replace the current `web/pages/FORGE.tsx` experience with a slim preview landing page containing a slate preview, Top Player Adds preview, sustainability preview, and links into deeper views.
+  - [x] 6.2 Create the new dedicated team detail route and ensure team logos/rows from dashboard team contexts navigate there consistently.
+  - [x] 6.3 Decide and implement card-type-specific player destinations, including when to route to the existing trends player page versus a new dashboard-specific player detail page.
+  - [x] 6.4 Build the dashboard-specific player detail page if required by the card-routing map and ensure projection/opportunity cards have a destination better suited than the trends page.
+  - [x] 6.5 Ensure the compact nav and clickable dashboard elements give equal access to the dashboard, team detail, player detail, start-chart, and trends views.
+- [x] 7.0 Add responsive behavior, stale-state handling, and verification coverage for the new dashboard system
+  - [x] 7.1 Implement desktop and mobile layout behavior, including accordion treatment for heavier mobile sections and the default expanded mobile sections required by the PRD.
+  - [x] 7.2 Add section-specific stale-state and missing-data handling so stale sections can warn without collapsing the entire dashboard experience.
+  - [x] 7.3 Add or update tests for `web/pages/forge/dashboard.tsx`, `web/pages/FORGE.tsx`, and any new team/player detail routes.
+  - [x] 7.4 Add tests or contract coverage for the dashboard data dependencies most likely to drift, including ownership, slate, team context, goalie, and sustainability payloads.
+  - [x] 7.5 Verify the dashboard nav, card click-throughs, mobile accordions, and ownership filters behave correctly under realistic initial-load states.
+  - [x] 7.6 Run full regression coverage for the affected dashboard, trends, start-chart, and supporting API/page surfaces before closeout.

@@ -1,19 +1,74 @@
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import styles from "styles/ForgeDashboard.module.scss";
-import type { NormalizedCtpiTeamRow } from "lib/dashboard/normalizers";
-import { normalizeCtpiResponse } from "lib/dashboard/normalizers";
+import {
+  normalizeSkaterTrendResponse,
+  type NormalizedSkaterTrendResponse
+} from "lib/dashboard/normalizers";
 import { fetchCachedJson } from "lib/dashboard/clientFetchCache";
-
-type SparkPoint = { date: string; value: number };
+import {
+  describePlayerSignalFrame,
+  describeTrendBand,
+  resolveInsightTone
+} from "lib/dashboard/playerInsightContext";
+import { fetchOwnershipContextMap } from "lib/dashboard/playerOwnership";
 
 type HotColdCardProps = {
+  date: string;
   team: string;
+  position: "all" | "f" | "d" | "g";
+  ownershipMin: number;
+  ownershipMax: number;
+  onStatusChange?: (status: {
+    loading: boolean;
+    error: string | null;
+    staleMessage: string | null;
+    empty: boolean;
+  }) => void;
 };
 
-type MomentumRow = NormalizedCtpiTeamRow & {
-  momentum: number;
-  spark: SparkPoint[];
+type TrendMode = "hotCold" | "movement";
+const MAX_SPARKS_PER_COLUMN = 1;
+
+type CompositePlayerRow = {
+  playerId: number;
+  fullName: string;
+  position: string | null;
+  teamAbbr: string | null;
+  imageUrl: string | null;
+  currentScore: number;
+  movementScore: number;
+  currentDriver: string;
+  movementDriver: string;
+  currentSeries: Array<{ gp: number; percentile: number }>;
+  movementSeries: Array<{ gp: number; percentile: number }>;
+};
+
+const CATEGORY_META: Record<
+  string,
+  { label: string; shortHot: string; shortCold: string }
+> = {
+  shotsPer60: {
+    label: "Shots/60",
+    shortHot: "shot volume driving the current heater",
+    shortCold: "shot volume has cooled off"
+  },
+  ixgPer60: {
+    label: "ixG/60",
+    shortHot: "chance quality is staying elevated",
+    shortCold: "chance quality has dropped"
+  },
+  timeOnIce: {
+    label: "TOI",
+    shortHot: "deployment is supporting the run",
+    shortCold: "deployment is fading"
+  },
+  powerPlayTime: {
+    label: "PP TOI",
+    shortHot: "power-play role is lifting the trend",
+    shortCold: "power-play role is shrinking"
+  }
 };
 
 const formatSigned = (value: number): string => {
@@ -21,86 +76,120 @@ const formatSigned = (value: number): string => {
   return `${sign}${value.toFixed(1)}`;
 };
 
-const shortReason = (row: NormalizedCtpiTeamRow): string => {
-  const drivers: string[] = [];
-  if (row.offense >= 60) drivers.push("offense surge");
-  if (row.defense >= 60) drivers.push("defensive control");
-  if (row.luck >= 60) drivers.push("puck luck");
-  if (drivers.length === 0) {
-    if (row.offense <= 40) drivers.push("offense cooling");
-    if (row.defense <= 40) drivers.push("defense leaking");
-    if (row.luck <= 40) drivers.push("unlucky stretch");
-  }
-  return drivers.slice(0, 2).join(" · ") || "balanced form";
+const formatScore = (value: number): string => value.toFixed(1);
+
+const formatOwnershipDelta = (value: number | null | undefined): string => {
+  if (value == null || Number.isNaN(value)) return "--";
+  const sign = value > 0 ? "+" : "";
+  return `${sign}${value.toFixed(1)} pts`;
 };
 
-function SparkMini({ points, variant }: { points: SparkPoint[]; variant: "hot" | "cold" }) {
-  const shape = useMemo(() => {
-    if (!points || points.length === 0) return null;
-    const series = points.slice(-10);
-    const values = series.map((p) => p.value);
-    let min = Math.min(...values);
-    let max = Math.max(...values);
-    if (min === max) {
-      min -= 0.5;
-      max += 0.5;
-    }
-    const range = max - min || 1;
-    const norm = series.map((p, i) => ({
-      x: series.length === 1 ? 0 : (i / (series.length - 1)) * 100,
-      y: 38 - ((p.value - min) / range) * 30 - 2
-    }));
+const toneClassForMagnitude = (score: number) => {
+  const tone = resolveInsightTone(score);
+  if (tone === "risk") return styles.insightContextRisk;
+  if (tone === "watch") return styles.insightContextWatch;
+  return styles.insightContextStable;
+};
 
-    const line = norm.map((n) => `${n.x},${n.y.toFixed(2)}`).join(" ");
-    const area = `0,40 ${line} 100,40`;
-    return { line, area };
-  }, [points]);
+const toPositionParam = (position: HotColdCardProps["position"]) => {
+  if (position === "d") return "defense";
+  if (position === "f") return "forward";
+  return "all";
+};
 
-  if (!shape) return <div className={styles.sparkEmpty}>—</div>;
+const buildReason = (
+  row: CompositePlayerRow,
+  mode: TrendMode,
+  side: "positive" | "negative"
+) => {
+  if (mode === "movement") {
+    return side === "positive"
+      ? `${row.movementDriver} is climbing fastest in the latest window. Short-term only.`
+      : `${row.movementDriver} is sliding hardest in the latest window. Short-term only.`;
+  }
 
-  return (
-    <svg className={styles.sparkSvg} viewBox="0 0 100 40" preserveAspectRatio="none">
-      <polygon
-        className={`${styles.sparkArea} ${variant === "hot" ? styles.sparkRise : styles.sparkFall}`}
-        points={shape.area}
-      />
-      <polyline
-        className={`${styles.sparkPath} ${variant === "hot" ? styles.sparkRise : styles.sparkFall}`}
-        points={shape.line}
-      />
-    </svg>
-  );
-}
+  return side === "positive"
+    ? `${row.currentDriver} keeps this player hot right now. Momentum only, not a trust grade.`
+    : `${row.currentDriver} is the clearest sign that this player is cold right now. Short-term read, not a long-term verdict.`;
+};
 
-export default function HotColdCard({ team }: HotColdCardProps) {
-  const [rows, setRows] = useState<NormalizedCtpiTeamRow[]>([]);
-  const [generatedAt, setGeneratedAt] = useState<string | null>(null);
+const buildSparklinePath = (
+  points: Array<{ gp: number; percentile: number }>
+): string | null => {
+  if (points.length < 2) return null;
+
+  const values = points.map((point) => point.percentile);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min || 1;
+  const width = 72;
+  const height = 24;
+
+  return points
+    .map((point, index) => {
+      const x = (index / (points.length - 1)) * width;
+      const y = height - ((point.percentile - min) / range) * (height - 2) - 1;
+      return `${index === 0 ? "M" : "L"} ${x.toFixed(1)} ${y.toFixed(1)}`;
+    })
+    .join(" ");
+};
+
+export default function HotColdCard({
+  date,
+  team,
+  position,
+  ownershipMin,
+  ownershipMax,
+  onStatusChange
+}: HotColdCardProps) {
+  const [mode, setMode] = useState<TrendMode>("hotCold");
+  const [payload, setPayload] = useState<NormalizedSkaterTrendResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [ownershipMap, setOwnershipMap] = useState<
+    Record<number, { ownership: number | null; delta: number | null; sparkline: Array<{ date: string; value: number }> }>
+  >({});
+  const [ownershipLoading, setOwnershipLoading] = useState(false);
+  const [ownershipWarning, setOwnershipWarning] = useState<string | null>(null);
+  const shortTermGuide = describePlayerSignalFrame("shortTerm");
 
   useEffect(() => {
     let active = true;
+
+    if (position === "g") {
+      setPayload(null);
+      setLoading(false);
+      setError(null);
+      return () => {
+        active = false;
+      };
+    }
+
     setLoading(true);
     setError(null);
 
-    fetchCachedJson<unknown>("/api/v1/trends/team-ctpi", {
+    const query = new URLSearchParams({
+      position: toPositionParam(position),
+      window: "5",
+      limit: "40"
+    });
+
+    fetchCachedJson<unknown>(`/api/v1/trends/skater-power?${query.toString()}`, {
       ttlMs: 5 * 60_000
     })
-      .then((payload) => normalizeCtpiResponse(payload))
-      .then((payload) => {
+      .then((response) => normalizeSkaterTrendResponse(response))
+      .then((response) => {
         if (!active) return;
-        setRows(payload.teams);
-        setGeneratedAt(payload.generatedAt ?? null);
+        setPayload(response);
       })
       .catch((fetchError: unknown) => {
         if (!active) return;
         const message =
           fetchError instanceof Error
             ? fetchError.message
-            : "Failed to load hot/cold trends.";
+            : "Failed to load player trend movement.";
         setError(message);
-        setRows([]);
-        setGeneratedAt(null);
+        setPayload(null);
       })
       .finally(() => {
         if (!active) return;
@@ -110,93 +199,452 @@ export default function HotColdCard({ team }: HotColdCardProps) {
     return () => {
       active = false;
     };
-  }, []);
+  }, [position]);
 
-  const ranked = useMemo<MomentumRow[]>(() => {
-    return rows
-      .filter((row) => (team === "all" ? true : row.team === team.toUpperCase()))
-      .map((row) => {
-        const spark = row.sparkSeries.slice(-10);
-        const first = spark[0]?.value ?? row.ctpi_0_to_100;
-        const last = spark[spark.length - 1]?.value ?? row.ctpi_0_to_100;
+  const rankedRows = useMemo<CompositePlayerRow[]>(() => {
+    if (!payload) return [];
+
+    const byPlayer = new Map<
+      number,
+      {
+        currentTotal: number;
+        currentCount: number;
+        movementTotal: number;
+        movementCount: number;
+        currentDriver: { label: string; value: number } | null;
+        movementDriver: { label: string; value: number } | null;
+        currentSeries: Array<{ gp: number; percentile: number }>;
+        movementSeries: Array<{ gp: number; percentile: number }>;
+      }
+    >();
+
+    Object.entries(payload.categories).forEach(([categoryKey, category]) => {
+      category.rankings.forEach((ranking) => {
+        const existing = byPlayer.get(ranking.playerId) ?? {
+          currentTotal: 0,
+          currentCount: 0,
+          movementTotal: 0,
+          movementCount: 0,
+          currentDriver: null,
+          movementDriver: null,
+          currentSeries: [],
+          movementSeries: []
+        };
+
+        existing.currentTotal += ranking.percentile;
+        existing.currentCount += 1;
+        existing.movementTotal += ranking.delta;
+        existing.movementCount += 1;
+
+        const meta = CATEGORY_META[categoryKey];
+        const currentMagnitude = Math.abs(ranking.percentile - 50);
+        const movementMagnitude = Math.abs(ranking.delta);
+
+        if (
+          !existing.currentDriver ||
+          currentMagnitude > Math.abs(existing.currentDriver.value)
+        ) {
+          existing.currentSeries = category.series[String(ranking.playerId)]?.slice(-10) ?? [];
+          existing.currentDriver = {
+            label:
+              ranking.percentile >= 50
+                ? meta?.shortHot ?? categoryKey
+                : meta?.shortCold ?? categoryKey,
+            value: ranking.percentile - 50
+          };
+        }
+
+        if (
+          !existing.movementDriver ||
+          movementMagnitude > Math.abs(existing.movementDriver.value)
+        ) {
+          existing.movementSeries = category.series[String(ranking.playerId)]?.slice(-10) ?? [];
+          existing.movementDriver = {
+            label: meta?.label ?? categoryKey,
+            value: ranking.delta
+          };
+        }
+
+        byPlayer.set(ranking.playerId, existing);
+      });
+    });
+
+    return Array.from(byPlayer.entries())
+      .map(([playerId, aggregate]) => {
+        const metadata = payload.playerMetadata[String(playerId)];
+        if (!metadata?.fullName) return null;
+        if (
+          team !== "all" &&
+          (metadata.teamAbbrev ?? "").toUpperCase() !== team.toUpperCase()
+        ) {
+          return null;
+        }
+
         return {
-          ...row,
-          spark,
-          momentum: last - first
+          playerId,
+          fullName: metadata.fullName,
+          position: metadata.position,
+          teamAbbr: metadata.teamAbbrev,
+          imageUrl: metadata.imageUrl,
+          currentScore:
+            aggregate.currentCount > 0
+              ? aggregate.currentTotal / aggregate.currentCount
+              : 0,
+          movementScore:
+            aggregate.movementCount > 0
+              ? aggregate.movementTotal / aggregate.movementCount
+              : 0,
+          currentDriver: aggregate.currentDriver?.label ?? "balanced recent form",
+          movementDriver: aggregate.movementDriver?.label ?? "recent movement",
+          currentSeries: aggregate.currentSeries,
+          movementSeries: aggregate.movementSeries
         };
       })
-      .sort((a, b) => b.momentum - a.momentum);
-  }, [rows, team]);
+      .filter((row): row is CompositePlayerRow => Boolean(row));
+  }, [payload, team]);
 
-  const hotRows = useMemo(() => ranked.slice(0, 3), [ranked]);
-  const coldRows = useMemo(() => [...ranked].reverse().slice(0, 3), [ranked]);
+  const ownershipPlayerIds = useMemo(
+    () => rankedRows.map((row) => row.playerId),
+    [rankedRows]
+  );
+
+  useEffect(() => {
+    let active = true;
+
+    if (ownershipPlayerIds.length === 0) {
+      setOwnershipMap({});
+      setOwnershipLoading(false);
+      setOwnershipWarning(null);
+      return () => {
+        active = false;
+      };
+    }
+
+    setOwnershipLoading(true);
+    setOwnershipWarning(null);
+
+    fetchOwnershipContextMap(ownershipPlayerIds, date, 5)
+      .then((nextMap) => {
+        if (!active) return;
+        setOwnershipMap(nextMap);
+      })
+      .catch(() => {
+        if (!active) return;
+        setOwnershipMap({});
+        setOwnershipWarning("Ownership filter unavailable; showing unfiltered player insight.");
+      })
+      .finally(() => {
+        if (!active) return;
+        setOwnershipLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [date, ownershipPlayerIds]);
+
+  const ownershipFilterActive = !ownershipWarning;
+  const filteredRankedRows = useMemo(
+    () =>
+      rankedRows.filter((row) => {
+        if (!ownershipFilterActive) return true;
+        const ownership = ownershipMap[row.playerId]?.ownership;
+        return ownership != null && ownership >= ownershipMin && ownership <= ownershipMax;
+      }),
+    [ownershipFilterActive, ownershipMap, ownershipMax, ownershipMin, rankedRows]
+  );
+
+  const hotRows = useMemo(
+    () => [...filteredRankedRows].sort((a, b) => b.currentScore - a.currentScore).slice(0, 4),
+    [filteredRankedRows]
+  );
+  const coldRows = useMemo(
+    () => [...filteredRankedRows].sort((a, b) => a.currentScore - b.currentScore).slice(0, 4),
+    [filteredRankedRows]
+  );
+  const upRows = useMemo(
+    () => [...filteredRankedRows].sort((a, b) => b.movementScore - a.movementScore).slice(0, 4),
+    [filteredRankedRows]
+  );
+  const downRows = useMemo(
+    () => [...filteredRankedRows].sort((a, b) => a.movementScore - b.movementScore).slice(0, 4),
+    [filteredRankedRows]
+  );
+
+  const generatedDate = payload?.generatedAt?.slice(0, 10) ?? "n/a";
   const isStale = useMemo(() => {
-    if (!generatedAt) return false;
-    const ts = new Date(generatedAt).getTime();
-    if (!Number.isFinite(ts)) return false;
-    return Date.now() - ts > 36 * 60 * 60 * 1000;
-  }, [generatedAt]);
-  const metaGenerated = generatedAt ? generatedAt.slice(0, 10) : "n/a";
+    if (!payload?.generatedAt) return false;
+    const ts = new Date(payload.generatedAt).getTime();
+    return Number.isFinite(ts) ? Date.now() - ts > 36 * 60 * 60 * 1000 : false;
+  }, [payload?.generatedAt]);
+
+  const leftRows = mode === "hotCold" ? hotRows : upRows;
+  const rightRows = mode === "hotCold" ? coldRows : downRows;
+  const leftTitle = mode === "hotCold" ? "Hot Players" : "Trending Up";
+  const rightTitle = mode === "hotCold" ? "Cold Players" : "Trending Down";
+
+  useEffect(() => {
+    onStatusChange?.({
+      loading: loading || ownershipLoading,
+      error,
+      staleMessage:
+        !loading && !ownershipLoading && !error
+          ? [
+              isStale && payload?.generatedAt
+                ? `Player trend feed last updated ${payload.generatedAt.slice(0, 10)}`
+                : null,
+              ownershipWarning
+            ]
+              .filter(Boolean)
+              .join(" • ") || null
+          : null,
+      empty:
+        !loading &&
+        !ownershipLoading &&
+        !error &&
+        position !== "g" &&
+        filteredRankedRows.length === 0
+    });
+  }, [
+    error,
+    filteredRankedRows.length,
+    isStale,
+    loading,
+    onStatusChange,
+    ownershipLoading,
+    ownershipWarning,
+    payload?.generatedAt,
+    position
+  ]);
 
   return (
-    <article className={styles.hotColdCard} aria-label="Team hot and cold streaks">
+    <article className={styles.hotColdCard} aria-label="Player hot and cold trend movement">
       <header className={styles.panelHeader}>
-        <h3 className={styles.panelTitle}>Hot / Cold Streaks</h3>
-        <span className={styles.panelMeta}>Momentum 10G • {metaGenerated}</span>
+        <h3 className={styles.panelTitle}>Hot / Cold and Trend Movement</h3>
+        <span className={styles.panelMeta}>Skater 5G • {generatedDate}</span>
       </header>
 
-      {loading && <p className={styles.panelState}>Loading hot/cold streaks...</p>}
-      {!loading && error && <p className={styles.panelState}>Error: {error}</p>}
+      <div className={styles.hotColdTabs} role="tablist" aria-label="Player trend mode">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={mode === "hotCold"}
+          className={`${styles.hotColdTab} ${mode === "hotCold" ? styles.hotColdTabActive : ""}`}
+          onClick={() => setMode("hotCold")}
+        >
+          Hot / Cold
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={mode === "movement"}
+          className={`${styles.hotColdTab} ${mode === "movement" ? styles.hotColdTabActive : ""}`}
+          onClick={() => setMode("movement")}
+        >
+          Trending Up / Down
+        </button>
+      </div>
 
-      {!loading && !error && ranked.length === 0 && (
-        <p className={styles.panelState}>No trend streak data available.</p>
+      {position === "g" && (
+        <p className={styles.panelState}>Trend movement is available for skaters only.</p>
       )}
-      {!loading && !error && isStale && (
+      {position !== "g" && (loading || ownershipLoading) && (
+        <p className={styles.panelState}>Loading player trend movement...</p>
+      )}
+      {position !== "g" && !loading && error && (
+        <p className={styles.panelState}>Error: {error}</p>
+      )}
+      {position !== "g" &&
+        !loading &&
+        !ownershipLoading &&
+        !error &&
+        filteredRankedRows.length === 0 && (
+        <p className={styles.panelState}>No player trend movement available for this filter.</p>
+      )}
+      {position !== "g" && !loading && !ownershipLoading && !error && isStale && (
         <p className={`${styles.panelState} ${styles.panelStateStale}`}>
-          Trend feed may be stale (last update {generatedAt}).
+          Trend feed may be stale (last update {payload?.generatedAt}).
         </p>
       )}
 
-      {!loading && !error && ranked.length > 0 && (
+      {position !== "g" &&
+        !loading &&
+        !ownershipLoading &&
+        !error &&
+        filteredRankedRows.length > 0 && (
+        <>
+        <div className={styles.insightLegend} aria-label="Trend signal guide">
+          <div className={styles.insightLegendItem}>
+            <span className={`${styles.insightContextPill} ${styles.insightContextWatch}`}>
+              {shortTermGuide.label}
+            </span>
+            <span className={styles.insightLegendText}>
+              {mode === "hotCold"
+                ? "Hot and cold identify current form. They do not say whether the run is trustworthy."
+                : "Trending up and down track movement speed. They do not replace sustainability."
+              }
+            </span>
+          </div>
+        </div>
+        <p className={styles.compactChartNote}>
+          Lead rows keep the only trend traces in each column.
+        </p>
         <div className={styles.hotColdColumns}>
           <div className={styles.hotColdColumn}>
-            <p className={styles.susColumnTitle}>Hot Teams</p>
+            <p className={styles.susColumnTitle}>{leftTitle}</p>
             <ul className={styles.susList}>
-              {hotRows.map((row) => (
-                <li key={`hot-${row.team}`} className={styles.hotColdRow}>
-                  <div>
-                    <p className={styles.hotColdName}>{row.team}</p>
-                    <p className={styles.hotColdReason}>{shortReason(row)}</p>
-                  </div>
-                  <div className={styles.hotColdStats}>
-                    <span className={styles.hotColdDelta}>{formatSigned(row.momentum)}</span>
-                    <SparkMini points={row.spark} variant="hot" />
-                  </div>
-                </li>
-              ))}
+              {leftRows.map((row, index) => {
+                const sparkPath = buildSparklinePath(
+                  mode === "hotCold" ? row.currentSeries : row.movementSeries
+                );
+                const ownershipContext = ownershipMap[row.playerId];
+
+                return (
+                  <li key={`${mode}-left-${row.playerId}`} className={styles.hotColdRow}>
+                    <Link
+                      href={`/trends/player/${row.playerId}`}
+                      className={styles.hotColdRowLink}
+                    >
+                      <div>
+                        <p className={styles.hotColdName}>{row.fullName}</p>
+                        <div className={styles.insightContextBlock}>
+                          <span
+                            className={`${styles.insightContextPill} ${toneClassForMagnitude(mode === "hotCold" ? row.currentScore - 50 : row.movementScore)}`}
+                          >
+                            {describeTrendBand(
+                              mode,
+                              mode === "hotCold" ? row.currentScore : row.movementScore
+                            ).title}
+                          </span>
+                          <span className={styles.insightContextText}>
+                            {
+                              describeTrendBand(
+                                mode,
+                                mode === "hotCold" ? row.currentScore : row.movementScore
+                              ).detail
+                            }
+                          </span>
+                        </div>
+                        <p className={styles.hotColdReason}>
+                          {buildReason(row, mode, "positive")}
+                        </p>
+                      </div>
+                      <div className={styles.hotColdStats}>
+                        <span className={styles.hotColdMeta}>
+                          {(row.teamAbbr ?? "--")} • {(row.position ?? "--")}
+                        </span>
+                        <span className={styles.hotColdMeta}>
+                          Own {ownershipContext?.ownership == null ? "--" : `${ownershipContext.ownership.toFixed(0)}%`}
+                        </span>
+                        <span className={styles.hotColdMeta}>
+                          5D {formatOwnershipDelta(ownershipContext?.delta)}
+                        </span>
+                        <span className={styles.hotColdDelta}>
+                          {mode === "hotCold"
+                            ? formatScore(row.currentScore)
+                            : formatSigned(row.movementScore)}
+                        </span>
+                        {index < MAX_SPARKS_PER_COLUMN && sparkPath ? (
+                          <svg
+                            className={styles.sparkSvg}
+                            viewBox="0 0 72 24"
+                            aria-hidden="true"
+                          >
+                            <path
+                              className={`${styles.sparkPath} ${styles.sparkRise}`}
+                              d={sparkPath}
+                            />
+                          </svg>
+                        ) : (
+                          <span className={styles.compactChartNote}>Text-first row</span>
+                        )}
+                      </div>
+                    </Link>
+                  </li>
+                );
+              })}
             </ul>
           </div>
 
           <div className={styles.hotColdColumn}>
-            <p className={styles.susColumnTitle}>Cold Teams</p>
+            <p className={styles.susColumnTitle}>{rightTitle}</p>
             <ul className={styles.susList}>
-              {coldRows.map((row) => (
-                <li key={`cold-${row.team}`} className={styles.hotColdRow}>
-                  <div>
-                    <p className={styles.hotColdName}>{row.team}</p>
-                    <p className={styles.hotColdReason}>{shortReason(row)}</p>
-                  </div>
-                  <div className={styles.hotColdStats}>
-                    <span className={`${styles.hotColdDelta} ${styles.hotColdDeltaDown}`}>
-                      {formatSigned(row.momentum)}
-                    </span>
-                    <SparkMini points={row.spark} variant="cold" />
-                  </div>
-                </li>
-              ))}
+              {rightRows.map((row, index) => {
+                const sparkPath = buildSparklinePath(
+                  mode === "hotCold" ? row.currentSeries : row.movementSeries
+                );
+                const ownershipContext = ownershipMap[row.playerId];
+
+                return (
+                  <li key={`${mode}-right-${row.playerId}`} className={styles.hotColdRow}>
+                    <Link
+                      href={`/trends/player/${row.playerId}`}
+                      className={styles.hotColdRowLink}
+                    >
+                      <div>
+                        <p className={styles.hotColdName}>{row.fullName}</p>
+                        <div className={styles.insightContextBlock}>
+                          <span
+                            className={`${styles.insightContextPill} ${toneClassForMagnitude(mode === "hotCold" ? row.currentScore - 50 : row.movementScore)}`}
+                          >
+                            {describeTrendBand(
+                              mode,
+                              mode === "hotCold" ? row.currentScore : row.movementScore
+                            ).title}
+                          </span>
+                          <span className={styles.insightContextText}>
+                            {
+                              describeTrendBand(
+                                mode,
+                                mode === "hotCold" ? row.currentScore : row.movementScore
+                              ).detail
+                            }
+                          </span>
+                        </div>
+                        <p className={styles.hotColdReason}>
+                          {buildReason(row, mode, "negative")}
+                        </p>
+                      </div>
+                      <div className={styles.hotColdStats}>
+                        <span className={styles.hotColdMeta}>
+                          {(row.teamAbbr ?? "--")} • {(row.position ?? "--")}
+                        </span>
+                        <span className={styles.hotColdMeta}>
+                          Own {ownershipContext?.ownership == null ? "--" : `${ownershipContext.ownership.toFixed(0)}%`}
+                        </span>
+                        <span className={styles.hotColdMeta}>
+                          5D {formatOwnershipDelta(ownershipContext?.delta)}
+                        </span>
+                        <span
+                          className={`${styles.hotColdDelta} ${styles.hotColdDeltaDown}`}
+                        >
+                          {mode === "hotCold"
+                            ? formatScore(row.currentScore)
+                            : formatSigned(row.movementScore)}
+                        </span>
+                        {index < MAX_SPARKS_PER_COLUMN && sparkPath ? (
+                          <svg
+                            className={styles.sparkSvg}
+                            viewBox="0 0 72 24"
+                            aria-hidden="true"
+                          >
+                            <path
+                              className={`${styles.sparkPath} ${styles.sparkFall}`}
+                              d={sparkPath}
+                            />
+                          </svg>
+                        ) : (
+                          <span className={styles.compactChartNote}>Text-first row</span>
+                        )}
+                      </div>
+                    </Link>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         </div>
+        </>
       )}
     </article>
   );

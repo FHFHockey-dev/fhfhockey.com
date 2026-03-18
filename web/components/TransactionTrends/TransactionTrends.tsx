@@ -1,9 +1,8 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import styles from "./TransactionTrends.module.scss";
-
-// Local minimal sparkline rather than depending on predictions code
-
-type OwnershipPoint = { date: string; value: number };
+import OwnershipSparkline, {
+  type OwnershipSparkPoint
+} from "./OwnershipSparkline";
 type TrendPlayer = {
   playerKey: string;
   name: string;
@@ -17,7 +16,7 @@ type TrendPlayer = {
   previous: number;
   delta: number;
   deltaPct: number;
-  sparkline: OwnershipPoint[];
+  sparkline: OwnershipSparkPoint[];
 };
 
 interface ApiResponse {
@@ -36,60 +35,6 @@ interface ApiResponse {
 }
 
 const WINDOWS = [1, 3, 5, 10];
-
-function Spark({
-  points,
-  variant
-}: {
-  points: OwnershipPoint[];
-  variant: "rise" | "fall";
-}) {
-  const pathData = useMemo(() => {
-    if (!points.length) return null;
-    const pts = points.filter((p) => typeof p.value === "number");
-    if (!pts.length) return null;
-    const series = pts.slice(-Math.min(pts.length, 20));
-    const values = series.map((p) => p.value);
-    let min = Math.min(...values);
-    let max = Math.max(...values);
-    if (min === max) {
-      min -= 0.5;
-      max += 0.5;
-    }
-    const range = max - min || 1;
-    const norm = series.map((p, i) => ({
-      x: series.length === 1 ? 0 : (i / (series.length - 1)) * 100,
-      y: 38 - ((p.value - min) / range) * 30 - 2
-    }));
-    const line = norm.map((n) => `${n.x},${n.y.toFixed(2)}`).join(" ");
-    const area = `0,40 ${line} 100,40`;
-    const baseVal = series[0].value;
-    const baselineY = 38 - ((baseVal - min) / range) * 30 - 2;
-    return { line, area, baselineY: Math.min(38, Math.max(2, baselineY)) };
-  }, [points]);
-
-  if (!pathData) return <div>—</div>;
-  return (
-    <svg
-      className={styles.sparkSvg}
-      viewBox="0 0 100 40"
-      preserveAspectRatio="none"
-    >
-      <polyline
-        className={styles.sparkBaseline}
-        points={`0,${pathData.baselineY} 100,${pathData.baselineY}`}
-      />
-      <polygon
-        className={`${styles.sparkArea} ${variant === "rise" ? styles.rise : styles.fall}`}
-        points={pathData.area}
-      />
-      <polyline
-        className={`${styles.sparkPath} ${variant === "rise" ? styles.rise : styles.fall}`}
-        points={pathData.line}
-      />
-    </svg>
-  );
-}
 
 export default function TransactionTrends() {
   // Default to 3-day window per request
@@ -287,7 +232,19 @@ export default function TransactionTrends() {
                       </td>
                       <td className={styles.sparkCell}>
                         <div className={`${styles.neonBox} ${styles.rise}`}>
-                          <Spark points={p.sparkline} variant="rise" />
+                          <OwnershipSparkline
+                            points={p.sparkline}
+                            variant="rise"
+                            width={100}
+                            height={40}
+                            baseline
+                            svgClassName={styles.sparkSvg}
+                            baselineClassName={styles.sparkBaseline}
+                            areaClassName={styles.sparkArea}
+                            pathClassName={styles.sparkPath}
+                            riseClassName={styles.rise}
+                            fallClassName={styles.fall}
+                          />
                         </div>
                       </td>
                       <td className={styles.deltaCell}>
@@ -295,7 +252,19 @@ export default function TransactionTrends() {
                           className={`${styles.neonBox} ${styles.rise} ${styles.deltaBox}`}
                         >
                           <div className={styles.deltaSparkBackdrop}>
-                            <Spark points={p.sparkline} variant="rise" />
+                            <OwnershipSparkline
+                              points={p.sparkline}
+                              variant="rise"
+                              width={100}
+                              height={40}
+                              baseline
+                              svgClassName={styles.sparkSvg}
+                              baselineClassName={styles.sparkBaseline}
+                              areaClassName={styles.sparkArea}
+                              pathClassName={styles.sparkPath}
+                              riseClassName={styles.rise}
+                              fallClassName={styles.fall}
+                            />
                           </div>
                           <div className={styles.deltaContent}>
                             {p.delta > 0
@@ -403,7 +372,19 @@ export default function TransactionTrends() {
                       </td>
                       <td className={styles.sparkCell}>
                         <div className={`${styles.neonBox} ${styles.fall}`}>
-                          <Spark points={p.sparkline} variant="fall" />
+                          <OwnershipSparkline
+                            points={p.sparkline}
+                            variant="fall"
+                            width={100}
+                            height={40}
+                            baseline
+                            svgClassName={styles.sparkSvg}
+                            baselineClassName={styles.sparkBaseline}
+                            areaClassName={styles.sparkArea}
+                            pathClassName={styles.sparkPath}
+                            riseClassName={styles.rise}
+                            fallClassName={styles.fall}
+                          />
                         </div>
                       </td>
                       <td className={styles.deltaCell}>
@@ -411,7 +392,19 @@ export default function TransactionTrends() {
                           className={`${styles.neonBox} ${styles.fall} ${styles.deltaBox}`}
                         >
                           <div className={styles.deltaSparkBackdrop}>
-                            <Spark points={p.sparkline} variant="fall" />
+                            <OwnershipSparkline
+                              points={p.sparkline}
+                              variant="fall"
+                              width={100}
+                              height={40}
+                              baseline
+                              svgClassName={styles.sparkSvg}
+                              baselineClassName={styles.sparkBaseline}
+                              areaClassName={styles.sparkArea}
+                              pathClassName={styles.sparkPath}
+                              riseClassName={styles.rise}
+                              fallClassName={styles.fall}
+                            />
                           </div>
                           <div className={styles.deltaContent}>
                             {p.delta.toFixed(1)}%
@@ -570,11 +563,20 @@ export default function TransactionTrends() {
                                 : styles.fall
                             }`}
                           >
-                            <Spark
+                            <OwnershipSparkline
                               points={p.sparkline}
                               variant={
                                 activeTable === "risers" ? "rise" : "fall"
                               }
+                              width={100}
+                              height={40}
+                              baseline
+                              svgClassName={styles.sparkSvg}
+                              baselineClassName={styles.sparkBaseline}
+                              areaClassName={styles.sparkArea}
+                              pathClassName={styles.sparkPath}
+                              riseClassName={styles.rise}
+                              fallClassName={styles.fall}
                             />
                           </div>
                         </td>
@@ -587,11 +589,20 @@ export default function TransactionTrends() {
                             } ${styles.deltaBox}`}
                           >
                             <div className={styles.deltaSparkBackdrop}>
-                              <Spark
+                              <OwnershipSparkline
                                 points={p.sparkline}
                                 variant={
                                   activeTable === "risers" ? "rise" : "fall"
                                 }
+                                width={100}
+                                height={40}
+                                baseline
+                                svgClassName={styles.sparkSvg}
+                                baselineClassName={styles.sparkBaseline}
+                                areaClassName={styles.sparkArea}
+                                pathClassName={styles.sparkPath}
+                                riseClassName={styles.rise}
+                                fallClassName={styles.fall}
                               />
                             </div>
                             <div className={styles.deltaContent}>

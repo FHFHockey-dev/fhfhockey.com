@@ -1,69 +1,11 @@
-/**
- * Cron Report Coverage
- *
- * Any API route that writes to Supabase `cron_job_audit` (either directly, or via `withCronJobAudit`)
- * will appear in the Cron Report / briefing emails.
- *
- * Included routes (currently 53):
- * - web/pages/api/v1/db/build-projection-derived-v2.ts
- * - web/pages/api/v1/db/calculate-wigo-stats.ts
- * - web/pages/api/v1/db/check-missing-goalie-data.ts
- * - web/pages/api/v1/db/cron/update-stats-cron.ts
- * - web/pages/api/v1/db/manual-refresh-yahoo-token.ts
- * - web/pages/api/v1/db/powerPlayTimeFrame.ts
- * - web/pages/api/v1/db/run-fetch-wgo-data.ts
- * - web/pages/api/v1/db/run-projection-accuracy.ts
- * - web/pages/api/v1/db/run-projection-v2.ts
- * - web/pages/api/v1/db/shift-charts.ts
- * - web/pages/api/v1/db/skaterArray.ts
- * - web/pages/api/v1/db/sustainability/rebuild-baselines.ts
- * - web/pages/api/v1/db/update-PbP.ts
- * - web/pages/api/v1/db/update-expected-goals/index.ts
- * - web/pages/api/v1/db/update-games.ts
- * - web/pages/api/v1/db/update-goalie-projections-v2.ts
- * - web/pages/api/v1/db/update-goalie-projections.ts
- * - web/pages/api/v1/db/update-last-7-14-30.ts
- * - web/pages/api/v1/db/update-line-combinations/[id].ts
- * - web/pages/api/v1/db/update-line-combinations/index.ts
- * - web/pages/api/v1/db/update-nst-current-season.ts
- * - web/pages/api/v1/db/update-nst-gamelog.ts
- * - web/pages/api/v1/db/update-nst-goalies.ts
- * - web/pages/api/v1/db/update-nst-last-ten.ts
- * - web/pages/api/v1/db/update-nst-player-reports.ts
- * - web/pages/api/v1/db/update-nst-team-daily.ts
- * - web/pages/api/v1/db/update-player/[playerId].ts
- * - web/pages/api/v1/db/update-players.ts
- * - web/pages/api/v1/db/update-power-play-combinations/[gameId].ts
- * - web/pages/api/v1/db/update-power-rankings.ts
- * - web/pages/api/v1/db/update-rolling-games.ts
- * - web/pages/api/v1/db/update-rolling-player-averages.ts
- * - web/pages/api/v1/db/update-season-stats.ts
- * - web/pages/api/v1/db/update-seasons.ts
- * - web/pages/api/v1/db/update-sko-stats.ts
- * - web/pages/api/v1/db/update-standings-details/index.ts
- * - web/pages/api/v1/db/update-start-chart-projections.ts
- * - web/pages/api/v1/db/update-stats/[gameId].ts
- * - web/pages/api/v1/db/update-team-ctpi-daily.ts
- * - web/pages/api/v1/db/update-team-power-ratings-new.ts
- * - web/pages/api/v1/db/update-team-power-ratings.ts
- * - web/pages/api/v1/db/update-team-sos.ts
- * - web/pages/api/v1/db/update-team-yearly-summary.ts
- * - web/pages/api/v1/db/update-teams.ts
- * - web/pages/api/v1/db/update-wgo-averages.ts
- * - web/pages/api/v1/db/update-wgo-goalie-totals.ts
- * - web/pages/api/v1/db/update-wgo-goalies.ts
- * - web/pages/api/v1/db/update-wgo-ly.ts
- * - web/pages/api/v1/db/update-wgo-skaters.ts
- * - web/pages/api/v1/db/update-wgo-totals.ts
- * - web/pages/api/v1/db/update-yahoo-players.ts
- * - web/pages/api/v1/db/update-yahoo-weeks.ts
- * - web/pages/api/v1/db/upsert-csv.ts
- */
+import fs from "fs/promises";
+import path from "path";
 
 import type { NextApiRequest, NextApiResponse } from "next";
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
-import { CronReportEmail } from "components/CronReportEmail/CronReportEmail"; // For job run details
+
+import { CronReportEmail } from "components/CronReportEmail/CronReportEmail";
 import { CronAuditEmail } from "components/CronReportEmail/CronAuditEmail";
 
 const supabase = createClient(
@@ -73,23 +15,138 @@ const supabase = createClient(
 
 const resend = new Resend(process.env.RESEND_API_KEY!);
 
+const REPORT_WINDOW_MS = 24 * 60 * 60 * 1000;
+const MATCH_WINDOW_MS = 30 * 60 * 1000;
+const WARN_SLOW_MS = 180_000;
+
 type NormalizedStatus = "success" | "failure" | "unknown";
-type JobSummary = {
+type ReportJobStatus = NormalizedStatus | "missing";
+type ScheduleMethod = "GET" | "POST" | "SQL" | "UNKNOWN";
+
+type ScheduledCronJob = {
+  key: string;
+  name: string;
+  displayName: string;
+  cronExpression: string;
+  scheduleTimeDisplay: string;
+  method: ScheduleMethod;
+  url: string | null;
+  route: string | null;
+  routePath: string | null;
+  sqlText: string | null;
+  expectedRunAt: string | null;
+  sortOrder: number;
+  aliases: string[];
+};
+
+type ParsedAuditDetails = {
+  durationMs: number | null;
+  statusCode: number | null;
+  url: string | null;
+  route: string | null;
+  routePath: string | null;
+  method: string | null;
+  error: string | null;
+  response: unknown;
+  responseMessage: string | null;
+  goalieRowsProcessed: number | null;
+  dataQualityWarningCount: number;
+  rowsUpserted: number | null;
+  failedRows: number | null;
+  failedRowSamples: string[];
+};
+
+type AuditRow = {
+  id: string;
   jobName: string;
-  lastStatus: NormalizedStatus;
-  lastStatusSource: "audit" | "cron" | "unknown";
-  lastTimeDisplay: string;
+  time: string;
+  rowsAffected: number | null;
+  rawStatus: unknown;
+  status: NormalizedStatus;
+  details: unknown;
+  detailsMessage: string | null;
+  parsed: ParsedAuditDetails;
+};
+
+type RunRow = {
+  id: string;
+  jobName: string;
+  time: string;
+  rawStatus: unknown;
+  status: NormalizedStatus;
+  returnMessage: string | null;
+  sqlText: string | null;
+  endTime: string | null;
+  rowsAffected: number | null;
+  durationMs: number | null;
+  method: ScheduleMethod;
+  url: string | null;
+  route: string | null;
+  routePath: string | null;
+};
+
+type JobSummary = {
+  jobKey: string;
+  jobName: string;
+  displayName: string;
+  lastStatus: ReportJobStatus;
+  lastStatusSource: "audit" | "cron" | "missing" | "unknown";
+  scheduleTimeDisplay: string;
+  expectedRunDisplay: string;
+  lastRunDisplay: string;
+  method: ScheduleMethod;
+  route: string | null;
+  statusCode: number | null;
   message: string | null;
+  why: string | null;
+  note: string | null;
   runsCount: number;
   auditRunsCount: number;
   okCount24h: number;
   failCount24h: number;
-  rowsLast: number | null;
-  rowsTotal: number | null;
-  goalieRowsLast: number | null;
-  goalieWarningsLast: number;
+  rowsUpsertedLast: number | null;
+  rowsAffectedLast: number | null;
+  failedRowsLast: number | null;
+  failedRowSamples: string[];
   lastDurationMs: number | null;
   avgDurationMs: number | null;
+};
+
+type RunDigest = {
+  key: string;
+  label: string;
+  jobName: string;
+  status: NormalizedStatus;
+  runTime: string;
+  runTimeDisplay: string;
+  method: string | null;
+  route: string | null;
+  statusCode: number | null;
+  durationMs: number | null;
+  rowsUpserted: number | null;
+  rowsAffected: number | null;
+  failedRows: number | null;
+  reason: string | null;
+  failedRowSamples: string[];
+};
+
+type ReportCounts = {
+  scheduledJobs: number;
+  scheduledJobsWithActivity: number;
+  auditRuns: number;
+  auditSuccesses: number;
+  auditFailures: number;
+  auditUnknown: number;
+  jobsOkLast: number;
+  jobsFailingLast: number;
+  jobsMissingLast: number;
+  jobsUnknownLast: number;
+  unscheduledRuns: number;
+  totalRowsUpserted: number;
+  totalFailedRows: number;
+  warnSlow: number;
+  warnPartialFailure: number;
+  warnMissingAudit: number;
 };
 
 function normalizeStatus(value: unknown): NormalizedStatus {
@@ -100,94 +157,388 @@ function normalizeStatus(value: unknown): NormalizedStatus {
   return "unknown";
 }
 
-function extractDetailsMessage(details: unknown): string | null {
-  if (!details) return null;
-  if (typeof details === "string") return details;
-  if (typeof details !== "object") return String(details);
+function toFiniteNumber(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
 
-  const asAny = details as any;
-  const direct =
-    asAny.message ??
-    asAny.error ??
-    asAny.err ??
-    asAny.reason ??
-    asAny.return_message ??
-    asAny.returnMessage;
-  if (typeof direct === "string" && direct.trim()) return direct;
+function truncateText(value: string, maxLen = 180): string {
+  return value.length <= maxLen ? value : `${value.slice(0, maxLen - 1)}…`;
+}
 
+function safeStringify(value: unknown, maxLen = 180): string | null {
   try {
-    const json = JSON.stringify(details);
-    return json === "{}" ? null : json;
+    return truncateText(JSON.stringify(value), maxLen);
   } catch {
     return null;
   }
 }
 
-type ParsedAuditDetails = {
-  durationMs: number | null;
-  statusCode: number | null;
-  url: string | null;
-  method: string | null;
-  error: string | null;
-  goalieRowsProcessed: number | null;
-  dataQualityWarningCount: number;
-};
+function parseJsonMaybe(value: unknown): unknown {
+  if (typeof value !== "string") return value;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    return value;
+  }
+}
+
+function extractPrimaryMessage(value: unknown): string | null {
+  if (typeof value === "string" && value.trim()) {
+    return truncateText(value.trim(), 240);
+  }
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const nested = extractPrimaryMessage(item);
+      if (nested) return nested;
+    }
+    return null;
+  }
+
+  if (!value || typeof value !== "object") return null;
+  const obj = value as Record<string, unknown>;
+  for (const key of [
+    "message",
+    "error",
+    "err",
+    "reason",
+    "detail",
+    "details",
+    "return_message",
+    "returnMessage",
+    "statusText"
+  ]) {
+    if (typeof obj[key] === "string" && obj[key]?.trim()) {
+      return truncateText(String(obj[key]).trim(), 240);
+    }
+  }
+
+  for (const key of ["errors", "failures", "failedRows", "failed_rows"]) {
+    const nested = extractPrimaryMessage(obj[key]);
+    if (nested) return nested;
+  }
+
+  return null;
+}
+
+function extractDetailsMessage(details: unknown): string | null {
+  const parsed = parseJsonMaybe(details);
+  if (!parsed || typeof parsed !== "object") {
+    return extractPrimaryMessage(parsed);
+  }
+
+  const obj = parsed as Record<string, unknown>;
+  const fromResponse = extractPrimaryMessage(parseJsonMaybe(obj.response));
+  return (
+    extractPrimaryMessage(obj.error) ??
+    extractPrimaryMessage(obj.message) ??
+    fromResponse ??
+    null
+  );
+}
+
+function getDirectNumericField(
+  value: unknown,
+  keys: readonly string[]
+): number | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const obj = value as Record<string, unknown>;
+  for (const key of keys) {
+    const numeric = toFiniteNumber(obj[key]);
+    if (numeric != null) return numeric;
+  }
+  return null;
+}
+
+function sumNumericFields(
+  value: unknown,
+  keys: readonly string[],
+  skipKeys: ReadonlySet<string>
+): { found: boolean; total: number } {
+  if (!value || typeof value !== "object") {
+    return { found: false, total: 0 };
+  }
+
+  if (Array.isArray(value)) {
+    return value.reduce(
+      (acc, item) => {
+        const nested = sumNumericFields(item, keys, skipKeys);
+        return nested.found
+          ? { found: true, total: acc.total + nested.total }
+          : acc;
+      },
+      { found: false, total: 0 }
+    );
+  }
+
+  const obj = value as Record<string, unknown>;
+  let found = false;
+  let total = 0;
+
+  for (const [key, nestedValue] of Object.entries(obj)) {
+    if (skipKeys.has(key)) continue;
+
+    const numeric = keys.includes(key) ? toFiniteNumber(nestedValue) : null;
+    if (numeric != null) {
+      found = true;
+      total += numeric;
+      continue;
+    }
+
+    const nested = sumNumericFields(nestedValue, keys, skipKeys);
+    if (nested.found) {
+      found = true;
+      total += nested.total;
+    }
+  }
+
+  return { found, total };
+}
+
+function inferRowsUpserted(response: unknown): number | null {
+  const direct = getDirectNumericField(response, [
+    "rowsUpserted",
+    "rows_upserted",
+    "rowsInserted",
+    "rows_inserted",
+    "upserted",
+    "inserted",
+    "updated",
+    "totalUpdates",
+    "total_updates",
+    "count"
+  ]);
+  if (direct != null) return direct;
+
+  const nested = sumNumericFields(
+    response,
+    [
+      "rowsUpserted",
+      "rows_upserted",
+      "rowsInserted",
+      "rows_inserted",
+      "upserted",
+      "inserted",
+      "updated",
+      "totalUpdates",
+      "total_updates"
+    ],
+    new Set(["observability", "debug", "errors", "warnings"])
+  );
+
+  return nested.found ? nested.total : null;
+}
+
+function collectFailureEntries(value: unknown, limit = 10): unknown[] {
+  const out: unknown[] = [];
+  const failureKeys = new Set([
+    "errors",
+    "failures",
+    "failedRows",
+    "failed_rows",
+    "rowFailures",
+    "invalidRows",
+    "invalid_rows"
+  ]);
+
+  const visit = (current: unknown) => {
+    if (out.length >= limit || current == null) return;
+
+    if (Array.isArray(current)) {
+      for (const item of current) {
+        if (out.length >= limit) break;
+        if (item && typeof item === "object") {
+          visit(item);
+        } else if (item != null) {
+          out.push(item);
+        }
+      }
+      return;
+    }
+
+    if (typeof current !== "object") return;
+    const obj = current as Record<string, unknown>;
+    for (const [key, nested] of Object.entries(obj)) {
+      if (out.length >= limit) break;
+      if (failureKeys.has(key) && Array.isArray(nested)) {
+        for (const entry of nested) {
+          out.push(entry);
+          if (out.length >= limit) break;
+        }
+        continue;
+      }
+      if (nested && typeof nested === "object") {
+        visit(nested);
+      }
+    }
+  };
+
+  visit(value);
+  return out;
+}
+
+function inferFailedRows(response: unknown): number | null {
+  const direct = getDirectNumericField(response, [
+    "failedRows",
+    "failed_rows",
+    "failedCount",
+    "failed_count",
+    "errorCount",
+    "errorsCount",
+    "rowsFailed",
+    "rows_failed"
+  ]);
+  if (direct != null) return direct;
+
+  const failures = collectFailureEntries(response, 100);
+  return failures.length > 0 ? failures.length : null;
+}
+
+function formatFailureSample(value: unknown): string | null {
+  if (typeof value === "string" && value.trim()) {
+    return truncateText(value.trim(), 180);
+  }
+
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return value == null ? null : truncateText(String(value), 180);
+  }
+
+  const obj = value as Record<string, unknown>;
+  const parts: string[] = [];
+
+  const addPart = (label: string, keys: string[]) => {
+    for (const key of keys) {
+      const raw = obj[key];
+      if (raw == null) continue;
+      const rendered = String(raw).trim();
+      if (!rendered) continue;
+      parts.push(`${label}: ${truncateText(rendered, 48)}`);
+      return;
+    }
+  };
+
+  addPart("date", ["date", "gameDate", "game_date", "date_scraped"]);
+  addPart("player", ["playerId", "player_id"]);
+  addPart("game", ["gameId", "game_id"]);
+  addPart("team", ["teamId", "team_id"]);
+  addPart("id", ["id"]);
+  addPart("table", ["table", "tableName", "table_name"]);
+  addPart("name", ["name", "fullName", "goalieFullName", "skaterFullName"]);
+  addPart("url", ["url"]);
+
+  const message = extractPrimaryMessage(obj);
+  if (message && !parts.some((part) => part.includes(message))) {
+    parts.push(message);
+  }
+
+  return parts.length > 0
+    ? truncateText(parts.join(" | "), 200)
+    : safeStringify(value, 200);
+}
+
+function countWarningEntries(response: unknown): number {
+  if (!response || typeof response !== "object") return 0;
+
+  if (Array.isArray(response)) {
+    return response.reduce((acc, item) => acc + countWarningEntries(item), 0);
+  }
+
+  const obj = response as Record<string, unknown>;
+  let total = 0;
+
+  for (const [key, value] of Object.entries(obj)) {
+    if (key === "warnings" || key === "dataQualityWarnings") {
+      total += Array.isArray(value) ? value.length : 0;
+      continue;
+    }
+    if (value && typeof value === "object") {
+      total += countWarningEntries(value);
+    }
+  }
+
+  return total;
+}
+
+function parseUrlPieces(
+  rawUrl: string | null
+): { route: string | null; routePath: string | null } {
+  if (!rawUrl) {
+    return { route: null, routePath: null };
+  }
+
+  try {
+    const parsed = new URL(rawUrl);
+    return {
+      route: `${parsed.pathname}${parsed.search}`,
+      routePath: parsed.pathname
+    };
+  } catch {
+    return {
+      route: rawUrl,
+      routePath: rawUrl.split("?")[0] ?? rawUrl
+    };
+  }
+}
 
 function parseAuditDetails(details: unknown): ParsedAuditDetails {
   const empty: ParsedAuditDetails = {
     durationMs: null,
     statusCode: null,
     url: null,
+    route: null,
+    routePath: null,
     method: null,
     error: null,
+    response: null,
+    responseMessage: null,
     goalieRowsProcessed: null,
-    dataQualityWarningCount: 0
+    dataQualityWarningCount: 0,
+    rowsUpserted: null,
+    failedRows: null,
+    failedRowSamples: []
   };
 
   if (!details) return empty;
 
-  let obj: any = details;
-  if (typeof details === "string") {
-    try {
-      obj = JSON.parse(details);
-    } catch {
-      return empty;
-    }
+  const parsedDetails = parseJsonMaybe(details);
+  if (!parsedDetails || typeof parsedDetails !== "object") {
+    return {
+      ...empty,
+      error: extractPrimaryMessage(parsedDetails),
+      responseMessage: extractPrimaryMessage(parsedDetails)
+    };
   }
 
-  if (!obj || typeof obj !== "object") return empty;
-  let goalieRowsProcessed: number | null = null;
-  let dataQualityWarningCount = 0;
-  try {
-    const responseRaw = typeof obj.response === "string" ? obj.response : null;
-    if (responseRaw) {
-      const response = JSON.parse(responseRaw) as any;
-      const observability = response?.observability;
-      if (typeof observability?.goalieRowsProcessed === "number") {
-        goalieRowsProcessed = observability.goalieRowsProcessed;
-      }
-      if (Array.isArray(observability?.dataQualityWarnings)) {
-        dataQualityWarningCount = observability.dataQualityWarnings.length;
-      }
-    }
-  } catch {
-    // ignore malformed/truncated serialized response payloads
-  }
+  const obj = parsedDetails as Record<string, unknown>;
+  const response = parseJsonMaybe(obj.response);
+  const { route, routePath } = parseUrlPieces(
+    typeof obj.url === "string" ? obj.url : null
+  );
+  const goalieRowsProcessed = getDirectNumericField(response, [
+    "goalieRowsProcessed"
+  ]);
+  const failedRowSamples = collectFailureEntries(response)
+    .map((entry) => formatFailureSample(entry))
+    .filter((entry): entry is string => Boolean(entry))
+    .slice(0, 3);
 
   return {
-    durationMs:
-      typeof obj.durationMs === "number" && Number.isFinite(obj.durationMs)
-        ? obj.durationMs
-        : null,
-    statusCode:
-      typeof obj.statusCode === "number" && Number.isFinite(obj.statusCode)
-        ? obj.statusCode
-        : null,
+    durationMs: toFiniteNumber(obj.durationMs),
+    statusCode: toFiniteNumber(obj.statusCode),
     url: typeof obj.url === "string" ? obj.url : null,
-    method: typeof obj.method === "string" ? obj.method : null,
-    error: typeof obj.error === "string" ? obj.error : null,
+    route,
+    routePath,
+    method: typeof obj.method === "string" ? obj.method.toUpperCase() : null,
+    error: extractPrimaryMessage(obj.error),
+    response,
+    responseMessage: extractPrimaryMessage(response),
     goalieRowsProcessed,
-    dataQualityWarningCount
+    dataQualityWarningCount: countWarningEntries(response),
+    rowsUpserted: inferRowsUpserted(response),
+    failedRows: inferFailedRows(response),
+    failedRowSamples
   };
 }
 
@@ -195,29 +546,30 @@ function parseRowsAffectedFromReturnMessage(
   returnMessage: string | null
 ): number | null {
   if (!returnMessage) return null;
-  const msg = String(returnMessage);
-  const toFiniteNumber = (value: string) => {
-    const n = Number(value);
-    return Number.isFinite(n) ? n : null;
+
+  const toNumber = (value: string) => {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
   };
 
+  const msg = String(returnMessage);
   const insertMatch = msg.match(/INSERT\s+\d+\s+(\d+)/i);
-  if (insertMatch?.[1]) return toFiniteNumber(insertMatch[1]);
+  if (insertMatch?.[1]) return toNumber(insertMatch[1]);
 
   const updateMatch = msg.match(/UPDATE\s+(\d+)/i);
-  if (updateMatch?.[1]) return toFiniteNumber(updateMatch[1]);
+  if (updateMatch?.[1]) return toNumber(updateMatch[1]);
 
   const deleteMatch = msg.match(/DELETE\s+(\d+)/i);
-  if (deleteMatch?.[1]) return toFiniteNumber(deleteMatch[1]);
+  if (deleteMatch?.[1]) return toNumber(deleteMatch[1]);
 
   const selectMatch = msg.match(/SELECT\s+(\d+)/i);
-  if (selectMatch?.[1]) return toFiniteNumber(selectMatch[1]);
+  if (selectMatch?.[1]) return toNumber(selectMatch[1]);
 
   const copyMatch = msg.match(/COPY\s+(\d+)/i);
-  if (copyMatch?.[1]) return toFiniteNumber(copyMatch[1]);
+  if (copyMatch?.[1]) return toNumber(copyMatch[1]);
 
   const rowWordMatch = msg.match(/(\d+)\s+row(s)?\b/i);
-  if (rowWordMatch?.[1]) return toFiniteNumber(rowWordMatch[1]);
+  if (rowWordMatch?.[1]) return toNumber(rowWordMatch[1]);
 
   return null;
 }
@@ -231,18 +583,276 @@ function safeDurationMs(startIso: string | null, endIso: string | null) {
   return duration >= 0 ? duration : null;
 }
 
+function parseCronInvocation(sqlText: string | null): {
+  method: ScheduleMethod;
+  url: string | null;
+  route: string | null;
+  routePath: string | null;
+} {
+  if (!sqlText) {
+    return { method: "UNKNOWN", url: null, route: null, routePath: null };
+  }
+
+  const methodMatch = sqlText.match(/net\.http_(get|post)\s*\(/i);
+  const method = methodMatch
+    ? methodMatch[1].toUpperCase() === "POST"
+      ? "POST"
+      : "GET"
+    : "SQL";
+
+  const urlMatch = sqlText.match(/url\s*:?=\s*'([^']+)'/i);
+  const url = urlMatch?.[1] ?? null;
+  const { route, routePath } = parseUrlPieces(url);
+
+  return {
+    method,
+    url,
+    route,
+    routePath
+  };
+}
+
+function formatScheduleTime(cronExpression: string): string {
+  const parts = cronExpression.trim().split(/\s+/);
+  if (parts.length < 2) return cronExpression;
+
+  const minute = Number(parts[0]);
+  const hour = Number(parts[1]);
+  if (!Number.isInteger(minute) || !Number.isInteger(hour)) {
+    return cronExpression;
+  }
+
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")} UTC`;
+}
+
+function expectedRunAtWithinWindow(
+  cronExpression: string,
+  since: Date,
+  now: Date
+): string | null {
+  const parts = cronExpression.trim().split(/\s+/);
+  if (parts.length < 2) return null;
+
+  const minute = Number(parts[0]);
+  const hour = Number(parts[1]);
+  if (!Number.isInteger(minute) || !Number.isInteger(hour)) return null;
+
+  const candidate = new Date(
+    Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      now.getUTCDate(),
+      hour,
+      minute,
+      0,
+      0
+    )
+  );
+
+  if (candidate.getTime() > now.getTime()) {
+    candidate.setUTCDate(candidate.getUTCDate() - 1);
+  }
+
+  return candidate.getTime() >= since.getTime() ? candidate.toISOString() : null;
+}
+
+async function readCronScheduleMarkdown(): Promise<string> {
+  const candidates = [
+    path.resolve(process.cwd(), "rules/cron-schedule.md"),
+    path.resolve(process.cwd(), "web/rules/cron-schedule.md")
+  ];
+
+  for (const candidate of candidates) {
+    try {
+      return await fs.readFile(candidate, "utf8");
+    } catch {
+      // continue
+    }
+  }
+
+  throw new Error("Could not locate rules/cron-schedule.md");
+}
+
+async function loadScheduledCronJobs(
+  since: Date,
+  now: Date
+): Promise<ScheduledCronJob[]> {
+  const markdown = await readCronScheduleMarkdown();
+  const normalized = markdown
+    .split("\n")
+    .map((line) => line.replace(/^\s*--\s?/, ""))
+    .join("\n");
+
+  const matches = Array.from(
+    normalized.matchAll(
+      /SELECT\s+cron\.schedule\(\s*'([^']+)'\s*,\s*'([^']+)'\s*,\s*([\s\S]*?)\);\s*/gi
+    )
+  );
+
+  const rawJobs = matches.map((match, index) => {
+    const name = match[1]?.trim() ?? "";
+    const cronExpression = match[2]?.trim() ?? "";
+    const body = match[3]?.trim() ?? "";
+    const invocation = parseCronInvocation(body);
+    const scheduleTimeDisplay = formatScheduleTime(cronExpression);
+    const expectedRunAt = expectedRunAtWithinWindow(cronExpression, since, now);
+    const sqlText =
+      invocation.method === "SQL"
+        ? truncateText(body.replace(/\s+/g, " ").trim(), 180)
+        : null;
+
+    return {
+      key: `${name}__${cronExpression}__${invocation.method}__${index}`,
+      name,
+      cronExpression,
+      scheduleTimeDisplay,
+      method: invocation.method,
+      url: invocation.url,
+      route: invocation.route,
+      routePath: invocation.routePath,
+      sqlText,
+      expectedRunAt,
+      sortOrder: index
+    };
+  });
+
+  const duplicateCounts = rawJobs.reduce(
+    (acc, job) => acc.set(job.name, (acc.get(job.name) ?? 0) + 1),
+    new Map<string, number>()
+  );
+
+  return rawJobs.map((job) => {
+    const displayName =
+      (duplicateCounts.get(job.name) ?? 0) > 1
+        ? `${job.name} [${job.method} ${job.scheduleTimeDisplay}]`
+        : job.name;
+
+    return {
+      ...job,
+      displayName,
+      aliases: Array.from(
+        new Set(
+          [
+            job.name,
+            job.route,
+            job.routePath,
+            job.url
+          ].filter((value): value is string => Boolean(value))
+        )
+      )
+    };
+  });
+}
+
+function candidateMatchesSchedule(
+  job: ScheduledCronJob,
+  candidate: {
+    jobName: string;
+    time: string;
+    method: string | null;
+    route: string | null;
+    routePath: string | null;
+  }
+): boolean {
+  const aliases = new Set(
+    [candidate.jobName, candidate.route, candidate.routePath].filter(
+      (value): value is string => Boolean(value)
+    )
+  );
+
+  const aliasMatch = job.aliases.some((alias) => aliases.has(alias));
+  if (!aliasMatch) return false;
+
+  const candidateMethod = candidate.method?.toUpperCase() ?? null;
+  if (
+    job.method !== "SQL" &&
+    candidateMethod &&
+    candidateMethod !== "UNKNOWN" &&
+    candidateMethod !== job.method
+  ) {
+    return false;
+  }
+
+  if (!job.expectedRunAt) return true;
+  const candidateTime = Date.parse(candidate.time);
+  const expectedTime = Date.parse(job.expectedRunAt);
+  if (!Number.isFinite(candidateTime) || !Number.isFinite(expectedTime)) {
+    return false;
+  }
+
+  return Math.abs(candidateTime - expectedTime) <= MATCH_WINDOW_MS;
+}
+
+function statusSortValue(status: ReportJobStatus): number {
+  switch (status) {
+    case "failure":
+      return 0;
+    case "missing":
+      return 1;
+    case "unknown":
+      return 2;
+    default:
+      return 3;
+  }
+}
+
+function buildRunDigestFromAudit(row: AuditRow): RunDigest {
+  return {
+    key: row.id,
+    label: row.parsed.route ?? row.jobName,
+    jobName: row.jobName,
+    status: row.status,
+    runTime: row.time,
+    runTimeDisplay: new Date(row.time).toLocaleString(),
+    method: row.parsed.method,
+    route: row.parsed.route,
+    statusCode: row.parsed.statusCode,
+    durationMs: row.parsed.durationMs,
+    rowsUpserted: row.parsed.rowsUpserted ?? row.rowsAffected,
+    rowsAffected: row.rowsAffected,
+    failedRows: row.parsed.failedRows,
+    reason:
+      row.parsed.error ??
+      row.parsed.responseMessage ??
+      row.detailsMessage ??
+      null,
+    failedRowSamples: row.parsed.failedRowSamples
+  };
+}
+
+function buildRunDigestFromCron(row: RunRow): RunDigest {
+  return {
+    key: row.id,
+    label: row.route ?? row.jobName,
+    jobName: row.jobName,
+    status: row.status,
+    runTime: row.time,
+    runTimeDisplay: new Date(row.time).toLocaleString(),
+    method: row.method === "UNKNOWN" ? null : row.method,
+    route: row.route,
+    statusCode: null,
+    durationMs: row.durationMs,
+    rowsUpserted: row.rowsAffected,
+    rowsAffected: row.rowsAffected,
+    failedRows: null,
+    reason: row.returnMessage ? truncateText(row.returnMessage, 240) : null,
+    failedRowSamples: []
+  };
+}
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const sinceDate = new Date(Date.now() - REPORT_WINDOW_MS);
+  const since = sinceDate.toISOString();
+  const now = new Date();
   const emailRecipient = process.env.CRON_REPORT_EMAIL_RECIPIENT!;
 
   let jobRunDetailsEmailResult: any = null;
   let auditEmailResult: any = null;
   const errors: string[] = [];
 
-  // 1. Fetch data for job_run_details (cron_job_report)
   const { data: runs, error: runErr } = await supabase
     .from("cron_job_report")
     .select("jobname, scheduled_time, status, return_message, end_time, sql_text")
@@ -251,11 +861,9 @@ export default async function handler(
 
   if (runErr) {
     console.error("Error fetching cron_job_report:", runErr.message);
-    // Not returning immediately, to allow audit email to proceed if desired
-    errors.push(`Failed to fetch job run details: ${runErr.message}`);
+    errors.push(`Failed to fetch cron_job_report: ${runErr.message}`);
   }
 
-  // 2. Fetch data for cron_job_audit
   const { data: audits, error: auditErr } = await supabase
     .from("cron_job_audit")
     .select("job_name, run_time, rows_affected, status, details")
@@ -264,223 +872,313 @@ export default async function handler(
 
   if (auditErr) {
     console.error("Error fetching cron_job_audit:", auditErr.message);
-    errors.push(`Failed to fetch cron job audit: ${auditErr.message}`);
+    errors.push(`Failed to fetch cron_job_audit: ${auditErr.message}`);
   }
 
-  const auditRows = (audits ?? []).map((a: any) => ({
-    jobName: String(a.job_name ?? ""),
-    time: String(a.run_time ?? ""),
-    rowsAffected: (a.rows_affected ?? null) as number | null,
-    rawStatus: a.status as unknown,
-    status: normalizeStatus(a.status),
-    details: a.details as unknown,
-    detailsMessage: extractDetailsMessage(a.details),
-    parsed: parseAuditDetails(a.details)
+  let scheduledJobs: ScheduledCronJob[] = [];
+  try {
+    scheduledJobs = await loadScheduledCronJobs(sinceDate, now);
+  } catch (error: any) {
+    console.error("Error loading cron schedule:", error?.message ?? error);
+    errors.push(
+      `Failed to parse cron schedule: ${error?.message ?? String(error)}`
+    );
+  }
+
+  const auditRows: AuditRow[] = (audits ?? []).map((row: any, index: number) => ({
+    id: `audit:${index}:${row.job_name ?? ""}:${row.run_time ?? ""}`,
+    jobName: String(row.job_name ?? ""),
+    time: String(row.run_time ?? ""),
+    rowsAffected: (row.rows_affected ?? null) as number | null,
+    rawStatus: row.status,
+    status: normalizeStatus(row.status),
+    details: row.details,
+    detailsMessage: extractDetailsMessage(row.details),
+    parsed: parseAuditDetails(row.details)
   }));
 
-  const runRows = (runs ?? []).map((r: any) => ({
-    jobName: String(r.jobname ?? ""),
-    time: String(r.scheduled_time ?? ""),
-    rawStatus: r.status as unknown,
-    status: normalizeStatus(r.status),
-    returnMessage: (r.return_message ?? null) as string | null,
-    sqlText: (r.sql_text ?? null) as string | null,
-    endTime: (r.end_time ?? null) as string | null,
-    rowsAffected: parseRowsAffectedFromReturnMessage(
-      (r.return_message ?? null) as string | null
-    ),
-    durationMs: safeDurationMs(
-      (r.scheduled_time ?? null) as string | null,
-      (r.end_time ?? null) as string | null
-    )
-  }));
+  const runRows: RunRow[] = (runs ?? []).map((row: any, index: number) => {
+    const invocation = parseCronInvocation((row.sql_text ?? null) as string | null);
+    return {
+      id: `run:${index}:${row.jobname ?? ""}:${row.scheduled_time ?? ""}`,
+      jobName: String(row.jobname ?? ""),
+      time: String(row.scheduled_time ?? ""),
+      rawStatus: row.status,
+      status: normalizeStatus(row.status),
+      returnMessage: (row.return_message ?? null) as string | null,
+      sqlText: (row.sql_text ?? null) as string | null,
+      endTime: (row.end_time ?? null) as string | null,
+      rowsAffected: parseRowsAffectedFromReturnMessage(
+        (row.return_message ?? null) as string | null
+      ),
+      durationMs: safeDurationMs(
+        (row.scheduled_time ?? null) as string | null,
+        (row.end_time ?? null) as string | null
+      ),
+      method: invocation.method,
+      url: invocation.url,
+      route: invocation.route,
+      routePath: invocation.routePath
+    };
+  });
 
-  const jobNames = new Set<string>([
-    ...auditRows.map((a) => a.jobName).filter(Boolean),
-    ...runRows.map((r) => r.jobName).filter(Boolean)
-  ]);
+  const matchedAuditIds = new Set<string>();
+  const matchedRunIds = new Set<string>();
 
-  const jobSummaries: JobSummary[] = Array.from(jobNames)
-    .map((jobName): JobSummary => {
-      const jobAudits = auditRows
-        .filter((a) => a.jobName === jobName)
+  const jobSummaries: JobSummary[] = scheduledJobs
+    .map((job) => {
+      const matchingAudits = auditRows
+        .filter((row) =>
+          candidateMatchesSchedule(job, {
+            jobName: row.jobName,
+            time: row.time,
+            method: row.parsed.method,
+            route: row.parsed.route,
+            routePath: row.parsed.routePath
+          })
+        )
         .sort((a, b) => Date.parse(b.time) - Date.parse(a.time));
-      const jobRuns = runRows
-        .filter((r) => r.jobName === jobName)
+
+      const matchingRuns = runRows
+        .filter((row) =>
+          candidateMatchesSchedule(job, {
+            jobName: row.jobName,
+            time: row.time,
+            method: row.method,
+            route: row.route,
+            routePath: row.routePath
+          })
+        )
         .sort((a, b) => Date.parse(b.time) - Date.parse(a.time));
 
-      const lastAudit = jobAudits[0] ?? null;
-      const lastRun = jobRuns[0] ?? null;
+      matchingAudits.forEach((row) => matchedAuditIds.add(row.id));
+      matchingRuns.forEach((row) => matchedRunIds.add(row.id));
 
-      const auditSuccesses = jobAudits.filter((a) => a.status === "success")
-        .length;
-      const auditFailures = jobAudits.filter((a) => a.status === "failure")
-        .length;
+      const lastAudit = matchingAudits[0] ?? null;
+      const lastRun = matchingRuns[0] ?? null;
+      const lastAuditTs = lastAudit ? Date.parse(lastAudit.time) : -Infinity;
+      const lastRunTs = lastRun ? Date.parse(lastRun.time) : -Infinity;
+      const preferAudit = lastAuditTs >= lastRunTs;
 
-      const runSuccesses = jobRuns.filter((r) => r.status === "success").length;
-      const runFailures = jobRuns.filter((r) => r.status === "failure").length;
-      const hasAnyAudit = jobAudits.length > 0;
+      const lastStatus: ReportJobStatus =
+        !lastAudit && !lastRun
+          ? "missing"
+          : preferAudit
+            ? (lastAudit?.status ?? "unknown")
+            : (lastRun?.status ?? "unknown");
 
-      const rowsTotalCounted = jobAudits.filter(
-        (a) => typeof a.rowsAffected === "number"
-      ).length;
-      const runRowsCounted = jobRuns.filter(
-        (r) => typeof r.rowsAffected === "number"
-      ).length;
+      const lastStatusSource: JobSummary["lastStatusSource"] =
+        !lastAudit && !lastRun
+          ? "missing"
+          : preferAudit
+            ? "audit"
+            : "cron";
 
-      const durations = jobAudits
-        .map((a) => a.parsed.durationMs)
-        .filter((d): d is number => typeof d === "number" && Number.isFinite(d));
-      const runDurations = jobRuns
-        .map((r) => r.durationMs)
-        .filter((d): d is number => typeof d === "number" && Number.isFinite(d));
-
-      const lastStatus: NormalizedStatus =
-        lastAudit?.status ?? lastRun?.status ?? "unknown";
-      const lastStatusSource: JobSummary["lastStatusSource"] = lastAudit
-        ? "audit"
-        : lastRun
-          ? "cron"
-          : "unknown";
-      const lastMessage =
-        lastAudit?.detailsMessage ??
-        lastRun?.returnMessage ??
-        null;
-
-      const lastTimeIso = lastAudit?.time ?? lastRun?.time ?? null;
-
-      const rowsLast =
-        (typeof lastAudit?.rowsAffected === "number"
-          ? lastAudit.rowsAffected
-          : null) ??
-        (typeof lastRun?.rowsAffected === "number" ? lastRun.rowsAffected : null);
-      const rowsTotal =
-        rowsTotalCounted > 0
-          ? jobAudits.reduce((acc, a) => acc + (a.rowsAffected ?? 0), 0)
-          : runRowsCounted > 0
-            ? jobRuns.reduce((acc, r) => acc + (r.rowsAffected ?? 0), 0)
-            : null;
-      const goalieRowsLast = lastAudit?.parsed.goalieRowsProcessed ?? null;
-      const goalieWarningsLast = lastAudit?.parsed.dataQualityWarningCount ?? 0;
-
+      const durations = matchingAudits
+        .map((row) => row.parsed.durationMs)
+        .filter((value): value is number => typeof value === "number");
+      const fallbackDurations = matchingRuns
+        .map((row) => row.durationMs)
+        .filter((value): value is number => typeof value === "number");
       const avgDurationMs =
         durations.length > 0
-          ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length)
-          : runDurations.length > 0
+          ? Math.round(durations.reduce((acc, value) => acc + value, 0) / durations.length)
+          : fallbackDurations.length > 0
             ? Math.round(
-                runDurations.reduce((a, b) => a + b, 0) / runDurations.length
+                fallbackDurations.reduce((acc, value) => acc + value, 0) /
+                  fallbackDurations.length
               )
             : null;
 
-      const okCount24h = hasAnyAudit ? auditSuccesses : runSuccesses;
-      const failCount24h = hasAnyAudit ? auditFailures : runFailures;
+      const okCount24h =
+        matchingAudits.length > 0
+          ? matchingAudits.filter((row) => row.status === "success").length
+          : matchingRuns.filter((row) => row.status === "success").length;
+      const failCount24h =
+        matchingAudits.length > 0
+          ? matchingAudits.filter((row) => row.status === "failure").length
+          : matchingRuns.filter((row) => row.status === "failure").length;
+
+      const rowsUpsertedLast =
+        lastAudit?.parsed.rowsUpserted ??
+        lastAudit?.rowsAffected ??
+        lastRun?.rowsAffected ??
+        null;
+      const rowsAffectedLast = lastAudit?.rowsAffected ?? lastRun?.rowsAffected ?? null;
+      const failedRowsLast = lastAudit?.parsed.failedRows ?? null;
+      const failedRowSamples = lastAudit?.parsed.failedRowSamples ?? [];
+
+      const message =
+        lastAudit?.parsed.responseMessage ??
+        lastAudit?.detailsMessage ??
+        (lastRun?.returnMessage ? truncateText(lastRun.returnMessage, 240) : null) ??
+        null;
+
+      const why =
+        lastStatus === "failure"
+          ? (lastAudit?.parsed.error ??
+            lastAudit?.parsed.responseMessage ??
+            lastAudit?.detailsMessage ??
+            (lastRun?.returnMessage
+              ? truncateText(lastRun.returnMessage, 240)
+              : null) ??
+            "Run failed")
+          : null;
+
+      const notes: string[] = [];
+      if (lastStatus === "missing") {
+        notes.push("No cron or audit entry matched this scheduled slot.");
+      }
+      if (matchingRuns.length > 0 && matchingAudits.length === 0 && job.method !== "SQL") {
+        notes.push("Cron invoked the route, but no audit payload was recorded.");
+      }
+      if (lastStatus === "success" && (failedRowsLast ?? 0) > 0) {
+        notes.push(`Completed with ${failedRowsLast} row-level failures.`);
+      }
+      if ((lastAudit?.parsed.dataQualityWarningCount ?? 0) > 0) {
+        notes.push(
+          `Returned ${lastAudit?.parsed.dataQualityWarningCount} warning(s).`
+        );
+      }
+      if (job.method === "SQL" && lastRun?.returnMessage && lastStatus !== "failure") {
+        notes.push(truncateText(lastRun.returnMessage, 140));
+      }
 
       return {
-        jobName,
+        jobKey: job.key,
+        jobName: job.name,
+        displayName: job.displayName,
         lastStatus,
         lastStatusSource,
-        lastTimeDisplay: lastTimeIso
-          ? new Date(lastTimeIso).toLocaleString()
-          : "—",
-        message: lastMessage,
-        runsCount: jobRuns.length,
-        auditRunsCount: jobAudits.length,
+        scheduleTimeDisplay: job.scheduleTimeDisplay,
+        expectedRunDisplay: job.expectedRunAt
+          ? new Date(job.expectedRunAt).toLocaleString()
+          : job.scheduleTimeDisplay,
+        lastRunDisplay:
+          lastAudit?.time || lastRun?.time
+            ? new Date(lastAudit?.time ?? lastRun?.time ?? "").toLocaleString()
+            : "—",
+        method: job.method,
+        route: job.route ?? job.sqlText,
+        statusCode: lastAudit?.parsed.statusCode ?? null,
+        message,
+        why,
+        note: notes.length > 0 ? notes.join(" ") : null,
+        runsCount: matchingRuns.length,
+        auditRunsCount: matchingAudits.length,
         okCount24h,
         failCount24h,
-        rowsLast,
-        rowsTotal,
-        goalieRowsLast,
-        goalieWarningsLast,
-        lastDurationMs: lastAudit?.parsed.durationMs ?? lastRun?.durationMs ?? null,
+        rowsUpsertedLast,
+        rowsAffectedLast,
+        failedRowsLast,
+        failedRowSamples,
+        lastDurationMs:
+          lastAudit?.parsed.durationMs ?? lastRun?.durationMs ?? null,
         avgDurationMs
       };
     })
     .sort((a, b) => {
-      if (a.lastStatus !== b.lastStatus) {
-        if (a.lastStatus === "failure") return -1;
-        if (b.lastStatus === "failure") return 1;
-      }
-      return a.jobName.localeCompare(b.jobName);
+      const statusDiff = statusSortValue(a.lastStatus) - statusSortValue(b.lastStatus);
+      if (statusDiff !== 0) return statusDiff;
+      const scheduleA = scheduledJobs.find((job) => job.key === a.jobKey)?.sortOrder ?? 0;
+      const scheduleB = scheduledJobs.find((job) => job.key === b.jobKey)?.sortOrder ?? 0;
+      return scheduleA - scheduleB;
     });
 
-  const auditFailuresList = auditRows
-    .filter((a) => a.status === "failure")
-    .map((a) => ({
-      jobName: a.jobName,
-      time: a.time,
-      runTimeDisplay: new Date(a.time).toLocaleString(),
-      rowsAffected: a.rowsAffected,
-      message: a.detailsMessage ?? "—",
-      durationMs: a.parsed.durationMs
-    }));
-  const cronFailuresList = runRows
-    .filter((r) => r.status === "failure")
-    .map((r) => ({
-      jobName: r.jobName,
-      time: r.time,
-      runTimeDisplay: new Date(r.time).toLocaleString(),
-      rowsAffected: r.rowsAffected,
-      message: r.returnMessage ?? "—",
-      durationMs: r.durationMs
-    }));
-  const failures = [...auditFailuresList, ...cronFailuresList]
-    .sort((a, b) => Date.parse(b.time) - Date.parse(a.time))
-    .map(({ time, ...rest }) => rest);
+  const failureHighlights = jobSummaries.filter((job) => job.lastStatus === "failure");
+  const missingJobs = jobSummaries.filter((job) => job.lastStatus === "missing");
 
-  const WARN_ZERO_ROWS = jobSummaries
-    .filter((j) => j.rowsLast === 0 && j.lastStatus !== "failure")
-    .map((j) => j.jobName);
-  const WARN_UNKNOWN = jobSummaries
-    .filter((j) => j.lastStatus === "unknown")
-    .map((j) => j.jobName);
-  const WARN_SLOW_MS = 60_000;
+  const unmatchedAuditRuns = auditRows
+    .filter((row) => !matchedAuditIds.has(row.id))
+    .map((row) => buildRunDigestFromAudit(row));
+  const unmatchedCronRuns = runRows
+    .filter((row) => !matchedRunIds.has(row.id))
+    .map((row) => buildRunDigestFromCron(row));
+  const unscheduledRuns = [...unmatchedAuditRuns, ...unmatchedCronRuns].sort(
+    (a, b) => Date.parse(b.runTime) - Date.parse(a.runTime)
+  );
+
+  const auditRunDigests = auditRows
+    .map((row) => buildRunDigestFromAudit(row))
+    .sort((a, b) => Date.parse(b.runTime) - Date.parse(a.runTime));
+
   const WARN_SLOW = jobSummaries
-    .filter((j) => (j.lastDurationMs ?? 0) > WARN_SLOW_MS)
-    .map((j) => ({ jobName: j.jobName, durationMs: j.lastDurationMs! }));
-  const WARN_GOALIE_QUALITY = jobSummaries
-    .filter((j) => j.goalieWarningsLast > 0)
-    .map((j) => ({ jobName: j.jobName, warningCount: j.goalieWarningsLast }));
+    .filter((job) => (job.lastDurationMs ?? 0) > WARN_SLOW_MS)
+    .map((job) => ({
+      displayName: job.displayName,
+      durationMs: job.lastDurationMs ?? 0
+    }));
 
-  const counts = {
-    jobs: jobSummaries.length,
+  const WARN_PARTIAL_FAILURE = jobSummaries
+    .filter((job) => job.lastStatus === "success" && (job.failedRowsLast ?? 0) > 0)
+    .map((job) => ({
+      displayName: job.displayName,
+      failedRows: job.failedRowsLast ?? 0
+    }));
+
+  const WARN_MISSING_AUDIT = jobSummaries
+    .filter(
+      (job) =>
+        job.lastStatus !== "missing" &&
+        job.runsCount > 0 &&
+        job.auditRunsCount === 0 &&
+        job.method !== "SQL"
+    )
+    .map((job) => job.displayName);
+
+  const counts: ReportCounts = {
+    scheduledJobs: scheduledJobs.length,
+    scheduledJobsWithActivity: jobSummaries.filter(
+      (job) => job.lastStatus !== "missing"
+    ).length,
     auditRuns: auditRows.length,
-    auditSuccesses: auditRows.filter((a) => a.status === "success").length,
-    auditFailures: auditRows.filter((a) => a.status === "failure").length,
-    auditUnknown: auditRows.filter((a) => a.status === "unknown").length,
-    jobsOkLast: jobSummaries.filter((j) => j.lastStatus === "success").length,
-    jobsFailingLast: jobSummaries.filter((j) => j.lastStatus === "failure")
-      .length,
-    jobsUnknownLast: jobSummaries.filter((j) => j.lastStatus === "unknown")
-      .length,
-    warnZeroRows: WARN_ZERO_ROWS.length,
-    warnUnknown: WARN_UNKNOWN.length,
+    auditSuccesses: auditRows.filter((row) => row.status === "success").length,
+    auditFailures: auditRows.filter((row) => row.status === "failure").length,
+    auditUnknown: auditRows.filter((row) => row.status === "unknown").length,
+    jobsOkLast: jobSummaries.filter((job) => job.lastStatus === "success").length,
+    jobsFailingLast: jobSummaries.filter((job) => job.lastStatus === "failure").length,
+    jobsMissingLast: jobSummaries.filter((job) => job.lastStatus === "missing").length,
+    jobsUnknownLast: jobSummaries.filter((job) => job.lastStatus === "unknown").length,
+    unscheduledRuns: unscheduledRuns.length,
+    totalRowsUpserted: jobSummaries.reduce(
+      (acc, job) => acc + (job.rowsUpsertedLast ?? job.rowsAffectedLast ?? 0),
+      0
+    ),
+    totalFailedRows: jobSummaries.reduce(
+      (acc, job) => acc + (job.failedRowsLast ?? 0),
+      0
+    ),
     warnSlow: WARN_SLOW.length,
-    warnGoalieQuality: WARN_GOALIE_QUALITY.length
+    warnPartialFailure: WARN_PARTIAL_FAILURE.length,
+    warnMissingAudit: WARN_MISSING_AUDIT.length
   };
 
-  // 3. Send Cron Job Audit Email
   if (auditRows.length > 0) {
-    const formattedAudits = auditRows.map((a) => ({
-      job_name: a.jobName,
-      run_time: a.time,
-      rows_affected: a.rowsAffected,
-      status: a.status,
-      message: a.detailsMessage,
-      duration_ms: a.parsed.durationMs
-    }));
-
     try {
       const { data, error } = await resend.emails.send({
         from: "audit-report@fhfhockey.com",
         to: emailRecipient,
         subject:
           counts.auditFailures > 0
-            ? `❌ Cron Job Audit — ${counts.auditFailures} failures`
-            : `✅ Cron Job Audit — ${counts.auditSuccesses} successes`,
+            ? `❌ Cron Audit — ${counts.auditFailures} failing audit runs`
+            : `✅ Cron Audit — ${counts.auditSuccesses} audit runs ok`,
         react: CronAuditEmail({
-          audits: formattedAudits,
+          audits: auditRunDigests,
           sinceDate: since,
-          summary: counts
+          summary: {
+            auditRuns: counts.auditRuns,
+            auditSuccesses: counts.auditSuccesses,
+            auditFailures: counts.auditFailures,
+            auditUnknown: counts.auditUnknown,
+            totalRowsUpserted: auditRunDigests.reduce(
+              (acc, audit) => acc + (audit.rowsUpserted ?? audit.rowsAffected ?? 0),
+              0
+            ),
+            totalFailedRows: auditRunDigests.reduce(
+              (acc, audit) => acc + (audit.failedRows ?? 0),
+              0
+            )
+          }
         })
       });
 
@@ -491,37 +1189,37 @@ export default async function handler(
       } else {
         auditEmailResult = { success: true, emailId: data?.id };
       }
-    } catch (e: any) {
-      console.error("Exception sending audit email:", e.message);
-      errors.push(`Audit email exception: ${e.message}`);
-      auditEmailResult = { success: false, error: e.message };
+    } catch (error: any) {
+      console.error("Exception sending audit email:", error.message);
+      errors.push(`Audit email exception: ${error.message}`);
+      auditEmailResult = { success: false, error: error.message };
     }
   } else if (!auditErr) {
     auditEmailResult = { success: true, message: "No audit data to send." };
   }
 
-  // 4. Prepare and Send Job Run Details Email (similar to your original logic)
-  if (runRows.length > 0 || auditRows.length > 0) {
+  if (scheduledJobs.length > 0 || runRows.length > 0 || auditRows.length > 0) {
     try {
       const { data, error } = await resend.emails.send({
-        from: "job-status@fhfhockey.com", // Can be a different 'from' address
+        from: "job-status@fhfhockey.com",
         to: emailRecipient,
         subject:
-          counts.jobsFailingLast > 0
-            ? `❌ Daily Job Runs — ${counts.jobsFailingLast} failing jobs`
-            : "✅ Daily Job Runs",
+          counts.jobsFailingLast > 0 || counts.jobsMissingLast > 0
+            ? `❌ Daily Cron Summary — ${counts.jobsFailingLast} failing, ${counts.jobsMissingLast} missing`
+            : `✅ Daily Cron Summary — ${counts.jobsOkLast}/${counts.scheduledJobs} scheduled jobs ok`,
         react: CronReportEmail({
           sinceDate: since,
           summary: counts,
           jobs: jobSummaries,
-          recentFailures: failures,
+          failureHighlights,
+          missingJobs,
+          unscheduledRuns,
           fetchErrors: errors,
           warnings: {
             slowMsThreshold: WARN_SLOW_MS,
-            zeroRowsJobs: WARN_ZERO_ROWS,
-            unknownStatusJobs: WARN_UNKNOWN,
             slowJobs: WARN_SLOW,
-            goalieQualityJobs: WARN_GOALIE_QUALITY
+            partialFailureJobs: WARN_PARTIAL_FAILURE,
+            missingAuditJobs: WARN_MISSING_AUDIT
           }
         })
       });
@@ -533,19 +1231,18 @@ export default async function handler(
       } else {
         jobRunDetailsEmailResult = { success: true, emailId: data?.id };
       }
-    } catch (e: any) {
-      console.error("Exception sending job run details email:", e.message);
-      errors.push(`Job run details email exception: ${e.message}`);
-      jobRunDetailsEmailResult = { success: false, error: e.message };
+    } catch (error: any) {
+      console.error("Exception sending job run details email:", error.message);
+      errors.push(`Job run details email exception: ${error.message}`);
+      jobRunDetailsEmailResult = { success: false, error: error.message };
     }
   } else if (!runErr) {
     jobRunDetailsEmailResult = {
       success: true,
-      message: "No job run data to send."
+      message: "No scheduled or observed cron data to send."
     };
   }
 
-  // 5. Return the result
   if (
     errors.length > 0 &&
     (!auditEmailResult?.success || !jobRunDetailsEmailResult?.success)
@@ -561,6 +1258,7 @@ export default async function handler(
   return res.status(200).json({
     success: true,
     auditEmailResult,
-    jobRunDetailsEmailResult
+    jobRunDetailsEmailResult,
+    counts
   });
 }

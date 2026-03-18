@@ -4,6 +4,7 @@ import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { SupabaseClient } from "@supabase/supabase-js";
 import {
   TOIData,
+  fetchGamecenterJson,
   getKey,
   isDefense,
   isForward,
@@ -103,9 +104,7 @@ async function getGoalies(id: number) {
     "homeTeam" | "awayTeam",
     { id: number; position: string }[]
   > = { homeTeam: [], awayTeam: [] };
-  const boxscore = await fetch(
-    `https://api-web.nhle.com/v1/gamecenter/${id}/boxscore`
-  ).then((res) => res.json());
+  const boxscore = await fetchGamecenterJson<any>(id, "boxscore");
   const playerByGameStats = boxscore.playerByGameStats;
 
   result.homeTeam = playerByGameStats.homeTeam.goalies.map((item: any) => ({

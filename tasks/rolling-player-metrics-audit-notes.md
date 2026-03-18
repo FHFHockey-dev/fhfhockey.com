@@ -2042,7 +2042,7 @@ These entries are written in the final intended checklist style:
 - ✅ `shooting_pct_avg_season`
   - formula: `season goals / season shots * 100`
   - note: matched source-derived season snapshots on refreshed rows
-
+x`
 - ✅ `sog_per_60_avg_season`
   - formula: `season shots / season toi_seconds * 3600`
   - note: matched source-derived season snapshots on refreshed rows

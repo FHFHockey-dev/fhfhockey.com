@@ -4,6 +4,24 @@ import supabase from "lib/supabase/server";
 
 const BASE_URL = true ? "https://fhfhockey.com" : "http://localhost:3000";
 
+class NonRetryableWebhookError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "NonRetryableWebhookError";
+  }
+}
+
+function isNonRetryableWebhookError(error: unknown): boolean {
+  if (error instanceof NonRetryableWebhookError) return true;
+  const message =
+    error instanceof Error ? error.message : typeof error === "string" ? error : "";
+  return (
+    message.includes("PUPPETEER_ENDPOINT is not configured") ||
+    message.includes("ECONNREFUSED") ||
+    message.includes("browser endpoint is unavailable")
+  );
+}
+
 export default adminOnly(async (req, res) => {
   const gameId = Number(req.query.gameId);
   const teamId = Number(req.query.teamId);
@@ -52,6 +70,9 @@ async function saveLinemateMatrixImages(gameId: number, teamIds: number[]) {
   console.log("Start to save line combo for " + gameId);
   let old = Date.now();
   console.log(process.env.PUPPETEER_ENDPOINT);
+  if (!process.env.PUPPETEER_ENDPOINT) {
+    throw new NonRetryableWebhookError("PUPPETEER_ENDPOINT is not configured.");
+  }
   let browser: any;
   try {
     browser = await puppeteer.connect({
@@ -70,7 +91,9 @@ async function saveLinemateMatrixImages(gameId: number, teamIds: number[]) {
       errSerialized = (util as any).inspect(err, { depth: 4 });
     }
     console.error("Failed to connect to puppeteer:", err);
-    throw new Error(`Failed to connect to puppeteer: ${errSerialized}`);
+    throw new NonRetryableWebhookError(
+      `Failed to connect to puppeteer: browser endpoint is unavailable. ${errSerialized}`
+    );
   }
 
   // Create a page
@@ -163,6 +186,9 @@ async function retryAsyncOperation(
     try {
       return await operation(); // Execute the operation and return the result
     } catch (error: any) {
+      if (isNonRetryableWebhookError(error)) {
+        throw error;
+      }
       if (retryCount >= maxRetries) {
         throw error; // If max retries reached, rethrow the error
       }

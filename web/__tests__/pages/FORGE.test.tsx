@@ -1,171 +1,232 @@
 import React from "react";
-import { describe, expect, it, beforeEach, vi } from "vitest";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 
-vi.mock("next/image", () => ({
-  default: (props: any) => {
-    const { alt, objectFit: _objectFit, ...rest } = props;
-    return <img alt={alt ?? ""} {...rest} />;
-  }
-}));
+import { clearClientFetchCache } from "lib/dashboard/clientFetchCache";
 
 vi.mock("next/head", () => ({
   default: ({ children }: { children: React.ReactNode }) => <>{children}</>
 }));
 
 import FORGEPage from "../../pages/FORGE";
-import { teamsInfo } from "lib/teamsInfo";
 
-function mockFetchResponse(data: unknown, ok = true) {
+function jsonResponse(data: unknown, ok = true, status = ok ? 200 : 500): Response {
   return {
     ok,
+    status,
     json: async () => data
   } as Response;
 }
 
-describe("FORGE goalie UI states", () => {
+describe("FORGE landing page", () => {
   beforeEach(() => {
+    clearClientFetchCache();
     vi.restoreAllMocks();
   });
 
-  it("renders goalie disclosure and starter confidence blocks", async () => {
-    const njdTeam =
-      Object.values(teamsInfo).find((team) => team.abbrev === "NJD") ??
-      Object.values(teamsInfo)[0];
-    const nyiTeam =
-      Object.values(teamsInfo).find((team) => team.abbrev === "NYI") ??
-      Object.values(teamsInfo)[1];
+  afterEach(() => {
+    cleanup();
+  });
 
+  it("renders slate, top adds, and sustainability previews with drill-in links", async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
-      if (url.includes("/api/v1/forge/players")) {
-        return mockFetchResponse({ data: [] });
-      }
-      if (url.includes("/api/v1/forge/accuracy")) {
-        return mockFetchResponse({
-          data: [
-            { date: "2026-02-05", accuracy: 42 },
-            { date: "2026-02-06", accuracy: 44 }
-          ]
-        });
-      }
-      if (url.includes("/api/v1/forge/goalies")) {
-        return mockFetchResponse({
-          modelVersion: "starter-scenario-v1",
-          scenarioCount: 2,
-          calibrationHints: { starterBrier: 0.19 },
-          diagnostics: { notes: ["No NHL games scheduled on requested date."] },
-          data: [
-            {
-              goalie_id: 8474593,
-              goalie_name: "Jacob Markstrom",
-              team_name: "New Jersey Devils",
-              team_abbreviation: "NJD",
-              opponent_team_name: "New York Islanders",
-              opponent_team_abbreviation: "NYI",
-              starter_probability: 0.61,
-              proj_shots_against: 27.2,
-              proj_saves: 24.1,
-              proj_goals_allowed: 3.1,
-              proj_win_prob: 0.53,
-              proj_shutout_prob: 0.05,
-              modeled_save_pct: 0.892,
-              volatility_index: 1.28,
-              blowup_risk: 0.27,
-              confidence_tier: "MEDIUM",
-              quality_tier: "ABOVE_AVERAGE",
-              reliability_tier: "MODERATE",
-              recommendation: "START",
-              uncertainty: {
-                saves: { p10: 18, p50: 24, p90: 31 },
-                goals_allowed: { p10: 1, p50: 3, p90: 5 },
-                model: {
-                  starter_selection: {
-                    model_context: {
-                      is_back_to_back: false,
-                      opponent_is_weak: true
-                    },
-                    opponent_offense_context: {
-                      context_adjustment_pct: -0.04
-                    },
-                    candidate_goalies: [
-                      {
-                        goalie_id: 8474593,
-                        days_since_last_played: 2,
-                        l10_starts: 7
-                      }
-                    ]
-                  }
-                }
-              }
-            }
-          ]
-        });
-      }
       if (url.includes("/api/v1/start-chart")) {
-        return mockFetchResponse({
-          dateUsed: "2026-02-08",
+        return jsonResponse({
+          dateUsed: "2026-03-14",
           games: [
             {
               id: 1,
-              date: "2026-02-08",
-              homeTeamId: njdTeam?.id,
-              awayTeamId: nyiTeam?.id,
-              homeRating: { offRating: 82, defRating: 77 },
-              awayRating: { offRating: 79, defRating: 81 },
-              homeGoalies: [
-                {
-                  player_id: 8474593,
-                  name: "Jacob Markstrom",
-                  start_probability: 0.72,
-                  projected_gsaa_per_60: 0.1,
-                  confirmed_status: false
-                }
-              ],
-              awayGoalies: [
-                {
-                  player_id: 8478406,
-                  name: "Ilya Sorokin",
-                  start_probability: 0.81,
-                  projected_gsaa_per_60: 0.2,
-                  confirmed_status: false
-                }
-              ]
+              date: "2026-03-14",
+              awayTeamId: 1,
+              homeTeamId: 2,
+              awayGoalies: [{ player_id: 10, name: "Away Goalie", start_probability: 0.64 }],
+              homeGoalies: [{ player_id: 11, name: "Home Goalie", start_probability: 0.71 }]
             }
           ]
         });
       }
-      return mockFetchResponse({}, false);
+      if (url.includes("/api/v1/forge/players")) {
+        return jsonResponse({
+          asOfDate: "2026-03-14",
+          data: [
+            {
+              player_id: 88,
+              player_name: "Top Add",
+              team_name: "New Jersey Devils",
+              position: "C",
+              pts: 2.6,
+              ppp: 0.8,
+              sog: 3.4,
+              hit: 0.6,
+              blk: 0.2,
+              uncertainty: 0.3
+            }
+          ]
+        });
+      }
+      if (url.includes("/api/v1/transactions/ownership-trends")) {
+        return jsonResponse({
+          success: true,
+          risers: [
+            {
+              playerId: 88,
+              name: "Top Add",
+              latest: 41,
+              delta: 6,
+              teamAbbrev: "NJD"
+            }
+          ],
+          fallers: []
+        });
+      }
+      if (url.includes("direction=cold")) {
+        return jsonResponse({
+          snapshot_date: "2026-03-14",
+          rows: [
+            {
+              player_id: 101,
+              player_name: "Trustworthy Skater",
+              s_100: 67.2,
+              luck_pressure: -1.2
+            }
+          ]
+        });
+      }
+      if (url.includes("direction=hot")) {
+        return jsonResponse({
+          snapshot_date: "2026-03-14",
+          rows: [
+            {
+              player_id: 202,
+              player_name: "Overheated Skater",
+              s_100: 38.8,
+              luck_pressure: 1.5
+            }
+          ]
+        });
+      }
+      return jsonResponse({}, false);
     });
 
     vi.stubGlobal("fetch", fetchMock);
 
-    const { asFragment } = render(<FORGEPage />);
+    render(<FORGEPage />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Goalies" }));
+    expect(await screen.findByText("Slate Preview")).toBeTruthy();
+    expect(screen.getByText("Top Player Adds")).toBeTruthy();
+    expect(screen.getByText("Sustainability Preview")).toBeTruthy();
+    expect(screen.getByText("Top Add")).toBeTruthy();
+    expect(screen.getByText("Trustworthy Skater")).toBeTruthy();
+    expect(screen.getByText("Overheated Skater")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Open Full Dashboard" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Dashboard" }).getAttribute("href")).toBe(
+      "/forge/dashboard"
+    );
+    expect(screen.getByRole("link", { name: "Start Chart" }).getAttribute("href")).toBe(
+      "/start-chart"
+    );
+    expect(screen.getByRole("link", { name: "Trends" }).getAttribute("href")).toBe(
+      "/trends"
+    );
+    expect(screen.getByRole("link", { name: "Open Start Chart" }).getAttribute("href")).toBe(
+      "/start-chart"
+    );
+  });
+
+  it("shows an error state when preview fetches fail", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => jsonResponse({}, false, 500)));
+
+    render(<FORGEPage />);
 
     await waitFor(() => {
-      expect(screen.getByText("Goalie Model Disclosure")).toBeTruthy();
+      expect(
+        screen.getByText("Error: FORGE previews are temporarily unavailable.")
+      ).toBeTruthy();
+    });
+  });
+
+  it("keeps preview panels usable when one feed is stale or another fails", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/v1/start-chart")) {
+        return jsonResponse({
+          dateUsed: "2026-03-12",
+          games: [
+            {
+              id: 1,
+              date: "2026-03-12",
+              awayTeamId: 1,
+              homeTeamId: 2,
+              awayGoalies: [{ player_id: 10, name: "Away Goalie", start_probability: 0.64 }],
+              homeGoalies: [{ player_id: 11, name: "Home Goalie", start_probability: 0.71 }]
+            }
+          ]
+        });
+      }
+      if (url.includes("/api/v1/forge/players")) {
+        return jsonResponse({
+          asOfDate: "2026-03-12",
+          data: [
+            {
+              player_id: 88,
+              player_name: "Top Add",
+              team_name: "New Jersey Devils",
+              position: "C",
+              pts: 2.6,
+              ppp: 0.8,
+              sog: 3.4,
+              hit: 0.6,
+              blk: 0.2,
+              uncertainty: 0.3
+            }
+          ]
+        });
+      }
+      if (url.includes("/api/v1/transactions/ownership-trends")) {
+        return jsonResponse({}, false, 500);
+      }
+      if (url.includes("direction=cold")) {
+        return jsonResponse({
+          snapshot_date: "2026-03-12",
+          rows: [
+            {
+              player_id: 101,
+              player_name: "Trustworthy Skater",
+              s_100: 67.2,
+              luck_pressure: -1.2
+            }
+          ]
+        });
+      }
+      if (url.includes("direction=hot")) {
+        return jsonResponse({
+          snapshot_date: "2026-03-12",
+          rows: [
+            {
+              player_id: 202,
+              player_name: "Overheated Skater",
+              s_100: 38.8,
+              luck_pressure: 1.5
+            }
+          ]
+        });
+      }
+      return jsonResponse({}, false);
     });
 
-    expect(screen.getByText(/Today's Slate/i)).toBeTruthy();
-    expect(screen.getAllByText("OFF").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("DEF").length).toBeGreaterThan(0);
-    if (njdTeam?.abbrev) {
-      expect(screen.getByAltText(njdTeam.abbrev)).toBeTruthy();
-    }
-    if (nyiTeam?.abbrev) {
-      expect(screen.getByAltText(nyiTeam.abbrev)).toBeTruthy();
-    }
-    expect(screen.getByText("Starter Confidence Drivers")).toBeTruthy();
-    expect(screen.getByText("Recency")).toBeTruthy();
-    expect(screen.getByText("L10 Starts")).toBeTruthy();
-    expect(screen.getByText("Back-to-Back")).toBeTruthy();
-    expect(screen.getByText("Opponent Context")).toBeTruthy();
-    expect(screen.getByText(/Model: starter-scenario-v1/i)).toBeTruthy();
-    expect(screen.getByText(/Starter scenarios: 2/i)).toBeTruthy();
-    expect(screen.getByText(/Starter calibration \(Brier\): 0.190/i)).toBeTruthy();
+    vi.stubGlobal("fetch", fetchMock);
 
-    expect(asFragment()).toMatchSnapshot();
+    render(<FORGEPage />);
+
+    expect(await screen.findByText("Using latest available slate from 2026-03-12.")).toBeTruthy();
+    expect(
+      screen.getByText("Top Adds preview unavailable. Open the dashboard for live retry.")
+    ).toBeTruthy();
+    expect(
+      screen.getByText("Using latest available sustainability snapshot from 2026-03-12.")
+    ).toBeTruthy();
+    expect(screen.getAllByText("Trustworthy Skater").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Overheated Skater").length).toBeGreaterThan(0);
   });
 });

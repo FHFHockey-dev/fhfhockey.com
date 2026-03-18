@@ -29,6 +29,7 @@ import {
   Tooltip,
   Legend
 } from "recharts";
+import { computeTeamPowerScore } from "lib/dashboard/teamContext";
 import styles from "./dashboard.module.scss";
 
 type TeamPowerRow = {
@@ -133,20 +134,6 @@ const getTodayEt = (): string => {
   return `${y}-${m}-${d}`;
 };
 
-const SPECIAL_TEAM_STEP = 1.5;
-const computePowerScore = (rating: {
-  offRating: number;
-  defRating: number;
-  paceRating: number;
-  ppTier: number;
-  pkTier: number;
-}): number => {
-  const base = (rating.offRating + rating.defRating + rating.paceRating) / 3;
-  const ppAdj = (3 - rating.ppTier) * SPECIAL_TEAM_STEP;
-  const pkAdj = (3 - rating.pkTier) * SPECIAL_TEAM_STEP;
-  return base + ppAdj + pkAdj;
-};
-
 const formatOptional = (value: number | null | undefined): string => {
   if (value === null || value === undefined || Number.isNaN(value)) return "—";
   return value.toFixed(1);
@@ -218,7 +205,7 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({
         return {
           teamAbbr: rating.teamAbbr,
           teamName: meta?.name ?? rating.teamAbbr,
-          powerScore: computePowerScore(rating),
+          powerScore: computeTeamPowerScore(rating),
           ctpiScore: ctpiMap.get(rating.teamAbbr) ?? null,
           sosScore: sosMap.get(rating.teamAbbr) ?? null
         };

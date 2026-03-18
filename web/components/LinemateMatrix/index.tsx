@@ -18,22 +18,46 @@ import { setDifference } from "utils/setDifference";
 
 // C:\Users\timbr\Desktop\FHF\fhfhockey.com-3\web\components\LinemateMatrix\index.tsx
 
+export async function fetchGamecenterJson<T>(
+  gameId: number,
+  resource: "boxscore" | "play-by-play"
+): Promise<T> {
+  const response = await fetch(
+    `https://api-web.nhle.com/v1/gamecenter/${gameId}/${resource}`,
+    {
+      headers: {
+        Accept: "application/json",
+        "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)"
+      }
+    }
+  );
+
+  const contentType = response.headers.get("content-type") ?? "";
+
+  if (!response.ok) {
+    let detail = "";
+    if (contentType.includes("application/json")) {
+      const body = await response.json().catch(() => null);
+      if (body && typeof body === "object" && "message" in body) {
+        detail = `: ${String(body.message)}`;
+      }
+    }
+    throw new Error(`Gamecenter ${resource} HTTP ${response.status}${detail}`);
+  }
+
+  if (!contentType.includes("application/json")) {
+    throw new Error(`Unexpected content type: ${contentType}`);
+  }
+
+  return response.json() as Promise<T>;
+}
+
 async function getRostersMap(gameId: number, _teamId?: number) {
   const rostersMap: Record<number, PlayerData> = {};
 
   let boxscore;
   try {
-    const response = await Fetch(
-      `https://api-web.nhle.com/v1/gamecenter/${gameId}/boxscore`
-    );
-
-    // Check if the response is JSON
-    const contentType = response.headers.get("Content-Type");
-    if (!contentType || !contentType.includes("application/json")) {
-      throw new Error(`Unexpected content type: ${contentType}`);
-    }
-
-    boxscore = await response.json();
+    boxscore = await fetchGamecenterJson<any>(gameId, "boxscore");
   } catch (e: any) {
     throw new Error(
       `Failed to fetch or parse boxscore for game ${gameId}: ${e.message}`
@@ -156,9 +180,7 @@ export async function fetchTOIRawData(id: number) {
         `https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId=${id}`
       ).then((res) => res.json()),
       getRostersMap(id),
-      Fetch(`https://api-web.nhle.com/v1/gamecenter/${id}/play-by-play`).then(
-        (res) => res.json()
-      )
+      fetchGamecenterJson<{ plays: any }>(id, "play-by-play")
     ]);
 
   return [{ data: shiftsData }, { rostersMap, teams }, { plays }] as const;

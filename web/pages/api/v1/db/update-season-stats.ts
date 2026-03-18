@@ -4,10 +4,24 @@ import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import supabase from "lib/supabase";
+import { getCurrentSeason } from "lib/NHL/server";
 import { HTMLElement, parse } from "node-html-parser";
 import { get } from "lib/NHL/base";
 import { updatePlayer } from "./update-player/[playerId]";
 import fetchWithCache from "lib/fetchWithCache";
+
+/**
+ * Query params:
+ * - seasonId: optional YYYYYYYY season id; defaults to the current NHL season.
+ * - runMode: optional `incremental` or `full`; defaults to incremental when no other mode is given.
+ * - full / all: optional truthy flag for a full-season replay.
+ *
+ * Cron-safe default:
+ * - no params => current-season incremental refresh from the latest fully processed game forward
+ *
+ * Cron-safe static URL:
+ * - /api/v1/db/update-season-stats
+ */
 
 type GameState = "OFF" | "FINAL" | "FUT";
 type Category =
@@ -162,6 +176,147 @@ type PlayerCounts = { [playerId: number]: number };
 
 /////////////// API Route Logic //////////////////
 
+type ProcessedGameTable =
+  | "teamGameStats"
+  | "skatersGameStats"
+  | "goaliesGameStats";
+
+export function isTruthyQueryFlag(
+  value: string | string[] | undefined
+): boolean {
+  if (typeof value === "string") {
+    return ["1", "true", "all", "full", "yes"].includes(value.toLowerCase());
+  }
+
+  if (Array.isArray(value)) {
+    return value.some((entry) => isTruthyQueryFlag(entry));
+  }
+
+  return false;
+}
+
+export function resolveSeasonStatsRunMode({
+  runMode,
+  fullFlag
+}: {
+  runMode?: string;
+  fullFlag?: string | string[];
+}): "incremental" | "full" {
+  if (typeof runMode === "string" && runMode.toLowerCase() === "full") {
+    return "full";
+  }
+
+  return isTruthyQueryFlag(fullFlag) ? "full" : "incremental";
+}
+
+async function getLatestProcessedGameIdForSeasonTable(
+  supabaseClient: SupabaseClient,
+  tableName: ProcessedGameTable,
+  seasonId: string
+): Promise<number | null> {
+  const { data, error } = await supabaseClient
+    .from(tableName)
+    .select("gameId, games!inner(id, seasonId, startTime)")
+    .eq("games.seasonId", seasonId)
+    .lte("games.startTime", new Date().toISOString())
+    .order("id", { foreignTable: "games", ascending: false })
+    .limit(1);
+
+  if (error) {
+    throw new Error(
+      `Failed to determine latest processed game for ${tableName} in season ${seasonId}: ${error.message}`
+    );
+  }
+
+  const latestRow = (data as Array<{ gameId?: number }> | null)?.[0];
+  return latestRow?.gameId ?? null;
+}
+
+async function getLatestFullyProcessedGameIdForSeason(
+  supabaseClient: SupabaseClient,
+  seasonId: string
+): Promise<number | null> {
+  const latestIds = await Promise.all(
+    (["teamGameStats", "skatersGameStats", "goaliesGameStats"] as const).map(
+      (tableName) =>
+        getLatestProcessedGameIdForSeasonTable(
+          supabaseClient,
+          tableName,
+          seasonId
+        )
+    )
+  );
+
+  if (latestIds.some((gameId) => gameId === null)) {
+    return null;
+  }
+
+  const validIds = latestIds.filter(
+    (gameId): gameId is number =>
+      typeof gameId === "number" && Number.isFinite(gameId)
+  );
+
+  return validIds.length > 0 ? Math.min(...validIds) : null;
+}
+
+async function fetchFinishedGamesForSeason(
+  supabaseClient: SupabaseClient,
+  seasonId: string,
+  lastProcessedGameId: number | null
+): Promise<Array<{ id: number }>> {
+  console.log(
+    `Workspaceing finished game IDs for season ${seasonId}${
+      lastProcessedGameId
+        ? ` after game ${lastProcessedGameId}`
+        : " from season start"
+    } with pagination...`
+  );
+
+  const pageSize = 1000;
+  let currentPage = 0;
+  let allGamesAccumulator: Array<{ id: number }> = [];
+  let keepFetching = true;
+
+  while (keepFetching) {
+    const rangeFrom = currentPage * pageSize;
+    const rangeTo = rangeFrom + pageSize - 1;
+
+    let query = supabaseClient
+      .from("games")
+      .select("id")
+      .eq("seasonId", seasonId)
+      .lte("startTime", new Date().toISOString())
+      .order("id", { ascending: true });
+
+    if (typeof lastProcessedGameId === "number") {
+      query = query.gt("id", lastProcessedGameId);
+    }
+
+    const { data: gamesOnPage, error: gamesError } = await query.range(
+      rangeFrom,
+      rangeTo
+    );
+
+    if (gamesError) {
+      throw new Error(
+        `Database error fetching games page ${currentPage} for season ${seasonId}: ${gamesError.message}`
+      );
+    }
+
+    if (gamesOnPage && gamesOnPage.length > 0) {
+      allGamesAccumulator = allGamesAccumulator.concat(gamesOnPage);
+    }
+
+    if (!gamesOnPage || gamesOnPage.length < pageSize) {
+      keepFetching = false;
+    } else {
+      currentPage += 1;
+    }
+  }
+
+  return allGamesAccumulator;
+}
+
 async function handler(
   req: NextApiRequest,
   res: NextApiResponse
@@ -171,87 +326,49 @@ async function handler(
     process.env.SUPABASE_SERVICE_ROLE_KEY || ""
   );
 
-  const seasonId = req.query.seasonId as string;
+  const requestedSeasonId = Array.isArray(req.query.seasonId)
+    ? req.query.seasonId[0]
+    : req.query.seasonId;
+  const runModeParam = Array.isArray(req.query.runMode)
+    ? req.query.runMode[0]
+    : req.query.runMode;
+  const fullParam = req.query.full ?? req.query.all;
+  const seasonId =
+    typeof requestedSeasonId === "string" && requestedSeasonId.trim()
+      ? requestedSeasonId.trim()
+      : String((await getCurrentSeason()).seasonId);
+  const runMode = resolveSeasonStatsRunMode({
+    runMode: typeof runModeParam === "string" ? runModeParam : undefined,
+    fullFlag: fullParam
+  });
 
   // Validate seasonId format (basic check, adjust regex if needed)
-  if (!seasonId || !/^\d{8}$/.test(seasonId)) {
+  if (!/^\d{8}$/.test(seasonId)) {
     return res.status(400).json({
       message:
-        "seasonId query parameter is required and must be in YYYYYYYY format (e.g., 20242025).",
+        "seasonId must be in YYYYYYYY format (e.g., 20242025).",
       success: false
     });
   }
 
-  console.log(`Received request to update stats for season: ${seasonId}`);
+  if (!requestedSeasonId) {
+    console.log(`No seasonId provided; defaulting to current season ${seasonId}.`);
+  }
+
+  console.log(
+    `Received request to update stats for season ${seasonId} in ${runMode} mode.`
+  );
 
   try {
-    // 1. Fetch ALL finished game IDs for the season using PAGINATION
-    console.log(
-      `Workspaceing all finished game IDs for season ${seasonId} with pagination...`
+    const lastProcessedGameId =
+      runMode === "incremental"
+        ? await getLatestFullyProcessedGameIdForSeason(supabase, seasonId)
+        : null;
+    const allGamesAccumulator = await fetchFinishedGamesForSeason(
+      supabase,
+      seasonId,
+      lastProcessedGameId
     );
-    const pageSize = 1000; // Supabase default limit per request
-    let currentPage = 0;
-    let allGamesAccumulator: { id: number }[] = []; // To store games from all pages
-    let keepFetching = true;
-
-    while (keepFetching) {
-      const rangeFrom = currentPage * pageSize;
-      const rangeTo = rangeFrom + pageSize - 1;
-
-      console.log(
-        `Workspaceing games page ${currentPage} (Range: ${rangeFrom}-${rangeTo})`
-      );
-
-      try {
-        const { data: gamesOnPage, error: gamesError } = await supabase
-          .from("games")
-          .select("id") // Only select the game ID
-          .eq("seasonId", seasonId)
-          .lte("startTime", new Date().toISOString()) // Filter for finished games
-          .order("id", { ascending: true }) // Consistent ordering
-          .range(rangeFrom, rangeTo); // Apply pagination range
-
-        if (gamesError) {
-          console.error(
-            `Error fetching games page ${currentPage} for season ${seasonId}:`,
-            gamesError
-          );
-          // Decide how to handle partial failure: stop or continue?
-          // For now, let's stop the whole process if DB query fails.
-          throw new Error(
-            `Database error fetching games page ${currentPage}: ${gamesError.message}`
-          );
-        }
-
-        // Add fetched games to the accumulator
-        if (gamesOnPage && gamesOnPage.length > 0) {
-          allGamesAccumulator = allGamesAccumulator.concat(gamesOnPage);
-          console.log(
-            `Workspaceed ${gamesOnPage.length} games on page ${currentPage}. Total accumulated: ${allGamesAccumulator.length}`
-          );
-        }
-
-        // Check if this was the last page
-        if (!gamesOnPage || gamesOnPage.length < pageSize) {
-          console.log("Reached the last page of games.");
-          keepFetching = false; // Stop the loop
-        } else {
-          // Prepare for the next page
-          currentPage++;
-        }
-      } catch (loopError: any) {
-        console.error(
-          `Error during game fetch loop (page ${currentPage}):`,
-          loopError
-        );
-        // Stop the process on unexpected errors within the loop
-        throw new Error(
-          `Failed during game ID pagination: ${loopError.message}`
-        );
-      }
-    } // End of while loop
-
-    // --- Processing starts here, using allGamesAccumulator ---
 
     if (allGamesAccumulator.length === 0) {
       console.log(
@@ -259,7 +376,12 @@ async function handler(
       );
       return res.json({
         seasonId,
-        message: `No finished games found to update for season ${seasonId}.`,
+        mode: runMode,
+        lastProcessedGameId,
+        message:
+          runMode === "incremental"
+            ? `No new finished games found to update for season ${seasonId}.`
+            : `No finished games found to update for season ${seasonId}.`,
         success: true,
         processed: 0,
         succeeded: 0,
@@ -269,7 +391,7 @@ async function handler(
     }
 
     console.log(
-      `Found a total of ${allGamesAccumulator.length} finished games for season ${seasonId}. Starting update process...`
+      `Found ${allGamesAccumulator.length} finished game(s) to process for season ${seasonId}. Starting update process...`
     );
 
     // 2. Iterate through each game ID (from the complete list) and update its stats
@@ -306,6 +428,8 @@ async function handler(
     // 3. Return summary response
     return res.json({
       seasonId,
+      mode: runMode,
+      lastProcessedGameId,
       message: `Stats update process completed for season ${seasonId}. Processed: ${allGamesAccumulator.length}, Succeeded: ${successCount}, Failed: ${failureCount}.`,
       success: failureCount === 0,
       processed: allGamesAccumulator.length, // Use total count from accumulator

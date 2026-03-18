@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
+import OwnershipSparkline from "components/TransactionTrends/OwnershipSparkline";
 import styles from "styles/ForgeDashboard.module.scss";
 import type {
   NormalizedSustainabilityResponse,
@@ -7,13 +9,27 @@ import type {
 } from "lib/dashboard/normalizers";
 import { normalizeSustainabilityResponse } from "lib/dashboard/normalizers";
 import { fetchCachedJson } from "lib/dashboard/clientFetchCache";
+import {
+  describePlayerSignalFrame,
+  describeSustainabilityBand,
+  resolveInsightTone
+} from "lib/dashboard/playerInsightContext";
+import { fetchOwnershipContextMap } from "lib/dashboard/playerOwnership";
 
 type SustainabilityDirection = "hot" | "cold";
 
 type SustainabilityCardProps = {
   date: string;
   position: "all" | "f" | "d" | "g";
+  ownershipMin: number;
+  ownershipMax: number;
   onResolvedDate?: (resolvedDate: string | null) => void;
+  onStatusChange?: (status: {
+    loading: boolean;
+    error: string | null;
+    staleMessage: string | null;
+    empty: boolean;
+  }) => void;
 };
 
 const toPosParam = (position: SustainabilityCardProps["position"]): "all" | "F" | "D" => {
@@ -33,11 +49,61 @@ const formatSigned = (value: number | null | undefined) => {
   return `${sign}${value.toFixed(2)}`;
 };
 
+const formatOwnershipDelta = (value: number | null | undefined) => {
+  if (value == null || Number.isNaN(value)) return "--";
+  const sign = value > 0 ? "+" : "";
+  return `${sign}${value.toFixed(1)} pts`;
+};
+
 const confidenceLabel = (pressure: number): string => {
   const abs = Math.abs(pressure);
   if (abs >= 1.25) return "High";
   if (abs >= 0.75) return "Medium";
   return "Low";
+};
+
+const formatPosition = (row: NormalizedSustainabilityRow): string => {
+  if (row.position_code) return row.position_code;
+  if (row.position_group) return row.position_group.toUpperCase();
+  return "--";
+};
+
+const getPrimaryDriver = (row: NormalizedSustainabilityRow) => {
+  const candidates = [
+    { key: "SHP", value: row.z_shp },
+    { key: "OI SH%", value: row.z_oishp },
+    { key: "IPP", value: row.z_ipp },
+    { key: "PP SH%", value: row.z_ppshp }
+  ];
+
+  return candidates
+    .filter((candidate) => candidate.value != null)
+    .sort((a, b) => Math.abs(b.value ?? 0) - Math.abs(a.value ?? 0))[0] ?? null;
+};
+
+const getReasonText = (
+  row: NormalizedSustainabilityRow,
+  direction: "sustainable" | "unsustainable"
+) => {
+  const driver = getPrimaryDriver(row);
+  if (!driver) {
+    return direction === "sustainable"
+      ? "Low luck pressure keeps this rise closer to skill-backed than spike-backed."
+      : "Luck pressure is elevated even without one dominant component spike.";
+  }
+
+  if (direction === "sustainable") {
+    return `${driver.key} is not driving the signal beyond expectation, keeping the profile steadier.`;
+  }
+
+  return `${driver.key} is the biggest inflation source inside this heater right now.`;
+};
+
+const toneClassForPressure = (pressure: number) => {
+  const tone = resolveInsightTone(pressure);
+  if (tone === "risk") return styles.insightContextRisk;
+  if (tone === "watch") return styles.insightContextWatch;
+  return styles.insightContextStable;
 };
 
 async function fetchDirection(params: {
@@ -64,13 +130,21 @@ async function fetchDirection(params: {
 export default function SustainabilityCard({
   date,
   position,
-  onResolvedDate
+  ownershipMin,
+  ownershipMax,
+  onResolvedDate,
+  onStatusChange
 }: SustainabilityCardProps) {
   const [hotRows, setHotRows] = useState<NormalizedSustainabilityRow[]>([]);
   const [coldRows, setColdRows] = useState<NormalizedSustainabilityRow[]>([]);
   const [snapshotDate, setSnapshotDate] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [ownershipMap, setOwnershipMap] = useState<
+    Record<number, { ownership: number | null; delta: number | null; sparkline: Array<{ date: string; value: number }> }>
+  >({});
+  const [ownershipLoading, setOwnershipLoading] = useState(false);
+  const [ownershipWarning, setOwnershipWarning] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -110,14 +184,101 @@ export default function SustainabilityCard({
     };
   }, [date, position]);
 
-  const sustainableRows = useMemo(() => coldRows.slice(0, 5), [coldRows]);
-  const riskRows = useMemo(() => hotRows.slice(0, 5), [hotRows]);
+  const ownershipPlayerIds = useMemo(
+    () => Array.from(new Set([...hotRows, ...coldRows].map((row) => row.player_id))),
+    [coldRows, hotRows]
+  );
+
+  useEffect(() => {
+    let active = true;
+
+    if (ownershipPlayerIds.length === 0) {
+      setOwnershipMap({});
+      setOwnershipLoading(false);
+      setOwnershipWarning(null);
+      return () => {
+        active = false;
+      };
+    }
+
+    setOwnershipLoading(true);
+    setOwnershipWarning(null);
+
+    fetchOwnershipContextMap(ownershipPlayerIds, date, 5)
+      .then((nextMap) => {
+        if (!active) return;
+        setOwnershipMap(nextMap);
+      })
+      .catch(() => {
+        if (!active) return;
+        setOwnershipMap({});
+        setOwnershipWarning("Ownership filter unavailable; showing unfiltered player insight.");
+      })
+      .finally(() => {
+        if (!active) return;
+        setOwnershipLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [date, ownershipPlayerIds]);
+
+  const ownershipFilterActive = !ownershipWarning;
+  const withinOwnershipBand = (playerId: number) => {
+    if (!ownershipFilterActive) return true;
+    const ownership = ownershipMap[playerId]?.ownership;
+    return ownership != null && ownership >= ownershipMin && ownership <= ownershipMax;
+  };
+
+  const sustainableRows = useMemo(
+    () => coldRows.filter((row) => withinOwnershipBand(row.player_id)).slice(0, 5),
+    [coldRows, ownershipMap, ownershipMax, ownershipMin, ownershipWarning]
+  );
+  const riskRows = useMemo(
+    () => hotRows.filter((row) => withinOwnershipBand(row.player_id)).slice(0, 5),
+    [hotRows, ownershipMap, ownershipMax, ownershipMin, ownershipWarning]
+  );
   const isStale = Boolean(snapshotDate && snapshotDate !== date);
   const metaSnapshot = snapshotDate ?? date;
+  const trustworthyGuide = describePlayerSignalFrame("trustworthy");
+  const overheatedGuide = describePlayerSignalFrame("overheated");
 
   useEffect(() => {
     onResolvedDate?.(snapshotDate);
   }, [onResolvedDate, snapshotDate]);
+
+  useEffect(() => {
+    onStatusChange?.({
+      loading: loading || ownershipLoading,
+      error,
+      staleMessage:
+        !loading && !ownershipLoading && !error
+          ? [
+              isStale && snapshotDate ? `Sustainability using ${snapshotDate}` : null,
+              ownershipWarning
+            ]
+              .filter(Boolean)
+              .join(" • ") || null
+          : null,
+      empty:
+        !loading &&
+        !ownershipLoading &&
+        !error &&
+        sustainableRows.length === 0 &&
+        riskRows.length === 0
+    });
+  }, [
+    error,
+    isStale,
+    loading,
+    ownershipLoading,
+    ownershipWarning,
+    onStatusChange,
+    riskRows.length,
+    snapshotDate,
+    sustainableRows.length
+  ]);
 
   return (
     <article className={styles.sustainabilityCard} aria-label="Sustainable versus unsustainable performances">
@@ -126,7 +287,7 @@ export default function SustainabilityCard({
         <span className={styles.panelMeta}>L10 • {metaSnapshot}</span>
       </header>
 
-      {loading && <p className={styles.panelState}>Loading sustainability signals...</p>}
+      {(loading || ownershipLoading) && <p className={styles.panelState}>Loading sustainability signals...</p>}
       {!loading && error && <p className={styles.panelState}>Error: {error}</p>}
 
       {!loading && !error && sustainableRows.length === 0 && riskRows.length === 0 && (
@@ -139,36 +300,159 @@ export default function SustainabilityCard({
       )}
 
       {!loading && !error && (sustainableRows.length > 0 || riskRows.length > 0) && (
-        <div className={styles.sustainabilityColumns}>
-          <div className={styles.susColumn}>
-            <p className={styles.susColumnTitle}>Most Sustainable</p>
-            <ul className={styles.susList}>
-              {sustainableRows.map((row) => (
-                <li key={`sustain-${row.player_id}`} className={styles.susRow}>
-                  <span className={styles.susName}>{row.player_name ?? `Player ${row.player_id}`}</span>
-                  <span className={styles.susMeta}>
-                    S {formatScore(row.s_100)} | L {formatSigned(row.luck_pressure)}
-                  </span>
-                </li>
-              ))}
-            </ul>
+        <>
+          <div className={styles.insightLegend} aria-label="Sustainability signal guide">
+            <div className={styles.insightLegendItem}>
+              <span className={`${styles.susBadge} ${styles.susBadgeStable}`}>
+                {trustworthyGuide.label}
+              </span>
+              <span className={styles.insightLegendText}>{trustworthyGuide.detail}</span>
+            </div>
+            <div className={styles.insightLegendItem}>
+              <span className={`${styles.susBadge} ${styles.susBadgeRisk}`}>
+                {overheatedGuide.label}
+              </span>
+              <span className={styles.insightLegendText}>{overheatedGuide.detail}</span>
+            </div>
           </div>
+          <div className={styles.sustainabilityColumns}>
+            <div className={styles.susColumn}>
+              <p className={styles.susColumnTitle}>Sustainable Risers</p>
+              <ul className={styles.susList}>
+                {sustainableRows.map((row, index) => {
+                  const band = describeSustainabilityBand(row, "sustainable");
+                  const ownershipContext = ownershipMap[row.player_id];
+                  return (
+                    <li key={`sustain-${row.player_id}`} className={styles.susRow}>
+                      <Link
+                        href={`/trends/player/${row.player_id}`}
+                        className={styles.susRowLink}
+                      >
+                        <div className={styles.susBadgeRow}>
+                          <span className={`${styles.susBadge} ${styles.susBadgeStable}`}>
+                            Trust {confidenceLabel(row.luck_pressure)}
+                          </span>
+                          <span className={styles.susBadge}>{formatPosition(row)}</span>
+                          <span className={styles.susBadge}>
+                            Own {ownershipContext?.ownership == null ? "--" : `${ownershipContext.ownership.toFixed(0)}%`}
+                          </span>
+                          <span className={styles.susBadge}>
+                            5D {formatOwnershipDelta(ownershipContext?.delta)}
+                          </span>
+                          <span className={styles.susBadge}>S {formatScore(row.s_100)}</span>
+                        </div>
+                        <span className={styles.susName}>
+                          {row.player_name ?? `Player ${row.player_id}`}
+                        </span>
+                        <span className={styles.susMeta}>
+                          Luck pressure {formatSigned(row.luck_pressure)}
+                        </span>
+                        <div className={styles.insightContextBlock}>
+                          <span
+                            className={`${styles.insightContextPill} ${toneClassForPressure(row.luck_pressure)}`}
+                          >
+                            {band.title}
+                          </span>
+                          <span className={styles.insightContextText}>{band.detail}</span>
+                        </div>
+                        {index === 0 && ownershipContext?.sparkline?.length ? (
+                          <div className={styles.playerOwnershipTrendInline}>
+                            <span className={styles.playerOwnershipTrendLabel}>
+                              Ownership 5D
+                            </span>
+                            <OwnershipSparkline
+                              points={ownershipContext.sparkline}
+                              variant={(ownershipContext.delta ?? 0) >= 0 ? "rise" : "fall"}
+                              width={72}
+                              height={24}
+                              svgClassName={styles.sparkSvg}
+                              areaClassName={styles.sparkArea}
+                              pathClassName={styles.sparkPath}
+                              riseClassName={styles.sparkRise}
+                              fallClassName={styles.sparkFall}
+                              emptyClassName={styles.sparkEmpty}
+                            />
+                          </div>
+                        ) : null}
+                        <span className={styles.susReason}>
+                          {getReasonText(row, "sustainable")}
+                        </span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
 
-          <div className={styles.susColumn}>
-            <p className={styles.susColumnTitle}>Highest Regression Risk</p>
-            <ul className={styles.susList}>
-              {riskRows.map((row) => (
-                <li key={`risk-${row.player_id}`} className={styles.susRow}>
-                  <span className={styles.susName}>{row.player_name ?? `Player ${row.player_id}`}</span>
-                  <span className={styles.susMeta}>
-                    S {formatScore(row.s_100)} | L {formatSigned(row.luck_pressure)} | {" "}
-                    {confidenceLabel(row.luck_pressure)}
-                  </span>
-                </li>
-              ))}
-            </ul>
+            <div className={styles.susColumn}>
+              <p className={styles.susColumnTitle}>Unsustainable Heaters</p>
+              <ul className={styles.susList}>
+                {riskRows.map((row, index) => {
+                  const band = describeSustainabilityBand(row, "unsustainable");
+                  const ownershipContext = ownershipMap[row.player_id];
+                  return (
+                    <li key={`risk-${row.player_id}`} className={styles.susRow}>
+                      <Link
+                        href={`/trends/player/${row.player_id}`}
+                        className={styles.susRowLink}
+                      >
+                        <div className={styles.susBadgeRow}>
+                          <span className={`${styles.susBadge} ${styles.susBadgeRisk}`}>
+                            Heat {confidenceLabel(row.luck_pressure)}
+                          </span>
+                          <span className={styles.susBadge}>{formatPosition(row)}</span>
+                          <span className={styles.susBadge}>
+                            Own {ownershipContext?.ownership == null ? "--" : `${ownershipContext.ownership.toFixed(0)}%`}
+                          </span>
+                          <span className={styles.susBadge}>
+                            5D {formatOwnershipDelta(ownershipContext?.delta)}
+                          </span>
+                          <span className={styles.susBadge}>S {formatScore(row.s_100)}</span>
+                        </div>
+                        <span className={styles.susName}>
+                          {row.player_name ?? `Player ${row.player_id}`}
+                        </span>
+                        <span className={styles.susMeta}>
+                          Luck pressure {formatSigned(row.luck_pressure)}
+                        </span>
+                        <div className={styles.insightContextBlock}>
+                          <span
+                            className={`${styles.insightContextPill} ${toneClassForPressure(row.luck_pressure)}`}
+                          >
+                            {band.title}
+                          </span>
+                          <span className={styles.insightContextText}>{band.detail}</span>
+                        </div>
+                        {index === 0 && ownershipContext?.sparkline?.length ? (
+                          <div className={styles.playerOwnershipTrendInline}>
+                            <span className={styles.playerOwnershipTrendLabel}>
+                              Ownership 5D
+                            </span>
+                            <OwnershipSparkline
+                              points={ownershipContext.sparkline}
+                              variant={(ownershipContext.delta ?? 0) >= 0 ? "rise" : "fall"}
+                              width={72}
+                              height={24}
+                              svgClassName={styles.sparkSvg}
+                              areaClassName={styles.sparkArea}
+                              pathClassName={styles.sparkPath}
+                              riseClassName={styles.sparkRise}
+                              fallClassName={styles.sparkFall}
+                              emptyClassName={styles.sparkEmpty}
+                            />
+                          </div>
+                        ) : null}
+                        <span className={styles.susReason}>
+                          {getReasonText(row, "unsustainable")}
+                        </span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
           </div>
-        </div>
+        </>
       )}
     </article>
   );

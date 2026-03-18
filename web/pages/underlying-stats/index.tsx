@@ -10,6 +10,7 @@ import {
   type TeamRating,
   type SpecialTeamTier
 } from "../../lib/teamRatingsService";
+import { computeTeamPowerScore } from "../../lib/dashboard/teamContext";
 import { teamsInfo } from "../../lib/teamsInfo";
 
 type PageProps = {
@@ -82,14 +83,6 @@ const formatOptionalRating = (value: number | null): string => {
 const getTeamName = (abbr: string): string =>
   teamsInfo[abbr as keyof typeof teamsInfo]?.name ?? abbr;
 
-const SPECIAL_TEAM_STEP = 1.5;
-const computePowerScore = (team: TeamRating): number => {
-  const base = (team.offRating + team.defRating + team.paceRating) / 3;
-  const ppAdj = (3 - team.ppTier) * SPECIAL_TEAM_STEP;
-  const pkAdj = (3 - team.pkTier) * SPECIAL_TEAM_STEP;
-  return base + ppAdj + pkAdj;
-};
-
 const TeamPowerRankingsPage: NextPage<PageProps> = ({
   initialDate,
   initialRatings,
@@ -158,7 +151,9 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
 
   const rankedRatings = useMemo(
     () =>
-      [...ratings].sort((a, b) => computePowerScore(b) - computePowerScore(a)),
+      [...ratings].sort(
+        (a, b) => computeTeamPowerScore(b) - computeTeamPowerScore(a)
+      ),
     [ratings]
   );
 
@@ -367,7 +362,7 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
                 </div>
                 <div className={styles.summaryMetricGroup}>
                   <div className={styles.summaryPower}>
-                    {formatPower(computePowerScore(team))}
+                    {formatPower(computeTeamPowerScore(team))}
                     <span className={styles.summaryMetricLabel}>
                       Power Score
                     </span>
@@ -471,7 +466,7 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
                         </span>
                       </td>
                       <td className={styles.powerCell}>
-                        {formatPower(computePowerScore(team))}
+                        {formatPower(computeTeamPowerScore(team))}
                       </td>
                       <td>{formatRating(team.offRating)}</td>
                       <td>{formatRating(team.defRating)}</td>
