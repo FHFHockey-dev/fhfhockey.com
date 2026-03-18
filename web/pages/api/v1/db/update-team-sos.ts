@@ -146,14 +146,17 @@ type SosRowInsert = {
 
 const buildDateRange = (start: string, end: string) => {
   const dates: string[] = [];
-  const startDate = new Date(start);
-  const endDate = new Date(end);
+  const startDate = new Date(`${start}T00:00:00.000Z`);
+  const endDate = new Date(`${end}T00:00:00.000Z`);
+  if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+    return dates;
+  }
   for (
     let d = new Date(startDate);
     d <= endDate;
-    d.setDate(d.getDate() + 1)
+    d.setUTCDate(d.getUTCDate() + 1)
   ) {
-    dates.push(new Date(d).toISOString().slice(0, 10));
+    dates.push(d.toISOString().slice(0, 10));
   }
   return dates;
 };
@@ -189,35 +192,38 @@ async function handler(
   }
 
   try {
-  const season = await fetchCurrentSeason();
-  const startParam =
-    typeof req.query.start === "string" ? req.query.start : undefined;
-  const today = new Date().toISOString().slice(0, 10);
-  const seasonEnd =
-    season.endDate || season.regularSeasonEndDate || today;
-  const endDate = seasonEnd > today ? today : seasonEnd;
-  const startCandidate = await resolveStartDate(
-    season.id,
-    season.startDate,
-    startParam
-  );
-  const startDate =
-    startCandidate > endDate
-      ? endDate
-      : startCandidate < season.startDate.slice(0, 10)
-        ? season.startDate.slice(0, 10)
-        : startCandidate;
+    const season = await fetchCurrentSeason();
+    const startParam =
+      typeof req.query.start === "string" ? req.query.start : undefined;
+    const today = new Date().toISOString().slice(0, 10);
+    const seasonEnd =
+      season.endDate || season.regularSeasonEndDate || today;
+    const endDate = seasonEnd > today ? today : seasonEnd;
+    const startCandidate = await resolveStartDate(
+      season.id,
+      season.startDate,
+      startParam
+    );
+    const startDate =
+      startCandidate > endDate
+        ? endDate
+        : startCandidate < season.startDate.slice(0, 10)
+          ? season.startDate.slice(0, 10)
+          : startCandidate;
 
-  if (startDate > endDate) {
-    return res.status(200).json({
-      message: "No dates to process (start is after today/season end).",
-      startDate,
-      endDate,
-      rows: 0
-    });
-  }
+    if (startDate > endDate) {
+      return res.status(200).json({
+        success: true,
+        message: "No dates to process (start is after today/season end).",
+        startDate,
+        endDate,
+        rows: 0,
+        rowsUpserted: 0,
+        failedRows: 0
+      });
+    }
 
-  const dates = buildDateRange(startDate, endDate);
+    const dates = buildDateRange(startDate, endDate);
 
     // Fetch schedules once per team
     const scheduleMap = new Map<string, NhlScheduleGame[]>();
@@ -269,7 +275,7 @@ async function handler(
               : g.homeTeam.abbrev;
           const oppStanding = standingsMap.get(opponent);
           if (!oppStanding) return;
-          if (gameDate < currentDate) {
+          if (gameDate <= currentDate) {
             pastWins += oppStanding.wins;
             pastLosses += oppStanding.losses;
             pastOt += oppStanding.otLosses;
@@ -318,14 +324,18 @@ async function handler(
     }
 
     return res.status(200).json({
+      success: true,
       message: "SOS updated",
       startDate,
       endDate,
-      rows: allRows.length
+      rows: allRows.length,
+      rowsUpserted: allRows.length,
+      failedRows: 0
     });
   } catch (error: any) {
     console.error("update-team-sos error", error);
     return res.status(500).json({
+      success: false,
       message: "Failed to compute SOS.",
       error: error?.message ?? "Unknown error"
     });

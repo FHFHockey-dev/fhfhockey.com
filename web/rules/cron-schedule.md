@@ -739,6 +739,11 @@ Gap notes (where new jobs fit)
 - `update-predictions-sko`
 - `update-nst-team-daily`
 - `nst-team-stats`
+- `update-goalie-projections-v2`
+- `refresh-team-power-ratings-daily`
+- `update-team-sos`
+- `ingest-projection-inputs`
+- `run-projection-accuracy`
 
 
 # STATIC CRON SNIPPETS TO ADD
@@ -765,6 +770,107 @@ Notes for the URLs below:
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/update-season-stats',
 --             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             timeout_milliseconds := 300000
+--         );
+--     $$
+-- );
+
+----------------------------------------------------------------------------------
+-- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||  09:12 UTC  |||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||  04:12 EST  |||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
+-- SELECT cron.schedule(
+--     'update-team-sos',
+--     '12 9 * * *', -- 09:12 UTC
+--     $$
+--         SELECT net.http_get(
+--             url := 'https://fhfhockey.com/api/v1/db/update-team-sos',
+--             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             timeout_milliseconds := 240000
+--         );
+--     $$
+-- );
+
+----------------------------------------------------------------------------------
+-- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||  09:30 UTC  |||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||  04:30 EST  |||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
+-- SELECT cron.schedule(
+--     'update-goalie-projections-v2',
+--     '30 9 * * *', -- 09:30 UTC
+--     $$
+--         SELECT net.http_post(
+--             url := 'https://fhfhockey.com/api/v1/db/update-goalie-projections-v2',
+--             body := '{}'::jsonb,
+--             headers := '{"Authorization": "Bearer fhfh-cron-mima-233", "Content-Type": "application/json"}'::jsonb,
+--             timeout_milliseconds := 100000
+--         );
+--     $$
+-- );
+
+----------------------------------------------------------------------------------
+-- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||  09:45 UTC  |||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||  04:45 EST  |||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
+-- SELECT cron.schedule(
+--     'ingest-projection-inputs',
+--     '45 9 * * *', -- 09:45 UTC
+--     $$
+--         SELECT net.http_post(
+--             url := 'https://fhfhockey.com/api/v1/db/ingest-projection-inputs',
+--             body := '{}'::jsonb,
+--             headers := '{"Authorization": "Bearer fhfh-cron-mima-233", "Content-Type": "application/json"}'::jsonb,
+--             timeout_milliseconds := 300000
+--         );
+--     $$
+-- );
+
+----------------------------------------------------------------------------------
+-- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||  10:15 UTC  |||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||  05:15 EST  |||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
+-- SELECT cron.schedule(
+--   'refresh-team-power-ratings-daily',
+--   '15 10 * * *', -- 10:15 UTC
+--   $$
+--     WITH s AS (
+--       SELECT *
+--       FROM public.seasons
+--       ORDER BY id DESC
+--       LIMIT 1
+--     )
+--     SELECT public.refresh_team_power_ratings(
+--       (SELECT startDate FROM s),
+--       LEAST(
+--         (now() AT TIME ZONE 'America/New_York')::date,
+--         (SELECT regularSeasonEndDate FROM s)
+--       )
+--     );
+--   $$
+-- );
+
+----------------------------------------------------------------------------------
+-- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||  11:30 UTC  |||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||  06:30 EST  |||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
+-- SELECT cron.schedule(
+--     'run-projection-accuracy',
+--     '30 11 * * *', -- 11:30 UTC
+--     $$
+--         SELECT net.http_post(
+--             url := 'https://fhfhockey.com/api/v1/db/run-projection-accuracy?projectionOffsetDays=0',
+--             body := '{}'::jsonb,
+--             headers := '{"Authorization": "Bearer fhfh-cron-mima-233", "Content-Type": "application/json"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -913,4 +1019,3 @@ Notes for the URLs below:
 --         );
 --     $$
 -- );
-
