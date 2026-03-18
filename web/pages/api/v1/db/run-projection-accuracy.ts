@@ -2160,6 +2160,8 @@ export default withCronJobAudit(async function handler(
         : DEFAULT_RANGE_BUDGET_MS;
       const deadlineMs = Date.now() + budgetMs;
       const results = [];
+      const errors: Array<{ date: string; message: string }> = [];
+      let nextStartDate: string | null = null;
       for (const date of rangeDates) {
         if (Date.now() > deadlineMs) {
           return res.status(200).json({
@@ -2167,15 +2169,31 @@ export default withCronJobAudit(async function handler(
             error: "Timed out",
             processedDates: results.map((r) => r.actualDate),
             results,
+            rowsUpserted: results.reduce((acc, row) => acc + row.totalRows, 0),
+            failedRows: errors.length,
+            errors,
+            nextStartDate: date,
             durationMs: formatDurationMsToMMSS(Date.now() - startedAt)
           });
         }
-        results.push(await runAccuracyForDate(date, offsetDays));
+        try {
+          results.push(await runAccuracyForDate(date, offsetDays));
+        } catch (error) {
+          errors.push({
+            date,
+            message: (error as any)?.message ?? String(error)
+          });
+          if (nextStartDate == null) nextStartDate = date;
+        }
       }
       return res.status(200).json({
-        success: true,
+        success: errors.length === 0,
         processedDates: results.map((r) => r.actualDate),
         results,
+        rowsUpserted: results.reduce((acc, row) => acc + row.totalRows, 0),
+        failedRows: errors.length,
+        errors,
+        nextStartDate,
         durationMs: formatDurationMsToMMSS(Date.now() - startedAt)
       });
     }
@@ -2202,6 +2220,8 @@ export default withCronJobAudit(async function handler(
         result.skaterRoleBucketIntervalCalibrationDiagnostics,
       skaterMissAttributionDiagnostics: result.skaterMissAttributionDiagnostics,
       skaterRollingDashboard: result.skaterRollingDashboard,
+      rowsUpserted: result.totalRows,
+      failedRows: 0,
       durationMs: formatDurationMsToMMSS(Date.now() - startedAt)
     });
   } catch (e) {

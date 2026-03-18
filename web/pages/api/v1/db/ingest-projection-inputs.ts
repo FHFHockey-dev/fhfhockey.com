@@ -21,6 +21,8 @@ type Result = {
   pbpGamesUpserted: number;
   pbpPlaysUpserted: number;
   shiftRowsUpserted: number;
+  rowsUpserted: number;
+  failedRows: number;
   skipped: number;
   skipReasons: {
     alreadyHadPbpAndShifts: number;
@@ -129,6 +131,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
       pbpGamesUpserted: 0,
       pbpPlaysUpserted: 0,
       shiftRowsUpserted: 0,
+      rowsUpserted: 0,
+      failedRows: 0,
       skipped: 0,
       skipReasons: {
         alreadyHadPbpAndShifts: 0,
@@ -141,6 +145,34 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
 
   const startDate = getParam(req, "startDate") ?? isoDateOnly(new Date().toISOString());
   const endDate = getParam(req, "endDate") ?? startDate;
+  const fullRequestedRange = buildDateRange(startDate, endDate);
+  if (fullRequestedRange.length === 0) {
+    return res.status(400).json({
+      success: false,
+      startDate,
+      endDate,
+      chunkDays: 0,
+      resumeFromDate: null,
+      nextStartDate: null,
+      durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
+      timedOut: false,
+      maxDurationMs: formatDurationMsToMMSS(0),
+      gamesTotal: 0,
+      gamesProcessed: 0,
+      pbpGamesUpserted: 0,
+      pbpPlaysUpserted: 0,
+      shiftRowsUpserted: 0,
+      rowsUpserted: 0,
+      failedRows: 0,
+      skipped: 0,
+      skipReasons: {
+        alreadyHadPbpAndShifts: 0,
+        alreadyHadPbpOnly: 0,
+        alreadyHadShiftTotalsOnly: 0
+      },
+      errors: [{ gameId: -1 as any, message: "Invalid startDate/endDate range" }]
+    });
+  }
   const chunkDays = parseChunkDays(getParam(req, "chunkDays"));
   const resumeFromDate = getParam(req, "resumeFromDate")?.slice(0, 10) ?? null;
   const force = (getParam(req, "force") ?? "false").toLowerCase() === "true";
@@ -187,6 +219,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
     pbpGamesUpserted: 0,
     pbpPlaysUpserted: 0,
     shiftRowsUpserted: 0,
+    rowsUpserted: 0,
+    failedRows: 0,
     skipped: 0,
     skipReasons: {
       alreadyHadPbpAndShifts: 0,
@@ -244,11 +278,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
         result.pbpGamesUpserted += 1;
         pbpPlaysUpserted = up.playsUpserted;
         result.pbpPlaysUpserted += pbpPlaysUpserted;
+        result.rowsUpserted += 1 + pbpPlaysUpserted;
       }
 
       if (!shiftsExist) {
         const up = await upsertShiftTotalsForGame(gameId);
         result.shiftRowsUpserted += up.rowsUpserted;
+        result.rowsUpserted += up.rowsUpserted;
       }
 
       result.gamesProcessed += 1;
@@ -272,9 +308,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
         gameId: g.id,
         message: (e as any)?.message ?? String(e)
       });
+      result.failedRows = result.errors.length;
     }
   }
 
+  result.failedRows = result.errors.length;
   result.durationMs = formatDurationMsToMMSS(Date.now() - startedAt);
   return res.status(200).json(result);
 }
