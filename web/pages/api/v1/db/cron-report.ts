@@ -7,6 +7,23 @@ import { Resend } from "resend";
 
 import { CronReportEmail } from "components/CronReportEmail/CronReportEmail";
 import { CronAuditEmail } from "components/CronReportEmail/CronAuditEmail";
+import {
+  getBenchmarkAnnotations,
+  hasBenchmarkAnnotationKind,
+  type BenchmarkAnnotation
+} from "lib/cron/benchmarkNotes";
+import {
+  buildSlowJobWarning,
+  isSlowJobDuration,
+  SLOW_JOB_DENOTATION,
+  SLOW_JOB_THRESHOLD_MS,
+  type SlowJobWarning
+} from "lib/cron/cronReportFlags";
+import {
+  type CronJobTimingRecord
+} from "lib/cron/timingContract";
+import { extractAuditTimingRecord } from "lib/cron/cronReportTiming";
+import { buildSqlCronTimingObservation } from "lib/cron/sqlTiming";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -17,7 +34,6 @@ const resend = new Resend(process.env.RESEND_API_KEY!);
 
 const REPORT_WINDOW_MS = 24 * 60 * 60 * 1000;
 const MATCH_WINDOW_MS = 6 * 60 * 60 * 1000;
-const WARN_SLOW_MS = 180_000;
 
 const SCHEDULE_ALIAS_MAP: Record<string, string[]> = {
   "update-all-wgo-skaters": ["update-wgo-skaters", "/api/v1/db/update-wgo-skaters"],
@@ -57,6 +73,7 @@ type ScheduledCronJob = {
 };
 
 type ParsedAuditDetails = {
+  timing: CronJobTimingRecord | null;
   durationMs: number | null;
   statusCode: number | null;
   url: string | null;
@@ -95,6 +112,7 @@ type RunRow = {
   sqlText: string | null;
   endTime: string | null;
   rowsAffected: number | null;
+  timing: CronJobTimingRecord | null;
   durationMs: number | null;
   method: ScheduleMethod;
   url: string | null;
@@ -127,6 +145,9 @@ type JobSummary = {
   failedRowSamples: string[];
   lastDurationMs: number | null;
   avgDurationMs: number | null;
+  optimizationDenotation: typeof SLOW_JOB_DENOTATION | null;
+  benchmarkAnnotations: BenchmarkAnnotation[];
+  missingObservationWarnings: string[];
 };
 
 type RunDigest = {
@@ -145,6 +166,9 @@ type RunDigest = {
   failedRows: number | null;
   reason: string | null;
   failedRowSamples: string[];
+  optimizationDenotation: typeof SLOW_JOB_DENOTATION | null;
+  benchmarkAnnotations: BenchmarkAnnotation[];
+  missingObservationWarnings: string[];
 };
 
 type ReportCounts = {
@@ -164,6 +188,19 @@ type ReportCounts = {
   warnSlow: number;
   warnPartialFailure: number;
   warnMissingAudit: number;
+};
+
+type WarningSummary = {
+  slowMsThreshold: number;
+  slowJobDenotation: typeof SLOW_JOB_DENOTATION;
+  slowJobs: SlowJobWarning[];
+  missingObservationJobs: Array<{ displayName: string; warnings: string[] }>;
+};
+
+type BenchmarkSummary = {
+  annotatedJobCount: number;
+  bottleneckJobs: Array<{ displayName: string; notes: string[] }>;
+  missingObservationJobs: Array<{ displayName: string; warnings: string[] }>;
 };
 
 function normalizeStatus(value: unknown): NormalizedStatus {
@@ -501,6 +538,7 @@ function parseUrlPieces(
 
 function parseAuditDetails(details: unknown): ParsedAuditDetails {
   const empty: ParsedAuditDetails = {
+    timing: null,
     durationMs: null,
     statusCode: null,
     url: null,
@@ -530,6 +568,7 @@ function parseAuditDetails(details: unknown): ParsedAuditDetails {
 
   const obj = parsedDetails as Record<string, unknown>;
   const response = parseJsonMaybe(obj.response);
+  const timing = extractAuditTimingRecord(parsedDetails);
   const { route, routePath } = parseUrlPieces(
     typeof obj.url === "string" ? obj.url : null
   );
@@ -542,7 +581,8 @@ function parseAuditDetails(details: unknown): ParsedAuditDetails {
     .slice(0, 3);
 
   return {
-    durationMs: toFiniteNumber(obj.durationMs),
+    timing,
+    durationMs: timing?.durationMs ?? toFiniteNumber(obj.durationMs),
     statusCode: toFiniteNumber(obj.statusCode),
     url: typeof obj.url === "string" ? obj.url : null,
     route,
@@ -843,6 +883,15 @@ function statusSortValue(status: ReportJobStatus): number {
 }
 
 function buildRunDigestFromAudit(row: AuditRow): RunDigest {
+  const benchmarkAnnotations = getBenchmarkAnnotations(row.jobName);
+  const optimizationDenotation = isSlowJobDuration(row.parsed.durationMs)
+    ? SLOW_JOB_DENOTATION
+    : null;
+  const missingObservationWarnings =
+    row.parsed.durationMs == null
+      ? ["Observed audit run does not have reliable timing metadata yet."]
+      : [];
+
   return {
     key: row.id,
     label: row.parsed.route ?? row.jobName,
@@ -862,11 +911,23 @@ function buildRunDigestFromAudit(row: AuditRow): RunDigest {
       row.parsed.responseMessage ??
       row.detailsMessage ??
       null,
-    failedRowSamples: row.parsed.failedRowSamples
+    failedRowSamples: row.parsed.failedRowSamples,
+    optimizationDenotation,
+    benchmarkAnnotations,
+    missingObservationWarnings
   };
 }
 
 function buildRunDigestFromCron(row: RunRow): RunDigest {
+  const benchmarkAnnotations = getBenchmarkAnnotations(row.jobName);
+  const optimizationDenotation = isSlowJobDuration(row.durationMs)
+    ? SLOW_JOB_DENOTATION
+    : null;
+  const missingObservationWarnings =
+    row.durationMs == null
+      ? ["Observed cron run does not have reliable timing metadata yet."]
+      : [];
+
   return {
     key: row.id,
     label: row.route ?? row.jobName,
@@ -882,8 +943,42 @@ function buildRunDigestFromCron(row: RunRow): RunDigest {
     rowsAffected: row.rowsAffected,
     failedRows: null,
     reason: row.returnMessage ? truncateText(row.returnMessage, 240) : null,
-    failedRowSamples: []
+    failedRowSamples: [],
+    optimizationDenotation,
+    benchmarkAnnotations,
+    missingObservationWarnings
   };
+}
+
+function collectMissingObservationWarnings(job: {
+  lastStatus: ReportJobStatus;
+  runsCount: number;
+  auditRunsCount: number;
+  method: ScheduleMethod;
+  lastDurationMs: number | null;
+  hasObservedSqlTiming: boolean;
+}): string[] {
+  const warnings: string[] = [];
+
+  if (job.lastStatus === "missing") {
+    warnings.push("No cron or audit observation matched this scheduled slot.");
+  }
+
+  if (job.runsCount > 0 && job.auditRunsCount === 0 && job.method !== "SQL") {
+    warnings.push("Cron invoked the route, but no audit payload was recorded.");
+  }
+
+  if (job.lastStatus !== "missing" && job.lastDurationMs == null) {
+    warnings.push("Observed run does not have reliable timing metadata yet.");
+  }
+
+  if (job.method === "SQL" && job.runsCount > 0 && !job.hasObservedSqlTiming) {
+    warnings.push(
+      "SQL observation is missing scheduled_time or end_time timing fields."
+    );
+  }
+
+  return warnings;
 }
 
 export default async function handler(
@@ -945,6 +1040,14 @@ export default async function handler(
 
   const runRows: RunRow[] = (runs ?? []).map((row: any, index: number) => {
     const invocation = parseCronInvocation((row.sql_text ?? null) as string | null);
+    const timing = buildSqlCronTimingObservation({
+      jobname: (row.jobname ?? null) as string | null,
+      scheduled_time: (row.scheduled_time ?? null) as string | null,
+      end_time: (row.end_time ?? null) as string | null,
+      status: row.status,
+      return_message: (row.return_message ?? null) as string | null,
+      sql_text: (row.sql_text ?? null) as string | null
+    }).timing;
     return {
       id: `run:${index}:${row.jobname ?? ""}:${row.scheduled_time ?? ""}`,
       jobName: String(row.jobname ?? ""),
@@ -957,10 +1060,13 @@ export default async function handler(
       rowsAffected: parseRowsAffectedFromReturnMessage(
         (row.return_message ?? null) as string | null
       ),
-      durationMs: safeDurationMs(
-        (row.scheduled_time ?? null) as string | null,
-        (row.end_time ?? null) as string | null
-      ),
+      timing,
+      durationMs:
+        timing?.durationMs ??
+        safeDurationMs(
+          (row.scheduled_time ?? null) as string | null,
+          (row.end_time ?? null) as string | null
+        ),
       method: invocation.method,
       url: invocation.url,
       route: invocation.route,
@@ -1071,6 +1177,21 @@ export default async function handler(
             "Run failed")
           : null;
 
+      const lastDurationMs =
+        lastAudit?.parsed.durationMs ?? lastRun?.durationMs ?? null;
+      const optimizationDenotation = isSlowJobDuration(lastDurationMs)
+        ? SLOW_JOB_DENOTATION
+        : null;
+      const benchmarkAnnotations = getBenchmarkAnnotations(job.name);
+      const missingObservationWarnings = collectMissingObservationWarnings({
+        lastStatus,
+        runsCount: matchingRuns.length,
+        auditRunsCount: matchingAudits.length,
+        method: job.method,
+        lastDurationMs,
+        hasObservedSqlTiming: matchingRuns.some((row) => row.timing != null)
+      });
+
       const notes: string[] = [];
       if (lastStatus === "missing") {
         notes.push("No cron or audit entry matched this scheduled slot.");
@@ -1085,6 +1206,17 @@ export default async function handler(
         notes.push(
           `Returned ${lastAudit?.parsed.dataQualityWarningCount} warning(s).`
         );
+      }
+      if (optimizationDenotation) {
+        notes.push(`${optimizationDenotation}: last runtime exceeded 4m30s.`);
+      }
+      if (hasBenchmarkAnnotationKind(benchmarkAnnotations, "bottleneck")) {
+        const firstBottleneckNote = benchmarkAnnotations.find(
+          (annotation) => annotation.kind === "bottleneck"
+        )?.note;
+        if (firstBottleneckNote) {
+          notes.push(`Bottleneck: ${firstBottleneckNote}`);
+        }
       }
       if (job.method === "SQL" && lastRun?.returnMessage && lastStatus !== "failure") {
         notes.push(truncateText(lastRun.returnMessage, 140));
@@ -1118,9 +1250,11 @@ export default async function handler(
         rowsAffectedLast,
         failedRowsLast,
         failedRowSamples,
-        lastDurationMs:
-          lastAudit?.parsed.durationMs ?? lastRun?.durationMs ?? null,
-        avgDurationMs
+        lastDurationMs,
+        avgDurationMs,
+        optimizationDenotation,
+        benchmarkAnnotations,
+        missingObservationWarnings
       };
     })
     .sort((a, b) => {
@@ -1148,12 +1282,9 @@ export default async function handler(
     .map((row) => buildRunDigestFromAudit(row))
     .sort((a, b) => Date.parse(b.runTime) - Date.parse(a.runTime));
 
-  const WARN_SLOW = jobSummaries
-    .filter((job) => (job.lastDurationMs ?? 0) > WARN_SLOW_MS)
-    .map((job) => ({
-      displayName: job.displayName,
-      durationMs: job.lastDurationMs ?? 0
-    }));
+  const WARN_SLOW: SlowJobWarning[] = jobSummaries
+    .filter((job) => isSlowJobDuration(job.lastDurationMs))
+    .map((job) => buildSlowJobWarning(job.displayName, job.lastDurationMs ?? 0));
 
   const WARN_PARTIAL_FAILURE = jobSummaries
     .filter((job) => job.lastStatus === "success" && (job.failedRowsLast ?? 0) > 0)
@@ -1171,6 +1302,35 @@ export default async function handler(
         job.method !== "SQL"
     )
     .map((job) => job.displayName);
+
+  const missingObservationJobs = jobSummaries
+    .filter((job) => job.missingObservationWarnings.length > 0)
+    .map((job) => ({
+      displayName: job.displayName,
+      warnings: job.missingObservationWarnings
+    }));
+
+  const benchmarkSummary: BenchmarkSummary = {
+    annotatedJobCount: jobSummaries.filter(
+      (job) => job.benchmarkAnnotations.length > 0
+    ).length,
+    bottleneckJobs: jobSummaries
+      .filter((job) => hasBenchmarkAnnotationKind(job.benchmarkAnnotations, "bottleneck"))
+      .map((job) => ({
+        displayName: job.displayName,
+        notes: job.benchmarkAnnotations
+          .filter((annotation) => annotation.kind === "bottleneck")
+          .map((annotation) => annotation.note)
+      })),
+    missingObservationJobs
+  };
+
+  const warningSummary: WarningSummary = {
+    slowMsThreshold: SLOW_JOB_THRESHOLD_MS,
+    slowJobDenotation: SLOW_JOB_DENOTATION,
+    slowJobs: WARN_SLOW,
+    missingObservationJobs
+  };
 
   const counts: ReportCounts = {
     scheduledJobs: scheduledJobs.length,
@@ -1211,11 +1371,22 @@ export default async function handler(
         react: CronAuditEmail({
           audits: auditRunDigests,
           sinceDate: since,
-          summary: {
+      summary: {
             auditRuns: counts.auditRuns,
             auditSuccesses: counts.auditSuccesses,
             auditFailures: counts.auditFailures,
             auditUnknown: counts.auditUnknown,
+            slowJobDenotation: SLOW_JOB_DENOTATION,
+            slowMsThreshold: SLOW_JOB_THRESHOLD_MS,
+            annotatedJobCount: auditRunDigests.filter(
+              (audit) => audit.benchmarkAnnotations.length > 0
+            ).length,
+            slowRuns: auditRunDigests.filter(
+              (audit) => audit.optimizationDenotation != null
+            ).length,
+            missingObservationRuns: auditRunDigests.filter(
+              (audit) => audit.missingObservationWarnings.length > 0
+            ).length,
             totalRowsUpserted: auditRunDigests.reduce(
               (acc, audit) => acc + (audit.rowsUpserted ?? audit.rowsAffected ?? 0),
               0
@@ -1262,7 +1433,7 @@ export default async function handler(
           unscheduledRuns,
           fetchErrors: errors,
           warnings: {
-            slowMsThreshold: WARN_SLOW_MS,
+            slowMsThreshold: SLOW_JOB_THRESHOLD_MS,
             slowJobs: WARN_SLOW,
             partialFailureJobs: WARN_PARTIAL_FAILURE,
             missingAuditJobs: WARN_MISSING_AUDIT
@@ -1305,6 +1476,8 @@ export default async function handler(
     success: true,
     auditEmailResult,
     jobRunDetailsEmailResult,
-    counts
+    counts,
+    warnings: warningSummary,
+    benchmark: benchmarkSummary
   });
 }

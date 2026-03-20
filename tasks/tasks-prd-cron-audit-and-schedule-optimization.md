@@ -4,6 +4,12 @@
 - `tasks/artifacts/cron-schedule-normalized-inventory.md` - Normalized inventory of every scheduled cron block with dependency position, time slot, method, and URL or SQL target.
 - `tasks/prd-cron-audit-and-schedule-optimization.md` - Product requirements document that defines the audit, reporting, NST-spacing, and schedule-optimization scope.
 - `web/pages/api/v1/db/cron-report.ts` - Existing cron summary endpoint that must be extended to understand richer timing, optimization denotations, and audit notes.
+- `web/lib/cron/cronReportTiming.ts` - Shared cron-report normalization helper for canonical timing extraction from audit payloads and fallback response envelopes.
+- `web/lib/cron/cronReportTiming.test.ts` - Tests for cron-report timing extraction so report normalization can ingest canonical `timing` payloads safely.
+- `web/lib/cron/cronReportFlags.ts` - Shared slow-job threshold and optimization-denotation helper used by cron-report summaries.
+- `web/lib/cron/cronReportFlags.test.ts` - Tests for the 4m30s slow-job threshold and stable optimization warning payloads.
+- `web/lib/cron/benchmarkNotes.ts` - Shared static benchmark annotations for known bottlenecks, side effects, and special-handling cron jobs.
+- `web/lib/cron/benchmarkNotes.test.ts` - Tests for curated benchmark annotation lookups used by cron-report payloads.
 - `web/lib/cron/withCronJobAudit.ts` - Current audit wrapper that records `details.durationMs` for wrapped cron routes and defines the existing route-level timing baseline.
 - `web/lib/cron/timingContract.ts` - Shared canonical timing contract and helper for adding nested `timing` payloads to cron responses, audit details, and benchmark observations.
 - `web/lib/cron/formatDuration.ts` - Shared cron duration-formatting helper for canonical MMSS output and reusable duration labels.
@@ -76,13 +82,13 @@
   - [x] 2.5 Ensure failure responses can still surface useful timing or partial-run timing context when a job errors after doing work.
   - [x] 2.6 Add tests for the shared timing helper and any timing-aware response normalization logic.
 
-- [ ] 3.0 Extend cron reporting and email output for benchmark visibility
-  - [ ] 3.1 Update `web/pages/api/v1/db/cron-report.ts` to ingest the richer timing contract and preserve existing success/failure and rows-affected metrics.
-  - [ ] 3.2 Add slow-job denotations for anything over 4 minutes 30 seconds and make those warnings visible in the report summary.
-  - [ ] 3.3 Add support for bottleneck notes, missing-observation warnings, and benchmark annotations to the report payload.
-  - [ ] 3.4 Update `web/components/CronReportEmail/CronReportEmail.tsx` to render the new timing and optimization signals clearly.
-  - [ ] 3.5 Update `web/components/CronReportEmail/CronAuditEmail.tsx` to render the same benchmark and optimization signals in the audit-oriented view.
-  - [ ] 3.6 Add tests covering MMSS rendering, slow-job warnings, missing observations, and optimization denotations in both email surfaces and the API response.
+- [x] 3.0 Extend cron reporting and email output for benchmark visibility
+  - [x] 3.1 Update `web/pages/api/v1/db/cron-report.ts` to ingest the richer timing contract and preserve existing success/failure and rows-affected metrics.
+  - [x] 3.2 Add slow-job denotations for anything over 4 minutes 30 seconds and make those warnings visible in the report summary.
+  - [x] 3.3 Add support for bottleneck notes, missing-observation warnings, and benchmark annotations to the report payload.
+  - [x] 3.4 Update `web/components/CronReportEmail/CronReportEmail.tsx` to render the new timing and optimization signals clearly.
+  - [x] 3.5 Update `web/components/CronReportEmail/CronAuditEmail.tsx` to render the same benchmark and optimization signals in the audit-oriented view.
+  - [x] 3.6 Add tests covering MMSS rendering, slow-job warnings, missing observations, and optimization denotations in both email surfaces and the API response.
 
 - [ ] 4.0 Build the benchmark runner and audit capture workflow
   - [ ] 4.1 Choose the benchmark execution shape: script, API endpoint, or a small shared runner that can be invoked by either.
