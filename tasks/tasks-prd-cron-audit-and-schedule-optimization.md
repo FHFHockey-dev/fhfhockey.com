@@ -2,6 +2,7 @@
 
 - `web/rules/cron-schedule.md` - Source-of-truth cron inventory and the schedule file that will be tightened and reordered based on measured durations.
 - `tasks/artifacts/cron-schedule-normalized-inventory.md` - Normalized inventory of every scheduled cron block with dependency position, time slot, method, and URL or SQL target.
+- `tasks/artifacts/cron-benchmark-runner-shape.md` - Execution-shape decision artifact choosing a shared runner core with a script-first operator surface and an optional thin API wrapper.
 - `tasks/prd-cron-audit-and-schedule-optimization.md` - Product requirements document that defines the audit, reporting, NST-spacing, and schedule-optimization scope.
 - `web/pages/api/v1/db/cron-report.ts` - Existing cron summary endpoint that must be extended to understand richer timing, optimization denotations, and audit notes.
 - `web/lib/cron/cronReportTiming.ts` - Shared cron-report normalization helper for canonical timing extraction from audit payloads and fallback response envelopes.
@@ -13,6 +14,14 @@
 - `web/lib/cron/withCronJobAudit.ts` - Current audit wrapper that records `details.durationMs` for wrapped cron routes and defines the existing route-level timing baseline.
 - `web/lib/cron/timingContract.ts` - Shared canonical timing contract and helper for adding nested `timing` payloads to cron responses, audit details, and benchmark observations.
 - `web/lib/cron/formatDuration.ts` - Shared cron duration-formatting helper for canonical MMSS output and reusable duration labels.
+- `web/lib/cron/cronInventory.ts` - Shared parser and loader for deriving the scheduled cron inventory from `web/rules/cron-schedule.md` with stable chronological ordering.
+- `web/lib/cron/cronInventory.test.ts` - Tests for schedule parsing, SQL normalization, broken-job classification, and chronological ordering.
+- `web/lib/cron/benchmarkRunner.ts` - Shared sequential benchmark runner that executes normalized inventory items in chronological order and records timing observations.
+- `web/lib/cron/benchmarkRunner.test.ts` - Tests for chronological execution order, tie preservation, and per-job observation timing.
+- `web/lib/cron/benchmarkObservationMetadata.ts` - Shared metadata helper that classifies touched systems, benchmark notes, and local-run policy for each scheduled job.
+- `web/lib/cron/benchmarkObservationMetadata.test.ts` - Tests for touched-system classification and local-run policy metadata.
+- `web/lib/cron/benchmarkExecutionPolicy.ts` - Shared skip/fallback policy helper that decides whether benchmark jobs should run normally, be skipped, be observed only, or use a mock fallback in local/dev.
+- `web/lib/cron/benchmarkExecutionPolicy.test.ts` - Tests for stable skip/fallback decisions on broken, side-effect, reporting, and safe benchmark jobs.
 - `web/lib/cron/sqlTiming.ts` - Shared normalization helper for SQL-only pg_cron jobs that must derive comparable timing from `cron_job_report`.
 - `web/lib/cron/timingContract.test.ts` - Tests for canonical timing construction, nested response envelopes, and timing-shape detection helpers.
 - `web/lib/cron/withCronJobAudit.test.ts` - Tests for wrapper-generated failure responses and audit timing preservation on timed error payloads.
@@ -47,7 +56,8 @@
 - `web/lib/cron/` - Likely home for shared cron inventory parsing, timing helpers, NST classification metadata, and audit result normalization.
 - `web/lib/cron/formatDuration.ts` - Likely new shared helper to standardize milliseconds plus MMSS display formatting across endpoints and reports.
 - `web/lib/cron/cronInventory.ts` - Likely new module to derive the scheduled job inventory from `cron-schedule.md` in a reusable way.
-- `web/lib/cron/nstClassification.ts` - Likely new module to track which jobs touch NST and what spacing/rate-limit rules apply.
+- `web/lib/cron/nstClassification.ts` - Shared NST classification helper for direct, indirect, unknown, and non-NST scheduled jobs.
+- `web/lib/cron/nstClassification.test.ts` - Tests for NST job classification and direct-vs-indirect detection.
 - `web/lib/cron/benchmarkNotes.ts` - Likely new module or data file for storing per-job observations, bottlenecks, and optimization denotations.
 - `web/__tests__/pages/api/v1/db/cron-report.test.ts` - Tests for the cron report endpoint after timing and warning logic changes.
 - `web/__tests__/components/CronReportEmail/CronReportEmail.test.tsx` - Tests for the daily cron report rendering of MMSS durations and optimization warnings.
@@ -90,14 +100,14 @@
   - [x] 3.5 Update `web/components/CronReportEmail/CronAuditEmail.tsx` to render the same benchmark and optimization signals in the audit-oriented view.
   - [x] 3.6 Add tests covering MMSS rendering, slow-job warnings, missing observations, and optimization denotations in both email surfaces and the API response.
 
-- [ ] 4.0 Build the benchmark runner and audit capture workflow
-  - [ ] 4.1 Choose the benchmark execution shape: script, API endpoint, or a small shared runner that can be invoked by either.
-  - [ ] 4.2 Implement chronological execution from earliest to latest using the normalized inventory from `web/rules/cron-schedule.md`.
-  - [ ] 4.3 Add support for both HTTP jobs and SQL-only jobs so the benchmark run can treat the whole schedule as one ordered workflow.
-  - [ ] 4.4 Capture per-job observations including duration, success/failure, MMSS timer, touched systems, notes, and whether the job could be run locally.
-  - [ ] 4.5 Ensure the runner does not impose a hard per-job duration limit during the audit pass, so true completion time can be observed.
-  - [ ] 4.6 Add a documented skip or fallback mechanism for jobs that cannot safely run in local/dev because of production-only dependencies or side effects.
-  - [ ] 4.7 Store or emit benchmark results in a format that `cron-report.ts` can consume consistently.
+- [x] 4.0 Build the benchmark runner and audit capture workflow
+  - [x] 4.1 Choose the benchmark execution shape: script, API endpoint, or a small shared runner that can be invoked by either.
+  - [x] 4.2 Implement chronological execution from earliest to latest using the normalized inventory from `web/rules/cron-schedule.md`.
+  - [x] 4.3 Add support for both HTTP jobs and SQL-only jobs so the benchmark run can treat the whole schedule as one ordered workflow.
+  - [x] 4.4 Capture per-job observations including duration, success/failure, MMSS timer, touched systems, notes, and whether the job could be run locally.
+  - [x] 4.5 Ensure the runner does not impose a hard per-job duration limit during the audit pass, so true completion time can be observed.
+  - [x] 4.6 Add a documented skip or fallback mechanism for jobs that cannot safely run in local/dev because of production-only dependencies or side effects.
+  - [x] 4.7 Store or emit benchmark results in a format that `cron-report.ts` can consume consistently.
 
 - [ ] 5.0 Run the audit and evaluate bottlenecks, NST safety, and batch-loop strategy
   - [ ] 5.1 Run the full benchmark sequence locally/dev where possible and capture completion notes for every scheduled job.
