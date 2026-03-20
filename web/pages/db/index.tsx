@@ -1,6 +1,6 @@
 // /Users/tim/Desktop/FHFH/fhfhockey.com/web/pages/db/index.tsx
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Button,
   Card,
@@ -21,6 +21,64 @@ import supabase, { doPOST } from "lib/supabase";
 import { useSnackbar } from "notistack";
 import useCurrentSeason from "hooks/useCurrentSeason";
 
+const NST_MANUAL_BACKFILL_DELAY_MS = 21_000;
+const NST_TEAM_STATS_BACKFILL_STORAGE_KEY = "nst-team-stats-backfill";
+
+function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+type PendingNstBackfill =
+  | {
+      mode: "forward";
+      startDate: string;
+      cursor: string;
+      requestsRun: number;
+    }
+  | {
+      mode: "backward";
+      startDate: string;
+      cursor: string;
+      requestsRun: number;
+    };
+
+function readPendingNstBackfill(): PendingNstBackfill | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const raw = window.localStorage.getItem(NST_TEAM_STATS_BACKFILL_STORAGE_KEY);
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(raw) as PendingNstBackfill;
+  } catch {
+    window.localStorage.removeItem(NST_TEAM_STATS_BACKFILL_STORAGE_KEY);
+    return null;
+  }
+}
+
+function writePendingNstBackfill(state: PendingNstBackfill) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.setItem(
+    NST_TEAM_STATS_BACKFILL_STORAGE_KEY,
+    JSON.stringify(state)
+  );
+}
+
+function clearPendingNstBackfill() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.removeItem(NST_TEAM_STATS_BACKFILL_STORAGE_KEY);
+}
+
 export default function Page() {
   const { enqueueSnackbar } = useSnackbar();
   const user = useUser(); // Get user from context
@@ -34,15 +92,302 @@ export default function Page() {
   const [powerPlayInput, setPowerPlayInput] = useState<string>("all"); // State for gameId input
   const [shiftChartsInput, setShiftChartsInput] = useState<string>("all"); // State for Shift Charts input
   const [nstTeamStatsInput, setNstTeamStatsInput] = useState<string>("all"); // State for NST tables
+  const [nstTeamStatsEndDateInput, setNstTeamStatsEndDateInput] =
+    useState<string>("");
   const [standingsDetailsInput, setStandingsDetailsInput] =
     useState<string>("all");
   const [teamsSeasonIdInput, setTeamsSeasonIdInput] = useState<string>("");
   const [gamesSeasonIdInput, setGamesSeasonIdInput] = useState<string>("");
   const [skoAsOfInput, setSkoAsOfInput] = useState<string>("");
   const [skoLoading, setSkoLoading] = useState(false);
+  const [nstTeamStatsLoading, setNstTeamStatsLoading] = useState(false);
+  const [pendingNstBackfill, setPendingNstBackfill] =
+    useState<PendingNstBackfill | null>(null);
+  const nstCancelRequestedRef = useRef(false);
+  const nstAbortControllerRef = useRef<AbortController | null>(null);
 
   const season = useCurrentSeason();
   console.log(season);
+
+  function persistPendingNstBackfill(state: PendingNstBackfill | null) {
+    if (state) {
+      writePendingNstBackfill(state);
+    } else {
+      clearPendingNstBackfill();
+    }
+    setPendingNstBackfill(state);
+  }
+
+  function isNstCancellationError(error: unknown) {
+    return (
+      (error as any)?.name === "AbortError" ||
+      (error as any)?.message === "NST backfill cancelled."
+    );
+  }
+
+  function throwIfNstCancelled() {
+    if (nstCancelRequestedRef.current) {
+      throw new Error("NST backfill cancelled.");
+    }
+  }
+
+  async function waitForNstBackfillDelay(ms: number) {
+    let remainingMs = ms;
+
+    while (remainingMs > 0) {
+      throwIfNstCancelled();
+      const chunkMs = Math.min(remainingMs, 250);
+      await delay(chunkMs);
+      remainingMs -= chunkMs;
+    }
+  }
+
+  function cancelPendingNstBackfill() {
+    nstCancelRequestedRef.current = true;
+    persistPendingNstBackfill(null);
+    nstAbortControllerRef.current?.abort();
+    enqueueSnackbar(
+      nstTeamStatsLoading
+        ? "NST backfill cancellation requested."
+        : "Cleared pending NST backfill.",
+      {
+        variant: "info"
+      }
+    );
+  }
+
+  async function runForwardNstBackfill(
+    startDate: string,
+    initialCursor = startDate,
+    initialRequestsRun = 0,
+    showResumeNotice = false
+  ) {
+    let cursor = initialCursor;
+    let requestsRun = initialRequestsRun;
+    let lastResponse: any = null;
+    const visitedStartDates = new Set<string>();
+
+    if (showResumeNotice) {
+      enqueueSnackbar(`Resuming NST forward backfill from ${cursor}.`, {
+        variant: "info"
+      });
+    }
+
+    while (cursor) {
+      throwIfNstCancelled();
+
+      if (visitedStartDates.has(cursor)) {
+        throw new Error(`NST backfill loop repeated startDate ${cursor}.`);
+      }
+      visitedStartDates.add(cursor);
+
+      persistPendingNstBackfill({
+        mode: "forward",
+        startDate,
+        cursor,
+        requestsRun
+      });
+
+      requestsRun += 1;
+      console.log(
+        `[NST Team Stats UI] Forward backfill request ${requestsRun} starting at ${cursor}`
+      );
+      const controller = new AbortController();
+      nstAbortControllerRef.current = controller;
+      const response = await doPOST(
+        `/api/Teams/nst-team-stats?startDate=${encodeURIComponent(cursor)}`,
+        undefined,
+        { signal: controller.signal }
+      );
+      nstAbortControllerRef.current = null;
+      lastResponse = response;
+
+      if (response.success === false) {
+        throw new Error(response.message ?? "NST team stats backfill failed.");
+      }
+
+      if (response.complete || !response.nextStartDate) {
+        persistPendingNstBackfill(null);
+        enqueueSnackbar(
+          response.message ??
+            `NST team stats backfill completed in ${requestsRun} request(s).`,
+          {
+            variant: "success"
+          }
+        );
+        return;
+      }
+
+      cursor = response.nextStartDate;
+      persistPendingNstBackfill({
+        mode: "forward",
+        startDate,
+        cursor,
+        requestsRun
+      });
+      await waitForNstBackfillDelay(NST_MANUAL_BACKFILL_DELAY_MS);
+    }
+
+    persistPendingNstBackfill(null);
+    enqueueSnackbar(
+      lastResponse?.message ??
+        `NST team stats backfill completed in ${requestsRun} request(s).`,
+      {
+        variant: "success"
+      }
+    );
+  }
+
+  async function runBackwardNstBackfill(
+    startDate: string,
+    initialCursor: string,
+    initialRequestsRun = 0,
+    showResumeNotice = false
+  ) {
+    let cursor = initialCursor;
+    let requestsRun = initialRequestsRun;
+    let lastResponse: any = null;
+    const visitedEndDates = new Set<string>();
+
+    if (showResumeNotice) {
+      enqueueSnackbar(
+        `Resuming NST backward backfill from ${startDate} through ${cursor}.`,
+        {
+          variant: "info"
+        }
+      );
+    }
+
+    while (cursor) {
+      throwIfNstCancelled();
+
+      if (visitedEndDates.has(cursor)) {
+        throw new Error(`NST backward backfill loop repeated endDate ${cursor}.`);
+      }
+      visitedEndDates.add(cursor);
+
+      persistPendingNstBackfill({
+        mode: "backward",
+        startDate,
+        cursor,
+        requestsRun
+      });
+
+      requestsRun += 1;
+      console.log(
+        `[NST Team Stats UI] Backward backfill request ${requestsRun} starting range ${startDate}..${cursor}`
+      );
+      const controller = new AbortController();
+      nstAbortControllerRef.current = controller;
+      const response = await doPOST(
+        `/api/Teams/nst-team-stats?startDate=${encodeURIComponent(
+          startDate
+        )}&endDate=${encodeURIComponent(cursor)}`,
+        undefined,
+        { signal: controller.signal }
+      );
+      nstAbortControllerRef.current = null;
+      lastResponse = response;
+
+      if (response.success === false) {
+        throw new Error(
+          response.message ?? "NST team stats backward backfill failed."
+        );
+      }
+
+      if (response.complete || !response.nextEndDate) {
+        persistPendingNstBackfill(null);
+        enqueueSnackbar(
+          response.message ??
+            `NST backward backfill completed in ${requestsRun} request(s).`,
+          {
+            variant: "success"
+          }
+        );
+        return;
+      }
+
+      cursor = response.nextEndDate;
+      persistPendingNstBackfill({
+        mode: "backward",
+        startDate,
+        cursor,
+        requestsRun
+      });
+      await waitForNstBackfillDelay(NST_MANUAL_BACKFILL_DELAY_MS);
+    }
+
+    persistPendingNstBackfill(null);
+    enqueueSnackbar(
+      lastResponse?.message ??
+        `NST backward backfill completed in ${requestsRun} request(s).`,
+      {
+        variant: "success"
+      }
+    );
+  }
+
+  useEffect(() => {
+    const pendingBackfill = readPendingNstBackfill();
+    setPendingNstBackfill(pendingBackfill);
+
+    if (pendingBackfill) {
+      setNstTeamStatsInput(pendingBackfill.startDate);
+      if (pendingBackfill.mode === "backward") {
+        setNstTeamStatsEndDateInput(pendingBackfill.cursor);
+      } else {
+        setNstTeamStatsEndDateInput("");
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      nstCancelRequestedRef.current = true;
+      nstAbortControllerRef.current?.abort();
+    };
+  }, []);
+
+  async function resumePendingNstBackfill() {
+    if (!pendingNstBackfill) {
+      enqueueSnackbar("There is no pending NST backfill to resume.", {
+        variant: "info"
+      });
+      return;
+    }
+
+    try {
+      nstCancelRequestedRef.current = false;
+      setNstTeamStatsLoading(true);
+      if (pendingNstBackfill.mode === "backward") {
+        await runBackwardNstBackfill(
+          pendingNstBackfill.startDate,
+          pendingNstBackfill.cursor,
+          pendingNstBackfill.requestsRun,
+          true
+        );
+      } else {
+        await runForwardNstBackfill(
+          pendingNstBackfill.startDate,
+          pendingNstBackfill.cursor,
+          pendingNstBackfill.requestsRun,
+          true
+        );
+      }
+    } catch (e: any) {
+      console.error(e.message);
+      enqueueSnackbar(
+        isNstCancellationError(e) ? "NST backfill cancelled." : e.message,
+        {
+          variant: isNstCancellationError(e) ? "info" : "error"
+        }
+      );
+    } finally {
+      nstAbortControllerRef.current = null;
+      setNstTeamStatsLoading(false);
+      setPendingNstBackfill(readPendingNstBackfill());
+    }
+  }
 
   async function updatePlayers() {
     try {
@@ -204,41 +549,81 @@ export default function Page() {
 
   // Add this within your Page component
   async function updateNstTeamStats() {
+    const trimmedInput = nstTeamStatsInput.trim().toLowerCase();
+    const trimmedEndDateInput = nstTeamStatsEndDateInput.trim().toLowerCase();
+    const isStartDate = /^\d{4}-\d{2}-\d{2}$/.test(trimmedInput);
+    const isEndDate = /^\d{4}-\d{2}-\d{2}$/.test(trimmedEndDateInput);
+
+    if (
+      trimmedInput !== "all" &&
+      !isStartDate
+    ) {
+      enqueueSnackbar(
+        "Please enter 'all' or a start date in YYYY-MM-DD format.",
+        {
+          variant: "error"
+        }
+      );
+      return;
+    }
+
+    if (trimmedInput === "all" && trimmedEndDateInput) {
+      enqueueSnackbar("Clear the end date when running the incremental 'all' sync.", {
+        variant: "error"
+      });
+      return;
+    }
+
+    if (trimmedEndDateInput && !isEndDate) {
+      enqueueSnackbar("Please enter a valid backward end date in YYYY-MM-DD format.", {
+        variant: "error"
+      });
+      return;
+    }
+
+    if (trimmedEndDateInput && trimmedInput > trimmedEndDateInput) {
+      enqueueSnackbar("NST backward backfill requires start date on or before end date.", {
+        variant: "error"
+      });
+      return;
+    }
+
     try {
-      // Validate input
-      const trimmedInput = nstTeamStatsInput.trim().toLowerCase();
+      nstCancelRequestedRef.current = false;
+      setNstTeamStatsLoading(true);
+      persistPendingNstBackfill(null);
 
-      // Define allowed values
-      const allowedValues = ["all", "all_season", "last_season"];
-
-      // Check if input is a valid predefined option or a specific date
-      if (
-        !allowedValues.includes(trimmedInput) &&
-        !/^\d{4}-\d{2}-\d{2}$/.test(trimmedInput)
-      ) {
-        enqueueSnackbar(
-          "Please enter a valid option or date in YYYY-MM-DD format.",
-          {
-            variant: "error"
-          }
+      if (trimmedInput === "all") {
+        const { message, success } = await doPOST(
+          "/api/Teams/nst-team-stats?date=all"
         );
+        enqueueSnackbar(message, {
+          variant: success ? "success" : "error"
+        });
         return;
       }
 
-      // Construct the endpoint URL with the date query parameter
-      const endpoint = `/api/Teams/nst-team-stats?date=${encodeURIComponent(
-        trimmedInput
-      )}`;
+      if (trimmedEndDateInput) {
+        await runBackwardNstBackfill(trimmedInput, trimmedEndDateInput);
+        return;
+      }
 
-      const { message, success } = await doPOST(endpoint);
-      enqueueSnackbar(message, {
-        variant: success ? "success" : "error"
-      });
+      await runForwardNstBackfill(trimmedInput);
     } catch (e: any) {
       console.error(e.message);
-      enqueueSnackbar(e.message, {
-        variant: "error"
-      });
+      enqueueSnackbar(
+        isNstCancellationError(e) ? "NST backfill cancelled." : e.message,
+        {
+          variant: isNstCancellationError(e) ? "info" : "error"
+        }
+      );
+      if (isNstCancellationError(e)) {
+        persistPendingNstBackfill(null);
+      }
+    } finally {
+      nstAbortControllerRef.current = null;
+      setNstTeamStatsLoading(false);
+      setPendingNstBackfill(readPendingNstBackfill());
     }
   }
 
@@ -754,20 +1139,52 @@ export default function Page() {
                 NST Team Stats
               </Typography>
               <Typography variant="body2">
-                Update NST team statistics based on date parameters. Choose to
-                update all data, current season, last season, or a specific
-                date.
+                Run the incremental NST sync with <strong>all</strong>, or
+                enter a start date to backfill one date at a time through
+                today. Add an end date to run the backfill in reverse and skip
+                offseason gaps.
               </Typography>
-              {/* Input Field for Date Parameter */}
+              {pendingNstBackfill ? (
+                <Typography variant="body2" sx={{ mt: 1, color: "#07aae2" }}>
+                  Pending NST {pendingNstBackfill.mode} backfill:
+                  {" "}
+                  start={pendingNstBackfill.startDate}, cursor=
+                  {pendingNstBackfill.cursor}, requests=
+                  {pendingNstBackfill.requestsRun}
+                </Typography>
+              ) : null}
               <TextField
-                label="Date Parameter"
+                label="Start Date or 'all'"
                 variant="outlined"
                 size="small"
                 fullWidth
                 margin="normal"
-                value={shiftChartsInput}
-                onChange={(e) => setShiftChartsInput(e.target.value)}
-                placeholder="Enter game ID or 'all'"
+                value={nstTeamStatsInput}
+                onChange={(e) => setNstTeamStatsInput(e.target.value)}
+                placeholder="YYYY-MM-DD or all"
+                sx={{
+                  backgroundColor: "#202020",
+                  border: "1px solid #07aae2",
+                  borderRadius: "4px",
+                  "& .css-1sumxir-MuiFormLabel-root-MuiInputLabel-root, .css-1n4twyu-MuiInputBase-input-MuiOutlinedInput-input":
+                    {
+                      color: "#07aae2",
+                      fontWeight: "900",
+                      textTransform: "uppercase",
+                      backgroundColor: "#202020",
+                      margin: "1px"
+                  }
+                }}
+              />
+              <TextField
+                label="Backward End Date (optional)"
+                variant="outlined"
+                size="small"
+                fullWidth
+                margin="normal"
+                value={nstTeamStatsEndDateInput}
+                onChange={(e) => setNstTeamStatsEndDateInput(e.target.value)}
+                placeholder="YYYY-MM-DD"
                 sx={{
                   backgroundColor: "#202020",
                   border: "1px solid #07aae2",
@@ -784,8 +1201,26 @@ export default function Page() {
               />
             </CardContent>
             <CardActions>
-              <Button size="small" onClick={updateNstTeamStats}>
-                Update NST Team Stats
+              <Button
+                size="small"
+                onClick={updateNstTeamStats}
+                disabled={nstTeamStatsLoading}
+              >
+                {nstTeamStatsLoading ? "Running NST Team Stats" : "Update NST Team Stats"}
+              </Button>
+              <Button
+                size="small"
+                onClick={resumePendingNstBackfill}
+                disabled={nstTeamStatsLoading || !pendingNstBackfill}
+              >
+                Resume Pending
+              </Button>
+              <Button
+                size="small"
+                onClick={cancelPendingNstBackfill}
+                disabled={!nstTeamStatsLoading && !pendingNstBackfill}
+              >
+                Cancel Pending
               </Button>
             </CardActions>
           </Card>

@@ -43,18 +43,21 @@ export function createClientWithToken(...args: any) {
  * @param body
  * @returns
  */
-export async function doPOST(url: string, body?: any) {
+export async function doPOST(url: string, body?: any, init?: RequestInit) {
   const { data } = await supabase.auth.getSession();
   const session = data.session;
   if (!session) throw new Error("Failed to authenticate.");
 
   console.log("send post request to", url);
   const result = await fetch(url, {
+    ...init,
     method: "POST",
     headers: {
-      Authorization: `Bearer ${session.access_token}`
+      Authorization: `Bearer ${session.access_token}`,
+      ...(init?.headers ?? {})
     },
-    body: JSON.stringify(body)
+    body: JSON.stringify(body),
+    signal: init?.signal
   }).then((res) => res.json());
 
   return result;

@@ -695,7 +695,11 @@ async function loadScheduledCronJobs(
   now: Date
 ): Promise<ScheduledCronJob[]> {
   const markdown = await readCronScheduleMarkdown();
-  const normalized = markdown
+  const activeMarkdown =
+    markdown.split(/^# NEED TO ADD:?$/m)[0] ??
+    markdown.split(/^# STATIC CRON SNIPPETS TO ADD$/m)[0] ??
+    markdown;
+  const normalized = activeMarkdown
     .split("\n")
     .map((line) => line.replace(/^\s*--\s?/, ""))
     .join("\n");
@@ -733,12 +737,36 @@ async function loadScheduledCronJobs(
     };
   });
 
-  const duplicateCounts = rawJobs.reduce(
+  const dedupedJobs = rawJobs.filter((job, index, jobs) => {
+    const signature = [
+      job.name,
+      job.cronExpression,
+      job.method,
+      job.route ?? "",
+      job.url ?? "",
+      job.sqlText ?? ""
+    ].join("::");
+    return (
+      index ===
+      jobs.findIndex((candidate) =>
+        [
+          candidate.name,
+          candidate.cronExpression,
+          candidate.method,
+          candidate.route ?? "",
+          candidate.url ?? "",
+          candidate.sqlText ?? ""
+        ].join("::") === signature
+      )
+    );
+  });
+
+  const duplicateCounts = dedupedJobs.reduce(
     (acc, job) => acc.set(job.name, (acc.get(job.name) ?? 0) + 1),
     new Map<string, number>()
   );
 
-  return rawJobs.map((job) => {
+  return dedupedJobs.map((job) => {
     const displayName =
       (duplicateCounts.get(job.name) ?? 0) > 1
         ? `${job.name} [${job.method} ${job.scheduleTimeDisplay}]`
