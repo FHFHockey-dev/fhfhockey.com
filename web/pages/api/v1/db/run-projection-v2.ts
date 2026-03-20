@@ -56,6 +56,7 @@
  */
 import type { NextApiRequest, NextApiResponse } from "next";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import { CronTimedResponse, withCronJobTiming } from "lib/cron/timingContract";
 import { runProjectionV2ForDate } from "lib/projections/run-forge-projections";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
 import { getGoalieForgePipelineSpec } from "lib/projections/goaliePipeline";
@@ -551,8 +552,13 @@ function buildGoalieObservability(args: {
   };
 }
 
-async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
+async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<CronTimedResponse<Result>>
+) {
   const startedAt = Date.now();
+  const withTiming = (body: Result, endedAt = Date.now()) =>
+    withCronJobTiming(body, startedAt, endedAt);
   const horizonGames = parseHorizonGames(getParam(req, "horizonGames"));
   const chunkDays = parseChunkDays(getParam(req, "chunkDays"));
   const resumeFromDate = parseDateParam(getParam(req, "resumeFromDate"));
@@ -572,7 +578,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
     res.setHeader("Allow", ["GET", "POST"]);
     return res
       .status(405)
-      .json({
+      .json(withTiming({
         success: false,
         asOfDate: "",
         startDate: "",
@@ -588,7 +594,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
         maxDurationMs: formatDurationMsToMMSS(0),
         durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
         error: "Method not allowed"
-      });
+      }));
   }
 
   const dateParam = parseDateParam(getParam(req, "date"));
@@ -609,7 +615,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
     (rangeDates.length === 0 ||
       (startDateParam && endDateParam && startDateParam > endDateParam))
   ) {
-    return res.status(400).json({
+    return res.status(400).json(withTiming({
       success: false,
       asOfDate: "",
       startDate: startDateParam ?? "",
@@ -625,7 +631,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
       maxDurationMs: formatDurationMsToMMSS(0),
       durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
       error: "Invalid startDate/endDate range"
-    });
+    }));
   }
   const asOfDate = dateParam ?? isoDateOnly(new Date().toISOString());
   const startDate = startDateParam ?? asOfDate;
@@ -671,7 +677,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
           )
         });
         if (rangePreflight.status === "FAIL") {
-          return res.status(422).json({
+          return res.status(422).json(withTiming({
             success: false,
             asOfDate: date,
             startDate: effectiveRangeStart,
@@ -688,7 +694,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
             durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
             error:
               "Preflight freshness checks failed for range date. Resolve upstream dependencies or use bypassPreflight=true."
-          });
+          }));
         }
         if (Date.now() > deadlineMs) {
           const timedOutObservability = buildGoalieObservability({
@@ -702,7 +708,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
               .filter((r) => r.goalieRowsUpserted === 0)
               .map((r) => r.asOfDate)
           });
-          return res.status(200).json({
+          return res.status(200).json(withTiming({
             success: false,
             asOfDate: date,
             startDate: effectiveRangeStart,
@@ -720,7 +726,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
             error: "Timed out",
             results,
             processedDates: results.map((r) => r.asOfDate)
-          });
+          }));
         }
         const out = await runProjectionV2ForDate(date, {
           deadlineMs,
@@ -748,7 +754,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
           .filter((r) => r.goalieRowsUpserted === 0)
           .map((r) => r.asOfDate)
       });
-      return res.status(200).json({
+      return res.status(200).json(withTiming({
         success: true,
         asOfDate: last?.asOfDate ?? asOfDate,
         startDate: effectiveRangeStart,
@@ -770,7 +776,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
         goalieRowsUpserted: last?.goalieRowsUpserted ?? 0,
         results,
         processedDates: results.map((r) => r.asOfDate)
-      });
+      }));
     }
 
     if (preflight.status === "FAIL") {
@@ -779,7 +785,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
         gamesProcessed: 0,
         goalieRowsProcessed: 0
       });
-      return res.status(422).json({
+      return res.status(422).json(withTiming({
         success: false,
         asOfDate,
         startDate,
@@ -796,7 +802,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
         durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
         error:
           "Preflight freshness checks failed. Resolve upstream dependencies or use bypassPreflight=true to override."
-      });
+      }));
     }
 
     const out = await runProjectionV2ForDate(asOfDate, {
@@ -809,7 +815,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
       goalieRowsProcessed: out.goalieRowsUpserted
     });
     if (out.timedOut) {
-      return res.status(200).json({
+      return res.status(200).json(withTiming({
         success: false,
         asOfDate,
         startDate,
@@ -830,11 +836,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
         teamRowsUpserted: out.teamRowsUpserted,
         goalieRowsUpserted: out.goalieRowsUpserted,
         error: "Timed out"
-      });
+      }));
     }
     return res
       .status(200)
-      .json({
+      .json(withTiming({
         success: true,
         asOfDate,
         startDate,
@@ -854,11 +860,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
         playerRowsUpserted: out.playerRowsUpserted,
         teamRowsUpserted: out.teamRowsUpserted,
         goalieRowsUpserted: out.goalieRowsUpserted
-      });
+      }));
   } catch (e) {
     return res
       .status(500)
-      .json({
+      .json(withTiming({
         success: false,
         asOfDate,
         startDate,
@@ -878,7 +884,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
         maxDurationMs: formatDurationMsToMMSS(budgetMs),
         durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
         error: (e as any)?.message ?? String(e)
-      });
+      }));
   }
 }
 

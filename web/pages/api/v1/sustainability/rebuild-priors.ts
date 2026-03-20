@@ -1,5 +1,6 @@
 // rebuild-priors.ts
 import { NextApiRequest, NextApiResponse } from "next";
+import { CronTimedResponse, withCronJobTiming } from "lib/cron/timingContract";
 // import supabase from "lib/supabase"; // <- remove
 import {
   ensureTables,
@@ -8,19 +9,17 @@ import {
   PosGroup,
   StatCode
 } from "lib/sustainability/priors";
+import { resolveSeasonId } from "lib/sustainability/resolveSeasonId";
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse
+  res: NextApiResponse<CronTimedResponse<Record<string, unknown>>>
 ) {
   const started = Date.now();
+  const withTiming = (body: Record<string, unknown>, endedAt = Date.now()) =>
+    withCronJobTiming(body, started, endedAt);
   try {
-    const season = Number(req.query.season);
-    if (!season || Number.isNaN(season)) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Missing or invalid ?season" });
-    }
+    const season = await resolveSeasonId(req.query.season);
     const dry =
       req.query.dry === "1" ||
       req.query.dry === "true" ||
@@ -71,7 +70,7 @@ export default async function handler(
     const duration_s = ((Date.now() - started) / 1000).toFixed(2);
     return res
       .status(200)
-      .json({
+      .json(withTiming({
         success: true,
         season,
         dry,
@@ -79,11 +78,14 @@ export default async function handler(
         inserted_player_rows: inserted,
         sample,
         duration_s
-      });
+      }));
   } catch (error: any) {
     console.error("rebuild-priors error", error?.message || error);
     return res
       .status(500)
-      .json({ success: false, message: error?.message || String(error) });
+      .json(withTiming({
+        success: false,
+        message: error?.message || String(error)
+      }));
   }
 }

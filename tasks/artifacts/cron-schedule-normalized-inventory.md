@@ -255,6 +255,17 @@
 - `03` to `05` WGO routes self-report duration in their JSON responses, but they are not currently audited through `withCronJobAudit`.
 - For later benchmark-runner work, the meaningful distinction is route-level timing availability, not just whether pg_cron can derive elapsed time after the fact.
 
+### SQL-Only Timing Strategy
+
+- SQL-only cron jobs will not be treated as JSON-producing routes.
+- Their comparable timing source is `cron_job_report`, using:
+  - `scheduled_time` as `startedAt`
+  - `end_time` as `endedAt`
+  - `end_time - scheduled_time` as raw `durationMs`
+  - shared formatter output as `timer`
+- This normalization is defined in [sqlTiming.ts](/Users/tim/Code/fhfhockey.com/web/lib/cron/sqlTiming.ts) and produces the same canonical timing contract used by HTTP routes, but with `source: "cron_report"`.
+- If pg_cron does not provide both timestamps, SQL timing is considered unavailable rather than guessed.
+
 ## First-Pass Bottlenecks And Benchmark-Runner Risks
 
 - This section is a first-pass risk triage based on code shape, external systems, resumability, and known stale-data sensitivity.

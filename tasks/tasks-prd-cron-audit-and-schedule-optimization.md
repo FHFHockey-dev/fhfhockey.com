@@ -5,6 +5,11 @@
 - `tasks/prd-cron-audit-and-schedule-optimization.md` - Product requirements document that defines the audit, reporting, NST-spacing, and schedule-optimization scope.
 - `web/pages/api/v1/db/cron-report.ts` - Existing cron summary endpoint that must be extended to understand richer timing, optimization denotations, and audit notes.
 - `web/lib/cron/withCronJobAudit.ts` - Current audit wrapper that records `details.durationMs` for wrapped cron routes and defines the existing route-level timing baseline.
+- `web/lib/cron/timingContract.ts` - Shared canonical timing contract and helper for adding nested `timing` payloads to cron responses, audit details, and benchmark observations.
+- `web/lib/cron/formatDuration.ts` - Shared cron duration-formatting helper for canonical MMSS output and reusable duration labels.
+- `web/lib/cron/sqlTiming.ts` - Shared normalization helper for SQL-only pg_cron jobs that must derive comparable timing from `cron_job_report`.
+- `web/lib/cron/timingContract.test.ts` - Tests for canonical timing construction, nested response envelopes, and timing-shape detection helpers.
+- `web/lib/cron/withCronJobAudit.test.ts` - Tests for wrapper-generated failure responses and audit timing preservation on timed error payloads.
 - `web/components/CronReportEmail/CronReportEmail.tsx` - Daily cron summary email that should display MMSS timing context, slow-job warnings, bottlenecks, and missing observations.
 - `web/components/CronReportEmail/CronAuditEmail.tsx` - Audit-focused email surface that should display the richer benchmark and optimization signals.
 - `web/pages/api/v1/sustainability/rebuild-priors.ts` - Example cron endpoint already updated for static cron-safe usage and likely to participate in timing contract standardization.
@@ -44,6 +49,7 @@
 - `web/__tests__/lib/cron/cronInventory.test.ts` - Tests for parsing and normalizing the cron inventory from the schedule file.
 - `web/__tests__/lib/cron/formatDuration.test.ts` - Tests for the shared MMSS formatting helper.
 - `web/__tests__/lib/cron/nstClassification.test.ts` - Tests for NST job classification and spacing metadata.
+- `web/lib/cron/sqlTiming.test.ts` - Tests for normalizing SQL-only pg_cron timing into the shared timing contract.
 
 ### Notes
 
@@ -62,13 +68,13 @@
   - [x] 1.5 Record which jobs have existing duration data, which jobs return JSON, and which jobs currently lack a reliable timing surface.
   - [x] 1.6 Produce a first-pass list of likely bottlenecks, stale-data-sensitive jobs, and jobs that may need special handling in the benchmark runner.
 
-- [ ] 2.0 Add standardized timing instrumentation for cron endpoints and auditable jobs
-  - [ ] 2.1 Define a shared timing contract that includes start time, end time, raw duration in milliseconds, and a human-readable `MMSS` string.
-  - [ ] 2.2 Implement a shared helper for duration formatting so endpoints and reports do not each invent their own `MMSS` formatting logic.
-  - [ ] 2.3 Update representative cron endpoints to adopt the shared response contract without breaking existing clients or cron consumers.
-  - [ ] 2.4 Define how SQL-only scheduled jobs will emit comparable timing data even though they do not naturally return JSON payloads.
-  - [ ] 2.5 Ensure failure responses can still surface useful timing or partial-run timing context when a job errors after doing work.
-  - [ ] 2.6 Add tests for the shared timing helper and any timing-aware response normalization logic.
+- [x] 2.0 Add standardized timing instrumentation for cron endpoints and auditable jobs
+  - [x] 2.1 Define a shared timing contract that includes start time, end time, raw duration in milliseconds, and a human-readable `MMSS` string.
+  - [x] 2.2 Implement a shared helper for duration formatting so endpoints and reports do not each invent their own `MMSS` formatting logic.
+  - [x] 2.3 Update representative cron endpoints to adopt the shared response contract without breaking existing clients or cron consumers.
+  - [x] 2.4 Define how SQL-only scheduled jobs will emit comparable timing data even though they do not naturally return JSON payloads.
+  - [x] 2.5 Ensure failure responses can still surface useful timing or partial-run timing context when a job errors after doing work.
+  - [x] 2.6 Add tests for the shared timing helper and any timing-aware response normalization logic.
 
 - [ ] 3.0 Extend cron reporting and email output for benchmark visibility
   - [ ] 3.1 Update `web/pages/api/v1/db/cron-report.ts` to ingest the richer timing contract and preserve existing success/failure and rows-affected metrics.

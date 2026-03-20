@@ -1,4 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import {
+  buildCronJobTiming,
+  hasCronTimingEnvelope,
+  withCronJobTiming
+} from "lib/cron/timingContract";
 import supabase from "lib/supabase";
 
 type AuditStatus = "success" | "failure";
@@ -105,13 +110,28 @@ export function withCronJobAudit(
     } catch (err) {
       thrown = err;
       if (!res.headersSent) {
+        const errorBody = withCronJobTiming(
+          { success: false, error: (err as any)?.message ?? "Unknown error" },
+          startedAt
+        );
+        capturedBody = errorBody;
         res
           .status(500)
-          .json({ success: false, error: (err as any)?.message ?? "Unknown error" });
+          .json(errorBody);
       }
     }
 
-    const durationMs = Date.now() - startedAt;
+    const endedAt = Date.now();
+    const timing = hasCronTimingEnvelope(capturedBody)
+      ? {
+          ...capturedBody.timing,
+          source: "audit" as const
+        }
+      : {
+          ...buildCronJobTiming(startedAt, endedAt),
+          source: "audit" as const
+        };
+    const durationMs = timing.durationMs;
     const statusCode = res.statusCode;
     const inferredFailure =
       thrown != null || statusCode >= 400 || inferFailure(capturedBody);
@@ -125,6 +145,7 @@ export function withCronJobAudit(
         url: req.url ?? null,
         statusCode,
         durationMs,
+        timing,
         error:
           thrown != null
             ? ((thrown as any)?.message ?? safeJson(thrown, 2000))

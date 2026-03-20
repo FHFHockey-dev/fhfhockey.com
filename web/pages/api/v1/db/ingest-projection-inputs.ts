@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import { CronTimedResponse, withCronJobTiming } from "lib/cron/timingContract";
 import supabase from "lib/supabase/server";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
 
@@ -112,11 +113,16 @@ async function listGamesInRange(startDate: string, endDate: string) {
   return (data ?? []) as Array<{ id: number; date: string }>;
 }
 
-async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
+async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<CronTimedResponse<Result>>
+) {
   const startedAt = Date.now();
+  const withTiming = (body: Result, endedAt = Date.now()) =>
+    withCronJobTiming(body, startedAt, endedAt);
   if (req.method !== "POST" && req.method !== "GET") {
     res.setHeader("Allow", ["GET", "POST"]);
-    return res.status(405).json({
+    return res.status(405).json(withTiming({
       success: false,
       startDate: "",
       endDate: "",
@@ -140,14 +146,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
         alreadyHadShiftTotalsOnly: 0
       },
       errors: [{ gameId: -1 as any, message: "Method not allowed" }]
-    });
+    }));
   }
 
   const startDate = getParam(req, "startDate") ?? isoDateOnly(new Date().toISOString());
   const endDate = getParam(req, "endDate") ?? startDate;
   const fullRequestedRange = buildDateRange(startDate, endDate);
   if (fullRequestedRange.length === 0) {
-    return res.status(400).json({
+    return res.status(400).json(withTiming({
       success: false,
       startDate,
       endDate,
@@ -171,7 +177,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
         alreadyHadShiftTotalsOnly: 0
       },
       errors: [{ gameId: -1 as any, message: "Invalid startDate/endDate range" }]
-    });
+    }));
   }
   const chunkDays = parseChunkDays(getParam(req, "chunkDays"));
   const resumeFromDate = getParam(req, "resumeFromDate")?.slice(0, 10) ?? null;
@@ -314,7 +320,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
 
   result.failedRows = result.errors.length;
   result.durationMs = formatDurationMsToMMSS(Date.now() - startedAt);
-  return res.status(200).json(result);
+  return res.status(200).json(withTiming(result));
 }
 
 export default withCronJobAudit(handler, {
