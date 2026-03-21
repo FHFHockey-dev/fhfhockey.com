@@ -78,13 +78,13 @@
   - [x] 3.5 Fix `update-predictions-sko` so it degrades gracefully when unified-view dependencies are unavailable and succeeds once those dependencies are restored.
   - [x] 3.6 Add or update tests for the repaired SQL/data-consumer routes, focusing on structured error surfacing, dependency preconditions, and post-fix successful execution paths.
 
-- [ ] 4.0 Audit and harden every NST-touching failed route, including validating whether a compliant small-batch burst mode is available and safe.
-  - [ ] 4.1 Confirm the real per-date URL counts and current burst/timer behavior for `update-nst-goalies`, `update-nst-team-daily`, `update-nst-team-daily-incremental`, and `update-nst-team-stats-all`, including the “one or two days means no wait timer” branch where it exists.
-  - [ ] 4.2 Define a shared NST safety calculation or policy helper that can decide when burst mode is allowed while staying under all four published limits.
-  - [ ] 4.3 Repair `update-nst-goalies` so bounded small-batch runs can complete reliably, and only skip wait intervals when the URL count is safely below all rate-limit thresholds.
-  - [ ] 4.4 Repair `update-nst-team-daily` and the incremental variant using the same policy, ensuring that burst behavior is explicitly gated by URL-count math rather than implicit assumptions.
-  - [ ] 4.5 Audit `nst-team-stats` / `update-nst-team-stats-all` for the same burst-mode opportunity, confirm the real per-run URL count, and implement safe burst behavior if it is compliant.
-  - [ ] 4.6 Add or update tests around NST rate-limit policy, small-batch burst eligibility, and failure handling so the remediated routes cannot silently exceed the published limits.
+- [x] 4.0 Audit and harden every NST-touching failed route, including validating whether a compliant small-batch burst mode is available and safe.
+  - [x] 4.1 Confirm the real per-date URL counts and current burst/timer behavior for `update-nst-goalies`, `update-nst-team-daily`, `update-nst-team-daily-incremental`, and `update-nst-team-stats-all`, including the “one or two days means no wait timer” branch where it exists.
+  - [x] 4.2 Define a shared NST safety calculation or policy helper that can decide when burst mode is allowed while staying under all four published limits.
+  - [x] 4.3 Repair `update-nst-goalies` so bounded small-batch runs can complete reliably, and only skip wait intervals when the URL count is safely below all rate-limit thresholds.
+  - [x] 4.4 Repair `update-nst-team-daily` and the incremental variant using the same policy, ensuring that burst behavior is explicitly gated by URL-count math rather than implicit assumptions.
+  - [x] 4.5 Audit `nst-team-stats` / `update-nst-team-stats-all` for the same burst-mode opportunity, confirm the real per-run URL count, and implement safe burst behavior if it is compliant.
+  - [x] 4.6 Add or update tests around NST rate-limit policy, small-batch burst eligibility, and failure handling so the remediated routes cannot silently exceed the published limits.
 
 - [ ] 5.0 Re-run targeted validations for every remediated failure cluster, record outcomes, and update the benchmark artifacts with a clean failure-resolution summary.
   - [ ] 5.1 Re-run targeted local/dev validation for the rolling and FORGE/projection cluster and record per-route outcomes, durations, and any remaining blockers.

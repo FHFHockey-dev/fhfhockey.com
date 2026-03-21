@@ -1,6 +1,10 @@
 import { NextApiResponse } from "next";
 import { addDays, format, isAfter, parseISO } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
+import {
+  NST_TEAM_STATS_SAFE_INTERVAL_MS,
+  resolveNstTeamStatsRequestPlan
+} from "lib/cron/nstBurstPlans";
 import adminOnly from "utils/adminOnlyMiddleware";
 import { getCurrentSeason } from "lib/NHL/server";
 import { teamsInfo, teamNameToAbbreviationMap } from "lib/teamsInfo";
@@ -11,7 +15,6 @@ const TIME_ZONE = "America/New_York";
 
 const MAX_DURATION_MS = 285_000;
 const MIN_REQUEST_BUDGET_MS = 55_000;
-const NST_INTER_REQUEST_DELAY_MS = 21_000;
 const MAX_DATE_BASED_DATES_PER_RUN = 1;
 
 export const config = {
@@ -105,6 +108,7 @@ interface SeasonWindow {
 
 let lastNstRequestCompletedAt = 0;
 let nstRequestSequence = 0;
+let currentNstRequestIntervalMs = NST_TEAM_STATS_SAFE_INTERVAL_MS;
 
 const normalizedTeamLookup = new Map<string, string>();
 
@@ -262,8 +266,8 @@ async function waitForNextNstRequestSlot(): Promise<number> {
   }
 
   const elapsed = Date.now() - lastNstRequestCompletedAt;
-  if (elapsed < NST_INTER_REQUEST_DELAY_MS) {
-    const waitMs = NST_INTER_REQUEST_DELAY_MS - elapsed;
+  if (elapsed < currentNstRequestIntervalMs) {
+    const waitMs = currentNstRequestIntervalMs - elapsed;
     await delay(waitMs);
     return waitMs;
   }
@@ -277,8 +281,8 @@ function getRemainingNstWaitMs(): number {
   }
 
   const elapsed = Date.now() - lastNstRequestCompletedAt;
-  return elapsed < NST_INTER_REQUEST_DELAY_MS
-    ? NST_INTER_REQUEST_DELAY_MS - elapsed
+  return elapsed < currentNstRequestIntervalMs
+    ? currentNstRequestIntervalMs - elapsed
     : 0;
 }
 
@@ -537,6 +541,7 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
   const { supabase } = req;
   lastNstRequestCompletedAt = 0;
   nstRequestSequence = 0;
+  currentNstRequestIntervalMs = NST_TEAM_STATS_SAFE_INTERVAL_MS;
 
   try {
     const rawDate = Array.isArray(req.query.date)
@@ -770,6 +775,18 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
     }
 
     remainingDates = remainingTargets.map((target) => target.date);
+    const shouldRunSeasonTables =
+      !isManualStartDateMode &&
+      !isBackwardRangeMode &&
+      remainingDates.length === 0 &&
+      hasBudgetForRequests(scriptStartTime, 2);
+    const nstRequestPlan = resolveNstTeamStatsRequestPlan({
+      dateRequestCount: targetDateObjects.length * dateBasedConfigs.length,
+      seasonRequestCount: shouldRunSeasonTables
+        ? seasonBasedConfigs.length
+        : 0
+    });
+    currentNstRequestIntervalMs = nstRequestPlan.requestIntervalMs;
 
     logNst(
       `Starting run | mode=${
@@ -872,12 +889,7 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
       processedDates.push(formattedDate);
     }
 
-    if (
-      !isManualStartDateMode &&
-      !isBackwardRangeMode &&
-      remainingDates.length === 0 &&
-      hasBudgetForRequests(scriptStartTime, 2)
-    ) {
+    if (shouldRunSeasonTables) {
       logNst("Date backlog is clear; starting season-based refresh.");
       for (const [seasonIndex, [key, { situation, rate, table }]] of seasonBasedConfigs.entries()) {
         const season = key === "seasonStats" ? seasonId : lastSeasonId;
@@ -981,6 +993,7 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
       success: fetchIssues.length === 0,
       complete,
       ranSeasonTables,
+      nstRequestPlan,
       processedDates,
       remainingDates,
       nextStartDate:
