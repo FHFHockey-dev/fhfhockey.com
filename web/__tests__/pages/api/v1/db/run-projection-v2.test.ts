@@ -50,7 +50,9 @@ vi.mock("lib/projections/run-forge-projections", () => ({
   runProjectionV2ForDate: vi.fn()
 }));
 
-import handler from "../../../../../pages/api/v1/db/run-projection-v2";
+import handler, {
+  summarizeGoalieRosterAssignments
+} from "../../../../../pages/api/v1/db/run-projection-v2";
 
 function createMockRes() {
   const res: any = {
@@ -115,6 +117,30 @@ describe("/api/v1/db/run-projection-v2", () => {
           })
         ]
       }
+    });
+  });
+
+  it("uses season rosters instead of current players.team_id to evaluate goalie assignment drift", () => {
+    const result = summarizeGoalieRosterAssignments({
+      latestGoaliesByTeam: new Map([
+        [6, [101, 202]],
+        [7, [101]]
+      ]),
+      goaliePlayers: [
+        { id: 101, position: "G" },
+        { id: 202, position: "G" }
+      ],
+      goalieRosters: [
+        { playerId: 101, teamId: 6 },
+        { playerId: 101, teamId: 7 },
+        { playerId: 202, teamId: 8 }
+      ]
+    });
+
+    expect(result).toEqual({
+      goalieCandidatesChecked: 2,
+      mismatchedAssignments: 1,
+      nonGoaliePositionRows: 0
     });
   });
 });

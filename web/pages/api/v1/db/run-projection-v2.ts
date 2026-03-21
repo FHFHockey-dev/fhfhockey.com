@@ -91,6 +91,20 @@ type GoalieObservability = {
   dataQualityWarnings: DataQualityWarning[];
 };
 
+type SeasonIdRow = {
+  id: number | string | null;
+};
+
+type GoaliePlayerRow = {
+  id: number;
+  position: string | null;
+};
+
+type GoalieRosterRow = {
+  playerId: number;
+  teamId: number;
+};
+
 type Result =
   | {
       success: true;
@@ -205,6 +219,68 @@ function addDays(dateStr: string, delta: number): string {
   const d = new Date(`${dateStr}T00:00:00.000Z`);
   d.setUTCDate(d.getUTCDate() + delta);
   return isoDateOnly(d.toISOString());
+}
+
+async function fetchSeasonIdForDate(asOfDate: string): Promise<number> {
+  const asOfTimestamp = `${asOfDate}T23:59:59.999Z`;
+  const { data, error } = await supabase
+    .from("seasons")
+    .select("id")
+    .lte("startDate", asOfTimestamp)
+    .order("startDate", { ascending: false })
+    .limit(1)
+    .maybeSingle<SeasonIdRow>();
+  if (error) throw error;
+  const seasonId = Number(data?.id);
+  if (!Number.isFinite(seasonId)) {
+    throw new Error(`Unable to resolve season id for as_of_date=${asOfDate}`);
+  }
+  return seasonId;
+}
+
+export function summarizeGoalieRosterAssignments(args: {
+  latestGoaliesByTeam: Map<number, number[]>;
+  goaliePlayers: GoaliePlayerRow[];
+  goalieRosters: GoalieRosterRow[];
+}): {
+  goalieCandidatesChecked: number;
+  mismatchedAssignments: number;
+  nonGoaliePositionRows: number;
+} {
+  const rosterTeamsByPlayer = new Map<number, Set<number>>();
+  for (const row of args.goalieRosters) {
+    if (!Number.isFinite(row.playerId) || !Number.isFinite(row.teamId)) continue;
+    const teamIds = rosterTeamsByPlayer.get(row.playerId) ?? new Set<number>();
+    teamIds.add(row.teamId);
+    rosterTeamsByPlayer.set(row.playerId, teamIds);
+  }
+
+  const goalieById = new Map(args.goaliePlayers.map((player) => [player.id, player]));
+  const goalieCandidateIds = new Set(
+    Array.from(args.latestGoaliesByTeam.values()).flat().filter((id) =>
+      Number.isFinite(id)
+    )
+  );
+
+  let mismatchedAssignments = 0;
+  let nonGoaliePositionRows = 0;
+
+  for (const [teamId, goalieIds] of args.latestGoaliesByTeam.entries()) {
+    for (const goalieId of goalieIds) {
+      const player = goalieById.get(goalieId);
+      if (!player) continue;
+      if (player.position !== "G") nonGoaliePositionRows += 1;
+      const rosterTeams = rosterTeamsByPlayer.get(goalieId);
+      if (rosterTeams && rosterTeams.has(teamId)) continue;
+      mismatchedAssignments += 1;
+    }
+  }
+
+  return {
+    goalieCandidatesChecked: goalieCandidateIds.size,
+    mismatchedAssignments,
+    nonGoaliePositionRows
+  };
 }
 
 async function runProjectionPreflightChecks(
@@ -406,6 +482,7 @@ async function runProjectionPreflightChecks(
   // 1) Missing recent goalie-game rows for teams on the target slate.
   // 2) Outdated players.team_id mappings for likely goalie candidates from latest line combos.
   if (scheduledTeamIds.length > 0) {
+    const seasonId = await fetchSeasonIdForDate(asOfDate);
     const staleWindowStart = addDays(asOfDate, -30);
     const { data: recentGoalieRows, error: recentGoalieErr } = await supabase
       .from("forge_goalie_game")
@@ -430,7 +507,8 @@ async function runProjectionPreflightChecks(
         "Run /api/v1/db/build-projection-derived-v2 for recent dates and verify source goalie game ingestion."
     });
 
-    const likelyGoalieIds = new Set<number>();
+    const recentGoalieCandidateIds = new Set<number>();
+    const latestGoaliesByTeam = new Map<number, number[]>();
     for (const teamId of scheduledTeamIds) {
       const { data, error } = await supabase
         .from("lineCombinations")
@@ -440,53 +518,54 @@ async function runProjectionPreflightChecks(
         .order("date", { foreignTable: "games", ascending: false })
         .limit(3);
       if (error) throw error;
-      for (const row of (data ?? []) as Array<{ goalies: number[] | null }>) {
-        for (const goalieId of row.goalies ?? []) {
-          if (Number.isFinite(goalieId)) likelyGoalieIds.add(goalieId);
+      const rows = (data ?? []) as Array<{ goalies: number[] | null }>;
+      rows.forEach((row, index) => {
+        const goalieIds = (row.goalies ?? []).filter((goalieId) =>
+          Number.isFinite(goalieId)
+        );
+        goalieIds.forEach((goalieId) => recentGoalieCandidateIds.add(goalieId));
+        if (index === 0 && goalieIds.length > 0) {
+          latestGoaliesByTeam.set(teamId, goalieIds);
         }
-      }
+      });
     }
+    const likelyGoalieIds = recentGoalieCandidateIds;
     if (likelyGoalieIds.size > 0) {
       const { data: goaliePlayers, error: goaliePlayersErr } = await supabase
         .from("players")
-        .select("id,team_id,position")
+        .select("id,position")
         .in("id", Array.from(likelyGoalieIds));
       if (goaliePlayersErr) throw goaliePlayersErr;
-      const goalieById = new Map(
-        ((goaliePlayers ?? []) as Array<{ id: number; team_id: number | null; position: string | null }>).map(
-          (p) => [p.id, p]
-        )
-      );
-      let mismatchedAssignments = 0;
-      let nonGoaliePositionRows = 0;
-      for (const teamId of scheduledTeamIds) {
-        const { data, error } = await supabase
-          .from("lineCombinations")
-          .select("goalies,games!inner(date)")
-          .eq("teamId", teamId)
-          .lt("games.date", asOfDate)
-          .order("date", { foreignTable: "games", ascending: false })
-          .limit(1)
-          .maybeSingle();
-        if (error) throw error;
-        const ids = ((data as any)?.goalies ?? []) as number[];
-        for (const goalieId of ids) {
-          const p = goalieById.get(goalieId);
-          if (!p) continue;
-          if (p.position !== "G") nonGoaliePositionRows += 1;
-          if (p.team_id != null && p.team_id !== teamId) mismatchedAssignments += 1;
-        }
-      }
+      const { data: goalieRosters, error: goalieRostersErr } = await supabase
+        .from("rosters")
+        .select("playerId,teamId")
+        .eq("seasonId", seasonId)
+        .in("playerId", Array.from(likelyGoalieIds));
+      if (goalieRostersErr) throw goalieRostersErr;
+      const assignmentSummary = summarizeGoalieRosterAssignments({
+        latestGoaliesByTeam,
+        goaliePlayers: (goaliePlayers ?? []) as GoaliePlayerRow[],
+        goalieRosters: (goalieRosters ?? []) as GoalieRosterRow[]
+      });
+      const rosterAssignmentDrift =
+        assignmentSummary.mismatchedAssignments > 0;
       gates.push({
         gate_key: "outdated_player_team_assignments",
         status:
-          mismatchedAssignments === 0 && nonGoaliePositionRows === 0
-            ? "PASS"
-            : "FAIL",
-        detail: `goalie_candidates_checked=${likelyGoalieIds.size}, mismatched_team_assignments=${mismatchedAssignments}, non_goalie_positions=${nonGoaliePositionRows}`,
+          assignmentSummary.nonGoaliePositionRows === 0 ? "PASS" : "FAIL",
+        detail: `goalie_candidates_checked=${assignmentSummary.goalieCandidatesChecked}, mismatched_team_assignments=${assignmentSummary.mismatchedAssignments}, non_goalie_positions=${assignmentSummary.nonGoaliePositionRows}, season_id=${seasonId}`,
         action:
-          "Refresh players/team mappings and line combinations; verify traded goalies are updated in players.team_id."
+          "Refresh players/rosters and line combinations; verify current-season goalie roster assignments are present in rosters."
       });
+      if (rosterAssignmentDrift) {
+        gates.push({
+          gate_key: "outdated_player_team_assignments_warning",
+          status: "PASS",
+          detail: `Roster drift warning only: ${assignmentSummary.mismatchedAssignments} latest line-combination goalie assignments are not present on current-season rosters.`,
+          action:
+            "Review recalled, reassigned, or traded goalie history if projection inputs look suspicious; this warning does not block the run."
+        });
+      }
     } else {
       gates.push({
         gate_key: "outdated_player_team_assignments",
@@ -531,6 +610,16 @@ function buildGoalieObservability(args: {
     warnings.push({
       code: `preflight_${gate.gate_key}`,
       message: "Preflight dependency check failed.",
+      detail: gate.detail
+    });
+  }
+  const warningOnlyGates = args.preflight.gates.filter((g) =>
+    g.gate_key.endsWith("_warning")
+  );
+  for (const gate of warningOnlyGates) {
+    warnings.push({
+      code: `preflight_${gate.gate_key}`,
+      message: "Preflight data-quality warning.",
       detail: gate.detail
     });
   }

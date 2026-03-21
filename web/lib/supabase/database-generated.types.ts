@@ -14857,69 +14857,11 @@ export type Database = {
           assists_avg_last3: number | null
           assists_avg_last5: number | null
           assists_avg_season: number | null
-          assists_total_all: number | null
-          assists_total_last10: number | null
-          assists_total_last20: number | null
-          assists_total_last3: number | null
-          assists_total_last5: number | null
-          primary_assists_avg_3ya: number | null
-          primary_assists_avg_all: number | null
-          primary_assists_avg_career: number | null
-          primary_assists_avg_last10: number | null
-          primary_assists_avg_last20: number | null
-          primary_assists_avg_last3: number | null
-          primary_assists_avg_last5: number | null
-          primary_assists_avg_season: number | null
-          primary_assists_total_all: number | null
-          primary_assists_total_last10: number | null
-          primary_assists_total_last20: number | null
-          primary_assists_total_last3: number | null
-          primary_assists_total_last5: number | null
-          secondary_assists_avg_3ya: number | null
-          secondary_assists_avg_all: number | null
-          secondary_assists_avg_career: number | null
-          secondary_assists_avg_last10: number | null
-          secondary_assists_avg_last20: number | null
-          secondary_assists_avg_last3: number | null
-          secondary_assists_avg_last5: number | null
-          secondary_assists_avg_season: number | null
-          secondary_assists_total_all: number | null
-          secondary_assists_total_last10: number | null
-          secondary_assists_total_last20: number | null
-          secondary_assists_total_last3: number | null
-          secondary_assists_total_last5: number | null
-          penalties_drawn_avg_3ya: number | null
-          penalties_drawn_avg_all: number | null
-          penalties_drawn_avg_career: number | null
-          penalties_drawn_avg_last10: number | null
-          penalties_drawn_avg_last20: number | null
-          penalties_drawn_avg_last3: number | null
-          penalties_drawn_avg_last5: number | null
-          penalties_drawn_avg_season: number | null
-          penalties_drawn_total_all: number | null
-          penalties_drawn_total_last10: number | null
-          penalties_drawn_total_last20: number | null
-          penalties_drawn_total_last3: number | null
-          penalties_drawn_total_last5: number | null
-          blocks_avg_3ya: number | null
-          blocks_avg_all: number | null
-          blocks_avg_career: number | null
-          blocks_avg_last10: number | null
-          blocks_avg_last20: number | null
-          blocks_avg_last3: number | null
-          blocks_avg_last5: number | null
-          blocks_avg_season: number | null
-          blocks_per_60_avg_3ya: number | null
-          blocks_per_60_avg_all: number | null
-          blocks_per_60_avg_career: number | null
-          goals_per_60_avg_3ya: number | null
-          goals_per_60_avg_all: number | null
-          goals_per_60_avg_career: number | null
-          goals_per_60_avg_last10: number | null
-          goals_per_60_avg_last20: number | null
-          goals_per_60_avg_last3: number | null
-          goals_per_60_avg_last5: number | null
-          goals_per_60_avg_season: number | null
+          assists_per_60_3ya: number | null
+          assists_per_60_all: number | null
+          assists_per_60_assists_3ya: number | null
+          assists_per_60_assists_career: number | null
+          assists_per_60_assists_season: number | null
           assists_per_60_avg_3ya: number | null
           assists_per_60_avg_all: number | null
           assists_per_60_avg_career: number | null
@@ -14928,52 +14870,64 @@ export type Database = {
           assists_per_60_avg_last3: number | null
           assists_per_60_avg_last5: number | null
           assists_per_60_avg_season: number | null
-          primary_assists_per_60_avg_3ya: number | null
-          primary_assists_per_60_avg_all: number | null
-          primary_assists_per_60_avg_career: number | null
-          primary_assists_per_60_avg_last10: number | null
-          primary_assists_per_60_avg_last20: number | null
-          primary_assists_per_60_avg_last3: number | null
-          primary_assists_per_60_avg_last5: number | null
-          primary_assists_per_60_avg_season: number | null
-          secondary_assists_per_60_avg_3ya: number | null
-          secondary_assists_per_60_avg_all: number | null
-          secondary_assists_per_60_avg_career: number | null
-          secondary_assists_per_60_avg_last10: number | null
-          secondary_assists_per_60_avg_last20: number | null
-          secondary_assists_per_60_avg_last3: number | null
-          secondary_assists_per_60_avg_last5: number | null
-          secondary_assists_per_60_avg_season: number | null
-          blocks_per_60_avg_last10: number | null
-          blocks_per_60_avg_last20: number | null
-          blocks_per_60_avg_last3: number | null
-          blocks_per_60_avg_last5: number | null
-          blocks_per_60_avg_season: number | null
-          blocks_per_60_total_all: number | null
-          blocks_per_60_total_last10: number | null
-          blocks_per_60_total_last20: number | null
-          blocks_per_60_total_last3: number | null
-          blocks_per_60_total_last5: number | null
-          goals_per_60_total_all: number | null
-          goals_per_60_total_last10: number | null
-          goals_per_60_total_last20: number | null
-          goals_per_60_total_last3: number | null
-          goals_per_60_total_last5: number | null
+          assists_per_60_career: number | null
+          assists_per_60_last10: number | null
+          assists_per_60_last20: number | null
+          assists_per_60_last3: number | null
+          assists_per_60_last5: number | null
+          assists_per_60_season: number | null
+          assists_per_60_toi_seconds_3ya: number | null
+          assists_per_60_toi_seconds_career: number | null
+          assists_per_60_toi_seconds_season: number | null
           assists_per_60_total_all: number | null
           assists_per_60_total_last10: number | null
           assists_per_60_total_last20: number | null
           assists_per_60_total_last3: number | null
           assists_per_60_total_last5: number | null
-          primary_assists_per_60_total_all: number | null
-          primary_assists_per_60_total_last10: number | null
-          primary_assists_per_60_total_last20: number | null
-          primary_assists_per_60_total_last3: number | null
-          primary_assists_per_60_total_last5: number | null
-          secondary_assists_per_60_total_all: number | null
-          secondary_assists_per_60_total_last10: number | null
-          secondary_assists_per_60_total_last20: number | null
-          secondary_assists_per_60_total_last3: number | null
-          secondary_assists_per_60_total_last5: number | null
+          assists_total_all: number | null
+          assists_total_last10: number | null
+          assists_total_last20: number | null
+          assists_total_last3: number | null
+          assists_total_last5: number | null
+          availability_pct_last10_team_games: number | null
+          availability_pct_last20_team_games: number | null
+          availability_pct_last3_team_games: number | null
+          availability_pct_last5_team_games: number | null
+          blocks_avg_3ya: number | null
+          blocks_avg_all: number | null
+          blocks_avg_career: number | null
+          blocks_avg_last10: number | null
+          blocks_avg_last20: number | null
+          blocks_avg_last3: number | null
+          blocks_avg_last5: number | null
+          blocks_avg_season: number | null
+          blocks_per_60_3ya: number | null
+          blocks_per_60_all: number | null
+          blocks_per_60_avg_3ya: number | null
+          blocks_per_60_avg_all: number | null
+          blocks_per_60_avg_career: number | null
+          blocks_per_60_avg_last10: number | null
+          blocks_per_60_avg_last20: number | null
+          blocks_per_60_avg_last3: number | null
+          blocks_per_60_avg_last5: number | null
+          blocks_per_60_avg_season: number | null
+          blocks_per_60_blocks_3ya: number | null
+          blocks_per_60_blocks_career: number | null
+          blocks_per_60_blocks_season: number | null
+          blocks_per_60_career: number | null
+          blocks_per_60_last10: number | null
+          blocks_per_60_last20: number | null
+          blocks_per_60_last3: number | null
+          blocks_per_60_last5: number | null
+          blocks_per_60_season: number | null
+          blocks_per_60_toi_seconds_3ya: number | null
+          blocks_per_60_toi_seconds_career: number | null
+          blocks_per_60_toi_seconds_season: number | null
+          blocks_per_60_total_all: number | null
+          blocks_per_60_total_last10: number | null
+          blocks_per_60_total_last20: number | null
+          blocks_per_60_total_last3: number | null
+          blocks_per_60_total_last5: number | null
           blocks_total_all: number | null
           blocks_total_last10: number | null
           blocks_total_last20: number | null
@@ -14992,7 +14946,10 @@ export type Database = {
           ca_total_last20: number | null
           ca_total_last3: number | null
           ca_total_last5: number | null
+          career_availability_pct: number | null
           career_games_played: number | null
+          career_participation_games: number | null
+          career_participation_pct: number | null
           career_team_games_available: number | null
           cf_avg_3ya: number | null
           cf_avg_all: number | null
@@ -15002,6 +14959,8 @@ export type Database = {
           cf_avg_last3: number | null
           cf_avg_last5: number | null
           cf_avg_season: number | null
+          cf_pct_3ya: number | null
+          cf_pct_all: number | null
           cf_pct_avg_3ya: number | null
           cf_pct_avg_all: number | null
           cf_pct_avg_career: number | null
@@ -15010,6 +14969,18 @@ export type Database = {
           cf_pct_avg_last3: number | null
           cf_pct_avg_last5: number | null
           cf_pct_avg_season: number | null
+          cf_pct_ca_3ya: number | null
+          cf_pct_ca_career: number | null
+          cf_pct_ca_season: number | null
+          cf_pct_career: number | null
+          cf_pct_cf_3ya: number | null
+          cf_pct_cf_career: number | null
+          cf_pct_cf_season: number | null
+          cf_pct_last10: number | null
+          cf_pct_last20: number | null
+          cf_pct_last3: number | null
+          cf_pct_last5: number | null
+          cf_pct_season: number | null
           cf_pct_total_all: number | null
           cf_pct_total_last10: number | null
           cf_pct_total_last20: number | null
@@ -15020,6 +14991,21 @@ export type Database = {
           cf_total_last20: number | null
           cf_total_last3: number | null
           cf_total_last5: number | null
+          dz_starts_avg_3ya: number | null
+          dz_starts_avg_all: number | null
+          dz_starts_avg_career: number | null
+          dz_starts_avg_last10: number | null
+          dz_starts_avg_last20: number | null
+          dz_starts_avg_last3: number | null
+          dz_starts_avg_last5: number | null
+          dz_starts_avg_season: number | null
+          dz_starts_total_all: number | null
+          dz_starts_total_last10: number | null
+          dz_starts_total_last20: number | null
+          dz_starts_total_last3: number | null
+          dz_starts_total_last5: number | null
+          expected_sh_pct_3ya: number | null
+          expected_sh_pct_all: number | null
           expected_sh_pct_avg_3ya: number | null
           expected_sh_pct_avg_all: number | null
           expected_sh_pct_avg_career: number | null
@@ -15028,6 +15014,18 @@ export type Database = {
           expected_sh_pct_avg_last3: number | null
           expected_sh_pct_avg_last5: number | null
           expected_sh_pct_avg_season: number | null
+          expected_sh_pct_career: number | null
+          expected_sh_pct_ixg_3ya: number | null
+          expected_sh_pct_ixg_career: number | null
+          expected_sh_pct_ixg_season: number | null
+          expected_sh_pct_last10: number | null
+          expected_sh_pct_last20: number | null
+          expected_sh_pct_last3: number | null
+          expected_sh_pct_last5: number | null
+          expected_sh_pct_season: number | null
+          expected_sh_pct_shots_3ya: number | null
+          expected_sh_pct_shots_career: number | null
+          expected_sh_pct_shots_season: number | null
           expected_sh_pct_total_all: number | null
           expected_sh_pct_total_last10: number | null
           expected_sh_pct_total_last20: number | null
@@ -15054,6 +15052,8 @@ export type Database = {
           ff_avg_last3: number | null
           ff_avg_last5: number | null
           ff_avg_season: number | null
+          ff_pct_3ya: number | null
+          ff_pct_all: number | null
           ff_pct_avg_3ya: number | null
           ff_pct_avg_all: number | null
           ff_pct_avg_career: number | null
@@ -15062,6 +15062,18 @@ export type Database = {
           ff_pct_avg_last3: number | null
           ff_pct_avg_last5: number | null
           ff_pct_avg_season: number | null
+          ff_pct_career: number | null
+          ff_pct_fa_3ya: number | null
+          ff_pct_fa_career: number | null
+          ff_pct_fa_season: number | null
+          ff_pct_ff_3ya: number | null
+          ff_pct_ff_career: number | null
+          ff_pct_ff_season: number | null
+          ff_pct_last10: number | null
+          ff_pct_last20: number | null
+          ff_pct_last3: number | null
+          ff_pct_last5: number | null
+          ff_pct_season: number | null
           ff_pct_total_all: number | null
           ff_pct_total_last10: number | null
           ff_pct_total_last20: number | null
@@ -15087,6 +15099,33 @@ export type Database = {
           goals_avg_last3: number | null
           goals_avg_last5: number | null
           goals_avg_season: number | null
+          goals_per_60_3ya: number | null
+          goals_per_60_all: number | null
+          goals_per_60_avg_3ya: number | null
+          goals_per_60_avg_all: number | null
+          goals_per_60_avg_career: number | null
+          goals_per_60_avg_last10: number | null
+          goals_per_60_avg_last20: number | null
+          goals_per_60_avg_last3: number | null
+          goals_per_60_avg_last5: number | null
+          goals_per_60_avg_season: number | null
+          goals_per_60_career: number | null
+          goals_per_60_goals_3ya: number | null
+          goals_per_60_goals_career: number | null
+          goals_per_60_goals_season: number | null
+          goals_per_60_last10: number | null
+          goals_per_60_last20: number | null
+          goals_per_60_last3: number | null
+          goals_per_60_last5: number | null
+          goals_per_60_season: number | null
+          goals_per_60_toi_seconds_3ya: number | null
+          goals_per_60_toi_seconds_career: number | null
+          goals_per_60_toi_seconds_season: number | null
+          goals_per_60_total_all: number | null
+          goals_per_60_total_last10: number | null
+          goals_per_60_total_last20: number | null
+          goals_per_60_total_last3: number | null
+          goals_per_60_total_last5: number | null
           goals_total_all: number | null
           goals_total_last10: number | null
           goals_total_last20: number | null
@@ -15114,6 +15153,8 @@ export type Database = {
           hits_avg_last3: number | null
           hits_avg_last5: number | null
           hits_avg_season: number | null
+          hits_per_60_3ya: number | null
+          hits_per_60_all: number | null
           hits_per_60_avg_3ya: number | null
           hits_per_60_avg_all: number | null
           hits_per_60_avg_career: number | null
@@ -15122,6 +15163,18 @@ export type Database = {
           hits_per_60_avg_last3: number | null
           hits_per_60_avg_last5: number | null
           hits_per_60_avg_season: number | null
+          hits_per_60_career: number | null
+          hits_per_60_hits_3ya: number | null
+          hits_per_60_hits_career: number | null
+          hits_per_60_hits_season: number | null
+          hits_per_60_last10: number | null
+          hits_per_60_last20: number | null
+          hits_per_60_last3: number | null
+          hits_per_60_last5: number | null
+          hits_per_60_season: number | null
+          hits_per_60_toi_seconds_3ya: number | null
+          hits_per_60_toi_seconds_career: number | null
+          hits_per_60_toi_seconds_season: number | null
           hits_per_60_total_all: number | null
           hits_per_60_total_last10: number | null
           hits_per_60_total_last20: number | null
@@ -15145,6 +15198,8 @@ export type Database = {
           ihdcf_total_last20: number | null
           ihdcf_total_last3: number | null
           ihdcf_total_last5: number | null
+          ipp_3ya: number | null
+          ipp_all: number | null
           ipp_avg_3ya: number | null
           ipp_avg_all: number | null
           ipp_avg_career: number | null
@@ -15153,6 +15208,28 @@ export type Database = {
           ipp_avg_last3: number | null
           ipp_avg_last5: number | null
           ipp_avg_season: number | null
+          ipp_career: number | null
+          ipp_last10: number | null
+          ipp_last20: number | null
+          ipp_last3: number | null
+          ipp_last5: number | null
+          ipp_on_ice_goals_for_3ya: number | null
+          ipp_on_ice_goals_for_all: number | null
+          ipp_on_ice_goals_for_career: number | null
+          ipp_on_ice_goals_for_last10: number | null
+          ipp_on_ice_goals_for_last20: number | null
+          ipp_on_ice_goals_for_last3: number | null
+          ipp_on_ice_goals_for_last5: number | null
+          ipp_on_ice_goals_for_season: number | null
+          ipp_points_3ya: number | null
+          ipp_points_all: number | null
+          ipp_points_career: number | null
+          ipp_points_last10: number | null
+          ipp_points_last20: number | null
+          ipp_points_last3: number | null
+          ipp_points_last5: number | null
+          ipp_points_season: number | null
+          ipp_season: number | null
           ipp_total_all: number | null
           ipp_total_last10: number | null
           ipp_total_last20: number | null
@@ -15179,6 +15256,8 @@ export type Database = {
           ixg_avg_last3: number | null
           ixg_avg_last5: number | null
           ixg_avg_season: number | null
+          ixg_per_60_3ya: number | null
+          ixg_per_60_all: number | null
           ixg_per_60_avg_3ya: number | null
           ixg_per_60_avg_all: number | null
           ixg_per_60_avg_career: number | null
@@ -15187,6 +15266,18 @@ export type Database = {
           ixg_per_60_avg_last3: number | null
           ixg_per_60_avg_last5: number | null
           ixg_per_60_avg_season: number | null
+          ixg_per_60_career: number | null
+          ixg_per_60_ixg_3ya: number | null
+          ixg_per_60_ixg_career: number | null
+          ixg_per_60_ixg_season: number | null
+          ixg_per_60_last10: number | null
+          ixg_per_60_last20: number | null
+          ixg_per_60_last3: number | null
+          ixg_per_60_last5: number | null
+          ixg_per_60_season: number | null
+          ixg_per_60_toi_seconds_3ya: number | null
+          ixg_per_60_toi_seconds_career: number | null
+          ixg_per_60_toi_seconds_season: number | null
           ixg_per_60_total_all: number | null
           ixg_per_60_total_last10: number | null
           ixg_per_60_total_last20: number | null
@@ -15199,6 +15290,73 @@ export type Database = {
           ixg_total_last5: number | null
           line_combo_group: string | null
           line_combo_slot: number | null
+          nz_starts_avg_3ya: number | null
+          nz_starts_avg_all: number | null
+          nz_starts_avg_career: number | null
+          nz_starts_avg_last10: number | null
+          nz_starts_avg_last20: number | null
+          nz_starts_avg_last3: number | null
+          nz_starts_avg_last5: number | null
+          nz_starts_avg_season: number | null
+          nz_starts_total_all: number | null
+          nz_starts_total_last10: number | null
+          nz_starts_total_last20: number | null
+          nz_starts_total_last3: number | null
+          nz_starts_total_last5: number | null
+          oi_ga_avg_3ya: number | null
+          oi_ga_avg_all: number | null
+          oi_ga_avg_career: number | null
+          oi_ga_avg_last10: number | null
+          oi_ga_avg_last20: number | null
+          oi_ga_avg_last3: number | null
+          oi_ga_avg_last5: number | null
+          oi_ga_avg_season: number | null
+          oi_ga_total_all: number | null
+          oi_ga_total_last10: number | null
+          oi_ga_total_last20: number | null
+          oi_ga_total_last3: number | null
+          oi_ga_total_last5: number | null
+          oi_gf_avg_3ya: number | null
+          oi_gf_avg_all: number | null
+          oi_gf_avg_career: number | null
+          oi_gf_avg_last10: number | null
+          oi_gf_avg_last20: number | null
+          oi_gf_avg_last3: number | null
+          oi_gf_avg_last5: number | null
+          oi_gf_avg_season: number | null
+          oi_gf_total_all: number | null
+          oi_gf_total_last10: number | null
+          oi_gf_total_last20: number | null
+          oi_gf_total_last3: number | null
+          oi_gf_total_last5: number | null
+          oi_sa_avg_3ya: number | null
+          oi_sa_avg_all: number | null
+          oi_sa_avg_career: number | null
+          oi_sa_avg_last10: number | null
+          oi_sa_avg_last20: number | null
+          oi_sa_avg_last3: number | null
+          oi_sa_avg_last5: number | null
+          oi_sa_avg_season: number | null
+          oi_sa_total_all: number | null
+          oi_sa_total_last10: number | null
+          oi_sa_total_last20: number | null
+          oi_sa_total_last3: number | null
+          oi_sa_total_last5: number | null
+          oi_sf_avg_3ya: number | null
+          oi_sf_avg_all: number | null
+          oi_sf_avg_career: number | null
+          oi_sf_avg_last10: number | null
+          oi_sf_avg_last20: number | null
+          oi_sf_avg_last3: number | null
+          oi_sf_avg_last5: number | null
+          oi_sf_avg_season: number | null
+          oi_sf_total_all: number | null
+          oi_sf_total_last10: number | null
+          oi_sf_total_last20: number | null
+          oi_sf_total_last3: number | null
+          oi_sf_total_last5: number | null
+          on_ice_sh_pct_3ya: number | null
+          on_ice_sh_pct_all: number | null
           on_ice_sh_pct_avg_3ya: number | null
           on_ice_sh_pct_avg_all: number | null
           on_ice_sh_pct_avg_career: number | null
@@ -15207,11 +15365,56 @@ export type Database = {
           on_ice_sh_pct_avg_last3: number | null
           on_ice_sh_pct_avg_last5: number | null
           on_ice_sh_pct_avg_season: number | null
+          on_ice_sh_pct_career: number | null
+          on_ice_sh_pct_goals_for_3ya: number | null
+          on_ice_sh_pct_goals_for_all: number | null
+          on_ice_sh_pct_goals_for_career: number | null
+          on_ice_sh_pct_goals_for_last10: number | null
+          on_ice_sh_pct_goals_for_last20: number | null
+          on_ice_sh_pct_goals_for_last3: number | null
+          on_ice_sh_pct_goals_for_last5: number | null
+          on_ice_sh_pct_goals_for_season: number | null
+          on_ice_sh_pct_last10: number | null
+          on_ice_sh_pct_last20: number | null
+          on_ice_sh_pct_last3: number | null
+          on_ice_sh_pct_last5: number | null
+          on_ice_sh_pct_season: number | null
+          on_ice_sh_pct_shots_for_3ya: number | null
+          on_ice_sh_pct_shots_for_all: number | null
+          on_ice_sh_pct_shots_for_career: number | null
+          on_ice_sh_pct_shots_for_last10: number | null
+          on_ice_sh_pct_shots_for_last20: number | null
+          on_ice_sh_pct_shots_for_last3: number | null
+          on_ice_sh_pct_shots_for_last5: number | null
+          on_ice_sh_pct_shots_for_season: number | null
           on_ice_sh_pct_total_all: number | null
           on_ice_sh_pct_total_last10: number | null
           on_ice_sh_pct_total_last20: number | null
           on_ice_sh_pct_total_last3: number | null
           on_ice_sh_pct_total_last5: number | null
+          on_ice_sv_pct_3ya: number | null
+          on_ice_sv_pct_all: number | null
+          on_ice_sv_pct_avg_3ya: number | null
+          on_ice_sv_pct_avg_all: number | null
+          on_ice_sv_pct_avg_career: number | null
+          on_ice_sv_pct_avg_last10: number | null
+          on_ice_sv_pct_avg_last20: number | null
+          on_ice_sv_pct_avg_last3: number | null
+          on_ice_sv_pct_avg_last5: number | null
+          on_ice_sv_pct_avg_season: number | null
+          on_ice_sv_pct_career: number | null
+          on_ice_sv_pct_last10: number | null
+          on_ice_sv_pct_last20: number | null
+          on_ice_sv_pct_last3: number | null
+          on_ice_sv_pct_last5: number | null
+          on_ice_sv_pct_season: number | null
+          on_ice_sv_pct_total_all: number | null
+          on_ice_sv_pct_total_last10: number | null
+          on_ice_sv_pct_total_last20: number | null
+          on_ice_sv_pct_total_last3: number | null
+          on_ice_sv_pct_total_last5: number | null
+          oz_start_pct_3ya: number | null
+          oz_start_pct_all: number | null
           oz_start_pct_avg_3ya: number | null
           oz_start_pct_avg_all: number | null
           oz_start_pct_avg_career: number | null
@@ -15220,11 +15423,64 @@ export type Database = {
           oz_start_pct_avg_last3: number | null
           oz_start_pct_avg_last5: number | null
           oz_start_pct_avg_season: number | null
+          oz_start_pct_career: number | null
+          oz_start_pct_def_zone_starts_3ya: number | null
+          oz_start_pct_def_zone_starts_all: number | null
+          oz_start_pct_def_zone_starts_career: number | null
+          oz_start_pct_def_zone_starts_last10: number | null
+          oz_start_pct_def_zone_starts_last20: number | null
+          oz_start_pct_def_zone_starts_last3: number | null
+          oz_start_pct_def_zone_starts_last5: number | null
+          oz_start_pct_def_zone_starts_season: number | null
+          oz_start_pct_last10: number | null
+          oz_start_pct_last20: number | null
+          oz_start_pct_last3: number | null
+          oz_start_pct_last5: number | null
+          oz_start_pct_neutral_zone_starts_3ya: number | null
+          oz_start_pct_neutral_zone_starts_all: number | null
+          oz_start_pct_neutral_zone_starts_career: number | null
+          oz_start_pct_neutral_zone_starts_last10: number | null
+          oz_start_pct_neutral_zone_starts_last20: number | null
+          oz_start_pct_neutral_zone_starts_last3: number | null
+          oz_start_pct_neutral_zone_starts_last5: number | null
+          oz_start_pct_neutral_zone_starts_season: number | null
+          oz_start_pct_off_zone_starts_3ya: number | null
+          oz_start_pct_off_zone_starts_all: number | null
+          oz_start_pct_off_zone_starts_career: number | null
+          oz_start_pct_off_zone_starts_last10: number | null
+          oz_start_pct_off_zone_starts_last20: number | null
+          oz_start_pct_off_zone_starts_last3: number | null
+          oz_start_pct_off_zone_starts_last5: number | null
+          oz_start_pct_off_zone_starts_season: number | null
+          oz_start_pct_season: number | null
           oz_start_pct_total_all: number | null
           oz_start_pct_total_last10: number | null
           oz_start_pct_total_last20: number | null
           oz_start_pct_total_last3: number | null
           oz_start_pct_total_last5: number | null
+          oz_starts_avg_3ya: number | null
+          oz_starts_avg_all: number | null
+          oz_starts_avg_career: number | null
+          oz_starts_avg_last10: number | null
+          oz_starts_avg_last20: number | null
+          oz_starts_avg_last3: number | null
+          oz_starts_avg_last5: number | null
+          oz_starts_avg_season: number | null
+          oz_starts_total_all: number | null
+          oz_starts_total_last10: number | null
+          oz_starts_total_last20: number | null
+          oz_starts_total_last3: number | null
+          oz_starts_total_last5: number | null
+          participation_games_last10_team_games: number | null
+          participation_games_last20_team_games: number | null
+          participation_games_last3_team_games: number | null
+          participation_games_last5_team_games: number | null
+          participation_pct_last10_team_games: number | null
+          participation_pct_last20_team_games: number | null
+          participation_pct_last3_team_games: number | null
+          participation_pct_last5_team_games: number | null
+          pdo_3ya: number | null
+          pdo_all: number | null
           pdo_avg_3ya: number | null
           pdo_avg_all: number | null
           pdo_avg_career: number | null
@@ -15233,11 +15489,89 @@ export type Database = {
           pdo_avg_last3: number | null
           pdo_avg_last5: number | null
           pdo_avg_season: number | null
+          pdo_career: number | null
+          pdo_goals_against_3ya: number | null
+          pdo_goals_against_all: number | null
+          pdo_goals_against_career: number | null
+          pdo_goals_against_last10: number | null
+          pdo_goals_against_last20: number | null
+          pdo_goals_against_last3: number | null
+          pdo_goals_against_last5: number | null
+          pdo_goals_against_season: number | null
+          pdo_goals_for_3ya: number | null
+          pdo_goals_for_all: number | null
+          pdo_goals_for_career: number | null
+          pdo_goals_for_last10: number | null
+          pdo_goals_for_last20: number | null
+          pdo_goals_for_last3: number | null
+          pdo_goals_for_last5: number | null
+          pdo_goals_for_season: number | null
+          pdo_last10: number | null
+          pdo_last20: number | null
+          pdo_last3: number | null
+          pdo_last5: number | null
+          pdo_season: number | null
+          pdo_shots_against_3ya: number | null
+          pdo_shots_against_all: number | null
+          pdo_shots_against_career: number | null
+          pdo_shots_against_last10: number | null
+          pdo_shots_against_last20: number | null
+          pdo_shots_against_last3: number | null
+          pdo_shots_against_last5: number | null
+          pdo_shots_against_season: number | null
+          pdo_shots_for_3ya: number | null
+          pdo_shots_for_all: number | null
+          pdo_shots_for_career: number | null
+          pdo_shots_for_last10: number | null
+          pdo_shots_for_last20: number | null
+          pdo_shots_for_last3: number | null
+          pdo_shots_for_last5: number | null
+          pdo_shots_for_season: number | null
           pdo_total_all: number | null
           pdo_total_last10: number | null
           pdo_total_last20: number | null
           pdo_total_last3: number | null
           pdo_total_last5: number | null
+          penalties_drawn_avg_3ya: number | null
+          penalties_drawn_avg_all: number | null
+          penalties_drawn_avg_career: number | null
+          penalties_drawn_avg_last10: number | null
+          penalties_drawn_avg_last20: number | null
+          penalties_drawn_avg_last3: number | null
+          penalties_drawn_avg_last5: number | null
+          penalties_drawn_avg_season: number | null
+          penalties_drawn_per_60_3ya: number | null
+          penalties_drawn_per_60_all: number | null
+          penalties_drawn_per_60_avg_3ya: number | null
+          penalties_drawn_per_60_avg_all: number | null
+          penalties_drawn_per_60_avg_career: number | null
+          penalties_drawn_per_60_avg_last10: number | null
+          penalties_drawn_per_60_avg_last20: number | null
+          penalties_drawn_per_60_avg_last3: number | null
+          penalties_drawn_per_60_avg_last5: number | null
+          penalties_drawn_per_60_avg_season: number | null
+          penalties_drawn_per_60_career: number | null
+          penalties_drawn_per_60_last10: number | null
+          penalties_drawn_per_60_last20: number | null
+          penalties_drawn_per_60_last3: number | null
+          penalties_drawn_per_60_last5: number | null
+          penalties_drawn_per_60_penalties_drawn_3ya: number | null
+          penalties_drawn_per_60_penalties_drawn_career: number | null
+          penalties_drawn_per_60_penalties_drawn_season: number | null
+          penalties_drawn_per_60_season: number | null
+          penalties_drawn_per_60_toi_seconds_3ya: number | null
+          penalties_drawn_per_60_toi_seconds_career: number | null
+          penalties_drawn_per_60_toi_seconds_season: number | null
+          penalties_drawn_per_60_total_all: number | null
+          penalties_drawn_per_60_total_last10: number | null
+          penalties_drawn_per_60_total_last20: number | null
+          penalties_drawn_per_60_total_last3: number | null
+          penalties_drawn_per_60_total_last5: number | null
+          penalties_drawn_total_all: number | null
+          penalties_drawn_total_last10: number | null
+          penalties_drawn_total_last20: number | null
+          penalties_drawn_total_last3: number | null
+          penalties_drawn_total_last5: number | null
           player_id: number
           points_avg_3ya: number | null
           points_avg_all: number | null
@@ -15265,6 +15599,44 @@ export type Database = {
           pp_points_total_last20: number | null
           pp_points_total_last3: number | null
           pp_points_total_last5: number | null
+          pp_share_of_team: number | null
+          pp_share_pct_3ya: number | null
+          pp_share_pct_all: number | null
+          pp_share_pct_avg_3ya: number | null
+          pp_share_pct_avg_all: number | null
+          pp_share_pct_avg_career: number | null
+          pp_share_pct_avg_last10: number | null
+          pp_share_pct_avg_last20: number | null
+          pp_share_pct_avg_last3: number | null
+          pp_share_pct_avg_last5: number | null
+          pp_share_pct_avg_season: number | null
+          pp_share_pct_career: number | null
+          pp_share_pct_last10: number | null
+          pp_share_pct_last20: number | null
+          pp_share_pct_last3: number | null
+          pp_share_pct_last5: number | null
+          pp_share_pct_player_pp_toi_3ya: number | null
+          pp_share_pct_player_pp_toi_all: number | null
+          pp_share_pct_player_pp_toi_career: number | null
+          pp_share_pct_player_pp_toi_last10: number | null
+          pp_share_pct_player_pp_toi_last20: number | null
+          pp_share_pct_player_pp_toi_last3: number | null
+          pp_share_pct_player_pp_toi_last5: number | null
+          pp_share_pct_player_pp_toi_season: number | null
+          pp_share_pct_season: number | null
+          pp_share_pct_team_pp_toi_3ya: number | null
+          pp_share_pct_team_pp_toi_all: number | null
+          pp_share_pct_team_pp_toi_career: number | null
+          pp_share_pct_team_pp_toi_last10: number | null
+          pp_share_pct_team_pp_toi_last20: number | null
+          pp_share_pct_team_pp_toi_last3: number | null
+          pp_share_pct_team_pp_toi_last5: number | null
+          pp_share_pct_team_pp_toi_season: number | null
+          pp_share_pct_total_all: number | null
+          pp_share_pct_total_last10: number | null
+          pp_share_pct_total_last20: number | null
+          pp_share_pct_total_last3: number | null
+          pp_share_pct_total_last5: number | null
           pp_toi_seconds_avg_3ya: number | null
           pp_toi_seconds_avg_all: number | null
           pp_toi_seconds_avg_career: number | null
@@ -15278,24 +15650,52 @@ export type Database = {
           pp_toi_seconds_total_last20: number | null
           pp_toi_seconds_total_last3: number | null
           pp_toi_seconds_total_last5: number | null
-          pp_share_pct_avg_3ya: number | null
-          pp_share_pct_avg_all: number | null
-          pp_share_pct_avg_career: number | null
-          pp_share_pct_avg_last10: number | null
-          pp_share_pct_avg_last20: number | null
-          pp_share_pct_avg_last3: number | null
-          pp_share_pct_avg_last5: number | null
-          pp_share_pct_avg_season: number | null
-          pp_share_pct_total_all: number | null
-          pp_share_pct_total_last10: number | null
-          pp_share_pct_total_last20: number | null
-          pp_share_pct_total_last3: number | null
-          pp_share_pct_total_last5: number | null
           pp_unit: number | null
-          pp_share_of_team: number | null
-          pp_unit_usage_index: number | null
           pp_unit_relative_toi: number | null
+          pp_unit_usage_index: number | null
           pp_vs_unit_avg: number | null
+          primary_assists_avg_3ya: number | null
+          primary_assists_avg_all: number | null
+          primary_assists_avg_career: number | null
+          primary_assists_avg_last10: number | null
+          primary_assists_avg_last20: number | null
+          primary_assists_avg_last3: number | null
+          primary_assists_avg_last5: number | null
+          primary_assists_avg_season: number | null
+          primary_assists_per_60_3ya: number | null
+          primary_assists_per_60_all: number | null
+          primary_assists_per_60_avg_3ya: number | null
+          primary_assists_per_60_avg_all: number | null
+          primary_assists_per_60_avg_career: number | null
+          primary_assists_per_60_avg_last10: number | null
+          primary_assists_per_60_avg_last20: number | null
+          primary_assists_per_60_avg_last3: number | null
+          primary_assists_per_60_avg_last5: number | null
+          primary_assists_per_60_avg_season: number | null
+          primary_assists_per_60_career: number | null
+          primary_assists_per_60_last10: number | null
+          primary_assists_per_60_last20: number | null
+          primary_assists_per_60_last3: number | null
+          primary_assists_per_60_last5: number | null
+          primary_assists_per_60_primary_assists_3ya: number | null
+          primary_assists_per_60_primary_assists_career: number | null
+          primary_assists_per_60_primary_assists_season: number | null
+          primary_assists_per_60_season: number | null
+          primary_assists_per_60_toi_seconds_3ya: number | null
+          primary_assists_per_60_toi_seconds_career: number | null
+          primary_assists_per_60_toi_seconds_season: number | null
+          primary_assists_per_60_total_all: number | null
+          primary_assists_per_60_total_last10: number | null
+          primary_assists_per_60_total_last20: number | null
+          primary_assists_per_60_total_last3: number | null
+          primary_assists_per_60_total_last5: number | null
+          primary_assists_total_all: number | null
+          primary_assists_total_last10: number | null
+          primary_assists_total_last20: number | null
+          primary_assists_total_last3: number | null
+          primary_assists_total_last5: number | null
+          primary_points_pct_3ya: number | null
+          primary_points_pct_all: number | null
           primary_points_pct_avg_3ya: number | null
           primary_points_pct_avg_all: number | null
           primary_points_pct_avg_career: number | null
@@ -15304,14 +15704,81 @@ export type Database = {
           primary_points_pct_avg_last3: number | null
           primary_points_pct_avg_last5: number | null
           primary_points_pct_avg_season: number | null
+          primary_points_pct_career: number | null
+          primary_points_pct_last10: number | null
+          primary_points_pct_last20: number | null
+          primary_points_pct_last3: number | null
+          primary_points_pct_last5: number | null
+          primary_points_pct_points_3ya: number | null
+          primary_points_pct_points_all: number | null
+          primary_points_pct_points_career: number | null
+          primary_points_pct_points_last10: number | null
+          primary_points_pct_points_last20: number | null
+          primary_points_pct_points_last3: number | null
+          primary_points_pct_points_last5: number | null
+          primary_points_pct_points_season: number | null
+          primary_points_pct_primary_points_3ya: number | null
+          primary_points_pct_primary_points_all: number | null
+          primary_points_pct_primary_points_career: number | null
+          primary_points_pct_primary_points_last10: number | null
+          primary_points_pct_primary_points_last20: number | null
+          primary_points_pct_primary_points_last3: number | null
+          primary_points_pct_primary_points_last5: number | null
+          primary_points_pct_primary_points_season: number | null
+          primary_points_pct_season: number | null
           primary_points_pct_total_all: number | null
           primary_points_pct_total_last10: number | null
           primary_points_pct_total_last20: number | null
           primary_points_pct_total_last3: number | null
           primary_points_pct_total_last5: number | null
           season: number
+          season_availability_pct: number | null
           season_games_played: number | null
+          season_participation_games: number | null
+          season_participation_pct: number | null
           season_team_games_available: number | null
+          secondary_assists_avg_3ya: number | null
+          secondary_assists_avg_all: number | null
+          secondary_assists_avg_career: number | null
+          secondary_assists_avg_last10: number | null
+          secondary_assists_avg_last20: number | null
+          secondary_assists_avg_last3: number | null
+          secondary_assists_avg_last5: number | null
+          secondary_assists_avg_season: number | null
+          secondary_assists_per_60_3ya: number | null
+          secondary_assists_per_60_all: number | null
+          secondary_assists_per_60_avg_3ya: number | null
+          secondary_assists_per_60_avg_all: number | null
+          secondary_assists_per_60_avg_career: number | null
+          secondary_assists_per_60_avg_last10: number | null
+          secondary_assists_per_60_avg_last20: number | null
+          secondary_assists_per_60_avg_last3: number | null
+          secondary_assists_per_60_avg_last5: number | null
+          secondary_assists_per_60_avg_season: number | null
+          secondary_assists_per_60_career: number | null
+          secondary_assists_per_60_last10: number | null
+          secondary_assists_per_60_last20: number | null
+          secondary_assists_per_60_last3: number | null
+          secondary_assists_per_60_last5: number | null
+          secondary_assists_per_60_season: number | null
+          secondary_assists_per_60_secondary_assists_3ya: number | null
+          secondary_assists_per_60_secondary_assists_career: number | null
+          secondary_assists_per_60_secondary_assists_season: number | null
+          secondary_assists_per_60_toi_seconds_3ya: number | null
+          secondary_assists_per_60_toi_seconds_career: number | null
+          secondary_assists_per_60_toi_seconds_season: number | null
+          secondary_assists_per_60_total_all: number | null
+          secondary_assists_per_60_total_last10: number | null
+          secondary_assists_per_60_total_last20: number | null
+          secondary_assists_per_60_total_last3: number | null
+          secondary_assists_per_60_total_last5: number | null
+          secondary_assists_total_all: number | null
+          secondary_assists_total_last10: number | null
+          secondary_assists_total_last20: number | null
+          secondary_assists_total_last3: number | null
+          secondary_assists_total_last5: number | null
+          shooting_pct_3ya: number | null
+          shooting_pct_all: number | null
           shooting_pct_avg_3ya: number | null
           shooting_pct_avg_all: number | null
           shooting_pct_avg_career: number | null
@@ -15320,6 +15787,18 @@ export type Database = {
           shooting_pct_avg_last3: number | null
           shooting_pct_avg_last5: number | null
           shooting_pct_avg_season: number | null
+          shooting_pct_career: number | null
+          shooting_pct_goals_3ya: number | null
+          shooting_pct_goals_career: number | null
+          shooting_pct_goals_season: number | null
+          shooting_pct_last10: number | null
+          shooting_pct_last20: number | null
+          shooting_pct_last3: number | null
+          shooting_pct_last5: number | null
+          shooting_pct_season: number | null
+          shooting_pct_shots_3ya: number | null
+          shooting_pct_shots_career: number | null
+          shooting_pct_shots_season: number | null
           shooting_pct_total_all: number | null
           shooting_pct_total_last10: number | null
           shooting_pct_total_last20: number | null
@@ -15338,6 +15817,8 @@ export type Database = {
           shots_total_last20: number | null
           shots_total_last3: number | null
           shots_total_last5: number | null
+          sog_per_60_3ya: number | null
+          sog_per_60_all: number | null
           sog_per_60_avg_3ya: number | null
           sog_per_60_avg_all: number | null
           sog_per_60_avg_career: number | null
@@ -15346,6 +15827,18 @@ export type Database = {
           sog_per_60_avg_last3: number | null
           sog_per_60_avg_last5: number | null
           sog_per_60_avg_season: number | null
+          sog_per_60_career: number | null
+          sog_per_60_last10: number | null
+          sog_per_60_last20: number | null
+          sog_per_60_last3: number | null
+          sog_per_60_last5: number | null
+          sog_per_60_season: number | null
+          sog_per_60_shots_3ya: number | null
+          sog_per_60_shots_career: number | null
+          sog_per_60_shots_season: number | null
+          sog_per_60_toi_seconds_3ya: number | null
+          sog_per_60_toi_seconds_career: number | null
+          sog_per_60_toi_seconds_season: number | null
           sog_per_60_total_all: number | null
           sog_per_60_total_last10: number | null
           sog_per_60_total_last20: number | null
@@ -15358,7 +15851,10 @@ export type Database = {
           team_games_available_last5: number | null
           team_games_played: number
           team_id: number | null
+          three_year_availability_pct: number | null
           three_year_games_played: number | null
+          three_year_participation_games: number | null
+          three_year_participation_pct: number | null
           three_year_team_games_available: number | null
           toi_seconds_avg_3ya: number | null
           toi_seconds_avg_all: number | null
@@ -15373,502 +15869,6 @@ export type Database = {
           toi_seconds_total_last20: number | null
           toi_seconds_total_last3: number | null
           toi_seconds_total_last5: number | null
-          season_availability_pct: number | null
-          three_year_availability_pct: number | null
-          career_availability_pct: number | null
-          availability_pct_last3_team_games: number | null
-          availability_pct_last5_team_games: number | null
-          availability_pct_last10_team_games: number | null
-          availability_pct_last20_team_games: number | null
-          season_participation_pct: number | null
-          three_year_participation_pct: number | null
-          career_participation_pct: number | null
-          participation_pct_last3_team_games: number | null
-          participation_pct_last5_team_games: number | null
-          participation_pct_last10_team_games: number | null
-          participation_pct_last20_team_games: number | null
-          season_participation_games: number | null
-          three_year_participation_games: number | null
-          career_participation_games: number | null
-          participation_games_last3_team_games: number | null
-          participation_games_last5_team_games: number | null
-          participation_games_last10_team_games: number | null
-          participation_games_last20_team_games: number | null
-          shooting_pct_all: number | null
-          shooting_pct_last3: number | null
-          shooting_pct_last5: number | null
-          shooting_pct_last10: number | null
-          shooting_pct_last20: number | null
-          shooting_pct_season: number | null
-          shooting_pct_3ya: number | null
-          shooting_pct_career: number | null
-          primary_points_pct_all: number | null
-          primary_points_pct_last3: number | null
-          primary_points_pct_last5: number | null
-          primary_points_pct_last10: number | null
-          primary_points_pct_last20: number | null
-          primary_points_pct_season: number | null
-          primary_points_pct_3ya: number | null
-          primary_points_pct_career: number | null
-          expected_sh_pct_all: number | null
-          expected_sh_pct_last3: number | null
-          expected_sh_pct_last5: number | null
-          expected_sh_pct_last10: number | null
-          expected_sh_pct_last20: number | null
-          expected_sh_pct_season: number | null
-          expected_sh_pct_3ya: number | null
-          expected_sh_pct_career: number | null
-          ipp_all: number | null
-          ipp_last3: number | null
-          ipp_last5: number | null
-          ipp_last10: number | null
-          ipp_last20: number | null
-          ipp_season: number | null
-          ipp_3ya: number | null
-          ipp_career: number | null
-          on_ice_sh_pct_all: number | null
-          on_ice_sh_pct_last3: number | null
-          on_ice_sh_pct_last5: number | null
-          on_ice_sh_pct_last10: number | null
-          on_ice_sh_pct_last20: number | null
-          on_ice_sh_pct_season: number | null
-          on_ice_sh_pct_3ya: number | null
-          on_ice_sh_pct_career: number | null
-          on_ice_sv_pct_all: number | null
-          on_ice_sv_pct_last3: number | null
-          on_ice_sv_pct_last5: number | null
-          on_ice_sv_pct_last10: number | null
-          on_ice_sv_pct_last20: number | null
-          on_ice_sv_pct_season: number | null
-          on_ice_sv_pct_3ya: number | null
-          on_ice_sv_pct_career: number | null
-          oz_start_pct_all: number | null
-          oz_start_pct_last3: number | null
-          oz_start_pct_last5: number | null
-          oz_start_pct_last10: number | null
-          oz_start_pct_last20: number | null
-          oz_start_pct_season: number | null
-          oz_start_pct_3ya: number | null
-          oz_start_pct_career: number | null
-          pp_share_pct_all: number | null
-          pp_share_pct_last3: number | null
-          pp_share_pct_last5: number | null
-          pp_share_pct_last10: number | null
-          pp_share_pct_last20: number | null
-          pp_share_pct_season: number | null
-          pp_share_pct_3ya: number | null
-          pp_share_pct_career: number | null
-          cf_pct_all: number | null
-          cf_pct_last3: number | null
-          cf_pct_last5: number | null
-          cf_pct_last10: number | null
-          cf_pct_last20: number | null
-          cf_pct_season: number | null
-          cf_pct_3ya: number | null
-          cf_pct_career: number | null
-          ff_pct_all: number | null
-          ff_pct_last3: number | null
-          ff_pct_last5: number | null
-          ff_pct_last10: number | null
-          ff_pct_last20: number | null
-          ff_pct_season: number | null
-          ff_pct_3ya: number | null
-          ff_pct_career: number | null
-          pdo_all: number | null
-          pdo_last3: number | null
-          pdo_last5: number | null
-          pdo_last10: number | null
-          pdo_last20: number | null
-          pdo_season: number | null
-          pdo_3ya: number | null
-          pdo_career: number | null
-          sog_per_60_all: number | null
-          sog_per_60_last3: number | null
-          sog_per_60_last5: number | null
-          sog_per_60_last10: number | null
-          sog_per_60_last20: number | null
-          sog_per_60_season: number | null
-          sog_per_60_3ya: number | null
-          sog_per_60_career: number | null
-          ixg_per_60_all: number | null
-          ixg_per_60_last3: number | null
-          ixg_per_60_last5: number | null
-          ixg_per_60_last10: number | null
-          ixg_per_60_last20: number | null
-          ixg_per_60_season: number | null
-          ixg_per_60_3ya: number | null
-          ixg_per_60_career: number | null
-          hits_per_60_all: number | null
-          hits_per_60_last3: number | null
-          hits_per_60_last5: number | null
-          hits_per_60_last10: number | null
-          hits_per_60_last20: number | null
-          hits_per_60_season: number | null
-          hits_per_60_3ya: number | null
-          hits_per_60_career: number | null
-          blocks_per_60_all: number | null
-          blocks_per_60_last3: number | null
-          blocks_per_60_last5: number | null
-          blocks_per_60_last10: number | null
-          blocks_per_60_last20: number | null
-          blocks_per_60_season: number | null
-          blocks_per_60_3ya: number | null
-          blocks_per_60_career: number | null
-          goals_per_60_all: number | null
-          goals_per_60_last3: number | null
-          goals_per_60_last5: number | null
-          goals_per_60_last10: number | null
-          goals_per_60_last20: number | null
-          goals_per_60_season: number | null
-          goals_per_60_3ya: number | null
-          goals_per_60_career: number | null
-          assists_per_60_all: number | null
-          assists_per_60_last3: number | null
-          assists_per_60_last5: number | null
-          assists_per_60_last10: number | null
-          assists_per_60_last20: number | null
-          assists_per_60_season: number | null
-          assists_per_60_3ya: number | null
-          assists_per_60_career: number | null
-          penalties_drawn_per_60_avg_3ya: number | null
-          penalties_drawn_per_60_avg_all: number | null
-          penalties_drawn_per_60_avg_career: number | null
-          penalties_drawn_per_60_avg_last10: number | null
-          penalties_drawn_per_60_avg_last20: number | null
-          penalties_drawn_per_60_avg_last3: number | null
-          penalties_drawn_per_60_avg_last5: number | null
-          penalties_drawn_per_60_avg_season: number | null
-          penalties_drawn_per_60_total_all: number | null
-          penalties_drawn_per_60_total_last10: number | null
-          penalties_drawn_per_60_total_last20: number | null
-          penalties_drawn_per_60_total_last3: number | null
-          penalties_drawn_per_60_total_last5: number | null
-          penalties_drawn_per_60_all: number | null
-          penalties_drawn_per_60_last3: number | null
-          penalties_drawn_per_60_last5: number | null
-          penalties_drawn_per_60_last10: number | null
-          penalties_drawn_per_60_last20: number | null
-          penalties_drawn_per_60_season: number | null
-          penalties_drawn_per_60_3ya: number | null
-          penalties_drawn_per_60_career: number | null
-          primary_assists_per_60_all: number | null
-          primary_assists_per_60_last3: number | null
-          primary_assists_per_60_last5: number | null
-          primary_assists_per_60_last10: number | null
-          primary_assists_per_60_last20: number | null
-          primary_assists_per_60_season: number | null
-          primary_assists_per_60_3ya: number | null
-          primary_assists_per_60_career: number | null
-          secondary_assists_per_60_all: number | null
-          secondary_assists_per_60_last3: number | null
-          secondary_assists_per_60_last5: number | null
-          secondary_assists_per_60_last10: number | null
-          secondary_assists_per_60_last20: number | null
-          secondary_assists_per_60_season: number | null
-          secondary_assists_per_60_3ya: number | null
-          secondary_assists_per_60_career: number | null
-          shooting_pct_goals_season: number | null
-          shooting_pct_shots_season: number | null
-          shooting_pct_goals_3ya: number | null
-          shooting_pct_shots_3ya: number | null
-          shooting_pct_goals_career: number | null
-          shooting_pct_shots_career: number | null
-          expected_sh_pct_ixg_season: number | null
-          expected_sh_pct_shots_season: number | null
-          expected_sh_pct_ixg_3ya: number | null
-          expected_sh_pct_shots_3ya: number | null
-          expected_sh_pct_ixg_career: number | null
-          expected_sh_pct_shots_career: number | null
-          cf_pct_cf_season: number | null
-          cf_pct_ca_season: number | null
-          cf_pct_cf_3ya: number | null
-          cf_pct_ca_3ya: number | null
-          cf_pct_cf_career: number | null
-          cf_pct_ca_career: number | null
-          ff_pct_ff_season: number | null
-          ff_pct_fa_season: number | null
-          ff_pct_ff_3ya: number | null
-          ff_pct_fa_3ya: number | null
-          ff_pct_ff_career: number | null
-          ff_pct_fa_career: number | null
-          sog_per_60_shots_season: number | null
-          sog_per_60_toi_seconds_season: number | null
-          sog_per_60_shots_3ya: number | null
-          sog_per_60_toi_seconds_3ya: number | null
-          sog_per_60_shots_career: number | null
-          sog_per_60_toi_seconds_career: number | null
-          ixg_per_60_ixg_season: number | null
-          ixg_per_60_toi_seconds_season: number | null
-          ixg_per_60_ixg_3ya: number | null
-          ixg_per_60_toi_seconds_3ya: number | null
-          ixg_per_60_ixg_career: number | null
-          ixg_per_60_toi_seconds_career: number | null
-          hits_per_60_hits_season: number | null
-          hits_per_60_toi_seconds_season: number | null
-          hits_per_60_hits_3ya: number | null
-          hits_per_60_toi_seconds_3ya: number | null
-          hits_per_60_hits_career: number | null
-          hits_per_60_toi_seconds_career: number | null
-          blocks_per_60_blocks_season: number | null
-          blocks_per_60_toi_seconds_season: number | null
-          blocks_per_60_blocks_3ya: number | null
-          blocks_per_60_toi_seconds_3ya: number | null
-          blocks_per_60_blocks_career: number | null
-          blocks_per_60_toi_seconds_career: number | null
-          goals_per_60_goals_season: number | null
-          goals_per_60_toi_seconds_season: number | null
-          goals_per_60_goals_3ya: number | null
-          goals_per_60_toi_seconds_3ya: number | null
-          goals_per_60_goals_career: number | null
-          goals_per_60_toi_seconds_career: number | null
-          assists_per_60_assists_season: number | null
-          assists_per_60_toi_seconds_season: number | null
-          assists_per_60_assists_3ya: number | null
-          assists_per_60_toi_seconds_3ya: number | null
-          assists_per_60_assists_career: number | null
-          assists_per_60_toi_seconds_career: number | null
-          penalties_drawn_per_60_penalties_drawn_season: number | null
-          penalties_drawn_per_60_toi_seconds_season: number | null
-          penalties_drawn_per_60_penalties_drawn_3ya: number | null
-          penalties_drawn_per_60_toi_seconds_3ya: number | null
-          penalties_drawn_per_60_penalties_drawn_career: number | null
-          penalties_drawn_per_60_toi_seconds_career: number | null
-          primary_assists_per_60_primary_assists_season: number | null
-          primary_assists_per_60_toi_seconds_season: number | null
-          primary_assists_per_60_primary_assists_3ya: number | null
-          primary_assists_per_60_toi_seconds_3ya: number | null
-          primary_assists_per_60_primary_assists_career: number | null
-          primary_assists_per_60_toi_seconds_career: number | null
-          secondary_assists_per_60_secondary_assists_season: number | null
-          secondary_assists_per_60_toi_seconds_season: number | null
-          secondary_assists_per_60_secondary_assists_3ya: number | null
-          secondary_assists_per_60_toi_seconds_3ya: number | null
-          secondary_assists_per_60_secondary_assists_career: number | null
-          secondary_assists_per_60_toi_seconds_career: number | null
-          primary_points_pct_primary_points_all: number | null
-          primary_points_pct_points_all: number | null
-          primary_points_pct_primary_points_last3: number | null
-          primary_points_pct_points_last3: number | null
-          primary_points_pct_primary_points_last5: number | null
-          primary_points_pct_points_last5: number | null
-          primary_points_pct_primary_points_last10: number | null
-          primary_points_pct_points_last10: number | null
-          primary_points_pct_primary_points_last20: number | null
-          primary_points_pct_points_last20: number | null
-          primary_points_pct_primary_points_season: number | null
-          primary_points_pct_points_season: number | null
-          primary_points_pct_primary_points_3ya: number | null
-          primary_points_pct_points_3ya: number | null
-          primary_points_pct_primary_points_career: number | null
-          primary_points_pct_points_career: number | null
-          ipp_points_all: number | null
-          ipp_on_ice_goals_for_all: number | null
-          ipp_points_last3: number | null
-          ipp_on_ice_goals_for_last3: number | null
-          ipp_points_last5: number | null
-          ipp_on_ice_goals_for_last5: number | null
-          ipp_points_last10: number | null
-          ipp_on_ice_goals_for_last10: number | null
-          ipp_points_last20: number | null
-          ipp_on_ice_goals_for_last20: number | null
-          ipp_points_season: number | null
-          ipp_on_ice_goals_for_season: number | null
-          ipp_points_3ya: number | null
-          ipp_on_ice_goals_for_3ya: number | null
-          ipp_points_career: number | null
-          ipp_on_ice_goals_for_career: number | null
-          on_ice_sh_pct_goals_for_all: number | null
-          on_ice_sh_pct_shots_for_all: number | null
-          on_ice_sh_pct_goals_for_last3: number | null
-          on_ice_sh_pct_shots_for_last3: number | null
-          on_ice_sh_pct_goals_for_last5: number | null
-          on_ice_sh_pct_shots_for_last5: number | null
-          on_ice_sh_pct_goals_for_last10: number | null
-          on_ice_sh_pct_shots_for_last10: number | null
-          on_ice_sh_pct_goals_for_last20: number | null
-          on_ice_sh_pct_shots_for_last20: number | null
-          on_ice_sh_pct_goals_for_season: number | null
-          on_ice_sh_pct_shots_for_season: number | null
-          on_ice_sh_pct_goals_for_3ya: number | null
-          on_ice_sh_pct_shots_for_3ya: number | null
-          on_ice_sh_pct_goals_for_career: number | null
-          on_ice_sh_pct_shots_for_career: number | null
-          pdo_goals_for_all: number | null
-          pdo_shots_for_all: number | null
-          pdo_goals_against_all: number | null
-          pdo_shots_against_all: number | null
-          pdo_goals_for_last3: number | null
-          pdo_shots_for_last3: number | null
-          pdo_goals_against_last3: number | null
-          pdo_shots_against_last3: number | null
-          pdo_goals_for_last5: number | null
-          pdo_shots_for_last5: number | null
-          pdo_goals_against_last5: number | null
-          pdo_shots_against_last5: number | null
-          pdo_goals_for_last10: number | null
-          pdo_shots_for_last10: number | null
-          pdo_goals_against_last10: number | null
-          pdo_shots_against_last10: number | null
-          pdo_goals_for_last20: number | null
-          pdo_shots_for_last20: number | null
-          pdo_goals_against_last20: number | null
-          pdo_shots_against_last20: number | null
-          pdo_goals_for_season: number | null
-          pdo_shots_for_season: number | null
-          pdo_goals_against_season: number | null
-          pdo_shots_against_season: number | null
-          pdo_goals_for_3ya: number | null
-          pdo_shots_for_3ya: number | null
-          pdo_goals_against_3ya: number | null
-          pdo_shots_against_3ya: number | null
-          pdo_goals_for_career: number | null
-          pdo_shots_for_career: number | null
-          pdo_goals_against_career: number | null
-          pdo_shots_against_career: number | null
-          oz_start_pct_off_zone_starts_all: number | null
-          oz_start_pct_def_zone_starts_all: number | null
-          oz_start_pct_neutral_zone_starts_all: number | null
-          oz_start_pct_off_zone_starts_last3: number | null
-          oz_start_pct_def_zone_starts_last3: number | null
-          oz_start_pct_neutral_zone_starts_last3: number | null
-          oz_start_pct_off_zone_starts_last5: number | null
-          oz_start_pct_def_zone_starts_last5: number | null
-          oz_start_pct_neutral_zone_starts_last5: number | null
-          oz_start_pct_off_zone_starts_last10: number | null
-          oz_start_pct_def_zone_starts_last10: number | null
-          oz_start_pct_neutral_zone_starts_last10: number | null
-          oz_start_pct_off_zone_starts_last20: number | null
-          oz_start_pct_def_zone_starts_last20: number | null
-          oz_start_pct_neutral_zone_starts_last20: number | null
-          oz_start_pct_off_zone_starts_season: number | null
-          oz_start_pct_def_zone_starts_season: number | null
-          oz_start_pct_neutral_zone_starts_season: number | null
-          oz_start_pct_off_zone_starts_3ya: number | null
-          oz_start_pct_def_zone_starts_3ya: number | null
-          oz_start_pct_neutral_zone_starts_3ya: number | null
-          oz_start_pct_off_zone_starts_career: number | null
-          oz_start_pct_def_zone_starts_career: number | null
-          oz_start_pct_neutral_zone_starts_career: number | null
-          pp_share_pct_player_pp_toi_all: number | null
-          pp_share_pct_team_pp_toi_all: number | null
-          pp_share_pct_player_pp_toi_last3: number | null
-          pp_share_pct_team_pp_toi_last3: number | null
-          pp_share_pct_player_pp_toi_last5: number | null
-          pp_share_pct_team_pp_toi_last5: number | null
-          pp_share_pct_player_pp_toi_last10: number | null
-          pp_share_pct_team_pp_toi_last10: number | null
-          pp_share_pct_player_pp_toi_last20: number | null
-          pp_share_pct_team_pp_toi_last20: number | null
-          pp_share_pct_player_pp_toi_season: number | null
-          pp_share_pct_team_pp_toi_season: number | null
-          pp_share_pct_player_pp_toi_3ya: number | null
-          pp_share_pct_team_pp_toi_3ya: number | null
-          pp_share_pct_player_pp_toi_career: number | null
-          pp_share_pct_team_pp_toi_career: number | null
-          on_ice_sv_pct_avg_3ya: number | null
-          on_ice_sv_pct_avg_all: number | null
-          on_ice_sv_pct_avg_career: number | null
-          on_ice_sv_pct_avg_last10: number | null
-          on_ice_sv_pct_avg_last20: number | null
-          on_ice_sv_pct_avg_last3: number | null
-          on_ice_sv_pct_avg_last5: number | null
-          on_ice_sv_pct_avg_season: number | null
-          on_ice_sv_pct_total_all: number | null
-          on_ice_sv_pct_total_last10: number | null
-          on_ice_sv_pct_total_last20: number | null
-          on_ice_sv_pct_total_last3: number | null
-          on_ice_sv_pct_total_last5: number | null
-          oz_starts_avg_3ya: number | null
-          oz_starts_avg_all: number | null
-          oz_starts_avg_career: number | null
-          oz_starts_avg_last10: number | null
-          oz_starts_avg_last20: number | null
-          oz_starts_avg_last3: number | null
-          oz_starts_avg_last5: number | null
-          oz_starts_avg_season: number | null
-          oz_starts_total_all: number | null
-          oz_starts_total_last10: number | null
-          oz_starts_total_last20: number | null
-          oz_starts_total_last3: number | null
-          oz_starts_total_last5: number | null
-          dz_starts_avg_3ya: number | null
-          dz_starts_avg_all: number | null
-          dz_starts_avg_career: number | null
-          dz_starts_avg_last10: number | null
-          dz_starts_avg_last20: number | null
-          dz_starts_avg_last3: number | null
-          dz_starts_avg_last5: number | null
-          dz_starts_avg_season: number | null
-          dz_starts_total_all: number | null
-          dz_starts_total_last10: number | null
-          dz_starts_total_last20: number | null
-          dz_starts_total_last3: number | null
-          dz_starts_total_last5: number | null
-          nz_starts_avg_3ya: number | null
-          nz_starts_avg_all: number | null
-          nz_starts_avg_career: number | null
-          nz_starts_avg_last10: number | null
-          nz_starts_avg_last20: number | null
-          nz_starts_avg_last3: number | null
-          nz_starts_avg_last5: number | null
-          nz_starts_avg_season: number | null
-          nz_starts_total_all: number | null
-          nz_starts_total_last10: number | null
-          nz_starts_total_last20: number | null
-          nz_starts_total_last3: number | null
-          nz_starts_total_last5: number | null
-          oi_gf_avg_3ya: number | null
-          oi_gf_avg_all: number | null
-          oi_gf_avg_career: number | null
-          oi_gf_avg_last10: number | null
-          oi_gf_avg_last20: number | null
-          oi_gf_avg_last3: number | null
-          oi_gf_avg_last5: number | null
-          oi_gf_avg_season: number | null
-          oi_gf_total_all: number | null
-          oi_gf_total_last10: number | null
-          oi_gf_total_last20: number | null
-          oi_gf_total_last3: number | null
-          oi_gf_total_last5: number | null
-          oi_ga_avg_3ya: number | null
-          oi_ga_avg_all: number | null
-          oi_ga_avg_career: number | null
-          oi_ga_avg_last10: number | null
-          oi_ga_avg_last20: number | null
-          oi_ga_avg_last3: number | null
-          oi_ga_avg_last5: number | null
-          oi_ga_avg_season: number | null
-          oi_ga_total_all: number | null
-          oi_ga_total_last10: number | null
-          oi_ga_total_last20: number | null
-          oi_ga_total_last3: number | null
-          oi_ga_total_last5: number | null
-          oi_sf_avg_3ya: number | null
-          oi_sf_avg_all: number | null
-          oi_sf_avg_career: number | null
-          oi_sf_avg_last10: number | null
-          oi_sf_avg_last20: number | null
-          oi_sf_avg_last3: number | null
-          oi_sf_avg_last5: number | null
-          oi_sf_avg_season: number | null
-          oi_sf_total_all: number | null
-          oi_sf_total_last10: number | null
-          oi_sf_total_last20: number | null
-          oi_sf_total_last3: number | null
-          oi_sf_total_last5: number | null
-          oi_sa_avg_3ya: number | null
-          oi_sa_avg_all: number | null
-          oi_sa_avg_career: number | null
-          oi_sa_avg_last10: number | null
-          oi_sa_avg_last20: number | null
-          oi_sa_avg_last3: number | null
-          oi_sa_avg_last5: number | null
-          oi_sa_avg_season: number | null
-          oi_sa_total_all: number | null
-          oi_sa_total_last10: number | null
-          oi_sa_total_last20: number | null
-          oi_sa_total_last3: number | null
-          oi_sa_total_last5: number | null
           updated_at: string
         }
         Insert: {
@@ -15880,69 +15880,11 @@ export type Database = {
           assists_avg_last3?: number | null
           assists_avg_last5?: number | null
           assists_avg_season?: number | null
-          assists_total_all?: number | null
-          assists_total_last10?: number | null
-          assists_total_last20?: number | null
-          assists_total_last3?: number | null
-          assists_total_last5?: number | null
-          primary_assists_avg_3ya?: number | null
-          primary_assists_avg_all?: number | null
-          primary_assists_avg_career?: number | null
-          primary_assists_avg_last10?: number | null
-          primary_assists_avg_last20?: number | null
-          primary_assists_avg_last3?: number | null
-          primary_assists_avg_last5?: number | null
-          primary_assists_avg_season?: number | null
-          primary_assists_total_all?: number | null
-          primary_assists_total_last10?: number | null
-          primary_assists_total_last20?: number | null
-          primary_assists_total_last3?: number | null
-          primary_assists_total_last5?: number | null
-          secondary_assists_avg_3ya?: number | null
-          secondary_assists_avg_all?: number | null
-          secondary_assists_avg_career?: number | null
-          secondary_assists_avg_last10?: number | null
-          secondary_assists_avg_last20?: number | null
-          secondary_assists_avg_last3?: number | null
-          secondary_assists_avg_last5?: number | null
-          secondary_assists_avg_season?: number | null
-          secondary_assists_total_all?: number | null
-          secondary_assists_total_last10?: number | null
-          secondary_assists_total_last20?: number | null
-          secondary_assists_total_last3?: number | null
-          secondary_assists_total_last5?: number | null
-          penalties_drawn_avg_3ya?: number | null
-          penalties_drawn_avg_all?: number | null
-          penalties_drawn_avg_career?: number | null
-          penalties_drawn_avg_last10?: number | null
-          penalties_drawn_avg_last20?: number | null
-          penalties_drawn_avg_last3?: number | null
-          penalties_drawn_avg_last5?: number | null
-          penalties_drawn_avg_season?: number | null
-          penalties_drawn_total_all?: number | null
-          penalties_drawn_total_last10?: number | null
-          penalties_drawn_total_last20?: number | null
-          penalties_drawn_total_last3?: number | null
-          penalties_drawn_total_last5?: number | null
-          blocks_avg_3ya?: number | null
-          blocks_avg_all?: number | null
-          blocks_avg_career?: number | null
-          blocks_avg_last10?: number | null
-          blocks_avg_last20?: number | null
-          blocks_avg_last3?: number | null
-          blocks_avg_last5?: number | null
-          blocks_avg_season?: number | null
-          blocks_per_60_avg_3ya?: number | null
-          blocks_per_60_avg_all?: number | null
-          blocks_per_60_avg_career?: number | null
-          goals_per_60_avg_3ya?: number | null
-          goals_per_60_avg_all?: number | null
-          goals_per_60_avg_career?: number | null
-          goals_per_60_avg_last10?: number | null
-          goals_per_60_avg_last20?: number | null
-          goals_per_60_avg_last3?: number | null
-          goals_per_60_avg_last5?: number | null
-          goals_per_60_avg_season?: number | null
+          assists_per_60_3ya?: number | null
+          assists_per_60_all?: number | null
+          assists_per_60_assists_3ya?: number | null
+          assists_per_60_assists_career?: number | null
+          assists_per_60_assists_season?: number | null
           assists_per_60_avg_3ya?: number | null
           assists_per_60_avg_all?: number | null
           assists_per_60_avg_career?: number | null
@@ -15951,52 +15893,64 @@ export type Database = {
           assists_per_60_avg_last3?: number | null
           assists_per_60_avg_last5?: number | null
           assists_per_60_avg_season?: number | null
-          primary_assists_per_60_avg_3ya?: number | null
-          primary_assists_per_60_avg_all?: number | null
-          primary_assists_per_60_avg_career?: number | null
-          primary_assists_per_60_avg_last10?: number | null
-          primary_assists_per_60_avg_last20?: number | null
-          primary_assists_per_60_avg_last3?: number | null
-          primary_assists_per_60_avg_last5?: number | null
-          primary_assists_per_60_avg_season?: number | null
-          secondary_assists_per_60_avg_3ya?: number | null
-          secondary_assists_per_60_avg_all?: number | null
-          secondary_assists_per_60_avg_career?: number | null
-          secondary_assists_per_60_avg_last10?: number | null
-          secondary_assists_per_60_avg_last20?: number | null
-          secondary_assists_per_60_avg_last3?: number | null
-          secondary_assists_per_60_avg_last5?: number | null
-          secondary_assists_per_60_avg_season?: number | null
-          blocks_per_60_avg_last10?: number | null
-          blocks_per_60_avg_last20?: number | null
-          blocks_per_60_avg_last3?: number | null
-          blocks_per_60_avg_last5?: number | null
-          blocks_per_60_avg_season?: number | null
-          blocks_per_60_total_all?: number | null
-          blocks_per_60_total_last10?: number | null
-          blocks_per_60_total_last20?: number | null
-          blocks_per_60_total_last3?: number | null
-          blocks_per_60_total_last5?: number | null
-          goals_per_60_total_all?: number | null
-          goals_per_60_total_last10?: number | null
-          goals_per_60_total_last20?: number | null
-          goals_per_60_total_last3?: number | null
-          goals_per_60_total_last5?: number | null
+          assists_per_60_career?: number | null
+          assists_per_60_last10?: number | null
+          assists_per_60_last20?: number | null
+          assists_per_60_last3?: number | null
+          assists_per_60_last5?: number | null
+          assists_per_60_season?: number | null
+          assists_per_60_toi_seconds_3ya?: number | null
+          assists_per_60_toi_seconds_career?: number | null
+          assists_per_60_toi_seconds_season?: number | null
           assists_per_60_total_all?: number | null
           assists_per_60_total_last10?: number | null
           assists_per_60_total_last20?: number | null
           assists_per_60_total_last3?: number | null
           assists_per_60_total_last5?: number | null
-          primary_assists_per_60_total_all?: number | null
-          primary_assists_per_60_total_last10?: number | null
-          primary_assists_per_60_total_last20?: number | null
-          primary_assists_per_60_total_last3?: number | null
-          primary_assists_per_60_total_last5?: number | null
-          secondary_assists_per_60_total_all?: number | null
-          secondary_assists_per_60_total_last10?: number | null
-          secondary_assists_per_60_total_last20?: number | null
-          secondary_assists_per_60_total_last3?: number | null
-          secondary_assists_per_60_total_last5?: number | null
+          assists_total_all?: number | null
+          assists_total_last10?: number | null
+          assists_total_last20?: number | null
+          assists_total_last3?: number | null
+          assists_total_last5?: number | null
+          availability_pct_last10_team_games?: number | null
+          availability_pct_last20_team_games?: number | null
+          availability_pct_last3_team_games?: number | null
+          availability_pct_last5_team_games?: number | null
+          blocks_avg_3ya?: number | null
+          blocks_avg_all?: number | null
+          blocks_avg_career?: number | null
+          blocks_avg_last10?: number | null
+          blocks_avg_last20?: number | null
+          blocks_avg_last3?: number | null
+          blocks_avg_last5?: number | null
+          blocks_avg_season?: number | null
+          blocks_per_60_3ya?: number | null
+          blocks_per_60_all?: number | null
+          blocks_per_60_avg_3ya?: number | null
+          blocks_per_60_avg_all?: number | null
+          blocks_per_60_avg_career?: number | null
+          blocks_per_60_avg_last10?: number | null
+          blocks_per_60_avg_last20?: number | null
+          blocks_per_60_avg_last3?: number | null
+          blocks_per_60_avg_last5?: number | null
+          blocks_per_60_avg_season?: number | null
+          blocks_per_60_blocks_3ya?: number | null
+          blocks_per_60_blocks_career?: number | null
+          blocks_per_60_blocks_season?: number | null
+          blocks_per_60_career?: number | null
+          blocks_per_60_last10?: number | null
+          blocks_per_60_last20?: number | null
+          blocks_per_60_last3?: number | null
+          blocks_per_60_last5?: number | null
+          blocks_per_60_season?: number | null
+          blocks_per_60_toi_seconds_3ya?: number | null
+          blocks_per_60_toi_seconds_career?: number | null
+          blocks_per_60_toi_seconds_season?: number | null
+          blocks_per_60_total_all?: number | null
+          blocks_per_60_total_last10?: number | null
+          blocks_per_60_total_last20?: number | null
+          blocks_per_60_total_last3?: number | null
+          blocks_per_60_total_last5?: number | null
           blocks_total_all?: number | null
           blocks_total_last10?: number | null
           blocks_total_last20?: number | null
@@ -16015,7 +15969,10 @@ export type Database = {
           ca_total_last20?: number | null
           ca_total_last3?: number | null
           ca_total_last5?: number | null
+          career_availability_pct?: number | null
           career_games_played?: number | null
+          career_participation_games?: number | null
+          career_participation_pct?: number | null
           career_team_games_available?: number | null
           cf_avg_3ya?: number | null
           cf_avg_all?: number | null
@@ -16025,6 +15982,8 @@ export type Database = {
           cf_avg_last3?: number | null
           cf_avg_last5?: number | null
           cf_avg_season?: number | null
+          cf_pct_3ya?: number | null
+          cf_pct_all?: number | null
           cf_pct_avg_3ya?: number | null
           cf_pct_avg_all?: number | null
           cf_pct_avg_career?: number | null
@@ -16033,6 +15992,18 @@ export type Database = {
           cf_pct_avg_last3?: number | null
           cf_pct_avg_last5?: number | null
           cf_pct_avg_season?: number | null
+          cf_pct_ca_3ya?: number | null
+          cf_pct_ca_career?: number | null
+          cf_pct_ca_season?: number | null
+          cf_pct_career?: number | null
+          cf_pct_cf_3ya?: number | null
+          cf_pct_cf_career?: number | null
+          cf_pct_cf_season?: number | null
+          cf_pct_last10?: number | null
+          cf_pct_last20?: number | null
+          cf_pct_last3?: number | null
+          cf_pct_last5?: number | null
+          cf_pct_season?: number | null
           cf_pct_total_all?: number | null
           cf_pct_total_last10?: number | null
           cf_pct_total_last20?: number | null
@@ -16043,6 +16014,21 @@ export type Database = {
           cf_total_last20?: number | null
           cf_total_last3?: number | null
           cf_total_last5?: number | null
+          dz_starts_avg_3ya?: number | null
+          dz_starts_avg_all?: number | null
+          dz_starts_avg_career?: number | null
+          dz_starts_avg_last10?: number | null
+          dz_starts_avg_last20?: number | null
+          dz_starts_avg_last3?: number | null
+          dz_starts_avg_last5?: number | null
+          dz_starts_avg_season?: number | null
+          dz_starts_total_all?: number | null
+          dz_starts_total_last10?: number | null
+          dz_starts_total_last20?: number | null
+          dz_starts_total_last3?: number | null
+          dz_starts_total_last5?: number | null
+          expected_sh_pct_3ya?: number | null
+          expected_sh_pct_all?: number | null
           expected_sh_pct_avg_3ya?: number | null
           expected_sh_pct_avg_all?: number | null
           expected_sh_pct_avg_career?: number | null
@@ -16051,6 +16037,18 @@ export type Database = {
           expected_sh_pct_avg_last3?: number | null
           expected_sh_pct_avg_last5?: number | null
           expected_sh_pct_avg_season?: number | null
+          expected_sh_pct_career?: number | null
+          expected_sh_pct_ixg_3ya?: number | null
+          expected_sh_pct_ixg_career?: number | null
+          expected_sh_pct_ixg_season?: number | null
+          expected_sh_pct_last10?: number | null
+          expected_sh_pct_last20?: number | null
+          expected_sh_pct_last3?: number | null
+          expected_sh_pct_last5?: number | null
+          expected_sh_pct_season?: number | null
+          expected_sh_pct_shots_3ya?: number | null
+          expected_sh_pct_shots_career?: number | null
+          expected_sh_pct_shots_season?: number | null
           expected_sh_pct_total_all?: number | null
           expected_sh_pct_total_last10?: number | null
           expected_sh_pct_total_last20?: number | null
@@ -16077,6 +16075,8 @@ export type Database = {
           ff_avg_last3?: number | null
           ff_avg_last5?: number | null
           ff_avg_season?: number | null
+          ff_pct_3ya?: number | null
+          ff_pct_all?: number | null
           ff_pct_avg_3ya?: number | null
           ff_pct_avg_all?: number | null
           ff_pct_avg_career?: number | null
@@ -16085,6 +16085,18 @@ export type Database = {
           ff_pct_avg_last3?: number | null
           ff_pct_avg_last5?: number | null
           ff_pct_avg_season?: number | null
+          ff_pct_career?: number | null
+          ff_pct_fa_3ya?: number | null
+          ff_pct_fa_career?: number | null
+          ff_pct_fa_season?: number | null
+          ff_pct_ff_3ya?: number | null
+          ff_pct_ff_career?: number | null
+          ff_pct_ff_season?: number | null
+          ff_pct_last10?: number | null
+          ff_pct_last20?: number | null
+          ff_pct_last3?: number | null
+          ff_pct_last5?: number | null
+          ff_pct_season?: number | null
           ff_pct_total_all?: number | null
           ff_pct_total_last10?: number | null
           ff_pct_total_last20?: number | null
@@ -16110,6 +16122,33 @@ export type Database = {
           goals_avg_last3?: number | null
           goals_avg_last5?: number | null
           goals_avg_season?: number | null
+          goals_per_60_3ya?: number | null
+          goals_per_60_all?: number | null
+          goals_per_60_avg_3ya?: number | null
+          goals_per_60_avg_all?: number | null
+          goals_per_60_avg_career?: number | null
+          goals_per_60_avg_last10?: number | null
+          goals_per_60_avg_last20?: number | null
+          goals_per_60_avg_last3?: number | null
+          goals_per_60_avg_last5?: number | null
+          goals_per_60_avg_season?: number | null
+          goals_per_60_career?: number | null
+          goals_per_60_goals_3ya?: number | null
+          goals_per_60_goals_career?: number | null
+          goals_per_60_goals_season?: number | null
+          goals_per_60_last10?: number | null
+          goals_per_60_last20?: number | null
+          goals_per_60_last3?: number | null
+          goals_per_60_last5?: number | null
+          goals_per_60_season?: number | null
+          goals_per_60_toi_seconds_3ya?: number | null
+          goals_per_60_toi_seconds_career?: number | null
+          goals_per_60_toi_seconds_season?: number | null
+          goals_per_60_total_all?: number | null
+          goals_per_60_total_last10?: number | null
+          goals_per_60_total_last20?: number | null
+          goals_per_60_total_last3?: number | null
+          goals_per_60_total_last5?: number | null
           goals_total_all?: number | null
           goals_total_last10?: number | null
           goals_total_last20?: number | null
@@ -16137,6 +16176,8 @@ export type Database = {
           hits_avg_last3?: number | null
           hits_avg_last5?: number | null
           hits_avg_season?: number | null
+          hits_per_60_3ya?: number | null
+          hits_per_60_all?: number | null
           hits_per_60_avg_3ya?: number | null
           hits_per_60_avg_all?: number | null
           hits_per_60_avg_career?: number | null
@@ -16145,6 +16186,18 @@ export type Database = {
           hits_per_60_avg_last3?: number | null
           hits_per_60_avg_last5?: number | null
           hits_per_60_avg_season?: number | null
+          hits_per_60_career?: number | null
+          hits_per_60_hits_3ya?: number | null
+          hits_per_60_hits_career?: number | null
+          hits_per_60_hits_season?: number | null
+          hits_per_60_last10?: number | null
+          hits_per_60_last20?: number | null
+          hits_per_60_last3?: number | null
+          hits_per_60_last5?: number | null
+          hits_per_60_season?: number | null
+          hits_per_60_toi_seconds_3ya?: number | null
+          hits_per_60_toi_seconds_career?: number | null
+          hits_per_60_toi_seconds_season?: number | null
           hits_per_60_total_all?: number | null
           hits_per_60_total_last10?: number | null
           hits_per_60_total_last20?: number | null
@@ -16168,6 +16221,8 @@ export type Database = {
           ihdcf_total_last20?: number | null
           ihdcf_total_last3?: number | null
           ihdcf_total_last5?: number | null
+          ipp_3ya?: number | null
+          ipp_all?: number | null
           ipp_avg_3ya?: number | null
           ipp_avg_all?: number | null
           ipp_avg_career?: number | null
@@ -16176,6 +16231,28 @@ export type Database = {
           ipp_avg_last3?: number | null
           ipp_avg_last5?: number | null
           ipp_avg_season?: number | null
+          ipp_career?: number | null
+          ipp_last10?: number | null
+          ipp_last20?: number | null
+          ipp_last3?: number | null
+          ipp_last5?: number | null
+          ipp_on_ice_goals_for_3ya?: number | null
+          ipp_on_ice_goals_for_all?: number | null
+          ipp_on_ice_goals_for_career?: number | null
+          ipp_on_ice_goals_for_last10?: number | null
+          ipp_on_ice_goals_for_last20?: number | null
+          ipp_on_ice_goals_for_last3?: number | null
+          ipp_on_ice_goals_for_last5?: number | null
+          ipp_on_ice_goals_for_season?: number | null
+          ipp_points_3ya?: number | null
+          ipp_points_all?: number | null
+          ipp_points_career?: number | null
+          ipp_points_last10?: number | null
+          ipp_points_last20?: number | null
+          ipp_points_last3?: number | null
+          ipp_points_last5?: number | null
+          ipp_points_season?: number | null
+          ipp_season?: number | null
           ipp_total_all?: number | null
           ipp_total_last10?: number | null
           ipp_total_last20?: number | null
@@ -16202,6 +16279,8 @@ export type Database = {
           ixg_avg_last3?: number | null
           ixg_avg_last5?: number | null
           ixg_avg_season?: number | null
+          ixg_per_60_3ya?: number | null
+          ixg_per_60_all?: number | null
           ixg_per_60_avg_3ya?: number | null
           ixg_per_60_avg_all?: number | null
           ixg_per_60_avg_career?: number | null
@@ -16210,6 +16289,18 @@ export type Database = {
           ixg_per_60_avg_last3?: number | null
           ixg_per_60_avg_last5?: number | null
           ixg_per_60_avg_season?: number | null
+          ixg_per_60_career?: number | null
+          ixg_per_60_ixg_3ya?: number | null
+          ixg_per_60_ixg_career?: number | null
+          ixg_per_60_ixg_season?: number | null
+          ixg_per_60_last10?: number | null
+          ixg_per_60_last20?: number | null
+          ixg_per_60_last3?: number | null
+          ixg_per_60_last5?: number | null
+          ixg_per_60_season?: number | null
+          ixg_per_60_toi_seconds_3ya?: number | null
+          ixg_per_60_toi_seconds_career?: number | null
+          ixg_per_60_toi_seconds_season?: number | null
           ixg_per_60_total_all?: number | null
           ixg_per_60_total_last10?: number | null
           ixg_per_60_total_last20?: number | null
@@ -16222,6 +16313,73 @@ export type Database = {
           ixg_total_last5?: number | null
           line_combo_group?: string | null
           line_combo_slot?: number | null
+          nz_starts_avg_3ya?: number | null
+          nz_starts_avg_all?: number | null
+          nz_starts_avg_career?: number | null
+          nz_starts_avg_last10?: number | null
+          nz_starts_avg_last20?: number | null
+          nz_starts_avg_last3?: number | null
+          nz_starts_avg_last5?: number | null
+          nz_starts_avg_season?: number | null
+          nz_starts_total_all?: number | null
+          nz_starts_total_last10?: number | null
+          nz_starts_total_last20?: number | null
+          nz_starts_total_last3?: number | null
+          nz_starts_total_last5?: number | null
+          oi_ga_avg_3ya?: number | null
+          oi_ga_avg_all?: number | null
+          oi_ga_avg_career?: number | null
+          oi_ga_avg_last10?: number | null
+          oi_ga_avg_last20?: number | null
+          oi_ga_avg_last3?: number | null
+          oi_ga_avg_last5?: number | null
+          oi_ga_avg_season?: number | null
+          oi_ga_total_all?: number | null
+          oi_ga_total_last10?: number | null
+          oi_ga_total_last20?: number | null
+          oi_ga_total_last3?: number | null
+          oi_ga_total_last5?: number | null
+          oi_gf_avg_3ya?: number | null
+          oi_gf_avg_all?: number | null
+          oi_gf_avg_career?: number | null
+          oi_gf_avg_last10?: number | null
+          oi_gf_avg_last20?: number | null
+          oi_gf_avg_last3?: number | null
+          oi_gf_avg_last5?: number | null
+          oi_gf_avg_season?: number | null
+          oi_gf_total_all?: number | null
+          oi_gf_total_last10?: number | null
+          oi_gf_total_last20?: number | null
+          oi_gf_total_last3?: number | null
+          oi_gf_total_last5?: number | null
+          oi_sa_avg_3ya?: number | null
+          oi_sa_avg_all?: number | null
+          oi_sa_avg_career?: number | null
+          oi_sa_avg_last10?: number | null
+          oi_sa_avg_last20?: number | null
+          oi_sa_avg_last3?: number | null
+          oi_sa_avg_last5?: number | null
+          oi_sa_avg_season?: number | null
+          oi_sa_total_all?: number | null
+          oi_sa_total_last10?: number | null
+          oi_sa_total_last20?: number | null
+          oi_sa_total_last3?: number | null
+          oi_sa_total_last5?: number | null
+          oi_sf_avg_3ya?: number | null
+          oi_sf_avg_all?: number | null
+          oi_sf_avg_career?: number | null
+          oi_sf_avg_last10?: number | null
+          oi_sf_avg_last20?: number | null
+          oi_sf_avg_last3?: number | null
+          oi_sf_avg_last5?: number | null
+          oi_sf_avg_season?: number | null
+          oi_sf_total_all?: number | null
+          oi_sf_total_last10?: number | null
+          oi_sf_total_last20?: number | null
+          oi_sf_total_last3?: number | null
+          oi_sf_total_last5?: number | null
+          on_ice_sh_pct_3ya?: number | null
+          on_ice_sh_pct_all?: number | null
           on_ice_sh_pct_avg_3ya?: number | null
           on_ice_sh_pct_avg_all?: number | null
           on_ice_sh_pct_avg_career?: number | null
@@ -16230,11 +16388,56 @@ export type Database = {
           on_ice_sh_pct_avg_last3?: number | null
           on_ice_sh_pct_avg_last5?: number | null
           on_ice_sh_pct_avg_season?: number | null
+          on_ice_sh_pct_career?: number | null
+          on_ice_sh_pct_goals_for_3ya?: number | null
+          on_ice_sh_pct_goals_for_all?: number | null
+          on_ice_sh_pct_goals_for_career?: number | null
+          on_ice_sh_pct_goals_for_last10?: number | null
+          on_ice_sh_pct_goals_for_last20?: number | null
+          on_ice_sh_pct_goals_for_last3?: number | null
+          on_ice_sh_pct_goals_for_last5?: number | null
+          on_ice_sh_pct_goals_for_season?: number | null
+          on_ice_sh_pct_last10?: number | null
+          on_ice_sh_pct_last20?: number | null
+          on_ice_sh_pct_last3?: number | null
+          on_ice_sh_pct_last5?: number | null
+          on_ice_sh_pct_season?: number | null
+          on_ice_sh_pct_shots_for_3ya?: number | null
+          on_ice_sh_pct_shots_for_all?: number | null
+          on_ice_sh_pct_shots_for_career?: number | null
+          on_ice_sh_pct_shots_for_last10?: number | null
+          on_ice_sh_pct_shots_for_last20?: number | null
+          on_ice_sh_pct_shots_for_last3?: number | null
+          on_ice_sh_pct_shots_for_last5?: number | null
+          on_ice_sh_pct_shots_for_season?: number | null
           on_ice_sh_pct_total_all?: number | null
           on_ice_sh_pct_total_last10?: number | null
           on_ice_sh_pct_total_last20?: number | null
           on_ice_sh_pct_total_last3?: number | null
           on_ice_sh_pct_total_last5?: number | null
+          on_ice_sv_pct_3ya?: number | null
+          on_ice_sv_pct_all?: number | null
+          on_ice_sv_pct_avg_3ya?: number | null
+          on_ice_sv_pct_avg_all?: number | null
+          on_ice_sv_pct_avg_career?: number | null
+          on_ice_sv_pct_avg_last10?: number | null
+          on_ice_sv_pct_avg_last20?: number | null
+          on_ice_sv_pct_avg_last3?: number | null
+          on_ice_sv_pct_avg_last5?: number | null
+          on_ice_sv_pct_avg_season?: number | null
+          on_ice_sv_pct_career?: number | null
+          on_ice_sv_pct_last10?: number | null
+          on_ice_sv_pct_last20?: number | null
+          on_ice_sv_pct_last3?: number | null
+          on_ice_sv_pct_last5?: number | null
+          on_ice_sv_pct_season?: number | null
+          on_ice_sv_pct_total_all?: number | null
+          on_ice_sv_pct_total_last10?: number | null
+          on_ice_sv_pct_total_last20?: number | null
+          on_ice_sv_pct_total_last3?: number | null
+          on_ice_sv_pct_total_last5?: number | null
+          oz_start_pct_3ya?: number | null
+          oz_start_pct_all?: number | null
           oz_start_pct_avg_3ya?: number | null
           oz_start_pct_avg_all?: number | null
           oz_start_pct_avg_career?: number | null
@@ -16243,11 +16446,64 @@ export type Database = {
           oz_start_pct_avg_last3?: number | null
           oz_start_pct_avg_last5?: number | null
           oz_start_pct_avg_season?: number | null
+          oz_start_pct_career?: number | null
+          oz_start_pct_def_zone_starts_3ya?: number | null
+          oz_start_pct_def_zone_starts_all?: number | null
+          oz_start_pct_def_zone_starts_career?: number | null
+          oz_start_pct_def_zone_starts_last10?: number | null
+          oz_start_pct_def_zone_starts_last20?: number | null
+          oz_start_pct_def_zone_starts_last3?: number | null
+          oz_start_pct_def_zone_starts_last5?: number | null
+          oz_start_pct_def_zone_starts_season?: number | null
+          oz_start_pct_last10?: number | null
+          oz_start_pct_last20?: number | null
+          oz_start_pct_last3?: number | null
+          oz_start_pct_last5?: number | null
+          oz_start_pct_neutral_zone_starts_3ya?: number | null
+          oz_start_pct_neutral_zone_starts_all?: number | null
+          oz_start_pct_neutral_zone_starts_career?: number | null
+          oz_start_pct_neutral_zone_starts_last10?: number | null
+          oz_start_pct_neutral_zone_starts_last20?: number | null
+          oz_start_pct_neutral_zone_starts_last3?: number | null
+          oz_start_pct_neutral_zone_starts_last5?: number | null
+          oz_start_pct_neutral_zone_starts_season?: number | null
+          oz_start_pct_off_zone_starts_3ya?: number | null
+          oz_start_pct_off_zone_starts_all?: number | null
+          oz_start_pct_off_zone_starts_career?: number | null
+          oz_start_pct_off_zone_starts_last10?: number | null
+          oz_start_pct_off_zone_starts_last20?: number | null
+          oz_start_pct_off_zone_starts_last3?: number | null
+          oz_start_pct_off_zone_starts_last5?: number | null
+          oz_start_pct_off_zone_starts_season?: number | null
+          oz_start_pct_season?: number | null
           oz_start_pct_total_all?: number | null
           oz_start_pct_total_last10?: number | null
           oz_start_pct_total_last20?: number | null
           oz_start_pct_total_last3?: number | null
           oz_start_pct_total_last5?: number | null
+          oz_starts_avg_3ya?: number | null
+          oz_starts_avg_all?: number | null
+          oz_starts_avg_career?: number | null
+          oz_starts_avg_last10?: number | null
+          oz_starts_avg_last20?: number | null
+          oz_starts_avg_last3?: number | null
+          oz_starts_avg_last5?: number | null
+          oz_starts_avg_season?: number | null
+          oz_starts_total_all?: number | null
+          oz_starts_total_last10?: number | null
+          oz_starts_total_last20?: number | null
+          oz_starts_total_last3?: number | null
+          oz_starts_total_last5?: number | null
+          participation_games_last10_team_games?: number | null
+          participation_games_last20_team_games?: number | null
+          participation_games_last3_team_games?: number | null
+          participation_games_last5_team_games?: number | null
+          participation_pct_last10_team_games?: number | null
+          participation_pct_last20_team_games?: number | null
+          participation_pct_last3_team_games?: number | null
+          participation_pct_last5_team_games?: number | null
+          pdo_3ya?: number | null
+          pdo_all?: number | null
           pdo_avg_3ya?: number | null
           pdo_avg_all?: number | null
           pdo_avg_career?: number | null
@@ -16256,11 +16512,89 @@ export type Database = {
           pdo_avg_last3?: number | null
           pdo_avg_last5?: number | null
           pdo_avg_season?: number | null
+          pdo_career?: number | null
+          pdo_goals_against_3ya?: number | null
+          pdo_goals_against_all?: number | null
+          pdo_goals_against_career?: number | null
+          pdo_goals_against_last10?: number | null
+          pdo_goals_against_last20?: number | null
+          pdo_goals_against_last3?: number | null
+          pdo_goals_against_last5?: number | null
+          pdo_goals_against_season?: number | null
+          pdo_goals_for_3ya?: number | null
+          pdo_goals_for_all?: number | null
+          pdo_goals_for_career?: number | null
+          pdo_goals_for_last10?: number | null
+          pdo_goals_for_last20?: number | null
+          pdo_goals_for_last3?: number | null
+          pdo_goals_for_last5?: number | null
+          pdo_goals_for_season?: number | null
+          pdo_last10?: number | null
+          pdo_last20?: number | null
+          pdo_last3?: number | null
+          pdo_last5?: number | null
+          pdo_season?: number | null
+          pdo_shots_against_3ya?: number | null
+          pdo_shots_against_all?: number | null
+          pdo_shots_against_career?: number | null
+          pdo_shots_against_last10?: number | null
+          pdo_shots_against_last20?: number | null
+          pdo_shots_against_last3?: number | null
+          pdo_shots_against_last5?: number | null
+          pdo_shots_against_season?: number | null
+          pdo_shots_for_3ya?: number | null
+          pdo_shots_for_all?: number | null
+          pdo_shots_for_career?: number | null
+          pdo_shots_for_last10?: number | null
+          pdo_shots_for_last20?: number | null
+          pdo_shots_for_last3?: number | null
+          pdo_shots_for_last5?: number | null
+          pdo_shots_for_season?: number | null
           pdo_total_all?: number | null
           pdo_total_last10?: number | null
           pdo_total_last20?: number | null
           pdo_total_last3?: number | null
           pdo_total_last5?: number | null
+          penalties_drawn_avg_3ya?: number | null
+          penalties_drawn_avg_all?: number | null
+          penalties_drawn_avg_career?: number | null
+          penalties_drawn_avg_last10?: number | null
+          penalties_drawn_avg_last20?: number | null
+          penalties_drawn_avg_last3?: number | null
+          penalties_drawn_avg_last5?: number | null
+          penalties_drawn_avg_season?: number | null
+          penalties_drawn_per_60_3ya?: number | null
+          penalties_drawn_per_60_all?: number | null
+          penalties_drawn_per_60_avg_3ya?: number | null
+          penalties_drawn_per_60_avg_all?: number | null
+          penalties_drawn_per_60_avg_career?: number | null
+          penalties_drawn_per_60_avg_last10?: number | null
+          penalties_drawn_per_60_avg_last20?: number | null
+          penalties_drawn_per_60_avg_last3?: number | null
+          penalties_drawn_per_60_avg_last5?: number | null
+          penalties_drawn_per_60_avg_season?: number | null
+          penalties_drawn_per_60_career?: number | null
+          penalties_drawn_per_60_last10?: number | null
+          penalties_drawn_per_60_last20?: number | null
+          penalties_drawn_per_60_last3?: number | null
+          penalties_drawn_per_60_last5?: number | null
+          penalties_drawn_per_60_penalties_drawn_3ya?: number | null
+          penalties_drawn_per_60_penalties_drawn_career?: number | null
+          penalties_drawn_per_60_penalties_drawn_season?: number | null
+          penalties_drawn_per_60_season?: number | null
+          penalties_drawn_per_60_toi_seconds_3ya?: number | null
+          penalties_drawn_per_60_toi_seconds_career?: number | null
+          penalties_drawn_per_60_toi_seconds_season?: number | null
+          penalties_drawn_per_60_total_all?: number | null
+          penalties_drawn_per_60_total_last10?: number | null
+          penalties_drawn_per_60_total_last20?: number | null
+          penalties_drawn_per_60_total_last3?: number | null
+          penalties_drawn_per_60_total_last5?: number | null
+          penalties_drawn_total_all?: number | null
+          penalties_drawn_total_last10?: number | null
+          penalties_drawn_total_last20?: number | null
+          penalties_drawn_total_last3?: number | null
+          penalties_drawn_total_last5?: number | null
           player_id: number
           points_avg_3ya?: number | null
           points_avg_all?: number | null
@@ -16288,6 +16622,44 @@ export type Database = {
           pp_points_total_last20?: number | null
           pp_points_total_last3?: number | null
           pp_points_total_last5?: number | null
+          pp_share_of_team?: number | null
+          pp_share_pct_3ya?: number | null
+          pp_share_pct_all?: number | null
+          pp_share_pct_avg_3ya?: number | null
+          pp_share_pct_avg_all?: number | null
+          pp_share_pct_avg_career?: number | null
+          pp_share_pct_avg_last10?: number | null
+          pp_share_pct_avg_last20?: number | null
+          pp_share_pct_avg_last3?: number | null
+          pp_share_pct_avg_last5?: number | null
+          pp_share_pct_avg_season?: number | null
+          pp_share_pct_career?: number | null
+          pp_share_pct_last10?: number | null
+          pp_share_pct_last20?: number | null
+          pp_share_pct_last3?: number | null
+          pp_share_pct_last5?: number | null
+          pp_share_pct_player_pp_toi_3ya?: number | null
+          pp_share_pct_player_pp_toi_all?: number | null
+          pp_share_pct_player_pp_toi_career?: number | null
+          pp_share_pct_player_pp_toi_last10?: number | null
+          pp_share_pct_player_pp_toi_last20?: number | null
+          pp_share_pct_player_pp_toi_last3?: number | null
+          pp_share_pct_player_pp_toi_last5?: number | null
+          pp_share_pct_player_pp_toi_season?: number | null
+          pp_share_pct_season?: number | null
+          pp_share_pct_team_pp_toi_3ya?: number | null
+          pp_share_pct_team_pp_toi_all?: number | null
+          pp_share_pct_team_pp_toi_career?: number | null
+          pp_share_pct_team_pp_toi_last10?: number | null
+          pp_share_pct_team_pp_toi_last20?: number | null
+          pp_share_pct_team_pp_toi_last3?: number | null
+          pp_share_pct_team_pp_toi_last5?: number | null
+          pp_share_pct_team_pp_toi_season?: number | null
+          pp_share_pct_total_all?: number | null
+          pp_share_pct_total_last10?: number | null
+          pp_share_pct_total_last20?: number | null
+          pp_share_pct_total_last3?: number | null
+          pp_share_pct_total_last5?: number | null
           pp_toi_seconds_avg_3ya?: number | null
           pp_toi_seconds_avg_all?: number | null
           pp_toi_seconds_avg_career?: number | null
@@ -16301,24 +16673,52 @@ export type Database = {
           pp_toi_seconds_total_last20?: number | null
           pp_toi_seconds_total_last3?: number | null
           pp_toi_seconds_total_last5?: number | null
-          pp_share_pct_avg_3ya?: number | null
-          pp_share_pct_avg_all?: number | null
-          pp_share_pct_avg_career?: number | null
-          pp_share_pct_avg_last10?: number | null
-          pp_share_pct_avg_last20?: number | null
-          pp_share_pct_avg_last3?: number | null
-          pp_share_pct_avg_last5?: number | null
-          pp_share_pct_avg_season?: number | null
-          pp_share_pct_total_all?: number | null
-          pp_share_pct_total_last10?: number | null
-          pp_share_pct_total_last20?: number | null
-          pp_share_pct_total_last3?: number | null
-          pp_share_pct_total_last5?: number | null
           pp_unit?: number | null
-          pp_share_of_team?: number | null
-          pp_unit_usage_index?: number | null
           pp_unit_relative_toi?: number | null
+          pp_unit_usage_index?: number | null
           pp_vs_unit_avg?: number | null
+          primary_assists_avg_3ya?: number | null
+          primary_assists_avg_all?: number | null
+          primary_assists_avg_career?: number | null
+          primary_assists_avg_last10?: number | null
+          primary_assists_avg_last20?: number | null
+          primary_assists_avg_last3?: number | null
+          primary_assists_avg_last5?: number | null
+          primary_assists_avg_season?: number | null
+          primary_assists_per_60_3ya?: number | null
+          primary_assists_per_60_all?: number | null
+          primary_assists_per_60_avg_3ya?: number | null
+          primary_assists_per_60_avg_all?: number | null
+          primary_assists_per_60_avg_career?: number | null
+          primary_assists_per_60_avg_last10?: number | null
+          primary_assists_per_60_avg_last20?: number | null
+          primary_assists_per_60_avg_last3?: number | null
+          primary_assists_per_60_avg_last5?: number | null
+          primary_assists_per_60_avg_season?: number | null
+          primary_assists_per_60_career?: number | null
+          primary_assists_per_60_last10?: number | null
+          primary_assists_per_60_last20?: number | null
+          primary_assists_per_60_last3?: number | null
+          primary_assists_per_60_last5?: number | null
+          primary_assists_per_60_primary_assists_3ya?: number | null
+          primary_assists_per_60_primary_assists_career?: number | null
+          primary_assists_per_60_primary_assists_season?: number | null
+          primary_assists_per_60_season?: number | null
+          primary_assists_per_60_toi_seconds_3ya?: number | null
+          primary_assists_per_60_toi_seconds_career?: number | null
+          primary_assists_per_60_toi_seconds_season?: number | null
+          primary_assists_per_60_total_all?: number | null
+          primary_assists_per_60_total_last10?: number | null
+          primary_assists_per_60_total_last20?: number | null
+          primary_assists_per_60_total_last3?: number | null
+          primary_assists_per_60_total_last5?: number | null
+          primary_assists_total_all?: number | null
+          primary_assists_total_last10?: number | null
+          primary_assists_total_last20?: number | null
+          primary_assists_total_last3?: number | null
+          primary_assists_total_last5?: number | null
+          primary_points_pct_3ya?: number | null
+          primary_points_pct_all?: number | null
           primary_points_pct_avg_3ya?: number | null
           primary_points_pct_avg_all?: number | null
           primary_points_pct_avg_career?: number | null
@@ -16327,14 +16727,81 @@ export type Database = {
           primary_points_pct_avg_last3?: number | null
           primary_points_pct_avg_last5?: number | null
           primary_points_pct_avg_season?: number | null
+          primary_points_pct_career?: number | null
+          primary_points_pct_last10?: number | null
+          primary_points_pct_last20?: number | null
+          primary_points_pct_last3?: number | null
+          primary_points_pct_last5?: number | null
+          primary_points_pct_points_3ya?: number | null
+          primary_points_pct_points_all?: number | null
+          primary_points_pct_points_career?: number | null
+          primary_points_pct_points_last10?: number | null
+          primary_points_pct_points_last20?: number | null
+          primary_points_pct_points_last3?: number | null
+          primary_points_pct_points_last5?: number | null
+          primary_points_pct_points_season?: number | null
+          primary_points_pct_primary_points_3ya?: number | null
+          primary_points_pct_primary_points_all?: number | null
+          primary_points_pct_primary_points_career?: number | null
+          primary_points_pct_primary_points_last10?: number | null
+          primary_points_pct_primary_points_last20?: number | null
+          primary_points_pct_primary_points_last3?: number | null
+          primary_points_pct_primary_points_last5?: number | null
+          primary_points_pct_primary_points_season?: number | null
+          primary_points_pct_season?: number | null
           primary_points_pct_total_all?: number | null
           primary_points_pct_total_last10?: number | null
           primary_points_pct_total_last20?: number | null
           primary_points_pct_total_last3?: number | null
           primary_points_pct_total_last5?: number | null
           season: number
+          season_availability_pct?: number | null
           season_games_played?: number | null
+          season_participation_games?: number | null
+          season_participation_pct?: number | null
           season_team_games_available?: number | null
+          secondary_assists_avg_3ya?: number | null
+          secondary_assists_avg_all?: number | null
+          secondary_assists_avg_career?: number | null
+          secondary_assists_avg_last10?: number | null
+          secondary_assists_avg_last20?: number | null
+          secondary_assists_avg_last3?: number | null
+          secondary_assists_avg_last5?: number | null
+          secondary_assists_avg_season?: number | null
+          secondary_assists_per_60_3ya?: number | null
+          secondary_assists_per_60_all?: number | null
+          secondary_assists_per_60_avg_3ya?: number | null
+          secondary_assists_per_60_avg_all?: number | null
+          secondary_assists_per_60_avg_career?: number | null
+          secondary_assists_per_60_avg_last10?: number | null
+          secondary_assists_per_60_avg_last20?: number | null
+          secondary_assists_per_60_avg_last3?: number | null
+          secondary_assists_per_60_avg_last5?: number | null
+          secondary_assists_per_60_avg_season?: number | null
+          secondary_assists_per_60_career?: number | null
+          secondary_assists_per_60_last10?: number | null
+          secondary_assists_per_60_last20?: number | null
+          secondary_assists_per_60_last3?: number | null
+          secondary_assists_per_60_last5?: number | null
+          secondary_assists_per_60_season?: number | null
+          secondary_assists_per_60_secondary_assists_3ya?: number | null
+          secondary_assists_per_60_secondary_assists_career?: number | null
+          secondary_assists_per_60_secondary_assists_season?: number | null
+          secondary_assists_per_60_toi_seconds_3ya?: number | null
+          secondary_assists_per_60_toi_seconds_career?: number | null
+          secondary_assists_per_60_toi_seconds_season?: number | null
+          secondary_assists_per_60_total_all?: number | null
+          secondary_assists_per_60_total_last10?: number | null
+          secondary_assists_per_60_total_last20?: number | null
+          secondary_assists_per_60_total_last3?: number | null
+          secondary_assists_per_60_total_last5?: number | null
+          secondary_assists_total_all?: number | null
+          secondary_assists_total_last10?: number | null
+          secondary_assists_total_last20?: number | null
+          secondary_assists_total_last3?: number | null
+          secondary_assists_total_last5?: number | null
+          shooting_pct_3ya?: number | null
+          shooting_pct_all?: number | null
           shooting_pct_avg_3ya?: number | null
           shooting_pct_avg_all?: number | null
           shooting_pct_avg_career?: number | null
@@ -16343,6 +16810,18 @@ export type Database = {
           shooting_pct_avg_last3?: number | null
           shooting_pct_avg_last5?: number | null
           shooting_pct_avg_season?: number | null
+          shooting_pct_career?: number | null
+          shooting_pct_goals_3ya?: number | null
+          shooting_pct_goals_career?: number | null
+          shooting_pct_goals_season?: number | null
+          shooting_pct_last10?: number | null
+          shooting_pct_last20?: number | null
+          shooting_pct_last3?: number | null
+          shooting_pct_last5?: number | null
+          shooting_pct_season?: number | null
+          shooting_pct_shots_3ya?: number | null
+          shooting_pct_shots_career?: number | null
+          shooting_pct_shots_season?: number | null
           shooting_pct_total_all?: number | null
           shooting_pct_total_last10?: number | null
           shooting_pct_total_last20?: number | null
@@ -16361,6 +16840,8 @@ export type Database = {
           shots_total_last20?: number | null
           shots_total_last3?: number | null
           shots_total_last5?: number | null
+          sog_per_60_3ya?: number | null
+          sog_per_60_all?: number | null
           sog_per_60_avg_3ya?: number | null
           sog_per_60_avg_all?: number | null
           sog_per_60_avg_career?: number | null
@@ -16369,6 +16850,18 @@ export type Database = {
           sog_per_60_avg_last3?: number | null
           sog_per_60_avg_last5?: number | null
           sog_per_60_avg_season?: number | null
+          sog_per_60_career?: number | null
+          sog_per_60_last10?: number | null
+          sog_per_60_last20?: number | null
+          sog_per_60_last3?: number | null
+          sog_per_60_last5?: number | null
+          sog_per_60_season?: number | null
+          sog_per_60_shots_3ya?: number | null
+          sog_per_60_shots_career?: number | null
+          sog_per_60_shots_season?: number | null
+          sog_per_60_toi_seconds_3ya?: number | null
+          sog_per_60_toi_seconds_career?: number | null
+          sog_per_60_toi_seconds_season?: number | null
           sog_per_60_total_all?: number | null
           sog_per_60_total_last10?: number | null
           sog_per_60_total_last20?: number | null
@@ -16381,7 +16874,10 @@ export type Database = {
           team_games_available_last5?: number | null
           team_games_played?: number
           team_id?: number | null
+          three_year_availability_pct?: number | null
           three_year_games_played?: number | null
+          three_year_participation_games?: number | null
+          three_year_participation_pct?: number | null
           three_year_team_games_available?: number | null
           toi_seconds_avg_3ya?: number | null
           toi_seconds_avg_all?: number | null
@@ -16396,502 +16892,6 @@ export type Database = {
           toi_seconds_total_last20?: number | null
           toi_seconds_total_last3?: number | null
           toi_seconds_total_last5?: number | null
-          season_availability_pct?: number | null
-          three_year_availability_pct?: number | null
-          career_availability_pct?: number | null
-          availability_pct_last3_team_games?: number | null
-          availability_pct_last5_team_games?: number | null
-          availability_pct_last10_team_games?: number | null
-          availability_pct_last20_team_games?: number | null
-          season_participation_pct?: number | null
-          three_year_participation_pct?: number | null
-          career_participation_pct?: number | null
-          participation_pct_last3_team_games?: number | null
-          participation_pct_last5_team_games?: number | null
-          participation_pct_last10_team_games?: number | null
-          participation_pct_last20_team_games?: number | null
-          season_participation_games?: number | null
-          three_year_participation_games?: number | null
-          career_participation_games?: number | null
-          participation_games_last3_team_games?: number | null
-          participation_games_last5_team_games?: number | null
-          participation_games_last10_team_games?: number | null
-          participation_games_last20_team_games?: number | null
-          shooting_pct_all?: number | null
-          shooting_pct_last3?: number | null
-          shooting_pct_last5?: number | null
-          shooting_pct_last10?: number | null
-          shooting_pct_last20?: number | null
-          shooting_pct_season?: number | null
-          shooting_pct_3ya?: number | null
-          shooting_pct_career?: number | null
-          primary_points_pct_all?: number | null
-          primary_points_pct_last3?: number | null
-          primary_points_pct_last5?: number | null
-          primary_points_pct_last10?: number | null
-          primary_points_pct_last20?: number | null
-          primary_points_pct_season?: number | null
-          primary_points_pct_3ya?: number | null
-          primary_points_pct_career?: number | null
-          expected_sh_pct_all?: number | null
-          expected_sh_pct_last3?: number | null
-          expected_sh_pct_last5?: number | null
-          expected_sh_pct_last10?: number | null
-          expected_sh_pct_last20?: number | null
-          expected_sh_pct_season?: number | null
-          expected_sh_pct_3ya?: number | null
-          expected_sh_pct_career?: number | null
-          ipp_all?: number | null
-          ipp_last3?: number | null
-          ipp_last5?: number | null
-          ipp_last10?: number | null
-          ipp_last20?: number | null
-          ipp_season?: number | null
-          ipp_3ya?: number | null
-          ipp_career?: number | null
-          on_ice_sh_pct_all?: number | null
-          on_ice_sh_pct_last3?: number | null
-          on_ice_sh_pct_last5?: number | null
-          on_ice_sh_pct_last10?: number | null
-          on_ice_sh_pct_last20?: number | null
-          on_ice_sh_pct_season?: number | null
-          on_ice_sh_pct_3ya?: number | null
-          on_ice_sh_pct_career?: number | null
-          on_ice_sv_pct_all?: number | null
-          on_ice_sv_pct_last3?: number | null
-          on_ice_sv_pct_last5?: number | null
-          on_ice_sv_pct_last10?: number | null
-          on_ice_sv_pct_last20?: number | null
-          on_ice_sv_pct_season?: number | null
-          on_ice_sv_pct_3ya?: number | null
-          on_ice_sv_pct_career?: number | null
-          oz_start_pct_all?: number | null
-          oz_start_pct_last3?: number | null
-          oz_start_pct_last5?: number | null
-          oz_start_pct_last10?: number | null
-          oz_start_pct_last20?: number | null
-          oz_start_pct_season?: number | null
-          oz_start_pct_3ya?: number | null
-          oz_start_pct_career?: number | null
-          pp_share_pct_all?: number | null
-          pp_share_pct_last3?: number | null
-          pp_share_pct_last5?: number | null
-          pp_share_pct_last10?: number | null
-          pp_share_pct_last20?: number | null
-          pp_share_pct_season?: number | null
-          pp_share_pct_3ya?: number | null
-          pp_share_pct_career?: number | null
-          cf_pct_all?: number | null
-          cf_pct_last3?: number | null
-          cf_pct_last5?: number | null
-          cf_pct_last10?: number | null
-          cf_pct_last20?: number | null
-          cf_pct_season?: number | null
-          cf_pct_3ya?: number | null
-          cf_pct_career?: number | null
-          ff_pct_all?: number | null
-          ff_pct_last3?: number | null
-          ff_pct_last5?: number | null
-          ff_pct_last10?: number | null
-          ff_pct_last20?: number | null
-          ff_pct_season?: number | null
-          ff_pct_3ya?: number | null
-          ff_pct_career?: number | null
-          pdo_all?: number | null
-          pdo_last3?: number | null
-          pdo_last5?: number | null
-          pdo_last10?: number | null
-          pdo_last20?: number | null
-          pdo_season?: number | null
-          pdo_3ya?: number | null
-          pdo_career?: number | null
-          sog_per_60_all?: number | null
-          sog_per_60_last3?: number | null
-          sog_per_60_last5?: number | null
-          sog_per_60_last10?: number | null
-          sog_per_60_last20?: number | null
-          sog_per_60_season?: number | null
-          sog_per_60_3ya?: number | null
-          sog_per_60_career?: number | null
-          ixg_per_60_all?: number | null
-          ixg_per_60_last3?: number | null
-          ixg_per_60_last5?: number | null
-          ixg_per_60_last10?: number | null
-          ixg_per_60_last20?: number | null
-          ixg_per_60_season?: number | null
-          ixg_per_60_3ya?: number | null
-          ixg_per_60_career?: number | null
-          hits_per_60_all?: number | null
-          hits_per_60_last3?: number | null
-          hits_per_60_last5?: number | null
-          hits_per_60_last10?: number | null
-          hits_per_60_last20?: number | null
-          hits_per_60_season?: number | null
-          hits_per_60_3ya?: number | null
-          hits_per_60_career?: number | null
-          blocks_per_60_all?: number | null
-          blocks_per_60_last3?: number | null
-          blocks_per_60_last5?: number | null
-          blocks_per_60_last10?: number | null
-          blocks_per_60_last20?: number | null
-          blocks_per_60_season?: number | null
-          blocks_per_60_3ya?: number | null
-          blocks_per_60_career?: number | null
-          goals_per_60_all?: number | null
-          goals_per_60_last3?: number | null
-          goals_per_60_last5?: number | null
-          goals_per_60_last10?: number | null
-          goals_per_60_last20?: number | null
-          goals_per_60_season?: number | null
-          goals_per_60_3ya?: number | null
-          goals_per_60_career?: number | null
-          assists_per_60_all?: number | null
-          assists_per_60_last3?: number | null
-          assists_per_60_last5?: number | null
-          assists_per_60_last10?: number | null
-          assists_per_60_last20?: number | null
-          assists_per_60_season?: number | null
-          assists_per_60_3ya?: number | null
-          assists_per_60_career?: number | null
-          penalties_drawn_per_60_avg_3ya?: number | null
-          penalties_drawn_per_60_avg_all?: number | null
-          penalties_drawn_per_60_avg_career?: number | null
-          penalties_drawn_per_60_avg_last10?: number | null
-          penalties_drawn_per_60_avg_last20?: number | null
-          penalties_drawn_per_60_avg_last3?: number | null
-          penalties_drawn_per_60_avg_last5?: number | null
-          penalties_drawn_per_60_avg_season?: number | null
-          penalties_drawn_per_60_total_all?: number | null
-          penalties_drawn_per_60_total_last10?: number | null
-          penalties_drawn_per_60_total_last20?: number | null
-          penalties_drawn_per_60_total_last3?: number | null
-          penalties_drawn_per_60_total_last5?: number | null
-          penalties_drawn_per_60_all?: number | null
-          penalties_drawn_per_60_last3?: number | null
-          penalties_drawn_per_60_last5?: number | null
-          penalties_drawn_per_60_last10?: number | null
-          penalties_drawn_per_60_last20?: number | null
-          penalties_drawn_per_60_season?: number | null
-          penalties_drawn_per_60_3ya?: number | null
-          penalties_drawn_per_60_career?: number | null
-          primary_assists_per_60_all?: number | null
-          primary_assists_per_60_last3?: number | null
-          primary_assists_per_60_last5?: number | null
-          primary_assists_per_60_last10?: number | null
-          primary_assists_per_60_last20?: number | null
-          primary_assists_per_60_season?: number | null
-          primary_assists_per_60_3ya?: number | null
-          primary_assists_per_60_career?: number | null
-          secondary_assists_per_60_all?: number | null
-          secondary_assists_per_60_last3?: number | null
-          secondary_assists_per_60_last5?: number | null
-          secondary_assists_per_60_last10?: number | null
-          secondary_assists_per_60_last20?: number | null
-          secondary_assists_per_60_season?: number | null
-          secondary_assists_per_60_3ya?: number | null
-          secondary_assists_per_60_career?: number | null
-          shooting_pct_goals_season?: number | null
-          shooting_pct_shots_season?: number | null
-          shooting_pct_goals_3ya?: number | null
-          shooting_pct_shots_3ya?: number | null
-          shooting_pct_goals_career?: number | null
-          shooting_pct_shots_career?: number | null
-          expected_sh_pct_ixg_season?: number | null
-          expected_sh_pct_shots_season?: number | null
-          expected_sh_pct_ixg_3ya?: number | null
-          expected_sh_pct_shots_3ya?: number | null
-          expected_sh_pct_ixg_career?: number | null
-          expected_sh_pct_shots_career?: number | null
-          cf_pct_cf_season?: number | null
-          cf_pct_ca_season?: number | null
-          cf_pct_cf_3ya?: number | null
-          cf_pct_ca_3ya?: number | null
-          cf_pct_cf_career?: number | null
-          cf_pct_ca_career?: number | null
-          ff_pct_ff_season?: number | null
-          ff_pct_fa_season?: number | null
-          ff_pct_ff_3ya?: number | null
-          ff_pct_fa_3ya?: number | null
-          ff_pct_ff_career?: number | null
-          ff_pct_fa_career?: number | null
-          sog_per_60_shots_season?: number | null
-          sog_per_60_toi_seconds_season?: number | null
-          sog_per_60_shots_3ya?: number | null
-          sog_per_60_toi_seconds_3ya?: number | null
-          sog_per_60_shots_career?: number | null
-          sog_per_60_toi_seconds_career?: number | null
-          ixg_per_60_ixg_season?: number | null
-          ixg_per_60_toi_seconds_season?: number | null
-          ixg_per_60_ixg_3ya?: number | null
-          ixg_per_60_toi_seconds_3ya?: number | null
-          ixg_per_60_ixg_career?: number | null
-          ixg_per_60_toi_seconds_career?: number | null
-          hits_per_60_hits_season?: number | null
-          hits_per_60_toi_seconds_season?: number | null
-          hits_per_60_hits_3ya?: number | null
-          hits_per_60_toi_seconds_3ya?: number | null
-          hits_per_60_hits_career?: number | null
-          hits_per_60_toi_seconds_career?: number | null
-          blocks_per_60_blocks_season?: number | null
-          blocks_per_60_toi_seconds_season?: number | null
-          blocks_per_60_blocks_3ya?: number | null
-          blocks_per_60_toi_seconds_3ya?: number | null
-          blocks_per_60_blocks_career?: number | null
-          blocks_per_60_toi_seconds_career?: number | null
-          goals_per_60_goals_season?: number | null
-          goals_per_60_toi_seconds_season?: number | null
-          goals_per_60_goals_3ya?: number | null
-          goals_per_60_toi_seconds_3ya?: number | null
-          goals_per_60_goals_career?: number | null
-          goals_per_60_toi_seconds_career?: number | null
-          assists_per_60_assists_season?: number | null
-          assists_per_60_toi_seconds_season?: number | null
-          assists_per_60_assists_3ya?: number | null
-          assists_per_60_toi_seconds_3ya?: number | null
-          assists_per_60_assists_career?: number | null
-          assists_per_60_toi_seconds_career?: number | null
-          penalties_drawn_per_60_penalties_drawn_season?: number | null
-          penalties_drawn_per_60_toi_seconds_season?: number | null
-          penalties_drawn_per_60_penalties_drawn_3ya?: number | null
-          penalties_drawn_per_60_toi_seconds_3ya?: number | null
-          penalties_drawn_per_60_penalties_drawn_career?: number | null
-          penalties_drawn_per_60_toi_seconds_career?: number | null
-          primary_assists_per_60_primary_assists_season?: number | null
-          primary_assists_per_60_toi_seconds_season?: number | null
-          primary_assists_per_60_primary_assists_3ya?: number | null
-          primary_assists_per_60_toi_seconds_3ya?: number | null
-          primary_assists_per_60_primary_assists_career?: number | null
-          primary_assists_per_60_toi_seconds_career?: number | null
-          secondary_assists_per_60_secondary_assists_season?: number | null
-          secondary_assists_per_60_toi_seconds_season?: number | null
-          secondary_assists_per_60_secondary_assists_3ya?: number | null
-          secondary_assists_per_60_toi_seconds_3ya?: number | null
-          secondary_assists_per_60_secondary_assists_career?: number | null
-          secondary_assists_per_60_toi_seconds_career?: number | null
-          primary_points_pct_primary_points_all?: number | null
-          primary_points_pct_points_all?: number | null
-          primary_points_pct_primary_points_last3?: number | null
-          primary_points_pct_points_last3?: number | null
-          primary_points_pct_primary_points_last5?: number | null
-          primary_points_pct_points_last5?: number | null
-          primary_points_pct_primary_points_last10?: number | null
-          primary_points_pct_points_last10?: number | null
-          primary_points_pct_primary_points_last20?: number | null
-          primary_points_pct_points_last20?: number | null
-          primary_points_pct_primary_points_season?: number | null
-          primary_points_pct_points_season?: number | null
-          primary_points_pct_primary_points_3ya?: number | null
-          primary_points_pct_points_3ya?: number | null
-          primary_points_pct_primary_points_career?: number | null
-          primary_points_pct_points_career?: number | null
-          ipp_points_all?: number | null
-          ipp_on_ice_goals_for_all?: number | null
-          ipp_points_last3?: number | null
-          ipp_on_ice_goals_for_last3?: number | null
-          ipp_points_last5?: number | null
-          ipp_on_ice_goals_for_last5?: number | null
-          ipp_points_last10?: number | null
-          ipp_on_ice_goals_for_last10?: number | null
-          ipp_points_last20?: number | null
-          ipp_on_ice_goals_for_last20?: number | null
-          ipp_points_season?: number | null
-          ipp_on_ice_goals_for_season?: number | null
-          ipp_points_3ya?: number | null
-          ipp_on_ice_goals_for_3ya?: number | null
-          ipp_points_career?: number | null
-          ipp_on_ice_goals_for_career?: number | null
-          on_ice_sh_pct_goals_for_all?: number | null
-          on_ice_sh_pct_shots_for_all?: number | null
-          on_ice_sh_pct_goals_for_last3?: number | null
-          on_ice_sh_pct_shots_for_last3?: number | null
-          on_ice_sh_pct_goals_for_last5?: number | null
-          on_ice_sh_pct_shots_for_last5?: number | null
-          on_ice_sh_pct_goals_for_last10?: number | null
-          on_ice_sh_pct_shots_for_last10?: number | null
-          on_ice_sh_pct_goals_for_last20?: number | null
-          on_ice_sh_pct_shots_for_last20?: number | null
-          on_ice_sh_pct_goals_for_season?: number | null
-          on_ice_sh_pct_shots_for_season?: number | null
-          on_ice_sh_pct_goals_for_3ya?: number | null
-          on_ice_sh_pct_shots_for_3ya?: number | null
-          on_ice_sh_pct_goals_for_career?: number | null
-          on_ice_sh_pct_shots_for_career?: number | null
-          pdo_goals_for_all?: number | null
-          pdo_shots_for_all?: number | null
-          pdo_goals_against_all?: number | null
-          pdo_shots_against_all?: number | null
-          pdo_goals_for_last3?: number | null
-          pdo_shots_for_last3?: number | null
-          pdo_goals_against_last3?: number | null
-          pdo_shots_against_last3?: number | null
-          pdo_goals_for_last5?: number | null
-          pdo_shots_for_last5?: number | null
-          pdo_goals_against_last5?: number | null
-          pdo_shots_against_last5?: number | null
-          pdo_goals_for_last10?: number | null
-          pdo_shots_for_last10?: number | null
-          pdo_goals_against_last10?: number | null
-          pdo_shots_against_last10?: number | null
-          pdo_goals_for_last20?: number | null
-          pdo_shots_for_last20?: number | null
-          pdo_goals_against_last20?: number | null
-          pdo_shots_against_last20?: number | null
-          pdo_goals_for_season?: number | null
-          pdo_shots_for_season?: number | null
-          pdo_goals_against_season?: number | null
-          pdo_shots_against_season?: number | null
-          pdo_goals_for_3ya?: number | null
-          pdo_shots_for_3ya?: number | null
-          pdo_goals_against_3ya?: number | null
-          pdo_shots_against_3ya?: number | null
-          pdo_goals_for_career?: number | null
-          pdo_shots_for_career?: number | null
-          pdo_goals_against_career?: number | null
-          pdo_shots_against_career?: number | null
-          oz_start_pct_off_zone_starts_all?: number | null
-          oz_start_pct_def_zone_starts_all?: number | null
-          oz_start_pct_neutral_zone_starts_all?: number | null
-          oz_start_pct_off_zone_starts_last3?: number | null
-          oz_start_pct_def_zone_starts_last3?: number | null
-          oz_start_pct_neutral_zone_starts_last3?: number | null
-          oz_start_pct_off_zone_starts_last5?: number | null
-          oz_start_pct_def_zone_starts_last5?: number | null
-          oz_start_pct_neutral_zone_starts_last5?: number | null
-          oz_start_pct_off_zone_starts_last10?: number | null
-          oz_start_pct_def_zone_starts_last10?: number | null
-          oz_start_pct_neutral_zone_starts_last10?: number | null
-          oz_start_pct_off_zone_starts_last20?: number | null
-          oz_start_pct_def_zone_starts_last20?: number | null
-          oz_start_pct_neutral_zone_starts_last20?: number | null
-          oz_start_pct_off_zone_starts_season?: number | null
-          oz_start_pct_def_zone_starts_season?: number | null
-          oz_start_pct_neutral_zone_starts_season?: number | null
-          oz_start_pct_off_zone_starts_3ya?: number | null
-          oz_start_pct_def_zone_starts_3ya?: number | null
-          oz_start_pct_neutral_zone_starts_3ya?: number | null
-          oz_start_pct_off_zone_starts_career?: number | null
-          oz_start_pct_def_zone_starts_career?: number | null
-          oz_start_pct_neutral_zone_starts_career?: number | null
-          pp_share_pct_player_pp_toi_all?: number | null
-          pp_share_pct_team_pp_toi_all?: number | null
-          pp_share_pct_player_pp_toi_last3?: number | null
-          pp_share_pct_team_pp_toi_last3?: number | null
-          pp_share_pct_player_pp_toi_last5?: number | null
-          pp_share_pct_team_pp_toi_last5?: number | null
-          pp_share_pct_player_pp_toi_last10?: number | null
-          pp_share_pct_team_pp_toi_last10?: number | null
-          pp_share_pct_player_pp_toi_last20?: number | null
-          pp_share_pct_team_pp_toi_last20?: number | null
-          pp_share_pct_player_pp_toi_season?: number | null
-          pp_share_pct_team_pp_toi_season?: number | null
-          pp_share_pct_player_pp_toi_3ya?: number | null
-          pp_share_pct_team_pp_toi_3ya?: number | null
-          pp_share_pct_player_pp_toi_career?: number | null
-          pp_share_pct_team_pp_toi_career?: number | null
-          on_ice_sv_pct_avg_3ya?: number | null
-          on_ice_sv_pct_avg_all?: number | null
-          on_ice_sv_pct_avg_career?: number | null
-          on_ice_sv_pct_avg_last10?: number | null
-          on_ice_sv_pct_avg_last20?: number | null
-          on_ice_sv_pct_avg_last3?: number | null
-          on_ice_sv_pct_avg_last5?: number | null
-          on_ice_sv_pct_avg_season?: number | null
-          on_ice_sv_pct_total_all?: number | null
-          on_ice_sv_pct_total_last10?: number | null
-          on_ice_sv_pct_total_last20?: number | null
-          on_ice_sv_pct_total_last3?: number | null
-          on_ice_sv_pct_total_last5?: number | null
-          oz_starts_avg_3ya?: number | null
-          oz_starts_avg_all?: number | null
-          oz_starts_avg_career?: number | null
-          oz_starts_avg_last10?: number | null
-          oz_starts_avg_last20?: number | null
-          oz_starts_avg_last3?: number | null
-          oz_starts_avg_last5?: number | null
-          oz_starts_avg_season?: number | null
-          oz_starts_total_all?: number | null
-          oz_starts_total_last10?: number | null
-          oz_starts_total_last20?: number | null
-          oz_starts_total_last3?: number | null
-          oz_starts_total_last5?: number | null
-          dz_starts_avg_3ya?: number | null
-          dz_starts_avg_all?: number | null
-          dz_starts_avg_career?: number | null
-          dz_starts_avg_last10?: number | null
-          dz_starts_avg_last20?: number | null
-          dz_starts_avg_last3?: number | null
-          dz_starts_avg_last5?: number | null
-          dz_starts_avg_season?: number | null
-          dz_starts_total_all?: number | null
-          dz_starts_total_last10?: number | null
-          dz_starts_total_last20?: number | null
-          dz_starts_total_last3?: number | null
-          dz_starts_total_last5?: number | null
-          nz_starts_avg_3ya?: number | null
-          nz_starts_avg_all?: number | null
-          nz_starts_avg_career?: number | null
-          nz_starts_avg_last10?: number | null
-          nz_starts_avg_last20?: number | null
-          nz_starts_avg_last3?: number | null
-          nz_starts_avg_last5?: number | null
-          nz_starts_avg_season?: number | null
-          nz_starts_total_all?: number | null
-          nz_starts_total_last10?: number | null
-          nz_starts_total_last20?: number | null
-          nz_starts_total_last3?: number | null
-          nz_starts_total_last5?: number | null
-          oi_gf_avg_3ya?: number | null
-          oi_gf_avg_all?: number | null
-          oi_gf_avg_career?: number | null
-          oi_gf_avg_last10?: number | null
-          oi_gf_avg_last20?: number | null
-          oi_gf_avg_last3?: number | null
-          oi_gf_avg_last5?: number | null
-          oi_gf_avg_season?: number | null
-          oi_gf_total_all?: number | null
-          oi_gf_total_last10?: number | null
-          oi_gf_total_last20?: number | null
-          oi_gf_total_last3?: number | null
-          oi_gf_total_last5?: number | null
-          oi_ga_avg_3ya?: number | null
-          oi_ga_avg_all?: number | null
-          oi_ga_avg_career?: number | null
-          oi_ga_avg_last10?: number | null
-          oi_ga_avg_last20?: number | null
-          oi_ga_avg_last3?: number | null
-          oi_ga_avg_last5?: number | null
-          oi_ga_avg_season?: number | null
-          oi_ga_total_all?: number | null
-          oi_ga_total_last10?: number | null
-          oi_ga_total_last20?: number | null
-          oi_ga_total_last3?: number | null
-          oi_ga_total_last5?: number | null
-          oi_sf_avg_3ya?: number | null
-          oi_sf_avg_all?: number | null
-          oi_sf_avg_career?: number | null
-          oi_sf_avg_last10?: number | null
-          oi_sf_avg_last20?: number | null
-          oi_sf_avg_last3?: number | null
-          oi_sf_avg_last5?: number | null
-          oi_sf_avg_season?: number | null
-          oi_sf_total_all?: number | null
-          oi_sf_total_last10?: number | null
-          oi_sf_total_last20?: number | null
-          oi_sf_total_last3?: number | null
-          oi_sf_total_last5?: number | null
-          oi_sa_avg_3ya?: number | null
-          oi_sa_avg_all?: number | null
-          oi_sa_avg_career?: number | null
-          oi_sa_avg_last10?: number | null
-          oi_sa_avg_last20?: number | null
-          oi_sa_avg_last3?: number | null
-          oi_sa_avg_last5?: number | null
-          oi_sa_avg_season?: number | null
-          oi_sa_total_all?: number | null
-          oi_sa_total_last10?: number | null
-          oi_sa_total_last20?: number | null
-          oi_sa_total_last3?: number | null
-          oi_sa_total_last5?: number | null
           updated_at?: string
         }
         Update: {
@@ -16903,69 +16903,11 @@ export type Database = {
           assists_avg_last3?: number | null
           assists_avg_last5?: number | null
           assists_avg_season?: number | null
-          assists_total_all?: number | null
-          assists_total_last10?: number | null
-          assists_total_last20?: number | null
-          assists_total_last3?: number | null
-          assists_total_last5?: number | null
-          primary_assists_avg_3ya?: number | null
-          primary_assists_avg_all?: number | null
-          primary_assists_avg_career?: number | null
-          primary_assists_avg_last10?: number | null
-          primary_assists_avg_last20?: number | null
-          primary_assists_avg_last3?: number | null
-          primary_assists_avg_last5?: number | null
-          primary_assists_avg_season?: number | null
-          primary_assists_total_all?: number | null
-          primary_assists_total_last10?: number | null
-          primary_assists_total_last20?: number | null
-          primary_assists_total_last3?: number | null
-          primary_assists_total_last5?: number | null
-          secondary_assists_avg_3ya?: number | null
-          secondary_assists_avg_all?: number | null
-          secondary_assists_avg_career?: number | null
-          secondary_assists_avg_last10?: number | null
-          secondary_assists_avg_last20?: number | null
-          secondary_assists_avg_last3?: number | null
-          secondary_assists_avg_last5?: number | null
-          secondary_assists_avg_season?: number | null
-          secondary_assists_total_all?: number | null
-          secondary_assists_total_last10?: number | null
-          secondary_assists_total_last20?: number | null
-          secondary_assists_total_last3?: number | null
-          secondary_assists_total_last5?: number | null
-          penalties_drawn_avg_3ya?: number | null
-          penalties_drawn_avg_all?: number | null
-          penalties_drawn_avg_career?: number | null
-          penalties_drawn_avg_last10?: number | null
-          penalties_drawn_avg_last20?: number | null
-          penalties_drawn_avg_last3?: number | null
-          penalties_drawn_avg_last5?: number | null
-          penalties_drawn_avg_season?: number | null
-          penalties_drawn_total_all?: number | null
-          penalties_drawn_total_last10?: number | null
-          penalties_drawn_total_last20?: number | null
-          penalties_drawn_total_last3?: number | null
-          penalties_drawn_total_last5?: number | null
-          blocks_avg_3ya?: number | null
-          blocks_avg_all?: number | null
-          blocks_avg_career?: number | null
-          blocks_avg_last10?: number | null
-          blocks_avg_last20?: number | null
-          blocks_avg_last3?: number | null
-          blocks_avg_last5?: number | null
-          blocks_avg_season?: number | null
-          blocks_per_60_avg_3ya?: number | null
-          blocks_per_60_avg_all?: number | null
-          blocks_per_60_avg_career?: number | null
-          goals_per_60_avg_3ya?: number | null
-          goals_per_60_avg_all?: number | null
-          goals_per_60_avg_career?: number | null
-          goals_per_60_avg_last10?: number | null
-          goals_per_60_avg_last20?: number | null
-          goals_per_60_avg_last3?: number | null
-          goals_per_60_avg_last5?: number | null
-          goals_per_60_avg_season?: number | null
+          assists_per_60_3ya?: number | null
+          assists_per_60_all?: number | null
+          assists_per_60_assists_3ya?: number | null
+          assists_per_60_assists_career?: number | null
+          assists_per_60_assists_season?: number | null
           assists_per_60_avg_3ya?: number | null
           assists_per_60_avg_all?: number | null
           assists_per_60_avg_career?: number | null
@@ -16974,52 +16916,64 @@ export type Database = {
           assists_per_60_avg_last3?: number | null
           assists_per_60_avg_last5?: number | null
           assists_per_60_avg_season?: number | null
-          primary_assists_per_60_avg_3ya?: number | null
-          primary_assists_per_60_avg_all?: number | null
-          primary_assists_per_60_avg_career?: number | null
-          primary_assists_per_60_avg_last10?: number | null
-          primary_assists_per_60_avg_last20?: number | null
-          primary_assists_per_60_avg_last3?: number | null
-          primary_assists_per_60_avg_last5?: number | null
-          primary_assists_per_60_avg_season?: number | null
-          secondary_assists_per_60_avg_3ya?: number | null
-          secondary_assists_per_60_avg_all?: number | null
-          secondary_assists_per_60_avg_career?: number | null
-          secondary_assists_per_60_avg_last10?: number | null
-          secondary_assists_per_60_avg_last20?: number | null
-          secondary_assists_per_60_avg_last3?: number | null
-          secondary_assists_per_60_avg_last5?: number | null
-          secondary_assists_per_60_avg_season?: number | null
-          blocks_per_60_avg_last10?: number | null
-          blocks_per_60_avg_last20?: number | null
-          blocks_per_60_avg_last3?: number | null
-          blocks_per_60_avg_last5?: number | null
-          blocks_per_60_avg_season?: number | null
-          blocks_per_60_total_all?: number | null
-          blocks_per_60_total_last10?: number | null
-          blocks_per_60_total_last20?: number | null
-          blocks_per_60_total_last3?: number | null
-          blocks_per_60_total_last5?: number | null
-          goals_per_60_total_all?: number | null
-          goals_per_60_total_last10?: number | null
-          goals_per_60_total_last20?: number | null
-          goals_per_60_total_last3?: number | null
-          goals_per_60_total_last5?: number | null
+          assists_per_60_career?: number | null
+          assists_per_60_last10?: number | null
+          assists_per_60_last20?: number | null
+          assists_per_60_last3?: number | null
+          assists_per_60_last5?: number | null
+          assists_per_60_season?: number | null
+          assists_per_60_toi_seconds_3ya?: number | null
+          assists_per_60_toi_seconds_career?: number | null
+          assists_per_60_toi_seconds_season?: number | null
           assists_per_60_total_all?: number | null
           assists_per_60_total_last10?: number | null
           assists_per_60_total_last20?: number | null
           assists_per_60_total_last3?: number | null
           assists_per_60_total_last5?: number | null
-          primary_assists_per_60_total_all?: number | null
-          primary_assists_per_60_total_last10?: number | null
-          primary_assists_per_60_total_last20?: number | null
-          primary_assists_per_60_total_last3?: number | null
-          primary_assists_per_60_total_last5?: number | null
-          secondary_assists_per_60_total_all?: number | null
-          secondary_assists_per_60_total_last10?: number | null
-          secondary_assists_per_60_total_last20?: number | null
-          secondary_assists_per_60_total_last3?: number | null
-          secondary_assists_per_60_total_last5?: number | null
+          assists_total_all?: number | null
+          assists_total_last10?: number | null
+          assists_total_last20?: number | null
+          assists_total_last3?: number | null
+          assists_total_last5?: number | null
+          availability_pct_last10_team_games?: number | null
+          availability_pct_last20_team_games?: number | null
+          availability_pct_last3_team_games?: number | null
+          availability_pct_last5_team_games?: number | null
+          blocks_avg_3ya?: number | null
+          blocks_avg_all?: number | null
+          blocks_avg_career?: number | null
+          blocks_avg_last10?: number | null
+          blocks_avg_last20?: number | null
+          blocks_avg_last3?: number | null
+          blocks_avg_last5?: number | null
+          blocks_avg_season?: number | null
+          blocks_per_60_3ya?: number | null
+          blocks_per_60_all?: number | null
+          blocks_per_60_avg_3ya?: number | null
+          blocks_per_60_avg_all?: number | null
+          blocks_per_60_avg_career?: number | null
+          blocks_per_60_avg_last10?: number | null
+          blocks_per_60_avg_last20?: number | null
+          blocks_per_60_avg_last3?: number | null
+          blocks_per_60_avg_last5?: number | null
+          blocks_per_60_avg_season?: number | null
+          blocks_per_60_blocks_3ya?: number | null
+          blocks_per_60_blocks_career?: number | null
+          blocks_per_60_blocks_season?: number | null
+          blocks_per_60_career?: number | null
+          blocks_per_60_last10?: number | null
+          blocks_per_60_last20?: number | null
+          blocks_per_60_last3?: number | null
+          blocks_per_60_last5?: number | null
+          blocks_per_60_season?: number | null
+          blocks_per_60_toi_seconds_3ya?: number | null
+          blocks_per_60_toi_seconds_career?: number | null
+          blocks_per_60_toi_seconds_season?: number | null
+          blocks_per_60_total_all?: number | null
+          blocks_per_60_total_last10?: number | null
+          blocks_per_60_total_last20?: number | null
+          blocks_per_60_total_last3?: number | null
+          blocks_per_60_total_last5?: number | null
           blocks_total_all?: number | null
           blocks_total_last10?: number | null
           blocks_total_last20?: number | null
@@ -17038,7 +16992,10 @@ export type Database = {
           ca_total_last20?: number | null
           ca_total_last3?: number | null
           ca_total_last5?: number | null
+          career_availability_pct?: number | null
           career_games_played?: number | null
+          career_participation_games?: number | null
+          career_participation_pct?: number | null
           career_team_games_available?: number | null
           cf_avg_3ya?: number | null
           cf_avg_all?: number | null
@@ -17048,6 +17005,8 @@ export type Database = {
           cf_avg_last3?: number | null
           cf_avg_last5?: number | null
           cf_avg_season?: number | null
+          cf_pct_3ya?: number | null
+          cf_pct_all?: number | null
           cf_pct_avg_3ya?: number | null
           cf_pct_avg_all?: number | null
           cf_pct_avg_career?: number | null
@@ -17056,6 +17015,18 @@ export type Database = {
           cf_pct_avg_last3?: number | null
           cf_pct_avg_last5?: number | null
           cf_pct_avg_season?: number | null
+          cf_pct_ca_3ya?: number | null
+          cf_pct_ca_career?: number | null
+          cf_pct_ca_season?: number | null
+          cf_pct_career?: number | null
+          cf_pct_cf_3ya?: number | null
+          cf_pct_cf_career?: number | null
+          cf_pct_cf_season?: number | null
+          cf_pct_last10?: number | null
+          cf_pct_last20?: number | null
+          cf_pct_last3?: number | null
+          cf_pct_last5?: number | null
+          cf_pct_season?: number | null
           cf_pct_total_all?: number | null
           cf_pct_total_last10?: number | null
           cf_pct_total_last20?: number | null
@@ -17066,6 +17037,21 @@ export type Database = {
           cf_total_last20?: number | null
           cf_total_last3?: number | null
           cf_total_last5?: number | null
+          dz_starts_avg_3ya?: number | null
+          dz_starts_avg_all?: number | null
+          dz_starts_avg_career?: number | null
+          dz_starts_avg_last10?: number | null
+          dz_starts_avg_last20?: number | null
+          dz_starts_avg_last3?: number | null
+          dz_starts_avg_last5?: number | null
+          dz_starts_avg_season?: number | null
+          dz_starts_total_all?: number | null
+          dz_starts_total_last10?: number | null
+          dz_starts_total_last20?: number | null
+          dz_starts_total_last3?: number | null
+          dz_starts_total_last5?: number | null
+          expected_sh_pct_3ya?: number | null
+          expected_sh_pct_all?: number | null
           expected_sh_pct_avg_3ya?: number | null
           expected_sh_pct_avg_all?: number | null
           expected_sh_pct_avg_career?: number | null
@@ -17074,6 +17060,18 @@ export type Database = {
           expected_sh_pct_avg_last3?: number | null
           expected_sh_pct_avg_last5?: number | null
           expected_sh_pct_avg_season?: number | null
+          expected_sh_pct_career?: number | null
+          expected_sh_pct_ixg_3ya?: number | null
+          expected_sh_pct_ixg_career?: number | null
+          expected_sh_pct_ixg_season?: number | null
+          expected_sh_pct_last10?: number | null
+          expected_sh_pct_last20?: number | null
+          expected_sh_pct_last3?: number | null
+          expected_sh_pct_last5?: number | null
+          expected_sh_pct_season?: number | null
+          expected_sh_pct_shots_3ya?: number | null
+          expected_sh_pct_shots_career?: number | null
+          expected_sh_pct_shots_season?: number | null
           expected_sh_pct_total_all?: number | null
           expected_sh_pct_total_last10?: number | null
           expected_sh_pct_total_last20?: number | null
@@ -17100,6 +17098,8 @@ export type Database = {
           ff_avg_last3?: number | null
           ff_avg_last5?: number | null
           ff_avg_season?: number | null
+          ff_pct_3ya?: number | null
+          ff_pct_all?: number | null
           ff_pct_avg_3ya?: number | null
           ff_pct_avg_all?: number | null
           ff_pct_avg_career?: number | null
@@ -17108,6 +17108,18 @@ export type Database = {
           ff_pct_avg_last3?: number | null
           ff_pct_avg_last5?: number | null
           ff_pct_avg_season?: number | null
+          ff_pct_career?: number | null
+          ff_pct_fa_3ya?: number | null
+          ff_pct_fa_career?: number | null
+          ff_pct_fa_season?: number | null
+          ff_pct_ff_3ya?: number | null
+          ff_pct_ff_career?: number | null
+          ff_pct_ff_season?: number | null
+          ff_pct_last10?: number | null
+          ff_pct_last20?: number | null
+          ff_pct_last3?: number | null
+          ff_pct_last5?: number | null
+          ff_pct_season?: number | null
           ff_pct_total_all?: number | null
           ff_pct_total_last10?: number | null
           ff_pct_total_last20?: number | null
@@ -17133,6 +17145,33 @@ export type Database = {
           goals_avg_last3?: number | null
           goals_avg_last5?: number | null
           goals_avg_season?: number | null
+          goals_per_60_3ya?: number | null
+          goals_per_60_all?: number | null
+          goals_per_60_avg_3ya?: number | null
+          goals_per_60_avg_all?: number | null
+          goals_per_60_avg_career?: number | null
+          goals_per_60_avg_last10?: number | null
+          goals_per_60_avg_last20?: number | null
+          goals_per_60_avg_last3?: number | null
+          goals_per_60_avg_last5?: number | null
+          goals_per_60_avg_season?: number | null
+          goals_per_60_career?: number | null
+          goals_per_60_goals_3ya?: number | null
+          goals_per_60_goals_career?: number | null
+          goals_per_60_goals_season?: number | null
+          goals_per_60_last10?: number | null
+          goals_per_60_last20?: number | null
+          goals_per_60_last3?: number | null
+          goals_per_60_last5?: number | null
+          goals_per_60_season?: number | null
+          goals_per_60_toi_seconds_3ya?: number | null
+          goals_per_60_toi_seconds_career?: number | null
+          goals_per_60_toi_seconds_season?: number | null
+          goals_per_60_total_all?: number | null
+          goals_per_60_total_last10?: number | null
+          goals_per_60_total_last20?: number | null
+          goals_per_60_total_last3?: number | null
+          goals_per_60_total_last5?: number | null
           goals_total_all?: number | null
           goals_total_last10?: number | null
           goals_total_last20?: number | null
@@ -17160,6 +17199,8 @@ export type Database = {
           hits_avg_last3?: number | null
           hits_avg_last5?: number | null
           hits_avg_season?: number | null
+          hits_per_60_3ya?: number | null
+          hits_per_60_all?: number | null
           hits_per_60_avg_3ya?: number | null
           hits_per_60_avg_all?: number | null
           hits_per_60_avg_career?: number | null
@@ -17168,6 +17209,18 @@ export type Database = {
           hits_per_60_avg_last3?: number | null
           hits_per_60_avg_last5?: number | null
           hits_per_60_avg_season?: number | null
+          hits_per_60_career?: number | null
+          hits_per_60_hits_3ya?: number | null
+          hits_per_60_hits_career?: number | null
+          hits_per_60_hits_season?: number | null
+          hits_per_60_last10?: number | null
+          hits_per_60_last20?: number | null
+          hits_per_60_last3?: number | null
+          hits_per_60_last5?: number | null
+          hits_per_60_season?: number | null
+          hits_per_60_toi_seconds_3ya?: number | null
+          hits_per_60_toi_seconds_career?: number | null
+          hits_per_60_toi_seconds_season?: number | null
           hits_per_60_total_all?: number | null
           hits_per_60_total_last10?: number | null
           hits_per_60_total_last20?: number | null
@@ -17191,6 +17244,8 @@ export type Database = {
           ihdcf_total_last20?: number | null
           ihdcf_total_last3?: number | null
           ihdcf_total_last5?: number | null
+          ipp_3ya?: number | null
+          ipp_all?: number | null
           ipp_avg_3ya?: number | null
           ipp_avg_all?: number | null
           ipp_avg_career?: number | null
@@ -17199,6 +17254,28 @@ export type Database = {
           ipp_avg_last3?: number | null
           ipp_avg_last5?: number | null
           ipp_avg_season?: number | null
+          ipp_career?: number | null
+          ipp_last10?: number | null
+          ipp_last20?: number | null
+          ipp_last3?: number | null
+          ipp_last5?: number | null
+          ipp_on_ice_goals_for_3ya?: number | null
+          ipp_on_ice_goals_for_all?: number | null
+          ipp_on_ice_goals_for_career?: number | null
+          ipp_on_ice_goals_for_last10?: number | null
+          ipp_on_ice_goals_for_last20?: number | null
+          ipp_on_ice_goals_for_last3?: number | null
+          ipp_on_ice_goals_for_last5?: number | null
+          ipp_on_ice_goals_for_season?: number | null
+          ipp_points_3ya?: number | null
+          ipp_points_all?: number | null
+          ipp_points_career?: number | null
+          ipp_points_last10?: number | null
+          ipp_points_last20?: number | null
+          ipp_points_last3?: number | null
+          ipp_points_last5?: number | null
+          ipp_points_season?: number | null
+          ipp_season?: number | null
           ipp_total_all?: number | null
           ipp_total_last10?: number | null
           ipp_total_last20?: number | null
@@ -17225,6 +17302,8 @@ export type Database = {
           ixg_avg_last3?: number | null
           ixg_avg_last5?: number | null
           ixg_avg_season?: number | null
+          ixg_per_60_3ya?: number | null
+          ixg_per_60_all?: number | null
           ixg_per_60_avg_3ya?: number | null
           ixg_per_60_avg_all?: number | null
           ixg_per_60_avg_career?: number | null
@@ -17233,6 +17312,18 @@ export type Database = {
           ixg_per_60_avg_last3?: number | null
           ixg_per_60_avg_last5?: number | null
           ixg_per_60_avg_season?: number | null
+          ixg_per_60_career?: number | null
+          ixg_per_60_ixg_3ya?: number | null
+          ixg_per_60_ixg_career?: number | null
+          ixg_per_60_ixg_season?: number | null
+          ixg_per_60_last10?: number | null
+          ixg_per_60_last20?: number | null
+          ixg_per_60_last3?: number | null
+          ixg_per_60_last5?: number | null
+          ixg_per_60_season?: number | null
+          ixg_per_60_toi_seconds_3ya?: number | null
+          ixg_per_60_toi_seconds_career?: number | null
+          ixg_per_60_toi_seconds_season?: number | null
           ixg_per_60_total_all?: number | null
           ixg_per_60_total_last10?: number | null
           ixg_per_60_total_last20?: number | null
@@ -17245,6 +17336,73 @@ export type Database = {
           ixg_total_last5?: number | null
           line_combo_group?: string | null
           line_combo_slot?: number | null
+          nz_starts_avg_3ya?: number | null
+          nz_starts_avg_all?: number | null
+          nz_starts_avg_career?: number | null
+          nz_starts_avg_last10?: number | null
+          nz_starts_avg_last20?: number | null
+          nz_starts_avg_last3?: number | null
+          nz_starts_avg_last5?: number | null
+          nz_starts_avg_season?: number | null
+          nz_starts_total_all?: number | null
+          nz_starts_total_last10?: number | null
+          nz_starts_total_last20?: number | null
+          nz_starts_total_last3?: number | null
+          nz_starts_total_last5?: number | null
+          oi_ga_avg_3ya?: number | null
+          oi_ga_avg_all?: number | null
+          oi_ga_avg_career?: number | null
+          oi_ga_avg_last10?: number | null
+          oi_ga_avg_last20?: number | null
+          oi_ga_avg_last3?: number | null
+          oi_ga_avg_last5?: number | null
+          oi_ga_avg_season?: number | null
+          oi_ga_total_all?: number | null
+          oi_ga_total_last10?: number | null
+          oi_ga_total_last20?: number | null
+          oi_ga_total_last3?: number | null
+          oi_ga_total_last5?: number | null
+          oi_gf_avg_3ya?: number | null
+          oi_gf_avg_all?: number | null
+          oi_gf_avg_career?: number | null
+          oi_gf_avg_last10?: number | null
+          oi_gf_avg_last20?: number | null
+          oi_gf_avg_last3?: number | null
+          oi_gf_avg_last5?: number | null
+          oi_gf_avg_season?: number | null
+          oi_gf_total_all?: number | null
+          oi_gf_total_last10?: number | null
+          oi_gf_total_last20?: number | null
+          oi_gf_total_last3?: number | null
+          oi_gf_total_last5?: number | null
+          oi_sa_avg_3ya?: number | null
+          oi_sa_avg_all?: number | null
+          oi_sa_avg_career?: number | null
+          oi_sa_avg_last10?: number | null
+          oi_sa_avg_last20?: number | null
+          oi_sa_avg_last3?: number | null
+          oi_sa_avg_last5?: number | null
+          oi_sa_avg_season?: number | null
+          oi_sa_total_all?: number | null
+          oi_sa_total_last10?: number | null
+          oi_sa_total_last20?: number | null
+          oi_sa_total_last3?: number | null
+          oi_sa_total_last5?: number | null
+          oi_sf_avg_3ya?: number | null
+          oi_sf_avg_all?: number | null
+          oi_sf_avg_career?: number | null
+          oi_sf_avg_last10?: number | null
+          oi_sf_avg_last20?: number | null
+          oi_sf_avg_last3?: number | null
+          oi_sf_avg_last5?: number | null
+          oi_sf_avg_season?: number | null
+          oi_sf_total_all?: number | null
+          oi_sf_total_last10?: number | null
+          oi_sf_total_last20?: number | null
+          oi_sf_total_last3?: number | null
+          oi_sf_total_last5?: number | null
+          on_ice_sh_pct_3ya?: number | null
+          on_ice_sh_pct_all?: number | null
           on_ice_sh_pct_avg_3ya?: number | null
           on_ice_sh_pct_avg_all?: number | null
           on_ice_sh_pct_avg_career?: number | null
@@ -17253,11 +17411,56 @@ export type Database = {
           on_ice_sh_pct_avg_last3?: number | null
           on_ice_sh_pct_avg_last5?: number | null
           on_ice_sh_pct_avg_season?: number | null
+          on_ice_sh_pct_career?: number | null
+          on_ice_sh_pct_goals_for_3ya?: number | null
+          on_ice_sh_pct_goals_for_all?: number | null
+          on_ice_sh_pct_goals_for_career?: number | null
+          on_ice_sh_pct_goals_for_last10?: number | null
+          on_ice_sh_pct_goals_for_last20?: number | null
+          on_ice_sh_pct_goals_for_last3?: number | null
+          on_ice_sh_pct_goals_for_last5?: number | null
+          on_ice_sh_pct_goals_for_season?: number | null
+          on_ice_sh_pct_last10?: number | null
+          on_ice_sh_pct_last20?: number | null
+          on_ice_sh_pct_last3?: number | null
+          on_ice_sh_pct_last5?: number | null
+          on_ice_sh_pct_season?: number | null
+          on_ice_sh_pct_shots_for_3ya?: number | null
+          on_ice_sh_pct_shots_for_all?: number | null
+          on_ice_sh_pct_shots_for_career?: number | null
+          on_ice_sh_pct_shots_for_last10?: number | null
+          on_ice_sh_pct_shots_for_last20?: number | null
+          on_ice_sh_pct_shots_for_last3?: number | null
+          on_ice_sh_pct_shots_for_last5?: number | null
+          on_ice_sh_pct_shots_for_season?: number | null
           on_ice_sh_pct_total_all?: number | null
           on_ice_sh_pct_total_last10?: number | null
           on_ice_sh_pct_total_last20?: number | null
           on_ice_sh_pct_total_last3?: number | null
           on_ice_sh_pct_total_last5?: number | null
+          on_ice_sv_pct_3ya?: number | null
+          on_ice_sv_pct_all?: number | null
+          on_ice_sv_pct_avg_3ya?: number | null
+          on_ice_sv_pct_avg_all?: number | null
+          on_ice_sv_pct_avg_career?: number | null
+          on_ice_sv_pct_avg_last10?: number | null
+          on_ice_sv_pct_avg_last20?: number | null
+          on_ice_sv_pct_avg_last3?: number | null
+          on_ice_sv_pct_avg_last5?: number | null
+          on_ice_sv_pct_avg_season?: number | null
+          on_ice_sv_pct_career?: number | null
+          on_ice_sv_pct_last10?: number | null
+          on_ice_sv_pct_last20?: number | null
+          on_ice_sv_pct_last3?: number | null
+          on_ice_sv_pct_last5?: number | null
+          on_ice_sv_pct_season?: number | null
+          on_ice_sv_pct_total_all?: number | null
+          on_ice_sv_pct_total_last10?: number | null
+          on_ice_sv_pct_total_last20?: number | null
+          on_ice_sv_pct_total_last3?: number | null
+          on_ice_sv_pct_total_last5?: number | null
+          oz_start_pct_3ya?: number | null
+          oz_start_pct_all?: number | null
           oz_start_pct_avg_3ya?: number | null
           oz_start_pct_avg_all?: number | null
           oz_start_pct_avg_career?: number | null
@@ -17266,11 +17469,64 @@ export type Database = {
           oz_start_pct_avg_last3?: number | null
           oz_start_pct_avg_last5?: number | null
           oz_start_pct_avg_season?: number | null
+          oz_start_pct_career?: number | null
+          oz_start_pct_def_zone_starts_3ya?: number | null
+          oz_start_pct_def_zone_starts_all?: number | null
+          oz_start_pct_def_zone_starts_career?: number | null
+          oz_start_pct_def_zone_starts_last10?: number | null
+          oz_start_pct_def_zone_starts_last20?: number | null
+          oz_start_pct_def_zone_starts_last3?: number | null
+          oz_start_pct_def_zone_starts_last5?: number | null
+          oz_start_pct_def_zone_starts_season?: number | null
+          oz_start_pct_last10?: number | null
+          oz_start_pct_last20?: number | null
+          oz_start_pct_last3?: number | null
+          oz_start_pct_last5?: number | null
+          oz_start_pct_neutral_zone_starts_3ya?: number | null
+          oz_start_pct_neutral_zone_starts_all?: number | null
+          oz_start_pct_neutral_zone_starts_career?: number | null
+          oz_start_pct_neutral_zone_starts_last10?: number | null
+          oz_start_pct_neutral_zone_starts_last20?: number | null
+          oz_start_pct_neutral_zone_starts_last3?: number | null
+          oz_start_pct_neutral_zone_starts_last5?: number | null
+          oz_start_pct_neutral_zone_starts_season?: number | null
+          oz_start_pct_off_zone_starts_3ya?: number | null
+          oz_start_pct_off_zone_starts_all?: number | null
+          oz_start_pct_off_zone_starts_career?: number | null
+          oz_start_pct_off_zone_starts_last10?: number | null
+          oz_start_pct_off_zone_starts_last20?: number | null
+          oz_start_pct_off_zone_starts_last3?: number | null
+          oz_start_pct_off_zone_starts_last5?: number | null
+          oz_start_pct_off_zone_starts_season?: number | null
+          oz_start_pct_season?: number | null
           oz_start_pct_total_all?: number | null
           oz_start_pct_total_last10?: number | null
           oz_start_pct_total_last20?: number | null
           oz_start_pct_total_last3?: number | null
           oz_start_pct_total_last5?: number | null
+          oz_starts_avg_3ya?: number | null
+          oz_starts_avg_all?: number | null
+          oz_starts_avg_career?: number | null
+          oz_starts_avg_last10?: number | null
+          oz_starts_avg_last20?: number | null
+          oz_starts_avg_last3?: number | null
+          oz_starts_avg_last5?: number | null
+          oz_starts_avg_season?: number | null
+          oz_starts_total_all?: number | null
+          oz_starts_total_last10?: number | null
+          oz_starts_total_last20?: number | null
+          oz_starts_total_last3?: number | null
+          oz_starts_total_last5?: number | null
+          participation_games_last10_team_games?: number | null
+          participation_games_last20_team_games?: number | null
+          participation_games_last3_team_games?: number | null
+          participation_games_last5_team_games?: number | null
+          participation_pct_last10_team_games?: number | null
+          participation_pct_last20_team_games?: number | null
+          participation_pct_last3_team_games?: number | null
+          participation_pct_last5_team_games?: number | null
+          pdo_3ya?: number | null
+          pdo_all?: number | null
           pdo_avg_3ya?: number | null
           pdo_avg_all?: number | null
           pdo_avg_career?: number | null
@@ -17279,11 +17535,89 @@ export type Database = {
           pdo_avg_last3?: number | null
           pdo_avg_last5?: number | null
           pdo_avg_season?: number | null
+          pdo_career?: number | null
+          pdo_goals_against_3ya?: number | null
+          pdo_goals_against_all?: number | null
+          pdo_goals_against_career?: number | null
+          pdo_goals_against_last10?: number | null
+          pdo_goals_against_last20?: number | null
+          pdo_goals_against_last3?: number | null
+          pdo_goals_against_last5?: number | null
+          pdo_goals_against_season?: number | null
+          pdo_goals_for_3ya?: number | null
+          pdo_goals_for_all?: number | null
+          pdo_goals_for_career?: number | null
+          pdo_goals_for_last10?: number | null
+          pdo_goals_for_last20?: number | null
+          pdo_goals_for_last3?: number | null
+          pdo_goals_for_last5?: number | null
+          pdo_goals_for_season?: number | null
+          pdo_last10?: number | null
+          pdo_last20?: number | null
+          pdo_last3?: number | null
+          pdo_last5?: number | null
+          pdo_season?: number | null
+          pdo_shots_against_3ya?: number | null
+          pdo_shots_against_all?: number | null
+          pdo_shots_against_career?: number | null
+          pdo_shots_against_last10?: number | null
+          pdo_shots_against_last20?: number | null
+          pdo_shots_against_last3?: number | null
+          pdo_shots_against_last5?: number | null
+          pdo_shots_against_season?: number | null
+          pdo_shots_for_3ya?: number | null
+          pdo_shots_for_all?: number | null
+          pdo_shots_for_career?: number | null
+          pdo_shots_for_last10?: number | null
+          pdo_shots_for_last20?: number | null
+          pdo_shots_for_last3?: number | null
+          pdo_shots_for_last5?: number | null
+          pdo_shots_for_season?: number | null
           pdo_total_all?: number | null
           pdo_total_last10?: number | null
           pdo_total_last20?: number | null
           pdo_total_last3?: number | null
           pdo_total_last5?: number | null
+          penalties_drawn_avg_3ya?: number | null
+          penalties_drawn_avg_all?: number | null
+          penalties_drawn_avg_career?: number | null
+          penalties_drawn_avg_last10?: number | null
+          penalties_drawn_avg_last20?: number | null
+          penalties_drawn_avg_last3?: number | null
+          penalties_drawn_avg_last5?: number | null
+          penalties_drawn_avg_season?: number | null
+          penalties_drawn_per_60_3ya?: number | null
+          penalties_drawn_per_60_all?: number | null
+          penalties_drawn_per_60_avg_3ya?: number | null
+          penalties_drawn_per_60_avg_all?: number | null
+          penalties_drawn_per_60_avg_career?: number | null
+          penalties_drawn_per_60_avg_last10?: number | null
+          penalties_drawn_per_60_avg_last20?: number | null
+          penalties_drawn_per_60_avg_last3?: number | null
+          penalties_drawn_per_60_avg_last5?: number | null
+          penalties_drawn_per_60_avg_season?: number | null
+          penalties_drawn_per_60_career?: number | null
+          penalties_drawn_per_60_last10?: number | null
+          penalties_drawn_per_60_last20?: number | null
+          penalties_drawn_per_60_last3?: number | null
+          penalties_drawn_per_60_last5?: number | null
+          penalties_drawn_per_60_penalties_drawn_3ya?: number | null
+          penalties_drawn_per_60_penalties_drawn_career?: number | null
+          penalties_drawn_per_60_penalties_drawn_season?: number | null
+          penalties_drawn_per_60_season?: number | null
+          penalties_drawn_per_60_toi_seconds_3ya?: number | null
+          penalties_drawn_per_60_toi_seconds_career?: number | null
+          penalties_drawn_per_60_toi_seconds_season?: number | null
+          penalties_drawn_per_60_total_all?: number | null
+          penalties_drawn_per_60_total_last10?: number | null
+          penalties_drawn_per_60_total_last20?: number | null
+          penalties_drawn_per_60_total_last3?: number | null
+          penalties_drawn_per_60_total_last5?: number | null
+          penalties_drawn_total_all?: number | null
+          penalties_drawn_total_last10?: number | null
+          penalties_drawn_total_last20?: number | null
+          penalties_drawn_total_last3?: number | null
+          penalties_drawn_total_last5?: number | null
           player_id?: number
           points_avg_3ya?: number | null
           points_avg_all?: number | null
@@ -17311,6 +17645,44 @@ export type Database = {
           pp_points_total_last20?: number | null
           pp_points_total_last3?: number | null
           pp_points_total_last5?: number | null
+          pp_share_of_team?: number | null
+          pp_share_pct_3ya?: number | null
+          pp_share_pct_all?: number | null
+          pp_share_pct_avg_3ya?: number | null
+          pp_share_pct_avg_all?: number | null
+          pp_share_pct_avg_career?: number | null
+          pp_share_pct_avg_last10?: number | null
+          pp_share_pct_avg_last20?: number | null
+          pp_share_pct_avg_last3?: number | null
+          pp_share_pct_avg_last5?: number | null
+          pp_share_pct_avg_season?: number | null
+          pp_share_pct_career?: number | null
+          pp_share_pct_last10?: number | null
+          pp_share_pct_last20?: number | null
+          pp_share_pct_last3?: number | null
+          pp_share_pct_last5?: number | null
+          pp_share_pct_player_pp_toi_3ya?: number | null
+          pp_share_pct_player_pp_toi_all?: number | null
+          pp_share_pct_player_pp_toi_career?: number | null
+          pp_share_pct_player_pp_toi_last10?: number | null
+          pp_share_pct_player_pp_toi_last20?: number | null
+          pp_share_pct_player_pp_toi_last3?: number | null
+          pp_share_pct_player_pp_toi_last5?: number | null
+          pp_share_pct_player_pp_toi_season?: number | null
+          pp_share_pct_season?: number | null
+          pp_share_pct_team_pp_toi_3ya?: number | null
+          pp_share_pct_team_pp_toi_all?: number | null
+          pp_share_pct_team_pp_toi_career?: number | null
+          pp_share_pct_team_pp_toi_last10?: number | null
+          pp_share_pct_team_pp_toi_last20?: number | null
+          pp_share_pct_team_pp_toi_last3?: number | null
+          pp_share_pct_team_pp_toi_last5?: number | null
+          pp_share_pct_team_pp_toi_season?: number | null
+          pp_share_pct_total_all?: number | null
+          pp_share_pct_total_last10?: number | null
+          pp_share_pct_total_last20?: number | null
+          pp_share_pct_total_last3?: number | null
+          pp_share_pct_total_last5?: number | null
           pp_toi_seconds_avg_3ya?: number | null
           pp_toi_seconds_avg_all?: number | null
           pp_toi_seconds_avg_career?: number | null
@@ -17324,24 +17696,52 @@ export type Database = {
           pp_toi_seconds_total_last20?: number | null
           pp_toi_seconds_total_last3?: number | null
           pp_toi_seconds_total_last5?: number | null
-          pp_share_pct_avg_3ya?: number | null
-          pp_share_pct_avg_all?: number | null
-          pp_share_pct_avg_career?: number | null
-          pp_share_pct_avg_last10?: number | null
-          pp_share_pct_avg_last20?: number | null
-          pp_share_pct_avg_last3?: number | null
-          pp_share_pct_avg_last5?: number | null
-          pp_share_pct_avg_season?: number | null
-          pp_share_pct_total_all?: number | null
-          pp_share_pct_total_last10?: number | null
-          pp_share_pct_total_last20?: number | null
-          pp_share_pct_total_last3?: number | null
-          pp_share_pct_total_last5?: number | null
           pp_unit?: number | null
-          pp_share_of_team?: number | null
-          pp_unit_usage_index?: number | null
           pp_unit_relative_toi?: number | null
+          pp_unit_usage_index?: number | null
           pp_vs_unit_avg?: number | null
+          primary_assists_avg_3ya?: number | null
+          primary_assists_avg_all?: number | null
+          primary_assists_avg_career?: number | null
+          primary_assists_avg_last10?: number | null
+          primary_assists_avg_last20?: number | null
+          primary_assists_avg_last3?: number | null
+          primary_assists_avg_last5?: number | null
+          primary_assists_avg_season?: number | null
+          primary_assists_per_60_3ya?: number | null
+          primary_assists_per_60_all?: number | null
+          primary_assists_per_60_avg_3ya?: number | null
+          primary_assists_per_60_avg_all?: number | null
+          primary_assists_per_60_avg_career?: number | null
+          primary_assists_per_60_avg_last10?: number | null
+          primary_assists_per_60_avg_last20?: number | null
+          primary_assists_per_60_avg_last3?: number | null
+          primary_assists_per_60_avg_last5?: number | null
+          primary_assists_per_60_avg_season?: number | null
+          primary_assists_per_60_career?: number | null
+          primary_assists_per_60_last10?: number | null
+          primary_assists_per_60_last20?: number | null
+          primary_assists_per_60_last3?: number | null
+          primary_assists_per_60_last5?: number | null
+          primary_assists_per_60_primary_assists_3ya?: number | null
+          primary_assists_per_60_primary_assists_career?: number | null
+          primary_assists_per_60_primary_assists_season?: number | null
+          primary_assists_per_60_season?: number | null
+          primary_assists_per_60_toi_seconds_3ya?: number | null
+          primary_assists_per_60_toi_seconds_career?: number | null
+          primary_assists_per_60_toi_seconds_season?: number | null
+          primary_assists_per_60_total_all?: number | null
+          primary_assists_per_60_total_last10?: number | null
+          primary_assists_per_60_total_last20?: number | null
+          primary_assists_per_60_total_last3?: number | null
+          primary_assists_per_60_total_last5?: number | null
+          primary_assists_total_all?: number | null
+          primary_assists_total_last10?: number | null
+          primary_assists_total_last20?: number | null
+          primary_assists_total_last3?: number | null
+          primary_assists_total_last5?: number | null
+          primary_points_pct_3ya?: number | null
+          primary_points_pct_all?: number | null
           primary_points_pct_avg_3ya?: number | null
           primary_points_pct_avg_all?: number | null
           primary_points_pct_avg_career?: number | null
@@ -17350,14 +17750,81 @@ export type Database = {
           primary_points_pct_avg_last3?: number | null
           primary_points_pct_avg_last5?: number | null
           primary_points_pct_avg_season?: number | null
+          primary_points_pct_career?: number | null
+          primary_points_pct_last10?: number | null
+          primary_points_pct_last20?: number | null
+          primary_points_pct_last3?: number | null
+          primary_points_pct_last5?: number | null
+          primary_points_pct_points_3ya?: number | null
+          primary_points_pct_points_all?: number | null
+          primary_points_pct_points_career?: number | null
+          primary_points_pct_points_last10?: number | null
+          primary_points_pct_points_last20?: number | null
+          primary_points_pct_points_last3?: number | null
+          primary_points_pct_points_last5?: number | null
+          primary_points_pct_points_season?: number | null
+          primary_points_pct_primary_points_3ya?: number | null
+          primary_points_pct_primary_points_all?: number | null
+          primary_points_pct_primary_points_career?: number | null
+          primary_points_pct_primary_points_last10?: number | null
+          primary_points_pct_primary_points_last20?: number | null
+          primary_points_pct_primary_points_last3?: number | null
+          primary_points_pct_primary_points_last5?: number | null
+          primary_points_pct_primary_points_season?: number | null
+          primary_points_pct_season?: number | null
           primary_points_pct_total_all?: number | null
           primary_points_pct_total_last10?: number | null
           primary_points_pct_total_last20?: number | null
           primary_points_pct_total_last3?: number | null
           primary_points_pct_total_last5?: number | null
           season?: number
+          season_availability_pct?: number | null
           season_games_played?: number | null
+          season_participation_games?: number | null
+          season_participation_pct?: number | null
           season_team_games_available?: number | null
+          secondary_assists_avg_3ya?: number | null
+          secondary_assists_avg_all?: number | null
+          secondary_assists_avg_career?: number | null
+          secondary_assists_avg_last10?: number | null
+          secondary_assists_avg_last20?: number | null
+          secondary_assists_avg_last3?: number | null
+          secondary_assists_avg_last5?: number | null
+          secondary_assists_avg_season?: number | null
+          secondary_assists_per_60_3ya?: number | null
+          secondary_assists_per_60_all?: number | null
+          secondary_assists_per_60_avg_3ya?: number | null
+          secondary_assists_per_60_avg_all?: number | null
+          secondary_assists_per_60_avg_career?: number | null
+          secondary_assists_per_60_avg_last10?: number | null
+          secondary_assists_per_60_avg_last20?: number | null
+          secondary_assists_per_60_avg_last3?: number | null
+          secondary_assists_per_60_avg_last5?: number | null
+          secondary_assists_per_60_avg_season?: number | null
+          secondary_assists_per_60_career?: number | null
+          secondary_assists_per_60_last10?: number | null
+          secondary_assists_per_60_last20?: number | null
+          secondary_assists_per_60_last3?: number | null
+          secondary_assists_per_60_last5?: number | null
+          secondary_assists_per_60_season?: number | null
+          secondary_assists_per_60_secondary_assists_3ya?: number | null
+          secondary_assists_per_60_secondary_assists_career?: number | null
+          secondary_assists_per_60_secondary_assists_season?: number | null
+          secondary_assists_per_60_toi_seconds_3ya?: number | null
+          secondary_assists_per_60_toi_seconds_career?: number | null
+          secondary_assists_per_60_toi_seconds_season?: number | null
+          secondary_assists_per_60_total_all?: number | null
+          secondary_assists_per_60_total_last10?: number | null
+          secondary_assists_per_60_total_last20?: number | null
+          secondary_assists_per_60_total_last3?: number | null
+          secondary_assists_per_60_total_last5?: number | null
+          secondary_assists_total_all?: number | null
+          secondary_assists_total_last10?: number | null
+          secondary_assists_total_last20?: number | null
+          secondary_assists_total_last3?: number | null
+          secondary_assists_total_last5?: number | null
+          shooting_pct_3ya?: number | null
+          shooting_pct_all?: number | null
           shooting_pct_avg_3ya?: number | null
           shooting_pct_avg_all?: number | null
           shooting_pct_avg_career?: number | null
@@ -17366,6 +17833,18 @@ export type Database = {
           shooting_pct_avg_last3?: number | null
           shooting_pct_avg_last5?: number | null
           shooting_pct_avg_season?: number | null
+          shooting_pct_career?: number | null
+          shooting_pct_goals_3ya?: number | null
+          shooting_pct_goals_career?: number | null
+          shooting_pct_goals_season?: number | null
+          shooting_pct_last10?: number | null
+          shooting_pct_last20?: number | null
+          shooting_pct_last3?: number | null
+          shooting_pct_last5?: number | null
+          shooting_pct_season?: number | null
+          shooting_pct_shots_3ya?: number | null
+          shooting_pct_shots_career?: number | null
+          shooting_pct_shots_season?: number | null
           shooting_pct_total_all?: number | null
           shooting_pct_total_last10?: number | null
           shooting_pct_total_last20?: number | null
@@ -17384,6 +17863,8 @@ export type Database = {
           shots_total_last20?: number | null
           shots_total_last3?: number | null
           shots_total_last5?: number | null
+          sog_per_60_3ya?: number | null
+          sog_per_60_all?: number | null
           sog_per_60_avg_3ya?: number | null
           sog_per_60_avg_all?: number | null
           sog_per_60_avg_career?: number | null
@@ -17392,6 +17873,18 @@ export type Database = {
           sog_per_60_avg_last3?: number | null
           sog_per_60_avg_last5?: number | null
           sog_per_60_avg_season?: number | null
+          sog_per_60_career?: number | null
+          sog_per_60_last10?: number | null
+          sog_per_60_last20?: number | null
+          sog_per_60_last3?: number | null
+          sog_per_60_last5?: number | null
+          sog_per_60_season?: number | null
+          sog_per_60_shots_3ya?: number | null
+          sog_per_60_shots_career?: number | null
+          sog_per_60_shots_season?: number | null
+          sog_per_60_toi_seconds_3ya?: number | null
+          sog_per_60_toi_seconds_career?: number | null
+          sog_per_60_toi_seconds_season?: number | null
           sog_per_60_total_all?: number | null
           sog_per_60_total_last10?: number | null
           sog_per_60_total_last20?: number | null
@@ -17404,7 +17897,10 @@ export type Database = {
           team_games_available_last5?: number | null
           team_games_played?: number
           team_id?: number | null
+          three_year_availability_pct?: number | null
           three_year_games_played?: number | null
+          three_year_participation_games?: number | null
+          three_year_participation_pct?: number | null
           three_year_team_games_available?: number | null
           toi_seconds_avg_3ya?: number | null
           toi_seconds_avg_all?: number | null
@@ -17419,502 +17915,6 @@ export type Database = {
           toi_seconds_total_last20?: number | null
           toi_seconds_total_last3?: number | null
           toi_seconds_total_last5?: number | null
-          season_availability_pct?: number | null
-          three_year_availability_pct?: number | null
-          career_availability_pct?: number | null
-          availability_pct_last3_team_games?: number | null
-          availability_pct_last5_team_games?: number | null
-          availability_pct_last10_team_games?: number | null
-          availability_pct_last20_team_games?: number | null
-          season_participation_pct?: number | null
-          three_year_participation_pct?: number | null
-          career_participation_pct?: number | null
-          participation_pct_last3_team_games?: number | null
-          participation_pct_last5_team_games?: number | null
-          participation_pct_last10_team_games?: number | null
-          participation_pct_last20_team_games?: number | null
-          season_participation_games?: number | null
-          three_year_participation_games?: number | null
-          career_participation_games?: number | null
-          participation_games_last3_team_games?: number | null
-          participation_games_last5_team_games?: number | null
-          participation_games_last10_team_games?: number | null
-          participation_games_last20_team_games?: number | null
-          shooting_pct_all?: number | null
-          shooting_pct_last3?: number | null
-          shooting_pct_last5?: number | null
-          shooting_pct_last10?: number | null
-          shooting_pct_last20?: number | null
-          shooting_pct_season?: number | null
-          shooting_pct_3ya?: number | null
-          shooting_pct_career?: number | null
-          primary_points_pct_all?: number | null
-          primary_points_pct_last3?: number | null
-          primary_points_pct_last5?: number | null
-          primary_points_pct_last10?: number | null
-          primary_points_pct_last20?: number | null
-          primary_points_pct_season?: number | null
-          primary_points_pct_3ya?: number | null
-          primary_points_pct_career?: number | null
-          expected_sh_pct_all?: number | null
-          expected_sh_pct_last3?: number | null
-          expected_sh_pct_last5?: number | null
-          expected_sh_pct_last10?: number | null
-          expected_sh_pct_last20?: number | null
-          expected_sh_pct_season?: number | null
-          expected_sh_pct_3ya?: number | null
-          expected_sh_pct_career?: number | null
-          ipp_all?: number | null
-          ipp_last3?: number | null
-          ipp_last5?: number | null
-          ipp_last10?: number | null
-          ipp_last20?: number | null
-          ipp_season?: number | null
-          ipp_3ya?: number | null
-          ipp_career?: number | null
-          on_ice_sh_pct_all?: number | null
-          on_ice_sh_pct_last3?: number | null
-          on_ice_sh_pct_last5?: number | null
-          on_ice_sh_pct_last10?: number | null
-          on_ice_sh_pct_last20?: number | null
-          on_ice_sh_pct_season?: number | null
-          on_ice_sh_pct_3ya?: number | null
-          on_ice_sh_pct_career?: number | null
-          on_ice_sv_pct_all?: number | null
-          on_ice_sv_pct_last3?: number | null
-          on_ice_sv_pct_last5?: number | null
-          on_ice_sv_pct_last10?: number | null
-          on_ice_sv_pct_last20?: number | null
-          on_ice_sv_pct_season?: number | null
-          on_ice_sv_pct_3ya?: number | null
-          on_ice_sv_pct_career?: number | null
-          oz_start_pct_all?: number | null
-          oz_start_pct_last3?: number | null
-          oz_start_pct_last5?: number | null
-          oz_start_pct_last10?: number | null
-          oz_start_pct_last20?: number | null
-          oz_start_pct_season?: number | null
-          oz_start_pct_3ya?: number | null
-          oz_start_pct_career?: number | null
-          pp_share_pct_all?: number | null
-          pp_share_pct_last3?: number | null
-          pp_share_pct_last5?: number | null
-          pp_share_pct_last10?: number | null
-          pp_share_pct_last20?: number | null
-          pp_share_pct_season?: number | null
-          pp_share_pct_3ya?: number | null
-          pp_share_pct_career?: number | null
-          cf_pct_all?: number | null
-          cf_pct_last3?: number | null
-          cf_pct_last5?: number | null
-          cf_pct_last10?: number | null
-          cf_pct_last20?: number | null
-          cf_pct_season?: number | null
-          cf_pct_3ya?: number | null
-          cf_pct_career?: number | null
-          ff_pct_all?: number | null
-          ff_pct_last3?: number | null
-          ff_pct_last5?: number | null
-          ff_pct_last10?: number | null
-          ff_pct_last20?: number | null
-          ff_pct_season?: number | null
-          ff_pct_3ya?: number | null
-          ff_pct_career?: number | null
-          pdo_all?: number | null
-          pdo_last3?: number | null
-          pdo_last5?: number | null
-          pdo_last10?: number | null
-          pdo_last20?: number | null
-          pdo_season?: number | null
-          pdo_3ya?: number | null
-          pdo_career?: number | null
-          sog_per_60_all?: number | null
-          sog_per_60_last3?: number | null
-          sog_per_60_last5?: number | null
-          sog_per_60_last10?: number | null
-          sog_per_60_last20?: number | null
-          sog_per_60_season?: number | null
-          sog_per_60_3ya?: number | null
-          sog_per_60_career?: number | null
-          ixg_per_60_all?: number | null
-          ixg_per_60_last3?: number | null
-          ixg_per_60_last5?: number | null
-          ixg_per_60_last10?: number | null
-          ixg_per_60_last20?: number | null
-          ixg_per_60_season?: number | null
-          ixg_per_60_3ya?: number | null
-          ixg_per_60_career?: number | null
-          hits_per_60_all?: number | null
-          hits_per_60_last3?: number | null
-          hits_per_60_last5?: number | null
-          hits_per_60_last10?: number | null
-          hits_per_60_last20?: number | null
-          hits_per_60_season?: number | null
-          hits_per_60_3ya?: number | null
-          hits_per_60_career?: number | null
-          blocks_per_60_all?: number | null
-          blocks_per_60_last3?: number | null
-          blocks_per_60_last5?: number | null
-          blocks_per_60_last10?: number | null
-          blocks_per_60_last20?: number | null
-          blocks_per_60_season?: number | null
-          blocks_per_60_3ya?: number | null
-          blocks_per_60_career?: number | null
-          goals_per_60_all?: number | null
-          goals_per_60_last3?: number | null
-          goals_per_60_last5?: number | null
-          goals_per_60_last10?: number | null
-          goals_per_60_last20?: number | null
-          goals_per_60_season?: number | null
-          goals_per_60_3ya?: number | null
-          goals_per_60_career?: number | null
-          assists_per_60_all?: number | null
-          assists_per_60_last3?: number | null
-          assists_per_60_last5?: number | null
-          assists_per_60_last10?: number | null
-          assists_per_60_last20?: number | null
-          assists_per_60_season?: number | null
-          assists_per_60_3ya?: number | null
-          assists_per_60_career?: number | null
-          penalties_drawn_per_60_avg_3ya?: number | null
-          penalties_drawn_per_60_avg_all?: number | null
-          penalties_drawn_per_60_avg_career?: number | null
-          penalties_drawn_per_60_avg_last10?: number | null
-          penalties_drawn_per_60_avg_last20?: number | null
-          penalties_drawn_per_60_avg_last3?: number | null
-          penalties_drawn_per_60_avg_last5?: number | null
-          penalties_drawn_per_60_avg_season?: number | null
-          penalties_drawn_per_60_total_all?: number | null
-          penalties_drawn_per_60_total_last10?: number | null
-          penalties_drawn_per_60_total_last20?: number | null
-          penalties_drawn_per_60_total_last3?: number | null
-          penalties_drawn_per_60_total_last5?: number | null
-          penalties_drawn_per_60_all?: number | null
-          penalties_drawn_per_60_last3?: number | null
-          penalties_drawn_per_60_last5?: number | null
-          penalties_drawn_per_60_last10?: number | null
-          penalties_drawn_per_60_last20?: number | null
-          penalties_drawn_per_60_season?: number | null
-          penalties_drawn_per_60_3ya?: number | null
-          penalties_drawn_per_60_career?: number | null
-          primary_assists_per_60_all?: number | null
-          primary_assists_per_60_last3?: number | null
-          primary_assists_per_60_last5?: number | null
-          primary_assists_per_60_last10?: number | null
-          primary_assists_per_60_last20?: number | null
-          primary_assists_per_60_season?: number | null
-          primary_assists_per_60_3ya?: number | null
-          primary_assists_per_60_career?: number | null
-          secondary_assists_per_60_all?: number | null
-          secondary_assists_per_60_last3?: number | null
-          secondary_assists_per_60_last5?: number | null
-          secondary_assists_per_60_last10?: number | null
-          secondary_assists_per_60_last20?: number | null
-          secondary_assists_per_60_season?: number | null
-          secondary_assists_per_60_3ya?: number | null
-          secondary_assists_per_60_career?: number | null
-          shooting_pct_goals_season?: number | null
-          shooting_pct_shots_season?: number | null
-          shooting_pct_goals_3ya?: number | null
-          shooting_pct_shots_3ya?: number | null
-          shooting_pct_goals_career?: number | null
-          shooting_pct_shots_career?: number | null
-          expected_sh_pct_ixg_season?: number | null
-          expected_sh_pct_shots_season?: number | null
-          expected_sh_pct_ixg_3ya?: number | null
-          expected_sh_pct_shots_3ya?: number | null
-          expected_sh_pct_ixg_career?: number | null
-          expected_sh_pct_shots_career?: number | null
-          cf_pct_cf_season?: number | null
-          cf_pct_ca_season?: number | null
-          cf_pct_cf_3ya?: number | null
-          cf_pct_ca_3ya?: number | null
-          cf_pct_cf_career?: number | null
-          cf_pct_ca_career?: number | null
-          ff_pct_ff_season?: number | null
-          ff_pct_fa_season?: number | null
-          ff_pct_ff_3ya?: number | null
-          ff_pct_fa_3ya?: number | null
-          ff_pct_ff_career?: number | null
-          ff_pct_fa_career?: number | null
-          sog_per_60_shots_season?: number | null
-          sog_per_60_toi_seconds_season?: number | null
-          sog_per_60_shots_3ya?: number | null
-          sog_per_60_toi_seconds_3ya?: number | null
-          sog_per_60_shots_career?: number | null
-          sog_per_60_toi_seconds_career?: number | null
-          ixg_per_60_ixg_season?: number | null
-          ixg_per_60_toi_seconds_season?: number | null
-          ixg_per_60_ixg_3ya?: number | null
-          ixg_per_60_toi_seconds_3ya?: number | null
-          ixg_per_60_ixg_career?: number | null
-          ixg_per_60_toi_seconds_career?: number | null
-          hits_per_60_hits_season?: number | null
-          hits_per_60_toi_seconds_season?: number | null
-          hits_per_60_hits_3ya?: number | null
-          hits_per_60_toi_seconds_3ya?: number | null
-          hits_per_60_hits_career?: number | null
-          hits_per_60_toi_seconds_career?: number | null
-          blocks_per_60_blocks_season?: number | null
-          blocks_per_60_toi_seconds_season?: number | null
-          blocks_per_60_blocks_3ya?: number | null
-          blocks_per_60_toi_seconds_3ya?: number | null
-          blocks_per_60_blocks_career?: number | null
-          blocks_per_60_toi_seconds_career?: number | null
-          goals_per_60_goals_season?: number | null
-          goals_per_60_toi_seconds_season?: number | null
-          goals_per_60_goals_3ya?: number | null
-          goals_per_60_toi_seconds_3ya?: number | null
-          goals_per_60_goals_career?: number | null
-          goals_per_60_toi_seconds_career?: number | null
-          assists_per_60_assists_season?: number | null
-          assists_per_60_toi_seconds_season?: number | null
-          assists_per_60_assists_3ya?: number | null
-          assists_per_60_toi_seconds_3ya?: number | null
-          assists_per_60_assists_career?: number | null
-          assists_per_60_toi_seconds_career?: number | null
-          penalties_drawn_per_60_penalties_drawn_season?: number | null
-          penalties_drawn_per_60_toi_seconds_season?: number | null
-          penalties_drawn_per_60_penalties_drawn_3ya?: number | null
-          penalties_drawn_per_60_toi_seconds_3ya?: number | null
-          penalties_drawn_per_60_penalties_drawn_career?: number | null
-          penalties_drawn_per_60_toi_seconds_career?: number | null
-          primary_assists_per_60_primary_assists_season?: number | null
-          primary_assists_per_60_toi_seconds_season?: number | null
-          primary_assists_per_60_primary_assists_3ya?: number | null
-          primary_assists_per_60_toi_seconds_3ya?: number | null
-          primary_assists_per_60_primary_assists_career?: number | null
-          primary_assists_per_60_toi_seconds_career?: number | null
-          secondary_assists_per_60_secondary_assists_season?: number | null
-          secondary_assists_per_60_toi_seconds_season?: number | null
-          secondary_assists_per_60_secondary_assists_3ya?: number | null
-          secondary_assists_per_60_toi_seconds_3ya?: number | null
-          secondary_assists_per_60_secondary_assists_career?: number | null
-          secondary_assists_per_60_toi_seconds_career?: number | null
-          primary_points_pct_primary_points_all?: number | null
-          primary_points_pct_points_all?: number | null
-          primary_points_pct_primary_points_last3?: number | null
-          primary_points_pct_points_last3?: number | null
-          primary_points_pct_primary_points_last5?: number | null
-          primary_points_pct_points_last5?: number | null
-          primary_points_pct_primary_points_last10?: number | null
-          primary_points_pct_points_last10?: number | null
-          primary_points_pct_primary_points_last20?: number | null
-          primary_points_pct_points_last20?: number | null
-          primary_points_pct_primary_points_season?: number | null
-          primary_points_pct_points_season?: number | null
-          primary_points_pct_primary_points_3ya?: number | null
-          primary_points_pct_points_3ya?: number | null
-          primary_points_pct_primary_points_career?: number | null
-          primary_points_pct_points_career?: number | null
-          ipp_points_all?: number | null
-          ipp_on_ice_goals_for_all?: number | null
-          ipp_points_last3?: number | null
-          ipp_on_ice_goals_for_last3?: number | null
-          ipp_points_last5?: number | null
-          ipp_on_ice_goals_for_last5?: number | null
-          ipp_points_last10?: number | null
-          ipp_on_ice_goals_for_last10?: number | null
-          ipp_points_last20?: number | null
-          ipp_on_ice_goals_for_last20?: number | null
-          ipp_points_season?: number | null
-          ipp_on_ice_goals_for_season?: number | null
-          ipp_points_3ya?: number | null
-          ipp_on_ice_goals_for_3ya?: number | null
-          ipp_points_career?: number | null
-          ipp_on_ice_goals_for_career?: number | null
-          on_ice_sh_pct_goals_for_all?: number | null
-          on_ice_sh_pct_shots_for_all?: number | null
-          on_ice_sh_pct_goals_for_last3?: number | null
-          on_ice_sh_pct_shots_for_last3?: number | null
-          on_ice_sh_pct_goals_for_last5?: number | null
-          on_ice_sh_pct_shots_for_last5?: number | null
-          on_ice_sh_pct_goals_for_last10?: number | null
-          on_ice_sh_pct_shots_for_last10?: number | null
-          on_ice_sh_pct_goals_for_last20?: number | null
-          on_ice_sh_pct_shots_for_last20?: number | null
-          on_ice_sh_pct_goals_for_season?: number | null
-          on_ice_sh_pct_shots_for_season?: number | null
-          on_ice_sh_pct_goals_for_3ya?: number | null
-          on_ice_sh_pct_shots_for_3ya?: number | null
-          on_ice_sh_pct_goals_for_career?: number | null
-          on_ice_sh_pct_shots_for_career?: number | null
-          pdo_goals_for_all?: number | null
-          pdo_shots_for_all?: number | null
-          pdo_goals_against_all?: number | null
-          pdo_shots_against_all?: number | null
-          pdo_goals_for_last3?: number | null
-          pdo_shots_for_last3?: number | null
-          pdo_goals_against_last3?: number | null
-          pdo_shots_against_last3?: number | null
-          pdo_goals_for_last5?: number | null
-          pdo_shots_for_last5?: number | null
-          pdo_goals_against_last5?: number | null
-          pdo_shots_against_last5?: number | null
-          pdo_goals_for_last10?: number | null
-          pdo_shots_for_last10?: number | null
-          pdo_goals_against_last10?: number | null
-          pdo_shots_against_last10?: number | null
-          pdo_goals_for_last20?: number | null
-          pdo_shots_for_last20?: number | null
-          pdo_goals_against_last20?: number | null
-          pdo_shots_against_last20?: number | null
-          pdo_goals_for_season?: number | null
-          pdo_shots_for_season?: number | null
-          pdo_goals_against_season?: number | null
-          pdo_shots_against_season?: number | null
-          pdo_goals_for_3ya?: number | null
-          pdo_shots_for_3ya?: number | null
-          pdo_goals_against_3ya?: number | null
-          pdo_shots_against_3ya?: number | null
-          pdo_goals_for_career?: number | null
-          pdo_shots_for_career?: number | null
-          pdo_goals_against_career?: number | null
-          pdo_shots_against_career?: number | null
-          oz_start_pct_off_zone_starts_all?: number | null
-          oz_start_pct_def_zone_starts_all?: number | null
-          oz_start_pct_neutral_zone_starts_all?: number | null
-          oz_start_pct_off_zone_starts_last3?: number | null
-          oz_start_pct_def_zone_starts_last3?: number | null
-          oz_start_pct_neutral_zone_starts_last3?: number | null
-          oz_start_pct_off_zone_starts_last5?: number | null
-          oz_start_pct_def_zone_starts_last5?: number | null
-          oz_start_pct_neutral_zone_starts_last5?: number | null
-          oz_start_pct_off_zone_starts_last10?: number | null
-          oz_start_pct_def_zone_starts_last10?: number | null
-          oz_start_pct_neutral_zone_starts_last10?: number | null
-          oz_start_pct_off_zone_starts_last20?: number | null
-          oz_start_pct_def_zone_starts_last20?: number | null
-          oz_start_pct_neutral_zone_starts_last20?: number | null
-          oz_start_pct_off_zone_starts_season?: number | null
-          oz_start_pct_def_zone_starts_season?: number | null
-          oz_start_pct_neutral_zone_starts_season?: number | null
-          oz_start_pct_off_zone_starts_3ya?: number | null
-          oz_start_pct_def_zone_starts_3ya?: number | null
-          oz_start_pct_neutral_zone_starts_3ya?: number | null
-          oz_start_pct_off_zone_starts_career?: number | null
-          oz_start_pct_def_zone_starts_career?: number | null
-          oz_start_pct_neutral_zone_starts_career?: number | null
-          pp_share_pct_player_pp_toi_all?: number | null
-          pp_share_pct_team_pp_toi_all?: number | null
-          pp_share_pct_player_pp_toi_last3?: number | null
-          pp_share_pct_team_pp_toi_last3?: number | null
-          pp_share_pct_player_pp_toi_last5?: number | null
-          pp_share_pct_team_pp_toi_last5?: number | null
-          pp_share_pct_player_pp_toi_last10?: number | null
-          pp_share_pct_team_pp_toi_last10?: number | null
-          pp_share_pct_player_pp_toi_last20?: number | null
-          pp_share_pct_team_pp_toi_last20?: number | null
-          pp_share_pct_player_pp_toi_season?: number | null
-          pp_share_pct_team_pp_toi_season?: number | null
-          pp_share_pct_player_pp_toi_3ya?: number | null
-          pp_share_pct_team_pp_toi_3ya?: number | null
-          pp_share_pct_player_pp_toi_career?: number | null
-          pp_share_pct_team_pp_toi_career?: number | null
-          on_ice_sv_pct_avg_3ya?: number | null
-          on_ice_sv_pct_avg_all?: number | null
-          on_ice_sv_pct_avg_career?: number | null
-          on_ice_sv_pct_avg_last10?: number | null
-          on_ice_sv_pct_avg_last20?: number | null
-          on_ice_sv_pct_avg_last3?: number | null
-          on_ice_sv_pct_avg_last5?: number | null
-          on_ice_sv_pct_avg_season?: number | null
-          on_ice_sv_pct_total_all?: number | null
-          on_ice_sv_pct_total_last10?: number | null
-          on_ice_sv_pct_total_last20?: number | null
-          on_ice_sv_pct_total_last3?: number | null
-          on_ice_sv_pct_total_last5?: number | null
-          oz_starts_avg_3ya?: number | null
-          oz_starts_avg_all?: number | null
-          oz_starts_avg_career?: number | null
-          oz_starts_avg_last10?: number | null
-          oz_starts_avg_last20?: number | null
-          oz_starts_avg_last3?: number | null
-          oz_starts_avg_last5?: number | null
-          oz_starts_avg_season?: number | null
-          oz_starts_total_all?: number | null
-          oz_starts_total_last10?: number | null
-          oz_starts_total_last20?: number | null
-          oz_starts_total_last3?: number | null
-          oz_starts_total_last5?: number | null
-          dz_starts_avg_3ya?: number | null
-          dz_starts_avg_all?: number | null
-          dz_starts_avg_career?: number | null
-          dz_starts_avg_last10?: number | null
-          dz_starts_avg_last20?: number | null
-          dz_starts_avg_last3?: number | null
-          dz_starts_avg_last5?: number | null
-          dz_starts_avg_season?: number | null
-          dz_starts_total_all?: number | null
-          dz_starts_total_last10?: number | null
-          dz_starts_total_last20?: number | null
-          dz_starts_total_last3?: number | null
-          dz_starts_total_last5?: number | null
-          nz_starts_avg_3ya?: number | null
-          nz_starts_avg_all?: number | null
-          nz_starts_avg_career?: number | null
-          nz_starts_avg_last10?: number | null
-          nz_starts_avg_last20?: number | null
-          nz_starts_avg_last3?: number | null
-          nz_starts_avg_last5?: number | null
-          nz_starts_avg_season?: number | null
-          nz_starts_total_all?: number | null
-          nz_starts_total_last10?: number | null
-          nz_starts_total_last20?: number | null
-          nz_starts_total_last3?: number | null
-          nz_starts_total_last5?: number | null
-          oi_gf_avg_3ya?: number | null
-          oi_gf_avg_all?: number | null
-          oi_gf_avg_career?: number | null
-          oi_gf_avg_last10?: number | null
-          oi_gf_avg_last20?: number | null
-          oi_gf_avg_last3?: number | null
-          oi_gf_avg_last5?: number | null
-          oi_gf_avg_season?: number | null
-          oi_gf_total_all?: number | null
-          oi_gf_total_last10?: number | null
-          oi_gf_total_last20?: number | null
-          oi_gf_total_last3?: number | null
-          oi_gf_total_last5?: number | null
-          oi_ga_avg_3ya?: number | null
-          oi_ga_avg_all?: number | null
-          oi_ga_avg_career?: number | null
-          oi_ga_avg_last10?: number | null
-          oi_ga_avg_last20?: number | null
-          oi_ga_avg_last3?: number | null
-          oi_ga_avg_last5?: number | null
-          oi_ga_avg_season?: number | null
-          oi_ga_total_all?: number | null
-          oi_ga_total_last10?: number | null
-          oi_ga_total_last20?: number | null
-          oi_ga_total_last3?: number | null
-          oi_ga_total_last5?: number | null
-          oi_sf_avg_3ya?: number | null
-          oi_sf_avg_all?: number | null
-          oi_sf_avg_career?: number | null
-          oi_sf_avg_last10?: number | null
-          oi_sf_avg_last20?: number | null
-          oi_sf_avg_last3?: number | null
-          oi_sf_avg_last5?: number | null
-          oi_sf_avg_season?: number | null
-          oi_sf_total_all?: number | null
-          oi_sf_total_last10?: number | null
-          oi_sf_total_last20?: number | null
-          oi_sf_total_last3?: number | null
-          oi_sf_total_last5?: number | null
-          oi_sa_avg_3ya?: number | null
-          oi_sa_avg_all?: number | null
-          oi_sa_avg_career?: number | null
-          oi_sa_avg_last10?: number | null
-          oi_sa_avg_last20?: number | null
-          oi_sa_avg_last3?: number | null
-          oi_sa_avg_last5?: number | null
-          oi_sa_avg_season?: number | null
-          oi_sa_total_all?: number | null
-          oi_sa_total_last10?: number | null
-          oi_sa_total_last20?: number | null
-          oi_sa_total_last3?: number | null
-          oi_sa_total_last5?: number | null
           updated_at?: string
         }
         Relationships: [
@@ -17958,6 +17958,8 @@ export type Database = {
       rosters: {
         Row: {
           created_at: string
+          ended_at: string | null
+          is_current: boolean
           playerId: number
           seasonId: number
           sweaterNumber: number
@@ -17965,6 +17967,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          ended_at?: string | null
+          is_current?: boolean
           playerId: number
           seasonId: number
           sweaterNumber: number
@@ -17972,6 +17976,8 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          ended_at?: string | null
+          is_current?: boolean
           playerId?: number
           seasonId?: number
           sweaterNumber?: number
@@ -34255,6 +34261,15 @@ export type Database = {
       truncate_rolling_player_game_metrics: { Args: never; Returns: undefined }
       unaccent: { Args: { "": string }; Returns: string }
       update_all_wgo_skaters: { Args: never; Returns: undefined }
+      upsert_current_roster_membership: {
+        Args: {
+          _playerid: number
+          _seasonid: number
+          _sweater_number?: number
+          _teamid: number
+        }
+        Returns: undefined
+      }
       upsert_players_batch:
         | {
             Args: { players_data: Json }

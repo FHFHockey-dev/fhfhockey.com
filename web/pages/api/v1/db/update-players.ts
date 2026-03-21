@@ -32,19 +32,11 @@ export default withCronJobAudit(adminOnly(async function handler(req, res) {
     if (players_error) throw players_error;
 
     console.log(`Updating the 'rosters' table.`);
-    // remove the players who play for multiple teams in a given season. aka. exists in multiple rosters.
-    await supabase.rpc("delete_duplicate_players_in_rosters", {
-      _seasonid: season.seasonId
+    await syncCurrentRosterMemberships({
+      supabase,
+      players,
+      seasonId: season.seasonId
     });
-    const { error: rosters_error } = await supabase.from("rosters").upsert(
-      players.map((player) => ({
-        playerId: player.id,
-        seasonId: season.seasonId,
-        teamId: player.teamId,
-        sweaterNumber: player.sweaterNumber ?? 0
-      }))
-    );
-    if (rosters_error) throw rosters_error;
 
     res.json({
       message: "Successfully updated the players & rosters tables.",
@@ -80,6 +72,35 @@ type Player = {
   teamAbbreviation: string;
   teamLogo: string;
 };
+
+const ROSTER_SYNC_BATCH_SIZE = 50;
+
+async function syncCurrentRosterMemberships(args: {
+  supabase: any;
+  players: Player[];
+  seasonId: number;
+}) {
+  const uniquePlayers = Array.from(
+    new Map(args.players.map((player) => [player.id, player])).values()
+  );
+
+  for (let i = 0; i < uniquePlayers.length; i += ROSTER_SYNC_BATCH_SIZE) {
+    const batch = uniquePlayers.slice(i, i + ROSTER_SYNC_BATCH_SIZE);
+    const results = await Promise.all(
+      batch.map((player) =>
+        args.supabase.rpc("upsert_current_roster_membership", {
+          _playerid: player.id,
+          _seasonid: args.seasonId,
+          _teamid: player.teamId,
+          _sweater_number: player.sweaterNumber ?? 0
+        })
+      )
+    );
+
+    const firstError = results.find((result: { error?: any }) => result?.error)?.error;
+    if (firstError) throw firstError;
+  }
+}
 
 async function getAllPlayers(seasonId?: number) {
   const teams = await getTeams(seasonId);

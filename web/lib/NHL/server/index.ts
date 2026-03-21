@@ -49,6 +49,7 @@ export async function getPlayer(id: number): Promise<Player> {
     .from("rosters")
     .select("teamId, sweaterNumber, players(*), teams(name,abbreviation)")
     .eq("playerId", id)
+    .eq("is_current", true)
     .order("seasonId", { ascending: false })
     .limit(1)
     .maybeSingle()
@@ -236,7 +237,8 @@ export async function getAllPlayers(seasonId?: number): Promise<Player[]> {
   const { data } = await supabase
     .from("rosters")
     .select("sweaterNumber, players(*), teams(id, name,abbreviation)")
-    .eq("seasonId", seasonId);
+    .eq("seasonId", seasonId)
+    .eq("is_current", true);
 
   // ADDED "ANY" TYPE TO player
   // 02/19/2024 10:23AM EST
