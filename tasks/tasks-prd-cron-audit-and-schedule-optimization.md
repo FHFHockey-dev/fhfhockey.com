@@ -22,6 +22,14 @@
 - `web/lib/cron/benchmarkObservationMetadata.test.ts` - Tests for touched-system classification and local-run policy metadata.
 - `web/lib/cron/benchmarkExecutionPolicy.ts` - Shared skip/fallback policy helper that decides whether benchmark jobs should run normally, be skipped, be observed only, or use a mock fallback in local/dev.
 - `web/lib/cron/benchmarkExecutionPolicy.test.ts` - Tests for stable skip/fallback decisions on broken, side-effect, reporting, and safe benchmark jobs.
+- `web/scripts/cron-audit-runner.ts` - Local/dev benchmark operator that executes the full scheduled inventory, enforces direct-NST spacing, and writes JSON plus markdown audit artifacts.
+- `tasks/artifacts/cron-benchmark-run-latest.json` - Latest machine-readable benchmark run output captured from the local/dev audit execution.
+- `tasks/artifacts/cron-benchmark-run-latest.md` - Latest human-readable benchmark notes for every scheduled job in the audit sequence.
+- `tasks/artifacts/cron-spacing-candidates.md` - First-pass spacing analysis that identifies which successful jobs can likely be tightened to 1-minute or 2-minute gaps and which short jobs must still stay loose.
+- `tasks/artifacts/cron-optimization-denotations.md` - Optimization register for every benchmarked job that exceeded 4m30s, including whether the overage came from NST safety waits or endpoint/runtime bottlenecks.
+- `tasks/artifacts/cron-nst-safety-matrix.md` - Direct-NST safety matrix covering per-route request behavior, current slot spacing, raw cap safety, and whether the written schedule is defensible under the preferred 15-minute separation rule.
+- `tasks/artifacts/cron-loop-batching-decisions.md` - Decision register for looping, resumable, and offset-based cron jobs, including which should stay single-call, which need optimization first, and which should become explicit sequential URLs.
+- `tasks/artifacts/cron-audit-findings.md` - Final `5.x` findings synthesis covering bottlenecks, dependency risks, missing telemetry, and which short jobs still should not be packed tightly.
 - `web/lib/cron/sqlTiming.ts` - Shared normalization helper for SQL-only pg_cron jobs that must derive comparable timing from `cron_job_report`.
 - `web/lib/cron/timingContract.test.ts` - Tests for canonical timing construction, nested response envelopes, and timing-shape detection helpers.
 - `web/lib/cron/withCronJobAudit.test.ts` - Tests for wrapper-generated failure responses and audit timing preservation on timed error payloads.
@@ -52,7 +60,7 @@
 - `web/pages/api/internal/sync-yahoo-players-to-sheet.ts` - Scheduled external side-effect route that writes to Google Sheets and should not be benchmarked blindly in local/dev.
 - `web/pages/api/v1/ml/update-predictions-sko.ts` - Scheduled prediction builder with no current route-level timing surface and likely benchmark-runner handling needs.
 - `web/pages/api/v1/db/cron-audit-runner.ts` - Likely new route or orchestrator for running the local/dev audit flow if an API-driven runner is chosen.
-- `scripts/cron-audit-runner.ts` - Likely new script if the benchmark runner is implemented as a script instead of an API endpoint.
+- `web/scripts/cron-audit-runner.ts` - Local/dev benchmark runner script used to execute the scheduled audit sequence and persist run artifacts.
 - `web/lib/cron/` - Likely home for shared cron inventory parsing, timing helpers, NST classification metadata, and audit result normalization.
 - `web/lib/cron/formatDuration.ts` - Likely new shared helper to standardize milliseconds plus MMSS display formatting across endpoints and reports.
 - `web/lib/cron/cronInventory.ts` - Likely new module to derive the scheduled job inventory from `cron-schedule.md` in a reusable way.
@@ -109,13 +117,13 @@
   - [x] 4.6 Add a documented skip or fallback mechanism for jobs that cannot safely run in local/dev because of production-only dependencies or side effects.
   - [x] 4.7 Store or emit benchmark results in a format that `cron-report.ts` can consume consistently.
 
-- [ ] 5.0 Run the audit and evaluate bottlenecks, NST safety, and batch-loop strategy
-  - [ ] 5.1 Run the full benchmark sequence locally/dev where possible and capture completion notes for every scheduled job.
-  - [ ] 5.2 Measure which jobs consistently finish quickly enough to justify 1-minute or 2-minute spacing instead of 5-minute spacing.
-  - [ ] 5.3 Flag every job exceeding 4 minutes 30 seconds and record an optimization denotation plus a short explanation of the likely cause.
-  - [ ] 5.4 Evaluate every NST-touching job against the published request caps and determine whether current or proposed spacing is safe.
-  - [ ] 5.5 For jobs with internal loops or offsets, decide whether they should be optimized into one cron-safe call or split into explicit sequential URLs.
-  - [ ] 5.6 Write down concrete bottlenecks, dependency risks, missing telemetry gaps, and jobs that should not be packed tightly despite short runtimes.
+- [x] 5.0 Run the audit and evaluate bottlenecks, NST safety, and batch-loop strategy
+  - [x] 5.1 Run the full benchmark sequence locally/dev where possible and capture completion notes for every scheduled job.
+  - [x] 5.2 Measure which jobs consistently finish quickly enough to justify 1-minute or 2-minute spacing instead of 5-minute spacing.
+  - [x] 5.3 Flag every job exceeding 4 minutes 30 seconds and record an optimization denotation plus a short explanation of the likely cause.
+  - [x] 5.4 Evaluate every NST-touching job against the published request caps and determine whether current or proposed spacing is safe.
+  - [x] 5.5 For jobs with internal loops or offsets, decide whether they should be optimized into one cron-safe call or split into explicit sequential URLs.
+  - [x] 5.6 Write down concrete bottlenecks, dependency risks, missing telemetry gaps, and jobs that should not be packed tightly despite short runtimes.
 
 - [ ] 6.0 Redesign `web/rules/cron-schedule.md` using measured results
   - [ ] 6.1 Move the start of the daily schedule so the first cron job runs no earlier than 3:00 AM EST.
