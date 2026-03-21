@@ -125,10 +125,10 @@
   - [x] 5.5 For jobs with internal loops or offsets, decide whether they should be optimized into one cron-safe call or split into explicit sequential URLs.
   - [x] 5.6 Write down concrete bottlenecks, dependency risks, missing telemetry gaps, and jobs that should not be packed tightly despite short runtimes.
 
-- [ ] 6.0 Redesign `web/rules/cron-schedule.md` using measured results
-  - [ ] 6.1 Move the start of the daily schedule so the first cron job runs no earlier than 3:00 AM EST.
-  - [ ] 6.2 Reorder or tighten short-running jobs so the schedule runs a tighter sequence without violating dependencies.
-  - [ ] 6.3 Preserve or increase spacing around NST-touching jobs, preferring at least 15 minutes between them unless internal throttling evidence supports an exception.
-  - [ ] 6.4 Add explicit sequential URLs for offset-based jobs when optimization under 4 minutes 30 seconds is not feasible.
-  - [ ] 6.5 Ensure `cron-report` is scheduled after every other daily job has completed.
-  - [ ] 6.6 Update the timeline summary and the detailed cron blocks in `web/rules/cron-schedule.md` so the documented schedule matches the measured redesign exactly.
+- [x] 6.0 Redesign `web/rules/cron-schedule.md` using measured results
+  - [x] 6.1 Move the start of the daily schedule so the first cron job runs no earlier than 3:00 AM EST.
+  - [x] 6.2 Reorder or tighten short-running jobs so the schedule runs a tighter sequence without violating dependencies.
+  - [x] 6.3 Preserve or increase spacing around NST-touching jobs, preferring at least 15 minutes between them unless internal throttling evidence supports an exception.
+  - [x] 6.4 Add explicit sequential URLs for offset-based jobs when optimization under 4 minutes 30 seconds is not feasible.
+  - [x] 6.5 Ensure `cron-report` is scheduled after every other daily job has completed.
+  - [x] 6.6 Update the timeline summary and the detailed cron blocks in `web/rules/cron-schedule.md` so the documented schedule matches the measured redesign exactly.
