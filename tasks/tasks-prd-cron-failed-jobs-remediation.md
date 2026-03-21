@@ -87,8 +87,8 @@
   - [x] 4.6 Add or update tests around NST rate-limit policy, small-batch burst eligibility, and failure handling so the remediated routes cannot silently exceed the published limits.
 
 - [ ] 5.0 Re-run targeted validations for every remediated failure cluster, record outcomes, and update the benchmark artifacts with a clean failure-resolution summary.
-  - [ ] 5.1 Re-run targeted local/dev validation for the rolling and FORGE/projection cluster and record per-route outcomes, durations, and any remaining blockers.
-  - [ ] 5.2 Re-run targeted validation for the SQL-backed refresh and downstream consumer cluster and verify that failures, if any, now return structured operator-usable details instead of raw HTML bodies.
-  - [ ] 5.3 Re-run targeted validation for the NST cluster and verify that any burst-mode optimization remains compliant with all NST request limits while improving completion time where appropriate.
-  - [ ] 5.4 Update or create benchmark artifacts that summarize the failed-job remediation status in a clean readable format, including resolved jobs, still-blocked jobs, and jobs requiring infrastructure follow-up.
-  - [ ] 5.5 Reflect the remediation outcomes back into the cron notes/reporting surfaces if any benchmark annotations, optimization denotations, or route guidance changed materially after the fixes.
+  - [x] 5.1 Re-run targeted local/dev validation for the rolling and FORGE/projection cluster and record per-route outcomes, durations, and any remaining blockers.
+  - [x] 5.2 Re-run targeted validation for the SQL-backed refresh and downstream consumer cluster and verify that failures, if any, now return structured operator-usable details instead of raw HTML bodies.
+  - [x] 5.3 Re-run targeted validation for the NST cluster and verify that any burst-mode optimization remains compliant with all NST request limits while improving completion time where appropriate.
+  - [x] 5.4 Update or create benchmark artifacts that summarize the failed-job remediation status in a clean readable format, including resolved jobs, still-blocked jobs, and jobs requiring infrastructure follow-up.
+  - [x] 5.5 Reflect the remediation outcomes back into the cron notes/reporting surfaces if any benchmark annotations, optimization denotations, or route guidance changed materially after the fixes.

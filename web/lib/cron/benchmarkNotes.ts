@@ -30,12 +30,13 @@ const BENCHMARK_NOTES_BY_JOB: Record<string, BenchmarkAnnotation[]> = {
   ],
   "update-rolling-player-averages": [
     {
-      kind: "bottleneck",
+      kind: "stateful",
       note: "Broad rolling rebuild with concurrency knobs and large player scope."
     },
     {
       kind: "dependency_sensitive",
-      note: "Downstream FORGE and Start Chart freshness depend on this output."
+      note:
+        "Downstream FORGE and Start Chart freshness depend on this output; local remediation validation now succeeds within budget."
     }
   ],
   "update-nst-tables-all": [
@@ -84,7 +85,7 @@ const BENCHMARK_NOTES_BY_JOB: Record<string, BenchmarkAnnotation[]> = {
   ],
   "update-goalie-projections-v2": [
     {
-      kind: "bottleneck",
+      kind: "stateful",
       note: "Runtime varies with how far behind goalie_start_projections currently is."
     },
     {
@@ -94,8 +95,9 @@ const BENCHMARK_NOTES_BY_JOB: Record<string, BenchmarkAnnotation[]> = {
   ],
   "ingest-projection-inputs": [
     {
-      kind: "bottleneck",
-      note: "Recent-game ingest reads multiple upstream tables under a timeout budget."
+      kind: "stateful",
+      note:
+        "Recent-game ingest reads multiple upstream tables, but the bounded resumable path now returns actionable progress cleanly."
     },
     {
       kind: "stateful",
@@ -104,8 +106,9 @@ const BENCHMARK_NOTES_BY_JOB: Record<string, BenchmarkAnnotation[]> = {
   ],
   "build-forge-derived-v2": [
     {
-      kind: "bottleneck",
-      note: "Runs multiple derived-table builders in one request under a 4.5-minute budget."
+      kind: "stateful",
+      note:
+        "Runs multiple derived-table builders in one request, but the per-date bounded path now completes cleanly in local validation."
     },
     {
       kind: "dependency_sensitive",
@@ -115,7 +118,8 @@ const BENCHMARK_NOTES_BY_JOB: Record<string, BenchmarkAnnotation[]> = {
   "run-forge-projection-v2": [
     {
       kind: "bottleneck",
-      note: "Projection run is preflight-gated and likely to overrun when upstream data lags."
+      note:
+        "Preflight no longer blocks the route incorrectly; the remaining blocker is execution-time DB statement timeout risk."
     },
     {
       kind: "dependency_sensitive",
@@ -150,6 +154,74 @@ const BENCHMARK_NOTES_BY_JOB: Record<string, BenchmarkAnnotation[]> = {
     {
       kind: "batch_loop",
       note: "May require audit-mode batching if runAll exceeds the cron budget."
+    }
+  ],
+  "update-nst-goalies": [
+    {
+      kind: "rate_limited",
+      note:
+        "Direct NST scraper; small bounded runs now burst only when the computed request budget stays under all published NST ceilings."
+    },
+    {
+      kind: "stateful",
+      note: "Runtime depends on resume point, queued dates, and max pending URL cap."
+    }
+  ],
+  "update-nst-team-daily": [
+    {
+      kind: "rate_limited",
+      note:
+        "Direct NST route; burst mode is now selected from request-count math rather than date-count assumptions."
+    },
+    {
+      kind: "stateful",
+      note: "Incremental and manual ranges remain backlog-sensitive."
+    }
+  ],
+  "update-nst-team-stats-all": [
+    {
+      kind: "rate_limited",
+      note:
+        "Direct NST team-stats route; small compliant runs can now burst instead of paying the legacy fixed 21s gap."
+    },
+    {
+      kind: "stateful",
+      note: "Whether season tables run depends on backlog state and remaining runtime budget."
+    }
+  ],
+  "update-wigo-table-stats": [
+    {
+      kind: "bottleneck",
+      note:
+        "Route still appears long-running after remediation; local validation did not complete within the 180s probe window."
+    }
+  ],
+  "update-season-stats-current-season": [
+    {
+      kind: "bottleneck",
+      note:
+        "Route still hangs past the 180s validation probe, so the current issue is long-running execution rather than HTML error leakage."
+    }
+  ],
+  "update-sko-stats-full-season": [
+    {
+      kind: "dependency_sensitive",
+      note:
+        "Current blocker is a real schema mismatch in sko_skater_stats (missing assists_5v5), not proxy HTML leakage."
+    }
+  ],
+  "update-wgo-averages": [
+    {
+      kind: "dependency_sensitive",
+      note:
+        "Current blocker is a structured upstream transport/dependency failure rather than raw HTML leakage."
+    }
+  ],
+  "run-projection-accuracy": [
+    {
+      kind: "dependency_sensitive",
+      note:
+        "Current failure mode is now cleanly downstream-dependent on a succeeded projection run for the target date."
     }
   ]
 };

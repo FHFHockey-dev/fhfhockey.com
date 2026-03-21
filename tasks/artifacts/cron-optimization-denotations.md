@@ -56,3 +56,39 @@ These did not exceed `4m30s`, so they are not denoted here, but they remain impo
 - `OPTIMIZE` does not mean the same fix for every job.
 - Direct NST jobs over the threshold are telling us the schedule is too tight for NST-safe execution.
 - The 5-minute boundary failures point to route budgeting, chunking, or retry/resume problems that should be treated as endpoint-level optimization work.
+
+## Remediation Update 2026-03-21
+
+Targeted reruns after the remediation work changed the practical status of several jobs that were originally denoted here from the first failing benchmark run.
+
+### No Longer Current As Active Optimization Flags In Local Validation
+
+- `update-rolling-player-averages`
+  - both cron invocation shapes now succeed locally in `03:46` and `03:37`
+- `update-start-chart-projections`
+  - now succeeds locally in `00:03.64`
+- `ingest-projection-inputs`
+  - now succeeds locally in `00:01.81`
+- `build-forge-derived-v2`
+  - now succeeds locally in `00:02`
+- `update-nst-goalies`
+  - small bounded validation run now completes compliantly with `0ms` burst spacing
+- `update-nst-team-daily`
+  - small bounded validation run now completes compliantly with `0ms` burst spacing
+- `update-nst-team-stats-all`
+  - single-date validation run now completes in `5.4s` with compliant `0ms` burst spacing
+
+### Still Current Optimization Or Blocker Candidates
+
+- `run-projection-v2`
+  - now passes preflight but still hits structured DB statement timeout during execution
+- `calculate-wigo-stats`
+  - still hangs past the `180s` local validation window
+- `update-season-stats-current-season`
+  - still hangs past the `180s` local validation window
+- `update-sko-stats-full-season`
+  - now exposes a real schema mismatch blocker
+- `update-wgo-averages`
+  - now exposes a real upstream transport/dependency blocker
+
+Use `/Users/tim/Code/fhfhockey.com/tasks/artifacts/cron-failed-jobs-remediation-status-2026-03-21.md` as the current source of truth for remediation status. This document remains the original benchmark-based denotation record.
