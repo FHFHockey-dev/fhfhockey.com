@@ -3,12 +3,27 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { createRequire } from "module";
 import path from "path";
 
-async function loadLegacyMain() {
+type LegacyRollingGamesMain = (mode: "all" | "recent") => Promise<void>;
+
+async function defaultLoadLegacyMain(): Promise<LegacyRollingGamesMain> {
   const require = createRequire(path.join(process.cwd(), "package.json"));
   const { main } = require(
     path.join(process.cwd(), "lib/supabase/Upserts/fetchRollingGames.js")
   );
-  return main as (mode: "all" | "recent") => Promise<void>;
+  return main as LegacyRollingGamesMain;
+}
+
+let loadLegacyMainImpl: () => Promise<LegacyRollingGamesMain> =
+  defaultLoadLegacyMain;
+
+export async function loadLegacyMain() {
+  return loadLegacyMainImpl();
+}
+
+export function setLegacyMainLoaderForTests(
+  loader: (() => Promise<LegacyRollingGamesMain>) | null
+) {
+  loadLegacyMainImpl = loader ?? defaultLoadLegacyMain;
 }
 
 /**

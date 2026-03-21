@@ -1,10 +1,15 @@
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import { normalizeDependencyError } from "lib/cron/normalizeDependencyError";
 import { NextApiRequest, NextApiResponse } from "next";
 import supabase from "lib/supabase/server";
 import {
   buildBaselinePayload,
   computePPControls
 } from "lib/baselines/aggregations";
+import {
+  assertBaselinesPrerequisites,
+  isSustainabilityDependencyError
+} from "lib/sustainability/dependencyChecks";
 
 /**
  * Query params:
@@ -138,6 +143,7 @@ async function handler(
   const start = Date.now();
   try {
     console.log("Starting rebuild-baselines job");
+    await assertBaselinesPrerequisites(snapshot_date);
 
     const sinceDate = new Date(
       new Date(snapshot_date).getTime() - 365 * 24 * 3600 * 1000
@@ -224,7 +230,7 @@ async function handler(
       });
 
       const upsertRecords: BaselineRecord[] = [];
-      const snapshot_date = String(
+      const batchSnapshotDate = String(
         (req.query as any)?.snapshot_date ||
           new Date().toISOString().slice(0, 10)
       );
@@ -244,7 +250,7 @@ async function handler(
         const baseline = buildBaselinePayload({
           player_id: String(pid),
           season_id: lastSeason?.season_id ?? null,
-          snapshot_date,
+          snapshot_date: batchSnapshotDate,
           position_code: meta.position_code,
           player_name: meta.player_name,
           rows_all,
@@ -345,10 +351,30 @@ async function handler(
         snapshot_date: snapshot_date
       });
   } catch (error: any) {
+    if (isSustainabilityDependencyError(error)) {
+      return res.status(error.statusCode).json({
+        success: false,
+        message: error.issue.message,
+        prerequisite: error.issue,
+        dependencyError: {
+          kind: "dependency_error",
+          source: "unknown",
+          classification: "structured_upstream_error",
+          message: error.issue.message,
+          detail: error.issue.detail,
+          htmlLike: false
+        }
+      });
+    }
+    const dependencyError = normalizeDependencyError(error);
     console.error("Error building baselines:", error?.message || error);
     return res
       .status(500)
-      .json({ success: false, message: error?.message || String(error) });
+      .json({
+        success: false,
+        message: dependencyError.message,
+        dependencyError
+      });
   }
 }
 

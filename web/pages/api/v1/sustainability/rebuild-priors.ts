@@ -1,5 +1,6 @@
 // rebuild-priors.ts
 import { NextApiRequest, NextApiResponse } from "next";
+import { normalizeDependencyError } from "lib/cron/normalizeDependencyError";
 import { CronTimedResponse, withCronJobTiming } from "lib/cron/timingContract";
 // import supabase from "lib/supabase"; // <- remove
 import {
@@ -10,6 +11,10 @@ import {
   StatCode
 } from "lib/sustainability/priors";
 import { resolveSeasonId } from "lib/sustainability/resolveSeasonId";
+import {
+  assertPriorsPrerequisites,
+  isSustainabilityDependencyError
+} from "lib/sustainability/dependencyChecks";
 
 export default async function handler(
   req: NextApiRequest,
@@ -20,6 +25,7 @@ export default async function handler(
     withCronJobTiming(body, started, endedAt);
   try {
     const season = await resolveSeasonId(req.query.season);
+    await assertPriorsPrerequisites(season);
     const dry =
       req.query.dry === "1" ||
       req.query.dry === "true" ||
@@ -80,12 +86,31 @@ export default async function handler(
         duration_s
       }));
   } catch (error: any) {
+    if (isSustainabilityDependencyError(error)) {
+      return res.status(error.statusCode).json(
+        withTiming({
+          success: false,
+          message: error.issue.message,
+          prerequisite: error.issue,
+          dependencyError: {
+            kind: "dependency_error",
+            source: "unknown",
+            classification: "structured_upstream_error",
+            message: error.issue.message,
+            detail: error.issue.detail,
+            htmlLike: false
+          }
+        })
+      );
+    }
+    const dependencyError = normalizeDependencyError(error);
     console.error("rebuild-priors error", error?.message || error);
     return res
       .status(500)
       .json(withTiming({
         success: false,
-        message: error?.message || String(error)
+        message: dependencyError.message,
+        dependencyError
       }));
   }
 }

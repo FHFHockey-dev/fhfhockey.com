@@ -12,6 +12,7 @@ import {
   type BenchmarkRunSequence
 } from "lib/cron/benchmarkRunner";
 import { getNstTouchLevel } from "lib/cron/nstClassification";
+import { executeSqlRpcWithRetry } from "lib/cron/sqlRpcExecution";
 
 type HttpBenchmarkSummary = {
   kind: "http";
@@ -23,6 +24,12 @@ type HttpBenchmarkSummary = {
 type SqlBenchmarkSummary = {
   kind: "sql";
   dataPreview: unknown;
+  attempts?: number;
+  failure?: {
+    classification: string;
+    statusCode: number | null;
+    detail: string | null;
+  };
 };
 
 type PolicyBenchmarkSummary = {
@@ -249,24 +256,37 @@ function buildExecutor(): BenchmarkExecutor<BenchmarkSummary> & {
         };
       }
 
-      const { data, error } = await supabase.rpc("execute_sql", {
-        sql_statement: job.sqlText
+      const result = await executeSqlRpcWithRetry({
+        client: supabase,
+        sqlText: job.sqlText,
+        maxAttempts: 3
       });
 
-      if (error) {
+      if (!result.ok) {
         return {
           status: "failure",
-          reason: error.message,
-          notes: ["Supabase execute_sql RPC failed."]
+          reason: result.failure.message,
+          notes: result.notes,
+          summary: {
+            kind: "sql",
+            dataPreview: null,
+            attempts: result.failure.attempts,
+            failure: {
+              classification: result.failure.classification,
+              statusCode: result.failure.statusCode,
+              detail: result.failure.detail
+            }
+          }
         };
       }
 
       return {
         status: "success",
-        notes: ["Executed through Supabase execute_sql RPC."],
+        notes: result.notes,
         summary: {
           kind: "sql",
-          dataPreview: data
+          dataPreview: result.data,
+          attempts: result.attempts
         },
         touchedSystems: ["supabase", "local_database_functions"]
       };

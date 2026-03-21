@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import { normalizeDependencyError } from "lib/cron/normalizeDependencyError";
 import { CronTimedResponse, withCronJobTiming } from "lib/cron/timingContract";
 import supabase from "lib/supabase/server";
 import {
@@ -10,6 +11,10 @@ import {
 } from "lib/sustainability/bandService";
 import type { SustainabilityMetricKey } from "lib/sustainability/bands";
 import { WindowCode } from "lib/sustainability/windows";
+import {
+  assertTrendBandPrerequisites,
+  isSustainabilityDependencyError
+} from "lib/sustainability/dependencyChecks";
 
 type Summary = {
   player_id: number;
@@ -113,6 +118,7 @@ async function handler(
   const effectiveEndDate = endDateOverride ?? snapshotDate;
 
   try {
+    await assertTrendBandPrerequisites();
     const offsets = runAll ? [offset] : [offset];
     if (runAll) {
       for (let nextOffset = offset + limit; ; nextOffset += limit) {
@@ -226,13 +232,32 @@ async function handler(
       errors
     }));
   } catch (error: any) {
+    if (isSustainabilityDependencyError(error)) {
+      return res
+        .status(error.statusCode)
+        .json(withTiming({
+          success: false,
+          message: error.issue.message,
+          prerequisite: error.issue,
+          dependencyError: {
+            kind: "dependency_error",
+            source: "unknown",
+            classification: "structured_upstream_error",
+            message: error.issue.message,
+            detail: error.issue.detail,
+            htmlLike: false
+          }
+        }));
+    }
+    const dependencyError = normalizeDependencyError(error);
     // eslint-disable-next-line no-console
     console.error("rebuild-trend-bands error", error?.message ?? error);
     return res
       .status(500)
       .json(withTiming({
         success: false,
-        message: error?.message ?? String(error)
+        message: dependencyError.message,
+        dependencyError
       }));
   }
 }

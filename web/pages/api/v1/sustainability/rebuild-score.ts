@@ -1,6 +1,7 @@
 // rebuild-score.ts
 
 import { NextApiRequest, NextApiResponse } from "next";
+import { normalizeDependencyError } from "lib/cron/normalizeDependencyError";
 import { CronTimedResponse, withCronJobTiming } from "lib/cron/timingContract";
 import { loadPlayersForSnapshot } from "lib/sustainability/windows";
 import {
@@ -11,6 +12,10 @@ import {
 } from "lib/sustainability/score";
 import { PosGroup } from "lib/sustainability/priors";
 import { resolveSeasonId } from "lib/sustainability/resolveSeasonId";
+import {
+  assertScorePrerequisites,
+  isSustainabilityDependencyError
+} from "lib/sustainability/dependencyChecks";
 
 export default async function handler(
   req: NextApiRequest,
@@ -24,6 +29,7 @@ export default async function handler(
     const snapshot = String(
       req.query.snapshot_date || new Date().toISOString().slice(0, 10)
     );
+    await assertScorePrerequisites(season, snapshot);
     const dry = req.query.dry === "1" || req.query.dry === "true";
     const limit = Number(req.query.limit || 250);
     const offset = Number(req.query.offset || 0);
@@ -95,13 +101,32 @@ export default async function handler(
       duration_s
     }));
   } catch (e: any) {
+    if (isSustainabilityDependencyError(e)) {
+      return res
+        .status(e.statusCode)
+        .json(withTiming({
+          success: false,
+          message: e.issue.message,
+          prerequisite: e.issue,
+          dependencyError: {
+            kind: "dependency_error",
+            source: "unknown",
+            classification: "structured_upstream_error",
+            message: e.issue.message,
+            detail: e.issue.detail,
+            htmlLike: false
+          }
+        }));
+    }
+    const dependencyError = normalizeDependencyError(e);
     // eslint-disable-next-line no-console
     console.error("rebuild-score error", e?.message || e);
     return res
       .status(500)
       .json(withTiming({
         success: false,
-        message: e?.message || String(e)
+        message: dependencyError.message,
+        dependencyError
       }));
   }
 }

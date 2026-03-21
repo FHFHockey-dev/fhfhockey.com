@@ -8,6 +8,7 @@
 - `tasks/artifacts/cron-rolling-player-failure-analysis.md` - Root-cause analysis for the two `update-rolling-player-averages` failures and why their surfaces differ.
 - `tasks/artifacts/cron-forge-projection-failure-analysis.md` - Root-cause matrix for the failed FORGE/projection-chain jobs, separating route timeouts from stale-data and transport failures.
 - `tasks/artifacts/cron-sql-refresh-failure-analysis.md` - Classification of the failed SQL-backed refresh jobs, showing RPC transport failures versus downstream consumer impact.
+- `tasks/artifacts/cron-sql-refresh-execution-paths.md` - Distinguishes benchmark RPC SQL failures from direct pg_cron SQL execution and records the per-job remediation determination for the SQL refresh cluster.
 - `tasks/artifacts/cron-downstream-failure-dependencies.md` - Direct dependency mapping for the remaining failed downstream routes, including sustainability and ML jobs.
 - `tasks/artifacts/cron-failed-jobs-root-cause-matrix.md` - Consolidated matrix mapping every failed job to root cause, dependent systems, proposed fix type, and validation path.
 - `tasks/artifacts/cron-audit-findings.md` - Existing bottleneck and dependency-risk findings that should guide remediation order.
@@ -70,12 +71,12 @@
   - [x] 2.6 Add or update focused tests for the repaired rolling and FORGE/projection routes so the specific benchmark failure modes are covered by regression tests.
 
 - [ ] 3.0 Fix the SQL-backed refresh and downstream data-consumer jobs that failed due to Supabase/Cloudflare HTML failures or stale dependency chains.
-  - [ ] 3.1 Investigate the failing SQL-backed refresh jobs and determine whether they need query changes, RPC retry/error normalization, workload reduction, or schedule-aware dependency protection.
-  - [ ] 3.2 Fix `calculate-wigo-stats`, `update-season-stats`, `update-sko-stats`, and `update-wgo-averages` so upstream table or view failures are surfaced as structured operator-usable errors instead of leaking raw HTML pages through nested exceptions.
-  - [ ] 3.3 Fix `update-rolling-games` and `update-power-rankings` by resolving the `require is not a function` defect and adding regression coverage for the runtime/module-loading path.
-  - [ ] 3.4 Fix the sustainability chain (`rebuild-baselines`, `rebuild-priors`, `rebuild-window-z`, `rebuild-score`, `rebuild-trend-bands`) so it handles missing upstream refreshes and Supabase failures cleanly, and succeeds once prerequisites are healthy.
-  - [ ] 3.5 Fix `update-predictions-sko` so it degrades gracefully when unified-view dependencies are unavailable and succeeds once those dependencies are restored.
-  - [ ] 3.6 Add or update tests for the repaired SQL/data-consumer routes, focusing on structured error surfacing, dependency preconditions, and post-fix successful execution paths.
+  - [x] 3.1 Investigate the failing SQL-backed refresh jobs and determine whether they need query changes, RPC retry/error normalization, workload reduction, or schedule-aware dependency protection.
+  - [x] 3.2 Fix `calculate-wigo-stats`, `update-season-stats`, `update-sko-stats`, and `update-wgo-averages` so upstream table or view failures are surfaced as structured operator-usable errors instead of leaking raw HTML pages through nested exceptions.
+  - [x] 3.3 Fix `update-rolling-games` and `update-power-rankings` by resolving the `require is not a function` defect and adding regression coverage for the runtime/module-loading path.
+  - [x] 3.4 Fix the sustainability chain (`rebuild-baselines`, `rebuild-priors`, `rebuild-window-z`, `rebuild-score`, `rebuild-trend-bands`) so it handles missing upstream refreshes and Supabase failures cleanly, and succeeds once prerequisites are healthy.
+  - [x] 3.5 Fix `update-predictions-sko` so it degrades gracefully when unified-view dependencies are unavailable and succeeds once those dependencies are restored.
+  - [x] 3.6 Add or update tests for the repaired SQL/data-consumer routes, focusing on structured error surfacing, dependency preconditions, and post-fix successful execution paths.
 
 - [ ] 4.0 Audit and harden every NST-touching failed route, including validating whether a compliant small-batch burst mode is available and safe.
   - [ ] 4.1 Confirm the real per-date URL counts and current burst/timer behavior for `update-nst-goalies`, `update-nst-team-daily`, `update-nst-team-daily-incremental`, and `update-nst-team-stats-all`, including the “one or two days means no wait timer” branch where it exists.
