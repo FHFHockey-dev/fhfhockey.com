@@ -57,6 +57,10 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { CronTimedResponse, withCronJobTiming } from "lib/cron/timingContract";
+import {
+  normalizeDependencyError,
+  type NormalizedDependencyError
+} from "lib/cron/normalizeDependencyError";
 import { runProjectionV2ForDate } from "lib/projections/run-forge-projections";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
 import { getGoalieForgePipelineSpec } from "lib/projections/goaliePipeline";
@@ -140,6 +144,7 @@ type Result =
       teamRowsUpserted?: number;
       goalieRowsUpserted?: number;
       error: string;
+      dependencyError?: NormalizedDependencyError;
       results?: Array<{
         asOfDate: string;
         runId: string;
@@ -636,12 +641,14 @@ async function handler(
   const asOfDate = dateParam ?? isoDateOnly(new Date().toISOString());
   const startDate = startDateParam ?? asOfDate;
   const endDate = endDateParam ?? asOfDate;
-  const preflight = await runProjectionPreflightChecks(asOfDate, bypassPreflight);
   const maxDurationMs = Number(getParam(req, "maxDurationMs") ?? 270_000);
   const budgetMs = Number.isFinite(maxDurationMs) ? maxDurationMs : 270_000;
   const deadlineMs = startedAt + budgetMs;
+  let preflight = defaultPreflight;
 
   try {
+    preflight = await runProjectionPreflightChecks(asOfDate, bypassPreflight);
+
     if (rangeDates.length > 0) {
       const effectiveRangeStart =
         resumeFromDate && resumeFromDate >= startDate && resumeFromDate <= endDate
@@ -862,6 +869,12 @@ async function handler(
         goalieRowsUpserted: out.goalieRowsUpserted
       }));
   } catch (e) {
+    const dependencyError = normalizeDependencyError(e);
+    const baseObservability = buildGoalieObservability({
+      preflight,
+      gamesProcessed: 0,
+      goalieRowsProcessed: 0
+    });
     return res
       .status(500)
       .json(withTiming({
@@ -875,15 +888,22 @@ async function handler(
         nextStartDate: null,
         pipeline,
         preflight,
-        observability: buildGoalieObservability({
-          preflight,
-          gamesProcessed: 0,
-          goalieRowsProcessed: 0
-        }),
+        observability: {
+          ...baseObservability,
+          dataQualityWarnings: [
+            ...baseObservability.dataQualityWarnings,
+            {
+              code: "dependency_error",
+              message: dependencyError.message,
+              detail: dependencyError.detail ?? undefined
+            }
+          ]
+        },
         timedOut: false,
         maxDurationMs: formatDurationMsToMMSS(budgetMs),
         durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
-        error: (e as any)?.message ?? String(e)
+        error: dependencyError.message,
+        dependencyError
       }));
   }
 }

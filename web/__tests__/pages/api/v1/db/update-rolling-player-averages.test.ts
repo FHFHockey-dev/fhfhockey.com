@@ -154,6 +154,75 @@ describe("/api/v1/db/update-rolling-player-averages", () => {
     });
   });
 
+  it("bounds bare GET cron calls to an implicit recent daily window", async () => {
+    const req: any = {
+      method: "GET",
+      query: {},
+      url: "/api/v1/db/update-rolling-player-averages"
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(mainMock).toHaveBeenCalledTimes(1);
+    const args = mainMock.mock.calls[0][0];
+    expect(args.playerId).toBeUndefined();
+    expect(args.season).toBeUndefined();
+    expect(args.resumePlayerId).toBeUndefined();
+    expect(args.startDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(args.endDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(args.playerConcurrency).toBe(4);
+    expect(args.upsertBatchSize).toBe(500);
+    expect(args.upsertConcurrency).toBe(4);
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      executionProfile: "daily_incremental",
+      runtimeBudget: expect.objectContaining({
+        budgetMs: 270000,
+        withinBudget: true
+      })
+    });
+  });
+
+  it("allows POST body params to bound cron runs explicitly", async () => {
+    const req: any = {
+      method: "POST",
+      query: {},
+      body: {
+        startDate: "2026-03-10",
+        endDate: "2026-03-14",
+        fastMode: true,
+        executionProfile: "daily_incremental"
+      },
+      url: "/api/v1/db/update-rolling-player-averages"
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(mainMock).toHaveBeenCalledWith({
+      playerId: undefined,
+      season: undefined,
+      startDate: "2026-03-10",
+      endDate: "2026-03-14",
+      resumePlayerId: undefined,
+      maxPlayers: undefined,
+      forceFullRefresh: undefined,
+      fullRefreshMode: undefined,
+      fullRefreshDeleteChunkSize: undefined,
+      playerConcurrency: 4,
+      upsertBatchSize: 500,
+      upsertConcurrency: 4,
+      skipDiagnostics: true,
+      dryRunUpsert: undefined,
+      debugUpsertPayload: undefined
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      executionProfile: "daily_incremental"
+    });
+  });
+
   it("returns 500 when the rolling writer throws", async () => {
     mainMock.mockRejectedValueOnce(new Error("upsert blocker"));
 

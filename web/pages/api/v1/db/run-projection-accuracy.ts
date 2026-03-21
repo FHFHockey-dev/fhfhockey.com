@@ -1,4 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import {
+  normalizeDependencyError,
+  type NormalizedDependencyError
+} from "lib/cron/normalizeDependencyError";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
 import supabase from "lib/supabase/server";
@@ -2225,9 +2229,11 @@ export default withCronJobAudit(async function handler(
       durationMs: formatDurationMsToMMSS(Date.now() - startedAt)
     });
   } catch (e) {
+    const dependencyError = normalizeDependencyError(e);
     return res.status(500).json({
       success: false,
-      error: (e as any)?.message ?? String(e),
+      error: dependencyError.message,
+      dependencyError,
       durationMs: formatDurationMsToMMSS(Date.now() - startedAt)
     });
   }

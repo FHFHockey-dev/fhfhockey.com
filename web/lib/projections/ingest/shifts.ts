@@ -128,6 +128,17 @@ export async function upsertShiftTotalsForGame(gameId: number): Promise<{
   assertSupabase();
 
   const pbp = await fetchPbpGame(gameId);
+  return upsertShiftTotalsForGameFromPbp(gameId, pbp);
+}
+
+export async function upsertShiftTotalsForGameFromPbp(
+  gameId: number,
+  pbp: Awaited<ReturnType<typeof fetchPbpGame>>
+): Promise<{
+  rowsUpserted: number;
+}> {
+  assertSupabase();
+
   const shiftRows = await fetchAllShiftCharts(gameId);
 
   const homeTeamId = pbp.homeTeam.id;
@@ -244,6 +255,5 @@ export async function upsertShiftTotalsForGame(gameId: number): Promise<{
     onConflict: "game_id,player_id"
   });
   if (error) throw error;
-
   return { rowsUpserted: upserts.length };
 }

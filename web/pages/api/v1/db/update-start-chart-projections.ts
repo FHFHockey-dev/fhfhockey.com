@@ -23,6 +23,7 @@ type LineCombinationRow = {
 };
 
 type RollingMetrics = {
+  player_id?: number | null;
   goals_avg_last5: number | null;
   goals_avg_all: number | null;
   assists_avg_last5: number | null;
@@ -42,6 +43,8 @@ type TeamRatingRow = {
   date: string;
   xga60: number | null;
 };
+
+const START_CHART_PLAYER_BATCH_SIZE = 200;
 
 const clamp = (val: number, min: number, max: number) =>
   Math.min(max, Math.max(min, val));
@@ -67,6 +70,7 @@ function computeGoalieSuppression(gsaaPer60?: number | null) {
 
 export const START_CHART_ROLLING_SELECT_CLAUSE =
   [
+    "player_id",
     "goals_avg_last5",
     "goals_avg_all",
     "assists_avg_last5",
@@ -86,6 +90,87 @@ export const START_CHART_ROLLING_SELECT_CLAUSE =
     "toi_seconds_avg_last5",
     "toi_seconds_avg_all"
   ].join(", ");
+
+function parsePositiveIntParam(value: unknown): number | undefined {
+  if (Array.isArray(value)) {
+    return parsePositiveIntParam(value[0]);
+  }
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return undefined;
+  const rounded = Math.floor(parsed);
+  return rounded > 0 ? rounded : undefined;
+}
+
+function getRequestParam(
+  req: NextApiRequest,
+  key: string
+): string | string[] | number | undefined {
+  const queryValue = req.query[key];
+  if (queryValue !== undefined) {
+    return queryValue;
+  }
+
+  const body = req.body;
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return undefined;
+  }
+
+  const value = (body as Record<string, unknown>)[key];
+  if (
+    typeof value === "string" ||
+    typeof value === "number" ||
+    (Array.isArray(value) && value.every((entry) => typeof entry === "string"))
+  ) {
+    return value as string | string[] | number;
+  }
+  return undefined;
+}
+
+function chunk<T>(items: T[], size: number): T[][] {
+  if (size <= 0) return [items];
+  const chunks: T[][] = [];
+  for (let index = 0; index < items.length; index += size) {
+    chunks.push(items.slice(index, index + size));
+  }
+  return chunks;
+}
+
+function buildLatestRollingMetricsByPlayer(
+  rows: RollingMetrics[]
+): Map<number, RollingMetrics> {
+  const metricsByPlayer = new Map<number, RollingMetrics>();
+  for (const row of rows) {
+    const playerId = Number(row.player_id);
+    if (!Number.isFinite(playerId) || metricsByPlayer.has(playerId)) {
+      continue;
+    }
+    metricsByPlayer.set(playerId, row);
+  }
+  return metricsByPlayer;
+}
+
+async function fetchLatestRollingMetricsByPlayer(
+  playerIds: number[],
+  date: string
+): Promise<Map<number, RollingMetrics>> {
+  const rows: RollingMetrics[] = [];
+
+  for (const playerBatch of chunk(playerIds, START_CHART_PLAYER_BATCH_SIZE)) {
+    const { data, error } = await supabase
+      .from("rolling_player_game_metrics")
+      .select(START_CHART_ROLLING_SELECT_CLAUSE)
+      .in("player_id", playerBatch)
+      .eq("strength_state", "all")
+      .lte("game_date", date)
+      .order("player_id", { ascending: true })
+      .order("game_date", { ascending: false });
+
+    if (error) throw error;
+    rows.push(...(((data ?? []) as unknown) as RollingMetrics[]));
+  }
+
+  return buildLatestRollingMetricsByPlayer(rows);
+}
 
 function projectFromRolling(
   metrics: RollingMetrics | null,
@@ -186,6 +271,12 @@ const handler = async (
     (req.method === "GET"
       ? (req.query.date as string | undefined)
       : req.body?.date) || defaultDate;
+  const maxPlayers = parsePositiveIntParam(getRequestParam(req, "maxPlayers"));
+  const playerOffsetRaw = Number(getRequestParam(req, "playerOffset") ?? 0);
+  const playerOffset =
+    Number.isFinite(playerOffsetRaw) && playerOffsetRaw > 0
+      ? Math.floor(playerOffsetRaw)
+      : 0;
 
   if (!date || typeof date !== "string") {
     res.setHeader("Allow", ["GET", "POST"]);
@@ -214,7 +305,9 @@ const handler = async (
     // We need to find the MOST RECENT line combination for each team playing today.
     // We cannot just query by today's gameIds because lineCombinations are only created AFTER a game is played.
     const gameIds = games.map((g) => g.id);
-    const teamIds = games.flatMap((g) => [g.homeTeamId, g.awayTeamId]);
+    const teamIds = Array.from(
+      new Set(games.flatMap((g) => [g.homeTeamId, g.awayTeamId]))
+    );
 
     const lineRows = (
       await Promise.all(
@@ -345,31 +438,40 @@ const handler = async (
       }
     }
 
-    // Process tasks in batches to avoid timeouts and overwhelm
+    const slicedTasks =
+      maxPlayers && maxPlayers > 0
+        ? playerTasks.slice(playerOffset, playerOffset + maxPlayers)
+        : playerOffset > 0
+          ? playerTasks.slice(playerOffset)
+          : playerTasks;
+
+    if (!slicedTasks.length) {
+      return {
+        status: 200,
+        body: {
+          message: "No player tasks selected for processing.",
+          date,
+          projections: 0,
+          playerTasksTotal: playerTasks.length,
+          playerTasksProcessed: 0,
+          playerOffset,
+          maxPlayers: maxPlayers ?? null
+        }
+      };
+    }
+
+    const rollingMetricsByPlayer = await fetchLatestRollingMetricsByPlayer(
+      Array.from(new Set(slicedTasks.map((task) => task.playerId))),
+      date
+    );
+
+    // Process tasks in batches to avoid timeout pressure during projection assembly.
     const BATCH_SIZE = 20;
-    for (let i = 0; i < playerTasks.length; i += BATCH_SIZE) {
-      const batch = playerTasks.slice(i, i + BATCH_SIZE);
+    for (let i = 0; i < slicedTasks.length; i += BATCH_SIZE) {
+      const batch = slicedTasks.slice(i, i + BATCH_SIZE);
 
-      await Promise.all(
-        batch.map(async (task) => {
-          const { data: metricRow, error: metricError } = await supabase
-            .from("rolling_player_game_metrics")
-            .select(START_CHART_ROLLING_SELECT_CLAUSE)
-            .eq("player_id", task.playerId)
-            .eq("strength_state", "all")
-            .lte("game_date", date)
-            .order("game_date", { ascending: false })
-            .limit(1)
-            .maybeSingle();
-
-          if (metricError) {
-            console.error(
-              `Error fetching metrics for player ${task.playerId}`,
-              metricError
-            );
-            return;
-          }
-
+      batch.forEach((task) => {
+          const metricRow = rollingMetricsByPlayer.get(task.playerId) ?? null;
           const projections = projectFromRolling(
             (metricRow as RollingMetrics | null) ?? null,
             task.matchup.shotMult,
@@ -383,8 +485,7 @@ const handler = async (
             matchup_grade: task.matchup.grade,
             ...projections
           });
-        })
-      );
+        });
     }
 
     if (upserts.length === 0) {
@@ -407,12 +508,16 @@ const handler = async (
 
     return {
       status: 200,
-      body: {
-        message: "Start Chart projections updated",
-        date,
-        projections: upserts.length
-      }
-    };
+        body: {
+          message: "Start Chart projections updated",
+          date,
+          projections: upserts.length,
+          playerTasksTotal: playerTasks.length,
+          playerTasksProcessed: slicedTasks.length,
+          playerOffset,
+          maxPlayers: maxPlayers ?? null
+        }
+      };
   };
 
   try {
@@ -436,5 +541,6 @@ export default withCronJobAudit(handler);
 
 export const __testables = {
   projectFromRolling,
-  START_CHART_ROLLING_SELECT_CLAUSE
+  START_CHART_ROLLING_SELECT_CLAUSE,
+  buildLatestRollingMetricsByPlayer
 };
