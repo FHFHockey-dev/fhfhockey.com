@@ -9,7 +9,12 @@ const supabaseUrl =
   "https://fyhftlxokyjtpndbkfse.supabase.co";
 // CHANGED SUPABASE THING
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY || "";
-const supabase = createClient<Database>(supabaseUrl, supabaseKey);
+const supabase = createClient<Database>(supabaseUrl, supabaseKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: false
+  }
+});
 
 export function createClientWithToken(access_token: string): typeof supabase;
 export function createClientWithToken(req: IncomingMessage): typeof supabase;

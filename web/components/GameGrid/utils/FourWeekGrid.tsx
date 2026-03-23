@@ -230,11 +230,8 @@ const FourWeekGrid: React.FC<FourWeekGridProps> = ({ teamDataArray }) => {
 
   // --- Render ---
   const handleTitleClick = isMobile ? toggleMobileMinimize : undefined;
-  const isLoading =
-    !teamsMap ||
-    Object.keys(teamsMap).length === 0 ||
-    teamDataArray.length === 0; // More robust loading check
-  const hasData = !isLoading && sortedTeams.length > 0;
+  const isLoading = !teamsMap || Object.keys(teamsMap).length === 0;
+  const hasData = sortedTeams.length > 0;
 
   return (
     <div

@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import { TeamDataWithTotals } from "lib/NHL/types";
-import supabase from "lib/supabase"; // Import the Supabase client
+import publicSupabase from "lib/supabase/public-client";
 import styles from "./OpponentMetricsTable.module.scss";
 import clsx from "clsx";
 import PanelStatus from "components/common/PanelStatus";
@@ -62,6 +62,7 @@ export default function OpponentMetricsTable({
     [key: string]: TeamStats;
   }>({});
   const [statsLoading, setStatsLoading] = useState(true);
+  const [statsError, setStatsError] = useState<string | null>(null);
 
   const isMobile = useIsMobile();
   const [isMobileMinimized, setIsMobileMinimized] = useState(false);
@@ -75,10 +76,11 @@ export default function OpponentMetricsTable({
   useEffect(() => {
     const fetchAndProcessAllStats = async () => {
       setStatsLoading(true);
+      setStatsError(null);
 
       // Pull from NST daily team table using the most recent date per team.
       // Strategy: order by date desc, and take the first row we see per team_abbreviation.
-      const { data, error } = await supabase
+      const { data, error } = await publicSupabase
         .from("nst_team_all")
         .select(
           [
@@ -99,6 +101,7 @@ export default function OpponentMetricsTable({
 
       if (error) {
         console.error("Failed to fetch team stats:", error);
+        setStatsError("Opponent metrics are temporarily unavailable.");
         setStatsLoading(false);
         return;
       }
@@ -128,6 +131,7 @@ export default function OpponentMetricsTable({
     if (teamData && teamData.length > 0) {
       fetchAndProcessAllStats();
     } else {
+      setStatsError(null);
       setStatsLoading(false);
     }
   }, [teamData]); // Rerun if teamData changes
@@ -381,8 +385,17 @@ export default function OpponentMetricsTable({
       <div id="opponent-metrics-content" className={styles.tableWrapper}>
         {statsLoading ? (
           <PanelStatus state="loading" message="Loading opponent stats..." />
+        ) : statsError ? (
+          <PanelStatus state="error" message={statsError} />
         ) : !hasData ? (
-          <PanelStatus state="empty" message="No opponent data available." />
+          <PanelStatus
+            state="empty"
+            message={
+              teamData.length === 0
+                ? "Opponent metrics will appear when schedule data is available."
+                : "No opponent data available."
+            }
+          />
         ) : (
           <table className={styles.table}>
             <thead>

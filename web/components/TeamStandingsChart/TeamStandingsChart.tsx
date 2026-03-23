@@ -4,7 +4,7 @@ import { format, isAfter } from "date-fns";
 import useCurrentSeason from "hooks/useCurrentSeason";
 import useResizeObserver from "hooks/useResizeObserver";
 import { teamsInfo, teamNameToAbbreviationMap } from "lib/teamsInfo";
-import supabase from "lib/supabase";
+import publicSupabase from "lib/supabase/public-client";
 import styles from "./TeamStandingsChart.module.scss";
 import Fetch from "lib/cors-fetch";
 
@@ -177,7 +177,7 @@ const TeamStandingsChart: React.FC = () => {
       let offset = 0;
       let standingsRows: any[] = [];
       while (true) {
-        const { data, error } = await supabase
+        const { data, error } = await publicSupabase
           // @ts-ignore
           .from("nhl_standings_details")
           .select(
@@ -211,7 +211,7 @@ const TeamStandingsChart: React.FC = () => {
       offset = 0;
       let teamStatsRows: any[] = [];
       while (true) {
-        const { data, error } = await supabase
+        const { data, error } = await publicSupabase
           .from("wgo_team_stats")
           .select(
             `

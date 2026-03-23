@@ -12,6 +12,24 @@ import { Response } from "pages/api/_types";
 
 const BASE_URL = "/api/v1";
 
+function summarizeHtmlError(value: string): string {
+  const title = value.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1]?.trim() ?? null;
+  const host = title?.split("|")[0]?.trim() ?? null;
+  const code = title?.match(/\|\s*(\d{3})\s*:/)?.[1]?.trim() ?? null;
+  const reason =
+    title?.match(/\|\s*\d{3}\s*:\s*([^|]+)/)?.[1]?.trim() ??
+    "HTML error response";
+
+  return [
+    "Upstream returned HTML instead of JSON.",
+    code ? `Code ${code}.` : null,
+    reason ? `${reason}.` : null,
+    host ? `Host: ${host}.` : null
+  ]
+    .filter((part): part is string => Boolean(part))
+    .join(" ");
+}
+
 /**
  * `BASE_URL` /api/v1
  * @param path
@@ -20,11 +38,44 @@ const BASE_URL = "/api/v1";
 async function get<T = any>(path: string): Promise<T> {
   const url = `${BASE_URL}${path}`;
   try {
-    return await fetch(url).then((res) => res.json());
+    const res = await fetch(url);
+    const contentType = res.headers.get("content-type") ?? "";
+    const bodyText = await res.text();
+    const isJson = contentType.includes("application/json");
+    const looksLikeHtml =
+      bodyText.trim().startsWith("<!DOCTYPE html") ||
+      bodyText.trim().startsWith("<html");
+
+    if (!res.ok) {
+      if (looksLikeHtml) {
+        throw new Error(`${url} -> ${summarizeHtmlError(bodyText)}`);
+      }
+
+      if (isJson) {
+        const parsed = JSON.parse(bodyText) as { error?: unknown; message?: unknown };
+        const message =
+          typeof parsed.error === "string"
+            ? parsed.error
+            : typeof parsed.message === "string"
+              ? parsed.message
+              : `Request failed with status ${res.status}`;
+        throw new Error(`${url} -> ${message}`);
+      }
+
+      throw new Error(`${url} -> Request failed with status ${res.status}`);
+    }
+
+    if (!isJson) {
+      if (looksLikeHtml) {
+        throw new Error(`${url} -> ${summarizeHtmlError(bodyText)}`);
+      }
+      throw new Error(`${url} -> Expected JSON but received ${contentType || "unknown content type"}`);
+    }
+
+    return JSON.parse(bodyText) as T;
   } catch (e: any) {
     console.error(url, e);
-    // @ts-expect-error
-    return null;
+    throw e;
   }
 }
 

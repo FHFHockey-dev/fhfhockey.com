@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { createClient } from "@supabase/supabase-js";
+import { normalizeDependencyError } from "lib/cron/normalizeDependencyError";
 
 type OwnershipPoint = { date: string; value: number };
 type TrendPlayer = {
@@ -251,9 +252,17 @@ export default async function handler(
     );
     return res.status(200).json(payload);
   } catch (err: any) {
-    console.error("ownership-trends error", err?.message || err);
+    const normalized = normalizeDependencyError(err);
+    console.error("ownership-trends error", {
+      message: normalized.message,
+      detail: normalized.detail
+    });
     return res
-      .status(500)
-      .json({ success: false, error: err?.message || String(err) });
+      .status(normalized.source === "supabase_or_proxy" ? 503 : 500)
+      .json({
+        success: false,
+        error: normalized.message,
+        ...(normalized.detail ? { detail: normalized.detail } : {})
+      });
   }
 }

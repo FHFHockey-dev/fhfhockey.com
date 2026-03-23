@@ -19,9 +19,28 @@ import {
   legacyTeamIdToAbbr,
   teamsInfo
 } from "lib/teamsInfo";
+import { normalizeDependencyError } from "lib/cron/normalizeDependencyError";
 import supabaseServer from "lib/supabase/server";
 import { Tables } from "lib/supabase/database-generated.types";
 import { updatePlayer } from "pages/api/v1/db/update-player/[playerId]";
+
+function buildStaticTeamsFallback(): Team[] {
+  return (
+    Object.entries(teamsInfo) as Array<
+      [keyof typeof teamsInfo, (typeof teamsInfo)[keyof typeof teamsInfo]]
+    >
+  )
+    .map(([abbr, info]) => {
+      const abbreviation = info.abbrev ?? String(abbr);
+      return {
+        id: info.id,
+        name: info.name,
+        abbreviation,
+        logo: getTeamLogo(abbreviation)
+      };
+    })
+    .sort((a, b) => a.id - b.id);
+}
 
 export async function getPlayerGameLog(
   id: number | string,
@@ -77,12 +96,23 @@ export async function getTeams(seasonId?: number): Promise<Team[]> {
     seasonId = (await getCurrentSeason()).seasonId;
   }
 
-  const { data: teams } = (await supabase
+  const { data: teams, error } = (await supabase
     .from("teams")
     .select("id, name, abbreviation, team_season!inner()")
     .eq("team_season.seasonId", seasonId)) as unknown as {
-    data: Tables<"teams">[];
+    data: Tables<"teams">[] | null;
+    error?: unknown;
   };
+
+  if (error || !Array.isArray(teams)) {
+    const normalized = normalizeDependencyError(error ?? "Missing team rows");
+    console.warn("Team lookup failed; falling back to static team catalog.", {
+      seasonId,
+      message: normalized.message,
+      detail: normalized.detail
+    });
+    return buildStaticTeamsFallback();
+  }
 
   const canonical = new Map<number, Team>();
 
@@ -170,9 +200,13 @@ export async function getCurrentSeason(): Promise<Season> {
     const lastSeason = data[1] ?? data[0];
     return toSeason(currentSeason, lastSeason);
   } catch (error: any) {
+    const normalized = normalizeDependencyError(error);
     console.warn(
       "Primary season lookup failed; falling back to NHL season feed.",
-      error
+      {
+        message: normalized.message,
+        detail: normalized.detail
+      }
     );
   }
 
@@ -347,7 +381,11 @@ export async function getSchedule(
       .in("game_id", gameIds);
 
     if (error) {
-      console.error("Error fetching win odds data:", error);
+      const normalized = normalizeDependencyError(error);
+      console.warn("Win odds lookup failed; continuing without odds.", {
+        message: normalized.message,
+        detail: normalized.detail
+      });
     }
 
     // Map odds data by game_id

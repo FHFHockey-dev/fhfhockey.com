@@ -5,7 +5,7 @@ import * as d3 from "d3";
 import { useTeam } from "../contexts/GameGridContext";
 import { generateProbabilityMatrixWithTieBreaker } from "../utils/poissonHelpers";
 import styles from "styles/PoissonHeatmap.module.scss";
-import supabase from "lib/supabase";
+import publicSupabase from "lib/supabase/public-client";
 import { calculateBlendedWinOdds, formatWinOdds } from "../utils/calcWinOdds";
 import Image from "next/legacy/image";
 import { teamsInfo } from "lib/teamsInfo";
@@ -127,7 +127,8 @@ const PoissonHeatmap: React.FC<PoissonHeatmapProps> = ({
     setError(null);
 
     try {
-      const { data: expectedGoalsData, error: supabaseError } = await supabase
+      const { data: expectedGoalsData, error: supabaseError } =
+        await publicSupabase
         .from("expected_goals")
         .select(
           "home_expected_goals, away_expected_goals, home_win_odds, away_win_odds, home_api_win_odds, away_api_win_odds"

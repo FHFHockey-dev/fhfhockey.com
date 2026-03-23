@@ -1,5 +1,3 @@
-// C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\lib\supabase\client.ts
-
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./database-generated.types";
 
@@ -8,16 +6,16 @@ const supabaseUrl =
   "https://fyhftlxokyjtpndbkfse.supabase.co";
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY || "";
 
-const supabase: SupabaseClient<Database> = createClient<Database>(
+const publicSupabase: SupabaseClient<Database> = createClient<Database>(
   supabaseUrl,
   supabaseKey,
   {
     auth: {
-      persistSession: true,
-      autoRefreshToken: false
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false
     }
   }
 );
 
-export type SupabaseType = typeof supabase;
-export default supabase;
+export default publicSupabase;

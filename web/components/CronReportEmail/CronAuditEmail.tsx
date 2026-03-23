@@ -27,6 +27,7 @@ interface AuditEntry {
 interface CronAuditEmailProps {
   audits: AuditEntry[];
   sinceDate: string;
+  fetchErrors?: string[];
   summary: {
     auditRuns: number;
     auditSuccesses: number;
@@ -45,10 +46,12 @@ interface CronAuditEmailProps {
 export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({
   audits,
   sinceDate,
+  fetchErrors = [],
   summary
 }) => {
   const failures = audits.filter((audit) => audit.status === "failure");
   const nonFailures = audits.filter((audit) => audit.status !== "failure");
+  const telemetryUnavailable = fetchErrors.length > 0 && audits.length === 0;
 
   const container: React.CSSProperties = {
     fontFamily: "system-ui, sans-serif",
@@ -225,20 +228,47 @@ export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({
         {summary.totalFailedRows.toLocaleString()} failed rows
       </div>
 
-      {failures.length > 0 ? (
+      {telemetryUnavailable ? (
+        <div
+          style={{
+            margin: "0 0 16px",
+            padding: "12px 14px",
+            border: "1px solid #FCA5A5",
+            background: "#FEF2F2",
+            color: "#991B1B"
+          }}
+        >
+          Audit telemetry was unavailable for this report window, so audit run status
+          could not be evaluated. This email is reporting collection failure, not audit
+          execution health.
+        </div>
+      ) : null}
+
+      {fetchErrors.length > 0 ? (
+        <div style={{ margin: "0 0 16px" }}>
+          <div style={{ fontWeight: 700, color: "#991B1B" }}>Report errors</div>
+          <ul style={{ margin: "6px 0 0", paddingLeft: 18, color: "#991B1B" }}>
+            {fetchErrors.map((error, index) => (
+              <li key={index}>{error}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {!telemetryUnavailable && failures.length > 0 ? (
         <>
           <h2 style={{ margin: "16px 0 8px", color: "#991B1B" }}>
             Failing audit runs
           </h2>
           {renderTable(failures)}
         </>
-      ) : (
+      ) : !telemetryUnavailable ? (
         <div style={{ margin: "12px 0", color: "#166534", fontWeight: 700 }}>
           No audit failures in this period.
         </div>
-      )}
+      ) : null}
 
-      {nonFailures.length > 0 ? (
+      {!telemetryUnavailable && nonFailures.length > 0 ? (
         <>
           <h2 style={{ margin: "16px 0 8px" }}>All other audit runs</h2>
           {renderTable(nonFailures)}

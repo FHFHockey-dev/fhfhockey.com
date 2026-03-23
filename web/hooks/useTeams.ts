@@ -9,7 +9,19 @@ export default function useTeams() {
   const [teams, setTeams] = useState<Team[]>([]);
 
   useEffect(() => {
-    getTeams().then((res) => setTeams(res));
+    getTeams()
+      .then((res) => {
+        if (Array.isArray(res)) {
+          setTeams(res);
+          return;
+        }
+        console.warn("useTeams received a non-array response; using empty team list.", res);
+        setTeams([]);
+      })
+      .catch((error) => {
+        console.error("useTeams failed to load teams", error);
+        setTeams([]);
+      });
   }, []);
 
   return teams;

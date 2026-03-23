@@ -147,6 +147,10 @@
   display: none;
 }
 
+.statusPanel {
+  margin-top: v.$space-sm;
+}
+
 .panel {
   // Align with broader site panel styling (reuse elevation & glass aesthetic)
   @include v.element-wrapper;

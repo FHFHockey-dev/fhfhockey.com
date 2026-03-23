@@ -100,6 +100,11 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
     fontFamily: "system-ui, sans-serif",
     lineHeight: 1.4
   };
+  const telemetryUnavailable =
+    fetchErrors.length > 0 &&
+    summary.scheduledJobsWithActivity === 0 &&
+    summary.auditRuns === 0 &&
+    summary.unscheduledRuns === 0;
 
   const renderTable = (children: React.ReactNode) => (
     <table
@@ -230,6 +235,22 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
         {summary.unscheduledRuns} unscheduled observations
       </div>
 
+      {telemetryUnavailable ? (
+        <div
+          style={{
+            margin: "0 0 16px",
+            padding: "12px 14px",
+            border: "1px solid #FCA5A5",
+            background: "#FEF2F2",
+            color: "#991B1B"
+          }}
+        >
+          Cron telemetry was unavailable for this report window, so scheduled job status
+          could not be evaluated. This email is reporting collection failure, not job
+          execution health.
+        </div>
+      ) : null}
+
       {warnings.slowJobs.length > 0 ||
       warnings.partialFailureJobs.length > 0 ||
       warnings.missingAuditJobs.length > 0 ? (
@@ -273,7 +294,7 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
         </div>
       ) : null}
 
-      {failureHighlights.length > 0 ? (
+      {!telemetryUnavailable && failureHighlights.length > 0 ? (
         <>
           <h2 style={{ margin: "16px 0 8px", color: "#991B1B" }}>
             Failures requiring attention
@@ -316,13 +337,13 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
             </>
           )}
         </>
-      ) : (
+      ) : !telemetryUnavailable ? (
         <div style={{ margin: "12px 0", color: "#166534", fontWeight: 700 }}>
           No scheduled job failures in this period.
         </div>
-      )}
+      ) : null}
 
-      {missingJobs.length > 0 ? (
+      {!telemetryUnavailable && missingJobs.length > 0 ? (
         <>
           <h2 style={{ margin: "16px 0 8px", color: "#92400E" }}>
             Missing scheduled runs
@@ -352,7 +373,7 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
         </>
       ) : null}
 
-      {unscheduledRuns.length > 0 ? (
+      {!telemetryUnavailable && unscheduledRuns.length > 0 ? (
         <>
           <h2 style={{ margin: "16px 0 8px" }}>Unscheduled activity</h2>
           {renderTable(
@@ -395,97 +416,101 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
         </>
       ) : null}
 
-      <h2 style={{ margin: "16px 0 8px" }}>Scheduled job status</h2>
-      {renderTable(
+      {!telemetryUnavailable ? (
         <>
-          <thead>
-            <tr style={{ background: "#F9FAFB" }}>
-              <th align="left">Status</th>
-              <th align="left">Scheduled</th>
-              <th align="left">Expected</th>
-              <th align="left">Last Run</th>
-              <th align="left">Route</th>
-              <th align="right">HTTP</th>
-              <th align="right">Duration</th>
-              <th align="right">Upserted</th>
-              <th align="right">Failed Rows</th>
-              <th align="right">OK</th>
-              <th align="right">Fail</th>
-              <th align="left">Note</th>
-            </tr>
-          </thead>
-          <tbody>
-            {jobs.map((job) => (
-              <tr
-                key={job.jobKey}
-                style={
-                  job.lastStatus === "failure"
-                    ? { background: "#FEF2F2" }
-                    : job.lastStatus === "missing"
-                      ? { background: "#FFFBEB" }
-                      : undefined
-                }
-              >
-                <td>{badge(job.lastStatus, job.lastStatusSource)}</td>
-                <td style={{ fontWeight: 700 }}>{job.displayName}</td>
-                <td>{job.expectedRunDisplay}</td>
-                <td>{job.lastRunDisplay}</td>
-                <td>
-                  <div>{job.route ?? "SQL"}</div>
-                  <div style={{ fontSize: 12, color: "#6B7280" }}>
-                    {job.method} • {job.scheduleTimeDisplay}
-                  </div>
-                </td>
-                <td align="right">{job.statusCode ?? "—"}</td>
-                <td align="right">{renderDuration(job.lastDurationMs)}</td>
-                <td align="right">{job.rowsUpsertedLast ?? "—"}</td>
-                <td align="right">{job.failedRowsLast ?? "—"}</td>
-                <td align="right">{job.okCount24h}</td>
-                <td align="right">{job.failCount24h}</td>
-                <td>
-                  <div>{job.note ?? job.why ?? "—"}</div>
-                  {job.optimizationDenotation
-                    ? pill(job.optimizationDenotation, {
-                        background: "#FEE2E2",
-                        color: "#991B1B"
-                      })
-                    : null}
-                  {(job.benchmarkAnnotations ?? [])
-                    .filter((annotation) =>
-                      ["bottleneck", "rate_limited", "side_effect"].includes(
-                        annotation.kind
-                      )
-                    )
-                    .slice(0, 2)
-                    .map((annotation) => (
-                      <React.Fragment key={`${job.jobKey}-${annotation.kind}`}>
-                        {pill(annotation.kind.replace(/_/g, " ").toUpperCase(), {
-                          background: "#E0F2FE",
-                          color: "#075985"
-                        })}
-                      </React.Fragment>
-                    ))}
-                  {(job.missingObservationWarnings ?? []).length > 0 ? (
-                    <div style={{ marginTop: 4, fontSize: 12, color: "#92400E" }}>
-                      Observation gaps: {job.missingObservationWarnings?.join(" ")}
-                    </div>
-                  ) : null}
-                  {(job.benchmarkAnnotations ?? []).length > 0 ? (
-                    <div style={{ marginTop: 4, fontSize: 12, color: "#4B5563" }}>
-                      Benchmark: {job.benchmarkAnnotations?.map((annotation) => annotation.note).join(" ")}
-                    </div>
-                  ) : null}
-                  {job.failedRowSamples.length > 0 ? (
-                    <div style={{ marginTop: 4, fontSize: 12, color: "#4B5563" }}>
-                      Samples: {job.failedRowSamples.join(" ; ")}
-                    </div>
-                  ) : null}
-                </td>
-              </tr>
-            ))}
-          </tbody>
+          <h2 style={{ margin: "16px 0 8px" }}>Scheduled job status</h2>
+          {renderTable(
+            <>
+              <thead>
+                <tr style={{ background: "#F9FAFB" }}>
+                  <th align="left">Status</th>
+                  <th align="left">Scheduled</th>
+                  <th align="left">Expected</th>
+                  <th align="left">Last Run</th>
+                  <th align="left">Route</th>
+                  <th align="right">HTTP</th>
+                  <th align="right">Duration</th>
+                  <th align="right">Upserted</th>
+                  <th align="right">Failed Rows</th>
+                  <th align="right">OK</th>
+                  <th align="right">Fail</th>
+                  <th align="left">Note</th>
+                </tr>
+              </thead>
+              <tbody>
+                {jobs.map((job) => (
+                  <tr
+                    key={job.jobKey}
+                    style={
+                      job.lastStatus === "failure"
+                        ? { background: "#FEF2F2" }
+                        : job.lastStatus === "missing"
+                          ? { background: "#FFFBEB" }
+                          : undefined
+                    }
+                  >
+                    <td>{badge(job.lastStatus, job.lastStatusSource)}</td>
+                    <td style={{ fontWeight: 700 }}>{job.displayName}</td>
+                    <td>{job.expectedRunDisplay}</td>
+                    <td>{job.lastRunDisplay}</td>
+                    <td>
+                      <div>{job.route ?? "SQL"}</div>
+                      <div style={{ fontSize: 12, color: "#6B7280" }}>
+                        {job.method} • {job.scheduleTimeDisplay}
+                      </div>
+                    </td>
+                    <td align="right">{job.statusCode ?? "—"}</td>
+                    <td align="right">{renderDuration(job.lastDurationMs)}</td>
+                    <td align="right">{job.rowsUpsertedLast ?? "—"}</td>
+                    <td align="right">{job.failedRowsLast ?? "—"}</td>
+                    <td align="right">{job.okCount24h}</td>
+                    <td align="right">{job.failCount24h}</td>
+                    <td>
+                      <div>{job.note ?? job.why ?? "—"}</div>
+                      {job.optimizationDenotation
+                        ? pill(job.optimizationDenotation, {
+                            background: "#FEE2E2",
+                            color: "#991B1B"
+                          })
+                        : null}
+                      {(job.benchmarkAnnotations ?? [])
+                        .filter((annotation) =>
+                          ["bottleneck", "rate_limited", "side_effect"].includes(
+                            annotation.kind
+                          )
+                        )
+                        .slice(0, 2)
+                        .map((annotation) => (
+                          <React.Fragment key={`${job.jobKey}-${annotation.kind}`}>
+                            {pill(annotation.kind.replace(/_/g, " ").toUpperCase(), {
+                              background: "#E0F2FE",
+                              color: "#075985"
+                            })}
+                          </React.Fragment>
+                        ))}
+                      {(job.missingObservationWarnings ?? []).length > 0 ? (
+                        <div style={{ marginTop: 4, fontSize: 12, color: "#92400E" }}>
+                          Observation gaps: {job.missingObservationWarnings?.join(" ")}
+                        </div>
+                      ) : null}
+                      {(job.benchmarkAnnotations ?? []).length > 0 ? (
+                        <div style={{ marginTop: 4, fontSize: 12, color: "#4B5563" }}>
+                          Benchmark: {job.benchmarkAnnotations?.map((annotation) => annotation.note).join(" ")}
+                        </div>
+                      ) : null}
+                      {job.failedRowSamples.length > 0 ? (
+                        <div style={{ marginTop: 4, fontSize: 12, color: "#4B5563" }}>
+                          Samples: {job.failedRowSamples.join(" ; ")}
+                        </div>
+                      ) : null}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </>
+          )}
         </>
-      )}
+      ) : null}
     </div>
   );
 };
