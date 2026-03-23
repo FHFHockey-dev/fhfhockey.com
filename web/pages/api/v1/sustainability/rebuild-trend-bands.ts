@@ -1,4 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import { normalizeDependencyError } from "lib/cron/normalizeDependencyError";
+import { CronTimedResponse, withCronJobTiming } from "lib/cron/timingContract";
 import supabase from "lib/supabase/server";
 import {
   computeAndStoreTrendBands,
@@ -9,6 +11,10 @@ import {
 } from "lib/sustainability/bandService";
 import type { SustainabilityMetricKey } from "lib/sustainability/bands";
 import { WindowCode } from "lib/sustainability/windows";
+import {
+  assertTrendBandPrerequisites,
+  isSustainabilityDependencyError
+} from "lib/sustainability/dependencyChecks";
 
 type Summary = {
   player_id: number;
@@ -61,12 +67,18 @@ async function fetchPlayerIds(
     .filter((id) => Number.isFinite(id));
 }
 
-async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<CronTimedResponse<Record<string, unknown>>>
+) {
+  const startedAt = Date.now();
+  const withTiming = (body: Record<string, unknown>, endedAt = Date.now()) =>
+    withCronJobTiming(body, startedAt, endedAt);
   if (req.method !== "POST" && req.method !== "GET") {
     res.setHeader("Allow", "GET,POST");
     return res
       .status(405)
-      .json({ success: false, message: "Method not allowed" });
+      .json(withTiming({ success: false, message: "Method not allowed" }));
   }
 
   const snapshotDate = parseDateParam(
@@ -93,6 +105,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     parseIntParam(req.body?.offset ?? req.query.offset, 0)
   );
   const dry = parseBoolean(req.body?.dry ?? req.query.dry);
+  const runAll = parseBoolean(req.body?.runAll ?? req.query.runAll) ||
+    parseBoolean(req.body?.run_all ?? req.query.run_all);
   const gameLimit = Math.max(
     1,
     parseIntParam(req.body?.game_limit ?? req.query.game_limit, 40)
@@ -104,97 +118,147 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   const effectiveEndDate = endDateOverride ?? snapshotDate;
 
   try {
-    const playerIds = await fetchPlayerIds(offset, limit);
-    if (!playerIds.length) {
-      return res.status(200).json({
-        success: true,
-        history: historyRequested,
-        start_date: startDate ?? null,
-        snapshot_date: effectiveEndDate,
-        processed: 0,
-        snapshots_processed: 0,
-        computed_bands: 0,
-        updated_bands: 0,
-        summaries: [],
-        errors: []
-      });
+    await assertTrendBandPrerequisites();
+    const offsets = runAll ? [offset] : [offset];
+    if (runAll) {
+      for (let nextOffset = offset + limit; ; nextOffset += limit) {
+        offsets.push(nextOffset);
+        const probe = await fetchPlayerIds(nextOffset, 1);
+        if (!probe.length) {
+          offsets.pop();
+          break;
+        }
+      }
     }
 
     const summaries: Summary[] = [];
     const errors: ErrorSummary[] = [];
     let totalBands = 0;
     let totalSnapshots = 0;
+    let totalPlayers = 0;
+    let processedBatches = 0;
 
-    for (const playerId of playerIds) {
-      try {
-        if (historyRequested) {
-          const result = await computeAndStoreTrendBandHistory({
+    for (const currentOffset of offsets) {
+      const playerIds = await fetchPlayerIds(currentOffset, limit);
+      if (!playerIds.length) {
+        continue;
+      }
+
+      processedBatches += 1;
+      totalPlayers += playerIds.length;
+
+      for (const playerId of playerIds) {
+        try {
+          if (historyRequested) {
+            const result = await computeAndStoreTrendBandHistory({
+              playerId,
+              metrics,
+              windows,
+              startDate,
+              endDate: effectiveEndDate,
+              gameLimit,
+              dry
+            });
+            totalBands += result.totalRows;
+            totalSnapshots += result.snapshots;
+            const summary: Summary = {
+              player_id: playerId,
+              bands_computed: result.totalRows
+            };
+            if (result.snapshots) {
+              summary.snapshots = result.snapshots;
+            }
+            if (result.seasonIds.length) {
+              summary.season_ids = result.seasonIds;
+            }
+            summaries.push(summary);
+          } else {
+            const { rows } = await computeAndStoreTrendBands({
+              playerId,
+              snapshotDate: effectiveEndDate,
+              metrics,
+              windows,
+              gameLimit,
+              dry
+            });
+            totalBands += rows.length;
+            summaries.push({ player_id: playerId, bands_computed: rows.length });
+          }
+        } catch (error: any) {
+          // eslint-disable-next-line no-console
+          console.error(
+            "trend-band bulk error",
             playerId,
-            metrics,
-            windows,
-            startDate,
-            endDate: effectiveEndDate,
-            gameLimit,
-            dry
-          });
-          totalBands += result.totalRows;
-          totalSnapshots += result.snapshots;
-          const summary: Summary = {
+            error?.message ?? error
+          );
+          errors.push({
             player_id: playerId,
-            bands_computed: result.totalRows
-          };
-          if (result.snapshots) {
-            summary.snapshots = result.snapshots;
-          }
-          if (result.seasonIds.length) {
-            summary.season_ids = result.seasonIds;
-          }
-          summaries.push(summary);
-        } else {
-          const { rows } = await computeAndStoreTrendBands({
-            playerId,
-            snapshotDate: effectiveEndDate,
-            metrics,
-            windows,
-            gameLimit,
-            dry
+            message: error?.message ?? String(error)
           });
-          totalBands += rows.length;
-          summaries.push({ player_id: playerId, bands_computed: rows.length });
         }
-      } catch (error: any) {
-        // eslint-disable-next-line no-console
-        console.error(
-          "trend-band bulk error",
-          playerId,
-          error?.message ?? error
-        );
-        errors.push({
-          player_id: playerId,
-          message: error?.message ?? String(error)
-        });
       }
     }
 
-    return res.status(200).json({
+    if (!totalPlayers) {
+      return res.status(200).json(withTiming({
+        success: true,
+        history: historyRequested,
+        start_date: startDate ?? null,
+        snapshot_date: effectiveEndDate,
+        run_all: runAll,
+        processed: 0,
+        batches_processed: 0,
+        snapshots_processed: 0,
+        computed_bands: 0,
+        updated_bands: 0,
+        summaries: [],
+        errors: []
+      }));
+    }
+
+    return res.status(200).json(withTiming({
       success: true,
       history: historyRequested,
       start_date: startDate ?? null,
       snapshot_date: effectiveEndDate,
       dry_run: dry,
-      processed: playerIds.length,
+      run_all: runAll,
+      processed: totalPlayers,
+      batches_processed: processedBatches,
       snapshots_processed: totalSnapshots,
       computed_bands: totalBands,
       updated_bands: dry ? 0 : totalBands,
       summaries,
       errors
-    });
+    }));
   } catch (error: any) {
+    if (isSustainabilityDependencyError(error)) {
+      return res
+        .status(error.statusCode)
+        .json(withTiming({
+          success: false,
+          message: error.issue.message,
+          prerequisite: error.issue,
+          dependencyError: {
+            kind: "dependency_error",
+            source: "unknown",
+            classification: "structured_upstream_error",
+            message: error.issue.message,
+            detail: error.issue.detail,
+            htmlLike: false
+          }
+        }));
+    }
+    const dependencyError = normalizeDependencyError(error);
     // eslint-disable-next-line no-console
     console.error("rebuild-trend-bands error", error?.message ?? error);
     return res
       .status(500)
-      .json({ success: false, message: error?.message ?? String(error) });
+      .json(withTiming({
+        success: false,
+        message: dependencyError.message,
+        dependencyError
+      }));
   }
 }
 

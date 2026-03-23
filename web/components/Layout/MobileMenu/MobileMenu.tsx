@@ -3,7 +3,7 @@ import { animated, useTransition } from "@react-spring/web";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import Image from "next/image";
-import supabase from "lib/supabase";
+import publicSupabase from "lib/supabase/public-client";
 
 import SocialMedias from "components/SocialMedias";
 
@@ -129,7 +129,7 @@ function MobileMenu({ onItemClick, visible }: MobileMenuProps) {
     setIsSearching(true);
     const searchTimeout = setTimeout(async () => {
       try {
-        const { data } = await supabase
+        const { data } = await publicSupabase
           .from("players")
           .select("id, fullName, image_url, team_id")
           .ilike("fullName", `%${searchQuery}%`)

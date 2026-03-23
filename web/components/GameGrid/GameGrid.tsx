@@ -144,8 +144,6 @@ function GameGridInternal({
     dates[0]
   );
 
-  console.log("Current Season ID:", currentSeasonId); // Debugging line
-
   const {
     teamSummaries,
     loading: summaryLoading,
@@ -471,11 +469,13 @@ function GameGridInternal({
         if (!team) {
           console.warn(`Team data not found for teamId: ${teamData.teamId}`);
         }
+        const teamAbbreviation = team?.abbreviation ?? String(teamData.teamId);
+        const canonicalTeamId = team?.id ?? teamData.teamId;
 
         if (!teamMap[teamData.teamId]) {
           teamMap[teamData.teamId] = {
-            teamAbbreviation: team.abbreviation,
-            teamId: team.id,
+            teamAbbreviation,
+            teamId: canonicalTeamId,
             weeks: [],
             totals: {
               opponents: [],
@@ -539,11 +539,13 @@ function GameGridInternal({
       if (!team) {
         console.warn(`Team data not found for teamId: ${teamData.teamId}`);
       }
+      const teamAbbreviation = team?.abbreviation ?? String(teamData.teamId);
+      const canonicalTeamId = team?.id ?? teamData.teamId;
 
       if (!teamMap[teamData.teamId]) {
         teamMap[teamData.teamId] = {
-          teamAbbreviation: team.abbreviation,
-          teamId: team.id,
+          teamAbbreviation,
+          teamId: canonicalTeamId,
           weeks: [],
           totals: {
             opponents: [],
@@ -646,7 +648,7 @@ function GameGridInternal({
 
   // Debugging: Log teamDataWithAverages
   useEffect(() => {
-    if (!fourWeekLoading) {
+    if (!fourWeekLoading && process.env.NODE_ENV === "development") {
       console.log("Team Data with Averages:", teamDataWithAverages);
     }
   }, [fourWeekLoading, teamDataWithAverages]);

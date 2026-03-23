@@ -1,37 +1,45 @@
 // web/pages/api/v1/sustainability/rebuild-window-z.ts
 
 import { NextApiRequest, NextApiResponse } from "next";
+import { normalizeDependencyError } from "lib/cron/normalizeDependencyError";
+import { CronTimedResponse, withCronJobTiming } from "lib/cron/timingContract";
 import {
   rebuildBetaWindowZForSnapshot,
   loadPlayersForSnapshot,
   ensureWindowTable
 } from "lib/sustainability/windows";
 import { StatCode } from "lib/sustainability/priors";
+import { resolveSeasonId } from "lib/sustainability/resolveSeasonId";
+import {
+  assertWindowZPrerequisites,
+  isSustainabilityDependencyError
+} from "lib/sustainability/dependencyChecks";
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse
+  res: NextApiResponse<CronTimedResponse<Record<string, unknown>>>
 ) {
   const started = Date.now();
+  const withTiming = (body: Record<string, unknown>, endedAt = Date.now()) =>
+    withCronJobTiming(body, started, endedAt);
   try {
-    const season = Number(req.query.season);
+    const season = await resolveSeasonId(req.query.season);
     const snapshot = String(
       req.query.snapshot_date || new Date().toISOString().slice(0, 10)
     );
+    await assertWindowZPrerequisites(season, snapshot);
     const dry = req.query.dry === "1" || req.query.dry === "true";
     const limit = Number(req.query.limit || 250);
     const offset = Number(req.query.offset || 0);
-
-    if (!season || Number.isNaN(season)) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Missing or invalid ?season" });
-    }
+    const runAll =
+      req.query.runAll === "1" ||
+      req.query.runAll === "true" ||
+      req.query.run_all === "1" ||
+      req.query.run_all === "true";
 
     if (!dry) await ensureWindowTable();
 
     const { ids, posMap } = await loadPlayersForSnapshot(snapshot);
-    const batch = ids.slice(offset, offset + limit);
     const windows = [
       { code: "l3", n: 3 },
       { code: "l5", n: 5 },
@@ -51,32 +59,81 @@ export default async function handler(
       if (!statCodes.length) statCodes = undefined; // fallback to all
     }
 
-    const { count, sample } = await rebuildBetaWindowZForSnapshot(
-      season,
-      snapshot,
-      batch,
-      posMap,
-      windows as any,
-      statCodes || ["shp", "oishp", "ipp", "ppshp"],
-      dry
-    );
+    const statList = statCodes || ["shp", "oishp", "ipp", "ppshp"];
+    const batchOffsets = runAll
+      ? Array.from(
+          { length: Math.ceil(ids.length / limit) },
+          (_, index) => index * limit
+        )
+      : [offset];
+
+    let totalCount = 0;
+    let totalPlayers = 0;
+    let sample: any[] = [];
+
+    for (const batchOffset of batchOffsets) {
+      const batch = ids.slice(batchOffset, batchOffset + limit);
+      if (!batch.length) {
+        continue;
+      }
+
+      const { count, sample: batchSample } = await rebuildBetaWindowZForSnapshot(
+        season,
+        snapshot,
+        batch,
+        posMap,
+        windows as any,
+        statList,
+        dry
+      );
+
+      totalCount += count;
+      totalPlayers += batch.length;
+      if (!sample.length && batchSample?.length) {
+        sample = batchSample;
+      }
+    }
 
     const duration_s = ((Date.now() - started) / 1000).toFixed(2);
-    return res.status(200).json({
+    return res.status(200).json(withTiming({
       success: true,
       season,
       snapshot_date: snapshot,
       dry,
-      processed_players: batch.length,
-      rows_upserted_or_built: count,
+      run_all: runAll,
+      processed_players: totalPlayers,
+      rows_upserted_or_built: totalCount,
+      batches_processed: batchOffsets.length,
       sample,
       duration_s
-    });
+    }));
   } catch (e: any) {
+    if (isSustainabilityDependencyError(e)) {
+      return res
+        .status(e.statusCode)
+        .json(withTiming({
+          success: false,
+          message: e.issue.message,
+          prerequisite: e.issue,
+          dependencyError: {
+            kind: "dependency_error",
+            source: "unknown",
+            classification: "structured_upstream_error",
+            message: e.issue.message,
+            detail: e.issue.detail,
+            htmlLike: false
+          }
+        }));
+    }
+    const dependencyError = normalizeDependencyError(e);
     // eslint-disable-next-line no-console
     console.error("rebuild-window-z error", e?.message || e);
     return res
       .status(500)
-      .json({ success: false, message: e?.message || String(e) });
+      .json(withTiming({
+        success: false,
+        message: dependencyError.message,
+        dependencyError
+      }));
   }
 }

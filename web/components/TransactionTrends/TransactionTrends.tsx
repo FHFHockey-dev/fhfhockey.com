@@ -3,6 +3,7 @@ import styles from "./TransactionTrends.module.scss";
 import OwnershipSparkline, {
   type OwnershipSparkPoint
 } from "./OwnershipSparkline";
+import PanelStatus from "components/common/PanelStatus";
 type TrendPlayer = {
   playerKey: string;
   name: string;
@@ -36,6 +37,34 @@ interface ApiResponse {
 
 const WINDOWS = [1, 3, 5, 10];
 
+function summarizeTransactionTrendError(status: number, body: string): string {
+  if (status === 503) {
+    return "Transaction trend data is temporarily unavailable.";
+  }
+
+  if (
+    body.includes("<!DOCTYPE html") ||
+    body.includes("<html") ||
+    body.includes("Connection timed out")
+  ) {
+    return "Transaction trend data is temporarily unavailable.";
+  }
+
+  try {
+    const parsed = JSON.parse(body) as { error?: unknown; message?: unknown };
+    if (typeof parsed.error === "string" && parsed.error.trim()) {
+      return parsed.error;
+    }
+    if (typeof parsed.message === "string" && parsed.message.trim()) {
+      return parsed.message;
+    }
+  } catch {
+    // Fall through to generic message.
+  }
+
+  return `Transaction trend request failed (${status}).`;
+}
+
 export default function TransactionTrends() {
   // Default to 3-day window per request
   const [windowDays, setWindowDays] = useState(3);
@@ -63,8 +92,11 @@ export default function TransactionTrends() {
         const res = await fetch(
           `/api/v1/transactions/ownership-trends?${params.toString()}`
         );
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const json: ApiResponse = await res.json();
+        const body = await res.text();
+        if (!res.ok) {
+          throw new Error(summarizeTransactionTrendError(res.status, body));
+        }
+        const json: ApiResponse = JSON.parse(body);
         if (!active) return;
         if (!json.success) throw new Error(json.error || "Unknown error");
         setData(json);
@@ -132,9 +164,19 @@ export default function TransactionTrends() {
         </div>
       </div>
       {loading && !data && (
-        <div className={styles.loading}>Loading ownership movement…</div>
+        <PanelStatus
+          state="loading"
+          message="Loading ownership movement..."
+          className={styles.statusPanel}
+        />
       )}
-      {error && <div className={styles.errorMsg}>{error}</div>}
+      {error && !loading && (
+        <PanelStatus
+          state="error"
+          message={error}
+          className={styles.statusPanel}
+        />
+      )}
       {data && (
         <>
           <div className={`${styles.tablesWrapper} ${styles.desktopTables}`}>

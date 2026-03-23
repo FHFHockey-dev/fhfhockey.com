@@ -53,6 +53,12 @@
  */
 
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import {
+  DEFAULT_MAX_PENDING_URLS_PER_RUN,
+  GOALIE_URLS_PER_DATE,
+  NST_GOALIES_REQUEST_INTERVAL_MS,
+  resolveGoalieNstRequestPlan
+} from "lib/cron/nstBurstPlans";
 import type { NextApiRequest, NextApiResponse } from "next";
 import axios from "axios";
 import * as cheerio from "cheerio";
@@ -73,10 +79,7 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
 
 // Delay interval between requests in milliseconds
-const REQUEST_INTERVAL_MS = 22000; // 22 seconds
-
 const BASE_URL = "https://www.naturalstattrick.com/playerteams.php";
-const DEFAULT_MAX_PENDING_URLS_PER_RUN = 8;
 
 // --- Header Mappings for Goalie Data ---
 const goalieCountsHeaderMap: Record<string, string> = {
@@ -591,12 +594,15 @@ async function main(options: {
 
     const maxPendingUrls =
       options.maxPendingUrls ?? DEFAULT_MAX_PENDING_URLS_PER_RUN;
-    const requestIntervalMs =
-      options.requestIntervalMs ??
-      (datesToScrape.length <= 2 ? 0 : REQUEST_INTERVAL_MS);
+    const nstRequestPlan = resolveGoalieNstRequestPlan({
+      queuedDates: datesToScrape.length,
+      totalQueuedUrls: urlsQueue.length,
+      maxPendingUrls,
+      explicitRequestIntervalMs: options.requestIntervalMs
+    });
 
     const result = await processUrlsSequentially(urlsQueue, {
-      requestIntervalMs,
+      requestIntervalMs: nstRequestPlan.requestIntervalMs,
       maxPendingUrls
     });
 
@@ -616,9 +622,10 @@ async function main(options: {
       totalQueuedUrls: urlsQueue.length,
       stoppedEarly: result.stoppedEarly,
       datesQueued: datesToScrape.length,
-      requestIntervalMs,
+      requestIntervalMs: nstRequestPlan.requestIntervalMs,
       maxPendingUrls,
-      nextStartDate: datesToScrape[0] ?? null
+      nextStartDate: datesToScrape[0] ?? null,
+      nstRequestPlan
     };
   } catch (error: any) {
     console.error("An error occurred:", error.message);

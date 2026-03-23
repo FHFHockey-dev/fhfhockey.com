@@ -1,6 +1,11 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "lib/supabase/database-generated.types";
+import { normalizeDependencyError } from "lib/cron/normalizeDependencyError";
+import {
+  assertPredictionsSkoPrerequisites,
+  isPredictionsSkoDependencyError
+} from "lib/ml/predictionsSkoDependencyChecks";
 import serviceRoleClient from "lib/supabase/server";
 
 /**
@@ -269,6 +274,11 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         ? seasonCutoff
         : lookbackStartIso;
 
+    await assertPredictionsSkoPrerequisites({
+      asOfDate,
+      startDate: effectiveStartIso
+    });
+
     let playerIds: number[];
     if (playerIdsFilter?.length) {
       playerIds = playerIdsFilter;
@@ -409,11 +419,28 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       ...(debug ? { timings: phases } : {})
     });
   } catch (error: any) {
+    if (isPredictionsSkoDependencyError(error)) {
+      return res.status(error.statusCode).json({
+        success: false,
+        message: error.issue.message,
+        prerequisite: error.issue,
+        dependencyError: {
+          kind: "dependency_error",
+          source: "unknown",
+          classification: "structured_upstream_error",
+          message: error.issue.message,
+          detail: error.issue.detail,
+          htmlLike: false
+        }
+      });
+    }
+    const dependencyError = normalizeDependencyError(error);
     // eslint-disable-next-line no-console
     console.error("update-predictions-sko error", error?.message ?? error);
     return res.status(500).json({
       success: false,
-      message: error?.message ?? "Unexpected error"
+      message: dependencyError.message,
+      dependencyError
     });
   }
 };

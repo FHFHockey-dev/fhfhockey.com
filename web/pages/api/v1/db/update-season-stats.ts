@@ -1,6 +1,7 @@
 // pages/api/v1/db/update-stats-by-season.ts
 
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import { normalizeDependencyError } from "lib/cron/normalizeDependencyError";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import supabase from "lib/supabase";
@@ -439,13 +440,15 @@ async function handler(
     });
   } catch (e: any) {
     // Catch errors from pagination loop
+    const dependencyError = normalizeDependencyError(e);
     console.error(
-      `Unhandled error during season update for ${seasonId}: ${e.message}`,
+      `Unhandled error during season update for ${seasonId}: ${dependencyError.message}`,
       e.stack
     );
     return res.status(500).json({
-      message: `An unexpected error occurred: ${e.message}`,
-      success: false
+      message: `An unexpected error occurred: ${dependencyError.message}`,
+      success: false,
+      dependencyError
     });
   }
 }

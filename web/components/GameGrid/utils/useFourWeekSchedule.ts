@@ -5,10 +5,8 @@ import { getSchedule, getTeams } from "lib/NHL/client";
 import { format, nextMonday, parseISO } from "date-fns";
 import {
   WeekData,
-  EXTENDED_DAY_ABBREVIATION,
   ExtendedWeekData
 } from "lib/NHL/types";
-import supabase from "lib/supabase";
 import {
   calcTotalOffNights,
   calcWeightedOffNights,
@@ -57,6 +55,13 @@ export default function useFourWeekSchedule(
 
         for (let week = 1; week <= weeksToFetch; week++) {
           const schedule = await getSchedule(currentStart);
+          if (
+            !schedule ||
+            !schedule.data ||
+            !Array.isArray(schedule.numGamesPerDay)
+          ) {
+            throw new Error("Schedule payload was missing expected shape.");
+          }
 
           // If extended is true and it's the first week, append the next week's games
           if (extended && week === 1) {
@@ -91,61 +96,6 @@ export default function useFourWeekSchedule(
               paddedTeams[team.id] = {};
             }
           });
-
-          // Collect all game IDs for fetching win odds
-          const gameIds: number[] = [];
-          for (const teamData of Object.values(paddedTeams) as WeekData[]) {
-            for (const day of Object.keys(
-              teamData
-            ) as EXTENDED_DAY_ABBREVIATION[]) {
-              const game = teamData[day];
-              if (game && game.id) {
-                gameIds.push(game.id);
-              }
-            }
-          }
-
-          // Fetch win odds from Supabase
-          const { data: oddsData, error } = await supabase
-            .from("expected_goals")
-            .select(
-              "game_id, home_win_odds, away_win_odds, home_api_win_odds, away_api_win_odds"
-            )
-            .in("game_id", gameIds);
-
-          if (error) {
-            console.error("Error fetching win odds data:", error);
-          }
-
-          // Map win odds by game_id for easy access
-          const oddsByGameId = (oddsData || []).reduce((acc, item) => {
-            acc[item.game_id] = item;
-            return acc;
-          }, {} as Record<number, any>);
-
-          // Assign win odds to each game in the schedule
-          for (const teamData of Object.values(paddedTeams) as WeekData[]) {
-            for (const day of Object.keys(
-              teamData
-            ) as EXTENDED_DAY_ABBREVIATION[]) {
-              const game = teamData[day];
-              if (game && game.id) {
-                const odds = oddsByGameId[game.id];
-                if (odds) {
-                  game.homeTeam.winOdds = odds.home_win_odds;
-                  game.awayTeam.winOdds = odds.away_win_odds;
-                  game.homeTeam.apiWinOdds = odds.home_api_win_odds;
-                  game.awayTeam.apiWinOdds = odds.away_api_win_odds;
-                } else {
-                  // Set default values if odds are missing
-                  game.homeTeam.winOdds = null;
-                  game.awayTeam.winOdds = null;
-                  game.homeTeam.apiWinOdds = null;
-                  game.awayTeam.apiWinOdds = null;
-                }
-              }
-            }
-          }
 
           // Aggregate the schedule data
           const result = Object.entries(paddedTeams).map(
@@ -221,6 +171,8 @@ export default function useFourWeekSchedule(
       } catch (error) {
         console.error("Error fetching schedules:", error);
         if (!ignore) {
+          setScheduleArray([]);
+          setNumGamesPerDay([]);
           setLoading(false);
         }
       }

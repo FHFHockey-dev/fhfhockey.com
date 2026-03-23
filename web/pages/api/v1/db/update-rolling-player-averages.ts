@@ -81,6 +81,7 @@ type ResponseBody = {
 
 type FullRefreshMode = "rpc_truncate" | "overwrite_only" | "delete";
 type EndpointPhase = "request" | "execute" | "response";
+const DEFAULT_INCREMENTAL_LOOKBACK_DAYS = 14;
 
 function logEndpointPhase(args: {
   phase: EndpointPhase;
@@ -123,6 +124,48 @@ function parseExecutionProfile(
   const value = parseQueryString(param);
   if (isRollingExecutionProfile(value)) return value;
   return undefined;
+}
+
+function getRequestParam(
+  req: NextApiRequest,
+  key: string
+): string | string[] | undefined {
+  const queryValue = req.query[key];
+  if (queryValue !== undefined) {
+    return queryValue;
+  }
+
+  const body = req.body;
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return undefined;
+  }
+
+  const value = (body as Record<string, unknown>)[key];
+  if (typeof value === "string") return value;
+  if (
+    Array.isArray(value) &&
+    value.every((entry) => typeof entry === "string")
+  ) {
+    return value as string[];
+  }
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+  return undefined;
+}
+
+function isoDateOnly(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
+function resolveImplicitDailyWindow(): { startDate: string; endDate: string } {
+  const end = new Date();
+  const start = new Date(end);
+  start.setUTCDate(start.getUTCDate() - DEFAULT_INCREMENTAL_LOOKBACK_DAYS);
+  return {
+    startDate: isoDateOnly(start),
+    endDate: isoDateOnly(end)
+  };
 }
 
 function formatDurationLabel(durationMs: number) {
@@ -185,28 +228,44 @@ async function handler(
   }
 
   try {
-    const playerId = parseQueryNumber(req.query.playerId);
-    const season = parseQueryNumber(req.query.season);
-    const startDate = parseQueryString(req.query.startDate);
-    const endDate = parseQueryString(req.query.endDate);
-    const resumeFrom = parseQueryNumber(req.query.resumeFrom);
-    const maxPlayers = parseQueryPositiveInt(req.query.maxPlayers);
-    const fullRefresh = parseQueryBoolean(req.query.fullRefresh);
-    const fullRefreshMode = parseFullRefreshMode(req.query.fullRefreshMode);
-    const deleteChunkSize = parseQueryPositiveInt(req.query.deleteChunkSize);
-    const playerConcurrency = parseQueryPositiveInt(req.query.playerConcurrency);
-    const upsertBatchSize = parseQueryPositiveInt(req.query.upsertBatchSize);
-    const upsertConcurrency = parseQueryPositiveInt(req.query.upsertConcurrency);
-    const skipDiagnostics = parseQueryBoolean(req.query.skipDiagnostics);
-    const dryRunUpsert = parseQueryBoolean(req.query.dryRunUpsert);
-    const debugUpsertPayload = parseQueryBoolean(req.query.debugUpsertPayload);
-    const fastMode = parseQueryBoolean(req.query.fastMode);
+    const playerId = parseQueryNumber(getRequestParam(req, "playerId"));
+    const season = parseQueryNumber(getRequestParam(req, "season"));
+    const requestedStartDate = parseQueryString(getRequestParam(req, "startDate"));
+    const requestedEndDate = parseQueryString(getRequestParam(req, "endDate"));
+    const resumeFrom = parseQueryNumber(getRequestParam(req, "resumeFrom"));
+    const maxPlayers = parseQueryPositiveInt(getRequestParam(req, "maxPlayers"));
+    const fullRefresh = parseQueryBoolean(getRequestParam(req, "fullRefresh"));
+    const fullRefreshMode = parseFullRefreshMode(getRequestParam(req, "fullRefreshMode"));
+    const deleteChunkSize = parseQueryPositiveInt(getRequestParam(req, "deleteChunkSize"));
+    const playerConcurrency = parseQueryPositiveInt(getRequestParam(req, "playerConcurrency"));
+    const upsertBatchSize = parseQueryPositiveInt(getRequestParam(req, "upsertBatchSize"));
+    const upsertConcurrency = parseQueryPositiveInt(getRequestParam(req, "upsertConcurrency"));
+    const skipDiagnostics = parseQueryBoolean(getRequestParam(req, "skipDiagnostics"));
+    const dryRunUpsert = parseQueryBoolean(getRequestParam(req, "dryRunUpsert"));
+    const debugUpsertPayload = parseQueryBoolean(getRequestParam(req, "debugUpsertPayload"));
+    const fastMode = parseQueryBoolean(getRequestParam(req, "fastMode"));
+    const explicitExecutionProfile = parseExecutionProfile(
+      getRequestParam(req, "executionProfile")
+    );
+    const shouldApplyImplicitDailyWindow =
+      playerId === undefined &&
+      season === undefined &&
+      requestedStartDate === undefined &&
+      requestedEndDate === undefined &&
+      resumeFrom === undefined &&
+      !fullRefresh &&
+      explicitExecutionProfile == null;
+    const implicitDailyWindow = shouldApplyImplicitDailyWindow
+      ? resolveImplicitDailyWindow()
+      : null;
+    const startDate = requestedStartDate ?? implicitDailyWindow?.startDate;
+    const endDate = requestedEndDate ?? implicitDailyWindow?.endDate;
     const executionProfile =
-      parseExecutionProfile(req.query.executionProfile) ??
+      explicitExecutionProfile ??
       (playerId === undefined &&
       season === undefined &&
-      startDate === undefined &&
-      endDate === undefined &&
+      requestedStartDate === undefined &&
+      requestedEndDate === undefined &&
       !fullRefresh
         ? "daily_incremental"
         : fastMode
@@ -249,6 +308,8 @@ async function handler(
         fullRefresh,
         fullRefreshMode,
         executionProfile,
+        implicitDailyWindowApplied: implicitDailyWindow != null,
+        implicitDailyWindow,
         playerConcurrency: resolvedPlayerConcurrency,
         upsertBatchSize: resolvedUpsertBatchSize,
         upsertConcurrency: resolvedUpsertConcurrency,
@@ -273,6 +334,8 @@ async function handler(
         fullRefresh,
         fullRefreshMode,
         executionProfile,
+        implicitDailyWindowApplied: implicitDailyWindow != null,
+        implicitDailyWindow,
         playerConcurrency: resolvedPlayerConcurrency,
         upsertBatchSize: resolvedUpsertBatchSize,
         upsertConcurrency: resolvedUpsertConcurrency,

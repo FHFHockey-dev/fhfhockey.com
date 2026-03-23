@@ -1,4 +1,5 @@
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import { normalizeDependencyError } from "lib/cron/normalizeDependencyError";
 import { NextApiRequest, NextApiResponse } from "next";
 import supabase from "lib/supabase"; // Adjust path as needed
 import { PostgrestError } from "@supabase/supabase-js"; // Import for type safety
@@ -1137,10 +1138,12 @@ async function handler(
     const durationSec = ((Date.now() - startTime) / 1000).toFixed(2);
     console.error("Error calculating player averages:", error);
     console.error("Error details:", error.message, error.stack);
+    const dependencyError = normalizeDependencyError(error);
     return res.status(500).json({
       success: false,
-      message: error.message || "An unexpected error occurred.",
+      message: dependencyError.message,
       duration: `${durationSec} s`,
+      dependencyError,
       ...(process.env.NODE_ENV === "development" && { stack: error.stack })
     });
   }

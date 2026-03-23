@@ -466,6 +466,7 @@ async function fetchActiveRosterSkaterIdsForTeamSeason(
     .select("playerId")
     .eq("teamId", teamId)
     .eq("seasonId", seasonId)
+    .eq("is_current", true)
     .order("playerId", { ascending: true })
     .limit(Math.max(1, Math.floor(maxPlayers)));
   if (error) throw error;

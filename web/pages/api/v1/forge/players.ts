@@ -29,7 +29,8 @@ async function fetchActiveRosterPlayerIdSet(
   const { data, error } = await supabase
     .from("rosters")
     .select("playerId")
-    .eq("seasonId", seasonId);
+    .eq("seasonId", seasonId)
+    .eq("is_current", true);
   if (error) throw error;
   return new Set(
     ((data ?? []) as Array<any>)

@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import { normalizeDependencyError } from "lib/cron/normalizeDependencyError";
 import { NextApiRequest, NextApiResponse } from "next";
 import supabase from "lib/supabase";
 import Fetch from "lib/cors-fetch";
@@ -1801,9 +1802,11 @@ async function handler(
       });
     }
   } catch (e: any) {
+    const dependencyError = normalizeDependencyError(e);
     res.status(400).json({
-      message: "Failed to process request. Reason: " + e.message,
-      success: false
+      message: "Failed to process request. Reason: " + dependencyError.message,
+      success: false,
+      dependencyError
     });
   }
 }

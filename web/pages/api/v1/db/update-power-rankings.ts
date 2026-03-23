@@ -3,12 +3,27 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { createRequire } from "module";
 import path from "path";
 
-async function loadLegacyMain() {
+type LegacyPowerRankingsMain = () => Promise<void>;
+
+async function defaultLoadLegacyMain(): Promise<LegacyPowerRankingsMain> {
   const require = createRequire(path.join(process.cwd(), "package.json"));
   const { main } = require(
     path.join(process.cwd(), "lib/supabase/Upserts/fetchPowerRankings.js")
   );
-  return main as () => Promise<void>;
+  return main as LegacyPowerRankingsMain;
+}
+
+let loadLegacyMainImpl: () => Promise<LegacyPowerRankingsMain> =
+  defaultLoadLegacyMain;
+
+export async function loadLegacyMain() {
+  return loadLegacyMainImpl();
+}
+
+export function setLegacyMainLoaderForTests(
+  loader: (() => Promise<LegacyPowerRankingsMain>) | null
+) {
+  loadLegacyMainImpl = loader ?? defaultLoadLegacyMain;
 }
 
 /**

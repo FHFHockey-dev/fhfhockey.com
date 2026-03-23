@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import supabase from "lib/supabase"; // Assuming lib/supabase is configured
+import publicSupabase from "lib/supabase/public-client";
 import styles from "./PlayerPickupTable.module.scss";
 import Image from "next/image";
 import clsx from "clsx";
 import useCurrentSeason from "hooks/useCurrentSeason";
 import { teamsInfo } from "lib/teamsInfo";
+import PanelStatus from "components/common/PanelStatus";
 
 // TO DO
 // integrate week score, dynamic. if toggle turns off a day, update score
@@ -212,6 +213,22 @@ const getLatestOwnershipValue = (timelineRaw: unknown): number | null => {
 
   return latestValue;
 };
+
+function summarizePlayerPickupError(error: unknown): string {
+  const message =
+    error instanceof Error ? error.message : typeof error === "string" ? error : "";
+
+  if (
+    message.includes("<!DOCTYPE html") ||
+    message.includes("<html") ||
+    message.includes("Connection timed out") ||
+    message.includes("Failed to fetch")
+  ) {
+    return "Best available player data is temporarily unavailable.";
+  }
+
+  return message || "Best available player data is temporarily unavailable.";
+}
 
 // ---------------------------
 // Default Filter Settings & Props
@@ -1631,6 +1648,7 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
     useState<Record<string, boolean>>(defaultPositions); // State for positions
   const [playersData, setPlayersData] = useState<UnifiedPlayerData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [sortKey, setSortKey] = useState<SortKey>("composite");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
@@ -1669,12 +1687,18 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
 
   // --- Data Fetching ---
   useEffect(() => {
-    if (yahooSeasonYear === null) return;
+    if (yahooSeasonYear === null) {
+      setLoading(false);
+      setLoadError(null);
+      setPlayersData([]);
+      return;
+    }
 
     let isCancelled = false;
 
     const fetchAllData = async () => {
       setLoading(true);
+      setLoadError(null);
       const allData: UnifiedPlayerData[] = [];
       const supabasePageSize = 1000;
       let from = 0;
@@ -1695,7 +1719,7 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
         let playersFrom = 0;
         while (true) {
           const { data: seasonPlayerRows, error: seasonPlayersError } =
-            await supabase
+            await publicSupabase
               .from("yahoo_players")
               .select(
                 "player_key, player_id, percent_ownership, ownership_timeline"
@@ -1751,7 +1775,7 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
 
         // Query `yahoo_nhl_player_map_mat` with pagination
         while (true) {
-          const { data, error, count } = await supabase
+          const { data, error, count } = await publicSupabase
             .from("yahoo_nhl_player_map_mat")
             .select("*", { count: "exact" })
             .range(from, from + supabasePageSize - 1);
@@ -1998,11 +2022,13 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
 
         if (!isCancelled) {
           setPlayersData(allData);
+          setLoadError(null);
         }
       } catch (error) {
         console.error("Failed to load player data:", error);
         if (!isCancelled) {
           setPlayersData([]);
+          setLoadError(summarizePlayerPickupError(error));
         }
       } finally {
         if (!isCancelled) {
@@ -2018,7 +2044,10 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
 
   // Fetch latest team games played for the season (used to compute GP%).
   useEffect(() => {
-    if (yahooSeasonYear === null) return;
+    if (yahooSeasonYear === null) {
+      setTeamGamesPlayedByAbbr({});
+      return;
+    }
 
     let isCancelled = false;
     const nhlSeasonIdString = getNhlSeasonIdFromYahooSeasonYear(yahooSeasonYear);
@@ -2027,7 +2056,7 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
 
     const fetchTeamGamesPlayed = async () => {
       try {
-        const { data: latest, error: latestError } = await supabase
+        const { data: latest, error: latestError } = await publicSupabase
           .from("nhl_standings_details")
           .select("date")
           .eq("season_id", nhlSeasonIdNumber)
@@ -2042,7 +2071,7 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
           return;
         }
 
-        const { data: rows, error: rowsError } = await supabase
+        const { data: rows, error: rowsError } = await publicSupabase
           .from("nhl_standings_details")
           .select("team_abbrev,games_played")
           .eq("season_id", nhlSeasonIdNumber)
@@ -2079,7 +2108,10 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
 
   // Fetch player games played totals for the season (skaters + goalies).
   useEffect(() => {
-    if (yahooSeasonYear === null) return;
+    if (yahooSeasonYear === null) {
+      setPlayerGamesPlayedById({});
+      return;
+    }
 
     if (playersData.length === 0) {
       setPlayerGamesPlayedById({});
@@ -2115,7 +2147,7 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
         const combined: Record<string, number> = {};
 
         for (const chunk of chunkArray(skaterIds, 500)) {
-          const { data, error } = await supabase
+          const { data, error } = await publicSupabase
             .from("wgo_skater_stats_totals")
             .select("player_id,games_played")
             .eq("season", nhlSeasonIdString)
@@ -2138,7 +2170,7 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
         }
 
         for (const chunk of chunkArray(goalieIds, 500)) {
-          const { data, error } = await supabase
+          const { data, error } = await publicSupabase
             .from("wgo_goalie_stats_totals")
             .select("goalie_id,games_played")
             .eq("season_id", nhlSeasonIdNumber)
@@ -2734,7 +2766,9 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
         )}
 
         {loading ? (
-          <div className={styles.message}>Loading players...</div>
+          <PanelStatus state="loading" message="Loading players..." />
+        ) : loadError ? (
+          <PanelStatus state="error" message={loadError} />
         ) : paginatedPlayers.length === 0 ? (
           <div className={styles.message}>
             No players match the current filters.

@@ -1,10 +1,19 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import { CronTimedResponse, withCronJobTiming } from "lib/cron/timingContract";
 import supabase from "lib/supabase/server";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
+import {
+  parseQueryBoolean,
+  parseQueryPositiveInt,
+  parseQueryString
+} from "lib/api/queryParams";
 
 import { fetchPbpGame, upsertPbpGameAndPlays } from "lib/projections/ingest/pbp";
-import { upsertShiftTotalsForGame } from "lib/projections/ingest/shifts";
+import {
+  upsertShiftTotalsForGame,
+  upsertShiftTotalsForGameFromPbp
+} from "lib/projections/ingest/shifts";
 
 type Result = {
   success: boolean;
@@ -38,17 +47,42 @@ type Result = {
       action: "skipped" | "ingested";
     }>;
   };
-  errors: Array<{ gameId: number; message: string }>;
+  maxGames: number | null;
+  nextGameId: number | null;
+  lastCompletedGameId: number | null;
+  errors: Array<{
+    gameId: number;
+    date: string;
+    stage:
+      | "list_games"
+      | "precheck_pbp"
+      | "precheck_shifts"
+      | "fetch_pbp"
+      | "upsert_pbp"
+      | "upsert_shifts";
+    message: string;
+  }>;
 };
 
 function assertSupabase() {
   if (!supabase) throw new Error("Supabase server client not available");
 }
 
-function getParam(req: NextApiRequest, key: string): string | null {
-  const v = req.query[key];
-  if (typeof v === "string" && v.trim()) return v.trim();
-  return null;
+function getParam(req: NextApiRequest, key: string): string | undefined {
+  const queryValue = parseQueryString(req.query[key]);
+  if (queryValue) return queryValue.trim();
+
+  const body = req.body;
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return undefined;
+  }
+
+  const value = (body as Record<string, unknown>)[key];
+  if (typeof value === "string" && value.trim()) return value.trim();
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+  return undefined;
 }
 
 function parseBooleanParam(value: string | null): boolean {
@@ -112,11 +146,16 @@ async function listGamesInRange(startDate: string, endDate: string) {
   return (data ?? []) as Array<{ id: number; date: string }>;
 }
 
-async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
+async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<CronTimedResponse<Result>>
+) {
   const startedAt = Date.now();
+  const withTiming = (body: Result, endedAt = Date.now()) =>
+    withCronJobTiming(body, startedAt, endedAt);
   if (req.method !== "POST" && req.method !== "GET") {
     res.setHeader("Allow", ["GET", "POST"]);
-    return res.status(405).json({
+    return res.status(405).json(withTiming({
       success: false,
       startDate: "",
       endDate: "",
@@ -139,15 +178,25 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
         alreadyHadPbpOnly: 0,
         alreadyHadShiftTotalsOnly: 0
       },
-      errors: [{ gameId: -1 as any, message: "Method not allowed" }]
-    });
+      maxGames: null,
+      nextGameId: null,
+      lastCompletedGameId: null,
+      errors: [
+        {
+          gameId: -1 as any,
+          date: "",
+          stage: "list_games",
+          message: "Method not allowed"
+        }
+      ]
+    }));
   }
 
   const startDate = getParam(req, "startDate") ?? isoDateOnly(new Date().toISOString());
   const endDate = getParam(req, "endDate") ?? startDate;
   const fullRequestedRange = buildDateRange(startDate, endDate);
   if (fullRequestedRange.length === 0) {
-    return res.status(400).json({
+    return res.status(400).json(withTiming({
       success: false,
       startDate,
       endDate,
@@ -170,16 +219,30 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
         alreadyHadPbpOnly: 0,
         alreadyHadShiftTotalsOnly: 0
       },
-      errors: [{ gameId: -1 as any, message: "Invalid startDate/endDate range" }]
-    });
+      maxGames: null,
+      nextGameId: null,
+      lastCompletedGameId: null,
+      errors: [
+        {
+          gameId: -1 as any,
+          date: "",
+          stage: "list_games",
+          message: "Invalid startDate/endDate range"
+        }
+      ]
+    }));
   }
-  const chunkDays = parseChunkDays(getParam(req, "chunkDays"));
+  const chunkDays = parseChunkDays(getParam(req, "chunkDays") ?? null);
   const resumeFromDate = getParam(req, "resumeFromDate")?.slice(0, 10) ?? null;
-  const force = (getParam(req, "force") ?? "false").toLowerCase() === "true";
-  const debug = (getParam(req, "debug") ?? "false").toLowerCase() === "true";
+  const force = parseQueryBoolean(getParam(req, "force")) ?? false;
+  const debug = parseQueryBoolean(getParam(req, "debug")) ?? false;
   const debugLimit = Number(getParam(req, "debugLimit") ?? 50);
+  const explicitMaxGames = parseQueryPositiveInt(getParam(req, "maxGames"));
+  const maxGames =
+    explicitMaxGames ??
+    (chunkDays === 0 && resumeFromDate == null && !force ? 6 : null);
   const bypassMaxDuration = parseBooleanParam(
-    getParam(req, "bypassMaxDuration")
+    getParam(req, "bypassMaxDuration") ?? null
   );
   const maxDurationMs = Number(getParam(req, "maxDurationMs") ?? 270_000); // safety: 4.5 minutes
   const budgetMs =
@@ -200,7 +263,17 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
       ? fullRangeDates[limitedRangeDates.length] ?? null
       : null;
 
-  const games = await listGamesInRange(effectiveStartDate, effectiveEndDate);
+  const allGames = await listGamesInRange(effectiveStartDate, effectiveEndDate);
+  const games =
+    typeof maxGames === "number" && maxGames > 0
+      ? allGames.slice(0, maxGames)
+      : allGames;
+  const nextGameId =
+    typeof maxGames === "number" &&
+    maxGames > 0 &&
+    allGames.length > games.length
+      ? allGames[games.length]?.id ?? null
+      : null;
 
   const result: Result = {
     success: true,
@@ -214,7 +287,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
     maxDurationMs: bypassMaxDuration
       ? "bypassed"
       : formatDurationMsToMMSS(budgetMs),
-    gamesTotal: games.length,
+    gamesTotal: allGames.length,
     gamesProcessed: 0,
     pbpGamesUpserted: 0,
     pbpPlaysUpserted: 0,
@@ -227,6 +300,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
       alreadyHadPbpOnly: 0,
       alreadyHadShiftTotalsOnly: 0
     },
+    maxGames,
+    nextGameId,
+    lastCompletedGameId: null,
     ...(debug
       ? {
           debug: {
@@ -242,11 +318,20 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
       result.success = false;
       result.timedOut = true;
       result.nextStartDate = g.date;
+      result.nextGameId = g.id;
       break;
     }
+    let stage:
+      | "precheck_pbp"
+      | "precheck_shifts"
+      | "fetch_pbp"
+      | "upsert_pbp"
+      | "upsert_shifts" = "precheck_pbp";
     try {
       const gameId = g.id;
+      stage = "precheck_pbp";
       const pbpExists = force ? false : await hasPbp(gameId);
+      stage = "precheck_shifts";
       const shiftsExist = force ? false : await hasShiftTotals(gameId);
 
       if (pbpExists && shiftsExist) {
@@ -271,10 +356,16 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
       if (pbpExists && !shiftsExist) result.skipReasons.alreadyHadPbpOnly += 1;
       if (!pbpExists && shiftsExist) result.skipReasons.alreadyHadShiftTotalsOnly += 1;
 
+      let sharedPbp: Awaited<ReturnType<typeof fetchPbpGame>> | null = null;
       let pbpPlaysUpserted = 0;
-      if (!pbpExists) {
-        const pbp = await fetchPbpGame(gameId);
-        const up = await upsertPbpGameAndPlays(pbp);
+      if (!pbpExists || !shiftsExist) {
+        stage = "fetch_pbp";
+        sharedPbp = await fetchPbpGame(gameId);
+      }
+
+      if (!pbpExists && sharedPbp) {
+        stage = "upsert_pbp";
+        const up = await upsertPbpGameAndPlays(sharedPbp);
         result.pbpGamesUpserted += 1;
         pbpPlaysUpserted = up.playsUpserted;
         result.pbpPlaysUpserted += pbpPlaysUpserted;
@@ -282,12 +373,16 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
       }
 
       if (!shiftsExist) {
-        const up = await upsertShiftTotalsForGame(gameId);
+        stage = "upsert_shifts";
+        const up = sharedPbp
+          ? await upsertShiftTotalsForGameFromPbp(gameId, sharedPbp)
+          : await upsertShiftTotalsForGame(gameId);
         result.shiftRowsUpserted += up.rowsUpserted;
         result.rowsUpserted += up.rowsUpserted;
       }
 
       result.gamesProcessed += 1;
+      result.lastCompletedGameId = gameId;
 
       if (
         debug &&
@@ -306,15 +401,20 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
       result.success = false;
       result.errors.push({
         gameId: g.id,
+        date: g.date,
+        stage,
         message: (e as any)?.message ?? String(e)
       });
       result.failedRows = result.errors.length;
+      if (result.nextGameId == null) {
+        result.nextGameId = g.id;
+      }
     }
   }
 
   result.failedRows = result.errors.length;
   result.durationMs = formatDurationMsToMMSS(Date.now() - startedAt);
-  return res.status(200).json(result);
+  return res.status(200).json(withTiming(result));
 }
 
 export default withCronJobAudit(handler, {

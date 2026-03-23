@@ -1,4 +1,8 @@
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import {
+  NST_TEAM_DAILY_BURST_INTERVAL_MS,
+  resolveTeamDailyNstRequestPlan
+} from "lib/cron/nstBurstPlans";
 import type { NextApiRequest, NextApiResponse } from "next";
 import axios from "axios";
 import * as cheerio from "cheerio";
@@ -69,9 +73,6 @@ interface DatasetConfig {
   situationLabel: string;
 }
 
-const DEFAULT_REQUEST_INTERVAL_MS = 0;
-const SMALL_MULTI_REQUEST_INTERVAL_MS = 3000;
-const MULTI_DATE_REQUEST_INTERVAL_MS = 30000;
 const NST_BASE_URL = "https://www.naturalstattrick.com/teamtable.php";
 const TIME_ZONE = "America/New_York";
 
@@ -292,7 +293,7 @@ Object.entries(teamNameToAbbreviationMap).forEach(([name, abbr]) => {
 
 const unknownTeams = new Set<string>();
 let lastNstRequestAt = 0;
-let currentRequestIntervalMs = DEFAULT_REQUEST_INTERVAL_MS;
+let currentRequestIntervalMs = NST_TEAM_DAILY_BURST_INTERVAL_MS;
 
 function normalizeHeaderKey(text: string): string {
   return text
@@ -723,12 +724,8 @@ const handler = async (
       });
     }
 
-    currentRequestIntervalMs =
-      targetDates.length <= 1
-        ? DEFAULT_REQUEST_INTERVAL_MS
-        : targetDates.length <= 2
-          ? SMALL_MULTI_REQUEST_INTERVAL_MS
-          : MULTI_DATE_REQUEST_INTERVAL_MS;
+    const nstRequestPlan = resolveTeamDailyNstRequestPlan(targetDates);
+    currentRequestIntervalMs = nstRequestPlan.requestIntervalMs;
 
     const summary = {
       runMode,
@@ -777,6 +774,7 @@ const handler = async (
     return res.status(statusCode).json({
       message: `Processed ${summary.processedDates} day(s); ${summary.skippedDates} skipped.`,
       durationMs: Date.now() - startedAt,
+      nstRequestPlan,
       summary
     });
   } catch (error: any) {

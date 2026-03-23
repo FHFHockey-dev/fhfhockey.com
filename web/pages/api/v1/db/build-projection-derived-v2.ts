@@ -63,8 +63,10 @@ type Result = {
   startDate: string;
   endDate: string;
   chunkDays: number;
+  maxDays: number | null;
   resumeFromDate: string | null;
   nextStartDate: string | null;
+  processedDates: string[];
   durationMs: string;
   timedOut: boolean;
   maxDurationMs: string;
@@ -78,10 +80,23 @@ type Result = {
   errors: string[];
 };
 
-function getParam(req: NextApiRequest, key: string): string | null {
-  const v = req.query[key];
-  if (typeof v === "string" && v.trim()) return v.trim();
-  return null;
+function getParam(req: NextApiRequest, key: string): string | undefined {
+  const queryValue = req.query[key];
+  if (typeof queryValue === "string" && queryValue.trim()) {
+    return queryValue.trim();
+  }
+
+  const body = req.body;
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return undefined;
+  }
+
+  const value = (body as Record<string, unknown>)[key];
+  if (typeof value === "string" && value.trim()) return value.trim();
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+  return undefined;
 }
 
 function parseBooleanParam(value: string | null): boolean {
@@ -98,6 +113,12 @@ function parseChunkDays(value: string | null): number {
   const n = Number(value ?? 0);
   if (!Number.isFinite(n) || n <= 0) return 0;
   return Math.max(1, Math.floor(n));
+}
+
+function parsePositiveInt(value: string | undefined): number | null {
+  const parsed = Number(value ?? 0);
+  if (!Number.isFinite(parsed) || parsed <= 0) return null;
+  return Math.max(1, Math.floor(parsed));
 }
 
 function buildDateRange(start: string, end: string): string[] {
@@ -121,8 +142,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
       startDate: "",
       endDate: "",
       chunkDays: 0,
+      maxDays: null,
       resumeFromDate: null,
       nextStartDate: null,
+      processedDates: [],
       durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
       timedOut: false,
       maxDurationMs: formatDurationMsToMMSS(0),
@@ -140,10 +163,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
   const startDate =
     getParam(req, "startDate") ?? isoDateOnly(new Date().toISOString());
   const endDate = getParam(req, "endDate") ?? startDate;
-  const chunkDays = parseChunkDays(getParam(req, "chunkDays"));
+  const chunkDays = parseChunkDays(getParam(req, "chunkDays") ?? null);
+  const explicitMaxDays = parsePositiveInt(getParam(req, "maxDays"));
+  const maxDays =
+    explicitMaxDays ??
+    (chunkDays === 0 && getParam(req, "resumeFromDate") == null ? 3 : null);
   const resumeFromDate = getParam(req, "resumeFromDate")?.slice(0, 10) ?? null;
   const bypassMaxDuration = parseBooleanParam(
-    getParam(req, "bypassMaxDuration")
+    getParam(req, "bypassMaxDuration") ?? null
   );
   const maxDurationMs = Number(getParam(req, "maxDurationMs") ?? 270_000);
   const budgetMs =
@@ -154,12 +181,16 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
       ? resumeFromDate
       : startDate;
   const fullRangeDates = buildDateRange(effectiveStartDate, endDate);
-  const limitedRangeDates =
+  const chunkLimitedRangeDates =
     chunkDays > 0 ? fullRangeDates.slice(0, chunkDays) : fullRangeDates;
+  const limitedRangeDates =
+    maxDays != null
+      ? chunkLimitedRangeDates.slice(0, maxDays)
+      : chunkLimitedRangeDates;
   const effectiveEndDate =
     limitedRangeDates[limitedRangeDates.length - 1] ?? effectiveStartDate;
   const chunkNextStartDate =
-    chunkDays > 0 && fullRangeDates.length > limitedRangeDates.length
+    fullRangeDates.length > limitedRangeDates.length
       ? fullRangeDates[limitedRangeDates.length] ?? null
       : null;
 
@@ -168,38 +199,73 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
   let team = { gamesProcessed: 0, rowsUpserted: 0 };
   let goalie = { gamesProcessed: 0, rowsUpserted: 0 };
   let timedOut = false;
+  const processedDates: string[] = [];
+  let nextStartDate = chunkNextStartDate;
 
-  try {
-    player = await buildPlayerGameStrengthV2ForDateRange({
-      startDate: effectiveStartDate,
-      endDate: effectiveEndDate,
-      deadlineMs
-    });
-  } catch (e) {
-    errors.push(`player: ${(e as any)?.message ?? String(e)}`);
+  for (const date of limitedRangeDates) {
+    if (Date.now() > deadlineMs) {
+      timedOut = true;
+      nextStartDate = date;
+      break;
+    }
+
+    try {
+      const playerResult = await buildPlayerGameStrengthV2ForDateRange({
+        startDate: date,
+        endDate: date,
+        deadlineMs
+      });
+      player.gamesProcessed += playerResult.gamesProcessed;
+      player.rowsUpserted += playerResult.rowsUpserted;
+    } catch (e) {
+      errors.push(`${date} player: ${(e as any)?.message ?? String(e)}`);
+    }
+
+    if (Date.now() > deadlineMs) {
+      timedOut = true;
+      nextStartDate = date;
+      break;
+    }
+
+    try {
+      const teamResult = await buildTeamGameStrengthV2ForDateRange({
+        startDate: date,
+        endDate: date,
+        deadlineMs
+      });
+      team.gamesProcessed += teamResult.gamesProcessed;
+      team.rowsUpserted += teamResult.rowsUpserted;
+    } catch (e) {
+      errors.push(`${date} team: ${(e as any)?.message ?? String(e)}`);
+    }
+
+    if (Date.now() > deadlineMs) {
+      timedOut = true;
+      nextStartDate = date;
+      break;
+    }
+
+    try {
+      const goalieResult = await buildGoalieGameV2ForDateRange({
+        startDate: date,
+        endDate: date,
+        deadlineMs
+      });
+      goalie.gamesProcessed += goalieResult.gamesProcessed;
+      goalie.rowsUpserted += goalieResult.rowsUpserted;
+    } catch (e) {
+      errors.push(`${date} goalie: ${(e as any)?.message ?? String(e)}`);
+    }
+
+    processedDates.push(date);
+
+    if (Date.now() > deadlineMs) {
+      timedOut = true;
+      nextStartDate = limitedRangeDates[processedDates.length] ?? chunkNextStartDate;
+      break;
+    }
   }
 
-  try {
-    team = await buildTeamGameStrengthV2ForDateRange({
-      startDate: effectiveStartDate,
-      endDate: effectiveEndDate,
-      deadlineMs
-    });
-  } catch (e) {
-    errors.push(`team: ${(e as any)?.message ?? String(e)}`);
-  }
-
-  try {
-    goalie = await buildGoalieGameV2ForDateRange({
-      startDate: effectiveStartDate,
-      endDate: effectiveEndDate,
-      deadlineMs
-    });
-  } catch (e) {
-    errors.push(`goalie: ${(e as any)?.message ?? String(e)}`);
-  }
-
-  if (Date.now() > deadlineMs) timedOut = true;
   const dataQualityWarnings: Array<{
     code: string;
     message: string;
@@ -234,8 +300,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
     startDate: effectiveStartDate,
     endDate: effectiveEndDate,
     chunkDays,
+    maxDays,
     resumeFromDate,
-    nextStartDate: timedOut ? effectiveStartDate : chunkNextStartDate,
+    nextStartDate,
+    processedDates,
     durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
     timedOut,
     maxDurationMs: bypassMaxDuration

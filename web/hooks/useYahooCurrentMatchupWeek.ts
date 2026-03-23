@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
-import supabase from "lib/supabase";
+import publicSupabase from "lib/supabase/public-client";
 
 type YahooMatchupWeek = {
   week: number;
@@ -65,7 +65,7 @@ export default function useYahooCurrentMatchupWeek(
       try {
         const referenceLocal =
           referenceDate == null ? format(new Date(), "yyyy-MM-dd") : toLocalYmd(referenceDate);
-        const { data, error: queryError } = await supabase
+        const { data, error: queryError } = await publicSupabase
           .from("yahoo_matchup_weeks")
           .select("week,start_date,end_date")
           .eq("season", season)

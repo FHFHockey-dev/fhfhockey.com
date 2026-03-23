@@ -56,6 +56,7 @@ export async function getPlayerCurrentTeamId(
     .from("rosters")
     .select("teamId, seasonId")
     .eq("playerId", playerId)
+    .eq("is_current", true)
     .order("seasonId", { ascending: false })
     .limit(1)
     .maybeSingle();

@@ -10,7 +10,13 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY || "";
 
 const supabase: SupabaseClient<Database> = createClient<Database>(
   supabaseUrl,
-  supabaseKey
+  supabaseKey,
+  {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: false
+    }
+  }
 );
 
 export type SupabaseType = typeof supabase;

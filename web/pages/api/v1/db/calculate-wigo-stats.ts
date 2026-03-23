@@ -1,5 +1,6 @@
 // API endpoint for calculating WIGO statistics
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import { normalizeDependencyError } from "lib/cron/normalizeDependencyError";
 import { NextApiRequest, NextApiResponse } from "next";
 import supabase from "lib/supabase"; // Supabase client instance
 import { getCurrentSeason } from "lib/NHL/server"; // NHL season helper function
@@ -1265,10 +1266,12 @@ export default withCronJobAudit(async function handler(
   } catch (error: any) {
     const durationSec = ((Date.now() - startTime) / 1000).toFixed(2);
     console.error("Critical error during player stats update:", error);
+    const dependencyError = normalizeDependencyError(error);
     return res.status(500).json({
       success: false,
-      message: error.message || "An unknown critical error occurred",
-      duration: `${durationSec} s`
+      message: dependencyError.message,
+      duration: `${durationSec} s`,
+      dependencyError
     });
   }
 }

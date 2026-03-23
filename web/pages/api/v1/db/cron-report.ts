@@ -7,6 +7,23 @@ import { Resend } from "resend";
 
 import { CronReportEmail } from "components/CronReportEmail/CronReportEmail";
 import { CronAuditEmail } from "components/CronReportEmail/CronAuditEmail";
+import {
+  getBenchmarkAnnotations,
+  hasBenchmarkAnnotationKind,
+  type BenchmarkAnnotation
+} from "lib/cron/benchmarkNotes";
+import {
+  buildSlowJobWarning,
+  isSlowJobDuration,
+  SLOW_JOB_DENOTATION,
+  SLOW_JOB_THRESHOLD_MS,
+  type SlowJobWarning
+} from "lib/cron/cronReportFlags";
+import {
+  type CronJobTimingRecord
+} from "lib/cron/timingContract";
+import { extractAuditTimingRecord } from "lib/cron/cronReportTiming";
+import { buildSqlCronTimingObservation } from "lib/cron/sqlTiming";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -17,7 +34,6 @@ const resend = new Resend(process.env.RESEND_API_KEY!);
 
 const REPORT_WINDOW_MS = 24 * 60 * 60 * 1000;
 const MATCH_WINDOW_MS = 6 * 60 * 60 * 1000;
-const WARN_SLOW_MS = 180_000;
 
 const SCHEDULE_ALIAS_MAP: Record<string, string[]> = {
   "update-all-wgo-skaters": ["update-wgo-skaters", "/api/v1/db/update-wgo-skaters"],
@@ -57,6 +73,7 @@ type ScheduledCronJob = {
 };
 
 type ParsedAuditDetails = {
+  timing: CronJobTimingRecord | null;
   durationMs: number | null;
   statusCode: number | null;
   url: string | null;
@@ -95,6 +112,7 @@ type RunRow = {
   sqlText: string | null;
   endTime: string | null;
   rowsAffected: number | null;
+  timing: CronJobTimingRecord | null;
   durationMs: number | null;
   method: ScheduleMethod;
   url: string | null;
@@ -127,6 +145,9 @@ type JobSummary = {
   failedRowSamples: string[];
   lastDurationMs: number | null;
   avgDurationMs: number | null;
+  optimizationDenotation: typeof SLOW_JOB_DENOTATION | null;
+  benchmarkAnnotations: BenchmarkAnnotation[];
+  missingObservationWarnings: string[];
 };
 
 type RunDigest = {
@@ -145,6 +166,9 @@ type RunDigest = {
   failedRows: number | null;
   reason: string | null;
   failedRowSamples: string[];
+  optimizationDenotation: typeof SLOW_JOB_DENOTATION | null;
+  benchmarkAnnotations: BenchmarkAnnotation[];
+  missingObservationWarnings: string[];
 };
 
 type ReportCounts = {
@@ -166,6 +190,19 @@ type ReportCounts = {
   warnMissingAudit: number;
 };
 
+type WarningSummary = {
+  slowMsThreshold: number;
+  slowJobDenotation: typeof SLOW_JOB_DENOTATION;
+  slowJobs: SlowJobWarning[];
+  missingObservationJobs: Array<{ displayName: string; warnings: string[] }>;
+};
+
+type BenchmarkSummary = {
+  annotatedJobCount: number;
+  bottleneckJobs: Array<{ displayName: string; notes: string[] }>;
+  missingObservationJobs: Array<{ displayName: string; warnings: string[] }>;
+};
+
 function normalizeStatus(value: unknown): NormalizedStatus {
   const v = String(value ?? "").toLowerCase().trim();
   if (!v) return "unknown";
@@ -180,6 +217,49 @@ function toFiniteNumber(value: unknown): number | null {
 
 function truncateText(value: string, maxLen = 180): string {
   return value.length <= maxLen ? value : `${value.slice(0, maxLen - 1)}…`;
+}
+
+function normalizeWhitespace(value: string): string {
+  return value.replace(/\s+/g, " ").trim();
+}
+
+function sanitizeErrorMessage(value: unknown, maxLen = 240): string | null {
+  if (value == null) return null;
+
+  const raw = String(value).trim();
+  if (!raw) return null;
+
+  const normalized = normalizeWhitespace(raw);
+  const isHtmlDocument =
+    /<!doctype html/i.test(normalized) ||
+    /<html[\s>]/i.test(normalized) ||
+    /<head[\s>]/i.test(normalized) ||
+    /<body[\s>]/i.test(normalized);
+
+  if (!isHtmlDocument) {
+    return truncateText(normalized, maxLen);
+  }
+
+  const title = raw.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1]?.trim() ?? null;
+  const cloudflareCode =
+    raw.match(/Error code\s*<\/span>\s*<span[^>]*>\s*(\d{3})/i)?.[1] ?? null;
+  const titleCode =
+    title?.match(/\|\s*(\d{3})\s*:\s*([^|]+)/)?.[1]?.trim() ?? null;
+  const titleReason =
+    title?.match(/\|\s*\d{3}\s*:\s*([^|]+)/)?.[1]?.trim() ?? null;
+  const headingReason =
+    raw.match(/<span class="inline-block">\s*([^<]+)\s*<\/span>/i)?.[1]?.trim() ?? null;
+  const host = title?.split("|")[0]?.trim() ?? null;
+  const provider = /cloudflare/i.test(raw) ? "Cloudflare" : "upstream proxy";
+  const code = cloudflareCode ?? titleCode;
+  const reason = titleReason ?? headingReason ?? "HTML error response";
+
+  return truncateText(
+    [provider, code ? `${code}` : null, reason, host ? `from ${host}` : null]
+      .filter((part): part is string => Boolean(part))
+      .join(" "),
+    maxLen
+  );
 }
 
 function safeStringify(value: unknown, maxLen = 180): string | null {
@@ -203,7 +283,7 @@ function parseJsonMaybe(value: unknown): unknown {
 
 function extractPrimaryMessage(value: unknown): string | null {
   if (typeof value === "string" && value.trim()) {
-    return truncateText(value.trim(), 240);
+    return sanitizeErrorMessage(value, 240);
   }
 
   if (Array.isArray(value)) {
@@ -228,7 +308,7 @@ function extractPrimaryMessage(value: unknown): string | null {
     "statusText"
   ]) {
     if (typeof obj[key] === "string" && obj[key]?.trim()) {
-      return truncateText(String(obj[key]).trim(), 240);
+      return sanitizeErrorMessage(obj[key], 240);
     }
   }
 
@@ -415,11 +495,11 @@ function inferFailedRows(response: unknown): number | null {
 
 function formatFailureSample(value: unknown): string | null {
   if (typeof value === "string" && value.trim()) {
-    return truncateText(value.trim(), 180);
+    return sanitizeErrorMessage(value, 180);
   }
 
   if (!value || typeof value !== "object" || Array.isArray(value)) {
-    return value == null ? null : truncateText(String(value), 180);
+    return value == null ? null : sanitizeErrorMessage(value, 180);
   }
 
   const obj = value as Record<string, unknown>;
@@ -501,6 +581,7 @@ function parseUrlPieces(
 
 function parseAuditDetails(details: unknown): ParsedAuditDetails {
   const empty: ParsedAuditDetails = {
+    timing: null,
     durationMs: null,
     statusCode: null,
     url: null,
@@ -530,6 +611,7 @@ function parseAuditDetails(details: unknown): ParsedAuditDetails {
 
   const obj = parsedDetails as Record<string, unknown>;
   const response = parseJsonMaybe(obj.response);
+  const timing = extractAuditTimingRecord(parsedDetails);
   const { route, routePath } = parseUrlPieces(
     typeof obj.url === "string" ? obj.url : null
   );
@@ -542,7 +624,8 @@ function parseAuditDetails(details: unknown): ParsedAuditDetails {
     .slice(0, 3);
 
   return {
-    durationMs: toFiniteNumber(obj.durationMs),
+    timing,
+    durationMs: timing?.durationMs ?? toFiniteNumber(obj.durationMs),
     statusCode: toFiniteNumber(obj.statusCode),
     url: typeof obj.url === "string" ? obj.url : null,
     route,
@@ -695,7 +778,11 @@ async function loadScheduledCronJobs(
   now: Date
 ): Promise<ScheduledCronJob[]> {
   const markdown = await readCronScheduleMarkdown();
-  const normalized = markdown
+  const activeMarkdown =
+    markdown.split(/^# NEED TO ADD:?$/m)[0] ??
+    markdown.split(/^# STATIC CRON SNIPPETS TO ADD$/m)[0] ??
+    markdown;
+  const normalized = activeMarkdown
     .split("\n")
     .map((line) => line.replace(/^\s*--\s?/, ""))
     .join("\n");
@@ -733,12 +820,36 @@ async function loadScheduledCronJobs(
     };
   });
 
-  const duplicateCounts = rawJobs.reduce(
+  const dedupedJobs = rawJobs.filter((job, index, jobs) => {
+    const signature = [
+      job.name,
+      job.cronExpression,
+      job.method,
+      job.route ?? "",
+      job.url ?? "",
+      job.sqlText ?? ""
+    ].join("::");
+    return (
+      index ===
+      jobs.findIndex((candidate) =>
+        [
+          candidate.name,
+          candidate.cronExpression,
+          candidate.method,
+          candidate.route ?? "",
+          candidate.url ?? "",
+          candidate.sqlText ?? ""
+        ].join("::") === signature
+      )
+    );
+  });
+
+  const duplicateCounts = dedupedJobs.reduce(
     (acc, job) => acc.set(job.name, (acc.get(job.name) ?? 0) + 1),
     new Map<string, number>()
   );
 
-  return rawJobs.map((job) => {
+  return dedupedJobs.map((job) => {
     const displayName =
       (duplicateCounts.get(job.name) ?? 0) > 1
         ? `${job.name} [${job.method} ${job.scheduleTimeDisplay}]`
@@ -815,6 +926,15 @@ function statusSortValue(status: ReportJobStatus): number {
 }
 
 function buildRunDigestFromAudit(row: AuditRow): RunDigest {
+  const benchmarkAnnotations = getBenchmarkAnnotations(row.jobName);
+  const optimizationDenotation = isSlowJobDuration(row.parsed.durationMs)
+    ? SLOW_JOB_DENOTATION
+    : null;
+  const missingObservationWarnings =
+    row.parsed.durationMs == null
+      ? ["Observed audit run does not have reliable timing metadata yet."]
+      : [];
+
   return {
     key: row.id,
     label: row.parsed.route ?? row.jobName,
@@ -834,11 +954,23 @@ function buildRunDigestFromAudit(row: AuditRow): RunDigest {
       row.parsed.responseMessage ??
       row.detailsMessage ??
       null,
-    failedRowSamples: row.parsed.failedRowSamples
+    failedRowSamples: row.parsed.failedRowSamples,
+    optimizationDenotation,
+    benchmarkAnnotations,
+    missingObservationWarnings
   };
 }
 
 function buildRunDigestFromCron(row: RunRow): RunDigest {
+  const benchmarkAnnotations = getBenchmarkAnnotations(row.jobName);
+  const optimizationDenotation = isSlowJobDuration(row.durationMs)
+    ? SLOW_JOB_DENOTATION
+    : null;
+  const missingObservationWarnings =
+    row.durationMs == null
+      ? ["Observed cron run does not have reliable timing metadata yet."]
+      : [];
+
   return {
     key: row.id,
     label: row.route ?? row.jobName,
@@ -853,9 +985,68 @@ function buildRunDigestFromCron(row: RunRow): RunDigest {
     rowsUpserted: row.rowsAffected,
     rowsAffected: row.rowsAffected,
     failedRows: null,
-    reason: row.returnMessage ? truncateText(row.returnMessage, 240) : null,
-    failedRowSamples: []
+    reason: row.returnMessage ? sanitizeErrorMessage(row.returnMessage, 240) : null,
+    failedRowSamples: [],
+    optimizationDenotation,
+    benchmarkAnnotations,
+    missingObservationWarnings
   };
+}
+
+function collectMissingObservationWarnings(job: {
+  lastStatus: ReportJobStatus;
+  runsCount: number;
+  auditRunsCount: number;
+  method: ScheduleMethod;
+  lastDurationMs: number | null;
+  hasObservedSqlTiming: boolean;
+  runDataAvailable: boolean;
+  auditDataAvailable: boolean;
+}): string[] {
+  const warnings: string[] = [];
+
+  if (job.lastStatus === "missing") {
+    warnings.push("No cron or audit observation matched this scheduled slot.");
+  }
+
+  if (
+    job.runsCount > 0 &&
+    job.auditRunsCount === 0 &&
+    job.method !== "SQL" &&
+    job.auditDataAvailable
+  ) {
+    warnings.push("Cron invoked the route, but no audit payload was recorded.");
+  }
+
+  if (job.lastStatus !== "missing" && job.lastDurationMs == null) {
+    const hasObservedRuns =
+      job.runsCount > 0 || (job.method !== "SQL" && job.auditRunsCount > 0);
+    if (hasObservedRuns) {
+      warnings.push("Observed run does not have reliable timing metadata yet.");
+    }
+  }
+
+  if (job.method === "SQL" && job.runsCount > 0 && !job.hasObservedSqlTiming) {
+    warnings.push(
+      "SQL observation is missing scheduled_time or end_time timing fields."
+    );
+  }
+
+  if (job.method === "SQL" && !job.runDataAvailable) {
+    warnings.push("Cron run telemetry is unavailable for SQL schedule matching.");
+  }
+
+  if (job.method !== "SQL" && (!job.runDataAvailable || !job.auditDataAvailable)) {
+    const unavailableSources = [
+      !job.runDataAvailable ? "cron_job_report" : null,
+      !job.auditDataAvailable ? "cron_job_audit" : null
+    ]
+      .filter((source): source is string => Boolean(source))
+      .join(" and ");
+    warnings.push(`Telemetry source unavailable: ${unavailableSources}.`);
+  }
+
+  return warnings;
 }
 
 export default async function handler(
@@ -879,7 +1070,11 @@ export default async function handler(
 
   if (runErr) {
     console.error("Error fetching cron_job_report:", runErr.message);
-    errors.push(`Failed to fetch cron_job_report: ${runErr.message}`);
+    errors.push(
+      `Failed to fetch cron_job_report: ${
+        sanitizeErrorMessage(runErr.message) ?? "Unknown upstream error"
+      }`
+    );
   }
 
   const { data: audits, error: auditErr } = await supabase
@@ -890,7 +1085,11 @@ export default async function handler(
 
   if (auditErr) {
     console.error("Error fetching cron_job_audit:", auditErr.message);
-    errors.push(`Failed to fetch cron_job_audit: ${auditErr.message}`);
+    errors.push(
+      `Failed to fetch cron_job_audit: ${
+        sanitizeErrorMessage(auditErr.message) ?? "Unknown upstream error"
+      }`
+    );
   }
 
   let scheduledJobs: ScheduledCronJob[] = [];
@@ -917,6 +1116,14 @@ export default async function handler(
 
   const runRows: RunRow[] = (runs ?? []).map((row: any, index: number) => {
     const invocation = parseCronInvocation((row.sql_text ?? null) as string | null);
+    const timing = buildSqlCronTimingObservation({
+      jobname: (row.jobname ?? null) as string | null,
+      scheduled_time: (row.scheduled_time ?? null) as string | null,
+      end_time: (row.end_time ?? null) as string | null,
+      status: row.status,
+      return_message: (row.return_message ?? null) as string | null,
+      sql_text: (row.sql_text ?? null) as string | null
+    }).timing;
     return {
       id: `run:${index}:${row.jobname ?? ""}:${row.scheduled_time ?? ""}`,
       jobName: String(row.jobname ?? ""),
@@ -929,10 +1136,13 @@ export default async function handler(
       rowsAffected: parseRowsAffectedFromReturnMessage(
         (row.return_message ?? null) as string | null
       ),
-      durationMs: safeDurationMs(
-        (row.scheduled_time ?? null) as string | null,
-        (row.end_time ?? null) as string | null
-      ),
+      timing,
+      durationMs:
+        timing?.durationMs ??
+        safeDurationMs(
+          (row.scheduled_time ?? null) as string | null,
+          (row.end_time ?? null) as string | null
+        ),
       method: invocation.method,
       url: invocation.url,
       route: invocation.route,
@@ -942,6 +1152,8 @@ export default async function handler(
 
   const matchedAuditIds = new Set<string>();
   const matchedRunIds = new Set<string>();
+  const runDataAvailable = !runErr;
+  const auditDataAvailable = !auditErr;
 
   const jobSummaries: JobSummary[] = scheduledJobs
     .map((job) => {
@@ -977,17 +1189,25 @@ export default async function handler(
       const lastAuditTs = lastAudit ? Date.parse(lastAudit.time) : -Infinity;
       const lastRunTs = lastRun ? Date.parse(lastRun.time) : -Infinity;
       const preferAudit = lastAuditTs >= lastRunTs;
+      const hasFullCoverageForMissing =
+        job.method === "SQL"
+          ? runDataAvailable
+          : runDataAvailable && auditDataAvailable;
 
       const lastStatus: ReportJobStatus =
         !lastAudit && !lastRun
-          ? "missing"
+          ? hasFullCoverageForMissing
+            ? "missing"
+            : "unknown"
           : preferAudit
             ? (lastAudit?.status ?? "unknown")
             : (lastRun?.status ?? "unknown");
 
       const lastStatusSource: JobSummary["lastStatusSource"] =
         !lastAudit && !lastRun
-          ? "missing"
+          ? hasFullCoverageForMissing
+            ? "missing"
+            : "unknown"
           : preferAudit
             ? "audit"
             : "cron";
@@ -1029,7 +1249,9 @@ export default async function handler(
       const message =
         lastAudit?.parsed.responseMessage ??
         lastAudit?.detailsMessage ??
-        (lastRun?.returnMessage ? truncateText(lastRun.returnMessage, 240) : null) ??
+        (lastRun?.returnMessage
+          ? sanitizeErrorMessage(lastRun.returnMessage, 240)
+          : null) ??
         null;
 
       const why =
@@ -1038,17 +1260,42 @@ export default async function handler(
             lastAudit?.parsed.responseMessage ??
             lastAudit?.detailsMessage ??
             (lastRun?.returnMessage
-              ? truncateText(lastRun.returnMessage, 240)
+              ? sanitizeErrorMessage(lastRun.returnMessage, 240)
               : null) ??
             "Run failed")
           : null;
+
+      const lastDurationMs =
+        lastAudit?.parsed.durationMs ?? lastRun?.durationMs ?? null;
+      const optimizationDenotation = isSlowJobDuration(lastDurationMs)
+        ? SLOW_JOB_DENOTATION
+        : null;
+      const benchmarkAnnotations = getBenchmarkAnnotations(job.name);
+      const missingObservationWarnings = collectMissingObservationWarnings({
+        lastStatus,
+        runsCount: matchingRuns.length,
+        auditRunsCount: matchingAudits.length,
+        method: job.method,
+        lastDurationMs,
+        hasObservedSqlTiming: matchingRuns.some((row) => row.timing != null),
+        runDataAvailable,
+        auditDataAvailable
+      });
 
       const notes: string[] = [];
       if (lastStatus === "missing") {
         notes.push("No cron or audit entry matched this scheduled slot.");
       }
-      if (matchingRuns.length > 0 && matchingAudits.length === 0 && job.method !== "SQL") {
+      if (
+        matchingRuns.length > 0 &&
+        matchingAudits.length === 0 &&
+        job.method !== "SQL" &&
+        auditDataAvailable
+      ) {
         notes.push("Cron invoked the route, but no audit payload was recorded.");
+      }
+      if (!lastAudit && !lastRun && !hasFullCoverageForMissing) {
+        notes.push("Telemetry is incomplete, so missing-run status could not be determined.");
       }
       if (lastStatus === "success" && (failedRowsLast ?? 0) > 0) {
         notes.push(`Completed with ${failedRowsLast} row-level failures.`);
@@ -1058,8 +1305,22 @@ export default async function handler(
           `Returned ${lastAudit?.parsed.dataQualityWarningCount} warning(s).`
         );
       }
+      if (optimizationDenotation) {
+        notes.push(`${optimizationDenotation}: last runtime exceeded 4m30s.`);
+      }
+      if (hasBenchmarkAnnotationKind(benchmarkAnnotations, "bottleneck")) {
+        const firstBottleneckNote = benchmarkAnnotations.find(
+          (annotation) => annotation.kind === "bottleneck"
+        )?.note;
+        if (firstBottleneckNote) {
+          notes.push(`Bottleneck: ${firstBottleneckNote}`);
+        }
+      }
       if (job.method === "SQL" && lastRun?.returnMessage && lastStatus !== "failure") {
-        notes.push(truncateText(lastRun.returnMessage, 140));
+        const sanitizedReturnMessage = sanitizeErrorMessage(lastRun.returnMessage, 140);
+        if (sanitizedReturnMessage) {
+          notes.push(sanitizedReturnMessage);
+        }
       }
 
       return {
@@ -1090,9 +1351,11 @@ export default async function handler(
         rowsAffectedLast,
         failedRowsLast,
         failedRowSamples,
-        lastDurationMs:
-          lastAudit?.parsed.durationMs ?? lastRun?.durationMs ?? null,
-        avgDurationMs
+        lastDurationMs,
+        avgDurationMs,
+        optimizationDenotation,
+        benchmarkAnnotations,
+        missingObservationWarnings
       };
     })
     .sort((a, b) => {
@@ -1120,12 +1383,9 @@ export default async function handler(
     .map((row) => buildRunDigestFromAudit(row))
     .sort((a, b) => Date.parse(b.runTime) - Date.parse(a.runTime));
 
-  const WARN_SLOW = jobSummaries
-    .filter((job) => (job.lastDurationMs ?? 0) > WARN_SLOW_MS)
-    .map((job) => ({
-      displayName: job.displayName,
-      durationMs: job.lastDurationMs ?? 0
-    }));
+  const WARN_SLOW: SlowJobWarning[] = jobSummaries
+    .filter((job) => isSlowJobDuration(job.lastDurationMs))
+    .map((job) => buildSlowJobWarning(job.displayName, job.lastDurationMs ?? 0));
 
   const WARN_PARTIAL_FAILURE = jobSummaries
     .filter((job) => job.lastStatus === "success" && (job.failedRowsLast ?? 0) > 0)
@@ -1140,14 +1400,44 @@ export default async function handler(
         job.lastStatus !== "missing" &&
         job.runsCount > 0 &&
         job.auditRunsCount === 0 &&
-        job.method !== "SQL"
+        job.method !== "SQL" &&
+        auditDataAvailable
     )
     .map((job) => job.displayName);
+
+  const missingObservationJobs = jobSummaries
+    .filter((job) => job.missingObservationWarnings.length > 0)
+    .map((job) => ({
+      displayName: job.displayName,
+      warnings: job.missingObservationWarnings
+    }));
+
+  const benchmarkSummary: BenchmarkSummary = {
+    annotatedJobCount: jobSummaries.filter(
+      (job) => job.benchmarkAnnotations.length > 0
+    ).length,
+    bottleneckJobs: jobSummaries
+      .filter((job) => hasBenchmarkAnnotationKind(job.benchmarkAnnotations, "bottleneck"))
+      .map((job) => ({
+        displayName: job.displayName,
+        notes: job.benchmarkAnnotations
+          .filter((annotation) => annotation.kind === "bottleneck")
+          .map((annotation) => annotation.note)
+      })),
+    missingObservationJobs
+  };
+
+  const warningSummary: WarningSummary = {
+    slowMsThreshold: SLOW_JOB_THRESHOLD_MS,
+    slowJobDenotation: SLOW_JOB_DENOTATION,
+    slowJobs: WARN_SLOW,
+    missingObservationJobs
+  };
 
   const counts: ReportCounts = {
     scheduledJobs: scheduledJobs.length,
     scheduledJobsWithActivity: jobSummaries.filter(
-      (job) => job.lastStatus !== "missing"
+      (job) => job.runsCount > 0 || job.auditRunsCount > 0
     ).length,
     auditRuns: auditRows.length,
     auditSuccesses: auditRows.filter((row) => row.status === "success").length,
@@ -1171,23 +1461,37 @@ export default async function handler(
     warnMissingAudit: WARN_MISSING_AUDIT.length
   };
 
-  if (auditRows.length > 0) {
+  if (auditRows.length > 0 || auditErr) {
     try {
       const { data, error } = await resend.emails.send({
         from: "audit-report@fhfhockey.com",
         to: emailRecipient,
         subject:
-          counts.auditFailures > 0
+          auditErr && auditRows.length === 0
+            ? "⚠️ Cron Audit — telemetry unavailable"
+            : counts.auditFailures > 0
             ? `❌ Cron Audit — ${counts.auditFailures} failing audit runs`
             : `✅ Cron Audit — ${counts.auditSuccesses} audit runs ok`,
         react: CronAuditEmail({
           audits: auditRunDigests,
           sinceDate: since,
-          summary: {
+          fetchErrors: errors.filter((message) => message.includes("cron_job_audit")),
+      summary: {
             auditRuns: counts.auditRuns,
             auditSuccesses: counts.auditSuccesses,
             auditFailures: counts.auditFailures,
             auditUnknown: counts.auditUnknown,
+            slowJobDenotation: SLOW_JOB_DENOTATION,
+            slowMsThreshold: SLOW_JOB_THRESHOLD_MS,
+            annotatedJobCount: auditRunDigests.filter(
+              (audit) => audit.benchmarkAnnotations.length > 0
+            ).length,
+            slowRuns: auditRunDigests.filter(
+              (audit) => audit.optimizationDenotation != null
+            ).length,
+            missingObservationRuns: auditRunDigests.filter(
+              (audit) => audit.missingObservationWarnings.length > 0
+            ).length,
             totalRowsUpserted: auditRunDigests.reduce(
               (acc, audit) => acc + (audit.rowsUpserted ?? audit.rowsAffected ?? 0),
               0
@@ -1222,8 +1526,15 @@ export default async function handler(
         from: "job-status@fhfhockey.com",
         to: emailRecipient,
         subject:
-          counts.jobsFailingLast > 0 || counts.jobsMissingLast > 0
+          errors.length > 0 &&
+          counts.scheduledJobsWithActivity === 0 &&
+          counts.auditRuns === 0 &&
+          counts.unscheduledRuns === 0
+            ? "⚠️ Daily Cron Summary — telemetry unavailable"
+            : counts.jobsFailingLast > 0 || counts.jobsMissingLast > 0
             ? `❌ Daily Cron Summary — ${counts.jobsFailingLast} failing, ${counts.jobsMissingLast} missing`
+            : counts.jobsUnknownLast > 0
+              ? `⚠️ Daily Cron Summary — ${counts.jobsUnknownLast} unknown`
             : `✅ Daily Cron Summary — ${counts.jobsOkLast}/${counts.scheduledJobs} scheduled jobs ok`,
         react: CronReportEmail({
           sinceDate: since,
@@ -1234,10 +1545,11 @@ export default async function handler(
           unscheduledRuns,
           fetchErrors: errors,
           warnings: {
-            slowMsThreshold: WARN_SLOW_MS,
+            slowMsThreshold: SLOW_JOB_THRESHOLD_MS,
             slowJobs: WARN_SLOW,
             partialFailureJobs: WARN_PARTIAL_FAILURE,
-            missingAuditJobs: WARN_MISSING_AUDIT
+            missingAuditJobs: WARN_MISSING_AUDIT,
+            missingObservationJobs
           }
         })
       });
@@ -1277,6 +1589,8 @@ export default async function handler(
     success: true,
     auditEmailResult,
     jobRunDetailsEmailResult,
-    counts
+    counts,
+    warnings: warningSummary,
+    benchmark: benchmarkSummary
   });
 }

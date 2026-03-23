@@ -1,5 +1,9 @@
 import * as React from "react";
 
+import { formatDurationMsToMMSS } from "lib/cron/formatDuration";
+
+type BenchmarkAnnotation = { kind: string; note: string };
+
 interface AuditEntry {
   key: string;
   label: string;
@@ -15,16 +19,25 @@ interface AuditEntry {
   failedRows: number | null;
   reason: string | null;
   failedRowSamples: string[];
+  optimizationDenotation?: string | null;
+  benchmarkAnnotations?: BenchmarkAnnotation[];
+  missingObservationWarnings?: string[];
 }
 
 interface CronAuditEmailProps {
   audits: AuditEntry[];
   sinceDate: string;
+  fetchErrors?: string[];
   summary: {
     auditRuns: number;
     auditSuccesses: number;
     auditFailures: number;
     auditUnknown: number;
+    slowJobDenotation?: string;
+    slowMsThreshold?: number;
+    annotatedJobCount?: number;
+    slowRuns?: number;
+    missingObservationRuns?: number;
     totalRowsUpserted: number;
     totalFailedRows: number;
   };
@@ -33,10 +46,12 @@ interface CronAuditEmailProps {
 export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({
   audits,
   sinceDate,
+  fetchErrors = [],
   summary
 }) => {
   const failures = audits.filter((audit) => audit.status === "failure");
   const nonFailures = audits.filter((audit) => audit.status !== "failure");
+  const telemetryUnavailable = fetchErrors.length > 0 && audits.length === 0;
 
   const container: React.CSSProperties = {
     fontFamily: "system-ui, sans-serif",
@@ -72,6 +87,39 @@ export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({
       </span>
     );
   };
+
+  const pill = (
+    label: string,
+    colors: { background: string; color: string }
+  ) => (
+    <span
+      style={{
+        display: "inline-block",
+        marginRight: 6,
+        marginTop: 4,
+        padding: "2px 8px",
+        borderRadius: 999,
+        fontSize: 11,
+        fontWeight: 700,
+        background: colors.background,
+        color: colors.color
+      }}
+    >
+      {label}
+    </span>
+  );
+
+  const renderDuration = (durationMs: number | null) =>
+    typeof durationMs === "number" ? (
+      <div>
+        <div style={{ fontWeight: 700 }}>{formatDurationMsToMMSS(durationMs)}</div>
+        <div style={{ fontSize: 12, color: "#6B7280" }}>
+          {Math.round(durationMs / 1000)}s
+        </div>
+      </div>
+    ) : (
+      "—"
+    );
 
   const renderTable = (rows: AuditEntry[]) => (
     <table
@@ -112,15 +160,43 @@ export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({
               </div>
             </td>
             <td align="right">{audit.statusCode ?? "—"}</td>
-            <td align="right">
-              {typeof audit.durationMs === "number"
-                ? `${Math.round(audit.durationMs / 1000)}s`
-                : "—"}
-            </td>
+            <td align="right">{renderDuration(audit.durationMs)}</td>
             <td align="right">{audit.rowsUpserted ?? audit.rowsAffected ?? "—"}</td>
             <td align="right">{audit.failedRows ?? "—"}</td>
             <td>
               <div>{audit.reason ?? "—"}</div>
+              {audit.optimizationDenotation
+                ? pill(audit.optimizationDenotation, {
+                    background: "#FEE2E2",
+                    color: "#991B1B"
+                  })
+                : null}
+              {(audit.benchmarkAnnotations ?? [])
+                .filter((annotation) =>
+                  ["bottleneck", "rate_limited", "side_effect"].includes(
+                    annotation.kind
+                  )
+                )
+                .slice(0, 2)
+                .map((annotation) => (
+                  <React.Fragment key={`${audit.key}-${annotation.kind}`}>
+                    {pill(annotation.kind.replace(/_/g, " ").toUpperCase(), {
+                      background: "#E0F2FE",
+                      color: "#075985"
+                    })}
+                  </React.Fragment>
+                ))}
+              {(audit.missingObservationWarnings ?? []).length > 0 ? (
+                <div style={{ marginTop: 4, fontSize: 12, color: "#92400E" }}>
+                  Observation gaps: {audit.missingObservationWarnings?.join(" ")}
+                </div>
+              ) : null}
+              {(audit.benchmarkAnnotations ?? []).length > 0 ? (
+                <div style={{ marginTop: 4, fontSize: 12, color: "#4B5563" }}>
+                  Benchmark:{" "}
+                  {audit.benchmarkAnnotations?.map((annotation) => annotation.note).join(" ")}
+                </div>
+              ) : null}
               {audit.failedRowSamples.length > 0 ? (
                 <div style={{ marginTop: 4, fontSize: 12, color: "#4B5563" }}>
                   Samples: {audit.failedRowSamples.join(" ; ")}
@@ -144,24 +220,55 @@ export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({
         </span>
         {summary.auditUnknown ? ` • ${summary.auditUnknown} unknown` : ""}
         <br />
+        {summary.slowRuns ?? 0} {summary.slowJobDenotation ?? "OPTIMIZE"} runs •{" "}
+        {summary.annotatedJobCount ?? 0} annotated •{" "}
+        {summary.missingObservationRuns ?? 0} observation gaps
+        <br />
         {summary.totalRowsUpserted.toLocaleString()} rows upserted •{" "}
         {summary.totalFailedRows.toLocaleString()} failed rows
       </div>
 
-      {failures.length > 0 ? (
+      {telemetryUnavailable ? (
+        <div
+          style={{
+            margin: "0 0 16px",
+            padding: "12px 14px",
+            border: "1px solid #FCA5A5",
+            background: "#FEF2F2",
+            color: "#991B1B"
+          }}
+        >
+          Audit telemetry was unavailable for this report window, so audit run status
+          could not be evaluated. This email is reporting collection failure, not audit
+          execution health.
+        </div>
+      ) : null}
+
+      {fetchErrors.length > 0 ? (
+        <div style={{ margin: "0 0 16px" }}>
+          <div style={{ fontWeight: 700, color: "#991B1B" }}>Report errors</div>
+          <ul style={{ margin: "6px 0 0", paddingLeft: 18, color: "#991B1B" }}>
+            {fetchErrors.map((error, index) => (
+              <li key={index}>{error}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {!telemetryUnavailable && failures.length > 0 ? (
         <>
           <h2 style={{ margin: "16px 0 8px", color: "#991B1B" }}>
             Failing audit runs
           </h2>
           {renderTable(failures)}
         </>
-      ) : (
+      ) : !telemetryUnavailable ? (
         <div style={{ margin: "12px 0", color: "#166534", fontWeight: 700 }}>
           No audit failures in this period.
         </div>
-      )}
+      ) : null}
 
-      {nonFailures.length > 0 ? (
+      {!telemetryUnavailable && nonFailures.length > 0 ? (
         <>
           <h2 style={{ margin: "16px 0 8px" }}>All other audit runs</h2>
           {renderTable(nonFailures)}

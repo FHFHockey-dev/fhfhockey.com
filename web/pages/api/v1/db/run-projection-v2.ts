@@ -56,6 +56,11 @@
  */
 import type { NextApiRequest, NextApiResponse } from "next";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import { CronTimedResponse, withCronJobTiming } from "lib/cron/timingContract";
+import {
+  normalizeDependencyError,
+  type NormalizedDependencyError
+} from "lib/cron/normalizeDependencyError";
 import { runProjectionV2ForDate } from "lib/projections/run-forge-projections";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
 import { getGoalieForgePipelineSpec } from "lib/projections/goaliePipeline";
@@ -84,6 +89,20 @@ type DataQualityWarning = {
 type GoalieObservability = {
   goalieRowsProcessed: number;
   dataQualityWarnings: DataQualityWarning[];
+};
+
+type SeasonIdRow = {
+  id: number | string | null;
+};
+
+type GoaliePlayerRow = {
+  id: number;
+  position: string | null;
+};
+
+type GoalieRosterRow = {
+  playerId: number;
+  teamId: number;
 };
 
 type Result =
@@ -139,6 +158,7 @@ type Result =
       teamRowsUpserted?: number;
       goalieRowsUpserted?: number;
       error: string;
+      dependencyError?: NormalizedDependencyError;
       results?: Array<{
         asOfDate: string;
         runId: string;
@@ -199,6 +219,68 @@ function addDays(dateStr: string, delta: number): string {
   const d = new Date(`${dateStr}T00:00:00.000Z`);
   d.setUTCDate(d.getUTCDate() + delta);
   return isoDateOnly(d.toISOString());
+}
+
+async function fetchSeasonIdForDate(asOfDate: string): Promise<number> {
+  const asOfTimestamp = `${asOfDate}T23:59:59.999Z`;
+  const { data, error } = await supabase
+    .from("seasons")
+    .select("id")
+    .lte("startDate", asOfTimestamp)
+    .order("startDate", { ascending: false })
+    .limit(1)
+    .maybeSingle<SeasonIdRow>();
+  if (error) throw error;
+  const seasonId = Number(data?.id);
+  if (!Number.isFinite(seasonId)) {
+    throw new Error(`Unable to resolve season id for as_of_date=${asOfDate}`);
+  }
+  return seasonId;
+}
+
+export function summarizeGoalieRosterAssignments(args: {
+  latestGoaliesByTeam: Map<number, number[]>;
+  goaliePlayers: GoaliePlayerRow[];
+  goalieRosters: GoalieRosterRow[];
+}): {
+  goalieCandidatesChecked: number;
+  mismatchedAssignments: number;
+  nonGoaliePositionRows: number;
+} {
+  const rosterTeamsByPlayer = new Map<number, Set<number>>();
+  for (const row of args.goalieRosters) {
+    if (!Number.isFinite(row.playerId) || !Number.isFinite(row.teamId)) continue;
+    const teamIds = rosterTeamsByPlayer.get(row.playerId) ?? new Set<number>();
+    teamIds.add(row.teamId);
+    rosterTeamsByPlayer.set(row.playerId, teamIds);
+  }
+
+  const goalieById = new Map(args.goaliePlayers.map((player) => [player.id, player]));
+  const goalieCandidateIds = new Set(
+    Array.from(args.latestGoaliesByTeam.values()).flat().filter((id) =>
+      Number.isFinite(id)
+    )
+  );
+
+  let mismatchedAssignments = 0;
+  let nonGoaliePositionRows = 0;
+
+  for (const [teamId, goalieIds] of args.latestGoaliesByTeam.entries()) {
+    for (const goalieId of goalieIds) {
+      const player = goalieById.get(goalieId);
+      if (!player) continue;
+      if (player.position !== "G") nonGoaliePositionRows += 1;
+      const rosterTeams = rosterTeamsByPlayer.get(goalieId);
+      if (rosterTeams && rosterTeams.has(teamId)) continue;
+      mismatchedAssignments += 1;
+    }
+  }
+
+  return {
+    goalieCandidatesChecked: goalieCandidateIds.size,
+    mismatchedAssignments,
+    nonGoaliePositionRows
+  };
 }
 
 async function runProjectionPreflightChecks(
@@ -400,6 +482,7 @@ async function runProjectionPreflightChecks(
   // 1) Missing recent goalie-game rows for teams on the target slate.
   // 2) Outdated players.team_id mappings for likely goalie candidates from latest line combos.
   if (scheduledTeamIds.length > 0) {
+    const seasonId = await fetchSeasonIdForDate(asOfDate);
     const staleWindowStart = addDays(asOfDate, -30);
     const { data: recentGoalieRows, error: recentGoalieErr } = await supabase
       .from("forge_goalie_game")
@@ -424,7 +507,8 @@ async function runProjectionPreflightChecks(
         "Run /api/v1/db/build-projection-derived-v2 for recent dates and verify source goalie game ingestion."
     });
 
-    const likelyGoalieIds = new Set<number>();
+    const recentGoalieCandidateIds = new Set<number>();
+    const latestGoaliesByTeam = new Map<number, number[]>();
     for (const teamId of scheduledTeamIds) {
       const { data, error } = await supabase
         .from("lineCombinations")
@@ -434,53 +518,54 @@ async function runProjectionPreflightChecks(
         .order("date", { foreignTable: "games", ascending: false })
         .limit(3);
       if (error) throw error;
-      for (const row of (data ?? []) as Array<{ goalies: number[] | null }>) {
-        for (const goalieId of row.goalies ?? []) {
-          if (Number.isFinite(goalieId)) likelyGoalieIds.add(goalieId);
+      const rows = (data ?? []) as Array<{ goalies: number[] | null }>;
+      rows.forEach((row, index) => {
+        const goalieIds = (row.goalies ?? []).filter((goalieId) =>
+          Number.isFinite(goalieId)
+        );
+        goalieIds.forEach((goalieId) => recentGoalieCandidateIds.add(goalieId));
+        if (index === 0 && goalieIds.length > 0) {
+          latestGoaliesByTeam.set(teamId, goalieIds);
         }
-      }
+      });
     }
+    const likelyGoalieIds = recentGoalieCandidateIds;
     if (likelyGoalieIds.size > 0) {
       const { data: goaliePlayers, error: goaliePlayersErr } = await supabase
         .from("players")
-        .select("id,team_id,position")
+        .select("id,position")
         .in("id", Array.from(likelyGoalieIds));
       if (goaliePlayersErr) throw goaliePlayersErr;
-      const goalieById = new Map(
-        ((goaliePlayers ?? []) as Array<{ id: number; team_id: number | null; position: string | null }>).map(
-          (p) => [p.id, p]
-        )
-      );
-      let mismatchedAssignments = 0;
-      let nonGoaliePositionRows = 0;
-      for (const teamId of scheduledTeamIds) {
-        const { data, error } = await supabase
-          .from("lineCombinations")
-          .select("goalies,games!inner(date)")
-          .eq("teamId", teamId)
-          .lt("games.date", asOfDate)
-          .order("date", { foreignTable: "games", ascending: false })
-          .limit(1)
-          .maybeSingle();
-        if (error) throw error;
-        const ids = ((data as any)?.goalies ?? []) as number[];
-        for (const goalieId of ids) {
-          const p = goalieById.get(goalieId);
-          if (!p) continue;
-          if (p.position !== "G") nonGoaliePositionRows += 1;
-          if (p.team_id != null && p.team_id !== teamId) mismatchedAssignments += 1;
-        }
-      }
+      const { data: goalieRosters, error: goalieRostersErr } = await supabase
+        .from("rosters")
+        .select("playerId,teamId")
+        .eq("seasonId", seasonId)
+        .in("playerId", Array.from(likelyGoalieIds));
+      if (goalieRostersErr) throw goalieRostersErr;
+      const assignmentSummary = summarizeGoalieRosterAssignments({
+        latestGoaliesByTeam,
+        goaliePlayers: (goaliePlayers ?? []) as GoaliePlayerRow[],
+        goalieRosters: (goalieRosters ?? []) as GoalieRosterRow[]
+      });
+      const rosterAssignmentDrift =
+        assignmentSummary.mismatchedAssignments > 0;
       gates.push({
         gate_key: "outdated_player_team_assignments",
         status:
-          mismatchedAssignments === 0 && nonGoaliePositionRows === 0
-            ? "PASS"
-            : "FAIL",
-        detail: `goalie_candidates_checked=${likelyGoalieIds.size}, mismatched_team_assignments=${mismatchedAssignments}, non_goalie_positions=${nonGoaliePositionRows}`,
+          assignmentSummary.nonGoaliePositionRows === 0 ? "PASS" : "FAIL",
+        detail: `goalie_candidates_checked=${assignmentSummary.goalieCandidatesChecked}, mismatched_team_assignments=${assignmentSummary.mismatchedAssignments}, non_goalie_positions=${assignmentSummary.nonGoaliePositionRows}, season_id=${seasonId}`,
         action:
-          "Refresh players/team mappings and line combinations; verify traded goalies are updated in players.team_id."
+          "Refresh players/rosters and line combinations; verify current-season goalie roster assignments are present in rosters."
       });
+      if (rosterAssignmentDrift) {
+        gates.push({
+          gate_key: "outdated_player_team_assignments_warning",
+          status: "PASS",
+          detail: `Roster drift warning only: ${assignmentSummary.mismatchedAssignments} latest line-combination goalie assignments are not present on current-season rosters.`,
+          action:
+            "Review recalled, reassigned, or traded goalie history if projection inputs look suspicious; this warning does not block the run."
+        });
+      }
     } else {
       gates.push({
         gate_key: "outdated_player_team_assignments",
@@ -528,6 +613,16 @@ function buildGoalieObservability(args: {
       detail: gate.detail
     });
   }
+  const warningOnlyGates = args.preflight.gates.filter((g) =>
+    g.gate_key.endsWith("_warning")
+  );
+  for (const gate of warningOnlyGates) {
+    warnings.push({
+      code: `preflight_${gate.gate_key}`,
+      message: "Preflight data-quality warning.",
+      detail: gate.detail
+    });
+  }
 
   if (args.gamesProcessed > 0 && args.goalieRowsProcessed === 0) {
     warnings.push({
@@ -551,8 +646,13 @@ function buildGoalieObservability(args: {
   };
 }
 
-async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
+async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<CronTimedResponse<Result>>
+) {
   const startedAt = Date.now();
+  const withTiming = (body: Result, endedAt = Date.now()) =>
+    withCronJobTiming(body, startedAt, endedAt);
   const horizonGames = parseHorizonGames(getParam(req, "horizonGames"));
   const chunkDays = parseChunkDays(getParam(req, "chunkDays"));
   const resumeFromDate = parseDateParam(getParam(req, "resumeFromDate"));
@@ -572,7 +672,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
     res.setHeader("Allow", ["GET", "POST"]);
     return res
       .status(405)
-      .json({
+      .json(withTiming({
         success: false,
         asOfDate: "",
         startDate: "",
@@ -588,7 +688,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
         maxDurationMs: formatDurationMsToMMSS(0),
         durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
         error: "Method not allowed"
-      });
+      }));
   }
 
   const dateParam = parseDateParam(getParam(req, "date"));
@@ -609,7 +709,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
     (rangeDates.length === 0 ||
       (startDateParam && endDateParam && startDateParam > endDateParam))
   ) {
-    return res.status(400).json({
+    return res.status(400).json(withTiming({
       success: false,
       asOfDate: "",
       startDate: startDateParam ?? "",
@@ -625,17 +725,19 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
       maxDurationMs: formatDurationMsToMMSS(0),
       durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
       error: "Invalid startDate/endDate range"
-    });
+    }));
   }
   const asOfDate = dateParam ?? isoDateOnly(new Date().toISOString());
   const startDate = startDateParam ?? asOfDate;
   const endDate = endDateParam ?? asOfDate;
-  const preflight = await runProjectionPreflightChecks(asOfDate, bypassPreflight);
   const maxDurationMs = Number(getParam(req, "maxDurationMs") ?? 270_000);
   const budgetMs = Number.isFinite(maxDurationMs) ? maxDurationMs : 270_000;
   const deadlineMs = startedAt + budgetMs;
+  let preflight = defaultPreflight;
 
   try {
+    preflight = await runProjectionPreflightChecks(asOfDate, bypassPreflight);
+
     if (rangeDates.length > 0) {
       const effectiveRangeStart =
         resumeFromDate && resumeFromDate >= startDate && resumeFromDate <= endDate
@@ -671,7 +773,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
           )
         });
         if (rangePreflight.status === "FAIL") {
-          return res.status(422).json({
+          return res.status(422).json(withTiming({
             success: false,
             asOfDate: date,
             startDate: effectiveRangeStart,
@@ -688,7 +790,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
             durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
             error:
               "Preflight freshness checks failed for range date. Resolve upstream dependencies or use bypassPreflight=true."
-          });
+          }));
         }
         if (Date.now() > deadlineMs) {
           const timedOutObservability = buildGoalieObservability({
@@ -702,7 +804,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
               .filter((r) => r.goalieRowsUpserted === 0)
               .map((r) => r.asOfDate)
           });
-          return res.status(200).json({
+          return res.status(200).json(withTiming({
             success: false,
             asOfDate: date,
             startDate: effectiveRangeStart,
@@ -720,7 +822,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
             error: "Timed out",
             results,
             processedDates: results.map((r) => r.asOfDate)
-          });
+          }));
         }
         const out = await runProjectionV2ForDate(date, {
           deadlineMs,
@@ -748,7 +850,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
           .filter((r) => r.goalieRowsUpserted === 0)
           .map((r) => r.asOfDate)
       });
-      return res.status(200).json({
+      return res.status(200).json(withTiming({
         success: true,
         asOfDate: last?.asOfDate ?? asOfDate,
         startDate: effectiveRangeStart,
@@ -770,7 +872,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
         goalieRowsUpserted: last?.goalieRowsUpserted ?? 0,
         results,
         processedDates: results.map((r) => r.asOfDate)
-      });
+      }));
     }
 
     if (preflight.status === "FAIL") {
@@ -779,7 +881,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
         gamesProcessed: 0,
         goalieRowsProcessed: 0
       });
-      return res.status(422).json({
+      return res.status(422).json(withTiming({
         success: false,
         asOfDate,
         startDate,
@@ -796,7 +898,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
         durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
         error:
           "Preflight freshness checks failed. Resolve upstream dependencies or use bypassPreflight=true to override."
-      });
+      }));
     }
 
     const out = await runProjectionV2ForDate(asOfDate, {
@@ -809,7 +911,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
       goalieRowsProcessed: out.goalieRowsUpserted
     });
     if (out.timedOut) {
-      return res.status(200).json({
+      return res.status(200).json(withTiming({
         success: false,
         asOfDate,
         startDate,
@@ -830,11 +932,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
         teamRowsUpserted: out.teamRowsUpserted,
         goalieRowsUpserted: out.goalieRowsUpserted,
         error: "Timed out"
-      });
+      }));
     }
     return res
       .status(200)
-      .json({
+      .json(withTiming({
         success: true,
         asOfDate,
         startDate,
@@ -854,11 +956,17 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
         playerRowsUpserted: out.playerRowsUpserted,
         teamRowsUpserted: out.teamRowsUpserted,
         goalieRowsUpserted: out.goalieRowsUpserted
-      });
+      }));
   } catch (e) {
+    const dependencyError = normalizeDependencyError(e);
+    const baseObservability = buildGoalieObservability({
+      preflight,
+      gamesProcessed: 0,
+      goalieRowsProcessed: 0
+    });
     return res
       .status(500)
-      .json({
+      .json(withTiming({
         success: false,
         asOfDate,
         startDate,
@@ -869,16 +977,23 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
         nextStartDate: null,
         pipeline,
         preflight,
-        observability: buildGoalieObservability({
-          preflight,
-          gamesProcessed: 0,
-          goalieRowsProcessed: 0
-        }),
+        observability: {
+          ...baseObservability,
+          dataQualityWarnings: [
+            ...baseObservability.dataQualityWarnings,
+            {
+              code: "dependency_error",
+              message: dependencyError.message,
+              detail: dependencyError.detail ?? undefined
+            }
+          ]
+        },
         timedOut: false,
         maxDurationMs: formatDurationMsToMMSS(budgetMs),
         durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
-        error: (e as any)?.message ?? String(e)
-      });
+        error: dependencyError.message,
+        dependencyError
+      }));
   }
 }
 
