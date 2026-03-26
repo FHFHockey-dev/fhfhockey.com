@@ -12,8 +12,8 @@ type TotalGamesPerDayRowProps = {
 };
 
 // Function to determine intensity based on game count
-const getIntensity = (numGames: number): string => {
-  if (numGames <= 7) return "high"; // Green (Fewest games = highest intensity day for streaming)
+export const getGamesPerDayIntensity = (numGames: number): string => {
+  if (numGames <= 6) return "high"; // Green (Fewest games = highest intensity day for streaming)
   if (numGames <= 8) return "medium-high"; // Yellow
   if (numGames <= 9) return "low"; // red
   return "low"; // Red (Most games = lowest intensity day for streaming)
@@ -55,7 +55,7 @@ function TotalGamesPerDayRow({
 
       {/* Day cells */}
       {games.map((numGames, i) => {
-        const intensity = getIntensity(numGames);
+        const intensity = getGamesPerDayIntensity(numGames);
         const isExcluded = !extended && excludedDaysIdx.includes(i);
         return (
           <td key={i} data-intensity={intensity}>
@@ -106,7 +106,10 @@ export function calcTotalGP(games: number[], excludedDays: DAY_ABBREVIATION[]) {
  * @param games A list of num games played.
  * @returns The number of off-night games for the week.
  */
-function calcTotalOffNights(games: number[], excludedDays: DAY_ABBREVIATION[]) {
+export function calcTotalOffNights(
+  games: number[],
+  excludedDays: DAY_ABBREVIATION[]
+) {
   let total = 0;
   // ["Fri","Tue"] => [4, 1]
   const excludedDaysIdx = excludedDays.map((day) => DAYS.indexOf(day));

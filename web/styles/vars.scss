@@ -176,8 +176,8 @@ $background-lighter: color.adjust($background-light, $lightness: 10%);
 $background-header: color.adjust($background-dark, $lightness: -5%);
 
 // Unified surface elevation ramp (new)
-$surface-0: $background-dark; // page canvas
-$surface-1: $background-medium; // base card / row surfaces
+$surface-0: #111417; // page canvas
+$surface-1: #1a1c21; // base card / row surfaces
 $surface-2: $background-light; // interactive hover / active surface
 
 // Elevation shadow tokens (soft, ambient)

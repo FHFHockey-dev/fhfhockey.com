@@ -8,24 +8,18 @@
 
 .mainGridContainer {
   width: 100%;
-  // max-width: 1600px; // Removed max-width constraint
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: v.$space-lg;
   position: relative;
   min-height: 100dvh;
+  padding: clamp(14px, 2vw, 28px);
+  background: v.$surface-0;
 
-  // Removed glassmorphism from main container to allow gaps
-
-  @media (max-width: #{v.$breakpoint-desktop - 1px}) {
-    width: 95%;
-    margin: v.$space-lg auto;
-    gap: v.$space-lg;
-  }
   @media (max-width: #{v.$breakpoint-tablet - 1px}) {
     width: 100%;
-    margin: v.$space-md 0;
+    padding: v.$space-sm;
     gap: v.$space-md;
   }
 
@@ -38,9 +32,11 @@
 
 // Sticky command header (desktop dashboard feel)
 .dashboardHeader {
-  position: sticky;
-  top: 0;
-  z-index: 40;
+  position: static;
+  z-index: auto;
+  padding-top: 0;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 // New 3-Column Grid Layout
@@ -48,13 +44,14 @@
   display: grid;
   grid-template-columns: 1fr; // Mobile default
   gap: v.$space-lg;
-  width: 100%;
+  width: 95%;
+  margin: 0 auto;
 
   @media (min-width: v.$breakpoint-desktop) {
     grid-template-columns:
-      minmax(280px, 2fr)
-      minmax(0, 5fr)
-      minmax(280px, 2fr);
+      156px
+      minmax(0, 1fr)
+      220px;
     align-items: stretch;
     gap: v.$space-lg;
     flex: 1 1 auto;
@@ -63,14 +60,18 @@
 }
 
 .leftRail {
-  // Container for OMT
   display: flex;
   flex-direction: column;
   gap: v.$space-lg;
   min-width: 0; // Prevent flex blowout
   width: 100%;
   min-height: 0;
-  @include v.glass-panel(0, v.$border-radius-xl);
+  border-radius: 0;
+  background: #1d2127;
+  border: 1px solid rgba(v.$color-white, 0.06);
+  box-shadow:
+    0 18px 44px rgba(0, 0, 0, 0.32),
+    inset 0 1px 0 rgba(v.$color-white, 0.05);
 
   @media (min-width: v.$breakpoint-desktop) {
     height: auto;
@@ -78,7 +79,6 @@
 }
 
 .centerGrid {
-  // Container for Main Game Grid
   display: flex;
   flex-direction: column;
   gap: v.$space-md;
@@ -87,16 +87,17 @@
   position: relative;
   padding: 0;
   min-height: 0;
-  @include v.glass-panel(0, v.$border-radius-xl * 2);
-  border: 2px solid rgba(v.$primary-color, 0.55);
+  border: 1px solid rgba(v.$secondary-color, 0.28);
   box-shadow:
-    v.$desktop-panel-shadow,
-    0 0 24px rgba(v.$primary-color, 0.12);
-  border-radius: v.$border-radius-xl * 2;
+    0 24px 60px rgba(0, 0, 0, 0.36),
+    0 0 0 1px rgba(v.$color-white, 0.03) inset,
+    0 0 28px rgba(v.$primary-color, 0.08);
+  border-radius: 0;
+  background: #20242a;
 
   @media (min-width: v.$breakpoint-desktop) {
     height: auto;
-    margin-top: v.$space-lg; // visually "drops" main content below rails
+    margin-top: v.$space-sm;
     &::before,
     &::after {
       opacity: 1;
@@ -111,14 +112,18 @@
 }
 
 .rightRail {
-  // Container for 4WG
   display: flex;
   flex-direction: column;
   gap: v.$space-md;
   min-width: 0;
   width: 100%;
   min-height: 0;
-  @include v.glass-panel(0, v.$border-radius-xl);
+  border-radius: 0;
+  background: #1d2127;
+  border: 1px solid rgba(v.$color-white, 0.06);
+  box-shadow:
+    0 18px 44px rgba(0, 0, 0, 0.32),
+    inset 0 1px 0 rgba(v.$color-white, 0.05);
 
   @media (min-width: v.$breakpoint-desktop) {
     height: auto;
@@ -150,23 +155,14 @@
 .scheduleGridContainer {
   flex-grow: 1;
   height: 100%; // Force full height
-  // @include v.element-wrapper;
-  border-radius: v.$border-radius-xl * 2;
+  border-radius: 0;
   overflow: hidden;
-  border: 1px solid v.$desktop-panel-border;
-  background: linear-gradient(
-    180deg,
-    rgba(color.adjust(v.$background-medium, $lightness: 2%), 0.95),
-    rgba(v.$background-dark, 0.95)
-  );
+  border: 1px solid rgba(v.$color-white, 0.06);
+  background: v.$surface-1;
   box-shadow:
-    v.$desktop-panel-shadow,
+    0 20px 44px rgba(0, 0, 0, 0.32),
     0 0 0 1px rgba(v.$color-white, 0.04) inset,
-    0 0 24px rgba(v.$primary-color, 0.08);
-  // Previously visible allowed internal absolutely positioned separator
-  // lines to extend past the rounded bottom-left corner. Hide overflow so
-  // the vertical team column separator and any negative-offset pseudo
-  // elements are clipped to the container's radius.
+    0 0 24px rgba(v.$primary-color, 0.06);
   position: relative;
   display: flex;
   flex-direction: column;
@@ -312,7 +308,7 @@
 
 .opponentStatsContainer {
   flex-shrink: 0;
-  border-radius: v.$border-radius-lg;
+  border-radius: 0;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.08);
 
@@ -340,12 +336,12 @@
 .fourWeekGridContainerAll {
   width: 100%;
   flex-grow: 1; // Fill the rail height
-  border-radius: 0 0 0 v.$border-radius-lg; // only inside bottom corner
+  border-radius: 0;
   overflow: hidden;
   min-height: 0;
 
   border: 1px solid rgba(255, 255, 255, 0.1);
-  background: v.$background-medium;
+  background: #1d2127;
   box-shadow:
     v.$box-shadow-default,
     inset -10px 0 0 rgba(v.$secondary-color, 0.85),
@@ -366,9 +362,9 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
-  border-radius: 0 0 v.$border-radius-lg 0; // only inside bottom corner
+  border-radius: 0;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  background: v.$background-medium;
+  background: #1d2127;
   box-shadow:
     v.$box-shadow-default,
     inset 10px 0 0 rgba(v.$primary-color, 0.85),
@@ -554,23 +550,29 @@
 
 // Make week nav buttons match DraftSettings toggle buttons (inside .dateNav)
 .dateNav {
-  // Align with .modeToggle (DraftSettings .draftTypeToggle)
   display: flex;
   align-items: center;
   gap: v.$space-sm;
-  background-color: v.$background-dark;
-  border-radius: v.$border-radius-md;
-  padding: v.$space-sm;
-  border: 2px solid v.$primary-color;
+  background: #1d2127;
+  border-radius: v.$border-radius-lg;
+  padding: 4px;
+  border: 1px solid rgba(v.$secondary-color, 0.22);
+  box-shadow:
+    0 10px 24px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(v.$color-white, 0.04);
+  min-height: 40px;
+  width: 50%;
 
   .dateButtonPrev,
   .dateButtonNext {
     @include v.button-style;
     border: 2px solid v.$primary-color;
-    background-color: v.$primary-color-opaque;
-    color: v.$primary-color;
+    background-color: rgba(v.$primary-color, 0.18);
+    color: v.$secondary-color;
+    width: 50%;
 
-    padding: v.$space-xs v.$space-md;
+    min-height: 32px;
+    padding: 0 v.$space-md;
     font-family: v.$font-family-accent, sans-serif;
     font-weight: 600;
     text-transform: uppercase;
@@ -579,9 +581,9 @@
     transition: all 0.2s ease;
 
     &:hover:not(:disabled) {
-      color: v.$primary-color;
-      background-color: color.adjust(v.$primary-color, $alpha: -0.5);
-      outline: 2px solid color.adjust(v.$primary-color, $alpha: -0.2);
+      color: v.$color-white;
+      background-color: rgba(v.$primary-color, 0.3);
+      box-shadow: 0 8px 16px rgba(v.$primary-color, 0.22);
     }
 
     &:disabled {
@@ -622,96 +624,42 @@
 // --- Title Header Styling (Modernized) ---
 .titleHeader,
 .gameGridHeaderContent {
-  background: linear-gradient(
-    135deg,
-    v.$background-dark,
-    color.adjust(v.$background-dark, $lightness: 5%)
-  );
-  padding: 20px;
+  background: v.$surface-1;
+  padding-block: clamp(12px, 1.4vw, 16px);
+  padding-inline: clamp(24px, 3vw, 24px);
   position: relative;
-  width: 100%;
+  width: 95%;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  align-items: center;
+  align-items: stretch;
   flex-shrink: 0;
-  border-bottom: 5px solid v.$primary-color;
+  border: 1px solid rgba(v.$color-white, 0.06);
+  border-bottom: 1px solid rgba(v.$secondary-color, 0.22);
+  border-radius: 18px 18px 0 0;
   font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   margin-bottom: 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  filter: drop-shadow(0 0 4px v.$primary-color);
+  box-shadow:
+    0 20px 50px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(v.$color-white, 0.05);
 }
 
 .gameGridHeaderContent {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: v.$space-sm;
-  width: 100%;
+  gap: v.$space-md;
+  width: 95%;
   position: relative;
-  // "Notch" at top center (Macbook/iPhone style) for the Week badge.
-  --week-notch-width: 480px;
-  --week-notch-depth: 56px;
-  --week-notch-inset: 48px; // controls trapezoid angle
-  --week-notch-radius: 24px; // softens bottom corner angles
-  // Make room for the notch/badge area.
-
-  // Visually "carve" the notch by overlaying a trapezoid that matches the
-  // surrounding container background. (We avoid clipping the element itself
-  // so the Week text can render inside the notch.)
   &::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: var(--week-notch-width);
-    height: var(--week-notch-depth);
-    clip-path: polygon(
-      0 0,
-      100% 0,
-      calc(100% - var(--week-notch-inset)) 100%,
-      var(--week-notch-inset) 100%
-    );
-
-    box-shadow: 0 0 16px rgba(v.$primary-color, 0.14);
-    background: v.$primary-color;
-    z-index: 5;
-    pointer-events: none;
+    content: none;
   }
 
-  // Inner notch fill (slightly inset) so the outer layer reads as a true border.
   &::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: var(--week-notch-width);
-    height: var(--week-notch-depth);
-    background: v.$background-dark
-      linear-gradient(
-        135deg,
-        rgba(255, 255, 255, 0.035),
-        rgba(255, 255, 255, 0.016)
-      ); // match scheduleGridContainer frame color
-    clip-path: polygon(
-      1px 1px,
-      calc(100% - 1px) 1px,
-      calc(100% - var(--week-notch-inset) - 1px) calc(100% - 1px),
-      calc(var(--week-notch-inset) + 1px) calc(100% - 1px)
-    );
-    z-index: 5;
-    pointer-events: none;
-  }
-
-  @media (max-width: 480px) {
-    --week-notch-width: 190px;
-    --week-notch-depth: 28px;
-    --week-notch-inset: 28px;
-    --week-notch-radius: 9px;
+    content: none;
   }
 }
 
@@ -719,50 +667,75 @@
 .gameGridTitle {
   font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-size: clamp(1.5rem, 4vw, 1.9rem);
+  letter-spacing: 0.32em;
+  font-size: clamp(1.7rem, 4vw, 2.45rem);
   font-weight: 900;
-  color: v.$text-color-primary;
+  color: v.$color-white;
   flex-grow: 1;
   text-align: left;
   margin: 0;
   width: 100%;
   text-shadow:
-    0 0 10px rgba(v.$primary-color, 0.18),
-    0 0 24px rgba(v.$secondary-color, 0.12);
+    0 0 12px rgba(v.$primary-color, 0.15),
+    0 0 24px rgba(v.$secondary-color, 0.08);
 }
 
 // --- New header enhancements ---
 .titleBlock {
   display: flex;
-  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
   min-width: 0;
   width: 100%;
+  gap: v.$space-md;
+
+  @media (max-width: 980px) {
+    flex-direction: column;
+    align-items: center;
+  }
 }
 
 .subTitle {
-  font-size: 0.9rem;
-  letter-spacing: 0.08em;
+  font-size: 1rem;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
   text-align: right;
-  color: v.$text-secondary;
+  color: v.$color-white;
   margin: 0;
-  opacity: 0.85;
+  opacity: 0.92;
   font-weight: 500;
-  width: 30%;
+  width: auto;
+  max-width: 28rem;
+  line-height: 1.45;
+  filter: drop-shadow(0  0 4px rgba(255, 255, 255, 0.4));
+
+  @media (max-width: 980px) {
+    text-align: center;
+    max-width: 44rem;
+  }
 }
 
 .controlsBar {
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-  gap: v.$space-sm;
-  width: 100%;
-  margin-top: v.$space-xs;
+  grid-template-columns: auto minmax(0, 2fr) auto;
+  align-items: end;
+  gap: v.$space-md;
+  width: 95%;
+  margin: -18px auto;
+  padding: v.$space-md clamp(14px, 1.8vw, 24px);
+  background: v.$surface-1;
+  border: 1px solid rgba(v.$color-white, 0.08);
+  box-shadow:
+    0 18px 36px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(v.$color-white, 0.04);
+  position: relative;
+  z-index: 4;
 
   @media (max-width: 980px) {
-    margin-top: v.$space-sm;
+    grid-template-columns: 1fr;
+    align-items: stretch;
     gap: v.$space-sm;
+    margin-top: v.$space-xs;
   }
 }
 
@@ -780,33 +753,40 @@
 .dateCluster {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: v.$space-sm;
   flex-wrap: wrap;
-  min-width: 0;
+  min-width: 100%;
   @media (min-width: 981px) {
     flex-wrap: nowrap; // inline on desktop
   }
 }
 
 .modeToggle {
-  // Match DraftSettings .draftTypeToggle
   display: flex;
-  background-color: v.$background-dark;
-  border-radius: v.$border-radius-md;
-  padding: v.$space-xs;
-  border: 1px solid v.$border-secondary;
+  background-color: rgba(v.$background-dark, 0.9);
+  border-radius: v.$border-radius-lg;
+  padding: 4px;
+  border: 1px solid rgba(v.$color-white, 0.08);
+  box-shadow: inset 0 1px 0 rgba(v.$color-white, 0.04);
   justify-self: end;
   grid-column: 3;
+  min-height: 40px;
+
+  @media (max-width: 980px) {
+    justify-self: stretch;
+    grid-column: auto;
+  }
 }
 
 .modeButton,
 .modeButtonActive {
-  // Match DraftSettings .toggleButton
   @include v.button-style;
   background-color: transparent;
-  color: v.$text-secondary;
-  border: none;
-  padding: v.$space-xs v.$space-md;
+  color: v.$secondary-color;
+  border: 2px solid transparent;
+  min-height: 32px;
+  padding: 0 v.$space-md;
   font-family: v.$font-family-accent, sans-serif;
   font-weight: 600;
   text-transform: uppercase;
@@ -816,17 +796,17 @@
 
   &:hover {
     color: v.$primary-color;
-    background-color: color.adjust(v.$primary-color, $alpha: -0.9);
+    background-color: rgba(v.$primary-color, 0.1);
   }
 }
 
 .modeButtonActive {
   background-color: v.$primary-color-opaque;
   border: 2px solid v.$primary-color;
-  color: v.$secondary-color;
+  color: v.$color-white;
 
   &:hover {
-    background-color: color.adjust(v.$primary-color, $lightness: -5%);
+    background-color: rgba(v.$primary-color, 0.48);
   }
 }
 
@@ -836,25 +816,37 @@
 // }
 
 .weekRange {
-  // Readable center "label pill" between Prev/Next
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: v.$space-xs v.$space-md;
-  border-radius: v.$border-radius-sm;
+  gap: 10px;
+  width: auto;
+  flex: 0 0 auto;
+
+  min-height: 32px;
+  padding: 0 v.$space-md;
+  border-radius: v.$border-radius-md;
   white-space: nowrap;
   font-size: v.$font-size-sm;
   font-weight: 600;
   letter-spacing: 0.02em;
   font-family: v.$font-family-numbers, v.$font-family-primary, sans-serif;
-  background: linear-gradient(
-    135deg,
-    rgba(v.$secondary-color, 0.12),
-    rgba(v.$secondary-color, 0.08)
-  );
-  color: v.$primary-color;
-  border: 1px solid rgba(v.$secondary-color, 0.25);
+  background: #1d2127;
+  color: v.$color-white;
+  border: 1px solid rgba(v.$color-white, 0.08);
   backdrop-filter: blur(8px);
+}
+
+.weekRangeStart {
+  display: inline-flex;
+}
+
+.weekRangeDash {
+  display: inline-flex;
+}
+
+.weekRangeEnd {
+  display: inline-flex;
 }
 
 .viewToggleWrapper {
@@ -868,8 +860,9 @@
   align-items: center;
   gap: v.$space-sm;
   flex-wrap: wrap;
+  width: 100%;
   min-width: 0;
-  justify-self: center;
+  justify-self: stretch;
   justify-content: center;
 
   @media (min-width: 981px) {
@@ -881,10 +874,13 @@
   min-width: 90px;
 }
 
-// Panel + orientation controls should match the active toggle styling.
 .panelControlButton,
 .orientationToggleButton {
   @extend .modeButtonActive;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 v.$space-md;
+  color: v.$color-white;
 }
 
 // --- Grid layout improvements ---
@@ -977,43 +973,81 @@
   box-shadow: inset 0 -2px 0 var(--day-accent);
 }
 
-// Week score rank colors (example mapping if missing)
+// Week score rank colors: full-cell fill + border + text, ranked green -> yellow -> orange -> red.
 @for $i from 1 through 32 {
+  $denominator: math.max(1, 31);
+  $percentage: math.div($i - 1, $denominator);
+  $hue: (1 - $percentage) * 120;
+  $rank-accent: hsl($hue, 88%, 66%);
+
   .rank-color-#{$i} {
-    background: linear-gradient(
-      90deg,
-      rgba(0, 0, 0, math.div(20 - $i, 95)),
-      transparent
-    );
+    background-color: rgba($rank-accent, 0.18) !important;
+    color: $rank-accent !important;
+    box-shadow:
+      inset 0 0 0 2px rgba($rank-accent, 0.72),
+      inset 0 -1px 0 rgba($rank-accent, 0.34);
   }
 }
 
 // Legend bar
 .legendBar {
-  margin: v.$space-sm;
-  max-width: 1600px;
+  margin: v.$space-sm v.$space-sm;
+  padding: v.$space-sm v.$space-md;
+  width: 100%;
   font-size: 0.65rem;
   letter-spacing: 0.05em;
   display: flex;
+  flex-direction: row;
   align-items: center;
-  flex-wrap: wrap;
+  justify-content: space-between;
   gap: 12px;
+  border-bottom: 1px solid rgba(v.$color-white, 0.06);
+  background: v.$surface-1;
+  border-radius: 0;
+
+  @media (max-width: 980px) {
+    grid-template-columns: 1fr;
+    justify-items: start;
+  }
+}
+
+.legendMeta {
+  min-width: 0;
+  width: 67%;
+
   ul {
     list-style: none;
     display: flex;
-    justify-content: space-evenly;
-    flex: 1 1 auto;
     width: 100%;
+    align-items: flex-start;
+    justify-content: center;
     flex-wrap: wrap;
-    gap: 12px;
+    gap: v.$space-lg;
     padding: 0;
     margin: 0;
   }
+
   li {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: v.$space-sm;
+    font-size: 1rem;
+    font-variant: all-small-caps;
+    letter-spacing: 0.05rem;
     color: v.$text-secondary;
+  }
+}
+
+.legendBarEnd {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+  width: 33%;
+
+  @media (max-width: 980px) {
+    justify-self: start;
   }
 }
 
@@ -1021,17 +1055,45 @@
   @extend .modeButtonActive;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  padding: 2px 10px;
-  min-height: 22px;
+  padding: 0 10px;
+  min-height: 32px;
   font-size: 0.7rem;
   line-height: 1;
+  cursor: pointer;
 }
 
 .weekScoreHelpIcon {
   @extend .weekScoreHelp;
   margin-left: 0;
   flex: 0 0 auto;
+}
+
+.weekScoreHelpPopover {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: min(320px, 92vw);
+  padding: 12px 14px;
+  border: 1px solid rgba(v.$secondary-color, 0.22);
+  background: #1d2127;
+  color: v.$text-primary;
+  box-shadow:
+    0 14px 28px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(v.$color-white, 0.04);
+  z-index: 20;
+
+  p {
+    margin: 0;
+    font-size: 0.78rem;
+    line-height: 1.45;
+    color: v.$text-secondary;
+  }
+
+  p + p {
+    margin-top: 8px;
+  }
 }
 .legendSwatch {
   width: 14px;
@@ -1051,6 +1113,663 @@
 }
 .legendWorst {
   background: v.$schedule-red;
+}
+
+.desktopMasterSection {
+  grid-column: 1 / -1;
+  min-width: 0;
+  --master-table-sticky-top: 0px;
+}
+
+@media (min-width: v.$breakpoint-desktop) {
+  .desktopMasterSection .scheduleGridContainer {
+    overflow: visible;
+  }
+
+  .desktopMasterSection .masterTableShell {
+    overflow: visible;
+  }
+
+  .desktopMasterSection .masterTableScroll {
+    overflow-x: auto;
+    overflow-y: visible;
+  }
+}
+
+.masterTableShell {
+  width: 100%;
+  min-width: 0;
+  padding: 0 v.$space-sm v.$space-sm;
+}
+
+.masterTableScroll {
+  overflow-x: auto;
+  overflow-y: auto;
+  max-width: 100%;
+  border-radius: 0;
+  @include v.custom-scrollbar(v.$secondary-color, v.$background-medium);
+}
+
+.masterStickyHeaderOverlay {
+  position: fixed;
+  top: 0;
+  z-index: 40;
+  overflow: hidden;
+  background: rgba(27, 32, 38, 0.96);
+  border-bottom: 1px solid rgba(v.$color-white, 0.18);
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.34);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.masterStickyHeaderViewport {
+  overflow: hidden;
+}
+
+.masterStickyHeaderTable {
+  margin: 0;
+}
+
+.masterTable {
+  --master-group-row-height: 28px;
+  width: 100%;
+  min-width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+  color: v.$text-primary;
+  font-family: v.$font-family-primary, sans-serif;
+  font-size: 0.82rem;
+
+  thead {
+    position: static;
+  }
+
+  thead th {
+    position: sticky;
+    top: calc(
+      var(--master-table-sticky-top) + var(--master-group-row-height)
+    );
+    z-index: 8;
+    padding: 0;
+    background-color: #26292d;
+    border-bottom: 1px solid rgba(v.$color-white, 0.06);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-family: v.$font-family-primary, sans-serif;
+    font-weight: 700;
+    color: rgba(v.$color-white, 0.92);
+    white-space: nowrap;
+  }
+
+  tbody td {
+    padding: 8px 10px;
+    text-align: center;
+    border-bottom: 1px solid rgba(v.$color-white, 0.04);
+    background: #1d2128;
+    min-width: 80px;
+    font-family: v.$font-family-numbers, v.$font-family-primary, sans-serif;
+  }
+
+  tbody td,
+  thead th {
+    border-right: 1px solid rgba(v.$color-white, 0.035);
+  }
+
+  tbody tr:nth-child(even) td {
+    background: #20252d;
+  }
+
+  tbody tr:hover td {
+    background: #242a31;
+  }
+
+  td[data-intensity="low"] {
+    background-color: rgba(v.$schedule-red, 0.12);
+  }
+
+  td[data-intensity="medium-low"] {
+    background-color: rgba(v.$color-orange-400, 0.1);
+  }
+
+  td[data-intensity="medium-high"] {
+    background-color: rgba(v.$schedule-yellow, 0.1);
+  }
+
+  td[data-intensity="high"] {
+    background-color: rgba(v.$schedule-green, 0.12);
+  }
+
+  th[data-intensity="low"] {
+    background: rgba(v.$schedule-red, 0.13);
+    box-shadow:
+      inset 0 -2px 0 rgba(v.$schedule-red, 0.78),
+      inset 0 1px 0 rgba(v.$color-white, 0.03);
+  }
+
+  th[data-intensity="medium-low"] {
+    background: rgba(v.$color-orange-400, 0.12);
+    box-shadow:
+      inset 0 -2px 0 rgba(v.$color-orange-400, 0.8),
+      inset 0 1px 0 rgba(v.$color-white, 0.03);
+  }
+
+  th[data-intensity="medium-high"] {
+    background: rgba(v.$schedule-yellow, 0.12);
+    box-shadow:
+      inset 0 -2px 0 rgba(v.$schedule-yellow, 0.8),
+      inset 0 1px 0 rgba(v.$color-white, 0.03);
+  }
+
+  th[data-intensity="high"] {
+    background: rgba(v.$schedule-green, 0.13);
+    box-shadow:
+      inset 0 -2px 0 rgba(v.$schedule-green, 0.8),
+      inset 0 1px 0 rgba(v.$color-white, 0.03);
+  }
+
+  td.cellInnerBorder {
+    min-width: 80px;
+    padding: 1px;
+    background: transparent;
+  }
+}
+
+.masterHeaderGroupRow th {
+  top: var(--master-table-sticky-top) !important;
+  z-index: 10 !important;
+  border-bottom: 1px solid rgba(v.$color-white, 0.08);
+}
+
+.masterHeaderMetricRow th {
+  top: calc(
+    var(--master-table-sticky-top) + var(--master-group-row-height)
+  ) !important;
+  z-index: 9 !important;
+}
+
+.masterStickyMetricGroup {
+  position: sticky !important;
+  left: 0;
+  z-index: 11 !important;
+}
+
+.masterSectionBanner {
+  height: var(--master-group-row-height);
+  background: #1b2026 !important;
+  text-align: center;
+  border-right: 1px solid rgba(v.$color-white, 0.05);
+  box-shadow:
+    inset 0 -1px 0 rgba(v.$color-white, 0.05),
+    inset 0 1px 0 rgba(v.$color-white, 0.03);
+}
+
+.masterSectionBannerMetrics {
+  background: #1d2329 !important;
+}
+
+.masterSectionBannerFourWeek {
+  background: #1c2530 !important;
+}
+
+.masterSectionBannerCollapsed {
+  width: 36px;
+  min-width: 36px !important;
+  max-width: 36px;
+}
+
+.masterSectionBannerSummary {
+  background: #10384e !important;
+  border-right: 0 !important;
+}
+
+.masterSectionBannerStart {
+  border-top-left-radius: 24px !important;
+}
+
+.masterSectionBannerEnd {
+  border-top-right-radius: 24px !important;
+}
+
+.masterSectionLabel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: var(--master-group-row-height);
+  padding: 0 10px;
+  font-size: 0.54rem;
+  line-height: 1;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(v.$color-blue-100, 0.9);
+}
+
+.masterSortButton,
+.masterCollapseButton {
+  width: 100%;
+  min-height: 56px;
+  padding: 6px 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: v.$space-xs;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+}
+
+.masterSortButton {
+  flex-direction: column;
+  line-height: 1.05;
+
+  &:hover,
+  &:focus-visible {
+    background: rgba(v.$color-white, 0.03);
+    outline: none;
+    box-shadow: inset 0 0 0 1px rgba(v.$color-white, 0.04);
+  }
+}
+
+.masterSortLabelStack {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+}
+
+.masterMetricEyebrow {
+  font-size: 0.52rem;
+  line-height: 1;
+  letter-spacing: 0.14em;
+  color: rgba(v.$color-blue-100, 0.92);
+}
+
+.masterCollapseButton {
+  flex-direction: column;
+  line-height: 1.1;
+
+  &:hover,
+  &:focus-visible {
+    outline: none;
+    background: rgba(v.$primary-color, 0.12);
+    box-shadow: inset 0 0 0 1px rgba(v.$primary-color, 0.26);
+  }
+}
+
+.masterSortGlyph {
+  opacity: 0.35;
+}
+
+.masterSortGlyphActive {
+  opacity: 1;
+  color: v.$secondary-color;
+}
+
+.masterMetricCell {
+  color: v.$text-primary;
+  min-width: 0 !important;
+  width: auto;
+  text-align: center;
+  box-shadow:
+    inset 0 0 0 1px rgba(v.$color-white, 0.05),
+    inset -1px 0 0 rgba(v.$color-white, 0.03);
+}
+
+.masterMetricGoodStrong {
+  color: #7cffcb;
+  background-color: rgba(v.$schedule-green, 0.16) !important;
+  font-weight: 700;
+}
+
+.masterMetricGoodSoft {
+  color: #f2cf63;
+  background-color: rgba(v.$schedule-yellow, 0.15) !important;
+  font-weight: 700;
+}
+
+.masterMetricBadSoft {
+  color: #ffad5a;
+  background-color: rgba(v.$color-orange-400, 0.15) !important;
+  font-weight: 700;
+}
+
+.masterMetricBadStrong {
+  color: #ff8f8f;
+  background-color: rgba(v.$schedule-red, 0.15) !important;
+  font-weight: 700;
+}
+
+.masterStickyCol {
+  position: sticky;
+  z-index: 3;
+  background: #20242a !important;
+}
+
+.masterStickyMetric {
+  position: sticky;
+  z-index: 5 !important;
+  background: #1d2128 !important;
+  box-shadow: 1px 0 0 rgba(v.$color-white, 0.05);
+}
+
+.masterStickyMetric.masterMetricGoodStrong {
+  background: rgba(v.$schedule-green, 0.16) !important;
+}
+
+.masterStickyMetric.masterMetricGoodSoft {
+  background: rgba(v.$schedule-yellow, 0.15) !important;
+}
+
+.masterStickyMetric.masterMetricBadSoft {
+  background: rgba(v.$color-orange-400, 0.15) !important;
+}
+
+.masterStickyMetric.masterMetricBadStrong {
+  background: rgba(v.$schedule-red, 0.15) !important;
+}
+
+.masterMetricHeader {
+  min-width: 0;
+  width: auto;
+}
+
+.masterMetricHeaderLead {
+  box-shadow:
+    inset 2px 0 0 rgba(v.$secondary-color, 0.34),
+    inset -1px 0 0 rgba(v.$color-white, 0.04);
+}
+
+.masterTeamHeader {
+  min-width: 0;
+  width: auto;
+  z-index: 5 !important;
+  background: #262d36 !important;
+}
+
+.masterStickyTeamCol {
+  z-index: 6 !important;
+  box-shadow:
+    inset 3px 0 0 rgba(v.$secondary-color, 0.22),
+    inset -3px 0 0 rgba(v.$secondary-color, 0.24),
+    10px 0 20px rgba(0, 0, 0, 0.18);
+}
+
+.masterTeamHeaderInner {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  min-height: 56px;
+}
+
+.masterTeamCell {
+  min-width: 0 !important;
+  width: auto;
+  font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
+  letter-spacing: 0.08em;
+  background: #262d36 !important;
+}
+
+.masterTeamIdentity {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+}
+
+.masterTeamLogoWrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.masterTeamLogo {
+  object-fit: contain;
+  filter: drop-shadow(0 0 8px rgba(v.$color-white, 0.08));
+}
+
+.masterDayHeader {
+  min-width: 0;
+  min-height: 56px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.masterDayHeaderLabel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 56px;
+}
+
+.masterDayAndDate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  min-height: 36px;
+  padding: 6px 6px 5px;
+  border-bottom: 1px solid rgba(v.$color-white, 0.08);
+}
+
+.masterDayHeaderButton {
+  width: 100%;
+  min-height: 50px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: inset 0 0 0 1px rgba(v.$secondary-color, 0.26);
+  }
+}
+
+.masterDayHeaderExcluded {
+  opacity: 0.5;
+}
+
+.masterDayName {
+  font-size: 0.68rem;
+  color: v.$color-white;
+  line-height: 1;
+  letter-spacing: 0.1em;
+}
+
+.masterDayDate {
+  font-size: 0.6rem;
+  color: v.$text-secondary;
+  font-family: v.$font-family-primary, sans-serif;
+}
+
+.masterDayToggle {
+  width: 100%;
+  min-height: 18px;
+  padding: 3px 0 5px;
+}
+
+.masterGroupEdge {
+  border-right: 1px solid rgba(v.$color-white, 0.14) !important;
+  box-shadow: inset -2px 0 0 rgba(v.$secondary-color, 0.24);
+}
+
+.masterSummaryScore {
+  min-width: 0;
+  width: auto;
+  color: v.$color-blue-300;
+  font-size: 1rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.masterCollapseSpacer {
+  width: auto;
+  min-width: 0 !important;
+  max-width: none;
+  background: #1c2530 !important;
+  border-left: 1px solid rgba(v.$color-blue-300, 0.24);
+  border-right: 1px solid rgba(v.$color-blue-300, 0.12);
+}
+
+.masterAverageLabel {
+  color: #bfe7f8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.masterAverageDash {
+  color: rgba(v.$color-white, 0.92);
+}
+
+.masterAverageTitle {
+  font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
+  letter-spacing: 0.08em;
+  font-size: 0.78rem;
+  line-height: 1;
+}
+
+.masterAverageSubtitle {
+  font-family: v.$font-family-primary, sans-serif;
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
+  color: rgba(v.$color-white, 0.54);
+}
+
+.masterCollapseLabel {
+  font-size: 0.58rem;
+  letter-spacing: 0.1em;
+}
+
+.masterBlueHeader {
+  background: #0f5f83 !important;
+  color: #0fc0f6 !important;
+}
+
+.masterScoreHeader {
+  background: #77cfff !important;
+  color: #173448 !important;
+  border-right: 0 !important;
+}
+
+.masterFourWeekHeader {
+  background: #1c2530 !important;
+  color: rgba(v.$color-white, 0.92) !important;
+  border-left: 1px solid rgba(v.$color-blue-300, 0.18);
+}
+
+.masterFourWeekLead {
+  border-left: 1px solid rgba(v.$color-blue-300, 0.24);
+}
+
+.masterFourWeekLeadCell {
+  background: #1a242e !important;
+  border-left: 1px solid rgba(v.$color-blue-300, 0.24);
+  border-right: 1px solid rgba(v.$color-blue-300, 0.18);
+}
+
+.masterFourWeekColumn {
+  box-shadow:
+    inset 1px 0 0 rgba(v.$color-blue-300, 0.18),
+    inset -1px 0 0 rgba(v.$color-blue-300, 0.08);
+}
+
+.masterFourWeekCollapsedHeader {
+  width: auto;
+  min-width: 0 !important;
+  max-width: none;
+}
+
+.masterFourWeekCollapsedButton {
+  min-height: 56px;
+  padding: 4px 2px;
+  gap: 2px;
+  white-space: nowrap;
+}
+
+.masterFourWeekCell {
+  background: #1c2530 !important;
+  border-right: 1px solid rgba(v.$color-blue-300, 0.18);
+}
+
+.masterRowBest td {
+  background-image: linear-gradient(
+    rgba(v.$schedule-green, 0.08),
+    rgba(v.$schedule-green, 0.08)
+  );
+}
+
+.masterRowWorst td {
+  background-image: linear-gradient(
+    rgba(v.$schedule-red, 0.08),
+    rgba(v.$schedule-red, 0.08)
+  );
+}
+
+.masterRowBest td:first-child {
+  box-shadow: inset 6px 0 0 rgba(v.$schedule-green, 0.95);
+}
+
+.masterRowWorst td:first-child {
+  box-shadow: inset 6px 0 0 rgba(v.$schedule-red, 0.95);
+}
+
+.masterRowBest td.masterTeamCell {
+  box-shadow:
+    inset 6px 0 0 rgba(v.$schedule-green, 0.95),
+    inset -2px 0 0 rgba(v.$secondary-color, 0.2);
+}
+
+.masterRowWorst td.masterTeamCell {
+  box-shadow:
+    inset 6px 0 0 rgba(v.$schedule-red, 0.95),
+    inset -2px 0 0 rgba(v.$secondary-color, 0.2);
+}
+
+.masterRowBest:hover td {
+  background-image: linear-gradient(
+    rgba(v.$schedule-green, 0.11),
+    rgba(v.$schedule-green, 0.11)
+  );
+}
+
+.masterRowWorst:hover td {
+  background-image: linear-gradient(
+    rgba(v.$schedule-red, 0.11),
+    rgba(v.$schedule-red, 0.11)
+  );
+}
+
+.masterRowBest td.masterSummaryScore,
+.masterRowWorst td.masterSummaryScore {
+  text-shadow: none;
+}
+
+
+
+.masterTotalsRow td {
+  background: #14465b !important;
+  color: rgba(v.$color-white, 0.92);
+  border-top: 2px solid rgba(v.$color-white, 0.16);
+  border-bottom: 2px solid rgba(v.$color-white, 0.16);
+  border-bottom-color: rgba(v.$color-white, 0.16);
 }
 
 // --- Utility & migrated inline styles ---
@@ -1158,14 +1877,36 @@
 }
 
 // Shared matchup cell intensity fill backgrounds (when there IS a game)
+.masterTable tbody td.cellInnerBorder.off-night-day {
+  background: rgba(v.$schedule-green, 0.12) !important;
+}
+.masterTable tbody td.cellInnerBorder.medium-heavy-day {
+  background: rgba(v.$schedule-yellow, 0.1) !important;
+}
+.masterTable tbody td.cellInnerBorder.heavy-day {
+  background: rgba(v.$schedule-red, 0.12) !important;
+}
+
+.masterTable tbody tr:nth-child(even) td.cellInnerBorder.off-night-day {
+  background: rgba(v.$schedule-green, 0.16) !important;
+}
+
+.masterTable tbody tr:nth-child(even) td.cellInnerBorder.medium-heavy-day {
+  background: rgba(v.$schedule-yellow, 0.14) !important;
+}
+
+.masterTable tbody tr:nth-child(even) td.cellInnerBorder.heavy-day {
+  background: rgba(v.$schedule-red, 0.16) !important;
+}
+
 .cellInnerBorder.off-night-day {
-  background: var(--color-off-night-bg);
+  background: rgba(v.$schedule-green, 0.18);
 }
 .cellInnerBorder.medium-heavy-day {
-  background: var(--color-mid-bg);
+  background: rgba(v.$schedule-yellow, 0.17);
 }
 .cellInnerBorder.heavy-day {
-  background: var(--color-heavy-bg);
+  background: rgba(v.$schedule-red, 0.18);
 }
 
 // Special game type highlights
@@ -1181,53 +1922,49 @@
   padding: 1px !important; // keep small frame for the border to "hide" overflow
   position: relative; // anchor for corner badge
   overflow: hidden; // hide oversized logo behind the cell frame
-  border-radius: 8px;
+  border-radius: 0;
 }
 .matchupCell {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 2px;
-  min-height: 32px; // ensure consistent row height
+  width: 100%;
+  min-height: 28px; // ensure consistent row height
   position: relative;
-  overflow: hidden; // clip oversized logos
-  border-radius: 6px;
+  overflow: visible;
+  border-radius: 0;
   cursor: pointer;
 }
 
-// Desktop matchup logo: oversize, overflow on LEFT, and fade on the LEFT edge.
+.matchupDesktopCluster {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: v.$space-sm;
+  width: 100%;
+  min-width: 40px;
+  position: relative;
+  z-index: 1;
+}
+
+// Desktop matchup logo centered as part of the combined logo/icon cluster.
 .matchupOpponentLogo {
-  position: absolute;
-  left: -10px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 20px;
-  height: 20px;
-  padding: v.$space-sm;
-  z-index: 0;
+  position: relative;
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
   pointer-events: none;
   overflow: visible;
 
   img {
+    position:relative !important;
     width: 100%;
     height: 100%;
-    transform: scale(1.3);
-    transform-origin: left center;
-    // Fade from 50% (left edge) to solid (right edge)
-    -webkit-mask-image: linear-gradient(
-      to right,
-      rgba(0, 0, 0, 0.2) 0%,
-      rgba(0, 0, 0, 1) 100%
-    );
-    mask-image: linear-gradient(
-      to right,
-      rgba(0, 0, 0, 0.2) 25%,
-      rgba(0, 0, 0, 1) 100%
-    );
-    -webkit-mask-repeat: no-repeat;
-    mask-repeat: no-repeat;
-    -webkit-mask-size: 100% 100%;
-    mask-size: 100% 100%;
+    transform: none;
   }
 }
 
@@ -1262,35 +1999,26 @@
 
 // Desktop home/away icon: opposite side (RIGHT), with opposite fade.
 .matchupHomeAwayIcon {
-  display: none; // Hide by default (shown on tablet+ below)
-  position: absolute;
-  right: 6px;
-  top: 51%;
-  transform: translateY(-50%);
-  width: 20px;
-  height: 20px;
+  display: inline-flex;
+  position: relative;
+  transform: none;
+  width: 24px;
+  height: 24px;
   z-index: 1;
   pointer-events: none;
-  border-radius: v.$border-radius-sm;
-  border: 1px solid var(--ha-border-color, rgba(255, 255, 255, 0.15));
-  background-color: var(--ha-bg-color, transparent);
+  border-radius: 4px;
+  border: 1px solid var(--ha-border-color, rgba(255, 255, 255, 0.18));
+  background-color: var(--ha-bg-color, rgba(255, 255, 255, 0.08));
   box-sizing: border-box;
 
   img {
     border-radius: inherit;
-    transform: scale(0.65);
+    transform: none;
     transform-origin: center;
-    opacity: 0.6;
-  }
-
-  @media (min-width: v.$breakpoint-tablet) {
-    display: inline-flex;
-    align-items: center;
-
-    img {
-      width: 16px;
-      height: 16px;
-    }
+    opacity: 0.88;
+    width: 12px;
+    height: 12px;
+    padding: v.$space-xxs;
   }
 }
 
@@ -1575,27 +2303,30 @@
 }
 
 .weekBadge {
-  position: absolute;
-  top: 5%;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 6;
-  pointer-events: none;
-
-  font-size: 1.75rem;
-  font-weight: 900;
-  letter-spacing: 0.65em;
-  text-transform: uppercase;
+  position: static;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 32px;
+  line-height: 100%;
+  width: 33%;
   padding: 0;
+  border: 0;
+  background: transparent;
+  font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
+  font-size: 1.8rem;
+  font-weight: 800;
+  letter-spacing: 0.45em;
+  text-transform: uppercase;
   white-space: nowrap;
-  color: v.$primary-color;
+  color: #0fc0f6;
   text-shadow:
-    0 0 5px rgba(v.$color-white, 0.25),
-    0 1px 2px rgba(0, 0, 0, 0.6);
+    0 0 10px rgba(v.$secondary-color, 0.18),
+    0 1px 2px rgba(0, 0, 0, 0.45);
 
   @media (max-width: v.$breakpoint-mobile-max) {
-    font-size: 0.75rem;
-    padding: 0;
+    font-size: 0.66rem;
+    letter-spacing: 0.16em;
   }
 }
 
@@ -2240,7 +2971,7 @@
         background-color: rgba(v.$schedule-red, v.$fill-opacity);
       }
       &[data-intensity="medium-low"] {
-        background-color: rgba(v.$schedule-yellow, v.$fill-opacity);
+        background-color: rgba(v.$color-orange-400, v.$fill-opacity);
       }
       &[data-intensity="medium-high"] {
         background-color: rgba(v.$schedule-yellow, v.$fill-opacity-strong);
@@ -2589,7 +3320,7 @@
         background-color: rgba(v.$schedule-red, v.$fill-opacity-subtle);
       }
       &[data-intensity="medium-low"] {
-        background-color: rgba(v.$schedule-yellow, v.$fill-opacity-subtle);
+        background-color: rgba(v.$color-orange-400, v.$fill-opacity-subtle);
       }
       &[data-intensity="medium-high"] {
         background-color: rgba(v.$schedule-yellow, v.$fill-opacity-subtle);
@@ -2600,12 +3331,7 @@
 
       // RANK COLOR STYLES
       &.weekScoreCell {
-        @for $i from 1 through 32 {
-          &.rank-color-#{$i} {
-            background-color: v.get-rank-color($i);
-          }
-        }
-        transition: background-color v.$transition-duration v.$transition-easing;
+        text-align: center;
       }
 
       // DAILY CELL BORDER
@@ -2703,7 +3429,7 @@
         background-color: rgba(v.$schedule-red, v.$fill-opacity);
       }
       &[data-intensity="medium-low"] {
-        background-color: rgba(v.$schedule-yellow, v.$fill-opacity);
+        background-color: rgba(v.$color-orange-400, v.$fill-opacity);
       }
       &[data-intensity="medium-high"] {
         background-color: rgba(v.$schedule-yellow, v.$fill-opacity-strong);
@@ -2929,7 +3655,7 @@
           background-color: rgba(v.$schedule-red, v.$fill-opacity);
         }
         &[data-intensity="medium-low"] {
-          background-color: rgba(v.$schedule-yellow, v.$fill-opacity);
+          background-color: rgba(v.$color-orange-400, v.$fill-opacity);
         }
         &[data-intensity="medium-high"] {
           background-color: rgba(v.$schedule-yellow, v.$fill-opacity-strong);

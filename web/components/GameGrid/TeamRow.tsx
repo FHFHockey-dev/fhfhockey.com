@@ -233,7 +233,7 @@ type MatchUpCellProps = {
   excluded?: boolean;
 };
 
-function MatchUpCell({
+export function MatchUpCell({
   home,
   homeTeam,
   awayTeam,
@@ -327,7 +327,7 @@ function MatchUpCell({
             />
           </div>
         ) : (
-          <>
+          <span className={styles.matchupDesktopCluster}>
             <span
               className={clsx(
                 styles.matchupOpponentLogo,
@@ -365,7 +365,7 @@ function MatchUpCell({
                 style={{ objectFit: "contain" }}
               />
             </span>
-          </>
+          </span>
         )}
       </div>
     </Tooltip>

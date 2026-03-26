@@ -41,6 +41,23 @@ type Averages = {
   avgOpponentPointPct: number;
 };
 
+type TeamNumeric = { teamId: number; value: number };
+
+function toRankMaps(entries: TeamNumeric[], bestDirection: "asc" | "desc") {
+  const sorted = [...entries].sort((a, b) =>
+    bestDirection === "asc" ? a.value - b.value : b.value - a.value
+  );
+  const best = new Map<number, number>();
+  const worst = new Map<number, number>();
+
+  sorted.slice(0, 10).forEach((entry, index) => best.set(entry.teamId, index + 1));
+  sorted
+    .slice(Math.max(sorted.length - 10, 0))
+    .forEach((entry, index) => worst.set(entry.teamId, index + 1));
+
+  return { best, worst };
+}
+
 const FourWeekGrid: React.FC<FourWeekGridProps> = ({ teamDataArray }) => {
   const teamsMap = useTeamsMap();
   const isMobile = useIsMobile();
@@ -173,20 +190,6 @@ const FourWeekGrid: React.FC<FourWeekGridProps> = ({ teamDataArray }) => {
 
     return sortableTeams;
   }, [teamsWithScore, sortConfig, teamsMap]);
-
-  type TeamNumeric = { teamId: number; value: number };
-  const toRankMaps = (entries: TeamNumeric[], bestDirection: "asc" | "desc") => {
-    const sorted = [...entries].sort((a, b) =>
-      bestDirection === "asc" ? a.value - b.value : b.value - a.value
-    );
-    const best = new Map<number, number>();
-    const worst = new Map<number, number>();
-    sorted.slice(0, 10).forEach((e, i) => best.set(e.teamId, i + 1));
-    sorted
-      .slice(Math.max(sorted.length - 10, 0))
-      .forEach((e, i) => worst.set(e.teamId, i + 1));
-    return { best, worst };
-  };
 
   const rankMaps = useMemo(() => {
     const gpEntries: TeamNumeric[] = [];
