@@ -26,6 +26,7 @@
 - `web/components/account/AccountSettingsPage.test.tsx` - Component tests for account settings sections, empty states, and guarded actions.
 - `web/lib/user-settings/defaults.ts` - Central default values for profile/settings rows seeded from the existing fantasy config system.
 - `web/lib/user-settings/defaults.test.ts` - Unit tests for default settings generation and schema-safe fallback values.
+- `web/lib/user-settings/ensureUserRecords.ts` - Auth-time helper that creates or backfills missing `user_profiles` and `user_settings` rows for newly signed-in users.
 - `web/lib/user-settings/mappers.ts` - Mapping helpers between persisted user settings and the existing fantasy config shapes already used in the app.
 - `web/lib/user-settings/mappers.test.ts` - Unit tests for mapping between database rows and app-facing settings objects.
 - `web/lib/projectionsConfig/fantasyPointsConfig.ts` - Existing reference for default fantasy scoring that should inform seeded account settings without changing Draft Dashboard behavior.
@@ -52,13 +53,13 @@
   - [x] 1.6 Define sensible database defaults for fantasy scoring, league type, roster config, UI preferences, and active-context placeholders using the existing fantasy config references.
   - [x] 1.7 Apply the migration in the appropriate environment and regenerate `web/lib/supabase/database-generated.types.ts`.
 
-- [ ] 2.0 Refactor app-wide auth state and Supabase client handling so authenticated session state is available globally and safely
-  - [ ] 2.1 Audit the current Supabase wrappers in `web/lib/supabase/` and choose a clear responsibility split for browser auth, public read-only access, and service-role server access.
-  - [ ] 2.2 Expand `AuthProviderContext` to expose a richer authenticated user shape, including ID, email, display name, avatar URL, verification-aware metadata, and admin role where available.
-  - [ ] 2.3 Update `web/pages/_app.tsx` so auth-aware context is available globally rather than only on `/auth` and `/db` routes.
-  - [ ] 2.4 Ensure auth state initializes correctly on first page load and responds to Supabase auth state changes without flicker or route-specific assumptions.
-  - [ ] 2.5 Add helper logic for creating or reconciling app-owned profile/settings rows after successful authentication if they do not already exist.
-  - [ ] 2.6 Verify that existing admin-only flows depending on the current `public.users` role table still work after the auth refactor.
+- [x] 2.0 Refactor app-wide auth state and Supabase client handling so authenticated session state is available globally and safely
+  - [x] 2.1 Audit the current Supabase wrappers in `web/lib/supabase/` and choose a clear responsibility split for browser auth, public read-only access, and service-role server access.
+  - [x] 2.2 Expand `AuthProviderContext` to expose a richer authenticated user shape, including ID, email, display name, avatar URL, verification-aware metadata, and admin role where available.
+  - [x] 2.3 Update `web/pages/_app.tsx` so auth-aware context is available globally rather than only on `/auth` and `/db` routes.
+  - [x] 2.4 Ensure auth state initializes correctly on first page load and responds to Supabase auth state changes without flicker or route-specific assumptions.
+  - [x] 2.5 Add helper logic for creating or reconciling app-owned profile/settings rows after successful authentication if they do not already exist.
+  - [x] 2.6 Verify that existing admin-only flows depending on the current `public.users` role table still work after the auth refactor.
 
 - [ ] 3.0 Implement the header authentication entry flow with a logged-out sign-in/sign-up button and a logged-in avatar menu
   - [ ] 3.1 Update `Header.tsx` to render a logged-out `Sign-in / Sign-up` CTA to the right of `.bmcWrap`.
@@ -94,3 +95,6 @@
 
 - [ ] 7.0 Harden provider secret storage before any real Yahoo, Fantrax, Patreon, or ESPN tokens are written
   - [ ] 7.1 Choose and implement an at-rest encryption strategy for `private.connected_account_tokens` instead of relying on plain text token columns.
+
+- [ ] 8.0 Migrate ambiguous Supabase imports to explicit client roles discovered during the wrapper audit
+  - [ ] 8.1 Replace server-side and API-route imports of `lib/supabase` with explicit browser, public, authenticated-token, or service-role clients based on actual access requirements.

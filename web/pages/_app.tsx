@@ -22,8 +22,6 @@ const queryClient = new QueryClient();
 
 function MyApp({ Component, pageProps, router }: AppProps) {
   const hasGql = Boolean(process.env.NEXT_PUBLIC_SANITY_GRAPHQL_URI);
-  const requiresAuthProvider =
-    router.pathname.startsWith("/auth") || router.pathname.startsWith("/db");
 
   const AppContent = (
     <Layout>
@@ -71,11 +69,7 @@ function MyApp({ Component, pageProps, router }: AppProps) {
 
   const AppTree = (
     <SnackbarProvider maxSnack={3} autoHideDuration={6000}>
-      {requiresAuthProvider ? (
-        <AuthProvider>{AppContent}</AuthProvider>
-      ) : (
-        AppContent
-      )}
+      <AuthProvider>{AppContent}</AuthProvider>
       <Analytics />
       <SpeedInsights />
     </SnackbarProvider>
