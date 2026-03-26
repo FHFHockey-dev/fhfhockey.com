@@ -2,28 +2,14 @@
 import React, { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import { TeamDataWithTotals } from "lib/NHL/types";
-import publicSupabase from "lib/supabase/public-client";
 import styles from "./OpponentMetricsTable.module.scss";
 import clsx from "clsx";
 import PanelStatus from "components/common/PanelStatus";
 import { useTeamsMap } from "hooks/useTeams";
-
-// It's best practice to move this interface to a shared types file (e.g., lib/NHL/types.ts)
-// to avoid duplication. It is included here for completeness.
-// Snapshot row from public.nst_team_all
-export interface TeamStats {
-  team_abbreviation: string;
-  team_name: string;
-  gp: number | null;
-  sf: number | null;
-  sa: number | null;
-  gf: number | null;
-  ga: number | null;
-  xgf: number | null;
-  xga: number | null;
-  points: number | null;
-  date: string; // YYYY-MM-DD
-}
+import {
+  OpponentMetricAverages,
+  UseOpponentMetricsDataResult
+} from "./utils/useOpponentMetricsData";
 
 // --- Re-add useIsMobile hook ---
 function useIsMobile() {
@@ -42,99 +28,42 @@ function useIsMobile() {
 
 type OpponentMetricsTableProps = {
   teamData: TeamDataWithTotals[];
+  metricsData: UseOpponentMetricsDataResult;
 };
 
-type Averages = {
-  avgXgf: number | null;
-  avgXga: number | null;
-  avgSf: number | null;
-  avgSa: number | null;
-  avgGoalFor: number | null;
-  avgGoalAgainst: number | null;
-  avgWinPct: number | null;
-};
+type TeamNumeric = { teamId: number; value: number };
+
+function toRankMaps(entries: TeamNumeric[], bestDirection: "asc" | "desc") {
+  const sorted = [...entries].sort((a, b) =>
+    bestDirection === "asc" ? a.value - b.value : b.value - a.value
+  );
+  const best = new Map<number, number>();
+  const worst = new Map<number, number>();
+  sorted.slice(0, 10).forEach((entry, index) => best.set(entry.teamId, index + 1));
+  sorted
+    .slice(Math.max(sorted.length - 10, 0))
+    .forEach((entry, index) => worst.set(entry.teamId, index + 1));
+  return { best, worst };
+}
 
 export default function OpponentMetricsTable({
-  teamData
+  teamData,
+  metricsData
 }: OpponentMetricsTableProps) {
-  // State for storing stats for ALL teams, keyed by abbreviation
-  const [allTeamStats, setAllTeamStats] = useState<{
-    [key: string]: TeamStats;
-  }>({});
-  const [statsLoading, setStatsLoading] = useState(true);
-  const [statsError, setStatsError] = useState<string | null>(null);
-
   const isMobile = useIsMobile();
   const [isMobileMinimized, setIsMobileMinimized] = useState(false);
   const teamsMap = useTeamsMap();
   const [sortConfig, setSortConfig] = useState<{
-    key: keyof Averages | "teamName";
+    key: keyof OpponentMetricAverages | "teamName";
     direction: "ascending" | "descending";
   } | null>(null);
-
-  // Effect to fetch and process stats for all teams on component mount
-  useEffect(() => {
-    const fetchAndProcessAllStats = async () => {
-      setStatsLoading(true);
-      setStatsError(null);
-
-      // Pull from NST daily team table using the most recent date per team.
-      // Strategy: order by date desc, and take the first row we see per team_abbreviation.
-      const { data, error } = await publicSupabase
-        .from("nst_team_all")
-        .select(
-          [
-            "team_abbreviation",
-            "team_name",
-            "gp",
-            "sf",
-            "sa",
-            "gf",
-            "ga",
-            "xgf",
-            "xga",
-            "points",
-            "date"
-          ].join(",")
-        )
-        .order("date", { ascending: false });
-
-      if (error) {
-        console.error("Failed to fetch team stats:", error);
-        setStatsError("Opponent metrics are temporarily unavailable.");
-        setStatsLoading(false);
-        return;
-      }
-
-      const rows: TeamStats[] = (data ?? []) as unknown as TeamStats[];
-
-      if (rows && rows.length > 0) {
-        // Keep first encounter per team_abbreviation (most recent date due to DESC order)
-        const statsByAbbr = rows.reduce<{ [key: string]: TeamStats }>(
-          (acc, stat) => {
-            const abbr = stat.team_abbreviation?.toUpperCase();
-            if (!abbr) return acc;
-            if (!acc[abbr]) {
-              acc[abbr] = stat;
-            }
-            return acc;
-          },
-          {}
-        );
-        setAllTeamStats(statsByAbbr);
-      } else {
-        setAllTeamStats({});
-      }
-      setStatsLoading(false);
-    };
-
-    if (teamData && teamData.length > 0) {
-      fetchAndProcessAllStats();
-    } else {
-      setStatsError(null);
-      setStatsLoading(false);
-    }
-  }, [teamData]); // Rerun if teamData changes
+  const {
+    entries: teamsAverages,
+    metricColumns,
+    leagueAverages,
+    statsLoading,
+    statsError
+  } = metricsData;
 
   const toggleMobileMinimize = () => {
     if (isMobile) {
@@ -142,61 +71,7 @@ export default function OpponentMetricsTable({
     }
   };
 
-  const teamsAverages = useMemo(() => {
-    const computeAverages = (team: TeamDataWithTotals): Averages => {
-      const week1 = team.weeks.find((w) => w.weekNumber === 1);
-      if (!week1 || week1.opponents.length === 0) {
-        return {
-          avgXgf: null,
-          avgXga: null,
-          avgSf: null,
-          avgSa: null,
-          avgGoalFor: null,
-          avgGoalAgainst: null,
-          avgWinPct: null
-        };
-      }
-      const count = week1.opponents.length;
-      const totals = week1.opponents.reduce(
-        (acc, opp) => {
-          const key = opp.abbreviation.toUpperCase();
-          const stats = allTeamStats[key]; // Use the new state object
-          if (stats) {
-            const gp = stats.gp ?? 0;
-            const denom = gp > 0 ? gp : 0;
-            const perGame = (value: number | null | undefined) =>
-              denom > 0 ? (value ?? 0) / denom : 0;
-            // Use NST per-game rates
-            acc.xgf += perGame(stats.xgf);
-            acc.xga += perGame(stats.xga);
-            acc.sf += perGame(stats.sf);
-            acc.sa += perGame(stats.sa);
-            acc.gf += perGame(stats.gf);
-            acc.ga += perGame(stats.ga);
-            // Compute point pct from points / (gp*2) if possible
-            const points = stats.points ?? 0;
-            acc.winPct += denom > 0 ? points / (denom * 2) : 0;
-          }
-          return acc;
-        },
-        { xgf: 0, xga: 0, sf: 0, sa: 0, gf: 0, ga: 0, winPct: 0 }
-      );
-      return {
-        avgXgf: count > 0 ? totals.xgf / count : null,
-        avgXga: count > 0 ? totals.xga / count : null,
-        avgSf: count > 0 ? totals.sf / count : null,
-        avgSa: count > 0 ? totals.sa / count : null,
-        avgGoalFor: count > 0 ? totals.gf / count : null,
-        avgGoalAgainst: count > 0 ? totals.ga / count : null,
-        avgWinPct: count > 0 ? totals.winPct / count : null
-      };
-    };
-    return teamData
-      ? teamData.map((team) => ({ team, averages: computeAverages(team) }))
-      : [];
-  }, [teamData, allTeamStats]); // Use allTeamStats as a dependency
-
-  const handleSort = (key: keyof Averages | "teamName") => {
+  const handleSort = (key: keyof OpponentMetricAverages | "teamName") => {
     let direction: "ascending" | "descending" = "ascending";
     if (
       sortConfig &&
@@ -258,61 +133,8 @@ export default function OpponentMetricsTable({
     return sortable;
   }, [teamsAverages, sortConfig, teamsMap]);
 
-  const metricColumns = useMemo(
-    (): { label: string; key: keyof Averages }[] => [
-      { label: "xGF", key: "avgXgf" },
-      { label: "xGA", key: "avgXga" },
-      { label: "SF", key: "avgSf" },
-      { label: "SA", key: "avgSa" },
-      { label: "GF", key: "avgGoalFor" },
-      { label: "GA", key: "avgGoalAgainst" },
-      { label: "W%", key: "avgWinPct" }
-    ],
-    []
-  );
-
-  const leagueAverages = useMemo(() => {
-    const sums: Partial<Record<keyof Averages, number>> = {};
-    const counts: Partial<Record<keyof Averages, number>> = {};
-    metricColumns.forEach(({ key }) => {
-      sums[key] = 0;
-      counts[key] = 0;
-    });
-
-    sortedTeamsAverages.forEach(({ averages }) => {
-      metricColumns.forEach(({ key }) => {
-        const value = averages[key];
-        if (typeof value === "number") {
-          sums[key] = (sums[key] ?? 0) + value;
-          counts[key] = (counts[key] ?? 0) + 1;
-        }
-      });
-    });
-
-    const result: Partial<Record<keyof Averages, number | null>> = {};
-    metricColumns.forEach(({ key }) => {
-      const count = counts[key] ?? 0;
-      result[key] = count > 0 ? (sums[key] ?? 0) / count : null;
-    });
-    return result as Record<keyof Averages, number | null>;
-  }, [sortedTeamsAverages, metricColumns]);
-
-  type TeamNumeric = { teamId: number; value: number };
-  const toRankMaps = (entries: TeamNumeric[], bestDirection: "asc" | "desc") => {
-    const sorted = [...entries].sort((a, b) =>
-      bestDirection === "asc" ? a.value - b.value : b.value - a.value
-    );
-    const best = new Map<number, number>();
-    const worst = new Map<number, number>();
-    sorted.slice(0, 10).forEach((e, i) => best.set(e.teamId, i + 1));
-    sorted
-      .slice(Math.max(sorted.length - 10, 0))
-      .forEach((e, i) => worst.set(e.teamId, i + 1));
-    return { best, worst };
-  };
-
   const rankMaps = useMemo(() => {
-    const directions: Record<keyof Averages, "asc" | "desc"> = {
+    const directions: Record<keyof OpponentMetricAverages, "asc" | "desc"> = {
       avgXgf: "asc",
       avgXga: "desc",
       avgSf: "asc",
@@ -323,7 +145,10 @@ export default function OpponentMetricsTable({
     };
 
     return metricColumns.reduce<
-      Record<keyof Averages, { best: Map<number, number>; worst: Map<number, number> }>
+      Record<
+        keyof OpponentMetricAverages,
+        { best: Map<number, number>; worst: Map<number, number> }
+      >
     >((acc, { key }) => {
       const entries: TeamNumeric[] = [];
       sortedTeamsAverages.forEach(({ team, averages }) => {
@@ -332,11 +157,14 @@ export default function OpponentMetricsTable({
       });
       acc[key] = toRankMaps(entries, directions[key]);
       return acc;
-    }, {} as Record<keyof Averages, { best: Map<number, number>; worst: Map<number, number> }>);
+    }, {} as Record<
+      keyof OpponentMetricAverages,
+      { best: Map<number, number>; worst: Map<number, number> }
+    >);
   }, [sortedTeamsAverages, metricColumns]);
 
   const getRankClass = (
-    key: keyof Averages,
+    key: keyof OpponentMetricAverages,
     teamId: number,
     value: number | null
   ): string | undefined => {

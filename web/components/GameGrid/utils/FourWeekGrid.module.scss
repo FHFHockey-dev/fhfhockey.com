@@ -167,6 +167,7 @@
 
 .table th:last-child {
   border-right: none;
+  border-bottom-color: rgba(v.$color-white, 0.04);
 }
 
 /* --- Sort Button Styling --- */
@@ -246,6 +247,7 @@
 
 .table td:last-child {
   border-right: none;
+  border-bottom-color: rgba(v.$color-white, 0.03);
 }
 
 /* --- Averages Row Styling --- */
@@ -266,6 +268,11 @@
       padding-left: 8px;
     }
   }
+
+  &:last-child {
+    border-top-color: rgba(v.$color-white, 0.06);
+    border-bottom-color: rgba(v.$color-white, 0.03);
+  }
 }
 
 /* Use monospaced numbers for numeric columns */
@@ -283,14 +290,33 @@
   background-color: v.$background-dark;
 }
 
-// Top/bottom-10 cell shading (rank 1 = strongest intensity)
+// Top/bottom-10 cell shading aligned with the opponent metrics palette.
 @for $i from 1 through 10 {
   .rankGood#{$i} {
-    $alpha: 0.32 - ($i - 1) * 0.02;
-    background-color: rgba(v.$schedule-green, $alpha);
+    @if $i <= 5 {
+      $alpha: 0.2 - ($i - 1) * 0.012;
+      color: v.$color-mint-300;
+      background-color: rgba(v.$schedule-green, $alpha);
+      font-weight: 700;
+    } @else {
+      $alpha: 0.18 - ($i - 6) * 0.01;
+      color: v.$color-gold-400;
+      background-color: rgba(v.$schedule-yellow, $alpha);
+      font-weight: 700;
+    }
   }
+
   .rankBad#{$i} {
-    $alpha: 0.32 - ($i - 1) * 0.02;
-    background-color: rgba(v.$schedule-red, $alpha);
+    @if $i <= 5 {
+      $alpha: 0.2 - ($i - 1) * 0.012;
+      color: v.$color-coral-500;
+      background-color: rgba(v.$schedule-red, $alpha);
+      font-weight: 700;
+    } @else {
+      $alpha: 0.18 - ($i - 6) * 0.01;
+      color: v.$color-orange-400;
+      background-color: rgba(v.$color-orange-400, $alpha);
+      font-weight: 700;
+    }
   }
 }

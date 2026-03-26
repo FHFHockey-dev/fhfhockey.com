@@ -4,7 +4,7 @@
 @use "styles/vars" as v;
 
 .tooltipWrapper {
-  display: inline-block;
+  display: block;
   cursor: pointer; /* Indicate that the element is clickable */
   height: 100%;
   position: relative;
