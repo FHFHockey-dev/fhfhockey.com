@@ -290,6 +290,48 @@ export type Database = {
         }
         Relationships: []
       }
+      connected_accounts: {
+        Row: {
+          account_label: string | null
+          created_at: string
+          id: string
+          last_synced_at: string | null
+          metadata: Json
+          provider: string
+          provider_user_id: string | null
+          scopes: Json
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_label?: string | null
+          created_at?: string
+          id?: string
+          last_synced_at?: string | null
+          metadata?: Json
+          provider: string
+          provider_user_id?: string | null
+          scopes?: Json
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_label?: string | null
+          created_at?: string
+          id?: string
+          last_synced_at?: string | null
+          metadata?: Json
+          provider?: string
+          provider_user_id?: string | null
+          scopes?: Json
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       cron_job_audit: {
         Row: {
           details: Json | null
@@ -422,6 +464,122 @@ export type Database = {
             columns: ["home_team_id"]
             isOneToOne: false
             referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      external_leagues: {
+        Row: {
+          connected_account_id: string
+          created_at: string
+          external_league_key: string
+          id: string
+          imported_at: string | null
+          league_metadata: Json
+          league_name: string | null
+          provider: string
+          roster_settings: Json
+          scoring_settings: Json
+          season_key: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          connected_account_id: string
+          created_at?: string
+          external_league_key: string
+          id?: string
+          imported_at?: string | null
+          league_metadata?: Json
+          league_name?: string | null
+          provider: string
+          roster_settings?: Json
+          scoring_settings?: Json
+          season_key?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          connected_account_id?: string
+          created_at?: string
+          external_league_key?: string
+          id?: string
+          imported_at?: string | null
+          league_metadata?: Json
+          league_name?: string | null
+          provider?: string
+          roster_settings?: Json
+          scoring_settings?: Json
+          season_key?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "external_leagues_connected_account_id_fkey"
+            columns: ["connected_account_id"]
+            isOneToOne: false
+            referencedRelation: "connected_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      external_teams: {
+        Row: {
+          connected_account_id: string
+          created_at: string
+          external_league_id: string
+          external_team_key: string
+          id: string
+          imported_at: string | null
+          provider: string
+          roster_snapshot: Json
+          team_metadata: Json
+          team_name: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          connected_account_id: string
+          created_at?: string
+          external_league_id: string
+          external_team_key: string
+          id?: string
+          imported_at?: string | null
+          provider: string
+          roster_snapshot?: Json
+          team_metadata?: Json
+          team_name?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          connected_account_id?: string
+          created_at?: string
+          external_league_id?: string
+          external_team_key?: string
+          id?: string
+          imported_at?: string | null
+          provider?: string
+          roster_snapshot?: Json
+          team_metadata?: Json
+          team_name?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "external_teams_connected_account_id_fkey"
+            columns: ["connected_account_id"]
+            isOneToOne: false
+            referencedRelation: "connected_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "external_teams_external_league_id_fkey"
+            columns: ["external_league_id"]
+            isOneToOne: false
+            referencedRelation: "external_leagues"
             referencedColumns: ["id"]
           },
         ]
@@ -14414,6 +14572,85 @@ export type Database = {
           },
         ]
       }
+      provider_sync_runs: {
+        Row: {
+          connected_account_id: string | null
+          cooldown_until: string | null
+          created_at: string
+          dedupe_key: string | null
+          error_details: Json
+          external_league_id: string | null
+          external_team_id: string | null
+          finished_at: string | null
+          id: string
+          provider: string
+          result_summary: Json
+          started_at: string | null
+          status: string
+          trigger_source: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          connected_account_id?: string | null
+          cooldown_until?: string | null
+          created_at?: string
+          dedupe_key?: string | null
+          error_details?: Json
+          external_league_id?: string | null
+          external_team_id?: string | null
+          finished_at?: string | null
+          id?: string
+          provider: string
+          result_summary?: Json
+          started_at?: string | null
+          status?: string
+          trigger_source?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          connected_account_id?: string | null
+          cooldown_until?: string | null
+          created_at?: string
+          dedupe_key?: string | null
+          error_details?: Json
+          external_league_id?: string | null
+          external_team_id?: string | null
+          finished_at?: string | null
+          id?: string
+          provider?: string
+          result_summary?: Json
+          started_at?: string | null
+          status?: string
+          trigger_source?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_sync_runs_connected_account_id_fkey"
+            columns: ["connected_account_id"]
+            isOneToOne: false
+            referencedRelation: "connected_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_sync_runs_external_league_id_fkey"
+            columns: ["external_league_id"]
+            isOneToOne: false
+            referencedRelation: "external_leagues"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_sync_runs_external_team_id_fkey"
+            columns: ["external_team_id"]
+            isOneToOne: false
+            referencedRelation: "external_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       raw_standings_sos: {
         Row: {
           date: string
@@ -19996,6 +20233,228 @@ export type Database = {
           primary_color?: string
           secondary_color?: string
           short_name?: string
+        }
+        Relationships: []
+      }
+      user_entitlements: {
+        Row: {
+          created_at: string
+          effective_from: string | null
+          effective_to: string | null
+          entitlement_key: string
+          entitlement_status: string
+          id: string
+          metadata: Json
+          source_account_id: string | null
+          source_provider: string
+          source_reference: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          effective_from?: string | null
+          effective_to?: string | null
+          entitlement_key: string
+          entitlement_status?: string
+          id?: string
+          metadata?: Json
+          source_account_id?: string | null
+          source_provider: string
+          source_reference?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          effective_from?: string | null
+          effective_to?: string | null
+          entitlement_key?: string
+          entitlement_status?: string
+          id?: string
+          metadata?: Json
+          source_account_id?: string | null
+          source_provider?: string
+          source_reference?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_entitlements_source_account_id_fkey"
+            columns: ["source_account_id"]
+            isOneToOne: false
+            referencedRelation: "connected_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          timezone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          timezone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          timezone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_provider_preferences: {
+        Row: {
+          active_context: Json
+          connected_account_id: string | null
+          created_at: string
+          default_external_league_id: string | null
+          default_external_team_id: string | null
+          id: string
+          provider: string
+          refresh_on_login: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active_context?: Json
+          connected_account_id?: string | null
+          created_at?: string
+          default_external_league_id?: string | null
+          default_external_team_id?: string | null
+          id?: string
+          provider: string
+          refresh_on_login?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active_context?: Json
+          connected_account_id?: string | null
+          created_at?: string
+          default_external_league_id?: string | null
+          default_external_team_id?: string | null
+          id?: string
+          provider?: string
+          refresh_on_login?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_provider_preferences_connected_account_id_fkey"
+            columns: ["connected_account_id"]
+            isOneToOne: false
+            referencedRelation: "connected_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_provider_preferences_default_external_league_id_fkey"
+            columns: ["default_external_league_id"]
+            isOneToOne: false
+            referencedRelation: "external_leagues"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_provider_preferences_default_external_team_id_fkey"
+            columns: ["default_external_team_id"]
+            isOneToOne: false
+            referencedRelation: "external_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_saved_teams: {
+        Row: {
+          created_at: string
+          external_league_key: string | null
+          external_team_key: string | null
+          id: string
+          is_default: boolean
+          name: string
+          provider: string | null
+          roster_json: Json
+          settings_snapshot: Json
+          source_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          external_league_key?: string | null
+          external_team_key?: string | null
+          id?: string
+          is_default?: boolean
+          name: string
+          provider?: string | null
+          roster_json?: Json
+          settings_snapshot?: Json
+          source_type?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          external_league_key?: string | null
+          external_team_key?: string | null
+          id?: string
+          is_default?: boolean
+          name?: string
+          provider?: string | null
+          roster_json?: Json
+          settings_snapshot?: Json
+          source_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_settings: {
+        Row: {
+          active_context: Json
+          category_weights: Json
+          created_at: string
+          league_type: string
+          roster_config: Json
+          scoring_categories: Json
+          ui_preferences: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active_context?: Json
+          category_weights?: Json
+          created_at?: string
+          league_type?: string
+          roster_config?: Json
+          scoring_categories?: Json
+          ui_preferences?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active_context?: Json
+          category_weights?: Json
+          created_at?: string
+          league_type?: string
+          roster_config?: Json
+          scoring_categories?: Json
+          ui_preferences?: Json
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
