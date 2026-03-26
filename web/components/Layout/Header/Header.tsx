@@ -12,6 +12,9 @@ import NavbarItems from "components/Layout/NavbarItems";
 import ITEMS_DATA from "components/Layout/NavbarItems/NavbarItemsData";
 import ClientOnly from "components/ClientOnly";
 import SocialMedias from "components/SocialMedias";
+import AuthModal from "components/auth/AuthModal";
+import UserMenu from "components/auth/UserMenu";
+import { useUser } from "contexts/AuthProviderContext";
 
 import styles from "./Header.module.scss";
 // import LOGO from "public/pictures/logo3.png";
@@ -176,8 +179,10 @@ function BurgerButton({ onClick }: { onClick: () => void }) {
 
 function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
   const { navbarRef, isNavbarVisible } = useHideableNavbar();
   const router = useRouter();
+  const user = useUser();
 
   // When taking automated screenshots, append ?isScreenshot=1 to the URL
   // to hide mobile-only UI like the bottom nav. This avoids layout overlays
@@ -245,6 +250,18 @@ function Header() {
           </a>
         </div>
 
+        {!user ? (
+          <button
+            type="button"
+            className={styles.authCta}
+            onClick={() => setAuthModalOpen(true)}
+          >
+            Sign-in / Sign-up
+          </button>
+        ) : (
+          <UserMenu />
+        )}
+
         {/* join button */}
         <button className={styles.join}>JOIN COMMUNITY</button>
 
@@ -256,7 +273,11 @@ function Header() {
             }}
           />
         ) : (
-          <button onClick={() => setMenuOpen(false)}>
+          <button
+            type="button"
+            className={styles.menuToggleButton}
+            onClick={() => setMenuOpen(false)}
+          >
             <Image
               src="/pictures/close.svg"
               alt="close menu"
@@ -278,6 +299,13 @@ function Header() {
 
       <ClientOnly>
         <MobileMenu visible={menuOpen} onItemClick={onItemClick} />
+      </ClientOnly>
+
+      <ClientOnly>
+        <AuthModal
+          open={authModalOpen}
+          onClose={() => setAuthModalOpen(false)}
+        />
       </ClientOnly>
     </>
   );

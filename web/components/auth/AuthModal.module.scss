@@ -1,0 +1,113 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(4, 8, 12, 0.72);
+  backdrop-filter: blur(10px);
+}
+
+.dialog {
+  width: min(100%, 440px);
+  border-radius: 22px;
+  border: 1px solid rgba(114, 200, 229, 0.18);
+  background:
+    radial-gradient(circle at top, rgba(7, 170, 226, 0.12), transparent 45%),
+    linear-gradient(180deg, rgba(20, 28, 36, 0.98), rgba(10, 14, 20, 0.98));
+  box-shadow:
+    0 22px 50px rgba(0, 0, 0, 0.42),
+    0 0 0 1px rgba(255, 255, 255, 0.04);
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px 22px 10px;
+}
+
+.titleWrap {
+  min-width: 0;
+}
+
+.eyebrow {
+  color: #72c8e5;
+  font-family: "Roboto Condensed", sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.title {
+  margin: 6px 0 0;
+  color: #f4fbff;
+  font-size: 1.5rem;
+  line-height: 1.1;
+}
+
+.closeButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(244, 251, 255, 0.84);
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.content {
+  padding: 0 22px 22px;
+  color: rgba(244, 251, 255, 0.82);
+}
+
+.body {
+  margin: 0 0 18px;
+  line-height: 1.55;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.primaryAction,
+.secondaryAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 16px;
+  border-radius: 999px;
+  font-family: "Roboto Condensed", sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.primaryAction {
+  border: 1px solid rgba(114, 200, 229, 0.65);
+  background: linear-gradient(
+    180deg,
+    rgba(7, 170, 226, 0.28) 0%,
+    rgba(7, 170, 226, 0.12) 100%
+  );
+  color: #f4fbff;
+}
+
+.secondaryAction {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(244, 251, 255, 0.88);
+}

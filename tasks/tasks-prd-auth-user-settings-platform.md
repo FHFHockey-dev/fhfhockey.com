@@ -10,12 +10,15 @@
 - `web/pages/_app.tsx` - App root where auth-aware provider wiring must become global so the header can react to session state on every route.
 - `web/components/Layout/Header/Header.tsx` - Header entry point for the logged-out `Sign-in / Sign-up` button and logged-in avatar menu.
 - `web/components/Layout/Header/Header.module.scss` - Header styling updates for the new auth CTA and avatar/menu affordances.
+- `web/__tests__/components/Layout/Header.test.tsx` - Component tests for logged-out header CTA rendering, modal launch, and logged-in header state handoff.
 - `web/components/auth/AuthModal.tsx` - Modal container for sign-in, sign-up, forgot-password, and verification guidance flows.
+- `web/components/auth/AuthModal.module.scss` - Styles for the header-triggered auth modal shell.
 - `web/components/auth/AuthModal.test.tsx` - Component tests for auth modal rendering, mode switching, and main interaction states.
 - `web/components/auth/AuthForm.tsx` - Form logic for Google sign-in, email/password sign-in, sign-up, and password recovery requests.
 - `web/components/auth/AuthForm.test.tsx` - Component tests for auth form validation, submit states, and auth-method branches.
+- `web/components/auth/UserMenu.module.scss` - Styles for the logged-in avatar trigger and account tray/menu.
 - `web/components/auth/UserMenu.tsx` - Logged-in avatar trigger and tray/menu for sign out, account settings, and league settings entry points.
-- `web/components/auth/UserMenu.test.tsx` - Component tests for avatar menu actions and authenticated header states.
+- `web/__tests__/components/auth/UserMenu.test.tsx` - Component tests for avatar menu actions and authenticated header states.
 - `web/pages/auth/index.tsx` - Existing auth page that should be reduced to a compatible fallback or redirect-oriented surface after the modal flow is introduced.
 - `web/pages/auth/callback.tsx` - OAuth and verification callback handler route for Supabase redirects.
 - `web/pages/auth/callback.test.tsx` - Route-level tests for callback code exchange and redirect behavior.
@@ -61,13 +64,13 @@
   - [x] 2.5 Add helper logic for creating or reconciling app-owned profile/settings rows after successful authentication if they do not already exist.
   - [x] 2.6 Verify that existing admin-only flows depending on the current `public.users` role table still work after the auth refactor.
 
-- [ ] 3.0 Implement the header authentication entry flow with a logged-out sign-in/sign-up button and a logged-in avatar menu
-  - [ ] 3.1 Update `Header.tsx` to render a logged-out `Sign-in / Sign-up` CTA to the right of `.bmcWrap`.
-  - [ ] 3.2 Add the logged-in avatar trigger in the same header area, using a safe avatar fallback strategy when no provider image exists.
-  - [ ] 3.3 Build the logged-in tray or menu with at least `Account Settings`, `League Settings`, and `Sign Out`.
-  - [ ] 3.4 Wire the logged-out CTA to open the auth modal and wire the logged-in actions to the correct routes or placeholders.
-  - [ ] 3.5 Update header styles so the new auth UI works in the existing desktop/mobile header system without disrupting current navigation behavior.
-  - [ ] 3.6 Add component tests covering logged-out, logged-in, and sign-out/menu interaction states.
+- [x] 3.0 Implement the header authentication entry flow with a logged-out sign-in/sign-up button and a logged-in avatar menu
+  - [x] 3.1 Update `Header.tsx` to render a logged-out `Sign-in / Sign-up` CTA to the right of `.bmcWrap`.
+  - [x] 3.2 Add the logged-in avatar trigger in the same header area, using a safe avatar fallback strategy when no provider image exists.
+  - [x] 3.3 Build the logged-in tray or menu with at least `Account Settings`, `League Settings`, and `Sign Out`.
+  - [x] 3.4 Wire the logged-out CTA to open the auth modal and wire the logged-in actions to the correct routes or placeholders.
+  - [x] 3.5 Update header styles so the new auth UI works in the existing desktop/mobile header system without disrupting current navigation behavior.
+  - [x] 3.6 Add component tests covering logged-out, logged-in, and sign-out/menu interaction states.
 
 - [ ] 4.0 Implement the core auth UX flows for Google sign-in, email/password, email verification, callback handling, and password reset
   - [ ] 4.1 Build an `AuthModal` that supports sign-in, sign-up, and forgot-password modes without requiring a dedicated page for normal entry.
