@@ -82,7 +82,12 @@ describe("Header auth entry", () => {
     expect(
       screen.getByRole("dialog", { name: "Authentication" })
     ).toBeDefined();
-    expect(screen.getByRole("link", { name: "Continue to Auth" })).toBeDefined();
+    expect(
+      screen.getByRole("heading", { name: "Sign in to your account" })
+    ).toBeDefined();
+    expect(
+      screen.getByRole("link", { name: "Continue to Sign In" })
+    ).toBeDefined();
   });
 
   it("renders the logged-in user menu instead of the logged-out CTA", () => {

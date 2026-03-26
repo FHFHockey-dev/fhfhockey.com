@@ -15,15 +15,19 @@
 - `web/components/auth/AuthModal.module.scss` - Styles for the header-triggered auth modal shell.
 - `web/components/auth/AuthModal.test.tsx` - Component tests for auth modal rendering, mode switching, and main interaction states.
 - `web/components/auth/AuthForm.tsx` - Form logic for Google sign-in, email/password sign-in, sign-up, and password recovery requests.
-- `web/components/auth/AuthForm.test.tsx` - Component tests for auth form validation, submit states, and auth-method branches.
+- `web/components/auth/AuthForm.module.scss` - Styles for the in-modal Google and email/password auth form states.
+- `web/__tests__/components/auth/AuthForm.test.tsx` - Component tests for auth form validation, submit states, and auth-method branches.
 - `web/components/auth/UserMenu.module.scss` - Styles for the logged-in avatar trigger and account tray/menu.
 - `web/components/auth/UserMenu.tsx` - Logged-in avatar trigger and tray/menu for sign out, account settings, and league settings entry points.
 - `web/__tests__/components/auth/UserMenu.test.tsx` - Component tests for avatar menu actions and authenticated header states.
 - `web/pages/auth/index.tsx` - Existing auth page that should be reduced to a compatible fallback or redirect-oriented surface after the modal flow is introduced.
 - `web/pages/auth/callback.tsx` - OAuth and verification callback handler route for Supabase redirects.
-- `web/pages/auth/callback.test.tsx` - Route-level tests for callback code exchange and redirect behavior.
+- `web/pages/auth/Callback.module.scss` - Styles for the callback status page that handles OAuth and email-link completion states.
+- `web/__tests__/pages/auth/callback.test.tsx` - Route-level tests for callback code exchange and redirect behavior.
 - `web/pages/auth/reset-password.tsx` - Password reset page for recovery links and password update UX.
-- `web/pages/auth/reset-password.test.tsx` - Tests for reset-password token handling, validation, and successful reset flow.
+- `web/pages/auth/ResetPassword.module.scss` - Styles for the dedicated reset-password recovery page.
+- `web/__tests__/pages/auth/reset-password.test.tsx` - Tests for reset-password token handling, validation, and successful reset flow.
+- `tasks/auth-provider-manual-config.md` - Manual Supabase and Google Cloud configuration checklist for the implemented auth flows.
 - `web/pages/account/index.tsx` - Account settings route entry point for authenticated users.
 - `web/components/account/AccountSettingsPage.tsx` - Main account settings UI for profile, league defaults, saved teams, connected accounts placeholders, and Patreon placeholder controls.
 - `web/components/account/AccountSettingsPage.test.tsx` - Component tests for account settings sections, empty states, and guarded actions.
@@ -72,15 +76,15 @@
   - [x] 3.5 Update header styles so the new auth UI works in the existing desktop/mobile header system without disrupting current navigation behavior.
   - [x] 3.6 Add component tests covering logged-out, logged-in, and sign-out/menu interaction states.
 
-- [ ] 4.0 Implement the core auth UX flows for Google sign-in, email/password, email verification, callback handling, and password reset
-  - [ ] 4.1 Build an `AuthModal` that supports sign-in, sign-up, and forgot-password modes without requiring a dedicated page for normal entry.
-  - [ ] 4.2 Build an `AuthForm` that supports Google OAuth initiation and email/password sign-in/sign-up submission through Supabase Auth.
-  - [ ] 4.3 Add clear UX states for email verification required, existing-account collisions, OAuth errors, invalid credentials, and recovery-email success.
-  - [ ] 4.4 Implement the Supabase callback route for OAuth code exchange and verification-related redirects.
-  - [ ] 4.5 Implement the reset-password page so recovery links can land on a dedicated route and allow secure password updates.
-  - [ ] 4.6 Rework the existing `/auth` page into a compatible fallback surface or redirect-oriented helper page that does not conflict with the new modal-first UX.
-  - [ ] 4.7 Add route/component tests for callback handling, password reset flow, and auth-form state transitions.
-  - [ ] 4.8 Document the manual provider configuration required in Supabase and Google Cloud, including site URL, redirect allow list, callback URL, and OAuth client settings.
+- [x] 4.0 Implement the core auth UX flows for Google sign-in, email/password, email verification, callback handling, and password reset
+  - [x] 4.1 Build an `AuthModal` that supports sign-in, sign-up, and forgot-password modes without requiring a dedicated page for normal entry.
+  - [x] 4.2 Build an `AuthForm` that supports Google OAuth initiation and email/password sign-in/sign-up submission through Supabase Auth.
+  - [x] 4.3 Add clear UX states for email verification required, existing-account collisions, OAuth errors, invalid credentials, and recovery-email success.
+  - [x] 4.4 Implement the Supabase callback route for OAuth code exchange and verification-related redirects.
+  - [x] 4.5 Implement the reset-password page so recovery links can land on a dedicated route and allow secure password updates.
+  - [x] 4.6 Rework the existing `/auth` page into a compatible fallback surface or redirect-oriented helper page that does not conflict with the new modal-first UX.
+  - [x] 4.7 Add route/component tests for callback handling, password reset flow, and auth-form state transitions.
+  - [x] 4.8 Document the manual provider configuration required in Supabase and Google Cloud, including site URL, redirect allow list, callback URL, and OAuth client settings.
 
 - [ ] 5.0 Build the MVP Account Settings experience and design-safe placeholders for league settings, connected accounts, provider refresh controls, and Patreon entitlements
   - [ ] 5.1 Create the authenticated `/account` route and main `AccountSettingsPage` shell.
