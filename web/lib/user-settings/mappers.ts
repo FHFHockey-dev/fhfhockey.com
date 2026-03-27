@@ -13,10 +13,10 @@ function isJsonObject(value: Json | null | undefined): value is Record<string, J
   return Boolean(value) && !Array.isArray(value) && typeof value === "object";
 }
 
-function coerceNumberMap(
+function coerceNumberMap<T extends NumericSettingsMap>(
   value: Json | null | undefined,
-  fallback: NumericSettingsMap
-): NumericSettingsMap {
+  fallback: T
+): T {
   const next = { ...fallback };
 
   if (!isJsonObject(value)) {
@@ -25,7 +25,7 @@ function coerceNumberMap(
 
   for (const [key, rawValue] of Object.entries(value)) {
     if (typeof rawValue === "number" && Number.isFinite(rawValue)) {
-      next[key] = rawValue;
+      next[key as keyof T] = rawValue as T[keyof T];
     }
   }
 
@@ -53,6 +53,29 @@ function coerceActiveContext(
   };
 }
 
+function coerceUiPreferences(
+  value: Json | null | undefined,
+  fallback: UserLeagueSettings["uiPreferences"]
+): UserLeagueSettings["uiPreferences"] {
+  const next = { ...fallback };
+
+  if (!isJsonObject(value)) {
+    return next;
+  }
+
+  for (const [key, rawValue] of Object.entries(value)) {
+    if (
+      typeof rawValue === "string" ||
+      typeof rawValue === "boolean" ||
+      rawValue === null
+    ) {
+      next[key] = rawValue;
+    }
+  }
+
+  return next;
+}
+
 export function mapUserSettingsRowToLeagueSettings(
   row: Pick<
     UserSettingsRow,
@@ -78,9 +101,7 @@ export function mapUserSettingsRowToLeagueSettings(
     ),
     categoryWeights: coerceNumberMap(row.category_weights, defaults.categoryWeights),
     rosterConfig: coerceNumberMap(row.roster_config, defaults.rosterConfig),
-    uiPreferences: isJsonObject(row.ui_preferences)
-      ? { ...defaults.uiPreferences, ...row.ui_preferences }
-      : defaults.uiPreferences,
+    uiPreferences: coerceUiPreferences(row.ui_preferences, defaults.uiPreferences),
     activeContext: coerceActiveContext(row.active_context, defaults.activeContext)
   };
 }
