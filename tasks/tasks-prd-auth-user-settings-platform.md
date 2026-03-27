@@ -177,3 +177,7 @@
 
 - [x] NEW 21.0 Eliminate the duplicate browser Supabase auth client that can interfere with recovery-session state changes
   - [x] NEW 21.1 Make `lib/supabase` re-export the shared browser client from `lib/supabase/client` instead of constructing a second GoTrue instance.
+
+- [x] NEW 22.0 Replace the hanging password-update client call with a direct Auth API request that either succeeds or surfaces a real error
+  - [x] NEW 22.1 Submit reset-password updates to `/auth/v1/user` with the active recovery access token instead of relying on the hanging `supabase.auth.updateUser(...)` path.
+  - [x] NEW 22.2 Add an explicit timeout and direct error parsing so the reset screen no longer stalls indefinitely on "Updating your password now."

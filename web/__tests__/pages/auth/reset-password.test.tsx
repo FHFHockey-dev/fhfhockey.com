@@ -2,7 +2,6 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const pageState = vi.hoisted(() => ({
-  updateUser: vi.fn(),
   getSession: vi.fn(),
   exchangeCodeForSession: vi.fn(),
   verifyOtp: vi.fn(),
@@ -33,7 +32,6 @@ vi.mock("lib/supabase/client", () => ({
       exchangeCodeForSession: pageState.exchangeCodeForSession,
       verifyOtp: pageState.verifyOtp,
       setSession: pageState.setSession,
-      updateUser: pageState.updateUser,
       onAuthStateChange: pageState.onAuthStateChange
     }
   }
@@ -43,7 +41,6 @@ import ResetPasswordPage from "pages/auth/reset-password";
 
 describe("Reset password page", () => {
   beforeEach(() => {
-    pageState.updateUser.mockReset();
     pageState.getSession.mockReset();
     pageState.exchangeCodeForSession.mockReset();
     pageState.verifyOtp.mockReset();
@@ -52,9 +49,13 @@ describe("Reset password page", () => {
     pageState.unsubscribe.mockReset();
     window.history.replaceState({}, "", "http://localhost:3000/auth/reset-password");
     window.localStorage.clear();
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      text: vi.fn().mockResolvedValue("{}")
+    }));
 
     pageState.getSession.mockResolvedValue({
-      data: { session: { user: { id: "user-1" } } },
+      data: { session: { user: { id: "user-1" }, access_token: "recovery-access-token" } },
       error: null
     });
     pageState.onAuthStateChange.mockImplementation((callback: any) => {
@@ -70,6 +71,7 @@ describe("Reset password page", () => {
   });
 
   afterEach(() => {
+    vi.unstubAllGlobals();
     cleanup();
   });
 
@@ -97,8 +99,6 @@ describe("Reset password page", () => {
   });
 
   it("updates the password and shows the success state", async () => {
-    pageState.updateUser.mockResolvedValue({ error: null });
-
     render(<ResetPasswordPage />);
 
     await screen.findByText("Choose a new password for your account.");
@@ -111,9 +111,18 @@ describe("Reset password page", () => {
     fireEvent.click(screen.getByRole("button", { name: "Update Password" }));
 
     await waitFor(() => {
-      expect(pageState.updateUser).toHaveBeenCalledWith({
-        password: "supersecret1"
-      });
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining("/auth/v1/user"),
+        expect.objectContaining({
+          method: "PUT",
+          headers: expect.objectContaining({
+            Authorization: "Bearer recovery-access-token"
+          }),
+          body: JSON.stringify({
+            password: "supersecret1"
+          })
+        })
+      );
     });
     expect(
       await screen.findByText(
@@ -123,5 +132,30 @@ describe("Reset password page", () => {
     expect(
       screen.getByRole("link", { name: "Continue to Site" }).getAttribute("href")
     ).toBe("/account");
+  });
+
+  it("shows a direct error when the password update request fails", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: false,
+      status: 400,
+      text: vi.fn().mockResolvedValue(JSON.stringify({ msg: "New password should be different from the old password." }))
+    }));
+
+    render(<ResetPasswordPage />);
+
+    await screen.findByText("Choose a new password for your account.");
+    fireEvent.change(screen.getByLabelText("New Password"), {
+      target: { value: "supersecret1" }
+    });
+    fireEvent.change(screen.getByLabelText("Confirm Password"), {
+      target: { value: "supersecret1" }
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Update Password" }));
+
+    expect(
+      await screen.findByText(
+        "New password should be different from the old password."
+      )
+    ).toBeTruthy();
   });
 });

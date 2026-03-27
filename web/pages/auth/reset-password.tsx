@@ -11,6 +11,7 @@ import styles from "./ResetPassword.module.scss";
 
 type PageState = "checking" | "ready" | "success" | "error";
 const VALID_OTP_TYPES = new Set(["recovery"]);
+const PASSWORD_UPDATE_TIMEOUT_MS = 15000;
 
 function sanitizeNextPath(nextValue?: string | null) {
   if (!nextValue || !nextValue.startsWith("/")) {
@@ -41,6 +42,64 @@ function clearStoredNextPath() {
     window.localStorage.removeItem("fhfh:post-password-reset-next");
   } catch {
     // Ignore storage failures.
+  }
+}
+
+async function updatePasswordWithRecoverySession(password: string) {
+  const { data, error } = await supabase.auth.getSession();
+  if (error) {
+    throw error;
+  }
+
+  const accessToken = data.session?.access_token;
+  if (!accessToken) {
+    throw new Error(
+      "Your recovery session is missing or expired. Request a new password reset email and try again."
+    );
+  }
+
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => {
+    controller.abort();
+  }, PASSWORD_UPDATE_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/user`,
+      {
+        method: "PUT",
+        headers: {
+          apikey: process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY || "",
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ password }),
+        signal: controller.signal
+      }
+    );
+
+    const rawBody = await response.text();
+    const parsedBody = rawBody ? JSON.parse(rawBody) : null;
+
+    if (!response.ok) {
+      const message =
+        parsedBody?.msg ||
+        parsedBody?.message ||
+        `Failed to update password (${response.status}).`;
+      throw new Error(message);
+    }
+
+    return parsedBody;
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new Error(
+        "Password update timed out. Retry once, and if it keeps happening, request a new recovery email."
+      );
+    }
+
+    throw error;
+  } finally {
+    window.clearTimeout(timeoutId);
   }
 }
 
@@ -200,13 +259,11 @@ export default function ResetPasswordPage() {
     setPageState("checking");
     setMessage("Updating your password now.");
 
-    const { error } = await supabase.auth.updateUser({
-      password
-    });
-
-    if (error) {
+    try {
+      await updatePasswordWithRecoverySession(password);
+    } catch (error) {
       setPageState("error");
-      setMessage(error.message);
+      setMessage(error instanceof Error ? error.message : "Failed to update password.");
       setIsSubmitting(false);
       return;
     }
