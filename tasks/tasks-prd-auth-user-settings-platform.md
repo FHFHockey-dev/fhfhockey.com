@@ -127,3 +127,7 @@
   - [ ] NEW 11.1 Confirm the `vault` schema and extension are available in each target Supabase environment before applying `20260327_encrypt_connected_account_tokens_with_vault.sql`.
   - [ ] NEW 11.2 Verify after migration that `anon` and `authenticated` do not have direct access to `vault.secrets` or `vault.decrypted_secrets`.
   - [ ] NEW 11.3 Review database statement-logging settings for environments that will write provider tokens so plaintext token values are not exposed in logs during Vault writes.
+
+- [ ] NEW 12.0 Recover and re-apply the Vault token-storage migration in environments where the first run failed partway through
+  - [ ] NEW 12.1 Apply the corrected `20260327_encrypt_connected_account_tokens_with_vault.sql` migration after pulling the fix for the missing-column rerun case.
+  - [ ] NEW 12.2 Verify that `private.connected_account_tokens` now has `access_token_secret_id` and `refresh_token_secret_id` and no longer has plaintext `access_token` or `refresh_token` columns.

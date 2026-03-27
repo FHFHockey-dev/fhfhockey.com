@@ -17,23 +17,51 @@ ALTER TABLE private.connected_account_tokens
 ADD COLUMN IF NOT EXISTS access_token_secret_id UUID NULL,
 ADD COLUMN IF NOT EXISTS refresh_token_secret_id UUID NULL;
 
-UPDATE private.connected_account_tokens
-SET access_token_secret_id = vault.create_secret(
-    access_token,
-    format('connected-account:%s:access-token', connected_account_id),
-    format('Encrypted %s access token for connected account %s', provider, connected_account_id)
-)
-WHERE access_token IS NOT NULL
-  AND access_token_secret_id IS NULL;
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'private'
+          AND table_name = 'connected_account_tokens'
+          AND column_name = 'access_token'
+    ) THEN
+        EXECUTE $sql$
+            UPDATE private.connected_account_tokens
+            SET access_token_secret_id = vault.create_secret(
+                access_token,
+                format('connected-account:%s:access-token', connected_account_id),
+                format('Encrypted %s access token for connected account %s', provider, connected_account_id)
+            )
+            WHERE access_token IS NOT NULL
+              AND access_token_secret_id IS NULL
+        $sql$;
+    END IF;
+END;
+$$;
 
-UPDATE private.connected_account_tokens
-SET refresh_token_secret_id = vault.create_secret(
-    refresh_token,
-    format('connected-account:%s:refresh-token', connected_account_id),
-    format('Encrypted %s refresh token for connected account %s', provider, connected_account_id)
-)
-WHERE refresh_token IS NOT NULL
-  AND refresh_token_secret_id IS NULL;
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'private'
+          AND table_name = 'connected_account_tokens'
+          AND column_name = 'refresh_token'
+    ) THEN
+        EXECUTE $sql$
+            UPDATE private.connected_account_tokens
+            SET refresh_token_secret_id = vault.create_secret(
+                refresh_token,
+                format('connected-account:%s:refresh-token', connected_account_id),
+                format('Encrypted %s refresh token for connected account %s', provider, connected_account_id)
+            )
+            WHERE refresh_token IS NOT NULL
+              AND refresh_token_secret_id IS NULL
+        $sql$;
+    END IF;
+END;
+$$;
 
 ALTER TABLE private.connected_account_tokens
 DROP COLUMN IF EXISTS access_token,
