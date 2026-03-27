@@ -10,6 +10,7 @@ import supabase from "lib/supabase/client";
 import styles from "./ResetPassword.module.scss";
 
 type PageState = "checking" | "ready" | "success" | "error";
+const VALID_OTP_TYPES = new Set(["recovery"]);
 
 function sanitizeNextPath(nextValue?: string | null) {
   if (!nextValue || !nextValue.startsWith("/")) {
@@ -17,6 +18,30 @@ function sanitizeNextPath(nextValue?: string | null) {
   }
 
   return nextValue;
+}
+
+function getStoredNextPath() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    return window.localStorage.getItem("fhfh:post-password-reset-next");
+  } catch {
+    return null;
+  }
+}
+
+function clearStoredNextPath() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    window.localStorage.removeItem("fhfh:post-password-reset-next");
+  } catch {
+    // Ignore storage failures.
+  }
 }
 
 export default function ResetPasswordPage() {
@@ -32,7 +57,7 @@ export default function ResetPasswordPage() {
   const nextPath = useMemo(() => {
     const nextParam = router.query.next;
     return sanitizeNextPath(
-      Array.isArray(nextParam) ? nextParam[0] : nextParam || "/account"
+      Array.isArray(nextParam) ? nextParam[0] : nextParam || getStoredNextPath() || "/account"
     );
   }, [router.query.next]);
 
@@ -44,6 +69,75 @@ export default function ResetPasswordPage() {
     let mounted = true;
 
     async function loadSession() {
+      const url = new URL(window.location.href);
+      const hashParams = new URLSearchParams(url.hash.replace(/^#/, ""));
+      const code = url.searchParams.get("code");
+      const tokenHash = url.searchParams.get("token_hash") || hashParams.get("token_hash");
+      const verificationType =
+        url.searchParams.get("type") || hashParams.get("type") || "";
+      const accessToken = hashParams.get("access_token");
+      const refreshToken = hashParams.get("refresh_token");
+
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+
+        if (!mounted) {
+          return;
+        }
+
+        if (error) {
+          setPageState("error");
+          setMessage(error.message);
+          return;
+        }
+
+        setPageState("ready");
+        setMessage("Choose a new password for your account.");
+        return;
+      }
+
+      if (tokenHash && VALID_OTP_TYPES.has(verificationType)) {
+        const { error } = await supabase.auth.verifyOtp({
+          token_hash: tokenHash,
+          type: "recovery"
+        });
+
+        if (!mounted) {
+          return;
+        }
+
+        if (error) {
+          setPageState("error");
+          setMessage(error.message);
+          return;
+        }
+
+        setPageState("ready");
+        setMessage("Choose a new password for your account.");
+        return;
+      }
+
+      if (accessToken && refreshToken) {
+        const { error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken
+        });
+
+        if (!mounted) {
+          return;
+        }
+
+        if (error) {
+          setPageState("error");
+          setMessage(error.message);
+          return;
+        }
+
+        setPageState("ready");
+        setMessage("Choose a new password for your account.");
+        return;
+      }
+
       const { data, error } = await supabase.auth.getSession();
 
       if (!mounted) {
@@ -121,6 +215,7 @@ export default function ResetPasswordPage() {
     setMessage(
       "Your password has been updated successfully. You can continue into your account now."
     );
+    clearStoredNextPath();
     setIsSubmitting(false);
     setPassword("");
     setConfirmPassword("");

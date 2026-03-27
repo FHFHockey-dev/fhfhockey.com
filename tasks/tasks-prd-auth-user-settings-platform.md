@@ -154,3 +154,13 @@
 - [ ] NEW 16.0 Verify the recovery-flow fix against a runtime that actually includes the patched callback handler
   - [ ] NEW 16.1 Run the updated local app or deploy the latest callback fix before re-testing password recovery.
   - [ ] NEW 16.2 Re-test the forgot-password flow and confirm the recovery link lands on `/auth/reset-password` with the password form visible.
+
+- [ ] NEW 17.0 Rotate sensitive credentials that were exposed during auth setup and debugging
+  - [ ] NEW 17.1 Rotate the Supabase service-role key and any other exposed Supabase secrets.
+  - [ ] NEW 17.2 Rotate exposed third-party credentials, including Yahoo, Resend, database, and Google service-account secrets.
+  - [ ] NEW 17.3 Update local and deployed environment configuration with the rotated values and verify dependent integrations still work.
+
+- [x] NEW 18.0 Remove the remaining ambiguity from Supabase password-recovery redirects
+  - [x] NEW 18.1 Change forgot-password emails to target `/auth/reset-password` directly instead of routing recovery through the generic callback page.
+  - [x] NEW 18.2 Teach `/auth/reset-password` to accept recovery payloads delivered as `code`, `token_hash`, or hash-based session tokens.
+  - [x] NEW 18.3 Add regression coverage for direct reset-page recovery links so future auth changes do not silently fall back to site-root sign-in behavior.

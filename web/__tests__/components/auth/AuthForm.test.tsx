@@ -93,7 +93,7 @@ describe("AuthForm", () => {
     ).toBeTruthy();
   });
 
-  it("sends recovery emails to the reset-password callback path", async () => {
+  it("sends recovery emails directly to the reset-password page", async () => {
     authState.resetPasswordForEmail.mockResolvedValue({
       error: null
     });
@@ -112,12 +112,9 @@ describe("AuthForm", () => {
     expect(authState.resetPasswordForEmail).toHaveBeenCalledWith(
       "tim@example.com",
       expect.objectContaining({
-        redirectTo: expect.stringContaining("/auth/callback")
+        redirectTo: expect.stringContaining("/auth/reset-password")
       })
     );
-    expect(
-      authState.resetPasswordForEmail.mock.calls[0][1].redirectTo
-    ).toContain("next=%2Fauth%2Freset-password");
     expect(
       await screen.findByText(
         "Password reset email sent. Open the recovery link from your inbox to choose a new password."

@@ -4,6 +4,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const pageState = vi.hoisted(() => ({
   updateUser: vi.fn(),
   getSession: vi.fn(),
+  exchangeCodeForSession: vi.fn(),
+  verifyOtp: vi.fn(),
+  setSession: vi.fn(),
   onAuthStateChange: vi.fn(),
   unsubscribe: vi.fn()
 }));
@@ -27,6 +30,9 @@ vi.mock("lib/supabase/client", () => ({
   default: {
     auth: {
       getSession: pageState.getSession,
+      exchangeCodeForSession: pageState.exchangeCodeForSession,
+      verifyOtp: pageState.verifyOtp,
+      setSession: pageState.setSession,
       updateUser: pageState.updateUser,
       onAuthStateChange: pageState.onAuthStateChange
     }
@@ -39,8 +45,13 @@ describe("Reset password page", () => {
   beforeEach(() => {
     pageState.updateUser.mockReset();
     pageState.getSession.mockReset();
+    pageState.exchangeCodeForSession.mockReset();
+    pageState.verifyOtp.mockReset();
+    pageState.setSession.mockReset();
     pageState.onAuthStateChange.mockReset();
     pageState.unsubscribe.mockReset();
+    window.history.replaceState({}, "", "http://localhost:3000/auth/reset-password");
+    window.localStorage.clear();
 
     pageState.getSession.mockResolvedValue({
       data: { session: { user: { id: "user-1" } } },
@@ -67,6 +78,22 @@ describe("Reset password page", () => {
 
     expect(await screen.findByText("Choose a new password for your account.")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Update Password" })).toBeTruthy();
+  });
+
+  it("exchanges recovery codes delivered directly to the reset page", async () => {
+    pageState.exchangeCodeForSession.mockResolvedValue({ error: null });
+    window.history.replaceState(
+      {},
+      "",
+      "http://localhost:3000/auth/reset-password?code=recovery-code&type=recovery"
+    );
+
+    render(<ResetPasswordPage />);
+
+    await waitFor(() => {
+      expect(pageState.exchangeCodeForSession).toHaveBeenCalledWith("recovery-code");
+    });
+    expect(await screen.findByText("Choose a new password for your account.")).toBeTruthy();
   });
 
   it("updates the password and shows the success state", async () => {

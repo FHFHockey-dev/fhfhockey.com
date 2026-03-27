@@ -57,6 +57,22 @@ function buildCallbackRedirectUrlForPath(nextPath: string) {
   return redirectUrl.toString();
 }
 
+function buildPasswordResetRedirectUrl() {
+  return getAuthRedirectUrl("/auth/reset-password");
+}
+
+function rememberPasswordResetReturnPath() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem("fhfh:post-password-reset-next", getCurrentReturnPath());
+  } catch {
+    // Ignore storage failures and fall back to default account routing later.
+  }
+}
+
 export default function AuthForm({ mode, onSuccess }: AuthFormProps) {
   const [formState, setFormState] = useState<FormState>({
     email: "",
@@ -167,8 +183,10 @@ export default function AuthForm({ mode, onSuccess }: AuthFormProps) {
       setIsSubmitting(true);
       setFeedback(null);
 
+      rememberPasswordResetReturnPath();
+
       const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
-        redirectTo: buildCallbackRedirectUrlForPath("/auth/reset-password")
+        redirectTo: buildPasswordResetRedirectUrl()
       });
 
       if (error) {
