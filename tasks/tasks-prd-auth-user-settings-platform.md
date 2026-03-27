@@ -224,3 +224,8 @@
   - [ ] NEW 30.2 Verify the Yahoo app redirect URI allows `/api/v1/account/yahoo/callback` for production.
   - [ ] NEW 30.3 Confirm the Yahoo app redirect URI matches the exact origin/path currently used by the running environment, including scheme, host, port, and no accidental trailing-slash mismatch.
   - [ ] NEW 30.4 Adjust the local Yahoo testing plan because Yahoo requires `https` redirect URIs; use a trusted HTTPS origin for local callback testing or validate Yahoo only against a deployed HTTPS environment.
+  - [ ] NEW 30.5 Configure the Yahoo OAuth client credentials in the deployed environment so production `/api/v1/account/yahoo/connect` can build the authorization URL.
+
+- [ ] NEW 31.0 Expose a service-role-only PostgREST wrapper for encrypted connected-account token writes so Yahoo callback sync can persist provider tokens in production.
+  - [ ] NEW 31.1 Apply the migration that exposes `public.upsert_connected_account_tokens_secure(...)`.
+  - [ ] NEW 31.2 Redeploy the app so the Yahoo callback uses the public wrapper RPC instead of trying to call the `private` schema directly.

@@ -155,12 +155,15 @@ Observed in `DraftSettings .draftTypeToggle`.
 
 **4. Full Color Border + Semi-Transparent Fill Button**
 Observed from the active state of `DraftSettings .toggleButton.active`.
-*   Use this as the explicit default rule for compact dashboard action buttons and emphasized secondary CTAs.
-*   **Background:** semi-transparent accent fill, typically `$primary-color-opaque` or `rgba($primary-color, 0.18..0.4)`
+*   Use this as the explicit default rule for compact dashboard action buttons and emphasized secondary CTAs. This is also the canonical match for `GameGrid .dateButtonPrev`.
+*   **Background:** `rgba($primary-color, 0.18)`
 *   **Border:** `2px solid $primary-color`
-*   **Text:** accent-bright text, preferably `$secondary-color` or `$color-white` depending on contrast
-*   **Typography:** accent font, uppercase, modest tracking
-*   **Hover:** keep the colored border, deepen the fill slightly, add glow, optional `translateY(-1px)` to `translateY(-2px)`
+*   **Text:** `$secondary-color` at rest, `$color-white` on hover
+*   **Typography:** `$font-family-accent`, uppercase, `font-weight: 600`, `letter-spacing: 0.05em`
+*   **Shape:** compact pill or rounded-rect with `min-height: 32px`, horizontal padding only, no oversized vertical padding
+*   **Shadow:** dark panel shadow plus subtle inset top highlight
+*   **Hover:** `translateY(-1px)`, keep the colored border, deepen fill to roughly `rgba($primary-color, 0.3)`, and use glow like `0 8px 16px rgba($primary-color, 0.22)`
+*   **Focus:** visible accent outline or desktop focus ring token
 *   **Do not:** downgrade this style to a plain transparent ghost button when the action should read as highlighted or dashboard-primary
 
 ### D. Data Tables

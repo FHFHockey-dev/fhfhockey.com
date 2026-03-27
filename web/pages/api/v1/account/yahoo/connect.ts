@@ -12,13 +12,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: "Method Not Allowed" });
   }
 
-  const user = await requireApiUser(req, res);
-  if (!user) {
-    return;
+  try {
+    const user = await requireApiUser(req, res);
+    if (!user) {
+      return;
+    }
+
+    const next = sanitizeYahooNextPath(req.body?.next);
+    const authorizationUrl = buildYahooAuthorizationUrl(req, user.id, next);
+
+    return res.status(200).json({ authorizationUrl });
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Yahoo authorization could not be started.";
+    return res.status(500).json({ error: message });
   }
-
-  const next = sanitizeYahooNextPath(req.body?.next);
-  const authorizationUrl = buildYahooAuthorizationUrl(req, user.id, next);
-
-  return res.status(200).json({ authorizationUrl });
 }
