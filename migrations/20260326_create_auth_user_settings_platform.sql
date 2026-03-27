@@ -178,6 +178,9 @@ ON connected_accounts (user_id);
 CREATE INDEX IF NOT EXISTS idx_connected_accounts_user_id_provider
 ON connected_accounts (user_id, provider);
 
+CREATE UNIQUE INDEX IF NOT EXISTS idx_connected_accounts_id_user_id_unique
+ON connected_accounts (id, user_id);
+
 CREATE UNIQUE INDEX IF NOT EXISTS idx_connected_accounts_provider_user_id_unique
 ON connected_accounts (provider, provider_user_id)
 WHERE provider_user_id IS NOT NULL;
@@ -185,11 +188,17 @@ WHERE provider_user_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_external_leagues_user_id_provider
 ON external_leagues (user_id, provider);
 
+CREATE UNIQUE INDEX IF NOT EXISTS idx_external_leagues_id_user_id_unique
+ON external_leagues (id, user_id);
+
 CREATE UNIQUE INDEX IF NOT EXISTS idx_external_leagues_account_league_unique
 ON external_leagues (connected_account_id, external_league_key);
 
 CREATE INDEX IF NOT EXISTS idx_external_teams_user_id_provider
 ON external_teams (user_id, provider);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_external_teams_id_user_id_unique
+ON external_teams (id, user_id);
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_external_teams_league_team_unique
 ON external_teams (external_league_id, external_team_key);
@@ -229,6 +238,89 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_user_entitlements_patreon_source_reference
 ON user_entitlements (source_reference)
 WHERE source_provider = 'patreon' AND source_reference IS NOT NULL;
 
+ALTER TABLE external_leagues
+DROP CONSTRAINT IF EXISTS external_leagues_connected_account_user_fk;
+
+ALTER TABLE external_leagues
+ADD CONSTRAINT external_leagues_connected_account_user_fk
+FOREIGN KEY (connected_account_id, user_id)
+REFERENCES connected_accounts (id, user_id)
+ON DELETE CASCADE;
+
+ALTER TABLE external_teams
+DROP CONSTRAINT IF EXISTS external_teams_connected_account_user_fk;
+
+ALTER TABLE external_teams
+ADD CONSTRAINT external_teams_connected_account_user_fk
+FOREIGN KEY (connected_account_id, user_id)
+REFERENCES connected_accounts (id, user_id)
+ON DELETE CASCADE;
+
+ALTER TABLE external_teams
+DROP CONSTRAINT IF EXISTS external_teams_external_league_user_fk;
+
+ALTER TABLE external_teams
+ADD CONSTRAINT external_teams_external_league_user_fk
+FOREIGN KEY (external_league_id, user_id)
+REFERENCES external_leagues (id, user_id)
+ON DELETE CASCADE;
+
+ALTER TABLE user_provider_preferences
+DROP CONSTRAINT IF EXISTS user_provider_preferences_connected_account_user_fk;
+
+ALTER TABLE user_provider_preferences
+ADD CONSTRAINT user_provider_preferences_connected_account_user_fk
+FOREIGN KEY (connected_account_id, user_id)
+REFERENCES connected_accounts (id, user_id);
+
+ALTER TABLE user_provider_preferences
+DROP CONSTRAINT IF EXISTS user_provider_preferences_default_external_league_user_fk;
+
+ALTER TABLE user_provider_preferences
+ADD CONSTRAINT user_provider_preferences_default_external_league_user_fk
+FOREIGN KEY (default_external_league_id, user_id)
+REFERENCES external_leagues (id, user_id);
+
+ALTER TABLE user_provider_preferences
+DROP CONSTRAINT IF EXISTS user_provider_preferences_default_external_team_user_fk;
+
+ALTER TABLE user_provider_preferences
+ADD CONSTRAINT user_provider_preferences_default_external_team_user_fk
+FOREIGN KEY (default_external_team_id, user_id)
+REFERENCES external_teams (id, user_id);
+
+ALTER TABLE provider_sync_runs
+DROP CONSTRAINT IF EXISTS provider_sync_runs_connected_account_user_fk;
+
+ALTER TABLE provider_sync_runs
+ADD CONSTRAINT provider_sync_runs_connected_account_user_fk
+FOREIGN KEY (connected_account_id, user_id)
+REFERENCES connected_accounts (id, user_id);
+
+ALTER TABLE provider_sync_runs
+DROP CONSTRAINT IF EXISTS provider_sync_runs_external_league_user_fk;
+
+ALTER TABLE provider_sync_runs
+ADD CONSTRAINT provider_sync_runs_external_league_user_fk
+FOREIGN KEY (external_league_id, user_id)
+REFERENCES external_leagues (id, user_id);
+
+ALTER TABLE provider_sync_runs
+DROP CONSTRAINT IF EXISTS provider_sync_runs_external_team_user_fk;
+
+ALTER TABLE provider_sync_runs
+ADD CONSTRAINT provider_sync_runs_external_team_user_fk
+FOREIGN KEY (external_team_id, user_id)
+REFERENCES external_teams (id, user_id);
+
+ALTER TABLE user_entitlements
+DROP CONSTRAINT IF EXISTS user_entitlements_source_account_user_fk;
+
+ALTER TABLE user_entitlements
+ADD CONSTRAINT user_entitlements_source_account_user_fk
+FOREIGN KEY (source_account_id, user_id)
+REFERENCES connected_accounts (id, user_id);
+
 CREATE SCHEMA IF NOT EXISTS private;
 
 REVOKE ALL ON SCHEMA private FROM PUBLIC;
@@ -265,6 +357,15 @@ ON private.connected_account_tokens (user_id, provider);
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_connected_account_tokens_connected_account_unique
 ON private.connected_account_tokens (connected_account_id);
+
+ALTER TABLE private.connected_account_tokens
+DROP CONSTRAINT IF EXISTS connected_account_tokens_connected_account_user_fk;
+
+ALTER TABLE private.connected_account_tokens
+ADD CONSTRAINT connected_account_tokens_connected_account_user_fk
+FOREIGN KEY (connected_account_id, user_id)
+REFERENCES connected_accounts (id, user_id)
+ON DELETE CASCADE;
 
 ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_settings ENABLE ROW LEVEL SECURITY;

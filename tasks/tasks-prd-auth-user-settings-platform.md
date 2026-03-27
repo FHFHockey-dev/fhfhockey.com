@@ -99,8 +99,8 @@
   - [x] 5.8 Add guarded authenticated-page behavior for unauthenticated users and loading/error states for missing profile/settings rows.
   - [x] 5.9 Add component tests for account settings rendering, saved-team CRUD states, default-team behavior, and connected-account placeholder visibility.
 
-- [ ] 6.0 Enforce cross-table ownership consistency for provider-linked records discovered during schema design
-  - [ ] 6.1 Add composite foreign keys, constraints, or trigger-based validation so provider-linked rows cannot reference `connected_account_id`, `external_league_id`, or `external_team_id` owned by a different `user_id`.
+- [x] 6.0 Enforce cross-table ownership consistency for provider-linked records discovered during schema design
+  - [x] 6.1 Add composite foreign keys, constraints, or trigger-based validation so provider-linked rows cannot reference `connected_account_id`, `external_league_id`, or `external_team_id` owned by a different `user_id`.
 
 - [ ] 7.0 Harden provider secret storage before any real Yahoo, Fantrax, Patreon, or ESPN tokens are written
   - [ ] 7.1 Choose and implement an at-rest encryption strategy for `private.connected_account_tokens` instead of relying on plain text token columns.
