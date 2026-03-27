@@ -94,6 +94,17 @@ export default function AuthCallbackPage() {
             throw error;
           }
 
+          if (verificationType === "recovery") {
+            setState({
+              heading: "Recovery verified",
+              message:
+                "Your recovery link was accepted. Redirecting you to the password reset screen now.",
+              tone: "success"
+            });
+            await router.replace(`/auth/reset-password?next=${encodeURIComponent(nextPath)}`);
+            return;
+          }
+
           setState({
             heading: "Authentication complete",
             message: "Your Google sign-in is complete. Redirecting you back now.",
@@ -142,6 +153,17 @@ export default function AuthCallbackPage() {
 
           if (error) {
             throw error;
+          }
+
+          if (verificationType === "recovery") {
+            setState({
+              heading: "Recovery verified",
+              message:
+                "Your recovery link was accepted. Redirecting you to the password reset screen now.",
+              tone: "success"
+            });
+            await router.replace(`/auth/reset-password?next=${encodeURIComponent(nextPath)}`);
+            return;
           }
 
           setState({

@@ -112,15 +112,15 @@
   - [x] 8.1 Replace server-side and API-route imports of `lib/supabase` with explicit browser, public, authenticated-token, or service-role clients based on actual access requirements.
 
 - [ ] NEW 9.0 Complete the manual Supabase email-auth delivery configuration required for sign-up verification and password recovery
-  - [ ] NEW 9.1 Enable `Email` auth in the Supabase dashboard for the target environment.
-  - [ ] NEW 9.2 Confirm that `Confirm email` is enabled so password sign-up requires verification before protected settings access.
-  - [ ] NEW 9.3 Update Supabase auth email templates to use `{{ .RedirectTo }}` instead of only `{{ .SiteURL }}` so verification and recovery links return to the implemented app callback flow.
-  - [ ] NEW 9.4 Verify the Supabase `Site URL` and redirect allow-list entries for localhost, production, and any required preview URLs.
+  - [x] NEW 9.1 Enable `Email` auth in the Supabase dashboard for the target environment.
+  - [x] NEW 9.2 Confirm that `Confirm email` is enabled so password sign-up requires verification before protected settings access.
+  - [x] NEW 9.3 Verify the Supabase auth email templates preserve the app-provided redirect target so verification and recovery links return to the implemented callback/reset flow.
+  - [x] NEW 9.4 Verify the Supabase `Site URL` and redirect allow-list entries for localhost, production, and any required preview URLs.
   - [ ] NEW 9.5 Configure a working SMTP sender or otherwise verify outbound email delivery in the active Supabase environment so sign-up and recovery emails actually arrive.
 
 - [ ] NEW 10.0 Complete the remaining manual auth-provider configuration and verification checklist documented in `tasks/auth-provider-manual-config.md`
   - [ ] NEW 10.1 Confirm required deploy environment values exist and are correct: `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_SUPABASE_URL`, and `NEXT_PUBLIC_SUPABASE_PUBLIC_KEY`.
-  - [ ] NEW 10.2 Verify Google Cloud OAuth client configuration, including authorized JavaScript origins and the hosted Supabase callback URI.
+  - [x] NEW 10.2 Verify Google Cloud OAuth client configuration, including authorized JavaScript origins and the hosted Supabase callback URI.
   - [ ] NEW 10.3 Run the documented manual verification checklist for Google sign-in on localhost and production.
   - [ ] NEW 10.4 Run the documented manual verification checklist for email sign-up verification, callback completion, and password-recovery flow.
   - [ ] NEW 10.5 Verify preview-deployment auth behavior if preview auth support is required.
@@ -137,3 +137,20 @@
 - [ ] NEW 13.0 Tighten service-role client initialization and configuration guarantees after the explicit-import refactor
   - [ ] NEW 13.1 Confirm `SUPABASE_SERVICE_ROLE_KEY` is configured in every environment that will run service-role API routes and cron jobs.
   - [ ] NEW 13.2 Replace the current test-safe service-role fallback with a stricter lazy initialization or test bootstrap pattern once env loading is standardized.
+
+- [ ] NEW 14.0 Resolve custom SMTP delivery failure for Supabase Auth emails
+  - [ ] NEW 14.1 Verify the custom SMTP configuration saves successfully and is accepted by Supabase without provider-auth errors.
+  - [ ] NEW 14.2 Check junk/spam/quarantine and recipient-side filtering for verification and reset emails.
+  - [ ] NEW 14.3 If delivery still fails, retry with the alternate Namecheap SMTP submission port and security mode combination supported by Private Email.
+  - [ ] NEW 14.4 Confirm the configured sender mailbox is allowed to send via the chosen SMTP credentials and is not blocked by provider policy.
+  - [ ] NEW 14.5 Send a fresh sign-up verification and password reset email and confirm end-to-end delivery.
+
+- [ ] NEW 15.0 Fix recovery-link handling so password reset links open the reset screen instead of silently signing the user in
+  - [x] NEW 15.1 Route hash-based Supabase recovery sessions through `/auth/reset-password` in the callback handler.
+  - [x] NEW 15.2 Add a regression test covering recovery links that arrive with `access_token` and `refresh_token` in the hash.
+  - [x] NEW 15.3 Route code-based Supabase recovery callbacks through `/auth/reset-password` instead of treating them like standard OAuth sign-in.
+  - [x] NEW 15.4 Add a regression test covering recovery links that arrive with `code=...&type=recovery`.
+
+- [ ] NEW 16.0 Verify the recovery-flow fix against a runtime that actually includes the patched callback handler
+  - [ ] NEW 16.1 Run the updated local app or deploy the latest callback fix before re-testing password recovery.
+  - [ ] NEW 16.2 Re-test the forgot-password flow and confirm the recovery link lands on `/auth/reset-password` with the password form visible.

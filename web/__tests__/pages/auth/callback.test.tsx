@@ -66,6 +66,26 @@ describe("Auth callback page", () => {
     });
   });
 
+  it("routes code-based recovery callbacks to the reset-password page", async () => {
+    pageState.exchangeCodeForSession.mockResolvedValue({ error: null });
+    window.history.replaceState(
+      {},
+      "",
+      "http://localhost:3000/auth/callback?code=recovery-code&type=recovery&next=%2Fforge"
+    );
+
+    render(<AuthCallbackPage />);
+
+    await waitFor(() => {
+      expect(pageState.exchangeCodeForSession).toHaveBeenCalledWith("recovery-code");
+    });
+    await waitFor(() => {
+      expect(pageState.replace).toHaveBeenCalledWith(
+        "/auth/reset-password?next=%2Fforge"
+      );
+    });
+  });
+
   it("routes verified recovery links to the reset-password page", async () => {
     pageState.verifyOtp.mockResolvedValue({ error: null });
     window.history.replaceState(
@@ -102,5 +122,28 @@ describe("Auth callback page", () => {
       await screen.findByText("Provider redirect failed")
     ).toBeTruthy();
     expect(pageState.replace).not.toHaveBeenCalled();
+  });
+
+  it("routes hash-based recovery sessions to the reset-password page", async () => {
+    pageState.setSession.mockResolvedValue({ error: null });
+    window.history.replaceState(
+      {},
+      "",
+      "http://localhost:3000/auth/callback#access_token=access123&refresh_token=refresh123&type=recovery&next=%2Fforge"
+    );
+
+    render(<AuthCallbackPage />);
+
+    await waitFor(() => {
+      expect(pageState.setSession).toHaveBeenCalledWith({
+        access_token: "access123",
+        refresh_token: "refresh123"
+      });
+    });
+    await waitFor(() => {
+      expect(pageState.replace).toHaveBeenCalledWith(
+        "/auth/reset-password?next=%2Fforge"
+      );
+    });
   });
 });
