@@ -28,7 +28,35 @@ type YahooSyncOptions = {
   redirectUri: string;
 };
 
-function flattenYahooLeagues(games: Array<any>) {
+function getYahooSeasonValue(game: any) {
+  const explicitSeason = Number(game?.season);
+  if (Number.isFinite(explicitSeason)) {
+    return explicitSeason;
+  }
+
+  const explicitGameId = Number(game?.game_id);
+  if (Number.isFinite(explicitGameId)) {
+    return explicitGameId;
+  }
+
+  const gameKeyPrefix =
+    typeof game?.game_key === "string"
+      ? Number(String(game.game_key).split(".")[0])
+      : Number.NaN;
+  return Number.isFinite(gameKeyPrefix) ? gameKeyPrefix : Number.NEGATIVE_INFINITY;
+}
+
+export function selectLatestYahooGames(games: Array<any>) {
+  if (!Array.isArray(games) || games.length === 0) {
+    return [];
+  }
+
+  const latestSeasonValue = Math.max(...games.map((game) => getYahooSeasonValue(game)));
+
+  return games.filter((game) => getYahooSeasonValue(game) === latestSeasonValue);
+}
+
+export function flattenYahooLeagues(games: Array<any>) {
   return games.flatMap((game) =>
     Array.isArray(game?.leagues)
       ? game.leagues.map((league: any) => ({
@@ -42,7 +70,7 @@ function flattenYahooLeagues(games: Array<any>) {
   );
 }
 
-function flattenYahooTeams(games: Array<any>) {
+export function flattenYahooTeams(games: Array<any>) {
   return games.flatMap((game) =>
     Array.isArray(game?.teams)
       ? game.teams.map((team: any) => ({
@@ -187,7 +215,8 @@ export async function syncYahooDiscovery({
   const nhlGames = Array.isArray(userGamesResponse?.games)
     ? userGamesResponse.games.filter((game: any) => game.code === YAHOO_GAME_CODE)
     : [];
-  const nhlGameKeys = nhlGames.map((game: any) =>
+  const latestNhlGames = selectLatestYahooGames(nhlGames);
+  const nhlGameKeys = latestNhlGames.map((game: any) =>
     String(game.game_key || game.game_id || YAHOO_GAME_CODE)
   );
 
@@ -246,7 +275,7 @@ export async function syncYahooDiscovery({
   ]);
 
   const discoveredLeagues = flattenYahooLeagues(leagueGamesResponse?.games || []);
-  const discoveredTeams = flattenYahooTeams(teamGamesResponse?.teams || teamGamesResponse?.games || []);
+  const discoveredTeams = flattenYahooTeams(teamGamesResponse?.teams || []);
 
   const normalizedLeagues = [];
   for (const league of discoveredLeagues) {
@@ -414,7 +443,7 @@ export async function syncYahooDiscovery({
       metadata: {
         ...jsonObjectOrEmpty(connectedAccount.metadata),
         provider_user_id: providerUserId ?? null,
-        available_game_codes: nhlGames.map((game: any) => game.code),
+        available_game_codes: latestNhlGames.map((game: any) => game.code),
         discovery: {
           league_count: leagueRows.length,
           team_count: teamRows.length,
