@@ -1,7 +1,7 @@
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { normalizeDependencyError } from "lib/cron/normalizeDependencyError";
 import { NextApiRequest, NextApiResponse } from "next";
-import supabase from "lib/supabase"; // Adjust path as needed
+import supabase from "lib/supabase/server"; // Adjust path as needed
 import { PostgrestError } from "@supabase/supabase-js"; // Import for type safety
 import { Database } from "lib/supabase/database-generated.types";
 

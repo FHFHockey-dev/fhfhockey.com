@@ -1,6 +1,6 @@
 // pages/api/v1/db/update-expected-goals/fetchData.ts
 
-import supabase from "lib/supabase";
+import supabase from "lib/supabase/public-client";
 import { teamsInfo } from "lib/teamsInfo";
 import Fetch from "lib/cors-fetch";
 

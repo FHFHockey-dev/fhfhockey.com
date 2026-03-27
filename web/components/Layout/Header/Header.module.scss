@@ -24,14 +24,6 @@ $mobile-header-height: 65px;
     z-index: 1000;
     padding-left: 3%;
 
-    button {
-      all: unset;
-      margin-right: 4%;
-      &:hover {
-        cursor: pointer;
-      }
-    }
-
     &.hidden {
       transform: translate3d(0, calc(-100% - 2px), 0);
     }
@@ -91,6 +83,54 @@ $mobile-header-height: 65px;
       }
     }
 
+    .authCta {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 16px;
+      padding: 9px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(114, 200, 229, 0.65);
+      background: linear-gradient(
+        180deg,
+        rgba(7, 170, 226, 0.18) 0%,
+        rgba(7, 170, 226, 0.08) 100%
+      );
+      color: #f4fbff;
+      font-family: "Roboto Condensed", sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      text-decoration: none;
+      white-space: nowrap;
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.04),
+        0 8px 18px rgba(0, 0, 0, 0.22);
+      transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        border-color 0.2s ease,
+        background 0.2s ease;
+
+      &:hover {
+        transform: translateY(-1px);
+        border-color: #72c8e5;
+        background: linear-gradient(
+          180deg,
+          rgba(7, 170, 226, 0.3) 0%,
+          rgba(7, 170, 226, 0.14) 100%
+        );
+        box-shadow:
+          0 0 0 1px rgba(114, 200, 229, 0.22),
+          0 10px 22px rgba(7, 170, 226, 0.2);
+      }
+
+      &:focus-visible {
+        outline: 2px solid #72c8e5;
+        outline-offset: 2px;
+      }
+    }
+
     .burgerButton {
       display: none;
     }
@@ -102,6 +142,7 @@ $mobile-header-height: 65px;
         cursor: pointer;
       }
 
+      margin-right: 4%;
       padding: 4px 4px;
       font-family: "Roboto Condensed";
       font-weight: 500;
@@ -112,6 +153,15 @@ $mobile-header-height: 65px;
       border: 1.5px solid #3498db;
       justify-content: center;
       align-items: center;
+    }
+
+    .menuToggleButton {
+      all: unset;
+      margin-right: 4%;
+
+      &:hover {
+        cursor: pointer;
+      }
     }
   }
 }

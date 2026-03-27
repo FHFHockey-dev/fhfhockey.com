@@ -2,7 +2,7 @@
 
 import { getPlayer } from "lib/NHL/server";
 import { PercentileRank } from "lib/NHL/types";
-import supabase from "lib/supabase";
+import supabase from "lib/supabase/public-client";
 import { NextApiRequest, NextApiResponse } from "next";
 import { getInterval } from "pages/api/toi";
 

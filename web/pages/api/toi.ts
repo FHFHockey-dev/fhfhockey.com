@@ -3,7 +3,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { compareAsc } from "date-fns";
 
 import { getCurrentSeason, getPlayer } from "lib/NHL/server";
-import supabase from "lib/supabase";
+import supabase from "lib/supabase/public-client";
 import { Player } from "lib/NHL/types";
 
 /**

@@ -4,7 +4,7 @@ import {
   hasCronTimingEnvelope,
   withCronJobTiming
 } from "lib/cron/timingContract";
-import supabase from "lib/supabase";
+import supabase from "lib/supabase/server";
 
 type AuditStatus = "success" | "failure";
 
@@ -155,6 +155,9 @@ export function withCronJobAudit(
     };
 
     try {
+      if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        return;
+      }
       await supabase.from("cron_job_audit").insert(row as any);
     } catch (e) {
       console.error("cron_job_audit insert failed", (e as any)?.message ?? e);

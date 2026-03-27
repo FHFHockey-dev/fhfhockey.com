@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { NextApiRequest, NextApiResponse } from "next";
-import supabase from "lib/supabase";
+import supabase from "lib/supabase/server";
 import Fetch from "lib/cors-fetch";
 import { format, parseISO, addDays, isBefore } from "date-fns";
 import { getCurrentSeason } from "lib/NHL/server";

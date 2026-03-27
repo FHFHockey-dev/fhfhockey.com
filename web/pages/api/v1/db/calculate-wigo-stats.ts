@@ -2,7 +2,7 @@
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { normalizeDependencyError } from "lib/cron/normalizeDependencyError";
 import { NextApiRequest, NextApiResponse } from "next";
-import supabase from "lib/supabase"; // Supabase client instance
+import supabase from "lib/supabase/server"; // Supabase client instance
 import { getCurrentSeason } from "lib/NHL/server"; // NHL season helper function
 import { Database } from "lib/supabase/database-generated.types"; // Database schema types
 import { SupabaseClient } from "@supabase/supabase-js";

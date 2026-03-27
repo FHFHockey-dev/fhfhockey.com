@@ -4,7 +4,6 @@ import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { normalizeDependencyError } from "lib/cron/normalizeDependencyError";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import supabase from "lib/supabase";
 import { getCurrentSeason } from "lib/NHL/server";
 import { HTMLElement, parse } from "node-html-parser";
 import { get } from "lib/NHL/base";

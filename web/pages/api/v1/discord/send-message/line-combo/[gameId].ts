@@ -1,6 +1,6 @@
 import { NUM_PLAYERS_PER_LINE } from "components/LinemateMatrix";
 import { teamsInfo } from "lib/teamsInfo";
-import supabase from "lib/supabase";
+import supabase from "lib/supabase/public-client";
 import adminOnly from "utils/adminOnlyMiddleware";
 
 const WEBHOOK_URL = process.env.LINE_COMBO_WEBHOOK_URL ?? "";

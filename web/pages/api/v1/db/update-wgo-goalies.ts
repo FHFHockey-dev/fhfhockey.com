@@ -2,7 +2,7 @@
 
 // Import necessary modules from Next.js, Supabase, and other utilities
 import { NextApiRequest, NextApiResponse } from "next";
-import supabase from "lib/supabase";
+import supabase from "lib/supabase/server";
 import Fetch from "lib/cors-fetch";
 import {
   format,
