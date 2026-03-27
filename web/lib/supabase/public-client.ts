@@ -13,7 +13,8 @@ const publicSupabase: SupabaseClient<Database> = createClient<Database>(
     auth: {
       persistSession: false,
       autoRefreshToken: false,
-      detectSessionInUrl: false
+      detectSessionInUrl: false,
+      storageKey: "fhfh-public-readonly-supabase"
     }
   }
 );

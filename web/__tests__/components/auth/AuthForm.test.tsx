@@ -5,7 +5,8 @@ const authState = vi.hoisted(() => ({
   signInWithOAuth: vi.fn(),
   signInWithPassword: vi.fn(),
   signUp: vi.fn(),
-  resetPasswordForEmail: vi.fn()
+  resetPasswordForEmail: vi.fn(),
+  signOut: vi.fn()
 }));
 
 vi.mock("next/link", () => ({
@@ -22,7 +23,8 @@ vi.mock("lib/supabase/client", () => ({
       signInWithOAuth: authState.signInWithOAuth,
       signInWithPassword: authState.signInWithPassword,
       signUp: authState.signUp,
-      resetPasswordForEmail: authState.resetPasswordForEmail
+      resetPasswordForEmail: authState.resetPasswordForEmail,
+      signOut: authState.signOut
     }
   }
 }));
@@ -35,7 +37,11 @@ describe("AuthForm", () => {
     authState.signInWithPassword.mockReset();
     authState.signUp.mockReset();
     authState.resetPasswordForEmail.mockReset();
+    authState.signOut.mockReset();
+    authState.signOut.mockResolvedValue({ error: null });
     window.history.replaceState({}, "", "http://localhost:3000/forge/dashboard?tab=skaters");
+    window.localStorage.clear();
+    window.sessionStorage.clear();
   });
 
   afterEach(() => {
@@ -62,6 +68,7 @@ describe("AuthForm", () => {
         "That email/password combination did not match an active account."
       )
     ).toBeTruthy();
+    expect(authState.signOut).toHaveBeenCalled();
   });
 
   it("shows verification success state when sign-up returns a user without a session", async () => {
@@ -120,5 +127,22 @@ describe("AuthForm", () => {
         "Password reset email sent. Open the recovery link from your inbox to choose a new password."
       )
     ).toBeTruthy();
+  });
+
+  it("offers a targeted local auth reset without clearing full browser history", async () => {
+    window.localStorage.setItem("sb-test-auth-token", "value");
+    window.sessionStorage.setItem("sb-test-code-verifier", "value");
+
+    render(<AuthForm mode="sign-in" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Reset Local Auth" }));
+
+    expect(
+      await screen.findByText(
+        "Local FHFH auth storage was reset. Try signing in again without clearing your full browser history."
+      )
+    ).toBeTruthy();
+    expect(window.localStorage.getItem("sb-test-auth-token")).toBeNull();
+    expect(window.sessionStorage.getItem("sb-test-code-verifier")).toBeNull();
   });
 });

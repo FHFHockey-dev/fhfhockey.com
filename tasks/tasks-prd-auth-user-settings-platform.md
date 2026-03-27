@@ -190,6 +190,9 @@
   - [x] NEW 23.4 Add or update component/page tests only where styling changes require markup changes or new accessible labels.
 
 - [ ] NEW 28.0 Investigate and eliminate the remaining `Multiple GoTrueClient instances detected` warnings still emitted in unrelated tests so the browser/client auth surface uses one clear singleton path everywhere.
+  - [x] NEW 28.1 Disable automatic URL auth-payload processing in the main browser client because `/auth/callback` and `/auth/reset-password` already handle those flows explicitly.
+  - [x] NEW 28.2 Give the read-only browser public client its own storage key so it does not contend with the primary authenticated browser client.
+  - [ ] NEW 28.3 Verify in production that the warning no longer appears and that auth remains usable after Yahoo redirect round-trips.
 
 - [ ] NEW 24.0 Implement the Yahoo Fantasy connected-account flow and first-pass league sync foundation
   - [x] NEW 24.1 Create the Yahoo connect/disconnect OAuth flow from account or league settings without coupling Yahoo to core site login.
@@ -229,3 +232,18 @@
 - [ ] NEW 31.0 Expose a service-role-only PostgREST wrapper for encrypted connected-account token writes so Yahoo callback sync can persist provider tokens in production.
   - [ ] NEW 31.1 Apply the migration that exposes `public.upsert_connected_account_tokens_secure(...)`.
   - [ ] NEW 31.2 Redeploy the app so the Yahoo callback uses the public wrapper RPC instead of trying to call the `private` schema directly.
+
+- [ ] NEW 32.0 Investigate why Yahoo discovery is finding leagues but zero owned teams after a successful OAuth callback.
+  - [ ] NEW 32.1 Validate the shape returned by `yahoo.user.game_teams(...)` for the connected Yahoo account and adjust the team flattening logic if the current parser is reading the wrong nesting level.
+  - [ ] NEW 32.2 Verify the connected-account UI can show discovered Yahoo teams and default-team selection once owned-team parsing is corrected.
+
+- [ ] NEW 33.0 Stop auth/session hydration from blocking the account UI on secondary role lookups after provider redirects.
+  - [x] NEW 33.1 Make the auth context publish the authenticated user immediately from the Supabase session before waiting on the optional `public.users` role query.
+  - [x] NEW 33.2 Prevent the header from flashing the logged-out CTA while auth is still resolving.
+  - [ ] NEW 33.3 Verify in production that `/account` no longer hangs on "Loading account settings..." after Yahoo redirect round-trips.
+
+- [ ] NEW 34.0 Replace the current "clear browser history" auth recovery workaround with a targeted local FHFH auth-session reset.
+  - [x] NEW 34.1 Add a browser-auth reset helper that clears only the FHFH/Supabase auth storage keys instead of wiping unrelated site logins.
+  - [x] NEW 34.2 Reset stale local Supabase auth state before starting fresh sign-in attempts so hung modal submissions do not require full browser-history clearing.
+  - [x] NEW 34.3 Add a visible `Reset Local Auth` action to the auth form as a user-facing recovery tool.
+  - [ ] NEW 34.4 Verify in production that users can recover from stale local auth state without clearing unrelated browser sessions.

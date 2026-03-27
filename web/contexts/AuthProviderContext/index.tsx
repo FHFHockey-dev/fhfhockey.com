@@ -53,19 +53,7 @@ export default function AuthProvider({ children }: Props) {
         return;
       }
 
-      const extra: { role: "admin" | null } = { role: null };
-      const { data, error } = await supabase
-        .from("users")
-        .select("role")
-        .eq("user_id", session.user.id)
-        .maybeSingle();
-
-      if (!isMounted) return;
-
-      if (!error) {
-        extra.role = data?.role === "admin" ? "admin" : null;
-      }
-      setUser(mapUser(session.user, extra));
+      setUser(mapUser(session.user, { role: null }));
       setIsLoading(false);
 
       if (!ensuredUserIdsRef.current.has(session.user.id)) {
@@ -74,6 +62,33 @@ export default function AuthProvider({ children }: Props) {
           ensuredUserIdsRef.current.delete(session.user.id);
         });
       }
+
+      void supabase
+        .from("users")
+        .select("role")
+        .eq("user_id", session.user.id)
+        .maybeSingle()
+        .then(({ data, error }) => {
+          if (!isMounted || error) {
+            return;
+          }
+
+          const resolvedRole = data?.role === "admin" ? "admin" : null;
+          setUser((currentUser) => {
+            if (!currentUser || currentUser.id !== session.user.id) {
+              return currentUser;
+            }
+
+            if (currentUser.role === resolvedRole) {
+              return currentUser;
+            }
+
+            return {
+              ...currentUser,
+              role: resolvedRole
+            };
+          });
+        });
     }
 
     void supabase.auth

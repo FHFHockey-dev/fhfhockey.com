@@ -14,7 +14,7 @@ import ClientOnly from "components/ClientOnly";
 import SocialMedias from "components/SocialMedias";
 import AuthModal from "components/auth/AuthModal";
 import UserMenu from "components/auth/UserMenu";
-import { useUser } from "contexts/AuthProviderContext";
+import { useAuth } from "contexts/AuthProviderContext";
 
 import styles from "./Header.module.scss";
 // import LOGO from "public/pictures/logo3.png";
@@ -182,7 +182,7 @@ function Header() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const { navbarRef, isNavbarVisible } = useHideableNavbar();
   const router = useRouter();
-  const user = useUser();
+  const { user, isLoading } = useAuth();
 
   // When taking automated screenshots, append ?isScreenshot=1 to the URL
   // to hide mobile-only UI like the bottom nav. This avoids layout overlays
@@ -250,7 +250,7 @@ function Header() {
           </a>
         </div>
 
-        {!user ? (
+        {!user && !isLoading ? (
           <button
             type="button"
             className={styles.authCta}
@@ -258,8 +258,10 @@ function Header() {
           >
             Sign-in / Sign-up
           </button>
-        ) : (
+        ) : user ? (
           <UserMenu />
+        ) : (
+          <div className={styles.authCtaPlaceholder} aria-hidden="true" />
         )}
 
         {/* join button */}

@@ -14,7 +14,8 @@ const supabase: SupabaseClient<Database> = createClient<Database>(
   {
     auth: {
       persistSession: true,
-      autoRefreshToken: false
+      autoRefreshToken: true,
+      detectSessionInUrl: false
     }
   }
 );

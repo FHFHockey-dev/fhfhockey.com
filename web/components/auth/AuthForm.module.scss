@@ -241,6 +241,36 @@
   }
 }
 
+.resetSessionButton {
+  @include v.button-style;
+  border: 1px solid rgba(v.$primary-color, 0.32);
+  background: rgba(v.$primary-color, 0.08);
+  color: v.$text-secondary;
+  padding: 6px 10px;
+  border-radius: v.$border-radius-sm;
+  font-family: v.$font-family-accent;
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  transition:
+    border-color v.$transition-duration v.$transition-easing,
+    background-color v.$transition-duration v.$transition-easing,
+    color v.$transition-duration v.$transition-easing;
+
+  &:hover:not(:disabled),
+  &:focus-visible {
+    color: v.$color-white;
+    border-color: rgba(v.$primary-color, 0.55);
+    background: rgba(v.$primary-color, 0.16);
+    outline: none;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
 @media (max-width: 560px) {
   .fallbackRow {
     align-items: flex-start;
