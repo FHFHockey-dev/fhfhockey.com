@@ -8,9 +8,15 @@ alwaysApply: false
 Guidelines for managing task lists in markdown files to track progress on completing a PRD
 
 ## Task Implementation
-- **One sub-task at a time:** Do **NOT** start the next sub‑task until you ask the user for permission and they say "yes" or "y"
+- **One sub-task at a time:** Do **NOT** start the next sub-task until you ask the user for permission and they say **"yes"** or **"y"**, except where overridden by the manual-action protocol below.
+- **Manual-action override for critical user steps:** Any and all SQL code, migrations, schema changes, database updates, endpoint runs, time-sensitive implementation actions, or other user-executed steps that are required to guarantee success of future steps **MUST OVERRIDE** the standard **"yes" / "y"** approval flow.
+  - In these cases, the AI must explicitly instruct the user what action must be performed.
+  - The AI must require the exact confirmation: **"Done, proceed"**
+  - If the user responds with **"yes"** or **"y"** instead, **DO NOT PROCEED**
+  - Instead, clearly alert the user again that the required action has not yet been confirmed and restate that the AI is waiting for: **"Done, proceed"**
+  - Only resume once the user has explicitly confirmed completion with **"Done, proceed"**
 - **Completion protocol:**  
-  1. When you finish a **sub‑task**, immediately mark it as completed by changing `[ ]` to `[x]`.
+  1. When you finish a **sub-task**, immediately mark it as completed by changing `[ ]` to `[x]`.
   2. If **all** subtasks underneath a parent task are now `[x]`, follow this sequence:
     - **First**: Run the full test suite (`pytest`, `npm test`, `bin/rails test`, etc.)
     - **Only if all tests pass**: Stage changes (`git add .`)
@@ -26,7 +32,7 @@ Guidelines for managing task lists in markdown files to track progress on comple
         git commit -m "feat: add payment validation logic" -m "- Validates card type and expiry" -m "- Adds unit tests for edge cases" -m "Related to T123 in PRD"
         ```
   3. Once all the subtasks are marked completed and changes have been committed, mark the **parent task** as completed.
-- Stop after each sub‑task and wait for the user's go‑ahead.
+- Stop after each sub-task and wait for the user's go-ahead.
 
 ## Task List Maintenance
 
@@ -34,9 +40,16 @@ Guidelines for managing task lists in markdown files to track progress on comple
    - Mark tasks and subtasks as completed (`[x]`) per the protocol above.
    - Add new tasks as they emerge.
 
-2. **Maintain the "Relevant Files" section:**
+2. **Track newly discovered work as tasks:**
+   - Keep track of open questions, manual configuration steps, bugs, follow-ups, edge cases, technical debt, and potential optimizations as **NEW** tasks in the task list.
+   - Append all newly discovered items to the **end of the task list**
+   - Do **not** leave important discoveries only in prose, notes, or commentary
+   - If something will need later investigation or user action, convert it into an explicit task or sub-task
+   - Prefer actionable wording so each new item can be completed, verified, and checked off later
+
+3. **Maintain the "Relevant Files" section:**
    - List every file created or modified.
-   - Give each file a one‑line description of its purpose.
+   - Give each file a one-line description of its purpose.
 
 ## AI Instructions
 
@@ -44,10 +57,13 @@ When working with task lists, the AI must:
 
 1. Regularly update the task list file after finishing any significant work.
 2. Follow the completion protocol:
-   - Mark each finished **sub‑task** `[x]`.
+   - Mark each finished **sub-task** `[x]`.
    - Mark the **parent task** `[x]` once **all** its subtasks are `[x]`.
 3. Add newly discovered tasks.
 4. Keep "Relevant Files" accurate and up to date.
-5. Before starting work, check which sub‑task is next.
-6. After implementing a sub‑task, update the file and then pause for user approval.
-7. If the user must implement something (Creation or editing of a SQL table, run an endpoint for upserts, etc.) in your message prompt, alert the user and describe what needs to be done. 
+5. Before starting work, check which sub-task is next.
+6. After implementing a sub-task, update the file and then pause for user approval.
+7. If the user must implement something (creation or editing of a SQL table, running migrations, running an endpoint for upserts, applying dashboard settings, environment configuration, or any other manual/time-sensitive action), explicitly alert the user and describe exactly what must be done.
+8. For any action covered by the manual-action override, require the response **"Done, proceed"** before continuing.
+9. If the user replies with **"yes"** or **"y"** when **"Done, proceed"** is required, do **not** continue; instead, warn the user again and restate the required confirmation.
+10. Append all newly identified bugs, optimizations, manual follow-ups, and open questions to the **end** of the task list as **NEW** tasks.

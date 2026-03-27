@@ -222,3 +222,5 @@
 - [ ] NEW 30.0 Complete the manual Yahoo app configuration for the new per-user OAuth callback flow.
   - [ ] NEW 30.1 Verify the Yahoo app redirect URI allows `/api/v1/account/yahoo/callback` for local development.
   - [ ] NEW 30.2 Verify the Yahoo app redirect URI allows `/api/v1/account/yahoo/callback` for production.
+  - [ ] NEW 30.3 Confirm the Yahoo app redirect URI matches the exact origin/path currently used by the running environment, including scheme, host, port, and no accidental trailing-slash mismatch.
+  - [ ] NEW 30.4 Adjust the local Yahoo testing plan because Yahoo requires `https` redirect URIs; use a trusted HTTPS origin for local callback testing or validate Yahoo only against a deployed HTTPS environment.
