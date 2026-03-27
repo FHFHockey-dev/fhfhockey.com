@@ -169,3 +169,11 @@
   - [x] NEW 19.1 Remove the stale JS season helper that could shadow the maintained TypeScript season helper on case-insensitive filesystems.
   - [x] NEW 19.2 Stop homepage server-side fetches from assuming every upstream response is valid JSON.
   - [x] NEW 19.3 Stop the homepage future-game search loop after the first upstream failure instead of retrying multiple slow external dates in sequence.
+
+- [ ] NEW 20.0 Fix the Supabase redirect allow-list mismatch that is still collapsing localhost recovery links back to the site root
+  - [ ] NEW 20.1 Replace the current localhost wildcard redirect entry with `http://localhost:3000/**` so nested auth routes like `/auth/reset-password` are allowed.
+  - [ ] NEW 20.2 Add exact localhost and production auth redirect entries for `/auth/callback` and `/auth/reset-password` so password recovery does not depend on wildcard behavior.
+  - [ ] NEW 20.3 Re-test forgot-password after the redirect allow-list fix and verify the recovery email now contains `/auth/reset-password` in `redirect_to`.
+
+- [x] NEW 21.0 Eliminate the duplicate browser Supabase auth client that can interfere with recovery-session state changes
+  - [x] NEW 21.1 Make `lib/supabase` re-export the shared browser client from `lib/supabase/client` instead of constructing a second GoTrue instance.

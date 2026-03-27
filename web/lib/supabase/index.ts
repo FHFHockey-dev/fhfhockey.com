@@ -3,18 +3,16 @@
 import { IncomingMessage } from "http";
 import { SupabaseClient, createClient } from "@supabase/supabase-js";
 import type { Database } from "./database-generated.types";
+import browserSupabase from "./client";
 
 const supabaseUrl =
   process.env.NEXT_PUBLIC_SUPABASE_URL ||
   "https://fyhftlxokyjtpndbkfse.supabase.co";
 // CHANGED SUPABASE THING
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY || "";
-const supabase = createClient<Database>(supabaseUrl, supabaseKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: false
-  }
-});
+// Re-export the shared browser auth client so client-side imports of `lib/supabase`
+// do not create a second GoTrue instance with the same storage key.
+const supabase = browserSupabase;
 
 export function createClientWithToken(access_token: string): typeof supabase;
 export function createClientWithToken(req: IncomingMessage): typeof supabase;
