@@ -192,9 +192,9 @@
 - [ ] NEW 28.0 Investigate and eliminate the remaining `Multiple GoTrueClient instances detected` warnings still emitted in unrelated tests so the browser/client auth surface uses one clear singleton path everywhere.
 
 - [ ] NEW 24.0 Implement the Yahoo Fantasy connected-account flow and first-pass league sync foundation
-  - [ ] NEW 24.1 Create the Yahoo connect/disconnect OAuth flow from account or league settings without coupling Yahoo to core site login.
-  - [ ] NEW 24.2 Store per-user Yahoo connection metadata in the connected-account model while keeping token material in the private token store.
-  - [ ] NEW 24.3 Build the first Yahoo league/team discovery sync so users with multiple Yahoo leagues can choose a default team and active league context.
+  - [x] NEW 24.1 Create the Yahoo connect/disconnect OAuth flow from account or league settings without coupling Yahoo to core site login.
+  - [x] NEW 24.2 Store per-user Yahoo connection metadata in the connected-account model while keeping token material in the private token store.
+  - [x] NEW 24.3 Build the first Yahoo league/team discovery sync so users with multiple Yahoo leagues can choose a default team and active league context.
   - [ ] NEW 24.4 Add guarded refresh controls, cooldown enforcement, and sync-run dedupe to avoid rapid repeated Yahoo sync attempts.
   - [ ] NEW 24.5 Keep the existing shared Yahoo refresh path untouched in `web/pages/api/v1/db/manual-refresh-yahoo-token.ts`.
 
@@ -214,3 +214,11 @@
   - [ ] NEW 27.2 Sync Patreon member identity and entitlement state into `user_entitlements` while preventing one Patreon identity from being reused across multiple site users.
   - [ ] NEW 27.3 Surface Patreon-linked access state and perk eligibility in account settings without making Patreon a primary sign-in provider.
   - [ ] NEW 27.4 Add a manual re-sync path and support-facing status messaging for Patreon entitlement drift or billing-state changes.
+
+- [ ] NEW 29.0 Remove Yahoo OAuth secrets and token artifacts from tracked files, rotate the exposed Yahoo app credentials/tokens, and replace repo-local secret storage with env-only or vault-backed handling.
+  - [ ] NEW 29.1 Delete or quarantine `web/lib/supabase/Upserts/yahooAuth/token.json` from the tracked codebase after rotating the leaked credentials.
+  - [ ] NEW 29.2 Rotate the Yahoo consumer key/secret and refresh any leaked Yahoo user tokens currently present in local env files or tracked artifacts.
+
+- [ ] NEW 30.0 Complete the manual Yahoo app configuration for the new per-user OAuth callback flow.
+  - [ ] NEW 30.1 Verify the Yahoo app redirect URI allows `/api/v1/account/yahoo/callback` for local development.
+  - [ ] NEW 30.2 Verify the Yahoo app redirect URI allows `/api/v1/account/yahoo/callback` for production.

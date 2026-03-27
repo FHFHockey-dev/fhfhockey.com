@@ -8,10 +8,16 @@ const accountState = vi.hoisted(() => ({
   profileUpsert: vi.fn(),
   settingsMaybeSingle: vi.fn(),
   settingsUpsert: vi.fn(),
+  connectedAccountMaybeSingle: vi.fn(),
+  externalLeaguesOrder: vi.fn(),
+  externalTeamsOrder: vi.fn(),
+  providerPreferencesMaybeSingle: vi.fn(),
+  providerPreferencesUpsert: vi.fn(),
   savedTeamsRows: [] as Array<any>,
   savedTeamsInsert: vi.fn(),
   savedTeamsUpdate: vi.fn(),
-  savedTeamsDelete: vi.fn()
+  savedTeamsDelete: vi.fn(),
+  authGetSession: vi.fn()
 }));
 
 vi.mock("next/router", () => ({
@@ -35,6 +41,9 @@ vi.mock("contexts/AuthProviderContext", () => ({
 
 vi.mock("lib/supabase/client", () => ({
   default: {
+    auth: {
+      getSession: accountState.authGetSession
+    },
     from: (table: string) => {
       if (table === "user_profiles") {
         return {
@@ -55,6 +64,55 @@ vi.mock("lib/supabase/client", () => ({
             })
           }),
           upsert: accountState.settingsUpsert
+        };
+      }
+
+      if (table === "connected_accounts") {
+        return {
+          select: () => ({
+            eq: (_field: string, _value: string) => ({
+              eq: (_nextField: string, _nextValue: string) => ({
+                maybeSingle: accountState.connectedAccountMaybeSingle
+              })
+            })
+          })
+        };
+      }
+
+      if (table === "external_leagues") {
+        return {
+          select: () => ({
+            eq: (_field: string, _value: string) => ({
+              eq: (_nextField: string, _nextValue: string) => ({
+                order: accountState.externalLeaguesOrder
+              })
+            })
+          })
+        };
+      }
+
+      if (table === "external_teams") {
+        return {
+          select: () => ({
+            eq: (_field: string, _value: string) => ({
+              eq: (_nextField: string, _nextValue: string) => ({
+                order: accountState.externalTeamsOrder
+              })
+            })
+          })
+        };
+      }
+
+      if (table === "user_provider_preferences") {
+        return {
+          select: () => ({
+            eq: (_field: string, _value: string) => ({
+              eq: (_nextField: string, _nextValue: string) => ({
+                maybeSingle: accountState.providerPreferencesMaybeSingle
+              })
+            })
+          }),
+          upsert: accountState.providerPreferencesUpsert
         };
       }
 
@@ -124,13 +182,45 @@ describe("AccountSettingsPage profile section", () => {
     accountState.profileUpsert.mockReset();
     accountState.settingsMaybeSingle.mockReset();
     accountState.settingsUpsert.mockReset();
+    accountState.connectedAccountMaybeSingle.mockReset();
+    accountState.externalLeaguesOrder.mockReset();
+    accountState.externalTeamsOrder.mockReset();
+    accountState.providerPreferencesMaybeSingle.mockReset();
+    accountState.providerPreferencesUpsert.mockReset();
     accountState.savedTeamsRows = [];
     accountState.savedTeamsInsert.mockReset();
     accountState.savedTeamsUpdate.mockReset();
     accountState.savedTeamsDelete.mockReset();
+    accountState.authGetSession.mockReset();
     accountState.settingsMaybeSingle.mockResolvedValue({
       data: null,
       error: null
+    });
+    accountState.connectedAccountMaybeSingle.mockResolvedValue({
+      data: null,
+      error: null
+    });
+    accountState.externalLeaguesOrder.mockResolvedValue({
+      data: [],
+      error: null
+    });
+    accountState.externalTeamsOrder.mockResolvedValue({
+      data: [],
+      error: null
+    });
+    accountState.providerPreferencesMaybeSingle.mockResolvedValue({
+      data: null,
+      error: null
+    });
+    accountState.providerPreferencesUpsert.mockResolvedValue({
+      error: null
+    });
+    accountState.authGetSession.mockResolvedValue({
+      data: {
+        session: {
+          access_token: "session-token"
+        }
+      }
     });
   });
 
@@ -586,6 +676,7 @@ describe("AccountSettingsPage profile section", () => {
     render(<AccountSettingsPage />);
 
     expect(await screen.findByText("Yahoo Fantasy")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Connect Yahoo Fantasy" })).toBeTruthy();
     expect(screen.getByText("Fantrax")).toBeTruthy();
     expect(screen.getAllByText("Patreon").length).toBeGreaterThan(1);
     expect(screen.getByText("ESPN")).toBeTruthy();
@@ -604,6 +695,104 @@ describe("AccountSettingsPage profile section", () => {
         "Active league switcher: in-place context change without losing draft/dashboard progress"
       )
     ).toBeTruthy();
+  });
+
+  it("shows discovered Yahoo leagues and teams when the user is connected", async () => {
+    accountState.routerQuery = {
+      section: "connected-accounts",
+      yahoo_status: "connected",
+      yahoo_message: "Yahoo synced 2 teams across 2 leagues."
+    };
+    accountState.profileMaybeSingle.mockResolvedValue({
+      data: {
+        display_name: "Tim Tester",
+        avatar_url: null,
+        timezone: "America/Chicago"
+      },
+      error: null
+    });
+    accountState.connectedAccountMaybeSingle.mockResolvedValue({
+      data: {
+        id: "yahoo-account-1",
+        user_id: "user-1",
+        provider: "yahoo",
+        provider_user_id: "guid-123",
+        account_label: "Tim's Yahoo",
+        status: "connected",
+        scopes: [],
+        metadata: {},
+        last_synced_at: "2026-03-27T12:00:00.000Z",
+        created_at: "2026-03-27T12:00:00.000Z",
+        updated_at: "2026-03-27T12:00:00.000Z"
+      },
+      error: null
+    });
+    accountState.externalLeaguesOrder.mockResolvedValue({
+      data: [
+        {
+          id: "league-1",
+          connected_account_id: "yahoo-account-1",
+          user_id: "user-1",
+          provider: "yahoo",
+          external_league_key: "nhl.l.1",
+          league_name: "Keeper League",
+          season_key: "2026",
+          league_metadata: {},
+          scoring_settings: {},
+          roster_settings: {},
+          imported_at: "2026-03-27T12:00:00.000Z",
+          created_at: "2026-03-27T12:00:00.000Z",
+          updated_at: "2026-03-27T12:00:00.000Z"
+        }
+      ],
+      error: null
+    });
+    accountState.externalTeamsOrder.mockResolvedValue({
+      data: [
+        {
+          id: "team-1",
+          external_league_id: "league-1",
+          connected_account_id: "yahoo-account-1",
+          user_id: "user-1",
+          provider: "yahoo",
+          external_team_key: "nhl.l.1.t.1",
+          team_name: "Tim's Test Team",
+          team_metadata: {},
+          roster_snapshot: {},
+          imported_at: "2026-03-27T12:00:00.000Z",
+          created_at: "2026-03-27T12:00:00.000Z",
+          updated_at: "2026-03-27T12:00:00.000Z"
+        }
+      ],
+      error: null
+    });
+    accountState.providerPreferencesMaybeSingle.mockResolvedValue({
+      data: {
+        id: "pref-1",
+        user_id: "user-1",
+        provider: "yahoo",
+        connected_account_id: "yahoo-account-1",
+        default_external_league_id: "league-1",
+        default_external_team_id: "team-1",
+        refresh_on_login: false,
+        active_context: {},
+        created_at: "2026-03-27T12:00:00.000Z",
+        updated_at: "2026-03-27T12:00:00.000Z"
+      },
+      error: null
+    });
+
+    render(<AccountSettingsPage />);
+
+    expect(await screen.findByText("Yahoo synced 2 teams across 2 leagues.")).toBeTruthy();
+    expect(screen.getByText("Connected account label: Tim's Yahoo")).toBeTruthy();
+    expect(screen.getByText("Keeper League (default league)")).toBeTruthy();
+    expect(screen.getByText("Tim's Test Team")).toBeTruthy();
+    expect(screen.getAllByText("Default team: Tim's Test Team").length).toBeGreaterThan(0);
+    expect(
+      screen.getByRole("button", { name: "Disconnect Yahoo Fantasy" })
+    ).toBeTruthy();
+    expect(screen.getByText("Default Team")).toBeTruthy();
   });
 
   it("shows Patreon as an account-linked entitlement placeholder, not site auth", async () => {

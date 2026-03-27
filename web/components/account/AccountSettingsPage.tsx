@@ -13,10 +13,16 @@ import {
   mapUserSettingsRowToLeagueSettings
 } from "lib/user-settings/mappers";
 import type { Database, Json } from "lib/supabase/database-generated.types";
+import { YAHOO_CONNECT_DEFAULT_NEXT, YAHOO_PROVIDER } from "lib/integrations/yahoo/config";
 
 import styles from "./AccountSettingsPage.module.scss";
 
 type SavedTeamRow = Database["public"]["Tables"]["user_saved_teams"]["Row"];
+type ConnectedAccountRow = Database["public"]["Tables"]["connected_accounts"]["Row"];
+type ExternalLeagueRow = Database["public"]["Tables"]["external_leagues"]["Row"];
+type ExternalTeamRow = Database["public"]["Tables"]["external_teams"]["Row"];
+type UserProviderPreferencesRow =
+  Database["public"]["Tables"]["user_provider_preferences"]["Row"];
 
 const CONNECTED_ACCOUNT_PROVIDERS = [
   {
@@ -281,9 +287,16 @@ function getSavedTeamLeagueType(settingsSnapshot: Json) {
   return settingsSnapshot.league_type === "categories" ? "categories" : "points";
 }
 
+function getQueryParamValue(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
 export default function AccountSettingsPage() {
   const router = useRouter();
   const { user } = useAuth();
+  const userId = user?.id ?? null;
+  const userDisplayName = user?.displayName ?? "";
+  const userAvatarUrl = user?.avatarUrl ?? "";
   const [leagueForm, setLeagueForm] = useState<UserLeagueSettings>(
     createDefaultUserLeagueSettings()
   );
@@ -323,6 +336,18 @@ export default function AccountSettingsPage() {
     tone: "error" | "success";
     message: string;
   } | null>(null);
+  const [yahooConnectedAccount, setYahooConnectedAccount] =
+    useState<ConnectedAccountRow | null>(null);
+  const [yahooLeagues, setYahooLeagues] = useState<ExternalLeagueRow[]>([]);
+  const [yahooTeams, setYahooTeams] = useState<ExternalTeamRow[]>([]);
+  const [yahooPreferences, setYahooPreferences] =
+    useState<UserProviderPreferencesRow | null>(null);
+  const [isYahooLoading, setIsYahooLoading] = useState(false);
+  const [isYahooActionLoading, setIsYahooActionLoading] = useState(false);
+  const [yahooFeedback, setYahooFeedback] = useState<{
+    tone: "error" | "success" | "info";
+    message: string;
+  } | null>(null);
 
   const activeSection = useMemo(
     () => resolveSection(router.query.section),
@@ -335,6 +360,23 @@ export default function AccountSettingsPage() {
     user?.email ||
     "Authenticated User";
   const resolvedAvatarUrl = profileForm.avatarUrl.trim() || user?.avatarUrl || "";
+  const yahooDefaultTeam = useMemo(
+    () =>
+      yahooTeams.find((team) => team.id === yahooPreferences?.default_external_team_id) ||
+      null,
+    [yahooPreferences?.default_external_team_id, yahooTeams]
+  );
+  const yahooDefaultLeague = useMemo(
+    () =>
+      yahooLeagues.find(
+        (league) =>
+          league.id ===
+          (yahooPreferences?.default_external_league_id ||
+            yahooDefaultTeam?.external_league_id ||
+            null)
+      ) || null,
+    [yahooDefaultTeam?.external_league_id, yahooLeagues, yahooPreferences?.default_external_league_id]
+  );
 
   function updateSection(section: AccountSection) {
     void router.replace(
@@ -348,12 +390,13 @@ export default function AccountSettingsPage() {
   }
 
   useEffect(() => {
-    if (!user?.id) {
+    if (!userId) {
       setIsProfileLoading(false);
       setProfileRecordState("missing");
       return;
     }
 
+    const currentUserId = userId;
     let isMounted = true;
 
     async function loadProfile() {
@@ -363,7 +406,7 @@ export default function AccountSettingsPage() {
       const { data, error } = await supabase
         .from("user_profiles")
         .select("display_name, avatar_url, timezone")
-        .eq("user_id", user.id)
+        .eq("user_id", currentUserId)
         .maybeSingle();
 
       if (!isMounted) {
@@ -382,8 +425,8 @@ export default function AccountSettingsPage() {
 
       setProfileRecordState(data ? "present" : "missing");
       setProfileForm({
-        displayName: data?.display_name || user.displayName || "",
-        avatarUrl: data?.avatar_url || user.avatarUrl || "",
+        displayName: data?.display_name || userDisplayName || "",
+        avatarUrl: data?.avatar_url || userAvatarUrl || "",
         timezone: data?.timezone || ""
       });
       setIsProfileLoading(false);
@@ -394,16 +437,17 @@ export default function AccountSettingsPage() {
     return () => {
       isMounted = false;
     };
-  }, [user?.avatarUrl, user?.displayName, user?.id]);
+  }, [userAvatarUrl, userDisplayName, userId]);
 
   useEffect(() => {
-    if (!user?.id) {
+    if (!userId) {
       setLeagueForm(createDefaultUserLeagueSettings());
       setIsLeagueLoading(false);
       setLeagueRecordState("missing");
       return;
     }
 
+    const currentUserId = userId;
     let isMounted = true;
 
     async function loadLeagueSettings() {
@@ -415,7 +459,7 @@ export default function AccountSettingsPage() {
         .select(
           "league_type, scoring_categories, category_weights, roster_config, ui_preferences, active_context"
         )
-        .eq("user_id", user.id)
+        .eq("user_id", currentUserId)
         .maybeSingle();
 
       if (!isMounted) {
@@ -443,13 +487,14 @@ export default function AccountSettingsPage() {
     return () => {
       isMounted = false;
     };
-  }, [user?.id]);
+  }, [userId]);
 
   useEffect(() => {
-    if (!user?.id || activeSection !== "saved-teams") {
+    if (!userId || activeSection !== "saved-teams") {
       return;
     }
 
+    const currentUserId = userId;
     let isMounted = true;
 
     async function loadSavedTeams() {
@@ -458,7 +503,7 @@ export default function AccountSettingsPage() {
       const { data, error } = await supabase
         .from("user_saved_teams")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", currentUserId)
         .order("created_at", { ascending: false });
 
       if (!isMounted) {
@@ -491,7 +536,115 @@ export default function AccountSettingsPage() {
     return () => {
       isMounted = false;
     };
-  }, [activeSection, user?.id]);
+  }, [activeSection, userId]);
+
+  async function reloadYahooState() {
+    if (!userId) {
+      setYahooConnectedAccount(null);
+      setYahooLeagues([]);
+      setYahooTeams([]);
+      setYahooPreferences(null);
+      return;
+    }
+
+    const [accountResponse, leagueResponse, teamResponse, preferencesResponse] =
+      await Promise.all([
+        supabase
+          .from("connected_accounts")
+          .select("*")
+          .eq("user_id", userId)
+          .eq("provider", YAHOO_PROVIDER)
+          .maybeSingle(),
+        supabase
+          .from("external_leagues")
+          .select("*")
+          .eq("user_id", userId)
+          .eq("provider", YAHOO_PROVIDER)
+          .order("league_name", { ascending: true }),
+        supabase
+          .from("external_teams")
+          .select("*")
+          .eq("user_id", userId)
+          .eq("provider", YAHOO_PROVIDER)
+          .order("team_name", { ascending: true }),
+        supabase
+          .from("user_provider_preferences")
+          .select("*")
+          .eq("user_id", userId)
+          .eq("provider", YAHOO_PROVIDER)
+          .maybeSingle(),
+      ]);
+
+    if (accountResponse.error) {
+      throw accountResponse.error;
+    }
+    if (leagueResponse.error) {
+      throw leagueResponse.error;
+    }
+    if (teamResponse.error) {
+      throw teamResponse.error;
+    }
+    if (preferencesResponse.error) {
+      throw preferencesResponse.error;
+    }
+
+    setYahooConnectedAccount(accountResponse.data);
+    setYahooLeagues(leagueResponse.data || []);
+    setYahooTeams(teamResponse.data || []);
+    setYahooPreferences(preferencesResponse.data);
+  }
+
+  useEffect(() => {
+    if (!userId || activeSection !== "connected-accounts") {
+      return;
+    }
+
+    let isMounted = true;
+
+    async function loadYahooState() {
+      setIsYahooLoading(true);
+
+      try {
+        await reloadYahooState();
+
+        if (!isMounted) {
+          return;
+        }
+
+        const yahooStatus = getQueryParamValue(router.query.yahoo_status);
+        const yahooMessage = getQueryParamValue(router.query.yahoo_message);
+
+        if (yahooStatus && yahooMessage) {
+          setYahooFeedback({
+            tone: yahooStatus === "error" ? "error" : "success",
+            message: yahooMessage,
+          });
+        }
+      } catch (error) {
+        if (!isMounted) {
+          return;
+        }
+
+        setYahooFeedback({
+          tone: "error",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Unable to load Yahoo connection state.",
+        });
+      } finally {
+        if (isMounted) {
+          setIsYahooLoading(false);
+        }
+      }
+    }
+
+    void loadYahooState();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [activeSection, router.query.yahoo_message, router.query.yahoo_status, userId]);
 
   function updateProfileField(field: keyof typeof profileForm, value: string) {
     setProfileForm((current) => ({
@@ -831,6 +984,156 @@ export default function AccountSettingsPage() {
         tone: "error",
         message: error instanceof Error ? error.message : "Unable to delete team."
       });
+    }
+  }
+
+  async function handleYahooConnect() {
+    setYahooFeedback(null);
+    setIsYahooActionLoading(true);
+
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session?.access_token) {
+        throw new Error("You must be signed in before connecting Yahoo.");
+      }
+
+      const response = await fetch("/api/v1/account/yahoo/connect", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          next: YAHOO_CONNECT_DEFAULT_NEXT,
+        }),
+      });
+
+      const payload = await response.json();
+      if (!response.ok || !payload.authorizationUrl) {
+        throw new Error(payload.error || "Unable to begin Yahoo authentication.");
+      }
+
+      window.location.assign(payload.authorizationUrl);
+    } catch (error) {
+      setYahooFeedback({
+        tone: "error",
+        message:
+          error instanceof Error ? error.message : "Unable to begin Yahoo authentication.",
+      });
+      setIsYahooActionLoading(false);
+    }
+  }
+
+  async function handleYahooDisconnect() {
+    setYahooFeedback(null);
+    setIsYahooActionLoading(true);
+
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session?.access_token) {
+        throw new Error("You must be signed in before disconnecting Yahoo.");
+      }
+
+      const response = await fetch("/api/v1/account/yahoo/disconnect", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(payload.error || "Unable to disconnect Yahoo.");
+      }
+
+      await reloadYahooState();
+      setYahooFeedback({
+        tone: "success",
+        message: payload.message || "Yahoo Fantasy disconnected.",
+      });
+    } catch (error) {
+      setYahooFeedback({
+        tone: "error",
+        message: error instanceof Error ? error.message : "Unable to disconnect Yahoo.",
+      });
+    } finally {
+      setIsYahooActionLoading(false);
+    }
+  }
+
+  async function handleSetYahooDefaultTeam(team: ExternalTeamRow) {
+    if (!user?.id || !yahooConnectedAccount) {
+      return;
+    }
+
+    const league = yahooLeagues.find((item) => item.id === team.external_league_id) || null;
+    const activeContext = {
+      provider: YAHOO_PROVIDER,
+      source_type: "external-provider",
+      external_league_id: league?.id || null,
+      external_team_id: team.id,
+      external_league_key: league?.external_league_key || null,
+      external_team_key: team.external_team_key,
+    };
+
+    setYahooFeedback(null);
+    setIsYahooActionLoading(true);
+
+    try {
+      const { error: preferencesError } = await supabase
+        .from("user_provider_preferences")
+        .upsert(
+          {
+            user_id: user.id,
+            provider: YAHOO_PROVIDER,
+            connected_account_id: yahooConnectedAccount.id,
+            default_external_league_id: league?.id || null,
+            default_external_team_id: team.id,
+            refresh_on_login: yahooPreferences?.refresh_on_login ?? false,
+            active_context: activeContext,
+          },
+          {
+            onConflict: "user_id,provider",
+          }
+        );
+
+      if (preferencesError) {
+        throw preferencesError;
+      }
+
+      const { error: settingsError } = await supabase.from("user_settings").upsert(
+        {
+          user_id: user.id,
+          active_context: activeContext,
+        },
+        {
+          onConflict: "user_id",
+        }
+      );
+
+      if (settingsError) {
+        throw settingsError;
+      }
+
+      await reloadYahooState();
+      setYahooFeedback({
+        tone: "success",
+        message: `"${team.team_name || "Yahoo team"}" is now your default Yahoo team.`,
+      });
+    } catch (error) {
+      setYahooFeedback({
+        tone: "error",
+        message:
+          error instanceof Error ? error.message : "Unable to update the default Yahoo team.",
+      });
+    } finally {
+      setIsYahooActionLoading(false);
     }
   }
 
@@ -1291,7 +1594,7 @@ export default function AccountSettingsPage() {
                         <button
                           type="button"
                           className={styles.secondaryButton}
-                          onClick={resetSavedTeamForm}
+                          onClick={() => resetSavedTeamForm()}
                           disabled={isSavedTeamSaving}
                         >
                           Cancel Edit
@@ -1392,6 +1695,21 @@ export default function AccountSettingsPage() {
               <div className={styles.panel}>
                 <h2 className={styles.panelTitle}>Provider Connection Architecture</h2>
 
+                {yahooFeedback ? (
+                  <div
+                    className={
+                      yahooFeedback.tone === "error"
+                        ? styles.errorMessage
+                        : yahooFeedback.tone === "success"
+                          ? styles.successMessage
+                          : styles.infoMessage
+                    }
+                    role={yahooFeedback.tone === "error" ? "alert" : undefined}
+                  >
+                    {yahooFeedback.message}
+                  </div>
+                ) : null}
+
                 <div className={styles.providerCardGrid}>
                   {CONNECTED_ACCOUNT_PROVIDERS.map((provider) => (
                     <div key={provider.key} className={styles.providerCard}>
@@ -1402,31 +1720,203 @@ export default function AccountSettingsPage() {
                             {provider.location}
                           </div>
                         </div>
-                        <span className={styles.providerStatus}>{provider.status}</span>
+                        <span className={styles.providerStatus}>
+                          {provider.key === YAHOO_PROVIDER
+                            ? yahooConnectedAccount?.status === "connected"
+                              ? "Connected"
+                              : isYahooLoading
+                                ? "Loading"
+                                : "Ready"
+                            : provider.status}
+                        </span>
                       </div>
 
-                      <p className={styles.providerSummary}>{provider.summary}</p>
+                      <p className={styles.providerSummary}>
+                        {provider.key === YAHOO_PROVIDER && yahooConnectedAccount
+                          ? `Connected through account settings. ${yahooTeams.length} Yahoo team${yahooTeams.length === 1 ? "" : "s"} discovered across ${yahooLeagues.length} league${yahooLeagues.length === 1 ? "" : "s"}.`
+                          : provider.summary}
+                      </p>
 
                       <div className={styles.providerPillRow}>
                         <span className={styles.statusPill}>Core auth stays separate</span>
-                        <span className={styles.statusPill}>No live token flow yet</span>
+                        <span className={styles.statusPill}>
+                          {provider.key === YAHOO_PROVIDER && yahooConnectedAccount
+                            ? `Last sync ${formatSavedTeamTimestamp(
+                                yahooConnectedAccount.last_synced_at ||
+                                  yahooConnectedAccount.updated_at
+                              )}`
+                            : "No live token flow yet"}
+                        </span>
+                        {provider.key === YAHOO_PROVIDER && yahooDefaultTeam ? (
+                          <span className={styles.statusPill}>
+                            Default team: {yahooDefaultTeam.team_name || "Yahoo team"}
+                          </span>
+                        ) : null}
                       </div>
 
-                      <div className={styles.providerBulletList}>
-                        {provider.bullets.map((bullet) => (
-                          <div key={bullet} className={styles.providerBullet}>
-                            {bullet}
+                      {provider.key === YAHOO_PROVIDER && yahooConnectedAccount ? (
+                        <div className={styles.providerBulletList}>
+                          <div className={styles.providerBullet}>
+                            Connected account label:{" "}
+                            {yahooConnectedAccount.account_label || "Yahoo Fantasy"}
                           </div>
-                        ))}
-                      </div>
+                          <div className={styles.providerBullet}>
+                            Discovered leagues: {yahooLeagues.length}
+                          </div>
+                          <div className={styles.providerBullet}>
+                            Discovered teams: {yahooTeams.length}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className={styles.providerBulletList}>
+                          {provider.bullets.map((bullet) => (
+                            <div key={bullet} className={styles.providerBullet}>
+                              {bullet}
+                            </div>
+                          ))}
+                        </div>
+                      )}
 
                       <div className={styles.providerFooter}>
-                        This card is architectural only in MVP. Real OAuth, token
-                        storage, sync runs, and refresh controls remain deferred.
+                        {provider.key === YAHOO_PROVIDER ? (
+                          <div className={styles.cardActionRow}>
+                            {!yahooConnectedAccount ? (
+                              <button
+                                type="button"
+                                className={styles.saveButton}
+                                onClick={() => void handleYahooConnect()}
+                                disabled={isYahooActionLoading}
+                              >
+                                Connect Yahoo Fantasy
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                className={styles.dangerButton}
+                                onClick={() => void handleYahooDisconnect()}
+                                disabled={isYahooActionLoading}
+                              >
+                                Disconnect Yahoo Fantasy
+                              </button>
+                            )}
+                          </div>
+                        ) : (
+                          "This card is architectural only in MVP. Real OAuth, token storage, sync runs, and refresh controls remain deferred."
+                        )}
                       </div>
                     </div>
                   ))}
                 </div>
+
+                {yahooConnectedAccount ? (
+                  <div className={styles.providerControlGrid}>
+                    <div className={styles.providerControlCard}>
+                      <div className={styles.formSectionHeader}>
+                        <h3 className={styles.formSectionTitle}>Yahoo League Discovery</h3>
+                        <p className={styles.formSectionBody}>
+                          The initial Yahoo sync imports the leagues attached to your
+                          Yahoo account so you can choose a stable default league/team
+                          context without leaving the account page.
+                        </p>
+                      </div>
+
+                      <div className={styles.providerControlRows}>
+                        {yahooLeagues.length > 0 ? (
+                          yahooLeagues.map((league) => (
+                            <div key={league.id} className={styles.providerControlRow}>
+                              {league.league_name || league.external_league_key}
+                              {yahooDefaultLeague?.id === league.id
+                                ? " (default league)"
+                                : ""}
+                            </div>
+                          ))
+                        ) : (
+                          <div className={styles.providerControlRow}>
+                            No Yahoo NHL leagues were discovered for this connected account.
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className={styles.providerControlCard}>
+                      <div className={styles.formSectionHeader}>
+                        <h3 className={styles.formSectionTitle}>Yahoo Teams</h3>
+                        <p className={styles.formSectionBody}>
+                          Multiple Yahoo leagues and teams are supported. Pick a default
+                          team here and the stored active context will remain stable for
+                          future league-aware screens.
+                        </p>
+                      </div>
+
+                      <div className={styles.providerControlRows}>
+                        {yahooTeams.length > 0 ? (
+                          yahooTeams.map((team) => {
+                            const league =
+                              yahooLeagues.find(
+                                (leagueItem) => leagueItem.id === team.external_league_id
+                              ) || null;
+
+                            return (
+                              <div key={team.id} className={styles.providerControlRow}>
+                                <div>{team.team_name || team.external_team_key}</div>
+                                <div>
+                                  League: {league?.league_name || league?.external_league_key || "Yahoo league"}
+                                </div>
+                                <div className={styles.cardActionRow}>
+                                  {yahooDefaultTeam?.id === team.id ? (
+                                    <span className={styles.defaultBadge}>Default Team</span>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      className={styles.secondaryButton}
+                                      onClick={() => void handleSetYahooDefaultTeam(team)}
+                                      disabled={isYahooActionLoading}
+                                    >
+                                      Set Default Team
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })
+                        ) : (
+                          <div className={styles.providerControlRow}>
+                            No Yahoo teams have been imported yet.
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className={styles.providerControlCard}>
+                      <div className={styles.formSectionHeader}>
+                        <h3 className={styles.formSectionTitle}>Stored Yahoo Context</h3>
+                        <p className={styles.formSectionBody}>
+                          This is the first-pass connected-account foundation. Manual
+                          refresh, cooldown enforcement, and sync dedupe are still a
+                          separate follow-up slice.
+                        </p>
+                      </div>
+
+                      <div className={styles.providerControlRows}>
+                        <div className={styles.providerControlRow}>
+                          Account status: {yahooConnectedAccount.status}
+                        </div>
+                        <div className={styles.providerControlRow}>
+                          Default league:{" "}
+                          {yahooDefaultLeague?.league_name ||
+                            yahooDefaultLeague?.external_league_key ||
+                            "Not selected"}
+                        </div>
+                        <div className={styles.providerControlRow}>
+                          Default team:{" "}
+                          {yahooDefaultTeam?.team_name ||
+                            yahooDefaultTeam?.external_team_key ||
+                            "Not selected"}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
 
                 <div className={styles.providerControlGrid}>
                   {FUTURE_PROVIDER_CONTROL_SURFACES.map((surface) => (
