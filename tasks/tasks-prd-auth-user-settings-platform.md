@@ -43,6 +43,7 @@
 - `web/lib/user-settings/mappers.test.ts` - Unit tests for mapping between database rows and app-facing settings objects.
 - `web/lib/projectionsConfig/fantasyPointsConfig.ts` - Existing reference for default fantasy scoring that should inform seeded account settings without changing Draft Dashboard behavior.
 - `web/pages/api/` - Existing API route area that may need a small authenticated settings endpoint layer if direct client-table access is not sufficient for some account operations.
+- `fhfh-styles.md` - Local FHFH design-system rules for applying the Neon Noir / Cyberpunk visual language to auth and account surfaces.
 - `tasks/prd-auth-user-settings-platform.md` - Source PRD this task list implements.
 - `tasks/tasks-prd-auth-user-settings-platform.md` - Implementation task list for the feature.
 
@@ -139,10 +140,10 @@
   - [ ] NEW 13.2 Replace the current test-safe service-role fallback with a stricter lazy initialization or test bootstrap pattern once env loading is standardized.
 
 - [ ] NEW 14.0 Resolve custom SMTP delivery failure for Supabase Auth emails
-  - [ ] NEW 14.1 Verify the custom SMTP configuration saves successfully and is accepted by Supabase without provider-auth errors.
+  - [x] NEW 14.1 Verify the custom SMTP configuration saves successfully and is accepted by Supabase without provider-auth errors.
   - [ ] NEW 14.2 Check junk/spam/quarantine and recipient-side filtering for verification and reset emails.
-  - [ ] NEW 14.3 If delivery still fails, retry with the alternate Namecheap SMTP submission port and security mode combination supported by Private Email.
-  - [ ] NEW 14.4 Confirm the configured sender mailbox is allowed to send via the chosen SMTP credentials and is not blocked by provider policy.
+  - [x] NEW 14.3 If delivery still fails, retry with the alternate Namecheap SMTP submission port and security mode combination supported by Private Email.
+  - [x] NEW 14.4 Confirm the configured sender mailbox is allowed to send via the chosen SMTP credentials and is not blocked by provider policy.
   - [ ] NEW 14.5 Send a fresh sign-up verification and password reset email and confirm end-to-end delivery.
 
 - [ ] NEW 15.0 Fix recovery-link handling so password reset links open the reset screen instead of silently signing the user in
@@ -151,9 +152,9 @@
   - [x] NEW 15.3 Route code-based Supabase recovery callbacks through `/auth/reset-password` instead of treating them like standard OAuth sign-in.
   - [x] NEW 15.4 Add a regression test covering recovery links that arrive with `code=...&type=recovery`.
 
-- [ ] NEW 16.0 Verify the recovery-flow fix against a runtime that actually includes the patched callback handler
-  - [ ] NEW 16.1 Run the updated local app or deploy the latest callback fix before re-testing password recovery.
-  - [ ] NEW 16.2 Re-test the forgot-password flow and confirm the recovery link lands on `/auth/reset-password` with the password form visible.
+- [x] NEW 16.0 Verify the recovery-flow fix against a runtime that actually includes the patched callback handler
+  - [x] NEW 16.1 Run the updated local app or deploy the latest callback fix before re-testing password recovery.
+  - [x] NEW 16.2 Re-test the forgot-password flow and confirm the recovery link lands on `/auth/reset-password` with the password form visible.
 
 - [ ] NEW 17.0 Rotate sensitive credentials that were exposed during auth setup and debugging
   - [ ] NEW 17.1 Rotate the Supabase service-role key and any other exposed Supabase secrets.
@@ -170,10 +171,10 @@
   - [x] NEW 19.2 Stop homepage server-side fetches from assuming every upstream response is valid JSON.
   - [x] NEW 19.3 Stop the homepage future-game search loop after the first upstream failure instead of retrying multiple slow external dates in sequence.
 
-- [ ] NEW 20.0 Fix the Supabase redirect allow-list mismatch that is still collapsing localhost recovery links back to the site root
-  - [ ] NEW 20.1 Replace the current localhost wildcard redirect entry with `http://localhost:3000/**` so nested auth routes like `/auth/reset-password` are allowed.
-  - [ ] NEW 20.2 Add exact localhost and production auth redirect entries for `/auth/callback` and `/auth/reset-password` so password recovery does not depend on wildcard behavior.
-  - [ ] NEW 20.3 Re-test forgot-password after the redirect allow-list fix and verify the recovery email now contains `/auth/reset-password` in `redirect_to`.
+- [x] NEW 20.0 Fix the Supabase redirect allow-list mismatch that is still collapsing localhost recovery links back to the site root
+  - [x] NEW 20.1 Replace the current localhost wildcard redirect entry with `http://localhost:3000/**` so nested auth routes like `/auth/reset-password` are allowed.
+  - [x] NEW 20.2 Add exact localhost and production auth redirect entries for `/auth/callback` and `/auth/reset-password` so password recovery does not depend on wildcard behavior.
+  - [x] NEW 20.3 Re-test forgot-password after the redirect allow-list fix and verify the recovery email now contains `/auth/reset-password` in `redirect_to`.
 
 - [x] NEW 21.0 Eliminate the duplicate browser Supabase auth client that can interfere with recovery-session state changes
   - [x] NEW 21.1 Make `lib/supabase` re-export the shared browser client from `lib/supabase/client` instead of constructing a second GoTrue instance.
@@ -181,3 +182,35 @@
 - [x] NEW 22.0 Replace the hanging password-update client call with a direct Auth API request that either succeeds or surfaces a real error
   - [x] NEW 22.1 Submit reset-password updates to `/auth/v1/user` with the active recovery access token instead of relying on the hanging `supabase.auth.updateUser(...)` path.
   - [x] NEW 22.2 Add an explicit timeout and direct error parsing so the reset screen no longer stalls indefinitely on "Updating your password now."
+
+- [x] NEW 23.0 Restyle the auth surfaces to match the FHFH Neon Noir design system in `fhfh-styles.md`
+  - [x] NEW 23.1 Update the auth modal, auth form, callback page, and reset-password page to use the FHFH accent typography, neon-glow interaction states, and glass/panel treatments.
+  - [x] NEW 23.2 Replace generic auth-page spacing, borders, and buttons with the standardized FHFH panel, ghost-button, and accent-button patterns.
+  - [x] NEW 23.3 Apply the same FHFH styling language to the account shell and connected-account cards so auth/account surfaces feel visually coherent.
+  - [x] NEW 23.4 Add or update component/page tests only where styling changes require markup changes or new accessible labels.
+
+- [ ] NEW 28.0 Investigate and eliminate the remaining `Multiple GoTrueClient instances detected` warnings still emitted in unrelated tests so the browser/client auth surface uses one clear singleton path everywhere.
+
+- [ ] NEW 24.0 Implement the Yahoo Fantasy connected-account flow and first-pass league sync foundation
+  - [ ] NEW 24.1 Create the Yahoo connect/disconnect OAuth flow from account or league settings without coupling Yahoo to core site login.
+  - [ ] NEW 24.2 Store per-user Yahoo connection metadata in the connected-account model while keeping token material in the private token store.
+  - [ ] NEW 24.3 Build the first Yahoo league/team discovery sync so users with multiple Yahoo leagues can choose a default team and active league context.
+  - [ ] NEW 24.4 Add guarded refresh controls, cooldown enforcement, and sync-run dedupe to avoid rapid repeated Yahoo sync attempts.
+  - [ ] NEW 24.5 Keep the existing shared Yahoo refresh path untouched in `web/pages/api/v1/db/manual-refresh-yahoo-token.ts`.
+
+- [ ] NEW 25.0 Implement the Fantrax connected-account and league-import foundation
+  - [ ] NEW 25.1 Confirm the viable Fantrax integration path for this project (official API, partner access, or manual/import fallback) before coding against an unstable assumption.
+  - [ ] NEW 25.2 Add the Fantrax connection architecture to account settings using the shared connected-account model.
+  - [ ] NEW 25.3 Implement the first Fantrax league/team discovery or import flow with support for multiple leagues and default-team selection.
+  - [ ] NEW 25.4 Add provider-specific sync-state, cooldown, and failure messaging for Fantrax so repeated retries stay controlled.
+
+- [ ] NEW 26.0 Implement the ESPN connected-account placeholder-to-integration upgrade path
+  - [ ] NEW 26.1 Decide whether ESPN support will use an authenticated wrapper, manual league import, or a server-side adapter before exposing a live connect button.
+  - [ ] NEW 26.2 Add ESPN connected-account persistence and active-context selection using the shared provider model.
+  - [ ] NEW 26.3 Support multiple ESPN leagues/teams and in-place switching of the active league context without forcing users off their working page.
+
+- [ ] NEW 27.0 Implement Patreon account linking and entitlement materialization without coupling Patreon to site auth
+  - [ ] NEW 27.1 Add the Patreon OAuth connect/disconnect flow from account settings only.
+  - [ ] NEW 27.2 Sync Patreon member identity and entitlement state into `user_entitlements` while preventing one Patreon identity from being reused across multiple site users.
+  - [ ] NEW 27.3 Surface Patreon-linked access state and perk eligibility in account settings without making Patreon a primary sign-in provider.
+  - [ ] NEW 27.4 Add a manual re-sync path and support-facing status messaging for Patreon entitlement drift or billing-state changes.
