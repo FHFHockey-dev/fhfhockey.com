@@ -234,8 +234,9 @@
   - [ ] NEW 31.2 Redeploy the app so the Yahoo callback uses the public wrapper RPC instead of trying to call the `private` schema directly.
 
 - [ ] NEW 32.0 Investigate why Yahoo discovery is finding leagues but zero owned teams after a successful OAuth callback.
-  - [ ] NEW 32.1 Validate the shape returned by `yahoo.user.game_teams(...)` for the connected Yahoo account and adjust the team flattening logic if the current parser is reading the wrong nesting level.
+  - [x] NEW 32.1 Validate the shape returned by `yahoo.user.game_teams(...)` for the connected Yahoo account and adjust the team flattening logic if the current parser is reading the wrong nesting level.
   - [ ] NEW 32.2 Verify the connected-account UI can show discovered Yahoo teams and default-team selection once owned-team parsing is corrected.
+  - [x] NEW 32.3 Limit Yahoo league discovery to the latest/current Yahoo NHL game season by default instead of importing every historical league the user has ever had.
 
 - [ ] NEW 33.0 Stop auth/session hydration from blocking the account UI on secondary role lookups after provider redirects.
   - [x] NEW 33.1 Make the auth context publish the authenticated user immediately from the Supabase session before waiting on the optional `public.users` role query.
