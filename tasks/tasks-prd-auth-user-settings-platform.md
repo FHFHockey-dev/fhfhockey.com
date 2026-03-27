@@ -1,6 +1,7 @@
 ## Relevant Files
 
 - `migrations/20260326_create_auth_user_settings_platform.sql` - Creates the MVP user tables, deferred-provider tables, indexes, constraints, triggers, and RLS policies described in the PRD.
+- `migrations/20260327_encrypt_connected_account_tokens_with_vault.sql` - Moves provider token material out of plaintext columns and into Supabase Vault-backed secret references.
 - `web/lib/supabase/database-generated.types.ts` - Generated Supabase types that must be updated after the schema migration so app code can use the new tables safely.
 - `web/lib/supabase/client.ts` - Browser Supabase client used by auth UI flows and client-side account/settings requests.
 - `web/lib/supabase/index.ts` - Existing shared Supabase wrapper that may need consolidation or cleanup for global auth/session handling.
@@ -102,8 +103,8 @@
 - [x] 6.0 Enforce cross-table ownership consistency for provider-linked records discovered during schema design
   - [x] 6.1 Add composite foreign keys, constraints, or trigger-based validation so provider-linked rows cannot reference `connected_account_id`, `external_league_id`, or `external_team_id` owned by a different `user_id`.
 
-- [ ] 7.0 Harden provider secret storage before any real Yahoo, Fantrax, Patreon, or ESPN tokens are written
-  - [ ] 7.1 Choose and implement an at-rest encryption strategy for `private.connected_account_tokens` instead of relying on plain text token columns.
+- [x] 7.0 Harden provider secret storage before any real Yahoo, Fantrax, Patreon, or ESPN tokens are written
+  - [x] 7.1 Choose and implement an at-rest encryption strategy for `private.connected_account_tokens` instead of relying on plain text token columns.
 
 - [ ] 8.0 Migrate ambiguous Supabase imports to explicit client roles discovered during the wrapper audit
   - [ ] 8.1 Replace server-side and API-route imports of `lib/supabase` with explicit browser, public, authenticated-token, or service-role clients based on actual access requirements.
@@ -121,3 +122,8 @@
   - [ ] NEW 10.3 Run the documented manual verification checklist for Google sign-in on localhost and production.
   - [ ] NEW 10.4 Run the documented manual verification checklist for email sign-up verification, callback completion, and password-recovery flow.
   - [ ] NEW 10.5 Verify preview-deployment auth behavior if preview auth support is required.
+
+- [ ] NEW 11.0 Complete Supabase Vault readiness checks before any live Yahoo, Fantrax, Patreon, or ESPN tokens are written
+  - [ ] NEW 11.1 Confirm the `vault` schema and extension are available in each target Supabase environment before applying `20260327_encrypt_connected_account_tokens_with_vault.sql`.
+  - [ ] NEW 11.2 Verify after migration that `anon` and `authenticated` do not have direct access to `vault.secrets` or `vault.decrypted_secrets`.
+  - [ ] NEW 11.3 Review database statement-logging settings for environments that will write provider tokens so plaintext token values are not exposed in logs during Vault writes.
