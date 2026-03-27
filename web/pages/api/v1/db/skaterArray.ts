@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import type { NextApiRequest, NextApiResponse } from "next";
-import supabase from "lib/supabase";
+import supabase from "lib/supabase/public-client";
 
 interface SkaterStat {
   // Define the properties based on the wgo_skater_stats table structure

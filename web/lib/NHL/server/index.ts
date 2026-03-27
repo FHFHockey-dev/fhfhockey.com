@@ -13,7 +13,7 @@ import {
   Team,
   GameData
 } from "lib/NHL/types";
-import supabase from "lib/supabase";
+import supabase from "lib/supabase/public-client";
 import {
   activeTeamAbbreviations,
   legacyTeamIdToAbbr,

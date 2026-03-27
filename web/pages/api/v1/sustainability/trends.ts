@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import supabase from "lib/supabase";
+import supabase from "lib/supabase/public-client";
 
 type Direction = "hot" | "cold";
 type WindowCode = "l3" | "l5" | "l10" | "l20";

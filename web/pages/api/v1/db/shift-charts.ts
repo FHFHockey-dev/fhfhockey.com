@@ -41,7 +41,7 @@
 // C:\Users\timbr\Desktop\FHFH\fhfhockey.com\web\pages\api\v1\db\shift-charts.ts
 // @ts-nocheck
 import { NextApiRequest, NextApiResponse } from "next";
-import supabase from "lib/supabase";
+import supabase from "lib/supabase/server";
 import adminOnly from "utils/adminOnlyMiddleware";
 
 // TODO : integrate home_or_away, opponent_team_id and opponent_team_abbreviation

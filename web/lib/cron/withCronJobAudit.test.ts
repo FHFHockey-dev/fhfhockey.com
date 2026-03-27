@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const insertMock = vi.fn();
 
-vi.mock("lib/supabase", () => ({
+vi.mock("lib/supabase/server", () => ({
   default: {
     from: vi.fn(() => ({
       insert: insertMock
@@ -52,6 +52,7 @@ function createMockRes() {
 
 describe("withCronJobAudit", () => {
   beforeEach(() => {
+    process.env.SUPABASE_SERVICE_ROLE_KEY = "test-service-role-key";
     insertMock.mockReset();
     insertMock.mockResolvedValue({});
   });

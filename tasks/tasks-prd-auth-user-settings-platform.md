@@ -7,6 +7,8 @@
 - `web/lib/supabase/index.ts` - Existing shared Supabase wrapper that may need consolidation or cleanup for global auth/session handling.
 - `web/lib/supabase/public-client.ts` - Public client used in read-only contexts; should remain safe and not gain authenticated user-only responsibilities.
 - `web/lib/supabase/server.ts` - Server-side Supabase client wrapper that will need clear separation between service-role and user-session usage.
+- `web/lib/cron/withCronJobAudit.test.ts` - Tests for audit-log persistence and timing capture in cron/API wrappers that now use the explicit service-role client.
+- `web/__tests__/pages/api/v1/db/update-wgo-averages.route.test.ts` - Route test covering structured dependency-error behavior after the API moved to the explicit service-role client.
 - `web/contexts/AuthProviderContext/index.tsx` - Global auth state provider that must be expanded beyond the current minimal role lookup.
 - `web/pages/_app.tsx` - App root where auth-aware provider wiring must become global so the header can react to session state on every route.
 - `web/components/Layout/Header/Header.tsx` - Header entry point for the logged-out `Sign-in / Sign-up` button and logged-in avatar menu.
@@ -106,8 +108,8 @@
 - [x] 7.0 Harden provider secret storage before any real Yahoo, Fantrax, Patreon, or ESPN tokens are written
   - [x] 7.1 Choose and implement an at-rest encryption strategy for `private.connected_account_tokens` instead of relying on plain text token columns.
 
-- [ ] 8.0 Migrate ambiguous Supabase imports to explicit client roles discovered during the wrapper audit
-  - [ ] 8.1 Replace server-side and API-route imports of `lib/supabase` with explicit browser, public, authenticated-token, or service-role clients based on actual access requirements.
+- [x] 8.0 Migrate ambiguous Supabase imports to explicit client roles discovered during the wrapper audit
+  - [x] 8.1 Replace server-side and API-route imports of `lib/supabase` with explicit browser, public, authenticated-token, or service-role clients based on actual access requirements.
 
 - [ ] NEW 9.0 Complete the manual Supabase email-auth delivery configuration required for sign-up verification and password recovery
   - [ ] NEW 9.1 Enable `Email` auth in the Supabase dashboard for the target environment.
@@ -131,3 +133,7 @@
 - [ ] NEW 12.0 Recover and re-apply the Vault token-storage migration in environments where the first run failed partway through
   - [ ] NEW 12.1 Apply the corrected `20260327_encrypt_connected_account_tokens_with_vault.sql` migration after pulling the fix for the missing-column rerun case.
   - [ ] NEW 12.2 Verify that `private.connected_account_tokens` now has `access_token_secret_id` and `refresh_token_secret_id` and no longer has plaintext `access_token` or `refresh_token` columns.
+
+- [ ] NEW 13.0 Tighten service-role client initialization and configuration guarantees after the explicit-import refactor
+  - [ ] NEW 13.1 Confirm `SUPABASE_SERVICE_ROLE_KEY` is configured in every environment that will run service-role API routes and cron jobs.
+  - [ ] NEW 13.2 Replace the current test-safe service-role fallback with a stricter lazy initialization or test bootstrap pattern once env loading is standardized.

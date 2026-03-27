@@ -4,7 +4,6 @@ import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { get } from "lib/NHL/base";
 import { getCurrentSeason } from "lib/NHL/server";
-import supabase from "lib/supabase";
 import adminOnly from "utils/adminOnlyMiddleware";
 import getPowerPlayBlocks, { Block } from "utils/getPowerPlayBlocks"; // Adjust the import path as necessary
 import { extractPowerPlayDetails, PowerPlay } from "utils/extractPPDetails"; // Import the new function

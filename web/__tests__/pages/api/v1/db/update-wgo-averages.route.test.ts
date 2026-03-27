@@ -8,7 +8,7 @@ vi.mock("../../../../../lib/cron/withCronJobAudit", () => ({
   withCronJobAudit: (handler: unknown) => handler
 }));
 
-vi.mock("../../../../../lib/supabase", () => ({
+vi.mock("../../../../../lib/supabase/server", () => ({
   default: {
     from: fromMock
   }
