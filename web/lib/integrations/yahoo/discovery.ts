@@ -75,6 +75,11 @@ export function flattenYahooTeams(games: Array<any>) {
     Array.isArray(game?.teams)
       ? game.teams.map((team: any) => ({
           ...team,
+          league_key:
+            team.league_key ||
+            (typeof team.team_key === "string"
+              ? team.team_key.split(".t.")[0]
+              : null),
           game_key: team.game_key || game.game_key || null,
           game_id: team.game_id || game.game_id || null,
           game_code: team.game_code || game.code || null,
@@ -274,8 +279,16 @@ export async function syncYahooDiscovery({
     yahoo.user.game_teams(nhlGameKeys),
   ]);
 
-  const discoveredLeagues = flattenYahooLeagues(leagueGamesResponse?.games || []);
   const discoveredTeams = flattenYahooTeams(teamGamesResponse?.teams || []);
+  const ownedLeagueKeys = new Set(
+    discoveredTeams
+      .map((team) => String(team.league_key || ""))
+      .filter((leagueKey) => leagueKey.length > 0)
+  );
+  const discoveredLeagues = flattenYahooLeagues(leagueGamesResponse?.games || []).filter(
+    (league) =>
+      ownedLeagueKeys.size === 0 || ownedLeagueKeys.has(String(league.league_key || ""))
+  );
 
   const normalizedLeagues = [];
   for (const league of discoveredLeagues) {
