@@ -164,3 +164,8 @@
   - [x] NEW 18.1 Change forgot-password emails to target `/auth/reset-password` directly instead of routing recovery through the generic callback page.
   - [x] NEW 18.2 Teach `/auth/reset-password` to accept recovery payloads delivered as `code`, `token_hash`, or hash-based session tokens.
   - [x] NEW 18.3 Add regression coverage for direct reset-page recovery links so future auth changes do not silently fall back to site-root sign-in behavior.
+
+- [x] NEW 19.0 Harden homepage server-render fallbacks so upstream NHL outages do not make local development look broken
+  - [x] NEW 19.1 Remove the stale JS season helper that could shadow the maintained TypeScript season helper on case-insensitive filesystems.
+  - [x] NEW 19.2 Stop homepage server-side fetches from assuming every upstream response is valid JSON.
+  - [x] NEW 19.3 Stop the homepage future-game search loop after the first upstream failure instead of retrying multiple slow external dates in sequence.

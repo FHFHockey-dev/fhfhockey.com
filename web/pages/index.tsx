@@ -67,20 +67,25 @@ const Home: NextPage = ({
 
   useEffect(() => {
     const checkSeason = async () => {
-      const currentSeason = await fetchCurrentSeason();
-      const now = new Date();
+      try {
+        const currentSeason = await fetchCurrentSeason();
+        const now = new Date();
 
-      const isPlayoffs =
-        now >= new Date(currentSeason.playoffsStartDate) &&
-        now <= new Date(currentSeason.playoffsEndDate);
-      const isRegularSeason =
-        now >= new Date(currentSeason.startDate) &&
-        now <= new Date(currentSeason.endDate);
+        const isPlayoffs =
+          now >= new Date(currentSeason.playoffsStartDate) &&
+          now <= new Date(currentSeason.playoffsEndDate);
+        const isRegularSeason =
+          now >= new Date(currentSeason.startDate) &&
+          now <= new Date(currentSeason.endDate);
 
-      setIsOffseason(!isPlayoffs && !isRegularSeason);
+        setIsOffseason(!isPlayoffs && !isRegularSeason);
+      } catch (error) {
+        console.error("Error checking client season state:", error);
+        setIsOffseason(false);
+      }
     };
 
-    checkSeason();
+    void checkSeason();
   }, []);
 
   useEffect(() => {
@@ -749,22 +754,45 @@ export async function getServerSideProps({ req, res }) {
     "public, s-maxage=60, stale-while-revalidate=120" // Cache for 60s, allow stale for 2 min
   );
 
+  const fetchJson = async (url: string) => {
+    const response = await Fetch(url);
+    const text = await response.text();
+
+    if (!response.ok) {
+      throw new Error(
+        `Request failed (${response.status})${text ? `: ${text.slice(0, 200)}` : ""}`
+      );
+    }
+
+    try {
+      return JSON.parse(text);
+    } catch {
+      throw new Error(`Expected JSON response but received: ${text.slice(0, 120)}`);
+    }
+  };
+
   const fetchGames = async (date: string) => {
     try {
       const scheduleUrl = `https://api-web.nhle.com/v1/schedule/${date}`;
-      const response = await Fetch(scheduleUrl).then((res) => res.json());
-      return response?.gameWeek?.[0]?.games || [];
+      const response = await fetchJson(scheduleUrl);
+      return {
+        games: response?.gameWeek?.[0]?.games || [],
+        failed: false
+      };
     } catch (error) {
       console.error(`Error fetching games for ${date}: `, error.message);
-      return [];
+      return {
+        games: [],
+        failed: true
+      };
     }
   };
 
   const fetchInjuries = async () => {
     try {
-      const response = await Fetch(
+      const response = await fetchJson(
         `https://stats.sports.bellmedia.ca/sports/hockey/leagues/nhl/playerInjuries?brand=tsn&type=json`
-      ).then((res) => res.json());
+      );
 
       if (!Array.isArray(response)) {
         console.error("Unexpected injuries API response format:", response);
@@ -819,9 +847,7 @@ export async function getServerSideProps({ req, res }) {
         );
       }
 
-      const response = await Fetch(
-        `https://api-web.nhle.com/v1/standings/${dateForStandings}`
-      ).then((res) => res.json());
+      const response = await fetchJson(`https://api-web.nhle.com/v1/standings/${dateForStandings}`);
 
       if (!response || !Array.isArray(response.standings)) {
         console.error(
@@ -872,10 +898,11 @@ export async function getServerSideProps({ req, res }) {
     nextGameDateFound = today;
   } else {
     // Only search for games during the regular season or playoffs
-    gamesToday = await fetchGames(today);
+    const todayGamesResult = await fetchGames(today);
+    gamesToday = todayGamesResult.games;
     nextGameDateFound = today;
 
-    if (gamesToday.length === 0) {
+    if (gamesToday.length === 0 && !todayGamesResult.failed) {
       debugLog(
         `No games found for today (${today}), searching for next available date...`
       );
@@ -886,7 +913,14 @@ export async function getServerSideProps({ req, res }) {
       while (gamesToday.length === 0 && attempts < maxAttempts) {
         const dateStr = nextDay.format("YYYY-MM-DD");
         debugLog(`Checking for games on ${dateStr}...`);
-        gamesToday = await fetchGames(dateStr);
+        const nextGamesResult = await fetchGames(dateStr);
+        gamesToday = nextGamesResult.games;
+        if (nextGamesResult.failed) {
+          console.warn(
+            `Stopping future game search after upstream failure on ${dateStr}.`
+          );
+          break;
+        }
         if (gamesToday.length > 0) {
           nextGameDateFound = dateStr;
           debugLog(`Found next games on ${nextGameDateFound}`);
