@@ -29,8 +29,10 @@
 - `web/__tests__/pages/auth/reset-password.test.tsx` - Tests for reset-password token handling, validation, and successful reset flow.
 - `tasks/auth-provider-manual-config.md` - Manual Supabase and Google Cloud configuration checklist for the implemented auth flows.
 - `web/pages/account/index.tsx` - Account settings route entry point for authenticated users.
+- `web/__tests__/pages/account/index.test.tsx` - Smoke tests for the authenticated account route shell and unauthenticated fallback prompt.
 - `web/components/account/AccountSettingsPage.tsx` - Main account settings UI for profile, league defaults, saved teams, connected accounts placeholders, and Patreon placeholder controls.
-- `web/components/account/AccountSettingsPage.test.tsx` - Component tests for account settings sections, empty states, and guarded actions.
+- `web/components/account/AccountSettingsPage.module.scss` - Styles for the authenticated account-settings shell and section navigation.
+- `web/__tests__/components/account/AccountSettingsPage.test.tsx` - Component tests for account settings sections, profile editing, empty states, and guarded actions.
 - `web/lib/user-settings/defaults.ts` - Central default values for profile/settings rows seeded from the existing fantasy config system.
 - `web/lib/user-settings/defaults.test.ts` - Unit tests for default settings generation and schema-safe fallback values.
 - `web/lib/user-settings/ensureUserRecords.ts` - Auth-time helper that creates or backfills missing `user_profiles` and `user_settings` rows for newly signed-in users.
@@ -86,16 +88,16 @@
   - [x] 4.7 Add route/component tests for callback handling, password reset flow, and auth-form state transitions.
   - [x] 4.8 Document the manual provider configuration required in Supabase and Google Cloud, including site URL, redirect allow list, callback URL, and OAuth client settings.
 
-- [ ] 5.0 Build the MVP Account Settings experience and design-safe placeholders for league settings, connected accounts, provider refresh controls, and Patreon entitlements
-  - [ ] 5.1 Create the authenticated `/account` route and main `AccountSettingsPage` shell.
-  - [ ] 5.2 Add profile management UI backed by `user_profiles`, including display name and avatar display state.
-  - [ ] 5.3 Add league-default settings UI backed by `user_settings`, using the persisted fantasy scoring and roster-config mapping helpers without touching Draft Dashboard.
-  - [ ] 5.4 Add the MVP saved-teams UI backed by `user_saved_teams`, including create, edit, list, and default-selection behavior for manual saved teams.
-  - [ ] 5.5 Add non-implemented but explicit connected-account sections for Yahoo, Fantrax, Patreon, and ESPN so the architecture is visible without shipping the real sync flows yet.
-  - [ ] 5.6 Add design placeholders for future provider features including multiple linked leagues/teams, default team selection, active-context switching, refresh-on-login preference, manual refresh, cooldown messaging, and in-flight dedupe states.
-  - [ ] 5.7 Add Patreon entitlement placeholders on the account page that make clear Patreon is connected from account settings rather than used as primary site login.
-  - [ ] 5.8 Add guarded authenticated-page behavior for unauthenticated users and loading/error states for missing profile/settings rows.
-  - [ ] 5.9 Add component tests for account settings rendering, saved-team CRUD states, default-team behavior, and connected-account placeholder visibility.
+- [x] 5.0 Build the MVP Account Settings experience and design-safe placeholders for league settings, connected accounts, provider refresh controls, and Patreon entitlements
+  - [x] 5.1 Create the authenticated `/account` route and main `AccountSettingsPage` shell.
+  - [x] 5.2 Add profile management UI backed by `user_profiles`, including display name and avatar display state.
+  - [x] 5.3 Add league-default settings UI backed by `user_settings`, using the persisted fantasy scoring and roster-config mapping helpers without touching Draft Dashboard.
+  - [x] 5.4 Add the MVP saved-teams UI backed by `user_saved_teams`, including create, edit, list, and default-selection behavior for manual saved teams.
+  - [x] 5.5 Add non-implemented but explicit connected-account sections for Yahoo, Fantrax, Patreon, and ESPN so the architecture is visible without shipping the real sync flows yet.
+  - [x] 5.6 Add design placeholders for future provider features including multiple linked leagues/teams, default team selection, active-context switching, refresh-on-login preference, manual refresh, cooldown messaging, and in-flight dedupe states.
+  - [x] 5.7 Add Patreon entitlement placeholders on the account page that make clear Patreon is connected from account settings rather than used as primary site login.
+  - [x] 5.8 Add guarded authenticated-page behavior for unauthenticated users and loading/error states for missing profile/settings rows.
+  - [x] 5.9 Add component tests for account settings rendering, saved-team CRUD states, default-team behavior, and connected-account placeholder visibility.
 
 - [ ] 6.0 Enforce cross-table ownership consistency for provider-linked records discovered during schema design
   - [ ] 6.1 Add composite foreign keys, constraints, or trigger-based validation so provider-linked rows cannot reference `connected_account_id`, `external_league_id`, or `external_team_id` owned by a different `user_id`.
@@ -105,3 +107,17 @@
 
 - [ ] 8.0 Migrate ambiguous Supabase imports to explicit client roles discovered during the wrapper audit
   - [ ] 8.1 Replace server-side and API-route imports of `lib/supabase` with explicit browser, public, authenticated-token, or service-role clients based on actual access requirements.
+
+- [ ] NEW 9.0 Complete the manual Supabase email-auth delivery configuration required for sign-up verification and password recovery
+  - [ ] NEW 9.1 Enable `Email` auth in the Supabase dashboard for the target environment.
+  - [ ] NEW 9.2 Confirm that `Confirm email` is enabled so password sign-up requires verification before protected settings access.
+  - [ ] NEW 9.3 Update Supabase auth email templates to use `{{ .RedirectTo }}` instead of only `{{ .SiteURL }}` so verification and recovery links return to the implemented app callback flow.
+  - [ ] NEW 9.4 Verify the Supabase `Site URL` and redirect allow-list entries for localhost, production, and any required preview URLs.
+  - [ ] NEW 9.5 Configure a working SMTP sender or otherwise verify outbound email delivery in the active Supabase environment so sign-up and recovery emails actually arrive.
+
+- [ ] NEW 10.0 Complete the remaining manual auth-provider configuration and verification checklist documented in `tasks/auth-provider-manual-config.md`
+  - [ ] NEW 10.1 Confirm required deploy environment values exist and are correct: `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_SUPABASE_URL`, and `NEXT_PUBLIC_SUPABASE_PUBLIC_KEY`.
+  - [ ] NEW 10.2 Verify Google Cloud OAuth client configuration, including authorized JavaScript origins and the hosted Supabase callback URI.
+  - [ ] NEW 10.3 Run the documented manual verification checklist for Google sign-in on localhost and production.
+  - [ ] NEW 10.4 Run the documented manual verification checklist for email sign-up verification, callback completion, and password-recovery flow.
+  - [ ] NEW 10.5 Verify preview-deployment auth behavior if preview auth support is required.
