@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
 import supabase from "lib/supabase/client";
+import { resetSupabaseBrowserAuthState } from "lib/supabase/browser-auth";
 
 import type { AuthModalMode } from "./AuthModal";
 import styles from "./AuthForm.module.scss";
@@ -73,6 +74,24 @@ function rememberPasswordResetReturnPath() {
   }
 }
 
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string) {
+  return new Promise<T>((resolve, reject) => {
+    const timeoutHandle = window.setTimeout(() => {
+      reject(new Error(message));
+    }, timeoutMs);
+
+    promise
+      .then((value) => {
+        window.clearTimeout(timeoutHandle);
+        resolve(value);
+      })
+      .catch((error) => {
+        window.clearTimeout(timeoutHandle);
+        reject(error);
+      });
+  });
+}
+
 export default function AuthForm({ mode, onSuccess }: AuthFormProps) {
   const [formState, setFormState] = useState<FormState>({
     email: "",
@@ -119,6 +138,18 @@ export default function AuthForm({ mode, onSuccess }: AuthFormProps) {
     setFeedback({ tone: "success", message });
   }
 
+  async function handleResetLocalSession() {
+    setIsSubmitting(true);
+    setFeedback(null);
+
+    await resetSupabaseBrowserAuthState(supabase);
+
+    setSuccess(
+      "Local FHFH auth storage was reset. Try signing in again without clearing your full browser history."
+    );
+    setIsSubmitting(false);
+  }
+
   function normalizeAuthErrorMessage(message: string, activeMode: AuthModalMode) {
     const normalized = message.toLowerCase();
 
@@ -157,12 +188,18 @@ export default function AuthForm({ mode, onSuccess }: AuthFormProps) {
     setIsSubmitting(true);
     setFeedback(null);
 
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: buildCallbackRedirectUrl()
-      }
-    });
+    await resetSupabaseBrowserAuthState(supabase);
+
+    const { error } = await withTimeout(
+      supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: buildCallbackRedirectUrl()
+        }
+      }),
+      12000,
+      "Google sign-in did not start cleanly. Reset the local auth session and try again."
+    );
 
     if (error) {
       setError(normalizeAuthErrorMessage(error.message, mode));
@@ -217,10 +254,16 @@ export default function AuthForm({ mode, onSuccess }: AuthFormProps) {
     setFeedback(null);
 
     if (mode === "sign-in") {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: normalizedEmail,
-        password: formState.password
-      });
+      await resetSupabaseBrowserAuthState(supabase);
+
+      const { error } = await withTimeout(
+        supabase.auth.signInWithPassword({
+          email: normalizedEmail,
+          password: formState.password
+        }),
+        12000,
+        "Sign-in timed out while reusing stale local auth state. Reset the local auth session and try again."
+      );
 
       if (error) {
         setError(normalizeAuthErrorMessage(error.message, mode));
@@ -376,6 +419,14 @@ export default function AuthForm({ mode, onSuccess }: AuthFormProps) {
         <Link href={`/auth?mode=${mode}`} className={styles.fallbackLink}>
           Open /auth
         </Link>
+        <button
+          type="button"
+          className={styles.resetSessionButton}
+          onClick={() => void handleResetLocalSession()}
+          disabled={isSubmitting}
+        >
+          Reset Local Auth
+        </button>
       </div>
     </div>
   );

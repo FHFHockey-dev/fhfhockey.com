@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const authState = vi.hoisted(() => ({
+  isLoading: false,
   mockUser: null as any
 }));
 
@@ -50,7 +51,10 @@ vi.mock("components/SocialMedias", () => ({
 }));
 
 vi.mock("contexts/AuthProviderContext", () => ({
-  useUser: () => authState.mockUser
+  useAuth: () => ({
+    isLoading: authState.isLoading,
+    user: authState.mockUser
+  })
 }));
 
 vi.mock("components/auth/UserMenu", () => ({
@@ -61,6 +65,7 @@ import Header from "components/Layout/Header/Header";
 
 describe("Header auth entry", () => {
   beforeEach(() => {
+    authState.isLoading = false;
     authState.mockUser = null;
   });
 
@@ -101,5 +106,14 @@ describe("Header auth entry", () => {
 
     expect(screen.queryByRole("button", { name: "Sign-in / Sign-up" })).toBeNull();
     expect(screen.getByTestId("user-menu")).toBeDefined();
+  });
+
+  it("does not show the logged-out CTA while auth is still resolving", () => {
+    authState.isLoading = true;
+
+    render(<Header />);
+
+    expect(screen.queryByRole("button", { name: "Sign-in / Sign-up" })).toBeNull();
+    expect(screen.queryByTestId("user-menu")).toBeNull();
   });
 });
