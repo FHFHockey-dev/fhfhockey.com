@@ -74,9 +74,9 @@ async function upsertConnectedAccountTokens(args: {
   tokenType?: string | null;
   providerUserId?: string | null;
 }) {
-  const { error } = await (serviceRoleClient as any)
-    .schema("private")
-    .rpc("upsert_connected_account_tokens", {
+  const { error } = await (serviceRoleClient as any).rpc(
+    "upsert_connected_account_tokens_secure",
+    {
       p_connected_account_id: args.connectedAccountId,
       p_user_id: args.userId,
       p_provider: YAHOO_PROVIDER,
@@ -88,7 +88,8 @@ async function upsertConnectedAccountTokens(args: {
       p_secret_metadata: {
         provider: YAHOO_PROVIDER,
       },
-    });
+    }
+  );
 
   if (error) {
     throw new Error(`Failed to store Yahoo provider tokens: ${error.message}`);
