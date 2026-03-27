@@ -237,6 +237,8 @@
   - [x] NEW 32.1 Validate the shape returned by `yahoo.user.game_teams(...)` for the connected Yahoo account and adjust the team flattening logic if the current parser is reading the wrong nesting level.
   - [ ] NEW 32.2 Verify the connected-account UI can show discovered Yahoo teams and default-team selection once owned-team parsing is corrected.
   - [x] NEW 32.3 Limit Yahoo league discovery to the latest/current Yahoo NHL game season by default instead of importing every historical league the user has ever had.
+  - [x] NEW 32.4 Derive Yahoo `league_key` from `team_key` when the team payload omits it, and filter synced leagues to the owned-team league set when team discovery is present.
+  - [ ] NEW 32.5 Evaluate using `public.yahoo_game_keys` as the authoritative current Yahoo NHL game/season source for provider discovery so current-season selection does not depend on per-user `user.games()` ordering.
 
 - [ ] NEW 33.0 Stop auth/session hydration from blocking the account UI on secondary role lookups after provider redirects.
   - [x] NEW 33.1 Make the auth context publish the authenticated user immediately from the Supabase session before waiting on the optional `public.users` role query.
