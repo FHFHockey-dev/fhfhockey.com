@@ -256,4 +256,5 @@
   - [x] NEW 34.1 Add a browser-auth reset helper that clears only the FHFH/Supabase auth storage keys instead of wiping unrelated site logins.
   - [x] NEW 34.2 Reset stale local Supabase auth state before starting fresh sign-in attempts so hung modal submissions do not require full browser-history clearing.
   - [x] NEW 34.3 Add a visible `Reset Local Auth` action to the auth form as a user-facing recovery tool.
-  - [ ] NEW 34.4 Verify in production that users can recover from stale local auth state without clearing unrelated browser sessions.
+  - [x] NEW 34.4 Make the auth modal body scroll safely on small screens so sign-in/sign-up flows remain usable on mobile Safari without trapping content below the viewport.
+  - [ ] NEW 34.5 Verify in production that users can recover from stale local auth state without clearing unrelated browser sessions.
