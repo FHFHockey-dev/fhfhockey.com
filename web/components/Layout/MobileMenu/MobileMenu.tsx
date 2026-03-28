@@ -11,6 +11,8 @@ import styles from "./MobileMenu.module.scss";
 
 type MobileMenuProps = {
   onItemClick: () => void;
+  onAuthClick?: () => void;
+  showAuthButton?: boolean;
   visible: boolean;
 };
 
@@ -79,7 +81,12 @@ const NAVIGATION_ITEMS = [
   }
 ];
 
-function MobileMenu({ onItemClick, visible }: MobileMenuProps) {
+function MobileMenu({
+  onItemClick,
+  onAuthClick,
+  showAuthButton = false,
+  visible
+}: MobileMenuProps) {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<PlayerResult[]>([]);
@@ -186,6 +193,18 @@ function MobileMenu({ onItemClick, visible }: MobileMenuProps) {
                   </div>
                 </button>
               </div>
+
+              {showAuthButton ? (
+                <div className={styles.authSection}>
+                  <button
+                    type="button"
+                    className={styles.authButton}
+                    onClick={onAuthClick}
+                  >
+                    Sign-in / Sign-up
+                  </button>
+                </div>
+              ) : null}
 
               {/* Search Section */}
               <div className={styles.searchSection}>

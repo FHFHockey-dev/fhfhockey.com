@@ -200,6 +200,11 @@
   - [x] NEW 24.3 Build the first Yahoo league/team discovery sync so users with multiple Yahoo leagues can choose a default team and active league context.
   - [ ] NEW 24.4 Add guarded refresh controls, cooldown enforcement, and sync-run dedupe to avoid rapid repeated Yahoo sync attempts.
   - [ ] NEW 24.5 Keep the existing shared Yahoo refresh path untouched in `web/pages/api/v1/db/manual-refresh-yahoo-token.ts`.
+  - [x] NEW 24.6 Drive the `League Settings` tab from synced Yahoo league scoring and roster data for the selected active Yahoo league instead of showing only generic user defaults.
+  - [ ] NEW 24.7 Add Yahoo league/team dropdown switchers to `League Settings` and `Saved Teams`, backed by `user_provider_preferences.active_context`, so users can quickly swap active leagues without reconnecting.
+  - [ ] NEW 24.8 Support saving imported Yahoo teams into `user_saved_teams` using synced `external_teams.roster_snapshot` plus linked `external_league_key` and `external_team_key`.
+  - [ ] NEW 24.9 Sync and expose Yahoo league standings plus all league teams metadata so the account UI can show the full league field, not only the current user’s owned teams.
+  - [ ] NEW 24.10 Add on-demand or cached views for other Yahoo teams’ rosters within a synced league.
 
 - [ ] NEW 25.0 Implement the Fantrax connected-account and league-import foundation
   - [ ] NEW 25.1 Confirm the viable Fantrax integration path for this project (official API, partner access, or manual/import fallback) before coding against an unstable assumption.
@@ -243,7 +248,8 @@
 - [ ] NEW 33.0 Stop auth/session hydration from blocking the account UI on secondary role lookups after provider redirects.
   - [x] NEW 33.1 Make the auth context publish the authenticated user immediately from the Supabase session before waiting on the optional `public.users` role query.
   - [x] NEW 33.2 Prevent the header from flashing the logged-out CTA while auth is still resolving.
-  - [ ] NEW 33.3 Verify in production that `/account` no longer hangs on "Loading account settings..." after Yahoo redirect round-trips.
+  - [x] NEW 33.3 Add a logged-out mobile-menu auth CTA that opens the shared `AuthModal` so mobile users have the same sign-in/sign-up entry point as desktop.
+  - [ ] NEW 33.4 Verify in production that `/account` no longer hangs on "Loading account settings..." after Yahoo redirect round-trips.
 
 - [ ] NEW 34.0 Replace the current "clear browser history" auth recovery workaround with a targeted local FHFH auth-session reset.
   - [x] NEW 34.1 Add a browser-auth reset helper that clears only the FHFH/Supabase auth storage keys instead of wiping unrelated site logins.
