@@ -16,6 +16,7 @@
 - `tasks/artifacts/forge-dashboard-top-adds-reconciliation.md` - Completed source-to-UI reconciliation for Top Adds, separating what the rail renders correctly from the current source-coverage, labeling, and position-contract failures that keep the opportunity board `red`.
 - `tasks/artifacts/forge-dashboard-team-context-health-audit.md` - Completed full-chain Team Trend Context audit covering team ratings, CTPI, matchup-edge logic, live mixed-cadence failures, and the current `red` verdict driven by stale CTPI plus flat team-power trend data.
 - `tasks/artifacts/forge-dashboard-team-context-freshness-ownership.md` - Completed Team Trend Context freshness-ownership trace covering team-power, CTPI, matchup-edge, NST/WGO dependencies, runbook ordering, and the current `red` ownership verdict.
+- `tasks/artifacts/forge-dashboard-team-context-reconciliation.md` - Completed source-to-UI reconciliation for Team Trend Context, separating honest team-power/matchup rendering from the current stale-CTPI snapshot-misalignment that keeps the panel `red`.
 - `tasks/artifacts/forge-dashboard-sustainability-health-audit.md` - Planned full-chain audit for Sustainable vs Unsustainable signals and their source-to-UI mapping.
 - `tasks/artifacts/forge-dashboard-trend-movement-health-audit.md` - Planned full-chain audit for Hot/Cold and Trending Up/Down movement surfaces.
 - `tasks/artifacts/forge-dashboard-goalie-health-audit.md` - Planned full-chain audit for goalie projections, uncertainty drivers, and starter-risk display.
@@ -83,7 +84,7 @@
   - [x] 2.6 Reconcile Top Adds cards against raw projection data, ownership data, ranking logic, and displayed ownership filters to confirm the UI is showing the intended opportunity board.
   - [x] 2.7 Audit `TeamPowerCard`, `web/pages/api/team-ratings.ts`, `web/pages/api/v1/trends/team-ctpi.ts`, and related matchup-edge logic, then record findings in `tasks/artifacts/forge-dashboard-team-context-health-audit.md`.
   - [x] 2.8 Verify Team Trend Context freshness ownership by tracing team-power, CTPI, matchup-context, and NST/WGO dependencies through their scheduled refresh jobs and runtime expectations.
-  - [ ] 2.9 Reconcile Team Trend Context output against the team ratings API, CTPI API, matchup inputs, and displayed variance/warning behavior to confirm the UI is not silently flattening or mislabeling team signals.
+  - [x] 2.9 Reconcile Team Trend Context output against the team ratings API, CTPI API, matchup inputs, and displayed variance/warning behavior to confirm the UI is not silently flattening or mislabeling team signals.
 - [ ] 3.0 Audit the sustainability, hot/cold movement, and goalie components end to end across UI, APIs, source tables, cron ownership, and source-to-UI reconciliation
   - [ ] 3.1 Audit `SustainabilityCard`, `web/pages/api/v1/sustainability/trends.ts`, and the supporting normalizers/helpers, then record findings in `tasks/artifacts/forge-dashboard-sustainability-health-audit.md`.
   - [ ] 3.2 Verify sustainability freshness ownership by tracing `sustainability_scores`, `player_baselines`, snapshot/fallback behavior, and the jobs that keep those sources current.
