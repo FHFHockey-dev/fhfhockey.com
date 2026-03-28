@@ -10,6 +10,7 @@
   align-items: center;
   justify-content: center;
   padding: v.$space-xl;
+  overflow-y: auto;
   background:
     radial-gradient(circle at top, rgba(v.$secondary-color, 0.18), transparent 38%),
     rgba(5, 9, 14, 0.78);
@@ -26,6 +27,9 @@
     $blur: 14px
   );
   width: min(100%, 560px);
+  max-height: calc(100dvh - (v.$space-xl * 2));
+  display: flex;
+  flex-direction: column;
   border: 1px solid rgba(v.$secondary-color, 0.24);
   background:
     linear-gradient(180deg, rgba(v.$secondary-color, 0.11) 0%, transparent 42%),
@@ -116,6 +120,11 @@
 
 .content {
   position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   padding: 22px 24px 24px;
   color: v.$text-primary;
 }
@@ -286,6 +295,7 @@
 
   .dialog {
     width: 100%;
+    max-height: calc(100dvh - 24px);
   }
 
   .header,
