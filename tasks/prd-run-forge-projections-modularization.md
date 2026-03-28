@@ -1,5 +1,7 @@
 # PRD: FORGE Projection Engine Modularization + Rename (`runProjectionV2.ts` -> `run-forge-projections.ts`)
 
+Historical note: this PRD was written before the runner rename landed. References to `runProjectionV2.ts` below describe the pre-rename state and should not be treated as the current runtime path.
+
 ## Introduction/Overview
 The current FORGE projection runner is implemented in a single file: `web/lib/projections/runProjectionV2.ts` (6,811 LOC). It currently mixes data access, orchestration, projection math, type definitions, constants, uncertainty metadata assembly, and persistence writes in one module.
 

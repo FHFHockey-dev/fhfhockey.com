@@ -10,7 +10,6 @@
 - `web/__tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts` - Coordinator response-contract test covering stage order, spec version, and downstream execution metadata.
 - `web/pages/api/v1/db/run-projection-v2.ts` - Canonical projection execution endpoint whose preflight and operator-facing behavior may need freshness and deprecation updates.
 - `web/lib/projections/run-forge-projections.ts` - Canonical FORGE projection runner and downstream storage writer.
-- `web/lib/projections/runProjectionV2.ts` - Removed compatibility shim; keep only as a historical reference in this task log until adjacent docs are cleaned up.
 - `web/pages/api/v1/db/update-start-chart-projections.ts` - Quarantined legacy downstream writer now explicitly marked transitional while it still materializes `player_projections`.
 - `web/pages/api/v1/start-chart.ts` - Start-chart consumer API now re-pointed to canonical `forge_player_projections` for skaters while still joining `goalie_start_projections` for goalie context.
 - `web/pages/api/v1/forge/players.ts` - Canonical player projection reader that should expose fallback and freshness state explicitly.
@@ -58,7 +57,7 @@
 - `web/lib/dashboard/dataFetchers.ts` - Dashboard data orchestration surface that may need clearer freshness and state contracts.
 - `web/lib/dashboard/freshness.ts` - Shared freshness logic likely to support the new same-day vs fallback signaling.
 - `web/lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts` - Rolling pipeline regression coverage for dependency and contract changes.
-- `web/lib/projections/runProjectionV2.test.ts` - Projection-runner regression coverage that should stay green while shim usage is retired.
+- `web/lib/projections/runProjectionV2.test.ts` - Historical test filename that still carries projection-runner regression coverage after the shim removal.
 - `web/lib/projections/module-imports.test.ts` - Import integrity coverage for projection module cleanup.
 - `web/lib/projections/goaliePipeline.test.ts` - Goalie pipeline coverage relevant to old-vs-v2 writer cleanup.
 - `web/__tests__/pages/api/v1/db/run-projection-v2.test.ts` - Projection execution regression test covering preflight normalization and shared dependency metadata.
@@ -415,12 +414,22 @@
 - This task file now carries the implementation next-step queue in explicit follow-up task groups so future work can continue directly from the same handoff artifact.
 - No additional pass-3 planning documents are needed; the PRD and this task file remain the only active handoff sources.
 
-- [ ] 7.0 Clean up stale documentation and task references that still describe `runProjectionV2.ts` as an active projection-runner file
-  - [ ] 7.1 Update active docs and task guides that still describe `web/lib/projections/runProjectionV2.ts` as a live runtime path so the repo no longer teaches the removed shim as current architecture. [Deps: 2.3] [Files: `FORGE_EXPLAINED.md`, `tasks/*.md`, related active runbooks/docs] [AC: active guidance points to `run-forge-projections.ts` unless a historical note is explicitly marked as historical]
+- [x] 7.0 Clean up stale documentation and task references that still describe `runProjectionV2.ts` as an active projection-runner file
+  - [x] 7.1 Update active docs and task guides that still describe `web/lib/projections/runProjectionV2.ts` as a live runtime path so the repo no longer teaches the removed shim as current architecture. [Deps: 2.3] [Files: `FORGE_EXPLAINED.md`, `tasks/*.md`, related active runbooks/docs] [AC: active guidance points to `run-forge-projections.ts` unless a historical note is explicitly marked as historical]
 
 - [ ] 8.0 Retire quarantined legacy operator routes now that pass-3 marked their canonical replacements and disabled their runtime behavior
   - [ ] 8.1 Audit hidden schedulers, cron jobs, benchmarks, logs, and operator runbooks for continued use of disabled `410 Gone` routes: `update-goalie-projections.ts`, `update-team-power-ratings-new.ts`, `update-rolling-games.ts`, and `update-power-rankings.ts`. [Deps: 6.4] [Files: `vercel.json`, scheduler inventories, runbooks, observability surfaces, related docs] [AC: every disabled legacy route has a documented caller audit result]
   - [ ] 8.2 Delete the disabled legacy operator routes whose caller audit is clear, and update any surviving docs or runbooks that still reference them. [Deps: 8.1] [Files: `web/pages/api/v1/db/update-goalie-projections.ts`, `web/pages/api/v1/db/update-team-power-ratings-new.ts`, `web/pages/api/v1/db/update-rolling-games.ts`, `web/pages/api/v1/db/update-power-rankings.ts`, related docs/tests] [AC: no disabled legacy operator route remains without an explicit retention reason]
+
+### 7.1 Active Runner-Path Docs Cleanup
+
+- Updated `FORGE_EXPLAINED.md` so the refresh-order guidance now points to the canonical runner in `run-forge-projections.ts` instead of the removed `runProjectionV2` shim name.
+- Updated `tasks/tasks-prd-sustainability-trends-audit.md` so its relevant-files inventory now describes `run-forge-projections.ts` as the live engine and no longer lists `runProjectionV2.ts` as an active compatibility surface.
+- Updated the active pass-3 checklist itself so its relevant-files inventory no longer teaches `web/lib/projections/runProjectionV2.ts` as a current file and now labels `runProjectionV2.test.ts` as a historical test filename.
+- Added explicit historical notes to `tasks/prd-run-forge-projections-modularization.md` and `tasks/tasks-prd-run-forge-projections-modularization.md` so their pre-rename references remain valid as migration history without reading as current architecture guidance.
+- Validation for this sub-task:
+- `rg -n "runProjectionV2\\.ts|runProjectionV2\\b" FORGE_EXPLAINED.md tasks web -g '!web/node_modules'`
+- Result: remaining matches are intentional historical migration notes, task-history entries, compatibility inventory metadata, or test filenames rather than active docs teaching the removed shim as the current runtime path.
 
 - [ ] 9.0 Retire the remaining transitional start-chart legacy materialization after consumer verification
   - [ ] 9.1 Map all remaining readers, jobs, docs, and manual workflows that still rely on `player_projections` or `/api/v1/db/update-start-chart-projections`. [Deps: 6.4] [Files: `web/**`, docs, task files, observability surfaces] [AC: the remaining `player_projections` dependency graph is explicit enough to support deletion or replacement]

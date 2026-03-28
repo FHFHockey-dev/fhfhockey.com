@@ -2,7 +2,7 @@
 
 - `web/lib/projections/run-forge-projections.ts` - Current orchestrator source after rename and decomposition.
 - `web/lib/projections/run-forge-projections.ts` - New orchestrator entrypoint after rename; stage-composition only.
-- `web/lib/projections/runProjectionV2.test.ts` - Existing test suite importing monolith helpers; update imports and/or rename test file.
+- `web/lib/projections/runProjectionV2.test.ts` - Historical test filename retained for regression coverage after the runner rename.
 - `web/lib/projections/types/*.ts` - Extracted projection row/result/contract types used across modules.
 - `web/lib/projections/types/run-forge-projections.types.ts` - Centralized extracted row, adjustment, starter, and orchestrator IO contract types for parity-safe modularization.
 - `web/lib/projections/constants/projection-weights.ts` - Extracted projection constants (windows, priors, clamps, multipliers, thresholds).
@@ -29,6 +29,7 @@
 
 ### Notes
 
+- Historical note: this task file documents the pre-rename and rename execution flow. References to `runProjectionV2.ts` below describe the old path during migration and should not be treated as the current runtime entrypoint.
 - Structural refactor only in parity phase: no projection math/business-logic/output-contract changes.
 - Any accuracy/math improvements must be captured as explicit post-parity follow-up tasks and not mixed into refactor tasks.
 - Keep endpoint path `/api/v1/db/run-projection-v2` and cron job naming stable unless separately approved.
