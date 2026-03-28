@@ -474,6 +474,136 @@ describe("AccountSettingsPage profile section", () => {
     expect(await screen.findByText("League defaults saved.")).toBeTruthy();
   });
 
+  it("surfaces synced Yahoo league scoring and roster data in league settings", async () => {
+    accountState.routerQuery = {
+      section: "league-settings"
+    };
+    accountState.profileMaybeSingle.mockResolvedValue({
+      data: {
+        display_name: "Tim Tester",
+        avatar_url: null,
+        timezone: "America/Chicago"
+      },
+      error: null
+    });
+    accountState.settingsMaybeSingle.mockResolvedValue({
+      data: {
+        league_type: "points",
+        scoring_categories: {},
+        category_weights: {},
+        roster_config: {},
+        ui_preferences: {},
+        active_context: {
+          source_type: "external-provider",
+          provider: "yahoo",
+          external_team_id: "team-1",
+          external_league_id: "league-1"
+        }
+      },
+      error: null
+    });
+    accountState.connectedAccountMaybeSingle.mockResolvedValue({
+      data: {
+        id: "yahoo-account-1",
+        user_id: "user-1",
+        provider: "yahoo",
+        provider_user_id: "guid-123",
+        account_label: "Tim's Yahoo",
+        status: "connected",
+        scopes: [],
+        metadata: {},
+        last_synced_at: "2026-03-27T12:00:00.000Z",
+        created_at: "2026-03-27T12:00:00.000Z",
+        updated_at: "2026-03-27T12:00:00.000Z"
+      },
+      error: null
+    });
+    accountState.externalLeaguesOrder.mockResolvedValue({
+      data: [
+        {
+          id: "league-1",
+          connected_account_id: "yahoo-account-1",
+          user_id: "user-1",
+          provider: "yahoo",
+          external_league_key: "465.l.23204",
+          league_name: "Keeper League",
+          season_key: "2025",
+          league_metadata: {
+            season: "2025",
+            game_key: "465",
+            scoring_type: "headpoint",
+            league_type: "private",
+            num_teams: 12,
+            current_week: 22,
+            roster_type: "date",
+            weekly_deadline: "intraday"
+          },
+          scoring_settings: {
+            stat_modifiers: {
+              stats: [{ stat: { stat_id: 1, value: "6" } }]
+            },
+            stat_categories: [{ stat_id: 1, name: "Goals", abbr: "G" }]
+          },
+          roster_settings: {
+            roster_positions: [
+              { position: "C", count: 2, is_starting_position: 1 },
+              { position: "BN", count: 4, is_starting_position: 0 }
+            ]
+          },
+          imported_at: "2026-03-27T12:00:00.000Z",
+          created_at: "2026-03-27T12:00:00.000Z",
+          updated_at: "2026-03-27T12:00:00.000Z"
+        }
+      ],
+      error: null
+    });
+    accountState.externalTeamsOrder.mockResolvedValue({
+      data: [
+        {
+          id: "team-1",
+          external_league_id: "league-1",
+          connected_account_id: "yahoo-account-1",
+          user_id: "user-1",
+          provider: "yahoo",
+          external_team_key: "465.l.23204.t.2",
+          team_name: "Tim's Test Team",
+          team_metadata: {},
+          roster_snapshot: {},
+          imported_at: "2026-03-27T12:00:00.000Z",
+          created_at: "2026-03-27T12:00:00.000Z",
+          updated_at: "2026-03-27T12:00:00.000Z"
+        }
+      ],
+      error: null
+    });
+    accountState.providerPreferencesMaybeSingle.mockResolvedValue({
+      data: {
+        id: "pref-1",
+        user_id: "user-1",
+        provider: "yahoo",
+        connected_account_id: "yahoo-account-1",
+        default_external_league_id: "league-1",
+        default_external_team_id: "team-1",
+        refresh_on_login: false,
+        active_context: {},
+        created_at: "2026-03-27T12:00:00.000Z",
+        updated_at: "2026-03-27T12:00:00.000Z"
+      },
+      error: null
+    });
+
+    render(<AccountSettingsPage />);
+
+    expect(await screen.findByText("Selected Yahoo League")).toBeTruthy();
+    expect(screen.getByText("Keeper League")).toBeTruthy();
+    expect(screen.getByText("Team context: Tim's Test Team")).toBeTruthy();
+    expect(screen.getByText("headpoint")).toBeTruthy();
+    expect(screen.getByText("Goals (G)")).toBeTruthy();
+    expect(screen.getByText("6 pts")).toBeTruthy();
+    expect(screen.getByText("2 starting slots")).toBeTruthy();
+    expect(screen.getByText("4 bench slots")).toBeTruthy();
+  });
+
   it("lists saved teams and creates a new manual saved team", async () => {
     accountState.routerQuery = {
       section: "saved-teams"

@@ -374,6 +374,76 @@
   gap: 16px;
 }
 
+.yahooLeagueStack,
+.yahooLeagueDetailRows {
+  display: grid;
+  gap: 16px;
+}
+
+.yahooLeagueSummaryGrid,
+.yahooLeagueDetailsGrid {
+  display: grid;
+  gap: 14px;
+}
+
+.yahooLeagueSummaryGrid {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.yahooLeagueDetailsGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.yahooLeagueSummaryCard,
+.yahooLeagueDetailCard,
+.yahooLeagueDetailRow {
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+  border: 1px solid rgba(v.$border-secondary, 0.86);
+  border-radius: 16px;
+  background:
+    linear-gradient(135deg, rgba(v.$secondary-color, 0.09), rgba(v.$primary-color, 0.07)),
+    rgba(v.$background-dark, 0.72);
+  box-shadow: inset 0 0 0 1px rgba(v.$color-white, 0.03);
+}
+
+.yahooLeagueSummaryLabel,
+.yahooLeagueDetailTitle {
+  color: rgba(v.$text-primary, 0.74);
+  font-family: v.$font-family-primary;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.yahooLeagueSummaryValue,
+.yahooLeagueDetailValue {
+  color: v.$color-white;
+  font-family: v.$font-family-accent;
+  font-size: 0.88rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.yahooLeagueSummaryHint,
+.yahooLeagueDetailLabel {
+  color: rgba(v.$text-primary, 0.88);
+  font-family: v.$font-family-primary;
+  line-height: 1.5;
+}
+
+.yahooLeagueDetailTitle {
+  margin: 0;
+}
+
+.yahooLeagueDetailRow {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
 .savedTeamsGrid {
   display: grid;
   grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
@@ -719,6 +789,7 @@
   }
 
   .savedTeamsGrid,
+  .yahooLeagueDetailsGrid,
   .providerCardGrid,
   .providerControlGrid {
     grid-template-columns: 1fr;

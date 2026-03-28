@@ -23,6 +23,7 @@ type ExternalLeagueRow = Database["public"]["Tables"]["external_leagues"]["Row"]
 type ExternalTeamRow = Database["public"]["Tables"]["external_teams"]["Row"];
 type UserProviderPreferencesRow =
   Database["public"]["Tables"]["user_provider_preferences"]["Row"];
+type JsonObject = Record<string, Json | undefined>;
 
 const CONNECTED_ACCOUNT_PROVIDERS = [
   {
@@ -291,6 +292,120 @@ function getQueryParamValue(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
 
+function isJsonObject(value: Json | null | undefined): value is JsonObject {
+  return Boolean(value) && !Array.isArray(value) && typeof value === "object";
+}
+
+function getJsonArray(value: Json | null | undefined) {
+  return Array.isArray(value) ? value : [];
+}
+
+function getJsonText(value: Json | null | undefined) {
+  if (typeof value === "string") {
+    return value;
+  }
+
+  if (typeof value === "number") {
+    return String(value);
+  }
+
+  if (typeof value === "boolean") {
+    return value ? "true" : "false";
+  }
+
+  return null;
+}
+
+function formatPluralSlots(count: string, label: "starting" | "bench") {
+  const numericCount = Number(count);
+  const slotCount = Number.isFinite(numericCount) ? numericCount : count;
+  const isSingular = slotCount === 1 || slotCount === "1";
+  return `${slotCount} ${label} ${isSingular ? "slot" : "slots"}`;
+}
+
+function getYahooLeagueMetadataValue(
+  league: ExternalLeagueRow | null,
+  key: string
+) {
+  if (!league || !isJsonObject(league.league_metadata)) {
+    return null;
+  }
+
+  return getJsonText(league.league_metadata[key]);
+}
+
+function getYahooLeagueScoringRows(scoringSettings: Json | null | undefined) {
+  if (!isJsonObject(scoringSettings)) {
+    return [];
+  }
+
+  const modifierMap = new Map<string, string>();
+  const statModifiers = isJsonObject(scoringSettings.stat_modifiers)
+    ? scoringSettings.stat_modifiers
+    : null;
+
+  getJsonArray(statModifiers?.stats).forEach((entry) => {
+    if (!isJsonObject(entry)) {
+      return;
+    }
+
+    const stat = isJsonObject(entry.stat) ? entry.stat : entry;
+    const statId = getJsonText(stat.stat_id);
+    const value = getJsonText(stat.value);
+
+    if (!statId || !value) {
+      return;
+    }
+
+    modifierMap.set(statId, value);
+  });
+
+  return getJsonArray(scoringSettings.stat_categories).flatMap((entry, index) => {
+    if (!isJsonObject(entry)) {
+      return [];
+    }
+
+    const statId = getJsonText(entry.stat_id) || `category-${index}`;
+    const abbreviation = getJsonText(entry.display_name) || getJsonText(entry.abbr);
+    const name = getJsonText(entry.name) || abbreviation || `Stat ${statId}`;
+    const label =
+      abbreviation && abbreviation !== name ? `${name} (${abbreviation})` : name;
+    const modifierValue = modifierMap.get(statId);
+
+    return [
+      {
+        key: statId,
+        label,
+        value: modifierValue ? `${modifierValue} pts` : "Enabled"
+      }
+    ];
+  });
+}
+
+function getYahooLeagueRosterRows(rosterSettings: Json | null | undefined) {
+  if (!isJsonObject(rosterSettings)) {
+    return [];
+  }
+
+  return getJsonArray(rosterSettings.roster_positions).flatMap((entry, index) => {
+    if (!isJsonObject(entry)) {
+      return [];
+    }
+
+    const position = getJsonText(entry.position) || `Slot ${index + 1}`;
+    const count = getJsonText(entry.count) || "0";
+    const isStarting = getJsonText(entry.is_starting_position) === "1";
+
+    return [
+      {
+        key: `${position}-${index}`,
+        label: position,
+        value: formatPluralSlots(count, isStarting ? "starting" : "bench")
+      }
+    ];
+  });
+}
+
 export default function AccountSettingsPage() {
   const router = useRouter();
   const { user } = useAuth();
@@ -376,6 +491,55 @@ export default function AccountSettingsPage() {
             null)
       ) || null,
     [yahooDefaultTeam?.external_league_id, yahooLeagues, yahooPreferences?.default_external_league_id]
+  );
+  const activeYahooLeague = useMemo(() => {
+    const activeYahooLeagueId =
+      leagueForm.activeContext.provider === YAHOO_PROVIDER
+        ? leagueForm.activeContext.external_league_id
+        : null;
+
+    return (
+      yahooLeagues.find((league) => league.id === activeYahooLeagueId) ||
+      yahooDefaultLeague ||
+      yahooLeagues[0] ||
+      null
+    );
+  }, [
+    leagueForm.activeContext.external_league_id,
+    leagueForm.activeContext.provider,
+    yahooDefaultLeague,
+    yahooLeagues
+  ]);
+  const activeYahooTeam = useMemo(() => {
+    const activeYahooTeamId =
+      leagueForm.activeContext.provider === YAHOO_PROVIDER
+        ? leagueForm.activeContext.external_team_id
+        : null;
+
+    return (
+      yahooTeams.find((team) => team.id === activeYahooTeamId) ||
+      yahooTeams.find(
+        (team) =>
+          team.id === yahooPreferences?.default_external_team_id &&
+          team.external_league_id === activeYahooLeague?.id
+      ) ||
+      yahooTeams.find((team) => team.external_league_id === activeYahooLeague?.id) ||
+      null
+    );
+  }, [
+    activeYahooLeague?.id,
+    leagueForm.activeContext.external_team_id,
+    leagueForm.activeContext.provider,
+    yahooPreferences?.default_external_team_id,
+    yahooTeams
+  ]);
+  const yahooLeagueScoringRows = useMemo(
+    () => getYahooLeagueScoringRows(activeYahooLeague?.scoring_settings),
+    [activeYahooLeague?.scoring_settings]
+  );
+  const yahooLeagueRosterRows = useMemo(
+    () => getYahooLeagueRosterRows(activeYahooLeague?.roster_settings),
+    [activeYahooLeague?.roster_settings]
   );
 
   function updateSection(section: AccountSection) {
@@ -595,7 +759,10 @@ export default function AccountSettingsPage() {
   }
 
   useEffect(() => {
-    if (!userId || activeSection !== "connected-accounts") {
+    if (
+      !userId ||
+      (activeSection !== "connected-accounts" && activeSection !== "league-settings")
+    ) {
       return;
     }
 
@@ -1336,6 +1503,166 @@ export default function AccountSettingsPage() {
 
                     <div className={styles.formSection}>
                       <div className={styles.formSectionHeader}>
+                        <h3 className={styles.formSectionTitle}>Imported Yahoo League</h3>
+                        <p className={styles.formSectionBody}>
+                          When your active context points at Yahoo, this imported league is
+                          the source of truth for scoring shape and roster slots. Manual
+                          defaults remain below as a fallback for manual teams and future
+                          unsupported providers.
+                        </p>
+                      </div>
+
+                      {isYahooLoading ? (
+                        <div className={styles.profileLoading}>
+                          Loading imported Yahoo league settings...
+                        </div>
+                      ) : activeYahooLeague ? (
+                        <div className={styles.yahooLeagueStack}>
+                          <div className={styles.yahooLeagueSummaryGrid}>
+                            <div className={styles.yahooLeagueSummaryCard}>
+                              <span className={styles.yahooLeagueSummaryLabel}>
+                                Selected Yahoo League
+                              </span>
+                              <span className={styles.yahooLeagueSummaryValue}>
+                                {activeYahooLeague.league_name || "Unnamed Yahoo league"}
+                              </span>
+                              <span className={styles.yahooLeagueSummaryHint}>
+                                Team context:{" "}
+                                {activeYahooTeam?.team_name ||
+                                  yahooDefaultTeam?.team_name ||
+                                  "No default Yahoo team selected"}
+                              </span>
+                            </div>
+
+                            <div className={styles.yahooLeagueSummaryCard}>
+                              <span className={styles.yahooLeagueSummaryLabel}>Season</span>
+                              <span className={styles.yahooLeagueSummaryValue}>
+                                {activeYahooLeague.season_key ||
+                                  getYahooLeagueMetadataValue(activeYahooLeague, "season") ||
+                                  "Unknown"}
+                              </span>
+                              <span className={styles.yahooLeagueSummaryHint}>
+                                Game key:{" "}
+                                {getYahooLeagueMetadataValue(activeYahooLeague, "game_key") ||
+                                  "Unknown"}
+                              </span>
+                            </div>
+
+                            <div className={styles.yahooLeagueSummaryCard}>
+                              <span className={styles.yahooLeagueSummaryLabel}>
+                                Scoring Type
+                              </span>
+                              <span className={styles.yahooLeagueSummaryValue}>
+                                {getYahooLeagueMetadataValue(
+                                  activeYahooLeague,
+                                  "scoring_type"
+                                ) || "Unknown"}
+                              </span>
+                              <span className={styles.yahooLeagueSummaryHint}>
+                                League type:{" "}
+                                {getYahooLeagueMetadataValue(
+                                  activeYahooLeague,
+                                  "league_type"
+                                ) || "Unknown"}
+                              </span>
+                            </div>
+
+                            <div className={styles.yahooLeagueSummaryCard}>
+                              <span className={styles.yahooLeagueSummaryLabel}>
+                                Team Count
+                              </span>
+                              <span className={styles.yahooLeagueSummaryValue}>
+                                {getYahooLeagueMetadataValue(activeYahooLeague, "num_teams") ||
+                                  "Unknown"}
+                              </span>
+                              <span className={styles.yahooLeagueSummaryHint}>
+                                Current week:{" "}
+                                {getYahooLeagueMetadataValue(
+                                  activeYahooLeague,
+                                  "current_week"
+                                ) || "Unknown"}
+                              </span>
+                            </div>
+
+                            <div className={styles.yahooLeagueSummaryCard}>
+                              <span className={styles.yahooLeagueSummaryLabel}>
+                                Roster Type
+                              </span>
+                              <span className={styles.yahooLeagueSummaryValue}>
+                                {getYahooLeagueMetadataValue(activeYahooLeague, "roster_type") ||
+                                  "Unknown"}
+                              </span>
+                              <span className={styles.yahooLeagueSummaryHint}>
+                                Weekly deadline:{" "}
+                                {getYahooLeagueMetadataValue(
+                                  activeYahooLeague,
+                                  "weekly_deadline"
+                                ) || "Unknown"}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className={styles.yahooLeagueDetailsGrid}>
+                            <div className={styles.yahooLeagueDetailCard}>
+                              <h4 className={styles.yahooLeagueDetailTitle}>
+                                Synced Scoring
+                              </h4>
+                              <div className={styles.yahooLeagueDetailRows}>
+                                {yahooLeagueScoringRows.length > 0 ? (
+                                  yahooLeagueScoringRows.map((row) => (
+                                    <div key={row.key} className={styles.yahooLeagueDetailRow}>
+                                      <span className={styles.yahooLeagueDetailLabel}>
+                                        {row.label}
+                                      </span>
+                                      <span className={styles.yahooLeagueDetailValue}>
+                                        {row.value}
+                                      </span>
+                                    </div>
+                                  ))
+                                ) : (
+                                  <div className={styles.emptyState}>
+                                    No scoring categories were stored for this Yahoo league yet.
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className={styles.yahooLeagueDetailCard}>
+                              <h4 className={styles.yahooLeagueDetailTitle}>
+                                Synced Roster Slots
+                              </h4>
+                              <div className={styles.yahooLeagueDetailRows}>
+                                {yahooLeagueRosterRows.length > 0 ? (
+                                  yahooLeagueRosterRows.map((row) => (
+                                    <div key={row.key} className={styles.yahooLeagueDetailRow}>
+                                      <span className={styles.yahooLeagueDetailLabel}>
+                                        {row.label}
+                                      </span>
+                                      <span className={styles.yahooLeagueDetailValue}>
+                                        {row.value}
+                                      </span>
+                                    </div>
+                                  ))
+                                ) : (
+                                  <div className={styles.emptyState}>
+                                    No roster positions were stored for this Yahoo league yet.
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className={styles.infoMessage}>
+                          No synced Yahoo NHL league is active yet. Connect Yahoo and choose
+                          a default team in Connected Accounts to surface imported scoring
+                          and roster settings here.
+                        </div>
+                      )}
+                    </div>
+
+                    <div className={styles.formSection}>
+                      <div className={styles.formSectionHeader}>
                         <h3 className={styles.formSectionTitle}>League Mode</h3>
                         <p className={styles.formSectionBody}>
                           These defaults persist independently from Draft Dashboard so
@@ -1477,7 +1804,16 @@ export default function AccountSettingsPage() {
                           Provider: {leagueForm.activeContext.provider || "manual"}
                         </span>
                         <span className={styles.statusPill}>
-                          Team: {leagueForm.activeContext.external_team_id || "none"}
+                          League:{" "}
+                          {activeYahooLeague?.league_name ||
+                            leagueForm.activeContext.external_league_id ||
+                            "none"}
+                        </span>
+                        <span className={styles.statusPill}>
+                          Team:{" "}
+                          {activeYahooTeam?.team_name ||
+                            leagueForm.activeContext.external_team_id ||
+                            "none"}
                         </span>
                       </div>
                     </div>

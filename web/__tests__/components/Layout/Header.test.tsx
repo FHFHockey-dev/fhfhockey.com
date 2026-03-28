@@ -35,7 +35,19 @@ vi.mock("hooks/useHideableNavbar", () => ({
 }));
 
 vi.mock("components/Layout/MobileMenu", () => ({
-  default: () => <div data-testid="mobile-menu" />
+  default: ({ showAuthButton, onAuthClick }: any) => (
+    <div data-testid="mobile-menu">
+      {showAuthButton ? (
+        <button
+          type="button"
+          data-testid="mobile-auth-cta"
+          onClick={onAuthClick}
+        >
+          Mobile Sign-in / Sign-up
+        </button>
+      ) : null}
+    </div>
+  )
 }));
 
 vi.mock("components/Layout/NavbarItems", () => ({
@@ -95,6 +107,19 @@ describe("Header auth entry", () => {
     ).toBeDefined();
   });
 
+  it("opens the auth modal from the mobile menu CTA for signed-out users", () => {
+    render(<Header />);
+
+    fireEvent.click(screen.getByTestId("mobile-auth-cta"));
+
+    expect(
+      screen.getByRole("dialog", { name: "Authentication" })
+    ).toBeDefined();
+    expect(
+      screen.getByRole("heading", { name: "Sign in to your account" })
+    ).toBeDefined();
+  });
+
   it("renders the logged-in user menu instead of the logged-out CTA", () => {
     authState.mockUser = {
       id: "user-1",
@@ -105,6 +130,7 @@ describe("Header auth entry", () => {
     render(<Header />);
 
     expect(screen.queryByRole("button", { name: "Sign-in / Sign-up" })).toBeNull();
+    expect(screen.queryByTestId("mobile-auth-cta")).toBeNull();
     expect(screen.getByTestId("user-menu")).toBeDefined();
   });
 
@@ -114,6 +140,7 @@ describe("Header auth entry", () => {
     render(<Header />);
 
     expect(screen.queryByRole("button", { name: "Sign-in / Sign-up" })).toBeNull();
+    expect(screen.queryByTestId("mobile-auth-cta")).toBeNull();
     expect(screen.queryByTestId("user-menu")).toBeNull();
   });
 });

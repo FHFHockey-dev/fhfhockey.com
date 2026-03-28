@@ -203,6 +203,11 @@ function Header() {
     }, 200);
   };
 
+  const handleMobileAuthClick = () => {
+    setMenuOpen(false);
+    setAuthModalOpen(true);
+  };
+
   return (
     <>
       {/* Desktop Header */}
@@ -300,7 +305,12 @@ function Header() {
       )}
 
       <ClientOnly>
-        <MobileMenu visible={menuOpen} onItemClick={onItemClick} />
+        <MobileMenu
+          visible={menuOpen}
+          onItemClick={onItemClick}
+          onAuthClick={handleMobileAuthClick}
+          showAuthButton={!user && !isLoading}
+        />
       </ClientOnly>
 
       <ClientOnly>
