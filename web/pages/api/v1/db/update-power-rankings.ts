@@ -1,33 +1,6 @@
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import type { NextApiRequest, NextApiResponse } from "next";
 
-type LegacyPowerRankingsMain = () => Promise<void>;
-
-async function defaultLoadLegacyMain(): Promise<LegacyPowerRankingsMain> {
-  const importedModule = await import("lib/supabase/Upserts/fetchPowerRankings.js");
-  const legacyModule =
-    importedModule &&
-    typeof importedModule === "object" &&
-    "default" in importedModule
-      ? importedModule.default
-      : importedModule;
-  const { main } = legacyModule as { main: LegacyPowerRankingsMain };
-  return main as LegacyPowerRankingsMain;
-}
-
-let loadLegacyMainImpl: () => Promise<LegacyPowerRankingsMain> =
-  defaultLoadLegacyMain;
-
-export async function loadLegacyMain() {
-  return loadLegacyMainImpl();
-}
-
-export function setLegacyMainLoaderForTests(
-  loader: (() => Promise<LegacyPowerRankingsMain>) | null
-) {
-  loadLegacyMainImpl = loader ?? defaultLoadLegacyMain;
-}
-
 /**
  * Query params:
  * - none
@@ -38,19 +11,25 @@ export function setLegacyMainLoaderForTests(
 
 async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<{ message: string }>
+  res: NextApiResponse
 ) {
-  try {
-    const main = await loadLegacyMain();
-    await main();
-
-    res.status(200).json({
-      message: `Power rankings data processed successfully.`
-    });
-  } catch (error: any) {
-    console.error("Error processing power rankings data:", error);
-    res.status(500).json({ message: `Error: ${error.message}` });
+  if (req.method !== "POST" && req.method !== "GET") {
+    res.setHeader("Allow", ["POST", "GET"]);
+    return res.status(405).json({ error: "Method not allowed" });
   }
+
+  return res.status(410).json({
+    success: false,
+    error: "Legacy power-rankings loader has been disabled.",
+    route: "/api/v1/db/update-power-rankings",
+    disposition: "DO NOT RUN",
+    legacySurface: true,
+    legacyLoader: "lib/supabase/Upserts/fetchPowerRankings.js",
+    canonicalStatus: "no supported operator route",
+    canonicalDataset: "power_rankings",
+    warning:
+      "This legacy JS loader is quarantined and has no canonical operator status in the rolling-to-FORGE pipeline."
+  });
 }
 
 export default withCronJobAudit(handler);

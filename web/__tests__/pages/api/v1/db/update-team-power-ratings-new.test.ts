@@ -1,18 +1,17 @@
 import { describe, expect, it } from "vitest";
 
-import handler from "../../../../../pages/api/v1/db/update-rolling-games";
+import handler from "../../../../../pages/api/v1/db/update-team-power-ratings-new";
 
 function createMockRes() {
   const res: any = {
     statusCode: 200,
+    headers: {} as Record<string, string | string[]>,
     body: null as any,
-    headers: {} as Record<string, string>,
+    setHeader(key: string, value: string | string[]) {
+      this.headers[key] = value;
+    },
     status(code: number) {
       this.statusCode = code;
-      return this;
-    },
-    setHeader(name: string, value: string) {
-      this.headers[name] = value;
       return this;
     },
     send(payload: any) {
@@ -27,11 +26,13 @@ function createMockRes() {
   return res;
 }
 
-describe("/api/v1/db/update-rolling-games", () => {
-  it("returns 410 and points callers to the canonical rolling route", async () => {
+describe("/api/v1/db/update-team-power-ratings-new", () => {
+  it("returns 410 and points callers to the canonical writer", async () => {
     const req: any = {
       method: "GET",
-      query: { date: "recent" }
+      query: {
+        date: "2026-02-07"
+      }
     };
     const res = createMockRes();
 
@@ -40,11 +41,11 @@ describe("/api/v1/db/update-rolling-games", () => {
     expect(res.statusCode).toBe(410);
     expect(res.body).toMatchObject({
       success: false,
-      route: "/api/v1/db/update-rolling-games",
-      requestedMode: "recent",
+      route: "/api/v1/db/update-team-power-ratings-new",
+      targetTable: "team_power_ratings_daily__new",
       disposition: "DO NOT RUN",
-      replacementRoute: "/api/v1/db/update-rolling-player-averages",
-      canonicalOutput: "rolling_player_game_metrics"
+      replacementRoute: "/api/v1/db/update-team-power-ratings",
+      canonicalTable: "team_power_ratings_daily"
     });
   });
 

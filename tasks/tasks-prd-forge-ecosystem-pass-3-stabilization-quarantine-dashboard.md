@@ -10,18 +10,23 @@
 - `web/__tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts` - Coordinator response-contract test covering stage order, spec version, and downstream execution metadata.
 - `web/pages/api/v1/db/run-projection-v2.ts` - Canonical projection execution endpoint whose preflight and operator-facing behavior may need freshness and deprecation updates.
 - `web/lib/projections/run-forge-projections.ts` - Canonical FORGE projection runner and downstream storage writer.
-- `web/lib/projections/runProjectionV2.ts` - Temporary compatibility shim that should be cleaned up once remaining imports are retired.
+- `web/lib/projections/runProjectionV2.ts` - Removed compatibility shim; keep only as a historical reference in this task log until adjacent docs are cleaned up.
 - `web/pages/api/v1/db/update-start-chart-projections.ts` - Quarantined legacy downstream writer now explicitly marked transitional while it still materializes `player_projections`.
 - `web/pages/api/v1/start-chart.ts` - Start-chart consumer API now re-pointed to canonical `forge_player_projections` for skaters while still joining `goalie_start_projections` for goalie context.
 - `web/pages/api/v1/forge/players.ts` - Canonical player projection reader that should expose fallback and freshness state explicitly.
 - `web/pages/api/v1/forge/goalies.ts` - Canonical goalie projection reader that should expose fallback and freshness state explicitly.
 - `web/pages/api/v1/projections/players.ts` - Redundant legacy player-reader namespace that should be deprecated or merged.
 - `web/pages/api/v1/projections/goalies.ts` - Redundant legacy goalie-reader namespace that should be deprecated or merged.
+- `web/__tests__/pages/api/v1/projections/players.test.ts` - Regression test proving the legacy player projection namespace remains readable but explicitly deprecated in favor of `/api/v1/forge/players`.
+- `web/__tests__/pages/api/v1/projections/goalies.test.ts` - Regression test proving the legacy goalie projection namespace remains readable but explicitly deprecated in favor of `/api/v1/forge/goalies`.
 - `web/pages/api/v1/db/update-goalie-projections.ts` - Quarantined old goalie-start writer that should be disabled and removed from operational use.
 - `web/pages/api/v1/db/update-goalie-projections-v2.ts` - Canonical goalie-start writer that should remain as the only supported write path.
+- `web/__tests__/pages/api/v1/db/update-goalie-projections.test.ts` - Regression test proving the legacy goalie-start writer is gated and points callers to the v2 route.
 - `web/pages/api/v1/db/update-team-power-ratings.ts` - Current team-ratings writer participating in the ambiguous dual-table story.
 - `web/pages/api/v1/db/update-team-power-ratings-new.ts` - Alternate team-ratings writer that must be validated, quarantined, or retired.
 - `web/lib/teamRatingsService.ts` - Shared service layer that currently reads across both team-ratings tables and needs a single canonical table decision.
+- `web/lib/teamRatingsService.test.ts` - Regression coverage for the canonical team-ratings read path and same-table column-fallback behavior.
+- `web/__tests__/pages/api/v1/db/update-team-power-ratings-new.test.ts` - Regression test proving the alternate `__new` team-ratings writer is quarantined and points callers to the canonical writer.
 - `web/pages/api/v1/db/update-rolling-player-averages.ts` - Canonical rolling recompute operator surface where freshness checks and validation guidance should tighten.
 - `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts` - Semantic owner for the rolling pipeline and a key surface for dependency/freshness enforcement.
 - `web/pages/api/v1/db/update-line-combinations/index.ts` - Recent-gap line-combo builder that needs a clearer historical repair story.
@@ -32,6 +37,8 @@
 - `web/pages/api/v1/db/run-projection-accuracy.ts` - Accuracy stage that should only run against fresh canonical outputs.
 - `web/pages/api/v1/db/update-rolling-games.ts` - Legacy loader route that should be audited for real usage, then gated or removed.
 - `web/pages/api/v1/db/update-power-rankings.ts` - Legacy JS loader route that should be audited for real usage, then gated or removed.
+- `web/__tests__/pages/api/v1/db/update-rolling-games.test.ts` - Regression test proving the legacy rolling-games wrapper is quarantined and points callers to the canonical rolling route.
+- `web/__tests__/pages/api/v1/db/update-power-rankings.test.ts` - Regression test proving the legacy power-rankings loader is disabled and marked non-canonical.
 - `web/pages/api/v1/forge/accuracy.ts` - Consumer reader that should continue reflecting canonical FORGE outputs after endpoint cleanup.
 - `web/pages/api/v1/runs/latest.ts` - Latest-run metadata reader that can help expose active data date and fallback state.
 - `web/pages/index.tsx` - Landing dashboard page that needs decomposition, hierarchy cleanup, and responsive polish.
@@ -67,12 +74,12 @@
   - [x] 1.4 Update `run-rolling-forge-pipeline.ts` so orchestration order, preflight language, and completion summaries match the corrected stage model and downstream ownership decisions. [Deps: 1.2, 1.3] [Files: `web/pages/api/v1/db/run-rolling-forge-pipeline.ts`] [AC: pipeline execution messaging no longer implies outputs that are not actually produced]
   - [x] 1.5 Validate the repaired downstream model against the current consumers that matter most, including start-chart and FORGE reader routes, before any legacy surface is removed. [Deps: 1.2, 1.4] [Files: `web/pages/api/v1/start-chart.ts`, `web/pages/api/v1/forge/players.ts`, `web/pages/api/v1/forge/goalies.ts`, `web/pages/start-chart.tsx`] [AC: product-facing consumers read from an intentional, documented contract with no ambiguous fallback ownership]
 
-- [ ] 2.0 Quarantine, deprecate, or merge legacy endpoint and runner surfaces so one canonical read/write path is explicit
-  - [ ] 2.1 Remove `update-goalie-projections.ts` from active operational use by auditing internal callers, scheduler references, and runbook assumptions, then gate or delete it so `update-goalie-projections-v2.ts` is the only supported writer. [Deps: none] [Files: `web/pages/api/v1/db/update-goalie-projections.ts`, `web/pages/api/v1/db/update-goalie-projections-v2.ts`] [AC: the old goalie-start writer is no longer treated as a safe interchangeable path]
-  - [ ] 2.2 Collapse duplicate projection read namespaces by making `/api/v1/forge/players` and `/api/v1/forge/goalies` the canonical consumer family and deprecating `/api/v1/projections/players` plus `/api/v1/projections/goalies`. [Deps: none] [Files: `web/pages/api/v1/forge/players.ts`, `web/pages/api/v1/forge/goalies.ts`, `web/pages/api/v1/projections/players.ts`, `web/pages/api/v1/projections/goalies.ts`] [AC: there is one clearly preferred read namespace and the old namespace is either redirected, warned, or removed]
-  - [ ] 2.3 Audit remaining imports of `runProjectionV2.ts`, migrate them to `run-forge-projections.ts`, and remove the shim once no runtime or test path still needs it. [Deps: none] [Files: `web/lib/projections/runProjectionV2.ts`, `web/lib/projections/run-forge-projections.ts`, `web/pages/api/v1/db/run-projection-v2.ts`, `web/lib/projections/runProjectionV2.test.ts`, `web/lib/projections/module-imports.test.ts`] [AC: repo import usage no longer depends on the compatibility shim]
-  - [ ] 2.4 Compare `team_power_ratings_daily` and `team_power_ratings_daily__new`, choose one canonical owner, update `teamRatingsService` to read from only that table, and quarantine the alternate writer. [Deps: none] [Files: `web/pages/api/v1/db/update-team-power-ratings.ts`, `web/pages/api/v1/db/update-team-power-ratings-new.ts`, `web/lib/teamRatingsService.ts`] [AC: the service layer no longer reads across two tables to answer one product question]
-  - [ ] 2.5 Audit legacy loader routes such as `update-rolling-games.ts` and `update-power-rankings.ts`, then either remove them if unused or mark them as explicit legacy-only operator surfaces with warnings and no canonical status. [Deps: none] [Files: `web/pages/api/v1/db/update-rolling-games.ts`, `web/pages/api/v1/db/update-power-rankings.ts`] [AC: no legacy route remains silently adjacent to the canonical rolling/FORGE path]
+- [x] 2.0 Quarantine, deprecate, or merge legacy endpoint and runner surfaces so one canonical read/write path is explicit
+  - [x] 2.1 Remove `update-goalie-projections.ts` from active operational use by auditing internal callers, scheduler references, and runbook assumptions, then gate or delete it so `update-goalie-projections-v2.ts` is the only supported writer. [Deps: none] [Files: `web/pages/api/v1/db/update-goalie-projections.ts`, `web/pages/api/v1/db/update-goalie-projections-v2.ts`] [AC: the old goalie-start writer is no longer treated as a safe interchangeable path]
+  - [x] 2.2 Collapse duplicate projection read namespaces by making `/api/v1/forge/players` and `/api/v1/forge/goalies` the canonical consumer family and deprecating `/api/v1/projections/players` plus `/api/v1/projections/goalies`. [Deps: none] [Files: `web/pages/api/v1/forge/players.ts`, `web/pages/api/v1/forge/goalies.ts`, `web/pages/api/v1/projections/players.ts`, `web/pages/api/v1/projections/goalies.ts`] [AC: there is one clearly preferred read namespace and the old namespace is either redirected, warned, or removed]
+  - [x] 2.3 Audit remaining imports of `runProjectionV2.ts`, migrate them to `run-forge-projections.ts`, and remove the shim once no runtime or test path still needs it. [Deps: none] [Files: `web/lib/projections/runProjectionV2.ts`, `web/lib/projections/run-forge-projections.ts`, `web/pages/api/v1/db/run-projection-v2.ts`, `web/lib/projections/runProjectionV2.test.ts`, `web/lib/projections/module-imports.test.ts`] [AC: repo import usage no longer depends on the compatibility shim]
+  - [x] 2.4 Compare `team_power_ratings_daily` and `team_power_ratings_daily__new`, choose one canonical owner, update `teamRatingsService` to read from only that table, and quarantine the alternate writer. [Deps: none] [Files: `web/pages/api/v1/db/update-team-power-ratings.ts`, `web/pages/api/v1/db/update-team-power-ratings-new.ts`, `web/lib/teamRatingsService.ts`] [AC: the service layer no longer reads across two tables to answer one product question]
+  - [x] 2.5 Audit legacy loader routes such as `update-rolling-games.ts` and `update-power-rankings.ts`, then either remove them if unused or mark them as explicit legacy-only operator surfaces with warnings and no canonical status. [Deps: none] [Files: `web/pages/api/v1/db/update-rolling-games.ts`, `web/pages/api/v1/db/update-power-rankings.ts`] [AC: no legacy route remains silently adjacent to the canonical rolling/FORGE path]
 
 - [ ] 3.0 Repair freshness dependencies, bulk-builder recovery paths, and the operator-safe validation sequence across the rolling-to-FORGE chain
   - [ ] 3.1 Encode the canonical dependency order across core entity refresh, skater sources, contextual builders, rolling recompute, ingest, derived builders, projection execution, and downstream readers so operators cannot mistake partial freshness for a healthy run. [Deps: none] [Files: `web/pages/api/v1/db/run-rolling-forge-pipeline.ts`, `web/lib/rollingForgePipeline.ts`, `web/pages/api/v1/db/update-rolling-player-averages.ts`, `web/pages/api/v1/db/ingest-projection-inputs.ts`, `web/pages/api/v1/db/build-projection-derived-v2.ts`, `web/pages/api/v1/db/run-projection-v2.ts`] [AC: one operator-visible ordering contract exists and matches actual runtime dependencies]
@@ -158,3 +165,60 @@
 - `./node_modules/.bin/vitest --run __tests__/pages/api/v1/start-chart.test.ts __tests__/pages/api/v1/forge/players.test.ts __tests__/pages/api/v1/forge/goalies.test.ts`
 - `npm run test:full`
 - `npx tsc --noEmit`
+
+### 2.1 Legacy Goalie Writer Audit And Gating
+
+- Repo audit result: no active runtime imports, pipeline references, cron schedule entries, or operator runbook instructions still point to `/api/v1/db/update-goalie-projections`; all current in-repo operational references already point to `/api/v1/db/update-goalie-projections-v2`.
+- The remaining mentions of `update-goalie-projections.ts` in the repo are documentation and task-artifact references describing it as quarantined legacy surface area.
+- `/api/v1/db/update-goalie-projections` now returns `410 Gone` for supported methods and explicitly directs callers to `/api/v1/db/update-goalie-projections-v2`.
+- The old route no longer performs the legacy `calculate_goalie_start_projections` RPC, so it cannot act as a silent alternate writer for `goalie_start_projections`.
+- Added regression coverage in `web/__tests__/pages/api/v1/db/update-goalie-projections.test.ts` to lock down the disabled-route behavior.
+- Validation for this sub-task:
+- `./node_modules/.bin/vitest --run __tests__/pages/api/v1/db/update-goalie-projections.test.ts __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts`
+- `npx tsc --noEmit`
+
+### 2.2 Projection Reader Namespace Deprecation
+
+- `/api/v1/forge/players` and `/api/v1/forge/goalies` remain the canonical reader family.
+- `/api/v1/projections/players` and `/api/v1/projections/goalies` were kept readable for compatibility, but both routes now emit explicit deprecation headers and JSON metadata pointing callers at the canonical `/api/v1/forge/*` successors.
+- This keeps legacy filtered callers from breaking immediately while removing any ambiguity about which namespace is preferred going forward.
+- Added regression tests for both deprecated routes so the deprecation contract stays explicit.
+- Validation for this sub-task:
+- `./node_modules/.bin/vitest --run __tests__/pages/api/v1/projections/players.test.ts __tests__/pages/api/v1/projections/goalies.test.ts __tests__/pages/api/v1/forge/players.test.ts __tests__/pages/api/v1/forge/goalies.test.ts`
+- `npx tsc --noEmit`
+
+### 2.3 Projection Runner Shim Removal
+
+- Runtime and test import audit result: no remaining `web/**` imports depend on `web/lib/projections/runProjectionV2.ts`.
+- The only surviving `runProjectionV2` references in `web` are symbol names such as `runProjectionV2ForDate` and test variable names; they already resolve through `run-forge-projections.ts` or route-level mocks.
+- Removed `web/lib/projections/runProjectionV2.ts`, so the compatibility shim no longer exists in the runtime graph.
+- Stale historical references still exist in markdown/task documents outside the runtime path; those were discovered during this audit and were converted into explicit follow-up work instead of being left implicit.
+- Validation for this sub-task:
+- `./node_modules/.bin/vitest --run lib/projections/module-imports.test.ts lib/projections/runProjectionV2.test.ts __tests__/pages/api/v1/db/run-projection-v2.test.ts`
+- `npx tsc --noEmit`
+
+### 2.4 Team Power Ratings Canonicalization
+
+- Table audit result: `team_power_ratings_daily` and `team_power_ratings_daily__new` currently expose the same column set in generated database types, so there is no schema-only reason to keep the shared read path ambiguous.
+- Canonical ownership decision: `team_power_ratings_daily` remains the single supported read/write table because direct product readers already treat it as the primary source and `/api/v1/db/update-team-power-ratings` is the established writer.
+- `web/lib/teamRatingsService.ts` now reads only `team_power_ratings_daily`; it no longer queries `team_power_ratings_daily__new` as a silent fallback for the same product response.
+- The service kept its missing-column fallback for extended rating fields, but that fallback now retries against the same canonical table with the core column set instead of hopping to an alternate table.
+- `/api/v1/db/update-team-power-ratings-new` now returns `410 Gone` and explicitly marks the `team_power_ratings_daily__new` path as quarantined, with `/api/v1/db/update-team-power-ratings` identified as the replacement writer.
+- Added regression coverage for both the canonical single-table read path and the disabled alternate writer contract.
+- Validation for this sub-task:
+- `./node_modules/.bin/vitest --run lib/teamRatingsService.test.ts __tests__/pages/api/v1/db/update-team-power-ratings-new.test.ts`
+- `npx tsc --noEmit`
+
+### 2.5 Legacy Loader Route Quarantine
+
+- Audit result: both `/api/v1/db/update-rolling-games` and `/api/v1/db/update-power-rankings` still appear in in-repo scheduler documentation and cron benchmark inventories, so they were not treated as safely deletable dead files.
+- The audit evidence includes the legacy schedule entries in `web/rules/cron-schedule.md` plus benchmark and normalized-inventory artifacts that still name `update-rolling-games-recent` and `update-power-rankings` as scheduled HTTP jobs.
+- `/api/v1/db/update-rolling-games` no longer loads `lib/supabase/Upserts/fetchRollingGames.js`; it now returns `410 Gone`, marks itself as a quarantined legacy surface, and directs operators to `/api/v1/db/update-rolling-player-averages` as the canonical rolling output path for `rolling_player_game_metrics`.
+- `/api/v1/db/update-power-rankings` no longer loads `lib/supabase/Upserts/fetchPowerRankings.js`; it now returns `410 Gone` and explicitly states that it has no supported canonical operator status inside the rolling-to-FORGE pipeline.
+- Added regression coverage so both legacy loader routes remain visibly disabled instead of silently acting like interchangeable operator surfaces.
+- Validation for this sub-task:
+- `./node_modules/.bin/vitest --run __tests__/pages/api/v1/db/update-rolling-games.test.ts __tests__/pages/api/v1/db/update-power-rankings.test.ts`
+- `npx tsc --noEmit`
+
+- [ ] 7.0 Clean up stale documentation and task references that still describe `runProjectionV2.ts` as an active projection-runner file
+  - [ ] 7.1 Update active docs and task guides that still describe `web/lib/projections/runProjectionV2.ts` as a live runtime path so the repo no longer teaches the removed shim as current architecture. [Deps: 2.3] [Files: `FORGE_EXPLAINED.md`, `tasks/*.md`, related active runbooks/docs] [AC: active guidance points to `run-forge-projections.ts` unless a historical note is explicitly marked as historical]

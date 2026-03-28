@@ -32,6 +32,15 @@ function parseQuery(req: NextApiRequest) {
   return parsed.data;
 }
 
+function applyDeprecationHeaders(res: NextApiResponse) {
+  res.setHeader("Deprecation", "true");
+  res.setHeader("X-FHF-Canonical-Route", "/api/v1/forge/players");
+  res.setHeader(
+    "Link",
+    '</api/v1/forge/players>; rel="successor-version"'
+  );
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const startedAt = Date.now();
   if (req.method !== "GET") {
@@ -40,6 +49,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
+    applyDeprecationHeaders(res);
     if (!supabase) throw new Error("Supabase server client not available");
     const q = parseQuery(req);
     const runId = q.runId ?? (await requireLatestSucceededRunId(q.date));
@@ -60,15 +70,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return res.status(200).json({
       durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
+      deprecated: true,
+      canonicalRoute: "/api/v1/forge/players",
       runId,
       asOfDate: q.date,
       horizonGames: q.horizon,
       data: data ?? []
     });
   } catch (e) {
+    applyDeprecationHeaders(res);
     const statusCode = (e as any)?.statusCode ?? 500;
     return res.status(statusCode).json({
       durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
+      deprecated: true,
+      canonicalRoute: "/api/v1/forge/players",
       error: (e as any)?.message ?? String(e),
       details: (e as any)?.details
     });

@@ -1,21 +1,6 @@
-import {
-  afterEach as afterEachHook,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi
-} from "vitest";
+import { describe, expect, it } from "vitest";
 
-const { loaderMock, legacyMainMock } = vi.hoisted(() => ({
-  loaderMock: vi.fn(),
-  legacyMainMock: vi.fn().mockResolvedValue(undefined)
-}));
-
-import handler, {
-  loadLegacyMain,
-  setLegacyMainLoaderForTests
-} from "../../../../../pages/api/v1/db/update-power-rankings";
+import handler from "../../../../../pages/api/v1/db/update-power-rankings";
 
 function createMockRes() {
   const res: any = {
@@ -43,22 +28,7 @@ function createMockRes() {
 }
 
 describe("/api/v1/db/update-power-rankings", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    loaderMock.mockResolvedValue(legacyMainMock);
-    setLegacyMainLoaderForTests(loaderMock);
-  });
-
-  it("loads the legacy power-rankings module through the async bridge", async () => {
-    const main = await loadLegacyMain();
-
-    await main();
-
-    expect(loaderMock).toHaveBeenCalled();
-    expect(legacyMainMock).toHaveBeenCalled();
-  });
-
-  it("runs the legacy power-rankings loader", async () => {
+  it("returns 410 and marks the loader as a quarantined legacy surface", async () => {
     const req: any = {
       method: "GET",
       query: {}
@@ -67,14 +37,26 @@ describe("/api/v1/db/update-power-rankings", () => {
 
     await handler(req, res);
 
-    expect(legacyMainMock).toHaveBeenCalled();
-    expect(res.statusCode).toBe(200);
-    expect(res.body).toEqual({
-      message: "Power rankings data processed successfully."
+    expect(res.statusCode).toBe(410);
+    expect(res.body).toMatchObject({
+      success: false,
+      route: "/api/v1/db/update-power-rankings",
+      disposition: "DO NOT RUN",
+      canonicalStatus: "no supported operator route",
+      canonicalDataset: "power_rankings"
     });
   });
 
-  afterEachHook(() => {
-    setLegacyMainLoaderForTests(null);
+  it("still returns 405 for unsupported methods", async () => {
+    const req: any = {
+      method: "DELETE",
+      query: {}
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(405);
+    expect(res.headers.Allow).toEqual(["POST", "GET"]);
   });
 });
