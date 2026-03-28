@@ -17,9 +17,15 @@
 - `tasks/artifacts/forge-dashboard-team-context-health-audit.md` - Completed full-chain Team Trend Context audit covering team ratings, CTPI, matchup-edge logic, live mixed-cadence failures, and the current `red` verdict driven by stale CTPI plus flat team-power trend data.
 - `tasks/artifacts/forge-dashboard-team-context-freshness-ownership.md` - Completed Team Trend Context freshness-ownership trace covering team-power, CTPI, matchup-edge, NST/WGO dependencies, runbook ordering, and the current `red` ownership verdict.
 - `tasks/artifacts/forge-dashboard-team-context-reconciliation.md` - Completed source-to-UI reconciliation for Team Trend Context, separating honest team-power/matchup rendering from the current stale-CTPI snapshot-misalignment that keeps the panel `red`.
-- `tasks/artifacts/forge-dashboard-sustainability-health-audit.md` - Planned full-chain audit for Sustainable vs Unsustainable signals and their source-to-UI mapping.
-- `tasks/artifacts/forge-dashboard-trend-movement-health-audit.md` - Planned full-chain audit for Hot/Cold and Trending Up/Down movement surfaces.
-- `tasks/artifacts/forge-dashboard-goalie-health-audit.md` - Planned full-chain audit for goalie projections, uncertainty drivers, and starter-risk display.
+- `tasks/artifacts/forge-dashboard-sustainability-health-audit.md` - Completed full-chain sustainability audit covering Sustainable vs Unsustainable signals, stale snapshot fallback, ownership-overlay mismatch, and the current `red` verdict.
+- `tasks/artifacts/forge-dashboard-sustainability-freshness-ownership.md` - Completed sustainability freshness-ownership trace covering scheduled rebuild jobs, dashboard freshness/runtime policy, mid-March `l10` continuity gaps, and the current `red` verdict.
+- `tasks/artifacts/forge-dashboard-sustainability-reconciliation.md` - Completed source-to-UI reconciliation for Sustainable vs Unsustainable, separating honest direction mapping from badge-scale drift, null-ownership suppression, and the current `red` rendered-card verdict.
+- `tasks/artifacts/forge-dashboard-trend-movement-health-audit.md` - Completed full-chain audit for Hot/Cold and Trending Up/Down movement surfaces, documenting synthetic freshness metadata, ownership-overlay risk, and the current `red` verdict.
+- `tasks/artifacts/forge-dashboard-trend-movement-freshness-ownership.md` - Completed trend-movement freshness-ownership trace covering the unscheduled `player_trend_metrics` writer, stale live source evidence, synthetic freshness metadata, and the current `red` verdict.
+- `tasks/artifacts/forge-dashboard-trend-movement-reconciliation.md` - Completed source-to-UI reconciliation for Hot/Cold and Trending Up/Down, separating coherent short-term semantics from dashboard-owned composite scoring, unreliable ownership filtering, and the current `red` rendered-card verdict.
+- `tasks/artifacts/forge-dashboard-goalie-health-audit.md` - Completed full-chain audit for goalie projections, uncertainty drivers, starter-risk display, requested-date fallback behavior, and the current `red` verdict.
+- `tasks/artifacts/forge-dashboard-goalie-freshness-ownership.md` - Completed goalie freshness-ownership trace covering the split Start Chart vs FORGE goalie chains, cron/pipeline ordering mismatch, requested-date coverage failure, and the current `red` verdict.
+- `tasks/artifacts/forge-dashboard-goalie-reconciliation.md` - Completed source-to-UI reconciliation for the goalie band, separating honest row rendering from missing requested-vs-resolved coverage context and the current `red` rendered-band verdict.
 - `tasks/artifacts/forge-dashboard-route-family-health-audit.md` - Planned route-family audit for FORGE landing previews and team/player drill-in consistency.
 - `tasks/artifacts/forge-dashboard-cron-runtime-health-audit.md` - Planned cron, freshness, and runtime-budget audit across the components’ upstream refresh paths.
 - `web/pages/forge/dashboard.tsx` - Main FORGE dashboard route whose component bands and health behavior are the primary audit target.
@@ -75,7 +81,7 @@
   - [x] 1.3 Create `tasks/artifacts/forge-dashboard-component-reconciliation-checks.md` and define the required source-to-UI reconciliation method for each component family.
   - [x] 1.4 Map the current cron/runbook ownership from `web/rules/cron-schedule.md` into the inventory so each component has an explicit upstream refresh chain and runtime expectation.
   - [x] 1.5 Document the audit procedure for separating freshness failures, correctness failures, degraded-state failures, observability gaps, and cron-surface gaps so later component reviews stay consistent.
-- [ ] 2.0 Audit the slate, Top Adds, and Team Trend Context components end to end across UI, APIs, source tables, cron ownership, and source-to-UI reconciliation
+- [x] 2.0 Audit the slate, Top Adds, and Team Trend Context components end to end across UI, APIs, source tables, cron ownership, and source-to-UI reconciliation
   - [x] 2.1 Audit `SlateStripCard`, `web/pages/api/v1/start-chart.ts`, and the slate surfaces in `web/pages/forge/dashboard.tsx` and `web/pages/FORGE.tsx`, then record findings in `tasks/artifacts/forge-dashboard-slate-health-audit.md`.
   - [x] 2.2 Verify slate freshness ownership by tracing the upstream jobs, source tables, fallback behavior, and runtime expectations that keep Start Chart current.
   - [x] 2.3 Reconcile the slate UI against the Start Chart API response and authoritative source tables to confirm matchup, goalie, and date-context accuracy.
@@ -86,15 +92,15 @@
   - [x] 2.8 Verify Team Trend Context freshness ownership by tracing team-power, CTPI, matchup-context, and NST/WGO dependencies through their scheduled refresh jobs and runtime expectations.
   - [x] 2.9 Reconcile Team Trend Context output against the team ratings API, CTPI API, matchup inputs, and displayed variance/warning behavior to confirm the UI is not silently flattening or mislabeling team signals.
 - [ ] 3.0 Audit the sustainability, hot/cold movement, and goalie components end to end across UI, APIs, source tables, cron ownership, and source-to-UI reconciliation
-  - [ ] 3.1 Audit `SustainabilityCard`, `web/pages/api/v1/sustainability/trends.ts`, and the supporting normalizers/helpers, then record findings in `tasks/artifacts/forge-dashboard-sustainability-health-audit.md`.
-  - [ ] 3.2 Verify sustainability freshness ownership by tracing `sustainability_scores`, `player_baselines`, snapshot/fallback behavior, and the jobs that keep those sources current.
-  - [ ] 3.3 Reconcile Sustainable vs Unsustainable cards against source sustainability metrics, normalized explanation text, ownership-band filtering, and displayed trust/overheated labels.
-  - [ ] 3.4 Audit `HotColdCard`, `web/pages/api/v1/trends/skater-power.ts`, and supporting dashboard movement helpers, then record findings in `tasks/artifacts/forge-dashboard-trend-movement-health-audit.md`.
-  - [ ] 3.5 Verify trend-movement freshness ownership by tracing skater trend sources, refresh cadence, fallback behavior, and any mixed-cadence risk with ownership-band filtering.
-  - [ ] 3.6 Reconcile Hot/Cold and Trending Up/Down UI output against raw skater-power responses, normalized trend-band labels, and displayed short-term explanation language.
-  - [ ] 3.7 Audit `GoalieRiskCard`, `web/pages/api/v1/forge/goalies.ts`, and supporting normalizers/helpers, then record findings in `tasks/artifacts/forge-dashboard-goalie-health-audit.md`.
-  - [ ] 3.8 Verify goalie freshness ownership by tracing `forge_goalie_projections`, uncertainty inputs, start-chart dependencies, and the jobs that keep goalie-facing data current within runtime expectations.
-  - [ ] 3.9 Reconcile the goalie band UI against goalie API responses, model recommendation fields, uncertainty drivers, and displayed starter-risk/confidence labels to confirm the component is representing goalie data accurately.
+  - [x] 3.1 Audit `SustainabilityCard`, `web/pages/api/v1/sustainability/trends.ts`, and the supporting normalizers/helpers, then record findings in `tasks/artifacts/forge-dashboard-sustainability-health-audit.md`.
+  - [x] 3.2 Verify sustainability freshness ownership by tracing `sustainability_scores`, `player_baselines`, snapshot/fallback behavior, and the jobs that keep those sources current.
+  - [x] 3.3 Reconcile Sustainable vs Unsustainable cards against source sustainability metrics, normalized explanation text, ownership-band filtering, and displayed trust/overheated labels.
+  - [x] 3.4 Audit `HotColdCard`, `web/pages/api/v1/trends/skater-power.ts`, and supporting dashboard movement helpers, then record findings in `tasks/artifacts/forge-dashboard-trend-movement-health-audit.md`.
+  - [x] 3.5 Verify trend-movement freshness ownership by tracing skater trend sources, refresh cadence, fallback behavior, and any mixed-cadence risk with ownership-band filtering.
+  - [x] 3.6 Reconcile Hot/Cold and Trending Up/Down UI output against raw skater-power responses, normalized trend-band labels, and displayed short-term explanation language.
+  - [x] 3.7 Audit `GoalieRiskCard`, `web/pages/api/v1/forge/goalies.ts`, and supporting normalizers/helpers, then record findings in `tasks/artifacts/forge-dashboard-goalie-health-audit.md`.
+  - [x] 3.8 Verify goalie freshness ownership by tracing `forge_goalie_projections`, uncertainty inputs, start-chart dependencies, and the jobs that keep goalie-facing data current within runtime expectations.
+  - [x] 3.9 Reconcile the goalie band UI against goalie API responses, model recommendation fields, uncertainty drivers, and displayed starter-risk/confidence labels to confirm the component is representing goalie data accurately.
 - [ ] 4.0 Audit the FORGE landing page and the team/player drill-in routes for preview consistency, routing integrity, degraded-state handling, and full-chain data health
   - [ ] 4.1 Audit `web/pages/FORGE.tsx` as a preview/gateway surface and record findings in `tasks/artifacts/forge-dashboard-route-family-health-audit.md`, with emphasis on preview-to-dashboard consistency.
   - [ ] 4.2 Verify that landing-page preview modules use data and stale/degraded behavior consistent with the full dashboard components they preview.
@@ -115,3 +121,15 @@
   - [ ] 6.3 Convert the audit findings into the next implementation task list for component-by-component fixes and verification work.
   - [ ] 6.4 Ensure the follow-on implementation plan explicitly includes a rolling “newly discovered issues and optimizations” backlog instead of only a fixed checklist.
   - [ ] 6.5 Update the task tracker and relevant artifact references so the audit outputs act as the authoritative operational reference for the next phase.
+
+## Quarantine List
+
+- `/api/v1/start-chart` - Matchups reconcile, but the audited slate showed a stale or empty goalie leg while the surface still looked current.
+- `/api/v1/forge/goalies` - Goalie-facing data is outdated relative to the audited slate window and is blocking a healthy slate/goalie contract.
+- `/api/v1/transactions/ownership-trends` - Ownership universe is truncated and the stable-ID merge path is not healthy in live data.
+- `/api/v1/transactions/ownership-snapshots` - Current season mapping is misaligned with live Yahoo rows, producing null ownership for valid dashboard players.
+- `/api/team-ratings` - Output date is current, but `trend10` is flat for every team on the audited date.
+- `/api/v1/trends/team-ctpi` - Payload recency is stale and truncated to early-November rows while request-time metadata makes it look current.
+- `/api/v1/sustainability/trends` - Mid-March `l10` continuity gap forces materially stale fallback snapshots for current-date dashboard requests.
+- `/api/v1/trends/skater-power` - The movement surface stamps request-time `generatedAt` instead of true source recency, so freshness and stale warnings are not trustworthy.
+- `/api/v1/trends/player-trends` - The apparent writer/readback surface for `player_trend_metrics` is unscheduled in cron and currently exposes materially stale October-dated rows.
