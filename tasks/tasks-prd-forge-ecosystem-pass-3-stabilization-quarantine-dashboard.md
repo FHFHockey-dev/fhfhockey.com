@@ -48,6 +48,9 @@
 - `web/__tests__/pages/api/v1/db/update-power-rankings.test.ts` - Regression test proving the legacy power-rankings loader is disabled and marked non-canonical.
 - `web/pages/api/v1/forge/accuracy.ts` - Consumer reader that should continue reflecting canonical FORGE outputs after endpoint cleanup.
 - `web/pages/api/v1/runs/latest.ts` - Latest-run metadata reader that can help expose active data date and fallback state.
+- `web/__tests__/pages/api/v1/runs/latest.test.ts` - Regression test proving the latest-run reader exposes scan-friendly run metadata instead of only raw row payloads.
+- `web/lib/api/scanSummary.ts` - Shared scan-summary helper that standardizes active data date, fallback usage, row counts, and blocking issue counts across run and reader surfaces.
+- `web/lib/projections/compatibilityInventory.ts` - Shared compatibility cleanup ledger for removed shim paths, duplicate reader namespaces, and surviving transitional routes.
 - `web/pages/index.tsx` - Landing dashboard page that needs decomposition, hierarchy cleanup, and responsive polish.
 - `web/styles/Home.module.scss` - Homepage stylesheet with the current desktop-first layout assumptions, including the hard `min-width`.
 - `web/components/TransactionTrends/TransactionTrends.tsx` - Homepage insight module that needs stronger hierarchy, state handling, and mobile behavior.
@@ -96,24 +99,24 @@
   - [x] 3.4 Tighten freshness and dependency preflight in the rolling and projection operator surfaces so stale upstream data blocks false validation rather than quietly producing believable-but-invalid outputs. [Deps: 3.1, 3.2, 3.3] [Files: `web/pages/api/v1/db/update-rolling-player-averages.ts`, `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`, `web/pages/api/v1/db/run-projection-v2.ts`, `web/pages/api/v1/db/run-projection-accuracy.ts`] [AC: routes fail or warn clearly when required upstream freshness conditions are not met]
   - [x] 3.5 Expose same-day vs fallback serving state in the key consumer readers so dashboard and validation workflows can tell whether they are seeing requested-date data or a fallback snapshot. [Deps: 3.4] [Files: `web/pages/api/v1/forge/players.ts`, `web/pages/api/v1/forge/goalies.ts`, `web/pages/api/v1/start-chart.ts`, `web/lib/dashboard/freshness.ts`, `web/lib/dashboard/dataFetchers.ts`] [AC: reader payloads or metadata make fallback date behavior explicit]
 
-- [ ] 4.0 Improve run-surface observability, fallback visibility, and compatibility cleanup tracking for projection and dashboard consumers
-  - [ ] 4.1 Standardize run summaries and endpoint metadata so active data date, fallback usage, row counts, and blocking freshness gaps are visible at scan speed for both operator routes and consumer readers. [Deps: 3.4, 3.5] [Files: `web/pages/api/v1/db/run-rolling-forge-pipeline.ts`, `web/pages/api/v1/db/run-projection-v2.ts`, `web/pages/api/v1/db/run-projection-accuracy.ts`, `web/pages/api/v1/runs/latest.ts`, `web/pages/api/v1/forge/players.ts`, `web/pages/api/v1/forge/goalies.ts`] [AC: run and read surfaces expose enough metadata to diagnose stale or partial outputs without code spelunking]
-  - [ ] 4.2 Keep the compatibility cleanup visible by inventorying remaining legacy field families, shim imports, duplicate readers, and transitional routes directly in maintained code comments or response metadata rather than letting them fade into implicit knowledge. [Deps: 2.2, 2.3, 2.5] [Files: `web/lib/projections/runProjectionV2.ts`, `web/lib/projections/run-forge-projections.ts`, `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`, related route handlers] [AC: surviving compatibility surfaces are explicitly marked temporary with a concrete removal direction]
-  - [ ] 4.3 Add or extend regression coverage around pipeline-stage alignment, fallback-date signaling, goalie-writer exclusivity, and reader-namespace cleanup so stabilization work stays enforced after follow-up changes. [Deps: 1.4, 2.1, 2.2, 3.5] [Files: `web/lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts`, `web/lib/projections/runProjectionV2.test.ts`, `web/lib/projections/module-imports.test.ts`, `web/lib/projections/goaliePipeline.test.ts`, `web/lib/dashboard/normalizers.test.ts`, `web/lib/dashboard/playerOwnership.test.ts`, `web/lib/dashboard/teamContext.test.ts`, `web/lib/dashboard/topAddsScheduleContext.test.ts`, `web/lib/dashboard/topAddsRanking.test.ts`] [AC: targeted tests cover the pass-3 stabilization promises that are easy to regress]
+- [x] 4.0 Improve run-surface observability, fallback visibility, and compatibility cleanup tracking for projection and dashboard consumers
+  - [x] 4.1 Standardize run summaries and endpoint metadata so active data date, fallback usage, row counts, and blocking freshness gaps are visible at scan speed for both operator routes and consumer readers. [Deps: 3.4, 3.5] [Files: `web/pages/api/v1/db/run-rolling-forge-pipeline.ts`, `web/pages/api/v1/db/run-projection-v2.ts`, `web/pages/api/v1/db/run-projection-accuracy.ts`, `web/pages/api/v1/runs/latest.ts`, `web/pages/api/v1/forge/players.ts`, `web/pages/api/v1/forge/goalies.ts`] [AC: run and read surfaces expose enough metadata to diagnose stale or partial outputs without code spelunking]
+  - [x] 4.2 Keep the compatibility cleanup visible by inventorying remaining legacy field families, shim imports, duplicate readers, and transitional routes directly in maintained code comments or response metadata rather than letting them fade into implicit knowledge. [Deps: 2.2, 2.3, 2.5] [Files: `web/lib/projections/runProjectionV2.ts`, `web/lib/projections/run-forge-projections.ts`, `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`, related route handlers] [AC: surviving compatibility surfaces are explicitly marked temporary with a concrete removal direction]
+  - [x] 4.3 Add or extend regression coverage around pipeline-stage alignment, fallback-date signaling, goalie-writer exclusivity, and reader-namespace cleanup so stabilization work stays enforced after follow-up changes. [Deps: 1.4, 2.1, 2.2, 3.5] [Files: `web/lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts`, `web/lib/projections/runProjectionV2.test.ts`, `web/lib/projections/module-imports.test.ts`, `web/lib/projections/goaliePipeline.test.ts`, `web/lib/dashboard/normalizers.test.ts`, `web/lib/dashboard/playerOwnership.test.ts`, `web/lib/dashboard/teamContext.test.ts`, `web/lib/dashboard/topAddsScheduleContext.test.ts`, `web/lib/dashboard/topAddsRanking.test.ts`] [AC: targeted tests cover the pass-3 stabilization promises that are easy to regress]
 
-- [ ] 5.0 Refactor the landing dashboard into a more cohesive, responsive, summary-first experience without expanding into a full-site redesign
-  - [ ] 5.1 Break `web/pages/index.tsx` into clearer homepage sections or shared components so hero content, data loading, module state, and layout concerns are no longer concentrated in one large page file. [Deps: none] [Files: `web/pages/index.tsx`, optional new homepage component files] [AC: homepage responsibilities are separated enough to support targeted polish without another monolith]
-  - [ ] 5.2 Rework the first viewport around a concise product story that highlights today’s slate, schedule context, and next-click actions instead of leading with dense utility blocks. [Deps: 5.1] [Files: `web/pages/index.tsx`, `web/styles/Home.module.scss`] [AC: the top of the page communicates what the product helps a fantasy hockey user do today]
-  - [ ] 5.3 Remove the hard desktop-only layout assumptions, including the `min-width: 1300px` behavior, and redesign section spacing so tablet and mobile layouts feel deliberate rather than squeezed. [Deps: 5.1] [Files: `web/styles/Home.module.scss`, `web/pages/index.tsx`] [AC: homepage layout works cleanly on mobile, tablet, and desktop without horizontal-force hacks]
-  - [ ] 5.4 Add consistent loading, empty, error, and stale-state presentation across homepage modules so panels do not look current when their data is degraded or missing. [Deps: 3.5, 5.1] [Files: `web/pages/index.tsx`, `web/lib/dashboard/dataFetchers.ts`, `web/lib/dashboard/freshness.ts`, homepage component files] [AC: homepage states are visually and semantically consistent across modules]
-  - [ ] 5.5 Refine `TransactionTrends` so it reads as a first-class homepage insight card with better hierarchy, spacing, and summary framing instead of an isolated table block. [Deps: 5.1, 5.4] [Files: `web/components/TransactionTrends/TransactionTrends.tsx`, `web/pages/index.tsx`, `web/styles/Home.module.scss`] [AC: the module is easier to scan quickly and feels integrated with the homepage visual system]
-  - [ ] 5.6 Refine `TeamStandingsChart` and adjacent standings/injuries presentation so the homepage emphasizes compact insight first and expandable detail second. [Deps: 5.1, 5.4] [Files: `web/components/TeamStandingsChart/TeamStandingsChart.tsx`, `web/pages/index.tsx`, `web/styles/Home.module.scss`] [AC: standings-related content no longer dominates the page with raw table weight]
+- [x] 5.0 Refactor the landing dashboard into a more cohesive, responsive, summary-first experience without expanding into a full-site redesign
+  - [x] 5.1 Break `web/pages/index.tsx` into clearer homepage sections or shared components so hero content, data loading, module state, and layout concerns are no longer concentrated in one large page file. [Deps: none] [Files: `web/pages/index.tsx`, optional new homepage component files] [AC: homepage responsibilities are separated enough to support targeted polish without another monolith]
+  - [x] 5.2 Rework the first viewport around a concise product story that highlights today’s slate, schedule context, and next-click actions instead of leading with dense utility blocks. [Deps: 5.1] [Files: `web/pages/index.tsx`, `web/styles/Home.module.scss`] [AC: the top of the page communicates what the product helps a fantasy hockey user do today]
+  - [x] 5.3 Remove the hard desktop-only layout assumptions, including the `min-width: 1300px` behavior, and redesign section spacing so tablet and mobile layouts feel deliberate rather than squeezed. [Deps: 5.1] [Files: `web/styles/Home.module.scss`, `web/pages/index.tsx`] [AC: homepage layout works cleanly on mobile, tablet, and desktop without horizontal-force hacks]
+  - [x] 5.4 Add consistent loading, empty, error, and stale-state presentation across homepage modules so panels do not look current when their data is degraded or missing. [Deps: 3.5, 5.1] [Files: `web/pages/index.tsx`, `web/lib/dashboard/dataFetchers.ts`, `web/lib/dashboard/freshness.ts`, homepage component files] [AC: homepage states are visually and semantically consistent across modules]
+  - [x] 5.5 Refine `TransactionTrends` so it reads as a first-class homepage insight card with better hierarchy, spacing, and summary framing instead of an isolated table block. [Deps: 5.1, 5.4] [Files: `web/components/TransactionTrends/TransactionTrends.tsx`, `web/pages/index.tsx`, `web/styles/Home.module.scss`] [AC: the module is easier to scan quickly and feels integrated with the homepage visual system]
+  - [x] 5.6 Refine `TeamStandingsChart` and adjacent standings/injuries presentation so the homepage emphasizes compact insight first and expandable detail second. [Deps: 5.1, 5.4] [Files: `web/components/TeamStandingsChart/TeamStandingsChart.tsx`, `web/pages/index.tsx`, `web/styles/Home.module.scss`] [AC: standings-related content no longer dominates the page with raw table weight]
 
-- [ ] 6.0 Validate dispositions, complete remaining deprecation decisions, and prepare the pass-3 remediation handoff for implementation follow-through
-  - [ ] 6.1 Run targeted regression tests for rolling, projection, goalie, and dashboard surfaces touched by the stabilization work, then fix any pass-3 regressions before broader validation. [Deps: 1.5, 2.5, 3.5, 4.3, 5.6] [Files: `web/lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts`, `web/lib/projections/runProjectionV2.test.ts`, `web/lib/projections/module-imports.test.ts`, `web/lib/projections/goaliePipeline.test.ts`, `web/lib/dashboard/normalizers.test.ts`, `web/lib/dashboard/playerOwnership.test.ts`, `web/lib/dashboard/teamContext.test.ts`, `web/lib/dashboard/topAddsScheduleContext.test.ts`, `web/lib/dashboard/topAddsRanking.test.ts`] [AC: targeted touched-scope tests pass]
-  - [ ] 6.2 Run repository-level integrity checks for the touched surfaces, including import/type validation in `web`, to confirm that deprecations and homepage refactors did not leave unresolved runtime paths behind. [Deps: 6.1] [Files: `web/**`] [AC: touched-scope type/import validation passes cleanly]
-  - [ ] 6.3 Reconcile the final implementation outcome against the PRD’s endpoint registry, quarantine ledger, freshness risks, and remediation plan so every high-risk surface has a concrete disposition and next action. [Deps: 6.1, 6.2] [Files: `tasks/prd-forge-ecosystem-pass-3-stabilization-quarantine-dashboard.md`, `tasks/tasks-prd-forge-ecosystem-pass-3-stabilization-quarantine-dashboard.md`] [AC: no meaningful pass-3 surface is left in an undocumented ambiguous state]
-  - [ ] 6.4 Capture any unresolved follow-up work as implementation next steps inside this task file or the source PRD rather than creating new pass-3 planning markdown. [Deps: 6.3] [Files: `tasks/prd-forge-ecosystem-pass-3-stabilization-quarantine-dashboard.md`, `tasks/tasks-prd-forge-ecosystem-pass-3-stabilization-quarantine-dashboard.md`] [AC: the handoff is implementation-ready without creating more pass-3 planning sprawl]
+- [x] 6.0 Validate dispositions, complete remaining deprecation decisions, and prepare the pass-3 remediation handoff for implementation follow-through
+  - [x] 6.1 Run targeted regression tests for rolling, projection, goalie, and dashboard surfaces touched by the stabilization work, then fix any pass-3 regressions before broader validation. [Deps: 1.5, 2.5, 3.5, 4.3, 5.6] [Files: `web/lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts`, `web/lib/projections/runProjectionV2.test.ts`, `web/lib/projections/module-imports.test.ts`, `web/lib/projections/goaliePipeline.test.ts`, `web/lib/dashboard/normalizers.test.ts`, `web/lib/dashboard/playerOwnership.test.ts`, `web/lib/dashboard/teamContext.test.ts`, `web/lib/dashboard/topAddsScheduleContext.test.ts`, `web/lib/dashboard/topAddsRanking.test.ts`] [AC: targeted touched-scope tests pass]
+  - [x] 6.2 Run repository-level integrity checks for the touched surfaces, including import/type validation in `web`, to confirm that deprecations and homepage refactors did not leave unresolved runtime paths behind. [Deps: 6.1] [Files: `web/**`] [AC: touched-scope type/import validation passes cleanly]
+  - [x] 6.3 Reconcile the final implementation outcome against the PRD’s endpoint registry, quarantine ledger, freshness risks, and remediation plan so every high-risk surface has a concrete disposition and next action. [Deps: 6.1, 6.2] [Files: `tasks/prd-forge-ecosystem-pass-3-stabilization-quarantine-dashboard.md`, `tasks/tasks-prd-forge-ecosystem-pass-3-stabilization-quarantine-dashboard.md`] [AC: no meaningful pass-3 surface is left in an undocumented ambiguous state]
+  - [x] 6.4 Capture any unresolved follow-up work as implementation next steps inside this task file or the source PRD rather than creating new pass-3 planning markdown. [Deps: 6.3] [Files: `tasks/prd-forge-ecosystem-pass-3-stabilization-quarantine-dashboard.md`, `tasks/tasks-prd-forge-ecosystem-pass-3-stabilization-quarantine-dashboard.md`] [AC: the handoff is implementation-ready without creating more pass-3 planning sprawl]
 
 ### 1.1 Storage Chain Findings
 
@@ -284,5 +287,146 @@
 - `./node_modules/.bin/vitest --run __tests__/pages/api/v1/forge/players.test.ts __tests__/pages/api/v1/forge/goalies.test.ts __tests__/pages/api/v1/start-chart.test.ts`
 - `npx tsc --noEmit`
 
+### 4.1 Scan-Speed Summary Contract
+
+- Added `web/lib/api/scanSummary.ts` so run and reader endpoints can return one shared `scanSummary` contract with `activeDataDate`, `requestedDate`, `fallbackApplied`, `rowCounts`, `blockingIssueCount`, and concise notes.
+- `/api/v1/forge/players` and `/api/v1/forge/goalies` now expose scan-friendly top-level summaries alongside their existing `serving` and diagnostics metadata, so fallback context and returned row counts are visible without opening deeper payload sections.
+- `/api/v1/db/run-rolling-forge-pipeline` now derives a top-level pipeline `scanSummary` from stage results and child-route summaries, including rolling/projection/accuracy row counts plus blocking freshness or stage-failure counts.
+- `/api/v1/db/run-projection-v2` and `/api/v1/db/run-projection-accuracy` now expose the same `scanSummary` contract across ready, partial, blocked, timeout, and dependency-error responses, so operators can see active date, row counts, and blocker counts at a glance.
+- `/api/v1/runs/latest` no longer returns only the raw run row; it now also exposes scan-friendly latest-run metadata, including active run date, latest run status, and row counts extracted from `forge_runs.metrics`.
+- Added or updated regression coverage for rolling-pipeline summary metadata, projection-run summary metadata, projection-accuracy summary metadata, FORGE reader summaries, goalie reader snapshot shape, and the new latest-run reader contract.
+- Validation for this sub-task:
+- `./node_modules/.bin/vitest --run __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts __tests__/pages/api/v1/db/run-projection-v2.test.ts __tests__/pages/api/v1/db/run-projection-accuracy.test.ts __tests__/pages/api/v1/forge/players.test.ts __tests__/pages/api/v1/forge/goalies.test.ts __tests__/pages/api/v1/runs/latest.test.ts`
+- `npx tsc --noEmit`
+
+### 4.2 Compatibility Cleanup Inventory
+
+- Added `web/lib/projections/compatibilityInventory.ts` as the maintained cleanup ledger for the removed `runProjectionV2.ts` shim, the still-readable deprecated `/api/v1/projections/*` reader namespace, and the surviving transitional route inventory.
+- `run-forge-projections.ts` now carries an explicit canonical-runner note pointing maintainers to that ledger, so the removed-shim replacement path is documented in live code rather than only in old task context.
+- `fetchRollingPlayerAverages.ts` now carries a focused compatibility inventory comment block for the remaining `gp_pct_*` and related GP-family aliases, including the removal condition tied to the later participation-schema migration.
+- `/api/v1/db/run-projection-v2` and `/api/v1/db/run-rolling-forge-pipeline` now return a shared `compatibilityInventory` block so operators can see the removed shim path, duplicate reader namespaces, and transitional route inventory without reopening task docs.
+- `/api/v1/forge/players`, `/api/v1/forge/goalies`, and `/api/v1/start-chart` now return narrow route-level compatibility metadata so canonical readers explicitly advertise their deprecated sibling namespace or transitional materializer relationship.
+- Validation for this sub-task:
+- `./node_modules/.bin/vitest --run __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts __tests__/pages/api/v1/db/run-projection-v2.test.ts __tests__/pages/api/v1/forge/players.test.ts __tests__/pages/api/v1/forge/goalies.test.ts __tests__/pages/api/v1/start-chart.test.ts`
+- `npx tsc --noEmit`
+
+### 4.3 Targeted Regression Coverage
+
+- Extended `web/lib/projections/module-imports.test.ts` so the cleanup inventory and filesystem state must agree that `web/lib/projections/runProjectionV2.ts` is gone and `run-forge-projections.ts` is the canonical replacement path.
+- Extended `web/lib/projections/goaliePipeline.test.ts` so the pipeline spec must keep `/api/v1/db/update-goalie-projections-v2` as the goalie-start writer stage and must not reintroduce `/api/v1/db/update-goalie-projections` as a live pipeline endpoint.
+- Extended `web/lib/dashboard/normalizers.test.ts` so start-chart normalization explicitly tolerates fallback-serving metadata, scan summaries, and compatibility inventory fields without changing the normalized dashboard shape.
+- These additions keep the pass-3 promises covered at the library level even if route-level response contracts evolve again later.
+- Validation for this sub-task:
+- `./node_modules/.bin/vitest --run lib/projections/module-imports.test.ts lib/projections/goaliePipeline.test.ts lib/dashboard/normalizers.test.ts`
+- `npx tsc --noEmit`
+
+### 5.1 Homepage Responsibility Split
+
+- `web/pages/index.tsx` now acts as the homepage orchestrator instead of owning schedule fetch logic, date navigation, standings sorting, injury pagination, and every render block inline.
+- Added `web/components/HomePage/useHomepageGames.ts` to hold the client-side schedule refresh, live-game overlay hydration, standings-record attachment, current-date state, and hero heading text selection.
+- Added `web/components/HomePage/HomepageGamesSection.tsx` for the top games hero block so the first viewport layout is isolated from page-level data bootstrap concerns.
+- Added `web/components/HomePage/HomepageStandingsInjuriesSection.tsx` so standings ordering, injury pagination, and both table renderers now live with the module they belong to instead of bloating `index.tsx`.
+- This keeps the current homepage content order intact while giving later polish tasks a cleaner place to update hero messaging, module states, and layout without re-growing one page-file monolith.
+- Validation for this sub-task:
+- `npx tsc --noEmit`
+
+### 5.2 First-Viewport Product Story
+
+- Reworked `web/components/HomePage/HomepageGamesSection.tsx` so the page now opens with a concise slate hero instead of dropping directly into the dense games utility header.
+- The new top block now explains the homepage value in one pass, summarizes the current slate with date/slate/live-or-upcoming context, and adapts the supporting copy when games are live, merely upcoming, or absent on the selected date.
+- Added direct next-click actions for `/start-chart`, `/goalies`, and `/trends` so the homepage points users toward the core decision surfaces instead of making them infer where to go next.
+- Updated `web/styles/Home.module.scss` with dedicated first-viewport hero, summary-card, and action-link styling while keeping the downstream games grid and lower sections intact for the next layout tasks.
+- Validation for this sub-task:
+- `npx tsc --noEmit`
+
+### 5.3 Responsive Layout Cleanup
+
+- Removed the homepage-level `min-width: 1300px` assumption from `web/styles/Home.module.scss` and replaced the shell sizing with fluid max-width, clamp-based spacing, and inline padding that works across desktop, tablet, and mobile without horizontal forcing.
+- Replaced the mixed grid-plus-flex games layout with a true responsive grid using `auto-fit` card sizing, so the slate cards now reflow naturally instead of depending on brittle flex-basis math tuned for desktop widths.
+- Added a non-mobile collapse point for the new slate hero so its summary rail and intro content stack cleanly on tablet-sized layouts instead of waiting until the smallest breakpoint.
+- Converted the standings-and-injuries area to an explicit grid with a tablet two-column state and mobile single-column fallback, making the lower homepage modules feel intentionally arranged rather than desktop-only sections squeezed smaller.
+- Tightened supporting wrapper rules like `chartContainer` and mobile card widths so the page no longer relies on horizontal-overflow escape hatches to stay usable.
+- Validation for this sub-task:
+- `npx tsc --noEmit`
+
+### 5.4 Consistent Homepage Module States
+
+- Added `buildHomepageModulePresentation` to `web/lib/dashboard/freshness.ts` so homepage modules can derive one shared loading/empty/error/stale presentation contract instead of inventing their own state language.
+- Added `web/lib/dashboard/freshness.test.ts` to lock down that state-priority logic, including the stale-path behavior that had no direct regression coverage before.
+- `web/components/HomePage/useHomepageGames.ts` now exposes loading, error, and last-updated state for the slate module, and `web/components/HomePage/HomepageGamesSection.tsx` now renders a shared status panel when the slate is refreshing, unavailable, empty, or stale.
+- `web/pages/index.tsx` now preserves SSR error context for standings and injuries via explicit props instead of collapsing every failure into silent empty arrays, and `web/components/HomePage/HomepageStandingsInjuriesSection.tsx` now renders those conditions through the same shared status treatment.
+- `web/components/TransactionTrends/TransactionTrends.tsx` now treats stale and empty responses as first-class panel states, not just loading/error edge cases.
+- `web/components/TeamStandingsChart/TeamStandingsChart.tsx` now exposes loading, empty, error, and stale presentation instead of silently drawing nothing when its fetch fails or returns no usable history.
+- Validation for this sub-task:
+- `./node_modules/.bin/vitest --run lib/dashboard/freshness.test.ts`
+- `npx tsc --noEmit`
+
+### 5.5 Transaction Trends Summary Framing
+
+- Reworked `web/components/TransactionTrends/TransactionTrends.tsx` so the module now opens with a short market-pulse explanation and a compact summary strip before the detailed riser/faller tables.
+- Added summary cards for the active window/filter scope, the current lead riser, and the current lead faller so the module communicates the main signal immediately before users read row-by-row tables.
+- Updated `web/components/TransactionTrends/TransactionTrends.module.scss` with matching summary-card styling, spacing, and mobile collapse behavior so the module reads as a homepage insight card instead of an isolated data table block.
+- The underlying filters, tables, pagination, and stale-state behavior from `5.4` remain intact; this task changed hierarchy and scanability rather than data semantics.
+- Validation for this sub-task:
+- `npx tsc --noEmit`
+
+### 5.6 Standings Insight Hierarchy
+
+- Reworked `web/components/TeamStandingsChart/TeamStandingsChart.tsx` so the module now opens with a compact standings-signal header that explains what the chart is for before exposing the full control surface and team toggle matrix.
+- Added chart-level summary stats for current metric, view mode, and selected-team count in `web/components/TeamStandingsChart/TeamStandingsChart.module.scss`, making the chart read as a quick insight card first and a full exploration tool second.
+- Softened the adjacent standings and injuries chrome in `web/styles/Home.module.scss` by reducing header weight, lightening table separators, and toning down hover/table-header emphasis so those lower modules support the chart instead of visually competing with it.
+- This keeps the detailed standings and injury tables available, but the homepage no longer treats them as the dominant visual payload in the standings area.
+- Validation for this sub-task:
+- `npx tsc --noEmit`
+
+### 6.1 Targeted Regression Validation
+
+- Ran the pass-3 touched-scope regression slice across rolling, projection, goalie, and dashboard library contracts:
+- `./node_modules/.bin/vitest --run lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts lib/projections/runProjectionV2.test.ts lib/projections/module-imports.test.ts lib/projections/goaliePipeline.test.ts lib/dashboard/normalizers.test.ts lib/dashboard/playerOwnership.test.ts lib/dashboard/teamContext.test.ts lib/dashboard/topAddsScheduleContext.test.ts lib/dashboard/topAddsRanking.test.ts lib/dashboard/freshness.test.ts`
+- Result: all targeted tests passed (`10` files, `122` tests), so no additional pass-3 regression fixes were needed before moving to broader integrity checks.
+
+### 6.2 Touched-Surface Integrity Checks
+
+- Ran touched-surface import/type validation for `web`:
+- `npx tsc --noEmit`
+- Ran a runtime-contract regression slice across the touched operator and reader routes:
+- `./node_modules/.bin/vitest --run __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts __tests__/pages/api/v1/db/run-projection-v2.test.ts __tests__/pages/api/v1/db/run-projection-accuracy.test.ts __tests__/pages/api/v1/forge/players.test.ts __tests__/pages/api/v1/forge/goalies.test.ts __tests__/pages/api/v1/start-chart.test.ts __tests__/pages/api/v1/runs/latest.test.ts`
+- Result: both checks passed cleanly (`7` files, `16` tests on the route slice), so the deprecations, metadata additions, and homepage refactors did not leave unresolved touched-scope runtime paths behind.
+
+### 6.3 PRD Reconciliation and Disposition Lock
+
+- Updated `tasks/prd-forge-ecosystem-pass-3-stabilization-quarantine-dashboard.md` so the endpoint registry, quarantine ledger, freshness review, deprecation candidates, and remediation plan now match implemented pass-3 reality instead of pre-implementation assumptions.
+- Closed the largest stale claims in the PRD:
+- `/api/v1/start-chart` is now documented as a canonical skater reader over `forge_player_projections`, not a legacy `player_projections` consumer.
+- `rollingForgePipeline.ts` and `/api/v1/db/run-rolling-forge-pipeline` are now documented as aligned with the real stage-8 legacy-materialization story instead of being treated as spec-drifted.
+- Disabled routes (`update-goalie-projections.ts`, `update-team-power-ratings-new.ts`, `update-rolling-games.ts`, `update-power-rankings.ts`) are now documented as `410 Gone` quarantine surfaces rather than live alternates.
+- The removed `runProjectionV2.ts` shim is now documented as deleted runtime debt with docs-cleanup follow-up only.
+- Reframed the freshness section around residual risk instead of already-fixed problems:
+- builder repair gaps are now documented as scope-selection risk rather than missing capabilities
+- fallback-serving risk is now documented as metadata-interpretation risk rather than silent behavior
+- `update-start-chart-projections.ts` is explicitly called out as the remaining transitional legacy materializer
+- Rewrote the landing-page audit and improvement plan to distinguish completed pass-3 homepage work from optional later polish, so the PRD no longer reads as if the homepage refactor never happened.
+- Documented the remaining concrete follow-up set for `6.4`: verify hidden callers before deleting `410` routes, map remaining `player_projections` consumers, clean stale `runProjectionV2.ts` docs, decide long-term `goalie_start_projections` ownership, and optionally continue homepage polish after browser verification.
+
+### 6.4 Follow-Up Queue Capture
+
+- Kept the unresolved post-pass-3 work inside the existing pass-3 artifacts instead of creating any new planning markdown.
+- The source PRD now carries the high-level residual queue under `Remaining Follow-Up After Pass 3`.
+- This task file now carries the implementation next-step queue in explicit follow-up task groups so future work can continue directly from the same handoff artifact.
+- No additional pass-3 planning documents are needed; the PRD and this task file remain the only active handoff sources.
+
 - [ ] 7.0 Clean up stale documentation and task references that still describe `runProjectionV2.ts` as an active projection-runner file
   - [ ] 7.1 Update active docs and task guides that still describe `web/lib/projections/runProjectionV2.ts` as a live runtime path so the repo no longer teaches the removed shim as current architecture. [Deps: 2.3] [Files: `FORGE_EXPLAINED.md`, `tasks/*.md`, related active runbooks/docs] [AC: active guidance points to `run-forge-projections.ts` unless a historical note is explicitly marked as historical]
+
+- [ ] 8.0 Retire quarantined legacy operator routes now that pass-3 marked their canonical replacements and disabled their runtime behavior
+  - [ ] 8.1 Audit hidden schedulers, cron jobs, benchmarks, logs, and operator runbooks for continued use of disabled `410 Gone` routes: `update-goalie-projections.ts`, `update-team-power-ratings-new.ts`, `update-rolling-games.ts`, and `update-power-rankings.ts`. [Deps: 6.4] [Files: `vercel.json`, scheduler inventories, runbooks, observability surfaces, related docs] [AC: every disabled legacy route has a documented caller audit result]
+  - [ ] 8.2 Delete the disabled legacy operator routes whose caller audit is clear, and update any surviving docs or runbooks that still reference them. [Deps: 8.1] [Files: `web/pages/api/v1/db/update-goalie-projections.ts`, `web/pages/api/v1/db/update-team-power-ratings-new.ts`, `web/pages/api/v1/db/update-rolling-games.ts`, `web/pages/api/v1/db/update-power-rankings.ts`, related docs/tests] [AC: no disabled legacy operator route remains without an explicit retention reason]
+
+- [ ] 9.0 Retire the remaining transitional start-chart legacy materialization after consumer verification
+  - [ ] 9.1 Map all remaining readers, jobs, docs, and manual workflows that still rely on `player_projections` or `/api/v1/db/update-start-chart-projections`. [Deps: 6.4] [Files: `web/**`, docs, task files, observability surfaces] [AC: the remaining `player_projections` dependency graph is explicit enough to support deletion or replacement]
+  - [ ] 9.2 Delete or replace `update-start-chart-projections.ts` once `player_projections` consumers are either retired or intentionally migrated to canonical FORGE read logic. [Deps: 9.1] [Files: `web/pages/api/v1/db/update-start-chart-projections.ts`, related readers/tests/docs] [AC: the legacy start-chart materializer is no longer an ambiguous surviving side channel]
+
+- [ ] 10.0 Resolve the remaining ownership and verification questions left open by pass 3
+  - [ ] 10.1 Decide whether `goalie_start_projections` should remain a shared table name or be renamed/wrapped under clearer FORGE ownership in a later pass, then document the decision in active operator guidance. [Deps: 6.4] [Files: `tasks/prd-forge-ecosystem-pass-3-stabilization-quarantine-dashboard.md`, active runbooks/docs, related route metadata] [AC: the table’s long-term ownership story is explicit]
+  - [ ] 10.2 Verify whether support-only WGO writers such as `update-wgo-ly.ts` and adjacent helper tables still have active product consumers, and quarantine or retire them if they do not. [Deps: 6.4] [Files: `web/pages/api/v1/db/update-wgo-ly.ts`, related WGO writers/readers/docs] [AC: support-only WGO surfaces have an explicit keep-or-retire decision]
+  - [ ] 10.3 Run browser-level homepage verification for the new summary-first landing experience, then decide whether card-first standings/injuries or a lightweight “today in fantasy” summary layer should become a later implementation slice. [Deps: 5.6, 6.4] [Files: `web/pages/index.tsx`, `web/components/HomePage/**`, `web/components/TransactionTrends/**`, `web/components/TeamStandingsChart/**`, `web/styles/Home.module.scss`] [AC: homepage follow-up is driven by observed UX gaps instead of another speculative redesign pass]
