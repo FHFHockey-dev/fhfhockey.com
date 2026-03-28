@@ -49,7 +49,7 @@ describe("/api/v1/db/update-rolling-games", () => {
     setLegacyMainLoaderForTests(loaderMock);
   });
 
-  it("loads the legacy CommonJS module through createRequire", async () => {
+  it("loads the legacy rolling-games module through the async bridge", async () => {
     const main = await loadLegacyMain();
 
     await main("recent");

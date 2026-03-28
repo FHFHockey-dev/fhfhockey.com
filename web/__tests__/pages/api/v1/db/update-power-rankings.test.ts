@@ -49,7 +49,7 @@ describe("/api/v1/db/update-power-rankings", () => {
     setLegacyMainLoaderForTests(loaderMock);
   });
 
-  it("loads the legacy CommonJS module through createRequire", async () => {
+  it("loads the legacy power-rankings module through the async bridge", async () => {
     const main = await loadLegacyMain();
 
     await main();

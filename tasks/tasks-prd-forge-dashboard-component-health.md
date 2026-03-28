@@ -4,8 +4,9 @@
 - `tasks/tasks-prd-forge-dashboard-component-health.md` - Task tracker for the component-health audit and follow-on planning work.
 - `tasks/artifacts/forge-dashboard-component-health-inventory.md` - Completed baseline inventory of the in-scope FORGE components, routes, adapters, serving APIs, source tables, and current cron/runtime ownership mapping.
 - `tasks/artifacts/forge-dashboard-component-health-scoring-model.md` - Completed scoring model defining `green / yellow / red` criteria, evidence requirements, downgrade rules, and component-family acceptance checks.
-- `tasks/artifacts/forge-dashboard-component-health-matrix.md` - Planned green/yellow/red status matrix with reason summaries and evidence links for each component.
-- `tasks/artifacts/forge-dashboard-component-health-remediation-backlog.md` - Planned running backlog for newly discovered bugs, optimizations, cron gaps, and observability gaps found during the audit.
+- `tasks/artifacts/forge-dashboard-component-health-matrix.md` - Completed authoritative green/yellow/red status matrix with reason summaries, cron-ownership notes, and evidence links for each component.
+- `tasks/artifacts/forge-dashboard-component-health-remediation-backlog.md` - Completed grouped remediation backlog that also acts as the rolling capture file for newly discovered bugs, optimizations, cron gaps, and observability gaps.
+- `tasks/tasks-forge-dashboard-component-remediation.md` - Next implementation task list for component-by-component fixes, verification work, and quarantine removal.
 - `tasks/artifacts/forge-dashboard-component-reconciliation-checks.md` - Completed reference artifact defining source-to-UI reconciliation methods, comparison paths, and evidence requirements for each component family.
 - `tasks/artifacts/forge-dashboard-component-audit-procedure.md` - Completed step-by-step audit procedure for separating freshness, correctness, degraded-state, observability, and cron-surface failures consistently.
 - `tasks/artifacts/forge-dashboard-slate-health-audit.md` - Completed full-chain slate audit covering Start Chart serving behavior, live source freshness, fallback/degraded-state safety, and the current `red` verdict driven by stale goalie projections.
@@ -32,7 +33,12 @@
 - `tasks/artifacts/forge-dashboard-player-route-health-audit.md` - Completed audit of the player drill-in route, covering Top Adds contract drift, fallback projection inheritance, route-context loss, and the current `red` verdict.
 - `tasks/artifacts/forge-dashboard-route-click-contract.md` - Completed click-routing audit across dashboard cards, landing previews, and shared nav, documenting where destinations match card semantics versus where date/context is still dropped.
 - `tasks/artifacts/forge-dashboard-route-family-reconciliation.md` - Completed route-family reconciliation tying together landing previews, team/player drill-ins, and click contracts into one final `red` route-family verdict and remediation summary.
-- `tasks/artifacts/forge-dashboard-cron-runtime-health-audit.md` - Planned cron, freshness, and runtime-budget audit across the components’ upstream refresh paths.
+- `tasks/artifacts/forge-dashboard-observability-review.md` - Completed review of existing FORGE dashboard tests, audit specs, freshness policies, and budget checks, separating the strong mocked-render baseline from the still-manual live observability gaps.
+- `tasks/artifacts/forge-dashboard-degraded-state-audit.md` - Completed cross-component degraded-state audit covering stale, fallback, partial, and mixed-cadence behavior across the dashboard and route family, with a current overall `red` verdict.
+- `tasks/artifacts/forge-dashboard-cron-runtime-health-audit.md` - Completed cron, freshness, and runtime-budget audit across the components’ upstream refresh paths, documenting schedule-order mismatches, missing ownership, and incomplete budget policy.
+- `tasks/artifacts/forge-dashboard-reconciliation-gap-audit.md` - Completed audit of where FORGE source-to-UI reconciliation is still manual, missing, duplicated, or too weak to support a trustworthy `green` status.
+- `tasks/artifacts/forge-dashboard-observability-followups.md` - Explicit follow-on work items extracted from the audit for freshness integrity, route continuity, ownership verification, mixed-cadence detection, and coverage-loss detection.
+- `tasks/artifacts/forge-dashboard-component-evidence-template.md` - Normalized evidence template defining the required fields, reasoning style, and evidence expectations for final `green / yellow / red` component records.
 - `web/pages/forge/dashboard.tsx` - Main FORGE dashboard route whose component bands and health behavior are the primary audit target.
 - `web/pages/FORGE.tsx` - FORGE preview/landing route that must stay consistent with the deeper dashboard surfaces it previews.
 - `web/pages/forge/team/[teamId].tsx` - Team drill-in route that must be audited for data correctness, freshness, and routing consistency.
@@ -76,7 +82,11 @@
 
 - This task list is for the component-health audit program, not for broad dashboard redesign work.
 - Each component must be audited as a full chain: UI, route, API, source tables, cron jobs, degraded-state behavior, observability, and source-to-UI reconciliation.
-- The follow-on output of this work should include both a remediation task list and a separate rolling backlog of newly discovered issues and optimizations.
+- The authoritative outputs of this audit are now:
+  - `tasks/artifacts/forge-dashboard-component-health-matrix.md`
+  - `tasks/artifacts/forge-dashboard-component-health-remediation-backlog.md`
+  - `tasks/tasks-forge-dashboard-component-remediation.md`
+- The follow-on implementation phase must treat the remediation backlog as a first-class running log instead of a one-time note dump.
 
 ## Tasks
 
@@ -106,26 +116,26 @@
   - [x] 3.7 Audit `GoalieRiskCard`, `web/pages/api/v1/forge/goalies.ts`, and supporting normalizers/helpers, then record findings in `tasks/artifacts/forge-dashboard-goalie-health-audit.md`.
   - [x] 3.8 Verify goalie freshness ownership by tracing `forge_goalie_projections`, uncertainty inputs, start-chart dependencies, and the jobs that keep goalie-facing data current within runtime expectations.
   - [x] 3.9 Reconcile the goalie band UI against goalie API responses, model recommendation fields, uncertainty drivers, and displayed starter-risk/confidence labels to confirm the component is representing goalie data accurately.
-- [ ] 4.0 Audit the FORGE landing page and the team/player drill-in routes for preview consistency, routing integrity, degraded-state handling, and full-chain data health
+- [x] 4.0 Audit the FORGE landing page and the team/player drill-in routes for preview consistency, routing integrity, degraded-state handling, and full-chain data health
   - [x] 4.1 Audit `web/pages/FORGE.tsx` as a preview/gateway surface and record findings in `tasks/artifacts/forge-dashboard-route-family-health-audit.md`, with emphasis on preview-to-dashboard consistency.
   - [x] 4.2 Verify that landing-page preview modules use data and stale/degraded behavior consistent with the full dashboard components they preview.
   - [x] 4.3 Audit `web/pages/forge/team/[teamId].tsx` for routing integrity, API/source alignment, freshness ownership, and whether team drill-ins remain consistent with dashboard Team Trend Context.
   - [x] 4.4 Audit `web/pages/forge/player/[playerId].tsx` for routing integrity, API/source alignment, freshness ownership, and whether player drill-ins remain consistent with Top Adds and other dashboard player cards.
   - [x] 4.5 Verify that `ForgeRouteNav` and card click paths send users to destinations whose data contracts match the originating card semantics instead of producing misleading context shifts.
   - [x] 4.6 Reconcile the landing and drill-in routes against their source APIs and dashboard entry points so preview mismatches, route drift, and drill-in contract bugs are documented explicitly.
-- [ ] 5.0 Validate observability, degraded-state behavior, reconciliation methods, and runtime-budget expectations across all audited FORGE components
-  - [ ] 5.1 Review existing tests, scripts, normalizer checks, and route-level verification to determine which components already have reliable observability and which do not.
-  - [ ] 5.2 Audit degraded-state and blocked-state behavior across every component family to confirm stale, fallback, degraded, and blocked states are safe and informative.
-  - [ ] 5.3 Create `tasks/artifacts/forge-dashboard-cron-runtime-health-audit.md` and document the runtime-budget expectations, actual scheduled ownership, and likely operational bottlenecks across the component chains.
-  - [ ] 5.4 Identify where source-to-UI reconciliation is currently manual, missing, duplicated, or too weak to support a `green` status.
-  - [ ] 5.5 Identify where missing or weak observability should become explicit follow-on work items rather than staying implicit audit caveats.
-  - [ ] 5.6 Normalize the component evidence format so every final status record uses the same fields, reasoning style, and evidence expectations.
-- [ ] 6.0 Produce the authoritative health matrix, remediation task list, and rolling backlog for newly discovered bugs, optimizations, cron gaps, and verification follow-ups
-  - [ ] 6.1 Create `tasks/artifacts/forge-dashboard-component-health-matrix.md` and record the final `green / yellow / red` status, reasons, cron ownership, and evidence links for every component in scope.
-  - [ ] 6.2 Create `tasks/artifacts/forge-dashboard-component-health-remediation-backlog.md` and group newly discovered issues into clear tracks such as correctness, freshness, cron/runbook, degraded-state, observability, and optimization.
-  - [ ] 6.3 Convert the audit findings into the next implementation task list for component-by-component fixes and verification work.
-  - [ ] 6.4 Ensure the follow-on implementation plan explicitly includes a rolling “newly discovered issues and optimizations” backlog instead of only a fixed checklist.
-  - [ ] 6.5 Update the task tracker and relevant artifact references so the audit outputs act as the authoritative operational reference for the next phase.
+- [x] 5.0 Validate observability, degraded-state behavior, reconciliation methods, and runtime-budget expectations across all audited FORGE components
+  - [x] 5.1 Review existing tests, scripts, normalizer checks, and route-level verification to determine which components already have reliable observability and which do not.
+  - [x] 5.2 Audit degraded-state and blocked-state behavior across every component family to confirm stale, fallback, degraded, and blocked states are safe and informative.
+  - [x] 5.3 Create `tasks/artifacts/forge-dashboard-cron-runtime-health-audit.md` and document the runtime-budget expectations, actual scheduled ownership, and likely operational bottlenecks across the component chains.
+  - [x] 5.4 Identify where source-to-UI reconciliation is currently manual, missing, duplicated, or too weak to support a `green` status.
+  - [x] 5.5 Identify where missing or weak observability should become explicit follow-on work items rather than staying implicit audit caveats.
+  - [x] 5.6 Normalize the component evidence format so every final status record uses the same fields, reasoning style, and evidence expectations.
+- [x] 6.0 Produce the authoritative health matrix, remediation task list, and rolling backlog for newly discovered bugs, optimizations, cron gaps, and verification follow-ups
+  - [x] 6.1 Create `tasks/artifacts/forge-dashboard-component-health-matrix.md` and record the final `green / yellow / red` status, reasons, cron ownership, and evidence links for every component in scope.
+  - [x] 6.2 Create `tasks/artifacts/forge-dashboard-component-health-remediation-backlog.md` and group newly discovered issues into clear tracks such as correctness, freshness, cron/runbook, degraded-state, observability, and optimization.
+  - [x] 6.3 Convert the audit findings into the next implementation task list for component-by-component fixes and verification work.
+  - [x] 6.4 Ensure the follow-on implementation plan explicitly includes a rolling “newly discovered issues and optimizations” backlog instead of only a fixed checklist.
+  - [x] 6.5 Update the task tracker and relevant artifact references so the audit outputs act as the authoritative operational reference for the next phase.
 
 ## Quarantine List
 

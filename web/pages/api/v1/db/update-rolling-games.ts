@@ -1,15 +1,17 @@
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import type { NextApiRequest, NextApiResponse } from "next";
-import { createRequire } from "module";
-import path from "path";
 
 type LegacyRollingGamesMain = (mode: "all" | "recent") => Promise<void>;
 
 async function defaultLoadLegacyMain(): Promise<LegacyRollingGamesMain> {
-  const require = createRequire(path.join(process.cwd(), "package.json"));
-  const { main } = require(
-    path.join(process.cwd(), "lib/supabase/Upserts/fetchRollingGames.js")
-  );
+  const importedModule = await import("lib/supabase/Upserts/fetchRollingGames.js");
+  const legacyModule =
+    importedModule &&
+    typeof importedModule === "object" &&
+    "default" in importedModule
+      ? importedModule.default
+      : importedModule;
+  const { main } = legacyModule as { main: LegacyRollingGamesMain };
   return main as LegacyRollingGamesMain;
 }
 
