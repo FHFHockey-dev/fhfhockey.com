@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import { buildRequestedDateServingState } from "lib/dashboard/freshness";
 import supabase from "lib/supabase/server";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
 import { teamsInfo } from "lib/teamsInfo";
@@ -188,6 +189,10 @@ export default async function handler(
       let projectionRunId: string | null = null;
       let skaterSourceDate = initialDate;
       let fallbackApplied = false;
+      let fallbackStrategy:
+        | "requested_date"
+        | "previous_date_with_games"
+        | "latest_available_with_data" = "requested_date";
 
       const fetchForDate = async (targetDate: string) => {
         const { data: games, error: gErr } = await supabase
@@ -319,6 +324,7 @@ export default async function handler(
           dateUsed = prev;
           skaterSourceDate = prev;
           fallbackApplied = prev !== initialDate;
+          fallbackStrategy = "previous_date_with_games";
         }
       }
 
@@ -333,9 +339,18 @@ export default async function handler(
         dateUsed = latest.dateUsed ?? dateUsed;
         skaterSourceDate = latest.dateUsed ?? skaterSourceDate;
         fallbackApplied = dateUsed !== initialDate;
+        fallbackStrategy = fallbackApplied
+          ? "latest_available_with_data"
+          : fallbackStrategy;
       }
 
       projectionRunId = runId;
+      const serving = buildRequestedDateServingState({
+        requestedDate: initialDate,
+        resolvedDate: dateUsed,
+        fallbackApplied,
+        strategy: fallbackApplied ? fallbackStrategy : "requested_date"
+      });
 
       if (
         (!projRows || projRows.length === 0) &&
@@ -346,6 +361,7 @@ export default async function handler(
           dateUsed,
           requestedDate: initialDate,
           fallbackApplied,
+          serving,
           skaterSourceDate,
           projectionRunId,
           skaterSource: "forge_player_projections",
@@ -632,6 +648,7 @@ export default async function handler(
         dateUsed,
         requestedDate: initialDate,
         fallbackApplied,
+        serving,
         skaterSourceDate,
         projectionRunId,
         skaterSource: "forge_player_projections",

@@ -93,7 +93,7 @@ vi.mock("../../../../../pages/api/v1/db/update-wgo-ly", () => ({ default: update
 vi.mock("../../../../../pages/api/v1/db/update-line-combinations", () => ({
   default: updateLineCombinationsMock
 }));
-vi.mock("../../../../../pages/api/v1/db/update-power-play-combinations/[gameId]", () => ({
+vi.mock("../../../../../pages/api/v1/db/update-power-play-combinations", () => ({
   default: updatePowerPlayCombinationsMock
 }));
 vi.mock("../../../../../pages/api/v1/db/update-rolling-player-averages", () => ({
@@ -183,7 +183,11 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
     expect(updateGamesMock).toHaveBeenCalled();
     expect(updateNstGamelogMock).toHaveBeenCalled();
     expect(updateWgoLyMock).not.toHaveBeenCalled();
-    expect(updatePowerPlayCombinationsMock).toHaveBeenCalledTimes(2);
+    expect(updatePowerPlayCombinationsMock).toHaveBeenCalledTimes(1);
+    expect(updatePowerPlayCombinationsMock.mock.calls[0]?.[0]?.query).toMatchObject({
+      startDate: "2026-03-14",
+      endDate: "2026-03-14"
+    });
     expect(updateRollingPlayerAveragesMock).toHaveBeenCalled();
     expect(updateRollingPlayerAveragesMock.mock.calls[0]?.[0]?.query).toMatchObject({
       startDate: "2026-03-14",
@@ -214,6 +218,20 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
         includesAccuracyRefresh: false,
         canonicalSkaterReadPath: "/api/v1/start-chart -> forge_player_projections",
         legacyMaterializerRoute: "/api/v1/db/update-start-chart-projections"
+      },
+      dependencyContract: {
+        version: "rolling-forge-operator-order-v1",
+        healthyRunRule: expect.any(String),
+        validationRule: expect.any(String),
+        stages: expect.arrayContaining([
+          expect.objectContaining({ id: "core_entity_freshness", order: 1 }),
+          expect.objectContaining({ id: "upstream_skater_sources", order: 2 }),
+          expect.objectContaining({ id: "contextual_builders", order: 3 }),
+          expect.objectContaining({ id: "rolling_player_recompute", order: 4 }),
+          expect.objectContaining({ id: "projection_input_ingest", order: 5 }),
+          expect.objectContaining({ id: "projection_derived_build", order: 6 }),
+          expect.objectContaining({ id: "projection_execution", order: 7 })
+        ])
       },
       pipeline: {
         version: "rolling-forge-pipeline-v2"

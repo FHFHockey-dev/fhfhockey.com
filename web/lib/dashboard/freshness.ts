@@ -16,7 +16,27 @@ export type FreshnessAuditResult = {
   issues: FreshnessIssue[];
 };
 
+export type RequestedDateServingStrategy =
+  | "requested_date"
+  | "latest_available_with_data"
+  | "previous_date_with_games";
+
+export type RequestedDateServingState = {
+  requestedDate: string | null;
+  resolvedDate: string | null;
+  fallbackApplied: boolean;
+  isSameDay: boolean;
+  state: "same_day" | "fallback" | "unknown";
+  strategy: RequestedDateServingStrategy | null;
+};
+
 const MS_PER_HOUR = 60 * 60 * 1000;
+const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+const normalizeDateOnly = (value: string | null | undefined): string | null => {
+  if (typeof value !== "string") return null;
+  return DATE_ONLY_PATTERN.test(value) ? value : null;
+};
 
 const parseTimestamp = (value: string | null): number | null => {
   if (!value) return null;
@@ -24,13 +44,49 @@ const parseTimestamp = (value: string | null): number | null => {
   if (Number.isFinite(direct)) return direct;
 
   // Accept date-only values by interpreting them as UTC midnight.
-  const dateOnly = /^\d{4}-\d{2}-\d{2}$/;
-  if (dateOnly.test(value)) {
+  if (DATE_ONLY_PATTERN.test(value)) {
     const asIso = Date.parse(`${value}T00:00:00.000Z`);
     return Number.isFinite(asIso) ? asIso : null;
   }
 
   return null;
+};
+
+export const buildRequestedDateServingState = (input: {
+  requestedDate: string | null | undefined;
+  resolvedDate: string | null | undefined;
+  fallbackApplied?: boolean | null;
+  strategy?: RequestedDateServingStrategy | null;
+}): RequestedDateServingState => {
+  const requestedDate = normalizeDateOnly(input.requestedDate);
+  const resolvedDate = normalizeDateOnly(input.resolvedDate);
+  const datesDiffer =
+    requestedDate != null &&
+    resolvedDate != null &&
+    requestedDate !== resolvedDate;
+  const fallbackApplied = Boolean(input.fallbackApplied) || datesDiffer;
+  const isSameDay =
+    requestedDate != null &&
+    resolvedDate != null &&
+    requestedDate === resolvedDate;
+
+  return {
+    requestedDate,
+    resolvedDate,
+    fallbackApplied,
+    isSameDay,
+    state:
+      requestedDate == null || resolvedDate == null
+        ? "unknown"
+        : fallbackApplied
+          ? "fallback"
+          : "same_day",
+    strategy:
+      input.strategy ??
+      (requestedDate != null && resolvedDate != null && requestedDate === resolvedDate
+        ? "requested_date"
+        : null)
+  };
 };
 
 export const evaluateFreshness = (

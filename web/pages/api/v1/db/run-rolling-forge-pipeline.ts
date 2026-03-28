@@ -9,6 +9,7 @@ import {
   type RollingForgePipelineMode
 } from "lib/rollingPlayerOperationalPolicy";
 import {
+  getRollingForgeDependencyContract,
   getRollingForgePipelineSpec,
   getRollingForgeStagesForMode,
   type RollingForgePipelineStageId
@@ -23,7 +24,7 @@ import updateWgoTotalsHandler from "./update-wgo-totals";
 import updateWgoAveragesHandler from "./update-wgo-averages";
 import updateWgoLyHandler from "./update-wgo-ly";
 import updateLineCombinationsHandler from "./update-line-combinations";
-import updatePowerPlayCombinationsHandler from "./update-power-play-combinations/[gameId]";
+import updatePowerPlayCombinationsBatchHandler from "./update-power-play-combinations";
 import updateRollingPlayerAveragesHandler from "./update-rolling-player-averages";
 import ingestProjectionInputsHandler from "./ingest-projection-inputs";
 import buildProjectionDerivedHandler from "./build-projection-derived-v2";
@@ -85,6 +86,7 @@ type ResponseBody = {
     legacyMaterializerRoute: string;
     notes: string[];
   };
+  dependencyContract: ReturnType<typeof getRollingForgeDependencyContract>;
   pipeline: ReturnType<typeof getRollingForgePipelineSpec>;
   stages: StageResult[];
 };
@@ -327,8 +329,8 @@ async function runStage(args: {
       const gameIds = await listGameIdsInRange(args.startDate, args.endDate);
       if (gameIds.length === 0) {
         steps.push({
-          id: "update-power-play-combinations",
-          route: "/api/v1/db/update-power-play-combinations/[gameId]",
+          id: "update-power-play-combinations-batch",
+          route: "/api/v1/db/update-power-play-combinations",
           status: "skipped",
           statusCode: 200,
           durationMs: 0,
@@ -337,16 +339,15 @@ async function runStage(args: {
           reason: "No games found in the selected date range."
         });
       } else {
-        for (const gameId of gameIds) {
-          await addStep({
-            id: `update-power-play-combinations-${gameId}`,
-            route: "/api/v1/db/update-power-play-combinations/[gameId]",
-            handler: updatePowerPlayCombinationsHandler,
-            query: {
-              gameId: String(gameId)
-            }
-          });
-        }
+        await addStep({
+          id: "update-power-play-combinations-batch",
+          route: "/api/v1/db/update-power-play-combinations",
+          handler: updatePowerPlayCombinationsBatchHandler,
+          query: {
+            startDate: args.startDate,
+            endDate: args.endDate
+          }
+        });
       }
       break;
     }
@@ -529,6 +530,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseBody>) 
         legacyMaterializerRoute: "/api/v1/db/update-start-chart-projections",
         notes: []
       },
+      dependencyContract: getRollingForgeDependencyContract(),
       pipeline: getRollingForgePipelineSpec(),
       stages: []
     });
@@ -622,6 +624,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseBody>) 
       legacyMaterializerRoute: "/api/v1/db/update-start-chart-projections",
       notes: downstreamNotes
     },
+    dependencyContract: getRollingForgeDependencyContract(),
     pipeline: getRollingForgePipelineSpec(),
     stages: stageResults
   });

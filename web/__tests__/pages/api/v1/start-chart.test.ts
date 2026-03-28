@@ -270,6 +270,14 @@ describe("/api/v1/start-chart", () => {
       dateUsed: "2026-02-07",
       requestedDate: "2026-02-07",
       fallbackApplied: false,
+      serving: {
+        requestedDate: "2026-02-07",
+        resolvedDate: "2026-02-07",
+        fallbackApplied: false,
+        isSameDay: true,
+        state: "same_day",
+        strategy: "requested_date"
+      },
       projectionRunId: "run-123",
       skaterSource: "forge_player_projections",
       goalieSource: "goalie_start_projections",
@@ -287,5 +295,123 @@ describe("/api/v1/start-chart", () => {
     expect(fromMock.mock.calls.map((call) => call[0])).not.toContain(
       "player_projections"
     );
+  });
+
+  it("reports previous-date fallback serving state when the requested slate has no games", async () => {
+    let gamesQueryCount = 0;
+    fetchTeamRatingsMock.mockResolvedValue([]);
+    fromMock.mockImplementation((table: string) => {
+      if (table === "player_projections") {
+        throw new Error("legacy player_projections should not be queried");
+      }
+      if (table === "games") {
+        gamesQueryCount += 1;
+        if (gamesQueryCount === 1) {
+          return createQueryBuilder(() => ({
+            data: [],
+            error: null
+          }));
+        }
+        return createQueryBuilder(() => ({
+          data: [
+            {
+              id: 1002,
+              date: "2026-02-07",
+              homeTeamId: 10,
+              awayTeamId: 8
+            }
+          ],
+          error: null
+        }));
+      }
+      if (table === "forge_player_projections") {
+        return createQueryBuilder(() => ({
+          data: [
+            {
+              run_id: "run-123",
+              as_of_date: "2026-02-07",
+              player_id: 8478402,
+              team_id: 8,
+              game_id: 1002,
+              opponent_team_id: 10,
+              proj_goals_es: 0.4,
+              proj_goals_pp: 0.2,
+              proj_goals_pk: 0,
+              proj_assists_es: 0.5,
+              proj_assists_pp: 0.1,
+              proj_assists_pk: 0,
+              proj_shots_es: 2.7,
+              proj_shots_pp: 0.8,
+              proj_shots_pk: 0,
+              proj_hits: 0.6,
+              proj_blocks: 0.4,
+              proj_pim: 0.1
+            }
+          ],
+          error: null
+        }));
+      }
+      if (table === "goalie_start_projections") {
+        return createQueryBuilder(() => ({
+          data: [],
+          error: null
+        }));
+      }
+      if (table === "yahoo_nhl_player_map_mat") {
+        return createQueryBuilder(() => ({
+          data: [{ nhl_player_id: "8478402", yahoo_player_id: "5001" }],
+          error: null
+        }));
+      }
+      if (table === "yahoo_players") {
+        return createQueryBuilder(() => ({
+          data: [
+            {
+              player_id: "5001",
+              player_name: "Nick Suzuki",
+              full_name: "Nick Suzuki",
+              eligible_positions: ["C"],
+              percent_ownership: 78,
+              ownership_timeline: []
+            }
+          ],
+          error: null
+        }));
+      }
+      if (table === "team_ctpi_daily") {
+        return createQueryBuilder(() => ({
+          data: [],
+          error: null
+        }));
+      }
+      return createQueryBuilder(() => ({ data: [], error: null }));
+    });
+
+    vi.resetModules();
+    const handler = (await import("../../../../pages/api/v1/start-chart")).default;
+    const req: any = {
+      method: "GET",
+      query: {
+        date: "2026-02-08"
+      }
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      dateUsed: "2026-02-07",
+      requestedDate: "2026-02-08",
+      fallbackApplied: true,
+      serving: {
+        requestedDate: "2026-02-08",
+        resolvedDate: "2026-02-07",
+        fallbackApplied: true,
+        isSameDay: false,
+        state: "fallback",
+        strategy: "previous_date_with_games"
+      }
+    });
   });
 });

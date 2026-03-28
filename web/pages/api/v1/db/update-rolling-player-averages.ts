@@ -64,6 +64,8 @@ import {
   ROLLING_EXECUTION_PROFILE_DEFAULTS,
   type RollingExecutionProfile
 } from "lib/rollingPlayerOperationalPolicy";
+import { getRollingForgeStageDependencyContract } from "lib/rollingForgePipeline";
+import type { RollingPlayerRunSummary } from "lib/supabase/Upserts/fetchRollingPlayerAverages";
 import type { NextApiRequest, NextApiResponse } from "next";
 
 type ResponseBody = {
@@ -77,6 +79,14 @@ type ResponseBody = {
     withinBudget: boolean;
   };
   appliedPlayerLimit?: number;
+  dependencyContract?: ReturnType<typeof getRollingForgeStageDependencyContract>;
+  runSummary?: RollingPlayerRunSummary;
+  freshnessGate?: {
+    status: "PASS" | "FAIL";
+    blockerCount: number;
+    bypassed: boolean;
+    action: string;
+  };
 };
 
 type FullRefreshMode = "rpc_truncate" | "overwrite_only" | "delete";
@@ -193,6 +203,10 @@ async function handler(
   req: NextApiRequest,
   res: NextApiResponse<ResponseBody>
 ) {
+  const dependencyContract = getRollingForgeStageDependencyContract(
+    "rolling_player_recompute"
+  );
+  let runSummary: RollingPlayerRunSummary | undefined;
   logEndpointPhase({
     phase: "request",
     status: "start",
@@ -244,6 +258,9 @@ async function handler(
     const dryRunUpsert = parseQueryBoolean(getRequestParam(req, "dryRunUpsert"));
     const debugUpsertPayload = parseQueryBoolean(getRequestParam(req, "debugUpsertPayload"));
     const fastMode = parseQueryBoolean(getRequestParam(req, "fastMode"));
+    const bypassFreshnessBlockers = parseQueryBoolean(
+      getRequestParam(req, "bypassFreshnessBlockers")
+    );
     const explicitExecutionProfile = parseExecutionProfile(
       getRequestParam(req, "executionProfile")
     );
@@ -363,7 +380,7 @@ async function handler(
       | ResponseBody["runtimeBudget"]
       | undefined;
     try {
-      await main({
+      runSummary = await main({
         playerId,
         season,
         startDate,
@@ -405,14 +422,47 @@ async function handler(
       phase: "response",
       status: "complete",
       details: {
-        statusCode: 200
+        statusCode:
+          (runSummary?.freshnessBlockers ?? 0) > 0 && !bypassFreshnessBlockers
+            ? 422
+            : 200
       }
     });
+    if ((runSummary?.freshnessBlockers ?? 0) > 0 && !bypassFreshnessBlockers) {
+      return res.status(422).json({
+        message:
+          "Freshness dependency checks failed. Refresh stale upstream sources or use bypassFreshnessBlockers=true to override.",
+        executionProfile,
+        runtimeBudget,
+        appliedPlayerLimit: maxPlayers,
+        dependencyContract,
+        runSummary,
+        freshnessGate: {
+          status: "FAIL",
+          blockerCount: runSummary?.freshnessBlockers ?? 0,
+          bypassed: false,
+          action:
+            "Refresh stale upstream sources or use bypassFreshnessBlockers=true to override."
+        }
+      });
+    }
     res.status(200).json({
       message: "Rolling player averages processed successfully.",
       executionProfile,
       runtimeBudget,
-      appliedPlayerLimit: maxPlayers
+      appliedPlayerLimit: maxPlayers,
+      dependencyContract,
+      runSummary,
+      freshnessGate: {
+        status:
+          (runSummary?.freshnessBlockers ?? 0) > 0 ? "FAIL" : "PASS",
+        blockerCount: runSummary?.freshnessBlockers ?? 0,
+        bypassed: bypassFreshnessBlockers ?? false,
+        action:
+          (runSummary?.freshnessBlockers ?? 0) > 0
+            ? "Refresh stale upstream sources or use bypassFreshnessBlockers=true to override."
+            : "None."
+      }
     });
   } catch (error: any) {
     logEndpointPhase({
@@ -432,7 +482,9 @@ async function handler(
     });
     res.status(500).json({
       message:
-        error?.message ?? "Unknown error updating rolling player averages."
+        error?.message ?? "Unknown error updating rolling player averages.",
+      dependencyContract,
+      runSummary
     });
   }
 }

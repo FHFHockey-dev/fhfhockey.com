@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 
 import supabase from "lib/supabase/server";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
+import { buildRequestedDateServingState } from "lib/dashboard/freshness";
 import { requireLatestSucceededRunId } from "pages/api/v1/projections/_helpers";
 
 async function fetchCurrentSeasonIdForDate(asOfDate: string): Promise<number> {
@@ -221,6 +222,14 @@ export default async function handler(
         uncertainty: row.uncertainty
       };
     });
+    const serving = buildRequestedDateServingState({
+      requestedDate: targetDate,
+      resolvedDate,
+      fallbackApplied,
+      strategy: fallbackApplied
+        ? "latest_available_with_data"
+        : "requested_date"
+    });
 
     return res.status(200).json({
       durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
@@ -229,6 +238,7 @@ export default async function handler(
       requestedDate: targetDate,
       horizonGames,
       fallbackApplied,
+      serving,
       data: projections
     });
   } catch (e) {

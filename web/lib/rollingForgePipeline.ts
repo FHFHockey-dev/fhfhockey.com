@@ -24,6 +24,26 @@ export type RollingForgePipelineStage = {
   blocking: boolean;
 };
 
+export type RollingForgeDependencyContractStage = {
+  id: RollingForgePipelineStageId;
+  order: number;
+  label: string;
+  operatorSurface: string;
+  routes: string[];
+  depends_on: RollingForgePipelineStageId[];
+  produces: string[];
+  healthyRunRequirement: string;
+};
+
+export type RollingForgeDependencyContract = {
+  version: string;
+  summary: string;
+  healthyRunRule: string;
+  validationRule: string;
+  falseHealthySignals: string[];
+  stages: RollingForgeDependencyContractStage[];
+};
+
 export const ROLLING_FORGE_PIPELINE_ORDER: RollingForgePipelineStage[] = [
   {
     id: "core_entity_freshness",
@@ -67,6 +87,7 @@ export const ROLLING_FORGE_PIPELINE_ORDER: RollingForgePipelineStage[] = [
     operatorSurface: "contextual-builder freshness",
     routes: [
       "/api/v1/db/update-line-combinations",
+      "/api/v1/db/update-power-play-combinations",
       "/api/v1/db/update-power-play-combinations/[gameId]"
     ],
     produces: ["lineCombinations", "powerPlayCombinations"],
@@ -182,4 +203,80 @@ export function getRollingForgeStagesForMode(mode: RollingForgePipelineMode) {
   return ROLLING_FORGE_PIPELINE_ORDER.filter((stage) =>
     stage.modes.includes(mode)
   );
+}
+
+const DEPENDENCY_STAGE_REQUIREMENTS: Record<
+  RollingForgePipelineStageId,
+  string
+> = {
+  core_entity_freshness:
+    "Games, teams, players, and rosters must refresh before any downstream freshness check is meaningful.",
+  upstream_skater_sources:
+    "NST and WGO skater-source tables must refresh before rolling_player_game_metrics is trusted.",
+  contextual_builders:
+    "Line and power-play context must refresh before rolling outputs or projection preflight are treated as healthy.",
+  rolling_player_recompute:
+    "rolling_player_game_metrics must be recomputed after both skater sources and contextual builders are fresh.",
+  projection_input_ingest:
+    "PBP and shift inputs must be ingested before projection-derived tables are rebuilt for the same window.",
+  projection_derived_build:
+    "Derived player, team, and goalie strength tables must be rebuilt after ingest and contextual refresh.",
+  projection_execution:
+    "Goalie start priors and FORGE projections are only healthy after rolling_player_game_metrics and derived tables are fresh for the same execution window.",
+  downstream_projection_consumers:
+    "Downstream consumers never repair stale canonical projections; they only materialize or evaluate projection_execution outputs.",
+  monitoring:
+    "Monitoring is diagnostic only and cannot make an otherwise stale run healthy."
+};
+
+export function getRollingForgeDependencyContract(): RollingForgeDependencyContract {
+  return {
+    version: "rolling-forge-operator-order-v1",
+    summary:
+      "Canonical rolling-to-FORGE dependency order for operator surfaces and preflight messaging.",
+    healthyRunRule:
+      "A healthy run requires each blocking stage to complete in order; success in a later stage does not excuse stale or skipped prerequisites.",
+    validationRule:
+      "Do not validate projections, dashboard readers, or downstream materializers until rolling_player_game_metrics, projection ingest, and projection-derived tables are all fresh for the intended date window.",
+    falseHealthySignals: [
+      "A successful rolling recompute does not imply projection ingest or derived tables are current.",
+      "A successful ingest run does not imply rolling_player_game_metrics or contextual builders are fresh.",
+      "A successful downstream reader or legacy materializer does not imply projection_execution used healthy upstream inputs."
+    ],
+    stages: ROLLING_FORGE_PIPELINE_ORDER.map((stage) => ({
+      id: stage.id,
+      order: stage.order,
+      label: stage.label,
+      operatorSurface: stage.operatorSurface,
+      routes: stage.routes,
+      depends_on: stage.depends_on,
+      produces: stage.produces,
+      healthyRunRequirement: DEPENDENCY_STAGE_REQUIREMENTS[stage.id]
+    }))
+  };
+}
+
+export function getRollingForgeStageDependencyContract(
+  stageId: RollingForgePipelineStageId
+) {
+  const contract = getRollingForgeDependencyContract();
+  const stage = contract.stages.find((entry) => entry.id === stageId);
+  if (!stage) {
+    throw new Error(`Unknown rolling-forge stage: ${stageId}`);
+  }
+
+  return {
+    version: contract.version,
+    summary: contract.summary,
+    healthyRunRule: contract.healthyRunRule,
+    validationRule: contract.validationRule,
+    falseHealthySignals: contract.falseHealthySignals,
+    currentStage: stage,
+    prerequisiteStages: contract.stages.filter((entry) =>
+      stage.depends_on.includes(entry.id)
+    ),
+    downstreamStages: contract.stages.filter((entry) =>
+      entry.depends_on.includes(stage.id)
+    )
+  };
 }

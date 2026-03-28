@@ -1,6 +1,7 @@
 import type { TeamRating } from "../teamRatingsService";
 import type { CategoryComputationResult } from "../trends/teamPercentiles";
 import type { TrendCategoryId } from "../trends/teamMetricConfig";
+import type { RequestedDateServingState } from "./freshness";
 import { getTeamMetaByAbbr, getTeamMetaById } from "./teamMetadata";
 
 export type TeamTrendsResponse = {
@@ -61,6 +62,9 @@ export type ForgePlayersResponse = {
   durationMs: string;
   runId: number;
   asOfDate: string;
+  requestedDate: string;
+  fallbackApplied: boolean;
+  serving: RequestedDateServingState;
   data: Array<Record<string, unknown>>;
 };
 
@@ -69,11 +73,17 @@ export type ForgeGoaliesResponse = {
   runId: string;
   asOfDate: string;
   horizonGames: number;
+  requestedDate: string;
+  fallbackApplied: boolean;
+  serving: RequestedDateServingState;
   data: Array<Record<string, unknown>>;
 };
 
 export type StartChartResponse = {
   dateUsed: string;
+  requestedDate: string;
+  fallbackApplied: boolean;
+  serving: RequestedDateServingState;
   projections: number;
   players: Array<Record<string, unknown>>;
   ctpi: Array<Record<string, unknown>>;

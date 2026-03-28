@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { z } from "zod";
 
+import { buildRequestedDateServingState } from "lib/dashboard/freshness";
 import supabase from "lib/supabase/server";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
 import {
@@ -466,6 +467,14 @@ export default async function handler(
         `Normalized likely-starter win probabilities across ${normalizationResult.adjustedMatchups} matchup(s) to total 100%.`
       );
     }
+    const serving = buildRequestedDateServingState({
+      requestedDate,
+      resolvedDate,
+      fallbackApplied,
+      strategy: fallbackApplied
+        ? "latest_available_with_data"
+        : "requested_date"
+    });
 
     return res.status(200).json({
       durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
@@ -479,6 +488,7 @@ export default async function handler(
       requestedDate,
       fallbackApplied,
       fallbackToLatestWithData: q.fallbackToLatestWithData,
+      serving,
       diagnostics: {
         requested: {
           date: requestedDate,

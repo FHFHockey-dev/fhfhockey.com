@@ -85,7 +85,14 @@ describe("/api/v1/db/build-projection-derived-v2", () => {
       endDate: "2026-03-20",
       maxDays: 3,
       nextStartDate: "2026-03-21",
-      processedDates: ["2026-03-18", "2026-03-19", "2026-03-20"]
+      processedDates: ["2026-03-18", "2026-03-19", "2026-03-20"],
+      dependencyContract: {
+        version: "rolling-forge-operator-order-v1",
+        currentStage: {
+          id: "projection_derived_build",
+          order: 6
+        }
+      }
     });
     expect(playerBuilderMock).toHaveBeenCalledTimes(3);
     expect(teamBuilderMock).toHaveBeenCalledTimes(3);

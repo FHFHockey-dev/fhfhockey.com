@@ -7,6 +7,7 @@ import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
 import supabase from "lib/supabase/server";
 import { requireLatestSucceededRunId } from "pages/api/v1/projections/_helpers";
+import { runProjectionPreflightChecks } from "./run-projection-v2";
 import {
   computeAccuracyScore,
   computeGoalieFantasyPoints,
@@ -272,6 +273,13 @@ function parseDateParam(value: string | string[] | undefined): string | null {
   const v = Array.isArray(value) ? value[0] : value;
   const trimmed = v.trim();
   return trimmed ? trimmed.slice(0, 10) : null;
+}
+
+function parseBooleanParam(value: string | string[] | undefined): boolean {
+  if (!value) return false;
+  const rawValue = Array.isArray(value) ? value[0] : value;
+  const normalized = rawValue.trim().toLowerCase();
+  return normalized === "1" || normalized === "true" || normalized === "yes";
 }
 
 function addDays(dateStr: string, delta: number): string {
@@ -2131,6 +2139,7 @@ export default withCronJobAudit(async function handler(
     const requestedDate = parseDateParam(req.query.date);
     const offsetDays =
       parseNumber(req.query.projectionOffsetDays) ?? DEFAULT_OFFSET_DAYS;
+    const bypassPreflight = parseBooleanParam(req.query.bypassPreflight);
     const startDateParam =
       parseDateParam(req.query.startDate) ??
       parseDateParam(req.query.endDate) ??
@@ -2181,6 +2190,22 @@ export default withCronJobAudit(async function handler(
           });
         }
         try {
+          const projectionDate = addDays(date, -offsetDays);
+          const preflight = await runProjectionPreflightChecks(
+            projectionDate,
+            bypassPreflight
+          );
+          if (preflight.status === "FAIL") {
+            return res.status(422).json({
+              success: false,
+              actualDate: date,
+              projectionDate,
+              preflight,
+              error:
+                "Projection freshness checks failed for the requested accuracy window. Resolve upstream dependencies or use bypassPreflight=true to override.",
+              durationMs: formatDurationMsToMMSS(Date.now() - startedAt)
+            });
+          }
           results.push(await runAccuracyForDate(date, offsetDays));
         } catch (error) {
           errors.push({
@@ -2203,11 +2228,28 @@ export default withCronJobAudit(async function handler(
     }
 
     const actualDate = requestedDate ?? addDays(isoDateOnly(new Date()), -1);
+    const projectionDate = addDays(actualDate, -offsetDays);
+    const preflight = await runProjectionPreflightChecks(
+      projectionDate,
+      bypassPreflight
+    );
+    if (preflight.status === "FAIL") {
+      return res.status(422).json({
+        success: false,
+        actualDate,
+        projectionDate,
+        preflight,
+        error:
+          "Projection freshness checks failed. Resolve upstream dependencies or use bypassPreflight=true to override.",
+        durationMs: formatDurationMsToMMSS(Date.now() - startedAt)
+      });
+    }
     const result = await runAccuracyForDate(actualDate, offsetDays);
     return res.status(200).json({
       success: true,
       asOfDate: result.asOfDate,
       actualDate: result.actualDate,
+      preflight,
       runId: result.runId,
       skaterRows: result.skaterRows,
       goalieRows: result.goalieRows,

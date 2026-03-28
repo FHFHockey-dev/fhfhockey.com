@@ -102,6 +102,23 @@ describe("/api/v1/db/run-projection-v2", () => {
       success: false,
       error:
         "Upstream dependency returned an HTML error page instead of structured JSON.",
+      dependencyContract: {
+        version: "rolling-forge-operator-order-v1",
+        currentStage: {
+          id: "projection_execution",
+          order: 7
+        },
+        prerequisiteStages: [
+          expect.objectContaining({
+            id: "rolling_player_recompute",
+            order: 4
+          }),
+          expect.objectContaining({
+            id: "projection_derived_build",
+            order: 6
+          })
+        ]
+      },
       dependencyError: {
         kind: "dependency_error",
         classification: "html_upstream_response",

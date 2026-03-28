@@ -110,5 +110,13 @@ exports[`/api/v1/forge/goalies > returns stable response shape with model/scenar
   "requestedRunId": "run-123",
   "runId": "run-123",
   "scenarioCount": 2,
+  "serving": {
+    "fallbackApplied": false,
+    "isSameDay": true,
+    "requestedDate": "2026-02-07",
+    "resolvedDate": "2026-02-07",
+    "state": "same_day",
+    "strategy": "requested_date",
+  },
 }
 `;

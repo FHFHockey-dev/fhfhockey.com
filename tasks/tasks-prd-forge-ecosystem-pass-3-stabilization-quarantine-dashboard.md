@@ -28,13 +28,20 @@
 - `web/lib/teamRatingsService.test.ts` - Regression coverage for the canonical team-ratings read path and same-table column-fallback behavior.
 - `web/__tests__/pages/api/v1/db/update-team-power-ratings-new.test.ts` - Regression test proving the alternate `__new` team-ratings writer is quarantined and points callers to the canonical writer.
 - `web/pages/api/v1/db/update-rolling-player-averages.ts` - Canonical rolling recompute operator surface where freshness checks and validation guidance should tighten.
+- `web/__tests__/pages/api/v1/db/update-rolling-player-averages.test.ts` - Regression test covering rolling recompute execution-profile behavior and operator-facing dependency metadata.
 - `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts` - Semantic owner for the rolling pipeline and a key surface for dependency/freshness enforcement.
 - `web/pages/api/v1/db/update-line-combinations/index.ts` - Recent-gap line-combo builder that needs a clearer historical repair story.
 - `web/pages/api/v1/db/update-line-combinations/[id].ts` - Per-game line-combo builder that remains a canonical upstream dependency.
+- `web/__tests__/pages/api/v1/db/update-line-combinations.test.ts` - Regression test proving the line-combination bulk route distinguishes recent-gap healing from historical backfill.
+- `web/pages/api/v1/db/update-power-play-combinations/index.ts` - Canonical bulk power-play combination repair route for date-range or explicit-game recovery.
 - `web/pages/api/v1/db/update-power-play-combinations/[gameId].ts` - Per-game power-play context builder that needs a batch or bulk-repair path.
+- `web/__tests__/pages/api/v1/db/update-power-play-combinations.test.ts` - Regression test proving the bulk power-play combination route supports date ranges, explicit game IDs, and partial-failure reporting.
 - `web/pages/api/v1/db/ingest-projection-inputs.ts` - Canonical ingest stage that must remain in the documented dependency order.
+- `web/__tests__/pages/api/v1/db/ingest-projection-inputs.test.ts` - Regression test proving the ingest route exposes the shared operator-order contract.
 - `web/pages/api/v1/db/build-projection-derived-v2.ts` - Canonical derived-builder stage that should stay aligned with stage-order and preflight guidance.
+- `web/__tests__/pages/api/v1/db/build-projection-derived-v2.test.ts` - Regression test proving the derived-build route exposes the shared operator-order contract.
 - `web/pages/api/v1/db/run-projection-accuracy.ts` - Accuracy stage that should only run against fresh canonical outputs.
+- `web/__tests__/pages/api/v1/db/run-projection-accuracy.test.ts` - Regression test proving projection accuracy now honors projection preflight freshness gates before validating historical outcomes.
 - `web/pages/api/v1/db/update-rolling-games.ts` - Legacy loader route that should be audited for real usage, then gated or removed.
 - `web/pages/api/v1/db/update-power-rankings.ts` - Legacy JS loader route that should be audited for real usage, then gated or removed.
 - `web/__tests__/pages/api/v1/db/update-rolling-games.test.ts` - Regression test proving the legacy rolling-games wrapper is quarantined and points callers to the canonical rolling route.
@@ -51,6 +58,7 @@
 - `web/lib/projections/runProjectionV2.test.ts` - Projection-runner regression coverage that should stay green while shim usage is retired.
 - `web/lib/projections/module-imports.test.ts` - Import integrity coverage for projection module cleanup.
 - `web/lib/projections/goaliePipeline.test.ts` - Goalie pipeline coverage relevant to old-vs-v2 writer cleanup.
+- `web/__tests__/pages/api/v1/db/run-projection-v2.test.ts` - Projection execution regression test covering preflight normalization and shared dependency metadata.
 - `web/lib/dashboard/normalizers.test.ts` - Dashboard data-shape regression coverage for homepage and reader-surface changes.
 - `web/lib/dashboard/playerOwnership.test.ts` - Dashboard regression coverage for player-facing ranking and ownership presentation.
 - `web/lib/dashboard/teamContext.test.ts` - Dashboard regression coverage for team-context cards and related homepage consumers.
@@ -81,12 +89,12 @@
   - [x] 2.4 Compare `team_power_ratings_daily` and `team_power_ratings_daily__new`, choose one canonical owner, update `teamRatingsService` to read from only that table, and quarantine the alternate writer. [Deps: none] [Files: `web/pages/api/v1/db/update-team-power-ratings.ts`, `web/pages/api/v1/db/update-team-power-ratings-new.ts`, `web/lib/teamRatingsService.ts`] [AC: the service layer no longer reads across two tables to answer one product question]
   - [x] 2.5 Audit legacy loader routes such as `update-rolling-games.ts` and `update-power-rankings.ts`, then either remove them if unused or mark them as explicit legacy-only operator surfaces with warnings and no canonical status. [Deps: none] [Files: `web/pages/api/v1/db/update-rolling-games.ts`, `web/pages/api/v1/db/update-power-rankings.ts`] [AC: no legacy route remains silently adjacent to the canonical rolling/FORGE path]
 
-- [ ] 3.0 Repair freshness dependencies, bulk-builder recovery paths, and the operator-safe validation sequence across the rolling-to-FORGE chain
-  - [ ] 3.1 Encode the canonical dependency order across core entity refresh, skater sources, contextual builders, rolling recompute, ingest, derived builders, projection execution, and downstream readers so operators cannot mistake partial freshness for a healthy run. [Deps: none] [Files: `web/pages/api/v1/db/run-rolling-forge-pipeline.ts`, `web/lib/rollingForgePipeline.ts`, `web/pages/api/v1/db/update-rolling-player-averages.ts`, `web/pages/api/v1/db/ingest-projection-inputs.ts`, `web/pages/api/v1/db/build-projection-derived-v2.ts`, `web/pages/api/v1/db/run-projection-v2.ts`] [AC: one operator-visible ordering contract exists and matches actual runtime dependencies]
-  - [ ] 3.2 Add or wire up a batch repair path for `powerPlayCombinations` so rolling validation no longer depends on manual per-game fan-out for bulk context recovery. [Deps: none] [Files: `web/pages/api/v1/db/update-power-play-combinations/[gameId].ts`, related helper or wrapper route(s)] [AC: operators have one clear bulk path for restoring missing PP context before rolling validation]
-  - [ ] 3.3 Add a clearer historical repair path for `lineCombinations` so recent-gap healing and backfill behavior are distinct and operationally legible. [Deps: none] [Files: `web/pages/api/v1/db/update-line-combinations/index.ts`, `web/pages/api/v1/db/update-line-combinations/[id].ts`] [AC: historical versus recent repair behavior is explicit and does not rely on guesswork]
-  - [ ] 3.4 Tighten freshness and dependency preflight in the rolling and projection operator surfaces so stale upstream data blocks false validation rather than quietly producing believable-but-invalid outputs. [Deps: 3.1, 3.2, 3.3] [Files: `web/pages/api/v1/db/update-rolling-player-averages.ts`, `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`, `web/pages/api/v1/db/run-projection-v2.ts`, `web/pages/api/v1/db/run-projection-accuracy.ts`] [AC: routes fail or warn clearly when required upstream freshness conditions are not met]
-  - [ ] 3.5 Expose same-day vs fallback serving state in the key consumer readers so dashboard and validation workflows can tell whether they are seeing requested-date data or a fallback snapshot. [Deps: 3.4] [Files: `web/pages/api/v1/forge/players.ts`, `web/pages/api/v1/forge/goalies.ts`, `web/pages/api/v1/start-chart.ts`, `web/lib/dashboard/freshness.ts`, `web/lib/dashboard/dataFetchers.ts`] [AC: reader payloads or metadata make fallback date behavior explicit]
+- [x] 3.0 Repair freshness dependencies, bulk-builder recovery paths, and the operator-safe validation sequence across the rolling-to-FORGE chain
+  - [x] 3.1 Encode the canonical dependency order across core entity refresh, skater sources, contextual builders, rolling recompute, ingest, derived builders, projection execution, and downstream readers so operators cannot mistake partial freshness for a healthy run. [Deps: none] [Files: `web/pages/api/v1/db/run-rolling-forge-pipeline.ts`, `web/lib/rollingForgePipeline.ts`, `web/pages/api/v1/db/update-rolling-player-averages.ts`, `web/pages/api/v1/db/ingest-projection-inputs.ts`, `web/pages/api/v1/db/build-projection-derived-v2.ts`, `web/pages/api/v1/db/run-projection-v2.ts`] [AC: one operator-visible ordering contract exists and matches actual runtime dependencies]
+  - [x] 3.2 Add or wire up a batch repair path for `powerPlayCombinations` so rolling validation no longer depends on manual per-game fan-out for bulk context recovery. [Deps: none] [Files: `web/pages/api/v1/db/update-power-play-combinations/[gameId].ts`, related helper or wrapper route(s)] [AC: operators have one clear bulk path for restoring missing PP context before rolling validation]
+  - [x] 3.3 Add a clearer historical repair path for `lineCombinations` so recent-gap healing and backfill behavior are distinct and operationally legible. [Deps: none] [Files: `web/pages/api/v1/db/update-line-combinations/index.ts`, `web/pages/api/v1/db/update-line-combinations/[id].ts`] [AC: historical versus recent repair behavior is explicit and does not rely on guesswork]
+  - [x] 3.4 Tighten freshness and dependency preflight in the rolling and projection operator surfaces so stale upstream data blocks false validation rather than quietly producing believable-but-invalid outputs. [Deps: 3.1, 3.2, 3.3] [Files: `web/pages/api/v1/db/update-rolling-player-averages.ts`, `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`, `web/pages/api/v1/db/run-projection-v2.ts`, `web/pages/api/v1/db/run-projection-accuracy.ts`] [AC: routes fail or warn clearly when required upstream freshness conditions are not met]
+  - [x] 3.5 Expose same-day vs fallback serving state in the key consumer readers so dashboard and validation workflows can tell whether they are seeing requested-date data or a fallback snapshot. [Deps: 3.4] [Files: `web/pages/api/v1/forge/players.ts`, `web/pages/api/v1/forge/goalies.ts`, `web/pages/api/v1/start-chart.ts`, `web/lib/dashboard/freshness.ts`, `web/lib/dashboard/dataFetchers.ts`] [AC: reader payloads or metadata make fallback date behavior explicit]
 
 - [ ] 4.0 Improve run-surface observability, fallback visibility, and compatibility cleanup tracking for projection and dashboard consumers
   - [ ] 4.1 Standardize run summaries and endpoint metadata so active data date, fallback usage, row counts, and blocking freshness gaps are visible at scan speed for both operator routes and consumer readers. [Deps: 3.4, 3.5] [Files: `web/pages/api/v1/db/run-rolling-forge-pipeline.ts`, `web/pages/api/v1/db/run-projection-v2.ts`, `web/pages/api/v1/db/run-projection-accuracy.ts`, `web/pages/api/v1/runs/latest.ts`, `web/pages/api/v1/forge/players.ts`, `web/pages/api/v1/forge/goalies.ts`] [AC: run and read surfaces expose enough metadata to diagnose stale or partial outputs without code spelunking]
@@ -218,6 +226,62 @@
 - Added regression coverage so both legacy loader routes remain visibly disabled instead of silently acting like interchangeable operator surfaces.
 - Validation for this sub-task:
 - `./node_modules/.bin/vitest --run __tests__/pages/api/v1/db/update-rolling-games.test.ts __tests__/pages/api/v1/db/update-power-rankings.test.ts`
+- `npx tsc --noEmit`
+
+### 3.1 Canonical Dependency Order Contract
+
+- Added a shared `rolling-forge-operator-order-v1` dependency contract in `web/lib/rollingForgePipeline.ts` so the canonical operator order is no longer implicit in stage IDs alone.
+- The shared contract now states the healthy-run rule, the validation rule, stage-by-stage ordering, and several explicit false-healthy signals that explain why later-stage success does not excuse stale prerequisites.
+- `/api/v1/db/run-rolling-forge-pipeline` now returns the full dependency contract alongside the stage execution results, making the operator-visible order explicit in the coordinating surface itself.
+- `/api/v1/db/update-rolling-player-averages`, `/api/v1/db/ingest-projection-inputs`, `/api/v1/db/build-projection-derived-v2`, and `/api/v1/db/run-projection-v2` now each return the stage-specific slice of that same contract so the route-local operator message stays aligned with the shared pipeline definition.
+- `run-projection-v2` now exposes that projection execution depends on both `rolling_player_recompute` and `projection_derived_build`, matching the preflight gates that already enforced those assumptions in code.
+- Validation for this sub-task:
+- `./node_modules/.bin/vitest --run __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts __tests__/pages/api/v1/db/run-projection-v2.test.ts __tests__/pages/api/v1/db/update-rolling-player-averages.test.ts __tests__/pages/api/v1/db/ingest-projection-inputs.test.ts __tests__/pages/api/v1/db/build-projection-derived-v2.test.ts`
+- `npx tsc --noEmit`
+
+### 3.2 Bulk Power-Play Combination Repair Path
+
+- Added `/api/v1/db/update-power-play-combinations` as the canonical batch repair route for `powerPlayCombinations`, supporting either a `startDate`/`endDate` window or an explicit `gameIds` list.
+- The existing per-game route at `/api/v1/db/update-power-play-combinations/[gameId]` now exports its update helper so the batch route can reuse the same write logic instead of duplicating the builder implementation.
+- The new batch route returns explicit processed/failed counts plus per-game failure details, so operators can rerun a larger repair scope without hiding partial failures behind a single success flag.
+- `run-rolling-forge-pipeline.ts` stage 3 now calls the batch route once for the requested date window instead of manually fan-out invoking the per-game route for each game ID.
+- `rollingForgePipeline.ts` now lists the batch route in the contextual-builders stage so the operator-visible route inventory matches the new canonical repair surface.
+- Validation for this sub-task:
+- `./node_modules/.bin/vitest --run __tests__/pages/api/v1/db/update-power-play-combinations.test.ts __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts`
+- `npx tsc --noEmit`
+
+### 3.3 Line Combination Historical Repair Split
+
+- `/api/v1/db/update-line-combinations` now distinguishes between `recent_gap` healing and `historical_backfill` repair instead of treating both workflows as one implicit `count`-driven scan.
+- The default route behavior remains `recent_gap`, preserving the current-season, missing-combo healer that scans a recent candidate window and updates only games with incomplete line-combination rows.
+- A new explicit `historical_backfill` mode now requires either `gameIds` or a `startDate`/`endDate` range, making historical repair intentional instead of guesswork driven by the recent-gap route.
+- Both modes now return `repairMode` and scope metadata so operators can tell whether they just ran a small recent-gap heal or a broader historical backfill.
+- Validation for this sub-task:
+- `./node_modules/.bin/vitest --run __tests__/pages/api/v1/db/update-line-combinations.test.ts __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts`
+- `npx tsc --noEmit`
+
+### 3.4 Freshness Gate Tightening
+
+- `fetchRollingPlayerAverages.ts` now always computes source-tail freshness diagnostics strongly enough to produce a concrete blocker count in the returned run summary, even when optional diagnostics are otherwise minimized.
+- `/api/v1/db/update-rolling-player-averages` now returns the rolling run summary and a `freshnessGate` block, and it fails with `422` when upstream freshness blockers remain unless the operator explicitly opts into `bypassFreshnessBlockers=true`.
+- `run-projection-v2.ts` now exports its projection preflight helper so downstream validation surfaces can reuse the same dependency gate instead of inventing a separate notion of freshness health.
+- `/api/v1/db/run-projection-accuracy` now runs projection freshness preflight before validating a requested projection window and returns `422` with the preflight result when stale prerequisites would make the accuracy output misleading; `bypassPreflight=true` remains the explicit override.
+- Validation for this sub-task:
+- `./node_modules/.bin/vitest --run __tests__/pages/api/v1/db/update-rolling-player-averages.test.ts __tests__/pages/api/v1/db/run-projection-accuracy.test.ts lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts lib/supabase/Upserts/rollingPlayerPipelineDiagnostics.test.ts`
+- `npx tsc --noEmit`
+
+### 3.5 Reader Serving-State Metadata
+
+- Added a shared `RequestedDateServingState` contract in `web/lib/dashboard/freshness.ts` so reader routes can report one explicit answer to the same question: is this the requested date or a fallback snapshot?
+- `/api/v1/forge/players`, `/api/v1/forge/goalies`, and `/api/v1/start-chart` now each return a `serving` block with `requestedDate`, `resolvedDate`, `fallbackApplied`, `isSameDay`, `state`, and a route-specific fallback `strategy`.
+- The start-chart route now distinguishes between `previous_date_with_games` fallback and `latest_available_with_data`, so its older slate behavior is explicit instead of being inferred indirectly from `dateUsed`.
+- `web/lib/dashboard/dataFetchers.ts` now types these reader payloads with the shared `serving` contract, so dashboard and validation callers can consume one consistent metadata shape instead of reverse-engineering separate date fields.
+- Added regression coverage proving:
+- `/api/v1/forge/players` reports both same-day and latest-available fallback serving state.
+- `/api/v1/forge/goalies` reports same-day and fallback serving state while preserving existing diagnostics.
+- `/api/v1/start-chart` reports same-day canonical serving and previous-date slate fallback serving.
+- Validation for this sub-task:
+- `./node_modules/.bin/vitest --run __tests__/pages/api/v1/forge/players.test.ts __tests__/pages/api/v1/forge/goalies.test.ts __tests__/pages/api/v1/start-chart.test.ts`
 - `npx tsc --noEmit`
 
 - [ ] 7.0 Clean up stale documentation and task references that still describe `runProjectionV2.ts` as an active projection-runner file

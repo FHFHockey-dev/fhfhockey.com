@@ -64,6 +64,7 @@ import {
 import { runProjectionV2ForDate } from "lib/projections/run-forge-projections";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
 import { getGoalieForgePipelineSpec } from "lib/projections/goaliePipeline";
+import { getRollingForgeStageDependencyContract } from "lib/rollingForgePipeline";
 import supabase from "lib/supabase/server";
 
 type PreflightGate = {
@@ -124,6 +125,7 @@ type Result =
       maxDurationMs: string;
       durationMs: string;
       pipeline: ReturnType<typeof getGoalieForgePipelineSpec>;
+      dependencyContract: ReturnType<typeof getRollingForgeStageDependencyContract>;
       preflight: PreflightSummary;
       observability: GoalieObservability;
       results?: Array<{
@@ -150,6 +152,7 @@ type Result =
       maxDurationMs: string;
       durationMs: string;
       pipeline: ReturnType<typeof getGoalieForgePipelineSpec>;
+      dependencyContract: ReturnType<typeof getRollingForgeStageDependencyContract>;
       preflight: PreflightSummary;
       observability: GoalieObservability;
       runId?: string;
@@ -283,7 +286,7 @@ export function summarizeGoalieRosterAssignments(args: {
   };
 }
 
-async function runProjectionPreflightChecks(
+export async function runProjectionPreflightChecks(
   asOfDate: string,
   bypassed: boolean
 ): Promise<PreflightSummary> {
@@ -657,6 +660,9 @@ async function handler(
   const chunkDays = parseChunkDays(getParam(req, "chunkDays"));
   const resumeFromDate = parseDateParam(getParam(req, "resumeFromDate"));
   const pipeline = getGoalieForgePipelineSpec();
+  const dependencyContract = getRollingForgeStageDependencyContract(
+    "projection_execution"
+  );
   const bypassPreflight = parseBooleanParam(getParam(req, "bypassPreflight"));
   const defaultPreflight: PreflightSummary = {
     asOfDate: "",
@@ -682,6 +688,7 @@ async function handler(
         resumeFromDate,
         nextStartDate: null,
         pipeline,
+        dependencyContract,
         preflight: defaultPreflight,
         observability: defaultObservability,
         timedOut: false,
@@ -719,6 +726,7 @@ async function handler(
       resumeFromDate,
       nextStartDate: null,
       pipeline,
+      dependencyContract,
       preflight: defaultPreflight,
       observability: defaultObservability,
       timedOut: false,
@@ -783,6 +791,7 @@ async function handler(
             resumeFromDate,
             nextStartDate: date,
             pipeline,
+            dependencyContract,
             preflight: rangePreflight,
             observability: failedRangePreflightObservability,
             timedOut: false,
@@ -814,6 +823,7 @@ async function handler(
             resumeFromDate,
             nextStartDate: date,
             pipeline,
+            dependencyContract,
             preflight: rangePreflight,
             observability: timedOutObservability,
             timedOut: true,
@@ -860,6 +870,7 @@ async function handler(
         resumeFromDate,
         nextStartDate: chunkNextStartDate,
         pipeline,
+        dependencyContract,
         preflight,
         observability: rangeObservability,
         timedOut: false,
@@ -891,6 +902,7 @@ async function handler(
         resumeFromDate,
         nextStartDate: asOfDate,
         pipeline,
+        dependencyContract,
         preflight,
         observability: failedPreflightObservability,
         timedOut: false,
@@ -921,6 +933,7 @@ async function handler(
         resumeFromDate,
         nextStartDate: asOfDate,
         pipeline,
+        dependencyContract,
         preflight,
         observability: singleRunObservability,
         timedOut: true,
@@ -946,6 +959,7 @@ async function handler(
         resumeFromDate,
         nextStartDate: null,
         pipeline,
+        dependencyContract,
         preflight,
         observability: singleRunObservability,
         timedOut: false,
@@ -976,6 +990,7 @@ async function handler(
         resumeFromDate,
         nextStartDate: null,
         pipeline,
+        dependencyContract,
         preflight,
         observability: {
           ...baseObservability,
