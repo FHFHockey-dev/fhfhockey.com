@@ -138,14 +138,21 @@ export const ROLLING_FORGE_PIPELINE_ORDER: RollingForgePipelineStage[] = [
   {
     id: "downstream_projection_consumers",
     order: 8,
-    label: "Downstream Projection Consumers",
+    label: "Legacy Start Chart And Accuracy",
     modes: ["overnight", "daily_incremental"],
-    operatorSurface: "downstream consumer refresh",
+    operatorSurface: "legacy start-chart materialization and accuracy refresh",
     routes: [
       "/api/v1/db/update-start-chart-projections",
       "/api/v1/db/run-projection-accuracy"
     ],
-    produces: ["start_chart_projections", "projection_accuracy_tables"],
+    produces: [
+      "player_projections (legacy transitional)",
+      "forge_projection_results",
+      "forge_projection_accuracy_daily",
+      "forge_projection_accuracy_player",
+      "forge_projection_accuracy_stat_daily",
+      "forge_projection_calibration_daily"
+    ],
     depends_on: ["projection_execution"],
     skippableInDaily: true,
     blocking: false
@@ -166,7 +173,7 @@ export const ROLLING_FORGE_PIPELINE_ORDER: RollingForgePipelineStage[] = [
 
 export function getRollingForgePipelineSpec() {
   return {
-    version: "rolling-forge-pipeline-v1",
+    version: "rolling-forge-pipeline-v2",
     stages: ROLLING_FORGE_PIPELINE_ORDER
   };
 }

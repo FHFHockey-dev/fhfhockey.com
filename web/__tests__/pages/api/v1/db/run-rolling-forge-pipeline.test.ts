@@ -203,8 +203,20 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
         durationLabel: expect.any(String),
         withinBudget: true
       },
+      executionControls: {
+        includeDownstream: true,
+        includeAccuracy: false,
+        stopOnFailure: true
+      },
+      downstreamSummary: {
+        stageId: "downstream_projection_consumers",
+        includesLegacyStartChartMaterialization: true,
+        includesAccuracyRefresh: false,
+        canonicalSkaterReadPath: "/api/v1/start-chart -> forge_player_projections",
+        legacyMaterializerRoute: "/api/v1/db/update-start-chart-projections"
+      },
       pipeline: {
-        version: "rolling-forge-pipeline-v1"
+        version: "rolling-forge-pipeline-v2"
       }
     });
     expect(res.body.stages.map((stage: any) => stage.id)).toEqual([

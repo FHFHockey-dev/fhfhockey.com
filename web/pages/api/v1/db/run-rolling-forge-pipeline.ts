@@ -72,6 +72,19 @@ type ResponseBody = {
     durationLabel: string;
     withinBudget: boolean;
   };
+  executionControls: {
+    includeDownstream: boolean;
+    includeAccuracy: boolean;
+    stopOnFailure: boolean;
+  };
+  downstreamSummary: {
+    stageId: "downstream_projection_consumers";
+    includesLegacyStartChartMaterialization: boolean;
+    includesAccuracyRefresh: boolean;
+    canonicalSkaterReadPath: string;
+    legacyMaterializerRoute: string;
+    notes: string[];
+  };
   pipeline: ReturnType<typeof getRollingForgePipelineSpec>;
   stages: StageResult[];
 };
@@ -404,14 +417,15 @@ async function runStage(args: {
     case "downstream_projection_consumers":
       if (!args.includeDownstream) {
         steps.push({
-          id: "downstream-consumers",
+          id: "legacy-start-chart-materialization",
           route: "/api/v1/db/update-start-chart-projections",
           status: "skipped",
           statusCode: 200,
           durationMs: 0,
           summary: null,
           query: {},
-          reason: "Downstream refresh disabled by request."
+          reason:
+            "Legacy start-chart materialization and accuracy refresh disabled by request."
         });
         break;
       }
@@ -442,7 +456,8 @@ async function runStage(args: {
           durationMs: 0,
           summary: null,
           query: {},
-          reason: "Accuracy run disabled by request."
+          reason:
+            "Accuracy refresh disabled by request, but legacy start-chart materialization still ran."
         });
       }
       break;
@@ -501,6 +516,19 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseBody>) 
       },
       durationMs: formatDurationMsToMMSS(0),
       runtimeBudget: buildRuntimeBudgetSummary("daily_incremental", 0),
+      executionControls: {
+        includeDownstream: false,
+        includeAccuracy: false,
+        stopOnFailure: true
+      },
+      downstreamSummary: {
+        stageId: "downstream_projection_consumers",
+        includesLegacyStartChartMaterialization: false,
+        includesAccuracyRefresh: false,
+        canonicalSkaterReadPath: "/api/v1/start-chart -> forge_player_projections",
+        legacyMaterializerRoute: "/api/v1/db/update-start-chart-projections",
+        notes: []
+      },
       pipeline: getRollingForgePipelineSpec(),
       stages: []
     });
@@ -555,6 +583,21 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseBody>) 
     (stage) => stage.blocking && stage.status === "failed"
   );
 
+  const downstreamNotes = [
+    "Stage 8 is a legacy start-chart materialization plus accuracy stage, not a canonical skater projection writer.",
+    "The Start Chart read layer now resolves skaters from forge_player_projections.",
+    "update-start-chart-projections remains a transitional writer for player_projections only."
+  ];
+  if (!includeDownstream) {
+    downstreamNotes.push(
+      "Legacy start-chart materialization and accuracy refresh were skipped by request."
+    );
+  } else if (!includeAccuracy) {
+    downstreamNotes.push(
+      "Accuracy refresh was skipped by request after legacy start-chart materialization."
+    );
+  }
+
   const durationMs = Date.now() - startedAt;
   return res.status(success ? 200 : 207).json({
     success,
@@ -566,6 +609,19 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseBody>) 
     },
     durationMs: formatDurationMsToMMSS(durationMs),
     runtimeBudget: buildRuntimeBudgetSummary(mode, durationMs),
+    executionControls: {
+      includeDownstream,
+      includeAccuracy,
+      stopOnFailure
+    },
+    downstreamSummary: {
+      stageId: "downstream_projection_consumers",
+      includesLegacyStartChartMaterialization: includeDownstream,
+      includesAccuracyRefresh: includeDownstream && includeAccuracy,
+      canonicalSkaterReadPath: "/api/v1/start-chart -> forge_player_projections",
+      legacyMaterializerRoute: "/api/v1/db/update-start-chart-projections",
+      notes: downstreamNotes
+    },
     pipeline: getRollingForgePipelineSpec(),
     stages: stageResults
   });

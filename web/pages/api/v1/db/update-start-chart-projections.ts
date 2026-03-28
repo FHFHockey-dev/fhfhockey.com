@@ -500,7 +500,7 @@ const handler = async (
       };
     }
 
-    // 6) Upsert into player_projections
+    // 6) Upsert into legacy player_projections for transitional compatibility only.
     const { error: upsertError } = await supabase
       .from("player_projections" as any)
       .upsert(upserts, { onConflict: "player_id, game_id" });
@@ -509,13 +509,18 @@ const handler = async (
     return {
       status: 200,
         body: {
-          message: "Start Chart projections updated",
+          message: "Legacy Start Chart projections updated",
           date,
           projections: upserts.length,
           playerTasksTotal: playerTasks.length,
           playerTasksProcessed: slicedTasks.length,
           playerOffset,
-          maxPlayers: maxPlayers ?? null
+          maxPlayers: maxPlayers ?? null,
+          legacySurface: true,
+          targetTable: "player_projections",
+          canonicalSkaterReadPath: "/api/v1/start-chart -> forge_player_projections",
+          warning:
+            "This route still materializes legacy player_projections for transitional compatibility only."
         }
       };
   };
