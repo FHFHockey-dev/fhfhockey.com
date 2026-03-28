@@ -26,7 +26,12 @@
 - `tasks/artifacts/forge-dashboard-goalie-health-audit.md` - Completed full-chain audit for goalie projections, uncertainty drivers, starter-risk display, requested-date fallback behavior, and the current `red` verdict.
 - `tasks/artifacts/forge-dashboard-goalie-freshness-ownership.md` - Completed goalie freshness-ownership trace covering the split Start Chart vs FORGE goalie chains, cron/pipeline ordering mismatch, requested-date coverage failure, and the current `red` verdict.
 - `tasks/artifacts/forge-dashboard-goalie-reconciliation.md` - Completed source-to-UI reconciliation for the goalie band, separating honest row rendering from missing requested-vs-resolved coverage context and the current `red` rendered-band verdict.
-- `tasks/artifacts/forge-dashboard-route-family-health-audit.md` - Planned route-family audit for FORGE landing previews and team/player drill-in consistency.
+- `tasks/artifacts/forge-dashboard-route-family-health-audit.md` - Completed route-family audit for the FORGE landing surface, documenting mixed-date preview risk, preview-to-dashboard drift, drill-in context loss, and the current `red` verdict.
+- `tasks/artifacts/forge-dashboard-route-preview-consistency.md` - Completed preview-to-dashboard comparison for the landing-page slate, adds, and sustainability modules, documenting where previews stay faithful versus where they drift into weaker or misleading semantics.
+- `tasks/artifacts/forge-dashboard-team-route-health-audit.md` - Completed audit of the team drill-in route, covering dashboard-to-route context loss, stale CTPI masking, source alignment, and the current `red` verdict.
+- `tasks/artifacts/forge-dashboard-player-route-health-audit.md` - Completed audit of the player drill-in route, covering Top Adds contract drift, fallback projection inheritance, route-context loss, and the current `red` verdict.
+- `tasks/artifacts/forge-dashboard-route-click-contract.md` - Completed click-routing audit across dashboard cards, landing previews, and shared nav, documenting where destinations match card semantics versus where date/context is still dropped.
+- `tasks/artifacts/forge-dashboard-route-family-reconciliation.md` - Completed route-family reconciliation tying together landing previews, team/player drill-ins, and click contracts into one final `red` route-family verdict and remediation summary.
 - `tasks/artifacts/forge-dashboard-cron-runtime-health-audit.md` - Planned cron, freshness, and runtime-budget audit across the components’ upstream refresh paths.
 - `web/pages/forge/dashboard.tsx` - Main FORGE dashboard route whose component bands and health behavior are the primary audit target.
 - `web/pages/FORGE.tsx` - FORGE preview/landing route that must stay consistent with the deeper dashboard surfaces it previews.
@@ -91,7 +96,7 @@
   - [x] 2.7 Audit `TeamPowerCard`, `web/pages/api/team-ratings.ts`, `web/pages/api/v1/trends/team-ctpi.ts`, and related matchup-edge logic, then record findings in `tasks/artifacts/forge-dashboard-team-context-health-audit.md`.
   - [x] 2.8 Verify Team Trend Context freshness ownership by tracing team-power, CTPI, matchup-context, and NST/WGO dependencies through their scheduled refresh jobs and runtime expectations.
   - [x] 2.9 Reconcile Team Trend Context output against the team ratings API, CTPI API, matchup inputs, and displayed variance/warning behavior to confirm the UI is not silently flattening or mislabeling team signals.
-- [ ] 3.0 Audit the sustainability, hot/cold movement, and goalie components end to end across UI, APIs, source tables, cron ownership, and source-to-UI reconciliation
+- [x] 3.0 Audit the sustainability, hot/cold movement, and goalie components end to end across UI, APIs, source tables, cron ownership, and source-to-UI reconciliation
   - [x] 3.1 Audit `SustainabilityCard`, `web/pages/api/v1/sustainability/trends.ts`, and the supporting normalizers/helpers, then record findings in `tasks/artifacts/forge-dashboard-sustainability-health-audit.md`.
   - [x] 3.2 Verify sustainability freshness ownership by tracing `sustainability_scores`, `player_baselines`, snapshot/fallback behavior, and the jobs that keep those sources current.
   - [x] 3.3 Reconcile Sustainable vs Unsustainable cards against source sustainability metrics, normalized explanation text, ownership-band filtering, and displayed trust/overheated labels.
@@ -102,12 +107,12 @@
   - [x] 3.8 Verify goalie freshness ownership by tracing `forge_goalie_projections`, uncertainty inputs, start-chart dependencies, and the jobs that keep goalie-facing data current within runtime expectations.
   - [x] 3.9 Reconcile the goalie band UI against goalie API responses, model recommendation fields, uncertainty drivers, and displayed starter-risk/confidence labels to confirm the component is representing goalie data accurately.
 - [ ] 4.0 Audit the FORGE landing page and the team/player drill-in routes for preview consistency, routing integrity, degraded-state handling, and full-chain data health
-  - [ ] 4.1 Audit `web/pages/FORGE.tsx` as a preview/gateway surface and record findings in `tasks/artifacts/forge-dashboard-route-family-health-audit.md`, with emphasis on preview-to-dashboard consistency.
-  - [ ] 4.2 Verify that landing-page preview modules use data and stale/degraded behavior consistent with the full dashboard components they preview.
-  - [ ] 4.3 Audit `web/pages/forge/team/[teamId].tsx` for routing integrity, API/source alignment, freshness ownership, and whether team drill-ins remain consistent with dashboard Team Trend Context.
-  - [ ] 4.4 Audit `web/pages/forge/player/[playerId].tsx` for routing integrity, API/source alignment, freshness ownership, and whether player drill-ins remain consistent with Top Adds and other dashboard player cards.
-  - [ ] 4.5 Verify that `ForgeRouteNav` and card click paths send users to destinations whose data contracts match the originating card semantics instead of producing misleading context shifts.
-  - [ ] 4.6 Reconcile the landing and drill-in routes against their source APIs and dashboard entry points so preview mismatches, route drift, and drill-in contract bugs are documented explicitly.
+  - [x] 4.1 Audit `web/pages/FORGE.tsx` as a preview/gateway surface and record findings in `tasks/artifacts/forge-dashboard-route-family-health-audit.md`, with emphasis on preview-to-dashboard consistency.
+  - [x] 4.2 Verify that landing-page preview modules use data and stale/degraded behavior consistent with the full dashboard components they preview.
+  - [x] 4.3 Audit `web/pages/forge/team/[teamId].tsx` for routing integrity, API/source alignment, freshness ownership, and whether team drill-ins remain consistent with dashboard Team Trend Context.
+  - [x] 4.4 Audit `web/pages/forge/player/[playerId].tsx` for routing integrity, API/source alignment, freshness ownership, and whether player drill-ins remain consistent with Top Adds and other dashboard player cards.
+  - [x] 4.5 Verify that `ForgeRouteNav` and card click paths send users to destinations whose data contracts match the originating card semantics instead of producing misleading context shifts.
+  - [x] 4.6 Reconcile the landing and drill-in routes against their source APIs and dashboard entry points so preview mismatches, route drift, and drill-in contract bugs are documented explicitly.
 - [ ] 5.0 Validate observability, degraded-state behavior, reconciliation methods, and runtime-budget expectations across all audited FORGE components
   - [ ] 5.1 Review existing tests, scripts, normalizer checks, and route-level verification to determine which components already have reliable observability and which do not.
   - [ ] 5.2 Audit degraded-state and blocked-state behavior across every component family to confirm stale, fallback, degraded, and blocked states are safe and informative.
@@ -126,6 +131,7 @@
 
 - `/api/v1/start-chart` - Matchups reconcile, but the audited slate showed a stale or empty goalie leg while the surface still looked current.
 - `/api/v1/forge/goalies` - Goalie-facing data is outdated relative to the audited slate window and is blocking a healthy slate/goalie contract.
+- `/api/v1/forge/players` - The FORGE landing page is currently previewing Top Adds from a fallback `asOfDate`, so the gateway surface is mixing stale projection context into a current-looking route.
 - `/api/v1/transactions/ownership-trends` - Ownership universe is truncated and the stable-ID merge path is not healthy in live data.
 - `/api/v1/transactions/ownership-snapshots` - Current season mapping is misaligned with live Yahoo rows, producing null ownership for valid dashboard players.
 - `/api/team-ratings` - Output date is current, but `trend10` is flat for every team on the audited date.
