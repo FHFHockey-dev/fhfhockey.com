@@ -160,6 +160,142 @@
   }
 }
 
+.accountSection {
+  padding: v.$space-lg v.$space-xl;
+  border-bottom: 1px solid rgba(v.$secondary-color, 0.14);
+  background: linear-gradient(
+    180deg,
+    rgba(v.$secondary-color, 0.06) 0%,
+    rgba(v.$background-light, 0.1) 100%
+  );
+}
+
+.accountCard {
+  display: grid;
+  gap: v.$space-lg;
+  padding: v.$space-lg;
+  border: 1px solid rgba(v.$secondary-color, 0.24);
+  border-radius: v.$border-radius-lg;
+  background: linear-gradient(
+    135deg,
+    rgba(v.$background-light, 0.76) 0%,
+    rgba(v.$background-light, 0.38) 100%
+  );
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.2);
+}
+
+.accountIdentity {
+  display: flex;
+  align-items: center;
+  gap: v.$space-md;
+}
+
+.accountAvatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid rgba(v.$secondary-color, 0.5);
+  background: linear-gradient(
+    135deg,
+    rgba(v.$secondary-color, 0.28) 0%,
+    rgba(v.$background-dark, 0.9) 100%
+  );
+  flex: 0 0 auto;
+}
+
+.accountAvatarImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.accountAvatarFallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: v.$color-white;
+  font-family: v.$font-family-accent;
+  font-size: v.$font-size-sm;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.accountMeta {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.accountName {
+  color: v.$color-white;
+  font-family: v.$font-family-accent;
+  font-size: v.$font-size-base;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.accountEmail {
+  color: rgba(v.$color-white, 0.72);
+  font-family: v.$font-family-primary;
+  font-size: v.$font-size-xs;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.accountActions {
+  display: grid;
+  gap: v.$space-sm;
+}
+
+.accountLink,
+.accountButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  padding: 0 v.$space-md;
+  border-radius: v.$border-radius-md;
+  border: 1px solid rgba(v.$secondary-color, 0.3);
+  background: rgba(v.$background-dark, 0.38);
+  color: v.$color-white;
+  cursor: pointer;
+  font-family: v.$font-family-primary;
+  font-size: v.$font-size-sm;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  transition:
+    transform v.$transition-duration v.$transition-easing,
+    border-color v.$transition-duration v.$transition-easing,
+    background-color v.$transition-duration v.$transition-easing,
+    box-shadow v.$transition-duration v.$transition-easing;
+
+  &:hover,
+  &:focus-visible {
+    transform: translateY(-1px);
+    border-color: v.$secondary-color;
+    background: rgba(v.$secondary-color, 0.18);
+    box-shadow: 0 8px 18px rgba(v.$secondary-color, 0.12);
+    outline: none;
+  }
+}
+
+.accountButton {
+  border-color: rgba(255, 128, 128, 0.28);
+  background: rgba(104, 22, 22, 0.34);
+
+  &:hover,
+  &:focus-visible {
+    border-color: rgba(255, 128, 128, 0.54);
+    background: rgba(140, 34, 34, 0.42);
+    box-shadow: 0 8px 18px rgba(140, 34, 34, 0.16);
+  }
+}
+
 // Search Section
 .searchSection {
   padding: v.$space-xl;
@@ -469,6 +605,7 @@
   }
 
   .authSection,
+  .accountSection,
   .searchSection,
   .navigationSection,
   .footer {

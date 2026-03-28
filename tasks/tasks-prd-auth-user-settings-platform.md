@@ -249,7 +249,8 @@
   - [x] NEW 33.1 Make the auth context publish the authenticated user immediately from the Supabase session before waiting on the optional `public.users` role query.
   - [x] NEW 33.2 Prevent the header from flashing the logged-out CTA while auth is still resolving.
   - [x] NEW 33.3 Add a logged-out mobile-menu auth CTA that opens the shared `AuthModal` so mobile users have the same sign-in/sign-up entry point as desktop.
-  - [ ] NEW 33.4 Verify in production that `/account` no longer hangs on "Loading account settings..." after Yahoo redirect round-trips.
+  - [x] NEW 33.4 Add signed-in mobile-menu account controls with avatar/context plus direct links to account settings, league settings, and sign-out.
+  - [ ] NEW 33.5 Verify in production that `/account` no longer hangs on "Loading account settings..." after Yahoo redirect round-trips.
 
 - [ ] NEW 34.0 Replace the current "clear browser history" auth recovery workaround with a targeted local FHFH auth-session reset.
   - [x] NEW 34.1 Add a browser-auth reset helper that clears only the FHFH/Supabase auth storage keys instead of wiping unrelated site logins.

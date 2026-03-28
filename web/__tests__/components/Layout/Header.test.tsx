@@ -3,7 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const authState = vi.hoisted(() => ({
   isLoading: false,
-  mockUser: null as any
+  mockUser: null as any,
+  signOut: vi.fn()
 }));
 
 vi.mock("next/image", () => ({
@@ -35,7 +36,13 @@ vi.mock("hooks/useHideableNavbar", () => ({
 }));
 
 vi.mock("components/Layout/MobileMenu", () => ({
-  default: ({ showAuthButton, onAuthClick }: any) => (
+  default: ({
+    showAuthButton,
+    onAuthClick,
+    showAccountControls,
+    accountUser,
+    onSignOut
+  }: any) => (
     <div data-testid="mobile-menu">
       {showAuthButton ? (
         <button
@@ -46,8 +53,30 @@ vi.mock("components/Layout/MobileMenu", () => ({
           Mobile Sign-in / Sign-up
         </button>
       ) : null}
+      {showAccountControls ? (
+        <>
+          <div data-testid="mobile-account-name">
+            {accountUser?.displayName || accountUser?.email || accountUser?.name}
+          </div>
+          <button
+            type="button"
+            data-testid="mobile-sign-out"
+            onClick={onSignOut}
+          >
+            Mobile Sign Out
+          </button>
+        </>
+      ) : null}
     </div>
   )
+}));
+
+vi.mock("lib/supabase/client", () => ({
+  default: {
+    auth: {
+      signOut: authState.signOut
+    }
+  }
 }));
 
 vi.mock("components/Layout/NavbarItems", () => ({
@@ -79,6 +108,8 @@ describe("Header auth entry", () => {
   beforeEach(() => {
     authState.isLoading = false;
     authState.mockUser = null;
+    authState.signOut.mockReset();
+    authState.signOut.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -124,14 +155,31 @@ describe("Header auth entry", () => {
     authState.mockUser = {
       id: "user-1",
       email: "tim@example.com",
-      displayName: "Tim Tester"
+      displayName: "Tim Tester",
+      avatarUrl: null
     };
 
     render(<Header />);
 
     expect(screen.queryByRole("button", { name: "Sign-in / Sign-up" })).toBeNull();
     expect(screen.queryByTestId("mobile-auth-cta")).toBeNull();
+    expect(screen.getByTestId("mobile-account-name").textContent).toBe("Tim Tester");
     expect(screen.getByTestId("user-menu")).toBeDefined();
+  });
+
+  it("signs out from the mobile menu for logged-in users", () => {
+    authState.mockUser = {
+      id: "user-1",
+      email: "tim@example.com",
+      displayName: "Tim Tester",
+      avatarUrl: null
+    };
+
+    render(<Header />);
+
+    fireEvent.click(screen.getByTestId("mobile-sign-out"));
+
+    expect(authState.signOut).toHaveBeenCalledTimes(1);
   });
 
   it("does not show the logged-out CTA while auth is still resolving", () => {

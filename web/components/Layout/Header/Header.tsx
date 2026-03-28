@@ -15,6 +15,7 @@ import SocialMedias from "components/SocialMedias";
 import AuthModal from "components/auth/AuthModal";
 import UserMenu from "components/auth/UserMenu";
 import { useAuth } from "contexts/AuthProviderContext";
+import supabase from "lib/supabase/client";
 
 import styles from "./Header.module.scss";
 // import LOGO from "public/pictures/logo3.png";
@@ -208,6 +209,11 @@ function Header() {
     setAuthModalOpen(true);
   };
 
+  const handleMobileSignOut = async () => {
+    setMenuOpen(false);
+    await supabase.auth.signOut();
+  };
+
   return (
     <>
       {/* Desktop Header */}
@@ -309,6 +315,9 @@ function Header() {
           visible={menuOpen}
           onItemClick={onItemClick}
           onAuthClick={handleMobileAuthClick}
+          onSignOut={handleMobileSignOut}
+          accountUser={user}
+          showAccountControls={Boolean(user) && !isLoading}
           showAuthButton={!user && !isLoading}
         />
       </ClientOnly>

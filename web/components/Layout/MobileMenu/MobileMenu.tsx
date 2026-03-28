@@ -10,9 +10,17 @@ import SocialMedias from "components/SocialMedias";
 import styles from "./MobileMenu.module.scss";
 
 type MobileMenuProps = {
+  accountUser?: {
+    avatarUrl?: string | null;
+    displayName?: string | null;
+    email?: string | null;
+    name?: string | null;
+  } | null;
   onItemClick: () => void;
   onAuthClick?: () => void;
+  onSignOut?: () => void | Promise<void>;
   showAuthButton?: boolean;
+  showAccountControls?: boolean;
   visible: boolean;
 };
 
@@ -81,9 +89,24 @@ const NAVIGATION_ITEMS = [
   }
 ];
 
+function getUserInitials(label?: string | null) {
+  const trimmed = (label || "").trim();
+  if (!trimmed) return "U";
+
+  const parts = trimmed.split(/\s+/).filter(Boolean);
+  if (parts.length === 1) {
+    return parts[0].slice(0, 1).toUpperCase();
+  }
+
+  return `${parts[0].slice(0, 1)}${parts[1].slice(0, 1)}`.toUpperCase();
+}
+
 function MobileMenu({
+  accountUser,
   onItemClick,
   onAuthClick,
+  onSignOut,
+  showAccountControls = false,
   showAuthButton = false,
   visible
 }: MobileMenuProps) {
@@ -170,6 +193,14 @@ function MobileMenu({
     onItemClick();
   };
 
+  const handleSignOut = async () => {
+    onItemClick();
+    await onSignOut?.();
+  };
+
+  const accountTitle =
+    accountUser?.displayName || accountUser?.email || accountUser?.name || "Account";
+
   return (
     <>
       {transitions((style, show) =>
@@ -203,6 +234,59 @@ function MobileMenu({
                   >
                     Sign-in / Sign-up
                   </button>
+                </div>
+              ) : null}
+
+              {showAccountControls && accountUser ? (
+                <div className={styles.accountSection}>
+                  <div className={styles.accountCard}>
+                    <div className={styles.accountIdentity}>
+                      <div className={styles.accountAvatar}>
+                        {accountUser.avatarUrl ? (
+                          <img
+                            src={accountUser.avatarUrl}
+                            alt={accountTitle}
+                            className={styles.accountAvatarImage}
+                          />
+                        ) : (
+                          <span className={styles.accountAvatarFallback}>
+                            {getUserInitials(accountTitle)}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className={styles.accountMeta}>
+                        <div className={styles.accountName}>{accountTitle}</div>
+                        {accountUser.email ? (
+                          <div className={styles.accountEmail}>{accountUser.email}</div>
+                        ) : null}
+                      </div>
+                    </div>
+
+                    <div className={styles.accountActions}>
+                      <Link
+                        href="/account"
+                        className={styles.accountLink}
+                        onClick={handleNavItemClick}
+                      >
+                        Account Settings
+                      </Link>
+                      <Link
+                        href="/account?section=league-settings"
+                        className={styles.accountLink}
+                        onClick={handleNavItemClick}
+                      >
+                        League Settings
+                      </Link>
+                      <button
+                        type="button"
+                        className={styles.accountButton}
+                        onClick={() => void handleSignOut()}
+                      >
+                        Sign Out
+                      </button>
+                    </div>
+                  </div>
                 </div>
               ) : null}
 
