@@ -43,6 +43,8 @@ describe("/api/v1/db/update-rolling-games", () => {
       route: "/api/v1/db/update-rolling-games",
       requestedMode: "recent",
       disposition: "DO NOT RUN",
+      retentionReason:
+        "Retained as a 410 quarantine stub until cron-source, failed-job inventories, and benchmark artifacts stop referencing this legacy route.",
       replacementRoute: "/api/v1/db/update-rolling-player-averages",
       canonicalOutput: "rolling_player_game_metrics"
     });

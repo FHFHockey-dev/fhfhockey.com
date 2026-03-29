@@ -42,6 +42,8 @@ describe("/api/v1/db/update-power-rankings", () => {
       success: false,
       route: "/api/v1/db/update-power-rankings",
       disposition: "DO NOT RUN",
+      retentionReason:
+        "Retained as a 410 quarantine stub until cron-source, failed-job inventories, and benchmark artifacts stop referencing this legacy route.",
       canonicalStatus: "no supported operator route",
       canonicalDataset: "power_rankings"
     });

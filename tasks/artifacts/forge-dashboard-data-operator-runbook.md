@@ -487,11 +487,16 @@ Call:
 
 - `http://localhost:3000/api/v1/db/update-team-power-ratings?date=2026-03-07`
 
-## Step Thirty-Three: Rebuild the new Team Power table
+## Step Thirty-Three: Do not run the disabled legacy Team Power route
 
-Call:
+Do not call:
 
 - `http://localhost:3000/api/v1/db/update-team-power-ratings-new?date=2026-03-07`
+
+Reason:
+
+1. `/api/v1/db/update-team-power-ratings-new` is now a quarantined `410 Gone` route.
+2. `/api/v1/db/update-team-power-ratings` is the only supported Team Power writer.
 
 ## Step Thirty-Four: Validate Team Power output
 
@@ -629,4 +634,4 @@ As of the latest audit:
 1) run update-nst-team-daily.ts
 2) run nst-team-stats.ts
 3) update-team-power-ratings.ts
-4) update-team-power-ratings-new.ts
+4) do not use update-team-power-ratings-new.ts; it is quarantined and retained only as a failing-safe legacy stub while old cron artifacts are cleaned up

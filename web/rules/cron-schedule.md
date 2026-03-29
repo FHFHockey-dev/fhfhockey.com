@@ -529,6 +529,9 @@
 -- |||||||||||||||||||||||||||||||||  09:13 UTC  |||||||||||||||||||||||||||||||||
 -- |||||||||||||||||||||||||||||||||  04:13 EST  |||||||||||||||||||||||||||||||||
 -- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+-- DISABLED IN PASS 3:
+-- Keep this historical schedule snippet only until the legacy route stub
+-- and audit artifacts are fully retired.
 
 -- SELECT cron.schedule(
 --     'update-team-power-ratings-new',
@@ -737,6 +740,9 @@
 -- |||||||||||||||||||||||||||||||||  10:25 UTC  |||||||||||||||||||||||||||||||||
 -- |||||||||||||||||||||||||||||||||  05:25 EST  |||||||||||||||||||||||||||||||||
 -- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+-- DISABLED IN PASS 3:
+-- Keep this historical schedule snippet only until the legacy route stub
+-- and audit artifacts are fully retired.
 
 -- SELECT cron.schedule(
 --     'update-rolling-games-recent',
@@ -1073,6 +1079,9 @@
 -- |||||||||||||||||||||||||||||||||  11:00 UTC  |||||||||||||||||||||||||||||||||
 -- |||||||||||||||||||||||||||||||||  06:00 EST  |||||||||||||||||||||||||||||||||
 -- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+-- DISABLED IN PASS 3:
+-- Keep this historical schedule snippet only until the legacy route stub
+-- and audit artifacts are fully retired.
 
 -- SELECT cron.schedule(
 --     'update-power-rankings',

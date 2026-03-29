@@ -23,6 +23,8 @@ async function handler(
     error: "Legacy power-rankings loader has been disabled.",
     route: "/api/v1/db/update-power-rankings",
     disposition: "DO NOT RUN",
+    retentionReason:
+      "Retained as a 410 quarantine stub until cron-source, failed-job inventories, and benchmark artifacts stop referencing this legacy route.",
     legacySurface: true,
     legacyLoader: "lib/supabase/Upserts/fetchPowerRankings.js",
     canonicalStatus: "no supported operator route",

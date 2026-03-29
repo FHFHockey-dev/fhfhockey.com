@@ -18,11 +18,9 @@
 - `web/pages/api/v1/projections/goalies.ts` - Redundant legacy goalie-reader namespace that should be deprecated or merged.
 - `web/__tests__/pages/api/v1/projections/players.test.ts` - Regression test proving the legacy player projection namespace remains readable but explicitly deprecated in favor of `/api/v1/forge/players`.
 - `web/__tests__/pages/api/v1/projections/goalies.test.ts` - Regression test proving the legacy goalie projection namespace remains readable but explicitly deprecated in favor of `/api/v1/forge/goalies`.
-- `web/pages/api/v1/db/update-goalie-projections.ts` - Quarantined old goalie-start writer that should be disabled and removed from operational use.
 - `web/pages/api/v1/db/update-goalie-projections-v2.ts` - Canonical goalie-start writer that should remain as the only supported write path.
-- `web/__tests__/pages/api/v1/db/update-goalie-projections.test.ts` - Regression test proving the legacy goalie-start writer is gated and points callers to the v2 route.
 - `web/pages/api/v1/db/update-team-power-ratings.ts` - Current team-ratings writer participating in the ambiguous dual-table story.
-- `web/pages/api/v1/db/update-team-power-ratings-new.ts` - Alternate team-ratings writer that must be validated, quarantined, or retired.
+- `web/pages/api/v1/db/update-team-power-ratings-new.ts` - Retained `410 Gone` legacy stub with an explicit retention reason while cron-source and operator docs are cleaned up.
 - `web/lib/teamRatingsService.ts` - Shared service layer that currently reads across both team-ratings tables and needs a single canonical table decision.
 - `web/lib/teamRatingsService.test.ts` - Regression coverage for the canonical team-ratings read path and same-table column-fallback behavior.
 - `web/__tests__/pages/api/v1/db/update-team-power-ratings-new.test.ts` - Regression test proving the alternate `__new` team-ratings writer is quarantined and points callers to the canonical writer.
@@ -41,8 +39,8 @@
 - `web/__tests__/pages/api/v1/db/build-projection-derived-v2.test.ts` - Regression test proving the derived-build route exposes the shared operator-order contract.
 - `web/pages/api/v1/db/run-projection-accuracy.ts` - Accuracy stage that should only run against fresh canonical outputs.
 - `web/__tests__/pages/api/v1/db/run-projection-accuracy.test.ts` - Regression test proving projection accuracy now honors projection preflight freshness gates before validating historical outcomes.
-- `web/pages/api/v1/db/update-rolling-games.ts` - Legacy loader route that should be audited for real usage, then gated or removed.
-- `web/pages/api/v1/db/update-power-rankings.ts` - Legacy JS loader route that should be audited for real usage, then gated or removed.
+- `web/pages/api/v1/db/update-rolling-games.ts` - Retained `410 Gone` legacy stub with an explicit retention reason while cron-source and benchmark artifacts are cleaned up.
+- `web/pages/api/v1/db/update-power-rankings.ts` - Retained `410 Gone` legacy stub with an explicit retention reason while cron-source and benchmark artifacts are cleaned up.
 - `web/__tests__/pages/api/v1/db/update-rolling-games.test.ts` - Regression test proving the legacy rolling-games wrapper is quarantined and points callers to the canonical rolling route.
 - `web/__tests__/pages/api/v1/db/update-power-rankings.test.ts` - Regression test proving the legacy power-rankings loader is disabled and marked non-canonical.
 - `web/pages/api/v1/forge/accuracy.ts` - Consumer reader that should continue reflecting canonical FORGE outputs after endpoint cleanup.
@@ -417,9 +415,82 @@
 - [x] 7.0 Clean up stale documentation and task references that still describe `runProjectionV2.ts` as an active projection-runner file
   - [x] 7.1 Update active docs and task guides that still describe `web/lib/projections/runProjectionV2.ts` as a live runtime path so the repo no longer teaches the removed shim as current architecture. [Deps: 2.3] [Files: `FORGE_EXPLAINED.md`, `tasks/*.md`, related active runbooks/docs] [AC: active guidance points to `run-forge-projections.ts` unless a historical note is explicitly marked as historical]
 
-- [ ] 8.0 Retire quarantined legacy operator routes now that pass-3 marked their canonical replacements and disabled their runtime behavior
-  - [ ] 8.1 Audit hidden schedulers, cron jobs, benchmarks, logs, and operator runbooks for continued use of disabled `410 Gone` routes: `update-goalie-projections.ts`, `update-team-power-ratings-new.ts`, `update-rolling-games.ts`, and `update-power-rankings.ts`. [Deps: 6.4] [Files: `vercel.json`, scheduler inventories, runbooks, observability surfaces, related docs] [AC: every disabled legacy route has a documented caller audit result]
-  - [ ] 8.2 Delete the disabled legacy operator routes whose caller audit is clear, and update any surviving docs or runbooks that still reference them. [Deps: 8.1] [Files: `web/pages/api/v1/db/update-goalie-projections.ts`, `web/pages/api/v1/db/update-team-power-ratings-new.ts`, `web/pages/api/v1/db/update-rolling-games.ts`, `web/pages/api/v1/db/update-power-rankings.ts`, related docs/tests] [AC: no disabled legacy operator route remains without an explicit retention reason]
+- [x] 8.0 Retire quarantined legacy operator routes now that pass-3 marked their canonical replacements and disabled their runtime behavior
+  - [x] 8.1 Audit hidden schedulers, cron jobs, benchmarks, logs, and operator runbooks for continued use of disabled `410 Gone` routes: `update-goalie-projections.ts`, `update-team-power-ratings-new.ts`, `update-rolling-games.ts`, and `update-power-rankings.ts`. [Deps: 6.4] [Files: `vercel.json`, scheduler inventories, runbooks, observability surfaces, related docs] [AC: every disabled legacy route has a documented caller audit result]
+  - [x] 8.2 Delete the disabled legacy operator routes whose caller audit is clear, and update any surviving docs or runbooks that still reference them. [Deps: 8.1] [Files: `web/pages/api/v1/db/update-goalie-projections.ts`, `web/pages/api/v1/db/update-team-power-ratings-new.ts`, `web/pages/api/v1/db/update-rolling-games.ts`, `web/pages/api/v1/db/update-power-rankings.ts`, related docs/tests] [AC: no disabled legacy operator route remains without an explicit retention reason]
+
+### 8.1 Disabled Route Caller Audit
+
+- Audited current scheduler and cron surfaces first:
+- `web/vercel.json` contains only function-duration config and no cron route entries, so there is no current app-level Vercel schedule definition still pointing at any of the disabled routes.
+- `web/rules/cron-schedule.md` still carries disabled-route schedule snippets for:
+- `/api/v1/db/update-team-power-ratings-new`
+- `/api/v1/db/update-rolling-games?date=recent`
+- `/api/v1/db/update-power-rankings`
+- Route-by-route audit result:
+- `/api/v1/db/update-goalie-projections`
+- No in-repo scheduler, cron inventory, benchmark artifact, or operator runbook still points at the disabled legacy goalie route.
+- Remaining in-repo references are quarantine docs, task history, route tests, and regression coverage asserting the route must stay disabled while `/api/v1/db/update-goalie-projections-v2` remains canonical.
+- `/api/v1/db/update-team-power-ratings-new`
+- Still appears in cron-source and observability artifacts:
+- `web/rules/cron-schedule.md`
+- `tasks/artifacts/cron-schedule-normalized-inventory.md`
+- `tasks/artifacts/cron-benchmark-run-latest.md`
+- `tasks/artifacts/cron-benchmark-run-latest.json`
+- `tasks/artifacts/cron-benchmark-run-2026-03-20T21-25-32Z.md`
+- `tasks/artifacts/cron-benchmark-run-2026-03-20T21-25-32Z.json`
+- Still appears in operator-facing docs:
+- `tasks/artifacts/forge-dashboard-data-operator-runbook.md`
+- `tasks/artifacts/forge-dashboard-team-context-freshness-ownership.md`
+- Still appears in active cron classification metadata:
+- `web/lib/cron/nstClassification.ts`
+- `/api/v1/db/update-rolling-games`
+- Still appears in cron-source and observability artifacts:
+- `web/rules/cron-schedule.md`
+- `tasks/artifacts/cron-schedule-normalized-inventory.md`
+- `tasks/artifacts/cron-failed-jobs-inventory.md`
+- `tasks/artifacts/cron-downstream-failure-dependencies.md`
+- `tasks/artifacts/cron-benchmark-run-latest.md`
+- `tasks/artifacts/cron-benchmark-run-latest.json`
+- `tasks/artifacts/cron-benchmark-run-2026-03-20T21-25-32Z.md`
+- `tasks/artifacts/cron-benchmark-run-2026-03-20T21-25-32Z.json`
+- Still appears in active audit/remediation docs:
+- `tasks/prd-cron-failed-jobs-remediation.md`
+- `tasks/tasks-prd-cron-failed-jobs-remediation.md`
+- `/api/v1/db/update-power-rankings`
+- Still appears in cron-source and observability artifacts:
+- `web/rules/cron-schedule.md`
+- `tasks/artifacts/cron-schedule-normalized-inventory.md`
+- `tasks/artifacts/cron-failed-jobs-inventory.md`
+- `tasks/artifacts/cron-benchmark-run-latest.md`
+- `tasks/artifacts/cron-benchmark-run-latest.json`
+- `tasks/artifacts/cron-benchmark-run-2026-03-20T21-25-32Z.md`
+- `tasks/artifacts/cron-benchmark-run-2026-03-20T21-25-32Z.json`
+- Still appears in active audit/remediation docs:
+- `tasks/prd-cron-failed-jobs-remediation.md`
+- `tasks/tasks-prd-cron-failed-jobs-remediation.md`
+- Deletion-readiness outcome:
+- `update-goalie-projections.ts` has a clean in-repo caller audit and is the strongest candidate for direct deletion in `8.2`.
+- `update-team-power-ratings-new.ts`, `update-rolling-games.ts`, and `update-power-rankings.ts` still have documented cron/runbook/benchmark footprints that must be cleaned up or intentionally preserved as historical artifacts during `8.2`.
+- Validation for this sub-task:
+- `rg -n "/api/v1/db/update-goalie-projections|/api/v1/db/update-team-power-ratings-new|/api/v1/db/update-rolling-games|/api/v1/db/update-power-rankings|update-goalie-projections\\.ts|update-team-power-ratings-new\\.ts|update-rolling-games\\.ts|update-power-rankings\\.ts" -g '!web/node_modules' -g '!web/.next' .`
+- `rg -n "/api/v1/db/update-team-power-ratings-new|/api/v1/db/update-rolling-games|/api/v1/db/update-power-rankings|/api/v1/db/update-goalie-projections(?!-v2)" web/lib web/scripts web/pages/api/v1/db/cron web/rules -g '!web/node_modules' --pcre2`
+
+### 8.2 Legacy Route Retirement And Retention Reasons
+
+- Deleted `web/pages/api/v1/db/update-goalie-projections.ts` after the clean `8.1` caller audit showed no remaining in-repo scheduler, inventory, benchmark, or runbook dependency on the disabled legacy goalie writer.
+- Deleted `web/__tests__/pages/api/v1/db/update-goalie-projections.test.ts` because the route it guarded no longer exists.
+- Kept `update-team-power-ratings-new.ts`, `update-rolling-games.ts`, and `update-power-rankings.ts` as `410 Gone` stubs, but added explicit `retentionReason` fields so they no longer survive as unexplained disabled routes.
+- Updated surviving operator-facing docs and runbooks that still referenced those retained stubs:
+- `web/rules/cron-schedule.md` now marks the legacy schedule snippets as `DISABLED IN PASS 3` historical entries.
+- `tasks/artifacts/forge-dashboard-data-operator-runbook.md` now tells operators not to call `update-team-power-ratings-new`.
+- `tasks/artifacts/forge-dashboard-team-context-freshness-ownership.md` now treats `update-team-power-ratings.ts` as canonical and the `__new` route as a quarantined historical stub.
+- This closes the ambiguity gap from `8.1`:
+- `update-goalie-projections.ts` is gone.
+- every still-present disabled legacy operator route now carries an explicit retention reason tied to remaining cron-source, inventory, benchmark, or runbook cleanup.
+- Validation for this sub-task:
+- `./node_modules/.bin/vitest --run __tests__/pages/api/v1/db/update-team-power-ratings-new.test.ts __tests__/pages/api/v1/db/update-rolling-games.test.ts __tests__/pages/api/v1/db/update-power-rankings.test.ts __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts`
+- `npx tsc --noEmit`
 
 ### 7.1 Active Runner-Path Docs Cleanup
 
