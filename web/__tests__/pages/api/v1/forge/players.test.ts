@@ -152,6 +152,23 @@ describe("/api/v1/forge/players", () => {
       requestedDate: "2026-02-07",
       horizonGames: 1,
       fallbackApplied: false,
+      scanSummary: {
+        surface: "forge_players_reader",
+        requestedDate: "2026-02-07",
+        activeDataDate: "2026-02-07",
+        fallbackApplied: false,
+        status: "ready",
+        rowCounts: {
+          returned: 1
+        },
+        blockingIssueCount: 0
+      },
+      compatibilityInventory: {
+        inventoryVersion: "forge-compatibility-inventory-v2",
+        canonicalRoute: "/api/v1/forge/players",
+        legacyRoute: "/api/v1/projections/players",
+        status: "canonical_preferred"
+      },
       serving: {
         requestedDate: "2026-02-07",
         resolvedDate: "2026-02-07",
@@ -260,6 +277,23 @@ describe("/api/v1/forge/players", () => {
       asOfDate: "2026-02-06",
       requestedDate: "2026-02-07",
       fallbackApplied: true,
+      scanSummary: {
+        surface: "forge_players_reader",
+        requestedDate: "2026-02-07",
+        activeDataDate: "2026-02-06",
+        fallbackApplied: true,
+        status: "ready",
+        rowCounts: {
+          returned: 1
+        },
+        blockingIssueCount: 0
+      },
+      compatibilityInventory: {
+        inventoryVersion: "forge-compatibility-inventory-v2",
+        canonicalRoute: "/api/v1/forge/players",
+        legacyRoute: "/api/v1/projections/players",
+        status: "canonical_preferred"
+      },
       serving: {
         requestedDate: "2026-02-07",
         resolvedDate: "2026-02-06",

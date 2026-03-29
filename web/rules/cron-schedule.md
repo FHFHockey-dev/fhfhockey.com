@@ -27,7 +27,7 @@
 -- - 09:14 UTC / 04:14 EST: update-wgo-teams
 -- - 09:15 UTC / 04:15 EST: update-nst-current-season
 -- - 09:30 UTC / 04:30 EST: update-goalie-projections-v2
--- - 09:40 UTC / 04:40 EST: update-start-chart-projections
+-- - 09:40 UTC / 04:40 EST: RETIRED IN PASS 3 (formerly update-start-chart-projections)
 -- - 09:45 UTC / 04:45 EST: ingest-projection-inputs
 -- - 09:50 UTC / 04:50 EST: build-forge-derived-v2
 -- - 09:55 UTC / 04:55 EST: update-nst-team-daily
@@ -588,18 +588,11 @@
 -- |||||||||||||||||||||||||||||||||  04:40 EST  |||||||||||||||||||||||||||||||||
 -- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
--- SELECT cron.schedule(
---     'update-start-chart-projections',
---     '40 9 * * *', -- 09:40 UTC
---     $$
---         SELECT net.http_post(
---             url := 'https://fhfhockey.com/api/v1/db/update-start-chart-projections',
---             body := '{}'::jsonb,
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233", "Content-Type": "application/json"}'::jsonb,
---             timeout_milliseconds := 300000
---         );
---     $$
--- );
+-- RETIRED IN PASS 3:
+-- `update-start-chart-projections` was removed after `/api/v1/start-chart`
+-- and the other surviving skater readers were moved to canonical
+-- `forge_player_projections`. There is no replacement cron job because the
+-- legacy `player_projections` materializer no longer has live readers.
 
 ----------------------------------------------------------------------------------
 -- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||

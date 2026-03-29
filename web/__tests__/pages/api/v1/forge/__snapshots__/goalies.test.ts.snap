@@ -15,6 +15,13 @@ exports[`/api/v1/forge/goalies > returns stable response shape with model/scenar
     "starterBrier": 0.19,
     "winBrier": 0.21,
   },
+  "compatibilityInventory": {
+    "canonicalRoute": "/api/v1/forge/goalies",
+    "inventoryVersion": "forge-compatibility-inventory-v2",
+    "legacyRoute": "/api/v1/projections/goalies",
+    "note": "Legacy namespace remains readable only for compatibility.",
+    "status": "canonical_preferred",
+  },
   "data": [
     {
       "blowup_risk": 0.22,
@@ -109,6 +116,20 @@ exports[`/api/v1/forge/goalies > returns stable response shape with model/scenar
   "requestedDate": "2026-02-07",
   "requestedRunId": "run-123",
   "runId": "run-123",
+  "scanSummary": {
+    "activeDataDate": "2026-02-07",
+    "blockingIssueCount": 0,
+    "fallbackApplied": false,
+    "notes": [],
+    "requestedDate": "2026-02-07",
+    "rowCounts": {
+      "requested": 1,
+      "returned": 1,
+      "scheduledGamesOnDate": 8,
+    },
+    "status": "ready",
+    "surface": "forge_goalies_reader",
+  },
   "scenarioCount": 2,
   "serving": {
     "fallbackApplied": false,

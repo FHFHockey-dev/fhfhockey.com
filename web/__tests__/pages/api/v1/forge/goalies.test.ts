@@ -190,6 +190,25 @@ describe("/api/v1/forge/goalies", () => {
       asOfDate: "2026-02-07",
       requestedDate: "2026-02-07",
       fallbackApplied: false,
+      scanSummary: {
+        surface: "forge_goalies_reader",
+        requestedDate: "2026-02-07",
+        activeDataDate: "2026-02-07",
+        fallbackApplied: false,
+        status: "ready",
+        rowCounts: {
+          returned: 1,
+          requested: 1,
+          scheduledGamesOnDate: 8
+        },
+        blockingIssueCount: 0
+      },
+      compatibilityInventory: {
+        inventoryVersion: "forge-compatibility-inventory-v2",
+        canonicalRoute: "/api/v1/forge/goalies",
+        legacyRoute: "/api/v1/projections/goalies",
+        status: "canonical_preferred"
+      },
       serving: {
         requestedDate: "2026-02-07",
         resolvedDate: "2026-02-07",
@@ -381,6 +400,25 @@ describe("/api/v1/forge/goalies", () => {
       isSameDay: false,
       state: "fallback",
       strategy: "latest_available_with_data"
+    });
+    expect(res.body.scanSummary).toMatchObject({
+      surface: "forge_goalies_reader",
+      requestedDate: "2026-02-07",
+      activeDataDate: "2026-02-06",
+      fallbackApplied: true,
+      status: "ready",
+      rowCounts: {
+        returned: 1,
+        requested: 0,
+        scheduledGamesOnDate: 6
+      },
+      blockingIssueCount: 0
+    });
+    expect(res.body.compatibilityInventory).toMatchObject({
+      inventoryVersion: "forge-compatibility-inventory-v2",
+      canonicalRoute: "/api/v1/forge/goalies",
+      legacyRoute: "/api/v1/projections/goalies",
+      status: "canonical_preferred"
     });
     expect(res.body.data).toHaveLength(1);
     expect(res.body.data[0]).toMatchObject({

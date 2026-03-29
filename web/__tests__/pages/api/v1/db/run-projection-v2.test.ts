@@ -119,6 +119,24 @@ describe("/api/v1/db/run-projection-v2", () => {
           })
         ]
       },
+      compatibilityInventory: {
+        version: "forge-compatibility-inventory-v2",
+        removedShim: {
+          legacyModulePath: "web/lib/projections/runProjectionV2.ts",
+          canonicalModulePath: "web/lib/projections/run-forge-projections.ts",
+          status: "removed"
+        },
+        duplicateReaders: expect.arrayContaining([
+          expect.objectContaining({
+            canonicalRoute: "/api/v1/forge/players",
+            legacyRoute: "/api/v1/projections/players"
+          }),
+          expect.objectContaining({
+            canonicalRoute: "/api/v1/forge/goalies",
+            legacyRoute: "/api/v1/projections/goalies"
+          })
+        ])
+      },
       dependencyError: {
         kind: "dependency_error",
         classification: "html_upstream_response",
@@ -133,6 +151,20 @@ describe("/api/v1/db/run-projection-v2", () => {
               "Upstream dependency returned an HTML error page instead of structured JSON."
           })
         ]
+      },
+      scanSummary: {
+        surface: "projection_run_operator",
+        requestedDate: "2026-03-20",
+        activeDataDate: "2026-03-20",
+        fallbackApplied: false,
+        status: "blocked",
+        rowCounts: {
+          gamesProcessed: 0,
+          playerRowsUpserted: 0,
+          teamRowsUpserted: 0,
+          goalieRowsUpserted: 0
+        },
+        blockingIssueCount: 1
       }
     });
   });

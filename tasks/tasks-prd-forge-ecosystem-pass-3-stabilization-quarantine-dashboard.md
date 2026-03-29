@@ -10,7 +10,7 @@
 - `web/__tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts` - Coordinator response-contract test covering stage order, spec version, and downstream execution metadata.
 - `web/pages/api/v1/db/run-projection-v2.ts` - Canonical projection execution endpoint whose preflight and operator-facing behavior may need freshness and deprecation updates.
 - `web/lib/projections/run-forge-projections.ts` - Canonical FORGE projection runner and downstream storage writer.
-- `web/pages/api/v1/db/update-start-chart-projections.ts` - Quarantined legacy downstream writer now explicitly marked transitional while it still materializes `player_projections`.
+- `web/pages/api/v1/db/update-start-chart-projections.ts` - Removed legacy downstream writer; keep only as a retired route reference while residual historical docs are cleaned up.
 - `web/pages/api/v1/start-chart.ts` - Start-chart consumer API now re-pointed to canonical `forge_player_projections` for skaters while still joining `goalie_start_projections` for goalie context.
 - `web/pages/api/v1/forge/players.ts` - Canonical player projection reader that should expose fallback and freshness state explicitly.
 - `web/pages/api/v1/forge/goalies.ts` - Canonical goalie projection reader that should expose fallback and freshness state explicitly.
@@ -502,11 +502,74 @@
 - `rg -n "runProjectionV2\\.ts|runProjectionV2\\b" FORGE_EXPLAINED.md tasks web -g '!web/node_modules'`
 - Result: remaining matches are intentional historical migration notes, task-history entries, compatibility inventory metadata, or test filenames rather than active docs teaching the removed shim as the current runtime path.
 
-- [ ] 9.0 Retire the remaining transitional start-chart legacy materialization after consumer verification
-  - [ ] 9.1 Map all remaining readers, jobs, docs, and manual workflows that still rely on `player_projections` or `/api/v1/db/update-start-chart-projections`. [Deps: 6.4] [Files: `web/**`, docs, task files, observability surfaces] [AC: the remaining `player_projections` dependency graph is explicit enough to support deletion or replacement]
-  - [ ] 9.2 Delete or replace `update-start-chart-projections.ts` once `player_projections` consumers are either retired or intentionally migrated to canonical FORGE read logic. [Deps: 9.1] [Files: `web/pages/api/v1/db/update-start-chart-projections.ts`, related readers/tests/docs] [AC: the legacy start-chart materializer is no longer an ambiguous surviving side channel]
+- [x] 9.0 Retire the remaining transitional start-chart legacy materialization after consumer verification
+  - [x] 9.1 Map all remaining readers, jobs, docs, and manual workflows that still rely on `player_projections` or `/api/v1/db/update-start-chart-projections`. [Deps: 6.4] [Files: `web/**`, docs, task files, observability surfaces] [AC: the remaining `player_projections` dependency graph is explicit enough to support deletion or replacement]
+  - [x] 9.2 Delete or replace `update-start-chart-projections.ts` once `player_projections` consumers are either retired or intentionally migrated to canonical FORGE read logic. [Deps: 9.1] [Files: `web/pages/api/v1/db/update-start-chart-projections.ts`, related readers/tests/docs] [AC: the legacy start-chart materializer is no longer an ambiguous surviving side channel]
 
 - [ ] 10.0 Resolve the remaining ownership and verification questions left open by pass 3
   - [ ] 10.1 Decide whether `goalie_start_projections` should remain a shared table name or be renamed/wrapped under clearer FORGE ownership in a later pass, then document the decision in active operator guidance. [Deps: 6.4] [Files: `tasks/prd-forge-ecosystem-pass-3-stabilization-quarantine-dashboard.md`, active runbooks/docs, related route metadata] [AC: the table’s long-term ownership story is explicit]
   - [ ] 10.2 Verify whether support-only WGO writers such as `update-wgo-ly.ts` and adjacent helper tables still have active product consumers, and quarantine or retire them if they do not. [Deps: 6.4] [Files: `web/pages/api/v1/db/update-wgo-ly.ts`, related WGO writers/readers/docs] [AC: support-only WGO surfaces have an explicit keep-or-retire decision]
   - [ ] 10.3 Run browser-level homepage verification for the new summary-first landing experience, then decide whether card-first standings/injuries or a lightweight “today in fantasy” summary layer should become a later implementation slice. [Deps: 5.6, 6.4] [Files: `web/pages/index.tsx`, `web/components/HomePage/**`, `web/components/TransactionTrends/**`, `web/components/TeamStandingsChart/**`, `web/styles/Home.module.scss`] [AC: homepage follow-up is driven by observed UX gaps instead of another speculative redesign pass]
+
+### 9.1 Remaining `player_projections` Dependency Map
+
+- Live runtime reader audit result:
+- No current `web/**` route still queries legacy `player_projections`.
+- Canonical skater readers now resolve through `forge_player_projections` in:
+- `/api/v1/start-chart`
+- `/api/v1/forge/players`
+- `/api/v1/projections/players`
+- `/api/v1/db/run-projection-accuracy`
+- Live runtime writer audit result:
+- `/api/v1/db/update-start-chart-projections` is still the only surviving writer that upserts legacy `player_projections`.
+- Live runtime orchestration still invoking that writer:
+- `/api/v1/db/run-rolling-forge-pipeline` stage 8 still imports and invokes `/api/v1/db/update-start-chart-projections`.
+- `web/lib/rollingForgePipeline.ts` still lists that stage as producing `player_projections (legacy transitional)`.
+- Test and compatibility surfaces still intentionally preserve the transitional contract:
+- `web/__tests__/pages/api/v1/db/update-start-chart-projections.test.ts`
+- `web/__tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts`
+- `web/__tests__/pages/api/v1/start-chart.test.ts`
+- `web/lib/projections/compatibilityInventory.ts`
+- `web/lib/dashboard/normalizers.test.ts`
+- Remaining scheduler, job, and manual-workflow references are documentation and observability surfaces rather than live reader code:
+- `web/rules/cron-schedule.md` still carries the `09:40 UTC` `update-start-chart-projections` schedule entry.
+- `tasks/artifacts/cron-schedule-normalized-inventory.md` still models that route as a downstream HTTP job.
+- Benchmark, failed-job, and audit artifacts still name the route, including `cron-benchmark-run-latest.*`, `cron-failed-jobs-inventory.md`, `cron-audit-findings.md`, and related cron remediation artifacts.
+- Several dashboard ownership and health artifacts still describe Start Chart as if it depended on `player_projections`, including `forge-dashboard-component-health-inventory.md`, `forge-dashboard-slate-freshness-ownership.md`, `forge-dashboard-slate-health-audit.md`, `forge-dashboard-slate-reconciliation.md`, `forge-dashboard-dependency-matrix.md`, and `forge-dashboard-component-reconciliation-checks.md`.
+- Active non-artifact task/PRD docs still needing cleanup or explicit historical framing include:
+- `tasks/prd-cron-failed-jobs-remediation.md`
+- `tasks/tasks-prd-cron-failed-jobs-remediation.md`
+- `tasks/tasks-prd-sustainability-trends-audit.md`
+- `tasks/prd-sustainability-trends-audit.md`
+- `tasks/tasks-prd-forge-dashboard-component-health.md`
+- `tasks/tasks-forge-dashboard-component-remediation.md`
+- Deletion-readiness outcome for `9.2`:
+- There is no remaining live `web/**` read-path blocker keeping `player_projections` alive.
+- The remaining dependency is the transitional writer plus its explicit stage-8 pipeline invocation, compatibility metadata, and the surrounding cron/runbook/audit documentation footprint.
+- `9.2` should therefore focus on removing or replacing the stage-8 materializer contract and then cleaning the remaining doc, test, and inventory references rather than chasing hidden runtime readers.
+- Validation for this sub-task:
+- `rg -n "player_projections|update-start-chart-projections" web -g '!web/node_modules' -g '!web/.next'`
+- `rg -n "update-start-chart-projections|player_projections" tasks web/rules FORGE_EXPLAINED.md -g '!web/node_modules'`
+
+### 9.2 Start-Chart Materializer Retirement
+
+- Deleted `web/pages/api/v1/db/update-start-chart-projections.ts` and its dedicated regression file because the `9.1` audit confirmed there were no remaining live `web/**` readers of `player_projections`.
+- `run-rolling-forge-pipeline.ts` no longer imports or invokes the legacy start-chart materializer.
+- `web/lib/rollingForgePipeline.ts` now treats stage 8 as `Projection Accuracy Refresh` only, removes the legacy route from the stage contract, drops `player_projections (legacy transitional)` from produced outputs, and bumps the spec version to `rolling-forge-pipeline-v3`.
+- `web/lib/projections/compatibilityInventory.ts` now moves `/api/v1/db/update-start-chart-projections` into a `retiredRoutes` ledger and updates Start Chart compatibility metadata to report the route as retired rather than transitional.
+- `web/pages/api/v1/start-chart.ts` still reads canonical `forge_player_projections`, but its compatibility payload now states that the legacy materializer was removed instead of advertising a surviving transitional writer.
+- Updated active operator docs so the route is not still taught as runnable:
+- `web/rules/cron-schedule.md` now marks the `09:40 UTC` slot as retired in pass 3 rather than listing a live cron definition.
+- `tasks/prd-forge-ecosystem-pass-3-stabilization-quarantine-dashboard.md` now records the route as retired and stage 8 as accuracy-only.
+- Updated regression coverage so the deleted route is not silently reintroduced:
+- `web/__tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts`
+- `web/__tests__/pages/api/v1/start-chart.test.ts`
+- `web/lib/projections/module-imports.test.ts`
+- `web/lib/dashboard/normalizers.test.ts`
+- `web/__tests__/pages/api/v1/forge/players.test.ts`
+- `web/__tests__/pages/api/v1/forge/goalies.test.ts`
+- `web/__tests__/pages/api/v1/db/run-projection-v2.test.ts`
+- Validation for this sub-task:
+- `./node_modules/.bin/vitest --run __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts __tests__/pages/api/v1/db/run-projection-v2.test.ts __tests__/pages/api/v1/start-chart.test.ts __tests__/pages/api/v1/forge/players.test.ts __tests__/pages/api/v1/forge/goalies.test.ts lib/projections/module-imports.test.ts lib/dashboard/normalizers.test.ts`
+- `npm run test:full`
+- `npx tsc --noEmit`

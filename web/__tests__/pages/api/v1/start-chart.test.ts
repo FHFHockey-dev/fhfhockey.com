@@ -281,6 +281,15 @@ describe("/api/v1/start-chart", () => {
       projectionRunId: "run-123",
       skaterSource: "forge_player_projections",
       goalieSource: "goalie_start_projections",
+      compatibilityInventory: {
+        inventoryVersion: "forge-compatibility-inventory-v2",
+        canonicalSkaterSource: "forge_player_projections",
+        canonicalReadRoute: "/api/v1/start-chart",
+        retiredLegacyMaterializerRoute:
+          "/api/v1/db/update-start-chart-projections",
+        legacyMaterializerRemoved: true,
+        legacyPlayerProjectionsReadDisabled: true
+      },
       legacyPlayerProjectionsUsed: false
     });
     const skater = res.body.players.find(
@@ -404,6 +413,15 @@ describe("/api/v1/start-chart", () => {
       dateUsed: "2026-02-07",
       requestedDate: "2026-02-08",
       fallbackApplied: true,
+      compatibilityInventory: {
+        inventoryVersion: "forge-compatibility-inventory-v2",
+        canonicalSkaterSource: "forge_player_projections",
+        canonicalReadRoute: "/api/v1/start-chart",
+        retiredLegacyMaterializerRoute:
+          "/api/v1/db/update-start-chart-projections",
+        legacyMaterializerRemoved: true,
+        legacyPlayerProjectionsReadDisabled: true
+      },
       serving: {
         requestedDate: "2026-02-08",
         resolvedDate: "2026-02-07",

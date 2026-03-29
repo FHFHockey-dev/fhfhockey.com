@@ -106,6 +106,87 @@ describe("dashboard normalizers", () => {
     });
   });
 
+  it("ignores fallback and compatibility metadata on start-chart reader payloads", () => {
+    const normalized = normalizeStartChartResponse({
+      dateUsed: "2026-03-15",
+      serving: {
+        requestedDate: "2026-03-16",
+        resolvedDate: "2026-03-15",
+        fallbackApplied: true,
+        state: "fallback",
+        strategy: "previous_date_with_games"
+      },
+      scanSummary: {
+        requestedDate: "2026-03-16",
+        activeDataDate: "2026-03-15",
+        fallbackApplied: true,
+        rowCounts: {
+          returned: 1
+        }
+      },
+      compatibilityInventory: {
+        canonicalReadRoute: "/api/v1/start-chart",
+        retiredLegacyMaterializerRoute:
+          "/api/v1/db/update-start-chart-projections",
+        legacyMaterializerRemoved: true
+      },
+      games: [
+        {
+          id: 2,
+          date: "2026-03-15",
+          homeTeamId: 3,
+          awayTeamId: 4,
+          homeGoalies: [
+            {
+              player_id: 20,
+              name: "Fallback Home Goalie",
+              start_probability: 0.58
+            }
+          ],
+          awayGoalies: [],
+          homeRating: {
+            offRating: 81,
+            defRating: 79,
+            paceRating: 80
+          },
+          awayRating: {}
+        }
+      ]
+    });
+
+    expect(normalized).toEqual({
+      dateUsed: "2026-03-15",
+      games: [
+        {
+          id: 2,
+          date: "2026-03-15",
+          homeTeamId: 3,
+          awayTeamId: 4,
+          homeGoalies: [
+            {
+              player_id: 20,
+              name: "Fallback Home Goalie",
+              start_probability: 0.58,
+              projected_gsaa_per_60: null,
+              confirmed_status: null,
+              percent_ownership: null
+            }
+          ],
+          awayGoalies: [],
+          homeRating: {
+            offRating: 81,
+            defRating: 79,
+            paceRating: 80,
+            trend10: null,
+            ppTier: null,
+            pkTier: null
+          },
+          awayRating: null
+        }
+      ]
+    });
+  });
+
   it("normalizes goalie projections with starter-selection detail", () => {
     const normalized = normalizeGoalieResponse({
       asOfDate: "2026-03-14",

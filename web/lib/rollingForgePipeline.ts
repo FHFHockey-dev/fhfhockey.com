@@ -159,15 +159,11 @@ export const ROLLING_FORGE_PIPELINE_ORDER: RollingForgePipelineStage[] = [
   {
     id: "downstream_projection_consumers",
     order: 8,
-    label: "Legacy Start Chart And Accuracy",
+    label: "Projection Accuracy Refresh",
     modes: ["overnight", "daily_incremental"],
-    operatorSurface: "legacy start-chart materialization and accuracy refresh",
-    routes: [
-      "/api/v1/db/update-start-chart-projections",
-      "/api/v1/db/run-projection-accuracy"
-    ],
+    operatorSurface: "projection accuracy refresh",
+    routes: ["/api/v1/db/run-projection-accuracy"],
     produces: [
-      "player_projections (legacy transitional)",
       "forge_projection_results",
       "forge_projection_accuracy_daily",
       "forge_projection_accuracy_player",
@@ -194,7 +190,7 @@ export const ROLLING_FORGE_PIPELINE_ORDER: RollingForgePipelineStage[] = [
 
 export function getRollingForgePipelineSpec() {
   return {
-    version: "rolling-forge-pipeline-v2",
+    version: "rolling-forge-pipeline-v3",
     stages: ROLLING_FORGE_PIPELINE_ORDER
   };
 }
@@ -224,7 +220,7 @@ const DEPENDENCY_STAGE_REQUIREMENTS: Record<
   projection_execution:
     "Goalie start priors and FORGE projections are only healthy after rolling_player_game_metrics and derived tables are fresh for the same execution window.",
   downstream_projection_consumers:
-    "Downstream consumers never repair stale canonical projections; they only materialize or evaluate projection_execution outputs.",
+    "Accuracy refresh only evaluates projection_execution outputs; it never repairs stale canonical projections.",
   monitoring:
     "Monitoring is diagnostic only and cannot make an otherwise stale run healthy."
 };
@@ -241,7 +237,7 @@ export function getRollingForgeDependencyContract(): RollingForgeDependencyContr
     falseHealthySignals: [
       "A successful rolling recompute does not imply projection ingest or derived tables are current.",
       "A successful ingest run does not imply rolling_player_game_metrics or contextual builders are fresh.",
-      "A successful downstream reader or legacy materializer does not imply projection_execution used healthy upstream inputs."
+      "A successful downstream accuracy refresh does not imply projection_execution used healthy upstream inputs."
     ],
     stages: ROLLING_FORGE_PIPELINE_ORDER.map((stage) => ({
       id: stage.id,

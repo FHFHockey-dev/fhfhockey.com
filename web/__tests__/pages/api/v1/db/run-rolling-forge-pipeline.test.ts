@@ -17,7 +17,6 @@ const {
   updateGoalieProjectionsV2Mock,
   runProjectionV2Mock,
   runProjectionAccuracyMock,
-  updateStartChartProjectionsMock,
   auditInsertMock,
   gamesSelectMock,
   gamesGteMock,
@@ -57,7 +56,6 @@ const {
     updateGoalieProjectionsV2Mock: vi.fn(successResponder),
     runProjectionV2Mock: vi.fn(successResponder),
     runProjectionAccuracyMock: vi.fn(successResponder),
-    updateStartChartProjectionsMock: vi.fn(successResponder),
     auditInsertMock: vi.fn().mockResolvedValue({ error: null }),
     gamesSelectMock,
     gamesGteMock,
@@ -111,9 +109,6 @@ vi.mock("../../../../../pages/api/v1/db/update-goalie-projections-v2", () => ({
 vi.mock("../../../../../pages/api/v1/db/run-projection-v2", () => ({ default: runProjectionV2Mock }));
 vi.mock("../../../../../pages/api/v1/db/run-projection-accuracy", () => ({
   default: runProjectionAccuracyMock
-}));
-vi.mock("../../../../../pages/api/v1/db/update-start-chart-projections", () => ({
-  default: updateStartChartProjectionsMock
 }));
 
 import handler from "../../../../../pages/api/v1/db/run-rolling-forge-pipeline";
@@ -214,10 +209,56 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
       },
       downstreamSummary: {
         stageId: "downstream_projection_consumers",
-        includesLegacyStartChartMaterialization: true,
+        includesLegacyStartChartMaterialization: false,
+        legacyStartChartMaterializerRetired: true,
         includesAccuracyRefresh: false,
         canonicalSkaterReadPath: "/api/v1/start-chart -> forge_player_projections",
-        legacyMaterializerRoute: "/api/v1/db/update-start-chart-projections"
+        legacyMaterializerRoute: null
+      },
+      compatibilityInventory: {
+        version: "forge-compatibility-inventory-v2",
+        removedShim: {
+          legacyModulePath: "web/lib/projections/runProjectionV2.ts",
+          canonicalModulePath: "web/lib/projections/run-forge-projections.ts",
+          status: "removed"
+        },
+        duplicateReaders: expect.arrayContaining([
+          expect.objectContaining({
+            canonicalRoute: "/api/v1/forge/players",
+            legacyRoute: "/api/v1/projections/players"
+          }),
+          expect.objectContaining({
+            canonicalRoute: "/api/v1/forge/goalies",
+            legacyRoute: "/api/v1/projections/goalies"
+          })
+        ]),
+        transitionalRoutes: expect.arrayContaining([
+          expect.objectContaining({
+            route: "/api/v1/db/update-goalie-projections-v2",
+            status: "canonical"
+          })
+        ]),
+        retiredRoutes: expect.arrayContaining([
+          expect.objectContaining({
+            route: "/api/v1/db/update-start-chart-projections",
+            status: "retired"
+          })
+        ])
+      },
+      scanSummary: {
+        surface: "rolling_forge_pipeline_operator",
+        requestedDate: "2026-03-14",
+        activeDataDate: "2026-03-14",
+        fallbackApplied: false,
+        status: "ready",
+        rowCounts: {
+          rollingPlayerRowsUpserted: 0,
+          projectionPlayerRowsUpserted: 0,
+          projectionTeamRowsUpserted: 0,
+          projectionGoalieRowsUpserted: 0,
+          accuracyRowsUpserted: 0
+        },
+        blockingIssueCount: 0
       },
       dependencyContract: {
         version: "rolling-forge-operator-order-v1",
@@ -234,7 +275,7 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
         ])
       },
       pipeline: {
-        version: "rolling-forge-pipeline-v2"
+        version: "rolling-forge-pipeline-v3"
       }
     });
     expect(res.body.stages.map((stage: any) => stage.id)).toEqual([
@@ -318,5 +359,33 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
         withinBudget: true
       }
     });
+  });
+
+  it("keeps stage 8 accuracy-only after retiring the legacy start-chart materializer", async () => {
+    const req: any = {
+      method: "GET",
+      query: {
+        mode: "daily_incremental",
+        date: "2026-03-14",
+        includeAccuracy: "true"
+      },
+      url: "/api/v1/db/run-rolling-forge-pipeline?mode=daily_incremental&date=2026-03-14&includeAccuracy=true"
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    const stage = res.body.stages.find(
+      (entry: any) => entry.id === "downstream_projection_consumers"
+    );
+
+    expect(runProjectionAccuracyMock).toHaveBeenCalledTimes(1);
+    expect(stage?.steps).toEqual([
+      expect.objectContaining({
+        id: "run-projection-accuracy",
+        route: "/api/v1/db/run-projection-accuracy",
+        status: "success"
+      })
+    ]);
   });
 });
