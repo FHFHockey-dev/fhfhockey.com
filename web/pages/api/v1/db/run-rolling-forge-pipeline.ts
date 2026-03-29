@@ -27,7 +27,6 @@ import updateNstGamelogHandler from "./update-nst-gamelog";
 import updateWgoSkatersHandler from "./update-wgo-skaters";
 import updateWgoTotalsHandler from "./update-wgo-totals";
 import updateWgoAveragesHandler from "./update-wgo-averages";
-import updateWgoLyHandler from "./update-wgo-ly";
 import updateLineCombinationsHandler from "./update-line-combinations";
 import updatePowerPlayCombinationsBatchHandler from "./update-power-play-combinations";
 import updateRollingPlayerAveragesHandler from "./update-rolling-player-averages";
@@ -398,24 +397,6 @@ async function runStage(args: {
           season: "current"
         }
       });
-      if (args.mode === "overnight") {
-        await addStep({
-          id: "update-wgo-ly",
-          route: "/api/v1/db/update-wgo-ly",
-          handler: updateWgoLyHandler
-        });
-      } else {
-        steps.push({
-          id: "update-wgo-ly",
-          route: "/api/v1/db/update-wgo-ly",
-          status: "skipped",
-          statusCode: 200,
-          durationMs: 0,
-          summary: null,
-          query: {},
-          reason: "Only included in overnight mode."
-        });
-      }
       break;
     case "contextual_builders": {
       await addStep({

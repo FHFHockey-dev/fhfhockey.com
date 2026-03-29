@@ -207,7 +207,15 @@ describe("/api/v1/forge/goalies", () => {
         inventoryVersion: "forge-compatibility-inventory-v2",
         canonicalRoute: "/api/v1/forge/goalies",
         legacyRoute: "/api/v1/projections/goalies",
-        status: "canonical_preferred"
+        status: "canonical_preferred",
+        goalieStartTable: {
+          decisionVersion: "goalie-start-ownership-v1",
+          table: "goalie_start_projections",
+          decision: "retain_shared_table_name_for_now",
+          canonicalWriterRoute: "/api/v1/db/update-goalie-projections-v2",
+          canonicalWriterStatus: "single_writer",
+          renameDeferred: true
+        }
       },
       serving: {
         requestedDate: "2026-02-07",
@@ -418,7 +426,15 @@ describe("/api/v1/forge/goalies", () => {
       inventoryVersion: "forge-compatibility-inventory-v2",
       canonicalRoute: "/api/v1/forge/goalies",
       legacyRoute: "/api/v1/projections/goalies",
-      status: "canonical_preferred"
+      status: "canonical_preferred",
+      goalieStartTable: {
+        decisionVersion: "goalie-start-ownership-v1",
+        table: "goalie_start_projections",
+        decision: "retain_shared_table_name_for_now",
+        canonicalWriterRoute: "/api/v1/db/update-goalie-projections-v2",
+        canonicalWriterStatus: "single_writer",
+        renameDeferred: true
+      }
     });
     expect(res.body.data).toHaveLength(1);
     expect(res.body.data[0]).toMatchObject({

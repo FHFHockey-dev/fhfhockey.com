@@ -1,7 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { z } from "zod";
 
+import { buildEndpointScanSummary } from "lib/api/scanSummary";
 import { buildRequestedDateServingState } from "lib/dashboard/freshness";
+import { buildGoalieReaderCompatibility } from "lib/projections/compatibilityInventory";
 import supabase from "lib/supabase/server";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
 import {
@@ -475,6 +477,24 @@ export default async function handler(
         ? "latest_available_with_data"
         : "requested_date"
     });
+    const scanSummary = buildEndpointScanSummary({
+      surface: "forge_goalies_reader",
+      requestedDate,
+      activeDataDate: resolvedDate,
+      fallbackApplied,
+      status: rows.length > 0 ? "ready" : "empty",
+      rowCounts: {
+        returned: rows.length,
+        requested: requestedRowCount,
+        scheduledGamesOnDate: scheduledGamesCount
+      },
+      notes: [
+        fallbackApplied
+          ? `Serving fallback goalie projections from ${resolvedDate}.`
+          : null,
+        ...notes
+      ]
+    });
 
     return res.status(200).json({
       durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
@@ -489,6 +509,8 @@ export default async function handler(
       fallbackApplied,
       fallbackToLatestWithData: q.fallbackToLatestWithData,
       serving,
+      scanSummary,
+      compatibilityInventory: buildGoalieReaderCompatibility(),
       diagnostics: {
         requested: {
           date: requestedDate,

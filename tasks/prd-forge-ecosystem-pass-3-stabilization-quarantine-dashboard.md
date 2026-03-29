@@ -90,7 +90,7 @@ The result is avoidable confusion around what is current, what is safe to run, w
 - `run-forge-projections.ts` is the canonical projection runner, and the old `runProjectionV2.ts` shim has been removed from runtime.
 - `run-rolling-forge-pipeline.ts` and `rollingForgePipeline.ts` now define the newer stage model with stage 8 reduced to accuracy refresh only after the legacy start-chart materializer was retired.
 - The start-chart read layer is aligned to canonical `forge_player_projections`, and the legacy `player_projections` materializer has now been removed from the live pipeline.
-- `goalie_start_projections` remains a live dependency for multiple readers and runners, which means the table still carries shared ownership and legacy naming pressure even though the old writer route is now disabled.
+- `goalie_start_projections` remains a live dependency for multiple readers and runners. Pass 3 now treats it as an intentionally shared table with one canonical writer, while any rename or wrapping is deferred to a later pass.
 - `team_power_ratings_daily` and `team_power_ratings_daily__new` still both exist structurally, but the rating service now reads only `team_power_ratings_daily` and the alternate writer is disabled.
 - The landing page was broken into focused homepage sections and no longer relies on the previous hard `min-width: 1300px` desktop lock, though further browser verification is still warranted.
 
@@ -161,7 +161,6 @@ The result is avoidable confusion around what is current, what is safe to run, w
 - `web/pages/api/v1/db/update-wgo-skaters.ts`
 - `web/pages/api/v1/db/update-wgo-totals.ts`
 - `web/pages/api/v1/db/update-wgo-averages.ts`
-- `web/pages/api/v1/db/update-wgo-ly.ts`
 
 ### UI and Dashboard Surfaces
 
@@ -263,7 +262,7 @@ The result is avoidable confusion around what is current, what is safe to run, w
 | `web/pages/api/v1/db/update-wgo-skaters.ts` | `/api/v1/db/update-wgo-skaters` | Refresh WGO per-game skater spine | Produces `wgo_skater_stats` | High | `HEALTHY` | `RUN ONLY AFTER DEPENDENCIES` | Large multi-endpoint fetch surface | Keep; treat as rolling-spine dependency |
 | `web/pages/api/v1/db/update-wgo-totals.ts` | `/api/v1/db/update-wgo-totals` | Refresh WGO season totals | Support tables for downstream historical context | Medium | `UNKNOWN` | `NEEDS VERIFICATION` | Relevant but not clearly tied to canonical FORGE consumers | Keep only if current consumers still rely on it; verify |
 | `web/pages/api/v1/db/update-wgo-averages.ts` | `/api/v1/db/update-wgo-averages` | Build WGO average surfaces | Support tables for downstream stats | Medium | `UNKNOWN` | `NEEDS VERIFICATION` | Large derived surface, unclear current consumer ownership | Verify continued need; keep only if still consumed |
-| `web/pages/api/v1/db/update-wgo-ly.ts` | `/api/v1/db/update-wgo-ly` | Build last-year WGO helper data | Support table for historical context | Low | `OUTDATED` | `NEEDS VERIFICATION` | Architecturally old support path with unclear current owner | Verify dependency; likely deprecate or fold into a canonical historical path |
+| `web/pages/api/v1/db/update-wgo-ly.ts` | retired route | Former last-year WGO helper writer | Formerly wrote `wgo_skater_stats_totals_ly` support data | Low | `RETIRED` | `DO NOT RUN` | `calculate-wigo-stats` and live WiGO surfaces already derive LY context from ordinary seasonal rows rather than the `_ly` helper table | Keep deleted; clean residual historical references only |
 | `web/pages/api/v1/db/update-line-combinations/[id].ts` | `/api/v1/db/update-line-combinations/[id]` | Per-game line builder | Produces `lineCombinations` | High | `HEALTHY` | `RUN ONLY AFTER DEPENDENCIES` | Needed for rolling context and start-chart player selection | Keep as canonical per-game builder |
 | `web/pages/api/v1/db/update-line-combinations/index.ts` | `/api/v1/db/update-line-combinations` | Line-combination repair surface | Produces `lineCombinations` through explicit `recent_gap` or `historical_backfill` modes | High | `HEALTHY` | `RUN ONLY AFTER DEPENDENCIES` | Historical repair is now explicit, but callers still need to choose the right scope intentionally | Keep as canonical batch repair route |
 | `web/pages/api/v1/db/update-power-play-combinations/[gameId].ts` | `/api/v1/db/update-power-play-combinations/[gameId]` | Per-game PP context builder | Produces `powerPlayCombinations` | High | `HEALTHY` | `RUN ONLY AFTER DEPENDENCIES` | Still a per-game builder, but no longer the only repair option | Keep as canonical per-game PP builder |
@@ -272,7 +271,7 @@ The result is avoidable confusion around what is current, what is safe to run, w
 | `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts` | module entry | Rolling pipeline semantic owner | Reads WGO, NST, PP, line combos; writes rolling rows | High | `HEALTHY` | `RUN ONLY AFTER DEPENDENCIES` | Large monolith with compatibility and diagnostics burden | Keep as owner; continue consolidation inside it |
 | `web/pages/api/v1/db/ingest-projection-inputs.ts` | `/api/v1/db/ingest-projection-inputs` | Ingest PBP and shift inputs | Produces `pbp_games`, `pbp_plays`, `shift_charts` | High | `HEALTHY` | `RUN ONLY AFTER DEPENDENCIES` | Partial-resume and skip behavior need explicit freshness interpretation | Keep as canonical ingest stage |
 | `web/pages/api/v1/db/build-projection-derived-v2.ts` | `/api/v1/db/build-projection-derived-v2` | Build derived strength tables | Produces `forge_player_game_strength`, `forge_team_game_strength`, `forge_goalie_game` | High | `HEALTHY` | `RUN ONLY AFTER DEPENDENCIES` | Current stage appears aligned and test-backed | Keep as canonical derived builder |
-| `web/pages/api/v1/db/update-goalie-projections-v2.ts` | `/api/v1/db/update-goalie-projections-v2` | Build goalie start priors | Writes `goalie_start_projections` | High | `HEALTHY` | `RUN ONLY AFTER DEPENDENCIES` | Still writes pre-FORGE-named table; observability lighter than other v2 surfaces | Keep for now; rename or wrap under canonical ownership later |
+| `web/pages/api/v1/db/update-goalie-projections-v2.ts` | `/api/v1/db/update-goalie-projections-v2` | Build goalie start priors | Writes `goalie_start_projections` | High | `HEALTHY` | `RUN ONLY AFTER DEPENDENCIES` | Pass 3 now records this as the sole canonical writer for an intentionally shared goalie-prior table | Keep as the single writer; revisit rename or wrapping only in a later coordinated pass |
 | `web/pages/api/v1/db/run-projection-v2.ts` | `/api/v1/db/run-projection-v2` | Canonical FORGE projection execution endpoint | Calls `run-forge-projections.ts`; writes `forge_runs` and projection outputs | High | `HEALTHY` | `RUN ONLY AFTER DEPENDENCIES` | Route name is still migration-era, but preflight, scan summary, and compatibility inventory are now explicit | Keep as canonical executor while planning route/name cleanup |
 | `web/lib/projections/run-forge-projections.ts` | module entry | Canonical projection runner | Reads rolling + derived tables; writes FORGE projection tables | High | `HEALTHY` | `RUN ONLY AFTER DEPENDENCIES` | Strong centrality means drift elsewhere quickly becomes product-visible | Keep as canonical runner |
 | `web/lib/projections/queries/skater-queries.ts` | module entry | Rolling-reader query surface for skater projection inputs | Reads `rolling_player_game_metrics` with compatibility fallback ordering | High | `HEALTHY` | `RUN ONLY AFTER DEPENDENCIES` | Still depends on canonical-plus-legacy duality | Keep; retire compatibility once downstream is cleaned up |
@@ -313,7 +312,7 @@ The result is avoidable confusion around what is current, what is safe to run, w
 | Order | Stage | Canonical Surfaces | Primary Outputs | Main Risk if Stale |
 | --- | --- | --- | --- | --- |
 | 1 | Core entity freshness | `update-teams`, `update-games`, `update-players` | `teams`, `team_season`, `games`, `players`, `rosters` | Later stages can use incomplete teams, games, or rosters |
-| 2 | Upstream skater sources | `update-nst-gamelog`, `update-wgo-skaters`, `update-wgo-totals`, `update-wgo-averages`, `update-wgo-ly` | NST and WGO source tables | Rolling rows become stale or falsely validated |
+| 2 | Upstream skater sources | `update-nst-gamelog`, `update-wgo-skaters`, `update-wgo-totals`, `update-wgo-averages` | NST and WGO source tables | Rolling rows become stale or falsely validated |
 | 3 | Contextual builders | `update-line-combinations/[id]`, `update-line-combinations`, `update-power-play-combinations/[gameId]`, `update-power-play-combinations` | `lineCombinations`, `powerPlayCombinations` | PP share, PP unit, and line labels lose trust |
 | 4 | Rolling recompute | `update-rolling-player-averages`, `fetchRollingPlayerAverages.ts` | `rolling_player_game_metrics` | Projection inputs and trends pages inherit stale metrics |
 | 5 | Projection ingest | `ingest-projection-inputs` | `pbp_games`, `pbp_plays`, `shift_charts` | Derived tables miss current games |
@@ -328,7 +327,7 @@ The result is avoidable confusion around what is current, what is safe to run, w
 - `update-rolling-player-averages` is still a flexible operator surface. It now reports `runSummary` and `freshnessGate`, and blocks on upstream freshness unless bypassed, but bypass flags can still be misused.
 - `run-projection-v2` and `run-projection-accuracy` now enforce dependency-aware preflight behavior. The remaining weak point is downstream validation discipline when a reader endpoint is allowed to serve fallback data.
 - `/api/v1/forge/players`, `/api/v1/forge/goalies`, and `/api/v1/start-chart` still allow fallback behavior for resilience, but they now expose `serving` metadata and scan summaries. The residual risk is operator misuse of those fallback-capable readers as strict same-day validation surfaces.
-- `goalie_start_projections` remains a shared upstream dependency with legacy naming. The write path is singular now, but the table name still under-communicates that it is part of the canonical FORGE serving story.
+- `goalie_start_projections` remains a shared upstream dependency with legacy naming, but pass 3 now makes that sharing explicit: one canonical writer, multiple legitimate readers, and no near-term rename inside this stabilization pass.
 - `update-start-chart-projections.ts` still materializes `player_projections`, which means the ecosystem still carries one bounded legacy skater-output side channel even though the start-chart read layer was corrected.
 
 ### Stale-Tail and False-Validation Risks
@@ -374,8 +373,9 @@ Pass 3 now codifies large parts of this standard directly in route contracts and
 ### Residual UX Gaps
 
 - Standings and injuries are still fundamentally table-based modules. The page is more coherent now, but a future card-first or progressively disclosed treatment could improve scanability further.
-- The homepage refactor was typechecked and covered by targeted shared-helper tests, but it was not fully browser-verified in this pass.
-- The product story is materially stronger than before, but there is still room for a more opinionated “today in fantasy” summary layer if the homepage needs another iteration later.
+- Browser verification on March 29, 2026 confirmed the new summary-first structure is directionally right, but it also exposed a hydration mismatch in the slate summary where server and client render different timezone strings for the same hero copy.
+- The immediate homepage follow-up should therefore be correctness-first: fix the server/client timezone mismatch before treating the landing page as fully stabilized.
+- The product story is materially stronger than before, and if a later UX iteration is still warranted after that hydration fix, card-first standings or injuries should take precedence over adding a separate “today in fantasy” summary layer.
 
 ## Landing Dashboard Improvement Plan
 
@@ -400,7 +400,7 @@ Pass 3 now codifies large parts of this standard directly in route contracts and
 | P2 | Convert standings and injuries from raw table-first presentation to card-first or summary-first presentation with expandable detail | `OPEN` | `web/components/HomePage/HomepageStandingsInjuriesSection.tsx`, `web/styles/Home.module.scss` |
 | P3 | Introduce a two-column homepage architecture with a main insight rail and a secondary utility rail | `OPTIONAL` | `web/pages/index.tsx`, `web/styles/Home.module.scss` |
 | P3 | Create a dedicated shared homepage section system for consistent wrappers, titles, status panels, and compact summaries | `OPTIONAL` | homepage component layer |
-| P3 | Introduce a lightweight “today in fantasy” summary card that bridges homepage utilities with FORGE surfaces | `OPTIONAL` | homepage component layer |
+| P3 | Introduce a lightweight “today in fantasy” summary card that bridges homepage utilities with FORGE surfaces | `DEFERRED` | homepage component layer |
 
 ## Deprecation / Merge / Delete Candidates
 
@@ -439,13 +439,12 @@ The follow-up implementation queue should stay in this PRD and the companion tas
 13. Verify that no hidden schedulers, cron jobs, benchmarks, or external callers still rely on the disabled `410 Gone` routes before deleting them.
 14. Clean any remaining active docs or task references that still teach the retired start-chart materializer as a live route.
 15. Clean active docs and task references that still teach `runProjectionV2.ts` as a live runner path.
-16. Decide whether `goalie_start_projections` remains an intentionally shared table name or should be renamed or wrapped under clearer FORGE ownership in a later pass.
-17. Revisit whether support-only WGO writers such as `update-wgo-ly.ts` and adjacent helper tables still deserve active write paths or should be folded into a narrower historical contract.
-18. If homepage iteration continues, evaluate a card-first standings or injuries treatment and optional “today in fantasy” summary layer after browser verification.
+16. If a later pass renames or wraps `goalie_start_projections`, migrate all shared readers together instead of creating another partial compatibility layer.
+17. Audit any remaining support-only WGO helper writers beyond `update-wgo-ly.ts` before treating them as active pipeline dependencies again.
+18. If homepage iteration continues after the verified timezone hydration mismatch is fixed, prioritize a card-first standings or injuries treatment before considering any optional “today in fantasy” summary layer.
 
 ## Open Questions
 
-- Is `goalie_start_projections` intended to remain a permanent shared table, or should it be renamed and absorbed into a more obviously FORGE-owned surface in a later pass?
 - Are there any production schedulers, Vercel cron jobs, or external consumers still hitting the quarantined legacy routes that are not visible from repo references alone?
 - Which of the support WGO writers are still required for active product surfaces versus historical analysis only?
 - These questions should be resolved during implementation sequencing, but they do not justify another pass-3 planning document. This PRD remains the single pass-3 source of truth for task generation, endpoint quarantine, stabilization work, and landing dashboard polish.

@@ -506,10 +506,10 @@
   - [x] 9.1 Map all remaining readers, jobs, docs, and manual workflows that still rely on `player_projections` or `/api/v1/db/update-start-chart-projections`. [Deps: 6.4] [Files: `web/**`, docs, task files, observability surfaces] [AC: the remaining `player_projections` dependency graph is explicit enough to support deletion or replacement]
   - [x] 9.2 Delete or replace `update-start-chart-projections.ts` once `player_projections` consumers are either retired or intentionally migrated to canonical FORGE read logic. [Deps: 9.1] [Files: `web/pages/api/v1/db/update-start-chart-projections.ts`, related readers/tests/docs] [AC: the legacy start-chart materializer is no longer an ambiguous surviving side channel]
 
-- [ ] 10.0 Resolve the remaining ownership and verification questions left open by pass 3
-  - [ ] 10.1 Decide whether `goalie_start_projections` should remain a shared table name or be renamed/wrapped under clearer FORGE ownership in a later pass, then document the decision in active operator guidance. [Deps: 6.4] [Files: `tasks/prd-forge-ecosystem-pass-3-stabilization-quarantine-dashboard.md`, active runbooks/docs, related route metadata] [AC: the table’s long-term ownership story is explicit]
-  - [ ] 10.2 Verify whether support-only WGO writers such as `update-wgo-ly.ts` and adjacent helper tables still have active product consumers, and quarantine or retire them if they do not. [Deps: 6.4] [Files: `web/pages/api/v1/db/update-wgo-ly.ts`, related WGO writers/readers/docs] [AC: support-only WGO surfaces have an explicit keep-or-retire decision]
-  - [ ] 10.3 Run browser-level homepage verification for the new summary-first landing experience, then decide whether card-first standings/injuries or a lightweight “today in fantasy” summary layer should become a later implementation slice. [Deps: 5.6, 6.4] [Files: `web/pages/index.tsx`, `web/components/HomePage/**`, `web/components/TransactionTrends/**`, `web/components/TeamStandingsChart/**`, `web/styles/Home.module.scss`] [AC: homepage follow-up is driven by observed UX gaps instead of another speculative redesign pass]
+- [x] 10.0 Resolve the remaining ownership and verification questions left open by pass 3
+  - [x] 10.1 Decide whether `goalie_start_projections` should remain a shared table name or be renamed/wrapped under clearer FORGE ownership in a later pass, then document the decision in active operator guidance. [Deps: 6.4] [Files: `tasks/prd-forge-ecosystem-pass-3-stabilization-quarantine-dashboard.md`, active runbooks/docs, related route metadata] [AC: the table’s long-term ownership story is explicit]
+  - [x] 10.2 Verify whether support-only WGO writers such as `update-wgo-ly.ts` and adjacent helper tables still have active product consumers, and quarantine or retire them if they do not. [Deps: 6.4] [Files: `web/pages/api/v1/db/update-wgo-ly.ts`, related WGO writers/readers/docs] [AC: support-only WGO surfaces have an explicit keep-or-retire decision]
+  - [x] 10.3 Run browser-level homepage verification for the new summary-first landing experience, then decide whether card-first standings/injuries or a lightweight “today in fantasy” summary layer should become a later implementation slice. [Deps: 5.6, 6.4] [Files: `web/pages/index.tsx`, `web/components/HomePage/**`, `web/components/TransactionTrends/**`, `web/components/TeamStandingsChart/**`, `web/styles/Home.module.scss`] [AC: homepage follow-up is driven by observed UX gaps instead of another speculative redesign pass]
 
 ### 9.1 Remaining `player_projections` Dependency Map
 
@@ -573,3 +573,71 @@
 - `./node_modules/.bin/vitest --run __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts __tests__/pages/api/v1/db/run-projection-v2.test.ts __tests__/pages/api/v1/start-chart.test.ts __tests__/pages/api/v1/forge/players.test.ts __tests__/pages/api/v1/forge/goalies.test.ts lib/projections/module-imports.test.ts lib/dashboard/normalizers.test.ts`
 - `npm run test:full`
 - `npx tsc --noEmit`
+
+### 10.1 `goalie_start_projections` Ownership Decision
+
+- Decision: keep `goalie_start_projections` as the intentional shared goalie-prior table for now instead of renaming or wrapping it during pass 3.
+- Canonical writer decision:
+- `/api/v1/db/update-goalie-projections-v2` remains the only supported writer for `goalie_start_projections`.
+- Shared-reader decision:
+- The table remains a legitimate upstream dependency for:
+- `/api/v1/forge/goalies`
+- `/api/v1/start-chart`
+- `web/lib/projections/run-forge-projections.ts`
+- Rationale for keeping the current table name in pass 3:
+- The dual-writer ambiguity is already gone, so the primary remaining issue is naming clarity rather than runtime ownership confusion.
+- Renaming or wrapping the table now would create another partial compatibility layer across multiple live readers without solving a pass-3 stability problem.
+- The correct future migration, if desired, is a coordinated later-pass rename or wrapper that moves all shared readers together.
+- Updated active operator guidance and route metadata:
+- `tasks/prd-forge-ecosystem-pass-3-stabilization-quarantine-dashboard.md` now records the explicit keep-for-now decision and removes the old open question.
+- `web/rules/goalie-tables.md` now documents the pass-3 ownership decision beside the table definition.
+- `web/lib/projections/compatibilityInventory.ts` now exposes the shared-table ownership decision through `goalieStartTable`.
+- `web/pages/api/v1/forge/goalies.ts`, `web/pages/api/v1/start-chart.ts`, and `web/pages/api/v1/db/run-rolling-forge-pipeline.ts` now surface that ownership note through route metadata or shared compatibility inventory.
+- `web/pages/api/v1/db/update-goalie-projections-v2.ts` now returns the same ownership decision in its writer response so operator-facing output matches the documented contract.
+- Validation for this sub-task:
+- `./node_modules/.bin/vitest --run __tests__/pages/api/v1/forge/goalies.test.ts __tests__/pages/api/v1/start-chart.test.ts __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts`
+- `npx tsc --noEmit`
+
+### 10.2 Support-Only WGO Writer Retirement Decision
+
+- Audit result:
+- `update-wgo-ly.ts` wrote only `wgo_skater_stats_totals_ly`.
+- I found no active live product reader still querying `wgo_skater_stats_totals_ly` in `web/**`.
+- The surviving WiGO product path at `/wigoCharts` reads `wigo_career` and `wigo_recent`, and `calculate-wigo-stats.ts` derives last-season (`LY`) values from normal `wgo_skater_stats_totals` seasonal rows rather than the `_ly` helper table.
+- The only active runtime dependency still keeping `update-wgo-ly.ts` alive was the overnight branch of `run-rolling-forge-pipeline.ts` plus the upstream-stage route inventory in `rollingForgePipeline.ts`.
+- Decision:
+- Retire `update-wgo-ly.ts` and remove it from the rolling-to-FORGE operator contract.
+- Do not keep support-only WGO helper routes in the canonical upstream skater-source stage when no active product surface depends on their output.
+- What changed:
+- Deleted `web/pages/api/v1/db/update-wgo-ly.ts`.
+- Removed `/api/v1/db/update-wgo-ly` from the upstream skater-source stage in `web/lib/rollingForgePipeline.ts`.
+- Removed the overnight coordinator call from `web/pages/api/v1/db/run-rolling-forge-pipeline.ts`.
+- Updated `web/__tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts` so the upstream stage must not reintroduce the retired route.
+- Updated `tasks/prd-forge-ecosystem-pass-3-stabilization-quarantine-dashboard.md` so the route is recorded as retired and no longer appears in the active upstream stage inventory.
+- Residual historical references remain only in archived pass-history artifacts, which is acceptable for this sub-task because they are not active operator guidance.
+- Validation for this sub-task:
+- `rg -n "wgo_skater_stats_totals_ly" web tasks -g '!web/node_modules' -g '!web/.next'`
+- `./node_modules/.bin/vitest --run __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts`
+- `npx tsc --noEmit`
+
+### 10.3 Homepage Browser Verification And Follow-Up Decision
+
+- Browser verification was run against `http://localhost:3000` on March 29, 2026 using headless local Chrome via `puppeteer-core`, which gave a real rendered page plus a full-page screenshot instead of relying only on code inspection.
+- Observed positive outcome:
+- The summary-first homepage direction is working as intended at a product-story level.
+- The page presents the new slate hero, summary rail, and direct links to `/start-chart`, `/goalies`, and `/trends`.
+- `TransactionTrends` reads as a homepage insight card with the new `Market Pulse` framing.
+- `TeamStandingsChart`, `Current Standings`, and `Injury Updates` are all present below the hero rather than dominating the first viewport.
+- Observed blocking issue from browser verification:
+- The homepage currently throws a hydration mismatch and replaces the root during client render because the slate summary time string differs between server and client render paths.
+- In the verified run, the server rendered `6 games on the board, starting at 12:00 PM CDT` while the client rehydrated to `6 games on the board, starting at 1:00 PM EDT`.
+- That mismatch triggered React hydration errors and a Next.js dev overlay, so the immediate homepage follow-up should be correctness-focused before any additional visual iteration is scheduled.
+- Follow-up decision:
+- If homepage iteration continues after the hydration mismatch is fixed, prioritize a card-first or progressively disclosed standings and injuries treatment over adding a new `today in fantasy` summary layer.
+- Rationale:
+- The current hero and module summaries already provide the scan-first product story that a `today in fantasy` layer would largely duplicate.
+- The larger remaining UX density sits in the lower standings and injuries tables, where card-first presentation would improve scanability more materially than another top-level summary block.
+- Validation for this sub-task:
+- Headless Chrome browser verification against `http://localhost:3000`
+- Captured full-page screenshot and DOM state
+- No code tests were run because `10.3` was verification and documentation only

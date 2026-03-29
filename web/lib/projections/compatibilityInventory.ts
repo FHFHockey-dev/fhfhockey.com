@@ -21,6 +21,38 @@ export type ForgeCompatibilityInventory = {
     status: "retired";
     note: string;
   }>;
+  goalieStartTable: GoalieStartTableOwnership;
+};
+
+export type GoalieStartTableOwnership = {
+  decisionVersion: "goalie-start-ownership-v1";
+  table: "goalie_start_projections";
+  decision: "retain_shared_table_name_for_now";
+  canonicalWriterRoute: "/api/v1/db/update-goalie-projections-v2";
+  canonicalWriterStatus: "single_writer";
+  sharedReaders: [
+    "/api/v1/forge/goalies",
+    "/api/v1/start-chart",
+    "web/lib/projections/run-forge-projections.ts"
+  ];
+  renameDeferred: true;
+  note: string;
+};
+
+export const GOALIE_START_TABLE_OWNERSHIP: GoalieStartTableOwnership = {
+  decisionVersion: "goalie-start-ownership-v1",
+  table: "goalie_start_projections",
+  decision: "retain_shared_table_name_for_now",
+  canonicalWriterRoute: "/api/v1/db/update-goalie-projections-v2",
+  canonicalWriterStatus: "single_writer",
+  sharedReaders: [
+    "/api/v1/forge/goalies",
+    "/api/v1/start-chart",
+    "web/lib/projections/run-forge-projections.ts"
+  ],
+  renameDeferred: true,
+  note:
+    "Pass 3 keeps goalie_start_projections as the intentional shared goalie-prior table; rename or wrapping is deferred to a later pass so the single writer and shared readers stay explicit."
 };
 
 export const FORGE_COMPATIBILITY_INVENTORY: ForgeCompatibilityInventory = {
@@ -58,7 +90,8 @@ export const FORGE_COMPATIBILITY_INVENTORY: ForgeCompatibilityInventory = {
       note:
         "Retired after Start Chart and other live readers moved to canonical forge_player_projections."
     }
-  ]
+  ],
+  goalieStartTable: GOALIE_START_TABLE_OWNERSHIP
 };
 
 export function buildCanonicalReaderCompatibility(args: {
@@ -74,6 +107,16 @@ export function buildCanonicalReaderCompatibility(args: {
   };
 }
 
+export function buildGoalieReaderCompatibility() {
+  return {
+    ...buildCanonicalReaderCompatibility({
+      canonicalRoute: "/api/v1/forge/goalies",
+      legacyRoute: "/api/v1/projections/goalies"
+    }),
+    goalieStartTable: GOALIE_START_TABLE_OWNERSHIP
+  };
+}
+
 export function buildStartChartCompatibility() {
   return {
     inventoryVersion: FORGE_COMPATIBILITY_INVENTORY.version,
@@ -82,6 +125,7 @@ export function buildStartChartCompatibility() {
     retiredLegacyMaterializerRoute: "/api/v1/db/update-start-chart-projections",
     legacyMaterializerRemoved: true,
     legacyPlayerProjectionsReadDisabled: true,
+    goalieStartTable: GOALIE_START_TABLE_OWNERSHIP,
     note:
       "Start Chart reads forge_player_projections directly; the legacy player_projections materializer route has been retired."
   };

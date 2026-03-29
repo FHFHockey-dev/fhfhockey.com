@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { buildRequestedDateServingState } from "lib/dashboard/freshness";
+import { buildStartChartCompatibility } from "lib/projections/compatibilityInventory";
 import supabase from "lib/supabase/server";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
 import { teamsInfo } from "lib/teamsInfo";
@@ -362,6 +363,7 @@ export default async function handler(
           requestedDate: initialDate,
           fallbackApplied,
           serving,
+          compatibilityInventory: buildStartChartCompatibility(),
           skaterSourceDate,
           projectionRunId,
           skaterSource: "forge_player_projections",
@@ -649,6 +651,7 @@ export default async function handler(
         requestedDate: initialDate,
         fallbackApplied,
         serving,
+        compatibilityInventory: buildStartChartCompatibility(),
         skaterSourceDate,
         projectionRunId,
         skaterSource: "forge_player_projections",

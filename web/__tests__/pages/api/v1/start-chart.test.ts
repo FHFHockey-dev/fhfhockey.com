@@ -288,7 +288,15 @@ describe("/api/v1/start-chart", () => {
         retiredLegacyMaterializerRoute:
           "/api/v1/db/update-start-chart-projections",
         legacyMaterializerRemoved: true,
-        legacyPlayerProjectionsReadDisabled: true
+        legacyPlayerProjectionsReadDisabled: true,
+        goalieStartTable: {
+          decisionVersion: "goalie-start-ownership-v1",
+          table: "goalie_start_projections",
+          decision: "retain_shared_table_name_for_now",
+          canonicalWriterRoute: "/api/v1/db/update-goalie-projections-v2",
+          canonicalWriterStatus: "single_writer",
+          renameDeferred: true
+        }
       },
       legacyPlayerProjectionsUsed: false
     });
@@ -420,7 +428,15 @@ describe("/api/v1/start-chart", () => {
         retiredLegacyMaterializerRoute:
           "/api/v1/db/update-start-chart-projections",
         legacyMaterializerRemoved: true,
-        legacyPlayerProjectionsReadDisabled: true
+        legacyPlayerProjectionsReadDisabled: true,
+        goalieStartTable: {
+          decisionVersion: "goalie-start-ownership-v1",
+          table: "goalie_start_projections",
+          decision: "retain_shared_table_name_for_now",
+          canonicalWriterRoute: "/api/v1/db/update-goalie-projections-v2",
+          canonicalWriterStatus: "single_writer",
+          renameDeferred: true
+        }
       },
       serving: {
         requestedDate: "2026-02-08",

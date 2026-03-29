@@ -8,7 +8,6 @@ const {
   updateWgoSkatersMock,
   updateWgoTotalsMock,
   updateWgoAveragesMock,
-  updateWgoLyMock,
   updateLineCombinationsMock,
   updatePowerPlayCombinationsMock,
   updateRollingPlayerAveragesMock,
@@ -47,7 +46,6 @@ const {
     updateWgoSkatersMock: vi.fn(successResponder),
     updateWgoTotalsMock: vi.fn(successResponder),
     updateWgoAveragesMock: vi.fn(successResponder),
-    updateWgoLyMock: vi.fn(successResponder),
     updateLineCombinationsMock: vi.fn(successResponder),
     updatePowerPlayCombinationsMock: vi.fn(successResponder),
     updateRollingPlayerAveragesMock: vi.fn(successResponder),
@@ -87,7 +85,6 @@ vi.mock("../../../../../pages/api/v1/db/update-nst-gamelog", () => ({ default: u
 vi.mock("../../../../../pages/api/v1/db/update-wgo-skaters", () => ({ default: updateWgoSkatersMock }));
 vi.mock("../../../../../pages/api/v1/db/update-wgo-totals", () => ({ default: updateWgoTotalsMock }));
 vi.mock("../../../../../pages/api/v1/db/update-wgo-averages", () => ({ default: updateWgoAveragesMock }));
-vi.mock("../../../../../pages/api/v1/db/update-wgo-ly", () => ({ default: updateWgoLyMock }));
 vi.mock("../../../../../pages/api/v1/db/update-line-combinations", () => ({
   default: updateLineCombinationsMock
 }));
@@ -177,7 +174,6 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
     expect(res.statusCode).toBe(200);
     expect(updateGamesMock).toHaveBeenCalled();
     expect(updateNstGamelogMock).toHaveBeenCalled();
-    expect(updateWgoLyMock).not.toHaveBeenCalled();
     expect(updatePowerPlayCombinationsMock).toHaveBeenCalledTimes(1);
     expect(updatePowerPlayCombinationsMock.mock.calls[0]?.[0]?.query).toMatchObject({
       startDate: "2026-03-14",
@@ -243,7 +239,15 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
             route: "/api/v1/db/update-start-chart-projections",
             status: "retired"
           })
-        ])
+        ]),
+        goalieStartTable: {
+          decisionVersion: "goalie-start-ownership-v1",
+          table: "goalie_start_projections",
+          decision: "retain_shared_table_name_for_now",
+          canonicalWriterRoute: "/api/v1/db/update-goalie-projections-v2",
+          canonicalWriterStatus: "single_writer",
+          renameDeferred: true
+        }
       },
       scanSummary: {
         surface: "rolling_forge_pipeline_operator",
@@ -342,7 +346,6 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
     await handler(req, res);
 
     expect(res.statusCode).toBe(200);
-    expect(updateWgoLyMock).toHaveBeenCalled();
     expect(updateRollingPlayerAveragesMock.mock.calls[0]?.[0]?.query).toMatchObject({
       startDate: "2026-03-10",
       endDate: "2026-03-14",
@@ -359,6 +362,28 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
         withinBudget: true
       }
     });
+  });
+
+  it("does not include retired support-only WGO routes in the upstream stage", async () => {
+    const req: any = {
+      method: "GET",
+      query: {
+        mode: "overnight",
+        date: "2026-03-14"
+      },
+      url: "/api/v1/db/run-rolling-forge-pipeline?mode=overnight&date=2026-03-14"
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    const stage = res.body.stages.find(
+      (entry: any) => entry.id === "upstream_skater_sources"
+    );
+
+    expect(stage?.steps.map((step: any) => step.route)).not.toContain(
+      "/api/v1/db/update-wgo-ly"
+    );
   });
 
   it("keeps stage 8 accuracy-only after retiring the legacy start-chart materializer", async () => {

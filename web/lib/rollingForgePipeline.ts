@@ -71,8 +71,7 @@ export const ROLLING_FORGE_PIPELINE_ORDER: RollingForgePipelineStage[] = [
       "/api/v1/db/update-nst-gamelog",
       "/api/v1/db/update-wgo-skaters",
       "/api/v1/db/update-wgo-totals",
-      "/api/v1/db/update-wgo-averages",
-      "/api/v1/db/update-wgo-ly"
+      "/api/v1/db/update-wgo-averages"
     ],
     produces: ["nst_gamelog_*", "wgo_skater_stats", "wgo_support_tables"],
     depends_on: ["core_entity_freshness"],
