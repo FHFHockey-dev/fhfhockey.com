@@ -10,6 +10,8 @@
 - `tasks/upstream-ambiguities.md` - Canonical register of sparse fields, endpoint ambiguities, fallback rules, and documented non-parity exceptions.
 - `tasks/schema-recommendation.md` - Architecture decision record for raw snapshots, normalized event rows, shift rows, and future derived tables.
 - `tasks/metric-parity-map.md` - Mapping of every legacy NST metric and table family to its NHL-derived replacement path.
+- `tasks/pbp-plays-vs-nhl-api-events-audit.md` - Comparison of legacy `pbp_plays` against `nhl_api_pbp_events`, including count parity, shared-field parity, and legacy-only assumptions.
+- `tasks/shift-charts-vs-nhl-api-shifts-audit.md` - Comparison of legacy `shift_charts` against `nhl_api_shift_rows`, including TOI parity, player coverage, and baseline limitations.
 - `tasks/validation-checklist.md` - Manual and automated validation checklist required before parity sign-off or training use.
 - `tasks/artifacts/nhl-pbp-recon-2026-03-30.md` - Generated reconnaissance report with sampled games, observed event types, and validated `situationCode` examples.
 - `tasks/artifacts/nhl-pbp-recon-2026-03-30.json` - Machine-readable reconnaissance output that can seed later tests or parser fixtures.
@@ -18,11 +20,12 @@
 - `web/scripts/ingest-nhl-api-raw.mjs` - Initial raw-ingestion script that stores play-by-play, landing, boxscore, and shiftcharts payloads and upserts normalized rows.
 - `web/lib/supabase/database-generated.types.ts` - Regenerated Supabase types after schema additions.
 - `web/pages/api/v1/db/update-nhl-play-by-play.ts` - API route to ingest raw and normalized play-by-play data for one game, a range, or a backfill batch.
-- `web/pages/api/v1/db/update-nhl-play-by-play.test.ts` - Route-level tests for fetch modes, idempotency, and error handling.
+- `web/__tests__/pages/api/v1/db/update-nhl-play-by-play.test.ts` - Route-level tests for single-game play-by-play ingest and route response handling.
 - `web/pages/api/v1/db/update-nhl-shift-charts.ts` - API route to ingest shift charts and any later stint/on-ice derivations.
-- `web/pages/api/v1/db/update-nhl-shift-charts.test.ts` - Route-level tests for shift ingestion, retry behavior, and auditing.
-- `web/lib/supabase/Upserts/nhlRawGamecenter.ts` - Reusable library for fetching/storing raw gamecenter and shiftchart payloads.
-- `web/lib/supabase/Upserts/nhlRawGamecenter.test.ts` - Unit tests for raw ingest, checksums, and idempotent upserts.
+- `web/__tests__/pages/api/v1/db/update-nhl-shift-charts.test.ts` - Route-level tests for shift-chart backfill selection and route response handling.
+- `web/lib/supabase/Upserts/nhlRawGamecenter.mjs` - Reusable library for fetching/storing raw gamecenter and shiftchart payloads and normalizing roster, event, and shift rows.
+- `web/lib/supabase/Upserts/nhlRawGamecenterRoute.ts` - Shared API-route helper that resolves game selections and invokes raw NHL gamecenter ingestion through admin/audit-safe endpoints.
+- `web/lib/supabase/Upserts/nhlRawGamecenter.test.ts` - Unit tests for raw endpoint retry logic, payload hashing, snapshot idempotency, and batched upserts.
 - `web/lib/supabase/Upserts/nhlPlayByPlayParser.ts` - Parser that converts raw NHL play-by-play JSON into normalized event rows.
 - `web/lib/supabase/Upserts/nhlPlayByPlayParser.test.ts` - Unit tests for event taxonomy, field extraction, and edge-case parsing.
 - `web/lib/supabase/Upserts/nhlStrengthState.ts` - Canonical decoding and normalization of `situationCode`, manpower, and strength labels.
@@ -79,15 +82,15 @@
   - [x] 3.7 Plan the next migrations for derived shot-feature storage and NST-parity output storage so the raw and normalized foundations do not get overloaded with derived concerns.
   - [x] 3.8 Regenerate `web/lib/supabase/database-generated.types.ts` after the migration set is finalized and applied.
 
-- [ ] 4.0 Operationalize raw ingestion in Supabase and the repo
-  - [ ] 4.1 Apply `migrations/20260330_create_nhl_api_raw_ingestion_tables.sql` to Supabase and confirm the new tables and view exist in the target project.
-  - [ ] 4.2 Run `web/scripts/ingest-nhl-api-raw.mjs` for the sampled recon games and verify that raw payload snapshots, roster spots, event rows, and shift rows are populated as expected.
-  - [ ] 4.3 Compare the newly ingested `nhl_api_pbp_events` rows against existing `pbp_plays` rows for overlapping games to identify flattening gaps, field mismatches, or legacy-only assumptions.
-  - [ ] 4.4 Compare `nhl_api_shift_rows` against existing `shift_charts` aggregates to confirm the raw shift feed can support current TOI totals and later stint reconstruction.
-  - [ ] 4.5 Extract shared logic from `web/scripts/ingest-nhl-api-raw.mjs` into reusable library modules such as `web/lib/supabase/Upserts/nhlRawGamecenter.ts`.
-  - [ ] 4.6 Add or update API routes that can invoke the new raw-ingestion flow for one game, a date range, or a backfill batch using the repo’s normal audit and auth patterns.
-  - [ ] 4.7 Decide whether the legacy `pbp_games`, `pbp_plays`, and `shift_charts` flows should dual-write during migration or remain frozen while the new pipeline is validated.
-  - [ ] 4.8 Add unit and route-level tests covering raw ingest retries, checksum/idempotency handling, and basic Supabase upsert behavior.
+- [x] 4.0 Operationalize raw ingestion in Supabase and the repo
+  - [x] 4.1 Apply `migrations/20260330_create_nhl_api_raw_ingestion_tables.sql` to Supabase and confirm the new tables and view exist in the target project.
+  - [x] 4.2 Run `web/scripts/ingest-nhl-api-raw.mjs` for the sampled recon games and verify that raw payload snapshots, roster spots, event rows, and shift rows are populated as expected.
+  - [x] 4.3 Compare the newly ingested `nhl_api_pbp_events` rows against existing `pbp_plays` rows for overlapping games to identify flattening gaps, field mismatches, or legacy-only assumptions.
+  - [x] 4.4 Compare `nhl_api_shift_rows` against existing `shift_charts` aggregates to confirm the raw shift feed can support current TOI totals and later stint reconstruction.
+  - [x] 4.5 Extract shared logic from `web/scripts/ingest-nhl-api-raw.mjs` into reusable library modules such as `web/lib/supabase/Upserts/nhlRawGamecenter.ts`.
+  - [x] 4.6 Add or update API routes that can invoke the new raw-ingestion flow for one game, a date range, or a backfill batch using the repo’s normal audit and auth patterns.
+  - [x] 4.7 Decide whether the legacy `pbp_games`, `pbp_plays`, and `shift_charts` flows should dual-write during migration or remain frozen while the new pipeline is validated. Legacy `pbp_games`, `pbp_plays`, and `shift_charts` will remain frozen while the new NHL API pipeline is validated.
+  - [x] 4.8 Add unit and route-level tests covering raw ingest retries, checksum/idempotency handling, and basic Supabase upsert behavior.
 
 - [ ] 5.0 Build the normalized event, strength, and on-ice attribution layer
   - [ ] 5.1 Implement `web/lib/supabase/Upserts/nhlPlayByPlayParser.ts` to extract typed event rows from raw play-by-play payloads, including participants, coordinates, shot type, reasons, score state, and sequence context.
@@ -120,3 +123,11 @@
   - [ ] 7.7 Confirm that no model training or production rollout occurs until event taxonomy, strength decoding, shift integration, and parity validation are documented and passing.
   - [ ] 7.8 Produce a final implementation summary listing what is complete, what is approximated, what is intentionally deferred, and what still blocks release.
   - [ ] 7.9 Leave follow-up tasks for model training, coefficient fitting, calibration, benchmarking, and advanced feature additions after the data foundation is validated.
+
+- [ ] 8.0 Resolve live schema drift discovered during NHL raw-ingest execution
+  - [ ] 8.1 Compare the live `nhl_api_*` table shapes in the target Supabase project against `migrations/20260330_create_nhl_api_raw_ingestion_tables.sql` and identify every missing lineage/raw JSON/index-related column.
+  - [ ] 8.2 Create an additive corrective migration so already-created `nhl_api_*` tables gain the missing phase-1 columns without requiring destructive table recreation.
+  - [ ] 8.3 Apply the corrective migration in the target Supabase project, regenerate `web/lib/supabase/database-generated.types.ts`, and retry `web/scripts/ingest-nhl-api-raw.mjs` for the sampled recon games.
+  - [ ] 8.4 Decide whether to keep `pbp_plays` frozen as a partial comparison baseline or backfill its missing recent-game coverage for broader overlap validation.
+  - [ ] 8.5 Decide whether `shift_charts` should remain a validation baseline as-is or be repaired/backfilled, given that recent rows can have null `game_toi`, `durations`, and `shifts`.
+  - [x] 8.6 Add retry/backoff handling around raw NHL endpoint fetches so multi-game ingest batches survive transient `UND_ERR_SOCKET` failures instead of aborting the whole run. Completed during `4.8` by adding shared retry/backoff fetch handling in `web/lib/supabase/Upserts/nhlRawGamecenter.mjs`.
