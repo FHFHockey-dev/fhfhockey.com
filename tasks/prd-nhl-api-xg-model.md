@@ -57,6 +57,7 @@ The immediate goal is not to train a model yet. The immediate goal is to build a
 22. The system must validate parity outputs against representative existing NST-era outputs for sampled games, teams, players, and goalies.
 23. The system must version parser logic, feature logic, and parity logic so future behavior changes are replayable and attributable.
 24. The system must keep model-input tables separate from parity-output tables and separate both from raw upstream storage.
+25. The system must not permit model-training use or production rollout until event taxonomy, strength decoding, shift integration, and parity validation are documented and passing under the current version set.
 
 ## 5. Non-Goals (Out of Scope)
 
@@ -95,3 +96,16 @@ The immediate goal is not to train a model yet. The immediate goal is to build a
 - Which downstream product surfaces should be migrated first once the new parity outputs are validated?
 - Which legacy tables should dual-write temporarily versus remain read-only during migration?
 - Which goalie-specific parity outputs should be considered mandatory for release versus follow-up enhancements if public data gaps appear?
+
+## 10. Release Gate
+
+The project is not release-ready for training or production rollout until all of the following are true:
+
+- event taxonomy is documented in `tasks/event-dictionary.md`
+- strength decoding is documented in `tasks/strength-mapping.md`
+- shift integration and on-ice attribution rules are documented in the phase-1 source-of-truth docs
+- normalized-event validation is passing on the intended release sample
+- parity validation is passing on the intended release sample
+- manual audit requirements have been satisfied and a passing artifact exists for representative games
+
+Until those conditions are met, NHL API ingestion may continue for development and audit purposes only.

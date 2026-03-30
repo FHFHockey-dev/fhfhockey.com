@@ -14,6 +14,12 @@
 - `tasks/pbp-plays-vs-nhl-api-events-audit.md` - Comparison of legacy `pbp_plays` against `nhl_api_pbp_events`, including count parity, shared-field parity, and legacy-only assumptions.
 - `tasks/shift-charts-vs-nhl-api-shifts-audit.md` - Comparison of legacy `shift_charts` against `nhl_api_shift_rows`, including TOI parity, player coverage, and baseline limitations.
 - `tasks/validation-checklist.md` - Manual and automated validation checklist required before parity sign-off or training use.
+- `tasks/manual-audit-requirements.md` - Human spot-check procedure and pass/fail rules for representative event, strength, and on-ice audits.
+- `tasks/idempotent-backfill-behavior.md` - Replay and backfill contract for raw snapshots, normalized rows, and future derived/parity outputs.
+- `tasks/failure-handling-policy.md` - Retry, logging, and partial-failure contract for upstream, parser, and schema-level NHL ingest failures.
+- `tasks/final-implementation-summary.md` - Release-facing summary of what is complete, approximate, deferred, and still blocking training or production rollout.
+- `tasks/post-foundation-follow-ups.md` - Follow-up queue for training, coefficient fitting, calibration, benchmarking, advanced features, and post-validation productization.
+- `tasks/artifacts/nhl-manual-audit-2026-03-30.md` - Dated manual audit artifact with live sampled findings from Supabase-backed NHL API ingest tables.
 - `tasks/artifacts/nhl-pbp-recon-2026-03-30.md` - Generated reconnaissance report with sampled games, observed event types, and validated `situationCode` examples.
 - `tasks/artifacts/nhl-pbp-recon-2026-03-30.json` - Machine-readable reconnaissance output that can seed later tests or parser fixtures.
 - `migrations/20260330_create_nhl_api_raw_ingestion_tables.sql` - Current migration for immutable raw payload snapshots plus normalized roster, event, and shift-row storage.
@@ -137,16 +143,16 @@
   - [x] 6.9 Document the final raw-field, normalized-field, derived-feature, and parity-output boundaries so future developers can understand the data contract.
   - [x] 6.10 Add unit tests covering feature derivation, parity mapping, exclusions, and strength-separated outputs.
 
-- [ ] 7.0 Validate, backfill, and prepare for rollout
-  - [ ] 7.1 Create `tasks/validation-checklist.md` covering raw payload parity, normalized event counts, shot-family counts, score progression sanity, strength-state sanity, and shift overlap sanity.
-  - [ ] 7.2 Implement automated validation rules that compare normalized event totals against raw payload totals for every ingested game.
-  - [ ] 7.3 Implement parity validation rules that compare the new NHL-derived outputs against existing NST-based outputs for a representative sample of games, teams, and players.
-  - [ ] 7.4 Define manual audit requirements and audit a representative sample of games so event parsing, strength mapping, and on-ice attribution can be spot-checked by a human.
-  - [ ] 7.5 Define idempotent backfill behavior so the same game can be re-fetched and re-parsed safely without creating duplicate logical records.
-  - [ ] 7.6 Define retry, error logging, and partial-failure handling for upstream API failures, malformed payloads, or schema mismatches.
-  - [ ] 7.7 Confirm that no model training or production rollout occurs until event taxonomy, strength decoding, shift integration, and parity validation are documented and passing.
-  - [ ] 7.8 Produce a final implementation summary listing what is complete, what is approximated, what is intentionally deferred, and what still blocks release.
-  - [ ] 7.9 Leave follow-up tasks for model training, coefficient fitting, calibration, benchmarking, and advanced feature additions after the data foundation is validated.
+- [x] 7.0 Validate, backfill, and prepare for rollout
+  - [x] 7.1 Create `tasks/validation-checklist.md` covering raw payload parity, normalized event counts, shot-family counts, score progression sanity, strength-state sanity, and shift overlap sanity.
+  - [x] 7.2 Implement automated validation rules that compare normalized event totals against raw payload totals for every ingested game.
+  - [x] 7.3 Implement parity validation rules that compare the new NHL-derived outputs against existing NST-based outputs for a representative sample of games, teams, and players.
+  - [x] 7.4 Define manual audit requirements and audit a representative sample of games so event parsing, strength mapping, and on-ice attribution can be spot-checked by a human.
+  - [x] 7.5 Define idempotent backfill behavior so the same game can be re-fetched and re-parsed safely without creating duplicate logical records.
+  - [x] 7.6 Define retry, error logging, and partial-failure handling for upstream API failures, malformed payloads, or schema mismatches.
+  - [x] 7.7 Confirm that no model training or production rollout occurs until event taxonomy, strength decoding, shift integration, and parity validation are documented and passing.
+  - [x] 7.8 Produce a final implementation summary listing what is complete, what is approximated, what is intentionally deferred, and what still blocks release.
+  - [x] 7.9 Leave follow-up tasks for model training, coefficient fitting, calibration, benchmarking, and advanced feature additions after the data foundation is validated.
 
 - [ ] 8.0 Resolve live schema drift discovered during NHL raw-ingest execution
   - [ ] 8.1 Compare the live `nhl_api_*` table shapes in the target Supabase project against `migrations/20260330_create_nhl_api_raw_ingestion_tables.sql` and identify every missing lineage/raw JSON/index-related column.
