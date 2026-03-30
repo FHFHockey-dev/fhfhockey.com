@@ -225,6 +225,56 @@ Parity risk:
 
 - high if shift ingestion is incomplete or stale
 
+### 11. Miss reasons are detailed enough to classify but not yet justified for exclusion
+
+Observed evidence:
+
+- sampled `missed-shot` rows carried `reason` at `100%`
+- sampled reasons included `wide-left`, `hit-right-post`, and `above-crossbar`
+- legacy repo surfaces also expose a `missed_shot_short_side` family from a different upstream source
+
+Impact:
+
+- miss subtypes can be preserved and bucketed in the public NHL pipeline
+- but the current public evidence is not strong enough to justify silently excluding any miss subtype from phase 1 parity or xG inputs
+
+Current handling:
+
+- keep all `missed-shot` reasons in parity counts
+- keep all `missed-shot` reasons in sequence context
+- keep all `missed-shot` reasons, including `short-side`, eligible for phase 1 xG feature generation
+- expose explicit miss-reason buckets and a future `excludeFromXgForMissReason` control point for later versioned methodology changes
+
+Parity risk:
+
+- low for parity counts
+- medium for future xG calibration if later evidence shows some miss subtypes need separate treatment
+
+### 12. Fatigue and movement context are approximations, not tracking-grade truth
+
+Observed evidence:
+
+- raw `shiftcharts` support event-time active shift intervals
+- normalized events support attacking-direction-adjusted coordinates and prior-event order
+- public NHL play-by-play does not expose puck trajectory, pass events, or true skating-speed tracking
+
+Impact:
+
+- power-play age is strong enough for phase 1 from event-sequence state changes
+- fatigue can be approximated from active shift age
+- east-west movement can only be approximated from event-to-event coordinate deltas, not actual puck path
+
+Current handling:
+
+- expose PP age, shift-age fatigue, and east-west movement proxies as derived contextual features
+- keep these values nullable when ownership, coordinates, or active shift intervals are missing
+- treat them as versioned public-data approximations rather than exact movement truth
+
+Parity risk:
+
+- low for PP-age-style context
+- medium for fatigue and movement features used in future xG calibration
+
 ## Current Non-Parity Exceptions
 
 These are not yet blockers for raw ingest, but they are blockers for exact parity claims:

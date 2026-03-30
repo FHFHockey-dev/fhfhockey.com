@@ -82,7 +82,7 @@ describe("nhlNormalizedLayer", () => {
     const inclusion = evaluateNormalizedEventInclusion(event);
     const coords = normalizeCoordinatesToAttackingDirection(event.x_coord, event.y_coord, {
       homeTeamDefendingSide: event.home_team_defending_side as "left" | "right" | null,
-      teamSide: event.event_owner_side,
+      teamSide: event.event_owner_side ?? null,
     });
     const stints = buildShiftStints([
       createShiftRow({ shift_id: 1, player_id: 91, team_id: 10, end_seconds: 40, duration_seconds: 40 }) as any,

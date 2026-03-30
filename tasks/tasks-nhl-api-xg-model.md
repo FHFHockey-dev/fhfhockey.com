@@ -9,6 +9,7 @@
 - `tasks/legacy-ingest-conventions.md` - Audit of the existing `pbp_games`, `pbp_plays`, and `shift_charts` ingest/idempotency/audit contract to preserve or replace during migration.
 - `tasks/upstream-ambiguities.md` - Canonical register of sparse fields, endpoint ambiguities, fallback rules, and documented non-parity exceptions.
 - `tasks/schema-recommendation.md` - Architecture decision record for raw snapshots, normalized event rows, shift rows, and future derived tables.
+- `tasks/data-contract-boundaries.md` - Canonical boundary document for what belongs in raw storage, normalized facts, derived feature rows, and published parity outputs.
 - `tasks/metric-parity-map.md` - Mapping of every legacy NST metric and table family to its NHL-derived replacement path.
 - `tasks/pbp-plays-vs-nhl-api-events-audit.md` - Comparison of legacy `pbp_plays` against `nhl_api_pbp_events`, including count parity, shared-field parity, and legacy-only assumptions.
 - `tasks/shift-charts-vs-nhl-api-shifts-audit.md` - Comparison of legacy `shift_charts` against `nhl_api_shift_rows`, including TOI parity, player coverage, and baseline limitations.
@@ -36,6 +37,22 @@
 - `web/lib/supabase/Upserts/nhlEventInclusion.test.ts` - Unit tests for normalized-layer eligibility and exclusion behavior across special event-state cases.
 - `web/lib/supabase/Upserts/nhlOnIceAttribution.ts` - Event-time on-ice attribution helpers for player, pairing, line, and team outputs built on top of reconstructed shift stints.
 - `web/lib/supabase/Upserts/nhlOnIceAttribution.test.ts` - Unit tests for on-ice player-set attribution, team-relative strength context, and entity membership checks.
+- `web/lib/supabase/Upserts/nhlPriorEventContext.ts` - Derived prior-event context features for previous event type/team, elapsed time, raw event-to-event distance, and normalized coordinate carry-forward.
+- `web/lib/supabase/Upserts/nhlPriorEventContext.test.ts` - Unit tests for prior-event context on standard, cross-team, and sparse-coordinate event sequences.
+- `web/lib/supabase/Upserts/nhlRebounds.ts` - Derived rebound classification helpers for rebound shots, source-shot credits, and explicit time-window sequencing rules.
+- `web/lib/supabase/Upserts/nhlRebounds.test.ts` - Unit tests for rebound detection across immediate follow-ups, sequence breaks, time-window failures, and exclusion cases.
+- `web/lib/supabase/Upserts/nhlRush.ts` - Derived rush classification helpers for transition-source detection, team-relative zone interpretation, and versioned rush-sequence assumptions.
+- `web/lib/supabase/Upserts/nhlRush.test.ts` - Unit tests for rush detection across takeaways, giveaways, rebound exclusions, and offensive-zone non-rush cases.
+- `web/lib/supabase/Upserts/nhlFlurries.ts` - Derived flurry sequence helpers that group close-together shot events without mutating raw per-shot values.
+- `web/lib/supabase/Upserts/nhlFlurries.test.ts` - Unit tests for flurry grouping across tight shot clusters, gap breaks, stoppage breaks, and opponent shot resets.
+- `web/lib/supabase/Upserts/nhlMissReasons.ts` - Miss-reason classification helpers for short-side and other miss buckets, with explicit parity and xG inclusion flags.
+- `web/lib/supabase/Upserts/nhlMissReasons.test.ts` - Unit tests for miss-reason bucketing and the phase-1 inclusion policy for short-side and other missed shots.
+- `web/lib/supabase/Upserts/nhlContextualFeatures.ts` - Derived contextual feature helpers for power-play age, shift-age fatigue proxies, and east-west movement from public event and shift data.
+- `web/lib/supabase/Upserts/nhlContextualFeatures.test.ts` - Unit tests for PP-age resets, fatigue calculations, and conservative movement-proxy behavior.
+- `web/lib/supabase/Upserts/nhlShotFeatureBuilder.ts` - Versioned derived shot-feature builder that assembles model-input rows from normalized events, shifts, and helper-level feature contexts.
+- `web/lib/supabase/Upserts/nhlShotFeatureBuilder.test.ts` - Unit tests for integrated shot-feature row assembly across distance, angle, rebound, rush, flurry, miss-reason, and exclusion cases.
+- `web/lib/supabase/Upserts/nhlNstParityMetrics.ts` - Strength-split parity engine that reconstructs skater and goalie NST-style count and rate surfaces from normalized events, shot features, and shifts.
+- `web/lib/supabase/Upserts/nhlNstParityMetrics.test.ts` - Unit tests for split-aware skater and goalie parity reconstruction across PP, EV, 5v5, on-ice, and rebound-goal cases.
 - `web/lib/supabase/Upserts/nhlNormalizedLayer.test.ts` - Cross-module normalized-layer coverage for standard plays, rare event shapes, empty-net states, overtime, and shift-overlap edge cases.
 - `web/lib/supabase/Upserts/nhlShiftStints.ts` - Shift overlap, stint derivation, and on-ice attribution utilities.
 - `web/lib/supabase/Upserts/nhlShiftStints.test.ts` - Unit tests for overlap handling, pulled-goalie states, and penalty windows.
@@ -108,17 +125,17 @@
   - [x] 5.6 Define and implement on-ice attribution rules needed for player, line, pairing, and team outputs across all relevant strengths.
   - [x] 5.7 Add unit tests covering standard plays, rare event shapes, pulled-goalie states, OT states, and shift-overlap edge cases.
 
-- [ ] 6.0 Build derived shot-feature and NST-parity outputs
-  - [ ] 6.1 Define and implement prior-event context features such as previous event type, previous event team, time since previous event, and distance from previous event.
-  - [ ] 6.2 Define and implement rebound logic explicitly, including time-window and same-sequence assumptions, and store rebound flags as derived fields.
-  - [ ] 6.3 Define and implement rush logic explicitly, including the transition assumptions needed to approximate or reproduce rush-based public metrics.
-  - [ ] 6.4 Define and implement flurry logic so raw per-shot values and flurry-adjusted sequence accounting can coexist without overwriting one another.
-  - [ ] 6.5 Define handling for “short” misses and other miss reasons, including whether they contribute to xG totals, parity metrics, sequence context, or only raw logging.
-  - [ ] 6.6 Define and implement feature support for fatigue, power-play age, east-west movement proxies, and other contextual factors if they are present or approximable from public data.
-  - [ ] 6.7 Implement `web/lib/supabase/Upserts/nhlShotFeatureBuilder.ts` so model-input tables remain separate from parity-output tables.
-  - [ ] 6.8 Implement `web/lib/supabase/Upserts/nhlNstParityMetrics.ts` to reconstruct the required NST-era metrics, strength splits, and on-ice outputs from normalized events and shifts.
-  - [ ] 6.9 Document the final raw-field, normalized-field, derived-feature, and parity-output boundaries so future developers can understand the data contract.
-  - [ ] 6.10 Add unit tests covering feature derivation, parity mapping, exclusions, and strength-separated outputs.
+- [x] 6.0 Build derived shot-feature and NST-parity outputs
+  - [x] 6.1 Define and implement prior-event context features such as previous event type, previous event team, time since previous event, and distance from previous event.
+  - [x] 6.2 Define and implement rebound logic explicitly, including time-window and same-sequence assumptions, and store rebound flags as derived fields.
+  - [x] 6.3 Define and implement rush logic explicitly, including the transition assumptions needed to approximate or reproduce rush-based public metrics.
+  - [x] 6.4 Define and implement flurry logic so raw per-shot values and flurry-adjusted sequence accounting can coexist without overwriting one another.
+  - [x] 6.5 Define handling for “short” misses and other miss reasons, including whether they contribute to xG totals, parity metrics, sequence context, or only raw logging.
+  - [x] 6.6 Define and implement feature support for fatigue, power-play age, east-west movement proxies, and other contextual factors if they are present or approximable from public data.
+  - [x] 6.7 Implement `web/lib/supabase/Upserts/nhlShotFeatureBuilder.ts` so model-input tables remain separate from parity-output tables.
+  - [x] 6.8 Implement `web/lib/supabase/Upserts/nhlNstParityMetrics.ts` to reconstruct the required NST-era metrics, strength splits, and on-ice outputs from normalized events and shifts.
+  - [x] 6.9 Document the final raw-field, normalized-field, derived-feature, and parity-output boundaries so future developers can understand the data contract.
+  - [x] 6.10 Add unit tests covering feature derivation, parity mapping, exclusions, and strength-separated outputs.
 
 - [ ] 7.0 Validate, backfill, and prepare for rollout
   - [ ] 7.1 Create `tasks/validation-checklist.md` covering raw payload parity, normalized event counts, shot-family counts, score progression sanity, strength-state sanity, and shift overlap sanity.

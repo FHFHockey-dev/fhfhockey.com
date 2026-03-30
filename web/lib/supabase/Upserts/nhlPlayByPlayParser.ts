@@ -15,11 +15,22 @@ const SHOT_LIKE_TYPES = new Set([
 const DEFAULT_REGULATION_PERIOD_SECONDS = 20 * 60;
 const DEFAULT_REGULAR_SEASON_OT_SECONDS = 5 * 60;
 
-type NhlApiPbpEventInsert =
-  Database["public"]["Tables"]["nhl_api_pbp_events"]["Insert"];
+type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: JsonValue }
+  | JsonValue[];
 
-type RawEventJson = NhlApiPbpEventInsert["raw_event"];
-type DetailsJson = NhlApiPbpEventInsert["details"];
+type NhlApiPbpEventInsert =
+  Database["public"]["Tables"]["nhl_api_pbp_events"]["Insert"] & {
+    raw_event?: JsonValue | null;
+    details?: JsonValue | null;
+  };
+
+type RawEventJson = JsonValue | null;
+type DetailsJson = JsonValue | null;
 
 type LocalizedName = {
   default?: string | null;
@@ -100,6 +111,9 @@ type OrderedEvent = {
 };
 
 export type ParsedNhlPbpEvent = NhlApiPbpEventInsert & {
+  raw_event: RawEventJson;
+  details: DetailsJson;
+  event_owner_side: "home" | "away" | null;
   event_index: number;
   period_duration_seconds: number | null;
   game_seconds_elapsed: number | null;

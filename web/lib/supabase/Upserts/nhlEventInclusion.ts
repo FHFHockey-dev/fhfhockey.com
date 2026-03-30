@@ -33,18 +33,17 @@ const COMMON_MANPOWER_STATES = new Set([
 const PENALTY_SHOT_PATTERN = /penalty[- ]shot/i;
 const SHOOTOUT_PATTERN = /shootout/i;
 
-type InclusionInput = Pick<
-  ParsedNhlPbpEvent,
-  | "type_desc_key"
-  | "period_type"
-  | "period_number"
-  | "strength_state"
-  | "strength_exact"
-  | "reason"
-  | "secondary_reason"
-  | "penalty_desc_key"
-  | "raw_event"
->;
+type InclusionInput = {
+  type_desc_key?: string | null | undefined;
+  period_type?: string | null | undefined;
+  period_number?: number | null | undefined;
+  strength_state?: string | null | undefined;
+  strength_exact?: string | null | undefined;
+  reason?: string | null | undefined;
+  secondary_reason?: string | null | undefined;
+  penalty_desc_key?: string | null | undefined;
+  raw_event?: unknown;
+};
 
 function normalizeText(value: unknown): string | null {
   if (value == null) return null;
@@ -85,9 +84,11 @@ function extractPenaltyShotTexts(event: InclusionInput): string[] {
 }
 
 export function isShootoutEvent(event: InclusionInput): boolean {
+  const normalizedPeriodType = normalizeText(event.period_type)?.toUpperCase() ?? null;
   return (
     SHOOTOUT_PATTERN.test(event.type_desc_key ?? "") ||
-    SHOOTOUT_PATTERN.test(event.period_type ?? "")
+    SHOOTOUT_PATTERN.test(event.period_type ?? "") ||
+    normalizedPeriodType === "SO"
   );
 }
 

@@ -105,4 +105,22 @@ describe("nhlEventInclusion", () => {
       hasRareManpower: true,
     });
   });
+
+  it("treats SO period-type events as shootout exclusions even when the event type is goal", () => {
+    expect(
+      evaluateNormalizedEventInclusion(
+        createEvent({
+          type_desc_key: "goal",
+          period_type: "SO",
+          period_number: 5,
+        })
+      )
+    ).toMatchObject({
+      includeInParity: false,
+      includeInOnIceParity: false,
+      includeInShotFeatures: false,
+      exclusionReason: "shootout",
+      isShootoutEvent: true,
+    });
+  });
 });

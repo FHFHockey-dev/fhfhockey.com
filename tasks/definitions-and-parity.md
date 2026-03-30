@@ -35,7 +35,10 @@ for the NHL API to xG data-foundation migration.
   - A goal always counts as a shot on goal.
 - `missed shot`
   - Event type `missed-shot`.
-  - Includes all miss reasons unless explicitly excluded by a later derived-rule version.
+  - Includes all miss reasons in phase 1 parity counts and shot-sequence context.
+  - Phase 1 also keeps all miss reasons, including `short-side`, eligible for xG feature generation.
+  - Miss reasons must still be normalized into explicit buckets such as `short-side`, `wide`, `post`, `crossbar`, `over-net`, and `other`.
+  - Future xG-only exclusions are allowed only through a new miss-reason version; phase 1 does not silently drop any miss subtype.
 - `blocked shot`
   - Event type `blocked-shot`.
   - Counts as a shot attempt, but not as an unblocked shot attempt or shot on goal.
@@ -47,16 +50,53 @@ for the NHL API to xG data-foundation migration.
 
 - `rebound`
   - A derived shot classification based on prior-event context and a time-window rule.
+  - Phase 1 rule uses the immediate prior normalized event only.
+  - The follow-up event must be a shot-feature-eligible shot-like event by the same team, in the same period, within 3 seconds of the prior event.
+  - The prior event must also be shot-feature eligible and one of `shot-on-goal`, `missed-shot`, or `blocked-shot`.
+  - Any intervening event breaks the rebound sequence.
+  - A rebound goal counts as a rebound shot.
+  - `rebounds created` are credited to the source shot that generated the rebound shot.
   - Final implementation must use normalized event order and time deltas, not ad hoc query logic.
 - `rush`
   - A derived shot classification based on transition context from preceding events.
-  - Final implementation must be NHL-derived and documented when it diverges from NST-era conventions.
+  - Phase 1 rule uses a backward scan up to 10 seconds within the same period.
+  - The shot must be shot-feature eligible and not already classified as a rebound.
+  - Qualifying transition sources are:
+    - same-team `takeaway`
+    - same-team `faceoff`
+    - opponent `giveaway`
+    - opponent `blocked-shot`
+  - The transition source must occur in the shooting team’s defensive or neutral zone, using team-relative zone interpretation.
+  - Hard sequence breaks include stoppages, penalties, delayed penalties, period boundaries, and prior shot-like events.
+  - Because the public NHL feed does not expose full controlled-entry data, phase 1 rush classification is an explicit approximation and must remain versioned.
 - `flurry`
   - A derived sequence classification for multiple close-together shot events in the same attacking sequence.
+  - Phase 1 rule groups shot-feature-eligible shot events by the same team, in the same period, when the gap between consecutive shots is 5 seconds or less.
+  - Hard sequence breaks include stoppages, penalties, delayed penalties, faceoffs, period boundaries, and opponent shot events.
+  - Possession-changing turnover signals also break the sequence when available.
+  - Phase 1 flurry logic assigns sequence metadata only:
+    - sequence id
+    - member shot index
+    - sequence shot count
+    - sequence start and end event ids
+  - Raw per-shot values must remain untouched; any later flurry-adjusted accounting must operate on top of sequence ids rather than overwriting the underlying shot rows.
   - Raw per-shot values and flurry-adjusted sequence accounting must both remain queryable.
 - `danger bucket`
   - A rule-based phase 1 shot classification into at least low-, medium-, and high-danger groupings.
   - The exact thresholds and geometry rules must be versioned.
+
+### Phase 1 Contextual Features
+
+- `power-play age`
+  - Derived from continuous owner-team `PP` segments in the normalized event stream.
+  - Resets when the team leaves `PP` or re-enters under a new segment.
+- `fatigue`
+  - Approximated from active raw shift intervals at the event second.
+  - Phase 1 exposes shooter shift age plus owner/opponent on-ice average and max shift age where shift rows support it.
+- `east-west movement proxies`
+  - Derived from attacking-direction-normalized coordinates between the current event and the prior same-team event.
+  - Phase 1 exposes absolute lateral movement, net-direction movement, and a conservative `crossedRoyalRoad` proxy.
+- These features are explicitly approximated from public data and must remain nullable when upstream event ownership, coordinates, or shift intervals are insufficient.
 
 ### Individual Offensive Counts
 
