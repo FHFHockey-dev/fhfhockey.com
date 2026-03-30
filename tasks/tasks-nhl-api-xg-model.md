@@ -6,6 +6,8 @@
 - `tasks/definitions-and-parity.md` - Canonical source of truth for event definitions, exclusions, parity targets, and versioning policy.
 - `tasks/event-dictionary.md` - Living catalog of NHL event types, `details` keys, nullable behavior, and examples.
 - `tasks/strength-mapping.md` - Canonical mapping for `situationCode`, manpower state, and exact/canonical strength labels.
+- `tasks/legacy-ingest-conventions.md` - Audit of the existing `pbp_games`, `pbp_plays`, and `shift_charts` ingest/idempotency/audit contract to preserve or replace during migration.
+- `tasks/upstream-ambiguities.md` - Canonical register of sparse fields, endpoint ambiguities, fallback rules, and documented non-parity exceptions.
 - `tasks/schema-recommendation.md` - Architecture decision record for raw snapshots, normalized event rows, shift rows, and future derived tables.
 - `tasks/metric-parity-map.md` - Mapping of every legacy NST metric and table family to its NHL-derived replacement path.
 - `tasks/validation-checklist.md` - Manual and automated validation checklist required before parity sign-off or training use.
@@ -57,15 +59,15 @@
   - [x] 1.7 Create `tasks/metric-parity-map.md` listing every existing NST-derived metric currently used by the repo, its target NHL-derived replacement, and its status: exact, close approximation, unsupported, or deprecated.
   - [x] 1.8 Define versioning rules for parser logic, strength logic, parity logic, derived features, and future xG model versions.
 
-- [ ] 2.0 Consolidate reconnaissance and legacy-contract findings into living docs
-  - [ ] 2.1 Promote the sampled event taxonomy from `tasks/artifacts/nhl-pbp-recon-2026-03-30.md` into `tasks/event-dictionary.md`.
-  - [ ] 2.2 Promote the validated `situationCode` findings into `tasks/strength-mapping.md`, including explicit examples for `1331`, `0651`, and `1560`.
-  - [ ] 2.3 Record the current upstream endpoint shape differences, including the finding that `play-by-play` exposes `rosterSpots` while `boxscore` may not expose the expected roster sections for the same game.
-  - [ ] 2.4 Confirm the canonical event-ordering field for deterministic in-game sequencing and document it in the event dictionary and parser notes.
-  - [ ] 2.5 Audit the current repo’s legacy NST scraping endpoints, `pbp_plays`, `pbp_games`, and `shift_charts` flows to capture the existing ingest, idempotency, and audit conventions that the new pipeline must preserve or replace.
-  - [ ] 2.6 Enumerate every current NST table family and strength split in use: all situations, EV, PP, PK, plus counts, rates, on-ice counts, and on-ice rates where applicable.
-  - [ ] 2.7 Confirm that the sampled NHL data supports the required coordinates, shot types, participant IDs, score state, and team attribution needed for parity and feature generation.
-  - [ ] 2.8 Identify any upstream ambiguities or missing fields that require approximation, fallback logic, or documented non-parity exceptions.
+- [x] 2.0 Consolidate reconnaissance and legacy-contract findings into living docs
+  - [x] 2.1 Promote the sampled event taxonomy from `tasks/artifacts/nhl-pbp-recon-2026-03-30.md` into `tasks/event-dictionary.md`.
+  - [x] 2.2 Promote the validated `situationCode` findings into `tasks/strength-mapping.md`, including explicit examples for `1331`, `0651`, and `1560`.
+  - [x] 2.3 Record the current upstream endpoint shape differences, including the finding that `play-by-play` exposes `rosterSpots` while `boxscore` may not expose the expected roster sections for the same game.
+  - [x] 2.4 Confirm the canonical event-ordering field for deterministic in-game sequencing and document it in the event dictionary and parser notes.
+  - [x] 2.5 Audit the current repo’s legacy NST scraping endpoints, `pbp_plays`, `pbp_games`, and `shift_charts` flows to capture the existing ingest, idempotency, and audit conventions that the new pipeline must preserve or replace.
+  - [x] 2.6 Enumerate every current NST table family and strength split in use: all situations, EV, PP, PK, plus counts, rates, on-ice counts, and on-ice rates where applicable.
+  - [x] 2.7 Confirm that the sampled NHL data supports the required coordinates, shot types, participant IDs, score state, and team attribution needed for parity and feature generation.
+  - [x] 2.8 Identify any upstream ambiguities or missing fields that require approximation, fallback logic, or documented non-parity exceptions.
 
 - [ ] 3.0 Finalize the scalable schema and migration plan
   - [ ] 3.1 Expand `tasks/schema-recommendation.md` to explain why raw snapshots plus normalized event and shift rows are preferred over a primary per-game JSONB design.

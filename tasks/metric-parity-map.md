@@ -18,6 +18,29 @@ Policy:
 
 ## Current NST Table Families
 
+Verification sources for the inventory below:
+
+- `web/lib/supabase/database-generated.types.ts`
+- `web/pages/api/v1/db/update-nst-gamelog.ts`
+- `web/pages/api/v1/db/nst_gamelog_scraper.py`
+- `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
+- `web/pages/stats/player/[playerId].tsx`
+- `web/pages/api/v1/db/update-nst-goalies.ts`
+- `web/pages/api/v1/db/nst_gamelog_goalie_scraper.py`
+
+### Verified Skater Matrix
+
+The current skater gamelog contract is a full 4 x 4 matrix:
+
+| Strength split | Counts | Rates | On-ice counts | On-ice rates |
+| --- | --- | --- | --- | --- |
+| All situations | `nst_gamelog_as_counts` | `nst_gamelog_as_rates` | `nst_gamelog_as_counts_oi` | `nst_gamelog_as_rates_oi` |
+| Even strength | `nst_gamelog_es_counts` | `nst_gamelog_es_rates` | `nst_gamelog_es_counts_oi` | `nst_gamelog_es_rates_oi` |
+| Power play | `nst_gamelog_pp_counts` | `nst_gamelog_pp_rates` | `nst_gamelog_pp_counts_oi` | `nst_gamelog_pp_rates_oi` |
+| Penalty kill | `nst_gamelog_pk_counts` | `nst_gamelog_pk_rates` | `nst_gamelog_pk_counts_oi` | `nst_gamelog_pk_rates_oi` |
+
+That yields 16 skater NST gamelog tables currently present and referenced by the repo.
+
 The current skater gamelog contract in the repo uses these table families:
 
 - `nst_gamelog_as_counts`
@@ -37,6 +60,25 @@ The current skater gamelog contract in the repo uses these table families:
 - `nst_gamelog_pk_counts_oi`
 - `nst_gamelog_pk_rates_oi`
 
+### Verified Goalie Matrix
+
+The current goalie gamelog contract is a 5 x 2 matrix:
+
+| Strength split | Counts | Rates |
+| --- | --- | --- |
+| All situations | `nst_gamelog_goalie_all_counts` | `nst_gamelog_goalie_all_rates` |
+| Even strength | `nst_gamelog_goalie_ev_counts` | `nst_gamelog_goalie_ev_rates` |
+| Exact 5v5 | `nst_gamelog_goalie_5v5_counts` | `nst_gamelog_goalie_5v5_rates` |
+| Power play | `nst_gamelog_goalie_pp_counts` | `nst_gamelog_goalie_pp_rates` |
+| Penalty kill | `nst_gamelog_goalie_pk_counts` | `nst_gamelog_goalie_pk_rates` |
+
+That yields 10 goalie NST gamelog tables currently present and referenced by the repo.
+
+Important distinction:
+
+- skater NST families have explicit on-ice table variants
+- goalie NST families do not use separate on-ice table variants
+
 The current database also includes goalie NST gamelog tables:
 
 - `nst_gamelog_goalie_all_counts`
@@ -49,6 +91,22 @@ The current database also includes goalie NST gamelog tables:
 - `nst_gamelog_goalie_pp_rates`
 - `nst_gamelog_goalie_pk_counts`
 - `nst_gamelog_goalie_pk_rates`
+
+### Current Repo Consumers
+
+Verified skater-family consumers include:
+
+- player page joins and fetches in `web/pages/stats/player/[playerId].tsx`
+- rolling player averages in `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
+- analytics views such as `web/sql/views/analytics.vw_sko_skater_base.sql`
+- NST ingest and refresh routes such as `web/pages/api/v1/db/update-nst-gamelog.ts`
+
+Verified goalie-family consumers include:
+
+- goalie NST ingest in `web/pages/api/v1/db/update-nst-goalies.ts`
+- goalie scraper mapping in `web/pages/api/v1/db/nst_gamelog_goalie_scraper.py`
+- goalie coverage and missing-data checks in `web/pages/api/v1/db/check-missing-goalie-data.ts`
+- goalie-facing reads such as `web/components/RosterMatrix/RosterMatrixWrapper.tsx`
 
 ## Explicit Repo Consumer: Player Page Game Log Merge
 
