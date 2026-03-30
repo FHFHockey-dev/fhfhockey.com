@@ -9,6 +9,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, "../..");
 const webRoot = path.resolve(__dirname, "..");
+const PARSER_VERSION = 1;
+const STRENGTH_VERSION = 1;
 const SHOT_LIKE_TYPES = new Set([
   "goal",
   "shot-on-goal",
@@ -152,11 +154,13 @@ async function insertPayloadSnapshot(supabase, row) {
   if (error) throw error;
 }
 
-function normalizeRosterSpots(game) {
+function normalizeRosterSpots(game, pbpHash) {
   return (game.rosterSpots ?? []).map((spot) => ({
     game_id: game.id,
     season_id: Number(game.season),
     game_date: game.gameDate,
+    source_play_by_play_hash: pbpHash,
+    parser_version: PARSER_VERSION,
     team_id: spot.teamId,
     player_id: spot.playerId,
     first_name: spot.firstName?.default ?? null,
@@ -164,11 +168,12 @@ function normalizeRosterSpots(game) {
     sweater_number: spot.sweaterNumber ?? null,
     position_code: spot.positionCode ?? null,
     headshot_url: spot.headshot ?? null,
+    raw_spot: spot,
     updated_at: new Date().toISOString(),
   }));
 }
 
-function normalizePbpEvents(game) {
+function normalizePbpEvents(game, pbpHash) {
   const seasonId = Number(game.season);
   const homeTeamId = game.homeTeam.id;
   const awayTeamId = game.awayTeam.id;
@@ -188,6 +193,9 @@ function normalizePbpEvents(game) {
       game_id: game.id,
       season_id: seasonId,
       game_date: game.gameDate,
+      source_play_by_play_hash: pbpHash,
+      parser_version: PARSER_VERSION,
+      strength_version: STRENGTH_VERSION,
       event_id: play.eventId,
       sort_order: play.sortOrder ?? null,
       period_number: play.periodDescriptor?.number ?? null,
@@ -214,6 +222,7 @@ function normalizePbpEvents(game) {
       is_shot_like: SHOT_LIKE_TYPES.has(typeDescKey),
       is_goal: typeDescKey === "goal",
       is_penalty: typeDescKey === "penalty",
+      raw_event: play,
       details,
       losing_player_id: details.losingPlayerId ?? null,
       winning_player_id: details.winningPlayerId ?? null,
@@ -250,13 +259,15 @@ function normalizePbpEvents(game) {
   });
 }
 
-function normalizeShiftRows(game, shiftPayload) {
+function normalizeShiftRows(game, shiftPayload, shiftHash) {
   const seasonId = Number(game.season);
   return (shiftPayload.data ?? []).map((shift) => ({
     game_id: game.id,
     shift_id: shift.id,
     season_id: seasonId,
     game_date: game.gameDate,
+    source_shiftcharts_hash: shiftHash,
+    parser_version: PARSER_VERSION,
     player_id: shift.playerId,
     team_id: shift.teamId,
     team_abbrev: shift.teamAbbrev ?? null,
@@ -277,6 +288,7 @@ function normalizeShiftRows(game, shiftPayload) {
     event_description: shift.eventDescription ?? null,
     event_details: shift.eventDetails ?? null,
     hex_value: shift.hexValue ?? null,
+    raw_shift: shift,
     updated_at: new Date().toISOString(),
   }));
 }
@@ -297,6 +309,10 @@ async function ingestGame(supabase, gameId) {
   const fetchedAt = new Date().toISOString();
   const seasonId = Number(pbp.season);
   const gameDate = pbp.gameDate;
+  const pbpHash = sha256Json(pbp);
+  const boxscoreHash = sha256Json(boxscore);
+  const landingHash = sha256Json(landing);
+  const shiftHash = sha256Json(shiftPayload);
 
   await insertPayloadSnapshot(supabase, {
     game_id: gameId,
@@ -304,7 +320,7 @@ async function ingestGame(supabase, gameId) {
     season_id: seasonId,
     game_date: gameDate,
     source_url: pbpUrl,
-    payload_hash: sha256Json(pbp),
+    payload_hash: pbpHash,
     payload: pbp,
     fetched_at: fetchedAt,
   });
@@ -315,7 +331,7 @@ async function ingestGame(supabase, gameId) {
     season_id: seasonId,
     game_date: gameDate,
     source_url: boxscoreUrl,
-    payload_hash: sha256Json(boxscore),
+    payload_hash: boxscoreHash,
     payload: boxscore,
     fetched_at: fetchedAt,
   });
@@ -326,7 +342,7 @@ async function ingestGame(supabase, gameId) {
     season_id: seasonId,
     game_date: gameDate,
     source_url: landingUrl,
-    payload_hash: sha256Json(landing),
+    payload_hash: landingHash,
     payload: landing,
     fetched_at: fetchedAt,
   });
@@ -337,14 +353,14 @@ async function ingestGame(supabase, gameId) {
     season_id: seasonId,
     game_date: gameDate,
     source_url: shiftUrl,
-    payload_hash: sha256Json(shiftPayload),
+    payload_hash: shiftHash,
     payload: shiftPayload,
     fetched_at: fetchedAt,
   });
 
-  const rosterRows = normalizeRosterSpots(pbp);
-  const eventRows = normalizePbpEvents(pbp);
-  const shiftRows = normalizeShiftRows(pbp, shiftPayload);
+  const rosterRows = normalizeRosterSpots(pbp, pbpHash);
+  const eventRows = normalizePbpEvents(pbp, pbpHash);
+  const shiftRows = normalizeShiftRows(pbp, shiftPayload, shiftHash);
 
   const rosterCount = rosterRows.length
     ? await upsertInBatches(

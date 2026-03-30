@@ -8,8 +8,8 @@ CREATE TABLE IF NOT EXISTS nhl_api_game_payloads_raw (
   ),
   season_id BIGINT NULL,
   game_date DATE NULL,
-  source_url TEXT NOT NULL,
-  payload_hash TEXT NOT NULL,
+  source_url TEXT NOT NULL CHECK (btrim(source_url) <> ''),
+  payload_hash TEXT NOT NULL CHECK (btrim(payload_hash) <> ''),
   payload JSONB NOT NULL,
   fetched_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -22,10 +22,26 @@ CREATE INDEX IF NOT EXISTS nhl_api_game_payloads_raw_game_endpoint_idx
 CREATE INDEX IF NOT EXISTS nhl_api_game_payloads_raw_season_date_idx
   ON nhl_api_game_payloads_raw (season_id, game_date DESC, endpoint);
 
+CREATE OR REPLACE FUNCTION prevent_nhl_api_game_payloads_raw_mutation()
+RETURNS TRIGGER AS $$
+BEGIN
+  RAISE EXCEPTION 'nhl_api_game_payloads_raw rows are immutable';
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS nhl_api_game_payloads_raw_no_update
+  ON nhl_api_game_payloads_raw;
+CREATE TRIGGER nhl_api_game_payloads_raw_no_update
+BEFORE UPDATE ON nhl_api_game_payloads_raw
+FOR EACH ROW
+EXECUTE FUNCTION prevent_nhl_api_game_payloads_raw_mutation();
+
 CREATE TABLE IF NOT EXISTS nhl_api_game_roster_spots (
   game_id BIGINT NOT NULL,
   season_id BIGINT NULL,
   game_date DATE NULL,
+  source_play_by_play_hash TEXT NOT NULL CHECK (btrim(source_play_by_play_hash) <> ''),
+  parser_version INTEGER NOT NULL DEFAULT 1 CHECK (parser_version >= 1),
   team_id BIGINT NOT NULL,
   player_id BIGINT NOT NULL,
   first_name TEXT NULL,
@@ -33,6 +49,7 @@ CREATE TABLE IF NOT EXISTS nhl_api_game_roster_spots (
   sweater_number INTEGER NULL,
   position_code TEXT NULL,
   headshot_url TEXT NULL,
+  raw_spot JSONB NOT NULL DEFAULT '{}'::JSONB,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   PRIMARY KEY (game_id, player_id)
@@ -48,6 +65,9 @@ CREATE TABLE IF NOT EXISTS nhl_api_pbp_events (
   game_id BIGINT NOT NULL,
   season_id BIGINT NULL,
   game_date DATE NULL,
+  source_play_by_play_hash TEXT NOT NULL CHECK (btrim(source_play_by_play_hash) <> ''),
+  parser_version INTEGER NOT NULL DEFAULT 1 CHECK (parser_version >= 1),
+  strength_version INTEGER NOT NULL DEFAULT 1 CHECK (strength_version >= 1),
   event_id BIGINT NOT NULL,
   sort_order INTEGER NULL,
   period_number INTEGER NULL,
@@ -57,20 +77,27 @@ CREATE TABLE IF NOT EXISTS nhl_api_pbp_events (
   period_seconds_elapsed INTEGER NULL,
   time_remaining_seconds INTEGER NULL,
   situation_code TEXT NULL,
-  away_goalie SMALLINT NULL,
+  away_goalie SMALLINT NULL CHECK (away_goalie IS NULL OR away_goalie IN (0, 1)),
   away_skaters SMALLINT NULL,
   home_skaters SMALLINT NULL,
-  home_goalie SMALLINT NULL,
-  strength_exact TEXT NULL,
-  strength_state TEXT NULL,
+  home_goalie SMALLINT NULL CHECK (home_goalie IS NULL OR home_goalie IN (0, 1)),
+  strength_exact TEXT NULL CHECK (
+    strength_exact IS NULL OR strength_exact ~ '^[0-9]+v[0-9]+$'
+  ),
+  strength_state TEXT NULL CHECK (
+    strength_state IS NULL OR strength_state IN ('EV', 'PP', 'SH', 'EN')
+  ),
   home_team_defending_side TEXT NULL,
   type_code INTEGER NULL,
   type_desc_key TEXT NULL,
   event_owner_team_id BIGINT NULL,
-  event_owner_side TEXT NULL,
+  event_owner_side TEXT NULL CHECK (
+    event_owner_side IS NULL OR event_owner_side IN ('home', 'away')
+  ),
   is_shot_like BOOLEAN NOT NULL DEFAULT FALSE,
   is_goal BOOLEAN NOT NULL DEFAULT FALSE,
   is_penalty BOOLEAN NOT NULL DEFAULT FALSE,
+  raw_event JSONB NOT NULL DEFAULT '{}'::JSONB,
   details JSONB NOT NULL DEFAULT '{}'::JSONB,
   losing_player_id BIGINT NULL,
   winning_player_id BIGINT NULL,
@@ -107,14 +134,32 @@ CREATE TABLE IF NOT EXISTS nhl_api_pbp_events (
 CREATE INDEX IF NOT EXISTS nhl_api_pbp_events_game_sort_idx
   ON nhl_api_pbp_events (game_id, sort_order);
 
+CREATE INDEX IF NOT EXISTS nhl_api_pbp_events_game_type_sort_idx
+  ON nhl_api_pbp_events (game_id, type_desc_key, sort_order);
+
 CREATE INDEX IF NOT EXISTS nhl_api_pbp_events_season_date_idx
   ON nhl_api_pbp_events (season_id, game_date DESC, type_desc_key);
+
+CREATE INDEX IF NOT EXISTS nhl_api_pbp_events_type_strength_date_idx
+  ON nhl_api_pbp_events (type_desc_key, strength_state, game_date DESC);
 
 CREATE INDEX IF NOT EXISTS nhl_api_pbp_events_owner_idx
   ON nhl_api_pbp_events (event_owner_team_id, game_date DESC);
 
 CREATE INDEX IF NOT EXISTS nhl_api_pbp_events_strength_idx
   ON nhl_api_pbp_events (strength_state, strength_exact, game_date DESC);
+
+CREATE INDEX IF NOT EXISTS nhl_api_pbp_events_player_idx
+  ON nhl_api_pbp_events (player_id, game_date DESC, game_id)
+  WHERE player_id IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS nhl_api_pbp_events_shooter_idx
+  ON nhl_api_pbp_events (shooting_player_id, game_date DESC, game_id)
+  WHERE shooting_player_id IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS nhl_api_pbp_events_scorer_idx
+  ON nhl_api_pbp_events (scoring_player_id, game_date DESC, game_id)
+  WHERE scoring_player_id IS NOT NULL;
 
 CREATE INDEX IF NOT EXISTS nhl_api_pbp_events_shot_like_idx
   ON nhl_api_pbp_events (is_shot_like, game_date DESC, game_id);
@@ -127,6 +172,8 @@ CREATE TABLE IF NOT EXISTS nhl_api_shift_rows (
   shift_id BIGINT NOT NULL,
   season_id BIGINT NULL,
   game_date DATE NULL,
+  source_shiftcharts_hash TEXT NOT NULL CHECK (btrim(source_shiftcharts_hash) <> ''),
+  parser_version INTEGER NOT NULL DEFAULT 1 CHECK (parser_version >= 1),
   player_id BIGINT NOT NULL,
   team_id BIGINT NOT NULL,
   team_abbrev TEXT NULL,
@@ -147,6 +194,7 @@ CREATE TABLE IF NOT EXISTS nhl_api_shift_rows (
   event_description TEXT NULL,
   event_details TEXT NULL,
   hex_value TEXT NULL,
+  raw_shift JSONB NOT NULL DEFAULT '{}'::JSONB,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   PRIMARY KEY (game_id, shift_id)
@@ -160,6 +208,12 @@ CREATE INDEX IF NOT EXISTS nhl_api_shift_rows_game_team_idx
 
 CREATE INDEX IF NOT EXISTS nhl_api_shift_rows_season_date_idx
   ON nhl_api_shift_rows (season_id, game_date DESC, team_id);
+
+CREATE INDEX IF NOT EXISTS nhl_api_shift_rows_player_date_idx
+  ON nhl_api_shift_rows (player_id, game_date DESC, game_id, period, start_seconds);
+
+CREATE INDEX IF NOT EXISTS nhl_api_game_roster_spots_player_date_idx
+  ON nhl_api_game_roster_spots (player_id, game_date DESC, game_id);
 
 CREATE OR REPLACE VIEW nhl_api_pbp_shot_events_v1 AS
 SELECT

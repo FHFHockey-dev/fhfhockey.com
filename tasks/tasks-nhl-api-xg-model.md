@@ -69,15 +69,15 @@
   - [x] 2.7 Confirm that the sampled NHL data supports the required coordinates, shot types, participant IDs, score state, and team attribution needed for parity and feature generation.
   - [x] 2.8 Identify any upstream ambiguities or missing fields that require approximation, fallback logic, or documented non-parity exceptions.
 
-- [ ] 3.0 Finalize the scalable schema and migration plan
-  - [ ] 3.1 Expand `tasks/schema-recommendation.md` to explain why raw snapshots plus normalized event and shift rows are preferred over a primary per-game JSONB design.
-  - [ ] 3.2 Review and refine `migrations/20260330_create_nhl_api_raw_ingestion_tables.sql` so it fully captures immutable raw payload snapshots, normalized roster spots, normalized event rows, and raw shift rows.
-  - [ ] 3.3 Decide which raw payload fields remain only in JSONB, which are promoted to typed columns, and which are deferred to derived feature tables.
-  - [ ] 3.4 Ensure the schema supports both exact manpower labels (`5v5`, `5v4`, `6v5`, `3v3`) and canonical strength states (`EV`, `PP`, `SH`, `EN`).
-  - [ ] 3.5 Ensure the schema supports normalized attacking-direction coordinates, parser/feature/parity versions, and replayable backfills.
-  - [ ] 3.6 Add or plan indexes and constraints for efficient querying by game, event order, team, player, strength, and event type.
-  - [ ] 3.7 Plan the next migrations for derived shot-feature storage and NST-parity output storage so the raw and normalized foundations do not get overloaded with derived concerns.
-  - [ ] 3.8 Regenerate `web/lib/supabase/database-generated.types.ts` after the migration set is finalized and applied.
+- [x] 3.0 Finalize the scalable schema and migration plan
+  - [x] 3.1 Expand `tasks/schema-recommendation.md` to explain why raw snapshots plus normalized event and shift rows are preferred over a primary per-game JSONB design.
+  - [x] 3.2 Review and refine `migrations/20260330_create_nhl_api_raw_ingestion_tables.sql` so it fully captures immutable raw payload snapshots, normalized roster spots, normalized event rows, and raw shift rows.
+  - [x] 3.3 Decide which raw payload fields remain only in JSONB, which are promoted to typed columns, and which are deferred to derived feature tables.
+  - [x] 3.4 Ensure the schema supports both exact manpower labels (`5v5`, `5v4`, `6v5`, `3v3`) and canonical strength states (`EV`, `PP`, `SH`, `EN`).
+  - [x] 3.5 Ensure the schema supports normalized attacking-direction coordinates, parser/feature/parity versions, and replayable backfills.
+  - [x] 3.6 Add or plan indexes and constraints for efficient querying by game, event order, team, player, strength, and event type.
+  - [x] 3.7 Plan the next migrations for derived shot-feature storage and NST-parity output storage so the raw and normalized foundations do not get overloaded with derived concerns.
+  - [x] 3.8 Regenerate `web/lib/supabase/database-generated.types.ts` after the migration set is finalized and applied.
 
 - [ ] 4.0 Operationalize raw ingestion in Supabase and the repo
   - [ ] 4.1 Apply `migrations/20260330_create_nhl_api_raw_ingestion_tables.sql` to Supabase and confirm the new tables and view exist in the target project.
