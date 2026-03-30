@@ -7,6 +7,11 @@ import ForgeRouteNav from "components/forge-dashboard/ForgeRouteNav";
 import { useTeamSchedule } from "hooks/useTeamSchedule";
 import { fetchCachedJson } from "lib/dashboard/clientFetchCache";
 import {
+  buildForgeHref,
+  parseForgeDateParam,
+  parseForgeResolvedDateParam
+} from "lib/dashboard/forgeLinks";
+import {
   normalizeCtpiResponse,
   normalizeStartChartResponse,
   normalizeTeamRatings,
@@ -48,8 +53,8 @@ const formatSigned = (value: number | null | undefined): string => {
 export default function ForgeTeamDetailPage() {
   const router = useRouter();
   const todayEt = useMemo(() => getTodayEt(), []);
-  const date =
-    typeof router.query.date === "string" ? router.query.date : todayEt;
+  const date = parseForgeDateParam(router.query.date, todayEt);
+  const routeResolvedDate = parseForgeResolvedDateParam(router.query.resolvedDate);
   const teamIdParam =
     typeof router.query.teamId === "string" ? router.query.teamId : "";
   const teamAbbr = teamIdParam.toUpperCase();
@@ -207,18 +212,35 @@ export default function ForgeTeamDetailPage() {
                   {teamMeta ? teamMeta.name : teamAbbr || "Unknown Team"}
                 </h1>
                 <p className={styles.routePageSubtitle}>
-                  Team power, current slate context, and upcoming schedule live together here so
+                  Team rating-blend context, current slate context, and upcoming schedule live together here so
                   team clicks from the dashboard land somewhere operational instead of generic.
                 </p>
               </div>
               <div className={styles.routePageNavStack}>
                 <ForgeRouteNav
                   current="teamDetail"
-                  teamHref={teamMeta ? `/forge/team/${teamAbbr}` : null}
+                  teamHref={
+                    teamMeta
+                      ? buildForgeHref(`/forge/team/${teamAbbr}`, {
+                          date,
+                          resolvedDate: resolvedDate ?? routeResolvedDate
+                        })
+                      : null
+                  }
+                  date={date}
+                  resolvedDate={resolvedDate ?? routeResolvedDate}
+                  team={teamAbbr}
                 />
                 <div className={styles.routePageMeta}>
                   <span className={styles.contextChip}>Date: {resolvedDate ?? date}</span>
-                  <Link href="/forge/dashboard" className={styles.navLink}>
+                  <Link
+                    href={buildForgeHref("/forge/dashboard", {
+                      date,
+                      resolvedDate: resolvedDate ?? routeResolvedDate,
+                      team: teamAbbr
+                    })}
+                    className={styles.navLink}
+                  >
                     Back to Dashboard
                   </Link>
                 </div>
@@ -264,7 +286,7 @@ export default function ForgeTeamDetailPage() {
                   ) : null}
                   <div className={styles.detailMetricGrid}>
                     <article className={styles.detailMetricCard}>
-                      <span className={styles.previewSubheading}>Power Score</span>
+                      <span className={styles.previewSubheading}>Rating Blend</span>
                       <strong>{formatMetric(powerScore)}</strong>
                       <span>Trend {formatSigned(teamRating?.trend10)}</span>
                     </article>
@@ -346,13 +368,29 @@ export default function ForgeTeamDetailPage() {
                     </div>
                   </div>
                   <div className={styles.previewActions}>
-                    <Link href="/forge/dashboard" className={styles.slateActionLink}>
+                    <Link
+                      href={buildForgeHref("/forge/dashboard", {
+                        date,
+                        resolvedDate: resolvedDate ?? routeResolvedDate,
+                        team: teamAbbr
+                      })}
+                      className={styles.slateActionLink}
+                    >
                       Dashboard
                     </Link>
-                    <Link href="/start-chart" className={styles.slateActionLink}>
+                    <Link
+                      href={buildForgeHref("/start-chart", {
+                        date,
+                        resolvedDate: resolvedDate ?? routeResolvedDate
+                      })}
+                      className={styles.slateActionLink}
+                    >
                       Start Chart
                     </Link>
-                    <Link href="/trends" className={styles.slateActionLink}>
+                    <Link
+                      href={buildForgeHref("/trends", { date })}
+                      className={styles.slateActionLink}
+                    >
                       Trends
                     </Link>
                     <Link href="/underlying-stats" className={styles.slateActionLink}>

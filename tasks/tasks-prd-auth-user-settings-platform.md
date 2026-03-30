@@ -201,7 +201,7 @@
   - [ ] NEW 24.4 Add guarded refresh controls, cooldown enforcement, and sync-run dedupe to avoid rapid repeated Yahoo sync attempts.
   - [ ] NEW 24.5 Keep the existing shared Yahoo refresh path untouched in `web/pages/api/v1/db/manual-refresh-yahoo-token.ts`.
   - [x] NEW 24.6 Drive the `League Settings` tab from synced Yahoo league scoring and roster data for the selected active Yahoo league instead of showing only generic user defaults.
-  - [ ] NEW 24.7 Add Yahoo league/team dropdown switchers to `League Settings` and `Saved Teams`, backed by `user_provider_preferences.active_context`, so users can quickly swap active leagues without reconnecting.
+  - [x] NEW 24.7 Add Yahoo league/team dropdown switchers to `League Settings` and `Saved Teams`, backed by `user_provider_preferences.active_context`, so users can quickly swap active leagues without reconnecting.
   - [ ] NEW 24.8 Support saving imported Yahoo teams into `user_saved_teams` using synced `external_teams.roster_snapshot` plus linked `external_league_key` and `external_team_key`.
   - [ ] NEW 24.9 Sync and expose Yahoo league standings plus all league teams metadata so the account UI can show the full league field, not only the current user’s owned teams.
   - [ ] NEW 24.10 Add on-demand or cached views for other Yahoo teams’ rosters within a synced league.

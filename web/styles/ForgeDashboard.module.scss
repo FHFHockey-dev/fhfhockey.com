@@ -15,31 +15,31 @@
 .container {
   width: min(1880px, calc(100% - 2rem));
   margin: 0 auto;
-  padding: v.$space-md 0 v.$space-md;
+  padding: v.$space-md 0 v.$space-lg;
   min-height: 100%;
   display: grid;
   grid-template-rows: auto auto auto 1fr;
-  gap: v.$space-sm;
+  gap: v.$space-md;
 }
 
 .shell {
   min-height: 0;
   display: grid;
-  gap: v.$space-sm;
+  gap: v.$space-md;
   align-content: start;
 }
 
 .sectionBand {
   @include p.panel-container(
     $radius: v.$border-radius-md,
-    $padding: v.$space-sm,
+    $padding: v.$space-md,
     $gradient-start: rgba(v.$color-white, 0.04),
     $gradient-end: rgba(v.$color-white, 0.015),
     $blur: 10px
   );
   min-height: 0;
   display: grid;
-  gap: v.$space-sm;
+  gap: v.$space-md;
   background:
     linear-gradient(180deg, rgba(v.$color-white, 0.02), rgba(v.$color-white, 0)),
     linear-gradient(135deg, rgba(v.$primary-color, 0.06), transparent 28%),
@@ -57,7 +57,9 @@
 .bandHeaderMain {
   min-width: 0;
   display: grid;
-  gap: 0.35rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: v.$space-sm;
 }
 
 .bandIntro {
@@ -100,7 +102,7 @@
 
 .sectionBandBody {
   display: grid;
-  gap: v.$space-sm;
+  gap: v.$space-md;
   min-height: 0;
 }
 
@@ -129,15 +131,32 @@
 }
 
 .ownershipControlCard {
+  position: relative;
+  overflow: hidden;
   min-width: min(100%, 290px);
   display: grid;
   gap: 0.45rem;
-  padding: v.$space-xs v.$space-sm;
+  padding: v.$space-sm v.$space-sm v.$space-sm calc(v.$space-sm + 12px + v.$space-xs);
   border-radius: v.$border-radius-sm;
-  border: 1px solid rgba(v.$border-secondary, 0.7);
+  border: 2px solid rgba(v.$primary-color, 0.45);
   background:
-    linear-gradient(180deg, rgba(v.$color-white, 0.03), rgba(v.$color-white, 0)),
-    rgba(v.$background-dark, 0.55);
+    linear-gradient(180deg, rgba(v.$primary-color, 0.12), rgba(v.$primary-color, 0.03)),
+    linear-gradient(135deg, rgba(v.$color-white, 0.03), rgba(v.$color-white, 0)),
+    rgba(v.$background-dark, 0.68);
+  box-shadow:
+    inset 0 1px 0 rgba(v.$color-white, 0.04),
+    0 10px 22px rgba(0, 0, 0, 0.22);
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 12px;
+    background: linear-gradient(180deg, rgba(v.$warning-color, 0.96), rgba(v.$primary-color, 0.78));
+    box-shadow:
+      0 0 14px rgba(v.$warning-color, 0.28),
+      0 0 20px rgba(v.$primary-color, 0.18);
+  }
 }
 
 .ownershipControlEyebrow {
@@ -160,12 +179,16 @@
 
 .ownershipControlRows {
   display: grid;
-  gap: 0.35rem;
+  gap: 0.45rem;
 }
 
 .ownershipControlItem {
   display: grid;
-  gap: 0.2rem;
+  gap: 0.24rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: v.$border-radius-sm;
+  border: 1px solid rgba(v.$border-secondary, 0.5);
+  background: rgba(v.$background-dark, 0.4);
   color: v.$text-secondary;
   font-size: v.$font-size-xs;
 
@@ -270,7 +293,9 @@
 .bandAlert {
   display: grid;
   gap: 0.25rem;
-  padding: v.$space-xs v.$space-sm;
+  width: fit-content;
+  max-width: min(100%, 92ch);
+  padding: 0.45rem 0.7rem;
   border-radius: v.$border-radius-sm;
   border: 1px solid rgba(v.$border-secondary, 0.38);
   background: rgba(v.$background-dark, 0.55);
@@ -300,15 +325,15 @@
 .bandAlertLine {
   margin: 0;
   color: v.$text-secondary;
-  font-size: v.$font-size-xs;
-  line-height: 1.4;
+  font-size: 0.7rem;
+  line-height: 1.35;
 }
 
 .topBandLayout {
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1.9fr) minmax(320px, 0.82fr);
-  gap: v.$space-sm;
+  grid-template-columns: minmax(0, 1.95fr) minmax(320px, 0.78fr);
+  gap: v.$space-md;
   align-items: start;
 }
 
@@ -364,13 +389,34 @@
   min-height: 0;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: v.$space-sm;
+  gap: v.$space-md;
 }
 
 .header {
-  display: flex;
-  flex-direction: column;
-  gap: v.$space-xs;
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  gap: v.$space-sm;
+  padding: v.$space-md;
+  border-radius: v.$border-radius-md;
+  border: 1px solid rgba(v.$border-secondary, 0.9);
+  background:
+    radial-gradient(circle at top left, rgba(v.$primary-color, 0.16), transparent 34%),
+    linear-gradient(180deg, rgba(v.$color-white, 0.025), rgba(v.$color-white, 0)),
+    linear-gradient(135deg, rgba(v.$secondary-color, 0.06), transparent 42%),
+    color.adjust(v.$background-medium, $lightness: -2%);
+  box-shadow:
+    inset 0 1px 0 rgba(v.$color-white, 0.04),
+    0 14px 30px rgba(0, 0, 0, 0.22);
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: auto -12% -45% 48%;
+    height: 150px;
+    background: radial-gradient(circle, rgba(v.$primary-color, 0.14), transparent 68%);
+    pointer-events: none;
+  }
 }
 
 .headerTopline {
@@ -384,6 +430,7 @@
   display: inline-grid;
   width: max-content;
   min-width: 0;
+  gap: 0.3rem;
 }
 
 .title {
@@ -422,34 +469,41 @@
   color: v.$text-secondary;
   font-size: 0.92rem;
   font-family: v.$font-family-primary, sans-serif;
-  padding-top: 0.45rem;
+  max-width: 33ch;
+  padding-top: 0.15rem;
   text-align: right;
-  white-space: nowrap;
+  white-space: normal;
+  justify-self: end;
+  align-self: end;
+  line-height: 1.45;
 }
 
 .controlsSurface {
   @include p.panel-container(
     $radius: v.$border-radius-md,
-    $padding: v.$space-sm,
+    $padding: v.$space-md,
     $gradient-start: rgba(v.$color-white, 0.04),
     $gradient-end: rgba(v.$color-white, 0.015),
     $blur: 10px
   );
   display: grid;
   grid-template-columns: minmax(260px, 0.95fr) minmax(0, 1.6fr);
-  gap: v.$space-sm;
+  gap: v.$space-md;
   align-items: stretch;
   background:
     linear-gradient(180deg, rgba(v.$color-white, 0.02), rgba(v.$color-white, 0)),
     linear-gradient(135deg, rgba(v.$primary-color, 0.05), transparent 28%),
     color.adjust(v.$background-medium, $lightness: -1%);
   border: 1px solid rgba(v.$border-secondary, 0.92);
+  box-shadow:
+    inset 0 1px 0 rgba(v.$color-white, 0.04),
+    0 12px 26px rgba(0, 0, 0, 0.2);
 }
 
 .contextBlock {
   min-height: 0;
   display: grid;
-  gap: v.$space-xs;
+  gap: v.$space-sm;
   align-content: start;
   padding-right: v.$space-sm;
   border-right: 1px solid rgba(v.$border-secondary, 0.42);
@@ -523,7 +577,7 @@
 .controlStack {
   min-height: 0;
   display: grid;
-  gap: v.$space-sm;
+  gap: 0.75rem;
   align-content: start;
 }
 
@@ -579,7 +633,10 @@
 }
 
 .secondaryNavWrapper {
-  display: block;
+  display: grid;
+  gap: v.$space-sm;
+  padding-bottom: v.$space-sm;
+  border-bottom: 1px solid rgba(v.$border-secondary, 0.4);
 }
 
 .secondaryNav {
@@ -760,7 +817,7 @@
 .controlsRow {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  align-items: end;
+  align-items: stretch;
   gap: v.$space-sm;
 }
 
@@ -910,26 +967,22 @@
 }
 
 .driftBanner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
   border: 1px solid rgba(v.$warning-color, 0.45);
   border-radius: v.$border-radius-md;
   background:
     linear-gradient(90deg, rgba(v.$warning-color, 0.14), rgba(v.$warning-color, 0.06)),
     rgba(v.$background-medium, 0.82);
   color: color.adjust(v.$warning-color, $lightness: 8%);
-  padding: v.$space-xs v.$space-sm;
-  font-size: v.$font-size-xs;
+  padding: 0.4rem 0.7rem;
+  font-size: 0.7rem;
   line-height: 1.35;
   box-shadow:
     inset 0 1px 0 rgba(v.$color-white, 0.04),
     0 8px 18px rgba(0, 0, 0, 0.18);
-}
-
-.dashboardGrid {
-  min-height: 0;
-  display: grid;
-  gap: v.$space-sm;
-  grid-template-columns: 1fr;
-  grid-template-rows: repeat(5, minmax(130px, auto));
 }
 
 // .moversPanel {}
@@ -1001,19 +1054,6 @@
   gap: v.$space-sm;
 }
 
-.slateRailPanel {
-  position: relative;
-  min-height: 0;
-  padding: v.$space-sm;
-  border-radius: v.$border-radius-md;
-  background:
-    linear-gradient(180deg, rgba(v.$primary-color, 0.05), rgba(v.$primary-color, 0.015)),
-    linear-gradient(135deg, rgba(v.$color-white, 0.03), rgba(v.$color-white, 0)),
-    v.$background-medium;
-  border: 1px solid rgba(v.$border-secondary, 0.95);
-  box-shadow: v.$box-shadow-default;
-}
-
 .moversCard {
   min-height: 100%;
   display: grid;
@@ -1030,7 +1070,17 @@
 
 .topAddsControls {
   display: grid;
-  gap: v.$space-sm;
+  gap: v.$space-md;
+  padding: v.$space-sm;
+  border-radius: v.$border-radius-md;
+  border: 1px solid rgba(v.$border-secondary, 0.62);
+  background:
+    linear-gradient(180deg, rgba(v.$color-white, 0.025), rgba(v.$color-white, 0)),
+    linear-gradient(145deg, rgba(v.$primary-color, 0.08), rgba(v.$color-white, 0)),
+    rgba(v.$background-dark, 0.42);
+  box-shadow:
+    inset 0 1px 0 rgba(v.$color-white, 0.04),
+    0 10px 20px rgba(0, 0, 0, 0.12);
 }
 
 .topAddsChipRow,
@@ -1065,15 +1115,20 @@
 .topAddsToggleGroup {
   display: inline-flex;
   align-items: center;
+  padding: 0.25rem;
   gap: v.$space-xs;
+  border-radius: v.$border-radius-md;
+  border: 1px solid rgba(v.$border-secondary, 0.9);
+  background: rgba(v.$background-dark, 0.72);
+  box-shadow: inset 0 1px 0 rgba(v.$color-white, 0.03);
 }
 
 .topAddsToggleButton {
   min-height: 32px;
   padding: 0 v.$space-sm;
   border-radius: 999px;
-  border: 1px solid rgba(v.$border-secondary, 0.75);
-  background: rgba(v.$background-dark, 0.65);
+  border: 2px solid transparent;
+  background: transparent;
   color: v.$text-secondary;
   font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
   font-size: v.$font-size-xs;
@@ -1084,19 +1139,27 @@
     border-color v.$hover-transition,
     color v.$hover-transition,
     background v.$hover-transition,
-    box-shadow v.$hover-transition;
+    box-shadow v.$hover-transition,
+    transform v.$hover-transition;
 
-  &:hover {
+  &:hover,
+  &:focus-visible {
     border-color: rgba(v.$primary-color, 0.7);
     color: v.$color-white;
+    background: rgba(v.$primary-color, 0.12);
+    box-shadow: 0 0 12px rgba(v.$primary-color, 0.16);
+    outline: none;
+    transform: translateY(-1px);
   }
 }
 
 .topAddsToggleButtonActive {
-  border-color: rgba(v.$primary-color, 0.8);
-  color: v.$color-white;
-  background: rgba(v.$primary-color, 0.14);
-  box-shadow: 0 0 0 1px rgba(v.$primary-color, 0.2);
+  border-color: rgba(v.$primary-color, 0.98);
+  color: v.$secondary-color;
+  background: rgba(v.$primary-color, 0.18);
+  box-shadow:
+    inset 0 1px 0 rgba(v.$color-white, 0.05),
+    0 8px 16px rgba(v.$primary-color, 0.22);
 }
 
 .topAddsOwnershipControls {
@@ -1104,10 +1167,13 @@
   gap: v.$space-xs;
   padding: v.$space-sm;
   border-radius: v.$border-radius-md;
-  border: 1px solid rgba(v.$border-secondary, 0.85);
+  border: 1px solid rgba(v.$primary-color, 0.42);
   background:
-    linear-gradient(135deg, rgba(v.$color-white, 0.03), rgba(v.$color-white, 0)),
+    linear-gradient(135deg, rgba(v.$primary-color, 0.1), rgba(v.$color-white, 0)),
     rgba(v.$background-dark, 0.72);
+  box-shadow:
+    inset 0 1px 0 rgba(v.$color-white, 0.04),
+    0 0 0 1px rgba(v.$primary-color, 0.08);
 }
 
 .topAddsOwnershipHeader {
@@ -1133,6 +1199,9 @@
   gap: 0.25rem;
   color: v.$text-secondary;
   font-size: v.$font-size-xs;
+  font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .topAddsRangeInput {
@@ -1211,13 +1280,15 @@
 }
 
 .topAddsCandidateCard {
+  position: relative;
+  overflow: hidden;
   display: grid;
   gap: v.$space-xs;
-  padding: v.$space-sm;
+  padding: v.$space-sm v.$space-sm v.$space-sm calc(v.$space-sm + 12px + v.$space-xs);
   border-radius: v.$border-radius-md;
-  border: 1px solid rgba(v.$border-secondary, 0.85);
+  border: 2px solid rgba(v.$primary-color, 0.46);
   background:
-    linear-gradient(160deg, rgba(v.$primary-color, 0.08), rgba(v.$primary-color, 0.02)),
+    linear-gradient(160deg, rgba(v.$primary-color, 0.12), rgba(v.$primary-color, 0.03)),
     linear-gradient(135deg, rgba(v.$color-white, 0.03), rgba(v.$color-white, 0)),
     rgba(v.$background-dark, 0.78);
   color: inherit;
@@ -1233,11 +1304,38 @@
     outline: none;
     border-color: rgba(v.$primary-color, 0.88);
     background:
-      linear-gradient(160deg, rgba(v.$primary-color, 0.14), rgba(v.$primary-color, 0.04)),
+      linear-gradient(160deg, rgba(v.$primary-color, 0.18), rgba(v.$primary-color, 0.04)),
       linear-gradient(135deg, rgba(v.$color-white, 0.04), rgba(v.$color-white, 0)),
       rgba(v.$background-dark, 0.82);
-    box-shadow: 0 12px 26px rgba(v.$primary-color, 0.14);
+    box-shadow:
+      0 12px 26px rgba(v.$primary-color, 0.14),
+      0 0 0 1px rgba(v.$primary-color, 0.22);
     transform: translateY(-1px);
+  }
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 12px;
+    background: linear-gradient(180deg, rgba(v.$secondary-color, 0.95), rgba(v.$primary-color, 0.84));
+    box-shadow:
+      0 0 14px rgba(v.$secondary-color, 0.28),
+      0 0 24px rgba(v.$primary-color, 0.2);
+  }
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: -30%;
+    background: radial-gradient(60% 40% at 18% 0%, rgba(v.$primary-color, 0.18), transparent 60%);
+    opacity: 0;
+    transition: opacity v.$transition-duration v.$transition-easing;
+  }
+
+  &:hover::after,
+  &:focus-visible::after {
+    opacity: 1;
   }
 }
 
@@ -1277,6 +1375,7 @@
 .topAddsCandidateIdentity {
   display: grid;
   gap: 0.15rem;
+  min-width: 0;
 
   strong {
     color: v.$color-white;
@@ -1302,6 +1401,18 @@
     color: v.$color-white;
     font-family: v.$font-family-numbers, monospace;
   }
+
+  span {
+    display: grid;
+    gap: 0.1rem;
+    min-width: 0;
+    padding: 0.42rem 0.5rem;
+    border-radius: v.$border-radius-sm;
+    border: 1px solid rgba(v.$border-secondary, 0.44);
+    background:
+      linear-gradient(180deg, rgba(v.$color-white, 0.02), rgba(v.$color-white, 0)),
+      rgba(v.$background-dark, 0.46);
+  }
 }
 
 .topAddsOwnershipTrend {
@@ -1309,10 +1420,12 @@
   align-items: center;
   justify-content: space-between;
   gap: v.$space-sm;
-  padding: 0.45rem 0.55rem;
+  padding: 0.55rem 0.65rem;
   border-radius: v.$border-radius-sm;
-  background: rgba(v.$background-medium, 0.5);
-  border: 1px solid rgba(v.$border-secondary, 0.5);
+  background:
+    linear-gradient(135deg, rgba(v.$primary-color, 0.08), rgba(v.$color-white, 0.02)),
+    rgba(v.$background-medium, 0.54);
+  border: 1px solid rgba(v.$border-secondary, 0.44);
 }
 
 .topAddsOwnershipTrendLabel {
@@ -1344,6 +1457,97 @@
 
 .topAddsCandidateReasons {
   grid-template-columns: repeat(4, minmax(0, 1fr));
+  padding-top: 0.15rem;
+  border-top: 1px solid rgba(v.$border-secondary, 0.32);
+}
+
+.topAddsInspector {
+  display: grid;
+  gap: v.$space-xs;
+  padding: 0.8rem 0.9rem;
+  border-radius: v.$border-radius-sm;
+  border: 1px solid rgba(v.$primary-color, 0.34);
+  background:
+    linear-gradient(140deg, rgba(v.$primary-color, 0.12), rgba(v.$color-white, 0.02)),
+    rgba(v.$background-dark, 0.58);
+  box-shadow:
+    inset 0 1px 0 rgba(v.$color-white, 0.04),
+    0 10px 20px rgba(0, 0, 0, 0.12);
+}
+
+.topAddsInspectorHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.35rem 0.75rem;
+
+  strong {
+    color: v.$color-white;
+    font-size: v.$font-size-xs;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  span {
+    color: rgba(v.$text-secondary, 0.92);
+    font-size: 0.68rem;
+    line-height: 1.35;
+    font-family: v.$font-family-numbers, monospace;
+  }
+}
+
+.topAddsInspectorGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: v.$space-sm;
+}
+
+.topAddsInspectorBlock {
+  display: grid;
+  gap: 0.32rem;
+  padding: 0.45rem 0.55rem;
+  border-radius: v.$border-radius-sm;
+  border: 1px solid rgba(v.$border-secondary, 0.35);
+  background: rgba(v.$background-dark, 0.3);
+}
+
+.topAddsInspectorEyebrow {
+  color: rgba(v.$text-secondary, 0.86);
+  font-size: 0.64rem;
+  line-height: 1.25;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
+}
+
+.topAddsInspectorText {
+  margin: 0;
+  color: rgba(v.$text-secondary, 0.96);
+  font-size: v.$font-size-xs;
+  line-height: 1.4;
+}
+
+.topAddsInspectorBreakdown {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: v.$space-xs;
+
+  span {
+    display: grid;
+    gap: 0.1rem;
+    min-width: 0;
+    padding: 0.38rem 0.45rem;
+    border-radius: v.$border-radius-sm;
+    border: 1px solid rgba(v.$border-secondary, 0.4);
+    background:
+      linear-gradient(180deg, rgba(v.$color-white, 0.02), rgba(v.$color-white, 0)),
+      rgba(v.$background-dark, 0.42);
+    color: rgba(v.$text-secondary, 0.94);
+    font-size: 0.7rem;
+    line-height: 1.25;
+    font-family: v.$font-family-numbers, monospace;
+  }
 }
 
 .panelHeader {
@@ -1352,7 +1556,7 @@
   justify-content: space-between;
   gap: v.$space-sm;
   margin: calc(v.$space-sm * -1) calc(v.$space-sm * -1) v.$space-sm;
-  padding: v.$space-xs v.$space-sm;
+  padding: v.$space-xs v.$space-sm calc(v.$space-xs + 1px);
   background: linear-gradient(
     135deg,
     color.adjust(v.$background-dark, $lightness: -4%),
@@ -1378,16 +1582,40 @@
   font-size: v.$font-size-xs;
   color: v.$text-secondary;
   font-family: v.$font-family-numbers, monospace;
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 0.45rem;
+  border-radius: 999px;
+  border: 1px solid rgba(v.$border-secondary, 0.55);
+  background: rgba(v.$background-dark, 0.44);
 }
 
 .panelState {
   margin: 0;
-  font-size: v.$font-size-sm;
+  display: grid;
+  gap: 0.15rem;
+  width: fit-content;
+  max-width: min(100%, 94ch);
+  padding: 0.45rem 0.7rem;
+  border-radius: v.$border-radius-sm;
+  border: 1px solid rgba(v.$border-secondary, 0.52);
+  background:
+    linear-gradient(135deg, rgba(v.$color-white, 0.03), rgba(v.$color-white, 0)),
+    rgba(v.$background-dark, 0.46);
   color: v.$text-secondary;
-  padding: v.$space-xs 0;
+  font-size: 0.7rem;
+  line-height: 1.35;
+  box-shadow:
+    inset 0 1px 0 rgba(v.$color-white, 0.03),
+    0 8px 18px rgba(0, 0, 0, 0.12);
 }
 
 .panelStateStale {
+  border-color: rgba(v.$warning-color, 0.42);
+  background:
+    linear-gradient(90deg, rgba(v.$warning-color, 0.12), rgba(v.$warning-color, 0.03)),
+    rgba(v.$background-dark, 0.58);
   color: v.$warning-color;
 }
 
@@ -1397,6 +1625,10 @@
   justify-content: space-between;
   gap: v.$space-sm;
   margin-top: calc(v.$space-xs * -1);
+  padding: 0.35rem 0.4rem;
+  border-radius: v.$border-radius-sm;
+  border: 1px solid rgba(v.$border-secondary, 0.42);
+  background: rgba(v.$background-dark, 0.28);
 }
 
 .teamPowerControlMeta {
@@ -1420,7 +1652,7 @@
   min-height: v.$touch-target-min;
   padding: 0 v.$space-sm;
   border-radius: 999px;
-  border: 0;
+  border: 2px solid transparent;
   background: transparent;
   color: v.$text-secondary;
   font-size: v.$font-size-xs;
@@ -1432,14 +1664,17 @@
     color v.$transition-duration v.$transition-easing,
     box-shadow v.$transition-duration v.$transition-easing,
     background v.$transition-duration v.$transition-easing,
-    border-color v.$transition-duration v.$transition-easing;
+    border-color v.$transition-duration v.$transition-easing,
+    transform v.$transition-duration v.$transition-easing;
 
   &:hover,
   &:focus-visible {
-    color: v.$primary-color;
-    background: rgba(v.$primary-color, 0.08);
+    color: v.$color-white;
+    background: rgba(v.$primary-color, 0.12);
+    border-color: rgba(v.$primary-color, 0.65);
     box-shadow: 0 0 12px rgba(v.$primary-color, 0.16);
     outline: none;
+    transform: translateY(-1px);
   }
 }
 
@@ -1455,12 +1690,20 @@
 .tableWrap {
   min-height: 0;
   overflow: auto;
+  border-radius: v.$border-radius-sm;
+  border: 1px solid rgba(v.$border-secondary, 0.48);
+  background:
+    linear-gradient(180deg, rgba(v.$color-white, 0.02), rgba(v.$color-white, 0)),
+    rgba(v.$background-dark, 0.34);
+  box-shadow:
+    inset 0 1px 0 rgba(v.$color-white, 0.03),
+    0 8px 18px rgba(0, 0, 0, 0.12);
 }
 
 .teamContextSpotlightGrid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: v.$space-sm;
+  gap: v.$space-md;
 }
 
 .teamContextSpotlightGrid > .compactChartNote {
@@ -1470,11 +1713,13 @@
 }
 
 .teamContextSpotlightCard {
+  position: relative;
+  overflow: hidden;
   display: grid;
   gap: v.$space-xs;
-  padding: v.$space-sm;
+  padding: v.$space-sm v.$space-sm v.$space-sm calc(v.$space-sm + 12px + v.$space-xs);
   border-radius: v.$border-radius-md;
-  border: 1px solid rgba(v.$border-secondary, 0.82);
+  border: 2px solid rgba(v.$primary-color, 0.38);
   background:
     linear-gradient(160deg, rgba(v.$secondary-color, 0.06), rgba(v.$primary-color, 0.03)),
     linear-gradient(135deg, rgba(v.$color-white, 0.03), rgba(v.$color-white, 0)),
@@ -1484,14 +1729,42 @@
   transition:
     border-color v.$hover-transition,
     transform v.$hover-transition,
-    box-shadow v.$hover-transition;
+    box-shadow v.$hover-transition,
+    background v.$hover-transition;
 
   &:hover,
   &:focus-visible {
     border-color: rgba(v.$primary-color, 0.72);
     transform: translateY(-1px);
-    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.28);
+    box-shadow:
+      0 10px 24px rgba(0, 0, 0, 0.28),
+      0 0 0 1px rgba(v.$primary-color, 0.24);
     outline: none;
+  }
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 12px;
+    background: linear-gradient(180deg, rgba(v.$secondary-color, 0.95), rgba(v.$primary-color, 0.82));
+    box-shadow:
+      0 0 14px rgba(v.$secondary-color, 0.28),
+      0 0 24px rgba(v.$primary-color, 0.2);
+  }
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: -28%;
+    background: radial-gradient(60% 40% at 18% 0%, rgba(v.$primary-color, 0.16), transparent 62%);
+    opacity: 0;
+    transition: opacity v.$transition-duration v.$transition-easing;
+  }
+
+  &:hover::after,
+  &:focus-visible::after {
+    opacity: 1;
   }
 }
 
@@ -1548,6 +1821,17 @@
   color: v.$text-secondary;
   font-size: v.$font-size-xs;
 
+  span {
+    display: grid;
+    gap: 0.12rem;
+    padding: 0.45rem 0.55rem;
+    border-radius: v.$border-radius-sm;
+    border: 1px solid rgba(v.$border-secondary, 0.42);
+    background:
+      linear-gradient(180deg, rgba(v.$color-white, 0.02), rgba(v.$color-white, 0)),
+      rgba(v.$background-dark, 0.5);
+  }
+
   strong {
     color: v.$color-white;
     font-family: v.$font-family-numbers, monospace;
@@ -1561,6 +1845,8 @@
   gap: v.$space-sm;
   color: v.$text-secondary;
   font-size: v.$font-size-xs;
+  padding-top: 0.15rem;
+  border-top: 1px solid rgba(v.$border-secondary, 0.28);
 }
 
 .teamTableLink {
@@ -1585,10 +1871,11 @@
   thead th {
     position: sticky;
     top: 0;
+    z-index: 1;
     background: color.adjust(v.$background-dark, $lightness: -4%);
     color: v.$text-secondary;
     text-align: left;
-    padding: v.$space-xs;
+    padding: 0.7rem 0.75rem;
     border-bottom: 1px solid rgba(v.$primary-color, 0.35);
     font-weight: 600;
     text-transform: uppercase;
@@ -1597,10 +1884,11 @@
   }
 
   tbody td {
-    padding: v.$space-xs;
+    padding: 0.7rem 0.75rem;
     border-bottom: 1px solid rgba(v.$border-secondary, 0.35);
     color: v.$text-primary;
     white-space: nowrap;
+    vertical-align: top;
   }
 
   tbody tr:nth-child(even) {
@@ -1608,7 +1896,9 @@
   }
 
   tbody tr:hover {
-    background: rgba(v.$primary-color, 0.08);
+    background:
+      linear-gradient(90deg, rgba(v.$primary-color, 0.12), rgba(v.$primary-color, 0.03)),
+      rgba(v.$background-dark, 0.3);
   }
 }
 
@@ -1653,7 +1943,7 @@
   min-height: 0;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: v.$space-sm;
+  gap: v.$space-md;
 }
 
 .susColumn {
@@ -1668,6 +1958,9 @@
   display: grid;
   grid-template-rows: auto 1fr;
   overflow: hidden;
+  box-shadow:
+    inset 0 1px 0 rgba(v.$color-white, 0.03),
+    0 10px 20px rgba(0, 0, 0, 0.12);
 
   &::before {
     content: "";
@@ -1683,7 +1976,9 @@
   margin: 0;
   padding: v.$space-xs v.$space-sm v.$space-xs calc(v.$space-sm + 6px);
   border-bottom: 1px solid rgba(v.$border-secondary, 0.5);
-  background: rgba(v.$background-dark, 0.38);
+  background:
+    linear-gradient(90deg, rgba(v.$primary-color, 0.08), rgba(v.$color-white, 0.02)),
+    rgba(v.$background-dark, 0.42);
   font-size: v.$font-size-xs;
   font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
   text-transform: uppercase;
@@ -1706,7 +2001,7 @@
 
 .susRowLink {
   display: grid;
-  gap: 4px;
+  gap: 0.4rem;
   padding: v.$space-xs v.$space-sm v.$space-xs calc(v.$space-sm + 6px);
   color: inherit;
   text-decoration: none;
@@ -1716,8 +2011,12 @@
 
   &:hover,
   &:focus-visible {
-    background: rgba(v.$primary-color, 0.1);
-    box-shadow: inset 0 0 0 1px rgba(v.$primary-color, 0.25);
+    background:
+      linear-gradient(90deg, rgba(v.$primary-color, 0.14), rgba(v.$primary-color, 0.04)),
+      rgba(v.$background-dark, 0.22);
+    box-shadow:
+      inset 0 0 0 1px rgba(v.$primary-color, 0.25),
+      0 10px 18px rgba(0, 0, 0, 0.12);
     outline: none;
   }
 }
@@ -1779,10 +2078,12 @@
   align-items: center;
   justify-content: space-between;
   gap: v.$space-sm;
-  padding: 0.3rem 0.45rem;
+  padding: 0.42rem 0.55rem;
   border-radius: v.$border-radius-sm;
   border: 1px solid rgba(v.$border-secondary, 0.42);
-  background: rgba(v.$background-dark, 0.42);
+  background:
+    linear-gradient(135deg, rgba(v.$primary-color, 0.08), rgba(v.$color-white, 0.02)),
+    rgba(v.$background-dark, 0.42);
 }
 
 .playerOwnershipTrendLabel {
@@ -1803,7 +2104,7 @@
 .insightLegendItem {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-start;
   gap: v.$space-xs;
   padding: v.$space-xs v.$space-sm;
   border-radius: v.$border-radius-sm;
@@ -1811,6 +2112,7 @@
   background:
     linear-gradient(135deg, rgba(v.$color-white, 0.03), rgba(v.$color-white, 0)),
     rgba(v.$background-dark, 0.46);
+  box-shadow: inset 0 1px 0 rgba(v.$color-white, 0.03);
 }
 
 .insightLegendText {
@@ -1827,15 +2129,28 @@
 }
 
 .goalieSpotlightCard {
+  position: relative;
+  overflow: hidden;
   display: grid;
   gap: v.$space-sm;
-  padding: v.$space-sm;
+  padding: v.$space-sm v.$space-sm v.$space-sm calc(v.$space-sm + 12px + v.$space-xs);
   border-radius: v.$border-radius-md;
-  border: 1px solid rgba(v.$border-secondary, 0.72);
+  border: 2px solid rgba(v.$primary-color, 0.34);
   background:
     linear-gradient(160deg, rgba(v.$primary-color, 0.08), rgba(v.$primary-color, 0.02)),
     linear-gradient(135deg, rgba(v.$color-white, 0.03), rgba(v.$color-white, 0)),
     rgba(v.$background-dark, 0.72);
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 12px;
+    background: linear-gradient(180deg, rgba(v.$success-color, 0.94), rgba(v.$primary-color, 0.78));
+    box-shadow:
+      0 0 14px rgba(v.$success-color, 0.24),
+      0 0 20px rgba(v.$primary-color, 0.18);
+  }
 }
 
 .goalieSpotlightHeader {
@@ -1851,6 +2166,15 @@
   gap: v.$space-xs;
   font-size: v.$font-size-xs;
   color: v.$text-secondary;
+
+  span {
+    display: grid;
+    gap: 0.12rem;
+    padding: 0.45rem 0.55rem;
+    border-radius: v.$border-radius-sm;
+    border: 1px solid rgba(v.$border-secondary, 0.4);
+    background: rgba(v.$background-dark, 0.4);
+  }
 
   strong {
     color: v.$color-white;
@@ -1875,21 +2199,27 @@
   min-height: 0;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: v.$space-sm;
+  gap: v.$space-md;
 }
 
 .hotColdTabs {
-  display: flex;
+  display: inline-flex;
   gap: v.$space-xs;
   flex-wrap: wrap;
+  width: fit-content;
+  padding: 0.25rem;
+  border-radius: v.$border-radius-md;
+  border: 1px solid rgba(v.$border-secondary, 0.92);
+  background: rgba(v.$background-dark, 0.72);
+  box-shadow: inset 0 1px 0 rgba(v.$color-white, 0.03);
 }
 
 .hotColdTab {
   min-height: v.$touch-target-min;
   padding: 0 v.$space-sm;
-  border-radius: v.$border-radius-sm;
-  border: 1px solid rgba(v.$border-secondary, 0.8);
-  background: rgba(v.$background-dark, 0.42);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background: transparent;
   color: v.$text-secondary;
   font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
   font-size: 0.74rem;
@@ -1900,25 +2230,27 @@
     border-color v.$transition-duration v.$transition-easing,
     background v.$transition-duration v.$transition-easing,
     color v.$transition-duration v.$transition-easing,
-    box-shadow v.$transition-duration v.$transition-easing;
+    box-shadow v.$transition-duration v.$transition-easing,
+    transform v.$transition-duration v.$transition-easing;
 
   &:hover,
   &:focus-visible {
     outline: none;
     color: v.$color-white;
-    border-color: rgba(v.$primary-color, 0.8);
-    background: rgba(v.$primary-color, 0.18);
-    box-shadow: 0 0 0 1px rgba(v.$primary-color, 0.25);
+    border-color: rgba(v.$primary-color, 0.7);
+    background: rgba(v.$primary-color, 0.12);
+    box-shadow: 0 0 12px rgba(v.$primary-color, 0.16);
+    transform: translateY(-1px);
   }
 }
 
 .hotColdTabActive {
-  color: v.$color-white;
-  border-color: rgba(v.$primary-color, 0.95);
-  background: rgba(v.$primary-color, 0.24);
+  color: v.$secondary-color;
+  border-color: rgba(v.$primary-color, 0.98);
+  background: rgba(v.$primary-color, 0.18);
   box-shadow:
-    0 0 0 1px rgba(v.$primary-color, 0.28),
-    0 10px 22px rgba(v.$primary-color, 0.14);
+    inset 0 1px 0 rgba(v.$color-white, 0.05),
+    0 8px 16px rgba(v.$primary-color, 0.22);
 }
 
 .hotColdColumn {
@@ -1933,6 +2265,9 @@
   display: grid;
   grid-template-rows: auto 1fr;
   overflow: hidden;
+  box-shadow:
+    inset 0 1px 0 rgba(v.$color-white, 0.03),
+    0 10px 20px rgba(0, 0, 0, 0.12);
 
   &::before {
     content: "";
@@ -1949,6 +2284,12 @@
   }
 }
 
+.hotColdColumn .susColumnTitle {
+  background:
+    linear-gradient(90deg, rgba(v.$primary-color, 0.1), rgba(v.$color-white, 0.02)),
+    rgba(v.$background-dark, 0.42);
+}
+
 .hotColdRow {
   padding: 0;
   border-bottom: 1px solid rgba(v.$border-secondary, 0.35);
@@ -1956,8 +2297,8 @@
 
 .hotColdRowLink {
   display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: center;
+  grid-template-columns: minmax(0, 1fr) minmax(92px, auto);
+  align-items: start;
   gap: v.$space-sm;
   padding: v.$space-xs v.$space-sm v.$space-xs calc(v.$space-sm + 6px);
   color: inherit;
@@ -1968,8 +2309,12 @@
 
   &:hover,
   &:focus-visible {
-    background: rgba(v.$primary-color, 0.1);
-    box-shadow: inset 0 0 0 1px rgba(v.$primary-color, 0.22);
+    background:
+      linear-gradient(90deg, rgba(v.$primary-color, 0.14), rgba(v.$primary-color, 0.04)),
+      rgba(v.$background-dark, 0.22);
+    box-shadow:
+      inset 0 0 0 1px rgba(v.$primary-color, 0.22),
+      0 10px 18px rgba(0, 0, 0, 0.12);
     outline: none;
   }
 }
@@ -1992,7 +2337,13 @@
   min-width: 86px;
   display: grid;
   justify-items: end;
-  gap: 2px;
+  gap: 0.25rem;
+  padding: 0.4rem 0.45rem;
+  border-radius: v.$border-radius-sm;
+  border: 1px solid rgba(v.$border-secondary, 0.4);
+  background:
+    linear-gradient(180deg, rgba(v.$color-white, 0.02), rgba(v.$color-white, 0)),
+    rgba(v.$background-dark, 0.38);
 }
 
 .hotColdStats .compactChartNote {
@@ -2042,6 +2393,29 @@
   color: v.$text-secondary;
   font-size: v.$font-size-xs;
   line-height: 1.45;
+}
+
+.insightRoutePill {
+  border-color: rgba(v.$primary-color, 0.5);
+  color: color.adjust(v.$secondary-color, $lightness: 6%);
+  background: rgba(v.$primary-color, 0.14);
+}
+
+.insightRouteNote {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  min-height: 20px;
+  margin-top: 0.15rem;
+  padding: 0 0.45rem;
+  border-radius: 999px;
+  border: 1px solid rgba(v.$primary-color, 0.32);
+  background: rgba(v.$primary-color, 0.08);
+  color: rgba(v.$secondary-color, 0.96);
+  font-size: 0.62rem;
+  font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
 }
 
 .insightContextStable {
@@ -2106,8 +2480,10 @@
   gap: v.$space-xs;
   padding: v.$space-xs v.$space-sm;
   border-radius: 999px;
-  border: 1px solid rgba(v.$border-secondary, 0.9);
-  background: rgba(v.$background-dark, 0.72);
+  border: 1px solid rgba(v.$border-secondary, 0.74);
+  background:
+    linear-gradient(135deg, rgba(v.$primary-color, 0.08), rgba(v.$color-white, 0.02)),
+    rgba(v.$background-dark, 0.72);
   color: v.$color-white;
 }
 
@@ -2128,13 +2504,33 @@
   min-height: v.$touch-target-min;
   padding: 0 v.$space-sm;
   border-radius: 999px;
-  border: 1px solid rgba(v.$primary-color, 0.55);
-  color: v.$primary-color;
+  border: 2px solid rgba(v.$primary-color, 0.95);
+  background: rgba(v.$primary-color, 0.18);
+  color: v.$secondary-color;
   text-decoration: none;
   font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
   font-size: v.$font-size-xs;
   letter-spacing: 0.05em;
   text-transform: uppercase;
+  box-shadow:
+    inset 0 1px 0 rgba(v.$color-white, 0.05),
+    0 8px 16px rgba(v.$primary-color, 0.14);
+  transition:
+    transform v.$transition-duration v.$transition-easing,
+    background v.$transition-duration v.$transition-easing,
+    box-shadow v.$transition-duration v.$transition-easing,
+    color v.$transition-duration v.$transition-easing;
+
+  &:hover,
+  &:focus-visible {
+    outline: none;
+    color: v.$color-white;
+    background: rgba(v.$primary-color, 0.3);
+    box-shadow:
+      inset 0 1px 0 rgba(v.$color-white, 0.06),
+      0 12px 20px rgba(v.$primary-color, 0.2);
+    transform: translateY(-1px);
+  }
 }
 
 .slateHeroFocus {
@@ -2486,17 +2882,17 @@
     white-space: normal;
   }
 
-  .dashboardGrid {
-    gap: v.$space-sm;
-    grid-template-rows: repeat(5, minmax(120px, auto));
-  }
-
   .sectionBand {
     padding: v.$space-sm;
+    gap: v.$space-sm;
   }
 
   .bandHeader {
     flex-direction: column;
+  }
+
+  .bandHeaderMain {
+    grid-template-columns: 1fr;
   }
 
   .bandActions {
@@ -2523,6 +2919,7 @@
 
   .controlsSurface {
     grid-template-columns: 1fr;
+    gap: v.$space-sm;
   }
 
   .contextBlock {
@@ -2530,6 +2927,7 @@
     padding-bottom: v.$space-sm;
     border-right: 0;
     border-bottom: 1px solid rgba(v.$border-secondary, 0.42);
+    gap: v.$space-xs;
   }
 
   .quickLinks {
@@ -2540,6 +2938,7 @@
   .topBandLayout,
   .insightBandLayout {
     grid-template-columns: 1fr;
+    gap: v.$space-sm;
   }
 
   .topHeroPanel,
@@ -2574,13 +2973,13 @@
     gap: v.$space-xs;
   }
 
+  .ownershipControlCard {
+    min-width: 100%;
+  }
+
   .teamPowerControls {
     align-items: flex-start;
     flex-direction: column;
-  }
-
-  .teamContextSpotlightGrid {
-    grid-template-columns: 1fr;
   }
 
   .sustainabilityColumns {
@@ -2596,8 +2995,13 @@
     justify-items: start;
   }
 
+  .hotColdRowLink {
+    grid-template-columns: 1fr;
+  }
+
   .hotColdStats {
     justify-items: start;
+    width: 100%;
   }
 
   .slateTeams {
@@ -2636,8 +3040,13 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .topAddsInspectorGrid,
+  .topAddsInspectorBreakdown {
+    grid-template-columns: 1fr;
+  }
+
   .teamContextSpotlightGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
   }
 }
 
@@ -2663,8 +3072,13 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .topAddsInspectorGrid {
+    grid-template-columns: 1fr;
+  }
+
   .controlsSurface {
     grid-template-columns: 1fr;
+    gap: v.$space-sm;
   }
 
   .contextBlock {
@@ -2691,6 +3105,10 @@
     grid-template-columns: 1fr;
   }
 
+  .teamContextSpotlightGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .topHeroPanel,
   .topRailPanel,
   .teamPowerPanel,
@@ -2698,12 +3116,6 @@
   .hotColdPanel,
   .goaliePanel {
     min-height: unset;
-  }
-
-  .dashboardGrid {
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: repeat(3, minmax(180px, auto));
-    align-content: start;
   }
 
   .panel {

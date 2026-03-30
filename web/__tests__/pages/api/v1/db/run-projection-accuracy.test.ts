@@ -89,6 +89,15 @@ describe("/api/v1/db/run-projection-accuracy", () => {
     expect(res.statusCode).toBe(500);
     expect(res.body).toMatchObject({
       success: false,
+      scanSummary: {
+        surface: "projection_accuracy_operator",
+        status: "blocked",
+        fallbackApplied: false,
+        rowCounts: {
+          rowsUpserted: 0
+        },
+        blockingIssueCount: 1
+      },
       error:
         "Upstream dependency returned an HTML error page instead of structured JSON.",
       dependencyError: {
@@ -132,6 +141,19 @@ describe("/api/v1/db/run-projection-accuracy", () => {
       projectionDate: "2026-03-19",
       preflight: {
         status: "FAIL"
+      },
+      scanSummary: {
+        surface: "projection_accuracy_operator",
+        requestedDate: "2026-03-20",
+        activeDataDate: "2026-03-20",
+        fallbackApplied: false,
+        status: "blocked",
+        rowCounts: {
+          skaterRows: 0,
+          goalieRows: 0,
+          totalRows: 0
+        },
+        blockingIssueCount: 1
       },
       error:
         "Projection freshness checks failed. Resolve upstream dependencies or use bypassPreflight=true to override."

@@ -95,6 +95,8 @@ export default function GoalieRiskCard({
 }: GoalieRiskCardProps) {
   const [rows, setRows] = useState<NormalizedGoalieProjectionRow[]>([]);
   const [asOfDate, setAsOfDate] = useState<string | null>(null);
+  const [servingMessage, setServingMessage] = useState<string | null>(null);
+  const [servingSeverity, setServingSeverity] = useState<"none" | "warn" | "error">("none");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -113,6 +115,8 @@ export default function GoalieRiskCard({
         if (!active) return;
         setRows(payload.data);
         setAsOfDate(payload.asOfDate);
+        setServingMessage(payload.serving?.message ?? null);
+        setServingSeverity(payload.serving?.severity ?? "none");
       })
       .catch((fetchError: unknown) => {
         if (!active) return;
@@ -122,6 +126,8 @@ export default function GoalieRiskCard({
             : "Failed to load goalie risk.";
         setError(message);
         setRows([]);
+        setServingMessage(null);
+        setServingSeverity("none");
       })
       .finally(() => {
         if (!active) return;
@@ -155,12 +161,13 @@ export default function GoalieRiskCard({
       loading,
       error,
       staleMessage:
-        !loading && !error && asOfDate && asOfDate !== date
-          ? `Goalies using ${asOfDate}`
+        !loading && !error
+          ? servingMessage ??
+            (asOfDate && asOfDate !== date ? `Goalies using ${asOfDate}` : null)
           : null,
       empty: !loading && !error && tableRows.length === 0
     });
-  }, [asOfDate, date, error, loading, onStatusChange, tableRows.length]);
+  }, [asOfDate, date, error, loading, onStatusChange, servingMessage, tableRows.length]);
 
   return (
     <article className={styles.goalieRiskCard} aria-label="Goalie start and risk projections">
@@ -177,7 +184,11 @@ export default function GoalieRiskCard({
       )}
       {!loading && !error && asOfDate && asOfDate !== date && (
         <p className={`${styles.panelState} ${styles.panelStateStale}`}>
-          Showing nearest available projection date ({asOfDate}).
+          {servingMessage
+            ? servingSeverity === "error"
+              ? `${servingMessage}`
+              : servingMessage
+            : `Showing nearest available projection date (${asOfDate}).`}
         </p>
       )}
 

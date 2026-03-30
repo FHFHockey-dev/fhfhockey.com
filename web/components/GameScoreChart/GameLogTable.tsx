@@ -1,4 +1,8 @@
 // web/components/GameLogTable.tsx
+//
+// Legacy sKO-only table component.
+// Pass-4 FORGE audit result: retained for lineage only; not approved for live
+// FORGE use because it displays quarantined predictedGameScore outputs.
 
 import React from "react";
 import { CombinedGameLog } from "lib/supabase/utils/types";

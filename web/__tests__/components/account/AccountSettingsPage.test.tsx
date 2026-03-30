@@ -462,7 +462,9 @@ describe("AccountSettingsPage profile section", () => {
             source_type: "manual",
             provider: null,
             external_league_id: null,
-            external_team_id: null
+            external_team_id: null,
+            external_league_key: null,
+            external_team_key: null
           }
         },
         {
@@ -595,13 +597,199 @@ describe("AccountSettingsPage profile section", () => {
     render(<AccountSettingsPage />);
 
     expect(await screen.findByText("Selected Yahoo League")).toBeTruthy();
-    expect(screen.getByText("Keeper League")).toBeTruthy();
+    expect(screen.getAllByText("Keeper League").length).toBeGreaterThan(0);
     expect(screen.getByText("Team context: Tim's Test Team")).toBeTruthy();
     expect(screen.getByText("headpoint")).toBeTruthy();
     expect(screen.getByText("Goals (G)")).toBeTruthy();
     expect(screen.getByText("6 pts")).toBeTruthy();
     expect(screen.getByText("2 starting slots")).toBeTruthy();
     expect(screen.getByText("4 bench slots")).toBeTruthy();
+  });
+
+  it("persists active Yahoo league and team changes from league settings", async () => {
+    accountState.routerQuery = {
+      section: "league-settings"
+    };
+    accountState.profileMaybeSingle.mockResolvedValue({
+      data: {
+        display_name: "Tim Tester",
+        avatar_url: null,
+        timezone: "America/Chicago"
+      },
+      error: null
+    });
+    accountState.settingsMaybeSingle.mockResolvedValue({
+      data: {
+        league_type: "points",
+        scoring_categories: {},
+        category_weights: {},
+        roster_config: {},
+        ui_preferences: {},
+        active_context: {
+          source_type: "external-provider",
+          provider: "yahoo",
+          external_team_id: "team-1",
+          external_league_id: "league-1"
+        }
+      },
+      error: null
+    });
+    accountState.connectedAccountMaybeSingle.mockResolvedValue({
+      data: {
+        id: "yahoo-account-1",
+        user_id: "user-1",
+        provider: "yahoo",
+        provider_user_id: "guid-123",
+        account_label: "Tim's Yahoo",
+        status: "connected",
+        scopes: [],
+        metadata: {},
+        last_synced_at: "2026-03-27T12:00:00.000Z",
+        created_at: "2026-03-27T12:00:00.000Z",
+        updated_at: "2026-03-27T12:00:00.000Z"
+      },
+      error: null
+    });
+    accountState.externalLeaguesOrder.mockResolvedValue({
+      data: [
+        {
+          id: "league-1",
+          connected_account_id: "yahoo-account-1",
+          user_id: "user-1",
+          provider: "yahoo",
+          external_league_key: "465.l.1",
+          league_name: "Keeper League",
+          season_key: "2025",
+          league_metadata: {},
+          scoring_settings: {},
+          roster_settings: {},
+          imported_at: "2026-03-27T12:00:00.000Z",
+          created_at: "2026-03-27T12:00:00.000Z",
+          updated_at: "2026-03-27T12:00:00.000Z"
+        },
+        {
+          id: "league-2",
+          connected_account_id: "yahoo-account-1",
+          user_id: "user-1",
+          provider: "yahoo",
+          external_league_key: "465.l.2",
+          league_name: "Dynasty League",
+          season_key: "2025",
+          league_metadata: {},
+          scoring_settings: {},
+          roster_settings: {},
+          imported_at: "2026-03-27T12:00:00.000Z",
+          created_at: "2026-03-27T12:00:00.000Z",
+          updated_at: "2026-03-27T12:00:00.000Z"
+        }
+      ],
+      error: null
+    });
+    accountState.externalTeamsOrder.mockResolvedValue({
+      data: [
+        {
+          id: "team-1",
+          external_league_id: "league-1",
+          connected_account_id: "yahoo-account-1",
+          user_id: "user-1",
+          provider: "yahoo",
+          external_team_key: "465.l.1.t.1",
+          team_name: "Keeper Team",
+          team_metadata: {},
+          roster_snapshot: {},
+          imported_at: "2026-03-27T12:00:00.000Z",
+          created_at: "2026-03-27T12:00:00.000Z",
+          updated_at: "2026-03-27T12:00:00.000Z"
+        },
+        {
+          id: "team-2",
+          external_league_id: "league-2",
+          connected_account_id: "yahoo-account-1",
+          user_id: "user-1",
+          provider: "yahoo",
+          external_team_key: "465.l.2.t.7",
+          team_name: "Dynasty Team",
+          team_metadata: {},
+          roster_snapshot: {},
+          imported_at: "2026-03-27T12:00:00.000Z",
+          created_at: "2026-03-27T12:00:00.000Z",
+          updated_at: "2026-03-27T12:00:00.000Z"
+        }
+      ],
+      error: null
+    });
+    accountState.providerPreferencesMaybeSingle.mockResolvedValue({
+      data: {
+        id: "pref-1",
+        user_id: "user-1",
+        provider: "yahoo",
+        connected_account_id: "yahoo-account-1",
+        default_external_league_id: "league-1",
+        default_external_team_id: "team-1",
+        refresh_on_login: false,
+        active_context: {},
+        created_at: "2026-03-27T12:00:00.000Z",
+        updated_at: "2026-03-27T12:00:00.000Z"
+      },
+      error: null
+    });
+    accountState.providerPreferencesUpsert.mockResolvedValue({
+      error: null
+    });
+    accountState.settingsUpsert.mockResolvedValue({ error: null });
+
+    render(<AccountSettingsPage />);
+
+    const leagueSelect = (await screen.findByLabelText(
+      "Active Yahoo League"
+    )) as HTMLSelectElement;
+    fireEvent.change(leagueSelect, {
+      target: { value: "league-2" }
+    });
+
+    await waitFor(() => {
+      expect(accountState.providerPreferencesUpsert).toHaveBeenCalledWith(
+        {
+          user_id: "user-1",
+          provider: "yahoo",
+          connected_account_id: "yahoo-account-1",
+          default_external_league_id: "league-1",
+          default_external_team_id: "team-1",
+          refresh_on_login: false,
+          active_context: {
+            source_type: "external-provider",
+            provider: "yahoo",
+            external_league_id: "league-2",
+            external_team_id: "team-2",
+            external_league_key: "465.l.2",
+            external_team_key: "465.l.2.t.7"
+          }
+        },
+        {
+          onConflict: "user_id,provider"
+        }
+      );
+      expect(accountState.settingsUpsert).toHaveBeenCalledWith(
+        {
+          user_id: "user-1",
+          active_context: {
+            source_type: "external-provider",
+            provider: "yahoo",
+            external_league_id: "league-2",
+            external_team_id: "team-2",
+            external_league_key: "465.l.2",
+            external_team_key: "465.l.2.t.7"
+          }
+        },
+        {
+          onConflict: "user_id"
+        }
+      );
+    });
+
+    expect(
+      await screen.findByText("Active Yahoo context updated to Dynasty League / Dynasty Team.")
+    ).toBeTruthy();
   });
 
   it("lists saved teams and creates a new manual saved team", async () => {
@@ -666,6 +854,97 @@ describe("AccountSettingsPage profile section", () => {
 
     expect(await screen.findByText("Saved team created.")).toBeTruthy();
     expect(screen.getByText("Playoff Push")).toBeTruthy();
+  });
+
+  it("shows Yahoo context switchers on the saved teams tab", async () => {
+    accountState.routerQuery = {
+      section: "saved-teams"
+    };
+    accountState.profileMaybeSingle.mockResolvedValue({
+      data: {
+        display_name: "Tim Tester",
+        avatar_url: null,
+        timezone: "America/Chicago"
+      },
+      error: null
+    });
+    accountState.connectedAccountMaybeSingle.mockResolvedValue({
+      data: {
+        id: "yahoo-account-1",
+        user_id: "user-1",
+        provider: "yahoo",
+        provider_user_id: "guid-123",
+        account_label: "Tim's Yahoo",
+        status: "connected",
+        scopes: [],
+        metadata: {},
+        last_synced_at: "2026-03-27T12:00:00.000Z",
+        created_at: "2026-03-27T12:00:00.000Z",
+        updated_at: "2026-03-27T12:00:00.000Z"
+      },
+      error: null
+    });
+    accountState.externalLeaguesOrder.mockResolvedValue({
+      data: [
+        {
+          id: "league-1",
+          connected_account_id: "yahoo-account-1",
+          user_id: "user-1",
+          provider: "yahoo",
+          external_league_key: "465.l.1",
+          league_name: "Keeper League",
+          season_key: "2025",
+          league_metadata: {},
+          scoring_settings: {},
+          roster_settings: {},
+          imported_at: "2026-03-27T12:00:00.000Z",
+          created_at: "2026-03-27T12:00:00.000Z",
+          updated_at: "2026-03-27T12:00:00.000Z"
+        }
+      ],
+      error: null
+    });
+    accountState.externalTeamsOrder.mockResolvedValue({
+      data: [
+        {
+          id: "team-1",
+          external_league_id: "league-1",
+          connected_account_id: "yahoo-account-1",
+          user_id: "user-1",
+          provider: "yahoo",
+          external_team_key: "465.l.1.t.1",
+          team_name: "Keeper Team",
+          team_metadata: {},
+          roster_snapshot: {},
+          imported_at: "2026-03-27T12:00:00.000Z",
+          created_at: "2026-03-27T12:00:00.000Z",
+          updated_at: "2026-03-27T12:00:00.000Z"
+        }
+      ],
+      error: null
+    });
+    accountState.providerPreferencesMaybeSingle.mockResolvedValue({
+      data: {
+        id: "pref-1",
+        user_id: "user-1",
+        provider: "yahoo",
+        connected_account_id: "yahoo-account-1",
+        default_external_league_id: "league-1",
+        default_external_team_id: "team-1",
+        refresh_on_login: false,
+        active_context: {},
+        created_at: "2026-03-27T12:00:00.000Z",
+        updated_at: "2026-03-27T12:00:00.000Z"
+      },
+      error: null
+    });
+
+    render(<AccountSettingsPage />);
+
+    expect(await screen.findByLabelText("Active Yahoo League")).toBeTruthy();
+    expect(screen.getByLabelText("Active Yahoo Team")).toBeTruthy();
+    expect(screen.getByText("League: Keeper League")).toBeTruthy();
+    expect(screen.getByText("Team: Keeper Team")).toBeTruthy();
   });
 
   it("edits a saved team and promotes another team to default", async () => {

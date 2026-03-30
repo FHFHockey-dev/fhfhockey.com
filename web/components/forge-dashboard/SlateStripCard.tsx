@@ -146,6 +146,8 @@ export default function SlateStripCard({
 }: SlateStripCardProps) {
   const [games, setGames] = useState<GameRow[]>([]);
   const [dateUsed, setDateUsed] = useState<string>(date);
+  const [servingMessage, setServingMessage] = useState<string | null>(null);
+  const [servingSeverity, setServingSeverity] = useState<"none" | "warn" | "error">("none");
   const [selectedGameId, setSelectedGameId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -166,6 +168,8 @@ export default function SlateStripCard({
         if (!active) return;
         setGames(payload.games);
         setDateUsed(payload.dateUsed ?? date);
+        setServingMessage(payload.serving?.message ?? null);
+        setServingSeverity(payload.serving?.severity ?? "none");
       })
       .catch((fetchError: unknown) => {
         if (!active) return;
@@ -175,6 +179,8 @@ export default function SlateStripCard({
             : "Failed to load slate strip.";
         setError(message);
         setGames([]);
+        setServingMessage(null);
+        setServingSeverity("none");
       })
       .finally(() => {
         if (!active) return;
@@ -186,7 +192,7 @@ export default function SlateStripCard({
     };
   }, [date]);
 
-  const displayGames = useMemo(
+  const filteredGames = useMemo(
     () =>
       games
         .filter((game) => {
@@ -195,9 +201,13 @@ export default function SlateStripCard({
           const away = getTeamMetaById(game.awayTeamId)?.abbr ?? "";
           const target = team.toUpperCase();
           return home === target || away === target;
-        })
-        .slice(0, 8),
+        }),
     [games, team]
+  );
+
+  const displayGames = useMemo(
+    () => filteredGames.slice(0, 8),
+    [filteredGames]
   );
 
   useEffect(() => {
@@ -230,12 +240,13 @@ export default function SlateStripCard({
       loading,
       error,
       staleMessage:
-        !loading && !error && dateUsed && dateUsed !== date
-          ? `Slate using ${dateUsed}`
+        !loading && !error
+          ? servingMessage ??
+            (dateUsed && dateUsed !== date ? `Slate using ${dateUsed}` : null)
           : null,
-      empty: !loading && !error && displayGames.length === 0
+      empty: !loading && !error && filteredGames.length === 0
     });
-  }, [date, dateUsed, displayGames.length, error, loading, onStatusChange]);
+  }, [date, dateUsed, error, filteredGames.length, loading, onStatusChange, servingMessage]);
 
   return (
     <article className={styles.slateStripCard} aria-label="Start-chart slate strip">
@@ -252,7 +263,11 @@ export default function SlateStripCard({
       )}
       {!loading && !error && dateUsed && dateUsed !== date && (
         <p className={`${styles.panelState} ${styles.panelStateStale}`}>
-          Showing nearest available slate date ({dateUsed}).
+          {servingMessage
+            ? servingSeverity === "error"
+              ? servingMessage
+              : servingMessage
+            : `Showing nearest available slate date (${dateUsed}).`}
         </p>
       )}
 
@@ -260,8 +275,14 @@ export default function SlateStripCard({
         <>
           <div className={styles.slateHeroSummary}>
             <div className={styles.slateSummaryChip}>
-              <span className={styles.slateSummaryLabel}>Games</span>
-              <strong>{displayGames.length}</strong>
+              <span className={styles.slateSummaryLabel}>
+                {filteredGames.length > displayGames.length ? "Visible games" : "Games"}
+              </span>
+              <strong>
+                {filteredGames.length > displayGames.length
+                  ? `${displayGames.length} of ${filteredGames.length}`
+                  : displayGames.length}
+              </strong>
             </div>
             <div className={styles.slateSummaryChip}>
               <span className={styles.slateSummaryLabel}>Focus</span>
@@ -272,7 +293,13 @@ export default function SlateStripCard({
             </div>
             <div className={styles.slateSummaryChip}>
               <span className={styles.slateSummaryLabel}>Mode</span>
-              <strong>{team === "all" ? "Full slate" : `${team} filtered`}</strong>
+              <strong>
+                {team === "all"
+                  ? filteredGames.length > displayGames.length
+                    ? "Focused subset"
+                    : "Full slate"
+                  : `${team} filtered`}
+              </strong>
             </div>
             <div className={styles.slateSummaryChip}>
               <span className={styles.slateSummaryLabel}>Power Edge</span>

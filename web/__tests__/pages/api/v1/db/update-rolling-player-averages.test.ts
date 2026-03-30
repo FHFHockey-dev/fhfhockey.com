@@ -94,6 +94,14 @@ vi.mock("lib/supabase", () => ({
   }
 }));
 
+vi.mock("lib/supabase/server", () => ({
+  default: {
+    from: vi.fn(() => ({
+      insert: auditInsertMock
+    }))
+  }
+}));
+
 import handler from "../../../../../pages/api/v1/db/update-rolling-player-averages";
 
 function createMockRes() {
@@ -264,6 +272,15 @@ describe("/api/v1/db/update-rolling-player-averages", () => {
     expect(res.statusCode).toBe(200);
     expect(res.body).toMatchObject({
       executionProfile: "daily_incremental",
+      executionScope: {
+        startDate: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+        endDate: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+        implicitDailyWindowApplied: true,
+        windowDays: 15,
+        smokeTestComparable: false,
+        smokeTestGuidance:
+          "This run is not a one-day smoke test. Use explicit startDate=endDate for a true one-day operational probe."
+      },
       runtimeBudget: expect.objectContaining({
         budgetMs: 270000,
         withinBudget: true
@@ -306,7 +323,44 @@ describe("/api/v1/db/update-rolling-player-averages", () => {
     });
     expect(res.statusCode).toBe(200);
     expect(res.body).toMatchObject({
-      executionProfile: "daily_incremental"
+      executionProfile: "daily_incremental",
+      executionScope: {
+        startDate: "2026-03-10",
+        endDate: "2026-03-14",
+        implicitDailyWindowApplied: false,
+        windowDays: 5,
+        smokeTestComparable: false,
+        smokeTestGuidance:
+          "This run is not a one-day smoke test. Use explicit startDate=endDate for a true one-day operational probe."
+      }
+    });
+  });
+
+  it("marks explicit same-day rolling runs as smoke-test comparable", async () => {
+    const req: any = {
+      method: "GET",
+      query: {
+        startDate: "2026-03-14",
+        endDate: "2026-03-14",
+        executionProfile: "daily_incremental"
+      },
+      url: "/api/v1/db/update-rolling-player-averages?startDate=2026-03-14&endDate=2026-03-14&executionProfile=daily_incremental"
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      executionProfile: "daily_incremental",
+      executionScope: {
+        startDate: "2026-03-14",
+        endDate: "2026-03-14",
+        implicitDailyWindowApplied: false,
+        windowDays: 1,
+        smokeTestComparable: true,
+        smokeTestGuidance: null
+      }
     });
   });
 
@@ -359,6 +413,19 @@ describe("/api/v1/db/update-rolling-player-averages", () => {
     expect(res.body).toMatchObject({
       message:
         "Freshness dependency checks failed. Refresh stale upstream sources or use bypassFreshnessBlockers=true to override.",
+      success: false,
+      operationStatus: "blocked",
+      warning:
+        "Rolling player averages were blocked because required upstream freshness checks failed.",
+      executionScope: {
+        startDate: "2026-03-10",
+        endDate: "2026-03-14",
+        implicitDailyWindowApplied: false,
+        windowDays: 5,
+        smokeTestComparable: false,
+        smokeTestGuidance:
+          "This run is not a one-day smoke test. Use explicit startDate=endDate for a true one-day operational probe."
+      },
       runSummary: expect.objectContaining({
         freshnessBlockers: 3
       }),
@@ -368,5 +435,67 @@ describe("/api/v1/db/update-rolling-player-averages", () => {
         bypassed: false
       }
     });
+  });
+
+  it("returns warning status and failed audit semantics when freshness blockers are bypassed", async () => {
+    mainMock.mockResolvedValueOnce(
+      createRollingRunSummary({
+        freshnessBlockers: 2
+      })
+    );
+    const previousServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    process.env.SUPABASE_SERVICE_ROLE_KEY = "test-service-role";
+
+    try {
+      const req: any = {
+        method: "GET",
+        query: {
+          startDate: "2026-03-14",
+          endDate: "2026-03-14",
+          bypassFreshnessBlockers: "true"
+        },
+        url: "/api/v1/db/update-rolling-player-averages?startDate=2026-03-14&endDate=2026-03-14&bypassFreshnessBlockers=true"
+      };
+      const res = createMockRes();
+
+      await handler(req, res);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toMatchObject({
+        message:
+          "Rolling player averages processed with freshness blockers bypassed.",
+        success: false,
+        operationStatus: "warning",
+        warning:
+          "Upstream freshness blockers were bypassed. Treat this recompute as degraded until stale sources are refreshed.",
+        executionScope: {
+          startDate: "2026-03-14",
+          endDate: "2026-03-14",
+          implicitDailyWindowApplied: false,
+          windowDays: 1,
+          smokeTestComparable: true,
+          smokeTestGuidance: null
+        },
+        freshnessGate: {
+          status: "FAIL",
+          blockerCount: 2,
+          bypassed: true,
+          action:
+            "Refresh stale upstream sources or use bypassFreshnessBlockers=true to override."
+        }
+      });
+      expect(auditInsertMock).toHaveBeenCalled();
+      const insertedAuditRow = auditInsertMock.mock.calls.at(-1)?.[0];
+      expect(insertedAuditRow).toMatchObject({
+        status: "failure",
+        job_name: "/api/v1/db/update-rolling-player-averages"
+      });
+    } finally {
+      if (previousServiceRoleKey === undefined) {
+        delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+      } else {
+        process.env.SUPABASE_SERVICE_ROLE_KEY = previousServiceRoleKey;
+      }
+    }
   });
 });

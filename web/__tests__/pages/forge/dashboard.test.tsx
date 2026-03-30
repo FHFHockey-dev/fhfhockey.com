@@ -4,8 +4,17 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 
 import { clearClientFetchCache } from "lib/dashboard/clientFetchCache";
 
+const routerState = vi.hoisted(() => ({
+  query: {},
+  isReady: true
+}));
+
 vi.mock("next/head", () => ({
   default: ({ children }: { children: React.ReactNode }) => <>{children}</>
+}));
+
+vi.mock("next/router", () => ({
+  useRouter: () => routerState
 }));
 
 vi.mock("components/GameGrid/utils/useSchedule", () => ({
@@ -83,6 +92,8 @@ describe("Forge dashboard render states", () => {
   beforeEach(() => {
     clearClientFetchCache();
     vi.restoreAllMocks();
+    routerState.query = { date: "2026-02-07" };
+    routerState.isReady = true;
     stubMatchMedia(false);
   });
 
@@ -98,7 +109,7 @@ describe("Forge dashboard render states", () => {
 
     render(<ForgeDashboardPage />);
 
-    expect(await screen.findByText("Loading team power...")).toBeTruthy();
+    expect(await screen.findByText("Loading team rating blend...")).toBeTruthy();
     expect(screen.getByText("Loading sustainability signals...")).toBeTruthy();
     expect(screen.getByText("Loading goalie projections...")).toBeTruthy();
     expect(screen.getByText("Loading game slate...")).toBeTruthy();
@@ -146,7 +157,7 @@ describe("Forge dashboard render states", () => {
     render(<ForgeDashboardPage />);
 
     await waitFor(() => {
-      expect(screen.getByText("No team power data for this date.")).toBeTruthy();
+      expect(screen.getByText("No team rating-blend data for this date.")).toBeTruthy();
       expect(
         screen.getByText("No sustainability signals available for this date.")
       ).toBeTruthy();
@@ -749,7 +760,7 @@ describe("Forge dashboard render states", () => {
     await waitFor(() => {
       expect(
         screen.getByRole("link", { name: "Team Detail" }).getAttribute("href")
-      ).toBe("/forge/team/NJD");
+      ).toBe("/forge/team/NJD?date=2026-02-07&team=NJD&position=all");
     });
   });
 
@@ -792,7 +803,15 @@ describe("Forge dashboard render states", () => {
     const teamSelect = screen.getByLabelText("Team") as HTMLSelectElement;
     const positionSelect = screen.getByLabelText("Position") as HTMLSelectElement;
     const resetButton = screen.getByRole("button", { name: "Reset Filters" });
-    const defaultDate = dateInput.value;
+    const todayEtParts = new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/New_York",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    }).formatToParts(new Date());
+    const resetDate = `${todayEtParts.find((part) => part.type === "year")?.value ?? "1970"}-${
+      todayEtParts.find((part) => part.type === "month")?.value ?? "01"
+    }-${todayEtParts.find((part) => part.type === "day")?.value ?? "01"}`;
 
     fireEvent.change(dateInput, {
       target: { value: "2026-02-07" }
@@ -811,7 +830,7 @@ describe("Forge dashboard render states", () => {
     fireEvent.click(resetButton);
 
     await waitFor(() => {
-      expect(dateInput.value).toBe(defaultDate);
+      expect(dateInput.value).toBe(resetDate);
       expect(teamSelect.value).toBe("all");
       expect(positionSelect.value).toBe("all");
       expect(resetButton.hasAttribute("disabled")).toBe(true);
@@ -1200,10 +1219,15 @@ describe("Forge dashboard render states", () => {
     expect(screen.getByText("Victor Olofsson")).toBeTruthy();
     expect(screen.queryByText("Leo Carlsson")).toBeNull();
     expect(
-      screen.getByText("Compact ownership charts stay on the lead add cards only.")
+      screen.getByText("Lead add cards keep the ownership trace and score inspector for pass-4 vetting.")
     ).toBeTruthy();
     expect(screen.getAllByText("Ownership 5D").length).toBeGreaterThan(0);
     expect(screen.getByText("+7.0 pts")).toBeTruthy();
+    expect(screen.getAllByText("Score inspector").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Raw inputs").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Weighted path").length).toBeGreaterThan(0);
+    expect(screen.getByText("Trend +35.0")).toBeTruthy();
+    expect(screen.getByText("Risk -0.5")).toBeTruthy();
 
     fireEvent.change(screen.getByLabelText("Maximum ownership"), {
       target: { value: "35" }
@@ -1373,8 +1397,12 @@ describe("Forge dashboard render states", () => {
 
     const trustworthyLink = screen.getByRole("link", { name: /Trustworthy Skater/i });
     const heaterLink = screen.getByRole("link", { name: /Heater Skater/i });
-    expect(trustworthyLink.getAttribute("href")).toBe("/trends/player/12");
-    expect(heaterLink.getAttribute("href")).toBe("/trends/player/16");
+    expect(trustworthyLink.getAttribute("href")).toBe(
+      "/trends/player/12?date=2026-02-07&origin=forge-dashboard&returnTo=%2Fforge%2Fdashboard%3Fdate%3D2026-02-07%26team%3Dall%26position%3Dall"
+    );
+    expect(heaterLink.getAttribute("href")).toBe(
+      "/trends/player/16?date=2026-02-07&origin=forge-dashboard&returnTo=%2Fforge%2Fdashboard%3Fdate%3D2026-02-07%26team%3Dall%26position%3Dall"
+    );
   });
 
   it("renders player hot/cold and trending up/down as separate companion states", async () => {
@@ -1539,7 +1567,13 @@ describe("Forge dashboard render states", () => {
     });
 
     const upLinks = screen.getAllByRole("link", { name: /Arrow Up/i });
-    expect(upLinks.some((link) => link.getAttribute("href") === "/trends/player/101")).toBe(true);
+    expect(
+      upLinks.some(
+        (link) =>
+          link.getAttribute("href") ===
+          "/trends/player/101?date=2026-02-07&origin=forge-dashboard&returnTo=%2Fforge%2Fdashboard%3Fdate%3D2026-02-07%26team%3Dall%26position%3Dall"
+      )
+    ).toBe(true);
   });
 
   it("applies the default 25 to 50 ownership band to player insight sections and lets the band expand", async () => {
@@ -1683,7 +1717,7 @@ describe("Forge dashboard render states", () => {
 
     render(<ForgeDashboardPage />);
 
-    expect(await screen.findByText("Discovery Ownership")).toBeTruthy();
+    expect(await screen.findByText("Insight Ownership Band")).toBeTruthy();
     expect(screen.getByText("25% - 50%")).toBeTruthy();
     expect(screen.getByText("Midband Heater")).toBeTruthy();
     expect(screen.getAllByText("Midband Trend").length).toBeGreaterThan(0);
@@ -1699,5 +1733,168 @@ describe("Forge dashboard render states", () => {
       expect(screen.getByText("Low Owned Riser")).toBeTruthy();
       expect(screen.getAllByText("Low Owned Trend").length).toBeGreaterThan(0);
     });
+  });
+
+  it("surfaces materially stale skater-trend fallback scope as degraded contract text", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/team-ratings")) return jsonResponse([]);
+      if (url.includes("/api/v1/sustainability/trends")) {
+        return jsonResponse({ snapshot_date: "2026-02-07", rows: [] });
+      }
+      if (url.includes("/api/v1/forge/goalies")) {
+        return jsonResponse({ asOfDate: "2026-02-07", data: [] });
+      }
+      if (url.includes("/api/v1/start-chart")) {
+        return jsonResponse({ dateUsed: "2026-02-07", games: [] });
+      }
+      if (url.includes("/api/v1/forge/players")) {
+        return jsonResponse(emptyForgePlayersResponse());
+      }
+      if (url.includes("/api/v1/transactions/ownership-trends")) {
+        return jsonResponse(emptyOwnershipResponse());
+      }
+      if (url.includes("/api/v1/transactions/ownership-snapshots")) {
+        return jsonResponse({ success: true, players: [] });
+      }
+      if (url.includes("/api/v1/trends/team-ctpi")) {
+        return jsonResponse({ generatedAt: "2026-02-07T12:00:00.000Z", teams: [] });
+      }
+      if (url.includes("/api/v1/trends/skater-power")) {
+        return jsonResponse({
+          generatedAt: "2026-02-07T12:00:00.000Z",
+          requestedDate: "2026-02-07",
+          dateUsed: "2025-10-16",
+          fallbackApplied: true,
+          serving: {
+            requestedDate: "2026-02-07",
+            resolvedDate: "2025-10-16",
+            fallbackApplied: true,
+            isSameDay: false,
+            state: "fallback",
+            strategy: "latest_available_with_data",
+            gapDays: 114,
+            severity: "error",
+            status: "blocked",
+            message:
+              "Trend movement fallback is materially stale: requested 2026-02-07, but latest available scope is 2025-10-16 (114 days old). Treat this module as degraded until fresher trend rows exist."
+          },
+          categories: {},
+          playerMetadata: {}
+        });
+      }
+      return jsonResponse({}, false);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<ForgeDashboardPage />);
+
+    expect(
+      await screen.findByText(/Trend movement fallback is materially stale:/)
+    ).toBeTruthy();
+    expect(
+      screen.getByText(/Latest refresh timestamp: 2026-02-07T12:00:00.000Z/)
+    ).toBeTruthy();
+  });
+
+  it("surfaces blocked goalie fallback and recent slate fallback with contract-aware messaging", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/team-ratings")) return jsonResponse([]);
+      if (url.includes("/api/v1/sustainability/trends")) {
+        return jsonResponse({ snapshot_date: "2026-02-07", rows: [] });
+      }
+      if (url.includes("/api/v1/forge/goalies")) {
+        return jsonResponse({
+          asOfDate: "2026-02-06",
+          requestedDate: "2026-02-07",
+          fallbackApplied: true,
+          serving: {
+            requestedDate: "2026-02-07",
+            resolvedDate: "2026-02-06",
+            fallbackApplied: true,
+            isSameDay: false,
+            state: "fallback",
+            strategy: "latest_available_with_data",
+            gapDays: 1,
+            severity: "error",
+            status: "blocked",
+            message:
+              "Goalie projections is serving 2026-02-06 even though 6 games were scheduled on requested date 2026-02-07. Treat this module as degraded until same-day data is available."
+          },
+          data: []
+        });
+      }
+      if (url.includes("/api/v1/start-chart")) {
+        return jsonResponse({
+          dateUsed: "2026-02-06",
+          requestedDate: "2026-02-07",
+          fallbackApplied: true,
+          serving: {
+            requestedDate: "2026-02-07",
+            resolvedDate: "2026-02-06",
+            fallbackApplied: true,
+            isSameDay: false,
+            state: "fallback",
+            strategy: "previous_date_with_games",
+            gapDays: 1,
+            severity: "warn",
+            status: "fallback_recent",
+            message:
+              "Start-chart slate is serving the nearest available date (2026-02-06), 1 day behind the requested date."
+          },
+          games: []
+        });
+      }
+      if (url.includes("/api/v1/forge/players")) {
+        return jsonResponse(emptyForgePlayersResponse());
+      }
+      if (url.includes("/api/v1/transactions/ownership-trends")) {
+        return jsonResponse(emptyOwnershipResponse());
+      }
+      if (url.includes("/api/v1/transactions/ownership-snapshots")) {
+        return jsonResponse({ success: true, players: [] });
+      }
+      if (url.includes("/api/v1/trends/team-ctpi")) {
+        return jsonResponse({ generatedAt: "2026-02-07T12:00:00.000Z", teams: [] });
+      }
+      if (url.includes("/api/v1/trends/skater-power")) {
+        return jsonResponse({
+          generatedAt: "2026-02-07T12:00:00.000Z",
+          requestedDate: "2026-02-07",
+          dateUsed: "2026-02-07",
+          fallbackApplied: false,
+          serving: {
+            requestedDate: "2026-02-07",
+            resolvedDate: "2026-02-07",
+            fallbackApplied: false,
+            isSameDay: true,
+            state: "same_day",
+            strategy: "requested_date",
+            gapDays: 0,
+            severity: "none",
+            status: "requested_date",
+            message: null
+          },
+          categories: {},
+          playerMetadata: {}
+        });
+      }
+      return jsonResponse({}, false);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<ForgeDashboardPage />);
+
+    expect(
+      await screen.findByText(
+        /Goalie projections is serving 2026-02-06 even though 6 games were scheduled/
+      )
+    ).toBeTruthy();
+    expect(
+      screen.getAllByText(
+        /Start-chart slate is serving the nearest available date \(2026-02-06\), 1 day behind/
+      ).length
+    ).toBeGreaterThan(0);
   });
 });

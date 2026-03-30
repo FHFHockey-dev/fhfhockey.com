@@ -124,20 +124,28 @@ describe("FORGE team detail page", () => {
     expect(
       screen
         .getAllByRole("link", { name: "Dashboard" })
-        .some((link) => link.getAttribute("href") === "/forge/dashboard")
+        .some(
+          (link) =>
+            link.getAttribute("href") === "/forge/dashboard?date=2026-03-14&team=NJD"
+        )
     ).toBe(true);
     expect(
       screen
         .getAllByRole("link", { name: "Start Chart" })
-        .some((link) => link.getAttribute("href") === "/start-chart")
+        .some(
+          (link) =>
+            link.getAttribute("href") === "/start-chart?date=2026-03-14&team=NJD"
+        )
     ).toBe(true);
     expect(
       screen
         .getAllByRole("link", { name: "Trends" })
-        .some((link) => link.getAttribute("href") === "/trends")
+        .some(
+          (link) => link.getAttribute("href") === "/trends?date=2026-03-14&team=NJD"
+        )
     ).toBe(true);
     expect(screen.getByRole("link", { name: "FORGE Landing" }).getAttribute("href")).toBe(
-      "/FORGE"
+      "/FORGE?date=2026-03-14&team=NJD"
     );
     expect(screen.getByRole("link", { name: "Underlying Stats" })).toBeTruthy();
   });

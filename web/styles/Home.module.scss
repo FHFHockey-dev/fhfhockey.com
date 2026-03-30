@@ -29,32 +29,160 @@ $mobile-column-short: 30px;
 
 // --- Main Page Layout ---
 .homepage {
-  // Use main container variables for consistency
-  width: 95%; // Slightly wider for home page potentially
-  max-width: 2200px;
-  min-width: 1300px;
-  margin: v.$space-xl auto; // Consistent vertical margin
+  width: min(100%, 1680px);
+  max-width: 1680px;
+  margin: clamp(v.$space-lg, 2vw, v.$space-xxl) auto;
+  padding-inline: clamp(v.$space-sm, 2vw, v.$space-lg);
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: v.$space-xl * 1.5; // Slightly larger gap between main sections
+  gap: clamp(v.$space-lg, 2.5vw, v.$space-xxl);
 }
 
-// Make the homepage container fluid on tablet/mobile to avoid horizontal overflow
-@media (max-width: #{v.$breakpoint-tablet}) {
+@media (max-width: #{v.$breakpoint-desktop}) {
   .homepage {
     width: 100%;
     max-width: 100%;
-    min-width: 0;
     margin: v.$space-lg auto;
-    padding-left: v.$mobile-edge-padding;
-    padding-right: v.$mobile-edge-padding;
-    box-sizing: border-box;
+    padding-inline: clamp(v.$space-sm, 2vw, v.$space-lg);
   }
 }
 
 // --- Games Section ---
 .gameCardsContainer {
   @include v.element-wrapper; // Apply consistent component frame
+}
+
+.moduleStatusPanel {
+  padding: v.$space-md v.$space-lg;
+  border-bottom: 1px solid rgba(v.$border-color-primary, 0.35);
+  text-align: left;
+}
+
+.slateHero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(280px, 1fr);
+  gap: v.$space-xl;
+  padding: v.$space-xl;
+  background:
+    radial-gradient(circle at top left, color.adjust(v.$secondary-color, $lightness: -18%) 0%, transparent 36%),
+    linear-gradient(145deg, color.adjust(v.$background-dark, $lightness: -4%) 0%, v.$background-medium 100%);
+  border-bottom: 2px solid color.adjust(v.$border-color-primary, $lightness: 8%);
+}
+
+@media (max-width: #{v.$breakpoint-desktop}) {
+  .slateHero {
+    grid-template-columns: 1fr;
+    gap: v.$space-lg;
+  }
+}
+
+.slateHeroIntro {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-sm;
+  min-width: 0;
+}
+
+.slateEyebrow {
+  margin: 0;
+  font-family: v.$font-family-primary;
+  text-transform: uppercase;
+  letter-spacing: 0.24em;
+  font-size: 0.72rem;
+  color: v.$secondary-color;
+}
+
+.slateHeadline {
+  margin: 0;
+  font-family: v.$font-family-primary;
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  line-height: 0.98;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: v.$text-color-primary;
+  max-width: 13ch;
+}
+
+.slateDescription {
+  margin: 0;
+  max-width: 66ch;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: v.$text-color-secondary;
+}
+
+.slateSummaryRail {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: v.$space-sm;
+  align-self: start;
+}
+
+.slateSummaryCard {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-xs;
+  min-height: 108px;
+  padding: v.$space-md;
+  border: 1px solid color.adjust(v.$border-color-primary, $lightness: 6%);
+  border-radius: v.$border-radius;
+  background: color.adjust(v.$background-dark, $lightness: -1%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.slateSummaryLabel {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  color: v.$text-color-secondary;
+}
+
+.slateSummaryValue {
+  font-family: v.$font-family-primary;
+  font-size: clamp(1.05rem, 2.4vw, 1.45rem);
+  line-height: 1.1;
+  text-transform: uppercase;
+  color: v.$text-color-primary;
+}
+
+.slateActionRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: v.$space-sm;
+  grid-column: 1 / -1;
+}
+
+.slateActionLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 v.$space-lg;
+  border: 1px solid color.adjust(v.$border-color-primary, $lightness: 10%);
+  border-radius: 999px;
+  background: color.adjust(v.$background-medium, $lightness: -2%);
+  color: v.$text-color-primary;
+  font-family: v.$font-family-primary;
+  font-size: 0.88rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  text-decoration: none;
+  transition:
+    transform v.$transition-duration v.$transition-easing,
+    background-color v.$transition-duration v.$transition-easing,
+    border-color v.$transition-duration v.$transition-easing;
+
+  &:hover {
+    transform: translateY(-1px);
+    background: color.adjust(v.$secondary-color, $lightness: -12%);
+    border-color: v.$secondary-color;
+  }
+
+  &:focus-visible {
+    outline: 2px solid v.$focus-color;
+    outline-offset: 2px;
+  }
 }
 
 .gamesHeader {
@@ -242,55 +370,21 @@ $mobile-column-short: 30px;
 
 .gamesContainer {
   display: grid;
-  grid-template-columns: repeat(1, 1fr); // Default: 1 column
-  gap: v.$space-md;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap: v.$space-lg;
   padding: v.$space-lg;
   border-left: v.$background-light;
   border-right: v.$background-light;
   border-bottom: v.$background-light;
   border-top: none;
-
-  @media (min-width: v.$breakpoint-tablet) {
-    grid-template-columns: repeat(2, 1fr); // 2 columns on tablet
-    gap: v.$space-xl;
-    padding: v.$space-xl;
-  }
-
-  @media (min-width: v.$breakpoint-desktop) {
-    grid-template-columns: repeat(3, 1fr); // 3 columns on desktop
-  }
-
-  // --- Centering Logic using Flexbox Fallback ---
-  // Apply flex properties to center the items
-  & {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
+  align-items: stretch;
+  justify-items: stretch;
 
   > * {
-    // --- Adjust grid item styles for Flexbox ---
-    width: 100%; // Let flex-basis control width primarily
-    max-width: 450px;
-    margin: 0 auto v.$space-lg auto;
-
-    flex-basis: 100%; // Default: 1 column (mobile)
-
-    @media (min-width: v.$breakpoint-tablet) {
-      // Roughly 2 columns (minus gap)
-      flex-basis: calc(
-        50% - #{math.div(v.$space-xl, 2)}
-      ); // Adjust basis for 2 columns + gap
-      margin-bottom: v.$space-xl;
-    }
-
-    @media (min-width: v.$breakpoint-desktop) {
-      // Roughly 3 columns (minus gap)
-      flex-basis: calc(
-        33.333% - #{v.$space-lg * math.div(2, 3)}
-      ); // Adjust basis for 3 columns + gap
-      margin-bottom: v.$space-lg; // Match grid gap
-    }
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    min-width: 0;
   }
 }
 
@@ -298,6 +392,8 @@ $mobile-column-short: 30px;
   text-decoration: none;
   color: inherit;
   display: block; // Ensure link takes up block space for layout
+  min-width: 0;
+  height: 100%;
   transition: transform 0.2s v.$transition-easing; // Add subtle hover effect
 
   &:hover {
@@ -564,22 +660,21 @@ $mobile-column-short: 30px;
 
 // --- Standings & Injuries Section ---
 .standingsInjuriesContainer {
-  display: flex;
-  flex-direction: column;
-  gap: v.$space-xl; // Default gap for mobile stacking
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: clamp(v.$space-lg, 2vw, v.$space-xxl);
+}
 
-  @media (min-width: v.$breakpoint-desktop) {
-    flex-direction: row;
-    align-items: flex-start;
-    // *** INCREASE gap for desktop view ***
-    gap: v.$space-xxxl; // Use a larger gap variable
-    // gap: v.$space-xl; // REMOVE or comment out
+@media (min-width: #{v.$breakpoint-tablet}) {
+  .standingsInjuriesContainer {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+    align-items: start;
   }
 }
+
 .standingsContainer,
 .injuriesContainer {
   @include v.component-wrapper; // Consistent wrapper
-  flex: 1; // Allow them to share space equally on desktop
   display: flex; // Use flex internally
   flex-direction: column; // Stack header and table
   min-width: 0; // Prevent flex overflow issues
@@ -587,30 +682,35 @@ $mobile-column-short: 30px;
 
 .standingsHeader,
 .injuriesHeader {
-  // Similar styling to .gamesHeader
-  padding: v.$space-md v.$space-lg;
-  border-bottom: 2px solid v.$secondary-color;
-  background-color: v.$background-dark;
+  padding: v.$space-sm v.$space-lg;
+  border-bottom: 1px solid rgba(v.$secondary-color, 0.55);
+  background:
+    linear-gradient(
+      180deg,
+      color.adjust(v.$background-dark, $lightness: -1%) 0%,
+      rgba(v.$background-dark, 0.86) 100%
+    );
   flex-shrink: 0; // Prevent header from shrinking
 
-  h1 {
+  h1,
+  h2 {
     margin: 0;
     font-family: v.$font-family-primary;
     text-transform: uppercase;
-    letter-spacing: 1.5px;
-    font-weight: 100;
+    letter-spacing: 0.12em;
+    font-weight: 400;
     font-size: clamp(
-      1.6rem,
-      3vw,
-      2rem
-    ); // Slightly smaller header for these sections
+      1.05rem,
+      2vw,
+      1.45rem
+    );
     line-height: 1.2;
     color: v.$text-color-primary;
     text-align: left;
 
     span {
       color: v.$secondary-color;
-      font-weight: 100;
+      font-weight: 400;
     }
   }
 }
@@ -647,15 +747,15 @@ $mobile-column-short: 30px;
     th {
       background-color: v.$background-dark; // Cell background
       color: v.$text-color-secondary; // Header text color
-      font-weight: 600;
+      font-weight: 500;
       font-family: v.$font-family-primary;
-      font-size: 11px; // Match GameGrid header
+      font-size: 10px;
       padding: v.$space-sm v.$space-md; // Consistent padding
       text-align: center;
-      border-bottom: 2px solid v.$secondary-color; // Consistent separator
+      border-bottom: 1px solid rgba(v.$secondary-color, 0.4);
       border-right: v.$border-subtle; // Subtle vertical separators
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.08em;
       white-space: nowrap;
 
       &:first-child {
@@ -686,11 +786,7 @@ $mobile-column-short: 30px;
       }
 
       &:hover {
-        background-color: color.scale(
-          v.$primary-color,
-          $lightness: -30%,
-          $alpha: -70%
-        );
+        background-color: rgba(v.$primary-color, 0.1);
       }
     }
 
@@ -698,7 +794,7 @@ $mobile-column-short: 30px;
       padding: v.$space-sm v.$space-md; // Consistent padding
       border-right: v.$border-subtle; // Subtle vertical separators
       vertical-align: middle;
-      font-size: v.$font-size-small; // Consistent cell font size
+      font-size: v.$font-size-small * 0.95;
 
       &:first-child {
         border-left: none; // No left border on first cell
@@ -860,6 +956,8 @@ $mobile-column-short: 30px;
   // Add a class for the chart wrapper if needed
   @include v.component-wrapper;
   padding: v.$space-lg; // Add padding inside the chart wrapper
+  min-width: 0;
+  overflow: hidden;
 
   @media (max-width: #{v.$breakpoint-tablet - 1px}) {
     display: none; // Hide the chart container on smaller screens
@@ -925,7 +1023,6 @@ $mobile-column-short: 30px;
     gap: v.$space-lg; // Tighter gap for mobile
     width: 100%;
     max-width: 100%;
-    min-width: 0;
     box-sizing: border-box;
   }
 
@@ -943,6 +1040,52 @@ $mobile-column-short: 30px;
 
   .gameCardsContainer {
     border-radius: v.$border-radius;
+  }
+
+  .slateHero {
+    grid-template-columns: 1fr;
+    gap: v.$space-md;
+    padding: v.$space-lg;
+  }
+
+  .slateHeadline {
+    max-width: none;
+    font-size: clamp(1.6rem, 8vw, 2.3rem);
+  }
+
+  .slateDescription {
+    font-size: 0.94rem;
+    line-height: 1.5;
+  }
+
+  .slateSummaryRail {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: v.$space-xs;
+  }
+
+  .slateSummaryCard {
+    min-height: 0;
+    padding: v.$space-sm;
+  }
+
+  .slateSummaryLabel {
+    font-size: 0.58rem;
+    letter-spacing: 0.18em;
+  }
+
+  .slateSummaryValue {
+    font-size: 0.92rem;
+  }
+
+  .slateActionRow {
+    gap: v.$space-xs;
+  }
+
+  .slateActionLink {
+    min-height: 38px;
+    padding: 0 v.$space-md;
+    font-size: 0.74rem;
+    letter-spacing: 0.08em;
   }
 
   .headerAndDate {
@@ -969,7 +1112,7 @@ $mobile-column-short: 30px;
     gap: v.$space-xs;
     padding: v.$space-xs;
     > * {
-      max-width: 95%;
+      max-width: 100%;
       margin: v.$space-xs;
     }
   }
@@ -1132,6 +1275,7 @@ $mobile-column-short: 30px;
 
   .standingsInjuriesContainer {
     gap: v.$space-lg;
+    grid-template-columns: 1fr;
   }
 
   .standingsHeader,

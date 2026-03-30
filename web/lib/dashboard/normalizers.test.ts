@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   normalizeGoalieResponse,
+  normalizeSkaterTrendResponse,
   normalizeStartChartResponse,
   normalizeSustainabilityResponse
 } from "./normalizers";
@@ -106,15 +107,22 @@ describe("dashboard normalizers", () => {
     });
   });
 
-  it("ignores fallback and compatibility metadata on start-chart reader payloads", () => {
+  it("preserves serving metadata while ignoring compatibility metadata on start-chart reader payloads", () => {
     const normalized = normalizeStartChartResponse({
       dateUsed: "2026-03-15",
+      requestedDate: "2026-03-16",
+      fallbackApplied: true,
       serving: {
         requestedDate: "2026-03-16",
         resolvedDate: "2026-03-15",
         fallbackApplied: true,
         state: "fallback",
-        strategy: "previous_date_with_games"
+        strategy: "previous_date_with_games",
+        gapDays: 1,
+        severity: "warn",
+        status: "fallback_recent",
+        message:
+          "Start-chart slate is serving the nearest available date (2026-03-15), 1 day behind the requested date."
       },
       scanSummary: {
         requestedDate: "2026-03-16",
@@ -156,6 +164,25 @@ describe("dashboard normalizers", () => {
 
     expect(normalized).toEqual({
       dateUsed: "2026-03-15",
+      requestedDate: "2026-03-16",
+      fallbackApplied: true,
+      serving: {
+        requestedDate: "2026-03-16",
+        resolvedDate: "2026-03-15",
+        fallbackApplied: true,
+        isSameDay: false,
+        state: "fallback",
+        strategy: "previous_date_with_games",
+        gapDays: 1,
+        severity: "warn",
+        status: "fallback_recent",
+        message:
+          "Start-chart slate is serving the nearest available date (2026-03-15), 1 day behind the requested date.",
+        requestedScheduledGames: null,
+        resolvedScheduledGames: null,
+        requestedHadGames: null,
+        resolvedHadGames: null
+      },
       games: [
         {
           id: 2,
@@ -190,6 +217,8 @@ describe("dashboard normalizers", () => {
   it("normalizes goalie projections with starter-selection detail", () => {
     const normalized = normalizeGoalieResponse({
       asOfDate: "2026-03-14",
+      requestedDate: "2026-03-14",
+      fallbackApplied: false,
       data: [
         {
           goalie_id: 8474593,
@@ -231,6 +260,9 @@ describe("dashboard normalizers", () => {
     });
 
     expect(normalized.asOfDate).toBe("2026-03-14");
+    expect(normalized.requestedDate).toBe("2026-03-14");
+    expect(normalized.fallbackApplied).toBe(false);
+    expect(normalized.serving).toBeNull();
     expect(normalized.data).toHaveLength(1);
     expect(normalized.data[0].starter_selection).toMatchObject({
       is_back_to_back: false,
@@ -238,6 +270,47 @@ describe("dashboard normalizers", () => {
       days_since_last_played: 2,
       l10_starts: 7,
       opponent_context_adjustment_pct: -0.042
+    });
+  });
+
+  it("normalizes skater trend serving metadata for degraded fallback scope", () => {
+    const normalized = normalizeSkaterTrendResponse({
+      generatedAt: "2026-03-29T12:00:00.000Z",
+      requestedDate: "2026-03-29",
+      dateUsed: "2026-03-11",
+      fallbackApplied: true,
+      serving: {
+        requestedDate: "2026-03-29",
+        resolvedDate: "2026-03-11",
+        fallbackApplied: true,
+        isSameDay: false,
+        state: "fallback",
+        strategy: "latest_available_with_data",
+        gapDays: 18,
+        severity: "error",
+        status: "blocked",
+        message:
+          "Trend movement fallback is materially stale: requested 2026-03-29, but latest available scope is 2026-03-11 (18 days old). Treat this module as degraded until fresher trend rows exist."
+      },
+      categories: {},
+      playerMetadata: {}
+    });
+
+    expect(normalized).toMatchObject({
+      generatedAt: "2026-03-29T12:00:00.000Z",
+      requestedDate: "2026-03-29",
+      dateUsed: "2026-03-11",
+      fallbackApplied: true,
+      serving: {
+        requestedDate: "2026-03-29",
+        resolvedDate: "2026-03-11",
+        fallbackApplied: true,
+        state: "fallback",
+        strategy: "latest_available_with_data",
+        gapDays: 18,
+        severity: "error",
+        status: "blocked"
+      }
     });
   });
 });

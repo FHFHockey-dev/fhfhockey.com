@@ -1,4 +1,9 @@
 // utils/dataFetching.ts
+//
+// Legacy sKO-only fetch helpers.
+// Pass-4 FORGE audit result: this path is quarantined from the live FORGE runtime.
+// It relies on direct client-side Supabase reads and exact-date WGO/SKO joins that
+// can silently drop context when timestamps do not match perfectly.
 // @ts-nocheck
 import supabase from "lib/supabase";
 import { CombinedGameLog, PlayerGameLog } from "./types";

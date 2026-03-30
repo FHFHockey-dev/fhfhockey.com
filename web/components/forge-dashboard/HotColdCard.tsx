@@ -2,6 +2,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import styles from "styles/ForgeDashboard.module.scss";
+import { buildForgeHref } from "lib/dashboard/forgeLinks";
 import {
   normalizeSkaterTrendResponse,
   type NormalizedSkaterTrendResponse
@@ -20,6 +21,8 @@ type HotColdCardProps = {
   position: "all" | "f" | "d" | "g";
   ownershipMin: number;
   ownershipMax: number;
+  returnToHref?: string | null;
+  onResolvedDate?: (resolvedDate: string | null) => void;
   onStatusChange?: (status: {
     loading: boolean;
     error: string | null;
@@ -140,6 +143,8 @@ export default function HotColdCard({
   position,
   ownershipMin,
   ownershipMax,
+  returnToHref,
+  onResolvedDate,
   onStatusChange
 }: HotColdCardProps) {
   const [mode, setMode] = useState<TrendMode>("hotCold");
@@ -169,6 +174,7 @@ export default function HotColdCard({
     setError(null);
 
     const query = new URLSearchParams({
+      date,
       position: toPositionParam(position),
       window: "5",
       limit: "40"
@@ -199,7 +205,7 @@ export default function HotColdCard({
     return () => {
       active = false;
     };
-  }, [position]);
+  }, [date, position]);
 
   const rankedRows = useMemo<CompositePlayerRow[]>(() => {
     if (!payload) return [];
@@ -344,12 +350,25 @@ export default function HotColdCard({
   }, [date, ownershipPlayerIds]);
 
   const ownershipFilterActive = !ownershipWarning;
+  const missingOwnershipCount = useMemo(
+    () =>
+      rankedRows.reduce((count, row) => {
+        const ownership = ownershipMap[row.playerId]?.ownership;
+        return ownership == null ? count + 1 : count;
+      }, 0),
+    [ownershipMap, rankedRows]
+  );
+  const ownershipCoverageWarning =
+    ownershipFilterActive && missingOwnershipCount > 0
+      ? `Ownership coverage incomplete for ${missingOwnershipCount} trend candidates; rows with Own -- remain visible outside the normal ownership band.`
+      : null;
   const filteredRankedRows = useMemo(
     () =>
       rankedRows.filter((row) => {
         if (!ownershipFilterActive) return true;
         const ownership = ownershipMap[row.playerId]?.ownership;
-        return ownership != null && ownership >= ownershipMin && ownership <= ownershipMax;
+        if (ownership == null) return true;
+        return ownership >= ownershipMin && ownership <= ownershipMax;
       }),
     [ownershipFilterActive, ownershipMap, ownershipMax, ownershipMin, rankedRows]
   );
@@ -372,6 +391,9 @@ export default function HotColdCard({
   );
 
   const generatedDate = payload?.generatedAt?.slice(0, 10) ?? "n/a";
+  const resolvedDate = payload?.dateUsed ?? null;
+  const servingMessage = payload?.serving?.message ?? null;
+  const servingSeverity = payload?.serving?.severity ?? "none";
   const isStale = useMemo(() => {
     if (!payload?.generatedAt) return false;
     const ts = new Date(payload.generatedAt).getTime();
@@ -384,16 +406,25 @@ export default function HotColdCard({
   const rightTitle = mode === "hotCold" ? "Cold Players" : "Trending Down";
 
   useEffect(() => {
+    onResolvedDate?.(resolvedDate);
+  }, [onResolvedDate, resolvedDate]);
+
+  useEffect(() => {
     onStatusChange?.({
       loading: loading || ownershipLoading,
       error,
       staleMessage:
         !loading && !ownershipLoading && !error
           ? [
+              servingMessage ??
+                (resolvedDate && resolvedDate !== date
+                  ? `Trend movement scoped through ${resolvedDate}`
+                  : null),
               isStale && payload?.generatedAt
                 ? `Player trend feed last updated ${payload.generatedAt.slice(0, 10)}`
                 : null,
-              ownershipWarning
+              ownershipWarning,
+              ownershipCoverageWarning
             ]
               .filter(Boolean)
               .join(" • ") || null
@@ -412,8 +443,11 @@ export default function HotColdCard({
     loading,
     onStatusChange,
     ownershipLoading,
+    ownershipCoverageWarning,
     ownershipWarning,
     payload?.generatedAt,
+    servingMessage,
+    resolvedDate,
     position
   ]);
 
@@ -421,7 +455,9 @@ export default function HotColdCard({
     <article className={styles.hotColdCard} aria-label="Player hot and cold trend movement">
       <header className={styles.panelHeader}>
         <h3 className={styles.panelTitle}>Hot / Cold and Trend Movement</h3>
-        <span className={styles.panelMeta}>Skater 5G • {generatedDate}</span>
+        <span className={styles.panelMeta}>
+          Skater 5G • Scope {resolvedDate ?? date} • Updated {generatedDate}
+        </span>
       </header>
 
       <div className={styles.hotColdTabs} role="tablist" aria-label="Player trend mode">
@@ -461,9 +497,19 @@ export default function HotColdCard({
         filteredRankedRows.length === 0 && (
         <p className={styles.panelState}>No player trend movement available for this filter.</p>
       )}
-      {position !== "g" && !loading && !ownershipLoading && !error && isStale && (
+      {position !== "g" &&
+        !loading &&
+        !ownershipLoading &&
+        !error &&
+        (isStale || (resolvedDate != null && resolvedDate !== date)) && (
         <p className={`${styles.panelState} ${styles.panelStateStale}`}>
-          Trend feed may be stale (last update {payload?.generatedAt}).
+          {servingMessage
+            ? servingSeverity === "error"
+              ? `${servingMessage} Latest refresh timestamp: ${payload?.generatedAt ?? "unknown"}.`
+              : servingMessage
+            : resolvedDate != null && resolvedDate !== date
+              ? `Trend movement is using the latest available game-date scope (${resolvedDate}).`
+              : `Trend feed may be stale (last update ${payload?.generatedAt}).`}
         </p>
       )}
 
@@ -485,6 +531,14 @@ export default function HotColdCard({
               }
             </span>
           </div>
+          <div className={styles.insightLegendItem}>
+            <span className={`${styles.insightContextPill} ${styles.insightRoutePill}`}>
+              Trends drill-in
+            </span>
+            <span className={styles.insightLegendText}>
+              Player rows open the Trends player page for deeper movement history, not the FORGE opportunity detail page.
+            </span>
+          </div>
         </div>
         <p className={styles.compactChartNote}>
           Lead rows keep the only trend traces in each column.
@@ -502,7 +556,11 @@ export default function HotColdCard({
                 return (
                   <li key={`${mode}-left-${row.playerId}`} className={styles.hotColdRow}>
                     <Link
-                      href={`/trends/player/${row.playerId}`}
+                      href={buildForgeHref(`/trends/player/${row.playerId}`, {
+                        date,
+                        origin: "forge-dashboard",
+                        returnTo: returnToHref
+                      })}
                       className={styles.hotColdRowLink}
                     >
                       <div>
@@ -528,6 +586,9 @@ export default function HotColdCard({
                         <p className={styles.hotColdReason}>
                           {buildReason(row, mode, "positive")}
                         </p>
+                        <span className={styles.insightRouteNote}>
+                          Opens in Trends player detail
+                        </span>
                       </div>
                       <div className={styles.hotColdStats}>
                         <span className={styles.hotColdMeta}>
@@ -578,7 +639,11 @@ export default function HotColdCard({
                 return (
                   <li key={`${mode}-right-${row.playerId}`} className={styles.hotColdRow}>
                     <Link
-                      href={`/trends/player/${row.playerId}`}
+                      href={buildForgeHref(`/trends/player/${row.playerId}`, {
+                        date,
+                        origin: "forge-dashboard",
+                        returnTo: returnToHref
+                      })}
                       className={styles.hotColdRowLink}
                     >
                       <div>
@@ -604,6 +669,9 @@ export default function HotColdCard({
                         <p className={styles.hotColdReason}>
                           {buildReason(row, mode, "negative")}
                         </p>
+                        <span className={styles.insightRouteNote}>
+                          Opens in Trends player detail
+                        </span>
                       </div>
                       <div className={styles.hotColdStats}>
                         <span className={styles.hotColdMeta}>

@@ -1,4 +1,10 @@
 // utils/statistics.ts
+//
+// Legacy sKO-only characteristic helpers.
+// Pass-4 FORGE audit result: do not reuse these outputs for FORGE explainability
+// without a full re-derivation. The PA/SA handling, weighted squared z-score
+// aggregate, and "rollingCV" naming are legacy assumptions, not approved FORGE
+// signal definitions.
 
 import {
   PlayerYearData,

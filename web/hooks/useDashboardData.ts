@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  loadDashboardData,
+  loadTrendsDashboardData,
   type DashboardData,
   type DashboardDataParams
 } from "lib/dashboard/dataFetchers";
@@ -44,7 +44,7 @@ export const useDashboardData = (
     setIsLoading(true);
     setError(null);
 
-    loadDashboardData(memoParams)
+    loadTrendsDashboardData(memoParams)
       .then((response) => {
         if (!isMounted) return;
         setData(response);

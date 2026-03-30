@@ -1,311 +1,92 @@
-// C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\pages\skoCharts.tsx
-// web/pages/skoCharts.tsx
+import type { NextPage } from "next";
+import Head from "next/head";
+import Link from "next/link";
 
-import React, { useEffect, useState } from "react";
-import supabase from "lib/supabase";
-import {
-  PerGameStatSummaries,
-  CharacteristicResult,
-  Player,
-  CombinedGameLog
-} from "lib/supabase/utils/types";
-import {
-  computeStatSummaries,
-  computeCharacteristicResults,
-  computeRollingAverage,
-  computeConfidenceMultiplierSmooth,
-  computeEmpiricalThresholds
-} from "lib/supabase/utils/statistics";
-import { calculateGameScore } from "lib/supabase/utils/calculations";
-import {
-  fetchGameLogs,
-  fetchMostRecentSeason
-} from "lib/supabase/utils/dataFetching";
-import {
-  TextField,
-  Autocomplete,
-  CircularProgress,
-  Typography,
-  Box
-} from "@mui/material";
-import LineChart from "components/SkoLineChart/LineChart";
-import GameScoreChart from "components/GameScoreChart/GameScoreChart";
-import GameLogTable from "components/GameScoreChart/GameLogTable";
+import styles from "styles/ForgeDashboard.module.scss";
 
-interface ChartDataPoint {
-  date: Date;
-  sumOfZScores: number;
-}
-
-const SkoCharts: React.FC = () => {
-  const [players, setPlayers] = useState<Player[]>([]);
-  const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
-  const [loadingPlayers, setLoadingPlayers] = useState<boolean>(false);
-  const [loadingStats, setLoadingStats] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-  const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
-  const [statSummaries, setStatSummaries] =
-    useState<PerGameStatSummaries | null>(null);
-  const [characteristicResults, setCharacteristicResults] = useState<
-    CharacteristicResult[] | null
-  >(null);
-  const [thresholds, setThresholds] = useState<{
-    T1: number;
-    T2: number;
-  } | null>(null);
-  const [combinedGameLogs, setCombinedGameLogs] = useState<CombinedGameLog[]>(
-    []
-  );
-
-  useEffect(() => {
-    const fetchPlayers = async () => {
-      setLoadingPlayers(true);
-      setError(null);
-      let allPlayers: Player[] = [];
-      const PAGE_SIZE = 1000;
-      let offset = 0;
-      let hasMore = true;
-
-      try {
-        while (hasMore) {
-          const { data, error } = await supabase
-            .from("sko_skater_years")
-            .select("player_id, player_name")
-            .order("player_name", { ascending: true })
-            .limit(PAGE_SIZE)
-            .range(offset, offset + PAGE_SIZE - 1);
-
-          if (error) {
-            throw error;
-          }
-
-          if (data && data.length > 0) {
-            allPlayers = allPlayers.concat(data as Player[]);
-            offset += PAGE_SIZE;
-          } else {
-            hasMore = false;
-          }
-        }
-
-        // Deduplicate players by player_id
-        const uniquePlayersMap = new Map<number, string>();
-        allPlayers.forEach((player) => {
-          if (!uniquePlayersMap.has(player.player_id)) {
-            uniquePlayersMap.set(player.player_id, player.player_name);
-          }
-        });
-
-        const uniquePlayers: Player[] = Array.from(
-          uniquePlayersMap.entries()
-        ).map(([player_id, player_name]) => ({ player_id, player_name }));
-
-        setPlayers(uniquePlayers);
-      } catch (err) {
-        setError("Error fetching players.");
-        console.error("Supabase Error:", err);
-      } finally {
-        setLoadingPlayers(false);
-      }
-    };
-
-    fetchPlayers();
-  }, []);
-
-  useEffect(() => {
-    if (selectedPlayer) {
-      const fetchPlayerData = async () => {
-        setLoadingStats(true);
-        setError(null);
-        setCombinedGameLogs([]);
-        setChartData([]);
-        setThresholds(null);
-
-        try {
-          // Fetch most recent season
-          const mostRecentSeason = await fetchMostRecentSeason(
-            selectedPlayer.player_id
-          );
-          if (!mostRecentSeason) {
-            setError("Error fetching player's most recent season.");
-            return;
-          }
-
-          // Fetch and combine game logs
-          const { combinedGameLogs: fetchedLogs, error: logsError } =
-            await fetchGameLogs(selectedPlayer.player_id, mostRecentSeason);
-
-          if (logsError || !fetchedLogs) {
-            setError(logsError || "Error fetching game logs.");
-            return;
-          }
-
-          // Compute statistical summaries
-          const statSummaries = computeStatSummaries(fetchedLogs);
-          // Compute characteristic results
-          const {
-            results: characteristicResults,
-            T1,
-            T2
-          } = computeCharacteristicResults(fetchedLogs, statSummaries);
-          // Optionally refine thresholds empirically to guard against outliers
-          const empirical = computeEmpiricalThresholds(
-            characteristicResults,
-            0.5,
-            0.9
-          );
-          const effT1 = Number.isFinite(empirical.T1) ? empirical.T1 : T1;
-          const effT2 = Number.isFinite(empirical.T2) ? empirical.T2 : T2;
-          setThresholds({ T1: effT1, T2: effT2 });
-
-          // Map characteristic results to game logs
-          const characteristicMap = new Map<string, number>();
-          characteristicResults.forEach((res) => {
-            characteristicMap.set(
-              res.gameDate,
-              res.sumOfWeightedSquaredZScores
-            );
-          });
-
-          // Calculate gameScore and integrate CV
-          // Precompute rolling CV series with window=10
-          const cvSeries = characteristicResults.map(
-            (r) => r.sumOfWeightedSquaredZScores
-          );
-          const rollingCVSeries = computeRollingAverage(cvSeries, 10);
-
-          const processedGameLogs = fetchedLogs.map((game, index) => {
-            const gameScore = calculateGameScore(game);
-            const CV = characteristicMap.get(game.date) ?? null;
-            const rollingCV = rollingCVSeries[index] ?? CV ?? 0;
-            const confidenceMultiplier = computeConfidenceMultiplierSmooth(
-              rollingCV,
-              effT1,
-              effT2,
-              { min: 0.8, max: 1.0 }
-            );
-            const predictedGameScore = gameScore * confidenceMultiplier;
-            // sKO: stability-adjusted score we surface to UI if needed
-            const sKO = predictedGameScore;
-
-            return {
-              ...game,
-              gameScore,
-              CV,
-              rollingCV,
-              confidenceMultiplier,
-              predictedGameScore,
-              sKO
-            } as CombinedGameLog & { sKO: number };
-          });
-
-          setCombinedGameLogs(processedGameLogs);
-
-          // Prepare data for the chart
-          const data = characteristicResults.map((result) => ({
-            date: new Date(result.gameDate),
-            sumOfZScores: result.sumOfWeightedSquaredZScores
-          }));
-
-          setChartData(data);
-        } catch (err) {
-          setError("Error fetching player data.");
-          console.error("Fetch Player Data Error:", err);
-        } finally {
-          setLoadingStats(false);
-        }
-      };
-
-      fetchPlayerData();
-    }
-  }, [selectedPlayer]);
-
+const SkoChartsPage: NextPage = () => {
   return (
-    <Box sx={{ padding: "20px" }}>
-      <Typography variant="h4" gutterBottom>
-        Player Performance Chart
-      </Typography>
-      {error && (
-        <Typography variant="body1" color="error" gutterBottom>
-          {error}
-        </Typography>
-      )}
+    <>
+      <Head>
+        <title>Legacy sKO Charts | FHFHockey</title>
+        <meta
+          name="description"
+          content="Legacy sKO charts are quarantined from the live runtime because the calculations and data joins are no longer trusted."
+        />
+        <meta name="robots" content="noindex,nofollow" />
+      </Head>
 
-      <Autocomplete
-        options={players}
-        getOptionLabel={(option) => option.player_name}
-        onChange={(event, newValue) => {
-          setSelectedPlayer(newValue);
-        }}
-        value={selectedPlayer}
-        loading={loadingPlayers}
-        isOptionEqualToValue={(option, value) =>
-          option.player_id === value.player_id
-        }
-        renderInput={(params) => (
-          <TextField
-            {...params}
-            label="Search Player"
-            variant="outlined"
-            InputProps={{
-              ...params.InputProps,
-              endAdornment: (
-                <>
-                  {loadingPlayers ? (
-                    <CircularProgress color="inherit" size={20} />
-                  ) : null}
-                  {params.InputProps.endAdornment}
-                </>
-              )
-            }}
-          />
-        )}
-        // Ensure unique key with player_id
-        renderOption={(props, option) => (
-          <li {...props} key={option.player_id}>
-            {option.player_name}
-          </li>
-        )}
-        sx={{ marginBottom: "20px", width: 300 }}
-      />
+      <main className={styles.page}>
+        <div className={styles.container}>
+          <section className={styles.header}>
+            <div className={styles.headerTopline}>
+              <div className={styles.titleBlock}>
+                <h1 className={styles.title}>LEGACY SKO CHARTS</h1>
+                <p className={styles.titleExpansion}>
+                  <span className={styles.titleExpansionText}>
+                    Quarantined legacy analysis surface
+                  </span>
+                </p>
+              </div>
+            </div>
+          </section>
 
-      {loadingStats && (
-        <Typography variant="body1" gutterBottom>
-          Loading player statistics...
-        </Typography>
-      )}
+          <section className={styles.sectionBand} aria-label="Legacy sKO quarantine notice">
+            <div className={styles.bandHeader}>
+              <div className={styles.bandHeaderMain}>
+                <div className={styles.bandIntro}>
+                  <p className={styles.bandEyebrow}>Legacy Route</p>
+                  <h2 className={styles.bandTitle}>This Page Is Quarantined</h2>
+                  <p className={styles.bandSummary}>
+                    The old sKO charts are not part of the live FORGE pipeline and no
+                    longer run in production-facing form.
+                  </p>
+                </div>
+              </div>
+            </div>
 
-      {selectedPlayer && !loadingStats && error && (
-        <Typography variant="body1" color="error">
-          {error}
-        </Typography>
-      )}
+            <div className={styles.sectionBandBody}>
+              <p className={`${styles.panelState} ${styles.panelStateStale}`}>
+                This route previously depended on legacy `sko_*` tables, direct
+                client-side Supabase reads, exact timestamp joins, and formula
+                assumptions that failed the pass-4 audit.
+              </p>
 
-      {chartData.length > 0 && (
-        <Box sx={{ marginTop: "40px" }}>
-          <Typography variant="h5" gutterBottom>
-            Performance Over Time - {selectedPlayer?.player_name}
-          </Typography>
+              <div className={styles.insightLegend}>
+                <div className={styles.insightLegendItem}>
+                  <span className={`${styles.insightContextPill} ${styles.insightContextRisk}`}>
+                    Not trusted
+                  </span>
+                  <span className={styles.insightLegendText}>
+                    The legacy sKO runtime is quarantined so it cannot present stale or
+                    misleading player scores as if they were current FORGE outputs.
+                  </span>
+                </div>
+                <div className={styles.insightLegendItem}>
+                  <span className={`${styles.insightContextPill} ${styles.insightRoutePill}`}>
+                    Kept for lineage
+                  </span>
+                  <span className={styles.insightLegendText}>
+                    Useful ideas from this route were reviewed separately and only
+                    adapted into FORGE where they survived the audit.
+                  </span>
+                </div>
+              </div>
 
-          {/* Render LineChart */}
-          <LineChart data={chartData} thresholds={thresholds ?? undefined} />
-        </Box>
-      )}
-      {/* New GameScore Chart and Game Log Table */}
-      {combinedGameLogs.length > 0 && (
-        <Box sx={{ marginTop: "40px" }}>
-          <Typography variant="h5" gutterBottom>
-            GameScore Predictions - {selectedPlayer?.player_name}
-          </Typography>
-
-          {/* Render GameScore LineChart */}
-          <GameScoreChart data={combinedGameLogs} />
-
-          {/* Render Game Log Table */}
-          <GameLogTable gameLogs={combinedGameLogs} />
-        </Box>
-      )}
-    </Box>
+              <div className={styles.previewActions}>
+                <Link href="/forge/dashboard" className={styles.navLink}>
+                  Back to FORGE Dashboard
+                </Link>
+                <Link href="/trends" className={styles.navLink}>
+                  Open Trends
+                </Link>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </>
   );
 };
 
-export default SkoCharts;
+export default SkoChartsPage;

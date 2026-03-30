@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { buildRequestedDateServingState } from "lib/dashboard/freshness";
+import { buildResolvedDataServingContract } from "lib/dashboard/freshness";
 import { buildStartChartCompatibility } from "lib/projections/compatibilityInventory";
 import supabase from "lib/supabase/server";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
@@ -302,6 +302,7 @@ export default async function handler(
         games: gameRows,
         runId
       } = await fetchForDate(initialDate);
+      const requestedGamesCount = gameRows?.length ?? 0;
       projectionRunId = runId;
       skaterSourceDate = initialDate;
 
@@ -346,11 +347,14 @@ export default async function handler(
       }
 
       projectionRunId = runId;
-      const serving = buildRequestedDateServingState({
+      const serving = buildResolvedDataServingContract({
         requestedDate: initialDate,
         resolvedDate: dateUsed,
         fallbackApplied,
-        strategy: fallbackApplied ? fallbackStrategy : "requested_date"
+        strategy: fallbackApplied ? fallbackStrategy : "requested_date",
+        requestedScheduledGames: requestedGamesCount,
+        resolvedScheduledGames: gameRows?.length ?? 0,
+        sourceLabel: "Start-chart slate"
       });
 
       if (

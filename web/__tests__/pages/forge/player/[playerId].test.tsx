@@ -112,22 +112,35 @@ describe("FORGE player detail page", () => {
     expect(
       screen
         .getAllByRole("link", { name: "Dashboard" })
-        .some((link) => link.getAttribute("href") === "/forge/dashboard")
+        .some(
+          (link) =>
+            link.getAttribute("href") === "/forge/dashboard?date=2026-03-14&mode=tonight"
+        )
     ).toBe(true);
     expect(
       screen
         .getAllByRole("link", { name: "Start Chart" })
-        .some((link) => link.getAttribute("href") === "/start-chart")
+        .some(
+          (link) =>
+            link.getAttribute("href") === "/start-chart?date=2026-03-14&mode=tonight"
+        )
     ).toBe(true);
     expect(
       screen
         .getAllByRole("link", { name: "Team Detail" })
-        .some((link) => link.getAttribute("href") === "/forge/team/NJD")
+        .some(
+          (link) =>
+            link.getAttribute("href") === "/forge/team/NJD?date=2026-03-14&mode=tonight"
+        )
     ).toBe(true);
     expect(screen.getByRole("link", { name: "FORGE Landing" }).getAttribute("href")).toBe(
-      "/FORGE"
+      "/FORGE?date=2026-03-14&mode=tonight"
     );
-    expect(screen.getByRole("link", { name: "Trends Player Page" })).toBeTruthy();
+    expect(
+      screen.getByRole("link", { name: "Trends Player Page" }).getAttribute("href")
+    ).toBe(
+      "/trends/player/88?date=2026-03-14&origin=forge-player-detail&returnTo=%2Fforge%2Fplayer%2F88%3Fdate%3D2026-03-14%26mode%3Dtonight"
+    );
   });
 
   it("keeps projection detail visible when ownership context is unavailable", async () => {

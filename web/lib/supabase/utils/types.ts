@@ -1,5 +1,10 @@
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\lib\supabase\utils\types.ts
 // utils/types.ts
+//
+// Legacy sKO-only typing surface.
+// Pass-4 FORGE audit result: fields like rollingCV, confidenceMultiplier, and
+// predictedGameScore are lineage-only and should not be wired into live FORGE
+// explainability without a full redesign and validation pass.
 
 import { StatField } from "./constants";
 
@@ -108,7 +113,7 @@ export interface Player {
 
 /**
  * Represents a player's game log with additional calculated fields.
- * This is used to display game logs in the GameLogTable component.
+ * This is retained for legacy sKO lineage surfaces only.
  */
 
 export interface CombinedGameLog extends PlayerGameLog {

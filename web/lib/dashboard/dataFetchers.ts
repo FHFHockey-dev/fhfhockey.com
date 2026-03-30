@@ -1,8 +1,16 @@
+import { fetchCachedJson } from "./clientFetchCache";
 import type { TeamRating } from "../teamRatingsService";
 import type { CategoryComputationResult } from "../trends/teamPercentiles";
 import type { TrendCategoryId } from "../trends/teamMetricConfig";
 import type { RequestedDateServingState } from "./freshness";
 import { getTeamMetaByAbbr, getTeamMetaById } from "./teamMetadata";
+
+// Trends dashboard aggregate fetchers.
+// Pass-4 FORGE audit result: this file is still live through the older Trends
+// dashboard path, but it is not the canonical fetch path for the standalone
+// FORGE dashboard route family. Keep it isolated to aggregate Trends loading
+// and share the common client fetch cache so overlapping endpoint contracts do
+// not drift through parallel cache implementations.
 
 export type TeamTrendsResponse = {
   seasonId: number;
@@ -167,51 +175,6 @@ const buildQuery = (
   return query ? `${base}?${query}` : base;
 };
 
-const fetchJson = async <T>(url: string, init?: RequestInit): Promise<T> => {
-  const response = await fetch(url, init);
-  if (!response.ok) {
-    throw new Error(`Request failed (${response.status}) for ${url}`);
-  }
-  return (await response.json()) as T;
-};
-
-type CacheEntry<T> = {
-  expiresAt: number;
-  value: T;
-};
-
-const cache = new Map<string, CacheEntry<unknown>>();
-const inFlight = new Map<string, Promise<unknown>>();
-
-const cachedFetchJson = async <T>(
-  url: string,
-  ttlMs: number,
-  init?: RequestInit
-): Promise<T> => {
-  const now = Date.now();
-  const cached = cache.get(url) as CacheEntry<T> | undefined;
-  if (cached && cached.expiresAt > now) {
-    return cached.value;
-  }
-
-  const pending = inFlight.get(url) as Promise<T> | undefined;
-  if (pending) {
-    return pending;
-  }
-
-  const request = fetchJson<T>(url, init)
-    .then((value) => {
-      cache.set(url, { value, expiresAt: now + ttlMs });
-      return value;
-    })
-    .finally(() => {
-      inFlight.delete(url);
-    });
-
-  inFlight.set(url, request);
-  return request;
-};
-
 const TREND_TTL_MS = 5 * 60_000;
 const SNAPSHOT_TTL_MS = 60_000;
 
@@ -261,58 +224,61 @@ const buildTeamMetaIndex = (input: {
 };
 
 export const fetchTeamTrends = (): Promise<TeamTrendsResponse> =>
-  cachedFetchJson<TeamTrendsResponse>(
-    "/api/v1/trends/team-power",
-    TREND_TTL_MS
-  );
+  fetchCachedJson<TeamTrendsResponse>("/api/v1/trends/team-power", {
+    ttlMs: TREND_TTL_MS
+  });
 
 export const fetchTeamCtpi = (): Promise<CtpiResponse> =>
-  cachedFetchJson<CtpiResponse>("/api/v1/trends/team-ctpi", TREND_TTL_MS);
+  fetchCachedJson<CtpiResponse>("/api/v1/trends/team-ctpi", {
+    ttlMs: TREND_TTL_MS
+  });
 
 export const fetchTeamSos = (): Promise<SosResponse> =>
-  cachedFetchJson<SosResponse>("/api/v1/trends/team-sos", TREND_TTL_MS);
+  fetchCachedJson<SosResponse>("/api/v1/trends/team-sos", {
+    ttlMs: TREND_TTL_MS
+  });
 
 export const fetchSkaterTrends = (params: {
   position?: "forward" | "defense" | "all";
   window?: 1 | 3 | 5 | 10;
   limit?: number;
 }): Promise<SkaterTrendsResponse> =>
-  cachedFetchJson<SkaterTrendsResponse>(
+  fetchCachedJson<SkaterTrendsResponse>(
     buildQuery("/api/v1/trends/skater-power", {
       position: params.position,
       window: params.window,
       limit: params.limit
     }),
-    TREND_TTL_MS
+    { ttlMs: TREND_TTL_MS }
   );
 
 export const fetchForgePlayers = (date: string): Promise<ForgePlayersResponse> =>
-  cachedFetchJson<ForgePlayersResponse>(
+  fetchCachedJson<ForgePlayersResponse>(
     buildQuery("/api/v1/forge/players", { date }),
-    SNAPSHOT_TTL_MS
+    { ttlMs: SNAPSHOT_TTL_MS }
   );
 
 export const fetchStartChart = (date: string): Promise<StartChartResponse> =>
-  cachedFetchJson<StartChartResponse>(
+  fetchCachedJson<StartChartResponse>(
     buildQuery("/api/v1/start-chart", { date }),
-    SNAPSHOT_TTL_MS
+    { ttlMs: SNAPSHOT_TTL_MS }
   );
 
 export const fetchForgeGoalies = (date: string): Promise<ForgeGoaliesResponse> =>
-  cachedFetchJson<ForgeGoaliesResponse>(
+  fetchCachedJson<ForgeGoaliesResponse>(
     // Canonical dashboard goalie endpoint: includes fallback + diagnostics metadata.
     buildQuery("/api/v1/forge/goalies", {
       date,
       horizon: 1,
       fallbackToLatestWithData: true
     }),
-    SNAPSHOT_TTL_MS
+    { ttlMs: SNAPSHOT_TTL_MS }
   );
 
 export const fetchTeamRatings = (date: string): Promise<TeamRating[]> =>
-  cachedFetchJson<TeamRating[]>(
+  fetchCachedJson<TeamRating[]>(
     buildQuery("/api/team-ratings", { date }),
-    SNAPSHOT_TTL_MS
+    { ttlMs: SNAPSHOT_TTL_MS }
   );
 
 const toSustainabilityPosition = (
@@ -330,7 +296,7 @@ export const fetchSustainabilityTrends = (params: {
   window?: "l3" | "l5" | "l10" | "l20";
   limit?: number;
 }): Promise<SustainabilityTrendsResponse> =>
-  cachedFetchJson<SustainabilityTrendsResponse>(
+  fetchCachedJson<SustainabilityTrendsResponse>(
     buildQuery("/api/v1/sustainability/trends", {
       snapshot_date: params.date,
       direction: params.direction,
@@ -338,10 +304,10 @@ export const fetchSustainabilityTrends = (params: {
       window_code: params.window,
       limit: params.limit
     }),
-    TREND_TTL_MS
+    { ttlMs: TREND_TTL_MS }
   );
 
-export const loadDashboardData = async (
+export const loadTrendsDashboardData = async (
   params: DashboardDataParams
 ): Promise<DashboardData> => {
   const skaterPosition = params.skaterPosition ?? "forward";
@@ -413,3 +379,7 @@ export const loadDashboardData = async (
     })
   };
 };
+
+// Deprecated compatibility export for older callers. Prefer loadTrendsDashboardData
+// for new code so this file is not mistaken for the canonical FORGE dashboard loader.
+export const loadDashboardData = loadTrendsDashboardData;

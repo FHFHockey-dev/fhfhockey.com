@@ -3,7 +3,7 @@
 .teamStandingsChart {
   position: relative;
   width: 100%;
-  margin: 2rem 0;
+  margin: 0;
   background-color: #1a1a1a;
   border-radius: 12px;
   padding: 1rem;
@@ -12,6 +12,79 @@
   @media (max-width: 768px) {
     display: none;
   }
+}
+
+.statusPanel {
+  padding: 1rem 0 1.25rem;
+}
+
+.summaryHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(240px, 1fr);
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.summaryCopy {
+  min-width: 0;
+}
+
+.summaryEyebrow {
+  margin: 0 0 0.35rem;
+  color: #07aae2;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-family: "Roboto Condensed", sans-serif;
+}
+
+.summaryTitle {
+  margin: 0;
+  color: #ffffff;
+  font-size: clamp(1.15rem, 2vw, 1.6rem);
+  line-height: 1.05;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.summaryBody {
+  margin: 0.45rem 0 0;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.92rem;
+  line-height: 1.5;
+  max-width: 56ch;
+}
+
+.summaryStats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.summaryStat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.8rem;
+  border: 1px solid rgba(7, 170, 226, 0.25);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.summaryStatLabel {
+  color: rgba(255, 255, 255, 0.56);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.summaryStatValue {
+  color: #ffffff;
+  font-size: 0.95rem;
+  line-height: 1.2;
+  text-transform: uppercase;
 }
 
 /* Container for chart + toggles */
@@ -191,4 +264,10 @@
 /* The main line style */
 .team-line {
   stroke-linecap: round;
+}
+
+@media (max-width: 1100px) {
+  .summaryHeader {
+    grid-template-columns: 1fr;
+  }
 }

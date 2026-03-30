@@ -16,6 +16,20 @@ export type TopAddsCandidateInput = {
   hit: number;
   blk: number;
   uncertainty: number | null;
+  degradedProjectionContext?: {
+    usedLineComboFallback: boolean;
+    lineComboFallbackReason: "missing" | "hard_stale" | "empty" | null;
+    lineComboRecencyClass:
+      | "FRESH"
+      | "SOFT_STALE"
+      | "HARD_STALE"
+      | "MISSING"
+      | null;
+    lineComboDaysStale: number | null;
+    skaterPoolRecoveryPath: string | null;
+    isDegraded: boolean;
+    summary: string | null;
+  } | null;
   scheduleGamesRemaining: number | null;
   scheduleOffNightsRemaining: number | null;
   scheduleLabel: string | null;

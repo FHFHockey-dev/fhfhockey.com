@@ -152,6 +152,15 @@ describe("/api/v1/forge/players", () => {
       requestedDate: "2026-02-07",
       horizonGames: 1,
       fallbackApplied: false,
+      degradedProjectionSummary: {
+        degradedPlayerCount: 0,
+        lineComboFallbackPlayerCount: 0,
+        hardStaleLineComboPlayerCount: 0,
+        missingLineComboPlayerCount: 0,
+        softStaleLineComboPlayerCount: 0,
+        skaterPoolRecoveryPlayerCount: 0,
+        note: null
+      },
       scanSummary: {
         surface: "forge_players_reader",
         requestedDate: "2026-02-07",
@@ -228,7 +237,26 @@ describe("/api/v1/forge/players", () => {
               proj_shots_pk: 0,
               proj_hits: 0.5,
               proj_blocks: 0.2,
-              uncertainty: null
+              uncertainty: {
+                model: {
+                  skater_selection: {
+                    fallback_path: {
+                      used: true,
+                      reason: "hard_stale",
+                      fallback_candidate_count: 18
+                    },
+                    line_combo_recency: {
+                      days_stale: 24,
+                      class: "HARD_STALE"
+                    },
+                    active_pool: {
+                      fallback_recovery: {
+                        path: "supplemental_fallback_plus_roster_union"
+                      }
+                    }
+                  }
+                }
+              }
             }
           ],
           error: null
@@ -277,6 +305,16 @@ describe("/api/v1/forge/players", () => {
       asOfDate: "2026-02-06",
       requestedDate: "2026-02-07",
       fallbackApplied: true,
+      degradedProjectionSummary: {
+        degradedPlayerCount: 1,
+        lineComboFallbackPlayerCount: 1,
+        hardStaleLineComboPlayerCount: 1,
+        missingLineComboPlayerCount: 0,
+        softStaleLineComboPlayerCount: 0,
+        skaterPoolRecoveryPlayerCount: 1,
+        note:
+          "1 projected skater is using fallback role context because line combinations were missing, empty, or hard stale."
+      },
       scanSummary: {
         surface: "forge_players_reader",
         requestedDate: "2026-02-07",
@@ -284,7 +322,10 @@ describe("/api/v1/forge/players", () => {
         fallbackApplied: true,
         status: "ready",
         rowCounts: {
-          returned: 1
+          returned: 1,
+          degraded_projection_rows: 1,
+          line_combo_fallback_rows: 1,
+          skater_pool_recovery_rows: 1
         },
         blockingIssueCount: 0
       },
@@ -304,7 +345,17 @@ describe("/api/v1/forge/players", () => {
       }
     });
     expect(res.body.data[0]).toMatchObject({
-      player_name: "Fallback Skater"
+      player_name: "Fallback Skater",
+      degradedProjectionContext: {
+        usedLineComboFallback: true,
+        lineComboFallbackReason: "hard_stale",
+        lineComboRecencyClass: "HARD_STALE",
+        lineComboDaysStale: 24,
+        skaterPoolRecoveryPath: "supplemental_fallback_plus_roster_union",
+        isDegraded: true,
+        summary:
+          "Fallback role context used because line combos were hard stale (24d stale)."
+      }
     });
   });
 });

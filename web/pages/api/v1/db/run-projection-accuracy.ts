@@ -1,5 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import {
+  buildEndpointScanSummary,
+  countFailingPreflightGates
+} from "lib/api/scanSummary";
+import {
   normalizeDependencyError,
   type NormalizedDependencyError
 } from "lib/cron/normalizeDependencyError";
@@ -2127,6 +2131,7 @@ export default withCronJobAudit(async function handler(
   res: NextApiResponse
 ) {
   const startedAt = Date.now();
+  const requestedDateFromQuery = parseDateParam(req.query.date);
   if (req.method !== "POST" && req.method !== "GET") {
     res.setHeader("Allow", ["GET", "POST"]);
     return res.status(405).json({ error: "Method not allowed" });
@@ -2136,7 +2141,7 @@ export default withCronJobAudit(async function handler(
   }
 
   try {
-    const requestedDate = parseDateParam(req.query.date);
+    const requestedDate = requestedDateFromQuery;
     const offsetDays =
       parseNumber(req.query.projectionOffsetDays) ?? DEFAULT_OFFSET_DAYS;
     const bypassPreflight = parseBooleanParam(req.query.bypassPreflight);
@@ -2160,6 +2165,20 @@ export default withCronJobAudit(async function handler(
     ) {
       return res.status(400).json({
         success: false,
+        scanSummary: buildEndpointScanSummary({
+          surface: "projection_accuracy_operator",
+          requestedDate: startDateParam ?? requestedDate ?? null,
+          activeDataDate: endDateParam ?? requestedDate ?? null,
+          fallbackApplied: false,
+          status: "blocked",
+          rowCounts: {
+            rowsUpserted: 0,
+            failedRows: 0,
+            processedDates: 0
+          },
+          blockingIssueCount: 1,
+          notes: ["Invalid startDate/endDate range."]
+        }),
         error: "Invalid startDate/endDate range",
         durationMs: formatDurationMsToMMSS(Date.now() - startedAt)
       });
@@ -2186,6 +2205,20 @@ export default withCronJobAudit(async function handler(
             failedRows: errors.length,
             errors,
             nextStartDate: date,
+            scanSummary: buildEndpointScanSummary({
+              surface: "projection_accuracy_operator",
+              requestedDate: endDateParam ?? date,
+              activeDataDate: results[results.length - 1]?.actualDate ?? startDateParam,
+              fallbackApplied: false,
+              status: "partial",
+              rowCounts: {
+                rowsUpserted: results.reduce((acc, row) => acc + row.totalRows, 0),
+                failedRows: errors.length,
+                processedDates: results.length
+              },
+              blockingIssueCount: errors.length,
+              notes: ["Timed out before completing the requested accuracy range."]
+            }),
             durationMs: formatDurationMsToMMSS(Date.now() - startedAt)
           });
         }
@@ -2196,11 +2229,28 @@ export default withCronJobAudit(async function handler(
             bypassPreflight
           );
           if (preflight.status === "FAIL") {
+            const failedGateCount = countFailingPreflightGates(preflight);
             return res.status(422).json({
               success: false,
               actualDate: date,
               projectionDate,
               preflight,
+              scanSummary: buildEndpointScanSummary({
+                surface: "projection_accuracy_operator",
+                requestedDate: date,
+                activeDataDate: date,
+                fallbackApplied: false,
+                status: "blocked",
+                rowCounts: {
+                  rowsUpserted: results.reduce((acc, row) => acc + row.totalRows, 0),
+                  failedRows: errors.length,
+                  processedDates: results.length
+                },
+                blockingIssueCount: failedGateCount,
+                notes: [
+                  "Accuracy validation blocked by projection freshness preflight."
+                ]
+              }),
               error:
                 "Projection freshness checks failed for the requested accuracy window. Resolve upstream dependencies or use bypassPreflight=true to override.",
               durationMs: formatDurationMsToMMSS(Date.now() - startedAt)
@@ -2223,6 +2273,23 @@ export default withCronJobAudit(async function handler(
         failedRows: errors.length,
         errors,
         nextStartDate,
+        scanSummary: buildEndpointScanSummary({
+          surface: "projection_accuracy_operator",
+          requestedDate: endDateParam ?? startDateParam,
+          activeDataDate: results[results.length - 1]?.actualDate ?? startDateParam,
+          fallbackApplied: false,
+          status: errors.length === 0 ? "ready" : "partial",
+          rowCounts: {
+            rowsUpserted: results.reduce((acc, row) => acc + row.totalRows, 0),
+            failedRows: errors.length,
+            processedDates: results.length
+          },
+          blockingIssueCount: errors.length,
+          notes:
+            errors.length > 0
+              ? ["One or more requested dates failed during accuracy execution."]
+              : []
+        }),
         durationMs: formatDurationMsToMMSS(Date.now() - startedAt)
       });
     }
@@ -2234,11 +2301,26 @@ export default withCronJobAudit(async function handler(
       bypassPreflight
     );
     if (preflight.status === "FAIL") {
+      const failedGateCount = countFailingPreflightGates(preflight);
       return res.status(422).json({
         success: false,
         actualDate,
         projectionDate,
         preflight,
+        scanSummary: buildEndpointScanSummary({
+          surface: "projection_accuracy_operator",
+          requestedDate: actualDate,
+          activeDataDate: actualDate,
+          fallbackApplied: false,
+          status: "blocked",
+          rowCounts: {
+            skaterRows: 0,
+            goalieRows: 0,
+            totalRows: 0
+          },
+          blockingIssueCount: failedGateCount,
+          notes: ["Accuracy validation blocked by projection freshness preflight."]
+        }),
         error:
           "Projection freshness checks failed. Resolve upstream dependencies or use bypassPreflight=true to override.",
         durationMs: formatDurationMsToMMSS(Date.now() - startedAt)
@@ -2250,6 +2332,23 @@ export default withCronJobAudit(async function handler(
       asOfDate: result.asOfDate,
       actualDate: result.actualDate,
       preflight,
+      scanSummary: buildEndpointScanSummary({
+        surface: "projection_accuracy_operator",
+        requestedDate: actualDate,
+        activeDataDate: result.actualDate,
+        fallbackApplied: false,
+        status: result.totalRows > 0 ? "ready" : "empty",
+        rowCounts: {
+          skaterRows: result.skaterRows,
+          goalieRows: result.goalieRows,
+          totalRows: result.totalRows
+        },
+        blockingIssueCount: 0,
+        notes:
+          result.totalRows === 0
+            ? ["Accuracy validation completed without writing any rows."]
+            : []
+      }),
       runId: result.runId,
       skaterRows: result.skaterRows,
       goalieRows: result.goalieRows,
@@ -2274,6 +2373,18 @@ export default withCronJobAudit(async function handler(
     const dependencyError = normalizeDependencyError(e);
     return res.status(500).json({
       success: false,
+      scanSummary: buildEndpointScanSummary({
+        surface: "projection_accuracy_operator",
+        requestedDate: requestedDateFromQuery,
+        activeDataDate: requestedDateFromQuery,
+        fallbackApplied: false,
+        status: "blocked",
+        rowCounts: {
+          rowsUpserted: 0
+        },
+        blockingIssueCount: 1,
+        notes: [dependencyError.message]
+      }),
       error: dependencyError.message,
       dependencyError,
       durationMs: formatDurationMsToMMSS(Date.now() - startedAt)

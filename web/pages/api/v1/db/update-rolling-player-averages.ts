@@ -45,6 +45,8 @@
  * Notes:
  * - Do not combine `playerId` with `fullRefresh=true`; full refresh modes operate on the entire table.
  * - For targeted backfills or corrections, prefer `playerId`, `season`, or an explicit `resumeFrom` without `fullRefresh=true`.
+ * - A bare GET/POST call with no scope params uses the `daily_incremental` profile plus an implicit recent lookback window for maintenance convenience; that default is not a one-day smoke test.
+ * - For a true one-day operational probe, pass explicit `startDate` and `endDate` with the same YYYY-MM-DD value.
  */
 // /api/v1/db/update-rolling-player-averages
 
@@ -70,7 +72,18 @@ import type { NextApiRequest, NextApiResponse } from "next";
 
 type ResponseBody = {
   message: string;
+  success?: boolean;
+  operationStatus?: "success" | "warning" | "blocked";
+  warning?: string | null;
   executionProfile?: RollingExecutionProfile;
+  executionScope?: {
+    startDate: string | null;
+    endDate: string | null;
+    implicitDailyWindowApplied: boolean;
+    windowDays: number | null;
+    smokeTestComparable: boolean;
+    smokeTestGuidance: string | null;
+  };
   runtimeBudget?: {
     budgetMs: number;
     budgetLabel: string;
@@ -185,6 +198,38 @@ function formatDurationLabel(durationMs: number) {
   return `${minutes}m ${seconds}s`;
 }
 
+function computeInclusiveWindowDays(
+  startDate: string | undefined,
+  endDate: string | undefined
+): number | null {
+  if (!startDate || !endDate) return null;
+  const startMs = Date.parse(`${startDate}T00:00:00.000Z`);
+  const endMs = Date.parse(`${endDate}T00:00:00.000Z`);
+  if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs < startMs) {
+    return null;
+  }
+  return Math.floor((endMs - startMs) / 86400000) + 1;
+}
+
+function buildExecutionScopeSummary(args: {
+  startDate: string | undefined;
+  endDate: string | undefined;
+  implicitDailyWindowApplied: boolean;
+}) {
+  const windowDays = computeInclusiveWindowDays(args.startDate, args.endDate);
+  const smokeTestComparable = windowDays === 1;
+  return {
+    startDate: args.startDate ?? null,
+    endDate: args.endDate ?? null,
+    implicitDailyWindowApplied: args.implicitDailyWindowApplied,
+    windowDays,
+    smokeTestComparable,
+    smokeTestGuidance: smokeTestComparable
+      ? null
+      : "This run is not a one-day smoke test. Use explicit startDate=endDate for a true one-day operational probe."
+  };
+}
+
 function buildRuntimeBudgetSummary(
   executionProfile: RollingExecutionProfile,
   durationMs: number
@@ -297,6 +342,11 @@ async function handler(
     const profileDefaults = executionProfile
       ? ROLLING_EXECUTION_PROFILE_DEFAULTS[executionProfile]
       : undefined;
+    const executionScope = buildExecutionScopeSummary({
+      startDate,
+      endDate,
+      implicitDailyWindowApplied: implicitDailyWindow != null
+    });
 
     const resolvedPlayerConcurrency =
       playerConcurrency ??
@@ -327,6 +377,7 @@ async function handler(
         executionProfile,
         implicitDailyWindowApplied: implicitDailyWindow != null,
         implicitDailyWindow,
+        executionScope,
         playerConcurrency: resolvedPlayerConcurrency,
         upsertBatchSize: resolvedUpsertBatchSize,
         upsertConcurrency: resolvedUpsertConcurrency,
@@ -353,6 +404,7 @@ async function handler(
         executionProfile,
         implicitDailyWindowApplied: implicitDailyWindow != null,
         implicitDailyWindow,
+        executionScope,
         playerConcurrency: resolvedPlayerConcurrency,
         upsertBatchSize: resolvedUpsertBatchSize,
         upsertConcurrency: resolvedUpsertConcurrency,
@@ -425,14 +477,21 @@ async function handler(
         statusCode:
           (runSummary?.freshnessBlockers ?? 0) > 0 && !bypassFreshnessBlockers
             ? 422
-            : 200
+            : 200,
+        freshnessBlockers: runSummary?.freshnessBlockers ?? 0,
+        bypassFreshnessBlockers: bypassFreshnessBlockers ?? false
       }
     });
     if ((runSummary?.freshnessBlockers ?? 0) > 0 && !bypassFreshnessBlockers) {
       return res.status(422).json({
         message:
           "Freshness dependency checks failed. Refresh stale upstream sources or use bypassFreshnessBlockers=true to override.",
+        success: false,
+        operationStatus: "blocked",
+        warning:
+          "Rolling player averages were blocked because required upstream freshness checks failed.",
         executionProfile,
+        executionScope,
         runtimeBudget,
         appliedPlayerLimit: maxPlayers,
         dependencyContract,
@@ -446,9 +505,30 @@ async function handler(
         }
       });
     }
+    const freshnessBypassedWithBlockers =
+      (runSummary?.freshnessBlockers ?? 0) > 0 &&
+      Boolean(bypassFreshnessBlockers);
+    if (freshnessBypassedWithBlockers) {
+      console.warn(
+        "[update-rolling-player-averages] freshness blockers bypassed",
+        JSON.stringify({
+          blockerCount: runSummary?.freshnessBlockers ?? 0,
+          executionProfile,
+          executionScope
+        })
+      );
+    }
     res.status(200).json({
-      message: "Rolling player averages processed successfully.",
+      message: freshnessBypassedWithBlockers
+        ? "Rolling player averages processed with freshness blockers bypassed."
+        : "Rolling player averages processed successfully.",
+      success: !freshnessBypassedWithBlockers,
+      operationStatus: freshnessBypassedWithBlockers ? "warning" : "success",
+      warning: freshnessBypassedWithBlockers
+        ? "Upstream freshness blockers were bypassed. Treat this recompute as degraded until stale sources are refreshed."
+        : null,
       executionProfile,
+      executionScope,
       runtimeBudget,
       appliedPlayerLimit: maxPlayers,
       dependencyContract,

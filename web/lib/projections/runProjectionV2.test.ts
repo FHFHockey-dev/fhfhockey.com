@@ -886,6 +886,26 @@ describe("skater pool recovery safeguards", () => {
     expect(guarded.wasCapped).toBe(false);
     expect(guarded.targetSeconds).toBe(18000);
   });
+
+  it("keeps canonical team skater TOI target at the minimum valid projected pool size", () => {
+    const guarded = computeSkaterTeamToiTargetWithPoolGuard({
+      canonicalTargetSeconds: 18000,
+      projectedSkaterCount: 15,
+      ppShare: 0.11
+    });
+    expect(guarded.wasCapped).toBe(false);
+    expect(guarded.targetSeconds).toBe(18000);
+  });
+
+  it("caps team skater TOI target immediately below the minimum valid projected pool size", () => {
+    const guarded = computeSkaterTeamToiTargetWithPoolGuard({
+      canonicalTargetSeconds: 18000,
+      projectedSkaterCount: 14,
+      ppShare: 0.11
+    });
+    expect(guarded.wasCapped).toBe(true);
+    expect(guarded.targetSeconds).toBeLessThan(18000);
+  });
 });
 
 describe("reconciliation distribution validation", () => {
@@ -1213,6 +1233,17 @@ describe("line-combination recency assessment", () => {
     expect(result.isSoftStale).toBe(true);
     expect(result.isHardStale).toBe(false);
     expect(result.daysStale).toBe(11);
+  });
+
+  it("keeps line combinations at the soft-stale boundary in the fresh bucket", () => {
+    const result = assessLineCombinationRecency({
+      asOfDate: "2026-02-07",
+      sourceGameDate: "2026-01-28"
+    });
+
+    expect(result.daysStale).toBe(10);
+    expect(result.isSoftStale).toBe(false);
+    expect(result.isHardStale).toBe(false);
   });
 
   it("marks very old line combinations as hard stale", () => {

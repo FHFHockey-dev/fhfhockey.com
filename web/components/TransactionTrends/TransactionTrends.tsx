@@ -4,6 +4,7 @@ import OwnershipSparkline, {
   type OwnershipSparkPoint
 } from "./OwnershipSparkline";
 import PanelStatus from "components/common/PanelStatus";
+import { buildHomepageModulePresentation } from "lib/dashboard/freshness";
 type TrendPlayer = {
   playerKey: string;
   name: string;
@@ -120,6 +121,26 @@ export default function TransactionTrends() {
     setOffset(0);
   }, [activeTable]);
 
+  const modulePresentation = buildHomepageModulePresentation({
+    source: "transaction-trends",
+    loading,
+    error,
+    isEmpty:
+      Boolean(data) &&
+      Array.isArray(data?.risers) &&
+      Array.isArray(data?.fallers) &&
+      data.risers.length + data.fallers.length === 0,
+    timestamp: data?.generatedAt ?? null,
+    maxAgeHours: 18,
+    loadingMessage: "Loading ownership movement...",
+    emptyMessage: "No ownership movement is available right now.",
+    staleMessage: "Ownership movement may be stale."
+  });
+  const leadRiser = data?.risers?.[0] ?? null;
+  const leadFaller = data?.fallers?.[0] ?? null;
+  const activePositionLabel = pos || "All skaters";
+  const summaryWindowLabel = `${windowDays}-day window`;
+
   return (
     <section
       className={styles.transactionTrends}
@@ -163,21 +184,55 @@ export default function TransactionTrends() {
           </div>
         </div>
       </div>
-      {loading && !data && (
-        <PanelStatus
-          state="loading"
-          message="Loading ownership movement..."
-          className={styles.statusPanel}
-        />
-      )}
-      {error && !loading && (
-        <PanelStatus
-          state="error"
-          message={error}
-          className={styles.statusPanel}
-        />
-      )}
+      <div className={styles.summaryIntro}>
+        <p className={styles.summaryEyebrow}>Market pulse</p>
+        <p className={styles.summaryBody}>
+          Scan the fastest ownership moves first, then use the sparkline and delta
+          columns to separate genuine momentum from short-term noise.
+        </p>
+      </div>
       {data && (
+        <div className={styles.summaryGrid}>
+          <div className={styles.summaryCard}>
+            <span className={styles.summaryLabel}>Scope</span>
+            <strong className={styles.summaryValue}>{summaryWindowLabel}</strong>
+            <span className={styles.summaryMeta}>
+              {activePositionLabel} • Page{" "}
+              {Math.floor((data.offset ?? offset) / (data.pageSize ?? limit)) + 1}
+            </span>
+          </div>
+          <div className={`${styles.summaryCard} ${styles.riseSummaryCard}`}>
+            <span className={styles.summaryLabel}>Lead riser</span>
+            <strong className={styles.summaryValue}>
+              {leadRiser ? leadRiser.name : "No riser data"}
+            </strong>
+            <span className={styles.summaryMeta}>
+              {leadRiser
+                ? `${leadRiser.delta > 0 ? "+" : ""}${leadRiser.delta.toFixed(1)} pts • ${leadRiser.latest.toFixed(1)}% rostered`
+                : "No movement available"}
+            </span>
+          </div>
+          <div className={`${styles.summaryCard} ${styles.fallSummaryCard}`}>
+            <span className={styles.summaryLabel}>Lead faller</span>
+            <strong className={styles.summaryValue}>
+              {leadFaller ? leadFaller.name : "No faller data"}
+            </strong>
+            <span className={styles.summaryMeta}>
+              {leadFaller
+                ? `${leadFaller.delta.toFixed(1)} pts • ${leadFaller.latest.toFixed(1)}% rostered`
+                : "No movement available"}
+            </span>
+          </div>
+        </div>
+      )}
+      {modulePresentation.panelState && (
+        <PanelStatus
+          state={modulePresentation.panelState}
+          message={modulePresentation.message ?? ""}
+          className={styles.statusPanel}
+        />
+      )}
+      {data && modulePresentation.state !== "empty" && (
         <>
           <div className={`${styles.tablesWrapper} ${styles.desktopTables}`}>
             <div className={`${styles.panel} ${styles.risersPanel}`}>

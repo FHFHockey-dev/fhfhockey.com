@@ -1,9 +1,203 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
+import { buildEndpointScanSummary } from "lib/api/scanSummary";
 import supabase from "lib/supabase/server";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
 import { buildRequestedDateServingState } from "lib/dashboard/freshness";
+import { buildCanonicalReaderCompatibility } from "lib/projections/compatibilityInventory";
 import { requireLatestSucceededRunId } from "pages/api/v1/projections/_helpers";
+
+type LineComboRecencyClass = "FRESH" | "SOFT_STALE" | "HARD_STALE" | "MISSING";
+
+type SkaterProjectionDegradedContext = {
+  usedLineComboFallback: boolean;
+  lineComboFallbackReason: "missing" | "hard_stale" | "empty" | null;
+  lineComboRecencyClass: LineComboRecencyClass | null;
+  lineComboDaysStale: number | null;
+  skaterPoolRecoveryPath: string | null;
+  isDegraded: boolean;
+  summary: string | null;
+};
+
+type SkaterProjectionDegradedSummary = {
+  degradedPlayerCount: number;
+  lineComboFallbackPlayerCount: number;
+  hardStaleLineComboPlayerCount: number;
+  missingLineComboPlayerCount: number;
+  softStaleLineComboPlayerCount: number;
+  skaterPoolRecoveryPlayerCount: number;
+  note: string | null;
+};
+
+function parseFiniteNumber(value: unknown): number | null {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : null;
+}
+
+function parseLineComboRecencyClass(value: unknown): LineComboRecencyClass | null {
+  if (
+    value === "FRESH" ||
+    value === "SOFT_STALE" ||
+    value === "HARD_STALE" ||
+    value === "MISSING"
+  ) {
+    return value;
+  }
+  return null;
+}
+
+function buildDegradedProjectionSummary(
+  contexts: Array<SkaterProjectionDegradedContext | null>
+): SkaterProjectionDegradedSummary {
+  const formatCountLabel = (
+    count: number,
+    singularTail: string,
+    pluralTail: string
+  ) =>
+    `${count} projected skater${count === 1 ? "" : "s"} ${
+      count === 1 ? singularTail : pluralTail
+    }`;
+  const nonNullContexts = contexts.filter(
+    (context): context is SkaterProjectionDegradedContext => Boolean(context)
+  );
+  const lineComboFallbackPlayerCount = nonNullContexts.filter(
+    (context) => context.usedLineComboFallback
+  ).length;
+  const hardStaleLineComboPlayerCount = nonNullContexts.filter(
+    (context) => context.lineComboRecencyClass === "HARD_STALE"
+  ).length;
+  const missingLineComboPlayerCount = nonNullContexts.filter(
+    (context) => context.lineComboRecencyClass === "MISSING"
+  ).length;
+  const softStaleLineComboPlayerCount = nonNullContexts.filter(
+    (context) => context.lineComboRecencyClass === "SOFT_STALE"
+  ).length;
+  const skaterPoolRecoveryPlayerCount = nonNullContexts.filter(
+    (context) => context.skaterPoolRecoveryPath != null
+  ).length;
+  const degradedPlayerCount = nonNullContexts.filter(
+    (context) => context.isDegraded
+  ).length;
+
+  let note: string | null = null;
+  if (lineComboFallbackPlayerCount > 0) {
+    note = formatCountLabel(
+      lineComboFallbackPlayerCount,
+      "is using fallback role context because line combinations were missing, empty, or hard stale.",
+      "are using fallback role context because line combinations were missing, empty, or hard stale."
+    );
+  } else if (skaterPoolRecoveryPlayerCount > 0) {
+    note = formatCountLabel(
+      skaterPoolRecoveryPlayerCount,
+      "required emergency pool recovery beyond the initial line-combo group.",
+      "required emergency pool recovery beyond the initial line-combo group."
+    );
+  } else if (softStaleLineComboPlayerCount > 0) {
+    note = formatCountLabel(
+      softStaleLineComboPlayerCount,
+      "is still tied to soft-stale line-combo context.",
+      "are still tied to soft-stale line-combo context."
+    );
+  }
+
+  return {
+    degradedPlayerCount,
+    lineComboFallbackPlayerCount,
+    hardStaleLineComboPlayerCount,
+    missingLineComboPlayerCount,
+    softStaleLineComboPlayerCount,
+    skaterPoolRecoveryPlayerCount,
+    note
+  };
+}
+
+function extractDegradedProjectionContext(
+  uncertainty: unknown
+): SkaterProjectionDegradedContext | null {
+  if (!uncertainty || typeof uncertainty !== "object") return null;
+  const model = (uncertainty as Record<string, unknown>).model;
+  if (!model || typeof model !== "object") return null;
+  const skaterSelection = (model as Record<string, unknown>).skater_selection;
+  if (!skaterSelection || typeof skaterSelection !== "object") return null;
+
+  const fallbackPath =
+    (skaterSelection as Record<string, unknown>).fallback_path ?? null;
+  const lineComboRecency =
+    (skaterSelection as Record<string, unknown>).line_combo_recency ?? null;
+  const activePool = (skaterSelection as Record<string, unknown>).active_pool ?? null;
+  const fallbackRecovery =
+    activePool && typeof activePool === "object"
+      ? (activePool as Record<string, unknown>).fallback_recovery ?? null
+      : null;
+
+  const usedLineComboFallback =
+    fallbackPath && typeof fallbackPath === "object"
+      ? Boolean((fallbackPath as Record<string, unknown>).used)
+      : false;
+  const lineComboFallbackReason =
+    fallbackPath && typeof fallbackPath === "object"
+      ? ((fallbackPath as Record<string, unknown>).reason as
+          | "missing"
+          | "hard_stale"
+          | "empty"
+          | null) ?? null
+      : null;
+  const lineComboRecencyClass =
+    lineComboRecency && typeof lineComboRecency === "object"
+      ? parseLineComboRecencyClass(
+          (lineComboRecency as Record<string, unknown>).class
+        )
+      : null;
+  const lineComboDaysStale =
+    lineComboRecency && typeof lineComboRecency === "object"
+      ? parseFiniteNumber((lineComboRecency as Record<string, unknown>).days_stale)
+      : null;
+  const skaterPoolRecoveryPath =
+    fallbackRecovery && typeof fallbackRecovery === "object"
+      ? (typeof (fallbackRecovery as Record<string, unknown>).path === "string"
+          ? ((fallbackRecovery as Record<string, unknown>).path as string)
+          : null)
+      : null;
+
+  const isDegraded = usedLineComboFallback || skaterPoolRecoveryPath != null;
+  const staleSuffix =
+    lineComboDaysStale != null ? ` (${lineComboDaysStale}d stale)` : "";
+
+  let summary: string | null = null;
+  if (usedLineComboFallback) {
+    const reasonLabel =
+      lineComboFallbackReason === "missing"
+        ? "line combos were missing"
+        : lineComboFallbackReason === "hard_stale"
+          ? "line combos were hard stale"
+          : lineComboFallbackReason === "empty"
+            ? "the line-combo group was empty"
+            : "line-combo context was unavailable";
+    summary = `Fallback role context used because ${reasonLabel}${staleSuffix}.`;
+  } else if (skaterPoolRecoveryPath != null) {
+    summary = `Projected skater pool required ${skaterPoolRecoveryPath.replaceAll("_", " ")} recovery${staleSuffix}.`;
+  } else if (lineComboRecencyClass === "SOFT_STALE") {
+    summary = `Line-combo context is soft stale${staleSuffix}.`;
+  }
+
+  if (
+    !usedLineComboFallback &&
+    !skaterPoolRecoveryPath &&
+    lineComboRecencyClass == null
+  ) {
+    return null;
+  }
+
+  return {
+    usedLineComboFallback,
+    lineComboFallbackReason,
+    lineComboRecencyClass,
+    lineComboDaysStale,
+    skaterPoolRecoveryPath,
+    isDegraded,
+    summary
+  };
+}
 
 async function fetchCurrentSeasonIdForDate(asOfDate: string): Promise<number> {
   if (!supabase) throw new Error("Supabase server client not available");
@@ -191,6 +385,9 @@ export default async function handler(
     }
 
     const projections = projectionsRaw.map((row: any) => {
+      const degradedProjectionContext = extractDegradedProjectionContext(
+        row.uncertainty
+      );
       const g =
         (row.proj_goals_es ?? 0) +
         (row.proj_goals_pp ?? 0) +
@@ -219,9 +416,13 @@ export default async function handler(
         blk: row.proj_blocks ?? 0,
         fw: 0,
         fl: 0,
-        uncertainty: row.uncertainty
+        uncertainty: row.uncertainty,
+        degradedProjectionContext
       };
     });
+    const degradedProjectionSummary = buildDegradedProjectionSummary(
+      projections.map((row) => row.degradedProjectionContext)
+    );
     const serving = buildRequestedDateServingState({
       requestedDate: targetDate,
       resolvedDate,
@@ -229,6 +430,27 @@ export default async function handler(
       strategy: fallbackApplied
         ? "latest_available_with_data"
         : "requested_date"
+    });
+    const scanSummary = buildEndpointScanSummary({
+      surface: "forge_players_reader",
+      requestedDate: targetDate,
+      activeDataDate: resolvedDate,
+      fallbackApplied,
+      status: projections.length > 0 ? "ready" : "empty",
+      rowCounts: {
+        returned: projections.length,
+        degraded_projection_rows: degradedProjectionSummary.degradedPlayerCount,
+        line_combo_fallback_rows:
+          degradedProjectionSummary.lineComboFallbackPlayerCount,
+        skater_pool_recovery_rows:
+          degradedProjectionSummary.skaterPoolRecoveryPlayerCount
+      },
+      notes: fallbackApplied
+        ? [
+            `Serving fallback skater projections from ${resolvedDate}.`,
+            degradedProjectionSummary.note
+          ]
+        : [degradedProjectionSummary.note]
     });
 
     return res.status(200).json({
@@ -238,7 +460,13 @@ export default async function handler(
       requestedDate: targetDate,
       horizonGames,
       fallbackApplied,
+      degradedProjectionSummary,
       serving,
+      scanSummary,
+      compatibilityInventory: buildCanonicalReaderCompatibility({
+        canonicalRoute: "/api/v1/forge/players",
+        legacyRoute: "/api/v1/projections/players"
+      }),
       data: projections
     });
   } catch (e) {

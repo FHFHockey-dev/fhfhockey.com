@@ -7,6 +7,11 @@ import ForgeRouteNav from "components/forge-dashboard/ForgeRouteNav";
 import { useTeamSchedule } from "hooks/useTeamSchedule";
 import { fetchCachedJson } from "lib/dashboard/clientFetchCache";
 import {
+  buildForgeHref,
+  parseForgeDateParam,
+  parseForgeResolvedDateParam
+} from "lib/dashboard/forgeLinks";
+import {
   fetchOwnershipContextMap,
   type PlayerOwnershipContext
 } from "lib/dashboard/playerOwnership";
@@ -19,6 +24,9 @@ import styles from "styles/ForgeDashboard.module.scss";
 
 type ForgePlayersResponse = {
   asOfDate: string | null;
+  degradedProjectionSummary?: {
+    note: string | null;
+  } | null;
   data: Array<{
     player_id: number;
     player_name: string | null;
@@ -30,6 +38,10 @@ type ForgePlayersResponse = {
     hit: number;
     blk: number;
     uncertainty: number | null;
+    degradedProjectionContext?: {
+      summary: string | null;
+      isDegraded: boolean;
+    } | null;
   }>;
 };
 
@@ -68,8 +80,8 @@ export default function ForgePlayerDetailPage() {
   const router = useRouter();
   const todayEt = useMemo(() => getTodayEt(), []);
   const playerId = Number(router.query.playerId);
-  const date =
-    typeof router.query.date === "string" ? router.query.date : todayEt;
+  const date = parseForgeDateParam(router.query.date, todayEt);
+  const routeResolvedDate = parseForgeResolvedDateParam(router.query.resolvedDate);
   const mode = router.query.mode === "week" ? "week" : "tonight";
   const [projectionRow, setProjectionRow] =
     useState<ForgePlayersResponse["data"][number] | null>(null);
@@ -133,6 +145,12 @@ export default function ForgePlayerDetailPage() {
           nextMessages.push(
             `Using latest available projections from ${playersPayload.asOfDate}.`
           );
+        }
+        if (playersPayload?.degradedProjectionSummary?.note) {
+          nextMessages.push(playersPayload.degradedProjectionSummary.note);
+        }
+        if (row.degradedProjectionContext?.summary) {
+          nextMessages.push(row.degradedProjectionContext.summary);
         }
 
         setProjectionRow(row);
@@ -208,6 +226,17 @@ export default function ForgePlayerDetailPage() {
       mode as TopAddsMode
     );
   }, [ownershipContext, playerId, projectionRow, teamMeta?.abbrev, teamMeta?.id]);
+  const playerDetailReturnHref = useMemo(
+    () =>
+      Number.isFinite(playerId)
+        ? buildForgeHref(`/forge/player/${playerId}`, {
+            date,
+            mode,
+            resolvedDate: asOfDate ?? routeResolvedDate
+          })
+        : null,
+    [asOfDate, date, mode, playerId, routeResolvedDate]
+  );
 
   const upcomingGames = useMemo(() => {
     const now = new Date(date);
@@ -247,14 +276,39 @@ export default function ForgePlayerDetailPage() {
               <div className={styles.routePageNavStack}>
                 <ForgeRouteNav
                   current="playerDetail"
-                  teamHref={teamMeta ? `/forge/team/${teamMeta.abbrev}` : null}
-                  playerHref={Number.isFinite(playerId) ? `/forge/player/${playerId}?date=${date}&mode=${mode}` : null}
+                  teamHref={
+                    teamMeta
+                      ? buildForgeHref(`/forge/team/${teamMeta.abbrev}`, {
+                          date,
+                          resolvedDate: asOfDate ?? routeResolvedDate,
+                          mode
+                        })
+                      : null
+                  }
+                  playerHref={
+                    Number.isFinite(playerId)
+                      ? buildForgeHref(`/forge/player/${playerId}`, {
+                          date,
+                          mode,
+                          resolvedDate: asOfDate ?? routeResolvedDate
+                        })
+                      : null
+                  }
+                  date={date}
+                  mode={mode}
+                  resolvedDate={asOfDate ?? routeResolvedDate}
                 />
                 <div className={styles.routePageMeta}>
                   <span className={styles.contextChip}>
                     {mode === "week" ? "This Week" : "Tonight"} • {asOfDate ?? date}
                   </span>
-                  <Link href="/forge/dashboard" className={styles.navLink}>
+                  <Link
+                    href={buildForgeHref("/forge/dashboard", {
+                      date,
+                      resolvedDate: asOfDate ?? routeResolvedDate
+                    })}
+                    className={styles.navLink}
+                  >
                     Back to Dashboard
                   </Link>
                 </div>
@@ -319,7 +373,7 @@ export default function ForgePlayerDetailPage() {
                       <span>5D {formatSigned(ownershipContext?.delta)} pts</span>
                     </article>
                     <article className={styles.detailMetricCard}>
-                      <span className={styles.previewSubheading}>Add Score</span>
+                      <span className={styles.previewSubheading}>Add Model Score</span>
                       <strong>{formatMetric(opportunityScore?.total)}</strong>
                       <span>Risk {formatMetric(opportunityScore?.riskPenaltyScore)}</span>
                     </article>
@@ -378,18 +432,44 @@ export default function ForgePlayerDetailPage() {
                     </div>
                   </div>
                   <div className={styles.previewActions}>
-                    <Link href={`/trends/player/${playerId}`} className={styles.slateActionLink}>
+                    <Link
+                      href={buildForgeHref(`/trends/player/${playerId}`, {
+                        date,
+                        origin: "forge-player-detail",
+                        returnTo: playerDetailReturnHref
+                      })}
+                      className={styles.slateActionLink}
+                    >
                       Trends Player Page
                     </Link>
                     {teamMeta ? (
-                      <Link href={`/forge/team/${teamMeta.abbrev}`} className={styles.slateActionLink}>
+                      <Link
+                        href={buildForgeHref(`/forge/team/${teamMeta.abbrev}`, {
+                          date,
+                          mode,
+                          resolvedDate: asOfDate ?? routeResolvedDate
+                        })}
+                        className={styles.slateActionLink}
+                      >
                         Team Detail
                       </Link>
                     ) : null}
-                    <Link href="/forge/dashboard" className={styles.slateActionLink}>
+                    <Link
+                      href={buildForgeHref("/forge/dashboard", {
+                        date,
+                        resolvedDate: asOfDate ?? routeResolvedDate
+                      })}
+                      className={styles.slateActionLink}
+                    >
                       Dashboard
                     </Link>
-                    <Link href="/start-chart" className={styles.slateActionLink}>
+                    <Link
+                      href={buildForgeHref("/start-chart", {
+                        date,
+                        resolvedDate: asOfDate ?? routeResolvedDate
+                      })}
+                      className={styles.slateActionLink}
+                    >
                       Start Chart
                     </Link>
                   </div>

@@ -18,5 +18,14 @@ describe("goalie pipeline spec", () => {
       }
     }
   });
-});
 
+  it("keeps the canonical v2 goalie writer as the only pipeline writer route", () => {
+    const spec = getGoalieForgePipelineSpec();
+    const writerStage = spec.stages.find((stage) => stage.id === "goalie_start_priors_v2");
+
+    expect(writerStage?.endpoint).toBe("/api/v1/db/update-goalie-projections-v2");
+    expect(
+      spec.stages.some((stage) => stage.endpoint === "/api/v1/db/update-goalie-projections")
+    ).toBe(false);
+  });
+});

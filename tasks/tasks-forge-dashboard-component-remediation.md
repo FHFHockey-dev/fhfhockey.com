@@ -13,7 +13,9 @@
 - `tasks/artifacts/forge-dashboard-goalie-health-audit.md` - Goalie baseline evidence for requested-date coverage and fallback repair work.
 - `tasks/artifacts/forge-dashboard-route-family-health-audit.md` - Route-family baseline evidence for landing-preview, drill-in, and click-contract repair work.
 - `tasks/artifacts/forge-dashboard-route-click-contract.md` - Routing and continuity baseline for preserving `date`, `mode`, and resolved fallback context.
+- `fhfh-styles.md` - Root design-system blueprint the fourth-pass styling completion must follow.
 - `web/pages/forge/dashboard.tsx` - Main dashboard route where mixed-date warnings, degraded-state treatment, and component-level truthfulness will be repaired.
+- `web/pages/skoCharts.tsx` - Legacy inspiration surface whose useful concepts must be ported intentionally and whose stale math/runtime assumptions must be retired explicitly.
 - `web/pages/FORGE.tsx` - Preview landing route whose preview consistency and CTA continuity need repair.
 - `web/pages/forge/team/[teamId].tsx` - Team drill-in route requiring date continuity and stale CTPI safety fixes.
 - `web/pages/forge/player/[playerId].tsx` - Player drill-in route requiring week-mode and route-context fixes.
@@ -24,11 +26,17 @@
 - `web/components/forge-dashboard/HotColdCard.tsx` - Trend-movement component needing true freshness semantics and overlay safety repairs.
 - `web/components/forge-dashboard/GoalieRiskCard.tsx` - Goalie component needing coverage-loss, fallback, and requested-date truthfulness repairs.
 - `web/components/forge-dashboard/ForgeRouteNav.tsx` - Shared route navigation contract that must preserve dashboard context correctly.
+- `web/components/forge-dashboard/TopMoversCard.tsx` - Currently unused dashboard module that needs an explicit integrate-or-retire decision instead of remaining stale surface area.
+- `web/lib/dashboard/forgeLinks.ts` - Shared FORGE route-state helper for preserving selected date, mode, and resolved fallback context across nav and drill-ins.
 - `web/lib/dashboard/normalizers.ts` - Shared normalization layer where stale coercion and mixed-cadence masking currently occur.
 - `web/lib/dashboard/playerOwnership.ts` - Shared Yahoo ownership helper that needs season-resolution and null-overlay repairs.
+- `web/lib/dashboard/teamContext.ts` - Team-context scoring helpers whose displayed composite naming and weighting assumptions need re-validation.
 - `web/lib/dashboard/topAddsRanking.ts` - Ranking helper that needs final contract cleanup once the ownership universe is fixed.
 - `web/lib/dashboard/freshness.ts` - Shared dashboard freshness policy that must stop trusting request-time metadata and cover missing endpoints.
 - `web/lib/dashboard/perfBudget.ts` - Shared endpoint-budget policy that still lacks explicit coverage for several ownership and FORGE endpoints.
+- `web/lib/supabase/utils/statistics.ts` - Legacy sKO characteristic-scoring math that should inform explainability decisions but not silently bleed into FORGE without re-validation.
+- `web/lib/supabase/utils/calculations.ts` - Legacy sKO game-score weighting surface reviewed for salvage versus retirement.
+- `web/lib/supabase/utils/dataFetching.ts` - Legacy sKO page fetch path that uses direct client-side Supabase queries and must stay isolated from FORGE runtime assumptions.
 - `web/pages/api/v1/start-chart.ts` - Slate-facing API whose goalie leg and date semantics need repair.
 - `web/pages/api/v1/forge/players.ts` - Top Adds projection API that needs stronger freshness ownership and stable merge expectations.
 - `web/pages/api/v1/forge/goalies.ts` - Goalie API whose requested-date coverage and fallback truthfulness need repair.
@@ -39,6 +47,7 @@
 - `web/pages/api/v1/trends/player-trends.ts` - Trend writer/readback surface that currently lacks acceptable scheduled ownership.
 - `web/pages/api/v1/transactions/ownership-trends.ts` - Yahoo ownership trend API needing stable-ID, coverage, and truncation fixes.
 - `web/pages/api/v1/transactions/ownership-snapshots.ts` - Yahoo ownership snapshot API needing season-alignment fixes.
+- `web/styles/vars.scss` - Variable source of truth for the dashboard styling completion pass.
 - `web/pages/api/v1/db/update-team-ctpi-daily.ts` - Upstream team-context writer whose schedule order currently conflicts with source freshness.
 - `web/pages/api/v1/db/update-team-power-ratings.ts` - Team-power writer requiring schedule-order and source-freshness repair.
 - `web/pages/api/v1/db/update-team-power-ratings-new.ts` - Alternate team-power writer that must stay aligned with the main ratings chain.
@@ -100,3 +109,14 @@
   - [ ] 6.3 Run the full verification suite, including `npm test -- --run`, `npx tsc --noEmit --pretty false`, and `npm run build`, and capture any new failures or warnings into the rolling remediation backlog.
   - [ ] 6.4 Update the runbook and cron schedule documentation to reflect the repaired ownership chains and runtime-budget expectations.
   - [ ] 6.5 Produce a closeout artifact summarizing what moved out of quarantine, what remains blocked, and what new optimization work should follow the trust-repair phase.
+
+- [x] 7.0 Execute the fourth-pass living audit, remediation expansion, output vetting, and styling completion workflow
+  - [x] 7.1 Complete the required early `web/pages/skoCharts.tsx` lineage review, recording which legacy concepts should be adopted for FORGE explainability and which legacy formulas/runtime assumptions should be explicitly retired.
+  - [x] 7.2 Repair dashboard route continuity end-to-end so `ForgeRouteNav`, dashboard back-links, and player/team drill-ins preserve selected `date`, `mode`, and resolved fallback context instead of resetting users onto generic routes.
+  - [x] 7.3 Resolve dashboard drill-in contract drift by deciding whether movement cards should stay inside the FORGE route family, and either route `HotColdCard` into FORGE detail context or explicitly document and style the cross-route handoff.
+  - [x] 7.4 Re-audit displayed dashboard scoring contracts, including `computeTeamPowerScore` naming/weights and the duplicated ownership-band controls between the dashboard shell and `TopAddsRail`, then fix or rename any composite that overstates what its inputs actually contain.
+  - [x] 7.5 Finish the page-level and component-level styling pass for `web/pages/forge/dashboard.tsx` and the individual dashboard modules using `fhfh-styles.md` plus `web/styles/vars.scss`, with special attention to rail density, spacing, hierarchy, overflow, and degraded/loading state polish.
+  - [x] 7.6 Smoke-test the live FORGE/dashboard endpoint family under the stated runtime and rate-limit rules, capture any stale-table blockers that require manual catch-up, and append optimization work for any scenario that misses the `4m30s` target.
+  - [x] 7.7 Perform output vetting and Chromium visual inspection for each dashboard band, append any newly discovered component/output issues, and make an explicit integrate-or-retire decision for stale dashboard surfaces such as `web/components/forge-dashboard/TopMoversCard.tsx`.
+  - [x] 7.8 Repair the FORGE page-test module-resolution blocker so the route-family Vitest suites can execute again instead of failing before collection on `lib/dashboard/*` imports.
+  - [x] 7.9 Teach the Trends player detail route to understand forwarded FORGE context (`date`, origin, and return path) so cross-route handoffs preserve operator context instead of becoming one-way jumps.

@@ -15,6 +15,8 @@ export type ActiveUserContext = {
   provider: string | null;
   external_league_id: string | null;
   external_team_id: string | null;
+  external_league_key?: string | null;
+  external_team_key?: string | null;
 };
 
 export type UserLeagueSettings = {
@@ -57,7 +59,9 @@ export const DEFAULT_ACTIVE_CONTEXT: ActiveUserContext = {
   source_type: "manual",
   provider: null,
   external_league_id: null,
-  external_team_id: null
+  external_team_id: null,
+  external_league_key: null,
+  external_team_key: null
 };
 
 export function createDefaultUserLeagueSettings(): UserLeagueSettings {

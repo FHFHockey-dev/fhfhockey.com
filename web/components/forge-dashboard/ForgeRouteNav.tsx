@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { buildForgeHref } from "lib/dashboard/forgeLinks";
 import styles from "styles/ForgeDashboard.module.scss";
 
 type ForgeRouteKey =
@@ -14,6 +15,11 @@ type ForgeRouteNavProps = {
   current: ForgeRouteKey;
   teamHref?: string | null;
   playerHref?: string | null;
+  date?: string | null;
+  mode?: "tonight" | "week" | null;
+  resolvedDate?: string | null;
+  team?: string | null;
+  position?: "all" | "f" | "d" | "g" | null;
 };
 
 type NavItem = {
@@ -25,23 +31,39 @@ type NavItem = {
 
 function buildNavItems({
   teamHref,
-  playerHref
-}: Pick<ForgeRouteNavProps, "teamHref" | "playerHref">): NavItem[] {
+  playerHref,
+  date,
+  mode,
+  resolvedDate,
+  team,
+  position
+}: Pick<
+  ForgeRouteNavProps,
+  "teamHref" | "playerHref" | "date" | "mode" | "resolvedDate" | "team" | "position"
+>): NavItem[] {
+  const sharedContext = {
+    date,
+    mode,
+    resolvedDate,
+    team,
+    position
+  } as const;
+
   return [
     {
       key: "dashboard",
       label: "Dashboard",
-      href: "/forge/dashboard"
+      href: buildForgeHref("/forge/dashboard", sharedContext)
     },
     {
       key: "startChart",
       label: "Start Chart",
-      href: "/start-chart"
+      href: buildForgeHref("/start-chart", sharedContext)
     },
     {
       key: "trends",
       label: "Trends",
-      href: "/trends"
+      href: buildForgeHref("/trends", sharedContext)
     },
     {
       key: "teamDetail",
@@ -58,7 +80,7 @@ function buildNavItems({
     {
       key: "landing",
       label: "FORGE Landing",
-      href: "/FORGE"
+      href: buildForgeHref("/FORGE", sharedContext)
     }
   ];
 }
@@ -66,9 +88,22 @@ function buildNavItems({
 export default function ForgeRouteNav({
   current,
   teamHref,
-  playerHref
+  playerHref,
+  date,
+  mode,
+  resolvedDate,
+  team,
+  position
 }: ForgeRouteNavProps) {
-  const items = buildNavItems({ teamHref, playerHref });
+  const items = buildNavItems({
+    teamHref,
+    playerHref,
+    date,
+    mode,
+    resolvedDate,
+    team,
+    position
+  });
 
   return (
     <nav className={styles.secondaryNav} aria-label="Forge dashboard navigation">

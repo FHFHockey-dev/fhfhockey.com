@@ -15,6 +15,10 @@ import {
   type SkaterWindowSize,
   SKATER_WINDOW_OPTIONS
 } from "lib/trends/skaterMetricConfig";
+import {
+  buildRequestedDateServingState,
+  type RequestedDateServingState
+} from "lib/dashboard/freshness";
 
 dotenv.config({ path: "./../../../.env.local" });
 
@@ -59,6 +63,15 @@ interface CategoryResult {
 interface SkaterTrendResponse {
   seasonId: number;
   generatedAt: string;
+  requestedDate: string;
+  dateUsed: string;
+  fallbackApplied: boolean;
+  serving: RequestedDateServingState & {
+    gapDays: number | null;
+    severity: "none" | "warn" | "error";
+    status: "requested_date" | "fallback_recent" | "degraded" | "blocked";
+    message: string | null;
+  };
   positionGroup: SkaterPositionGroup;
   limit: number;
   windowSize: SkaterWindowSize;
@@ -80,6 +93,8 @@ interface SkaterTrendResponse {
 
 const PAGE_SIZE = 2000;
 const RESPONSE_TTL_MS = 60_000;
+const RECENT_FALLBACK_MAX_DAYS = 3;
+const BLOCKED_FALLBACK_MIN_DAYS = 14;
 const responseCache = new Map<
   string,
   { expiresAt: number; payload: SkaterTrendResponse }
@@ -113,6 +128,67 @@ function parsePositionGroup(input: unknown): SkaterPositionGroup {
     return "all";
   }
   return "forward";
+}
+
+function diffDateOnlyDays(laterDate: string, earlierDate: string): number | null {
+  const laterTs = Date.parse(`${laterDate}T00:00:00.000Z`);
+  const earlierTs = Date.parse(`${earlierDate}T00:00:00.000Z`);
+  if (!Number.isFinite(laterTs) || !Number.isFinite(earlierTs)) return null;
+  return Math.max(0, Math.round((laterTs - earlierTs) / 86_400_000));
+}
+
+function buildSkaterServingContract(input: {
+  requestedDate: string;
+  resolvedDate: string;
+}): SkaterTrendResponse["serving"] {
+  const gapDays = diffDateOnlyDays(input.requestedDate, input.resolvedDate);
+  const base = buildRequestedDateServingState({
+    requestedDate: input.requestedDate,
+    resolvedDate: input.resolvedDate,
+    fallbackApplied: input.requestedDate !== input.resolvedDate,
+    strategy:
+      input.requestedDate === input.resolvedDate
+        ? "requested_date"
+        : "latest_available_with_data"
+  });
+
+  if (!base.fallbackApplied || gapDays == null || gapDays <= 0) {
+    return {
+      ...base,
+      gapDays: gapDays ?? 0,
+      severity: "none",
+      status: "requested_date",
+      message: null
+    };
+  }
+
+  if (gapDays <= RECENT_FALLBACK_MAX_DAYS) {
+    return {
+      ...base,
+      gapDays,
+      severity: "warn",
+      status: "fallback_recent",
+      message: `Trend movement is serving the nearest available scope date (${input.resolvedDate}), ${gapDays} day${gapDays === 1 ? "" : "s"} behind the requested dashboard date.`
+    };
+  }
+
+  if (gapDays >= BLOCKED_FALLBACK_MIN_DAYS) {
+    return {
+      ...base,
+      gapDays,
+      severity: "error",
+      status: "blocked",
+      message: `Trend movement fallback is materially stale: requested ${input.requestedDate}, but latest available scope is ${input.resolvedDate} (${gapDays} days old). Treat this module as degraded until fresher trend rows exist.`
+    };
+  }
+
+  return {
+    ...base,
+    gapDays,
+    severity: "warn",
+    status: "degraded",
+    message: `Trend movement is using stale fallback scope (${input.resolvedDate}), ${gapDays} days behind the requested dashboard date.`
+  };
 }
 
 function valueForWindow(row: PlayerTrendRow, windowSize: SkaterWindowSize) {
@@ -282,6 +358,7 @@ async function fetchMetricRows(
   category: SkaterTrendCategoryDefinition,
   seasonId: number,
   seasonStart: string,
+  asOfDate: string,
   positions: string[] | undefined
 ): Promise<PlayerTrendRow[]> {
   const rows: PlayerTrendRow[] = [];
@@ -294,6 +371,7 @@ async function fetchMetricRows(
       .eq("metric_key", category.metricKey)
       .eq("season_id", seasonId)
       .gte("game_date", seasonStart)
+      .lte("game_date", asOfDate)
       .order("player_id", { ascending: true })
       .order("game_date", { ascending: true })
       .range(from, from + PAGE_SIZE - 1);
@@ -369,7 +447,13 @@ export default async function handler(
     const limit = parseLimit(req.query.limit);
     const windowSize = parseWindowSize(req.query.window);
     const positionGroup = parsePositionGroup(req.query.position);
-    const cacheKey = `${positionGroup}:${windowSize}:${limit}`;
+    const requestedDateRaw = String(
+      Array.isArray(req.query.date) ? req.query.date[0] : req.query.date ?? ""
+    ).trim();
+    const requestedDate = /^\d{4}-\d{2}-\d{2}$/.test(requestedDateRaw)
+      ? requestedDateRaw
+      : new Date().toISOString().slice(0, 10);
+    const cacheKey = `${positionGroup}:${windowSize}:${limit}:${requestedDate}`;
     const nowMs = Date.now();
     const cached = responseCache.get(cacheKey);
     if (cached && cached.expiresAt > nowMs) {
@@ -392,14 +476,25 @@ export default async function handler(
       const categories: Partial<SkaterTrendResponse["categories"]> = {};
       const playerIdsNeeded = new Set<number>();
       const positions = SKATER_POSITION_GROUP_MAP[positionGroup];
+      let latestIncludedDate: string | null = null;
 
       for (const category of SKATER_TREND_CATEGORIES) {
         const rows = await fetchMetricRows(
           category,
           seasonId,
           seasonStart,
+          requestedDate,
           positions
         );
+        for (const row of rows) {
+          if (
+            typeof row.game_date === "string" &&
+            row.game_date.length >= 10 &&
+            (!latestIncludedDate || row.game_date > latestIncludedDate)
+          ) {
+            latestIncludedDate = row.game_date;
+          }
+        }
         const result = buildCategoryResult(rows, category, windowSize, limit);
         categories[category.id] = {
           series: result.series,
@@ -411,10 +506,19 @@ export default async function handler(
       const playerMetadata = await fetchPlayerMetadata(
         Array.from(playerIdsNeeded)
       );
+      const resolvedDate = latestIncludedDate ?? requestedDate;
+      const serving = buildSkaterServingContract({
+        requestedDate,
+        resolvedDate
+      });
 
       const response: SkaterTrendResponse = {
         seasonId,
         generatedAt: new Date().toISOString(),
+        requestedDate,
+        dateUsed: resolvedDate,
+        fallbackApplied: serving.fallbackApplied,
+        serving,
         positionGroup,
         limit,
         windowSize,
@@ -439,7 +543,13 @@ export default async function handler(
     const limit = parseLimit(req.query.limit);
     const windowSize = parseWindowSize(req.query.window);
     const positionGroup = parsePositionGroup(req.query.position);
-    const cacheKey = `${positionGroup}:${windowSize}:${limit}`;
+    const requestedDateRaw = String(
+      Array.isArray(req.query.date) ? req.query.date[0] : req.query.date ?? ""
+    ).trim();
+    const requestedDate = /^\d{4}-\d{2}-\d{2}$/.test(requestedDateRaw)
+      ? requestedDateRaw
+      : new Date().toISOString().slice(0, 10);
+    const cacheKey = `${positionGroup}:${windowSize}:${limit}:${requestedDate}`;
     inFlight.delete(cacheKey);
     console.error("skater-power API error", error);
     return res.status(500).json({

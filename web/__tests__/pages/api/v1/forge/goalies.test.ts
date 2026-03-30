@@ -223,7 +223,11 @@ describe("/api/v1/forge/goalies", () => {
         fallbackApplied: false,
         isSameDay: true,
         state: "same_day",
-        strategy: "requested_date"
+        strategy: "requested_date",
+        gapDays: 0,
+        severity: "none",
+        status: "requested_date",
+        message: null
       },
       modelVersion: "starter-scenario-v1",
       scenarioCount: 2,
@@ -407,20 +411,25 @@ describe("/api/v1/forge/goalies", () => {
       fallbackApplied: true,
       isSameDay: false,
       state: "fallback",
-      strategy: "latest_available_with_data"
+      strategy: "latest_available_with_data",
+      gapDays: 1,
+      severity: "error",
+      status: "blocked",
+      message:
+        "Goalie projections is serving 2026-02-06 even though 6 games were scheduled on requested date 2026-02-07. Treat this module as degraded until same-day data is available."
     });
     expect(res.body.scanSummary).toMatchObject({
       surface: "forge_goalies_reader",
       requestedDate: "2026-02-07",
       activeDataDate: "2026-02-06",
       fallbackApplied: true,
-      status: "ready",
+      status: "partial",
       rowCounts: {
         returned: 1,
         requested: 0,
         scheduledGamesOnDate: 6
       },
-      blockingIssueCount: 0
+      blockingIssueCount: 1
     });
     expect(res.body.compatibilityInventory).toMatchObject({
       inventoryVersion: "forge-compatibility-inventory-v2",

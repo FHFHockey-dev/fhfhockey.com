@@ -276,7 +276,11 @@ describe("/api/v1/start-chart", () => {
         fallbackApplied: false,
         isSameDay: true,
         state: "same_day",
-        strategy: "requested_date"
+        strategy: "requested_date",
+        gapDays: 0,
+        severity: "none",
+        status: "requested_date",
+        message: null
       },
       projectionRunId: "run-123",
       skaterSource: "forge_player_projections",
@@ -444,7 +448,12 @@ describe("/api/v1/start-chart", () => {
         fallbackApplied: true,
         isSameDay: false,
         state: "fallback",
-        strategy: "previous_date_with_games"
+        strategy: "previous_date_with_games",
+        gapDays: 1,
+        severity: "warn",
+        status: "fallback_recent",
+        message:
+          "Start-chart slate is serving the nearest available date (2026-02-07), 1 day behind the requested date."
       }
     });
   });

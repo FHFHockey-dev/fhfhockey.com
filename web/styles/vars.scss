@@ -313,16 +313,10 @@ $team-label-width: 60px; // Fixed team label width used in Draft Board
 // =============================================
 // Borders (All definitions preserved)
 // =============================================
-// --- From Border Variables Example Block ---
-$border-subtle: 1px solid $border-color-secondary; // Definition 1 (Uses $border-color-secondary Def 2 value)
-$border-separator: 2px solid $secondary-color; // Definition 1 (Uses $secondary-color Def 1 value)
-$border-radius-sm: 6px; // Definition 1 (From Border Variables Example block)
-// --- From Chart Specific Block ---
-$border-radius-sm: 4px; // Definition 2 (Overrides 6px)
-// --- From Structured Section 6 ---
-$border-subtle: 1px solid $border-secondary; // Definition 2 (Uses $border-secondary value)
-$border-default: 1px solid $border-primary; // Definition 1 (Uses $border-primary value)
-$border-separator: 2px solid $border-accent; // Definition 2 (Uses $border-accent value)
+$border-subtle: 1px solid $border-secondary;
+$border-default: 1px solid $border-primary;
+$border-separator: 2px solid $border-accent;
+$border-radius-sm: 4px;
 
 // =============================================
 // Transitions (All definitions preserved)
@@ -335,78 +329,32 @@ $hover-transition: $transition-duration $transition-easing; // Combined transiti
 // =============================================
 // Chart Colors (All definitions preserved)
 // =============================================
-// New, dedicated line chart palette
-$chart-color-1: #07aae2; // $secondary-color
-$chart-color-2: #4bc0c0; // $color-teal
-$chart-color-3: #ff9f40; // $color-orange
-$chart-color-4: #ff6384; // $danger-color
-$chart-color-5: #9b59b6; // $color-purple
-$chart-color-6: #ffcc33; // $warning-color
-$chart-color-7: #3b82f6; // $info-color
-$chart-color-8: #00ff99; // $success-color
-$chart-color-9: #cccccc; // $text-primary
-$chart-color-10: #d3d3d3; // $color-grey-light
+// Unified chart palette. Keep legacy token names, but define each one exactly once
+// so dashboards and older chart surfaces cannot drift apart through local overrides.
+$chart-color-1: $primary-color;
+$chart-color-2: $color-teal;
+$chart-color-3: $color-purple;
+$chart-color-4: $secondary-color;
+$chart-color-5: $warning-color;
+$chart-color-6: $color-orange;
+$chart-color-7: $color-soft-green;
+$chart-color-8: $color-blue;
+$chart-color-9: $text-primary;
+$chart-color-10: $color-grey-light;
 
-// --- Chart Color Palette Block ---
-$chart-color-1: $primary-color; // Definition 1 (Uses $primary-color Def 1 value)
-$chart-color-2: $secondary-color; // Definition 1 (Uses $secondary-color Def 1 value)
-$chart-color-3: color.adjust(
-  $primary-color,
-  $lightness: 15%,
-  $saturation: -10%
-); // Definition 1
-$chart-color-4: color.adjust(
-  $secondary-color,
-  $lightness: -15%,
-  $saturation: 10%
-); // Definition 1
-$chart-color-5: $warning-color; // Definition 1 (Uses $warning-color Def 1 value)
-$chart-color-6: #ff6b6b; // Definition 1
-$chart-color-7: #98d8a8; // Definition 1
-$chart-color-8: #f0f0f0; // Definition 1
-$chart-background-transparent-1: rgba($chart-color-1, 0.2); // Definition 1
-$chart-background-transparent-2: rgba($chart-color-2, 0.2); // Definition 1
-$chart-background-transparent-3: rgba($chart-color-3, 0.2); // Definition 1
-$chart-background-transparent-4: rgba($chart-color-4, 0.2); // Definition 1
-$chart-background-transparent-5: rgba($chart-color-5, 0.2); // Definition 1
-$chart-background-transparent-6: rgba($chart-color-6, 0.15); // Definition 1
-$chart-background-transparent-7: rgba($chart-color-7, 0.2); // Definition 1
+$chart-background-transparent-1: rgba($chart-color-1, 0.2);
+$chart-background-transparent-2: rgba($chart-color-2, 0.2);
+$chart-background-transparent-3: rgba($chart-color-3, 0.2);
+$chart-background-transparent-4: rgba($chart-color-4, 0.2);
+$chart-background-transparent-5: rgba($chart-color-5, 0.2);
+$chart-background-transparent-6: rgba($chart-color-6, 0.15);
+$chart-background-transparent-7: rgba($chart-color-7, 0.2);
 
-// --- Specific Chart Elements Block ---
-$chart-grid-color: rgba(
-  $text-color-primary,
-  0.1
-); // Definition 1 (Uses $text-color-primary Def 2)
-$chart-tick-color: $text-color-secondary; // Definition 1 (Uses $text-color-secondary Def 2)
-$chart-tooltip-bg: rgba(
-  $background-dark,
-  0.9
-); // Definition 1 (Uses $background-dark Def 2)
-$chart-tooltip-border: $border-color-secondary; // Definition 1 (Uses $border-color-secondary Def 2)
-$chart-tooltip-text: $text-color-primary; // Definition 1 (Uses $text-color-primary Def 2)
-
-// --- Structured Section 8 ---
-// Only add if name is new OR name exists but definition/value is different
-$chart-color-1: $primary-color; // Definition 2 (Uses $primary-color Def 2)
-$chart-color-2: $color-teal; // Definition 2 (Uses $color-teal value)
-$chart-color-3: $color-purple; // Definition 2 (Overrides Def 1)
-$chart-color-4: $secondary-color; // Definition 2 (Uses $secondary-color Def 2)
-$chart-color-5: $warning-color; // Definition 2 (Uses $warning-color Def 2)
-$chart-color-6: $color-orange; // Definition 2 (Overrides Def 1)
-$chart-color-7: $color-soft-green; // Definition 2 (Overrides Def 1)
-$chart-color-8: $color-blue; // Definition 2 (Overrides Def 1)
-
-$chart-grid-color: rgba(
-  $text-primary,
-  0.1
-); // Definition 2 (Uses $text-primary)
-$chart-tick-color: $text-secondary; // Definition 2 (Uses $text-secondary)
-$chart-tooltip-bg: rgba(
-  $background-dark,
-  0.9
-); // Definition 2 (Uses $background-dark Def 3)
-$chart-tooltip-border: $border-secondary; // Definition 2 (Uses $border-secondary)
-$chart-tooltip-text: $text-primary; // Definition 2 (Uses $text-primary)
+$chart-grid-color: rgba($text-primary, 0.1);
+$chart-tick-color: $text-secondary;
+$chart-tooltip-bg: rgba($background-dark, 0.9);
+$chart-tooltip-border: $border-secondary;
+$chart-tooltip-text: $text-primary;
 
 // =============================================
 // Desktop vs Mobile Theming Tokens (now safely after color + semantic vars)

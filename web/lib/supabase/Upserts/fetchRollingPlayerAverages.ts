@@ -2211,6 +2211,15 @@ type GpOutputCompatibilityMode = {
     | "legacy_gp_fields_only_until_participation_schema";
 };
 
+// Compatibility inventory:
+// - `gp_pct_*` and `gp_pct_avg_*` remain compatibility aliases while
+//   availability fields migrate to the canonical participation/availability
+//   contract.
+// - Split-strength rows still use legacy GP-family storage because those rows
+//   represent positive-TOI participation, not ordinary games played.
+// - Remove these aliases only after the participation schema task replaces the
+//   remaining GP-family consumers.
+
 function getGpOutputCompatibilityMode(
   strength: StrengthState
 ): GpOutputCompatibilityMode {

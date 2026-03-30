@@ -386,11 +386,21 @@
   gap: 14px;
 }
 
+.yahooContextSwitcher,
+.yahooContextGrid {
+  display: grid;
+  gap: 14px;
+}
+
 .yahooLeagueSummaryGrid {
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 }
 
 .yahooLeagueDetailsGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.yahooContextGrid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
@@ -789,6 +799,7 @@
   }
 
   .savedTeamsGrid,
+  .yahooContextGrid,
   .yahooLeagueDetailsGrid,
   .providerCardGrid,
   .providerControlGrid {

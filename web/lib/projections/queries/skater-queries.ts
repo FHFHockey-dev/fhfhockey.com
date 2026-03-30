@@ -12,8 +12,16 @@ import type {
   SustainabilityTrendBandRow,
   WgoSkaterDeploymentProfile
 } from "../types/run-forge-projections.types";
-import { parseDateOnly, daysBetweenDates } from "../utils/date-utils";
+import { daysBetweenDates } from "../utils/date-utils";
 import { clamp, finiteOrNull } from "../utils/number-utils";
+import {
+  classifyTrendBandRecency,
+  compareTrendBandRowsForSelection,
+  computeSkaterTrendAdjustment
+} from "../utils/trend-adjustments";
+
+const trendBandMetricPriority = new Set<string>(TREND_BAND_METRIC_PRIORITY);
+const trendBandWindowPriority = new Set<string>(TREND_BAND_WINDOW_PRIORITY);
 
 function assertSupabase() {
   if (!supabase) throw new Error("Supabase server client not available");
@@ -72,73 +80,23 @@ function normalizeWgoToiToSeconds(value: number | null | undefined): number | nu
   return 3600;
 }
 
-function computeSkaterTrendAdjustment(args: {
-  row: SustainabilityTrendBandRow;
-  asOfDate: string;
-}): SkaterTrendAdjustment | null {
-  const value = finiteOrNull(args.row.value);
-  const ciLower = finiteOrNull(args.row.ci_lower);
-  const ciUpper = finiteOrNull(args.row.ci_upper);
-  const snapshotDate = parseDateOnly(args.row.snapshot_date);
-  if (value == null || ciLower == null || ciUpper == null || !snapshotDate) {
-    return null;
-  }
+export type SkaterTrendAdjustmentFetchDiagnostics = {
+  requestedPlayers: number;
+  eligibleRows: number;
+  playersWithRows: number;
+  playersAdjusted: number;
+  playersMissingRows: number;
+  playersNeutralizedByRecency: number;
+  selectedSoftStaleRows: number;
+  selectedHardStaleRows: number;
+  fetchFailed: boolean;
+  fetchErrorMessage: string | null;
+};
 
-  const lower = Math.min(ciLower, ciUpper);
-  const upper = Math.max(ciLower, ciUpper);
-  const bandWidth = Math.max(upper - lower, 1e-4);
-  let signedDistance = 0;
-  if (value > upper) {
-    signedDistance = (value - upper) / bandWidth;
-  } else if (value < lower) {
-    signedDistance = -((lower - value) / bandWidth);
-  }
-
-  const boundedDistance = clamp(signedDistance, -2, 2);
-  if (Math.abs(boundedDistance) < 1e-6) {
-    return {
-      metricKey: args.row.metric_key,
-      windowCode: args.row.window_code,
-      snapshotDate,
-      value,
-      ciLower: lower,
-      ciUpper: upper,
-      nEff: finiteOrNull(args.row.n_eff),
-      confidence: 0,
-      signedDistance: 0,
-      shotRateMultiplier: 1,
-      goalRateMultiplier: 1,
-      assistRateMultiplier: 1,
-      uncertaintyVolatilityMultiplier: 1
-    };
-  }
-
-  const nEff = finiteOrNull(args.row.n_eff);
-  const nEffWeight = nEff == null ? 0.6 : clamp(nEff / 8, 0.35, 1);
-  const ageDays = Math.max(0, daysBetweenDates(args.asOfDate, snapshotDate));
-  const recencyWeight =
-    ageDays <= 3 ? 1 : ageDays >= 28 ? 0.35 : 1 - ((ageDays - 3) / 25) * 0.65;
-  const confidence = clamp(nEffWeight * recencyWeight, 0.2, 1);
-  const weightedSignal = boundedDistance * confidence;
-
-  return {
-    metricKey: args.row.metric_key,
-    windowCode: args.row.window_code,
-    snapshotDate,
-    value,
-    ciLower: lower,
-    ciUpper: upper,
-    nEff,
-    confidence: Number(confidence.toFixed(4)),
-    signedDistance: Number(weightedSignal.toFixed(4)),
-    shotRateMultiplier: Number(clamp(1 + weightedSignal * 0.08, 0.88, 1.12).toFixed(4)),
-    goalRateMultiplier: Number(clamp(1 + weightedSignal * 0.1, 0.86, 1.14).toFixed(4)),
-    assistRateMultiplier: Number(clamp(1 + weightedSignal * 0.08, 0.88, 1.12).toFixed(4)),
-    uncertaintyVolatilityMultiplier: Number(
-      (1 + clamp(Math.abs(weightedSignal) * 0.45, 0, 0.55)).toFixed(4)
-    )
-  };
-}
+export type SkaterTrendAdjustmentFetchResult = {
+  adjustments: Map<number, SkaterTrendAdjustment>;
+  diagnostics: SkaterTrendAdjustmentFetchDiagnostics;
+};
 
 export async function fetchRollingRows(
   playerIds: number[],
@@ -314,12 +272,29 @@ export async function fetchLatestSkaterOnIceContextProfiles(
 export async function fetchLatestSkaterTrendAdjustments(
   playerIds: number[],
   asOfDate: string
-): Promise<Map<number, SkaterTrendAdjustment>> {
+): Promise<SkaterTrendAdjustmentFetchResult> {
   assertSupabase();
   const uniquePlayerIds = Array.from(new Set(playerIds)).filter((id) =>
     Number.isFinite(id)
   );
-  if (uniquePlayerIds.length === 0) return new Map();
+  const diagnostics: SkaterTrendAdjustmentFetchDiagnostics = {
+    requestedPlayers: uniquePlayerIds.length,
+    eligibleRows: 0,
+    playersWithRows: 0,
+    playersAdjusted: 0,
+    playersMissingRows: 0,
+    playersNeutralizedByRecency: 0,
+    selectedSoftStaleRows: 0,
+    selectedHardStaleRows: 0,
+    fetchFailed: false,
+    fetchErrorMessage: null
+  };
+  if (uniquePlayerIds.length === 0) {
+    return {
+      adjustments: new Map(),
+      diagnostics
+    };
+  }
 
   const { data, error } = await supabase
     .from("sustainability_trend_bands")
@@ -333,48 +308,60 @@ export async function fetchLatestSkaterTrendAdjustments(
     .order("snapshot_date", { ascending: false })
     .limit(12000);
   if (error) {
+    diagnostics.fetchFailed = true;
+    diagnostics.fetchErrorMessage =
+      error.message ?? "Unknown sustainability trend-band fetch failure";
     console.warn("Error fetching sustainability trend bands for projections:", error);
-    return new Map();
+    diagnostics.playersMissingRows = uniquePlayerIds.length;
+    return {
+      adjustments: new Map(),
+      diagnostics
+    };
   }
 
-  const metricPriority = new Map<string, number>(
-    TREND_BAND_METRIC_PRIORITY.map((metric, idx) => [metric, idx])
-  );
-  const windowPriority = new Map<string, number>(
-    TREND_BAND_WINDOW_PRIORITY.map((window, idx) => [window, idx])
-  );
   const rowsByPlayer = new Map<number, SustainabilityTrendBandRow[]>();
   for (const raw of (data ?? []) as unknown as SustainabilityTrendBandRow[]) {
     const playerId = Number(raw.player_id);
     if (!Number.isFinite(playerId)) continue;
-    if (!metricPriority.has(raw.metric_key)) continue;
-    if (!windowPriority.has(raw.window_code)) continue;
+    if (!trendBandMetricPriority.has(raw.metric_key)) continue;
+    if (!trendBandWindowPriority.has(raw.window_code)) continue;
     const rows = rowsByPlayer.get(playerId) ?? [];
     rows.push(raw);
     rowsByPlayer.set(playerId, rows);
   }
+  diagnostics.eligibleRows = Array.from(rowsByPlayer.values()).reduce(
+    (sum, rows) => sum + rows.length,
+    0
+  );
+  diagnostics.playersWithRows = rowsByPlayer.size;
+  diagnostics.playersMissingRows = Math.max(
+    0,
+    uniquePlayerIds.length - diagnostics.playersWithRows
+  );
 
   const out = new Map<number, SkaterTrendAdjustment>();
   for (const [playerId, rows] of rowsByPlayer.entries()) {
-    const chosen = rows.slice().sort((a, b) => {
-      const metricDelta =
-        (metricPriority.get(a.metric_key) ?? 99) -
-        (metricPriority.get(b.metric_key) ?? 99);
-      if (metricDelta !== 0) return metricDelta;
-      const windowDelta =
-        (windowPriority.get(a.window_code) ?? 99) -
-        (windowPriority.get(b.window_code) ?? 99);
-      if (windowDelta !== 0) return windowDelta;
-      const dateA = parseDateOnly(a.snapshot_date) ?? "";
-      const dateB = parseDateOnly(b.snapshot_date) ?? "";
-      return dateB.localeCompare(dateA);
-    })[0];
+    const chosen = rows
+      .slice()
+      .sort((a, b) => compareTrendBandRowsForSelection(a, b, asOfDate))[0];
     if (!chosen) continue;
 
     const adjustment = computeSkaterTrendAdjustment({ row: chosen, asOfDate });
     if (!adjustment) continue;
+    const recencyClass = classifyTrendBandRecency(
+      Math.max(0, daysBetweenDates(asOfDate, adjustment.snapshotDate))
+    );
+    if (recencyClass === "soft_stale") diagnostics.selectedSoftStaleRows += 1;
+    if (recencyClass === "hard_stale") diagnostics.selectedHardStaleRows += 1;
+    if (adjustment.effectState === "neutralized_by_recency") {
+      diagnostics.playersNeutralizedByRecency += 1;
+    }
+    if (adjustment.effectState === "applied") diagnostics.playersAdjusted += 1;
     out.set(playerId, adjustment);
   }
 
-  return out;
+  return {
+    adjustments: out,
+    diagnostics
+  };
 }

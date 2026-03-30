@@ -30,6 +30,30 @@ export type RequestedDateServingState = {
   strategy: RequestedDateServingStrategy | null;
 };
 
+export type ResolvedDataServingContract = RequestedDateServingState & {
+  gapDays: number | null;
+  severity: "none" | "warn" | "error";
+  status: "requested_date" | "fallback_recent" | "degraded" | "blocked";
+  message: string | null;
+  requestedScheduledGames: number | null;
+  resolvedScheduledGames: number | null;
+  requestedHadGames: boolean | null;
+  resolvedHadGames: boolean | null;
+};
+
+export type HomepageModulePresentationState =
+  | "ready"
+  | "loading"
+  | "empty"
+  | "error"
+  | "stale";
+
+export type HomepageModulePresentation = {
+  state: HomepageModulePresentationState;
+  panelState: "loading" | "empty" | "error" | "info" | null;
+  message: string | null;
+};
+
 const MS_PER_HOUR = 60 * 60 * 1000;
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -50,6 +74,16 @@ const parseTimestamp = (value: string | null): number | null => {
   }
 
   return null;
+};
+
+const diffDateOnlyDays = (
+  laterDate: string | null,
+  earlierDate: string | null
+): number | null => {
+  const laterTs = parseTimestamp(laterDate);
+  const earlierTs = parseTimestamp(earlierDate);
+  if (laterTs == null || earlierTs == null) return null;
+  return Math.max(0, Math.round((laterTs - earlierTs) / (24 * MS_PER_HOUR)));
 };
 
 export const buildRequestedDateServingState = (input: {
@@ -86,6 +120,102 @@ export const buildRequestedDateServingState = (input: {
       (requestedDate != null && resolvedDate != null && requestedDate === resolvedDate
         ? "requested_date"
         : null)
+  };
+};
+
+export const buildResolvedDataServingContract = (input: {
+  requestedDate: string | null | undefined;
+  resolvedDate: string | null | undefined;
+  fallbackApplied?: boolean | null;
+  strategy?: RequestedDateServingStrategy | null;
+  requestedScheduledGames?: number | null;
+  resolvedScheduledGames?: number | null;
+  sourceLabel: string;
+}): ResolvedDataServingContract => {
+  const base = buildRequestedDateServingState({
+    requestedDate: input.requestedDate,
+    resolvedDate: input.resolvedDate,
+    fallbackApplied: input.fallbackApplied,
+    strategy: input.strategy
+  });
+  const gapDays = diffDateOnlyDays(base.requestedDate, base.resolvedDate);
+  const requestedScheduledGames = Number.isFinite(Number(input.requestedScheduledGames))
+    ? Math.max(0, Number(input.requestedScheduledGames))
+    : null;
+  const resolvedScheduledGames = Number.isFinite(Number(input.resolvedScheduledGames))
+    ? Math.max(0, Number(input.resolvedScheduledGames))
+    : null;
+  const requestedHadGames =
+    requestedScheduledGames == null ? null : requestedScheduledGames > 0;
+  const resolvedHadGames =
+    resolvedScheduledGames == null ? null : resolvedScheduledGames > 0;
+
+  if (!base.fallbackApplied || gapDays == null || gapDays <= 0) {
+    return {
+      ...base,
+      gapDays: gapDays ?? 0,
+      severity: "none",
+      status: "requested_date",
+      message: null,
+      requestedScheduledGames,
+      resolvedScheduledGames,
+      requestedHadGames,
+      resolvedHadGames
+    };
+  }
+
+  if (requestedHadGames) {
+    return {
+      ...base,
+      gapDays,
+      severity: "error",
+      status: "blocked",
+      message: `${input.sourceLabel} is serving ${base.resolvedDate} even though ${requestedScheduledGames} game${requestedScheduledGames === 1 ? "" : "s"} were scheduled on requested date ${base.requestedDate}. Treat this module as degraded until same-day data is available.`,
+      requestedScheduledGames,
+      resolvedScheduledGames,
+      requestedHadGames,
+      resolvedHadGames
+    };
+  }
+
+  if (gapDays <= 3) {
+    return {
+      ...base,
+      gapDays,
+      severity: "warn",
+      status: "fallback_recent",
+      message: `${input.sourceLabel} is serving the nearest available date (${base.resolvedDate}), ${gapDays} day${gapDays === 1 ? "" : "s"} behind the requested date.`,
+      requestedScheduledGames,
+      resolvedScheduledGames,
+      requestedHadGames,
+      resolvedHadGames
+    };
+  }
+
+  if (gapDays >= 14) {
+    return {
+      ...base,
+      gapDays,
+      severity: "error",
+      status: "blocked",
+      message: `${input.sourceLabel} fallback is materially stale: requested ${base.requestedDate}, but latest available date is ${base.resolvedDate} (${gapDays} days old). Treat this module as degraded until fresher data exists.`,
+      requestedScheduledGames,
+      resolvedScheduledGames,
+      requestedHadGames,
+      resolvedHadGames
+    };
+  }
+
+  return {
+    ...base,
+    gapDays,
+    severity: "warn",
+    status: "degraded",
+    message: `${input.sourceLabel} is using stale fallback data from ${base.resolvedDate}, ${gapDays} days behind the requested date.`,
+    requestedScheduledGames,
+    resolvedScheduledGames,
+    requestedHadGames,
+    resolvedHadGames
   };
 };
 
@@ -190,3 +320,64 @@ export const buildDashboardFreshnessChecks = (input: {
     severity: "warn"
   }
 ];
+
+export const buildHomepageModulePresentation = (input: {
+  source: string;
+  loading?: boolean;
+  error?: string | null;
+  isEmpty?: boolean;
+  timestamp?: string | null;
+  maxAgeHours?: number;
+  loadingMessage?: string;
+  emptyMessage?: string;
+  staleMessage?: string;
+}): HomepageModulePresentation => {
+  if (input.loading) {
+    return {
+      state: "loading",
+      panelState: "loading",
+      message: input.loadingMessage ?? "Loading module..."
+    };
+  }
+
+  if (typeof input.error === "string" && input.error.trim().length > 0) {
+    return {
+      state: "error",
+      panelState: "error",
+      message: input.error
+    };
+  }
+
+  if (input.isEmpty) {
+    return {
+      state: "empty",
+      panelState: "empty",
+      message: input.emptyMessage ?? "No data available."
+    };
+  }
+
+  if (input.timestamp && typeof input.maxAgeHours === "number") {
+    const freshness = evaluateFreshness([
+      {
+        source: input.source,
+        timestamp: input.timestamp,
+        maxAgeHours: input.maxAgeHours,
+        severity: "warn"
+      }
+    ]);
+
+    if (freshness.issues.length > 0) {
+      return {
+        state: "stale",
+        panelState: "info",
+        message: input.staleMessage ?? freshness.issues[0].message
+      };
+    }
+  }
+
+  return {
+    state: "ready",
+    panelState: null,
+    message: null
+  };
+};
