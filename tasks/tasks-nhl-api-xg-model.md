@@ -99,7 +99,7 @@
   - [x] 4.7 Decide whether the legacy `pbp_games`, `pbp_plays`, and `shift_charts` flows should dual-write during migration or remain frozen while the new pipeline is validated. Legacy `pbp_games`, `pbp_plays`, and `shift_charts` will remain frozen while the new NHL API pipeline is validated.
   - [x] 4.8 Add unit and route-level tests covering raw ingest retries, checksum/idempotency handling, and basic Supabase upsert behavior.
 
-- [ ] 5.0 Build the normalized event, strength, and on-ice attribution layer
+- [x] 5.0 Build the normalized event, strength, and on-ice attribution layer
   - [x] 5.1 Implement `web/lib/supabase/Upserts/nhlPlayByPlayParser.ts` to extract typed event rows from raw play-by-play payloads, including participants, coordinates, shot type, reasons, score state, and sequence context.
   - [x] 5.2 Implement `web/lib/supabase/Upserts/nhlStrengthState.ts` to decode `situationCode` and assign exact/canonical strength labels consistently across EV, PP, SH, EN, OT, and rare manpower states.
   - [x] 5.3 Implement normalized attacking-direction coordinate handling so downstream distance and angle calculations do not depend on raw rink orientation.
