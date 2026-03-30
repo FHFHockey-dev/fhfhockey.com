@@ -2254,9 +2254,12 @@ export type Database = {
           game_id: number
           headshot_url: string | null
           last_name: string | null
+          parser_version: number
           player_id: number
           position_code: string | null
+          raw_spot: Json
           season_id: number | null
+          source_play_by_play_hash: string
           sweater_number: number | null
           team_id: number
           updated_at: string
@@ -2268,9 +2271,12 @@ export type Database = {
           game_id: number
           headshot_url?: string | null
           last_name?: string | null
+          parser_version?: number
           player_id: number
           position_code?: string | null
+          raw_spot?: Json
           season_id?: number | null
+          source_play_by_play_hash: string
           sweater_number?: number | null
           team_id: number
           updated_at?: string
@@ -2282,9 +2288,12 @@ export type Database = {
           game_id?: number
           headshot_url?: string | null
           last_name?: string | null
+          parser_version?: number
           player_id?: number
           position_code?: string | null
+          raw_spot?: Json
           season_id?: number | null
+          source_play_by_play_hash?: string
           sweater_number?: number | null
           team_id?: number
           updated_at?: string
@@ -2321,6 +2330,7 @@ export type Database = {
           is_penalty: boolean
           is_shot_like: boolean
           losing_player_id: number | null
+          parser_version: number
           penalty_desc_key: string | null
           penalty_duration_minutes: number | null
           penalty_type_code: string | null
@@ -2328,6 +2338,7 @@ export type Database = {
           period_seconds_elapsed: number | null
           period_type: string | null
           player_id: number | null
+          raw_event: Json
           reason: string | null
           scoring_player_id: number | null
           season_id: number | null
@@ -2337,8 +2348,10 @@ export type Database = {
           shot_type: string | null
           situation_code: string | null
           sort_order: number | null
+          source_play_by_play_hash: string
           strength_exact: string | null
           strength_state: string | null
+          strength_version: number
           time_in_period: string | null
           time_remaining: string | null
           time_remaining_seconds: number | null
@@ -2379,6 +2392,7 @@ export type Database = {
           is_penalty?: boolean
           is_shot_like?: boolean
           losing_player_id?: number | null
+          parser_version?: number
           penalty_desc_key?: string | null
           penalty_duration_minutes?: number | null
           penalty_type_code?: string | null
@@ -2386,6 +2400,7 @@ export type Database = {
           period_seconds_elapsed?: number | null
           period_type?: string | null
           player_id?: number | null
+          raw_event?: Json
           reason?: string | null
           scoring_player_id?: number | null
           season_id?: number | null
@@ -2395,8 +2410,10 @@ export type Database = {
           shot_type?: string | null
           situation_code?: string | null
           sort_order?: number | null
+          source_play_by_play_hash: string
           strength_exact?: string | null
           strength_state?: string | null
+          strength_version?: number
           time_in_period?: string | null
           time_remaining?: string | null
           time_remaining_seconds?: number | null
@@ -2437,6 +2454,7 @@ export type Database = {
           is_penalty?: boolean
           is_shot_like?: boolean
           losing_player_id?: number | null
+          parser_version?: number
           penalty_desc_key?: string | null
           penalty_duration_minutes?: number | null
           penalty_type_code?: string | null
@@ -2444,6 +2462,7 @@ export type Database = {
           period_seconds_elapsed?: number | null
           period_type?: string | null
           player_id?: number | null
+          raw_event?: Json
           reason?: string | null
           scoring_player_id?: number | null
           season_id?: number | null
@@ -2453,8 +2472,10 @@ export type Database = {
           shot_type?: string | null
           situation_code?: string | null
           sort_order?: number | null
+          source_play_by_play_hash?: string
           strength_exact?: string | null
           strength_state?: string | null
+          strength_version?: number
           time_in_period?: string | null
           time_remaining?: string | null
           time_remaining_seconds?: number | null
@@ -2484,11 +2505,14 @@ export type Database = {
           game_id: number
           hex_value: string | null
           last_name: string | null
+          parser_version: number
           period: number | null
           player_id: number
+          raw_shift: Json
           season_id: number | null
           shift_id: number
           shift_number: number | null
+          source_shiftcharts_hash: string
           start_seconds: number | null
           start_time: string | null
           team_abbrev: string | null
@@ -2512,11 +2536,14 @@ export type Database = {
           game_id: number
           hex_value?: string | null
           last_name?: string | null
+          parser_version?: number
           period?: number | null
           player_id: number
+          raw_shift?: Json
           season_id?: number | null
           shift_id: number
           shift_number?: number | null
+          source_shiftcharts_hash: string
           start_seconds?: number | null
           start_time?: string | null
           team_abbrev?: string | null
@@ -2540,11 +2567,14 @@ export type Database = {
           game_id?: number
           hex_value?: string | null
           last_name?: string | null
+          parser_version?: number
           period?: number | null
           player_id?: number
+          raw_shift?: Json
           season_id?: number | null
           shift_id?: number
           shift_number?: number | null
+          source_shiftcharts_hash?: string
           start_seconds?: number | null
           start_time?: string | null
           team_abbrev?: string | null

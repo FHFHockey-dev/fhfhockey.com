@@ -19,6 +19,9 @@
 - `tasks/failure-handling-policy.md` - Retry, logging, and partial-failure contract for upstream, parser, and schema-level NHL ingest failures.
 - `tasks/final-implementation-summary.md` - Release-facing summary of what is complete, approximate, deferred, and still blocking training or production rollout.
 - `tasks/post-foundation-follow-ups.md` - Follow-up queue for training, coefficient fitting, calibration, benchmarking, advanced features, and post-validation productization.
+- `tasks/live-schema-drift-audit.md` - Live Supabase catalog audit comparing `nhl_api_*` table shape, constraints, indexes, trigger, and view definitions against the phase-1 migration.
+- `tasks/corrective-migration-decision.md` - No-op decision record confirming whether an additive schema-repair migration is still required after the live drift audit.
+- `tasks/post-drift-retry-verification.md` - Operational verification record for type regeneration, sampled raw-ingest retry, and direct row-count confirmation after the drift audit.
 - `tasks/artifacts/nhl-manual-audit-2026-03-30.md` - Dated manual audit artifact with live sampled findings from Supabase-backed NHL API ingest tables.
 - `tasks/artifacts/nhl-pbp-recon-2026-03-30.md` - Generated reconnaissance report with sampled games, observed event types, and validated `situationCode` examples.
 - `tasks/artifacts/nhl-pbp-recon-2026-03-30.json` - Machine-readable reconnaissance output that can seed later tests or parser fixtures.
@@ -155,9 +158,9 @@
   - [x] 7.9 Leave follow-up tasks for model training, coefficient fitting, calibration, benchmarking, and advanced feature additions after the data foundation is validated.
 
 - [ ] 8.0 Resolve live schema drift discovered during NHL raw-ingest execution
-  - [ ] 8.1 Compare the live `nhl_api_*` table shapes in the target Supabase project against `migrations/20260330_create_nhl_api_raw_ingestion_tables.sql` and identify every missing lineage/raw JSON/index-related column.
-  - [ ] 8.2 Create an additive corrective migration so already-created `nhl_api_*` tables gain the missing phase-1 columns without requiring destructive table recreation.
-  - [ ] 8.3 Apply the corrective migration in the target Supabase project, regenerate `web/lib/supabase/database-generated.types.ts`, and retry `web/scripts/ingest-nhl-api-raw.mjs` for the sampled recon games.
-  - [ ] 8.4 Decide whether to keep `pbp_plays` frozen as a partial comparison baseline or backfill its missing recent-game coverage for broader overlap validation.
+  - [x] 8.1 Compare the live `nhl_api_*` table shapes in the target Supabase project against `migrations/20260330_create_nhl_api_raw_ingestion_tables.sql` and identify every missing lineage/raw JSON/index-related column.
+  - [x] 8.2 Create an additive corrective migration so already-created `nhl_api_*` tables gain the missing phase-1 columns without requiring destructive table recreation.
+  - [x] 8.3 Apply the corrective migration in the target Supabase project, regenerate `web/lib/supabase/database-generated.types.ts`, and retry `web/scripts/ingest-nhl-api-raw.mjs` for the sampled recon games.
+  - [x] 8.4 Decide whether to keep `pbp_plays` frozen as a partial comparison baseline or backfill its missing recent-game coverage for broader overlap validation. `pbp_plays` will remain frozen as a partial comparison baseline.
   - [ ] 8.5 Decide whether `shift_charts` should remain a validation baseline as-is or be repaired/backfilled, given that recent rows can have null `game_toi`, `durations`, and `shifts`.
   - [x] 8.6 Add retry/backoff handling around raw NHL endpoint fetches so multi-game ingest batches survive transient `UND_ERR_SOCKET` failures instead of aborting the whole run. Completed during `4.8` by adding shared retry/backoff fetch handling in `web/lib/supabase/Upserts/nhlRawGamecenter.mjs`.
