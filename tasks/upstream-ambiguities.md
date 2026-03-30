@@ -165,7 +165,7 @@ Parity risk:
 
 - low if `situationCode` remains stable
 
-### 8. Penalty-shot handling is not yet explicitly validated
+### 8. Penalty-shot handling was unresolved during recon and is now versioned conservatively
 
 Observed evidence:
 
@@ -174,16 +174,17 @@ Observed evidence:
 
 Impact:
 
-- parity and xG feature outputs could diverge if penalty shots are silently blended into normal shots or exclusions
+- penalty shots still require a dedicated future methodology if they are ever to participate in xG or parity surfaces
 
-Required handling:
+Current handling:
 
-- treat penalty-shot logic as an explicit versioned rule before production parity sign-off
-- document whether penalty shots are excluded, separately classified, or included in any derived surfaces
+- preserve penalty-shot rows in normalized storage
+- exclude them from phase 1 parity, on-ice parity, and general shot-feature eligibility
+- detect them explicitly from normalized text fields and raw-event detail fields
 
 Parity risk:
 
-- medium until the rule is finalized
+- low for phase 1 parity because the exclusion is now explicit and versioned
 
 ### 9. Chance buckets and xG-style values are inherently approximation territory
 

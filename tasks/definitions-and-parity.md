@@ -163,18 +163,59 @@ Validated examples:
 ### Explicit Exclusions
 
 - Shootout events are excluded from NST-style parity metrics.
-- Penalty-shot treatment must be explicitly versioned and documented once implemented; it must never be left implicit.
+- Penalty-shot events remain stored in normalized rows but are excluded from phase 1 NST-style parity and shot-feature eligibility until a dedicated versioned penalty-shot methodology is introduced.
 
 ### Empty Net
 
 - Empty-net events are not treated as ordinary goalie-in-net EV/PP/SH states.
 - Any state with a zero goalie digit is classified as `EN` in canonical event-relative strength logic.
 
+### Penalty Shots
+
+- Penalty-shot events are preserved in normalized storage for auditability.
+- Phase 1 normalized-layer policy excludes penalty-shot events from:
+  - NST-style parity metrics
+  - on-ice parity outputs
+  - shot-feature eligibility for the general xG feature layer
+- Penalty-shot detection must be explicit and versioned; do not silently blend them into normal shot events.
+
+### Shootouts
+
+- Shootout events are preserved in normalized storage for auditability.
+- Phase 1 normalized-layer policy excludes shootout events from:
+  - NST-style parity metrics
+  - on-ice parity outputs
+  - shot-feature eligibility
+
+### Delayed Penalties
+
+- `delayed-penalty` events remain included in normalized and parity-eligible event streams.
+- They are not shot-feature eligible unless a future feature version explicitly defines a use for them.
+
+### Overtime And Rare Manpower
+
+- Overtime events remain included at the normalized layer and in phase 1 parity surfaces.
+- Rare manpower states remain included at the normalized layer and in phase 1 parity surfaces.
+- Overtime and rare manpower must be explicitly flagged so downstream feature or parity logic can choose to bucket or exclude them intentionally rather than by accident.
+
 ### On-Ice Attribution
 
 - On-ice attribution must be reconstructed from raw shift rows.
 - `eventOwnerTeamId` is not a substitute for actual on-ice player attribution.
 - Zone-start and faceoff-zone metrics must be driven by shift/on-ice logic rather than scorekeeper ownership fields alone.
+- The active on-ice set for an event is the shift stint covering that event’s `period_number` plus `period_seconds_elapsed`.
+- Player attribution rule:
+  - a player is on-ice for an event only if the player appears in the active stint for that player’s team
+- Pairing attribution rule:
+  - a pairing is on-ice only if both players appear in the same active team stint
+- Line attribution rule:
+  - a line is on-ice only if all listed players appear in the same active team stint
+- Team attribution rule:
+  - team-level on-ice metrics use the full active stint player set for the team at the event second
+- Strength interpretation rule:
+  - exact manpower is shared by both teams for the event
+  - canonical `PP` or `SH` is team-relative
+  - canonical `EN` applies to both teams when either goalie digit is `0`
 
 ## Parity Expectations
 

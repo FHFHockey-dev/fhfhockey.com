@@ -30,6 +30,13 @@
 - `web/lib/supabase/Upserts/nhlPlayByPlayParser.test.ts` - Unit tests for event taxonomy, field extraction, and edge-case parsing.
 - `web/lib/supabase/Upserts/nhlStrengthState.ts` - Canonical decoding and normalization of `situationCode`, manpower, and strength labels.
 - `web/lib/supabase/Upserts/nhlStrengthState.test.ts` - Unit tests for EV, PP, SH, EN, OT, and rare manpower combinations.
+- `web/lib/supabase/Upserts/nhlCoordinates.ts` - Offense-relative coordinate normalization helpers that keep raw rink coordinates separate from derived direction-aware geometry.
+- `web/lib/supabase/Upserts/nhlCoordinates.test.ts` - Unit tests for attacking-direction normalization, mirroring rules, and null-side handling.
+- `web/lib/supabase/Upserts/nhlEventInclusion.ts` - Canonical normalized-layer inclusion and exclusion rules for shootouts, penalty shots, delayed penalties, empty-net states, overtime, and rare manpower.
+- `web/lib/supabase/Upserts/nhlEventInclusion.test.ts` - Unit tests for normalized-layer eligibility and exclusion behavior across special event-state cases.
+- `web/lib/supabase/Upserts/nhlOnIceAttribution.ts` - Event-time on-ice attribution helpers for player, pairing, line, and team outputs built on top of reconstructed shift stints.
+- `web/lib/supabase/Upserts/nhlOnIceAttribution.test.ts` - Unit tests for on-ice player-set attribution, team-relative strength context, and entity membership checks.
+- `web/lib/supabase/Upserts/nhlNormalizedLayer.test.ts` - Cross-module normalized-layer coverage for standard plays, rare event shapes, empty-net states, overtime, and shift-overlap edge cases.
 - `web/lib/supabase/Upserts/nhlShiftStints.ts` - Shift overlap, stint derivation, and on-ice attribution utilities.
 - `web/lib/supabase/Upserts/nhlShiftStints.test.ts` - Unit tests for overlap handling, pulled-goalie states, and penalty windows.
 - `web/lib/supabase/Upserts/nhlShotFeatureBuilder.ts` - Derived shot-event and xG feature generation from normalized event data.
@@ -93,13 +100,13 @@
   - [x] 4.8 Add unit and route-level tests covering raw ingest retries, checksum/idempotency handling, and basic Supabase upsert behavior.
 
 - [ ] 5.0 Build the normalized event, strength, and on-ice attribution layer
-  - [ ] 5.1 Implement `web/lib/supabase/Upserts/nhlPlayByPlayParser.ts` to extract typed event rows from raw play-by-play payloads, including participants, coordinates, shot type, reasons, score state, and sequence context.
-  - [ ] 5.2 Implement `web/lib/supabase/Upserts/nhlStrengthState.ts` to decode `situationCode` and assign exact/canonical strength labels consistently across EV, PP, SH, EN, OT, and rare manpower states.
-  - [ ] 5.3 Implement normalized attacking-direction coordinate handling so downstream distance and angle calculations do not depend on raw rink orientation.
-  - [ ] 5.4 Implement `web/lib/supabase/Upserts/nhlShiftStints.ts` to reconstruct overlapping shift intervals, stints, and on-ice player sets from raw shift rows.
-  - [ ] 5.5 Define and implement the inclusion and exclusion rules for penalty shots, shootouts, delayed penalties, empty-net events, overtime, and rare manpower states at the normalized layer.
-  - [ ] 5.6 Define and implement on-ice attribution rules needed for player, line, pairing, and team outputs across all relevant strengths.
-  - [ ] 5.7 Add unit tests covering standard plays, rare event shapes, pulled-goalie states, OT states, and shift-overlap edge cases.
+  - [x] 5.1 Implement `web/lib/supabase/Upserts/nhlPlayByPlayParser.ts` to extract typed event rows from raw play-by-play payloads, including participants, coordinates, shot type, reasons, score state, and sequence context.
+  - [x] 5.2 Implement `web/lib/supabase/Upserts/nhlStrengthState.ts` to decode `situationCode` and assign exact/canonical strength labels consistently across EV, PP, SH, EN, OT, and rare manpower states.
+  - [x] 5.3 Implement normalized attacking-direction coordinate handling so downstream distance and angle calculations do not depend on raw rink orientation.
+  - [x] 5.4 Implement `web/lib/supabase/Upserts/nhlShiftStints.ts` to reconstruct overlapping shift intervals, stints, and on-ice player sets from raw shift rows.
+  - [x] 5.5 Define and implement the inclusion and exclusion rules for penalty shots, shootouts, delayed penalties, empty-net events, overtime, and rare manpower states at the normalized layer.
+  - [x] 5.6 Define and implement on-ice attribution rules needed for player, line, pairing, and team outputs across all relevant strengths.
+  - [x] 5.7 Add unit tests covering standard plays, rare event shapes, pulled-goalie states, OT states, and shift-overlap edge cases.
 
 - [ ] 6.0 Build derived shot-feature and NST-parity outputs
   - [ ] 6.1 Define and implement prior-event context features such as previous event type, previous event team, time since previous event, and distance from previous event.
