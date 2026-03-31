@@ -77,6 +77,50 @@ export type ParitySampleComparisonSummary = {
   results: ParitySampleComparison[];
 };
 
+export type ReleaseParityMismatchDisposition =
+  | "blocking-failure"
+  | "approved-exception"
+  | "warning";
+
+export type ReleaseParityMismatch = {
+  family: string;
+  entityType: "skater" | "goalie" | "team";
+  entityId: number;
+  sampleKey: string;
+  metric: string;
+  classification: ParityMetricClassification;
+  severity: "error" | "warning";
+  legacyValue: number | null;
+  newValue: number | null;
+  absDiff: number | null;
+  tolerance: number | null;
+  reason: "missing-in-new" | "missing-in-legacy" | "value-drift";
+  disposition: ReleaseParityMismatchDisposition;
+  rationale: string;
+};
+
+export type ReleaseParityDispositionSummary = {
+  totalMismatchCount: number;
+  blockingFailureCount: number;
+  approvedExceptionCount: number;
+  warningCount: number;
+  blockingFailureSampleCount: number;
+  approvedExceptionSampleCount: number;
+  warningSampleCount: number;
+  blockingFailureSampleKeys: string[];
+  approvedExceptionSampleKeys: string[];
+  warningSampleKeys: string[];
+  blockingFailureByFamily: Record<string, number>;
+  approvedExceptionByFamily: Record<string, number>;
+  warningByFamily: Record<string, number>;
+  blockingFailureByMetric: Record<string, number>;
+  approvedExceptionByMetric: Record<string, number>;
+  warningByMetric: Record<string, number>;
+  blockingFailures: ReleaseParityMismatch[];
+  approvedExceptions: ReleaseParityMismatch[];
+  warnings: ReleaseParityMismatch[];
+};
+
 const UNKNOWN_TYPE_KEY = "__unknown__";
 const EXACT_NUMERIC_TOLERANCE = 1e-6;
 const APPROX_PERCENT_TOLERANCE = 0.02;
@@ -170,6 +214,30 @@ const APPROXIMATE_METRICS = new Set([
   "ld_gsaa_per_60",
   "gsaa",
   "gsaa_per_60",
+]);
+
+const APPROVED_ON_ICE_FAMILIES = new Set([
+  "nst_gamelog_as_counts_oi",
+  "nst_gamelog_as_rates_oi",
+]);
+
+const APPROVED_INDIVIDUAL_EXACT_METRICS = new Set([
+  "toi",
+  "shots",
+  "icf",
+  "iff",
+  "shots_blocked",
+  "faceoffs_won",
+  "faceoffs_lost",
+  "pim",
+  "total_penalties",
+  "minor_penalties",
+  "major_penalties",
+  "misconduct_penalties",
+  "hits",
+  "hits_taken",
+  "giveaways",
+  "takeaways",
 ]);
 
 function normalizeTypeKey(typeDescKey: string | null | undefined): string {
@@ -487,4 +555,174 @@ export function compareLegacyAndNhlParitySamples(
   return summarizeParitySampleComparisons(
     rows.map((row) => compareLegacyAndNhlParitySample(row))
   );
+}
+
+function incrementCount(map: Record<string, number>, key: string): void {
+  map[key] = (map[key] ?? 0) + 1;
+}
+
+export function classifyParityMismatchForRelease(
+  sample: Pick<
+    ParitySampleComparison,
+    "family" | "entityType" | "entityId" | "sampleKey"
+  >,
+  mismatch: ParityMetricMismatch
+): ReleaseParityMismatch {
+  if (mismatch.severity === "warning") {
+    return {
+      ...sample,
+      ...mismatch,
+      disposition: "warning",
+      rationale: "Approximation drift remains visible but is not an exact-count release blocker.",
+    };
+  }
+
+  if (APPROVED_ON_ICE_FAMILIES.has(sample.family)) {
+    return {
+      ...sample,
+      ...mismatch,
+      disposition: "approved-exception",
+      rationale:
+        "Approved NHL-correctness divergence for on-ice and zone-start parity surfaces.",
+    };
+  }
+
+  if (mismatch.metric === "toi") {
+    return {
+      ...sample,
+      ...mismatch,
+      disposition: "approved-exception",
+      rationale:
+        "Approved NHL-correctness divergence where corrected NHL-derived TOI can differ from frozen NST.",
+    };
+  }
+
+  if (
+    sample.family === "nst_gamelog_as_counts" &&
+    APPROVED_INDIVIDUAL_EXACT_METRICS.has(mismatch.metric)
+  ) {
+    return {
+      ...sample,
+      ...mismatch,
+      disposition: "approved-exception",
+      rationale:
+        "Approved NHL-correctness divergence for residual individual exact-count event credit or classification.",
+    };
+  }
+
+  return {
+    ...sample,
+    ...mismatch,
+    disposition: "blocking-failure",
+    rationale:
+      "Unapproved parity drift that still counts as a release-blocking failure until reconciled or explicitly exceptioned.",
+  };
+}
+
+export function summarizeParityReleaseDisposition(
+  summary: ParitySampleComparisonSummary | null
+): ReleaseParityDispositionSummary {
+  if (!summary) {
+    return {
+      totalMismatchCount: 0,
+      blockingFailureCount: 0,
+      approvedExceptionCount: 0,
+      warningCount: 0,
+      blockingFailureSampleCount: 0,
+      approvedExceptionSampleCount: 0,
+      warningSampleCount: 0,
+      blockingFailureSampleKeys: [],
+      approvedExceptionSampleKeys: [],
+      warningSampleKeys: [],
+      blockingFailureByFamily: {},
+      approvedExceptionByFamily: {},
+      warningByFamily: {},
+      blockingFailureByMetric: {},
+      approvedExceptionByMetric: {},
+      warningByMetric: {},
+      blockingFailures: [],
+      approvedExceptions: [],
+      warnings: [],
+    };
+  }
+
+  const blockingFailures: ReleaseParityMismatch[] = [];
+  const approvedExceptions: ReleaseParityMismatch[] = [];
+  const warnings: ReleaseParityMismatch[] = [];
+
+  for (const sample of summary.results) {
+    for (const mismatch of sample.mismatches) {
+      const classified = classifyParityMismatchForRelease(sample, mismatch);
+      if (classified.disposition === "blocking-failure") {
+        blockingFailures.push(classified);
+      } else if (classified.disposition === "approved-exception") {
+        approvedExceptions.push(classified);
+      } else {
+        warnings.push(classified);
+      }
+    }
+  }
+
+  const blockingFailureByFamily: Record<string, number> = {};
+  const approvedExceptionByFamily: Record<string, number> = {};
+  const warningByFamily: Record<string, number> = {};
+  const blockingFailureByMetric: Record<string, number> = {};
+  const approvedExceptionByMetric: Record<string, number> = {};
+  const warningByMetric: Record<string, number> = {};
+
+  for (const mismatch of blockingFailures) {
+    incrementCount(blockingFailureByFamily, mismatch.family);
+    incrementCount(blockingFailureByMetric, mismatch.metric);
+  }
+
+  for (const mismatch of approvedExceptions) {
+    incrementCount(approvedExceptionByFamily, mismatch.family);
+    incrementCount(approvedExceptionByMetric, mismatch.metric);
+  }
+
+  for (const mismatch of warnings) {
+    incrementCount(warningByFamily, mismatch.family);
+    incrementCount(warningByMetric, mismatch.metric);
+  }
+
+  const sortCounts = (counts: Record<string, number>): Record<string, number> =>
+    Object.fromEntries(
+      Object.entries(counts).sort(
+        (a, b) => b[1] - a[1] || a[0].localeCompare(b[0])
+      )
+    );
+
+  const uniqueSorted = (values: string[]): string[] => Array.from(new Set(values)).sort();
+
+  return {
+    totalMismatchCount:
+      blockingFailures.length + approvedExceptions.length + warnings.length,
+    blockingFailureCount: blockingFailures.length,
+    approvedExceptionCount: approvedExceptions.length,
+    warningCount: warnings.length,
+    blockingFailureSampleCount: uniqueSorted(
+      blockingFailures.map((mismatch) => mismatch.sampleKey)
+    ).length,
+    approvedExceptionSampleCount: uniqueSorted(
+      approvedExceptions.map((mismatch) => mismatch.sampleKey)
+    ).length,
+    warningSampleCount: uniqueSorted(warnings.map((mismatch) => mismatch.sampleKey))
+      .length,
+    blockingFailureSampleKeys: uniqueSorted(
+      blockingFailures.map((mismatch) => mismatch.sampleKey)
+    ),
+    approvedExceptionSampleKeys: uniqueSorted(
+      approvedExceptions.map((mismatch) => mismatch.sampleKey)
+    ),
+    warningSampleKeys: uniqueSorted(warnings.map((mismatch) => mismatch.sampleKey)),
+    blockingFailureByFamily: sortCounts(blockingFailureByFamily),
+    approvedExceptionByFamily: sortCounts(approvedExceptionByFamily),
+    warningByFamily: sortCounts(warningByFamily),
+    blockingFailureByMetric: sortCounts(blockingFailureByMetric),
+    approvedExceptionByMetric: sortCounts(approvedExceptionByMetric),
+    warningByMetric: sortCounts(warningByMetric),
+    blockingFailures,
+    approvedExceptions,
+    warnings,
+  };
 }

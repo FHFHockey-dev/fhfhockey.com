@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import { parseNhlPlayByPlayEvents } from "./nhlPlayByPlayParser";
 import {
+  classifyParityMismatchForRelease,
   compareLegacyAndNhlParitySample,
   compareLegacyAndNhlParitySamples,
   summarizeNormalizedEventValidationResults,
+  summarizeParityReleaseDisposition,
   summarizeParitySampleComparisons,
   validateNormalizedEventBatchAgainstRawPayloads,
   validateNormalizedEventsAgainstRawPlayByPlay,
@@ -492,5 +494,202 @@ describe("nhlXgValidation", () => {
       warningSamples: 0,
       failedSampleKeys: ["nst_gamelog_as_rates_oi:skater:91:2026-03-30"],
     });
+  });
+
+  it("classifies approved on-ice and individual exact-count drift as release exceptions", () => {
+    const onIceSample = compareLegacyAndNhlParitySample({
+      family: "nst_gamelog_as_counts_oi",
+      entityType: "skater",
+      entityId: 91,
+      sampleKey: "2026-03-30",
+      legacyRow: {
+        player_id: 91,
+        date_scraped: "2026-03-30",
+        cf: 10,
+      },
+      newRow: {
+        player_id: 91,
+        date_scraped: "2026-03-30",
+        cf: 12,
+      },
+    });
+
+    const individualSample = compareLegacyAndNhlParitySample({
+      family: "nst_gamelog_as_counts",
+      entityType: "skater",
+      entityId: 91,
+      sampleKey: "2026-03-30",
+      legacyRow: {
+        player_id: 91,
+        date_scraped: "2026-03-30",
+        shots: 3,
+      },
+      newRow: {
+        player_id: 91,
+        date_scraped: "2026-03-30",
+        shots: 4,
+      },
+    });
+
+    expect(
+      classifyParityMismatchForRelease(onIceSample, onIceSample.mismatches[0]!)
+    ).toMatchObject({
+      disposition: "approved-exception",
+      metric: "cf",
+      family: "nst_gamelog_as_counts_oi",
+    });
+
+    expect(
+      classifyParityMismatchForRelease(
+        individualSample,
+        individualSample.mismatches[0]!
+      )
+    ).toMatchObject({
+      disposition: "approved-exception",
+      metric: "shots",
+      family: "nst_gamelog_as_counts",
+    });
+  });
+
+  it("keeps approximation warnings visible without promoting them to blocking failures", () => {
+    const sample = compareLegacyAndNhlParitySample({
+      family: "nst_gamelog_as_counts",
+      entityType: "skater",
+      entityId: 91,
+      sampleKey: "2026-03-30",
+      legacyRow: {
+        player_id: 91,
+        date_scraped: "2026-03-30",
+        ixg: 0.44,
+      },
+      newRow: {
+        player_id: 91,
+        date_scraped: "2026-03-30",
+        ixg: 0.62,
+      },
+    });
+
+    const classified = classifyParityMismatchForRelease(
+      sample,
+      sample.mismatches[0]!
+    );
+
+    expect(classified).toMatchObject({
+      disposition: "warning",
+      metric: "ixg",
+      family: "nst_gamelog_as_counts",
+      severity: "warning",
+    });
+  });
+
+  it("summarizes release disposition into blocking failures, approved exceptions, and warnings", () => {
+    const summary = compareLegacyAndNhlParitySamples([
+      {
+        family: "nst_gamelog_as_counts_oi",
+        entityType: "skater",
+        entityId: 91,
+        sampleKey: "2026-03-30",
+        legacyRow: {
+          player_id: 91,
+          date_scraped: "2026-03-30",
+          cf: 10,
+        },
+        newRow: {
+          player_id: 91,
+          date_scraped: "2026-03-30",
+          cf: 12,
+        },
+      },
+      {
+        family: "nst_gamelog_as_counts",
+        entityType: "skater",
+        entityId: 92,
+        sampleKey: "2026-03-30",
+        legacyRow: {
+          player_id: 92,
+          date_scraped: "2026-03-30",
+          giveaways: 1,
+        },
+        newRow: {
+          player_id: 92,
+          date_scraped: "2026-03-30",
+          giveaways: 3,
+        },
+      },
+      {
+        family: "nst_gamelog_goalie_all_counts",
+        entityType: "goalie",
+        entityId: 31,
+        sampleKey: "2026-03-30",
+        legacyRow: {
+          player_id: 31,
+          date_scraped: "2026-03-30",
+          shots_against: 28,
+        },
+        newRow: {
+          player_id: 31,
+          date_scraped: "2026-03-30",
+          shots_against: 30,
+        },
+      },
+      {
+        family: "nst_gamelog_as_counts",
+        entityType: "skater",
+        entityId: 93,
+        sampleKey: "2026-03-30",
+        legacyRow: {
+          player_id: 93,
+          date_scraped: "2026-03-30",
+          ixg: 0.4,
+        },
+        newRow: {
+          player_id: 93,
+          date_scraped: "2026-03-30",
+          ixg: 0.61,
+        },
+      },
+    ]);
+
+    const disposition = summarizeParityReleaseDisposition(summary);
+
+    expect(disposition).toMatchObject({
+      totalMismatchCount: 4,
+      blockingFailureCount: 1,
+      approvedExceptionCount: 2,
+      warningCount: 1,
+      blockingFailureSampleCount: 1,
+      approvedExceptionSampleCount: 2,
+      warningSampleCount: 1,
+      blockingFailureByFamily: {
+        nst_gamelog_goalie_all_counts: 1,
+      },
+      approvedExceptionByFamily: {
+        nst_gamelog_as_counts: 1,
+        nst_gamelog_as_counts_oi: 1,
+      },
+      warningByFamily: {
+        nst_gamelog_as_counts: 1,
+      },
+      blockingFailureByMetric: {
+        shots_against: 1,
+      },
+      approvedExceptionByMetric: {
+        cf: 1,
+        giveaways: 1,
+      },
+      warningByMetric: {
+        ixg: 1,
+      },
+    });
+    expect(disposition.blockingFailureSampleKeys).toEqual([
+      "nst_gamelog_goalie_all_counts:goalie:31:2026-03-30",
+    ]);
+    expect(disposition.approvedExceptionSampleKeys).toEqual([
+      "nst_gamelog_as_counts:skater:92:2026-03-30",
+      "nst_gamelog_as_counts_oi:skater:91:2026-03-30",
+    ]);
+    expect(disposition.warningSampleKeys).toEqual([
+      "nst_gamelog_as_counts:skater:93:2026-03-30",
+    ]);
   });
 });

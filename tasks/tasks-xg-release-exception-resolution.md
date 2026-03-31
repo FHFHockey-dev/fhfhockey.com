@@ -4,6 +4,7 @@
 - `tasks/artifacts/xg-release-validation-2026-03-31.md` - Current formal release-batch artifact, which still records `FAIL`.
 - `tasks/artifacts/xg-release-exception-reconciliation-2026-03-31.md` - Reconciliation of the March 31 formal failure classes against the approved exception package, showing which reported failures are already exceptioned.
 - `tasks/artifacts/xg-release-exception-policy-decision-2026-03-31.md` - Policy decision recording that approved-exception classes remain visible but should not count as blocking parity failures.
+- `tasks/artifacts/xg-release-validation-output-contract-2026-03-31.md` - Required report shape for formal release validation, separating raw failures, true blockers, and approved exceptions.
 - `tasks/definitions-and-parity.md` - Canonical parity policy document updated to state that approved exception classes remain visible but are not training-use blockers by themselves.
 - `tasks/artifacts/xg-release-blockers-2026-03-31.md` - Current blocker list after the formal release batch.
 - `tasks/artifacts/xg-release-gate-verdict-2026-03-31.md` - Current dated verdict recording that the release gate is not satisfied.
@@ -28,8 +29,8 @@
   - [x] 1.3 Document the release-policy decision, including whether exceptioned drift is acceptable for training use.
 
 - [ ] 2.0 Update the validation and reporting contract if the current fail-state should no longer be blocking
-  - [ ] 2.1 Define the required output shape for release validation so raw failures, true parity bugs, and approved exception classes are reported separately.
-  - [ ] 2.2 Update `web/lib/supabase/Upserts/nhlXgValidation.ts` and/or `web/scripts/run-nhl-xg-release-validation.ts` so approved exception classes do not appear as unresolved blockers.
+  - [x] 2.1 Define the required output shape for release validation so raw failures, true parity bugs, and approved exception classes are reported separately.
+  - [x] 2.2 Update `web/lib/supabase/Upserts/nhlXgValidation.ts` and/or `web/scripts/run-nhl-xg-release-validation.ts` so approved exception classes do not appear as unresolved blockers.
   - [ ] 2.3 Add tests covering the new release-validation interpretation rules.
 
 - [ ] 3.0 Re-run the formal release batch under the resolved contract

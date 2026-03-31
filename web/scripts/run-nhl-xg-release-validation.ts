@@ -5,13 +5,20 @@ import dotenv from "dotenv";
 import { Client } from "pg";
 import {
   compareLegacyAndNhlParitySamples,
+  summarizeParityReleaseDisposition,
   validateNormalizedEventBatchAgainstRawPayloads,
   type ParitySampleComparisonSummary,
   type NormalizedEventValidationSummary,
+  type ReleaseParityDispositionSummary,
 } from "../lib/supabase/Upserts/nhlXgValidation";
-import { parseNhlPlayByPlayEvents } from "../lib/supabase/Upserts/nhlPlayByPlayParser";
+import {
+  parseNhlPlayByPlayEvents,
+  type NhlPlayByPlayGame,
+  type ParsedNhlPbpEvent,
+} from "../lib/supabase/Upserts/nhlPlayByPlayParser";
 import { buildShotFeatureRows } from "../lib/supabase/Upserts/nhlShotFeatureBuilder";
 import { buildNstParityMetrics } from "../lib/supabase/Upserts/nhlNstParityMetrics";
+import type { Database } from "../lib/supabase/database-generated.types";
 
 dotenv.config({ path: path.resolve(process.cwd(), ".env.local") });
 
@@ -120,13 +127,19 @@ type ValidationMetadata = {
   approvedExceptionRefs: string[];
 };
 
+type ShiftRow = Database["public"]["Tables"]["nhl_api_shift_rows"]["Row"];
+
 type ReleaseValidationReport = {
   metadata: ValidationMetadata;
-  status: "pass" | "fail";
+  overallResult: "PASS" | "FAIL";
+  rawValidationResult: "PASS" | "FAIL";
+  parityValidationResult: "PASS" | "WARN" | "FAIL";
+  blockingFailureResult: "PASS" | "FAIL";
+  approvedExceptionResult: "NONE" | "PRESENT";
+  trainingUseReleaseResult: "PASS" | "FAIL";
   rawValidationSummary: NormalizedEventValidationSummary;
   paritySummary: ParitySampleComparisonSummary | null;
-  parityFamilyBreakdown: Record<string, number>;
-  parityErrorsByMetric: Record<string, number>;
+  parityReleaseDisposition: ReleaseParityDispositionSummary;
 };
 
 function printHelp(): void {
@@ -297,76 +310,58 @@ async function fetchRows<T extends Record<string, unknown>>(
   return result.rows as T[];
 }
 
-function summarizeParityErrorsByMetric(summary: ParitySampleComparisonSummary | null): Record<string, number> {
-  if (!summary) return {};
-
-  const counts: Record<string, number> = {};
-
-  for (const result of summary.results) {
-    for (const mismatch of result.mismatches) {
-      if (mismatch.severity !== "error") continue;
-      counts[mismatch.metric] = (counts[mismatch.metric] ?? 0) + 1;
-    }
-  }
-
-  return Object.fromEntries(
-    Object.entries(counts).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-  );
-}
-
 function buildMarkdownReport(report: ReleaseValidationReport): string {
   const {
     metadata,
-    status,
+    overallResult,
+    rawValidationResult,
+    parityValidationResult,
+    blockingFailureResult,
+    approvedExceptionResult,
+    trainingUseReleaseResult,
     rawValidationSummary,
     paritySummary,
-    parityFamilyBreakdown,
-    parityErrorsByMetric,
+    parityReleaseDisposition,
   } = report;
+  const summaryExplanation =
+    trainingUseReleaseResult === "PASS"
+      ? "Raw validation passed, and any remaining parity drift is fully covered by approved exceptions."
+      : rawValidationResult === "FAIL"
+        ? "Raw validation still has blocking failures."
+        : "Unapproved blocking parity failures still remain after approved-exception reconciliation.";
 
-  const passedLines = [
-    `Raw validation games passed: \`${rawValidationSummary.passedGames}/${rawValidationSummary.totalGames}\``,
+  const blockingFailures =
+    parityReleaseDisposition.blockingFailureCount > 0
+      ? [
+          `- Blocking mismatch count: \`${parityReleaseDisposition.blockingFailureCount}\``,
+          `- Blocking sample count: \`${parityReleaseDisposition.blockingFailureSampleCount}\``,
+          `- Blocking family breakdown: \`${JSON.stringify(parityReleaseDisposition.blockingFailureByFamily)}\``,
+          `- Blocking metric breakdown: \`${JSON.stringify(parityReleaseDisposition.blockingFailureByMetric)}\``,
+        ]
+      : ["- none"];
+
+  const approvedExceptionLines = [
+    `- Approved exception mismatch count: \`${parityReleaseDisposition.approvedExceptionCount}\``,
+    `- Approved exception sample count: \`${parityReleaseDisposition.approvedExceptionSampleCount}\``,
+    `- Approved exception family breakdown: \`${JSON.stringify(parityReleaseDisposition.approvedExceptionByFamily)}\``,
+    `- Approved exception metric breakdown: \`${JSON.stringify(parityReleaseDisposition.approvedExceptionByMetric)}\``,
+    ...(metadata.approvedExceptionRefs.length > 0
+      ? metadata.approvedExceptionRefs.map((ref) => `- Governing artifact: \`${ref}\``)
+      : ["- No approved exception artifact refs were supplied for this run"]),
   ];
 
-  if (paritySummary) {
-    passedLines.push(
-      `Parity samples evaluated: \`${paritySummary.totalSamples}\``
-    );
-  }
-
-  const failedLines: string[] = [];
-
-  if (rawValidationSummary.failedGames > 0) {
-    failedLines.push(
-      `Raw validation failed for game ids: \`${rawValidationSummary.failedGameIds.join(", ")}\``
-    );
-  }
-
-  if (paritySummary && paritySummary.failedSamples > 0) {
-    failedLines.push(
-      `Parity failed samples: \`${paritySummary.failedSamples}/${paritySummary.totalSamples}\``
-    );
-    failedLines.push(
-      `Parity family breakdown: \`${JSON.stringify(parityFamilyBreakdown)}\``
-    );
-    failedLines.push(
-      `Top exact mismatch metrics: \`${JSON.stringify(parityErrorsByMetric)}\``
-    );
-  }
-
-  if (!failedLines.length) {
-    failedLines.push("- none");
-  }
-
-  const approvedExceptions =
-    metadata.approvedExceptionRefs.length > 0
-      ? metadata.approvedExceptionRefs.map((ref) => `- \`${ref}\``)
-      : ["- none recorded in this run"];
-
-  const nextActions =
-    status === "pass"
-      ? ["- proceed to release-gate review using this artifact"]
-      : ["- review failed sections and approved-exception coverage before release-gate review"];
+  const dispositionLines =
+    trainingUseReleaseResult === "PASS"
+      ? [
+          "- Training use: approved for the current version tuple",
+          "- Production rollout: still governed separately by the broader rollout gate",
+          "- Next action: record the updated release-gate verdict and resume baseline-model preparation only if that verdict is satisfied",
+        ]
+      : [
+          "- Training use: blocked for the current version tuple",
+          "- Production rollout: blocked",
+          "- Next action: resolve remaining blocking failures or explicitly approve and document any still-unclassified mismatch class",
+        ];
 
   return `# Validation Run
 
@@ -378,7 +373,7 @@ function buildMarkdownReport(report: ReleaseValidationReport): string {
 - Feature version: ${metadata.featureVersion ?? "unspecified"}
 - Parity version: ${metadata.parityVersion ?? "unspecified"}
 - Games sampled: ${metadata.sampledGameIds.join(", ")}
-- Result: ${status.toUpperCase()}
+- Result: ${overallResult}
 
 ## Validation Metadata
 
@@ -386,21 +381,61 @@ function buildMarkdownReport(report: ReleaseValidationReport): string {
 - Season range covered: ${metadata.seasonRangeCovered}
 - Manual audit reference: ${metadata.manualAuditRef ?? "none"}
 
-## Passed
+## Verdict Summary
 
-${passedLines.map((line) => `- ${line}`).join("\n")}
+- Overall result: ${overallResult}
+- Raw validation result: ${rawValidationResult}
+- Parity validation result: ${parityValidationResult}
+- Blocking failure result: ${blockingFailureResult}
+- Approved exception result: ${approvedExceptionResult}
+- Training-use release result: ${trainingUseReleaseResult}
+- Summary: ${summaryExplanation}
 
-## Failed
+## Raw Validation
 
-${failedLines.map((line) => (line.startsWith("-") ? line : `- ${line}`)).join("\n")}
+- Raw validation games passed: \`${rawValidationSummary.passedGames}/${rawValidationSummary.totalGames}\`
+- Raw validation games failed: \`${rawValidationSummary.failedGames}/${rawValidationSummary.totalGames}\`
+- Raw validation failed game ids: ${
+    rawValidationSummary.failedGameIds.length > 0
+      ? `\`${rawValidationSummary.failedGameIds.join(", ")}\``
+      : "none"
+  }
+
+## Parity Validation
+
+- Parity samples evaluated: \`${paritySummary?.totalSamples ?? 0}\`
+- Parity samples with any mismatch: \`${
+    parityReleaseDisposition.blockingFailureSampleCount +
+    parityReleaseDisposition.approvedExceptionSampleCount +
+    parityReleaseDisposition.warningSampleCount
+  }\`
+- Parity samples with blocking mismatches: \`${parityReleaseDisposition.blockingFailureSampleCount}\`
+- Parity samples with approved-exception-only mismatches: \`${parityReleaseDisposition.approvedExceptionSampleCount}\`
+- Parity samples with warnings only: \`${parityReleaseDisposition.warningSampleCount}\`
+- Blocking family breakdown: \`${JSON.stringify(parityReleaseDisposition.blockingFailureByFamily)}\`
+- Approved exception family breakdown: \`${JSON.stringify(parityReleaseDisposition.approvedExceptionByFamily)}\`
+- Warning family breakdown: \`${JSON.stringify(parityReleaseDisposition.warningByFamily)}\`
+
+## Blocking Failures
+
+${blockingFailures.join("\n")}
 
 ## Approved Exceptions
 
-${approvedExceptions.join("\n")}
+${approvedExceptionLines.join("\n")}
 
-## Next Actions
+## Manual Audit References
 
-${nextActions.join("\n")}
+- Manual audit artifact: ${metadata.manualAuditRef ?? "none"}
+- Manual audit coverage note: ${
+    metadata.manualAuditRef
+      ? "Use the referenced audit to confirm representative EV, PP/PK, OT, and empty-net spot checks remain in scope for this release review."
+      : "No manual audit reference was supplied for this run."
+  }
+
+## Disposition
+
+${dispositionLines.join("\n")}
 `;
 }
 
@@ -463,13 +498,19 @@ async function main(): Promise<void> {
 
     const rawValidationSummary = validateNormalizedEventBatchAgainstRawPayloads(
       options.games.map((gameId) => ({
-        rawPayload: latestRawByGame.get(gameId)?.payload ?? null,
-        normalizedEvents: normalizedByGame.get(gameId) ?? [],
+        rawPayload:
+          (latestRawByGame.get(gameId)?.payload as NhlPlayByPlayGame | undefined) ?? {
+            id: gameId,
+            homeTeam: { id: 0 },
+            awayTeam: { id: 0 },
+            plays: [],
+          },
+        normalizedEvents:
+          (normalizedByGame.get(gameId) as ParsedNhlPbpEvent[] | undefined) ?? [],
       }))
     );
 
     let paritySummary: ParitySampleComparisonSummary | null = null;
-    let parityFamilyBreakdown: Record<string, number> = {};
 
     if (options.overlapGames.length > 0) {
       const games = await fetchRows<{
@@ -505,8 +546,9 @@ async function main(): Promise<void> {
         const homeTeamId = Number(game.homeTeamId);
         const awayTeamId = Number(game.awayTeamId);
         const season = Number(game.seasonId);
+        if (!dateOnly) continue;
 
-        const shiftRows = await fetchRows<Record<string, unknown>>(
+        const shiftRows = await fetchRows<ShiftRow>(
           client,
           `select *
            from public.nhl_api_shift_rows
@@ -515,7 +557,7 @@ async function main(): Promise<void> {
           [gameId]
         );
 
-        const parsedEvents = parseNhlPlayByPlayEvents(raw.payload, {
+        const parsedEvents = parseNhlPlayByPlayEvents(raw.payload as NhlPlayByPlayGame, {
           sourcePlayByPlayHash: raw.payload_hash,
           now: new Date().toISOString(),
         });
@@ -619,13 +661,29 @@ async function main(): Promise<void> {
           });
         }
       }
-
       paritySummary = compareLegacyAndNhlParitySamples(parityRows);
-      parityFamilyBreakdown = parityRows.reduce<Record<string, number>>((acc, row) => {
-        acc[row.family] = (acc[row.family] ?? 0) + 1;
-        return acc;
-      }, {});
     }
+
+    const parityReleaseDisposition = summarizeParityReleaseDisposition(paritySummary);
+    const rawValidationResult: "PASS" | "FAIL" =
+      rawValidationSummary.failedGames === 0 ? "PASS" : "FAIL";
+    const blockingFailureResult: "PASS" | "FAIL" =
+      rawValidationSummary.failedGames === 0 &&
+      parityReleaseDisposition.blockingFailureCount === 0
+        ? "PASS"
+        : "FAIL";
+    const approvedExceptionResult: "NONE" | "PRESENT" =
+      parityReleaseDisposition.approvedExceptionCount > 0 ? "PRESENT" : "NONE";
+    const parityValidationResult: "PASS" | "WARN" | "FAIL" =
+      parityReleaseDisposition.blockingFailureCount > 0
+        ? "FAIL"
+        : parityReleaseDisposition.totalMismatchCount > 0
+          ? "WARN"
+          : "PASS";
+    const trainingUseReleaseResult: "PASS" | "FAIL" =
+      rawValidationResult === "PASS" && blockingFailureResult === "PASS"
+        ? "PASS"
+        : "FAIL";
 
     const report: ReleaseValidationReport = {
       metadata: {
@@ -642,15 +700,15 @@ async function main(): Promise<void> {
         manualAuditRef: options.manualAuditRef,
         approvedExceptionRefs: options.approvedExceptionRefs,
       },
-      status:
-        rawValidationSummary.failedGames === 0 &&
-        (paritySummary == null || paritySummary.failedSamples === 0)
-          ? "pass"
-          : "fail",
+      overallResult: trainingUseReleaseResult,
+      rawValidationResult,
+      parityValidationResult,
+      blockingFailureResult,
+      approvedExceptionResult,
+      trainingUseReleaseResult,
       rawValidationSummary,
       paritySummary,
-      parityFamilyBreakdown,
-      parityErrorsByMetric: summarizeParityErrorsByMetric(paritySummary),
+      parityReleaseDisposition,
     };
 
     const markdown = buildMarkdownReport(report);
