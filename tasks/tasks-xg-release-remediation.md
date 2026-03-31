@@ -6,10 +6,17 @@
 - `tasks/artifacts/xg-release-gate-verdict-2026-03-30.md` - Dated decision recording that the release gate is not satisfied.
 - `tasks/artifacts/xg-event-id-root-cause-2026-03-30.md` - Root-cause analysis for the sampled `event_id` validation failure.
 - `tasks/artifacts/xg-event-id-remediation-2026-03-30.md` - Dated remediation record showing the event-id validation path is fixed and revalidated.
+- `tasks/artifacts/xg-parity-root-causes-2026-03-30.md` - Root-cause analysis for the sampled exact-count parity failures.
+- `tasks/artifacts/xg-toi-on-ice-resolution-2026-03-30.md` - Resolution record for duplicate-window TOI inflation and remaining NHL-vs-legacy TOI differences.
+- `tasks/artifacts/xg-parity-rerun-2026-03-30.md` - Rerun evidence showing that raw validation now passes but exact skater parity still fails broadly enough that task `2.4` remains open.
+- `tasks/artifacts/xg-on-ice-root-causes-2026-03-30.md` - Representative root-cause analysis for the broad `counts_oi` drift, separating a real zone-start bug from shift-boundary convention differences and validator noise.
+- `tasks/artifacts/xg-on-ice-policy-decision-2026-03-30.md` - Dated decision recording that on-ice and zone-start metrics stay in scope but frozen NST-only boundary conventions are retired as approved NHL-correctness divergences.
+- `tasks/artifacts/xg-on-ice-rerun-2026-03-30.md` - Post-fix rerun evidence showing the zone-start overcount is resolved and the remaining `counts_oi` drift is now bounded to documented policy differences.
 - `tasks/validation-checklist.md` - Formal checklist the remediation work must satisfy before training can begin.
 - `web/lib/supabase/Upserts/nhlPlayByPlayParser.ts` - Current parser that must preserve upstream event identity correctly.
 - `web/lib/supabase/Upserts/nhlRawGamecenter.mjs` - Current raw-ingest and normalized-upsert path that may be rewriting event identity incorrectly.
 - `web/lib/supabase/Upserts/nhlNstParityMetrics.ts` - Current parity engine with exact-metric drift that must be traced and corrected.
+- `web/lib/supabase/Upserts/nhlNstParityMetrics.test.ts` - Regression coverage for parity reconstruction, including the zone-start fix under NHL-derived on-ice logic.
 - `web/lib/supabase/Upserts/nhlOnIceAttribution.ts` - On-ice attribution layer likely involved in TOI and on-ice parity drift.
 - `web/lib/supabase/Upserts/nhlShiftStints.ts` - Shift-to-stint logic likely involved in TOI and manpower-segment drift.
 - `web/lib/supabase/Upserts/nhlXgValidation.ts` - Validation helpers that should become the formal release-batch runner.
@@ -29,9 +36,9 @@
   - [x] 1.4 Record the fix, affected versions, and validation evidence in a dated artifact.
 
 - [ ] 2.0 Fix exact-subset parity drift on the sampled legacy-overlap set
-  - [ ] 2.1 Trace representative exact-count mismatches back to root causes across parsing, inclusion rules, on-ice attribution, and TOI segmentation.
-  - [ ] 2.2 Correct skater exact-count drift for shot, faceoff, hit, giveaway/takeaway, assist/point, and penalty families.
-  - [ ] 2.3 Correct TOI and on-ice exact-count drift caused by shift normalization, stint reconstruction, or strength-segment overlap logic.
+  - [x] 2.1 Trace representative exact-count mismatches back to root causes across parsing, inclusion rules, on-ice attribution, and TOI segmentation.
+  - [x] 2.2 Correct skater exact-count drift for shot, faceoff, hit, giveaway/takeaway, assist/point, and penalty families.
+  - [x] 2.3 Correct TOI and on-ice exact-count drift caused by shift normalization, stint reconstruction, or strength-segment overlap logic.
   - [ ] 2.4 Re-run sampled parity validation and prove that exact families pass or have explicitly approved, documented exceptions.
 
 - [ ] 3.0 Turn the current validation package into a formal release-batch record
@@ -43,3 +50,21 @@
   - [ ] 4.1 Re-review the validation artifact against `tasks/validation-checklist.md` and list any remaining blockers.
   - [ ] 4.2 Record a new dated release-gate verdict for training use.
   - [ ] 4.3 If and only if the verdict is satisfied, resume `tasks/tasks-xg-baseline-options.md` at task `2.0`.
+
+- [ ] 5.0 Resolve broad `nst_gamelog_as_counts_oi` exact-parity drift on the legacy-overlap set
+  - [x] 5.1 Trace representative `cf/ca`, `ff/fa`, `sf/sa`, `gf/ga`, and zone-start mismatches back to on-ice attribution, event inclusion, or frozen-NST definition differences.
+  - [x] 5.2 Decide whether frozen NST on-ice and zone-start definitions must still be matched exactly or should be retired as approved NHL-correctness divergences.
+  - [ ] 5.3 If exact matching remains required, correct the on-ice and zone-start parity logic and rerun sampled validation.
+
+- [ ] 6.0 Resolve the remaining individual exact-count parity drift after the shift-layer fixes
+  - [ ] 6.1 Trace the residual `shots_blocked`, `shots`, `icf`, `iff`, faceoff, penalty, hit, giveaway, and takeaway mismatches to exact event-definition differences.
+  - [ ] 6.2 Decide which remaining residual mismatches are true bugs versus approved NHL-correctness divergences and document the decision.
+  - [ ] 6.3 Correct any remaining true-bug exact-count drift and rerun sampled validation.
+
+- [ ] 7.0 Normalize legacy null-versus-zero comparison rules in parity validation where the frozen NST surface stores unset exact-count fields as `NULL`
+  - [x] 7.1 Decide whether `NULL` and `0` should compare equal for legacy `counts_oi.shots_blocked`.
+  - [ ] 7.2 If approved, update the parity validator and rerun the sampled comparison so `shots_blocked` does not inflate the on-ice error surface artificially.
+
+- [x] 8.0 Fix real on-ice implementation bugs while keeping NHL-derived boundary behavior as the source of truth
+  - [x] 8.1 Correct the zone-start logic so it no longer treats every on-ice faceoff as a zone start.
+  - [x] 8.2 Rerun sampled on-ice parity and document which remaining `counts_oi` drifts are now limited to approved NHL-correctness divergences.

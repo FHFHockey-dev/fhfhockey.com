@@ -708,6 +708,30 @@ function accumulateGoalieToiBySplit(
   return splitMaps;
 }
 
+function buildShiftStartPlayersByMoment(
+  intervals: NhlShiftInterval[]
+): Map<string, number[]> {
+  const playersByMoment = new Map<string, Set<number>>();
+
+  for (const interval of intervals) {
+    const key = `${interval.period}:${interval.startSecond}`;
+    const existing = playersByMoment.get(key);
+    if (existing) {
+      existing.add(interval.playerId);
+      continue;
+    }
+
+    playersByMoment.set(key, new Set([interval.playerId]));
+  }
+
+  return new Map(
+    Array.from(playersByMoment.entries()).map(([key, playerIds]) => [
+      key,
+      Array.from(playerIds).sort((left, right) => left - right),
+    ])
+  );
+}
+
 function getSkaterSplitForTeamState(state: StrengthState | null): SkaterSplitKey | null {
   if (state === "EV") return "ev";
   if (state === "PP") return "pp";
@@ -775,6 +799,9 @@ export function buildNstParityMetrics(
     sortedEvents,
     options.homeTeamId,
     options.awayTeamId
+  );
+  const shiftStartPlayersByMoment = buildShiftStartPlayersByMoment(
+    normalizedIntervals.filter((interval) => skaterIds.has(interval.playerId))
   );
   const skaterToiBySplit = accumulateToiBySplit(
     normalizedIntervals.filter((interval) => skaterIds.has(interval.playerId)),
@@ -1059,7 +1086,16 @@ export function buildNstParityMetrics(
     }
 
     if (event.type_desc_key === "faceoff") {
-      const isZoneStart = previous != null && ZONE_START_PREVIOUS_TYPES.has(previous.type_desc_key ?? "");
+      const isZoneStart =
+        previous != null &&
+        ZONE_START_PREVIOUS_TYPES.has(previous.type_desc_key ?? "") &&
+        event.period_number != null &&
+        event.period_seconds_elapsed != null;
+      const shiftStartPlayerIds = isZoneStart
+        ? shiftStartPlayersByMoment.get(
+            `${event.period_number}:${event.period_seconds_elapsed}`
+          ) ?? []
+        : [];
       for (const teamId of [options.homeTeamId, options.awayTeamId]) {
         const teamState = teamId === options.homeTeamId ? homeState : awayState;
         const split = getSkaterSplitForTeamState(teamState);
@@ -1067,6 +1103,9 @@ export function buildNstParityMetrics(
           teamId === options.homeTeamId
             ? attribution.homeTeam.playerIds
             : attribution.awayTeam.playerIds;
+        const zoneStartPlayerIds = isZoneStart
+          ? playerIds.filter((playerId) => shiftStartPlayerIds.includes(playerId))
+          : [];
         const zone = getTeamRelativeZone(
           event.event_owner_team_id ?? null,
           teamId,
@@ -1078,11 +1117,11 @@ export function buildNstParityMetrics(
           if (zone === "O") acc.off_zone_faceoffs += 1;
           if (zone === "N") acc.neu_zone_faceoffs += 1;
           if (zone === "D") acc.def_zone_faceoffs += 1;
-          if (isZoneStart) {
-            if (zone === "O") acc.off_zone_starts += 1;
-            if (zone === "N") acc.neu_zone_starts += 1;
-            if (zone === "D") acc.def_zone_starts += 1;
-          }
+        });
+        addOnIceStat(zoneStartPlayerIds, split, (acc) => {
+          if (zone === "O") acc.off_zone_starts += 1;
+          if (zone === "N") acc.neu_zone_starts += 1;
+          if (zone === "D") acc.def_zone_starts += 1;
         });
       }
     }

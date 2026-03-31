@@ -256,6 +256,10 @@ Validated examples:
   - exact manpower is shared by both teams for the event
   - canonical `PP` or `SH` is team-relative
   - canonical `EN` applies to both teams when either goalie digit is `0`
+- NHL-correctness policy for on-ice families:
+  - on-ice and zone-start metrics remain required outputs
+  - real implementation bugs must still be corrected
+  - when frozen NST disagrees only because of legacy boundary conventions or legacy-only bookkeeping, the NHL-derived result is preferred and the divergence must be documented and versioned
 
 ## Parity Expectations
 
@@ -284,6 +288,9 @@ For each divergence from NST-era behavior, record:
 - why the NHL-derived result is preferred,
 - which metric families are affected,
 - which version introduced the divergence
+- On-ice-specific note:
+  - frozen NST shift-boundary behavior and `on_the_fly_starts` bookkeeping are not automatic parity targets when they conflict with NHL-derived event and shift interpretation
+  - however, broad on-ice drifts caused by actual implementation bugs must still be fixed before release
 
 ## Versioning Policy
 

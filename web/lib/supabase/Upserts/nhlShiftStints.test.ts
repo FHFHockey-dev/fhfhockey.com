@@ -70,6 +70,35 @@ describe("nhlShiftStints", () => {
     });
   });
 
+  it("normalizes pg-shaped bigint string identifiers into numeric interval fields", () => {
+    const row = createShiftRow({
+      game_id: "2025020418",
+      shift_id: "2002",
+      season_id: "20252026",
+      team_id: "10",
+      player_id: "91",
+      shift_number: "4",
+      period: "2",
+      start_seconds: "120",
+      end_seconds: "165",
+      duration_seconds: "45",
+    });
+
+    expect(normalizeShiftInterval(row as any)).toEqual({
+      gameId: 2025020418,
+      shiftId: 2002,
+      seasonId: 20252026,
+      gameDate: "2026-03-30",
+      teamId: 10,
+      playerId: 91,
+      period: 2,
+      startSecond: 120,
+      endSecond: 165,
+      durationSeconds: 45,
+      shiftNumber: 4,
+    });
+  });
+
   it("sorts and preserves overlapping intervals from the raw feed", () => {
     const intervals = normalizeShiftIntervals([
       createShiftRow({
@@ -93,6 +122,40 @@ describe("nhlShiftStints", () => {
       [0, 40],
       [25, 55],
     ]);
+  });
+
+  it("deduplicates identical shift windows for the same player so TOI is not double-counted", () => {
+    const intervals = normalizeShiftIntervals([
+      createShiftRow({
+        shift_id: 10,
+        player_id: "11",
+        team_id: "10",
+        period: "2",
+        start_seconds: "1020",
+        end_seconds: "1081",
+        duration_seconds: "61",
+      }) as any,
+      createShiftRow({
+        shift_id: 11,
+        player_id: "11",
+        team_id: "10",
+        period: "2",
+        start_seconds: "1020",
+        end_seconds: "1081",
+        duration_seconds: "61",
+      }) as any,
+    ]);
+
+    expect(intervals).toHaveLength(1);
+    expect(intervals[0]).toMatchObject({
+      shiftId: 10,
+      playerId: 11,
+      teamId: 10,
+      period: 2,
+      startSecond: 1020,
+      endSecond: 1081,
+      durationSeconds: 61,
+    });
   });
 
   it("builds merged stints with per-team on-ice player sets across line changes", () => {

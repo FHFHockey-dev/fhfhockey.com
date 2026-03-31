@@ -33,9 +33,18 @@ export type NhlShiftStint = {
   onIcePlayerIds: number[];
 };
 
-function normalizeInteger(value: number | null | undefined): number | null {
+function normalizeInteger(
+  value: number | string | null | undefined
+): number | null {
   if (value == null) return null;
-  return Number.isFinite(value) ? Math.trunc(value) : null;
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? Math.trunc(value) : null;
+  }
+
+  const normalized = value.trim();
+  if (!/^-?\d+$/.test(normalized)) return null;
+  const parsed = Number(normalized);
+  return Number.isSafeInteger(parsed) ? parsed : null;
 }
 
 function compareNumberArrays(left: number[], right: number[]): boolean {
@@ -64,14 +73,20 @@ export function normalizeShiftInterval(row: ShiftRow): NhlShiftInterval | null {
   const startSecond = normalizeInteger(row.start_seconds);
   const endSecond = normalizeInteger(row.end_seconds);
   const durationSeconds = normalizeInteger(row.duration_seconds);
+  const gameId = normalizeInteger(row.game_id);
+  const shiftId = normalizeInteger(row.shift_id);
+  const teamId = normalizeInteger(row.team_id);
+  const playerId = normalizeInteger(row.player_id);
+  const seasonId = normalizeInteger(row.season_id);
+  const shiftNumber = normalizeInteger(row.shift_number);
 
   if (
     period == null ||
     startSecond == null ||
-    row.game_id == null ||
-    row.shift_id == null ||
-    row.team_id == null ||
-    row.player_id == null
+    gameId == null ||
+    shiftId == null ||
+    teamId == null ||
+    playerId == null
   ) {
     return null;
   }
@@ -91,32 +106,48 @@ export function normalizeShiftInterval(row: ShiftRow): NhlShiftInterval | null {
   if (normalizedDuration <= 0) return null;
 
   return {
-    gameId: row.game_id,
-    shiftId: row.shift_id,
-    seasonId: row.season_id,
+    gameId,
+    shiftId,
+    seasonId,
     gameDate: row.game_date,
-    teamId: row.team_id,
-    playerId: row.player_id,
+    teamId,
+    playerId,
     period,
     startSecond,
     endSecond: normalizedEnd,
     durationSeconds: normalizedDuration,
-    shiftNumber: row.shift_number,
+    shiftNumber,
   };
 }
 
 export function normalizeShiftIntervals(rows: ShiftRow[]): NhlShiftInterval[] {
-  return rows
+  const deduped = new Map<string, NhlShiftInterval>();
+
+  for (const row of rows
     .map(normalizeShiftInterval)
-    .filter((row): row is NhlShiftInterval => row !== null)
-    .sort((left, right) => {
-      if (left.period !== right.period) return left.period - right.period;
-      if (left.startSecond !== right.startSecond) return left.startSecond - right.startSecond;
-      if (left.endSecond !== right.endSecond) return left.endSecond - right.endSecond;
-      if (left.teamId !== right.teamId) return left.teamId - right.teamId;
-      if (left.playerId !== right.playerId) return left.playerId - right.playerId;
-      return left.shiftId - right.shiftId;
-    });
+    .filter((row): row is NhlShiftInterval => row !== null)) {
+    const key = [
+      row.gameId,
+      row.playerId,
+      row.teamId,
+      row.period,
+      row.startSecond,
+      row.endSecond,
+    ].join(":");
+    const existing = deduped.get(key);
+    if (!existing || row.shiftId < existing.shiftId) {
+      deduped.set(key, row);
+    }
+  }
+
+  return Array.from(deduped.values()).sort((left, right) => {
+    if (left.period !== right.period) return left.period - right.period;
+    if (left.startSecond !== right.startSecond) return left.startSecond - right.startSecond;
+    if (left.endSecond !== right.endSecond) return left.endSecond - right.endSecond;
+    if (left.teamId !== right.teamId) return left.teamId - right.teamId;
+    if (left.playerId !== right.playerId) return left.playerId - right.playerId;
+    return left.shiftId - right.shiftId;
+  });
 }
 
 function buildStintTeams(
