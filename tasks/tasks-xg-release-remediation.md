@@ -1,0 +1,43 @@
+## Relevant Files
+
+- `tasks/tasks-xg-release-remediation.md` - Execution plan for fixing the release blockers that currently prevent baseline-model training.
+- `tasks/artifacts/xg-baseline-validation-2026-03-30.md` - Validation evidence showing the current raw-identity and parity failures.
+- `tasks/artifacts/xg-release-blockers-2026-03-30.md` - Current minimal blocker list for training-use release approval.
+- `tasks/artifacts/xg-release-gate-verdict-2026-03-30.md` - Dated decision recording that the release gate is not satisfied.
+- `tasks/validation-checklist.md` - Formal checklist the remediation work must satisfy before training can begin.
+- `web/lib/supabase/Upserts/nhlPlayByPlayParser.ts` - Current parser that must preserve upstream event identity correctly.
+- `web/lib/supabase/Upserts/nhlRawGamecenter.mjs` - Current raw-ingest and normalized-upsert path that may be rewriting event identity incorrectly.
+- `web/lib/supabase/Upserts/nhlNstParityMetrics.ts` - Current parity engine with exact-metric drift that must be traced and corrected.
+- `web/lib/supabase/Upserts/nhlOnIceAttribution.ts` - On-ice attribution layer likely involved in TOI and on-ice parity drift.
+- `web/lib/supabase/Upserts/nhlShiftStints.ts` - Shift-to-stint logic likely involved in TOI and manpower-segment drift.
+- `web/lib/supabase/Upserts/nhlXgValidation.ts` - Validation helpers that should become the formal release-batch runner.
+
+### Notes
+
+- Do not start any model-family work from `tasks/tasks-xg-baseline-options.md` until this remediation list is complete and the release gate is re-evaluated as satisfied.
+- Treat raw event identity and exact-count parity as blocking correctness issues, not approximation-policy issues.
+- The final remediation package must produce a complete formal validation artifact with the metadata required by `tasks/validation-checklist.md`.
+
+## Tasks
+
+- [ ] 1.0 Fix raw event identity alignment between raw play-by-play and normalized event rows
+  - [ ] 1.1 Inspect the current parser and ingest path to identify why stored `nhl_api_pbp_events.event_id` does not equal upstream raw `play-by-play` `eventId`.
+  - [ ] 1.2 Correct the parser and/or ingest contract so normalized `event_id` preserves the upstream raw event identity.
+  - [ ] 1.3 Re-ingest a representative sample and prove that raw-vs-normalized validation now passes event-id reconciliation, not just count reconciliation.
+  - [ ] 1.4 Record the fix, affected versions, and validation evidence in a dated artifact.
+
+- [ ] 2.0 Fix exact-subset parity drift on the sampled legacy-overlap set
+  - [ ] 2.1 Trace representative exact-count mismatches back to root causes across parsing, inclusion rules, on-ice attribution, and TOI segmentation.
+  - [ ] 2.2 Correct skater exact-count drift for shot, faceoff, hit, giveaway/takeaway, assist/point, and penalty families.
+  - [ ] 2.3 Correct TOI and on-ice exact-count drift caused by shift normalization, stint reconstruction, or strength-segment overlap logic.
+  - [ ] 2.4 Re-run sampled parity validation and prove that exact families pass or have explicitly approved, documented exceptions.
+
+- [ ] 3.0 Turn the current validation package into a formal release-batch record
+  - [ ] 3.1 Build or formalize a repeatable validation runner that captures the metadata required by `tasks/validation-checklist.md`.
+  - [ ] 3.2 Run the full release validation batch on the intended training sample with explicit `parser_version`, `strength_version`, `feature_version`, `parity_version`, environment, season range, and commit SHA.
+  - [ ] 3.3 Publish a dated release-validation artifact that records pass/fail status, approved exceptions if any, and links to supporting audit evidence.
+
+- [ ] 4.0 Re-evaluate the training-use release gate after remediation
+  - [ ] 4.1 Re-review the validation artifact against `tasks/validation-checklist.md` and list any remaining blockers.
+  - [ ] 4.2 Record a new dated release-gate verdict for training use.
+  - [ ] 4.3 If and only if the verdict is satisfied, resume `tasks/tasks-xg-baseline-options.md` at task `2.0`.
