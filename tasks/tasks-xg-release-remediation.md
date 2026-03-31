@@ -4,6 +4,7 @@
 - `tasks/artifacts/xg-baseline-validation-2026-03-30.md` - Validation evidence showing the current raw-identity and parity failures.
 - `tasks/artifacts/xg-release-blockers-2026-03-30.md` - Current minimal blocker list for training-use release approval.
 - `tasks/artifacts/xg-release-gate-verdict-2026-03-30.md` - Dated decision recording that the release gate is not satisfied.
+- `tasks/artifacts/xg-release-validation-2026-03-31.md` - Formal release-batch validation artifact for the intended training sample, including metadata, pass/fail status, and approved exception references.
 - `tasks/artifacts/xg-event-id-root-cause-2026-03-30.md` - Root-cause analysis for the sampled `event_id` validation failure.
 - `tasks/artifacts/xg-event-id-remediation-2026-03-30.md` - Dated remediation record showing the event-id validation path is fixed and revalidated.
 - `tasks/artifacts/xg-parity-root-causes-2026-03-30.md` - Root-cause analysis for the sampled exact-count parity failures.
@@ -17,6 +18,7 @@
 - `tasks/artifacts/xg-individual-policy-decision-2026-03-30.md` - Dated decision recording that the remaining investigated individual exact-count residuals are approved NHL-correctness divergences unless a concrete parser or inclusion bug is later shown.
 - `tasks/artifacts/xg-individual-rerun-2026-03-30.md` - Rerun evidence showing that no new true-bug individual exact-count drift remains after the root-cause trace and policy decision.
 - `tasks/validation-checklist.md` - Formal checklist the remediation work must satisfy before training can begin.
+- `web/scripts/run-nhl-xg-release-validation.ts` - Repeatable in-repo release-validation runner that records checklist-required metadata and produces markdown validation reports.
 - `web/lib/supabase/Upserts/nhlPlayByPlayParser.ts` - Current parser that must preserve upstream event identity correctly.
 - `web/lib/supabase/Upserts/nhlRawGamecenter.mjs` - Current raw-ingest and normalized-upsert path that may be rewriting event identity incorrectly.
 - `web/lib/supabase/Upserts/nhlNstParityMetrics.ts` - Current parity engine with exact-metric drift that must be traced and corrected.
@@ -46,9 +48,9 @@
   - [x] 2.4 Re-run sampled parity validation and prove that exact families pass or have explicitly approved, documented exceptions.
 
 - [ ] 3.0 Turn the current validation package into a formal release-batch record
-  - [ ] 3.1 Build or formalize a repeatable validation runner that captures the metadata required by `tasks/validation-checklist.md`.
-  - [ ] 3.2 Run the full release validation batch on the intended training sample with explicit `parser_version`, `strength_version`, `feature_version`, `parity_version`, environment, season range, and commit SHA.
-  - [ ] 3.3 Publish a dated release-validation artifact that records pass/fail status, approved exceptions if any, and links to supporting audit evidence.
+  - [x] 3.1 Build or formalize a repeatable validation runner that captures the metadata required by `tasks/validation-checklist.md`.
+  - [x] 3.2 Run the full release validation batch on the intended training sample with explicit `parser_version`, `strength_version`, `feature_version`, `parity_version`, environment, season range, and commit SHA.
+  - [x] 3.3 Publish a dated release-validation artifact that records pass/fail status, approved exceptions if any, and links to supporting audit evidence.
 
 - [ ] 4.0 Re-evaluate the training-use release gate after remediation
   - [ ] 4.1 Re-review the validation artifact against `tasks/validation-checklist.md` and list any remaining blockers.
