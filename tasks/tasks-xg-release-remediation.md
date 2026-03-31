@@ -9,6 +9,7 @@
 - `tasks/artifacts/xg-parity-root-causes-2026-03-30.md` - Root-cause analysis for the sampled exact-count parity failures.
 - `tasks/artifacts/xg-toi-on-ice-resolution-2026-03-30.md` - Resolution record for duplicate-window TOI inflation and remaining NHL-vs-legacy TOI differences.
 - `tasks/artifacts/xg-parity-rerun-2026-03-30.md` - Rerun evidence showing that raw validation now passes but exact skater parity still fails broadly enough that task `2.4` remains open.
+- `tasks/artifacts/xg-exact-parity-disposition-2026-03-30.md` - Final exact-family disposition record showing the remaining sampled mismatches are now either fixed or covered by explicit documented NHL-correctness exceptions.
 - `tasks/artifacts/xg-on-ice-root-causes-2026-03-30.md` - Representative root-cause analysis for the broad `counts_oi` drift, separating a real zone-start bug from shift-boundary convention differences and validator noise.
 - `tasks/artifacts/xg-on-ice-policy-decision-2026-03-30.md` - Dated decision recording that on-ice and zone-start metrics stay in scope but frozen NST-only boundary conventions are retired as approved NHL-correctness divergences.
 - `tasks/artifacts/xg-on-ice-rerun-2026-03-30.md` - Post-fix rerun evidence showing the zone-start overcount is resolved and the remaining `counts_oi` drift is now bounded to documented policy differences.
@@ -38,11 +39,11 @@
   - [x] 1.3 Re-ingest a representative sample and prove that raw-vs-normalized validation now passes event-id reconciliation, not just count reconciliation.
   - [x] 1.4 Record the fix, affected versions, and validation evidence in a dated artifact.
 
-- [ ] 2.0 Fix exact-subset parity drift on the sampled legacy-overlap set
+- [x] 2.0 Fix exact-subset parity drift on the sampled legacy-overlap set
   - [x] 2.1 Trace representative exact-count mismatches back to root causes across parsing, inclusion rules, on-ice attribution, and TOI segmentation.
   - [x] 2.2 Correct skater exact-count drift for shot, faceoff, hit, giveaway/takeaway, assist/point, and penalty families.
   - [x] 2.3 Correct TOI and on-ice exact-count drift caused by shift normalization, stint reconstruction, or strength-segment overlap logic.
-  - [ ] 2.4 Re-run sampled parity validation and prove that exact families pass or have explicitly approved, documented exceptions.
+  - [x] 2.4 Re-run sampled parity validation and prove that exact families pass or have explicitly approved, documented exceptions.
 
 - [ ] 3.0 Turn the current validation package into a formal release-batch record
   - [ ] 3.1 Build or formalize a repeatable validation runner that captures the metadata required by `tasks/validation-checklist.md`.
