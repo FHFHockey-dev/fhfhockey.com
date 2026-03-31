@@ -1,13 +1,13 @@
 import type { ParsedNhlPbpEvent } from "./nhlPlayByPlayParser";
 
 type RawPlay = {
-  eventId?: number | null;
-  sortOrder?: number | null;
+  eventId?: number | string | null;
+  sortOrder?: number | string | null;
   typeDescKey?: string | null;
 };
 
 type RawPlayByPlayPayload = {
-  id?: number | null;
+  id?: number | string | null;
   plays?: RawPlay[] | null;
 };
 
@@ -249,6 +249,21 @@ function isComparableNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
 }
 
+function toComparableInteger(value: unknown): number | null {
+  if (typeof value === "number") {
+    return Number.isInteger(value) ? value : null;
+  }
+
+  if (typeof value === "string") {
+    const normalized = value.trim();
+    if (!/^-?\d+$/.test(normalized)) return null;
+    const parsed = Number(normalized);
+    return Number.isSafeInteger(parsed) ? parsed : null;
+  }
+
+  return null;
+}
+
 function buildSampleKey(
   family: string,
   entityType: "skater" | "goalie" | "team",
@@ -265,13 +280,13 @@ export function validateNormalizedEventsAgainstRawPlayByPlay(
   const rawPlays = rawPayload.plays ?? [];
   const rawEventIds = new Set(
     rawPlays
-      .map((play) => play.eventId)
-      .filter((eventId): eventId is number => Number.isInteger(eventId))
+      .map((play) => toComparableInteger(play.eventId))
+      .filter((eventId): eventId is number => eventId != null)
   );
   const normalizedEventIds = new Set(
     normalizedEvents
-      .map((event) => event.event_id)
-      .filter((eventId): eventId is number => Number.isInteger(eventId))
+      .map((event) => toComparableInteger(event.event_id))
+      .filter((eventId): eventId is number => eventId != null)
   );
 
   const missingNormalizedEventIds = sortNumeric(
@@ -298,14 +313,17 @@ export function validateNormalizedEventsAgainstRawPlayByPlay(
     .filter((row) => row.rawCount !== row.normalizedCount)
     .sort((a, b) => a.typeDescKey.localeCompare(b.typeDescKey));
   const duplicateNormalizedEventIds = findDuplicates(
-    normalizedEvents.map((event) => event.event_id)
+    normalizedEvents.map((event) => toComparableInteger(event.event_id))
   );
   const duplicateNormalizedSortOrders = findDuplicates(
-    normalizedEvents.map((event) => event.sort_order)
+    normalizedEvents.map((event) => toComparableInteger(event.sort_order))
   );
 
   return {
-    gameId: rawPayload.id ?? normalizedEvents[0]?.game_id ?? null,
+    gameId:
+      toComparableInteger(rawPayload.id) ??
+      toComparableInteger(normalizedEvents[0]?.game_id) ??
+      null,
     rawEventCount: rawPlays.length,
     normalizedEventCount: normalizedEvents.length,
     matchingEventIdCount: Array.from(rawEventIds).filter((eventId) =>

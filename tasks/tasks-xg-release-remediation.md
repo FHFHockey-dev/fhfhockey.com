@@ -4,6 +4,8 @@
 - `tasks/artifacts/xg-baseline-validation-2026-03-30.md` - Validation evidence showing the current raw-identity and parity failures.
 - `tasks/artifacts/xg-release-blockers-2026-03-30.md` - Current minimal blocker list for training-use release approval.
 - `tasks/artifacts/xg-release-gate-verdict-2026-03-30.md` - Dated decision recording that the release gate is not satisfied.
+- `tasks/artifacts/xg-event-id-root-cause-2026-03-30.md` - Root-cause analysis for the sampled `event_id` validation failure.
+- `tasks/artifacts/xg-event-id-remediation-2026-03-30.md` - Dated remediation record showing the event-id validation path is fixed and revalidated.
 - `tasks/validation-checklist.md` - Formal checklist the remediation work must satisfy before training can begin.
 - `web/lib/supabase/Upserts/nhlPlayByPlayParser.ts` - Current parser that must preserve upstream event identity correctly.
 - `web/lib/supabase/Upserts/nhlRawGamecenter.mjs` - Current raw-ingest and normalized-upsert path that may be rewriting event identity incorrectly.
@@ -20,11 +22,11 @@
 
 ## Tasks
 
-- [ ] 1.0 Fix raw event identity alignment between raw play-by-play and normalized event rows
-  - [ ] 1.1 Inspect the current parser and ingest path to identify why stored `nhl_api_pbp_events.event_id` does not equal upstream raw `play-by-play` `eventId`.
-  - [ ] 1.2 Correct the parser and/or ingest contract so normalized `event_id` preserves the upstream raw event identity.
-  - [ ] 1.3 Re-ingest a representative sample and prove that raw-vs-normalized validation now passes event-id reconciliation, not just count reconciliation.
-  - [ ] 1.4 Record the fix, affected versions, and validation evidence in a dated artifact.
+- [x] 1.0 Fix raw event identity alignment between raw play-by-play and normalized event rows
+  - [x] 1.1 Inspect the current parser and ingest path to identify why stored `nhl_api_pbp_events.event_id` does not equal upstream raw `play-by-play` `eventId`.
+  - [x] 1.2 Correct the parser and/or ingest contract so normalized `event_id` preserves the upstream raw event identity.
+  - [x] 1.3 Re-ingest a representative sample and prove that raw-vs-normalized validation now passes event-id reconciliation, not just count reconciliation.
+  - [x] 1.4 Record the fix, affected versions, and validation evidence in a dated artifact.
 
 - [ ] 2.0 Fix exact-subset parity drift on the sampled legacy-overlap set
   - [ ] 2.1 Trace representative exact-count mismatches back to root causes across parsing, inclusion rules, on-ice attribution, and TOI segmentation.

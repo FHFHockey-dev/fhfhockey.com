@@ -195,6 +195,65 @@ describe("nhlXgValidation", () => {
     ]);
   });
 
+  it("accepts integer-like string ids when normalized rows come from raw pg bigint results", () => {
+    const plays = [
+      {
+        eventId: 500,
+        sortOrder: 500,
+        periodDescriptor: { number: 1, periodType: "REG" },
+        timeInPeriod: "04:00",
+        timeRemaining: "16:00",
+        situationCode: "1551",
+        homeTeamDefendingSide: "left",
+        typeCode: 502,
+        typeDescKey: "faceoff",
+        details: {
+          eventOwnerTeamId: 10,
+          winningPlayerId: 91,
+          losingPlayerId: 21,
+        },
+      },
+      {
+        eventId: 501,
+        sortOrder: 501,
+        periodDescriptor: { number: 1, periodType: "REG" },
+        timeInPeriod: "04:05",
+        timeRemaining: "15:55",
+        situationCode: "1551",
+        homeTeamDefendingSide: "left",
+        typeCode: 516,
+        typeDescKey: "stoppage",
+        details: {},
+      },
+    ];
+
+    const pgShapedNormalizedEvents = parseEvents(plays).map((event) => ({
+      ...event,
+      event_id: String(event.event_id),
+      sort_order:
+        event.sort_order == null ? null : String(event.sort_order),
+      game_id: String(event.game_id),
+    }));
+
+    const result = validateNormalizedEventsAgainstRawPlayByPlay(
+      { ...createRawPayload(plays), id: "2025020418" } as any,
+      pgShapedNormalizedEvents as any
+    );
+
+    expect(result).toMatchObject({
+      gameId: 2025020418,
+      rawEventCount: 2,
+      normalizedEventCount: 2,
+      matchingEventIdCount: 2,
+      missingNormalizedEventIds: [],
+      extraNormalizedEventIds: [],
+      duplicateNormalizedEventIds: [],
+      duplicateNormalizedSortOrders: [],
+      typeCountMismatches: [],
+      passed: true,
+    });
+  });
+
   it("summarizes batch validation results across multiple games", () => {
     const passPlays = [
       {
