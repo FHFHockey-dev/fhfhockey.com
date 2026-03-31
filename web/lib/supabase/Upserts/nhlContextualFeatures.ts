@@ -23,10 +23,16 @@ export type NhlContextualFeatureContext = {
   homePowerPlayAgeSeconds: number | null;
   awayPowerPlayAgeSeconds: number | null;
   shooterShiftAgeSeconds: number | null;
+  shooterPreviousShiftGapSeconds: number | null;
+  shooterPreviousShiftDurationSeconds: number | null;
   ownerAverageShiftAgeSeconds: number | null;
   ownerMaxShiftAgeSeconds: number | null;
+  ownerAveragePreviousShiftGapSeconds: number | null;
+  ownerAveragePreviousShiftDurationSeconds: number | null;
   opponentAverageShiftAgeSeconds: number | null;
   opponentMaxShiftAgeSeconds: number | null;
+  opponentAveragePreviousShiftGapSeconds: number | null;
+  opponentAveragePreviousShiftDurationSeconds: number | null;
   eastWestMovementFeet: number | null;
   northSouthMovementFeet: number | null;
   crossedRoyalRoad: boolean | null;
@@ -70,6 +76,33 @@ function buildIntervalIndex(
   return index;
 }
 
+function buildPlayerHistoryIndex(
+  shiftRows: ShiftRow[]
+): Map<string, NhlShiftInterval[]> {
+  const index = new Map<string, NhlShiftInterval[]>();
+
+  for (const interval of normalizeShiftIntervals(shiftRows)) {
+    const key = `${interval.gameId}:${interval.playerId}`;
+    const existing = index.get(key);
+    if (existing) {
+      existing.push(interval);
+    } else {
+      index.set(key, [interval]);
+    }
+  }
+
+  for (const intervals of index.values()) {
+    intervals.sort((left, right) => {
+      if (left.period !== right.period) return left.period - right.period;
+      if (left.startSecond !== right.startSecond) return left.startSecond - right.startSecond;
+      if (left.endSecond !== right.endSecond) return left.endSecond - right.endSecond;
+      return left.shiftId - right.shiftId;
+    });
+  }
+
+  return index;
+}
+
 function findActiveInterval(
   intervalIndex: Map<string, NhlShiftInterval[]>,
   event: ParsedNhlPbpEvent,
@@ -106,6 +139,83 @@ function computePlayerShiftAgeSeconds(
   return event.period_seconds_elapsed - interval.startSecond;
 }
 
+function findPreviousInterval(
+  playerHistoryIndex: Map<string, NhlShiftInterval[]>,
+  event: ParsedNhlPbpEvent,
+  playerId: number | null,
+  currentInterval: NhlShiftInterval | null
+): NhlShiftInterval | null {
+  if (playerId == null || currentInterval == null) {
+    return null;
+  }
+
+  const key = `${event.game_id}:${playerId}`;
+  const intervals = playerHistoryIndex.get(key) ?? [];
+
+  for (let index = intervals.length - 1; index >= 0; index -= 1) {
+    const candidate = intervals[index];
+    const endsBeforeCurrent =
+      candidate.period < currentInterval.period ||
+      (candidate.period === currentInterval.period &&
+        candidate.endSecond <= currentInterval.startSecond);
+    if (!endsBeforeCurrent) continue;
+
+    return candidate;
+  }
+
+  return null;
+}
+
+function computePlayerPreviousShiftGapSeconds(
+  intervalIndex: Map<string, NhlShiftInterval[]>,
+  playerHistoryIndex: Map<string, NhlShiftInterval[]>,
+  event: ParsedNhlPbpEvent,
+  playerId: number | null
+): number | null {
+  const currentInterval = findActiveInterval(intervalIndex, event, playerId);
+  const previousInterval = findPreviousInterval(
+    playerHistoryIndex,
+    event,
+    playerId,
+    currentInterval
+  );
+
+  if (
+    currentInterval == null ||
+    previousInterval == null ||
+    previousInterval.period !== currentInterval.period
+  ) {
+    return null;
+  }
+
+  return currentInterval.startSecond - previousInterval.endSecond;
+}
+
+function computePlayerPreviousShiftDurationSeconds(
+  intervalIndex: Map<string, NhlShiftInterval[]>,
+  playerHistoryIndex: Map<string, NhlShiftInterval[]>,
+  event: ParsedNhlPbpEvent,
+  playerId: number | null
+): number | null {
+  const currentInterval = findActiveInterval(intervalIndex, event, playerId);
+  const previousInterval = findPreviousInterval(
+    playerHistoryIndex,
+    event,
+    playerId,
+    currentInterval
+  );
+
+  if (
+    currentInterval == null ||
+    previousInterval == null ||
+    previousInterval.period !== currentInterval.period
+  ) {
+    return null;
+  }
+
+  return previousInterval.durationSeconds;
+}
+
 function computeShiftAgeStats(
   intervalIndex: Map<string, NhlShiftInterval[]>,
   event: ParsedNhlPbpEvent,
@@ -125,6 +235,21 @@ function computeShiftAgeStats(
     average: total / ages.length,
     max: Math.max(...ages),
   };
+}
+
+function computeAverageMetricForPlayers(
+  playerIds: number[],
+  getMetric: (playerId: number) => number | null
+): number | null {
+  const values = playerIds
+    .map((playerId) => getMetric(playerId))
+    .filter((value): value is number => value != null);
+
+  if (!values.length) {
+    return null;
+  }
+
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
 function getPrimaryShooterId(event: ParsedNhlPbpEvent): number | null {
@@ -170,6 +295,7 @@ export function buildContextualFeatureContexts(
   );
   const stints = buildShiftStints(shiftRows);
   const intervalIndex = buildIntervalIndex(shiftRows);
+  const playerHistoryIndex = buildPlayerHistoryIndex(shiftRows);
   const powerPlayStateByTeamKey = new Map<string, PowerPlayAgeState>();
 
   return sorted.map((event) => {
@@ -238,6 +364,58 @@ export function buildContextualFeatureContexts(
       event,
       getPrimaryShooterId(event)
     );
+    const shooterPreviousShiftGapSeconds = computePlayerPreviousShiftGapSeconds(
+      intervalIndex,
+      playerHistoryIndex,
+      event,
+      getPrimaryShooterId(event)
+    );
+    const shooterPreviousShiftDurationSeconds =
+      computePlayerPreviousShiftDurationSeconds(
+        intervalIndex,
+        playerHistoryIndex,
+        event,
+        getPrimaryShooterId(event)
+      );
+    const ownerAveragePreviousShiftGapSeconds = computeAverageMetricForPlayers(
+      onIce.ownerPlayerIds,
+      (playerId) =>
+        computePlayerPreviousShiftGapSeconds(
+          intervalIndex,
+          playerHistoryIndex,
+          event,
+          playerId
+        )
+    );
+    const ownerAveragePreviousShiftDurationSeconds = computeAverageMetricForPlayers(
+      onIce.ownerPlayerIds,
+      (playerId) =>
+        computePlayerPreviousShiftDurationSeconds(
+          intervalIndex,
+          playerHistoryIndex,
+          event,
+          playerId
+        )
+    );
+    const opponentAveragePreviousShiftGapSeconds = computeAverageMetricForPlayers(
+      onIce.opponentPlayerIds,
+      (playerId) =>
+        computePlayerPreviousShiftGapSeconds(
+          intervalIndex,
+          playerHistoryIndex,
+          event,
+          playerId
+        )
+    );
+    const opponentAveragePreviousShiftDurationSeconds =
+      computeAverageMetricForPlayers(onIce.opponentPlayerIds, (playerId) =>
+        computePlayerPreviousShiftDurationSeconds(
+          intervalIndex,
+          playerHistoryIndex,
+          event,
+          playerId
+        )
+      );
 
     const sameTeamMovementEligible =
       evaluateNormalizedEventInclusion(event).includeInShotFeatures &&
@@ -286,10 +464,16 @@ export function buildContextualFeatureContexts(
       homePowerPlayAgeSeconds,
       awayPowerPlayAgeSeconds,
       shooterShiftAgeSeconds,
+      shooterPreviousShiftGapSeconds,
+      shooterPreviousShiftDurationSeconds,
       ownerAverageShiftAgeSeconds: ownerShiftStats.average,
       ownerMaxShiftAgeSeconds: ownerShiftStats.max,
+      ownerAveragePreviousShiftGapSeconds,
+      ownerAveragePreviousShiftDurationSeconds,
       opponentAverageShiftAgeSeconds: opponentShiftStats.average,
       opponentMaxShiftAgeSeconds: opponentShiftStats.max,
+      opponentAveragePreviousShiftGapSeconds,
+      opponentAveragePreviousShiftDurationSeconds,
       eastWestMovementFeet,
       northSouthMovementFeet,
       crossedRoyalRoad,

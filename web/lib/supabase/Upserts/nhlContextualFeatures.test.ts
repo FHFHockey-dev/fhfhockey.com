@@ -155,10 +155,16 @@ describe("nhlContextualFeatures", () => {
       homePowerPlayAgeSeconds: 4,
       awayPowerPlayAgeSeconds: null,
       shooterShiftAgeSeconds: 14,
+      shooterPreviousShiftGapSeconds: null,
+      shooterPreviousShiftDurationSeconds: null,
       ownerAverageShiftAgeSeconds: 11.5,
       ownerMaxShiftAgeSeconds: 14,
+      ownerAveragePreviousShiftGapSeconds: null,
+      ownerAveragePreviousShiftDurationSeconds: null,
       opponentAverageShiftAgeSeconds: 21.5,
       opponentMaxShiftAgeSeconds: 24,
+      opponentAveragePreviousShiftGapSeconds: null,
+      opponentAveragePreviousShiftDurationSeconds: null,
       eastWestMovementFeet: 34,
       northSouthMovementFeet: 7,
       crossedRoyalRoad: true,
@@ -255,11 +261,116 @@ describe("nhlContextualFeatures", () => {
     expect(contexts[1]).toMatchObject({
       eventId: 301,
       shooterShiftAgeSeconds: null,
+      shooterPreviousShiftGapSeconds: null,
+      shooterPreviousShiftDurationSeconds: null,
       ownerAverageShiftAgeSeconds: null,
+      ownerAveragePreviousShiftGapSeconds: null,
+      ownerAveragePreviousShiftDurationSeconds: null,
       opponentAverageShiftAgeSeconds: null,
+      opponentAveragePreviousShiftGapSeconds: null,
+      opponentAveragePreviousShiftDurationSeconds: null,
       eastWestMovementFeet: null,
       northSouthMovementFeet: null,
       crossedRoyalRoad: null,
+    });
+  });
+
+  it("computes prior-shift recency and prior-shift duration for shooter and on-ice groups within a period", () => {
+    const events = parseEvents([
+      {
+        eventId: 400,
+        sortOrder: 400,
+        periodDescriptor: { number: 1, periodType: "REG" },
+        timeInPeriod: "03:20",
+        timeRemaining: "16:40",
+        situationCode: "1551",
+        homeTeamDefendingSide: "left",
+        typeCode: 506,
+        typeDescKey: "shot-on-goal",
+        details: {
+          eventOwnerTeamId: 10,
+          shootingPlayerId: 91,
+          goalieInNetId: 31,
+          xCoord: 74,
+          yCoord: 8,
+          zoneCode: "O",
+        },
+      },
+    ]);
+
+    const shiftRows = [
+      createShiftRow({
+        shift_id: 10,
+        player_id: 91,
+        team_id: 10,
+        start_seconds: 120,
+        end_seconds: 170,
+        duration_seconds: 50,
+      }),
+      createShiftRow({
+        shift_id: 11,
+        player_id: 91,
+        team_id: 10,
+        start_seconds: 190,
+        end_seconds: 240,
+        duration_seconds: 50,
+      }),
+      createShiftRow({
+        shift_id: 12,
+        player_id: 34,
+        team_id: 10,
+        start_seconds: 130,
+        end_seconds: 175,
+        duration_seconds: 45,
+      }),
+      createShiftRow({
+        shift_id: 13,
+        player_id: 34,
+        team_id: 10,
+        start_seconds: 190,
+        end_seconds: 250,
+        duration_seconds: 60,
+      }),
+      createShiftRow({
+        shift_id: 14,
+        player_id: 31,
+        team_id: 20,
+        team_abbrev: "NYR",
+        start_seconds: 0,
+        end_seconds: 240,
+        duration_seconds: 240,
+      }),
+      createShiftRow({
+        shift_id: 15,
+        player_id: 32,
+        team_id: 20,
+        team_abbrev: "NYR",
+        start_seconds: 100,
+        end_seconds: 160,
+        duration_seconds: 60,
+      }),
+      createShiftRow({
+        shift_id: 16,
+        player_id: 32,
+        team_id: 20,
+        team_abbrev: "NYR",
+        start_seconds: 190,
+        end_seconds: 230,
+        duration_seconds: 40,
+      }),
+    ] as any[];
+
+    const contexts = buildContextualFeatureContexts(events, shiftRows as any, 10, 20);
+
+    expect(contexts[0]).toMatchObject({
+      eventId: 400,
+      shooterShiftAgeSeconds: 10,
+      shooterPreviousShiftGapSeconds: 20,
+      shooterPreviousShiftDurationSeconds: 50,
+      ownerAveragePreviousShiftGapSeconds: 17.5,
+      ownerAveragePreviousShiftDurationSeconds: 47.5,
+      opponentAveragePreviousShiftGapSeconds: 30,
+      opponentAveragePreviousShiftDurationSeconds: 60,
     });
   });
 });

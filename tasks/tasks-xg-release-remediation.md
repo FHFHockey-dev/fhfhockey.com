@@ -3,7 +3,9 @@
 - `tasks/tasks-xg-release-remediation.md` - Execution plan for fixing the release blockers that currently prevent baseline-model training.
 - `tasks/artifacts/xg-baseline-validation-2026-03-30.md` - Validation evidence showing the current raw-identity and parity failures.
 - `tasks/artifacts/xg-release-blockers-2026-03-30.md` - Current minimal blocker list for training-use release approval.
+- `tasks/artifacts/xg-release-blockers-2026-03-31.md` - Updated blocker list after the formal release batch, showing that raw validation and metadata packaging are resolved and the remaining blocker is the still-failing formal parity verdict.
 - `tasks/artifacts/xg-release-gate-verdict-2026-03-30.md` - Dated decision recording that the release gate is not satisfied.
+- `tasks/artifacts/xg-release-gate-verdict-2026-03-31.md` - Updated dated verdict after the formal release batch, recording that the gate is still not satisfied because the release artifact remains in a failed parity state.
 - `tasks/artifacts/xg-release-validation-2026-03-31.md` - Formal release-batch validation artifact for the intended training sample, including metadata, pass/fail status, and approved exception references.
 - `tasks/artifacts/xg-event-id-root-cause-2026-03-30.md` - Root-cause analysis for the sampled `event_id` validation failure.
 - `tasks/artifacts/xg-event-id-remediation-2026-03-30.md` - Dated remediation record showing the event-id validation path is fixed and revalidated.
@@ -53,8 +55,8 @@
   - [x] 3.3 Publish a dated release-validation artifact that records pass/fail status, approved exceptions if any, and links to supporting audit evidence.
 
 - [ ] 4.0 Re-evaluate the training-use release gate after remediation
-  - [ ] 4.1 Re-review the validation artifact against `tasks/validation-checklist.md` and list any remaining blockers.
-  - [ ] 4.2 Record a new dated release-gate verdict for training use.
+  - [x] 4.1 Re-review the validation artifact against `tasks/validation-checklist.md` and list any remaining blockers.
+  - [x] 4.2 Record a new dated release-gate verdict for training use.
   - [ ] 4.3 If and only if the verdict is satisfied, resume `tasks/tasks-xg-baseline-options.md` at task `2.0`.
 
 - [ ] 5.0 Resolve broad `nst_gamelog_as_counts_oi` exact-parity drift on the legacy-overlap set

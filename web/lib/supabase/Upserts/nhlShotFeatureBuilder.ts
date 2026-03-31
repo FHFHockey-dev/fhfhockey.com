@@ -9,9 +9,11 @@ import { evaluateNormalizedEventInclusion } from "./nhlEventInclusion";
 import { buildFlurryContexts } from "./nhlFlurries";
 import { buildMissReasonContexts } from "./nhlMissReasons";
 import type { ParsedNhlPbpEvent } from "./nhlPlayByPlayParser";
+import { buildPossessionChainContexts } from "./nhlPossessionChains";
 import { buildPriorEventContexts } from "./nhlPriorEventContext";
 import { buildReboundContexts } from "./nhlRebounds";
 import { buildRushContexts } from "./nhlRush";
+import { buildScoreStateContexts } from "./nhlScoreState";
 
 type ShiftRow = Database["public"]["Tables"]["nhl_api_shift_rows"]["Row"];
 
@@ -51,17 +53,48 @@ export type NhlShotFeatureRow = {
   normalizedY: number | null;
   shotDistanceFeet: number | null;
   shotAngleDegrees: number | null;
+  shooterRosterPosition: "L" | "R" | "C" | "D" | "G" | null;
+  shooterPositionGroup: "forward" | "defense" | "goalie" | null;
+  isDefensemanShooter: boolean | null;
+  shooterHandedness: "L" | "R" | null;
+  goalieCatchHand: "L" | "R" | null;
+  shooterGoalieHandednessMatchup: "same-hand" | "opposite-hand" | null;
   previousEventId: number | null;
   previousEventTypeDescKey: string | null;
   previousEventTeamId: number | null;
   previousEventSameTeam: boolean | null;
   timeSincePreviousEventSeconds: number | null;
   distanceFromPreviousEvent: number | null;
+  homeScoreBeforeEvent: number | null;
+  awayScoreBeforeEvent: number | null;
+  homeScoreDiffBeforeEvent: number | null;
+  awayScoreDiffBeforeEvent: number | null;
+  ownerScoreDiffBeforeEvent: number | null;
+  ownerScoreDiffBucket: string | null;
+  scoreEffectsGameTimeSegment: string | null;
+  ownerScoreDiffByGameTimeBucket: string | null;
+  isLateGameClose: boolean | null;
+  isLateGameTrailing: boolean | null;
+  isLateGameLeading: boolean | null;
+  isFinalFiveMinutes: boolean | null;
+  isFinalTwoMinutes: boolean | null;
+  possessionSequenceId: string | null;
+  possessionEventCount: number | null;
+  possessionDurationSeconds: number | null;
+  possessionStartEventId: number | null;
+  possessionStartTypeDescKey: string | null;
+  possessionStartZoneCode: string | null;
+  possessionRegainedFromOpponent: boolean | null;
+  possessionRegainEventTypeDescKey: string | null;
+  possessionEnteredOffensiveZone: boolean | null;
   isReboundShot: boolean;
   reboundSourceEventId: number | null;
   reboundSourceTypeDescKey: string | null;
   reboundTimeDeltaSeconds: number | null;
   reboundDistanceFromSource: number | null;
+  reboundLateralDisplacementFeet: number | null;
+  reboundDistanceDeltaFeet: number | null;
+  reboundAngleChangeDegrees: number | null;
   createsRebound: boolean;
   isRushShot: boolean;
   rushSourceEventId: number | null;
@@ -80,10 +113,25 @@ export type NhlShotFeatureRow = {
   ownerPowerPlayAgeSeconds: number | null;
   opponentPowerPlayAgeSeconds: number | null;
   shooterShiftAgeSeconds: number | null;
+  shooterPreviousShiftGapSeconds: number | null;
+  shooterPreviousShiftDurationSeconds: number | null;
   ownerAverageShiftAgeSeconds: number | null;
   ownerMaxShiftAgeSeconds: number | null;
+  ownerAveragePreviousShiftGapSeconds: number | null;
+  ownerAveragePreviousShiftDurationSeconds: number | null;
   opponentAverageShiftAgeSeconds: number | null;
   opponentMaxShiftAgeSeconds: number | null;
+  opponentAveragePreviousShiftGapSeconds: number | null;
+  opponentAveragePreviousShiftDurationSeconds: number | null;
+  ownerForwardCountOnIce: number | null;
+  ownerDefenseCountOnIce: number | null;
+  opponentForwardCountOnIce: number | null;
+  opponentDefenseCountOnIce: number | null;
+  ownerGoalieOnIce: boolean | null;
+  opponentGoalieOnIce: boolean | null;
+  ownerSkaterDeploymentBucket: string | null;
+  opponentSkaterDeploymentBucket: string | null;
+  skaterRoleMatchupBucket: string | null;
   eastWestMovementFeet: number | null;
   northSouthMovementFeet: number | null;
   crossedRoyalRoad: boolean | null;
@@ -140,6 +188,14 @@ export function buildShotFeatureRows(
   const priorByEventId = new Map(
     priorContexts.map((context) => [context.eventId, context])
   );
+  const possessionContexts = buildPossessionChainContexts(events);
+  const possessionByEventId = new Map(
+    possessionContexts.map((context) => [context.eventId, context])
+  );
+  const scoreStateContexts = buildScoreStateContexts(events);
+  const scoreStateByEventId = new Map(
+    scoreStateContexts.map((context) => [context.eventId, context])
+  );
   const reboundContexts = buildReboundContexts(events);
   const reboundByEventId = new Map(
     reboundContexts.map((context) => [context.eventId, context])
@@ -174,6 +230,8 @@ export function buildShotFeatureRows(
     .map((event) => {
       const inclusion = evaluateNormalizedEventInclusion(event);
       const prior = priorByEventId.get(event.event_id);
+      const possession = possessionByEventId.get(event.event_id);
+      const scoreState = scoreStateByEventId.get(event.event_id);
       const rebound = reboundByEventId.get(event.event_id);
       const rush = rushByEventId.get(event.event_id);
       const flurry = flurryByEventId.get(event.event_id);
@@ -235,17 +293,54 @@ export function buildShotFeatureRows(
           normalized.normalizedX,
           normalized.normalizedY
         ),
+        shooterRosterPosition: null,
+        shooterPositionGroup: null,
+        isDefensemanShooter: null,
+        shooterHandedness: null,
+        goalieCatchHand: null,
+        shooterGoalieHandednessMatchup: null,
         previousEventId: prior?.previousEventId ?? null,
         previousEventTypeDescKey: prior?.previousEventTypeDescKey ?? null,
         previousEventTeamId: prior?.previousEventTeamId ?? null,
         previousEventSameTeam: prior?.previousEventSameTeam ?? null,
         timeSincePreviousEventSeconds: prior?.timeSincePreviousEventSeconds ?? null,
         distanceFromPreviousEvent: prior?.distanceFromPreviousEvent ?? null,
+        homeScoreBeforeEvent: scoreState?.homeScoreBeforeEvent ?? null,
+        awayScoreBeforeEvent: scoreState?.awayScoreBeforeEvent ?? null,
+        homeScoreDiffBeforeEvent: scoreState?.homeScoreDiffBeforeEvent ?? null,
+        awayScoreDiffBeforeEvent: scoreState?.awayScoreDiffBeforeEvent ?? null,
+        ownerScoreDiffBeforeEvent: scoreState?.ownerScoreDiffBeforeEvent ?? null,
+        ownerScoreDiffBucket: scoreState?.ownerScoreDiffBucket ?? null,
+        scoreEffectsGameTimeSegment:
+          scoreState?.scoreEffectsGameTimeSegment ?? null,
+        ownerScoreDiffByGameTimeBucket:
+          scoreState?.ownerScoreDiffByGameTimeBucket ?? null,
+        isLateGameClose: scoreState?.isLateGameClose ?? null,
+        isLateGameTrailing: scoreState?.isLateGameTrailing ?? null,
+        isLateGameLeading: scoreState?.isLateGameLeading ?? null,
+        isFinalFiveMinutes: scoreState?.isFinalFiveMinutes ?? null,
+        isFinalTwoMinutes: scoreState?.isFinalTwoMinutes ?? null,
+        possessionSequenceId: possession?.possessionSequenceId ?? null,
+        possessionEventCount: possession?.possessionEventCount ?? null,
+        possessionDurationSeconds: possession?.possessionDurationSeconds ?? null,
+        possessionStartEventId: possession?.possessionStartEventId ?? null,
+        possessionStartTypeDescKey: possession?.possessionStartTypeDescKey ?? null,
+        possessionStartZoneCode: possession?.possessionStartZoneCode ?? null,
+        possessionRegainedFromOpponent:
+          possession?.possessionRegainedFromOpponent ?? null,
+        possessionRegainEventTypeDescKey:
+          possession?.possessionRegainEventTypeDescKey ?? null,
+        possessionEnteredOffensiveZone:
+          possession?.possessionEnteredOffensiveZone ?? null,
         isReboundShot: rebound?.isReboundShot ?? false,
         reboundSourceEventId: rebound?.reboundSourceEventId ?? null,
         reboundSourceTypeDescKey: rebound?.reboundSourceTypeDescKey ?? null,
         reboundTimeDeltaSeconds: rebound?.reboundTimeDeltaSeconds ?? null,
         reboundDistanceFromSource: rebound?.reboundDistanceFromSource ?? null,
+        reboundLateralDisplacementFeet:
+          rebound?.reboundLateralDisplacementFeet ?? null,
+        reboundDistanceDeltaFeet: rebound?.reboundDistanceDeltaFeet ?? null,
+        reboundAngleChangeDegrees: rebound?.reboundAngleChangeDegrees ?? null,
         createsRebound: rebound?.createsRebound ?? false,
         isRushShot: rush?.isRushShot ?? false,
         rushSourceEventId: rush?.rushSourceEventId ?? null,
@@ -266,13 +361,34 @@ export function buildShotFeatureRows(
         opponentPowerPlayAgeSeconds:
           contextual?.opponentPowerPlayAgeSeconds ?? null,
         shooterShiftAgeSeconds: contextual?.shooterShiftAgeSeconds ?? null,
+        shooterPreviousShiftGapSeconds:
+          contextual?.shooterPreviousShiftGapSeconds ?? null,
+        shooterPreviousShiftDurationSeconds:
+          contextual?.shooterPreviousShiftDurationSeconds ?? null,
         ownerAverageShiftAgeSeconds:
           contextual?.ownerAverageShiftAgeSeconds ?? null,
         ownerMaxShiftAgeSeconds: contextual?.ownerMaxShiftAgeSeconds ?? null,
+        ownerAveragePreviousShiftGapSeconds:
+          contextual?.ownerAveragePreviousShiftGapSeconds ?? null,
+        ownerAveragePreviousShiftDurationSeconds:
+          contextual?.ownerAveragePreviousShiftDurationSeconds ?? null,
         opponentAverageShiftAgeSeconds:
           contextual?.opponentAverageShiftAgeSeconds ?? null,
         opponentMaxShiftAgeSeconds:
           contextual?.opponentMaxShiftAgeSeconds ?? null,
+        opponentAveragePreviousShiftGapSeconds:
+          contextual?.opponentAveragePreviousShiftGapSeconds ?? null,
+        opponentAveragePreviousShiftDurationSeconds:
+          contextual?.opponentAveragePreviousShiftDurationSeconds ?? null,
+        ownerForwardCountOnIce: null,
+        ownerDefenseCountOnIce: null,
+        opponentForwardCountOnIce: null,
+        opponentDefenseCountOnIce: null,
+        ownerGoalieOnIce: null,
+        opponentGoalieOnIce: null,
+        ownerSkaterDeploymentBucket: null,
+        opponentSkaterDeploymentBucket: null,
+        skaterRoleMatchupBucket: null,
         eastWestMovementFeet: contextual?.eastWestMovementFeet ?? null,
         northSouthMovementFeet: contextual?.northSouthMovementFeet ?? null,
         crossedRoyalRoad: contextual?.crossedRoyalRoad ?? null,

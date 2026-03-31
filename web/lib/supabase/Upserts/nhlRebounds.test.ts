@@ -73,6 +73,9 @@ describe("nhlRebounds", () => {
       reboundSourceTeamId: null,
       reboundTimeDeltaSeconds: null,
       reboundDistanceFromSource: null,
+      reboundLateralDisplacementFeet: null,
+      reboundDistanceDeltaFeet: null,
+      reboundAngleChangeDegrees: null,
       reboundWindowSeconds: DEFAULT_REBOUND_WINDOW_SECONDS,
       createsRebound: true,
       reboundTargetEventId: 101,
@@ -90,6 +93,9 @@ describe("nhlRebounds", () => {
       createsRebound: false,
     });
     expect(contexts[1].reboundDistanceFromSource).toBeCloseTo(13.601, 3);
+    expect(contexts[1].reboundLateralDisplacementFeet).toBe(11);
+    expect(contexts[1].reboundDistanceDeltaFeet).toBeCloseTo(-9.2138, 3);
+    expect(contexts[1].reboundAngleChangeDegrees).toBeCloseTo(7.5789, 3);
   });
 
   it("breaks rebound sequences when an intervening non-shot event occurs", () => {

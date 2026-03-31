@@ -45,6 +45,7 @@ Implication:
   - `shot-on-goal`
   - `missed-shot`
 - blocked shots are retained in the feature layer for future experimentation, but they are excluded from the first baseline training cohort
+- the next clean approval pass keeps blocked shots as excluded training rows rather than coercing them into contextual zero-probability rows
 
 ## Canonical Label Definition
 
@@ -132,7 +133,7 @@ This document does not yet decide:
 - class weighting strategy
 - calibration strategy
 - persisted-table versus on-demand dataset materialization
-- whether later models should add blocked-shot or goalie-specific cohorts
+- whether a later blocked-shot expansion should become a separate modeled class or staged model after the unblocked-shot baseline is approved
 
 Those belong to later subtasks in `2.2` through `2.4`.
 

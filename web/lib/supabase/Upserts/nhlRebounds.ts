@@ -1,6 +1,7 @@
 import { evaluateNormalizedEventInclusion } from "./nhlEventInclusion";
 import type { ParsedNhlPbpEvent } from "./nhlPlayByPlayParser";
 import { buildPriorEventContexts } from "./nhlPriorEventContext";
+import { OFFENSIVE_NET_X, OFFENSIVE_NET_Y } from "./nhlCoordinates";
 
 export const DEFAULT_REBOUND_WINDOW_SECONDS = 3;
 
@@ -23,11 +24,34 @@ export type NhlReboundContext = {
   reboundSourceTeamId: number | null;
   reboundTimeDeltaSeconds: number | null;
   reboundDistanceFromSource: number | null;
+  reboundLateralDisplacementFeet: number | null;
+  reboundDistanceDeltaFeet: number | null;
+  reboundAngleChangeDegrees: number | null;
   reboundWindowSeconds: number;
   createsRebound: boolean;
   reboundTargetEventId: number | null;
   reboundTargetTypeDescKey: string | null;
 };
+
+function computeShotDistanceFeet(
+  normalizedX: number | null,
+  normalizedY: number | null
+): number | null {
+  if (normalizedX == null || normalizedY == null) return null;
+  const deltaX = OFFENSIVE_NET_X - normalizedX;
+  const deltaY = OFFENSIVE_NET_Y - normalizedY;
+  return Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+}
+
+function computeShotAngleDegrees(
+  normalizedX: number | null,
+  normalizedY: number | null
+): number | null {
+  if (normalizedX == null || normalizedY == null) return null;
+  const deltaX = Math.abs(OFFENSIVE_NET_X - normalizedX);
+  const deltaY = Math.abs(OFFENSIVE_NET_Y - normalizedY);
+  return (Math.atan2(deltaY, deltaX) * 180) / Math.PI;
+}
 
 function getEventOrder(event: ParsedNhlPbpEvent): number {
   return event.sort_order ?? event.event_id;
@@ -114,6 +138,42 @@ export function buildReboundContexts(
         : null,
       reboundDistanceFromSource: isReboundShot
         ? priorContext?.distanceFromPreviousEvent ?? null
+        : null,
+      reboundLateralDisplacementFeet: isReboundShot
+        ? priorContext?.currentNormalizedY != null &&
+          priorContext.previousNormalizedY != null
+          ? Math.abs(
+              priorContext.currentNormalizedY - priorContext.previousNormalizedY
+            )
+          : null
+        : null,
+      reboundDistanceDeltaFeet: isReboundShot
+        ? (() => {
+            const currentDistance = computeShotDistanceFeet(
+              priorContext?.currentNormalizedX ?? null,
+              priorContext?.currentNormalizedY ?? null
+            );
+            const sourceDistance = computeShotDistanceFeet(
+              priorContext?.previousNormalizedX ?? null,
+              priorContext?.previousNormalizedY ?? null
+            );
+            if (currentDistance == null || sourceDistance == null) return null;
+            return currentDistance - sourceDistance;
+          })()
+        : null,
+      reboundAngleChangeDegrees: isReboundShot
+        ? (() => {
+            const currentAngle = computeShotAngleDegrees(
+              priorContext?.currentNormalizedX ?? null,
+              priorContext?.currentNormalizedY ?? null
+            );
+            const sourceAngle = computeShotAngleDegrees(
+              priorContext?.previousNormalizedX ?? null,
+              priorContext?.previousNormalizedY ?? null
+            );
+            if (currentAngle == null || sourceAngle == null) return null;
+            return Math.abs(currentAngle - sourceAngle);
+          })()
         : null,
       reboundWindowSeconds,
       createsRebound: false,

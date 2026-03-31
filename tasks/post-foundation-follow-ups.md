@@ -44,7 +44,8 @@ These are not phase-1 foundation blockers. They are the next queue once the vali
   - isotonic regression
   - Platt scaling
   - no post-calibration if already acceptable
-- version calibrated outputs separately from uncalibrated model outputs when required
+- version calibrated outputs separately from uncalibrated model outputs
+- persist calibration as a separately versioned artifact linked to the underlying base-model artifact rather than overwriting it in place
 
 ## 4. Benchmarking
 
@@ -95,7 +96,12 @@ These are not phase-1 foundation blockers. They are the next queue once the vali
   - current-season updates
   - repair runs
   - historical backfills
-- add dashboards or health checks for validation drift and upstream schema drift
+- add rollout health checks for:
+  - validation drift
+  - calibration drift
+  - upstream feature-contract drift
+  - upstream schema drift
+- keep scheduled retrains separate from targeted repair runs and separate from benchmark-refresh decision runs
 
 ## 9. Historical Backfill Expansion
 

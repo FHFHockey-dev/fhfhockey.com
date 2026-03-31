@@ -21,8 +21,11 @@
 - `tasks/tasks-xg-release-exception-resolution.md` - Release-policy resolution track that unblocked resumption of baseline-model work.
 - `web/lib/supabase/Upserts/nhlShotFeatureBuilder.ts` - Current builder for versioned shot-feature rows that baseline models will consume.
 - `web/lib/supabase/Upserts/nhlShotFeatureBuilder.test.ts` - Unit tests covering integrated shot-feature assembly.
+- `web/lib/xg/baselineDataset.ts` - Baseline dataset shaping and chronological split logic for xG training artifacts.
+- `web/lib/xg/binaryLogistic.ts` - Minimal binary logistic trainer used by the first baseline-training harness.
 - `web/lib/supabase/Upserts/nhlXgValidation.ts` - Existing validation helpers for normalized-event parity and NST comparison.
 - `web/lib/supabase/Upserts/nhlXgValidation.test.ts` - Unit tests for event-count and parity validation helpers.
+- `web/scripts/train-nhl-xg-baseline.ts` - Reproducible baseline-training entrypoint that reads validated NHL-derived rows and writes versioned dataset/model artifacts.
 - `web/lib/supabase/database-generated.types.ts` - Current generated database types for future feature/training table additions.
 - `migrations/XXXXXXXXXXXX_create_nhl_shot_features_tables.sql` - Planned migration slot for derived shot-feature storage if persisted training datasets are added.
 - `migrations/XXXXXXXXXXXX_create_nhl_metric_parity_tables.sql` - Planned migration slot for published parity surfaces used during benchmarking comparisons.
@@ -50,33 +53,33 @@
   - [x] 2.4 Decide whether training datasets will be generated on demand or stored in a versioned table/file artifact.
 
 - [ ] 3.0 Build the shared baseline-training harness before fitting any model family
-  - [ ] 3.1 Create a reproducible baseline-training entrypoint that reads validated shot-feature rows and outputs versioned model artifacts.
-  - [ ] 3.2 Add configuration for feature selection, data splits, and seed control so baseline runs are repeatable.
-  - [ ] 3.3 Add evaluation output for log loss, Brier score, calibration, and split-specific reporting.
-  - [ ] 3.4 Add focused tests for dataset shaping, split logic, and artifact metadata generation.
+  - [x] 3.1 Create a reproducible baseline-training entrypoint that reads validated shot-feature rows and outputs versioned model artifacts.
+  - [x] 3.2 Add configuration for feature selection, data splits, and seed control so baseline runs are repeatable.
+  - [x] 3.3 Add evaluation output for log loss, Brier score, calibration, and split-specific reporting.
+  - [x] 3.4 Add focused tests for dataset shaping, split logic, and artifact metadata generation.
 
-- [ ] 4.0 Train and evaluate the simplest baseline first: unregularized logistic regression
-  - [ ] 4.1 Fit the baseline on the validated training dataset and save coefficients plus metadata.
-  - [ ] 4.2 Evaluate the model on holdout data across overall, strength-state, rebound, and rush slices.
-  - [ ] 4.3 Document strengths, weaknesses, and obvious feature gaps from the baseline result.
+- [x] 4.0 Train and evaluate the simplest baseline first: unregularized logistic regression
+  - [x] 4.1 Fit the baseline on the validated training dataset and save coefficients plus metadata.
+  - [x] 4.2 Evaluate the model on holdout data across overall, strength-state, rebound, and rush slices.
+  - [x] 4.3 Document strengths, weaknesses, and obvious feature gaps from the baseline result.
 
-- [ ] 5.0 Train and evaluate the second baseline: regularized logistic regression
-  - [ ] 5.1 Add L1/L2 or elastic-net regularization options and fit the regularized baseline.
-  - [ ] 5.2 Compare regularized performance against the unregularized logistic baseline.
-  - [ ] 5.3 Document coefficient stability, feature shrinkage, and any practical deployment advantages.
+- [x] 5.0 Train and evaluate the second baseline: regularized logistic regression
+  - [x] 5.1 Add L1/L2 or elastic-net regularization options and fit the regularized baseline.
+  - [x] 5.2 Compare regularized performance against the unregularized logistic baseline.
+  - [x] 5.3 Document coefficient stability, feature shrinkage, and any practical deployment advantages.
 
-- [ ] 6.0 Train and evaluate the third baseline: gradient boosting
-  - [ ] 6.1 Define the first boosting configuration and fit the model on the same validated training dataset.
-  - [ ] 6.2 Compare boosting performance against both logistic baselines using the same holdout and reporting contract.
-  - [ ] 6.3 Document feature importance behavior, overfitting risk, calibration behavior, and operational tradeoffs.
+- [x] 6.0 Train and evaluate the third baseline: gradient boosting
+  - [x] 6.1 Define the first boosting configuration and fit the model on the same validated training dataset.
+  - [x] 6.2 Compare boosting performance against both logistic baselines using the same holdout and reporting contract.
+  - [x] 6.3 Document feature importance behavior, overfitting risk, calibration behavior, and operational tradeoffs.
 
-- [ ] 7.0 Benchmark, calibrate, and compare the baseline options under one evaluation contract
-  - [ ] 7.1 Run a uniform benchmark suite across all candidate baselines with identical splits and metrics.
-  - [ ] 7.2 Evaluate whether post-calibration is required for each baseline and test isotonic and/or Platt calibration where justified.
-  - [ ] 7.3 Produce a benchmark artifact summarizing winner, runner-up, calibration outcomes, and reasons for rejection of weaker baselines.
+- [x] 7.0 Benchmark, calibrate, and compare the baseline options under one evaluation contract
+  - [x] 7.1 Run a uniform benchmark suite across all candidate baselines with identical splits and metrics.
+  - [x] 7.2 Evaluate whether post-calibration is required for each baseline and test isotonic and/or Platt calibration where justified.
+  - [x] 7.3 Produce a benchmark artifact summarizing winner, runner-up, calibration outcomes, and reasons for rejection of weaker baselines.
 
-- [ ] 8.0 Decide the first approved xG baseline and queue next-phase work
-  - [ ] 8.1 Choose the first approved baseline model for future integration or further tuning.
-  - [ ] 8.2 List any follow-up feature additions needed before a stronger second-pass model is attempted.
-  - [ ] 8.3 Decide whether goalie-facing modeling should reuse the chosen skater-shot baseline or wait for a dedicated goalie pass.
-  - [ ] 8.4 Create follow-up tasks for calibration hardening, historical benchmarking, advanced features, and rollout planning after the first baseline decision.
+- [x] 8.0 Decide the first approved xG baseline and queue next-phase work
+  - [x] 8.1 Choose the first approved baseline model for future integration or further tuning.
+  - [x] 8.2 List any follow-up feature additions needed before a stronger second-pass model is attempted.
+  - [x] 8.3 Decide whether goalie-facing modeling should reuse the chosen skater-shot baseline or wait for a dedicated goalie pass.
+  - [x] 8.4 Create follow-up tasks for calibration hardening, historical benchmarking, advanced features, and rollout planning after the first baseline decision.

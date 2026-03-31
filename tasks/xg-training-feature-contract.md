@@ -29,6 +29,58 @@ That means:
 
 ## Feature Categories
 
+## Named Feature Families
+
+The training harness now exposes two named feature-family presets:
+
+### `first_pass_v1`
+
+This is the default clean baseline family.
+
+It contains:
+
+- all mandatory baseline numeric features
+- all mandatory baseline boolean features
+- the recommended first-pass categorical set
+
+It intentionally excludes optional second-pass context such as possession-chain, score-state, handedness, roster-position, and richer rebound geometry unless those are explicitly requested.
+
+### `expanded_v2`
+
+This is the first named second-pass candidate family.
+
+It contains everything in `first_pass_v1`, plus the promoted additions from the March 31 second-pass benchmark pass:
+
+- possession-chain context:
+  - `possessionEventCount`
+  - `possessionDurationSeconds`
+  - `possessionStartTypeDescKey`
+  - `possessionStartZoneCode`
+  - `possessionRegainedFromOpponent`
+  - `possessionRegainEventTypeDescKey`
+  - `possessionEnteredOffensiveZone`
+- score-state context:
+  - `homeScoreDiffBeforeEvent`
+  - `awayScoreDiffBeforeEvent`
+  - `ownerScoreDiffBeforeEvent`
+  - `ownerScoreDiffBucket`
+  - `isLateGameClose`
+  - `isLateGameTrailing`
+- roster-position context:
+  - `shooterRosterPosition`
+  - `shooterPositionGroup`
+  - `isDefensemanShooter`
+
+It intentionally does not promote these optional families yet:
+
+- handedness joins
+- richer rebound geometry
+
+Reason:
+
+- handedness did not help on the repaired sample
+- rebound geometry remained inconclusive because the current holdout still lacks positive rebound coverage
+
 ### 1. Mandatory Baseline Features
 
 These columns must be present and used in the first baseline comparison.
@@ -42,7 +94,6 @@ Core geometry:
 
 Shot context:
 
-- `shotEventType`
 - `shotType`
 - `strengthState`
 - `strengthExact`
@@ -84,6 +135,7 @@ Why these are mandatory:
 - they represent the first-pass public-data xG signal set
 - they are available directly from the current feature builder
 - they cover geometry, sequence context, manpower context, and a minimal fatigue/movement layer without overloading the first baseline
+- miss subtypes stay in the cohort as explanatory inputs; they are not currently exclusion rules
 
 ### 2. Optional Baseline Features
 
@@ -113,7 +165,62 @@ Extended rebound context:
 - `reboundSourceTypeDescKey`
 - `reboundTimeDeltaSeconds`
 - `reboundDistanceFromSource`
+- `reboundLateralDisplacementFeet`
+- `reboundDistanceDeltaFeet`
+- `reboundAngleChangeDegrees`
 - `createsRebound`
+
+Possession-chain context:
+
+- `possessionSequenceId`
+- `possessionEventCount`
+- `possessionDurationSeconds`
+- `possessionStartEventId`
+- `possessionStartTypeDescKey`
+- `possessionStartZoneCode`
+- `possessionRegainedFromOpponent`
+- `possessionRegainEventTypeDescKey`
+- `possessionEnteredOffensiveZone`
+
+Score-state context:
+
+- `homeScoreBeforeEvent`
+- `awayScoreBeforeEvent`
+- `homeScoreDiffBeforeEvent`
+- `awayScoreDiffBeforeEvent`
+- `ownerScoreDiffBeforeEvent`
+- `ownerScoreDiffBucket`
+- `scoreEffectsGameTimeSegment`
+- `ownerScoreDiffByGameTimeBucket`
+- `isLateGameClose`
+- `isLateGameTrailing`
+- `isLateGameLeading`
+- `isFinalFiveMinutes`
+- `isFinalTwoMinutes`
+
+Handedness context:
+
+- `shooterHandedness`
+- `goalieCatchHand`
+- `shooterGoalieHandednessMatchup`
+
+Roster-position context:
+
+- `shooterRosterPosition`
+- `shooterPositionGroup`
+- `isDefensemanShooter`
+
+Deployment and matchup context:
+
+- `ownerForwardCountOnIce`
+- `ownerDefenseCountOnIce`
+- `opponentForwardCountOnIce`
+- `opponentDefenseCountOnIce`
+- `ownerGoalieOnIce`
+- `opponentGoalieOnIce`
+- `ownerSkaterDeploymentBucket`
+- `opponentSkaterDeploymentBucket`
+- `skaterRoleMatchupBucket`
 
 Extended rush context:
 
@@ -133,10 +240,16 @@ Extended flurry context:
 Extended contextual features:
 
 - `opponentPowerPlayAgeSeconds`
+- `shooterPreviousShiftGapSeconds`
+- `shooterPreviousShiftDurationSeconds`
 - `ownerAverageShiftAgeSeconds`
 - `ownerMaxShiftAgeSeconds`
+- `ownerAveragePreviousShiftGapSeconds`
+- `ownerAveragePreviousShiftDurationSeconds`
 - `opponentAverageShiftAgeSeconds`
 - `opponentMaxShiftAgeSeconds`
+- `opponentAveragePreviousShiftGapSeconds`
+- `opponentAveragePreviousShiftDurationSeconds`
 
 Why these are optional:
 
@@ -158,6 +271,7 @@ Identity and lineage only:
 
 Direct label or near-label leakage:
 
+- `shotEventType`
 - `isGoal`
 - `isShotOnGoal`
 - `isMissedShot`
@@ -179,7 +293,7 @@ Training-policy exclusion flags:
 Reason for exclusion:
 
 - identity fields are for lineage, joins, and split assignment only
-- label-adjacent columns would leak or restate the target
+- current-shot event-class and label-adjacent columns would leak or restate the target
 - raw coordinates are dominated by normalized geometry in the first baseline
 - exclusion and cohort-policy flags define row eligibility, not shot quality
 
@@ -203,7 +317,6 @@ The first baseline harness should assume:
 
 Recommended first-pass categorical set:
 
-- `shotEventType`
 - `shotType`
 - `strengthState`
 - `strengthExact`
@@ -216,6 +329,7 @@ Recommended first-pass categorical set:
 - This contract defines feature eligibility, not the exact final model matrix implementation.
 - The first baseline harness may run ablations between mandatory-only and mandatory-plus-optional sets.
 - Any future addition of blocked-shot cohorts, goalie-specific context expansion, or historical season expansion must be versioned in training artifact metadata.
+- any future miss-subtype exclusion, down-weighting, or separate modeling treatment must also be versioned and justified by an approval-grade rerun
 
 ## Summary
 
@@ -223,4 +337,4 @@ The first baseline comparison now uses:
 
 - a compact mandatory feature set centered on geometry, sequence context, manpower, and a minimal contextual layer
 - an optional feature set for ablation and richer later baselines
-- a strict excluded set for identity fields, direct label leakage, and cohort-policy flags
+- a strict excluded set for identity fields, current-shot event-class leakage, direct label leakage, and cohort-policy flags
