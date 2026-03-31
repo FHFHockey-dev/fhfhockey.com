@@ -8,6 +8,9 @@
 - `tasks/definitions-and-parity.md` - Canonical rules for exclusions, feature semantics, and versioning that training logic must respect.
 - `tasks/data-contract-boundaries.md` - Boundary contract separating raw, normalized, feature, and parity layers.
 - `tasks/post-drift-retry-verification.md` - Latest operational verification that raw ingest, schema, and generated types are aligned.
+- `tasks/xg-training-dataset-contract.md` - Canonical first-pass training dataset contract defining row grain, label, and split strategy for baseline comparisons.
+- `tasks/xg-training-feature-contract.md` - Canonical first-pass feature contract defining mandatory, optional, and excluded shot-feature columns for baseline training.
+- `tasks/xg-training-materialization-decision.md` - Decision record that baseline datasets will be stored as versioned artifacts rather than generated only on demand.
 - `tasks/artifacts/xg-baseline-validation-2026-03-30.md` - Dated release-gate validation artifact for the intended baseline-training sample.
 - `tasks/artifacts/xg-release-blockers-2026-03-30.md` - Dated blocker list for the current baseline-training release-gate review.
 - `tasks/artifacts/xg-release-gate-verdict-2026-03-30.md` - Dated release-gate decision for whether baseline-model training may begin.
@@ -41,10 +44,10 @@
   - [x] 1.4 If the gate is not satisfied, stop baseline-model work and create remediation tasks before proceeding.
 
 - [ ] 2.0 If and only if the release gate is satisfied, define the first training dataset contract
-  - [ ] 2.1 Lock the canonical training-row grain, label definition, and season split strategy for the first xG baseline comparison.
-  - [ ] 2.2 Define which shot-feature columns are mandatory, optional, or excluded for baseline training.
-  - [ ] 2.3 Specify dataset lineage requirements, including `parser_version`, `strength_version`, `feature_version`, and source commit SHA.
-  - [ ] 2.4 Decide whether training datasets will be generated on demand or stored in a versioned table/file artifact.
+  - [x] 2.1 Lock the canonical training-row grain, label definition, and season split strategy for the first xG baseline comparison.
+  - [x] 2.2 Define which shot-feature columns are mandatory, optional, or excluded for baseline training.
+  - [x] 2.3 Specify dataset lineage requirements, including `parser_version`, `strength_version`, `feature_version`, and source commit SHA.
+  - [x] 2.4 Decide whether training datasets will be generated on demand or stored in a versioned table/file artifact.
 
 - [ ] 3.0 Build the shared baseline-training harness before fitting any model family
   - [ ] 3.1 Create a reproducible baseline-training entrypoint that reads validated shot-feature rows and outputs versioned model artifacts.
