@@ -304,6 +304,13 @@ For each divergence from NST-era behavior, record:
     - giveaways
     - takeaways
   - it does not apply when normalized participant ids, inclusion rules, or parity accumulation disagree with the NHL-derived source rows
+- Release-artifact note:
+  - approved exception classes must remain visible in formal validation artifacts
+  - but for training-use release decisions, approved exception classes do not count as blocking parity failures by themselves
+  - a formal release artifact should distinguish:
+    - true blocking failures
+    - approved exceptions
+  - training use is allowed to proceed only when all remaining parity drift is exceptioned and no true blocker class remains
 
 ## Versioning Policy
 
