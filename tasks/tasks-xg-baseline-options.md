@@ -12,6 +12,10 @@
 - `tasks/artifacts/xg-release-blockers-2026-03-30.md` - Dated blocker list for the current baseline-training release-gate review.
 - `tasks/artifacts/xg-release-gate-verdict-2026-03-30.md` - Dated release-gate decision for whether baseline-model training may begin.
 - `tasks/tasks-xg-release-remediation.md` - Required remediation queue that must be completed before any baseline-model work resumes.
+- `tasks/artifacts/xg-release-validation-2026-03-31-v2.md` - Current exception-aware release-validation artifact showing training-use release readiness for the active version tuple.
+- `tasks/artifacts/xg-release-blockers-2026-03-31-v2.md` - Current blocker review showing no remaining training-use blockers.
+- `tasks/artifacts/xg-release-gate-verdict-2026-03-31-v2.md` - Current dated verdict recording that the training-use release gate is now satisfied.
+- `tasks/tasks-xg-release-exception-resolution.md` - Release-policy resolution track that unblocked resumption of baseline-model work.
 - `web/lib/supabase/Upserts/nhlShotFeatureBuilder.ts` - Current builder for versioned shot-feature rows that baseline models will consume.
 - `web/lib/supabase/Upserts/nhlShotFeatureBuilder.test.ts` - Unit tests covering integrated shot-feature assembly.
 - `web/lib/supabase/Upserts/nhlXgValidation.ts` - Existing validation helpers for normalized-event parity and NST comparison.
@@ -26,7 +30,7 @@
 - Do not begin model training work unless task `1.0` concludes that the release gate is satisfied for training use.
 - Keep baseline-model experimentation separate from parity publication logic and separate from parser/feature versioning.
 - Treat logistic regression, regularized logistic regression, and gradient boosting as candidate baselines; do not assume the winner before benchmarking.
-- Tasks `2.0` through `8.0` are conditional on `1.3` recording `release gate satisfied`.
+- Tasks `2.0` through `8.0` are now active because the updated release verdict in `tasks/artifacts/xg-release-gate-verdict-2026-03-31-v2.md` records `release gate satisfied`.
 
 ## Tasks
 

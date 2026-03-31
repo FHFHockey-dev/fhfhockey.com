@@ -7,6 +7,8 @@
 - `tasks/artifacts/xg-release-validation-output-contract-2026-03-31.md` - Required report shape for formal release validation, separating raw failures, true blockers, and approved exceptions.
 - `tasks/artifacts/xg-release-validation-2026-03-31-v2.md` - Updated formal release-validation artifact published under the exception-aware contract.
 - `tasks/artifacts/xg-release-blockers-2026-03-31-v2.md` - Final blocker review showing no remaining training-use blockers under the updated release contract.
+- `tasks/artifacts/xg-release-gate-verdict-2026-03-31-v2.md` - Updated dated release-gate verdict recording that the training-use gate is now satisfied.
+- `tasks/tasks-xg-baseline-options.md` - Baseline-model task list reactivated now that the training-use release gate is satisfied.
 - `tasks/definitions-and-parity.md` - Canonical parity policy document updated to state that approved exception classes remain visible but are not training-use blockers by themselves.
 - `tasks/artifacts/xg-release-blockers-2026-03-31.md` - Current blocker list after the formal release batch.
 - `tasks/artifacts/xg-release-gate-verdict-2026-03-31.md` - Current dated verdict recording that the release gate is not satisfied.
@@ -41,5 +43,5 @@
   - [x] 3.3 Re-review the updated artifact against `tasks/validation-checklist.md` and record the final remaining blockers, if any.
 
 - [ ] 4.0 Record the final training-use release verdict
-  - [ ] 4.1 Record a new dated release-gate verdict based on the updated release artifact.
-  - [ ] 4.2 If and only if the verdict is satisfied, resume `tasks/tasks-xg-baseline-options.md` at task `2.0`.
+  - [x] 4.1 Record a new dated release-gate verdict based on the updated release artifact.
+  - [x] 4.2 If and only if the verdict is satisfied, resume `tasks/tasks-xg-baseline-options.md` at task `2.0`.
