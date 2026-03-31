@@ -5,6 +5,8 @@
 - `tasks/artifacts/xg-release-exception-reconciliation-2026-03-31.md` - Reconciliation of the March 31 formal failure classes against the approved exception package, showing which reported failures are already exceptioned.
 - `tasks/artifacts/xg-release-exception-policy-decision-2026-03-31.md` - Policy decision recording that approved-exception classes remain visible but should not count as blocking parity failures.
 - `tasks/artifacts/xg-release-validation-output-contract-2026-03-31.md` - Required report shape for formal release validation, separating raw failures, true blockers, and approved exceptions.
+- `tasks/artifacts/xg-release-validation-2026-03-31-v2.md` - Updated formal release-validation artifact published under the exception-aware contract.
+- `tasks/artifacts/xg-release-blockers-2026-03-31-v2.md` - Final blocker review showing no remaining training-use blockers under the updated release contract.
 - `tasks/definitions-and-parity.md` - Canonical parity policy document updated to state that approved exception classes remain visible but are not training-use blockers by themselves.
 - `tasks/artifacts/xg-release-blockers-2026-03-31.md` - Current blocker list after the formal release batch.
 - `tasks/artifacts/xg-release-gate-verdict-2026-03-31.md` - Current dated verdict recording that the release gate is not satisfied.
@@ -31,12 +33,12 @@
 - [ ] 2.0 Update the validation and reporting contract if the current fail-state should no longer be blocking
   - [x] 2.1 Define the required output shape for release validation so raw failures, true parity bugs, and approved exception classes are reported separately.
   - [x] 2.2 Update `web/lib/supabase/Upserts/nhlXgValidation.ts` and/or `web/scripts/run-nhl-xg-release-validation.ts` so approved exception classes do not appear as unresolved blockers.
-  - [ ] 2.3 Add tests covering the new release-validation interpretation rules.
+  - [x] 2.3 Add tests covering the new release-validation interpretation rules.
 
 - [ ] 3.0 Re-run the formal release batch under the resolved contract
-  - [ ] 3.1 Re-run the full release validation batch on the intended training sample.
-  - [ ] 3.2 Publish a new dated release-validation artifact showing the resolved interpretation.
-  - [ ] 3.3 Re-review the updated artifact against `tasks/validation-checklist.md` and record the final remaining blockers, if any.
+  - [x] 3.1 Re-run the full release validation batch on the intended training sample.
+  - [x] 3.2 Publish a new dated release-validation artifact showing the resolved interpretation.
+  - [x] 3.3 Re-review the updated artifact against `tasks/validation-checklist.md` and record the final remaining blockers, if any.
 
 - [ ] 4.0 Record the final training-use release verdict
   - [ ] 4.1 Record a new dated release-gate verdict based on the updated release artifact.
