@@ -291,6 +291,19 @@ For each divergence from NST-era behavior, record:
 - On-ice-specific note:
   - frozen NST shift-boundary behavior and `on_the_fly_starts` bookkeeping are not automatic parity targets when they conflict with NHL-derived event and shift interpretation
   - however, broad on-ice drifts caused by actual implementation bugs must still be fixed before release
+- Individual exact-count note:
+  - if parity output matches direct included-event reconstruction from normalized NHL rows, residual disagreement with frozen NST is treated as an approved NHL-correctness divergence rather than a blocking bug
+  - this currently applies to the investigated residual families:
+    - faceoffs won and lost
+    - shots
+    - `icf`
+    - `iff`
+    - shots blocked
+    - penalty-family splits
+    - hits and hits taken
+    - giveaways
+    - takeaways
+  - it does not apply when normalized participant ids, inclusion rules, or parity accumulation disagree with the NHL-derived source rows
 
 ## Versioning Policy
 

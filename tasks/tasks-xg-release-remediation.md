@@ -12,6 +12,9 @@
 - `tasks/artifacts/xg-on-ice-root-causes-2026-03-30.md` - Representative root-cause analysis for the broad `counts_oi` drift, separating a real zone-start bug from shift-boundary convention differences and validator noise.
 - `tasks/artifacts/xg-on-ice-policy-decision-2026-03-30.md` - Dated decision recording that on-ice and zone-start metrics stay in scope but frozen NST-only boundary conventions are retired as approved NHL-correctness divergences.
 - `tasks/artifacts/xg-on-ice-rerun-2026-03-30.md` - Post-fix rerun evidence showing the zone-start overcount is resolved and the remaining `counts_oi` drift is now bounded to documented policy differences.
+- `tasks/artifacts/xg-individual-root-causes-2026-03-30.md` - Root-cause analysis showing the remaining individual exact-count drift is now mostly frozen-NST versus NHL event-credit or classification disagreement rather than a new parity-engine bug.
+- `tasks/artifacts/xg-individual-policy-decision-2026-03-30.md` - Dated decision recording that the remaining investigated individual exact-count residuals are approved NHL-correctness divergences unless a concrete parser or inclusion bug is later shown.
+- `tasks/artifacts/xg-individual-rerun-2026-03-30.md` - Rerun evidence showing that no new true-bug individual exact-count drift remains after the root-cause trace and policy decision.
 - `tasks/validation-checklist.md` - Formal checklist the remediation work must satisfy before training can begin.
 - `web/lib/supabase/Upserts/nhlPlayByPlayParser.ts` - Current parser that must preserve upstream event identity correctly.
 - `web/lib/supabase/Upserts/nhlRawGamecenter.mjs` - Current raw-ingest and normalized-upsert path that may be rewriting event identity incorrectly.
@@ -56,10 +59,10 @@
   - [x] 5.2 Decide whether frozen NST on-ice and zone-start definitions must still be matched exactly or should be retired as approved NHL-correctness divergences.
   - [ ] 5.3 If exact matching remains required, correct the on-ice and zone-start parity logic and rerun sampled validation.
 
-- [ ] 6.0 Resolve the remaining individual exact-count parity drift after the shift-layer fixes
-  - [ ] 6.1 Trace the residual `shots_blocked`, `shots`, `icf`, `iff`, faceoff, penalty, hit, giveaway, and takeaway mismatches to exact event-definition differences.
-  - [ ] 6.2 Decide which remaining residual mismatches are true bugs versus approved NHL-correctness divergences and document the decision.
-  - [ ] 6.3 Correct any remaining true-bug exact-count drift and rerun sampled validation.
+- [x] 6.0 Resolve the remaining individual exact-count parity drift after the shift-layer fixes
+  - [x] 6.1 Trace the residual `shots_blocked`, `shots`, `icf`, `iff`, faceoff, penalty, hit, giveaway, and takeaway mismatches to exact event-definition differences.
+  - [x] 6.2 Decide which remaining residual mismatches are true bugs versus approved NHL-correctness divergences and document the decision.
+  - [x] 6.3 Correct any remaining true-bug exact-count drift and rerun sampled validation.
 
 - [ ] 7.0 Normalize legacy null-versus-zero comparison rules in parity validation where the frozen NST surface stores unset exact-count fields as `NULL`
   - [x] 7.1 Decide whether `NULL` and `0` should compare equal for legacy `counts_oi.shots_blocked`.
