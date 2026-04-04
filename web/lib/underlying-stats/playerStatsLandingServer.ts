@@ -2059,7 +2059,7 @@ function buildPbpOnlyIndividualContextsForGame(args: {
   >();
 
   for (const event of parsedEvents) {
-    const ownerTeamId = event.event_owner_team_id;
+    const ownerTeamId = event.event_owner_team_id ?? null;
     const opponentTeamId =
       ownerTeamId == null ? null : resolveOpponentTeamId(args.game, ownerTeamId);
 
@@ -2076,7 +2076,7 @@ function buildPbpOnlyIndividualContextsForGame(args: {
       case "goal":
         addPbpOnlyPlayerMetric(
           metricsByPlayerId,
-          event.scoring_player_id,
+          event.scoring_player_id ?? null,
           args.rosterSpotByPlayerId,
           (metrics) => {
             if (eventMatchesStrength(ownerTeamId)) {
@@ -2086,7 +2086,7 @@ function buildPbpOnlyIndividualContextsForGame(args: {
         );
         addPbpOnlyPlayerMetric(
           metricsByPlayerId,
-          event.assist1_player_id,
+          event.assist1_player_id ?? null,
           args.rosterSpotByPlayerId,
           (metrics) => {
             if (eventMatchesStrength(ownerTeamId)) {
@@ -2097,7 +2097,7 @@ function buildPbpOnlyIndividualContextsForGame(args: {
         );
         addPbpOnlyPlayerMetric(
           metricsByPlayerId,
-          event.assist2_player_id,
+          event.assist2_player_id ?? null,
           args.rosterSpotByPlayerId,
           (metrics) => {
             if (eventMatchesStrength(ownerTeamId)) {
@@ -2110,7 +2110,7 @@ function buildPbpOnlyIndividualContextsForGame(args: {
       case "penalty":
         addPbpOnlyPlayerMetric(
           metricsByPlayerId,
-          event.committed_by_player_id,
+          event.committed_by_player_id ?? null,
           args.rosterSpotByPlayerId,
           (metrics) => {
             const duration = event.penalty_duration_minutes ?? 0;
@@ -2133,7 +2133,7 @@ function buildPbpOnlyIndividualContextsForGame(args: {
         );
         addPbpOnlyPlayerMetric(
           metricsByPlayerId,
-          event.drawn_by_player_id,
+          event.drawn_by_player_id ?? null,
           args.rosterSpotByPlayerId,
           (metrics) => {
             if (eventMatchesStrength(opponentTeamId)) {
@@ -2145,7 +2145,7 @@ function buildPbpOnlyIndividualContextsForGame(args: {
       case "faceoff":
         addPbpOnlyPlayerMetric(
           metricsByPlayerId,
-          event.winning_player_id,
+          event.winning_player_id ?? null,
           args.rosterSpotByPlayerId,
           (metrics) => {
             if (eventMatchesStrength(ownerTeamId)) {
@@ -2155,7 +2155,7 @@ function buildPbpOnlyIndividualContextsForGame(args: {
         );
         addPbpOnlyPlayerMetric(
           metricsByPlayerId,
-          event.losing_player_id,
+          event.losing_player_id ?? null,
           args.rosterSpotByPlayerId,
           (metrics) => {
             if (eventMatchesStrength(opponentTeamId)) {
@@ -2167,7 +2167,7 @@ function buildPbpOnlyIndividualContextsForGame(args: {
       case "hit":
         addPbpOnlyPlayerMetric(
           metricsByPlayerId,
-          event.hitting_player_id,
+          event.hitting_player_id ?? null,
           args.rosterSpotByPlayerId,
           (metrics) => {
             if (eventMatchesStrength(ownerTeamId)) {
@@ -2177,7 +2177,7 @@ function buildPbpOnlyIndividualContextsForGame(args: {
         );
         addPbpOnlyPlayerMetric(
           metricsByPlayerId,
-          event.hittee_player_id,
+          event.hittee_player_id ?? null,
           args.rosterSpotByPlayerId,
           (metrics) => {
             if (eventMatchesStrength(opponentTeamId)) {
@@ -2189,7 +2189,7 @@ function buildPbpOnlyIndividualContextsForGame(args: {
       case "giveaway":
         addPbpOnlyPlayerMetric(
           metricsByPlayerId,
-          event.player_id,
+          event.player_id ?? null,
           args.rosterSpotByPlayerId,
           (metrics) => {
             if (eventMatchesStrength(ownerTeamId)) {
@@ -2201,7 +2201,7 @@ function buildPbpOnlyIndividualContextsForGame(args: {
       case "takeaway":
         addPbpOnlyPlayerMetric(
           metricsByPlayerId,
-          event.player_id,
+          event.player_id ?? null,
           args.rosterSpotByPlayerId,
           (metrics) => {
             if (eventMatchesStrength(ownerTeamId)) {
@@ -2213,7 +2213,7 @@ function buildPbpOnlyIndividualContextsForGame(args: {
       case "blocked-shot":
         addPbpOnlyPlayerMetric(
           metricsByPlayerId,
-          event.blocking_player_id,
+          event.blocking_player_id ?? null,
           args.rosterSpotByPlayerId,
           (metrics) => {
             if (eventMatchesStrength(opponentTeamId)) {
