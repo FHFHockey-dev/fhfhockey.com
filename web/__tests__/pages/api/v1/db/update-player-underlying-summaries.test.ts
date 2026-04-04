@@ -34,7 +34,7 @@ vi.mock("lib/underlying-stats/playerStatsSummaryRefresh", () => ({
     warmPlayerStatsLandingSeasonAggregateCacheMock,
 }));
 
-import handler from "./update-player-underlying-summaries";
+import handler from "../../../../../pages/api/v1/db/update-player-underlying-summaries";
 
 function createMockApiContext(args?: {
   method?: string;

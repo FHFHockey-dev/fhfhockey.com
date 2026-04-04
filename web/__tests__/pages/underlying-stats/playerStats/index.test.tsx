@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import PlayerUnderlyingStatsLandingPage from "./index";
+import PlayerUnderlyingStatsLandingPage from "../../../../pages/underlying-stats/playerStats/index";
 
 const routerMock = {
   isReady: true,

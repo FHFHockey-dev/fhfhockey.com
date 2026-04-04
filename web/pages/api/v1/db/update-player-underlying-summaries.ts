@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import type { Json } from "lib/supabase/database-generated.types";
 import serviceRoleClient from "lib/supabase/server";
 import {
   PLAYER_STATS_SUMMARY_PARTITION_SOURCE_URL_PREFIX,
@@ -61,8 +62,8 @@ function isIsoDate(value: string | undefined): value is string {
 }
 
 async function fetchAllRows<TRow>(
-  fetchPage: (from: number, to: number) => Promise<{
-    data: TRow[] | null;
+  fetchPage: (from: number, to: number) => PromiseLike<{
+    data: unknown[] | null;
     error: unknown;
   }>
 ): Promise<TRow[]> {
@@ -73,13 +74,15 @@ async function fetchAllRows<TRow>(
     const { data, error } = await fetchPage(from, to);
     if (error) throw error;
 
-    if (!data?.length) {
+    const pageRows = (data ?? []) as TRow[];
+
+    if (!pageRows.length) {
       break;
     }
 
-    rows.push(...data);
+    rows.push(...pageRows);
 
-    if (data.length < SUPABASE_PAGE_SIZE) {
+    if (pageRows.length < SUPABASE_PAGE_SIZE) {
       break;
     }
   }
@@ -113,19 +116,19 @@ async function fetchFinishedSeasonGames(args: {
     ).range(from, to)
   );
 
-  return rows
-    .map((row) => ({
-      id: Number(row.id),
-      date: row.date,
-      startTime: row.startTime,
-    }))
-    .filter(
-      (row): row is { id: number; date: string; startTime?: string | null } =>
-        Number.isFinite(row.id) &&
-        typeof row.date === "string" &&
-        row.date < today &&
-        (typeof row.startTime !== "string" || new Date(row.startTime) <= finishedCutoff)
-    );
+  return rows.flatMap<{ id: number; date: string; startTime?: string | null }>((row) => {
+    const id = Number(row.id);
+    const date = row.date;
+    const startTime = row.startTime;
+
+    if (!Number.isFinite(id)) return [];
+    if (typeof date !== "string" || date >= today) return [];
+    if (typeof startTime === "string" && new Date(startTime) > finishedCutoff) {
+      return [];
+    }
+
+    return [{ id, date, startTime }];
+  });
 }
 
 async function fetchSeasonGameIdSet(args: {
@@ -168,10 +171,10 @@ async function fetchSummaryPayloadRowsByGameIds(args: {
 
   const rows = await fetchAllRows<{
     game_id: number | string | null;
-    payload: unknown;
+    payload: Json;
     fetched_at: string | null;
     source_url: string | null;
-  }>((from, to) =>
+  }>(async (from, to) =>
     serviceRoleClient
       .from("nhl_api_game_payloads_raw")
       .select("game_id,payload,fetched_at,source_url")
@@ -183,19 +186,24 @@ async function fetchSummaryPayloadRowsByGameIds(args: {
       .range(from, to)
   );
 
-  return rows.filter(
-    (
-      row
-    ): row is {
-      game_id: number;
-      payload: unknown;
-      fetched_at: string | null;
-      source_url: string | null;
-    } => Number.isFinite(Number(row.game_id))
-  ).map((row) => ({
-    ...row,
-    game_id: Number(row.game_id),
-  }));
+  return rows.flatMap<{
+    game_id: number;
+    payload: Json;
+    fetched_at: string | null;
+    source_url: string | null;
+  }>((row) => {
+    const gameId = Number(row.game_id);
+    if (!Number.isFinite(gameId)) {
+      return [];
+    }
+
+    return [
+      {
+        ...row,
+        game_id: gameId,
+      },
+    ];
+  });
 }
 
 async function resolveSummaryRequestedGameIds(query: NextApiRequest["query"]) {

@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("lib/underlying-stats/playerStatsLandingServer", () => ({
-  buildPlayerStatsDetailAggregationFromState: vi.fn(),
+  buildPlayerStatsLandingAggregationFromState: vi.fn(),
 }));
 
-import { buildPlayerStatsDetailAggregationFromState } from "lib/underlying-stats/playerStatsLandingServer";
-import handler from "./[playerId]";
+import { buildPlayerStatsLandingAggregationFromState } from "lib/underlying-stats/playerStatsLandingServer";
+import handler from "../../../../../pages/api/v1/underlying-stats/players";
 
 function createMockApiContext(args?: {
   method?: string;
@@ -38,26 +38,22 @@ function createMockApiContext(args?: {
   };
 }
 
-describe("/api/v1/underlying-stats/players/[playerId]", () => {
+describe("/api/v1/underlying-stats/players", () => {
   beforeEach(() => {
-    vi.mocked(buildPlayerStatsDetailAggregationFromState).mockReset();
+    vi.mocked(buildPlayerStatsLandingAggregationFromState).mockReset();
   });
 
-  it("returns a non-placeholder detail payload for valid requests", async () => {
-    vi.mocked(buildPlayerStatsDetailAggregationFromState).mockResolvedValue({
-      playerId: 8478401,
+  it("returns a non-placeholder native landing payload for valid requests", async () => {
+    vi.mocked(buildPlayerStatsLandingAggregationFromState).mockResolvedValue({
       family: "individualCounts",
       rows: [
         {
-          rowKey: "detail:season:8478401:20252026",
-          seasonId: 20252026,
-          seasonLabel: "2025-26",
-          playerName: "Pavel Zacha",
-          teamLabel: "BOS",
-          positionCode: "C",
-          gamesPlayed: 72,
-          toiSeconds: 73440,
-          totalPoints: 60,
+          rowKey: "landing:player:9001",
+          playerName: "Taylor Test",
+          teamLabel: "AAA / BBB",
+          gamesPlayed: 2,
+          toiSeconds: 540,
+          totalPoints: 3,
         },
       ],
       sort: { sortKey: "totalPoints", direction: "desc" },
@@ -71,41 +67,42 @@ describe("/api/v1/underlying-stats/players/[playerId]", () => {
 
     const { req, res, headers } = createMockApiContext({
       query: {
-        playerId: "8478401",
         fromSeasonId: "20252026",
         throughSeasonId: "20252026",
+        statMode: "individual",
+        displayMode: "counts",
       },
     });
 
     await handler(req as never, res as never);
 
-    expect(buildPlayerStatsDetailAggregationFromState).toHaveBeenCalledWith(
-      8478401,
-      expect.objectContaining({
-        surface: "detail",
-      })
-    );
+    expect(buildPlayerStatsLandingAggregationFromState).toHaveBeenCalledTimes(1);
     expect(res.status).toHaveBeenCalledWith(200);
     expect(headers.get("Cache-Control")).toBe(
       "private, max-age=60, stale-while-revalidate=300"
     );
     expect(res.body).toMatchObject({
-      playerId: 8478401,
       family: "individualCounts",
       placeholder: false,
       rows: [
         expect.objectContaining({
-          seasonLabel: "2025-26",
-          totalPoints: 60,
+          playerName: "Taylor Test",
+          totalPoints: 3,
         }),
       ],
     });
   });
 
-  it("returns a 400 error for invalid player ids", async () => {
+  it("returns a 400 error for unsupported native filter combinations", async () => {
+    vi.mocked(buildPlayerStatsLandingAggregationFromState).mockRejectedValue(
+      new Error('Native landing aggregation does not yet support score state "tied".')
+    );
+
     const { req, res } = createMockApiContext({
       query: {
-        playerId: "not-a-player",
+        fromSeasonId: "20252026",
+        throughSeasonId: "20252026",
+        scoreState: "tied",
       },
     });
 
@@ -113,8 +110,8 @@ describe("/api/v1/underlying-stats/players/[playerId]", () => {
 
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.body).toEqual({
-      error: "Invalid player id.",
-      issues: ["playerId must be a positive integer."],
+      error: "Unsupported player stats filter combination.",
+      issues: ['Native landing aggregation does not yet support score state "tied".'],
     });
   });
 });

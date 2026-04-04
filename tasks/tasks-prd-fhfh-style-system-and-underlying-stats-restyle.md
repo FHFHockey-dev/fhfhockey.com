@@ -54,7 +54,7 @@
 
 - [ ] 2.0 Rewrite `fhfh-styles.md` into a complete Codex-oriented style system with explicit element-by-element rules and SCSS examples
   - [x] 2.1 Restructure `fhfh-styles.md` so it reads as a prompt-ready system document instead of a loose aesthetic memo.
-  - [ ] 2.2 Define non-negotiable brand rules, including the hard rule that gradients are to be used sparingly and are generally not the default background treatment.
+  - [x] 2.2 Define non-negotiable brand rules, including the hard rule that gradients are to be used sparingly and are generally not the default background treatment.
   - [ ] 2.3 Define page archetypes and layout guidance for dashboard pages, data pages, chart pages, bento-box pages, table-heavy pages, and drill-down/detail pages.
   - [ ] 2.4 Define typography rules covering fonts, font sizes, weights, letter spacing, casing, and visual hierarchy for page titles, section titles, subtitles, eyebrow labels, body copy, captions, and footnotes.
   - [ ] 2.5 Define the canonical color and border system, including default text colors, accent rules, subdued data-page treatments, state colors, chart colors, and when positional accent colors are allowed.

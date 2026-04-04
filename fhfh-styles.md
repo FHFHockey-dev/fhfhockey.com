@@ -18,13 +18,57 @@ When styling or re-styling a page:
 
 ## 2. Non-Negotiable Rules
 
+### 2.1 Core Brand Rules
+
 1. The site remains dark, dense, and analytics-focused.
-2. Gradients are to be used sparingly, especially on page backgrounds.
-3. Default surfaces should usually be flat or near-flat dark panels with visible borders.
-4. Use `DraftDashboard` as the primary styling reference for reusable components unless a better site example is explicitly identified.
-5. Prefer compact spacing and strong visual hierarchy over decorative chrome.
-6. Reuse canonical patterns for buttons, toggles, cards, tables, headers, filters, and dialogs.
-7. Do not introduce new local style idioms when an existing canonical pattern already fits.
+2. The site should feel like one connected product system, not a collection of individually styled pages.
+3. Readability, hierarchy, and data scanning take priority over atmosphere.
+4. `DraftDashboard` is the primary visual reference for reusable application UI unless a better canonical site example is explicitly documented.
+5. New page work should extend the system, not invent a parallel one.
+
+### 2.2 Background And Surface Rules
+
+1. Gradients are to be used sparingly and are generally not the default background treatment.
+2. Page backgrounds should usually be flat or near-flat dark surfaces using shared tokens.
+3. Default panels, cards, tables, and control shells should sit on solid or almost-solid dark surfaces with visible borders.
+4. Large full-page gradients, noisy color transitions, and decorative glow washes should not be used as baseline styling.
+5. If a gradient is used, it should be restrained, low-contrast, and justified by emphasis rather than decoration.
+6. Glassmorphism, blur, and bloom are optional emphasis tools and should usually be limited to overlays, highlighted modules, or special focus states.
+
+### 2.3 Density And Spacing Rules
+
+1. Layouts should be compact and information-dense without feeling cramped.
+2. Avoid oversized hero padding, oversized empty gutters, or marketing-style whitespace on analytics pages.
+3. Headers, controls, filters, and tables should feel visually connected rather than floating in unrelated blocks.
+4. Repetition of oversized panel padding across the page is discouraged; use tighter spacing for dense work surfaces.
+
+### 2.4 Reuse Rules
+
+1. Reuse canonical patterns for buttons, toggles, cards, tables, headers, filters, dialogs, and search controls.
+2. Do not introduce a new local button style, card anatomy, or table treatment when an existing system pattern already fits.
+3. If a component needs a variant, create a documented system variant rather than a one-off local exception.
+4. If a pattern is missing, add it to the style guide, token system, and sandbox instead of improvising silently in one feature stylesheet.
+
+### 2.5 Token And Implementation Rules
+
+1. Shared values belong in `web/styles/vars.scss` or `web/styles/_panel.scss`.
+2. Do not hardcode canonical colors, spacing, radii, shadows, borders, or focus treatments in feature-local modules when they should be reusable.
+3. If a required token does not exist, create it in the shared token source and verify that it is used consistently.
+4. Before finalizing a restyle, cross-check that every referenced token actually exists.
+
+### 2.6 Explicit Anti-Patterns
+
+Avoid these as defaults unless a documented exception is justified:
+
+- gradient-heavy page shells
+- panel backgrounds that look glossy, cloudy, or airbrushed
+- purple-on-black neon treatment as a generic fallback
+- oversized rounded cards with weak borders and soft hierarchy
+- generic SaaS hero layouts on analytics pages
+- detached floating filters with too much surrounding whitespace
+- glow on every border, button, or active state
+- multiple unrelated accent colors fighting on the same surface
+- one-off local control styling that does not match the system
 
 ## 3. Codex Role And Output Expectation
 

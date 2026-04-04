@@ -35,7 +35,7 @@ vi.mock("lib/underlying-stats/playerStatsSummaryRefresh", () => ({
     refreshPlayerUnderlyingSummarySnapshotsForGameIdsMock,
 }));
 
-import handler from "./update-player-underlying-stats";
+import handler from "../../../../../pages/api/v1/db/update-player-underlying-stats";
 
 function createMockApiContext(args?: {
   method?: string;
