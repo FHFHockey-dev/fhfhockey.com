@@ -519,7 +519,10 @@ function sha256Json(payload: unknown): string {
 }
 
 async function fetchAllSupabaseRows<TRow>(
-  fetchPage: (from: number, to: number) => PromiseLike<SupabasePagedResult<TRow>>
+  fetchPage: (from: number, to: number) => PromiseLike<{
+    data: unknown[] | null;
+    error: unknown;
+  }>
 ): Promise<TRow[]> {
   const rows: TRow[] = [];
 
@@ -530,7 +533,7 @@ async function fetchAllSupabaseRows<TRow>(
       throw result.error;
     }
 
-    const pageRows = result.data ?? [];
+    const pageRows = (result.data ?? []) as TRow[];
     rows.push(...pageRows);
 
     if (pageRows.length < SUPABASE_PAGE_SIZE) {
@@ -635,7 +638,10 @@ async function fetchSupabaseRowsForGameChunks<TRow>(args: {
     gameIdChunk: readonly number[],
     from: number,
     to: number
-  ) => PromiseLike<SupabasePagedResult<TRow>>;
+  ) => PromiseLike<{
+    data: unknown[] | null;
+    error: unknown;
+  }>;
 }): Promise<TRow[]> {
   const rows: TRow[] = [];
 
@@ -983,7 +989,7 @@ async function fetchPlayerStatsSourceGamesForFilterState(
   const throughSeasonId = state.primary.seasonRange.throughSeasonId;
   const gameType = resolvePlayerStatsSeasonGameType(state.primary.seasonType);
 
-  const rawGames = await fetchAllSupabaseRows<PlayerStatsSourceGameRow>((from, to) => {
+  const rawGames = await fetchAllSupabaseRows<PlayerStatsSourceGameRow>(async (from, to) => {
     let gamesQuery = client
       .from("games")
       .select(PLAYER_STATS_SOURCE_GAME_SELECT)
@@ -1058,7 +1064,7 @@ async function fetchPlayerStatsLandingSourceBundleForGames(args: {
   const [events, shiftRows, rosterSpots, landingPayloadRows] = await Promise.all([
     fetchSupabaseRowsForGameChunks<PlayerStatsSourceEventRow>({
       gameIdChunks,
-      fetchChunkPage: (gameIdChunk, from, to) =>
+      fetchChunkPage: async (gameIdChunk, from, to) =>
         client
           .from("nhl_api_pbp_events")
           .select(PLAYER_STATS_SOURCE_EVENT_SELECT)
@@ -1070,7 +1076,7 @@ async function fetchPlayerStatsLandingSourceBundleForGames(args: {
     }),
     fetchSupabaseRowsForGameChunks<PlayerStatsSourceShiftRow>({
       gameIdChunks,
-      fetchChunkPage: (gameIdChunk, from, to) =>
+      fetchChunkPage: async (gameIdChunk, from, to) =>
         client
           .from("nhl_api_shift_rows")
           .select(PLAYER_STATS_SOURCE_SHIFT_SELECT)
@@ -1083,7 +1089,7 @@ async function fetchPlayerStatsLandingSourceBundleForGames(args: {
     args.shouldFetchRosterSpots
       ? fetchSupabaseRowsForGameChunks<PlayerStatsSourceRosterSpotRow>({
           gameIdChunks,
-          fetchChunkPage: (gameIdChunk, from, to) =>
+          fetchChunkPage: async (gameIdChunk, from, to) =>
             client
               .from("nhl_api_game_roster_spots")
               .select(PLAYER_STATS_SOURCE_ROSTER_SELECT)
@@ -1249,7 +1255,7 @@ async function fetchPlayerStatsLandingGamesByIds(
 
   return fetchSupabaseRowsForGameChunks<PlayerStatsSourceGameRow>({
     gameIdChunks: chunkNumberArray(gameIds, GAME_ID_CHUNK_SIZE),
-    fetchChunkPage: (gameIdChunk, from, to) =>
+    fetchChunkPage: async (gameIdChunk, from, to) =>
       client
         .from("games")
         .select(PLAYER_STATS_SOURCE_GAME_SELECT)
@@ -1296,7 +1302,7 @@ async function fetchPlayerStatsSummaryPayloadRows(args: {
 
   return fetchSupabaseRowsForGameChunks<PlayerStatsSummaryPayloadRow>({
     gameIdChunks: chunkNumberArray(args.gameIds, GAME_ID_CHUNK_SIZE),
-    fetchChunkPage: (gameIdChunk, from, to) =>
+    fetchChunkPage: async (gameIdChunk, from, to) =>
       client
         .from("nhl_api_game_payloads_raw")
         .select("game_id,payload,fetched_at,source_url")
@@ -1371,7 +1377,7 @@ async function fetchPlayerStatsOfficialLandingPayloadRows(args: {
 
   const rows = await fetchSupabaseRowsForGameChunks<PlayerStatsSummaryPayloadRow>({
     gameIdChunks: chunkNumberArray(args.gameIds, GAME_ID_CHUNK_SIZE),
-    fetchChunkPage: (gameIdChunk, from, to) =>
+    fetchChunkPage: async (gameIdChunk, from, to) =>
       client
         .from("nhl_api_game_payloads_raw")
         .select("game_id,payload,fetched_at,source_url")
