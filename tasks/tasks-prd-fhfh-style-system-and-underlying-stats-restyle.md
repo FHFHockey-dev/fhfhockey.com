@@ -52,33 +52,34 @@
   - [x] 1.7 Produce an audit summary that maps each reusable element family to its current best reference implementation and flags duplicated or conflicting patterns.
   - [x] 1.8 Record any missing element types not represented in `DraftDashboard` and list them as owner-follow-up gaps that need site examples before final canonical rules are written.
 
-- [ ] 2.0 Rewrite `fhfh-styles.md` into a complete Codex-oriented style system with explicit element-by-element rules and SCSS examples
+- [x] 2.0 Rewrite `fhfh-styles.md` into a complete Codex-oriented style system with explicit element-by-element rules and SCSS examples
   - [x] 2.1 Restructure `fhfh-styles.md` so it reads as a prompt-ready system document instead of a loose aesthetic memo.
   - [x] 2.2 Define non-negotiable brand rules, including the hard rule that gradients are to be used sparingly and are generally not the default background treatment.
-  - [ ] 2.3 Define page archetypes and layout guidance for dashboard pages, data pages, chart pages, bento-box pages, table-heavy pages, and drill-down/detail pages.
-  - [ ] 2.4 Define typography rules covering fonts, font sizes, weights, letter spacing, casing, and visual hierarchy for page titles, section titles, subtitles, eyebrow labels, body copy, captions, and footnotes.
-  - [ ] 2.5 Define the canonical color and border system, including default text colors, accent rules, subdued data-page treatments, state colors, chart colors, and when positional accent colors are allowed.
-  - [ ] 2.6 Define canonical panel and card patterns, including flat versus elevated surfaces, left-side accent borders, hover/selected/focus behavior, and when to use dashboard-intense versus data-page-softened treatment.
-  - [ ] 2.7 Define canonical controls, including primary/secondary/ghost/compact buttons, segmented toggles, dropdowns, search boxes, text inputs, number inputs, filter bars, and steppers.
-  - [ ] 2.8 Define canonical table and chart-container rules, including sticky headers, row density, numeric alignment, sorting affordances, empty/loading/error states, chart framing, and chart toolbar behavior.
-  - [ ] 2.9 Add “do” and “do not” guidance plus SCSS examples for every core element family so future Codex prompts can be executed from this file alone.
-  - [ ] 2.10 Add a dedicated section explaining how the sandbox page and approval workflow map back to the style guide, including how newly added showcase items should appear at the top during active review.
+  - [x] 2.3 Define page archetypes and layout guidance for dashboard pages, data pages, chart pages, bento-box pages, table-heavy pages, and drill-down/detail pages.
+  - [x] 2.4 Define typography rules covering fonts, font sizes, weights, letter spacing, casing, and visual hierarchy for page titles, section titles, subtitles, eyebrow labels, body copy, captions, and footnotes.
+  - [x] 2.5 Define the canonical color and border system, including default text colors, accent rules, subdued data-page treatments, state colors, chart colors, and when positional accent colors are allowed.
+  - [x] 2.6 Define canonical panel and card patterns, including flat versus elevated surfaces, left-side accent borders, hover/selected/focus behavior, and when to use dashboard-intense versus data-page-softened treatment.
+  - [x] 2.7 Define canonical controls, including primary/secondary/ghost/compact buttons, segmented toggles, dropdowns, search boxes, text inputs, number inputs, filter bars, and steppers.
+  - [x] 2.8 Define canonical table and chart-container rules, including sticky headers, row density, numeric alignment, sorting affordances, empty/loading/error states, chart framing, and chart toolbar behavior.
+  - [x] 2.9 Add “do” and “do not” guidance plus SCSS examples for every core element family so future Codex prompts can be executed from this file alone.
+  - [x] 2.10 Add a dedicated section explaining how the sandbox page and approval workflow map back to the style guide, including how newly added showcase items should appear at the top during active review.
 
-- [ ] 3.0 Normalize shared design tokens and panel primitives in `vars.scss` and `_panel.scss`, and cross-verify all referenced variables exist
-  - [ ] 3.1 Audit the existing tokens in `vars.scss` to identify duplicates, conflicting names, obsolete aliases, and missing variables required by the rewritten style guide.
-  - [ ] 3.2 Add or rename shared tokens in `vars.scss` for any canonical spacing, typography, color, border, shadow, radius, focus, or state values that the new guide depends on.
-  - [ ] 3.3 Update `_panel.scss` to provide canonical mixins/helpers for panel shells, section headers, scroll wrappers, and related shared surfaces where appropriate.
-  - [ ] 3.4 Replace or reduce local one-off literals and gradient-heavy assumptions in shared styling helpers where they conflict with the new “gradients sparingly” rule.
-  - [ ] 3.5 Cross-verify that every token and mixin referenced in `fhfh-styles.md`, the sandbox page, and the restyled production pages actually exists and compiles cleanly.
-  - [ ] 3.6 Document any intentional legacy aliases that must remain temporarily for compatibility, and distinguish them from the new canonical tokens.
+- [x] 3.0 Normalize shared design tokens and panel primitives in `vars.scss` and `_panel.scss`, and cross-verify all referenced variables exist
+  - [x] 3.1 Audit the existing tokens in `vars.scss` to identify duplicates, conflicting names, obsolete aliases, and missing variables required by the rewritten style guide.
+  - [x] 3.2 Add or rename shared tokens in `vars.scss` for any canonical spacing, typography, color, border, shadow, radius, focus, or state values that the new guide depends on.
+  - [x] 3.3 Update `_panel.scss` to provide canonical mixins/helpers for panel shells, section headers, scroll wrappers, and related shared surfaces where appropriate.
+  - [x] 3.4 Replace or reduce local one-off literals and gradient-heavy assumptions in shared styling helpers where they conflict with the new “gradients sparingly” rule.
+  - [x] 3.5 Cross-verify that every token and mixin referenced in `fhfh-styles.md`, the sandbox page, and the restyled production pages actually exists and compiles cleanly.
+  - [x] 3.6 Document any intentional legacy aliases that must remain temporarily for compatibility, and distinguish them from the new canonical tokens.
 
-- [ ] 4.0 Build `cssTestingGrounds` as the canonical sandbox and approval surface for reusable UI primitives
-  - [ ] 4.1 Create `web/pages/cssTestingGrounds.tsx` with a layout designed for fast visual inspection and future growth as the style showcase expands.
-  - [ ] 4.2 Create `web/pages/cssTestingGrounds.module.scss` and implement the canonical sandbox page shell using only approved shared tokens and mixins.
-  - [ ] 4.3 Add canonical example blocks for page shells, section headers, standard panels, softened data-page panels, left-accent cards, tables, buttons, segmented toggles, dropdowns, search inputs, input rows, empty states, loading banners, and chart frames.
-  - [ ] 4.4 Ensure newly added or currently-under-review showcase elements can be surfaced at the top of the page without breaking the long-term showcase structure.
-  - [ ] 4.5 Add labels or annotations inside the sandbox so each showcased element clearly maps to the corresponding section in `fhfh-styles.md`.
-  - [ ] 4.6 Verify the sandbox page visually in-browser and treat it as the main smoke test surface for approving new base components before broader rollout.
+- [x] 4.0 Build `cssTestingGrounds` as the canonical sandbox and approval surface for reusable UI primitives
+  - [x] 4.1 Create `web/pages/cssTestingGrounds.tsx` with a layout designed for fast visual inspection and future growth as the style showcase expands.
+  - [x] 4.2 Create `web/pages/cssTestingGrounds.module.scss` and implement the canonical sandbox page shell using only approved shared tokens and mixins.
+  - [x] 4.3 Add canonical example blocks for page shells, section headers, standard panels, softened data-page panels, left-accent cards, tables, buttons, segmented toggles, dropdowns, search inputs, input rows, empty states, loading banners, and chart frames.
+  - [x] 4.4 Ensure newly added or currently-under-review showcase elements can be surfaced at the top of the page without breaking the long-term showcase structure.
+  - [x] 4.5 Add labels or annotations inside the sandbox so each showcased element clearly maps to the corresponding section in `fhfh-styles.md`.
+  - [x] 4.6 Verify the sandbox page visually in-browser and treat it as the main smoke test surface for approving new base components before broader rollout.
+  - [x] 4.7 Run a sequential element-by-element reference-validation pass for every sandbox primitive: identify the closest `DraftDashboard` reference first, fall back to another rendered site example only if the element does not exist there, compare the sandbox recreation against that live reference, and do not advance to the next element until the current one is approved, revised, or explicitly deferred.
 
 - [ ] 5.0 Re-style the `underlying-stats` entry surfaces and align adjacent `playerStats` pages to the new system
   - [ ] 5.1 Review the rendered top-level `underlying-stats` entry page and map its current sections to the new page-shell, panel, control, and table rules.
@@ -91,8 +92,8 @@
   - [ ] 5.8 Update or add tests as needed for touched `underlying-stats` pages, then perform browser-based verification to confirm the pages visually align with the new rules on desktop and mobile.
 
 - [ ] 6.0 Define and document the component-by-component signoff workflow, missing-element gap process, and ongoing maintenance rules linking docs, sandbox, tokens, and production
-  - [ ] 6.1 Create an itemized approval checklist covering page shells, headers, cards, tables, buttons, toggles, inputs/selects, chart frames, and state banners.
-  - [ ] 6.2 For each approval item, document the canonical source pattern, token dependencies, sandbox example, and expected interaction states.
+  - [ ] 6.1 Create an itemized approval checklist covering page shells, headers, cards, tables, buttons, toggles, inputs/selects, chart frames, and state banners, and process it strictly one element at a time in review order.
+  - [ ] 6.2 For each approval item, document the canonical source pattern, whether that source came from `DraftDashboard` or another site surface, the token dependencies, the sandbox example, and the expected interaction states.
   - [ ] 6.3 Add a documented process for handling missing element types, including how to request a site example from the owner before writing a final canonical rule.
   - [ ] 6.4 Add maintenance guidance stating that changes to canonical styling must stay synchronized across `fhfh-styles.md`, shared tokens/mixins, sandbox examples, and production implementations.
   - [ ] 6.5 Perform a final consistency pass to ensure the rewritten style guide, sandbox examples, shared tokens, and `underlying-stats` production pages all reflect the same canonical decisions.

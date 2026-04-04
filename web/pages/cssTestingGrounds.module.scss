@@ -1,0 +1,922 @@
+@use "sass:color";
+@use "styles/vars" as v;
+@use "styles/_panel" as panel;
+
+.page {
+  min-height: 100vh;
+  background: v.$background-dark;
+  color: v.$text-primary;
+  padding: v.$space-xl clamp(1rem, 3vw, 1.75rem) v.$space-xxl;
+}
+
+.content {
+  width: min(1280px, 100%);
+  margin: 0 auto;
+  display: grid;
+  gap: v.$space-lg;
+}
+
+.hero {
+  @include panel.panel-shell($padding: v.$space-lg, $variant: soft);
+  display: grid;
+  gap: v.$space-sm;
+}
+
+.eyebrow {
+  margin: 0;
+  color: v.$primary-color;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-family: v.$font-family-accent, sans-serif;
+}
+
+.title {
+  margin: 0;
+  color: v.$color-white;
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  line-height: 1.05;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.heroCopy {
+  margin: 0;
+  max-width: 72ch;
+  line-height: 1.6;
+  color: v.$text-secondary;
+}
+
+.section {
+  @include panel.panel-shell($padding: v.$space-lg);
+  display: grid;
+  gap: v.$space-md;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: v.$space-sm;
+  flex-wrap: wrap;
+}
+
+.sectionTitleBlock {
+  display: grid;
+  gap: v.$space-xs;
+}
+
+.sectionTitle {
+  margin: 0;
+  color: v.$color-white;
+  font-size: clamp(1.1rem, 2vw, 1.35rem);
+  line-height: 1.15;
+}
+
+.sectionDescription {
+  margin: 0;
+  color: v.$text-secondary;
+  line-height: 1.6;
+  max-width: 74ch;
+}
+
+.guideRefs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: v.$space-xs;
+  align-items: center;
+}
+
+.guideRefChip {
+  border: 1px dashed v.$border-soft;
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  color: v.$text-secondary;
+  font-size: 0.72rem;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.queueBadge {
+  border: v.$border-subtle;
+  border-radius: 999px;
+  padding: v.$space-xs v.$space-sm;
+  font-size: 0.78rem;
+  color: v.$text-secondary;
+  white-space: nowrap;
+}
+
+.pinnedBlock {
+  display: grid;
+  gap: v.$space-sm;
+  padding-top: v.$space-xs;
+  border-top: 1px solid v.$border-soft;
+}
+
+.pinnedHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: v.$space-sm;
+}
+
+.pinnedEyebrow {
+  margin: 0;
+  color: v.$primary-color;
+  font-size: v.$font-size-xs;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.cardGrid {
+  display: grid;
+  gap: v.$space-sm;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.exampleStack {
+  display: grid;
+  gap: v.$space-md;
+}
+
+.exampleGridTwo,
+.exampleGridThree {
+  display: grid;
+  gap: v.$space-md;
+}
+
+.exampleGridTwo {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.exampleGridThree {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.showcaseCard {
+  @include panel.panel-shell($padding: v.$space-md, $variant: soft);
+  position: relative;
+  display: grid;
+  gap: v.$space-xs;
+  padding-left: calc(v.$space-md + 6px);
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 3px;
+    border-radius: v.$radius-md 0 0 v.$radius-md;
+    background: var(--status-color, #{v.$primary-color});
+  }
+}
+
+.cardTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: v.$space-sm;
+}
+
+.cardTitle {
+  color: v.$color-white;
+  font-weight: v.$font-weight-semibold;
+}
+
+.cardStatus {
+  color: var(--status-color, #{v.$primary-color});
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.cardFamily {
+  margin: 0;
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.cardNotes {
+  margin: 0;
+  line-height: 1.6;
+}
+
+.demoShell,
+.demoShellSoft,
+.demoPanel,
+.demoPanelStrong,
+.demoPanelSoft,
+.demoAccentCard,
+.demoStateCard,
+.demoControlBlock,
+.demoTablePanel,
+.demoChartPanel {
+  @include panel.panel-shell($padding: v.$space-md);
+  display: grid;
+  gap: v.$space-sm;
+}
+
+.demoShellSoft,
+.demoPanelSoft,
+.demoStateCard,
+.demoControlBlock {
+  @include panel.panel-shell($padding: v.$space-md, $variant: soft);
+}
+
+.demoControlBlock {
+  overflow: visible;
+}
+
+.demoPanelStrong {
+  @include panel.panel-shell($padding: v.$space-md, $variant: intense);
+}
+
+.demoAccentCard {
+  position: relative;
+  padding-left: calc(v.$space-md + 6px);
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 3px;
+    border-radius: v.$radius-md 0 0 v.$radius-md;
+    background: v.$primary-color;
+  }
+}
+
+.demoPageHeader,
+.demoSectionHeader,
+.demoPanelHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: v.$space-sm;
+  flex-wrap: wrap;
+}
+
+.demoPanelHeader {
+  @include panel.panel-divider;
+
+  strong {
+    color: v.$color-white;
+    font-size: v.$font-size-sm;
+  }
+
+  span {
+    color: v.$text-secondary;
+    font-size: v.$font-size-xs;
+  }
+}
+
+.demoTitleStack {
+  display: grid;
+  gap: v.$space-xs;
+}
+
+.demoEyebrow {
+  margin: 0;
+  color: v.$primary-color;
+  font-size: v.$font-size-xs;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-family: v.$font-family-accent, sans-serif;
+}
+
+.demoHeading,
+.demoSubheading {
+  margin: 0;
+  color: v.$color-white;
+  line-height: 1.1;
+}
+
+.demoHeading {
+  font-size: clamp(1.2rem, 2vw, 1.45rem);
+}
+
+.demoSubheading {
+  font-size: 1rem;
+}
+
+.demoCopy {
+  margin: 0;
+  color: v.$text-secondary;
+  line-height: 1.6;
+}
+
+.demoMetaRow,
+.demoActionRow,
+.demoButtonRow,
+.chartToolbar,
+.chartLegend {
+  display: flex;
+  gap: v.$space-xs;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.buttonNavGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: v.$space-sm;
+  flex-wrap: wrap;
+  background: #1d2127;
+  border-radius: v.$border-radius-lg;
+  padding: 4px;
+  border: 1px solid rgba(v.$secondary-color, 0.22);
+  box-shadow:
+    0 10px 24px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(v.$color-white, 0.04);
+  min-height: 40px;
+}
+
+.demoPill,
+.toolbarChip,
+.toolbarChipActive {
+  border: v.$border-subtle;
+  border-radius: 999px;
+  padding: v.$space-xs v.$space-sm;
+  font-size: v.$font-size-xs;
+  color: v.$text-secondary;
+  background: v.$background-dark;
+}
+
+.toolbarChip,
+.toolbarChipActive {
+  cursor: pointer;
+}
+
+.toolbarChipActive {
+  border-color: v.$primary-color;
+  background: rgba(v.$primary-color, 0.16);
+  color: v.$color-white;
+}
+
+.demoBento {
+  display: grid;
+  grid-template-columns: 1.2fr 1.6fr 1fr;
+  gap: v.$space-sm;
+}
+
+.demoPanelBody {
+  display: grid;
+  gap: v.$space-sm;
+}
+
+.demoMetricRow {
+  display: flex;
+  justify-content: space-between;
+  gap: v.$space-sm;
+  color: v.$text-secondary;
+
+  strong {
+    color: v.$color-white;
+    font-family: v.$font-family-numbers;
+    font-weight: v.$font-weight-semibold;
+  }
+}
+
+.demoStatGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: v.$space-sm;
+
+  div {
+    display: grid;
+    gap: v.$space-xs;
+  }
+
+  span {
+    color: v.$text-secondary;
+    font-size: v.$font-size-xs;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  strong {
+    color: v.$color-white;
+    font-family: v.$font-family-numbers;
+    font-size: v.$font-size-md;
+  }
+}
+
+.demoFilterBar,
+.demoInputRow {
+  display: flex;
+  gap: v.$space-sm;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.demoSearch,
+.demoSelect,
+.demoField,
+.dropdownTrigger {
+  min-height: v.$control-height-md;
+  border-radius: v.$border-radius-md;
+  color: v.$text-primary;
+  font-size: v.$font-size-sm;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    background-color 0.18s ease,
+    color 0.18s ease;
+}
+
+.demoSearch,
+.demoField {
+  border: 2px solid v.$border-secondary;
+  background-color: v.$background-dark;
+  padding: 0 v.$space-sm;
+}
+
+.demoSearch,
+.demoField,
+.demoSelect,
+.dropdownTrigger {
+  &:focus-visible {
+    outline: none;
+    border-color: v.$primary-color;
+    box-shadow: 0 0 0 3px rgba(v.$primary-color, 0.2);
+  }
+}
+
+.demoSearch {
+  min-width: min(280px, 100%);
+  flex: 1 1 220px;
+
+  &::placeholder {
+    color: rgba(v.$text-secondary, 0.55);
+    font-family: v.$font-family-primary, sans-serif;
+    font-style: italic;
+    opacity: 1;
+  }
+}
+
+.demoSelect {
+  min-width: 140px;
+  padding: v.$space-sm 2.5rem v.$space-sm v.$space-md;
+  border: 1px solid rgba(v.$color-white, 0.14);
+  background-color: color.adjust(v.$background-dark, $lightness: -1%);
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2307aae2' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.85rem center;
+  background-repeat: no-repeat;
+  background-size: 1.1rem;
+
+  &:hover {
+    border-color: v.$color-brand-primary;
+    background-color: v.$color-brand-primary;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%231a1d21' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    color: v.$color-brand-dark;
+  }
+}
+
+.demoField {
+  flex: 1 1 180px;
+}
+
+.buttonPrimary,
+.buttonSecondary,
+.buttonGhost,
+.buttonNav,
+.buttonNavActive {
+  min-height: v.$control-height-md;
+  border-radius: v.$border-radius-sm;
+  padding: 0 v.$space-sm;
+  font-size: v.$font-size-xs;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-family: v.$font-family-accent, sans-serif;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.buttonPrimary {
+  border: 2px solid v.$primary-color;
+  background: rgba(v.$primary-color, 0.18);
+  color: v.$secondary-color;
+}
+
+.buttonPrimary:hover,
+.buttonNav:hover,
+.buttonSecondary:hover,
+.buttonGhost:hover {
+  color: v.$color-white;
+  background: rgba(v.$primary-color, 0.3);
+  box-shadow: 0 8px 16px rgba(v.$primary-color, 0.22);
+}
+
+.buttonNav,
+.buttonNavActive {
+  width: calc(33.333% - 0.4rem);
+  min-width: 120px;
+  border: 2px solid v.$primary-color;
+  background: rgba(v.$primary-color, 0.18);
+  color: v.$secondary-color;
+}
+
+.buttonNavActive {
+  background-color: v.$primary-color;
+  color: v.$color-white;
+  border-color: v.$primary-color;
+  box-shadow: 0 2px 8px rgba(v.$secondary-color, 0.3);
+}
+
+.buttonNavActive:hover {
+  background-color: color.scale(v.$primary-color, $lightness: -5%);
+  border-color: color.scale(v.$primary-color, $lightness: -5%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(v.$secondary-color, 0.4);
+}
+
+.buttonSecondary {
+  border: 2px solid transparent;
+  background: transparent;
+  color: v.$secondary-color;
+}
+
+.buttonGhost {
+  border: 2px solid transparent;
+  background: transparent;
+  color: v.$text-secondary;
+}
+
+.buttonSecondary:hover,
+.buttonGhost:hover {
+  color: v.$primary-color;
+}
+
+.buttonSecondary {
+  background-color: v.$primary-color-opaque;
+  border: 2px solid v.$primary-color;
+  color: v.$color-white;
+}
+
+.buttonSecondary:hover {
+  background-color: rgba(v.$primary-color, 0.48);
+}
+
+.segmentRail {
+  display: inline-flex;
+  background-color: rgba(v.$background-dark, 0.9);
+  border-radius: v.$border-radius-lg;
+  padding: 4px;
+  border: 1px solid rgba(v.$color-white, 0.08);
+  box-shadow: inset 0 1px 0 rgba(v.$color-white, 0.04);
+  min-height: 40px;
+  width: fit-content;
+  align-self: start;
+  justify-self: start;
+  flex: 0 0 auto;
+  max-width: 100%;
+}
+
+.segment {
+  min-height: 32px;
+  padding: 0 v.$space-sm;
+  border: 2px solid transparent;
+  border-radius: v.$border-radius-sm;
+  background: transparent;
+  color: v.$secondary-color;
+  font-size: v.$font-size-xs;
+  font-family: v.$font-family-accent, sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  transition: all 0.2s ease;
+}
+
+.segmentActive {
+  background-color: v.$primary-color-opaque;
+  border: 2px solid v.$primary-color;
+  color: v.$color-white;
+}
+
+.segment:hover {
+  color: v.$primary-color;
+  background-color: rgba(v.$primary-color, 0.1);
+}
+
+.segmentActive:hover {
+  background-color: rgba(v.$primary-color, 0.48);
+}
+
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  border: v.$border-subtle;
+  border-radius: v.$radius-control;
+  overflow: hidden;
+  background: v.$background-dark;
+}
+
+.stepperButton {
+  min-width: v.$control-height-md;
+  min-height: v.$control-height-md;
+  border: 0;
+  background: transparent;
+  color: v.$color-white;
+  cursor: pointer;
+}
+
+.stepperValue {
+  min-width: 2.4rem;
+  text-align: center;
+  font-family: v.$font-family-numbers;
+  color: v.$color-white;
+}
+
+.demoDropdown {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-self: flex-start;
+  min-width: 180px;
+}
+
+.dropdownTrigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: v.$space-sm;
+  width: 100%;
+  min-width: 180px;
+  padding: v.$space-sm 2.5rem v.$space-sm v.$space-md;
+  border: 1px solid rgba(v.$color-white, 0.14);
+  background-color: color.adjust(v.$background-dark, $lightness: -1%);
+  text-align: left;
+
+  &:hover {
+    border-color: v.$color-brand-primary;
+    background-color: v.$color-brand-primary;
+    color: v.$color-brand-dark;
+  }
+}
+
+.dropdownMenu {
+  @include panel.panel-shell($padding: v.$space-xs, $variant: soft);
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 5;
+  display: grid;
+  gap: 2px;
+  min-width: 100%;
+  border-color: rgba(v.$primary-color, 0.35);
+  box-shadow:
+    0 14px 32px rgba(0, 0, 0, 0.32),
+    0 0 0 1px rgba(v.$primary-color, 0.12);
+}
+
+.dropdownCaret {
+  color: currentcolor;
+  font-size: v.$font-size-sm;
+  line-height: 1;
+}
+
+.dropdownItem {
+  appearance: none;
+  border: 0;
+  width: 100%;
+  padding: v.$space-xs v.$space-sm;
+  border-radius: v.$radius-control;
+  color: v.$text-primary;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease;
+
+  &:hover,
+  &:focus-visible {
+    outline: none;
+    background-color: v.$color-brand-primary;
+    color: v.$color-brand-dark;
+  }
+}
+
+.demoEmptyState {
+  display: grid;
+  gap: v.$space-xs;
+  border: 1px dashed v.$border-soft;
+  border-radius: v.$radius-card;
+  padding: v.$space-md;
+
+  strong {
+    color: v.$color-white;
+  }
+
+  p {
+    margin: 0;
+    color: v.$text-secondary;
+    line-height: 1.6;
+  }
+}
+
+.demoLoadingBanner {
+  display: inline-flex;
+  align-items: center;
+  gap: v.$space-sm;
+  min-height: v.$control-height-md;
+  border: v.$border-subtle;
+  border-radius: v.$radius-control;
+  background: rgba(v.$primary-color, 0.08);
+  padding: 0 v.$space-sm;
+  color: v.$color-white;
+}
+
+.demoLoadingDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: v.$primary-color;
+  box-shadow: 0 0 0 0 rgba(v.$primary-color, 0.35);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+.tableWrap {
+  overflow: auto;
+  border: v.$border-subtle;
+  border-radius: v.$radius-card;
+}
+
+.demoTable {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+
+  th,
+  td {
+    padding: 0.7rem;
+    border-bottom: 1px solid v.$border-soft;
+    white-space: nowrap;
+  }
+
+  thead th {
+    position: sticky;
+    top: 0;
+    background: v.$background-dark;
+    color: v.$text-secondary;
+    font-size: v.$font-size-xs;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-align: left;
+  }
+
+  tbody td {
+    color: v.$text-primary;
+  }
+}
+
+.numericCell {
+  text-align: right !important;
+  font-family: v.$font-family-numbers;
+}
+
+.currentRow td {
+  background: rgba(v.$primary-color, 0.08);
+}
+
+.chartFrame {
+  position: relative;
+  min-height: 240px;
+  border: v.$border-subtle;
+  border-radius: v.$radius-card;
+  background: v.$background-dark;
+  overflow: hidden;
+}
+
+.chartGrid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, rgba(v.$border-secondary, 0.18) 1px, transparent 1px),
+    linear-gradient(to top, rgba(v.$border-secondary, 0.18) 1px, transparent 1px);
+  background-size: 20% 100%, 100% 25%;
+}
+
+.chartBars {
+  position: absolute;
+  inset: auto v.$space-md v.$space-md v.$space-md;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  align-items: end;
+  gap: v.$space-sm;
+  height: 70%;
+}
+
+.chartBarShort,
+.chartBarMid,
+.chartBarTall {
+  border-radius: v.$radius-control v.$radius-control 0 0;
+  background: linear-gradient(
+    180deg,
+    rgba(v.$primary-color, 0.9),
+    rgba(v.$secondary-color, 0.58)
+  );
+}
+
+.chartBarShort {
+  height: 34%;
+}
+
+.chartBarMid {
+  height: 58%;
+}
+
+.chartBarTall {
+  height: 82%;
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: v.$space-xs;
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+}
+
+.legendSwatchPrimary,
+.legendSwatchSecondary {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+}
+
+.legendSwatchPrimary {
+  background: v.$primary-color;
+}
+
+.legendSwatchSecondary {
+  background: rgba(v.$secondary-color, 0.55);
+}
+
+.chartNote {
+  margin: 0;
+  color: v.$text-secondary;
+  line-height: 1.6;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(v.$primary-color, 0.35);
+  }
+
+  70% {
+    box-shadow: 0 0 0 8px rgba(v.$primary-color, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(v.$primary-color, 0);
+  }
+}
+
+@media (max-width: v.$screen-small-max) {
+  .page {
+    padding: v.$space-lg v.$space-sm v.$space-xxl;
+  }
+
+  .hero,
+  .section {
+    padding: v.$space-md;
+  }
+
+  .showcaseCard {
+    padding: v.$space-sm v.$space-sm v.$space-sm calc(v.$space-sm + 6px);
+  }
+
+  .exampleGridTwo,
+  .exampleGridThree,
+  .demoBento,
+  .demoStatGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .demoFilterBar,
+  .demoInputRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .demoSearch,
+  .demoSelect,
+  .demoField,
+  .dropdownTrigger {
+    width: 100%;
+  }
+
+  .segmentRail {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .chartBars {
+    gap: v.$space-xs;
+  }
+}

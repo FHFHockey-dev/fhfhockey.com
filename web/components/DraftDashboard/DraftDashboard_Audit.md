@@ -141,6 +141,39 @@ Current recommendation:
 - Proceed using `DraftDashboard` as the canonical source for dashboard shells, controls, cards, progress modules, rails, tables, and modal shells.
 - Do not finalize canonical rules for the missing element families above until the owner provides a rendered site example for each one that matters.
 
+### Sandbox Reference Validation Matrix
+
+This records the sequential sandbox review pass completed on April 4, 2026. The rule used during review was:
+
+1. Find the closest `DraftDashboard` reference first.
+2. If the element is not represented strongly enough there, fall back to another rendered site surface.
+3. Compare the sandbox recreation to that source.
+4. Approve, revise, or explicitly defer before moving to the next element.
+
+| Sandbox Primitive | Primary Reference | Fallback Reference | Review Outcome | Notes |
+| --- | --- | --- | --- | --- |
+| Dashboard shell | `DraftDashboard.module.scss` (`dashboardContainer`, `mainContent`, panel layout) | None | Approved | Sandbox shell should continue following the compact three-panel hierarchy rather than a hero-first page treatment. |
+| Data-page shell | No strong `DraftDashboard` equivalent | `underlying-stats` surfaces are the nearest live family, but not yet canonical | Deferred | Final canonical data-page shell will be locked during task `5.0` once `underlying-stats` is restyled. |
+| Standard panel | Shared `DraftDashboard` / `DraftBoard` panel shell and header-body split | None | Approved | Shared panel shell, visible border, and compact header band are canonical. |
+| Softened data panel | `DraftDashboard` panel shell as base anatomy | Data-page softening is currently guide-driven rather than source-complete | Provisional approval | Keep the softer treatment, but final production source of truth will be set by the first `underlying-stats` implementation pass. |
+| Left-accent card | `SuggestedPicks.module.scss` (`card`, selected card, left accent strip) | None | Approved | This remains the canonical card emphasis pattern. |
+| Empty state | Weak within `DraftDashboard` | `start-chart.module.scss` (`emptyState`) | Deferred | Current sandbox block is acceptable as a placeholder, but page-level and in-panel empty states still need stronger canonical site references. |
+| Loading banner | Weak within `DraftDashboard` | Scattered loading states outside the dashboard family | Deferred | Keep the sandbox example as a review aid, but do not treat it as final canonical production styling yet. |
+| Buttons | `DraftSettings` compact action buttons were the first dashboard reference reviewed | `GameGrid.module.scss` (`dateNav`, `dateButtonPrev`, `dateButtonNext`) | Approved after revision | Owner review chose the `GameGrid` control language over the earlier dashboard button approximation. |
+| Segmented toggle | `DraftSettings.module.scss` (`draftTypeToggle`) | `GameGrid.module.scss` (`modeToggle`, `modeButton`, `modeButtonActive`) | Approved after revision | Owner review chose `GameGrid` as the stronger canonical segmented-control match. |
+| Search input | `ProjectionsTable.module.scss` / `MyRoster.module.scss` (`searchInput`) | None | Approved after revision | Dark field, visible border, blue focus state, and italic condensed placeholder are now the approved sandbox behavior. |
+| Select / dropdown trigger | `DraftSettings.module.scss` (`select`) as the base dashboard source | `PlayerStatsFilters.module.scss` (`select`) | Approved after revision | Sandbox select and dropdown now follow the stronger filter-select behavior, with the owner-approved blue hover preview treatment. |
+| Text field / numeric input row | `DraftSettings.module.scss` (`numberInput`, grouped field rows) | None | Approved | Compact bordered inputs remain canonical. |
+| Stepper | `DraftSettings.module.scss` (`rosterStepper`, `stepButton`) | None | Approved | Joined control with compact hit areas remains the standard. |
+| Analytics table | `ProjectionsTable.module.scss` heavy-table pattern | `DraftBoard.module.scss` for compact leaderboard behaviors | Approved | Sticky headers, dense rows, and scan-first alignment remain the canonical table family. |
+| Chart frame | No strong `DraftDashboard` equivalent beyond small forecast strips | `start-chart.module.scss` (`chartPanel`, header, legend structures) | Deferred | The sandbox chart frame is useful, but final canonical chart framing still depends on a chart-first site example. |
+
+Review note:
+
+- The owner completed a manual element-by-element pass over `cssTestingGrounds`.
+- Buttons, segmented toggle, search input, and select/dropdown behavior were explicitly rejected in their earlier sandbox form and revised to match stronger site references.
+- Deferred items remain intentionally open and should not be treated as final production canon until the site provides a better live example or task `5.0` establishes one.
+
 ---
 
 ## DraftSettings.tsx

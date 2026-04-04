@@ -187,11 +187,18 @@ $shadow-hover:
 $shadow-focus:
   0 0 0 2px rgba($primary-color, 0.55),
   0 4px 16px -4px rgba(0, 0, 0, 0.6);
+$shadow-panel:
+  0 18px 36px -24px rgba(0, 0, 0, 0.78),
+  0 1px 0 rgba(255, 255, 255, 0.03);
+$shadow-panel-hover:
+  0 24px 48px -28px rgba(0, 0, 0, 0.84),
+  0 0 0 1px rgba(255, 255, 255, 0.05);
 
 // Borders
 $border-primary: $color-grey-darker;
 $border-secondary: $color-grey-dark;
 $border-accent: $secondary-color;
+$border-soft: rgba($border-secondary, 0.7); // raw divider color for explicit 1px borders
 
 // Text (canonical)
 $text-primary: $color-grey-text;
@@ -206,7 +213,12 @@ $color-purple: #9b59b6;
 $color-soft-green: #98d8a8;
 $color-pink-red: #ff6b6b;
 
-// Legacy aliases (to avoid breaking existing modules)
+// Compatibility aliases (temporary; do not use for new work).
+// Canonical replacements:
+// - use $text-primary / $text-secondary for text
+// - use $border-primary / $border-secondary / $border-soft for borders
+// - use $background-dark / $background-medium for surfaces
+// - use semantic color tokens such as $warning-color / $success-color / $danger-color
 $text-color-primary: $text-primary !default;
 $text-color-secondary: $text-secondary !default;
 $border-color-primary: $border-primary !default;
@@ -247,7 +259,7 @@ $fill-opacity-heavy: 0.6;
 // (Legacy) Accents slated for removal in refactor passes
 // $best-accent, $worst-accent, off-night/day intensity color literals in component styles
 
-// Legacy background shade aliases referenced in some modules
+// Compatibility background aliases referenced in older modules only.
 $color-bg-dark-1: #101010 !default; // deepest original seed
 $color-bg-dark-2: $background-dark !default; // primary dark
 $color-bg-dark-3: $background-light !default; // lighter dark surface
@@ -276,7 +288,7 @@ $font-size-xxl: 2rem;
 $font-size-small: $font-size-sm !default; // legacy alias
 $text-color-button: $text-button !default;
 
-// Legacy alias for condensed name used elsewhere
+// Compatibility typography alias for older modules only.
 $font-family-condensed: $font-family-primary !default;
 
 // =============================================
@@ -297,10 +309,10 @@ $panel-gap: $space-lg; // Standard vertical gap between stacked dashboard panels
 $border-radius-md: 8px;
 $border-radius-lg: 12px;
 $border-radius-xl: 16px;
-$border-radius: $border-radius-lg; // canonical radius
+$border-radius: $border-radius-lg; // compatibility radius alias; prefer $radius-* for new work
 
 $box-shadow-default: 0 4px 8px rgba($color-black, 0.25);
-$box-shadow: $box-shadow-default !default; // legacy alias
+$box-shadow: $box-shadow-default !default; // compatibility alias; prefer $shadow-* for new work
 
 // Tables & layout
 $table-header-height: 35px;
@@ -311,12 +323,12 @@ $filter-vertical-spacing: $space-xl;
 $team-label-width: 60px; // Fixed team label width used in Draft Board
 
 // =============================================
-// Borders (All definitions preserved)
+// Borders (compatibility shorthands preserved)
 // =============================================
 $border-subtle: 1px solid $border-secondary;
 $border-default: 1px solid $border-primary;
 $border-separator: 2px solid $border-accent;
-$border-radius-sm: 4px;
+$border-radius-sm: 4px; // compatibility alias; prefer $radius-sm for new work
 
 // =============================================
 // Transitions (All definitions preserved)
@@ -359,19 +371,14 @@ $chart-tooltip-text: $text-primary;
 // =============================================
 // Desktop vs Mobile Theming Tokens (now safely after color + semantic vars)
 // =============================================
-// Subtle translucent panel layers for desktop (frosted glass look)
-$desktop-panel-bg: rgba($background-dark, 0.6);
-$desktop-panel-border: color.adjust($border-primary, $lightness: 10%);
-$desktop-panel-shadow:
-  0 4px 24px -4px rgba(0, 0, 0, 0.6),
-  0 0 0 1px rgba(255, 255, 255, 0.04);
-$desktop-surface-elevated: linear-gradient(
-  145deg,
-  color.adjust($background-dark, $lightness: 3%) 0%,
-  color.adjust($background-dark, $lightness: -4%) 100%
-);
+// Desktop panel tokens default to flat, bordered dark surfaces.
+// Frosted or gradient-heavy surfaces should be opt-in and page-specific.
+$desktop-panel-bg: $background-medium;
+$desktop-panel-border: $border-soft;
+$desktop-panel-shadow: $shadow-panel;
+$desktop-surface-elevated: color.adjust($background-medium, $lightness: 2%);
 
-// Accent gradients for stat emphasis (desktop)
+// Accent gradients remain available, but should be treated as optional emphasis only.
 $gradient-accent-inline: linear-gradient(
   90deg,
   $primary-color 0%,
@@ -392,6 +399,8 @@ $mobile-separator: rgba($border-secondary, 0.6);
 // Focus rings
 $focus-ring-desktop: 0 0 0 2px rgba($primary-color, 0.5);
 $focus-ring-mobile: 0 0 0 3px rgba($primary-color, 0.8);
+$focus-ring: $focus-ring-desktop;
+$focus-ring-strong: $focus-ring-mobile;
 
 // Typography weights
 $font-weight-regular: 400;
@@ -408,6 +417,13 @@ $radius-xs: 4px;
 $radius-sm: 6px;
 $radius-md: 10px;
 $radius-lg: 16px;
+$radius-control: $radius-sm;
+$radius-card: $radius-md;
+$radius-panel: $radius-md;
+$radius-feature: $radius-lg;
+$control-height-sm: 32px;
+$control-height-md: 34px;
+$control-height-lg: 44px;
 $blur-backdrop-strong: 28px;
 $blur-backdrop-soft: 12px;
 
@@ -422,21 +438,37 @@ $z-desktop-toast: 650;
 // =============================================
 // Helper Mixins (desktop/mobile)
 // =============================================
-@mixin glass-panel($padding: $space-md $space-lg, $radius: $radius-lg) {
+@mixin glass-panel(
+  $padding: $space-md $space-lg,
+  $radius: $radius-lg,
+  $frosted: false
+) {
   background: $desktop-panel-bg;
-  backdrop-filter: blur($blur-backdrop-soft) saturate(150%);
-  -webkit-backdrop-filter: blur($blur-backdrop-soft) saturate(150%);
-  border: 1px solid $desktop-panel-border;
+  border: $border-subtle;
   box-shadow: $desktop-panel-shadow;
   border-radius: $radius;
   padding: $padding;
+
+  @if $frosted {
+    background: rgba($background-dark, 0.72);
+    border: 1px solid rgba($color-white, 0.1);
+    backdrop-filter: blur($blur-backdrop-soft);
+    -webkit-backdrop-filter: blur($blur-backdrop-soft);
+    box-shadow:
+      0 10px 24px -12px rgba(0, 0, 0, 0.58),
+      0 0 0 1px rgba(255, 255, 255, 0.035);
+  }
 }
 
-@mixin stat-accent-text {
-  background: $gradient-accent-inline;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+@mixin stat-accent-text($use-gradient: false) {
+  color: $primary-color;
+
+  @if $use-gradient {
+    background: $gradient-accent-inline;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
 }
 
 @mixin focus-ring-desktop {

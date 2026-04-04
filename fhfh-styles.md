@@ -131,40 +131,141 @@ Do not copy these as defaults without judgment:
 
 ## 6. Page Archetypes
 
-This section defines the document structure Codex should follow. Detailed rules will be expanded further in later sections and future passes.
+This section defines the page-level structure Codex should follow before styling individual components. Choose the archetype first, then apply the corresponding shell, spacing, and hierarchy rules.
 
 ### 6.1 Dashboard Pages
 
 Use for pages like `DraftDashboard`.
 
-- Enter directly into utility surfaces.
-- Keep top-level spacing compact.
-- Favor full-width control planes and multi-panel workspaces.
+- Enter directly into utility surfaces rather than a marketing-style intro.
+- Keep top-level spacing compact from the first viewport.
+- Favor full-width control planes, horizontal utility rails, and multi-panel workspaces.
 - Use one visually emphasized primary panel at most.
+- Group related controls into one dense control plane instead of scattering filters throughout the page.
+- Prefer asymmetric workspaces such as `2fr / 1fr / 2fr` or a dominant primary column with supporting side rails.
+- Panels should feel operational and continuously usable, not decorative.
+
+Recommended structure:
+
+1. compact page header or title band when needed
+2. primary settings or filter plane
+3. utility rail or summary rail if applicable
+4. main multi-panel workspace
+
+Do not default to:
+
+- oversized hero intros
+- centered marketing layouts
+- equal-width cards when one area is clearly primary
 
 ### 6.2 Data Pages
 
 Use for pages like `underlying-stats`.
 
-- Keep the same dark system and border language as dashboard pages.
+- Keep the same dark system, border language, and typography hierarchy as dashboard pages.
 - Soften decorative chrome compared with dashboard pages.
-- Reduce empty space.
-- Keep headers, controls, and data sections tightly connected.
+- Reduce empty space and avoid detached hero sections.
+- Keep headers, controls, summary context, and data sections tightly connected.
+- Treat the first viewport as an analytics workspace, not a landing page.
+- Use compact context rows, summary chips, or metadata blocks to explain scope without consuming excessive vertical space.
 
-### 6.3 Chart Pages
+Recommended structure:
 
-Reserved page archetype.
+1. compact title and scope context
+2. connected filter and control block
+3. optional summary metrics row
+4. primary data surface such as table, grouped cards, or mixed sections
+
+Default tone:
+
+- disciplined
+- compact
+- readable
+- less chrome-heavy than a true dashboard
+
+### 6.3 Bento-Box Pages
+
+Use when a page is composed of multiple distinct insight modules of different sizes.
+
+- Use a clear visual grid with intentional size hierarchy.
+- Allow one or two modules to span wider than the rest.
+- Each box should still use canonical panel anatomy and spacing.
+- Avoid random masonry styling; modules should align to a predictable grid.
+- Use bento layouts only when the page genuinely contains multiple different insight types.
+
+Recommended structure:
+
+1. compact header and filters
+2. modular insight grid with mixed spans
+3. table or detail section below if one module requires deep inspection
+
+Good fit for:
+
+- dashboard-like overviews
+- mixed cards plus charts plus rankings
+- preview and spotlight pages
+
+### 6.4 Table-Heavy Pages
+
+Use when the table is the primary reason the page exists.
+
+- Keep the table close to the filter bar and page context.
+- Sticky headers, compact row density, strong numeric alignment, and scanability are mandatory.
+- Support controls should be compact and should not dominate more vertical space than the table itself.
+- Use summary metrics sparingly and only when they materially help the table reading experience.
+- The page shell should support width and density rather than decorative framing.
+
+Recommended structure:
+
+1. compact page title and context
+2. dense filter and search toolbar
+3. optional micro-summary row
+4. dominant table panel
+
+Do not default to:
+
+- oversized cards above the table
+- repeated full-width decorative panels
+- filter stacks that push the table too far below the fold
+
+### 6.5 Chart Pages
+
+Use when charts are the primary content.
 
 - Use the same shell and typography system.
 - Chart framing, legends, and toolbar rules should reuse canonical panel and control patterns.
-- Detailed chart-page rules will be expanded once the chart reference set is finalized.
+- Keep chart controls close to the chart they affect.
+- Let the chart own the space; do not compress a primary chart into a small card without reason.
+- Use supporting metrics, notes, and legends as secondary surfaces around the chart.
+- Multiple charts on one page should still maintain a clear hierarchy, not a wall of identical panels.
 
-### 6.4 Drill-Down / Detail Pages
+Recommended structure:
 
-Reserved page archetype.
+1. compact title and scope controls
+2. primary chart surface
+3. supporting legend / notes / comparative modules
+4. secondary chart grid or table if needed
 
-- Reuse the data-page shell.
-- Promote page context and filters clearly, but do not default to oversized hero treatment.
+### 6.6 Drill-Down / Detail Pages
+
+- Reuse the data-page shell, not a dashboard shell.
+- Promote page context, identity, filters, and breadcrumbs clearly.
+- Do not default to oversized hero treatment.
+- The top of the page should answer who or what the page is about, what slice of data is shown, and what controls are active.
+- Follow the context block with the main analytical surface quickly.
+- Use secondary sections below for supporting history, breakdowns, tables, or related modules.
+
+Recommended structure:
+
+1. identity and scope header
+2. compact control row
+3. primary analytical section
+4. supporting secondary sections
+
+Detail-page caution:
+
+- do not let the identity header consume the same space as a consumer-profile page
+- do not separate the primary chart or table too far below the fold
 
 ## 7. Token System
 
@@ -180,7 +281,68 @@ Use shared tokens before writing local values.
 - Secondary text: `$text-secondary`
 - Strong header text: `$color-white`
 
-### 7.2 Position Accent Colors
+Usage rules:
+
+1. Canvas and panel surfaces should remain dark enough to let borders, data, and accents read clearly.
+2. Primary text should be reserved for key values, titles, row labels, and important controls.
+3. Secondary text should be used for subtitles, helper copy, metadata, stale notes, and supporting values.
+4. Strong white text should be used selectively for high-priority headings and emphasized values, not as the default for all text.
+
+### 7.2 Accent Rules
+
+1. The primary accent should be the dominant interaction and emphasis color across the site.
+2. Secondary accent use should be limited to subtle variation, support states, or adjacent emphasis rather than creating a second competing system.
+3. Accent color should guide attention, not flood the interface.
+4. Buttons, toggles, active states, current-row emphasis, links, and selected cards should all feel related through the same accent family.
+5. Do not introduce arbitrary new accent colors in local modules when the shared accent system already covers the need.
+
+### 7.3 Border System
+
+1. Borders are a core part of hierarchy on FHFH and should usually be visible.
+2. Default panels, cards, tables, toolbars, and inputs should use a restrained neutral border instead of relying on shadow alone.
+3. Border contrast should be clear enough to separate layers, but not so bright that every surface looks outlined in chrome.
+4. Active, selected, or focused states may intensify border color toward the accent family.
+5. Data pages should generally use quieter borders than the most intense dashboard treatments.
+6. Left accent borders are the canonical emphasis treatment for recommendation cards and similar spotlight modules.
+
+### 7.4 State Colors
+
+Use shared semantic colors for meaning, not decorative novelty.
+
+- success / positive outcome: `$success-color`
+- warning / caution / stale context: `$warning-color`
+- danger / error / destructive context: `$danger-color`
+- info / neutral emphasis: `$info-color`
+
+Rules:
+
+1. Semantic colors should communicate status first and brand style second.
+2. Warning and danger colors should be used sparingly so alerts retain meaning.
+3. Positive and negative deltas in tables or cards should use a consistent rule set across the site.
+4. State color should usually appear in text, pills, borders, small badges, or accent bars before it appears as a full-surface fill.
+
+### 7.5 Chart Colors
+
+1. Charts should use a restrained, intentional palette that fits the product accent system.
+2. One primary series may use the main accent color.
+3. Supporting series should use coordinated, lower-conflict colors rather than a rainbow palette.
+4. Gridlines, axes, legends, and chart annotations should stay subdued and readable against dark surfaces.
+5. Danger, warning, and success chart colors should preserve the same semantic meaning they have elsewhere in the UI.
+6. Avoid over-saturated chart palettes that compete with nearby cards, controls, and table states.
+
+### 7.6 Data-Page Softened Treatment
+
+Data pages should usually be visually softer than the most intense dashboard modules.
+
+- lower gradient intensity
+- quieter border glow
+- more neutral panel fills
+- fewer stacked accent effects
+- stronger emphasis on readability and scanability
+
+This does not mean flat and lifeless. It means restrained and consistent.
+
+### 7.7 Position Accent Colors
 
 Use position accents only when the UI benefits from category identity.
 
@@ -191,13 +353,30 @@ Use position accents only when the UI benefits from category identity.
 - G: `$success-color`
 - UTIL: `$warning-color`
 
-### 7.3 Token Governance
+Allowed uses:
+
+- player position pills
+- roster composition summaries
+- position-coded recommendation cards
+- filters or legends where position identity materially improves scanning
+
+Do not use position accents for:
+
+- generic buttons
+- page shells
+- general panel borders
+- unrelated headings
+- large background treatments
+
+### 7.8 Token Governance
 
 - If a spacing, border, radius, shadow, focus, or state token is missing, add it to `vars.scss`.
 - If a reusable surface/helper pattern is missing, add or refine it in `_panel.scss`.
 - Do not bury canonical values inside feature-local SCSS modules.
 
 ## 8. Typography System
+
+Typography should establish hierarchy quickly and support dense analytics reading. It should feel technical, disciplined, and legible at a glance.
 
 ### 8.1 Accent Font
 
@@ -211,6 +390,8 @@ Use position accents only when the UI benefits from category identity.
   - uppercase
   - wide tracking
   - bold
+  - restrained use
+  - not for paragraphs or dense explanatory copy
 
 ### 8.2 Body Font
 
@@ -219,7 +400,14 @@ Use position accents only when the UI benefits from category identity.
   - labels
   - descriptions
   - helper text
+  - subtitles
+  - table support copy
   - general page copy
+- Standard traits:
+  - normal case by default
+  - high readability
+  - neutral tracking
+  - medium or regular weight by default
 
 ### 8.3 Numeric / Data Font
 
@@ -228,7 +416,173 @@ Use position accents only when the UI benefits from category identity.
   - table metrics
   - compact stat pills
   - percentages
-  - timing, pricing, or numeric controls when monospaced alignment helps readability
+  - timing, rates, and counts
+  - numeric controls when monospaced alignment helps readability
+
+### 8.4 Hierarchy Roles
+
+#### Page Title
+
+Use for the primary page heading.
+
+- Font: accent
+- Weight: bold
+- Case: uppercase by default
+- Tracking: wide
+- Size target:
+  - desktop: `2rem` to `2.5rem`
+  - mobile: `1.5rem` to `2rem`
+- Color: strongest text color
+- Usage rule:
+  - only one primary page title per page
+
+#### Section Title
+
+Use for major sections within a page or large panel.
+
+- Font: accent
+- Weight: bold
+- Case: uppercase by default
+- Tracking: medium to wide
+- Size target:
+  - desktop: `1rem` to `1.35rem`
+  - mobile: `0.95rem` to `1.15rem`
+- Usage rule:
+  - stronger than labels, weaker than the page title
+
+#### Panel Title
+
+Use inside panel headers.
+
+- Font: accent
+- Weight: bold
+- Case: uppercase by default
+- Tracking: medium to wide
+- Size target:
+  - desktop and mobile: `0.85rem` to `1rem`
+- Usage rule:
+  - panel titles should be compact and never compete with the page title
+
+#### Subtitle / Supporting Intro Copy
+
+Use for the short explanatory line beneath a page title or section title.
+
+- Font: body
+- Weight: regular or medium
+- Case: sentence case
+- Tracking: normal
+- Size target:
+  - desktop: `0.95rem` to `1.1rem`
+  - mobile: `0.9rem` to `1rem`
+- Color: secondary text
+- Usage rule:
+  - keep concise; do not let subtitles become long marketing paragraphs
+
+#### Eyebrow / Kicker / Meta Label
+
+Use for pre-title labels, category labels, status context, or grouped metadata.
+
+- Font: accent or body depending on density
+- Weight: semibold
+- Case: uppercase when used as a system label
+- Tracking: wide when uppercase
+- Size target:
+  - `0.65rem` to `0.8rem`
+- Color: muted or accent-tinted text depending on emphasis
+
+#### Body Copy
+
+Use for explanatory text blocks and general interface copy.
+
+- Font: body
+- Weight: regular
+- Case: sentence case
+- Tracking: normal
+- Size target:
+  - `0.95rem` to `1rem`
+- Line height:
+  - looser than labels, tighter than marketing/editorial content
+
+#### UI Label
+
+Use for form labels, control labels, table toolbar labels, and compact metadata labels.
+
+- Font: body
+- Weight: medium or semibold
+- Case: sentence case by default
+- Size target:
+  - `0.75rem` to `0.9rem`
+- Usage rule:
+  - labels should read crisply but should not overpower the control itself
+
+#### Table Header Label
+
+Use for column headers and sortable labels.
+
+- Font: accent or semibold body depending on density
+- Weight: semibold to bold
+- Case: uppercase or title-style compact labels depending on available width
+- Tracking: slight increase when uppercase
+- Size target:
+  - `0.7rem` to `0.82rem`
+- Usage rule:
+  - table headers should privilege scanability over decorative styling
+
+#### Table Cell Text
+
+Use for primary non-numeric table values.
+
+- Font: body
+- Weight: regular to medium
+- Size target:
+  - `0.78rem` to `0.92rem`
+- Color:
+  - primary text for key values
+  - secondary text for supporting values
+
+#### Numeric Data Text
+
+Use for counts, rates, percentages, deltas, and standings-style metrics.
+
+- Font: numeric / data font when alignment matters
+- Weight: medium or semibold
+- Size target:
+  - `0.78rem` to `0.95rem`
+- Usage rule:
+  - keep numeric alignment visually stable across rows and cards
+
+#### Caption / Helper Text
+
+Use for secondary explanatory copy, empty-state guidance, filter hints, and chart notes.
+
+- Font: body
+- Weight: regular
+- Size target:
+  - `0.72rem` to `0.85rem`
+- Color: secondary text
+- Usage rule:
+  - captions should support the interface, not compete with it
+
+#### Footnote / Fine Print
+
+Use for validation notes, freshness notes, provenance, or low-priority caveats.
+
+- Font: body
+- Weight: regular
+- Size target:
+  - `0.68rem` to `0.78rem`
+- Color: muted secondary text
+- Usage rule:
+  - only use when the information is genuinely secondary
+
+### 8.5 Typography Rules
+
+1. Typography must create a clear ladder from page title to panel title to labels to data to captions.
+2. Accent typography should be used intentionally, not sprayed across every text element.
+3. Do not mix too many font sizes inside a single panel; use a controlled hierarchy.
+4. Avoid oversized subtitle copy, bloated panel headers, and decorative letter spacing on body text.
+5. Numeric alignment matters in analytics tables and metric cards; use the numeric font where it improves scanability.
+6. Uppercase is primarily a system-heading and metadata-label tool, not a default for body copy.
 
 ## 9. Canonical Component Families
 
@@ -254,6 +608,76 @@ Use for most work surfaces.
 - Border: visible neutral border
 - Radius: shared medium radius
 - Shadow: restrained depth
+- Use for:
+  - data sections
+  - tables
+  - filter containers
+  - summary modules
+  - chart frames
+
+Behavior rules:
+
+1. Standard panels are the baseline surface treatment across the site.
+2. They should feel solid, bordered, and structured before they feel elevated.
+3. Default panel emphasis should come from hierarchy, header treatment, and content density, not heavy effects.
+
+#### Flat Panel
+
+Use when the panel should sit quietly inside a dense data page.
+
+- Near-flat fill
+- Clear border
+- Minimal glow
+- Minimal lift
+
+Good fit for:
+
+- table wrappers
+- stacked data sections
+- subordinate detail blocks
+- page sections where too much elevation would create noise
+
+#### Elevated Panel
+
+Use when a module needs slightly more separation or prominence.
+
+- Same base anatomy as the standard panel
+- Stronger shadow or contrast than a flat panel
+- Still restrained relative to dashboard-intense modules
+
+Good fit for:
+
+- primary summary blocks
+- standout control surfaces
+- promoted charts or recommendation modules
+
+#### Dashboard-Intense Panel
+
+Use sparingly for a small number of primary dashboard modules.
+
+- May use stronger accent tinting
+- May use slightly stronger shadow, border emphasis, or glow
+- Should still preserve readability and not become glossy or theatrical
+
+Rules:
+
+1. Do not make every panel on the page dashboard-intense.
+2. Usually only one or two panels on a dashboard should carry this stronger treatment.
+3. This treatment is usually inappropriate as the default on data pages.
+
+#### Data-Page Softened Panel
+
+Use as the default panel treatment on data-heavy pages.
+
+- Darker, flatter, quieter
+- Cleaner border hierarchy
+- Lower glow intensity
+- Emphasis comes from layout and content, not effects
+
+Rules:
+
+1. This is the default target for `underlying-stats` style pages.
+2. If in doubt on a data page, choose the softened panel treatment.
 
 #### Overlay / Dialog Panel
 
@@ -269,6 +693,30 @@ Use for modals and feature overlays.
 - Visible bottom divider
 - Accent font title
 - Compact vertical padding
+
+Panel header rules:
+
+1. Panel headers should visually separate metadata or actions from the content body.
+2. Header height should stay compact.
+3. Header actions should align cleanly and never overwhelm the title.
+4. Panel headers should not become mini hero sections.
+
+#### Panel Interaction States
+
+- hover:
+  - minor border emphasis
+  - minor shadow increase when the panel is interactive
+- selected / active:
+  - stronger border or accent treatment
+  - may add restrained accent tinting
+- focus within:
+  - visible accessibility-focused outline or border shift
+
+Rules:
+
+1. State changes should intensify the existing anatomy, not replace it with a different visual language.
+2. Focus styles must remain visible on dark backgrounds.
+3. Hover motion should be subtle and directional, never floaty.
 
 ### 9.3 Cards
 
@@ -288,6 +736,56 @@ Primary card reference: `SuggestedPicks.module.scss`
   - the left accent strip is canonical
   - heavy glow/blur/gradient intensity is optional
 
+#### Card Surface Variants
+
+##### Standard Data Card
+
+- Use for summary cards, metric modules, and supporting detail blocks
+- Flat-to-lightly-elevated surface
+- Visible border
+- Compact internal spacing
+
+##### Recommendation / Spotlight Card
+
+- Use for suggested picks, spotlight modules, and ranked recommendation items
+- Left accent strip is the default emphasis treatment
+- May use a slightly stronger hover and selected state than standard data cards
+
+##### Intense Dashboard Card
+
+- Use sparingly for high-attention modules inside dashboards
+- May use stronger accent tint or shadow than the standard card
+- Should still keep the same structural anatomy
+
+#### Card State Rules
+
+- hover:
+  - modest border emphasis
+  - slight lift or directional motion
+- selected:
+  - stronger border
+  - stronger accent strip or accent tint
+  - same core shape and spacing
+- focus:
+  - clear accessible outline or border emphasis
+- disabled / inactive:
+  - reduced contrast
+  - reduced motion
+
+Rules:
+
+1. Cards should never rely on glow alone to indicate interactivity.
+2. Hover and selected states should feel crisp and intentional, not flashy.
+3. Left accent strips should be flat, clean, and aligned with the card edge.
+4. Data-page cards should use quieter shadows and tints than dashboard spotlight cards.
+
+#### Card Content Rules
+
+1. Internal spacing should support dense reading and quick scanning.
+2. Metric stacks, sublabels, trend indicators, and metadata should align to a consistent vertical rhythm.
+3. Avoid oversized empty padding inside cards.
+4. If a card becomes too complex, it should probably be a panel section instead of a card.
+
 ### 9.4 Buttons
 
 #### Primary Button
@@ -295,12 +793,52 @@ Primary card reference: `SuggestedPicks.module.scss`
 - Strong action emphasis
 - Accent-led
 - Compact but obvious
+- Current canonical reference should follow the `GameGrid` date-nav control language more closely than the earlier generic button example
+
+Rules:
+
+1. Use for the main action in a local area, not every action on the page.
+2. The primary button should feel clearly interactive without becoming oversized.
+3. Accent fill and accent border should feel related to the global accent system.
+4. Use compact accent typography when the surrounding interface follows the dashboard/control language.
+5. For dense dashboard controls, prefer the `GameGrid` pattern: `2px` accent border, low accent fill at rest, stronger accent fill on hover, and uppercase accent typography.
+
+Typical states:
+
+- default:
+  - accent-led fill or strong accent treatment
+- hover:
+  - stronger border and slightly brighter emphasis
+- active:
+  - slightly compressed or darker pressed state
+- focus:
+  - visible focus ring or outline on dark backgrounds
+- disabled:
+  - reduced contrast and reduced saturation
+
+#### Secondary Button
+
+- Lower emphasis than the primary button
+- Usually border-led or low-fill
+- Suitable for secondary actions in a shared action cluster
+
+Rules:
+
+1. Secondary buttons should read clearly next to primary buttons without competing with them.
+2. Border contrast matters more than shadow.
+3. Hover states may borrow accent treatment, but the resting state should remain quieter than the primary button.
 
 #### Secondary / Ghost Button
 
 - Transparent or low-fill
 - Border-led
 - Gains accent treatment on hover
+
+Rules:
+
+1. Use for low-priority actions, utility controls, and inline toolbars.
+2. Ghost buttons should still feel clickable; do not make them fade into the background.
+3. Use them sparingly in dense toolbars so the interface does not become visually noisy.
 
 #### Compact Dashboard Action Button
 
@@ -315,16 +853,58 @@ Rules:
 - uppercase accent typography
 - clear border
 - no oversized vertical padding
+- fits dense settings rows and utility clusters
+
+#### Button Size Guidance
+
+- compact:
+  - default for dashboards, filter bars, table toolbars, and dense controls
+- standard:
+  - use when a page-level action needs more presence
+- large:
+  - avoid unless a page has a very small number of actions and one clearly deserves prominence
+
+Button anti-patterns:
+
+- oversized pill buttons
+- extra-tall buttons in dense analytics contexts
+- unrelated colors per button
+- weak ghost buttons with unreadable borders
 
 ### 9.5 Segmented Toggles
 
-Primary reference: `DraftSettings .draftTypeToggle`
+Primary reference: `GameGrid .modeToggle`
 
-- Dark rail
+Secondary reference: `DraftSettings .draftTypeToggle`
+
+- Dark rail with `4px` internal padding
 - Compact internal padding
 - Inactive state stays quiet
 - Active state uses accent fill + accent border
 - This is the canonical segmented-control pattern
+
+Rules:
+
+1. Segmented toggles are the default pattern for switching between two to five closely related modes.
+2. The rail should read as one control group, not a row of unrelated buttons.
+3. Inactive segments should remain legible without stealing attention.
+4. Active segments should intensify through accent treatment, not by changing shape.
+5. Segmented controls should stay compact enough for settings rows and dashboard filters.
+6. Default to the `GameGrid` anatomy: dark grouped rail, transparent inactive buttons, accent-tinted hover state, and active buttons with `primary-color-opaque` plus a `2px` accent border.
+
+Use for:
+
+- mode switches
+- counts vs rates
+- player vs team views
+- time-slice toggles
+- dashboard subsection modes
+
+Do not use for:
+
+- long menus
+- large choice lists
+- controls with highly unequal label lengths
 
 ### 9.6 Inputs And Selects
 
@@ -340,7 +920,97 @@ Shared traits:
 - accent focus ring
 - compact sizing for dashboard/data pages
 
-### 9.7 Progress Modules
+#### Text Input
+
+Use for direct text entry, filter terms, and compact form fields.
+
+Rules:
+
+1. Inputs should be compact, bordered, and clearly readable against dark surfaces.
+2. Placeholder text should be subdued but legible.
+3. Focus state must be visible and consistent across all input types.
+4. Input chrome should not overpower surrounding labels and data.
+
+#### Search Input
+
+Use for player search, table search, and local filtering.
+
+Rules:
+
+1. Search inputs should use the same base anatomy as text inputs.
+2. Search fields in dense toolbars should remain compact.
+3. If an icon is used, it should be quiet and aligned cleanly.
+4. Search should feel like part of the same filter bar rather than a separate visual system.
+5. Current approved search reference is the `ProjectionsTable` / `MyRoster` pattern: dark field, visible border, blue border on focus, and a restrained focus ring.
+6. Search placeholder text should use `Roboto Condensed` via `$font-family-primary`, with italic styling and transparentized secondary text rather than full-opacity body copy.
+
+#### Select
+
+Use for compact enumerated choices.
+
+Rules:
+
+1. Selects should use the same background, border, and focus treatment as other inputs.
+2. Avoid decorative custom arrows or over-styled dropdown chrome.
+3. Select width should fit expected content without wasting toolbar space.
+4. In dense dashboards, selects should align cleanly with adjacent buttons and inputs.
+5. Approved base reference is `PlayerStatsFilters .select` for border, focus, and arrow treatment.
+6. Sandbox and future custom menu demos may use a stronger hover preview state with `$color-brand-primary` background and `$color-brand-dark` text so option hover is unmistakable during review.
+
+#### Number Input
+
+Use for compact numeric entry where direct typing is useful.
+
+Rules:
+
+1. Numeric inputs should align visually with steppers and selects.
+2. The field should remain readable even at compact widths.
+3. Avoid extra-heavy shadows or detached plus/minus buttons unless the stepper pattern is used.
+
+#### Stepper
+
+Use when the user is expected to increment or decrement small values directly.
+
+Rules:
+
+1. Use a compact joined control with a central value field and adjacent increment/decrement actions.
+2. Button hit areas should remain usable without becoming oversized.
+3. Stepper controls should feel engineered and compact, not toy-like.
+4. The value display should use stable numeric alignment.
+
+#### Dropdown / Action Menu
+
+Canonical site-wide menu rules still need more examples, but default guidance is:
+
+- anchor visually to the triggering control
+- dark panel shell
+- clear border
+- compact option density
+- strong hover and focus states
+- no floating white menu treatment
+- open directly below the trigger, not on top of it
+- option hover may use `$color-brand-primary` fill with `$color-brand-dark` text for clear review-state approval
+
+### 9.7 Filter Bars And Control Rows
+
+Use for grouped controls above tables, dashboards, or analytical sections.
+
+Rules:
+
+1. Filter bars should read as one connected control surface.
+2. Controls inside a filter bar should align by height and visual weight.
+3. Search, selects, segmented toggles, and compact action buttons should coexist without one style family dominating the row.
+4. Dense control rows should wrap cleanly on smaller screens.
+5. Avoid excessive vertical stacking unless the viewport forces it.
+
+Recommended ingredients:
+
+- one search field
+- one or more compact selects
+- a segmented mode toggle when relevant
+- one or two secondary actions
+- one clearly primary action only if necessary
+### 9.8 Progress Modules
 
 Primary reference: `MyRoster .rosterProgress`
 
@@ -349,7 +1019,7 @@ Primary reference: `MyRoster .rosterProgress`
 - compact spacing
 - should feel like a support module, not a hero component
 
-### 9.8 Tables
+### 9.9 Tables
 
 Primary heavy-table reference: `ProjectionsTable.module.scss`
 
@@ -363,7 +1033,122 @@ Rules:
 - use restrained striping
 - support current-row or selected-row emphasis with left accent border or restrained tint
 
-### 9.9 Dense Grid / Matrix Cells
+#### Table Structure Rules
+
+1. Tables should usually live inside a canonical panel shell.
+2. Table headers, toolbar controls, and scroll containers should feel like one system.
+3. Column density should favor scanability over decorative spacing.
+4. Numeric columns should align consistently and use the numeric/data font when helpful.
+5. Heavy internal gridlines should be avoided unless the data truly needs them.
+
+#### Row Density Rules
+
+1. Default row density should be compact.
+2. Dense analytics tables should privilege visible data per viewport over oversized padding.
+3. If a row needs secondary metadata, keep it visually subordinate to the primary value.
+4. Do not use tall rows as the default on table-heavy pages.
+
+#### Header And Sorting Rules
+
+1. Sticky headers are the default when the table scrolls vertically.
+2. Header labels should be compact, legible, and visually distinct from body rows.
+3. Sortable columns should have a clear affordance, but the icon treatment should remain restrained.
+4. Active sort state should be obvious through accent or stronger text emphasis.
+5. Header bars should remain darker or more separated than the table body.
+
+#### Row State Rules
+
+- hover:
+  - subtle row tint or border emphasis
+- selected:
+  - stronger tint and/or left accent
+- current / active:
+  - the clearest row emphasis state
+- disabled / unavailable:
+  - reduced contrast
+
+Rules:
+
+1. Current-row and selected-row states should intensify the existing table language, not introduce unrelated colors.
+2. A left accent border is the preferred strong-emphasis treatment when a row needs standout focus.
+3. Striping should remain restrained enough that selected and current states still read clearly.
+
+#### Table States
+
+##### Empty State
+
+- should live inside the same panel shell as the table
+- should explain why there are no rows
+- may suggest the control or filter to change
+
+##### Loading State
+
+- should preserve the table frame or panel shell
+- may use skeleton rows or a compact loading banner
+- should not cause the entire page to jump structure
+
+##### Error State
+
+- should stay inside the data container
+- should use semantic warning/danger treatment sparingly
+- should explain what failed and, when appropriate, how to retry
+
+### 9.10 Chart Containers
+
+Chart containers should use canonical panel anatomy unless a documented exception is needed.
+
+#### Chart Frame
+
+- dark panel shell
+- visible border
+- compact header or toolbar area
+- chart area gets the majority of the space
+
+Rules:
+
+1. The chart frame should support the chart, not visually compete with it.
+2. Chart modules should feel like part of the same system as tables and cards.
+3. Primary charts may use elevated or promoted panel treatment, but still within the same panel language.
+
+#### Chart Toolbar
+
+Use for chart-local controls such as timeframe, series mode, compare toggles, or legend visibility.
+
+Rules:
+
+1. Chart controls should sit close to the chart they affect.
+2. Toolbars should use the same button, select, and segmented-control system as the rest of the site.
+3. Toolbars should remain compact and should not dominate vertical space above the chart.
+4. If multiple controls exist, they should wrap cleanly on smaller screens.
+
+#### Chart Legend And Notes
+
+1. Legends should be readable, compact, and visually secondary to the chart itself.
+2. Legend color chips should match the chart palette exactly.
+3. Notes, caveats, and freshness context should use caption-level typography.
+4. Supporting notes should not crowd the plotting area.
+
+#### Chart States
+
+##### Empty Chart State
+
+- explain why the chart has no data
+- preserve the chart frame
+- align with table empty-state language
+
+##### Loading Chart State
+
+- preserve the chart frame and title area
+- use a calm placeholder or skeleton
+- avoid large layout shifts
+
+##### Error Chart State
+
+- keep the message within the chart container
+- use semantic state styling sparingly
+- do not replace the page shell with a large global error block
+
+### 9.11 Dense Grid / Matrix Cells
 
 Primary reference: `DraftBoard` pick grid
 
@@ -371,7 +1156,7 @@ Primary reference: `DraftBoard` pick grid
 - state variants for current, past, completed, selected, etc.
 - anchor cells may use stronger accent treatment than normal data cells
 
-### 9.10 Recommendation Rails
+### 9.12 Recommendation Rails
 
 Primary reference: `SuggestedPicks .cardsRow`
 
@@ -379,7 +1164,7 @@ Primary reference: `SuggestedPicks .cardsRow`
 - compact controls above
 - should support featured content without becoming a second full page shell
 
-### 9.11 Dialogs And Overlays
+### 9.13 Dialogs And Overlays
 
 Primary shared references:
 
@@ -400,7 +1185,339 @@ Do not over-canonicalize:
 
 - feature-specific modal internals
 
-## 10. Layout And Spacing
+## 10. Do / Do Not + SCSS Patterns
+
+Use these as compact execution references when styling a page from this document.
+
+### 10.1 Page Shell
+
+Do:
+
+- keep the page shell dark, compact, and utility-first
+- connect the header, controls, and first data surface closely
+
+Do not:
+
+- build a marketing hero
+- center the whole page in a narrow content column if the page is data-heavy
+
+```scss
+.pageShell {
+  min-height: 100%;
+  padding: 1rem 1rem 1.25rem;
+  background: v.$background-dark;
+  color: v.$text-primary;
+}
+
+.pageStack {
+  display: grid;
+  gap: 0.9rem;
+}
+```
+
+### 10.2 Standard Panel
+
+Do:
+
+- use a solid dark surface
+- use a clear neutral border
+- keep the header compact
+
+Do not:
+
+- rely on shadow alone for separation
+- turn every panel into a glowing feature box
+
+```scss
+.panel {
+  background: v.$background-medium;
+  border: v.$border-subtle;
+  border-radius: v.$radius-md;
+  box-shadow: v.$shadow-panel;
+  overflow: clip;
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.7rem 0.9rem;
+  border-bottom: 1px solid v.$border-soft;
+  background: v.$background-dark;
+}
+
+.panelBody {
+  padding: 0.9rem;
+}
+```
+
+### 10.3 Softened Data Panel
+
+Do:
+
+- use a flatter, quieter version of the standard panel on data pages
+
+Do not:
+
+- use dashboard-intense glow by default on analytics surfaces
+
+```scss
+.dataPanel {
+  background: v.$background-medium;
+  border: v.$border-subtle;
+  border-radius: v.$radius-md;
+  box-shadow: none;
+}
+```
+
+### 10.4 Left-Accent Card
+
+Do:
+
+- use the flat left accent strip for spotlight and recommendation cards
+
+Do not:
+
+- replace the accent strip with a full-card gradient
+
+```scss
+.accentCard {
+  position: relative;
+  padding: 0.85rem 0.9rem 0.85rem 1.1rem;
+  background: v.$background-medium;
+  border: v.$border-subtle;
+  border-radius: v.$radius-md;
+}
+
+.accentCard::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: v.$primary-color;
+  border-radius: v.$radius-md 0 0 v.$radius-md;
+}
+```
+
+### 10.5 Primary Button
+
+Do:
+
+- keep buttons compact and clearly interactive
+
+Do not:
+
+- use oversized pill buttons in dense interfaces
+
+```scss
+.buttonPrimary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: 2rem;
+  padding: 0 0.85rem;
+  border: 2px solid v.$primary-color;
+  border-radius: v.$border-radius-sm;
+  background: rgba(v.$primary-color, 0.18);
+  color: v.$secondary-color;
+  font: 700 0.78rem/1 v.$font-family-accent;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  transition: all 0.2s ease;
+}
+
+.buttonPrimary:hover {
+  color: v.$color-white;
+  background: rgba(v.$primary-color, 0.3);
+  box-shadow: 0 8px 16px rgba(v.$primary-color, 0.22);
+}
+```
+
+### 10.6 Segmented Toggle
+
+Do:
+
+- treat the rail as one control group
+
+Do not:
+
+- style each segment like a disconnected button
+
+```scss
+.segmentRail {
+  display: flex;
+  padding: 4px;
+  min-height: 40px;
+  background: rgba(v.$background-dark, 0.9);
+  border: 1px solid rgba(v.$color-white, 0.08);
+  border-radius: v.$border-radius-lg;
+  box-shadow: inset 0 1px 0 rgba(v.$color-white, 0.04);
+}
+
+.segment {
+  min-height: 32px;
+  padding: 0 v.$space-md;
+  border: 2px solid transparent;
+  border-radius: v.$border-radius-sm;
+  background: transparent;
+  color: v.$secondary-color;
+  font-family: v.$font-family-accent;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.segment:hover {
+  color: v.$primary-color;
+  background: rgba(v.$primary-color, 0.1);
+}
+
+.segmentActive {
+  border: 2px solid v.$primary-color;
+  background: v.$primary-color-opaque;
+  color: v.$color-white;
+}
+```
+
+### 10.7 Input / Select
+
+Do:
+
+- keep inputs dark, bordered, and compact
+
+Do not:
+
+- use bright white inputs or oversized form chrome
+
+```scss
+.field {
+  min-height: v.$control-height-md;
+  padding: 0 v.$space-sm;
+  border: 2px solid v.$border-secondary;
+  border-radius: v.$border-radius-md;
+  background: v.$background-dark;
+  color: v.$text-primary;
+}
+
+.field:focus-visible {
+  outline: none;
+  border-color: v.$primary-color;
+  box-shadow: 0 0 0 3px rgba(v.$primary-color, 0.2);
+}
+
+.field::placeholder {
+  color: rgba(v.$text-secondary, 0.55);
+  font-family: v.$font-family-primary, sans-serif;
+  font-style: italic;
+  opacity: 1;
+}
+
+.selectLike {
+  min-height: v.$control-height-md;
+  padding: v.$space-sm 2.5rem v.$space-sm v.$space-md;
+  border: 1px solid rgba(v.$color-white, 0.14);
+  border-radius: v.$border-radius-md;
+  background: color.adjust(v.$background-dark, $lightness: -1%);
+  color: v.$text-primary;
+}
+
+.selectLike:hover {
+  background: v.$color-brand-primary;
+  color: v.$color-brand-dark;
+}
+```
+
+### 10.8 Table Shell
+
+Do:
+
+- keep headers sticky when scrolling
+- use compact rows and strong numeric alignment
+
+Do not:
+
+- use heavy internal borders as the main organizing tool
+
+```scss
+.tableWrap {
+  overflow: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: v.$background-dark;
+  border-bottom: 1px solid v.$border-soft;
+  padding: 0.65rem 0.7rem;
+}
+
+.table tbody td {
+  padding: 0.62rem 0.7rem;
+  border-bottom: 1px solid v.$border-soft;
+}
+```
+
+### 10.9 Chart Frame
+
+Do:
+
+- keep the chart inside a canonical panel shell
+
+Do not:
+
+- detach legends and controls into unrelated floating modules
+
+```scss
+.chartFrame {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.9rem;
+  background: v.$background-medium;
+  border: v.$border-subtle;
+  border-radius: v.$radius-md;
+}
+
+.chartToolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+```
+
+### 10.10 Empty State
+
+Do:
+
+- preserve the parent panel shell
+- explain what is empty and why
+
+Do not:
+
+- replace the whole page with a generic blank message
+
+```scss
+.emptyState {
+  display: grid;
+  gap: 0.35rem;
+  justify-items: start;
+  padding: 1rem;
+  border: 1px dashed v.$border-soft;
+  border-radius: v.$radius-md;
+  color: v.$text-secondary;
+}
+```
+
+## 11. Layout And Spacing
 
 - Prefer CSS Grid for dashboard and data-page layouts.
 - Keep gaps disciplined and reusable.
@@ -410,7 +1527,7 @@ Do not over-canonicalize:
   - reduce spacing slightly
   - preserve the same hierarchy, not a different visual language
 
-## 11. Implementation Checklist For Codex
+## 12. Implementation Checklist For Codex
 
 When styling a page per this document:
 
@@ -424,7 +1541,65 @@ When styling a page per this document:
 8. Preserve accent-color identity where category, status, or position meaning matters.
 9. If an element family is missing from this document, request a site example before finalizing a canonical rule.
 
-## 12. Known Gaps
+## 13. Sandbox And Approval Workflow
+
+The sandbox page is the canonical staging area for style approval before or during production rollout.
+
+Primary sandbox surface:
+
+- `web/pages/cssTestingGrounds.tsx`
+- `web/pages/cssTestingGrounds.module.scss`
+
+Rules:
+
+1. Every new canonical element family should be represented in the sandbox when practical.
+2. The sandbox should include dummy or reference examples for cards, tables, toggles, buttons, inputs, dropdowns, search boxes, chart frames, empty states, loading states, and other reusable primitives.
+3. The sandbox is not a random demo page. It is the review surface for approving canonical UI behavior and appearance.
+4. The sandbox must stay synchronized with this document and with the shared token system.
+
+### 13.1 Order Of New Showcase Items
+
+When a new element is being actively reviewed:
+
+1. Add the new showcase item near the top of `cssTestingGrounds`.
+2. Do not bury newly added review items at the bottom of a long showcase page.
+3. Once the item is approved, it may remain in place as a permanent reference or be reorganized into the stable showcase grouping.
+4. During active iteration, optimization for fast review takes priority over long-term showcase ordering.
+
+### 13.2 Approval Flow
+
+For each new or revised canonical element:
+
+1. identify the canonical source pattern or closest reference
+2. define or verify tokens in `vars.scss` / `_panel.scss`
+3. build the sandbox example
+4. refine until approved visually
+5. update `fhfh-styles.md` with the final canonical rule
+6. apply the approved pattern in production pages/components
+
+### 13.3 Sync Requirements
+
+When a canonical styling decision changes, the following should stay aligned:
+
+- `fhfh-styles.md`
+- `web/styles/vars.scss`
+- `web/styles/_panel.scss`
+- `cssTestingGrounds`
+- production implementation files
+
+If one of these changes without the others, the style system is drifting and should be corrected.
+
+### 13.4 Missing Element Workflow
+
+If Codex encounters an element family that is not covered well enough here:
+
+1. stop before inventing a final canonical pattern
+2. request a rendered site example from the owner
+3. document the new family in this guide
+4. add a sandbox example
+5. only then roll the pattern into production as canonical
+
+## 14. Known Gaps
 
 The following element families still need site examples before their canonical rules should be considered final:
 
@@ -436,7 +1611,7 @@ The following element families still need site examples before their canonical r
 - page-level empty states
 - inline content-flow callouts and notices
 
-## 13. Next Expansion Targets
+## 15. Next Expansion Targets
 
 This file structure is now the required framework. Later sub-tasks should expand it by:
 
