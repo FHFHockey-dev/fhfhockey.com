@@ -51,8 +51,7 @@
 - `web/lib/sustainability/windows.ts` - Sustainability window/z-score calculation and upsert logic.
 - `web/lib/sustainability/score.ts` - Sustainability score calculation and upsert logic.
 - `web/lib/baselines/aggregations.ts` - Legacy baseline aggregation logic used by baseline rebuilds.
-- `web/lib/projections/run-forge-projections.ts` - Main FORGE engine implementation and projection writes.
-- `web/lib/projections/runProjectionV2.ts` - Compatibility shim pointing to the FORGE runner.
+- `web/lib/projections/run-forge-projections.ts` - Main FORGE engine implementation and projection writes; the old `runProjectionV2.ts` shim has been removed.
 - `web/lib/projections/goaliePipeline.ts` - Goalie pipeline stage spec and table ownership hints.
 - `web/lib/projections/queries/skater-queries.ts` - FORGE skater query layer reading rolling metrics and sustainability bands.
 - `web/lib/projections/queries/goalie-queries.ts` - FORGE goalie query layer reading goalie-start projections and related inputs.

@@ -31,7 +31,7 @@ The chain is not merely stale. It is operationally misowned in multiple places:
 | team power serving | [team-ratings.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/team-ratings.ts) via [teamRatingsService.ts](/Users/tim/Code/fhfhockey.com/web/lib/teamRatingsService.ts) | dashboard freshness policy: `30h error`; dashboard budget: `800ms`, `120KB` |
 | CTPI serving | [team-ctpi.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/trends/team-ctpi.ts) | dashboard freshness policy: `72h warn`; dashboard budget: `800ms`, `180KB` |
 | matchup-edge serving | `/api/v1/start-chart` | downstream of Start Chart chain; team context consumes rating snapshots already embedded there |
-| team power writer | [update-team-power-ratings.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-team-power-ratings.ts) and [update-team-power-ratings-new.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-team-power-ratings-new.ts) | cron timeout `300000ms` each |
+| team power writer | [update-team-power-ratings.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-team-power-ratings.ts) | canonical writer; legacy `update-team-power-ratings-new.ts` is now a quarantined `410 Gone` stub retained only while old cron artifacts are cleaned up |
 | CTPI writer | [update-team-ctpi-daily.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-team-ctpi-daily.ts) | cron timeout `100000ms` |
 | team NST gamelog inputs | [update-nst-team-daily.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-nst-team-daily.ts) | incremental resume-from-latest; scheduled later than CTPI/power in current runbook |
 | team 5v5 input | [nst-team-stats.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/Teams/nst-team-stats.ts) | resume-from-latest when called without params; not part of the earlier active team-context chain |
@@ -43,7 +43,7 @@ Current runbook entries in [cron-schedule.md](/Users/tim/Code/fhfhockey.com/web/
 
 - `09:10 UTC` `update-team-ctpi-daily`
 - `09:15 UTC` `update-team-power-ratings`
-- `09:20 UTC` `update-team-power-ratings-new`
+- `09:20 UTC` historical disabled slot for `update-team-power-ratings-new`
 - `09:35 UTC` `update-wgo-teams`
 - `09:40 UTC` `update-start-chart-projections`
 - `09:55 UTC` `update-nst-team-daily`
@@ -76,7 +76,7 @@ So date-current output rows do not prove the component is freshness-healthy.
 
 ## Team Power Ownership
 
-[update-team-power-ratings.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-team-power-ratings.ts) and [update-team-power-ratings-new.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-team-power-ratings-new.ts) both read through [power-ratings.ts](/Users/tim/Code/fhfhockey.com/web/lib/power-ratings.ts).
+[update-team-power-ratings.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-team-power-ratings.ts) is now the canonical Team Power writer. The legacy [update-team-power-ratings-new.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-team-power-ratings-new.ts) route remains only as a quarantined `410 Gone` stub while cron artifacts are cleaned up. Both code paths historically read through [power-ratings.ts](/Users/tim/Code/fhfhockey.com/web/lib/power-ratings.ts).
 
 That helper currently depends on:
 

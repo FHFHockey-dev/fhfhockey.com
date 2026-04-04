@@ -51,6 +51,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
+import { getRollingForgeStageDependencyContract } from "lib/rollingForgePipeline";
 
 import {
   buildPlayerGameStrengthV2ForDateRange,
@@ -78,6 +79,7 @@ type Result = {
     dataQualityWarnings: Array<{ code: string; message: string; detail?: string }>;
   };
   errors: string[];
+  dependencyContract?: ReturnType<typeof getRollingForgeStageDependencyContract>;
 };
 
 function getParam(req: NextApiRequest, key: string): string | undefined {
@@ -135,6 +137,9 @@ function buildDateRange(start: string, end: string): string[] {
 
 async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
   const startedAt = Date.now();
+  const dependencyContract = getRollingForgeStageDependencyContract(
+    "projection_derived_build"
+  );
   if (req.method !== "POST" && req.method !== "GET") {
     res.setHeader("Allow", ["GET", "POST"]);
     return res.status(405).json({
@@ -156,7 +161,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
         goalieRowsProcessed: 0,
         dataQualityWarnings: []
       },
-      errors: ["Method not allowed"]
+      errors: ["Method not allowed"],
+      dependencyContract
     });
   }
 
@@ -316,7 +322,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
       goalieRowsProcessed: goalie.rowsUpserted,
       dataQualityWarnings
     },
-    errors
+    errors,
+    dependencyContract
   });
 }
 

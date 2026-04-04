@@ -13,6 +13,73 @@ export const toArray = <T>(value: unknown): T[] => {
   return Array.isArray(value) ? (value as T[]) : [];
 };
 
+export type NormalizedServingContract = {
+  requestedDate: string | null;
+  resolvedDate: string | null;
+  fallbackApplied: boolean;
+  isSameDay: boolean;
+  state: "same_day" | "fallback" | "unknown";
+  strategy:
+    | "requested_date"
+    | "latest_available_with_data"
+    | "previous_date_with_games"
+    | null;
+  gapDays: number | null;
+  severity: "none" | "warn" | "error";
+  status: "requested_date" | "fallback_recent" | "degraded" | "blocked";
+  message: string | null;
+  requestedScheduledGames: number | null;
+  resolvedScheduledGames: number | null;
+  requestedHadGames: boolean | null;
+  resolvedHadGames: boolean | null;
+};
+
+const normalizeServingContract = (
+  value: unknown
+): NormalizedServingContract | null => {
+  if (!value || typeof value !== "object") return null;
+  const root = value as Record<string, unknown>;
+  return {
+    requestedDate: toStringOrNull(root.requestedDate),
+    resolvedDate: toStringOrNull(root.resolvedDate),
+    fallbackApplied: Boolean(root.fallbackApplied),
+    isSameDay: Boolean(root.isSameDay),
+    state:
+      (toStringOrNull(root.state) as
+        | "same_day"
+        | "fallback"
+        | "unknown"
+        | null) ?? "unknown",
+    strategy:
+      (toStringOrNull(root.strategy) as
+        | "requested_date"
+        | "latest_available_with_data"
+        | "previous_date_with_games"
+        | null) ?? null,
+    gapDays: toFiniteNumber(root.gapDays),
+    severity:
+      (toStringOrNull(root.severity) as
+        | "none"
+        | "warn"
+        | "error"
+        | null) ?? "none",
+    status:
+      (toStringOrNull(root.status) as
+        | "requested_date"
+        | "fallback_recent"
+        | "degraded"
+        | "blocked"
+        | null) ?? "requested_date",
+    message: toStringOrNull(root.message),
+    requestedScheduledGames: toFiniteNumber(root.requestedScheduledGames),
+    resolvedScheduledGames: toFiniteNumber(root.resolvedScheduledGames),
+    requestedHadGames:
+      typeof root.requestedHadGames === "boolean" ? root.requestedHadGames : null,
+    resolvedHadGames:
+      typeof root.resolvedHadGames === "boolean" ? root.resolvedHadGames : null
+  };
+};
+
 export type NormalizedTeamRatingRow = TeamPowerSnapshot & {
   teamAbbr: string;
   date: string;
@@ -203,6 +270,9 @@ export type NormalizedGoalieProjectionRow = {
 
 export type NormalizedGoalieResponse = {
   asOfDate: string | null;
+  requestedDate: string | null;
+  fallbackApplied: boolean;
+  serving: NormalizedServingContract | null;
   data: NormalizedGoalieProjectionRow[];
 };
 
@@ -283,6 +353,9 @@ export const normalizeGoalieResponse = (payload: unknown): NormalizedGoalieRespo
 
   return {
     asOfDate: toStringOrNull(root.asOfDate),
+    requestedDate: toStringOrNull(root.requestedDate),
+    fallbackApplied: Boolean(root.fallbackApplied),
+    serving: normalizeServingContract(root.serving),
     data
   };
 };
@@ -314,6 +387,9 @@ export type NormalizedStartChartGameRow = {
 
 export type NormalizedStartChartResponse = {
   dateUsed: string | null;
+  requestedDate: string | null;
+  fallbackApplied: boolean;
+  serving: NormalizedServingContract | null;
   games: NormalizedStartChartGameRow[];
 };
 
@@ -384,6 +460,9 @@ export const normalizeStartChartResponse = (
 
   return {
     dateUsed: toStringOrNull(root.dateUsed),
+    requestedDate: toStringOrNull(root.requestedDate),
+    fallbackApplied: Boolean(root.fallbackApplied),
+    serving: normalizeServingContract(root.serving),
     games
   };
 };
@@ -469,6 +548,10 @@ export type NormalizedSkaterTrendCategory = {
 
 export type NormalizedSkaterTrendResponse = {
   generatedAt: string | null;
+  requestedDate: string | null;
+  dateUsed: string | null;
+  fallbackApplied: boolean;
+  serving: NormalizedServingContract | null;
   categories: Record<string, NormalizedSkaterTrendCategory>;
   playerMetadata: Record<
     string,
@@ -559,6 +642,10 @@ export const normalizeSkaterTrendResponse = (
 
   return {
     generatedAt: toStringOrNull(root.generatedAt),
+    requestedDate: toStringOrNull(root.requestedDate),
+    dateUsed: toStringOrNull(root.dateUsed),
+    fallbackApplied: Boolean(root.fallbackApplied),
+    serving: normalizeServingContract(root.serving),
     categories,
     playerMetadata
   };

@@ -1,4 +1,5 @@
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import { GOALIE_START_TABLE_OWNERSHIP } from "lib/projections/compatibilityInventory";
 import type { NextApiRequest, NextApiResponse } from "next";
 import supabase from "lib/supabase/server";
 import { teamsInfo } from "lib/teamsInfo";
@@ -283,6 +284,7 @@ const handler = async (
       success: true,
       message: `Updated projections. Total upserted: ${totalUpserted}`,
       updates: totalUpserted,
+      ownershipDecision: GOALIE_START_TABLE_OWNERSHIP,
       observability: {
         goalieRowsProcessed: totalUpserted,
         dataQualityWarnings: [

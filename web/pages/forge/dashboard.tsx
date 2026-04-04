@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import type { NextPage } from "next";
 import Head from "next/head";
+import { useRouter } from "next/router";
 
 import styles from "styles/ForgeDashboard.module.scss";
 import ForgeRouteNav from "components/forge-dashboard/ForgeRouteNav";
@@ -10,6 +11,12 @@ import HotColdCard from "components/forge-dashboard/HotColdCard";
 import GoalieRiskCard from "components/forge-dashboard/GoalieRiskCard";
 import SlateStripCard from "components/forge-dashboard/SlateStripCard";
 import TopAddsRail from "components/forge-dashboard/TopAddsRail";
+import {
+  buildForgeHref,
+  parseForgeDateParam,
+  parseForgePositionParam,
+  parseForgeTeamParam
+} from "lib/dashboard/forgeLinks";
 import { teamsInfo } from "lib/teamsInfo";
 
 type DashboardModuleStatus = {
@@ -159,6 +166,7 @@ function BandStatusSummary({
 }
 
 const ForgeDashboardPage: NextPage = () => {
+  const router = useRouter();
   const todayEt = useMemo(() => {
     const now = new Date();
     const parts = new Intl.DateTimeFormat("en-US", {
@@ -187,13 +195,17 @@ const ForgeDashboardPage: NextPage = () => {
   const titleRef = useRef<HTMLHeadingElement | null>(null);
   const expansionTextRef = useRef<HTMLSpanElement | null>(null);
   const [moduleResolvedDates, setModuleResolvedDates] = useState<{
+    adds: string | null;
     teamPower: string | null;
     sustainability: string | null;
+    hotCold: string | null;
     goalie: string | null;
     slate: string | null;
   }>({
+    adds: null,
     teamPower: null,
     sustainability: null,
+    hotCold: null,
     goalie: null,
     slate: null
   });
@@ -215,6 +227,23 @@ const ForgeDashboardPage: NextPage = () => {
         .sort((a, b) => a.localeCompare(b)),
     []
   );
+  const requestedDate = useMemo(
+    () => parseForgeDateParam(router.query.date, todayEt),
+    [router.query.date, todayEt]
+  );
+  const requestedTeam = useMemo(
+    () => parseForgeTeamParam(router.query.team),
+    [router.query.team]
+  );
+  const requestedPosition = useMemo(
+    () => parseForgePositionParam(router.query.position),
+    [router.query.position]
+  );
+  const normalizedRequestedTeam = useMemo(() => {
+    if (requestedTeam === "ALL") return "all";
+    if (requestedTeam && teamOptions.includes(requestedTeam)) return requestedTeam;
+    return null;
+  }, [requestedTeam, teamOptions]);
   const formattedDateContext = useMemo(() => {
     const [year, month, day] = selectedDate.split("-").map(Number);
     if (!year || !month || !day) return selectedDate;
@@ -238,10 +267,21 @@ const ForgeDashboardPage: NextPage = () => {
     selectedPosition !== "all";
   const teamDetailHref =
     selectedTeam === "all" ? "/trends" : `/forge/team/${selectedTeam}`;
+  const dashboardReturnHref = useMemo(
+    () =>
+      buildForgeHref("/forge/dashboard", {
+        date: selectedDate,
+        team: selectedTeam,
+        position: selectedPosition
+      }),
+    [selectedDate, selectedPosition, selectedTeam]
+  );
   const driftWarnings = useMemo(() => {
     const labels: Record<keyof typeof moduleResolvedDates, string> = {
+      adds: "Top Adds",
       teamPower: "Team Power",
       sustainability: "Sustainability",
+      hotCold: "Trend Movement",
       goalie: "Goalie Risk",
       slate: "Slate Strip"
     };
@@ -255,6 +295,19 @@ const ForgeDashboardPage: NextPage = () => {
         resolvedDate: resolvedDate as string
       }));
   }, [moduleResolvedDates, selectedDate]);
+
+  useEffect(() => {
+    if (!router.isReady) return;
+    setSelectedDate((current) => (current === requestedDate ? current : requestedDate));
+    setSelectedTeam((current) =>
+      normalizedRequestedTeam && current !== normalizedRequestedTeam
+        ? normalizedRequestedTeam
+        : current
+    );
+    setSelectedPosition((current) =>
+      requestedPosition && current !== requestedPosition ? requestedPosition : current
+    );
+  }, [normalizedRequestedTeam, requestedDate, requestedPosition, router.isReady]);
 
   useEffect(() => {
     if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
@@ -500,7 +553,18 @@ const ForgeDashboardPage: NextPage = () => {
                 >
                   <ForgeRouteNav
                     current="dashboard"
-                    teamHref={selectedTeam === "all" ? null : teamDetailHref}
+                    teamHref={
+                      selectedTeam === "all"
+                        ? null
+                        : buildForgeHref(teamDetailHref, {
+                            date: selectedDate,
+                            team: selectedTeam,
+                            position: selectedPosition
+                          })
+                    }
+                    date={selectedDate}
+                    team={selectedTeam}
+                    position={selectedPosition}
                   />
                 </nav>
 
@@ -639,6 +703,9 @@ const ForgeDashboardPage: NextPage = () => {
                       date={selectedDate}
                       position={selectedPosition}
                       positionLabel={selectedPositionLabel}
+                      onResolvedDate={(resolvedDate) =>
+                        updateModuleResolvedDate("adds", resolvedDate)
+                      }
                       onStatusChange={(status) =>
                         updateModuleStatus("adds", status)
                       }
@@ -658,7 +725,7 @@ const ForgeDashboardPage: NextPage = () => {
                     <p className={styles.bandEyebrow}>Band 2</p>
                     <h2 className={styles.bandTitle}>Team Trend Context</h2>
                     <p className={styles.bandSummary}>
-                      Team power, momentum, and environment should frame the player
+                      Team rating blends, momentum, and matchup context should frame the player
                       opportunity view instead of living in a disconnected module.
                     </p>
                   </div>
@@ -739,10 +806,14 @@ const ForgeDashboardPage: NextPage = () => {
                     aria-label="Player insight ownership filter"
                   >
                     <p className={styles.ownershipControlEyebrow}>
-                      Discovery Ownership
+                      Insight Ownership Band
                     </p>
                     <p className={styles.ownershipControlValue}>
                       {insightOwnershipMin}% - {insightOwnershipMax}%
+                    </p>
+                    <p className={styles.contextSummary}>
+                      Applies only to sustainability and trend-movement cards.
+                      Top Adds keeps its own opportunity band in the rail.
                     </p>
                     <div className={styles.ownershipControlRows}>
                       <label className={styles.ownershipControlItem}>
@@ -790,6 +861,7 @@ const ForgeDashboardPage: NextPage = () => {
                       position={selectedPosition}
                       ownershipMin={insightOwnershipMin}
                       ownershipMax={insightOwnershipMax}
+                      returnToHref={dashboardReturnHref}
                       onStatusChange={(status) =>
                         updateModuleStatus("sustainability", status)
                       }
@@ -805,6 +877,10 @@ const ForgeDashboardPage: NextPage = () => {
                       position={selectedPosition}
                       ownershipMin={insightOwnershipMin}
                       ownershipMax={insightOwnershipMax}
+                      returnToHref={dashboardReturnHref}
+                      onResolvedDate={(resolvedDate) =>
+                        updateModuleResolvedDate("hotCold", resolvedDate)
+                      }
                       onStatusChange={(status) =>
                         updateModuleStatus("hotCold", status)
                       }

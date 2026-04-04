@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import OwnershipSparkline from "components/TransactionTrends/OwnershipSparkline";
 import styles from "styles/ForgeDashboard.module.scss";
+import { buildForgeHref } from "lib/dashboard/forgeLinks";
 import type {
   NormalizedSustainabilityResponse,
   NormalizedSustainabilityRow
@@ -23,6 +24,7 @@ type SustainabilityCardProps = {
   position: "all" | "f" | "d" | "g";
   ownershipMin: number;
   ownershipMax: number;
+  returnToHref?: string | null;
   onResolvedDate?: (resolvedDate: string | null) => void;
   onStatusChange?: (status: {
     loading: boolean;
@@ -132,6 +134,7 @@ export default function SustainabilityCard({
   position,
   ownershipMin,
   ownershipMax,
+  returnToHref,
   onResolvedDate,
   onStatusChange
 }: SustainabilityCardProps) {
@@ -225,10 +228,23 @@ export default function SustainabilityCard({
   }, [date, ownershipPlayerIds]);
 
   const ownershipFilterActive = !ownershipWarning;
+  const missingOwnershipCount = useMemo(
+    () =>
+      ownershipPlayerIds.reduce((count, playerId) => {
+        const ownership = ownershipMap[playerId]?.ownership;
+        return ownership == null ? count + 1 : count;
+      }, 0),
+    [ownershipMap, ownershipPlayerIds]
+  );
+  const ownershipCoverageWarning =
+    ownershipFilterActive && missingOwnershipCount > 0
+      ? `Ownership coverage incomplete for ${missingOwnershipCount} sustainability candidates; rows with Own -- remain visible outside the normal ownership band.`
+      : null;
   const withinOwnershipBand = (playerId: number) => {
     if (!ownershipFilterActive) return true;
     const ownership = ownershipMap[playerId]?.ownership;
-    return ownership != null && ownership >= ownershipMin && ownership <= ownershipMax;
+    if (ownership == null) return true;
+    return ownership >= ownershipMin && ownership <= ownershipMax;
   };
 
   const sustainableRows = useMemo(
@@ -256,7 +272,8 @@ export default function SustainabilityCard({
         !loading && !ownershipLoading && !error
           ? [
               isStale && snapshotDate ? `Sustainability using ${snapshotDate}` : null,
-              ownershipWarning
+              ownershipWarning,
+              ownershipCoverageWarning
             ]
               .filter(Boolean)
               .join(" • ") || null
@@ -273,6 +290,7 @@ export default function SustainabilityCard({
     isStale,
     loading,
     ownershipLoading,
+    ownershipCoverageWarning,
     ownershipWarning,
     onStatusChange,
     riskRows.length,
@@ -314,6 +332,14 @@ export default function SustainabilityCard({
               </span>
               <span className={styles.insightLegendText}>{overheatedGuide.detail}</span>
             </div>
+            <div className={styles.insightLegendItem}>
+              <span className={`${styles.insightContextPill} ${styles.insightRoutePill}`}>
+                Trends drill-in
+              </span>
+              <span className={styles.insightLegendText}>
+                Sustainability rows open the Trends player page where the longer signal history lives.
+              </span>
+            </div>
           </div>
           <div className={styles.sustainabilityColumns}>
             <div className={styles.susColumn}>
@@ -325,7 +351,11 @@ export default function SustainabilityCard({
                   return (
                     <li key={`sustain-${row.player_id}`} className={styles.susRow}>
                       <Link
-                        href={`/trends/player/${row.player_id}`}
+                        href={buildForgeHref(`/trends/player/${row.player_id}`, {
+                          date,
+                          origin: "forge-dashboard",
+                          returnTo: returnToHref
+                        })}
                         className={styles.susRowLink}
                       >
                         <div className={styles.susBadgeRow}>
@@ -377,6 +407,9 @@ export default function SustainabilityCard({
                         <span className={styles.susReason}>
                           {getReasonText(row, "sustainable")}
                         </span>
+                        <span className={styles.insightRouteNote}>
+                          Opens in Trends player detail
+                        </span>
                       </Link>
                     </li>
                   );
@@ -393,7 +426,11 @@ export default function SustainabilityCard({
                   return (
                     <li key={`risk-${row.player_id}`} className={styles.susRow}>
                       <Link
-                        href={`/trends/player/${row.player_id}`}
+                        href={buildForgeHref(`/trends/player/${row.player_id}`, {
+                          date,
+                          origin: "forge-dashboard",
+                          returnTo: returnToHref
+                        })}
                         className={styles.susRowLink}
                       >
                         <div className={styles.susBadgeRow}>
@@ -444,6 +481,9 @@ export default function SustainabilityCard({
                         ) : null}
                         <span className={styles.susReason}>
                           {getReasonText(row, "unsustainable")}
+                        </span>
+                        <span className={styles.insightRouteNote}>
+                          Opens in Trends player detail
                         </span>
                       </Link>
                     </li>

@@ -406,6 +406,17 @@ function getYahooLeagueRosterRows(rosterSettings: Json | null | undefined) {
   });
 }
 
+function buildManualActiveContext() {
+  return {
+    source_type: "manual",
+    provider: null,
+    external_league_id: null,
+    external_team_id: null,
+    external_league_key: null,
+    external_team_key: null
+  };
+}
+
 export default function AccountSettingsPage() {
   const router = useRouter();
   const { user } = useAuth();
@@ -540,6 +551,13 @@ export default function AccountSettingsPage() {
   const yahooLeagueRosterRows = useMemo(
     () => getYahooLeagueRosterRows(activeYahooLeague?.roster_settings),
     [activeYahooLeague?.roster_settings]
+  );
+  const yahooTeamsForActiveLeague = useMemo(
+    () =>
+      activeYahooLeague
+        ? yahooTeams.filter((team) => team.external_league_id === activeYahooLeague.id)
+        : [],
+    [activeYahooLeague, yahooTeams]
   );
 
   function updateSection(section: AccountSection) {
@@ -761,7 +779,9 @@ export default function AccountSettingsPage() {
   useEffect(() => {
     if (
       !userId ||
-      (activeSection !== "connected-accounts" && activeSection !== "league-settings")
+      (activeSection !== "connected-accounts" &&
+        activeSection !== "league-settings" &&
+        activeSection !== "saved-teams")
     ) {
       return;
     }
@@ -1304,6 +1324,134 @@ export default function AccountSettingsPage() {
     }
   }
 
+  function getPreferredYahooTeamForLeague(
+    leagueId: string,
+    preferredTeamId?: string | null
+  ) {
+    const teamsForLeague = yahooTeams.filter((team) => team.external_league_id === leagueId);
+
+    return (
+      teamsForLeague.find((team) => team.id === preferredTeamId) ||
+      teamsForLeague.find((team) => team.id === yahooPreferences?.default_external_team_id) ||
+      teamsForLeague[0] ||
+      null
+    );
+  }
+
+  async function handleSetYahooActiveContext(nextLeagueId: string, nextTeamId?: string) {
+    if (!user?.id || !yahooConnectedAccount) {
+      return;
+    }
+
+    const trimmedLeagueId = nextLeagueId || "";
+    const trimmedTeamId = nextTeamId || "";
+    const nextLeague = yahooLeagues.find((league) => league.id === trimmedLeagueId) || null;
+    const nextTeam =
+      (trimmedTeamId &&
+        yahooTeams.find(
+          (team) =>
+            team.id === trimmedTeamId &&
+            (!nextLeague || team.external_league_id === nextLeague.id)
+        )) ||
+      (nextLeague
+        ? getPreferredYahooTeamForLeague(nextLeague.id, trimmedTeamId || null)
+        : null);
+
+    const activeContext = nextLeague
+      ? {
+          source_type: "external-provider",
+          provider: YAHOO_PROVIDER,
+          external_league_id: nextLeague.id,
+          external_team_id: nextTeam?.id || null,
+          external_league_key: nextLeague.external_league_key,
+          external_team_key: nextTeam?.external_team_key || null
+        }
+      : buildManualActiveContext();
+
+    setYahooFeedback(null);
+    setSavedTeamsFeedback(null);
+    setLeagueFeedback(null);
+    setIsYahooActionLoading(true);
+
+    try {
+      const { error: preferencesError } = await supabase
+        .from("user_provider_preferences")
+        .upsert(
+          {
+            user_id: user.id,
+            provider: YAHOO_PROVIDER,
+            connected_account_id: yahooConnectedAccount.id,
+            default_external_league_id: yahooPreferences?.default_external_league_id || null,
+            default_external_team_id: yahooPreferences?.default_external_team_id || null,
+            refresh_on_login: yahooPreferences?.refresh_on_login ?? false,
+            active_context: activeContext
+          },
+          {
+            onConflict: "user_id,provider"
+          }
+        );
+
+      if (preferencesError) {
+        throw preferencesError;
+      }
+
+      const { error: settingsError } = await supabase.from("user_settings").upsert(
+        {
+          user_id: user.id,
+          active_context: activeContext
+        },
+        {
+          onConflict: "user_id"
+        }
+      );
+
+      if (settingsError) {
+        throw settingsError;
+      }
+
+      setLeagueForm((current) => ({
+        ...current,
+        activeContext
+      }));
+      await reloadYahooState();
+
+      const successMessage = nextLeague
+        ? `Active Yahoo context updated to ${nextLeague.league_name || "Yahoo league"}${nextTeam?.team_name ? ` / ${nextTeam.team_name}` : ""}.`
+        : "Active context reset to manual.";
+
+      setYahooFeedback({
+        tone: "success",
+        message: successMessage
+      });
+      setLeagueFeedback({
+        tone: "success",
+        message: successMessage
+      });
+      setSavedTeamsFeedback({
+        tone: "success",
+        message: successMessage
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Unable to update the active Yahoo context.";
+
+      setYahooFeedback({
+        tone: "error",
+        message
+      });
+      setLeagueFeedback({
+        tone: "error",
+        message
+      });
+      setSavedTeamsFeedback({
+        tone: "error",
+        message
+      });
+    } finally {
+      setIsYahooActionLoading(false);
+    }
+  }
+
   const scoringEntries = useMemo(
     () => Object.entries(leagueForm.scoringCategories),
     [leagueForm.scoringCategories]
@@ -1790,11 +1938,61 @@ export default function AccountSettingsPage() {
                       <div className={styles.formSectionHeader}>
                         <h3 className={styles.formSectionTitle}>Active League Context</h3>
                         <p className={styles.formSectionBody}>
-                          Active provider and team switching stays here later. For MVP,
-                          this shows the currently persisted context placeholder so the
-                          shape is visible without routing users away.
+                          Use these quick switchers to change the active Yahoo league and
+                          team without reconnecting. The selection persists to both
+                          `user_provider_preferences.active_context` and `user_settings.active_context`.
                         </p>
                       </div>
+
+                      {yahooConnectedAccount && yahooLeagues.length > 0 ? (
+                        <div className={styles.yahooContextSwitcher}>
+                          <div className={styles.yahooContextGrid}>
+                            <label className={styles.field}>
+                              <span className={styles.fieldLabel}>Active Yahoo League</span>
+                              <select
+                                value={activeYahooLeague?.id || ""}
+                                onChange={(event) =>
+                                  void handleSetYahooActiveContext(event.target.value)
+                                }
+                                className={styles.select}
+                                disabled={isYahooActionLoading}
+                              >
+                                {yahooLeagues.map((league) => (
+                                  <option key={league.id} value={league.id}>
+                                    {league.league_name || league.external_league_key}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+
+                            <label className={styles.field}>
+                              <span className={styles.fieldLabel}>Active Yahoo Team</span>
+                              <select
+                                value={activeYahooTeam?.id || ""}
+                                onChange={(event) =>
+                                  void handleSetYahooActiveContext(
+                                    activeYahooLeague?.id || "",
+                                    event.target.value
+                                  )
+                                }
+                                className={styles.select}
+                                disabled={isYahooActionLoading || !activeYahooLeague}
+                              >
+                                {yahooTeamsForActiveLeague.map((team) => (
+                                  <option key={team.id} value={team.id}>
+                                    {team.team_name || team.external_team_key}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className={styles.infoMessage}>
+                          Connect Yahoo and import at least one NHL league to enable the
+                          quick context switchers here.
+                        </div>
+                      )}
 
                       <div className={styles.contextSummary}>
                         <span className={styles.statusPill}>
@@ -1862,6 +2060,76 @@ export default function AccountSettingsPage() {
                     className={styles.savedTeamForm}
                     onSubmit={(event) => void handleSavedTeamSubmit(event)}
                   >
+                    {yahooConnectedAccount && yahooLeagues.length > 0 ? (
+                      <div className={styles.formSection}>
+                        <div className={styles.formSectionHeader}>
+                          <h3 className={styles.formSectionTitle}>Active Yahoo Context</h3>
+                          <p className={styles.formSectionBody}>
+                            Manual saved teams can still follow the same active Yahoo
+                            league/team context used elsewhere in the account UI. Use
+                            these dropdowns when you want to switch league focus before
+                            saving or comparing teams.
+                          </p>
+                        </div>
+
+                        <div className={styles.yahooContextGrid}>
+                          <label className={styles.field}>
+                            <span className={styles.fieldLabel}>Active Yahoo League</span>
+                            <select
+                              value={activeYahooLeague?.id || ""}
+                              onChange={(event) =>
+                                void handleSetYahooActiveContext(event.target.value)
+                              }
+                              className={styles.select}
+                              disabled={isYahooActionLoading}
+                            >
+                              {yahooLeagues.map((league) => (
+                                <option key={league.id} value={league.id}>
+                                  {league.league_name || league.external_league_key}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+
+                          <label className={styles.field}>
+                            <span className={styles.fieldLabel}>Active Yahoo Team</span>
+                            <select
+                              value={activeYahooTeam?.id || ""}
+                              onChange={(event) =>
+                                void handleSetYahooActiveContext(
+                                  activeYahooLeague?.id || "",
+                                  event.target.value
+                                )
+                              }
+                              className={styles.select}
+                              disabled={isYahooActionLoading || !activeYahooLeague}
+                            >
+                              {yahooTeamsForActiveLeague.map((team) => (
+                                <option key={team.id} value={team.id}>
+                                  {team.team_name || team.external_team_key}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                        </div>
+
+                        <div className={styles.contextSummary}>
+                          <span className={styles.statusPill}>
+                            League:{" "}
+                            {activeYahooLeague?.league_name ||
+                              activeYahooLeague?.external_league_key ||
+                              "none"}
+                          </span>
+                          <span className={styles.statusPill}>
+                            Team:{" "}
+                            {activeYahooTeam?.team_name ||
+                              activeYahooTeam?.external_team_key ||
+                              "none"}
+                          </span>
+                        </div>
+                      </div>
+                    ) : null}
+
                     <div className={styles.formSectionHeader}>
                       <h3 className={styles.formSectionTitle}>
                         {editingSavedTeamId ? "Edit Saved Team" : "Create Saved Team"}

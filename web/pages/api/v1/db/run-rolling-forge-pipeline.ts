@@ -1,6 +1,11 @@
 import { parseQueryBoolean } from "lib/api/queryParams";
+import {
+  buildEndpointScanSummary,
+  type EndpointScanSummary
+} from "lib/api/scanSummary";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import { FORGE_COMPATIBILITY_INVENTORY } from "lib/projections/compatibilityInventory";
 import supabase from "lib/supabase/server";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
 import {
@@ -9,6 +14,7 @@ import {
   type RollingForgePipelineMode
 } from "lib/rollingPlayerOperationalPolicy";
 import {
+  getRollingForgeDependencyContract,
   getRollingForgePipelineSpec,
   getRollingForgeStagesForMode,
   type RollingForgePipelineStageId
@@ -21,16 +27,14 @@ import updateNstGamelogHandler from "./update-nst-gamelog";
 import updateWgoSkatersHandler from "./update-wgo-skaters";
 import updateWgoTotalsHandler from "./update-wgo-totals";
 import updateWgoAveragesHandler from "./update-wgo-averages";
-import updateWgoLyHandler from "./update-wgo-ly";
 import updateLineCombinationsHandler from "./update-line-combinations";
-import updatePowerPlayCombinationsHandler from "./update-power-play-combinations/[gameId]";
+import updatePowerPlayCombinationsBatchHandler from "./update-power-play-combinations";
 import updateRollingPlayerAveragesHandler from "./update-rolling-player-averages";
 import ingestProjectionInputsHandler from "./ingest-projection-inputs";
 import buildProjectionDerivedHandler from "./build-projection-derived-v2";
 import updateGoalieProjectionsV2Handler from "./update-goalie-projections-v2";
 import runProjectionV2Handler from "./run-projection-v2";
 import runProjectionAccuracyHandler from "./run-projection-accuracy";
-import updateStartChartProjectionsHandler from "./update-start-chart-projections";
 
 type StepStatus = "success" | "failed" | "skipped";
 type StageStatus = StepStatus;
@@ -72,7 +76,24 @@ type ResponseBody = {
     durationLabel: string;
     withinBudget: boolean;
   };
+  executionControls: {
+    includeDownstream: boolean;
+    includeAccuracy: boolean;
+    stopOnFailure: boolean;
+  };
+  downstreamSummary: {
+    stageId: "downstream_projection_consumers";
+    includesLegacyStartChartMaterialization: boolean;
+    legacyStartChartMaterializerRetired: boolean;
+    includesAccuracyRefresh: boolean;
+    canonicalSkaterReadPath: string;
+    legacyMaterializerRoute: string | null;
+    notes: string[];
+  };
+  dependencyContract: ReturnType<typeof getRollingForgeDependencyContract>;
   pipeline: ReturnType<typeof getRollingForgePipelineSpec>;
+  compatibilityInventory: typeof FORGE_COMPATIBILITY_INVENTORY;
+  scanSummary: EndpointScanSummary;
   stages: StageResult[];
 };
 
@@ -127,6 +148,99 @@ function buildQueryString(query: Record<string, string>) {
   const params = new URLSearchParams(query);
   const rendered = params.toString();
   return rendered ? `?${rendered}` : "";
+}
+
+function readNumeric(value: unknown): number | null {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function buildPipelineScanSummary(args: {
+  requestedDate: string;
+  activeDataDate: string;
+  success: boolean;
+  stageResults: StageResult[];
+}) {
+  const failedStages = args.stageResults.filter(
+    (stage) => stage.status === "failed"
+  );
+  const blockingFailures = failedStages.filter((stage) => stage.blocking);
+  const stepSummaries = args.stageResults.flatMap((stage) => stage.steps);
+  const rollingSummary = stepSummaries.find(
+    (step) => step.id === "update-rolling-player-averages"
+  )?.summary as Record<string, any> | undefined;
+  const projectionSummary = stepSummaries.find(
+    (step) => step.id === "run-projection-v2"
+  )?.summary as Record<string, any> | undefined;
+  const accuracySummary = stepSummaries.find(
+    (step) => step.id === "run-projection-accuracy"
+  )?.summary as Record<string, any> | undefined;
+
+  const freshnessBlockers =
+    readNumeric(rollingSummary?.freshnessGate?.blockerCount) ?? 0;
+  const projectionPreflightFailures = Array.isArray(
+    projectionSummary?.preflight?.gates
+  )
+    ? projectionSummary.preflight.gates.filter(
+        (gate: any) => gate?.status === "FAIL"
+      ).length
+    : 0;
+  const accuracyPreflightFailures = Array.isArray(
+    accuracySummary?.preflight?.gates
+  )
+    ? accuracySummary.preflight.gates.filter(
+        (gate: any) => gate?.status === "FAIL"
+      ).length
+    : 0;
+  const blockingIssueCount =
+    freshnessBlockers +
+    projectionPreflightFailures +
+    accuracyPreflightFailures +
+    blockingFailures.length;
+
+  return buildEndpointScanSummary({
+    surface: "rolling_forge_pipeline_operator",
+    requestedDate: args.requestedDate,
+    activeDataDate: args.activeDataDate,
+    fallbackApplied: false,
+    status:
+      blockingFailures.length > 0
+        ? "blocked"
+        : args.success
+          ? "ready"
+          : "partial",
+    rowCounts: {
+      rollingPlayerRowsUpserted: readNumeric(
+        rollingSummary?.runSummary?.rowsUpserted
+      ),
+      projectionPlayerRowsUpserted: readNumeric(
+        projectionSummary?.playerRowsUpserted
+      ),
+      projectionTeamRowsUpserted: readNumeric(
+        projectionSummary?.teamRowsUpserted
+      ),
+      projectionGoalieRowsUpserted: readNumeric(
+        projectionSummary?.goalieRowsUpserted
+      ),
+      accuracyRowsUpserted: readNumeric(accuracySummary?.rowsUpserted)
+    },
+    blockingIssueCount,
+    notes: [
+      ...blockingFailures.map(
+        (stage) =>
+          `${stage.label} failed${stage.reason ? `: ${stage.reason}` : "."}`
+      ),
+      freshnessBlockers > 0
+        ? `Rolling freshness gate reported ${freshnessBlockers} blocker(s).`
+        : null,
+      projectionPreflightFailures > 0
+        ? `Projection execution reported ${projectionPreflightFailures} failed preflight gate(s).`
+        : null,
+      accuracyPreflightFailures > 0
+        ? `Accuracy refresh reported ${accuracyPreflightFailures} failed preflight gate(s).`
+        : null
+    ]
+  });
 }
 
 function createMockRes() {
@@ -283,24 +397,6 @@ async function runStage(args: {
           season: "current"
         }
       });
-      if (args.mode === "overnight") {
-        await addStep({
-          id: "update-wgo-ly",
-          route: "/api/v1/db/update-wgo-ly",
-          handler: updateWgoLyHandler
-        });
-      } else {
-        steps.push({
-          id: "update-wgo-ly",
-          route: "/api/v1/db/update-wgo-ly",
-          status: "skipped",
-          statusCode: 200,
-          durationMs: 0,
-          summary: null,
-          query: {},
-          reason: "Only included in overnight mode."
-        });
-      }
       break;
     case "contextual_builders": {
       await addStep({
@@ -314,8 +410,8 @@ async function runStage(args: {
       const gameIds = await listGameIdsInRange(args.startDate, args.endDate);
       if (gameIds.length === 0) {
         steps.push({
-          id: "update-power-play-combinations",
-          route: "/api/v1/db/update-power-play-combinations/[gameId]",
+          id: "update-power-play-combinations-batch",
+          route: "/api/v1/db/update-power-play-combinations",
           status: "skipped",
           statusCode: 200,
           durationMs: 0,
@@ -324,16 +420,15 @@ async function runStage(args: {
           reason: "No games found in the selected date range."
         });
       } else {
-        for (const gameId of gameIds) {
-          await addStep({
-            id: `update-power-play-combinations-${gameId}`,
-            route: "/api/v1/db/update-power-play-combinations/[gameId]",
-            handler: updatePowerPlayCombinationsHandler,
-            query: {
-              gameId: String(gameId)
-            }
-          });
-        }
+        await addStep({
+          id: "update-power-play-combinations-batch",
+          route: "/api/v1/db/update-power-play-combinations",
+          handler: updatePowerPlayCombinationsBatchHandler,
+          query: {
+            startDate: args.startDate,
+            endDate: args.endDate
+          }
+        });
       }
       break;
     }
@@ -404,36 +499,19 @@ async function runStage(args: {
     case "downstream_projection_consumers":
       if (!args.includeDownstream) {
         steps.push({
-          id: "downstream-consumers",
-          route: "/api/v1/db/update-start-chart-projections",
+          id: "run-projection-accuracy",
+          route: "/api/v1/db/run-projection-accuracy",
           status: "skipped",
           statusCode: 200,
           durationMs: 0,
           summary: null,
           query: {},
-          reason: "Downstream refresh disabled by request."
+          reason:
+            "Downstream accuracy refresh disabled by request."
         });
         break;
       }
-      await addStep({
-        id: "update-start-chart-projections",
-        route: "/api/v1/db/update-start-chart-projections",
-        handler: updateStartChartProjectionsHandler,
-        query: {
-          date: args.date
-        }
-      });
-      if (args.includeAccuracy) {
-        await addStep({
-          id: "run-projection-accuracy",
-          route: "/api/v1/db/run-projection-accuracy",
-          handler: runProjectionAccuracyHandler,
-          query: {
-            date: args.date,
-            projectionOffsetDays: "0"
-          }
-        });
-      } else {
+      if (!args.includeAccuracy) {
         steps.push({
           id: "run-projection-accuracy",
           route: "/api/v1/db/run-projection-accuracy",
@@ -442,7 +520,17 @@ async function runStage(args: {
           durationMs: 0,
           summary: null,
           query: {},
-          reason: "Accuracy run disabled by request."
+          reason: "Accuracy refresh disabled by request."
+        });
+      } else {
+        await addStep({
+          id: "run-projection-accuracy",
+          route: "/api/v1/db/run-projection-accuracy",
+          handler: runProjectionAccuracyHandler,
+          query: {
+            date: args.date,
+            projectionOffsetDays: "0"
+          }
         });
       }
       break;
@@ -501,7 +589,34 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseBody>) 
       },
       durationMs: formatDurationMsToMMSS(0),
       runtimeBudget: buildRuntimeBudgetSummary("daily_incremental", 0),
+      executionControls: {
+        includeDownstream: false,
+        includeAccuracy: false,
+        stopOnFailure: true
+      },
+      downstreamSummary: {
+        stageId: "downstream_projection_consumers",
+        includesLegacyStartChartMaterialization: false,
+        legacyStartChartMaterializerRetired: true,
+        includesAccuracyRefresh: false,
+        canonicalSkaterReadPath:
+          "/api/v1/start-chart -> forge_player_projections",
+        legacyMaterializerRoute: null,
+        notes: []
+      },
+      dependencyContract: getRollingForgeDependencyContract(),
       pipeline: getRollingForgePipelineSpec(),
+      compatibilityInventory: FORGE_COMPATIBILITY_INVENTORY,
+      scanSummary: buildEndpointScanSummary({
+        surface: "rolling_forge_pipeline_operator",
+        requestedDate: "",
+        activeDataDate: "",
+        fallbackApplied: false,
+        status: "blocked",
+        rowCounts: {},
+        blockingIssueCount: 1,
+        notes: ["Method not allowed."]
+      }),
       stages: []
     });
   }
@@ -555,7 +670,26 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseBody>) 
     (stage) => stage.blocking && stage.status === "failed"
   );
 
+  const downstreamNotes = [
+    "Stage 8 is now an accuracy-only downstream validation stage, not a canonical skater projection writer.",
+    "The Start Chart read layer resolves skaters from forge_player_projections.",
+    "update-start-chart-projections has been retired; no live player_projections materializer remains in the rolling-to-FORGE pipeline."
+  ];
+  if (!includeDownstream) {
+    downstreamNotes.push(
+      "Downstream accuracy refresh was skipped by request."
+    );
+  } else if (!includeAccuracy) {
+    downstreamNotes.push("Accuracy refresh was skipped by request.");
+  }
+
   const durationMs = Date.now() - startedAt;
+  const scanSummary = buildPipelineScanSummary({
+    requestedDate: date,
+    activeDataDate: endDate,
+    success,
+    stageResults
+  });
   return res.status(success ? 200 : 207).json({
     success,
     mode,
@@ -566,7 +700,25 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseBody>) 
     },
     durationMs: formatDurationMsToMMSS(durationMs),
     runtimeBudget: buildRuntimeBudgetSummary(mode, durationMs),
+    executionControls: {
+      includeDownstream,
+      includeAccuracy,
+      stopOnFailure
+    },
+    downstreamSummary: {
+      stageId: "downstream_projection_consumers",
+      includesLegacyStartChartMaterialization: false,
+      legacyStartChartMaterializerRetired: true,
+      includesAccuracyRefresh: includeDownstream && includeAccuracy,
+      canonicalSkaterReadPath:
+        "/api/v1/start-chart -> forge_player_projections",
+      legacyMaterializerRoute: null,
+      notes: downstreamNotes
+    },
+    dependencyContract: getRollingForgeDependencyContract(),
     pipeline: getRollingForgePipelineSpec(),
+    compatibilityInventory: FORGE_COMPATIBILITY_INVENTORY,
+    scanSummary,
     stages: stageResults
   });
 }

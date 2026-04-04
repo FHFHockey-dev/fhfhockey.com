@@ -4,8 +4,17 @@ import { cleanup, render, screen, waitFor } from "@testing-library/react";
 
 import { clearClientFetchCache } from "lib/dashboard/clientFetchCache";
 
+const routerState = vi.hoisted(() => ({
+  query: {},
+  isReady: true
+}));
+
 vi.mock("next/head", () => ({
   default: ({ children }: { children: React.ReactNode }) => <>{children}</>
+}));
+
+vi.mock("next/router", () => ({
+  useRouter: () => routerState
 }));
 
 import FORGEPage from "../../pages/FORGE";
@@ -22,6 +31,8 @@ describe("FORGE landing page", () => {
   beforeEach(() => {
     clearClientFetchCache();
     vi.restoreAllMocks();
+    routerState.query = { date: "2026-03-14" };
+    routerState.isReady = true;
   });
 
   afterEach(() => {
@@ -121,16 +132,16 @@ describe("FORGE landing page", () => {
     expect(screen.getByText("Overheated Skater")).toBeTruthy();
     expect(screen.getByRole("link", { name: "Open Full Dashboard" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "Dashboard" }).getAttribute("href")).toBe(
-      "/forge/dashboard"
+      "/forge/dashboard?date=2026-03-14"
     );
     expect(screen.getByRole("link", { name: "Start Chart" }).getAttribute("href")).toBe(
-      "/start-chart"
+      "/start-chart?date=2026-03-14"
     );
     expect(screen.getByRole("link", { name: "Trends" }).getAttribute("href")).toBe(
-      "/trends"
+      "/trends?date=2026-03-14"
     );
     expect(screen.getByRole("link", { name: "Open Start Chart" }).getAttribute("href")).toBe(
-      "/start-chart"
+      "/start-chart?date=2026-03-14"
     );
   });
 

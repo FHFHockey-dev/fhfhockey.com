@@ -1,30 +1,5 @@
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import type { NextApiRequest, NextApiResponse } from "next";
-import { createRequire } from "module";
-import path from "path";
-
-type LegacyRollingGamesMain = (mode: "all" | "recent") => Promise<void>;
-
-async function defaultLoadLegacyMain(): Promise<LegacyRollingGamesMain> {
-  const require = createRequire(path.join(process.cwd(), "package.json"));
-  const { main } = require(
-    path.join(process.cwd(), "lib/supabase/Upserts/fetchRollingGames.js")
-  );
-  return main as LegacyRollingGamesMain;
-}
-
-let loadLegacyMainImpl: () => Promise<LegacyRollingGamesMain> =
-  defaultLoadLegacyMain;
-
-export async function loadLegacyMain() {
-  return loadLegacyMainImpl();
-}
-
-export function setLegacyMainLoaderForTests(
-  loader: (() => Promise<LegacyRollingGamesMain>) | null
-) {
-  loadLegacyMainImpl = loader ?? defaultLoadLegacyMain;
-}
 
 /**
  * Query params:
@@ -37,22 +12,30 @@ export function setLegacyMainLoaderForTests(
 
 async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<{ message: string }>
+  res: NextApiResponse
 ) {
-  try {
-    // Parse query parameter:
-    // /api/v1/db/update-rolling-games?date=all         (default), full season process or:
-    // /api/v1/db/update-rolling-games?date=recent      for just the most recent games
-    const mode = req.query.date === "recent" ? "recent" : "all";
-    const main = await loadLegacyMain();
-    await main(mode);
-    res.status(200).json({
-      message: `Rolling games data processed successfully in ${mode} mode.`
-    });
-  } catch (error: any) {
-    console.error("Error processing rolling games data:", error);
-    res.status(500).json({ message: `Error: ${error.message}` });
+  if (req.method !== "POST" && req.method !== "GET") {
+    res.setHeader("Allow", ["POST", "GET"]);
+    return res.status(405).json({ error: "Method not allowed" });
   }
+
+  const mode = req.query.date === "recent" ? "recent" : "all";
+
+  return res.status(410).json({
+    success: false,
+    error: "Legacy rolling-games loader has been disabled.",
+    route: "/api/v1/db/update-rolling-games",
+    requestedMode: mode,
+    disposition: "DO NOT RUN",
+    retentionReason:
+      "Retained as a 410 quarantine stub until cron-source, failed-job inventories, and benchmark artifacts stop referencing this legacy route.",
+    legacySurface: true,
+    legacyLoader: "lib/supabase/Upserts/fetchRollingGames.js",
+    replacementRoute: "/api/v1/db/update-rolling-player-averages",
+    canonicalOutput: "rolling_player_game_metrics",
+    warning:
+      "Use the canonical rolling-player averages route instead. This legacy rolling-games wrapper is quarantined and has no canonical status."
+  });
 }
 
 export default withCronJobAudit(handler);

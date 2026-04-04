@@ -1,5 +1,9 @@
 import supabase from "lib/supabase/server";
 import { resolveNullableCompatibilityValue } from "lib/rollingPlayerMetricCompatibility";
+// This file is the canonical projection runner that replaced the removed
+// runProjectionV2 shim. Keep cleanup inventory updates alongside
+// lib/projections/compatibilityInventory.ts so surviving compatibility surfaces
+// stay explicit while transitional routes are retired.
 import { reconcileTeamToPlayers } from "lib/projections/reconcile";
 import {
   buildGoalieUncertainty,
@@ -1327,6 +1331,14 @@ export async function runProjectionV2ForDate(
       shot_quality_adjustments_applied: 0,
       on_ice_context_profiles_found: 0,
       on_ice_context_adjustments_applied: 0,
+      trend_adjustment_rows_eligible: 0,
+      trend_adjustment_players_with_rows: 0,
+      trend_adjustment_players_adjusted: 0,
+      trend_adjustment_players_missing_rows: 0,
+      trend_adjustment_players_neutralized_by_recency: 0,
+      trend_adjustment_soft_stale_selected: 0,
+      trend_adjustment_hard_stale_selected: 0,
+      trend_adjustment_fetch_failures: 0,
       team_level_context_teams_with_signal: 0,
       team_level_context_adjustments_applied: 0,
       opponent_goalie_context_profiles_found: 0,
@@ -1921,14 +1933,39 @@ export async function runProjectionV2ForDate(
           skaterIds,
           asOfDate
         );
-        const trendAdjustmentByPlayerId =
+        const trendAdjustmentFetch =
           await fetchLatestSkaterTrendAdjustments(skaterIds, asOfDate);
+        const trendAdjustmentByPlayerId = trendAdjustmentFetch.adjustments;
         metrics.data_quality.deployment_prior_profiles_found +=
           deploymentPriorByPlayerId.size;
         metrics.data_quality.shot_quality_profiles_found +=
           shotQualityByPlayerId.size;
         metrics.data_quality.on_ice_context_profiles_found +=
           onIceContextByPlayerId.size;
+        metrics.data_quality.trend_adjustment_rows_eligible +=
+          trendAdjustmentFetch.diagnostics.eligibleRows;
+        metrics.data_quality.trend_adjustment_players_with_rows +=
+          trendAdjustmentFetch.diagnostics.playersWithRows;
+        metrics.data_quality.trend_adjustment_players_adjusted +=
+          trendAdjustmentFetch.diagnostics.playersAdjusted;
+        metrics.data_quality.trend_adjustment_players_missing_rows +=
+          trendAdjustmentFetch.diagnostics.playersMissingRows;
+        metrics.data_quality.trend_adjustment_players_neutralized_by_recency +=
+          trendAdjustmentFetch.diagnostics.playersNeutralizedByRecency;
+        metrics.data_quality.trend_adjustment_soft_stale_selected +=
+          trendAdjustmentFetch.diagnostics.selectedSoftStaleRows;
+        metrics.data_quality.trend_adjustment_hard_stale_selected +=
+          trendAdjustmentFetch.diagnostics.selectedHardStaleRows;
+        if (trendAdjustmentFetch.diagnostics.fetchFailed) {
+          metrics.data_quality.trend_adjustment_fetch_failures += 1;
+          metrics.warnings.push(
+            `Trend adjustments unavailable for team ${teamAbbreviationById.get(teamId) ?? teamId}; projections continued without sustainability trend modifiers.`
+          );
+        } else if (trendAdjustmentFetch.diagnostics.selectedHardStaleRows > 0) {
+          metrics.warnings.push(
+            `Trend adjustments for team ${teamAbbreviationById.get(teamId) ?? teamId} included ${trendAdjustmentFetch.diagnostics.selectedHardStaleRows} hard-stale rows; those signals were decayed to neutral.`
+          );
+        }
         if (!teamSkaterRoleHistoryCache.has(teamDateKey(teamId))) {
           teamSkaterRoleHistoryCache.set(teamDateKey(teamId),
             await fetchTeamSkaterRoleHistory(teamId, asOfDate)
@@ -2832,10 +2869,16 @@ export async function runProjectionV2ForDate(
                   recency_multiplier: Number(p.recencyMultiplier.toFixed(4))
                 },
                 trend_adjustment: {
-                  applied: Boolean(p.trendAdjustment),
+                  selected: Boolean(p.trendAdjustment),
+                  applied: p.trendAdjustment?.effectState === "applied",
+                  effect_state: p.trendAdjustment?.effectState ?? "none",
+                  neutralized_by_recency:
+                    p.trendAdjustment?.effectState === "neutralized_by_recency",
                   metric_key: p.trendAdjustment?.metricKey ?? null,
                   window_code: p.trendAdjustment?.windowCode ?? null,
                   snapshot_date: p.trendAdjustment?.snapshotDate ?? null,
+                  age_days: p.trendAdjustment?.ageDays ?? null,
+                  recency_class: p.trendAdjustment?.recencyClass ?? null,
                   value:
                     p.trendAdjustment != null
                       ? Number(p.trendAdjustment.value.toFixed(6))

@@ -144,7 +144,14 @@ describe("/api/v1/db/ingest-projection-inputs", () => {
     expect(res.body).toMatchObject({
       maxGames: 6,
       gamesTotal: 7,
-      nextGameId: 107
+      nextGameId: 107,
+      dependencyContract: {
+        version: "rolling-forge-operator-order-v1",
+        currentStage: {
+          id: "projection_input_ingest",
+          order: 5
+        }
+      }
     });
     expect(fetchPbpGameMock).toHaveBeenCalledTimes(6);
   });

@@ -2207,6 +2207,384 @@ export type Database = {
         }
         Relationships: []
       }
+      nhl_api_game_payloads_raw: {
+        Row: {
+          created_at: string
+          endpoint: string
+          fetched_at: string
+          game_date: string | null
+          game_id: number
+          id: number
+          payload: Json
+          payload_hash: string
+          season_id: number | null
+          source_url: string
+        }
+        Insert: {
+          created_at?: string
+          endpoint: string
+          fetched_at?: string
+          game_date?: string | null
+          game_id: number
+          id?: number
+          payload: Json
+          payload_hash: string
+          season_id?: number | null
+          source_url: string
+        }
+        Update: {
+          created_at?: string
+          endpoint?: string
+          fetched_at?: string
+          game_date?: string | null
+          game_id?: number
+          id?: number
+          payload?: Json
+          payload_hash?: string
+          season_id?: number | null
+          source_url?: string
+        }
+        Relationships: []
+      }
+      nhl_api_game_roster_spots: {
+        Row: {
+          created_at: string
+          first_name: string | null
+          game_date: string | null
+          game_id: number
+          headshot_url: string | null
+          last_name: string | null
+          parser_version: number
+          player_id: number
+          position_code: string | null
+          raw_spot: Json
+          season_id: number | null
+          source_play_by_play_hash: string
+          sweater_number: number | null
+          team_id: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          first_name?: string | null
+          game_date?: string | null
+          game_id: number
+          headshot_url?: string | null
+          last_name?: string | null
+          parser_version?: number
+          player_id: number
+          position_code?: string | null
+          raw_spot?: Json
+          season_id?: number | null
+          source_play_by_play_hash: string
+          sweater_number?: number | null
+          team_id: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          first_name?: string | null
+          game_date?: string | null
+          game_id?: number
+          headshot_url?: string | null
+          last_name?: string | null
+          parser_version?: number
+          player_id?: number
+          position_code?: string | null
+          raw_spot?: Json
+          season_id?: number | null
+          source_play_by_play_hash?: string
+          sweater_number?: number | null
+          team_id?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      nhl_api_pbp_events: {
+        Row: {
+          assist1_player_id: number | null
+          assist2_player_id: number | null
+          away_goalie: number | null
+          away_score: number | null
+          away_skaters: number | null
+          away_sog: number | null
+          blocking_player_id: number | null
+          committed_by_player_id: number | null
+          created_at: string
+          details: Json
+          drawn_by_player_id: number | null
+          event_id: number
+          event_owner_side: string | null
+          event_owner_team_id: number | null
+          game_date: string | null
+          game_id: number
+          goalie_in_net_id: number | null
+          hittee_player_id: number | null
+          hitting_player_id: number | null
+          home_goalie: number | null
+          home_score: number | null
+          home_skaters: number | null
+          home_sog: number | null
+          home_team_defending_side: string | null
+          is_goal: boolean
+          is_penalty: boolean
+          is_shot_like: boolean
+          losing_player_id: number | null
+          parser_version: number
+          penalty_desc_key: string | null
+          penalty_duration_minutes: number | null
+          penalty_type_code: string | null
+          period_number: number | null
+          period_seconds_elapsed: number | null
+          period_type: string | null
+          player_id: number | null
+          raw_event: Json
+          reason: string | null
+          scoring_player_id: number | null
+          season_id: number | null
+          secondary_reason: string | null
+          served_by_player_id: number | null
+          shooting_player_id: number | null
+          shot_type: string | null
+          situation_code: string | null
+          sort_order: number | null
+          source_play_by_play_hash: string
+          strength_exact: string | null
+          strength_state: string | null
+          strength_version: number
+          time_in_period: string | null
+          time_remaining: string | null
+          time_remaining_seconds: number | null
+          type_code: number | null
+          type_desc_key: string | null
+          updated_at: string
+          winning_player_id: number | null
+          x_coord: number | null
+          y_coord: number | null
+          zone_code: string | null
+        }
+        Insert: {
+          assist1_player_id?: number | null
+          assist2_player_id?: number | null
+          away_goalie?: number | null
+          away_score?: number | null
+          away_skaters?: number | null
+          away_sog?: number | null
+          blocking_player_id?: number | null
+          committed_by_player_id?: number | null
+          created_at?: string
+          details?: Json
+          drawn_by_player_id?: number | null
+          event_id: number
+          event_owner_side?: string | null
+          event_owner_team_id?: number | null
+          game_date?: string | null
+          game_id: number
+          goalie_in_net_id?: number | null
+          hittee_player_id?: number | null
+          hitting_player_id?: number | null
+          home_goalie?: number | null
+          home_score?: number | null
+          home_skaters?: number | null
+          home_sog?: number | null
+          home_team_defending_side?: string | null
+          is_goal?: boolean
+          is_penalty?: boolean
+          is_shot_like?: boolean
+          losing_player_id?: number | null
+          parser_version?: number
+          penalty_desc_key?: string | null
+          penalty_duration_minutes?: number | null
+          penalty_type_code?: string | null
+          period_number?: number | null
+          period_seconds_elapsed?: number | null
+          period_type?: string | null
+          player_id?: number | null
+          raw_event?: Json
+          reason?: string | null
+          scoring_player_id?: number | null
+          season_id?: number | null
+          secondary_reason?: string | null
+          served_by_player_id?: number | null
+          shooting_player_id?: number | null
+          shot_type?: string | null
+          situation_code?: string | null
+          sort_order?: number | null
+          source_play_by_play_hash: string
+          strength_exact?: string | null
+          strength_state?: string | null
+          strength_version?: number
+          time_in_period?: string | null
+          time_remaining?: string | null
+          time_remaining_seconds?: number | null
+          type_code?: number | null
+          type_desc_key?: string | null
+          updated_at?: string
+          winning_player_id?: number | null
+          x_coord?: number | null
+          y_coord?: number | null
+          zone_code?: string | null
+        }
+        Update: {
+          assist1_player_id?: number | null
+          assist2_player_id?: number | null
+          away_goalie?: number | null
+          away_score?: number | null
+          away_skaters?: number | null
+          away_sog?: number | null
+          blocking_player_id?: number | null
+          committed_by_player_id?: number | null
+          created_at?: string
+          details?: Json
+          drawn_by_player_id?: number | null
+          event_id?: number
+          event_owner_side?: string | null
+          event_owner_team_id?: number | null
+          game_date?: string | null
+          game_id?: number
+          goalie_in_net_id?: number | null
+          hittee_player_id?: number | null
+          hitting_player_id?: number | null
+          home_goalie?: number | null
+          home_score?: number | null
+          home_skaters?: number | null
+          home_sog?: number | null
+          home_team_defending_side?: string | null
+          is_goal?: boolean
+          is_penalty?: boolean
+          is_shot_like?: boolean
+          losing_player_id?: number | null
+          parser_version?: number
+          penalty_desc_key?: string | null
+          penalty_duration_minutes?: number | null
+          penalty_type_code?: string | null
+          period_number?: number | null
+          period_seconds_elapsed?: number | null
+          period_type?: string | null
+          player_id?: number | null
+          raw_event?: Json
+          reason?: string | null
+          scoring_player_id?: number | null
+          season_id?: number | null
+          secondary_reason?: string | null
+          served_by_player_id?: number | null
+          shooting_player_id?: number | null
+          shot_type?: string | null
+          situation_code?: string | null
+          sort_order?: number | null
+          source_play_by_play_hash?: string
+          strength_exact?: string | null
+          strength_state?: string | null
+          strength_version?: number
+          time_in_period?: string | null
+          time_remaining?: string | null
+          time_remaining_seconds?: number | null
+          type_code?: number | null
+          type_desc_key?: string | null
+          updated_at?: string
+          winning_player_id?: number | null
+          x_coord?: number | null
+          y_coord?: number | null
+          zone_code?: string | null
+        }
+        Relationships: []
+      }
+      nhl_api_shift_rows: {
+        Row: {
+          created_at: string
+          detail_code: number | null
+          duration: string | null
+          duration_seconds: number | null
+          end_seconds: number | null
+          end_time: string | null
+          event_description: string | null
+          event_details: string | null
+          event_number: number | null
+          first_name: string | null
+          game_date: string | null
+          game_id: number
+          hex_value: string | null
+          last_name: string | null
+          parser_version: number
+          period: number | null
+          player_id: number
+          raw_shift: Json
+          season_id: number | null
+          shift_id: number
+          shift_number: number | null
+          source_shiftcharts_hash: string
+          start_seconds: number | null
+          start_time: string | null
+          team_abbrev: string | null
+          team_id: number
+          team_name: string | null
+          type_code: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          detail_code?: number | null
+          duration?: string | null
+          duration_seconds?: number | null
+          end_seconds?: number | null
+          end_time?: string | null
+          event_description?: string | null
+          event_details?: string | null
+          event_number?: number | null
+          first_name?: string | null
+          game_date?: string | null
+          game_id: number
+          hex_value?: string | null
+          last_name?: string | null
+          parser_version?: number
+          period?: number | null
+          player_id: number
+          raw_shift?: Json
+          season_id?: number | null
+          shift_id: number
+          shift_number?: number | null
+          source_shiftcharts_hash: string
+          start_seconds?: number | null
+          start_time?: string | null
+          team_abbrev?: string | null
+          team_id: number
+          team_name?: string | null
+          type_code?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          detail_code?: number | null
+          duration?: string | null
+          duration_seconds?: number | null
+          end_seconds?: number | null
+          end_time?: string | null
+          event_description?: string | null
+          event_details?: string | null
+          event_number?: number | null
+          first_name?: string | null
+          game_date?: string | null
+          game_id?: number
+          hex_value?: string | null
+          last_name?: string | null
+          parser_version?: number
+          period?: number | null
+          player_id?: number
+          raw_shift?: Json
+          season_id?: number | null
+          shift_id?: number
+          shift_number?: number | null
+          source_shiftcharts_hash?: string
+          start_seconds?: number | null
+          start_time?: string | null
+          team_abbrev?: string | null
+          team_id?: number
+          team_name?: string | null
+          type_code?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       nhl_names: {
         Row: {
           first_name: string | null
@@ -30615,6 +30993,126 @@ export type Database = {
         }
         Relationships: []
       }
+      nhl_api_pbp_shot_events_v1: {
+        Row: {
+          away_goalie: number | null
+          away_score: number | null
+          away_skaters: number | null
+          away_sog: number | null
+          blocking_player_id: number | null
+          details: Json | null
+          event_id: number | null
+          event_owner_side: string | null
+          event_owner_team_id: number | null
+          game_date: string | null
+          game_id: number | null
+          goalie_in_net_id: number | null
+          home_goalie: number | null
+          home_score: number | null
+          home_skaters: number | null
+          home_sog: number | null
+          is_goal: boolean | null
+          period_number: number | null
+          period_seconds_elapsed: number | null
+          period_type: string | null
+          reason: string | null
+          scoring_player_id: number | null
+          season_id: number | null
+          shooting_player_id: number | null
+          shot_type: string | null
+          situation_code: string | null
+          sort_order: number | null
+          strength_exact: string | null
+          strength_state: string | null
+          time_in_period: string | null
+          time_remaining: string | null
+          time_remaining_seconds: number | null
+          type_code: number | null
+          type_desc_key: string | null
+          x_coord: number | null
+          y_coord: number | null
+          zone_code: string | null
+        }
+        Insert: {
+          away_goalie?: number | null
+          away_score?: number | null
+          away_skaters?: number | null
+          away_sog?: number | null
+          blocking_player_id?: number | null
+          details?: Json | null
+          event_id?: number | null
+          event_owner_side?: string | null
+          event_owner_team_id?: number | null
+          game_date?: string | null
+          game_id?: number | null
+          goalie_in_net_id?: number | null
+          home_goalie?: number | null
+          home_score?: number | null
+          home_skaters?: number | null
+          home_sog?: number | null
+          is_goal?: boolean | null
+          period_number?: number | null
+          period_seconds_elapsed?: number | null
+          period_type?: string | null
+          reason?: string | null
+          scoring_player_id?: number | null
+          season_id?: number | null
+          shooting_player_id?: number | null
+          shot_type?: string | null
+          situation_code?: string | null
+          sort_order?: number | null
+          strength_exact?: string | null
+          strength_state?: string | null
+          time_in_period?: string | null
+          time_remaining?: string | null
+          time_remaining_seconds?: number | null
+          type_code?: number | null
+          type_desc_key?: string | null
+          x_coord?: number | null
+          y_coord?: number | null
+          zone_code?: string | null
+        }
+        Update: {
+          away_goalie?: number | null
+          away_score?: number | null
+          away_skaters?: number | null
+          away_sog?: number | null
+          blocking_player_id?: number | null
+          details?: Json | null
+          event_id?: number | null
+          event_owner_side?: string | null
+          event_owner_team_id?: number | null
+          game_date?: string | null
+          game_id?: number | null
+          goalie_in_net_id?: number | null
+          home_goalie?: number | null
+          home_score?: number | null
+          home_skaters?: number | null
+          home_sog?: number | null
+          is_goal?: boolean | null
+          period_number?: number | null
+          period_seconds_elapsed?: number | null
+          period_type?: string | null
+          reason?: string | null
+          scoring_player_id?: number | null
+          season_id?: number | null
+          shooting_player_id?: number | null
+          shot_type?: string | null
+          situation_code?: string | null
+          sort_order?: number | null
+          strength_exact?: string | null
+          strength_state?: string | null
+          time_in_period?: string | null
+          time_remaining?: string | null
+          time_remaining_seconds?: number | null
+          type_code?: number | null
+          type_desc_key?: string | null
+          x_coord?: number | null
+          y_coord?: number | null
+          zone_code?: string | null
+        }
+        Relationships: []
+      }
       nhl_team_data: {
         Row: {
           cf_pct: number | null
@@ -34720,6 +35218,23 @@ export type Database = {
       truncate_rolling_player_game_metrics: { Args: never; Returns: undefined }
       unaccent: { Args: { "": string }; Returns: string }
       update_all_wgo_skaters: { Args: never; Returns: undefined }
+      upsert_connected_account_tokens_secure: {
+        Args: {
+          p_access_token?: string
+          p_connected_account_id: string
+          p_expires_at?: string
+          p_last_refreshed_at?: string
+          p_provider: string
+          p_provider_user_id?: string
+          p_refresh_expires_at?: string
+          p_refresh_token?: string
+          p_scopes?: Json
+          p_secret_metadata?: Json
+          p_token_type?: string
+          p_user_id: string
+        }
+        Returns: string
+      }
       upsert_current_roster_membership: {
         Args: {
           _playerid: number

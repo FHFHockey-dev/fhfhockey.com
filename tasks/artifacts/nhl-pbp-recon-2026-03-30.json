@@ -1,0 +1,1349 @@
+{
+  "generatedAt": "2026-03-30T13:38:25.079Z",
+  "reconDate": "2026-03-30",
+  "sampleGames": [
+    {
+      "label": "overtime",
+      "id": 2025021018,
+      "gameDate": "2026-03-10",
+      "homeTeam": "CAR",
+      "awayTeam": "PIT",
+      "totalEvents": 389,
+      "shotLikeEvents": 158,
+      "goals": 11,
+      "penalties": 12,
+      "delayedPenalties": 2,
+      "emptyNetGoals": 0,
+      "unequalSkaterEvents": 107,
+      "zeroGoalieEvents": 22,
+      "maxPeriod": 5,
+      "hasOt": true,
+      "hasShootout": true
+    },
+    {
+      "label": "empty-net",
+      "id": 2025021103,
+      "gameDate": "2026-03-21",
+      "homeTeam": "SJS",
+      "awayTeam": "PHI",
+      "totalEvents": 318,
+      "shotLikeEvents": 112,
+      "goals": 5,
+      "penalties": 13,
+      "delayedPenalties": 5,
+      "emptyNetGoals": 2,
+      "unequalSkaterEvents": 86,
+      "zeroGoalieEvents": 17,
+      "maxPeriod": 3,
+      "hasOt": false,
+      "hasShootout": false
+    },
+    {
+      "label": "heavy-special-teams",
+      "id": 2025021003,
+      "gameDate": "2026-03-08",
+      "homeTeam": "BUF",
+      "awayTeam": "TBL",
+      "totalEvents": 366,
+      "shotLikeEvents": 124,
+      "goals": 15,
+      "penalties": 28,
+      "delayedPenalties": 4,
+      "emptyNetGoals": 0,
+      "unequalSkaterEvents": 59,
+      "zeroGoalieEvents": 16,
+      "maxPeriod": 3,
+      "hasOt": false,
+      "hasShootout": false
+    },
+    {
+      "label": "low-event",
+      "id": 2025021119,
+      "gameDate": "2026-03-23",
+      "homeTeam": "NYR",
+      "awayTeam": "OTT",
+      "totalEvents": 280,
+      "shotLikeEvents": 87,
+      "goals": 3,
+      "penalties": 10,
+      "delayedPenalties": 2,
+      "emptyNetGoals": 0,
+      "unequalSkaterEvents": 85,
+      "zeroGoalieEvents": 17,
+      "maxPeriod": 3,
+      "hasOt": false,
+      "hasShootout": false
+    },
+    {
+      "label": "high-event",
+      "id": 2025021171,
+      "gameDate": "2026-03-29",
+      "homeTeam": "NJD",
+      "awayTeam": "CHI",
+      "totalEvents": 353,
+      "shotLikeEvents": 154,
+      "goals": 8,
+      "penalties": 5,
+      "delayedPenalties": 0,
+      "emptyNetGoals": 1,
+      "unequalSkaterEvents": 63,
+      "zeroGoalieEvents": 16,
+      "maxPeriod": 3,
+      "hasOt": false,
+      "hasShootout": false
+    },
+    {
+      "label": "regulation-control",
+      "id": 2025021140,
+      "gameDate": "2026-03-26",
+      "homeTeam": "FLA",
+      "awayTeam": "MIN",
+      "totalEvents": 336,
+      "shotLikeEvents": 129,
+      "goals": 5,
+      "penalties": 2,
+      "delayedPenalties": 1,
+      "emptyNetGoals": 0,
+      "unequalSkaterEvents": 29,
+      "zeroGoalieEvents": 18,
+      "maxPeriod": 3,
+      "hasOt": false,
+      "hasShootout": false
+    },
+    {
+      "label": "goalie-pulled",
+      "id": 2025020982,
+      "gameDate": "2026-03-05",
+      "homeTeam": "LAK",
+      "awayTeam": "NYI",
+      "totalEvents": 350,
+      "shotLikeEvents": 153,
+      "goals": 8,
+      "penalties": 6,
+      "delayedPenalties": 1,
+      "emptyNetGoals": 0,
+      "unequalSkaterEvents": 91,
+      "zeroGoalieEvents": 51,
+      "maxPeriod": 3,
+      "hasOt": false,
+      "hasShootout": false
+    },
+    {
+      "label": "fill-8",
+      "id": 2025021172,
+      "gameDate": "2026-03-29",
+      "homeTeam": "PHI",
+      "awayTeam": "DAL",
+      "totalEvents": 280,
+      "shotLikeEvents": 94,
+      "goals": 3,
+      "penalties": 5,
+      "delayedPenalties": 5,
+      "emptyNetGoals": 0,
+      "unequalSkaterEvents": 30,
+      "zeroGoalieEvents": 1,
+      "maxPeriod": 4,
+      "hasOt": true,
+      "hasShootout": false
+    },
+    {
+      "label": "fill-9",
+      "id": 2025021170,
+      "gameDate": "2026-03-29",
+      "homeTeam": "CBJ",
+      "awayTeam": "BOS",
+      "totalEvents": 351,
+      "shotLikeEvents": 140,
+      "goals": 9,
+      "penalties": 12,
+      "delayedPenalties": 2,
+      "emptyNetGoals": 0,
+      "unequalSkaterEvents": 47,
+      "zeroGoalieEvents": 26,
+      "maxPeriod": 5,
+      "hasOt": true,
+      "hasShootout": true
+    },
+    {
+      "label": "fill-10",
+      "id": 2025021169,
+      "gameDate": "2026-03-29",
+      "homeTeam": "CAR",
+      "awayTeam": "MTL",
+      "totalEvents": 327,
+      "shotLikeEvents": 142,
+      "goals": 4,
+      "penalties": 7,
+      "delayedPenalties": 1,
+      "emptyNetGoals": 0,
+      "unequalSkaterEvents": 82,
+      "zeroGoalieEvents": 23,
+      "maxPeriod": 3,
+      "hasOt": false,
+      "hasShootout": false
+    }
+  ],
+  "eventDictionary": {
+    "eventTypes": [
+      {
+        "typeCode": 502,
+        "typeDescKey": "faceoff",
+        "count": 573,
+        "detailKeys": [
+          {
+            "detailKey": "eventOwnerTeamId",
+            "presencePct": 100,
+            "examples": [
+              "25",
+              "4",
+              "1"
+            ]
+          },
+          {
+            "detailKey": "losingPlayerId",
+            "presencePct": 100,
+            "examples": [
+              "8477989",
+              "8481533",
+              "8475168"
+            ]
+          },
+          {
+            "detailKey": "winningPlayerId",
+            "presencePct": 100,
+            "examples": [
+              "8482740",
+              "8475168",
+              "8480015"
+            ]
+          },
+          {
+            "detailKey": "xCoord",
+            "presencePct": 100,
+            "examples": [
+              "0",
+              "-20",
+              "-69"
+            ]
+          },
+          {
+            "detailKey": "yCoord",
+            "presencePct": 100,
+            "examples": [
+              "0",
+              "-22",
+              "22"
+            ]
+          },
+          {
+            "detailKey": "zoneCode",
+            "presencePct": 100,
+            "examples": [
+              "N",
+              "O",
+              "D"
+            ]
+          }
+        ]
+      },
+      {
+        "typeCode": 503,
+        "typeDescKey": "hit",
+        "count": 467,
+        "detailKeys": [
+          {
+            "detailKey": "eventOwnerTeamId",
+            "presencePct": 100,
+            "examples": [
+              "4",
+              "25",
+              "16"
+            ]
+          },
+          {
+            "detailKey": "hitteePlayerId",
+            "presencePct": 100,
+            "examples": [
+              "8481581",
+              "8482142",
+              "8476278"
+            ]
+          },
+          {
+            "detailKey": "hittingPlayerId",
+            "presencePct": 100,
+            "examples": [
+              "8478439",
+              "8475168",
+              "8480220"
+            ]
+          },
+          {
+            "detailKey": "xCoord",
+            "presencePct": 100,
+            "examples": [
+              "-94",
+              "96",
+              "-79"
+            ]
+          },
+          {
+            "detailKey": "yCoord",
+            "presencePct": 100,
+            "examples": [
+              "25",
+              "13",
+              "39"
+            ]
+          },
+          {
+            "detailKey": "zoneCode",
+            "presencePct": 100,
+            "examples": [
+              "O",
+              "D",
+              "N"
+            ]
+          }
+        ]
+      },
+      {
+        "typeCode": 504,
+        "typeDescKey": "giveaway",
+        "count": 290,
+        "detailKeys": [
+          {
+            "detailKey": "eventOwnerTeamId",
+            "presencePct": 100,
+            "examples": [
+              "4",
+              "25",
+              "16"
+            ]
+          },
+          {
+            "detailKey": "playerId",
+            "presencePct": 100,
+            "examples": [
+              "8480220",
+              "8476372",
+              "8480027"
+            ]
+          },
+          {
+            "detailKey": "xCoord",
+            "presencePct": 100,
+            "examples": [
+              "-46",
+              "94",
+              "73"
+            ]
+          },
+          {
+            "detailKey": "yCoord",
+            "presencePct": 100,
+            "examples": [
+              "41",
+              "-24",
+              "-35"
+            ]
+          },
+          {
+            "detailKey": "zoneCode",
+            "presencePct": 100,
+            "examples": [
+              "O",
+              "D",
+              "N"
+            ]
+          }
+        ]
+      },
+      {
+        "typeCode": 505,
+        "typeDescKey": "goal",
+        "count": 71,
+        "detailKeys": [
+          {
+            "detailKey": "assist1PlayerId",
+            "presencePct": 85.9,
+            "examples": [
+              "8484387",
+              "8481546",
+              "8485391"
+            ]
+          },
+          {
+            "detailKey": "assist1PlayerTotal",
+            "presencePct": 85.9,
+            "examples": [
+              "24",
+              "22",
+              "3"
+            ]
+          },
+          {
+            "detailKey": "assist2PlayerId",
+            "presencePct": 67.6,
+            "examples": [
+              "8477499",
+              "8481035",
+              "8481806"
+            ]
+          },
+          {
+            "detailKey": "assist2PlayerTotal",
+            "presencePct": 67.6,
+            "examples": [
+              "9",
+              "1",
+              "14"
+            ]
+          },
+          {
+            "detailKey": "awayScore",
+            "presencePct": 100,
+            "examples": [
+              "0",
+              "1",
+              "2"
+            ]
+          },
+          {
+            "detailKey": "discreteClip",
+            "presencePct": 94.4,
+            "examples": [
+              "6392096567112",
+              "6392100423112",
+              "6392102789112"
+            ]
+          },
+          {
+            "detailKey": "discreteClipFr",
+            "presencePct": 94.4,
+            "examples": [
+              "6392097745112",
+              "6392098186112",
+              "6392101820112"
+            ]
+          },
+          {
+            "detailKey": "eventOwnerTeamId",
+            "presencePct": 100,
+            "examples": [
+              "4",
+              "25",
+              "16"
+            ]
+          },
+          {
+            "detailKey": "goalieInNetId",
+            "presencePct": 95.8,
+            "examples": [
+              "8479193",
+              "8481035",
+              "8474596"
+            ]
+          },
+          {
+            "detailKey": "highlightClip",
+            "presencePct": 95.8,
+            "examples": [
+              "6392099110112",
+              "6392097794112",
+              "6392103875112"
+            ]
+          },
+          {
+            "detailKey": "highlightClipFr",
+            "presencePct": 91.5,
+            "examples": [
+              "6392096569112",
+              "6392100626112",
+              "6392102916112"
+            ]
+          },
+          {
+            "detailKey": "highlightClipSharingUrl",
+            "presencePct": 95.8,
+            "examples": [
+              "https://nhl.com/video/dal-phi-konecny-scores-ppg-against-casey-desmith-6392099110112",
+              "https://nhl.com/video/dal-phi-hyry-scores-shg-against-samuel-ersson-6392097794112",
+              "https://nhl.com/video/dal-phi-zegras-scores-goal-against-casey-desmith-6392103875112"
+            ]
+          },
+          {
+            "detailKey": "highlightClipSharingUrlFr",
+            "presencePct": 91.5,
+            "examples": [
+              "https://nhl.com/fr/video/dal-phi-konecny-marque-un-but-en-a-n-contre-casey-desmith-6392096569112",
+              "https://nhl.com/fr/video/dal-phi-hyry-marque-un-but-en-i-n-contre-samuel-ersson-6392100626112",
+              "https://nhl.com/fr/video/dal-phi-zegras-marque-un-but-contre-casey-desmith-6392102916112"
+            ]
+          },
+          {
+            "detailKey": "homeScore",
+            "presencePct": 100,
+            "examples": [
+              "1",
+              "2",
+              "0"
+            ]
+          },
+          {
+            "detailKey": "scoringPlayerId",
+            "presencePct": 100,
+            "examples": [
+              "8478439",
+              "8484938",
+              "8481533"
+            ]
+          },
+          {
+            "detailKey": "scoringPlayerTotal",
+            "presencePct": 91.5,
+            "examples": [
+              "26",
+              "1",
+              "23"
+            ]
+          },
+          {
+            "detailKey": "shotType",
+            "presencePct": 98.6,
+            "examples": [
+              "wrist",
+              "snap",
+              "deflected"
+            ]
+          },
+          {
+            "detailKey": "xCoord",
+            "presencePct": 100,
+            "examples": [
+              "85",
+              "-67",
+              "73"
+            ]
+          },
+          {
+            "detailKey": "yCoord",
+            "presencePct": 100,
+            "examples": [
+              "0",
+              "-19",
+              "-23"
+            ]
+          },
+          {
+            "detailKey": "zoneCode",
+            "presencePct": 100,
+            "examples": [
+              "O",
+              "D"
+            ]
+          }
+        ]
+      },
+      {
+        "typeCode": 506,
+        "typeDescKey": "shot-on-goal",
+        "count": 553,
+        "detailKeys": [
+          {
+            "detailKey": "awaySOG",
+            "presencePct": 100,
+            "examples": [
+              "0",
+              "1",
+              "2"
+            ]
+          },
+          {
+            "detailKey": "eventOwnerTeamId",
+            "presencePct": 100,
+            "examples": [
+              "4",
+              "25",
+              "16"
+            ]
+          },
+          {
+            "detailKey": "goalieInNetId",
+            "presencePct": 100,
+            "examples": [
+              "8479193",
+              "8481035",
+              "8474596"
+            ]
+          },
+          {
+            "detailKey": "homeSOG",
+            "presencePct": 100,
+            "examples": [
+              "1",
+              "2",
+              "3"
+            ]
+          },
+          {
+            "detailKey": "shootingPlayerId",
+            "presencePct": 100,
+            "examples": [
+              "8477499",
+              "8482740",
+              "8484938"
+            ]
+          },
+          {
+            "detailKey": "shotType",
+            "presencePct": 100,
+            "examples": [
+              "wrist",
+              "snap",
+              "tip-in"
+            ]
+          },
+          {
+            "detailKey": "xCoord",
+            "presencePct": 100,
+            "examples": [
+              "-87",
+              "74",
+              "40"
+            ]
+          },
+          {
+            "detailKey": "yCoord",
+            "presencePct": 100,
+            "examples": [
+              "-5",
+              "-12",
+              "-24"
+            ]
+          },
+          {
+            "detailKey": "zoneCode",
+            "presencePct": 100,
+            "examples": [
+              "O",
+              "N",
+              "D"
+            ]
+          }
+        ]
+      },
+      {
+        "typeCode": 507,
+        "typeDescKey": "missed-shot",
+        "count": 341,
+        "detailKeys": [
+          {
+            "detailKey": "eventOwnerTeamId",
+            "presencePct": 100,
+            "examples": [
+              "25",
+              "4",
+              "1"
+            ]
+          },
+          {
+            "detailKey": "goalieInNetId",
+            "presencePct": 97.4,
+            "examples": [
+              "8481035",
+              "8479193",
+              "8481519"
+            ]
+          },
+          {
+            "detailKey": "reason",
+            "presencePct": 100,
+            "examples": [
+              "wide-left",
+              "hit-right-post",
+              "above-crossbar"
+            ]
+          },
+          {
+            "detailKey": "shootingPlayerId",
+            "presencePct": 100,
+            "examples": [
+              "8477454",
+              "8484142",
+              "8482740"
+            ]
+          },
+          {
+            "detailKey": "shotType",
+            "presencePct": 100,
+            "examples": [
+              "wrap-around",
+              "wrist",
+              "tip-in"
+            ]
+          },
+          {
+            "detailKey": "xCoord",
+            "presencePct": 100,
+            "examples": [
+              "87",
+              "-79",
+              "68"
+            ]
+          },
+          {
+            "detailKey": "yCoord",
+            "presencePct": 100,
+            "examples": [
+              "-5",
+              "-9",
+              "14"
+            ]
+          },
+          {
+            "detailKey": "zoneCode",
+            "presencePct": 100,
+            "examples": [
+              "O",
+              "N",
+              "D"
+            ]
+          }
+        ]
+      },
+      {
+        "typeCode": 508,
+        "typeDescKey": "blocked-shot",
+        "count": 328,
+        "detailKeys": [
+          {
+            "detailKey": "blockingPlayerId",
+            "presencePct": 100,
+            "examples": [
+              "8476902",
+              "8481533",
+              "8484829"
+            ]
+          },
+          {
+            "detailKey": "eventOwnerTeamId",
+            "presencePct": 100,
+            "examples": [
+              "4",
+              "25",
+              "1"
+            ]
+          },
+          {
+            "detailKey": "reason",
+            "presencePct": 100,
+            "examples": [
+              "blocked",
+              "teammate-blocked"
+            ]
+          },
+          {
+            "detailKey": "shootingPlayerId",
+            "presencePct": 100,
+            "examples": [
+              "8477499",
+              "8481581",
+              "8480220"
+            ]
+          },
+          {
+            "detailKey": "xCoord",
+            "presencePct": 100,
+            "examples": [
+              "-81",
+              "34",
+              "-70"
+            ]
+          },
+          {
+            "detailKey": "yCoord",
+            "presencePct": 100,
+            "examples": [
+              "-3",
+              "-7",
+              "-8"
+            ]
+          },
+          {
+            "detailKey": "zoneCode",
+            "presencePct": 100,
+            "examples": [
+              "D",
+              "O",
+              "N"
+            ]
+          }
+        ]
+      },
+      {
+        "typeCode": 509,
+        "typeDescKey": "penalty",
+        "count": 100,
+        "detailKeys": [
+          {
+            "detailKey": "committedByPlayerId",
+            "presencePct": 94,
+            "examples": [
+              "8482740",
+              "8476461",
+              "8478420"
+            ]
+          },
+          {
+            "detailKey": "descKey",
+            "presencePct": 100,
+            "examples": [
+              "tripping",
+              "holding-the-stick",
+              "high-sticking"
+            ]
+          },
+          {
+            "detailKey": "drawnByPlayerId",
+            "presencePct": 86,
+            "examples": [
+              "8481546",
+              "8478047",
+              "8477499"
+            ]
+          },
+          {
+            "detailKey": "duration",
+            "presencePct": 100,
+            "examples": [
+              "2",
+              "5",
+              "4"
+            ]
+          },
+          {
+            "detailKey": "eventOwnerTeamId",
+            "presencePct": 100,
+            "examples": [
+              "25",
+              "4",
+              "16"
+            ]
+          },
+          {
+            "detailKey": "servedByPlayerId",
+            "presencePct": 11,
+            "examples": [
+              "8482809",
+              "8484984",
+              "8480188"
+            ]
+          },
+          {
+            "detailKey": "typeCode",
+            "presencePct": 100,
+            "examples": [
+              "MIN",
+              "MAJ",
+              "BEN"
+            ]
+          },
+          {
+            "detailKey": "xCoord",
+            "presencePct": 100,
+            "examples": [
+              "96",
+              "60",
+              "66"
+            ]
+          },
+          {
+            "detailKey": "yCoord",
+            "presencePct": 100,
+            "examples": [
+              "18",
+              "-39",
+              "-1"
+            ]
+          },
+          {
+            "detailKey": "zoneCode",
+            "presencePct": 100,
+            "examples": [
+              "O",
+              "D",
+              "N"
+            ]
+          }
+        ]
+      },
+      {
+        "typeCode": 516,
+        "typeDescKey": "stoppage",
+        "count": 431,
+        "detailKeys": [
+          {
+            "detailKey": "reason",
+            "presencePct": 100,
+            "examples": [
+              "offside",
+              "puck-frozen",
+              "icing"
+            ]
+          },
+          {
+            "detailKey": "secondaryReason",
+            "presencePct": 23.2,
+            "examples": [
+              "tv-timeout",
+              "rink-repair",
+              "visitor-timeout"
+            ]
+          }
+        ]
+      },
+      {
+        "typeCode": 520,
+        "typeDescKey": "period-start",
+        "count": 35,
+        "detailKeys": []
+      },
+      {
+        "typeCode": 521,
+        "typeDescKey": "period-end",
+        "count": 35,
+        "detailKeys": []
+      },
+      {
+        "typeCode": 523,
+        "typeDescKey": "shootout-complete",
+        "count": 2,
+        "detailKeys": []
+      },
+      {
+        "typeCode": 524,
+        "typeDescKey": "game-end",
+        "count": 10,
+        "detailKeys": []
+      },
+      {
+        "typeCode": 525,
+        "typeDescKey": "takeaway",
+        "count": 91,
+        "detailKeys": [
+          {
+            "detailKey": "eventOwnerTeamId",
+            "presencePct": 100,
+            "examples": [
+              "4",
+              "25",
+              "1"
+            ]
+          },
+          {
+            "detailKey": "playerId",
+            "presencePct": 100,
+            "examples": [
+              "8484142",
+              "8482142",
+              "8473994"
+            ]
+          },
+          {
+            "detailKey": "xCoord",
+            "presencePct": 100,
+            "examples": [
+              "-20",
+              "89",
+              "39"
+            ]
+          },
+          {
+            "detailKey": "yCoord",
+            "presencePct": 100,
+            "examples": [
+              "37",
+              "-32",
+              "-36"
+            ]
+          },
+          {
+            "detailKey": "zoneCode",
+            "presencePct": 100,
+            "examples": [
+              "N",
+              "D",
+              "O"
+            ]
+          }
+        ]
+      },
+      {
+        "typeCode": 535,
+        "typeDescKey": "delayed-penalty",
+        "count": 23,
+        "detailKeys": [
+          {
+            "detailKey": "eventOwnerTeamId",
+            "presencePct": 100,
+            "examples": [
+              "25",
+              "4",
+              "6"
+            ]
+          }
+        ]
+      }
+    ],
+    "situationExamples": [
+      {
+        "gameId": 2025021172,
+        "typeCode": 506,
+        "typeDescKey": "shot-on-goal",
+        "situationCode": "1551",
+        "eventOwnerTeamId": 4,
+        "emptyNet": null,
+        "homeTeam": "PHI",
+        "awayTeam": "DAL",
+        "exactStrength": "5v5",
+        "state": "EV"
+      },
+      {
+        "gameId": 2025021172,
+        "typeCode": 506,
+        "typeDescKey": "shot-on-goal",
+        "situationCode": "1551",
+        "eventOwnerTeamId": 25,
+        "emptyNet": null,
+        "homeTeam": "PHI",
+        "awayTeam": "DAL",
+        "exactStrength": "5v5",
+        "state": "EV"
+      },
+      {
+        "gameId": 2025021172,
+        "typeCode": 535,
+        "typeDescKey": "delayed-penalty",
+        "situationCode": "1551",
+        "eventOwnerTeamId": 25,
+        "emptyNet": null,
+        "homeTeam": "PHI",
+        "awayTeam": "DAL",
+        "exactStrength": "5v5",
+        "state": "EV"
+      },
+      {
+        "gameId": 2025021172,
+        "typeCode": 509,
+        "typeDescKey": "penalty",
+        "situationCode": "1551",
+        "eventOwnerTeamId": 25,
+        "emptyNet": null,
+        "homeTeam": "PHI",
+        "awayTeam": "DAL",
+        "exactStrength": "5v5",
+        "state": "EV"
+      },
+      {
+        "gameId": 2025021172,
+        "typeCode": 506,
+        "typeDescKey": "shot-on-goal",
+        "situationCode": "1451",
+        "eventOwnerTeamId": 25,
+        "emptyNet": null,
+        "homeTeam": "PHI",
+        "awayTeam": "DAL",
+        "exactStrength": "4v5",
+        "state": "SH"
+      },
+      {
+        "gameId": 2025021172,
+        "typeCode": 506,
+        "typeDescKey": "shot-on-goal",
+        "situationCode": "1551",
+        "eventOwnerTeamId": 25,
+        "emptyNet": null,
+        "homeTeam": "PHI",
+        "awayTeam": "DAL",
+        "exactStrength": "5v5",
+        "state": "EV"
+      },
+      {
+        "gameId": 2025021172,
+        "typeCode": 506,
+        "typeDescKey": "shot-on-goal",
+        "situationCode": "1551",
+        "eventOwnerTeamId": 4,
+        "emptyNet": null,
+        "homeTeam": "PHI",
+        "awayTeam": "DAL",
+        "exactStrength": "5v5",
+        "state": "EV"
+      },
+      {
+        "gameId": 2025021172,
+        "typeCode": 535,
+        "typeDescKey": "delayed-penalty",
+        "situationCode": "1551",
+        "eventOwnerTeamId": 4,
+        "emptyNet": null,
+        "homeTeam": "PHI",
+        "awayTeam": "DAL",
+        "exactStrength": "5v5",
+        "state": "EV"
+      },
+      {
+        "gameId": 2025021172,
+        "typeCode": 509,
+        "typeDescKey": "penalty",
+        "situationCode": "1551",
+        "eventOwnerTeamId": 4,
+        "emptyNet": null,
+        "homeTeam": "PHI",
+        "awayTeam": "DAL",
+        "exactStrength": "5v5",
+        "state": "EV"
+      },
+      {
+        "gameId": 2025021172,
+        "typeCode": 506,
+        "typeDescKey": "shot-on-goal",
+        "situationCode": "1551",
+        "eventOwnerTeamId": 4,
+        "emptyNet": null,
+        "homeTeam": "PHI",
+        "awayTeam": "DAL",
+        "exactStrength": "5v5",
+        "state": "EV"
+      },
+      {
+        "gameId": 2025021172,
+        "typeCode": 506,
+        "typeDescKey": "shot-on-goal",
+        "situationCode": "1551",
+        "eventOwnerTeamId": 25,
+        "emptyNet": null,
+        "homeTeam": "PHI",
+        "awayTeam": "DAL",
+        "exactStrength": "5v5",
+        "state": "EV"
+      },
+      {
+        "gameId": 2025021172,
+        "typeCode": 506,
+        "typeDescKey": "shot-on-goal",
+        "situationCode": "1551",
+        "eventOwnerTeamId": 25,
+        "emptyNet": null,
+        "homeTeam": "PHI",
+        "awayTeam": "DAL",
+        "exactStrength": "5v5",
+        "state": "EV"
+      },
+      {
+        "gameId": 2025021172,
+        "typeCode": 506,
+        "typeDescKey": "shot-on-goal",
+        "situationCode": "1551",
+        "eventOwnerTeamId": 25,
+        "emptyNet": null,
+        "homeTeam": "PHI",
+        "awayTeam": "DAL",
+        "exactStrength": "5v5",
+        "state": "EV"
+      },
+      {
+        "gameId": 2025021172,
+        "typeCode": 506,
+        "typeDescKey": "shot-on-goal",
+        "situationCode": "1551",
+        "eventOwnerTeamId": 4,
+        "emptyNet": null,
+        "homeTeam": "PHI",
+        "awayTeam": "DAL",
+        "exactStrength": "5v5",
+        "state": "EV"
+      },
+      {
+        "gameId": 2025021172,
+        "typeCode": 506,
+        "typeDescKey": "shot-on-goal",
+        "situationCode": "1551",
+        "eventOwnerTeamId": 25,
+        "emptyNet": null,
+        "homeTeam": "PHI",
+        "awayTeam": "DAL",
+        "exactStrength": "5v5",
+        "state": "EV"
+      },
+      {
+        "gameId": 2025021172,
+        "typeCode": 506,
+        "typeDescKey": "shot-on-goal",
+        "situationCode": "1551",
+        "eventOwnerTeamId": 4,
+        "emptyNet": null,
+        "homeTeam": "PHI",
+        "awayTeam": "DAL",
+        "exactStrength": "5v5",
+        "state": "EV"
+      }
+    ]
+  },
+  "situationMapping": {
+    "inferredOrdering": "Empirical samples are consistent with situationCode = awayGoalie, awaySkaters, homeSkaters, homeGoalie.",
+    "examples": {
+      "emptyNetExamples": [
+        {
+          "gameId": 2025021171,
+          "typeDescKey": "goal",
+          "situationCode": "0651",
+          "eventOwnerTeamId": 1,
+          "homeTeam": "NJD",
+          "awayTeam": "CHI",
+          "exactStrength": "6v5",
+          "state": "EN",
+          "emptyNet": null
+        },
+        {
+          "gameId": 2025021103,
+          "typeDescKey": "goal",
+          "situationCode": "1560",
+          "eventOwnerTeamId": 4,
+          "homeTeam": "SJS",
+          "awayTeam": "PHI",
+          "exactStrength": "5v6",
+          "state": "EN",
+          "emptyNet": null
+        },
+        {
+          "gameId": 2025021103,
+          "typeDescKey": "goal",
+          "situationCode": "1560",
+          "eventOwnerTeamId": 4,
+          "homeTeam": "SJS",
+          "awayTeam": "PHI",
+          "exactStrength": "5v6",
+          "state": "EN",
+          "emptyNet": null
+        }
+      ],
+      "threeOnThreeExamples": [
+        {
+          "gameId": 2025021172,
+          "typeDescKey": "period-start",
+          "situationCode": "1331",
+          "eventOwnerTeamId": null,
+          "homeTeam": "PHI",
+          "awayTeam": "DAL",
+          "exactStrength": "3v3",
+          "state": "EV",
+          "emptyNet": null
+        },
+        {
+          "gameId": 2025021172,
+          "typeDescKey": "faceoff",
+          "situationCode": "1331",
+          "eventOwnerTeamId": 4,
+          "homeTeam": "PHI",
+          "awayTeam": "DAL",
+          "exactStrength": "3v3",
+          "state": "EV",
+          "emptyNet": null
+        },
+        {
+          "gameId": 2025021172,
+          "typeDescKey": "shot-on-goal",
+          "situationCode": "1331",
+          "eventOwnerTeamId": 4,
+          "homeTeam": "PHI",
+          "awayTeam": "DAL",
+          "exactStrength": "3v3",
+          "state": "EV",
+          "emptyNet": null
+        },
+        {
+          "gameId": 2025021172,
+          "typeDescKey": "shot-on-goal",
+          "situationCode": "1331",
+          "eventOwnerTeamId": 4,
+          "homeTeam": "PHI",
+          "awayTeam": "DAL",
+          "exactStrength": "3v3",
+          "state": "EV",
+          "emptyNet": null
+        }
+      ],
+      "sixOnFiveExamples": [
+        {
+          "gameId": 2025021171,
+          "typeDescKey": "shot-on-goal",
+          "situationCode": "0651",
+          "eventOwnerTeamId": 16,
+          "homeTeam": "NJD",
+          "awayTeam": "CHI",
+          "exactStrength": "6v5",
+          "state": "EN",
+          "emptyNet": null
+        },
+        {
+          "gameId": 2025021171,
+          "typeDescKey": "stoppage",
+          "situationCode": "0651",
+          "eventOwnerTeamId": null,
+          "homeTeam": "NJD",
+          "awayTeam": "CHI",
+          "exactStrength": "6v5",
+          "state": "EN",
+          "emptyNet": null
+        },
+        {
+          "gameId": 2025021171,
+          "typeDescKey": "faceoff",
+          "situationCode": "0651",
+          "eventOwnerTeamId": 16,
+          "homeTeam": "NJD",
+          "awayTeam": "CHI",
+          "exactStrength": "6v5",
+          "state": "EN",
+          "emptyNet": null
+        },
+        {
+          "gameId": 2025021171,
+          "typeDescKey": "blocked-shot",
+          "situationCode": "0651",
+          "eventOwnerTeamId": 16,
+          "homeTeam": "NJD",
+          "awayTeam": "CHI",
+          "exactStrength": "6v5",
+          "state": "EN",
+          "emptyNet": null
+        },
+        {
+          "gameId": 2025021171,
+          "typeDescKey": "blocked-shot",
+          "situationCode": "0651",
+          "eventOwnerTeamId": 16,
+          "homeTeam": "NJD",
+          "awayTeam": "CHI",
+          "exactStrength": "6v5",
+          "state": "EN",
+          "emptyNet": null
+        },
+        {
+          "gameId": 2025021171,
+          "typeDescKey": "blocked-shot",
+          "situationCode": "0651",
+          "eventOwnerTeamId": 16,
+          "homeTeam": "NJD",
+          "awayTeam": "CHI",
+          "exactStrength": "6v5",
+          "state": "EN",
+          "emptyNet": null
+        }
+      ]
+    }
+  },
+  "candidateCount": 220
+}

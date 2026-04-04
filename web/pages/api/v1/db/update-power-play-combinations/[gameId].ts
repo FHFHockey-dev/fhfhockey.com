@@ -37,7 +37,7 @@ export default withCronJobAudit(adminOnly(async (req, res) => {
   }
 }));
 
-async function updatePowerPlayCombinations(
+export async function updatePowerPlayCombinations(
   gameId: number,
   supabase: SupabaseType
 ) {

@@ -1,4 +1,8 @@
 // web/components/GameScoreChart.tsx
+//
+// Legacy sKO-only chart component.
+// Pass-4 FORGE audit result: retained for lineage only; not approved for live
+// FORGE use because it visualizes quarantined predictedGameScore outputs.
 
 import React, { useRef, useEffect } from "react";
 import * as d3 from "d3";

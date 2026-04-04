@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import * as d3 from "d3";
 import { format, isAfter } from "date-fns";
+import PanelStatus from "components/common/PanelStatus";
 import useCurrentSeason from "hooks/useCurrentSeason";
 import useResizeObserver from "hooks/useResizeObserver";
+import { buildHomepageModulePresentation } from "lib/dashboard/freshness";
 import { teamsInfo, teamNameToAbbreviationMap } from "lib/teamsInfo";
 import publicSupabase from "lib/supabase/public-client";
 import styles from "./TeamStandingsChart.module.scss";
@@ -139,6 +141,9 @@ function computeRollingAverageFiltered(
 const TeamStandingsChart: React.FC = () => {
   const season = useCurrentSeason();
   const [data, setData] = useState<Map<string, TeamData[]>>(new Map());
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
   const [metric, setMetric] = useState<NumericMetric>("points");
 
   // Filter states.
@@ -173,106 +178,115 @@ const TeamStandingsChart: React.FC = () => {
     const endDateStr = format(endDate, "yyyy-MM-dd");
 
     const fetchData = async () => {
+      setLoading(true);
+      setError(null);
       const limit = 1000;
       let offset = 0;
       let standingsRows: any[] = [];
-      while (true) {
-        const { data, error } = await publicSupabase
-          // @ts-ignore
-          .from("nhl_standings_details")
-          .select(
+      try {
+        while (true) {
+          const { data, error } = await publicSupabase
+            // @ts-ignore
+            .from("nhl_standings_details")
+            .select(
+              `
+              date,
+              team_name_default,
+              games_played,
+              point_pctg,
+              points,
+              goal_against,
+              goal_for,
+              conference_abbrev,
+              division_name
             `
-            date,
-            team_name_default,
-            games_played,
-            point_pctg,
-            points,
-            goal_against,
-            goal_for,
-            conference_abbrev,
-            division_name
-          `
-          )
-          .gte("date", seasonStartStr)
-          .lte("date", endDateStr)
-          .order("date", { ascending: true })
-          .order("team_name_default", { ascending: true })
-          .range(offset, offset + limit - 1);
-        if (error) {
-          console.error("Error fetching standings:", error);
-          break;
+            )
+            .gte("date", seasonStartStr)
+            .lte("date", endDateStr)
+            .order("date", { ascending: true })
+            .order("team_name_default", { ascending: true })
+            .range(offset, offset + limit - 1);
+          if (error) {
+            throw new Error("Unable to load standings history.");
+          }
+          if (!data || data.length === 0) break;
+          standingsRows.push(...data);
+          if (data.length < limit) break;
+          offset += limit;
         }
-        if (!data || data.length === 0) break;
-        standingsRows.push(...data);
-        if (data.length < limit) break;
-        offset += limit;
-      }
 
-      offset = 0;
-      let teamStatsRows: any[] = [];
-      while (true) {
-        const { data, error } = await publicSupabase
-          .from("wgo_team_stats")
-          .select(
+        offset = 0;
+        const teamStatsRows: any[] = [];
+        while (true) {
+          const { data, error } = await publicSupabase
+            .from("wgo_team_stats")
+            .select(
+              `
+              date,
+              franchise_name,
+              games_played,
+              penalty_kill_pct,
+              power_play_pct
             `
-            date,
-            franchise_name,
-            games_played,
-            penalty_kill_pct,
-            power_play_pct
-          `
-          )
-          .gte("date", seasonStartStr)
-          .lte("date", endDateStr)
-          .order("date", { ascending: true })
-          .order("franchise_name", { ascending: true })
-          .range(offset, offset + limit - 1);
-        if (error) {
-          console.error("Error fetching team stats:", error);
-          break;
+            )
+            .gte("date", seasonStartStr)
+            .lte("date", endDateStr)
+            .order("date", { ascending: true })
+            .order("franchise_name", { ascending: true })
+            .range(offset, offset + limit - 1);
+          if (error) {
+            throw new Error("Unable to load team special-teams history.");
+          }
+          if (!data || data.length === 0) break;
+          teamStatsRows.push(...data);
+          if (data.length < limit) break;
+          offset += limit;
         }
-        if (!data || data.length === 0) break;
-        teamStatsRows.push(...data);
-        if (data.length < limit) break;
-        offset += limit;
+
+        const teamStatsMap = new Map<string, any>();
+        teamStatsRows.forEach((row) => {
+          const key = `${row.date}_${row.franchise_name}`;
+          teamStatsMap.set(key, row);
+        });
+
+        const dailyData = standingsRows.map((row) => {
+          const gp = row.games_played || 0;
+          const key = `${row.date}_${row.team_name_default}`;
+          const stats = teamStatsMap.get(key);
+          return {
+            franchiseName: row.team_name_default,
+            gamesPlayed: gp,
+            pointPct: gp > 0 ? row.point_pctg || 0 : 0.5,
+            points: row.points || 0,
+            goalsAgainstPerGame: gp > 0 ? (row.goal_against ?? 0) / gp : 0,
+            goalsForPerGame: gp > 0 ? (row.goal_for ?? 0) / gp : 0,
+            penaltyKillPct: stats ? stats.penalty_kill_pct : 0,
+            powerPlayPct: stats ? stats.power_play_pct : 0,
+            shotsAgainstPerGame: 0,
+            shotsForPerGame: 0,
+            conference: row.conference_abbrev || "N/A",
+            division: row.division_name || "N/A",
+            goalFor: row.goal_for || 0,
+            goalAgainst: row.goal_against || 0
+          } as TeamData;
+        });
+
+        const accumulatedData = processDailyData(new Map(), dailyData);
+        setData(accumulatedData);
+        setLastUpdatedAt(new Date().toISOString());
+      } catch (fetchError) {
+        console.error("Error fetching standings chart data:", fetchError);
+        setError(
+          fetchError instanceof Error
+            ? fetchError.message
+            : "Unable to load standings chart."
+        );
+      } finally {
+        setLoading(false);
       }
-
-      // Build a lookup from team stats.
-      const teamStatsMap = new Map<string, any>();
-      teamStatsRows.forEach((row) => {
-        const key = `${row.date}_${row.franchise_name}`;
-        teamStatsMap.set(key, row);
-      });
-
-      // Merge data; note we now include raw cumulative totals (goal_for and goal_against).
-      const dailyData = standingsRows.map((row) => {
-        const gp = row.games_played || 0;
-        const key = `${row.date}_${row.team_name_default}`;
-        const stats = teamStatsMap.get(key);
-        return {
-          franchiseName: row.team_name_default,
-          gamesPlayed: gp,
-          pointPct: gp > 0 ? row.point_pctg || 0 : 0.5,
-          points: row.points || 0,
-          goalsAgainstPerGame: gp > 0 ? (row.goal_against ?? 0) / gp : 0,
-          goalsForPerGame: gp > 0 ? (row.goal_for ?? 0) / gp : 0,
-          penaltyKillPct: stats ? stats.penalty_kill_pct : 0,
-          powerPlayPct: stats ? stats.power_play_pct : 0,
-          shotsAgainstPerGame: 0,
-          shotsForPerGame: 0,
-          conference: row.conference_abbrev || "N/A",
-          division: row.division_name || "N/A",
-          // Include the raw cumulative values:
-          goalFor: row.goal_for || 0,
-          goalAgainst: row.goal_against || 0
-        } as TeamData;
-      });
-
-      const accumulatedData = processDailyData(new Map(), dailyData);
-      setData(accumulatedData);
     };
 
-    fetchData();
+    void fetchData();
   }, [season]);
 
   // -------------------------------
@@ -814,162 +828,214 @@ const TeamStandingsChart: React.FC = () => {
   };
 
   const clearAllTeams = () => setSelectedTeams([]);
+  const modulePresentation = buildHomepageModulePresentation({
+    source: "team-standings-chart",
+    loading,
+    error,
+    isEmpty: !loading && !error && data.size === 0,
+    timestamp: lastUpdatedAt,
+    maxAgeHours: 18,
+    loadingMessage: "Loading standings history...",
+    emptyMessage: "Standings chart data is unavailable right now.",
+    staleMessage: "Standings chart data may be stale."
+  });
+  const selectedTeamCount = selectedTeams.length;
+  const summaryLabel =
+    metric === "points"
+      ? "League separation"
+      : metric === "pointPct"
+        ? "Performance vs .500"
+        : metric === "goalsForPerGame"
+          ? "Scoring pace"
+          : metric === "goalsAgainstPerGame"
+            ? "Goals allowed"
+            : metric === "powerPlayPct"
+              ? "Power-play efficiency"
+              : metric === "penaltyKillPct"
+                ? "Penalty-kill efficiency"
+                : "League form";
+  const trendModeLabel = rolling10 ? "10-game view" : rolling5 ? "5-game view" : "full-season view";
 
   return (
     <div className={styles.teamStandingsChart}>
-      <div className={styles.chartAndToggles}>
-        <div className={styles.leftColumn}>
-          {/* Filters */}
-          <div className={styles.filters}>
-            <label>Conference: </label>
-            <select
-              value={selectedConference}
-              onChange={(e) => setSelectedConference(e.target.value)}
-            >
-              <option value="All">All</option>
-              {/* You can populate dynamic options here */}
-            </select>
-            <label>Division: </label>
-            <select
-              value={selectedDivision}
-              onChange={(e) => setSelectedDivision(e.target.value)}
-            >
-              <option value="All">All</option>
-              {/* You can populate dynamic options here */}
-            </select>
-            <label>Metric: </label>
-            <select
-              value={metric}
-              onChange={(e) => {
-                setMetric(e.target.value as NumericMetric);
-                if (
-                  e.target.value === "penaltyKillPct" ||
-                  e.target.value === "powerPlayPct" ||
-                  e.target.value === "goalsForPerGame" ||
-                  e.target.value === "goalsAgainstPerGame"
-                ) {
-                  setRolling5(true);
-                  setRolling10(false);
-                } else {
-                  setRolling5(false);
-                  setRolling10(false);
-                }
-                // Reset team selection to all visible teams.
-                const allTeams: string[] = [];
-                Object.values(teamsByDivision).forEach((arr) => {
-                  allTeams.push(...arr);
-                });
-                setSelectedTeams(allTeams);
-              }}
-            >
-              <option value="points">Points</option>
-              <option value="pointPct">Point Percentage</option>
-              <option value="goalsAgainstPerGame">Goals Against/Game</option>
-              <option value="goalsForPerGame">Goals For/Game</option>
-              <option value="penaltyKillPct">PK%</option>
-              <option value="powerPlayPct">PP%</option>
-              {/* <option value="shotsAgainstPerGame">Shots Against/Game</option>
-              <option value="shotsForPerGame">Shots For/Game</option> */}
-            </select>
-            {(metric === "penaltyKillPct" ||
-              metric === "powerPlayPct" ||
-              metric === "goalsAgainstPerGame" ||
-              metric === "goalsForPerGame") && (
-              <div className={styles.rollingToggles}>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={rolling5}
-                    onChange={(e) => setRolling5(e.target.checked)}
-                  />
-                  5GM Rolling Avg
-                </label>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={rolling10}
-                    onChange={(e) => setRolling10(e.target.checked)}
-                  />
-                  10GM Rolling Avg
-                </label>
-              </div>
-            )}
-          </div>
-
-          {/* Chart container (responsive via useResizeObserver) */}
-          <div ref={containerRef} className={styles.chartContainer}>
-            <svg ref={svgRef} className={styles.chartSvg} />
-          </div>
+      <div className={styles.summaryHeader}>
+        <div className={styles.summaryCopy}>
+          <p className={styles.summaryEyebrow}>Standings signal</p>
+          <h3 className={styles.summaryTitle}>{summaryLabel}</h3>
+          <p className={styles.summaryBody}>
+            Use the chart for movement and separation, then fall back to the tables
+            below for exact ranking and injury context.
+          </p>
         </div>
-
-        {/* Team Toggle Panel */}
-        <div className={styles.teamToggles}>
-          <div className={styles.toggleButtons}>
-            <button onClick={selectAllTeams}>Select All</button>
-            <button onClick={clearAllTeams}>Clear All</button>
+        <div className={styles.summaryStats}>
+          <div className={styles.summaryStat}>
+            <span className={styles.summaryStatLabel}>Metric</span>
+            <strong className={styles.summaryStatValue}>{metric}</strong>
           </div>
-          <div className={styles.toggleList}>
-            <div className={styles.toggleColumn}>
-              {leftDivisions.map((div) => (
-                <div key={div}>
-                  <strong>{div}</strong>
-                  {teamsByDivision[div]?.map((abbr) => (
-                    <label key={abbr} className={styles.teamToggle}>
-                      <input
-                        type="checkbox"
-                        checked={selectedTeams.includes(abbr)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedTeams((prev) => [...prev, abbr]);
-                          } else {
-                            setSelectedTeams((prev) =>
-                              prev.filter((t) => t !== abbr)
-                            );
-                          }
-                        }}
-                      />
-                      <img
-                        src={`/teamLogos/${abbr ?? "default"}.png`}
-                        alt={abbr}
-                        className={styles.toggleLogo}
-                      />
-                    </label>
-                  ))}
-                </div>
-              ))}
-            </div>
-            <div className={styles.toggleColumn}>
-              {rightDivisions.map((div) => (
-                <div key={div}>
-                  <strong>{div === "Metropolitan" ? "Metro" : div}</strong>
-                  {teamsByDivision[div]?.map((abbr) => (
-                    <label key={abbr} className={styles.teamToggle}>
-                      <input
-                        type="checkbox"
-                        checked={selectedTeams.includes(abbr)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedTeams((prev) => [...prev, abbr]);
-                          } else {
-                            setSelectedTeams((prev) =>
-                              prev.filter((t) => t !== abbr)
-                            );
-                          }
-                        }}
-                      />
-                      <img
-                        src={`/teamLogos/${abbr ?? "default"}.png`}
-                        alt={abbr}
-                        className={styles.toggleLogo}
-                      />
-                    </label>
-                  ))}
-                </div>
-              ))}
-            </div>
+          <div className={styles.summaryStat}>
+            <span className={styles.summaryStatLabel}>View</span>
+            <strong className={styles.summaryStatValue}>{trendModeLabel}</strong>
+          </div>
+          <div className={styles.summaryStat}>
+            <span className={styles.summaryStatLabel}>Teams</span>
+            <strong className={styles.summaryStatValue}>{selectedTeamCount}</strong>
           </div>
         </div>
       </div>
+      {modulePresentation.panelState && (
+        <PanelStatus
+          state={modulePresentation.panelState}
+          message={modulePresentation.message ?? ""}
+          className={styles.statusPanel}
+        />
+      )}
+      {modulePresentation.state === "empty" || modulePresentation.state === "error" ? null : (
+        <div className={styles.chartAndToggles}>
+          <div className={styles.leftColumn}>
+            <div className={styles.filters}>
+              <label>Conference: </label>
+              <select
+                value={selectedConference}
+                onChange={(e) => setSelectedConference(e.target.value)}
+              >
+                <option value="All">All</option>
+              </select>
+              <label>Division: </label>
+              <select
+                value={selectedDivision}
+                onChange={(e) => setSelectedDivision(e.target.value)}
+              >
+                <option value="All">All</option>
+              </select>
+              <label>Metric: </label>
+              <select
+                value={metric}
+                onChange={(e) => {
+                  setMetric(e.target.value as NumericMetric);
+                  if (
+                    e.target.value === "penaltyKillPct" ||
+                    e.target.value === "powerPlayPct" ||
+                    e.target.value === "goalsForPerGame" ||
+                    e.target.value === "goalsAgainstPerGame"
+                  ) {
+                    setRolling5(true);
+                    setRolling10(false);
+                  } else {
+                    setRolling5(false);
+                    setRolling10(false);
+                  }
+                  const allTeams: string[] = [];
+                  Object.values(teamsByDivision).forEach((arr) => {
+                    allTeams.push(...arr);
+                  });
+                  setSelectedTeams(allTeams);
+                }}
+              >
+                <option value="points">Points</option>
+                <option value="pointPct">Point Percentage</option>
+                <option value="goalsAgainstPerGame">Goals Against/Game</option>
+                <option value="goalsForPerGame">Goals For/Game</option>
+                <option value="penaltyKillPct">PK%</option>
+                <option value="powerPlayPct">PP%</option>
+              </select>
+              {(metric === "penaltyKillPct" ||
+                metric === "powerPlayPct" ||
+                metric === "goalsAgainstPerGame" ||
+                metric === "goalsForPerGame") && (
+                <div className={styles.rollingToggles}>
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={rolling5}
+                      onChange={(e) => setRolling5(e.target.checked)}
+                    />
+                    5GM Rolling Avg
+                  </label>
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={rolling10}
+                      onChange={(e) => setRolling10(e.target.checked)}
+                    />
+                    10GM Rolling Avg
+                  </label>
+                </div>
+              )}
+            </div>
+
+            <div ref={containerRef} className={styles.chartContainer}>
+              <svg ref={svgRef} className={styles.chartSvg} />
+            </div>
+          </div>
+
+          <div className={styles.teamToggles}>
+            <div className={styles.toggleButtons}>
+              <button onClick={selectAllTeams}>Select All</button>
+              <button onClick={clearAllTeams}>Clear All</button>
+            </div>
+            <div className={styles.toggleList}>
+              <div className={styles.toggleColumn}>
+                {leftDivisions.map((div) => (
+                  <div key={div}>
+                    <strong>{div}</strong>
+                    {teamsByDivision[div]?.map((abbr) => (
+                      <label key={abbr} className={styles.teamToggle}>
+                        <input
+                          type="checkbox"
+                          checked={selectedTeams.includes(abbr)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedTeams((prev) => [...prev, abbr]);
+                            } else {
+                              setSelectedTeams((prev) =>
+                                prev.filter((t) => t !== abbr)
+                              );
+                            }
+                          }}
+                        />
+                        <img
+                          src={`/teamLogos/${abbr ?? "default"}.png`}
+                          alt={abbr}
+                          className={styles.toggleLogo}
+                        />
+                      </label>
+                    ))}
+                  </div>
+                ))}
+              </div>
+              <div className={styles.toggleColumn}>
+                {rightDivisions.map((div) => (
+                  <div key={div}>
+                    <strong>{div === "Metropolitan" ? "Metro" : div}</strong>
+                    {teamsByDivision[div]?.map((abbr) => (
+                      <label key={abbr} className={styles.teamToggle}>
+                        <input
+                          type="checkbox"
+                          checked={selectedTeams.includes(abbr)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedTeams((prev) => [...prev, abbr]);
+                            } else {
+                              setSelectedTeams((prev) =>
+                                prev.filter((t) => t !== abbr)
+                              );
+                            }
+                          }}
+                        />
+                        <img
+                          src={`/teamLogos/${abbr ?? "default"}.png`}
+                          alt={abbr}
+                          className={styles.toggleLogo}
+                        />
+                      </label>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Tooltip */}
       <div ref={tooltipRef} className={styles.tooltip} />

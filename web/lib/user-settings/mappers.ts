@@ -49,7 +49,11 @@ function coerceActiveContext(
     external_league_id:
       typeof value.external_league_id === "string" ? value.external_league_id : null,
     external_team_id:
-      typeof value.external_team_id === "string" ? value.external_team_id : null
+      typeof value.external_team_id === "string" ? value.external_team_id : null,
+    external_league_key:
+      typeof value.external_league_key === "string" ? value.external_league_key : null,
+    external_team_key:
+      typeof value.external_team_key === "string" ? value.external_team_key : null
   };
 }
 

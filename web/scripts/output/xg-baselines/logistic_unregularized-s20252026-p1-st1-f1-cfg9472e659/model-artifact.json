@@ -1,0 +1,2000 @@
+{
+  "artifactKind": "nhl_xg_model",
+  "artifactVersion": 1,
+  "artifactTag": "logistic_unregularized-s20252026-p1-st1-f1-cfg9472e659",
+  "family": "logistic_unregularized",
+  "generatedAt": "2026-03-31T18:22:31.185Z",
+  "sourceCommitSha": "6bfd7b1f5d13c0df4c23cbc402c08b66838efe1d",
+  "parserVersion": 1,
+  "strengthVersion": 1,
+  "featureVersion": 1,
+  "seasonScope": 20252026,
+  "randomSeed": 42,
+  "splitConfig": {
+    "trainRatio": 0.7,
+    "validationRatio": 0.15
+  },
+  "splitStrategy": "chronological_game(train=0.7,validation=0.15,test=0.15000000000000005)",
+  "selectedFeatures": {
+    "numeric": [
+      "normalizedX",
+      "normalizedY",
+      "shotDistanceFeet",
+      "shotAngleDegrees",
+      "periodNumber",
+      "periodSecondsElapsed",
+      "gameSecondsElapsed",
+      "timeSincePreviousEventSeconds",
+      "distanceFromPreviousEvent",
+      "ownerPowerPlayAgeSeconds",
+      "shooterShiftAgeSeconds",
+      "eastWestMovementFeet",
+      "northSouthMovementFeet"
+    ],
+    "boolean": [
+      "previousEventSameTeam",
+      "isReboundShot",
+      "isRushShot",
+      "isFlurryShot",
+      "isEmptyNetEvent",
+      "isOvertimeEvent",
+      "isShortSideMiss",
+      "crossedRoyalRoad",
+      "possessionRegainedFromOpponent",
+      "possessionEnteredOffensiveZone",
+      "isLateGameClose",
+      "isLateGameTrailing"
+    ],
+    "categorical": [
+      "shotType",
+      "strengthState",
+      "strengthExact",
+      "zoneCode",
+      "previousEventTypeDescKey",
+      "missReasonBucket",
+      "shooterHandedness",
+      "goalieCatchHand",
+      "shooterGoalieHandednessMatchup"
+    ]
+  },
+  "featureKeys": [
+    "normalizedX",
+    "normalizedY",
+    "shotDistanceFeet",
+    "shotAngleDegrees",
+    "periodNumber",
+    "periodSecondsElapsed",
+    "gameSecondsElapsed",
+    "timeSincePreviousEventSeconds",
+    "distanceFromPreviousEvent",
+    "ownerPowerPlayAgeSeconds",
+    "shooterShiftAgeSeconds",
+    "eastWestMovementFeet",
+    "northSouthMovementFeet",
+    "previousEventSameTeam",
+    "isReboundShot",
+    "isRushShot",
+    "isFlurryShot",
+    "isEmptyNetEvent",
+    "isOvertimeEvent",
+    "isShortSideMiss",
+    "crossedRoyalRoad",
+    "possessionRegainedFromOpponent",
+    "possessionEnteredOffensiveZone",
+    "isLateGameClose",
+    "isLateGameTrailing",
+    "shotType:backhand",
+    "shotType:deflected",
+    "shotType:poke",
+    "shotType:slap",
+    "shotType:snap",
+    "shotType:tip-in",
+    "shotType:wrap-around",
+    "shotType:wrist",
+    "strengthState:EN",
+    "strengthState:EV",
+    "strengthState:PP",
+    "strengthState:SH",
+    "strengthExact:3v4",
+    "strengthExact:3v5",
+    "strengthExact:4v4",
+    "strengthExact:4v5",
+    "strengthExact:5v4",
+    "strengthExact:5v5",
+    "strengthExact:5v6",
+    "strengthExact:6v5",
+    "zoneCode:D",
+    "zoneCode:N",
+    "zoneCode:O",
+    "previousEventTypeDescKey:blocked-shot",
+    "previousEventTypeDescKey:delayed-penalty",
+    "previousEventTypeDescKey:faceoff",
+    "previousEventTypeDescKey:giveaway",
+    "previousEventTypeDescKey:hit",
+    "previousEventTypeDescKey:missed-shot",
+    "previousEventTypeDescKey:shot-on-goal",
+    "previousEventTypeDescKey:takeaway",
+    "missReasonBucket:crossbar",
+    "missReasonBucket:other",
+    "missReasonBucket:post",
+    "missReasonBucket:short-side",
+    "missReasonBucket:wide",
+    "shooterHandedness:L",
+    "shooterHandedness:R",
+    "goalieCatchHand:L",
+    "shooterGoalieHandednessMatchup:opposite-hand",
+    "shooterGoalieHandednessMatchup:same-hand"
+  ],
+  "trainExampleCount": 210,
+  "validationExampleCount": 88,
+  "testExampleCount": 0,
+  "fitOptions": {
+    "iterations": 800,
+    "learningRate": 0.05,
+    "l1": 0,
+    "l2": 0
+  },
+  "evaluation": {
+    "overall": {
+      "exampleCount": 298,
+      "goalCount": 28,
+      "goalRate": 0.09396,
+      "averagePrediction": 0.604026,
+      "logLoss": 10.419838,
+      "brierScore": 0.510066,
+      "calibrationBins": [
+        {
+          "binIndex": 0,
+          "lowerBoundInclusive": 0,
+          "upperBoundExclusive": 0.1,
+          "count": 118,
+          "avgPrediction": 0,
+          "observedGoalRate": 0
+        },
+        {
+          "binIndex": 1,
+          "lowerBoundInclusive": 0.1,
+          "upperBoundExclusive": 0.2,
+          "count": 0,
+          "avgPrediction": null,
+          "observedGoalRate": null
+        },
+        {
+          "binIndex": 2,
+          "lowerBoundInclusive": 0.2,
+          "upperBoundExclusive": 0.3,
+          "count": 0,
+          "avgPrediction": null,
+          "observedGoalRate": null
+        },
+        {
+          "binIndex": 3,
+          "lowerBoundInclusive": 0.3,
+          "upperBoundExclusive": 0.4,
+          "count": 0,
+          "avgPrediction": null,
+          "observedGoalRate": null
+        },
+        {
+          "binIndex": 4,
+          "lowerBoundInclusive": 0.4,
+          "upperBoundExclusive": 0.5,
+          "count": 0,
+          "avgPrediction": null,
+          "observedGoalRate": null
+        },
+        {
+          "binIndex": 5,
+          "lowerBoundInclusive": 0.5,
+          "upperBoundExclusive": 0.6,
+          "count": 0,
+          "avgPrediction": null,
+          "observedGoalRate": null
+        },
+        {
+          "binIndex": 6,
+          "lowerBoundInclusive": 0.6,
+          "upperBoundExclusive": 0.7,
+          "count": 0,
+          "avgPrediction": null,
+          "observedGoalRate": null
+        },
+        {
+          "binIndex": 7,
+          "lowerBoundInclusive": 0.7,
+          "upperBoundExclusive": 0.8,
+          "count": 0,
+          "avgPrediction": null,
+          "observedGoalRate": null
+        },
+        {
+          "binIndex": 8,
+          "lowerBoundInclusive": 0.8,
+          "upperBoundExclusive": 0.9,
+          "count": 0,
+          "avgPrediction": null,
+          "observedGoalRate": null
+        },
+        {
+          "binIndex": 9,
+          "lowerBoundInclusive": 0.9,
+          "upperBoundExclusive": 1.000001,
+          "count": 180,
+          "avgPrediction": 0.999999,
+          "observedGoalRate": 0.155556
+        }
+      ]
+    },
+    "train": {
+      "exampleCount": 210,
+      "goalCount": 23,
+      "goalRate": 0.109524,
+      "averagePrediction": 0.499999,
+      "logLoss": 7.938823,
+      "brierScore": 0.390475,
+      "calibrationBins": [
+        {
+          "binIndex": 0,
+          "lowerBoundInclusive": 0,
+          "upperBoundExclusive": 0.1,
+          "count": 105,
+          "avgPrediction": 0,
+          "observedGoalRate": 0
+        },
+        {
+          "binIndex": 1,
+          "lowerBoundInclusive": 0.1,
+          "upperBoundExclusive": 0.2,
+          "count": 0,
+          "avgPrediction": null,
+          "observedGoalRate": null
+        },
+        {
+          "binIndex": 2,
+          "lowerBoundInclusive": 0.2,
+          "upperBoundExclusive": 0.3,
+          "count": 0,
+          "avgPrediction": null,
+          "observedGoalRate": null
+        },
+        {
+          "binIndex": 3,
+          "lowerBoundInclusive": 0.3,
+          "upperBoundExclusive": 0.4,
+          "count": 0,
+          "avgPrediction": null,
+          "observedGoalRate": null
+        },
+        {
+          "binIndex": 4,
+          "lowerBoundInclusive": 0.4,
+          "upperBoundExclusive": 0.5,
+          "count": 0,
+          "avgPrediction": null,
+          "observedGoalRate": null
+        },
+        {
+          "binIndex": 5,
+          "lowerBoundInclusive": 0.5,
+          "upperBoundExclusive": 0.6,
+          "count": 0,
+          "avgPrediction": null,
+          "observedGoalRate": null
+        },
+        {
+          "binIndex": 6,
+          "lowerBoundInclusive": 0.6,
+          "upperBoundExclusive": 0.7,
+          "count": 0,
+          "avgPrediction": null,
+          "observedGoalRate": null
+        },
+        {
+          "binIndex": 7,
+          "lowerBoundInclusive": 0.7,
+          "upperBoundExclusive": 0.8,
+          "count": 0,
+          "avgPrediction": null,
+          "observedGoalRate": null
+        },
+        {
+          "binIndex": 8,
+          "lowerBoundInclusive": 0.8,
+          "upperBoundExclusive": 0.9,
+          "count": 0,
+          "avgPrediction": null,
+          "observedGoalRate": null
+        },
+        {
+          "binIndex": 9,
+          "lowerBoundInclusive": 0.9,
+          "upperBoundExclusive": 1.000001,
+          "count": 105,
+          "avgPrediction": 0.999999,
+          "observedGoalRate": 0.219048
+        }
+      ]
+    },
+    "validation": {
+      "exampleCount": 88,
+      "goalCount": 5,
+      "goalRate": 0.056818,
+      "averagePrediction": 0.852273,
+      "logLoss": 16.340443,
+      "brierScore": 0.795454,
+      "calibrationBins": [
+        {
+          "binIndex": 0,
+          "lowerBoundInclusive": 0,
+          "upperBoundExclusive": 0.1,
+          "count": 13,
+          "avgPrediction": 0,
+          "observedGoalRate": 0
+        },
+        {
+          "binIndex": 1,
+          "lowerBoundInclusive": 0.1,
+          "upperBoundExclusive": 0.2,
+          "count": 0,
+          "avgPrediction": null,
+          "observedGoalRate": null
+        },
+        {
+          "binIndex": 2,
+          "lowerBoundInclusive": 0.2,
+          "upperBoundExclusive": 0.3,
+          "count": 0,
+          "avgPrediction": null,
+          "observedGoalRate": null
+        },
+        {
+          "binIndex": 3,
+          "lowerBoundInclusive": 0.3,
+          "upperBoundExclusive": 0.4,
+          "count": 0,
+          "avgPrediction": null,
+          "observedGoalRate": null
+        },
+        {
+          "binIndex": 4,
+          "lowerBoundInclusive": 0.4,
+          "upperBoundExclusive": 0.5,
+          "count": 0,
+          "avgPrediction": null,
+          "observedGoalRate": null
+        },
+        {
+          "binIndex": 5,
+          "lowerBoundInclusive": 0.5,
+          "upperBoundExclusive": 0.6,
+          "count": 0,
+          "avgPrediction": null,
+          "observedGoalRate": null
+        },
+        {
+          "binIndex": 6,
+          "lowerBoundInclusive": 0.6,
+          "upperBoundExclusive": 0.7,
+          "count": 0,
+          "avgPrediction": null,
+          "observedGoalRate": null
+        },
+        {
+          "binIndex": 7,
+          "lowerBoundInclusive": 0.7,
+          "upperBoundExclusive": 0.8,
+          "count": 0,
+          "avgPrediction": null,
+          "observedGoalRate": null
+        },
+        {
+          "binIndex": 8,
+          "lowerBoundInclusive": 0.8,
+          "upperBoundExclusive": 0.9,
+          "count": 0,
+          "avgPrediction": null,
+          "observedGoalRate": null
+        },
+        {
+          "binIndex": 9,
+          "lowerBoundInclusive": 0.9,
+          "upperBoundExclusive": 1.000001,
+          "count": 75,
+          "avgPrediction": 1,
+          "observedGoalRate": 0.066667
+        }
+      ]
+    },
+    "test": {
+      "exampleCount": 0,
+      "goalCount": 0,
+      "goalRate": null,
+      "averagePrediction": null,
+      "logLoss": null,
+      "brierScore": null,
+      "calibrationBins": [
+        {
+          "binIndex": 0,
+          "lowerBoundInclusive": 0,
+          "upperBoundExclusive": 0.1,
+          "count": 0,
+          "avgPrediction": null,
+          "observedGoalRate": null
+        },
+        {
+          "binIndex": 1,
+          "lowerBoundInclusive": 0.1,
+          "upperBoundExclusive": 0.2,
+          "count": 0,
+          "avgPrediction": null,
+          "observedGoalRate": null
+        },
+        {
+          "binIndex": 2,
+          "lowerBoundInclusive": 0.2,
+          "upperBoundExclusive": 0.3,
+          "count": 0,
+          "avgPrediction": null,
+          "observedGoalRate": null
+        },
+        {
+          "binIndex": 3,
+          "lowerBoundInclusive": 0.3,
+          "upperBoundExclusive": 0.4,
+          "count": 0,
+          "avgPrediction": null,
+          "observedGoalRate": null
+        },
+        {
+          "binIndex": 4,
+          "lowerBoundInclusive": 0.4,
+          "upperBoundExclusive": 0.5,
+          "count": 0,
+          "avgPrediction": null,
+          "observedGoalRate": null
+        },
+        {
+          "binIndex": 5,
+          "lowerBoundInclusive": 0.5,
+          "upperBoundExclusive": 0.6,
+          "count": 0,
+          "avgPrediction": null,
+          "observedGoalRate": null
+        },
+        {
+          "binIndex": 6,
+          "lowerBoundInclusive": 0.6,
+          "upperBoundExclusive": 0.7,
+          "count": 0,
+          "avgPrediction": null,
+          "observedGoalRate": null
+        },
+        {
+          "binIndex": 7,
+          "lowerBoundInclusive": 0.7,
+          "upperBoundExclusive": 0.8,
+          "count": 0,
+          "avgPrediction": null,
+          "observedGoalRate": null
+        },
+        {
+          "binIndex": 8,
+          "lowerBoundInclusive": 0.8,
+          "upperBoundExclusive": 0.9,
+          "count": 0,
+          "avgPrediction": null,
+          "observedGoalRate": null
+        },
+        {
+          "binIndex": 9,
+          "lowerBoundInclusive": 0.9,
+          "upperBoundExclusive": 1.000001,
+          "count": 0,
+          "avgPrediction": null,
+          "observedGoalRate": null
+        }
+      ]
+    }
+  },
+  "holdoutEvaluation": {
+    "exampleCount": 88,
+    "goalCount": 5,
+    "goalRate": 0.056818,
+    "averagePrediction": 0.852273,
+    "logLoss": 16.340443,
+    "brierScore": 0.795454,
+    "calibrationBins": [
+      {
+        "binIndex": 0,
+        "lowerBoundInclusive": 0,
+        "upperBoundExclusive": 0.1,
+        "count": 13,
+        "avgPrediction": 0,
+        "observedGoalRate": 0
+      },
+      {
+        "binIndex": 1,
+        "lowerBoundInclusive": 0.1,
+        "upperBoundExclusive": 0.2,
+        "count": 0,
+        "avgPrediction": null,
+        "observedGoalRate": null
+      },
+      {
+        "binIndex": 2,
+        "lowerBoundInclusive": 0.2,
+        "upperBoundExclusive": 0.3,
+        "count": 0,
+        "avgPrediction": null,
+        "observedGoalRate": null
+      },
+      {
+        "binIndex": 3,
+        "lowerBoundInclusive": 0.3,
+        "upperBoundExclusive": 0.4,
+        "count": 0,
+        "avgPrediction": null,
+        "observedGoalRate": null
+      },
+      {
+        "binIndex": 4,
+        "lowerBoundInclusive": 0.4,
+        "upperBoundExclusive": 0.5,
+        "count": 0,
+        "avgPrediction": null,
+        "observedGoalRate": null
+      },
+      {
+        "binIndex": 5,
+        "lowerBoundInclusive": 0.5,
+        "upperBoundExclusive": 0.6,
+        "count": 0,
+        "avgPrediction": null,
+        "observedGoalRate": null
+      },
+      {
+        "binIndex": 6,
+        "lowerBoundInclusive": 0.6,
+        "upperBoundExclusive": 0.7,
+        "count": 0,
+        "avgPrediction": null,
+        "observedGoalRate": null
+      },
+      {
+        "binIndex": 7,
+        "lowerBoundInclusive": 0.7,
+        "upperBoundExclusive": 0.8,
+        "count": 0,
+        "avgPrediction": null,
+        "observedGoalRate": null
+      },
+      {
+        "binIndex": 8,
+        "lowerBoundInclusive": 0.8,
+        "upperBoundExclusive": 0.9,
+        "count": 0,
+        "avgPrediction": null,
+        "observedGoalRate": null
+      },
+      {
+        "binIndex": 9,
+        "lowerBoundInclusive": 0.9,
+        "upperBoundExclusive": 1.000001,
+        "count": 75,
+        "avgPrediction": 1,
+        "observedGoalRate": 0.066667
+      }
+    ]
+  },
+  "holdoutSliceEvaluations": {
+    "strengthState": [
+      {
+        "sliceName": "strengthState",
+        "sliceValue": "EV",
+        "evaluation": {
+          "exampleCount": 63,
+          "goalCount": 4,
+          "goalRate": 0.063492,
+          "averagePrediction": 0.84127,
+          "logLoss": 15.916991,
+          "brierScore": 0.777778,
+          "calibrationBins": [
+            {
+              "binIndex": 0,
+              "lowerBoundInclusive": 0,
+              "upperBoundExclusive": 0.1,
+              "count": 10,
+              "avgPrediction": 0,
+              "observedGoalRate": 0
+            },
+            {
+              "binIndex": 1,
+              "lowerBoundInclusive": 0.1,
+              "upperBoundExclusive": 0.2,
+              "count": 0,
+              "avgPrediction": null,
+              "observedGoalRate": null
+            },
+            {
+              "binIndex": 2,
+              "lowerBoundInclusive": 0.2,
+              "upperBoundExclusive": 0.3,
+              "count": 0,
+              "avgPrediction": null,
+              "observedGoalRate": null
+            },
+            {
+              "binIndex": 3,
+              "lowerBoundInclusive": 0.3,
+              "upperBoundExclusive": 0.4,
+              "count": 0,
+              "avgPrediction": null,
+              "observedGoalRate": null
+            },
+            {
+              "binIndex": 4,
+              "lowerBoundInclusive": 0.4,
+              "upperBoundExclusive": 0.5,
+              "count": 0,
+              "avgPrediction": null,
+              "observedGoalRate": null
+            },
+            {
+              "binIndex": 5,
+              "lowerBoundInclusive": 0.5,
+              "upperBoundExclusive": 0.6,
+              "count": 0,
+              "avgPrediction": null,
+              "observedGoalRate": null
+            },
+            {
+              "binIndex": 6,
+              "lowerBoundInclusive": 0.6,
+              "upperBoundExclusive": 0.7,
+              "count": 0,
+              "avgPrediction": null,
+              "observedGoalRate": null
+            },
+            {
+              "binIndex": 7,
+              "lowerBoundInclusive": 0.7,
+              "upperBoundExclusive": 0.8,
+              "count": 0,
+              "avgPrediction": null,
+              "observedGoalRate": null
+            },
+            {
+              "binIndex": 8,
+              "lowerBoundInclusive": 0.8,
+              "upperBoundExclusive": 0.9,
+              "count": 0,
+              "avgPrediction": null,
+              "observedGoalRate": null
+            },
+            {
+              "binIndex": 9,
+              "lowerBoundInclusive": 0.9,
+              "upperBoundExclusive": 1.000001,
+              "count": 53,
+              "avgPrediction": 1,
+              "observedGoalRate": 0.075472
+            }
+          ]
+        }
+      },
+      {
+        "sliceName": "strengthState",
+        "sliceValue": "PP",
+        "evaluation": {
+          "exampleCount": 20,
+          "goalCount": 1,
+          "goalRate": 0.05,
+          "averagePrediction": 0.95,
+          "logLoss": 18.650939,
+          "brierScore": 0.9,
+          "calibrationBins": [
+            {
+              "binIndex": 0,
+              "lowerBoundInclusive": 0,
+              "upperBoundExclusive": 0.1,
+              "count": 1,
+              "avgPrediction": 0,
+              "observedGoalRate": 0
+            },
+            {
+              "binIndex": 1,
+              "lowerBoundInclusive": 0.1,
+              "upperBoundExclusive": 0.2,
+              "count": 0,
+              "avgPrediction": null,
+              "observedGoalRate": null
+            },
+            {
+              "binIndex": 2,
+              "lowerBoundInclusive": 0.2,
+              "upperBoundExclusive": 0.3,
+              "count": 0,
+              "avgPrediction": null,
+              "observedGoalRate": null
+            },
+            {
+              "binIndex": 3,
+              "lowerBoundInclusive": 0.3,
+              "upperBoundExclusive": 0.4,
+              "count": 0,
+              "avgPrediction": null,
+              "observedGoalRate": null
+            },
+            {
+              "binIndex": 4,
+              "lowerBoundInclusive": 0.4,
+              "upperBoundExclusive": 0.5,
+              "count": 0,
+              "avgPrediction": null,
+              "observedGoalRate": null
+            },
+            {
+              "binIndex": 5,
+              "lowerBoundInclusive": 0.5,
+              "upperBoundExclusive": 0.6,
+              "count": 0,
+              "avgPrediction": null,
+              "observedGoalRate": null
+            },
+            {
+              "binIndex": 6,
+              "lowerBoundInclusive": 0.6,
+              "upperBoundExclusive": 0.7,
+              "count": 0,
+              "avgPrediction": null,
+              "observedGoalRate": null
+            },
+            {
+              "binIndex": 7,
+              "lowerBoundInclusive": 0.7,
+              "upperBoundExclusive": 0.8,
+              "count": 0,
+              "avgPrediction": null,
+              "observedGoalRate": null
+            },
+            {
+              "binIndex": 8,
+              "lowerBoundInclusive": 0.8,
+              "upperBoundExclusive": 0.9,
+              "count": 0,
+              "avgPrediction": null,
+              "observedGoalRate": null
+            },
+            {
+              "binIndex": 9,
+              "lowerBoundInclusive": 0.9,
+              "upperBoundExclusive": 1.000001,
+              "count": 19,
+              "avgPrediction": 1,
+              "observedGoalRate": 0.052632
+            }
+          ]
+        }
+      },
+      {
+        "sliceName": "strengthState",
+        "sliceValue": "SH",
+        "evaluation": {
+          "exampleCount": 5,
+          "goalCount": 0,
+          "goalRate": 0,
+          "averagePrediction": 0.6,
+          "logLoss": 12.43396,
+          "brierScore": 0.6,
+          "calibrationBins": [
+            {
+              "binIndex": 0,
+              "lowerBoundInclusive": 0,
+              "upperBoundExclusive": 0.1,
+              "count": 2,
+              "avgPrediction": 0,
+              "observedGoalRate": 0
+            },
+            {
+              "binIndex": 1,
+              "lowerBoundInclusive": 0.1,
+              "upperBoundExclusive": 0.2,
+              "count": 0,
+              "avgPrediction": null,
+              "observedGoalRate": null
+            },
+            {
+              "binIndex": 2,
+              "lowerBoundInclusive": 0.2,
+              "upperBoundExclusive": 0.3,
+              "count": 0,
+              "avgPrediction": null,
+              "observedGoalRate": null
+            },
+            {
+              "binIndex": 3,
+              "lowerBoundInclusive": 0.3,
+              "upperBoundExclusive": 0.4,
+              "count": 0,
+              "avgPrediction": null,
+              "observedGoalRate": null
+            },
+            {
+              "binIndex": 4,
+              "lowerBoundInclusive": 0.4,
+              "upperBoundExclusive": 0.5,
+              "count": 0,
+              "avgPrediction": null,
+              "observedGoalRate": null
+            },
+            {
+              "binIndex": 5,
+              "lowerBoundInclusive": 0.5,
+              "upperBoundExclusive": 0.6,
+              "count": 0,
+              "avgPrediction": null,
+              "observedGoalRate": null
+            },
+            {
+              "binIndex": 6,
+              "lowerBoundInclusive": 0.6,
+              "upperBoundExclusive": 0.7,
+              "count": 0,
+              "avgPrediction": null,
+              "observedGoalRate": null
+            },
+            {
+              "binIndex": 7,
+              "lowerBoundInclusive": 0.7,
+              "upperBoundExclusive": 0.8,
+              "count": 0,
+              "avgPrediction": null,
+              "observedGoalRate": null
+            },
+            {
+              "binIndex": 8,
+              "lowerBoundInclusive": 0.8,
+              "upperBoundExclusive": 0.9,
+              "count": 0,
+              "avgPrediction": null,
+              "observedGoalRate": null
+            },
+            {
+              "binIndex": 9,
+              "lowerBoundInclusive": 0.9,
+              "upperBoundExclusive": 1.000001,
+              "count": 3,
+              "avgPrediction": 1,
+              "observedGoalRate": 0
+            }
+          ]
+        }
+      }
+    ],
+    "rebound": [
+      {
+        "sliceName": "rebound",
+        "sliceValue": "non-rebound",
+        "evaluation": {
+          "exampleCount": 88,
+          "goalCount": 5,
+          "goalRate": 0.056818,
+          "averagePrediction": 0.852273,
+          "logLoss": 16.340443,
+          "brierScore": 0.795454,
+          "calibrationBins": [
+            {
+              "binIndex": 0,
+              "lowerBoundInclusive": 0,
+              "upperBoundExclusive": 0.1,
+              "count": 13,
+              "avgPrediction": 0,
+              "observedGoalRate": 0
+            },
+            {
+              "binIndex": 1,
+              "lowerBoundInclusive": 0.1,
+              "upperBoundExclusive": 0.2,
+              "count": 0,
+              "avgPrediction": null,
+              "observedGoalRate": null
+            },
+            {
+              "binIndex": 2,
+              "lowerBoundInclusive": 0.2,
+              "upperBoundExclusive": 0.3,
+              "count": 0,
+              "avgPrediction": null,
+              "observedGoalRate": null
+            },
+            {
+              "binIndex": 3,
+              "lowerBoundInclusive": 0.3,
+              "upperBoundExclusive": 0.4,
+              "count": 0,
+              "avgPrediction": null,
+              "observedGoalRate": null
+            },
+            {
+              "binIndex": 4,
+              "lowerBoundInclusive": 0.4,
+              "upperBoundExclusive": 0.5,
+              "count": 0,
+              "avgPrediction": null,
+              "observedGoalRate": null
+            },
+            {
+              "binIndex": 5,
+              "lowerBoundInclusive": 0.5,
+              "upperBoundExclusive": 0.6,
+              "count": 0,
+              "avgPrediction": null,
+              "observedGoalRate": null
+            },
+            {
+              "binIndex": 6,
+              "lowerBoundInclusive": 0.6,
+              "upperBoundExclusive": 0.7,
+              "count": 0,
+              "avgPrediction": null,
+              "observedGoalRate": null
+            },
+            {
+              "binIndex": 7,
+              "lowerBoundInclusive": 0.7,
+              "upperBoundExclusive": 0.8,
+              "count": 0,
+              "avgPrediction": null,
+              "observedGoalRate": null
+            },
+            {
+              "binIndex": 8,
+              "lowerBoundInclusive": 0.8,
+              "upperBoundExclusive": 0.9,
+              "count": 0,
+              "avgPrediction": null,
+              "observedGoalRate": null
+            },
+            {
+              "binIndex": 9,
+              "lowerBoundInclusive": 0.9,
+              "upperBoundExclusive": 1.000001,
+              "count": 75,
+              "avgPrediction": 1,
+              "observedGoalRate": 0.066667
+            }
+          ]
+        }
+      }
+    ],
+    "rush": [
+      {
+        "sliceName": "rush",
+        "sliceValue": "non-rush",
+        "evaluation": {
+          "exampleCount": 88,
+          "goalCount": 5,
+          "goalRate": 0.056818,
+          "averagePrediction": 0.852273,
+          "logLoss": 16.340443,
+          "brierScore": 0.795454,
+          "calibrationBins": [
+            {
+              "binIndex": 0,
+              "lowerBoundInclusive": 0,
+              "upperBoundExclusive": 0.1,
+              "count": 13,
+              "avgPrediction": 0,
+              "observedGoalRate": 0
+            },
+            {
+              "binIndex": 1,
+              "lowerBoundInclusive": 0.1,
+              "upperBoundExclusive": 0.2,
+              "count": 0,
+              "avgPrediction": null,
+              "observedGoalRate": null
+            },
+            {
+              "binIndex": 2,
+              "lowerBoundInclusive": 0.2,
+              "upperBoundExclusive": 0.3,
+              "count": 0,
+              "avgPrediction": null,
+              "observedGoalRate": null
+            },
+            {
+              "binIndex": 3,
+              "lowerBoundInclusive": 0.3,
+              "upperBoundExclusive": 0.4,
+              "count": 0,
+              "avgPrediction": null,
+              "observedGoalRate": null
+            },
+            {
+              "binIndex": 4,
+              "lowerBoundInclusive": 0.4,
+              "upperBoundExclusive": 0.5,
+              "count": 0,
+              "avgPrediction": null,
+              "observedGoalRate": null
+            },
+            {
+              "binIndex": 5,
+              "lowerBoundInclusive": 0.5,
+              "upperBoundExclusive": 0.6,
+              "count": 0,
+              "avgPrediction": null,
+              "observedGoalRate": null
+            },
+            {
+              "binIndex": 6,
+              "lowerBoundInclusive": 0.6,
+              "upperBoundExclusive": 0.7,
+              "count": 0,
+              "avgPrediction": null,
+              "observedGoalRate": null
+            },
+            {
+              "binIndex": 7,
+              "lowerBoundInclusive": 0.7,
+              "upperBoundExclusive": 0.8,
+              "count": 0,
+              "avgPrediction": null,
+              "observedGoalRate": null
+            },
+            {
+              "binIndex": 8,
+              "lowerBoundInclusive": 0.8,
+              "upperBoundExclusive": 0.9,
+              "count": 0,
+              "avgPrediction": null,
+              "observedGoalRate": null
+            },
+            {
+              "binIndex": 9,
+              "lowerBoundInclusive": 0.9,
+              "upperBoundExclusive": 1.000001,
+              "count": 75,
+              "avgPrediction": 1,
+              "observedGoalRate": 0.066667
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "holdoutScores": [
+    {
+      "rowId": "2025021018:64",
+      "split": "validation",
+      "label": 0,
+      "prediction": 1e-9,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:251",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:65",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:75",
+      "split": "validation",
+      "label": 0,
+      "prediction": 1e-9,
+      "strengthState": "SH",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:77",
+      "split": "validation",
+      "label": 0,
+      "prediction": 1e-9,
+      "strengthState": "SH",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:80",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "PP",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:102",
+      "split": "validation",
+      "label": 0,
+      "prediction": 1e-9,
+      "strengthState": "PP",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:91",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "PP",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:97",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "PP",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:168",
+      "split": "validation",
+      "label": 0,
+      "prediction": 1.1012521969500492e-9,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:182",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:200",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:205",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:252",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:206",
+      "split": "validation",
+      "label": 1,
+      "prediction": 0.999999999,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:211",
+      "split": "validation",
+      "label": 0,
+      "prediction": 5.02374327273258e-7,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:216",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:241",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:243",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:244",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:303",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:103",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:306",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:313",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:315",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:326",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:333",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:352",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "PP",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:353",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "PP",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:357",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "PP",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:359",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "PP",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:381",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:382",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:390",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:393",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:402",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:411",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:414",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:416",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:427",
+      "split": "validation",
+      "label": 1,
+      "prediction": 0.999999999,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:503",
+      "split": "validation",
+      "label": 0,
+      "prediction": 6.771191839682049e-7,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:509",
+      "split": "validation",
+      "label": 0,
+      "prediction": 1e-9,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:512",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:514",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:519",
+      "split": "validation",
+      "label": 0,
+      "prediction": 1e-9,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:522",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.9999999517578065,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:547",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "PP",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:566",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:568",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:580",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:104",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:604",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "PP",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:253",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "PP",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:609",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "SH",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:105",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "SH",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:614",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "PP",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:617",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "PP",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:626",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:633",
+      "split": "validation",
+      "label": 0,
+      "prediction": 1e-9,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:648",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "SH",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:649",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "PP",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:652",
+      "split": "validation",
+      "label": 1,
+      "prediction": 0.999999999,
+      "strengthState": "PP",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:107",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:669",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:687",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "PP",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:689",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "PP",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:690",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "PP",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:692",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "PP",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:709",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "PP",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:728",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:736",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:749",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:254",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:757",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:759",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:764",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:802",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:777",
+      "split": "validation",
+      "label": 0,
+      "prediction": 1e-9,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:784",
+      "split": "validation",
+      "label": 0,
+      "prediction": 1e-9,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:255",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:109",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:799",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:855",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:110",
+      "split": "validation",
+      "label": 1,
+      "prediction": 0.999999999,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:862",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.9999934096091577,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:873",
+      "split": "validation",
+      "label": 1,
+      "prediction": 0.999999999,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:880",
+      "split": "validation",
+      "label": 0,
+      "prediction": 0.999999999,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    },
+    {
+      "rowId": "2025021018:893",
+      "split": "validation",
+      "label": 0,
+      "prediction": 1e-9,
+      "strengthState": "EV",
+      "isReboundShot": false,
+      "isRushShot": false
+    }
+  ],
+  "calibrationAssessment": {
+    "requiresPostCalibration": true,
+    "requirementReason": "Average prediction differs from observed goal rate by 0.795455.",
+    "validationStrategy": "cross_validated_holdout",
+    "holdoutExampleCount": 88,
+    "holdoutPositiveCount": 5,
+    "reboundPositiveCount": 0,
+    "rushPositiveCount": 0,
+    "trustWarnings": [
+      "No dedicated test split is available; calibration comparison is holdout cross-validation only.",
+      "Holdout positive-goal coverage is sparse, so calibration comparisons are unstable.",
+      "Positive rebound holdout coverage is absent, so rebound-slice calibration is not approval-grade.",
+      "Positive rush holdout coverage is absent, so rush-slice calibration is not approval-grade."
+    ],
+    "adoptabilityBlockingReasons": [
+      "No dedicated test split is available; calibration cannot be treated as adoptable.",
+      "Holdout positive-goal coverage is below the adoptability minimum of 10.",
+      "Positive rebound holdout coverage is below the adoptability minimum of 1.",
+      "Positive rush holdout coverage is below the adoptability minimum of 1."
+    ],
+    "methods": [
+      {
+        "method": "raw",
+        "applicable": true,
+        "metrics": {
+          "exampleCount": 88,
+          "goalCount": 5,
+          "goalRate": 0.056818,
+          "averagePrediction": 0.852273,
+          "logLoss": 16.340443,
+          "brierScore": 0.795454
+        }
+      },
+      {
+        "method": "platt",
+        "applicable": true,
+        "metrics": {
+          "exampleCount": 88,
+          "goalCount": 5,
+          "goalRate": 0.056818,
+          "averagePrediction": 0.091175,
+          "logLoss": 0.229644,
+          "brierScore": 0.055434
+        }
+      },
+      {
+        "method": "isotonic",
+        "applicable": true,
+        "metrics": {
+          "exampleCount": 88,
+          "goalCount": 5,
+          "goalRate": 0.056818,
+          "averagePrediction": 0,
+          "logLoss": 1.177458,
+          "brierScore": 0.056818
+        }
+      }
+    ],
+    "bestObservedMethod": "platt",
+    "adoptableMethod": null
+  },
+  "approvalGradeEligibility": {
+    "isEligible": false,
+    "blockingReasons": [
+      "Dedicated test split is empty; approval-grade benchmark artifacts require at least one test example."
+    ]
+  },
+  "model": {
+    "featureCount": 66,
+    "weights": [
+      12.299794818391009,
+      -0.7164961468657859,
+      -19.752796113584154,
+      -7.291587706322387,
+      0.8346099820317134,
+      1.125705980805117,
+      0,
+      0,
+      0.22306647303895774,
+      0,
+      -35.9262499652143,
+      7.585905958468784,
+      -3.037412844094468,
+      0.18128588691556452,
+      0,
+      0,
+      0,
+      -0.19478990812311972,
+      0,
+      -0.07202821954626884,
+      0.3574450162612396,
+      0.2758385405193213,
+      -0.08502227154660749,
+      0,
+      0,
+      -0.0003695921359980131,
+      -0.09030519587427814,
+      -0.02864131280046126,
+      -0.04785608697214269,
+      -0.22613807246172668,
+      -0.09391125782353903,
+      -0.03011904763958691,
+      0.3699218245234109,
+      -0.19478990812311972,
+      -0.6233875744777135,
+      0.5883057592592152,
+      0.21736468877287013,
+      0,
+      -0.006068520387609387,
+      -0.08129076826042209,
+      0.7430332371548398,
+      0.06870573126485956,
+      -0.5420968062172908,
+      -0.1285570714676174,
+      -0.0662328366555003,
+      -0.0065476190476190495,
+      -0.011136233445175472,
+      0.005176817924046631,
+      0.11446171908772532,
+      -0.047248661335556746,
+      -0.35617462940768324,
+      -0.1899377135251034,
+      0.3019431482435386,
+      -0.19977094574963367,
+      0.2560950977724887,
+      0.10812495034547012,
+      -0.16865896786800005,
+      -0.01901456765442242,
+      -0.1262606472431484,
+      -0.07202821954626884,
+      -0.7133917679302173,
+      -0.2657586741049138,
+      0.05418952556974249,
+      0.03322049321863617,
+      0.055260954141171076,
+      -0.2657586741049138
+    ],
+    "bias": -0.012507034568748184
+  }
+}

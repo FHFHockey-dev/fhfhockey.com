@@ -22,6 +22,23 @@ import {
   FinalRating
 } from "../../../../lib/power-ratings";
 
+function parseBooleanFlag(value: unknown): boolean {
+  if (typeof value !== "string") return false;
+  const normalized = value.trim().toLowerCase();
+  return normalized === "1" || normalized === "true" || normalized === "yes";
+}
+
+function getRequestFlag(
+  req: NextApiRequest,
+  key: string
+): boolean {
+  if (req.method === "GET") {
+    const raw = req.query[key];
+    return parseBooleanFlag(Array.isArray(raw) ? raw[0] : raw);
+  }
+  return parseBooleanFlag(req.body?.[key]);
+}
+
 async function handler(
   req: NextApiRequest,
   res: NextApiResponse
@@ -34,6 +51,7 @@ async function handler(
   const targetDateParam =
     (req.method === "GET" ? (req.query.date as string) : req.body?.date) ||
     new Date().toISOString().slice(0, 10);
+  const smokeTestMode = getRequestFlag(req, "smokeTest");
 
   try {
     // Check if table is empty to decide if we need to backfill
@@ -42,15 +60,25 @@ async function handler(
       .select("*", { count: "exact", head: true });
 
     let startDateStr = targetDateParam;
-    if (count === 0) {
+    const tableWasEmpty = count === 0;
+    const autoBackfillApplied = tableWasEmpty && !smokeTestMode;
+    if (autoBackfillApplied) {
       console.log("Table is empty. Fetching season start date...");
       const season = await fetchCurrentSeason();
       startDateStr = season.startDate;
       console.log(`Backfilling from season start: ${startDateStr}`);
+    } else if (tableWasEmpty && smokeTestMode) {
+      console.log(
+        `Smoke-test mode enabled; skipping empty-table backfill and probing only ${targetDateParam}.`
+      );
     }
 
     const startDate = new Date(startDateStr);
     const endDate = new Date(targetDateParam);
+    const executionWindowDays =
+      Math.floor(
+        (endDate.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000)
+      ) + 1;
     let processedCount = 0;
     let totalUpserts = 0;
 
@@ -284,7 +312,21 @@ async function handler(
       startDate: startDateStr,
       endDate: targetDateParam,
       processedDays: processedCount,
-      totalUpserts
+      totalUpserts,
+      executionScope: {
+        requestedDate: targetDateParam,
+        startDate: startDateStr,
+        endDate: targetDateParam,
+        windowDays: executionWindowDays,
+        tableWasEmpty,
+        smokeTestMode,
+        autoBackfillApplied,
+        smokeTestComparable: executionWindowDays === 1,
+        smokeTestGuidance:
+          executionWindowDays === 1
+            ? null
+            : "This run expanded beyond a one-day smoke test. Pass smokeTest=true with a target date to force a bounded one-day operational probe when the table is empty."
+      }
     });
   } catch (err: any) {
     console.error(err);

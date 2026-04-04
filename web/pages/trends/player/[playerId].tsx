@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -15,6 +16,12 @@ import {
   getCompatibilityFieldOrder,
   type RollingMetricCompatibilityFamily
 } from "lib/rollingPlayerMetricCompatibility";
+import {
+  buildForgeHref,
+  parseForgeDateParam,
+  parseForgeOriginParam,
+  parseForgeReturnToParam
+} from "lib/dashboard/forgeLinks";
 import supabase from "lib/supabase";
 import styles from "./playerTrendPage.module.scss";
 
@@ -399,9 +406,28 @@ function buildSelectClause() {
 
 const SELECT_CLAUSE = buildSelectClause();
 
+function getTodayEt(): string {
+  const now = new Date();
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(now);
+
+  const y = parts.find((part) => part.type === "year")?.value ?? "1970";
+  const m = parts.find((part) => part.type === "month")?.value ?? "01";
+  const d = parts.find((part) => part.type === "day")?.value ?? "01";
+  return `${y}-${m}-${d}`;
+}
+
 export default function PlayerTrendPage() {
   const router = useRouter();
   const { playerId } = router.query;
+  const todayEt = useMemo(() => getTodayEt(), []);
+  const handoffDate = parseForgeDateParam(router.query.date, todayEt);
+  const forgeOrigin = parseForgeOriginParam(router.query.origin);
+  const forgeReturnTo = parseForgeReturnToParam(router.query.returnTo);
 
   const [playerName, setPlayerName] = useState<string>("");
   const [data, setData] = useState<RollingMetricRow[]>([]);
@@ -582,18 +608,42 @@ export default function PlayerTrendPage() {
   };
 
   const activeGroupMeta = METRIC_GROUPS.find((group) => group.id === activeGroup);
+  const handoffContext = useMemo(() => {
+    if (forgeOrigin === "forge-dashboard") {
+      return {
+        backHref:
+          forgeReturnTo ?? buildForgeHref("/forge/dashboard", { date: handoffDate }),
+        backLabel: "Back to FORGE Dashboard",
+        badge: "FORGE Dashboard Handoff",
+        detail: `Context date ${handoffDate} preserved for dashboard return.`
+      };
+    }
+
+    if (forgeOrigin === "forge-player-detail") {
+      return {
+        backHref:
+          forgeReturnTo ?? buildForgeHref("/forge/dashboard", { date: handoffDate }),
+        backLabel: "Back to FORGE Player Detail",
+        badge: "FORGE Player Handoff",
+        detail: `Context date ${handoffDate} preserved for player-detail return.`
+      };
+    }
+
+    return {
+      backHref: "/trends",
+      backLabel: "Back to Trends",
+      badge: null,
+      detail: null
+    };
+  }, [forgeOrigin, forgeReturnTo, handoffDate]);
 
   return (
     <div className={styles.container}>
       <div className={styles.inner}>
-        <button
-          type="button"
-          onClick={() => router.push("/trends")}
-          className={styles.backButton}
-        >
+        <Link href={handoffContext.backHref} className={styles.backButton}>
           <span aria-hidden>←</span>
-          Back to Trends
-        </button>
+          {handoffContext.backLabel}
+        </Link>
 
         <header className={styles.headerCard}>
           <div>
@@ -605,6 +655,12 @@ export default function PlayerTrendPage() {
               metrics. Switch the recent window and baseline to inspect how a
               player is moving against different historical anchors.
             </p>
+            {handoffContext.badge ? (
+              <div className={styles.handoffMeta}>
+                <span className={styles.handoffBadge}>{handoffContext.badge}</span>
+                <p className={styles.handoffCopy}>{handoffContext.detail}</p>
+              </div>
+            ) : null}
           </div>
           <div className={styles.datasetBadge}>
             <p className={styles.datasetLabel}>Dataset health</p>

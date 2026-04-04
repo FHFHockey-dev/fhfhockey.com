@@ -1,6 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { z } from "zod";
 
+import { buildEndpointScanSummary } from "lib/api/scanSummary";
+import { buildResolvedDataServingContract } from "lib/dashboard/freshness";
+import { buildGoalieReaderCompatibility } from "lib/projections/compatibilityInventory";
 import supabase from "lib/supabase/server";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
 import {
@@ -466,6 +469,42 @@ export default async function handler(
         `Normalized likely-starter win probabilities across ${normalizationResult.adjustedMatchups} matchup(s) to total 100%.`
       );
     }
+    const serving = buildResolvedDataServingContract({
+      requestedDate,
+      resolvedDate,
+      fallbackApplied,
+      strategy: fallbackApplied
+        ? "latest_available_with_data"
+        : "requested_date",
+      requestedScheduledGames: requestedScheduledGamesCount,
+      resolvedScheduledGames: scheduledGamesCount,
+      sourceLabel: "Goalie projections"
+    });
+    const scanSummary = buildEndpointScanSummary({
+      surface: "forge_goalies_reader",
+      requestedDate,
+      activeDataDate: resolvedDate,
+      fallbackApplied,
+      status:
+        rows.length > 0
+          ? serving.severity === "error"
+            ? "partial"
+            : "ready"
+          : "empty",
+      rowCounts: {
+        returned: rows.length,
+        requested: requestedRowCount,
+        scheduledGamesOnDate: scheduledGamesCount
+      },
+      blockingIssueCount: serving.severity === "error" ? 1 : 0,
+      notes: [
+        serving.message,
+        fallbackApplied
+          ? `Serving fallback goalie projections from ${resolvedDate}.`
+          : null,
+        ...notes
+      ]
+    });
 
     return res.status(200).json({
       durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
@@ -479,6 +518,9 @@ export default async function handler(
       requestedDate,
       fallbackApplied,
       fallbackToLatestWithData: q.fallbackToLatestWithData,
+      serving,
+      scanSummary,
+      compatibilityInventory: buildGoalieReaderCompatibility(),
       diagnostics: {
         requested: {
           date: requestedDate,

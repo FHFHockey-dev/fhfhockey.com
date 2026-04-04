@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
+import { buildForgeHref } from "lib/dashboard/forgeLinks";
 import styles from "styles/ForgeDashboard.module.scss";
 import type {
   NormalizedCtpiTeamRow,
@@ -97,6 +98,9 @@ export default function TeamPowerCard({
   const [rows, setRows] = useState<NormalizedTeamRatingRow[]>([]);
   const [ctpiRows, setCtpiRows] = useState<NormalizedCtpiTeamRow[]>([]);
   const [slateGames, setSlateGames] = useState<NormalizedStartChartGameRow[]>([]);
+  const [ctpiGeneratedAt, setCtpiGeneratedAt] = useState<string | null>(null);
+  const [slateDateUsed, setSlateDateUsed] = useState<string | null>(null);
+  const [slateServingMessage, setSlateServingMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [secondaryWarnings, setSecondaryWarnings] = useState<string[]>([]);
@@ -106,6 +110,7 @@ export default function TeamPowerCard({
     setLoading(true);
     setError(null);
     setSecondaryWarnings([]);
+    setSlateServingMessage(null);
 
     Promise.allSettled([
       fetchCachedJson<unknown>(
@@ -130,6 +135,8 @@ export default function TeamPowerCard({
           setRows([]);
           setCtpiRows([]);
           setSlateGames([]);
+          setCtpiGeneratedAt(null);
+          setSlateDateUsed(null);
           return;
         }
 
@@ -138,16 +145,24 @@ export default function TeamPowerCard({
         const warnings: string[] = [];
 
         if (ctpiResult.status === "fulfilled") {
-          setCtpiRows(normalizeCtpiResponse(ctpiResult.value).teams);
+          const normalizedCtpi = normalizeCtpiResponse(ctpiResult.value);
+          setCtpiRows(normalizedCtpi.teams);
+          setCtpiGeneratedAt(normalizedCtpi.generatedAt);
         } else {
           setCtpiRows([]);
+          setCtpiGeneratedAt(null);
           warnings.push("CTPI pulse unavailable");
         }
 
         if (startChartResult.status === "fulfilled") {
-          setSlateGames(normalizeStartChartResponse(startChartResult.value).games);
+          const normalizedStartChart = normalizeStartChartResponse(startChartResult.value);
+          setSlateGames(normalizedStartChart.games);
+          setSlateDateUsed(normalizedStartChart.dateUsed);
+          setSlateServingMessage(normalizedStartChart.serving?.message ?? null);
         } else {
           setSlateGames([]);
+          setSlateDateUsed(null);
+          setSlateServingMessage(null);
           warnings.push("Slate matchup context unavailable");
         }
 
@@ -163,6 +178,9 @@ export default function TeamPowerCard({
         setRows([]);
         setCtpiRows([]);
         setSlateGames([]);
+        setCtpiGeneratedAt(null);
+        setSlateDateUsed(null);
+        setSlateServingMessage(null);
       })
       .finally(() => {
         if (!active) return;
@@ -216,6 +234,7 @@ export default function TeamPowerCard({
     [rankedRows]
   );
   const resolvedDate = rows[0]?.date ?? null;
+  const ctpiDate = ctpiGeneratedAt?.slice(0, 10) ?? null;
   const isStale = Boolean(resolvedDate && resolvedDate !== date);
   const metaDate = resolvedDate ?? date;
 
@@ -228,25 +247,48 @@ export default function TeamPowerCard({
       loading,
       error,
       staleMessage:
-        !loading && !error && isStale && resolvedDate
-          ? `Team context using ${resolvedDate}`
+        !loading && !error
+          ? [
+              isStale && resolvedDate ? `Team ratings using ${resolvedDate}` : null,
+              ctpiDate && ctpiDate !== date ? `CTPI pulse from ${ctpiDate}` : null,
+              slateServingMessage ??
+                (slateDateUsed && slateDateUsed !== date
+                  ? `Slate matchup context from ${slateDateUsed}`
+                  : null),
+              secondaryWarnings.length > 0 ? secondaryWarnings.join(" • ") : null
+            ]
+              .filter(Boolean)
+              .join(" • ") || null
           : null,
       empty: !loading && !error && rankedRows.length === 0
     });
-  }, [error, isStale, loading, onStatusChange, rankedRows.length, resolvedDate]);
+  }, [
+    ctpiDate,
+    error,
+    isStale,
+    loading,
+    onStatusChange,
+    rankedRows.length,
+    resolvedDate,
+    secondaryWarnings,
+    slateServingMessage,
+    slateDateUsed
+  ]);
 
   return (
-    <article className={styles.teamPowerCard} aria-label="Team power rankings">
+    <article className={styles.teamPowerCard} aria-label="Team rating blend rankings">
       <header className={styles.panelHeader}>
-        <h3 className={styles.panelTitle}>Team Power Rankings</h3>
-        <span className={styles.panelMeta}>Snapshot {metaDate}</span>
+        <h3 className={styles.panelTitle}>Team Rating Blend</h3>
+        <span className={styles.panelMeta}>
+          Ratings {metaDate} • CTPI {ctpiDate ?? "--"} • Slate {slateDateUsed ?? date}
+        </span>
       </header>
 
-      {loading && <p className={styles.panelState}>Loading team power...</p>}
+      {loading && <p className={styles.panelState}>Loading team rating blend...</p>}
       {!loading && error && <p className={styles.panelState}>Error: {error}</p>}
 
       {!loading && !error && rankedRows.length === 0 && (
-        <p className={styles.panelState}>No team power data for this date.</p>
+        <p className={styles.panelState}>No team rating-blend data for this date.</p>
       )}
 
       {!loading && !error && rankedRows.length > 0 && (
@@ -261,9 +303,19 @@ export default function TeamPowerCard({
               Trend feed is currently flat in the source snapshot; all teams are reporting 0.0.
             </p>
           )}
-          {secondaryWarnings.length > 0 && (
+          {(secondaryWarnings.length > 0 ||
+            (ctpiDate != null && ctpiDate !== date) ||
+            (slateDateUsed != null && slateDateUsed !== date)) && (
             <p className={`${styles.panelState} ${styles.panelStateStale}`}>
-              {secondaryWarnings.join(" • ")}
+              {[
+                ctpiDate && ctpiDate !== date ? `CTPI pulse from ${ctpiDate}` : null,
+                slateDateUsed && slateDateUsed !== date
+                  ? `Slate matchup context from ${slateDateUsed}`
+                  : null,
+                ...secondaryWarnings
+              ]
+                .filter(Boolean)
+                .join(" • ")}
             </p>
           )}
           {team === "all" && rankedRows.length > 16 && (
@@ -316,7 +368,10 @@ export default function TeamPowerCard({
                 return (
                   <Link
                     key={`spotlight-${row.teamAbbr}`}
-                    href={`/forge/team/${row.teamAbbr}`}
+                    href={buildForgeHref(`/forge/team/${row.teamAbbr}`, {
+                      date,
+                      resolvedDate
+                    })}
                     className={styles.teamContextSpotlightCard}
                   >
                     <div className={styles.teamContextSpotlightHeader}>
@@ -336,7 +391,7 @@ export default function TeamPowerCard({
                       </span>
                     </div>
                     <div className={styles.teamContextSpotlightStats}>
-                      <span>Power {formatPower(row.powerScore)}</span>
+                      <span>Blend {formatPower(row.powerScore)}</span>
                       <span>CTPI {formatCtpi(row.ctpiScore)}</span>
                       <span>
                         Matchup{" "}
@@ -382,7 +437,7 @@ export default function TeamPowerCard({
                 <tr>
                   <th scope="col">#</th>
                   <th scope="col">Team</th>
-                  <th scope="col">Power</th>
+                  <th scope="col">Blend</th>
                   <th scope="col">CTPI</th>
                   <th scope="col">Matchup</th>
                   <th scope="col">Off</th>
@@ -408,7 +463,10 @@ export default function TeamPowerCard({
                       <td>{row.overallRank}</td>
                       <td title={getTeamLabel(row.teamAbbr)}>
                         <Link
-                          href={`/forge/team/${row.teamAbbr}`}
+                          href={buildForgeHref(`/forge/team/${row.teamAbbr}`, {
+                            date,
+                            resolvedDate
+                          })}
                           className={styles.teamTableLink}
                         >
                           {row.teamAbbr}

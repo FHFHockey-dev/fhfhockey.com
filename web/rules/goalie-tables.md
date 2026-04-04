@@ -535,6 +535,12 @@ VIEW vw_goalie_stats_unified
 ```
 
 ```sql
+Pass-3 ownership decision:
+- Keep `goalie_start_projections` as the intentional shared goalie-prior table for now.
+- Canonical writer: `/api/v1/db/update-goalie-projections-v2`.
+- Shared readers: `/api/v1/forge/goalies`, `/api/v1/start-chart`, and `web/lib/projections/run-forge-projections.ts`.
+- Rename or wrap under clearer FORGE ownership only in a later pass once those shared readers can migrate together.
+
 create table public.goalie_start_projections (
   game_id integer not null,
   team_id integer not null,
@@ -573,4 +579,3 @@ MATERIALIZED VIEW goalie_stats_unified
   }
 ]
 ```
-

@@ -77,6 +77,72 @@
 
 ---
 
+## Canonical Element Family Summary
+
+This summary maps each reusable UI family to the current best reference implementation and flags the main style conflicts discovered during the audit.
+
+| Element Family | Current Best Reference | Why It Is The Best Reference | Main Conflicts / Caveats |
+| --- | --- | --- | --- |
+| Dashboard page shell | `DraftDashboard.module.scss` (`dashboardContainer`, `mainContent`, `leftPanel`, `centerPanel`, `rightPanel`) | Defines the clearest utility-first page shell, three-panel workspace, and emphasized focal column. | Center panel relies on stronger gradient/glow treatment that should become optional, not default. |
+| Full-width control plane | `DraftSettings.module.scss` (`settingsContainer`, `settingsHeader`, `headerActions`, `settingsGrid`) | Strongest current example of a compact top-level control surface with grouped subsections. | Current container leans glass-heavy; structure should transfer more than the blur/shine treatment. |
+| Panel header + scrollable body | Shared across `DraftDashboard`, `DraftBoard`, `MyRoster`, and `ProjectionsTable` panel headers | Repeated enough to justify a canonical header/body split rule for panels. | Reimplemented multiple times instead of being centralized in one shared primitive. |
+| Segmented toggle rail | `DraftSettings.module.scss` (`draftTypeToggle`, `toggleButton.active`) | Clearest current segmented-control pattern in the app. | Variants in other modules should be collapsed into this shared rule family. |
+| Compact dashboard action buttons | `DraftSettings.module.scss` (`summaryButton`, `actionButton`, `inlineResetBtn`) | Best reference for small dashboard-primary and utility actions. | Too many local button variants exist; needs consolidation into a smaller canonical family. |
+| Tiny icon / utility button | `DraftSettings.module.scss` (`collapseButton`) | Best current reference for small icon-only control treatment. | Still one-off; should become a documented icon-button variant. |
+| Select / dropdown control | `DraftSettings.module.scss` (`select`) | Cleanest default dark select styling with compact sizing and accent focus state. | Similar but duplicated select styling exists in `SuggestedPicks` and `ProjectionsTable`. |
+| Number input + stepper | `DraftSettings.module.scss` (`numberInput`, `rosterStepper`, `stepButton`) | Strongest current compact stepper/input pattern. | Accent-heavy top/bottom border treatment may need softening for broader site use. |
+| Dense analytics table | `ProjectionsTable.module.scss` (`tableContainer`, `playersTable`, sticky `thead`, `sortableHeader`) | Heaviest and clearest full-table reference for filters, sticky headers, sorting, and action columns. | Contains duplicated/conflicting style declarations that need cleanup before canonical rollout. |
+| Compact standings / leaderboard table | `DraftBoard.module.scss` (`leaderboardSection`, `leaderboardTable`, `sortableHeader`, `currentTeamRow`) | Best reference for compressed leaderboard-style tables and highlighted current rows. | Strong current-turn gradients/animations should be optional, not default. |
+| Matrix / cell-state grid | `DraftBoard.module.scss` (`roundCell`, `pickCell`, `currentPick`, `draftedPick`) | Best reference for stateful compact cells in a matrix-like layout. | Some current-state animation and gradient intensity should be toned down in the canonical rules. |
+| Current row / selected row emphasis | `DraftBoard.module.scss` (`currentTeamRow`) | Best example of left-accent border plus restrained tint for active row emphasis. | Similar row highlighting should be standardized across all tables. |
+| Progress module | `MyRoster.module.scss` (`rosterProgress`, `progressBar`, `progressFill`) | Strongest compact progress block pattern inside a work panel. | Gradient fill is heavier than necessary for a default system token. |
+| Micro summary cards | `MyRoster.module.scss` (`teamSummary`, `summaryCard`) | Best current supporting-metric card pattern that does not overpower the main content. | Nested `.summaryValue` rules include confusing table-related styles that likely need cleanup. |
+| Search-and-act block | `MyRoster.module.scss` (`draftSection`, `searchInput`, `draftButton`) | Best compact search + primary action grouping. | Button treatment should be harmonized with the broader button system. |
+| Slot / composition cards | `MyRoster.module.scss` (`rosterSlot` and slot-list structure) | Best current reference for stacked structured cards representing roster or inventory slots. | Needs to be abstracted into a more general “slot card” rule in the final style guide. |
+| Recommendation rail | `SuggestedPicks.module.scss` (`cardsRow`) | Best horizontal rail pattern for featured/recommended items. | Card rail should preserve structure while allowing calmer card styling on non-dashboard pages. |
+| Canonical card anatomy | `SuggestedPicks.module.scss` (`card`, `cardSelected`, left accent strip) | Strongest current expression of the FHFH card identity: dark surface, visible border, left flat accent strip, compact metrics, strong hover state. | Heavy gradients, glow, blur, and neon intensity need to become optional tiers, not baseline defaults. |
+| Metric pills / inline tags | `SuggestedPicks.module.scss` (`stat`, `statLabel`, `statValue`, `tag`) | Best reference for compact supporting metrics inside cards. | Similar micro-metric patterns should be centralized as a shared primitive. |
+| Filter toolbar | `ProjectionsTable.module.scss` (`controlsBar`, `searchContainer`, `positionFilter`, `controlToggleBtn`) | Best full-featured filter toolbar with visible primary controls and secondary settings. | Pattern overlaps with `DraftSettings` and `SuggestedPicks`; needs consolidation into one control language. |
+| Run forecast / compact chart-adjacent strip | `ProjectionsTable.module.scss` (`miniRunForecast`, `runForecast`) | Best current compact “micro-visualization in a toolbar” pattern. | Should be documented as an advanced optional pattern rather than a base control. |
+| Modal / dialog shell | `DraftSummaryModal.module.scss`, `ComparePlayersModal.module.scss`, plus accessibility patterns from `ComparePlayersModal.tsx` and `ImportCsvModal.tsx` | Together they show a mature overlay/backdrop/shell/header/close-control/dialog-body system. | Visual intensity varies widely; canonicalization should stop at the shared shell level and not force all modal internals into one template. |
+
+### Consolidation Priorities
+
+1. Centralize repeated panel header/body patterns.
+2. Reduce the number of local button variants into a smaller documented family.
+3. Unify select, toggle, and compact toolbar controls across `DraftSettings`, `SuggestedPicks`, and `ProjectionsTable`.
+4. Preserve the left-accent card pattern while lowering default glow/gradient intensity.
+5. Treat `ProjectionsTable` as the canonical heavy-table reference after cleaning up duplicated/conflicting declarations.
+6. Include modal shell patterns in the style system, but keep specialized modal internals feature-specific.
+
+### Known Conflicts To Resolve Before Final Canonical Rollout
+
+1. `ProjectionsTable.module.scss` contains duplicated/conflicting control, checkbox, and table declarations.
+2. `MyRoster.module.scss` contains oddly nested table-related rules inside `.summaryValue`, which likely indicates dead, misplaced, or confusing styling.
+3. Panel headers are visually similar across modules but are reimplemented locally instead of being driven by a single shared primitive.
+4. Buttons and compact utility controls have drifted into too many local variants.
+5. Multiple modules still depend on stronger gradients, blur, and glow than the new style rules should allow by default.
+
+### Missing Element Types That Still Need Site Examples
+
+These elements are not represented strongly enough in `DraftDashboard` to become final canonical rules without another site example from elsewhere on FHFH:
+
+1. Data-page hero/header systems with eyebrow text, descriptive copy, breadcrumbs, and top-right metadata cards.
+2. Chart-first page layouts with large standalone charts, legends, annotations, chart toolbars, and chart-to-table transitions.
+3. Plain content sections for text-heavy explanatory areas, longform notes, or documentation-style blocks.
+4. Standard dropdown or action-menu popovers that are more advanced than a native `<select>`.
+5. Pagination patterns or “load more” navigation patterns for long tables/lists.
+6. Empty states that are page-level rather than in-panel or in-table.
+7. Inline notices/callouts that live in content flows rather than inside dense dashboard control surfaces.
+8. Any site-specific chart cards or chart-grid layouts that should define the canonical chart-page system beyond the limited forecast strips seen in `DraftDashboard`.
+
+Current recommendation:
+
+- Proceed using `DraftDashboard` as the canonical source for dashboard shells, controls, cards, progress modules, rails, tables, and modal shells.
+- Do not finalize canonical rules for the missing element families above until the owner provides a rendered site example for each one that matters.
+
+---
+
 ## DraftSettings.tsx
 
 - Summary: Settings panel controlling league configuration, roster structure, scoring modes, projection source weighting, CSV import/export triggers, keepers, traded picks, and portable bookmark serialization. Debounced UX for weight editing and normalization, plus optional expansion UIs for adding/removing stats and categories.
@@ -265,6 +331,41 @@ This single document will accumulate file-by-file findings and cross-references 
   - Data refresh button bumps `refreshKey` to re-query projections.
   - CSV export builds a blended projections file from `allPlayers`.
 
+**Style Audit: Root Shell and Layout Hierarchy**
+- Page shell:
+  - `dashboardContainer` establishes the canonical dashboard-page wrapper: full-width, full-height dark canvas, internal padding, vertical stacking, and consistent section gaps.
+  - The shell reads as a tool surface rather than a marketing page. It avoids a hero and moves directly into functional controls.
+- Section order:
+  - The visual hierarchy is `settings` -> `suggested picks rail` -> `three-panel workspace`.
+  - This is a strong reference for other application pages that should feel immediate and utility-first.
+- Top control region:
+  - The settings section is full-width and visually reads as the control plane for the rest of the screen.
+  - It uses an opaque panel treatment, compact padding, and strong border/shadow definition rather than a decorative container.
+- Mid-page recommendation rail:
+  - `suggestedSection` acts as a transitional strip between configuration and heavy workspace content.
+  - This pattern is useful for “secondary but high-value” content that should stay visible without competing with the main work area.
+- Main workspace grid:
+  - `mainContent` is the clearest root layout reference in the dashboard: a three-column 2fr / 1fr / 2fr grid with a deliberately emphasized center column.
+  - The center panel is visually differentiated through a stronger border and glow treatment, which makes it the natural “your team / primary focus” column.
+- Shared panel anatomy:
+  - `leftPanel`, `centerPanel`, and `rightPanel` share the same base shell: dark surface, border, radius, flex-column structure, overflow clipping, and box shadow.
+  - This is the canonical example of how related panels should feel like part of one system before local variations are applied.
+- Highlighted primary panel:
+  - `centerPanel` is the canonical “featured panel” variant: same base anatomy as sibling panels, but with stronger emphasis through border weight, accent color, and elevated treatment.
+  - This should inform future guidance for “primary focus” panels without turning every page into a neon-heavy layout.
+- Header/content split:
+  - `panelHeader` and `panelContent` define a repeatable split used across the dashboard: compact dark title band above a padded scrollable content body.
+  - This is a strong candidate for canonical panel/header rules in the style guide because the pattern recurs across multiple dashboard modules.
+- Spacing:
+  - The root shell uses compact but readable spacing. The layout succeeds because spacing is disciplined and repeated, not because any one surface is oversized.
+  - This is an important contrast with the current `underlying-stats` landing page, which uses looser spacing and more decorative top treatment.
+- Responsive behavior:
+  - On narrower screens, the three-column workspace collapses to a single column and the center panel moves first.
+  - This is a useful canonical responsive rule for priority-based panel stacks: preserve the same surfaces, but reorder by user importance rather than visual symmetry.
+- Style-system implications:
+  - The best transferable rules from this root shell are: utility-first page entry, compact section spacing, strong opaque panel shells, a repeatable header/body split, and one deliberately emphasized focal panel per workspace.
+  - The less-transferable rules are the more decorative parts of the center-panel gradient/glow and the animated shimmer treatment on the summary button; these should be optional accents, not defaults.
+
 **Efficiency Gaps & Recommendations**
 - Repeated lookups by ID:
   - Pattern: `allPlayers.find(p => String(p.playerId) === draftedPlayer.playerId)` inside loops (e.g., building `teamStats`). This is O(n) per lookup and becomes O(n·m) for `m` drafted players per team.
@@ -316,6 +417,81 @@ This single document will accumulate file-by-file findings and cross-references 
 - Drafting, undo, keepers, and traded-pick overrides update `currentTurn`, `teamStats`, and `posNeeds` deterministically.
 - Toggling `forwardGrouping` updates roster config and downstream needs/VORP behavior.
 - Session resume works from Snapshot V2; legacy V1 is clearly deprecated or still functional depending on chosen strategy.
+
+**Style Audit: Draft Settings Control System**
+- Container treatment:
+  - `settingsContainer` is currently more glass-heavy than the root dashboard shell, but its structure is still the clearest reference for a dense control plane.
+  - The best reusable pattern is the compact, full-width control container with grouped subsections, not necessarily the blur/glass effect itself.
+- Header composition:
+  - `settingsHeader` combines the main page title with a right-aligned action/control cluster.
+  - This is a strong reference for pages that need a title plus immediate utility controls in the same band.
+- Action clustering:
+  - `headerActions` demonstrates a useful pattern: related high-priority controls are grouped horizontally and kept close to the title rather than scattered down the page.
+  - The status badges, toggle rail, summary button, and collapse button all read as one compact utility cluster.
+- Segmented toggle rail:
+  - `draftTypeToggle` is the clearest canonical segmented-control pattern in the current site.
+  - The rail uses a dark inset track, compact inner padding, and small-radius pills.
+  - `toggleButton.active` is the canonical active state: semi-opaque accent fill, visible accent border, and stronger text contrast.
+  - Inactive buttons stay quiet and only gain accent treatment on hover.
+- Compact action buttons:
+  - `summaryButton`, `inlineResetBtn`, and `actionButton` together show the current site’s compact dashboard button language: small height, uppercase/accent typography, border-led emphasis, and restrained spacing.
+  - This family is a good starting point for canonical “dashboard compact action” rules, though button variants need to be consolidated in the final guide.
+- Collapse/icon control:
+  - `collapseButton` is a useful reference for tiny utility icon buttons: square footprint, subtle border, dark fill, quiet default state, and accent hover.
+  - This should become a documented icon-button variant rather than staying an ad hoc one-off.
+- Settings grid:
+  - `settingsGrid` and the nested fieldsets demonstrate the best current pattern for multi-group settings pages: responsive auto-fit columns, compact internal spacing, and section-level containment.
+  - This is a strong page archetype for dense forms and configuration surfaces.
+- Settings groups and legends:
+  - The fieldset/legend pattern creates readable subgrouping without needing oversized cards.
+  - This should inform canonical rules for “control groups” and “subsections” in the final style guide.
+- Row anatomy:
+  - `settingRow` uses a simple two-sided label/control alignment that works well for compact administrative settings.
+  - This is a better reference for data-heavy control pages than a full stacked form layout.
+- Selects:
+  - `select` is the clearest base dropdown rule in the dashboard: dark surface, visible border, compact radius, compact padding, and accent focus ring.
+  - This should become the canonical default select treatment across the site.
+- Number inputs and steppers:
+  - `numberInput` plus `rosterStepper` and `stepButton` form the best existing stepper/input pattern.
+  - The current number input is visually distinctive because of top/bottom accent borders rather than a full outline. This may be worth softening for broader site use, but it is still the current best reference for compact stepper-based numeric controls.
+- Density and spacing:
+  - The settings surface succeeds because spacing is intentionally compressed: legends, rows, subgroup titles, and controls all use reduced padding and margin values without becoming unreadable.
+  - This density profile should directly influence the `underlying-stats` restyle, which currently feels looser and less “tool-like.”
+- Style-system implications:
+  - Canonical control rules should borrow the segmented rail, compact fieldset grouping, responsive settings grid, and dark bordered selects directly from this module.
+  - The final style guide should reduce local style sprawl by collapsing the many button and helper variants into a smaller documented family.
+
+**Style Audit: Draft Board Dense Grid and Leaderboard Patterns**
+- Subsection headers:
+  - The compact subheaders used for “Team Standings” and “Draft Graph” are strong references for dense in-panel section headers.
+  - They work because they combine a short accent title with a terse supporting summary instead of a large decorative band.
+- Dense data container:
+  - `leaderboardSection` is a strong canonical reference for an analytics table container: tight padding, dark inset surface, visible divider, and scrollable interior.
+  - This should inform canonical table-section framing across the site.
+- Sticky table header:
+  - `leaderboardTable thead` and its `th` cells are among the clearest current references for sticky analytics headers.
+  - The key transferable traits are compact height, uppercase labeling, strong bottom border, and enough contrast to stay readable while scrolling.
+- Sortable header affordance:
+  - `sortableHeader` and `activeSortHeader` provide a useful baseline for interactive column headers: subtle hover accent, active tint, and small directional indicators.
+  - This should directly shape the style guide’s default sortable-table behavior.
+- Dense row language:
+  - The leaderboard rows are intentionally compressed and rely on striping, alignment, and restrained hover states rather than oversized spacing.
+  - This density profile is a better reference for data pages than the looser current `underlying-stats` presentation.
+- Current row emphasis:
+  - `currentTeamRow` shows a good canonical pattern for highlighting an important row: left accent border plus restrained background tint.
+  - This pattern should be reusable for “current”, “selected”, or “my team” rows elsewhere.
+- Stateful grid cells:
+  - `roundCell` versus `pickCell` is a strong example of hierarchy in matrix-like data: anchor cells get stronger accent treatment while data cells stay neutral until state changes.
+  - `currentPick`, `pastPick`, and `draftedPick` show how one shared base cell can branch into multiple clearly legible states.
+- Status banners inside panels:
+  - `currentTurnStatus`, `myTurnIndicator`, and `otherTurnIndicator` show how status can live inside a panel instead of becoming a page-level alert.
+  - The layout pattern is reusable; the stronger gradients and pulse animation should likely become optional rather than default.
+- Visual hierarchy in dense data:
+  - The module succeeds by using compact typography, small-radius cells, strong borders, and clear state color semantics.
+  - This is one of the strongest references for future schedule tables, standings views, and compact heatmap-style matrix layouts.
+- Style-system implications:
+  - The most transferable rules here are sticky table headers, compact sortable columns, current-row accenting, and shared base cell anatomy with state variants.
+  - The less-transferable rules are the more animated or gradient-heavy status treatments, which should be documented as optional emphasis rather than baseline behavior.
 
 ---
 
@@ -452,6 +628,76 @@ This single document will accumulate file-by-file findings and cross-references 
 - Changing risk SD in ProjectionsTable updates availability percentages shown here (via localStorage sync).
 - Multi-select via roster bar filters cards; UTIL segment clears filters.
 - Draft action fires `onDraftPlayer`; disabled when `!canDraft`.
+
+**Style Audit: Cards, Progress Blocks, Recommendation Rails, and Large Data Tables**
+- My Roster as a progress-and-composition reference:
+  - `rosterProgress`, `progressBar`, and `progressFill` are strong references for compact progress modules inside a panel.
+  - The structure is more transferable than the current gradient fill; the key reusable idea is the tight label/count/header plus a low-height progress track.
+- Summary micro-cards:
+  - `teamSummary` and `summaryCard` show a useful pattern for small metric cards inside a larger work panel.
+  - This is a good canonical reference for “supporting metrics” that should not visually overpower the main table or roster content.
+- Search-and-act block:
+  - `draftSection`, `searchInput`, `searchResults`, and `draftButton` together form a compact search/action module.
+  - This is a strong reference for future inline player-picker or quick-action zones, though the button family should be normalized with the broader dashboard button system.
+- Slot composition cards:
+  - `rosterSlot` and the surrounding slot-list composition provide a useful pattern for stacked card rows representing structured inventory or roster state.
+  - This can inform future “slot”, “lineup”, or “composition” card patterns elsewhere on the site.
+- Suggested Picks card rail:
+  - `cardsRow` is the clearest current reference for a horizontal recommendation rail made of repeated high-density cards.
+  - This is a strong pattern for “top suggestions”, “featured insights”, or “recommended actions” sections on other pages.
+- Canonical card anatomy:
+  - `SuggestedPicks .card` is the strongest current expression of the FHFH card identity: dark surface, visible body border, left flat accent strip, strong hover state, and a compact internal information stack.
+  - The left accent strip should be treated as a canonical pattern, but the blur, glow, and heavy gradient usage should be optional or softened in the final system to satisfy the new gradient rule.
+- Card selection state:
+  - `cardSelected` is a useful pattern for selected-card emphasis: keep the same card anatomy, intensify border/glow, and preserve the accent identity rather than inventing a separate layout.
+- Compact stat pills and tags:
+  - `stat`, `statLabel`, `statValue`, and `tag` provide a good reference for small inline metric blocks inside cards.
+  - This should influence canonical “metric pill”, “meta pill”, and “reason tag” definitions in the style guide.
+- Recommendation controls:
+  - `headerRow`, `controls`, `controlGroup`, `select`, `sortDirBtn`, and `collapseBtn` show a repeatable compact toolbar pattern for recommendation and filter surfaces.
+  - These should be reconciled with the `DraftSettings` control rules so the site ends up with one shared compact-control language.
+- Projections table as the heaviest table/filter reference:
+  - `controlsBar`, `searchContainer`, `positionFilter`, `controlToggleBtn`, `miniRunForecast`, and `settingsDrawer` collectively show the site’s most complex filter-toolbar system.
+  - The key transferable idea is a tiered control area: essential filters visible first, deeper settings behind a secondary control or drawer.
+- Large data table framing:
+  - `tableContainer`, `playersTable`, sticky `thead`, `sortableHeader`, and the compact row/cell treatment are the strongest current references for large scrollable analytics tables.
+  - This is likely the canonical table system for `underlying-stats` and other data-dense pages.
+- Action cells and compare controls:
+  - `draftButton`, compare checkboxes, and compare-launch affordances show how single-purpose action cells can stay compact and visually distinct within a dense table.
+  - This should become a documented rule for action columns rather than remaining feature-specific styling.
+- Important cleanup discovery:
+  - `ProjectionsTable.module.scss` contains duplicated/conflicting control and checkbox patterns, and `MyRoster.module.scss` contains oddly nested table-related rules under `.summaryValue`.
+  - These are useful signals that the final implementation should include cleanup and consolidation work, not just documentation and restyling.
+- Style-system implications:
+  - The most transferable patterns from this group are: compact progress modules, micro-summary cards, left-accent recommendation cards, horizontal card rails, compact filter toolbars, and heavy-data sticky tables.
+  - The final guide should explicitly separate “core anatomy” from “optional intensity” so the site can keep the FHFH identity without defaulting every card or table to blur/glow-heavy treatment.
+
+**Style Audit: Dialogs and Overlays**
+- Scope decision:
+  - Dialog patterns should be included in the same style-system pass, but only at the shared-shell level.
+  - The canonical system should cover backdrop, modal shell, header band, close button, action cluster, scrollable body, and dialog sizing rules.
+  - Highly specialized interior layouts such as roster recap grids, radar-comparison layouts, or CSV-mapping workflows should remain feature-specific.
+- Shared modal anatomy:
+  - `DraftSummaryModal` and `ComparePlayersModal` both confirm that the site already relies on a repeatable overlay structure: full-screen backdrop, centered shell, header band, action/close controls, and scrollable content body.
+  - That shared anatomy is mature enough to justify canonical rules.
+- Backdrop treatment:
+  - Both modals use darkened, blurred backdrops with accent-aware lighting.
+  - The transferable rule is the backdrop’s job: isolate the app and focus the eye. The stronger radial lighting and blur intensity should be optional, not mandatory.
+- Shell treatment:
+  - `DraftSummaryModal` and `ComparePlayersModal` both use large, high-emphasis shells with strong border/shadow hierarchy.
+  - The final style guide should define a calmer baseline modal shell and document stronger “feature modal” variants as optional.
+- Header band:
+  - Both modals use a sticky or strongly separated header band with accent typography and close controls.
+  - This should become a canonical modal-header rule because it is consistent with the panel-header language already present across the dashboard.
+- Close and action controls:
+  - The small close control in `ComparePlayersModal` and the action cluster in `DraftSummaryModal` show two useful dialog-control patterns.
+  - These should be normalized into documented icon-button and dialog-action variants.
+- Accessibility signal:
+  - `ComparePlayersModal` and `ImportCsvModal` already contain stronger keyboard/focus handling than `DraftSummaryModal`.
+  - This is a signal that the style-system pass should include dialog accessibility expectations, not just visual styling.
+- Inclusion boundary:
+  - Include dialogs in the style-system pass for shared shell/backdrop/header/controls.
+  - Do not try to over-canonicalize the interior content architecture of every modal in this pass.
 
 ---
 

@@ -2,9 +2,11 @@ import Link from "next/link";
 import type { NextPage } from "next";
 import Head from "next/head";
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/router";
 
 import ForgeRouteNav from "components/forge-dashboard/ForgeRouteNav";
 import { fetchCachedJson } from "lib/dashboard/clientFetchCache";
+import { buildForgeHref, parseForgeDateParam } from "lib/dashboard/forgeLinks";
 import {
   normalizeStartChartResponse,
   normalizeSustainabilityResponse
@@ -18,6 +20,9 @@ import styles from "styles/ForgeDashboard.module.scss";
 
 type ForgePlayersResponse = {
   asOfDate: string | null;
+  degradedProjectionSummary?: {
+    note: string | null;
+  } | null;
   data: Array<{
     player_id: number;
     player_name: string | null;
@@ -29,6 +34,7 @@ type ForgePlayersResponse = {
     hit: number;
     blk: number;
     uncertainty: number | null;
+    degradedProjectionContext?: TopAddsCandidateInput["degradedProjectionContext"];
   }>;
 };
 
@@ -94,7 +100,12 @@ function formatSigned(value: number | null | undefined, suffix = ""): string {
 }
 
 const ForgeLandingPage: NextPage = () => {
-  const date = useMemo(() => getTodayEt(), []);
+  const router = useRouter();
+  const todayEt = useMemo(() => getTodayEt(), []);
+  const date = useMemo(
+    () => parseForgeDateParam(router.query.date, todayEt),
+    [router.query.date, todayEt]
+  );
   const [slateDateUsed, setSlateDateUsed] = useState<string | null>(null);
   const [slateGames, setSlateGames] = useState<
     Array<ReturnType<typeof normalizeStartChartResponse>["games"][number]>
@@ -228,6 +239,7 @@ const ForgeLandingPage: NextPage = () => {
                   hit: row.hit ?? 0,
                   blk: row.blk ?? 0,
                   uncertainty: row.uncertainty,
+                  degradedProjectionContext: row.degradedProjectionContext ?? null,
                   scheduleGamesRemaining: null,
                   scheduleOffNightsRemaining: null,
                   scheduleLabel: null,
@@ -249,6 +261,11 @@ const ForgeLandingPage: NextPage = () => {
             setAddsPreviewMessage({
               tone: "warning",
               text: `Using latest available add context from ${playersPayload.asOfDate}.`
+            });
+          } else if (playersPayload?.degradedProjectionSummary?.note) {
+            setAddsPreviewMessage({
+              tone: "warning",
+              text: playersPayload.degradedProjectionSummary.note
             });
           } else if (rankedAdds.length === 0) {
             setAddsPreviewMessage({
@@ -362,10 +379,13 @@ const ForgeLandingPage: NextPage = () => {
                 </p>
               </div>
               <div className={styles.routePageNavStack}>
-                <ForgeRouteNav current="landing" />
+                <ForgeRouteNav current="landing" date={date} />
                 <div className={styles.routePageMeta}>
                   <span className={styles.contextChip}>Preview date: {slateDateUsed ?? date}</span>
-                  <Link href="/forge/dashboard" className={styles.navLink}>
+                  <Link
+                    href={buildForgeHref("/forge/dashboard", { date })}
+                    className={styles.navLink}
+                  >
                     Open Full Dashboard
                   </Link>
                 </div>
@@ -422,7 +442,10 @@ const ForgeLandingPage: NextPage = () => {
                           return (
                             <Link
                               key={game.id}
-                              href={`/start-chart?date=${slateDateUsed ?? date}`}
+                              href={buildForgeHref("/start-chart", {
+                                date,
+                                resolvedDate: slateDateUsed
+                              })}
                               className={styles.previewRow}
                             >
                               <strong>{awayTeam} @ {homeTeam}</strong>
@@ -441,7 +464,13 @@ const ForgeLandingPage: NextPage = () => {
                       )}
                     </div>
                     <div className={styles.previewActions}>
-                      <Link href="/start-chart" className={styles.slateActionLink}>
+                      <Link
+                        href={buildForgeHref("/start-chart", {
+                          date,
+                          resolvedDate: slateDateUsed
+                        })}
+                        className={styles.slateActionLink}
+                      >
                         Open Start Chart
                       </Link>
                     </div>
@@ -468,7 +497,10 @@ const ForgeLandingPage: NextPage = () => {
                         topAdds.map((row) => (
                           <Link
                             key={row.playerId}
-                            href={`/forge/player/${row.playerId}?date=${date}&mode=tonight`}
+                            href={buildForgeHref(`/forge/player/${row.playerId}`, {
+                              date,
+                              mode: "tonight"
+                            })}
                             className={styles.previewRow}
                           >
                             <strong>{row.name}</strong>
@@ -483,7 +515,10 @@ const ForgeLandingPage: NextPage = () => {
                       )}
                     </div>
                     <div className={styles.previewActions}>
-                      <Link href="/forge/dashboard" className={styles.slateActionLink}>
+                      <Link
+                        href={buildForgeHref("/forge/dashboard", { date })}
+                        className={styles.slateActionLink}
+                      >
                         Open Dashboard Adds
                       </Link>
                     </div>
@@ -512,7 +547,9 @@ const ForgeLandingPage: NextPage = () => {
                           {sustainablePreview.map((row) => (
                             <Link
                               key={`stable-${row.playerId}`}
-                              href={`/trends/player/${row.playerId}`}
+                              href={buildForgeHref(`/trends/player/${row.playerId}`, {
+                                date
+                              })}
                               className={styles.previewRow}
                             >
                               <strong>{row.playerName ?? `Player ${row.playerId}`}</strong>
@@ -527,7 +564,9 @@ const ForgeLandingPage: NextPage = () => {
                           {riskPreview.map((row) => (
                             <Link
                               key={`risk-${row.playerId}`}
-                              href={`/trends/player/${row.playerId}`}
+                              href={buildForgeHref(`/trends/player/${row.playerId}`, {
+                                date
+                              })}
                               className={styles.previewRow}
                             >
                               <strong>{row.playerName ?? `Player ${row.playerId}`}</strong>
@@ -538,7 +577,10 @@ const ForgeLandingPage: NextPage = () => {
                       </div>
                     </div>
                     <div className={styles.previewActions}>
-                      <Link href="/forge/dashboard" className={styles.slateActionLink}>
+                      <Link
+                        href={buildForgeHref("/forge/dashboard", { date })}
+                        className={styles.slateActionLink}
+                      >
                         Open Dashboard Insight
                       </Link>
                     </div>

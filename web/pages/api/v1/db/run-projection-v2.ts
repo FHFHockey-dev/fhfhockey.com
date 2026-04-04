@@ -55,6 +55,11 @@
  * - Errors during execution will result in a `500 Internal Server Error` with a descriptive error message.
  */
 import type { NextApiRequest, NextApiResponse } from "next";
+import {
+  buildEndpointScanSummary,
+  countFailingPreflightGates,
+  type EndpointScanSummary
+} from "lib/api/scanSummary";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { CronTimedResponse, withCronJobTiming } from "lib/cron/timingContract";
 import {
@@ -63,7 +68,9 @@ import {
 } from "lib/cron/normalizeDependencyError";
 import { runProjectionV2ForDate } from "lib/projections/run-forge-projections";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
+import { FORGE_COMPATIBILITY_INVENTORY } from "lib/projections/compatibilityInventory";
 import { getGoalieForgePipelineSpec } from "lib/projections/goaliePipeline";
+import { getRollingForgeStageDependencyContract } from "lib/rollingForgePipeline";
 import supabase from "lib/supabase/server";
 
 type PreflightGate = {
@@ -124,8 +131,11 @@ type Result =
       maxDurationMs: string;
       durationMs: string;
       pipeline: ReturnType<typeof getGoalieForgePipelineSpec>;
+      dependencyContract: ReturnType<typeof getRollingForgeStageDependencyContract>;
+      compatibilityInventory: typeof FORGE_COMPATIBILITY_INVENTORY;
       preflight: PreflightSummary;
       observability: GoalieObservability;
+      scanSummary: EndpointScanSummary;
       results?: Array<{
         asOfDate: string;
         runId: string;
@@ -150,8 +160,11 @@ type Result =
       maxDurationMs: string;
       durationMs: string;
       pipeline: ReturnType<typeof getGoalieForgePipelineSpec>;
+      dependencyContract: ReturnType<typeof getRollingForgeStageDependencyContract>;
+      compatibilityInventory: typeof FORGE_COMPATIBILITY_INVENTORY;
       preflight: PreflightSummary;
       observability: GoalieObservability;
+      scanSummary: EndpointScanSummary;
       runId?: string;
       gamesProcessed?: number;
       playerRowsUpserted?: number;
@@ -283,7 +296,7 @@ export function summarizeGoalieRosterAssignments(args: {
   };
 }
 
-async function runProjectionPreflightChecks(
+export async function runProjectionPreflightChecks(
   asOfDate: string,
   bypassed: boolean
 ): Promise<PreflightSummary> {
@@ -646,6 +659,26 @@ function buildGoalieObservability(args: {
   };
 }
 
+function buildProjectionRunScanSummary(args: {
+  status: EndpointScanSummary["status"];
+  requestedDate: string;
+  activeDataDate: string;
+  blockingIssueCount: number;
+  notes?: string[];
+  rowCounts?: Record<string, unknown>;
+}) {
+  return buildEndpointScanSummary({
+    surface: "projection_run_operator",
+    requestedDate: args.requestedDate,
+    activeDataDate: args.activeDataDate,
+    fallbackApplied: false,
+    status: args.status,
+    rowCounts: args.rowCounts,
+    blockingIssueCount: args.blockingIssueCount,
+    notes: args.notes
+  });
+}
+
 async function handler(
   req: NextApiRequest,
   res: NextApiResponse<CronTimedResponse<Result>>
@@ -657,6 +690,9 @@ async function handler(
   const chunkDays = parseChunkDays(getParam(req, "chunkDays"));
   const resumeFromDate = parseDateParam(getParam(req, "resumeFromDate"));
   const pipeline = getGoalieForgePipelineSpec();
+  const dependencyContract = getRollingForgeStageDependencyContract(
+    "projection_execution"
+  );
   const bypassPreflight = parseBooleanParam(getParam(req, "bypassPreflight"));
   const defaultPreflight: PreflightSummary = {
     asOfDate: "",
@@ -682,8 +718,18 @@ async function handler(
         resumeFromDate,
         nextStartDate: null,
         pipeline,
+        dependencyContract,
+        compatibilityInventory: FORGE_COMPATIBILITY_INVENTORY,
         preflight: defaultPreflight,
         observability: defaultObservability,
+        scanSummary: buildProjectionRunScanSummary({
+          status: "blocked",
+          requestedDate: "",
+          activeDataDate: "",
+          blockingIssueCount: 1,
+          notes: ["Method not allowed."],
+          rowCounts: {}
+        }),
         timedOut: false,
         maxDurationMs: formatDurationMsToMMSS(0),
         durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
@@ -719,8 +765,18 @@ async function handler(
       resumeFromDate,
       nextStartDate: null,
       pipeline,
+      dependencyContract,
+      compatibilityInventory: FORGE_COMPATIBILITY_INVENTORY,
       preflight: defaultPreflight,
       observability: defaultObservability,
+      scanSummary: buildProjectionRunScanSummary({
+        status: "blocked",
+        requestedDate: startDateParam ?? "",
+        activeDataDate: endDateParam ?? "",
+        blockingIssueCount: 1,
+        notes: ["Invalid startDate/endDate range."],
+        rowCounts: {}
+      }),
       timedOut: false,
       maxDurationMs: formatDurationMsToMMSS(0),
       durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
@@ -773,6 +829,7 @@ async function handler(
           )
         });
         if (rangePreflight.status === "FAIL") {
+          const failedGateCount = countFailingPreflightGates(rangePreflight);
           return res.status(422).json(withTiming({
             success: false,
             asOfDate: date,
@@ -783,8 +840,35 @@ async function handler(
             resumeFromDate,
             nextStartDate: date,
             pipeline,
+            dependencyContract,
+            compatibilityInventory: FORGE_COMPATIBILITY_INVENTORY,
             preflight: rangePreflight,
             observability: failedRangePreflightObservability,
+            scanSummary: buildProjectionRunScanSummary({
+              status: "blocked",
+              requestedDate: date,
+              activeDataDate: date,
+              blockingIssueCount: failedGateCount,
+              notes: [
+                "Projection run blocked by preflight freshness gates for requested range date."
+              ],
+              rowCounts: {
+                gamesProcessed: results.reduce((sum, r) => sum + r.gamesProcessed, 0),
+                playerRowsUpserted: results.reduce(
+                  (sum, r) => sum + r.playerRowsUpserted,
+                  0
+                ),
+                teamRowsUpserted: results.reduce(
+                  (sum, r) => sum + r.teamRowsUpserted,
+                  0
+                ),
+                goalieRowsUpserted: results.reduce(
+                  (sum, r) => sum + r.goalieRowsUpserted,
+                  0
+                ),
+                processedDates: results.length
+              }
+            }),
             timedOut: false,
             maxDurationMs: formatDurationMsToMMSS(budgetMs),
             durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
@@ -814,8 +898,34 @@ async function handler(
             resumeFromDate,
             nextStartDate: date,
             pipeline,
+            dependencyContract,
+            compatibilityInventory: FORGE_COMPATIBILITY_INVENTORY,
             preflight: rangePreflight,
             observability: timedOutObservability,
+            scanSummary: buildProjectionRunScanSummary({
+              status: "partial",
+              requestedDate: endDate,
+              activeDataDate:
+                results[results.length - 1]?.asOfDate ?? effectiveRangeStart,
+              blockingIssueCount: 0,
+              notes: ["Timed out before completing the requested projection range."],
+              rowCounts: {
+                gamesProcessed: results.reduce((sum, r) => sum + r.gamesProcessed, 0),
+                playerRowsUpserted: results.reduce(
+                  (sum, r) => sum + r.playerRowsUpserted,
+                  0
+                ),
+                teamRowsUpserted: results.reduce(
+                  (sum, r) => sum + r.teamRowsUpserted,
+                  0
+                ),
+                goalieRowsUpserted: results.reduce(
+                  (sum, r) => sum + r.goalieRowsUpserted,
+                  0
+                ),
+                processedDates: results.length
+              }
+            }),
             timedOut: true,
             maxDurationMs: formatDurationMsToMMSS(budgetMs),
             durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
@@ -860,8 +970,32 @@ async function handler(
         resumeFromDate,
         nextStartDate: chunkNextStartDate,
         pipeline,
+        dependencyContract,
+        compatibilityInventory: FORGE_COMPATIBILITY_INVENTORY,
         preflight,
         observability: rangeObservability,
+        scanSummary: buildProjectionRunScanSummary({
+          status: chunkNextStartDate ? "partial" : "ready",
+          requestedDate: endDate,
+          activeDataDate: last?.asOfDate ?? asOfDate,
+          blockingIssueCount: 0,
+          notes: chunkNextStartDate
+            ? ["Chunked range execution stopped before the requested end date."]
+            : [],
+          rowCounts: {
+            gamesProcessed: results.reduce((sum, r) => sum + r.gamesProcessed, 0),
+            playerRowsUpserted: results.reduce(
+              (sum, r) => sum + r.playerRowsUpserted,
+              0
+            ),
+            teamRowsUpserted: results.reduce((sum, r) => sum + r.teamRowsUpserted, 0),
+            goalieRowsUpserted: results.reduce(
+              (sum, r) => sum + r.goalieRowsUpserted,
+              0
+            ),
+            processedDates: results.length
+          }
+        }),
         timedOut: false,
         maxDurationMs: formatDurationMsToMMSS(budgetMs),
         durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
@@ -881,6 +1015,7 @@ async function handler(
         gamesProcessed: 0,
         goalieRowsProcessed: 0
       });
+      const failedGateCount = countFailingPreflightGates(preflight);
       return res.status(422).json(withTiming({
         success: false,
         asOfDate,
@@ -891,8 +1026,23 @@ async function handler(
         resumeFromDate,
         nextStartDate: asOfDate,
         pipeline,
+        dependencyContract,
+        compatibilityInventory: FORGE_COMPATIBILITY_INVENTORY,
         preflight,
         observability: failedPreflightObservability,
+        scanSummary: buildProjectionRunScanSummary({
+          status: "blocked",
+          requestedDate: asOfDate,
+          activeDataDate: asOfDate,
+          blockingIssueCount: failedGateCount,
+          notes: ["Projection run blocked by preflight freshness gates."],
+          rowCounts: {
+            gamesProcessed: 0,
+            playerRowsUpserted: 0,
+            teamRowsUpserted: 0,
+            goalieRowsUpserted: 0
+          }
+        }),
         timedOut: false,
         maxDurationMs: formatDurationMsToMMSS(0),
         durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
@@ -921,8 +1071,23 @@ async function handler(
         resumeFromDate,
         nextStartDate: asOfDate,
         pipeline,
+        dependencyContract,
+        compatibilityInventory: FORGE_COMPATIBILITY_INVENTORY,
         preflight,
         observability: singleRunObservability,
+        scanSummary: buildProjectionRunScanSummary({
+          status: "partial",
+          requestedDate: asOfDate,
+          activeDataDate: asOfDate,
+          blockingIssueCount: 0,
+          notes: ["Timed out before the projection run completed."],
+          rowCounts: {
+            gamesProcessed: out.gamesProcessed,
+            playerRowsUpserted: out.playerRowsUpserted,
+            teamRowsUpserted: out.teamRowsUpserted,
+            goalieRowsUpserted: out.goalieRowsUpserted
+          }
+        }),
         timedOut: true,
         maxDurationMs: formatDurationMsToMMSS(budgetMs),
         durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
@@ -946,8 +1111,22 @@ async function handler(
         resumeFromDate,
         nextStartDate: null,
         pipeline,
+        dependencyContract,
+        compatibilityInventory: FORGE_COMPATIBILITY_INVENTORY,
         preflight,
         observability: singleRunObservability,
+        scanSummary: buildProjectionRunScanSummary({
+          status: "ready",
+          requestedDate: asOfDate,
+          activeDataDate: asOfDate,
+          blockingIssueCount: 0,
+          rowCounts: {
+            gamesProcessed: out.gamesProcessed,
+            playerRowsUpserted: out.playerRowsUpserted,
+            teamRowsUpserted: out.teamRowsUpserted,
+            goalieRowsUpserted: out.goalieRowsUpserted
+          }
+        }),
         timedOut: false,
         maxDurationMs: formatDurationMsToMMSS(budgetMs),
         durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
@@ -976,6 +1155,8 @@ async function handler(
         resumeFromDate,
         nextStartDate: null,
         pipeline,
+        dependencyContract,
+        compatibilityInventory: FORGE_COMPATIBILITY_INVENTORY,
         preflight,
         observability: {
           ...baseObservability,
@@ -988,6 +1169,19 @@ async function handler(
             }
           ]
         },
+        scanSummary: buildProjectionRunScanSummary({
+          status: "blocked",
+          requestedDate: asOfDate,
+          activeDataDate: asOfDate,
+          blockingIssueCount: 1,
+          notes: [dependencyError.message],
+          rowCounts: {
+            gamesProcessed: 0,
+            playerRowsUpserted: 0,
+            teamRowsUpserted: 0,
+            goalieRowsUpserted: 0
+          }
+        }),
         timedOut: false,
         maxDurationMs: formatDurationMsToMMSS(budgetMs),
         durationMs: formatDurationMsToMMSS(Date.now() - startedAt),

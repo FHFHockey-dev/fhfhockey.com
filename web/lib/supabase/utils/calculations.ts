@@ -1,4 +1,9 @@
 // utils/calculations.ts
+//
+// Legacy sKO-only game-score helper.
+// Pass-4 FORGE audit result: this file remains for lineage and quarantine-era
+// reference only. Do not wire it into FORGE explainability or player-signal UI
+// without a fresh hockey-facing validation pass.
 
 import { CombinedGameLog } from "./types";
 

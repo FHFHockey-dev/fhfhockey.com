@@ -218,6 +218,12 @@ export type SkaterTrendAdjustment = {
   metricKey: string;
   windowCode: string;
   snapshotDate: string;
+  ageDays: number;
+  recencyClass: "fresh" | "soft_stale" | "hard_stale";
+  effectState:
+    | "applied"
+    | "neutralized_by_recency"
+    | "within_band_neutral";
   value: number;
   ciLower: number;
   ciUpper: number;

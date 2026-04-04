@@ -15,6 +15,13 @@ Guidelines for managing task lists in markdown files to track progress on comple
   - If the user responds with **"yes"** or **"y"** instead, **DO NOT PROCEED**
   - Instead, clearly alert the user again that the required action has not yet been confirmed and restate that the AI is waiting for: **"Done, proceed"**
   - Only resume once the user has explicitly confirmed completion with **"Done, proceed"**
+- **Decision-step override for policy or strategy choices:** If the next sub-task requires the user to choose between options, the AI must not present the choice as a bare list without explanation.
+  - The AI must briefly describe **each available option** in plain language.
+  - The AI must explain the **practical consequence** of choosing each option, including what it enables, what it blocks, and any important tradeoff.
+  - The AI should give a concise recommendation when one option is more consistent with prior decisions or project goals.
+  - Only after providing that context may the AI ask the user to reply with the exact choice text.
+  - If the user answers with **"yes"** or **"y"** instead of choosing an option, **DO NOT PROCEED**
+  - Instead, restate the available options, with their consequences, and ask the user to pick one explicitly.
 - **Completion protocol:**  
   1. When you finish a **sub-task**, immediately mark it as completed by changing `[ ]` to `[x]`.
   2. If **all** subtasks underneath a parent task are now `[x]`, follow this sequence:
@@ -66,4 +73,6 @@ When working with task lists, the AI must:
 7. If the user must implement something (creation or editing of a SQL table, running migrations, running an endpoint for upserts, applying dashboard settings, environment configuration, or any other manual/time-sensitive action), explicitly alert the user and describe exactly what must be done.
 8. For any action covered by the manual-action override, require the response **"Done, proceed"** before continuing.
 9. If the user replies with **"yes"** or **"y"** when **"Done, proceed"** is required, do **not** continue; instead, warn the user again and restate the required confirmation.
-10. Append all newly identified bugs, optimizations, manual follow-ups, and open questions to the **end** of the task list as **NEW** tasks.
+10. If a sub-task requires a user decision, explain each option and its consequences before asking the user to choose.
+11. If the user replies with **"yes"** or **"y"** when an explicit choice is required, do **not** continue; instead, restate the options, consequences, and required choice.
+12. Append all newly identified bugs, optimizations, manual follow-ups, and open questions to the **end** of the task list as **NEW** tasks.

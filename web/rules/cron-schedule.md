@@ -27,7 +27,7 @@
 -- - 09:14 UTC / 04:14 EST: update-wgo-teams
 -- - 09:15 UTC / 04:15 EST: update-nst-current-season
 -- - 09:30 UTC / 04:30 EST: update-goalie-projections-v2
--- - 09:40 UTC / 04:40 EST: update-start-chart-projections
+-- - 09:40 UTC / 04:40 EST: RETIRED IN PASS 3 (formerly update-start-chart-projections)
 -- - 09:45 UTC / 04:45 EST: ingest-projection-inputs
 -- - 09:50 UTC / 04:50 EST: build-forge-derived-v2
 -- - 09:55 UTC / 04:55 EST: update-nst-team-daily
@@ -72,6 +72,84 @@
 -- Gap notes
 -- - 07:15 UTC / 02:15 EST: retired pre-floor slot for update-games.
 ----------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------
+-- Player Underlying Stats Freshness
+----------------------------------------------------------------------------------
+--
+-- Recommended primary path: invoke the dedicated one-game ingest route as soon as
+-- your Supabase game-end trigger determines a game is final. This keeps the work
+-- bounded to one game, refreshes raw gamecenter inputs plus per-game player
+-- underlying summary snapshots, and is the safest way to stay under the 4m30s
+-- timeout budget.
+--
+-- Route:
+--   https://fhfhockey.com/api/v1/db/update-player-underlying-stats?gameId={gameId}
+--
+-- Preferred trigger implementation: keep the existing line-combo webhook intact
+-- and add a second trigger on public."lineCombinations" that only fires on the
+-- home-team row. Because lineCombinations stores exactly two rows per game
+-- (home + away), this guard guarantees one underlying-stats refresh per game.
+--
+-- CREATE OR REPLACE FUNCTION public.on_new_player_underlying_stats()
+-- RETURNS trigger
+-- LANGUAGE plpgsql
+-- AS $$
+-- DECLARE
+--   url TEXT := 'https://fhfhockey.com/api/v1/db/update-player-underlying-stats';
+--   headers JSONB := '{"Content-Type": "application/json", "Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb;
+--   home_team_id INTEGER;
+-- BEGIN
+--   SELECT "homeTeamId"
+--   INTO home_team_id
+--   FROM public."games"
+--   WHERE id = NEW."gameId";
+--
+--   IF home_team_id IS NULL THEN
+--     RETURN NEW;
+--   END IF;
+--
+--   IF NEW."teamId" <> home_team_id THEN
+--     RETURN NEW;
+--   END IF;
+--
+--   PERFORM net.http_post(
+--     url := url || '?gameId=' || NEW."gameId"::TEXT || '&warmLandingCache=true',
+--     headers := headers,
+--     timeout_milliseconds := 270000
+--   );
+--
+--   RETURN NEW;
+-- END;
+-- $$;
+--
+-- DROP TRIGGER IF EXISTS after_player_underlying_stats_insert ON public."lineCombinations";
+--
+-- CREATE TRIGGER after_player_underlying_stats_insert
+-- AFTER INSERT ON public."lineCombinations"
+-- FOR EACH ROW
+-- EXECUTE FUNCTION public.on_new_player_underlying_stats();
+--
+-- Recommended safety net: one daily catch-up for yesterday's games only. This is
+-- intentionally date-bounded, not full-season, so it stays within the same 4m30s
+-- timeout budget and can repair any missed game-end triggers.
+--
+-- SELECT cron.schedule(
+--   'update-player-underlying-stats-yesterday',
+--   '35 9 * * *', -- 09:35 UTC / 05:35 ET
+--   $$
+--     SELECT net.http_get(
+--       url :=
+--         'https://fhfhockey.com/api/v1/db/update-player-underlying-stats?startDate=' ||
+--         to_char((CURRENT_DATE - INTERVAL '1 day')::date, 'YYYY-MM-DD') ||
+--         '&endDate=' ||
+--         to_char((CURRENT_DATE - INTERVAL '1 day')::date, 'YYYY-MM-DD') ||
+--         '&warmLandingCache=true',
+--       headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--       timeout_milliseconds := 270000
+--     );
+--   $$
+-- );
 
 
 ----------------------------------------------------------------------------------
@@ -529,6 +607,9 @@
 -- |||||||||||||||||||||||||||||||||  09:13 UTC  |||||||||||||||||||||||||||||||||
 -- |||||||||||||||||||||||||||||||||  04:13 EST  |||||||||||||||||||||||||||||||||
 -- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+-- DISABLED IN PASS 3:
+-- Keep this historical schedule snippet only until the legacy route stub
+-- and audit artifacts are fully retired.
 
 -- SELECT cron.schedule(
 --     'update-team-power-ratings-new',
@@ -585,18 +666,11 @@
 -- |||||||||||||||||||||||||||||||||  04:40 EST  |||||||||||||||||||||||||||||||||
 -- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
--- SELECT cron.schedule(
---     'update-start-chart-projections',
---     '40 9 * * *', -- 09:40 UTC
---     $$
---         SELECT net.http_post(
---             url := 'https://fhfhockey.com/api/v1/db/update-start-chart-projections',
---             body := '{}'::jsonb,
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233", "Content-Type": "application/json"}'::jsonb,
---             timeout_milliseconds := 300000
---         );
---     $$
--- );
+-- RETIRED IN PASS 3:
+-- `update-start-chart-projections` was removed after `/api/v1/start-chart`
+-- and the other surviving skater readers were moved to canonical
+-- `forge_player_projections`. There is no replacement cron job because the
+-- legacy `player_projections` materializer no longer has live readers.
 
 ----------------------------------------------------------------------------------
 -- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
@@ -737,6 +811,9 @@
 -- |||||||||||||||||||||||||||||||||  10:25 UTC  |||||||||||||||||||||||||||||||||
 -- |||||||||||||||||||||||||||||||||  05:25 EST  |||||||||||||||||||||||||||||||||
 -- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+-- DISABLED IN PASS 3:
+-- Keep this historical schedule snippet only until the legacy route stub
+-- and audit artifacts are fully retired.
 
 -- SELECT cron.schedule(
 --     'update-rolling-games-recent',
@@ -1073,6 +1150,9 @@
 -- |||||||||||||||||||||||||||||||||  11:00 UTC  |||||||||||||||||||||||||||||||||
 -- |||||||||||||||||||||||||||||||||  06:00 EST  |||||||||||||||||||||||||||||||||
 -- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+-- DISABLED IN PASS 3:
+-- Keep this historical schedule snippet only until the legacy route stub
+-- and audit artifacts are fully retired.
 
 -- SELECT cron.schedule(
 --     'update-power-rankings',

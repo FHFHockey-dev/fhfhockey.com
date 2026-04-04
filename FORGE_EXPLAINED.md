@@ -211,7 +211,7 @@ FORGE is a hockey prediction factory where data-collector workers, math workers,
 Use this order when you want to "fix" or fully refresh FORGE data so frontend outputs are correct and consistent.
 
 ### A) Refresh upstream source tables FORGE depends on
-These feed model features used by `runProjectionV2`:
+These feed model features used by the canonical FORGE runner in `run-forge-projections.ts`:
 
 1. `/api/v1/db/update-teams`
 2. `/api/v1/db/update-players`

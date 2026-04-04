@@ -1,21 +1,6 @@
-import {
-  afterEach as afterEachHook,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi
-} from "vitest";
+import { describe, expect, it } from "vitest";
 
-const { loaderMock, legacyMainMock } = vi.hoisted(() => ({
-  loaderMock: vi.fn(),
-  legacyMainMock: vi.fn().mockResolvedValue(undefined)
-}));
-
-import handler, {
-  loadLegacyMain,
-  setLegacyMainLoaderForTests
-} from "../../../../../pages/api/v1/db/update-rolling-games";
+import handler from "../../../../../pages/api/v1/db/update-rolling-games";
 
 function createMockRes() {
   const res: any = {
@@ -43,22 +28,7 @@ function createMockRes() {
 }
 
 describe("/api/v1/db/update-rolling-games", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    loaderMock.mockResolvedValue(legacyMainMock);
-    setLegacyMainLoaderForTests(loaderMock);
-  });
-
-  it("loads the legacy CommonJS module through createRequire", async () => {
-    const main = await loadLegacyMain();
-
-    await main("recent");
-
-    expect(loaderMock).toHaveBeenCalled();
-    expect(legacyMainMock).toHaveBeenCalledWith("recent");
-  });
-
-  it("runs the legacy loader in recent mode when date=recent", async () => {
+  it("returns 410 and points callers to the canonical rolling route", async () => {
     const req: any = {
       method: "GET",
       query: { date: "recent" }
@@ -67,14 +37,29 @@ describe("/api/v1/db/update-rolling-games", () => {
 
     await handler(req, res);
 
-    expect(legacyMainMock).toHaveBeenCalledWith("recent");
-    expect(res.statusCode).toBe(200);
-    expect(res.body).toEqual({
-      message: "Rolling games data processed successfully in recent mode."
+    expect(res.statusCode).toBe(410);
+    expect(res.body).toMatchObject({
+      success: false,
+      route: "/api/v1/db/update-rolling-games",
+      requestedMode: "recent",
+      disposition: "DO NOT RUN",
+      retentionReason:
+        "Retained as a 410 quarantine stub until cron-source, failed-job inventories, and benchmark artifacts stop referencing this legacy route.",
+      replacementRoute: "/api/v1/db/update-rolling-player-averages",
+      canonicalOutput: "rolling_player_game_metrics"
     });
   });
 
-  afterEachHook(() => {
-    setLegacyMainLoaderForTests(null);
+  it("still returns 405 for unsupported methods", async () => {
+    const req: any = {
+      method: "DELETE",
+      query: {}
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(405);
+    expect(res.headers.Allow).toEqual(["POST", "GET"]);
   });
 });

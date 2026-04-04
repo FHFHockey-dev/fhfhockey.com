@@ -134,12 +134,9 @@ export const fetchTeamRatings = async (
       ? [...coreColumns, ...extendedColumns].join(",")
       : coreColumns.join(",");
 
-  const runQuery = async (
-    tableName: "team_power_ratings_daily" | "team_power_ratings_daily__new",
-    includeExtended: boolean
-  ) => {
+  const runQuery = async (includeExtended: boolean) => {
     let query = supabase
-      .from(tableName)
+      .from("team_power_ratings_daily")
       .select(selectColumns(includeExtended))
       .eq("date", date)
       .order("off_rating", { ascending: false })
@@ -159,49 +156,20 @@ export const fetchTeamRatings = async (
         err.message.includes("does not exist")
     );
 
-  const isMissingRelationError = (err: { message?: string } | null): boolean =>
-    Boolean(
-      err?.message &&
-        err.message.includes("does not exist") &&
-        (err.message.includes("relation") || err.message.includes("table"))
-    );
-
-  const tablesWithExtended: Array<
-    "team_power_ratings_daily" | "team_power_ratings_daily__new"
-  > = ["team_power_ratings_daily", "team_power_ratings_daily__new"];
-
   let data: unknown[] | null = null;
   let error: { message?: string } | null = null;
-  let fetchedExtended = false;
 
-  for (const tableName of tablesWithExtended) {
-    const response = await runQuery(tableName, true);
-    data = response.data;
-    error = response.error;
+  const response = await runQuery(true);
+  data = response.data;
+  error = response.error;
 
-    if (!error) {
-      fetchedExtended = true;
-      break;
-    }
-
-    if (isMissingRelationError(error) || isMissingColumnError(error)) {
-      data = null;
-      error = null;
-      continue;
-    }
-
-    throw error;
-  }
-
-  if (!fetchedExtended) {
-    const fallbackResponse = await runQuery("team_power_ratings_daily", false);
+  if (error && isMissingColumnError(error)) {
+    const fallbackResponse = await runQuery(false);
     data = fallbackResponse.data;
     error = fallbackResponse.error;
-
-    if (error) {
-      throw error;
-    }
   }
+
+  if (error) throw error;
 
   const rows = Array.isArray(data) ? data : [];
   const payload = rows.map((row) =>

@@ -8,6 +8,7 @@ import {
   parseQueryPositiveInt,
   parseQueryString
 } from "lib/api/queryParams";
+import { getRollingForgeStageDependencyContract } from "lib/rollingForgePipeline";
 
 import { fetchPbpGame, upsertPbpGameAndPlays } from "lib/projections/ingest/pbp";
 import {
@@ -62,6 +63,7 @@ type Result = {
       | "upsert_shifts";
     message: string;
   }>;
+  dependencyContract?: ReturnType<typeof getRollingForgeStageDependencyContract>;
 };
 
 function assertSupabase() {
@@ -151,6 +153,9 @@ async function handler(
   res: NextApiResponse<CronTimedResponse<Result>>
 ) {
   const startedAt = Date.now();
+  const dependencyContract = getRollingForgeStageDependencyContract(
+    "projection_input_ingest"
+  );
   const withTiming = (body: Result, endedAt = Date.now()) =>
     withCronJobTiming(body, startedAt, endedAt);
   if (req.method !== "POST" && req.method !== "GET") {
@@ -188,7 +193,8 @@ async function handler(
           stage: "list_games",
           message: "Method not allowed"
         }
-      ]
+      ],
+      dependencyContract
     }));
   }
 
@@ -229,7 +235,8 @@ async function handler(
           stage: "list_games",
           message: "Invalid startDate/endDate range"
         }
-      ]
+      ],
+      dependencyContract
     }));
   }
   const chunkDays = parseChunkDays(getParam(req, "chunkDays") ?? null);
@@ -310,7 +317,8 @@ async function handler(
           }
         }
       : {}),
-    errors: []
+    errors: [],
+    dependencyContract
   };
 
   for (const g of games) {

@@ -1,5 +1,8 @@
+import { existsSync } from "node:fs";
+
 import { describe, expect, it } from "vitest";
 
+import { FORGE_COMPATIBILITY_INVENTORY } from "./compatibilityInventory";
 import { clamp } from "./utils/number-utils";
 import { buildSequentialHorizonScalarsFromDates } from "./utils/date-utils";
 import { pickLatestByPlayer } from "./utils/collection-utils";
@@ -34,5 +37,30 @@ describe("projection module import integrity", () => {
     expect(typeof createRun).toBe("function");
 
     expect(typeof runProjectionV2ForDate).toBe("function");
+  });
+
+  it("keeps the removed shim path absent while pointing imports at the canonical runner", () => {
+    expect(FORGE_COMPATIBILITY_INVENTORY.removedShim).toMatchObject({
+      legacyModulePath: "web/lib/projections/runProjectionV2.ts",
+      canonicalModulePath: "web/lib/projections/run-forge-projections.ts",
+      status: "removed"
+    });
+    expect(
+      existsSync(new URL("./runProjectionV2.ts", import.meta.url))
+    ).toBe(false);
+  });
+
+  it("keeps the retired start-chart materializer absent while preserving its cleanup ledger entry", () => {
+    expect(FORGE_COMPATIBILITY_INVENTORY.retiredRoutes).toContainEqual(
+      expect.objectContaining({
+        route: "/api/v1/db/update-start-chart-projections",
+        status: "retired"
+      })
+    );
+    expect(
+      existsSync(
+        new URL("../../pages/api/v1/db/update-start-chart-projections.ts", import.meta.url)
+      )
+    ).toBe(false);
   });
 });

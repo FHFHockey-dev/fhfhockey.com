@@ -151,6 +151,83 @@
   margin-top: v.$space-sm;
 }
 
+.summaryIntro {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-xs;
+  max-width: 72ch;
+  margin-top: calc(-1 * v.$space-sm);
+}
+
+.summaryEyebrow {
+  margin: 0;
+  color: v.$primary-color;
+  font-family: v.$font-family-accent;
+  font-size: v.$font-size-xs;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.summaryBody {
+  margin: 0;
+  color: v.$text-secondary;
+  font-size: v.$font-size-sm;
+  line-height: 1.5;
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: v.$space-md;
+}
+
+.summaryCard {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-xs;
+  min-width: 0;
+  padding: v.$space-md;
+  border: 1px solid rgba(v.$border-secondary, 0.65);
+  border-radius: v.$border-radius-md;
+  background: linear-gradient(
+    140deg,
+    rgba(v.$background-medium, 0.78),
+    rgba(v.$background-light, 0.64)
+  );
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.riseSummaryCard {
+  border-color: rgba(v.$success-color, 0.55);
+}
+
+.fallSummaryCard {
+  border-color: rgba(v.$danger-color, 0.55);
+}
+
+.summaryLabel {
+  color: v.$text-secondary;
+  font-size: v.$font-size-xxs;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.summaryValue {
+  color: v.$text-primary;
+  font-family: v.$font-family-primary;
+  font-size: v.$font-size-md;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.summaryMeta {
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+  line-height: 1.35;
+}
+
 .panel {
   // Align with broader site panel styling (reuse elevation & glass aesthetic)
   @include v.element-wrapper;
@@ -624,6 +701,22 @@ tbody tr:hover .neonBox.fall {
   }
   .neonBox {
     padding: 2px 3px;
+  }
+  .summaryGrid {
+    grid-template-columns: 1fr;
+    gap: v.$mobile-space-sm;
+  }
+  .summaryIntro {
+    margin-top: 0;
+  }
+  .summaryBody {
+    font-size: v.$mobile-font-size-xs;
+  }
+  .summaryCard {
+    padding: v.$mobile-space-sm v.$mobile-space-md;
+  }
+  .summaryValue {
+    font-size: v.$font-size-sm;
   }
   .pager {
     margin-top: v.$mobile-space-md;

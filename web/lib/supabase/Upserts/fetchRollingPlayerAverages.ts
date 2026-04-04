@@ -656,7 +656,7 @@ export type RollingPlayerValidationSourceData = {
   >;
 };
 
-type RollingPlayerRunSummary = {
+export type RollingPlayerRunSummary = {
   rowsUpserted: number;
   processedPlayers: number;
   playersWithRows: number;
@@ -2185,6 +2185,12 @@ function buildRunSummary(args: RollingPlayerRunSummary): RollingPlayerRunSummary
   };
 }
 
+function countFreshnessBlockers(
+  blockers: ReturnType<typeof summarizeSourceTailFreshness>["blockers"]
+): number {
+  return Object.values(blockers).filter((value) => value > 0).length;
+}
+
 function didPlayerCountAsAppearance(
   strength: StrengthState,
   game: PlayerGameData
@@ -2204,6 +2210,15 @@ type GpOutputCompatibilityMode = {
     | "derived_aliases_from_canonical_availability"
     | "legacy_gp_fields_only_until_participation_schema";
 };
+
+// Compatibility inventory:
+// - `gp_pct_*` and `gp_pct_avg_*` remain compatibility aliases while
+//   availability fields migrate to the canonical participation/availability
+//   contract.
+// - Split-strength rows still use legacy GP-family storage because those rows
+//   represent positive-TOI participation, not ordinary games played.
+// - Remove these aliases only after the participation schema task replaces the
+//   remaining GP-family consumers.
 
 function getGpOutputCompatibilityMode(
   strength: StrengthState
@@ -3248,7 +3263,21 @@ async function processPlayer(
         );
       }
 
-      if (!options.skipDiagnostics) {
+        const sourceTailSummary = summarizeSourceTailFreshness({
+          playerId,
+          strength: config.state,
+          wgoRows,
+          countsRows,
+          ratesRows,
+          countsOiRows,
+          ppRows,
+          lineRows
+        });
+        diagnostics.freshnessBlockerCount += countFreshnessBlockers(
+          sourceTailSummary.blockers
+        );
+        sourceTailSummary.warnings.forEach((warning) => console.warn(warning));
+        if (!options.skipDiagnostics) {
         const coverageSummary = summarizeCoverage({
           playerId,
           strength: config.state,
@@ -3262,19 +3291,8 @@ async function processPlayer(
         diagnostics.coverageWarningCount += coverageSummary.warnings.length;
         diagnostics.unknownGameIdCount += coverageSummary.counts.unknownGameIds;
         coverageSummary.warnings.forEach((warning) => console.warn(warning));
-        const sourceTailSummary = summarizeSourceTailFreshness({
-          playerId,
-          strength: config.state,
-          wgoRows,
-          countsRows,
-          ratesRows,
-          countsOiRows,
-          ppRows,
-          lineRows
-        });
-        diagnostics.freshnessBlockerCount += sourceTailSummary.warnings.length;
-        sourceTailSummary.warnings.forEach((warning) => console.warn(warning));
-      }
+        }
+      
 
       const mergePhaseStartedAt = Date.now();
       logPipelinePhase({
@@ -3686,7 +3704,9 @@ export async function fetchPlayerValidationSourceData(options: {
   };
 }
 
-export async function main(options: FetchOptions = {}): Promise<void> {
+export async function main(
+  options: FetchOptions = {}
+): Promise<RollingPlayerRunSummary> {
   console.info(
     "[fetchRollingPlayerAverages] Starting run",
     JSON.stringify(options)
@@ -3881,7 +3901,16 @@ export async function main(options: FetchOptions = {}): Promise<void> {
     console.info(
       "[fetchRollingPlayerAverages] No players to process after applying resume filter."
     );
-    return;
+    return buildRunSummary({
+      rowsUpserted: 0,
+      processedPlayers: 0,
+      playersWithRows: 0,
+      coverageWarnings: 0,
+      suspiciousOutputWarnings: 0,
+      unknownGameIds: 0,
+      freshnessBlockers: 0,
+      sourceTracking: createEmptySourceTrackingSummary()
+    });
   }
 
   console.info(
@@ -4097,20 +4126,19 @@ export async function main(options: FetchOptions = {}): Promise<void> {
       rowsUpserted
     }
   });
+  const runSummary = buildRunSummary({
+    rowsUpserted,
+    processedPlayers,
+    playersWithRows,
+    coverageWarnings,
+    suspiciousOutputWarnings,
+    unknownGameIds,
+    freshnessBlockers,
+    sourceTracking
+  });
   console.info(
     "[fetchRollingPlayerAverages] Completed run",
-    JSON.stringify(
-      buildRunSummary({
-        rowsUpserted,
-        processedPlayers,
-        playersWithRows,
-        coverageWarnings,
-        suspiciousOutputWarnings,
-        unknownGameIds,
-        freshnessBlockers,
-        sourceTracking
-      })
-    )
+    JSON.stringify(runSummary)
   );
   logPipelinePhase({
     phase: "summary",
@@ -4125,6 +4153,7 @@ export async function main(options: FetchOptions = {}): Promise<void> {
       freshnessBlockers
     }
   });
+  return runSummary;
 }
 
 export const __testables = {

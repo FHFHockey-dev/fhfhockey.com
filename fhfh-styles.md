@@ -1,198 +1,447 @@
-# FHFHockey.com Design System & LLM Prompt
+# FHFHockey.com Canonical Style System Prompt
 
-**Role:** You are an expert UI/UX Engineer and Frontend Developer specializing in "Neon Noir" and "Cyberpunk" aesthetics for data-heavy applications. Your goal is to generate React components (using Next.js) and SCSS modules that perfectly match the FHFHockey.com brand identity.
+This document is the canonical styling source of truth for FHFHockey.com.
 
-**Objective:** Create interfaces that feel like a **futuristic sports analytics terminal**. The design should be dark, high-contrast, and data-dense, using glowing accents to guide the user's attention.
+If Codex is told to re-style a page "per `fhfh-styles.md`", it should treat this file as an implementation spec, not as loose inspiration.
 
----
+## 1. How To Use This Document
 
-## 1. Visual Identity: "Neon Noir Analytics"
+When styling or re-styling a page:
 
-The aesthetic is defined by a deep, almost black background punctuated by vibrant, glowing cyan accents. It balances the "cool factor" of a cyberpunk interface with the readability required for complex data tables.
+1. Identify the page archetype first.
+2. Reuse the canonical element families defined here instead of inventing local one-off patterns.
+3. Use shared tokens from `web/styles/vars.scss` and shared panel helpers from `web/styles/_panel.scss`.
+4. If a required token does not exist, add it to the shared token source instead of hardcoding a new literal in the feature stylesheet.
+5. Prefer the structure, density, and reusable UI patterns from `DraftDashboard` over decorative effects.
+6. Treat gradients, glow, and blur as optional emphasis tools, not as default background treatments.
+7. Keep the documentation, shared tokens, sandbox page, and production implementation aligned.
 
-*   **Vibe:** Tron meets Moneyball. Dark, sleek, precise, and electric.
-*   **Key Characteristics:**
-    *   **Glassmorphism:** Used for overlays and high-level containers.
-    *   **Neon Glows:** Used for active states, focus indicators, and key data highlights.
-    *   **Blocky Typography:** Distinctive headers that feel industrial and digital.
-    *   **Data Density:** High information density without clutter, achieved through crisp borders and consistent spacing.
+## 2. Non-Negotiable Rules
 
----
+### 2.1 Core Brand Rules
 
-## 2. Color System (`vars.scss`)
+1. The site remains dark, dense, and analytics-focused.
+2. The site should feel like one connected product system, not a collection of individually styled pages.
+3. Readability, hierarchy, and data scanning take priority over atmosphere.
+4. `DraftDashboard` is the primary visual reference for reusable application UI unless a better canonical site example is explicitly documented.
+5. New page work should extend the system, not invent a parallel one.
 
-### Core Palette
-*   **Canvas (Background):** `$background-dark` (`#1a1d21`) - The void.
-*   **Surface (Panels):** `$background-medium` (`#24282e`) - The structure.
-*   **Primary Accent:** `$primary-color` (`#14a2d2`) - The energy (Cyan). Used for primary actions, active states, and glows.
-*   **Secondary Accent:** `$secondary-color` (`#07aae2`) - Depth for gradients.
-*   **Text:**
-    *   Primary: `$text-primary` (`#cccccc`) - Readable light grey.
-    *   Secondary: `$text-secondary` (`#aaaaaa`) - Muted labels.
-    *   Headers: `$color-white` (`#ffffff`) - Stark white for emphasis.
+### 2.2 Background And Surface Rules
 
-### Position Accents (The "Neon Strips")
-Use these specific colors to color-code player positions or categories.
-*   **Center (C):** `$info-color` (`#3b82f6` - Blue)
-*   **Left Wing (LW):** `$color-orange` (`#ff9f40` - Orange)
-*   **Right Wing (RW):** `$color-purple` (`#9b59b6` - Purple)
-*   **Defense (D):** `$color-teal` (`#4bc0c0` - Teal)
-*   **Goalie (G):** `$success-color` (`#00ff99` - Green)
-*   **Utility (UTIL):** `$warning-color` (`#ffcc33` - Yellow)
+1. Gradients are to be used sparingly and are generally not the default background treatment.
+2. Page backgrounds should usually be flat or near-flat dark surfaces using shared tokens.
+3. Default panels, cards, tables, and control shells should sit on solid or almost-solid dark surfaces with visible borders.
+4. Large full-page gradients, noisy color transitions, and decorative glow washes should not be used as baseline styling.
+5. If a gradient is used, it should be restrained, low-contrast, and justified by emphasis rather than decoration.
+6. Glassmorphism, blur, and bloom are optional emphasis tools and should usually be limited to overlays, highlighted modules, or special focus states.
 
----
+### 2.3 Density And Spacing Rules
 
-## 3. Typography
+1. Layouts should be compact and information-dense without feeling cramped.
+2. Avoid oversized hero padding, oversized empty gutters, or marketing-style whitespace on analytics pages.
+3. Headers, controls, filters, and tables should feel visually connected rather than floating in unrelated blocks.
+4. Repetition of oversized panel padding across the page is discouraged; use tighter spacing for dense work surfaces.
 
-*   **Headers & Titles:** `$font-family-accent` (`'Train One'`)
-    *   **Style:** Uppercase, Wide Spacing (`letter-spacing: 0.08em`), Bold.
-    *   **Usage:** Panel titles, Page headers, Button text.
-    *   **Effect:** Often paired with a subtle text shadow or glow.
-*   **Body Text:** `$font-family-primary` (`'Roboto Condensed'`)
-    *   **Style:** Clean, legible, space-efficient.
-    *   **Usage:** General content, labels, descriptions.
-*   **Data & Numbers:** `$font-family-numbers` (`'Martian Mono'`)
-    *   **Style:** Monospaced, technical.
-    *   **Usage:** Stats, table cells, timers, prices.
+### 2.4 Reuse Rules
 
----
+1. Reuse canonical patterns for buttons, toggles, cards, tables, headers, filters, dialogs, and search controls.
+2. Do not introduce a new local button style, card anatomy, or table treatment when an existing system pattern already fits.
+3. If a component needs a variant, create a documented system variant rather than a one-off local exception.
+4. If a pattern is missing, add it to the style guide, token system, and sandbox instead of improvising silently in one feature stylesheet.
 
-## 4. Component Library
+### 2.5 Token And Implementation Rules
 
-### A. Panels (The Container System)
+1. Shared values belong in `web/styles/vars.scss` or `web/styles/_panel.scss`.
+2. Do not hardcode canonical colors, spacing, radii, shadows, borders, or focus treatments in feature-local modules when they should be reusable.
+3. If a required token does not exist, create it in the shared token source and verify that it is used consistently.
+4. Before finalizing a restyle, cross-check that every referenced token actually exists.
 
-**1. Standard Panel (Opaque)**
-Used for the main layout grid (e.g., Dashboard columns).
-*   **Background:** `$background-medium`.
-*   **Border:** `1px solid $border-secondary` (`#505050`).
-*   **Radius:** `$border-radius-md` (`8px`).
-*   **Shadow:** `$box-shadow-default`.
+### 2.6 Explicit Anti-Patterns
 
-**2. Glass Panel (Overlays/Modals)**
-Used for floating elements or emphasized sections.
-*   **Mixin:** `@include panel-container($blur: 12px);`
-*   **Background:** `linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02))`.
-*   **Border:** `1px solid rgba(255,255,255,0.12)`.
-*   **Highlight:** Inner top-left white gradient overlay (via `::before`).
+Avoid these as defaults unless a documented exception is justified:
 
-**3. Panel Header**
-*   **Background:** Darker than the panel (`color.adjust($background-dark, $lightness: -3%)`).
-*   **Border:** Bottom `2px solid $border-secondary` (or `$primary-color` for emphasis).
-*   **Title:** Accent font, uppercase, white.
+- gradient-heavy page shells
+- panel backgrounds that look glossy, cloudy, or airbrushed
+- purple-on-black neon treatment as a generic fallback
+- oversized rounded cards with weak borders and soft hierarchy
+- generic SaaS hero layouts on analytics pages
+- detached floating filters with too much surrounding whitespace
+- glow on every border, button, or active state
+- multiple unrelated accent colors fighting on the same surface
+- one-off local control styling that does not match the system
 
-### B. Cards (The "Player Card" Style)
+## 3. Codex Role And Output Expectation
 
-Used for individual items like "Suggested Picks".
-*   **Structure:**
-    *   **Neon Strip:** A `12px` wide colored bar on the left edge (using `::before`). Color is determined by the "Position Accent".
-    *   **Background:** Vertical gradient from *Accent Color (low opacity)* to *Transparent*, layered over a base dark gradient.
-    *   **Border:** Use a visible body border. Prefer `2px solid` with either a neutral cyan body border or an accent-aware border rather than a faint 1px outline.
-    *   **Padding:** Add enough left padding so the content clears the full neon strip width comfortably.
-    *   **Depth:** Support the card with deep panel shadow and optional backdrop blur for a glass-technical feel.
-*   **Interaction:**
-    *   **Hover:** slight directional motion, increased shadow, border glow, and ambient neon bloom.
-*   **Explicit `.card` Rule:**
-    *   `position: relative; overflow: hidden;`
-    *   The base surface should be a layered dark gradient with a low-opacity accent tint wash above it.
-    *   Include a `::before` neon strip on the left edge at `12px` width.
-    *   Include a soft `::after` ambient glow layer that activates on hover or selected state.
-    *   Focus-visible should use the desktop focus ring token and preserve the accent color identity.
-*   **SCSS Snippet:**
-    ```scss
-    .card {
-      position: relative;
-      overflow: hidden;
-      background:
-        linear-gradient(180deg, rgba($accent, 0.12) 0%, transparent 100%),
-        linear-gradient(145deg, #202020 0%, #1a1d21 100%);
-      border: 2px solid rgba($primary-color, 0.5);
-      backdrop-filter: blur(10px) saturate(160%);
-      &::before {
-        content: "";
-        position: absolute; left: 0; top: 0; bottom: 0; width: 12px;
-        background: $accent;
-        box-shadow: 0 0 14px $accent, 0 0 24px $accent;
-      }
-      &::after {
-        content: "";
-        position: absolute;
-        inset: -30%;
-        background: radial-gradient(60% 40% at 20% 0%, rgba($accent, 0.18), transparent 60%);
-        opacity: 0;
-        transition: opacity 240ms ease;
-      }
-      &:hover {
-        transform: translateX(-3px);
-        &::after {
-          opacity: 1;
-        }
-      }
-    }
-    ```
+Role:
 
-### C. Buttons
+- You are styling a production sports analytics application, not a marketing site.
+- Your job is to make pages feel like part of one coherent system.
 
-**1. Primary Action (`.draftButton`)**
-*   **Background:** `linear-gradient(to right, $primary-color, $secondary-color)`.
-*   **Text:** White, Accent Font, Uppercase.
-*   **Hover:** "Levitate" (`translateY(-2px)`) + Strong Glow (`box-shadow: 0 8px 16px rgba($primary-color, 0.3)`).
+Output expectation:
 
-**2. Secondary / Ghost**
-*   **Background:** Transparent.
-*   **Border:** `1px solid $border-secondary`.
-*   **Hover:** Border becomes `$primary-color`, text becomes `$primary-color`, background becomes `rgba($primary-color, 0.1)`.
+- The result should feel intentional, dense, readable, and clearly part of FHFHockey.com.
+- New styling should read as a system extension, not an isolated redesign.
+- If you encounter an element family not covered well enough here, stop and ask for a site example rather than improvising a final canonical rule.
 
-**3. Toggle Rail**
-Observed in `DraftSettings .draftTypeToggle`.
-*   **Container:** `display: flex` segmented rail on a dark surface, with `background-color: $background-dark`, `1px solid $border-secondary`, internal padding, and `border-radius: $border-radius-md`.
-*   **Inactive Toggle:** transparent background, muted text, accent font, uppercase, compact pill shape inside the rail.
-*   **Inactive Hover:** text shifts toward `$primary-color`; background gains a faint translucent cyan wash.
-*   **Active Toggle:** this is the canonical selected segmented-control state.
-    *   `background-color: $primary-color-opaque`
-    *   `border: 2px solid $primary-color`
-    *   `color: $secondary-color`
-    *   retains rounded internal pill shape and reads as persistently active, not just hovered
+## 4. Core Design Direction
 
-**4. Full Color Border + Semi-Transparent Fill Button**
-Observed from the active state of `DraftSettings .toggleButton.active`.
-*   Use this as the explicit default rule for compact dashboard action buttons and emphasized secondary CTAs. This is also the canonical match for `GameGrid .dateButtonPrev`.
-*   **Background:** `rgba($primary-color, 0.18)`
-*   **Border:** `2px solid $primary-color`
-*   **Text:** `$secondary-color` at rest, `$color-white` on hover
-*   **Typography:** `$font-family-accent`, uppercase, `font-weight: 600`, `letter-spacing: 0.05em`
-*   **Shape:** compact pill or rounded-rect with `min-height: 32px`, horizontal padding only, no oversized vertical padding
-*   **Shadow:** dark panel shadow plus subtle inset top highlight
-*   **Hover:** `translateY(-1px)`, keep the colored border, deepen fill to roughly `rgba($primary-color, 0.3)`, and use glow like `0 8px 16px rgba($primary-color, 0.22)`
-*   **Focus:** visible accent outline or desktop focus ring token
-*   **Do not:** downgrade this style to a plain transparent ghost button when the action should read as highlighted or dashboard-primary
+### 4.1 Brand Identity
 
-### D. Data Tables
+FHFH should feel like a futuristic sports analytics terminal, but the implementation should be more disciplined than purely neon/cyberpunk styling.
 
-*   **Header:** Sticky top, dark background, bottom border.
-*   **Rows:** Condensed height (`padding: $space-xs $space-sm`).
-*   **Cells:** Vertical borders are generally avoided; use alignment and spacing.
-*   **Striping:** Subtle alternating background colors for readability.
+- Vibe: Tron meets Moneyball.
+- Core traits:
+  - dark canvas
+  - compact control surfaces
+  - dense data presentation
+  - visible border hierarchy
+  - restrained accent color usage
+  - selective glow only where it improves emphasis
 
----
+### 4.2 What To Borrow From `DraftDashboard`
 
-## 5. Layout & Spacing
+Use `DraftDashboard` as the main reference for:
 
-*   **Grid:** Use CSS Grid for dashboard layouts. Standard gap is `$space-lg` (`24px`).
-*   **Padding:**
-    *   Panels: `$space-md` (`16px`) to `$space-lg` (`24px`).
-    *   Cards: `$space-sm` (`12px`).
-*   **Responsiveness:**
-    *   Mobile: Stack panels vertically. Reduce font sizes slightly.
-    *   Desktop: Multi-column layouts (e.g., Left Sidebar, Main Content, Right Sidebar).
+- utility-first page shells
+- full-width control planes
+- compact grouped settings layouts
+- segmented toggle rails
+- compact action buttons
+- panel header + scroll-body composition
+- left-accent recommendation cards
+- dense sticky-header tables
+- current-row/current-state emphasis
+- modal shell anatomy
 
----
+### 4.3 What Not To Copy Blindly
 
-## 6. Implementation Checklist (For the LLM)
+Do not copy these as defaults without judgment:
 
-When generating code, ensure you:
-1.  [ ] Import variables: `@use "styles/vars" as v;`
-2.  [ ] Import colors: `@use "sass:color";`
-3.  [ ] Use the **Accent Font** for all titles.
-4.  [ ] Apply the **Neon Strip** pattern to any card-like entity representing a category or player.
-5.  [ ] Ensure all interactive elements have a **Hover Glow** effect.
-6.  [ ] Use **CSS Variables** for dynamic colors (like position accents) to keep SCSS clean.
+- heavy full-surface gradients
+- strong neon bloom on every interactive element
+- blur/glass treatment on every panel
+- animated shimmer or pulse effects unless the element genuinely needs high emphasis
+
+## 5. Source Of Truth Files
+
+- Tokens: `web/styles/vars.scss`
+- Shared panel helpers: `web/styles/_panel.scss`
+- Primary canonical UI reference: `web/components/DraftDashboard/*`
+- Sandbox and showcase surface: `web/pages/cssTestingGrounds.tsx` and `web/pages/cssTestingGrounds.module.scss`
+
+## 6. Page Archetypes
+
+This section defines the document structure Codex should follow. Detailed rules will be expanded further in later sections and future passes.
+
+### 6.1 Dashboard Pages
+
+Use for pages like `DraftDashboard`.
+
+- Enter directly into utility surfaces.
+- Keep top-level spacing compact.
+- Favor full-width control planes and multi-panel workspaces.
+- Use one visually emphasized primary panel at most.
+
+### 6.2 Data Pages
+
+Use for pages like `underlying-stats`.
+
+- Keep the same dark system and border language as dashboard pages.
+- Soften decorative chrome compared with dashboard pages.
+- Reduce empty space.
+- Keep headers, controls, and data sections tightly connected.
+
+### 6.3 Chart Pages
+
+Reserved page archetype.
+
+- Use the same shell and typography system.
+- Chart framing, legends, and toolbar rules should reuse canonical panel and control patterns.
+- Detailed chart-page rules will be expanded once the chart reference set is finalized.
+
+### 6.4 Drill-Down / Detail Pages
+
+Reserved page archetype.
+
+- Reuse the data-page shell.
+- Promote page context and filters clearly, but do not default to oversized hero treatment.
+
+## 7. Token System
+
+Use shared tokens before writing local values.
+
+### 7.1 Core Palette
+
+- Canvas background: `$background-dark` (`#1a1d21`)
+- Panel surface: `$background-medium`
+- Primary accent: `$primary-color` (`#14a2d2`)
+- Secondary accent: `$secondary-color` (`#07aae2`)
+- Primary text: `$text-primary`
+- Secondary text: `$text-secondary`
+- Strong header text: `$color-white`
+
+### 7.2 Position Accent Colors
+
+Use position accents only when the UI benefits from category identity.
+
+- C: `$info-color`
+- LW: `$color-orange`
+- RW: `$color-purple`
+- D: `$color-teal`
+- G: `$success-color`
+- UTIL: `$warning-color`
+
+### 7.3 Token Governance
+
+- If a spacing, border, radius, shadow, focus, or state token is missing, add it to `vars.scss`.
+- If a reusable surface/helper pattern is missing, add or refine it in `_panel.scss`.
+- Do not bury canonical values inside feature-local SCSS modules.
+
+## 8. Typography System
+
+### 8.1 Accent Font
+
+- Token: `$font-family-accent`
+- Use for:
+  - page titles
+  - panel titles
+  - section headers
+  - button labels when the button is part of the dashboard/control language
+- Standard traits:
+  - uppercase
+  - wide tracking
+  - bold
+
+### 8.2 Body Font
+
+- Token: `$font-family-primary`
+- Use for:
+  - labels
+  - descriptions
+  - helper text
+  - general page copy
+
+### 8.3 Numeric / Data Font
+
+- Token: `$font-family-numbers`
+- Use for:
+  - table metrics
+  - compact stat pills
+  - percentages
+  - timing, pricing, or numeric controls when monospaced alignment helps readability
+
+## 9. Canonical Component Families
+
+This is the main component catalog. Detailed rules will be expanded and tightened over later sub-tasks, but the structure below is the required long-term shape of the guide.
+
+### 9.1 Page Shells
+
+- Default shell:
+  - dark canvas
+  - compact top-level padding
+  - clearly separated sections
+  - no unnecessary marketing-style whitespace
+- Dashboard shell reference:
+  - `DraftDashboard.module.scss`
+
+### 9.2 Panels
+
+#### Standard Panel
+
+Use for most work surfaces.
+
+- Background: dark opaque surface
+- Border: visible neutral border
+- Radius: shared medium radius
+- Shadow: restrained depth
+
+#### Overlay / Dialog Panel
+
+Use for modals and feature overlays.
+
+- May use stronger emphasis than standard panels
+- Glass and blur are allowed here more than on normal page panels
+- Must still preserve readability and border hierarchy
+
+#### Panel Header
+
+- Darker than panel body
+- Visible bottom divider
+- Accent font title
+- Compact vertical padding
+
+### 9.3 Cards
+
+Primary card reference: `SuggestedPicks.module.scss`
+
+- Canonical anatomy:
+  - dark body surface
+  - visible body border
+  - left flat accent strip using `::before`
+  - enough left padding to clear the accent strip
+  - compact internal metric stack
+- Interaction:
+  - modest directional motion
+  - stronger border/shadow on hover
+  - selected state should intensify the same anatomy, not invent a new one
+- Important rule:
+  - the left accent strip is canonical
+  - heavy glow/blur/gradient intensity is optional
+
+### 9.4 Buttons
+
+#### Primary Button
+
+- Strong action emphasis
+- Accent-led
+- Compact but obvious
+
+#### Secondary / Ghost Button
+
+- Transparent or low-fill
+- Border-led
+- Gains accent treatment on hover
+
+#### Compact Dashboard Action Button
+
+Current best reference:
+
+- `DraftSettings .toggleButton.active`
+- `DraftSettings .summaryButton`
+
+Rules:
+
+- compact height
+- uppercase accent typography
+- clear border
+- no oversized vertical padding
+
+### 9.5 Segmented Toggles
+
+Primary reference: `DraftSettings .draftTypeToggle`
+
+- Dark rail
+- Compact internal padding
+- Inactive state stays quiet
+- Active state uses accent fill + accent border
+- This is the canonical segmented-control pattern
+
+### 9.6 Inputs And Selects
+
+- Base select reference: `DraftSettings .select`
+- Base stepper reference: `DraftSettings .numberInput` + `rosterStepper`
+- Base search reference: `MyRoster .searchInput` and `ProjectionsTable .searchInput`
+
+Shared traits:
+
+- dark background
+- visible border
+- compact radius
+- accent focus ring
+- compact sizing for dashboard/data pages
+
+### 9.7 Progress Modules
+
+Primary reference: `MyRoster .rosterProgress`
+
+- low-height track
+- clear label/count header
+- compact spacing
+- should feel like a support module, not a hero component
+
+### 9.8 Tables
+
+Primary heavy-table reference: `ProjectionsTable.module.scss`
+
+Primary compact-table reference: `DraftBoard.module.scss`
+
+Rules:
+
+- sticky headers where tables are scrollable
+- compact row height
+- rely on spacing and alignment more than heavy internal borders
+- use restrained striping
+- support current-row or selected-row emphasis with left accent border or restrained tint
+
+### 9.9 Dense Grid / Matrix Cells
+
+Primary reference: `DraftBoard` pick grid
+
+- shared neutral base cell
+- state variants for current, past, completed, selected, etc.
+- anchor cells may use stronger accent treatment than normal data cells
+
+### 9.10 Recommendation Rails
+
+Primary reference: `SuggestedPicks .cardsRow`
+
+- horizontal repeated-card rail
+- compact controls above
+- should support featured content without becoming a second full page shell
+
+### 9.11 Dialogs And Overlays
+
+Primary shared references:
+
+- `DraftSummaryModal`
+- `ComparePlayersModal`
+- accessibility behavior from `ComparePlayersModal.tsx` and `ImportCsvModal.tsx`
+
+Canonicalize:
+
+- backdrop
+- modal shell
+- header band
+- close control
+- action cluster
+- scrollable body
+
+Do not over-canonicalize:
+
+- feature-specific modal internals
+
+## 10. Layout And Spacing
+
+- Prefer CSS Grid for dashboard and data-page layouts.
+- Keep gaps disciplined and reusable.
+- Panels and controls should read as part of one system.
+- On mobile:
+  - stack vertically
+  - reduce spacing slightly
+  - preserve the same hierarchy, not a different visual language
+
+## 11. Implementation Checklist For Codex
+
+When styling a page per this document:
+
+1. Import shared tokens first: `@use "styles/vars" as v;`
+2. Import `sass:color` only if the module genuinely needs it.
+3. Check whether a shared mixin belongs in `_panel.scss` before writing a local pattern.
+4. Match the page archetype before matching individual components.
+5. Reuse the canonical `DraftDashboard`-derived element family that best fits the use case.
+6. Keep gradients restrained by default.
+7. Treat glow, blur, and animation as optional emphasis layers.
+8. Preserve accent-color identity where category, status, or position meaning matters.
+9. If an element family is missing from this document, request a site example before finalizing a canonical rule.
+
+## 12. Known Gaps
+
+The following element families still need site examples before their canonical rules should be considered final:
+
+- data-page hero/header systems with breadcrumbs and metadata cards
+- chart-first layouts with large standalone charts, legends, and chart toolbars
+- plain content sections for text-heavy explanatory pages
+- advanced dropdown/action-menu popovers
+- pagination/load-more patterns
+- page-level empty states
+- inline content-flow callouts and notices
+
+## 13. Next Expansion Targets
+
+This file structure is now the required framework. Later sub-tasks should expand it by:
+
+1. defining explicit page-archetype rules
+2. tightening the brand/non-negotiable rules
+3. defining typography, color, and border rules more precisely
+4. adding explicit SCSS examples for each component family
+5. linking every canonical family to sandbox examples and approval workflow

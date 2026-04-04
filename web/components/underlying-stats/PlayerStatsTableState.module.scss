@@ -1,0 +1,57 @@
+@use "sass:color";
+@use "styles/vars" as v;
+
+.panelState,
+.warningState {
+  min-height: 180px;
+  border-radius: v.$border-radius-md;
+  border: 1px solid v.$border-secondary;
+  box-shadow: v.$box-shadow-default;
+}
+
+.panelState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(v.$color-white, 0.02),
+      rgba(v.$color-black, 0.08)
+    ),
+    v.$surface-1;
+}
+
+.warningState {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: v.$space-sm;
+  padding: v.$space-md v.$space-lg;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(v.$warning-color, 0.18),
+      rgba(v.$warning-color, 0.06) 48%,
+      rgba(v.$surface-1, 0.96)
+    ),
+    v.$surface-1;
+  border-color: color.adjust(v.$warning-color, $lightness: -12%);
+  color: v.$text-primary;
+}
+
+.warningEyebrow {
+  margin: 0;
+  color: v.$warning-color;
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: v.$font-size-xs;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.warningMessage {
+  margin: 0;
+  max-width: 64ch;
+  font-size: v.$font-size-sm;
+  line-height: 1.5;
+}
