@@ -57,6 +57,54 @@ function parseEvents(plays: Record<string, unknown>[]) {
 }
 
 describe("nhlNstParityMetrics", () => {
+  it("counts own-goal scorers as goals without adding shot credit", () => {
+    const events = parseEvents([
+      {
+        eventId: 100,
+        sortOrder: 100,
+        periodDescriptor: { number: 1, periodType: "REG" },
+        timeInPeriod: "00:10",
+        timeRemaining: "19:50",
+        situationCode: "1551",
+        homeTeamDefendingSide: "left",
+        typeCode: 505,
+        typeDescKey: "goal",
+        goalModifier: "own-goal",
+        details: {
+          eventOwnerTeamId: 10,
+          scoringPlayerId: 91,
+          goalieInNetId: 31,
+          xCoord: 88,
+          yCoord: 8,
+          zoneCode: "O",
+        },
+      },
+    ]);
+
+    const shiftRows = [
+      createShiftRow({ shift_id: 1, player_id: 91, team_id: 10, start_seconds: 0, end_seconds: 30, duration_seconds: 30 }),
+      createShiftRow({ shift_id: 2, player_id: 31, team_id: 20, team_abbrev: "NYR", start_seconds: 0, end_seconds: 30, duration_seconds: 30 }),
+    ] as any[];
+
+    const shotFeatures = buildShotFeatureRows(events, shiftRows as any, 10, 20);
+    const output = buildNstParityMetrics(events, shotFeatures, shiftRows as any, {
+      date: "2026-03-30",
+      season: 20252026,
+      homeTeamId: 10,
+      awayTeamId: 20,
+    });
+
+    const skater91All = output.skaters.all.counts.find((row) => row.player_id === 91)!;
+
+    expect(skater91All).toMatchObject({
+      goals: 1,
+      total_points: 1,
+      shots: 0,
+      icf: 0,
+      iff: 0,
+    });
+  });
+
   it("reconstructs all-situations and PP skater metrics plus on-ice counts from normalized events and shifts", () => {
     const events = parseEvents([
       {
@@ -692,6 +740,9 @@ describe("nhlNstParityMetrics", () => {
 
     const skater91All = output.skaters.all.counts.find((row) => row.player_id === 91)!;
     const skater91Ev = output.skaters.ev.counts.find((row) => row.player_id === 91)!;
+    const skater91FiveOnFive = output.skaters.fiveOnFive.counts.find(
+      (row) => row.player_id === 91
+    )!;
     const skater91Pp = output.skaters.pp.counts.find((row) => row.player_id === 91)!;
     const skater91Pk = output.skaters.pk.counts.find((row) => row.player_id === 91)!;
     const skater91PkOi = output.skaters.pk.countsOi.find((row) => row.player_id === 91)!;
@@ -709,6 +760,11 @@ describe("nhlNstParityMetrics", () => {
       iff: 2,
     });
     expect(skater91Ev).toMatchObject({
+      toi: 5,
+      shots: 1,
+      icf: 1,
+    });
+    expect(skater91FiveOnFive).toMatchObject({
       toi: 5,
       shots: 1,
       icf: 1,

@@ -73,6 +73,84 @@
 -- - 07:15 UTC / 02:15 EST: retired pre-floor slot for update-games.
 ----------------------------------------------------------------------------------
 
+----------------------------------------------------------------------------------
+-- Player Underlying Stats Freshness
+----------------------------------------------------------------------------------
+--
+-- Recommended primary path: invoke the dedicated one-game ingest route as soon as
+-- your Supabase game-end trigger determines a game is final. This keeps the work
+-- bounded to one game, refreshes raw gamecenter inputs plus per-game player
+-- underlying summary snapshots, and is the safest way to stay under the 4m30s
+-- timeout budget.
+--
+-- Route:
+--   https://fhfhockey.com/api/v1/db/update-player-underlying-stats?gameId={gameId}
+--
+-- Preferred trigger implementation: keep the existing line-combo webhook intact
+-- and add a second trigger on public."lineCombinations" that only fires on the
+-- home-team row. Because lineCombinations stores exactly two rows per game
+-- (home + away), this guard guarantees one underlying-stats refresh per game.
+--
+-- CREATE OR REPLACE FUNCTION public.on_new_player_underlying_stats()
+-- RETURNS trigger
+-- LANGUAGE plpgsql
+-- AS $$
+-- DECLARE
+--   url TEXT := 'https://fhfhockey.com/api/v1/db/update-player-underlying-stats';
+--   headers JSONB := '{"Content-Type": "application/json", "Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb;
+--   home_team_id INTEGER;
+-- BEGIN
+--   SELECT "homeTeamId"
+--   INTO home_team_id
+--   FROM public."games"
+--   WHERE id = NEW."gameId";
+--
+--   IF home_team_id IS NULL THEN
+--     RETURN NEW;
+--   END IF;
+--
+--   IF NEW."teamId" <> home_team_id THEN
+--     RETURN NEW;
+--   END IF;
+--
+--   PERFORM net.http_post(
+--     url := url || '?gameId=' || NEW."gameId"::TEXT || '&warmLandingCache=true',
+--     headers := headers,
+--     timeout_milliseconds := 270000
+--   );
+--
+--   RETURN NEW;
+-- END;
+-- $$;
+--
+-- DROP TRIGGER IF EXISTS after_player_underlying_stats_insert ON public."lineCombinations";
+--
+-- CREATE TRIGGER after_player_underlying_stats_insert
+-- AFTER INSERT ON public."lineCombinations"
+-- FOR EACH ROW
+-- EXECUTE FUNCTION public.on_new_player_underlying_stats();
+--
+-- Recommended safety net: one daily catch-up for yesterday's games only. This is
+-- intentionally date-bounded, not full-season, so it stays within the same 4m30s
+-- timeout budget and can repair any missed game-end triggers.
+--
+-- SELECT cron.schedule(
+--   'update-player-underlying-stats-yesterday',
+--   '35 9 * * *', -- 09:35 UTC / 05:35 ET
+--   $$
+--     SELECT net.http_get(
+--       url :=
+--         'https://fhfhockey.com/api/v1/db/update-player-underlying-stats?startDate=' ||
+--         to_char((CURRENT_DATE - INTERVAL '1 day')::date, 'YYYY-MM-DD') ||
+--         '&endDate=' ||
+--         to_char((CURRENT_DATE - INTERVAL '1 day')::date, 'YYYY-MM-DD') ||
+--         '&warmLandingCache=true',
+--       headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--       timeout_milliseconds := 270000
+--     );
+--   $$
+-- );
+
 
 ----------------------------------------------------------------------------------
 -- 03:00 EST Floor Cluster And Remaining Legacy Holds

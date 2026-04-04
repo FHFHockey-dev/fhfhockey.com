@@ -1,0 +1,223 @@
+@use "sass:color";
+@use "styles/vars" as v;
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-md;
+}
+
+.headerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: v.$space-md;
+  flex-wrap: wrap;
+}
+
+.advancedToggle {
+  min-height: 40px;
+  padding: v.$space-xs v.$space-md;
+  border-radius: 999px;
+  border: 1px solid rgba(v.$secondary-color, 0.24);
+  background: rgba(v.$secondary-color, 0.1);
+  color: v.$color-white;
+  font: inherit;
+  font-size: v.$font-size-xs;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    border-color 0.18s ease,
+    background-color 0.18s ease;
+
+  &:hover,
+  &:focus-visible {
+    border-color: rgba(v.$secondary-color, 0.48);
+    background: rgba(v.$secondary-color, 0.16);
+    outline: none;
+  }
+}
+
+.primaryGrid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: v.$space-sm;
+}
+
+.control {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-xs;
+  min-width: 0;
+}
+
+.label {
+  margin: 0;
+  font-size: v.$font-size-xs;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: v.$text-secondary;
+}
+
+.select {
+  width: 100%;
+  min-height: 44px;
+  padding: v.$space-sm 2.5rem v.$space-sm v.$space-md;
+  border-radius: v.$border-radius-md;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(v.$color-white, 0.06),
+      rgba(v.$color-white, 0.02)
+    ),
+    color.adjust(v.$background-dark, $lightness: -1%);
+  color: v.$color-white;
+  font: inherit;
+  font-size: v.$font-size-sm;
+  line-height: 1.2;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2314a2d2' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.85rem center;
+  background-repeat: no-repeat;
+  background-size: 1.1rem;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    background-color 0.18s ease;
+
+  &:hover {
+    border-color: rgba(v.$secondary-color, 0.4);
+  }
+
+  &:focus-visible {
+    outline: none;
+    border-color: rgba(v.$primary-color, 0.75);
+    box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.2);
+  }
+}
+
+.hintRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: v.$space-md;
+  flex-wrap: wrap;
+}
+
+.hint {
+  margin: 0;
+  font-size: v.$font-size-xs;
+  line-height: 1.5;
+  color: v.$text-secondary;
+}
+
+.familyBadge {
+  padding: v.$space-xs v.$space-sm;
+  border-radius: 999px;
+  border: 1px solid rgba(v.$secondary-color, 0.22);
+  background: rgba(v.$secondary-color, 0.12);
+  font-size: v.$font-size-xs;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: v.$color-white;
+}
+
+.advancedPanel {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-md;
+  padding: v.$space-md;
+  border-radius: v.$border-radius-md;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(v.$color-white, 0.02), rgba(v.$color-white, 0)),
+    rgba(0, 0, 0, 0.16);
+}
+
+.advancedGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: v.$space-sm;
+}
+
+.input {
+  width: 100%;
+  min-height: 44px;
+  padding: v.$space-sm v.$space-md;
+  border-radius: v.$border-radius-md;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(v.$color-white, 0.06),
+      rgba(v.$color-white, 0.02)
+    ),
+    color.adjust(v.$background-dark, $lightness: -1%);
+  color: v.$color-white;
+  font: inherit;
+  font-size: v.$font-size-sm;
+
+  &:focus-visible {
+    outline: none;
+    border-color: rgba(v.$primary-color, 0.75);
+    box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.2);
+  }
+
+  &:disabled {
+    opacity: 0.48;
+    cursor: not-allowed;
+  }
+}
+
+.advancedMeta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: v.$space-md;
+  flex-wrap: wrap;
+}
+
+.scopeBadge {
+  padding: v.$space-xs v.$space-sm;
+  border-radius: 999px;
+  border: 1px solid rgba(v.$warning-color, 0.22);
+  background: rgba(v.$warning-color, 0.12);
+  font-size: v.$font-size-xs;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: v.$color-white;
+}
+
+.subtleHint {
+  margin: 0;
+  font-size: v.$font-size-xs;
+  color: v.$text-secondary;
+  line-height: 1.5;
+}
+
+@media (max-width: 1280px) {
+  .primaryGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .advancedGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: v.$screen-small-max) {
+  .primaryGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .advancedGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .advancedMeta,
+  .headerRow {
+    align-items: flex-start;
+  }
+}

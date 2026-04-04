@@ -1,7 +1,10 @@
 import type { Database } from "../database-generated.types";
 import { evaluateNormalizedEventInclusion } from "./nhlEventInclusion";
 import type { NhlShotFeatureRow } from "./nhlShotFeatureBuilder";
-import type { ParsedNhlPbpEvent } from "./nhlPlayByPlayParser";
+import {
+  isOwnGoalPlayByPlayEvent,
+  type ParsedNhlPbpEvent,
+} from "./nhlPlayByPlayParser";
 import {
   classifyTeamStrengthState,
   formatStrengthExact,
@@ -20,7 +23,7 @@ import {
 
 type ShiftRow = Database["public"]["Tables"]["nhl_api_shift_rows"]["Row"];
 
-type SkaterSplitKey = "all" | "ev" | "pp" | "pk";
+type SkaterSplitKey = "all" | "ev" | "fiveOnFive" | "pp" | "pk";
 type GoalieSplitKey = "all" | "ev" | "fiveOnFive" | "pp" | "pk";
 type TeamRelativeZoneCode = "O" | "N" | "D";
 type DangerBucket = "high" | "medium" | "low";
@@ -594,6 +597,7 @@ function accumulateToiBySplit(
   const splitMaps: Record<SkaterSplitKey, Map<number, number>> = {
     all: new Map<number, number>(),
     ev: new Map<number, number>(),
+    fiveOnFive: new Map<number, number>(),
     pp: new Map<number, number>(),
     pk: new Map<number, number>(),
   };
@@ -624,6 +628,12 @@ function accumulateToiBySplit(
           interval.playerId,
           (splitMaps.ev.get(interval.playerId) ?? 0) + duration
         );
+        if (segment.strengthExact === "5v5") {
+          splitMaps.fiveOnFive.set(
+            interval.playerId,
+            (splitMaps.fiveOnFive.get(interval.playerId) ?? 0) + duration
+          );
+        }
       } else if (teamState === "PP") {
         splitMaps.pp.set(
           interval.playerId,
@@ -732,11 +742,24 @@ function buildShiftStartPlayersByMoment(
   );
 }
 
-function getSkaterSplitForTeamState(state: StrengthState | null): SkaterSplitKey | null {
-  if (state === "EV") return "ev";
-  if (state === "PP") return "pp";
-  if (state === "SH") return "pk";
-  return null;
+function getSkaterSplitKeys(
+  teamState: StrengthState | null,
+  strengthExact: string | null
+): SkaterSplitKey[] {
+  const splits: SkaterSplitKey[] = [];
+
+  if (teamState === "EV") {
+    splits.push("ev");
+    if (strengthExact === "5v5") {
+      splits.push("fiveOnFive");
+    }
+  } else if (teamState === "PP") {
+    splits.push("pp");
+  } else if (teamState === "SH") {
+    splits.push("pk");
+  }
+
+  return splits;
 }
 
 function getGoalieSplitKeys(
@@ -820,12 +843,14 @@ export function buildNstParityMetrics(
   const skaterCountsAcc: Record<SkaterSplitKey, Map<number, RawSkaterAccumulator>> = {
     all: new Map(),
     ev: new Map(),
+    fiveOnFive: new Map(),
     pp: new Map(),
     pk: new Map(),
   };
   const skaterOiAcc: Record<SkaterSplitKey, Map<number, RawSkaterOiAccumulator>> = {
     all: new Map(),
     ev: new Map(),
+    fiveOnFive: new Map(),
     pp: new Map(),
     pk: new Map(),
   };
@@ -875,21 +900,21 @@ export function buildNstParityMetrics(
       if (teamId == null) return;
       const teamState =
         teamId === options.homeTeamId ? homeState : awayState;
-      const split = getSkaterSplitForTeamState(teamState);
+      const splits = getSkaterSplitKeys(teamState, event.strength_exact);
       increment(getOrCreate(skaterCountsAcc.all, playerId, defaultSkaterAccumulator));
-      if (split) {
+      for (const split of splits) {
         increment(getOrCreate(skaterCountsAcc[split], playerId, defaultSkaterAccumulator));
       }
     };
 
     const addOnIceStat = (
       playerIds: number[],
-      split: SkaterSplitKey | null,
+      splits: readonly SkaterSplitKey[],
       increment: (acc: RawSkaterOiAccumulator) => void
     ) => {
       for (const playerId of playerIds) {
         increment(getOrCreate(skaterOiAcc.all, playerId, defaultSkaterOiAccumulator));
-        if (split) {
+        for (const split of splits) {
           increment(getOrCreate(skaterOiAcc[split], playerId, defaultSkaterOiAccumulator));
         }
       }
@@ -913,12 +938,14 @@ export function buildNstParityMetrics(
     }
 
     const shooterId = shot?.shooterPlayerId ?? event.shooting_player_id ?? event.scoring_player_id;
-    if (SHOT_ON_GOAL_TYPES.has(event.type_desc_key ?? "")) {
+    const isOwnGoal = isOwnGoalPlayByPlayEvent(event);
+
+    if (!isOwnGoal && SHOT_ON_GOAL_TYPES.has(event.type_desc_key ?? "")) {
       addSkaterStat(shooterId, (acc) => {
         acc.shots += 1;
       });
     }
-    if (SHOT_ATTEMPT_TYPES.has(event.type_desc_key ?? "")) {
+    if (!isOwnGoal && SHOT_ATTEMPT_TYPES.has(event.type_desc_key ?? "")) {
       addSkaterStat(shooterId, (acc) => {
         acc.icf += 1;
         if (shot) {
@@ -932,7 +959,7 @@ export function buildNstParityMetrics(
         }
       });
     }
-    if (UNBLOCKED_ATTEMPT_TYPES.has(event.type_desc_key ?? "")) {
+    if (!isOwnGoal && UNBLOCKED_ATTEMPT_TYPES.has(event.type_desc_key ?? "")) {
       addSkaterStat(shooterId, (acc) => {
         acc.iff += 1;
       });
@@ -988,49 +1015,69 @@ export function buildNstParityMetrics(
     }
 
     if (shot) {
-      const ownerSplit = getSkaterSplitForTeamState(
+      const ownerSplits = getSkaterSplitKeys(
         event.event_owner_team_id === options.homeTeamId ? homeState : awayState
+        ,
+        shot.strengthExact
       );
-      const opponentSplit = getSkaterSplitForTeamState(
+      const opponentSplits = getSkaterSplitKeys(
         event.event_owner_team_id === options.homeTeamId ? awayState : homeState
+        ,
+        shot.strengthExact
       );
       const xgValue = getApproximateXgValue(shot);
       const dangerBucket = getDangerBucket(shot);
       const scoringChance = isScoringChance(shot);
 
-      addOnIceStat(attribution.ownerPlayerIds, ownerSplit, (acc) => {
-        if (SHOT_ATTEMPT_TYPES.has(shot.shotEventType ?? "")) acc.cf += 1;
-        if (UNBLOCKED_ATTEMPT_TYPES.has(shot.shotEventType ?? "")) acc.ff += 1;
-        if (SHOT_ON_GOAL_TYPES.has(shot.shotEventType ?? "")) acc.sf += 1;
+      addOnIceStat(attribution.ownerPlayerIds, ownerSplits, (acc) => {
+        if (!shot.isOwnGoal && SHOT_ATTEMPT_TYPES.has(shot.shotEventType ?? "")) {
+          acc.cf += 1;
+        }
+        if (!shot.isOwnGoal && UNBLOCKED_ATTEMPT_TYPES.has(shot.shotEventType ?? "")) {
+          acc.ff += 1;
+        }
+        if (!shot.isOwnGoal && SHOT_ON_GOAL_TYPES.has(shot.shotEventType ?? "")) {
+          acc.sf += 1;
+        }
         if (shot.isGoal) acc.gf += 1;
-        if (xgValue != null) acc.xgf = addToNullableNumber(acc.xgf, xgValue);
-        if (scoringChance) acc.scf = (acc.scf ?? 0) + 1;
-        if (dangerBucket === "high") {
+        if (!shot.isOwnGoal && xgValue != null) {
+          acc.xgf = addToNullableNumber(acc.xgf, xgValue);
+        }
+        if (!shot.isOwnGoal && scoringChance) acc.scf = (acc.scf ?? 0) + 1;
+        if (!shot.isOwnGoal && dangerBucket === "high") {
           acc.hdcf = (acc.hdcf ?? 0) + 1;
           if (shot.isGoal) acc.hdgf = (acc.hdgf ?? 0) + 1;
-        } else if (dangerBucket === "medium") {
+        } else if (!shot.isOwnGoal && dangerBucket === "medium") {
           acc.mdcf = (acc.mdcf ?? 0) + 1;
           if (shot.isGoal) acc.mdgf = (acc.mdgf ?? 0) + 1;
-        } else if (dangerBucket === "low") {
+        } else if (!shot.isOwnGoal && dangerBucket === "low") {
           acc.ldcf = (acc.ldcf ?? 0) + 1;
           if (shot.isGoal) acc.ldgf = (acc.ldgf ?? 0) + 1;
         }
       });
 
-      addOnIceStat(attribution.opponentPlayerIds, opponentSplit, (acc) => {
-        if (SHOT_ATTEMPT_TYPES.has(shot.shotEventType ?? "")) acc.ca += 1;
-        if (UNBLOCKED_ATTEMPT_TYPES.has(shot.shotEventType ?? "")) acc.fa += 1;
-        if (SHOT_ON_GOAL_TYPES.has(shot.shotEventType ?? "")) acc.sa += 1;
+      addOnIceStat(attribution.opponentPlayerIds, opponentSplits, (acc) => {
+        if (!shot.isOwnGoal && SHOT_ATTEMPT_TYPES.has(shot.shotEventType ?? "")) {
+          acc.ca += 1;
+        }
+        if (!shot.isOwnGoal && UNBLOCKED_ATTEMPT_TYPES.has(shot.shotEventType ?? "")) {
+          acc.fa += 1;
+        }
+        if (!shot.isOwnGoal && SHOT_ON_GOAL_TYPES.has(shot.shotEventType ?? "")) {
+          acc.sa += 1;
+        }
         if (shot.isGoal) acc.ga += 1;
-        if (xgValue != null) acc.xga = addToNullableNumber(acc.xga, xgValue);
-        if (scoringChance) acc.sca = (acc.sca ?? 0) + 1;
-        if (dangerBucket === "high") {
+        if (!shot.isOwnGoal && xgValue != null) {
+          acc.xga = addToNullableNumber(acc.xga, xgValue);
+        }
+        if (!shot.isOwnGoal && scoringChance) acc.sca = (acc.sca ?? 0) + 1;
+        if (!shot.isOwnGoal && dangerBucket === "high") {
           acc.hdca = (acc.hdca ?? 0) + 1;
           if (shot.isGoal) acc.hdga = (acc.hdga ?? 0) + 1;
-        } else if (dangerBucket === "medium") {
+        } else if (!shot.isOwnGoal && dangerBucket === "medium") {
           acc.mdca = (acc.mdca ?? 0) + 1;
           if (shot.isGoal) acc.mdga = (acc.mdga ?? 0) + 1;
-        } else if (dangerBucket === "low") {
+        } else if (!shot.isOwnGoal && dangerBucket === "low") {
           acc.ldca = (acc.ldca ?? 0) + 1;
           if (shot.isGoal) acc.ldga = (acc.ldga ?? 0) + 1;
         }
@@ -1047,7 +1094,7 @@ export function buildNstParityMetrics(
 
         for (const split of goalieSplits) {
           const acc = getOrCreate(goalieAcc[split], shot.goalieInNetId, defaultGoalieAccumulator);
-          if (SHOT_ON_GOAL_TYPES.has(shot.shotEventType ?? "")) {
+          if (!shot.isOwnGoal && SHOT_ON_GOAL_TYPES.has(shot.shotEventType ?? "")) {
             acc.shots_against += 1;
             if (!shot.isGoal) acc.saves += 1;
             if (shot.shotDistanceFeet != null) {
@@ -1057,17 +1104,19 @@ export function buildNstParityMetrics(
           }
           if (shot.isGoal) {
             acc.goals_against += 1;
-            if (shot.shotDistanceFeet != null) {
+            if (!shot.isOwnGoal && shot.shotDistanceFeet != null) {
               acc.goalDistanceTotal += shot.shotDistanceFeet;
               acc.goalDistanceCount += 1;
             }
           }
-          if (shot.isRushShot) acc.rush_attempts_against += 1;
-          if (shot.isReboundShot) acc.rebound_attempts_against += 1;
+          if (!shot.isOwnGoal && shot.isRushShot) acc.rush_attempts_against += 1;
+          if (!shot.isOwnGoal && shot.isReboundShot) acc.rebound_attempts_against += 1;
           const xgValueForGoalie = getApproximateXgValue(shot);
-          acc.xg_against = addToNullableNumber(acc.xg_against, xgValueForGoalie);
+          if (!shot.isOwnGoal) {
+            acc.xg_against = addToNullableNumber(acc.xg_against, xgValueForGoalie);
+          }
           const dangerBucket = getDangerBucket(shot);
-          if (SHOT_ON_GOAL_TYPES.has(shot.shotEventType ?? "")) {
+          if (!shot.isOwnGoal && SHOT_ON_GOAL_TYPES.has(shot.shotEventType ?? "")) {
             if (dangerBucket === "high") {
               acc.hd_shots_against = (acc.hd_shots_against ?? 0) + 1;
               if (!shot.isGoal) acc.hd_saves = (acc.hd_saves ?? 0) + 1;
@@ -1098,7 +1147,7 @@ export function buildNstParityMetrics(
         : [];
       for (const teamId of [options.homeTeamId, options.awayTeamId]) {
         const teamState = teamId === options.homeTeamId ? homeState : awayState;
-        const split = getSkaterSplitForTeamState(teamState);
+        const splits = getSkaterSplitKeys(teamState, event.strength_exact);
         const playerIds =
           teamId === options.homeTeamId
             ? attribution.homeTeam.playerIds
@@ -1113,12 +1162,12 @@ export function buildNstParityMetrics(
         );
         if (zone == null) continue;
 
-        addOnIceStat(playerIds, split, (acc) => {
+        addOnIceStat(playerIds, splits, (acc) => {
           if (zone === "O") acc.off_zone_faceoffs += 1;
           if (zone === "N") acc.neu_zone_faceoffs += 1;
           if (zone === "D") acc.def_zone_faceoffs += 1;
         });
-        addOnIceStat(zoneStartPlayerIds, split, (acc) => {
+        addOnIceStat(zoneStartPlayerIds, splits, (acc) => {
           if (zone === "O") acc.off_zone_starts += 1;
           if (zone === "N") acc.neu_zone_starts += 1;
           if (zone === "D") acc.def_zone_starts += 1;
@@ -1407,6 +1456,7 @@ export function buildNstParityMetrics(
     skaters: {
       all: buildSkaterSplitParity("all"),
       ev: buildSkaterSplitParity("ev"),
+      fiveOnFive: buildSkaterSplitParity("fiveOnFive"),
       pp: buildSkaterSplitParity("pp"),
       pk: buildSkaterSplitParity("pk"),
     },

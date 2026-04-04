@@ -150,6 +150,27 @@ function toNullableString(value: unknown): string | null {
   return text.length > 0 ? text : null;
 }
 
+function isObjectRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value != null && !Array.isArray(value);
+}
+
+export function getGoalModifierFromRawEvent(rawEvent: unknown): string | null {
+  if (!isObjectRecord(rawEvent)) {
+    return null;
+  }
+
+  return toNullableString(rawEvent.goalModifier);
+}
+
+export function isOwnGoalPlayByPlayEvent(
+  event: Pick<ParsedNhlPbpEvent, "type_desc_key" | "raw_event">
+): boolean {
+  return (
+    event.type_desc_key === "goal" &&
+    getGoalModifierFromRawEvent(event.raw_event) === "own-goal"
+  );
+}
+
 function defaultPeriodDurationSeconds(periodType: string | null): number | null {
   const normalized = periodType?.trim().toUpperCase() ?? null;
   if (!normalized) return DEFAULT_REGULATION_PERIOD_SECONDS;

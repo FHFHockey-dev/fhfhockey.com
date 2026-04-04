@@ -1,0 +1,199 @@
+@use "sass:color";
+@use "styles/vars" as v;
+@use "styles/panel" as panel;
+
+.shell {
+  @include panel.panel-container($radius: v.$border-radius-lg, $padding: 0);
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
+    v.$background-dark;
+}
+
+.viewport {
+  overflow-x: auto;
+  overflow-y: auto;
+  max-width: 100%;
+  @include v.custom-scrollbar(v.$secondary-color, v.$background-medium);
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: v.$space-md;
+  padding: v.$space-sm v.$space-md v.$space-md;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
+    color.adjust(v.$background-dark, $lightness: -2%);
+}
+
+.paginationSummary,
+.paginationMeta {
+  margin: 0;
+  font-size: v.$font-size-xs;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: v.$text-secondary;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: v.$space-sm;
+  margin-left: auto;
+}
+
+.paginationButton {
+  min-width: 96px;
+  padding: v.$space-xs v.$space-md;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: v.$border-radius-md;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.08),
+      rgba(255, 255, 255, 0.03)
+    ),
+    transparent;
+  color: v.$text-primary;
+  font: inherit;
+  font-size: v.$font-size-sm;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition:
+    border-color 0.18s ease,
+    background-color 0.18s ease,
+    color 0.18s ease,
+    opacity 0.18s ease;
+
+  &:hover:not(:disabled),
+  &:focus-visible {
+    border-color: rgba(v.$secondary-color, 0.45);
+    color: v.$color-white;
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba(v.$primary-color, 0.7);
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.42;
+  }
+}
+
+.table {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+  font-size: v.$font-size-sm;
+  font-variant-numeric: tabular-nums;
+  color: v.$text-color-primary;
+}
+
+.head {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+}
+
+.headerCell,
+.bodyCell {
+  padding: v.$space-sm v.$space-md;
+  white-space: nowrap;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background-color: v.$background-dark;
+}
+
+.headerCell {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background-color: color.adjust(v.$background-dark, $lightness: -3%);
+  border-bottom: 2px solid rgba(v.$secondary-color, 0.5);
+}
+
+.headerButton {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: v.$space-sm;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid rgba(v.$primary-color, 0.7);
+    outline-offset: 2px;
+  }
+}
+
+.sortIndicator {
+  color: v.$secondary-color;
+  font-size: 0.9em;
+  line-height: 1;
+}
+
+.row:nth-child(even) .bodyCell {
+  background-color: rgba(255, 255, 255, 0.015);
+}
+
+.row:hover .bodyCell {
+  background-color: rgba(v.$secondary-color, 0.08);
+}
+
+.stickyCell {
+  position: sticky;
+  z-index: 2;
+  box-shadow: 1px 0 0 rgba(255, 255, 255, 0.08);
+}
+
+.head .stickyCell {
+  z-index: 5;
+}
+
+.alignLeft {
+  text-align: left;
+}
+
+.alignCenter {
+  text-align: center;
+}
+
+.alignRight {
+  text-align: right;
+}
+
+@media (max-width: v.$breakpoint-mobile-max) {
+  .footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pagination {
+    width: 100%;
+    justify-content: space-between;
+    margin-left: 0;
+  }
+
+  .paginationButton {
+    min-width: 0;
+    flex: 1 1 0;
+  }
+
+  .paginationMeta {
+    text-align: center;
+  }
+}

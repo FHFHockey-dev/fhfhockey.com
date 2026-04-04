@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { parse as parseHtml } from "node-html-parser";
 
 export const PARSER_VERSION = 1;
 export const STRENGTH_VERSION = 1;
@@ -13,6 +14,11 @@ const SHOT_LIKE_TYPES = new Set([
   "blocked-shot",
   "failed-shot-attempt",
 ]);
+const FINISHED_GAME_STATES = new Set(["FINAL", "OFF"]);
+const HTML_SHIFT_EVENT_LABELS = {
+  G: "Goal",
+  P: "Penalty",
+};
 
 function sha256Json(payload) {
   return crypto.createHash("sha256").update(JSON.stringify(payload)).digest("hex");
@@ -20,6 +26,13 @@ function sha256Json(payload) {
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function normalizeWhitespace(value) {
+  return String(value ?? "")
+    .replace(/\u00a0/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function parseClockToSeconds(clock) {
@@ -94,6 +107,19 @@ function isRetryableFetchError(error) {
 }
 
 export async function fetchJsonWithRetry(url, options = {}) {
+  return fetchWithRetry(url, options, "json", "application/json,text/plain,*/*");
+}
+
+export async function fetchTextWithRetry(url, options = {}) {
+  return fetchWithRetry(
+    url,
+    options,
+    "text",
+    "text/html,application/xhtml+xml,text/plain,*/*"
+  );
+}
+
+async function fetchWithRetry(url, options = {}, responseType = "json", acceptHeader) {
   const retries = options.retries ?? DEFAULT_FETCH_RETRIES;
   const timeoutMs = options.timeoutMs ?? DEFAULT_FETCH_TIMEOUT_MS;
   const retryDelayMs = options.retryDelayMs ?? DEFAULT_RETRY_DELAY_MS;
@@ -108,11 +134,14 @@ export async function fetchJsonWithRetry(url, options = {}) {
         signal: controller.signal,
         headers: {
           "user-agent": "fhfhockey-nhl-api-raw-ingest/1.0",
-          accept: "application/json,text/plain,*/*",
+          accept: acceptHeader,
         },
       });
       if (!res.ok) {
         throw new Error(`HTTP ${res.status} ${res.statusText} for ${url}`);
+      }
+      if (responseType === "text") {
+        return await res.text();
       }
       return await res.json();
     } catch (error) {
@@ -127,6 +156,165 @@ export async function fetchJsonWithRetry(url, options = {}) {
   }
 
   throw lastError instanceof Error ? lastError : new Error(`Failed to fetch ${url}`);
+}
+
+function buildTeamMetadata(game, teamSide) {
+  const team = teamSide === "away" ? game.awayTeam ?? null : game.homeTeam ?? null;
+  return {
+    teamId: team?.id ?? null,
+    teamAbbrev:
+      team?.abbrev?.default ??
+      team?.abbrev ??
+      team?.commonName?.default ??
+      team?.placeName?.default ??
+      null,
+  };
+}
+
+function buildHtmlShiftReportUrls(gameId, seasonId) {
+  const season = String(seasonId);
+  const suffix = String(gameId).slice(-6);
+  return {
+    visitor: `https://www.nhl.com/scores/htmlreports/${season}/TV${suffix}.HTM`,
+    home: `https://www.nhl.com/scores/htmlreports/${season}/TH${suffix}.HTM`,
+  };
+}
+
+function parseHtmlShiftPlayerHeading(headingText) {
+  const match = normalizeWhitespace(headingText).match(/^(\d+)\s+([^,]+),\s*(.+)$/);
+  if (!match) return null;
+  return {
+    sweaterNumber: Number(match[1]),
+    lastName: match[2],
+    firstName: match[3],
+  };
+}
+
+function normalizeNameKey(value) {
+  return normalizeWhitespace(value)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^A-Za-z0-9]/g, "")
+    .toUpperCase();
+}
+
+function resolveHtmlShiftPlayer(game, teamId, parsedHeading) {
+  const roster = (game.rosterSpots ?? []).filter((spot) => spot.teamId === teamId);
+  if (!roster.length) return null;
+
+  const sweaterMatches = roster.filter(
+    (spot) => Number(spot.sweaterNumber) === parsedHeading.sweaterNumber
+  );
+  if (sweaterMatches.length === 1) return sweaterMatches[0];
+
+  const firstNameKey = normalizeNameKey(parsedHeading.firstName);
+  const lastNameKey = normalizeNameKey(parsedHeading.lastName);
+  const namePool = sweaterMatches.length ? sweaterMatches : roster;
+
+  const exactNameMatches = namePool.filter(
+    (spot) =>
+      normalizeNameKey(spot.firstName?.default ?? "") === firstNameKey &&
+      normalizeNameKey(spot.lastName?.default ?? "") === lastNameKey
+  );
+  if (exactNameMatches.length) return exactNameMatches[0];
+
+  const lastNameMatches = namePool.filter(
+    (spot) => normalizeNameKey(spot.lastName?.default ?? "") === lastNameKey
+  );
+  if (lastNameMatches.length) return lastNameMatches[0];
+
+  return namePool[0] ?? null;
+}
+
+function parseElapsedClock(value) {
+  const [elapsed] = normalizeWhitespace(value).split("/");
+  return normalizeWhitespace(elapsed);
+}
+
+function parseHtmlShiftEvent(value) {
+  const raw = normalizeWhitespace(value);
+  if (!raw) {
+    return {
+      eventDescription: null,
+      eventDetails: null,
+    };
+  }
+
+  return {
+    eventDescription: HTML_SHIFT_EVENT_LABELS[raw] ?? raw,
+    eventDetails: raw,
+  };
+}
+
+function parseHtmlShiftReportRows(html, game, teamSide, shiftIdStart = 1) {
+  if (!normalizeWhitespace(html)) {
+    return { rows: [], nextShiftId: shiftIdStart };
+  }
+
+  const root = parseHtml(html);
+  const rows = root.querySelectorAll("tr");
+  const headingIndexes = [];
+
+  for (let index = 0; index < rows.length; index += 1) {
+    if (rows[index].querySelector('td[class*="playerHeading"]')) {
+      headingIndexes.push(index);
+    }
+  }
+
+  const teamMeta = buildTeamMetadata(game, teamSide);
+  const teamHeading = root.querySelector('td[class*="teamHeading"]');
+  const htmlTeamName = normalizeWhitespace(teamHeading?.text);
+  const parsedRows = [];
+  let nextShiftId = shiftIdStart;
+
+  for (let i = 0; i < headingIndexes.length; i += 1) {
+    const headingIndex = headingIndexes[i];
+    const nextHeadingIndex = headingIndexes[i + 1] ?? rows.length;
+    const headingCell = rows[headingIndex].querySelector('td[class*="playerHeading"]');
+    const parsedHeading = parseHtmlShiftPlayerHeading(headingCell?.text ?? "");
+    if (!parsedHeading) continue;
+
+    const rosterSpot = resolveHtmlShiftPlayer(game, teamMeta.teamId, parsedHeading);
+    if (!rosterSpot?.playerId) continue;
+
+    for (let rowIndex = headingIndex + 1; rowIndex < nextHeadingIndex; rowIndex += 1) {
+      const cells = rows[rowIndex].querySelectorAll("td");
+      if (cells.length !== 6) continue;
+
+      const shiftNumberRaw = normalizeWhitespace(cells[0].text);
+      const periodRaw = normalizeWhitespace(cells[1].text);
+      if (!/^\d+$/.test(shiftNumberRaw) || !/^\d+$/.test(periodRaw)) continue;
+
+      const startTime = parseElapsedClock(cells[2].text);
+      const endTime = parseElapsedClock(cells[3].text);
+      const duration = normalizeWhitespace(cells[4].text);
+      const event = parseHtmlShiftEvent(cells[5].text);
+
+      parsedRows.push({
+        id: nextShiftId,
+        playerId: rosterSpot.playerId,
+        teamId: teamMeta.teamId,
+        teamAbbrev: teamMeta.teamAbbrev,
+        teamName: htmlTeamName || null,
+        firstName: rosterSpot.firstName?.default ?? parsedHeading.firstName,
+        lastName: rosterSpot.lastName?.default ?? parsedHeading.lastName,
+        period: Number(periodRaw),
+        shiftNumber: Number(shiftNumberRaw),
+        startTime,
+        endTime,
+        duration,
+        typeCode: null,
+        detailCode: null,
+        eventNumber: null,
+        eventDescription: event.eventDescription,
+        eventDetails: event.eventDetails,
+        hexValue: null,
+      });
+      nextShiftId += 1;
+    }
+  }
+
+  return { rows: parsedRows, nextShiftId };
 }
 
 export async function fetchShiftCharts(gameId, fetchOptions = {}) {
@@ -147,18 +335,90 @@ export async function fetchShiftCharts(gameId, fetchOptions = {}) {
   return { total: rows.length, data: rows };
 }
 
+async function fetchShiftChartsWithFallback(gameId, seasonId, game, landing, fetchOptions = {}) {
+  const jsonPayload = await fetchShiftCharts(gameId, fetchOptions);
+  if (
+    jsonPayload.total > 0 ||
+    !FINISHED_GAME_STATES.has(normalizeWhitespace(landing?.gameState).toUpperCase())
+  ) {
+    return {
+      ...jsonPayload,
+      source: "json-api",
+    };
+  }
+
+  const htmlReportUrls = buildHtmlShiftReportUrls(gameId, seasonId);
+  const [visitorHtmlResult, homeHtmlResult] = await Promise.allSettled([
+    fetchTextWithRetry(htmlReportUrls.visitor, fetchOptions),
+    fetchTextWithRetry(htmlReportUrls.home, fetchOptions),
+  ]);
+
+  const visitorRows =
+    visitorHtmlResult.status === "fulfilled"
+      ? parseHtmlShiftReportRows(visitorHtmlResult.value, game, "away", 1)
+      : { rows: [], nextShiftId: 1 };
+  const homeRows =
+    homeHtmlResult.status === "fulfilled"
+      ? parseHtmlShiftReportRows(
+          homeHtmlResult.value,
+          game,
+          "home",
+          visitorRows.nextShiftId
+        )
+      : { rows: [], nextShiftId: visitorRows.nextShiftId };
+
+  const fallbackRows = [...visitorRows.rows, ...homeRows.rows];
+  if (fallbackRows.length > 0) {
+    return {
+      total: fallbackRows.length,
+      data: fallbackRows,
+      source: "htmlreports",
+      upstream: {
+        json: jsonPayload,
+      },
+      htmlReports: {
+        visitorUrl: htmlReportUrls.visitor,
+        homeUrl: htmlReportUrls.home,
+      },
+    };
+  }
+
+  return {
+    ...jsonPayload,
+    source: "json-api-empty",
+    htmlReports: {
+      visitorUrl: htmlReportUrls.visitor,
+      homeUrl: htmlReportUrls.home,
+      visitorError:
+        visitorHtmlResult.status === "rejected"
+          ? String(visitorHtmlResult.reason?.message ?? visitorHtmlResult.reason)
+          : null,
+      homeError:
+        homeHtmlResult.status === "rejected"
+          ? String(homeHtmlResult.reason?.message ?? homeHtmlResult.reason)
+          : null,
+    },
+  };
+}
+
 export async function fetchNhlApiRawGamePayloads(gameId, fetchOptions = {}) {
   const pbpUrl = `https://api-web.nhle.com/v1/gamecenter/${gameId}/play-by-play`;
   const boxscoreUrl = `https://api-web.nhle.com/v1/gamecenter/${gameId}/boxscore`;
   const landingUrl = `https://api-web.nhle.com/v1/gamecenter/${gameId}/landing`;
   const shiftUrl = `https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId=${gameId}`;
 
-  const [pbp, boxscore, landing, shiftPayload] = await Promise.all([
+  const [pbp, boxscore, landing] = await Promise.all([
     fetchJsonWithRetry(pbpUrl, fetchOptions),
     fetchJsonWithRetry(boxscoreUrl, fetchOptions),
     fetchJsonWithRetry(landingUrl, fetchOptions),
-    fetchShiftCharts(gameId, fetchOptions),
   ]);
+  const shiftPayload = await fetchShiftChartsWithFallback(
+    gameId,
+    Number(pbp.season),
+    pbp,
+    landing,
+    fetchOptions
+  );
 
   return {
     gameId,

@@ -8,7 +8,10 @@ import { buildContextualFeatureContexts } from "./nhlContextualFeatures";
 import { evaluateNormalizedEventInclusion } from "./nhlEventInclusion";
 import { buildFlurryContexts } from "./nhlFlurries";
 import { buildMissReasonContexts } from "./nhlMissReasons";
-import type { ParsedNhlPbpEvent } from "./nhlPlayByPlayParser";
+import {
+  isOwnGoalPlayByPlayEvent,
+  type ParsedNhlPbpEvent,
+} from "./nhlPlayByPlayParser";
 import { buildPossessionChainContexts } from "./nhlPossessionChains";
 import { buildPriorEventContexts } from "./nhlPriorEventContext";
 import { buildReboundContexts } from "./nhlRebounds";
@@ -37,6 +40,7 @@ export type NhlShotFeatureRow = {
   strengthExact: string | null;
   shotEventType: string | null;
   isGoal: boolean;
+  isOwnGoal: boolean;
   isShotOnGoal: boolean;
   isMissedShot: boolean;
   isBlockedShot: boolean;
@@ -228,6 +232,7 @@ export function buildShotFeatureRows(
       return event.is_shot_like && inclusion.includeInShotFeatures;
     })
     .map((event) => {
+      const isOwnGoal = isOwnGoalPlayByPlayEvent(event);
       const inclusion = evaluateNormalizedEventInclusion(event);
       const prior = priorByEventId.get(event.event_id);
       const possession = possessionByEventId.get(event.event_id);
@@ -270,11 +275,14 @@ export function buildShotFeatureRows(
         strengthExact: event.strength_exact ?? null,
         shotEventType: event.type_desc_key ?? null,
         isGoal: event.type_desc_key === "goal",
+        isOwnGoal,
         isShotOnGoal:
-          event.type_desc_key === "goal" || event.type_desc_key === "shot-on-goal",
+          event.type_desc_key === "shot-on-goal" ||
+          (event.type_desc_key === "goal" && !isOwnGoal),
         isMissedShot: event.type_desc_key === "missed-shot",
         isBlockedShot: event.type_desc_key === "blocked-shot",
-        isUnblockedShotAttempt: event.type_desc_key !== "blocked-shot",
+        isUnblockedShotAttempt:
+          event.type_desc_key !== "blocked-shot" && !isOwnGoal,
         shooterPlayerId: getPrimaryShooterId(event),
         shootingPlayerId: event.shooting_player_id ?? null,
         scoringPlayerId: event.scoring_player_id ?? null,
