@@ -78,7 +78,7 @@
   - [x] 4.3 Add canonical example blocks for page shells, section headers, standard panels, softened data-page panels, left-accent cards, tables, buttons, segmented toggles, dropdowns, search inputs, input rows, empty states, loading banners, and chart frames.
   - [x] 4.4 Ensure newly added or currently-under-review showcase elements can be surfaced at the top of the page without breaking the long-term showcase structure.
   - [x] 4.5 Add labels or annotations inside the sandbox so each showcased element clearly maps to the corresponding section in `fhfh-styles.md`.
-  - [x] 4.6 Verify the sandbox page visually in-browser and treat it as the main smoke test surface for approving new base components before broader rollout.
+  - [x] 4.6 Verify the sandbox page visually in-browser and treat it as the main smoke test surface for approving new base components before broader rollout. (Completed against a clean local render on `http://localhost:3001/cssTestingGrounds`; remaining item-by-item canonical signoff continues in `4.7`.)
   - [x] 4.7 Run a sequential element-by-element reference-validation pass for every sandbox primitive: identify the closest `DraftDashboard` reference first, fall back to another rendered site example only if the element does not exist there, compare the sandbox recreation against that live reference, and do not advance to the next element until the current one is approved, revised, or explicitly deferred.
 
 - [ ] 5.0 Re-style the `underlying-stats` entry surfaces and align adjacent `playerStats` pages to the new system
