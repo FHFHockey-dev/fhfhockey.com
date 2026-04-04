@@ -900,7 +900,7 @@ export function buildNstParityMetrics(
       if (teamId == null) return;
       const teamState =
         teamId === options.homeTeamId ? homeState : awayState;
-      const splits = getSkaterSplitKeys(teamState, event.strength_exact);
+      const splits = getSkaterSplitKeys(teamState, event.strength_exact ?? null);
       increment(getOrCreate(skaterCountsAcc.all, playerId, defaultSkaterAccumulator));
       for (const split of splits) {
         increment(getOrCreate(skaterCountsAcc[split], playerId, defaultSkaterAccumulator));
@@ -1147,7 +1147,7 @@ export function buildNstParityMetrics(
         : [];
       for (const teamId of [options.homeTeamId, options.awayTeamId]) {
         const teamState = teamId === options.homeTeamId ? homeState : awayState;
-        const splits = getSkaterSplitKeys(teamState, event.strength_exact);
+        const splits = getSkaterSplitKeys(teamState, event.strength_exact ?? null);
         const playerIds =
           teamId === options.homeTeamId
             ? attribution.homeTeam.playerIds

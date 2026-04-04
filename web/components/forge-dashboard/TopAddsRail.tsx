@@ -423,17 +423,16 @@ export default function TopAddsRail({
       ownershipByName.set(normalizeName(row.name), row);
     });
 
-    return projections
-      .map((row) => {
+    return projections.flatMap<TopAddsCandidateInput>((row) => {
         const ownershipRow =
           ownershipByPlayerId.get(row.player_id) ??
           ownershipByName.get(normalizeName(row.player_name));
-        if (!matchesPosition(row.position, position)) return null;
+        if (!matchesPosition(row.position, position)) return [];
 
         const ownership =
           ownershipRow?.latest ?? ownershipSnapshotMap[row.player_id] ?? null;
-        if (ownership == null) return null;
-        if (ownership < minOwnership || ownership > maxOwnership) return null;
+        if (ownership == null) return [];
+        if (ownership < minOwnership || ownership > maxOwnership) return [];
 
         const teamAbbr = resolveTeamAbbr(
           ownershipRow?.teamAbbrev ?? null,
@@ -443,7 +442,7 @@ export default function TopAddsRail({
           ? scheduleContextMap[teamAbbr]
           : undefined;
 
-        return {
+        const candidate: TopAddsCandidateInput = {
           playerId: row.player_id,
           name: row.player_name ?? ownershipRow?.name ?? `Player ${row.player_id}`,
           team:
@@ -466,9 +465,10 @@ export default function TopAddsRail({
           scheduleGamesRemaining: scheduleContext?.gamesRemaining ?? null,
           scheduleOffNightsRemaining: scheduleContext?.offNightsRemaining ?? null,
           scheduleLabel: scheduleContext?.summaryLabel ?? null
-        } satisfies TopAddsCandidateInput;
-      })
-      .filter((row): row is TopAddsCandidateInput => Boolean(row));
+        };
+
+        return [candidate];
+      });
   }, [
     maxOwnership,
     minOwnership,

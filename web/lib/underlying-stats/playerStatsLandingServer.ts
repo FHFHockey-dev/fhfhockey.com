@@ -61,10 +61,12 @@ export type PlayerStatsSourceEventRow = Pick<
   | "game_date"
   | "event_id"
   | "sort_order"
+  | "source_play_by_play_hash"
   | "period_number"
   | "period_type"
   | "time_in_period"
   | "time_remaining"
+  | "time_remaining_seconds"
   | "period_seconds_elapsed"
   | "situation_code"
   | "away_goalie"
@@ -853,7 +855,9 @@ function buildOwnGoalEventIdsByGameId(
   return ownGoalEventIdsByGameId;
 }
 
-function buildTaggedOwnGoalRawEvent(eventId: number): Record<string, unknown> {
+function buildTaggedOwnGoalRawEvent(
+  eventId: number
+): ParsedNhlPbpEvent["raw_event"] {
   return {
     eventId,
     goalModifier: "own-goal",

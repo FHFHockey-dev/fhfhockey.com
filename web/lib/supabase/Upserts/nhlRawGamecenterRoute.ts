@@ -123,7 +123,7 @@ async function fetchBackfillCandidateGames(args: {
   const now = new Date();
   const finishedCutoff = new Date(now.getTime() - 8 * 60 * 60 * 1000);
 
-  const rows = await fetchAllRows<GameRow>((from, to) =>
+  const rows = await fetchAllRows<GameRow>(async (from, to) =>
     args.supabase
       .from("games")
       .select("id,date,startTime,seasonId")
@@ -134,19 +134,21 @@ async function fetchBackfillCandidateGames(args: {
       .range(from, to)
   );
 
-  return rows
-    .map((row) => ({
-      id: Number(row.id),
-      date: row.date,
-      startTime: row.startTime,
-    }))
-    .filter(
-      (row): row is { id: number; date: string; startTime?: string | null } =>
-        Number.isFinite(row.id) &&
-        typeof row.date === "string" &&
-        row.date < args.today &&
-        (typeof row.startTime !== "string" || new Date(row.startTime) <= finishedCutoff)
-    );
+  return rows.flatMap<{ id: number; date: string; startTime?: string | null }>((row) => {
+    const id = Number(row.id);
+    const date = row.date;
+    const startTime = row.startTime;
+
+    if (!Number.isFinite(id)) return [];
+    if (typeof date !== "string" || date >= args.today) {
+      return [];
+    }
+    if (typeof startTime === "string" && new Date(startTime) > finishedCutoff) {
+      return [];
+    }
+
+    return [{ id, date, startTime }];
+  });
 }
 
 async function fetchSeasonGameIdSet(args: {
@@ -156,7 +158,7 @@ async function fetchSeasonGameIdSet(args: {
   seasonId: number;
   endpoint?: RawGamecenterEndpoint;
 }): Promise<Set<number>> {
-  const rows = await fetchAllRows<GameIdRow>((from, to) => {
+  const rows = await fetchAllRows<GameIdRow>(async (from, to) => {
     let query: any = args.supabase
       .from(args.table)
       .select("game_id")

@@ -1,6 +1,19 @@
 import type { Database } from "../database-generated.types";
 
-type ShiftRow = Database["public"]["Tables"]["nhl_api_shift_rows"]["Row"];
+type ShiftRow = Pick<
+  Database["public"]["Tables"]["nhl_api_shift_rows"]["Row"],
+  | "game_id"
+  | "shift_id"
+  | "season_id"
+  | "game_date"
+  | "player_id"
+  | "team_id"
+  | "period"
+  | "shift_number"
+  | "start_seconds"
+  | "end_seconds"
+  | "duration_seconds"
+>;
 
 export type NhlShiftInterval = {
   gameId: number;
