@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import serviceRoleClient from "lib/supabase/server";
+import type { Json } from "lib/supabase/database-generated.types";
 
 import { createDefaultLandingFilterState } from "./playerStatsFilters";
 import {
@@ -21,14 +22,14 @@ type GameIdRow = {
 
 type SummaryPayloadRow = {
   game_id: number;
-  payload: unknown;
-  fetched_at: string | null;
-  source_url: string | null;
+  payload: Json;
+  fetched_at: string;
+  source_url: string;
 };
 
 async function fetchAllRows<TRow>(
-  fetchPage: (from: number, to: number) => Promise<{
-    data: TRow[] | null;
+  fetchPage: (from: number, to: number) => PromiseLike<{
+    data: unknown[] | null;
     error: unknown;
   }>
 ): Promise<TRow[]> {
@@ -39,13 +40,15 @@ async function fetchAllRows<TRow>(
     const { data, error } = await fetchPage(from, to);
     if (error) throw error;
 
-    if (!data?.length) {
+    const pageRows = (data ?? []) as TRow[];
+
+    if (!pageRows.length) {
       break;
     }
 
-    rows.push(...data);
+    rows.push(...pageRows);
 
-    if (data.length < SUPABASE_PAGE_SIZE) {
+    if (pageRows.length < SUPABASE_PAGE_SIZE) {
       break;
     }
   }
@@ -64,10 +67,10 @@ async function fetchSummaryPayloadRowsByGameIds(args: {
 
   const rows = await fetchAllRows<{
     game_id: number | string | null;
-    payload: unknown;
+    payload: Json;
     fetched_at: string | null;
     source_url: string | null;
-  }>((from, to) =>
+  }>(async (from, to) =>
     args.supabase
       .from("nhl_api_game_payloads_raw")
       .select("game_id,payload,fetched_at,source_url")
@@ -79,21 +82,28 @@ async function fetchSummaryPayloadRowsByGameIds(args: {
       .range(from, to)
   );
 
-  return rows
-    .filter(
-      (
-        row
-      ): row is {
-        game_id: number;
-        payload: unknown;
-        fetched_at: string | null;
-        source_url: string | null;
-      } => Number.isFinite(Number(row.game_id))
-    )
-    .map((row) => ({
-      ...row,
-      game_id: Number(row.game_id),
-    }));
+  return rows.flatMap<SummaryPayloadRow>((row) => {
+    const gameId = Number(row.game_id);
+    const sourceUrl = row.source_url;
+    const fetchedAt = row.fetched_at;
+
+    if (
+      !Number.isFinite(gameId) ||
+      typeof sourceUrl !== "string" ||
+      typeof fetchedAt !== "string"
+    ) {
+      return [];
+    }
+
+    return [
+      {
+        ...row,
+        game_id: gameId,
+        fetched_at: fetchedAt,
+        source_url: sourceUrl,
+      },
+    ];
+  });
 }
 
 function resolveSeasonTypeFromGameType(gameType: number | null | undefined) {
@@ -163,7 +173,7 @@ export async function fetchSeasonSummaryGameIdSet(args: {
   sourceUrlPrefix?: string;
 }): Promise<Set<number>> {
   const supabase = args.supabase ?? serviceRoleClient;
-  const rows = await fetchAllRows<GameIdRow>((from, to) => {
+  const rows = await fetchAllRows<GameIdRow>(async (from, to) => {
     let query: any = supabase
       .from("nhl_api_game_payloads_raw")
       .select("game_id")

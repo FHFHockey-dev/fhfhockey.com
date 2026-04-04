@@ -1414,7 +1414,7 @@ export function buildPlayerStatsLandingParityByGame(
 }
 
 function resolveLandingTableFamily(
-  state: PlayerStatsLandingFilterState
+  state: PlayerStatsFilterState
 ): PlayerStatsTableFamily {
   if (state.primary.statMode === "individual") {
     return state.primary.displayMode === "rates"
@@ -1423,7 +1423,9 @@ function resolveLandingTableFamily(
   }
 
   if (state.primary.statMode === "goalies") {
-    return state.primary.displayMode === "rates" ? "goalieRates" : "goalieCounts";
+    return state.primary.displayMode === "rates"
+      ? "goalieRates"
+      : "goalieCounts";
   }
 
   return state.primary.displayMode === "rates" ? "onIceRates" : "onIceCounts";
@@ -2274,89 +2276,95 @@ function buildPbpOnlyIndividualContextsForGame(args: {
     metricsByPlayerId.set(playerId, metrics);
   }
 
-  return [...metricsByPlayerId.entries()]
-    .map(([playerId, metrics]) => {
-      const rosterSpot = args.rosterSpotByPlayerId.get(playerId);
-      if (!rosterSpot) {
-        return null;
-      }
+  return [
+    ...metricsByPlayerId.entries()
+  ].flatMap<PlayerStatsLandingIndividualContext>(([playerId, metrics]) => {
+    const rosterSpot = args.rosterSpotByPlayerId.get(playerId);
+    if (!rosterSpot) {
+      return [];
+    }
 
-      const identity = resolvePlayerIdentity(playerId, args.identityMaps, "individual");
-      if (
-        !matchesPlayerStatsPositionGroup({
-          rawPosition: rosterSpot.position_code ?? identity.positionCode,
-          positionGroup: args.state.expandable.positionGroup,
-          mode: args.state.primary.statMode,
-        })
-      ) {
-        return null;
-      }
+    const identity = resolvePlayerIdentity(
+      playerId,
+      args.identityMaps,
+      "individual"
+    );
+    if (
+      !matchesPlayerStatsPositionGroup({
+        rawPosition: rosterSpot.position_code ?? identity.positionCode,
+        positionGroup: args.state.expandable.positionGroup,
+        mode: args.state.primary.statMode
+      })
+    ) {
+      return [];
+    }
 
-      const isHome = resolveIsHome(args.game, rosterSpot.team_id);
-      if (!matchesLandingVenue(args.state.expandable.venue, isHome)) {
-        return null;
-      }
+    const isHome = resolveIsHome(args.game, rosterSpot.team_id);
+    if (!matchesLandingVenue(args.state.expandable.venue, isHome)) {
+      return [];
+    }
 
-      if (
-        args.state.expandable.teamId != null &&
-        rosterSpot.team_id !== args.state.expandable.teamId
-      ) {
-        return null;
-      }
+    if (
+      args.state.expandable.teamId != null &&
+      rosterSpot.team_id !== args.state.expandable.teamId
+    ) {
+      return [];
+    }
 
-      return {
-        kind: "individual",
-        ...identity,
-        positionCode: normalizeCanonicalPlayerPositionCode(
-          rosterSpot.position_code,
-          "individual"
-        ),
-        gameId: args.game.id,
-        seasonId: args.game.seasonId,
-        gameDate: args.game.date,
-        teamId: rosterSpot.team_id,
-        teamAbbrev: getTeamAbbrev(rosterSpot.team_id, args.identityMaps),
-        opponentTeamId: resolveOpponentTeamId(args.game, rosterSpot.team_id),
-        isHome,
-        hasReliableToi: false,
-        counts: {
-          player_id: playerId,
-          season: args.game.seasonId,
-          date_scraped: args.game.date,
-          gp: 1,
-          toi: 0,
-          goals: metrics.goals,
-          total_assists: metrics.totalAssists,
-          first_assists: metrics.firstAssists,
-          second_assists: metrics.secondAssists,
-          total_points: metrics.goals + metrics.totalAssists,
-          shots: metrics.shots,
-          ixg: metrics.ixg,
-          icf: metrics.iCf,
-          iff: metrics.iFf,
-          iscfs: metrics.iScf,
-          hdcf: metrics.iHdcf,
-          rush_attempts: metrics.rushAttempts,
-          rebounds_created: metrics.reboundsCreated,
-          pim: metrics.pim,
-          total_penalties: metrics.totalPenalties,
-          minor_penalties: metrics.minorPenalties,
-          major_penalties: metrics.majorPenalties,
-          misconduct_penalties: metrics.misconductPenalties,
-          penalties_drawn: metrics.penaltiesDrawn,
-          giveaways: metrics.giveaways,
-          takeaways: metrics.takeaways,
-          hits: metrics.hits,
-          hits_taken: metrics.hitsTaken,
-          shots_blocked: metrics.shotsBlocked,
-          faceoffs_won: metrics.faceoffsWon,
-          faceoffs_lost: metrics.faceoffsLost,
-          ipp: null,
-        },
-        onIceCounts: null,
-      } satisfies PlayerStatsLandingIndividualContext;
-    })
-    .filter((row): row is PlayerStatsLandingIndividualContext => row != null);
+    const context: PlayerStatsLandingIndividualContext = {
+      kind: "individual",
+      ...identity,
+      positionCode: normalizeCanonicalPlayerPositionCode(
+        rosterSpot.position_code,
+        "individual"
+      ),
+      gameId: args.game.id,
+      seasonId: args.game.seasonId,
+      gameDate: args.game.date,
+      teamId: rosterSpot.team_id,
+      teamAbbrev: getTeamAbbrev(rosterSpot.team_id, args.identityMaps),
+      opponentTeamId: resolveOpponentTeamId(args.game, rosterSpot.team_id),
+      isHome,
+      hasReliableToi: false,
+      counts: {
+        player_id: playerId,
+        season: args.game.seasonId,
+        date_scraped: args.game.date,
+        gp: 1,
+        toi: 0,
+        goals: metrics.goals,
+        total_assists: metrics.totalAssists,
+        first_assists: metrics.firstAssists,
+        second_assists: metrics.secondAssists,
+        total_points: metrics.goals + metrics.totalAssists,
+        shots: metrics.shots,
+        ixg: metrics.ixg,
+        icf: metrics.iCf,
+        iff: metrics.iFf,
+        iscfs: metrics.iScf,
+        hdcf: metrics.iHdcf,
+        rush_attempts: metrics.rushAttempts,
+        rebounds_created: metrics.reboundsCreated,
+        pim: metrics.pim,
+        total_penalties: metrics.totalPenalties,
+        minor_penalties: metrics.minorPenalties,
+        major_penalties: metrics.majorPenalties,
+        misconduct_penalties: metrics.misconductPenalties,
+        penalties_drawn: metrics.penaltiesDrawn,
+        giveaways: metrics.giveaways,
+        takeaways: metrics.takeaways,
+        hits: metrics.hits,
+        hits_taken: metrics.hitsTaken,
+        shots_blocked: metrics.shotsBlocked,
+        faceoffs_won: metrics.faceoffsWon,
+        faceoffs_lost: metrics.faceoffsLost,
+        ipp: null
+      },
+      onIceCounts: null
+    };
+
+    return [context];
+  });
 }
 
 function buildOnIceContextsForGame(args: {
@@ -2370,10 +2378,10 @@ function buildOnIceContextsForGame(args: {
 
   return gameParity.parity.skaters[splitKey].countsOi
     .filter((row) => row.toi > 0)
-    .map((row) => {
+    .flatMap<PlayerStatsLandingOnIceContext>((row) => {
       const shiftRow = shiftTeamByPlayerId.get(row.player_id);
       if (!shiftRow) {
-        return null;
+        return [];
       }
 
       const identity = resolvePlayerIdentity(
@@ -2384,41 +2392,49 @@ function buildOnIceContextsForGame(args: {
       const isHome = resolveIsHome(gameParity.game, shiftRow.team_id);
 
       if (!matchesLandingVenue(state.expandable.venue, isHome)) {
-        return null;
+        return [];
       }
 
       if (
         state.expandable.teamId != null &&
         shiftRow.team_id !== state.expandable.teamId
       ) {
-        return null;
+        return [];
       }
 
       if (
         !matchesPlayerStatsPositionGroup({
           rawPosition: identity.positionCode,
           positionGroup: state.expandable.positionGroup,
-          mode: state.primary.statMode,
+          mode: state.primary.statMode
         })
       ) {
-        return null;
+        return [];
       }
 
-      return {
+      const context: PlayerStatsLandingOnIceContext = {
         kind: "onIce",
         ...identity,
         gameId: gameParity.game.id,
         seasonId: gameParity.game.seasonId,
         gameDate: gameParity.game.date,
         teamId: shiftRow.team_id,
-        teamAbbrev: getTeamAbbrev(shiftRow.team_id, identityMaps, shiftRow.team_abbrev),
-        opponentTeamId: resolveOpponentTeamId(gameParity.game, shiftRow.team_id),
+        teamAbbrev: getTeamAbbrev(
+          shiftRow.team_id,
+          identityMaps,
+          shiftRow.team_abbrev
+        ),
+        opponentTeamId: resolveOpponentTeamId(
+          gameParity.game,
+          shiftRow.team_id
+        ),
         isHome,
         hasReliableToi: true,
-        counts: row,
+        counts: row
       };
-    })
-    .filter((row): row is PlayerStatsLandingOnIceContext => row != null);
+
+      return [context];
+    });
 }
 
 function buildGoalieContextsForGame(args: {
@@ -2432,27 +2448,31 @@ function buildGoalieContextsForGame(args: {
 
   return gameParity.parity.goalies[splitKey].counts
     .filter((row) => row.toi > 0)
-    .map((row) => {
+    .flatMap<PlayerStatsLandingGoalieContext>((row) => {
       const shiftRow = shiftTeamByPlayerId.get(row.player_id);
       if (!shiftRow) {
-        return null;
+        return [];
       }
 
-      const identity = resolvePlayerIdentity(row.player_id, identityMaps, "goalies");
+      const identity = resolvePlayerIdentity(
+        row.player_id,
+        identityMaps,
+        "goalies"
+      );
       const isHome = resolveIsHome(gameParity.game, shiftRow.team_id);
 
       if (!matchesLandingVenue(state.expandable.venue, isHome)) {
-        return null;
+        return [];
       }
 
       if (
         state.expandable.teamId != null &&
         shiftRow.team_id !== state.expandable.teamId
       ) {
-        return null;
+        return [];
       }
 
-      return {
+      const context: PlayerStatsLandingGoalieContext = {
         kind: "goalies",
         ...identity,
         positionCode: "G",
@@ -2460,15 +2480,23 @@ function buildGoalieContextsForGame(args: {
         seasonId: gameParity.game.seasonId,
         gameDate: gameParity.game.date,
         teamId: shiftRow.team_id,
-        teamAbbrev: getTeamAbbrev(shiftRow.team_id, identityMaps, shiftRow.team_abbrev),
-        opponentTeamId: resolveOpponentTeamId(gameParity.game, shiftRow.team_id),
+        teamAbbrev: getTeamAbbrev(
+          shiftRow.team_id,
+          identityMaps,
+          shiftRow.team_abbrev
+        ),
+        opponentTeamId: resolveOpponentTeamId(
+          gameParity.game,
+          shiftRow.team_id
+        ),
         isHome,
         hasReliableToi: true,
         counts: row,
-        shotFeatures: gameParity.shotFeatures,
+        shotFeatures: gameParity.shotFeatures
       };
-    })
-    .filter((row): row is PlayerStatsLandingGoalieContext => row != null);
+
+      return [context];
+    });
 }
 
 function buildPlayerStatsLandingContexts(args: {
@@ -2490,6 +2518,8 @@ function buildPlayerStatsLandingContexts(args: {
       `Native landing aggregation does not yet support score state "${state.primary.scoreState}".`
     );
   }
+
+  const supportedStrength = state.primary.strength;
 
   if (state.primary.statMode === "goalies") {
     const splitKey = resolveGoalieSplitKey(state.primary.strength);
@@ -2532,10 +2562,12 @@ function buildPlayerStatsLandingContexts(args: {
           state,
           game: gameParity.game,
           events: bundle.eventsByGameId.get(gameParity.game.id) ?? [],
-          ownGoalEventIds: bundle.ownGoalEventIdsByGameId.get(gameParity.game.id),
+          ownGoalEventIds: bundle.ownGoalEventIdsByGameId.get(
+            gameParity.game.id
+          ),
           rosterSpotByPlayerId: getRosterSpotByPlayerId(rosterSpots),
           identityMaps,
-          strength: state.primary.strength,
+          strength: supportedStrength
         });
       }
 
@@ -2787,8 +2819,7 @@ function accumulateGoalieShotFeatureBucketMetrics(
             ? "medium"
             : "low";
     const xgValue =
-      shot.xgValue ??
-      (dangerBucket === "high"
+      dangerBucket === "high"
         ? shot.isGoal
           ? 0.25
           : 0.18
@@ -2796,7 +2827,7 @@ function accumulateGoalieShotFeatureBucketMetrics(
           ? 0.08
           : dangerBucket === "low"
             ? 0.02
-            : null);
+            : null;
 
     if (dangerBucket === "high") {
       metrics.hdGoalsAgainst += shot.isGoal ? 1 : 0;
@@ -3491,7 +3522,7 @@ function createLandingRowFromAggregation(args: {
 }
 
 function createLandingRowFromSummaryRows(args: {
-  state: PlayerStatsLandingFilterState;
+  state: PlayerStatsFilterState;
   rows: readonly PlayerStatsLandingSummaryRow[];
   metrics: PlayerStatsLandingAggregateMetrics;
 }): PlayerStatsLandingAggregationRow | null {
@@ -3501,7 +3532,9 @@ function createLandingRowFromSummaryRows(args: {
     return null;
   }
 
-  const resolvedToiSeconds = args.metrics.hasUnknownToi ? null : args.metrics.toiSeconds;
+  const resolvedToiSeconds = args.metrics.hasUnknownToi
+    ? null
+    : args.metrics.toiSeconds;
 
   if (
     args.state.expandable.minimumToiSeconds != null &&
@@ -3518,17 +3551,17 @@ function createLandingRowFromSummaryRows(args: {
         {
           teamId: row.teamId,
           teamAbbrev: row.teamAbbrev ?? "—",
-          firstGameDate: row.gameDate,
-        },
+          firstGameDate: row.gameDate
+        }
       ])
-    ).values(),
+    ).values()
   ];
   const tradeDisplay = buildLandingTradeDisplay({
     playerId: firstRow.playerId,
     tradeMode: args.state.expandable.tradeMode,
     teamContexts,
     splitTeamId:
-      args.state.expandable.tradeMode === "split" ? firstRow.teamId : null,
+      args.state.expandable.tradeMode === "split" ? firstRow.teamId : null
   });
 
   return {
@@ -3544,7 +3577,7 @@ function createLandingRowFromSummaryRows(args: {
       resolvedToiSeconds != null && args.metrics.gamesPlayed > 0
         ? resolvedToiSeconds / args.metrics.gamesPlayed
         : null,
-    metrics: args.metrics,
+    metrics: args.metrics
   };
 }
 
@@ -3589,7 +3622,7 @@ function matchesPlayerStatsSummaryRowForState(
 }
 
 function getSummaryGroupingKey(
-  state: PlayerStatsLandingFilterState,
+  state: PlayerStatsFilterState,
   row: PlayerStatsLandingSummaryRow
 ): string {
   return state.expandable.tradeMode === "split"
@@ -3616,7 +3649,7 @@ function takeMostRecentSummaryRows(
 }
 
 function applyLandingScopeSelectionToSummaryRows(args: {
-  state: PlayerStatsLandingFilterState;
+  state: PlayerStatsFilterState;
   games: readonly PlayerStatsSourceGameRow[];
   rows: readonly PlayerStatsLandingSummaryRow[];
 }): PlayerStatsLandingSummaryRow[] {
@@ -3658,7 +3691,7 @@ function applyLandingScopeSelectionToSummaryRows(args: {
         games: args.games,
         teamId,
         venue: args.state.expandable.venue,
-        limit: scope.value,
+        limit: scope.value
       });
 
       for (const gameId of teamGameIds) {
@@ -3990,17 +4023,22 @@ function buildDetailApiResultFromAggregationRows(args: {
   rows: readonly PlayerStatsDetailAggregationRow[];
 }): PlayerStatsDetailAggregationResult {
   const family = resolveLandingTableFamily(args.state);
-  const apiRows = filterLandingAggregationRowsForState(args.state, args.rows).map(
-    (row) => ({
-      ...mapLandingAggregationRowToApiRow(
-        row,
-        family,
-        args.state.primary.displayMode
-      ),
+  const filteredRows = filterLandingAggregationRowsForState(
+    args.state,
+    args.rows
+  ) as PlayerStatsDetailAggregationRow[];
+  const apiRows = filteredRows.map((row) => {
+    const baseRow = mapLandingAggregationRowToApiRow(
+      row,
+      family,
+      args.state.primary.displayMode
+    );
+    return {
+      ...baseRow,
       seasonId: row.seasonId,
-      seasonLabel: row.seasonLabel,
-    })
-  );
+      seasonLabel: row.seasonLabel
+    } as PlayerStatsDetailApiRow;
+  });
   const sortedRows = sortLandingApiRows(
     apiRows,
     args.state.view.sort.sortKey,
@@ -4014,14 +4052,17 @@ function buildDetailApiResultFromAggregationRows(args: {
   return {
     playerId: args.playerId,
     family,
-    rows: sortedRows.slice(start, start + pageSize),
+    rows: sortedRows.slice(
+      start,
+      start + pageSize
+    ) as PlayerStatsDetailApiRow[],
     sort: args.state.view.sort,
     pagination: {
       page,
       pageSize,
       totalRows,
-      totalPages,
-    },
+      totalPages
+    }
   };
 }
 
@@ -4036,10 +4077,13 @@ function mapLandingAggregationRowToApiRow(
     rowKey: row.rowKey,
     playerName: row.playerName,
     teamLabel: row.teamLabel,
-    positionCode: family === "goalieCounts" || family === "goalieRates" ? null : row.positionCode,
+    positionCode:
+      family === "goalieCounts" || family === "goalieRates"
+        ? null
+        : row.positionCode,
     gamesPlayed: row.gamesPlayed,
     toiSeconds: row.toiSeconds,
-    toiPerGameSeconds: row.toiPerGameSeconds,
+    toiPerGameSeconds: row.toiPerGameSeconds
   } satisfies PlayerStatsLandingApiRow;
 
   if (family === "individualCounts" || family === "individualRates") {
@@ -4329,15 +4373,18 @@ function compareNullable(
   return String(left).localeCompare(String(right));
 }
 
-function sortLandingApiRows(
-  rows: readonly PlayerStatsLandingApiRow[],
+function sortLandingApiRows<TRow extends PlayerStatsLandingApiRow>(
+  rows: readonly TRow[],
   sortKey: string | null,
   direction: PlayerStatsSortDirection
-): PlayerStatsLandingApiRow[] {
+): TRow[] {
   const resolvedSortKey = sortKey ?? "playerName";
 
   return [...rows].sort((left, right) => {
-    const primary = compareNullable(left[resolvedSortKey], right[resolvedSortKey]);
+    const primary = compareNullable(
+      left[resolvedSortKey],
+      right[resolvedSortKey]
+    );
     if (primary !== 0) {
       return direction === "asc" ? primary : -primary;
     }
@@ -4348,7 +4395,7 @@ function sortLandingApiRows(
       "positionCode",
       "gamesPlayed",
       "toiSeconds",
-      "rowKey",
+      "rowKey"
     ];
 
     for (const fallbackKey of fallbacks) {
