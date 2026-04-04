@@ -519,7 +519,7 @@ function sha256Json(payload: unknown): string {
 }
 
 async function fetchAllSupabaseRows<TRow>(
-  fetchPage: (from: number, to: number) => Promise<SupabasePagedResult<TRow>>
+  fetchPage: (from: number, to: number) => PromiseLike<SupabasePagedResult<TRow>>
 ): Promise<TRow[]> {
   const rows: TRow[] = [];
 
@@ -635,7 +635,7 @@ async function fetchSupabaseRowsForGameChunks<TRow>(args: {
     gameIdChunk: readonly number[],
     from: number,
     to: number
-  ) => Promise<SupabasePagedResult<TRow>>;
+  ) => PromiseLike<SupabasePagedResult<TRow>>;
 }): Promise<TRow[]> {
   const rows: TRow[] = [];
 
