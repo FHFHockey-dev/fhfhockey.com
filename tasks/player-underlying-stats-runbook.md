@@ -21,6 +21,345 @@ The steady-state production path is:
 4. landing/detail reads from persisted summary partitions first
 5. live normalized reconstruction only for missing games or unsupported cache paths
 
+## Refresh Recipe
+
+Use this order when player underlying-stats numbers look stale, missing, or mathematically wrong.
+
+### 1. Refresh raw Gamecenter inputs and player summaries for the affected game or date range
+
+Single game:
+
+```bash
+cd /Users/tim/Code/fhfhockey.com/web
+set -a && source .env.local && set +a
+curl -i -sS -m 180 \
+  -H "Authorization: Bearer ${CRON_SECRET}" \
+  "http://localhost:3000/api/v1/db/update-player-underlying-stats?gameId=2025021196"
+```
+
+Date range in one season:
+
+```bash
+cd /Users/tim/Code/fhfhockey.com/web
+set -a && source .env.local && set +a
+curl -i -sS -m 180 \
+  -H "Authorization: Bearer ${CRON_SECRET}" \
+  "http://localhost:3000/api/v1/db/update-player-underlying-stats?seasonId=20252026&startDate=2026-03-31&endDate=2026-04-03"
+```
+
+What this does:
+
+- re-fetches raw NHL Gamecenter payloads
+- rebuilds normalized roster, event, and shift rows
+- rebuilds per-game player underlying summary snapshots
+
+Use this route first when a player is missing games, missing TOI, or missing stat rows.
+
+### 2. If raw coverage is already correct and only summary payloads are missing, refresh summaries only
+
+Single game:
+
+```bash
+cd /Users/tim/Code/fhfhockey.com/web
+set -a && source .env.local && set +a
+curl -i -sS -m 180 \
+  -H "Authorization: Bearer ${CRON_SECRET}" \
+  "http://localhost:3000/api/v1/db/update-player-underlying-summaries?gameId=2025021196"
+```
+
+Backfill missing summary payloads for a season:
+
+```bash
+cd /Users/tim/Code/fhfhockey.com/web
+set -a && source .env.local && set +a
+curl -i -sS -m 180 \
+  -H "Authorization: Bearer ${CRON_SECRET}" \
+  "http://localhost:3000/api/v1/db/update-player-underlying-summaries?seasonId=20252026&backfill=true&limit=25"
+```
+
+Use this only when raw Gamecenter ingest is already complete and the problem is limited to missing derived summary payloads.
+
+### 3. Verify the player row from the public API contract
+
+Landing query example:
+
+```bash
+curl -sS \
+  "http://localhost:3000/api/v1/underlying-stats/players?fromSeasonId=20252026&throughSeasonId=20252026&seasonType=regularSeason&strength=fiveOnFive&scoreState=allScores&statMode=onIce&displayMode=rates&venue=all&tradeMode=combine&scope=none&sortKey=xgfPct&sortDirection=desc&page=1&pageSize=200"
+```
+
+Detail query example:
+
+```bash
+curl -sS \
+  "http://localhost:3000/api/v1/underlying-stats/players/8485406?fromSeasonId=20252026&throughSeasonId=20252026&seasonType=regularSeason&strength=fiveOnFive&scoreState=allScores&statMode=onIce&displayMode=rates&venue=all&tradeMode=combine&scope=none&sortKey=seasonId&sortDirection=desc&page=1&pageSize=50"
+```
+
+### 3.5 Verify the full rollup with the local query-audit script
+
+Use the script when you need to prove which games were included and how the final row was built.
+
+File:
+
+- `web/scripts/verify-player-underlying-query.ts`
+
+Landing example:
+
+```bash
+cd /Users/tim/Code/fhfhockey.com/web
+set -a && source .env.local && set +a
+NODE_PATH=/Users/tim/Code/fhfhockey.com/web \
+  ./node_modules/.bin/ts-node --transpile-only \
+  --compiler-options '{"module":"NodeNext","moduleResolution":"NodeNext"}' \
+  /Users/tim/Code/fhfhockey.com/web/scripts/verify-player-underlying-query.ts \
+  --playerId 8485406 \
+  --surface landing \
+  --query 'fromSeasonId=20252026&throughSeasonId=20252026&seasonType=regularSeason&strength=fiveOnFive&scoreState=allScores&statMode=onIce&displayMode=rates&venue=all&tradeMode=combine&scope=none&sortKey=xgfPct&sortDirection=desc&page=1&pageSize=50'
+```
+
+Detail example:
+
+```bash
+cd /Users/tim/Code/fhfhockey.com/web
+set -a && source .env.local && set +a
+NODE_PATH=/Users/tim/Code/fhfhockey.com/web \
+  ./node_modules/.bin/ts-node --transpile-only \
+  --compiler-options '{"module":"NodeNext","moduleResolution":"NodeNext"}' \
+  /Users/tim/Code/fhfhockey.com/web/scripts/verify-player-underlying-query.ts \
+  --playerId 8485406 \
+  --surface detail \
+  --query 'fromSeasonId=20252026&throughSeasonId=20252026&seasonType=regularSeason&strength=fiveOnFive&scoreState=allScores&statMode=onIce&displayMode=rates&venue=all&tradeMode=combine&scope=none&sortKey=seasonId&sortDirection=desc&page=1&pageSize=50'
+```
+
+Expected output sections:
+
+- `eligibleGameCount`
+- `eligibleGameIds`
+- `summaryRowCountForPlayer`
+- `scopedSummaryRowCountForPlayer`
+- `verificationBlocks[].includedGameIds`
+- `verificationBlocks[].summedToiSeconds`
+- `verificationBlocks[].rawNumeratorTotals`
+- `verificationBlocks[].derivedValues`
+- `verificationBlocks[].rebuiltFinalRowPayload`
+
+Operational rule:
+
+- if `includedGameIds` or `summedToiSeconds` are wrong, this is an upstream coverage or summary-refresh problem
+- if those are correct and `rebuiltFinalRowPayload` is wrong, then inspect the aggregation or formula layer
+- do not question the rate math before the included game list is correct
+
+### 3.6 Recorded spot-checks
+
+These are the first three canonical verifier checks and should be kept as known-good examples.
+
+#### Skater `individual/rates`
+
+Player:
+
+- Porter Martone (`8485406`)
+
+Query:
+
+- `seasonId=20252026`
+- `seasonType=regularSeason`
+- `strength=fiveOnFive`
+- `statMode=individual`
+- `displayMode=rates`
+
+Verified inputs:
+
+- games -> `2025021184`, `2025021196`, `2025021205`
+- TOI -> `2470s`
+- shots -> `13`
+- totalAssists -> `1`
+- iCF -> `16`
+
+Verified outputs:
+
+- `shotsPer60 = 13 / 2470 * 3600 = 18.94736842105263`
+- `totalAssistsPer60 = 1 / 2470 * 3600 = 1.45748987854251`
+- rebuilt payload matched the raw numerator totals
+
+Result:
+
+- pass
+
+#### Skater `onIce/rates`
+
+Player:
+
+- Porter Martone (`8485406`)
+
+Query:
+
+- `seasonId=20252026`
+- `seasonType=regularSeason`
+- `strength=fiveOnFive`
+- `statMode=onIce`
+- `displayMode=rates`
+
+Verified inputs:
+
+- games -> `2025021184`, `2025021196`, `2025021205`
+- TOI -> `2470s`
+- CF -> `53`
+- CA -> `30`
+- xGF -> `4.6`
+- xGA -> `2.98`
+
+Verified outputs:
+
+- `cfPer60 = 53 / 2470 * 3600 = 77.24696356275304`
+- `xgfPer60 = 4.6 / 2470 * 3600 = 6.704453441295548`
+- `xgfPct = 4.6 / (4.6 + 2.98) = 0.6068601583113458`
+- rebuilt payload matched the raw numerator totals
+
+Result:
+
+- pass
+
+#### Goalie `goalie/rates`
+
+Player:
+
+- Juuse Saros (`8477424`)
+
+Query:
+
+- `seasonId=20252026`
+- `seasonType=regularSeason`
+- `strength=allStrengths`
+- `statMode=goalies`
+- `displayMode=rates`
+
+Verified inputs:
+
+- games -> `55`
+- TOI -> `189625s`
+- shotsAgainst -> `1572`
+- saves -> `1406`
+- goalsAgainst -> `166`
+- xgAgainst -> `191.93`
+
+Verified outputs:
+
+- `savePct = 1406 / 1572 = 0.8944020356234097`
+- `shotsAgainstPer60 = 1572 / 189625 * 3600 = 29.844166117336847`
+- `savesPer60 = 1406 / 189625 * 3600 = 26.692682926829267`
+- `gaa = 166 / 189625 * 3600 = 3.1514831905075806`
+- rebuilt payload matched the raw numerator totals
+
+Result:
+
+- pass
+
+### 4. If the player is still missing games, inspect the identity layer before touching formulas
+
+Check `nhl_api_game_roster_spots` for the player and affected games.
+
+If the player is absent there, the rates math is not the first problem. The raw ingest for those games is stale or incomplete, and step 1 must be rerun for the exact affected games.
+
+### 5. Compare like for like
+
+Do not compare:
+
+- NHL all-situations `avgToi`
+- against FHFH `fiveOnFive`, `powerPlay`, or `penaltyKill` TOI
+
+When validating rates:
+
+- compare NHL all-situations numbers only to `allStrengths`
+- compare 5v5-derived numbers only to `fiveOnFive`
+- verify `gamesPlayed` and `toiSeconds` first
+- verify per-60 math second
+
+## Martone Mismatch Diagnosis
+
+This is the canonical example of a stale-coverage issue being mistaken for a bad rate formula.
+
+### Symptom
+
+For Porter Martone (`8485406`) on the player landing page with:
+
+- `seasonId=20252026`
+- `seasonType=regularSeason`
+- `strength=fiveOnFive`
+- `statMode=onIce`
+- `displayMode=rates`
+
+the landing row incorrectly showed:
+
+- `gamesPlayed = 1`
+- `toiSeconds = 780`
+- `toiPerGameSeconds = 780`
+
+That surfaced as `13:00 TOI/GP`, which did not match the NHL API career/season display.
+
+### Root Cause Chain
+
+1. The comparison mixed two different contexts:
+   - NHL API `avgToi` was all-situations
+   - FHFH query was `fiveOnFive`
+2. The FHFH row was still wrong even within five-on-five, because the player only existed in `nhl_api_game_roster_spots` for one of his three NHL games.
+3. The missing roster rows prevented the player-summary builder from emitting Martone rows for the other two games.
+4. The landing aggregate therefore rolled up only one game instead of three.
+
+Affected games:
+
+- `2025021184` — present before refresh
+- `2025021196` — missing before refresh
+- `2025021205` — missing before refresh
+
+### Verified Fix
+
+After targeted raw ingest plus summary refresh for `2026-03-31` through `2026-04-03`, Martone appeared in all three roster rows and the five-on-five per-game summary layer produced:
+
+- `2025021184` -> `780s`
+- `2025021196` -> `989s`
+- `2025021205` -> `701s`
+
+Correct five-on-five aggregate:
+
+- `gamesPlayed = 3`
+- `toiSeconds = 2470`
+- `toiPerGameSeconds = 823.33`
+- `toiPerGame = 13:43`
+
+This means:
+
+- the original `1 GP / 13:00` row was stale-data wrong
+- the NHL API `16:47` comparison was also context-wrong because it was not a five-on-five number
+
+### Denominator Context Verification
+
+Refreshed FHFH source rows for Martone confirm the split cleanly:
+
+- `allStrengths`
+  - `2025021184` -> `1014s`
+  - `2025021196` -> `1095s`
+  - `2025021205` -> `913s`
+  - aggregate -> `3022s / 3 GP = 1007.33s = 16:47`
+- `fiveOnFive`
+  - `2025021184` -> `780s`
+  - `2025021196` -> `989s`
+  - `2025021205` -> `701s`
+  - aggregate -> `2470s / 3 GP = 823.33s = 13:43`
+
+Operational conclusion:
+
+- NHL API `avgToi = 16:47` is a valid comparison only against `allStrengths`
+- FHFH `fiveOnFive` TOI should be lower, and for Martone the verified target is `13:43`
+
+### Operational Rule
+
+If a player is missing games in the aggregate:
+
+1. check `nhl_api_game_roster_spots`
+2. rebuild raw Gamecenter ingest for the affected games
+3. rebuild per-game underlying summaries
+4. only then question the per-60 formulas
+
 ## Product Surfaces
 
 ### Landing Page

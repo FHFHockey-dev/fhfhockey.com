@@ -268,8 +268,9 @@ describe("PlayerStatsTable", () => {
     const positionHeader = screen.getByRole("button", { name: "Sort by Position" });
 
     expect((playerHeader.closest("th") as HTMLTableCellElement).style.left).toBe("0px");
-    expect((teamHeader.closest("th") as HTMLTableCellElement).style.left).toBe("220px");
-    expect((positionHeader.closest("th") as HTMLTableCellElement).style.left).toBe("332px");
+    expect((teamHeader.closest("th") as HTMLTableCellElement).style.left).toBe("188px");
+    expect((positionHeader.closest("th") as HTMLTableCellElement).style.left).toBe("260px");
+    expect(screen.getByText("POS")).toBeTruthy();
 
     const row = within(table).getByText("Sam Bennett").closest("tr");
     expect(row).toBeTruthy();

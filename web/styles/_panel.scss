@@ -1,114 +1,179 @@
 @use "styles/vars" as v;
 @use "sass:color";
 
-// Base elevated glass surface (panel container)
+// Canonical panel surface primitive.
+// Standard is the default for most data and dashboard surfaces.
+// Intense is reserved for legacy dashboard-heavy surfaces that still need more depth.
+@mixin panel-shell(
+  $radius: v.$radius-panel,
+  $padding: 0,
+  $variant: standard,
+  $overflow: hidden
+) {
+  position: relative;
+  border-radius: $radius;
+  padding: $padding;
+  overflow: $overflow;
+  border: v.$border-subtle;
+  background: v.$background-medium;
+  box-shadow: v.$shadow-panel;
+
+  @if $variant == soft {
+    background: color.adjust(v.$background-medium, $lightness: -1%);
+    box-shadow: none;
+  } @else if $variant == flat {
+    background: v.$background-dark;
+    box-shadow: none;
+  } @else if $variant == intense {
+    background:
+      linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.035),
+        rgba(255, 255, 255, 0.015)
+      ),
+      v.$background-medium;
+    box-shadow: v.$shadow-panel-hover;
+
+    &::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      pointer-events: none;
+      background: linear-gradient(
+        140deg,
+        rgba(255, 255, 255, 0.07),
+        rgba(255, 255, 255, 0)
+      );
+      opacity: 0.35;
+    }
+  }
+}
+
+@mixin panel-header(
+  $padding-y: v.$space-sm,
+  $padding-x: v.$space-md,
+  $justify: space-between,
+  $align: center,
+  $background: v.$background-dark,
+  $border-color: v.$border-soft
+) {
+  display: flex;
+  align-items: $align;
+  justify-content: $justify;
+  gap: v.$space-sm;
+  width: 100%;
+  padding: $padding-y $padding-x;
+  background: $background;
+  border-bottom: 1px solid $border-color;
+}
+
+@mixin panel-body($padding: v.$space-md, $gap: null) {
+  padding: $padding;
+
+  @if $gap != null {
+    display: grid;
+    gap: $gap;
+  }
+}
+
+@mixin panel-scroll-surface(
+  $max-height: 5000px,
+  $minimized-selector: ".container.minimized &"
+) {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+  transition:
+    max-height 0.4s v.$transition-easing,
+    opacity 0.3s v.$transition-easing,
+    visibility 0.3s v.$transition-easing;
+  max-height: $max-height;
+  opacity: 1;
+  visibility: visible;
+
+  #{$minimized-selector} {
+    max-height: 0;
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+@mixin panel-divider($color: v.$border-soft, $width: 1px) {
+  border-bottom: $width solid $color;
+}
+
+// Compatibility wrapper used broadly across the repo.
 @mixin panel-container(
   $radius: v.$border-radius,
   $padding: 0,
   $gradient-start: rgba(255, 255, 255, 0.05),
   $gradient-end: rgba(255, 255, 255, 0.02),
-  $blur: 12px
+  $blur: 12px,
+  $variant: standard
 ) {
-  position: relative;
-  border-radius: $radius;
-  background: linear-gradient(135deg, $gradient-start, $gradient-end);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur($blur);
-  -webkit-backdrop-filter: blur($blur);
-  padding: $padding;
-  box-shadow:
-    0 4px 16px rgba(0, 0, 0, 0.4),
-    0 0 0 1px rgba(255, 255, 255, 0.05);
-  overflow: hidden;
+  @include panel-shell($radius: $radius, $padding: $padding, $variant: $variant);
 
-  // subtle inner highlight ring
-  &::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    pointer-events: none;
-    background: linear-gradient(
-      140deg,
-      rgba(255, 255, 255, 0.08),
-      rgba(255, 255, 255, 0)
-    );
-    mix-blend-mode: overlay;
-    opacity: 0.4;
+  // Preserve the option for legacy glass-heavy surfaces that still pass custom values.
+  @if $variant == intense or $blur != null and $blur > 0 and (
+    $gradient-start != rgba(255, 255, 255, 0.05) or
+    $gradient-end != rgba(255, 255, 255, 0.02)
+  ) {
+    background: linear-gradient(135deg, $gradient-start, $gradient-end), v.$background-medium;
+    backdrop-filter: blur($blur);
+    -webkit-backdrop-filter: blur($blur);
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow:
+      0 4px 16px rgba(0, 0, 0, 0.4),
+      0 0 0 1px rgba(255, 255, 255, 0.05);
   }
 }
 
-// Shared title header style (modernized to mirror GameGrid aesthetic)
+// Compatibility title/header mixin.
 @mixin panel-title(
-  $padding-y: 4px,
-  $padding-x: 5px,
+  $padding-y: v.$space-xs,
+  $padding-x: v.$space-xs,
   $gradient-dark: v.$background-dark,
   $gradient-light: #{"#{v.$background-dark}"}
 ) {
-  background: linear-gradient(
-    135deg,
-    $gradient-dark,
-    color.adjust($gradient-dark, $lightness: 4%)
+  @include panel-header(
+    $padding-y: $padding-y,
+    $padding-x: $padding-x,
+    $justify: center,
+    $background: $gradient-dark,
+    $border-color: v.$secondary-color
   );
-  padding: $padding-y $padding-x;
+
   position: relative;
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
   font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
   text-transform: uppercase;
   font-weight: 300;
   font-size: clamp(1.15rem, 3.5vw, 1.4rem);
-  border-bottom: 2px solid transparent;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+
   .container:not(.minimized) & {
     border-bottom-color: v.$secondary-color;
   }
 
-  // soft overlay glow on hover when interactive
   &[data-interactive="true"]::after {
     content: "";
     position: absolute;
     inset: 0;
-    background: radial-gradient(
-      circle at 30% 40%,
-      rgba(255, 255, 255, 0.1),
-      rgba(255, 255, 255, 0)
-    );
+    background: rgba(v.$primary-color, 0.08);
     opacity: 0;
     transition: opacity v.$transition-duration v.$transition-easing;
   }
+
   &[data-interactive="true"]:hover::after,
   &[data-interactive="true"]:focus-visible::after {
     opacity: 1;
   }
 }
 
-// Sticky scroll container for tables
+// Compatibility wrapper used by scrollable grid/table panels.
 @mixin panel-scroll-wrapper {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.03),
-    rgba(255, 255, 255, 0.01)
-  );
-  transition:
-    max-height 0.4s v.$transition-easing,
-    opacity 0.3s v.$transition-easing,
-    visibility 0.3s v.$transition-easing;
-  max-height: 5000px;
-  opacity: 1;
-  visibility: visible;
-  .container.minimized & {
-    max-height: 0;
-    opacity: 0;
-    visibility: hidden;
-  }
+  @include panel-scroll-surface;
 }
 
 // Unified first column separator
@@ -116,19 +181,23 @@
   border-right: $width solid v.$secondary-color;
 }
 
-// Global color utility classes (remove duplicates in modules)
+// Global color utility classes retained for existing modules.
 .red {
   background-color: rgba(v.$schedule-red, 0.25);
 }
+
 .orange {
   background-color: rgba(v.$schedule-yellow, 0.35);
 }
+
 .yellow {
   background-color: rgba(v.$schedule-yellow, 0.25);
 }
+
 .green {
   background-color: rgba(v.$schedule-green, 0.25);
 }
+
 .grey {
   background-color: rgba(128, 128, 128, 0.2);
 }

@@ -21,6 +21,7 @@ import styles from "./Header.module.scss";
 // import LOGO from "public/pictures/logo3.png";
 // import LOGO from "public/pictures/fhfh-italic-2.png";
 import LOGO from "public/pictures/FHFHonly.png";
+import UNDERLYING_STATS_LOGO from "public/pictures/ULSlogo.png";
 //         src="/pictures/logo-fhfh.svg"
 
 // Bottom Navigation Items
@@ -184,6 +185,8 @@ function Header() {
   const { navbarRef, isNavbarVisible } = useHideableNavbar();
   const router = useRouter();
   const { user, isLoading } = useAuth();
+  const isUnderlyingStatsRoute =
+    router.pathname.startsWith("/underlying-stats");
 
   // When taking automated screenshots, append ?isScreenshot=1 to the URL
   // to hide mobile-only UI like the bottom nav. This avoids layout overlays
@@ -224,30 +227,49 @@ function Header() {
         })}
       >
         {/* logo */}
-        <Link href="/" className={styles.logo}>
+        <Link
+          href="/"
+          className={classNames(styles.logo, {
+            [styles.underlyingStatsLogo]: isUnderlyingStatsRoute
+          })}
+        >
           {/* Main Logo Image */}
           <Image
-            src={LOGO}
+            src={isUnderlyingStatsRoute ? UNDERLYING_STATS_LOGO : LOGO}
             alt="FHFH logo"
             placeholder="blur"
-            width={110}
-            height={30}
+            width={isUnderlyingStatsRoute ? 270 : 110}
+            height={isUnderlyingStatsRoute ? 35 : 30}
             priority
           />
         </Link>
 
         {/* nav bar items */}
         <ClientOnly className={styles.nav}>
-          <NavbarItems items={ITEMS_DATA} onItemClick={onItemClick} />
+          <NavbarItems
+            items={ITEMS_DATA}
+            onItemClick={onItemClick}
+            className={
+              isUnderlyingStatsRoute ? styles.underlyingStatsNavTheme : undefined
+            }
+          />
         </ClientOnly>
 
         {/* social medias */}
         <div className={styles.socials}>
-          <SocialMedias />
+          <SocialMedias
+            className={
+              isUnderlyingStatsRoute ? styles.underlyingStatsSocialsTheme : undefined
+            }
+          />
         </div>
 
         {/* Buy Me a Coffee */}
-        <div className={styles.bmcWrap}>
+        <div
+          className={classNames(styles.bmcWrap, {
+            [styles.underlyingStatsBmcWrap]: isUnderlyingStatsRoute
+          })}
+        >
           <a
             href="https://www.buymeacoffee.com/tjsusername"
             target="_blank"
@@ -255,7 +277,9 @@ function Header() {
             aria-label="Buy me a coffee"
           >
             <img
-              src="https://img.buymeacoffee.com/button-api/?text=Support&emoji=🥃&slug=tjsusername&button_colour=07aae2&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00"
+              src={`https://img.buymeacoffee.com/button-api/?text=Support&emoji=%F0%9F%A5%83&slug=tjsusername&button_colour=${
+                isUnderlyingStatsRoute ? "DBA507" : "07aae2"
+              }&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00`}
               alt="Buy me a coffee"
             />
           </a>
@@ -264,7 +288,9 @@ function Header() {
         {!user && !isLoading ? (
           <button
             type="button"
-            className={styles.authCta}
+            className={classNames(styles.authCta, {
+              [styles.underlyingStatsAuthCta]: isUnderlyingStatsRoute
+            })}
             onClick={() => setAuthModalOpen(true)}
           >
             Sign-in / Sign-up

@@ -14,7 +14,7 @@
   overflow-x: auto;
   overflow-y: auto;
   max-width: 100%;
-  @include v.custom-scrollbar(v.$secondary-color, v.$background-medium);
+  @include v.custom-scrollbar(v.$color-brand-yellow, v.$background-medium);
 }
 
 .footer {
@@ -70,12 +70,12 @@
 
   &:hover:not(:disabled),
   &:focus-visible {
-    border-color: rgba(v.$secondary-color, 0.45);
+    border-color: rgba(v.$color-brand-yellow, 0.45);
     color: v.$color-white;
   }
 
   &:focus-visible {
-    outline: 2px solid rgba(v.$primary-color, 0.7);
+    outline: 2px solid rgba(v.$color-brand-yellow, 0.7);
     outline-offset: 2px;
   }
 
@@ -108,6 +108,7 @@
   white-space: nowrap;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   background-color: v.$background-dark;
+  background-clip: padding-box;
 }
 
 .headerCell {
@@ -115,7 +116,7 @@
   top: 0;
   z-index: 3;
   background-color: color.adjust(v.$background-dark, $lightness: -3%);
-  border-bottom: 2px solid rgba(v.$secondary-color, 0.5);
+  border-bottom: 2px solid rgba(v.$color-brand-yellow, 0.5);
 }
 
 .headerButton {
@@ -135,29 +136,40 @@
   cursor: pointer;
 
   &:focus-visible {
-    outline: 2px solid rgba(v.$primary-color, 0.7);
+    outline: 2px solid rgba(v.$color-brand-yellow, 0.7);
     outline-offset: 2px;
   }
 }
 
 .sortIndicator {
-  color: v.$secondary-color;
+  color: v.$color-brand-yellow;
   font-size: 0.9em;
   line-height: 1;
 }
 
 .row:nth-child(even) .bodyCell {
-  background-color: rgba(255, 255, 255, 0.015);
+  background-color: color.adjust(v.$background-dark, $lightness: 2%);
 }
 
 .row:hover .bodyCell {
-  background-color: rgba(v.$secondary-color, 0.08);
+  background-color: color.adjust(v.$background-dark, $lightness: 4%);
 }
 
 .stickyCell {
   position: sticky;
   z-index: 2;
-  box-shadow: 1px 0 0 rgba(255, 255, 255, 0.08);
+  background-color: v.$background-dark;
+  box-shadow:
+    1px 0 0 rgba(255, 255, 255, 0.08),
+    10px 0 14px -14px rgba(0, 0, 0, 0.85);
+}
+
+.row:nth-child(even) .stickyCell {
+  background-color: color.adjust(v.$background-dark, $lightness: 2%);
+}
+
+.row:hover .stickyCell {
+  background-color: color.adjust(v.$background-dark, $lightness: 4%);
 }
 
 .head .stickyCell {

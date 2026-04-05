@@ -73,6 +73,7 @@ function NavbarItemCategory({ item, onItemClick }: NavBarCategoryProps) {
 type NavBarItemsProps = {
   items: NavbarItem[];
   onItemClick: (item?: NavbarItem) => void;
+  className?: string;
 };
 
 function NavbarItems_({ items, onItemClick }: NavBarItemsProps) {
@@ -94,7 +95,8 @@ function NavbarItems_({ items, onItemClick }: NavBarItemsProps) {
               <li
                 key={idx}
                 className={classNames(styles.link, {
-                  [styles.active]: isLinkActive(item)
+                  [styles.active]: isLinkActive(item),
+                  [styles.underlyingStatsLink]: item.accent === "yellow"
                 })}
                 onClick={() => onItemClick(item)}
               >
@@ -108,12 +110,16 @@ function NavbarItems_({ items, onItemClick }: NavBarItemsProps) {
   );
 }
 
-export default function NavbarItems(props: NavBarItemsProps) {
+export default function NavbarItems({
+  className,
+  ...props
+}: NavBarItemsProps) {
   const size = useScreenSize();
   return (
     <nav
       className={classNames(
         styles.items,
+        className,
         size.screen === BreakPoint.l ? styles.large : styles.small
       )}
     >

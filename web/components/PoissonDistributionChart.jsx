@@ -1,7 +1,8 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import Fetch from "lib/cors-fetch";
 import * as d3 from "d3";
 import styles from "./GamePoissonChart.module.scss"; // Import the SCSS module
+import useResizeObserver from "hooks/useResizeObserver";
 
 // --- Helper Functions (Keep as they are) ---
 const poissonProbability = (lambda, k) => {
@@ -27,11 +28,17 @@ const factorial = (num) => {
 
 const PoissonDistributionChart = ({ chartData }) => {
   const svgRef = useRef();
+  const containerRef = useRef();
   const [homeWinProb, setHomeWinProb] = useState(0);
   const [awayWinProb, setAwayWinProb] = useState(0);
   const [prediction, setPrediction] = useState("");
   const [otPrediction, setOtPrediction] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const { width: containerWidth } = useResizeObserver(containerRef);
+  const chartFrameWidth = useMemo(() => {
+    if (!containerWidth) return 430;
+    return Math.max(320, Math.min(containerWidth - 32, 500));
+  }, [containerWidth]);
 
   useEffect(() => {
     console.log("PDC useEffect triggered. chartData:", chartData);
@@ -157,19 +164,17 @@ const PoissonDistributionChart = ({ chartData }) => {
         // The main prediction should show the MOST LIKELY *NON*-DRAW score.
         if (nonDrawMostLikely.value > 1e-9) {
           // Check if a valid non-draw outcome was found
-          finalPrediction = `Model Prediction: | ${homeTeamName} | ${nonDrawMostLikely.y} - ${nonDrawMostLikely.x} | ${awayTeamName} |`;
-          // The OT prediction explains that the draw was most likely overall
-          // Use drawMostLikely here as overallMostLikely *is* the most likely draw
-          finalOtPrediction = `(Most likely: Draw ${drawMostLikely.y}-${drawMostLikely.x}, favoring ${otWinner} in OT/SO)`;
+          finalPrediction = `Model prediction: ${homeTeamName} ${nonDrawMostLikely.y}-${nonDrawMostLikely.x} ${awayTeamName}`;
+          finalOtPrediction = `Most likely draw: ${drawMostLikely.y}-${drawMostLikely.x}. Edge: ${otWinner} in OT/SO.`;
         } else {
           // Edge Case: Only draws have significant probability. Show the most likely draw.
-          finalPrediction = `Model Prediction: Draw ${drawMostLikely.y}-${drawMostLikely.x}`;
-          finalOtPrediction = `(Favoring ${otWinner} in OT/SO)`;
+          finalPrediction = `Model prediction: Draw ${drawMostLikely.y}-${drawMostLikely.x}`;
+          finalOtPrediction = `Edge: ${otWinner} in OT/SO.`;
         }
       } else {
         // NO, the highest probability outcome is NOT a draw.
         // Display this non-draw outcome as the main prediction.
-        finalPrediction = `Model Prediction: | ${homeTeamName} | ${overallMostLikely.y} - ${overallMostLikely.x} | ${awayTeamName} |`;
+        finalPrediction = `Model prediction: ${homeTeamName} ${overallMostLikely.y}-${overallMostLikely.x} ${awayTeamName}`;
         finalOtPrediction = ""; // No need for OT text if the primary prediction isn't a draw
       }
     }
@@ -178,9 +183,9 @@ const PoissonDistributionChart = ({ chartData }) => {
     setOtPrediction(finalOtPrediction);
 
     // --- D3 Drawing Code ( Largely Unchanged ) ---
-    const margin = { top: 50, right: 30, bottom: 70, left: 70 };
-    const width = 500 - margin.left - margin.right;
-    const height = 500 - margin.top - margin.bottom;
+    const margin = { top: 54, right: 28, bottom: 64, left: 64 };
+    const width = chartFrameWidth - margin.left - margin.right;
+    const height = width;
 
     const svg = d3
       .select(svgRef.current)
@@ -312,14 +317,14 @@ const PoissonDistributionChart = ({ chartData }) => {
       .attr("x", width / 2)
       .attr("y", 0 - margin.top / 2) // Adjusted position
       .style("text-anchor", "middle")
-      .text(`Predicted Score Probability Distribution`);
+      .text(`Score Probability Grid`);
 
     // --- Effect Cleanup ---
     return () => {
       // Remove the tooltip specific to this component instance when it unmounts
       tooltip.remove();
     };
-  }, [chartData]); // Dependency array
+  }, [chartData, chartFrameWidth]); // Dependency array
 
   // --- Render Logic ---
   if (isLoading) {
@@ -327,7 +332,7 @@ const PoissonDistributionChart = ({ chartData }) => {
   }
 
   return (
-    <div className={styles.chartContainer}>
+    <div className={styles.chartContainer} ref={containerRef}>
       <div className={styles.predictionValues}>
         {/* Display the determined prediction */}
         <div className={styles.predictionText}>{prediction}</div>

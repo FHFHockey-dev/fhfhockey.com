@@ -1,5 +1,10 @@
 @use "styles/vars" as *;
 
+.underlyingStatsTheme {
+  --navbar-accent: #{$color-brand-yellow};
+  --navbar-accent-soft: rgba(219, 165, 7, 0.18);
+}
+
 nav.items.small {
   margin-top: 32px;
   margin-left: 20px;
@@ -71,7 +76,7 @@ nav.items.small {
     font-family: $font-family-accent;
     font-weight: 500;
     font-size: 2.1rem;
-    color: #07aae2;
+    color: var(--navbar-accent, #07aae2);
     letter-spacing: 0.15em;
 
     li:not(:first-child) {
@@ -87,7 +92,21 @@ nav.items.small {
     }
     &.active,
     &:hover {
-      color: $primary-color;
+      color: var(--navbar-accent, #07aae2);
+    }
+
+    &.underlyingStatsLink {
+      color: $color-brand-yellow;
+      border-radius: 8px;
+      transition:
+        color 180ms ease,
+        background-color 180ms ease;
+
+      &.active,
+      &:hover {
+        color: $color-brand-yellow;
+        background-color: $yellow-color-opaque;
+      }
     }
   }
 }
@@ -181,7 +200,27 @@ nav.items.large {
 
         &.active,
         &:hover {
-          color: $primary-color;
+          color: var(--navbar-accent, #07aae2);
+        }
+
+        &.underlyingStatsLink {
+          color: $color-brand-yellow;
+          border-radius: 8px;
+          transition:
+            color 180ms ease,
+            background-color 180ms ease;
+
+          a {
+            padding-left: 10px;
+            padding-right: 10px;
+            border-radius: 8px;
+          }
+
+          &.active,
+          &:hover {
+            color: $color-brand-yellow;
+            background-color: $yellow-color-opaque;
+          }
         }
       }
     }

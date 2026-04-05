@@ -4,12 +4,13 @@ import Image from "next/image";
 import styles from "./SocialMedias.module.scss";
 import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
 import ClientOnly from "components/ClientOnly";
+import classNames from "classnames";
 
-function SocialMedias() {
+function SocialMedias({ className }: { className?: string }) {
   const size = useScreenSize();
   const imgSize = size.screen === BreakPoint.l ? 32 : 48;
   return (
-    <ClientOnly className={styles.socialMedias}>
+    <ClientOnly className={classNames(styles.socialMedias, className)}>
       <a
         href="https://www.twitter.com/fhfhockey"
         target="_blank"

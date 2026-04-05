@@ -9,6 +9,20 @@ import Image from "next/image";
 import styles from "./GamePage.module.scss";
 import Link from "next/link";
 
+function deriveSeasonIdFromGameDate(gameDateLike) {
+  const parsedDate = gameDateLike ? new Date(gameDateLike) : new Date();
+  const safeDate = Number.isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
+  const year = safeDate.getUTCFullYear();
+  const month = safeDate.getUTCMonth();
+  const seasonStartYear = month >= 8 ? year : year - 1;
+  return `${seasonStartYear}${seasonStartYear + 1}`;
+}
+
+function formatGoalieSavePct(value) {
+  if (value == null || Number.isNaN(Number(value))) return "-";
+  return Number(value).toFixed(3).replace(/^0+/, "");
+}
+
 export default function Page() {
   const router = useRouter();
   const { gameId } = router.query;
@@ -25,11 +39,14 @@ export default function Page() {
       const endpointURL = `https://api-web.nhle.com/v1/gamecenter/${gameId}/boxscore`;
       try {
         const response = await Fetch(endpointURL).then((res) => res.json());
+        const seasonId =
+          String(response?.season ?? response?.seasonId ?? "").trim() ||
+          deriveSeasonIdFromGameDate(response?.gameDate);
         setGameDetails(response);
-        fetchTeamStats(response.homeTeam.abbrev, "home");
-        fetchTeamStats(response.awayTeam.abbrev, "away");
-        fetchPowerPlayStats(response.homeTeam.abbrev, "home");
-        fetchPowerPlayStats(response.awayTeam.abbrev, "away");
+        fetchTeamStats(response.homeTeam.abbrev, "home", seasonId);
+        fetchTeamStats(response.awayTeam.abbrev, "away", seasonId);
+        fetchPowerPlayStats(response.homeTeam.abbrev, "home", seasonId);
+        fetchPowerPlayStats(response.awayTeam.abbrev, "away", seasonId);
       } catch (error) {
         console.error("Error fetching game details:", error);
       }
@@ -52,11 +69,12 @@ export default function Page() {
     fetchGameLandingDetails();
   }, [gameId]);
 
-  async function fetchTeamStats(teamAbbreviation, teamType) {
+  async function fetchTeamStats(teamAbbreviation, teamType, seasonId) {
     const franchiseId = teamsInfo[teamAbbreviation]?.franchiseId;
     if (!franchiseId) return;
 
-    const statsURL = `https://api.nhle.com/stats/rest/en/team/summary?isAggregate=false&isGame=false&sort=[{"property":"points","direction":"DESC"},{"property":"wins","direction":"DESC"},{"property":"teamId","direction":"ASC"}]&start=0&limit=50&factCayenneExp=gamesPlayed>=1&cayenneExp=franchiseId=${franchiseId} and gameTypeId=2 and seasonId<=20232024 and seasonId>=20232024`;
+    const targetSeasonId = seasonId || deriveSeasonIdFromGameDate();
+    const statsURL = `https://api.nhle.com/stats/rest/en/team/summary?isAggregate=false&isGame=false&sort=[{"property":"points","direction":"DESC"},{"property":"wins","direction":"DESC"},{"property":"teamId","direction":"ASC"}]&start=0&limit=50&factCayenneExp=gamesPlayed>=1&cayenneExp=franchiseId=${franchiseId} and gameTypeId=2 and seasonId<=${targetSeasonId} and seasonId>=${targetSeasonId}`;
     try {
       const response = await Fetch(statsURL).then((res) => res.json());
       const statsData = response.data[0] || {}; // Assuming the first object contains the relevant stats
@@ -70,18 +88,16 @@ export default function Page() {
     }
   }
 
-  async function fetchPowerPlayStats(teamAbbreviation, teamType) {
+  async function fetchPowerPlayStats(teamAbbreviation, teamType, seasonId) {
     // Match the teamID from teamsInfo to fetch the correct stats
     const teamId = teamsInfo[teamAbbreviation]?.id;
     if (!teamId) return;
 
-    const powerPlayStatsURL = `https://api.nhle.com/stats/rest/en/team/powerplay?isAggregate=false&isGame=false&sort=[{"property":"powerPlayPct","direction":"DESC"}]&start=0&limit=50&factCayenneExp=gamesPlayed>=1&cayenneExp=gameTypeId=2 and seasonId<=20232024 and seasonId>=20232024`;
+    const targetSeasonId = seasonId || deriveSeasonIdFromGameDate();
+    const powerPlayStatsURL = `https://api.nhle.com/stats/rest/en/team/powerplay?isAggregate=false&isGame=false&sort=[{"property":"powerPlayPct","direction":"DESC"}]&start=0&limit=50&factCayenneExp=gamesPlayed>=1&cayenneExp=teamId=${teamId} and gameTypeId=2 and seasonId<=${targetSeasonId} and seasonId>=${targetSeasonId}`;
     try {
       const response = await Fetch(powerPlayStatsURL).then((res) => res.json());
-      // Use the teamId to find the relevant team's stats
-      const powerPlayStats = response.data.find(
-        (stat) => stat.teamId == teamId
-      ); // Ensure the comparison is correct for the data type (== or === depending on data type consistency)
+      const powerPlayStats = response.data?.[0];
       if (!powerPlayStats) {
         console.error(`No power play stats found for teamId: ${teamId}`);
         return; // Early return if no stats found for the team
@@ -358,8 +374,8 @@ export default function Page() {
             homeTeam?.logo
           )}
           <div
-            className={`gameHero__score ${
-              showScores ? "gameHero__score--final" : ""
+            className={`${styles["gameHero__score"]} ${
+              showScores ? styles["gameHero__score--final"] : ""
             }`}
           >
             <div className={styles["gameHero__scoreGlyph"]}>
@@ -631,7 +647,7 @@ export default function Page() {
             {renderGameHero()}
 
             <section className={styles["gameContent"]}>
-              <div className={styles["statsAndPlayerCompContainer"]}>
+              <div className={styles["previewWorkspace"]}>
                 {/* ///////////////////////////////// STAT ROW ///////////////////////////////////////////////////////// */}
                 <div className={styles["gamePageVsTableContainer"]}>
                   <h1 className={styles["tableHeader"]}>
@@ -662,121 +678,121 @@ export default function Page() {
                         />
                       </div>
                     </div>
-                    {/* Use StatRow for each statistic you want to display */}
-                    <StatRow
-                      statLabel="WINS"
-                      homeStat={homeTeamStats?.wins}
-                      awayStat={awayTeamStats?.wins}
-                    />
-                    <StatRow
-                      statLabel="GF/GM"
-                      homeStat={formatNumber(homeTeamStats?.goalsForPerGame, 2)}
-                      awayStat={formatNumber(awayTeamStats?.goalsForPerGame, 2)}
-                    />
-                    <StatRow
-                      statLabel="GA/GM"
-                      homeStat={formatNumber(
-                        homeTeamStats?.goalsAgainstPerGame,
-                        2
-                      )}
-                      awayStat={formatNumber(
-                        awayTeamStats?.goalsAgainstPerGame,
-                        2
-                      )}
-                      isLowerBetter // Lower is better for goals against
-                    />
-                    <StatRow
-                      statLabel="PP%"
-                      homeStat={formatPercentValue(
-                        homeTeamPowerPlayStats?.powerPlayPct,
-                        1
-                      )}
-                      awayStat={formatPercentValue(
-                        awayTeamPowerPlayStats?.powerPlayPct,
-                        1
-                      )}
-                    />
-                    <StatRow
-                      statLabel="PK%"
-                      homeStat={formatPercentValue(
-                        homeTeamStats?.penaltyKillPct,
-                        1
-                      )}
-                      awayStat={formatPercentValue(
-                        awayTeamStats?.penaltyKillPct,
-                        1
-                      )}
-                    />
-                    <StatRow
-                      statLabel="SF/GM"
-                      homeStat={formatNumber(homeTeamStats?.shotsForPerGame, 1)}
-                      awayStat={formatNumber(awayTeamStats?.shotsForPerGame, 1)}
-                    />
-                    <StatRow
-                      statLabel="SA/GM"
-                      homeStat={formatNumber(
-                        homeTeamStats?.shotsAgainstPerGame,
-                        1
-                      )}
-                      awayStat={formatNumber(
-                        awayTeamStats?.shotsAgainstPerGame,
-                        1
-                      )}
-                      isLowerBetter // Lower is better for shots against
-                    />
-                    <StatRow
-                      statLabel="PPO/GM"
-                      homeStat={formatNumber(
-                        homeTeamPowerPlayStats?.ppOpportunitiesPerGame,
-                        2
-                      )}
-                      awayStat={formatNumber(
-                        awayTeamPowerPlayStats?.ppOpportunitiesPerGame,
-                        2
-                      )}
-                    />
-                    <StatRow
-                      statLabel="PPG/GM"
-                      homeStat={formatNumber(
-                        homeTeamPowerPlayStats?.ppGoalsPerGame,
-                        2
-                      )}
-                      awayStat={formatNumber(
-                        awayTeamPowerPlayStats?.ppGoalsPerGame,
-                        2
-                      )}
-                    />
-                    <StatRow
-                      statLabel="S%"
-                      homeStat={formatRate(
-                        homeTeamStats?.goalsForPerGame,
-                        homeTeamStats?.shotsForPerGame,
-                        100,
-                        1,
-                        "%"
-                      )}
-                      awayStat={formatRate(
-                        awayTeamStats?.goalsForPerGame,
-                        awayTeamStats?.shotsForPerGame,
-                        100,
-                        1,
-                        "%"
-                      )}
-                    />
-                    <StatRow
-                      statLabel="SV%"
-                      homeStat={formatSavePercentage(
-                        homeTeamStats?.goalsAgainstPerGame,
-                        homeTeamStats?.shotsAgainstPerGame
-                      )}
-                      awayStat={formatSavePercentage(
-                        awayTeamStats?.goalsAgainstPerGame,
-                        awayTeamStats?.shotsAgainstPerGame
-                      )}
-                    />
+                    <div className={styles["advantageRows"]}>
+                      <StatRow
+                        statLabel="WINS"
+                        homeStat={homeTeamStats?.wins}
+                        awayStat={awayTeamStats?.wins}
+                      />
+                      <StatRow
+                        statLabel="GF/GM"
+                        homeStat={formatNumber(homeTeamStats?.goalsForPerGame, 2)}
+                        awayStat={formatNumber(awayTeamStats?.goalsForPerGame, 2)}
+                      />
+                      <StatRow
+                        statLabel="GA/GM"
+                        homeStat={formatNumber(
+                          homeTeamStats?.goalsAgainstPerGame,
+                          2
+                        )}
+                        awayStat={formatNumber(
+                          awayTeamStats?.goalsAgainstPerGame,
+                          2
+                        )}
+                        isLowerBetter
+                      />
+                      <StatRow
+                        statLabel="PP%"
+                        homeStat={formatPercentValue(
+                          homeTeamPowerPlayStats?.powerPlayPct,
+                          1
+                        )}
+                        awayStat={formatPercentValue(
+                          awayTeamPowerPlayStats?.powerPlayPct,
+                          1
+                        )}
+                      />
+                      <StatRow
+                        statLabel="PK%"
+                        homeStat={formatPercentValue(
+                          homeTeamStats?.penaltyKillPct,
+                          1
+                        )}
+                        awayStat={formatPercentValue(
+                          awayTeamStats?.penaltyKillPct,
+                          1
+                        )}
+                      />
+                      <StatRow
+                        statLabel="SF/GM"
+                        homeStat={formatNumber(homeTeamStats?.shotsForPerGame, 1)}
+                        awayStat={formatNumber(awayTeamStats?.shotsForPerGame, 1)}
+                      />
+                      <StatRow
+                        statLabel="SA/GM"
+                        homeStat={formatNumber(
+                          homeTeamStats?.shotsAgainstPerGame,
+                          1
+                        )}
+                        awayStat={formatNumber(
+                          awayTeamStats?.shotsAgainstPerGame,
+                          1
+                        )}
+                        isLowerBetter
+                      />
+                      <StatRow
+                        statLabel="PPO/GM"
+                        homeStat={formatNumber(
+                          homeTeamPowerPlayStats?.ppOpportunitiesPerGame,
+                          2
+                        )}
+                        awayStat={formatNumber(
+                          awayTeamPowerPlayStats?.ppOpportunitiesPerGame,
+                          2
+                        )}
+                      />
+                      <StatRow
+                        statLabel="PPG/GM"
+                        homeStat={formatNumber(
+                          homeTeamPowerPlayStats?.ppGoalsPerGame,
+                          2
+                        )}
+                        awayStat={formatNumber(
+                          awayTeamPowerPlayStats?.ppGoalsPerGame,
+                          2
+                        )}
+                      />
+                      <StatRow
+                        statLabel="S%"
+                        homeStat={formatRate(
+                          homeTeamStats?.goalsForPerGame,
+                          homeTeamStats?.shotsForPerGame,
+                          100,
+                          1,
+                          "%"
+                        )}
+                        awayStat={formatRate(
+                          awayTeamStats?.goalsForPerGame,
+                          awayTeamStats?.shotsForPerGame,
+                          100,
+                          1,
+                          "%"
+                        )}
+                      />
+                      <StatRow
+                        statLabel="SV%"
+                        homeStat={formatSavePercentage(
+                          homeTeamStats?.goalsAgainstPerGame,
+                          homeTeamStats?.shotsAgainstPerGame
+                        )}
+                        awayStat={formatSavePercentage(
+                          awayTeamStats?.goalsAgainstPerGame,
+                          awayTeamStats?.shotsAgainstPerGame
+                        )}
+                      />
+                    </div>
                   </div>
                 </div>
-
                 <div className={styles["statsPlayerAndGoalieCompContainer"]}>
                   <h1 className={styles["tableHeader"]}>
                     Last{" "}
@@ -890,8 +906,6 @@ export default function Page() {
                     <span className={styles["spanColorBlue"]}>Comparison</span>
                   </h1>
                   <div className={styles["goalieCompContainer"]}>
-                    {" "}
-                    {/* Add some margin for spacing */}
                     <div className={styles["goalieCompHeader"]}>
                       <div className={styles["goalieCompHeaderLeft"]}>
                         <Image
@@ -923,25 +937,27 @@ export default function Page() {
                               key={goalie.playerId}
                               className={styles["goalieStatRow"]}
                             >
-                              <div className={styles["goalieImage"]}>
-                                <Image
-                                  src={goalie.headshot}
-                                  alt={`Headshot of ${goalie.name.default}`}
-                                  width={60}
-                                  height={60}
-                                />
-                              </div>
-                              <div className={styles["goalieName"]}>
-                                <span>
-                                  {goalie.firstName.default}{" "}
-                                  <span className={styles["goalieLastName"]}>
-                                    {goalie.lastName.default}
+                              <div className={styles["goalieIdentity"]}>
+                                <div className={styles["goalieImage"]}>
+                                  <Image
+                                    src={goalie.headshot}
+                                    alt={`Headshot of ${goalie.name.default}`}
+                                    width={60}
+                                    height={60}
+                                  />
+                                </div>
+                                <div className={styles["goalieName"]}>
+                                  <span>
+                                    {goalie.firstName.default}{" "}
+                                    <span className={styles["goalieLastName"]}>
+                                      {goalie.lastName.default}
+                                    </span>
+                                  </span>{" "}
+                                  <span className={styles["goalieSweaterNumber"]}>
+                                    #{goalie.sweaterNumber} •{" "}
+                                    {goalie.positionCode}
                                   </span>
-                                </span>{" "}
-                                <span className={styles["goalieSweaterNumber"]}>
-                                  #{goalie.sweaterNumber} •{" "}
-                                  {goalie.positionCode}
-                                </span>
+                                </div>
                               </div>
                               <div
                                 className={styles["homeGoalieStatHighlight"]}
@@ -967,10 +983,7 @@ export default function Page() {
                                     SV%:
                                   </span>
                                   <span className={styles["spanGoalieStat"]}>
-                                    {goalie?.savePctg
-                                      ?.toFixed(3)
-                                      ?.replace(/^0+/, "")}
-                                    %
+                                    {formatGoalieSavePct(goalie?.savePctg)}
                                   </span>
                                 </div>
                                 <div className={styles["goalieStatDetails"]}>
@@ -1019,12 +1032,7 @@ export default function Page() {
                                     SV%:
                                   </span>
                                   <span className={styles["spanGoalieStat"]}>
-                                    {goalie.savePctg != null
-                                      ? goalie.savePctg
-                                          .toFixed(3)
-                                          .replace(/^0+/, "")
-                                      : "-"}
-                                    %
+                                    {formatGoalieSavePct(goalie.savePctg)}
                                   </span>
                                 </div>
                                 <div className={styles["goalieStatDetails"]}>
@@ -1036,27 +1044,28 @@ export default function Page() {
                                   </span>
                                 </div>
                               </div>
-                              <div className={styles["goalieName"]}>
-                                <span>
-                                  {goalie.firstName.default}{" "}
-                                  <span className={styles["goalieLastName"]}>
-                                    {goalie.lastName.default}
+                              <div className={styles["goalieIdentity"]}>
+                                <div className={styles["goalieName"]}>
+                                  <span>
+                                    {goalie.firstName.default}{" "}
+                                    <span className={styles["goalieLastName"]}>
+                                      {goalie.lastName.default}
+                                    </span>
+                                  </span>{" "}
+                                  <span className={styles["goalieSweaterNumber"]}>
+                                    #{goalie.sweaterNumber} •{" "}
+                                    {goalie.positionCode}
                                   </span>
-                                </span>{" "}
-                                {/* First Name */}{" "}
-                                <span className={styles["goalieSweaterNumber"]}>
-                                  #{goalie.sweaterNumber} •{" "}
-                                  {goalie.positionCode}
-                                </span>
-                              </div>
+                                </div>
 
-                              <div className={styles["goalieImage"]}>
-                                <Image
-                                  src={goalie.headshot}
-                                  alt={`Headshot of ${goalie.name.default}`}
-                                  width={60}
-                                  height={60}
-                                />
+                                <div className={styles["goalieImage"]}>
+                                  <Image
+                                    src={goalie.headshot}
+                                    alt={`Headshot of ${goalie.name.default}`}
+                                    width={60}
+                                    height={60}
+                                  />
+                                </div>
                               </div>
                             </div>
                           )
@@ -1065,15 +1074,22 @@ export default function Page() {
                     </div>
                   </div>
                 </div>
-              </div>
-              {/* Conditionally render PoissonDistributionChart if all data is loaded */}
-              {isDataLoaded ? (
-                <div className={styles["poissonChartContainer"]}>
-                  <PoissonDistributionChart chartData={chartData} />
+                <div className={styles["previewPoissonRail"]}>
+                  <h1 className={styles["tableHeader"]}>
+                    Win{" "}
+                    <span className={styles["spanColorBlue"]}>Probability</span>
+                  </h1>
+                  {isDataLoaded ? (
+                    <div className={styles["poissonChartContainer"]}>
+                      <PoissonDistributionChart chartData={chartData} />
+                    </div>
+                  ) : (
+                    <div className={styles["poissonLoading"]}>
+                      Loading prediction model...
+                    </div>
+                  )}
                 </div>
-              ) : (
-                <p>Loading chart data...</p>
-              )}
+              </div>
             </section>
           </>
         ) : (

@@ -347,24 +347,30 @@ export default function PlayerUnderlyingStatsLandingPage() {
 
       <main className={styles.page}>
         <div className={styles.pageInner}>
-          <section className={styles.hero}>
+          <div className={styles.utilityRow}>
+            <div className={styles.breadcrumbs}>
+              <Link href="/underlying-stats" className={styles.breadcrumbLink}>
+                Underlying Stats
+              </Link>
+              <span>/</span>
+              <span>Players</span>
+            </div>
+            <Link href="/underlying-stats" className={styles.breadcrumbLink}>
+              View team power rankings
+            </Link>
+          </div>
+
+          <header className={styles.hero}>
             <div className={styles.heroBody}>
               <div className={styles.heroCopy}>
-                <div className={styles.breadcrumbs}>
-                  <Link href="/underlying-stats" className={styles.breadcrumbLink}>
-                    Underlying Stats
-                  </Link>
-                  <span>/</span>
-                  <span>Players</span>
-                </div>
                 <p className={styles.eyebrow}>Native xG Player Surface</p>
                 <h1 className={styles.title}>
                   Player <span className={styles.accent}>Underlying Stats</span>
                 </h1>
                 <p className={styles.description}>
-                  Compare skaters and goalies through one shared filter contract.
-                  This route is the landing surface for the sortable player table
-                  and the entry point for player drill-down pages.
+                  Compare skaters and goalies through one shared filter contract,
+                  then drill directly into player-level detail pages from the
+                  sortable landing table.
                 </p>
               </div>
 
@@ -378,35 +384,34 @@ export default function PlayerUnderlyingStatsLandingPage() {
                     )}
                   </p>
                   <p className={styles.metaHint}>
-                    Canonical landing defaults come from the shared filter-state
-                    module, not page-local constants.
+                    Shared landing defaults come from the central filter-state
+                    contract, not page-local constants.
                   </p>
                 </div>
                 <div className={styles.metaCard}>
-                  <p className={styles.metaLabel}>Initial Table Family</p>
+                  <p className={styles.metaLabel}>Current Table Family</p>
                   <p className={styles.metaValue}>
                     {formatTableFamily(tableFamily)}
                   </p>
                   <p className={styles.metaHint}>
-                    Landing and detail pages will resolve the same family contract
-                    from mode + display state.
+                    Landing and detail routes resolve the same family from mode
+                    plus display state.
                   </p>
                 </div>
               </div>
             </div>
-          </section>
+          </header>
 
-          <section className={styles.section}>
+          <section className={styles.section} aria-labelledby="player-table-heading">
             <div className={styles.sectionHeader}>
               <div>
-                <h2 className={styles.sectionTitle}>Primary Controls</h2>
+                <h2 id="player-table-heading" className={styles.sectionTitle}>
+                  Player table
+                </h2>
                 <p className={styles.sectionCopy}>
-                  These dropdowns now drive the canonical landing filter state for
-                  season span, season type, strength, score state, stat mode, and
-                  display mode. The page now also round-trips that state through
-                  the canonical URL contract for reloads and shared links, and
-                  the table now fetches through a dedicated server route. Position
-                  filtering is aligned to canonical roster codes rather than UI labels.
+                  Filters, sorting, and pagination all flow through the canonical
+                  landing query contract so shared links and reloads preserve the
+                  active table state.
                 </p>
               </div>
               <div className={styles.chipRow} aria-label="Current landing defaults">
@@ -726,10 +731,9 @@ export default function PlayerUnderlyingStatsLandingPage() {
                   }}
                 />
                 <p className={styles.footnote}>
-                  The landing table now requests data through
+                  Table data is served through
                   <code> /api/v1/underlying-stats/players </code> using canonical
-                  filter, sort, and pagination params. Native row aggregation is
-                  the remaining step.
+                  filter, sort, and pagination params.
                 </p>
               </div>
             </div>

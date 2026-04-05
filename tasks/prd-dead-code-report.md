@@ -36,7 +36,6 @@ Tools: knip (unused files/exports), dependency-cruiser (orphans), ts-prune (unus
 * hooks/useWGOPlayerStats.ts
 * lib/NHL/NHL_API.ts
 * lib/projectionsConfig/formatTotalSecondsToMMSS.ts
-* lib/supabase/GoaliePage/calculateAverages.js
 * lib/supabase/GoaliePage/calculateAverages.ts
 * lib/supabase/GoaliePage/calculateGoalieRanking.ts
 * lib/supabase/GoaliePage/calculateRanking.ts
@@ -44,7 +43,7 @@ Tools: knip (unused files/exports), dependency-cruiser (orphans), ts-prune (unus
 * lib/supabase/GoaliePage/fetchGoalieDataForWeek.js
 * lib/supabase/GoaliePage/goaliePageWeeks.js
 * lib/supabase/GoaliePage/types.ts
-* lib/supabase/GoaliePage/updateWeeklyData.js
+* lib/supabase/GoaliePage/updateWeeklyData.ts
 * lib/supabase/GoaliePage/upsertGoalieData.js
 * lib/supabase/Upserts/fetchPPTOIdata.js
 * lib/supabase/Upserts/fetchSKOskaterStats.js
@@ -417,7 +416,7 @@ Tools: knip (unused files/exports), dependency-cruiser (orphans), ts-prune (unus
 - web/lib/apollo-client.js
 - web/lib/sanity/sanity.js
 - web/lib/sanity/sanity.server.js
-- web/lib/supabase/GoaliePage/updateWeeklyData.js
+- web/lib/supabase/GoaliePage/updateWeeklyData.ts
 - web/lib/supabase/Upserts/fetchPPTOIdata.js
 - web/lib/supabase/Upserts/fetchPowerRankings.js
 - web/lib/supabase/Upserts/fetchRollingGames.js
