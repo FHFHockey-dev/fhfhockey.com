@@ -26,6 +26,7 @@
 - `/Users/tim/Code/fhfhockey.com/tasks/artifacts/underlying-stats-render-check-5-3.md` - Task `5.3` artifact documenting the live mobile render verification, the served desktop route check, and the explicit desktop screenshot limitation.
 - `/Users/tim/Code/fhfhockey.com/tasks/artifacts/underlying-stats-playerstats-scope-check-5-4.md` - Task `5.4` artifact documenting the landing-page-only file diff, the isolation check against `/underlying-stats/playerStats`, and the targeted `playerStats` regression test pass.
 - `/Users/tim/Code/fhfhockey.com/tasks/artifacts/underlying-stats-final-verification-notes-5-5.md` - Task `5.5` artifact documenting the final verified behaviors, shipped assumptions, intentionally excluded `SoS` inputs, residual risks, and the final full-suite test pass.
+- `/Users/tim/Code/fhfhockey.com/tasks/artifacts/underlying-stats-upstream-trend-refresh-6-0.md` - Task `NEW 6.0` artifact documenting the shared stored-trend fix, the new explicit range-refresh writer path, the live backfill execution, and the post-refresh canonical API verification.
 - `/Users/tim/Code/fhfhockey.com/web/pages/underlying-stats/index.tsx` - Main landing-page route, SSR date loading, table rendering, summary cards, and metric copy.
 - `/Users/tim/Code/fhfhockey.com/web/pages/underlying-stats/indexUS.module.scss` - Landing-page-specific layout and table styling that must stay aligned to the FHFH style system.
 - `/Users/tim/Code/fhfhockey.com/web/pages/statsPlaceholder.tsx` - Legacy placeholder page showing the older standings-only SoS approach and its OWP-style assumptions.
@@ -35,6 +36,7 @@
 - `/Users/tim/Code/fhfhockey.com/web/lib/teamRatingsService.test.ts` - Existing service tests that should be extended for distinct date handling, trend integrity, and any added SoS payload fields.
 - `/Users/tim/Code/fhfhockey.com/web/lib/dashboard/teamContext.ts` - Shared power-score computation used to rank teams on the landing page.
 - `/Users/tim/Code/fhfhockey.com/web/lib/dashboard/teamContext.test.ts` - Existing shared metric tests that may need coverage if shared ranking logic or helpers expand.
+- `/Users/tim/Code/fhfhockey.com/web/lib/teamRatingsTrend.ts` - Shared played-snapshot trend helper now used by both the landing-page repair path and the canonical ratings writer.
 - `/Users/tim/Code/fhfhockey.com/web/lib/underlying-stats/availableSnapshotDates.ts` - Landing-page helper that pages through raw ratings rows until it collects the requested number of distinct snapshot dates.
 - `/Users/tim/Code/fhfhockey.com/web/lib/underlying-stats/availableSnapshotDates.test.ts` - Unit tests for distinct snapshot-date pagination and source exhaustion behavior.
 - `/Users/tim/Code/fhfhockey.com/web/lib/underlying-stats/teamLandingRatings.ts` - Landing-page-only helper that overlays repaired `trend10` values derived from actual game-history snapshots.
@@ -44,6 +46,7 @@
 - `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchPowerRankings.js` - Legacy power-rankings pipeline containing an older SoS helper that relies on `power_rankings_store`.
 - `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchSoSgameLog.js` - Legacy SoS ingestion path that populates `sos_standings` from NHL standings and club schedules.
 - `/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-team-power-ratings.ts` - Upstream ratings updater that appears to drive the current `trend10` behavior and may require remediation or documentation updates.
+- `/Users/tim/Code/fhfhockey.com/web/__tests__/pages/api/v1/db/update-team-power-ratings.test.ts` - Route tests covering empty-table behavior, explicit range refreshes, and stored-trend recomputation from played snapshots.
 - `/Users/tim/Code/fhfhockey.com/web/rules/power-ratings-tables.md` - Source-of-truth SQL documentation for the intended ratings and trend formulas.
 - `/Users/tim/Code/fhfhockey.com/fhfh-styles.md` - Canonical styling guidance for the page archetype and density targets.
 - `/Users/tim/Code/fhfhockey.com/web/styles/vars.scss` - Shared tokens for spacing, color, typography, and borders.
@@ -91,4 +94,4 @@
   - [x] 5.4 Confirm that no implementation changes altered `/underlying-stats/playerStats` behavior or shared logic beyond what was strictly required for the landing page.
   - [x] 5.5 Record final verification notes, assumptions, and any residual risks around optional `SoS` inputs that were intentionally excluded.
 
-- [ ] NEW 6.0 Refresh or backfill affected `team_power_ratings_daily` snapshots after the trend logic is corrected so the landing page is not reading stale flattened history.
+- [x] NEW 6.0 Refresh or backfill affected `team_power_ratings_daily` snapshots after the trend logic is corrected so the landing page is not reading stale flattened history.
