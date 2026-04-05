@@ -161,7 +161,7 @@
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: v.$space-md;
   align-items: start;
-  order: 4;
+  order: 2;
 }
 
 .legend,
@@ -308,7 +308,7 @@
 }
 
 .tableSection {
-  order: 2;
+  order: 4;
 }
 
 .summarySection {
