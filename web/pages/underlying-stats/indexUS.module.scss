@@ -2,8 +2,6 @@
 @use "styles/vars" as v;
 @use "styles/panel" as p;
 
-$page-max-width: 1200px;
-
 .page {
   min-height: 100vh;
   padding: v.$space-lg clamp(1rem, 3vw, 2rem) v.$space-xxl;
@@ -11,7 +9,7 @@ $page-max-width: 1200px;
   color: v.$text-primary;
   display: flex;
   flex-direction: column;
-  gap: v.$space-lg;
+  gap: v.$space-md;
   font-family: v.$font-family-primary, sans-serif;
 }
 
@@ -23,7 +21,7 @@ $page-max-width: 1200px;
 .loadingBanner,
 .errorBanner,
 .emptyState {
-  width: min(100%, $page-max-width);
+  width: 90%;
   margin: 0 auto;
 }
 
@@ -49,9 +47,10 @@ $page-max-width: 1200px;
 }
 
 .headerPanel {
-  @include p.panel-shell($padding: v.$space-lg, $variant: soft, $overflow: visible);
+  @include p.panel-shell($padding: v.$space-md, $variant: soft, $overflow: visible);
   display: grid;
-  gap: v.$space-lg;
+  gap: v.$space-md;
+  order: 1;
 }
 
 .sectionEyebrow {
@@ -66,8 +65,8 @@ $page-max-width: 1200px;
 
 .header {
   display: grid;
-  grid-template-columns: minmax(0, 1.8fr) minmax(260px, 0.8fr);
-  gap: v.$space-lg;
+  grid-template-columns: minmax(0, 2fr) minmax(240px, 0.75fr);
+  gap: v.$space-md;
   align-items: flex-start;
 }
 
@@ -90,16 +89,16 @@ $page-max-width: 1200px;
 
 .description {
   margin: 0;
-  max-width: 58ch;
+  max-width: 54ch;
   color: v.$text-secondary;
   font-size: v.$font-size-sm;
-  line-height: 1.65;
+  line-height: 1.55;
 }
 
 .controls {
-  @include p.panel-shell($padding: v.$space-md, $variant: flat);
+  @include p.panel-shell($padding: v.$space-sm v.$space-md, $variant: flat);
   display: grid;
-  gap: v.$space-sm;
+  gap: v.$space-xs;
   align-self: flex-start;
 }
 
@@ -160,13 +159,14 @@ $page-max-width: 1200px;
 .secondaryPanels {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: v.$space-lg;
+  gap: v.$space-md;
   align-items: start;
+  order: 4;
 }
 
 .legend,
 .subRatings {
-  @include p.panel-shell($padding: v.$space-lg, $variant: soft);
+  @include p.panel-shell($padding: v.$space-md, $variant: soft);
 }
 
 .legend {
@@ -193,14 +193,14 @@ $page-max-width: 1200px;
 }
 
 .legendContent {
-  margin-top: v.$space-md;
-  padding-top: v.$space-md;
+  margin-top: v.$space-sm;
+  padding-top: v.$space-sm;
   border-top: 1px solid v.$border-soft;
   display: grid;
   gap: v.$space-sm;
   color: v.$text-secondary;
-  font-size: v.$font-size-sm;
-  line-height: 1.6;
+  font-size: v.$font-size-xs;
+  line-height: 1.55;
 
   p {
     margin: 0;
@@ -220,15 +220,15 @@ $page-max-width: 1200px;
 
 .subRatings {
   display: grid;
-  gap: v.$space-md;
+  gap: v.$space-sm;
 }
 
 .subRatingsHeader {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: v.$space-md;
-  padding-bottom: v.$space-md;
+  gap: v.$space-sm;
+  padding-bottom: v.$space-sm;
   border-bottom: 1px solid v.$border-soft;
 
   h2 {
@@ -244,22 +244,22 @@ $page-max-width: 1200px;
   p {
     margin: v.$space-xs 0 0;
     color: v.$text-secondary;
-    font-size: v.$font-size-sm;
-    line-height: 1.55;
+    font-size: v.$font-size-xs;
+    line-height: 1.45;
     max-width: 48ch;
   }
 }
 
 .subRatingsGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
   gap: v.$space-sm;
 }
 
 .subRatingCard {
-  @include p.panel-shell($padding: v.$space-md, $variant: flat);
+  @include p.panel-shell($padding: v.$space-sm, $variant: flat);
   display: grid;
-  gap: v.$space-xs;
+  gap: v.$space-xxs;
 }
 
 .subRatingLabel {
@@ -273,15 +273,15 @@ $page-max-width: 1200px;
 .subRatingValue {
   color: v.$color-brand-yellow;
   font-family: v.$font-family-numbers, monospace;
-  font-size: 1.45rem;
+  font-size: 1.2rem;
   font-weight: 700;
   line-height: 1;
 }
 
 .subRatingHint {
   color: v.$text-secondary;
-  font-size: 0.72rem;
-  line-height: 1.45;
+  font-size: 0.68rem;
+  line-height: 1.35;
 }
 
 .varianceFlagBadge {
@@ -305,6 +305,14 @@ $page-max-width: 1200px;
 .tableSection {
   display: grid;
   gap: v.$space-sm;
+}
+
+.tableSection {
+  order: 2;
+}
+
+.summarySection {
+  order: 3;
 }
 
 .sectionHeader {
@@ -363,16 +371,16 @@ $page-max-width: 1200px;
 .summaryGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: v.$space-md;
+  gap: v.$space-sm;
 }
 
 .summaryCard {
-  @include p.panel-shell($padding: v.$space-md, $variant: soft);
+  @include p.panel-shell($padding: v.$space-sm, $variant: soft);
   position: relative;
   display: grid;
-  gap: v.$space-sm;
+  gap: v.$space-xs;
   overflow: hidden;
-  padding-left: calc(v.$space-md + 10px);
+  padding-left: calc(v.$space-sm + 10px);
   transition:
     transform 0.18s ease,
     border-color 0.18s ease,
@@ -396,10 +404,10 @@ $page-max-width: 1200px;
 .summaryRank {
   position: absolute;
   top: v.$space-xs;
-  right: v.$space-md;
+  right: v.$space-sm;
   color: rgba(v.$color-white, 0.08);
   font-family: v.$font-family-accent, sans-serif;
-  font-size: clamp(2rem, 4.2vw, 3rem);
+  font-size: clamp(1.6rem, 3.5vw, 2.5rem);
   font-weight: 700;
   line-height: 1;
   pointer-events: none;
@@ -415,7 +423,7 @@ $page-max-width: 1200px;
 .summaryTeam {
   color: v.$color-white;
   font-family: v.$font-family-accent, sans-serif;
-  font-size: clamp(1.3rem, 2.5vw, 1.7rem);
+  font-size: clamp(1.05rem, 2vw, 1.35rem);
   font-weight: 700;
   letter-spacing: 0.07em;
   line-height: 1;
@@ -432,16 +440,16 @@ $page-max-width: 1200px;
 .summaryMetricGroup {
   position: relative;
   display: grid;
-  gap: v.$space-sm;
+  gap: v.$space-xs;
 }
 
 .summaryPower {
   display: inline-flex;
   align-items: baseline;
-  gap: v.$space-sm;
+  gap: v.$space-xs;
   color: v.$color-brand-yellow;
   font-family: v.$font-family-numbers, monospace;
-  font-size: clamp(1.75rem, 3.5vw, 2.35rem);
+  font-size: clamp(1.35rem, 2.8vw, 1.9rem);
   font-weight: 700;
   line-height: 1;
 }
@@ -458,16 +466,16 @@ $page-max-width: 1200px;
 .summaryMetricRow {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: v.$space-sm;
+  gap: v.$space-xs;
 
   div {
-    @include p.panel-shell($padding: v.$space-xs v.$space-sm, $variant: flat);
+    @include p.panel-shell($padding: v.$space-xxs v.$space-xs, $variant: flat);
     display: grid;
     gap: 2px;
     justify-items: center;
     color: v.$color-white;
     font-family: v.$font-family-numbers, monospace;
-    font-size: v.$font-size-sm;
+    font-size: v.$font-size-xs;
     font-weight: 700;
     line-height: 1.1;
   }
@@ -485,17 +493,17 @@ $page-max-width: 1200px;
 .summaryDetails {
   list-style: none;
   margin: 0;
-  padding: v.$space-md 0 0;
+  padding: v.$space-sm 0 0;
   border-top: 1px solid v.$border-soft;
   display: grid;
-  gap: v.$space-xs;
+  gap: v.$space-xxs;
 
   li {
     display: flex;
     justify-content: space-between;
     gap: v.$space-sm;
     color: v.$text-secondary;
-    font-size: v.$font-size-sm;
+    font-size: v.$font-size-xs;
   }
 
   strong {
@@ -524,7 +532,7 @@ $page-max-width: 1200px;
 
 .table {
   width: 100%;
-  min-width: 1120px;
+  min-width: 1080px;
   border-collapse: separate;
   border-spacing: 0;
   table-layout: auto;
@@ -536,7 +544,7 @@ $page-max-width: 1200px;
     background: color.adjust(v.$background-dark, $lightness: -2%);
     color: v.$text-secondary;
     border-bottom: 1px solid v.$border-soft;
-    padding: 0.75rem 0.8rem;
+    padding: v.$table-cell-padding-compact;
     text-align: left;
     font-family: v.$font-family-accent, sans-serif;
     font-size: 0.72rem;
@@ -547,7 +555,7 @@ $page-max-width: 1200px;
   }
 
   tbody td {
-    padding: 0.75rem 0.8rem;
+    padding: v.$table-cell-padding-compact;
     color: v.$text-primary;
     border-bottom: 1px solid rgba(v.$border-soft, 0.9);
     white-space: nowrap;
@@ -568,7 +576,7 @@ $page-max-width: 1200px;
 }
 
 .rankCell {
-  width: 56px;
+  width: 52px;
   text-align: center;
   color: v.$text-secondary;
   font-family: v.$font-family-numbers, monospace;
@@ -660,12 +668,12 @@ $page-max-width: 1200px;
 }
 
 .componentBadge {
-  min-width: 42px;
+  min-width: 40px;
   padding: 0 v.$space-xs;
 }
 
 .sosPill {
-  min-width: 48px;
+  min-width: 44px;
   padding: 0 v.$space-xs;
 }
 
@@ -688,7 +696,7 @@ $page-max-width: 1200px;
 }
 
 .tierBadge {
-  min-width: 82px;
+  min-width: 74px;
   padding: 0 v.$space-sm;
 }
 
@@ -783,7 +791,7 @@ $page-max-width: 1200px;
   }
 
   .summaryCard {
-    padding-left: calc(v.$space-md + 10px);
+    padding-left: calc(v.$space-sm + 10px);
   }
 
   .summaryMetricRow {
@@ -792,7 +800,7 @@ $page-max-width: 1200px;
 
   .table thead th,
   .table tbody td {
-    padding: 0.65rem 0.7rem;
+    padding: v.$table-cell-padding-compact-mobile;
   }
 
   .dateSelect {

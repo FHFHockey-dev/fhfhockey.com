@@ -264,7 +264,7 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
         <title>Team Power Rankings | FHFHockey</title>
         <meta
           name="description"
-          content="Daily team offense, defense, pace, trend, and strength-of-schedule ratings with special teams tiers."
+          content="Daily team power rankings with offense, defense, pace, trend, strength of schedule, and special-teams tiers."
         />
       </Head>
       <main className={styles.page}>
@@ -280,12 +280,9 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
             <div className={styles.headerIntro}>
               <h1 className={styles.title}>Team Power Rankings</h1>
               <p className={styles.description}>
-                Offense, defense, and pace scores are normalized to a 100-point
-                league average using per-60 expected and actual results blended
-                with an EWMA + shrinkage model. Special teams tiers come from
-                daily power-play and penalty-kill percentiles, trend reflects
-                movement versus each club&apos;s prior 10 played snapshots, and
-                SoS blends opponent record quality with current opponent power.
+                Daily team snapshot with league-relative offense, defense, and
+                pace ratings, special-teams tiers, repaired 10-game trend, and
+                strength-of-schedule context.
               </p>
             </div>
             <div className={styles.controls} role="group" aria-label="Snapshot controls">
@@ -306,7 +303,7 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
                 ))}
               </select>
               <span className={styles.controlHint}>
-                Showing {ratings.length} teams · Updated nightly after new games
+                {ratings.length} teams · Nightly snapshot after games
               </span>
             </div>
           </div>
@@ -314,15 +311,11 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
 
         <section className={styles.secondaryPanels}>
           <details className={styles.legend}>
-            <summary className={styles.legendSummary}>
-              Metric legend &amp; formulas
-            </summary>
+            <summary className={styles.legendSummary}>Metric definitions</summary>
             <div className={styles.legendContent}>
               <p>
-                <strong>Power Score</strong> averages the offense, defense, and
-                pace indices, then adds 1.5 points for each special teams tier
-                step (Tier&nbsp;1 → +3, Tier&nbsp;2 → +1.5, Tier&nbsp;3 → 0) for
-                both PP and PK.
+                <strong>Power Score</strong> = average of Off, Def, and Pace,
+                plus 1.5 points for each PP and PK tier step.
               </p>
               <p>
                 <strong>Offense</strong> = 100 + 15 × Z(<em>0.7×z(xGF60)</em> +
@@ -332,20 +325,16 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
                 <strong>Pace</strong> = 100 + 15 × Z(<em>((CF60+CA60)/2)</em>).
               </p>
               <p>
-                <strong>Trend</strong> compares today’s offense index against
-                each club&apos;s prior 10 played snapshots, not flattened stored
-                carry-forward rows. <strong>SoS</strong> is a 50/50 blend of
-                opponent record strength plus OOWP-style schedule context and
-                opponents&apos; current snapshot Power Scores. Scores stay on the
-                same 100-centered scale, where 105+ is difficult and 95- is
-                softer. <strong>Pace60</strong> is the underlying per-60 pace
-                metric from the view.
+                <strong>Trend</strong> = current offense rating versus the prior
+                10 played snapshots. <strong>SoS</strong> = 50/50 blend of
+                opponent record/schedule context and opponents&apos; current Power
+                Scores. Both use the same 100-centered page scale.{" "}
+                <strong>Pace60</strong> is the underlying per-60 pace metric.
               </p>
               <p>
-                <strong>Component Ratings</strong> turn the newly appended
-                finishing, goalie, danger-mix, special teams, and discipline
-                columns into the same 100-point scale (105 = strong, 95 = weak)
-                for quick trend checks.
+                <strong>Component Ratings</strong> convert finishing, goalie,
+                danger mix, special teams, and discipline into the same
+                100-point scale for quick reads.
               </p>
             </div>
           </details>
@@ -356,9 +345,8 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
                 <div>
                   <h2>Sub-Ratings Spotlight</h2>
                   <p>
-                    League-relative scores (100 = average) for the top-ranked
-                    club across finishing, goaltending, danger mix, special
-                    teams, and discipline.
+                    Top-ranked club only. League-relative scores where 100 is
+                    average.
                   </p>
                 </div>
                 {rankedRatings[0]?.varianceFlag === 1 && (
@@ -397,8 +385,7 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
                 Top teams overview
               </h2>
               <p className={styles.sectionDescription}>
-                Current leaders by blended power score with quick component and
-                schedule context.
+                Top three teams with quick context.
               </p>
             </div>
           </div>
@@ -481,8 +468,7 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
                 Daily power rankings table
               </h2>
               <p className={styles.sectionDescription}>
-                Full team-by-team ranking with power, strength of schedule,
-                pace, trend, tier, and component-rating context.
+                Full team table for the selected snapshot.
               </p>
             </div>
             <div className={styles.sectionMeta}>
