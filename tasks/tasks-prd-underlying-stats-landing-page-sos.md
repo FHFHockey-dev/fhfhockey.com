@@ -6,8 +6,14 @@
 - `/Users/tim/Code/fhfhockey.com/tasks/artifacts/underlying-stats-trend-fallback-implementation.md` - Task `1.4` implementation artifact documenting the landing-page-only trend repair path, its formula, and verification results.
 - `/Users/tim/Code/fhfhockey.com/tasks/artifacts/underlying-stats-snapshot-date-loading.md` - Task `1.5` artifact documenting the distinct snapshot-date pagination strategy and the SSR verification result.
 - `/Users/tim/Code/fhfhockey.com/tasks/artifacts/underlying-stats-snapshot-fallback-resolution.md` - Task `1.6` artifact documenting the shared fallback resolver and the verified SSR/API resolved-date behavior.
+- `/Users/tim/Code/fhfhockey.com/tasks/artifacts/underlying-stats-sos-source-inventory.md` - Task `2.1` artifact inventorying the actual standings, schedule, predictive, and legacy SoS data sources available for the landing page.
+- `/Users/tim/Code/fhfhockey.com/tasks/artifacts/underlying-stats-sos-standings-component.md` - Task `2.2` artifact defining the standings-based half of `SoS`, including the direct and indirect opponent-quality inputs and the normalization method.
+- `/Users/tim/Code/fhfhockey.com/tasks/artifacts/underlying-stats-sos-predictive-component.md` - Task `2.3` artifact defining the predictive/context half of `SoS` from current snapshot opponent Power Scores and documenting why additional component fields were not promoted into the core formula.
+- `/Users/tim/Code/fhfhockey.com/tasks/artifacts/underlying-stats-sos-optional-context-decision.md` - Task `2.4` artifact deciding which optional schedule/context adjustments are excluded from the shipped core `SoS` formula and why.
+- `/Users/tim/Code/fhfhockey.com/tasks/artifacts/underlying-stats-sos-final-formula.md` - Task `2.5` artifact documenting the full shipped `SoS` formula, assumptions, exclusions, and the line between verified sources and implementation choices.
 - `/Users/tim/Code/fhfhockey.com/web/pages/underlying-stats/index.tsx` - Main landing-page route, SSR date loading, table rendering, summary cards, and metric copy.
 - `/Users/tim/Code/fhfhockey.com/web/pages/underlying-stats/indexUS.module.scss` - Landing-page-specific layout and table styling that must stay aligned to the FHFH style system.
+- `/Users/tim/Code/fhfhockey.com/web/pages/statsPlaceholder.tsx` - Legacy placeholder page showing the older standings-only SoS approach and its OWP-style assumptions.
 - `/Users/tim/Code/fhfhockey.com/web/pages/api/team-ratings.ts` - API route that serves landing-page ratings payloads for date changes.
 - `/Users/tim/Code/fhfhockey.com/web/pages/api/underlying-stats/team-ratings.ts` - Landing-page-only API route that serves repaired team ratings without changing shared consumers.
 - `/Users/tim/Code/fhfhockey.com/web/lib/teamRatingsService.ts` - Server-side ratings fetcher and mapping layer for `team_power_ratings_daily`.
@@ -20,6 +26,8 @@
 - `/Users/tim/Code/fhfhockey.com/web/lib/underlying-stats/teamLandingRatings.test.ts` - Unit tests for landing-page trend reconstruction from actual played-game history.
 - `/Users/tim/Code/fhfhockey.com/web/lib/underlying-stats/teamScheduleStrength.ts` - Suggested new helper module for landing-page-only SoS computation so schedule logic stays isolated from unrelated pages.
 - `/Users/tim/Code/fhfhockey.com/web/lib/underlying-stats/teamScheduleStrength.test.ts` - Unit tests for the SoS formula, weighting, and edge-case behavior.
+- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchPowerRankings.js` - Legacy power-rankings pipeline containing an older SoS helper that relies on `power_rankings_store`.
+- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchSoSgameLog.js` - Legacy SoS ingestion path that populates `sos_standings` from NHL standings and club schedules.
 - `/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-team-power-ratings.ts` - Upstream ratings updater that appears to drive the current `trend10` behavior and may require remediation or documentation updates.
 - `/Users/tim/Code/fhfhockey.com/web/rules/power-ratings-tables.md` - Source-of-truth SQL documentation for the intended ratings and trend formulas.
 - `/Users/tim/Code/fhfhockey.com/fhfh-styles.md` - Canonical styling guidance for the page archetype and density targets.
@@ -34,7 +42,7 @@
 
 ## Tasks
 
-- [ ] 1.0 Audit and correct the landing-page data pipeline for trend accuracy and snapshot-date availability
+- [x] 1.0 Audit and correct the landing-page data pipeline for trend accuracy and snapshot-date availability
   - [x] 1.1 Trace the full landing-page data path from `web/pages/underlying-stats/index.tsx` through `/api/team-ratings` and `web/lib/teamRatingsService.ts` to confirm where each displayed field originates.
   - [x] 1.2 Verify the intended `trend10` definition against `web/rules/power-ratings-tables.md` and compare it to the current stored values in `team_power_ratings_daily`.
   - [x] 1.3 Determine whether the current all-zero `trend10` values are caused by upstream data generation, stale carry-forward behavior, read-time mapping, or a combination of those factors.
@@ -42,11 +50,13 @@
   - [x] 1.5 Replace the current raw-row-limited date loading approach with a distinct snapshot-date strategy so the selector exposes the actual available dates.
   - [x] 1.6 Preserve the existing “latest valid snapshot” fallback behavior for SSR and client-side date changes after the date-loading fix.
 - [ ] 2.0 Design the landing-page `SoS` model using a 50/50 split between standings-based strength and predictive/context strength
-  - [ ] 2.1 Inventory the schedule, standings, and team-strength inputs that are verifiably available from `games`, `team_power_ratings_daily`, `nhl_standings_details`, and any trustworthy existing SoS sources.
-  - [ ] 2.2 Define the standings-based 50% of `SoS`, including the exact opponent-quality inputs to use and how they are normalized.
-  - [ ] 2.3 Define the predictive/context 50% of `SoS`, prioritizing existing power-score and play-driving inputs that match the landing page’s team-rating model.
-  - [ ] 2.4 Decide whether optional context such as home/away, goal differential, or other opponent-strength adjustments is supported well enough to include without speculative placeholders.
-  - [ ] 2.5 Document the final formula in plain language, including what was directly verified from source data versus what is an implementation choice based on available inputs.
+  - [x] 2.1 Inventory the schedule, standings, and team-strength inputs that are verifiably available from `games`, `team_power_ratings_daily`, `nhl_standings_details`, and any trustworthy existing SoS sources.
+  - [x] 2.2 Define the standings-based 50% of `SoS`, including the exact opponent-quality inputs to use and how they are normalized.
+  - [x] 2.3 Define the predictive/context 50% of `SoS`, prioritizing existing power-score and play-driving inputs that match the landing page’s team-rating model.
+  - [x] 2.4 Decide whether optional context such as home/away, goal differential, or other opponent-strength adjustments is supported well enough to include without speculative placeholders.
+  - [x] 2.5 Document the final formula in plain language, including what was directly verified from source data versus what is an implementation choice based on available inputs.
+
+- [ ] NEW 7.0 Refresh `nhl_standings_details` ingestion so record/split fields like goal differential and home/road standings can be reconsidered later without snapshot staleness.
 - [ ] 3.0 Implement the `SoS` data path and add the `SoS` column to the `/underlying-stats` landing-page table
   - [ ] 3.1 Add or extend a dedicated helper that computes landing-page `SoS` from the selected snapshot date and the verified source inputs.
   - [ ] 3.2 Extend the landing-page server/data-fetching path so each team row includes the computed `SoS` value needed by the UI.
