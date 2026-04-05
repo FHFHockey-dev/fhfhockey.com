@@ -238,12 +238,16 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
         />
       </Head>
       <main className={styles.page}>
-        <div style={{ marginBottom: "1rem" }}>
-          <a href="/trends">Visit the unified dashboard →</a>
+        <div className={styles.utilityRow}>
+          <a className={styles.utilityLink} href="/trends">
+            Visit the unified dashboard →
+          </a>
         </div>
+
         <section className={styles.headerPanel}>
+          <div className={styles.sectionEyebrow}>Underlying stats</div>
           <div className={styles.header}>
-            <div>
+            <div className={styles.headerIntro}>
               <h1 className={styles.title}>Team Power Rankings</h1>
               <p className={styles.description}>
                 Offense, defense, and pace scores are normalized to a 100-point
@@ -253,7 +257,7 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
                 reflects movement versus each club&apos;s 10-game baseline.
               </p>
             </div>
-            <div className={styles.controls}>
+            <div className={styles.controls} role="group" aria-label="Snapshot controls">
               <label className={styles.controlLabel} htmlFor="date-select">
                 Snapshot date
               </label>
@@ -349,69 +353,110 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
           )}
         </section>
 
-        <section className={styles.summaryGrid} aria-label="Top teams overview">
-          {topTeams.length ? (
-            topTeams.map((team, index) => (
-              <article key={team.teamAbbr} className={styles.summaryCard}>
-                <span className={styles.summaryRank}>#{index + 1}</span>
-                <div className={styles.summaryHeader}>
-                  <span className={styles.summaryTeam}>{team.teamAbbr}</span>
-                  <span className={styles.summaryTeamName}>
-                    {getTeamName(team.teamAbbr)}
-                  </span>
-                </div>
-                <div className={styles.summaryMetricGroup}>
-                  <div className={styles.summaryPower}>
-                    {formatPower(computeTeamPowerScore(team))}
-                    <span className={styles.summaryMetricLabel}>
-                      Power Score
+        <section className={styles.summarySection} aria-labelledby="top-teams-heading">
+          <div className={styles.sectionHeader}>
+            <div>
+              <p className={styles.sectionKicker}>Summary cards</p>
+              <h2 className={styles.sectionTitle} id="top-teams-heading">
+                Top teams overview
+              </h2>
+              <p className={styles.sectionDescription}>
+                Current leaders by blended power score with quick component
+                context.
+              </p>
+            </div>
+          </div>
+
+          <div className={styles.summaryGrid}>
+            {topTeams.length ? (
+              topTeams.map((team, index) => (
+                <article key={team.teamAbbr} className={styles.summaryCard}>
+                  <span className={styles.summaryRank}>#{index + 1}</span>
+                  <div className={styles.summaryHeader}>
+                    <span className={styles.summaryTeam}>{team.teamAbbr}</span>
+                    <span className={styles.summaryTeamName}>
+                      {getTeamName(team.teamAbbr)}
                     </span>
                   </div>
-                  <div className={styles.summaryMetricRow}>
-                    <div>
-                      {formatRating(team.offRating)}
-                      <span className={styles.summarySubLabel}>Off</span>
+                  <div className={styles.summaryMetricGroup}>
+                    <div className={styles.summaryPower}>
+                      {formatPower(computeTeamPowerScore(team))}
+                      <span className={styles.summaryMetricLabel}>
+                        Power Score
+                      </span>
                     </div>
-                    <div>
-                      {formatRating(team.defRating)}
-                      <span className={styles.summarySubLabel}>Def</span>
-                    </div>
-                    <div>
-                      {formatRating(team.paceRating)}
-                      <span className={styles.summarySubLabel}>Pace</span>
+                    <div className={styles.summaryMetricRow}>
+                      <div>
+                        {formatRating(team.offRating)}
+                        <span className={styles.summarySubLabel}>Off</span>
+                      </div>
+                      <div>
+                        {formatRating(team.defRating)}
+                        <span className={styles.summarySubLabel}>Def</span>
+                      </div>
+                      <div>
+                        {formatRating(team.paceRating)}
+                        <span className={styles.summarySubLabel}>Pace</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <ul className={styles.summaryDetails}>
-                  <li>
-                    Trend{" "}
-                    <strong className={getTrendClass(team.trend10)}>
-                      {formatTrend(team.trend10)}
-                    </strong>
-                  </li>
-                  <li>
-                    PP Tier{" "}
-                    <strong className={styles.tierInline}>
-                      {tierLabels[team.ppTier]}
-                    </strong>
-                  </li>
-                  <li>
-                    PK Tier{" "}
-                    <strong className={styles.tierInline}>
-                      {tierLabels[team.pkTier]}
-                    </strong>
-                  </li>
-                </ul>
+                  <ul className={styles.summaryDetails}>
+                    <li>
+                      Trend{" "}
+                      <strong className={getTrendClass(team.trend10)}>
+                        {formatTrend(team.trend10)}
+                      </strong>
+                    </li>
+                    <li>
+                      PP Tier{" "}
+                      <strong className={styles.tierInline}>
+                        {tierLabels[team.ppTier]}
+                      </strong>
+                    </li>
+                    <li>
+                      PK Tier{" "}
+                      <strong className={styles.tierInline}>
+                        {tierLabels[team.pkTier]}
+                      </strong>
+                    </li>
+                  </ul>
+                </article>
+              ))
+            ) : (
+              <article className={styles.summaryEmpty}>
+                No rankings available for this date yet.
               </article>
-            ))
-          ) : (
-            <article className={styles.summaryEmpty}>
-              No rankings available for this date yet.
-            </article>
-          )}
+            )}
+          </div>
         </section>
 
-        <section className={styles.tableSection} aria-live="polite">
+        <section
+          className={styles.tableSection}
+          aria-labelledby="power-rankings-table-heading"
+          aria-live="polite"
+        >
+          <div className={styles.sectionHeader}>
+            <div>
+              <p className={styles.sectionKicker}>Primary surface</p>
+              <h2
+                className={styles.sectionTitle}
+                id="power-rankings-table-heading"
+              >
+                Daily power rankings table
+              </h2>
+              <p className={styles.sectionDescription}>
+                Full team-by-team ranking with power, pace, trend, tier, and
+                component-rating context.
+              </p>
+            </div>
+            <div className={styles.sectionMeta}>
+              <span>{rankedRatings.length} teams</span>
+              <span>
+                {selectedDate ? formatDateLabel(selectedDate) : "Latest snapshot"}
+              </span>
+            </div>
+          </div>
+
           {isLoading && (
             <div className={styles.loadingBanner}>Loading team ratings…</div>
           )}

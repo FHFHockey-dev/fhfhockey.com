@@ -543,7 +543,6 @@ Total files: 845
 │   │   │   └── nameStandardization.ts
 │   │   ├── supabase/
 │   │   │   ├── GoaliePage/
-│   │   │   │   ├── calculateAverages.js
 │   │   │   │   ├── calculateAverages.ts
 │   │   │   │   ├── calculateGoalieRanking.ts
 │   │   │   │   ├── calculateRanking.ts
@@ -551,7 +550,7 @@ Total files: 845
 │   │   │   │   ├── fetchGoalieDataForWeek.js
 │   │   │   │   ├── goaliePageWeeks.js
 │   │   │   │   ├── types.ts
-│   │   │   │   ├── updateWeeklyData.js
+│   │   │   │   ├── updateWeeklyData.ts
 │   │   │   │   └── upsertGoalieData.js
 │   │   │   ├── Upserts/
 │   │   │   │   ├── Yahoo/
@@ -1478,7 +1477,6 @@ Total files: 845
 - web/lib/sanity/sanity.server.js
 - web/lib/standardization/columnStandardization.ts
 - web/lib/standardization/nameStandardization.ts
-- web/lib/supabase/GoaliePage/calculateAverages.js
 - web/lib/supabase/GoaliePage/calculateAverages.ts
 - web/lib/supabase/GoaliePage/calculateGoalieRanking.ts
 - web/lib/supabase/GoaliePage/calculateRanking.ts
@@ -1486,7 +1484,7 @@ Total files: 845
 - web/lib/supabase/GoaliePage/fetchGoalieDataForWeek.js
 - web/lib/supabase/GoaliePage/goaliePageWeeks.js
 - web/lib/supabase/GoaliePage/types.ts
-- web/lib/supabase/GoaliePage/updateWeeklyData.js
+- web/lib/supabase/GoaliePage/updateWeeklyData.ts
 - web/lib/supabase/GoaliePage/upsertGoalieData.js
 - web/lib/supabase/Upserts/Yahoo/name_mapping_todo.json
 - web/lib/supabase/Upserts/Yahoo/player_name_normalization_spec.json
@@ -1557,7 +1555,6 @@ Total files: 845
 - web/pages/api/ThreeYearAverages/[playerId].ts
 - web/pages/api/ThreeYearAverages/nstgamelog.py
 - web/pages/api/ThreeYearAverages/nsttest.py
-- web/pages/api/WGOAverages/calculateAverages.js
 - web/pages/api/WGOAverages/calculateAverages.ts
 - web/pages/api/_types.ts
 - web/pages/api/cors/index.ts

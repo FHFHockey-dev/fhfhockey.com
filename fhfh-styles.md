@@ -1557,6 +1557,67 @@ Rules:
 3. The sandbox is not a random demo page. It is the review surface for approving canonical UI behavior and appearance.
 4. The sandbox must stay synchronized with this document and with the shared token system.
 
+### 13.0 Canonical Approval Checklist
+
+This is the required review order for canonical element approval.
+
+Process rule:
+
+1. Review exactly one checklist item at a time.
+2. Use `DraftDashboard` as the canonical source first.
+3. If `DraftDashboard` does not contain a strong enough example, use another rendered site surface and record that source explicitly.
+4. Compare the sandbox or production implementation against the rendered reference before marking the item approved.
+5. Do not move to the next item until the current item is marked `Approved`, `Rework Required`, or `Deferred`.
+
+Checklist statuses:
+
+- `Approved`: the family has an accepted canonical reference and an implementation direction strong enough for future Codex restyles.
+- `Rework Required`: the family exists, but the current sandbox/production expression is not yet aligned well enough.
+- `Deferred`: the family needs a stronger site example or a later dedicated pass before it should be treated as final canon.
+
+| Review Order | Element Family | Primary Canonical Source | Current Status | Notes |
+| --- | --- | --- | --- | --- |
+| 1 | Page shell | `DraftDashboard` shell, then `underlying-stats` production pages for softened data pages | Approved | Use dashboard shell for operational layouts and the `underlying-stats` pages for calmer table-first shells. |
+| 2 | Headers and title bands | `DraftDashboard` section headers, then `underlying-stats` / `playerStats` production headers | Approved | Includes page title, eyebrow, subtitle, utility row, and compact metadata context. |
+| 3 | Panels and cards | `SuggestedPicks`, `MyRoster`, `DraftDashboard`, then production summary cards | Approved | Includes standard panels, softened data panels, left-accent cards, and compact summary cards. |
+| 4 | Tables | `ProjectionsTable`, `DraftBoard`, `PlayerStatsTable`, `underlying-stats` production tables | Approved | Sticky headers, dense row spacing, numeric alignment, and compact footer/pagination behavior are canonical. |
+| 5 | Buttons | `GameGrid.module.scss` (`.dateButtonPrev`) and compact dashboard utility buttons | Approved | `GameGrid` is the stronger dense-control reference than the earlier sandbox version. |
+| 6 | Toggles | `GameGrid.module.scss` (`.modeToggle`) and `DraftSettings` segmented controls | Approved | Use the denser `GameGrid` behavior first, with `DraftSettings` as the grouped dashboard variant. |
+| 7 | Inputs and selects | `ProjectionsTable`, `MyRoster`, `PlayerStatsFilters`, `DraftSettings` | Approved | Includes search boxes, text inputs, numeric inputs, selects, dropdown triggers, and field-row grouping. |
+| 8 | State banners | `playerStats` and `underlying-stats` production pages | Approved | Loading, warning, error, stale-data, and empty-table banners should stay in-section, not page-replacing. |
+| 9 | Chart frames | No locked `DraftDashboard` source; use strongest chart page reference when supplied | Deferred | Keep sandbox chart examples provisional until a stronger chart-first production example is documented. |
+
+Practical meaning:
+
+- If a future Codex task says to restyle a page per this guide, it should follow this checklist order during implementation and approval.
+- If the page introduces a new family not covered above, that work stops and moves into the missing-element workflow below.
+
+### 13.0.1 Approval Matrix
+
+Use this matrix when implementing or reviewing any canonical family.
+
+| Element Family | Canonical Source Pattern | Source Type | Token Dependencies | Sandbox Example | Expected Interaction States |
+| --- | --- | --- | --- | --- | --- |
+| Page shell | `DraftDashboard` page shell for dashboard/bento layouts; `underlying-stats` production pages for softened data-page shells | `DraftDashboard` first, then other site surface | `$background-dark`, `$background-medium`, `$text-primary`, `$text-secondary`, `$border-soft`, `$shadow-panel`, `$radius-panel`, `panel-shell` | `cssTestingGrounds -> page-shells -> Dashboard shell`, `cssTestingGrounds -> page-shells -> Data-page shell` | Default, responsive stack, scroll behavior, compact utility-row alignment |
+| Headers and title bands | `DraftDashboard` section headers for compact title bars; `underlying-stats` and `playerStats` production headers for data-page title/context treatment | Mixed: `DraftDashboard` plus production site surfaces | `$primary-color`, `$text-primary`, `$text-secondary`, `$background-dark`, `$border-soft`, `$radius-panel`, `panel-header`, `panel-shell` | `cssTestingGrounds -> page-shells` header examples | Default, compact/expanded density, responsive wrap, utility-link hover/focus |
+| Panels and cards | `DraftDashboard` panel shell, `SuggestedPicks` left-accent cards, `MyRoster` compact summary cards, `underlying-stats` summary modules | `DraftDashboard` first, then other site surface | `$background-dark`, `$background-medium`, `$border-soft`, `$shadow-panel`, `$radius-card`, `$radius-panel`, `$primary-color`, `$text-primary`, `$text-secondary`, `panel-shell` | `cssTestingGrounds -> surfaces -> Standard panel`, `cssTestingGrounds -> surfaces -> Left-accent card` | Default, hover, selected/current, focus-visible, disabled when applicable |
+| Tables | `ProjectionsTable` heavy analytics table, `DraftBoard` compact leaderboard table, `PlayerStatsTable`, `underlying-stats` production table shell | Mixed: `DraftDashboard` plus production site surfaces | `$background-dark`, `$background-medium`, `$border-soft`, `$text-primary`, `$text-secondary`, `$primary-color`, `$radius-panel`, `$shadow-panel`, `panel-shell`, `panel-scroll-surface` | `cssTestingGrounds -> data-display -> Analytics table` | Default, hover row, sticky header, sorted header, empty/loading/error-in-panel, pagination enabled/disabled |
+| Buttons | `GameGrid.module.scss` dense date-nav buttons, with compact dashboard utility buttons from `DraftSettings` as secondary reference | Other site surface first, then `DraftDashboard` | `$control-height-sm`, `$control-height-md`, `$radius-control`, `$primary-color`, `$background-dark`, `$text-primary`, `$text-button`, `$border-soft`, `$focus-ring` | `cssTestingGrounds -> controls -> Button set` | Default, hover, active/pressed, focus-visible, disabled |
+| Toggles | `GameGrid.module.scss` `.modeToggle` as the strongest dense segmented control; `DraftSettings` segmented rails as grouped dashboard variant | Other site surface first, then `DraftDashboard` | `$control-height-sm`, `$control-height-md`, `$radius-control`, `$primary-color`, `$background-dark`, `$text-primary`, `$text-secondary`, `$border-soft`, `$focus-ring` | `cssTestingGrounds -> controls -> Segmented toggle` | Default, hover, active/selected, focus-visible, disabled |
+| Inputs and selects | `ProjectionsTable` / `MyRoster` search field behavior, `PlayerStatsFilters` select behavior, `DraftSettings` base select/input density | Mixed: `DraftDashboard` plus production site surfaces | `$control-height-md`, `$radius-control`, `$background-dark`, `$background-medium`, `$text-primary`, `$text-secondary`, `$primary-color`, `$color-brand-dark`, `$border-soft`, `$focus-ring`, `$font-family-primary` | `cssTestingGrounds -> controls -> Search and filter row` | Default, placeholder, hover, focus-visible, open menu, selected option, disabled |
+| State banners | `playerStats` and `underlying-stats` production in-section loading/warning/error/empty banners | Other site surface | `$background-dark`, `$background-medium`, `$text-primary`, `$text-secondary`, `$primary-color`, `$warning-color`, `$danger-color`, `$border-soft`, `$radius-card` | `cssTestingGrounds -> surfaces -> Empty state / loading banner examples` | Loading, warning, error, empty, stale-data/cached-warning, optional secondary action |
+| Chart frames | No locked chart-first production reference yet; use `start-chart` framing only as a temporary fallback until a stronger chart page is documented | Deferred to other site surface | `$background-dark`, `$background-medium`, `$border-soft`, `$text-primary`, `$text-secondary`, `$primary-color`, `$radius-panel`, `$shadow-panel`, `panel-shell` | `cssTestingGrounds -> data-display -> Chart frame` | Default, hover on toolbar controls, focus-visible on controls, legend visibility, loading/error/empty chart states |
+
+Source-selection note:
+
+- `Source Type` should be copied into future implementation notes so it stays obvious whether the family is truly `DraftDashboard`-derived or was promoted from another site surface.
+- When multiple sources are listed, the first one is the strongest visual reference and the others exist to fill gaps in behavior or density.
+
+Token-usage note:
+
+- The token list above is intentionally family-level, not exhaustive per selector.
+- If a future implementation needs a new shared color, spacing, shadow, radius, or focus value beyond these, add it to `vars.scss` rather than introducing a feature-local literal.
+
 ### 13.1 Order Of New Showcase Items
 
 When a new element is being actively reviewed:
@@ -1579,7 +1640,7 @@ For each new or revised canonical element:
 
 ### 13.3 Sync Requirements
 
-When a canonical styling decision changes, the following should stay aligned:
+When a canonical styling decision changes, the following layers must stay aligned:
 
 - `fhfh-styles.md`
 - `web/styles/vars.scss`
@@ -1589,21 +1650,115 @@ When a canonical styling decision changes, the following should stay aligned:
 
 If one of these changes without the others, the style system is drifting and should be corrected.
 
+Required maintenance rule:
+
+- A change is not complete just because the production page looks correct.
+- Canonical styling work is only complete when the documentation layer, token/mixin layer, sandbox layer, and production layer agree with each other.
+
+Layer responsibilities:
+
+- `fhfh-styles.md`
+  - defines the canonical rule, approval status, source references, and interaction expectations
+- `web/styles/vars.scss`
+  - defines shared tokens for colors, spacing, radii, shadows, focus, and control sizing
+- `web/styles/_panel.scss`
+  - defines shared surface primitives and shared panel/header/body helpers
+- `cssTestingGrounds`
+  - shows the canonical sandbox example for review and posterity
+- production implementation files
+  - prove that the pattern works in a real page/component context
+
+When each layer must be touched:
+
+- If the visual rule changes, update `fhfh-styles.md`.
+- If a shared color, size, spacing, shadow, focus, or radius value changes, update `vars.scss`.
+- If a shared shell/header/body surface rule changes, update `_panel.scss`.
+- If the canonical example for the family changes, update `cssTestingGrounds`.
+- If the change is being shipped on a real page, update the production implementation too.
+
+Allowed exceptions:
+
+- A production-only exploratory change may temporarily skip sandbox or guide updates while the pattern is still under active review.
+- But that temporary state must be called out as provisional and cannot be treated as final canon.
+
+Required drift check before closing a styling task:
+
+1. Confirm the family exists in the checklist and matrix in `fhfh-styles.md`.
+2. Confirm all referenced tokens and mixins exist.
+3. Confirm the sandbox example matches the current approved production expression, or explicitly document why it is deferred.
+4. Confirm the production implementation is using the shared token/mixin layer rather than local literals where reuse is expected.
+5. Confirm any deferred items are labeled as deferred rather than implicitly approved.
+
+What counts as drift:
+
+- a new production button/card/table style that is not documented in the guide
+- a new token used in production that is not represented in the canonical rules
+- a sandbox primitive that no longer resembles the approved production/source reference
+- a guide entry that describes a pattern no longer reflected in shipped pages
+- an interaction state documented in the guide but missing from the sandbox or production implementation
+
+Codex close-out rule:
+
+- When finishing any future canonical styling task, explicitly mention which layers were updated and whether any layer was intentionally deferred.
+
 ### 13.4 Missing Element Workflow
 
-If Codex encounters an element family that is not covered well enough here:
+If Codex encounters an element family that is not covered well enough here, it must treat that as a blocked canonicalization step rather than an invitation to improvise.
 
-1. stop before inventing a final canonical pattern
-2. request a rendered site example from the owner
-3. document the new family in this guide
-4. add a sandbox example
-5. only then roll the pattern into production as canonical
+Trigger conditions:
+
+- the element family does not appear in the approval checklist or matrix
+- the guide mentions the family only as a gap or deferred item
+- the closest existing reference is clearly a poor fit
+- the sandbox example exists but is still marked provisional or deferred
+- the element’s interaction model is materially different from any approved family already documented here
+
+Required process:
+
+1. Stop before inventing a final canonical pattern.
+2. Identify the missing family in plain language.
+3. Search `DraftDashboard` first for the closest usable analogue.
+4. If `DraftDashboard` does not contain a strong enough reference, look for another rendered site surface.
+5. If no strong rendered site surface exists, request a site example from the owner before writing a final canonical rule.
+6. If the owner provides an example, record the source route/component in this guide.
+7. Add or update any required shared tokens in `vars.scss` or `_panel.scss`.
+8. Add the new family to `cssTestingGrounds` near the top of the page while it is under review.
+9. Document the family in the approval checklist and approval matrix.
+10. Only after those steps are complete should the family be rolled into production as canonical.
+
+What Codex may do while blocked:
+
+- use a temporary, clearly non-canonical local treatment only if needed to unblock unrelated work
+- leave a note that the family is provisional and awaiting owner-supplied reference
+- defer the element formally instead of pretending it is approved
+
+What Codex must not do:
+
+- silently invent a site-wide canonical style from general taste
+- promote a one-off local implementation to canonical without documentation
+- treat an unreviewed sandbox sketch as a final source of truth
+- skip the owner-reference step when the family is still listed in `Known Gaps`
+
+Owner request format:
+
+When asking for a missing example, Codex should ask for:
+
+1. a rendered route or page where the element already exists, if one exists
+2. the specific element to copy from that page
+3. any behavioral expectation that is not obvious from the screenshot alone
+
+Required documentation after owner response:
+
+- add the new family or variant to the checklist
+- add the source type (`DraftDashboard` or other site surface) to the approval matrix
+- add the sandbox example reference
+- add the token dependencies
+- note whether the family is now `Approved`, `Rework Required`, or `Deferred`
 
 ## 14. Known Gaps
 
 The following element families still need site examples before their canonical rules should be considered final:
 
-- data-page hero/header systems with breadcrumbs and metadata cards
 - chart-first layouts with large standalone charts, legends, and chart toolbars
 - plain content sections for text-heavy explanatory pages
 - advanced dropdown/action-menu popovers

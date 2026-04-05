@@ -163,6 +163,11 @@ const TeamStandingsChart: React.FC = () => {
   const tooltipRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const { width, height } = useResizeObserver(containerRef);
+  const chartWidth = width || containerRef.current?.clientWidth || 0;
+  const chartHeight = Math.max(
+    height || containerRef.current?.clientHeight || 0,
+    600
+  );
 
   // -------------------------------
   // FETCH & MERGE DATA
@@ -324,7 +329,7 @@ const TeamStandingsChart: React.FC = () => {
   // Draw Chart with D3 (Responsive, Dynamic Y Axis, 1‑sec Hover Delay)
   // -------------------------------
   useEffect(() => {
-    if (data.size === 0 || !width || !height) return;
+    if (data.size === 0 || !chartWidth) return;
     const svgEl = svgRef.current;
     if (!svgEl) return;
 
@@ -332,8 +337,8 @@ const TeamStandingsChart: React.FC = () => {
     svg.selectAll("*").remove();
 
     const margin = { top: 20, right: 30, bottom: 50, left: 60 };
-    const innerWidth = Math.max(0, width - margin.left - margin.right);
-    const innerHeight = Math.max(0, height - margin.top - margin.bottom);
+    const innerWidth = Math.max(0, chartWidth - margin.left - margin.right);
+    const innerHeight = Math.max(0, chartHeight - margin.top - margin.bottom);
 
     let maxGames = 0;
     data.forEach((teamData) => {
@@ -787,8 +792,8 @@ const TeamStandingsChart: React.FC = () => {
     rolling5,
     rolling10,
     selectedTeams,
-    width,
-    height
+    chartWidth,
+    chartHeight
   ]);
 
   // -------------------------------
@@ -860,11 +865,13 @@ const TeamStandingsChart: React.FC = () => {
     <div className={styles.teamStandingsChart}>
       <div className={styles.summaryHeader}>
         <div className={styles.summaryCopy}>
-          <p className={styles.summaryEyebrow}>Standings signal</p>
-          <h3 className={styles.summaryTitle}>{summaryLabel}</h3>
+          <div className={styles.summaryIntro}>
+            <p className={styles.summaryEyebrow}>Standings signal</p>
+            <h3 className={styles.summaryTitle}>{summaryLabel}</h3>
+          </div>
           <p className={styles.summaryBody}>
-            Use the chart for movement and separation, then fall back to the tables
-            below for exact ranking and injury context.
+            Use the chart for movement and separation, then fall back to the
+            tables below for exact ranking and injury context.
           </p>
         </div>
         <div className={styles.summaryStats}>
@@ -874,11 +881,15 @@ const TeamStandingsChart: React.FC = () => {
           </div>
           <div className={styles.summaryStat}>
             <span className={styles.summaryStatLabel}>View</span>
-            <strong className={styles.summaryStatValue}>{trendModeLabel}</strong>
+            <strong className={styles.summaryStatValue}>
+              {trendModeLabel}
+            </strong>
           </div>
           <div className={styles.summaryStat}>
             <span className={styles.summaryStatLabel}>Teams</span>
-            <strong className={styles.summaryStatValue}>{selectedTeamCount}</strong>
+            <strong className={styles.summaryStatValue}>
+              {selectedTeamCount}
+            </strong>
           </div>
         </div>
       </div>
@@ -889,55 +900,62 @@ const TeamStandingsChart: React.FC = () => {
           className={styles.statusPanel}
         />
       )}
-      {modulePresentation.state === "empty" || modulePresentation.state === "error" ? null : (
+      {modulePresentation.state === "empty" ||
+      modulePresentation.state === "error" ? null : (
         <div className={styles.chartAndToggles}>
           <div className={styles.leftColumn}>
             <div className={styles.filters}>
-              <label>Conference: </label>
-              <select
-                value={selectedConference}
-                onChange={(e) => setSelectedConference(e.target.value)}
-              >
-                <option value="All">All</option>
-              </select>
-              <label>Division: </label>
-              <select
-                value={selectedDivision}
-                onChange={(e) => setSelectedDivision(e.target.value)}
-              >
-                <option value="All">All</option>
-              </select>
-              <label>Metric: </label>
-              <select
-                value={metric}
-                onChange={(e) => {
-                  setMetric(e.target.value as NumericMetric);
-                  if (
-                    e.target.value === "penaltyKillPct" ||
-                    e.target.value === "powerPlayPct" ||
-                    e.target.value === "goalsForPerGame" ||
-                    e.target.value === "goalsAgainstPerGame"
-                  ) {
-                    setRolling5(true);
-                    setRolling10(false);
-                  } else {
-                    setRolling5(false);
-                    setRolling10(false);
-                  }
-                  const allTeams: string[] = [];
-                  Object.values(teamsByDivision).forEach((arr) => {
-                    allTeams.push(...arr);
-                  });
-                  setSelectedTeams(allTeams);
-                }}
-              >
-                <option value="points">Points</option>
-                <option value="pointPct">Point Percentage</option>
-                <option value="goalsAgainstPerGame">Goals Against/Game</option>
-                <option value="goalsForPerGame">Goals For/Game</option>
-                <option value="penaltyKillPct">PK%</option>
-                <option value="powerPlayPct">PP%</option>
-              </select>
+              <div className={styles.filterField}>
+                <label>Conference:</label>
+                <select
+                  value={selectedConference}
+                  onChange={(e) => setSelectedConference(e.target.value)}
+                >
+                  <option value="All">All</option>
+                </select>
+              </div>
+              <div className={styles.filterField}>
+                <label>Division:</label>
+                <select
+                  value={selectedDivision}
+                  onChange={(e) => setSelectedDivision(e.target.value)}
+                >
+                  <option value="All">All</option>
+                </select>
+              </div>
+              <div className={styles.filterField}>
+                <label>Metric:</label>
+                <select
+                  value={metric}
+                  onChange={(e) => {
+                    setMetric(e.target.value as NumericMetric);
+                    if (
+                      e.target.value === "penaltyKillPct" ||
+                      e.target.value === "powerPlayPct" ||
+                      e.target.value === "goalsForPerGame" ||
+                      e.target.value === "goalsAgainstPerGame"
+                    ) {
+                      setRolling5(true);
+                      setRolling10(false);
+                    } else {
+                      setRolling5(false);
+                      setRolling10(false);
+                    }
+                    const allTeams: string[] = [];
+                    Object.values(teamsByDivision).forEach((arr) => {
+                      allTeams.push(...arr);
+                    });
+                    setSelectedTeams(allTeams);
+                  }}
+                >
+                  <option value="points">Points</option>
+                  <option value="pointPct">Point Percentage</option>
+                  <option value="goalsAgainstPerGame">Goals Against/Game</option>
+                  <option value="goalsForPerGame">Goals For/Game</option>
+                  <option value="penaltyKillPct">PK%</option>
+                  <option value="powerPlayPct">PP%</option>
+                </select>
+              </div>
               {(metric === "penaltyKillPct" ||
                 metric === "powerPlayPct" ||
                 metric === "goalsAgainstPerGame" ||
@@ -964,7 +982,12 @@ const TeamStandingsChart: React.FC = () => {
             </div>
 
             <div ref={containerRef} className={styles.chartContainer}>
-              <svg ref={svgRef} className={styles.chartSvg} />
+              <svg
+                ref={svgRef}
+                className={styles.chartSvg}
+                width={Math.max(chartWidth, 0)}
+                height={chartHeight}
+              />
             </div>
           </div>
 
@@ -976,59 +999,63 @@ const TeamStandingsChart: React.FC = () => {
             <div className={styles.toggleList}>
               <div className={styles.toggleColumn}>
                 {leftDivisions.map((div) => (
-                  <div key={div}>
+                  <div key={div} className={styles.divisionGroup}>
                     <strong>{div}</strong>
-                    {teamsByDivision[div]?.map((abbr) => (
-                      <label key={abbr} className={styles.teamToggle}>
-                        <input
-                          type="checkbox"
-                          checked={selectedTeams.includes(abbr)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedTeams((prev) => [...prev, abbr]);
-                            } else {
-                              setSelectedTeams((prev) =>
-                                prev.filter((t) => t !== abbr)
-                              );
-                            }
-                          }}
-                        />
-                        <img
-                          src={`/teamLogos/${abbr ?? "default"}.png`}
-                          alt={abbr}
-                          className={styles.toggleLogo}
-                        />
-                      </label>
-                    ))}
+                    <div className={styles.divisionTeams}>
+                      {teamsByDivision[div]?.map((abbr) => (
+                        <label key={abbr} className={styles.teamToggle}>
+                          <input
+                            type="checkbox"
+                            checked={selectedTeams.includes(abbr)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedTeams((prev) => [...prev, abbr]);
+                              } else {
+                                setSelectedTeams((prev) =>
+                                  prev.filter((t) => t !== abbr)
+                                );
+                              }
+                            }}
+                          />
+                          <img
+                            src={`/teamLogos/${abbr ?? "default"}.png`}
+                            alt={abbr}
+                            className={styles.toggleLogo}
+                          />
+                        </label>
+                      ))}
+                    </div>
                   </div>
                 ))}
               </div>
               <div className={styles.toggleColumn}>
                 {rightDivisions.map((div) => (
-                  <div key={div}>
+                  <div key={div} className={styles.divisionGroup}>
                     <strong>{div === "Metropolitan" ? "Metro" : div}</strong>
-                    {teamsByDivision[div]?.map((abbr) => (
-                      <label key={abbr} className={styles.teamToggle}>
-                        <input
-                          type="checkbox"
-                          checked={selectedTeams.includes(abbr)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedTeams((prev) => [...prev, abbr]);
-                            } else {
-                              setSelectedTeams((prev) =>
-                                prev.filter((t) => t !== abbr)
-                              );
-                            }
-                          }}
-                        />
-                        <img
-                          src={`/teamLogos/${abbr ?? "default"}.png`}
-                          alt={abbr}
-                          className={styles.toggleLogo}
-                        />
-                      </label>
-                    ))}
+                    <div className={styles.divisionTeams}>
+                      {teamsByDivision[div]?.map((abbr) => (
+                        <label key={abbr} className={styles.teamToggle}>
+                          <input
+                            type="checkbox"
+                            checked={selectedTeams.includes(abbr)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedTeams((prev) => [...prev, abbr]);
+                              } else {
+                                setSelectedTeams((prev) =>
+                                  prev.filter((t) => t !== abbr)
+                                );
+                              }
+                            }}
+                          />
+                          <img
+                            src={`/teamLogos/${abbr ?? "default"}.png`}
+                            alt={abbr}
+                            className={styles.toggleLogo}
+                          />
+                        </label>
+                      ))}
+                    </div>
                   </div>
                 ))}
               </div>

@@ -121,7 +121,8 @@ $mobile-easing-smooth: cubic-bezier(
 // Core brand colors
 $color-brand-primary: #07AAE2;      // vivid cyan-blue; primary brand color
 $color-brand-dark: #1A1D21;         // charcoal-black; main dark brand background
-$color-brand-white: #FFFFFF;        // clean white; primary light contrast color
+$color-brand-white: #F4F8FB;        // clean white; primary light contrast color
+$color-brand-yellow: #DBA507;       // warm gold; secondary accent and warning color
 
 // Cool neutrals
 $color-neutral-950: #101214;        // deepest near-black; ideal for app background
@@ -144,6 +145,7 @@ $color-gold-400: #FFC857;           // warm gold; premium highlight or warning a
 $color-orange-400: #FF9F43;         // soft orange; alerts, callouts, emphasis
 $color-coral-500: #FF6B6B;          // warm coral-red; friendlier danger/accent color
 $color-violet-400: #A78BFA;         // soft violet; premium, insight, or feature accent
+$color-teal-alt: #1985A1;           // alternative teal; secondary positive accent or hover state
 
 // Core brand & semantic palette
 $primary-color: #14a2d2;

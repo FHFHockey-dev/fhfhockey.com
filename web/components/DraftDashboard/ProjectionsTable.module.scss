@@ -41,21 +41,12 @@
 
 .settingsAndTooltips {
   display: flex;
-  align-items: stretch;
+  align-items: center;
   gap: v.$space-sm;
   justify-content: flex-end;
   margin: v.$space-md;
   flex-wrap: wrap;
   min-width: 0;
-  margin: v.$space-md;
-  display: flex;
-  align-items: center;
-  .controlsBarTitle {
-    grid-template-columns: 1fr; // stack on smaller screens
-  }
-  .settingsAndTooltips {
-    justify-content: flex-start;
-  }
 }
 
 .panelTitle {
@@ -127,48 +118,6 @@
   width: 100%;
 }
 
-/* Compare selection checkbox styling */
-.compareCheckbox {
-  appearance: none;
-  -webkit-appearance: none;
-  width: 18px;
-  height: 18px;
-  border: 1px solid v.$border-secondary;
-  border-radius: v.$border-radius-sm;
-  background: v.$background-dark;
-  display: inline-grid;
-  place-content: center;
-  cursor: pointer;
-  transition:
-    box-shadow 0.15s ease,
-    border-color 0.15s ease,
-    background-color 0.15s ease;
-
-  &:hover {
-    border-color: v.$primary-color;
-  }
-  &:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.35);
-    border-color: v.$primary-color;
-  }
-  &::after {
-    content: "";
-    width: 6px;
-    height: 10px;
-    transform: rotate(45deg) scale(0);
-    border-right: 2px solid v.$color-white;
-    border-bottom: 2px solid v.$color-white;
-    transition: transform 0.12s ease-in-out;
-  }
-  &:checked {
-    background: v.$focus-color;
-    border-color: v.$focus-color;
-  }
-  &:checked::after {
-    transform: rotate(45deg) scale(1);
-  }
-}
 .controlToggleBtn {
   background: v.$background-dark;
   border: 1px solid v.$border-secondary;
@@ -256,11 +205,6 @@
     text-align: left;
     white-space: normal;
   }
-}
-.searchInput {
-  min-height: 28px;
-  padding: 4px 8px;
-  width: 100%;
 }
 .toggle .toggleText {
   font-size: v.$font-size-xxs;
@@ -531,6 +475,8 @@
 }
 
 .searchInput {
+  min-height: 28px;
+  padding: 4px 8px;
   width: 100%;
   background-color: v.$background-dark;
   color: v.$text-primary;
@@ -612,36 +558,6 @@
   padding: v.$space-sm v.$space-sm;
   font-weight: 700;
   text-align: left;
-
-  /* Center cell content for favorite star, draft button, and maintain compare */
-  .playersTable td.colFav,
-  .playersTable td.colAction {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0; /* tighter around single control */
-    vertical-align: middle;
-  }
-
-  .playersTable td.colAction .draftButton {
-    margin: 0 auto;
-  }
-
-  /* Ensure favorite star and compare checkbox are perfectly centered */
-  .playersTable td.colFav .favoriteButton,
-  .playersTable td.compareCell .compareCheckbox {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto;
-    text-align: center;
-  }
-
-  .playersTable td.compareCell {
-    vertical-align: middle;
-  }
-  text-align: left;
-  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   border-bottom: 2px solid v.$border-secondary;
@@ -874,14 +790,6 @@
   background-color: color.adjust(v.$background-dark, $lightness: 2%) !important;
 }
 
-/* Favorited row highlight */
-.favoritedRow td {
-  background-color: v.$primary-color-opaque !important;
-}
-.favoritedRow {
-  box-shadow: inset 0 0 0 2px v.$primary-color;
-}
-
 /* =================== Table Cell Styles =================== */
 .playerName {
   min-width: 140px; // was 165px; allow narrower name column
@@ -991,23 +899,6 @@
     color: v.$primary-color;
     box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.25);
   }
-}
-
-/* Dynamic stat view helpers */
-.statHeader {
-  text-align: right;
-}
-.statCol {
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-
-/* Favorited row highlight */
-.favoritedRow td {
-  background-color: v.$primary-color-opaque !important;
-}
-.favoritedRow {
-  box-shadow: inset 0 0 0 2px v.$primary-color;
 }
 
 .position {

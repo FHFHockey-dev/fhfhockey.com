@@ -97,7 +97,7 @@ export default function HomepageGamesSection({
     games.length > 0
       ? liveGames > 0
         ? `${liveGames} game${liveGames === 1 ? "" : "s"} live right now. Move from the slate to confirmed starter context and market movement without leaving the homepage flow.`
-        : `${games.length} game${games.length === 1 ? "" : "s"} on the board${scheduleContext ? `, starting at ${scheduleContext}` : ""}. Scan the slate first, then jump straight into goalie, start-chart, or trend context.`
+        : `${games.length} game${games.length === 1 ? "" : "s"} on the board${scheduleContext ? `, starting at ${scheduleContext}` : ""}.`
       : `No games are scheduled for ${moment(currentDate).format("MMMM D")}. Use the decision surfaces below to plan your next move before the slate repopulates.`;
   const modulePresentation = buildHomepageModulePresentation({
     source: "homepage-games",
@@ -116,8 +116,12 @@ export default function HomepageGamesSection({
       <div className={styles.slateHero}>
         <div className={styles.slateHeroIntro}>
           <p className={styles.slateEyebrow}>Fantasy hockey today</p>
-          <h1 className={styles.slateHeadline}>Start with the slate, then pick the right next click.</h1>
-          <p className={styles.slateDescription}>{heroDescription}</p>
+          <div className={styles.slateHeroContent}>
+            <h1 className={styles.slateHeadline}>The Slate</h1>
+            <div className={styles.slateDescriptionWrap}>
+              <p className={styles.slateDescription}>{heroDescription}</p>
+            </div>
+          </div>
         </div>
 
         <div className={styles.slateSummaryRail}>
@@ -159,18 +163,24 @@ export default function HomepageGamesSection({
       </div>
 
       <div className={styles.gamesHeader}>
-        <button onClick={() => onChangeDate(-1)} aria-label="Previous Day"></button>
+        <button
+          onClick={() => onChangeDate(-1)}
+          aria-label="Previous Day"
+        ></button>
         <div className={styles.headerAndDate}>
           <h1
             className={
-              gamesHeaderText === "Yesterday's" || gamesHeaderText === "Tomorrow's"
+              gamesHeaderText === "Yesterday's" ||
+              gamesHeaderText === "Tomorrow's"
                 ? styles.smallerHeader
                 : ""
             }
           >
             {gamesHeaderText} <span>Games</span>
           </h1>
-          <p className={styles.dateDisplay}>{moment(currentDate).format("M/DD/YYYY")}</p>
+          <p className={styles.dateDisplay}>
+            {moment(currentDate).format("M/DD/YYYY")}
+          </p>
         </div>
         <button onClick={() => onChangeDate(1)} aria-label="Next Day"></button>
       </div>
@@ -189,12 +199,12 @@ export default function HomepageGamesSection({
               <span className={styles.homeLabel}>Home</span>
               <span className={styles.awayLabel}>Away</span>
             </div>
-
-            {games.map((game) => {
+            <div className={styles.gamesGrid}>
+              {games.map((game) => {
               const homeTeam = game.homeTeam;
               const awayTeam = game.awayTeam;
-              const homeTeamInfo = teamsInfo[homeTeam.abbrev] || {};
-              const awayTeamInfo = teamsInfo[awayTeam.abbrev] || {};
+                const homeTeamInfo = teamsInfo[homeTeam.abbrev];
+                const awayTeamInfo = teamsInfo[awayTeam.abbrev];
 
               if (!homeTeam?.abbrev || !awayTeam?.abbrev) return null;
 
@@ -209,14 +219,20 @@ export default function HomepageGamesSection({
                     className={styles.combinedGameCard}
                     style={
                       {
-                        "--home-primary-color": homeTeamInfo.primaryColor || "#888888",
-                        "--home-secondary-color": homeTeamInfo.secondaryColor || "#555555",
-                        "--home-jersey-color": homeTeamInfo.jersey || "#cccccc",
-                        "--away-primary-color": awayTeamInfo.primaryColor || "#888888",
-                        "--away-secondary-color": awayTeamInfo.secondaryColor || "#555555",
-                        "--away-jersey-color": awayTeamInfo.jersey || "#cccccc",
-                        "--home-primary-light-color": homeTeamInfo.lightColor || "#aaaaaa",
-                        "--away-primary-light-color": awayTeamInfo.lightColor || "#aaaaaa"
+                          "--home-primary-color":
+                            homeTeamInfo?.primaryColor ?? "#888888",
+                          "--home-secondary-color":
+                            homeTeamInfo?.secondaryColor ?? "#555555",
+                          "--home-jersey-color": homeTeamInfo?.jersey ?? "#cccccc",
+                          "--away-primary-color":
+                            awayTeamInfo?.primaryColor ?? "#888888",
+                          "--away-secondary-color":
+                            awayTeamInfo?.secondaryColor ?? "#555555",
+                          "--away-jersey-color": awayTeamInfo?.jersey ?? "#cccccc",
+                          "--home-primary-light-color":
+                            homeTeamInfo?.lightColor ?? "#aaaaaa",
+                          "--away-primary-light-color":
+                            awayTeamInfo?.lightColor ?? "#aaaaaa"
                       } as CSSProperties
                     }
                   >
@@ -235,21 +251,31 @@ export default function HomepageGamesSection({
                         fallbackSrc={fallbackNHLLogo}
                       />
                       <div className={styles.teamRecord}>
-                        {typeof homeTeam?.record === "string" ? homeTeam.record : ""}
+                        {typeof homeTeam?.record === "string"
+                          ? homeTeam.record
+                          : ""}
                       </div>
                     </div>
-                    <div className={`${styles.teamRecordMobile} ${styles.homeRecord}`}>
-                      {typeof homeTeam?.record === "string" ? homeTeam.record : ""}
+                    <div
+                      className={`${styles.teamRecordMobile} ${styles.homeRecord}`}
+                    >
+                      {typeof homeTeam?.record === "string"
+                        ? homeTeam.record
+                        : ""}
                     </div>
                     <div className={styles.gameTimeSection}>
-                      <div className={styles.homeScore}>{homeTeam.score ?? "-"}</div>
+                      <div className={styles.homeScore}>
+                        {homeTeam.score ?? "-"}
+                      </div>
                       <div className={styles.gameTimeInfo}>
                         <span className={styles.gameState}>
                           {game.gameState === "LIVE"
                             ? formatPeriodText(
                                 game?.periodDescriptor?.number ?? game?.period,
-                                game?.periodDescriptor?.periodType ?? game?.periodType,
-                                game?.clock && game.clock.inIntermission !== undefined
+                                game?.periodDescriptor?.periodType ??
+                                  game?.periodType,
+                                game?.clock &&
+                                  game.clock.inIntermission !== undefined
                                   ? game.clock.inIntermission
                                   : game?.inIntermission
                               )
@@ -258,19 +284,28 @@ export default function HomepageGamesSection({
                         <ClientOnly>
                           <span className={styles.gameTimeText}>
                             {game.gameState === "LIVE"
-                              ? !(game?.clock && game.clock.inIntermission !== undefined
+                              ? !(game?.clock &&
+                                game.clock.inIntermission !== undefined
                                   ? game.clock.inIntermission
                                   : game?.inIntermission)
-                                ? game?.clock?.timeRemaining || game?.timeRemaining || "--:--"
+                                ? game?.clock?.timeRemaining ||
+                                  game?.timeRemaining ||
+                                  "--:--"
                                 : ""
                               : formatLocalStartTime(game.startTimeUTC)}
                           </span>
                         </ClientOnly>
                       </div>
-                      <div className={styles.awayScore}>{awayTeam.score ?? "-"}</div>
+                      <div className={styles.awayScore}>
+                        {awayTeam.score ?? "-"}
+                      </div>
                     </div>
-                    <div className={`${styles.teamRecordMobile} ${styles.awayRecord}`}>
-                      {typeof awayTeam?.record === "string" ? awayTeam.record : ""}
+                    <div
+                      className={`${styles.teamRecordMobile} ${styles.awayRecord}`}
+                    >
+                      {typeof awayTeam?.record === "string"
+                        ? awayTeam.record
+                        : ""}
                     </div>
                     <div
                       className={styles.awayTeamLogo}
@@ -287,13 +322,16 @@ export default function HomepageGamesSection({
                         fallbackSrc={fallbackNHLLogo}
                       />
                       <div className={styles.teamRecord}>
-                        {typeof awayTeam?.record === "string" ? awayTeam.record : ""}
+                        {typeof awayTeam?.record === "string"
+                          ? awayTeam.record
+                          : ""}
                       </div>
                     </div>
                   </div>
                 </Link>
               );
             })}
+            </div>
           </>
         ) : null}
       </div>

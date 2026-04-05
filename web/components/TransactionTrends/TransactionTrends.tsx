@@ -1,12 +1,16 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { format, startOfWeek } from "date-fns";
 import styles from "./TransactionTrends.module.scss";
 import OwnershipSparkline, {
   type OwnershipSparkPoint
 } from "./OwnershipSparkline";
 import PanelStatus from "components/common/PanelStatus";
+import useSchedule from "components/GameGrid/utils/useSchedule";
 import { buildHomepageModulePresentation } from "lib/dashboard/freshness";
+import { buildTopAddsScheduleContextMap } from "lib/dashboard/topAddsScheduleContext";
 type TrendPlayer = {
   playerKey: string;
+  playerId?: number | null;
   name: string;
   headshot: string | null;
   displayPosition?: string | null;
@@ -37,6 +41,7 @@ interface ApiResponse {
 }
 
 const WINDOWS = [1, 3, 5, 10];
+const POSITION_FILTERS = ["", "F", "C", "LW", "RW", "D", "G"] as const;
 
 function summarizeTransactionTrendError(status: number, body: string): string {
   if (status === 503) {
@@ -78,6 +83,11 @@ export default function TransactionTrends() {
   const [activeTable, setActiveTable] = useState<"risers" | "fallers">(
     "risers"
   );
+  const weekStartDate = useMemo(
+    () => format(startOfWeek(new Date(), { weekStartsOn: 1 }), "yyyy-MM-dd"),
+    []
+  );
+  const [weekSchedule, weekNumGamesPerDay] = useSchedule(weekStartDate, false);
 
   useEffect(() => {
     let active = true;
@@ -140,6 +150,23 @@ export default function TransactionTrends() {
   const leadFaller = data?.fallers?.[0] ?? null;
   const activePositionLabel = pos || "All skaters";
   const summaryWindowLabel = `${windowDays}-day window`;
+  const scheduleContextMap = useMemo(
+    () =>
+      buildTopAddsScheduleContextMap(
+        weekSchedule,
+        weekNumGamesPerDay,
+        weekStartDate
+      ),
+    [weekNumGamesPerDay, weekSchedule, weekStartDate]
+  );
+  const leadRiserSchedule =
+    leadRiser?.teamAbbrev != null
+      ? scheduleContextMap[leadRiser.teamAbbrev.toUpperCase()] ?? null
+      : null;
+  const leadFallerSchedule =
+    leadFaller?.teamAbbrev != null
+      ? scheduleContextMap[leadFaller.teamAbbrev.toUpperCase()] ?? null
+      : null;
 
   return (
     <section
@@ -150,39 +177,6 @@ export default function TransactionTrends() {
         <h2 id="trends-heading" className={styles.title}>
           Transaction <span>Trends</span>
         </h2>
-        <div className={styles.headerControls}>
-          <div
-            className={styles.timeframeButtons}
-            role="group"
-            aria-label="Time windows"
-          >
-            {WINDOWS.map((w) => (
-              <button
-                key={w}
-                className={w === windowDays ? `${styles.isActive} active` : ""}
-                onClick={() => setWindowDays(w)}
-              >
-                {w}D
-              </button>
-            ))}
-          </div>
-          <div
-            className={styles.posButtons}
-            role="group"
-            aria-label="Position filter"
-          >
-            {["", "F", "C", "LW", "RW", "D", "G"].map((p) => (
-              <button
-                key={p || "ALL"}
-                className={p === pos ? `${styles.isActive} active` : ""}
-                onClick={() => setPos(p)}
-                title={p ? `Filter: ${p}` : "All positions"}
-              >
-                {p || "All"}
-              </button>
-            ))}
-          </div>
-        </div>
       </div>
       <div className={styles.summaryIntro}>
         <p className={styles.summaryEyebrow}>Market pulse</p>
@@ -203,28 +197,111 @@ export default function TransactionTrends() {
           </div>
           <div className={`${styles.summaryCard} ${styles.riseSummaryCard}`}>
             <span className={styles.summaryLabel}>Lead riser</span>
-            <strong className={styles.summaryValue}>
-              {leadRiser ? leadRiser.name : "No riser data"}
-            </strong>
-            <span className={styles.summaryMeta}>
-              {leadRiser
-                ? `${leadRiser.delta > 0 ? "+" : ""}${leadRiser.delta.toFixed(1)} pts • ${leadRiser.latest.toFixed(1)}% rostered`
-                : "No movement available"}
-            </span>
+            <div className={styles.summaryCardBody}>
+              <div className={styles.summaryCopyBlock}>
+                <strong className={styles.summaryValue}>
+                  {leadRiser ? leadRiser.name : "No riser data"}
+                </strong>
+                <div className={styles.summaryMetaStack}>
+                  <span className={styles.summaryMeta}>
+                    {leadRiser
+                      ? `${leadRiser.delta > 0 ? "+" : ""}${leadRiser.delta.toFixed(1)} pts • ${leadRiser.latest.toFixed(1)}% rostered`
+                      : "No movement available"}
+                  </span>
+                  <span className={styles.summaryMeta}>
+                    {leadRiser
+                      ? [leadRiser.teamAbbrev, leadRiser.displayPosition]
+                          .filter(Boolean)
+                          .join(" • ")
+                      : "No team context available"}
+                  </span>
+                </div>
+              </div>
+              <div className={styles.summaryStatRow}>
+                <span className={`${styles.summaryStat} ${styles.riseStat}`}>
+                  {leadRiserSchedule
+                    ? `${leadRiserSchedule.gamesRemaining} GP`
+                    : "GP --"}
+                </span>
+                <span className={`${styles.summaryStat} ${styles.riseStat}`}>
+                  {leadRiserSchedule
+                    ? `${leadRiserSchedule.offNightsRemaining} off`
+                    : "Off --"}
+                </span>
+              </div>
+            </div>
           </div>
           <div className={`${styles.summaryCard} ${styles.fallSummaryCard}`}>
             <span className={styles.summaryLabel}>Lead faller</span>
-            <strong className={styles.summaryValue}>
-              {leadFaller ? leadFaller.name : "No faller data"}
-            </strong>
-            <span className={styles.summaryMeta}>
-              {leadFaller
-                ? `${leadFaller.delta.toFixed(1)} pts • ${leadFaller.latest.toFixed(1)}% rostered`
-                : "No movement available"}
-            </span>
+            <div className={styles.summaryCardBody}>
+              <div className={styles.summaryCopyBlock}>
+                <strong className={styles.summaryValue}>
+                  {leadFaller ? leadFaller.name : "No faller data"}
+                </strong>
+                <div className={styles.summaryMetaStack}>
+                  <span className={styles.summaryMeta}>
+                    {leadFaller
+                      ? `${leadFaller.delta.toFixed(1)} pts • ${leadFaller.latest.toFixed(1)}% rostered`
+                      : "No movement available"}
+                  </span>
+                  <span className={styles.summaryMeta}>
+                    {leadFaller
+                      ? [leadFaller.teamAbbrev, leadFaller.displayPosition]
+                          .filter(Boolean)
+                          .join(" • ")
+                      : "No team context available"}
+                  </span>
+                </div>
+              </div>
+              <div className={styles.summaryStatRow}>
+                <span className={`${styles.summaryStat} ${styles.fallStat}`}>
+                  {leadFallerSchedule
+                    ? `${leadFallerSchedule.gamesRemaining} GP`
+                    : "GP --"}
+                </span>
+                <span className={`${styles.summaryStat} ${styles.fallStat}`}>
+                  {leadFallerSchedule
+                    ? `${leadFallerSchedule.offNightsRemaining} off`
+                    : "Off --"}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       )}
+      <div className={styles.headerControls}>
+        <div
+          className={styles.timeframeButtons}
+          role="group"
+          aria-label="Time windows"
+        >
+          {WINDOWS.map((w) => (
+            <button
+              key={w}
+              className={w === windowDays ? `${styles.isActive} active` : ""}
+              onClick={() => setWindowDays(w)}
+            >
+              {w}D
+            </button>
+          ))}
+        </div>
+        <div
+          className={styles.posButtons}
+          role="group"
+          aria-label="Position filter"
+        >
+          {POSITION_FILTERS.map((p) => (
+            <button
+              key={p || "ALL"}
+              className={p === pos ? `${styles.isActive} active` : ""}
+              onClick={() => setPos(p)}
+              title={p ? `Filter: ${p}` : "All positions"}
+            >
+              {p || "All"}
+            </button>
+          ))}
+        </div>
+      </div>
       {modulePresentation.panelState && (
         <PanelStatus
           state={modulePresentation.panelState}

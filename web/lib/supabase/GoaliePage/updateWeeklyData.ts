@@ -1,12 +1,17 @@
-// updateWeeklyData.js
+import { createClient } from "@supabase/supabase-js";
+import dotenv from "dotenv";
+import { format } from "date-fns";
 
-const { createClient } = require("@supabase/supabase-js"); // Supabase client
-require("dotenv").config({ path: "../../../.env.local" });
+import { calculateAverages } from "./calculateAverages";
 
-// Initialize Supabase client with Service Role Key
+const { fetchSeasonWeeks } = require("./goaliePageWeeks");
+const { fetchGoalieDataForWeek } = require("./fetchGoalieDataForWeek");
+const { upsertWeekData } = require("./upsertGoalieData");
+
+dotenv.config({ path: "../../../.env.local" });
+
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-// CHANGED SUPABASE THING
 
 console.log("Supabase URL:", supabaseUrl);
 console.log("Supabase anon Role Key:", supabaseKey);
@@ -20,19 +25,12 @@ if (!supabaseUrl || !supabaseKey) {
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Import required functions
-const { fetchSeasonWeeks } = require("./goaliePageWeeks");
-const { fetchGoalieDataForWeek } = require("./fetchGoalieDataForWeek");
-const { calculateAverages } = require("./calculateAverages");
-const { upsertWeekData } = require("./upsertGoalieData");
-const { format } = require("date-fns");
-
-async function updateWeeklyData() {
+async function updateWeeklyData(): Promise<void> {
   try {
     const weeks = await fetchSeasonWeeks();
     console.log(`Fetched ${weeks.length} weeks.`);
 
-    for (let index = 0; index < weeks.length; index++) {
+    for (let index = 0; index < weeks.length; index += 1) {
       const week = weeks[index];
       const weekId = index + 1;
 
@@ -43,7 +41,6 @@ async function updateWeeklyData() {
         )} to ${format(week.end, "yyyy-MM-dd")}`
       );
 
-      // Upsert week info
       const { error: weekError } = await supabase
         .from("goalie_page_weeks")
         .upsert(
@@ -65,7 +62,6 @@ async function updateWeeklyData() {
 
       console.log("Week info upserted successfully.");
 
-      // Fetch goalie data for the week
       const goalies = await fetchGoalieDataForWeek(week);
       console.log(`Fetched ${goalies.length} goalies for Week ${weekId}.`);
 
@@ -74,24 +70,27 @@ async function updateWeeklyData() {
         continue;
       }
 
-      // Calculate league averages
       const averages = calculateAverages(goalies);
       console.log("Calculated Averages:", averages);
 
-      // Upsert goalie stats and league averages
       await upsertWeekData(weekId, { goalies, averages });
 
       console.log(`Week ${weekId} data upserted successfully.`);
     }
   } catch (error) {
-    if (error) {
-      console.error("Error updating weekly data:", error.message || error);
-      console.error("Details:", error.details || "No details provided");
-      console.error("Hint:", error.hint || "No hint provided");
-    } else {
-      console.error("Error updating weekly data: Unknown error");
+    if (error instanceof Error) {
+      const errorWithMeta = error as Error & {
+        details?: string;
+        hint?: string;
+      };
+      console.error("Error updating weekly data:", error.message);
+      console.error("Details:", errorWithMeta.details || "No details provided");
+      console.error("Hint:", errorWithMeta.hint || "No hint provided");
+      return;
     }
+
+    console.error("Error updating weekly data: Unknown error");
   }
 }
 
-updateWeeklyData();
+void updateWeeklyData();

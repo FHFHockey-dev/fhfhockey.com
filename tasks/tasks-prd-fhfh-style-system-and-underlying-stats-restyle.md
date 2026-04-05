@@ -27,11 +27,25 @@
 - `tasks/tasks-prd-fhfh-style-system-and-underlying-stats-restyle.md` - Active implementation checklist for this PRD; must stay updated as subtasks complete and new work is discovered.
 - `web/pages/underlying-stats/index.tsx` - Production `underlying-stats` entry page that uses `indexUS.module.scss` and must be aligned to the new system.
 - `web/pages/underlying-stats/indexUS.module.scss` - Existing stylesheet for the top-level `underlying-stats` entry page to be restyled using canonical tokens and patterns.
+- `web/pages/underlying-stats/UnderlyingStats_Audit.md` - Rendered audit and section-to-style-system mapping for the current `underlying-stats` landing surface.
 - `web/pages/underlying-stats/playerStats/index.tsx` - Production player-stats landing page to be restyled using the new system.
 - `web/pages/underlying-stats/playerStats/playerStats.module.scss` - Actual stylesheet used by `playerStats/index.tsx`; primary target for the player landing-page restyle.
+- `web/pages/underlying-stats/playerStats/PlayerStatsLanding_Audit.md` - Rendered audit for the player landing surface, including the explicit stylesheet clarification and section-to-archetype mapping.
+- `web/pages/underlying-stats/playerStats/PlayerStatsDetail_Audit.md` - Evaluation of the `[playerId]` route showing that it inherits the shared page module and documenting the decision to defer route-specific markup cleanup.
 - `web/pages/underlying-stats/playerStats/[playerId].tsx` - Adjacent detail surface that should be evaluated for alignment or documented deferral.
 - `web/pages/underlying-stats/playerStats/index.test.tsx` - Existing test coverage that may need updates if markup or visible headings/labels change.
 - `web/pages/underlying-stats/playerStats/[playerId].test.tsx` - Existing detail-page tests that may need updates if the detail surface is touched.
+- `tasks/player-underlying-stats-runbook.md` - Operational runbook for raw ingest, summary refresh, verification commands, and future math-validation recipes.
+- `web/scripts/verify-player-underlying-query.ts` - Local query-audit script that prints included game IDs, summed TOI, raw numerators, derived rates, and the rebuilt final payload for any player/query state.
+- `web/lib/underlying-stats/playerStatsLandingServer.ts` - Canonical aggregation engine where player-game inclusion, season rollups, and derived rate math are resolved.
+- `web/lib/underlying-stats/playerStatsSummaryRefresh.ts` - Summary-refresh orchestration used to rebuild persisted per-game player underlying payloads.
+- `web/pages/api/v1/db/update-player-underlying-stats.ts` - Admin refresh route that re-ingests raw Gamecenter inputs and rebuilds per-game player summaries.
+- `web/pages/api/v1/db/update-player-underlying-summaries.ts` - Summary-only refresh route used when raw ingest is already healthy but derived payloads are missing.
+- `web/pages/api/v1/underlying-stats/players.ts` - Landing API route whose loading behavior and page-size contract will need to change for the new table experience.
+- `web/components/underlying-stats/PlayerStatsTable.tsx` - Table renderer that will need rank-column, sticky-header, load-more, and overflow-behavior changes.
+- `web/components/underlying-stats/PlayerStatsTable.module.scss` - Table styling surface for sticky headers, rank column, overflow masking, and load-more presentation.
+- `web/components/underlying-stats/PlayerStatsTable.test.tsx` - Table-focused test suite that should cover rank rendering, sticky headers, and any load-more contract changes.
+- `web/components/underlying-stats/PlayerStatsFilters.module.scss` - Filter shell whose vertical density should be reduced to free space for the table.
 - `web/components/DraftDashboard/DraftDashboard_Audit.md` - Existing audit notes that can be mined or updated when translating dashboard observations into canonical style rules.
 
 ### Notes
@@ -81,26 +95,26 @@
   - [x] 4.6 Verify the sandbox page visually in-browser and treat it as the main smoke test surface for approving new base components before broader rollout. (Completed against a clean local render on `http://localhost:3001/cssTestingGrounds`; remaining item-by-item canonical signoff continues in `4.7`.)
   - [x] 4.7 Run a sequential element-by-element reference-validation pass for every sandbox primitive: identify the closest `DraftDashboard` reference first, fall back to another rendered site example only if the element does not exist there, compare the sandbox recreation against that live reference, and do not advance to the next element until the current one is approved, revised, or explicitly deferred.
 
-- [ ] 5.0 Re-style the `underlying-stats` entry surfaces and align adjacent `playerStats` pages to the new system
-  - [ ] 5.1 Review the rendered top-level `underlying-stats` entry page and map its current sections to the new page-shell, panel, control, and table rules.
-  - [ ] 5.2 Refactor `web/pages/underlying-stats/index.tsx` markup only as needed to support canonical layout hierarchy, tighter control grouping, and consistent section structure.
-  - [ ] 5.3 Rewrite `web/pages/underlying-stats/indexUS.module.scss` to use canonical tokens and shared rules while reducing unnecessary gradients, empty space, and inconsistent control treatment.
-  - [ ] 5.4 Review the rendered player-stats landing page and explicitly account for the fact that it uses `playerStats.module.scss`, not `indexUS.module.scss`.
-  - [ ] 5.5 Refactor `web/pages/underlying-stats/playerStats/index.tsx` markup only as needed to align hero/header/filter/table sections with the new data-page archetype.
-  - [ ] 5.6 Rewrite `web/pages/underlying-stats/playerStats/playerStats.module.scss` to bring the page into alignment with the new system while keeping the softer data-page treatment.
-  - [ ] 5.7 Evaluate `web/pages/underlying-stats/playerStats/[playerId].tsx` and its styling surface to decide whether it should be aligned in the same pass or formally documented as deferred.
-  - [ ] 5.8 Update or add tests as needed for touched `underlying-stats` pages, then perform browser-based verification to confirm the pages visually align with the new rules on desktop and mobile.
+- [x] 5.0 Re-style the `underlying-stats` entry surfaces and align adjacent `playerStats` pages to the new system
+  - [x] 5.1 Review the rendered top-level `underlying-stats` entry page and map its current sections to the new page-shell, panel, control, and table rules.
+  - [x] 5.2 Refactor `web/pages/underlying-stats/index.tsx` markup only as needed to support canonical layout hierarchy, tighter control grouping, and consistent section structure.
+  - [x] 5.3 Rewrite `web/pages/underlying-stats/indexUS.module.scss` to use canonical tokens and shared rules while reducing unnecessary gradients, empty space, and inconsistent control treatment.
+  - [x] 5.4 Review the rendered player-stats landing page and explicitly account for the fact that it uses `playerStats.module.scss`, not `indexUS.module.scss`.
+  - [x] 5.5 Refactor `web/pages/underlying-stats/playerStats/index.tsx` markup only as needed to align hero/header/filter/table sections with the new data-page archetype.
+  - [x] 5.6 Rewrite `web/pages/underlying-stats/playerStats/playerStats.module.scss` to bring the page into alignment with the new system while keeping the softer data-page treatment.
+  - [x] 5.7 Evaluate `web/pages/underlying-stats/playerStats/[playerId].tsx` and its styling surface to decide whether it should be aligned in the same pass or formally documented as deferred.
+  - [x] 5.8 Update or add tests as needed for touched `underlying-stats` pages, then perform browser-based verification to confirm the pages visually align with the new rules on desktop and mobile.
 
-- [ ] 6.0 Define and document the component-by-component signoff workflow, missing-element gap process, and ongoing maintenance rules linking docs, sandbox, tokens, and production
-  - [ ] 6.1 Create an itemized approval checklist covering page shells, headers, cards, tables, buttons, toggles, inputs/selects, chart frames, and state banners, and process it strictly one element at a time in review order.
-  - [ ] 6.2 For each approval item, document the canonical source pattern, whether that source came from `DraftDashboard` or another site surface, the token dependencies, the sandbox example, and the expected interaction states.
-  - [ ] 6.3 Add a documented process for handling missing element types, including how to request a site example from the owner before writing a final canonical rule.
-  - [ ] 6.4 Add maintenance guidance stating that changes to canonical styling must stay synchronized across `fhfh-styles.md`, shared tokens/mixins, sandbox examples, and production implementations.
-  - [ ] 6.5 Perform a final consistency pass to ensure the rewritten style guide, sandbox examples, shared tokens, and `underlying-stats` production pages all reflect the same canonical decisions.
+- [x] 6.0 Define and document the component-by-component signoff workflow, missing-element gap process, and ongoing maintenance rules linking docs, sandbox, tokens, and production
+  - [x] 6.1 Create an itemized approval checklist covering page shells, headers, cards, tables, buttons, toggles, inputs/selects, chart frames, and state banners, and process it strictly one element at a time in review order.
+  - [x] 6.2 For each approval item, document the canonical source pattern, whether that source came from `DraftDashboard` or another site surface, the token dependencies, the sandbox example, and the expected interaction states.
+  - [x] 6.3 Add a documented process for handling missing element types, including how to request a site example from the owner before writing a final canonical rule.
+  - [x] 6.4 Add maintenance guidance stating that changes to canonical styling must stay synchronized across `fhfh-styles.md`, shared tokens/mixins, sandbox examples, and production implementations.
+  - [x] 6.5 Perform a final consistency pass to ensure the rewritten style guide, sandbox examples, shared tokens, and `underlying-stats` production pages all reflect the same canonical decisions.
 
-- [ ] 7.0 Clean up conflicting or duplicated style declarations discovered during the dashboard audit before final canonical rollout
-  - [ ] 7.1 Review and consolidate duplicated or conflicting control/checkbox/table style declarations in `web/components/DraftDashboard/ProjectionsTable.module.scss`.
-  - [ ] 7.2 Review the nested table-related rules currently scoped under `.summaryValue` in `web/components/DraftDashboard/MyRoster.module.scss` and decide whether they should be relocated, rewritten, or removed as dead/confusing styling.
+- [x] 7.0 Clean up conflicting or duplicated style declarations discovered during the dashboard audit before final canonical rollout
+  - [x] 7.1 Review and consolidate duplicated or conflicting control/checkbox/table style declarations in `web/components/DraftDashboard/ProjectionsTable.module.scss`.
+  - [x] 7.2 Review the nested table-related rules currently scoped under `.summaryValue` in `web/components/DraftDashboard/MyRoster.module.scss` and decide whether they should be relocated, rewritten, or removed as dead/confusing styling.
 
 - [ ] 8.0 Canonicalize shared dialog and overlay patterns as part of the same style-system pass
   - [ ] 8.1 Extract shared modal-shell rules from `DraftSummaryModal`, `ComparePlayersModal`, and `ImportCsvModal`, including backdrop, shell, header, close control, action cluster, and scrollable body behavior.
@@ -110,3 +124,33 @@
   - [ ] 9.1 Request rendered site examples for data-page hero/header systems with breadcrumbs, descriptive copy, and metadata cards.
   - [ ] 9.2 Request rendered site examples for chart-first page layouts, chart-grid layouts, and chart toolbar/legend treatments.
   - [ ] 9.3 Request rendered site examples for advanced dropdown/action menus, pagination patterns, page-level empty states, and inline content callouts if those families need canonical site-wide rules.
+
+- [ ] 10.0 Diagnose and harden player underlying-stats math and refresh trust, starting with the Martone coverage mismatch
+  - [x] 10.1 Reproduce the Martone discrepancy end to end and document the exact root cause chain, including the stale `nhl_api_game_roster_spots` coverage that reduced his five-on-five aggregate from three games to one.
+  - [x] 10.2 Verify that the corrected Martone five-on-five aggregate uses the right denominator context, explicitly separating `allStrengths` NHL TOI comparisons from `fiveOnFive` FHFH comparisons.
+  - [x] 10.3 Build a narrow verification script or debug surface that, for any player plus query-state combination, prints included game IDs, summed TOI, raw numerator totals, derived per-60 values, and the final API row payload.
+  - [x] 10.4 Use the verification tool to spot-check at least one skater in `individual/rates`, one skater in `onIce/rates`, and one goalie in `goalie/rates`, recording whether the rollup math matches the underlying per-game inputs.
+  - [ ] 10.5 Audit the refresh chain used by player underlying stats and identify where stale raw ingest, missing roster spots, missing summary payloads, or slow live reconstruction can silently distort trust in landing rows.
+  - [ ] 10.6 Tighten the public or debug-facing diagnostics so that when a player is missing games upstream, the system can distinguish stale coverage from formula errors instead of surfacing only a slow or empty table.
+  - [ ] 10.7 Expand `tasks/player-underlying-stats-runbook.md` with a strict no-fluff recipe for targeted game refresh, date-range refresh, summary-only refresh, verification commands, and the exact order those steps should be run.
+  - [ ] 10.8 Add or update tests around the verification logic and any new diagnostics so the math-checking workflow remains stable after future query-layer changes.
+
+- [ ] 11.0 Rework the player underlying-stats table loading model and visible table frame for a denser, scroll-first experience
+  - [ ] 11.1 Evaluate the current landing aggregation and transport path to determine whether server-side sorting plus fetching only the first visible batch can materially reduce cold-load latency without corrupting the canonical sort contract.
+  - [ ] 11.2 Replace numbered pagination with a `load more` batching model that loads the first 100 players on initial render, keeps the table fully visible at page load, and reveals additional 100-row batches on demand.
+  - [ ] 11.3 Update the landing API and client query contract so batch fetches are treated as incremental result extension rather than classic page-to-page pagination, while preserving server-side sorting for the active sort option.
+  - [ ] 11.4 Rework `PlayerStatsTable` overflow behavior so rows beyond the current loaded batch stay hidden below the table frame until the user requests more, instead of forcing immediate full-table vertical sprawl.
+  - [ ] 11.5 Add a visible `Rank` column numbered `1-x` in `$color-brand-primary`, and ensure the numbering respects the active sort plus cumulative batch position.
+  - [ ] 11.6 Make the table headers sticky and verify that the sticky identity columns and sticky header layer interact cleanly during both horizontal and vertical scroll.
+  - [ ] 11.7 Compress the vertical footprint of `.hero` and `.sectionHeader` in `playerStats.module.scss` and `.root` in `PlayerStatsFilters.module.scss` so the table gets more above-the-fold space without breaking the current visual hierarchy.
+  - [ ] 11.8 Revisit the table shell styling after the loading-model change so the load-more affordance, hidden-overflow boundary, and sticky-header treatment all align with the current style system.
+  - [ ] 11.9 Add or update tests for the new loading model, rank column, sticky-header behavior, and any revised landing-query state transitions.
+  - [x] 11.10 Swap the shared header and footer branding to yellow variants only while the user is on the `underlying-stats` path, and preserve the default blue assets everywhere else.
+
+- [x] 12.0 Rework the homepage slate hero, games grid, and transaction-trends module so they align better with the current style direction and information hierarchy
+  - [x] 12.1 Rework the homepage slate hero so the eyebrow remains above the headline/description pair, while the headline and description sit side by side on desktop and stack cleanly on smaller screens.
+  - [x] 12.2 Restyle the homepage slate summary cards to match the canonical left-accent card treatment from `cssTestingGrounds`, remove their artificial minimum height, and hide the current `slateActionRow` until its destination pages are ready.
+  - [x] 12.3 Rework the homepage games grid so it caps at three game cards per row on desktop and centers incomplete rows instead of leaving leftover cards stranded on the left edge.
+  - [x] 12.4 Rework the desktop transaction-trends control/header layout so the time-window and position controls sit above both tables, with a single shared desktop shell wrapping the risers and fallers instead of two separately outlined panels.
+  - [x] 12.5 Add subtle success/danger surface tinting to the risers and fallers tables and convert the lead riser/faller summary cards to the same left-accent card treatment with color-coordinated styling.
+  - [x] 12.6 Enrich the lead riser/faller summary cards with weekly games and off-night schedule context derived from the same weekly schedule model used by the Game Grid.

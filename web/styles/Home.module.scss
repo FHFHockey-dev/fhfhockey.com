@@ -67,7 +67,7 @@ $mobile-column-short: 30px;
   background:
     radial-gradient(circle at top left, color.adjust(v.$secondary-color, $lightness: -18%) 0%, transparent 36%),
     linear-gradient(145deg, color.adjust(v.$background-dark, $lightness: -4%) 0%, v.$background-medium 100%);
-  border-bottom: 2px solid color.adjust(v.$border-color-primary, $lightness: 8%);
+  border-bottom: 8px solid color.adjust(v.$border-color-primary, $lightness: 8%);
 }
 
 @media (max-width: #{v.$breakpoint-desktop}) {
@@ -75,12 +75,29 @@ $mobile-column-short: 30px;
     grid-template-columns: 1fr;
     gap: v.$space-lg;
   }
+
+  .slateHeroContent {
+    grid-template-columns: 1fr;
+    gap: v.$space-sm;
+  }
 }
 
 .slateHeroIntro {
   display: flex;
   flex-direction: column;
   gap: v.$space-sm;
+  min-width: 0;
+  justify-content: center;
+}
+
+.slateHeroContent {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  gap: v.$space-lg;
+  align-items: start;
+}
+
+.slateDescriptionWrap {
   min-width: 0;
 }
 
@@ -101,15 +118,16 @@ $mobile-column-short: 30px;
   text-transform: uppercase;
   letter-spacing: 0.03em;
   color: v.$text-color-primary;
-  max-width: 13ch;
+
 }
 
 .slateDescription {
   margin: 0;
-  max-width: 66ch;
+  max-width: 58ch;
   font-size: 1rem;
   line-height: 1.6;
   color: v.$text-color-secondary;
+  text-align: right;
 }
 
 .slateSummaryRail {
@@ -120,22 +138,35 @@ $mobile-column-short: 30px;
 }
 
 .slateSummaryCard {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: v.$space-xs;
-  min-height: 108px;
-  padding: v.$space-md;
+  min-width: 0;
+  padding: v.$space-md v.$space-md v.$space-md calc(v.$space-md + 12px);
   border: 1px solid color.adjust(v.$border-color-primary, $lightness: 6%);
-  border-radius: v.$border-radius;
+  border-radius: v.$radius-card;
   background: color.adjust(v.$background-dark, $lightness: -1%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  box-shadow:
+    0 10px 24px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 6px;
+    border-radius: v.$radius-card 0 0 v.$radius-card;
+    background: v.$primary-color;
+  }
 }
 
 .slateSummaryLabel {
   font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.22em;
-  color: v.$text-color-secondary;
+  color: v.$color-brand-primary;
+  font-weight: 900;
 }
 
 .slateSummaryValue {
@@ -151,6 +182,7 @@ $mobile-column-short: 30px;
   flex-wrap: wrap;
   gap: v.$space-sm;
   grid-column: 1 / -1;
+  display: none;
 }
 
 .slateActionLink {
@@ -234,6 +266,9 @@ $mobile-column-short: 30px;
 
     v.$background-light 19%,
     v.$background-light 20%,
+
+    color.adjust(v.$secondary-color, $lightness: -18%) 20%,
+    color.adjust(v.$background-light, $lightness: -4%) 35%,
 
     v.$background-light 80%,
     v.$background-light 81%,
@@ -370,7 +405,6 @@ $mobile-column-short: 30px;
 
 .gamesContainer {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
   gap: v.$space-lg;
   padding: v.$space-lg;
   border-left: v.$background-light;
@@ -378,14 +412,20 @@ $mobile-column-short: 30px;
   border-bottom: v.$background-light;
   border-top: none;
   align-items: stretch;
-  justify-items: stretch;
+}
 
-  > * {
-    width: 100%;
-    max-width: none;
-    margin: 0;
-    min-width: 0;
-  }
+.gamesGrid {
+  width: min(100%, calc((4 * 320px) + (3 * #{v.$space-lg})));
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: v.$space-lg;
+}
+
+.gamesGrid > .gameLink {
+  flex: 0 1 320px;
+  max-width: 320px;
 }
 
 .gameLink {
@@ -393,7 +433,6 @@ $mobile-column-short: 30px;
   color: inherit;
   display: block; // Ensure link takes up block space for layout
   min-width: 0;
-  height: 100%;
   transition: transform 0.2s v.$transition-easing; // Add subtle hover effect
 
   &:hover {
@@ -1065,7 +1104,7 @@ $mobile-column-short: 30px;
 
   .slateSummaryCard {
     min-height: 0;
-    padding: v.$space-sm;
+    padding: v.$space-sm v.$space-sm v.$space-sm calc(v.$space-sm + 10px);
   }
 
   .slateSummaryLabel {
@@ -1115,6 +1154,18 @@ $mobile-column-short: 30px;
       max-width: 100%;
       margin: v.$space-xs;
     }
+  }
+
+  .gamesGrid {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: v.$space-xs;
+  }
+
+  .gamesGrid > .gameLink {
+    flex: 1 1 auto;
+    max-width: 100%;
   }
 
   .gameColumnLabels {

@@ -36,10 +36,10 @@ export type PlayerStatsTableProps<Row extends PlayerStatsTableRow = PlayerStatsT
 };
 
 const STICKY_COLUMN_WIDTHS: Record<string, number> = {
-  playerName: 220,
-  teamLabel: 112,
-  positionCode: 92,
-  gamesPlayed: 72,
+  playerName: 188,
+  teamLabel: 72,
+  positionCode: 56,
+  gamesPlayed: 48,
   toiSeconds: 96,
 };
 
@@ -132,7 +132,7 @@ export default function PlayerStatsTable<Row extends PlayerStatsTableRow>({
                       aria-pressed={header.isActive}
                       aria-label={`Sort by ${header.column.label}`}
                     >
-                      <span>{header.column.label}</span>
+                      <span>{getVisibleHeaderLabel(header.column.key, header.column.label)}</span>
                       <span className={styles.sortIndicator} aria-hidden="true">
                         {header.isActive
                           ? header.direction === "desc"
@@ -232,4 +232,12 @@ export default function PlayerStatsTable<Row extends PlayerStatsTableRow>({
 
 function capitalize(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+function getVisibleHeaderLabel(columnKey: string, label: string): string {
+  if (columnKey === "positionCode") {
+    return "POS";
+  }
+
+  return label;
 }

@@ -3,7 +3,7 @@ import Head from "next/head";
 
 import styles from "./cssTestingGrounds.module.scss";
 
-type ShowcaseStatus = "review" | "approved" | "planned";
+type ShowcaseStatus = "review" | "approved" | "planned" | "deferred";
 
 interface ShowcaseItem {
   id: string;
@@ -33,7 +33,7 @@ const reviewQueue: ShowcaseItem[] = [
 
 // Move any currently reviewed showcase section IDs here so they render near the top
 // of the page without disturbing their long-term home further down.
-const pinnedShowcaseSectionIds = ["controls"];
+const pinnedShowcaseSectionIds: string[] = [];
 
 const showcaseSections: ShowcaseSection[] = [
   {
@@ -46,17 +46,17 @@ const showcaseSections: ShowcaseSection[] = [
         id: "dashboard-shell",
         title: "Dashboard shell",
         family: "Page shell",
-        status: "planned",
+        status: "approved",
         notes:
-          "Primary reference for bento-style dashboards, page padding, and page title stack."
+          "Approved canonical dashboard page shell drawn from DraftDashboard spacing, hierarchy, and multi-panel workspace structure."
       },
       {
         id: "data-shell",
         title: "Data-page shell",
         family: "Page shell",
-        status: "planned",
+        status: "approved",
         notes:
-          "Softer analytics shell for `underlying-stats`, tables, and chart-led pages."
+          "Approved softer analytics shell validated against the restyled underlying-stats production pages."
       }
     ]
   },
@@ -70,25 +70,25 @@ const showcaseSections: ShowcaseSection[] = [
         id: "standard-panel",
         title: "Standard panel",
         family: "Panel",
-        status: "planned",
+        status: "approved",
         notes:
-          "Canonical default shell for dashboard and table surfaces."
+          "Approved default shell for dashboard and table surfaces using the shared panel primitive."
       },
       {
         id: "accent-card",
         title: "Left-accent card",
         family: "Card",
-        status: "planned",
+        status: "approved",
         notes:
-          "Reference for recommendation cards, insight cards, and spotlight modules."
+          "Approved spotlight-card pattern based on SuggestedPicks and other left-accent production cards."
       },
       {
         id: "empty-state",
         title: "Empty state",
         family: "State block",
-        status: "planned",
+        status: "approved",
         notes:
-          "Show empty, loading, and error states without replacing the parent panel shell."
+          "Approved in-panel empty/loading/state treatment. Page-level empty-state canon remains a separate deferred family."
       }
     ]
   },
@@ -102,25 +102,25 @@ const showcaseSections: ShowcaseSection[] = [
         id: "button-set",
         title: "Button set",
         family: "Controls",
-        status: "planned",
+        status: "approved",
         notes:
-          "Primary, secondary, ghost, and compact dashboard buttons should be reviewed together."
+          "Approved against GameGrid dense controls and aligned compact dashboard utility buttons."
       },
       {
         id: "segmented-toggle",
         title: "Segmented toggle",
         family: "Controls",
-        status: "planned",
+        status: "approved",
         notes:
-          "Review active, hover, focus, and disabled states as one grouped control."
+          "Approved against the GameGrid mode toggle pattern with grouped active, hover, focus, and disabled behavior."
       },
       {
         id: "search-row",
         title: "Search and filter row",
         family: "Controls",
-        status: "planned",
+        status: "approved",
         notes:
-          "Use this area to validate input density, dropdown sizing, and row wrapping behavior."
+          "Approved against ProjectionsTable, MyRoster, and PlayerStatsFilters for input density, select behavior, and dropdown positioning."
       }
     ]
   },
@@ -134,17 +134,17 @@ const showcaseSections: ShowcaseSection[] = [
         id: "table-shell",
         title: "Analytics table",
         family: "Table",
-        status: "planned",
+        status: "approved",
         notes:
-          "Review sticky headers, numeric alignment, density, row states, and empty rows."
+          "Approved sticky-header analytics table pattern aligned to ProjectionsTable, DraftBoard, and production underlying-stats tables."
       },
       {
         id: "chart-frame",
         title: "Chart frame",
         family: "Chart",
-        status: "planned",
+        status: "deferred",
         notes:
-          "Review chart container spacing, toolbar placement, legend treatment, and support notes."
+          "Deferred until a stronger chart-first production page is documented and reviewed against the sandbox."
       }
     ]
   }
@@ -153,13 +153,15 @@ const showcaseSections: ShowcaseSection[] = [
 const statusLabel: Record<ShowcaseStatus, string> = {
   review: "In review",
   approved: "Approved",
-  planned: "Planned"
+  planned: "Planned",
+  deferred: "Deferred"
 };
 
 const statusColor: Record<ShowcaseStatus, string> = {
   review: "#ffc857",
   approved: "#00c896",
-  planned: "#07aae2"
+  planned: "#07aae2",
+  deferred: "#8b95a7"
 };
 
 function renderGuideRefs(refs: string[]) {
