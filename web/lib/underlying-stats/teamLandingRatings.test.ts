@@ -1,8 +1,36 @@
 import { describe, expect, it } from "vitest";
 import {
   computeTrendOverridesFromHistory,
+  mergeUnderlyingStatsLandingRatings,
   resolveUnderlyingStatsLandingSnapshot
 } from "./teamLandingRatings";
+import type { TeamRating } from "../teamRatingsService";
+
+const buildRating = (teamAbbr: string, date: string): TeamRating => ({
+  teamAbbr,
+  date,
+  offRating: 100,
+  defRating: 100,
+  paceRating: 100,
+  ppTier: 2,
+  pkTier: 2,
+  trend10: 0,
+  components: {
+    xgf60: 1,
+    gf60: 1,
+    sf60: 1,
+    xga60: 1,
+    ga60: 1,
+    sa60: 1,
+    pace60: 1
+  },
+  finishingRating: null,
+  goalieRating: null,
+  dangerRating: null,
+  specialRating: null,
+  disciplineRating: null,
+  varianceFlag: null
+});
 
 describe("computeTrendOverridesFromHistory", () => {
   it("computes trend from the latest played snapshot against the prior 10 snapshots", () => {
@@ -48,29 +76,11 @@ describe("resolveUnderlyingStatsLandingSnapshot", () => {
       if (date === "2026-04-04") {
         return [
           {
-            teamAbbr: "TOR",
-            date,
-            offRating: 100,
-            defRating: 100,
-            paceRating: 100,
+            ...buildRating("TOR", date),
             ppTier: 1 as const,
             pkTier: 1 as const,
             trend10: 1,
-            components: {
-              xgf60: 1,
-              gf60: 1,
-              sf60: 1,
-              xga60: 1,
-              ga60: 1,
-              sa60: 1,
-              pace60: 1
-            },
-            finishingRating: null,
-            goalieRating: null,
-            dangerRating: null,
-            specialRating: null,
-            disciplineRating: null,
-            varianceFlag: null
+            sos: 111.11
           }
         ];
       }
@@ -93,29 +103,11 @@ describe("resolveUnderlyingStatsLandingSnapshot", () => {
   it("returns the first valid available date when the requested date is invalid", async () => {
     const fetchRatings = async (date: string) => [
       {
-        teamAbbr: "DET",
-        date,
+        ...buildRating("DET", date),
         offRating: 99,
         defRating: 99,
         paceRating: 99,
-        ppTier: 2 as const,
-        pkTier: 2 as const,
-        trend10: 0,
-        components: {
-          xgf60: 1,
-          gf60: 1,
-          sf60: 1,
-          xga60: 1,
-          ga60: 1,
-          sa60: 1,
-          pace60: 1
-        },
-        finishingRating: null,
-        goalieRating: null,
-        dangerRating: null,
-        specialRating: null,
-        disciplineRating: null,
-        varianceFlag: null
+        sos: 98.76
       }
     ];
 
@@ -128,5 +120,47 @@ describe("resolveUnderlyingStatsLandingSnapshot", () => {
     expect(result.requestedDate).toBe("not-a-date");
     expect(result.resolvedDate).toBe("2026-04-05");
     expect(result.ratings[0]?.date).toBe("2026-04-05");
+  });
+});
+
+describe("mergeUnderlyingStatsLandingRatings", () => {
+  it("merges repaired trend and sos values into landing-page rows", () => {
+    const result = mergeUnderlyingStatsLandingRatings({
+      baseRatings: [buildRating("TOR", "2026-04-05"), buildRating("DET", "2026-04-05")],
+      trendOverrides: new Map([
+        ["TOR", 2.34]
+      ]),
+      scheduleStrengthByTeam: new Map([
+        [
+          "TOR",
+          {
+            teamAbbr: "TOR",
+            date: "2026-04-05",
+            sos: 117.59,
+            standingsComponentScore: 124.23,
+            predictiveComponentScore: 110.94,
+            standingsRaw: 0.61,
+            predictiveRaw: 108.2,
+            directOpponentPointPct: 0.58,
+            opponentScheduleContext: 0.55,
+            opponentGamesPlayed: 77,
+            uniqueOpponents: 31
+          }
+        ]
+      ])
+    });
+
+    expect(result).toEqual([
+      expect.objectContaining({
+        teamAbbr: "TOR",
+        trend10: 2.34,
+        sos: 117.59
+      }),
+      expect.objectContaining({
+        teamAbbr: "DET",
+        trend10: 0,
+        sos: null
+      })
+    ]);
   });
 });

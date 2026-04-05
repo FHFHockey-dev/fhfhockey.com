@@ -11,6 +11,11 @@
 - `/Users/tim/Code/fhfhockey.com/tasks/artifacts/underlying-stats-sos-predictive-component.md` - Task `2.3` artifact defining the predictive/context half of `SoS` from current snapshot opponent Power Scores and documenting why additional component fields were not promoted into the core formula.
 - `/Users/tim/Code/fhfhockey.com/tasks/artifacts/underlying-stats-sos-optional-context-decision.md` - Task `2.4` artifact deciding which optional schedule/context adjustments are excluded from the shipped core `SoS` formula and why.
 - `/Users/tim/Code/fhfhockey.com/tasks/artifacts/underlying-stats-sos-final-formula.md` - Task `2.5` artifact documenting the full shipped `SoS` formula, assumptions, exclusions, and the line between verified sources and implementation choices.
+- `/Users/tim/Code/fhfhockey.com/tasks/artifacts/underlying-stats-sos-helper-implementation.md` - Task `3.1` artifact documenting the landing-page-only SoS helper, its exact inputs, normalization behavior, and the targeted synthetic and live-snapshot verification results.
+- `/Users/tim/Code/fhfhockey.com/tasks/artifacts/underlying-stats-sos-data-path-extension.md` - Task `3.2` artifact documenting the landing-page row-type extension, the merged `trend10 + sos` fetch path, and the targeted unit and live data-path verification.
+- `/Users/tim/Code/fhfhockey.com/tasks/artifacts/underlying-stats-sos-table-column.md` - Task `3.3` artifact documenting the landing-page table-column insertion, the current `SoS` render convention, and the scope-safe verification results.
+- `/Users/tim/Code/fhfhockey.com/tasks/artifacts/underlying-stats-sos-display-conventions.md` - Task `3.4` artifact documenting the final `SoS` scan treatment, why the table remains sorted by `Power`, and the targeted verification results.
+- `/Users/tim/Code/fhfhockey.com/tasks/artifacts/underlying-stats-sos-copy-update.md` - Task `3.5` artifact documenting the landing-page legend, header, summary, and table-copy updates for the shipped `SoS` formula and repaired trend wording.
 - `/Users/tim/Code/fhfhockey.com/web/pages/underlying-stats/index.tsx` - Main landing-page route, SSR date loading, table rendering, summary cards, and metric copy.
 - `/Users/tim/Code/fhfhockey.com/web/pages/underlying-stats/indexUS.module.scss` - Landing-page-specific layout and table styling that must stay aligned to the FHFH style system.
 - `/Users/tim/Code/fhfhockey.com/web/pages/statsPlaceholder.tsx` - Legacy placeholder page showing the older standings-only SoS approach and its OWP-style assumptions.
@@ -49,7 +54,7 @@
   - [x] 1.4 Fix the trend path so the landing page receives a valid comparative trend value, or introduce a safe landing-page fallback computation if upstream correction is not sufficient on its own.
   - [x] 1.5 Replace the current raw-row-limited date loading approach with a distinct snapshot-date strategy so the selector exposes the actual available dates.
   - [x] 1.6 Preserve the existing “latest valid snapshot” fallback behavior for SSR and client-side date changes after the date-loading fix.
-- [ ] 2.0 Design the landing-page `SoS` model using a 50/50 split between standings-based strength and predictive/context strength
+- [x] 2.0 Design the landing-page `SoS` model using a 50/50 split between standings-based strength and predictive/context strength
   - [x] 2.1 Inventory the schedule, standings, and team-strength inputs that are verifiably available from `games`, `team_power_ratings_daily`, `nhl_standings_details`, and any trustworthy existing SoS sources.
   - [x] 2.2 Define the standings-based 50% of `SoS`, including the exact opponent-quality inputs to use and how they are normalized.
   - [x] 2.3 Define the predictive/context 50% of `SoS`, prioritizing existing power-score and play-driving inputs that match the landing page’s team-rating model.
@@ -58,11 +63,11 @@
 
 - [ ] NEW 7.0 Refresh `nhl_standings_details` ingestion so record/split fields like goal differential and home/road standings can be reconsidered later without snapshot staleness.
 - [ ] 3.0 Implement the `SoS` data path and add the `SoS` column to the `/underlying-stats` landing-page table
-  - [ ] 3.1 Add or extend a dedicated helper that computes landing-page `SoS` from the selected snapshot date and the verified source inputs.
-  - [ ] 3.2 Extend the landing-page server/data-fetching path so each team row includes the computed `SoS` value needed by the UI.
-  - [ ] 3.3 Add the `SoS` table column and rendering logic to `web/pages/underlying-stats/index.tsx` without altering `/underlying-stats/playerStats`.
-  - [ ] 3.4 Decide on the table formatting, sorting behavior, and display conventions for `SoS` so it scans cleanly next to the existing metrics.
-  - [ ] 3.5 Update the metric legend or explanatory copy so the page accurately describes the new `SoS` metric and any corrected trend behavior.
+  - [x] 3.1 Add or extend a dedicated helper that computes landing-page `SoS` from the selected snapshot date and the verified source inputs.
+  - [x] 3.2 Extend the landing-page server/data-fetching path so each team row includes the computed `SoS` value needed by the UI.
+  - [x] 3.3 Add the `SoS` table column and rendering logic to `web/pages/underlying-stats/index.tsx` without altering `/underlying-stats/playerStats`.
+  - [x] 3.4 Decide on the table formatting, sorting behavior, and display conventions for `SoS` so it scans cleanly next to the existing metrics.
+  - [x] 3.5 Update the metric legend or explanatory copy so the page accurately describes the new `SoS` metric and any corrected trend behavior.
 - [ ] 4.0 Tighten the `/underlying-stats` landing-page layout and copy so it aligns with the FHFH table-heavy data-page style system
   - [ ] 4.1 Review the rendered landing page against `fhfh-styles.md` and identify the specific header, spacing, and module-density changes needed to make the page more table-first.
   - [ ] 4.2 Tighten the top-of-page layout in `web/pages/underlying-stats/indexUS.module.scss` so the summary and support modules do not push the table too far below the fold.

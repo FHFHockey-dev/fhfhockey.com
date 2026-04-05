@@ -15,6 +15,10 @@ import {
   isValidIsoDate,
   type TeamRating
 } from "../teamRatingsService";
+import {
+  fetchUnderlyingStatsTeamScheduleStrengthForRatings,
+  type UnderlyingStatsTeamScheduleStrength
+} from "./teamScheduleStrength";
 
 type TeamOffRatingSnapshot = {
   date: string;
@@ -27,12 +31,16 @@ type TrendCacheEntry = {
   payload: Map<string, number>;
 };
 
-type LandingRatingsFetcher = (date: string) => Promise<TeamRating[]>;
+export type UnderlyingStatsLandingRating = TeamRating & {
+  sos: number | null;
+};
+
+type LandingRatingsFetcher = (date: string) => Promise<UnderlyingStatsLandingRating[]>;
 
 export type UnderlyingStatsLandingSnapshot = {
   requestedDate: string | null;
   resolvedDate: string | null;
-  ratings: TeamRating[];
+  ratings: UnderlyingStatsLandingRating[];
 };
 
 const TREND_LOOKBACK_DAYS = 150;
@@ -193,7 +201,7 @@ export const deriveTrendOverridesForDate = async (
 
 export const fetchUnderlyingStatsLandingRatings = async (
   date: string
-): Promise<TeamRating[]> => {
+): Promise<UnderlyingStatsLandingRating[]> => {
   if (!isValidIsoDate(date)) {
     return [];
   }
@@ -202,12 +210,30 @@ export const fetchUnderlyingStatsLandingRatings = async (
     fetchTeamRatings(date),
     deriveTrendOverridesForDate(date)
   ]);
+  const scheduleStrengthByTeam =
+    await fetchUnderlyingStatsTeamScheduleStrengthForRatings(date, baseRatings);
 
-  return baseRatings.map((rating) => ({
-    ...rating,
-    trend10: trendOverrides.get(rating.teamAbbr) ?? rating.trend10
-  }));
+  return mergeUnderlyingStatsLandingRatings({
+    baseRatings,
+    trendOverrides,
+    scheduleStrengthByTeam
+  });
 };
+
+export const mergeUnderlyingStatsLandingRatings = ({
+  baseRatings,
+  trendOverrides,
+  scheduleStrengthByTeam
+}: {
+  baseRatings: TeamRating[];
+  trendOverrides: Map<string, number>;
+  scheduleStrengthByTeam: Map<string, UnderlyingStatsTeamScheduleStrength>;
+}): UnderlyingStatsLandingRating[] =>
+  baseRatings.map((rating) => ({
+    ...rating,
+    trend10: trendOverrides.get(rating.teamAbbr) ?? rating.trend10,
+    sos: scheduleStrengthByTeam.get(rating.teamAbbr)?.sos ?? null
+  }));
 
 export const resolveUnderlyingStatsLandingSnapshot = async ({
   requestedDate,

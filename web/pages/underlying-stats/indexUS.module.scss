@@ -576,6 +576,7 @@ $page-max-width: 1200px;
 }
 
 .powerCell,
+.sosCell,
 .trendCell,
 .componentCell,
 .varianceCell {
@@ -585,6 +586,11 @@ $page-max-width: 1200px;
 .powerCell {
   color: v.$color-brand-yellow;
   font-weight: 700;
+}
+
+.sosCell {
+  color: v.$color-white;
+  font-weight: 600;
 }
 
 .teamCell {
@@ -634,7 +640,12 @@ $page-max-width: 1200px;
   text-align: center;
 }
 
+.sosCell {
+  text-align: center;
+}
+
 .componentBadge,
+.sosPill,
 .tierBadge,
 .variancePill {
   display: inline-flex;
@@ -650,6 +661,11 @@ $page-max-width: 1200px;
 
 .componentBadge {
   min-width: 42px;
+  padding: 0 v.$space-xs;
+}
+
+.sosPill {
+  min-width: 48px;
   padding: 0 v.$space-xs;
 }
 
