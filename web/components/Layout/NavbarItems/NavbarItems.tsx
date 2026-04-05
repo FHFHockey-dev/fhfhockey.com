@@ -95,7 +95,8 @@ function NavbarItems_({ items, onItemClick }: NavBarItemsProps) {
               <li
                 key={idx}
                 className={classNames(styles.link, {
-                  [styles.active]: isLinkActive(item)
+                  [styles.active]: isLinkActive(item),
+                  [styles.underlyingStatsLink]: item.accent === "yellow"
                 })}
                 onClick={() => onItemClick(item)}
               >

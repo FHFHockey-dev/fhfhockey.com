@@ -6,6 +6,7 @@ export type NavbarItemLink = {
   type: "link";
   label: string;
   href: string;
+  accent?: "yellow";
 };
 
 export type NavbarItemCategory = {
@@ -16,6 +17,12 @@ export type NavbarItemCategory = {
 
 const ITEMS_DATA: NavbarItem[] = [
   { type: "link", label: "HOME", href: "/" },
+  {
+    type: "link",
+    label: "UNDERLYING STATS",
+    href: "/underlying-stats",
+    accent: "yellow"
+  },
   { type: "link", label: "PODCAST", href: "/podfeed" },
   {
     type: "category",

@@ -94,6 +94,20 @@ nav.items.small {
     &:hover {
       color: var(--navbar-accent, #07aae2);
     }
+
+    &.underlyingStatsLink {
+      color: $color-brand-yellow;
+      border-radius: 8px;
+      transition:
+        color 180ms ease,
+        background-color 180ms ease;
+
+      &.active,
+      &:hover {
+        color: $color-brand-yellow;
+        background-color: $yellow-color-opaque;
+      }
+    }
   }
 }
 
@@ -187,6 +201,26 @@ nav.items.large {
         &.active,
         &:hover {
           color: var(--navbar-accent, #07aae2);
+        }
+
+        &.underlyingStatsLink {
+          color: $color-brand-yellow;
+          border-radius: 8px;
+          transition:
+            color 180ms ease,
+            background-color 180ms ease;
+
+          a {
+            padding-left: 10px;
+            padding-right: 10px;
+            border-radius: 8px;
+          }
+
+          &.active,
+          &:hover {
+            color: $color-brand-yellow;
+            background-color: $yellow-color-opaque;
+          }
         }
       }
     }
