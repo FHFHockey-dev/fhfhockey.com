@@ -6,12 +6,16 @@ import { format, parseISO } from "date-fns";
 import styles from "./indexUS.module.scss";
 import supabaseServer from "../../lib/supabase/server";
 import {
-  fetchTeamRatings,
   type TeamRating,
   type SpecialTeamTier
 } from "../../lib/teamRatingsService";
 import { computeTeamPowerScore } from "../../lib/dashboard/teamContext";
 import { teamsInfo } from "../../lib/teamsInfo";
+import { fetchDistinctUnderlyingStatsSnapshotDates } from "../../lib/underlying-stats/availableSnapshotDates";
+import {
+  resolveUnderlyingStatsLandingSnapshot,
+  type UnderlyingStatsLandingSnapshot
+} from "../../lib/underlying-stats/teamLandingRatings";
 
 type PageProps = {
   initialDate: string | null;
@@ -110,16 +114,27 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
     setIsLoading(true);
     setError(null);
 
-    fetch(`/api/team-ratings?date=${selectedDate}`)
+    fetch(`/api/underlying-stats/team-ratings?date=${selectedDate}`)
       .then((response) => {
         if (!response.ok) {
           throw new Error(`Unable to load ratings (${response.status})`);
         }
-        return response.json() as Promise<TeamRating[]>;
+        return response.json() as Promise<UnderlyingStatsLandingSnapshot>;
       })
       .then((data) => {
         if (!isMounted) return;
-        setRatings(data);
+        setRatings(data.ratings);
+        if (data.resolvedDate && data.resolvedDate !== selectedDate) {
+          setSelectedDate(data.resolvedDate);
+          router.replace(
+            {
+              pathname: router.pathname,
+              query: { date: data.resolvedDate }
+            },
+            undefined,
+            { shallow: true }
+          );
+        }
       })
       .catch((fetchError: unknown) => {
         if (!isMounted) return;
@@ -139,7 +154,7 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
     return () => {
       isMounted = false;
     };
-  }, [selectedDate, initialDate]);
+  }, [selectedDate, initialDate, router]);
 
   const dateOptions = useMemo(() => {
     const unique = Array.from(new Set(availableDates));
@@ -599,39 +614,20 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
       typeof context.query.date === "string" ? context.query.date : undefined;
 
     const supabase = supabaseServer;
-    const { data: rawDates, error: datesError } = await supabase
-      .from("team_power_ratings_daily")
-      .select("date")
-      .order("date", { ascending: false })
-      .limit(90);
-
-    if (datesError) {
-      throw datesError;
-    }
-
-    const availableDates = Array.from(
-      new Set(
-        (rawDates ?? [])
-          .map((row) => row.date as string | null)
-          .filter((value): value is string => Boolean(value))
-      )
+    const availableDates = await fetchDistinctUnderlyingStatsSnapshotDates(
+      90,
+      supabase
     );
 
-    let targetDate = requestedDate ?? availableDates[0] ?? null;
-    let initialRatings: TeamRating[] = [];
-
-    if (targetDate) {
-      initialRatings = await fetchTeamRatings(targetDate);
-      if (!initialRatings.length && availableDates.length) {
-        targetDate = availableDates[0];
-        initialRatings = await fetchTeamRatings(targetDate);
-      }
-    }
+    const snapshot = await resolveUnderlyingStatsLandingSnapshot({
+      requestedDate,
+      availableDates
+    });
 
     return {
       props: {
-        initialDate: targetDate,
-        initialRatings,
+        initialDate: snapshot.resolvedDate,
+        initialRatings: snapshot.ratings,
         availableDates
       }
     };
