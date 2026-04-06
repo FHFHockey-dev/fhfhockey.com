@@ -36,10 +36,38 @@ type ShiftRow = Pick<
   | "duration_seconds"
 >;
 
-type SkaterSplitKey = "all" | "ev" | "fiveOnFive" | "pp" | "pk";
-type GoalieSplitKey = "all" | "ev" | "fiveOnFive" | "pp" | "pk";
+type SkaterSplitKey =
+  | "all"
+  | "ev"
+  | "fiveOnFive"
+  | "pp"
+  | "pk"
+  | "fiveOnFourPP"
+  | "fourOnFivePK"
+  | "threeOnThree"
+  | "withEmptyNet"
+  | "againstEmptyNet";
+type GoalieSplitKey =
+  | "all"
+  | "ev"
+  | "fiveOnFive"
+  | "pp"
+  | "pk"
+  | "fiveOnFourPP"
+  | "fourOnFivePK"
+  | "threeOnThree"
+  | "withEmptyNet"
+  | "againstEmptyNet";
 type TeamRelativeZoneCode = "O" | "N" | "D";
 type DangerBucket = "high" | "medium" | "low";
+type ScoreStateFilter =
+  | "allScores"
+  | "tied"
+  | "leading"
+  | "trailing"
+  | "withinOne"
+  | "upOne"
+  | "downOne";
 
 export type SkaterCountsRow = {
   player_id: number;
@@ -306,6 +334,12 @@ type StrengthSegment = {
   strengthExact: string | null;
   homeState: StrengthState | null;
   awayState: StrengthState | null;
+  awayGoalie: number;
+  awaySkaters: number;
+  homeSkaters: number;
+  homeGoalie: number;
+  homeScore: number | null;
+  awayScore: number | null;
 };
 
 type RawSkaterAccumulator = Omit<
@@ -595,17 +629,276 @@ function buildStrengthSegments(
       strengthExact: formatStrengthExact(parsed),
       homeState: classifyTeamStrengthState(parsed, homeTeamId, homeTeamId, awayTeamId),
       awayState: classifyTeamStrengthState(parsed, awayTeamId, homeTeamId, awayTeamId),
+      awayGoalie: parsed.awayGoalie,
+      awaySkaters: parsed.awaySkaters,
+      homeSkaters: parsed.homeSkaters,
+      homeGoalie: parsed.homeGoalie,
+      homeScore: event.home_score,
+      awayScore: event.away_score,
     });
   }
 
   return segments;
 }
 
+function resolveTeamRelativeSituation(args: {
+  teamId: number;
+  homeTeamId: number;
+  awayTeamId: number;
+  awayGoalie: number;
+  awaySkaters: number;
+  homeSkaters: number;
+  homeGoalie: number;
+  homeState: StrengthState | null;
+  awayState: StrengthState | null;
+}) {
+  if (args.teamId === args.homeTeamId) {
+    return {
+      teamSkaters: args.homeSkaters,
+      opponentSkaters: args.awaySkaters,
+      teamGoalie: args.homeGoalie,
+      opponentGoalie: args.awayGoalie,
+      teamState: args.homeState,
+    };
+  }
+
+  if (args.teamId === args.awayTeamId) {
+    return {
+      teamSkaters: args.awaySkaters,
+      opponentSkaters: args.homeSkaters,
+      teamGoalie: args.awayGoalie,
+      opponentGoalie: args.homeGoalie,
+      teamState: args.awayState,
+    };
+  }
+
+  return null;
+}
+
+function matchesRelativeStrengthSplit(args: {
+  split: Exclude<SkaterSplitKey, "all">;
+  teamSkaters: number;
+  opponentSkaters: number;
+  teamGoalie: number;
+  opponentGoalie: number;
+  teamState: StrengthState | null;
+}) {
+  const {
+    split,
+    teamSkaters,
+    opponentSkaters,
+    teamGoalie,
+    opponentGoalie,
+    teamState,
+  } = args;
+
+  if (split === "ev") {
+    return teamState === "EV";
+  }
+
+  if (split === "fiveOnFive") {
+    return teamGoalie > 0 && opponentGoalie > 0 && teamSkaters === 5 && opponentSkaters === 5;
+  }
+
+  if (split === "pp") {
+    return teamState === "PP";
+  }
+
+  if (split === "pk") {
+    return teamState === "SH";
+  }
+
+  if (split === "fiveOnFourPP") {
+    return teamState === "PP" && teamGoalie > 0 && opponentGoalie > 0 && teamSkaters === 5 && opponentSkaters === 4;
+  }
+
+  if (split === "fourOnFivePK") {
+    return teamState === "SH" && teamGoalie > 0 && opponentGoalie > 0 && teamSkaters === 4 && opponentSkaters === 5;
+  }
+
+  if (split === "threeOnThree") {
+    return teamGoalie > 0 && opponentGoalie > 0 && teamSkaters === 3 && opponentSkaters === 3;
+  }
+
+  if (split === "withEmptyNet") {
+    return teamGoalie === 0;
+  }
+
+  return opponentGoalie === 0;
+}
+
+function getSplitKeysForTeamSituation(args: {
+  teamId: number;
+  homeTeamId: number;
+  awayTeamId: number;
+  awayGoalie: number;
+  awaySkaters: number;
+  homeSkaters: number;
+  homeGoalie: number;
+  homeState: StrengthState | null;
+  awayState: StrengthState | null;
+}): Array<Exclude<SkaterSplitKey, "all">> {
+  const relative = resolveTeamRelativeSituation(args);
+  if (!relative) {
+    return [];
+  }
+
+  const splits: Array<Exclude<SkaterSplitKey, "all">> = [];
+
+  for (const split of [
+    "ev",
+    "fiveOnFive",
+    "pp",
+    "pk",
+    "fiveOnFourPP",
+    "fourOnFivePK",
+    "threeOnThree",
+    "withEmptyNet",
+    "againstEmptyNet",
+  ] as const) {
+    if (
+      matchesRelativeStrengthSplit({
+        split,
+        ...relative,
+      })
+    ) {
+      splits.push(split);
+    }
+  }
+
+  return splits;
+}
+
+function getScoreStateBucketFromDiff(diff: number): Exclude<ScoreStateFilter, "allScores"> {
+  if (diff === 0) {
+    return "tied";
+  }
+
+  if (diff === 1) {
+    return "upOne";
+  }
+
+  if (diff === -1) {
+    return "downOne";
+  }
+
+  if (diff > 0) {
+    return "leading";
+  }
+
+  return "trailing";
+}
+
+function matchesScoreStateFromDiff(scoreState: ScoreStateFilter, diff: number | null) {
+  if (scoreState === "allScores") {
+    return true;
+  }
+
+  if (diff == null) {
+    return false;
+  }
+
+  if (scoreState === "withinOne") {
+    return Math.abs(diff) <= 1;
+  }
+
+  return getScoreStateBucketFromDiff(diff) === scoreState;
+}
+
+function getTeamScoreDiff(args: {
+  teamId: number;
+  homeTeamId: number;
+  awayTeamId: number;
+  homeScore: number | null;
+  awayScore: number | null;
+}): number | null {
+  if (args.homeScore == null || args.awayScore == null) {
+    return null;
+  }
+
+  if (args.teamId === args.homeTeamId) {
+    return args.homeScore - args.awayScore;
+  }
+
+  if (args.teamId === args.awayTeamId) {
+    return args.awayScore - args.homeScore;
+  }
+
+  return null;
+}
+
+function getPreEventScores(
+  event: ParsedNhlPbpEvent,
+  homeTeamId: number,
+  awayTeamId: number
+) {
+  let homeScore = event.home_score;
+  let awayScore = event.away_score;
+
+  if (event.type_desc_key === "goal") {
+    const goalOwnerTeamId = event.event_owner_team_id;
+
+    if (goalOwnerTeamId != null) {
+      if (goalOwnerTeamId === homeTeamId && homeScore != null) {
+        homeScore -= 1;
+      } else if (goalOwnerTeamId === awayTeamId && awayScore != null) {
+        awayScore -= 1;
+      }
+    }
+  }
+
+  return { homeScore, awayScore };
+}
+
+function matchesEventScoreState(args: {
+  scoreState: ScoreStateFilter;
+  teamId: number;
+  homeTeamId: number;
+  awayTeamId: number;
+  event: ParsedNhlPbpEvent;
+}) {
+  const { homeScore, awayScore } = getPreEventScores(
+    args.event,
+    args.homeTeamId,
+    args.awayTeamId
+  );
+  return matchesScoreStateFromDiff(
+    args.scoreState,
+    getTeamScoreDiff({
+      teamId: args.teamId,
+      homeTeamId: args.homeTeamId,
+      awayTeamId: args.awayTeamId,
+      homeScore,
+      awayScore,
+    })
+  );
+}
+
+function matchesSegmentScoreState(args: {
+  scoreState: ScoreStateFilter;
+  teamId: number;
+  homeTeamId: number;
+  awayTeamId: number;
+  segment: StrengthSegment;
+}) {
+  return matchesScoreStateFromDiff(
+    args.scoreState,
+    getTeamScoreDiff({
+      teamId: args.teamId,
+      homeTeamId: args.homeTeamId,
+      awayTeamId: args.awayTeamId,
+      homeScore: args.segment.homeScore,
+      awayScore: args.segment.awayScore,
+    })
+  );
+}
+
 function accumulateToiBySplit(
   intervals: NhlShiftInterval[],
   segments: StrengthSegment[],
   homeTeamId: number,
-  awayTeamId: number
+  awayTeamId: number,
+  scoreState: ScoreStateFilter
 ): Record<SkaterSplitKey, Map<number, number>> {
   const splitMaps: Record<SkaterSplitKey, Map<number, number>> = {
     all: new Map<number, number>(),
@@ -613,13 +906,20 @@ function accumulateToiBySplit(
     fiveOnFive: new Map<number, number>(),
     pp: new Map<number, number>(),
     pk: new Map<number, number>(),
+    fiveOnFourPP: new Map<number, number>(),
+    fourOnFivePK: new Map<number, number>(),
+    threeOnThree: new Map<number, number>(),
+    withEmptyNet: new Map<number, number>(),
+    againstEmptyNet: new Map<number, number>(),
   };
 
   for (const interval of intervals) {
-    splitMaps.all.set(
-      interval.playerId,
-      (splitMaps.all.get(interval.playerId) ?? 0) + interval.durationSeconds
-    );
+    if (scoreState === "allScores") {
+      splitMaps.all.set(
+        interval.playerId,
+        (splitMaps.all.get(interval.playerId) ?? 0) + interval.durationSeconds
+      );
+    }
 
     const relevantSegments = segments.filter(
       (segment) =>
@@ -632,30 +932,42 @@ function accumulateToiBySplit(
       const overlapEnd = Math.min(interval.endSecond, segment.endSecond);
       if (overlapEnd <= overlapStart) continue;
 
-      const duration = overlapEnd - overlapStart;
-      const teamState =
-        interval.teamId === homeTeamId ? segment.homeState : segment.awayState;
+      if (
+        !matchesSegmentScoreState({
+          scoreState,
+          teamId: interval.teamId,
+          homeTeamId,
+          awayTeamId,
+          segment,
+        })
+      ) {
+        continue;
+      }
 
-      if (teamState === "EV") {
-        splitMaps.ev.set(
+      const duration = overlapEnd - overlapStart;
+      if (scoreState !== "allScores") {
+        splitMaps.all.set(
           interval.playerId,
-          (splitMaps.ev.get(interval.playerId) ?? 0) + duration
+          (splitMaps.all.get(interval.playerId) ?? 0) + duration
         );
-        if (segment.strengthExact === "5v5") {
-          splitMaps.fiveOnFive.set(
-            interval.playerId,
-            (splitMaps.fiveOnFive.get(interval.playerId) ?? 0) + duration
-          );
-        }
-      } else if (teamState === "PP") {
-        splitMaps.pp.set(
+      }
+
+      const splits = getSplitKeysForTeamSituation({
+        teamId: interval.teamId,
+        homeTeamId,
+        awayTeamId,
+        awayGoalie: segment.awayGoalie,
+        awaySkaters: segment.awaySkaters,
+        homeSkaters: segment.homeSkaters,
+        homeGoalie: segment.homeGoalie,
+        homeState: segment.homeState,
+        awayState: segment.awayState,
+      });
+
+      for (const split of splits) {
+        splitMaps[split].set(
           interval.playerId,
-          (splitMaps.pp.get(interval.playerId) ?? 0) + duration
-        );
-      } else if (teamState === "SH") {
-        splitMaps.pk.set(
-          interval.playerId,
-          (splitMaps.pk.get(interval.playerId) ?? 0) + duration
+          (splitMaps[split].get(interval.playerId) ?? 0) + duration
         );
       }
     }
@@ -669,7 +981,8 @@ function accumulateGoalieToiBySplit(
   goalieIds: Set<number>,
   segments: StrengthSegment[],
   homeTeamId: number,
-  awayTeamId: number
+  awayTeamId: number,
+  scoreState: ScoreStateFilter
 ): Record<GoalieSplitKey, Map<number, number>> {
   const splitMaps: Record<GoalieSplitKey, Map<number, number>> = {
     all: new Map<number, number>(),
@@ -677,15 +990,21 @@ function accumulateGoalieToiBySplit(
     fiveOnFive: new Map<number, number>(),
     pp: new Map<number, number>(),
     pk: new Map<number, number>(),
+    fiveOnFourPP: new Map<number, number>(),
+    fourOnFivePK: new Map<number, number>(),
+    threeOnThree: new Map<number, number>(),
+    withEmptyNet: new Map<number, number>(),
+    againstEmptyNet: new Map<number, number>(),
   };
 
   for (const interval of intervals) {
     if (!goalieIds.has(interval.playerId)) continue;
-
-    splitMaps.all.set(
-      interval.playerId,
-      (splitMaps.all.get(interval.playerId) ?? 0) + interval.durationSeconds
-    );
+    if (scoreState === "allScores") {
+      splitMaps.all.set(
+        interval.playerId,
+        (splitMaps.all.get(interval.playerId) ?? 0) + interval.durationSeconds
+      );
+    }
 
     const relevantSegments = segments.filter(
       (segment) =>
@@ -698,31 +1017,42 @@ function accumulateGoalieToiBySplit(
       const overlapEnd = Math.min(interval.endSecond, segment.endSecond);
       if (overlapEnd <= overlapStart) continue;
 
-      const duration = overlapEnd - overlapStart;
-      const teamState =
-        interval.teamId === homeTeamId ? segment.homeState : segment.awayState;
+      if (
+        !matchesSegmentScoreState({
+          scoreState,
+          teamId: interval.teamId,
+          homeTeamId,
+          awayTeamId,
+          segment,
+        })
+      ) {
+        continue;
+      }
 
-      if (teamState === "EV") {
-        splitMaps.ev.set(
+      const duration = overlapEnd - overlapStart;
+      if (scoreState !== "allScores") {
+        splitMaps.all.set(
           interval.playerId,
-          (splitMaps.ev.get(interval.playerId) ?? 0) + duration
+          (splitMaps.all.get(interval.playerId) ?? 0) + duration
         );
       }
-      if (segment.strengthExact === "5v5") {
-        splitMaps.fiveOnFive.set(
+
+      const splits = getSplitKeysForTeamSituation({
+        teamId: interval.teamId,
+        homeTeamId,
+        awayTeamId,
+        awayGoalie: segment.awayGoalie,
+        awaySkaters: segment.awaySkaters,
+        homeSkaters: segment.homeSkaters,
+        homeGoalie: segment.homeGoalie,
+        homeState: segment.homeState,
+        awayState: segment.awayState,
+      });
+
+      for (const split of splits) {
+        splitMaps[split].set(
           interval.playerId,
-          (splitMaps.fiveOnFive.get(interval.playerId) ?? 0) + duration
-        );
-      }
-      if (teamState === "PP") {
-        splitMaps.pp.set(
-          interval.playerId,
-          (splitMaps.pp.get(interval.playerId) ?? 0) + duration
-        );
-      } else if (teamState === "SH") {
-        splitMaps.pk.set(
-          interval.playerId,
-          (splitMaps.pk.get(interval.playerId) ?? 0) + duration
+          (splitMaps[split].get(interval.playerId) ?? 0) + duration
         );
       }
     }
@@ -755,45 +1085,6 @@ function buildShiftStartPlayersByMoment(
   );
 }
 
-function getSkaterSplitKeys(
-  teamState: StrengthState | null,
-  strengthExact: string | null
-): SkaterSplitKey[] {
-  const splits: SkaterSplitKey[] = [];
-
-  if (teamState === "EV") {
-    splits.push("ev");
-    if (strengthExact === "5v5") {
-      splits.push("fiveOnFive");
-    }
-  } else if (teamState === "PP") {
-    splits.push("pp");
-  } else if (teamState === "SH") {
-    splits.push("pk");
-  }
-
-  return splits;
-}
-
-function getGoalieSplitKeys(
-  teamState: StrengthState | null,
-  strengthExact: string | null
-): GoalieSplitKey[] {
-  const splits: GoalieSplitKey[] = ["all"];
-  if (teamState === "EV") {
-    splits.push("ev");
-  }
-  if (strengthExact === "5v5") {
-    splits.push("fiveOnFive");
-  }
-  if (teamState === "PP") {
-    splits.push("pp");
-  } else if (teamState === "SH") {
-    splits.push("pk");
-  }
-  return splits;
-}
-
 function addToNullableNumber(value: number | null, delta: number | null): number | null {
   if (delta == null) return value;
   return (value ?? 0) + delta;
@@ -808,8 +1099,10 @@ export function buildNstParityMetrics(
     season: number | null;
     homeTeamId: number;
     awayTeamId: number;
+    scoreState?: ScoreStateFilter;
   }
 ): NhlNstParityMetricsOutput {
+  const scoreState = options.scoreState ?? "allScores";
   const sortedEvents = sortEvents(events);
   const normalizedIntervals = normalizeShiftIntervals(shiftRows);
   const stints = buildShiftStints(shiftRows);
@@ -843,14 +1136,16 @@ export function buildNstParityMetrics(
     normalizedIntervals.filter((interval) => skaterIds.has(interval.playerId)),
     strengthSegments,
     options.homeTeamId,
-    options.awayTeamId
+    options.awayTeamId,
+    scoreState
   );
   const goalieToiBySplit = accumulateGoalieToiBySplit(
     normalizedIntervals,
     goalieIds,
     strengthSegments,
     options.homeTeamId,
-    options.awayTeamId
+    options.awayTeamId,
+    scoreState
   );
 
   const skaterCountsAcc: Record<SkaterSplitKey, Map<number, RawSkaterAccumulator>> = {
@@ -859,6 +1154,11 @@ export function buildNstParityMetrics(
     fiveOnFive: new Map(),
     pp: new Map(),
     pk: new Map(),
+    fiveOnFourPP: new Map(),
+    fourOnFivePK: new Map(),
+    threeOnThree: new Map(),
+    withEmptyNet: new Map(),
+    againstEmptyNet: new Map(),
   };
   const skaterOiAcc: Record<SkaterSplitKey, Map<number, RawSkaterOiAccumulator>> = {
     all: new Map(),
@@ -866,6 +1166,11 @@ export function buildNstParityMetrics(
     fiveOnFive: new Map(),
     pp: new Map(),
     pk: new Map(),
+    fiveOnFourPP: new Map(),
+    fourOnFivePK: new Map(),
+    threeOnThree: new Map(),
+    withEmptyNet: new Map(),
+    againstEmptyNet: new Map(),
   };
   const goalieAcc: Record<GoalieSplitKey, Map<number, RawGoalieAccumulator>> = {
     all: new Map(),
@@ -873,6 +1178,11 @@ export function buildNstParityMetrics(
     fiveOnFive: new Map(),
     pp: new Map(),
     pk: new Map(),
+    fiveOnFourPP: new Map(),
+    fourOnFivePK: new Map(),
+    threeOnThree: new Map(),
+    withEmptyNet: new Map(),
+    againstEmptyNet: new Map(),
   };
 
   for (let index = 0; index < sortedEvents.length; index += 1) {
@@ -911,9 +1221,33 @@ export function buildNstParityMetrics(
       if (playerId == null) return;
       const teamId = playerTeamId.get(playerId);
       if (teamId == null) return;
-      const teamState =
-        teamId === options.homeTeamId ? homeState : awayState;
-      const splits = getSkaterSplitKeys(teamState, event.strength_exact ?? null);
+      if (
+        !matchesEventScoreState({
+          scoreState,
+          teamId,
+          homeTeamId: options.homeTeamId,
+          awayTeamId: options.awayTeamId,
+          event,
+        })
+      ) {
+        return;
+      }
+
+      const parsedSituationForEvent = parseSituationCode(event.situation_code);
+      const splits =
+        parsedSituationForEvent == null
+          ? []
+          : getSplitKeysForTeamSituation({
+              teamId,
+              homeTeamId: options.homeTeamId,
+              awayTeamId: options.awayTeamId,
+              awayGoalie: parsedSituationForEvent.awayGoalie,
+              awaySkaters: parsedSituationForEvent.awaySkaters,
+              homeSkaters: parsedSituationForEvent.homeSkaters,
+              homeGoalie: parsedSituationForEvent.homeGoalie,
+              homeState,
+              awayState,
+            });
       increment(getOrCreate(skaterCountsAcc.all, playerId, defaultSkaterAccumulator));
       for (const split of splits) {
         increment(getOrCreate(skaterCountsAcc[split], playerId, defaultSkaterAccumulator));
@@ -922,10 +1256,42 @@ export function buildNstParityMetrics(
 
     const addOnIceStat = (
       playerIds: number[],
-      splits: readonly SkaterSplitKey[],
       increment: (acc: RawSkaterOiAccumulator) => void
     ) => {
       for (const playerId of playerIds) {
+        const teamId = playerTeamId.get(playerId);
+        if (teamId == null) {
+          continue;
+        }
+
+        if (
+          !matchesEventScoreState({
+            scoreState,
+            teamId,
+            homeTeamId: options.homeTeamId,
+            awayTeamId: options.awayTeamId,
+            event,
+          })
+        ) {
+          continue;
+        }
+
+        const parsedSituationForEvent = parseSituationCode(event.situation_code);
+        const splits =
+          parsedSituationForEvent == null
+            ? []
+            : getSplitKeysForTeamSituation({
+                teamId,
+                homeTeamId: options.homeTeamId,
+                awayTeamId: options.awayTeamId,
+                awayGoalie: parsedSituationForEvent.awayGoalie,
+                awaySkaters: parsedSituationForEvent.awaySkaters,
+                homeSkaters: parsedSituationForEvent.homeSkaters,
+                homeGoalie: parsedSituationForEvent.homeGoalie,
+                homeState,
+                awayState,
+              });
+
         increment(getOrCreate(skaterOiAcc.all, playerId, defaultSkaterOiAccumulator));
         for (const split of splits) {
           increment(getOrCreate(skaterOiAcc[split], playerId, defaultSkaterOiAccumulator));
@@ -1028,21 +1394,11 @@ export function buildNstParityMetrics(
     }
 
     if (shot) {
-      const ownerSplits = getSkaterSplitKeys(
-        event.event_owner_team_id === options.homeTeamId ? homeState : awayState
-        ,
-        shot.strengthExact
-      );
-      const opponentSplits = getSkaterSplitKeys(
-        event.event_owner_team_id === options.homeTeamId ? awayState : homeState
-        ,
-        shot.strengthExact
-      );
       const xgValue = getApproximateXgValue(shot);
       const dangerBucket = getDangerBucket(shot);
       const scoringChance = isScoringChance(shot);
 
-      addOnIceStat(attribution.ownerPlayerIds, ownerSplits, (acc) => {
+      addOnIceStat(attribution.ownerPlayerIds, (acc) => {
         if (!shot.isOwnGoal && SHOT_ATTEMPT_TYPES.has(shot.shotEventType ?? "")) {
           acc.cf += 1;
         }
@@ -1069,7 +1425,9 @@ export function buildNstParityMetrics(
         }
       });
 
-      addOnIceStat(attribution.opponentPlayerIds, opponentSplits, (acc) => {
+      addOnIceStat(
+        attribution.opponentPlayerIds,
+        (acc) => {
         if (!shot.isOwnGoal && SHOT_ATTEMPT_TYPES.has(shot.shotEventType ?? "")) {
           acc.ca += 1;
         }
@@ -1094,18 +1452,42 @@ export function buildNstParityMetrics(
           acc.ldca = (acc.ldca ?? 0) + 1;
           if (shot.isGoal) acc.ldga = (acc.ldga ?? 0) + 1;
         }
-      });
+        }
+      );
 
       if (shot.goalieInNetId != null) {
         const goalieTeamId =
           event.event_owner_team_id === options.homeTeamId
             ? options.awayTeamId
             : options.homeTeamId;
-        const goalieState =
-          goalieTeamId === options.homeTeamId ? homeState : awayState;
-        const goalieSplits = getGoalieSplitKeys(goalieState, shot.strengthExact);
+        const parsedSituationForEvent = parseSituationCode(event.situation_code);
 
-        for (const split of goalieSplits) {
+        if (
+          parsedSituationForEvent == null ||
+          !matchesEventScoreState({
+            scoreState,
+            teamId: goalieTeamId,
+            homeTeamId: options.homeTeamId,
+            awayTeamId: options.awayTeamId,
+            event,
+          })
+        ) {
+          continue;
+        }
+
+        const goalieSplits = getSplitKeysForTeamSituation({
+          teamId: goalieTeamId,
+          homeTeamId: options.homeTeamId,
+          awayTeamId: options.awayTeamId,
+          awayGoalie: parsedSituationForEvent.awayGoalie,
+          awaySkaters: parsedSituationForEvent.awaySkaters,
+          homeSkaters: parsedSituationForEvent.homeSkaters,
+          homeGoalie: parsedSituationForEvent.homeGoalie,
+          homeState,
+          awayState,
+        });
+
+        for (const split of ["all", ...goalieSplits] as const) {
           const acc = getOrCreate(goalieAcc[split], shot.goalieInNetId, defaultGoalieAccumulator);
           if (!shot.isOwnGoal && SHOT_ON_GOAL_TYPES.has(shot.shotEventType ?? "")) {
             acc.shots_against += 1;
@@ -1159,8 +1541,6 @@ export function buildNstParityMetrics(
           ) ?? []
         : [];
       for (const teamId of [options.homeTeamId, options.awayTeamId]) {
-        const teamState = teamId === options.homeTeamId ? homeState : awayState;
-        const splits = getSkaterSplitKeys(teamState, event.strength_exact ?? null);
         const playerIds =
           teamId === options.homeTeamId
             ? attribution.homeTeam.playerIds
@@ -1175,12 +1555,12 @@ export function buildNstParityMetrics(
         );
         if (zone == null) continue;
 
-        addOnIceStat(playerIds, splits, (acc) => {
+        addOnIceStat(playerIds, (acc) => {
           if (zone === "O") acc.off_zone_faceoffs += 1;
           if (zone === "N") acc.neu_zone_faceoffs += 1;
           if (zone === "D") acc.def_zone_faceoffs += 1;
         });
-        addOnIceStat(zoneStartPlayerIds, splits, (acc) => {
+        addOnIceStat(zoneStartPlayerIds, (acc) => {
           if (zone === "O") acc.off_zone_starts += 1;
           if (zone === "N") acc.neu_zone_starts += 1;
           if (zone === "D") acc.def_zone_starts += 1;
@@ -1472,6 +1852,11 @@ export function buildNstParityMetrics(
       fiveOnFive: buildSkaterSplitParity("fiveOnFive"),
       pp: buildSkaterSplitParity("pp"),
       pk: buildSkaterSplitParity("pk"),
+      fiveOnFourPP: buildSkaterSplitParity("fiveOnFourPP"),
+      fourOnFivePK: buildSkaterSplitParity("fourOnFivePK"),
+      threeOnThree: buildSkaterSplitParity("threeOnThree"),
+      withEmptyNet: buildSkaterSplitParity("withEmptyNet"),
+      againstEmptyNet: buildSkaterSplitParity("againstEmptyNet"),
     },
     goalies: {
       all: buildGoalieSplitParity("all"),
@@ -1479,6 +1864,11 @@ export function buildNstParityMetrics(
       fiveOnFive: buildGoalieSplitParity("fiveOnFive"),
       pp: buildGoalieSplitParity("pp"),
       pk: buildGoalieSplitParity("pk"),
+      fiveOnFourPP: buildGoalieSplitParity("fiveOnFourPP"),
+      fourOnFivePK: buildGoalieSplitParity("fourOnFivePK"),
+      threeOnThree: buildGoalieSplitParity("threeOnThree"),
+      withEmptyNet: buildGoalieSplitParity("withEmptyNet"),
+      againstEmptyNet: buildGoalieSplitParity("againstEmptyNet"),
     },
   };
 }

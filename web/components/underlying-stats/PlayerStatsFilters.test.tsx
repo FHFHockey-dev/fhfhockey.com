@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import {
@@ -89,7 +89,7 @@ describe("PlayerStatsFilters", () => {
     const onScopeChange = vi.fn();
     const onTradeModeChange = vi.fn();
 
-    render(
+    const view = render(
       <PlayerStatsFilters
         state={{
           ...state,
@@ -145,12 +145,15 @@ describe("PlayerStatsFilters", () => {
     });
     expect(onMinimumToiChange).toHaveBeenCalledWith(900);
 
-    fireEvent.change(screen.getByLabelText("Scope"), {
-      target: { value: "gameRange" },
-    });
+    fireEvent.change(
+      within(view.container).getByPlaceholderText("Last X player games"),
+      {
+      target: { value: "12" },
+      }
+    );
     expect(onScopeChange).toHaveBeenCalledWith({
       kind: "gameRange",
-      value: null,
+      value: 12,
     });
 
     fireEvent.change(screen.getByLabelText("Combine or Split"), {
@@ -198,7 +201,7 @@ describe("PlayerStatsFilters", () => {
 
     expect(
       screen.getByText(
-        "Primary controls now drive the canonical detail filter state. Against Specific Team filters the selected player's rows by opponent team, not by the player's own team."
+        "Primary controls drive the canonical detail query."
       )
     ).toBeTruthy();
 

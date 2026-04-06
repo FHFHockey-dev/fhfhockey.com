@@ -27,6 +27,7 @@ import {
   normalizeCanonicalPlayerPositionCode,
   type CanonicalPlayerPositionCode,
   type PlayerStatsDetailApiRow,
+  type PlayerStatsLandingChartPoint,
   type PlayerStatsLandingApiRow,
 } from "./playerStatsQueries";
 
@@ -36,6 +37,7 @@ import type {
   PlayerStatsFilterState,
   PlayerStatsLandingFilterState,
   PlayerStatsMode,
+  PlayerStatsScoreState,
   PlayerStatsSeasonType,
   PlayerStatsSortDirection,
   PlayerStatsStrength,
@@ -266,12 +268,8 @@ const PLAYER_STATS_PG_SOURCE_ROSTER_SELECT = PLAYER_STATS_SOURCE_ROSTER_SELECT;
 
 let playerStatsPgPool: Pool | null = null;
 
-type PlayerStatsSupportedStrength =
-  | "allStrengths"
-  | "evenStrength"
-  | "fiveOnFive"
-  | "powerPlay"
-  | "penaltyKill";
+type PlayerStatsSupportedStrength = PlayerStatsStrength;
+type PlayerStatsSupportedScoreState = PlayerStatsScoreState;
 
 type PlayerStatsNativeSkaterSplitKey =
   keyof NhlNstParityMetricsOutput["skaters"];
@@ -412,6 +410,8 @@ type PlayerStatsLandingAggregationRow = {
   positionCode: CanonicalPlayerPositionCode;
   teamId: number | null;
   teamLabel: string;
+  windowStartDate: string | null;
+  windowEndDate: string | null;
   gamesPlayed: number;
   toiSeconds: number | null;
   toiPerGameSeconds: number | null;
@@ -438,6 +438,12 @@ type PlayerStatsDetailAggregationResult = {
   sort: PlayerStatsDetailFilterState["view"]["sort"];
 };
 
+export type PlayerStatsLandingChartResult = {
+  playerId: number;
+  family: PlayerStatsTableFamily;
+  rows: PlayerStatsLandingChartPoint[];
+};
+
 type PlayerStatsSeasonAggregateCacheEntry = {
   cachedAt: number;
   rows: PlayerStatsLandingAggregationRow[];
@@ -447,6 +453,7 @@ type PlayerStatsLandingSummaryRow = {
   kind: PlayerStatsLandingAppearanceContext["kind"];
   mode: PlayerStatsMode;
   strength: PlayerStatsSupportedStrength;
+  scoreState: PlayerStatsSupportedScoreState;
   supportedDisplayModes: PlayerStatsDisplayMode[];
   playerId: number;
   playerName: string;
@@ -474,6 +481,12 @@ type PlayerStatsLandingSummaryPayload = {
   };
   rows: PlayerStatsLandingSummaryRow[];
 };
+
+function getSummaryRowScoreState(
+  row: Pick<Partial<PlayerStatsLandingSummaryRow>, "scoreState">
+): PlayerStatsSupportedScoreState {
+  return row.scoreState ?? "allScores";
+}
 
 const playerStatsSeasonAggregateCache = new Map<
   string,
@@ -545,6 +558,14 @@ async function fetchAllSupabaseRows<TRow>(
 }
 
 function getPlayerStatsPgPool(): Pool | null {
+  const allowDirectPg =
+    process.env.PLAYER_STATS_USE_DIRECT_PG === "true" ||
+    process.env.NODE_ENV === "production";
+
+  if (!allowDirectPg) {
+    return null;
+  }
+
   const dbConfig = readPlayerStatsDbConfigFromEnv();
   if (dbConfig == null) {
     return null;
@@ -642,17 +663,31 @@ async function fetchSupabaseRowsForGameChunks<TRow>(args: {
     data: unknown[] | null;
     error: unknown;
   }>;
+  concurrency?: number;
 }): Promise<TRow[]> {
-  const rows: TRow[] = [];
+  const concurrency = Math.max(1, Math.trunc(args.concurrency ?? 1));
+  const chunkRows = new Array<TRow[]>(args.gameIdChunks.length);
+  let nextIndex = 0;
 
-  for (const gameIdChunk of args.gameIdChunks) {
-    const chunkRows = await fetchAllSupabaseRows<TRow>((from, to) =>
-      args.fetchChunkPage(gameIdChunk, from, to)
-    );
-    rows.push(...chunkRows);
+  async function runWorker() {
+    while (nextIndex < args.gameIdChunks.length) {
+      const currentIndex = nextIndex;
+      nextIndex += 1;
+
+      chunkRows[currentIndex] = await fetchAllSupabaseRows<TRow>((from, to) =>
+        args.fetchChunkPage(args.gameIdChunks[currentIndex] ?? [], from, to)
+      );
+    }
   }
 
-  return rows;
+  await Promise.all(
+    Array.from(
+      { length: Math.min(concurrency, args.gameIdChunks.length) },
+      () => runWorker()
+    )
+  );
+
+  return chunkRows.flat();
 }
 
 export function resolvePlayerStatsSeasonGameType(
@@ -935,6 +970,7 @@ export function buildPlayerStatsNativeGameParity(args: {
   events: readonly PlayerStatsSourceEventRow[];
   shiftRows: readonly PlayerStatsSourceShiftRow[];
   ownGoalEventIds?: ReadonlySet<number>;
+  scoreState?: PlayerStatsSupportedScoreState;
 }) {
   const parsedEvents = buildStoredPbpEventSequence(
     args.events,
@@ -954,6 +990,7 @@ export function buildPlayerStatsNativeGameParity(args: {
       season: args.game.seasonId,
       homeTeamId: args.game.homeTeamId,
       awayTeamId: args.game.awayTeamId,
+      scoreState: args.scoreState,
     }),
     shotFeatures,
   };
@@ -1302,6 +1339,7 @@ async function fetchPlayerStatsSummaryPayloadRows(args: {
 
   return fetchSupabaseRowsForGameChunks<PlayerStatsSummaryPayloadRow>({
     gameIdChunks: chunkNumberArray(args.gameIds, GAME_ID_CHUNK_SIZE),
+    concurrency: 6,
     fetchChunkPage: async (gameIdChunk, from, to) =>
       client
         .from("nhl_api_game_payloads_raw")
@@ -1377,6 +1415,7 @@ async function fetchPlayerStatsOfficialLandingPayloadRows(args: {
 
   const rows = await fetchSupabaseRowsForGameChunks<PlayerStatsSummaryPayloadRow>({
     gameIdChunks: chunkNumberArray(args.gameIds, GAME_ID_CHUNK_SIZE),
+    concurrency: 6,
     fetchChunkPage: async (gameIdChunk, from, to) =>
       client
         .from("nhl_api_game_payloads_raw")
@@ -1392,7 +1431,8 @@ async function fetchPlayerStatsOfficialLandingPayloadRows(args: {
 }
 
 export function buildPlayerStatsLandingParityByGame(
-  bundle: PlayerStatsLandingSourceBundle
+  bundle: PlayerStatsLandingSourceBundle,
+  scoreState: PlayerStatsSupportedScoreState = "allScores"
 ): PlayerStatsLandingNativeGameParity[] {
   return bundle.games.map((game) => {
     const nativeGame = buildPlayerStatsNativeGameParity({
@@ -1403,6 +1443,7 @@ export function buildPlayerStatsLandingParityByGame(
         game,
         bundle.shiftRowsByGameId.get(game.id) ?? []
       ),
+      scoreState,
     });
 
     return {
@@ -1434,13 +1475,18 @@ function resolveLandingTableFamily(
 function isSupportedLandingStrength(
   strength: PlayerStatsStrength
 ): strength is PlayerStatsSupportedStrength {
-  return (
-    strength === "allStrengths" ||
-    strength === "evenStrength" ||
-    strength === "fiveOnFive" ||
-    strength === "powerPlay" ||
-    strength === "penaltyKill"
-  );
+  return [
+    "allStrengths",
+    "evenStrength",
+    "fiveOnFive",
+    "powerPlay",
+    "penaltyKill",
+    "fiveOnFourPP",
+    "fourOnFivePK",
+    "threeOnThree",
+    "withEmptyNet",
+    "againstEmptyNet",
+  ].includes(strength);
 }
 
 function resolveSkaterSplitKey(
@@ -1484,7 +1530,239 @@ function resolveGoalieSplitKey(
     return "pp";
   }
 
-  return "pk";
+  if (strength === "penaltyKill") {
+    return "pk";
+  }
+
+  if (strength === "fiveOnFourPP") {
+    return "fiveOnFourPP";
+  }
+
+  if (strength === "fourOnFivePK") {
+    return "fourOnFivePK";
+  }
+
+  if (strength === "threeOnThree") {
+    return "threeOnThree";
+  }
+
+  if (strength === "withEmptyNet") {
+    return "withEmptyNet";
+  }
+
+  return "againstEmptyNet";
+}
+
+function parseStrengthExactCounts(
+  strengthExact: string | null
+): { homeSkaters: number | null; awaySkaters: number | null } {
+  const match = strengthExact?.match(/^(\d+)v(\d+)$/);
+  if (!match) {
+    return { homeSkaters: null, awaySkaters: null };
+  }
+
+  return {
+    homeSkaters: Number(match[1]),
+    awaySkaters: Number(match[2]),
+  };
+}
+
+function getTeamScoreDiffBucket(diff: number): Exclude<PlayerStatsSupportedScoreState, "allScores"> {
+  if (diff === 0) {
+    return "tied";
+  }
+
+  if (diff === 1) {
+    return "upOne";
+  }
+
+  if (diff === -1) {
+    return "downOne";
+  }
+
+  return diff > 0 ? "leading" : "trailing";
+}
+
+function matchesPlayerStatsScoreState(
+  scoreState: PlayerStatsSupportedScoreState,
+  teamScoreDiff: number | null
+): boolean {
+  if (scoreState === "allScores") {
+    return true;
+  }
+
+  if (teamScoreDiff == null) {
+    return false;
+  }
+
+  if (scoreState === "withinOne") {
+    return Math.abs(teamScoreDiff) <= 1;
+  }
+
+  return getTeamScoreDiffBucket(teamScoreDiff) === scoreState;
+}
+
+function matchesPlayerStatsStrengthForTeam(args: {
+  strength: PlayerStatsSupportedStrength;
+  teamSkaters: number | null;
+  opponentSkaters: number | null;
+  teamGoalieOnIce: boolean | null;
+  opponentGoalieOnIce: boolean | null;
+}): boolean {
+  const {
+    strength,
+    teamSkaters,
+    opponentSkaters,
+    teamGoalieOnIce,
+    opponentGoalieOnIce,
+  } = args;
+
+  if (strength === "allStrengths") {
+    return true;
+  }
+
+  if (teamSkaters == null || opponentSkaters == null) {
+    return false;
+  }
+
+  if (strength === "evenStrength") {
+    return teamSkaters === opponentSkaters;
+  }
+
+  if (strength === "fiveOnFive") {
+    return (
+      teamGoalieOnIce === true &&
+      opponentGoalieOnIce === true &&
+      teamSkaters === 5 &&
+      opponentSkaters === 5
+    );
+  }
+
+  if (strength === "powerPlay") {
+    return teamSkaters > opponentSkaters;
+  }
+
+  if (strength === "penaltyKill") {
+    return teamSkaters < opponentSkaters;
+  }
+
+  if (strength === "fiveOnFourPP") {
+    return (
+      teamGoalieOnIce === true &&
+      opponentGoalieOnIce === true &&
+      teamSkaters === 5 &&
+      opponentSkaters === 4
+    );
+  }
+
+  if (strength === "fourOnFivePK") {
+    return (
+      teamGoalieOnIce === true &&
+      opponentGoalieOnIce === true &&
+      teamSkaters === 4 &&
+      opponentSkaters === 5
+    );
+  }
+
+  if (strength === "threeOnThree") {
+    return (
+      teamGoalieOnIce === true &&
+      opponentGoalieOnIce === true &&
+      teamSkaters === 3 &&
+      opponentSkaters === 3
+    );
+  }
+
+  if (strength === "withEmptyNet") {
+    return teamGoalieOnIce === false;
+  }
+
+  return opponentGoalieOnIce === false;
+}
+
+function getTeamScoreDiffBeforeEvent(args: {
+  event: Pick<
+    ParsedNhlPbpEvent,
+    "type_desc_key" | "event_owner_team_id" | "home_score" | "away_score"
+  >;
+  teamId: number;
+  homeTeamId: number;
+  awayTeamId: number;
+}): number | null {
+  let homeScore = args.event.home_score;
+  let awayScore = args.event.away_score;
+
+  if (
+    args.event.type_desc_key === "goal" &&
+    args.event.event_owner_team_id != null
+  ) {
+    if (args.event.event_owner_team_id === args.homeTeamId && homeScore != null) {
+      homeScore -= 1;
+    } else if (
+      args.event.event_owner_team_id === args.awayTeamId &&
+      awayScore != null
+    ) {
+      awayScore -= 1;
+    }
+  }
+
+  if (homeScore == null || awayScore == null) {
+    return null;
+  }
+
+  if (args.teamId === args.homeTeamId) {
+    return homeScore - awayScore;
+  }
+
+  if (args.teamId === args.awayTeamId) {
+    return awayScore - homeScore;
+  }
+
+  return null;
+}
+
+function filterGoalieShotFeaturesForState(args: {
+  shotFeatures: ReturnType<typeof buildShotFeatureRows>;
+  goalieId: number;
+  isHome: boolean;
+  strength: PlayerStatsSupportedStrength;
+  scoreState: PlayerStatsSupportedScoreState;
+}): ReturnType<typeof buildShotFeatureRows> {
+  return args.shotFeatures.filter((shot) => {
+    if (shot.goalieInNetId !== args.goalieId) {
+      return false;
+    }
+
+    const { homeSkaters, awaySkaters } = parseStrengthExactCounts(shot.strengthExact);
+    const teamSkaters = args.isHome ? homeSkaters : awaySkaters;
+    const opponentSkaters = args.isHome ? awaySkaters : homeSkaters;
+    const teamGoalieOnIce =
+      args.isHome === (shot.eventOwnerSide === "home")
+        ? shot.ownerGoalieOnIce
+        : shot.opponentGoalieOnIce;
+    const opponentGoalieOnIce =
+      args.isHome === (shot.eventOwnerSide === "home")
+        ? shot.opponentGoalieOnIce
+        : shot.ownerGoalieOnIce;
+    const ownerScoreDiff = shot.ownerScoreDiffBeforeEvent;
+    const teamScoreDiff =
+      ownerScoreDiff == null
+        ? null
+        : args.isHome === (shot.eventOwnerSide === "home")
+          ? ownerScoreDiff
+          : ownerScoreDiff * -1;
+
+    return (
+      matchesPlayerStatsStrengthForTeam({
+        strength: args.strength,
+        teamSkaters,
+        opponentSkaters,
+        teamGoalieOnIce,
+        opponentGoalieOnIce,
+      }) &&
+      matchesPlayerStatsScoreState(args.scoreState, teamScoreDiff)
+    );
+  });
 }
 
 function canUsePlayerStatsSeasonAggregateCache(
@@ -1598,6 +1876,13 @@ function compareGamesDescending(
   }
 
   return right.id - left.id;
+}
+
+function compareGamesAscending(
+  left: Pick<PlayerStatsSourceGameRow, "date" | "id">,
+  right: Pick<PlayerStatsSourceGameRow, "date" | "id">
+): number {
+  return compareGamesDescending(right, left);
 }
 
 function toPctDecimal(
@@ -1939,7 +2224,35 @@ function matchesPbpOnlyStrengthForTeam(args: {
     return teamStrengthState === "PP";
   }
 
-  return teamStrengthState === "SH";
+  if (args.strength === "penaltyKill") {
+    return teamStrengthState === "SH";
+  }
+
+  if (args.strength === "fiveOnFourPP") {
+    return teamStrengthState === "PP" && args.event.strength_exact === "5v4";
+  }
+
+  if (args.strength === "fourOnFivePK") {
+    return teamStrengthState === "SH" && args.event.strength_exact === "4v5";
+  }
+
+  if (args.strength === "threeOnThree") {
+    return teamStrengthState === "EV" && args.event.strength_exact === "3v3";
+  }
+
+  const isHomeTeam = args.teamId === args.game.homeTeamId;
+  const teamGoalieOnIce = isHomeTeam
+    ? parsedSituation?.homeGoalie != null && parsedSituation.homeGoalie > 0
+    : parsedSituation?.awayGoalie != null && parsedSituation.awayGoalie > 0;
+  const opponentGoalieOnIce = isHomeTeam
+    ? parsedSituation?.awayGoalie != null && parsedSituation.awayGoalie > 0
+    : parsedSituation?.homeGoalie != null && parsedSituation.homeGoalie > 0;
+
+  if (args.strength === "withEmptyNet") {
+    return teamGoalieOnIce === false;
+  }
+
+  return opponentGoalieOnIce === false;
 }
 
 function addPbpOnlyPlayerMetric(
@@ -2064,9 +2377,21 @@ function buildPbpOnlyIndividualContextsForGame(args: {
     const ownerTeamId = event.event_owner_team_id ?? null;
     const opponentTeamId =
       ownerTeamId == null ? null : resolveOpponentTeamId(args.game, ownerTeamId);
+    const matchesScoreStateForTeam = (teamId: number | null) =>
+      teamId != null &&
+      matchesPlayerStatsScoreState(
+        args.state.primary.scoreState,
+        getTeamScoreDiffBeforeEvent({
+          event,
+          teamId,
+          homeTeamId: args.game.homeTeamId,
+          awayTeamId: args.game.awayTeamId,
+        })
+      );
 
     const eventMatchesStrength = (teamId: number | null) =>
       teamId != null &&
+      matchesScoreStateForTeam(teamId) &&
       matchesPbpOnlyStrengthForTeam({
         strength: args.strength,
         event,
@@ -2492,7 +2817,13 @@ function buildGoalieContextsForGame(args: {
         isHome,
         hasReliableToi: true,
         counts: row,
-        shotFeatures: gameParity.shotFeatures
+        shotFeatures: filterGoalieShotFeaturesForState({
+          shotFeatures: gameParity.shotFeatures,
+          goalieId: row.player_id,
+          isHome,
+          strength: state.primary.strength,
+          scoreState: state.primary.scoreState,
+        }),
       };
 
       return [context];
@@ -2510,12 +2841,6 @@ function buildPlayerStatsLandingContexts(args: {
   if (!isSupportedLandingStrength(state.primary.strength)) {
     throw new Error(
       `Native landing aggregation does not yet support strength "${state.primary.strength}".`
-    );
-  }
-
-  if (state.primary.scoreState !== "allScores") {
-    throw new Error(
-      `Native landing aggregation does not yet support score state "${state.primary.scoreState}".`
     );
   }
 
@@ -2653,6 +2978,139 @@ function getSelectedGamesForTeamContext(args: {
       .slice(0, args.limit == null || args.limit <= 0 ? eligibleGames.length : args.limit)
       .map((game) => game.id)
   );
+}
+
+function getDateBoundsForGameIds(args: {
+  games: readonly PlayerStatsSourceGameRow[];
+  gameIds: Iterable<number>;
+}): { startDate: string | null; endDate: string | null } {
+  const selectedGames = [...args.gameIds]
+    .map((gameId) => args.games.find((game) => game.id === gameId) ?? null)
+    .filter((game): game is PlayerStatsSourceGameRow => game != null)
+    .sort(compareGamesDescending);
+
+  if (selectedGames.length === 0) {
+    return { startDate: null, endDate: null };
+  }
+
+  return {
+    startDate: selectedGames[selectedGames.length - 1]?.date ?? null,
+    endDate: selectedGames[0]?.date ?? null,
+  };
+}
+
+function getDateBoundsForDates(
+  dates: readonly string[]
+): { startDate: string | null; endDate: string | null } {
+  if (dates.length === 0) {
+    return { startDate: null, endDate: null };
+  }
+
+  const sortedDates = [...dates].sort((left, right) => left.localeCompare(right));
+
+  return {
+    startDate: sortedDates[0] ?? null,
+    endDate: sortedDates[sortedDates.length - 1] ?? null,
+  };
+}
+
+function resolveScopeWindowFromTeamSelection(args: {
+  state: PlayerStatsFilterState;
+  games: readonly PlayerStatsSourceGameRow[];
+  teamIds: readonly number[];
+}): { startDate: string | null; endDate: string | null } {
+  const selectedGameIds = new Set<number>();
+
+  for (const teamId of args.teamIds) {
+    const teamGameIds = getSelectedGamesForTeamContext({
+      games: args.games,
+      teamId,
+      venue: args.state.expandable.venue,
+      limit: args.state.expandable.scope.kind === "byTeamGames"
+        ? args.state.expandable.scope.value
+        : null,
+    });
+
+    for (const gameId of teamGameIds) {
+      selectedGameIds.add(gameId);
+    }
+  }
+
+  return getDateBoundsForGameIds({
+    games: args.games,
+    gameIds: selectedGameIds,
+  });
+}
+
+function resolveLandingScopeWindowFromContexts(args: {
+  state: PlayerStatsLandingFilterState;
+  games: readonly PlayerStatsSourceGameRow[];
+  contexts: readonly PlayerStatsLandingAppearanceContext[];
+}): { startDate: string | null; endDate: string | null } {
+  const scope = args.state.expandable.scope;
+
+  if (scope.kind === "dateRange") {
+    return {
+      startDate: scope.startDate,
+      endDate: scope.endDate,
+    };
+  }
+
+  if (scope.kind === "gameRange") {
+    return getDateBoundsForDates(args.contexts.map((context) => context.gameDate));
+  }
+
+  if (scope.kind === "byTeamGames") {
+    const explicitTeamId = args.state.expandable.teamId;
+    const teamIds =
+      explicitTeamId != null
+        ? [explicitTeamId]
+        : [...new Set(args.contexts.map((context) => context.teamId))];
+
+    return resolveScopeWindowFromTeamSelection({
+      state: args.state,
+      games: args.games,
+      teamIds,
+    });
+  }
+
+  return { startDate: null, endDate: null };
+}
+
+function resolveLandingScopeWindowFromSummaryRows(args: {
+  state: PlayerStatsFilterState;
+  games: readonly PlayerStatsSourceGameRow[];
+  rows: readonly PlayerStatsLandingSummaryRow[];
+}): { startDate: string | null; endDate: string | null } {
+  const scope = args.state.expandable.scope;
+
+  if (scope.kind === "dateRange") {
+    return {
+      startDate: scope.startDate,
+      endDate: scope.endDate,
+    };
+  }
+
+  if (scope.kind === "gameRange") {
+    return getDateBoundsForDates(args.rows.map((row) => row.gameDate));
+  }
+
+  if (scope.kind === "byTeamGames") {
+    const explicitTeamId =
+      args.state.surface === "landing" ? args.state.expandable.teamId : null;
+    const teamIds =
+      explicitTeamId != null
+        ? [explicitTeamId]
+        : [...new Set(args.rows.map((row) => row.teamId))];
+
+    return resolveScopeWindowFromTeamSelection({
+      state: args.state,
+      games: args.games,
+      teamIds,
+    });
+  }
+
+  return { startDate: null, endDate: null };
 }
 
 function applyLandingScopeSelection(args: {
@@ -2948,6 +3406,20 @@ const PLAYER_STATS_SUMMARY_SUPPORTED_STRENGTHS: readonly PlayerStatsSupportedStr
   "fiveOnFive",
   "powerPlay",
   "penaltyKill",
+  "fiveOnFourPP",
+  "fourOnFivePK",
+  "threeOnThree",
+  "withEmptyNet",
+  "againstEmptyNet",
+];
+const PLAYER_STATS_SUMMARY_SUPPORTED_SCORE_STATES: readonly PlayerStatsSupportedScoreState[] = [
+  "allScores",
+  "tied",
+  "leading",
+  "trailing",
+  "withinOne",
+  "upOne",
+  "downOne",
 ];
 
 function createPlayerStatsSummaryBuildState(args: {
@@ -2955,6 +3427,7 @@ function createPlayerStatsSummaryBuildState(args: {
   mode: PlayerStatsMode;
   displayMode: PlayerStatsDisplayMode;
   strength: PlayerStatsSupportedStrength;
+  scoreState: PlayerStatsSupportedScoreState;
 }): PlayerStatsLandingFilterState {
   return {
     surface: "landing",
@@ -2965,7 +3438,7 @@ function createPlayerStatsSummaryBuildState(args: {
       },
       seasonType: args.game.type === 3 ? "playoffs" : args.game.type === 1 ? "preSeason" : "regularSeason",
       strength: args.strength,
-      scoreState: "allScores",
+      scoreState: args.scoreState,
       statMode: args.mode,
       displayMode: args.displayMode,
     },
@@ -2994,31 +3467,39 @@ function createPlayerStatsSummaryBuildState(args: {
 function getPlayerStatsSummaryIdentityKey(args: {
   kind: PlayerStatsLandingAppearanceContext["kind"];
   strength: PlayerStatsSupportedStrength;
+  scoreState: PlayerStatsSupportedScoreState;
   playerId: number;
   teamId: number;
 }): string {
-  return `${args.kind}:${args.strength}:${args.playerId}:${args.teamId}`;
+  return `${args.kind}:${args.strength}:${args.scoreState}:${args.playerId}:${args.teamId}`;
 }
 
 function buildPlayerStatsSummaryPartitionSourceUrl(args: {
   gameId: number;
   mode: PlayerStatsMode;
   strength: PlayerStatsSupportedStrength;
+  scoreState: PlayerStatsSupportedScoreState;
 }): string {
-  return `${PLAYER_STATS_SUMMARY_PARTITION_SOURCE_URL_PREFIX}${args.mode}/${args.strength}/${args.gameId}`;
+  const scoreStatePath =
+    args.scoreState === "allScores" ? "" : `${args.scoreState}/`;
+  return `${PLAYER_STATS_SUMMARY_PARTITION_SOURCE_URL_PREFIX}${args.mode}/${args.strength}/${scoreStatePath}${args.gameId}`;
 }
 
 function getPlayerStatsSummaryPartitionPrefix(args: {
   mode: PlayerStatsMode;
   strength: PlayerStatsSupportedStrength;
+  scoreState: PlayerStatsSupportedScoreState;
 }): string {
-  return `${PLAYER_STATS_SUMMARY_PARTITION_SOURCE_URL_PREFIX}${args.mode}/${args.strength}/`;
+  const scoreStatePath =
+    args.scoreState === "allScores" ? "" : `${args.scoreState}/`;
+  return `${PLAYER_STATS_SUMMARY_PARTITION_SOURCE_URL_PREFIX}${args.mode}/${args.strength}/${scoreStatePath}`;
 }
 
 function createPlayerStatsSummaryRowFromContext(args: {
   context: PlayerStatsLandingAppearanceContext;
   mode: PlayerStatsMode;
   strength: PlayerStatsSupportedStrength;
+  scoreState: PlayerStatsSupportedScoreState;
   supportedDisplayModes: PlayerStatsDisplayMode[];
 }): PlayerStatsLandingSummaryRow {
   const metrics = defaultAggregateMetrics();
@@ -3028,6 +3509,7 @@ function createPlayerStatsSummaryRowFromContext(args: {
     kind: args.context.kind,
     mode: args.mode,
     strength: args.strength,
+    scoreState: args.scoreState,
     supportedDisplayModes: args.supportedDisplayModes,
     playerId: args.context.playerId,
     playerName: args.context.playerName,
@@ -3133,6 +3615,7 @@ function buildPlayerStatsGameSummaryRows(args: {
 }): PlayerStatsLandingSummaryRow[] {
   const rows: PlayerStatsLandingSummaryRow[] = [];
   const supportedStrengths = [...PLAYER_STATS_SUMMARY_SUPPORTED_STRENGTHS];
+  const supportedScoreStates = [...PLAYER_STATS_SUMMARY_SUPPORTED_SCORE_STATES];
   const singleGameBundle: PlayerStatsLandingSourceBundle = {
     games: [args.gameParity.game],
     eventsByGameId: new Map([
@@ -3160,84 +3643,115 @@ function buildPlayerStatsGameSummaryRows(args: {
       ],
     ]),
   };
+  const parityByScoreState = new Map<
+    PlayerStatsSupportedScoreState,
+    PlayerStatsLandingNativeGameParity
+  >();
 
-  for (const strength of supportedStrengths) {
-    const individualCountsState = createPlayerStatsSummaryBuildState({
-      game: args.gameParity.game,
-      mode: "individual",
-      displayMode: "counts",
-      strength,
-    });
-    const individualRatesState = createPlayerStatsSummaryBuildState({
-      game: args.gameParity.game,
-      mode: "individual",
-      displayMode: "rates",
-      strength,
-    });
-    const individualCountContexts = buildPlayerStatsLandingContexts({
-      state: individualCountsState,
-      parityByGame: [args.gameParity],
-      bundle: singleGameBundle,
-      identityMaps: args.identityMaps,
-    });
-    const individualRateContextKeys = new Set(
-      buildPlayerStatsLandingContexts({
-        state: individualRatesState,
-        parityByGame: [args.gameParity],
-        bundle: singleGameBundle,
-        identityMaps: args.identityMaps,
-      }).map((context) =>
-        getPlayerStatsSummaryIdentityKey({
-          kind: context.kind,
-          strength,
-          playerId: context.playerId,
-          teamId: context.teamId,
-        })
-      )
-    );
+  for (const scoreState of supportedScoreStates) {
+    const parityForScoreState =
+      scoreState === "allScores"
+        ? args.gameParity
+        : buildPlayerStatsLandingParityByGame(singleGameBundle, scoreState)[0];
 
-    for (const context of individualCountContexts) {
-      const contextKey = getPlayerStatsSummaryIdentityKey({
-        kind: context.kind,
-        strength,
-        playerId: context.playerId,
-        teamId: context.teamId,
-      });
-      rows.push(
-        createPlayerStatsSummaryRowFromContext({
-          context,
-          mode: "individual",
-          strength,
-          supportedDisplayModes: individualRateContextKeys.has(contextKey)
-            ? ["counts", "rates"]
-            : ["counts"],
-        })
-      );
+    if (parityForScoreState == null) {
+      continue;
     }
 
-    for (const mode of ["onIce", "goalies"] as const) {
-      const modeState = createPlayerStatsSummaryBuildState({
+    parityByScoreState.set(scoreState, parityForScoreState);
+  }
+
+  for (const scoreState of supportedScoreStates) {
+    const parityForScoreState = parityByScoreState.get(scoreState);
+    if (!parityForScoreState) {
+      continue;
+    }
+
+    for (const strength of supportedStrengths) {
+      const individualCountsState = createPlayerStatsSummaryBuildState({
         game: args.gameParity.game,
-        mode,
+        mode: "individual",
         displayMode: "counts",
         strength,
+        scoreState,
       });
-      const contexts = buildPlayerStatsLandingContexts({
-        state: modeState,
-        parityByGame: [args.gameParity],
+      const individualRatesState = createPlayerStatsSummaryBuildState({
+        game: args.gameParity.game,
+        mode: "individual",
+        displayMode: "rates",
+        strength,
+        scoreState,
+      });
+      const individualCountContexts = buildPlayerStatsLandingContexts({
+        state: individualCountsState,
+        parityByGame: [parityForScoreState],
         bundle: singleGameBundle,
         identityMaps: args.identityMaps,
       });
+      const individualRateContextKeys = new Set(
+        buildPlayerStatsLandingContexts({
+          state: individualRatesState,
+          parityByGame: [parityForScoreState],
+          bundle: singleGameBundle,
+          identityMaps: args.identityMaps,
+        }).map((context) =>
+          getPlayerStatsSummaryIdentityKey({
+            kind: context.kind,
+            strength,
+            scoreState,
+            playerId: context.playerId,
+            teamId: context.teamId,
+          })
+        )
+      );
 
-      for (const context of contexts) {
+      for (const context of individualCountContexts) {
+        const contextKey = getPlayerStatsSummaryIdentityKey({
+          kind: context.kind,
+          strength,
+          scoreState,
+          playerId: context.playerId,
+          teamId: context.teamId,
+        });
         rows.push(
           createPlayerStatsSummaryRowFromContext({
             context,
-            mode,
+            mode: "individual",
             strength,
-            supportedDisplayModes: ["counts", "rates"],
+            scoreState,
+            supportedDisplayModes: individualRateContextKeys.has(contextKey)
+              ? ["counts", "rates"]
+              : ["counts"],
           })
         );
+      }
+
+      for (const mode of ["onIce", "goalies"] as const) {
+        const modeState = createPlayerStatsSummaryBuildState({
+          game: args.gameParity.game,
+          mode,
+          displayMode: "counts",
+          strength,
+          scoreState,
+        });
+        const contexts = buildPlayerStatsLandingContexts({
+          state: modeState,
+          parityByGame: [parityForScoreState],
+          bundle: singleGameBundle,
+          identityMaps: args.identityMaps,
+        });
+
+        for (const context of contexts) {
+          rows.push(
+            createPlayerStatsSummaryRowFromContext({
+              context,
+              mode,
+              strength,
+              scoreState,
+              supportedDisplayModes: ["counts", "rates"],
+            })
+          );
+        }
       }
     }
   }
@@ -3269,6 +3783,7 @@ function partitionPlayerStatsLandingSummaryPayload(
 ): Array<{
   mode: PlayerStatsMode;
   strength: PlayerStatsSupportedStrength;
+  scoreState: PlayerStatsSupportedScoreState;
   payload: PlayerStatsLandingSummaryPayload;
 }> {
   const rowsByPartition = new Map<
@@ -3276,12 +3791,14 @@ function partitionPlayerStatsLandingSummaryPayload(
     {
       mode: PlayerStatsMode;
       strength: PlayerStatsSupportedStrength;
+      scoreState: PlayerStatsSupportedScoreState;
       rows: PlayerStatsLandingSummaryRow[];
     }
   >();
 
   for (const row of payload.rows) {
-    const key = `${row.mode}:${row.strength}`;
+    const scoreState = getSummaryRowScoreState(row);
+    const key = `${row.mode}:${row.strength}:${scoreState}`;
     const existing = rowsByPartition.get(key);
 
     if (existing) {
@@ -3292,6 +3809,7 @@ function partitionPlayerStatsLandingSummaryPayload(
     rowsByPartition.set(key, {
       mode: row.mode,
       strength: row.strength,
+      scoreState,
       rows: [row],
     });
   }
@@ -3299,6 +3817,7 @@ function partitionPlayerStatsLandingSummaryPayload(
   return [...rowsByPartition.values()].map((partition) => ({
     mode: partition.mode,
     strength: partition.strength,
+    scoreState: partition.scoreState,
     payload: {
       ...payload,
       rows: partition.rows,
@@ -3313,6 +3832,7 @@ function buildPlayerStatsGameSummaryPartitionPayloads(args: {
 }): Array<{
   mode: PlayerStatsMode;
   strength: PlayerStatsSupportedStrength;
+  scoreState: PlayerStatsSupportedScoreState;
   payload: PlayerStatsLandingSummaryPayload;
 }> {
   return partitionPlayerStatsLandingSummaryPayload(
@@ -3337,7 +3857,26 @@ function parsePlayerStatsLandingSummaryPayload(
     return null;
   }
 
-  return candidate as PlayerStatsLandingSummaryPayload;
+  const rows = candidate.rows.flatMap((row): PlayerStatsLandingSummaryRow[] => {
+    if (!isObjectRecord(row)) {
+      return [];
+    }
+
+    return [
+      {
+        ...(row as PlayerStatsLandingSummaryRow),
+        scoreState:
+          typeof row.scoreState === "string"
+            ? (row.scoreState as PlayerStatsSupportedScoreState)
+            : "allScores",
+      },
+    ];
+  });
+
+  return {
+    ...(candidate as PlayerStatsLandingSummaryPayload),
+    rows,
+  };
 }
 
 export function flattenPersistedSummaryRows(
@@ -3398,6 +3937,7 @@ async function buildLiveSummaryRowsForGames(args: {
     }).rows.filter(
       (row) =>
         row.mode === args.state.primary.statMode &&
+        row.scoreState === args.state.primary.scoreState &&
         (supportedStrength == null || row.strength === supportedStrength)
     )
   );
@@ -3425,7 +3965,7 @@ export async function buildPlayerStatsLandingSummarySnapshotsForGameIds(
       gameParity,
       bundle,
       identityMaps,
-    }).map(({ mode, strength, payload }) => ({
+    }).map(({ mode, strength, scoreState, payload }) => ({
       game_id: gameParity.game.id,
       endpoint: PLAYER_STATS_SUMMARY_STORAGE_ENDPOINT,
       season_id: gameParity.game.seasonId,
@@ -3434,6 +3974,7 @@ export async function buildPlayerStatsLandingSummarySnapshotsForGameIds(
         gameId: gameParity.game.id,
         mode,
         strength,
+        scoreState,
       }),
       payload_hash: sha256Json(payload),
       payload,
@@ -3447,7 +3988,7 @@ export function buildPlayerStatsLandingSummarySnapshotsFromPayloadRows(
 ): PlayerStatsLandingSummarySnapshotRow[] {
   return [...flattenPersistedSummaryRows(payloadRows).values()].flatMap((payload) =>
     partitionPlayerStatsLandingSummaryPayload(payload).map(
-      ({ mode, strength, payload: partitionPayload }) => ({
+      ({ mode, strength, scoreState, payload: partitionPayload }) => ({
         game_id: payload.game.id,
         endpoint: PLAYER_STATS_SUMMARY_STORAGE_ENDPOINT,
         season_id: payload.game.seasonId,
@@ -3456,6 +3997,7 @@ export function buildPlayerStatsLandingSummarySnapshotsFromPayloadRows(
           gameId: payload.game.id,
           mode,
           strength,
+          scoreState,
         }),
         payload_hash: sha256Json(partitionPayload),
         payload: partitionPayload,
@@ -3467,6 +4009,7 @@ export function buildPlayerStatsLandingSummarySnapshotsFromPayloadRows(
 
 function createLandingRowFromAggregation(args: {
   state: PlayerStatsLandingFilterState;
+  bundle: PlayerStatsLandingSourceBundle;
   contexts: readonly PlayerStatsLandingAppearanceContext[];
   metrics: PlayerStatsLandingAggregateMetrics;
 }): PlayerStatsLandingAggregationRow | null {
@@ -3503,6 +4046,11 @@ function createLandingRowFromAggregation(args: {
     teamContexts,
     splitTeamId: state.expandable.tradeMode === "split" ? firstContext.teamId : null,
   });
+  const scopeWindow = resolveLandingScopeWindowFromContexts({
+    state,
+    games: args.bundle.games,
+    contexts,
+  });
 
   return {
     rowKey: tradeDisplay.rowKey,
@@ -3511,6 +4059,8 @@ function createLandingRowFromAggregation(args: {
     positionCode: firstContext.positionCode,
     teamId: tradeDisplay.teamId,
     teamLabel: tradeDisplay.teamLabel,
+    windowStartDate: scopeWindow.startDate,
+    windowEndDate: scopeWindow.endDate,
     gamesPlayed: metrics.gamesPlayed,
     toiSeconds: resolvedToiSeconds,
     toiPerGameSeconds:
@@ -3523,6 +4073,7 @@ function createLandingRowFromAggregation(args: {
 
 function createLandingRowFromSummaryRows(args: {
   state: PlayerStatsFilterState;
+  games: readonly PlayerStatsSourceGameRow[];
   rows: readonly PlayerStatsLandingSummaryRow[];
   metrics: PlayerStatsLandingAggregateMetrics;
 }): PlayerStatsLandingAggregationRow | null {
@@ -3563,6 +4114,11 @@ function createLandingRowFromSummaryRows(args: {
     splitTeamId:
       args.state.expandable.tradeMode === "split" ? firstRow.teamId : null
   });
+  const scopeWindow = resolveLandingScopeWindowFromSummaryRows({
+    state: args.state,
+    games: args.games,
+    rows: args.rows,
+  });
 
   return {
     rowKey: tradeDisplay.rowKey,
@@ -3571,6 +4127,8 @@ function createLandingRowFromSummaryRows(args: {
     positionCode: firstRow.positionCode,
     teamId: tradeDisplay.teamId,
     teamLabel: tradeDisplay.teamLabel,
+    windowStartDate: scopeWindow.startDate,
+    windowEndDate: scopeWindow.endDate,
     gamesPlayed: args.metrics.gamesPlayed,
     toiSeconds: resolvedToiSeconds,
     toiPerGameSeconds:
@@ -3590,6 +4148,10 @@ function matchesPlayerStatsSummaryRowForState(
   }
 
   if (row.strength !== state.primary.strength) {
+    return false;
+  }
+
+  if (getSummaryRowScoreState(row) !== state.primary.scoreState) {
     return false;
   }
 
@@ -3745,6 +4307,7 @@ function buildPlayerStatsLandingAggregationFromSummaryRows(args: {
 
       return createLandingRowFromSummaryRows({
         state: args.state,
+        games: args.games,
         rows: groupRows,
         metrics,
       });
@@ -3818,8 +4381,10 @@ async function fetchPlayerStatsSummaryRowsForFilterState(args: {
   games: readonly PlayerStatsSourceGameRow[];
   state: PlayerStatsFilterState;
   client?: PlayerStatsSupabaseClient;
+  allowLiveSummaryBuild?: boolean;
 }) {
   const client = args.client ?? supabase;
+  const allowLiveSummaryBuild = args.allowLiveSummaryBuild ?? true;
   const gameIds = args.games.map((game) => game.id);
   const supportedStrength = isSupportedLandingStrength(args.state.primary.strength)
     ? args.state.primary.strength
@@ -3832,6 +4397,7 @@ async function fetchPlayerStatsSummaryRowsForFilterState(args: {
           sourceUrlPrefix: getPlayerStatsSummaryPartitionPrefix({
             mode: args.state.primary.statMode,
             strength: supportedStrength,
+            scoreState: args.state.primary.scoreState,
           }),
           client,
         });
@@ -3862,11 +4428,13 @@ async function fetchPlayerStatsSummaryRowsForFilterState(args: {
   const missingSummaryGames = args.games.filter(
     (game) => !persistedSummaryPayloads.has(game.id)
   );
-  const liveSummaryRows = await buildLiveSummaryRowsForGames({
-    games: missingSummaryGames,
-    state: args.state,
-    client,
-  });
+  const liveSummaryRows = allowLiveSummaryBuild
+    ? await buildLiveSummaryRowsForGames({
+        games: missingSummaryGames,
+        state: args.state,
+        client,
+      })
+    : [];
   const liveSummaryRowsBuiltAt = Date.now();
 
   return {
@@ -3906,6 +4474,10 @@ function matchesPlayerStatsSummaryRowForDetailState(
   }
 
   if (row.strength !== state.primary.strength) {
+    return false;
+  }
+
+  if (getSummaryRowScoreState(row) !== state.primary.scoreState) {
     return false;
   }
 
@@ -3994,6 +4566,7 @@ function buildPlayerStatsDetailAggregationFromSummaryRows(args: {
 
       const baseRow = createLandingRowFromSummaryRows({
         state: args.state,
+        games: args.games,
         rows: groupRows,
         metrics,
       });
@@ -4068,6 +4641,74 @@ function buildDetailApiResultFromAggregationRows(args: {
 
 export { buildDetailApiResultFromAggregationRows };
 
+function buildLandingChartApiResultFromSummaryRows(args: {
+  playerId: number;
+  splitTeamId: number | null;
+  state: PlayerStatsLandingFilterState;
+  games: readonly PlayerStatsSourceGameRow[];
+  rows: readonly PlayerStatsLandingSummaryRow[];
+}): PlayerStatsLandingChartResult {
+  const family = resolveLandingTableFamily(args.state);
+  const filteredRows = args.rows.filter((row) => {
+    if (!matchesPlayerStatsSummaryRowForState(args.state, row)) {
+      return false;
+    }
+
+    if (row.playerId !== args.playerId) {
+      return false;
+    }
+
+    if (args.splitTeamId != null && row.teamId !== args.splitTeamId) {
+      return false;
+    }
+
+    return true;
+  });
+  const scopedRows = applyLandingScopeSelectionToSummaryRows({
+    state: args.state,
+    games: args.games,
+    rows: filteredRows,
+  });
+  const chronologicallySortedRows = [...scopedRows].sort((left, right) =>
+    compareGamesAscending(
+      { date: left.gameDate, id: left.gameId },
+      { date: right.gameDate, id: right.gameId }
+    )
+  );
+  const chartRows = chronologicallySortedRows
+    .map((row) => {
+      const baseRow = createLandingRowFromSummaryRows({
+        state: args.state,
+        games: args.games,
+        rows: [row],
+        metrics: row.metrics,
+      });
+
+      if (!baseRow) {
+        return null;
+      }
+
+      return {
+        ...mapLandingAggregationRowToApiRow(
+          baseRow,
+          family,
+          args.state.primary.displayMode
+        ),
+        gameId: row.gameId,
+        gameDate: row.gameDate,
+        opponentTeamId: row.opponentTeamId,
+        isHome: row.isHome,
+      } satisfies PlayerStatsLandingChartPoint;
+    })
+    .filter((row): row is PlayerStatsLandingChartPoint => row != null);
+
+  return {
+    playerId: args.playerId,
+    family,
+    rows: chartRows,
+  };
+}
+
 function mapLandingAggregationRowToApiRow(
   row: PlayerStatsLandingAggregationRow,
   family: PlayerStatsTableFamily,
@@ -4075,12 +4716,16 @@ function mapLandingAggregationRowToApiRow(
 ): PlayerStatsLandingApiRow {
   const base = {
     rowKey: row.rowKey,
+    playerId: row.playerId,
     playerName: row.playerName,
+    teamId: row.teamId,
     teamLabel: row.teamLabel,
     positionCode:
       family === "goalieCounts" || family === "goalieRates"
         ? null
         : row.positionCode,
+    windowStartDate: row.windowStartDate,
+    windowEndDate: row.windowEndDate,
     gamesPlayed: row.gamesPlayed,
     toiSeconds: row.toiSeconds,
     toiPerGameSeconds: row.toiPerGameSeconds
@@ -4454,6 +5099,7 @@ export function buildPlayerStatsLandingAggregation(args: {
 
       return createLandingRowFromAggregation({
         state: args.state,
+        bundle: args.bundle,
         contexts: groupContexts,
         metrics,
       });
@@ -4531,6 +5177,14 @@ export async function buildPlayerStatsLandingAggregationFromState(
 
   const games = await fetchPlayerStatsLandingSourceGames(state, client);
   const gamesResolvedAt = Date.now();
+  if (process.env.NODE_ENV !== "test") {
+    console.info("[player-stats] landing stage", {
+      stage: "games-resolved",
+      totalMs: gamesResolvedAt - startedAt,
+      gameCount: games.length,
+      canUseAggregateCache,
+    });
+  }
   const {
     supportedStrength,
     partitionSummaryPayloads,
@@ -4546,7 +5200,18 @@ export async function buildPlayerStatsLandingAggregationFromState(
     games,
     state,
     client,
+    allowLiveSummaryBuild: !canUseAggregateCache,
   });
+  if (process.env.NODE_ENV !== "test") {
+    console.info("[player-stats] landing stage", {
+      stage: "summary-rows-resolved",
+      totalMs: Date.now() - startedAt,
+      persistedSummaryRows: persistedSummaryRows.length,
+      liveSummaryRows: liveSummaryRows.length,
+      missingSummaryGames: missingSummaryGames.length,
+      canUseAggregateCache,
+    });
+  }
   const aggregationState =
     canUseAggregateCache && supportedStrength != null
       ? buildPlayerStatsSeasonAggregateBaseState(state)
@@ -4591,6 +5256,32 @@ export async function buildPlayerStatsLandingAggregationFromState(
   }
 
   return aggregation;
+}
+
+export async function buildPlayerStatsLandingChartFromState(args: {
+  playerId: number;
+  splitTeamId: number | null;
+  state: PlayerStatsLandingFilterState;
+  client?: PlayerStatsSupabaseClient;
+}): Promise<PlayerStatsLandingChartResult> {
+  const client = args.client ?? supabase;
+  const games = await fetchPlayerStatsLandingSourceGames(args.state, client);
+  const {
+    persistedSummaryRows,
+    liveSummaryRows,
+  } = await fetchPlayerStatsSummaryRowsForFilterState({
+    games,
+    state: args.state,
+    client,
+  });
+
+  return buildLandingChartApiResultFromSummaryRows({
+    playerId: args.playerId,
+    splitTeamId: args.splitTeamId,
+    state: args.state,
+    games,
+    rows: [...persistedSummaryRows, ...liveSummaryRows],
+  });
 }
 
 export async function buildPlayerStatsDetailAggregationFromState(

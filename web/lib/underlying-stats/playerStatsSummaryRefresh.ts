@@ -3,7 +3,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import serviceRoleClient from "lib/supabase/server";
 import type { Json } from "lib/supabase/database-generated.types";
 
-import { createDefaultLandingFilterState } from "./playerStatsFilters";
+import {
+  createDefaultLandingFilterState,
+  getDefaultLandingSortState,
+} from "./playerStatsFilters";
 import {
   buildPlayerStatsLandingAggregationFromState,
   buildPlayerStatsLandingSummarySnapshotsForGameIds,
@@ -13,6 +16,7 @@ import {
   PLAYER_STATS_SUMMARY_SOURCE_URL_PREFIX,
   PLAYER_STATS_SUMMARY_STORAGE_ENDPOINT,
 } from "./playerStatsLandingServer";
+import type { PlayerStatsMode } from "./playerStatsTypes";
 
 const SUPABASE_PAGE_SIZE = 1000;
 
@@ -122,24 +126,39 @@ export async function warmPlayerStatsLandingSeasonAggregateCache(args: {
   seasonId: number;
   gameType?: number | null;
   supabase?: SupabaseClient;
+  statModes?: readonly PlayerStatsMode[];
 }) {
   const defaultLandingState = createDefaultLandingFilterState();
-  const warmedState = {
-    ...defaultLandingState,
-    primary: {
-      ...defaultLandingState.primary,
-      seasonRange: {
-        fromSeasonId: args.seasonId,
-        throughSeasonId: args.seasonId,
-      },
-      seasonType: resolveSeasonTypeFromGameType(args.gameType ?? 2),
-    },
-  };
+  const statModes = [
+    ...new Set(args.statModes ?? [defaultLandingState.primary.statMode]),
+  ];
 
-  await buildPlayerStatsLandingAggregationFromState(
-    warmedState,
-    args.supabase ?? serviceRoleClient
-  );
+  for (const statMode of statModes) {
+    const warmedState = {
+      ...defaultLandingState,
+      primary: {
+        ...defaultLandingState.primary,
+        seasonRange: {
+          fromSeasonId: args.seasonId,
+          throughSeasonId: args.seasonId,
+        },
+        seasonType: resolveSeasonTypeFromGameType(args.gameType ?? 2),
+        statMode,
+      },
+      view: {
+        ...defaultLandingState.view,
+        sort: getDefaultLandingSortState(
+          statMode,
+          defaultLandingState.primary.displayMode
+        ),
+      },
+    };
+
+    await buildPlayerStatsLandingAggregationFromState(
+      warmedState,
+      args.supabase ?? serviceRoleClient
+    );
+  }
 }
 
 async function upsertSummarySnapshots(args: {

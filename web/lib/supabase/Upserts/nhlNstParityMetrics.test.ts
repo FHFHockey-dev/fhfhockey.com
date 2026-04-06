@@ -373,6 +373,247 @@ describe("nhlNstParityMetrics", () => {
     });
   });
 
+  it("supports extended goalie strength splits for 5v4 PP, 4v5 PK, 3v3, and against-empty-net states", () => {
+    const events = parseEvents([
+      {
+        eventId: 210,
+        sortOrder: 210,
+        periodDescriptor: { number: 1, periodType: "REG" },
+        timeInPeriod: "00:02",
+        timeRemaining: "19:58",
+        situationCode: "1541",
+        homeTeamDefendingSide: "left",
+        typeCode: 506,
+        typeDescKey: "shot-on-goal",
+        details: {
+          eventOwnerTeamId: 10,
+          shootingPlayerId: 91,
+          goalieInNetId: 31,
+          xCoord: 73,
+          yCoord: 8,
+          zoneCode: "O",
+        },
+      },
+      {
+        eventId: 211,
+        sortOrder: 211,
+        periodDescriptor: { number: 1, periodType: "REG" },
+        timeInPeriod: "00:06",
+        timeRemaining: "19:54",
+        situationCode: "1451",
+        homeTeamDefendingSide: "left",
+        typeCode: 506,
+        typeDescKey: "shot-on-goal",
+        details: {
+          eventOwnerTeamId: 10,
+          shootingPlayerId: 34,
+          goalieInNetId: 31,
+          xCoord: 76,
+          yCoord: -5,
+          zoneCode: "O",
+        },
+      },
+      {
+        eventId: 212,
+        sortOrder: 212,
+        periodDescriptor: { number: 1, periodType: "OT" },
+        timeInPeriod: "00:10",
+        timeRemaining: "04:50",
+        situationCode: "1331",
+        homeTeamDefendingSide: "left",
+        typeCode: 506,
+        typeDescKey: "shot-on-goal",
+        details: {
+          eventOwnerTeamId: 10,
+          shootingPlayerId: 91,
+          goalieInNetId: 31,
+          xCoord: 72,
+          yCoord: 2,
+          zoneCode: "O",
+        },
+      },
+      {
+        eventId: 213,
+        sortOrder: 213,
+        periodDescriptor: { number: 1, periodType: "REG" },
+        timeInPeriod: "00:14",
+        timeRemaining: "19:46",
+        situationCode: "1550",
+        homeTeamDefendingSide: "left",
+        typeCode: 506,
+        typeDescKey: "shot-on-goal",
+        details: {
+          eventOwnerTeamId: 10,
+          shootingPlayerId: 34,
+          goalieInNetId: 31,
+          xCoord: 78,
+          yCoord: 3,
+          zoneCode: "O",
+        },
+      },
+    ]);
+
+    const shiftRows = [
+      createShiftRow({ shift_id: 10, player_id: 91, team_id: 10, start_seconds: 0, end_seconds: 30, duration_seconds: 30 }),
+      createShiftRow({ shift_id: 11, player_id: 34, team_id: 10, start_seconds: 0, end_seconds: 30, duration_seconds: 30 }),
+      createShiftRow({ shift_id: 12, player_id: 31, team_id: 20, team_abbrev: "NYR", start_seconds: 0, end_seconds: 30, duration_seconds: 30 }),
+    ] as any[];
+
+    const shotFeatures = buildShotFeatureRows(events, shiftRows as any, 10, 20);
+    const output = buildNstParityMetrics(events, shotFeatures, shiftRows as any, {
+      date: "2026-03-30",
+      season: 20252026,
+      homeTeamId: 10,
+      awayTeamId: 20,
+    });
+
+    expect(output.goalies.fiveOnFourPP.counts.find((row) => row.player_id === 31)).toMatchObject({
+      shots_against: 1,
+      saves: 1,
+      goals_against: 0,
+    });
+    expect(output.goalies.fourOnFivePK.counts.find((row) => row.player_id === 31)).toMatchObject({
+      shots_against: 1,
+      saves: 1,
+      goals_against: 0,
+    });
+    expect(output.goalies.threeOnThree.counts.find((row) => row.player_id === 31)).toMatchObject({
+      shots_against: 1,
+      saves: 1,
+      goals_against: 0,
+    });
+    expect(output.goalies.againstEmptyNet.counts.find((row) => row.player_id === 31)).toMatchObject({
+      shots_against: 1,
+      saves: 1,
+      goals_against: 0,
+    });
+  });
+
+  it("filters goalie parity by score state using the team-relative pre-event score buckets", () => {
+    const events = parseEvents([
+      {
+        eventId: 220,
+        sortOrder: 220,
+        periodDescriptor: { number: 1, periodType: "REG" },
+        timeInPeriod: "00:02",
+        timeRemaining: "19:58",
+        situationCode: "1551",
+        homeTeamDefendingSide: "left",
+        typeCode: 505,
+        typeDescKey: "goal",
+        details: {
+          eventOwnerTeamId: 20,
+          scoringPlayerId: 21,
+          goalieInNetId: 41,
+          homeScore: 0,
+          awayScore: 1,
+          xCoord: -78,
+          yCoord: 4,
+          zoneCode: "O",
+        },
+      },
+      {
+        eventId: 221,
+        sortOrder: 221,
+        periodDescriptor: { number: 1, periodType: "REG" },
+        timeInPeriod: "00:05",
+        timeRemaining: "19:55",
+        situationCode: "1551",
+        homeTeamDefendingSide: "left",
+        typeCode: 506,
+        typeDescKey: "shot-on-goal",
+        details: {
+          eventOwnerTeamId: 10,
+          shootingPlayerId: 91,
+          goalieInNetId: 31,
+          homeScore: 0,
+          awayScore: 1,
+          xCoord: 75,
+          yCoord: 8,
+          zoneCode: "O",
+        },
+      },
+      {
+        eventId: 222,
+        sortOrder: 222,
+        periodDescriptor: { number: 1, periodType: "REG" },
+        timeInPeriod: "00:08",
+        timeRemaining: "19:52",
+        situationCode: "1551",
+        homeTeamDefendingSide: "left",
+        typeCode: 505,
+        typeDescKey: "goal",
+        details: {
+          eventOwnerTeamId: 10,
+          scoringPlayerId: 91,
+          goalieInNetId: 31,
+          homeScore: 1,
+          awayScore: 1,
+          xCoord: 80,
+          yCoord: -1,
+          zoneCode: "O",
+        },
+      },
+      {
+        eventId: 223,
+        sortOrder: 223,
+        periodDescriptor: { number: 1, periodType: "REG" },
+        timeInPeriod: "00:12",
+        timeRemaining: "19:48",
+        situationCode: "1551",
+        homeTeamDefendingSide: "left",
+        typeCode: 506,
+        typeDescKey: "shot-on-goal",
+        details: {
+          eventOwnerTeamId: 10,
+          shootingPlayerId: 34,
+          goalieInNetId: 31,
+          homeScore: 1,
+          awayScore: 1,
+          xCoord: 77,
+          yCoord: 3,
+          zoneCode: "O",
+        },
+      },
+    ]);
+
+    const shiftRows = [
+      createShiftRow({ shift_id: 20, player_id: 91, team_id: 10, start_seconds: 0, end_seconds: 20, duration_seconds: 20 }),
+      createShiftRow({ shift_id: 21, player_id: 34, team_id: 10, start_seconds: 0, end_seconds: 20, duration_seconds: 20 }),
+      createShiftRow({ shift_id: 22, player_id: 21, team_id: 20, team_abbrev: "NYR", start_seconds: 0, end_seconds: 20, duration_seconds: 20 }),
+      createShiftRow({ shift_id: 23, player_id: 31, team_id: 20, team_abbrev: "NYR", start_seconds: 0, end_seconds: 20, duration_seconds: 20 }),
+      createShiftRow({ shift_id: 24, player_id: 41, team_id: 10, start_seconds: 0, end_seconds: 20, duration_seconds: 20 }),
+    ] as any[];
+
+    const shotFeatures = buildShotFeatureRows(events, shiftRows as any, 10, 20);
+
+    const upOneOutput = buildNstParityMetrics(events, shotFeatures, shiftRows as any, {
+      date: "2026-03-30",
+      season: 20252026,
+      homeTeamId: 10,
+      awayTeamId: 20,
+      scoreState: "upOne",
+    });
+    const tiedOutput = buildNstParityMetrics(events, shotFeatures, shiftRows as any, {
+      date: "2026-03-30",
+      season: 20252026,
+      homeTeamId: 10,
+      awayTeamId: 20,
+      scoreState: "tied",
+    });
+
+    expect(upOneOutput.goalies.all.counts.find((row) => row.player_id === 31)).toMatchObject({
+      shots_against: 2,
+      saves: 1,
+      goals_against: 1,
+    });
+    expect(tiedOutput.goalies.all.counts.find((row) => row.player_id === 31)).toMatchObject({
+      shots_against: 1,
+      saves: 1,
+      goals_against: 0,
+    });
+  });
+
   it("preserves skater exact counts when shift rows come from pg bigint string fields", () => {
     const events = parseEvents([
       {
