@@ -43,7 +43,7 @@ describe("/api/v1/underlying-stats/goalies/[playerId]", () => {
     vi.mocked(buildPlayerStatsDetailAggregationFromState).mockReset();
   });
 
-  it("forces goalie mode on detail requests", async () => {
+  it("returns the shared goalie counts payload unchanged for detail requests", async () => {
     vi.mocked(buildPlayerStatsDetailAggregationFromState).mockResolvedValue({
       playerId: 8475883,
       family: "goalieCounts",
@@ -92,6 +92,74 @@ describe("/api/v1/underlying-stats/goalies/[playerId]", () => {
     expect(res.body).toMatchObject({
       family: "goalieCounts",
       placeholder: false,
+      rows: [
+        expect.objectContaining({
+          playerName: "Goalie Test",
+          savePct: 0.919,
+        }),
+      ],
+    });
+  });
+
+  it("returns a goalie-only rates family when the shared detail builder resolves goalie rates", async () => {
+    vi.mocked(buildPlayerStatsDetailAggregationFromState).mockResolvedValue({
+      playerId: 8475883,
+      family: "goalieRates",
+      rows: [
+        {
+          rowKey: "detail:season:8475883:20252026",
+          seasonId: 20252026,
+          seasonLabel: "2025-26",
+          playerName: "Goalie Rates Test",
+          teamLabel: "AAA",
+          gamesPlayed: 50,
+          toiSeconds: 120000,
+          savePct: 0.921,
+          shotsAgainstPer60: 27.1,
+          gsaaPer60: 0.21,
+        },
+      ],
+      sort: { sortKey: "savePct", direction: "desc" },
+      pagination: {
+        page: 1,
+        pageSize: 50,
+        totalRows: 1,
+        totalPages: 1,
+      },
+    });
+
+    const { req, res } = createMockApiContext({
+      query: {
+        playerId: "8475883",
+        fromSeasonId: "20252026",
+        throughSeasonId: "20252026",
+        displayMode: "rates",
+        statMode: "individual",
+      },
+    });
+
+    await handler(req as never, res as never);
+
+    expect(buildPlayerStatsDetailAggregationFromState).toHaveBeenCalledWith(
+      8475883,
+      expect.objectContaining({
+        primary: expect.objectContaining({
+          statMode: "goalies",
+          displayMode: "rates",
+        }),
+      })
+    );
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.body).toMatchObject({
+      family: "goalieRates",
+      placeholder: false,
+      rows: [
+        expect.objectContaining({
+          playerName: "Goalie Rates Test",
+          shotsAgainstPer60: 27.1,
+          gsaaPer60: 0.21,
+        }),
+      ],
     });
   });
 });

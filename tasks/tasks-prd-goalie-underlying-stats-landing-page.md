@@ -47,13 +47,13 @@
   - [x] 1.5 Document the reuse boundary: what stays in the shared player-underlying pipeline versus what becomes goalie-specific route, API, and UI code.
   - [x] NEW 1.7 Decide whether the dedicated goalie route needs its own aggregate-cache warm path, since the current optional warm step only prewarms the default shared landing state.
 
-- [ ] 2.0 Create the dedicated goalie routing and API surface while preserving the shared underlying player-summary pipeline
+- [x] 2.0 Create the dedicated goalie routing and API surface while preserving the shared underlying player-summary pipeline
   - [x] 2.1 Create the dedicated landing route at `pages/underlying-stats/goalieStats/index.tsx`.
   - [x] 2.2 Create the dedicated detail route at `pages/underlying-stats/goalieStats/[playerId].tsx`.
   - [x] 2.3 Add dedicated goalie API wrappers for landing, detail, and chart reads under `/api/v1/underlying-stats/goalies`.
   - [x] 2.4 Implement goalie-specific request parsing and URL builders so the goalie surface has stable, shareable route contracts independent of the player route namespace.
   - [x] 2.5 Ensure the dedicated goalie read routes delegate to shared aggregation logic rather than duplicating underlying metric computation.
-  - [ ] 2.6 Add route-level tests proving the goalie API surface returns goalie-only families and preserves the existing shared source-of-truth math.
+  - [x] 2.6 Add route-level tests proving the goalie API surface returns goalie-only families and preserves the existing shared source-of-truth math.
 
 - [ ] 3.0 Implement the `/underlying-stats/goalieStats` landing page with goalie-first controls, table families, and staged loading behavior
   - [ ] 3.1 Build the goalie landing page shell and route-level page state with goalie-first copy, breadcrumbs, defaults, and metadata.

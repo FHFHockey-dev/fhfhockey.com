@@ -43,7 +43,7 @@ describe("/api/v1/underlying-stats/goalies/[playerId]/chart", () => {
     vi.mocked(buildPlayerStatsLandingChartFromState).mockReset();
   });
 
-  it("forces goalie mode on chart requests", async () => {
+  it("returns the shared goalie chart payload unchanged for chart requests", async () => {
     vi.mocked(buildPlayerStatsLandingChartFromState).mockResolvedValue({
       playerId: 8475883,
       family: "goalieCounts",
@@ -84,6 +84,63 @@ describe("/api/v1/underlying-stats/goalies/[playerId]/chart", () => {
     expect(res.body).toMatchObject({
       playerId: 8475883,
       family: "goalieCounts",
+      rows: [
+        expect.objectContaining({
+          gameId: 2025021001,
+          savePct: 0.944,
+        }),
+      ],
+    });
+  });
+
+  it("returns a goalie-only rates family when the shared chart builder resolves goalie rates", async () => {
+    vi.mocked(buildPlayerStatsLandingChartFromState).mockResolvedValue({
+      playerId: 8475883,
+      family: "goalieRates",
+      rows: [
+        {
+          rowKey: "chart:8475883:2025021002",
+          gameId: 2025021002,
+          gameDate: "2026-03-03",
+          opponentTeamId: 2,
+          isHome: false,
+          savePct: 0.952,
+          shotsAgainstPer60: 25.8,
+        },
+      ],
+      generatedAt: "2026-04-06T00:00:00.000Z",
+    });
+
+    const { req, res } = createMockApiContext({
+      query: {
+        playerId: "8475883",
+        displayMode: "rates",
+        statMode: "individual",
+      },
+    });
+
+    await handler(req as never, res as never);
+
+    expect(buildPlayerStatsLandingChartFromState).toHaveBeenCalledWith({
+      playerId: 8475883,
+      splitTeamId: null,
+      state: expect.objectContaining({
+        primary: expect.objectContaining({
+          statMode: "goalies",
+          displayMode: "rates",
+        }),
+      }),
+    });
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.body).toMatchObject({
+      playerId: 8475883,
+      family: "goalieRates",
+      rows: [
+        expect.objectContaining({
+          gameId: 2025021002,
+          shotsAgainstPer60: 25.8,
+        }),
+      ],
     });
   });
 });

@@ -43,7 +43,7 @@ describe("/api/v1/underlying-stats/goalies", () => {
     vi.mocked(buildPlayerStatsLandingAggregationFromState).mockReset();
   });
 
-  it("forces goalie mode on landing requests", async () => {
+  it("returns the shared goalie counts payload unchanged for landing requests", async () => {
     vi.mocked(buildPlayerStatsLandingAggregationFromState).mockResolvedValue({
       family: "goalieCounts",
       rows: [
@@ -89,6 +89,69 @@ describe("/api/v1/underlying-stats/goalies", () => {
     expect(res.body).toMatchObject({
       family: "goalieCounts",
       placeholder: false,
+      rows: [
+        expect.objectContaining({
+          playerName: "Goalie Test",
+          savePct: 0.931,
+        }),
+      ],
+    });
+  });
+
+  it("returns a goalie-only rates family when the shared builder resolves goalie rates", async () => {
+    vi.mocked(buildPlayerStatsLandingAggregationFromState).mockResolvedValue({
+      family: "goalieRates",
+      rows: [
+        {
+          rowKey: "landing:player:2",
+          playerName: "Goalie Rates Test",
+          teamLabel: "BBB",
+          gamesPlayed: 5,
+          toiSeconds: 7200,
+          savePct: 0.917,
+          shotsAgainstPer60: 28.4,
+          gsaaPer60: 0.18,
+        },
+      ],
+      sort: { sortKey: "savePct", direction: "desc" },
+      pagination: {
+        page: 1,
+        pageSize: 50,
+        totalRows: 1,
+        totalPages: 1,
+      },
+    });
+
+    const { req, res } = createMockApiContext({
+      query: {
+        fromSeasonId: "20252026",
+        throughSeasonId: "20252026",
+        displayMode: "rates",
+        statMode: "individual",
+      },
+    });
+
+    await handler(req as never, res as never);
+
+    expect(buildPlayerStatsLandingAggregationFromState).toHaveBeenCalledWith(
+      expect.objectContaining({
+        primary: expect.objectContaining({
+          statMode: "goalies",
+          displayMode: "rates",
+        }),
+      })
+    );
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.body).toMatchObject({
+      family: "goalieRates",
+      placeholder: false,
+      rows: [
+        expect.objectContaining({
+          playerName: "Goalie Rates Test",
+          shotsAgainstPer60: 28.4,
+          gsaaPer60: 0.18,
+        }),
+      ],
     });
   });
 });
