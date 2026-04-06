@@ -627,14 +627,24 @@ function buildStrengthSegments(
       startSecond,
       endSecond,
       strengthExact: formatStrengthExact(parsed),
-      homeState: classifyTeamStrengthState(parsed, homeTeamId, homeTeamId, awayTeamId),
-      awayState: classifyTeamStrengthState(parsed, awayTeamId, homeTeamId, awayTeamId),
+      homeState: classifyTeamStrengthState(
+        parsed,
+        homeTeamId,
+        homeTeamId,
+        awayTeamId
+      ),
+      awayState: classifyTeamStrengthState(
+        parsed,
+        awayTeamId,
+        homeTeamId,
+        awayTeamId
+      ),
       awayGoalie: parsed.awayGoalie,
       awaySkaters: parsed.awaySkaters,
       homeSkaters: parsed.homeSkaters,
       homeGoalie: parsed.homeGoalie,
-      homeScore: event.home_score,
-      awayScore: event.away_score,
+      homeScore: event.home_score ?? null,
+      awayScore: event.away_score ?? null
     });
   }
 
@@ -832,8 +842,8 @@ function getPreEventScores(
   homeTeamId: number,
   awayTeamId: number
 ) {
-  let homeScore = event.home_score;
-  let awayScore = event.away_score;
+  let homeScore = event.home_score ?? null;
+  let awayScore = event.away_score ?? null;
 
   if (event.type_desc_key === "goal") {
     const goalOwnerTeamId = event.event_owner_team_id;

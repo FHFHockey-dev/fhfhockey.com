@@ -156,18 +156,26 @@ describe("PlayerUnderlyingStatsDetailPage", () => {
       expect(screen.getAllByText("Loading player detail underlying stats...").length).toBeGreaterThan(0);
     });
 
-    resolveFetch?.({
-      ok: true,
-      json: async () => ({
-        playerId: 8478401,
-        family: "individualCounts",
-        rows: [],
-        sort: { sortKey: "totalPoints", direction: "desc" },
-        pagination: { page: 1, pageSize: 50, totalRows: 0, totalPages: 0 },
-        placeholder: false,
-        generatedAt: "2026-04-02T00:00:00.000Z",
-      }),
-    });
+    const flushFetch:
+      | ((value: {
+          ok: boolean;
+          json: () => Promise<unknown>;
+        }) => void)
+      | null = resolveFetch;
+    if (flushFetch !== null) {
+      flushFetch({
+        ok: true,
+        json: async () => ({
+          playerId: 8478401,
+          family: "individualCounts",
+          rows: [],
+          sort: { sortKey: "totalPoints", direction: "desc" },
+          pagination: { page: 1, pageSize: 50, totalRows: 0, totalPages: 0 },
+          placeholder: false,
+          generatedAt: "2026-04-02T00:00:00.000Z",
+        }),
+      });
+    }
   });
 
   it("shows the no-data empty state when the detail API returns no rows", async () => {

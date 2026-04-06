@@ -11,6 +11,7 @@ export type PlayerStatsColumnFormat =
   | "text"
   | "team"
   | "position"
+  | "date"
   | "integer"
   | "decimal"
   | "percentage"

@@ -551,6 +551,33 @@ describe("PlayerStatsTable", () => {
     expect(onPageChange).toHaveBeenLastCalledWith(3);
   });
 
+  it("hides pagination controls when the table is rendered without a page-change handler", () => {
+    render(
+      <PlayerStatsTable
+        family="individualCounts"
+        rows={[
+          {
+            rowKey: "player-1",
+            playerName: "Sam Bennett",
+            teamLabel: "FLA",
+            positionCode: "C",
+            gamesPlayed: 82,
+            toiSeconds: 3723,
+            goals: 25,
+            totalAssists: 24,
+            totalPoints: 49,
+          },
+        ]}
+        sortState={{ sortKey: "totalPoints", direction: "desc" }}
+        pagination={{ page: 2, pageSize: 50, totalRows: 138, totalPages: 3 }}
+      />
+    );
+
+    expect(screen.queryByText("Showing 51-100 of 138")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Previous" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Next" })).toBeNull();
+  });
+
   it("renders a reusable loading, empty, error, or warning state instead of the table when requested", () => {
     const { container, rerender } = render(
       <PlayerStatsTable
@@ -602,6 +629,105 @@ describe("PlayerStatsTable", () => {
     expect(
       screen.getByText("Goalie mode does not support winger-only filters.")
     ).toBeTruthy();
+  });
+
+  it("keeps the rank column aligned to the visible row order and renders inline expanded content", () => {
+    render(
+      <PlayerStatsTable
+        family="individualCounts"
+        rows={[
+          {
+            rowKey: "player-2",
+            playerId: 2,
+            playerName: "Second Player",
+            teamLabel: "BBB",
+            positionCode: "C",
+            gamesPlayed: 8,
+            toiSeconds: 640,
+            goals: 4,
+            totalAssists: 5,
+            firstAssists: 3,
+            secondAssists: 2,
+            totalPoints: 9,
+            ipp: 0.51,
+            shots: 32,
+            shootingPct: 0.125,
+            ixg: 3.8,
+            iCf: 46,
+            iFf: 39,
+            iScf: 21,
+            iHdcf: 9,
+            rushAttempts: 4,
+            reboundsCreated: 1,
+            pim: 6,
+            totalPenalties: 3,
+            minorPenalties: 3,
+            majorPenalties: 0,
+            misconductPenalties: 0,
+            penaltiesDrawn: 2,
+            giveaways: 1,
+            takeaways: 4,
+            hits: 7,
+            hitsTaken: 2,
+            shotsBlocked: 3,
+            faceoffsWon: 20,
+            faceoffsLost: 18,
+            faceoffPct: 0.526,
+          },
+          {
+            rowKey: "player-1",
+            playerId: 1,
+            playerName: "First Player",
+            teamLabel: "AAA",
+            positionCode: "LW",
+            gamesPlayed: 7,
+            toiSeconds: 590,
+            goals: 3,
+            totalAssists: 2,
+            firstAssists: 2,
+            secondAssists: 0,
+            totalPoints: 5,
+            ipp: 0.48,
+            shots: 27,
+            shootingPct: 0.111,
+            ixg: 2.9,
+            iCf: 34,
+            iFf: 31,
+            iScf: 18,
+            iHdcf: 5,
+            rushAttempts: 2,
+            reboundsCreated: 1,
+            pim: 2,
+            totalPenalties: 1,
+            minorPenalties: 1,
+            majorPenalties: 0,
+            misconductPenalties: 0,
+            penaltiesDrawn: 1,
+            giveaways: 2,
+            takeaways: 3,
+            hits: 4,
+            hitsTaken: 1,
+            shotsBlocked: 2,
+            faceoffsWon: 0,
+            faceoffsLost: 0,
+            faceoffPct: null,
+          },
+        ]}
+        sortState={{ sortKey: "totalPoints", direction: "desc" }}
+        showRankColumn
+        expandedRowKey="player-2"
+        renderExpandedRow={({ row }) => (
+          <div>{`Expanded content for ${String(row.playerName)}`}</div>
+        )}
+      />
+    );
+
+    const rows = screen.getAllByRole("row");
+    expect(within(rows[1] as HTMLElement).getAllByRole("cell")[0]?.textContent).toBe("1");
+    expect(within(rows[1] as HTMLElement).getByText("Second Player")).toBeTruthy();
+    expect(within(rows[3] as HTMLElement).getAllByRole("cell")[0]?.textContent).toBe("2");
+    expect(within(rows[3] as HTMLElement).getByText("First Player")).toBeTruthy();
+    expect(screen.getByText("Expanded content for Second Player")).toBeTruthy();
   });
 });
 

@@ -17,7 +17,7 @@ export default function adminOnly(handler: Handler): Handler {
     const authHeader = req.headers.authorization ?? "";
     let client: ReturnType<typeof createClientWithToken>;
     // check if this is invoked by cron
-    if (invokedByCron(authHeader)) {
+    if (invokedByCron(authHeader) || invokedByLocalDev(req)) {
       client = serviceRoleClient;
     } else {
       // authentication check
@@ -46,6 +46,19 @@ export default function adminOnly(handler: Handler): Handler {
   };
 }
 
-function invokedByCron(authHeader: string) {
+export function invokedByCron(authHeader: string) {
   return authHeader === `Bearer ${process.env.CRON_SECRET}`;
+}
+
+function isLocalHostHeader(hostHeader: string | undefined) {
+  if (typeof hostHeader !== "string" || hostHeader.length === 0) {
+    return false;
+  }
+
+  const normalizedHost = hostHeader.toLowerCase().split(":")[0];
+  return normalizedHost === "localhost" || normalizedHost === "127.0.0.1" || normalizedHost === "::1";
+}
+
+export function invokedByLocalDev(req: NextApiRequest) {
+  return process.env.NODE_ENV !== "production" && isLocalHostHeader(req.headers.host);
 }

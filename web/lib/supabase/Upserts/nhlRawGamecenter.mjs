@@ -6,6 +6,7 @@ export const STRENGTH_VERSION = 1;
 export const DEFAULT_FETCH_RETRIES = 3;
 export const DEFAULT_FETCH_TIMEOUT_MS = 20_000;
 export const DEFAULT_RETRY_DELAY_MS = 500;
+export const DEFAULT_GAME_INGEST_RETRIES = 2;
 
 const SHOT_LIKE_TYPES = new Set([
   "goal",
@@ -26,6 +27,24 @@ function sha256Json(payload) {
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function stringifyError(error) {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  if (typeof error === "string") {
+    return error;
+  }
+
+  if (error && typeof error === "object") {
+    try {
+      return JSON.stringify(error);
+    } catch {}
+  }
+
+  return String(error);
 }
 
 function normalizeWhitespace(value) {
@@ -713,4 +732,45 @@ export async function ingestNhlApiRawGames(supabase, gameIds) {
     results.push(await ingestNhlApiRawGame(supabase, gameId));
   }
   return results;
+}
+
+async function ingestNhlApiRawGameWithRetry(supabase, gameId, options = {}) {
+  const retries = options.retries ?? DEFAULT_GAME_INGEST_RETRIES;
+  const retryDelayMs = options.retryDelayMs ?? DEFAULT_RETRY_DELAY_MS;
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= retries; attempt += 1) {
+    try {
+      return await ingestNhlApiRawGame(supabase, gameId);
+    } catch (error) {
+      lastError = error;
+      if (attempt === retries) {
+        throw error;
+      }
+      await sleep(retryDelayMs * attempt);
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error(`Failed to ingest raw NHL game ${gameId}`);
+}
+
+export async function ingestNhlApiRawGamesBestEffort(supabase, gameIds, options = {}) {
+  const results = [];
+  const failures = [];
+
+  for (const gameId of gameIds) {
+    try {
+      results.push(await ingestNhlApiRawGameWithRetry(supabase, gameId, options));
+    } catch (error) {
+      failures.push({
+        gameId,
+        message: stringifyError(error),
+      });
+    }
+  }
+
+  return {
+    results,
+    failures,
+  };
 }

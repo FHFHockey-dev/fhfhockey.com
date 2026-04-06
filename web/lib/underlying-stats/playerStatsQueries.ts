@@ -20,6 +20,8 @@ import type {
 
 export type PlayerStatsLandingApiRow = {
   rowKey: string;
+  playerId?: number;
+  teamId?: number | null;
   [key: string]: unknown;
 };
 
@@ -33,6 +35,25 @@ export type PlayerStatsLandingApiResponse = {
 };
 
 export type PlayerStatsLandingApiError = {
+  error: string;
+  issues?: string[];
+};
+
+export type PlayerStatsLandingChartPoint = PlayerStatsLandingApiRow & {
+  gameId: number;
+  gameDate: string;
+  opponentTeamId: number;
+  isHome: boolean;
+};
+
+export type PlayerStatsLandingChartResponse = {
+  playerId: number;
+  family: PlayerStatsTableFamily;
+  rows: PlayerStatsLandingChartPoint[];
+  generatedAt: string;
+};
+
+export type PlayerStatsLandingChartError = {
   error: string;
   issues?: string[];
 };
@@ -90,6 +111,22 @@ export function buildPlayerStatsDetailApiPath(
   return query
     ? `/api/v1/underlying-stats/players/${playerId}?${query}`
     : `/api/v1/underlying-stats/players/${playerId}`;
+}
+
+export function buildPlayerStatsLandingChartApiPath(args: {
+  playerId: number;
+  state: PlayerStatsLandingFilterState;
+  splitTeamId?: number | null;
+}): string {
+  const query = buildPlayerStatsSearchParams(args.state);
+  if (args.splitTeamId != null) {
+    query.set("splitTeamId", String(args.splitTeamId));
+  }
+
+  const queryString = query.toString();
+  return queryString
+    ? `/api/v1/underlying-stats/players/${args.playerId}/chart?${queryString}`
+    : `/api/v1/underlying-stats/players/${args.playerId}/chart`;
 }
 
 export function createEmptyPlayerStatsLandingResponse(
@@ -342,6 +379,82 @@ export function parseDetailApiRequest(
   return {
     ok: true,
     playerId: Math.trunc(playerId),
+    state,
+  };
+}
+
+export function parseLandingChartApiRequest(
+  query: NextApiRequestQuery
+):
+  | {
+      ok: true;
+      playerId: number;
+      splitTeamId: number | null;
+      state: PlayerStatsLandingFilterState;
+    }
+  | {
+      ok: false;
+      error: PlayerStatsLandingChartError;
+      statusCode: number;
+    } {
+  const rawPlayerId = query.playerId;
+  const normalizedPlayerId = Array.isArray(rawPlayerId)
+    ? rawPlayerId[0]
+    : rawPlayerId;
+  const playerId = Number(normalizedPlayerId);
+
+  if (!Number.isFinite(playerId) || playerId <= 0) {
+    return {
+      ok: false,
+      statusCode: 400,
+      error: {
+        error: "Invalid player id.",
+        issues: ["playerId must be a positive integer."],
+      },
+    };
+  }
+
+  const rawSplitTeamId = Array.isArray(query.splitTeamId)
+    ? query.splitTeamId[0]
+    : query.splitTeamId;
+  const splitTeamId =
+    rawSplitTeamId != null && rawSplitTeamId !== ""
+      ? Number(rawSplitTeamId)
+      : null;
+
+  if (
+    splitTeamId != null &&
+    (!Number.isFinite(splitTeamId) || Math.trunc(splitTeamId) <= 0)
+  ) {
+    return {
+      ok: false,
+      statusCode: 400,
+      error: {
+        error: "Invalid split team id.",
+        issues: ["splitTeamId must be a positive integer when provided."],
+      },
+    };
+  }
+
+  const fallbackState = createDefaultLandingFilterState();
+  const state = parsePlayerStatsFilterStateFromQuery(query, fallbackState);
+  const validation = validatePlayerStatsFilterState(state);
+
+  if (!validation.isValid) {
+    return {
+      ok: false,
+      statusCode: 400,
+      error: {
+        error: "Invalid player stats filter combination.",
+        issues: validation.issues,
+      },
+    };
+  }
+
+  return {
+    ok: true,
+    playerId: Math.trunc(playerId),
+    splitTeamId: splitTeamId == null ? null : Math.trunc(splitTeamId),
     state,
   };
 }

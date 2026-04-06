@@ -2,11 +2,13 @@
 @use "styles/vars" as v;
 @use "styles/panel" as p;
 
-$page-max-width: 1360px;
+$page-max-width: 1600px;
 
 .page {
+  height: 100vh;
   min-height: 100vh;
-  padding: v.$space-lg clamp(1rem, 3vw, 2rem) v.$space-xxl;
+  overflow: hidden;
+  padding: v.$space-md clamp(1rem, 3vw, 2rem) v.$space-md;
   background: v.$background-dark;
   color: v.$text-primary;
   display: flex;
@@ -17,8 +19,11 @@ $page-max-width: 1360px;
 
 .pageInner {
   width: min(100%, $page-max-width);
+  height: 100%;
+  min-height: 0;
   margin: 0 auto;
   display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
   gap: v.$space-lg;
 }
 
@@ -26,6 +31,7 @@ $page-max-width: 1360px;
 .hero,
 .section {
   width: 100%;
+  min-width: 0;
 }
 
 .utilityRow {
@@ -37,32 +43,22 @@ $page-max-width: 1360px;
 }
 
 .hero {
-  @include p.panel-shell($padding: v.$space-lg, $variant: soft, $overflow: visible);
+  @include p.panel-shell($padding: v.$space-md, $variant: soft, $overflow: visible);
   display: grid;
-  gap: v.$space-lg;
+  gap: v.$space-md;
 }
 
 .heroBody {
   display: grid;
   grid-template-columns: minmax(0, 1.75fr) minmax(280px, 0.9fr);
-  gap: v.$space-lg;
-  align-items: flex-start;
+  gap: v.$space-md;
+  align-items: center;
 }
 
 .heroCopy {
   display: grid;
   gap: v.$space-sm;
   min-width: 0;
-}
-
-.eyebrow {
-  margin: 0;
-  color: v.$color-brand-yellow;
-  font-family: v.$font-family-accent, sans-serif;
-  font-size: v.$font-size-xs;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
 }
 
 .title {
@@ -78,14 +74,6 @@ $page-max-width: 1360px;
 
 .accent {
   color: v.$color-brand-yellow;
-}
-
-.description {
-  margin: 0;
-  max-width: 60ch;
-  color: v.$text-secondary;
-  font-size: v.$font-size-sm;
-  line-height: 1.65;
 }
 
 .breadcrumbs {
@@ -117,15 +105,16 @@ $page-max-width: 1360px;
 }
 
 .metaCard {
-  @include p.panel-shell($padding: v.$space-md, $variant: flat);
+  @include p.panel-shell($padding: v.$space-sm, $variant: flat);
   display: grid;
-  gap: v.$space-xs;
+  gap: 0.2rem;
   min-width: 0;
+  min-height: 0;
 }
 
 .metaLabel {
   margin: 0;
-  color: v.$text-secondary;
+  color: v.$color-brand-yellow;
   font-size: v.$font-size-xs;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -140,74 +129,194 @@ $page-max-width: 1360px;
   line-height: 1.1;
 }
 
-.metaHint {
-  margin: 0;
-  color: v.$text-secondary;
-  font-size: v.$font-size-xs;
-  line-height: 1.5;
-}
-
 .section {
   @include p.panel-shell($padding: 0, $variant: soft, $overflow: hidden);
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
 }
 
 .sectionHeader {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  gap: v.$space-md;
-  padding: v.$space-lg;
+  align-items: center;
+  gap: v.$space-sm;
+  width: 100%;
+  min-width: 0;
+  padding: v.$space-md v.$space-lg;
   border-bottom: 1px solid v.$border-soft;
 }
 
-.sectionTitle {
-  margin: 0;
-  color: v.$color-white;
+.chipRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  width: 100%;
+  min-width: 0;
+  gap: v.$space-sm;
+  align-items: stretch;
+}
+
+
+.chip {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  justify-content: center;
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  min-height: v.$control-height-md;
+  padding: 0 v.$space-sm;
+  border-radius: v.$border-radius-md;
+  border: 1px solid v.$color-brand-yellow;
+  background: rgba(v.$color-brand-yellow, 0.18);
+  color: v.$color-brand-yellow;
+  font-size: v.$font-size-xxs;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
   font-family: v.$font-family-accent, sans-serif;
-  font-size: v.$font-size-lg;
+
+  &[data-progress="true"] {
+    color: v.$color-neutral-050;
+  }
+}
+
+.chipProgressFill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--chip-progress, 0%);
+  background: rgba(v.$color-brand-yellow, 0.32);
+  pointer-events: none;
+}
+
+.chipLabel {
+  position: relative;
+  z-index: 1;
+}
+
+.tableSectionBody {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  padding: v.$space-md v.$space-lg v.$space-lg;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.tableFrame {
+  display: flex;
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  gap: v.$space-md;
+}
+
+.tableShell {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+.playerCellContent {
+  display: inline-flex;
+  align-items: center;
+  gap: v.$space-sm;
+  min-width: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.expandToggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.4rem;
+  height: 1.4rem;
+  padding: 0;
+  flex: 0 0 auto;
+  border: 1px solid rgba(v.$color-brand-yellow, 0.4);
+  border-radius: v.$border-radius-sm;
+  background: rgba(v.$color-brand-yellow, 0.08);
+  color: v.$color-brand-yellow;
+  font: inherit;
+  font-size: v.$font-size-sm;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  position: relative;
+  z-index: 2;
+  pointer-events: auto;
+  user-select: none;
+  transition:
+    border-color 0.18s ease,
+    background-color 0.18s ease,
+    color 0.18s ease,
+    opacity 0.18s ease;
+
+  &:hover:not(:disabled),
+  &:focus-visible {
+    border-color: v.$color-brand-yellow;
+    background: rgba(v.$color-brand-yellow, 0.18);
+    color: v.$color-white;
+    outline: none;
+  }
+
+  &:disabled {
+    opacity: 0.42;
+    cursor: not-allowed;
+  }
+}
+
+.playerLink,
+.playerText {
+  min-width: 0;
+  color: v.$text-primary;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.playerLink {
+  transition: color 0.18s ease;
+
+  &:hover,
+  &:focus-visible {
+    color: v.$color-brand-yellow;
+    outline: none;
+  }
+}
+
+.expandedFallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 150px;
+  border-radius: v.$border-radius-md;
+  border: 1px solid rgba(v.$color-white, 0.08);
+  background: rgba(v.$color-white, 0.02);
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.progressIndicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: v.$space-sm;
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-.sectionCopy {
-  margin: v.$space-xs 0 0;
-  max-width: 60ch;
-  color: v.$text-secondary;
-  font-size: v.$font-size-sm;
-  line-height: 1.6;
-}
-
-.chipRow {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  align-items: center;
-  gap: v.$space-xs;
-}
-
-.chip {
+.progressSpinner {
   display: inline-flex;
-  align-items: center;
-  min-height: 30px;
-  padding: 0 v.$space-sm;
-  border-radius: 999px;
-  border: 1px solid rgba(v.$color-brand-yellow, 0.2);
-  background: rgba(v.$color-brand-yellow, 0.08);
-  color: v.$text-primary;
-  font-size: v.$font-size-xs;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.tableSectionBody {
-  padding: v.$space-lg;
-}
-
-.tableFrame {
-  display: grid;
-  gap: v.$space-md;
 }
 
 .stateBanner {
@@ -239,6 +348,19 @@ $page-max-width: 1360px;
     border-color: rgba(v.$color-white, 0.12);
     background: rgba(v.$color-white, 0.03);
   }
+}
+
+.stateBannerLead {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: v.$space-sm;
+  min-width: 0;
+}
+
+.stateBannerSpinner {
+  display: inline-flex;
+  flex: 0 0 auto;
+  margin-top: 0.1rem;
 }
 
 .stateBannerCopy {
