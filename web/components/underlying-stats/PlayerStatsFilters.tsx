@@ -127,9 +127,6 @@ export default function PlayerStatsFilters({
   return (
     <section className={styles.root} aria-label="Player stats primary controls">
       <div className={styles.headerRow}>
-        <p className={styles.hint}>
-          {headerHint}
-        </p>
         <button
           type="button"
           className={styles.advancedToggle}
@@ -157,7 +154,7 @@ export default function PlayerStatsFilters({
                 throughSeasonId: Math.max(
                   fromSeasonId,
                   primary.seasonRange.throughSeasonId ?? fromSeasonId
-                ),
+                )
               });
             }}
           >
@@ -185,7 +182,7 @@ export default function PlayerStatsFilters({
                   primary.seasonRange.fromSeasonId ?? throughSeasonId,
                   throughSeasonId
                 ),
-                throughSeasonId,
+                throughSeasonId
               });
             }}
           >
@@ -298,7 +295,7 @@ export default function PlayerStatsFilters({
                   : {
                       kind: "dateRange" as const,
                       startDate,
-                      endDate: dateRangeScope.endDate,
+                      endDate: dateRangeScope.endDate
                     };
 
               onScopeChange(nextScope);
@@ -320,7 +317,7 @@ export default function PlayerStatsFilters({
                   : {
                       kind: "dateRange" as const,
                       startDate: dateRangeScope.startDate,
-                      endDate,
+                      endDate
                     };
 
               onScopeChange(nextScope);
@@ -345,7 +342,7 @@ export default function PlayerStatsFilters({
                   ? { kind: "none" }
                   : {
                       kind: "gameRange",
-                      value,
+                      value
                     }
               );
             }}
@@ -370,7 +367,7 @@ export default function PlayerStatsFilters({
                   ? { kind: "none" }
                   : {
                       kind: "byTeamGames",
-                      value,
+                      value
                     }
               );
             }}
@@ -380,13 +377,12 @@ export default function PlayerStatsFilters({
       </div>
 
       <div className={styles.hintRow}>
-        <p className={styles.hint}>
-          Use one timeframe window at a time. Date and game-count inputs replace
-          each other automatically as the active sample.
-        </p>
         <span className={styles.familyBadge}>
           {formatTableFamily(tableFamily)} · default sort{" "}
-          {getDefaultLandingSortState(primary.statMode, primary.displayMode).sortKey}
+          {
+            getDefaultLandingSortState(primary.statMode, primary.displayMode)
+              .sortKey
+          }
         </span>
       </div>
 
@@ -400,7 +396,9 @@ export default function PlayerStatsFilters({
                 value={selectedTeamContextId ?? ""}
                 onChange={(event) =>
                   onTeamContextFilterChange(
-                    event.target.value === "" ? null : Number(event.target.value)
+                    event.target.value === ""
+                      ? null
+                      : Number(event.target.value)
                   )
                 }
               >
@@ -488,10 +486,6 @@ export default function PlayerStatsFilters({
           </div>
 
           <div className={styles.advancedMeta}>
-            <p className={styles.subtleHint}>
-              Advanced filters cover team context, venue, position, TOI
-              threshold, and combine or split traded-player rows.
-            </p>
             <span className={styles.scopeBadge}>
               {scopeIsActive
                 ? `Active scope: ${formatScope(expandable.scope.kind)}`
