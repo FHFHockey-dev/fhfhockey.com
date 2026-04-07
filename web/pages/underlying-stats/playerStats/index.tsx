@@ -751,11 +751,11 @@ export default function PlayerUnderlyingStatsLandingPage() {
 
           <section className={styles.section} aria-label="Player table">
             <div className={styles.sectionHeader}>
-                <div
-                  className={styles.chipRow}
-                  aria-label="Current landing defaults"
-                >
-                  {summaryChips.map((chip) => (
+              <div
+                className={styles.chipRow}
+                aria-label="Current landing defaults"
+              >
+                {summaryChips.map((chip) => (
                   <span
                     key={chip.key}
                     className={styles.chip}
@@ -763,23 +763,27 @@ export default function PlayerUnderlyingStatsLandingPage() {
                     style={
                       chip.progress
                         ? ({
-                            "--chip-progress": `${Math.round(
-                              ((chip.progress.total > 0
-                                ? chip.progress.current / chip.progress.total
-                                : rowLoadProgress) *
-                                10000)
-                            ) / 100}%`
+                            "--chip-progress": `${
+                              Math.round(
+                                (chip.progress.total > 0
+                                  ? chip.progress.current / chip.progress.total
+                                  : rowLoadProgress) * 10000
+                              ) / 100
+                            }%`
                           } as CSSProperties)
                         : undefined
                     }
                   >
                     {chip.progress ? (
-                      <span className={styles.chipProgressFill} aria-hidden="true" />
+                      <span
+                        className={styles.chipProgressFill}
+                        aria-hidden="true"
+                      />
                     ) : null}
                     <span className={styles.chipLabel}>{chip.label}</span>
                   </span>
-                  ))}
-                </div>
+                ))}
+              </div>
             </div>
 
             <div className={styles.tableSectionBody}>
@@ -1187,13 +1191,7 @@ export default function PlayerUnderlyingStatsLandingPage() {
                     );
                   }}
                 />
-                <p className={styles.footnote}>
-                  Table data is served through
-                  <code> /api/v1/underlying-stats/players </code> using
-                  canonical filter and sort params with staged loading: first
-                  100 rows immediately, then the remaining sorted rows in
-                  sequential 100-player batches.
-                </p>
+
                 {isProgressivelyHydratingRows ? (
                   <p className={styles.footnote}>
                     Showing the first {loadedRowCount} of {totalRowCount} player
