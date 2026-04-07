@@ -23,7 +23,7 @@ $page-max-width: 1600px;
   min-height: 0;
   margin: 0 auto;
   display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr);
+  grid-template-rows: auto auto auto minmax(0, 1fr);
   gap: v.$space-lg;
 }
 

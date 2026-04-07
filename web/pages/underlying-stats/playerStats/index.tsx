@@ -46,6 +46,8 @@ import { teamsInfo } from "lib/teamsInfo";
 
 import styles from "./playerStats.module.scss";
 
+import UnderlyingStatsNavBar from "../../../components/underlying-stats/UnderlyingStatsNavBar";
+
 const LANDING_RESPONSE_CACHE_PREFIX = "player-stats-landing-response";
 const INITIAL_LANDING_PLAYER_ROW_COUNT = 100;
 type LandingSummaryChip =
@@ -711,13 +713,13 @@ export default function PlayerUnderlyingStatsLandingPage() {
               <Link href="/underlying-stats" className={styles.breadcrumbLink}>
                 Underlying Stats
               </Link>
-              <span>/</span>
-              <span>Players</span>
             </div>
-            <Link href="/underlying-stats" className={styles.breadcrumbLink}>
-              View team power rankings
+            <Link href="/trends" className={styles.breadcrumbLink}>
+              View trends dashboard
             </Link>
           </div>
+
+          <UnderlyingStatsNavBar />
 
           <header className={styles.hero}>
             <div className={styles.heroBody}>

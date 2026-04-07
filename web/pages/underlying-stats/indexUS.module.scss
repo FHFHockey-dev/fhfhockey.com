@@ -28,6 +28,7 @@
 .utilityRow {
   display: flex;
   align-items: center;
+  gap: v.$space-md;
 }
 
 .utilityLink {
@@ -46,11 +47,51 @@
   }
 }
 
+.navButton {
+  display: inline-flex;
+  align-items: center;
+  background-color: transparent;
+  color: v.$color-brand-yellow;
+  border: 1px solid v.$color-brand-yellow;
+  padding: v.$space-xs v.$space-md;
+  border-radius: v.$radius-sm;
+  cursor: pointer;
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: v.$font-size-xs;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background-color: rgba(v.$color-brand-yellow, 0.1);
+    color: v.$color-brand-yellow;
+    box-shadow: 0 0 8px rgba(v.$color-brand-yellow, 0.2);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: v.$focus-ring-desktop;
+  }
+}
+
 .headerPanel {
   @include p.panel-shell($padding: v.$space-md, $variant: soft, $overflow: visible);
   display: grid;
   gap: v.$space-md;
   order: 1;
+}
+
+.topNavRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: v.$space-md;
 }
 
 .sectionEyebrow {

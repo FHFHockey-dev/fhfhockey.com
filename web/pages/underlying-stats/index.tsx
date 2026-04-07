@@ -15,6 +15,8 @@ import {
   type UnderlyingStatsLandingSnapshot
 } from "../../lib/underlying-stats/teamLandingRatings";
 
+import UnderlyingStatsNavBar from "../../components/underlying-stats/UnderlyingStatsNavBar";
+
 type PageProps = {
   initialDate: string | null;
   initialRatings: UnderlyingStatsLandingRating[];
@@ -275,7 +277,10 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
         </div>
 
         <section className={styles.headerPanel}>
-          <div className={styles.sectionEyebrow}>Underlying stats</div>
+          <div className={styles.topNavRow}>
+            <div className={styles.sectionEyebrow}>Underlying stats</div>
+            <UnderlyingStatsNavBar />
+          </div>
           <div className={styles.header}>
             <div className={styles.headerIntro}>
               <h1 className={styles.title}>Team Power Rankings</h1>
@@ -285,7 +290,11 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
                 strength-of-schedule context.
               </p>
             </div>
-            <div className={styles.controls} role="group" aria-label="Snapshot controls">
+            <div
+              className={styles.controls}
+              role="group"
+              aria-label="Snapshot controls"
+            >
               <label className={styles.controlLabel} htmlFor="date-select">
                 Snapshot date
               </label>
@@ -310,8 +319,8 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
         </section>
 
         <section className={styles.secondaryPanels}>
-          <details className={styles.legend}>
-            <summary className={styles.legendSummary}>Metric definitions</summary>
+          <div className={styles.legend}>
+            <div className={styles.legendSummary}>Metric definitions</div>
             <div className={styles.legendContent}>
               <p>
                 <strong>Power Score</strong> = average of Off, Def, and Pace,
@@ -327,8 +336,8 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
               <p>
                 <strong>Trend</strong> = current offense rating versus the prior
                 10 played snapshots. <strong>SoS</strong> = 50/50 blend of
-                opponent record/schedule context and opponents&apos; current Power
-                Scores. Both use the same 100-centered page scale.{" "}
+                opponent record/schedule context and opponents&apos; current
+                Power Scores. Both use the same 100-centered page scale.{" "}
                 <strong>Pace60</strong> is the underlying per-60 pace metric.
               </p>
               <p>
@@ -337,7 +346,7 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
                 100-point scale for quick reads.
               </p>
             </div>
-          </details>
+          </div>
 
           {shouldShowSubRatings && (
             <section className={styles.subRatings}>
@@ -377,7 +386,10 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
           )}
         </section>
 
-        <section className={styles.summarySection} aria-labelledby="top-teams-heading">
+        <section
+          className={styles.summarySection}
+          aria-labelledby="top-teams-heading"
+        >
           <div className={styles.sectionHeader}>
             <div>
               <p className={styles.sectionKicker}>Summary cards</p>
@@ -474,7 +486,9 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
             <div className={styles.sectionMeta}>
               <span>{rankedRatings.length} teams</span>
               <span>
-                {selectedDate ? formatDateLabel(selectedDate) : "Latest snapshot"}
+                {selectedDate
+                  ? formatDateLabel(selectedDate)
+                  : "Latest snapshot"}
               </span>
             </div>
           </div>
