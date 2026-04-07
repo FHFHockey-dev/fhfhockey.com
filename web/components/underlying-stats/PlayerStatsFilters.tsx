@@ -42,6 +42,16 @@ type PlayerStatsFiltersProps = {
   state: PlayerStatsFilterState;
   seasonOptions: readonly PlayerStatsSeasonOption[];
   teamOptions: readonly PlayerStatsTeamOption[];
+  surfaceLabel?: string;
+  hideModeControl?: boolean;
+  hidePositionGroupControl?: boolean;
+  hideTradeModeControl?: boolean;
+  headerHintOverride?: string;
+  gameRangeLabel?: string;
+  gameRangePlaceholder?: string;
+  teamGamesLabel?: string;
+  teamGamesPlaceholder?: string;
+  minimumToiLabel?: string;
   onSeasonRangeChange: (nextRange: {
     fromSeasonId: number;
     throughSeasonId: number;
@@ -55,7 +65,9 @@ type PlayerStatsFiltersProps = {
   onDisplayModeChange: (displayMode: PlayerStatsDisplayMode) => void;
   onAdvancedOpenChange: (open: boolean) => void;
   onTeamContextFilterChange: (teamId: number | null) => void;
-  onPositionGroupChange: (positionGroup: PlayerStatsPositionGroup | null) => void;
+  onPositionGroupChange: (
+    positionGroup: PlayerStatsPositionGroup | null
+  ) => void;
   onVenueChange: (venue: PlayerStatsVenue) => void;
   onMinimumToiChange: (minimumToiSeconds: number | null) => void;
   onScopeChange: (scope: PlayerStatsFilterState["expandable"]["scope"]) => void;
@@ -80,6 +92,16 @@ export default function PlayerStatsFilters({
   state,
   seasonOptions,
   teamOptions,
+  surfaceLabel = "Player stats",
+  hideModeControl = false,
+  hidePositionGroupControl = false,
+  hideTradeModeControl = false,
+  headerHintOverride,
+  gameRangeLabel = "# of GP",
+  gameRangePlaceholder = "Last X player games",
+  teamGamesLabel = "# of Team GP",
+  teamGamesPlaceholder = "Last X team games",
+  minimumToiLabel = "Minimum TOI",
   onSeasonRangeChange,
   onSeasonTypeChange,
   onStrengthChange,
@@ -92,7 +114,7 @@ export default function PlayerStatsFilters({
   onVenueChange,
   onMinimumToiChange,
   onScopeChange,
-  onTradeModeChange,
+  onTradeModeChange
 }: PlayerStatsFiltersProps) {
   const { primary } = state;
   const { expandable } = state;
@@ -112,9 +134,10 @@ export default function PlayerStatsFilters({
   const teamLabel =
     state.surface === "landing" ? "Team" : "Against Specific Team";
   const headerHint =
-    state.surface === "landing"
+    headerHintOverride ??
+    (state.surface === "landing"
       ? "Primary controls drive the canonical landing query."
-      : "Primary controls drive the canonical detail query.";
+      : "Primary controls drive the canonical detail query.");
   const dateRangeScope =
     expandable.scope.kind === "dateRange"
       ? expandable.scope
@@ -125,8 +148,12 @@ export default function PlayerStatsFilters({
     expandable.scope.kind === "byTeamGames" ? expandable.scope.value : null;
 
   return (
-    <section className={styles.root} aria-label="Player stats primary controls">
+    <section
+      className={styles.root}
+      aria-label={`${surfaceLabel} primary controls`}
+    >
       <div className={styles.headerRow}>
+        <p className={styles.hint}>{headerHint}</p>
         <button
           type="button"
           className={styles.advancedToggle}
@@ -245,22 +272,24 @@ export default function PlayerStatsFilters({
           </select>
         </label>
 
-        <label className={styles.control}>
-          <span className={styles.label}>Stat Mode</span>
-          <select
-            className={styles.select}
-            value={primary.statMode}
-            onChange={(event) =>
-              onModeChange(event.target.value as PlayerStatsMode)
-            }
-          >
-            {MODE_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
+        {!hideModeControl ? (
+          <label className={styles.control}>
+            <span className={styles.label}>Stat Mode</span>
+            <select
+              className={styles.select}
+              value={primary.statMode}
+              onChange={(event) =>
+                onModeChange(event.target.value as PlayerStatsMode)
+              }
+            >
+              {MODE_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
 
         <label className={styles.control}>
           <span className={styles.label}>Display Mode</span>
@@ -326,7 +355,7 @@ export default function PlayerStatsFilters({
         </label>
 
         <label className={styles.control}>
-          <span className={styles.label}># of GP</span>
+          <span className={styles.label}>{gameRangeLabel}</span>
           <input
             className={styles.input}
             type="number"
@@ -346,12 +375,12 @@ export default function PlayerStatsFilters({
                     }
               );
             }}
-            placeholder="Last X player games"
+            placeholder={gameRangePlaceholder}
           />
         </label>
 
         <label className={styles.control}>
-          <span className={styles.label}># of Team GP</span>
+          <span className={styles.label}>{teamGamesLabel}</span>
           <input
             className={styles.input}
             type="number"
@@ -371,7 +400,7 @@ export default function PlayerStatsFilters({
                     }
               );
             }}
-            placeholder="Last X team games"
+            placeholder={teamGamesPlaceholder}
           />
         </label>
       </div>
@@ -411,28 +440,30 @@ export default function PlayerStatsFilters({
               </select>
             </label>
 
-            <label className={styles.control}>
-              <span className={styles.label}>Position Group</span>
-              <select
-                className={styles.select}
-                value={expandable.positionGroup ?? ""}
-                onChange={(event) =>
-                  onPositionGroupChange(
-                    event.target.value === ""
-                      ? null
-                      : (event.target.value as PlayerStatsPositionGroup)
-                  )
-                }
-                disabled={!modeCompatibility.supportsPositionFilter}
-              >
-                <option value="">All Positions</option>
-                {positionOptions.map((positionGroup) => (
-                  <option key={positionGroup} value={positionGroup}>
-                    {formatPositionGroup(positionGroup)}
-                  </option>
-                ))}
-              </select>
-            </label>
+            {!hidePositionGroupControl ? (
+              <label className={styles.control}>
+                <span className={styles.label}>Position Group</span>
+                <select
+                  className={styles.select}
+                  value={expandable.positionGroup ?? ""}
+                  onChange={(event) =>
+                    onPositionGroupChange(
+                      event.target.value === ""
+                        ? null
+                        : (event.target.value as PlayerStatsPositionGroup)
+                    )
+                  }
+                  disabled={!modeCompatibility.supportsPositionFilter}
+                >
+                  <option value="">All Positions</option>
+                  {positionOptions.map((positionGroup) => (
+                    <option key={positionGroup} value={positionGroup}>
+                      {formatPositionGroup(positionGroup)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
 
             <label className={styles.control}>
               <span className={styles.label}>Home or Away</span>
@@ -452,7 +483,7 @@ export default function PlayerStatsFilters({
             </label>
 
             <label className={styles.control}>
-              <span className={styles.label}>Minimum TOI</span>
+              <span className={styles.label}>{minimumToiLabel}</span>
               <input
                 className={styles.input}
                 type="number"
@@ -467,22 +498,26 @@ export default function PlayerStatsFilters({
               />
             </label>
 
-            <label className={styles.control}>
-              <span className={styles.label}>Combine or Split</span>
-              <select
-                className={styles.select}
-                value={expandable.tradeMode}
-                onChange={(event) =>
-                  onTradeModeChange(event.target.value as PlayerStatsTradeMode)
-                }
-              >
-                {PLAYER_STATS_TRADE_MODES.map((tradeMode) => (
-                  <option key={tradeMode} value={tradeMode}>
-                    {tradeMode === "combine" ? "Combine" : "Split"}
-                  </option>
-                ))}
-              </select>
-            </label>
+            {!hideTradeModeControl ? (
+              <label className={styles.control}>
+                <span className={styles.label}>Combine or Split</span>
+                <select
+                  className={styles.select}
+                  value={expandable.tradeMode}
+                  onChange={(event) =>
+                    onTradeModeChange(
+                      event.target.value as PlayerStatsTradeMode
+                    )
+                  }
+                >
+                  {PLAYER_STATS_TRADE_MODES.map((tradeMode) => (
+                    <option key={tradeMode} value={tradeMode}>
+                      {tradeMode === "combine" ? "Combine" : "Split"}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
           </div>
 
           <div className={styles.advancedMeta}>

@@ -15,6 +15,7 @@ import {
   formatPlayerStatsToi,
   formatPlayerStatsValue,
 } from "lib/underlying-stats/playerStatsFormatting";
+import { buildGoalieStatsLandingChartApiPath } from "lib/underlying-stats/goalieStatsQueries";
 import {
   buildPlayerStatsLandingChartApiPath,
   type PlayerStatsLandingChartPoint,
@@ -31,6 +32,7 @@ type PlayerStatsExpandedRowChartProps = {
   splitTeamId?: number | null;
   viewportWidth?: number | null;
   state: PlayerStatsLandingFilterState;
+  variant?: "player" | "goalie";
   metricColumns: readonly PlayerStatsColumnDefinition[];
   selectedMetricKey: string;
   onMetricChange: (metricKey: string) => void;
@@ -49,9 +51,10 @@ export default function PlayerStatsExpandedRowChart({
   splitTeamId = null,
   viewportWidth = null,
   state,
+  variant = "player",
   metricColumns,
   selectedMetricKey,
-  onMetricChange,
+  onMetricChange
 }: PlayerStatsExpandedRowChartProps) {
   const [data, setData] = useState<PlayerStatsLandingChartPoint[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -73,11 +76,18 @@ export default function PlayerStatsExpandedRowChart({
 
   useEffect(() => {
     const controller = new AbortController();
-    const requestPath = buildPlayerStatsLandingChartApiPath({
-      playerId,
-      state,
-      splitTeamId,
-    });
+    const requestPath =
+      variant === "goalie"
+        ? buildGoalieStatsLandingChartApiPath({
+            playerId,
+            state,
+            splitTeamId
+          })
+        : buildPlayerStatsLandingChartApiPath({
+            playerId,
+            state,
+            splitTeamId
+          });
 
     setIsLoading(true);
     setError(null);
@@ -92,7 +102,9 @@ export default function PlayerStatsExpandedRowChart({
           throw new Error(
             "error" in payload && payload.error
               ? payload.error
-              : "Unable to load player chart data."
+              : variant === "goalie"
+                ? "Unable to load goalie chart data."
+                : "Unable to load player chart data."
           );
         }
 
@@ -109,7 +121,9 @@ export default function PlayerStatsExpandedRowChart({
         setError(
           fetchError instanceof Error
             ? fetchError.message
-            : "Unable to load player chart data."
+            : variant === "goalie"
+              ? "Unable to load goalie chart data."
+              : "Unable to load player chart data."
         );
       })
       .finally(() => {
@@ -119,14 +133,16 @@ export default function PlayerStatsExpandedRowChart({
       });
 
     return () => controller.abort();
-  }, [playerId, splitTeamId, state]);
+  }, [playerId, splitTeamId, state, variant]);
 
   const chartData = useMemo<ChartPoint[]>(() => {
     if (!selectedMetric) {
       return [];
     }
 
-    const numericValues = data.map((row) => toFiniteNumber(row[selectedMetric.key]));
+    const numericValues = data.map((row) =>
+      toFiniteNumber(row[selectedMetric.key])
+    );
     const seasonAverage = calculateAverage(numericValues);
     const rolling5 = calculateRollingAverage(numericValues, 5);
     const rolling10 = calculateRollingAverage(numericValues, 10);
@@ -137,7 +153,7 @@ export default function PlayerStatsExpandedRowChart({
       value: numericValues[index] ?? null,
       rolling5: rolling5[index] ?? null,
       rolling10: rolling10[index] ?? null,
-      seasonAverage,
+      seasonAverage
     }));
   }, [data, selectedMetric]);
 
@@ -154,7 +170,13 @@ export default function PlayerStatsExpandedRowChart({
   }
 
   if (isLoading) {
-    return <div className={styles.status}>Loading player trend...</div>;
+    return (
+      <div className={styles.status}>
+        {variant === "goalie"
+          ? "Loading goalie trend..."
+          : "Loading player trend..."}
+      </div>
+    );
   }
 
   if (error) {
@@ -185,7 +207,11 @@ export default function PlayerStatsExpandedRowChart({
         className={styles.chartShell}
         style={
           chartWidth != null
-            ? { width: `${chartWidth}px`, minWidth: `${chartWidth}px`, maxWidth: `${chartWidth}px` }
+            ? {
+                width: `${chartWidth}px`,
+                minWidth: `${chartWidth}px`,
+                maxWidth: `${chartWidth}px`
+              }
             : undefined
         }
       >
@@ -195,136 +221,136 @@ export default function PlayerStatsExpandedRowChart({
           data={chartData}
           margin={{ top: 10, right: 12, bottom: 0, left: 4 }}
         >
-            <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.GRID_LINE} />
-            <XAxis
-              dataKey="label"
-              tick={{ fill: CHART_COLORS.TICK_LABEL, fontSize: 10 }}
-              axisLine={{ stroke: CHART_COLORS.AXIS_BORDER }}
-              tickLine={{ stroke: CHART_COLORS.AXIS_BORDER }}
-              minTickGap={18}
-            />
-            <YAxis
-              width={48}
-              tick={{ fill: CHART_COLORS.TICK_LABEL, fontSize: 10 }}
-              axisLine={{ stroke: CHART_COLORS.AXIS_BORDER }}
-              tickLine={{ stroke: CHART_COLORS.AXIS_BORDER }}
-              tickFormatter={(value) =>
-                formatAxisValue(value, selectedMetric.format)
+          <CartesianGrid
+            strokeDasharray="3 3"
+            stroke={CHART_COLORS.GRID_LINE}
+          />
+          <XAxis
+            dataKey="label"
+            tick={{ fill: CHART_COLORS.TICK_LABEL, fontSize: 10 }}
+            axisLine={{ stroke: CHART_COLORS.AXIS_BORDER }}
+            tickLine={{ stroke: CHART_COLORS.AXIS_BORDER }}
+            minTickGap={18}
+          />
+          <YAxis
+            width={48}
+            tick={{ fill: CHART_COLORS.TICK_LABEL, fontSize: 10 }}
+            axisLine={{ stroke: CHART_COLORS.AXIS_BORDER }}
+            tickLine={{ stroke: CHART_COLORS.AXIS_BORDER }}
+            tickFormatter={(value) =>
+              formatAxisValue(value, selectedMetric.format)
+            }
+          />
+          <Tooltip
+            cursor={{ stroke: addAlpha(WIGO_COLORS.YELLOW, 0.5) }}
+            content={({ active, payload }) => {
+              if (!active || !payload?.length) {
+                return null;
               }
-            />
-            <Tooltip
-              cursor={{ stroke: addAlpha(WIGO_COLORS.YELLOW, 0.5) }}
-              content={({ active, payload }) => {
-                if (!active || !payload?.length) {
-                  return null;
-                }
 
-                const point = payload[0]?.payload as ChartPoint | undefined;
-                if (!point) {
-                  return null;
-                }
+              const point = payload[0]?.payload as ChartPoint | undefined;
+              if (!point) {
+                return null;
+              }
 
-                return (
-                  <div className={styles.tooltip}>
-                    <p className={styles.tooltipLabel}>
-                      {formatLongDate(point.gameDate)}
-                    </p>
-                    <p className={styles.tooltipValue}>
-                      {selectedMetric.label}:{" "}
-                      {formatPlayerStatsValue(
-                        point.value,
-                        selectedMetric.format
-                      )}
-                    </p>
-                    <p className={styles.tooltipMeta}>
-                      5G Avg:{" "}
-                      {formatPlayerStatsValue(
-                        point.rolling5,
-                        selectedMetric.format
-                      )}
-                    </p>
-                    <p className={styles.tooltipMeta}>
-                      10G Avg:{" "}
-                      {formatPlayerStatsValue(
-                        point.rolling10,
-                        selectedMetric.format
-                      )}
-                    </p>
-                    <p className={styles.tooltipMeta}>
-                      Season Avg:{" "}
-                      {formatPlayerStatsValue(
-                        point.seasonAverage,
-                        selectedMetric.format
-                      )}
-                    </p>
-                  </div>
-                );
-              }}
-            />
-            <Bar
-              dataKey="value"
-              barSize={12}
-              radius={[2, 2, 0, 0]}
-              fill={addAlpha(CHART_COLORS.BAR_PRIMARY, 0.72)}
-              stroke={CHART_COLORS.BAR_PRIMARY}
-              strokeWidth={1}
-              isAnimationActive={false}
-            />
-            <Area
-              type="monotone"
-              dataKey="rolling5"
-              stroke="none"
-              fill={addAlpha(CHART_COLORS.LINE_PRIMARY, 0.12)}
-              connectNulls
-              isAnimationActive={false}
-            />
-            <Line
-              type="monotone"
-              dataKey="rolling5"
-              stroke={CHART_COLORS.LINE_PRIMARY}
-              strokeWidth={2.25}
-              dot={false}
-              activeDot={{
-                r: 4,
-                fill: CHART_COLORS.LINE_PRIMARY,
-                strokeWidth: 0,
-              }}
-              connectNulls
-              isAnimationActive={false}
-            />
-            <Line
-              type="monotone"
-              dataKey="rolling10"
-              stroke={CHART_COLORS.PP_TOI}
-              strokeWidth={2}
-              dot={false}
-              activeDot={{
-                r: 4,
-                fill: CHART_COLORS.PP_TOI,
-                strokeWidth: 0,
-              }}
-              connectNulls
-              isAnimationActive={false}
-            />
-            <Line
-              type="monotone"
-              dataKey="seasonAverage"
-              stroke={CHART_COLORS.AVG_LINE_PRIMARY}
-              strokeWidth={1.75}
-              strokeDasharray="4 4"
-              dot={false}
-              activeDot={false}
-              connectNulls
-              isAnimationActive={false}
-            />
-            <Brush
-              dataKey="label"
-              height={24}
-              stroke={CHART_COLORS.LINE_PRIMARY}
-              fill={addAlpha(WIGO_COLORS.BG_DARK_2, 0.95)}
-              travellerWidth={10}
-            />
-          </ComposedChart>
+              return (
+                <div className={styles.tooltip}>
+                  <p className={styles.tooltipLabel}>
+                    {formatLongDate(point.gameDate)}
+                  </p>
+                  <p className={styles.tooltipValue}>
+                    {selectedMetric.label}:{" "}
+                    {formatPlayerStatsValue(point.value, selectedMetric.format)}
+                  </p>
+                  <p className={styles.tooltipMeta}>
+                    5G Avg:{" "}
+                    {formatPlayerStatsValue(
+                      point.rolling5,
+                      selectedMetric.format
+                    )}
+                  </p>
+                  <p className={styles.tooltipMeta}>
+                    10G Avg:{" "}
+                    {formatPlayerStatsValue(
+                      point.rolling10,
+                      selectedMetric.format
+                    )}
+                  </p>
+                  <p className={styles.tooltipMeta}>
+                    Season Avg:{" "}
+                    {formatPlayerStatsValue(
+                      point.seasonAverage,
+                      selectedMetric.format
+                    )}
+                  </p>
+                </div>
+              );
+            }}
+          />
+          <Bar
+            dataKey="value"
+            barSize={12}
+            radius={[2, 2, 0, 0]}
+            fill={addAlpha(CHART_COLORS.BAR_PRIMARY, 0.72)}
+            stroke={CHART_COLORS.BAR_PRIMARY}
+            strokeWidth={1}
+            isAnimationActive={false}
+          />
+          <Area
+            type="monotone"
+            dataKey="rolling5"
+            stroke="none"
+            fill={addAlpha(CHART_COLORS.LINE_PRIMARY, 0.12)}
+            connectNulls
+            isAnimationActive={false}
+          />
+          <Line
+            type="monotone"
+            dataKey="rolling5"
+            stroke={CHART_COLORS.LINE_PRIMARY}
+            strokeWidth={2.25}
+            dot={false}
+            activeDot={{
+              r: 4,
+              fill: CHART_COLORS.LINE_PRIMARY,
+              strokeWidth: 0
+            }}
+            connectNulls
+            isAnimationActive={false}
+          />
+          <Line
+            type="monotone"
+            dataKey="rolling10"
+            stroke={CHART_COLORS.PP_TOI}
+            strokeWidth={2}
+            dot={false}
+            activeDot={{
+              r: 4,
+              fill: CHART_COLORS.PP_TOI,
+              strokeWidth: 0
+            }}
+            connectNulls
+            isAnimationActive={false}
+          />
+          <Line
+            type="monotone"
+            dataKey="seasonAverage"
+            stroke={CHART_COLORS.AVG_LINE_PRIMARY}
+            strokeWidth={1.75}
+            strokeDasharray="4 4"
+            dot={false}
+            activeDot={false}
+            connectNulls
+            isAnimationActive={false}
+          />
+          <Brush
+            dataKey="label"
+            height={24}
+            stroke={CHART_COLORS.LINE_PRIMARY}
+            fill={addAlpha(WIGO_COLORS.BG_DARK_2, 0.95)}
+            travellerWidth={10}
+          />
+        </ComposedChart>
       </div>
     </div>
   );

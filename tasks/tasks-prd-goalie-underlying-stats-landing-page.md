@@ -20,8 +20,16 @@
 - `web/pages/api/v1/db/update-player-underlying-stats.ts` - Canonical refresh entry point that the goalie PRD explicitly reuses.
 - `web/pages/api/v1/db/update-player-underlying-summaries.ts` - Canonical summary-only refresh entry point that the goalie PRD explicitly reuses.
 - `web/components/underlying-stats/PlayerStatsTable.tsx` - Shared wide-table component that may be reused or specialized for the dedicated goalie landing page.
+- `web/components/underlying-stats/PlayerStatsExpandedRowChart.tsx` - Shared inline trend-chart component now wired to the dedicated goalie chart namespace when used on the goalie landing page.
+- `web/components/underlying-stats/PlayerStatsExpandedRowChart.test.tsx` - Focused chart-component tests covering the dedicated goalie chart request path and goalie-specific loading copy.
+- `web/components/underlying-stats/PlayerStatsTable.test.tsx` - Shared table tests covering goalie rank rendering, sort behavior, and visible PRD-aligned header labels.
 - `web/components/underlying-stats/playerStatsColumns.ts` - Existing goalie counts and rates column definitions to audit and either reuse or extract.
+- `web/components/underlying-stats/playerStatsColumns.test.ts` - Column-definition tests covering the dedicated goalie counts and rates label contract.
 - `web/components/underlying-stats/PlayerStatsFilters.tsx` - Existing shared filter component whose goalie-specific pieces may be reused or extracted.
+- `web/components/underlying-stats/PlayerStatsFilters.test.tsx` - Shared filter tests covering the dedicated goalie primary and advanced control surface plus forwarded filter interactions.
+- `web/__tests__/pages/underlying-stats/playerStats/index.test.tsx` - Shared landing-page tests covering the dedicated goalie variant's API namespace, goalie-only control surface, staged-loading behavior, sort-default persistence, and landing filter serialization.
+- `web/pages/underlying-stats/playerStats/index.tsx` - Shared landing page shell now parameterized for goalie-first defaults, metadata, and dedicated goalie landing fetch orchestration.
+- `web/pages/underlying-stats/playerStats/playerStats.module.scss` - Shared landing page styles supporting the goalie-first hero lead copy.
 - `tasks/prd-goalie-underlying-stats-landing-page.md` - Source PRD for this task list.
 - `tasks/artifacts/goalie-stats-current-data-path-audit.md` - `1.1` audit of the current shared goalie landing/detail/chart read path through the player-underlying routes and server modules.
 - `tasks/artifacts/goalie-stats-column-audit.md` - `1.2` comparison of current shared goalie counts/rates columns against the dedicated goalie PRD requirements.
@@ -55,22 +63,22 @@
   - [x] 2.5 Ensure the dedicated goalie read routes delegate to shared aggregation logic rather than duplicating underlying metric computation.
   - [x] 2.6 Add route-level tests proving the goalie API surface returns goalie-only families and preserves the existing shared source-of-truth math.
 
-- [ ] 3.0 Implement the `/underlying-stats/goalieStats` landing page with goalie-first controls, table families, and staged loading behavior
-  - [ ] 3.1 Build the goalie landing page shell and route-level page state with goalie-first copy, breadcrumbs, defaults, and metadata.
-  - [ ] 3.2 Reuse or extract the current shared filter controls so the goalie landing page exposes only goalie-relevant controls.
-  - [ ] 3.3 Support the required primary controls: season span, season type, strength, score state, and display mode.
-  - [ ] 3.4 Support the required advanced filters: team, home or away, minimum TOI, date range, game range, and team-game range.
-  - [ ] 3.5 Render the exact goalie counts and goalie rates column sets from the PRD, including correct identity columns and row-rank behavior.
-  - [ ] 3.6 Preserve or adapt staged loading so the dedicated goalie landing page remains performant for large result sets without regressing clarity of progress state.
-  - [ ] 3.7 Reuse or adapt the expandable-row chart pattern only if it cleanly fits the goalie surface without introducing width or loading regressions.
-  - [ ] 3.8 Add landing-page tests for table-family switching, filter interactions, staged loading behavior, sort defaults, and goalie-only row results.
+- [x] 3.0 Implement the `/underlying-stats/goalieStats` landing page with goalie-first controls, table families, and staged loading behavior
+  - [x] 3.1 Build the goalie landing page shell and route-level page state with goalie-first copy, breadcrumbs, defaults, and metadata.
+  - [x] 3.2 Reuse or extract the current shared filter controls so the goalie landing page exposes only goalie-relevant controls.
+  - [x] 3.3 Support the required primary controls: season span, season type, strength, score state, and display mode.
+  - [x] 3.4 Support the required advanced filters: team, home or away, minimum TOI, date range, game range, and team-game range.
+  - [x] 3.5 Render the exact goalie counts and goalie rates column sets from the PRD, including correct identity columns and row-rank behavior.
+  - [x] 3.6 Preserve or adapt staged loading so the dedicated goalie landing page remains performant for large result sets without regressing clarity of progress state.
+  - [x] 3.7 Reuse or adapt the expandable-row chart pattern only if it cleanly fits the goalie surface without introducing width or loading regressions.
+  - [x] 3.8 Add landing-page tests for table-family switching, filter interactions, staged loading behavior, sort defaults, and goalie-only row results.
 
-- [ ] 4.0 Implement the `/underlying-stats/goalieStats/{playerId}` detail page and goalie-specific drill-down navigation flow
-  - [ ] 4.1 Build the dedicated goalie detail route shell and goalie-first page framing.
-  - [ ] 4.2 Ensure landing-page goalie links route to the dedicated goalie detail page with preserved analysis context in the URL.
-  - [ ] 4.3 Reuse the shared detail aggregation engine while constraining the detail surface to goalie-relevant families and controls.
-  - [ ] 4.4 Decide and implement whether the detail page keeps the current `Against Specific Team` pattern or uses a simplified goalie-specific alternative.
-  - [ ] 4.5 Add dedicated detail-page tests for route resolution, preserved query state, sort behavior, and goalie-specific rendering.
+- [x] 4.0 Implement the `/underlying-stats/goalieStats/{playerId}` detail page and goalie-specific drill-down navigation flow
+  - [x] 4.1 Build the dedicated goalie detail route shell and goalie-first page framing.
+  - [x] 4.2 Ensure landing-page goalie links route to the dedicated goalie detail page with preserved analysis context in the URL.
+  - [x] 4.3 Reuse the shared detail aggregation engine while constraining the detail surface to goalie-relevant families and controls.
+  - [x] 4.4 Decide and implement whether the detail page keeps the current `Against Specific Team` pattern or uses a simplified goalie-specific alternative.
+  - [x] 4.5 Add dedicated detail-page tests for route resolution, preserved query state, sort behavior, and goalie-specific rendering.
 
 - [ ] 5.0 Align the goalie surface with the current style system and remove player-oriented information architecture from the dedicated goalie experience
   - [ ] 5.1 Reconcile the dedicated goalie landing and detail pages with the current FHFH style system and page-shell conventions.
@@ -86,3 +94,4 @@
   - [ ] 6.4 Validate that minimum TOI, team, and venue filters are applied after or before aggregation in the correct stages per the PRD.
   - [ ] 6.5 Validate that the dedicated goalie routes do not break or diverge from the shared `update-player-underlying-stats` and `update-player-underlying-summaries` refresh jobs.
   - [ ] 6.6 Run targeted route, page, and server tests and document any residual risks, especially around shared pipeline coupling and future removal of goalie mode from the player surface.
+  - [ ] NEW 6.7 Fix the workspace `Build web (typecheck)` task configuration so it runs from the `web` package directory instead of the repo root.

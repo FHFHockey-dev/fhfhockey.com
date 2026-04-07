@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import GoalieUnderlyingStatsDetailRoute from "../../../../pages/underlying-stats/goalieStats/[playerId]";
 
+const sharedDetailPageMock = vi.fn(() => <div>Shared player detail page</div>);
+
 const routerMock = {
   isReady: true,
   pathname: "/underlying-stats/goalieStats/[playerId]",
@@ -19,7 +21,7 @@ vi.mock("next/head", () => ({
 }));
 
 vi.mock("../../../../pages/underlying-stats/playerStats/[playerId]", () => ({
-  default: () => <div>Shared player detail page</div>,
+  default: (props: { variant?: string }) => sharedDetailPageMock(props),
 }));
 
 describe("GoalieUnderlyingStatsDetailRoute", () => {
@@ -30,6 +32,7 @@ describe("GoalieUnderlyingStatsDetailRoute", () => {
       playerId: "8475883",
     };
     routerMock.replace.mockClear();
+    sharedDetailPageMock.mockClear();
   });
 
   it("canonicalizes the goalie detail route into goalie mode while preserving playerId", async () => {
@@ -44,7 +47,8 @@ describe("GoalieUnderlyingStatsDetailRoute", () => {
           query: expect.objectContaining({
             playerId: "8475883",
             statMode: "goalies",
-            displayMode: "counts",
+      sharedDetailPageMock.mockClear();
+      sharedDetailPageMock.mockClear();
             sortKey: "savePct",
             sortDirection: "desc",
           }),
@@ -73,6 +77,9 @@ describe("GoalieUnderlyingStatsDetailRoute", () => {
       sortKey: "savePct",
       sortDirection: "desc",
       page: "1",
+      expect(sharedDetailPageMock).toHaveBeenCalledWith(
+        expect.objectContaining({ variant: "goalie" })
+      );
       pageSize: "50",
     };
 
@@ -80,5 +87,8 @@ describe("GoalieUnderlyingStatsDetailRoute", () => {
 
     expect(screen.getByText("Shared player detail page")).toBeTruthy();
     expect(routerMock.replace).not.toHaveBeenCalled();
+    expect(sharedDetailPageMock).toHaveBeenCalledWith(
+      expect.objectContaining({ variant: "goalie" })
+    );
   });
 });

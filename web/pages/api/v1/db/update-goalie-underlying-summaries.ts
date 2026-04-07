@@ -1,0 +1,344 @@
+import type { NextApiRequest, NextApiResponse } from "next";
+
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import serviceRoleClient from "lib/supabase/server";
+import {
+  fetchSeasonGoalieSummaryGameIdSet,
+  refreshGoalieUnderlyingSummarySnapshotsForGameIds,
+  warmGoalieStatsLandingSeasonAggregateCache,
+} from "lib/underlying-stats/goalieStatsSummaryRefresh";
+import { resolveGoalieStatsIncrementalSelection } from "lib/underlying-stats/goalieStatsRefreshWindow";
+import adminOnly from "utils/adminOnlyMiddleware";
+
+type SummaryRefreshResponse =
+  | {
+      success: true;
+      route: string;
+      mode?: "game" | "date_range" | "backfill_batch" | "incremental";
+      seasonId?: number | null;
+      startDate?: string | null;
+      endDate?: string | null;
+      latestCoveredDate?: string | null;
+      catchUpCompleted?: boolean;
+      batchSize?: number;
+      batchesProcessed?: number;
+      requestedGameCount: number;
+      gameIds: number[];
+      rowsUpserted: number;
+    }
+  | {
+      success: false;
+      error: string;
+      issues?: string[];
+    };
+
+const SUPABASE_PAGE_SIZE = 1000;
+
+type QueryValue = string | string[] | undefined;
+type GameRow = {
+  id: number | string | null;
+  date: string | null;
+  startTime?: string | null;
+  type?: number | string | null;
+};
+
+function getSingleQueryValue(value: QueryValue): string | undefined {
+  if (typeof value === "string") return value;
+  if (Array.isArray(value)) return value[0];
+  return undefined;
+}
+
+function isTruthyQueryFlag(value: QueryValue): boolean {
+  const normalized = getSingleQueryValue(value)?.toLowerCase();
+  return normalized != null && ["1", "true", "yes", "y", "all", "full"].includes(normalized);
+}
+
+function parsePositiveInteger(value: QueryValue): number | null {
+  const normalized = getSingleQueryValue(value);
+  if (!normalized) return null;
+  const parsed = Number(normalized);
+  if (!Number.isFinite(parsed) || parsed <= 0) return null;
+  return Math.trunc(parsed);
+}
+
+function chunkGameIds(gameIds: readonly number[], batchSize: number) {
+  const normalizedBatchSize = Math.max(1, batchSize);
+  const chunks: number[][] = [];
+
+  for (let index = 0; index < gameIds.length; index += normalizedBatchSize) {
+    chunks.push(gameIds.slice(index, index + normalizedBatchSize));
+  }
+
+  return chunks;
+}
+
+function isIsoDate(value: string | undefined): value is string {
+  return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+
+async function fetchAllRows<TRow>(
+  fetchPage: (from: number, to: number) => PromiseLike<{
+    data: unknown[] | null;
+    error: unknown;
+  }>
+): Promise<TRow[]> {
+  const rows: TRow[] = [];
+
+  for (let from = 0; ; from += SUPABASE_PAGE_SIZE) {
+    const to = from + SUPABASE_PAGE_SIZE - 1;
+    const { data, error } = await fetchPage(from, to);
+    if (error) throw error;
+
+    const pageRows = (data ?? []) as TRow[];
+
+    if (!pageRows.length) {
+      break;
+    }
+
+    rows.push(...pageRows);
+
+    if (pageRows.length < SUPABASE_PAGE_SIZE) {
+      break;
+    }
+  }
+
+  return rows;
+}
+
+async function fetchFinishedSeasonGames(args: {
+  seasonId: number;
+  gameType?: number | null;
+}): Promise<Array<{ id: number; date: string }>> {
+  const today = new Date().toISOString().slice(0, 10);
+  const now = new Date();
+  const finishedCutoff = new Date(now.getTime() - 8 * 60 * 60 * 1000);
+
+  const rows = await fetchAllRows<GameRow>((from, to) =>
+    ((query: any) => {
+      if (args.gameType != null) {
+        return query.eq("type", args.gameType);
+      }
+
+      return query;
+    })(
+      serviceRoleClient
+        .from("games")
+        .select("id,date,startTime,seasonId,type")
+        .eq("seasonId", args.seasonId)
+        .lte("date", today)
+        .order("date", { ascending: false })
+        .order("id", { ascending: false })
+    ).range(from, to)
+  );
+
+  return rows.flatMap<{ id: number; date: string; startTime?: string | null }>((row) => {
+    const id = Number(row.id);
+    const date = row.date;
+    const startTime = row.startTime;
+
+    if (!Number.isFinite(id)) return [];
+    if (typeof date !== "string" || date >= today) return [];
+    if (typeof startTime === "string" && new Date(startTime) > finishedCutoff) {
+      return [];
+    }
+
+    return [{ id, date, startTime }];
+  });
+}
+
+async function resolveSummaryRequestedGameIds(query: NextApiRequest["query"]) {
+  const explicitGameId = parsePositiveInteger(query.gameId);
+  const startDate = getSingleQueryValue(query.startDate);
+  const endDate = getSingleQueryValue(query.endDate);
+  const backfill = isTruthyQueryFlag(query.backfill) || isTruthyQueryFlag(query.games);
+  const limit = parsePositiveInteger(query.limit) ?? 10;
+  const seasonId = parsePositiveInteger(query.seasonId);
+  const requestedGameType = parsePositiveInteger(query.gameType);
+
+  if (explicitGameId != null) {
+    return {
+      mode: "game" as const,
+      seasonId,
+      requestedGameType,
+      gameIds: [explicitGameId],
+    };
+  }
+
+  if (seasonId == null) {
+    throw new Error("seasonId is required for goalie summary refresh range/backfill requests.");
+  }
+
+  if (isIsoDate(startDate) && isIsoDate(endDate)) {
+    const rows = await serviceRoleClient
+      .from("games")
+      .select("id,date")
+      .eq("seasonId", seasonId)
+      .gte("date", startDate)
+      .lte("date", endDate)
+      .order("date", { ascending: true })
+      .order("id", { ascending: true });
+
+    if (rows.error) {
+      throw rows.error;
+    }
+
+    return {
+      mode: "date_range" as const,
+      seasonId,
+      requestedGameType,
+      gameIds: (rows.data ?? [])
+        .map((row) => Number(row.id))
+        .filter((gameId) => Number.isFinite(gameId)),
+    };
+  }
+
+  if (!backfill) {
+    throw new Error(
+      "Provide gameId, startDate+endDate, or backfill=true (with seasonId) for goalie summary refresh."
+    );
+  }
+
+  const [games, summaryGameIds] = await Promise.all([
+    fetchFinishedSeasonGames({
+      seasonId,
+      gameType: requestedGameType ?? 2,
+    }),
+    fetchSeasonGoalieSummaryGameIdSet({
+      supabase: serviceRoleClient,
+      seasonId,
+    }),
+  ]);
+
+  const gameIds: number[] = [];
+
+  for (const game of games) {
+    if (summaryGameIds.has(game.id)) {
+      continue;
+    }
+
+    gameIds.push(game.id);
+
+    if (gameIds.length >= limit) {
+      break;
+    }
+  }
+
+  return {
+    mode: "backfill_batch" as const,
+    seasonId,
+    requestedGameType,
+    gameIds,
+  };
+}
+
+async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<SummaryRefreshResponse>
+) {
+  if (req.method !== "POST" && req.method !== "GET") {
+    res.setHeader("Allow", ["POST", "GET"]);
+    return res.status(405).json({
+      success: false,
+      error: "Method not allowed",
+    });
+  }
+
+  try {
+    const incrementalSelectionRequested = isTruthyQueryFlag(req.query.incremental);
+    const catchUpRequested =
+      incrementalSelectionRequested && isTruthyQueryFlag(req.query.catchUp);
+    const batchSize = parsePositiveInteger(req.query.batchSize) ?? 10;
+    const resolved = incrementalSelectionRequested
+      ? await resolveGoalieStatsIncrementalSelection({
+          seasonId: parsePositiveInteger(req.query.seasonId),
+          requestedGameType: parsePositiveInteger(req.query.gameType),
+          supabase: serviceRoleClient,
+        })
+      : await resolveSummaryRequestedGameIds(req.query);
+    const shouldWarmLandingCache =
+      isTruthyQueryFlag(req.query.warmLandingCache) ||
+      (resolved.mode === "backfill_batch" &&
+        resolved.seasonId != null &&
+        resolved.gameIds.length === 0) ||
+      (resolved.mode === "incremental" &&
+        resolved.seasonId != null &&
+        resolved.gameIds.length === 0);
+    const gameIdBatches = catchUpRequested
+      ? chunkGameIds(resolved.gameIds, batchSize)
+      : [resolved.gameIds];
+    let rowsUpserted = 0;
+
+    for (let batchIndex = 0; batchIndex < gameIdBatches.length; batchIndex += 1) {
+      const batchGameIds = gameIdBatches[batchIndex] ?? [];
+      const summaryRefresh = await refreshGoalieUnderlyingSummarySnapshotsForGameIds({
+        gameIds: batchGameIds,
+        seasonId: resolved.seasonId,
+        requestedGameType: resolved.requestedGameType,
+        preferSharedSnapshotSeed: resolved.mode === "backfill_batch",
+        shouldWarmLandingCache: false,
+        supabase: serviceRoleClient,
+      });
+
+      rowsUpserted += summaryRefresh.rowsUpserted;
+    }
+
+    if (shouldWarmLandingCache && resolved.seasonId != null) {
+      await warmGoalieStatsLandingSeasonAggregateCache({
+        seasonId: resolved.seasonId,
+        gameType: resolved.requestedGameType,
+        supabase: serviceRoleClient,
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      route: "/api/v1/db/update-goalie-underlying-summaries",
+      mode: resolved.mode,
+      seasonId: resolved.seasonId,
+      ...(resolved.mode === "incremental"
+        ? {
+            startDate: resolved.startDate,
+            endDate: resolved.endDate,
+            latestCoveredDate: resolved.latestCoveredDate,
+          }
+        : {}),
+      ...(catchUpRequested
+        ? {
+            catchUpCompleted: true,
+            batchSize,
+            batchesProcessed: gameIdBatches.length,
+          }
+        : {}),
+      requestedGameCount: resolved.gameIds.length,
+      gameIds: resolved.gameIds,
+      rowsUpserted,
+    });
+  } catch (error) {
+    const message = (() => {
+      if (error instanceof Error) {
+        return error.message;
+      }
+
+      if (error && typeof error === "object") {
+        try {
+          return JSON.stringify(error);
+        } catch {}
+      }
+
+      if (typeof error === "string") {
+        return error;
+      }
+
+      return "Unable to refresh goalie underlying summaries.";
+    })();
+    return res.status(500).json({
+      success: false,
+      error: message,
+      issues: [message],
+    });
+  }
+}
+
+export default withCronJobAudit(adminOnly(handler), {
+  jobName: "/api/v1/db/update-goalie-underlying-summaries",
+});
