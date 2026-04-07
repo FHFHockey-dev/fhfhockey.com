@@ -6,12 +6,12 @@ import {
   parsePositiveInteger,
   runWithDependencyRetry,
   runRawIngestAndRefreshBatches,
-  selectMissingPlayerSummaryGameIds
+  selectMissingTeamSummaryGameIds,
 } from "lib/underlying-stats/adminRouteHelpers";
 import {
-  refreshPlayerUnderlyingSummarySnapshotsForGameIds,
-  warmPlayerStatsLandingSeasonAggregateCache
-} from "lib/underlying-stats/playerStatsSummaryRefresh";
+  refreshTeamUnderlyingSummaryRowsForGameIds,
+  warmTeamStatsLandingSeasonAggregateCache,
+} from "lib/underlying-stats/teamStatsSummaryRefresh";
 import serviceRoleClient from "lib/supabase/server";
 import adminOnly from "utils/adminOnlyMiddleware";
 
@@ -93,7 +93,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<SeasonBackfillR
     let summaryRowsUpserted = 0;
     const failures: Array<{ gameId: number; message: string }> = [];
 
-    console.info("[backfill-player-underlying-season] start", {
+    console.info("[backfill-team-underlying-season] start", {
       seasonId,
       requestedGameType,
       batchSize,
@@ -103,22 +103,22 @@ async function handler(req: NextApiRequest, res: NextApiResponse<SeasonBackfillR
 
     for (;;) {
       stage = "resolve-raw-backfill-selection";
-      const gameIds = await selectMissingPlayerSummaryGameIds({
+      const gameIds = await selectMissingTeamSummaryGameIds({
         seasonId,
         requestedGameType,
         limit: rawSelectionLimit,
-        supabase: serviceRoleClient
+        supabase: serviceRoleClient,
       });
 
       if (gameIds.length === 0) {
         break;
       }
 
-      console.info("[backfill-player-underlying-season] raw-backfill-batch", {
+      console.info("[backfill-team-underlying-season] raw-backfill-batch", {
         rawBackfillBatchNumber: rawBackfillBatchesProcessed + 1,
         selectedGameCount: gameIds.length,
         firstGameId: gameIds[0] ?? null,
-        lastGameId: gameIds[gameIds.length - 1] ?? null
+        lastGameId: gameIds[gameIds.length - 1] ?? null,
       });
 
       rawBackfillBatchesProcessed += 1;
@@ -129,13 +129,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse<SeasonBackfillR
         requestedGameType,
         shouldWarmLandingCache: false,
         refreshSummaries: async (args) =>
-          refreshPlayerUnderlyingSummarySnapshotsForGameIds({
+          refreshTeamUnderlyingSummaryRowsForGameIds({
             gameIds: args.gameIds,
             seasonId: args.seasonId,
             requestedGameType: args.requestedGameType,
             shouldWarmLandingCache: false,
-            shouldMigrateLegacySummaries: false
-          })
+            supabase: serviceRoleClient,
+          }),
       });
 
       processedGameCount += batchResult.processedGameIds.length;
@@ -143,7 +143,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<SeasonBackfillR
       summaryRowsUpserted += batchResult.summaryRowsUpserted;
       failures.push(...batchResult.failures);
 
-      console.info("[backfill-player-underlying-season] raw-backfill-batch-complete", {
+      console.info("[backfill-team-underlying-season] raw-backfill-batch-complete", {
         rawBackfillBatchesProcessed,
         processedGameCount,
         failedGameCount: failures.length,
@@ -158,7 +158,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<SeasonBackfillR
 
     for (;;) {
       stage = "resolve-missing-summary-game-ids";
-      const gameIds = await selectMissingPlayerSummaryGameIds({
+      const gameIds = await selectMissingTeamSummaryGameIds({
         seasonId,
         requestedGameType,
         limit: summaryLimit,
@@ -170,7 +170,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<SeasonBackfillR
       }
 
       summaryBackfillBatchesProcessed += 1;
-      console.info("[backfill-player-underlying-season] summary-backfill-batch", {
+      console.info("[backfill-team-underlying-season] summary-backfill-batch", {
         summaryBackfillBatchesProcessed,
         selectedGameCount: gameIds.length,
         firstGameId: gameIds[0] ?? null,
@@ -179,21 +179,20 @@ async function handler(req: NextApiRequest, res: NextApiResponse<SeasonBackfillR
 
       stage = "refresh-summary-only-backfill";
       const summaryRefresh = await runWithDependencyRetry({
-        label: "backfill-player-underlying-season.summary-only-refresh",
+        label: "backfill-team-underlying-season.summary-only-refresh",
         operation: () =>
-          refreshPlayerUnderlyingSummarySnapshotsForGameIds({
+          refreshTeamUnderlyingSummaryRowsForGameIds({
             gameIds,
             seasonId,
             requestedGameType,
             shouldWarmLandingCache: false,
-            shouldMigrateLegacySummaries: true,
-            supabase: serviceRoleClient
-          })
+            supabase: serviceRoleClient,
+          }),
       });
 
       summaryRowsUpserted += summaryRefresh.rowsUpserted;
 
-      console.info("[backfill-player-underlying-season] summary-backfill-batch-complete", {
+      console.info("[backfill-team-underlying-season] summary-backfill-batch-complete", {
         summaryBackfillBatchesProcessed,
         summaryRowsUpserted,
       });
@@ -207,29 +206,29 @@ async function handler(req: NextApiRequest, res: NextApiResponse<SeasonBackfillR
     stage = "warm-landing-cache";
     try {
       await runWithDependencyRetry({
-        label: "backfill-player-underlying-season.warm-cache",
+        label: "backfill-team-underlying-season.warm-cache",
         operation: () =>
-          warmPlayerStatsLandingSeasonAggregateCache({
+          warmTeamStatsLandingSeasonAggregateCache({
             seasonId,
             gameType: requestedGameType,
-            supabase: serviceRoleClient
-          })
+            supabase: serviceRoleClient,
+          }),
       });
       warmedLandingCache = true;
     } catch (error) {
       const message = `landing cache warm failed: ${formatUnknownError(error).message}`;
       failures.push({
         gameId: 0,
-        message
+        message,
       });
-      console.warn("[backfill-player-underlying-season] cache-warm-failed", {
+      console.warn("[backfill-team-underlying-season] cache-warm-failed", {
         seasonId,
         requestedGameType,
-        message
+        message,
       });
     }
 
-    console.info("[backfill-player-underlying-season] complete", {
+    console.info("[backfill-team-underlying-season] complete", {
       seasonId,
       requestedGameType,
       rawBackfillBatchesProcessed,
@@ -242,7 +241,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<SeasonBackfillR
 
     return res.status(200).json({
       success: true,
-      route: "/api/v1/db/backfill-player-underlying-season",
+      route: "/api/v1/db/backfill-team-underlying-season",
       seasonId,
       requestedGameType,
       rawBackfillBatchesProcessed,
@@ -252,7 +251,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<SeasonBackfillR
       ...(failures.length > 0
         ? {
             failedGameIds: failures.map((failure) => failure.gameId),
-            failures
+            failures,
           }
         : {}),
       rawRowsUpserted,
@@ -261,13 +260,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse<SeasonBackfillR
       warmedLandingCache,
       message:
         failures.length === 0
-          ? "Player underlying season backfill completed."
-          : "Player underlying season backfill completed with partial failures."
+          ? "Team underlying season backfill completed."
+          : "Team underlying season backfill completed with partial failures.",
     });
   } catch (error) {
     const { message, stack } = formatUnknownError(error);
     const failureStage = typeof stage === "string" ? stage : "unknown";
-    console.error("[backfill-player-underlying-season] failed", {
+    console.error("[backfill-team-underlying-season] failed", {
       stage: failureStage,
       query: req.query,
       error: message,
@@ -275,16 +274,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse<SeasonBackfillR
     });
     return res.status(500).json({
       success: false,
-      error: `Player underlying season backfill failed during ${failureStage}: ${message}`,
-      issues: [
-        `stage=${failureStage}`,
-        message,
-      ],
+      error: `Team underlying season backfill failed during ${failureStage}: ${message}`,
+      issues: [`stage=${failureStage}`, message],
       stage: failureStage,
     });
   }
 }
 
 export default withCronJobAudit(adminOnly(handler), {
-  jobName: "/api/v1/db/backfill-player-underlying-season",
+  jobName: "/api/v1/db/backfill-team-underlying-season",
 });

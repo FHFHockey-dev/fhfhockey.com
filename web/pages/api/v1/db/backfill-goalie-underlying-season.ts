@@ -4,14 +4,14 @@ import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import {
   chunkGameIds,
   parsePositiveInteger,
+  runWithDependencyRetry,
   runRawIngestAndRefreshBatches,
-  selectMissingGoalieSummaryGameIds,
+  selectMissingGoalieSummaryGameIds
 } from "lib/underlying-stats/adminRouteHelpers";
 import {
   refreshGoalieUnderlyingSummarySnapshotsForGameIds,
-  warmGoalieStatsLandingSeasonAggregateCache,
+  warmGoalieStatsLandingSeasonAggregateCache
 } from "lib/underlying-stats/goalieStatsSummaryRefresh";
-import { resolveRequestedGameIds } from "lib/supabase/Upserts/nhlRawGamecenterRoute";
 import serviceRoleClient from "lib/supabase/server";
 import adminOnly from "utils/adminOnlyMiddleware";
 
@@ -103,31 +103,28 @@ async function handler(req: NextApiRequest, res: NextApiResponse<SeasonBackfillR
 
     for (;;) {
       stage = "resolve-raw-backfill-selection";
-      const selection = await resolveRequestedGameIds(
-        {
-          backfill: "true",
-          seasonId: String(seasonId),
-          gameType: String(requestedGameType),
-          limit: String(rawSelectionLimit),
-        },
-        serviceRoleClient
-      );
+      const gameIds = await selectMissingGoalieSummaryGameIds({
+        seasonId,
+        requestedGameType,
+        limit: rawSelectionLimit,
+        supabase: serviceRoleClient
+      });
 
-      if (selection.gameIds.length === 0) {
+      if (gameIds.length === 0) {
         break;
       }
 
       console.info("[backfill-goalie-underlying-season] raw-backfill-batch", {
         rawBackfillBatchNumber: rawBackfillBatchesProcessed + 1,
-        selectedGameCount: selection.gameIds.length,
-        firstGameId: selection.gameIds[0] ?? null,
-        lastGameId: selection.gameIds[selection.gameIds.length - 1] ?? null,
+        selectedGameCount: gameIds.length,
+        firstGameId: gameIds[0] ?? null,
+        lastGameId: gameIds[gameIds.length - 1] ?? null
       });
 
       rawBackfillBatchesProcessed += 1;
       stage = "run-raw-ingest-and-summary-refresh";
       const batchResult = await runRawIngestAndRefreshBatches({
-        gameIdBatches: chunkGameIds(selection.gameIds, batchSize),
+        gameIdBatches: chunkGameIds(gameIds, batchSize),
         seasonId,
         requestedGameType,
         shouldWarmLandingCache: false,
@@ -137,8 +134,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse<SeasonBackfillR
             seasonId: args.seasonId,
             requestedGameType: args.requestedGameType,
             shouldWarmLandingCache: false,
-            preferSharedSnapshotSeed: false,
-          }),
+            preferSharedSnapshotSeed: false
+          })
       });
 
       processedGameCount += batchResult.processedGameIds.length;
@@ -181,13 +178,17 @@ async function handler(req: NextApiRequest, res: NextApiResponse<SeasonBackfillR
       });
 
       stage = "refresh-summary-only-backfill";
-      const summaryRefresh = await refreshGoalieUnderlyingSummarySnapshotsForGameIds({
-        gameIds,
-        seasonId,
-        requestedGameType,
-        shouldWarmLandingCache: false,
-        preferSharedSnapshotSeed: true,
-        supabase: serviceRoleClient,
+      const summaryRefresh = await runWithDependencyRetry({
+        label: "backfill-goalie-underlying-season.summary-only-refresh",
+        operation: () =>
+          refreshGoalieUnderlyingSummarySnapshotsForGameIds({
+            gameIds,
+            seasonId,
+            requestedGameType,
+            shouldWarmLandingCache: false,
+            preferSharedSnapshotSeed: true,
+            supabase: serviceRoleClient
+          })
       });
 
       summaryRowsUpserted += summaryRefresh.rowsUpserted;
@@ -202,12 +203,31 @@ async function handler(req: NextApiRequest, res: NextApiResponse<SeasonBackfillR
       }
     }
 
+    let warmedLandingCache = false;
     stage = "warm-landing-cache";
-    await warmGoalieStatsLandingSeasonAggregateCache({
-      seasonId,
-      gameType: requestedGameType,
-      supabase: serviceRoleClient,
-    });
+    try {
+      await runWithDependencyRetry({
+        label: "backfill-goalie-underlying-season.warm-cache",
+        operation: () =>
+          warmGoalieStatsLandingSeasonAggregateCache({
+            seasonId,
+            gameType: requestedGameType,
+            supabase: serviceRoleClient
+          })
+      });
+      warmedLandingCache = true;
+    } catch (error) {
+      const message = `landing cache warm failed: ${formatUnknownError(error).message}`;
+      failures.push({
+        gameId: 0,
+        message
+      });
+      console.warn("[backfill-goalie-underlying-season] cache-warm-failed", {
+        seasonId,
+        requestedGameType,
+        message
+      });
+    }
 
     console.info("[backfill-goalie-underlying-season] complete", {
       seasonId,
@@ -232,17 +252,17 @@ async function handler(req: NextApiRequest, res: NextApiResponse<SeasonBackfillR
       ...(failures.length > 0
         ? {
             failedGameIds: failures.map((failure) => failure.gameId),
-            failures,
+            failures
           }
         : {}),
       rawRowsUpserted,
       summaryRowsUpserted,
       rowsUpserted: rawRowsUpserted + summaryRowsUpserted,
-      warmedLandingCache: true,
+      warmedLandingCache,
       message:
         failures.length === 0
           ? "Goalie underlying season backfill completed."
-          : "Goalie underlying season backfill completed with partial failures.",
+          : "Goalie underlying season backfill completed with partial failures."
     });
   } catch (error) {
     const { message, stack } = formatUnknownError(error);

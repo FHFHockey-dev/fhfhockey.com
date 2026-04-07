@@ -3,7 +3,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import GoalieUnderlyingStatsDetailRoute from "../../../../pages/underlying-stats/goalieStats/[playerId]";
 
-const sharedDetailPageMock = vi.fn(() => <div>Shared player detail page</div>);
+const sharedDetailPageMock = vi.fn((_props?: { variant?: string }) => (
+  <div>Shared player detail page</div>
+));
 
 const routerMock = {
   isReady: true,
@@ -47,11 +49,12 @@ describe("GoalieUnderlyingStatsDetailRoute", () => {
           query: expect.objectContaining({
             playerId: "8475883",
             statMode: "goalies",
-      sharedDetailPageMock.mockClear();
-      sharedDetailPageMock.mockClear();
+            displayMode: "counts",
             sortKey: "savePct",
             sortDirection: "desc",
-          }),
+            page: "1",
+            pageSize: "50"
+          })
         },
         undefined,
         { shallow: true }
@@ -77,10 +80,7 @@ describe("GoalieUnderlyingStatsDetailRoute", () => {
       sortKey: "savePct",
       sortDirection: "desc",
       page: "1",
-      expect(sharedDetailPageMock).toHaveBeenCalledWith(
-        expect.objectContaining({ variant: "goalie" })
-      );
-      pageSize: "50",
+      pageSize: "50"
     };
 
     render(<GoalieUnderlyingStatsDetailRoute />);

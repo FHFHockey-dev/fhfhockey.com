@@ -292,7 +292,7 @@ export default function PlayerUnderlyingStatsDetailPage({
     formatScoreState(filterState.primary.scoreState),
     formatMode(filterState.primary.statMode, filterState.primary.displayMode),
     formatAgainstTeam(filterState.expandable.againstTeamId),
-    formatTradeMode(filterState.expandable.tradeMode),
+    formatTradeMode(filterState.expandable.tradeMode, variant),
     isLoading ? "Server query loading" : "Server query ready"
   ];
 
@@ -436,20 +436,30 @@ export default function PlayerUnderlyingStatsDetailPage({
             : tableState.kind === "error"
               ? "Query error"
               : tableState.kind === "empty"
-                ? "No season rows"
-                : "Loading season rows",
+                ? variant === "goalie"
+                  ? "No goalie seasons"
+                  : "No season rows"
+                : variant === "goalie"
+                  ? "Loading goalie seasons"
+                  : "Loading season rows",
         message: tableState.message,
         tone: tableState.kind
       }
     : tableError && detailData?.rows.length
       ? {
-          title: "Using cached season rows",
+          title:
+            variant === "goalie"
+              ? "Using cached goalie seasons"
+              : "Using cached season rows",
           message: `${tableError} Showing the last successful result while the refresh failed.`,
           tone: "warning" as const
         }
       : canRenderStaleDetailData
         ? {
-            title: "Refreshing season rows",
+            title:
+              variant === "goalie"
+                ? "Refreshing goalie seasons"
+                : "Refreshing season rows",
             message:
               "Updating the current detail table in the background while preserving the last loaded result.",
             tone: "loading" as const
@@ -1021,7 +1031,14 @@ function formatTableFamily(family: string): string {
   }
 }
 
-function formatTradeMode(tradeMode: string): string {
+function formatTradeMode(
+  tradeMode: string,
+  variant: DetailPageVariant = "player"
+): string {
+  if (variant === "goalie") {
+    return tradeMode === "split" ? "Split team rows" : "Combined rows";
+  }
+
   return tradeMode === "split"
     ? "Split traded-player rows"
     : "Combined traded-player rows";

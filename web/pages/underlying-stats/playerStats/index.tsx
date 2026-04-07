@@ -691,7 +691,7 @@ export default function PlayerUnderlyingStatsLandingPage({
     { key: "scope", label: formatActiveScope(filterState.expandable.scope) },
     {
       key: "tradeMode",
-      label: formatTradeMode(filterState.expandable.tradeMode)
+      label: formatTradeMode(filterState.expandable.tradeMode, variant)
     },
     {
       key: "rows",
@@ -750,20 +750,30 @@ export default function PlayerUnderlyingStatsLandingPage({
               : tableState.kind === "error"
                 ? "Query error"
                 : tableState.kind === "empty"
-                  ? "No landing rows"
-                  : "Loading landing rows",
+                  ? variant === "goalie"
+                    ? "No goalie rows"
+                    : "No landing rows"
+                  : variant === "goalie"
+                    ? "Loading goalie rows"
+                    : "Loading landing rows",
         message: tableState.message,
         tone: tableState.kind
       }
     : tableError && landingData?.rows.length
       ? {
-          title: "Using cached landing rows",
+          title:
+            variant === "goalie"
+              ? "Using cached goalie rows"
+              : "Using cached landing rows",
           message: `${tableError} Showing the last successful result while the refresh failed.`,
           tone: "warning" as const
         }
       : canRenderStaleLandingData
         ? {
-            title: "Refreshing landing rows",
+            title:
+              variant === "goalie"
+                ? "Refreshing goalie rows"
+                : "Refreshing landing rows",
             message:
               "Updating the current table in the background while preserving the last loaded result.",
             tone: "loading" as const
@@ -879,7 +889,10 @@ export default function PlayerUnderlyingStatsLandingPage({
             </div>
           </header>
 
-          <section className={styles.section} aria-label="Player table">
+          <section
+            className={styles.section}
+            aria-label={variant === "goalie" ? "Goalie table" : "Player table"}
+          >
             <div className={styles.sectionHeader}>
               <div
                 className={styles.chipRow}
@@ -1535,7 +1548,14 @@ function resolveDefaultExpandedMetricKey(
   return metricColumns[0]?.key ?? null;
 }
 
-function formatTradeMode(tradeMode: string): string {
+function formatTradeMode(
+  tradeMode: string,
+  variant: LandingPageVariant = "player"
+): string {
+  if (variant === "goalie") {
+    return tradeMode === "split" ? "Split team rows" : "Combined rows";
+  }
+
   return tradeMode === "split"
     ? "Split traded-player rows"
     : "Combined traded-player rows";

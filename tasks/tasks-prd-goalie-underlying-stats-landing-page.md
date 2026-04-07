@@ -80,18 +80,20 @@
   - [x] 4.4 Decide and implement whether the detail page keeps the current `Against Specific Team` pattern or uses a simplified goalie-specific alternative.
   - [x] 4.5 Add dedicated detail-page tests for route resolution, preserved query state, sort behavior, and goalie-specific rendering.
 
-- [ ] 5.0 Align the goalie surface with the current style system and remove player-oriented information architecture from the dedicated goalie experience
-  - [ ] 5.1 Reconcile the dedicated goalie landing and detail pages with the current FHFH style system and page-shell conventions.
-  - [ ] 5.2 Replace player-oriented headings, descriptions, metadata cards, breadcrumbs, and empty states with goalie-specific copy.
-  - [ ] 5.3 Ensure the wide goalie table uses clean horizontal overflow, sticky headers, and readable column density without leaking skater-oriented layout assumptions.
-  - [ ] 5.4 Ensure goalie-specific loading, empty, and error states clearly communicate what is happening without implying skater modes or mixed player surfaces.
-  - [ ] 5.5 Verify mobile and desktop behavior for the dedicated goalie landing page and detail page.
+- [x] 5.0 Align the goalie surface with the current style system and remove player-oriented information architecture from the dedicated goalie experience
+  - [x] 5.1 Reconcile the dedicated goalie landing and detail pages with the current FHFH style system and page-shell conventions.
+  - [x] 5.2 Replace player-oriented headings, descriptions, metadata cards, breadcrumbs, and empty states with goalie-specific copy.
+  - [x] 5.3 Ensure the wide goalie table uses clean horizontal overflow, sticky headers, and readable column density without leaking skater-oriented layout assumptions.
+  - [x] 5.4 Ensure goalie-specific loading, empty, and error states clearly communicate what is happening without implying skater modes or mixed player surfaces.
+  - [x] 5.5 Verify mobile and desktop behavior for the dedicated goalie landing page and detail page.
 
-- [ ] 6.0 Verify data correctness, filter semantics, route safety, and regression coverage across the dedicated goalie surface and shared pipeline
-  - [ ] 6.1 Validate goalie counts and rates calculations against the shared aggregation output for representative filters and time scopes.
-  - [ ] 6.2 Validate that all required strength states and score states behave correctly for the dedicated goalie route.
-  - [ ] 6.3 Validate that date range, game range, and team-game range remain mutually exclusive and produce the intended goalie result windows.
-  - [ ] 6.4 Validate that minimum TOI, team, and venue filters are applied after or before aggregation in the correct stages per the PRD.
-  - [ ] 6.5 Validate that the dedicated goalie routes do not break or diverge from the shared `update-player-underlying-stats` and `update-player-underlying-summaries` refresh jobs.
-  - [ ] 6.6 Run targeted route, page, and server tests and document any residual risks, especially around shared pipeline coupling and future removal of goalie mode from the player surface.
-  - [ ] NEW 6.7 Fix the workspace `Build web (typecheck)` task configuration so it runs from the `web` package directory instead of the repo root.
+- [x] 6.0 Verify data correctness, filter semantics, route safety, and regression coverage across the dedicated goalie surface and shared pipeline
+  - [x] 6.1 Validate goalie counts and rates calculations against the shared aggregation output for representative filters and time scopes.
+  - [x] 6.2 Validate that all required strength states and score states behave correctly for the dedicated goalie route.
+  - [x] 6.3 Validate that date range, game range, and team-game range remain mutually exclusive and produce the intended goalie result windows.
+  - [x] 6.4 Validate that minimum TOI, team, and venue filters are applied after or before aggregation in the correct stages per the PRD.
+  - [x] 6.5 Validate that the dedicated goalie routes do not break or diverge from the shared `update-player-underlying-stats` and `update-player-underlying-summaries` refresh jobs.
+  - [x] 6.6 Run targeted route, page, and server tests and document any residual risks, especially around shared pipeline coupling and future removal of goalie mode from the player surface.
+  - [x] NEW 6.7 Fix the workspace `Build web (typecheck)` task configuration so it runs from the `web` package directory instead of the repo root.
+
+Validation note: a fresh local Next server returned `200` responses for representative non-default goalie strength and score-state queries (`allStrengths + leading`, `fiveOnFourPP + withinOne`, `againstEmptyNet + trailing`) after enabling local direct Postgres reads when `SUPABASE_DB_URL` is configured. The focused goalie/shared underlying-stats regression suite passed in full (`6` files, `63` tests). Residual risk remains in the shared pipeline coupling, and the workspace build task now launches from `web/` correctly but still surfaces unrelated pre-existing Next prerender missing-page failures during full export.

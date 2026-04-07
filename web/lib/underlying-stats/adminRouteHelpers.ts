@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { normalizeDependencyError } from "lib/cron/normalizeDependencyError";
 import serviceRoleClient from "lib/supabase/server";
 import { ingestNhlApiRawGamesBestEffort } from "lib/supabase/Upserts/nhlRawGamecenter.mjs";
 
@@ -10,8 +11,11 @@ import {
   fetchSeasonSummaryGameIdSet,
   PLAYER_STATS_SUMMARY_PARTITION_SOURCE_URL_PREFIX,
 } from "./playerStatsSummaryRefresh";
+import { fetchSeasonTeamSummaryGameIdSet } from "./teamStatsSummaryRefresh";
 
 const SUPABASE_PAGE_SIZE = 1000;
+const DEFAULT_DEPENDENCY_RETRIES = 3;
+const DEFAULT_DEPENDENCY_RETRY_DELAY_MS = 750;
 
 export type QueryValue = string | string[] | undefined;
 
@@ -35,6 +39,81 @@ export type RawIngestBatchResult = {
   rawRowsUpserted: number;
   summaryRowsUpserted: number;
 };
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function stringifyError(error: unknown) {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  if (typeof error === "string") {
+    return error;
+  }
+
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return String(error);
+  }
+}
+
+export function isRetryableDependencyError(error: unknown) {
+  const normalized = normalizeDependencyError(error);
+  if (
+    normalized.classification === "transport_fetch_failure" ||
+    normalized.classification === "html_upstream_response"
+  ) {
+    return true;
+  }
+
+  const raw = stringifyError(error).toLowerCase();
+  return (
+    raw.includes("http 500") ||
+    raw.includes("http 502") ||
+    raw.includes("http 503") ||
+    raw.includes("http 504") ||
+    raw.includes("und_err_socket") ||
+    raw.includes("socketerror") ||
+    raw.includes("fetch failed")
+  );
+}
+
+export async function runWithDependencyRetry<T>(args: {
+  label: string;
+  operation: () => Promise<T>;
+  retries?: number;
+  retryDelayMs?: number;
+}) {
+  const retries = args.retries ?? DEFAULT_DEPENDENCY_RETRIES;
+  const retryDelayMs = args.retryDelayMs ?? DEFAULT_DEPENDENCY_RETRY_DELAY_MS;
+  let lastError: unknown = null;
+
+  for (let attempt = 1; attempt <= retries; attempt += 1) {
+    try {
+      return await args.operation();
+    } catch (error) {
+      lastError = error;
+      if (attempt === retries || !isRetryableDependencyError(error)) {
+        throw error;
+      }
+
+      console.warn(
+        `[${args.label}] retrying after transient dependency failure`,
+        {
+          attempt,
+          retries,
+          error: stringifyError(error)
+        }
+      );
+      await sleep(retryDelayMs * attempt);
+    }
+  }
+
+  throw lastError;
+}
 
 export function getSingleQueryValue(value: QueryValue): string | undefined {
   if (typeof value === "string") return value;
@@ -234,6 +313,42 @@ export async function selectMissingGoalieSummaryGameIds(args: {
   return missingGameIds;
 }
 
+export async function selectMissingTeamSummaryGameIds(args: {
+  seasonId: number;
+  requestedGameType?: number | null;
+  limit: number;
+  supabase?: SupabaseClient;
+}) {
+  const supabase = args.supabase ?? serviceRoleClient;
+  const [finishedGameIds, summaryGameIds] = await Promise.all([
+    fetchFinishedSeasonGameIds({
+      seasonId: args.seasonId,
+      requestedGameType: args.requestedGameType,
+      supabase
+    }),
+    fetchSeasonTeamSummaryGameIdSet({
+      supabase,
+      seasonId: args.seasonId
+    })
+  ]);
+
+  const missingGameIds: number[] = [];
+
+  for (const gameId of finishedGameIds) {
+    if (summaryGameIds.has(gameId)) {
+      continue;
+    }
+
+    missingGameIds.push(gameId);
+
+    if (missingGameIds.length >= args.limit) {
+      break;
+    }
+  }
+
+  return missingGameIds;
+}
+
 function sumRowsAffected(results: Array<{
   rosterCount: number;
   eventCount: number;
@@ -286,15 +401,30 @@ export async function runRawIngestAndRefreshBatches(args: {
       continue;
     }
 
-    const summaryRefresh = await args.refreshSummaries({
-      gameIds: successfulGameIds,
-      seasonId: args.seasonId,
-      requestedGameType: args.requestedGameType,
-      shouldWarmLandingCache:
-        args.shouldWarmLandingCache && batchIndex === args.gameIdBatches.length - 1,
-    });
+    try {
+      const summaryRefresh = await runWithDependencyRetry({
+        label: "run-raw-ingest-and-refresh-batches.summary-refresh",
+        operation: () =>
+          args.refreshSummaries({
+            gameIds: successfulGameIds,
+            seasonId: args.seasonId,
+            requestedGameType: args.requestedGameType,
+            shouldWarmLandingCache:
+              args.shouldWarmLandingCache &&
+              batchIndex === args.gameIdBatches.length - 1
+          })
+      });
 
-    summaryRowsUpserted += summaryRefresh.rowsUpserted;
+      summaryRowsUpserted += summaryRefresh.rowsUpserted;
+    } catch (error) {
+      const message = `summary refresh failed: ${stringifyError(error)}`;
+      failures.push(
+        ...successfulGameIds.map((gameId) => ({
+          gameId,
+          message
+        }))
+      );
+    }
   }
 
   return {
