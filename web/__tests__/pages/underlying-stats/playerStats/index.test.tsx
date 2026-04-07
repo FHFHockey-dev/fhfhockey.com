@@ -2,6 +2,8 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import PlayerUnderlyingStatsLandingPage from "../../../../pages/underlying-stats/playerStats/index";
+import { createDefaultLandingFilterState } from "../../../../lib/underlying-stats/playerStatsFilters";
+import { buildPlayerStatsLandingApiPath } from "../../../../lib/underlying-stats/playerStatsQueries";
 
 const routerMock = {
   isReady: true,
@@ -31,6 +33,20 @@ vi.mock("next/link", () => ({
     <a href={href} className={className}>
       {children}
     </a>
+  ),
+}));
+
+vi.mock("components/underlying-stats/PlayerStatsExpandedRowChart", () => ({
+  default: ({
+    playerId,
+    selectedMetricKey,
+  }: {
+    playerId: number;
+    selectedMetricKey: string;
+  }) => (
+    <div>
+      Expanded chart for player {playerId} using {selectedMetricKey}
+    </div>
   ),
 }));
 
@@ -64,6 +80,20 @@ function buildMockLandingRow(family: string) {
     ...baseRow,
     positionCode: "C",
   };
+}
+
+function buildMockLandingRows(family: string, count: number) {
+  return Array.from({ length: count }, (_, index) => {
+    const playerNumber = index + 1;
+    const row = buildMockLandingRow(family);
+
+    return {
+      ...row,
+      rowKey: `row:${family}:${playerNumber}`,
+      playerId: 8478400 + playerNumber,
+      playerName: `Player ${playerNumber}`,
+    };
+  });
 }
 
 describe("PlayerUnderlyingStatsLandingPage", () => {
@@ -128,9 +158,7 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
       expect(screen.getAllByText("Invalid filter combination").length).toBeGreaterThan(0);
     });
 
-    expect(
-      screen.getAllByText("Date Range requires a start date.").length
-    ).toBeTruthy();
+    expect(screen.getAllByText("Date Range requires a start date.").length).toBeGreaterThan(0);
     expect(fetch).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByRole("button", { name: "Reset landing filters" }));
@@ -154,16 +182,15 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
     });
   });
 
-  it("shows the active scope and clears stale date-range params when switching to game range", async () => {
+  it("shows the active scope and clears stale date-range params when switching to # of GP", async () => {
     render(<PlayerUnderlyingStatsLandingPage />);
 
     await waitFor(() => {
       expect(screen.getAllByText("Scope: Date Range").length).toBeGreaterThan(0);
     });
 
-    fireEvent.click(screen.getByRole("button", { name: "Show advanced filters" }));
-    fireEvent.change(screen.getByLabelText("Scope"), {
-      target: { value: "gameRange" },
+    fireEvent.change(screen.getByLabelText("# of GP"), {
+      target: { value: "7" },
     });
 
     await waitFor(() => {
@@ -257,8 +284,169 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
     expect(screen.getByText("16:27")).toBeTruthy();
     expect(screen.getByText("12")).toBeTruthy();
     expect(link.getAttribute("href")).toBe(
-      "/underlying-stats/playerStats/8478401?fromSeasonId=20252026&throughSeasonId=20252026&seasonType=regularSeason&strength=powerPlay&scoreState=allScores&statMode=individual&displayMode=counts&venue=away&tradeMode=split&scope=dateRange&startDate=2025-11-01&endDate=2026-02-01&sortKey=totalPoints&sortDirection=desc&page=1&pageSize=25"
+      "/underlying-stats/playerStats/8478401?fromSeasonId=20252026&throughSeasonId=20252026&seasonType=regularSeason&strength=powerPlay&scoreState=allScores&statMode=individual&displayMode=counts&venue=away&tradeMode=split&scope=dateRange&startDate=2025-11-01&endDate=2026-02-01&sortKey=totalPoints&sortDirection=desc&page=1&pageSize=100"
     );
+  });
+
+  it("renders the first 100 sorted rows immediately and hydrates the remaining rows in the background", async () => {
+    routerMock.query = {};
+
+    let resolveSecondPageFetch: (() => void) | null = null;
+    const family = "onIceCounts";
+    const initialRows = buildMockLandingRows(family, 100);
+    const secondPageRows = buildMockLandingRows(family, 150).slice(100);
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation((input: string | URL | Request) => {
+        const url =
+          typeof input === "string"
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : input.url;
+        const params = new URL(url, "http://localhost").searchParams;
+        const page = Number(params.get("page") ?? "1");
+        const pageSize = Number(params.get("pageSize"));
+
+        if (page === 2 && pageSize === 100) {
+          return new Promise((resolve) => {
+            resolveSecondPageFetch = () =>
+              resolve({
+                ok: true,
+                json: async () => ({
+                  family,
+                  rows: secondPageRows,
+                  sort: { sortKey: "xgfPct", direction: "desc" },
+                  pagination: { page: 2, pageSize: 100, totalRows: 150, totalPages: 2 },
+                  placeholder: false,
+                  generatedAt: "2026-03-31T12:00:00.000Z",
+                }),
+              });
+          });
+        }
+
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            family,
+            rows: initialRows,
+            sort: { sortKey: "xgfPct", direction: "desc" },
+            pagination: { page: 1, pageSize: 100, totalRows: 150, totalPages: 2 },
+            placeholder: false,
+            generatedAt: "2026-03-31T12:00:00.000Z",
+          }),
+        });
+      })
+    );
+
+    render(<PlayerUnderlyingStatsLandingPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Player 100")).toBeTruthy();
+    });
+
+    expect(screen.queryByText("Player 150")).toBeNull();
+    expect(screen.getByText("Loading remaining rows (100/150)")).toBeTruthy();
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining("page=2&pageSize=100"),
+      expect.any(Object)
+    );
+    expect(screen.queryByRole("button", { name: "Previous" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Next" })).toBeNull();
+
+    const flushSecondPageFetch: (() => void) | null = resolveSecondPageFetch;
+    if (flushSecondPageFetch !== null) {
+      flushSecondPageFetch();
+    }
+
+    await waitFor(() => {
+      expect(screen.getByText("Player 150")).toBeTruthy();
+    });
+  });
+
+  it("revalidates a fresh cached first page before hydrating the remaining landing rows", async () => {
+    routerMock.query = {};
+
+    const family = "onIceCounts";
+    const cachedRows = buildMockLandingRows(family, 100);
+    const pageOneRows = buildMockLandingRows(family, 100);
+    const pageTwoRows = buildMockLandingRows(family, 200).slice(100, 200);
+    const requestPath = buildPlayerStatsLandingApiPath(
+      createDefaultLandingFilterState({ pageSize: 100 })
+    );
+
+    window.sessionStorage.setItem(
+      `player-stats-landing-response:${requestPath}`,
+      JSON.stringify({
+        cachedAt: Date.now(),
+        payload: {
+          family,
+          rows: cachedRows,
+          sort: { sortKey: "xgfPct", direction: "desc" },
+          pagination: { page: 1, pageSize: 100, totalRows: 108, totalPages: 2 },
+          placeholder: false,
+          generatedAt: "2026-03-31T12:00:00.000Z",
+        },
+      })
+    );
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation((input: string | URL | Request) => {
+        const url =
+          typeof input === "string"
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : input.url;
+        const params = new URL(url, "http://localhost").searchParams;
+        const page = Number(params.get("page") ?? "1");
+
+        if (page === 2) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({
+              family,
+              rows: pageTwoRows,
+              sort: { sortKey: "xgfPct", direction: "desc" },
+              pagination: { page: 2, pageSize: 100, totalRows: 908, totalPages: 10 },
+              placeholder: false,
+              generatedAt: "2026-03-31T12:00:00.000Z",
+            }),
+          });
+        }
+
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            family,
+            rows: pageOneRows,
+            sort: { sortKey: "xgfPct", direction: "desc" },
+            pagination: { page: 1, pageSize: 100, totalRows: 908, totalPages: 10 },
+            placeholder: false,
+            generatedAt: "2026-03-31T12:00:00.000Z",
+          }),
+        });
+      })
+    );
+
+    render(<PlayerUnderlyingStatsLandingPage />);
+
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining("page=1&pageSize=100"),
+        expect.any(Object)
+      );
+    });
+
+    expect(
+      screen.getAllByText((content) => content.includes("100/908")).length
+    ).toBeGreaterThan(0);
+
+    await waitFor(() => {
+      expect(screen.getByText("Player 200")).toBeTruthy();
+    });
   });
 
   it("surfaces query errors with a landing reset action", async () => {
@@ -353,5 +541,51 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
         ).toBeNull();
       }
     }
+  });
+
+  it("expands a landing row into the inline chart panel without changing the rank order", async () => {
+    routerMock.query = {};
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          family: "onIceCounts",
+          rows: buildMockLandingRows("onIceCounts", 2),
+          sort: { sortKey: "xgfPct", direction: "desc" },
+          pagination: { page: 1, pageSize: 100, totalRows: 2, totalPages: 1 },
+          placeholder: false,
+          generatedAt: "2026-03-31T12:00:00.000Z",
+        }),
+      })
+    );
+
+    render(<PlayerUnderlyingStatsLandingPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Player 1")).toBeTruthy();
+    });
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Expand trend chart for Player 1",
+      })
+    );
+
+    expect(
+      screen.getByText("Expanded chart for player 8478401 using xgfPct")
+    ).toBeTruthy();
+    expect(screen.getByText("1")).toBeTruthy();
+    expect(screen.getByText("2")).toBeTruthy();
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Collapse trend chart for Player 1",
+      })
+    );
+
+    expect(
+      screen.queryByText("Expanded chart for player 8478401 using xgfPct")
+    ).toBeNull();
   });
 });

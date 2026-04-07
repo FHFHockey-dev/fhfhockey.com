@@ -55,6 +55,37 @@ What this does:
 
 Use this route first when a player is missing games, missing TOI, or missing stat rows.
 
+### 1.5 Incremental catch-up from the latest processed day through current finished games
+
+Use this when you want the route to inspect Supabase first, find the latest day that already has persisted player-summary partitions, and then reprocess from that date forward through the latest finished games in the current season.
+
+Incremental end-to-end catch-up:
+
+```bash
+cd /Users/tim/Code/fhfhockey.com/web
+set -a && source .env.local && set +a
+curl -i -sS -m 180 \
+  -H "Authorization: Bearer ${CRON_SECRET}" \
+  "http://localhost:3000/api/v1/db/update-player-underlying-stats?incremental=true&warmLandingCache=true"
+```
+
+Notes:
+
+- this defaults to the current season
+- this defaults to regular-season games unless `gameType` is supplied
+- it starts from the latest processed summary date and reprocesses that date as a safety overwrite
+- if no summary partitions exist yet for the season, it will process the full finished-game range to date
+
+Local dev browser URL:
+
+```text
+http://localhost:3000/api/v1/db/update-player-underlying-stats?incremental=true&catchUp=true&batchSize=5&warmLandingCache=true
+```
+
+- on localhost in non-production, this route now accepts a direct browser request without a Bearer header
+- `catchUp=true` runs the selected incremental window in batches until it reaches the latest finished games
+- `batchSize=5` is the default recommended end-to-end catch-up size for local manual runs
+
 ### 2. If raw coverage is already correct and only summary payloads are missing, refresh summaries only
 
 Single game:
@@ -78,6 +109,27 @@ curl -i -sS -m 180 \
 ```
 
 Use this only when raw Gamecenter ingest is already complete and the problem is limited to missing derived summary payloads.
+
+Incremental summary-only catch-up:
+
+```bash
+cd /Users/tim/Code/fhfhockey.com/web
+set -a && source .env.local && set +a
+curl -i -sS -m 180 \
+  -H "Authorization: Bearer ${CRON_SECRET}" \
+  "http://localhost:3000/api/v1/db/update-player-underlying-summaries?incremental=true&warmLandingCache=true"
+```
+
+Use this when raw Gamecenter coverage is already healthy and you only need the persisted player-summary partitions to catch up from the most recent covered day through the latest finished games.
+
+Local dev browser URL:
+
+```text
+http://localhost:3000/api/v1/db/update-player-underlying-summaries?incremental=true&catchUp=true&batchSize=10&warmLandingCache=true
+```
+
+- this is the lower-cost “bring summaries current” path when raw payloads are already present
+- `batchSize=10` is the default recommended summary-only catch-up size for local manual runs
 
 ### 3. Verify the player row from the public API contract
 
@@ -799,6 +851,19 @@ Steady-state target:
 - trigger raw ingest per finished game
 - then trigger summary refresh for that same game
 - use season backfill only for catch-up or repair
+
+Cron-friendly trigger paths:
+
+- per finished game:
+  - `/api/v1/db/update-player-underlying-stats?gameId={gameId}&warmLandingCache=true`
+- daily incremental catch-up:
+  - `/api/v1/db/update-player-underlying-stats?incremental=true&warmLandingCache=true`
+- summary-only incremental repair:
+  - `/api/v1/db/update-player-underlying-summaries?incremental=true&warmLandingCache=true`
+- local browser catch-up:
+  - `/api/v1/db/update-player-underlying-stats?incremental=true&catchUp=true&batchSize=5&warmLandingCache=true`
+- local browser summary catch-up:
+  - `/api/v1/db/update-player-underlying-summaries?incremental=true&catchUp=true&batchSize=10&warmLandingCache=true`
 
 ## Local Development Notes
 

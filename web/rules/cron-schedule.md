@@ -150,6 +150,30 @@
 --     );
 --   $$
 -- );
+--
+-- New generic incremental catch-up path: when you do not want to hardcode a date
+-- window, use the explicit incremental query. It checks Supabase for the latest
+-- covered player-summary day, reprocesses that day as a safety overwrite, and
+-- then catches up through the latest finished regular-season games in the
+-- current season.
+--
+-- Primary incremental URL:
+--   https://fhfhockey.com/api/v1/db/update-player-underlying-stats?incremental=true&warmLandingCache=true
+--
+-- Summary-only incremental URL:
+--   https://fhfhockey.com/api/v1/db/update-player-underlying-summaries?incremental=true&warmLandingCache=true
+--
+-- Recommended cron shape:
+-- - keep the one-game finished-game trigger as the primary freshness path
+-- - keep one daily bounded or incremental safety net
+-- - use the summary-only incremental URL only as a lower-frequency repair job,
+--   not as the primary postgame freshness trigger
+
+<!-- cd /Users/tim/Code/fhfhockey.com/web
+set -a && source .env.local && set +a
+curl -i -sS -m 180 \
+  -H "Authorization: Bearer ${CRON_SECRET}" \
+  "http://localhost:3000/api/v1/db/update-player-underlying-summaries?incremental=true&warmLandingCache=true" -->
 
 
 ----------------------------------------------------------------------------------

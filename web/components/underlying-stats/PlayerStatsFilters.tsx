@@ -113,10 +113,16 @@ export default function PlayerStatsFilters({
     state.surface === "landing" ? "Team" : "Against Specific Team";
   const headerHint =
     state.surface === "landing"
-      ? "Primary controls now drive the canonical landing filter state. Mode and display changes reset the default sort for the newly active table family."
-      : "Primary controls now drive the canonical detail filter state. Against Specific Team filters the selected player's rows by opponent team, not by the player's own team.";
+      ? "Primary controls drive the canonical landing query."
+      : "Primary controls drive the canonical detail query.";
   const dateRangeScope =
-    expandable.scope.kind === "dateRange" ? expandable.scope : null;
+    expandable.scope.kind === "dateRange"
+      ? expandable.scope
+      : { kind: "dateRange" as const, startDate: null, endDate: null };
+  const gameRangeValue =
+    expandable.scope.kind === "gameRange" ? expandable.scope.value : null;
+  const teamGamesValue =
+    expandable.scope.kind === "byTeamGames" ? expandable.scope.value : null;
 
   return (
     <section className={styles.root} aria-label="Player stats primary controls">
@@ -277,11 +283,106 @@ export default function PlayerStatsFilters({
         </label>
       </div>
 
+      <div className={styles.scopeGrid}>
+        <label className={styles.control}>
+          <span className={styles.label}>From Date</span>
+          <input
+            className={styles.input}
+            type="date"
+            value={dateRangeScope.startDate ?? ""}
+            onChange={(event) => {
+              const startDate = event.target.value || null;
+              const nextScope =
+                startDate == null && dateRangeScope.endDate == null
+                  ? { kind: "none" as const }
+                  : {
+                      kind: "dateRange" as const,
+                      startDate,
+                      endDate: dateRangeScope.endDate,
+                    };
+
+              onScopeChange(nextScope);
+            }}
+          />
+        </label>
+
+        <label className={styles.control}>
+          <span className={styles.label}>Through Date</span>
+          <input
+            className={styles.input}
+            type="date"
+            value={dateRangeScope.endDate ?? ""}
+            onChange={(event) => {
+              const endDate = event.target.value || null;
+              const nextScope =
+                dateRangeScope.startDate == null && endDate == null
+                  ? { kind: "none" as const }
+                  : {
+                      kind: "dateRange" as const,
+                      startDate: dateRangeScope.startDate,
+                      endDate,
+                    };
+
+              onScopeChange(nextScope);
+            }}
+          />
+        </label>
+
+        <label className={styles.control}>
+          <span className={styles.label}># of GP</span>
+          <input
+            className={styles.input}
+            type="number"
+            min="1"
+            step="1"
+            inputMode="numeric"
+            value={gameRangeValue ?? ""}
+            onChange={(event) => {
+              const value = parseNullableInteger(event.target.value);
+
+              onScopeChange(
+                value == null
+                  ? { kind: "none" }
+                  : {
+                      kind: "gameRange",
+                      value,
+                    }
+              );
+            }}
+            placeholder="Last X player games"
+          />
+        </label>
+
+        <label className={styles.control}>
+          <span className={styles.label}># of Team GP</span>
+          <input
+            className={styles.input}
+            type="number"
+            min="1"
+            step="1"
+            inputMode="numeric"
+            value={teamGamesValue ?? ""}
+            onChange={(event) => {
+              const value = parseNullableInteger(event.target.value);
+
+              onScopeChange(
+                value == null
+                  ? { kind: "none" }
+                  : {
+                      kind: "byTeamGames",
+                      value,
+                    }
+              );
+            }}
+            placeholder="Last X team games"
+          />
+        </label>
+      </div>
+
       <div className={styles.hintRow}>
         <p className={styles.hint}>
-          Expandable filters cover team context, venue, position, TOI threshold,
-          mutually exclusive scope windows, and combine or split traded-player
-          rows.
+          Use one timeframe window at a time. Date and game-count inputs replace
+          each other automatically as the active sample.
         </p>
         <span className={styles.familyBadge}>
           {formatTableFamily(tableFamily)} · default sort{" "}
@@ -369,100 +470,6 @@ export default function PlayerStatsFilters({
             </label>
 
             <label className={styles.control}>
-              <span className={styles.label}>Scope</span>
-              <select
-                className={styles.select}
-                value={expandable.scope.kind}
-                onChange={(event) =>
-                  onScopeChange(createScopeFromKind(event.target.value))
-                }
-              >
-                <option value="none">No scope modifier</option>
-                <option value="dateRange">Date Range</option>
-                <option value="gameRange">Game Range</option>
-                <option value="byTeamGames">By Team Games</option>
-              </select>
-            </label>
-
-            {dateRangeScope ? (
-              <>
-                <label className={styles.control}>
-                  <span className={styles.label}>Start Date</span>
-                  <input
-                    className={styles.input}
-                    type="date"
-                    value={dateRangeScope.startDate ?? ""}
-                    onChange={(event) =>
-                      onScopeChange({
-                        kind: "dateRange",
-                        startDate: event.target.value || null,
-                        endDate: dateRangeScope.endDate,
-                      })
-                    }
-                  />
-                </label>
-
-                <label className={styles.control}>
-                  <span className={styles.label}>End Date</span>
-                  <input
-                    className={styles.input}
-                    type="date"
-                    value={dateRangeScope.endDate ?? ""}
-                    onChange={(event) =>
-                      onScopeChange({
-                        kind: "dateRange",
-                        startDate: dateRangeScope.startDate,
-                        endDate: event.target.value || null,
-                      })
-                    }
-                  />
-                </label>
-              </>
-            ) : null}
-
-            {expandable.scope.kind === "gameRange" ? (
-              <label className={styles.control}>
-                <span className={styles.label}>Game Range</span>
-                <input
-                  className={styles.input}
-                  type="number"
-                  min="1"
-                  step="1"
-                  inputMode="numeric"
-                  value={expandable.scope.value ?? ""}
-                  onChange={(event) =>
-                    onScopeChange({
-                      kind: "gameRange",
-                      value: parseNullableInteger(event.target.value),
-                    })
-                  }
-                  placeholder="Last X player games"
-                />
-              </label>
-            ) : null}
-
-            {expandable.scope.kind === "byTeamGames" ? (
-              <label className={styles.control}>
-                <span className={styles.label}>By Team Games</span>
-                <input
-                  className={styles.input}
-                  type="number"
-                  min="1"
-                  step="1"
-                  inputMode="numeric"
-                  value={expandable.scope.value ?? ""}
-                  onChange={(event) =>
-                    onScopeChange({
-                      kind: "byTeamGames",
-                      value: parseNullableInteger(event.target.value),
-                    })
-                  }
-                  placeholder="Last X team games"
-                />
-              </label>
-            ) : null}
-
-            <label className={styles.control}>
               <span className={styles.label}>Combine or Split</span>
               <select
                 className={styles.select}
@@ -482,9 +489,8 @@ export default function PlayerStatsFilters({
 
           <div className={styles.advancedMeta}>
             <p className={styles.subtleHint}>
-              Date Range, Game Range, and By Team Games are intentionally modeled
-              as one shared scope control so only one sample window can be active
-              at a time.
+              Advanced filters cover team context, venue, position, TOI
+              threshold, and combine or split traded-player rows.
             </p>
             <span className={styles.scopeBadge}>
               {scopeIsActive
@@ -624,29 +630,4 @@ function parseNullableInteger(value: string): number | null {
 
   const parsed = Number.parseInt(value, 10);
   return Number.isInteger(parsed) && parsed >= 0 ? parsed : null;
-}
-
-function createScopeFromKind(
-  kind: string
-): PlayerStatsFilterState["expandable"]["scope"] {
-  switch (kind) {
-    case "dateRange":
-      return {
-        kind: "dateRange",
-        startDate: null,
-        endDate: null,
-      };
-    case "gameRange":
-      return {
-        kind: "gameRange",
-        value: null,
-      };
-    case "byTeamGames":
-      return {
-        kind: "byTeamGames",
-        value: null,
-      };
-    default:
-      return { kind: "none" };
-  }
 }

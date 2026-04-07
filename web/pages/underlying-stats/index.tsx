@@ -5,21 +5,21 @@ import { useRouter } from "next/router";
 import { format, parseISO } from "date-fns";
 import styles from "./indexUS.module.scss";
 import supabaseServer from "../../lib/supabase/server";
-import {
-  type TeamRating,
-  type SpecialTeamTier
-} from "../../lib/teamRatingsService";
+import { type SpecialTeamTier } from "../../lib/teamRatingsService";
 import { computeTeamPowerScore } from "../../lib/dashboard/teamContext";
 import { teamsInfo } from "../../lib/teamsInfo";
 import { fetchDistinctUnderlyingStatsSnapshotDates } from "../../lib/underlying-stats/availableSnapshotDates";
 import {
   resolveUnderlyingStatsLandingSnapshot,
+  type UnderlyingStatsLandingRating,
   type UnderlyingStatsLandingSnapshot
 } from "../../lib/underlying-stats/teamLandingRatings";
 
+import UnderlyingStatsNavBar from "../../components/underlying-stats/UnderlyingStatsNavBar";
+
 type PageProps = {
   initialDate: string | null;
-  initialRatings: TeamRating[];
+  initialRatings: UnderlyingStatsLandingRating[];
   availableDates: string[];
 };
 
@@ -77,6 +77,8 @@ const formatPer60 = (value: number): string => value.toFixed(2);
 const formatTrend = (value: number): string =>
   `${value > 0 ? "+" : ""}${value.toFixed(1)}`;
 const formatPower = (value: number): string => value.toFixed(1);
+const formatSos = (value: number | null): string =>
+  typeof value === "number" && !Number.isNaN(value) ? value.toFixed(1) : "—";
 const formatOptionalRating = (value: number | null): string => {
   if (typeof value !== "number" || Number.isNaN(value)) {
     return "—";
@@ -94,7 +96,9 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
 }) => {
   const router = useRouter();
   const [selectedDate, setSelectedDate] = useState(initialDate ?? "");
-  const [ratings, setRatings] = useState<TeamRating[]>(initialRatings);
+  const [ratings, setRatings] = useState<UnderlyingStatsLandingRating[]>(
+    initialRatings
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -187,6 +191,19 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
     return styles.componentNeutral;
   };
 
+  const getSosClass = (value: number | null): string => {
+    if (typeof value !== "number" || Number.isNaN(value)) {
+      return styles.componentNeutral;
+    }
+    if (value >= 105) {
+      return styles.componentPositive;
+    }
+    if (value <= 95) {
+      return styles.componentNegative;
+    }
+    return styles.componentNeutral;
+  };
+
   type SubRatingMetric = {
     key: ComponentRatingKey;
     label: string;
@@ -249,7 +266,7 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
         <title>Team Power Rankings | FHFHockey</title>
         <meta
           name="description"
-          content="Daily team offense, defense, pace ratings with special teams tiers and trends."
+          content="Daily team power rankings with offense, defense, pace, trend, strength of schedule, and special-teams tiers."
         />
       </Head>
       <main className={styles.page}>
@@ -260,19 +277,24 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
         </div>
 
         <section className={styles.headerPanel}>
-          <div className={styles.sectionEyebrow}>Underlying stats</div>
+          <div className={styles.topNavRow}>
+            <div className={styles.sectionEyebrow}>Underlying stats</div>
+            <UnderlyingStatsNavBar />
+          </div>
           <div className={styles.header}>
             <div className={styles.headerIntro}>
               <h1 className={styles.title}>Team Power Rankings</h1>
               <p className={styles.description}>
-                Offense, defense, and pace scores are normalized to a 100-point
-                league average using per-60 expected and actual results blended
-                with an EWMA + shrinkage model. Special teams tiers come from
-                daily power-play and penalty-kill percentiles, while the trend
-                reflects movement versus each club&apos;s 10-game baseline.
+                Daily team snapshot with league-relative offense, defense, and
+                pace ratings, special-teams tiers, repaired 10-game trend, and
+                strength-of-schedule context.
               </p>
             </div>
-            <div className={styles.controls} role="group" aria-label="Snapshot controls">
+            <div
+              className={styles.controls}
+              role="group"
+              aria-label="Snapshot controls"
+            >
               <label className={styles.controlLabel} htmlFor="date-select">
                 Snapshot date
               </label>
@@ -290,23 +312,19 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
                 ))}
               </select>
               <span className={styles.controlHint}>
-                Showing {ratings.length} teams · Updated nightly after new games
+                {ratings.length} teams · Nightly snapshot after games
               </span>
             </div>
           </div>
         </section>
 
         <section className={styles.secondaryPanels}>
-          <details className={styles.legend}>
-            <summary className={styles.legendSummary}>
-              Metric legend &amp; formulas
-            </summary>
+          <div className={styles.legend}>
+            <div className={styles.legendSummary}>Metric definitions</div>
             <div className={styles.legendContent}>
               <p>
-                <strong>Power Score</strong> averages the offense, defense, and
-                pace indices, then adds 1.5 points for each special teams tier
-                step (Tier&nbsp;1 → +3, Tier&nbsp;2 → +1.5, Tier&nbsp;3 → 0) for
-                both PP and PK.
+                <strong>Power Score</strong> = average of Off, Def, and Pace,
+                plus 1.5 points for each PP and PK tier step.
               </p>
               <p>
                 <strong>Offense</strong> = 100 + 15 × Z(<em>0.7×z(xGF60)</em> +
@@ -316,18 +334,19 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
                 <strong>Pace</strong> = 100 + 15 × Z(<em>((CF60+CA60)/2)</em>).
               </p>
               <p>
-                <strong>Trend</strong> compares today’s offense index against
-                each club’s 10-game baseline. <strong>Pace60</strong> is the
-                underlying per-60 pace metric from the view.
+                <strong>Trend</strong> = current offense rating versus the prior
+                10 played snapshots. <strong>SoS</strong> = 50/50 blend of
+                opponent record/schedule context and opponents&apos; current
+                Power Scores. Both use the same 100-centered page scale.{" "}
+                <strong>Pace60</strong> is the underlying per-60 pace metric.
               </p>
               <p>
-                <strong>Component Ratings</strong> turn the newly appended
-                finishing, goalie, danger-mix, special teams, and discipline
-                columns into the same 100-point scale (105 = strong, 95 = weak)
-                for quick trend checks.
+                <strong>Component Ratings</strong> convert finishing, goalie,
+                danger mix, special teams, and discipline into the same
+                100-point scale for quick reads.
               </p>
             </div>
-          </details>
+          </div>
 
           {shouldShowSubRatings && (
             <section className={styles.subRatings}>
@@ -335,9 +354,8 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
                 <div>
                   <h2>Sub-Ratings Spotlight</h2>
                   <p>
-                    League-relative scores (100 = average) for the top-ranked
-                    club across finishing, goaltending, danger mix, special
-                    teams, and discipline.
+                    Top-ranked club only. League-relative scores where 100 is
+                    average.
                   </p>
                 </div>
                 {rankedRatings[0]?.varianceFlag === 1 && (
@@ -368,7 +386,10 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
           )}
         </section>
 
-        <section className={styles.summarySection} aria-labelledby="top-teams-heading">
+        <section
+          className={styles.summarySection}
+          aria-labelledby="top-teams-heading"
+        >
           <div className={styles.sectionHeader}>
             <div>
               <p className={styles.sectionKicker}>Summary cards</p>
@@ -376,8 +397,7 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
                 Top teams overview
               </h2>
               <p className={styles.sectionDescription}>
-                Current leaders by blended power score with quick component
-                context.
+                Top three teams with quick context.
               </p>
             </div>
           </div>
@@ -460,14 +480,15 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
                 Daily power rankings table
               </h2>
               <p className={styles.sectionDescription}>
-                Full team-by-team ranking with power, pace, trend, tier, and
-                component-rating context.
+                Full team table for the selected snapshot.
               </p>
             </div>
             <div className={styles.sectionMeta}>
               <span>{rankedRatings.length} teams</span>
               <span>
-                {selectedDate ? formatDateLabel(selectedDate) : "Latest snapshot"}
+                {selectedDate
+                  ? formatDateLabel(selectedDate)
+                  : "Latest snapshot"}
               </span>
             </div>
           </div>
@@ -490,6 +511,9 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
                     <th scope="col">#</th>
                     <th scope="col">Team</th>
                     <th scope="col">Power</th>
+                    <th scope="col" title="Strength of Schedule">
+                      SoS
+                    </th>
                     <th scope="col">Off</th>
                     <th scope="col">Def</th>
                     <th scope="col">Pace</th>
@@ -527,6 +551,14 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
                       </td>
                       <td className={styles.powerCell}>
                         {formatPower(computeTeamPowerScore(team))}
+                      </td>
+                      <td className={styles.sosCell}>
+                        <span
+                          className={`${styles.sosPill} ${getSosClass(team.sos)}`}
+                          title="Strength of Schedule"
+                        >
+                          {formatSos(team.sos)}
+                        </span>
                       </td>
                       <td>{formatRating(team.offRating)}</td>
                       <td>{formatRating(team.defRating)}</td>

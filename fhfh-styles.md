@@ -840,6 +840,18 @@ Rules:
 2. Ghost buttons should still feel clickable; do not make them fade into the background.
 3. Use them sparingly in dense toolbars so the interface does not become visually noisy.
 
+#### Hub Navigation Button
+
+- Solid border
+- Semi-transparent background of the same color as the border
+- Intensified accent color on hover and active states
+
+Rules:
+
+1. Use exclusively for top-level navigation hubs (e.g., Underlying Stats tab switching).
+2. Maintain solid borders while utilizing low-opacity backgrounds (`0.15` to `0.2` resting).
+3. Selected/active state should increase the opacity (e.g., `0.5`) to clearly indicate the current page and change text color to white for contrast.
+
 #### Compact Dashboard Action Button
 
 Current best reference:

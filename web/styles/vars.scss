@@ -320,6 +320,8 @@ $box-shadow: $box-shadow-default !default; // compatibility alias; prefer $shado
 // Tables & layout
 $table-header-height: 35px;
 $table-cell-padding: $space-sm $space-md;
+$table-cell-padding-compact: 0.7rem 0.72rem;
+$table-cell-padding-compact-mobile: 0.58rem 0.6rem;
 $filter-vertical-spacing: $space-xl;
 
 // Shared widths

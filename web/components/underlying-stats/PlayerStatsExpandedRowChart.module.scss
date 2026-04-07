@@ -1,0 +1,104 @@
+@use "sass:color";
+@use "styles/vars" as v;
+
+.panel {
+  display: grid;
+  gap: v.$space-sm;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.toolbar {
+  display: flex;
+  gap: v.$space-xs;
+  align-items: center;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  @include v.custom-scrollbar(v.$color-brand-yellow, v.$background-medium);
+}
+
+.metricButton {
+  flex: 0 0 auto;
+  min-height: 28px;
+  padding: 0 v.$space-sm;
+  border-radius: v.$border-radius-sm;
+  border: 1px solid rgba(v.$color-brand-yellow, 0.28);
+  background: rgba(v.$color-brand-yellow, 0.08);
+  color: v.$text-secondary;
+  font: inherit;
+  font-size: v.$font-size-xxs;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    border-color 0.18s ease,
+    background-color 0.18s ease,
+    color 0.18s ease;
+
+  &:hover,
+  &:focus-visible {
+    border-color: rgba(v.$color-brand-yellow, 0.52);
+    background: rgba(v.$color-brand-yellow, 0.16);
+    color: v.$color-white;
+    outline: none;
+  }
+
+  &[data-active="true"] {
+    border-color: v.$color-brand-yellow;
+    background: rgba(v.$color-brand-yellow, 0.18);
+    color: v.$color-brand-yellow;
+  }
+}
+
+.chartShell {
+  height: 150px;
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  border-radius: v.$border-radius-md;
+  border: 1px solid rgba(v.$color-white, 0.08);
+  background: color.adjust(v.$background-dark, $lightness: -2%);
+  padding: v.$space-xs v.$space-sm v.$space-xs 0;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 150px;
+  border-radius: v.$border-radius-md;
+  border: 1px solid rgba(v.$color-white, 0.08);
+  background: color.adjust(v.$background-dark, $lightness: -2%);
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.tooltip {
+  padding: v.$space-xs v.$space-sm;
+  border-radius: v.$border-radius-sm;
+  border: 1px solid rgba(v.$color-white, 0.14);
+  background: rgba(0, 0, 0, 0.88);
+  color: v.$color-white;
+  font-size: v.$font-size-xs;
+}
+
+.tooltipLabel,
+.tooltipValue {
+  margin: 0;
+}
+
+.tooltipValue {
+  color: v.$color-brand-yellow;
+  font-weight: 700;
+}
+
+.tooltipMeta {
+  margin: 0;
+  color: v.$text-secondary;
+}

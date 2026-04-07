@@ -9,12 +9,21 @@ import {
   refreshPlayerUnderlyingSummarySnapshotsForGameIds,
   warmPlayerStatsLandingSeasonAggregateCache,
 } from "lib/underlying-stats/playerStatsSummaryRefresh";
+import { resolvePlayerStatsIncrementalSelection } from "lib/underlying-stats/playerStatsRefreshWindow";
 import adminOnly from "utils/adminOnlyMiddleware";
 
 type SummaryRefreshResponse =
   | {
       success: true;
       route: string;
+      mode?: "game" | "date_range" | "backfill_batch" | "incremental";
+      seasonId?: number | null;
+      startDate?: string | null;
+      endDate?: string | null;
+      latestCoveredDate?: string | null;
+      catchUpCompleted?: boolean;
+      batchSize?: number;
+      batchesProcessed?: number;
       requestedGameCount: number;
       gameIds: number[];
       rowsUpserted: number;
@@ -55,6 +64,17 @@ function parsePositiveInteger(value: QueryValue): number | null {
   const parsed = Number(normalized);
   if (!Number.isFinite(parsed) || parsed <= 0) return null;
   return Math.trunc(parsed);
+}
+
+function chunkGameIds(gameIds: readonly number[], batchSize: number) {
+  const normalizedBatchSize = Math.max(1, batchSize);
+  const chunks: number[][] = [];
+
+  for (let index = 0; index < gameIds.length; index += normalizedBatchSize) {
+    chunks.push(gameIds.slice(index, index + normalizedBatchSize));
+  }
+
+  return chunks;
 }
 
 function isIsoDate(value: string | undefined): value is string {
@@ -309,20 +329,43 @@ async function handler(
   }
 
   try {
-    const resolved = await resolveSummaryRequestedGameIds(req.query);
+    const incrementalSelectionRequested = isTruthyQueryFlag(req.query.incremental);
+    const catchUpRequested =
+      incrementalSelectionRequested && isTruthyQueryFlag(req.query.catchUp);
+    const batchSize = parsePositiveInteger(req.query.batchSize) ?? 10;
+    const resolved = incrementalSelectionRequested
+      ? await resolvePlayerStatsIncrementalSelection({
+          seasonId: parsePositiveInteger(req.query.seasonId),
+          requestedGameType: parsePositiveInteger(req.query.gameType),
+          supabase: serviceRoleClient,
+        })
+      : await resolveSummaryRequestedGameIds(req.query);
     const shouldWarmLandingCache =
       isTruthyQueryFlag(req.query.warmLandingCache) ||
       (resolved.mode === "backfill_batch" &&
         resolved.seasonId != null &&
+        resolved.gameIds.length === 0) ||
+      (resolved.mode === "incremental" &&
+        resolved.seasonId != null &&
         resolved.gameIds.length === 0);
-    const summaryRefresh = await refreshPlayerUnderlyingSummarySnapshotsForGameIds({
-      gameIds: resolved.gameIds,
-      seasonId: resolved.seasonId,
-      requestedGameType: resolved.requestedGameType,
-      shouldMigrateLegacySummaries: resolved.mode === "backfill_batch",
-      shouldWarmLandingCache: false,
-      supabase: serviceRoleClient,
-    });
+    const gameIdBatches = catchUpRequested
+      ? chunkGameIds(resolved.gameIds, batchSize)
+      : [resolved.gameIds];
+    let rowsUpserted = 0;
+
+    for (let batchIndex = 0; batchIndex < gameIdBatches.length; batchIndex += 1) {
+      const batchGameIds = gameIdBatches[batchIndex] ?? [];
+      const summaryRefresh = await refreshPlayerUnderlyingSummarySnapshotsForGameIds({
+        gameIds: batchGameIds,
+        seasonId: resolved.seasonId,
+        requestedGameType: resolved.requestedGameType,
+        shouldMigrateLegacySummaries: resolved.mode === "backfill_batch",
+        shouldWarmLandingCache: false,
+        supabase: serviceRoleClient,
+      });
+
+      rowsUpserted += summaryRefresh.rowsUpserted;
+    }
 
     if (shouldWarmLandingCache && resolved.seasonId != null) {
       await warmPlayerStatsLandingSeasonAggregateCache({
@@ -335,9 +378,25 @@ async function handler(
     return res.status(200).json({
       success: true,
       route: "/api/v1/db/update-player-underlying-summaries",
+      mode: resolved.mode,
+      seasonId: resolved.seasonId,
+      ...(resolved.mode === "incremental"
+        ? {
+            startDate: resolved.startDate,
+            endDate: resolved.endDate,
+            latestCoveredDate: resolved.latestCoveredDate,
+          }
+        : {}),
+      ...(catchUpRequested
+        ? {
+            catchUpCompleted: true,
+            batchSize,
+            batchesProcessed: gameIdBatches.length,
+          }
+        : {}),
       requestedGameCount: resolved.gameIds.length,
       gameIds: resolved.gameIds,
-      rowsUpserted: summaryRefresh.rowsUpserted,
+      rowsUpserted,
     });
   } catch (error) {
     const message = (() => {

@@ -4,10 +4,12 @@ const {
   refreshPlayerUnderlyingSummarySnapshotsForGameIdsMock,
   warmPlayerStatsLandingSeasonAggregateCacheMock,
   serviceRoleFromMock,
+  resolvePlayerStatsIncrementalSelectionMock,
 } = vi.hoisted(() => ({
   refreshPlayerUnderlyingSummarySnapshotsForGameIdsMock: vi.fn(),
   warmPlayerStatsLandingSeasonAggregateCacheMock: vi.fn(),
   serviceRoleFromMock: vi.fn(),
+  resolvePlayerStatsIncrementalSelectionMock: vi.fn(),
 }));
 
 vi.mock("lib/cron/withCronJobAudit", () => ({
@@ -32,6 +34,11 @@ vi.mock("lib/underlying-stats/playerStatsSummaryRefresh", () => ({
     refreshPlayerUnderlyingSummarySnapshotsForGameIdsMock,
   warmPlayerStatsLandingSeasonAggregateCache:
     warmPlayerStatsLandingSeasonAggregateCacheMock,
+}));
+
+vi.mock("lib/underlying-stats/playerStatsRefreshWindow", () => ({
+  resolvePlayerStatsIncrementalSelection:
+    resolvePlayerStatsIncrementalSelectionMock,
 }));
 
 import handler from "../../../../../pages/api/v1/db/update-player-underlying-summaries";
@@ -74,6 +81,15 @@ describe("/api/v1/db/update-player-underlying-summaries", () => {
       rawBuildGameIds: [2025020955],
     });
     warmPlayerStatsLandingSeasonAggregateCacheMock.mockResolvedValue(undefined);
+    resolvePlayerStatsIncrementalSelectionMock.mockResolvedValue({
+      mode: "incremental",
+      seasonId: 20252026,
+      requestedGameType: 2,
+      startDate: "2026-04-04",
+      endDate: "2026-04-05",
+      latestCoveredDate: "2026-04-04",
+      gameIds: [2025021184, 2025021196],
+    });
 
     serviceRoleFromMock.mockImplementation((table: string) => {
       if (table === "nhl_api_game_payloads_raw") {
@@ -178,6 +194,8 @@ describe("/api/v1/db/update-player-underlying-summaries", () => {
     expect(res.body).toEqual({
       success: true,
       route: "/api/v1/db/update-player-underlying-summaries",
+      mode: "backfill_batch",
+      seasonId: 20252026,
       requestedGameCount: 1,
       gameIds: [2025020955],
       rowsUpserted: 1,
@@ -289,6 +307,8 @@ describe("/api/v1/db/update-player-underlying-summaries", () => {
     expect(res.body).toEqual({
       success: true,
       route: "/api/v1/db/update-player-underlying-summaries",
+      mode: "backfill_batch",
+      seasonId: 20252026,
       requestedGameCount: 1,
       gameIds: [2025020955],
       rowsUpserted: 1,
@@ -318,6 +338,8 @@ describe("/api/v1/db/update-player-underlying-summaries", () => {
     expect(res.body).toEqual({
       success: true,
       route: "/api/v1/db/update-player-underlying-summaries",
+      mode: "game",
+      seasonId: null,
       requestedGameCount: 1,
       gameIds: [2025020955],
       rowsUpserted: 1,
@@ -425,9 +447,143 @@ describe("/api/v1/db/update-player-underlying-summaries", () => {
     expect(res.body).toEqual({
       success: true,
       route: "/api/v1/db/update-player-underlying-summaries",
+      mode: "backfill_batch",
+      seasonId: 20252026,
       requestedGameCount: 0,
       gameIds: [],
       rowsUpserted: 0,
+    });
+  });
+
+  it("supports incremental summary catch-up from the latest covered date through current finished games", async () => {
+    refreshPlayerUnderlyingSummarySnapshotsForGameIdsMock.mockResolvedValue({
+      rowsUpserted: 2,
+      migratedGameIds: [],
+      rawBuildGameIds: [2025021184, 2025021196],
+    });
+
+    const { req, res } = createMockApiContext({
+      query: {
+        incremental: "true",
+        warmLandingCache: "true",
+      },
+    });
+
+    await handler(req as never, res as never);
+
+    expect(resolvePlayerStatsIncrementalSelectionMock).toHaveBeenCalledWith({
+      seasonId: null,
+      requestedGameType: null,
+      supabase: expect.objectContaining({
+        from: expect.any(Function),
+      }),
+    });
+    expect(refreshPlayerUnderlyingSummarySnapshotsForGameIdsMock).toHaveBeenCalledWith({
+      gameIds: [2025021184, 2025021196],
+      seasonId: 20252026,
+      requestedGameType: 2,
+      shouldMigrateLegacySummaries: false,
+      shouldWarmLandingCache: false,
+      supabase: expect.objectContaining({
+        from: expect.any(Function),
+      }),
+    });
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.body).toEqual({
+      success: true,
+      route: "/api/v1/db/update-player-underlying-summaries",
+      mode: "incremental",
+      seasonId: 20252026,
+      startDate: "2026-04-04",
+      endDate: "2026-04-05",
+      latestCoveredDate: "2026-04-04",
+      requestedGameCount: 2,
+      gameIds: [2025021184, 2025021196],
+      rowsUpserted: 2,
+    });
+    expect(warmPlayerStatsLandingSeasonAggregateCacheMock).toHaveBeenCalledWith({
+      seasonId: 20252026,
+      gameType: 2,
+      supabase: expect.objectContaining({
+        from: expect.any(Function),
+      }),
+    });
+  });
+
+  it("supports batched catch-up mode for incremental summary refreshes", async () => {
+    resolvePlayerStatsIncrementalSelectionMock.mockResolvedValue({
+      mode: "incremental",
+      seasonId: 20252026,
+      requestedGameType: 2,
+      startDate: "2026-04-04",
+      endDate: "2026-04-05",
+      latestCoveredDate: "2026-04-04",
+      gameIds: [2025021184, 2025021196, 2025021197],
+    });
+    refreshPlayerUnderlyingSummarySnapshotsForGameIdsMock
+      .mockResolvedValueOnce({
+        rowsUpserted: 2,
+        migratedGameIds: [],
+        rawBuildGameIds: [2025021184, 2025021196],
+      })
+      .mockResolvedValueOnce({
+        rowsUpserted: 1,
+        migratedGameIds: [],
+        rawBuildGameIds: [2025021197],
+      });
+
+    const { req, res } = createMockApiContext({
+      query: {
+        incremental: "true",
+        catchUp: "true",
+        batchSize: "2",
+        warmLandingCache: "true",
+      },
+    });
+
+    await handler(req as never, res as never);
+
+    expect(refreshPlayerUnderlyingSummarySnapshotsForGameIdsMock).toHaveBeenNthCalledWith(1, {
+      gameIds: [2025021184, 2025021196],
+      seasonId: 20252026,
+      requestedGameType: 2,
+      shouldMigrateLegacySummaries: false,
+      shouldWarmLandingCache: false,
+      supabase: expect.objectContaining({
+        from: expect.any(Function),
+      }),
+    });
+    expect(refreshPlayerUnderlyingSummarySnapshotsForGameIdsMock).toHaveBeenNthCalledWith(2, {
+      gameIds: [2025021197],
+      seasonId: 20252026,
+      requestedGameType: 2,
+      shouldMigrateLegacySummaries: false,
+      shouldWarmLandingCache: false,
+      supabase: expect.objectContaining({
+        from: expect.any(Function),
+      }),
+    });
+    expect(warmPlayerStatsLandingSeasonAggregateCacheMock).toHaveBeenCalledWith({
+      seasonId: 20252026,
+      gameType: 2,
+      supabase: expect.objectContaining({
+        from: expect.any(Function),
+      }),
+    });
+    expect(res.body).toEqual({
+      success: true,
+      route: "/api/v1/db/update-player-underlying-summaries",
+      mode: "incremental",
+      seasonId: 20252026,
+      startDate: "2026-04-04",
+      endDate: "2026-04-05",
+      latestCoveredDate: "2026-04-04",
+      catchUpCompleted: true,
+      batchSize: 2,
+      batchesProcessed: 2,
+      requestedGameCount: 3,
+      gameIds: [2025021184, 2025021196, 2025021197],
+      rowsUpserted: 3,
     });
   });
 });

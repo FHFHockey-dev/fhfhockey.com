@@ -5,15 +5,26 @@
 .shell {
   @include panel.panel-container($radius: v.$border-radius-lg, $padding: 0);
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 100%;
+  min-height: 0;
+  height: 100%;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
     v.$background-dark;
 }
 
 .viewport {
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0;
   overflow-x: auto;
   overflow-y: auto;
   max-width: 100%;
+  max-height: 100%;
+  overscroll-behavior: contain;
   @include v.custom-scrollbar(v.$color-brand-yellow, v.$background-medium);
 }
 
@@ -115,8 +126,13 @@
   position: sticky;
   top: 0;
   z-index: 3;
-  background-color: color.adjust(v.$background-dark, $lightness: -3%);
-  border-bottom: 2px solid rgba(v.$color-brand-yellow, 0.5);
+  background-color: v.$color-brand-yellow;
+  color: v.$color-neutral-950;
+  border-bottom: 2px solid v.$color-neutral-050;
+
+  &[data-active="true"] {
+    background-color: v.$color-gold-400;
+  }
 }
 
 .headerButton {
@@ -134,6 +150,7 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
   cursor: pointer;
+  color: v.$color-neutral-950;
 
   &:focus-visible {
     outline: 2px solid rgba(v.$color-brand-yellow, 0.7);
@@ -142,9 +159,18 @@
 }
 
 .sortIndicator {
-  color: v.$color-brand-yellow;
+  color: v.$color-neutral-950;
   font-size: 0.9em;
   line-height: 1;
+}
+
+.rankHeaderLabel {
+  display: inline-flex;
+  width: 100%;
+  justify-content: center;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .row:nth-child(even) .bodyCell {
@@ -164,6 +190,10 @@
     10px 0 14px -14px rgba(0, 0, 0, 0.85);
 }
 
+.head .stickyCell {
+  background-color: v.$color-brand-yellow;
+}
+
 .row:nth-child(even) .stickyCell {
   background-color: color.adjust(v.$background-dark, $lightness: 2%);
 }
@@ -174,6 +204,92 @@
 
 .head .stickyCell {
   z-index: 5;
+}
+
+.bodyCell[data-active="true"] {
+  background-color: rgba(v.$color-blue-100, 0.12);
+}
+
+.row:nth-child(even) .bodyCell[data-active="true"] {
+  background-color: rgba(v.$color-blue-100, 0.18);
+}
+
+.row:hover .bodyCell[data-active="true"] {
+  background-color: rgba(v.$color-blue-100, 0.24);
+}
+
+.stickyCell[data-active="true"] {
+  background-color: rgba(v.$color-blue-100, 0.12);
+}
+
+.row:nth-child(even) .stickyCell[data-active="true"] {
+  background-color: rgba(v.$color-blue-100, 0.18);
+}
+
+.row:hover .stickyCell[data-active="true"] {
+  background-color: rgba(v.$color-blue-100, 0.24);
+}
+
+.row[data-expanded="true"] .bodyCell {
+  border-bottom-color: transparent;
+}
+
+.row[data-expanded="true"] .stickyCell {
+  box-shadow:
+    1px 0 0 rgba(255, 255, 255, 0.08),
+    10px 0 14px -14px rgba(0, 0, 0, 0.85);
+}
+
+.rankHeaderCell,
+.rankBodyCell {
+  min-width: 64px;
+}
+
+.rankValue {
+  color: v.$color-brand-yellow;
+  font-weight: 700;
+}
+
+.loadingRow .bodyCell,
+.loadingCell {
+  padding: v.$space-md;
+  text-align: center;
+  border-bottom: 0;
+  background-color: color.adjust(v.$background-dark, $lightness: 1%);
+}
+
+.loadingCell {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  box-shadow: 0 -8px 16px rgba(0, 0, 0, 0.28);
+}
+
+.expandedRow td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.expandedCell {
+  position: relative;
+  padding: v.$space-sm 0 v.$space-md;
+  background:
+    linear-gradient(180deg, rgba(v.$color-brand-yellow, 0.04), rgba(255, 255, 255, 0)),
+    color.adjust(v.$background-dark, $lightness: -2%);
+  overflow: hidden;
+}
+
+.expandedViewportShell {
+  display: block;
+  position: sticky;
+  left: 0;
+  right: auto;
+  padding: 0 v.$space-md;
+  box-sizing: border-box;
+  min-width: 0;
+  overflow: hidden;
+  contain: layout paint;
+  isolation: isolate;
+  z-index: 1;
 }
 
 .alignLeft {

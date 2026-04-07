@@ -4,6 +4,7 @@ export type PlayerStatsFormattingToken =
   | "text"
   | "team"
   | "position"
+  | "date"
   | "integer"
   | "decimal"
   | "percentage"
@@ -90,6 +91,24 @@ export function formatPlayerStatsText(
   return String(value);
 }
 
+export function formatPlayerStatsDate(
+  value: string | null | undefined
+): string {
+  if (!value) {
+    return PLAYER_STATS_EMPTY_VALUE;
+  }
+
+  const parsedDate = new Date(`${value}T00:00:00Z`);
+  if (Number.isNaN(parsedDate.getTime())) {
+    return PLAYER_STATS_EMPTY_VALUE;
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+  }).format(parsedDate);
+}
+
 export function formatPlayerStatsValue(
   value: string | number | null | undefined,
   format: PlayerStatsFormattingToken
@@ -103,6 +122,8 @@ export function formatPlayerStatsValue(
     case "team":
     case "position":
       return formatPlayerStatsText(value);
+    case "date":
+      return formatPlayerStatsDate(typeof value === "string" ? value : String(value));
     case "integer":
       return formatPlayerStatsInteger(
         typeof value === "number" ? value : Number(value)
