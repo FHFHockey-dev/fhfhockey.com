@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { Pool } from "pg";
 
 import { normalizeDependencyError } from "lib/cron/normalizeDependencyError";
 import serviceRoleClient from "lib/supabase/server";
@@ -16,6 +17,8 @@ import { fetchSeasonTeamSummaryGameIdSet } from "./teamStatsSummaryRefresh";
 const SUPABASE_PAGE_SIZE = 1000;
 const DEFAULT_DEPENDENCY_RETRIES = 3;
 const DEFAULT_DEPENDENCY_RETRY_DELAY_MS = 750;
+
+let underlyingStatsAdminPgPool: Pool | null = null;
 
 export type QueryValue = string | string[] | undefined;
 
@@ -57,6 +60,108 @@ function stringifyError(error: unknown) {
     return JSON.stringify(error);
   } catch {
     return String(error);
+  }
+}
+
+function readUnderlyingStatsAdminDbConfigFromEnv(): {
+  user: string;
+  password: string;
+  host: string;
+  port: number;
+  database: string;
+} | null {
+  const rawUrl = process.env.SUPABASE_DB_URL;
+
+  if (!rawUrl) {
+    return null;
+  }
+
+  const withoutPrefix = rawUrl.replace(/^postgresql:\/\//, "");
+  const atIndex = withoutPrefix.lastIndexOf("@");
+
+  if (atIndex === -1) {
+    throw new Error(
+      "Unexpected SUPABASE_DB_URL format: missing credential delimiter."
+    );
+  }
+
+  const creds = withoutPrefix.slice(0, atIndex);
+  const hostPart = withoutPrefix.slice(atIndex + 1);
+  const colonIndex = creds.indexOf(":");
+
+  if (colonIndex === -1) {
+    throw new Error(
+      "Unexpected SUPABASE_DB_URL format: missing password delimiter."
+    );
+  }
+
+  const user = creds.slice(0, colonIndex);
+  const password = creds.slice(colonIndex + 1);
+  const hostMatch = hostPart.match(/^([^:]+):(\d+)\/([^?]+)(\?.*)?$/);
+
+  if (!hostMatch) {
+    throw new Error(
+      "Unexpected SUPABASE_DB_URL format: missing host, port, or database."
+    );
+  }
+
+  const [, host, port, database] = hostMatch;
+
+  return {
+    user,
+    password,
+    host,
+    port: Number(port),
+    database
+  };
+}
+
+function getUnderlyingStatsAdminPgPool(): Pool | null {
+  const hasDirectPgConfig = Boolean(process.env.SUPABASE_DB_URL);
+  const allowDirectPg =
+    process.env.NODE_ENV === "production" ||
+    (process.env.NODE_ENV === "development" && hasDirectPgConfig);
+
+  if (!allowDirectPg) {
+    return null;
+  }
+
+  const dbConfig = readUnderlyingStatsAdminDbConfigFromEnv();
+  if (dbConfig == null) {
+    return null;
+  }
+
+  if (underlyingStatsAdminPgPool == null) {
+    underlyingStatsAdminPgPool = new Pool({
+      ...dbConfig,
+      ssl: {
+        rejectUnauthorized: false
+      },
+      max: 4
+    });
+  }
+
+  return underlyingStatsAdminPgPool;
+}
+
+async function fetchUnderlyingStatsAdminPgRows<
+  TRow extends Record<string, unknown>
+>(query: string, params: unknown[]): Promise<TRow[]> {
+  const pool = getUnderlyingStatsAdminPgPool();
+  if (pool == null) {
+    throw new Error(
+      "SUPABASE_DB_URL is required for direct admin selection queries."
+    );
+  }
+
+  const client = await pool.connect();
+
+  try {
+    await client.query("SET statement_timeout TO '300000'");
+    const result = await client.query(query, params);
+    return result.rows as TRow[];
+  } finally {
+    client.release();
   }
 }
 
@@ -320,6 +425,64 @@ export async function selectMissingTeamSummaryGameIds(args: {
   supabase?: SupabaseClient;
 }) {
   const supabase = args.supabase ?? serviceRoleClient;
+
+  if (
+    supabase === serviceRoleClient &&
+    getUnderlyingStatsAdminPgPool() != null
+  ) {
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      const finishedCutoff = new Date(
+        Date.now() - 8 * 60 * 60 * 1000
+      ).toISOString();
+      const rows = await fetchUnderlyingStatsAdminPgRows<{
+        id: number | string | null;
+      }>(
+        `select g.id
+           from public.games g
+          where g."seasonId" = $1
+            and ($2::int is null or g.type = $2)
+            and (
+              g.date < $3::date
+              or (g.date = $3::date and g."startTime" is not null and g."startTime" <= $4::timestamptz)
+            )
+            and not exists (
+              select 1
+                from public.team_underlying_stats_summary s
+               where s.season_id = $1
+                 and ($2::int is null or s.game_type = $2)
+                 and s.game_id = g.id
+                 and s.strength = 'allStrengths'
+                 and s.score_state = 'allScores'
+               group by s.game_id
+              having count(distinct s.team_id) filter (where s.toi_seconds > 0) >= 2
+            )
+          order by g.date desc, g.id desc
+          limit $5`,
+        [
+          args.seasonId,
+          args.requestedGameType ?? null,
+          today,
+          finishedCutoff,
+          Math.max(1, args.limit)
+        ]
+      );
+
+      return rows
+        .map((row) => Number(row.id))
+        .filter((gameId) => Number.isFinite(gameId));
+    } catch (error) {
+      console.warn(
+        "[team-underlying] falling back from direct PG missing-game selection",
+        {
+          seasonId: args.seasonId,
+          requestedGameType: args.requestedGameType ?? null,
+          error: stringifyError(error)
+        }
+      );
+    }
+  }
+
   const [finishedGameIds, summaryGameIds] = await Promise.all([
     fetchFinishedSeasonGameIds({
       seasonId: args.seasonId,
@@ -328,7 +491,8 @@ export async function selectMissingTeamSummaryGameIds(args: {
     }),
     fetchSeasonTeamSummaryGameIdSet({
       supabase,
-      seasonId: args.seasonId
+      seasonId: args.seasonId,
+      requestedGameType: args.requestedGameType
     })
   ]);
 

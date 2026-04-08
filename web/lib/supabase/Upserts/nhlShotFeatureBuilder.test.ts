@@ -206,10 +206,12 @@ describe("nhlShotFeatureBuilder", () => {
       flurryShotCount: 2,
       ownerPowerPlayAgeSeconds: 4,
       shooterShiftAgeSeconds: 14,
+      ownerGoalieOnIce: true,
+      opponentGoalieOnIce: true,
       eastWestMovementFeet: 34,
       crossedRoyalRoad: true,
       isPenaltyShotEvent: false,
-      isEmptyNetEvent: false,
+      isEmptyNetEvent: false
     });
     expect(rows[0].shotDistanceFeet).toBeCloseTo(17.6918, 3);
     expect(rows[0].shotAngleDegrees).toBeCloseTo(42.7093, 3);
@@ -338,6 +340,76 @@ describe("nhlShotFeatureBuilder", () => {
       shotType: null,
       isFlurryShot: true,
       flurryShotCount: 2,
+    });
+  });
+
+  it("derives owner and opponent goalie-on-ice flags from the parsed situation code", () => {
+    const evenStrengthRows = buildShotFeatureRows(
+      parseEvents([
+        {
+          eventId: 500,
+          sortOrder: 500,
+          periodDescriptor: { number: 1, periodType: "REG" },
+          timeInPeriod: "03:00",
+          timeRemaining: "17:00",
+          situationCode: "1551",
+          homeTeamDefendingSide: "left",
+          typeCode: 506,
+          typeDescKey: "shot-on-goal",
+          details: {
+            eventOwnerTeamId: 10,
+            shootingPlayerId: 91,
+            goalieInNetId: 31,
+            shotType: "Wrist",
+            xCoord: 70,
+            yCoord: 10,
+            zoneCode: "O"
+          }
+        }
+      ]),
+      [] as any,
+      10,
+      20
+    );
+
+    expect(evenStrengthRows[0]).toMatchObject({
+      strengthExact: "5v5",
+      ownerGoalieOnIce: true,
+      opponentGoalieOnIce: true
+    });
+
+    const emptyNetRows = buildShotFeatureRows(
+      parseEvents([
+        {
+          eventId: 501,
+          sortOrder: 501,
+          periodDescriptor: { number: 3, periodType: "REG" },
+          timeInPeriod: "18:00",
+          timeRemaining: "02:00",
+          situationCode: "0651",
+          homeTeamDefendingSide: "left",
+          typeCode: 506,
+          typeDescKey: "shot-on-goal",
+          details: {
+            eventOwnerTeamId: 10,
+            shootingPlayerId: 91,
+            shotType: "Wrist",
+            xCoord: 70,
+            yCoord: 10,
+            zoneCode: "O"
+          }
+        }
+      ]),
+      [] as any,
+      10,
+      20
+    );
+
+    expect(emptyNetRows[0]).toMatchObject({
+      strengthExact: "6v5",
+      ownerGoalieOnIce: true,
+      opponentGoalieOnIce: false,
+      isEmptyNetEvent: true
     });
   });
 

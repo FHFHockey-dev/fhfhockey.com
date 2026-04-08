@@ -1,11 +1,106 @@
 import Head from "next/head";
 import { useRouter } from "next/router";
+import useSWR from "swr";
 import styles from "./[gameId].module.scss";
 import PlayerSearchBar from "components/StatsPage/PlayerSearchBar";
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
+
+// Helper to convert American/Decimal odds to implied probability
+function getImpliedProb(oddsStr?: string): number {
+  if (!oddsStr) return 50;
+  
+  // Handle decimal odds
+  if (!oddsStr.startsWith("+") && !oddsStr.startsWith("-")) {
+    const decimal = parseFloat(oddsStr);
+    if (!isNaN(decimal) && decimal > 0) return (1 / decimal) * 100;
+  }
+  
+  // Handle American odds
+  const odds = parseInt(oddsStr.replace("+", ""), 10);
+  if (isNaN(odds)) return 50;
+  if (odds > 0) {
+    return (100 / (odds + 100)) * 100;
+  } else {
+    return (-odds / (-odds + 100)) * 100;
+  }
+}
 
 export default function GameStatsPage() {
   const router = useRouter();
   const { gameId } = router.query;
+
+  const { data: rightRail, error: rrError } = useSWR(
+    gameId ? `/api/v1/game/${gameId}/right-rail` : null,
+    fetcher
+  );
+
+  const currentGame = rightRail?.seasonSeries?.find(
+    (g: any) => g.id === Number(gameId)
+  );
+  
+  const gameDate = currentGame?.gameDate;
+
+  const { data: scheduleData } = useSWR(
+    gameDate ? `/api/v1/schedule/date/${gameDate}` : null,
+    fetcher
+  );
+
+  // Fallback to placeholder while loading
+  const isLoading = !rightRail && !rrError;
+
+  // Find game in daily schedule to get odds
+  const gameOdds = scheduleData?.gameWeek?.[0]?.games?.find(
+    (g: any) => g.id === Number(gameId)
+  );
+
+  // DraftKings is usually providerId 9, fallback to 8 (Sportradar) or first available
+  const findOdds = (teamOdds: any[]) => {
+    if (!teamOdds || !teamOdds.length) return undefined;
+    return teamOdds.find(o => o.providerId === 9)?.value || 
+           teamOdds.find(o => o.providerId === 8)?.value || 
+           teamOdds[0]?.value;
+  };
+
+  const awayMoneylineStr = findOdds(gameOdds?.awayTeam?.odds);
+  const homeMoneylineStr = findOdds(gameOdds?.homeTeam?.odds);
+
+  const rawAwayProb = getImpliedProb(awayMoneylineStr);
+  const rawHomeProb = getImpliedProb(homeMoneylineStr);
+  const totalProb = rawAwayProb + rawHomeProb;
+  
+  // Normalize probabilities (removing the vig)
+  const awayProb = totalProb ? Math.round((rawAwayProb / totalProb) * 100) : 42; // fallback to mock data
+  const homeProb = totalProb ? 100 - awayProb : 58;
+
+  // Team Context
+  const awayTeam = currentGame?.awayTeam || { abbrev: "Away", score: 0 };
+  const homeTeam = currentGame?.homeTeam || { abbrev: "Home", score: 0 };
+  
+  const awayStats = rightRail?.teamSeasonStats?.awayTeam || {
+    ppPctg: 0.21, pkPctg: 0.82, goalsForPerGamePlayed: 3.1, goalsAgainstPerGamePlayed: 2.8
+  };
+  const homeStats = rightRail?.teamSeasonStats?.homeTeam || {
+    ppPctg: 0.22, pkPctg: 0.74, goalsForPerGamePlayed: 3.3, goalsAgainstPerGamePlayed: 3.1
+  };
+  
+  const last10Away = rightRail?.last10Record?.awayTeam || { record: "0-0-0", streak: 0, streakType: "W" };
+  const last10Home = rightRail?.last10Record?.homeTeam || { record: "0-0-0", streak: 0, streakType: "W" };
+
+  // Calculate visual bar widths for strengths
+  const getBarWidths = (awayVal: number, homeVal: number) => {
+    const total = awayVal + homeVal;
+    if (total === 0) return { away: 50, home: 50 };
+    return {
+      away: (awayVal / total) * 100,
+      home: (homeVal / total) * 100
+    };
+  };
+
+  const ppVsPkAway = awayStats.ppPctg + (1 - homeStats.pkPctg);
+  const ppVsPkHome = homeStats.ppPctg + (1 - awayStats.pkPctg);
+  const specialTeamsBars = getBarWidths(ppVsPkAway, ppVsPkHome);
+  const goalsBars = getBarWidths(awayStats.goalsForPerGamePlayed, homeStats.goalsForPerGamePlayed);
 
   return (
     <>
@@ -22,19 +117,27 @@ export default function GameStatsPage() {
           {/* 1. Identity & Scope Header */}
           <header className={styles.matchupHeader}>
              <div className={styles.teamAway}>
-                <span className={styles.teamEyebrow}>Away (18-12-4)</span>
-                <div className={styles.teamName}>Lightning</div>
-                <div className={styles.teamRecord}>1st Atlantic</div>
+                <span className={styles.teamEyebrow}>Away ({last10Away.record})</span>
+                <div className={styles.teamName}>{awayTeam.abbrev}</div>
+                <div className={styles.teamRecord}>
+                  {last10Away.streak > 0 ? `${last10Away.streakType}${last10Away.streak} Streak` : " "}
+                </div>
              </div>
              <div className={styles.gameInfo}>
-                <div className={styles.gameStatus}>Scheduled</div>
-                <div className={styles.gameTime}>7:00 PM EST</div>
-                <div className={styles.venue}>Amalie Arena</div>
+                <div className={styles.gameStatus}>
+                  {isLoading ? "Loading..." : (currentGame?.gameState === "FUT" ? "Scheduled" : "Live/Final")}
+                </div>
+                <div className={styles.gameTime}>
+                  {gameOdds ? new Date(gameOdds.startTimeUTC).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "7:00 PM"}
+                </div>
+                <div className={styles.venue}>NHL GameCenter</div>
              </div>
              <div className={styles.teamHome}>
-                <span className={styles.teamEyebrow}>Home (22-9-2)</span>
-                <div className={styles.teamName}>Panthers</div>
-                <div className={styles.teamRecord}>2nd Atlantic</div>
+                <span className={styles.teamEyebrow}>Home ({last10Home.record})</span>
+                <div className={styles.teamName}>{homeTeam.abbrev}</div>
+                <div className={styles.teamRecord}>
+                  {last10Home.streak > 0 ? `${last10Home.streakType}${last10Home.streak} Streak` : " "}
+                </div>
              </div>
           </header>
 
@@ -50,16 +153,16 @@ export default function GameStatsPage() {
                 <div className={styles.probabilityHero}>
                   <div className={styles.probScale}>
                     <div className={styles.probLabels}>
-                      <span className={styles.probAway}>TBL 42%</span>
-                      <span className={styles.probHome}>FLA 58%</span>
+                      <span className={styles.probAway}>{awayTeam.abbrev} {awayProb}%</span>
+                      <span className={styles.probHome}>{homeTeam.abbrev} {homeProb}%</span>
                     </div>
                     <div className={styles.probBar}>
-                      <div className={styles.probFillAway} style={{ width: "42%" }}></div>
-                      <div className={styles.probFillHome} style={{ width: "58%" }}></div>
+                      <div className={styles.probFillAway} style={{ width: `${awayProb}%` }}></div>
+                      <div className={styles.probFillHome} style={{ width: `${homeProb}%` }}></div>
                     </div>
                     <div className={styles.probLabels} style={{ color: "rgba(255,255,255,0.5)", marginTop: "0.25rem" }}>
-                      <span>Proj: 2.8</span>
-                      <span>Proj: 3.4</span>
+                      <span>Proj: {awayStats.goalsForPerGamePlayed.toFixed(1)}</span>
+                      <span>Proj: {homeStats.goalsForPerGamePlayed.toFixed(1)}</span>
                     </div>
                   </div>
                 </div>
@@ -76,21 +179,21 @@ export default function GameStatsPage() {
                   {/* Away Goalie */}
                   <div className={`${styles.goalieCard} ${styles.away}`}>
                     <div className={styles.goalieHeader}>
-                      <div className={styles.goalieName}>A. Vasilevskiy</div>
-                      <div className={`${styles.goalieStatus} ${styles.confirmed}`}>Confirmed</div>
+                      <div className={styles.goalieName}>Away Starter</div>
+                      <div className={`${styles.goalieStatus} ${styles.unconfirmed}`}>Expected</div>
                     </div>
                     <div className={styles.statGrid}>
                       <div className={styles.statBox}>
                         <span className={styles.statLabel}>SV%</span>
-                        <span className={`${styles.statValue} ${styles.good}`}>.918</span>
+                        <span className={styles.statValue}>.000</span>
                       </div>
                       <div className={styles.statBox}>
                         <span className={styles.statLabel}>GAA</span>
-                        <span className={styles.statValue}>2.45</span>
+                        <span className={styles.statValue}>0.00</span>
                       </div>
                       <div className={styles.statBox}>
                         <span className={styles.statLabel}>GSAx</span>
-                        <span className={`${styles.statValue} ${styles.good}`}>+8.4</span>
+                        <span className={styles.statValue}>0.0</span>
                       </div>
                     </div>
                   </div>
@@ -98,21 +201,21 @@ export default function GameStatsPage() {
                   {/* Home Goalie */}
                   <div className={`${styles.goalieCard} ${styles.home}`}>
                     <div className={styles.goalieHeader}>
-                      <div className={styles.goalieName}>S. Bobrovsky</div>
+                      <div className={styles.goalieName}>Home Starter</div>
                       <div className={`${styles.goalieStatus} ${styles.unconfirmed}`}>Expected</div>
                     </div>
                     <div className={styles.statGrid}>
                       <div className={styles.statBox}>
                         <span className={styles.statLabel}>SV%</span>
-                        <span className={styles.statValue}>.908</span>
+                        <span className={styles.statValue}>.000</span>
                       </div>
                       <div className={styles.statBox}>
                         <span className={styles.statLabel}>GAA</span>
-                        <span className={styles.statValue}>2.81</span>
+                        <span className={styles.statValue}>0.00</span>
                       </div>
                       <div className={styles.statBox}>
                         <span className={styles.statLabel}>GSAx</span>
-                        <span className={`${styles.statValue} ${styles.bad}`}>-1.2</span>
+                        <span className={styles.statValue}>0.0</span>
                       </div>
                     </div>
                   </div>
@@ -126,37 +229,38 @@ export default function GameStatsPage() {
                 <h3>Team Strengths</h3>
               </div>
               <div className={styles.panelBody}>
+                {/* We don't have 5v5 xG% from the basic NHL API, so using Goals/Gm vs GoalsAgainst/Gm for now */}
                 <div className={styles.strengthRow}>
                   <div className={styles.strengthLabels}>
-                    <span className={styles.strengthValueAway}>51.2%</span>
-                    <span>5v5 xG%</span>
-                    <span className={styles.strengthValueHome}>54.8%</span>
+                    <span className={styles.strengthValueAway}>{awayStats.goalsForPerGamePlayed.toFixed(2)}</span>
+                    <span>Goals / 60</span>
+                    <span className={styles.strengthValueHome}>{homeStats.goalsForPerGamePlayed.toFixed(2)}</span>
                   </div>
                   <div className={styles.strengthBarWrap}>
-                    <div className={styles.strengthFillAway} style={{ width: "48%" }}></div>
-                    <div className={styles.strengthFillHome} style={{ width: "52%" }}></div>
+                    <div className={styles.strengthFillAway} style={{ width: `${goalsBars.away}%` }}></div>
+                    <div className={styles.strengthFillHome} style={{ width: `${goalsBars.home}%` }}></div>
                   </div>
                 </div>
                 <div className={styles.strengthRow}>
                   <div className={styles.strengthLabels}>
-                    <span className={styles.strengthValueAway}>26.4%</span>
+                    <span className={styles.strengthValueAway}>{(awayStats.ppPctg * 100).toFixed(1)}%</span>
                     <span>PP% vs PK%</span>
-                    <span className={styles.strengthValueHome}>82.1%</span>
+                    <span className={styles.strengthValueHome}>{(homeStats.pkPctg * 100).toFixed(1)}%</span>
                   </div>
                   <div className={styles.strengthBarWrap}>
-                    <div className={styles.strengthFillAway} style={{ width: "60%" }}></div>
-                    <div className={styles.strengthFillHome} style={{ width: "40%" }}></div>
+                    <div className={styles.strengthFillAway} style={{ width: `${specialTeamsBars.away}%` }}></div>
+                    <div className={styles.strengthFillHome} style={{ width: `${specialTeamsBars.home}%` }}></div>
                   </div>
                 </div>
                 <div className={styles.strengthRow}>
                   <div className={styles.strengthLabels}>
-                    <span className={styles.strengthValueAway}>3.12</span>
-                    <span>Goals/60</span>
-                    <span className={styles.strengthValueHome}>3.45</span>
+                    <span className={styles.strengthValueAway}>{(awayStats.pkPctg * 100).toFixed(1)}%</span>
+                    <span>PK% vs PP%</span>
+                    <span className={styles.strengthValueHome}>{(homeStats.ppPctg * 100).toFixed(1)}%</span>
                   </div>
                   <div className={styles.strengthBarWrap}>
-                    <div className={styles.strengthFillAway} style={{ width: "47%" }}></div>
-                    <div className={styles.strengthFillHome} style={{ width: "53%" }}></div>
+                    <div className={styles.strengthFillAway} style={{ width: `${specialTeamsBars.home}%` }}></div>
+                    <div className={styles.strengthFillHome} style={{ width: `${specialTeamsBars.away}%` }}></div>
                   </div>
                 </div>
               </div>
@@ -171,40 +275,26 @@ export default function GameStatsPage() {
                 <table className={styles.linesTable}>
                   <thead>
                     <tr>
-                      <th>TBL Line</th>
+                      <th>{awayTeam.abbrev} Line</th>
                       <th>Matchup</th>
-                      <th>FLA Line</th>
+                      <th>{homeTeam.abbrev} Line</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr>
-                      <td>
-                        <span className={styles.xgValue}>55.2%</span><br />
-                        <span style={{ fontSize: "0.65rem", color: "gray" }}>Stamkos/Point</span>
-                      </td>
+                      <td><span className={styles.xgValue}>-</span></td>
                       <td className={styles.lineMatchup}>L1 v L1</td>
-                      <td>
-                        <span className={styles.xgValue}>58.1%</span><br />
-                        <span style={{ fontSize: "0.65rem", color: "gray" }}>Barkov/Tkachuk</span>
-                      </td>
+                      <td><span className={styles.xgValue}>-</span></td>
                     </tr>
                     <tr>
-                      <td>
-                        <span className={styles.xgValue}>48.4%</span>
-                      </td>
+                      <td><span className={styles.xgValue}>-</span></td>
                       <td className={styles.lineMatchup}>L2 v L2</td>
-                      <td>
-                        <span className={styles.xgValue}>51.0%</span>
-                      </td>
+                      <td><span className={styles.xgValue}>-</span></td>
                     </tr>
                     <tr>
-                      <td>
-                        <span className={styles.xgValue}>45.1%</span>
-                      </td>
+                      <td><span className={styles.xgValue}>-</span></td>
                       <td className={styles.lineMatchup}>L3 v L3</td>
-                      <td>
-                        <span className={styles.xgValue}>53.2%</span>
-                      </td>
+                      <td><span className={styles.xgValue}>-</span></td>
                     </tr>
                   </tbody>
                 </table>
@@ -218,32 +308,8 @@ export default function GameStatsPage() {
               </div>
               <div className={styles.panelBody}>
                 <div className={styles.playerList}>
-                  <div className={styles.playerItem}>
-                    <div className={styles.playerInfo}>
-                      <span className={styles.playerPos}>C</span>
-                      <span className={styles.playerName}>A. Barkov (FLA)</span>
-                    </div>
-                    <div className={styles.playerTrend}>
-                      🔥 8 PTS (L5)
-                    </div>
-                  </div>
-                  <div className={styles.playerItem}>
-                    <div className={styles.playerInfo}>
-                      <span className={styles.playerPos}>RW</span>
-                      <span className={styles.playerName}>N. Kucherov (TBL)</span>
-                    </div>
-                    <div className={styles.playerTrend}>
-                      🔥 7 PTS (L5)
-                    </div>
-                  </div>
-                  <div className={styles.playerItem}>
-                    <div className={styles.playerInfo}>
-                      <span className={styles.playerPos}>D</span>
-                      <span className={styles.playerName}>A. Ekblad (FLA)</span>
-                    </div>
-                    <div className={`${styles.playerTrend} ${styles.cold}`}>
-                      ❄️ 0 PTS (L5)
-                    </div>
+                  <div className={styles.placeholderText} style={{ padding: "1rem 0" }}>
+                    Fetching player trends from FHFH Database...
                   </div>
                 </div>
               </div>
@@ -256,21 +322,34 @@ export default function GameStatsPage() {
               </div>
               <div className={styles.panelBody}>
                 <div className={styles.h2hList}>
-                  <div className={styles.h2hCard}>
-                    <div className={styles.h2hDate}>Oct 12, 2025</div>
-                    <div className={styles.h2hScore}>FLA 4 - 2 TBL</div>
-                    <div className={styles.h2hWinnerHome}>Panthers Win</div>
-                  </div>
-                  <div className={styles.h2hCard}>
-                    <div className={styles.h2hDate}>Dec 05, 2025</div>
-                    <div className={styles.h2hScore}>TBL 3 - 1 FLA</div>
-                    <div className={styles.h2hWinnerAway}>Lightning Win</div>
-                  </div>
-                  <div className={styles.h2hCard}>
-                    <div className={styles.h2hDate}>Feb 18, 2026</div>
-                    <div className={styles.h2hScore}>FLA 5 - 4 TBL (OT)</div>
-                    <div className={styles.h2hWinnerHome}>Panthers Win</div>
-                  </div>
+                  {rightRail?.seasonSeries?.map((game: any) => {
+                    const isCompleted = game.gameState === "OFF" || game.gameState === "FINAL";
+                    if (!isCompleted) return null;
+                    
+                    const aTeam = game.awayTeam;
+                    const hTeam = game.homeTeam;
+                    const winner = aTeam.score > hTeam.score ? aTeam : hTeam;
+                    const isHomeWin = winner.id === hTeam.id;
+
+                    return (
+                      <div className={styles.h2hCard} key={game.id}>
+                        <div className={styles.h2hDate}>
+                          {new Date(game.gameDate).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </div>
+                        <div className={styles.h2hScore}>
+                          {aTeam.abbrev} {aTeam.score} - {hTeam.score} {hTeam.abbrev}
+                        </div>
+                        <div className={isHomeWin ? styles.h2hWinnerHome : styles.h2hWinnerAway}>
+                          {winner.abbrev} Win
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {(!rightRail?.seasonSeries || !rightRail.seasonSeries.some((g: any) => g.gameState === "OFF" || g.gameState === "FINAL")) && (
+                    <div className={styles.placeholderText} style={{ padding: "0.5rem", width: "100%" }}>
+                      First meeting of the season.
+                    </div>
+                  )}
                 </div>
               </div>
             </section>

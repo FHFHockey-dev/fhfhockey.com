@@ -103,11 +103,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse<SeasonBackfillR
 
     for (;;) {
       stage = "resolve-raw-backfill-selection";
-      const gameIds = await selectMissingTeamSummaryGameIds({
-        seasonId,
-        requestedGameType,
-        limit: rawSelectionLimit,
-        supabase: serviceRoleClient,
+      const gameIds = await runWithDependencyRetry({
+        label: "backfill-team-underlying-season.resolve-raw-selection",
+        operation: () =>
+          selectMissingTeamSummaryGameIds({
+            seasonId,
+            requestedGameType,
+            limit: rawSelectionLimit,
+            supabase: serviceRoleClient
+          })
       });
 
       if (gameIds.length === 0) {
@@ -158,11 +162,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse<SeasonBackfillR
 
     for (;;) {
       stage = "resolve-missing-summary-game-ids";
-      const gameIds = await selectMissingTeamSummaryGameIds({
-        seasonId,
-        requestedGameType,
-        limit: summaryLimit,
-        supabase: serviceRoleClient,
+      const gameIds = await runWithDependencyRetry({
+        label: "backfill-team-underlying-season.resolve-summary-selection",
+        operation: () =>
+          selectMissingTeamSummaryGameIds({
+            seasonId,
+            requestedGameType,
+            limit: summaryLimit,
+            supabase: serviceRoleClient
+          })
       });
 
       if (gameIds.length === 0) {

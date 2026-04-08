@@ -171,7 +171,7 @@ describe("/api/v1/db/backfill-team-underlying-season", () => {
       limit: 5,
       supabase: {},
     });
-    expect(runWithDependencyRetryMock).toHaveBeenCalledTimes(2);
+    expect(runWithDependencyRetryMock).toHaveBeenCalledTimes(6);
     expect(refreshTeamUnderlyingSummaryRowsForGameIdsMock).toHaveBeenNthCalledWith(1, {
       gameIds: [2025020957],
       seasonId: 20252026,
@@ -260,5 +260,6 @@ describe("/api/v1/db/backfill-team-underlying-season", () => {
       warmedLandingCache: true,
       message: "Team underlying season backfill completed with partial failures.",
     });
+    expect(runWithDependencyRetryMock).toHaveBeenCalledTimes(4);
   });
 });

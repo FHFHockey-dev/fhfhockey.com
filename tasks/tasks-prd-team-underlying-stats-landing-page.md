@@ -10,6 +10,7 @@
 - `web/__tests__/pages/underlying-stats/goalieStats/[playerId].test.tsx` - Repaired goalie detail route test file that had the pre-existing syntax error blocking the full suite.
 - `web/components/underlying-stats/PlayerStatsFilters.tsx` - Shared filter UI to adapt for the team variant.
 - `web/components/underlying-stats/PlayerStatsTable.tsx` - Shared wide-table renderer to reuse for team results.
+- `web/components/underlying-stats/UnderlyingStatsLandingShell.tsx` - Shared landing-page frame for the player, goalie, and team underlying-stats variants.
 - `web/components/underlying-stats/playerStatsColumns.ts` - Reference column-definition patterns for ordered, sortable stat families.
 - `web/lib/underlying-stats/playerStatsFilters.ts` - Reference filter normalization, URL serialization, and scope-exclusivity behavior.
 - `web/lib/underlying-stats/playerStatsQueries.ts` - Reference landing-query contract and API-path helper patterns.
@@ -19,7 +20,9 @@
 - `web/lib/underlying-stats/teamStatsRefreshWindow.ts` - Incremental team catch-up game selection helper that mirrors the existing player and goalie refresh-window flow.
 - `web/pages/api/v1/underlying-stats/teams.ts` - New landing API wrapper for team table reads.
 - `web/lib/underlying-stats/teamStatsFilters.ts` - New team landing filter-state, URL parsing, and default-sort contract.
+- `web/lib/underlying-stats/teamStatsLandingApi.ts` - Client-safe team landing response and path contract shared by the route, tests, and server query layer.
 - `web/lib/underlying-stats/teamStatsQueries.ts` - New team landing query and aggregation layer.
+- `web/__tests__/pages/underlying-stats/teamStats/index.test.tsx` - Route-level tests for canonical team URL rewriting, default-load fetch behavior, and display-mode API integration.
 - `web/components/underlying-stats/teamStatsColumns.ts` - New canonical Team Counts and Team Rates column definitions.
 - `web/pages/underlying-stats/teamStats/index.tsx` - New team underlying-stats landing route.
 - `web/components/underlying-stats/teamStatsColumns.test.ts` - Tests for team column families and default sorts.
@@ -59,36 +62,53 @@
   - [x] 3.5 Add focused tests for game selection, batching, partial-failure reporting, and summary-refresh invocation.
 
 - [ ] 4.0 Implement the team landing query contract, filter state, and URL semantics
-  - [ ] 4.1 Create `web/lib/underlying-stats/teamStatsFilters.ts` with the canonical landing filter shape covering primary controls, expandable filters, sorting, pagination, and advanced-panel state.
-  - [ ] 4.2 Support and validate all PRD filters: `From Season`, `Through Season`, `Season Type`, `Strength`, `Score State`, `Display Mode`, `Team`, `Opponent`, `Home/Away`, `Minimum TOI`, `Date Range`, `Game Range`, and `Team Game Range`.
-  - [ ] 4.3 Enforce that `Date Range`, `Game Range`, and `Team Game Range` are mutually exclusive during normalization and URL serialization.
-  - [ ] 4.4 Implement deterministic sort mapping for every visible team column and wire the v1 default sorts from `1.3` into the default landing state.
-  - [ ] 4.5 Implement `web/lib/underlying-stats/teamStatsQueries.ts` to read team summaries, aggregate by team, compute requested counts, derive per-60 rates from TOI, and preserve share or percentage metrics without double-converting them.
-  - [ ] 4.6 Implement opponent-filter behavior so `againstTeamId` alone shows all teams against that opponent, and `teamId + againstTeamId` shows the selected team’s aggregate against that opponent without special-case UI branching.
-  - [ ] 4.7 Add focused tests for filter parsing, URL round-trips, scope exclusivity, default sorts, rate derivations, and opponent semantics.
+  - [x] 4.1 Create `web/lib/underlying-stats/teamStatsFilters.ts` with the canonical landing filter shape covering primary controls, expandable filters, sorting, pagination, and advanced-panel state.
+  - [x] 4.2 Support and validate all PRD filters: `From Season`, `Through Season`, `Season Type`, `Strength`, `Score State`, `Display Mode`, `Team`, `Opponent`, `Home/Away`, `Minimum TOI`, `Date Range`, `Game Range`, and `Team Game Range`.
+  - [x] 4.3 Enforce that `Date Range`, `Game Range`, and `Team Game Range` are mutually exclusive during normalization and URL serialization.
+  - [x] 4.4 Implement deterministic sort mapping for every visible team column and wire the v1 default sorts from `1.3` into the default landing state.
+  - [x] 4.5 Implement `web/lib/underlying-stats/teamStatsQueries.ts` to read team summaries, aggregate by team, compute requested counts, derive per-60 rates from TOI, and preserve share or percentage metrics without double-converting them.
+  - [x] 4.6 Implement opponent-filter behavior so `againstTeamId` alone shows all teams against that opponent, and `teamId + againstTeamId` shows the selected team’s aggregate against that opponent without special-case UI branching.
+  - [x] 4.7 Add focused tests for filter parsing, URL round-trips, scope exclusivity, default sorts, rate derivations, and opponent semantics.
 
 - [ ] 5.0 Add the dedicated team landing API surface and route wiring
-  - [ ] 5.1 Create `web/pages/api/v1/underlying-stats/teams.ts` as the landing API wrapper over `teamStatsQueries.ts`.
-  - [ ] 5.2 Define the team landing response contract so `rows`, `family`, `sort`, `pagination`, `placeholder`, and `generatedAt` mirror the existing player or goalie landing API pattern where practical.
-  - [ ] 5.3 Create `web/pages/underlying-stats/teamStats/index.tsx` and mirror the goalie route’s canonical-query normalization so shared links resolve to one stable URL state.
-  - [ ] 5.4 Wire the route to the team landing API path, default filter state, loading and empty and error states, and display-mode switching without breaking back or forward navigation.
-  - [ ] 5.5 Add route-level tests for canonical query rewriting, default-load behavior, and landing API integration.
+  - [x] 5.1 Create `web/pages/api/v1/underlying-stats/teams.ts` as the landing API wrapper over `teamStatsQueries.ts`.
+  - [x] 5.2 Define the team landing response contract so `rows`, `family`, `sort`, `pagination`, `placeholder`, and `generatedAt` mirror the existing player or goalie landing API pattern where practical.
+  - [x] 5.3 Create `web/pages/underlying-stats/teamStats/index.tsx` and mirror the goalie route’s canonical-query normalization so shared links resolve to one stable URL state.
+  - [x] 5.4 Wire the route to the team landing API path, default filter state, loading and empty and error states, and display-mode switching without breaking back or forward navigation.
+  - [x] 5.5 Add route-level tests for canonical query rewriting, default-load behavior, and landing API integration.
 
 - [ ] 6.0 Adapt the shared underlying-stats UI for `variant="team"`
-  - [ ] 6.1 Refactor or wrap the shared landing-page shell so it cleanly supports `variant="team"` alongside player and goalie.
-  - [ ] 6.2 Create `web/components/underlying-stats/teamStatsColumns.ts` with the exact Team Counts and Team Rates column order, labels, formatting, and sortable keys required by the PRD.
-  - [ ] 6.3 Reuse the shared wide-table renderer for team rows, including sticky identifier behavior, horizontal overflow, and sortable headers across the full column surface.
-  - [ ] 6.4 Update the shared filter UI so the team variant shows `Team` and `Opponent`, hides player-only controls such as `Position Group` and trade-mode behavior, and keeps the primary controls aligned with player and goalie page conventions.
-  - [ ] 6.5 Verify the team variant keeps page copy, breadcrumbs, loading states, and empty states specific to team analysis rather than player wording.
-  - [ ] 6.6 Add UI tests for team-specific filter visibility, column families, sort behavior, and wide-table rendering.
+  - [x] 6.1 Refactor or wrap the shared landing-page shell so it cleanly supports `variant="team"` alongside player and goalie.
+  - [x] 6.2 Create `web/components/underlying-stats/teamStatsColumns.ts` with the exact Team Counts and Team Rates column order, labels, formatting, and sortable keys required by the PRD.
+  - [x] 6.3 Reuse the shared wide-table renderer for team rows, including sticky identifier behavior, horizontal overflow, and sortable headers across the full column surface.
+  - [x] 6.4 Update the shared filter UI so the team variant shows `Team` and `Opponent`, hides player-only controls such as `Position Group` and trade-mode behavior, and keeps the primary controls aligned with player and goalie page conventions.
+  - [x] 6.5 Verify the team variant keeps page copy, breadcrumbs, loading states, and empty states specific to team analysis rather than player wording.
+  - [x] 6.6 Add UI tests for team-specific filter visibility, column families, sort behavior, and wide-table rendering.
+
+- [x] NEW 10.0 Fix the team landing client/server import boundary and strict summary-refresh nullability blockers discovered during route verification.
+  - [x] NEW 10.1 Move the team landing API path and response contract into a client-safe module so the page route does not import `pg` through server-only query dependencies.
+  - [x] NEW 10.2 Narrow nullable event and game fields in `teamStatsSummaryRefresh.ts` so the new team summary builder passes TypeScript checks.
 
 - [ ] 7.0 Validate the landing-page v1 end to end
-  - [ ] 7.1 Run the team catch-up or season-backfill flow locally against a representative season and verify sample team rows land in the new tables.
-  - [ ] 7.2 Verify `/underlying-stats/teamStats` renders with the expected default display mode, default sort, and URL-synced filter state.
+  - [x] 7.1 Run the team catch-up or season-backfill flow locally against a representative season and verify sample team rows land in the new tables.
+  - [x] 7.2 Verify `/underlying-stats/teamStats` renders with the expected default display mode, default sort, and URL-synced filter state.
   - [ ] 7.3 Verify `Counts` vs `Rates` switches the correct column families and calculations without dropping active filters.
   - [ ] 7.4 Verify `Team`, `Opponent`, `Home/Away`, `Strength`, `Score State`, `Minimum TOI`, `Date Range`, `Game Range`, and `Team Game Range` each affect both data and URL state as expected.
   - [ ] 7.5 Verify wide-viewport table behavior matches the existing `playerStats` and `goalieStats` patterns for sticky headers, sticky identity columns if used, and horizontal scrolling.
   - [ ] 7.6 Run targeted tests and the workspace typecheck build, then record any remaining risks or follow-up gaps before shipping v1.
+
+- [x] NEW 12.0 Exclude zero-sample placeholder rows from team landing aggregation so narrow slices only report games with actual filtered sample.
+  - [x] NEW 12.1 Filter zero-TOI/all-zero summary rows out of `teamStatsQueries.ts` before aggregation so GP, points, and team visibility are not inflated by synthetic slice placeholders.
+  - [x] NEW 12.2 Add a regression test proving placeholder rows do not create extra games played or phantom teams in landing results.
+
+- [x] NEW 13.0 Tighten team summary coverage detection so catch-up and backfill revisit partially summarized games.
+  - [x] NEW 13.1 Treat a game as covered only when `allStrengths/allScores` contains sampled rows for both teams, rather than any summary row for the game.
+  - [x] NEW 13.2 Align the direct-PG missing-game selector with the same broad-slice completeness rule and add focused helper coverage for partial and zero-sample games.
+  - [x] NEW 13.3 Add deterministic ordering to paginated season-coverage scans so REST-based full-season coverage checks do not drift across pages.
+
+- [x] NEW 14.0 Repair five-on-five shot classification so the default team landing view surfaces populated shot-based metrics.
+  - [x] NEW 14.1 Populate `ownerGoalieOnIce` and `opponentGoalieOnIce` from parsed `situation_code` in `nhlShotFeatureBuilder.ts` instead of leaving them null for every shot feature row.
+  - [x] NEW 14.2 Add a regression test covering both normal `5v5` and empty-net situation parsing so five-on-five and empty-net filters cannot silently zero out shot metrics again.
 
 ## Recorded Assumptions For V1
 
@@ -97,6 +117,10 @@
 - Selecting both `Team` and `Opponent` is treated as a filtered aggregate for that matchup sample inside the same landing table, not as a separate head-to-head feature.
 
 ## NEW Tasks
+
+- [x] NEW 11.0 Harden the team season-backfill selection path against transient Supabase REST failures discovered during local 7.1 validation.
+  - [x] NEW 11.1 Route raw and summary missing-game selection through dependency retries so transient 5xx selection failures do not abort the backfill immediately.
+  - [x] NEW 11.2 Use the local direct Postgres path for team missing-game selection when `SUPABASE_DB_URL` is available so full-season scans do not depend on Cloudflare-backed REST pagination.
 
 - [x] NEW 8.0 Repair the pre-existing full-suite blocker before closing parent task 1.0
   - [x] NEW 8.1 Fix the syntax error in `web/__tests__/pages/underlying-stats/goalieStats/[playerId].test.tsx` (`Expected "}" but found "."` near line 50) so `npm run verify:full` can pass again.

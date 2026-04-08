@@ -14,6 +14,7 @@ import {
   buildPlayerStatsLandingParityByGame,
   fetchPlayerStatsLandingGamesByIds,
   fetchPlayerStatsLandingSourceBundleForGames,
+  PLAYER_STATS_SUMMARY_STORAGE_ENDPOINT,
   type PlayerStatsLandingNativeGameParity,
   type PlayerStatsSourceEventRow,
 } from "./playerStatsLandingServer";
@@ -149,6 +150,40 @@ type TeamGameOutcome = {
   outcomeType: "regulation" | "overtime" | "shootout" | null;
 };
 
+type OfficialGamePayload = {
+  gameOutcome?: {
+    lastPeriodType?: unknown;
+  } | null;
+  periodDescriptor?: {
+    periodType?: unknown;
+  } | null;
+  homeTeam?: {
+    id?: unknown;
+    score?: unknown;
+  } | null;
+  awayTeam?: {
+    id?: unknown;
+    score?: unknown;
+  } | null;
+  summary?: {
+    scoring?: Array<{
+      periodDescriptor?: {
+        periodType?: unknown;
+      } | null;
+    }> | null;
+  } | null;
+};
+
+type OfficialGamePayloadRow = {
+  game_id: number | string | null;
+  payload: unknown;
+  source_url: string | null;
+};
+
+function isObjectRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value != null && !Array.isArray(value);
+}
+
 function defaultMetrics(): TeamShotMetrics {
   return {
     cf: 0,
@@ -245,6 +280,7 @@ function buildStrengthSegments(
 
   for (let index = 0; index < sorted.length; index += 1) {
     const event = sorted[index];
+    const periodNumber = event.period_number;
     const next =
       index < sorted.length - 1 &&
       sorted[index + 1].game_id === event.game_id &&
@@ -257,6 +293,7 @@ function buildStrengthSegments(
       next?.period_seconds_elapsed ?? resolvePeriodDurationSeconds(event);
 
     if (
+      periodNumber == null ||
       parsed == null ||
       startSecond == null ||
       endSecond == null ||
@@ -266,18 +303,28 @@ function buildStrengthSegments(
     }
 
     segments.push({
-      periodNumber: event.period_number,
+      periodNumber,
       startSecond,
       endSecond,
       strengthExact: formatStrengthExact(parsed),
-      homeState: classifyTeamStrengthState(parsed, homeTeamId, homeTeamId, awayTeamId),
-      awayState: classifyTeamStrengthState(parsed, awayTeamId, homeTeamId, awayTeamId),
+      homeState: classifyTeamStrengthState(
+        parsed,
+        homeTeamId,
+        homeTeamId,
+        awayTeamId
+      ),
+      awayState: classifyTeamStrengthState(
+        parsed,
+        awayTeamId,
+        homeTeamId,
+        awayTeamId
+      ),
       awayGoalie: parsed.awayGoalie,
       awaySkaters: parsed.awaySkaters,
       homeSkaters: parsed.homeSkaters,
       homeGoalie: parsed.homeGoalie,
       homeScore: event.home_score ?? null,
-      awayScore: event.away_score ?? null,
+      awayScore: event.away_score ?? null
     });
   }
 
@@ -731,7 +778,7 @@ function accumulateTeamShotMetrics(args: {
   return metrics;
 }
 
-function resolveGameOutcome(args: {
+function resolveGameOutcomeFromEvents(args: {
   events: readonly PlayerStatsSourceEventRow[];
   homeTeamId: number;
   awayTeamId: number;
@@ -779,6 +826,108 @@ function resolveGameOutcome(args: {
   };
 }
 
+function normalizeOfficialOutcomeType(lastPeriodType: unknown): TeamGameOutcome["outcomeType"] {
+  const normalized =
+    typeof lastPeriodType === "string"
+      ? lastPeriodType.trim().toUpperCase()
+      : null;
+
+  if (normalized === "SO" || normalized === "SHOOTOUT") {
+    return "shootout";
+  }
+
+  if (
+    normalized === "OT" ||
+    normalized === "OVERTIME" ||
+    normalized === "REGULAR_SEASON_OT"
+  ) {
+    return "overtime";
+  }
+
+  if (normalized === "REG") {
+    return "regulation";
+  }
+
+  return null;
+}
+
+function resolveOfficialPayloadPeriodType(payload: OfficialGamePayload): unknown {
+  const rootPeriodType = payload.periodDescriptor?.periodType;
+  if (typeof rootPeriodType === "string" && rootPeriodType.trim().length > 0) {
+    return rootPeriodType;
+  }
+
+  const scoringPeriods = Array.isArray(payload.summary?.scoring)
+    ? payload.summary?.scoring
+    : [];
+
+  for (let index = scoringPeriods.length - 1; index >= 0; index -= 1) {
+    const periodType = scoringPeriods[index]?.periodDescriptor?.periodType;
+    if (typeof periodType === "string" && periodType.trim().length > 0) {
+      return periodType;
+    }
+  }
+
+  return payload.gameOutcome?.lastPeriodType;
+}
+
+export function resolveGameOutcomeFromOfficialPayload(args: {
+  payload: unknown;
+  homeTeamId: number;
+  awayTeamId: number;
+}): TeamGameOutcome | null {
+  if (!isObjectRecord(args.payload)) {
+    return null;
+  }
+
+  const payload = args.payload as OfficialGamePayload;
+  const homeTeam = isObjectRecord(payload.homeTeam) ? payload.homeTeam : null;
+  const awayTeam = isObjectRecord(payload.awayTeam) ? payload.awayTeam : null;
+  const homeTeamId = Number(homeTeam?.id);
+  const awayTeamId = Number(awayTeam?.id);
+  const homeScore = Number(homeTeam?.score);
+  const awayScore = Number(awayTeam?.score);
+
+  if (
+    !Number.isFinite(homeTeamId) ||
+    !Number.isFinite(awayTeamId) ||
+    !Number.isFinite(homeScore) ||
+    !Number.isFinite(awayScore) ||
+    homeTeamId !== args.homeTeamId ||
+    awayTeamId !== args.awayTeamId ||
+    homeScore === awayScore
+  ) {
+    return null;
+  }
+
+  return {
+    winnerTeamId: homeScore > awayScore ? args.homeTeamId : args.awayTeamId,
+    outcomeType: normalizeOfficialOutcomeType(resolveOfficialPayloadPeriodType(payload)),
+  };
+}
+
+function resolveGameOutcome(args: {
+  events: readonly PlayerStatsSourceEventRow[];
+  homeTeamId: number;
+  awayTeamId: number;
+  officialPayload?: unknown;
+}): TeamGameOutcome {
+  const officialOutcome =
+    args.officialPayload == null
+      ? null
+      : resolveGameOutcomeFromOfficialPayload({
+          payload: args.officialPayload,
+          homeTeamId: args.homeTeamId,
+          awayTeamId: args.awayTeamId,
+        });
+
+  if (officialOutcome != null) {
+    return officialOutcome;
+  }
+
+  return resolveGameOutcomeFromEvents(args);
+}
+
 function buildStandingsOutcome(args: {
   teamId: number;
   opponentTeamId: number;
@@ -820,8 +969,15 @@ function buildStandingsOutcome(args: {
 function buildTeamUnderlyingSummaryRowsForGame(args: {
   gameParity: PlayerStatsLandingNativeGameParity;
   events: readonly PlayerStatsSourceEventRow[];
+  officialPayload?: unknown;
 }) {
   const { game } = args.gameParity;
+  const gameType = game.type;
+
+  if (gameType == null) {
+    return [];
+  }
+
   const strengthSegments = buildStrengthSegments(
     args.events,
     game.homeTeamId,
@@ -831,6 +987,7 @@ function buildTeamUnderlyingSummaryRowsForGame(args: {
     events: args.events,
     homeTeamId: game.homeTeamId,
     awayTeamId: game.awayTeamId,
+    officialPayload: args.officialPayload,
   });
 
   return [
@@ -864,7 +1021,7 @@ function buildTeamUnderlyingSummaryRowsForGame(args: {
         return {
           game_id: game.id,
           season_id: game.seasonId,
-          game_type: game.type,
+          game_type: gameType,
           game_date: game.date,
           team_id: teamContext.teamId,
           opponent_team_id: teamContext.opponentTeamId,
@@ -878,10 +1035,10 @@ function buildTeamUnderlyingSummaryRowsForGame(args: {
             homeTeamId: game.homeTeamId,
             awayTeamId: game.awayTeamId,
             strength,
-            scoreState,
+            scoreState
           }),
           ...standings,
-          ...metrics,
+          ...metrics
         } satisfies TeamUnderlyingSummaryRow;
       })
     )
@@ -943,23 +1100,93 @@ async function upsertTeamSummaryRows(args: {
   return count;
 }
 
-export async function fetchSeasonTeamSummaryGameIdSet(args: {
-  supabase?: TeamUnderlyingSupabaseClient;
-  seasonId: number;
-}): Promise<Set<number>> {
-  const databaseClient = (args.supabase ?? serviceRoleClient) as any;
-  const rows = await fetchAllRows<{ game_id: number | string | null }>((from, to) =>
-    databaseClient
-      .from(TEAM_STATS_SUMMARY_TABLE)
-      .select("game_id")
-      .eq("season_id", args.seasonId)
+async function fetchOfficialGamePayloadByGameId(args: {
+  gameIds: readonly number[];
+  supabase: TeamUnderlyingSupabaseClient;
+}): Promise<Map<number, unknown>> {
+  if (args.gameIds.length === 0) {
+    return new Map();
+  }
+
+  const rows = await fetchAllRows<OfficialGamePayloadRow>((from, to) =>
+    (args.supabase as any)
+      .from("nhl_api_game_payloads_raw")
+      .select("game_id,payload,source_url")
+      .eq("endpoint", PLAYER_STATS_SUMMARY_STORAGE_ENDPOINT)
+      .in("game_id", [...args.gameIds])
+      .order("game_id", { ascending: true })
+      .order("fetched_at", { ascending: false })
       .range(from, to)
   );
 
+  const payloadByGameId = new Map<number, unknown>();
+
+  for (const row of rows) {
+    const gameId = Number(row.game_id);
+    if (!Number.isFinite(gameId) || payloadByGameId.has(gameId)) {
+      continue;
+    }
+
+    if (typeof row.source_url === "string" && row.source_url.startsWith("derived://")) {
+      continue;
+    }
+
+    payloadByGameId.set(gameId, row.payload);
+  }
+
+  return payloadByGameId;
+}
+
+export async function fetchSeasonTeamSummaryGameIdSet(args: {
+  supabase?: TeamUnderlyingSupabaseClient;
+  seasonId: number;
+  requestedGameType?: number | null;
+}): Promise<Set<number>> {
+  const databaseClient = (args.supabase ?? serviceRoleClient) as any;
+  const rows = await fetchAllRows<{
+    game_id: number | string | null;
+    team_id: number | string | null;
+    toi_seconds: number | null;
+  }>((from, to) => {
+    let query = databaseClient
+      .from(TEAM_STATS_SUMMARY_TABLE)
+      .select("game_id,team_id,toi_seconds")
+      .eq("season_id", args.seasonId)
+      .eq("strength", "allStrengths")
+      .eq("score_state", "allScores");
+
+    if (args.requestedGameType != null) {
+      query = query.eq("game_type", args.requestedGameType);
+    }
+
+    return query
+      .order("game_id", { ascending: true })
+      .order("team_id", { ascending: true })
+      .range(from, to);
+  });
+
+  const sampledTeamsByGame = new Map<number, Set<number>>();
+
+  for (const row of rows) {
+    const gameId = Number(row.game_id);
+    const teamId = Number(row.team_id);
+    if (!Number.isFinite(gameId) || !Number.isFinite(teamId)) {
+      continue;
+    }
+
+    if ((row.toi_seconds ?? 0) <= 0) {
+      continue;
+    }
+
+    const sampledTeams = sampledTeamsByGame.get(gameId) ?? new Set<number>();
+    sampledTeams.add(teamId);
+    sampledTeamsByGame.set(gameId, sampledTeams);
+  }
+
   return new Set(
-    rows
-      .map((row) => Number(row.game_id))
-      .filter((gameId) => Number.isFinite(gameId))
+    [...sampledTeamsByGame.entries()]
+      .filter(([, teamIds]) => teamIds.size >= 2)
+      .map(([gameId]) => gameId)
   );
 }
 
@@ -994,10 +1221,15 @@ export async function refreshTeamUnderlyingSummaryRowsForGameIds(args: {
     client: supabase,
   });
   const parityByGame = buildPlayerStatsLandingParityByGame(bundle);
+  const officialPayloadByGameId = await fetchOfficialGamePayloadByGameId({
+    gameIds: games.map((game) => game.id),
+    supabase,
+  });
   const rows = parityByGame.flatMap((gameParity) =>
     buildTeamUnderlyingSummaryRowsForGame({
       gameParity,
       events: bundle.eventsByGameId.get(gameParity.game.id) ?? [],
+      officialPayload: officialPayloadByGameId.get(gameParity.game.id),
     })
   );
   const rowsUpserted = await upsertTeamSummaryRows({

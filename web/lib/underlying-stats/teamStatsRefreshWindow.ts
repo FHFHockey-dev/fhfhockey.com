@@ -133,6 +133,7 @@ export async function resolveTeamStatsIncrementalSelection(args?: {
   const summaryGameIds = await fetchSeasonTeamSummaryGameIdSet({
     supabase,
     seasonId,
+    requestedGameType
   });
 
   let latestCoveredDate: string | null = null;

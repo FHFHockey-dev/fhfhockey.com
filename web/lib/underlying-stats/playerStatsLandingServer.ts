@@ -1183,65 +1183,64 @@ export async function fetchPlayerStatsLandingSourceBundleForGames(args: {
       eventsByGameId: new Map(),
       shiftRowsByGameId: new Map(),
       rosterSpotsByGameId: new Map(),
-      ownGoalEventIdsByGameId: new Map()
+      ownGoalEventIdsByGameId: new Map(),
     };
   }
 
   const gameIds = games.map((game) => game.id);
   const gameIdChunks = chunkNumberArray(gameIds, GAME_ID_CHUNK_SIZE);
 
-  const [events, shiftRows, rosterSpots, landingPayloadRows] =
-    await Promise.all([
-      fetchSupabaseRowsForGameChunks<PlayerStatsSourceEventRow>({
-        gameIdChunks,
-        fetchChunkPage: async (gameIdChunk, from, to) =>
-          client
-            .from("nhl_api_pbp_events")
-            .select(PLAYER_STATS_SOURCE_EVENT_SELECT)
-            .in("game_id", [...gameIdChunk])
-            .order("game_id", { ascending: true })
-            .order("sort_order", { ascending: true })
-            .order("event_id", { ascending: true })
-            .range(from, to)
-      }),
-      fetchSupabaseRowsForGameChunks<PlayerStatsSourceShiftRow>({
-        gameIdChunks,
-        fetchChunkPage: async (gameIdChunk, from, to) =>
-          client
-            .from("nhl_api_shift_rows")
-            .select(PLAYER_STATS_SOURCE_SHIFT_SELECT)
-            .in("game_id", [...gameIdChunk])
-            .order("game_id", { ascending: true })
-            .order("period", { ascending: true })
-            .order("start_seconds", { ascending: true })
-            .range(from, to)
-      }),
-      args.shouldFetchRosterSpots
-        ? fetchSupabaseRowsForGameChunks<PlayerStatsSourceRosterSpotRow>({
-            gameIdChunks,
-            fetchChunkPage: async (gameIdChunk, from, to) =>
-              client
-                .from("nhl_api_game_roster_spots")
-                .select(PLAYER_STATS_SOURCE_ROSTER_SELECT)
-                .in("game_id", [...gameIdChunk])
-                .order("game_id", { ascending: true })
-                .order("team_id", { ascending: true })
-                .order("player_id", { ascending: true })
-                .range(from, to)
-          })
-        : Promise.resolve([]),
-      fetchPlayerStatsOfficialLandingPayloadRows({
-        gameIds,
+  const [events, shiftRows, rosterSpots, landingPayloadRows] = await Promise.all([
+    fetchSupabaseRowsForGameChunks<PlayerStatsSourceEventRow>({
+      gameIdChunks,
+      fetchChunkPage: async (gameIdChunk, from, to) =>
         client
-      })
-    ]);
+          .from("nhl_api_pbp_events")
+          .select(PLAYER_STATS_SOURCE_EVENT_SELECT)
+          .in("game_id", [...gameIdChunk])
+          .order("game_id", { ascending: true })
+          .order("sort_order", { ascending: true })
+          .order("event_id", { ascending: true })
+          .range(from, to),
+    }),
+    fetchSupabaseRowsForGameChunks<PlayerStatsSourceShiftRow>({
+      gameIdChunks,
+      fetchChunkPage: async (gameIdChunk, from, to) =>
+        client
+          .from("nhl_api_shift_rows")
+          .select(PLAYER_STATS_SOURCE_SHIFT_SELECT)
+          .in("game_id", [...gameIdChunk])
+          .order("game_id", { ascending: true })
+          .order("period", { ascending: true })
+          .order("start_seconds", { ascending: true })
+          .range(from, to),
+    }),
+    args.shouldFetchRosterSpots
+      ? fetchSupabaseRowsForGameChunks<PlayerStatsSourceRosterSpotRow>({
+          gameIdChunks,
+          fetchChunkPage: async (gameIdChunk, from, to) =>
+            client
+              .from("nhl_api_game_roster_spots")
+              .select(PLAYER_STATS_SOURCE_ROSTER_SELECT)
+              .in("game_id", [...gameIdChunk])
+              .order("game_id", { ascending: true })
+              .order("team_id", { ascending: true })
+              .order("player_id", { ascending: true })
+              .range(from, to),
+        })
+      : Promise.resolve([]),
+    fetchPlayerStatsOfficialLandingPayloadRows({
+      gameIds,
+      client,
+    }),
+  ]);
 
   return {
     games,
     eventsByGameId: groupPlayerStatsSourceRowsByGameId(events),
     shiftRowsByGameId: groupPlayerStatsSourceRowsByGameId(shiftRows),
     rosterSpotsByGameId: groupPlayerStatsSourceRowsByGameId(rosterSpots),
-    ownGoalEventIdsByGameId: buildOwnGoalEventIdsByGameId(landingPayloadRows)
+    ownGoalEventIdsByGameId: buildOwnGoalEventIdsByGameId(landingPayloadRows),
   };
 }
 
@@ -1388,7 +1387,7 @@ export async function fetchPlayerStatsLandingGamesByIds(
         .in("id", [...gameIdChunk])
         .order("date", { ascending: true })
         .order("id", { ascending: true })
-        .range(from, to)
+        .range(from, to),
   });
 }
 

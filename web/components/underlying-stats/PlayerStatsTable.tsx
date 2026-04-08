@@ -16,10 +16,10 @@ import {
 } from "lib/underlying-stats/playerStatsTypes";
 
 import {
+  getPlayerStatsColumns,
   getPlayerStatsIdentityColumns,
-  type PlayerStatsColumnDefinition,
+  type PlayerStatsColumnDefinition
 } from "./playerStatsColumns";
-import { getPlayerStatsSortableHeaders, getPlayerStatsNextSortState } from "./playerStatsSorting";
 import PlayerStatsTableState, { type PlayerStatsTableViewState } from "./PlayerStatsTableState";
 import styles from "./PlayerStatsTable.module.scss";
 
@@ -28,8 +28,11 @@ export type PlayerStatsTableRow = {
   [key: string]: unknown;
 };
 
-export type PlayerStatsTableProps<Row extends PlayerStatsTableRow = PlayerStatsTableRow> = {
-  family: PlayerStatsTableFamily;
+export type PlayerStatsTableProps<
+  Row extends PlayerStatsTableRow = PlayerStatsTableRow
+> = {
+  family?: PlayerStatsTableFamily;
+  columns?: readonly PlayerStatsColumnDefinition[];
   rows: Row[];
   sortState: PlayerStatsSortState;
   state?: PlayerStatsTableViewState | null;
@@ -51,6 +54,7 @@ export type PlayerStatsTableProps<Row extends PlayerStatsTableRow = PlayerStatsT
     rawValue: unknown;
     formattedValue: string;
   }) => ReactNode;
+  paginationAriaLabel?: string;
   className?: string;
 };
 
@@ -89,34 +93,25 @@ function getStickyOffsets(headers: readonly HeaderState[]): Map<string, number> 
 }
 
 function getNextSortStateForColumn(
-  family: PlayerStatsTableFamily,
   currentSort: PlayerStatsSortState,
-  header: HeaderState,
-  extraColumns: readonly PlayerStatsColumnDefinition[]
+  header: HeaderState
 ): PlayerStatsSortState {
-  const isExtraColumn = extraColumns.some(
-    (column) => column.key === header.column.key
-  );
-
-  if (!isExtraColumn) {
-    return getPlayerStatsNextSortState(family, currentSort, header.column.key);
-  }
-
   if (currentSort.sortKey === header.column.sortKey) {
     return {
       sortKey: header.column.sortKey,
-      direction: currentSort.direction === "desc" ? "asc" : "desc",
+      direction: currentSort.direction === "desc" ? "asc" : "desc"
     };
   }
 
   return {
     sortKey: header.column.sortKey,
-    direction: "desc",
+    direction: "desc"
   };
 }
 
 export default function PlayerStatsTable<Row extends PlayerStatsTableRow>({
   family,
+  columns,
   rows,
   sortState,
   state,
@@ -129,10 +124,13 @@ export default function PlayerStatsTable<Row extends PlayerStatsTableRow>({
   expandedRowKey = null,
   renderExpandedRow,
   renderCell,
-  className,
+  paginationAriaLabel = "Player stats table pagination",
+  className
 }: PlayerStatsTableProps<Row>) {
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const [viewportWidth, setViewportWidth] = useState<number | null>(null);
+  const resolvedColumns =
+    columns ?? (family ? getPlayerStatsColumns(family) : null);
 
   useEffect(() => {
     const viewport = viewportRef.current;
@@ -171,18 +169,31 @@ export default function PlayerStatsTable<Row extends PlayerStatsTableRow>({
     );
   }
 
-  const identityColumnCount = getPlayerStatsIdentityColumns(family).length;
-  const headers = getPlayerStatsSortableHeaders(family, sortState);
+  if (resolvedColumns == null) {
+    throw new Error(
+      "PlayerStatsTable requires either a family or explicit columns."
+    );
+  }
+
+  const identityColumnCount = columns
+    ? resolvedColumns.filter((column) => column.isIdentity === true).length
+    : getPlayerStatsIdentityColumns(family as PlayerStatsTableFamily).length;
+  const headers: HeaderState[] = resolvedColumns.map((column) => ({
+    column,
+    sortable: true,
+    isActive: sortState.sortKey === column.sortKey,
+    direction: sortState.sortKey === column.sortKey ? sortState.direction : null
+  }));
   const extraHeaderStates: HeaderState[] = extraColumns.map((column) => ({
     column,
     sortable: true,
     isActive: sortState.sortKey === column.sortKey,
-    direction: sortState.sortKey === column.sortKey ? sortState.direction : null,
+    direction: sortState.sortKey === column.sortKey ? sortState.direction : null
   }));
   const mergedHeaders = [
     ...headers.slice(0, identityColumnCount),
     ...extraHeaderStates,
-    ...headers.slice(identityColumnCount),
+    ...headers.slice(identityColumnCount)
   ];
   const visibleHeaders: HeaderState[] = showRankColumn
     ? [
@@ -193,13 +204,13 @@ export default function PlayerStatsTable<Row extends PlayerStatsTableRow>({
             sortKey: "rank",
             format: "integer",
             align: "center",
-            isIdentity: true,
+            isIdentity: true
           },
           sortable: false,
           isActive: false,
-          direction: null,
+          direction: null
         },
-        ...mergedHeaders,
+        ...mergedHeaders
       ]
     : mergedHeaders;
   const stickyOffsets = getStickyOffsets(visibleHeaders);
@@ -229,7 +240,7 @@ export default function PlayerStatsTable<Row extends PlayerStatsTableRow>({
                 const stickyStyle: CSSProperties | undefined = isSticky
                   ? {
                       left: `${stickyOffsets.get(header.column.key) ?? 0}px`,
-                      minWidth: `${STICKY_COLUMN_WIDTHS[header.column.key] ?? 96}px`,
+                      minWidth: `${STICKY_COLUMN_WIDTHS[header.column.key] ?? 96}px`
                     }
                   : undefined;
 
@@ -238,9 +249,11 @@ export default function PlayerStatsTable<Row extends PlayerStatsTableRow>({
                     key={header.column.key}
                     className={[
                       styles.headerCell,
-                      styles[`align${capitalize(header.column.align ?? "left")}`],
+                      styles[
+                        `align${capitalize(header.column.align ?? "left")}`
+                      ],
                       isSticky ? styles.stickyCell : "",
-                      isRankColumn ? styles.rankHeaderCell : "",
+                      isRankColumn ? styles.rankHeaderCell : ""
                     ]
                       .filter(Boolean)
                       .join(" ")}
@@ -256,19 +269,22 @@ export default function PlayerStatsTable<Row extends PlayerStatsTableRow>({
                         className={styles.headerButton}
                         onClick={() =>
                           onSortChange?.(
-                            getNextSortStateForColumn(
-                              family,
-                              sortState,
-                              header,
-                              extraColumns
-                            )
+                            getNextSortStateForColumn(sortState, header)
                           )
                         }
                         aria-pressed={header.isActive}
                         aria-label={`Sort by ${header.column.label}`}
                       >
-                        <span>{getVisibleHeaderLabel(header.column.key, header.column.label)}</span>
-                        <span className={styles.sortIndicator} aria-hidden="true">
+                        <span>
+                          {getVisibleHeaderLabel(
+                            header.column.key,
+                            header.column.label
+                          )}
+                        </span>
+                        <span
+                          className={styles.sortIndicator}
+                          aria-hidden="true"
+                        >
                           {header.isActive
                             ? header.direction === "desc"
                               ? "↓"
@@ -288,7 +304,10 @@ export default function PlayerStatsTable<Row extends PlayerStatsTableRow>({
 
               return (
                 <Fragment key={row.rowKey}>
-                  <tr className={styles.row} data-expanded={isExpanded ? "true" : "false"}>
+                  <tr
+                    className={styles.row}
+                    data-expanded={isExpanded ? "true" : "false"}
+                  >
                     {visibleHeaders.map((header) => {
                       const isRankColumn = header.column.key === "rank";
                       const rawValue = row[header.column.key];
@@ -302,7 +321,7 @@ export default function PlayerStatsTable<Row extends PlayerStatsTableRow>({
                       const stickyStyle: CSSProperties | undefined = isSticky
                         ? {
                             left: `${stickyOffsets.get(header.column.key) ?? 0}px`,
-                            minWidth: `${STICKY_COLUMN_WIDTHS[header.column.key] ?? 96}px`,
+                            minWidth: `${STICKY_COLUMN_WIDTHS[header.column.key] ?? 96}px`
                           }
                         : undefined;
 
@@ -311,32 +330,43 @@ export default function PlayerStatsTable<Row extends PlayerStatsTableRow>({
                           key={`${row.rowKey}:${header.column.key}`}
                           className={[
                             styles.bodyCell,
-                            styles[`align${capitalize(header.column.align ?? "left")}`],
+                            styles[
+                              `align${capitalize(header.column.align ?? "left")}`
+                            ],
                             isSticky ? styles.stickyCell : "",
-                            isRankColumn ? styles.rankBodyCell : "",
+                            isRankColumn ? styles.rankBodyCell : ""
                           ]
                             .filter(Boolean)
                             .join(" ")}
                           style={stickyStyle}
-                          data-active={header.isActive === true ? "true" : "false"}
+                          data-active={
+                            header.isActive === true ? "true" : "false"
+                          }
                         >
                           {isRankColumn ? (
-                            <span className={styles.rankValue}>{rowIndex + 1}</span>
-                          ) : renderCell
-                            ? renderCell({
-                                row,
-                                columnKey: header.column.key,
-                                rawValue,
-                                formattedValue,
-                              })
-                            : formattedValue}
+                            <span className={styles.rankValue}>
+                              {rowIndex + 1}
+                            </span>
+                          ) : renderCell ? (
+                            renderCell({
+                              row,
+                              columnKey: header.column.key,
+                              rawValue,
+                              formattedValue
+                            })
+                          ) : (
+                            formattedValue
+                          )}
                         </td>
                       );
                     })}
                   </tr>
                   {isExpanded && renderExpandedRow ? (
                     <tr className={styles.expandedRow}>
-                      <td className={styles.expandedCell} colSpan={visibleHeaders.length}>
+                      <td
+                        className={styles.expandedCell}
+                        colSpan={visibleHeaders.length}
+                      >
                         <div
                           className={styles.expandedViewportShell}
                           style={
@@ -344,7 +374,7 @@ export default function PlayerStatsTable<Row extends PlayerStatsTableRow>({
                               ? ({
                                   width: `${viewportWidth}px`,
                                   minWidth: `${viewportWidth}px`,
-                                  maxWidth: `${viewportWidth}px`,
+                                  maxWidth: `${viewportWidth}px`
                                 } as CSSProperties)
                               : undefined
                           }
@@ -352,7 +382,7 @@ export default function PlayerStatsTable<Row extends PlayerStatsTableRow>({
                           {renderExpandedRow({
                             row,
                             colSpan: visibleHeaders.length,
-                            viewportWidth,
+                            viewportWidth
                           })}
                         </div>
                       </td>
@@ -379,10 +409,7 @@ export default function PlayerStatsTable<Row extends PlayerStatsTableRow>({
           <p className={styles.paginationSummary}>
             Showing {visibleRowStart}-{visibleRowEnd} of {pagination.totalRows}
           </p>
-          <div
-            className={styles.pagination}
-            aria-label="Player stats table pagination"
-          >
+          <div className={styles.pagination} aria-label={paginationAriaLabel}>
             <button
               type="button"
               className={styles.paginationButton}

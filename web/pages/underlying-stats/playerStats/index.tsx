@@ -1,4 +1,3 @@
-import Head from "next/head";
 import Link from "next/link";
 import {
   startTransition,
@@ -6,7 +5,7 @@ import {
   useMemo,
   useRef,
   useState,
-  type CSSProperties,
+  type CSSProperties
 } from "react";
 import { useRouter } from "next/router";
 
@@ -28,7 +27,7 @@ import {
   getDefaultLandingSortState,
   parsePlayerStatsFilterStateFromQuery,
   serializePlayerStatsFilterStateToQuery,
-  validatePlayerStatsFilterState,
+  validatePlayerStatsFilterState
 } from "lib/underlying-stats/playerStatsFilters";
 import {
   buildGoalieStatsLandingApiPath,
@@ -44,14 +43,13 @@ import {
   PLAYER_STATS_CLIENT_CACHE_TTL_MS,
   getPlayerStatsClientCachedResponse,
   isViewOnlyPlayerStatsRequestChange,
-  setPlayerStatsClientCachedResponse,
+  setPlayerStatsClientCachedResponse
 } from "lib/underlying-stats/playerStatsClientCache";
 import type { PlayerStatsLandingFilterState } from "lib/underlying-stats/playerStatsTypes";
 import { teamsInfo } from "lib/teamsInfo";
 
 import styles from "./playerStats.module.scss";
-
-import UnderlyingStatsNavBar from "../../../components/underlying-stats/UnderlyingStatsNavBar";
+import UnderlyingStatsLandingShell from "components/underlying-stats/UnderlyingStatsLandingShell";
 
 const LANDING_RESPONSE_CACHE_PREFIX = "player-stats-landing-response";
 const INITIAL_LANDING_PLAYER_ROW_COUNT = 100;
@@ -829,564 +827,484 @@ export default function PlayerUnderlyingStatsLandingPage({
   }
 
   return (
-    <>
-      <Head>
-        <title>{pageShell.title}</title>
-        <meta name="description" content={pageShell.description} />
-      </Head>
-
-      <main className={styles.page}>
-        <div className={styles.pageInner}>
-          <div className={styles.utilityRow}>
-            <div className={styles.breadcrumbs}>
-              <Link href="/underlying-stats" className={styles.breadcrumbLink}>
-                {pageShell.breadcrumbLabel}
-              </Link>
-            </div>
-            <Link href="/trends" className={styles.breadcrumbLink}>
-              View trends dashboard
-            </Link>
-          </div>
-
-          <UnderlyingStatsNavBar />
-
-          <header className={styles.hero}>
-            <div className={styles.heroBody}>
-              <div className={styles.heroCopy}>
-                <h1 className={styles.title}>
-                  {variant === "goalie" ? (
-                    pageShell.heroTitle
-                  ) : (
-                    <>
-                      <span className={styles.accent}> Underlying </span>Stats
-                    </>
-                  )}
-                </h1>
-                <p className={styles.heroDescription}>{pageShell.heroLead}</p>
-              </div>
-
-              <div className={styles.heroMeta}>
-                <div className={styles.metaCard}>
-                  <p className={styles.metaLabel}>
-                    {pageShell.defaultSpanLabel}
-                  </p>
-                  <p className={styles.metaValue}>
-                    {formatSeasonRange(
-                      defaultLandingState.primary.seasonRange.fromSeasonId,
-                      defaultLandingState.primary.seasonRange.throughSeasonId
-                    )}
-                  </p>
-                </div>
-                <div className={styles.metaCard}>
-                  <p className={styles.metaLabel}>
-                    {pageShell.activeFamilyLabel}
-                  </p>
-                  <p className={styles.metaValue}>
-                    {formatTableFamily(tableFamily)}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </header>
-
-          <section
-            className={styles.section}
-            aria-label={variant === "goalie" ? "Goalie table" : "Player table"}
-          >
-            <div className={styles.sectionHeader}>
-              <div
-                className={styles.chipRow}
-                aria-label="Current landing defaults"
-              >
-                {summaryChips.map((chip) => (
-                  <span
-                    key={chip.key}
-                    className={styles.chip}
-                    data-progress={chip.progress ? "true" : "false"}
-                    style={
-                      chip.progress
-                        ? ({
-                            "--chip-progress": `${
-                              Math.round(
-                                (chip.progress.total > 0
-                                  ? chip.progress.current / chip.progress.total
-                                  : rowLoadProgress) * 10000
-                              ) / 100
-                            }%`
-                          } as CSSProperties)
-                        : undefined
-                    }
-                  >
-                    {chip.progress ? (
-                      <span
-                        className={styles.chipProgressFill}
-                        aria-hidden="true"
-                      />
-                    ) : null}
-                    <span className={styles.chipLabel}>{chip.label}</span>
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            <div className={styles.tableSectionBody}>
-              <div className={styles.tableFrame}>
-                {pageStatusBanner ? (
-                  <div
-                    className={styles.stateBanner}
-                    data-tone={pageStatusBanner.tone}
-                    role={
-                      pageStatusBanner.tone === "error" ? "alert" : "status"
-                    }
-                    aria-live={
-                      pageStatusBanner.tone === "loading" ? "polite" : undefined
-                    }
-                  >
-                    <div className={styles.stateBannerLead}>
-                      {pageStatusBanner.tone === "loading" ? (
-                        <Spinner
-                          className={styles.stateBannerSpinner}
-                          size="small"
-                        />
-                      ) : null}
-                      <div className={styles.stateBannerCopy}>
-                        <p className={styles.stateBannerTitle}>
-                          {pageStatusBanner.title}
-                        </p>
-                        <p className={styles.stateBannerMessage}>
-                          {pageStatusBanner.message}
-                        </p>
-                      </div>
-                    </div>
-                    {canResetFilters &&
-                    (pageStatusBanner.tone === "warning" ||
-                      pageStatusBanner.tone === "error" ||
-                      pageStatusBanner.tone === "empty") ? (
-                      <button
-                        type="button"
-                        className={styles.resetButton}
-                        onClick={handleResetFilters}
-                      >
-                        Reset landing filters
-                      </button>
-                    ) : null}
-                  </div>
-                ) : null}
-                <PlayerStatsFilters
-                  state={filterState}
-                  seasonOptions={seasonOptions}
-                  teamOptions={teamOptions}
-                  surfaceLabel={
-                    variant === "goalie" ? "Goalie stats" : "Player stats"
-                  }
-                  hideModeControl={variant === "goalie"}
-                  hidePositionGroupControl={variant === "goalie"}
-                  hideTradeModeControl={variant === "goalie"}
-                  headerHintOverride={
-                    variant === "goalie"
-                      ? "Goalie controls drive the canonical goalie landing query."
-                      : undefined
-                  }
-                  gameRangeLabel={
-                    variant === "goalie" ? "# of Goalie GP" : undefined
-                  }
-                  gameRangePlaceholder={
-                    variant === "goalie"
-                      ? "Last X goalie appearances"
-                      : undefined
-                  }
-                  minimumToiLabel={
-                    variant === "goalie" ? "Minimum TOI (seconds)" : undefined
-                  }
-                  onSeasonRangeChange={(nextRange) =>
-                    setFilterState((current) => ({
-                      ...current,
-                      primary: {
-                        ...current.primary,
-                        seasonRange: nextRange
-                      },
-                      view: {
-                        ...current.view,
-                        pagination: {
-                          ...current.view.pagination,
-                          page: 1
-                        }
-                      }
-                    }))
-                  }
-                  onSeasonTypeChange={(seasonType) =>
-                    setFilterState((current) => ({
-                      ...current,
-                      primary: {
-                        ...current.primary,
-                        seasonType
-                      },
-                      view: {
-                        ...current.view,
-                        pagination: {
-                          ...current.view.pagination,
-                          page: 1
-                        }
-                      }
-                    }))
-                  }
-                  onStrengthChange={(strength) =>
-                    setFilterState((current) => ({
-                      ...current,
-                      primary: {
-                        ...current.primary,
-                        strength
-                      },
-                      view: {
-                        ...current.view,
-                        pagination: {
-                          ...current.view.pagination,
-                          page: 1
-                        }
-                      }
-                    }))
-                  }
-                  onScoreStateChange={(scoreState) =>
-                    setFilterState((current) => ({
-                      ...current,
-                      primary: {
-                        ...current.primary,
-                        scoreState
-                      },
-                      view: {
-                        ...current.view,
-                        pagination: {
-                          ...current.view.pagination,
-                          page: 1
-                        }
-                      }
-                    }))
-                  }
-                  onModeChange={(mode) => {
-                    let normalizationResult:
-                      | ReturnType<
-                          typeof applyPlayerStatsModeChange<PlayerStatsLandingFilterState>
-                        >
-                      | undefined;
-
-                    setFilterState((current) => {
-                      normalizationResult =
-                        applyPlayerStatsModeChange<PlayerStatsLandingFilterState>(
-                          current,
-                          mode
-                        );
-                      const nextState = normalizationResult.state;
-
-                      return {
-                        ...nextState,
-                        view: {
-                          ...nextState.view,
-                          sort: getDefaultLandingSortState(
-                            nextState.primary.statMode,
-                            nextState.primary.displayMode
-                          ),
-                          pagination: {
-                            ...nextState.view.pagination,
-                            page: 1
-                          }
-                        }
-                      };
-                    });
-
-                    return normalizationResult!;
-                  }}
-                  onDisplayModeChange={(displayMode) =>
-                    setFilterState((current) => ({
-                      ...current,
-                      primary: {
-                        ...current.primary,
-                        displayMode
-                      },
-                      view: {
-                        ...current.view,
-                        sort: getDefaultLandingSortState(
-                          current.primary.statMode,
-                          displayMode
-                        ),
-                        pagination: {
-                          ...current.view.pagination,
-                          page: 1
-                        }
-                      }
-                    }))
-                  }
-                  onAdvancedOpenChange={(advancedOpen) =>
-                    setFilterState((current) => ({
-                      ...current,
-                      expandable: {
-                        ...current.expandable,
-                        advancedOpen
-                      }
-                    }))
-                  }
-                  onTeamContextFilterChange={(teamId) =>
-                    setFilterState((current) => ({
-                      ...current,
-                      expandable: {
-                        ...current.expandable,
-                        teamId
-                      },
-                      view: {
-                        ...current.view,
-                        pagination: {
-                          ...current.view.pagination,
-                          page: 1
-                        }
-                      }
-                    }))
-                  }
-                  onPositionGroupChange={(positionGroup) =>
-                    setFilterState((current) => ({
-                      ...current,
-                      expandable: {
-                        ...current.expandable,
-                        positionGroup
-                      },
-                      view: {
-                        ...current.view,
-                        pagination: {
-                          ...current.view.pagination,
-                          page: 1
-                        }
-                      }
-                    }))
-                  }
-                  onVenueChange={(venue) =>
-                    setFilterState((current) => ({
-                      ...current,
-                      expandable: {
-                        ...current.expandable,
-                        venue
-                      },
-                      view: {
-                        ...current.view,
-                        pagination: {
-                          ...current.view.pagination,
-                          page: 1
-                        }
-                      }
-                    }))
-                  }
-                  onMinimumToiChange={(minimumToiSeconds) =>
-                    setFilterState((current) => ({
-                      ...current,
-                      expandable: {
-                        ...current.expandable,
-                        minimumToiSeconds
-                      },
-                      view: {
-                        ...current.view,
-                        pagination: {
-                          ...current.view.pagination,
-                          page: 1
-                        }
-                      }
-                    }))
-                  }
-                  onScopeChange={(scope) =>
-                    setFilterState((current) => ({
-                      ...applyPlayerStatsScopeChange(current, scope),
-                      view: {
-                        ...current.view,
-                        pagination: {
-                          ...current.view.pagination,
-                          page: 1
-                        }
-                      }
-                    }))
-                  }
-                  onTradeModeChange={(tradeMode) =>
-                    setFilterState((current) => ({
-                      ...current,
-                      expandable: {
-                        ...current.expandable,
-                        tradeMode
-                      },
-                      view: {
-                        ...current.view,
-                        pagination: {
-                          ...current.view.pagination,
-                          page: 1
-                        }
-                      }
-                    }))
-                  }
-                />
-                <PlayerStatsTable
-                  family={activeTableFamily}
-                  rows={landingData?.rows ?? []}
-                  sortState={landingData?.sort ?? filterState.view.sort}
-                  state={tableState}
-                  pagination={landingData?.pagination ?? null}
-                  showRankColumn
-                  extraColumns={timeframeColumns}
-                  className={styles.tableShell}
-                  expandedRowKey={expandedRowKey}
-                  loadingMoreIndicator={
-                    isProgressivelyHydratingRows ? (
-                      <div
-                        className={styles.progressIndicator}
-                        aria-live="polite"
-                        role="status"
-                      >
-                        <Spinner
-                          className={styles.progressSpinner}
-                          size="small"
-                        />
-                        <span>
-                          {buildLandingPageProgressLabel({
-                            loadedRowCount,
-                            totalRowCount,
-                            variant
-                          })}
-                        </span>
-                      </div>
-                    ) : null
-                  }
-                  onSortChange={(nextSort) =>
-                    setFilterState((current) => ({
-                      ...current,
-                      view: {
-                        ...current.view,
-                        sort: nextSort,
-                        pagination: {
-                          ...current.view.pagination,
-                          page: 1
-                        }
-                      }
-                    }))
-                  }
-                  renderCell={({ row, columnKey, formattedValue }) => {
-                    if (columnKey !== "playerName") {
-                      return formattedValue;
-                    }
-
-                    const playerId = Number(row.playerId);
-                    const canExpand = Number.isFinite(playerId) && playerId > 0;
-                    const isExpanded = expandedRowKey === row.rowKey;
-
-                    return (
-                      <div className={styles.playerCellContent}>
-                        <button
-                          type="button"
-                          className={styles.expandToggle}
-                          onClick={(event) => {
-                            event.preventDefault();
-                            event.stopPropagation();
-                            handleExpandedRowToggle(row);
-                          }}
-                          aria-expanded={isExpanded}
-                          aria-label={
-                            canExpand
-                              ? isExpanded
-                                ? `Collapse ${variant === "goalie" ? "goalie" : "player"} trend chart for ${formattedValue}`
-                                : `Expand ${variant === "goalie" ? "goalie" : "player"} trend chart for ${formattedValue}`
-                              : `No ${variant === "goalie" ? "goalie" : "player"} chart available for ${formattedValue}`
-                          }
-                          title={
-                            isExpanded
-                              ? `Collapse ${variant === "goalie" ? "goalie" : "player"} trend`
-                              : `Expand ${variant === "goalie" ? "goalie" : "player"} trend`
-                          }
-                          disabled={!canExpand}
-                        >
-                          {isExpanded ? "−" : "+"}
-                        </button>
-                        {canExpand ? (
-                          <Link
-                            href={
-                              variant === "goalie"
-                                ? buildGoalieStatsDetailHref(
-                                    playerId,
-                                    filterState
-                                  )
-                                : buildPlayerStatsDetailHref(
-                                    playerId,
-                                    filterState
-                                  )
-                            }
-                            className={styles.playerLink}
-                          >
-                            {formattedValue}
-                          </Link>
-                        ) : (
-                          <span className={styles.playerText}>
-                            {formattedValue}
-                          </span>
-                        )}
-                      </div>
-                    );
-                  }}
-                  renderExpandedRow={({ row, viewportWidth }) => {
-                    const playerId = Number(row.playerId);
-                    if (!Number.isFinite(playerId) || playerId <= 0) {
-                      return (
-                        <div className={styles.expandedFallback}>
-                          {variant === "goalie"
-                            ? "No goalie chart is available for this row."
-                            : "No player chart is available for this row."}
-                        </div>
-                      );
-                    }
-
-                    const selectedMetricKey =
-                      expandedMetricByRowKey[row.rowKey] ??
-                      defaultExpandedMetricKey;
-                    if (!selectedMetricKey || chartMetricColumns.length === 0) {
-                      return (
-                        <div className={styles.expandedFallback}>
-                          No chartable metrics are available for this table
-                          family.
-                        </div>
-                      );
-                    }
-
-                    return (
-                      <PlayerStatsExpandedRowChart
-                        playerId={playerId}
-                        splitTeamId={
-                          typeof row.teamId === "number" ? row.teamId : null
-                        }
-                        viewportWidth={viewportWidth}
-                        state={filterState}
-                        variant={variant}
-                        metricColumns={chartMetricColumns}
-                        selectedMetricKey={selectedMetricKey}
-                        onMetricChange={(metricKey) =>
-                          setExpandedMetricByRowKey((current) => ({
-                            ...current,
-                            [row.rowKey]: metricKey
-                          }))
-                        }
-                      />
-                    );
-                  }}
-                />
-
-                {isProgressivelyHydratingRows ? (
-                  <p className={styles.footnote}>
-                    Showing the first {loadedRowCount} of {totalRowCount}
-                    rows while the rest load behind the current table.
-                  </p>
-                ) : null}
-                {backgroundLoadError ? (
-                  <p className={styles.footnote}>
-                    Remaining rows did not finish loading in the background. The
-                    current sorted top {loadedRowCount} rows are still
-                    available.
-                  </p>
-                ) : null}
-              </div>
-            </div>
-          </section>
+    <UnderlyingStatsLandingShell
+      title={pageShell.title}
+      description={pageShell.description}
+      breadcrumbLabel={pageShell.breadcrumbLabel}
+      heroTitle={
+        variant === "goalie" ? (
+          pageShell.heroTitle
+        ) : (
+          <>
+            <span className={styles.accent}> Underlying </span>Stats
+          </>
+        )
+      }
+      heroLead={pageShell.heroLead}
+      defaultSpanLabel={pageShell.defaultSpanLabel}
+      defaultSpanValue={formatSeasonRange(
+        defaultLandingState.primary.seasonRange.fromSeasonId,
+        defaultLandingState.primary.seasonRange.throughSeasonId
+      )}
+      activeFamilyLabel={pageShell.activeFamilyLabel}
+      activeFamilyValue={formatTableFamily(tableFamily)}
+      sectionAriaLabel={variant === "goalie" ? "Goalie table" : "Player table"}
+      sectionHeader={
+        <div className={styles.chipRow} aria-label="Current landing defaults">
+          {summaryChips.map((chip) => (
+            <span
+              key={chip.key}
+              className={styles.chip}
+              data-progress={chip.progress ? "true" : "false"}
+              style={
+                chip.progress
+                  ? ({
+                      "--chip-progress": `${
+                        Math.round(
+                          (chip.progress.total > 0
+                            ? chip.progress.current / chip.progress.total
+                            : rowLoadProgress) * 10000
+                        ) / 100
+                      }%`
+                    } as CSSProperties)
+                  : undefined
+              }
+            >
+              {chip.progress ? (
+                <span className={styles.chipProgressFill} aria-hidden="true" />
+              ) : null}
+              <span className={styles.chipLabel}>{chip.label}</span>
+            </span>
+          ))}
         </div>
-      </main>
-    </>
+      }
+    >
+      <div className={styles.tableFrame}>
+        {pageStatusBanner ? (
+          <div
+            className={styles.stateBanner}
+            data-tone={pageStatusBanner.tone}
+            role={pageStatusBanner.tone === "error" ? "alert" : "status"}
+            aria-live={
+              pageStatusBanner.tone === "loading" ? "polite" : undefined
+            }
+          >
+            <div className={styles.stateBannerLead}>
+              {pageStatusBanner.tone === "loading" ? (
+                <Spinner className={styles.stateBannerSpinner} size="small" />
+              ) : null}
+              <div className={styles.stateBannerCopy}>
+                <p className={styles.stateBannerTitle}>
+                  {pageStatusBanner.title}
+                </p>
+                <p className={styles.stateBannerMessage}>
+                  {pageStatusBanner.message}
+                </p>
+              </div>
+            </div>
+            {canResetFilters &&
+            (pageStatusBanner.tone === "warning" ||
+              pageStatusBanner.tone === "error" ||
+              pageStatusBanner.tone === "empty") ? (
+              <button
+                type="button"
+                className={styles.resetButton}
+                onClick={handleResetFilters}
+              >
+                Reset landing filters
+              </button>
+            ) : null}
+          </div>
+        ) : null}
+        <PlayerStatsFilters
+          state={filterState}
+          seasonOptions={seasonOptions}
+          teamOptions={teamOptions}
+          surfaceLabel={variant === "goalie" ? "Goalie stats" : "Player stats"}
+          hideModeControl={variant === "goalie"}
+          hidePositionGroupControl={variant === "goalie"}
+          hideTradeModeControl={variant === "goalie"}
+          headerHintOverride={
+            variant === "goalie"
+              ? "Goalie controls drive the canonical goalie landing query."
+              : undefined
+          }
+          gameRangeLabel={variant === "goalie" ? "# of Goalie GP" : undefined}
+          gameRangePlaceholder={
+            variant === "goalie" ? "Last X goalie appearances" : undefined
+          }
+          minimumToiLabel={
+            variant === "goalie" ? "Minimum TOI (seconds)" : undefined
+          }
+          onSeasonRangeChange={(nextRange) =>
+            setFilterState((current) => ({
+              ...current,
+              primary: {
+                ...current.primary,
+                seasonRange: nextRange
+              },
+              view: {
+                ...current.view,
+                pagination: {
+                  ...current.view.pagination,
+                  page: 1
+                }
+              }
+            }))
+          }
+          onSeasonTypeChange={(seasonType) =>
+            setFilterState((current) => ({
+              ...current,
+              primary: {
+                ...current.primary,
+                seasonType
+              },
+              view: {
+                ...current.view,
+                pagination: {
+                  ...current.view.pagination,
+                  page: 1
+                }
+              }
+            }))
+          }
+          onStrengthChange={(strength) =>
+            setFilterState((current) => ({
+              ...current,
+              primary: {
+                ...current.primary,
+                strength
+              },
+              view: {
+                ...current.view,
+                pagination: {
+                  ...current.view.pagination,
+                  page: 1
+                }
+              }
+            }))
+          }
+          onScoreStateChange={(scoreState) =>
+            setFilterState((current) => ({
+              ...current,
+              primary: {
+                ...current.primary,
+                scoreState
+              },
+              view: {
+                ...current.view,
+                pagination: {
+                  ...current.view.pagination,
+                  page: 1
+                }
+              }
+            }))
+          }
+          onModeChange={(mode) => {
+            let normalizationResult:
+              | ReturnType<
+                  typeof applyPlayerStatsModeChange<PlayerStatsLandingFilterState>
+                >
+              | undefined;
+
+            setFilterState((current) => {
+              normalizationResult =
+                applyPlayerStatsModeChange<PlayerStatsLandingFilterState>(
+                  current,
+                  mode
+                );
+              const nextState = normalizationResult.state;
+
+              return {
+                ...nextState,
+                view: {
+                  ...nextState.view,
+                  sort: getDefaultLandingSortState(
+                    nextState.primary.statMode,
+                    nextState.primary.displayMode
+                  ),
+                  pagination: {
+                    ...nextState.view.pagination,
+                    page: 1
+                  }
+                }
+              };
+            });
+
+            return normalizationResult!;
+          }}
+          onDisplayModeChange={(displayMode) =>
+            setFilterState((current) => ({
+              ...current,
+              primary: {
+                ...current.primary,
+                displayMode
+              },
+              view: {
+                ...current.view,
+                sort: getDefaultLandingSortState(
+                  current.primary.statMode,
+                  displayMode
+                ),
+                pagination: {
+                  ...current.view.pagination,
+                  page: 1
+                }
+              }
+            }))
+          }
+          onAdvancedOpenChange={(advancedOpen) =>
+            setFilterState((current) => ({
+              ...current,
+              expandable: {
+                ...current.expandable,
+                advancedOpen
+              }
+            }))
+          }
+          onTeamContextFilterChange={(teamId) =>
+            setFilterState((current) => ({
+              ...current,
+              expandable: {
+                ...current.expandable,
+                teamId
+              },
+              view: {
+                ...current.view,
+                pagination: {
+                  ...current.view.pagination,
+                  page: 1
+                }
+              }
+            }))
+          }
+          onPositionGroupChange={(positionGroup) =>
+            setFilterState((current) => ({
+              ...current,
+              expandable: {
+                ...current.expandable,
+                positionGroup
+              },
+              view: {
+                ...current.view,
+                pagination: {
+                  ...current.view.pagination,
+                  page: 1
+                }
+              }
+            }))
+          }
+          onVenueChange={(venue) =>
+            setFilterState((current) => ({
+              ...current,
+              expandable: {
+                ...current.expandable,
+                venue
+              },
+              view: {
+                ...current.view,
+                pagination: {
+                  ...current.view.pagination,
+                  page: 1
+                }
+              }
+            }))
+          }
+          onMinimumToiChange={(minimumToiSeconds) =>
+            setFilterState((current) => ({
+              ...current,
+              expandable: {
+                ...current.expandable,
+                minimumToiSeconds
+              },
+              view: {
+                ...current.view,
+                pagination: {
+                  ...current.view.pagination,
+                  page: 1
+                }
+              }
+            }))
+          }
+          onScopeChange={(scope) =>
+            setFilterState((current) => ({
+              ...applyPlayerStatsScopeChange(current, scope),
+              view: {
+                ...current.view,
+                pagination: {
+                  ...current.view.pagination,
+                  page: 1
+                }
+              }
+            }))
+          }
+          onTradeModeChange={(tradeMode) =>
+            setFilterState((current) => ({
+              ...current,
+              expandable: {
+                ...current.expandable,
+                tradeMode
+              },
+              view: {
+                ...current.view,
+                pagination: {
+                  ...current.view.pagination,
+                  page: 1
+                }
+              }
+            }))
+          }
+        />
+        <PlayerStatsTable
+          family={activeTableFamily}
+          rows={landingData?.rows ?? []}
+          sortState={landingData?.sort ?? filterState.view.sort}
+          state={tableState}
+          pagination={landingData?.pagination ?? null}
+          showRankColumn
+          extraColumns={timeframeColumns}
+          className={styles.tableShell}
+          expandedRowKey={expandedRowKey}
+          loadingMoreIndicator={
+            isProgressivelyHydratingRows ? (
+              <div
+                className={styles.progressIndicator}
+                aria-live="polite"
+                role="status"
+              >
+                <Spinner className={styles.progressSpinner} size="small" />
+                <span>
+                  {buildLandingPageProgressLabel({
+                    loadedRowCount,
+                    totalRowCount,
+                    variant
+                  })}
+                </span>
+              </div>
+            ) : null
+          }
+          onSortChange={(nextSort) =>
+            setFilterState((current) => ({
+              ...current,
+              view: {
+                ...current.view,
+                sort: nextSort,
+                pagination: {
+                  ...current.view.pagination,
+                  page: 1
+                }
+              }
+            }))
+          }
+          renderCell={({ row, columnKey, formattedValue }) => {
+            if (columnKey !== "playerName") {
+              return formattedValue;
+            }
+
+            const playerId = Number(row.playerId);
+            const canExpand = Number.isFinite(playerId) && playerId > 0;
+            const isExpanded = expandedRowKey === row.rowKey;
+
+            return (
+              <div className={styles.playerCellContent}>
+                <button
+                  type="button"
+                  className={styles.expandToggle}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    handleExpandedRowToggle(row);
+                  }}
+                  aria-expanded={isExpanded}
+                  aria-label={
+                    canExpand
+                      ? isExpanded
+                        ? `Collapse ${variant === "goalie" ? "goalie" : "player"} trend chart for ${formattedValue}`
+                        : `Expand ${variant === "goalie" ? "goalie" : "player"} trend chart for ${formattedValue}`
+                      : `No ${variant === "goalie" ? "goalie" : "player"} chart available for ${formattedValue}`
+                  }
+                  title={
+                    isExpanded
+                      ? `Collapse ${variant === "goalie" ? "goalie" : "player"} trend`
+                      : `Expand ${variant === "goalie" ? "goalie" : "player"} trend`
+                  }
+                  disabled={!canExpand}
+                >
+                  {isExpanded ? "−" : "+"}
+                </button>
+                {canExpand ? (
+                  <Link
+                    href={
+                      variant === "goalie"
+                        ? buildGoalieStatsDetailHref(playerId, filterState)
+                        : buildPlayerStatsDetailHref(playerId, filterState)
+                    }
+                    className={styles.playerLink}
+                  >
+                    {formattedValue}
+                  </Link>
+                ) : (
+                  <span className={styles.playerText}>{formattedValue}</span>
+                )}
+              </div>
+            );
+          }}
+          renderExpandedRow={({ row, viewportWidth }) => {
+            const playerId = Number(row.playerId);
+            if (!Number.isFinite(playerId) || playerId <= 0) {
+              return (
+                <div className={styles.expandedFallback}>
+                  {variant === "goalie"
+                    ? "No goalie chart is available for this row."
+                    : "No player chart is available for this row."}
+                </div>
+              );
+            }
+
+            const selectedMetricKey =
+              expandedMetricByRowKey[row.rowKey] ?? defaultExpandedMetricKey;
+            if (!selectedMetricKey || chartMetricColumns.length === 0) {
+              return (
+                <div className={styles.expandedFallback}>
+                  No chartable metrics are available for this table family.
+                </div>
+              );
+            }
+
+            return (
+              <PlayerStatsExpandedRowChart
+                playerId={playerId}
+                splitTeamId={typeof row.teamId === "number" ? row.teamId : null}
+                viewportWidth={viewportWidth}
+                state={filterState}
+                variant={variant}
+                metricColumns={chartMetricColumns}
+                selectedMetricKey={selectedMetricKey}
+                onMetricChange={(metricKey) =>
+                  setExpandedMetricByRowKey((current) => ({
+                    ...current,
+                    [row.rowKey]: metricKey
+                  }))
+                }
+              />
+            );
+          }}
+        />
+
+        {isProgressivelyHydratingRows ? (
+          <p className={styles.footnote}>
+            Showing the first {loadedRowCount} of {totalRowCount}
+            rows while the rest load behind the current table.
+          </p>
+        ) : null}
+        {backgroundLoadError ? (
+          <p className={styles.footnote}>
+            Remaining rows did not finish loading in the background. The current
+            sorted top {loadedRowCount} rows are still available.
+          </p>
+        ) : null}
+      </div>
+    </UnderlyingStatsLandingShell>
   );
 }
 
@@ -1394,8 +1312,8 @@ function buildSeasonOptions(anchorSeasonId: number | null): Array<{
   value: number;
   label: string;
 }> {
-  const fallbackAnchor = createDefaultLandingFilterState().primary.seasonRange
-    .throughSeasonId;
+  const fallbackAnchor =
+    createDefaultLandingFilterState().primary.seasonRange.throughSeasonId;
   const resolvedAnchor = anchorSeasonId ?? fallbackAnchor ?? 20252026;
 
   return Array.from({ length: 8 }, (_, index) => {
@@ -1403,7 +1321,7 @@ function buildSeasonOptions(anchorSeasonId: number | null): Array<{
     const seasonId = Number(`${startYear}${startYear + 1}`);
     return {
       value: seasonId,
-      label: formatSeason(seasonId),
+      label: formatSeason(seasonId)
     };
   });
 }
@@ -1412,7 +1330,7 @@ function buildTeamOptions(): Array<{ value: number; label: string }> {
   return Object.values(teamsInfo)
     .map((team) => ({
       value: team.id,
-      label: `${team.abbrev} · ${team.name}`,
+      label: `${team.abbrev} · ${team.name}`
     }))
     .sort((left, right) => left.label.localeCompare(right.label));
 }
@@ -1561,9 +1479,9 @@ function formatTradeMode(
     : "Combined traded-player rows";
 }
 
-function formatActiveScope(
-  scope: { kind: "none" | "dateRange" | "gameRange" | "byTeamGames" }
-): string {
+function formatActiveScope(scope: {
+  kind: "none" | "dateRange" | "gameRange" | "byTeamGames";
+}): string {
   switch (scope.kind) {
     case "dateRange":
       return "Scope: Date Range";
