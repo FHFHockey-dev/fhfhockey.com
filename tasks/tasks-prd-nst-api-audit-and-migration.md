@@ -89,13 +89,13 @@
   - [x] 4.5 Preserve or improve safeguards that prevent duplicate downstream writes when retries happen because of auth failures, transient upstream errors, or exhausted token budget.
   - [x] 4.6 Update automated tests for NST rate calculations, burst-plan selection, and any audit or benchmark behavior affected by the new pacing model.
 
-- [ ] 5.0 Add parity validation, rollout verification, and operator documentation
-  - [ ] 5.1 Add automated tests for the shared NST client behavior, including config loading, header injection, secret redaction, and failure handling.
-  - [ ] 5.2 Add representative parser or route parity tests for at least one `playerreport.php` flow, one `playerteams.php` skater flow, one `playerteams.php` goalie flow, and one `teamtable.php` flow using fixtures or mocked HTML.
-  - [ ] 5.3 Define a manual smoke-test matrix that compares legacy and migrated behavior for representative NST endpoints and one cron-backed Supabase-writing route.
-  - [ ] 5.4 Document local setup requirements for `NST_KEY`, deployed environment requirements, and the safe sequence for preview or staging verification before production rollout.
-  - [ ] 5.5 Write the rollout checklist, rollback guidance, and operator runbook covering missing key, auth rejection, token-budget exhaustion, HTML parse drift, upstream 4xx or 5xx responses, and stale downstream data diagnosis.
-  - [ ] 5.6 Record the final migrated file inventory, the intentionally retained legacy tools, and the recommended follow-up cleanup items after the authenticated NST migration is complete.
+- [x] 5.0 Add parity validation, rollout verification, and operator documentation
+  - [x] 5.1 Add automated tests for the shared NST client behavior, including config loading, header injection, secret redaction, and failure handling.
+  - [x] 5.2 Add representative parser or route parity tests for at least one `playerreport.php` flow, one `playerteams.php` skater flow, one `playerteams.php` goalie flow, and one `teamtable.php` flow using fixtures or mocked HTML.
+  - [x] 5.3 Define a manual smoke-test matrix that compares legacy and migrated behavior for representative NST endpoints and one cron-backed Supabase-writing route.
+  - [x] 5.4 Document local setup requirements for `NST_KEY`, deployed environment requirements, and the safe sequence for preview or staging verification before production rollout.
+  - [x] 5.5 Write the rollout checklist, rollback guidance, and operator runbook covering missing key, auth rejection, token-budget exhaustion, HTML parse drift, upstream 4xx or 5xx responses, and stale downstream data diagnosis.
+  - [x] 5.6 Record the final migrated file inventory, the intentionally retained legacy tools, and the recommended follow-up cleanup items after the authenticated NST migration is complete.
 
 - [ ] 6.0 Resolve ambiguous direct-route ownership discovered during the NST audit
   - [ ] 6.1 Decide whether `web/pages/api/v1/db/update-nst-player-reports.ts` remains an active migrated route or should be retired after confirming operational ownership.

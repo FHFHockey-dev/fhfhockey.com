@@ -80,6 +80,14 @@ describe("nst client", () => {
     expect(headers.Accept).toContain("text/html");
   });
 
+  it("loads and trims NST_KEY from the environment before injecting the header", () => {
+    vi.stubEnv("NST_KEY", "  trimmed-key  ");
+
+    const headers = getNstHeaders();
+
+    expect(headers[NST_HEADER_NAME]).toBe("trimmed-key");
+  });
+
   it("supports explicit query-string auth fallback while still redacting logs", () => {
     vi.stubEnv("NST_KEY", "fallback-key");
 
@@ -270,6 +278,30 @@ describe("nst client", () => {
     ).rejects.toMatchObject({
       name: "NstResponseError",
       status: 403
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("fails fast on NST token-budget exhaustion instead of retrying immediately", async () => {
+    vi.stubEnv("NST_KEY", "rate-key");
+
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response("too many requests", {
+        status: 429,
+        statusText: "Too Many Requests"
+      })
+    );
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      fetchNstTextByUrl(`${NST_BASE_URL}/playerreport.php?playerid=1`, {
+        retries: 2
+      })
+    ).rejects.toMatchObject({
+      name: "NstResponseError",
+      status: 429
     });
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
