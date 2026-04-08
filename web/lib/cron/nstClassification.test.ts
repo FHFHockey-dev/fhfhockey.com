@@ -10,6 +10,12 @@ describe("nstClassification", () => {
     expect(getNstTouchLevel("update-nst-gamelog")).toBe(
       "direct_remote_nst_fetch"
     );
+    expect(getNstTouchLevel("update-nst-player-reports")).toBe(
+      "direct_remote_nst_fetch"
+    );
+    expect(getNstTouchLevel("check-missing-goalie-data")).toBe(
+      "direct_remote_nst_fetch"
+    );
     expect(getNstTouchLevel("rebuild-sustainability-score")).toBe(
       "indirect_nst_derived"
     );

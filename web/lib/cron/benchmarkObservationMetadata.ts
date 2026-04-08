@@ -2,6 +2,7 @@ import {
   getBenchmarkAnnotations,
   type BenchmarkAnnotation
 } from "lib/cron/benchmarkNotes";
+import { getNstCoordinationPolicy } from "lib/cron/nstCoordination";
 import type { CronInventoryJob } from "lib/cron/cronInventory";
 import { getNstTouchLevel } from "lib/cron/nstClassification";
 
@@ -92,13 +93,19 @@ export function getBenchmarkObservationMetadata(
   job: Pick<CronInventoryJob, "name" | "method" | "executionShape" | "notes">
 ): BenchmarkObservationMetadata {
   const benchmarkAnnotations = getBenchmarkAnnotations(job.name);
+  const nstCoordinationPolicy = getNstCoordinationPolicy(job.name);
   const touchedSystems = getTouchedSystemsForJob(job);
+  const coordinationNotes = nstCoordinationPolicy ? [nstCoordinationPolicy.note] : [];
 
   if (job.executionShape === "currently non-runnable in local/dev") {
     return {
       touchedSystems,
       benchmarkAnnotations,
-      notes: [...job.notes, ...benchmarkAnnotations.map((entry) => entry.note)],
+      notes: [
+        ...job.notes,
+        ...benchmarkAnnotations.map((entry) => entry.note),
+        ...coordinationNotes
+      ],
       canRunLocally: false,
       localRunPolicy: "skip",
       localRunReason:
@@ -115,7 +122,7 @@ export function getBenchmarkObservationMetadata(
     return {
       touchedSystems,
       benchmarkAnnotations,
-      notes: benchmarkAnnotations.map((entry) => entry.note),
+      notes: [...benchmarkAnnotations.map((entry) => entry.note), ...coordinationNotes],
       canRunLocally: false,
       localRunPolicy: "skip",
       localRunReason:
@@ -138,7 +145,7 @@ export function getBenchmarkObservationMetadata(
     return {
       touchedSystems,
       benchmarkAnnotations,
-      notes: benchmarkAnnotations.map((entry) => entry.note),
+      notes: [...benchmarkAnnotations.map((entry) => entry.note), ...coordinationNotes],
       canRunLocally: true,
       localRunPolicy: "caution",
       localRunReason:
@@ -154,7 +161,11 @@ export function getBenchmarkObservationMetadata(
   return {
     touchedSystems,
     benchmarkAnnotations,
-    notes: [...job.notes, ...benchmarkAnnotations.map((entry) => entry.note)],
+    notes: [
+      ...job.notes,
+      ...benchmarkAnnotations.map((entry) => entry.note),
+      ...coordinationNotes
+    ],
     canRunLocally: true,
     localRunPolicy: "safe",
     localRunReason: null

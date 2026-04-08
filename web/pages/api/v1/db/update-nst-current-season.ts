@@ -5,7 +5,11 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import * as cheerio from "cheerio";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
-import { fetchNstTextByUrl } from "lib/nst/client";
+import {
+  fetchNstTextByUrl,
+  isNstAuthError,
+  isNstRateLimitError
+} from "lib/nst/client";
 // Assuming utils/fetchCurrentSeason is directly under 'pages' or project root
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
 import type { Element } from "domhandler";
@@ -475,6 +479,9 @@ async function fetchAndParseAllPlayersData(
       );
       return dataRowsCollected;
     } catch (error: any) {
+      if (isNstAuthError(error) || isNstRateLimitError(error)) {
+        throw error;
+      }
       console.error(
         `Attempt ${attempt} - Error fetching/parsing ${ReportType[reportType]} from ${url}:`,
         error.message

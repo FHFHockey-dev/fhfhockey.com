@@ -60,7 +60,7 @@ const BENCHMARK_NOTES_BY_JOB: Record<string, BenchmarkAnnotation[]> = {
     },
     {
       kind: "rate_limited",
-      note: "Consumes the direct NST request budget."
+      note: "Consumes the shared NST key budget and should stay coordinated with the other direct NST routes."
     }
   ],
   "sync-yahoo-players-to-sheet": [
@@ -160,29 +160,73 @@ const BENCHMARK_NOTES_BY_JOB: Record<string, BenchmarkAnnotation[]> = {
     {
       kind: "rate_limited",
       note:
-        "Direct NST scraper; small bounded runs now burst only when the computed request budget stays under all published NST ceilings."
+        "Direct NST scraper; small bounded runs now burst only when the computed request budget stays under the shared 80-page/5-minute and 180-page/hour NST key ceilings."
     },
     {
       kind: "stateful",
       note: "Runtime depends on resume point, queued dates, and max pending URL cap."
     }
   ],
+  "update-nst-player-reports": [
+    {
+      kind: "rate_limited",
+      note:
+        "Direct NST scraper; this route also spends the shared NST key budget even when run manually or as a targeted repair path."
+    },
+    {
+      kind: "stateful",
+      note: "Runtime depends on active-player scope, season selection, and retry behavior."
+    }
+  ],
+  "update-nst-last-ten": [
+    {
+      kind: "rate_limited",
+      note:
+        "Direct NST scraper; treat it as another consumer of the shared NST key budget rather than an isolated helper route."
+    },
+    {
+      kind: "stateful",
+      note: "Runtime depends on target date windows and whether tables already contain the requested rows."
+    }
+  ],
+  "check-missing-goalie-data": [
+    {
+      kind: "rate_limited",
+      note:
+        "Direct NST verification route; manual repair runs still draw from the same shared NST key budget as scheduled jobs."
+    },
+    {
+      kind: "stateful",
+      note: "Observed runtime depends on missing-date scans and the bounded repair window."
+    }
+  ],
   "update-nst-team-daily": [
     {
       kind: "rate_limited",
       note:
-        "Direct NST route; burst mode is now selected from request-count math rather than date-count assumptions."
+        "Direct NST route; burst mode is now selected from request-count math under the shared NST key budget rather than date-count assumptions."
     },
     {
       kind: "stateful",
       note: "Incremental and manual ranges remain backlog-sensitive."
     }
   ],
+  "update-nst-team-daily-incremental": [
+    {
+      kind: "rate_limited",
+      note:
+        "Scheduled direct NST route; it shares the same NST key budget as gamelog, goalies, current-season, and team-stats jobs."
+    },
+    {
+      kind: "stateful",
+      note: "Incremental runtime depends on how many unfilled dates are still pending."
+    }
+  ],
   "update-nst-team-stats-all": [
     {
       kind: "rate_limited",
       note:
-        "Direct NST team-stats route; small compliant runs can now burst instead of paying the legacy fixed 21s gap."
+        "Direct NST team-stats route; small compliant runs can now burst when they stay inside the shared NST key budget instead of paying the legacy fixed 21s gap."
     },
     {
       kind: "stateful",

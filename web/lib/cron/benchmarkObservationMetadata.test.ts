@@ -17,6 +17,25 @@ describe("benchmarkObservationMetadata", () => {
     ).toMatchObject({
       canRunLocally: true,
       localRunPolicy: "caution",
+      touchedSystems: expect.arrayContaining(["supabase", "nst", "external_api"]),
+      notes: expect.arrayContaining([
+        expect.stringContaining("must run serially"),
+        expect.stringContaining("5-minute cooldown")
+      ])
+    });
+  });
+
+  it("treats scheduled incremental NST routes as caution jobs under the shared key budget", () => {
+    expect(
+      getBenchmarkObservationMetadata({
+        name: "update-nst-team-daily-incremental",
+        method: "GET",
+        executionShape: "HTTP route",
+        notes: []
+      })
+    ).toMatchObject({
+      canRunLocally: true,
+      localRunPolicy: "caution",
       touchedSystems: expect.arrayContaining(["supabase", "nst", "external_api"])
     });
   });

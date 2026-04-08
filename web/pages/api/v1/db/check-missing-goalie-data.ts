@@ -5,7 +5,11 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import * as cheerio from "cheerio";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
-import { fetchNstTextByUrl } from "lib/nst/client";
+import {
+  fetchNstTextByUrl,
+  isNstAuthError,
+  isNstRateLimitError
+} from "lib/nst/client";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
 
 dotenv.config({ path: "./../../../.env.local" });
@@ -280,6 +284,9 @@ async function fetchAndParseData(
       );
       return dataRowsCollected;
     } catch (error: any) {
+      if (isNstAuthError(error) || isNstRateLimitError(error)) {
+        throw error;
+      }
       console.error(
         `Attempt ${attempt} - Error fetching ${url}:`,
         error.message

@@ -75,7 +75,11 @@ import axios from "axios";
 import * as cheerio from "cheerio";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
-import { fetchNstTextByUrl } from "lib/nst/client";
+import {
+  fetchNstTextByUrl,
+  isNstAuthError,
+  isNstRateLimitError
+} from "lib/nst/client";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
 import {
   addDays,
@@ -1081,6 +1085,9 @@ async function fetchAndParseData(
       );
       return { success: true, data: dataRowsWithPlayerIds };
     } catch (error: any) {
+      if (isNstAuthError(error) || isNstRateLimitError(error)) {
+        throw error;
+      }
       console.error(
         `Attempt ${attempt}/${retries} - Error fetching/parsing ${url}:`,
         error.message

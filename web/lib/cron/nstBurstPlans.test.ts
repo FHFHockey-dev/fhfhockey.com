@@ -31,15 +31,15 @@ describe("NST route burst plans", () => {
     expect(plan.requestIntervalMs).toBe(0);
   });
 
-  it("forces update-nst-goalies back to the safe interval when an explicit burst override is unsafe", () => {
+  it("forces update-nst-goalies back to the safe interval when an explicit burst override exceeds the burst budget", () => {
     const plan = resolveGoalieNstRequestPlan({
-      queuedDates: 5,
-      totalQueuedUrls: GOALIE_URLS_PER_DATE * 5,
-      maxPendingUrls: 50,
+      queuedDates: 9,
+      totalQueuedUrls: GOALIE_URLS_PER_DATE * 9,
+      maxPendingUrls: 90,
       explicitRequestIntervalMs: 0
     });
 
-    expect(plan.requestCountBudget).toBe(50);
+    expect(plan.requestCountBudget).toBe(90);
     expect(plan.burstAllowed).toBe(false);
     expect(plan.explicitIntervalRejected).toBe(true);
     expect(plan.requestIntervalMs).toBe(NST_GOALIES_REQUEST_INTERVAL_MS);
@@ -61,16 +61,16 @@ describe("NST route burst plans", () => {
     expect(twoDayPlan.burstAllowed).toBe(true);
   });
 
-  it("uses the small interval once burst would exceed the one-minute cap", () => {
+  it("uses the small interval once burst would exceed the five-minute burst cap", () => {
     const dates = ["2026-03-16", "2026-03-17", "2026-03-18", "2026-03-19", "2026-03-20", "2026-03-21"];
     const plan = resolveTeamDailyNstRequestPlan(dates);
 
     expect(plan.requestCount).toBe(TEAM_DAILY_URLS_PER_DATE * dates.length);
-    expect(plan.requestIntervalMs).toBe(NST_TEAM_DAILY_SMALL_INTERVAL_MS);
-    expect(plan.burstAllowed).toBe(false);
+    expect(plan.requestIntervalMs).toBe(NST_TEAM_DAILY_BURST_INTERVAL_MS);
+    expect(plan.burstAllowed).toBe(true);
   });
 
-  it("forces update-nst-team-daily onto the long interval when the request count outgrows the small interval", () => {
+  it("uses the small interval when the request count exceeds the burst budget but still fits the hourly budget", () => {
     const dates = [
       "2026-03-09",
       "2026-03-10",
@@ -86,6 +86,17 @@ describe("NST route burst plans", () => {
       "2026-03-20",
       "2026-03-21"
     ];
+    const plan = resolveTeamDailyNstRequestPlan(dates);
+
+    expect(plan.requestCount).toBe(TEAM_DAILY_URLS_PER_DATE * dates.length);
+    expect(plan.requestIntervalMs).toBe(NST_TEAM_DAILY_SMALL_INTERVAL_MS);
+    expect(plan.burstAllowed).toBe(false);
+  });
+
+  it("forces update-nst-team-daily onto the long interval when the request count outgrows the small interval", () => {
+    const dates = Array.from({ length: 23 }, (_, index) =>
+      `2026-03-${String(index + 1).padStart(2, "0")}`
+    );
     const plan = resolveTeamDailyNstRequestPlan(dates);
 
     expect(plan.requestCount).toBe(TEAM_DAILY_URLS_PER_DATE * dates.length);
@@ -105,7 +116,7 @@ describe("NST route burst plans", () => {
 
   it("retains the safe interval candidate if a future request footprint ever stops qualifying for burst", () => {
     const plan = resolveNstTeamStatsRequestPlan({
-      dateRequestCount: 41,
+      dateRequestCount: 81,
       seasonRequestCount: 0
     });
 

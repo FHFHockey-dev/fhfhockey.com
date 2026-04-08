@@ -81,13 +81,13 @@
   - [x] 3.5 Preserve request parity and downstream behavior parity for every migrated route, including route responses, parser mappings, table upserts, and idempotent retry behavior.
   - [x] 3.6 Mark legacy or manual-only NST scripts clearly if they are not part of the production migration path, and document any follow-up cleanup candidates rather than silently leaving them ambiguous.
 
-- [ ] 4.0 Replace legacy NST throttling assumptions with the new token-aware budget model
-  - [ ] 4.1 Replace the old four-window NST limit assumptions in `nstRateLimitPolicy.ts` with a model aligned to the current published NST key rules and token budget behavior.
-  - [ ] 4.2 Update `nstBurstPlans.ts` so direct NST jobs select request pacing from the new token-aware ceilings instead of the legacy anti-bot intervals.
-  - [ ] 4.3 Review `nstClassification.ts`, cron coordination, and benchmark metadata so all direct NST jobs remain correctly classified and scheduled under the new shared-budget model.
-  - [ ] 4.4 Define how concurrent direct NST jobs coordinate the shared key budget across gamelog, goalies, team daily, team stats, player reports, current season, and last-ten workflows.
-  - [ ] 4.5 Preserve or improve safeguards that prevent duplicate downstream writes when retries happen because of auth failures, transient upstream errors, or exhausted token budget.
-  - [ ] 4.6 Update automated tests for NST rate calculations, burst-plan selection, and any audit or benchmark behavior affected by the new pacing model.
+- [x] 4.0 Replace legacy NST throttling assumptions with the new token-aware budget model
+  - [x] 4.1 Replace the old four-window NST limit assumptions in `nstRateLimitPolicy.ts` with a model aligned to the current published NST key rules and token budget behavior.
+  - [x] 4.2 Update `nstBurstPlans.ts` so direct NST jobs select request pacing from the new token-aware ceilings instead of the legacy anti-bot intervals.
+  - [x] 4.3 Review `nstClassification.ts`, cron coordination, and benchmark metadata so all direct NST jobs remain correctly classified and scheduled under the new shared-budget model.
+  - [x] 4.4 Define how concurrent direct NST jobs coordinate the shared key budget across gamelog, goalies, team daily, team stats, player reports, current season, and last-ten workflows.
+  - [x] 4.5 Preserve or improve safeguards that prevent duplicate downstream writes when retries happen because of auth failures, transient upstream errors, or exhausted token budget.
+  - [x] 4.6 Update automated tests for NST rate calculations, burst-plan selection, and any audit or benchmark behavior affected by the new pacing model.
 
 - [ ] 5.0 Add parity validation, rollout verification, and operator documentation
   - [ ] 5.1 Add automated tests for the shared NST client behavior, including config loading, header injection, secret redaction, and failure handling.

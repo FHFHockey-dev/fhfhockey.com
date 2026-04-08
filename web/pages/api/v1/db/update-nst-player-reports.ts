@@ -11,7 +11,11 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import * as cheerio from "cheerio";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
-import { fetchNstTextByUrl } from "lib/nst/client";
+import {
+  fetchNstTextByUrl,
+  isNstAuthError,
+  isNstRateLimitError
+} from "lib/nst/client";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
 import type { Element } from "domhandler";
 import { format as tzFormat, toZonedTime } from "date-fns-tz";
@@ -436,6 +440,9 @@ async function fetchAndParsePlayerData(
       // console.log(`Parsed ${individualData.length} Individual rows, ${onIceData.length} On-Ice rows.`);
       return { individualData, onIceData };
     } catch (error: any) {
+      if (isNstAuthError(error) || isNstRateLimitError(error)) {
+        throw error;
+      }
       console.error(
         `Attempt ${attempt} - Error fetching/parsing data for Player ${playerId} from ${url}:`,
         error.message

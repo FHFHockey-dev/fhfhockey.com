@@ -8,10 +8,14 @@ import {
   fetchNstTextWithCache,
   fetchNstTextWithCacheByUrl,
   getNstHeaders,
+  isNstAuthError,
   isNstConfigError,
+  isNstRateLimitError,
+  isNstResponseError,
   NstConfigError,
   NST_BASE_URL,
   NST_HEADER_NAME,
+  NstResponseError,
   redactNstMessage,
   redactNstUrl,
   toNstOperatorMessage
@@ -218,11 +222,72 @@ describe("nst client", () => {
   });
 
   it("maps non-config failures to sanitized operator messages", () => {
+    expect(
+      toNstOperatorMessage(
+        new NstResponseError({
+          status: 403,
+          redactedUrl: `${NST_BASE_URL}/playerreport.php?playerid=1`
+        })
+      )
+    ).toBe("NST authentication failed");
+    expect(
+      toNstOperatorMessage(
+        new NstResponseError({
+          status: 429,
+          redactedUrl: `${NST_BASE_URL}/playerreport.php?playerid=1`
+        })
+      )
+    ).toBe("NST token budget exhausted");
+    expect(
+      toNstOperatorMessage(
+        new NstResponseError({
+          status: 503,
+          redactedUrl: `${NST_BASE_URL}/playerreport.php?playerid=1`
+        })
+      )
+    ).toBe("NST upstream failed");
     expect(toNstOperatorMessage(new Error("The operation was aborted"))).toBe(
       "NST request timed out"
     );
     expect(toNstOperatorMessage(new Error("socket hang up"))).toBe(
       "NST request failed"
     );
+  });
+
+  it("fails fast on NST auth errors instead of treating them as empty data", async () => {
+    vi.stubEnv("NST_KEY", "auth-key");
+
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response("forbidden", { status: 403, statusText: "Forbidden" })
+    );
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      fetchNstTextByUrl(`${NST_BASE_URL}/playerreport.php?playerid=1`, {
+        retries: 2
+      })
+    ).rejects.toMatchObject({
+      name: "NstResponseError",
+      status: 403
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("classifies NST response errors by auth and token-budget semantics", () => {
+    const authError = new NstResponseError({
+      status: 401,
+      redactedUrl: `${NST_BASE_URL}/playerreport.php?playerid=1`
+    });
+    const rateLimitError = new NstResponseError({
+      status: 429,
+      redactedUrl: `${NST_BASE_URL}/playerreport.php?playerid=1`
+    });
+
+    expect(isNstResponseError(authError)).toBe(true);
+    expect(isNstAuthError(authError)).toBe(true);
+    expect(isNstRateLimitError(authError)).toBe(false);
+    expect(isNstRateLimitError(rateLimitError)).toBe(true);
   });
 });

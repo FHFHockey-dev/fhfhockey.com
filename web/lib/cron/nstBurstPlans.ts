@@ -51,7 +51,7 @@ export function resolveGoalieNstRequestPlan(options: {
 }
 
 export const NST_TEAM_DAILY_BURST_INTERVAL_MS = 0;
-export const NST_TEAM_DAILY_SMALL_INTERVAL_MS = 3000;
+export const NST_TEAM_DAILY_SMALL_INTERVAL_MS = 4000;
 export const NST_TEAM_DAILY_MULTI_DATE_INTERVAL_MS = 30000;
 export const TEAM_DAILY_URLS_PER_DATE = 8;
 

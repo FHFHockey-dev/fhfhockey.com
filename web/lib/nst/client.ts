@@ -13,8 +13,32 @@ export class NstConfigError extends Error {
   }
 }
 
+export class NstResponseError extends Error {
+  status: number;
+  redactedUrl: string;
+
+  constructor(args: { status: number; redactedUrl: string; message?: string }) {
+    super(args.message ?? `NST request failed with status ${args.status}`);
+    this.name = "NstResponseError";
+    this.status = args.status;
+    this.redactedUrl = args.redactedUrl;
+  }
+}
+
 export function isNstConfigError(error: unknown): error is NstConfigError {
   return error instanceof NstConfigError;
+}
+
+export function isNstResponseError(error: unknown): error is NstResponseError {
+  return error instanceof NstResponseError;
+}
+
+export function isNstAuthError(error: unknown): error is NstResponseError {
+  return isNstResponseError(error) && (error.status === 401 || error.status === 403);
+}
+
+export function isNstRateLimitError(error: unknown): error is NstResponseError {
+  return isNstResponseError(error) && error.status === 429;
 }
 
 export interface NstRequestOptions {
@@ -71,6 +95,18 @@ export function getNstKey(): string {
 export function toNstOperatorMessage(error: unknown): string {
   if (isNstConfigError(error)) {
     return error.message;
+  }
+
+  if (isNstAuthError(error)) {
+    return "NST authentication failed";
+  }
+
+  if (isNstRateLimitError(error)) {
+    return "NST token budget exhausted";
+  }
+
+  if (isNstResponseError(error) && error.status >= 500) {
+    return "NST upstream failed";
   }
 
   if (error instanceof Error && /abort|timeout/i.test(error.message)) {
@@ -152,10 +188,19 @@ async function executeNstRequest(
       cache: "no-store"
     });
 
+    const redactedUrl = redactNstUrl(url);
+
+    if (!response.ok) {
+      throw new NstResponseError({
+        status: response.status,
+        redactedUrl
+      });
+    }
+
     return {
       response,
       url: url.toString(),
-      redactedUrl: redactNstUrl(url)
+      redactedUrl
     };
   } finally {
     clearTimeout(timeout);
@@ -164,6 +209,10 @@ async function executeNstRequest(
 
 function shouldRetry(response: Response | null, error: unknown): boolean {
   if (error) {
+    if (isNstResponseError(error)) {
+      return error.status >= 500;
+    }
+
     return true;
   }
 
@@ -171,7 +220,7 @@ function shouldRetry(response: Response | null, error: unknown): boolean {
     return true;
   }
 
-  return response.status >= 500 || response.status === 429;
+  return response.status >= 500;
 }
 
 export async function nstRequest(
