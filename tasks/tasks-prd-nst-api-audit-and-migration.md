@@ -103,10 +103,10 @@
   - [x] 6.3 Decide whether `web/pages/api/fetch_team_table.ts` remains a supported route or is retired in favor of `functions/api/fetch_team_table.py`.
   - [x] 6.4 Decide whether `web/pages/api/Teams/[teamAbbreviation].ts` should be fixed, replaced, or retired because its current implementation does not match its file path contract.
 
-- [ ] 7.0 Clean up stale NST route identity and contract drift during migration
-  - [ ] 7.1 Update misleading copied file headers and route descriptions in NST ingestion files such as `update-nst-last-ten.ts`.
-  - [ ] 7.2 Remove or rewrite stale old-limit comments in NST routes so operator guidance matches the new key-token model.
-  - [ ] 7.3 Consolidate duplicated inline `playerreport.php` request construction onto the shared NST request path to prevent post-migration drift.
+- [x] 7.0 Clean up stale NST route identity and contract drift during migration
+  - [x] 7.1 Update misleading copied file headers and route descriptions in NST ingestion files such as `update-nst-last-ten.ts`.
+  - [x] 7.2 Remove or rewrite stale old-limit comments in NST routes so operator guidance matches the new key-token model.
+  - [x] 7.3 Consolidate duplicated inline `playerreport.php` request construction onto the shared NST request path to prevent post-migration drift.
 
 - [ ] 8.0 Resolve unrelated full-suite test failures blocking NST parent-task closure
   - [ ] 8.1 Investigate the failing assertions in `web/lib/underlying-stats/teamStatsQueries.test.ts` discovered during the mandatory `npm test` run for task `1.0`.

@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   buildNstRequestUrl,
   buildNstUrl,
+  buildNstUrlString,
   fetchNstText,
   fetchNstTextByUrl,
   fetchNstTextWithCache,
@@ -37,6 +38,16 @@ describe("nst client", () => {
     expect(url.toString()).toBe(
       `${NST_BASE_URL}/playerreport.php?stype=2&sit=all&playerid=8478402`
     );
+  });
+
+  it("builds NST url strings through the shared helper", () => {
+    expect(
+      buildNstUrlString("playerreport.php", {
+        stype: 2,
+        sit: "all",
+        playerid: 8478402
+      })
+    ).toBe(`${NST_BASE_URL}/playerreport.php?stype=2&sit=all&playerid=8478402`);
   });
 
   it("redacts query-string auth tokens", () => {

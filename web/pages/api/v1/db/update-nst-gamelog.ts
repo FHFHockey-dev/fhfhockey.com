@@ -104,8 +104,9 @@ if (!supabaseUrl || !supabaseKey) {
 
 const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
 
-// Global NST rate limit: at least 21 seconds between requests (set to 25s for safety)
-const REQUEST_INTERVAL_MS = 25000; // 25 seconds
+// Route-local pacing for sequential requests inside one run.
+// Shared cross-job NST coordination is handled separately by the NST budget policy.
+const REQUEST_INTERVAL_MS = 25000;
 
 const BASE_URL = "https://data.naturalstattrick.com/playerteams.php";
 const NHL_API_BASE_URL = "https://api-web.nhle.com/v1";

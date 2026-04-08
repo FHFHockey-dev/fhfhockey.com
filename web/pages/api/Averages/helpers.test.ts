@@ -5,6 +5,16 @@ const { fetchNstTextWithCacheByUrlMock } = vi.hoisted(() => ({
 }));
 
 vi.mock("lib/nst/client", () => ({
+  buildNstUrlString: (path: string, query?: Record<string, string | number>) =>
+    new URL(
+      `${path.startsWith("/") ? path.slice(1) : path}`,
+      "https://data.naturalstattrick.com/"
+    ).toString() +
+    (query
+      ? `?${new URLSearchParams(
+          Object.entries(query).map(([key, value]) => [key, String(value)])
+        ).toString()}`
+      : ""),
   fetchNstTextWithCacheByUrl: fetchNstTextWithCacheByUrlMock
 }));
 

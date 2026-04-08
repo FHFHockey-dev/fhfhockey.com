@@ -1,4 +1,4 @@
-// pages/api/v1/db/update-nst-gamelog.ts
+// pages/api/v1/db/update-nst-last-ten.ts
 
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import type { NextApiRequest, NextApiResponse } from "next";
@@ -25,8 +25,9 @@ if (!supabaseUrl || !supabaseKey) {
 
 const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
 
-// Delay interval between requests in milliseconds
-const REQUEST_INTERVAL_MS = 30000; // 30 seconds
+// Route-local pacing for sequential requests inside one run.
+// Shared cross-job NST coordination is handled separately by the NST budget policy.
+const REQUEST_INTERVAL_MS = 30000;
 
 const BASE_URL = "https://data.naturalstattrick.com/playerteams.php";
 

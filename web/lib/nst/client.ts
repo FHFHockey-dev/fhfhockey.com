@@ -132,6 +132,13 @@ export function buildNstUrl(
   return url;
 }
 
+export function buildNstUrlString(
+  path: string,
+  query?: Record<string, string | number | boolean | null | undefined>
+): string {
+  return buildNstUrl(path, query).toString();
+}
+
 export function redactNstUrl(input: string | URL): string {
   const url = typeof input === "string" ? new URL(input) : new URL(input.toString());
   if (url.searchParams.has("key")) {

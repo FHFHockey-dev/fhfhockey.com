@@ -32,7 +32,7 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
 
 // --- Constants ---
-const REQUEST_INTERVAL_MS = 5000; // Delay between processing each player (5 seconds)
+const REQUEST_INTERVAL_MS = 5000; // Delay between processing each player inside one run.
 const PLAYER_FETCH_BATCH_SIZE = 1000; // Supabase fetch limit
 const BASE_URL = "https://data.naturalstattrick.com/playerreport.php";
 
@@ -650,7 +650,7 @@ async function processPlayer(
   const rates = [false, true]; // false = counts (rate=n), true = rates (rate=y)
 
   let totalRowsUpsertedForPlayer = 0;
-  const PER_REQUEST_DELAY_MS = 21000; // 21 seconds to stay under 180 req/hr
+  const PER_REQUEST_DELAY_MS = 21000; // Sequential in-route pacing only; shared NST budget coordination is handled separately.
 
   console.log(
     `--- Processing Player ID: ${playerId} (${playerCount.current}/${playerCount.total}) ---`
