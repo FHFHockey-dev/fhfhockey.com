@@ -108,6 +108,6 @@
   - [x] 7.2 Remove or rewrite stale old-limit comments in NST routes so operator guidance matches the new key-token model.
   - [x] 7.3 Consolidate duplicated inline `playerreport.php` request construction onto the shared NST request path to prevent post-migration drift.
 
-- [ ] 8.0 Resolve unrelated full-suite test failures blocking NST parent-task closure
-  - [ ] 8.1 Investigate the failing assertions in `web/lib/underlying-stats/teamStatsQueries.test.ts` discovered during the mandatory `npm test` run for task `1.0`.
-  - [ ] 8.2 Decide whether the `teamStatsQueries` failures reflect expected upstream ongoing work or a real regression that must be fixed before later NST parent tasks are marked complete.
+- [x] 8.0 Resolve unrelated full-suite test failures blocking NST parent-task closure
+  - [x] 8.1 Investigate the failing assertions in `web/lib/underlying-stats/teamStatsQueries.test.ts` discovered during the mandatory `npm test` run for task `1.0`.
+  - [x] 8.2 Decide whether the `teamStatsQueries` failures reflect expected upstream ongoing work or a real regression that must be fixed before later NST parent tasks are marked complete.
