@@ -73,13 +73,13 @@
   - [x] 2.5 Define and document the Python-side integration pattern so Python callers either use an equivalent shared config contract or are explicitly marked legacy and excluded from runtime usage.
   - [x] 2.6 Add fast-fail behavior for missing `NST_KEY` with sanitized, operator-readable errors that do not leak secrets.
 
-- [ ] 3.0 Migrate all in-scope NST callers to the shared data-subdomain integration
-  - [ ] 3.1 Migrate the primary direct ingestion routes to `data.naturalstattrick.com` through the shared NST request contract, starting with `update-nst-gamelog`, `update-nst-goalies`, `update-nst-team-daily`, `update-nst-current-season`, `update-nst-player-reports`, `update-nst-last-ten`, and `check-missing-goalie-data`.
-  - [ ] 3.2 Migrate team-table fetch flows, including `web/pages/api/fetch_team_table.ts`, `functions/api/fetch_team_table.py`, `web/scripts/fetch_team_table.py`, and `web/pages/api/Teams/nst-team-stats.ts`, while preserving request parameter behavior and downstream consumers.
-  - [ ] 3.3 Migrate direct player-report and player-team API callers, including career averages, three-year averages, sustainability stats, and any remaining helper-layer NST fetches.
-  - [ ] 3.4 Review and update browser-mimic headers, referers, and session-establishment workarounds so the new data-subdomain integration keeps only behavior still required by NST.
-  - [ ] 3.5 Preserve request parity and downstream behavior parity for every migrated route, including route responses, parser mappings, table upserts, and idempotent retry behavior.
-  - [ ] 3.6 Mark legacy or manual-only NST scripts clearly if they are not part of the production migration path, and document any follow-up cleanup candidates rather than silently leaving them ambiguous.
+- [x] 3.0 Migrate all in-scope NST callers to the shared data-subdomain integration
+  - [x] 3.1 Migrate the primary direct ingestion routes to `data.naturalstattrick.com` through the shared NST request contract, starting with `update-nst-gamelog`, `update-nst-goalies`, `update-nst-team-daily`, `update-nst-current-season`, `update-nst-player-reports`, `update-nst-last-ten`, and `check-missing-goalie-data`.
+  - [x] 3.2 Migrate team-table fetch flows, including `web/pages/api/fetch_team_table.ts`, `functions/api/fetch_team_table.py`, `web/scripts/fetch_team_table.py`, and `web/pages/api/Teams/nst-team-stats.ts`, while preserving request parameter behavior and downstream consumers.
+  - [x] 3.3 Migrate direct player-report and player-team API callers, including career averages, three-year averages, sustainability stats, and any remaining helper-layer NST fetches.
+  - [x] 3.4 Review and update browser-mimic headers, referers, and session-establishment workarounds so the new data-subdomain integration keeps only behavior still required by NST.
+  - [x] 3.5 Preserve request parity and downstream behavior parity for every migrated route, including route responses, parser mappings, table upserts, and idempotent retry behavior.
+  - [x] 3.6 Mark legacy or manual-only NST scripts clearly if they are not part of the production migration path, and document any follow-up cleanup candidates rather than silently leaving them ambiguous.
 
 - [ ] 4.0 Replace legacy NST throttling assumptions with the new token-aware budget model
   - [ ] 4.1 Replace the old four-window NST limit assumptions in `nstRateLimitPolicy.ts` with a model aligned to the current published NST key rules and token budget behavior.

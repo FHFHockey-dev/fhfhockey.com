@@ -1,5 +1,9 @@
 // https://github.com/FHFHockey-dev/fhfhockey.com/pull/15#issuecomment-1208254068
 //
+// Legacy compatibility route.
+// Despite the file name, this handler still behaves like a player-report endpoint.
+// It remains in scope only to preserve existing behavior until cleanup task 7.0
+// resolves the route identity mismatch explicitly.
 
 // IDEA TO creat NST team datapoints for api
 // 1. Get all team abbreviations
@@ -8,7 +12,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { HTMLElement, parse } from "node-html-parser";
 
-import fetchWithCache from "lib/fetchWithCache";
+import { fetchNstTextWithCacheByUrl } from "lib/nst/client";
 import { parseTime } from "lib/NHL/TOI";
 
 export type Data = {
@@ -82,9 +86,8 @@ export function parseTable(table: HTMLElement) {
 }
 
 async function getStats(playerId: string) {
-  const URL = `https://naturalstattrick.com/playerreport.php?stype=2&sit=all&stdoi=std&rate=n&v=p&playerid=${playerId}`;
-
-  const html = (await fetchWithCache(URL, false)) as string;
+  const URL = `https://data.naturalstattrick.com/playerreport.php?stype=2&sit=all&stdoi=std&rate=n&v=p&playerid=${playerId}`;
+  const { text: html } = await fetchNstTextWithCacheByUrl(URL);
   const document = parse(html);
   const individual = parseTable(document.getElementById("indreg"));
   const onIce = parseTable(document.getElementById("reg"));

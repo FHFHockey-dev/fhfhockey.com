@@ -75,6 +75,7 @@ import axios from "axios";
 import * as cheerio from "cheerio";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
+import { fetchNstTextByUrl } from "lib/nst/client";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
 import {
   addDays,
@@ -102,7 +103,7 @@ const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
 // Global NST rate limit: at least 21 seconds between requests (set to 25s for safety)
 const REQUEST_INTERVAL_MS = 25000; // 25 seconds
 
-const BASE_URL = "https://www.naturalstattrick.com/playerteams.php";
+const BASE_URL = "https://data.naturalstattrick.com/playerteams.php";
 const NHL_API_BASE_URL = "https://api-web.nhle.com/v1";
 
 // Keep existing player name mapping
@@ -190,28 +191,12 @@ async function nstGet(
     }
   }
   lastNstRequestAt = Date.now();
-  // Many sites (including NST) return generic 404s for non-browser requests.
-  // Send realistic browser headers to avoid being blocked by WAF/CDN.
-  const headers = {
-    "User-Agent":
-      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36",
-    Accept:
-      "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-    "Accept-Language": "en-US,en;q=0.9",
-    Referer: "https://www.naturalstattrick.com/",
-    "Cache-Control": "no-cache",
-    Pragma: "no-cache",
-    // Some CDNs treat these as hints; harmless if ignored server-side
-    "Upgrade-Insecure-Requests": "1"
-  } as Record<string, string>;
+  const result = await fetchNstTextByUrl(url, { timeoutMs });
 
-  return axios.get(url, {
-    timeout: timeoutMs,
-    headers,
-    maxRedirects: 3,
-    responseType: "text"
-    // Do not decompress on our side explicitly; axios/node handles gzip automatically
-  });
+  return {
+    data: result.text,
+    status: result.response.status
+  };
 }
 
 // --- Helper Functions (Normalize Name, Delay, Dates Between, Map Header, Get Table Name) ---

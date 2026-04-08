@@ -4,7 +4,9 @@ import {
   buildNstRequestUrl,
   buildNstUrl,
   fetchNstText,
+  fetchNstTextByUrl,
   fetchNstTextWithCache,
+  fetchNstTextWithCacheByUrl,
   getNstHeaders,
   isNstConfigError,
   NstConfigError,
@@ -87,6 +89,29 @@ describe("nst client", () => {
     expect(redactNstUrl(url)).not.toContain("fallback-key");
   });
 
+  it("rewrites full legacy NST urls onto the shared data-subdomain contract", async () => {
+    vi.stubEnv("NST_KEY", "legacy-url-key");
+
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response("<html>legacy</html>", { status: 200, statusText: "OK" })
+    );
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await fetchNstTextByUrl(
+      "https://naturalstattrick.com/playerreport.php?stype=2&sit=all&playerid=8478402"
+    );
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      `${NST_BASE_URL}/playerreport.php?stype=2&sit=all&playerid=8478402`
+    );
+    expect(result.text).toBe("<html>legacy</html>");
+    expect(result.redactedUrl).toBe(
+      `${NST_BASE_URL}/playerreport.php?stype=2&sit=all&playerid=8478402`
+    );
+  });
+
   it("fetches text with retries and returns a redacted url", async () => {
     vi.stubEnv("NST_KEY", "retry-key");
 
@@ -163,6 +188,33 @@ describe("nst client", () => {
     expect(second.text).toBe("<html>cached</html>");
     expect(first.redactedUrl).toContain("key=%5BREDACTED%5D");
     expect(first.redactedUrl).not.toContain("cache-key");
+  });
+
+  it("supports cached full-url NST fetches while preserving redacted cache identity", async () => {
+    vi.stubEnv("NST_KEY", "legacy-cache-key");
+
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response("<html>cached by url</html>", {
+        status: 200,
+        statusText: "OK"
+      })
+    );
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    const first = await fetchNstTextWithCacheByUrl(
+      "https://www.naturalstattrick.com/playerteams.php?sit=all&playerid=99"
+    );
+    const second = await fetchNstTextWithCacheByUrl(
+      "https://www.naturalstattrick.com/playerteams.php?sit=all&playerid=99"
+    );
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(first.text).toBe("<html>cached by url</html>");
+    expect(second.text).toBe("<html>cached by url</html>");
+    expect(first.redactedUrl).toBe(
+      `${NST_BASE_URL}/playerteams.php?sit=all&playerid=99`
+    );
   });
 
   it("maps non-config failures to sanitized operator messages", () => {

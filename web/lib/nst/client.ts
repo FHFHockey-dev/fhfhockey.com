@@ -32,10 +32,32 @@ export interface NstRequestResult {
   redactedUrl: string;
 }
 
+export interface ParsedNstUrl {
+  path: string;
+  query: Record<string, string>;
+}
+
 const NST_QUERY_KEY_PATTERN = /([?&]key=)([^&]+)/gi;
 
 function normalizePath(path: string): string {
   return path.startsWith("/") ? path.slice(1) : path;
+}
+
+export function parseNstUrl(url: string): ParsedNstUrl {
+  const parsed = new URL(url);
+  const query: Record<string, string> = {};
+
+  parsed.searchParams.forEach((value, key) => {
+    if (key === "key") {
+      return;
+    }
+    query[key] = value;
+  });
+
+  return {
+    path: normalizePath(parsed.pathname),
+    query
+  };
 }
 
 export function getNstKey(): string {
@@ -197,6 +219,18 @@ export async function fetchNstText(
   };
 }
 
+export async function fetchNstTextByUrl(
+  url: string,
+  options?: Omit<NstRequestOptions, "path" | "query">
+): Promise<{ text: string; redactedUrl: string; response: Response }> {
+  const parsed = parseNstUrl(url);
+  return fetchNstText({
+    ...options,
+    path: parsed.path,
+    query: parsed.query
+  });
+}
+
 export async function fetchNstTextWithCache(
   options: NstRequestOptions
 ): Promise<{ text: string; redactedUrl: string }> {
@@ -218,4 +252,16 @@ export async function fetchNstTextWithCache(
     text: redactNstMessage(text),
     redactedUrl
   };
+}
+
+export async function fetchNstTextWithCacheByUrl(
+  url: string,
+  options?: Omit<NstRequestOptions, "path" | "query">
+): Promise<{ text: string; redactedUrl: string }> {
+  const parsed = parseNstUrl(url);
+  return fetchNstTextWithCache({
+    ...options,
+    path: parsed.path,
+    query: parsed.query
+  });
 }

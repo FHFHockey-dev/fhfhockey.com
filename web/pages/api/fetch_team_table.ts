@@ -1,5 +1,11 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import * as cheerio from "cheerio";
+import { fetchNstTextByUrl } from "lib/nst/client";
+
+// Compatibility route only.
+// Canonical production ownership for `teamtable.php` now lives in:
+//   functions/api/fetch_team_table.py
+// Keep this route aligned for compatibility while cleanup task 7.0 decides whether to retire it.
 
 interface TeamRow {
   date: string | null;
@@ -67,20 +73,11 @@ function validatePct(value: string | null): number | null {
 }
 
 async function fetchHtml(url: string, timeoutMs = 10000): Promise<string> {
-  const controller = new AbortController();
-  const t = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const res = await fetch(url, {
-      signal: controller.signal,
-      headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; fhfhockey-bot/1.0)"
-      }
-    });
-    if (!res.ok) throw new Error(`Upstream status ${res.status}`);
-    return await res.text();
-  } finally {
-    clearTimeout(t);
+  const { text, response } = await fetchNstTextByUrl(url, { timeoutMs });
+  if (!response.ok) {
+    throw new Error(`Upstream status ${response.status}`);
   }
+  return text;
 }
 
 export default async function handler(
@@ -112,7 +109,7 @@ export default async function handler(
       .json({ error: "Missing required parameters 'sit' and 'rate'" });
   }
 
-  const url = `https://www.naturalstattrick.com/teamtable.php?fromseason=${from_season}&thruseason=${thru_season}&stype=${stype}&sit=${sit}&score=${score}&rate=${rate}&team=${team}&loc=${loc}&gpf=${gpf}&fd=${fd}&td=${td}`;
+  const url = `https://data.naturalstattrick.com/teamtable.php?fromseason=${from_season}&thruseason=${thru_season}&stype=${stype}&sit=${sit}&score=${score}&rate=${rate}&team=${team}&loc=${loc}&gpf=${gpf}&fd=${fd}&td=${td}`;
 
   const debug: Record<string, any> = { FetchingURL: url };
 

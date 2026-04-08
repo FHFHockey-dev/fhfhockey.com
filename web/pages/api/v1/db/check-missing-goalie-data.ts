@@ -2,10 +2,10 @@
 
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import type { NextApiRequest, NextApiResponse } from "next";
-import axios from "axios";
 import * as cheerio from "cheerio";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
+import { fetchNstTextByUrl } from "lib/nst/client";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
 
 dotenv.config({ path: "./../../../.env.local" });
@@ -21,7 +21,7 @@ const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
 
 // Delay interval between requests in milliseconds
 const REQUEST_INTERVAL_MS = 22000; // 22 seconds
-const BASE_URL = "https://www.naturalstattrick.com/playerteams.php";
+const BASE_URL = "https://data.naturalstattrick.com/playerteams.php";
 
 // --- Header Mappings for Goalie Data ---
 const goalieCountsHeaderMap: Record<string, string> = {
@@ -218,17 +218,12 @@ async function fetchAndParseData(
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       console.log(`Fetching data from URL: ${url} (Attempt ${attempt})`);
-      const response = await axios.get(url, {
-        headers: {
-          "User-Agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Safari/537.36"
-        }
-      });
-      if (!response.data) {
+      const { text } = await fetchNstTextByUrl(url, { timeoutMs: 30000 });
+      if (!text) {
         console.warn(`No data received from URL: ${url}`);
         return [];
       }
-      const $ = cheerio.load(response.data);
+      const $ = cheerio.load(text);
       const table = $("table").first();
       if (table.length === 0) {
         console.warn(`No table found in response from URL: ${url}`);

@@ -2,10 +2,10 @@
 
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import type { NextApiRequest, NextApiResponse } from "next";
-import axios from "axios";
 import * as cheerio from "cheerio";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
+import { fetchNstTextByUrl } from "lib/nst/client";
 // Assuming utils/fetchCurrentSeason is directly under 'pages' or project root
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
 import type { Element } from "domhandler";
@@ -23,9 +23,8 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
 
 // --- Constants ---
-// NST Rate Limits: 40/min, 80/5min, 100/15min, 180/hr
 const PLAYER_MAP_VIEW = "view_active_player_ids_max_season";
-const BASE_URL_ALL_PLAYERS = "https://www.naturalstattrick.com/playerteams.php";
+const BASE_URL_ALL_PLAYERS = "https://data.naturalstattrick.com/playerteams.php";
 // Define target table names
 const TABLE_INDIVIDUAL_COUNTS = "nst_seasonal_individual_counts";
 const TABLE_INDIVIDUAL_RATES = "nst_seasonal_individual_rates";
@@ -347,14 +346,14 @@ async function fetchAndParseAllPlayersData(
       console.log(
         `fetching data for ${ReportType[reportType]} (Strength: ${strength}, Season: ${seasonId}) - Attempt ${attempt}`
       );
-      const response = await axios.get(url, { timeout: 60000 });
-      if (!response.data) {
+      const { text } = await fetchNstTextByUrl(url, { timeoutMs: 60000 });
+      if (!text) {
         console.warn(`Attempt ${attempt}: No data received from URL: ${url}`);
         if (attempt === retries) return [];
         await delay(2000 * (attempt + 1));
         continue;
       }
-      const $ = cheerio.load(response.data);
+      const $ = cheerio.load(text);
       const table = $("div#allplayers_length ~ table");
       let dataTable: cheerio.Cheerio<Element>;
       if (table.length > 0) {

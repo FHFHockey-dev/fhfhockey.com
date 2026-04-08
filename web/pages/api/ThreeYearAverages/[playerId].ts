@@ -2,7 +2,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { HTMLElement, parse } from "node-html-parser";
 
-import fetchWithCache from "lib/fetchWithCache";
+import { fetchNstTextWithCacheByUrl } from "lib/nst/client";
 
 // DATA TO BE CONSIDERED FOR 3 YEAR STATS AVERAGE
 export type Data = {
@@ -654,8 +654,8 @@ async function GetThreeYearStats(playerId: string): Promise<{
   yearlyCounts: YearlyCounts;
   threeYearCountsAverages: Data;
 }> {
-  const URL = `https://naturalstattrick.com/playerreport.php?stype=2&sit=all&stdoi=std&rate=n&v=p&playerid=${playerId}`;
-  const html = (await fetchWithCache(URL, false)) as string;
+  const URL = `https://data.naturalstattrick.com/playerreport.php?stype=2&sit=all&stdoi=std&rate=n&v=p&playerid=${playerId}`;
+  const { text: html } = await fetchNstTextWithCacheByUrl(URL);
   const document = parse(html);
 
   const individual = parseTable(document.getElementById("indreg"));
@@ -1037,8 +1037,8 @@ async function GetThreeYearRates(playerId: string): Promise<{
   yearlyRates: YearlyRates;
   threeYearRatesAverages: RatesData;
 }> {
-  const URL = `https://naturalstattrick.com/playerreport.php?stype=2&sit=all&stdoi=std&rate=y&v=p&playerid=${playerId}`;
-  const html = (await fetchWithCache(URL, false)) as string;
+  const URL = `https://data.naturalstattrick.com/playerreport.php?stype=2&sit=all&stdoi=std&rate=y&v=p&playerid=${playerId}`;
+  const { text: html } = await fetchNstTextWithCacheByUrl(URL);
   const document = parse(html);
 
   const individual = parseTable(document.getElementById("indreg"));
@@ -1354,8 +1354,8 @@ async function GetCareerStats(playerId: string): Promise<{
   yearlyCounts: YearlyCounts;
   careerAverageCounts: Data;
 }> {
-  const URL = `https://naturalstattrick.com/playerreport.php?stype=2&sit=all&stdoi=std&rate=n&v=p&playerid=${playerId}`;
-  const html = (await fetchWithCache(URL, false)) as string;
+  const URL = `https://data.naturalstattrick.com/playerreport.php?stype=2&sit=all&stdoi=std&rate=n&v=p&playerid=${playerId}`;
+  const { text: html } = await fetchNstTextWithCacheByUrl(URL);
   const document = parse(html);
 
   const individual = parseTable(document.getElementById("indreg"));
@@ -1735,8 +1735,8 @@ async function GetCareerRates(playerId: string): Promise<{
   yearlyRates: YearlyRates;
   careerAverageRates: RatesData;
 }> {
-  const URL = `https://naturalstattrick.com/playerreport.php?stype=2&sit=all&stdoi=std&rate=y&v=p&playerid=${playerId}`;
-  const html = (await fetchWithCache(URL, false)) as string;
+  const URL = `https://data.naturalstattrick.com/playerreport.php?stype=2&sit=all&stdoi=std&rate=y&v=p&playerid=${playerId}`;
+  const { text: html } = await fetchNstTextWithCacheByUrl(URL);
   const document = parse(html);
 
   const individual = parseTable(document.getElementById("indreg"));

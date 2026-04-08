@@ -8,10 +8,10 @@
 
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import type { NextApiRequest, NextApiResponse } from "next";
-import axios from "axios";
 import * as cheerio from "cheerio";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
+import { fetchNstTextByUrl } from "lib/nst/client";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
 import type { Element } from "domhandler";
 import { format as tzFormat, toZonedTime } from "date-fns-tz";
@@ -30,7 +30,7 @@ const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
 // --- Constants ---
 const REQUEST_INTERVAL_MS = 5000; // Delay between processing each player (5 seconds)
 const PLAYER_FETCH_BATCH_SIZE = 1000; // Supabase fetch limit
-const BASE_URL = "https://www.naturalstattrick.com/playerreport.php";
+const BASE_URL = "https://data.naturalstattrick.com/playerreport.php";
 
 // Define target table names
 const TABLE_INDIVIDUAL_COUNTS = "nst_seasonal_individual_counts";
@@ -398,13 +398,13 @@ async function fetchAndParsePlayerData(
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       // console.log(`Fetching data for Player ${playerId}, Strength ${strength}, Rate ${isRate ? 'Y':'N'} (Attempt ${attempt})`);
-      const response = await axios.get(url, { timeout: 30000 }); // Increased timeout
-      if (!response.data) {
+      const { text } = await fetchNstTextByUrl(url, { timeoutMs: 30000 });
+      if (!text) {
         console.warn(`No data received from URL: ${url}`);
         return { individualData: [], onIceData: [] };
       }
 
-      const $ = cheerio.load(response.data);
+      const $ = cheerio.load(text);
       const tables = $("table"); // Expecting two tables
 
       if (tables.length < 2) {

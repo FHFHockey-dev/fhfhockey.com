@@ -4,7 +4,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { HTMLElement, parse } from "node-html-parser";
 
-import fetchWithCache from "lib/fetchWithCache";
+import { fetchNstTextWithCacheByUrl } from "lib/nst/client";
 import { parseTime } from "lib/NHL/TOI";
 
 export type Data = {
@@ -78,9 +78,8 @@ export function parseTable(table: HTMLElement) {
 }
 
 async function getStats(playerId: string) {
-  const URL = `https://naturalstattrick.com/playerreport.php?stype=2&sit=all&stdoi=std&rate=n&v=p&playerid=${playerId}`;
-
-  const html = (await fetchWithCache(URL, false)) as string;
+  const URL = `https://data.naturalstattrick.com/playerreport.php?stype=2&sit=all&stdoi=std&rate=n&v=p&playerid=${playerId}`;
+  const { text: html } = await fetchNstTextWithCacheByUrl(URL);
   const document = parse(html);
   const individual = parseTable(document.getElementById("indreg"));
   const onIce = parseTable(document.getElementById("reg"));
