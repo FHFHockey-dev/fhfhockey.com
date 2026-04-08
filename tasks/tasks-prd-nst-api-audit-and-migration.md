@@ -97,11 +97,11 @@
   - [x] 5.5 Write the rollout checklist, rollback guidance, and operator runbook covering missing key, auth rejection, token-budget exhaustion, HTML parse drift, upstream 4xx or 5xx responses, and stale downstream data diagnosis.
   - [x] 5.6 Record the final migrated file inventory, the intentionally retained legacy tools, and the recommended follow-up cleanup items after the authenticated NST migration is complete.
 
-- [ ] 6.0 Resolve ambiguous direct-route ownership discovered during the NST audit
-  - [ ] 6.1 Decide whether `web/pages/api/v1/db/update-nst-player-reports.ts` remains an active migrated route or should be retired after confirming operational ownership.
-  - [ ] 6.2 Decide whether `web/pages/api/v1/db/update-nst-last-ten.ts` remains an active migrated route or should be retired after confirming operational ownership.
-  - [ ] 6.3 Decide whether `web/pages/api/fetch_team_table.ts` remains a supported route or is retired in favor of `functions/api/fetch_team_table.py`.
-  - [ ] 6.4 Decide whether `web/pages/api/Teams/[teamAbbreviation].ts` should be fixed, replaced, or retired because its current implementation does not match its file path contract.
+- [x] 6.0 Resolve ambiguous direct-route ownership discovered during the NST audit
+  - [x] 6.1 Decide whether `web/pages/api/v1/db/update-nst-player-reports.ts` remains an active migrated route or should be retired after confirming operational ownership.
+  - [x] 6.2 Decide whether `web/pages/api/v1/db/update-nst-last-ten.ts` remains an active migrated route or should be retired after confirming operational ownership.
+  - [x] 6.3 Decide whether `web/pages/api/fetch_team_table.ts` remains a supported route or is retired in favor of `functions/api/fetch_team_table.py`.
+  - [x] 6.4 Decide whether `web/pages/api/Teams/[teamAbbreviation].ts` should be fixed, replaced, or retired because its current implementation does not match its file path contract.
 
 - [ ] 7.0 Clean up stale NST route identity and contract drift during migration
   - [ ] 7.1 Update misleading copied file headers and route descriptions in NST ingestion files such as `update-nst-last-ten.ts`.
