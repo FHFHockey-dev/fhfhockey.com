@@ -1,30 +1,10 @@
 // /Users/tim/Desktop/FHFH/fhfhockey.com/web/components/WiGO/tableUtils.ts
 
-import {
-  formatMinutesToMMSS,
-  formatSecondsToMMSS as formatSecondsUtil
-} from "utils/formattingUtils"; // Use a consistent name
 import { TableAggregateData } from "./types";
-
-// --- <<< NEW: Define labels needing per-game DIFF calculation >>> ---
-// These are stats typically stored as cumulative totals for STD/LY/CA/3YA,
-// requiring division by GP for a meaningful comparison across those timeframes.
-const trueCountLabelsForDiff = new Set([
-  "Goals",
-  "Assists",
-  "Points",
-  "SOG",
-  "ixG",
-  "PPG",
-  "PPA",
-  "PPP",
-  "HIT",
-  "BLK",
-  "PIM",
-  "iCF"
-  // Note: ATOI/PPTOI are handled separately as they become averages.
-  // Note: IPP, OZS%, oiSH%, S%, PP% are percentages/rates already.
-]);
+import {
+  formatWigoStatValue,
+  shouldUseGpForDiff
+} from "./statMetadata";
 
 /**
  * Computes the .DIFF property for each row in the tableData based on comparing leftKey vs. rightKey.
@@ -60,7 +40,7 @@ export function computeDiffColumn( // <<< NEW Unified Function
       let diffBaseRight: number | undefined = undefined;
 
       // Determine the base values for comparison
-      if (trueCountLabelsForDiff.has(row.label)) {
+      if (shouldUseGpForDiff(row.label)) {
         // --- Calculate per-game rate for true counts ---
         const gpLeft = gpRow ? gpRow[leftKey] : null;
         const gpRight = gpRow ? gpRow[rightKey] : null;
@@ -122,63 +102,7 @@ export const formatCell = (
   columnKey: keyof Omit<TableAggregateData, "label" | "GP" | "DIFF">
 ): string => {
   const value = row[columnKey];
-  const label = row.label;
-
-  // Handle null, undefined, or non-numeric values first
-  if (value == null || typeof value !== "number" || isNaN(value)) {
-    return "-";
-  }
-
-  // --- Time Formatting ---
-  // Assumes fetchPlayerAggregatedStats now ensures these are avg SECONDS/game
-  if (label === "ATOI" || label === "PPTOI") {
-    return formatSecondsUtil(value); // Use the seconds formatter
-  }
-
-  // --- Percentage Formatting ---
-  // Assumes fetchPlayerAggregatedStats ensures these are scaled 0-100
-  if (
-    label === "S%" ||
-    label === "PP%" ||
-    label === "oiSH%" ||
-    label === "IPP" ||
-    label === "OZS%" ||
-    label === "PTS1%"
-  ) {
-    // Also catch dynamic percentages if needed: || label.endsWith('%') || label.endsWith('_pct')
-    return `${value.toFixed(1)}%`;
-  }
-
-  // --- Rate Formatting ---
-  if (label.includes("/60")) {
-    return value.toFixed(2); // Typically show 2 decimal places for /60 rates
-  }
-
-  // --- Integer Count Formatting ---
-  // Add any other known integer counts if needed
-  if (
-    label === "GP" ||
-    label === "Goals" ||
-    label === "Assists" ||
-    label === "Points" ||
-    label === "SOG" ||
-    label === "PPG" ||
-    label === "PPA" ||
-    label === "PPP" ||
-    label === "HIT" ||
-    label === "BLK" ||
-    label === "PIM" ||
-    label === "iCF"
-  ) {
-    // Check if it's effectively an integer (within tolerance for floating point issues if needed)
-    // Or just round if values might have decimals from averaging (e.g., L5 GP)
-    return Math.round(value).toString();
-  }
-
-  // --- Default Formatting ---
-  // For other numbers (like ixG, potentially some averages not caught above)
-  // Default to 1 decimal place
-  return value.toFixed(1);
+  return formatWigoStatValue(row.label, value);
 };
 
 /**

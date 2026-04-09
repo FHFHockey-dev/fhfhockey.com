@@ -2,6 +2,7 @@
 
 - `web/tasks/prd-wigo-charts-optimization.md` - Source PRD that defines the WiGO optimization scope and acceptance criteria.
 - `web/pages/wigoCharts.tsx` - Main WiGO page that needs orchestration and layout refactoring.
+- `web/pages/draft-dashboard.tsx` - Non-WiGO page updated to remove a build blocker discovered during parent-task validation.
 - `web/hooks/useCurrentSeason.ts` - Shared season lookup hook that should be folded into a more coherent WiGO data-loading flow.
 - `web/hooks/useWigoPlayerDashboard.ts` - Proposed new page-level data hook for selected player, season, branding, aggregates, and statuses.
 - `web/hooks/useWigoPlayerDashboard.test.ts` - Unit tests for the new page-level WiGO data orchestration hook.
@@ -58,12 +59,12 @@
 
 ## Tasks
 
-- [ ] 1.0 Define the canonical WiGO data contract and stat metadata layer
-  - [ ] 1.1 Inventory every stat displayed across WiGO tables and charts, including label, source field, unit, chart unit, display unit, and diff strategy.
-  - [ ] 1.2 Create a shared stat metadata module that defines formatter rules, count-vs-rate semantics, percentage scaling behavior, and drilldown chart behavior.
-  - [ ] 1.3 Refactor `tableUtils.ts` to consume the shared stat metadata instead of relying primarily on hard-coded label sets.
-  - [ ] 1.4 Normalize TOI, PP TOI, and percentage handling in `fetchWigoPlayerStats.ts` so each value is transformed exactly once before reaching presentation components.
-  - [ ] 1.5 Add unit tests covering diff calculation, count-per-game comparison rules, percentage formatting, TOI formatting, and missing-data fallbacks.
+- [x] 1.0 Define the canonical WiGO data contract and stat metadata layer
+  - [x] 1.1 Inventory every stat displayed across WiGO tables and charts, including label, source field, unit, chart unit, display unit, and diff strategy.
+  - [x] 1.2 Create a shared stat metadata module that defines formatter rules, count-vs-rate semantics, percentage scaling behavior, and drilldown chart behavior.
+  - [x] 1.3 Refactor `tableUtils.ts` to consume the shared stat metadata instead of relying primarily on hard-coded label sets.
+  - [x] 1.4 Normalize TOI, PP TOI, and percentage handling in `fetchWigoPlayerStats.ts` so each value is transformed exactly once before reaching presentation components.
+  - [x] 1.5 Add unit tests covering diff calculation, count-per-game comparison rules, percentage formatting, TOI formatting, and missing-data fallbacks.
 
 - [ ] 2.0 Build a shared WiGO page data layer and remove redundant fetch orchestration
   - [ ] 2.1 Create a page-level WiGO dashboard hook or provider that resolves selected player, team branding, current season, aggregate table data, and shared loading/error states.
