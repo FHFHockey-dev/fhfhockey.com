@@ -232,3 +232,9 @@ export default function AuthCallbackPage() {
     </Container>
   );
 }
+
+export async function getServerSideProps() {
+  return {
+    props: {}
+  };
+}

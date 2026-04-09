@@ -44,15 +44,23 @@ type UnitsHistoryMap = Record<number, UnitHistoryEntry[]>;
 type Props = {
   teamId: number;
   gameId: number;
+  teamAbbreviation?: string;
 };
 
 const UNIT_ORDER = [1, 2, 3] as const;
 
-export default function PowerPlayCombos({ teamId, gameId }: Props) {
+export default function PowerPlayCombos({
+  teamId,
+  gameId,
+  teamAbbreviation
+}: Props) {
   const season = useCurrentSeason();
   const seasonId = season?.seasonId;
   const [units, setUnits] = useState<UnitsMap>({});
   const [history, setHistory] = useState<UnitsHistoryMap>({});
+  const [ppShotShareByPlayerId, setPpShotShareByPlayerId] = useState<
+    Record<number, number | null>
+  >({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedUnit, setExpandedUnit] = useState<number | null>(null);
@@ -280,10 +288,63 @@ export default function PowerPlayCombos({ teamId, gameId }: Props) {
     };
   }, [seasonId, teamId, gameId]);
 
+  useEffect(() => {
+    if (!teamAbbreviation) {
+      setPpShotShareByPlayerId({});
+      return;
+    }
+    const activeTeamAbbreviation: string = teamAbbreviation;
+
+    let cancelled = false;
+
+    async function loadShotShare() {
+      try {
+        const response = await fetch(
+          `/api/v1/splits?team=${encodeURIComponent(activeTeamAbbreviation)}`
+        );
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const payload = (await response.json()) as {
+          ppShotShare?: Array<{ playerId: number; ppShotSharePct: number | null }>;
+        };
+        if (cancelled) {
+          return;
+        }
+
+        const nextMap: Record<number, number | null> = {};
+        (payload.ppShotShare ?? []).forEach((row) => {
+          nextMap[row.playerId] = row.ppShotSharePct ?? null;
+        });
+        setPpShotShareByPlayerId(nextMap);
+      } catch (cause) {
+        console.error("Failed to load PP shot share context", cause);
+        if (!cancelled) {
+          setPpShotShareByPlayerId({});
+        }
+      }
+    }
+
+    void loadShotShare();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [teamAbbreviation]);
+
   const unitNumbers = useMemo(
     () => UNIT_ORDER.filter((unit) => (units[unit] ?? []).length > 0),
     [units]
   );
+
+  const formatShotShare = useCallback((value: number | null | undefined) => {
+    if (value == null) {
+      return null;
+    }
+
+    return `${(value * 100).toFixed(1)}% team PP shots`;
+  }, []);
 
   if (!teamId || !gameId) {
     return null;
@@ -348,7 +409,12 @@ export default function PowerPlayCombos({ teamId, gameId }: Props) {
                           : "—"}
                       </span>
                       <span className={styles.playerName}>
-                        {player.displayName}
+                        <span>{player.displayName}</span>
+                        {ppShotShareByPlayerId[player.playerId] != null ? (
+                          <span className={styles.playerDetail}>
+                            {formatShotShare(ppShotShareByPlayerId[player.playerId])}
+                          </span>
+                        ) : null}
                       </span>
                       {player.position ? (
                         <span className={styles.playerPosition}>
@@ -397,7 +463,14 @@ export default function PowerPlayCombos({ teamId, gameId }: Props) {
                                       : "—"}
                                   </span>
                                   <span className={styles.playerName}>
-                                    {player.displayName}
+                                    <span>{player.displayName}</span>
+                                    {ppShotShareByPlayerId[player.playerId] != null ? (
+                                      <span className={styles.playerDetail}>
+                                        {formatShotShare(
+                                          ppShotShareByPlayerId[player.playerId]
+                                        )}
+                                      </span>
+                                    ) : null}
                                   </span>
                                   {player.position ? (
                                     <span className={styles.playerPosition}>

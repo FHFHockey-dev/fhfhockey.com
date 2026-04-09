@@ -50,6 +50,14 @@
 - `web/__tests__/pages/trends/index.test.tsx` - Route-level regression tests for trends landing changes and new entry points.
 - `web/__tests__/pages/stats/team/[teamAbbreviation].test.tsx` - Route-level team-page tests for new modules, navigation, and canonical behavior.
 - `web/__tests__/pages/splits/index.test.tsx` - New route-level tests for the dedicated splits surface if this route is introduced.
+- `web/lib/splits/splitsSurface.ts` - Shared splits response types and calculation helpers for matchup cards, PP shot share, and fantasy-priority leader ranking.
+- `web/lib/splits/splitsServer.ts` - Server-side composition layer that reuses underlying-stats and team-context data to build the splits surface payload.
+- `web/lib/splits/splitsSurface.test.ts` - Helper-level coverage for PP shot-share derivation, fantasy leader ranking, and matchup-card shaping.
+- `web/__tests__/pages/api/v1/splits/index.test.ts` - API-route coverage for splits request validation and payload passthrough.
+- `web/pages/splits/splits.module.scss` - Styling for the dedicated splits route.
+- `web/components/PowerPlayCombos/PowerPlayCombos.module.scss` - Styling support for the new PP shot-share detail labels inside the current PP-unit surface.
+- `web/pages/auth/callback.tsx` - Auth callback page updated to opt out of static prerendering so roadmap work can still pass production build verification.
+- `web/pages/auth/reset-password.tsx` - Password-reset page updated to opt out of static prerendering so roadmap work can still pass production build verification.
 
 ### Notes
 
@@ -84,15 +92,15 @@
   - [x] 3.5 Extend or normalize the supporting trend APIs and data shapers so the UI receives explicit comparison-ready outputs instead of raw rolling metrics with ambiguous labels.
   - [x] 3.6 Add route-level and helper-level tests covering baseline-mode switching, URL state, and trend-summary rendering.
 
-- [ ] 4.0 Deliver the strongest fantasy-decision additions: splits, L10 context, and PP shot-share
-  - [ ] 4.1 Decide whether the splits experience fits cleanly into trends or should become a dedicated route; if a dedicated route is cleaner, create `/splits` as the canonical player-vs-team and team-vs-team surface.
-  - [ ] 4.2 Define the strong-v1 split-query contract for player-versus-team and team-versus-team outputs, with fantasy-oriented summaries and ranking behavior rather than raw historical dumps.
-  - [ ] 4.3 Implement the supporting API and query layer for split results, reusing existing team-context and underlying-stat helpers where possible instead of building isolated duplicate data paths.
-  - [ ] 4.4 Build an L10-style team-context module that combines recent team offense, defense, and special-teams context with opponent framing so users can make matchup decisions without manually joining multiple pages.
-  - [ ] 4.5 Expose player PP shot share as a dedicated user-facing metric and keep it explicitly separate from PP TOI share, PP usage share, or unit membership.
-  - [ ] 4.6 Integrate PP shot-share output with existing PP personnel and line-context displays so the feature explains role and opportunity together.
-  - [ ] 4.7 Add navigation hooks from trends, team pages, lines pages, and start-chart-adjacent surfaces into the new splits and recent-context modules.
-  - [ ] 4.8 Add route, API, and calculation tests for split-query correctness, L10-context shaping, and PP shot-share derivation.
+- [x] 4.0 Deliver the strongest fantasy-decision additions: splits, L10 context, and PP shot-share
+  - [x] 4.1 Decide whether the splits experience fits cleanly into trends or should become a dedicated route; if a dedicated route is cleaner, create `/splits` as the canonical player-vs-team and team-vs-team surface.
+  - [x] 4.2 Define the strong-v1 split-query contract for player-versus-team and team-versus-team outputs, with fantasy-oriented summaries and ranking behavior rather than raw historical dumps.
+  - [x] 4.3 Implement the supporting API and query layer for split results, reusing existing team-context and underlying-stat helpers where possible instead of building isolated duplicate data paths.
+  - [x] 4.4 Build an L10-style team-context module that combines recent team offense, defense, and special-teams context with opponent framing so users can make matchup decisions without manually joining multiple pages.
+  - [x] 4.5 Expose player PP shot share as a dedicated user-facing metric and keep it explicitly separate from PP TOI share, PP usage share, or unit membership.
+  - [x] 4.6 Integrate PP shot-share output with existing PP personnel and line-context displays so the feature explains role and opportunity together.
+  - [x] 4.7 Add navigation hooks from trends, team pages, lines pages, and start-chart-adjacent surfaces into the new splits and recent-context modules.
+  - [x] 4.8 Add route, API, and calculation tests for split-query correctness, L10-context shaping, and PP shot-share derivation.
 
 - [ ] 5.0 Expand team pages and lines pages into the main team-context workflow
   - [ ] 5.1 Keep the current team route as the primary team destination and remove any ambiguity about which route should own new team-context modules.

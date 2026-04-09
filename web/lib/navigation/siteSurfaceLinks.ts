@@ -36,6 +36,11 @@ export const HOME_SURFACE_LINKS: SiteSurfaceLink[] = [
 
 export const TRENDS_SURFACE_LINKS: SiteSurfaceLink[] = [
   {
+    href: "/splits",
+    label: "Splits",
+    description: "Move recent form into player-vs-team and matchup split context."
+  },
+  {
     href: "/start-chart",
     label: "Starter Board",
     description: "Carry recent-form context into start or sit decisions."
@@ -58,6 +63,11 @@ export const TRENDS_SURFACE_LINKS: SiteSurfaceLink[] = [
 ];
 
 export const START_CHART_SURFACE_LINKS: SiteSurfaceLink[] = [
+  {
+    href: "/splits",
+    label: "Splits",
+    description: "Open player-vs-team and L10 matchup context for the slate."
+  },
   {
     href: "/trends",
     label: "Trends Dashboard",
@@ -121,9 +131,32 @@ export const GAME_GRID_SURFACE_LINKS: SiteSurfaceLink[] = [
   }
 ];
 
+export const SPLITS_SURFACE_LINKS: SiteSurfaceLink[] = [
+  {
+    href: "/trends",
+    label: "Trends Dashboard",
+    description: "Cross-check split targets against recent-form movement."
+  },
+  {
+    href: "/lines",
+    label: "Lines",
+    description: "Confirm deployment and PP personnel behind the split edge."
+  },
+  {
+    href: "/start-chart",
+    label: "Starter Board",
+    description: "Carry split context straight into the slate decision board."
+  }
+];
+
 export const getTeamSurfaceLinks = (
   teamAbbreviation: string
 ): SiteSurfaceLink[] => [
+  {
+    href: `/splits?team=${teamAbbreviation}`,
+    label: "Splits",
+    description: "Open player-vs-team and L10 matchup context for this club."
+  },
   {
     href: `/lines/${teamAbbreviation}`,
     label: "Team Lines",
@@ -149,6 +182,11 @@ export const getTeamSurfaceLinks = (
 export const getLinesSurfaceLinks = (
   teamAbbreviation: string
 ): SiteSurfaceLink[] => [
+  {
+    href: `/splits?team=${teamAbbreviation}`,
+    label: "Splits",
+    description: "Connect the current units to player-vs-team and PP shot-share context."
+  },
   {
     href: `/stats/team/${teamAbbreviation}`,
     label: "Team HQ",

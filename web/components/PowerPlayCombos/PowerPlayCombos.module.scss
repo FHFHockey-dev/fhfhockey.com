@@ -175,9 +175,18 @@
 }
 
 .playerName {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   font-family: vars.$font-family-primary;
   font-size: vars.$font-size-xs;
   color: vars.$text-primary;
+}
+
+.playerDetail {
+  font-size: vars.$font-size-xxs;
+  letter-spacing: 0.05em;
+  color: vars.$text-secondary;
 }
 
 .playerPosition {

@@ -291,6 +291,7 @@ export default function TeamLC({
               <PowerPlayCombos
                 teamId={teamId}
                 gameId={lineCombinations.game.id}
+                teamAbbreviation={mappedAbbreviation}
               />
             </div>
           ) : null}

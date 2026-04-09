@@ -356,3 +356,9 @@ export default function ResetPasswordPage() {
     </Container>
   );
 }
+
+export async function getServerSideProps() {
+  return {
+    props: {}
+  };
+}

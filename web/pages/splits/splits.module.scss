@@ -1,0 +1,252 @@
+@use "styles/vars";
+
+.page {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: vars.$space-lg;
+  display: flex;
+  flex-direction: column;
+  gap: vars.$space-lg;
+}
+
+.hero {
+  padding: vars.$space-lg;
+  border-radius: vars.$border-radius-lg;
+  border: 1px solid rgba(vars.$border-secondary, 0.9);
+  background:
+    radial-gradient(circle at top right, rgba(vars.$primary-color, 0.18), transparent 40%),
+    linear-gradient(135deg, rgba(vars.$background-light, 0.96), rgba(vars.$background-medium, 0.9));
+  box-shadow: vars.$desktop-panel-shadow;
+}
+
+.eyebrow {
+  margin: 0 0 vars.$space-xs;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: vars.$font-size-xs;
+  color: vars.$text-secondary;
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(2rem, 3vw, 3.1rem);
+  line-height: 1.05;
+}
+
+.description {
+  max-width: 740px;
+  margin: vars.$space-sm 0 0;
+  color: vars.$text-secondary;
+  line-height: 1.6;
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: vars.$space-md;
+}
+
+.control {
+  display: flex;
+  flex-direction: column;
+  gap: vars.$space-xs;
+}
+
+.controlLabel {
+  font-size: vars.$font-size-xs;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: vars.$text-secondary;
+}
+
+.select {
+  border-radius: vars.$border-radius-md;
+  border: 1px solid rgba(vars.$border-secondary, 0.8);
+  background: rgba(vars.$background-medium, 0.92);
+  color: vars.$text-primary;
+  padding: vars.$space-sm vars.$space-md;
+  font: inherit;
+}
+
+.layout {
+  display: flex;
+  flex-direction: column;
+  gap: vars.$space-lg;
+}
+
+.section {
+  padding: vars.$space-lg;
+  border-radius: vars.$border-radius-lg;
+  border: 1px solid rgba(vars.$border-secondary, 0.85);
+  background: rgba(vars.$background-light, 0.92);
+  box-shadow: vars.$desktop-panel-shadow;
+  display: flex;
+  flex-direction: column;
+  gap: vars.$space-md;
+}
+
+.sectionHeader {
+  display: flex;
+  flex-direction: column;
+  gap: vars.$space-xs;
+}
+
+.sectionHeader h2,
+.compareCard h3 {
+  margin: 0;
+}
+
+.sectionHeader p,
+.cardDescription,
+.cardMeta,
+.status,
+.error {
+  margin: 0;
+  color: vars.$text-secondary;
+}
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: vars.$space-sm vars.$space-xs;
+  border-bottom: 1px solid rgba(vars.$border-secondary, 0.4);
+  text-align: left;
+}
+
+.table th {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: vars.$font-size-xxs;
+  color: vars.$text-secondary;
+}
+
+.inlineMeta {
+  margin-left: vars.$space-xs;
+  font-size: vars.$font-size-xxs;
+  color: vars.$text-secondary;
+}
+
+.chips {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: vars.$space-sm;
+}
+
+.chip {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: vars.$space-sm;
+  padding: vars.$space-sm vars.$space-md;
+  border-radius: vars.$border-radius-md;
+  background: rgba(vars.$background-medium, 0.9);
+  border: 1px solid rgba(vars.$border-secondary, 0.7);
+}
+
+.cards,
+.compareGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: vars.$space-md;
+}
+
+.card,
+.compareCard {
+  padding: vars.$space-md;
+  border-radius: vars.$border-radius-md;
+  border: 1px solid rgba(vars.$border-secondary, 0.75);
+  background: rgba(vars.$background-medium, 0.88);
+}
+
+.edgeFavorable {
+  border-color: rgba(vars.$success-color, 0.55);
+}
+
+.edgeWarning {
+  border-color: rgba(vars.$danger-color, 0.55);
+}
+
+.edgeNeutral {
+  border-color: rgba(vars.$border-secondary, 0.75);
+}
+
+.cardLabel,
+.compareLabel {
+  margin: 0 0 vars.$space-xs;
+  font-size: vars.$font-size-xs;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: vars.$text-secondary;
+}
+
+.cardValueRow {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: vars.$space-sm;
+  font-size: clamp(1.5rem, 2vw, 2rem);
+}
+
+.cardDivider {
+  color: vars.$text-secondary;
+  font-size: vars.$font-size-sm;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+}
+
+.compareList {
+  margin: vars.$space-sm 0 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: vars.$space-sm;
+}
+
+.compareList div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.compareList dt {
+  font-size: vars.$font-size-xxs;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: vars.$text-secondary;
+}
+
+.compareList dd {
+  margin: 0;
+  font-family: vars.$font-family-numbers;
+}
+
+.status,
+.error {
+  padding: vars.$space-md;
+  border-radius: vars.$border-radius-md;
+  border: 1px dashed rgba(vars.$border-secondary, 0.8);
+}
+
+.error {
+  border-style: solid;
+  border-color: rgba(vars.$danger-color, 0.45);
+  color: vars.$danger-color;
+}
+
+@media screen and (max-width: vars.$breakpoint-tablet) {
+  .page {
+    padding: vars.$space-md;
+  }
+
+  .section,
+  .hero {
+    padding: vars.$space-md;
+  }
+}
