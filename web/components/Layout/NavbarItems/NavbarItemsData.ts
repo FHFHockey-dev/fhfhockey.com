@@ -28,7 +28,10 @@ const ITEMS_DATA: NavbarItem[] = [
     type: "category",
     label: "TOOLS",
     items: [
+      { type: "link", label: "TRENDS", href: "/trends" },
       { type: "link", label: "GAME GRID", href: "/game-grid" },
+      { type: "link", label: "START CHART", href: "/start-chart" },
+      { type: "link", label: "GOALIES", href: "/goalies" },
       { type: "link", label: "DRAFT TOOL", href: "/draft-dashboard" },
 
       { type: "link", label: "LINES", href: "/lines" },

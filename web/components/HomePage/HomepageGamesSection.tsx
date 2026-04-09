@@ -7,8 +7,10 @@ import "moment-timezone";
 import ClientOnly from "components/ClientOnly";
 import PanelStatus from "components/common/PanelStatus";
 import OptimizedImage from "components/common/OptimizedImage";
+import SurfaceWorkflowLinks from "components/SurfaceWorkflowLinks";
 import { buildHomepageModulePresentation } from "lib/dashboard/freshness";
 import { fallbackNHLLogo, getTeamLogoSvg } from "lib/images";
+import { HOME_SURFACE_LINKS } from "lib/navigation/siteSurfaceLinks";
 import { teamsInfo } from "lib/teamsInfo";
 import styles from "styles/Home.module.scss";
 
@@ -160,6 +162,12 @@ export default function HomepageGamesSection({
             Trend watch
           </Link>
         </div>
+
+        <SurfaceWorkflowLinks
+          title="Decision Surfaces"
+          description="Move straight from the slate into the tools that explain who to start, stream, or monitor next."
+          links={HOME_SURFACE_LINKS}
+        />
       </div>
 
       <div className={styles.gamesHeader}>

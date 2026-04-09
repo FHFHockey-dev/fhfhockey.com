@@ -7,10 +7,12 @@ import useCurrentSeason from "hooks/useCurrentSeason";
 import { useShotData, ShotDataFilters } from "hooks/useShotData";
 import { teamsInfo } from "lib/teamsInfo";
 import { LineCombinationsGrid } from "components/LineCombinations/LineCombinationsGrid";
+import SurfaceWorkflowLinks from "components/SurfaceWorkflowLinks";
 import { TeamTabNavigation } from "components/TeamTabNavigation/TeamTabNavigation";
 import TeamDropdown from "components/TeamDropdown";
 import { getTeams } from "lib/NHL/server";
 import { getTeamAbbreviationById } from "lib/teamsInfo";
+import { getTeamSurfaceLinks } from "lib/navigation/siteSurfaceLinks";
 
 // Shot data interface
 interface ShotData {
@@ -419,6 +421,12 @@ export default function TeamStatsPage({
             )}
           </div>
         </div>
+
+        <SurfaceWorkflowLinks
+          title="Next Team Workflow Step"
+          description="Carry team context into deployment, slate planning, and league-wide trend views."
+          links={getTeamSurfaceLinks(teamAbbreviation)}
+        />
 
         {/* Integrated Tab Navigation */}
         <TeamTabNavigation

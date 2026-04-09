@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { GetServerSideProps, NextPage } from "next";
 import Head from "next/head";
 import Image from "next/image";
+import SurfaceWorkflowLinks from "components/SurfaceWorkflowLinks";
 import { useDashboardData } from "hooks/useDashboardData";
 import type { DashboardData } from "lib/dashboard/dataFetchers";
 import TopMovers from "components/TopMovers/TopMovers";
@@ -16,6 +17,7 @@ import {
   type SkaterPositionGroup,
   type SkaterWindowSize
 } from "lib/trends/skaterMetricConfig";
+import { TRENDS_SURFACE_LINKS } from "lib/navigation/siteSurfaceLinks";
 import { useRouter } from "next/router";
 import supabase from "lib/supabase";
 import { getTeamAbbreviationById } from "lib/teamsInfo";
@@ -765,6 +767,12 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({
               </div>
             </div>
           </header>
+
+          <SurfaceWorkflowLinks
+            title="Decision Workflow"
+            description="Carry recent-form context into the starter board, schedule tools, deployment pages, and goalie workflow."
+            links={TRENDS_SURFACE_LINKS}
+          />
 
           <div className={styles.dashboardGrid}>
             <section className={styles.chartPanel}>

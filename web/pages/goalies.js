@@ -4,6 +4,8 @@ import React, { useEffect, useState } from "react";
 import Fetch from "lib/cors-fetch";
 import GoalieList from "components/GoaliePage/GoalieList";
 import GoalieLeaderboard from "components/GoaliePage/GoalieLeaderboard";
+import SurfaceWorkflowLinks from "components/SurfaceWorkflowLinks";
+import { GOALIE_SURFACE_LINKS } from "lib/navigation/siteSurfaceLinks";
 import styles from "styles/Goalies.module.scss";
 import {
   parseISO,
@@ -400,6 +402,11 @@ const GoalieTrends = () => {
   return (
     <div className={styles.container}>
       <h1 className={styles.headerText}>NHL Goalie Stats</h1>
+      <SurfaceWorkflowLinks
+        title="Keep The Workflow Moving"
+        description="Take goalie workload and week-level results into the starter board, trends dashboard, or weekly game grid."
+        links={GOALIE_SURFACE_LINKS}
+      />
       <div className={styles.toggleContainer}>
         <button
           className={`${styles.toggleButton} ${
