@@ -587,9 +587,21 @@ function cleanHeader(h: string): string {
     .trim();
 }
 
+function isDashPlaceholder(value: string): boolean {
+  return /^[\s\\\-‐‑‒–—―−﹘﹣－]*[\-‐‑‒–—―−﹘﹣－][\s\\\-‐‑‒–—―−﹘﹣－]*$/u.test(
+    value
+  );
+}
+
 type PlayerCacheRow = { id: number; position: string };
 let playerIdCache: Map<string, PlayerCacheRow[]> | null = null;
 const playerIdMemo = new Map<string, number | null>();
+type NstRowDebugMeta = {
+  playerName: string;
+  position: string;
+  date: string;
+  datasetType: string;
+};
 
 async function loadPlayerIdCache(): Promise<Map<string, PlayerCacheRow[]>> {
   if (playerIdCache) return playerIdCache;
@@ -836,6 +848,49 @@ async function upsertData(
           JSON.stringify(dataRows[0])
         );
       }
+
+      // Fall back to row-by-row upserts on batch failure so the offending row is identified.
+      for (const row of dataRows) {
+        const { error: singleRowError } = await supabase
+          .from(tableName)
+          .upsert([row], {
+            onConflict: "player_id,date_scraped",
+            count: "exact"
+          });
+
+        if (!singleRowError) {
+          continue;
+        }
+
+        const debugMeta = (row as { __nstDebug?: NstRowDebugMeta }).__nstDebug;
+        const decimalFields = Object.entries(row)
+          .filter(
+            ([key, value]) =>
+              key !== "__nstDebug" &&
+              typeof value === "number" &&
+              Number.isFinite(value) &&
+              !Number.isInteger(value)
+          )
+          .map(([key, value]) => `${key}=${value}`);
+
+        console.error("Identified failing NST row during single-row retry.", {
+          datasetType,
+          tableName,
+          playerName: debugMeta?.playerName ?? null,
+          position: debugMeta?.position ?? null,
+          date: debugMeta?.date ?? null,
+          singleRowError: singleRowError.details || singleRowError.message,
+          decimalFields
+        });
+        console.error(
+          "Failing row payload:",
+          JSON.stringify(row, (_key, value) =>
+            _key === "__nstDebug" ? undefined : value
+          )
+        );
+        break;
+      }
+
       return { success: false, count: 0 };
     }
 
@@ -966,10 +1021,19 @@ async function fetchAndParseData(
         let playerFullName: string | null = null;
         let playerPosition: string | null = null;
         let playerTeam: string | null = null;
+        const cells = $(tr).find("td");
+        if (cells.length !== headers.length) {
+          const rowPreview = cells
+            .toArray()
+            .slice(0, 8)
+            .map((td) => cleanHeader($(td).text()))
+            .join(" | ");
+          console.warn(
+            `td/header mismatch for ${datasetType} ${effectiveDate}: headers=${headers.length}, tds=${cells.length}, preview="${rowPreview}"`
+          );
+        }
 
-        $(tr)
-          .find("td")
-          .each((i, td) => {
+        cells.each((i, td) => {
             if (i >= headers.length) return;
 
             const originalHeader = headers[i];
@@ -992,8 +1056,10 @@ async function fetchAndParseData(
 
             let cellText: string | null = $(td).text().trim();
 
-            if (cellText === "-" || cellText === "" || cellText === "\\-") {
+            if (cellText === "") {
               cellText = null;
+            } else if (isDashPlaceholder(cellText)) {
+              cellText = "0";
             }
 
             if (cellText !== null) {
@@ -1077,6 +1143,16 @@ async function fetchAndParseData(
         row["player_id"] = playerId;
         delete row["_player_full_name_temp"];
         delete row["_player_position_temp"];
+        Object.defineProperty(row, "__nstDebug", {
+          value: {
+            playerName: playerFullName,
+            position: playerPosition,
+            date: effectiveDate,
+            datasetType
+          } satisfies NstRowDebugMeta,
+          enumerable: false,
+          configurable: true
+        });
 
         dataRowsWithPlayerIds.push(row);
       }
