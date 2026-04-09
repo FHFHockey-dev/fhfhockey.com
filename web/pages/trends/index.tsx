@@ -2,7 +2,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { GetServerSideProps, NextPage } from "next";
 import Head from "next/head";
 import Image from "next/image";
+import Link from "next/link";
 import SurfaceWorkflowLinks from "components/SurfaceWorkflowLinks";
+import GoalieShareChart from "components/GoalieShareChart";
 import { useDashboardData } from "hooks/useDashboardData";
 import type { DashboardData } from "lib/dashboard/dataFetchers";
 import TopMovers from "components/TopMovers/TopMovers";
@@ -13,11 +15,18 @@ import {
 } from "lib/trends/teamMetricConfig";
 import {
   SKATER_TREND_CATEGORIES,
+  SKATER_WINDOW_OPTIONS,
   type SkaterTrendCategoryId,
   type SkaterPositionGroup,
   type SkaterWindowSize
 } from "lib/trends/skaterMetricConfig";
 import { TRENDS_SURFACE_LINKS } from "lib/navigation/siteSurfaceLinks";
+import {
+  DEFERRED_PLAYER_BASELINE_NOTE,
+  LOCKED_PLAYER_BASELINES,
+  buildSkaterRecentSummaryCards,
+  formatSkaterTrendWindowLabel
+} from "lib/trends/trendsSurface";
 import { useRouter } from "next/router";
 import supabase from "lib/supabase";
 import { getTeamAbbreviationById } from "lib/teamsInfo";
@@ -509,6 +518,16 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({
     );
   }, [skaterCategory]);
 
+  const skaterSummaryCards = useMemo(
+    () =>
+      buildSkaterRecentSummaryCards({
+        categories: data?.skaterTrends?.categories ?? {},
+        playerMetadata: data?.skaterTrends?.playerMetadata ?? {},
+        windowSize: skaterWindow
+      }),
+    [data, skaterWindow]
+  );
+
   const skaterTrendSeries = useMemo(() => {
     const rankings = skaterCategoryData.rankings ?? [];
     const topPlayers = rankings
@@ -773,6 +792,75 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({
             description="Carry recent-form context into the starter board, schedule tools, deployment pages, and goalie workflow."
             links={TRENDS_SURFACE_LINKS}
           />
+
+          <section className={styles.summaryBand}>
+            <div className={styles.summaryBandHeader}>
+              <div>
+                <h2 className={styles.panelTitle}>Recent-Form Scan</h2>
+                <p className={styles.summaryBandCopy}>
+                  Scan deployment, shot pressure, PP usage, and chance creation
+                  before drilling into a player trend page.
+                </p>
+              </div>
+              <div className={styles.summaryBandMeta}>
+                <span className={styles.panelMeta}>
+                  Window {formatSkaterTrendWindowLabel(skaterWindow)}
+                </span>
+                <span className={styles.summaryContract}>
+                  Strong v1 baselines:{" "}
+                  {LOCKED_PLAYER_BASELINES.map((baseline) => baseline.label).join(
+                    ", "
+                  )}
+                  .
+                </span>
+                <span className={styles.summaryContract}>
+                  {DEFERRED_PLAYER_BASELINE_NOTE}
+                </span>
+              </div>
+            </div>
+
+            <div className={styles.summaryBandGrid}>
+              {skaterSummaryCards.map((card) => (
+                <article key={card.categoryId} className={styles.summaryCard}>
+                  <div className={styles.summaryCardHeader}>
+                    <div>
+                      <h3 className={styles.summaryCardTitle}>{card.label}</h3>
+                      <p className={styles.summaryCardCopy}>{card.description}</p>
+                    </div>
+                    <span className={styles.summaryBadge}>{card.windowLabel}</span>
+                  </div>
+                  <ul className={styles.summaryLeaderList}>
+                    {card.leaders.length === 0 ? (
+                      <li className={styles.summaryEmpty}>No recent trend leaders yet.</li>
+                    ) : (
+                      card.leaders.map((leader) => (
+                        <li key={leader.playerId} className={styles.summaryLeaderRow}>
+                          <div className={styles.summaryLeaderText}>
+                            <Link
+                              href={`/trends/player/${leader.playerId}`}
+                              className={styles.summaryLeaderLink}
+                            >
+                              {leader.fullName}
+                            </Link>
+                            <span className={styles.summaryLeaderMeta}>
+                              {leader.teamAbbrev ?? "FA"}
+                              {leader.position ? ` · ${leader.position}` : ""}
+                            </span>
+                          </div>
+                          <div className={styles.summaryLeaderMetrics}>
+                            <span className={styles.summaryLeaderValue}>
+                              {formatPercent(leader.percentile)}
+                            </span>
+                            <ArrowDelta delta={leader.delta} />
+                          </div>
+                        </li>
+                      ))
+                    )}
+                  </ul>
+                </article>
+              ))}
+            </div>
+          </section>
 
           <div className={styles.dashboardGrid}>
             <section className={styles.chartPanel}>
@@ -1215,7 +1303,7 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({
                         className={styles.windowToggle}
                         aria-label="Skater window size"
                       >
-                        {([1, 3, 5, 10] as SkaterWindowSize[]).map(
+                        {(SKATER_WINDOW_OPTIONS as readonly SkaterWindowSize[]).map(
                           (windowSize) => (
                             <button
                               key={windowSize}
@@ -1288,6 +1376,20 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({
               )}
             </section>
           </div>
+
+          <section className={`${styles.panel} ${styles.goalieSharePanel}`}>
+            <div className={styles.panelHeader}>
+              <h2 className={styles.panelTitle}>Goalie Workload Share</h2>
+              <span className={styles.panelMeta}>L10 to season</span>
+            </div>
+            <div className={styles.goalieShareBody}>
+              <p className={styles.summaryBandCopy}>
+                Use the existing goalie-share chart here as the workload context
+                companion to the goalie starts table.
+              </p>
+              <GoalieShareChart />
+            </div>
+          </section>
         </main>
       </div>
     </>

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ResponsiveContainer,
   LineChart,
@@ -22,6 +22,15 @@ import {
   parseForgeOriginParam,
   parseForgeReturnToParam
 } from "lib/dashboard/forgeLinks";
+import {
+  DEFERRED_PLAYER_BASELINE_NOTE,
+  LOCKED_PLAYER_BASELINES,
+  PLAYER_QUICK_VIEWS,
+  isLockedPlayerBaselineMode,
+  isPlayerQuickViewId,
+  type LockedPlayerBaselineMode,
+  type PlayerQuickViewId
+} from "lib/trends/trendsSurface";
 import supabase from "lib/supabase";
 import styles from "./playerTrendPage.module.scss";
 
@@ -40,7 +49,8 @@ const ROLLING_WINDOW_OPTIONS = [
   { key: "all", label: "Cumulative" }
 ] as const;
 
-type BaselineMode = (typeof BASELINE_OPTIONS)[number]["key"];
+type BaselineMode = (typeof BASELINE_OPTIONS)[number]["key"] &
+  LockedPlayerBaselineMode;
 type RollingWindowMode = (typeof ROLLING_WINDOW_OPTIONS)[number]["key"];
 
 const METRIC_GROUPS = [
@@ -344,8 +354,39 @@ type StreakSummary = {
   averageDelta: number;
 };
 
+type QuickComparisonCard = {
+  metricKey: MetricKey;
+  label: string;
+  recentValue: number | null;
+  baselineValue: number | null;
+  deltaPct: number | null;
+  sampleLabel: string;
+};
+
 function getMetricField(metricKey: MetricKey, mode: RollingWindowMode | BaselineMode) {
   return `${metricKey}_${mode}`;
+}
+
+function parseRollingWindowMode(input: unknown): RollingWindowMode {
+  if (typeof input === "string") {
+    const candidate = ROLLING_WINDOW_OPTIONS.find((option) => option.key === input);
+    if (candidate) return candidate.key;
+  }
+  return "last5";
+}
+
+function parseBaselineMode(input: unknown): BaselineMode {
+  if (isLockedPlayerBaselineMode(input)) {
+    return input;
+  }
+  return "season";
+}
+
+function parseQuickViewMode(input: unknown): PlayerQuickViewId {
+  if (isPlayerQuickViewId(input)) {
+    return input;
+  }
+  return "rolling10";
 }
 
 function getLegacyScope(scope: RollingWindowMode | BaselineMode): string {
@@ -390,6 +431,7 @@ function resolveMetricValue(
 function buildSelectClause() {
   const fields = new Set<string>(["game_date"]);
   METRIC_CONFIG.forEach((metric) => {
+    fields.add(metric.key);
     ROLLING_WINDOW_OPTIONS.forEach((option) => {
       getMetricFieldCandidates(metric, option.key).forEach((field) =>
         fields.add(field)
@@ -421,9 +463,82 @@ function getTodayEt(): string {
   return `${y}-${m}-${d}`;
 }
 
+function resolveRawMetricValue(
+  row: RollingMetricRow,
+  metric: MetricConfig
+): number | null {
+  const rawValue = row[metric.key];
+  if (rawValue === null || rawValue === undefined) return null;
+  const numericValue = Number(rawValue);
+  return Number.isFinite(numericValue) ? numericValue : null;
+}
+
+function averageMetricByRecentDays(
+  rows: RollingMetricRow[],
+  metric: MetricConfig,
+  days: number
+): { value: number | null; games: number } {
+  if (!rows.length) {
+    return { value: null, games: 0 };
+  }
+
+  const latestGameDate = rows[rows.length - 1]?.game_date;
+  if (!latestGameDate) {
+    return { value: null, games: 0 };
+  }
+
+  const latestTs = Date.parse(`${latestGameDate}T12:00:00.000Z`);
+  if (!Number.isFinite(latestTs)) {
+    return { value: null, games: 0 };
+  }
+
+  const cutoffTs = latestTs - (days - 1) * 86_400_000;
+  const values = rows
+    .filter((row) => {
+      const gameTs = Date.parse(`${row.game_date}T12:00:00.000Z`);
+      return Number.isFinite(gameTs) && gameTs >= cutoffTs && gameTs <= latestTs;
+    })
+    .map((row) => resolveRawMetricValue(row, metric))
+    .filter((value): value is number => typeof value === "number");
+
+  if (!values.length) {
+    return { value: null, games: 0 };
+  }
+
+  return {
+    value: values.reduce((sum, value) => sum + value, 0) / values.length,
+    games: values.length
+  };
+}
+
+function formatMetricDisplay(metric: MetricConfig, value: number | null): string {
+  if (value === null || value === undefined || Number.isNaN(value)) {
+    return "—";
+  }
+
+  if (metric.key === "toi_seconds") {
+    const totalSeconds = Math.max(0, Math.round(value));
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}:${String(seconds).padStart(2, "0")}`;
+  }
+
+  if (
+    metric.key.endsWith("_pct") ||
+    metric.key === "ipp" ||
+    metric.key === "pdo" ||
+    metric.key === "pp_share_pct"
+  ) {
+    return `${value.toFixed(1)}%`;
+  }
+
+  return value.toFixed(2);
+}
+
 export default function PlayerTrendPage() {
   const router = useRouter();
   const { playerId } = router.query;
+  const hasHydratedUrlState = useRef(false);
   const todayEt = useMemo(() => getTodayEt(), []);
   const handoffDate = parseForgeDateParam(router.query.date, todayEt);
   const forgeOrigin = parseForgeOriginParam(router.query.origin);
@@ -439,9 +554,98 @@ export default function PlayerTrendPage() {
   const [baselineMode, setBaselineMode] = useState<BaselineMode>("season");
   const [rollingWindowMode, setRollingWindowMode] =
     useState<RollingWindowMode>("last5");
+  const [quickViewMode, setQuickViewMode] =
+    useState<PlayerQuickViewId>("rolling10");
   const [activeGroup, setActiveGroup] = useState<(typeof METRIC_GROUPS)[number]["id"]>(
     "surface"
   );
+
+  useEffect(() => {
+    if (!router.isReady) return;
+
+    const nextBaseline = parseBaselineMode(router.query.baseline);
+    const nextWindow = parseRollingWindowMode(router.query.window);
+    const nextQuickView = parseQuickViewMode(router.query.view);
+
+    setBaselineMode((current) => (current === nextBaseline ? current : nextBaseline));
+    setRollingWindowMode((current) => (current === nextWindow ? current : nextWindow));
+    setQuickViewMode((current) => (current === nextQuickView ? current : nextQuickView));
+    hasHydratedUrlState.current = true;
+  }, [
+    hasHydratedUrlState,
+    router.isReady,
+    router.query.baseline,
+    router.query.view,
+    router.query.window
+  ]);
+
+  useEffect(() => {
+    if (
+      !router.isReady ||
+      !hasHydratedUrlState.current ||
+      typeof router.replace !== "function"
+    ) {
+      return;
+    }
+
+    const currentBaseline = Array.isArray(router.query.baseline)
+      ? router.query.baseline[0]
+      : router.query.baseline;
+    const currentWindow = Array.isArray(router.query.window)
+      ? router.query.window[0]
+      : router.query.window;
+    const currentView = Array.isArray(router.query.view)
+      ? router.query.view[0]
+      : router.query.view;
+
+    const queryHasExplicitState =
+      typeof currentBaseline === "string" ||
+      typeof currentWindow === "string" ||
+      typeof currentView === "string";
+    const parsedQueryBaseline = parseBaselineMode(currentBaseline);
+    const parsedQueryWindow = parseRollingWindowMode(currentWindow);
+    const parsedQueryView = parseQuickViewMode(currentView);
+
+    if (
+      queryHasExplicitState &&
+      (parsedQueryBaseline !== baselineMode ||
+        parsedQueryWindow !== rollingWindowMode ||
+        parsedQueryView !== quickViewMode)
+    ) {
+      return;
+    }
+
+    if (
+      currentBaseline === baselineMode &&
+      currentWindow === rollingWindowMode &&
+      currentView === quickViewMode
+    ) {
+      return;
+    }
+
+    void router.replace(
+      {
+        pathname: router.pathname,
+        query: {
+          ...router.query,
+          baseline: baselineMode,
+          window: rollingWindowMode,
+          view: quickViewMode
+        }
+      },
+      undefined,
+      { shallow: true }
+    );
+  }, [
+    baselineMode,
+    hasHydratedUrlState,
+    quickViewMode,
+    rollingWindowMode,
+    router,
+    router.isReady,
+    router.pathname,
+    router.query
+  ]);
 
   useEffect(() => {
     if (!router.isReady || !playerId) return;
@@ -598,6 +802,48 @@ export default function PlayerTrendPage() {
       })
       .sort((left, right) => Math.abs(right.latestDelta) - Math.abs(left.latestDelta));
   }, [chartDatasets, rechartsData]);
+
+  const quickComparisonCards = useMemo(() => {
+    const comparisonMetrics = chartDatasets.slice(0, 4);
+    const latestRow = data[data.length - 1];
+
+    return comparisonMetrics.map((metric) => {
+      let recentValue: number | null = null;
+      let sampleLabel = "No sample";
+
+      if (quickViewMode === "rolling10") {
+        recentValue = latestRow
+          ? resolveMetricValue(latestRow, metric, "last10")
+          : null;
+        sampleLabel = "Rolling 10 GP";
+      } else {
+        const days = quickViewMode === "l7" ? 7 : quickViewMode === "l14" ? 14 : 30;
+        const summary = averageMetricByRecentDays(data, metric, days);
+        recentValue = summary.value;
+        sampleLabel = `${quickViewMode.toUpperCase()} · ${summary.games} GP`;
+      }
+
+      const baselineValue = latestRow
+        ? resolveMetricValue(latestRow, metric, baselineMode)
+        : null;
+
+      const deltaPct =
+        recentValue !== null &&
+        baselineValue !== null &&
+        baselineValue !== 0
+          ? ((recentValue - baselineValue) / Math.abs(baselineValue)) * 100
+          : null;
+
+      return {
+        metricKey: metric.key,
+        label: metric.label,
+        recentValue,
+        baselineValue,
+        deltaPct,
+        sampleLabel
+      } satisfies QuickComparisonCard;
+    });
+  }, [baselineMode, chartDatasets, data, quickViewMode]);
 
   const handleMetricToggle = (metricKey: MetricKey) => {
     setSelectedMetrics((prev) =>
@@ -771,6 +1017,77 @@ export default function PlayerTrendPage() {
               })}
             </div>
           </section>
+        </section>
+
+        <section className={styles.quickViewPanel}>
+          <div className={styles.quickViewHeader}>
+            <div>
+              <p className={styles.baselineLabel}>Recent comparison toolkit</p>
+              <p className={styles.baselineCopy}>
+                Package recent-vs-season and recent-vs-career checks into explicit
+                calendar and rolling views instead of relying on chart reading alone.
+              </p>
+            </div>
+            <div className={styles.quickViewMeta}>
+              <span className={styles.quickViewMetaLabel}>
+                Strong v1 baselines:{" "}
+                {LOCKED_PLAYER_BASELINES.map((baseline) => baseline.label).join(", ")}
+              </span>
+              <span className={styles.quickViewMetaLabel}>
+                {DEFERRED_PLAYER_BASELINE_NOTE}
+              </span>
+            </div>
+          </div>
+          <div className={styles.quickViewToggleGroup}>
+            {PLAYER_QUICK_VIEWS.map((view) => {
+              const active = quickViewMode === view.id;
+              return (
+                <button
+                  key={view.id}
+                  type="button"
+                  onClick={() => setQuickViewMode(view.id)}
+                  className={`${styles.baselineToggle} ${
+                    active ? styles.baselineToggleActive : ""
+                  }`}
+                >
+                  {view.label}
+                </button>
+              );
+            })}
+          </div>
+          <div className={styles.quickViewGrid}>
+            {quickComparisonCards.length === 0 ? (
+              <div className={styles.quickViewEmpty}>
+                Enable at least one metric to populate the recent comparison toolkit.
+              </div>
+            ) : (
+              quickComparisonCards.map((card) => {
+                const metric = METRIC_CONFIG.find((item) => item.key === card.metricKey);
+                return (
+                  <article key={card.metricKey} className={styles.quickViewCard}>
+                    <span className={styles.summaryLabel}>{card.label}</span>
+                    <strong className={styles.quickViewValue}>
+                      {metric ? formatMetricDisplay(metric, card.recentValue) : "—"}
+                    </strong>
+                    <p className={styles.quickViewCopy}>
+                      {card.sampleLabel} vs{" "}
+                      {BASELINE_OPTIONS.find((option) => option.key === baselineMode)
+                        ?.label ?? "Baseline"}
+                    </p>
+                    <p className={styles.quickViewCopy}>
+                      Baseline{" "}
+                      {metric ? formatMetricDisplay(metric, card.baselineValue) : "—"}
+                    </p>
+                    <p className={styles.quickViewDelta}>
+                      {card.deltaPct === null
+                        ? "Delta unavailable"
+                        : `${card.deltaPct >= 0 ? "+" : ""}${card.deltaPct.toFixed(1)}%`}
+                    </p>
+                  </article>
+                );
+              })
+            )}
+          </div>
         </section>
 
         <section className={styles.summaryStrip}>

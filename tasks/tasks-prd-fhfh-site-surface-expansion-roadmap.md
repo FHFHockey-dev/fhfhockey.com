@@ -11,6 +11,8 @@
 - `web/components/Layout/NavbarItems/NavbarItemsData.ts` - Global navigation inventory where roadmap-approved top-level tool links are exposed.
 - `web/pages/trends/index.tsx` - Trends landing page that should absorb more recent-form, L10-style, and comparison-toolkit entry points.
 - `web/pages/trends/player/[playerId].tsx` - Player trend detail route that already supports rolling and historical baselines and should be extended rather than replaced.
+- `web/pages/trends/dashboard.module.scss` - Trends landing styling for the new recent-form scan and integrated goalie-workload panel.
+- `web/pages/trends/player/playerTrendPage.module.scss` - Player trend detail styling for the explicit recent comparison toolkit and quick-view cards.
 - `web/pages/wigoCharts.tsx` - Existing explanatory chart route that can host stronger over/under-performance storytelling before a brand-new page is created.
 - `web/pages/stats/team/[teamAbbreviation].tsx` - Primary team route that should remain the core team destination as schedule, shot-map, and context modules expand.
 - `web/pages/lines/[abbreviation].tsx` - Per-team lines page for deployment, PP personnel, and future timeshare or goal-share visualizations.
@@ -31,10 +33,13 @@
 - `web/lib/dashboard/teamContext.ts` - Existing team-context shaping logic that is a natural starting point for L10-style and matchup-facing modules.
 - `web/lib/underlying-stats/teamScheduleStrength.ts` - Team schedule-strength helper that can support opponent-success and upcoming-schedule context.
 - `web/lib/trends/teamPercentiles.ts` - Existing percentile/category foundation that can feed later category-coverage synthesis work.
+- `web/lib/trends/trendsSurface.ts` - Shared trends-surface helper contract for locked baseline modes, quick-view labels, and recent-form summary cards.
+- `web/lib/trends/trendsSurface.test.ts` - Helper-level regression coverage for trends-surface baseline and summary-card shaping.
 - `web/pages/api/v1/trends/team-power.ts` - Existing recent-team-context API surface that may need expansion for fantasy-facing L10 packaging.
 - `web/pages/api/v1/trends/team-sos.ts` - Existing team-schedule/opponent context route that can support matchup framing.
 - `web/pages/api/v1/trends/team-ctpi.ts` - Existing team-context API surface that may be reused instead of creating duplicate recent-form endpoints.
 - `web/pages/api/v1/start-chart.ts` - Existing matchup-planning API route whose context may need to cross-link with splits and recent-form surfaces.
+- `web/pages/api/v1/trends/skater-power.ts` - Skater recent-form API that now needs to support the stronger 20-game window contract used by the trends toolkit.
 - `web/lib/navigation/siteSurfaceLinks.ts` - Shared configuration for roadmap-approved cross-links between homepage, trends, team pages, lines, goalies, start chart, and game grid.
 - `web/components/SurfaceWorkflowLinks/SurfaceWorkflowLinks.tsx` - Reusable cross-link strip for guiding users between summary and deep-dive decision surfaces.
 - `web/components/SurfaceWorkflowLinks/SurfaceWorkflowLinks.module.scss` - Styling for the reusable roadmap cross-link strip.
@@ -71,13 +76,13 @@
   - [x] 2.5 Add lightweight downstream links from homepage summary modules into the strongest relevant deep-dive surfaces instead of trying to turn the homepage into a dense analysis page.
   - [x] 2.6 Add targeted route/component tests for homepage rendering, data fallbacks, and any corrected metric-display logic.
 
-- [ ] 3.0 Expand trends into the main recent-form and rolling-comparison toolkit
-  - [ ] 3.1 Audit the existing player trend route and explicitly lock the supported baseline modes for strong v1, with recent-vs-season and recent-vs-career treated as required and recent-vs-last-year included only if the source contract is stable.
-  - [ ] 3.2 Package the current rolling-chart capability into clearer user-facing controls for L7, L14, L30, rolling-10, and related comparison views so users do not need to infer the workflow from chart behavior alone.
-  - [ ] 3.3 Expose clearer recent-form summaries for TOI, shots, PP usage, and related fantasy metrics on the trends landing page so users can scan before drilling into a player page.
-  - [ ] 3.4 Integrate or enhance goalie-share and goalie-workload trend presentation using existing goalie-share components rather than creating a disconnected new chart surface.
-  - [ ] 3.5 Extend or normalize the supporting trend APIs and data shapers so the UI receives explicit comparison-ready outputs instead of raw rolling metrics with ambiguous labels.
-  - [ ] 3.6 Add route-level and helper-level tests covering baseline-mode switching, URL state, and trend-summary rendering.
+- [x] 3.0 Expand trends into the main recent-form and rolling-comparison toolkit
+  - [x] 3.1 Audit the existing player trend route and explicitly lock the supported baseline modes for strong v1, with recent-vs-season and recent-vs-career treated as required and recent-vs-last-year included only if the source contract is stable.
+  - [x] 3.2 Package the current rolling-chart capability into clearer user-facing controls for L7, L14, L30, rolling-10, and related comparison views so users do not need to infer the workflow from chart behavior alone.
+  - [x] 3.3 Expose clearer recent-form summaries for TOI, shots, PP usage, and related fantasy metrics on the trends landing page so users can scan before drilling into a player page.
+  - [x] 3.4 Integrate or enhance goalie-share and goalie-workload trend presentation using existing goalie-share components rather than creating a disconnected new chart surface.
+  - [x] 3.5 Extend or normalize the supporting trend APIs and data shapers so the UI receives explicit comparison-ready outputs instead of raw rolling metrics with ambiguous labels.
+  - [x] 3.6 Add route-level and helper-level tests covering baseline-mode switching, URL state, and trend-summary rendering.
 
 - [ ] 4.0 Deliver the strongest fantasy-decision additions: splits, L10 context, and PP shot-share
   - [ ] 4.1 Decide whether the splits experience fits cleanly into trends or should become a dedicated route; if a dedicated route is cleaner, create `/splits` as the canonical player-vs-team and team-vs-team surface.

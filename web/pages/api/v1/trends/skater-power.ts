@@ -42,6 +42,15 @@ type PlayerTrendRow = {
   position_code: string | null;
 };
 
+type PlayerTrendPoint = {
+  gameDate: string;
+  rawValue: number;
+  rollingAvg3: number | null;
+  rollingAvg5: number | null;
+  rollingAvg10: number | null;
+  gp: number;
+};
+
 type SeriesPoint = { gp: number; percentile: number };
 
 interface RankingEntry {
@@ -191,18 +200,21 @@ function buildSkaterServingContract(input: {
   };
 }
 
-function valueForWindow(row: PlayerTrendRow, windowSize: SkaterWindowSize) {
-  switch (windowSize) {
-    case 3:
-      return row.rolling_avg_3;
-    case 5:
-      return row.rolling_avg_5;
-    case 10:
-      return row.rolling_avg_10;
-    case 1:
-    default:
-      return row.raw_value;
+function computeTrailingAverage(
+  list: PlayerTrendPoint[],
+  index: number,
+  sampleSize: number
+): number | null {
+  const values = list
+    .slice(Math.max(0, index - sampleSize + 1), index + 1)
+    .map((entry) => entry.rawValue)
+    .filter((value) => Number.isFinite(value));
+
+  if (!values.length) {
+    return null;
   }
+
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
 function computePercentiles(
@@ -233,22 +245,34 @@ function buildCategoryResult(
   windowSize: SkaterWindowSize,
   limit: number
 ): CategoryResult {
-  const byPlayer = new Map<
-    number,
-    Array<{ gameDate: string; value: number; gp: number }>
-  >();
+  const byPlayer = new Map<number, PlayerTrendPoint[]>();
 
   rows.forEach((row) => {
-    const value = valueForWindow(row, windowSize);
-    if (value === null || value === undefined || !Number.isFinite(value))
+    if (row.raw_value === null || row.raw_value === undefined) {
       return;
+    }
+    const rawValue = Number(row.raw_value);
+    if (!Number.isFinite(rawValue)) return;
+
     if (!byPlayer.has(row.player_id)) {
       byPlayer.set(row.player_id, []);
     }
     const list = byPlayer.get(row.player_id)!;
     list.push({
       gameDate: row.game_date,
-      value: Number(value),
+      rawValue,
+      rollingAvg3:
+        row.rolling_avg_3 === null || row.rolling_avg_3 === undefined
+          ? null
+          : Number(row.rolling_avg_3),
+      rollingAvg5:
+        row.rolling_avg_5 === null || row.rolling_avg_5 === undefined
+          ? null
+          : Number(row.rolling_avg_5),
+      rollingAvg10:
+        row.rolling_avg_10 === null || row.rolling_avg_10 === undefined
+          ? null
+          : Number(row.rolling_avg_10),
       gp: 0
     });
   });
@@ -273,7 +297,29 @@ function buildCategoryResult(
     byPlayer.forEach((list, playerId) => {
       const point = list[gp - 1];
       if (!point) return;
-      entries.push({ playerId, value: point.value });
+
+      let value: number | null;
+      switch (windowSize) {
+        case 3:
+          value = point.rollingAvg3 ?? computeTrailingAverage(list, gp - 1, 3);
+          break;
+        case 5:
+          value = point.rollingAvg5 ?? computeTrailingAverage(list, gp - 1, 5);
+          break;
+        case 10:
+          value = point.rollingAvg10 ?? computeTrailingAverage(list, gp - 1, 10);
+          break;
+        case 20:
+          value = computeTrailingAverage(list, gp - 1, 20);
+          break;
+        case 1:
+        default:
+          value = point.rawValue;
+          break;
+      }
+
+      if (value === null || !Number.isFinite(value)) return;
+      entries.push({ playerId, value });
     });
     if (entries.length === 0) continue;
     const percentileMap = computePercentiles(entries, category.higherIsBetter);
@@ -295,7 +341,37 @@ function buildCategoryResult(
       const sourceList = byPlayer.get(numericId);
       const latestValue =
         sourceList && sourceList.length > 0
-          ? sourceList[sourceList.length - 1].value
+          ? (() => {
+              const latestPoint = sourceList[sourceList.length - 1];
+              if (!latestPoint) return null;
+
+              switch (windowSize) {
+                case 3:
+                  return (
+                    latestPoint.rollingAvg3 ??
+                    computeTrailingAverage(sourceList, sourceList.length - 1, 3)
+                  );
+                case 5:
+                  return (
+                    latestPoint.rollingAvg5 ??
+                    computeTrailingAverage(sourceList, sourceList.length - 1, 5)
+                  );
+                case 10:
+                  return (
+                    latestPoint.rollingAvg10 ??
+                    computeTrailingAverage(sourceList, sourceList.length - 1, 10)
+                  );
+                case 20:
+                  return computeTrailingAverage(
+                    sourceList,
+                    sourceList.length - 1,
+                    20
+                  );
+                case 1:
+                default:
+                  return latestPoint.rawValue;
+              }
+            })()
           : null;
       return {
         playerId: numericId,

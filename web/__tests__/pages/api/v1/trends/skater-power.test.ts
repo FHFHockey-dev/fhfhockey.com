@@ -225,4 +225,36 @@ describe("/api/v1/trends/skater-power", () => {
     });
     expect(res.body.serving.gapDays).toBe(0);
   });
+
+  it("supports a 20-game window by averaging the trailing raw values", async () => {
+    supabaseState.current = buildSupabaseMock(
+      Array.from({ length: 21 }, (_, index) => ({
+        player_id: 8471214,
+        game_date: `2026-02-${String(index + 1).padStart(2, "0")}`,
+        raw_value: index + 1,
+        rolling_avg_3: index + 1,
+        rolling_avg_5: index + 1,
+        rolling_avg_10: index + 1,
+        season_id: 20252026,
+        position_code: "C"
+      }))
+    );
+
+    const req: any = {
+      method: "GET",
+      query: {
+        date: "2026-02-21",
+        position: "forward",
+        window: "20",
+        limit: "10"
+      }
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.windowSize).toBe(20);
+    expect(res.body.categories.shotsPer60.rankings[0].latestValue).toBeCloseTo(11.5, 5);
+  });
 });

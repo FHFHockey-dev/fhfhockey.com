@@ -158,6 +158,82 @@
   }
 }
 
+.quickViewPanel {
+  @include v.component-wrapper;
+  display: grid;
+  gap: v.$space-md;
+  padding: v.$space-md;
+  background-color: rgba(v.$background-medium, 0.72);
+}
+
+.quickViewHeader {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: v.$space-md;
+}
+
+.quickViewMeta {
+  display: grid;
+  gap: v.$space-xxs;
+  max-width: 26rem;
+}
+
+.quickViewMetaLabel {
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+  line-height: 1.5;
+}
+
+.quickViewToggleGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: v.$space-xs;
+}
+
+.quickViewGrid {
+  display: grid;
+  gap: v.$space-sm;
+
+  @media (min-width: 768px) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.quickViewCard {
+  border-radius: v.$border-radius-md;
+  padding: v.$space-md;
+  border: 1px solid v.$border-primary;
+  background: rgba(v.$background-dark, 0.45);
+  display: grid;
+  gap: v.$space-xxs;
+}
+
+.quickViewValue {
+  font-family: v.$font-family-numbers;
+  font-size: clamp(1.25rem, 2vw, 1.8rem);
+  color: v.$color-white;
+}
+
+.quickViewCopy {
+  margin: 0;
+  color: v.$text-secondary;
+  font-size: v.$font-size-sm;
+}
+
+.quickViewDelta {
+  margin: 0;
+  color: v.$primary-color;
+  font-size: v.$font-size-sm;
+  font-family: v.$font-family-numbers;
+  font-weight: 700;
+}
+
+.quickViewEmpty {
+  color: v.$text-secondary;
+  font-size: v.$font-size-sm;
+}
+
 .summaryStrip {
   display: grid;
   gap: v.$space-sm;
