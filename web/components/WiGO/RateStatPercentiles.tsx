@@ -14,7 +14,7 @@ import {
 } from "chart.js";
 import ChartDataLabels from "chartjs-plugin-datalabels";
 import styles from "styles/wigoCharts.module.scss";
-import { fetchAllPlayerStatsForStrength } from "utils/fetchWigoPercentiles";
+import { fetchPercentileCohortForPlayer } from "utils/fetchWigoPercentiles";
 import { PlayerRawStats, PercentileStrength } from "components/WiGO/types";
 import {
   calculatePercentileRank,
@@ -233,15 +233,23 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
   const [selectedStrength, setSelectedStrength] =
     useState<PercentileStrength>("as");
   const {
-    data: allPlayersStats = [],
+    data: percentileCohort,
     isLoading,
     error
-  } = useQuery<PlayerRawStats[]>({
-    queryKey: ["wigoPercentileStats", selectedStrength, seasonId],
+  } = useQuery({
+    queryKey: ["wigoPercentileStats", selectedStrength, seasonId, playerId],
     queryFn: () =>
-      fetchAllPlayerStatsForStrength(selectedStrength, seasonId as number),
-    enabled: typeof seasonId === "number"
+      fetchPercentileCohortForPlayer(
+        selectedStrength,
+        seasonId as number,
+        playerId as number
+      ),
+    enabled: typeof seasonId === "number" && typeof playerId === "number"
   });
+  const allPlayersStats: PlayerRawStats[] = percentileCohort?.stats ?? [];
+  const usingFallbackSeason =
+    (percentileCohort?.appliedSeasonId ?? seasonId) !==
+    (percentileCohort?.requestedSeasonId ?? seasonId);
 
   const maxPossibleGp = useMemo(() => {
     const maxGpOverall = allPlayersStats.reduce(
@@ -257,8 +265,11 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
       return null;
     }
 
-    return allPlayersStats.find((player) => player.player_id === playerId)?.gp ?? null;
-  }, [allPlayersStats, playerId]);
+    const cohortGp =
+      allPlayersStats.find((player) => player.player_id === playerId)?.gp ?? null;
+
+    return percentileCohort?.canonicalPlayerGp ?? cohortGp;
+  }, [allPlayersStats, percentileCohort?.canonicalPlayerGp, playerId]);
 
   const { calculatedPercentiles, calculatedRanks } = useMemo(() => {
     if (!playerId || allPlayersStats.length === 0) {
@@ -360,11 +371,7 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
   }, [selectedPlayerGp, minGp]);
 
   const sliderMax =
-    selectedPlayerGp !== null && selectedPlayerGp > 0
-      ? selectedPlayerGp
-      : maxPossibleGp > 0
-      ? maxPossibleGp
-      : 1;
+    Math.max(selectedPlayerGp ?? 0, maxPossibleGp, 1);
 
   const combinedChartConfig = useMemo(
     () =>
@@ -457,6 +464,13 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
 
             <div className={styles.thresholdMessagesContainer}>
               {calculatedPercentiles !== null &&
+                percentileCohort?.fallbackReason && (
+                <div className={styles.thresholdMessage}>
+                  {percentileCohort.fallbackReason}
+                </div>
+              )}
+              {calculatedPercentiles !== null &&
+                !usingFallbackSeason &&
                 !selectedPlayerMeetsGpThreshold &&
                 selectedPlayerGp !== null && (
                 <div className={styles.thresholdMessage}>

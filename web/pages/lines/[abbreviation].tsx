@@ -45,6 +45,7 @@ export type SkaterStats = PlayerBasic & {
   Hits: number;
   Blocks: number;
   PlusMinus: number;
+  TOISeconds?: number;
 };
 
 export type GoalieStats = PlayerBasic & {

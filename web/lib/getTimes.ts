@@ -42,11 +42,6 @@ export default function getTimes(timeOption: TimeOption): Times {
       endTime = new Date();
       break;
     }
-    case "L5": {
-      startTime = subDays(new Date(), 5);
-      endTime = new Date();
-      break;
-    }
     case "L7": {
       startTime = subDays(new Date(), 7);
       endTime = new Date();

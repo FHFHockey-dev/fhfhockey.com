@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { format } from "date-fns";
 
 import { TimeOption } from "components/TimeOptions/TimeOptions";
 import getTimes from "lib/getTimes";
@@ -46,7 +47,9 @@ function getSinglePercentileRank(
   statType: Stat
 ) {
   const key = statMapping[statType];
-  const sorted = allStats.map((stats) => stats[key]).sort();
+  const sorted = allStats
+    .map((stats) => stats[key])
+    .sort((left, right) => left - right);
   const position = sorted.findIndex((item) => item === playerStats[key]);
 
   return Number(((position / sorted.length) * 100).toFixed(2));
@@ -82,7 +85,25 @@ export default function usePercentileRank(
     if (!playerId || !season?.seasonId) return;
     (async () => {
       setLoading(true);
-      const { StartTime, EndTime } = getTimes(timeOption);
+      let { StartTime, EndTime } = getTimes(timeOption);
+
+      if (timeOption === "SEASON") {
+        StartTime = season.regularSeasonStartDate;
+        EndTime = format(
+          new Date(
+            Math.min(Date.now(), new Date(season.regularSeasonEndDate).getTime())
+          ),
+          "yyyy-MM-dd"
+        );
+      }
+
+      if (!StartTime || !EndTime) {
+        if (mount) {
+          setLoading(false);
+          setData(undefined);
+        }
+        return;
+      }
 
       const { data: averages, error } = await supabase
         .rpc("get_skaters_avg_stats", {
