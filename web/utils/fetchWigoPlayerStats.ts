@@ -789,6 +789,13 @@ export const fetchPlayerPerGameTotals = async (
       // comes from totals as a decimal (e.g., 0.35)
       processedData.pp_toi_pct_per_game *= 100;
     }
+    if (
+      processedData &&
+      processedData.shooting_percentage !== null &&
+      Math.abs(processedData.shooting_percentage) <= 1
+    ) {
+      processedData.shooting_percentage *= 100;
+    }
 
     // console.log(`Workspaceed Per Game Totals Data for player ${playerId} (Latest Season):`, processedData);
     return processedData as SkaterTotalsData | null; // Cast to updated interface

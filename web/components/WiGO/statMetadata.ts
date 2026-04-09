@@ -396,3 +396,19 @@ export function shouldUseGpForDiff(label: string): boolean {
 export function shouldAttachGpMetadata(label: string): boolean {
   return getWigoStatMetadata(label)?.includeGpMetadata ?? false;
 }
+
+export function isWigoTimeStat(label: string): boolean {
+  return getWigoStatMetadata(label)?.formatKind === "timeSeconds";
+}
+
+export function isWigoPercentStat(label: string): boolean {
+  return getWigoStatMetadata(label)?.formatKind === "percent1";
+}
+
+export function isWigoCountChartStat(label: string): boolean {
+  const metadata = getWigoStatMetadata(label);
+
+  return (
+    metadata?.diffMode === "perGameCount" || metadata?.formatKind === "timeSeconds"
+  );
+}

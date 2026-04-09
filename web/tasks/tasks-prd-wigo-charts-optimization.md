@@ -88,12 +88,12 @@
   - [x] 4.4 Replace `next/legacy/image` usage in `PlayerHeader.tsx` with the modern Next image approach while preserving remote headshots and placeholders.
   - [x] 4.5 Simplify `NameSearchBar.tsx` async state handling and verify keyboard, blur, and selection behavior remain correct after the page refactor.
 
-- [ ] 5.0 Harden table and drilldown interactions for correctness and maintainability
-  - [ ] 5.1 Update `StatsTable.tsx` so expanding one stat correctly resets stale game-log errors and loading state before fetching the next stat.
-  - [ ] 5.2 Ensure `StatsTableRowChart.tsx` uses canonical stat formatting rules and cannot double-scale percentages or mis-handle TOI conversions.
-  - [ ] 5.3 Review `TimeframeComparison.tsx` and comparison-table highlighting logic so visible columns, diff columns, and drilldown context stay in sync on desktop and mobile.
-  - [ ] 5.4 Align `PerGameStatsTable.tsx` with the canonical stat metadata so summary values match the comparison table and trend charts.
-  - [ ] 5.5 Add focused component tests for table expansion, comparison highlighting, stat drilldown formatting, and per-game summary correctness.
+- [x] 5.0 Harden table and drilldown interactions for correctness and maintainability
+  - [x] 5.1 Update `StatsTable.tsx` so expanding one stat correctly resets stale game-log errors and loading state before fetching the next stat.
+  - [x] 5.2 Ensure `StatsTableRowChart.tsx` uses canonical stat formatting rules and cannot double-scale percentages or mis-handle TOI conversions.
+  - [x] 5.3 Review `TimeframeComparison.tsx` and comparison-table highlighting logic so visible columns, diff columns, and drilldown context stay in sync on desktop and mobile.
+  - [x] 5.4 Align `PerGameStatsTable.tsx` with the canonical stat metadata so summary values match the comparison table and trend charts.
+  - [x] 5.5 Add focused component tests for table expansion, comparison highlighting, stat drilldown formatting, and per-game summary correctness.
 
 - [ ] 6.0 Clean up WiGO technical debt and verify the full page end-to-end
   - [ ] 6.1 Remove stale comments, dead branches, old machine path remnants, and unused imports across the WiGO code path touched by this PRD.

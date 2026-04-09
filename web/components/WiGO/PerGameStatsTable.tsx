@@ -5,6 +5,7 @@ import {
   fetchPlayerPerGameTotals,
   SkaterTotalsData
 } from "utils/fetchWigoPlayerStats";
+import { formatWigoStatValue } from "./statMetadata";
 import styles from "./PerGameStatsTable.module.scss";
 
 type NumericSkaterTotalsKeys = {
@@ -43,9 +44,7 @@ const formatPercentageValue = (value: number | null | undefined): string => {
   if (value === null || value === undefined || isNaN(value)) {
     return "-";
   }
-
-  value = value * 100;
-  return `${value.toFixed(1)}%`;
+  return formatWigoStatValue("S%", value);
 };
 
 const PerGameStatsTable: React.FC<PerGameStatsTableProps> = ({
