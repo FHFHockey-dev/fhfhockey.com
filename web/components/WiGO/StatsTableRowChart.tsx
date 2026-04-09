@@ -1,4 +1,3 @@
-// /Users/tim/Desktop/FHFH/fhfhockey.com/web/components/WiGO/StatsTableRowChart.tsx
 import React, { useState, useMemo } from "react";
 import {
   LineChart,
@@ -21,7 +20,6 @@ import {
   isWigoTimeStat,
   shouldUseGpForDiff
 } from "./statMetadata";
-// Removed unused imports: letterSpacing, textTransform, useState (if not used elsewhere now)
 
 interface GameLogChartProps {
   playerId: number;
@@ -84,10 +82,6 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
     L10: false,
     L20: false
   });
-
-  // Removed unused useCurrentSeason hook as seasonId is passed via props now
-  // const currentSeasonData = useCurrentSeason();
-  // const seasonId = currentSeasonData?.seasonId || 0;
 
   const handleAverageToggle = (key: AverageKey) => {
     setVisibleAverages((prev) => ({ ...prev, [key]: !prev[key] }));

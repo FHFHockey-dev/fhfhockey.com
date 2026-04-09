@@ -1,7 +1,6 @@
-// /pages/wigoCharts.tsx
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 
-import styles from "styles/wigoCharts.module.scss"; // Main styles
+import styles from "styles/wigoCharts.module.scss";
 import { TableAggregateData } from "components/WiGO/types";
 import {
   WigoComparisonSection,
@@ -57,7 +56,6 @@ const WigoCharts: React.FC = () => {
     setRightTimeframe("CA");
   }, [selectedPlayer?.id]);
 
-  // --- <<< CHANGE: Calculate Display Data with DIFF using single raw state >>> ---
   const displayDataWithDiff = useMemo(() => {
     if (rawCombinedData.length === 0) {
       return []; // Return empty array if no raw data
@@ -65,18 +63,15 @@ const WigoCharts: React.FC = () => {
     return computeDiffColumn(rawCombinedData, leftTimeframe, rightTimeframe);
   }, [rawCombinedData, leftTimeframe, rightTimeframe]); // Dependencies
 
-  // Handler for timeframe changes (remains the same)
   const handleTimeframeCompare = useCallback((left: string, right: string) => {
     setLeftTimeframe(left as keyof TableAggregateData);
     setRightTimeframe(right as keyof TableAggregateData);
   }, []);
 
-  // Visible columns for mobile table view
   const mobileVisibleColumns = useMemo(() => {
     return [leftTimeframe, rightTimeframe] as Array<keyof TableAggregateData>;
   }, [leftTimeframe, rightTimeframe]);
 
-  // Tab button renderer
   const renderTabs = () => (
     <div className={styles.mobileTabsBar}>
       {validTabs.map((t) => (
@@ -100,7 +95,6 @@ const WigoCharts: React.FC = () => {
   return (
     <div className={styles.wigoDashHeader}>
       <div className={styles.wigoDashboardContainer}>
-        {/* Desktop/Grid view (hidden on mobile via CSS) */}
         <div
           className={styles.wigoDashboardContent}
           style={
@@ -113,15 +107,10 @@ const WigoCharts: React.FC = () => {
             } as React.CSSProperties
           }
         >
-          {/* === Grid Items START === */}
-
-          {/* --- Top Row Items (Direct Grid Children) --- */}
-          {/* --- NEW: Header Row Wrapper (Direct Grid Child) --- */}
           <div className={styles.headerRowWrapper}>
             <WigoDashboardHeader onPlayerSelect={handlePlayerSelect} />
           </div>
 
-          {/* --- NEW: Left Column Wrapper (Direct Grid Child) --- */}
           <div className={styles.leftColumnWrapper}>
             <WigoOverviewSection
               selectedPlayer={selectedPlayer}
@@ -135,7 +124,6 @@ const WigoCharts: React.FC = () => {
             />
           </div>
 
-          {/* --- NEW: Middle Column Wrapper (Direct Grid Child) --- */}
           <div className={styles.middleColumnWrapper}>
             <WigoTrendsSection
               selectedPlayer={selectedPlayer}
@@ -149,7 +137,6 @@ const WigoCharts: React.FC = () => {
             />
           </div>
 
-          {/* --- NEW: Right Column Wrapper (Direct Grid Child) --- */}
           <div className={styles.rightColumnWrapper}>
             <WigoComparisonSection
               data={displayDataWithDiff}
@@ -162,11 +149,8 @@ const WigoCharts: React.FC = () => {
               onCompare={handleTimeframeCompare}
             />
           </div>
-
-          {/* === Grid Items END === */}
         </div>
 
-        {/* Mobile/Tabbed view (hidden on desktop via CSS) */}
         <div
           className={styles.mobileContainer}
           style={

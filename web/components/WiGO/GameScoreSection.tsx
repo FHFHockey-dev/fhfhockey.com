@@ -1,5 +1,3 @@
-// /Users/tim/Desktop/FHFH/fhfhockey.com/web/components/WiGO/GameScoreSection.tsx
-
 import React from "react";
 import GameScoreLineChart from "./GameScoreLineChart";
 import WigoSectionCard from "./WigoSectionCard";
@@ -16,7 +14,7 @@ const GameScoreSection: React.FC<GameScoreSectionProps> = ({
 }) => {
   return (
     <WigoSectionCard title="Game Score">
-        <GameScoreLineChart playerId={playerId} seasonId={seasonId} />
+      <GameScoreLineChart playerId={playerId} seasonId={seasonId} />
     </WigoSectionCard>
   );
 };

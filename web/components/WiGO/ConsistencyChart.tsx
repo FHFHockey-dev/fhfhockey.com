@@ -1,13 +1,12 @@
-// components/WiGO/ConsistencyChart.tsx
 import React, { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Doughnut } from "react-chartjs-2";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, Title } from "chart.js";
 import {
   fetchPlayerGameLogConsistencyData
-} from "utils/fetchWigoPlayerStats"; // Adjust path
-import { formatPercentage } from "utils/formattingUtils"; // Adjust path
-import styles from "styles/wigoCharts.module.scss"; // Import shared styles
+} from "utils/fetchWigoPlayerStats";
+import { formatPercentage } from "utils/formattingUtils";
+import styles from "styles/wigoCharts.module.scss";
 import {
   WIGO_COLORS,
   CHART_COLORS,

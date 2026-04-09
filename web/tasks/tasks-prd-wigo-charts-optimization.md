@@ -4,6 +4,7 @@
 - `web/pages/wigoCharts.tsx` - Main WiGO page that needs orchestration and layout refactoring.
 - `web/pages/draft-dashboard.tsx` - Non-WiGO page updated to remove a build blocker discovered during parent-task validation.
 - `web/hooks/useCurrentSeason.ts` - Shared season lookup hook that should be folded into a more coherent WiGO data-loading flow.
+- `web/hooks/usePercentileRank.ts` - Legacy percentile radar hook now backed directly by the shared Supabase percentile source instead of the broken nested API route.
 - `web/hooks/useWigoPlayerDashboard.ts` - Proposed new page-level data hook for selected player, season, branding, aggregates, and statuses.
 - `web/hooks/useWigoPlayerDashboard.test.ts` - Unit tests for the new page-level WiGO data orchestration hook.
 - `web/utils/fetchWigoPlayerStats.ts` - Core WiGO aggregate, totals, and stat drilldown fetch helpers that need normalization cleanup.
@@ -28,9 +29,9 @@
 - `web/components/WiGO/PerGameStatsTable.tsx` - Per-game summary table with percentage formatting issues and repeated fetch behavior.
 - `web/components/WiGO/PerGameStatsTable.test.tsx` - Component tests for per-game rendering and stat formatting consistency.
 - `web/components/WiGO/RateStatPercentiles.tsx` - Rate percentile panel that should share canonical ranking logic and optimized data access.
-- `web/components/WiGO/RateStatPercentiles.test.tsx` - Component tests for threshold filtering, rank display, and loading/error handling.
+- `web/components/WiGO/RateStatPercentiles.test.tsx` - Component tests for percentile threshold messaging, chart payload shaping, and missing-data resilience.
 - `web/components/WiGO/PlayerRatingsDisplay.tsx` - Ratings panel that needs min-GP alignment and fetch optimization.
-- `web/components/WiGO/PlayerRatingsDisplay.test.tsx` - Component tests for ratings states, thresholds, and final value rendering.
+- `web/components/WiGO/PlayerRatingsDisplay.test.tsx` - Component tests for rendered ratings behavior across low-GP and missing-slice scenarios.
 - `web/components/WiGO/ConsistencyChart.tsx` - WiGO consistency chart that should adopt shared chart shell and normalized data semantics.
 - `web/components/WiGO/ConsistencyChart.test.tsx` - Component tests for consistency distribution rendering and empty/error states.
 - `web/components/WiGO/ToiLineChart.tsx` - TOI chart that should move to shared chart shell and standardized formatting.
@@ -50,6 +51,7 @@
 - `web/components/WiGO/WigoSectionCard.test.tsx` - Component tests for shared WiGO shell loading, error, empty, and toolbar states.
 - `web/components/CategoryCoverageChart/CategoryCoverageChart.tsx` - Adjacent percentile surface that should be evaluated for contract alignment with the rest of WiGO.
 - `web/styles/wigoCharts.module.scss` - Shared WiGO page stylesheet that should be simplified after composition cleanup.
+- `web/pages/api/v1/player/[id]/percentile-rank.ts` - Legacy percentile endpoint normalized during manual verification follow-up.
 
 ### Notes
 
@@ -95,9 +97,9 @@
   - [x] 5.4 Align `PerGameStatsTable.tsx` with the canonical stat metadata so summary values match the comparison table and trend charts.
   - [x] 5.5 Add focused component tests for table expansion, comparison highlighting, stat drilldown formatting, and per-game summary correctness.
 
-- [ ] 6.0 Clean up WiGO technical debt and verify the full page end-to-end
-  - [ ] 6.1 Remove stale comments, dead branches, old machine path remnants, and unused imports across the WiGO code path touched by this PRD.
-  - [ ] 6.2 Confirm `CategoryCoverageChart.tsx` is either aligned with the new WiGO stat contract or explicitly documented as a separate percentile source.
-  - [ ] 6.3 Add integration-level verification for representative forwards and defensemen with different GP levels, usage profiles, and missing-data scenarios.
-  - [ ] 6.4 Run targeted Jest suites for transformed utilities and WiGO components, then fix any regressions introduced by the refactor.
-  - [ ] 6.5 Perform manual desktop and mobile verification of section order, tab behavior, chart states, and cross-surface stat consistency on `/wigoCharts`.
+- [x] 6.0 Clean up WiGO technical debt and verify the full page end-to-end
+  - [x] 6.1 Remove stale comments, dead branches, old machine path remnants, and unused imports across the WiGO code path touched by this PRD.
+  - [x] 6.2 Confirm `CategoryCoverageChart.tsx` is either aligned with the new WiGO stat contract or explicitly documented as a separate percentile source.
+  - [x] 6.3 Add integration-level verification for representative forwards and defensemen with different GP levels, usage profiles, and missing-data scenarios.
+  - [x] 6.4 Run targeted Jest suites for transformed utilities and WiGO components, then fix any regressions introduced by the refactor.
+  - [x] 6.5 Perform manual desktop and mobile verification of section order, tab behavior, chart states, and cross-surface stat consistency on `/wigoCharts`.

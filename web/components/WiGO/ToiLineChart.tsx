@@ -1,4 +1,3 @@
-// components/WiGO/ToiLineChart.tsx
 import React, { useState, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Line } from "react-chartjs-2";
@@ -26,7 +25,7 @@ import { formatSecondsToMMSS, formatDateToMMDD } from "utils/formattingUtils";
 import styles from "styles/wigoCharts.module.scss";
 import zoomPlugin from "chartjs-plugin-zoom";
 import Spinner from "components/Spinner";
-import { WIGO_COLORS, CHART_COLORS, addAlpha } from "styles/wigoColors"; // Adjust path
+import { WIGO_COLORS, CHART_COLORS, addAlpha } from "styles/wigoColors";
 import WigoSectionCard from "./WigoSectionCard";
 
 ChartJS.register(

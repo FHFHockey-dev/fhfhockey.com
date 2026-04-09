@@ -1,5 +1,3 @@
-// /Users/tim/Desktop/FHFH/fhfhockey.com/web/components/WiGO/tableUtils.ts
-
 import { TableAggregateData } from "./types";
 import {
   formatWigoStatValue,
@@ -10,7 +8,7 @@ import {
  * Computes the .DIFF property for each row in the tableData based on comparing leftKey vs. rightKey.
  * Applies per-game calculation for true counts and direct comparison for rates/averages/percentages.
  */
-export function computeDiffColumn( // <<< NEW Unified Function
+export function computeDiffColumn(
   tableData: TableAggregateData[],
   leftKey: keyof TableAggregateData,
   rightKey: keyof TableAggregateData

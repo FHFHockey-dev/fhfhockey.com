@@ -1,4 +1,3 @@
-// /components/WiGO/RateStatPercentiles.tsx
 import React, { useState, useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Bar } from "react-chartjs-2";
@@ -14,8 +13,8 @@ import {
   ChartData
 } from "chart.js";
 import ChartDataLabels from "chartjs-plugin-datalabels";
-import styles from "styles/wigoCharts.module.scss"; // Assuming styles are shared or adjust path
-import { fetchAllPlayerStatsForStrength } from "utils/fetchWigoPercentiles"; // Adjust path if needed
+import styles from "styles/wigoCharts.module.scss";
+import { fetchAllPlayerStatsForStrength } from "utils/fetchWigoPercentiles";
 import { PlayerRawStats, PercentileStrength } from "components/WiGO/types";
 import {
   calculatePercentileRank,
@@ -36,17 +35,15 @@ ChartJS.register(
 interface RateStatPercentilesProps {
   playerId: number | null | undefined;
   seasonId?: number | null;
-  minGp: number; // Received from parent
-  onMinGpChange: (newMinGp: number) => void; // Handler received from parent
+  minGp: number;
+  onMinGpChange: (newMinGp: number) => void;
 }
 
-// --- Stat Definitions ---
 const ALL_STATS_TO_DISPLAY: Array<{
   label: string;
   key: string;
   higherIsBetter: boolean;
 }> = [
-  // Rate Stats
   { label: "TOI/GP", key: "toi_per_gp_calc", higherIsBetter: true },
   { label: "G/60", key: "goals_per_60", higherIsBetter: true },
   { label: "A/60", key: "total_assists_per_60", higherIsBetter: true },
@@ -58,7 +55,6 @@ const ALL_STATS_TO_DISPLAY: Array<{
   { label: "iCF/60", key: "icf_per_60", higherIsBetter: true },
   { label: "SCF/60", key: "scf_per_60", higherIsBetter: true },
   { label: "HDCF/60", key: "oi_hdcf_per_60", higherIsBetter: true },
-  // Percentage Stats
   { label: "CF%", key: "cf_pct", higherIsBetter: true },
   { label: "SF%", key: "sf_pct", higherIsBetter: true },
   { label: "GF%", key: "gf_pct", higherIsBetter: true },
@@ -66,14 +62,11 @@ const ALL_STATS_TO_DISPLAY: Array<{
   { label: "HDCF%", key: "hdcf_pct", higherIsBetter: true }
 ];
 
-// Type for calculated percentiles and ranks
 type CalculatedData = {
   [key: string]: number | null;
 };
 
-// --- Chart.js Helper Function ---
 const generateChartConfig = (
-  title: string,
   statsToDisplay: Array<{
     label: string;
     key: string;
@@ -89,19 +82,16 @@ const generateChartConfig = (
       percentile !== null && !isNaN(percentile)
         ? Math.max(0, Math.min(1, percentile))
         : null;
-    return validPercentile !== null ? Math.round(validPercentile * 100) : null; // Scale to 0-100
+    return validPercentile !== null ? Math.round(validPercentile * 100) : null;
   });
 
   const backgroundColors = dataValues.map((value) => {
     if (value === null) {
-      return "#555555"; // Grey for null values
+      return "#555555";
     }
 
-    const brandHue = 195; // Hue for brand blue (#14a2d2)
+    const brandHue = 195;
     const brandSaturation = 70;
-
-    // Vary Lightness: Map percentile (0-100) to a lightness range.
-    // 0 maps to 25% lightness (darker blue), 100 maps to 65% (brighter blue)
     const minLightness = 25;
     const maxLightness = 65;
     const lightness =
@@ -109,8 +99,6 @@ const generateChartConfig = (
 
     return `hsl(${brandHue}, ${brandSaturation}%, ${lightness}%)`;
   });
-  // --- End of NEW color generation ---
-
   const data: ChartData<"bar"> = {
     labels: labels,
     datasets: [
@@ -125,7 +113,7 @@ const generateChartConfig = (
   };
 
   const options: ChartOptions<"bar"> = {
-    indexAxis: "x", // Vertical bars
+    indexAxis: "x",
     responsive: true,
     maintainAspectRatio: false,
     scales: {
@@ -133,12 +121,12 @@ const generateChartConfig = (
         beginAtZero: true,
         max: 100,
         ticks: {
-          color: "#ccc", // Consider using $text-color-secondary from vars?
+          color: "#ccc",
           font: { size: 10 },
           stepSize: 20
         },
         grid: {
-          color: "rgba(255, 255, 255, 0.1)" // Consider using $border-color-primary/secondary?
+          color: "rgba(255, 255, 255, 0.1)"
         }
       },
       x: {
@@ -174,9 +162,7 @@ const generateChartConfig = (
         }
       },
       datalabels: {
-        // Wrap configurations inside a 'labels' object
         labels: {
-          // --- Configuration for Category Label (INSIDE bar) ---
           categoryLabel: {
             display: true,
             rotation: -90,
@@ -194,14 +180,9 @@ const generateChartConfig = (
             },
             anchor: "center",
             align: "center",
-            formatter: (value, context) => {
-              // Keep formatter for category name
-              return (
-                (context.chart.data.labels?.[context.dataIndex] as string) || ""
-              );
-            }
+            formatter: (value, context) =>
+              (context.chart.data.labels?.[context.dataIndex] as string) || ""
           },
-          // --- Configuration for Value Label (ABOVE bar) ---
           valueLabel: {
             display: true,
             color: "#fff",
@@ -213,35 +194,26 @@ const generateChartConfig = (
               weight: "bolder",
               family: "Roboto Condensed"
             },
-            formatter: (value, context) => {
-              // Formatter for the value itself
-              if (value === null) {
-                return value + "%"; // Display the percentile value with a % sign
-              }
-            }
+            formatter: (value) => (value === null ? null : `${value}%`)
           },
-          // --- NEW Rank Label (BELOW bar) ---
           rankLabel: {
             display: true,
-            color: "#FFF", // Adjust color as needed
-            anchor: "start", // Position at the bottom of the bar
-            align: "center", // Center horizontally relative to the anchor
-            offset: 10, // Distance below the bar (adjust as needed)
+            color: "#FFF",
+            anchor: "start",
+            align: "center",
+            offset: 10,
             font: {
-              size: 14, // Adjust size
-              weight: "bolder", // Adjust weight
+              size: 14,
+              weight: "bolder",
               family: "Roboto Condensed"
             },
             formatter: (value, context) => {
-              // Get the stat key corresponding to this bar's index
               const statKey = statsToDisplay[context.dataIndex]?.key;
               if (!statKey || !ranks) {
-                return "-"; // No key or no rank data
+                return "-";
               }
-              // Retrieve the rank for this specific stat key
               const rank = ranks[statKey];
-              // Format the rank using your existing utility
-              return formatOrdinal(rank) ?? "-"; // Use formatOrdinal, default to '-'
+              return formatOrdinal(rank) ?? "-";
             }
           }
         }
@@ -252,7 +224,6 @@ const generateChartConfig = (
   return { data, options };
 };
 
-// --- RateStatPercentiles Component ---
 const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
   playerId,
   seasonId,
@@ -373,48 +344,40 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
     };
   }, [allPlayersStats, minGp, playerId]);
 
-  // Handlers (remain the same)
   const handleStrengthChange = useCallback((strength: PercentileStrength) => {
     setSelectedStrength(strength);
   }, []);
 
   const handleSliderChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
-      onMinGpChange(Number(event.target.value)); // Call parent's handler
+      onMinGpChange(Number(event.target.value));
     },
     [onMinGpChange]
   );
 
-  // Memoized check (remains the same)
   const selectedPlayerMeetsGpThreshold = useMemo(() => {
     return selectedPlayerGp !== null && selectedPlayerGp >= minGp;
   }, [selectedPlayerGp, minGp]);
 
-  // --- Determine the slider's actual max value ---
-  // Use selected player's GP if available and positive, otherwise fallback
   const sliderMax =
     selectedPlayerGp !== null && selectedPlayerGp > 0
       ? selectedPlayerGp
       : maxPossibleGp > 0
       ? maxPossibleGp
-      : 1; // Use league max as fallback, ensure > 0
+      : 1;
 
-  // --- Generate Chart Configs ---
-  // Use useMemo to prevent regenerating chart configs on every render unless data changes
   const combinedChartConfig = useMemo(
     () =>
       generateChartConfig(
-        "Player Percentile Ranks",
         ALL_STATS_TO_DISPLAY,
         calculatedPercentiles,
         calculatedRanks
       ),
     [calculatedPercentiles, calculatedRanks]
-  ); // Recalculate only when percentiles change
+  );
 
   return (
     <div className={styles.rateStatPercentilesComponent}>
-      {/* Loading / Error / No Player Messages - Render these first if applicable */}
       {isLoading && (
         <div className={styles.loadingMessage}>Loading Player Data...</div>
       )}
@@ -436,15 +399,11 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
         <div className={styles.noPlayerMessage}>Please select a player.</div>
       )}
 
-      {/* Main Content: Filters (Left) + Chart & Ranks (Right) */}
       {!isLoading && !error && playerId && seasonId && (
         <div className={styles.mainContentWrapper}>
-          {/* Filters Container */}
           <div className={styles.percentileFiltersContainer}>
             <h1 className={styles.filtersTitle}>Rate Stat Percentiles</h1>
-            {/* NEW Wrapper for side-by-side controls */}
             <div className={styles.filterControlsWrapper}>
-              {/* Strength Selector (Left side of wrapper) */}
               <div className={styles.strengthSelector}>
                 {(["as", "es", "pp", "pk"] as PercentileStrength[]).map(
                   (strength) => (
@@ -460,23 +419,18 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
                     </button>
                   )
                 )}
-              </div>{" "}
-              {/* End Strength Selector */}
-              {/* GP Slider Container (Right side of wrapper - Vertical Slider) */}
+              </div>
               <div className={styles.gpSliderContainer}>
-                {/* Position Label Above */}
                 <label htmlFor="gpSlider">
                   Min GP:
                   <span className={styles.minGpValue}>{minGp}</span>
                 </label>
-                {/* Display Max Value (Top of slider range) */}
                 <span className={styles.gpSliderMaxLabel}>
                   {sliderMax > 1
                     ? sliderMax
                     : selectedPlayerGp !== null
                     ? selectedPlayerGp
-                    : ""}{" "}
-                  {/* Show player GP if available, else the fallback if > 1 */}
+                    : ""}
                 </span>
 
                 <input
@@ -488,16 +442,13 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
                   onChange={handleSliderChange}
                   disabled={isLoading || allPlayersStats.length === 0}
                   className={styles.gpSlider}
-                  // Add orient="vertical" for semantic correctness, though CSS handles appearance
-                  // Note: `orient` attribute is deprecated/non-standard for input[type=range] in HTML5
-                  // Use CSS `appearance` or `transform` instead.
                   style={
                     {
                       "--min": 0,
                       "--max": sliderMax,
                       "--val": minGp
                     } as React.CSSProperties
-                  } // Optional: For custom styling track fill
+                  }
                 />
 
                 <span className={styles.gpSliderMinLabel}>0</span>
@@ -508,18 +459,16 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
               {calculatedPercentiles !== null &&
                 !selectedPlayerMeetsGpThreshold &&
                 selectedPlayerGp !== null && (
-                  <div className={styles.thresholdMessage}>
-                    Selected Player GP ({selectedPlayerGp}) below threshold (
-                    {minGp}). Comparing against {minGp}+ GP players.
-                  </div>
-                )}
-              {/* Message if player has 0 GP for this strength */}
+                <div className={styles.thresholdMessage}>
+                  Selected Player GP ({selectedPlayerGp}) below threshold (
+                  {minGp}). Comparing against {minGp}+ GP players.
+                </div>
+              )}
               {selectedPlayerGp === 0 && (
                 <div className={styles.thresholdMessage}>
                   Selected Player has 0 GP for {selectedStrength.toUpperCase()}.
                 </div>
               )}
-              {/* Message if player has null GP (data missing) */}
               {selectedPlayerGp === null && playerId && !isLoading && (
                 <div className={styles.thresholdMessage}>
                   Selected Player has no GP data for{" "}
@@ -528,10 +477,7 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
               )}
             </div>
           </div>
-          {/* Chart Area + Ranks Area (Takes remaining space on the Right) */}
-          {/* Wrap Chart and Ranks together */}
           <div className={styles.chartAndRanksArea}>
-            {/* Chart Container */}
             <div className={styles.percentileChartsContainer}>
               {calculatedPercentiles !== null ? (
                 <Bar
@@ -544,14 +490,11 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
                   Calculating...
                 </div>
               )}
-            </div>{" "}
-            {/* End Chart Container */}
-            {/* Ranks Container - Display ranks only if calculated */}
-          </div>{" "}
-          {/* End Chart And Ranks Area */}
-        </div> // End Main Content Wrapper
+            </div>
+          </div>
+        </div>
       )}
-    </div> // End Component Root
+    </div>
   );
 };
 

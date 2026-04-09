@@ -1,5 +1,3 @@
-// /Users/tim/Desktop/FHFH/fhfhockey.com/web/components/WiGO/PlayerHeader.tsx
-
 import React from "react";
 import Image from "next/image";
 import { Player, TeamColors } from "./types";

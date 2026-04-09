@@ -1,11 +1,8 @@
-// /Users/tim/Desktop/FHFH/fhfhockey.com/web/components/WiGO/StatsTable.tsx
-import React, { useState, useCallback, useMemo } from "react"; // Removed useEffect if not used
+import React, { useState, useCallback, useMemo } from "react";
 import { TableAggregateData } from "./types";
 import styles from "styles/wigoCharts.module.scss";
 import GameLogChart from "./StatsTableRowChart";
-import {
-  isWigoCountChartStat
-} from "./statMetadata";
+import { isWigoCountChartStat } from "./statMetadata";
 import {
   fetchPlayerGameLogForStat,
   GameLogDataPoint
@@ -19,24 +16,21 @@ interface StatsTableProps {
   error: string | null;
   formatCell: (
     row: TableAggregateData,
-    columnKey: keyof Omit<TableAggregateData, "label" | "GP" | "DIFF"> // Keep Omit here
-  ) => string; // It returns string based on its implementation
+    columnKey: keyof Omit<TableAggregateData, "label" | "GP" | "DIFF">
+  ) => string;
   playerId: number;
   currentSeasonId: number;
   leftTimeframe: keyof TableAggregateData;
   rightTimeframe: keyof TableAggregateData;
-  // Optional: restrict which data columns are visible (e.g., for mobile)
   visibleColumns?: Array<
     keyof Omit<TableAggregateData, "label" | "GP" | "DIFF">
   >;
 }
 
-// These are the keys for the standard data COLUMNS
 type DataColumnKey = keyof Omit<TableAggregateData, "label" | "GP" | "DIFF">;
 
-// Define Column Keys and Headers
 const columnKeys: DataColumnKey[] = [
-  "STD", // Moved to first position after Stat Label
+  "STD",
   "LY",
   "CA",
   "3YA",
