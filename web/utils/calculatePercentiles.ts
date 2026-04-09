@@ -5,6 +5,57 @@ interface RankablePlayerData {
   value: number; // The specific stat value being ranked
 }
 
+export interface RankingResult {
+  percentile: number;
+  rank: number;
+}
+
+export function calculateRankingResult(
+  data: ReadonlyArray<RankablePlayerData>,
+  targetPlayerId: number,
+  higherIsBetter: boolean
+): RankingResult | null {
+  if (data.length === 0) {
+    return null;
+  }
+
+  const targetPlayerData = data.find((player) => player.player_id === targetPlayerId);
+
+  if (!targetPlayerData) {
+    return null;
+  }
+
+  const targetScore = targetPlayerData.value;
+  let betterCount = 0;
+  let equalCount = 0;
+  let worseCount = 0;
+
+  for (const player of data) {
+    const score = player.value;
+
+    if (score === targetScore) {
+      equalCount++;
+      continue;
+    }
+
+    const isBetterScore = higherIsBetter ? score > targetScore : score < targetScore;
+
+    if (isBetterScore) {
+      betterCount++;
+    } else {
+      worseCount++;
+    }
+  }
+
+  const percentile =
+    (worseCount + 0.5 * equalCount) / data.length;
+
+  return {
+    percentile: Math.max(0, Math.min(1, percentile)),
+    rank: betterCount + 1
+  };
+}
+
 /**
  * Calculates the percentile rank for a specific player within a dataset for a given stat.
  * Handles ties using the method: (players_below + 0.5 * players_equal) / total_count
@@ -21,46 +72,17 @@ export function calculatePercentileRank(
   valueKey: keyof RankablePlayerData = "value", // Should always be 'value' here
   higherIsBetter: boolean
 ): number | null {
-  if (data.length === 0) {
-    return null; // Cannot calculate percentile with no data
-  }
+  const rankingData = data.map((player) => ({
+    player_id: player.player_id,
+    value: player[valueKey] as number
+  }));
+  const result = calculateRankingResult(
+    rankingData,
+    targetPlayerId,
+    higherIsBetter
+  );
 
-  // Find the target player's data point
-  const targetPlayerData = data.find((p) => p.player_id === targetPlayerId);
-
-  if (!targetPlayerData) {
-    // console.log(`Target player ${targetPlayerId} not found in the filtered dataset for this stat.`);
-    return null; // Target player doesn't meet criteria or wasn't found
-  }
-
-  const targetScore = targetPlayerData[valueKey];
-  const totalCount = data.length;
-
-  let lowerCount = 0;
-  let equalCount = 0;
-
-  // Iterate through the data to count players below and equal to the target score
-  for (const player of data) {
-    const score = player[valueKey];
-    if (score < targetScore) {
-      lowerCount++;
-    } else if (score === targetScore) {
-      equalCount++;
-    }
-  }
-
-  // Calculate percentile based on ranking method
-  // (Count Below + 0.5 * Count Equal) / Total Count
-  // This gives the proportion of players *at or below* the target score (with adjustment for ties)
-  let percentile = (lowerCount + 0.5 * equalCount) / totalCount;
-
-  // If lower is better, we invert the percentile
-  if (!higherIsBetter) {
-    percentile = 1 - percentile;
-  }
-
-  // Clamp result between 0 and 1 (floating point math might slightly exceed bounds)
-  return Math.max(0, Math.min(1, percentile));
+  return result?.percentile ?? null;
 }
 
 // --- Helper Function to Calculate Rank ---
@@ -71,27 +93,6 @@ export const calculatePlayerRank = (
   targetPlayerId: number,
   higherIsBetter: boolean
 ): number | null => {
-  if (!data || data.length === 0) {
-    return null;
-  }
-
-  const targetPlayerData = data.find((p) => p.player_id === targetPlayerId);
-  if (!targetPlayerData) {
-    return null; // Player not in filtered data for this stat
-  }
-
-  // Sort the data based on the value
-  const sortedData = [...data].sort((a, b) => {
-    // Handle potential nulls defensively although pre-filtered
-    const valA = a.value ?? (higherIsBetter ? -Infinity : Infinity);
-    const valB = b.value ?? (higherIsBetter ? -Infinity : Infinity);
-    return higherIsBetter ? valB - valA : valA - valB; // Desc for higherIsBetter, Asc otherwise
-  });
-
-  // Find the index (0-based) of the target player in the sorted list
-  // Note: findIndex stops at the first match, handling ties by assigning the highest rank (e.g., 1st)
-  const index = sortedData.findIndex((p) => p.player_id === targetPlayerId);
-
-  // Return rank (1-based index) or null if not found (shouldn't happen if targetPlayerData was found)
-  return index !== -1 ? index + 1 : null;
+  const result = calculateRankingResult(data, targetPlayerId, higherIsBetter);
+  return result?.rank ?? null;
 };

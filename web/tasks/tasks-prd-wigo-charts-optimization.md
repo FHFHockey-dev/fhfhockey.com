@@ -73,12 +73,12 @@
   - [x] 2.4 Standardize WiGO data fetching on one query pattern, using React Query-compatible cache keys where repeated season/player lookups exist.
   - [x] 2.5 Add tests for the shared WiGO dashboard hook covering player switching, season readiness, error propagation, and stale-data prevention.
 
-- [ ] 3.0 Repair percentile and ratings accuracy while reducing heavy client-side cohort work
-  - [ ] 3.1 Refactor `calculatePercentiles.ts`, `RateStatPercentiles.tsx`, and related helpers so percentile rank and ordinal rank share one authoritative calculation path.
-  - [ ] 3.2 Ensure the active `minGp` threshold is either applied consistently to ratings calculations or removed from the ratings UI contract if it should not affect ratings.
-  - [ ] 3.3 Rebuild low-GP regression in `calculateWigoRatings.ts` so regression means are computed from finalized comparison cohorts rather than partially built intermediate state.
-  - [ ] 3.4 Optimize `fetchWigoPercentiles.ts` and `fetchWigoRatingStats.ts` by introducing shared cache reuse, thinner payloads, or a server-backed aggregation path for season-wide datasets.
-  - [ ] 3.5 Add unit tests for percentile ties, filtered cohorts, low-GP regression cases, and overall/offense/defense rating composition.
+- [x] 3.0 Repair percentile and ratings accuracy while reducing heavy client-side cohort work
+  - [x] 3.1 Refactor `calculatePercentiles.ts`, `RateStatPercentiles.tsx`, and related helpers so percentile rank and ordinal rank share one authoritative calculation path.
+  - [x] 3.2 Ensure the active `minGp` threshold is either applied consistently to ratings calculations or removed from the ratings UI contract if it should not affect ratings.
+  - [x] 3.3 Rebuild low-GP regression in `calculateWigoRatings.ts` so regression means are computed from finalized comparison cohorts rather than partially built intermediate state.
+  - [x] 3.4 Optimize `fetchWigoPercentiles.ts` and `fetchWigoRatingStats.ts` by introducing shared cache reuse, thinner payloads, or a server-backed aggregation path for season-wide datasets.
+  - [x] 3.5 Add unit tests for percentile ties, filtered cohorts, low-GP regression cases, and overall/offense/defense rating composition.
 
 - [ ] 4.0 Refactor WiGO layout into shared section components and standardized chart shells
   - [ ] 4.1 Break `wigoCharts.tsx` into reusable section components so desktop and mobile reuse the same rendered content instead of duplicating large JSX blocks.

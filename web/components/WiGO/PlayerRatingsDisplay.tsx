@@ -73,7 +73,13 @@ const PlayerRatingsDisplay: React.FC<PlayerRatingsProps> = ({
       queryKey: ["wigoPlayerRatings", playerId, seasonId, minGp],
       queryFn: async () => {
         const rawStats = await fetchRawStatsForAllStrengths(seasonId as number);
-        return calculatePlayerRatings(playerId as number, rawStats);
+        return calculatePlayerRatings(
+          playerId as number,
+          rawStats,
+          undefined,
+          undefined,
+          minGp
+        );
       },
       enabled: typeof playerId === "number" && typeof seasonId === "number"
     });

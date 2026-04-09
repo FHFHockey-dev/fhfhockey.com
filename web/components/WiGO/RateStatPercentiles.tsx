@@ -298,7 +298,9 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
     }
 
     const filteredPlayers = allPlayersStats.filter(
-      (player) => player.gp !== null && player.gp >= minGp
+      (player) =>
+        player.gp !== null &&
+        (player.gp >= minGp || player.player_id === playerId)
     );
 
     if (filteredPlayers.length === 0) {
