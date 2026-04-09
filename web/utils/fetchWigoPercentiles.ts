@@ -58,9 +58,12 @@ interface DefenseRow {
  * Fetches raw stats for ALL players for the latest season for a given strength.
  */
 export async function fetchAllPlayerStatsForStrength(
-  strength: PercentileStrength
+  strength: PercentileStrength,
+  seasonId: number
 ): Promise<PlayerRawStats[]> {
-  console.log(`Fetching ALL player stats for Strength: ${strength}`);
+  console.log(
+    `Fetching ALL player stats for Strength: ${strength}, season: ${seasonId}`
+  );
 
   const offenseTable =
     `nst_percentile_${strength}_offense` as OffensePercentileTable;
@@ -80,9 +83,12 @@ export async function fetchAllPlayerStatsForStrength(
       (supabase as any)
         .from(offenseTable)
         .select(ALL_OFFENSE_COLUMNS_TO_SELECT)
+        .eq("season", seasonId)
         .gt("gp", 0), // Only fetch players with GP > 0
-      (supabase as any).from(defenseTable).select(ALL_DEFENSE_COLUMNS_TO_SELECT)
-      // .eq('season', latestSeason) // Add if latestSeason is determined
+      (supabase as any)
+        .from(defenseTable)
+        .select(ALL_DEFENSE_COLUMNS_TO_SELECT)
+        .eq("season", seasonId)
     ]);
 
     if (offenseRes.error) throw offenseRes.error;

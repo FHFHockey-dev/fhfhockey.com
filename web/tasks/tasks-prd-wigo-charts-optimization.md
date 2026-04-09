@@ -66,12 +66,12 @@
   - [x] 1.4 Normalize TOI, PP TOI, and percentage handling in `fetchWigoPlayerStats.ts` so each value is transformed exactly once before reaching presentation components.
   - [x] 1.5 Add unit tests covering diff calculation, count-per-game comparison rules, percentage formatting, TOI formatting, and missing-data fallbacks.
 
-- [ ] 2.0 Build a shared WiGO page data layer and remove redundant fetch orchestration
-  - [ ] 2.1 Create a page-level WiGO dashboard hook or provider that resolves selected player, team branding, current season, aggregate table data, and shared loading/error states.
-  - [ ] 2.2 Move player-selection URL syncing, auto-load-by-`playerId`, and aggregate fetch orchestration out of `wigoCharts.tsx` into the shared data layer.
-  - [ ] 2.3 Rework components that currently rediscover the same player/season context so they consume shared data or shared queries instead of independent local fetch flows.
-  - [ ] 2.4 Standardize WiGO data fetching on one query pattern, using React Query-compatible cache keys where repeated season/player lookups exist.
-  - [ ] 2.5 Add tests for the shared WiGO dashboard hook covering player switching, season readiness, error propagation, and stale-data prevention.
+- [x] 2.0 Build a shared WiGO page data layer and remove redundant fetch orchestration
+  - [x] 2.1 Create a page-level WiGO dashboard hook or provider that resolves selected player, team branding, current season, aggregate table data, and shared loading/error states.
+  - [x] 2.2 Move player-selection URL syncing, auto-load-by-`playerId`, and aggregate fetch orchestration out of `wigoCharts.tsx` into the shared data layer.
+  - [x] 2.3 Rework components that currently rediscover the same player/season context so they consume shared data or shared queries instead of independent local fetch flows.
+  - [x] 2.4 Standardize WiGO data fetching on one query pattern, using React Query-compatible cache keys where repeated season/player lookups exist.
+  - [x] 2.5 Add tests for the shared WiGO dashboard hook covering player switching, season readiness, error propagation, and stale-data prevention.
 
 - [ ] 3.0 Repair percentile and ratings accuracy while reducing heavy client-side cohort work
   - [ ] 3.1 Refactor `calculatePercentiles.ts`, `RateStatPercentiles.tsx`, and related helpers so percentile rank and ordinal rank share one authoritative calculation path.

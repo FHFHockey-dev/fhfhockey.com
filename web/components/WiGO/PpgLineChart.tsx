@@ -1,5 +1,6 @@
 // components/WiGO/PpgLineChart.tsx
-import React, { useState, useEffect, useRef } from "react";
+import React, { useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Chart } from "react-chartjs-2"; // Use mixed type Chart component
 import {
   Chart as ChartJS,
@@ -29,7 +30,6 @@ import styles from "styles/wigoCharts.module.scss";
 import Spinner from "components/Spinner";
 import Zoom from "chartjs-plugin-zoom";
 import { WIGO_COLORS, CHART_COLORS, addAlpha } from "styles/wigoColors";
-import useCurrentSeason from "hooks/useCurrentSeason";
 
 ChartJS.register(
   CategoryScale,
@@ -48,57 +48,34 @@ ChartJS.register(
 
 interface PpgLineChartProps {
   playerId: number | null | undefined;
+  seasonId?: number | null;
 }
 
 const dummyLabels = ["", "Start", "", "Mid", "", "End", ""];
 
-const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId }) => {
-  const [gameLogData, setGameLogData] = useState<SkaterGameLogPointsData[]>([]);
-  const [averagePpg, setAveragePpg] = useState<number | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId, seasonId }) => {
   const chartRef = useRef<ChartJS<"bar" | "line"> | null>(null);
-  const currentSeasonData = useCurrentSeason();
-  const currentSeasonId = currentSeasonData?.seasonId;
+  const { data, isLoading, error } = useQuery<{
+    gameLogData: SkaterGameLogPointsData[];
+    averagePpg: number | null;
+  }>({
+    queryKey: ["wigoPpgChart", playerId, seasonId],
+    queryFn: async () => {
+      const [totals, gameLogs] = await Promise.all([
+        fetchPlayerPerGameTotals(playerId as number, seasonId),
+        fetchPlayerGameLogPoints(playerId as number, String(seasonId))
+      ]);
 
-  useEffect(() => {
-    if (!playerId || !currentSeasonId) {
-      setGameLogData([]);
-      setAveragePpg(null);
-      setError(null);
-      setIsLoading(false);
-      return;
-    }
+      return {
+        gameLogData: gameLogs,
+        averagePpg: (totals as SkaterTotalsData | null)?.points_per_game ?? null
+      };
+    },
+    enabled: typeof playerId === "number" && typeof seasonId === "number"
+  });
 
-    const loadChartData = async () => {
-      setIsLoading(true);
-      setError(null);
-      setGameLogData([]);
-      setAveragePpg(null);
-
-      try {
-        // Fetch totals for averages (but not for season selection)
-        const totals = await fetchPlayerPerGameTotals(playerId);
-        setAveragePpg(totals?.points_per_game ?? null);
-
-        // Use currentSeasonId from hook for fetching game log
-        const gameLogs = await fetchPlayerGameLogPoints(
-          playerId,
-          String(currentSeasonId)
-        );
-        setGameLogData(gameLogs);
-      } catch (err: any) {
-        console.error("Failed to load PPG chart data:", err);
-        setError(`Failed to load data: ${err.message || "Unknown error"}`);
-        setGameLogData([]);
-        setAveragePpg(null);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadChartData();
-  }, [playerId, currentSeasonId]);
+  const gameLogData = data?.gameLogData ?? [];
+  const averagePpg = data?.averagePpg ?? null;
 
   // --- Prepare Chart Data ---
   const getChartData = (): ChartData<
@@ -336,8 +313,8 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId }) => {
         )}
 
         {/* Error Message */}
-        {error && !isLoading && (
-          <div style={placeholderStyle}>Error: {error}</div>
+        {error instanceof Error && !isLoading && (
+          <div style={placeholderStyle}>Error: {error.message}</div>
         )}
 
         {/* "Select Player" Placeholder */}
@@ -345,8 +322,16 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId }) => {
           <div style={placeholderStyle}>Select a player to view chart.</div>
         )}
 
+        {!isLoading && !error && playerId && !seasonId && (
+          <div style={placeholderStyle}>Loading season info...</div>
+        )}
+
         {/* "No Data" Placeholder */}
-        {!isLoading && !error && playerId && gameLogData.length === 0 && (
+        {!isLoading &&
+          !error &&
+          playerId &&
+          seasonId &&
+          gameLogData.length === 0 && (
           <div style={placeholderStyle}>
             No Points data available for this player.
           </div>

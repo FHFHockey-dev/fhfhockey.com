@@ -1,15 +1,16 @@
 // components/WiGO/PlayerRatingsDisplay.tsx
-import React, { useState, useEffect } from "react";
+import React from "react";
+import { useQuery } from "@tanstack/react-query";
 
 import { fetchRawStatsForAllStrengths } from "utils/fetchWigoRatingStats"; // Adjust path as needed
 import { calculatePlayerRatings } from "utils/calculateWigoRatings"; // Adjust path
 import { CalculatedPlayerRatings } from "components/WiGO/types"; // Import the final ratings type
 
 import styles from "./PlayerRatingsDisplay.module.scss"; // Keep your styles import
-import useCurrentSeason from "hooks/useCurrentSeason";
 
 interface PlayerRatingsProps {
   playerId: number | null | undefined;
+  seasonId?: number | null;
   minGp: number;
 }
 
@@ -64,82 +65,18 @@ const getColorForRating = (
 // --- Component ---
 const PlayerRatingsDisplay: React.FC<PlayerRatingsProps> = ({
   playerId,
+  seasonId,
   minGp
 }) => {
-  const [ratings, setRatings] = useState<CalculatedPlayerRatings | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const season = useCurrentSeason();
-
-  useEffect(() => {
-    if (!playerId || !season?.seasonId) {
-      setRatings(null);
-      setIsLoading(false);
-      setError(null);
-      if (!playerId) console.log("[Ratings] No Player ID, clearing state.");
-      if (!season?.seasonId) console.log("[Ratings] No season loaded yet.");
-      return;
-    }
-
-    const loadAndCalculateRatings = async () => {
-      setIsLoading(true);
-      setError(null);
-      setRatings(null);
-      console.log(
-        `[Ratings] Starting calculation for Player ${playerId}, Season ${season.seasonId}`
-      );
-
-      try {
-        console.log(`[Ratings] Fetching raw stats...`);
-        const rawStats = await fetchRawStatsForAllStrengths(season.seasonId);
-
-        if (!rawStats || Object.keys(rawStats).length === 0) {
-          console.warn(
-            `[Ratings] No raw stats data returned for season ${season.seasonId}.`
-          );
-        } else {
-          console.log(`[Ratings] Raw stats fetched successfully.`);
-        }
-
-        console.log(`[Ratings] Calculating ratings...`);
-        const calculatedData = calculatePlayerRatings(playerId, rawStats);
-
-        if (calculatedData) {
-          console.log(
-            "[Ratings] Calculation successful. Setting final ratings state:",
-            calculatedData
-          );
-          setRatings(calculatedData);
-          if (calculatedData._debug) {
-            console.log(
-              "[Ratings Debug] Intermediate Percentiles:",
-              calculatedData._debug.percentiles
-            );
-            console.log(
-              "[Ratings Debug] Regressed Percentiles:",
-              calculatedData._debug.regressedPercentiles
-            );
-          }
-        } else {
-          console.warn(
-            `[Ratings] Calculation returned null for Player ${playerId}. Player might not have data for this season.`
-          );
-          setRatings(null);
-        }
-      } catch (err: any) {
-        console.error("[Ratings] Error during fetch or calculation:", err);
-        setError(
-          `Failed to calculate ratings: ${err.message || "Unknown error"}`
-        );
-        setRatings(null);
-      } finally {
-        setIsLoading(false);
-        console.log("[Ratings] Load and calculation process finished.");
-      }
-    };
-
-    loadAndCalculateRatings();
-  }, [playerId, season?.seasonId]);
+  const { data: ratings, isLoading, error } =
+    useQuery<CalculatedPlayerRatings | null>({
+      queryKey: ["wigoPlayerRatings", playerId, seasonId, minGp],
+      queryFn: async () => {
+        const rawStats = await fetchRawStatsForAllStrengths(seasonId as number);
+        return calculatePlayerRatings(playerId as number, rawStats);
+      },
+      enabled: typeof playerId === "number" && typeof seasonId === "number"
+    });
 
   const formatRating = (rating: number | null): string => {
     return rating !== null && !isNaN(rating) ? rating.toFixed(1) : "-";
@@ -149,11 +86,18 @@ const PlayerRatingsDisplay: React.FC<PlayerRatingsProps> = ({
   const renderContent = () => {
     if (isLoading)
       return <div className={styles.loading}>Loading Ratings...</div>;
-    if (error) return <div className={styles.error}>{error}</div>;
+    if (error instanceof Error)
+      return (
+        <div className={styles.error}>
+          Failed to calculate ratings: {error.message || "Unknown error"}
+        </div>
+      );
     if (!ratings && !isLoading && playerId)
       return <div className={styles.calculating}>Calculating...</div>;
     if (!playerId)
       return <div className={styles.noPlayer}>Select player for ratings</div>;
+    if (!seasonId)
+      return <div className={styles.loading}>Loading season info...</div>;
     if (!ratings)
       return (
         <div className={styles.noData}>

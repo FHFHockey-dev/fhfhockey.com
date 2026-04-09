@@ -1,18 +1,10 @@
 // /pages/wigoCharts.tsx
-import React, { useState, useEffect, useCallback, useMemo } from "react"; // Added useMemo
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import dynamic from "next/dynamic";
-import { useRouter } from "next/router";
 
 import styles from "styles/wigoCharts.module.scss"; // Main styles
-import {
-  Player,
-  TeamColors,
-  defaultColors,
-  TableAggregateData
-} from "components/WiGO/types";
+import { TableAggregateData } from "components/WiGO/types";
 import NameSearchBar from "components/WiGO/NameSearchBar";
-import { getTeamInfoById, teamNameToAbbreviationMap } from "lib/teamsInfo";
-import { fetchPlayerAggregatedStats } from "utils/fetchWigoPlayerStats";
 import TimeframeComparison from "components/WiGO/TimeframeComparison";
 import CategoryCoverageChart from "components/CategoryCoverageChart";
 import GameScoreSection from "components/WiGO/GameScoreSection";
@@ -20,27 +12,15 @@ import PlayerHeader from "components/WiGO/PlayerHeader";
 import StatsTable from "components/WiGO/StatsTable"; // The modified component
 import PerGameStatsTable from "components/WiGO/PerGameStatsTable";
 import RateStatPercentiles from "components/WiGO/RateStatPercentiles";
-import useCurrentSeason from "hooks/useCurrentSeason";
 import OpponentGamelog from "components/WiGO/OpponentGamelog";
 import PlayerRatingsDisplay from "components/WiGO/PlayerRatingsDisplay";
+import useWigoPlayerDashboard from "hooks/useWigoPlayerDashboard";
 // Removed TimeOptions import if not used elsewhere
 
 import {
   computeDiffColumn,
   formatCell as formatCellUtil
 } from "components/WiGO/tableUtils";
-
-// Simple viewport check; SSR-safe fallback to desktop
-const useIsMobile = (breakpoint = 768) => {
-  const [isMobile, setIsMobile] = useState(false);
-  useEffect(() => {
-    const onResize = () => setIsMobile(window.innerWidth < breakpoint);
-    onResize();
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, [breakpoint]);
-  return isMobile;
-};
 
 // --- Dynamically import components (remains the same) ---
 const ChartLoadingPlaceholder = ({ message }: { message: string }) => (
@@ -67,18 +47,6 @@ const ConsistencyChart = dynamic(
 // --- End Dynamic Imports ---
 
 const WigoCharts: React.FC = () => {
-  // --- State variables ---
-  const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
-  const [teamIdForLog, setTeamIdForLog] = useState<number | null>(null);
-  const [headshotUrl, setHeadshotUrl] = useState<string | null>(null);
-  const [teamColors, setTeamColors] = useState<TeamColors>(defaultColors);
-  const [rawCombinedData, setRawCombinedData] = useState<TableAggregateData[]>(
-    []
-  );
-  const [isLoadingAggData, setIsLoadingAggData] = useState<boolean>(false);
-  const [aggDataError, setAggDataError] = useState<string | null>(null);
-  const [teamName, setTeamName] = useState<string>("");
-  const [teamAbbreviation, setTeamAbbreviation] = useState<string | null>(null);
   const [leftTimeframe, setLeftTimeframe] =
     useState<keyof TableAggregateData>("STD");
   const [rightTimeframe, setRightTimeframe] =
@@ -86,11 +54,20 @@ const WigoCharts: React.FC = () => {
   const placeholderImage = "/pictures/player-placeholder.jpg";
   const [minGp, setMinGp] = useState<number>(10);
 
-  const currentSeasonData = useCurrentSeason();
-  const currentSeasonId = currentSeasonData?.seasonId ?? null;
-  const router = useRouter();
-  const isMobile = useIsMobile();
-
+  const {
+    selectedPlayer,
+    headshotUrl,
+    currentSeasonId,
+    teamColors,
+    teamName,
+    teamAbbreviation,
+    teamIdForLog,
+    rawCombinedData,
+    isLoadingAggData,
+    aggDataError,
+    handlePlayerSelect,
+    updateUrlWith
+  } = useWigoPlayerDashboard();
   type TabKey = "overview" | "trends" | "percentiles" | "comparison";
   const validTabs: TabKey[] = [
     "overview",
@@ -102,144 +79,17 @@ const WigoCharts: React.FC = () => {
 
   // Sync tab from URL on mount/change
   useEffect(() => {
-    const t = router.query.tab;
+    const t = window.location.search
+      ? new URLSearchParams(window.location.search).get("tab")
+      : null;
     if (!t) return;
-    const tab = Array.isArray(t) ? t[0] : t;
-    if (validTabs.includes(tab as TabKey)) setActiveTab(tab as TabKey);
-  }, [router.query.tab]);
+    if (validTabs.includes(t as TabKey)) setActiveTab(t as TabKey);
+  }, []);
 
-  // Helper to update URL with tab (and keep playerId)
-  const updateUrlWith = useCallback(
-    (updates: Record<string, string | number | undefined>) => {
-      const nextQuery = { ...router.query } as Record<string, any>;
-      Object.entries(updates).forEach(([k, v]) => {
-        if (v === undefined) delete nextQuery[k];
-        else nextQuery[k] = v;
-      });
-      router.replace(
-        { pathname: router.pathname, query: nextQuery },
-        undefined,
-        {
-          shallow: true
-        }
-      );
-    },
-    [router]
-  );
-
-  // Handle player selection (remains the same)
-  const handlePlayerSelect = useCallback(
-    (player: Player, headshot: string) => {
-      setSelectedPlayer(player);
-      setHeadshotUrl(headshot);
-      setTeamIdForLog(player.team_id ?? null);
-
-      if (player.team_id) {
-        const teamInfo = getTeamInfoById(player.team_id);
-        if (teamInfo) {
-          const abbr = teamNameToAbbreviationMap[teamInfo.name] ?? null;
-          setTeamName(teamInfo.name);
-          setTeamAbbreviation(abbr);
-          setTeamColors({
-            primaryColor: teamInfo.primaryColor,
-            secondaryColor: teamInfo.secondaryColor,
-            accentColor: teamInfo.accent,
-            altColor: teamInfo.alt,
-            jerseyColor: teamInfo.jersey
-          });
-        } else {
-          setTeamName("");
-          setTeamAbbreviation(null);
-          setTeamColors(defaultColors);
-        }
-      } else {
-        setTeamName("");
-        setTeamAbbreviation(null);
-        setTeamColors(defaultColors);
-      }
-      setLeftTimeframe("STD");
-      setRightTimeframe("CA");
-      setRawCombinedData([]); // Clear combined raw data
-
-      setAggDataError(null); // Clear error
-      // Update the URL with the playerId as a query parameter
-      updateUrlWith({ playerId: player.id });
-    },
-    [updateUrlWith]
-  );
-
-  // Auto-select player if playerId is present in the query
   useEffect(() => {
-    const playerIdParam = router.query.playerId;
-    if (!playerIdParam || selectedPlayer) return;
-    // Only proceed if playerIdParam is a string and a valid number
-    const playerId = Array.isArray(playerIdParam)
-      ? playerIdParam[0]
-      : playerIdParam;
-    if (!playerId || isNaN(Number(playerId))) return;
-    (async () => {
-      try {
-        const { data, error } = await (await import("lib/supabase")).default
-          .from("players")
-          .select("*")
-          .eq("id", Number(playerId))
-          .single();
-        if (error || !data) return;
-        let headshotUrl = data.image_url || "";
-        if (!data.image_url) {
-          try {
-            const response = await fetch(
-              `https://api-web.nhle.com/v1/player/${data.id}/landing`
-            );
-            if (response.ok) {
-              const nhlData = await response.json();
-              headshotUrl = nhlData.headshot || "";
-            }
-          } catch {}
-        }
-        handlePlayerSelect(data as Player, headshotUrl);
-      } catch {}
-    })();
-  }, [router.query.playerId, selectedPlayer, handlePlayerSelect]);
-
-  // Fetch aggregated data effect (Counts/Rates)
-  useEffect(() => {
-    if (!selectedPlayer) {
-      setRawCombinedData([]);
-      setAggDataError(null);
-      return;
-    }
-
-    const fetchData = async () => {
-      setIsLoadingAggData(true);
-      setAggDataError(null);
-      setRawCombinedData([]);
-
-      try {
-        // --- <<< CHANGE: Expect single array from fetch >>> ---
-        const fetchedData: TableAggregateData[] =
-          await fetchPlayerAggregatedStats(selectedPlayer.id);
-
-        // Set raw data, let useMemo handle processing and combining
-        setRawCombinedData(fetchedData);
-        if (!fetchedData || fetchedData.length === 0) {
-          console.log(
-            "No aggregated stats returned for player:",
-            selectedPlayer.id
-          );
-          // Optional: setAggDataError("No aggregated statistics available.");
-        }
-      } catch (error) {
-        console.error("Error fetching aggregated stats:", error);
-        setAggDataError("Failed to load Counts/Rates statistics.");
-        setRawCombinedData([]);
-      } finally {
-        setIsLoadingAggData(false);
-      }
-    };
-
-    fetchData();
-  }, [selectedPlayer]);
+    setLeftTimeframe("STD");
+    setRightTimeframe("CA");
+  }, [selectedPlayer?.id]);
 
   // --- <<< CHANGE: Calculate Display Data with DIFF using single raw state >>> ---
   const displayDataWithDiff = useMemo(() => {
@@ -350,11 +200,15 @@ const WigoCharts: React.FC = () => {
               )}
             </div>
             <div className={styles.perGameStatsContainer}>
-              <PerGameStatsTable playerId={selectedPlayer?.id} />
+              <PerGameStatsTable
+                playerId={selectedPlayer?.id}
+                seasonId={currentSeasonId}
+              />
             </div>
             <div className={styles.opponentLogContainer}>
               <OpponentGamelog
                 teamId={teamIdForLog}
+                seasonId={currentSeasonId}
                 highlightColor={teamColors.primaryColor || "#07aae2"}
               />
             </div>
@@ -362,6 +216,7 @@ const WigoCharts: React.FC = () => {
               {selectedPlayer ? (
                 <PlayerRatingsDisplay
                   playerId={selectedPlayer.id}
+                  seasonId={currentSeasonId}
                   minGp={minGp}
                 />
               ) : (
@@ -378,7 +233,10 @@ const WigoCharts: React.FC = () => {
             <div className={styles.consistencyAndCategoryWrapper}>
               <div className={styles.consistencyRatingContainer}>
                 {selectedPlayer ? (
-                  <ConsistencyChart playerId={selectedPlayer.id} />
+                  <ConsistencyChart
+                    playerId={selectedPlayer.id}
+                    seasonId={currentSeasonId}
+                  />
                 ) : (
                   <ChartLoadingPlaceholder message="Select a player" />
                 )}
@@ -394,17 +252,27 @@ const WigoCharts: React.FC = () => {
               </div>
             </div>
             <div className={styles.toiChartContainer}>
-              <ToiLineChart playerId={selectedPlayer?.id} />
+              <ToiLineChart
+                playerId={selectedPlayer?.id}
+                seasonId={currentSeasonId}
+              />
             </div>
             <div className={styles.ppgChartContainer}>
-              <PpgLineChart playerId={selectedPlayer?.id} />
+              <PpgLineChart
+                playerId={selectedPlayer?.id}
+                seasonId={currentSeasonId}
+              />
             </div>
             <div className={styles.gameScoreContainer}>
-              <GameScoreSection playerId={selectedPlayer?.id} />
+              <GameScoreSection
+                playerId={selectedPlayer?.id}
+                seasonId={currentSeasonId}
+              />
             </div>
             <div className={styles.rateStatBarPercentilesContainer}>
               <RateStatPercentiles
                 playerId={selectedPlayer?.id}
+                seasonId={currentSeasonId}
                 minGp={minGp}
                 onMinGpChange={setMinGp}
               />
@@ -504,11 +372,15 @@ const WigoCharts: React.FC = () => {
                   )}
                 </div>
                 <div className={styles.perGameStatsContainer}>
-                  <PerGameStatsTable playerId={selectedPlayer?.id} />
+                  <PerGameStatsTable
+                    playerId={selectedPlayer?.id}
+                    seasonId={currentSeasonId}
+                  />
                 </div>
                 <div className={styles.opponentLogContainer}>
                   <OpponentGamelog
                     teamId={teamIdForLog}
+                    seasonId={currentSeasonId}
                     highlightColor={teamColors.primaryColor || "#07aae2"}
                   />
                 </div>
@@ -516,6 +388,7 @@ const WigoCharts: React.FC = () => {
                   {selectedPlayer ? (
                     <PlayerRatingsDisplay
                       playerId={selectedPlayer.id}
+                      seasonId={currentSeasonId}
                       minGp={minGp}
                     />
                   ) : (
@@ -532,7 +405,10 @@ const WigoCharts: React.FC = () => {
                 <div className={styles.consistencyAndCategoryWrapper}>
                   <div className={styles.consistencyRatingContainer}>
                     {selectedPlayer ? (
-                      <ConsistencyChart playerId={selectedPlayer.id} />
+                      <ConsistencyChart
+                        playerId={selectedPlayer.id}
+                        seasonId={currentSeasonId}
+                      />
                     ) : (
                       <ChartLoadingPlaceholder message="Select a player" />
                     )}
@@ -548,13 +424,22 @@ const WigoCharts: React.FC = () => {
                   </div>
                 </div>
                 <div className={styles.toiChartContainer}>
-                  <ToiLineChart playerId={selectedPlayer?.id} />
+                  <ToiLineChart
+                    playerId={selectedPlayer?.id}
+                    seasonId={currentSeasonId}
+                  />
                 </div>
                 <div className={styles.ppgChartContainer}>
-                  <PpgLineChart playerId={selectedPlayer?.id} />
+                  <PpgLineChart
+                    playerId={selectedPlayer?.id}
+                    seasonId={currentSeasonId}
+                  />
                 </div>
                 <div className={styles.gameScoreContainer}>
-                  <GameScoreSection playerId={selectedPlayer?.id} />
+                  <GameScoreSection
+                    playerId={selectedPlayer?.id}
+                    seasonId={currentSeasonId}
+                  />
                 </div>
               </>
             )}
@@ -563,6 +448,7 @@ const WigoCharts: React.FC = () => {
               <div className={styles.rateStatBarPercentilesContainer}>
                 <RateStatPercentiles
                   playerId={selectedPlayer?.id}
+                  seasonId={currentSeasonId}
                   minGp={minGp}
                   onMinGpChange={setMinGp}
                 />

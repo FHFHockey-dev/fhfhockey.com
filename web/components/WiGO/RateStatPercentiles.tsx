@@ -1,5 +1,6 @@
 // /components/WiGO/RateStatPercentiles.tsx
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Bar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -34,6 +35,7 @@ ChartJS.register(
 
 interface RateStatPercentilesProps {
   playerId: number | null | undefined;
+  seasonId?: number | null;
   minGp: number; // Received from parent
   onMinGpChange: (newMinGp: number) => void; // Handler received from parent
 }
@@ -253,144 +255,109 @@ const generateChartConfig = (
 // --- RateStatPercentiles Component ---
 const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
   playerId,
+  seasonId,
   minGp,
   onMinGpChange
 }) => {
   const [selectedStrength, setSelectedStrength] =
     useState<PercentileStrength>("as");
-  const [allPlayersStats, setAllPlayersStats] = useState<PlayerRawStats[]>([]);
-  const [calculatedPercentiles, setCalculatedPercentiles] =
-    useState<CalculatedData | null>(null);
-  const [calculatedRanks, setCalculatedRanks] = // <-- NEW STATE FOR RANKS
-    useState<CalculatedData | null>(null);
+  const {
+    data: allPlayersStats = [],
+    isLoading,
+    error
+  } = useQuery<PlayerRawStats[]>({
+    queryKey: ["wigoPercentileStats", selectedStrength, seasonId],
+    queryFn: () =>
+      fetchAllPlayerStatsForStrength(selectedStrength, seasonId as number),
+    enabled: typeof seasonId === "number"
+  });
 
-  const [maxPossibleGp, setMaxPossibleGp] = useState<number>(82);
-  const [selectedPlayerGp, setSelectedPlayerGp] = useState<number | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-
-  // --- Fetching Logic ---
-  useEffect(() => {
-    const loadAllPlayerData = async () => {
-      setIsLoading(true);
-      setError(null);
-      setAllPlayersStats([]);
-      setCalculatedPercentiles(null); // Clear old calculations
-      setCalculatedRanks(null); // Clear old ranks
-
-      try {
-        const data = await fetchAllPlayerStatsForStrength(selectedStrength);
-        setAllPlayersStats(data);
-
-        // Calculate the overall max GP for fallback purposes
-        const maxGpOverall = data.reduce(
-          (max, p) => Math.max(max, p.gp ?? 0),
-          0
-        );
-        setMaxPossibleGp(maxGpOverall > 0 ? maxGpOverall : 82); // Use league max as fallback max
-
-        // --- Find selected player's GP immediately after fetch ---
-        // --- This ensures selectedPlayerGp state is updated when strength changes ---
-        if (playerId) {
-          const newlyFetchedPlayerData = data.find(
-            (p) => p.player_id === playerId
-          );
-          setSelectedPlayerGp(newlyFetchedPlayerData?.gp ?? null);
-        } else {
-          setSelectedPlayerGp(null); // Clear if no player ID
-        }
-      } catch (err: any) {
-        console.error("Failed to load all player data:", err);
-        setError(
-          `Failed to load player list: ${err.message || "Unknown error"}`
-        );
-        setAllPlayersStats([]);
-        setSelectedPlayerGp(null); // Clear GP on error
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    loadAllPlayerData();
-    // Depend on selectedStrength AND playerId so selectedPlayerGp updates if playerId changes *without* strength changing
-  }, [selectedStrength, playerId]);
-
-  // --- Calculation Logic (Percentiles and Ranks) ---
-  useEffect(() => {
-    if (!playerId || allPlayersStats.length === 0) {
-      /* ... clear state ... */ return;
-    }
-    const selectedPlayerData = allPlayersStats.find(
-      (p) => p.player_id === playerId
+  const maxPossibleGp = useMemo(() => {
+    const maxGpOverall = allPlayersStats.reduce(
+      (max, player) => Math.max(max, player.gp ?? 0),
+      0
     );
-    const currentPlayerGp = selectedPlayerData?.gp ?? null;
-    setSelectedPlayerGp(currentPlayerGp);
+
+    return maxGpOverall > 0 ? maxGpOverall : 82;
+  }, [allPlayersStats]);
+
+  const selectedPlayerGp = useMemo(() => {
+    if (!playerId) {
+      return null;
+    }
+
+    return allPlayersStats.find((player) => player.player_id === playerId)?.gp ?? null;
+  }, [allPlayersStats, playerId]);
+
+  const { calculatedPercentiles, calculatedRanks } = useMemo(() => {
+    if (!playerId || allPlayersStats.length === 0) {
+      return {
+        calculatedPercentiles: null as CalculatedData | null,
+        calculatedRanks: null as CalculatedData | null
+      };
+    }
 
     const filteredPlayers = allPlayersStats.filter(
-      (p) => p.gp !== null && p.gp >= minGp
+      (player) => player.gp !== null && player.gp >= minGp
     );
 
-    // If filtering results in no players (e.g., minGp is too high), clear results
     if (filteredPlayers.length === 0) {
-      setCalculatedPercentiles({});
-      setCalculatedRanks({});
-      return;
+      return {
+        calculatedPercentiles: {} as CalculatedData,
+        calculatedRanks: {} as CalculatedData
+      };
     }
 
     const percentileResults: CalculatedData = {};
     const rankResults: CalculatedData = {};
 
-    // --- Calculate TOI/GP Separately ---
     const toiGpData = filteredPlayers
-      .map((p) => ({
-        player_id: p.player_id,
-        // Ensure both toi and gp are numbers before division
+      .map((player) => ({
+        player_id: player.player_id,
         value:
-          p.toi != null && p.gp != null && p.gp > 0
-            ? Number(p.toi) / Number(p.gp)
+          player.toi != null && player.gp != null && player.gp > 0
+            ? Number(player.toi) / Number(player.gp)
             : null
       }))
       .filter(
-        (p): p is { player_id: number; value: number } => p.value !== null
+        (player): player is { player_id: number; value: number } =>
+          player.value !== null
       );
 
-    percentileResults["toi_per_gp_calc"] = calculatePercentileRank(
+    percentileResults.toi_per_gp_calc = calculatePercentileRank(
       toiGpData,
       playerId,
       "value",
-      true // higherIsBetter
+      true
     );
-    rankResults["toi_per_gp_calc"] = calculatePlayerRank(
+    rankResults.toi_per_gp_calc = calculatePlayerRank(
       toiGpData,
       playerId,
-      true // higherIsBetter
+      true
     );
 
-    // --- Calculate Other Stats ---
     ALL_STATS_TO_DISPLAY.forEach((stat) => {
-      if (stat.key === "toi_per_gp_calc") return; // Already calculated
+      if (stat.key === "toi_per_gp_calc") {
+        return;
+      }
 
       const validStatKey = stat.key as keyof PlayerRawStats;
-
-      // Prepare data for the current stat
       const statData = filteredPlayers
-        .map((p) => ({
-          player_id: p.player_id,
-          value: p[validStatKey] as number | null // Cast necessary? Check type
+        .map((player) => ({
+          player_id: player.player_id,
+          value: player[validStatKey] as number | null
         }))
         .filter(
-          (p): p is { player_id: number; value: number } =>
-            p.value !== null && !isNaN(p.value)
-        ); // Ensure value is non-null number
+          (player): player is { player_id: number; value: number } =>
+            player.value !== null && !isNaN(player.value)
+        );
 
-      // Calculate percentile
       percentileResults[validStatKey] = calculatePercentileRank(
         statData,
         playerId,
         "value",
         stat.higherIsBetter
       );
-
-      // Calculate rank
       rankResults[validStatKey] = calculatePlayerRank(
         statData,
         playerId,
@@ -398,9 +365,11 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
       );
     });
 
-    setCalculatedPercentiles(percentileResults);
-    setCalculatedRanks(rankResults); // <-- Set the ranks state
-  }, [allPlayersStats, playerId, minGp]);
+    return {
+      calculatedPercentiles: percentileResults,
+      calculatedRanks: rankResults
+    };
+  }, [allPlayersStats, minGp, playerId]);
 
   // Handlers (remain the same)
   const handleStrengthChange = useCallback((strength: PercentileStrength) => {
@@ -448,9 +417,15 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
         <div className={styles.loadingMessage}>Loading Player Data...</div>
       )}
       {!isLoading && error && (
-        <div className={styles.errorMessage}>{error}</div>
+        <div className={styles.errorMessage}>
+          Failed to load player list:{" "}
+          {error instanceof Error ? error.message || "Unknown error" : "Unknown error"}
+        </div>
       )}
-      {!isLoading && !error && allPlayersStats.length === 0 && (
+      {!isLoading && !error && !seasonId && playerId && (
+        <div className={styles.loadingMessage}>Loading season info...</div>
+      )}
+      {!isLoading && !error && seasonId && allPlayersStats.length === 0 && (
         <div className={styles.noDataMessage}>
           No player data available for {selectedStrength.toUpperCase()}.
         </div>
@@ -460,7 +435,7 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
       )}
 
       {/* Main Content: Filters (Left) + Chart & Ranks (Right) */}
-      {!isLoading && !error && playerId && (
+      {!isLoading && !error && playerId && seasonId && (
         <div className={styles.mainContentWrapper}>
           {/* Filters Container */}
           <div className={styles.percentileFiltersContainer}>

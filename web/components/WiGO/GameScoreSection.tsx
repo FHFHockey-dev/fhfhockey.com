@@ -8,9 +8,13 @@ import Spinner from "components/Spinner"; // Import Spinner for potential use in
 interface GameScoreSectionProps {
   // Allow null/undefined to be passed down
   playerId: number | null | undefined;
+  seasonId?: number | null;
 }
 
-const GameScoreSection: React.FC<GameScoreSectionProps> = ({ playerId }) => {
+const GameScoreSection: React.FC<GameScoreSectionProps> = ({
+  playerId,
+  seasonId
+}) => {
   return (
     // Ensure chartContainer has display: flex, flex-direction: column in SCSS
     <div className={styles.chartContainer}>
@@ -19,7 +23,7 @@ const GameScoreSection: React.FC<GameScoreSectionProps> = ({ playerId }) => {
       </div>
 
       <div className={styles.chartCanvasContainer}>
-        <GameScoreLineChart playerId={playerId} />
+        <GameScoreLineChart playerId={playerId} seasonId={seasonId} />
       </div>
     </div>
   );

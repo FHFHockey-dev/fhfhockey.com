@@ -738,12 +738,13 @@ export async function fetchPaginatedData<T>(
 
 // New function to fetch per-game relevant totals
 export const fetchPlayerPerGameTotals = async (
-  playerId: number
+  playerId: number,
+  seasonId?: number | null
 ): Promise<SkaterTotalsData | null> => {
   if (!playerId) return null;
 
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from("wgo_skater_stats_totals")
       .select(
         `
@@ -766,8 +767,13 @@ export const fetchPlayerPerGameTotals = async (
       )
       .eq("player_id", playerId)
       .order("season", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .limit(1);
+
+    if (typeof seasonId === "number") {
+      query = query.eq("season", String(seasonId));
+    }
+
+    const { data, error } = await query.maybeSingle();
 
     if (error) {
       console.error(

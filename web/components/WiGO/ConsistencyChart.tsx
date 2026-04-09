@@ -1,11 +1,10 @@
 // components/WiGO/ConsistencyChart.tsx
-import React, { useState, useEffect } from "react";
+import React, { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Doughnut } from "react-chartjs-2";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, Title } from "chart.js";
 import {
-  fetchPlayerGameLogConsistencyData,
-  fetchPlayerPerGameTotals,
-  SkaterGameLogConsistencyData
+  fetchPlayerGameLogConsistencyData
 } from "utils/fetchWigoPlayerStats"; // Adjust path
 import { formatPercentage } from "utils/formattingUtils"; // Adjust path
 import styles from "styles/wigoCharts.module.scss"; // Import shared styles
@@ -27,110 +26,86 @@ interface ConsistencyDataPoint {
 
 interface ConsistencyChartProps {
   playerId: number | null | undefined;
+  seasonId?: number | null;
 }
 
-const ConsistencyChart: React.FC<ConsistencyChartProps> = ({ playerId }) => {
-  const [processedData, setProcessedData] = useState<ConsistencyDataPoint[]>(
-    []
-  );
-  const [chartData, setChartData] = useState<any>({ datasets: [] });
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+const ConsistencyChart: React.FC<ConsistencyChartProps> = ({
+  playerId,
+  seasonId
+}) => {
+  const {
+    data: gameLogs = [],
+    isLoading,
+    error
+  } = useQuery({
+    queryKey: ["wigoConsistencyGameLog", playerId, seasonId],
+    queryFn: () =>
+      fetchPlayerGameLogConsistencyData(playerId as number, String(seasonId)),
+    enabled: typeof playerId === "number" && typeof seasonId === "number"
+  });
 
-  useEffect(() => {
-    // --- Fetching logic remains the same ---
-    if (!playerId) {
-      return;
+  const { processedData, chartData } = useMemo(() => {
+    if (!gameLogs || gameLogs.length === 0) {
+      return { processedData: [] as ConsistencyDataPoint[], chartData: { datasets: [] } };
     }
-    const loadConsistencyData = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const totals = await fetchPlayerPerGameTotals(playerId);
-        if (!totals || !totals.season)
-          throw new Error("Could not determine latest season for player.");
-        const currentSeason = totals.season;
-        const gameLogs = await fetchPlayerGameLogConsistencyData(
-          playerId,
-          currentSeason
-        );
-        if (!gameLogs || gameLogs.length === 0) {
-          setError("No game data found...");
-          setIsLoading(false);
-          return;
-        }
 
-        const totalGames = gameLogs.length;
-        let maxPoints = 0;
-        const pointCounts: { [key: number]: number } = {};
-        let cardioGameCount = 0;
-        gameLogs.forEach((log) => {
-          const points = log.points ?? 0;
-          const shots = log.shots ?? 0;
-          const hits = log.hits ?? 0;
-          const blocks = log.blocked_shots ?? 0;
-          pointCounts[points] = (pointCounts[points] || 0) + 1;
-          if (points > maxPoints) maxPoints = points;
-          if (points === 0 && shots === 0 && hits === 0 && blocks === 0)
-            cardioGameCount++;
-        });
+    const totalGames = gameLogs.length;
+    let maxPoints = 0;
+    const pointCounts: { [key: number]: number } = {};
+    let cardioGameCount = 0;
 
-        const displayData: ConsistencyDataPoint[] = [];
-        const chartLabels: string[] = [];
-        const chartPercentages: number[] = [];
-        const chartBackgroundColors: string[] = [];
+    gameLogs.forEach((log) => {
+      const points = log.points ?? 0;
+      const shots = log.shots ?? 0;
+      const hits = log.hits ?? 0;
+      const blocks = log.blocked_shots ?? 0;
+      pointCounts[points] = (pointCounts[points] || 0) + 1;
+      if (points > maxPoints) maxPoints = points;
+      if (points === 0 && shots === 0 && hits === 0 && blocks === 0) {
+        cardioGameCount++;
+      }
+    });
 
-        for (let i = 0; i <= maxPoints; i++) {
-          const count = pointCounts[i] || 0;
-          const percentage = totalGames > 0 ? count / totalGames : 0;
-          const label = `${i} Pt${i !== 1 ? "s" : ""}`;
+    const displayData: ConsistencyDataPoint[] = [];
+    const chartLabels: string[] = [];
+    const chartPercentages: number[] = [];
+    const chartBackgroundColors: string[] = [];
 
-          const color = CONSISTENCY_CHART_COLORS[i] ?? WIGO_COLORS.GREY_MEDIUM;
+    for (let i = 0; i <= maxPoints; i++) {
+      const count = pointCounts[i] || 0;
+      const percentage = totalGames > 0 ? count / totalGames : 0;
+      const label = `${i} Pt${i !== 1 ? "s" : ""}`;
+      const color = CONSISTENCY_CHART_COLORS[i] ?? WIGO_COLORS.GREY_MEDIUM;
 
-          displayData.push({ label, percentage, count, color }); // Store specific color
+      displayData.push({ label, percentage, count, color });
+      chartLabels.push(label);
+      chartPercentages.push(percentage * 100);
+      chartBackgroundColors.push(color);
+    }
 
-          chartLabels.push(label);
-          chartPercentages.push(percentage * 100);
-          chartBackgroundColors.push(color); // Use the assigned color
-        }
+    displayData.push({
+      label: "Cardio",
+      percentage: totalGames > 0 ? cardioGameCount / totalGames : 0,
+      count: cardioGameCount,
+      color: WIGO_COLORS.GREY_MEDIUM
+    });
 
-        // --- Handle Cardio separately ---
-        const cardioPercentage =
-          totalGames > 0 ? cardioGameCount / totalGames : 0;
-
-        // Assign a specific color for Cardio, maybe grey?
-        const cardioColor = WIGO_COLORS.GREY_MEDIUM;
-        displayData.push({
-          label: "Cardio",
-          percentage: cardioPercentage,
-          count: cardioGameCount,
-          color: cardioColor // Add color for the list item
-        });
-
-        setProcessedData(displayData);
-        setChartData({
-          labels: chartLabels,
-          datasets: [
-            {
-              label: "Points per Game Distribution",
-              data: chartPercentages,
-              backgroundColor: chartBackgroundColors,
-              borderColor: CHART_COLORS.BORDER_DARK, // Use var
-              borderWidth: 1
-            }
-          ]
-        });
-      } catch (err: any) {
-        console.error("Failed to load Consistency chart data:", err);
-        setError(`Failed to load data: ${err.message || "Unknown error"}`);
-        setProcessedData([]);
-        setChartData({ datasets: [] });
-      } finally {
-        setIsLoading(false);
+    return {
+      processedData: displayData,
+      chartData: {
+        labels: chartLabels,
+        datasets: [
+          {
+            label: "Points per Game Distribution",
+            data: chartPercentages,
+            backgroundColor: chartBackgroundColors,
+            borderColor: CHART_COLORS.BORDER_DARK,
+            borderWidth: 1
+          }
+        ]
       }
     };
-    loadConsistencyData();
-  }, [playerId]);
+  }, [gameLogs]);
 
   // --- chartOptions remain the same ---
   const chartOptions: any = {
@@ -189,14 +164,42 @@ const ConsistencyChart: React.FC<ConsistencyChartProps> = ({ playerId }) => {
             Loading Consistency...
           </div>
         )}
-        {error && (
+        {error instanceof Error && (
           <div
             className={styles.chartErrorPlaceholder}
             style={{ width: "100%" }}
           >
-            Error: {error}
+            Error: Failed to load data: {error.message || "Unknown error"}
           </div>
         )}
+        {!playerId && !isLoading && !error && (
+          <div
+            className={styles.chartLoadingPlaceholder}
+            style={{ width: "100%" }}
+          >
+            Select a player
+          </div>
+        )}
+        {playerId && !seasonId && !isLoading && !error && (
+          <div
+            className={styles.chartLoadingPlaceholder}
+            style={{ width: "100%" }}
+          >
+            Loading season info...
+          </div>
+        )}
+        {!isLoading &&
+          !error &&
+          playerId &&
+          seasonId &&
+          processedData.length === 0 && (
+            <div
+              className={styles.chartLoadingPlaceholder}
+              style={{ width: "100%" }}
+            >
+              No game data found...
+            </div>
+          )}
 
         {!isLoading && !error && processedData.length > 0 && (
           <>
