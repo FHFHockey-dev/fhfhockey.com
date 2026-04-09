@@ -9,21 +9,12 @@ import { teamsInfo, teamNameToAbbreviationMap } from "lib/teamsInfo";
 import publicSupabase from "lib/supabase/public-client";
 import styles from "./TeamStandingsChart.module.scss";
 import Fetch from "lib/cors-fetch";
+import { getMetricValue, getYDomainMax, type NumericMetric } from "./metricUtils";
 
 // -------------------------------
 // TYPE DEFINITIONS
 // -------------------------------
 // Note: we now include raw cumulative totals: goalFor and goalAgainst.
-type NumericMetric =
-  | "pointPct"
-  | "points"
-  | "goalsAgainstPerGame"
-  | "goalsForPerGame"
-  | "penaltyKillPct"
-  | "powerPlayPct"
-  | "shotsAgainstPerGame"
-  | "shotsForPerGame";
-
 interface TeamData {
   franchiseName: string;
   gamesPlayed: number;
@@ -40,39 +31,6 @@ interface TeamData {
   // Raw cumulative totals (from the API)
   goalFor: number;
   goalAgainst: number;
-}
-
-// -------------------------------
-// HELPER FUNCTIONS
-// -------------------------------
-function getYDomainMax(metric: NumericMetric): number {
-  if (
-    metric === "pointPct" ||
-    metric === "penaltyKillPct" ||
-    metric === "powerPlayPct"
-  ) {
-    return 100;
-  }
-  if (metric === "goalsAgainstPerGame" || metric === "goalsForPerGame") {
-    return 10;
-  }
-  if (metric === "shotsAgainstPerGame" || metric === "shotsForPerGame") {
-    return 50;
-  }
-  return 100;
-}
-
-function getMetricValue(d: TeamData, metric: NumericMetric): number {
-  const raw = d[metric];
-  // For PK%, PP%, and pointPct, multiply by 100.
-  if (
-    metric === "pointPct" ||
-    metric === "penaltyKillPct" ||
-    metric === "powerPlayPct"
-  ) {
-    return raw * 100;
-  }
-  return raw;
 }
 
 /** Accumulate daily data for each team. */
@@ -383,14 +341,14 @@ const TeamStandingsChart: React.FC = () => {
         if (useRolling) {
           if (rolling5) {
             const s = computeRollingAverageFiltered(sortedData, 5, metric);
-            s.forEach((d) => allValues.push(getMetricValue(d, metric)));
+            s.forEach((d) => allValues.push(getMetricValue(d[metric], metric)));
           }
           if (rolling10) {
             const s = computeRollingAverageFiltered(sortedData, 10, metric);
-            s.forEach((d) => allValues.push(getMetricValue(d, metric)));
+            s.forEach((d) => allValues.push(getMetricValue(d[metric], metric)));
           }
         } else {
-          sortedData.forEach((d) => allValues.push(getMetricValue(d, metric)));
+          sortedData.forEach((d) => allValues.push(getMetricValue(d[metric], metric)));
         }
       });
       const minVal = d3.min(allValues) ?? 0;
@@ -456,7 +414,7 @@ const TeamStandingsChart: React.FC = () => {
               5,
               metric === "goalsForPerGame" ? "goalsFor" : "goalsAgainst"
             );
-            s.forEach((d) => allValues.push(getMetricValue(d, metric)));
+            s.forEach((d) => allValues.push(getMetricValue(d[metric], metric)));
           }
           if (rolling10) {
             const s = computeRollingForGoals(
@@ -464,10 +422,10 @@ const TeamStandingsChart: React.FC = () => {
               10,
               metric === "goalsForPerGame" ? "goalsFor" : "goalsAgainst"
             );
-            s.forEach((d) => allValues.push(getMetricValue(d, metric)));
+            s.forEach((d) => allValues.push(getMetricValue(d[metric], metric)));
           }
         } else {
-          sortedData.forEach((d) => allValues.push(getMetricValue(d, metric)));
+          sortedData.forEach((d) => allValues.push(getMetricValue(d[metric], metric)));
         }
       });
       const minVal = d3.min(allValues) ?? 0;
@@ -492,11 +450,11 @@ const TeamStandingsChart: React.FC = () => {
       .x((d) => xScale(d.gamesPlayed))
       .y((d) => {
         if (metric === "pointPct") {
-          return yScale(getMetricValue(d, metric) - 50);
+          return yScale(getMetricValue(d[metric], metric) - 50);
         } else if (metric === "points") {
           return yScale(d.points - d.gamesPlayed);
         } else {
-          return yScale(getMetricValue(d, metric));
+          return yScale(getMetricValue(d[metric], metric));
         }
       })
       .curve(d3.curveLinear);
@@ -596,7 +554,7 @@ const TeamStandingsChart: React.FC = () => {
               .append("svg:image")
               .attr("xlink:href", `/teamLogos/${abbr || "default"}.png`)
               .attr("x", xScale(lastPoint.gamesPlayed) + 5)
-              .attr("y", yScale(getMetricValue(lastPoint, metric)) - 10)
+              .attr("y", yScale(getMetricValue(lastPoint[metric], metric)) - 10)
               .attr("width", 20)
               .attr("height", 20);
           }
@@ -621,10 +579,10 @@ const TeamStandingsChart: React.FC = () => {
           .attr("cx", (d) => xScale(d.gamesPlayed))
           .attr("cy", (d) =>
             metric === "pointPct"
-              ? yScale(getMetricValue(d, metric) - 50)
+              ? yScale(getMetricValue(d[metric], metric) - 50)
               : metric === "points"
                 ? yScale(d.points - d.gamesPlayed)
-                : yScale(getMetricValue(d, metric))
+                : yScale(getMetricValue(d[metric], metric))
           )
           .attr("r", 3)
           .attr("fill", color)
@@ -636,10 +594,10 @@ const TeamStandingsChart: React.FC = () => {
                 GP: ${d.gamesPlayed}<br/>
                 Value: ${
                   metric === "pointPct"
-                    ? (getMetricValue(d, metric) - 50).toFixed(2)
+                    ? (getMetricValue(d[metric], metric) - 50).toFixed(2)
                     : metric === "points"
                       ? (d.points - d.gamesPlayed).toFixed(2)
-                      : getMetricValue(d, metric).toFixed(2)
+                      : getMetricValue(d[metric], metric).toFixed(2)
                 }
               `);
           })
@@ -662,10 +620,10 @@ const TeamStandingsChart: React.FC = () => {
           .attr("x", xScale(lastPoint.gamesPlayed) + 5)
           .attr("y", () =>
             metric === "pointPct"
-              ? yScale(getMetricValue(lastPoint, metric) - 50) - 10
+              ? yScale(getMetricValue(lastPoint[metric], metric) - 50) - 10
               : metric === "points"
                 ? yScale(lastPoint.points - lastPoint.gamesPlayed) - 10
-                : yScale(getMetricValue(lastPoint, metric)) - 10
+                : yScale(getMetricValue(lastPoint[metric], metric)) - 10
           )
           .attr("width", 20)
           .attr("height", 20);

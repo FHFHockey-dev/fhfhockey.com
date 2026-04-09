@@ -3,8 +3,11 @@
 - `tasks/prd-fhfh-site-surface-expansion-roadmap.md` - Source PRD that defines the umbrella roadmap, scope, phases, and non-goals for this task list.
 - `tasks/fhfh-site-surface-expansion-implementation-map.md` - Canonical route-ownership, naming, cross-link, and non-goal note used to lock roadmap decisions before feature work expands.
 - `web/pages/index.tsx` - Homepage route that anchors slate summaries, standings, injuries, and downstream navigation.
+- `web/styles/Home.module.scss` - Homepage styling layer where the injury-table date column and related layout polish are controlled.
 - `web/components/HomePage/HomepageGamesSection.tsx` - Homepage live-game summary module that needs status validation and lightweight deep-link support.
+- `web/components/HomePage/HomepageGamesSection.test.tsx` - Homepage regression coverage for live-game clock presentation and downstream decision-surface links.
 - `web/components/HomePage/HomepageStandingsInjuriesSection.tsx` - Homepage standings and injuries surface for table-completeness and layout polish work.
+- `web/components/HomePage/HomepageStandingsInjuriesSection.test.tsx` - Homepage regression coverage for standings sorting, error handling, and injury pagination behavior.
 - `web/components/Layout/NavbarItems/NavbarItemsData.ts` - Global navigation inventory where roadmap-approved top-level tool links are exposed.
 - `web/pages/trends/index.tsx` - Trends landing page that should absorb more recent-form, L10-style, and comparison-toolkit entry points.
 - `web/pages/trends/player/[playerId].tsx` - Player trend detail route that already supports rolling and historical baselines and should be extended rather than replaced.
@@ -20,6 +23,9 @@
 - `web/pages/game-grid/index.tsx` - Game-grid route that should keep its planning role while linking to deeper team and matchup tools.
 - `web/pages/game-grid/[mode].tsx` - Canonical game-grid route where phase-1 cross-links should guide users into the related deep-dive surfaces.
 - `web/pages/start-chart.tsx` - Starter-board route that should connect matchup planning to trends, lines, goalies, and the game grid.
+- `web/components/TeamStandingsChart/TeamStandingsChart.tsx` - Homepage standings-chart component where PP% and PK% metric scaling must stay aligned with upstream percentage units.
+- `web/components/TeamStandingsChart/metricUtils.ts` - Shared metric-scaling helpers for homepage standings-chart percentage handling.
+- `web/components/TeamStandingsChart/metricUtils.test.ts` - Regression tests that protect point-percentage scaling while keeping PP% and PK% in their original units.
 - `web/components/GameGrid/utils/FourWeekGrid.tsx` - Core four-week-grid implementation that needs the tabbed “back side” redesign.
 - `web/components/GameGrid/OpponentMetricsTable.tsx` - Existing opponent-context companion table that should remain aligned with grid enhancements.
 - `web/lib/dashboard/teamContext.ts` - Existing team-context shaping logic that is a natural starting point for L10-style and matchup-facing modules.
@@ -57,13 +63,13 @@
   - [x] 1.4 Add or update cross-links between homepage, trends, team pages, lines pages, start chart, and game grid so summary modules lead directly to the right deep-dive page.
   - [x] 1.5 Record the intentionally deferred items and PRD non-goals in implementation notes so no one accidentally builds the excluded ranking-vote workflow.
 
-- [ ] 2.0 Polish the homepage and other lightweight summary surfaces before deeper feature expansion
-  - [ ] 2.1 Verify the homepage still swaps scheduled start time to period plus time remaining for in-progress games and repair any regressions if the live-state contract has drifted.
-  - [ ] 2.2 Audit the homepage standings module to confirm data completeness, empty-state handling, and resilience when one upstream data source is stale.
-  - [ ] 2.3 Fix the injury-table date-column layout issue so the row density remains readable across common viewport widths.
-  - [ ] 2.4 Audit every homepage PP-related summary metric, identify why the current PP% output can drift from expected values, and correct the displayed contract rather than patching only formatting.
-  - [ ] 2.5 Add lightweight downstream links from homepage summary modules into the strongest relevant deep-dive surfaces instead of trying to turn the homepage into a dense analysis page.
-  - [ ] 2.6 Add targeted route/component tests for homepage rendering, data fallbacks, and any corrected metric-display logic.
+- [x] 2.0 Polish the homepage and other lightweight summary surfaces before deeper feature expansion
+  - [x] 2.1 Verify the homepage still swaps scheduled start time to period plus time remaining for in-progress games and repair any regressions if the live-state contract has drifted.
+  - [x] 2.2 Audit the homepage standings module to confirm data completeness, empty-state handling, and resilience when one upstream data source is stale.
+  - [x] 2.3 Fix the injury-table date-column layout issue so the row density remains readable across common viewport widths.
+  - [x] 2.4 Audit every homepage PP-related summary metric, identify why the current PP% output can drift from expected values, and correct the displayed contract rather than patching only formatting.
+  - [x] 2.5 Add lightweight downstream links from homepage summary modules into the strongest relevant deep-dive surfaces instead of trying to turn the homepage into a dense analysis page.
+  - [x] 2.6 Add targeted route/component tests for homepage rendering, data fallbacks, and any corrected metric-display logic.
 
 - [ ] 3.0 Expand trends into the main recent-form and rolling-comparison toolkit
   - [ ] 3.1 Audit the existing player trend route and explicitly lock the supported baseline modes for strong v1, with recent-vs-season and recent-vs-career treated as required and recent-vs-last-year included only if the source contract is stable.

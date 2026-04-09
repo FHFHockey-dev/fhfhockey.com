@@ -924,7 +924,9 @@ $mobile-column-short: 30px;
   }
 
   .dateColumn {
-    width: 15%;
+    width: 6.5rem;
+    min-width: 6.5rem;
+    max-width: 6.5rem;
     white-space: nowrap;
   }
   // Adjust other column widths if needed due to team column change
@@ -1428,7 +1430,8 @@ $mobile-column-short: 30px;
     // DATE
     th:nth-child(1),
     td:nth-child(1) {
-      width: 15%;
+      width: 6.25rem;
+      min-width: 6.25rem;
       font-weight: 900;
       font-size: 16px;
       text-align: center;
