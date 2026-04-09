@@ -2,8 +2,7 @@
 
 import React from "react";
 import GameScoreLineChart from "./GameScoreLineChart";
-import styles from "styles/wigoCharts.module.scss";
-import Spinner from "components/Spinner"; // Import Spinner for potential use inside GameScoreLineChart
+import WigoSectionCard from "./WigoSectionCard";
 
 interface GameScoreSectionProps {
   // Allow null/undefined to be passed down
@@ -16,16 +15,9 @@ const GameScoreSection: React.FC<GameScoreSectionProps> = ({
   seasonId
 }) => {
   return (
-    // Ensure chartContainer has display: flex, flex-direction: column in SCSS
-    <div className={styles.chartContainer}>
-      <div className={styles.chartHeader}>
-        <h3>Game Score</h3>
-      </div>
-
-      <div className={styles.chartCanvasContainer}>
+    <WigoSectionCard title="Game Score">
         <GameScoreLineChart playerId={playerId} seasonId={seasonId} />
-      </div>
-    </div>
+    </WigoSectionCard>
   );
 };
 

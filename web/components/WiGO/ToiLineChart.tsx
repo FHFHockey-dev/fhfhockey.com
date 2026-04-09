@@ -27,6 +27,7 @@ import styles from "styles/wigoCharts.module.scss";
 import zoomPlugin from "chartjs-plugin-zoom";
 import Spinner from "components/Spinner";
 import { WIGO_COLORS, CHART_COLORS, addAlpha } from "styles/wigoColors"; // Adjust path
+import WigoSectionCard from "./WigoSectionCard";
 
 ChartJS.register(
   CategoryScale,
@@ -334,31 +335,22 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId, seasonId }) => {
   const chartOptions = getChartOptions();
 
   return (
-    <div className={styles.chartContainer}>
-      {/* --- Header with Title and Toggle Buttons --- */}
-      <div className={styles.chartHeader}>
-        <h3>{chartTitle}</h3>
-
-        {/* Basic Toggle Buttons */}
+    <WigoSectionCard
+      title={chartTitle}
+      toolbar={
         <div className={styles.toggleButtons}>
-          <button
-            onClick={() => setChartView("toi")}
-            disabled={chartView === "toi"} // Disable if active
-          >
+          <button onClick={() => setChartView("toi")} disabled={chartView === "toi"}>
             TOI
           </button>
           <button
             onClick={() => setChartView("pp_pct")}
-            disabled={chartView === "pp_pct"} // Disable if active
+            disabled={chartView === "pp_pct"}
           >
             PP TOI %
           </button>
         </div>
-      </div>
-
-      {/* --- Chart Canvas --- */}
-      {/* Chart Canvas Container */}
-      <div className={styles.chartCanvasContainer}>
+      }
+    >
         {/* Render the chart structure if NO error */}
         {/* It will show the empty state (with dummy labels) while loading */}
         {!error && (
@@ -400,8 +392,7 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId, seasonId }) => {
             No game log data available for this player.
           </div>
         )}
-      </div>
-    </div>
+    </WigoSectionCard>
   );
 };
 

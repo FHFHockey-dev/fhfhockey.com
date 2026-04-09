@@ -30,6 +30,7 @@ import styles from "styles/wigoCharts.module.scss";
 import Spinner from "components/Spinner";
 import Zoom from "chartjs-plugin-zoom";
 import { WIGO_COLORS, CHART_COLORS, addAlpha } from "styles/wigoColors";
+import WigoSectionCard from "./WigoSectionCard";
 
 ChartJS.register(
   CategoryScale,
@@ -284,14 +285,7 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId, seasonId }) => {
   const chartData = getChartData();
   const chartOptions = getChartOptions();
   return (
-    <div className={styles.chartContainer}>
-      {/* Header remains the same */}
-      <div className={styles.chartHeader}>
-        <h3>Points / Game</h3>
-      </div>
-
-      {/* Chart Canvas Container */}
-      <div className={styles.chartCanvasContainer}>
+    <WigoSectionCard title="Points / Game">
         {/* Render the chart structure if NO error */}
         {/* Shows empty state (with dummy labels) while loading */}
         {!error && (
@@ -336,8 +330,7 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId, seasonId }) => {
             No Points data available for this player.
           </div>
         )}
-      </div>
-    </div>
+    </WigoSectionCard>
   );
 };
 

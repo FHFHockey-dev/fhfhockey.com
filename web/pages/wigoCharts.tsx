@@ -1,57 +1,23 @@
 // /pages/wigoCharts.tsx
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import dynamic from "next/dynamic";
 
 import styles from "styles/wigoCharts.module.scss"; // Main styles
 import { TableAggregateData } from "components/WiGO/types";
-import NameSearchBar from "components/WiGO/NameSearchBar";
-import TimeframeComparison from "components/WiGO/TimeframeComparison";
-import CategoryCoverageChart from "components/CategoryCoverageChart";
-import GameScoreSection from "components/WiGO/GameScoreSection";
-import PlayerHeader from "components/WiGO/PlayerHeader";
-import StatsTable from "components/WiGO/StatsTable"; // The modified component
-import PerGameStatsTable from "components/WiGO/PerGameStatsTable";
-import RateStatPercentiles from "components/WiGO/RateStatPercentiles";
-import OpponentGamelog from "components/WiGO/OpponentGamelog";
-import PlayerRatingsDisplay from "components/WiGO/PlayerRatingsDisplay";
-import useWigoPlayerDashboard from "hooks/useWigoPlayerDashboard";
-// Removed TimeOptions import if not used elsewhere
-
 import {
-  computeDiffColumn,
-  formatCell as formatCellUtil
-} from "components/WiGO/tableUtils";
-
-// --- Dynamically import components (remains the same) ---
-const ChartLoadingPlaceholder = ({ message }: { message: string }) => (
-  <div className={styles.chartLoadingPlaceholder}>{message}</div>
-);
-
-const ToiLineChart = dynamic(() => import("components/WiGO/ToiLineChart"), {
-  ssr: false,
-  loading: () => <ChartLoadingPlaceholder message="Loading TOI Chart..." />
-});
-
-const PpgLineChart = dynamic(() => import("components/WiGO/PpgLineChart"), {
-  ssr: false,
-  loading: () => <ChartLoadingPlaceholder message="Loading PPG Chart..." />
-});
-
-const ConsistencyChart = dynamic(
-  () => import("components/WiGO/ConsistencyChart"),
-  {
-    ssr: false,
-    loading: () => <ChartLoadingPlaceholder message="Loading Consistency..." />
-  }
-);
-// --- End Dynamic Imports ---
+  WigoComparisonSection,
+  WigoDashboardHeader,
+  WigoOverviewSection,
+  WigoPercentilesSection,
+  WigoTrendsSection
+} from "components/WiGO/WigoDashboardSections";
+import useWigoPlayerDashboard from "hooks/useWigoPlayerDashboard";
+import { computeDiffColumn } from "components/WiGO/tableUtils";
 
 const WigoCharts: React.FC = () => {
   const [leftTimeframe, setLeftTimeframe] =
     useState<keyof TableAggregateData>("STD");
   const [rightTimeframe, setRightTimeframe] =
     useState<keyof TableAggregateData>("CA");
-  const placeholderImage = "/pictures/player-placeholder.jpg";
   const [minGp, setMinGp] = useState<number>(10);
 
   const {
@@ -152,158 +118,49 @@ const WigoCharts: React.FC = () => {
           {/* --- Top Row Items (Direct Grid Children) --- */}
           {/* --- NEW: Header Row Wrapper (Direct Grid Child) --- */}
           <div className={styles.headerRowWrapper}>
-            {/* Components within the header wrapper, arranged by flexbox */}
-            <div className={styles.nameSearchBarContainer}>
-              <NameSearchBar onSelect={handlePlayerSelect} />
-            </div>
-            <div className={styles.wigoHeader}>
-              <div className={styles.headerText}>
-                <span className={styles.spanColorBlue}>WiGO</span>
-                {"\u00A0\u00A0//\u00A0\u00A0"}
-                <span className={styles.spanColorBlue}>W</span>
-                HAT
-                {"\u00A0\u00A0"}
-                <span className={styles.spanColorBlue}>I</span>S{"\u00A0\u00A0"}
-                <span className={styles.spanColorBlue}>G</span>
-                OING
-                {"\u00A0\u00A0"}
-                <span className={styles.spanColorBlue}>O</span>N
-              </div>
-            </div>
+            <WigoDashboardHeader onPlayerSelect={handlePlayerSelect} />
           </div>
 
           {/* --- NEW: Left Column Wrapper (Direct Grid Child) --- */}
           <div className={styles.leftColumnWrapper}>
-            {/* Components within the left column */}
-            <div className={styles.playerHeaderContainer}>
-              <PlayerHeader
-                selectedPlayer={selectedPlayer}
-                headshotUrl={headshotUrl}
-                teamName={teamName}
-                teamAbbreviation={teamAbbreviation}
-                teamColors={teamColors}
-                placeholderImage={placeholderImage}
-              />
-            </div>
-            <div className={styles.playerNameContainer}>
-              {selectedPlayer ? (
-                <h2 className={styles.playerName}>
-                  <span className={styles.spanColorBlueName}>
-                    {selectedPlayer.firstName}
-                  </span>{" "}
-                  {selectedPlayer.lastName}
-                </h2>
-              ) : (
-                <div className={styles.chartLoadingPlaceholder}>
-                  Select a player
-                </div>
-              )}
-            </div>
-            <div className={styles.perGameStatsContainer}>
-              <PerGameStatsTable
-                playerId={selectedPlayer?.id}
-                seasonId={currentSeasonId}
-              />
-            </div>
-            <div className={styles.opponentLogContainer}>
-              <OpponentGamelog
-                teamId={teamIdForLog}
-                seasonId={currentSeasonId}
-                highlightColor={teamColors.primaryColor || "#07aae2"}
-              />
-            </div>
-            <div className={styles.ratingsContainer}>
-              {selectedPlayer ? (
-                <PlayerRatingsDisplay
-                  playerId={selectedPlayer.id}
-                  seasonId={currentSeasonId}
-                  minGp={minGp}
-                />
-              ) : (
-                <div className={styles.chartLoadingPlaceholder}>
-                  Select player for ratings
-                </div>
-              )}
-            </div>
+            <WigoOverviewSection
+              selectedPlayer={selectedPlayer}
+              headshotUrl={headshotUrl}
+              teamName={teamName}
+              teamAbbreviation={teamAbbreviation}
+              teamColors={teamColors}
+              teamIdForLog={teamIdForLog}
+              currentSeasonId={currentSeasonId}
+              minGp={minGp}
+            />
           </div>
 
           {/* --- NEW: Middle Column Wrapper (Direct Grid Child) --- */}
           <div className={styles.middleColumnWrapper}>
-            {/* Components within the middle column */}
-            <div className={styles.consistencyAndCategoryWrapper}>
-              <div className={styles.consistencyRatingContainer}>
-                {selectedPlayer ? (
-                  <ConsistencyChart
-                    playerId={selectedPlayer.id}
-                    seasonId={currentSeasonId}
-                  />
-                ) : (
-                  <ChartLoadingPlaceholder message="Select a player" />
-                )}
-              </div>
-              <div className={styles.percentileChartContainer}>
-                <div className={styles.chartTitle}>
-                  <h3 style={{ margin: 0 }}>Percentiles</h3>
-                </div>
-                <CategoryCoverageChart
-                  playerId={selectedPlayer?.id}
-                  timeOption="SEASON" // Or make dynamic if needed
-                />
-              </div>
-            </div>
-            <div className={styles.toiChartContainer}>
-              <ToiLineChart
-                playerId={selectedPlayer?.id}
-                seasonId={currentSeasonId}
-              />
-            </div>
-            <div className={styles.ppgChartContainer}>
-              <PpgLineChart
-                playerId={selectedPlayer?.id}
-                seasonId={currentSeasonId}
-              />
-            </div>
-            <div className={styles.gameScoreContainer}>
-              <GameScoreSection
-                playerId={selectedPlayer?.id}
-                seasonId={currentSeasonId}
-              />
-            </div>
-            <div className={styles.rateStatBarPercentilesContainer}>
-              <RateStatPercentiles
-                playerId={selectedPlayer?.id}
-                seasonId={currentSeasonId}
-                minGp={minGp}
-                onMinGpChange={setMinGp}
-              />
-            </div>
+            <WigoTrendsSection
+              selectedPlayer={selectedPlayer}
+              currentSeasonId={currentSeasonId}
+            />
+            <WigoPercentilesSection
+              playerId={selectedPlayer?.id}
+              seasonId={currentSeasonId}
+              minGp={minGp}
+              onMinGpChange={setMinGp}
+            />
           </div>
 
           {/* --- NEW: Right Column Wrapper (Direct Grid Child) --- */}
           <div className={styles.rightColumnWrapper}>
-            {/* Components within the right column */}
-            <div className={styles.timeframeComparisonWrapper}>
-              <TimeframeComparison
-                initialLeft={leftTimeframe}
-                initialRight={rightTimeframe}
-                onCompare={handleTimeframeCompare}
-                // disabled={isLoadingAggData}
-              />
-              <div className={styles.combinedStatsTableContainer}>
-                <StatsTable
-                  data={displayDataWithDiff}
-                  isLoading={
-                    isLoadingAggData && displayDataWithDiff.length === 0
-                  }
-                  error={aggDataError}
-                  formatCell={formatCellUtil} // Ensure this handles mixed types
-                  playerId={selectedPlayer?.id ?? 0}
-                  currentSeasonId={currentSeasonId ?? 0}
-                  leftTimeframe={leftTimeframe}
-                  rightTimeframe={rightTimeframe}
-                />
-              </div>
-            </div>
+            <WigoComparisonSection
+              data={displayDataWithDiff}
+              isLoadingAggData={isLoadingAggData}
+              aggDataError={aggDataError}
+              playerId={selectedPlayer?.id}
+              currentSeasonId={currentSeasonId}
+              leftTimeframe={leftTimeframe}
+              rightTimeframe={rightTimeframe}
+              onCompare={handleTimeframeCompare}
+            />
           </div>
 
           {/* === Grid Items END === */}
@@ -323,161 +180,53 @@ const WigoCharts: React.FC = () => {
           }
         >
           <div className={styles.mobileHeaderRow}>
-            <div className={styles.nameSearchBarContainer}>
-              <NameSearchBar onSelect={handlePlayerSelect} />
-            </div>
-            <div className={styles.wigoHeader}>
-              <div className={styles.headerText}>
-                <span className={styles.spanColorBlue}>WiGO</span>
-                {"\u00A0\u00A0//\u00A0\u00A0"}
-                <span className={styles.spanColorBlue}>W</span>
-                HAT
-                {"\u00A0\u00A0"}
-                <span className={styles.spanColorBlue}>I</span>S{"\u00A0\u00A0"}
-                <span className={styles.spanColorBlue}>G</span>
-                OING
-                {"\u00A0\u00A0"}
-                <span className={styles.spanColorBlue}>O</span>N
-              </div>
-            </div>
+            <WigoDashboardHeader onPlayerSelect={handlePlayerSelect} />
           </div>
 
           {renderTabs()}
 
           <div className={styles.mobilePanel}>
             {activeTab === "overview" && (
-              <>
-                <div className={styles.playerHeaderContainer}>
-                  <PlayerHeader
-                    selectedPlayer={selectedPlayer}
-                    headshotUrl={headshotUrl}
-                    teamName={teamName}
-                    teamAbbreviation={teamAbbreviation}
-                    teamColors={teamColors}
-                    placeholderImage={placeholderImage}
-                  />
-                </div>
-                <div className={styles.playerNameContainer}>
-                  {selectedPlayer ? (
-                    <h2 className={styles.playerName}>
-                      <span className={styles.spanColorBlueName}>
-                        {selectedPlayer.firstName}
-                      </span>{" "}
-                      {selectedPlayer.lastName}
-                    </h2>
-                  ) : (
-                    <div className={styles.chartLoadingPlaceholder}>
-                      Select a player
-                    </div>
-                  )}
-                </div>
-                <div className={styles.perGameStatsContainer}>
-                  <PerGameStatsTable
-                    playerId={selectedPlayer?.id}
-                    seasonId={currentSeasonId}
-                  />
-                </div>
-                <div className={styles.opponentLogContainer}>
-                  <OpponentGamelog
-                    teamId={teamIdForLog}
-                    seasonId={currentSeasonId}
-                    highlightColor={teamColors.primaryColor || "#07aae2"}
-                  />
-                </div>
-                <div className={styles.ratingsContainer}>
-                  {selectedPlayer ? (
-                    <PlayerRatingsDisplay
-                      playerId={selectedPlayer.id}
-                      seasonId={currentSeasonId}
-                      minGp={minGp}
-                    />
-                  ) : (
-                    <div className={styles.chartLoadingPlaceholder}>
-                      Select player for ratings
-                    </div>
-                  )}
-                </div>
-              </>
+              <WigoOverviewSection
+                selectedPlayer={selectedPlayer}
+                headshotUrl={headshotUrl}
+                teamName={teamName}
+                teamAbbreviation={teamAbbreviation}
+                teamColors={teamColors}
+                teamIdForLog={teamIdForLog}
+                currentSeasonId={currentSeasonId}
+                minGp={minGp}
+              />
             )}
 
             {activeTab === "trends" && (
-              <>
-                <div className={styles.consistencyAndCategoryWrapper}>
-                  <div className={styles.consistencyRatingContainer}>
-                    {selectedPlayer ? (
-                      <ConsistencyChart
-                        playerId={selectedPlayer.id}
-                        seasonId={currentSeasonId}
-                      />
-                    ) : (
-                      <ChartLoadingPlaceholder message="Select a player" />
-                    )}
-                  </div>
-                  <div className={styles.percentileChartContainer}>
-                    <div className={styles.chartTitle}>
-                      <h3 style={{ margin: 0 }}>Percentiles</h3>
-                    </div>
-                    <CategoryCoverageChart
-                      playerId={selectedPlayer?.id}
-                      timeOption="SEASON"
-                    />
-                  </div>
-                </div>
-                <div className={styles.toiChartContainer}>
-                  <ToiLineChart
-                    playerId={selectedPlayer?.id}
-                    seasonId={currentSeasonId}
-                  />
-                </div>
-                <div className={styles.ppgChartContainer}>
-                  <PpgLineChart
-                    playerId={selectedPlayer?.id}
-                    seasonId={currentSeasonId}
-                  />
-                </div>
-                <div className={styles.gameScoreContainer}>
-                  <GameScoreSection
-                    playerId={selectedPlayer?.id}
-                    seasonId={currentSeasonId}
-                  />
-                </div>
-              </>
+              <WigoTrendsSection
+                selectedPlayer={selectedPlayer}
+                currentSeasonId={currentSeasonId}
+              />
             )}
 
             {activeTab === "percentiles" && (
-              <div className={styles.rateStatBarPercentilesContainer}>
-                <RateStatPercentiles
-                  playerId={selectedPlayer?.id}
-                  seasonId={currentSeasonId}
-                  minGp={minGp}
-                  onMinGpChange={setMinGp}
-                />
-              </div>
+              <WigoPercentilesSection
+                playerId={selectedPlayer?.id}
+                seasonId={currentSeasonId}
+                minGp={minGp}
+                onMinGpChange={setMinGp}
+              />
             )}
 
             {activeTab === "comparison" && (
-              <div className={styles.timeframeComparisonWrapper}>
-                <TimeframeComparison
-                  initialLeft={leftTimeframe}
-                  initialRight={rightTimeframe}
-                  onCompare={handleTimeframeCompare}
-                />
-                <div className={styles.combinedStatsTableContainer}>
-                  <StatsTable
-                    data={displayDataWithDiff}
-                    isLoading={
-                      isLoadingAggData && displayDataWithDiff.length === 0
-                    }
-                    error={aggDataError}
-                    formatCell={formatCellUtil}
-                    playerId={selectedPlayer?.id ?? 0}
-                    currentSeasonId={currentSeasonId ?? 0}
-                    leftTimeframe={leftTimeframe}
-                    rightTimeframe={rightTimeframe}
-                    visibleColumns={mobileVisibleColumns as any}
-                  />
-                </div>
-              </div>
+              <WigoComparisonSection
+                data={displayDataWithDiff}
+                isLoadingAggData={isLoadingAggData}
+                aggDataError={aggDataError}
+                playerId={selectedPlayer?.id}
+                currentSeasonId={currentSeasonId}
+                leftTimeframe={leftTimeframe}
+                rightTimeframe={rightTimeframe}
+                onCompare={handleTimeframeCompare}
+                visibleColumns={mobileVisibleColumns}
+              />
             )}
           </div>
         </div>

@@ -45,6 +45,7 @@
 - `web/components/WiGO/PlayerHeader.tsx` - Player header that should be upgraded off `next/legacy/image` and aligned to shared card composition.
 - `web/components/WiGO/OpponentGamelog.tsx` - Schedule section that should reuse shared page-level season/team context where possible.
 - `web/components/WiGO/TimeframeComparison.tsx` - Timeframe selector that should remain aligned to comparison table state after refactor.
+- `web/components/WiGO/WigoDashboardSections.tsx` - Shared overview/trends/percentiles/comparison section components that remove duplicated page JSX.
 - `web/components/WiGO/WigoSectionCard.tsx` - Proposed shared card/shell wrapper for WiGO sections.
 - `web/components/WiGO/WigoSectionCard.test.tsx` - Component tests for shared WiGO shell loading, error, empty, and toolbar states.
 - `web/components/CategoryCoverageChart/CategoryCoverageChart.tsx` - Adjacent percentile surface that should be evaluated for contract alignment with the rest of WiGO.
@@ -80,12 +81,12 @@
   - [x] 3.4 Optimize `fetchWigoPercentiles.ts` and `fetchWigoRatingStats.ts` by introducing shared cache reuse, thinner payloads, or a server-backed aggregation path for season-wide datasets.
   - [x] 3.5 Add unit tests for percentile ties, filtered cohorts, low-GP regression cases, and overall/offense/defense rating composition.
 
-- [ ] 4.0 Refactor WiGO layout into shared section components and standardized chart shells
-  - [ ] 4.1 Break `wigoCharts.tsx` into reusable section components so desktop and mobile reuse the same rendered content instead of duplicating large JSX blocks.
-  - [ ] 4.2 Introduce a shared WiGO section card or chart shell component with consistent title, toolbar, loading, empty, and error treatments.
-  - [ ] 4.3 Update TOI, PPG, Game Score, Consistency, and stat drilldown charts to use the shared shell and unified formatting behavior.
-  - [ ] 4.4 Replace `next/legacy/image` usage in `PlayerHeader.tsx` with the modern Next image approach while preserving remote headshots and placeholders.
-  - [ ] 4.5 Simplify `NameSearchBar.tsx` async state handling and verify keyboard, blur, and selection behavior remain correct after the page refactor.
+- [x] 4.0 Refactor WiGO layout into shared section components and standardized chart shells
+  - [x] 4.1 Break `wigoCharts.tsx` into reusable section components so desktop and mobile reuse the same rendered content instead of duplicating large JSX blocks.
+  - [x] 4.2 Introduce a shared WiGO section card or chart shell component with consistent title, toolbar, loading, empty, and error treatments.
+  - [x] 4.3 Update TOI, PPG, Game Score, Consistency, and stat drilldown charts to use the shared shell and unified formatting behavior.
+  - [x] 4.4 Replace `next/legacy/image` usage in `PlayerHeader.tsx` with the modern Next image approach while preserving remote headshots and placeholders.
+  - [x] 4.5 Simplify `NameSearchBar.tsx` async state handling and verify keyboard, blur, and selection behavior remain correct after the page refactor.
 
 - [ ] 5.0 Harden table and drilldown interactions for correctness and maintainability
   - [ ] 5.1 Update `StatsTable.tsx` so expanding one stat correctly resets stale game-log errors and loading state before fetching the next stat.

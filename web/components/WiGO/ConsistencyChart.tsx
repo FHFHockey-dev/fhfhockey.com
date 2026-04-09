@@ -11,9 +11,9 @@ import styles from "styles/wigoCharts.module.scss"; // Import shared styles
 import {
   WIGO_COLORS,
   CHART_COLORS,
-  CONSISTENCY_CHART_COLORS,
-  addAlpha
+  CONSISTENCY_CHART_COLORS
 } from "styles/wigoColors";
+import WigoSectionCard from "./WigoSectionCard";
 
 ChartJS.register(ArcElement, Tooltip, Legend, Title);
 
@@ -150,10 +150,10 @@ const ConsistencyChart: React.FC<ConsistencyChartProps> = ({
   // The inline style `style={{ color: item.color }}` on the label
   // will automatically pick up the new colors stored in processedData
   return (
-    <div className={styles.chartContainer}>
-      <div className={styles.chartTitle}>
-        <h3 style={{ margin: 0 }}>Point Consistency</h3>
-      </div>
+    <WigoSectionCard
+      title="Point Consistency"
+      bodyClassName={styles.sectionCardBodyFlush}
+    >
       <div className={styles.consistencyContent}>
         {/* Loading/Error/No Data/Content rendering logic remains the same */}
         {isLoading && (
@@ -235,7 +235,7 @@ const ConsistencyChart: React.FC<ConsistencyChartProps> = ({
           </>
         )}
       </div>
-    </div>
+    </WigoSectionCard>
   );
 };
 
