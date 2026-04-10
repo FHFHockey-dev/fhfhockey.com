@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import Head from "next/head";
-import SurfaceWorkflowLinks from "components/SurfaceWorkflowLinks";
 import { START_CHART_SURFACE_LINKS } from "lib/navigation/siteSurfaceLinks";
 import useSWR from "swr";
 import {
@@ -411,12 +410,6 @@ export default function StartChartPage() {
       <Head>
         <title>Start Chart</title>
       </Head>
-
-      <SurfaceWorkflowLinks
-        title="Next Checks"
-        description="Take the starter board into trends, schedule planning, deployment, or goalie-specific context."
-        links={START_CHART_SURFACE_LINKS}
-      />
 
       <section className={styles.chartPanel}>
         <div className={styles.chartHeader}>

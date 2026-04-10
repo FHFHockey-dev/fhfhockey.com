@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import type { Database } from "lib/supabase/database-generated.types";
 import { normalizeDependencyError } from "lib/cron/normalizeDependencyError";
 import {
@@ -445,4 +446,6 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   }
 };
 
-export default handler;
+export default withCronJobAudit(handler, {
+  jobName: "update-predictions-sko"
+});

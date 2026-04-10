@@ -1,306 +1,419 @@
 /* /styles/GoalieTrends.module.scss */
 @use "sass:color";
 @use "styles/vars" as v; // Import variables from vars.scss
-@import url("https://fonts.googleapis.com/css2?family=Train+One&display=swap");
-// Add other fonts if needed, e.g., Roboto Condensed for tables
+@use "styles/panel" as panel;
 
 /* =================== Main Page Layout =================== */
 
 .pageContainer {
-  @include v.component-wrapper; // Reuse wrapper mixin if available
-  width: 95%; // Keep slightly wider than wigoCharts for potentially simpler layout
-  max-width: 2000px; // Adjust max-width as needed
-  min-width: 1000px; // Adjust min-width
-  min-height: 90vh; // Adjust height
-  margin: v.$space-lg auto v.$space-xxl auto;
-  display: flex; // Use flex for the main container
-  flex-direction: column; // Stack sections vertically
-  border: 10px solid v.$border-color-primary; // Prominent border like wigo
-  border-radius: v.$border-radius * 1.5; // Slightly less rounded than wigo
-  outline: 15px solid color.adjust(v.$background-dark, $lightness: -2%); // Outline like wigo
-  background-color: color.adjust(
-    v.$background-dark,
-    $lightness: -2%
-  ); // Main background
-  overflow: hidden; // Prevent content spill
-  padding: v.$space-lg; // Padding inside the main container
-  gap: v.$space-lg; // Gap between direct children (header, controls, content)
+  width: min(96%, 1600px);
+  min-height: calc(100vh - 4rem);
+  margin: v.$space-lg auto v.$space-xxl;
+  display: grid;
+  gap: v.$space-md;
+  padding: v.$space-md;
+  background: v.$background-dark;
+  color: v.$text-primary;
 }
 
 /* =================== Section Wrappers =================== */
 // Use wrappers for logical grouping and styling
 
 .headerWrapper {
-  // Similar to .headerRowWrapper but maybe simpler
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding-bottom: v.$space-md;
-  border-bottom: 8px double v.$primary-color; // Double border like wigo header items
-  margin-bottom: v.$space-md; // Space below header
-  width: 100%;
+  @include panel.panel-shell($padding: 0, $variant: flat);
+  @include panel.panel-header(
+    $padding-y: v.$space-md,
+    $padding-x: v.$space-lg,
+    $justify: center,
+    $background: color.adjust(v.$background-dark, $lightness: -1%)
+  );
 }
 
 .controlsWrapper {
-  display: flex;
-  flex-direction: row; // Stack control sections vertically
-  gap: v.$space-lg; // Gap between control sections
+  display: grid;
+  grid-template-columns: 1.05fr 1.55fr 1.4fr;
+  gap: v.$space-md;
   width: 100%;
-  background-color: color.adjust(
-    v.$background-dark,
-    $lightness: -1%
-  ); // Slightly different background
-  border-radius: v.$border-radius;
-  padding: v.$space-md;
-  outline: 5px solid color.adjust(v.$background-dark, $lightness: 3%); // Subtle outline
-  border: 1px solid v.$border-color-secondary; // Thin border
+  align-items: stretch;
+  min-height: 13.5rem;
 }
 
 .contentWrapper {
-  flex-grow: 1; // Allow content to take remaining space
-  display: flex; // Use flex to manage the table/leaderboard inside
+  @include panel.panel-shell($padding: v.$space-sm, $variant: soft);
+  flex-grow: 1;
+  display: flex;
   flex-direction: column;
-  overflow: hidden; // Important for table scrolling later
-  background-color: color.adjust(
-    v.$background-dark,
-    $lightness: -1%
-  ); // Background for the content area
-  border-radius: v.$border-radius;
-  padding: v.$space-sm; // Padding around the table/leaderboard
-  outline: 5px solid color.adjust(v.$background-dark, $lightness: 3%);
-  border: 1px solid v.$border-color-secondary;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.surfaceShell {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: 100%;
+}
+
+.surfaceTabs {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.45rem;
+  padding: 0 v.$space-sm;
+  margin-bottom: -1px;
+}
+
+.surfaceTab {
+  min-height: 2.2rem;
+  padding: 0.55rem 1rem 0.45rem;
+  border: 1px solid rgba(v.$color-white, 0.14);
+  border-bottom: 0;
+  border-radius: 0.9rem 0.9rem 0 0;
+  background: color.adjust(v.$background-dark, $lightness: -2%);
+  color: v.$text-secondary;
+  font: 700 0.78rem/1 v.$font-family-accent;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease,
+    transform 0.2s ease,
+    border-color 0.2s ease;
+
+  &:hover:not(:disabled) {
+    color: v.$primary-color;
+    background: color.adjust(v.$background-dark, $lightness: 1%);
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+.surfaceTabActive {
+  background: color.adjust(v.$background-medium, $lightness: 2%);
+  color: v.$color-white;
+  border-color: rgba(v.$primary-color, 0.5);
+}
+
+.surfaceBody {
+  min-height: 38rem;
+  padding: v.$space-md;
+  border: 1px solid rgba(v.$color-white, 0.08);
+  border-radius: v.$radius-panel;
+  background: color.adjust(v.$background-medium, $lightness: 1%);
+  overflow: auto;
 }
 
 /* =================== Header Styling =================== */
 
 .pageTitle {
-  // Style the H1 like .wigoHeader .headerText
-  font-family: "Train One", sans-serif;
-  font-size: v.$font-size-base * 1.6; // Slightly smaller than wigo
-  font-weight: 100;
-  color: v.$text-color-primary;
-  letter-spacing: 0.5em; // Less spacing than wigo
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: clamp(1.45rem, 2vw + 0.95rem, 2.2rem);
+  font-weight: 700;
+  color: v.$color-white;
+  letter-spacing: 0.12em;
   text-align: center;
-  text-transform: uppercase; // Added uppercase
-
-  .spanColorBlue {
-    // Replicate the blue span style
-    display: inline-block;
-    color: v.$primary-color;
-    font-weight: 900; // Keep heavier weight
-    font-family: inherit; // Inherit Train One
-  }
+  text-transform: uppercase;
 }
 
 .goalieRankingLeaderboardHeader {
-  // Style the leaderboard header
-  font-family: "Train One", sans-serif;
-  font-size: v.$font-size-base * 1.4; // Slightly smaller than wigo
-  font-weight: 100;
-  color: v.$text-color-primary;
-  letter-spacing: 0.7em; // Less spacing than wigo
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: clamp(1rem, 1.1vw + 0.75rem, 1.35rem);
+  font-weight: 700;
+  color: v.$color-white;
+  letter-spacing: 0.12em;
   text-align: center;
-  text-transform: uppercase; // Added uppercase
+  text-transform: uppercase;
 }
 
 .spanColorBlue {
-  // Replicate the blue span style
   display: inline-block;
   color: v.$primary-color;
-  font-weight: 900; // Keep heavier weight
-  font-family: inherit; // Inherit Train One
+  font-weight: 900;
+  font-family: inherit;
 }
 
 /* =================== Controls Styling =================== */
 
 .controlsSection {
-  // Wrapper for each group of controls (Toggle, Date, Stats, Fantasy)
-  background-color: color.adjust(
-    v.$background-dark,
-    $lightness: 0%
-  ); // Slightly lighter than wrapper
-  border-radius: v.$border-radius-sm;
-  padding: v.$space-md;
-  border: 1px solid v.$border-color-secondary;
-  display: flex;
-  flex-direction: column;
-  gap: v.$space-md; // Gap within a control section
-  width: 100%; // Full width of the controls wrapper
+  @include panel.panel-shell($padding: v.$space-md, $variant: soft, $overflow: visible);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  align-content: start;
+  gap: v.$space-md;
+  min-width: 0;
+  min-height: 100%;
 }
 
 .sectionTitle {
-  // Title for each control section
-  font-size: v.$font-size-base * 0.9;
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: 0.78rem;
   font-weight: 700;
-  color: v.$text-color-secondary;
+  color: v.$text-secondary;
   text-transform: uppercase;
-  letter-spacing: 2px;
-  padding-bottom: v.$space-sm;
-  margin-bottom: v.$space-sm;
-  border-bottom: 2px solid v.$primary-color; // Accent border
-  text-align: center;
+  letter-spacing: 0.08em;
+  padding-bottom: v.$space-xs;
+  margin-bottom: v.$space-xs;
+  border-bottom: 1px solid v.$border-soft;
 }
 
-// --- Mode Toggles ---
-.toggleContainer {
+.segmentRail {
   display: flex;
-  justify-content: center;
-  flex-direction: column;
-  gap: v.$space-md; // Use variable for gap
+  padding: 4px;
+  min-height: 40px;
+  background: rgba(v.$background-dark, 0.9);
+  border: 1px solid rgba(v.$color-white, 0.08);
+  border-radius: v.$border-radius-lg;
+  box-shadow: inset 0 1px 0 rgba(v.$color-white, 0.04);
 }
 
-.toggleButton {
-  @include v.button-style; // Use button mixin if available in vars
-  background-color: color.adjust(v.$background-dark, $lightness: -10%);
-  color: v.$text-color-button;
-  border: 1px solid v.$border-color;
-  padding: v.$space-sm v.$space-lg; // Use variables
-  font-size: v.$font-size-base * 0.9;
-  font-weight: 600; // Make slightly bolder
-  border-radius: v.$border-radius-sm; // Consistent radius
+.segment {
+  min-height: 32px;
+  flex: 1 1 0;
+  padding: 0 v.$space-md;
+  border: 2px solid transparent;
+  border-radius: v.$border-radius-sm;
+  background: transparent;
+  color: v.$secondary-color;
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+  cursor: pointer;
 
-  &:hover:not(:disabled) {
-    background-color: color.adjust(v.$background-dark, $lightness: -5%);
-    border-color: v.$primary-color;
+  &:hover {
     color: v.$primary-color;
-  }
-
-  &.active {
-    background-color: v.$primary-color;
-    color: v.$color-white; // Ensure white text on active
-    border-color: color.adjust(v.$primary-color, $lightness: -10%);
-    font-weight: 700;
-  }
-  &:disabled {
-    // Style disabled state like wigoCharts
-    opacity: 0.6;
-    cursor: not-allowed;
+    background: rgba(v.$primary-color, 0.1);
   }
 }
 
-// --- Date Selectors ---
+.segmentActive {
+  border: 2px solid v.$primary-color;
+  background: v.$primary-color-opaque;
+  color: v.$color-white;
+}
+
 .dateSelectorContainer {
-  // Replaces .singleWeekDropdown, .weekRangeDropdowns
   display: flex;
-  flex-direction: column; // Stack label and selects
-  align-items: center; // Center items
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: space-between;
   gap: v.$space-sm;
+  min-height: 100%;
+}
+
+.filtersPanel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: v.$space-md;
+  min-height: 100%;
 }
 
 .rangeSelectContainer {
   display: flex;
-  justify-content: center;
   align-items: center;
   flex-direction: row;
-  gap: v.$space-sm; // Gap between start/end dropdowns
-  width: 80%;
-  flex-wrap: wrap; // Allow wrapping on smaller screens
+  gap: v.$space-sm;
+  width: 100%;
+  flex-wrap: wrap;
 }
 
 .dropdownGroup {
-  // Wrapper for label + select
   display: flex;
   align-items: center;
-
   gap: v.$space-sm;
-  flex: 1 1 40%; // Allow growing/shrinking, basis 40%
-  min-width: 250px; // Prevent excessive shrinking
-  justify-content: space-between;
+  flex: 1 1 16rem;
+  min-width: 0;
 }
 
 .selectLabel {
-  // Style for "Start:", "End:", "Select Week:"
-  color: v.$text-color-secondary;
-  font-size: v.$font-size-small;
+  color: v.$text-secondary;
+  font-size: 0.76rem;
   font-weight: 600;
   white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .customSelect {
-  // Style for the <select> element
-  padding: v.$space-xs v.$space-sm; // Adjust padding
-  border: 1px solid v.$border-color;
-  border-radius: v.$border-radius-sm;
-  background-color: color.adjust(v.$background-dark, $lightness: -10%);
-  font-size: v.$font-size-base * 0.9;
-  color: v.$text-color-primary; // Brighter text
-  flex-grow: 1; // Allow select to take available space in dropdownGroup
+  min-height: v.$control-height-md;
+  padding: v.$space-sm 2.25rem v.$space-sm v.$space-md;
+  border: 1px solid rgba(v.$color-white, 0.14);
+  border-radius: v.$border-radius-md;
+  background: color.adjust(v.$background-dark, $lightness: -1%);
+  font-size: 0.86rem;
+  color: v.$text-primary;
+  flex-grow: 1;
   min-width: 100px;
-  max-width: 250px; // Prevent excessive width
   cursor: pointer;
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, v.$secondary-color 50%),
+    linear-gradient(135deg, v.$secondary-color 50%, transparent 50%);
+  background-position:
+    calc(100% - 1rem) calc(50% - 2px),
+    calc(100% - 0.68rem) calc(50% - 2px);
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
 
   &:hover {
     border-color: v.$primary-color;
   }
-  &:focus {
-    outline: 1px solid v.$primary-color;
-    outline-offset: 1px;
+  &:focus-visible {
+    outline: none;
     border-color: v.$primary-color;
+    box-shadow: 0 0 0 3px rgba(v.$primary-color, 0.2);
   }
 }
 
 .selectorNote {
-  // Replaces .singleWeekNote
-  color: v.$text-color-secondary;
-  font-size: v.$font-size-small;
-  font-style: italic; // Italicize notes
-  text-align: center;
+  color: v.$text-secondary;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  text-align: left;
   width: 100%;
-  margin-top: v.$space-xs; // Small space above note
+  margin-top: v.$space-xs;
 
   .hyperlink {
-    // Style link within note
     color: v.$primary-color;
     text-decoration: none;
     font-weight: 600;
+
     &:hover {
       text-decoration: underline;
     }
   }
 }
 
-// --- Stat Checkboxes ---
-.checkboxContainer {
-  display: grid; // Use grid for better alignment
-  grid-template-columns: repeat(
-    auto-fit,
-    minmax(25%, 1fr)
-  ); // Responsive columns
-  gap: v.$space-sm v.$space-md; // Row and column gap
+.buttonPrimary {
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
-  align-items: center; // Vertically align items in grid cells
+  gap: 0.45rem;
+  min-height: 2rem;
+  padding: 0 0.85rem;
+  border: 2px solid v.$primary-color;
+  border-radius: v.$border-radius-sm;
+  background: rgba(v.$primary-color, 0.18);
+  color: v.$secondary-color;
+  font: 700 0.78rem/1 v.$font-family-accent;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  align-self: flex-start;
+
+  &:hover {
+    color: v.$color-white;
+    background: rgba(v.$primary-color, 0.3);
+    box-shadow: 0 8px 16px rgba(v.$primary-color, 0.22);
+  }
+}
+
+.checkboxContainer {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+  gap: v.$space-sm;
+  align-content: start;
+}
+
+.metricsToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: v.$space-md;
+  margin-bottom: v.$space-md;
+  padding-bottom: v.$space-sm;
+  border-bottom: 1px solid rgba(v.$color-white, 0.08);
+}
+
+.metricsToolbarLabel {
+  color: v.$text-secondary;
+  font: 700 0.78rem/1 v.$font-family-accent;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.metricsSegmentRail {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  padding: 4px;
+  border: 1px solid rgba(v.$color-white, 0.08);
+  border-radius: v.$border-radius-lg;
+  background: rgba(v.$background-dark, 0.55);
+}
+
+.metricsSegment {
+  min-height: 30px;
+  padding: 0 0.8rem;
+  border: 1px solid transparent;
+  border-radius: v.$border-radius-sm;
+  background: transparent;
+  color: v.$text-secondary;
+  font: 700 0.72rem/1 v.$font-family-accent;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+
+  &:hover {
+    color: v.$primary-color;
+  }
+}
+
+.metricsSegmentActive {
+  color: v.$color-white;
+  border-color: rgba(v.$primary-color, 0.4);
+  background: rgba(v.$primary-color, 0.18);
+}
+
+.metricsPlaceholder {
+  display: flex;
+  min-height: 24rem;
+  align-items: center;
 }
 
 .checkboxItem {
-  // Individual checkbox + label container
-  display: flex; // Align checkbox and label
+  display: flex;
   align-items: center;
-  position: relative; // Needed for pseudo-elements
+  position: relative;
+  min-height: v.$control-height-md;
 
   input[type="checkbox"] {
-    opacity: 0; // Hide actual checkbox
+    opacity: 0;
     position: absolute;
     width: 1px;
     height: 1px;
 
-    &:focus + label::before {
-      // Focus style like wigo inputs
-      outline: 1px solid v.$primary-color;
-      outline-offset: 1px;
+    &:focus-visible + label::before {
+      outline: none;
       border-color: v.$primary-color;
+      box-shadow: 0 0 0 3px rgba(v.$primary-color, 0.2);
     }
 
     & + label {
-      // Label styling
-      color: v.$text-color-primary;
-      font-size: v.$font-size-small;
-      padding-left: 28px; // Space for custom box
+      color: v.$text-primary;
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding-left: 1.8rem;
       cursor: pointer;
-      position: relative; // Anchor for pseudo-elements
-      user-select: none; // Prevent text selection on click
+      position: relative;
+      user-select: none;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
 
       &::before {
-        // Custom checkbox box
         content: "";
         position: absolute;
         left: 0;
@@ -308,40 +421,98 @@
         transform: translateY(-50%);
         width: 18px;
         height: 18px;
-        border: 1px solid v.$border-color;
-        background-color: color.adjust(v.$background-dark, $lightness: -10%);
-        border-radius: v.$border-radius-sm; // Small radius
+        border: 1px solid rgba(v.$color-white, 0.16);
+        background: color.adjust(v.$background-dark, $lightness: -1%);
+        border-radius: v.$border-radius-sm;
         transition:
           background-color 0.2s ease,
-          border-color 0.2s ease;
+          border-color 0.2s ease,
+          box-shadow 0.2s ease;
       }
 
       &::after {
-        // Custom checkmark
         content: "";
         position: absolute;
         left: 6px;
         top: 50%;
         width: 5px;
         height: 10px;
-        border: solid v.$color-white; // Checkmark color
+        border: solid v.$color-white;
         border-width: 0 2px 2px 0;
-        transform: translateY(-65%) rotate(45deg); // Center and rotate checkmark
-        opacity: 0; // Hidden by default
+        transform: translateY(-65%) rotate(45deg);
+        opacity: 0;
         transition: opacity 0.2s ease;
       }
     }
 
     &:checked + label::before {
-      // Checked box style
       background-color: v.$primary-color;
       border-color: color.adjust(v.$primary-color, $lightness: -10%);
+      box-shadow: 0 0 12px rgba(v.$primary-color, 0.25);
     }
 
     &:checked + label::after {
-      // Show checkmark when checked
       opacity: 1;
     }
+  }
+}
+
+@media (max-width: 1100px) {
+  .controlsWrapper {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .pageContainer {
+    width: calc(100% - 1rem);
+    padding: v.$space-sm;
+  }
+
+  .headerWrapper {
+    padding-inline: v.$space-sm;
+  }
+
+  .pageTitle {
+    letter-spacing: 0.08em;
+  }
+
+  .segmentRail {
+    flex-direction: column;
+    min-height: auto;
+  }
+
+  .rangeSelectContainer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dropdownGroup {
+    width: 100%;
+  }
+
+  .buttonPrimary {
+    width: 100%;
+    align-self: stretch;
+  }
+
+  .metricsToolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .metricsSegmentRail {
+    width: 100%;
+  }
+
+  .surfaceTabs {
+    overflow-x: auto;
+    padding-inline: 0;
+  }
+
+  .surfaceBody {
+    min-height: 30rem;
+    padding: v.$space-sm;
   }
 }
 
@@ -382,6 +553,7 @@
   width: 70px; // Slightly narrower
   text-align: center;
   font-size: v.$font-size-base * 0.9;
+  appearance: textfield;
   -moz-appearance: textfield;
   &::-webkit-outer-spin-button,
   &::-webkit-inner-spin-button {
@@ -398,11 +570,32 @@
 /* =================== Content Area Styling (Table/Leaderboard) =================== */
 
 .backButton {
-  // Style the "Back to Leaderboard" button
-  @extend .toggleButton; // Inherit base toggle button styles
-  margin-bottom: v.$space-md; // Space below button
-  width: auto; // Don't force full width
-  align-self: flex-start; // Align to the left
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2rem;
+  padding: 0 0.85rem;
+  margin-bottom: v.$space-md;
+  width: auto;
+  align-self: flex-start;
+  border: 1px solid rgba(v.$color-white, 0.12);
+  border-radius: v.$border-radius-sm;
+  background: color.adjust(v.$background-dark, $lightness: -3%);
+  color: v.$text-secondary;
+  font: 700 0.78rem/1 v.$font-family-accent;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    color 0.2s ease,
+    background-color 0.2s ease;
+
+  &:hover {
+    border-color: rgba(v.$primary-color, 0.55);
+    color: v.$primary-color;
+    background: rgba(v.$primary-color, 0.08);
+  }
 }
 
 .tableScrollContainer {

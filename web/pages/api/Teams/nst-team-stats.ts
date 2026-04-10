@@ -1,6 +1,7 @@
 import { NextApiResponse } from "next";
 import { addDays, format, isAfter, parseISO } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import {
   NST_TEAM_STATS_SAFE_INTERVAL_MS,
   resolveNstTeamStatsRequestPlan
@@ -536,7 +537,7 @@ function hasBudgetForRequests(startedAt: number, requestCount: number) {
   return remainingBudget >= requestCount * MIN_REQUEST_BUDGET_MS;
 }
 
-export default adminOnly(async (req: any, res: NextApiResponse) => {
+const handler = adminOnly(async (req: any, res: NextApiResponse) => {
   const scriptStartTime = Date.now();
   const { supabase } = req;
   lastNstRequestCompletedAt = 0;
@@ -781,6 +782,7 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
       remainingDates.length === 0 &&
       hasBudgetForRequests(scriptStartTime, 2);
     const nstRequestPlan = resolveNstTeamStatsRequestPlan({
+      queuedDates: targetDateObjects.length,
       dateRequestCount: targetDateObjects.length * dateBasedConfigs.length,
       seasonRequestCount: shouldRunSeasonTables
         ? seasonBasedConfigs.length
@@ -1012,3 +1014,5 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
     });
   }
 });
+
+export default withCronJobAudit(handler);

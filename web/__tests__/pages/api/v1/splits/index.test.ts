@@ -35,7 +35,24 @@ describe("/api/v1/splits", () => {
     vi.clearAllMocks();
   });
 
-  it("rejects missing team selection before calling the server helper", async () => {
+  it("returns the landing payload without a team selection", async () => {
+    buildSplitsSurfaceMock.mockResolvedValue({
+      generatedAt: "2026-04-10T12:00:00.000Z",
+      seasonId: 20252026,
+      teamOptions: [],
+      selection: {
+        teamAbbreviation: null,
+        opponentAbbreviation: null,
+        effectiveOpponentAbbreviation: null,
+      },
+      landing: {
+        topSkaters: [],
+        topGoalies: [],
+      },
+      ppShotShare: [],
+      roster: null,
+    });
+
     const req: any = {
       method: "GET",
       query: {},
@@ -44,35 +61,40 @@ describe("/api/v1/splits", () => {
 
     await handler(req, res);
 
-    expect(res.statusCode).toBe(400);
-    expect(res.body).toMatchObject({
-      error: "Missing team selection.",
+    expect(res.statusCode).toBe(200);
+    expect(buildSplitsSurfaceMock).toHaveBeenCalledWith({
+      teamAbbreviation: null,
+      opponentAbbreviation: null,
+      includeLanding: true,
     });
-    expect(buildSplitsSurfaceMock).not.toHaveBeenCalled();
   });
 
-  it("returns the splits payload for a valid request", async () => {
+  it("passes team and opponent through for a valid request", async () => {
     buildSplitsSurfaceMock.mockResolvedValue({
-      generatedAt: "2026-04-08T12:00:00.000Z",
+      generatedAt: "2026-04-10T12:00:00.000Z",
       seasonId: 20252026,
+      teamOptions: [],
       selection: {
         teamAbbreviation: "EDM",
-        opponentAbbreviation: "VAN",
-        playerId: 97,
+        opponentAbbreviation: "ANA",
+        effectiveOpponentAbbreviation: "ANA",
       },
-      playerOptions: [],
-      matchupCards: [],
-      teamLeaders: [],
+      landing: {
+        topSkaters: [],
+        topGoalies: [],
+      },
       ppShotShare: [],
-      playerVsTeam: null,
+      roster: {
+        skaters: [],
+        goalies: [],
+      },
     });
 
     const req: any = {
       method: "GET",
       query: {
         team: "EDM",
-        opponent: "VAN",
-        playerId: "97",
+        opponent: "ANA",
       },
     };
     const res = createMockRes();
@@ -82,14 +104,48 @@ describe("/api/v1/splits", () => {
     expect(res.statusCode).toBe(200);
     expect(buildSplitsSurfaceMock).toHaveBeenCalledWith({
       teamAbbreviation: "EDM",
-      opponentAbbreviation: "VAN",
-      playerId: 97,
+      opponentAbbreviation: "ANA",
+      includeLanding: true,
     });
-    expect(res.body).toMatchObject({
+  });
+
+  it("skips landing payload construction for roster-only requests", async () => {
+    buildSplitsSurfaceMock.mockResolvedValue({
+      generatedAt: "2026-04-10T12:00:00.000Z",
       seasonId: 20252026,
+      teamOptions: [],
       selection: {
-        teamAbbreviation: "EDM",
+        teamAbbreviation: "CAR",
+        opponentAbbreviation: null,
+        effectiveOpponentAbbreviation: "ANA",
       },
+      landing: {
+        topSkaters: [],
+        topGoalies: [],
+      },
+      ppShotShare: [],
+      roster: {
+        skaters: [],
+        goalies: [],
+      },
+    });
+
+    const req: any = {
+      method: "GET",
+      query: {
+        team: "CAR",
+        mode: "roster",
+      },
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(buildSplitsSurfaceMock).toHaveBeenCalledWith({
+      teamAbbreviation: "CAR",
+      opponentAbbreviation: null,
+      includeLanding: false,
     });
   });
 });

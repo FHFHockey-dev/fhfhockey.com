@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  extractMissingSkoSkaterColumnName,
   isTruthyQueryFlag,
   resolveSkaterIncrementalWindow
 } from "../../../../../pages/api/v1/db/update-sko-stats";
@@ -57,5 +58,19 @@ describe("/api/v1/db/update-sko-stats helpers", () => {
       endDate: "2026-03-14",
       upToDate: true
     });
+  });
+
+  it("extracts missing sko_skater_stats column names from database errors", () => {
+    expect(
+      extractMissingSkoSkaterColumnName(
+        "Column 'assists_5v5' of relation 'sko_skater_stats' does not exist"
+      )
+    ).toBe("assists_5v5");
+    expect(
+      extractMissingSkoSkaterColumnName(
+        'Could not find the "assists_5v5" column of "sko_skater_stats" in the schema cache'
+      )
+    ).toBe("assists_5v5");
+    expect(extractMissingSkoSkaterColumnName("unrelated")).toBeNull();
   });
 });

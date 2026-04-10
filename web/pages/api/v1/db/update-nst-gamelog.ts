@@ -80,6 +80,7 @@ import {
   isNstAuthError,
   isNstRateLimitError
 } from "lib/nst/client";
+import { resolveNstGamelogRequestPlan } from "lib/cron/nstBurstPlans";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
 import {
   addDays,
@@ -106,7 +107,7 @@ const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
 
 // Route-local pacing for sequential requests inside one run.
 // Shared cross-job NST coordination is handled separately by the NST budget policy.
-const REQUEST_INTERVAL_MS = 25000;
+const REQUEST_INTERVAL_MS = 21000;
 
 const BASE_URL = "https://data.naturalstattrick.com/playerteams.php";
 const NHL_API_BASE_URL = "https://api-web.nhle.com/v1";
@@ -1989,12 +1990,13 @@ async function main(
     const failedUrls: UrlQueueItem[] = [];
     const uniqueDatesToScrape = new Set(initialUrlsQueue.map((q) => q.date));
     const uniqueDateCount = uniqueDatesToScrape.size;
-    const nstPacing =
-      uniqueDateCount <= 2
-        ? { bypassRateLimit: true }
-        : uniqueDateCount === 3
-          ? { minIntervalMs: 2000 }
-          : { bypassRateLimit: false };
+    const initialNstRequestPlan = resolveNstGamelogRequestPlan({
+      queuedDates: uniqueDateCount,
+      requestCount: initialUrlsQueue.length
+    });
+    const nstPacing = initialNstRequestPlan.burstAllowed
+      ? { bypassRateLimit: true }
+      : { minIntervalMs: initialNstRequestPlan.requestIntervalMs };
     const initialProcessResult = await processUrls(
       initialUrlsQueue,
       fullRefreshFlag(isForwardFull ? "forward" : "incremental"),
@@ -2027,12 +2029,13 @@ async function main(
       const retryFailedUrls: UrlQueueItem[] = [];
       const retryUniqueDates = new Set(failedUrlsRetryCopy.map((q) => q.date));
       const retryUniqueDateCount = retryUniqueDates.size;
-      const retryNstPacing =
-        retryUniqueDateCount <= 2
-          ? { bypassRateLimit: true }
-          : retryUniqueDateCount === 3
-            ? { minIntervalMs: 2000 }
-            : { bypassRateLimit: false };
+      const retryNstRequestPlan = resolveNstGamelogRequestPlan({
+        queuedDates: retryUniqueDateCount,
+        requestCount: failedUrlsRetryCopy.length
+      });
+      const retryNstPacing = retryNstRequestPlan.burstAllowed
+        ? { bypassRateLimit: true }
+        : { minIntervalMs: retryNstRequestPlan.requestIntervalMs };
       const retryResult = await processUrls(
         failedUrlsRetryCopy,
         true,

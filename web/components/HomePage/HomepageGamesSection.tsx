@@ -7,7 +7,6 @@ import "moment-timezone";
 import ClientOnly from "components/ClientOnly";
 import PanelStatus from "components/common/PanelStatus";
 import OptimizedImage from "components/common/OptimizedImage";
-import SurfaceWorkflowLinks from "components/SurfaceWorkflowLinks";
 import { buildHomepageModulePresentation } from "lib/dashboard/freshness";
 import { fallbackNHLLogo, getTeamLogoSvg } from "lib/images";
 import { HOME_SURFACE_LINKS } from "lib/navigation/siteSurfaceLinks";
@@ -151,23 +150,7 @@ export default function HomepageGamesSection({
           </div>
         </div>
 
-        <div className={styles.slateActionRow}>
-          <Link href="/start-chart" className={styles.slateActionLink}>
-            Starter board
-          </Link>
-          <Link href="/goalies" className={styles.slateActionLink}>
-            Goalie view
-          </Link>
-          <Link href="/trends" className={styles.slateActionLink}>
-            Trend watch
-          </Link>
-        </div>
 
-        <SurfaceWorkflowLinks
-          title="Decision Surfaces"
-          description="Move straight from the slate into the tools that explain who to start, stream, or monitor next."
-          links={HOME_SURFACE_LINKS}
-        />
       </div>
 
       <div className={styles.gamesHeader}>

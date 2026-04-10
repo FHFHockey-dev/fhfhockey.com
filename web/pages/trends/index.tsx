@@ -3,7 +3,6 @@ import type { GetServerSideProps, NextPage } from "next";
 import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
-import SurfaceWorkflowLinks from "components/SurfaceWorkflowLinks";
 import GoalieShareChart from "components/GoalieShareChart";
 import { useDashboardData } from "hooks/useDashboardData";
 import type { DashboardData } from "lib/dashboard/dataFetchers";
@@ -787,11 +786,6 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({
             </div>
           </header>
 
-          <SurfaceWorkflowLinks
-            title="Decision Workflow"
-            description="Carry recent-form context into the starter board, schedule tools, deployment pages, and goalie workflow."
-            links={TRENDS_SURFACE_LINKS}
-          />
 
           <section className={styles.summaryBand}>
             <div className={styles.summaryBandHeader}>

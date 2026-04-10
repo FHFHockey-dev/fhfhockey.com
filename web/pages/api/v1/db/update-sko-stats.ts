@@ -63,6 +63,71 @@ interface NHLApiResponse {
     | WGOToiSkaterStat[];
 }
 
+const unsupportedSkoSkaterColumns = new Set<string>();
+
+export function extractMissingSkoSkaterColumnName(error: unknown): string | null {
+  const message =
+    error instanceof Error
+      ? error.message
+      : typeof error === "string"
+        ? error
+        : String(error ?? "");
+
+  const patterns = [
+    /column ['"]([^'"]+)['"] of relation ['"]sko_skater_stats['"] does not exist/i,
+    /Could not find the ['"]([^'"]+)['"] column of ['"]sko_skater_stats['"] in the schema cache/i
+  ];
+
+  for (const pattern of patterns) {
+    const match = message.match(pattern);
+    if (match?.[1]) {
+      return match[1];
+    }
+  }
+
+  return null;
+}
+
+function stripUnsupportedSkoSkaterColumns<T extends Record<string, any>>(row: T): T {
+  if (unsupportedSkoSkaterColumns.size === 0) {
+    return row;
+  }
+
+  const filteredEntries = Object.entries(row).filter(
+    ([key]) => !unsupportedSkoSkaterColumns.has(key)
+  );
+  return Object.fromEntries(filteredEntries) as T;
+}
+
+async function upsertSkoSkaterStats(
+  client: typeof supabase,
+  payload: Record<string, any> | Array<Record<string, any>>
+) {
+  let sanitizedPayload = Array.isArray(payload)
+    ? payload.map((row) => stripUnsupportedSkoSkaterColumns(row))
+    : stripUnsupportedSkoSkaterColumns(payload);
+
+  while (true) {
+    const { error } = await client.from("sko_skater_stats").upsert(sanitizedPayload);
+    if (!error) {
+      return;
+    }
+
+    const missingColumn = extractMissingSkoSkaterColumnName(error);
+    if (!missingColumn || unsupportedSkoSkaterColumns.has(missingColumn)) {
+      throw error;
+    }
+
+    unsupportedSkoSkaterColumns.add(missingColumn);
+    console.warn(
+      `[update-sko-stats] skipping unsupported sko_skater_stats column ${missingColumn}`
+    );
+    sanitizedPayload = Array.isArray(payload)
+      ? payload.map((row) => stripUnsupportedSkoSkaterColumns(row))
+      : stripUnsupportedSkoSkaterColumns(payload);
+  }
+}
+
 export function isTruthyQueryFlag(
   value: string | string[] | undefined
 ): boolean {
@@ -728,13 +793,7 @@ async function updateSkaterStats(
   }
 
   if (mergedRows.length > 0) {
-    const { error: upsertError } = await supabase
-      .from("sko_skater_stats")
-      .upsert(mergedRows);
-
-    if (upsertError) {
-      throw upsertError;
-    }
+    await upsertSkoSkaterStats(supabase, mergedRows);
   }
 
   return {
@@ -1106,7 +1165,7 @@ async function updateSkaterStatsForSeason() {
 
       // Update Supabase table if there are new non-null values
       if (totalNullUpdates > 0) {
-        await supabase.from("sko_skater_stats").upsert(mergedData);
+        await upsertSkoSkaterStats(supabase, mergedData);
       }
 
       for (const stat of skaterStats) {
@@ -1155,7 +1214,7 @@ async function updateSkaterStatsForSeason() {
         const timeOnIceStat = timeOnIceStats.find(
           (aStat) => aStat.playerId === stat.playerId
         );
-        await supabase.from("sko_skater_stats").upsert({
+        await upsertSkoSkaterStats(supabase, {
           // summary stats from skaterStatsResponse (stat)
           player_id: stat.playerId, // int
           player_name: stat.skaterFullName, // text

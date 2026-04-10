@@ -298,7 +298,7 @@ export const calculateGoalieRankings = (
       info: {
         playerId: goalieId,
         goalieFullName: firstGame?.goalie_name ?? "Unknown Goalie",
-        team: undefined // Will get updated from weekly data if available
+        team: firstGame?.team ?? undefined // Prefer game data when available
       },
       weekCounts: { Elite: 0, Quality: 0, Average: 0, Bad: 0, "Really Bad": 0 },
       weeklyStatsList: [],

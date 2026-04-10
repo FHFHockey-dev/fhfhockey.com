@@ -6,8 +6,7 @@ import styles from "styles/Goalies.module.scss";
 import type {
   GoalieRanking,
   Ranking,
-  StatColumn,
-  NumericGoalieStatKey
+  StatColumn
 } from "components/GoaliePage/goalieTypes";
 // Adjust path if SortConfig is defined elsewhere, e.g., in trueGoalieValue.tsx
 import { SortConfig } from "pages/trueGoalieValue";
@@ -15,10 +14,12 @@ import { SortConfig } from "pages/trueGoalieValue";
 interface Props {
   goalieRankings: GoalieRanking[];
   // setView can likely be removed if only used for back button previously
-  setView: React.Dispatch<React.SetStateAction<"leaderboard" | "week">>;
-  statColumns: StatColumn[]; // Receive stat columns for percentile headers
+  setView: React.Dispatch<
+    React.SetStateAction<"leaderboard" | "week" | "table">
+  >;
+  statColumns?: StatColumn[]; // Optional for legacy callers
   sortConfig?: SortConfig<GoalieRanking>; // Optional sort config
-  requestSort: (key: keyof GoalieRanking) => void; // Function to request sorting
+  requestSort?: (key: keyof GoalieRanking) => void; // Function to request sorting
 }
 
 // *** DEFINE COLUMN WIDTHS HERE ***
@@ -72,17 +73,20 @@ const GoalieLeaderboard: FC<Props> = ({
 
   // Helper to safely access week counts (unchanged)
   const getWeekCount = (goalie: GoalieRanking, rank: Ranking): number => {
-    return goalie?.weekCounts?.[rank] ?? 0;
-  };
+    const legacyRankMap: Record<Ranking, string> = {
+      Elite: "Elite Week",
+      Quality: "Quality Week",
+      Average: "Week",
+      Bad: "Bad Week",
+      "Really Bad": "Really Bad Week"
+    };
 
-  // Get stat keys that have percentiles calculated (based on calculation logic)
-  const percentileKeys = statColumns
-    .map((c) => c.value)
-    .filter(
-      (key) =>
-        goalieRankings[0]?.percentiles && // Check if percentiles exist on first goalie
-        goalieRankings[0].percentiles[key] !== undefined
-    ) as NumericGoalieStatKey[];
+    return (
+      goalie?.weekCounts?.[rank] ??
+      goalie?.weekCounts?.[legacyRankMap[rank] as Ranking] ??
+      0
+    );
+  };
 
   // Helper function to get sort indicator
   const getSortIndicator = (key: keyof GoalieRanking): string => {
@@ -93,22 +97,22 @@ const GoalieLeaderboard: FC<Props> = ({
   };
 
   // Helper to map column labels to GoalieRanking keys (adjust mappings as needed)
-  const columnToSortKeyMap: { [label: string]: keyof GoalieRanking | null } = {
-    Rank: null,
+  const columnToSortKeyMap: { [label: string]: keyof GoalieRanking } = {
+    Rank: "totalPoints",
     Name: "goalieFullName",
     Team: "team",
     "WoW Pts": "totalPoints", // Added mapping
-    "Elite Wk": null, // Cannot sort easily
-    Quality: null, // Cannot sort easily
-    AVG: null, // Cannot sort easily
-    BAD: null, // Cannot sort easily
-    "Really Bad": null, // Cannot sort easily
+    "Elite Wk": "eliteWeeks",
+    Quality: "qualityWeeks",
+    AVG: "averageWeeks",
+    BAD: "badWeeks",
+    "Really Bad": "reallyBadWeeks",
     "% OK WKs": "percentAcceptableWeeks",
     "% Good WKs": "percentGoodWeeks",
     "Week Over Week Variance": "wowVariance", // Adjusted label
     "Game Over Game Variance": "gogVariance", // Adjusted label
     "Avg fPts/G": "averageFantasyPointsPerGame",
-    "+/- Lg Avg fPts": null, // Cannot sort easily
+    "+/- Lg Avg fPts": "fantasyPointsAboveAverage",
     "Percentile Rank": "averagePercentileRank", // Adjusted label
     GP: "totalGamesPlayed",
     "SV%": "overallSavePct",
@@ -150,7 +154,7 @@ const GoalieLeaderboard: FC<Props> = ({
             {/* Iterate over the defined headerLabels array */}
             {headerLabels.map((label) => {
               const sortKey = columnToSortKeyMap[label];
-              const isSortable = sortKey !== null;
+              const isSortable = typeof requestSort === "function";
               // Get the width from the map, default to 'auto' if not found
               const width = columnWidths[label] || "auto";
 
@@ -240,26 +244,17 @@ const GoalieLeaderboard: FC<Props> = ({
                 <td
                   className={getPercentageClass(goalie.percentAcceptableWeeks)}
                 >
-                  {" "}
-                  {/* % OK WKs */}
                   {(goalie.percentAcceptableWeeks ?? 0).toFixed(1)}%
                 </td>
                 <td className={getPercentageClass(goalie.percentGoodWeeks)}>
-                  {" "}
-                  {/* % Good WKs */}
                   {(goalie.percentGoodWeeks ?? 0).toFixed(1)}%
                 </td>
-                <td>{goalie.wowVariance?.toFixed(2) ?? "N/A"}</td>{" "}
-                {/* Week Over Week Variance */}
-                <td>{goalie.gogVariance?.toFixed(2) ?? "N/A"}</td>{" "}
-                {/* Game Over Game Variance */}
+                <td>{goalie.wowVariance?.toFixed(2) ?? "N/A"}</td>
+                <td>{goalie.gogVariance?.toFixed(2) ?? "N/A"}</td>
                 <td>
                   {goalie.averageFantasyPointsPerGame?.toFixed(2) ?? "N/A"}
                 </td>
-                {/* Avg fPts/G */}
                 <td>
-                  {" "}
-                  {/* +/- Lg Avg fPts */}
                   {fPtsDiff !== undefined
                     ? `${fPtsDiff >= 0 ? "+" : ""}${fPtsDiff.toFixed(2)}`
                     : "N/A"}
@@ -267,13 +262,10 @@ const GoalieLeaderboard: FC<Props> = ({
                 <td
                   className={getPercentageClass(goalie.averagePercentileRank)}
                 >
-                  {" "}
-                  {/* Percentile Rank */}
                   {goalie.averagePercentileRank?.toFixed(1) ?? "N/A"}%
                 </td>
                 <td>{goalie.totalGamesPlayed ?? "N/A"}</td> {/* GP */}
-                <td>{goalie.overallSavePct?.toFixed(3) ?? "N/A"}</td>{" "}
-                {/* SV% */}
+                <td>{goalie.overallSavePct?.toFixed(3) ?? "N/A"}</td>
                 <td>{goalie.overallGaa?.toFixed(2) ?? "N/A"}</td> {/* GAA */}
               </tr>
             );

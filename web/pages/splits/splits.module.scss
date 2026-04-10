@@ -1,7 +1,7 @@
 @use "styles/vars";
 
 .page {
-  max-width: 1180px;
+  width: 95%;
   margin: 0 auto;
   padding: vars.$space-lg;
   display: flex;
@@ -9,41 +9,46 @@
   gap: vars.$space-lg;
 }
 
-.hero {
+.hero,
+.section {
   padding: vars.$space-lg;
-  border-radius: vars.$border-radius-lg;
+  border-radius: 18px;
   border: 1px solid rgba(vars.$border-secondary, 0.9);
-  background:
-    radial-gradient(circle at top right, rgba(vars.$primary-color, 0.18), transparent 40%),
-    linear-gradient(135deg, rgba(vars.$background-light, 0.96), rgba(vars.$background-medium, 0.9));
-  box-shadow: vars.$desktop-panel-shadow;
+  background: rgba(vars.$background-light, 0.94);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.22);
 }
 
-.eyebrow {
-  margin: 0 0 vars.$space-xs;
-  text-transform: uppercase;
-  letter-spacing: 0.18em;
+.eyebrow,
+.controlLabel {
+  margin: 0;
   font-size: vars.$font-size-xs;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
   color: vars.$text-secondary;
 }
 
 .title {
-  margin: 0;
+  margin: vars.$space-xs 0 0;
   font-size: clamp(2rem, 3vw, 3.1rem);
   line-height: 1.05;
 }
 
-.description {
-  max-width: 740px;
+.description,
+.sectionHeader p,
+.status,
+.error {
   margin: vars.$space-sm 0 0;
   color: vars.$text-secondary;
-  line-height: 1.6;
 }
 
 .controls {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 320px));
   gap: vars.$space-md;
+  padding: vars.$space-md;
+  border-radius: 16px;
+  border: 1px solid rgba(vars.$border-secondary, 0.72);
+  background: rgba(vars.$background-light, 0.9);
 }
 
 .control {
@@ -52,15 +57,8 @@
   gap: vars.$space-xs;
 }
 
-.controlLabel {
-  font-size: vars.$font-size-xs;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: vars.$text-secondary;
-}
-
 .select {
-  border-radius: vars.$border-radius-md;
+  border-radius: 12px;
   border: 1px solid rgba(vars.$border-secondary, 0.8);
   background: rgba(vars.$background-medium, 0.92);
   color: vars.$text-primary;
@@ -68,64 +66,57 @@
   font: inherit;
 }
 
-.layout {
-  display: flex;
-  flex-direction: column;
-  gap: vars.$space-lg;
-}
-
-.section {
-  padding: vars.$space-lg;
-  border-radius: vars.$border-radius-lg;
-  border: 1px solid rgba(vars.$border-secondary, 0.85);
-  background: rgba(vars.$background-light, 0.92);
-  box-shadow: vars.$desktop-panel-shadow;
+.section,
+.subsection {
   display: flex;
   flex-direction: column;
   gap: vars.$space-md;
 }
 
-.sectionHeader {
-  display: flex;
-  flex-direction: column;
-  gap: vars.$space-xs;
+.subsection {
+  padding-top: vars.$space-sm;
 }
 
 .sectionHeader h2,
-.compareCard h3 {
+.sectionHeader h3 {
   margin: 0;
-}
-
-.sectionHeader p,
-.cardDescription,
-.cardMeta,
-.status,
-.error {
-  margin: 0;
-  color: vars.$text-secondary;
 }
 
 .tableWrap {
   overflow-x: auto;
+  border: 1px solid rgba(vars.$border-secondary, 0.42);
+  border-radius: 14px;
+  background: rgba(vars.$background-medium, 0.55);
 }
 
 .table {
   width: 100%;
+  min-width: 1120px;
   border-collapse: collapse;
+  font-size: vars.$font-size-sm;
 }
 
 .table th,
 .table td {
   padding: vars.$space-sm vars.$space-xs;
-  border-bottom: 1px solid rgba(vars.$border-secondary, 0.4);
+  border-bottom: 1px solid rgba(vars.$border-secondary, 0.35);
   text-align: left;
+  white-space: nowrap;
+}
+
+.table tbody tr:hover {
+  background: rgba(vars.$primary-color, 0.06);
 }
 
 .table th {
+  position: sticky;
+  top: 0;
+  background: #20252b;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-size: vars.$font-size-xxs;
   color: vars.$text-secondary;
+  z-index: 1;
 }
 
 .inlineMeta {
@@ -134,104 +125,58 @@
   color: vars.$text-secondary;
 }
 
-.chips {
+.opponentTabs {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: vars.$space-sm;
+  grid-template-columns: repeat(32, minmax(0, 1fr));
+  gap: vars.$space-xxs;
+  padding: vars.$space-sm 0 vars.$space-md;
+  border-top: 1px solid rgba(vars.$border-secondary, 0.42);
+  border-bottom: 1px solid rgba(vars.$border-secondary, 0.42);
 }
 
-.chip {
-  display: flex;
-  justify-content: space-between;
+.opponentTab {
+  display: inline-flex;
   align-items: center;
-  gap: vars.$space-sm;
-  padding: vars.$space-sm vars.$space-md;
-  border-radius: vars.$border-radius-md;
-  background: rgba(vars.$background-medium, 0.9);
+  justify-content: center;
+  aspect-ratio: 1;
+  width: 100%;
+  min-width: 0;
+  padding: vars.$space-xs;
+  border-top-left-radius: vars.$border-radius-md;
+  border-top-right-radius: vars.$border-radius-md;
   border: 1px solid rgba(vars.$border-secondary, 0.7);
+  background: rgba(vars.$background-medium, 0.76);
+  color: vars.$text-primary;
+  font: inherit;
+  cursor: pointer;
+  transition:
+    transform 140ms ease,
+    border-color 140ms ease,
+    background-color 140ms ease;
 }
 
-.cards,
-.compareGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: vars.$space-md;
+.opponentTab:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: rgba(vars.$primary-color, 0.66);
 }
 
-.card,
-.compareCard {
-  padding: vars.$space-md;
-  border-radius: vars.$border-radius-md;
-  border: 1px solid rgba(vars.$border-secondary, 0.75);
-  background: rgba(vars.$background-medium, 0.88);
+.opponentTabActive {
+  border-color: rgba(vars.$primary-color, 0.88);
+  background: rgba(vars.$primary-color, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(vars.$primary-color, 0.2);
 }
 
-.edgeFavorable {
-  border-color: rgba(vars.$success-color, 0.55);
-}
-
-.edgeWarning {
-  border-color: rgba(vars.$danger-color, 0.55);
-}
-
-.edgeNeutral {
-  border-color: rgba(vars.$border-secondary, 0.75);
-}
-
-.cardLabel,
-.compareLabel {
-  margin: 0 0 vars.$space-xs;
-  font-size: vars.$font-size-xs;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  color: vars.$text-secondary;
-}
-
-.cardValueRow {
-  margin: 0;
-  display: flex;
-  align-items: baseline;
-  gap: vars.$space-sm;
-  font-size: clamp(1.5rem, 2vw, 2rem);
-}
-
-.cardDivider {
-  color: vars.$text-secondary;
-  font-size: vars.$font-size-sm;
-  text-transform: uppercase;
-  letter-spacing: 0.2em;
-}
-
-.compareList {
-  margin: vars.$space-sm 0 0;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: vars.$space-sm;
-}
-
-.compareList div {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.compareList dt {
-  font-size: vars.$font-size-xxs;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: vars.$text-secondary;
-}
-
-.compareList dd {
-  margin: 0;
-  font-family: vars.$font-family-numbers;
+.opponentTabDisabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+  filter: grayscale(1);
 }
 
 .status,
 .error {
   padding: vars.$space-md;
   border-radius: vars.$border-radius-md;
-  border: 1px dashed rgba(vars.$border-secondary, 0.8);
+  border: 1px dashed rgba(vars.$border-secondary, 0.75);
 }
 
 .error {
@@ -242,11 +187,20 @@
 
 @media screen and (max-width: vars.$breakpoint-tablet) {
   .page {
+    width: calc(100% - #{vars.$space-md * 2});
+    padding: vars.$space-md 0;
+  }
+
+  .hero,
+  .section {
     padding: vars.$space-md;
   }
 
-  .section,
-  .hero {
-    padding: vars.$space-md;
+  .opponentTabs {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+  }
+
+  .table {
+    min-width: 820px;
   }
 }

@@ -339,6 +339,10 @@ async function handler(
               fullRefresh
             })
           : undefined);
+    const allowImplicitDailyFreshnessWarning =
+      implicitDailyWindow != null &&
+      executionProfile === "daily_incremental" &&
+      !bypassFreshnessBlockers;
     const profileDefaults = executionProfile
       ? ROLLING_EXECUTION_PROFILE_DEFAULTS[executionProfile]
       : undefined;
@@ -475,7 +479,9 @@ async function handler(
       status: "complete",
       details: {
         statusCode:
-          (runSummary?.freshnessBlockers ?? 0) > 0 && !bypassFreshnessBlockers
+          (runSummary?.freshnessBlockers ?? 0) > 0 &&
+          !bypassFreshnessBlockers &&
+          !allowImplicitDailyFreshnessWarning
             ? 422
             : 200,
         freshnessBlockers: runSummary?.freshnessBlockers ?? 0,
@@ -483,34 +489,45 @@ async function handler(
       }
     });
     if ((runSummary?.freshnessBlockers ?? 0) > 0 && !bypassFreshnessBlockers) {
-      return res.status(422).json({
-        message:
-          "Freshness dependency checks failed. Refresh stale upstream sources or use bypassFreshnessBlockers=true to override.",
-        success: false,
-        operationStatus: "blocked",
-        warning:
-          "Rolling player averages were blocked because required upstream freshness checks failed.",
-        executionProfile,
-        executionScope,
-        runtimeBudget,
-        appliedPlayerLimit: maxPlayers,
-        dependencyContract,
-        runSummary,
-        freshnessGate: {
-          status: "FAIL",
-          blockerCount: runSummary?.freshnessBlockers ?? 0,
-          bypassed: false,
-          action:
-            "Refresh stale upstream sources or use bypassFreshnessBlockers=true to override."
-        }
-      });
+      if (allowImplicitDailyFreshnessWarning) {
+        console.warn(
+          "[update-rolling-player-averages] freshness blockers tolerated for implicit daily window",
+          JSON.stringify({
+            blockerCount: runSummary?.freshnessBlockers ?? 0,
+            executionProfile: executionProfile ?? "daily_incremental",
+            executionScope
+          })
+        );
+      } else {
+        return res.status(422).json({
+          message:
+            "Freshness dependency checks failed. Refresh stale upstream sources or use bypassFreshnessBlockers=true to override.",
+          success: false,
+          operationStatus: "blocked",
+          warning:
+            "Rolling player averages were blocked because required upstream freshness checks failed.",
+          executionProfile,
+          executionScope,
+          runtimeBudget,
+          appliedPlayerLimit: maxPlayers,
+          dependencyContract,
+          runSummary,
+          freshnessGate: {
+            status: "FAIL",
+            blockerCount: runSummary?.freshnessBlockers ?? 0,
+            bypassed: false,
+            action:
+              "Refresh stale upstream sources or use bypassFreshnessBlockers=true to override."
+          }
+        });
+      }
     }
-    const freshnessBypassedWithBlockers =
+    const freshnessWarningOnly =
       (runSummary?.freshnessBlockers ?? 0) > 0 &&
-      Boolean(bypassFreshnessBlockers);
-    if (freshnessBypassedWithBlockers) {
+      (Boolean(bypassFreshnessBlockers) || allowImplicitDailyFreshnessWarning);
+    if (freshnessWarningOnly) {
       console.warn(
-        "[update-rolling-player-averages] freshness blockers bypassed",
+        "[update-rolling-player-averages] freshness blockers treated as warning",
         JSON.stringify({
           blockerCount: runSummary?.freshnessBlockers ?? 0,
           executionProfile,
@@ -519,13 +536,17 @@ async function handler(
       );
     }
     res.status(200).json({
-      message: freshnessBypassedWithBlockers
-        ? "Rolling player averages processed with freshness blockers bypassed."
+      message: freshnessWarningOnly
+        ? allowImplicitDailyFreshnessWarning
+          ? "Rolling player averages processed with freshness warnings on the implicit daily window."
+          : "Rolling player averages processed with freshness blockers bypassed."
         : "Rolling player averages processed successfully.",
-      success: !freshnessBypassedWithBlockers,
-      operationStatus: freshnessBypassedWithBlockers ? "warning" : "success",
-      warning: freshnessBypassedWithBlockers
-        ? "Upstream freshness blockers were bypassed. Treat this recompute as degraded until stale sources are refreshed."
+      success: true,
+      operationStatus: freshnessWarningOnly ? "warning" : "success",
+      warning: freshnessWarningOnly
+        ? allowImplicitDailyFreshnessWarning
+          ? "Implicit daily maintenance tolerated upstream freshness blockers. Treat this recompute as degraded until stale sources are refreshed."
+          : "Upstream freshness blockers were bypassed. Treat this recompute as degraded until stale sources are refreshed."
         : null,
       executionProfile,
       executionScope,
@@ -537,7 +558,8 @@ async function handler(
         status:
           (runSummary?.freshnessBlockers ?? 0) > 0 ? "FAIL" : "PASS",
         blockerCount: runSummary?.freshnessBlockers ?? 0,
-        bypassed: bypassFreshnessBlockers ?? false,
+        bypassed:
+          (bypassFreshnessBlockers ?? false) || allowImplicitDailyFreshnessWarning,
         action:
           (runSummary?.freshnessBlockers ?? 0) > 0
             ? "Refresh stale upstream sources or use bypassFreshnessBlockers=true to override."

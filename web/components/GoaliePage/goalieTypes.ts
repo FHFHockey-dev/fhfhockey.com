@@ -69,6 +69,11 @@ export type WeekCounts = Record<Ranking, number>;
 export interface GoalieRanking extends GoalieInfo {
   totalPoints: number; // Based on WoW ranking
   weekCounts: WeekCounts;
+  eliteWeeks?: number;
+  qualityWeeks?: number;
+  averageWeeks?: number;
+  badWeeks?: number;
+  reallyBadWeeks?: number;
   percentAcceptableWeeks?: number;
   percentGoodWeeks?: number;
   wowVariance?: number; // StdDev of Weekly Points (vs League Avg)
@@ -88,6 +93,7 @@ export interface GoalieRanking extends GoalieInfo {
   // --- NEW Fantasy Point Fields ---
   averageFantasyPointsPerGame: number;
   leagueAverageFantasyPointsPerGame?: number; // Overall league avg for the period
+  fantasyPointsAboveAverage?: number;
   // --- NEW Percentile Fields ---
   percentiles?: Partial<Record<NumericGoalieStatKey, number>>; // Store percentile for each stat
   averagePercentileRank?: number; // Average of all calculated percentiles
@@ -160,6 +166,7 @@ export interface GoalieWeeklyAggregate {
 export interface GoalieGameStat {
   goalie_id: number; // is_nullable: NO
   goalie_name: string; // is_nullable: NO
+  team?: string | null;
   date: string; // data_type: date, comes as string from Supabase client
   shoots_catches?: string | null;
   position_code?: string | null;

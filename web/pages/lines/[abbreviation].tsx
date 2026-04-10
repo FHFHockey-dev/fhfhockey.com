@@ -15,7 +15,6 @@ import CategoryTitle from "components/LineCombinations/CategoryTitle";
 import Line from "components/LineCombinations/Line";
 import { mapTeamAbbreviation } from "lib/NHL/utils/utils";
 import PowerPlayCombos from "components/PowerPlayCombos";
-import SurfaceWorkflowLinks from "components/SurfaceWorkflowLinks";
 
 import { LineChange } from "components/LineCombinations/PlayerCard/SkaterCard";
 import Custom404 from "pages/404";
@@ -169,12 +168,6 @@ export default function TeamLC({
             onOptionChange={onTeamChange}
           />
         </div>
-
-        <SurfaceWorkflowLinks
-          title="Turn Deployment Into A Decision"
-          description="Move from line combinations into the matching team dashboard, matchup board, grid, or recent-form hub."
-          links={getLinesSurfaceLinks(mappedAbbreviation)}
-        />
 
         <div ref={lineComboRef}>
           <Header

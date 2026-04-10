@@ -54,12 +54,56 @@ export default withCronJobAudit(adminOnly(async (req, res) => {
     if (failedGameIds.length !== 0) {
       console.log(results);
     }
+    const staleCutoff = new Date();
+    staleCutoff.setUTCDate(staleCutoff.getUTCDate() - 30);
+    let quarantinedGameIds: number[] = [];
+    if (failedGameIds.length > 0) {
+      const { data: failedGameMeta, error: failedGameMetaError } = await supabase
+        .from("games")
+        .select("id,date")
+        .in("id", failedGameIds);
+      if (failedGameMetaError) {
+        throw failedGameMetaError;
+      }
+      quarantinedGameIds = ((failedGameMeta ?? []) as Array<{
+        id: number;
+        date: string | null;
+      }>)
+        .filter((game) => {
+          if (!game?.date) return false;
+          const gameTime = Date.parse(`${game.date}T00:00:00.000Z`);
+          return Number.isFinite(gameTime) && gameTime < staleCutoff.getTime();
+        })
+        .map((game) => game.id);
+
+      if (quarantinedGameIds.length > 0) {
+        const { error: quarantineError } = await supabase
+          .from("statsUpdateStatus")
+          .update({ updated: true })
+          .in("gameId", quarantinedGameIds);
+        if (quarantineError) {
+          throw quarantineError;
+        }
+      }
+    }
+    const pendingRetryGameIds = failedGameIds.filter(
+      (gameId) => !quarantinedGameIds.includes(gameId)
+    );
     res.json({
       success: true,
+      operationStatus:
+        pendingRetryGameIds.length > 0 || quarantinedGameIds.length > 0
+          ? "warning"
+          : "success",
       message:
-        `Successfully updated the stats for these games` +
-        JSON.stringify(updatedGameIds) +
-        `\n Failed games: ${JSON.stringify(failedGameIds)}`
+        pendingRetryGameIds.length > 0 || quarantinedGameIds.length > 0
+          ? "Processed stats backlog; some games remain pending retry or were quarantined from automatic retry."
+          : "Processed stats backlog successfully.",
+      updatedGameIds,
+      quarantinedGameIds,
+      pendingRetryGameIds,
+      rowsUpserted: updatedGameIds.length,
+      attemptedGameIds: ids
     });
   } catch (e: any) {
     res.status(400).json({ message: e.message, success: false });

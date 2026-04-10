@@ -98,11 +98,14 @@ export function withCronJobAudit(
       return originalJson(body);
     }) as any;
 
-    const originalSend = res.send.bind(res);
-    res.send = ((body: any) => {
-      if (capturedBody == null) capturedBody = body;
-      return originalSend(body);
-    }) as any;
+    const originalSend =
+      typeof res.send === "function" ? res.send.bind(res) : null;
+    if (originalSend) {
+      res.send = ((body: any) => {
+        if (capturedBody == null) capturedBody = body;
+        return originalSend(body);
+      }) as any;
+    }
 
     let thrown: unknown = null;
     try {

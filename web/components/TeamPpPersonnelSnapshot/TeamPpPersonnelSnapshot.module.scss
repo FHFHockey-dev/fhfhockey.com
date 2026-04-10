@@ -1,0 +1,67 @@
+@use "styles/vars";
+
+.wrapper {
+  margin-top: vars.$space-md;
+  padding: vars.$space-md;
+  border-radius: vars.$border-radius-lg;
+  border: 1px solid rgba(vars.$border-secondary, 0.7);
+  background: rgba(vars.$background-medium, 0.88);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  gap: vars.$space-md;
+  align-items: start;
+  margin-bottom: vars.$space-md;
+}
+
+.title,
+.description {
+  margin: 0;
+}
+
+.description {
+  color: vars.$text-secondary;
+  margin-top: vars.$space-xs;
+}
+
+.link {
+  color: vars.$primary-color;
+  text-decoration: none;
+  font-size: vars.$font-size-xs;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: vars.$space-sm;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  gap: vars.$space-sm;
+  align-items: center;
+}
+
+.position {
+  margin-left: vars.$space-xs;
+  color: vars.$text-secondary;
+  font-size: vars.$font-size-xs;
+}
+
+.share {
+  font-family: vars.$font-family-numbers;
+}
+
+.status,
+.statusError {
+  color: vars.$text-secondary;
+}
+
+.statusError {
+  color: vars.$danger-color;
+}

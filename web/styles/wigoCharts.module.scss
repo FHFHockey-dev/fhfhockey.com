@@ -165,11 +165,11 @@
 // Grid areas for wrapper elements
 // Format: DOWN / LEFT / RIGHT / DOWN
 .leftColumnWrapper {
-  grid-area: 4 / 2 / 45 / 8; // Rows 3-44, Cols 1-8
+  grid-area: 4 / 2 / 45 / 9; // Rows 3-44, Cols 1-8
 }
 
 .middleColumnWrapper {
-  grid-area: 4 / 8 / 45 / 23; // Rows 3-44, Cols 9-24
+  grid-area: 4 / 9 / 45 / 23; // Rows 3-44, Cols 9-24
 }
 
 .rightColumnWrapper {
@@ -315,7 +315,7 @@
   padding: 0;
 
   // Flex Sizing Configuration
-  flex: 5 1 0%; // Grow = 2, Shrink = 1, Basis = 0% (Takes 2/3rds of available width)
+  flex: 3 1 0%; // Grow = 2, Shrink = 1, Basis = 0% (Takes 2/3rds of available width)
   min-width: 0; // Prevents flexbox overflow issues
 
   // Internal styles for Consistency Chart component

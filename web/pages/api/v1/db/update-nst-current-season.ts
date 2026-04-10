@@ -1,6 +1,7 @@
 // pages/api/v1/db/update-nst-current-season.ts
 
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import { resolveNstCurrentSeasonRequestPlan } from "lib/cron/nstBurstPlans";
 import type { NextApiRequest, NextApiResponse } from "next";
 import * as cheerio from "cheerio";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
@@ -34,7 +35,8 @@ const TABLE_INDIVIDUAL_COUNTS = "nst_seasonal_individual_counts";
 const TABLE_INDIVIDUAL_RATES = "nst_seasonal_individual_rates";
 const TABLE_ON_ICE_COUNTS = "nst_seasonal_on_ice_counts";
 const TABLE_ON_ICE_RATES = "nst_seasonal_on_ice_rates";
-const REQUEST_DELAY_MS = 1500; // 1.5 second delay between NST requests - conservative but safe
+let currentNstRequestIntervalMs = 0;
+let lastNstRequestCompletedAt = 0;
 
 // Enum for report types
 enum ReportType {
@@ -48,6 +50,17 @@ enum ReportType {
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function waitForNextNstRequestSlot() {
+  if (lastNstRequestCompletedAt === 0 || currentNstRequestIntervalMs <= 0) {
+    return;
+  }
+
+  const elapsed = Date.now() - lastNstRequestCompletedAt;
+  if (elapsed < currentNstRequestIntervalMs) {
+    await delay(currentNstRequestIntervalMs - elapsed);
+  }
 }
 
 // --- Header Mappers (assuming unchanged from previous version) ---
@@ -350,7 +363,9 @@ async function fetchAndParseAllPlayersData(
       console.log(
         `fetching data for ${ReportType[reportType]} (Strength: ${strength}, Season: ${seasonId}) - Attempt ${attempt}`
       );
+      await waitForNextNstRequestSlot();
       const { text } = await fetchNstTextByUrl(url, { timeoutMs: 60000 });
+      lastNstRequestCompletedAt = Date.now();
       if (!text) {
         console.warn(`Attempt ${attempt}: No data received from URL: ${url}`);
         if (attempt === retries) return [];
@@ -567,6 +582,7 @@ async function main() {
   console.log("Starting NST All Players Seasonal Update Script...");
   const startTime = Date.now(); // Timer start
   let grandTotalRowsUpserted = 0;
+  lastNstRequestCompletedAt = 0;
   try {
     // 1. Get Current Season ID (Unchanged)
     let currentSeasonId: string;
@@ -609,6 +625,11 @@ async function main() {
       ReportType.OnIceRates
     ];
     const strengthsToProcess = ["all"]; // Now only contains "all"
+    const nstRequestPlan = resolveNstCurrentSeasonRequestPlan({
+      queuedDates: strengthsToProcess.length,
+      requestCount: strengthsToProcess.length * reportsToProcess.length
+    });
+    currentNstRequestIntervalMs = nstRequestPlan.requestIntervalMs;
 
     // 4. Loop through reports and strengths (Outer loop now runs only once)
     for (const strength of strengthsToProcess) {

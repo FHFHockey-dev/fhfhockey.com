@@ -3,11 +3,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const {
   cronJobReportSelectMock,
   cronJobAuditSelectMock,
+  cronJobAuditInsertMock,
   resendSendMock,
   readFileMock
 } = vi.hoisted(() => ({
   cronJobReportSelectMock: vi.fn(),
   cronJobAuditSelectMock: vi.fn(),
+  cronJobAuditInsertMock: vi.fn(),
   resendSendMock: vi.fn(),
   readFileMock: vi.fn()
 }));
@@ -28,6 +30,14 @@ vi.mock("@supabase/supabase-js", () => ({
       throw new Error(`Unexpected table ${table}`);
     })
   }))
+}));
+
+vi.mock("lib/supabase/server", () => ({
+  default: {
+    from: vi.fn(() => ({
+      insert: cronJobAuditInsertMock
+    }))
+  }
 }));
 
 vi.mock("resend", () => ({
@@ -133,6 +143,7 @@ SELECT cron.schedule(
 );
 `);
 
+    cronJobAuditInsertMock.mockResolvedValue({});
     resendSendMock.mockResolvedValue({ data: { id: "email_123" }, error: null });
   });
 
@@ -170,6 +181,86 @@ SELECT cron.schedule(
         ],
         missingObservationJobs: []
       }
+    });
+  });
+
+  it("prefers the active JSON schedule inventory over legacy SQL snippets", async () => {
+    vi.setSystemTime(new Date("2026-03-20T14:00:00.000Z"));
+
+    cronJobReportSelectMock.mockReturnValue({
+      gte: vi.fn().mockReturnValue({
+        order: vi.fn().mockResolvedValue({
+          data: [
+            {
+              jobname: "daily-cron-report",
+              scheduled_time: "2026-03-20T13:00:00.000Z",
+              end_time: "2026-03-20T13:00:01.000Z",
+              status: "success",
+              return_message: "1 row",
+              sql_text:
+                "select net.http_get(url:='https://fhfhockey.com/api/v1/db/cron-report');"
+            }
+          ],
+          error: null
+        })
+      })
+    });
+
+    cronJobAuditSelectMock.mockReturnValue({
+      gte: vi.fn().mockReturnValue({
+        order: vi.fn().mockResolvedValue({
+          data: [],
+          error: null
+        })
+      })
+    });
+
+    readFileMock.mockResolvedValue(`
+\`\`\`json
+[
+  {
+    "jobid": 234,
+    "jobname": "daily-cron-report",
+    "schedule": "00 13 * * *",
+    "run_time_utc": "13:00 UTC",
+    "active": true
+  },
+  {
+    "jobid": 277,
+    "jobname": "refresh-team-power-ratings-daily",
+    "schedule": "15 10 * * *",
+    "run_time_utc": "10:15 UTC",
+    "active": false
+  }
+]
+\`\`\`
+
+-- SELECT cron.schedule(
+--   'daily-cron-report',
+--   '00 13 * * *',
+--   $$select net.http_get(url:='https://fhfhockey.com/api/v1/db/cron-report');$$
+-- );
+
+-- SELECT cron.schedule(
+--   'refresh-team-power-ratings-daily',
+--   '15 10 * * *',
+--   $$select public.refresh_team_power_ratings('2025-10-01', '2026-03-20');$$
+-- );
+`);
+
+    const req: any = { method: "GET" };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      success: true,
+      counts: expect.objectContaining({
+        scheduledJobs: 1,
+        jobsMissingLast: 0,
+        scheduledJobsWithActivity: 1
+      })
     });
   });
 });

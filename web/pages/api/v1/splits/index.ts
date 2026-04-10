@@ -28,36 +28,13 @@ export default async function handler(
 
   const teamAbbreviation = normalizeQueryValue(req.query.team);
   const opponentAbbreviation = normalizeQueryValue(req.query.opponent);
-  const playerIdValue = normalizeQueryValue(req.query.playerId);
-  const playerId =
-    playerIdValue != null && playerIdValue.length > 0
-      ? Number(playerIdValue)
-      : null;
-
-  if (!teamAbbreviation) {
-    res.setHeader("Cache-Control", "no-store");
-    return res.status(400).json({
-      error: "Missing team selection.",
-      issues: ["team is required."],
-    });
-  }
-
-  if (
-    playerId != null &&
-    (!Number.isFinite(playerId) || Math.trunc(playerId) <= 0)
-  ) {
-    res.setHeader("Cache-Control", "no-store");
-    return res.status(400).json({
-      error: "Invalid player id.",
-      issues: ["playerId must be a positive integer when provided."],
-    });
-  }
+  const mode = normalizeQueryValue(req.query.mode);
 
   try {
     const payload = await buildSplitsSurface({
       teamAbbreviation,
       opponentAbbreviation,
-      playerId: playerId == null ? null : Math.trunc(playerId),
+      includeLanding: mode !== "roster",
     });
 
     res.setHeader("Cache-Control", "private, max-age=60, stale-while-revalidate=300");

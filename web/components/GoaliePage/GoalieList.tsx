@@ -46,6 +46,7 @@ interface Props {
   setView: React.Dispatch<React.SetStateAction<"leaderboard" | "week">>;
   loading?: boolean; // Optional loading state
   onBackToLeaderboard: () => void; // Function to go back to leaderboard
+  showBackButton?: boolean;
 }
 
 const GoalieList: FC<Props> = ({
@@ -56,7 +57,8 @@ const GoalieList: FC<Props> = ({
   statColumns,
   // setView, // Commented out if not used
   loading,
-  onBackToLeaderboard
+  onBackToLeaderboard,
+  showBackButton = true
 }) => {
   // --- Start of Hook Declarations ---
 
@@ -125,17 +127,28 @@ const GoalieList: FC<Props> = ({
         ranking: rankData.weeklyRank,
         percentage: rankData.weeklyRankPercentage
       };
-      // Add other GoalieBaseStats properties from rankData
-      Object.keys(GoalieBaseStatsExample).forEach((baseKey) => {
-        const key = baseKey as keyof GoalieBaseStats;
-        const value = (rankData as any)[key]; // Assuming GoalieWeeklyRank includes GoalieBaseStats fields
-        if (value !== undefined && value !== null) {
-          (displayGoalie as any)[key] = value;
-        } else {
-          // Assign default from GoalieBaseStatsExample if value is missing/null
-          (displayGoalie as any)[key] = GoalieBaseStatsExample[key];
+
+      Object.entries(GoalieBaseStatsExample).forEach(
+        ([baseKey, defaultValue]) => {
+          const statColumn = statColumns.find(
+            (column) => column.value === baseKey
+          );
+          const aggregateKey = statColumn?.dbFieldGoalie;
+          const aggregateValue = aggregateKey
+            ? rankData[aggregateKey]
+            : undefined;
+
+          if (aggregateValue !== undefined && aggregateValue !== null) {
+            (displayGoalie as any)[baseKey] =
+              baseKey === "timeOnIce"
+                ? Number(aggregateValue) / 60
+                : aggregateValue;
+          } else {
+            (displayGoalie as any)[baseKey] = defaultValue;
+          }
         }
-      });
+      );
+
       return displayGoalie as DisplayGoalie;
     });
 
@@ -362,10 +375,13 @@ const GoalieList: FC<Props> = ({
       statColumns={statColumns}
       startDate={startDate}
       endDate={endDate}
-      isSingleWeek={true}
+      isSingleWeek={false}
       onBackToLeaderboard={onBackToLeaderboard}
+      showBackButton={showBackButton}
       requestSort={handleListSort}
       sortConfig={listSortConfig}
+      tableTitle="Weekly Goalie Metrics"
+      averagesLabel="Weekly Metrics Averages:"
     />
   );
 };

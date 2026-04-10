@@ -6,7 +6,7 @@ import Router from "next/router";
 import { NextSeo } from "next-seo";
 import GameGrid from "components/GameGrid";
 import Container from "components/Layout/Container";
-import SurfaceWorkflowLinks from "components/SurfaceWorkflowLinks";
+
 import { GameGridMode } from "components/GameGrid/GameGrid";
 import { GAME_GRID_SURFACE_LINKS } from "lib/navigation/siteSurfaceLinks";
 
@@ -37,11 +37,6 @@ function GameGridPage({ initialMode }: { initialMode: GameGridMode }) {
       />
 
       <div style={{ marginTop: "0px", width: "100%" }}>
-        <SurfaceWorkflowLinks
-          title="Pair The Grid With"
-          description="Use the grid as the planning layer, then jump into matchup, trend, deployment, and goalie context."
-          links={GAME_GRID_SURFACE_LINKS}
-        />
         <button
           style={{ display: "none" }}
           onClick={() => {

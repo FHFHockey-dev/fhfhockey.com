@@ -36,6 +36,8 @@
  *      - reverse/forward: overwrite defaults to yes (full-refresh)
  *      - incremental: overwrite defaults to no (skip complete dates)
  *    Example: /api/v1/db/update-nst-goalies?runMode=reverse&overwrite=no
+ * 
+ *    /api/v1/db/update-nst-goalies?runMode=incremental&overwrite=yes&startDate=2026-03-01
  *
  * 4. `datasetType` (optional): Filters the operation to a specific dataset type.
  *    Useful for debugging or targeting a specific table.
@@ -489,25 +491,27 @@ async function processUrlsSequentially(
   let processedCount = 0;
   let pendingProcessedCount = 0;
   let stoppedEarly = false;
+  let nstRequestsMade = 0;
   for (let i = 0; i < urlsQueue.length; i++) {
     const { datasetType, url, date, seasonId } = urlsQueue[i];
     console.log(
       `\nProcessing URL ${i + 1}/${totalUrls}: ${datasetType} for ${date}`
     );
-    if (processedCount > 0 && options.requestIntervalMs > 0) {
-      console.log(
-        `Waiting ${options.requestIntervalMs / 1000} seconds before next request...`
-      );
-      await delay(options.requestIntervalMs);
-    }
     const dataExists = await checkDataExists(datasetType, date);
     if (!dataExists) {
+      if (nstRequestsMade > 0 && options.requestIntervalMs > 0) {
+        console.log(
+          `Waiting ${options.requestIntervalMs / 1000} seconds before next NST request...`
+        );
+        await delay(options.requestIntervalMs);
+      }
       const dataRows = await fetchAndParseData(
         url,
         datasetType,
         date,
         seasonId
       );
+      nstRequestsMade++;
       if (dataRows.length > 0) {
         await upsertData(datasetType, dataRows);
       }
