@@ -27,6 +27,7 @@
  *    - In `incremental` mode: Defines the starting date for the forward fetch. The script will fetch data from this date
  *      up to the current date.
  *    The format must be YYYY-MM-DD.
+ * 
  *    Example: /api/v1/db/update-nst-goalies?runMode=reverse&startDate=2024-02-05
  *    Example: /api/v1/db/update-nst-goalies?runMode=incremental&startDate=2025-10-01
  *
@@ -198,6 +199,26 @@ function parsePositiveIntParam(value: string | string[] | undefined): number | u
   if (!raw) return undefined;
   const parsed = Number.parseInt(raw, 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+}
+
+type RunMode = "incremental" | "forward" | "reverse";
+
+function parseRunMode(value: string | string[] | undefined): RunMode {
+  const raw = (Array.isArray(value) ? value[0] : value)?.toLowerCase();
+  if (raw === "forward" || raw === "reverse" || raw === "incremental") {
+    return raw;
+  }
+  return "incremental";
+}
+
+function parseBooleanParam(
+  value: string | string[] | undefined
+): boolean | undefined {
+  const raw = (Array.isArray(value) ? value[0] : value)?.toLowerCase();
+  if (!raw) return undefined;
+  if (["yes", "true", "1"].includes(raw)) return true;
+  if (["no", "false", "0"].includes(raw)) return false;
+  return undefined;
 }
 
 function getDatesBetween(start: Date, end: Date): string[] {
@@ -484,22 +505,24 @@ async function processUrlsSequentially(
   }[],
   options: {
     requestIntervalMs: number;
-    maxPendingUrls: number;
+    maxPendingUrls?: number;
+    overwrite: boolean;
   }
 ) {
   const totalUrls = urlsQueue.length;
   let processedCount = 0;
   let pendingProcessedCount = 0;
   let stoppedEarly = false;
-  let nstRequestsMade = 0;
   for (let i = 0; i < urlsQueue.length; i++) {
     const { datasetType, url, date, seasonId } = urlsQueue[i];
     console.log(
       `\nProcessing URL ${i + 1}/${totalUrls}: ${datasetType} for ${date}`
     );
-    const dataExists = await checkDataExists(datasetType, date);
-    if (!dataExists) {
-      if (nstRequestsMade > 0 && options.requestIntervalMs > 0) {
+    const dataExists = options.overwrite
+      ? false
+      : await checkDataExists(datasetType, date);
+    if (!dataExists || options.overwrite) {
+      if (options.requestIntervalMs > 0) {
         console.log(
           `Waiting ${options.requestIntervalMs / 1000} seconds before next NST request...`
         );
@@ -511,7 +534,6 @@ async function processUrlsSequentially(
         date,
         seasonId
       );
-      nstRequestsMade++;
       if (dataRows.length > 0) {
         await upsertData(datasetType, dataRows);
       }
@@ -523,7 +545,10 @@ async function processUrlsSequentially(
     }
     processedCount++;
     console.log(`Processed ${processedCount} out of ${totalUrls} URLs.`);
-    if (pendingProcessedCount >= options.maxPendingUrls) {
+    if (
+      options.maxPendingUrls !== undefined &&
+      pendingProcessedCount >= options.maxPendingUrls
+    ) {
       stoppedEarly = i < urlsQueue.length - 1;
       break;
     }
@@ -536,27 +561,35 @@ async function processUrlsSequentially(
   };
 }
 
-async function main(options: {
-  maxPendingUrls?: number;
-  requestIntervalMs?: number;
-  startDate?: string;
-  maxDays?: number;
-} = {}) {
+async function main(
+  options: {
+    maxPendingUrls?: number;
+    requestIntervalMs?: number;
+    startDate?: string;
+    maxDays?: number;
+    runMode?: RunMode;
+    overwrite?: boolean;
+    datasetType?: string;
+  } = {}
+) {
   try {
+    const runMode = options.runMode ?? "incremental";
+    const overwrite =
+      options.overwrite ?? (runMode === "incremental" ? false : true);
+
     const seasonInfo = await fetchCurrentSeason();
     const seasonId = seasonInfo.id.toString();
     const seasonStartDate = new Date(seasonInfo.startDate);
+    const regularSeasonEndDate = new Date(seasonInfo.regularSeasonEndDate);
     const today = new Date();
     const scrapingEndDate =
-      today < new Date(seasonInfo.endDate)
-        ? today
-        : new Date(seasonInfo.endDate);
+      today < regularSeasonEndDate ? today : regularSeasonEndDate;
 
     let startDate = seasonStartDate;
     if (options.startDate) {
       startDate = new Date(options.startDate);
       console.log(`Using explicit startDate ${options.startDate}.`);
-    } else {
+    } else if (runMode === "incremental") {
       const latestDateStr = await getLatestDateSupabase();
       if (latestDateStr) {
         startDate = new Date(latestDateStr);
@@ -576,7 +609,44 @@ async function main(options: {
       startDate = seasonStartDate;
     }
 
+    if (startDate > regularSeasonEndDate) {
+      console.log(
+        `Start date ${startDate.toISOString().split("T")[0]} is after regular season end ${seasonInfo.regularSeasonEndDate}. No regular-season NST goalie dates to scrape.`
+      );
+      return {
+        message: "No regular-season NST goalie dates to scrape.",
+        pendingUrlsProcessed: 0,
+        totalQueuedUrls: 0,
+        stoppedEarly: false,
+        datesQueued: 0,
+        requestIntervalMs:
+          options.requestIntervalMs ?? NST_GOALIES_REQUEST_INTERVAL_MS,
+        maxPendingUrls: options.maxPendingUrls ?? null,
+        runMode,
+        overwrite,
+        datasetType: options.datasetType ?? null,
+        nextStartDate: null,
+        nstRequestPlan: resolveGoalieNstRequestPlan({
+          queuedDates: 0,
+          totalQueuedUrls: 0,
+          maxPendingUrls:
+            options.maxPendingUrls ?? DEFAULT_MAX_PENDING_URLS_PER_RUN,
+          explicitRequestIntervalMs: options.requestIntervalMs
+        })
+      };
+    }
+
+    if (runMode === "reverse") {
+      console.warn(
+        "runMode=reverse currently runs as full forward season sweep in this endpoint."
+      );
+    }
+
     let datesToScrape = getDatesBetween(startDate, scrapingEndDate);
+    datesToScrape = datesToScrape.filter((date) => {
+      const current = new Date(date);
+      return current >= seasonStartDate && current <= regularSeasonEndDate;
+    });
     if (options.maxDays && options.maxDays > 0) {
       datesToScrape = datesToScrape.slice(0, options.maxDays);
     }
@@ -599,22 +669,33 @@ async function main(options: {
     datesToScrape.forEach((date) => {
       const urls = constructGoalieUrlsForDate(date, seasonId);
       for (const [datasetType, url] of Object.entries(urls)) {
+        if (options.datasetType && datasetType !== options.datasetType) {
+          continue;
+        }
         urlsQueue.push({ datasetType, url, date, seasonId });
       }
     });
 
     const maxPendingUrls =
-      options.maxPendingUrls ?? DEFAULT_MAX_PENDING_URLS_PER_RUN;
+      options.maxPendingUrls ??
+      (runMode === "forward" ? undefined : DEFAULT_MAX_PENDING_URLS_PER_RUN);
+    const maxPendingUrlsForPlan = maxPendingUrls ?? urlsQueue.length;
     const nstRequestPlan = resolveGoalieNstRequestPlan({
       queuedDates: datesToScrape.length,
       totalQueuedUrls: urlsQueue.length,
-      maxPendingUrls,
+      maxPendingUrls: maxPendingUrlsForPlan,
       explicitRequestIntervalMs: options.requestIntervalMs
     });
+    const requestIntervalMs =
+      options.requestIntervalMs ??
+      (runMode === "forward"
+        ? NST_GOALIES_REQUEST_INTERVAL_MS
+        : nstRequestPlan.requestIntervalMs);
 
     const result = await processUrlsSequentially(urlsQueue, {
-      requestIntervalMs: nstRequestPlan.requestIntervalMs,
-      maxPendingUrls
+      requestIntervalMs,
+      maxPendingUrls,
+      overwrite
     });
 
     if (troublesomePlayers.length > 0) {
@@ -625,6 +706,9 @@ async function main(options: {
       );
     }
 
+    const urlsPerDate = options.datasetType ? 1 : GOALIE_URLS_PER_DATE;
+    const nextDateIndex = Math.floor(result.processedCount / urlsPerDate);
+
     return {
       message: result.stoppedEarly
         ? "Processed a bounded chunk of NST goalie work. Re-run to continue."
@@ -633,9 +717,16 @@ async function main(options: {
       totalQueuedUrls: urlsQueue.length,
       stoppedEarly: result.stoppedEarly,
       datesQueued: datesToScrape.length,
-      requestIntervalMs: nstRequestPlan.requestIntervalMs,
-      maxPendingUrls,
-      nextStartDate: datesToScrape[0] ?? null,
+      requestIntervalMs,
+      maxPendingUrls: maxPendingUrls ?? null,
+      runMode,
+      seasonStartDate: seasonInfo.startDate,
+      regularSeasonEndDate: seasonInfo.regularSeasonEndDate,
+      overwrite,
+      datasetType: options.datasetType ?? null,
+      nextStartDate: result.stoppedEarly
+        ? (datesToScrape[nextDateIndex] ?? null)
+        : null,
       nstRequestPlan
     };
   } catch (error: any) {
@@ -650,10 +741,20 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     return;
   }
   try {
+    const runMode = parseRunMode(req.query.runMode);
+    const overwriteParam = parseBooleanParam(req.query.overwrite);
+    const overwrite =
+      overwriteParam ?? (runMode === "incremental" ? false : true);
+
     const result = await main({
+      runMode,
+      overwrite,
       maxPendingUrls: parsePositiveIntParam(req.query.maxUrls),
       requestIntervalMs: parsePositiveIntParam(req.query.requestIntervalMs),
       maxDays: parsePositiveIntParam(req.query.maxDays),
+      datasetType: Array.isArray(req.query.datasetType)
+        ? req.query.datasetType[0]
+        : req.query.datasetType,
       startDate: Array.isArray(req.query.startDate)
         ? req.query.startDate[0]
         : req.query.startDate

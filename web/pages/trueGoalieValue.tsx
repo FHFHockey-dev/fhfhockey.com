@@ -127,7 +127,9 @@ const GoalieTrends: FC = () => {
   const [selectedStats, setSelectedStats] = useState<NumericGoalieStatKey[]>(
     DEFAULT_SELECTED_STATS
   );
-  const [view, setView] = useState<"leaderboard" | "week">("leaderboard");
+  const [view, setView] = useState<"leaderboard" | "week" | "table">(
+    "leaderboard"
+  );
   const [useSingleWeek, setUseSingleWeek] = useState<boolean>(false);
 
   // --- NEW: State for Fantasy Points ---

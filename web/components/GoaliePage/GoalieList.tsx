@@ -43,7 +43,9 @@ interface Props {
   week: WeekOption["value"];
   selectedStats: NumericGoalieStatKey[];
   statColumns: StatColumn[];
-  setView: React.Dispatch<React.SetStateAction<"leaderboard" | "week">>;
+  setView: React.Dispatch<
+    React.SetStateAction<"leaderboard" | "week" | "table">
+  >;
   loading?: boolean; // Optional loading state
   onBackToLeaderboard: () => void; // Function to go back to leaderboard
   showBackButton?: boolean;

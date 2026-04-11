@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-
+import adminOnly from "utils/adminOnlyMiddleware";
 import shiftChartsHandler from "./shift-charts";
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -7,7 +7,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     req.method = "POST";
   }
 
-  return shiftChartsHandler(req, res);
+  // Explicitly cast `req` to `ApiRequest` before passing it to `shiftChartsHandler`
+  return shiftChartsHandler(req as any, res);
 }
 
-export default handler;
+export default adminOnly(handler);

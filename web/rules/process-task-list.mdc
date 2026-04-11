@@ -1,3 +1,4 @@
+
 ---
 description: 
 globs: 
@@ -5,16 +6,26 @@ alwaysApply: false
 ---
 # Task List Management
 
-Guidelines for managing task lists in markdown files to track progress on completing a PRD
+Guidelines for managing task lists in markdown files to track progress on completing a PRD.
 
 ## Task Implementation
-- **One sub-task at a time:** Do **NOT** start the next sub-task until you ask the user for permission and they say **"yes"** or **"y"**, except where overridden by the manual-action protocol below.
-- **Manual-action override for critical user steps:** Any and all SQL code, migrations, schema changes, database updates, endpoint runs, time-sensitive implementation actions, or other user-executed steps that are required to guarantee success of future steps **MUST OVERRIDE** the standard **"yes" / "y"** approval flow.
+
+- **Manual-action override for critical user steps:** Any and all SQL code, migrations, schema changes, database updates, endpoint runs, environment changes, build commands, targeted test commands, API verification requests, staging actions, commit actions, or other user-executed steps that are required to guarantee success of future steps **MUST OVERRIDE** the standard **"yes" / "y"** approval flow.
   - In these cases, the AI must explicitly instruct the user what action must be performed.
-  - The AI must require the exact confirmation: **"Done, proceed"**
+  - The AI must tell the user exactly what output is required next.
+  - Acceptable required follow-up may include:
+    - pasted terminal output
+    - pasted error output
+    - pasted API response output
+    - pasted build output
+    - pasted test output
+    - pasted command result
+    - **"Done, proceed"** only when no machine output is needed and the action is purely manual
+    - **"Committed, proceed."** for commit steps
   - If the user responds with **"yes"** or **"y"** instead, **DO NOT PROCEED**
-  - Instead, clearly alert the user again that the required action has not yet been confirmed and restate that the AI is waiting for: **"Done, proceed"**
-  - Only resume once the user has explicitly confirmed completion with **"Done, proceed"**
+  - Instead, clearly alert the user again that the required action has not yet been confirmed and restate exactly what output or confirmation is still required.
+  - Only resume once the user has provided the required output or exact confirmation.
+
 - **Decision-step override for policy or strategy choices:** If the next sub-task requires the user to choose between options, the AI must not present the choice as a bare list without explanation.
   - The AI must briefly describe **each available option** in plain language.
   - The AI must explain the **practical consequence** of choosing each option, including what it enables, what it blocks, and any important tradeoff.
@@ -22,24 +33,117 @@ Guidelines for managing task lists in markdown files to track progress on comple
   - Only after providing that context may the AI ask the user to reply with the exact choice text.
   - If the user answers with **"yes"** or **"y"** instead of choosing an option, **DO NOT PROCEED**
   - Instead, restate the available options, with their consequences, and ask the user to pick one explicitly.
-- **Completion protocol:**  
+
+- **Manual-verification bias:** Prefer asking the user to run routine terminal commands when that is sufficient and more token-efficient than having Codex do it.
+  - Examples:
+    - build commands
+    - targeted test commands
+    - one-off API checks
+    - endpoint invocation output checks
+    - git status checks
+    - staging commands
+    - commit commands
+  - Codex should still perform terminal/tool usage when it is meaningfully necessary for debugging, discovery, live investigation, or higher-value implementation work.
+  - Do **not** offload terminal work to the user when Codex genuinely needs to inspect logs interactively, explore a failure, or iterate rapidly in-terminal.
+
+- **Completion protocol:**
   1. When you finish a **sub-task**, immediately mark it as completed by changing `[ ]` to `[x]`.
   2. If **all** subtasks underneath a parent task are now `[x]`, follow this sequence:
-    - **First**: Run the full test suite (`pytest`, `npm test`, `bin/rails test`, etc.)
-    - **Only if all tests pass**: Stage changes (`git add .`)
-    - **Clean up**: Remove any temporary files and temporary code before committing
-    - **Commit**: Use a descriptive commit message that:
-      - Uses conventional commit format (`feat:`, `fix:`, `refactor:`, etc.)
-      - Summarizes what was accomplished in the parent task
-      - Lists key changes and additions
-      - References the task number and PRD context
-      - **Formats the message as a single-line command using `-m` flags**, e.g.:
+     - **First:** Decide what verification is actually needed.
+       - Prefer the **narrowest valid verification**.
+       - Prefer **manual user-run verification** for routine build/test/endpoint commands when that is sufficient.
+       - Provide the exact command(s) the user should run.
+       - Require the user to paste back the relevant output.
+     - **Then:** If verification passes, provide the exact staging command if staging is needed.
+       - Require the user to perform staging manually when practical.
+       - If confirmation is needed, require either pasted `git status` output or a clear confirmation that staging is complete.
+     - **Then:** Clean up temporary files, temporary code, scratch artifacts, and any no-longer-needed implementation debris before commit.
+     - **Then:** If a commit is appropriate, provide a descriptive commit command or message that:
+       - uses conventional commit format (`feat:`, `fix:`, `refactor:`, etc.)
+       - summarizes what was accomplished in the parent task
+       - lists key changes and additions
+       - references the task number and PRD context where useful
+       - is ready for the user to run directly
+     - **Commit confirmation requirement:** For commit steps, the only valid completion confirmation is:
+       - **"Committed, proceed."**
+       - or pasted commit output if requested
+  3. Once all the subtasks are marked completed and all required verification/manual actions have been completed, mark the **parent task** as completed.
 
-        ```
-        git commit -m "feat: add payment validation logic" -m "- Validates card type and expiry" -m "- Adds unit tests for edge cases" -m "Related to T123 in PRD"
-        ```
-  3. Once all the subtasks are marked completed and changes have been committed, mark the **parent task** as completed.
-- Stop after each sub-task and wait for the user's go-ahead.
+- **Controlled sub-task progression:** Do **NOT** continue indefinitely without user checkpoints.
+  - The AI may continue through consecutive low-risk sub-tasks when they are tightly related, remain within the same local context, and do not require user input, manual action, manual verification, or a strategy decision.
+  - The AI must pause at meaningful checkpoints for user approval, unless a stricter override below requires specific output or confirmation instead of **"yes"** / **"y"**.
+
+- **Execution pacing:** Do not stop after every sub-task by default.
+  - Continue through consecutive low-risk sub-tasks when they are tightly related, can be completed within the same local context, and do not require user input, manual verification, or a strategy decision.
+  - Pause when a meaningful checkpoint is reached, including:
+    - manual action or manual verification
+    - explicit user choice
+    - ambiguity or uncertainty
+    - unexpected errors or failed assumptions
+    - significant scope change
+    - risky refactor boundary
+    - completion of a parent task
+  - Prefer grouped execution for small related implementation steps, but do **not** batch so much work that review becomes difficult or course-correction becomes expensive.
+
+## Edit Strategy
+
+- Prefer targeted, in-place edits over full-file rewrites.
+- Do **not** delete and recreate an existing file unless a true structural rewrite is required.
+- Preserve unchanged code, comments, formatting, and file structure where practical.
+- Make the smallest effective change that fully solves the current sub-task.
+- Before making a large rewrite, first consider whether a narrower patch can achieve the same result with less risk and less token usage.
+
+## Test Strategy
+
+- Do **not** create or update test files by default for every change.
+- Treat tests as targeted risk control, not a mandatory ritual for all work.
+- Add or update tests when the change affects:
+  - non-trivial logic
+  - calculations or scoring
+  - parsing or normalization
+  - branching or fallback behavior
+  - data transformation
+  - API behavior with meaningful conditional paths
+  - bug fixes that could regress
+- Skip creating new tests for:
+  - trivial styling or layout changes
+  - copy/text changes
+  - straightforward presentational updates
+  - simple wiring changes with minimal logic
+  - low-risk refactors that are easy to verify directly
+- Prefer updating an existing nearby test file over creating a brand new test file.
+- If no test is added, the AI should briefly state why direct verification is sufficient.
+- If a new test file is proposed, it should be because the expected value exceeds the token and maintenance cost.
+- Prefer targeted manual verification when a routine command run by the user is sufficient.
+
+## Context Management
+
+- Use the narrowest context needed for the current sub-task.
+- Do **not** repeatedly scan broad areas of the repository if the next step depends on one specific missing artifact.
+- If the required context is narrow and user-provided context would be faster than additional repository exploration, pause, bookmark the current sub-task, and ask the user for the exact file, snippet, schema, command output, stack trace, API response, or error needed.
+- Resume from the same sub-task once that context is provided.
+- Do **not** ask the user for context that can be obtained quickly from obvious local project conventions; only pause when additional searching would be materially wasteful or ambiguous.
+
+## Temporary Documentation Control
+
+- Do **not** create ad hoc markdown notes, scratchpads, memory files, status logs, or temporary documentation unless they are explicitly requested by the user or clearly required as a real deliverable.
+- Prefer updating the task list, PRD, existing docs, or code comments instead of creating new markdown files.
+- For any single task list, create **at most one** new documentation markdown file unless the user explicitly asks for more.
+- Do **not** create one markdown file per parent task, sub-task, milestone, or bug fix.
+- If durable project documentation is needed, consolidate it into a single **RUNBOOK** for the full task list.
+- Prefer updating that RUNBOOK rather than creating additional markdown documentation files.
+- If a temporary file is truly necessary, record it in the task list and delete or consolidate it before the related parent task is completed.
+- If no durable documentation is necessary, do **not** create a RUNBOOK.
+
+## Ambiguity Escalation
+
+- If progress is blocked by product ambiguity, architectural tradeoffs, or an unclear decision boundary, the AI may pause and explicitly instruct the user to open a ChatGPT chat for brainstorming, then provide a compact copy-pasteable handoff prompt.
+- That handoff prompt should:
+  - summarize the problem in plain language
+  - list the relevant files, systems, or constraints
+  - state the decision that must be made
+  - ask ChatGPT to clarify tradeoffs and return a copy-pasteable markdown decision block
+- Use this only when clarification is likely to save more tokens and time than continued implementation guesswork.
 
 ## Task List Maintenance
 
@@ -65,14 +169,21 @@ When working with task lists, the AI must:
 1. Regularly update the task list file after finishing any significant work.
 2. Follow the completion protocol:
    - Mark each finished **sub-task** `[x]`.
-   - Mark the **parent task** `[x]` once **all** its subtasks are `[x]`.
+   - Mark the **parent task** `[x]` once **all** its subtasks are `[x]` and required verification/manual steps are completed.
 3. Add newly discovered tasks.
 4. Keep "Relevant Files" accurate and up to date.
 5. Before starting work, check which sub-task is next.
-6. After implementing a sub-task, update the file and then pause for user approval.
-7. If the user must implement something (creation or editing of a SQL table, running migrations, running an endpoint for upserts, applying dashboard settings, environment configuration, or any other manual/time-sensitive action), explicitly alert the user and describe exactly what must be done.
-8. For any action covered by the manual-action override, require the response **"Done, proceed"** before continuing.
-9. If the user replies with **"yes"** or **"y"** when **"Done, proceed"** is required, do **not** continue; instead, warn the user again and restate the required confirmation.
-10. If a sub-task requires a user decision, explain each option and its consequences before asking the user to choose.
-11. If the user replies with **"yes"** or **"y"** when an explicit choice is required, do **not** continue; instead, restate the options, consequences, and required choice.
-12. Append all newly identified bugs, optimizations, manual follow-ups, and open questions to the **end** of the task list as **NEW** tasks.
+6. After implementing a sub-task, update the file and continue through adjacent low-risk sub-tasks when appropriate.
+7. Pause at meaningful checkpoints and always pause when user approval, required output, manual action, manual verification, ambiguity resolution, or an explicit decision is needed.
+8. If the user must implement something manually, explicitly alert the user and describe exactly what must be done.
+9. For manual-action steps, specify the exact command to run when applicable.
+10. For manual-verification steps, specify exactly what output must be pasted back.
+11. For commit steps, provide the exact commit command or message and require **"Committed, proceed."** before continuing.
+12. If the user replies with **"yes"** or **"y"** when a command output, explicit choice, or exact confirmation is required, do **not** continue; instead, warn the user again and restate the required response.
+13. If a sub-task requires a user decision, explain each option and its consequences before asking the user to choose.
+14. Append all newly identified bugs, optimizations, manual follow-ups, and open questions to the **end** of the task list as **NEW** tasks.
+15. Prefer targeted edits over broad rewrites, and avoid unnecessary file churn.
+16. Avoid creating temporary markdown files when the same information can be preserved in the task list, PRD, existing documentation, or concise code comments.
+17. When ambiguity meaningfully blocks progress, prefer a focused clarification or compact brainstorming handoff over speculative implementation.
+18. Prefer delegating routine terminal chores to the user when that is sufficient and more token-efficient than having Codex perform them directly.
+19. Reserve Codex terminal/tool usage for work that actually benefits from direct exploration, debugging, inspection, or implementation.

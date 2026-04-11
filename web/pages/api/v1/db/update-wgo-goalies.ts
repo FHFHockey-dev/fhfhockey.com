@@ -1,5 +1,122 @@
 // C:\Users\timbr\Desktop\FHFH\fhfhockey.com-3\web\pages\api\v1\db\update-wgo-goalies.ts
 
+/**
+ * API: /api/v1/db/update-wgo-goalies
+ *
+ * Supported query parameters
+ *
+ * `runMode`
+ * - Type: `"incremental" | "forward" | "reverse" | "single"`
+ * - Description: Runs a date-range sweep without using the legacy `action`
+ *   parameter.
+ * - Example:
+ *   `/api/v1/db/update-wgo-goalies?runMode=forward&startDate=2026-01-15&overwrite=true`
+ * - Notes:
+ *   - `incremental` behaves like a resumable forward run. If `startDate` is
+ *     omitted, the handler starts from the day after the latest
+ *     `wgo_goalie_stats` date, or the current season start when the table is
+ *     empty.
+ *   - `forward` walks forward from `startDate` through today.
+ *   - `reverse` walks backward from `startDate` to the earliest season start in
+ *     the `seasons` table.
+ *   - `single` processes only `startDate` and then stops.
+ *
+ * `startDate`
+ * - Type: `YYYY-MM-DD`
+ * - Description: Defines the starting point for `runMode`-based sweeps.
+ * - Example:
+ *   `/api/v1/db/update-wgo-goalies?runMode=reverse&startDate=2026-01-15`
+ * - Notes:
+ *   - Required for `forward`, `reverse`, and `single`.
+ *   - Optional for `incremental`.
+ *
+ * `overwrite`
+ * - Type: boolean-like string: `true | false | yes | no | 1 | 0`
+ * - Description: Controls whether dates in a `runMode` sweep are reloaded even
+ *   when rows already exist.
+ * - Example:
+ *   `/api/v1/db/update-wgo-goalies?runMode=forward&overwrite=false&startDate=2026-01-15`
+ * - Notes:
+ *   - `overwrite=true` deletes existing rows for each processed date before
+ *     re-fetching them.
+ *   - `overwrite=false` skips dates that already exist in `wgo_goalie_stats`.
+ *   - Default behavior matches the NST endpoints: `incremental` defaults to
+ *     `false`; `forward` and `reverse` default to `true`.
+ *
+ * `action`
+ * - Type: `"all" | "fullRefresh"`
+ * - Description: Selects a bulk update mode.
+ * - Example: `/api/v1/db/update-wgo-goalies?action=all`
+ * - Notes:
+ *   - `action=all` performs an incremental refresh from the day after the most
+ *     recent `wgo_goalie_stats` record up to yesterday.
+ *   - `action=fullRefresh` performs a historical rebuild. When paired with
+ *     `season`, it refreshes only that season. Without `season`, it refreshes
+ *     every season in the `seasons` table.
+ *
+ * `season`
+ * - Type: numeric season ID string, such as `20232024`
+ * - Description: Restricts `action=fullRefresh` to one specific season.
+ * - Example: `/api/v1/db/update-wgo-goalies?action=fullRefresh&season=20232024`
+ * - Notes: Ignored unless `action=fullRefresh` is provided.
+ *
+ * `date`
+ * - Type: `YYYY-MM-DD`
+ * - Description: Targets a single game date, or supplies the date context for a
+ *   single-player fetch.
+ * - Example: `/api/v1/db/update-wgo-goalies?date=2026-01-15`
+ * - Notes:
+ *   - When sent by itself, the handler fetches and upserts all goalie stats for
+ *     that one date.
+ *   - When paired with `playerId`, it fetches aggregate stats for one goalie up
+ *     to that date within the resolved season.
+ *
+ * `playerId`
+ * - Type: NHL player ID string or number-like string
+ * - Description: Fetches data for a single goalie when paired with `date`.
+ * - Example:
+ *   `/api/v1/db/update-wgo-goalies?playerId=8475883&date=2026-01-15`
+ * - Notes: This path fetches data only; it does not upsert into
+ *   `wgo_goalie_stats`.
+ *
+ * `goalieFullName`
+ * - Type: string
+ * - Description: Optional display name used only for logging and response
+ *   messaging in the single-player fetch path.
+ * - Example:
+ *   `/api/v1/db/update-wgo-goalies?playerId=8475883&date=2026-01-15&goalieFullName=Connor%20Hellebuyck`
+ * - Notes: Defaults to `Unknown Goalie` when omitted.
+ *
+ * Valid request patterns
+ * - Single-date run with overwrite enabled:
+ *   `/api/v1/db/update-wgo-goalies?runMode=single&overwrite=true&startDate=2026-01-15`
+ * - Forward sweep from a specific date through today:
+ *   `/api/v1/db/update-wgo-goalies?runMode=forward&overwrite=true&startDate=2026-01-15`
+ * - Reverse sweep from a specific date back to the earliest known season:
+ *   `/api/v1/db/update-wgo-goalies?runMode=reverse&overwrite=false&startDate=2026-01-15`
+ * - Incremental sweep with an explicit starting date:
+ *   `/api/v1/db/update-wgo-goalies?runMode=incremental&overwrite=true&startDate=2026-01-15`
+ * - Incremental refresh:
+ *   `/api/v1/db/update-wgo-goalies?action=all`
+ * - Full refresh for all historical seasons:
+ *   `/api/v1/db/update-wgo-goalies?action=fullRefresh`
+ * - Full refresh for one season:
+ *   `/api/v1/db/update-wgo-goalies?action=fullRefresh&season=20232024`
+ * - Upsert all goalie stats for one date:
+ *   `/api/v1/db/update-wgo-goalies?date=2026-01-15`
+ * - Fetch one goalie's aggregate stats up to a date:
+ *   `/api/v1/db/update-wgo-goalies?playerId=8475883&date=2026-01-15&goalieFullName=Connor%20Hellebuyck`
+ *
+ * Invalid combinations
+ * - `runMode=forward`, `runMode=reverse`, or `runMode=single` without
+ *   `startDate`
+ * - `runMode`/`startDate`/`overwrite` combined with `action`, `date`, or
+ *   `playerId`
+ * - `season` without `action=fullRefresh`
+ * - `playerId` without `date`
+ * - `action` combined with the single-date or single-player request modes
+ */
+
 // Import necessary modules from Next.js, Supabase, and other utilities
 import { NextApiRequest, NextApiResponse } from "next";
 import supabase from "lib/supabase/server";
@@ -10,7 +127,8 @@ import {
   addDays,
   isBefore,
   isAfter,
-  subDays
+  subDays,
+  isValid
 } from "date-fns";
 import { getCurrentSeason } from "lib/NHL/server";
 import {
@@ -31,6 +149,44 @@ interface SeasonInfo {
   id: number; // Assuming 'id' in your 'seasons' table is the numeric season ID like 20232024
   startDate: string; // 'YYYY-MM-DD'
   regularSeasonEndDate: string; // 'YYYY-MM-DD'
+}
+
+type RunMode = "incremental" | "forward" | "reverse" | "single";
+
+function parseRunMode(
+  value: string | string[] | undefined
+): RunMode | undefined {
+  const raw = (Array.isArray(value) ? value[0] : value)?.toLowerCase();
+  if (
+    raw === "incremental" ||
+    raw === "forward" ||
+    raw === "reverse" ||
+    raw === "single"
+  ) {
+    return raw;
+  }
+  return undefined;
+}
+
+function parseBooleanParam(
+  value: string | string[] | undefined
+): boolean | undefined {
+  const raw = (Array.isArray(value) ? value[0] : value)?.toLowerCase();
+  if (!raw) return undefined;
+  if (["yes", "true", "1"].includes(raw)) return true;
+  if (["no", "false", "0"].includes(raw)) return false;
+  return undefined;
+}
+
+function parseDateParam(
+  value: string | string[] | undefined
+): string | undefined {
+  const raw = Array.isArray(value) ? value[0] : value;
+  if (!raw || !/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+    return undefined;
+  }
+  const parsed = parseISO(raw);
+  return isValid(parsed) ? raw : undefined;
 }
 
 /**
@@ -186,6 +342,62 @@ async function getSeasonDetailsById(
       err.message
     );
     return null;
+  }
+}
+
+async function getEarliestSeasonStartDate(): Promise<string | null> {
+  try {
+    const { data, error } = await supabase
+      .from("seasons")
+      .select("startDate")
+      .order("startDate", { ascending: true })
+      .limit(1)
+      .single();
+
+    if (error || !data?.startDate) {
+      console.error(
+        "Error fetching earliest season start date:",
+        error?.message
+      );
+      return null;
+    }
+
+    return data.startDate;
+  } catch (err: any) {
+    console.error(
+      "Unexpected error in getEarliestSeasonStartDate:",
+      err.message
+    );
+    return null;
+  }
+}
+
+async function hasExistingGoalieStatsForDate(date: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("wgo_goalie_stats")
+    .select("goalie_id")
+    .eq("date", date)
+    .limit(1);
+
+  if (error) {
+    throw new Error(
+      `Failed checking existing goalie stats for ${date}: ${error.message}`
+    );
+  }
+
+  return (data?.length ?? 0) > 0;
+}
+
+async function deleteGoalieStatsForDate(date: string): Promise<void> {
+  const { error } = await supabase
+    .from("wgo_goalie_stats")
+    .delete()
+    .eq("date", date);
+
+  if (error) {
+    throw new Error(
+      `Failed deleting existing goalie stats for ${date}: ${error.message}`
+    );
   }
 }
 
@@ -784,6 +996,157 @@ async function updateRecentGoalieStats(): Promise<{
   };
 }
 
+async function runGoalieStatsDateRange(options: {
+  runMode: RunMode;
+  startDate?: string;
+  overwrite?: boolean;
+}): Promise<{
+  message: string;
+  success: boolean;
+  totalUpdates: number;
+  totalErrors: number;
+  startDate: string;
+  endDate: string;
+  runMode: RunMode;
+  overwrite: boolean;
+  processedDates: number;
+  skippedDates: number;
+}> {
+  const runMode = options.runMode;
+  const overwrite =
+    options.overwrite ?? (runMode === "incremental" ? false : true);
+  const today = format(new Date(), "yyyy-MM-dd");
+  let resolvedStartDate = options.startDate;
+
+  if (!resolvedStartDate && runMode === "incremental") {
+    const { data: latestEntry, error: latestEntryError } = await supabase
+      .from("wgo_goalie_stats")
+      .select("date")
+      .order("date", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (latestEntryError) {
+      throw new Error(
+        `Failed to fetch latest goalie stats date: ${latestEntryError.message}`
+      );
+    }
+
+    if (latestEntry?.date) {
+      resolvedStartDate = format(
+        addDays(parseISO(latestEntry.date), 1),
+        "yyyy-MM-dd"
+      );
+    } else {
+      const currentSeasonInfo = await getSeasonFromDate(today);
+      if (currentSeasonInfo?.startDate) {
+        resolvedStartDate = currentSeasonInfo.startDate;
+      } else {
+        resolvedStartDate = (await getEarliestSeasonStartDate()) ?? undefined;
+      }
+    }
+  }
+
+  if (!resolvedStartDate) {
+    throw new Error(
+      `Missing required startDate. Provide startDate=YYYY-MM-DD when runMode=${runMode}.`
+    );
+  }
+
+  const startDateObj = parseISO(resolvedStartDate);
+  if (!isValid(startDateObj)) {
+    throw new Error(
+      `Invalid startDate format: ${resolvedStartDate}. Expected YYYY-MM-DD.`
+    );
+  }
+
+  let endDate = today;
+  if (runMode === "single") {
+    endDate = resolvedStartDate;
+  } else if (runMode === "reverse") {
+    const earliestSeasonStartDate = await getEarliestSeasonStartDate();
+    if (!earliestSeasonStartDate) {
+      throw new Error(
+        "Could not determine earliest season start date for reverse mode."
+      );
+    }
+    endDate = earliestSeasonStartDate;
+  }
+
+  const endDateObj = parseISO(endDate);
+  const dateStep = runMode === "reverse" ? -1 : 1;
+  const isOutOfRange =
+    runMode === "reverse"
+      ? isBefore(startDateObj, endDateObj)
+      : isAfter(startDateObj, endDateObj);
+
+  if (isOutOfRange) {
+    return {
+      message: `No dates to process. startDate ${resolvedStartDate} is already beyond the ${runMode} target boundary ${endDate}.`,
+      success: true,
+      totalUpdates: 0,
+      totalErrors: 0,
+      startDate: resolvedStartDate,
+      endDate,
+      runMode,
+      overwrite,
+      processedDates: 0,
+      skippedDates: 0
+    };
+  }
+
+  let currentDate = startDateObj;
+  let totalUpdates = 0;
+  let totalErrors = 0;
+  let processedDates = 0;
+  let skippedDates = 0;
+
+  while (
+    runMode === "reverse"
+      ? !isBefore(currentDate, endDateObj)
+      : !isAfter(currentDate, endDateObj)
+  ) {
+    const formattedDate = format(currentDate, "yyyy-MM-dd");
+
+    try {
+      const hasExistingData =
+        await hasExistingGoalieStatsForDate(formattedDate);
+      if (hasExistingData && !overwrite) {
+        skippedDates++;
+      } else {
+        if (hasExistingData && overwrite) {
+          await deleteGoalieStatsForDate(formattedDate);
+        }
+
+        const dailyResult = await updateGoalieStats(formattedDate);
+        totalUpdates += dailyResult.actualUpsertCount;
+      }
+      processedDates++;
+    } catch (error: any) {
+      totalErrors++;
+      console.error(
+        `Error processing ${formattedDate} in ${runMode} mode:`,
+        error.message
+      );
+    }
+
+    currentDate = addDays(currentDate, dateStep);
+  }
+
+  return {
+    message: `Completed ${runMode} goalie stats run from ${resolvedStartDate} to ${endDate}.`,
+    success: totalErrors === 0,
+    totalUpdates,
+    totalErrors,
+    startDate: resolvedStartDate,
+    endDate,
+    runMode,
+    overwrite,
+    processedDates,
+    skippedDates
+  };
+}
+
 // --- API Handler ---
 export default async function handler(
   req: NextApiRequest,
@@ -804,12 +1167,75 @@ export default async function handler(
     const actionParam = req.query.action as string | undefined;
     const dateParam = req.query.date as string | undefined;
     const playerIdParam = req.query.playerId as string | undefined;
+    const runModeParam = parseRunMode(req.query.runMode);
+    const startDateParam = parseDateParam(req.query.startDate);
+    const overwriteParam = parseBooleanParam(req.query.overwrite);
     const goalieFullName =
       (req.query.goalieFullName as string | undefined) || "Unknown Goalie";
     const seasonParam = req.query.season as string | undefined; // Expects format like '20232024'
 
+    const hasRangeParams =
+      runModeParam !== undefined ||
+      req.query.startDate !== undefined ||
+      req.query.overwrite !== undefined;
+
+    if (hasRangeParams) {
+      if (actionParam || dateParam || playerIdParam) {
+        throw new Error(
+          "Invalid parameter combination. runMode/startDate/overwrite cannot be combined with action, date, or playerId request modes."
+        );
+      }
+
+      if (req.query.startDate !== undefined && !startDateParam) {
+        throw new Error(
+          `Invalid startDate format: ${Array.isArray(req.query.startDate) ? req.query.startDate[0] : req.query.startDate}. Expected YYYY-MM-DD.`
+        );
+      }
+
+      if (req.query.overwrite !== undefined && overwriteParam === undefined) {
+        throw new Error(
+          "Invalid overwrite value. Use true/false, yes/no, or 1/0."
+        );
+      }
+
+      const runMode = runModeParam ?? "incremental";
+      if (
+        (runMode === "forward" ||
+          runMode === "reverse" ||
+          runMode === "single") &&
+        !startDateParam
+      ) {
+        throw new Error(
+          `Missing required startDate. Provide startDate=YYYY-MM-DD when runMode=${runMode}.`
+        );
+      }
+
+      details.action = `${runMode}_range_update`;
+      const result = await runGoalieStatsDateRange({
+        runMode,
+        startDate: startDateParam,
+        overwrite: overwriteParam
+      });
+      rowsAffected = result.totalUpdates;
+      totalErrors = result.totalErrors;
+      status = result.success ? "success" : "error";
+      responseMessage = result.message;
+      details = {
+        ...details,
+        runMode: result.runMode,
+        overwrite: result.overwrite,
+        startDate: result.startDate,
+        endDate: result.endDate,
+        processedDates: result.processedDates,
+        skippedDates: result.skippedDates,
+        totalUpdates: result.totalUpdates,
+        totalErrors: result.totalErrors
+      };
+      responseData = result;
+    }
+
     // --- Action: all (Incremental Update) ---
-    if (actionParam === "all") {
+    else if (actionParam === "all") {
       details.action = "incremental_update";
       // Use the updateRecentGoalieStats function for incremental updates
       const result = await updateRecentGoalieStats();
