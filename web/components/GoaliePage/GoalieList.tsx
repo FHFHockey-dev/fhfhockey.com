@@ -12,15 +12,10 @@ import {
   Ranking,
   WeekOption,
   GoalieBaseStats,
-  GoalieAverages
+  GoalieAverages,
+  SortConfig
 } from "components/GoaliePage/goalieTypes";
 import { calculateWeeklyRanking } from "./goalieCalculations"; // Removed unused rankingPoints import
-
-// Define SortConfig interface if not imported
-interface SortConfig<T> {
-  key: keyof T | null;
-  direction: "ascending" | "descending";
-}
 
 // Define the type GoalieTable expects
 type DisplayGoalie = GoalieBaseStats & {
@@ -43,9 +38,6 @@ interface Props {
   week: WeekOption["value"];
   selectedStats: NumericGoalieStatKey[];
   statColumns: StatColumn[];
-  setView: React.Dispatch<
-    React.SetStateAction<"leaderboard" | "week" | "table">
-  >;
   loading?: boolean; // Optional loading state
   onBackToLeaderboard: () => void; // Function to go back to leaderboard
   showBackButton?: boolean;
@@ -57,7 +49,6 @@ const GoalieList: FC<Props> = ({
   week,
   selectedStats,
   statColumns,
-  // setView, // Commented out if not used
   loading,
   onBackToLeaderboard,
   showBackButton = true

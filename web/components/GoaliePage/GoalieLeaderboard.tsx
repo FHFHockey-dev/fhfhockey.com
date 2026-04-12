@@ -6,53 +6,26 @@ import styles from "styles/Goalies.module.scss";
 import type {
   GoalieRanking,
   Ranking,
-  StatColumn
+  SortConfig
 } from "components/GoaliePage/goalieTypes";
-// Adjust path if SortConfig is defined elsewhere, e.g., in trueGoalieValue.tsx
-import { SortConfig } from "pages/trueGoalieValue";
+import {
+  buildGoalieVarianceAverages,
+  formatGoalieVarianceValue,
+  getGoalieLeaderboardColumns
+} from "./goalieMetrics";
 
 interface Props {
   goalieRankings: GoalieRanking[];
-  // setView can likely be removed if only used for back button previously
-  setView: React.Dispatch<
-    React.SetStateAction<"leaderboard" | "week" | "table">
-  >;
-  statColumns?: StatColumn[]; // Optional for legacy callers
-  sortConfig?: SortConfig<GoalieRanking>; // Optional sort config
-  requestSort?: (key: keyof GoalieRanking) => void; // Function to request sorting
+  sortConfig?: SortConfig<GoalieRanking>;
+  requestSort?: (key: keyof GoalieRanking) => void;
+  varianceDisplayMode?: "raw" | "relative";
 }
-
-// *** DEFINE COLUMN WIDTHS HERE ***
-// Adjust these percentages as needed. Try to keep the total around 100%.
-const columnWidths: { [label: string]: string } = {
-  Rank: "4%",
-  Name: "10%", // Wider for names
-  Team: "5%",
-  "Rank Pts": "5%", // Added WoW Pts mapping
-  "Elite Wk": "5%",
-  Quality: "5%", // Renamed from Quality Wk if needed to match label
-  AVG: "5%", // Renamed from Av Wk if needed
-  BAD: "5%", // Renamed from Bd Wk if needed
-  "Really Bad": "5%", // Renamed from RB Wk if needed
-  "% OK WKs": "5%",
-  "% Good WKs": "5%",
-  "Week Over Week Variance": "6%", // Adjusted label from WoW Var
-  "Game Over Game Variance": "6%", // Adjusted label from GoG Var
-  "Avg fPts/G": "5%",
-  "+/- Lg Avg fPts": "5%",
-  "Percentile Rank": "5%", // Adjusted label from Avg %ile
-  GP: "4%",
-  "SV%": "5%",
-  GAA: "5%"
-};
-// Current Total: 4+10+5+5+5+5+5+5
 
 const GoalieLeaderboard: FC<Props> = ({
   goalieRankings,
-  setView,
-  statColumns,
-  requestSort, // Destructure new props
-  sortConfig
+  requestSort,
+  sortConfig,
+  varianceDisplayMode = "raw"
 }) => {
   if (!goalieRankings || goalieRankings.length === 0) {
     return (
@@ -66,9 +39,33 @@ const GoalieLeaderboard: FC<Props> = ({
   // Function to determine percentage class (unchanged)
   const getPercentageClass = (percentage: number | undefined): string => {
     const p = percentage ?? 0;
-    if (p >= 65) return styles.percentHigh;
+    if (p >= 75) return styles.percentHigh;
     if (p >= 50) return styles.percentMedium;
     return styles.percentLow;
+  };
+
+  const columns = React.useMemo(
+    () => getGoalieLeaderboardColumns(varianceDisplayMode),
+    [varianceDisplayMode]
+  );
+  const varianceAverages = React.useMemo(
+    () => buildGoalieVarianceAverages(goalieRankings),
+    [goalieRankings]
+  );
+
+  const getValueTierClass = (tier: string | undefined) => {
+    switch (tier) {
+      case "Tier 1":
+        return styles.valueTierTier1;
+      case "Tier 2":
+        return styles.valueTierTier2;
+      case "Tier 3":
+        return styles.valueTierTier3;
+      case "Tier 4":
+        return styles.valueTierTier4;
+      default:
+        return styles.valueTierTier5;
+    }
   };
 
   // Helper to safely access week counts (unchanged)
@@ -96,52 +93,6 @@ const GoalieLeaderboard: FC<Props> = ({
     return sortConfig.direction === "ascending" ? " ▲" : " ▼";
   };
 
-  // Helper to map column labels to GoalieRanking keys (adjust mappings as needed)
-  const columnToSortKeyMap: { [label: string]: keyof GoalieRanking } = {
-    Rank: "totalPoints",
-    Name: "goalieFullName",
-    Team: "team",
-    "WoW Pts": "totalPoints", // Added mapping
-    "Elite Wk": "eliteWeeks",
-    Quality: "qualityWeeks",
-    AVG: "averageWeeks",
-    BAD: "badWeeks",
-    "Really Bad": "reallyBadWeeks",
-    "% OK WKs": "percentAcceptableWeeks",
-    "% Good WKs": "percentGoodWeeks",
-    "Week Over Week Variance": "wowVariance", // Adjusted label
-    "Game Over Game Variance": "gogVariance", // Adjusted label
-    "Avg fPts/G": "averageFantasyPointsPerGame",
-    "+/- Lg Avg fPts": "fantasyPointsAboveAverage",
-    "Percentile Rank": "averagePercentileRank", // Adjusted label
-    GP: "totalGamesPlayed",
-    "SV%": "overallSavePct",
-    GAA: "overallGaa"
-  };
-
-  // Define the exact order and labels for headers
-  const headerLabels = [
-    "Rank",
-    "Name",
-    "Team",
-    "WoW Pts", // Added WoW Pts
-    "Elite Wk",
-    "Quality",
-    "AVG",
-    "BAD",
-    "Really Bad",
-    "% OK WKs",
-    "% Good WKs",
-    "Week Over Week Variance", // Use full label
-    "Game Over Game Variance", // Use full label
-    "Avg fPts/G",
-    "+/- Lg Avg fPts",
-    "Percentile Rank", // Use full label
-    "GP",
-    "SV%",
-    "GAA"
-  ];
-
   return (
     <>
       {/* Use standard h2, adjust styling via CSS if needed */}
@@ -151,64 +102,26 @@ const GoalieLeaderboard: FC<Props> = ({
       <table className={styles.dataTable}>
         <thead>
           <tr>
-            {/* Iterate over the defined headerLabels array */}
-            {headerLabels.map((label) => {
-              const sortKey = columnToSortKeyMap[label];
+            {columns.map((column) => {
+              const { label, sortKey, width, infoTitle } = column;
               const isSortable = typeof requestSort === "function";
-              // Get the width from the map, default to 'auto' if not found
-              const width = columnWidths[label] || "auto";
 
               return (
                 <th
                   key={label}
                   className={isSortable ? styles.sortableHeader : ""}
                   onClick={isSortable ? () => requestSort(sortKey) : undefined}
-                  // *** APPLY INLINE STYLE FOR WIDTH ***
                   style={{ width: width }}
                 >
                   {label}
-                  {/* Add info icons conditionally based on label */}
-                  {label === "Week Over Week Variance" && (
+                  {infoTitle && (
                     <span
                       className={styles.infoIcon}
-                      title="Week-over-Week Ranking Variance (StdDev of Weekly Points vs League Avg)"
+                      title={infoTitle}
                     >
                       &#9432;
                     </span>
                   )}
-                  {label === "Game Over Game Variance" && (
-                    <span
-                      className={styles.infoIcon}
-                      title="Game-over-Game Fantasy Point Variance (StdDev of Game fPts)"
-                    >
-                      &#9432;
-                    </span>
-                  )}
-                  {label === "Avg fPts/G" && (
-                    <span
-                      className={styles.infoIcon}
-                      title="Average Fantasy Points Scored Per Game Played"
-                    >
-                      &#9432;
-                    </span>
-                  )}
-                  {label === "+/- Lg Avg fPts" && (
-                    <span
-                      className={styles.infoIcon}
-                      title="Goalie Avg fPts/G vs League Avg fPts/G for the period"
-                    >
-                      &#9432;
-                    </span>
-                  )}
-                  {label === "Percentile Rank" && (
-                    <span
-                      className={styles.infoIcon}
-                      title="Average Percentile Rank across key statistics"
-                    >
-                      &#9432;
-                    </span>
-                  )}
-                  {/* Sort Indicator */}
                   {isSortable && (
                     <span className={styles.sortIndicator}>
                       {getSortIndicator(sortKey)}
@@ -235,6 +148,24 @@ const GoalieLeaderboard: FC<Props> = ({
                 <td>{index + 1}</td> {/* Rank */}
                 <td>{goalie.goalieFullName ?? "N/A"}</td> {/* Name */}
                 <td>{goalie.team ?? "N/A"}</td> {/* Team */}
+                <td>
+                  {(() => {
+                    return goalie.valueTier && goalie.valueTierScore != null ? (
+                      <span
+                        className={`${styles.valueTierPill} ${getValueTierClass(
+                          goalie.valueTier
+                        )}`}
+                        title={`Filtered-population value score ${goalie.valueTierScore.toFixed(
+                          1
+                        )}`}
+                      >
+                        {goalie.valueTier}
+                      </span>
+                    ) : (
+                      "N/A"
+                    );
+                  })()}
+                </td>
                 <td>{goalie.totalPoints ?? 0}</td> {/* WoW Pts */}
                 <td>{getWeekCount(goalie, "Elite")}</td> {/* Elite Wk */}
                 <td>{getWeekCount(goalie, "Quality")}</td> {/* Quality */}
@@ -249,8 +180,20 @@ const GoalieLeaderboard: FC<Props> = ({
                 <td className={getPercentageClass(goalie.percentGoodWeeks)}>
                   {(goalie.percentGoodWeeks ?? 0).toFixed(1)}%
                 </td>
-                <td>{goalie.wowVariance?.toFixed(2) ?? "N/A"}</td>
-                <td>{goalie.gogVariance?.toFixed(2) ?? "N/A"}</td>
+                <td>
+                  {formatGoalieVarianceValue(
+                    goalie.wowVariance,
+                    varianceAverages.wowVariance,
+                    varianceDisplayMode
+                  )}
+                </td>
+                <td>
+                  {formatGoalieVarianceValue(
+                    goalie.gogVariance,
+                    varianceAverages.gogVariance,
+                    varianceDisplayMode
+                  )}
+                </td>
                 <td>
                   {goalie.averageFantasyPointsPerGame?.toFixed(2) ?? "N/A"}
                 </td>
@@ -274,8 +217,9 @@ const GoalieLeaderboard: FC<Props> = ({
       </table>
 
       <p className={styles.varianceNote}>
-        Lower Variance (WoW Var, GoG Var) indicates more consistent performance.
+        Lower standard deviation indicates more consistent performance.
         Avg %ile shows overall statistical rank vs peers (higher is better).
+        Relative mode shows the delta versus the filtered average.
         Fantasy Points (fPts) calculated based on settings.
       </p>
     </>

@@ -116,13 +116,13 @@ nav.items.large {
     margin: 0;
     list-style-type: none;
     display: flex;
-    gap: 24px;
+    gap: clamp(12px, 1.35vw, 24px);
     color: rgba(249, 235, 234, 1);
     font-family:
       roboto condensed,
       sans-serif;
     font-weight: 900;
-    font-size: 1.25rem;
+    font-size: clamp(1rem, 1.18vw, 1.25rem);
     letter-spacing: 2px;
 
     li {

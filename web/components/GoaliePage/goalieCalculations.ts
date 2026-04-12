@@ -423,6 +423,7 @@ export const calculateGoalieRankings = (
       wowVariance: wowVariance, // WoW based on weekly ranking points
       gogVariance: gogVariance, // GoG based on std dev of fantasy points per game
       totalGamesPlayed: totalGP,
+      totalGamesStarted: totalGS,
       // totalGamesStarted: totalGS, // Can add if needed
       totalWins: totalWins,
       totalLosses: totalLosses,

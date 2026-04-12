@@ -28,7 +28,7 @@ export const HOME_SURFACE_LINKS: SiteSurfaceLink[] = [
     description: "Check current deployment and PP personnel."
   },
   {
-    href: "/goalies",
+    href: "/variance/goalies",
     label: "Goalie View",
     description: "Review workload, starts, and weekly goalie context."
   }
@@ -56,7 +56,7 @@ export const TRENDS_SURFACE_LINKS: SiteSurfaceLink[] = [
     description: "Confirm deployment changes behind the trend movement."
   },
   {
-    href: "/goalies",
+    href: "/variance/goalies",
     label: "Goalie View",
     description: "Check the goalie side before locking in a call."
   }
@@ -84,27 +84,9 @@ export const START_CHART_SURFACE_LINKS: SiteSurfaceLink[] = [
     description: "Validate deployment before acting on the matchup."
   },
   {
-    href: "/goalies",
+    href: "/variance/goalies",
     label: "Goalie View",
     description: "Cross-check starter context against goalie workload."
-  }
-];
-
-export const GOALIE_SURFACE_LINKS: SiteSurfaceLink[] = [
-  {
-    href: "/start-chart",
-    label: "Starter Board",
-    description: "Jump from weekly results into slate starter context."
-  },
-  {
-    href: "/trends",
-    label: "Trends Dashboard",
-    description: "Layer team and player recent form onto goalie calls."
-  },
-  {
-    href: GAME_GRID_HREF,
-    label: "Game Grid",
-    description: "Compare goalie choices against weekly game volume."
   }
 ];
 
@@ -125,7 +107,7 @@ export const GAME_GRID_SURFACE_LINKS: SiteSurfaceLink[] = [
     description: "Confirm line and PP deployment next to the grid."
   },
   {
-    href: "/goalies",
+    href: "/variance/goalies",
     label: "Goalie View",
     description: "Compare weekly volume plans with goalie reliability."
   }

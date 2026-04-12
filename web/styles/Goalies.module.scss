@@ -6,7 +6,7 @@
 /* =================== Main Page Layout =================== */
 
 .pageContainer {
-  width: min(96%, 1600px);
+  width: 95%;
   min-height: calc(100vh - 4rem);
   margin: v.$space-lg auto v.$space-xxl;
   display: grid;
@@ -31,7 +31,7 @@
 
 .controlsWrapper {
   display: grid;
-  grid-template-columns: 1.05fr 1.55fr 1.4fr;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
   gap: v.$space-md;
   width: 100%;
   align-items: stretch;
@@ -167,6 +167,13 @@
   border: 1px solid rgba(v.$color-white, 0.08);
   border-radius: v.$border-radius-lg;
   box-shadow: inset 0 1px 0 rgba(v.$color-white, 0.04);
+}
+
+.timeframePanel {
+  display: grid;
+  gap: v.$space-md;
+  align-content: start;
+  min-height: 100%;
 }
 
 .segment {
@@ -318,9 +325,49 @@
 
 .checkboxContainer {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+  grid-template-columns: repeat(6, 1fr);
   gap: v.$space-sm;
   align-content: start;
+}
+
+.inputStack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+
+.textInput {
+  min-height: v.$control-height-md;
+  padding: v.$space-sm v.$space-md;
+  border: 1px solid rgba(v.$color-white, 0.14);
+  border-radius: v.$border-radius-md;
+  background: color.adjust(v.$background-dark, $lightness: -1%);
+  color: v.$text-primary;
+  font-size: 0.86rem;
+  width: 100%;
+
+  &:focus {
+    outline: none;
+    border-color: v.$primary-color;
+    box-shadow: 0 0 0 3px rgba(v.$primary-color, 0.15);
+  }
+}
+
+.fieldHint,
+.fieldError {
+  margin: 0;
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+.fieldHint {
+  color: v.$text-secondary;
+}
+
+.fieldError {
+  color: v.$danger-color;
 }
 
 .metricsToolbar {
@@ -376,12 +423,6 @@
   color: v.$color-white;
   border-color: rgba(v.$primary-color, 0.4);
   background: rgba(v.$primary-color, 0.18);
-}
-
-.metricsPlaceholder {
-  display: flex;
-  min-height: 24rem;
-  align-items: center;
 }
 
 .checkboxItem {
@@ -724,6 +765,11 @@
         $alpha: 0.3
       );
       color: v.$focus-color;
+      border-top: 1px solid v.$focus-color;
+      border-bottom: 1px solid v.$focus-color;
+    }
+
+    &:hover td:not(:nth-child(2)) {
       font-weight: 600;
     }
 
@@ -807,6 +853,40 @@
     text-align: center;
     margin-top: v.$space-md;
     padding: 0 v.$space-md;
+  }
+
+  .valueTierPill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 4.5rem;
+    padding: 0.3rem 0.5rem;
+    border-radius: 999px;
+    border: 1px solid rgba(v.$color-white, 0.12);
+    color: v.$color-white;
+    font: 700 0.72rem/1 v.$font-family-accent;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .valueTierTier1 {
+    background: rgba(v.$success-color, 0.28);
+  }
+
+  .valueTierTier2 {
+    background: rgba(v.$primary-color, 0.28);
+  }
+
+  .valueTierTier3 {
+    background: rgba(v.$warning-color, 0.28);
+  }
+
+  .valueTierTier4 {
+    background: rgba(v.$secondary-color, 0.2);
+  }
+
+  .valueTierTier5 {
+    background: rgba(v.$danger-color, 0.24);
   }
 }
 

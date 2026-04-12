@@ -72,6 +72,7 @@ import {
   isNstRateLimitError
 } from "lib/nst/client";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
+import { parseISO } from "date-fns";
 
 dotenv.config({ path: "./../../../.env.local" });
 
@@ -513,20 +514,44 @@ async function processUrlsSequentially(
   let processedCount = 0;
   let pendingProcessedCount = 0;
   let stoppedEarly = false;
+  const urlProgress: {
+    datasetType: string;
+    date: string;
+    status: "processed" | "skipped";
+    startedAt: string;
+    finishedAt: string;
+    durationMs: number;
+    rowCount: number;
+  }[] = [];
+  // Track unique dates and per-date totals so we can log a per-date summary
+  const uniqueDates = Array.from(new Set(urlsQueue.map((q) => q.date)));
+  const dateTotalUrls: Record<string, number> = {};
+  uniqueDates.forEach((d) => {
+    dateTotalUrls[d] = urlsQueue.filter((u) => u.date === d).length;
+  });
+  const dateProcessedCounts: Record<string, number> = {};
   for (let i = 0; i < urlsQueue.length; i++) {
     const { datasetType, url, date, seasonId } = urlsQueue[i];
+    const urlStartedAt = Date.now();
+    const startedAtIso = new Date(urlStartedAt).toISOString();
     console.log(
-      `\nProcessing URL ${i + 1}/${totalUrls}: ${datasetType} for ${date}`
+      `\n[${startedAtIso}] Starting URL ${i + 1}/${totalUrls}: ${datasetType} for ${date}`
     );
     const dataExists = options.overwrite
       ? false
       : await checkDataExists(datasetType, date);
     if (!dataExists || options.overwrite) {
       if (options.requestIntervalMs > 0) {
+        const wakeAt = new Date(
+          Date.now() + options.requestIntervalMs
+        ).toISOString();
         console.log(
-          `Waiting ${options.requestIntervalMs / 1000} seconds before next NST request...`
+          `[${new Date().toISOString()}] Waiting ${options.requestIntervalMs / 1000} seconds before requesting ${datasetType} for ${date}. Next request at approximately ${wakeAt}.`
         );
         await delay(options.requestIntervalMs);
+        console.log(
+          `[${new Date().toISOString()}] Request window open for ${datasetType} on ${date}. Fetch starting now.`
+        );
       }
       const dataRows = await fetchAndParseData(
         url,
@@ -537,14 +562,51 @@ async function processUrlsSequentially(
       if (dataRows.length > 0) {
         await upsertData(datasetType, dataRows);
       }
+      const finishedAtIso = new Date().toISOString();
+      const durationMs = Date.now() - urlStartedAt;
       pendingProcessedCount++;
+      console.log(
+        `[${finishedAtIso}] Finished ${datasetType} for ${date} in ${(durationMs / 1000).toFixed(1)}s.`
+      );
+      urlProgress.push({
+        datasetType,
+        date,
+        status: "processed",
+        startedAt: startedAtIso,
+        finishedAt: finishedAtIso,
+        durationMs,
+        rowCount: dataRows.length
+      });
     } else {
+      const finishedAtIso = new Date().toISOString();
+      const durationMs = Date.now() - urlStartedAt;
       console.log(
         `Data already exists for ${datasetType} on ${date}. Skipping.`
       );
+      console.log(
+        `[${finishedAtIso}] Skipped ${datasetType} for ${date} after ${(durationMs / 1000).toFixed(1)}s.`
+      );
+      urlProgress.push({
+        datasetType,
+        date,
+        status: "skipped",
+        startedAt: startedAtIso,
+        finishedAt: finishedAtIso,
+        durationMs,
+        rowCount: 0
+      });
     }
     processedCount++;
     console.log(`Processed ${processedCount} out of ${totalUrls} URLs.`);
+
+    // Update per-date processed counter and log when a date's URLs are complete
+    dateProcessedCounts[date] = (dateProcessedCounts[date] || 0) + 1;
+    if (dateProcessedCounts[date] === dateTotalUrls[date]) {
+      const dateIndex = uniqueDates.indexOf(date) + 1;
+      console.log(
+        `[${new Date().toISOString()}] Completed ${dateProcessedCounts[date]} out of ${dateTotalUrls[date]} URLs for ${date} (date ${dateIndex} of ${uniqueDates.length}).`
+      );
+    }
     if (
       options.maxPendingUrls !== undefined &&
       pendingProcessedCount >= options.maxPendingUrls
@@ -557,7 +619,8 @@ async function processUrlsSequentially(
   return {
     processedCount,
     pendingProcessedCount,
-    stoppedEarly
+    stoppedEarly,
+    urlProgress
   };
 }
 
@@ -579,20 +642,20 @@ async function main(
 
     const seasonInfo = await fetchCurrentSeason();
     const seasonId = seasonInfo.id.toString();
-    const seasonStartDate = new Date(seasonInfo.startDate);
-    const regularSeasonEndDate = new Date(seasonInfo.regularSeasonEndDate);
+    const seasonStartDate = parseISO(seasonInfo.startDate);
+    const regularSeasonEndDate = parseISO(seasonInfo.regularSeasonEndDate);
     const today = new Date();
     const scrapingEndDate =
       today < regularSeasonEndDate ? today : regularSeasonEndDate;
 
     let startDate = seasonStartDate;
     if (options.startDate) {
-      startDate = new Date(options.startDate);
+      startDate = parseISO(options.startDate);
       console.log(`Using explicit startDate ${options.startDate}.`);
     } else if (runMode === "incremental") {
       const latestDateStr = await getLatestDateSupabase();
       if (latestDateStr) {
-        startDate = new Date(latestDateStr);
+        startDate = parseISO(latestDateStr);
         console.log(
           `Latest date in Supabase is ${latestDateStr}. Resuming from that date to catch partial/incomplete datasets.`
         );
@@ -644,7 +707,7 @@ async function main(
 
     let datesToScrape = getDatesBetween(startDate, scrapingEndDate);
     datesToScrape = datesToScrape.filter((date) => {
-      const current = new Date(date);
+      const current = parseISO(date);
       return current >= seasonStartDate && current <= regularSeasonEndDate;
     });
     if (options.maxDays && options.maxDays > 0) {
@@ -727,6 +790,7 @@ async function main(
       nextStartDate: result.stoppedEarly
         ? (datesToScrape[nextDateIndex] ?? null)
         : null,
+      urlProgress: result.urlProgress,
       nstRequestPlan
     };
   } catch (error: any) {
@@ -789,7 +853,7 @@ async function getLatestDateSupabase(): Promise<string | null> {
       .maybeSingle();
     if (error) continue;
     if (data && data.date_scraped) {
-      if (!latestDate || new Date(data.date_scraped) > new Date(latestDate)) {
+      if (!latestDate || parseISO(data.date_scraped) > parseISO(latestDate)) {
         latestDate = data.date_scraped;
       }
     }

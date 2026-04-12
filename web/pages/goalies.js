@@ -2,11 +2,20 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import Fetch from "lib/cors-fetch";
+import supabase from "lib/supabase";
 import GoalieList from "components/GoaliePage/GoalieList";
+import GoalieTable from "components/GoaliePage/GoalieTable";
 import GoalieLeaderboard from "components/GoaliePage/GoalieLeaderboard";
+import GoalieAdvancedMetricsTable from "components/GoaliePage/GoalieAdvancedMetricsTable";
 import { calculateGoalieRankings as calculateRichGoalieRankings } from "components/GoaliePage/goalieCalculations";
+import { parseMinimumGamesPlayedInput } from "components/Variance/varianceFilters";
+import {
+  GOALIE_ADVANCED_METRICS_SELECT,
+  GOALIE_ADVANCED_STRENGTH_OPTIONS,
+  applyGoalieValueTiers,
+  buildGoalieAdvancedMetricsRows
+} from "components/GoaliePage/goalieMetrics";
 
-import { GOALIE_SURFACE_LINKS } from "lib/navigation/siteSurfaceLinks";
 import styles from "styles/Goalies.module.scss";
 import {
   parseISO,
@@ -369,6 +378,7 @@ const leaderboardSortAccessors = {
   percentGoodWeeks: (goalie) => goalie.percentGoodWeeks ?? 0,
   wowVariance: (goalie) => goalie.wowVariance ?? Number.POSITIVE_INFINITY,
   gogVariance: (goalie) => goalie.gogVariance ?? Number.POSITIVE_INFINITY,
+  valueTierScore: (goalie) => goalie.valueTierScore ?? Number.NEGATIVE_INFINITY,
   averageFantasyPointsPerGame: (goalie) =>
     goalie.averageFantasyPointsPerGame ?? 0,
   fantasyPointsAboveAverage: (goalie) =>
@@ -376,11 +386,122 @@ const leaderboardSortAccessors = {
   averagePercentileRank: (goalie) => goalie.averagePercentileRank ?? 0,
   totalGamesPlayed: (goalie) => goalie.totalGamesPlayed ?? 0,
   overallSavePct: (goalie) => goalie.overallSavePct ?? 0,
-  overallGaa: (goalie) => goalie.overallGaa ?? Number.POSITIVE_INFINITY
+  overallGaa: (goalie) => goalie.overallGaa ?? Number.POSITIVE_INFINITY,
+  gamesPlayed: (goalie) => goalie.totalGamesPlayed ?? 0,
+  gamesStarted: (goalie) => goalie.totalGamesStarted ?? 0,
+  wins: (goalie) => goalie.totalWins ?? 0,
+  losses: (goalie) => goalie.totalLosses ?? 0,
+  otLosses: (goalie) => goalie.totalOtLosses ?? 0,
+  saves: (goalie) => goalie.totalSaves ?? 0,
+  shotsAgainst: (goalie) => goalie.totalShotsAgainst ?? 0,
+  goalsAgainst: (goalie) => goalie.totalGoalsAgainst ?? 0,
+  shutouts: (goalie) => goalie.totalShutouts ?? 0,
+  timeOnIce: (goalie) => goalie.totalTimeOnIce ?? 0,
+  savePct: (goalie) => goalie.overallSavePct ?? 0,
+  goalsAgainstAverage: (goalie) =>
+    goalie.overallGaa ?? Number.POSITIVE_INFINITY,
+  savesPer60: (goalie) =>
+    goalie.totalTimeOnIce > 0
+      ? ((goalie.totalSaves ?? 0) / goalie.totalTimeOnIce) * 60
+      : 0,
+  shotsAgainstPer60: (goalie) =>
+    goalie.totalTimeOnIce > 0
+      ? ((goalie.totalShotsAgainst ?? 0) / goalie.totalTimeOnIce) * 60
+      : 0
+};
+
+const mapRankingToGoalieTableRow = (goalie) => {
+  const totalTimeOnIce = goalie.totalTimeOnIce ?? 0;
+
+  return {
+    playerId: goalie.playerId,
+    goalieFullName: goalie.goalieFullName ?? "Unknown Goalie",
+    team: goalie.team,
+    gamesPlayed: goalie.totalGamesPlayed ?? 0,
+    gamesStarted: goalie.totalGamesStarted ?? 0,
+    wins: goalie.totalWins ?? 0,
+    losses: goalie.totalLosses ?? 0,
+    otLosses: goalie.totalOtLosses ?? 0,
+    saves: goalie.totalSaves ?? 0,
+    shotsAgainst: goalie.totalShotsAgainst ?? 0,
+    goalsAgainst: goalie.totalGoalsAgainst ?? 0,
+    shutouts: goalie.totalShutouts ?? 0,
+    timeOnIce: totalTimeOnIce,
+    savePct: goalie.overallSavePct,
+    goalsAgainstAverage: goalie.overallGaa,
+    savesPer60:
+      totalTimeOnIce > 0 ? ((goalie.totalSaves ?? 0) / totalTimeOnIce) * 60 : 0,
+    shotsAgainstPer60:
+      totalTimeOnIce > 0
+        ? ((goalie.totalShotsAgainst ?? 0) / totalTimeOnIce) * 60
+        : 0
+  };
+};
+
+const buildRangeGoalieAverages = (goalies) => {
+  const totals = goalies.reduce(
+    (acc, goalie) => {
+      acc.gamesPlayed += goalie.totalGamesPlayed ?? 0;
+      acc.gamesStarted += goalie.totalGamesStarted ?? 0;
+      acc.wins += goalie.totalWins ?? 0;
+      acc.losses += goalie.totalLosses ?? 0;
+      acc.otLosses += goalie.totalOtLosses ?? 0;
+      acc.saves += goalie.totalSaves ?? 0;
+      acc.shotsAgainst += goalie.totalShotsAgainst ?? 0;
+      acc.goalsAgainst += goalie.totalGoalsAgainst ?? 0;
+      acc.shutouts += goalie.totalShutouts ?? 0;
+      acc.timeOnIce += goalie.totalTimeOnIce ?? 0;
+      return acc;
+    },
+    {
+      gamesPlayed: 0,
+      gamesStarted: 0,
+      wins: 0,
+      losses: 0,
+      otLosses: 0,
+      saves: 0,
+      shotsAgainst: 0,
+      goalsAgainst: 0,
+      shutouts: 0,
+      timeOnIce: 0
+    }
+  );
+  const goalieCount = goalies.length || 1;
+  const average = (value) => value / goalieCount;
+
+  return {
+    gamesPlayed: average(totals.gamesPlayed).toFixed(1),
+    gamesStarted: average(totals.gamesStarted).toFixed(1),
+    wins: average(totals.wins).toFixed(1),
+    losses: average(totals.losses).toFixed(1),
+    otLosses: average(totals.otLosses).toFixed(1),
+    saves: average(totals.saves).toFixed(1),
+    shotsAgainst: average(totals.shotsAgainst).toFixed(1),
+    goalsAgainst: average(totals.goalsAgainst).toFixed(1),
+    shutouts: average(totals.shutouts).toFixed(1),
+    timeOnIce: average(totals.timeOnIce).toFixed(1),
+    savePct:
+      totals.shotsAgainst > 0
+        ? (totals.saves / totals.shotsAgainst).toFixed(3)
+        : "N/A",
+    goalsAgainstAverage:
+      totals.timeOnIce > 0
+        ? ((totals.goalsAgainst / totals.timeOnIce) * 60).toFixed(2)
+        : "N/A",
+    savesPer60:
+      totals.timeOnIce > 0
+        ? ((totals.saves / totals.timeOnIce) * 60).toFixed(2)
+        : "N/A",
+    shotsAgainstPer60:
+      totals.timeOnIce > 0
+        ? ((totals.shotsAgainst / totals.timeOnIce) * 60).toFixed(2)
+        : "N/A"
+  };
 };
 
 const GoalieTrends = () => {
   const [season, setSeason] = useState(null);
+  const [seasonId, setSeasonId] = useState(null);
   const [weeks, setWeeks] = useState([]);
   const [selectedWeek, setSelectedWeek] = useState(null);
   const [selectedStats, setSelectedStats] = useState(defaultSelectedStats);
@@ -395,13 +516,22 @@ const GoalieTrends = () => {
   const [fetchData, setFetchData] = useState(false); // Control data fetch
   const [pendingWeeklyView, setPendingWeeklyView] = useState(null);
   const [minimumGamesPlayed, setMinimumGamesPlayed] = useState(0);
+  const [minimumGamesPlayedInput, setMinimumGamesPlayedInput] = useState("0");
+  const [minimumGamesPlayedError, setMinimumGamesPlayedError] =
+    useState(null);
   const [metricsView, setMetricsView] = useState("standard");
+  const [advancedGoalieMetrics, setAdvancedGoalieMetrics] = useState([]);
+  const [advancedGoalieMetricsLoading, setAdvancedGoalieMetricsLoading] =
+    useState(false);
+  const [advancedGoalieMetricsError, setAdvancedGoalieMetricsError] =
+    useState(null);
+  const [varianceDisplayMode, setVarianceDisplayMode] = useState("raw");
+  const [advancedMetricsStrength, setAdvancedMetricsStrength] =
+    useState("all");
   const [leaderboardSortConfig, setLeaderboardSortConfig] = useState({
     key: "totalPoints",
     direction: "descending"
   });
-
-  const minimumGamesOptions = [0, 1, 2, 3, 5, 10];
 
   const viewTabs = [
     { id: "leaderboard", label: "Value Overview" },
@@ -426,6 +556,7 @@ const GoalieTrends = () => {
         }
 
         setSeason({ start: seasonStart, end: seasonEnd });
+        setSeasonId(seasonData.id);
 
         const firstSunday = endOfWeek(seasonStart, { weekStartsOn: 1 });
         const firstWeek = {
@@ -467,6 +598,40 @@ const GoalieTrends = () => {
 
     fetchSeasonData();
   }, [selectedStats]); // Include selectedStats so rankings recompute if user changes stat set
+
+  useEffect(() => {
+    if (!seasonId) {
+      return;
+    }
+
+    const fetchAdvancedGoalieMetrics = async () => {
+      setAdvancedGoalieMetricsLoading(true);
+      setAdvancedGoalieMetricsError(null);
+
+      try {
+        // Advanced metrics use Supabase season rows only; leaderboard rankings
+        // still come from the NHL API game-log flow below.
+        const { data, error } = await supabase
+          .from("goalie_stats_unified")
+          .select(GOALIE_ADVANCED_METRICS_SELECT)
+          .eq("season_id", seasonId);
+
+        if (error) {
+          throw error;
+        }
+
+        setAdvancedGoalieMetrics(buildGoalieAdvancedMetricsRows(data ?? []));
+      } catch (error) {
+        console.error("Error fetching advanced goalie metrics:", error);
+        setAdvancedGoalieMetrics([]);
+        setAdvancedGoalieMetricsError("Advanced goalie metrics unavailable.");
+      } finally {
+        setAdvancedGoalieMetricsLoading(false);
+      }
+    };
+
+    fetchAdvancedGoalieMetrics();
+  }, [seasonId]);
 
   useEffect(() => {
     if (!fetchData || !selectedWeek) return;
@@ -531,15 +696,19 @@ const GoalieTrends = () => {
       return;
     }
 
-    setUseSingleWeek(true);
-    setPendingWeeklyView(tabId);
+    if (useSingleWeek) {
+      setPendingWeeklyView(tabId);
 
-    if (!selectedWeek && weeks.length > 0) {
-      setSelectedWeek(weeks[0].value);
+      if (!selectedWeek && weeks.length > 0) {
+        setSelectedWeek(weeks[0].value);
+      }
+
+      setFetchData(true);
+      return;
     }
 
-    if (!canShowWeeklyViews) {
-      setFetchData(true);
+    if (goalieRankings.length === 0) {
+      handleRangeSubmit(tabId);
       return;
     }
 
@@ -548,11 +717,17 @@ const GoalieTrends = () => {
 
   const handleWeekChange = (event) => {
     setSelectedWeek(weeks[event.target.value].value);
-    setFetchData(true);
   };
 
   const handleMinimumGamesChange = (event) => {
-    setMinimumGamesPlayed(parseInt(event.target.value, 10));
+    const nextValue = event.target.value;
+    setMinimumGamesPlayedInput(nextValue);
+    const parsed = parseMinimumGamesPlayedInput(
+      nextValue,
+      minimumGamesPlayed
+    );
+    setMinimumGamesPlayed(parsed.minimumGamesPlayed);
+    setMinimumGamesPlayedError(parsed.error);
   };
 
   const handleStatChange = (event) => {
@@ -569,7 +744,52 @@ const GoalieTrends = () => {
     setSelectedRange({ start, end });
   };
 
-  const handleRangeSubmit = async () => {
+  const handleSingleWeekSubmit = async (targetView = view) => {
+    const activeWeek = selectedWeek ?? weeks[0]?.value;
+
+    if (!activeWeek) {
+      return;
+    }
+
+    setSelectedWeek(activeWeek);
+    setLoading(true);
+
+    try {
+      const weekIndex = weeks.findIndex(
+        (week) =>
+          week.value.start.getTime() === activeWeek.start.getTime() &&
+          week.value.end.getTime() === activeWeek.end.getTime()
+      );
+      const weekNumber = weekIndex >= 0 ? weekIndex + 1 : 1;
+      const goalieRankings = await buildLeaderboardRankings(
+        [
+          {
+            start: activeWeek.start,
+            end: activeWeek.end,
+            week: weekNumber
+          }
+        ],
+        selectedStats
+      );
+
+      setGoalieRankings(goalieRankings.map(decorateGoalieRanking));
+
+      if (targetView === "week") {
+        setPendingWeeklyView("week");
+        setFetchData(true);
+      } else {
+        setPendingWeeklyView(null);
+        setView("leaderboard");
+      }
+    } catch (error) {
+      console.error("Error fetching goalie data:", error);
+      setError("Error fetching data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRangeSubmit = async (targetView = "leaderboard") => {
     setLoading(true);
     try {
       const selectedWeeks = weeks.slice(
@@ -586,7 +806,8 @@ const GoalieTrends = () => {
         selectedStats
       );
       setGoalieRankings(goalieRankings.map(decorateGoalieRanking));
-      setView("leaderboard");
+      setPendingWeeklyView(null);
+      setView(targetView);
     } catch (error) {
       console.error("Error fetching goalie data:", error);
       setError("Error fetching data");
@@ -615,14 +836,31 @@ const GoalieTrends = () => {
     });
   };
 
-  const sortedGoalieRankings = useMemo(() => {
+  const thresholdFilteredGoalieRankings = useMemo(
+    () =>
+      goalieRankings.filter(
+        (goalie) => (goalie.totalGamesPlayed ?? 0) >= minimumGamesPlayed
+      ),
+    [goalieRankings, minimumGamesPlayed]
+  );
+
+  const valueTierGoalieRankings = useMemo(
+    () =>
+      applyGoalieValueTiers(
+        thresholdFilteredGoalieRankings,
+        advancedGoalieMetrics
+      ),
+    [advancedGoalieMetrics, thresholdFilteredGoalieRankings]
+  );
+
+  const filteredGoalieRankings = useMemo(() => {
     const accessor = leaderboardSortAccessors[leaderboardSortConfig.key];
 
     if (!accessor) {
-      return goalieRankings;
+      return valueTierGoalieRankings;
     }
 
-    return [...goalieRankings].sort((a, b) => {
+    return [...valueTierGoalieRankings].sort((a, b) => {
       const aValue = accessor(a);
       const bValue = accessor(b);
 
@@ -643,15 +881,7 @@ const GoalieTrends = () => {
 
       return 0;
     });
-  }, [goalieRankings, leaderboardSortConfig]);
-
-  const filteredGoalieRankings = useMemo(
-    () =>
-      sortedGoalieRankings.filter(
-        (goalie) => (goalie.totalGamesPlayed ?? 0) >= minimumGamesPlayed
-      ),
-    [minimumGamesPlayed, sortedGoalieRankings]
-  );
+  }, [leaderboardSortConfig, valueTierGoalieRankings]);
 
   const filteredSingleWeekGoalieData = useMemo(
     () =>
@@ -661,11 +891,43 @@ const GoalieTrends = () => {
     [minimumGamesPlayed, singleWeekGoalieData]
   );
 
+  const filteredAdvancedGoalieMetrics = useMemo(
+    () =>
+      advancedGoalieMetrics.filter(
+        (goalie) => goalie.gamesPlayed >= minimumGamesPlayed
+      ),
+    [advancedGoalieMetrics, minimumGamesPlayed]
+  );
+
+  const rangeGoaliesForMetrics = useMemo(
+    () => filteredGoalieRankings.map(mapRankingToGoalieTableRow),
+    [filteredGoalieRankings]
+  );
+
+  const rangeGoalieAverages = useMemo(
+    () => buildRangeGoalieAverages(filteredGoalieRankings),
+    [filteredGoalieRankings]
+  );
+
+  const selectedRangeWindow = useMemo(() => {
+    const selectedWeeks = weeks.slice(selectedRange.start, selectedRange.end + 1);
+    return {
+      startDate:
+        selectedWeeks[0]?.value.start.toLocaleDateString() ?? "N/A",
+      endDate:
+        selectedWeeks.at(-1)?.value.end.toLocaleDateString() ?? "N/A"
+    };
+  }, [selectedRange.end, selectedRange.start, weeks]);
+
   const canShowWeeklyViews = Boolean(
     selectedWeek && singleWeekGoalieData.length > 0 && singleWeekLeagueAverage
   );
 
-  const activeView = view === "week" && !canShowWeeklyViews ? "leaderboard" : view;
+  const canShowMetricsView = useSingleWeek
+    ? canShowWeeklyViews
+    : rangeGoaliesForMetrics.length > 0;
+
+  const activeView = view === "week" && !canShowMetricsView ? "leaderboard" : view;
 
   return (
     <div className={styles.pageContainer}>
@@ -677,143 +939,146 @@ const GoalieTrends = () => {
 
       <div className={styles.controlsWrapper}>
         <section className={styles.controlsSection}>
-          <div className={styles.sectionTitle}>View Window</div>
-          <div className={styles.segmentRail}>
-            <button
-              type="button"
-              className={`${styles.segment} ${
-                !useSingleWeek ? styles.segmentActive : ""
-              }`}
-              onClick={() => setUseSingleWeek(false)}
-            >
-              Date Range
-            </button>
-            <button
-              type="button"
-              className={`${styles.segment} ${
-                useSingleWeek ? styles.segmentActive : ""
-              }`}
-              onClick={() => setUseSingleWeek(true)}
-            >
-              Single Week
-            </button>
-          </div>
-        </section>
-
-        <section className={styles.controlsSection}>
-          <div className={styles.sectionTitle}>
-            {useSingleWeek ? "Single Week Stats" : "Date Range Stats"}
-          </div>
-
-          {useSingleWeek ? (
-            <div className={styles.dateSelectorContainer}>
-              {weeks.length > 0 && (
-                <div className={styles.dropdownGroup}>
-                  <label
-                    className={styles.selectLabel}
-                    htmlFor="goalies-single-week"
-                  >
-                    Week
-                  </label>
-                  <select
-                    id="goalies-single-week"
-                    className={styles.customSelect}
-                    onChange={handleWeekChange}
-                  >
-                    {weeks.map((week, index) => (
-                      <option key={index} value={index}>
-                        {week.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-              <p className={styles.selectorNote}>
-                Adapted from the
-                <a
-                  href="https://dobberhockey.com/2024/05/19/geek-of-the-week-true-goalie-value-season-recap/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={styles.hyperlink}
-                >
-                  True Goalie Value
-                </a>
-                rankings and constructs by
-                <a
-                  href="https://twitter.com/fantasycheddar"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={styles.hyperlink}
-                >
-                  @TopCheddarFantasy
-                </a>
-              </p>
-            </div>
-          ) : (
-            <div className={styles.dateSelectorContainer}>
-              <div className={styles.rangeSelectContainer}>
-                <div className={styles.dropdownGroup}>
-                  <label
-                    className={styles.selectLabel}
-                    htmlFor="goalies-range-start"
-                  >
-                    Start
-                  </label>
-                  <select
-                    id="goalies-range-start"
-                    className={styles.customSelect}
-                    value={selectedRange.start}
-                    onChange={(e) =>
-                      handleRangeChange(
-                        parseInt(e.target.value),
-                        selectedRange.end
-                      )
-                    }
-                  >
-                    {weeks.map((week, index) => (
-                      <option key={index} value={index}>
-                        {week.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className={styles.dropdownGroup}>
-                  <label
-                    className={styles.selectLabel}
-                    htmlFor="goalies-range-end"
-                  >
-                    End
-                  </label>
-                  <select
-                    id="goalies-range-end"
-                    className={styles.customSelect}
-                    value={selectedRange.end}
-                    onChange={(e) =>
-                      handleRangeChange(
-                        selectedRange.start,
-                        parseInt(e.target.value)
-                      )
-                    }
-                  >
-                    {weeks.map((week, index) => (
-                      <option key={index} value={index}>
-                        {week.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
+          <div className={styles.sectionTitle}>Timeframe Filters</div>
+          <div className={styles.timeframePanel}>
+            <div className={styles.segmentRail}>
               <button
                 type="button"
-                className={styles.buttonPrimary}
-                onClick={handleRangeSubmit}
+                className={`${styles.segment} ${
+                  !useSingleWeek ? styles.segmentActive : ""
+                }`}
+                onClick={() => setUseSingleWeek(false)}
               >
-                Apply Range
+                Date Range
+              </button>
+              <button
+                type="button"
+                className={`${styles.segment} ${
+                  useSingleWeek ? styles.segmentActive : ""
+                }`}
+                onClick={() => setUseSingleWeek(true)}
+              >
+                Single Week
               </button>
             </div>
-          )}
+
+            {useSingleWeek ? (
+              <div className={styles.dateSelectorContainer}>
+                {weeks.length > 0 && (
+                  <div className={styles.dropdownGroup}>
+                    <label
+                      className={styles.selectLabel}
+                      htmlFor="goalies-single-week"
+                    >
+                      Week
+                    </label>
+                    <select
+                      id="goalies-single-week"
+                      className={styles.customSelect}
+                      onChange={handleWeekChange}
+                    >
+                      {weeks.map((week, index) => (
+                        <option key={index} value={index}>
+                          {week.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                <button
+                  type="button"
+                  className={styles.buttonPrimary}
+                  onClick={() => handleSingleWeekSubmit(activeView)}
+                >
+                  Apply Week
+                </button>
+                <p className={styles.selectorNote}>
+                  Adapted from the
+                  <a
+                    href="https://dobberhockey.com/2024/05/19/geek-of-the-week-true-goalie-value-season-recap/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={styles.hyperlink}
+                  >
+                    True Goalie Value
+                  </a>
+                  rankings and constructs by
+                  <a
+                    href="https://twitter.com/fantasycheddar"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={styles.hyperlink}
+                  >
+                    @TopCheddarFantasy
+                  </a>
+                </p>
+              </div>
+            ) : (
+              <div className={styles.dateSelectorContainer}>
+                <div className={styles.rangeSelectContainer}>
+                  <div className={styles.dropdownGroup}>
+                    <label
+                      className={styles.selectLabel}
+                      htmlFor="goalies-range-start"
+                    >
+                      Start
+                    </label>
+                    <select
+                      id="goalies-range-start"
+                      className={styles.customSelect}
+                      value={selectedRange.start}
+                      onChange={(e) =>
+                        handleRangeChange(
+                          parseInt(e.target.value),
+                          selectedRange.end
+                        )
+                      }
+                    >
+                      {weeks.map((week, index) => (
+                        <option key={index} value={index}>
+                          {week.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className={styles.dropdownGroup}>
+                    <label
+                      className={styles.selectLabel}
+                      htmlFor="goalies-range-end"
+                    >
+                      End
+                    </label>
+                    <select
+                      id="goalies-range-end"
+                      className={styles.customSelect}
+                      value={selectedRange.end}
+                      onChange={(e) =>
+                        handleRangeChange(
+                          selectedRange.start,
+                          parseInt(e.target.value)
+                        )
+                      }
+                    >
+                      {weeks.map((week, index) => (
+                        <option key={index} value={index}>
+                          {week.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  className={styles.buttonPrimary}
+                  onClick={() => handleRangeSubmit(activeView)}
+                >
+                  Apply Range
+                </button>
+              </div>
+            )}
+          </div>
         </section>
 
         <section className={styles.controlsSection}>
@@ -823,18 +1088,26 @@ const GoalieTrends = () => {
               <label className={styles.selectLabel} htmlFor="goalies-min-games">
                 Minimum GP
               </label>
-              <select
-                id="goalies-min-games"
-                className={styles.customSelect}
-                value={minimumGamesPlayed}
-                onChange={handleMinimumGamesChange}
-              >
-                {minimumGamesOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option === 0 ? "All Goalies" : `${option}+ Games`}
-                  </option>
-                ))}
-              </select>
+              <div className={styles.inputStack}>
+                <input
+                  id="goalies-min-games"
+                  className={styles.textInput}
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={minimumGamesPlayedInput}
+                  onChange={handleMinimumGamesChange}
+                  placeholder="0"
+                  aria-invalid={Boolean(minimumGamesPlayedError)}
+                />
+                {minimumGamesPlayedError ? (
+                  <p className={styles.fieldError}>{minimumGamesPlayedError}</p>
+                ) : (
+                  <p className={styles.fieldHint}>
+                    Empty input shows all goalies.
+                  </p>
+                )}
+              </div>
             </div>
 
             <div className={styles.checkboxContainer}>
@@ -884,16 +1157,45 @@ const GoalieTrends = () => {
             {error && <p className={styles.errorText}>{error}</p>}
 
             {activeView === "leaderboard" && (
-              <GoalieLeaderboard
-                goalieRankings={filteredGoalieRankings}
-                setView={setView}
-                statColumns={statColumns}
-                sortConfig={leaderboardSortConfig}
-                requestSort={handleLeaderboardSort}
-              />
+              <>
+                <div className={styles.metricsToolbar}>
+                  <div className={styles.metricsToolbarLabel}>Variance Mode</div>
+                  <div className={styles.metricsSegmentRail}>
+                    <button
+                      type="button"
+                      className={`${styles.metricsSegment} ${
+                        varianceDisplayMode === "raw"
+                          ? styles.metricsSegmentActive
+                          : ""
+                      }`}
+                      onClick={() => setVarianceDisplayMode("raw")}
+                    >
+                      Raw
+                    </button>
+                    <button
+                      type="button"
+                      className={`${styles.metricsSegment} ${
+                        varianceDisplayMode === "relative"
+                          ? styles.metricsSegmentActive
+                          : ""
+                      }`}
+                      onClick={() => setVarianceDisplayMode("relative")}
+                    >
+                      Relative
+                    </button>
+                  </div>
+                </div>
+
+                <GoalieLeaderboard
+                  goalieRankings={filteredGoalieRankings}
+                  sortConfig={leaderboardSortConfig}
+                  requestSort={handleLeaderboardSort}
+                  varianceDisplayMode={varianceDisplayMode}
+                />
+              </>
             )}
 
-            {activeView === "week" && selectedWeek && canShowWeeklyViews && (
+            {activeView === "week" && canShowMetricsView && (
               <>
                 <div className={styles.metricsToolbar}>
                   <div className={styles.metricsToolbarLabel}>Metrics View</div>
@@ -920,25 +1222,83 @@ const GoalieTrends = () => {
                 </div>
 
                 {metricsView === "standard" ? (
+                  useSingleWeek ? (
                   <GoalieList
                     goalieAggregates={filteredSingleWeekGoalieData}
                     leagueAverage={singleWeekLeagueAverage}
                     week={selectedWeek}
                     selectedStats={selectedStats}
                     statColumns={leaderboardStatColumns}
-                    setView={setView}
                     loading={loading}
                     onBackToLeaderboard={() => setView("leaderboard")}
                     showBackButton={false}
                   />
+                  ) : (
+                    <GoalieTable
+                      goalies={rangeGoaliesForMetrics}
+                      averages={rangeGoalieAverages}
+                      selectedStats={selectedStats}
+                      statColumns={leaderboardStatColumns}
+                      startDate={selectedRangeWindow.startDate}
+                      endDate={selectedRangeWindow.endDate}
+                      isSingleWeek={false}
+                      onBackToLeaderboard={() => setView("leaderboard")}
+                      showBackButton={false}
+                      requestSort={handleLeaderboardSort}
+                      sortConfig={leaderboardSortConfig}
+                      tableTitle="Date Range Goalie Metrics"
+                      averagesLabel="Range Metrics Averages:"
+                    />
+                  )
                 ) : (
-                  <div className={styles.metricsPlaceholder}>
-                    <p className={styles.standoutNote}>
-                      Advanced Analytics is reserved for the next pass. This
-                      selector is now in place so we can add deeper goalie
-                      context without changing the page navigation again.
+                  advancedGoalieMetricsLoading ? (
+                    <p className={styles.loadingMessage}>
+                      Loading advanced goalie metrics...
                     </p>
-                  </div>
+                  ) : advancedGoalieMetricsError ? (
+                    <p className={styles.errorText}>
+                      {advancedGoalieMetricsError}
+                    </p>
+                  ) : advancedGoalieMetrics.length === 0 ? (
+                    <p className={styles.standoutNote}>
+                      No advanced goalie metrics available for the current
+                      season.
+                    </p>
+                  ) : filteredAdvancedGoalieMetrics.length > 0 ? (
+                    <>
+                      <div className={styles.metricsToolbar}>
+                        <div className={styles.metricsToolbarLabel}>
+                          Strength
+                        </div>
+                        <div className={styles.metricsSegmentRail}>
+                          {GOALIE_ADVANCED_STRENGTH_OPTIONS.map((option) => (
+                            <button
+                              key={option.value}
+                              type="button"
+                              className={`${styles.metricsSegment} ${
+                                advancedMetricsStrength === option.value
+                                  ? styles.metricsSegmentActive
+                                  : ""
+                              }`}
+                              onClick={() =>
+                                setAdvancedMetricsStrength(option.value)
+                              }
+                            >
+                              {option.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <GoalieAdvancedMetricsTable
+                        rows={filteredAdvancedGoalieMetrics}
+                        strength={advancedMetricsStrength}
+                      />
+                    </>
+                  ) : (
+                    <p className={styles.standoutNote}>
+                      No goalie metrics available for the current filter.
+                    </p>
+                  )
                 )}
               </>
             )}
@@ -950,3 +1310,12 @@ const GoalieTrends = () => {
 };
 
 export default GoalieTrends;
+
+export async function getServerSideProps() {
+  return {
+    redirect: {
+      destination: "/variance/goalies",
+      permanent: false
+    }
+  };
+}

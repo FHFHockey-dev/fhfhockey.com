@@ -55,7 +55,7 @@ Assume the primary reader of the PRD is a **junior developer**. Therefore, requi
 ## Output
 
 * **Format:** Markdown (`.md`)
-* **Location:** `/tasks/`
+* **Location:** `/tasks/TASKS/`
 * **Filename:** `prd-[feature-name].md`
 
 ## Final instructions
@@ -65,3 +65,4 @@ Assume the primary reader of the PRD is a **junior developer**. Therefore, requi
 3. Where helpful, provide a concise recommended answer or default option for each question so the user can respond quickly.
 4. Take the user's answers to the clarifying questions and use them to refine and finalize the PRD.
 5. Prefer completeness and clarity, but avoid unnecessary verbosity or repeated restatement.
+

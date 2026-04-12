@@ -1,0 +1,230 @@
+@use "styles/vars" as v;
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-xl;
+  padding: clamp(1.5rem, 3vw, 2.5rem);
+}
+
+.hero {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-sm;
+  max-width: 54rem;
+}
+
+.eyebrow {
+  margin: 0;
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.title {
+  margin: 0;
+  color: v.$color-white;
+  font-size: clamp(2rem, 4vw, 3.4rem);
+  font-family: v.$font-family-accent;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.description {
+  margin: 0;
+  color: v.$text-secondary;
+  font-size: v.$font-size-md;
+  line-height: 1.6;
+  max-width: 44rem;
+}
+
+.buttonRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: v.$space-md;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 3rem;
+  padding: 0.8rem 1.1rem;
+  border-radius: v.$border-radius-md;
+  border: 1px solid v.$border-secondary;
+  color: v.$color-white;
+  text-decoration: none;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  transition:
+    transform 0.16s ease,
+    border-color 0.16s ease,
+    background 0.16s ease;
+}
+
+.button:hover {
+  transform: translateY(-1px);
+  border-color: v.$primary-color;
+}
+
+.buttonPrimary {
+  background: linear-gradient(135deg, rgba(v.$primary-color, 0.24), rgba(255, 255, 255, 0.04));
+}
+
+.buttonSecondary {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.card {
+  max-width: 48rem;
+  padding: v.$space-lg;
+  border-radius: v.$border-radius-lg;
+  border: 1px solid v.$border-secondary;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.cardTitle {
+  margin: 0 0 v.$space-xs;
+  color: v.$color-white;
+  font-size: v.$font-size-lg;
+  font-family: v.$font-family-accent;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.cardText {
+  margin: 0;
+  color: v.$text-secondary;
+  line-height: 1.6;
+}
+
+.backLink {
+  color: v.$primary-color;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.backLink:hover {
+  text-decoration: underline;
+}
+
+.tableSection {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-md;
+  min-width: 0;
+}
+
+.tableToolbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: v.$space-md;
+  padding-bottom: v.$space-sm;
+  border-bottom: 1px solid v.$border-secondary;
+}
+
+.tableTitle {
+  margin: 0;
+  color: v.$color-white;
+  font-family: v.$font-family-accent;
+  font-size: v.$font-size-xl;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.tableMeta {
+  margin: v.$space-xs 0 0;
+  color: v.$text-secondary;
+  font-size: v.$font-size-sm;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 12rem;
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.inputGroup small {
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1.4;
+  text-transform: none;
+}
+
+.textInput {
+  min-height: 2.5rem;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-md;
+  background: rgba(0, 0, 0, 0.22);
+  color: v.$color-white;
+}
+
+.textInput:focus {
+  outline: none;
+  border-color: v.$primary-color;
+}
+
+.tableScroller {
+  width: 100%;
+  overflow: auto;
+}
+
+.dataTable {
+  width: 100%;
+  min-width: 900px;
+  border-collapse: collapse;
+  color: v.$text-primary;
+}
+
+.dataTable th,
+.dataTable td {
+  padding: 0.7rem 0.8rem;
+  border-bottom: 1px solid v.$border-secondary;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.dataTable th {
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.dataTable th:first-child,
+.dataTable td:first-child {
+  text-align: left;
+}
+
+.dataTable tbody tr:hover td {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.statusText {
+  margin: 0;
+  color: v.$text-secondary;
+  line-height: 1.6;
+}
+
+@media (max-width: 700px) {
+  .tableToolbar {
+    flex-direction: column;
+  }
+
+  .inputGroup {
+    width: 100%;
+  }
+}

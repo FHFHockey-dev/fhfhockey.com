@@ -65,6 +65,18 @@ export type Ranking = "Elite" | "Quality" | "Average" | "Bad" | "Really Bad";
 // Structure for counting weeks by ranking
 export type WeekCounts = Record<Ranking, number>;
 
+export type GoalieValueTier =
+  | "Tier 1"
+  | "Tier 2"
+  | "Tier 3"
+  | "Tier 4"
+  | "Tier 5";
+
+export interface SortConfig<T> {
+  key: keyof T | null;
+  direction: "ascending" | "descending";
+}
+
 // Final structure for a goalie's overall ranking
 export interface GoalieRanking extends GoalieInfo {
   totalPoints: number; // Based on WoW ranking
@@ -80,6 +92,7 @@ export interface GoalieRanking extends GoalieInfo {
   gogVariance?: number; // StdDev of Game Fantasy Points (vs Goalie's Avg fPts) **<- NEW MEANING**
   // Aggregated stats
   totalGamesPlayed: number;
+  totalGamesStarted: number;
   totalWins: number;
   totalLosses: number;
   totalOtLosses: number;
@@ -97,6 +110,8 @@ export interface GoalieRanking extends GoalieInfo {
   // --- NEW Percentile Fields ---
   percentiles?: Partial<Record<NumericGoalieStatKey, number>>; // Store percentile for each stat
   averagePercentileRank?: number; // Average of all calculated percentiles
+  valueTier?: GoalieValueTier;
+  valueTierScore?: number;
 }
 
 // Represents a week interval

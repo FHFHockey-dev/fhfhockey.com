@@ -11,7 +11,7 @@ import type {
 } from "components/GoaliePage/goalieTypes";
 // Import shared statMap
 import { statMap } from "./goalieCalculations"; // Adjust path if needed
-import { SortConfig } from "pages/trueGoalieValue";
+import type { SortConfig } from "components/GoaliePage/goalieTypes";
 
 // Type for the data rows this table displays (can be ranked games or ranked weeks)
 type DisplayGoalie = GoalieBaseStats & {
@@ -66,8 +66,8 @@ const GoalieTable: FC<Props> = ({
   const getPercentageClass = (percentage: number | undefined): string => {
     // ... (keep existing logic)
     const p = percentage ?? 0;
-    if (p > 75) return styles.percentHigh; // Example thresholds
-    if (p > 50) return styles.percentMedium;
+    if (p >= 75) return styles.percentHigh;
+    if (p >= 50) return styles.percentMedium;
     return styles.percentLow;
   };
 
