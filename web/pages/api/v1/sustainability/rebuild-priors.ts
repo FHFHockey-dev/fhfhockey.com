@@ -1,5 +1,6 @@
 // rebuild-priors.ts
 import { NextApiRequest, NextApiResponse } from "next";
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { normalizeDependencyError } from "lib/cron/normalizeDependencyError";
 import { CronTimedResponse, withCronJobTiming } from "lib/cron/timingContract";
 // import supabase from "lib/supabase"; // <- remove
@@ -16,7 +17,7 @@ import {
   isSustainabilityDependencyError
 } from "lib/sustainability/dependencyChecks";
 
-export default async function handler(
+async function handler(
   req: NextApiRequest,
   res: NextApiResponse<CronTimedResponse<Record<string, unknown>>>
 ) {
@@ -114,3 +115,7 @@ export default async function handler(
       }));
   }
 }
+
+export default withCronJobAudit(handler, {
+  jobName: "rebuild-sustainability-priors"
+});

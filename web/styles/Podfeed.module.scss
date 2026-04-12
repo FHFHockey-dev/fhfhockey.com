@@ -1,4 +1,157 @@
-@use "styles/vars";
+@use "styles/vars" as *;
 
-.podbeanWrapper {
+.pageIntro {
+  max-width: 1100px;
+  margin: 0 auto $space-xl;
+  padding: $space-lg;
+  border: 1px solid rgba($color-white, 0.12);
+  border-radius: $border-radius-md;
+  background: rgba($bg-light, 0.72);
+  color: rgba($color-white, 0.86);
+
+  p {
+    margin: 0;
+    font-size: $font-size-lg;
+    line-height: 1.55;
+  }
+}
+
+.feedLinks,
+.episodeActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-sm;
+  margin-top: $space-md;
+
+  a,
+  span {
+    display: inline-flex;
+    align-items: center;
+    min-height: 36px;
+    padding: 0 $space-md;
+    border: 1px solid rgba($primary-color, 0.55);
+    border-radius: $border-radius-sm;
+    color: $secondary-color;
+    background: rgba($primary-color, 0.12);
+    font-family: $font-family-accent;
+    font-size: $font-size-sm;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  span {
+    border-color: rgba($color-white, 0.16);
+    color: rgba($color-white, 0.56);
+    background: rgba($color-white, 0.04);
+  }
+}
+
+.feedError {
+  max-width: 1100px;
+  margin: 0 auto $space-lg;
+  padding: $space-md;
+  border: 1px solid rgba($danger-color, 0.5);
+  border-radius: $border-radius-sm;
+  color: $color-white;
+  background: rgba($danger-color, 0.14);
+}
+
+.episodeList {
+  display: grid;
+  gap: $space-lg;
+  max-width: 1100px;
+  margin: 0 auto $space-xxl;
+}
+
+.episodeCard {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 320px);
+  gap: $space-lg;
+  padding: $space-lg;
+  border: 1px solid rgba($color-white, 0.12);
+  border-radius: $border-radius-md;
+  background:
+    linear-gradient(135deg, rgba($primary-color, 0.12), transparent 38%),
+    rgba($bg-light, 0.86);
+  box-shadow: 0 16px 32px rgba($color-black, 0.24);
+}
+
+.episodeContent {
+  min-width: 0;
+
+  h2 {
+    margin: $space-sm 0;
+    color: $color-white;
+    font-family: $font-family-accent;
+    font-size: clamp(1.25rem, 2vw, 1.75rem);
+    line-height: 1.15;
+    letter-spacing: 0;
+  }
+
+  p {
+    margin: 0 0 $space-md;
+    color: rgba($color-white, 0.78);
+    line-height: 1.55;
+  }
+}
+
+.episodeMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-xs;
+
+  span {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    padding: 0 $space-sm;
+    border-radius: $border-radius-sm;
+    color: rgba($color-white, 0.76);
+    background: rgba($color-white, 0.08);
+    font-size: $font-size-sm;
+    font-weight: 700;
+  }
+}
+
+.audioPlayer {
+  display: block;
+  width: 100%;
+  margin-top: $space-md;
+  accent-color: $primary-color;
+}
+
+.youtubePreview {
+  display: grid;
+  align-content: start;
+  gap: $space-sm;
+  color: $color-white;
+  font-family: $font-family-accent;
+  font-weight: 700;
+  line-height: 1.2;
+
+  img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    border-radius: $border-radius-sm;
+    border: 1px solid rgba($color-white, 0.14);
+    background: rgba($color-black, 0.2);
+  }
+
+  span {
+    color: rgba($color-white, 0.82);
+  }
+}
+
+@media (max-width: $screen-medium) {
+  .pageIntro,
+  .episodeCard {
+    padding: $space-md;
+  }
+
+  .episodeCard {
+    grid-template-columns: 1fr;
+  }
 }

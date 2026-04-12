@@ -3,6 +3,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import GoalieUnderlyingStatsLandingRoute from "../../../../pages/underlying-stats/goalieStats/index";
 
+const sharedLandingPageMock = vi.fn(() => (
+  <div>Shared player landing page</div>
+));
+
 const routerMock = {
   isReady: true,
   pathname: "/underlying-stats/goalieStats",
@@ -19,7 +23,7 @@ vi.mock("next/head", () => ({
 }));
 
 vi.mock("../../../../pages/underlying-stats/playerStats/index", () => ({
-  default: () => <div>Shared player landing page</div>,
+  default: (props: { variant?: string }) => sharedLandingPageMock(props)
 }));
 
 describe("GoalieUnderlyingStatsLandingRoute", () => {
@@ -28,6 +32,7 @@ describe("GoalieUnderlyingStatsLandingRoute", () => {
     routerMock.pathname = "/underlying-stats/goalieStats";
     routerMock.query = {};
     routerMock.replace.mockClear();
+    sharedLandingPageMock.mockClear();
   });
 
   it("canonicalizes the goalie landing route into goalie mode before rendering the shared landing page", async () => {
@@ -78,5 +83,8 @@ describe("GoalieUnderlyingStatsLandingRoute", () => {
 
     expect(screen.getByText("Shared player landing page")).toBeTruthy();
     expect(routerMock.replace).not.toHaveBeenCalled();
+    expect(sharedLandingPageMock).toHaveBeenCalledWith(
+      expect.objectContaining({ variant: "goalie" })
+    );
   });
 });

@@ -11,7 +11,7 @@ import type {
 } from "components/GoaliePage/goalieTypes";
 // Import shared statMap
 import { statMap } from "./goalieCalculations"; // Adjust path if needed
-import { SortConfig } from "pages/trueGoalieValue";
+import type { SortConfig } from "components/GoaliePage/goalieTypes";
 
 // Type for the data rows this table displays (can be ranked games or ranked weeks)
 type DisplayGoalie = GoalieBaseStats & {
@@ -37,6 +37,9 @@ interface Props {
   endDate: string;
   isSingleWeek: boolean;
   onBackToLeaderboard?: () => void;
+  showBackButton?: boolean;
+  tableTitle?: string;
+  averagesLabel?: string;
   // *** NEW: Add sort props ***
   requestSort: (key: keyof DisplayGoalie) => void;
   sortConfig: SortConfig<DisplayGoalie>;
@@ -52,6 +55,9 @@ const GoalieTable: FC<Props> = ({
   endDate,
   isSingleWeek,
   onBackToLeaderboard,
+  showBackButton = true,
+  tableTitle,
+  averagesLabel,
   // *** Destructure sort props ***
   requestSort,
   sortConfig
@@ -60,8 +66,8 @@ const GoalieTable: FC<Props> = ({
   const getPercentageClass = (percentage: number | undefined): string => {
     // ... (keep existing logic)
     const p = percentage ?? 0;
-    if (p > 75) return styles.percentHigh; // Example thresholds
-    if (p > 50) return styles.percentMedium;
+    if (p >= 75) return styles.percentHigh;
+    if (p >= 50) return styles.percentMedium;
     return styles.percentLow;
   };
 
@@ -136,7 +142,8 @@ const GoalieTable: FC<Props> = ({
     <>
       {/* Conditionally show Back button */}
       {/* CHANGE className for the button */}
-      {isSingleWeek &&
+      {showBackButton &&
+        isSingleWeek &&
         onBackToLeaderboard && ( // Check if handler exists
           <button
             className={styles.backButton} // Use the new button class
@@ -149,8 +156,11 @@ const GoalieTable: FC<Props> = ({
       {/* Use standard h2, remove specific class */}
       {/* Removed className={styles.tableHeader} */}
       <h2>
-        {isSingleWeek ? "Weekly Game Stats" : "Goalie Leaderboard Details"} from{" "}
-        {startDate} to {endDate}
+        {tableTitle ??
+          (isSingleWeek
+            ? "Weekly Game Stats"
+            : "Goalie Leaderboard Details")}{" "}
+        from {startDate} to {endDate}
       </h2>
 
       {/* Optional: Add scroll container if needed */}
@@ -162,7 +172,8 @@ const GoalieTable: FC<Props> = ({
           {/* Averages Row - uses .averageHeader, .averageCell which should exist */}
           <tr>
             <td colSpan={isSingleWeek ? 2 : 2} className={styles.averageHeader}>
-              {isSingleWeek ? "Weekly Game Averages:" : "Range Averages:"}
+              {averagesLabel ??
+                (isSingleWeek ? "Weekly Game Averages:" : "Range Averages:")}
             </td>
             {statColumns.map((statCol) => (
               <td key={`avg-${statCol.value}`} className={styles.averageCell}>

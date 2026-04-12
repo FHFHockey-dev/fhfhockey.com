@@ -11,6 +11,7 @@ import {
   type BenchmarkRunResult,
   type BenchmarkRunSequence
 } from "lib/cron/benchmarkRunner";
+import { getNstCoordinationPolicy } from "lib/cron/nstCoordination";
 import { getNstTouchLevel } from "lib/cron/nstClassification";
 import { executeSqlRpcWithRetry } from "lib/cron/sqlRpcExecution";
 
@@ -45,7 +46,6 @@ type BenchmarkSummary =
 const WEB_DIR = process.cwd();
 const ROOT_DIR = path.resolve(WEB_DIR, "..");
 const ARTIFACT_DIR = path.resolve(ROOT_DIR, "tasks", "artifacts");
-const NST_MIN_GAP_MS = 15 * 60 * 1000;
 
 dotenv.config({ path: path.resolve(WEB_DIR, ".env.local") });
 dotenv.config({ path: path.resolve(ROOT_DIR, ".env.local") });
@@ -174,28 +174,31 @@ async function waitForDirectNstGap(args: {
   job: CronInventoryJob;
   lastDirectNstFinishedAt: number | null;
 }): Promise<string[]> {
-  if (getNstTouchLevel(args.job.name) !== "direct_remote_nst_fetch") {
+  const coordinationPolicy = getNstCoordinationPolicy(args.job.name);
+
+  if (getNstTouchLevel(args.job.name) !== "direct_remote_nst_fetch" || !coordinationPolicy) {
     return [];
   }
 
   if (args.lastDirectNstFinishedAt == null) {
-    return ["Direct NST job started with no prior NST wait requirement."];
+    return [coordinationPolicy.note];
   }
 
   const elapsedMs = Date.now() - args.lastDirectNstFinishedAt;
-  if (elapsedMs >= NST_MIN_GAP_MS) {
+  if (elapsedMs >= coordinationPolicy.minSpacingAfterCompletionMs) {
     return [
-      `Direct NST gap already satisfied (${Math.floor(elapsedMs / 60000)}m elapsed).`
+      `${coordinationPolicy.note} Gap already satisfied (${Math.floor(elapsedMs / 60000)}m elapsed).`
     ];
   }
 
-  const waitMs = NST_MIN_GAP_MS - elapsedMs;
+  const waitMs = coordinationPolicy.minSpacingAfterCompletionMs - elapsedMs;
   console.log(
-    `Waiting ${Math.ceil(waitMs / 1000)}s before ${args.job.name} to preserve the 15-minute NST gap.`
+    `Waiting ${Math.ceil(waitMs / 1000)}s before ${args.job.name} to preserve the shared NST key cooldown.`
   );
   await sleep(waitMs);
   return [
-    `Inserted ${Math.ceil(waitMs / 1000)}s NST safety wait before execution.`
+    coordinationPolicy.note,
+    `Inserted ${Math.ceil(waitMs / 1000)}s NST shared-key cooldown before execution.`
   ];
 }
 

@@ -128,7 +128,7 @@ export type SustainabilityTrendsResponse = {
 export type DashboardDataParams = {
   date: string;
   skaterPosition?: "forward" | "defense" | "all";
-  skaterWindow?: 1 | 3 | 5 | 10;
+  skaterWindow?: 1 | 3 | 5 | 10 | 20;
   skaterLimit?: number;
   sustainabilityWindow?: "l3" | "l5" | "l10" | "l20";
   sustainabilityLimit?: number;
@@ -240,7 +240,7 @@ export const fetchTeamSos = (): Promise<SosResponse> =>
 
 export const fetchSkaterTrends = (params: {
   position?: "forward" | "defense" | "all";
-  window?: 1 | 3 | 5 | 10;
+  window?: 1 | 3 | 5 | 10 | 20;
   limit?: number;
 }): Promise<SkaterTrendsResponse> =>
   fetchCachedJson<SkaterTrendsResponse>(

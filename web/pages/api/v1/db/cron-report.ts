@@ -12,6 +12,7 @@ import {
   hasBenchmarkAnnotationKind,
   type BenchmarkAnnotation
 } from "lib/cron/benchmarkNotes";
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import {
   buildSlowJobWarning,
   isSlowJobDuration,
@@ -42,14 +43,17 @@ const SCHEDULE_ALIAS_MAP: Record<string, string[]> = {
     "update-skater-totals",
     "/api/v1/db/update-wgo-totals"
   ],
-  "update-shift-charts": ["/api/v1/db/shift-charts"],
+  "update-shift-charts": ["/api/v1/db/shift-charts", "/api/v1/db/update-shifts"],
   "update-yahoo-matchup-dates": ["/api/v1/db/update-yahoo-weeks"],
   "update-line-combinations-all": ["/api/v1/db/update-line-combinations"],
   "update-wgo-teams": ["run-fetch-wgo-data", "/api/v1/db/run-fetch-wgo-data"],
   "update-wigo-table-stats": [
     "calculate-wigo-stats",
     "/api/v1/db/calculate-wigo-stats"
-  ]
+  ],
+  "update-nst-tables-all": ["/api/Teams/nst-team-stats"],
+  "sync-yahoo-players-to-sheet": ["/api/internal/sync-yahoo-players-to-sheet"],
+  "update-predictions-sko": ["/api/v1/ml/update-predictions-sko"]
 };
 
 type NormalizedStatus = "success" | "failure" | "unknown";
@@ -70,6 +74,14 @@ type ScheduledCronJob = {
   expectedRunAt: string | null;
   sortOrder: number;
   aliases: string[];
+};
+
+type CronScheduleJsonEntry = {
+  jobid?: number;
+  jobname?: string;
+  schedule?: string;
+  run_time_utc?: string;
+  active?: boolean;
 };
 
 type ParsedAuditDetails = {
@@ -773,6 +785,20 @@ async function readCronScheduleMarkdown(): Promise<string> {
   throw new Error("Could not locate rules/cron-schedule.md");
 }
 
+function parseScheduleJsonEntries(markdown: string): CronScheduleJsonEntry[] {
+  const codeFenceMatch = markdown.match(/```json\s*([\s\S]*?)\s*```/i);
+  if (!codeFenceMatch?.[1]) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(codeFenceMatch[1]);
+    return Array.isArray(parsed) ? (parsed as CronScheduleJsonEntry[]) : [];
+  } catch {
+    return [];
+  }
+}
+
 async function loadScheduledCronJobs(
   since: Date,
   now: Date
@@ -793,7 +819,7 @@ async function loadScheduledCronJobs(
     )
   );
 
-  const rawJobs = matches.map((match, index) => {
+  const sqlDefinitions = matches.map((match, index) => {
     const name = match[1]?.trim() ?? "";
     const cronExpression = match[2]?.trim() ?? "";
     const body = match[3]?.trim() ?? "";
@@ -819,6 +845,37 @@ async function loadScheduledCronJobs(
       sortOrder: index
     };
   });
+
+  const jsonJobs = parseScheduleJsonEntries(markdown)
+    .filter((entry) => entry.active)
+    .map((entry, index) => {
+      const name = String(entry.jobname ?? "").trim();
+      const cronExpression = String(entry.schedule ?? "").trim();
+      const definition =
+        sqlDefinitions.find(
+          (candidate) =>
+            candidate.name === name && candidate.cronExpression === cronExpression
+        ) ??
+        sqlDefinitions.find((candidate) => candidate.name === name) ??
+        null;
+
+      return {
+        key: definition?.key ?? `${name}__${cronExpression}__json__${index}`,
+        name,
+        cronExpression,
+        scheduleTimeDisplay: formatScheduleTime(cronExpression),
+        method: definition?.method ?? "UNKNOWN",
+        url: definition?.url ?? null,
+        route: definition?.route ?? null,
+        routePath: definition?.routePath ?? null,
+        sqlText: definition?.sqlText ?? null,
+        expectedRunAt: expectedRunAtWithinWindow(cronExpression, since, now),
+        sortOrder: index
+      };
+    })
+    .filter((job) => job.name && job.cronExpression);
+
+  const rawJobs = jsonJobs.length > 0 ? jsonJobs : sqlDefinitions;
 
   const dedupedJobs = rawJobs.filter((job, index, jobs) => {
     const signature = [
@@ -1049,7 +1106,7 @@ function collectMissingObservationWarnings(job: {
   return warnings;
 }
 
-export default async function handler(
+async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
@@ -1594,3 +1651,5 @@ export default async function handler(
     benchmark: benchmarkSummary
   });
 }
+
+export default withCronJobAudit(handler, { jobName: "daily-cron-report" });

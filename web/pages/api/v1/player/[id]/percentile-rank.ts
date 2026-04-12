@@ -1,5 +1,3 @@
-// /Users/tim/Desktop/FHFH/fhfhockey.com/web/pages/api/v1/player/[id]/percentile-rank/index.ts
-
 import { getPlayer } from "lib/NHL/server";
 import { PercentileRank } from "lib/NHL/types";
 import supabase from "lib/supabase/public-client";

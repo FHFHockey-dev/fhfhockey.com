@@ -165,11 +165,11 @@
 // Grid areas for wrapper elements
 // Format: DOWN / LEFT / RIGHT / DOWN
 .leftColumnWrapper {
-  grid-area: 4 / 2 / 45 / 8; // Rows 3-44, Cols 1-8
+  grid-area: 4 / 2 / 45 / 9; // Rows 3-44, Cols 1-8
 }
 
 .middleColumnWrapper {
-  grid-area: 4 / 8 / 45 / 23; // Rows 3-44, Cols 9-24
+  grid-area: 4 / 9 / 45 / 23; // Rows 3-44, Cols 9-24
 }
 
 .rightColumnWrapper {
@@ -315,7 +315,7 @@
   padding: 0;
 
   // Flex Sizing Configuration
-  flex: 5 1 0%; // Grow = 2, Shrink = 1, Basis = 0% (Takes 2/3rds of available width)
+  flex: 3 1 0%; // Grow = 2, Shrink = 1, Basis = 0% (Takes 2/3rds of available width)
   min-width: 0; // Prevents flexbox overflow issues
 
   // Internal styles for Consistency Chart component
@@ -949,27 +949,22 @@
   justify-content: center;
   transform: translateX(10%);
   opacity: 0.25; // Semi-transparent appearance
-  img {
-    display: block;
-    max-width: 100%;
-    max-height: 100%;
-    width: auto;
-    height: auto;
-    object-fit: contain;
-    filter: drop-shadow(3px 3px 0 var(--secondary-color))
-      drop-shadow(-3px -3px 0 var(--secondary-color))
-      drop-shadow(3px -3px 0 var(--secondary-color))
-      drop-shadow(-3px 3px 0 var(--secondary-color));
-  }
-  span {
-    overflow: visible !important;
-  }
   p {
     color: #ccc;
     font-size: 14px;
     text-align: center;
   }
 }
+
+.teamLogoImage {
+  display: block;
+  object-fit: contain;
+  filter: drop-shadow(3px 3px 0 var(--secondary-color))
+    drop-shadow(-3px -3px 0 var(--secondary-color))
+    drop-shadow(3px -3px 0 var(--secondary-color))
+    drop-shadow(-3px 3px 0 var(--secondary-color));
+}
+
 .headshot {
   position: absolute;
   top: 0;
@@ -980,22 +975,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  span {
-    overflow: visible !important;
-    width: 100% !important;
-    height: 100% !important;
-  }
-  img {
-    height: 90%;
-    width: 90%;
-  }
 }
 .headshotImage {
   display: block;
   width: 100%;
   height: 100%;
   transform: translateX(-20%);
-  object-fit: cover; // Covers the area, potentially cropping
+  object-fit: cover;
   // filter: drop-shadow(3px 3px 0 var(--primary-color))
   //   drop-shadow(-3px 3px 0 var(--primary-color))
   //   drop-shadow(3px -3px 0 var(--primary-color))
@@ -1008,7 +994,7 @@
   //   drop-shadow(-3px 3px 0 white);
   filter: drop-shadow(0px 4px 8px white);
 }
-img[alt*="Placeholder headshot"].headshotImage {
+.headshotImage[alt*="Placeholder headshot"] {
   object-fit: contain;
   opacity: 0.4;
   filter: none;
@@ -1098,6 +1084,13 @@ img[alt*="Placeholder headshot"].headshotImage {
     }
   }
 }
+
+.chartToolbar {
+  display: flex;
+  align-items: center;
+  gap: v.$space-xs;
+}
+
 .chartCanvasContainer {
   position: relative;
   width: 100%;
@@ -1105,6 +1098,10 @@ img[alt*="Placeholder headshot"].headshotImage {
   overflow: hidden;
   padding: v.$space-sm;
   box-sizing: border-box;
+}
+
+.sectionCardBodyFlush {
+  padding: 0;
 }
 
 .chartLoadingPlaceholder {

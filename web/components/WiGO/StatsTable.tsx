@@ -1,32 +1,13 @@
-// /Users/tim/Desktop/FHFH/fhfhockey.com/web/components/WiGO/StatsTable.tsx
-import React, { useState, useCallback, useMemo } from "react"; // Removed useEffect if not used
+import React, { useState, useCallback, useMemo } from "react";
 import { TableAggregateData } from "./types";
 import styles from "styles/wigoCharts.module.scss";
 import GameLogChart from "./StatsTableRowChart";
+import { isWigoCountChartStat } from "./statMetadata";
 import {
   fetchPlayerGameLogForStat,
   GameLogDataPoint
 } from "utils/fetchWigoPlayerStats";
 import clsx from "clsx";
-
-// Define which stats are generally treated as 'COUNTS' for chart purposes
-const countStatLabels = [
-  "GP",
-  "Goals",
-  "Assists",
-  "Points",
-  "SOG",
-  "ixG",
-  "PPG",
-  "PPA",
-  "PPP",
-  "HIT",
-  "BLK",
-  "PIM",
-  "iCF",
-  "ATOI",
-  "PPTOI"
-];
 
 interface StatsTableProps {
   tableTitle?: string;
@@ -35,24 +16,21 @@ interface StatsTableProps {
   error: string | null;
   formatCell: (
     row: TableAggregateData,
-    columnKey: keyof Omit<TableAggregateData, "label" | "GP" | "DIFF"> // Keep Omit here
-  ) => string; // It returns string based on its implementation
+    columnKey: keyof Omit<TableAggregateData, "label" | "GP" | "DIFF">
+  ) => string;
   playerId: number;
   currentSeasonId: number;
   leftTimeframe: keyof TableAggregateData;
   rightTimeframe: keyof TableAggregateData;
-  // Optional: restrict which data columns are visible (e.g., for mobile)
   visibleColumns?: Array<
     keyof Omit<TableAggregateData, "label" | "GP" | "DIFF">
   >;
 }
 
-// These are the keys for the standard data COLUMNS
 type DataColumnKey = keyof Omit<TableAggregateData, "label" | "GP" | "DIFF">;
 
-// Define Column Keys and Headers
 const columnKeys: DataColumnKey[] = [
-  "STD", // Moved to first position after Stat Label
+  "STD",
   "LY",
   "CA",
   "3YA",
@@ -130,10 +108,13 @@ const StatsTable: React.FC<StatsTableProps> = ({
 
       const newLabel = expandedStatLabel === statLabel ? null : statLabel;
       setExpandedStatLabel(newLabel);
-      // ... (rest of handleExpandClick remains the same) ...
+
+      setGameLogError(null);
+      setGameLogData([]);
+      setIsLoadingGameLog(false);
+
       if (newLabel !== null) {
-        const isCountStat = countStatLabels.includes(newLabel);
-        const typeForChart: "COUNTS" | "RATES" = isCountStat
+        const typeForChart: "COUNTS" | "RATES" = isWigoCountChartStat(newLabel)
           ? "COUNTS"
           : "RATES";
         setExpandedStatType(typeForChart);
@@ -142,11 +123,13 @@ const StatsTable: React.FC<StatsTableProps> = ({
         fetchPlayerGameLogForStat(playerId, currentSeasonId, statLabel)
           .then((fetchedData) => {
             setGameLogData(fetchedData);
+            setGameLogError(null);
             setIsLoadingGameLog(false);
           })
           .catch((err) => {
             console.error("Error fetching game log:", err);
             setGameLogError(`Failed to load game log for ${statLabel}.`);
+            setGameLogData([]);
             setIsLoadingGameLog(false);
           });
       }
@@ -191,7 +174,7 @@ const StatsTable: React.FC<StatsTableProps> = ({
     return undefined; // Return undefined if GP row not found
   }, [data]);
 
-  const totalColumns = columnKeys.length + 2;
+  const totalColumns = renderColumnKeys.length + 2;
 
   return (
     <div className={styles.statsTableContainer}>

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import Head from "next/head";
+import { START_CHART_SURFACE_LINKS } from "lib/navigation/siteSurfaceLinks";
 import useSWR from "swr";
 import {
   LineChart,
@@ -409,10 +410,6 @@ export default function StartChartPage() {
       <Head>
         <title>Start Chart</title>
       </Head>
-
-      <div style={{ marginBottom: "1rem" }}>
-        <a href="/trends">Visit the unified dashboard →</a>
-      </div>
 
       <section className={styles.chartPanel}>
         <div className={styles.chartHeader}>

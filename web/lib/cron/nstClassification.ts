@@ -9,6 +9,9 @@ const DIRECT_REMOTE_NST_JOBS = new Set([
   "update-nst-tables-all",
   "update-nst-goalies",
   "update-nst-current-season",
+  "update-nst-player-reports",
+  "update-nst-last-ten",
+  "check-missing-goalie-data",
   "update-nst-team-daily",
   "update-nst-team-daily-incremental",
   "update-nst-team-stats-all"

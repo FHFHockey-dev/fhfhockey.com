@@ -6,40 +6,13 @@ import {
   Strength,
   CalculatedPlayerRatings,
   RatingWeightsConfig,
-  RegressionConfig,
-  StatWeight
+  RegressionConfig
 } from "components/WiGO/types"; // Adjust path
 import {
   RATING_WEIGHTS,
   REGRESSION_CONFIG
 } from "components/WiGO/ratingWeights"; // Adjust path
-
-// --- Helper: Calculate Percentile Rank ---
-// (Keep this function as is)
-function calculatePercentileRank(
-  value: number,
-  data: number[], // Array of valid, non-null numbers for the specific stat
-  higherIsBetter: boolean
-): number {
-  if (data.length === 0) {
-    return 50; // Default to average if no comparison data
-  }
-  let lowerCount = 0;
-  let equalCount = 0;
-  const totalCount = data.length;
-  for (const score of data) {
-    if (score < value) {
-      lowerCount++;
-    } else if (score === value) {
-      equalCount++;
-    }
-  }
-  let percentile = (lowerCount + 0.5 * equalCount) / totalCount;
-  if (!higherIsBetter) {
-    percentile = 1.0 - percentile;
-  }
-  return Math.max(0, Math.min(1, percentile)) * 100;
-}
+import { calculateRankingResult } from "./calculatePercentiles";
 
 // --- Helper: Apply Regression ---
 // (Keep this function as is - it receives the threshold)
@@ -57,12 +30,43 @@ function applyRegression(
   return Math.max(0, Math.min(100, regressedValue));
 }
 
+interface ComparisonRow {
+  player_id: number;
+  gp: number;
+  value: number;
+}
+
+function buildComparisonRows(
+  playerDataArray: PlayerStrengthStats[],
+  statKey: string,
+  targetPlayerId: number,
+  cohortMinGp: number
+): ComparisonRow[] {
+  return playerDataArray
+    .filter((player) => {
+      const playerGp = player.gp ?? 0;
+      return player.player_id === targetPlayerId || playerGp >= cohortMinGp;
+    })
+    .map((player) => ({
+      player_id: player.player_id,
+      gp: player.gp ?? 0,
+      value: player[statKey] as number | null
+    }))
+    .filter(
+      (player): player is ComparisonRow =>
+        typeof player.value === "number" &&
+        !isNaN(player.value) &&
+        isFinite(player.value)
+    );
+}
+
 // --- Main Calculation Function ---
 export function calculatePlayerRatings(
   playerId: number,
   rawStats: RawStatsCollection,
   weightsConfig: RatingWeightsConfig = RATING_WEIGHTS,
-  regressionConfig: RegressionConfig = REGRESSION_CONFIG // Keep config for the 'enabled' flag
+  regressionConfig: RegressionConfig = REGRESSION_CONFIG,
+  cohortMinGp = 0
 ): CalculatedPlayerRatings | null {
   const strengths: Strength[] = ["as", "es", "pp", "pk"];
   const finalRatings: Partial<CalculatedPlayerRatings> & {
@@ -117,76 +121,70 @@ export function calculatePlayerRatings(
       for (const weightInfo of weights) {
         const statKey = weightInfo.stat;
         const higherIsBetter = weightInfo.higherIsBetter;
+        const comparisonRows = buildComparisonRows(
+          playerDataArray,
+          String(statKey),
+          playerId,
+          cohortMinGp
+        );
 
-        // --- Percentile Calculation ---
-        const targetPlayerValue = targetPlayerRow
-          ? targetPlayerRow[statKey]
-          : null;
-        let percentile: number | null = null;
-
-        if (
-          typeof targetPlayerValue === "number" &&
-          !isNaN(targetPlayerValue) &&
-          isFinite(targetPlayerValue)
-        ) {
-          const comparisonData = playerDataArray
-            .map((p) => p[statKey])
-            .filter(
-              (v): v is number =>
-                typeof v === "number" && !isNaN(v) && isFinite(v)
-            );
-          percentile = calculatePercentileRank(
-            targetPlayerValue,
-            comparisonData,
-            higherIsBetter
-          );
-        }
+        const targetRanking = calculateRankingResult(
+          comparisonRows,
+          playerId,
+          higherIsBetter
+        );
+        const percentile =
+          targetRanking !== null ? targetRanking.percentile * 100 : null;
         intermediatePercentiles[strength]![String(statKey)] = percentile;
 
-        // --- Regression (Optional & Dynamic Threshold) ---
-        let finalPercentileValue = percentile; // Start with the raw percentile
+        let finalPercentileValue = percentile;
 
         if (
-          regressionConfig.enabled && // Check if regression is enabled globally
-          percentile !== null && // Can only regress if percentile exists
-          targetPlayerRow // Need player's row for GP
-          // targetPlayerGP > 0          // Ensure GP is positive to avoid threshold of 0
+          regressionConfig.enabled &&
+          percentile !== null &&
+          targetPlayerRow &&
+          targetPlayerGP < regressionConfig.minGPThreshold
         ) {
-          // Calculate the dynamic threshold based on player's GP for this strength
-          // Always round up (minimum threshold of 1)
-          const dynamicGpThreshold = Math.max(
-            1,
-            Math.ceil(targetPlayerGP * 0.25)
+          const cohortPercentiles = comparisonRows
+            .map((row) => ({
+              player_id: row.player_id,
+              gp: row.gp,
+              result: calculateRankingResult(
+                comparisonRows,
+                row.player_id,
+                higherIsBetter
+              )
+            }))
+            .filter(
+              (row): row is {
+                player_id: number;
+                gp: number;
+                result: NonNullable<ReturnType<typeof calculateRankingResult>>;
+              } => row.result !== null
+            );
+
+          const regressionTargets = cohortPercentiles.filter(
+            (row) =>
+              row.player_id !== playerId &&
+              row.gp >= regressionConfig.minGPThreshold
           );
 
-          // Apply regression only if the player's GP is strictly LESS than the calculated threshold
-          if (targetPlayerGP < dynamicGpThreshold) {
-            // Calculate the mean *percentile* for players below the DYNAMIC threshold for THIS STAT
-            const lowGpPercentiles = playerDataArray
-              // Filter for players strictly below the dynamic threshold
-              .filter((p) => p.gp != null && p.gp < dynamicGpThreshold)
-              // Get their already calculated raw percentile for this stat
-              .map((p) => intermediatePercentiles[strength]?.[String(statKey)])
-              .filter((p): p is number => p !== null); // Filter out nulls
+          const regressionMeanPercentile =
+            regressionTargets.length > 0
+              ? regressionTargets.reduce(
+                  (sum, row) => sum + row.result.percentile * 100,
+                  0
+                ) / regressionTargets.length
+              : 50;
 
-            if (lowGpPercentiles.length > 0) {
-              const regressionMeanPercentile =
-                lowGpPercentiles.reduce((a, b) => a + b, 0) /
-                lowGpPercentiles.length;
-
-              // Apply regression formula to the *percentile* using the dynamic threshold
-              finalPercentileValue = applyRegression(
-                percentile, // Player's calculated percentile
-                targetPlayerGP,
-                regressionMeanPercentile, // Mean percentile for low GP players
-                dynamicGpThreshold // Use the dynamic threshold
-              );
-              // console.log(`[Debug Regression - ${strength} ${String(statKey)}] GP: ${targetPlayerGP}, Threshold: ${dynamicGpThreshold}, Raw %: ${percentile.toFixed(1)}, Mean Low GP %: ${regressionMeanPercentile.toFixed(1)}, Regressed %: ${finalPercentileValue.toFixed(1)}`);
-            }
-            // else: No other players below the dynamic threshold had a valid percentile, cannot regress.
-          }
-          // else: Player GP meets or exceeds dynamic threshold, no regression needed.
+          finalPercentileValue = applyRegression(
+            percentile,
+            targetPlayerGP,
+            regressionMeanPercentile,
+            regressionConfig.minGPThreshold
+          );
         }
+
         regressedPercentiles[strength]![String(statKey)] = finalPercentileValue;
       }
     }

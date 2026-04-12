@@ -1,5 +1,5 @@
-// components/WiGO/ToiLineChart.tsx
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -25,8 +25,8 @@ import { formatSecondsToMMSS, formatDateToMMDD } from "utils/formattingUtils";
 import styles from "styles/wigoCharts.module.scss";
 import zoomPlugin from "chartjs-plugin-zoom";
 import Spinner from "components/Spinner";
-import { WIGO_COLORS, CHART_COLORS, addAlpha } from "styles/wigoColors"; // Adjust path
-import useCurrentSeason from "hooks/useCurrentSeason";
+import { WIGO_COLORS, CHART_COLORS, addAlpha } from "styles/wigoColors";
+import WigoSectionCard from "./WigoSectionCard";
 
 ChartJS.register(
   CategoryScale,
@@ -42,6 +42,7 @@ ChartJS.register(
 );
 interface ToiLineChartProps {
   playerId: number | null | undefined;
+  seasonId?: number | null;
 }
 
 // --- Define the possible chart views ---
@@ -57,62 +58,35 @@ type NumericSkaterLogKeys = {
     : never;
 }[keyof SkaterGameLogStatsData];
 
-const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId }) => {
-  const [gameLogData, setGameLogData] = useState<SkaterGameLogStatsData[]>([]);
-  const [averageToi, setAverageToi] = useState<number | null>(null);
-  const [averagePpToiPct, setAveragePpToiPct] = useState<number | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId, seasonId }) => {
   const chartRef = useRef<ChartJS<"line">>(null);
   // --- State to control which chart is displayed ---
   const [chartView, setChartView] = useState<ChartView>("toi"); // Default to 'toi'
-  const currentSeasonData = useCurrentSeason();
-  const currentSeasonId = currentSeasonData?.seasonId;
+  const { data, isLoading, error } = useQuery<{
+    gameLogData: SkaterGameLogStatsData[];
+    averageToi: number | null;
+    averagePpToiPct: number | null;
+  }>({
+    queryKey: ["wigoToiChart", playerId, seasonId],
+    queryFn: async () => {
+      const [totals, gameLogs] = await Promise.all([
+        fetchPlayerPerGameTotals(playerId as number, seasonId),
+        fetchPlayerGameLogStats(playerId as number, String(seasonId))
+      ]);
 
-  useEffect(() => {
-    if (!playerId || !currentSeasonId) {
-      // Clear data, reset loading/error for empty state
-      setGameLogData([]);
-      setAverageToi(null);
-      setAveragePpToiPct(null);
-      setError(null);
-      setIsLoading(false);
-      return;
-    }
+      return {
+        gameLogData: gameLogs,
+        averageToi: (totals as SkaterTotalsData | null)?.toi_per_game ?? null,
+        averagePpToiPct:
+          (totals as SkaterTotalsData | null)?.pp_toi_pct_per_game ?? null
+      };
+    },
+    enabled: typeof playerId === "number" && typeof seasonId === "number"
+  });
 
-    const loadChartData = async () => {
-      setIsLoading(true);
-      setError(null);
-      setGameLogData([]);
-      setAverageToi(null);
-      setAveragePpToiPct(null);
-
-      try {
-        // Fetch totals for averages (but not for season selection)
-        const totals: SkaterTotalsData | null =
-          await fetchPlayerPerGameTotals(playerId);
-        setAverageToi(totals?.toi_per_game ?? null);
-        setAveragePpToiPct(totals?.pp_toi_pct_per_game ?? null);
-
-        // Use currentSeasonId from hook for fetching game log
-        const gameLogs = await fetchPlayerGameLogStats(
-          playerId,
-          String(currentSeasonId)
-        );
-        setGameLogData(gameLogs);
-      } catch (err: any) {
-        console.error("Failed to load chart data:", err);
-        setError(`Failed to load data: ${err.message || "Unknown error"}`);
-        setGameLogData([]); // Clear data on error
-        setAverageToi(null);
-        setAveragePpToiPct(null);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadChartData();
-  }, [playerId, currentSeasonId]);
+  const gameLogData = data?.gameLogData ?? [];
+  const averageToi = data?.averageToi ?? null;
+  const averagePpToiPct = data?.averagePpToiPct ?? null;
 
   // --- Prepare Chart Data based on the selected view ---
   const getChartData = (): ChartData<"line", (number | null)[], string> => {
@@ -360,31 +334,22 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId }) => {
   const chartOptions = getChartOptions();
 
   return (
-    <div className={styles.chartContainer}>
-      {/* --- Header with Title and Toggle Buttons --- */}
-      <div className={styles.chartHeader}>
-        <h3>{chartTitle}</h3>
-
-        {/* Basic Toggle Buttons */}
+    <WigoSectionCard
+      title={chartTitle}
+      toolbar={
         <div className={styles.toggleButtons}>
-          <button
-            onClick={() => setChartView("toi")}
-            disabled={chartView === "toi"} // Disable if active
-          >
+          <button onClick={() => setChartView("toi")} disabled={chartView === "toi"}>
             TOI
           </button>
           <button
             onClick={() => setChartView("pp_pct")}
-            disabled={chartView === "pp_pct"} // Disable if active
+            disabled={chartView === "pp_pct"}
           >
             PP TOI %
           </button>
         </div>
-      </div>
-
-      {/* --- Chart Canvas --- */}
-      {/* Chart Canvas Container */}
-      <div className={styles.chartCanvasContainer}>
+      }
+    >
         {/* Render the chart structure if NO error */}
         {/* It will show the empty state (with dummy labels) while loading */}
         {!error && (
@@ -402,9 +367,9 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId }) => {
 
         {/* Error Message (replaces chart or overlaps) */}
         {/* Show error overlay if an error occurred */}
-        {error &&
+        {error instanceof Error &&
           !isLoading && ( // Show only if not also loading
-            <div style={placeholderStyle}>Error: {error}</div>
+            <div style={placeholderStyle}>Error: {error.message}</div>
           )}
 
         {/* "Select Player" Placeholder (overlaps empty chart if !isLoading, !error, !playerId) */}
@@ -412,14 +377,21 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId }) => {
           <div style={placeholderStyle}>Select a player to view chart.</div>
         )}
 
+        {!isLoading && !error && playerId && !seasonId && (
+          <div style={placeholderStyle}>Loading season info...</div>
+        )}
+
         {/* "No Data" Placeholder (overlaps empty chart if !isLoading, !error, playerId, and gameLogData is empty) */}
-        {!isLoading && !error && playerId && gameLogData.length === 0 && (
+        {!isLoading &&
+          !error &&
+          playerId &&
+          seasonId &&
+          gameLogData.length === 0 && (
           <div style={placeholderStyle}>
             No game log data available for this player.
           </div>
         )}
-      </div>
-    </div>
+    </WigoSectionCard>
   );
 };
 

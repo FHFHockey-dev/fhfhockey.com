@@ -23,6 +23,24 @@ The steady-state production path is:
 
 ## Refresh Recipe
 
+```
+http://localhost:3000/api/v1/db/backfill-player-underlying-season?seasonId=20252026
+
+http://localhost:3000/api/v1/db/catch-up-player-underlying?seasonId=20252026
+
+http://localhost:3000/api/v1/db/backfill-goalie-underlying-season?seasonId=20252026
+
+http://localhost:3000/api/v1/db/catch-up-goalie-underlying?seasonId=20252026
+```
+
+Important:
+
+- `backfill-player-underlying-season` and `backfill-goalie-underlying-season` are repair-style season backfill routes.
+- They do not forcibly reprocess every finished game in the season.
+- They scan for finished games that are still missing the relevant persisted summary coverage, ingest those games, refresh summaries, and stop when no missing summary coverage remains.
+- A result like `processedGameCount: 6` means the route found six finished games in that season still missing player-summary coverage at run time.
+- If you need a true full-season reprocess, use smaller date-range or game-targeted raw ingest runs across the whole season instead of assuming this convenience route is exhaustive.
+
 Use this order when player underlying-stats numbers look stale, missing, or mathematically wrong.
 
 ### 1. Refresh raw Gamecenter inputs and player summaries for the affected game or date range

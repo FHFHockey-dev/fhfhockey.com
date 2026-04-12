@@ -9,6 +9,7 @@ import PanelStatus from "components/common/PanelStatus";
 import OptimizedImage from "components/common/OptimizedImage";
 import { buildHomepageModulePresentation } from "lib/dashboard/freshness";
 import { fallbackNHLLogo, getTeamLogoSvg } from "lib/images";
+import { HOME_SURFACE_LINKS } from "lib/navigation/siteSurfaceLinks";
 import { teamsInfo } from "lib/teamsInfo";
 import styles from "styles/Home.module.scss";
 
@@ -149,17 +150,7 @@ export default function HomepageGamesSection({
           </div>
         </div>
 
-        <div className={styles.slateActionRow}>
-          <Link href="/start-chart" className={styles.slateActionLink}>
-            Starter board
-          </Link>
-          <Link href="/goalies" className={styles.slateActionLink}>
-            Goalie view
-          </Link>
-          <Link href="/trends" className={styles.slateActionLink}>
-            Trend watch
-          </Link>
-        </div>
+
       </div>
 
       <div className={styles.gamesHeader}>

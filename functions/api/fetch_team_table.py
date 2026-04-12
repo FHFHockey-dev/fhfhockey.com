@@ -6,8 +6,10 @@ from bs4 import BeautifulSoup
 import json
 import argparse
 import re
+import os
 from flask import Flask, request, jsonify
 from typing import Optional, Tuple
+from lib.env_loader import ensure_loaded_for
 
 # Optional DB access for dynamic season discovery
 try:
@@ -42,9 +44,16 @@ def fetch_team_table(from_season='20242025', thru_season='20242025',
         "data": []
     }
 
+    ensure_loaded_for(["NST_KEY"])
+    nst_key = (os.environ.get("NST_KEY") or "").strip()
+    if not nst_key:
+        result["debug"]["Error"] = "NST_KEY missing"
+        result["debug"]["Status"] = "missing_key"
+        return json.dumps(result)
+
     # Construct the URL with query parameters
     url = (
-        f"https://www.naturalstattrick.com/teamtable.php?"
+        f"https://data.naturalstattrick.com/teamtable.php?"
         f"fromseason={from_season}&thruseason={thru_season}&"
         f"stype={stype}&sit={sit}&score={score}&rate={rate}&"
         f"team={team}&loc={loc}&gpf={gpf}&fd={fd}&td={td}"
@@ -53,33 +62,15 @@ def fetch_team_table(from_season='20242025', thru_season='20242025',
     # Log the URL being fetched
     result["debug"]["Fetching URL"] = url
 
-    # Define headers to mimic a real browser
     headers = {
-        "User-Agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/90.0.4430.93 Safari/537.36"
-        ),
-        "Accept": (
-            "text/html,application/xhtml+xml,application/xml;"
-            "q=0.9,image/webp,*/*;q=0.8"
-        ),
-        "Accept-Language": "en-US,en;q=0.9",
-        "Referer": "https://www.naturalstattrick.com/",
-        "Connection": "keep-alive",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)",
+        "nst-key": nst_key,
     }
 
-    # Start a session to handle cookies
-    session = requests.Session()
-    session.headers.update(headers)
-
     try:
-        # Initial request to establish session cookies
-        response = session.get("https://www.naturalstattrick.com/", timeout=10)
-        response.raise_for_status()
-
         # Fetch the team table page
-        response = session.get(url, timeout=10)
+        response = requests.get(url, headers=headers, timeout=10)
         response.raise_for_status()
 
         # Parse the HTML content

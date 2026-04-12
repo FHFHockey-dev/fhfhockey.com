@@ -127,7 +127,9 @@ const GoalieTrends: FC = () => {
   const [selectedStats, setSelectedStats] = useState<NumericGoalieStatKey[]>(
     DEFAULT_SELECTED_STATS
   );
-  const [view, setView] = useState<"leaderboard" | "week">("leaderboard");
+  const [view, setView] = useState<"leaderboard" | "week" | "table">(
+    "leaderboard"
+  );
   const [useSingleWeek, setUseSingleWeek] = useState<boolean>(false);
 
   // --- NEW: State for Fantasy Points ---
@@ -885,11 +887,9 @@ const GoalieTrends: FC = () => {
             <GoalieLeaderboard
               // Pass SORTED data
               goalieRankings={sortedLeaderboardRankings}
-              statColumns={STAT_COLUMNS}
               // Pass sort handler and config
               requestSort={handleLeaderboardSort}
               sortConfig={leaderboardSortConfig}
-              setView={setView} // Keep if needed
             />
           )}
           {showSingleWeekList && currentSingleWeekValue && (
@@ -899,7 +899,6 @@ const GoalieTrends: FC = () => {
               week={currentSingleWeekValue}
               selectedStats={selectedStats}
               statColumns={STAT_COLUMNS}
-              setView={setView} // Pass setView if GoalieList/Table needs it internally
               onBackToLeaderboard={handleBackToLeaderboard}
               loading={singleWeekLoading} // Pass correct loading state
             />

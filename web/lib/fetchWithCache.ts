@@ -6,9 +6,19 @@ import cacheData from "memory-cache"; // Importing the caching module
 
 let num = 0; // Counter for logging purposes
 
+export interface FetchWithCacheOptions {
+  cacheKey?: string;
+  init?: RequestInit;
+}
+
 // The main function to fetch data with cache support
-export default async function fetchWithCache(url: string, json = true) {
-  const value = cacheData.get(url); // Try to get data from cache
+export default async function fetchWithCache(
+  url: string,
+  json = true,
+  options?: FetchWithCacheOptions
+) {
+  const cacheKey = options?.cacheKey ?? url;
+  const value = cacheData.get(cacheKey); // Try to get data from cache
   if (value) {
     // If data is found in cache, return it
     return value;
@@ -19,14 +29,14 @@ export default async function fetchWithCache(url: string, json = true) {
     num++;
 
     // Using the new Fetch structure
-    const response = await Fetch(url)
+    const response = await Fetch(url, options?.init)
       .then((res) => (json ? res.json() : res.text())) // Processing response according to the expected type (json or text)
       .catch((error) => {
         console.error(`Fetch error: ${error}`);
         throw error; // Rethrow the error after logging
       });
 
-    cacheData.put(url, response, hours * 1000 * 60 * 60); // Store the fetched data in cache
+    cacheData.put(cacheKey, response, hours * 1000 * 60 * 60); // Store the fetched data in cache
     return response; // Return the fetched data
   }
 }

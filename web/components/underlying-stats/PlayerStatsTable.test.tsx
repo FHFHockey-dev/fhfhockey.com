@@ -12,15 +12,23 @@ afterEach(() => {
 });
 
 describe("PlayerStatsTable", () => {
-  it.each<
-    [PlayerStatsTableFamily, string, string, string]
-  >([
+  it.each<[PlayerStatsTableFamily, string, string, string]>([
     ["individualCounts", "Goals", "Sort by Total Points", "Sort by SH%"],
     ["individualRates", "Goals/60", "Sort by Total Points/60", "Sort by SH%"],
     ["onIceCounts", "CF", "Sort by xGF%", "Sort by HDGF%"],
     ["onIceRates", "CF/60", "Sort by xGF%", "Sort by HDGF%"],
-    ["goalieCounts", "Shots Against", "Sort by SV%", "Sort by Avg Shot Distance"],
-    ["goalieRates", "Shots Against/60", "Sort by SV%", "Sort by Avg Goal Distance"],
+    [
+      "goalieCounts",
+      "Shots Against",
+      "Sort by SV%",
+      "Sort by Avg. Shot Distance"
+    ],
+    [
+      "goalieRates",
+      "Shots Against/60",
+      "Sort by SV%",
+      "Sort by Avg. Goal Distance"
+    ]
   ])(
     "renders the %s column family with the expected default active sort",
     (family, metricHeaderLabel, activeSortLabel, secondarySortLabel) => {
@@ -70,7 +78,7 @@ describe("PlayerStatsTable", () => {
               avgShotDistance: 33.4,
               avgGoalDistance: 19.8,
               shotsAgainstPer60: 29.1,
-              savesPer60: 27.4,
+              savesPer60: 27.4
             }
           : {
               rowKey: `${family}-row`,
@@ -185,7 +193,7 @@ describe("PlayerStatsTable", () => {
               mdga: 18,
               mdgaPer60: 0.85,
               mdgfPct: 0.538,
-              ldcf: 109,
+              ldcf: 109
             };
 
       const sortState =
@@ -197,17 +205,19 @@ describe("PlayerStatsTable", () => {
               ? { sortKey: "savePct", direction: "desc" as const }
               : { sortKey: "xgfPct", direction: "desc" as const };
 
-      render(<PlayerStatsTable family={family} rows={[row]} sortState={sortState} />);
+      render(
+        <PlayerStatsTable family={family} rows={[row]} sortState={sortState} />
+      );
 
       expect(
-        screen.getByRole("button", { name: activeSortLabel }).getAttribute(
-          "aria-pressed"
-        )
+        screen
+          .getByRole("button", { name: activeSortLabel })
+          .getAttribute("aria-pressed")
       ).toBe("true");
       expect(
-        screen.getByRole("button", { name: secondarySortLabel }).getAttribute(
-          "aria-pressed"
-        )
+        screen
+          .getByRole("button", { name: secondarySortLabel })
+          .getAttribute("aria-pressed")
       ).toBe("false");
       expect(screen.getByText(metricHeaderLabel)).toBeTruthy();
     }

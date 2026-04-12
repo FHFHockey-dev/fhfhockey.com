@@ -57,6 +57,8 @@ type CategoryCoverageChartProps = {
   showTitle?: boolean;
 };
 
+// This surface intentionally stays on the legacy usePercentileRank pipeline.
+// It does not consume the WiGO stat metadata/ranking contract introduced for /wigoCharts.
 function CategoryCoverageChart({
   playerId,
   timeOption,

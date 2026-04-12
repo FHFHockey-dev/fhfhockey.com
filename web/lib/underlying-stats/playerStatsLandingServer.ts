@@ -488,6 +488,22 @@ function getSummaryRowScoreState(
   return row.scoreState ?? "allScores";
 }
 
+function isRecoverablePlayerStatsPgReadError(error: unknown) {
+  const message =
+    error instanceof Error
+      ? error.message
+      : String(error ?? "Unknown PG error");
+
+  return (
+    message.includes("ENOTFOUND") ||
+    message.includes("ECONNREFUSED") ||
+    message.includes("timeout") ||
+    message.includes("connect") ||
+    message.includes("57014") ||
+    message.includes("canceling statement due to statement timeout")
+  );
+}
+
 const playerStatsSeasonAggregateCache = new Map<
   string,
   PlayerStatsSeasonAggregateCacheEntry
@@ -510,15 +526,15 @@ type SupabasePagedResult<TRow> = {
   error: unknown;
 };
 
-function chunkNumberArray(
-  values: readonly number[],
-  chunkSize: number
-): number[][] {
+const PLAYER_STATS_SUPABASE_READ_RETRIES = 3;
+const PLAYER_STATS_SUPABASE_RETRY_DELAY_MS = 250;
+
+function chunkArray<T>(values: readonly T[], chunkSize: number): T[][] {
   if (chunkSize <= 0) {
     return [Array.from(values)];
   }
 
-  const chunks: number[][] = [];
+  const chunks: T[][] = [];
 
   for (let index = 0; index < values.length; index += chunkSize) {
     chunks.push(values.slice(index, index + chunkSize));
@@ -527,8 +543,47 @@ function chunkNumberArray(
   return chunks;
 }
 
+function chunkNumberArray(
+  values: readonly number[],
+  chunkSize: number
+): number[][] {
+  return chunkArray(values, chunkSize);
+}
+
 function sha256Json(payload: unknown): string {
   return crypto.createHash("sha256").update(JSON.stringify(payload)).digest("hex");
+}
+
+function stringifyPlayerStatsReadError(error: unknown) {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  if (typeof error === "string") {
+    return error;
+  }
+
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return String(error);
+  }
+}
+
+function isRetryablePlayerStatsSupabaseReadError(error: unknown) {
+  const raw = stringifyPlayerStatsReadError(error);
+
+  return (
+    raw.includes("PGRST002") ||
+    raw.includes("schema cache") ||
+    raw.includes("Retrying.") ||
+    raw.includes("fetch failed") ||
+    raw.includes("timeout")
+  );
+}
+
+async function sleepPlayerStatsReadRetry(delayMs: number) {
+  await new Promise((resolve) => setTimeout(resolve, delayMs));
 }
 
 async function fetchAllSupabaseRows<TRow>(
@@ -540,7 +595,42 @@ async function fetchAllSupabaseRows<TRow>(
   const rows: TRow[] = [];
 
   for (let offset = 0; ; offset += SUPABASE_PAGE_SIZE) {
-    const result = await fetchPage(offset, offset + SUPABASE_PAGE_SIZE - 1);
+    let result: { data: unknown[] | null; error: unknown } | null = null;
+
+    for (
+      let attempt = 1;
+      attempt <= PLAYER_STATS_SUPABASE_READ_RETRIES;
+      attempt += 1
+    ) {
+      result = await fetchPage(offset, offset + SUPABASE_PAGE_SIZE - 1);
+
+      if (!result.error) {
+        break;
+      }
+
+      if (
+        attempt === PLAYER_STATS_SUPABASE_READ_RETRIES ||
+        !isRetryablePlayerStatsSupabaseReadError(result.error)
+      ) {
+        break;
+      }
+
+      if (process.env.NODE_ENV !== "test") {
+        console.warn("[player-stats] retrying Supabase page read", {
+          attempt,
+          offset,
+          error: stringifyPlayerStatsReadError(result.error)
+        });
+      }
+
+      await sleepPlayerStatsReadRetry(
+        PLAYER_STATS_SUPABASE_RETRY_DELAY_MS * attempt
+      );
+    }
+
+    if (result == null) {
+      break;
+    }
 
     if (result.error) {
       throw result.error;
@@ -558,9 +648,11 @@ async function fetchAllSupabaseRows<TRow>(
 }
 
 function getPlayerStatsPgPool(): Pool | null {
+  const hasDirectPgConfig = Boolean(process.env.SUPABASE_DB_URL);
   const allowDirectPg =
     process.env.PLAYER_STATS_USE_DIRECT_PG === "true" ||
-    process.env.NODE_ENV === "production";
+    process.env.NODE_ENV === "production" ||
+    (process.env.NODE_ENV === "development" && hasDirectPgConfig);
 
   if (!allowDirectPg) {
     return null;
@@ -1077,7 +1169,7 @@ async function fetchPlayerStatsDetailSourceGames(
   return rawGames.filter((game) => isFinishedPlayerStatsSourceGame(game, now));
 }
 
-async function fetchPlayerStatsLandingSourceBundleForGames(args: {
+export async function fetchPlayerStatsLandingSourceBundleForGames(args: {
   games: readonly PlayerStatsSourceGameRow[];
   shouldFetchRosterSpots: boolean;
   client?: PlayerStatsSupabaseClient;
@@ -1162,11 +1254,7 @@ export async function fetchPlayerStatsLandingSourceBundle(
     } catch (error) {
       const message =
         error instanceof Error ? error.message : String(error ?? "Unknown PG error");
-      const isConnectionFailure =
-        message.includes("ENOTFOUND") ||
-        message.includes("ECONNREFUSED") ||
-        message.includes("timeout") ||
-        message.includes("connect");
+      const isConnectionFailure = isRecoverablePlayerStatsPgReadError(error);
 
       if (!isConnectionFailure) {
         throw error;
@@ -1282,7 +1370,7 @@ async function fetchPlayerStatsLandingSourceBundleViaPg(
   };
 }
 
-async function fetchPlayerStatsLandingGamesByIds(
+export async function fetchPlayerStatsLandingGamesByIds(
   gameIds: readonly number[],
   client: PlayerStatsSupabaseClient = supabase
 ): Promise<PlayerStatsSourceGameRow[]> {
@@ -1306,6 +1394,7 @@ async function fetchPlayerStatsLandingGamesByIds(
 async function fetchPlayerStatsSummaryPayloadRows(args: {
   gameIds: readonly number[];
   sourceUrlPrefix: string;
+  sourceUrls?: readonly string[];
   client?: PlayerStatsSupabaseClient;
 }): Promise<PlayerStatsSummaryPayloadRow[]> {
   const client = args.client ?? supabase;
@@ -1318,45 +1407,73 @@ async function fetchPlayerStatsSummaryPayloadRows(args: {
       return await fetchPlayerStatsSummaryPayloadRowsViaPg(args);
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : String(error ?? "Unknown PG error");
-      const isConnectionFailure =
-        message.includes("ENOTFOUND") ||
-        message.includes("ECONNREFUSED") ||
-        message.includes("timeout") ||
-        message.includes("connect");
+        error instanceof Error
+          ? error.message
+          : String(error ?? "Unknown PG error");
+      const isConnectionFailure = isRecoverablePlayerStatsPgReadError(error);
 
       if (!isConnectionFailure) {
         throw error;
       }
 
       if (process.env.NODE_ENV !== "test") {
-        console.warn("[player-stats] falling back from direct PG summary read to Supabase", {
-          reason: message,
-        });
+        console.warn(
+          "[player-stats] falling back from direct PG summary read to Supabase",
+          {
+            reason: message
+          }
+        );
       }
     }
   }
 
+  const sourceUrlChunks =
+    args.sourceUrls == null
+      ? null
+      : chunkArray(args.sourceUrls, GAME_ID_CHUNK_SIZE);
+
   return fetchSupabaseRowsForGameChunks<PlayerStatsSummaryPayloadRow>({
     gameIdChunks: chunkNumberArray(args.gameIds, GAME_ID_CHUNK_SIZE),
     concurrency: 6,
-    fetchChunkPage: async (gameIdChunk, from, to) =>
-      client
+    fetchChunkPage: async (gameIdChunk, from, to) => {
+      const baseQuery = client
         .from("nhl_api_game_payloads_raw")
         .select("game_id,payload,fetched_at,source_url")
         .eq("endpoint", PLAYER_STATS_SUMMARY_STORAGE_ENDPOINT)
-        .like("source_url", `${args.sourceUrlPrefix}%`)
         .in("game_id", [...gameIdChunk])
         .order("game_id", { ascending: true })
         .order("fetched_at", { ascending: false })
-        .range(from, to),
+        .range(from, to);
+
+      const chunkIndex = Math.floor(from / SUPABASE_PAGE_SIZE);
+      const sourceUrlChunk = sourceUrlChunks?.[chunkIndex] ?? null;
+
+      if (sourceUrlChunk != null && sourceUrlChunk.length > 0) {
+        return baseQuery.in("source_url", sourceUrlChunk);
+      }
+
+      return baseQuery.like("source_url", `${args.sourceUrlPrefix}%`);
+    }
   });
 }
 
 async function fetchPlayerStatsSummaryPayloadRowsViaPg(args: {
   gameIds: readonly number[];
   sourceUrlPrefix: string;
+  sourceUrls?: readonly string[];
 }): Promise<PlayerStatsSummaryPayloadRow[]> {
+  if (args.sourceUrls != null && args.sourceUrls.length > 0) {
+    return fetchPlayerStatsPgRows<PlayerStatsSummaryPayloadRow>(
+      `select game_id, payload, fetched_at, source_url
+       from public.nhl_api_game_payloads_raw
+       where endpoint = $1
+         and source_url = any($2::text[])
+         and game_id = any($3::bigint[])
+       order by game_id asc, fetched_at desc`,
+      [PLAYER_STATS_SUMMARY_STORAGE_ENDPOINT, args.sourceUrls, args.gameIds]
+    );
+  }
+
   return fetchPlayerStatsPgRows<PlayerStatsSummaryPayloadRow>(
     `select game_id, payload, fetched_at, source_url
      from public.nhl_api_game_payloads_raw
@@ -1367,7 +1484,7 @@ async function fetchPlayerStatsSummaryPayloadRowsViaPg(args: {
     [
       PLAYER_STATS_SUMMARY_STORAGE_ENDPOINT,
       `${args.sourceUrlPrefix}%`,
-      args.gameIds,
+      args.gameIds
     ]
   );
 }
@@ -1395,11 +1512,7 @@ async function fetchPlayerStatsOfficialLandingPayloadRows(args: {
     } catch (error) {
       const message =
         error instanceof Error ? error.message : String(error ?? "Unknown PG error");
-      const isConnectionFailure =
-        message.includes("ENOTFOUND") ||
-        message.includes("ECONNREFUSED") ||
-        message.includes("timeout") ||
-        message.includes("connect");
+      const isConnectionFailure = isRecoverablePlayerStatsPgReadError(error);
 
       if (!isConnectionFailure) {
         throw error;
@@ -1770,7 +1883,7 @@ function canUsePlayerStatsSeasonAggregateCache(
 ): state is PlayerStatsLandingFilterState & {
   primary: PlayerStatsLandingFilterState["primary"] & {
     strength: PlayerStatsSupportedStrength;
-    scoreState: "allScores";
+    scoreState: PlayerStatsSupportedScoreState;
     seasonRange: {
       fromSeasonId: number;
       throughSeasonId: number;
@@ -1784,7 +1897,6 @@ function canUsePlayerStatsSeasonAggregateCache(
     fromSeasonId != null &&
     throughSeasonId != null &&
     fromSeasonId === throughSeasonId &&
-    state.primary.scoreState === "allScores" &&
     isSupportedLandingStrength(state.primary.strength) &&
     state.expandable.teamId == null &&
     state.expandable.venue === "all" &&
@@ -1797,6 +1909,7 @@ function getPlayerStatsSeasonAggregateCacheKey(
   state: PlayerStatsLandingFilterState & {
     primary: PlayerStatsLandingFilterState["primary"] & {
       strength: PlayerStatsSupportedStrength;
+      scoreState: PlayerStatsSupportedScoreState;
       seasonRange: {
         fromSeasonId: number;
         throughSeasonId: number;
@@ -1809,6 +1922,7 @@ function getPlayerStatsSeasonAggregateCacheKey(
     state.primary.seasonType,
     state.primary.statMode,
     state.primary.strength,
+    state.primary.scoreState
   ].join(":");
 }
 
@@ -4397,9 +4511,17 @@ async function fetchPlayerStatsSummaryRowsForFilterState(args: {
           sourceUrlPrefix: getPlayerStatsSummaryPartitionPrefix({
             mode: args.state.primary.statMode,
             strength: supportedStrength,
-            scoreState: args.state.primary.scoreState,
+            scoreState: args.state.primary.scoreState
           }),
-          client,
+          sourceUrls: args.games.map((game) =>
+            buildPlayerStatsSummaryPartitionSourceUrl({
+              gameId: game.id,
+              mode: args.state.primary.statMode,
+              strength: supportedStrength,
+              scoreState: args.state.primary.scoreState
+            })
+          ),
+          client
         });
   const partitionRowsFetchedAt = Date.now();
   const partitionSummaryPayloads = flattenPersistedSummaryRows(

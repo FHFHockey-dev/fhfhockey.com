@@ -230,6 +230,148 @@
   min-height: 0;
 }
 
+.summaryBand {
+  @include v.glass-panel($padding: v.$space-lg, $radius: v.$radius-lg);
+  display: grid;
+  gap: v.$space-md;
+}
+
+.summaryBandHeader {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: v.$space-md;
+}
+
+.summaryBandCopy {
+  margin: v.$space-xxs 0 0;
+  color: v.$text-secondary;
+  font-size: v.$font-size-sm;
+  line-height: 1.5;
+}
+
+.summaryBandMeta {
+  display: grid;
+  gap: v.$space-xxs;
+  align-content: start;
+  max-width: 32rem;
+}
+
+.summaryContract {
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+  line-height: 1.5;
+}
+
+.summaryBandGrid {
+  display: grid;
+  gap: v.$space-md;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.summaryCard {
+  @include v.component-wrapper;
+  padding: v.$space-md;
+  background: rgba(v.$background-dark, 0.72);
+  display: grid;
+  gap: v.$space-sm;
+  min-height: 0;
+}
+
+.summaryCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: v.$space-sm;
+}
+
+.summaryCardTitle {
+  margin: 0;
+  font-family: v.$font-family-accent;
+  font-size: v.$font-size-md;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: v.$color-white;
+}
+
+.summaryCardCopy {
+  margin: v.$space-xxs 0 0;
+  color: v.$text-secondary;
+  font-size: v.$font-size-sm;
+}
+
+.summaryBadge {
+  font-family: v.$font-family-numbers;
+  font-size: v.$font-size-xs;
+  color: v.$primary-color;
+  border: 1px solid rgba(v.$primary-color, 0.35);
+  background: rgba(v.$primary-color, 0.12);
+  border-radius: 999px;
+  padding: 0.2rem 0.45rem;
+  white-space: nowrap;
+}
+
+.summaryLeaderList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: v.$space-xs;
+}
+
+.summaryLeaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: v.$space-sm;
+  padding: v.$space-xs 0;
+  border-top: 1px solid rgba(v.$border-primary, 0.6);
+}
+
+.summaryLeaderRow:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.summaryLeaderText {
+  display: grid;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.summaryLeaderLink {
+  color: v.$color-white;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.summaryLeaderLink:hover {
+  color: v.$primary-color;
+}
+
+.summaryLeaderMeta {
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+}
+
+.summaryLeaderMetrics {
+  display: flex;
+  align-items: center;
+  gap: v.$space-sm;
+  white-space: nowrap;
+}
+
+.summaryLeaderValue {
+  font-family: v.$font-family-numbers;
+  font-weight: 700;
+  color: v.$color-white;
+}
+
+.summaryEmpty {
+  color: v.$text-secondary;
+  font-size: v.$font-size-sm;
+}
+
 .chartPanel {
   @include v.glass-panel($padding: v.$space-md, $radius: v.$radius-lg);
   grid-area: 1 / 1 / 2 / 12;
@@ -304,6 +446,16 @@
   flex-direction: column;
   gap: v.$space-sm;
   min-height: 0;
+}
+
+.goalieSharePanel {
+  margin-top: v.$space-md;
+}
+
+.goalieShareBody {
+  padding: v.$space-sm v.$space-md v.$space-md;
+  display: grid;
+  gap: v.$space-sm;
 }
 
 .powerTableWrapper {
@@ -857,6 +1009,10 @@
 }
 
 @media (max-width: 1100px) {
+  .summaryBandGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .header {
     grid-template-columns: 1fr;
   }
@@ -873,5 +1029,11 @@
   .projectionsPanel,
   .trendsPanel {
     grid-area: auto;
+  }
+}
+
+@media (max-width: 720px) {
+  .summaryBandGrid {
+    grid-template-columns: 1fr;
   }
 }

@@ -27,7 +27,7 @@ function createMockRes() {
 }
 
 describe("/api/v1/db/update-team-power-ratings-new", () => {
-  it("returns 410 and points callers to the canonical writer", async () => {
+  it("returns a warning-only noop payload for the disabled alternate writer", async () => {
     const req: any = {
       method: "GET",
       query: {
@@ -38,9 +38,12 @@ describe("/api/v1/db/update-team-power-ratings-new", () => {
 
     await handler(req, res);
 
-    expect(res.statusCode).toBe(410);
+    expect(res.statusCode).toBe(200);
     expect(res.body).toMatchObject({
-      success: false,
+      success: true,
+      operationStatus: "warning",
+      message:
+        "Alternate team power ratings writer remains disabled; no work was performed.",
       route: "/api/v1/db/update-team-power-ratings-new",
       targetTable: "team_power_ratings_daily__new",
       disposition: "DO NOT RUN",

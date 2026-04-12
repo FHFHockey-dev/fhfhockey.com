@@ -17,8 +17,12 @@ import {
   validatePlayerStatsFilterState,
 } from "lib/underlying-stats/playerStatsFilters";
 import {
+  buildGoalieStatsDetailApiPath,
+  createDefaultGoalieDetailFilterState
+} from "lib/underlying-stats/goalieStatsQueries";
+import {
   buildPlayerStatsDetailApiPath,
-  type PlayerStatsDetailApiResponse,
+  type PlayerStatsDetailApiResponse
 } from "lib/underlying-stats/playerStatsQueries";
 import {
   PLAYER_STATS_CLIENT_CACHE_TTL_MS,
@@ -33,14 +37,130 @@ import styles from "./playerStats.module.scss";
 
 const DETAIL_RESPONSE_CACHE_PREFIX = "player-stats-detail-response";
 
-export default function PlayerUnderlyingStatsDetailPage() {
+type DetailPageVariant = "player" | "goalie";
+
+type DetailPageShell = {
+  title: string;
+  metaDescription: string;
+  loadingFiltersMessage: string;
+  invalidRouteTitle: string;
+  invalidRouteMessage: string;
+  loadingRowsMessage: string;
+  apiErrorFallback: string;
+  emptyRowsMessage: string;
+  breadcrumbLabel: string;
+  landingPath: string;
+  landingLabel: string;
+  heroEyebrow: string;
+  heroTitle: string;
+  heroDescription: string;
+  routePlayerLabel: string;
+  routePlayerHint: string;
+  initialFamilyLabel: string;
+  initialFamilyHint: string;
+  sectionTitle: string;
+  sectionCopy: string;
+  headerHintOverride?: string;
+  surfaceLabel: string;
+  footnote: string;
+};
+
+function getDetailPageShell(variant: DetailPageVariant): DetailPageShell {
+  if (variant === "goalie") {
+    return {
+      title: "Goalie Underlying Detail | FHFHockey",
+      metaDescription:
+        "Review one goalie through the dedicated goalie underlying route contract with live season-level detail aggregation.",
+      loadingFiltersMessage: "Preparing goalie detail filters...",
+      invalidRouteTitle: "Invalid goalie route",
+      invalidRouteMessage:
+        "A numeric playerId is required in the goalie detail route before the season-log query can run.",
+      loadingRowsMessage: "Loading goalie detail underlying stats...",
+      apiErrorFallback:
+        "Unable to load goalie detail underlying stats from the server.",
+      emptyRowsMessage:
+        "No goalie seasons matched the current detail filter combination.",
+      breadcrumbLabel: "Underlying Stats",
+      landingPath: "/underlying-stats/goalieStats",
+      landingLabel: "Goalie Stats",
+      heroEyebrow: "Goalie Season Log Route",
+      heroTitle: "Goalie Detail",
+      heroDescription:
+        "This goalie drill-down route preserves the dedicated goalie landing context, keeps the current Against Specific Team detail filter semantics, and loads season-level goalie rows from the goalie API namespace.",
+      routePlayerLabel: "Route Goalie",
+      routePlayerHint:
+        "The goalie detail route reads the dynamic player id from the URL and hydrates goalie-first detail filters from shared query-state parsing.",
+      initialFamilyLabel: "Initial Goalie Table",
+      initialFamilyHint:
+        "The goalie detail route reuses the shared family resolution contract while constraining the surface to goalie-only families.",
+      sectionTitle: "Goalie Detail Controls",
+      sectionCopy:
+        "Goalie detail defaults hydrate from the canonical goalie detail filter model. The current detail route keeps the Against Specific Team pattern because it already matches the shared opponent-team query semantics.",
+      headerHintOverride:
+        "Goalie detail controls drive the canonical goalie season-log query.",
+      surfaceLabel: "Goalie detail",
+      footnote:
+        "The goalie detail route reconstructs carried goalie query state for one player and resolves season-level rows through the dedicated goalie API wrapper over the shared summary contract."
+    };
+  }
+
+  return {
+    title: "Player Underlying Detail | FHFHockey",
+    metaDescription:
+      "Review one player through the shared underlying-stat filter contract with live season-level detail aggregation.",
+    loadingFiltersMessage: "Preparing player detail filters...",
+    invalidRouteTitle: "Invalid player route",
+    invalidRouteMessage:
+      "A numeric playerId is required in the detail route before the season-log query can run.",
+    loadingRowsMessage: "Loading player detail underlying stats...",
+    apiErrorFallback:
+      "Unable to load player detail underlying stats from the server.",
+    emptyRowsMessage:
+      "No season rows matched the current detail filter combination.",
+    breadcrumbLabel: "Underlying Stats",
+    landingPath: "/underlying-stats/playerStats",
+    landingLabel: "Players",
+    heroEyebrow: "Player Season Log Route",
+    heroTitle: "Player Detail",
+    heroDescription:
+      "This drill-down route reuses the shared filter and table contracts from the landing page, but swaps the landing team filter for the detail-only against-team context and loads season-level detail rows from the native summary query path.",
+    routePlayerLabel: "Route Player",
+    routePlayerHint:
+      "The detail route reads the dynamic player id from the URL and hydrates detail filters from shared query-state parsing.",
+    initialFamilyLabel: "Initial Table Family",
+    initialFamilyHint:
+      "The detail route reuses the same family resolution contract as the landing surface.",
+    sectionTitle: "Detail Controls",
+    sectionCopy:
+      "Detail defaults now hydrate from the canonical detail filter model. Carried landing context now feeds a live server-backed season detail query.",
+    surfaceLabel: "Player detail",
+    footnote:
+      "The detail route now reconstructs carried query state for one player and resolves season-level rows through the same native summary contract used by the landing page."
+  };
+}
+
+type PlayerUnderlyingStatsDetailPageProps = {
+  variant?: DetailPageVariant;
+};
+
+export default function PlayerUnderlyingStatsDetailPage({
+  variant = "player"
+}: PlayerUnderlyingStatsDetailPageProps) {
   const router = useRouter();
-  const defaultDetailState = useMemo(() => createDefaultDetailFilterState(), []);
-  const [filterState, setFilterState] = useState(defaultDetailState);
-  const [detailData, setDetailData] = useState<PlayerStatsDetailApiResponse | null>(null);
-  const [detailDataRequestPath, setDetailDataRequestPath] = useState<string | null>(
-    null
+  const pageShell = useMemo(() => getDetailPageShell(variant), [variant]);
+  const defaultDetailState = useMemo(
+    () =>
+      variant === "goalie"
+        ? createDefaultGoalieDetailFilterState()
+        : createDefaultDetailFilterState(),
+    [variant]
   );
+  const [filterState, setFilterState] = useState(defaultDetailState);
+  const [detailData, setDetailData] =
+    useState<PlayerStatsDetailApiResponse | null>(null);
+  const [detailDataRequestPath, setDetailDataRequestPath] = useState<
+    string | null
+  >(null);
   const [isLoading, setIsLoading] = useState(false);
   const [tableError, setTableError] = useState<string | null>(null);
   const hasHydratedFromQueryRef = useRef(false);
@@ -65,7 +185,8 @@ export default function PlayerUnderlyingStatsDetailPage() {
       router.query,
       defaultDetailState
     );
-    const normalizedQueryString = buildPlayerStatsSearchParams(parsedState).toString();
+    const normalizedQueryString =
+      buildPlayerStatsSearchParams(parsedState).toString();
 
     if (
       hasHydratedFromQueryRef.current &&
@@ -74,8 +195,10 @@ export default function PlayerUnderlyingStatsDetailPage() {
       return;
     }
 
-    const currentQueryString = buildPlayerStatsSearchParams(filterState).toString();
-    isApplyingHydratedQueryRef.current = currentQueryString !== normalizedQueryString;
+    const currentQueryString =
+      buildPlayerStatsSearchParams(filterState).toString();
+    isApplyingHydratedQueryRef.current =
+      currentQueryString !== normalizedQueryString;
     hasHydratedFromQueryRef.current = true;
     lastAppliedQueryStringRef.current = normalizedQueryString;
     setFilterState(parsedState);
@@ -104,7 +227,8 @@ export default function PlayerUnderlyingStatsDetailPage() {
       return;
     }
 
-    const nextQueryString = buildPlayerStatsSearchParams(filterState).toString();
+    const nextQueryString =
+      buildPlayerStatsSearchParams(filterState).toString();
     if (lastAppliedQueryStringRef.current === nextQueryString) {
       return;
     }
@@ -116,8 +240,8 @@ export default function PlayerUnderlyingStatsDetailPage() {
         pathname: router.pathname,
         query: {
           playerId: getRoutePlayerId(router.query.playerId),
-          ...serializePlayerStatsFilterStateToQuery(filterState),
-        },
+          ...serializePlayerStatsFilterStateToQuery(filterState)
+        }
       },
       undefined,
       { shallow: true }
@@ -130,8 +254,13 @@ export default function PlayerUnderlyingStatsDetailPage() {
   );
   const playerId = getNumericPlayerId(router.query.playerId);
   const detailRequestPath = useMemo(
-    () => (playerId == null ? null : buildPlayerStatsDetailApiPath(playerId, filterState)),
-    [filterState, playerId]
+    () =>
+      playerId == null
+        ? null
+        : variant === "goalie"
+          ? buildGoalieStatsDetailApiPath(playerId, filterState)
+          : buildPlayerStatsDetailApiPath(playerId, filterState),
+    [filterState, playerId, variant]
   );
   const tableFamily = resolvePlayerStatsTableFamily(
     filterState.primary.statMode,
@@ -145,13 +274,15 @@ export default function PlayerUnderlyingStatsDetailPage() {
       ),
     [
       defaultDetailState.primary.seasonRange.throughSeasonId,
-      filterState.primary.seasonRange.throughSeasonId,
+      filterState.primary.seasonRange.throughSeasonId
     ]
   );
   const teamOptions = useMemo(() => buildTeamOptions(), []);
 
   const summaryChips = [
-    playerId != null ? `Player ${playerId}` : "Player pending",
+    playerId != null
+      ? `${variant === "goalie" ? "Goalie" : "Player"} ${playerId}`
+      : `${variant === "goalie" ? "Goalie" : "Player"} pending`,
     formatSeasonRange(
       filterState.primary.seasonRange.fromSeasonId,
       filterState.primary.seasonRange.throughSeasonId
@@ -161,8 +292,8 @@ export default function PlayerUnderlyingStatsDetailPage() {
     formatScoreState(filterState.primary.scoreState),
     formatMode(filterState.primary.statMode, filterState.primary.displayMode),
     formatAgainstTeam(filterState.expandable.againstTeamId),
-    formatTradeMode(filterState.expandable.tradeMode),
-    isLoading ? "Server query loading" : "Server query ready",
+    formatTradeMode(filterState.expandable.tradeMode, variant),
+    isLoading ? "Server query loading" : "Server query ready"
   ];
 
   useEffect(() => {
@@ -188,7 +319,7 @@ export default function PlayerUnderlyingStatsDetailPage() {
       requestPath: detailRequestPath,
       storagePrefix: DETAIL_RESPONSE_CACHE_PREFIX,
       memoryCache: detailResponseCacheRef.current,
-      ttlMs: PLAYER_STATS_CLIENT_CACHE_TTL_MS,
+      ttlMs: PLAYER_STATS_CLIENT_CACHE_TTL_MS
     });
     if (cachedResponse) {
       setDetailData(cachedResponse.payload);
@@ -214,9 +345,7 @@ export default function PlayerUnderlyingStatsDetailPage() {
 
         if (!response.ok) {
           const errorPayload = payload as { error?: string; issues?: string[] };
-          const message =
-            errorPayload.error ??
-            "Unable to load player detail underlying stats from the server.";
+          const message = errorPayload.error ?? pageShell.apiErrorFallback;
           throw new Error(message);
         }
 
@@ -225,7 +354,7 @@ export default function PlayerUnderlyingStatsDetailPage() {
           requestPath: detailRequestPath,
           storagePrefix: DETAIL_RESPONSE_CACHE_PREFIX,
           memoryCache: detailResponseCacheRef.current,
-          payload: nextPayload,
+          payload: nextPayload
         });
         setDetailData(nextPayload);
         setDetailDataRequestPath(detailRequestPath);
@@ -236,9 +365,7 @@ export default function PlayerUnderlyingStatsDetailPage() {
         }
 
         setTableError(
-          error instanceof Error
-            ? error.message
-            : "Unable to load player detail underlying stats from the server."
+          error instanceof Error ? error.message : pageShell.apiErrorFallback
         );
       })
       .finally(() => {
@@ -248,87 +375,102 @@ export default function PlayerUnderlyingStatsDetailPage() {
       });
 
     return () => controller.abort();
-  }, [detailRequestPath, playerId, router.isReady, validation.isValid]);
+  }, [
+    detailRequestPath,
+    pageShell.apiErrorFallback,
+    playerId,
+    router.isReady,
+    validation.isValid
+  ]);
 
   const canRenderStaleDetailData =
     detailData?.rows.length != null &&
     detailData.rows.length > 0 &&
     detailRequestPath != null &&
     isLoading &&
-    isViewOnlyPlayerStatsRequestChange(detailDataRequestPath, detailRequestPath);
+    isViewOnlyPlayerStatsRequestChange(
+      detailDataRequestPath,
+      detailRequestPath
+    );
 
-  const tableState = !router.isReady || !hasHydratedFromQueryRef.current
-    ? {
-        kind: "loading" as const,
-        message: "Preparing player detail filters...",
-      }
-    : playerId == null
+  const tableState =
+    !router.isReady || !hasHydratedFromQueryRef.current
       ? {
-          kind: "warning" as const,
-          title: "Invalid player route",
-          message:
-            "A numeric playerId is required in the detail route before the season-log query can run.",
+          kind: "loading" as const,
+          message: pageShell.loadingFiltersMessage
         }
-      : !validation.isValid
-      ? {
-          kind: "warning" as const,
-          title: "Invalid filter combination",
-          message: formatDetailValidationMessage(validation.issues),
-        }
-        : isLoading && !canRenderStaleDetailData
+      : playerId == null
+        ? {
+            kind: "warning" as const,
+            title: pageShell.invalidRouteTitle,
+            message: pageShell.invalidRouteMessage
+          }
+        : !validation.isValid
           ? {
-              kind: "loading" as const,
-              message: "Loading player detail underlying stats...",
+              kind: "warning" as const,
+              title: "Invalid filter combination",
+              message: formatDetailValidationMessage(validation.issues)
             }
-          : tableError && !detailData?.rows.length
+          : isLoading && !canRenderStaleDetailData
             ? {
-                kind: "error" as const,
-                message: tableError,
+                kind: "loading" as const,
+                message: pageShell.loadingRowsMessage
               }
-            : detailData?.rows.length
-              ? null
-              : {
-            kind: "empty" as const,
-            message:
-                "No season rows matched the current detail filter combination.",
-              };
+            : tableError && !detailData?.rows.length
+              ? {
+                  kind: "error" as const,
+                  message: tableError
+                }
+              : detailData?.rows.length
+                ? null
+                : {
+                    kind: "empty" as const,
+                    message: pageShell.emptyRowsMessage
+                  };
 
   const pageStatusBanner = tableState
     ? {
         title:
           tableState.kind === "warning"
-            ? tableState.title ?? "Invalid filter combination"
+            ? (tableState.title ?? "Invalid filter combination")
             : tableState.kind === "error"
               ? "Query error"
               : tableState.kind === "empty"
-                ? "No season rows"
-                : "Loading season rows",
+                ? variant === "goalie"
+                  ? "No goalie seasons"
+                  : "No season rows"
+                : variant === "goalie"
+                  ? "Loading goalie seasons"
+                  : "Loading season rows",
         message: tableState.message,
-        tone: tableState.kind,
+        tone: tableState.kind
       }
     : tableError && detailData?.rows.length
       ? {
-          title: "Using cached season rows",
+          title:
+            variant === "goalie"
+              ? "Using cached goalie seasons"
+              : "Using cached season rows",
           message: `${tableError} Showing the last successful result while the refresh failed.`,
-          tone: "warning" as const,
+          tone: "warning" as const
         }
       : canRenderStaleDetailData
         ? {
-            title: "Refreshing season rows",
+            title:
+              variant === "goalie"
+                ? "Refreshing goalie seasons"
+                : "Refreshing season rows",
             message:
               "Updating the current detail table in the background while preserving the last loaded result.",
-            tone: "loading" as const,
+            tone: "loading" as const
           }
         : null;
 
   return (
     <>
       <Head>
-        <title>Player Underlying Detail | FHFHockey</title>
-        <meta
-          name="description"
-          content="Review one player through the shared underlying-stat filter contract with live season-level detail aggregation."
-        />
+        <title>{pageShell.title}</title>
+        <meta name="description" content={pageShell.metaDescription} />
       </Head>
 
       <main className={styles.page}>
@@ -337,50 +479,60 @@ export default function PlayerUnderlyingStatsDetailPage() {
             <div className={styles.heroBody}>
               <div className={styles.heroCopy}>
                 <div className={styles.breadcrumbs}>
-                  <Link href="/underlying-stats" className={styles.breadcrumbLink}>
-                    Underlying Stats
+                  <Link
+                    href="/underlying-stats"
+                    className={styles.breadcrumbLink}
+                  >
+                    {pageShell.breadcrumbLabel}
                   </Link>
                   <span>/</span>
                   <Link
-                    href="/underlying-stats/playerStats"
+                    href={pageShell.landingPath}
                     className={styles.breadcrumbLink}
                   >
-                    Players
+                    {pageShell.landingLabel}
                   </Link>
                   <span>/</span>
-                  <span>{playerId != null ? `Player ${playerId}` : "Detail"}</span>
+                  <span>
+                    {playerId != null
+                      ? `${variant === "goalie" ? "Goalie" : "Player"} ${playerId}`
+                      : "Detail"}
+                  </span>
                 </div>
-                <p className={styles.eyebrow}>Player Season Log Route</p>
+                <p className={styles.eyebrow}>{pageShell.heroEyebrow}</p>
                 <h1 className={styles.title}>
-                  Player <span className={styles.accent}>Detail</span>
+                  {variant === "goalie" ? (
+                    pageShell.heroTitle
+                  ) : (
+                    <>
+                      Player <span className={styles.accent}>Detail</span>
+                    </>
+                  )}
                 </h1>
                 <p className={styles.description}>
-                  This drill-down route reuses the shared filter and table contracts
-                  from the landing page, but swaps the landing team filter for the
-                  detail-only against-team context and loads season-level detail
-                  rows from the native summary query path.
+                  {pageShell.heroDescription}
                 </p>
               </div>
 
               <div className={styles.heroMeta}>
                 <div className={styles.metaCard}>
-                  <p className={styles.metaLabel}>Route Player</p>
+                  <p className={styles.metaLabel}>
+                    {pageShell.routePlayerLabel}
+                  </p>
                   <p className={styles.metaValue}>
                     {playerId != null ? playerId : "Invalid route"}
                   </p>
-                  <p className={styles.metaHint}>
-                    The detail route reads the dynamic player id from the URL and
-                    hydrates detail filters from shared query-state parsing.
-                  </p>
+                  <p className={styles.metaHint}>{pageShell.routePlayerHint}</p>
                 </div>
                 <div className={styles.metaCard}>
-                  <p className={styles.metaLabel}>Initial Table Family</p>
+                  <p className={styles.metaLabel}>
+                    {pageShell.initialFamilyLabel}
+                  </p>
                   <p className={styles.metaValue}>
                     {formatTableFamily(tableFamily)}
                   </p>
                   <p className={styles.metaHint}>
-                    The detail route reuses the same family resolution contract as
-                    the landing surface.
+                    {pageShell.initialFamilyHint}
                   </p>
                 </div>
               </div>
@@ -390,14 +542,15 @@ export default function PlayerUnderlyingStatsDetailPage() {
           <section className={styles.section}>
             <div className={styles.sectionHeader}>
               <div>
-                <h2 className={styles.sectionTitle}>Detail Controls</h2>
-                <p className={styles.sectionCopy}>
-                  Detail defaults now hydrate from the canonical detail filter
-                  model. Carried landing context now feeds a live server-backed
-                  season detail query.
-                </p>
+                <h2 className={styles.sectionTitle}>
+                  {pageShell.sectionTitle}
+                </h2>
+                <p className={styles.sectionCopy}>{pageShell.sectionCopy}</p>
               </div>
-              <div className={styles.chipRow} aria-label="Current detail context">
+              <div
+                className={styles.chipRow}
+                aria-label="Current detail context"
+              >
                 {summaryChips.map((chip) => (
                   <span key={chip} className={styles.chip}>
                     {chip}
@@ -412,7 +565,9 @@ export default function PlayerUnderlyingStatsDetailPage() {
                   <div
                     className={styles.stateBanner}
                     data-tone={pageStatusBanner.tone}
-                    role={pageStatusBanner.tone === "error" ? "alert" : "status"}
+                    role={
+                      pageStatusBanner.tone === "error" ? "alert" : "status"
+                    }
                     aria-live={
                       pageStatusBanner.tone === "loading" ? "polite" : undefined
                     }
@@ -431,20 +586,25 @@ export default function PlayerUnderlyingStatsDetailPage() {
                   state={filterState}
                   seasonOptions={seasonOptions}
                   teamOptions={teamOptions}
+                  surfaceLabel={pageShell.surfaceLabel}
+                  hideModeControl={variant === "goalie"}
+                  hidePositionGroupControl={variant === "goalie"}
+                  hideTradeModeControl={variant === "goalie"}
+                  headerHintOverride={pageShell.headerHintOverride}
                   onSeasonRangeChange={(nextRange) =>
                     setFilterState((current) => ({
                       ...current,
                       primary: {
                         ...current.primary,
-                        seasonRange: nextRange,
+                        seasonRange: nextRange
                       },
                       view: {
                         ...current.view,
                         pagination: {
                           ...current.view.pagination,
-                          page: 1,
-                        },
-                      },
+                          page: 1
+                        }
+                      }
                     }))
                   }
                   onSeasonTypeChange={(seasonType) =>
@@ -452,15 +612,15 @@ export default function PlayerUnderlyingStatsDetailPage() {
                       ...current,
                       primary: {
                         ...current.primary,
-                        seasonType,
+                        seasonType
                       },
                       view: {
                         ...current.view,
                         pagination: {
                           ...current.view.pagination,
-                          page: 1,
-                        },
-                      },
+                          page: 1
+                        }
+                      }
                     }))
                   }
                   onStrengthChange={(strength) =>
@@ -468,15 +628,15 @@ export default function PlayerUnderlyingStatsDetailPage() {
                       ...current,
                       primary: {
                         ...current.primary,
-                        strength,
+                        strength
                       },
                       view: {
                         ...current.view,
                         pagination: {
                           ...current.view.pagination,
-                          page: 1,
-                        },
-                      },
+                          page: 1
+                        }
+                      }
                     }))
                   }
                   onScoreStateChange={(scoreState) =>
@@ -484,15 +644,15 @@ export default function PlayerUnderlyingStatsDetailPage() {
                       ...current,
                       primary: {
                         ...current.primary,
-                        scoreState,
+                        scoreState
                       },
                       view: {
                         ...current.view,
                         pagination: {
                           ...current.view.pagination,
-                          page: 1,
-                        },
-                      },
+                          page: 1
+                        }
+                      }
                     }))
                   }
                   onModeChange={(mode) => {
@@ -520,9 +680,9 @@ export default function PlayerUnderlyingStatsDetailPage() {
                           ),
                           pagination: {
                             ...nextState.view.pagination,
-                            page: 1,
-                          },
-                        },
+                            page: 1
+                          }
+                        }
                       };
                     });
 
@@ -533,7 +693,7 @@ export default function PlayerUnderlyingStatsDetailPage() {
                       ...current,
                       primary: {
                         ...current.primary,
-                        displayMode,
+                        displayMode
                       },
                       view: {
                         ...current.view,
@@ -543,9 +703,9 @@ export default function PlayerUnderlyingStatsDetailPage() {
                         ),
                         pagination: {
                           ...current.view.pagination,
-                          page: 1,
-                        },
-                      },
+                          page: 1
+                        }
+                      }
                     }))
                   }
                   onAdvancedOpenChange={(advancedOpen) =>
@@ -553,8 +713,8 @@ export default function PlayerUnderlyingStatsDetailPage() {
                       ...current,
                       expandable: {
                         ...current.expandable,
-                        advancedOpen,
-                      },
+                        advancedOpen
+                      }
                     }))
                   }
                   onTeamContextFilterChange={(againstTeamId) =>
@@ -562,15 +722,15 @@ export default function PlayerUnderlyingStatsDetailPage() {
                       ...current,
                       expandable: {
                         ...current.expandable,
-                        againstTeamId,
+                        againstTeamId
                       },
                       view: {
                         ...current.view,
                         pagination: {
                           ...current.view.pagination,
-                          page: 1,
-                        },
-                      },
+                          page: 1
+                        }
+                      }
                     }))
                   }
                   onPositionGroupChange={(positionGroup) =>
@@ -578,15 +738,15 @@ export default function PlayerUnderlyingStatsDetailPage() {
                       ...current,
                       expandable: {
                         ...current.expandable,
-                        positionGroup,
+                        positionGroup
                       },
                       view: {
                         ...current.view,
                         pagination: {
                           ...current.view.pagination,
-                          page: 1,
-                        },
-                      },
+                          page: 1
+                        }
+                      }
                     }))
                   }
                   onVenueChange={(venue) =>
@@ -594,15 +754,15 @@ export default function PlayerUnderlyingStatsDetailPage() {
                       ...current,
                       expandable: {
                         ...current.expandable,
-                        venue,
+                        venue
                       },
                       view: {
                         ...current.view,
                         pagination: {
                           ...current.view.pagination,
-                          page: 1,
-                        },
-                      },
+                          page: 1
+                        }
+                      }
                     }))
                   }
                   onMinimumToiChange={(minimumToiSeconds) =>
@@ -610,15 +770,15 @@ export default function PlayerUnderlyingStatsDetailPage() {
                       ...current,
                       expandable: {
                         ...current.expandable,
-                        minimumToiSeconds,
+                        minimumToiSeconds
                       },
                       view: {
                         ...current.view,
                         pagination: {
                           ...current.view.pagination,
-                          page: 1,
-                        },
-                      },
+                          page: 1
+                        }
+                      }
                     }))
                   }
                   onScopeChange={(scope) =>
@@ -628,9 +788,9 @@ export default function PlayerUnderlyingStatsDetailPage() {
                         ...current.view,
                         pagination: {
                           ...current.view.pagination,
-                          page: 1,
-                        },
-                      },
+                          page: 1
+                        }
+                      }
                     }))
                   }
                   onTradeModeChange={(tradeMode) =>
@@ -638,15 +798,15 @@ export default function PlayerUnderlyingStatsDetailPage() {
                       ...current,
                       expandable: {
                         ...current.expandable,
-                        tradeMode,
+                        tradeMode
                       },
                       view: {
                         ...current.view,
                         pagination: {
                           ...current.view.pagination,
-                          page: 1,
-                        },
-                      },
+                          page: 1
+                        }
+                      }
                     }))
                   }
                 />
@@ -665,9 +825,9 @@ export default function PlayerUnderlyingStatsDetailPage() {
                         sort: nextSort,
                         pagination: {
                           ...current.view.pagination,
-                          page: 1,
-                        },
-                      },
+                          page: 1
+                        }
+                      }
                     }))
                   }
                   onPageChange={(page) =>
@@ -677,9 +837,9 @@ export default function PlayerUnderlyingStatsDetailPage() {
                         ...current.view,
                         pagination: {
                           ...current.view.pagination,
-                          page,
-                        },
-                      },
+                          page
+                        }
+                      }
                     }))
                   }
                   renderCell={({ row, columnKey, formattedValue }) => {
@@ -688,7 +848,9 @@ export default function PlayerUnderlyingStatsDetailPage() {
                     }
 
                     const seasonLabel =
-                      typeof row.seasonLabel === "string" ? row.seasonLabel : null;
+                      typeof row.seasonLabel === "string"
+                        ? row.seasonLabel
+                        : null;
 
                     return seasonLabel == null
                       ? formattedValue
@@ -696,11 +858,7 @@ export default function PlayerUnderlyingStatsDetailPage() {
                   }}
                 />
 
-                <p className={styles.footnote}>
-                  The detail route now reconstructs carried query state for one
-                  player and resolves season-level rows through the same native
-                  summary contract used by the landing page.
-                </p>
+                <p className={styles.footnote}>{pageShell.footnote}</p>
               </div>
             </div>
           </section>
@@ -873,7 +1031,14 @@ function formatTableFamily(family: string): string {
   }
 }
 
-function formatTradeMode(tradeMode: string): string {
+function formatTradeMode(
+  tradeMode: string,
+  variant: DetailPageVariant = "player"
+): string {
+  if (variant === "goalie") {
+    return tradeMode === "split" ? "Split team rows" : "Combined rows";
+  }
+
   return tradeMode === "split"
     ? "Split traded-player rows"
     : "Combined traded-player rows";

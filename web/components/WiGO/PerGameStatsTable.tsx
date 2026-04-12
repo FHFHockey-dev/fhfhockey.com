@@ -1,9 +1,11 @@
 // components/WiGO/PerGameStatsTable.tsx
-import React, { useState, useEffect } from "react";
+import React, { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   fetchPlayerPerGameTotals,
   SkaterTotalsData
 } from "utils/fetchWigoPlayerStats";
+import { formatWigoStatValue } from "./statMetadata";
 import styles from "./PerGameStatsTable.module.scss";
 
 type NumericSkaterTotalsKeys = {
@@ -14,6 +16,7 @@ type NumericSkaterTotalsKeys = {
 
 interface PerGameStatsTableProps {
   playerId: number | null | undefined;
+  seasonId?: number | null;
 }
 
 // Interface for the calculated data rows
@@ -41,130 +44,103 @@ const formatPercentageValue = (value: number | null | undefined): string => {
   if (value === null || value === undefined || isNaN(value)) {
     return "-";
   }
-
-  value = value * 100;
-  return `${value.toFixed(1)}%`;
+  return formatWigoStatValue("S%", value);
 };
 
-const PerGameStatsTable: React.FC<PerGameStatsTableProps> = ({ playerId }) => {
-  const [totalsData, setTotalsData] = useState<SkaterTotalsData | null>(null);
-  const [statRows, setStatRows] = useState<CalculatedStatRow[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+const PerGameStatsTable: React.FC<PerGameStatsTableProps> = ({
+  playerId,
+  seasonId
+}) => {
+  const { data: totalsData, isLoading, error } = useQuery<SkaterTotalsData | null>(
+    {
+      queryKey: ["wigoPerGameTotals", playerId, seasonId ?? "latest"],
+      queryFn: () => fetchPlayerPerGameTotals(playerId as number, seasonId),
+      enabled: typeof playerId === "number"
+    }
+  );
 
-  useEffect(() => {
+  const statRows = useMemo(() => {
+    if (!totalsData?.games_played || totalsData.games_played <= 0) {
+      return [];
+    }
+
+    const gp = totalsData.games_played;
+    const statsToCalculate: Array<{
+      key: NumericSkaterTotalsKeys;
+      name: string;
+    }> = [
+      { key: "goals", name: "G" },
+      { key: "assists", name: "A" },
+      { key: "points", name: "PTS" },
+      { key: "shots", name: "SOG" },
+      { key: "shooting_percentage", name: "S%" },
+      { key: "pp_points", name: "PPP" },
+      { key: "hits", name: "HIT" },
+      { key: "blocked_shots", name: "BLK" },
+      { key: "penalty_minutes", name: "PIM" }
+    ];
+
+    const rows = statsToCalculate.map(({ key, name }) => {
+      const totalValue = totalsData[key] ?? null;
+
+      if (key === "shooting_percentage") {
+        return {
+          stat: name,
+          perGame: formatPercentageValue(totalValue),
+          per82: "-"
+        };
+      }
+
+      const numericTotalValue = Number(totalValue ?? 0);
+      const perGameValue = numericTotalValue / gp;
+      const per82Value = perGameValue * 82;
+
+      return {
+        stat: name,
+        perGame: formatStatValue(perGameValue),
+        per82: formatPaceValue(per82Value)
+      };
+    });
+
+    rows.unshift({
+      stat: "GP",
+      perGame: gp.toString(),
+      per82: "-"
+    });
+
+    return rows;
+  }, [totalsData]);
+
+  const errorMessage = useMemo(() => {
     if (!playerId) {
-      setTotalsData(null);
-      setStatRows([]);
-      setError(null);
-      setIsLoading(false);
-      return;
+      return null;
     }
-    const loadData = async () => {
-      setIsLoading(true);
-      setError(null);
-      setTotalsData(null);
-      setStatRows([]);
-      try {
-        const data = await fetchPlayerPerGameTotals(playerId);
-        if (data) {
-          setTotalsData(data);
-        } else {
-          // Set error only if player selected but no data found
-          setError("No stats data found for this player.");
-          setTotalsData(null);
-        }
-      } catch (err: any) {
-        console.error("Failed to fetch player totals:", err);
-        setError(`Failed to load stats: ${err.message || "Unknown error"}`);
-        setTotalsData(null);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    loadData();
-  }, [playerId]);
 
-  // Calculation logic populates statRows
-  useEffect(() => {
-    // const gp = totalsData?.games_played ?? 0; // <-- REMOVE THIS - Defined inside if block
-
-    if (totalsData && totalsData.games_played && totalsData.games_played > 0) {
-      const gp = totalsData.games_played; // Use gp defined within the valid scope
-
-      // Use the helper type for the key property
-      const statsToCalculate: Array<{
-        key: NumericSkaterTotalsKeys; // <--- USE NUMERIC ONLY KEYS
-        name: string;
-      }> = [
-        { key: "goals", name: "G" },
-        { key: "assists", name: "A" },
-        { key: "points", name: "PTS" },
-        { key: "shots", name: "SOG" },
-        { key: "shooting_percentage", name: "S%" },
-        { key: "pp_points", name: "PPP" },
-        { key: "hits", name: "HIT" },
-        { key: "blocked_shots", name: "BLK" },
-        { key: "penalty_minutes", name: "PIM" }
-      ];
-
-      const newStatRows = statsToCalculate.map(({ key, name }) => {
-        // Get the raw value, allow it to be null
-        const totalValue = totalsData[key] ?? null;
-
-        // Special case for shooting percentage
-        if (key === "shooting_percentage") {
-          return {
-            stat: name,
-            perGame: formatPercentageValue(totalValue),
-            per82: "-"
-          };
-        }
-        // Default case for counting stats
-        else {
-          const numericTotalValue = Number(totalValue ?? 0);
-          const perGameValue = numericTotalValue / gp;
-          const per82Value = perGameValue * 82;
-          return {
-            stat: name,
-            perGame: formatStatValue(perGameValue),
-            per82: formatPaceValue(per82Value)
-          };
-        }
-      });
-
-      // Add the GP row at the beginning
-      newStatRows.unshift({
-        stat: "GP",
-        perGame: gp.toString(),
-        per82: "-"
-      });
-
-      setStatRows(newStatRows);
-      setError(null);
-    } else {
-      setStatRows([]);
-      if (totalsData && (totalsData.games_played ?? 0) <= 0 && !isLoading) {
-        // Check using nullish coalescing
-        setError("Player has 0 games played.");
-      } else if (!totalsData && !isLoading && playerId) {
-        if (!error) {
-          setError("No stats data found for this player.");
-        }
-      }
+    if (error instanceof Error) {
+      return `Failed to load stats: ${error.message || "Unknown error"}`;
     }
-  }, [totalsData, isLoading, error]);
+
+    if (!isLoading && totalsData && (totalsData.games_played ?? 0) <= 0) {
+      return "Player has 0 games played.";
+    }
+
+    if (!isLoading && !totalsData) {
+      return "No stats data found for this player.";
+    }
+
+    return null;
+  }, [error, isLoading, playerId, totalsData]);
 
   return (
     <div className={styles.perGameTableContainer}>
       {isLoading && (
         <div className={styles.loadingMessage}>Loading Stats...</div>
       )}
-      {error && <div className={styles.errorMessage}>{error}</div>}
-      {!isLoading && !error && statRows.length === 0 && playerId && (
+      {errorMessage && <div className={styles.errorMessage}>{errorMessage}</div>}
+      {!isLoading && !errorMessage && statRows.length === 0 && playerId && (
         <div className={styles.noDataMessage}>No data available.</div>
       )}
-      {!isLoading && !error && statRows.length > 0 && (
+      {!isLoading && !errorMessage && statRows.length > 0 && (
         <table className={styles.verticalStatsTable}>
           <thead>
             <tr>

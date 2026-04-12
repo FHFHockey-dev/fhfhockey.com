@@ -27,6 +27,7 @@
  *    - In `incremental` mode: Defines the starting date for the forward fetch. The script will fetch data from this date
  *      up to the current date.
  *    The format must be YYYY-MM-DD.
+ * 
  *    Example: /api/v1/db/update-nst-goalies?runMode=reverse&startDate=2024-02-05
  *    Example: /api/v1/db/update-nst-goalies?runMode=incremental&startDate=2025-10-01
  *
@@ -36,6 +37,8 @@
  *      - reverse/forward: overwrite defaults to yes (full-refresh)
  *      - incremental: overwrite defaults to no (skip complete dates)
  *    Example: /api/v1/db/update-nst-goalies?runMode=reverse&overwrite=no
+ * 
+ *    /api/v1/db/update-nst-goalies?runMode=incremental&overwrite=yes&startDate=2026-03-01
  *
  * 4. `datasetType` (optional): Filters the operation to a specific dataset type.
  *    Useful for debugging or targeting a specific table.
@@ -60,11 +63,16 @@ import {
   resolveGoalieNstRequestPlan
 } from "lib/cron/nstBurstPlans";
 import type { NextApiRequest, NextApiResponse } from "next";
-import axios from "axios";
 import * as cheerio from "cheerio";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
+import {
+  fetchNstTextByUrl,
+  isNstAuthError,
+  isNstRateLimitError
+} from "lib/nst/client";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
+import { parseISO } from "date-fns";
 
 dotenv.config({ path: "./../../../.env.local" });
 
@@ -79,7 +87,7 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
 
 // Delay interval between requests in milliseconds
-const BASE_URL = "https://www.naturalstattrick.com/playerteams.php";
+const BASE_URL = "https://data.naturalstattrick.com/playerteams.php";
 
 // --- Header Mappings for Goalie Data ---
 const goalieCountsHeaderMap: Record<string, string> = {
@@ -194,6 +202,26 @@ function parsePositiveIntParam(value: string | string[] | undefined): number | u
   return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
 }
 
+type RunMode = "incremental" | "forward" | "reverse";
+
+function parseRunMode(value: string | string[] | undefined): RunMode {
+  const raw = (Array.isArray(value) ? value[0] : value)?.toLowerCase();
+  if (raw === "forward" || raw === "reverse" || raw === "incremental") {
+    return raw;
+  }
+  return "incremental";
+}
+
+function parseBooleanParam(
+  value: string | string[] | undefined
+): boolean | undefined {
+  const raw = (Array.isArray(value) ? value[0] : value)?.toLowerCase();
+  if (!raw) return undefined;
+  if (["yes", "true", "1"].includes(raw)) return true;
+  if (["no", "false", "0"].includes(raw)) return false;
+  return undefined;
+}
+
 function getDatesBetween(start: Date, end: Date): string[] {
   const dates: string[] = [];
   const current = new Date(start);
@@ -292,12 +320,12 @@ async function fetchAndParseData(
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       console.log(`Fetching data from URL: ${url} (Attempt ${attempt})`);
-      const response = await axios.get(url);
-      if (!response.data) {
+      const { text } = await fetchNstTextByUrl(url, { timeoutMs: 30000 });
+      if (!text) {
         console.warn(`No data received from URL: ${url}`);
         return [];
       }
-      const $ = cheerio.load(response.data);
+      const $ = cheerio.load(text);
       const table = $("table").first();
       if (table.length === 0) {
         console.warn(`No table found in response from URL: ${url}`);
@@ -358,6 +386,9 @@ async function fetchAndParseData(
       );
       return dataRowsCollected;
     } catch (error: any) {
+      if (isNstAuthError(error) || isNstRateLimitError(error)) {
+        throw error;
+      }
       console.error(
         `Attempt ${attempt} - Error fetching ${url}:`,
         error.message
@@ -475,26 +506,53 @@ async function processUrlsSequentially(
   }[],
   options: {
     requestIntervalMs: number;
-    maxPendingUrls: number;
+    maxPendingUrls?: number;
+    overwrite: boolean;
   }
 ) {
   const totalUrls = urlsQueue.length;
   let processedCount = 0;
   let pendingProcessedCount = 0;
   let stoppedEarly = false;
+  const urlProgress: {
+    datasetType: string;
+    date: string;
+    status: "processed" | "skipped";
+    startedAt: string;
+    finishedAt: string;
+    durationMs: number;
+    rowCount: number;
+  }[] = [];
+  // Track unique dates and per-date totals so we can log a per-date summary
+  const uniqueDates = Array.from(new Set(urlsQueue.map((q) => q.date)));
+  const dateTotalUrls: Record<string, number> = {};
+  uniqueDates.forEach((d) => {
+    dateTotalUrls[d] = urlsQueue.filter((u) => u.date === d).length;
+  });
+  const dateProcessedCounts: Record<string, number> = {};
   for (let i = 0; i < urlsQueue.length; i++) {
     const { datasetType, url, date, seasonId } = urlsQueue[i];
+    const urlStartedAt = Date.now();
+    const startedAtIso = new Date(urlStartedAt).toISOString();
     console.log(
-      `\nProcessing URL ${i + 1}/${totalUrls}: ${datasetType} for ${date}`
+      `\n[${startedAtIso}] Starting URL ${i + 1}/${totalUrls}: ${datasetType} for ${date}`
     );
-    if (processedCount > 0 && options.requestIntervalMs > 0) {
-      console.log(
-        `Waiting ${options.requestIntervalMs / 1000} seconds before next request...`
-      );
-      await delay(options.requestIntervalMs);
-    }
-    const dataExists = await checkDataExists(datasetType, date);
-    if (!dataExists) {
+    const dataExists = options.overwrite
+      ? false
+      : await checkDataExists(datasetType, date);
+    if (!dataExists || options.overwrite) {
+      if (options.requestIntervalMs > 0) {
+        const wakeAt = new Date(
+          Date.now() + options.requestIntervalMs
+        ).toISOString();
+        console.log(
+          `[${new Date().toISOString()}] Waiting ${options.requestIntervalMs / 1000} seconds before requesting ${datasetType} for ${date}. Next request at approximately ${wakeAt}.`
+        );
+        await delay(options.requestIntervalMs);
+        console.log(
+          `[${new Date().toISOString()}] Request window open for ${datasetType} on ${date}. Fetch starting now.`
+        );
+      }
       const dataRows = await fetchAndParseData(
         url,
         datasetType,
@@ -504,15 +562,55 @@ async function processUrlsSequentially(
       if (dataRows.length > 0) {
         await upsertData(datasetType, dataRows);
       }
+      const finishedAtIso = new Date().toISOString();
+      const durationMs = Date.now() - urlStartedAt;
       pendingProcessedCount++;
+      console.log(
+        `[${finishedAtIso}] Finished ${datasetType} for ${date} in ${(durationMs / 1000).toFixed(1)}s.`
+      );
+      urlProgress.push({
+        datasetType,
+        date,
+        status: "processed",
+        startedAt: startedAtIso,
+        finishedAt: finishedAtIso,
+        durationMs,
+        rowCount: dataRows.length
+      });
     } else {
+      const finishedAtIso = new Date().toISOString();
+      const durationMs = Date.now() - urlStartedAt;
       console.log(
         `Data already exists for ${datasetType} on ${date}. Skipping.`
       );
+      console.log(
+        `[${finishedAtIso}] Skipped ${datasetType} for ${date} after ${(durationMs / 1000).toFixed(1)}s.`
+      );
+      urlProgress.push({
+        datasetType,
+        date,
+        status: "skipped",
+        startedAt: startedAtIso,
+        finishedAt: finishedAtIso,
+        durationMs,
+        rowCount: 0
+      });
     }
     processedCount++;
     console.log(`Processed ${processedCount} out of ${totalUrls} URLs.`);
-    if (pendingProcessedCount >= options.maxPendingUrls) {
+
+    // Update per-date processed counter and log when a date's URLs are complete
+    dateProcessedCounts[date] = (dateProcessedCounts[date] || 0) + 1;
+    if (dateProcessedCounts[date] === dateTotalUrls[date]) {
+      const dateIndex = uniqueDates.indexOf(date) + 1;
+      console.log(
+        `[${new Date().toISOString()}] Completed ${dateProcessedCounts[date]} out of ${dateTotalUrls[date]} URLs for ${date} (date ${dateIndex} of ${uniqueDates.length}).`
+      );
+    }
+    if (
+      options.maxPendingUrls !== undefined &&
+      pendingProcessedCount >= options.maxPendingUrls
+    ) {
       stoppedEarly = i < urlsQueue.length - 1;
       break;
     }
@@ -521,34 +619,43 @@ async function processUrlsSequentially(
   return {
     processedCount,
     pendingProcessedCount,
-    stoppedEarly
+    stoppedEarly,
+    urlProgress
   };
 }
 
-async function main(options: {
-  maxPendingUrls?: number;
-  requestIntervalMs?: number;
-  startDate?: string;
-  maxDays?: number;
-} = {}) {
+async function main(
+  options: {
+    maxPendingUrls?: number;
+    requestIntervalMs?: number;
+    startDate?: string;
+    maxDays?: number;
+    runMode?: RunMode;
+    overwrite?: boolean;
+    datasetType?: string;
+  } = {}
+) {
   try {
+    const runMode = options.runMode ?? "incremental";
+    const overwrite =
+      options.overwrite ?? (runMode === "incremental" ? false : true);
+
     const seasonInfo = await fetchCurrentSeason();
     const seasonId = seasonInfo.id.toString();
-    const seasonStartDate = new Date(seasonInfo.startDate);
+    const seasonStartDate = parseISO(seasonInfo.startDate);
+    const regularSeasonEndDate = parseISO(seasonInfo.regularSeasonEndDate);
     const today = new Date();
     const scrapingEndDate =
-      today < new Date(seasonInfo.endDate)
-        ? today
-        : new Date(seasonInfo.endDate);
+      today < regularSeasonEndDate ? today : regularSeasonEndDate;
 
     let startDate = seasonStartDate;
     if (options.startDate) {
-      startDate = new Date(options.startDate);
+      startDate = parseISO(options.startDate);
       console.log(`Using explicit startDate ${options.startDate}.`);
-    } else {
+    } else if (runMode === "incremental") {
       const latestDateStr = await getLatestDateSupabase();
       if (latestDateStr) {
-        startDate = new Date(latestDateStr);
+        startDate = parseISO(latestDateStr);
         console.log(
           `Latest date in Supabase is ${latestDateStr}. Resuming from that date to catch partial/incomplete datasets.`
         );
@@ -565,7 +672,44 @@ async function main(options: {
       startDate = seasonStartDate;
     }
 
+    if (startDate > regularSeasonEndDate) {
+      console.log(
+        `Start date ${startDate.toISOString().split("T")[0]} is after regular season end ${seasonInfo.regularSeasonEndDate}. No regular-season NST goalie dates to scrape.`
+      );
+      return {
+        message: "No regular-season NST goalie dates to scrape.",
+        pendingUrlsProcessed: 0,
+        totalQueuedUrls: 0,
+        stoppedEarly: false,
+        datesQueued: 0,
+        requestIntervalMs:
+          options.requestIntervalMs ?? NST_GOALIES_REQUEST_INTERVAL_MS,
+        maxPendingUrls: options.maxPendingUrls ?? null,
+        runMode,
+        overwrite,
+        datasetType: options.datasetType ?? null,
+        nextStartDate: null,
+        nstRequestPlan: resolveGoalieNstRequestPlan({
+          queuedDates: 0,
+          totalQueuedUrls: 0,
+          maxPendingUrls:
+            options.maxPendingUrls ?? DEFAULT_MAX_PENDING_URLS_PER_RUN,
+          explicitRequestIntervalMs: options.requestIntervalMs
+        })
+      };
+    }
+
+    if (runMode === "reverse") {
+      console.warn(
+        "runMode=reverse currently runs as full forward season sweep in this endpoint."
+      );
+    }
+
     let datesToScrape = getDatesBetween(startDate, scrapingEndDate);
+    datesToScrape = datesToScrape.filter((date) => {
+      const current = parseISO(date);
+      return current >= seasonStartDate && current <= regularSeasonEndDate;
+    });
     if (options.maxDays && options.maxDays > 0) {
       datesToScrape = datesToScrape.slice(0, options.maxDays);
     }
@@ -588,22 +732,33 @@ async function main(options: {
     datesToScrape.forEach((date) => {
       const urls = constructGoalieUrlsForDate(date, seasonId);
       for (const [datasetType, url] of Object.entries(urls)) {
+        if (options.datasetType && datasetType !== options.datasetType) {
+          continue;
+        }
         urlsQueue.push({ datasetType, url, date, seasonId });
       }
     });
 
     const maxPendingUrls =
-      options.maxPendingUrls ?? DEFAULT_MAX_PENDING_URLS_PER_RUN;
+      options.maxPendingUrls ??
+      (runMode === "forward" ? undefined : DEFAULT_MAX_PENDING_URLS_PER_RUN);
+    const maxPendingUrlsForPlan = maxPendingUrls ?? urlsQueue.length;
     const nstRequestPlan = resolveGoalieNstRequestPlan({
       queuedDates: datesToScrape.length,
       totalQueuedUrls: urlsQueue.length,
-      maxPendingUrls,
+      maxPendingUrls: maxPendingUrlsForPlan,
       explicitRequestIntervalMs: options.requestIntervalMs
     });
+    const requestIntervalMs =
+      options.requestIntervalMs ??
+      (runMode === "forward"
+        ? NST_GOALIES_REQUEST_INTERVAL_MS
+        : nstRequestPlan.requestIntervalMs);
 
     const result = await processUrlsSequentially(urlsQueue, {
-      requestIntervalMs: nstRequestPlan.requestIntervalMs,
-      maxPendingUrls
+      requestIntervalMs,
+      maxPendingUrls,
+      overwrite
     });
 
     if (troublesomePlayers.length > 0) {
@@ -614,6 +769,9 @@ async function main(options: {
       );
     }
 
+    const urlsPerDate = options.datasetType ? 1 : GOALIE_URLS_PER_DATE;
+    const nextDateIndex = Math.floor(result.processedCount / urlsPerDate);
+
     return {
       message: result.stoppedEarly
         ? "Processed a bounded chunk of NST goalie work. Re-run to continue."
@@ -622,9 +780,17 @@ async function main(options: {
       totalQueuedUrls: urlsQueue.length,
       stoppedEarly: result.stoppedEarly,
       datesQueued: datesToScrape.length,
-      requestIntervalMs: nstRequestPlan.requestIntervalMs,
-      maxPendingUrls,
-      nextStartDate: datesToScrape[0] ?? null,
+      requestIntervalMs,
+      maxPendingUrls: maxPendingUrls ?? null,
+      runMode,
+      seasonStartDate: seasonInfo.startDate,
+      regularSeasonEndDate: seasonInfo.regularSeasonEndDate,
+      overwrite,
+      datasetType: options.datasetType ?? null,
+      nextStartDate: result.stoppedEarly
+        ? (datesToScrape[nextDateIndex] ?? null)
+        : null,
+      urlProgress: result.urlProgress,
       nstRequestPlan
     };
   } catch (error: any) {
@@ -639,10 +805,20 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     return;
   }
   try {
+    const runMode = parseRunMode(req.query.runMode);
+    const overwriteParam = parseBooleanParam(req.query.overwrite);
+    const overwrite =
+      overwriteParam ?? (runMode === "incremental" ? false : true);
+
     const result = await main({
+      runMode,
+      overwrite,
       maxPendingUrls: parsePositiveIntParam(req.query.maxUrls),
       requestIntervalMs: parsePositiveIntParam(req.query.requestIntervalMs),
       maxDays: parsePositiveIntParam(req.query.maxDays),
+      datasetType: Array.isArray(req.query.datasetType)
+        ? req.query.datasetType[0]
+        : req.query.datasetType,
       startDate: Array.isArray(req.query.startDate)
         ? req.query.startDate[0]
         : req.query.startDate
@@ -677,7 +853,7 @@ async function getLatestDateSupabase(): Promise<string | null> {
       .maybeSingle();
     if (error) continue;
     if (data && data.date_scraped) {
-      if (!latestDate || new Date(data.date_scraped) > new Date(latestDate)) {
+      if (!latestDate || parseISO(data.date_scraped) > parseISO(latestDate)) {
         latestDate = data.date_scraped;
       }
     }

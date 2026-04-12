@@ -3,7 +3,6 @@ import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import supabase from "lib/supabase/client";
 import RollingAverageChart from "./RollingAverageChart";
-import useCurrentSeason from "hooks/useCurrentSeason";
 import Spinner from "components/Spinner";
 import {
   calculateRollingAverage,
@@ -15,6 +14,7 @@ import { WIGO_COLORS, addAlpha, CHART_COLORS } from "styles/wigoColors";
 // --- Define props and dummy labels ---
 type GameScoreLineChartProps = {
   playerId: number | null | undefined; // Allow null/undefined
+  seasonId?: number | null;
 };
 const dummyLabels = ["", "Start", "", "Mid", "", "End", ""];
 
@@ -26,11 +26,9 @@ interface GameScoreDataPoint {
 }
 
 export default function GameScoreLineChart({
-  playerId
+  playerId,
+  seasonId
 }: GameScoreLineChartProps) {
-  const currentSeason = useCurrentSeason();
-  const seasonId = currentSeason?.seasonId;
-
   const queryKey = ["skaterGameScoresForSeason", playerId, seasonId];
 
   const {

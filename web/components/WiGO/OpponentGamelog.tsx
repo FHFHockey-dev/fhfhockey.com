@@ -1,10 +1,10 @@
 // components/WiGO/OpponentGamelog.tsx
 import React, { useState, useEffect, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { parseISO, format, isToday, isTomorrow } from "date-fns";
 import { toZonedTime, formatInTimeZone } from "date-fns-tz"; // For timezone handling
 import Fetch from "lib/cors-fetch";
 
-import useCurrentSeason from "hooks/useCurrentSeason";
 import { getTeamAbbreviationById } from "lib/teamsInfo";
 import styles from "./OpponentGameLog.module.scss";
 
@@ -40,6 +40,7 @@ interface ApiGame {
 
 interface OpponentGamelogProps {
   teamId: number | null | undefined;
+  seasonId?: number | null;
   highlightColor?: string;
 }
 
@@ -56,63 +57,42 @@ const getLocalTimeZone = (): string => {
 
 const OpponentGamelog: React.FC<OpponentGamelogProps> = ({
   teamId,
+  seasonId,
   highlightColor = "#07aae2"
 }) => {
-  const [schedule, setSchedule] = useState<ApiGame[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
   const [localTimeZone, setLocalTimeZone] = useState<string>("UTC"); // Initialize with UTC
-
-  const currentSeasonData = useCurrentSeason();
-  const currentSeasonId = currentSeasonData?.seasonId;
+  const teamAbbreviation = useMemo(
+    () => (teamId ? getTeamAbbreviationById(teamId) : null),
+    [teamId]
+  );
 
   // Determine local timezone once on component mount
   useEffect(() => {
     setLocalTimeZone(getLocalTimeZone());
   }, []);
 
-  // Fetching logic remains the same
-  useEffect(() => {
-    if (!teamId || !currentSeasonId) {
-      setSchedule([]);
-      setError(null);
-      setIsLoading(false);
-      return;
-    }
+  const {
+    data: schedule = [],
+    isLoading,
+    error
+  } = useQuery<ApiGame[]>({
+    queryKey: ["wigoTeamSchedule", teamAbbreviation, seasonId],
+    queryFn: async () => {
+      const url = `https://api-web.nhle.com/v1/club-schedule-season/${teamAbbreviation}/${seasonId}`;
+      const response = await Fetch(url);
 
-    const teamAbbreviation = getTeamAbbreviationById(teamId);
-
-    if (!teamAbbreviation) {
-      setError("Could not find team abbreviation.");
-      setSchedule([]);
-      return;
-    }
-
-    const fetchSchedule = async () => {
-      setIsLoading(true);
-      setError(null);
-      setSchedule([]);
-
-      const url = `https://api-web.nhle.com/v1/club-schedule-season/${teamAbbreviation}/${currentSeasonId}`;
-
-      try {
-        const response = await Fetch(url);
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        setSchedule(data.games || []);
-      } catch (err) {
-        console.error("Error fetching team schedule:", err);
-        setError("Failed to load game log.");
-        setSchedule([]);
-      } finally {
-        setIsLoading(false);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-    };
 
-    fetchSchedule();
-  }, [teamId, currentSeasonId]);
+      const data = await response.json();
+      return data.games || [];
+    },
+    enabled:
+      typeof teamId === "number" &&
+      Boolean(teamAbbreviation) &&
+      typeof seasonId === "number"
+  });
 
   // Data processing logic remains the same
   const { gamesToShow, nextGameIndexOverall } = useMemo(() => {
@@ -210,6 +190,20 @@ const OpponentGamelog: React.FC<OpponentGamelogProps> = ({
     );
   }
 
+  if (!seasonId) {
+    return (
+      <div className={styles.opponentLogContainer}>Loading season info...</div>
+    );
+  }
+
+  if (!teamAbbreviation) {
+    return (
+      <div className={styles.opponentLogContainer}>
+        Could not find team abbreviation.
+      </div>
+    );
+  }
+
   if (isLoading) {
     return (
       <div className={styles.opponentLogContainer}>Loading schedule...</div>
@@ -217,7 +211,11 @@ const OpponentGamelog: React.FC<OpponentGamelogProps> = ({
   }
 
   if (error) {
-    return <div className={styles.opponentLogContainer}>{error}</div>;
+    return (
+      <div className={styles.opponentLogContainer}>
+        Failed to load game log.
+      </div>
+    );
   }
 
   if (gamesToShow.length === 0) {

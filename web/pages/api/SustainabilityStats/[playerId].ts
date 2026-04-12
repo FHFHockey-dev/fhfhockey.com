@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { parse } from "node-html-parser";
 
-import fetchWithCache from "lib/fetchWithCache";
+import { fetchNstTextWithCacheByUrl } from "lib/nst/client";
 import { Data, parseTable } from "../CareerAverages/[playerId]";
 import { Input } from "../toi";
 import { parseTime } from "lib/NHL/TOI";
@@ -64,7 +64,7 @@ async function getStats(
   const team = player?.teamId ? NST_TEAM_ABBREVATION[player.teamName] : "";
 
   const url = new URL(
-    "https://www.naturalstattrick.com/playerteams.php?stype=2&sit=all&score=all&rate=n&pos=S&loc=B&toi=0&gpfilt=gpdate&tgp=410&lines=single&draftteam=ALL"
+    "https://data.naturalstattrick.com/playerteams.php?stype=2&sit=all&score=all&rate=n&pos=S&loc=B&toi=0&gpfilt=gpdate&tgp=410&lines=single&draftteam=ALL"
   );
 
   // set the season
@@ -87,10 +87,10 @@ async function getStats(
   url.searchParams.set("stdoi", "oi");
   const onIceURL = url.toString();
 
-  const [individualHtml, onIceHtml] = (await Promise.all([
-    fetchWithCache(individualURL, false),
-    fetchWithCache(onIceURL, false)
-  ])) as string[];
+  const [{ text: individualHtml }, { text: onIceHtml }] = await Promise.all([
+    fetchNstTextWithCacheByUrl(individualURL),
+    fetchNstTextWithCacheByUrl(onIceURL)
+  ]);
   const individualDocument = parse(individualHtml);
 
   const onIceDocument = parse(onIceHtml);

@@ -1,3 +1,9 @@
+# LEGACY MANUAL SCRIPT
+# This file is not part of the production NST migration path.
+# Canonical production ownership for skater `playerteams.php` ingestion now lives in:
+#   web/pages/api/v1/db/update-nst-gamelog.ts
+# Keep this file only for manual reference or one-off local investigation until cleanup task 3.6/7.0 retires it.
+#
 # nst_gamelog_scraper.py - Refactored for improved rate limiting
 
 import os

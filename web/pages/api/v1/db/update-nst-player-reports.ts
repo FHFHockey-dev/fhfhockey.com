@@ -8,10 +8,14 @@
 
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import type { NextApiRequest, NextApiResponse } from "next";
-import axios from "axios";
 import * as cheerio from "cheerio";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
+import {
+  fetchNstTextByUrl,
+  isNstAuthError,
+  isNstRateLimitError
+} from "lib/nst/client";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
 import type { Element } from "domhandler";
 import { format as tzFormat, toZonedTime } from "date-fns-tz";
@@ -28,9 +32,9 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
 
 // --- Constants ---
-const REQUEST_INTERVAL_MS = 5000; // Delay between processing each player (5 seconds)
+const REQUEST_INTERVAL_MS = 5000; // Delay between processing each player inside one run.
 const PLAYER_FETCH_BATCH_SIZE = 1000; // Supabase fetch limit
-const BASE_URL = "https://www.naturalstattrick.com/playerreport.php";
+const BASE_URL = "https://data.naturalstattrick.com/playerreport.php";
 
 // Define target table names
 const TABLE_INDIVIDUAL_COUNTS = "nst_seasonal_individual_counts";
@@ -398,13 +402,13 @@ async function fetchAndParsePlayerData(
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       // console.log(`Fetching data for Player ${playerId}, Strength ${strength}, Rate ${isRate ? 'Y':'N'} (Attempt ${attempt})`);
-      const response = await axios.get(url, { timeout: 30000 }); // Increased timeout
-      if (!response.data) {
+      const { text } = await fetchNstTextByUrl(url, { timeoutMs: 30000 });
+      if (!text) {
         console.warn(`No data received from URL: ${url}`);
         return { individualData: [], onIceData: [] };
       }
 
-      const $ = cheerio.load(response.data);
+      const $ = cheerio.load(text);
       const tables = $("table"); // Expecting two tables
 
       if (tables.length < 2) {
@@ -436,6 +440,9 @@ async function fetchAndParsePlayerData(
       // console.log(`Parsed ${individualData.length} Individual rows, ${onIceData.length} On-Ice rows.`);
       return { individualData, onIceData };
     } catch (error: any) {
+      if (isNstAuthError(error) || isNstRateLimitError(error)) {
+        throw error;
+      }
       console.error(
         `Attempt ${attempt} - Error fetching/parsing data for Player ${playerId} from ${url}:`,
         error.message
@@ -643,7 +650,7 @@ async function processPlayer(
   const rates = [false, true]; // false = counts (rate=n), true = rates (rate=y)
 
   let totalRowsUpsertedForPlayer = 0;
-  const PER_REQUEST_DELAY_MS = 21000; // 21 seconds to stay under 180 req/hr
+  const PER_REQUEST_DELAY_MS = 21000; // Sequential in-route pacing only; shared NST budget coordination is handled separately.
 
   console.log(
     `--- Processing Player ID: ${playerId} (${playerCount.current}/${playerCount.total}) ---`

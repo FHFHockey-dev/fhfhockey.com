@@ -1,0 +1,206 @@
+@use "styles/vars";
+
+.page {
+  width: 95%;
+  margin: 0 auto;
+  padding: vars.$space-lg;
+  display: flex;
+  flex-direction: column;
+  gap: vars.$space-lg;
+}
+
+.hero,
+.section {
+  padding: vars.$space-lg;
+  border-radius: 18px;
+  border: 1px solid rgba(vars.$border-secondary, 0.9);
+  background: rgba(vars.$background-light, 0.94);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.22);
+}
+
+.eyebrow,
+.controlLabel {
+  margin: 0;
+  font-size: vars.$font-size-xs;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: vars.$text-secondary;
+}
+
+.title {
+  margin: vars.$space-xs 0 0;
+  font-size: clamp(2rem, 3vw, 3.1rem);
+  line-height: 1.05;
+}
+
+.description,
+.sectionHeader p,
+.status,
+.error {
+  margin: vars.$space-sm 0 0;
+  color: vars.$text-secondary;
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 320px));
+  gap: vars.$space-md;
+  padding: vars.$space-md;
+  border-radius: 16px;
+  border: 1px solid rgba(vars.$border-secondary, 0.72);
+  background: rgba(vars.$background-light, 0.9);
+}
+
+.control {
+  display: flex;
+  flex-direction: column;
+  gap: vars.$space-xs;
+}
+
+.select {
+  border-radius: 12px;
+  border: 1px solid rgba(vars.$border-secondary, 0.8);
+  background: rgba(vars.$background-medium, 0.92);
+  color: vars.$text-primary;
+  padding: vars.$space-sm vars.$space-md;
+  font: inherit;
+}
+
+.section,
+.subsection {
+  display: flex;
+  flex-direction: column;
+  gap: vars.$space-md;
+}
+
+.subsection {
+  padding-top: vars.$space-sm;
+}
+
+.sectionHeader h2,
+.sectionHeader h3 {
+  margin: 0;
+}
+
+.tableWrap {
+  overflow-x: auto;
+  border: 1px solid rgba(vars.$border-secondary, 0.42);
+  border-radius: 14px;
+  background: rgba(vars.$background-medium, 0.55);
+}
+
+.table {
+  width: 100%;
+  min-width: 1120px;
+  border-collapse: collapse;
+  font-size: vars.$font-size-sm;
+}
+
+.table th,
+.table td {
+  padding: vars.$space-sm vars.$space-xs;
+  border-bottom: 1px solid rgba(vars.$border-secondary, 0.35);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.table tbody tr:hover {
+  background: rgba(vars.$primary-color, 0.06);
+}
+
+.table th {
+  position: sticky;
+  top: 0;
+  background: #20252b;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: vars.$font-size-xxs;
+  color: vars.$text-secondary;
+  z-index: 1;
+}
+
+.inlineMeta {
+  margin-left: vars.$space-xs;
+  font-size: vars.$font-size-xxs;
+  color: vars.$text-secondary;
+}
+
+.opponentTabs {
+  display: grid;
+  grid-template-columns: repeat(32, minmax(0, 1fr));
+  gap: vars.$space-xxs;
+  padding: vars.$space-sm 0 vars.$space-md;
+  border-top: 1px solid rgba(vars.$border-secondary, 0.42);
+  border-bottom: 1px solid rgba(vars.$border-secondary, 0.42);
+}
+
+.opponentTab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1;
+  width: 100%;
+  min-width: 0;
+  padding: vars.$space-xs;
+  border-top-left-radius: vars.$border-radius-md;
+  border-top-right-radius: vars.$border-radius-md;
+  border: 1px solid rgba(vars.$border-secondary, 0.7);
+  background: rgba(vars.$background-medium, 0.76);
+  color: vars.$text-primary;
+  font: inherit;
+  cursor: pointer;
+  transition:
+    transform 140ms ease,
+    border-color 140ms ease,
+    background-color 140ms ease;
+}
+
+.opponentTab:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: rgba(vars.$primary-color, 0.66);
+}
+
+.opponentTabActive {
+  border-color: rgba(vars.$primary-color, 0.88);
+  background: rgba(vars.$primary-color, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(vars.$primary-color, 0.2);
+}
+
+.opponentTabDisabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+  filter: grayscale(1);
+}
+
+.status,
+.error {
+  padding: vars.$space-md;
+  border-radius: vars.$border-radius-md;
+  border: 1px dashed rgba(vars.$border-secondary, 0.75);
+}
+
+.error {
+  border-style: solid;
+  border-color: rgba(vars.$danger-color, 0.45);
+  color: vars.$danger-color;
+}
+
+@media screen and (max-width: vars.$breakpoint-tablet) {
+  .page {
+    width: calc(100% - #{vars.$space-md * 2});
+    padding: vars.$space-md 0;
+  }
+
+  .hero,
+  .section {
+    padding: vars.$space-md;
+  }
+
+  .opponentTabs {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+  }
+
+  .table {
+    min-width: 820px;
+  }
+}

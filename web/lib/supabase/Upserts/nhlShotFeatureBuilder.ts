@@ -17,6 +17,7 @@ import { buildPriorEventContexts } from "./nhlPriorEventContext";
 import { buildReboundContexts } from "./nhlRebounds";
 import { buildRushContexts } from "./nhlRush";
 import { buildScoreStateContexts } from "./nhlScoreState";
+import { parseSituationCode } from "./nhlStrengthState";
 
 type ShiftRow = Pick<
   Database["public"]["Tables"]["nhl_api_shift_rows"]["Row"],
@@ -190,6 +191,32 @@ function getPrimaryShooterId(event: ParsedNhlPbpEvent): number | null {
   return event.shooting_player_id ?? event.scoring_player_id ?? null;
 }
 
+function resolveGoalieOnIceFlags(args: {
+  situationCode: string | null | undefined;
+  eventOwnerSide: "home" | "away" | null;
+}) {
+  const parsedSituation = parseSituationCode(args.situationCode);
+
+  if (parsedSituation == null || args.eventOwnerSide == null) {
+    return {
+      ownerGoalieOnIce: null,
+      opponentGoalieOnIce: null
+    };
+  }
+
+  if (args.eventOwnerSide === "home") {
+    return {
+      ownerGoalieOnIce: parsedSituation.homeGoalie > 0,
+      opponentGoalieOnIce: parsedSituation.awayGoalie > 0
+    };
+  }
+
+  return {
+    ownerGoalieOnIce: parsedSituation.awayGoalie > 0,
+    opponentGoalieOnIce: parsedSituation.homeGoalie > 0
+  };
+}
+
 export function buildShotFeatureRows(
   events: ParsedNhlPbpEvent[],
   shiftRows: ShiftRow[],
@@ -266,6 +293,13 @@ export function buildShotFeatureRows(
           teamSide: event.event_owner_side ?? null,
         }
       );
+      const goalieOnIce = resolveGoalieOnIceFlags({
+        situationCode: event.situation_code,
+        eventOwnerSide:
+          event.event_owner_side === "home" || event.event_owner_side === "away"
+            ? event.event_owner_side
+            : null
+      });
 
       return {
         featureVersion,
@@ -324,13 +358,15 @@ export function buildShotFeatureRows(
         previousEventTypeDescKey: prior?.previousEventTypeDescKey ?? null,
         previousEventTeamId: prior?.previousEventTeamId ?? null,
         previousEventSameTeam: prior?.previousEventSameTeam ?? null,
-        timeSincePreviousEventSeconds: prior?.timeSincePreviousEventSeconds ?? null,
+        timeSincePreviousEventSeconds:
+          prior?.timeSincePreviousEventSeconds ?? null,
         distanceFromPreviousEvent: prior?.distanceFromPreviousEvent ?? null,
         homeScoreBeforeEvent: scoreState?.homeScoreBeforeEvent ?? null,
         awayScoreBeforeEvent: scoreState?.awayScoreBeforeEvent ?? null,
         homeScoreDiffBeforeEvent: scoreState?.homeScoreDiffBeforeEvent ?? null,
         awayScoreDiffBeforeEvent: scoreState?.awayScoreDiffBeforeEvent ?? null,
-        ownerScoreDiffBeforeEvent: scoreState?.ownerScoreDiffBeforeEvent ?? null,
+        ownerScoreDiffBeforeEvent:
+          scoreState?.ownerScoreDiffBeforeEvent ?? null,
         ownerScoreDiffBucket: scoreState?.ownerScoreDiffBucket ?? null,
         scoreEffectsGameTimeSegment:
           scoreState?.scoreEffectsGameTimeSegment ?? null,
@@ -343,9 +379,11 @@ export function buildShotFeatureRows(
         isFinalTwoMinutes: scoreState?.isFinalTwoMinutes ?? null,
         possessionSequenceId: possession?.possessionSequenceId ?? null,
         possessionEventCount: possession?.possessionEventCount ?? null,
-        possessionDurationSeconds: possession?.possessionDurationSeconds ?? null,
+        possessionDurationSeconds:
+          possession?.possessionDurationSeconds ?? null,
         possessionStartEventId: possession?.possessionStartEventId ?? null,
-        possessionStartTypeDescKey: possession?.possessionStartTypeDescKey ?? null,
+        possessionStartTypeDescKey:
+          possession?.possessionStartTypeDescKey ?? null,
         possessionStartZoneCode: possession?.possessionStartZoneCode ?? null,
         possessionRegainedFromOpponent:
           possession?.possessionRegainedFromOpponent ?? null,
@@ -405,8 +443,8 @@ export function buildShotFeatureRows(
         ownerDefenseCountOnIce: null,
         opponentForwardCountOnIce: null,
         opponentDefenseCountOnIce: null,
-        ownerGoalieOnIce: null,
-        opponentGoalieOnIce: null,
+        ownerGoalieOnIce: goalieOnIce.ownerGoalieOnIce,
+        opponentGoalieOnIce: goalieOnIce.opponentGoalieOnIce,
         ownerSkaterDeploymentBucket: null,
         opponentSkaterDeploymentBucket: null,
         skaterRoleMatchupBucket: null,
@@ -418,7 +456,7 @@ export function buildShotFeatureRows(
         isDelayedPenaltyEvent: inclusion.isDelayedPenaltyEvent,
         isEmptyNetEvent: inclusion.isEmptyNetEvent,
         isOvertimeEvent: inclusion.isOvertimeEvent,
-        hasRareManpower: inclusion.hasRareManpower,
+        hasRareManpower: inclusion.hasRareManpower
       };
     });
 }

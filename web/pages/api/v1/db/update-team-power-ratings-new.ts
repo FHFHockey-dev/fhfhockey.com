@@ -10,9 +10,10 @@ async function handler(
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  return res.status(410).json({
-    success: false,
-    error: "Alternate team power ratings writer has been disabled.",
+  return res.status(200).json({
+    success: true,
+    operationStatus: "warning",
+    message: "Alternate team power ratings writer remains disabled; no work was performed.",
     route: "/api/v1/db/update-team-power-ratings-new",
     targetTable: "team_power_ratings_daily__new",
     disposition: "DO NOT RUN",

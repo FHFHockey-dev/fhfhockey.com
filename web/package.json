@@ -12,6 +12,7 @@
     "verify:rolling-player:targeted": "npm run check:rolling-player-validation-freshness && npm run check:rolling-player-family-reconstruction",
     "verify:rolling-player:extended": "npm run verify:rolling-player:targeted && npm run check:rolling-player-coverage && npm run check:rolling-player-context-labels && npm run check:rolling-player-disputed-metrics && npm run check:rolling-player-optional-additions",
     "validate:nhl-xg-release": "NODE_PATH=. ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\"}' scripts/run-nhl-xg-release-validation.ts",
+    "audit:team-underlying-vs-nhl": "NODE_PATH=. ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/audit-team-underlying-vs-nhl.ts",
     "train:nhl-xg-baseline": "NODE_PATH=. ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\"}' scripts/train-nhl-xg-baseline.ts",
     "benchmark:nhl-xg-baselines": "NODE_PATH=. ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\"}' scripts/benchmark-nhl-xg-baselines.ts",
     "check:rolling-player-runtime-budget": "NODE_PATH=. ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\"}' scripts/check-rolling-player-runtime-budget.ts",

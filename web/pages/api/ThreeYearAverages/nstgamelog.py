@@ -1,3 +1,12 @@
+# LEGACY MANUAL SCRIPT
+# This file is not part of the production NST migration path.
+# Canonical production ownership for `playerreport.php` API usage now lives in:
+#   web/pages/api/Averages/helpers.ts
+#   web/pages/api/CareerAverages/[playerId].ts
+#   web/pages/api/ThreeYearAverages/[playerId].ts
+#   web/pages/api/SustainabilityStats/[playerId].ts
+# Keep this file only for manual reference until cleanup task 3.6/7.0 retires it.
+#
 import os
 import requests
 from bs4 import BeautifulSoup

@@ -1,0 +1,223 @@
+[
+  {
+    "team": {
+      "id": 21,
+      "commonName": {
+        "default": "Avalanche"
+      },
+      "placeNameWithPreposition": {
+        "default": "Colorado",
+        "fr": "du Colorado"
+      },
+      "abbrev": "COL",
+      "teamLogo": {
+        "light": "https://assets.nhle.com/logos/nhl/svg/COL_light.svg",
+        "dark": "https://assets.nhle.com/logos/nhl/svg/COL_dark.svg"
+      },
+      "slug": "colorado-avalanche-21"
+    },
+    "all": 2588,
+    "highDanger": 657,
+    "midRange": 826,
+    "longRange": 639
+  },
+  {
+    "team": {
+      "id": 12,
+      "commonName": {
+        "default": "Hurricanes"
+      },
+      "placeNameWithPreposition": {
+        "default": "Carolina",
+        "fr": "de la Caroline"
+      },
+      "abbrev": "CAR",
+      "teamLogo": {
+        "light": "https://assets.nhle.com/logos/nhl/svg/CAR_light.svg",
+        "dark": "https://assets.nhle.com/logos/nhl/svg/CAR_dark.svg"
+      },
+      "slug": "carolina-hurricanes-12"
+    },
+    "all": 2538,
+    "highDanger": 698,
+    "midRange": 740,
+    "longRange": 611
+  },
+  {
+    "team": {
+      "id": 24,
+      "commonName": {
+        "default": "Ducks"
+      },
+      "placeNameWithPreposition": {
+        "default": "Anaheim",
+        "fr": "d'Anaheim"
+      },
+      "abbrev": "ANA",
+      "teamLogo": {
+        "light": "https://assets.nhle.com/logos/nhl/svg/ANA_light.svg",
+        "dark": "https://assets.nhle.com/logos/nhl/svg/ANA_dark.svg"
+      },
+      "slug": "anaheim-ducks-24"
+    },
+    "all": 2392,
+    "highDanger": 659,
+    "midRange": 689,
+    "longRange": 503
+  },
+  {
+    "team": {
+      "id": 1,
+      "commonName": {
+        "default": "Devils"
+      },
+      "placeNameWithPreposition": {
+        "default": "New Jersey",
+        "fr": "du New Jersey"
+      },
+      "abbrev": "NJD",
+      "teamLogo": {
+        "light": "https://assets.nhle.com/logos/nhl/svg/NJD_light.svg",
+        "dark": "https://assets.nhle.com/logos/nhl/svg/NJD_dark.svg"
+      },
+      "slug": "new-jersey-devils-1"
+    },
+    "all": 2321,
+    "highDanger": 651,
+    "midRange": 666,
+    "longRange": 488
+  },
+  {
+    "team": {
+      "id": 22,
+      "commonName": {
+        "default": "Oilers"
+      },
+      "placeNameWithPreposition": {
+        "default": "Edmonton",
+        "fr": "d'Edmonton"
+      },
+      "abbrev": "EDM",
+      "teamLogo": {
+        "light": "https://assets.nhle.com/logos/nhl/svg/EDM_light.svg",
+        "dark": "https://assets.nhle.com/logos/nhl/svg/EDM_dark.svg"
+      },
+      "slug": "edmonton-oilers-22"
+    },
+    "all": 2320,
+    "highDanger": 688,
+    "midRange": 642,
+    "longRange": 452
+  },
+  {
+    "team": {
+      "id": 30,
+      "commonName": {
+        "default": "Wild"
+      },
+      "placeNameWithPreposition": {
+        "default": "Minnesota",
+        "fr": "du Minnesota"
+      },
+      "abbrev": "MIN",
+      "teamLogo": {
+        "light": "https://assets.nhle.com/logos/nhl/svg/MIN_light.svg",
+        "dark": "https://assets.nhle.com/logos/nhl/svg/MIN_dark.svg"
+      },
+      "slug": "minnesota-wild-30"
+    },
+    "all": 2289,
+    "highDanger": 639,
+    "midRange": 586,
+    "longRange": 467
+  },
+  {
+    "team": {
+      "id": 29,
+      "commonName": {
+        "default": "Blue Jackets"
+      },
+      "placeNameWithPreposition": {
+        "default": "Columbus",
+        "fr": "de Columbus"
+      },
+      "abbrev": "CBJ",
+      "teamLogo": {
+        "light": "https://assets.nhle.com/logos/nhl/svg/CBJ_light.svg",
+        "dark": "https://assets.nhle.com/logos/nhl/svg/CBJ_dark.svg"
+      },
+      "slug": "columbus-blue-jackets-29"
+    },
+    "all": 2277,
+    "highDanger": 596,
+    "midRange": 679,
+    "longRange": 448
+  },
+  {
+    "team": {
+      "id": 9,
+      "commonName": {
+        "default": "Senators",
+        "fr": "Sénateurs"
+      },
+      "placeNameWithPreposition": {
+        "default": "Ottawa",
+        "fr": "d'Ottawa"
+      },
+      "abbrev": "OTT",
+      "teamLogo": {
+        "light": "https://assets.nhle.com/logos/nhl/svg/OTT_light.svg",
+        "dark": "https://assets.nhle.com/logos/nhl/svg/OTT_dark.svg"
+      },
+      "slug": "ottawa-senators-9"
+    },
+    "all": 2261,
+    "highDanger": 686,
+    "midRange": 658,
+    "longRange": 441
+  },
+  {
+    "team": {
+      "id": 5,
+      "commonName": {
+        "default": "Penguins"
+      },
+      "placeNameWithPreposition": {
+        "default": "Pittsburgh",
+        "fr": "de Pittsburgh"
+      },
+      "abbrev": "PIT",
+      "teamLogo": {
+        "light": "https://assets.nhle.com/logos/nhl/svg/PIT_light.svg",
+        "dark": "https://assets.nhle.com/logos/nhl/svg/PIT_dark.svg"
+      },
+      "slug": "pittsburgh-penguins-5"
+    },
+    "all": 2255,
+    "highDanger": 711,
+    "midRange": 672,
+    "longRange": 384
+  },
+  {
+    "team": {
+      "id": 54,
+      "commonName": {
+        "default": "Golden Knights"
+      },
+      "placeNameWithPreposition": {
+        "default": "Vegas",
+        "fr": "de Vegas"
+      },
+      "abbrev": "VGK",
+      "teamLogo": {
+        "light": "https://assets.nhle.com/logos/nhl/svg/VGK_light.svg",
+        "dark": "https://assets.nhle.com/logos/nhl/svg/VGK_dark.svg"
+      },
+      "slug": "vegas-golden-knights-54"
+    },
+    "all": 2248,
+    "highDanger": 686,
+    "midRange": 588,
+    "longRange": 471
+  }
+]

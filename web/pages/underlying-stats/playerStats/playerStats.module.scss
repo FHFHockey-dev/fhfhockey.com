@@ -61,6 +61,14 @@ $page-max-width: 1600px;
   min-width: 0;
 }
 
+.heroDescription {
+  margin: 0;
+  color: v.$text-secondary;
+  font-size: v.$font-size-sm;
+  line-height: 1.6;
+  max-width: 68ch;
+}
+
 .title {
   margin: 0;
   color: v.$color-white;

@@ -2,15 +2,20 @@
 
 import {
   TableAggregateData,
-  CombinedPlayerStats,
   PlayerRawStats
 } from "components/WiGO/types";
+import {
+  WIGO_STAT_ORDER,
+  getWigoStatMetadata,
+  normalizeWigoAggregateValue,
+  shouldAttachGpMetadata
+} from "components/WiGO/statMetadata";
 import supabase from "lib/supabase";
 import { Database } from "lib/supabase/database-generated.types";
 
 // Import the types for the tables
-type WigoCareerRow = Database["public"]["Tables"]["wigo_career"]["Row"];
-type WigoRecentRow = Database["public"]["Tables"]["wigo_recent"]["Row"];
+export type WigoCareerRow = Database["public"]["Tables"]["wigo_career"]["Row"];
+export type WigoRecentRow = Database["public"]["Tables"]["wigo_recent"]["Row"];
 
 export interface SkaterTotalsData {
   player_id: number;
@@ -188,117 +193,206 @@ const statToGameLogColumnMap: Record<
   } // Check DB format
 };
 
-const statMap: Record<string, string> = {
-  // Counts
-  GP: "gp",
-  ATOI: "atoi",
-  Goals: "g",
-  Assists: "a",
-  Points: "pts",
-  SOG: "sog", // <-- Count
-  ixG: "ixg",
-  PPG: "ppg",
-  PPA: "ppa",
-  PPP: "ppp",
-  PPTOI: "pptoi",
-  HIT: "hit",
-  BLK: "blk",
-  PIM: "pim",
-  iCF: "icf",
-  IPP: "ipp",
-  "oiSH%": "oi_sh_pct",
-  "OZS%": "ozs_pct",
-  "PTS1%": "pts1_pct",
-  // Rates
-  "S%": "s_pct", // <-- Rate (Shooting Percentage)
-  "G/60": "g_per_60",
-  "A/60": "a_per_60",
-  "PTS/60": "pts_per_60",
-  "PTS1/60": "pts1_per_60",
-  "SOG/60": "sog_per_60",
-  "ixG/60": "ixg_per_60",
-  "iCF/60": "icf_per_60",
-  "iHDCF/60": "ihdcf_per_60",
-  "iSCF/60": "iscf_per_60",
-  "PPG/60": "ppg_per_60",
-  "PPA/60": "ppa_per_60",
-  "PPP/60": "ppp_per_60",
-  "HIT/60": "hit_per_60",
-  "BLK/60": "blk_per_60",
-  "PIM/60": "pim_per_60",
-  "PP%": "pp_pct" // Power Play Percentage (often treated as rate/percentage)
+type WigoTotalsFallbackData =
+  | (Partial<{
+      goals: number | null;
+      assists: number | null;
+      points: number | null;
+      shots: number | null;
+      hits: number | null;
+      blocked_shots: number | null;
+      penalty_minutes: number | null;
+      pp_points: number | null;
+    }> & { season?: string | null })
+  | null;
+
+interface BuildPlayerAggregatedStatsInput {
+  careerData: WigoCareerRow | null;
+  recentData: WigoRecentRow | null;
+  ratesData: Record<string, number | null> | null;
+  totalsData: WigoTotalsFallbackData;
+}
+
+const getAggregateValue = (
+  row: WigoCareerRow | WigoRecentRow | null,
+  key: string | undefined
+): number | null => {
+  if (row && key && (row as Record<string, unknown>)[key] != null) {
+    const num = Number((row as Record<string, unknown>)[key]);
+    return Number.isNaN(num) ? null : num;
+  }
+  return null;
 };
 
-// --- <<< NEW: Define SINGLE desired order, mixing counts & rates >>> ---
-const orderedStatLabels: string[] = [
-  "GP",
-  "ATOI",
+export function buildPlayerAggregatedStats({
+  careerData,
+  recentData,
+  ratesData,
+  totalsData
+}: BuildPlayerAggregatedStatsInput): TableAggregateData[] {
+  if (!careerData && !recentData) {
+    return [];
+  }
 
-  "Points",
-  "Goals",
-  "Assists",
+  const gpBaseColName = "gp";
+  const combinedStatsData: TableAggregateData[] = [];
 
-  "SOG", // <-- Shots on Goal (Count)
-  "S%", // <-- Shooting Percentage (Rate) - Placed right below SOG
+  for (const label of WIGO_STAT_ORDER) {
+    const metadata = getWigoStatMetadata(label);
+    if (!metadata) {
+      console.warn(`Missing WiGO stat metadata for "${label}". Skipping.`);
+      continue;
+    }
 
-  "PPP",
-  "PPG",
-  "PPA",
-  "PPTOI",
-  "PP%", // <-- PP Percentage
+    const baseColName = metadata.baseKey;
 
-  "HIT",
-  "BLK",
-  "PIM",
+    let stdValue = getAggregateValue(careerData, `std_${baseColName}`);
+    let lyValue = getAggregateValue(careerData, `ly_${baseColName}`);
+    let ya3Value = getAggregateValue(careerData, `ya3_${baseColName}`);
+    let caValue = getAggregateValue(careerData, `ca_${baseColName}`);
+    let l5Value = getAggregateValue(recentData, `l5_${baseColName}`);
+    let l10Value = getAggregateValue(recentData, `l10_${baseColName}`);
+    let l20Value = getAggregateValue(recentData, `l20_${baseColName}`);
 
-  "ixG",
-  "iCF",
-  // --- Add other stats in your preferred mixed order ---
-  "G/60",
-  "A/60",
-  "PTS/60",
-  "SOG/60",
-  "ixG/60",
-  "iCF/60",
-  // --- Power Play Section ---
+    if (metadata.isPerSixty && ratesData) {
+      const pickRate = (suffix: string) => {
+        const key = `${baseColName}_${suffix}`;
+        if (Object.prototype.hasOwnProperty.call(ratesData, key)) {
+          const rawValue = ratesData[key];
+          const num = rawValue != null ? Number(rawValue) : null;
+          return Number.isNaN(num as number) ? null : (num as number);
+        }
+        return undefined;
+      };
 
-  "PPP/60",
-  "PPG/60",
-  "PPA/60",
-  // --- Other Stats ---
+      const rStd = pickRate("std");
+      const rLy = pickRate("ly");
+      const rCa = pickRate("ca");
+      const r3ya = pickRate("3ya") ?? pickRate("ya3");
+      const rL5 = pickRate("l5");
+      const rL10 = pickRate("l10");
+      const rL20 = pickRate("l20");
 
-  "iHDCF/60",
-  "iSCF/60",
-  "HIT/60",
-  "BLK/60",
-  "PIM/60",
-  "IPP",
-  "oiSH%",
-  "OZS%",
-  "PTS1%",
-  "PTS1/60"
-  // Add any remaining stats from statMap here
-];
+      if (rStd !== undefined) stdValue = rStd;
+      if (rLy !== undefined) lyValue = rLy;
+      if (rCa !== undefined) caValue = rCa;
+      if (r3ya !== undefined) ya3Value = r3ya;
+      if (rL5 !== undefined) l5Value = rL5;
+      if (rL10 !== undefined) l10Value = rL10;
+      if (rL20 !== undefined) l20Value = rL20;
+    }
 
-// Identify which stats still benefit from having the GP object attached (usually counts)
-const statsNeedingGpMetadata = new Set([
-  "GP",
-  "ATOI",
-  "Goals",
-  "Assists",
-  "Points",
-  "SOG",
-  "ixG",
-  "PPG",
-  "PPA",
-  "PPP",
-  "PPTOI",
-  "HIT",
-  "BLK",
-  "PIM",
-  "iCF",
-  "IPP"
-]);
+    if (metadata.isPerSixty) {
+      const per60ToCountMap: Record<string, string> = {
+        g_per_60: "g",
+        a_per_60: "a",
+        pts_per_60: "pts",
+        sog_per_60: "sog",
+        ixg_per_60: "ixg",
+        icf_per_60: "icf",
+        hit_per_60: "hit",
+        blk_per_60: "blk",
+        pim_per_60: "pim"
+      };
+      const countBase = per60ToCountMap[baseColName];
+      const derivePer60 = (
+        prefix: "std" | "ly" | "ya3" | "ca"
+      ): number | undefined => {
+        if (!careerData || !countBase) return undefined;
+        const count = getAggregateValue(careerData, `${prefix}_${countBase}`);
+        const gp = getAggregateValue(careerData, `${prefix}_gp`);
+        const atoiMin = getAggregateValue(careerData, `${prefix}_atoi`);
+        if (
+          typeof count === "number" &&
+          typeof gp === "number" &&
+          gp > 0 &&
+          typeof atoiMin === "number" &&
+          atoiMin > 0
+        ) {
+          const totalMinutes = atoiMin * gp;
+          if (totalMinutes > 0) {
+            return (count * 60) / totalMinutes;
+          }
+        }
+        return undefined;
+      };
+      if (stdValue == null || Number.isNaN(stdValue)) {
+        const derived = derivePer60("std");
+        if (derived !== undefined) stdValue = derived;
+      }
+      if (lyValue == null || Number.isNaN(lyValue)) {
+        const derived = derivePer60("ly");
+        if (derived !== undefined) lyValue = derived;
+      }
+      if (ya3Value == null || Number.isNaN(ya3Value)) {
+        const derived = derivePer60("ya3");
+        if (derived !== undefined) ya3Value = derived;
+      }
+      if (caValue == null || Number.isNaN(caValue)) {
+        const derived = derivePer60("ca");
+        if (derived !== undefined) caValue = derived;
+      }
+    }
+
+    if (
+      (label === "Goals" ||
+        label === "Assists" ||
+        label === "Points" ||
+        label === "SOG" ||
+        label === "HIT" ||
+        label === "BLK" ||
+        label === "PIM" ||
+        label === "PPP") &&
+      (stdValue == null || Number.isNaN(stdValue)) &&
+      totalsData
+    ) {
+      const totalsMap: Record<string, number | null | undefined> = {
+        Goals: totalsData.goals,
+        Assists: totalsData.assists,
+        Points: totalsData.points,
+        SOG: totalsData.shots,
+        HIT: totalsData.hits,
+        BLK: totalsData.blocked_shots,
+        PIM: totalsData.penalty_minutes,
+        PPP: totalsData.pp_points
+      };
+      const fallback = totalsMap[label];
+      if (typeof fallback === "number" && !Number.isNaN(fallback)) {
+        stdValue = fallback;
+      }
+    }
+
+    const normalizedValues = {
+      STD: normalizeWigoAggregateValue(label, stdValue),
+      LY: normalizeWigoAggregateValue(label, lyValue),
+      "3YA": normalizeWigoAggregateValue(label, ya3Value),
+      CA: normalizeWigoAggregateValue(label, caValue),
+      L5: normalizeWigoAggregateValue(label, l5Value),
+      L10: normalizeWigoAggregateValue(label, l10Value),
+      L20: normalizeWigoAggregateValue(label, l20Value)
+    };
+
+    const rowData: TableAggregateData = {
+      label,
+      GP: shouldAttachGpMetadata(label)
+        ? {
+            STD: getAggregateValue(careerData, `std_${gpBaseColName}`),
+            LY: getAggregateValue(careerData, `ly_${gpBaseColName}`),
+            "3YA": getAggregateValue(careerData, `ya3_${gpBaseColName}`),
+            CA: getAggregateValue(careerData, `ca_${gpBaseColName}`),
+            L5: getAggregateValue(recentData, `l5_${gpBaseColName}`),
+            L10: getAggregateValue(recentData, `l10_${gpBaseColName}`),
+            L20: getAggregateValue(recentData, `l20_${gpBaseColName}`)
+          }
+        : undefined,
+      ...normalizedValues
+    };
+
+    combinedStatsData.push(rowData);
+  }
+
+  return combinedStatsData;
+}
 
 export async function fetchPlayerGameLogForStat(
   playerId: number,
@@ -547,214 +641,12 @@ export async function fetchPlayerAggregatedStats(
     return []; // Return empty array
   }
 
-  const combinedStatsData: TableAggregateData[] = [];
-
-  const getValue = (
-    row: WigoCareerRow | WigoRecentRow | null,
-    key: string | undefined
-  ): number | null => {
-    if (row && key && (row as any)[key] != null) {
-      const num = Number((row as any)[key]);
-      return isNaN(num) ? null : num;
-    }
-    return null;
-  };
-
-  // --- Process Count Stats ---
-  const gpBaseColName = "gp";
-
-  // --- <<< NEW: Single loop over the combined ordered list >>> ---
-  for (const label of orderedStatLabels) {
-    const baseColName = statMap[label]; // Look up in the combined map
-    if (!baseColName) {
-      console.warn(
-        `Label "${label}" found in orderedStatLabels but not in statMap. Skipping.`
-      );
-      continue;
-    }
-
-    // Get raw values first
-    let stdValue = getValue(careerData, `std_${baseColName}`);
-    let lyValue = getValue(careerData, `ly_${baseColName}`);
-    let ya3Value = getValue(careerData, `ya3_${baseColName}`);
-    let caValue = getValue(careerData, `ca_${baseColName}`);
-    let l5Value = getValue(recentData, `l5_${baseColName}`);
-    let l10Value = getValue(recentData, `l10_${baseColName}`);
-    let l20Value = getValue(recentData, `l20_${baseColName}`);
-
-    // If this is a per-60 stat, prefer authoritative values from wigo_rates for all windows when available
-    const isPerSixty = label.includes("/60");
-    if (isPerSixty && ratesData) {
-      const pickRate = (suffix: string) => {
-        const key = `${baseColName}_${suffix}`;
-        if (ratesData && Object.prototype.hasOwnProperty.call(ratesData, key)) {
-          const v = ratesData[key];
-          const num = v != null ? Number(v) : null;
-          return isNaN(num as number) ? null : (num as number);
-        }
-        return undefined; // signal no override available for this window
-      };
-      // Override across all windows when rates exist
-      const rStd = pickRate("std");
-      const rLy = pickRate("ly");
-      const rCa = pickRate("ca");
-      const r3ya = pickRate("3ya") ?? pickRate("ya3");
-      const rL5 = pickRate("l5");
-      const rL10 = pickRate("l10");
-      const rL20 = pickRate("l20");
-      if (rStd !== undefined) stdValue = rStd;
-      if (rLy !== undefined) lyValue = rLy;
-      if (rCa !== undefined) caValue = rCa;
-      if (r3ya !== undefined) ya3Value = r3ya;
-      if (rL5 !== undefined) l5Value = rL5;
-      if (rL10 !== undefined) l10Value = rL10;
-      if (rL20 !== undefined) l20Value = rL20;
-    }
-
-    // --- Apply conditional unit conversions ---
-    if (label === "ATOI") {
-      // ... ATOI conversion logic ...
-      const convertMinutesToSeconds = (val: number | null): number | null =>
-        val != null ? val * 60 : null;
-      stdValue = convertMinutesToSeconds(stdValue);
-      lyValue = convertMinutesToSeconds(lyValue);
-      ya3Value = convertMinutesToSeconds(ya3Value);
-      caValue = convertMinutesToSeconds(caValue);
-      // L5/L10/L20 for ATOI are likely already per-game averages in correct unit? Double check source data. If they are total minutes, divide by GP here. Assuming they are avg minutes/game:
-      // No conversion needed for L5/L10/L20 if they are already avg minutes/game
-    } else if (
-      label === "PP%" ||
-      label === "S%" ||
-      label === "oiSH%" ||
-      label === "OZS%" ||
-      label === "PTS1%"
-    ) {
-      // Assuming these percentages might be stored 0-1 decimal, convert to 0-100 for display
-      // Adjust if your source data format is different
-      const transformPct = (val: number | null | undefined) =>
-        val != null && !isNaN(val) ? val * 100 : null;
-      stdValue = transformPct(stdValue);
-      lyValue = transformPct(lyValue);
-      ya3Value = transformPct(ya3Value);
-      caValue = transformPct(caValue);
-      l5Value = transformPct(l5Value);
-      l10Value = transformPct(l10Value);
-      l20Value = transformPct(l20Value);
-    }
-
-    // --- Per-60 Fallback: derive from counts + ATOI + GP when missing ---
-    if (isPerSixty) {
-      // Map a per-60 base to its corresponding count base in wigo_career
-      const per60ToCountMap: Record<string, string> = {
-        g_per_60: "g",
-        a_per_60: "a",
-        pts_per_60: "pts",
-        sog_per_60: "sog",
-        ixg_per_60: "ixg",
-        icf_per_60: "icf",
-        hit_per_60: "hit",
-        blk_per_60: "blk",
-        pim_per_60: "pim"
-      };
-      const countBase = per60ToCountMap[baseColName];
-      const derivePer60 = (
-        prefix: "std" | "ly" | "ya3" | "ca"
-      ): number | undefined => {
-        if (!careerData || !countBase) return undefined;
-        const count = getValue(careerData, `${prefix}_${countBase}`);
-        const gp = getValue(careerData, `${prefix}_gp`);
-        const atoiMin = getValue(careerData, `${prefix}_atoi`); // avg minutes per game
-        if (
-          typeof count === "number" &&
-          typeof gp === "number" &&
-          gp > 0 &&
-          typeof atoiMin === "number" &&
-          atoiMin > 0
-        ) {
-          const totalMinutes = atoiMin * gp; // minutes
-          if (totalMinutes > 0) {
-            return (count * 60) / totalMinutes;
-          }
-        }
-        return undefined;
-      };
-      if (stdValue == null || isNaN(stdValue)) {
-        const v = derivePer60("std");
-        if (v !== undefined) stdValue = v;
-      }
-      if (lyValue == null || isNaN(lyValue)) {
-        const v = derivePer60("ly");
-        if (v !== undefined) lyValue = v;
-      }
-      if (ya3Value == null || isNaN(ya3Value)) {
-        const v = derivePer60("ya3");
-        if (v !== undefined) ya3Value = v;
-      }
-      if (caValue == null || isNaN(caValue)) {
-        const v = derivePer60("ca");
-        if (v !== undefined) caValue = v;
-      }
-    }
-
-    // --- Fallback for missing STD counts using season totals (best-effort) ---
-    // Only for common count stats; avoids fabricating advanced counts not present in totals
-    if (
-      (label === "Goals" ||
-        label === "Assists" ||
-        label === "Points" ||
-        label === "SOG" ||
-        label === "HIT" ||
-        label === "BLK" ||
-        label === "PIM" ||
-        label === "PPP") &&
-      (stdValue == null || isNaN(stdValue)) &&
-      totalsData
-    ) {
-      const totalsMap: Record<string, number | null | undefined> = {
-        Goals: totalsData.goals,
-        Assists: totalsData.assists,
-        Points: totalsData.points,
-        SOG: totalsData.shots,
-        HIT: totalsData.hits,
-        BLK: totalsData.blocked_shots,
-        PIM: totalsData.penalty_minutes,
-        PPP: totalsData.pp_points
-      };
-      const fallback = totalsMap[label];
-      if (typeof fallback === "number" && !isNaN(fallback)) {
-        stdValue = fallback;
-      }
-    }
-
-    // --- Create the row data ---
-    const rowData: TableAggregateData = {
-      label: label,
-      // Conditionally add the GP object only for relevant stats
-      GP: statsNeedingGpMetadata.has(label)
-        ? {
-            STD: getValue(careerData, `std_${gpBaseColName}`),
-            LY: getValue(careerData, `ly_${gpBaseColName}`),
-            "3YA": getValue(careerData, `ya3_${gpBaseColName}`),
-            CA: getValue(careerData, `ca_${gpBaseColName}`),
-            L5: getValue(recentData, `l5_${gpBaseColName}`),
-            L10: getValue(recentData, `l10_${gpBaseColName}`),
-            L20: getValue(recentData, `l20_${gpBaseColName}`)
-          }
-        : undefined, // Set to undefined if not needed for this stat
-      // Populate the actual stat values (potentially converted)
-      STD: stdValue,
-      LY: lyValue,
-      "3YA": ya3Value,
-      CA: caValue,
-      L5: l5Value,
-      L10: l10Value,
-      L20: l20Value
-    };
-    combinedStatsData.push(rowData);
-  } // End of the single loop
-
-  // --- <<< NEW: Return the single combined array >>> ---
-  return combinedStatsData;
+  return buildPlayerAggregatedStats({
+    careerData,
+    recentData,
+    ratesData,
+    totalsData
+  });
 }
 
 export async function fetchPaginatedData<T>(
@@ -846,12 +738,13 @@ export async function fetchPaginatedData<T>(
 
 // New function to fetch per-game relevant totals
 export const fetchPlayerPerGameTotals = async (
-  playerId: number
+  playerId: number,
+  seasonId?: number | null
 ): Promise<SkaterTotalsData | null> => {
   if (!playerId) return null;
 
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from("wgo_skater_stats_totals")
       .select(
         `
@@ -874,8 +767,13 @@ export const fetchPlayerPerGameTotals = async (
       )
       .eq("player_id", playerId)
       .order("season", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .limit(1);
+
+    if (typeof seasonId === "number") {
+      query = query.eq("season", String(seasonId));
+    }
+
+    const { data, error } = await query.maybeSingle();
 
     if (error) {
       console.error(
@@ -890,6 +788,13 @@ export const fetchPlayerPerGameTotals = async (
     if (processedData && processedData.pp_toi_pct_per_game !== null) {
       // comes from totals as a decimal (e.g., 0.35)
       processedData.pp_toi_pct_per_game *= 100;
+    }
+    if (
+      processedData &&
+      processedData.shooting_percentage !== null &&
+      Math.abs(processedData.shooting_percentage) <= 1
+    ) {
+      processedData.shooting_percentage *= 100;
     }
 
     // console.log(`Workspaceed Per Game Totals Data for player ${playerId} (Latest Season):`, processedData);

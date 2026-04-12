@@ -133,5 +133,5 @@ export default function GoalieUnderlyingStatsDetailRoute() {
     );
   }
 
-  return <PlayerUnderlyingStatsDetailPage />;
+  return <PlayerUnderlyingStatsDetailPage variant="goalie" />;
 }

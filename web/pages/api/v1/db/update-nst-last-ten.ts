@@ -1,11 +1,15 @@
-// pages/api/v1/db/update-nst-gamelog.ts
+// pages/api/v1/db/update-nst-last-ten.ts
 
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import type { NextApiRequest, NextApiResponse } from "next";
-import axios from "axios";
 import * as cheerio from "cheerio";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
+import {
+  fetchNstTextByUrl,
+  isNstAuthError,
+  isNstRateLimitError
+} from "lib/nst/client";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
 
 dotenv.config({ path: "./../../../.env.local" });
@@ -21,10 +25,11 @@ if (!supabaseUrl || !supabaseKey) {
 
 const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
 
-// Delay interval between requests in milliseconds
-const REQUEST_INTERVAL_MS = 30000; // 30 seconds
+// Route-local pacing for sequential requests inside one run.
+// Shared cross-job NST coordination is handled separately by the NST budget policy.
+const REQUEST_INTERVAL_MS = 30000;
 
-const BASE_URL = "https://www.naturalstattrick.com/playerteams.php";
+const BASE_URL = "https://data.naturalstattrick.com/playerteams.php";
 
 // Player name mapping
 /**
@@ -438,14 +443,14 @@ async function fetchAndParseData(
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       console.log(`Fetching data from URL: ${url} (Attempt ${attempt})`);
-      const response = await axios.get(url);
+      const { text } = await fetchNstTextByUrl(url, { timeoutMs: 30000 });
 
-      if (!response.data) {
+      if (!text) {
         console.warn(`No data received from URL: ${url}`);
         return [];
       }
 
-      const $ = cheerio.load(response.data);
+      const $ = cheerio.load(text);
       const table = $("table").first();
 
       if (table.length === 0) {
@@ -550,6 +555,9 @@ async function fetchAndParseData(
 
       return dataRowsWithPlayerIds;
     } catch (error: any) {
+      if (isNstAuthError(error) || isNstRateLimitError(error)) {
+        throw error;
+      }
       console.error(
         `Attempt ${attempt} - Error fetching data from ${url}:`,
         error.message

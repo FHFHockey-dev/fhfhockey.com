@@ -25,6 +25,7 @@ import useScreenSize from "hooks/useScreenSize";
 import { getTeamLogo, getTeams, getCurrentSeason } from "lib/NHL/server";
 import { Team } from "lib/NHL/types";
 import { getLineCombinations } from "components/LineCombinations/utilities";
+import { getLinesSurfaceLinks } from "lib/navigation/siteSurfaceLinks";
 
 export type PlayerBasic = {
   playerId: number;
@@ -43,6 +44,7 @@ export type SkaterStats = PlayerBasic & {
   Hits: number;
   Blocks: number;
   PlusMinus: number;
+  TOISeconds?: number;
 };
 
 export type GoalieStats = PlayerBasic & {
@@ -283,6 +285,7 @@ export default function TeamLC({
               <PowerPlayCombos
                 teamId={teamId}
                 gameId={lineCombinations.game.id}
+                teamAbbreviation={mappedAbbreviation}
               />
             </div>
           ) : null}

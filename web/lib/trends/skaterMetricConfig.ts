@@ -43,7 +43,7 @@ export const SKATER_TREND_CATEGORIES: SkaterTrendCategoryDefinition[] = [
   }
 ];
 
-export const SKATER_WINDOW_OPTIONS = [1, 3, 5, 10] as const;
+export const SKATER_WINDOW_OPTIONS = [1, 3, 5, 10, 20] as const;
 export type SkaterWindowSize = (typeof SKATER_WINDOW_OPTIONS)[number];
 
 export const FORWARD_POSITIONS = ["C", "LW", "RW", "F", "L", "R"];

@@ -1,3 +1,8 @@
+# LEGACY MANUAL TEST SCRIPT
+# This file is not part of the production NST migration path.
+# It is a standalone parsing experiment retained only for manual debugging/reference.
+# Do not treat it as a supported runtime path.
+#
 # Import necessary modules
 import requests
 from bs4 import BeautifulSoup

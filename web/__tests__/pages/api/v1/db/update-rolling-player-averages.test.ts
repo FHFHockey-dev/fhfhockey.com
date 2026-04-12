@@ -437,7 +437,7 @@ describe("/api/v1/db/update-rolling-player-averages", () => {
     });
   });
 
-  it("returns warning status and failed audit semantics when freshness blockers are bypassed", async () => {
+  it("returns warning status and successful audit semantics when freshness blockers are bypassed", async () => {
     mainMock.mockResolvedValueOnce(
       createRollingRunSummary({
         freshnessBlockers: 2
@@ -464,7 +464,7 @@ describe("/api/v1/db/update-rolling-player-averages", () => {
       expect(res.body).toMatchObject({
         message:
           "Rolling player averages processed with freshness blockers bypassed.",
-        success: false,
+        success: true,
         operationStatus: "warning",
         warning:
           "Upstream freshness blockers were bypassed. Treat this recompute as degraded until stale sources are refreshed.",
@@ -487,7 +487,7 @@ describe("/api/v1/db/update-rolling-player-averages", () => {
       expect(auditInsertMock).toHaveBeenCalled();
       const insertedAuditRow = auditInsertMock.mock.calls.at(-1)?.[0];
       expect(insertedAuditRow).toMatchObject({
-        status: "failure",
+        status: "success",
         job_name: "/api/v1/db/update-rolling-player-averages"
       });
     } finally {
@@ -497,5 +497,43 @@ describe("/api/v1/db/update-rolling-player-averages", () => {
         process.env.SUPABASE_SERVICE_ROLE_KEY = previousServiceRoleKey;
       }
     }
+  });
+
+  it("downgrades freshness blockers to warning status for the implicit daily cron shape", async () => {
+    mainMock.mockResolvedValueOnce(
+      createRollingRunSummary({
+        freshnessBlockers: 1
+      })
+    );
+
+    const req: any = {
+      method: "GET",
+      query: {},
+      url: "/api/v1/db/update-rolling-player-averages"
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      success: true,
+      operationStatus: "warning",
+      message:
+        "Rolling player averages processed with freshness warnings on the implicit daily window.",
+      warning:
+        "Implicit daily maintenance tolerated upstream freshness blockers. Treat this recompute as degraded until stale sources are refreshed.",
+      executionProfile: "daily_incremental",
+      executionScope: expect.objectContaining({
+        implicitDailyWindowApplied: true
+      }),
+      freshnessGate: {
+        status: "FAIL",
+        blockerCount: 1,
+        bypassed: true,
+        action:
+          "Refresh stale upstream sources or use bypassFreshnessBlockers=true to override."
+      }
+    });
   });
 });

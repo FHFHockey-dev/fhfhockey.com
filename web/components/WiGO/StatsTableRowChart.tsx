@@ -1,4 +1,3 @@
-// /Users/tim/Desktop/FHFH/fhfhockey.com/web/components/WiGO/StatsTableRowChart.tsx
 import React, { useState, useMemo } from "react";
 import {
   LineChart,
@@ -13,11 +12,14 @@ import {
   Area
 } from "recharts";
 import { GameLogDataPoint } from "utils/fetchWigoPlayerStats";
-import { formatSecondsToMMSS } from "./tableUtils";
 import styles from "styles/wigoCharts.module.scss";
-import useCurrentSeason from "hooks/useCurrentSeason";
 import { TableAggregateData } from "./types";
-// Removed unused imports: letterSpacing, textTransform, useState (if not used elsewhere now)
+import {
+  formatWigoStatValue,
+  isWigoPercentStat,
+  isWigoTimeStat,
+  shouldUseGpForDiff
+} from "./statMetadata";
 
 interface GameLogChartProps {
   playerId: number;
@@ -48,21 +50,6 @@ const availableAverages: AverageKey[] = [
   "L5",
   "L10",
   "L20"
-];
-
-const convertibleCountStats: string[] = [
-  "Goals",
-  "Assists",
-  "Points",
-  "SOG",
-  "ixG",
-  "PPG",
-  "PPA",
-  "PPP",
-  "HIT",
-  "BLK",
-  "PIM",
-  "iCF"
 ];
 
 const averageColors: Record<AverageKey, string> = {
@@ -96,16 +83,12 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
     L20: false
   });
 
-  // Removed unused useCurrentSeason hook as seasonId is passed via props now
-  // const currentSeasonData = useCurrentSeason();
-  // const seasonId = currentSeasonData?.seasonId || 0;
-
   const handleAverageToggle = (key: AverageKey) => {
     setVisibleAverages((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const isTOIStat = statLabel === "ATOI" || statLabel === "PPTOI";
-  const isPercentStat = statLabel.includes("%") || statLabel === "IPP";
+  const isTOIStat = isWigoTimeStat(statLabel);
+  const isPercentStat = isWigoPercentStat(statLabel);
 
   const chartData = useMemo(() => {
     return gameLogData.map((d, index) => ({
@@ -137,14 +120,14 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
     if (value == null || isNaN(value)) return "-";
     switch (statType) {
       case "TOI":
-        return formatSecondsToMMSS(value);
+        return formatWigoStatValue(statLabel, value);
       case "Percent":
-        return `${(value * 100).toFixed(1)}%`;
+        return formatWigoStatValue(statLabel, value);
       case "CountPerGame":
         return value.toFixed(2);
       case "Other":
       default:
-        return Number.isInteger(value) ? value.toString() : value.toFixed(2);
+        return formatWigoStatValue(statLabel, value);
     }
   };
 
@@ -207,8 +190,7 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
             } else if (isPercentStat) {
               formattingType = "Percent";
             } else if (
-              tableType === "COUNTS" &&
-              convertibleCountStats.includes(statLabel) &&
+              shouldUseGpForDiff(statLabel) &&
               typeof gpValue === "number" &&
               gpValue > 0
             ) {
@@ -273,7 +255,7 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
             tickFormatter={(tick) =>
               formatDisplayValue(
                 isTOIStat ? tick * 60 : tick,
-                isTOIStat ? "TOI" : "Other"
+                isTOIStat ? "TOI" : isPercentStat ? "Percent" : "Other"
               )
             }
             tick={{ fontSize: 9, fill: "#aaa" }}
@@ -337,12 +319,7 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
             const gpValue = gpData?.[key];
             let referenceValue = null;
             if (avgValue != null) {
-              if (
-                tableType === "COUNTS" &&
-                convertibleCountStats.includes(statLabel) &&
-                typeof gpValue === "number" &&
-                gpValue > 0
-              ) {
+              if (shouldUseGpForDiff(statLabel) && typeof gpValue === "number" && gpValue > 0) {
                 referenceValue = avgValue / gpValue;
               } else if (isTOIStat) {
                 referenceValue = avgValue;
@@ -351,7 +328,7 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
                 referenceValue = avgValue;
               } else if (
                 tableType === "COUNTS" &&
-                !convertibleCountStats.includes(statLabel) &&
+                !shouldUseGpForDiff(statLabel) &&
                 !isTOIStat &&
                 !isPercentStat
               ) {

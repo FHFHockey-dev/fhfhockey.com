@@ -23,33 +23,40 @@ const ITEMS_DATA: NavbarItem[] = [
     href: "/underlying-stats",
     accent: "yellow"
   },
-  { type: "link", label: "PODCAST", href: "/podfeed" },
+  { type: "link", label: "GAME GRID", href: "/game-grid" },
   {
     type: "category",
     label: "TOOLS",
     items: [
-      { type: "link", label: "GAME GRID", href: "/game-grid" },
-      { type: "link", label: "DRAFT TOOL", href: "/draft-dashboard" },
-
-      { type: "link", label: "LINES", href: "/lines" },
       { type: "link", label: "STATS", href: "/stats" },
-      { type: "link", label: "WiGO CHARTS", href: "/wigoCharts" },
-      // { type: "link", label: "PLAYER CARDS", href: "/charts" },
-      { type: "link", label: "SHIFT CHART", href: "/shiftChart" },
-      // { type: "link", label: "TEAM STATS", href: "/teamStats" },
-      // Hidden until finished
-      // { type: "link", label: "SHOT MAP", href: "/shotMap" },
-      // { type: "link", label: "GOALIES", href: "/goalies" },
-      { type: "link", label: "LINE COMBO MATRIX", href: "/drm" }
-      // { type: "link", label: "GOALIES", href: "/goalieShareChart" },
-      // { type: "link", label: "SKO CHARTS", href: "/SkoCharts" },
-      // { type: "link", label: "BLSH", href: "/buyLowSellHigh" },
+      { type: "link", label: "TRENDS", href: "/trends" },
+      { type: "link", label: "LINES", href: "/lines" },
+      { type: "link", label: "LINE COMBO MATRIX", href: "/drm" },
+      { type: "link", label: "SPLITS", href: "/splits" }
     ]
   },
   {
     type: "category",
-    label: "MORE",
-    items: [{ type: "link", label: "BLOG", href: "/blog" }]
+    label: "CHARTS",
+    items: [
+      { type: "link", label: "START CHART", href: "/start-chart" },
+      { type: "link", label: "WiGO", href: "/wigoCharts" },
+      { type: "link", label: "SHIFT CHART", href: "/shiftChart" }
+    ]
+  },
+  {
+    type: "category",
+    label: "VARIANCE",
+    items: [
+      { type: "link", label: "SKATERS", href: "/variance/skaters" },
+      { type: "link", label: "GOALIES", href: "/variance/goalies" }
+    ]
+  },
+  { type: "link", label: "BLOG", href: "/blog" },
+  {
+    type: "link",
+    label: "PODCAST",
+    href: "/podfeed"
   }
 ];
 

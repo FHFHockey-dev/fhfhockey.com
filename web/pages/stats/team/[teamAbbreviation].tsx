@@ -11,6 +11,7 @@ import { TeamTabNavigation } from "components/TeamTabNavigation/TeamTabNavigatio
 import TeamDropdown from "components/TeamDropdown";
 import { getTeams } from "lib/NHL/server";
 import { getTeamAbbreviationById } from "lib/teamsInfo";
+import { getTeamSurfaceLinks } from "lib/navigation/siteSurfaceLinks";
 
 // Shot data interface
 interface ShotData {

@@ -1,7 +1,7 @@
 // /Users/tim/Desktop/FHFH/fhfhockey.com/web/pages/api/Averages/helpers.ts
 
 import { HTMLElement, parse } from "node-html-parser";
-import fetchWithCache from "lib/fetchWithCache";
+import { buildNstUrlString, fetchNstTextWithCacheByUrl } from "lib/nst/client";
 import { YearlyCount, YearlyRate } from "./types";
 
 /**
@@ -136,8 +136,15 @@ export async function fetchPlayerData(
   individualRows: Array<{ [key: string]: string }>;
   onIceRows: Array<{ [key: string]: string }>;
 }> {
-  const URL = `https://naturalstattrick.com/playerreport.php?stype=2&sit=all&stdoi=std&rate=${rate}&v=p&playerid=${playerId}`;
-  const html = (await fetchWithCache(URL, false)) as string;
+  const URL = buildNstUrlString("playerreport.php", {
+    stype: 2,
+    sit: "all",
+    stdoi: "std",
+    rate,
+    v: "p",
+    playerid: playerId
+  });
+  const { text: html } = await fetchNstTextWithCacheByUrl(URL);
   const document = parse(html);
 
   const individual = parseTable(document.getElementById("indreg"));

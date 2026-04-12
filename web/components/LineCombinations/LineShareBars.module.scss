@@ -1,0 +1,97 @@
+@use "styles/vars";
+
+.wrapper {
+  margin-top: vars.$space-lg;
+  padding: vars.$space-md vars.$space-lg;
+  border-radius: vars.$border-radius-lg;
+  border: 1px solid rgba(vars.$border-secondary, 0.75);
+  background: rgba(vars.$background-light, 0.92);
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: vars.$space-xs;
+  margin-bottom: vars.$space-md;
+}
+
+.title,
+.description {
+  margin: 0;
+}
+
+.description {
+  color: vars.$text-secondary;
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: vars.$space-md;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(180px, 220px) 1fr 1fr;
+  gap: vars.$space-md;
+  align-items: center;
+}
+
+.meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.label {
+  font-size: vars.$font-size-sm;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.players {
+  color: vars.$text-secondary;
+  font-size: vars.$font-size-xs;
+}
+
+.metricBlock {
+  display: flex;
+  flex-direction: column;
+  gap: vars.$space-xs;
+}
+
+.metricHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: vars.$space-sm;
+  font-size: vars.$font-size-xs;
+}
+
+.track {
+  position: relative;
+  width: 100%;
+  height: 12px;
+  border-radius: 999px;
+  background: rgba(vars.$background-dark, 0.65);
+  overflow: hidden;
+}
+
+.fillTime,
+.fillGoals {
+  height: 100%;
+  border-radius: inherit;
+}
+
+.fillTime {
+  background: linear-gradient(90deg, rgba(vars.$primary-color, 0.95), rgba(vars.$primary-color, 0.45));
+}
+
+.fillGoals {
+  background: linear-gradient(90deg, rgba(vars.$success-color, 0.95), rgba(vars.$success-color, 0.45));
+}
+
+@media screen and (max-width: vars.$breakpoint-tablet) {
+  .row {
+    grid-template-columns: 1fr;
+  }
+}

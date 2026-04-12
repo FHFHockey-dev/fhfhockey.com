@@ -1,0 +1,78 @@
+@use "styles/vars" as v;
+
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-sm;
+  width: 100%;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.eyebrow {
+  margin: 0;
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.title {
+  margin: 0;
+  color: v.$color-white;
+  font-size: v.$font-size-md;
+  font-family: v.$font-family-accent;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.description {
+  margin: 0;
+  color: v.$text-secondary;
+  font-size: v.$font-size-sm;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: v.$space-sm;
+}
+
+.linkCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: v.$space-sm v.$space-md;
+  border-radius: v.$border-radius-md;
+  border: 1px solid v.$border-secondary;
+  background: rgba(255, 255, 255, 0.03);
+  text-decoration: none;
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    background 0.18s ease;
+}
+
+.linkCard:hover {
+  transform: translateY(-1px);
+  border-color: v.$primary-color;
+  background: rgba(v.$primary-color, 0.1);
+}
+
+.label {
+  color: v.$color-white;
+  font-size: v.$font-size-sm;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.copy {
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+  line-height: 1.45;
+}
