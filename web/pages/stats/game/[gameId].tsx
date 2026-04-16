@@ -1,4 +1,5 @@
 import Head from "next/head";
+import type { GetServerSideProps } from "next";
 import { useRouter } from "next/router";
 import useSWR from "swr";
 import styles from "./[gameId].module.scss";
@@ -360,3 +361,7 @@ export default function GameStatsPage() {
     </>
   );
 }
+
+export const getServerSideProps: GetServerSideProps = async () => ({
+  props: {}
+});

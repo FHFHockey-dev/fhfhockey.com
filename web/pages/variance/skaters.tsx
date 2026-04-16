@@ -1,19 +1,17 @@
 import Head from "next/head";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import supabase from "lib/supabase";
-import { parseMinimumGamesPlayedInput } from "components/Variance/varianceFilters";
-import {
-  buildSkaterVarianceRows,
-  type SkaterVarianceGameRow,
-  type SkaterVarianceRow
-} from "components/Variance/skaterVariance";
+import SkaterList from "components/SkaterPage/SkaterList";
+import Spinner from "components/Spinner/Spinner";
+import type {
+  SkaterGameRow,
+  SkaterWeek,
+  YahooSkaterRow
+} from "components/SkaterPage/skaterTypes";
 
 import styles from "./variance.module.scss";
-
-type SortDirection = "ascending" | "descending";
-type SortKey = keyof SkaterVarianceRow;
 
 const SKATER_SELECT_FIELDS = [
   "player_id",
@@ -25,65 +23,98 @@ const SKATER_SELECT_FIELDS = [
   "season_id",
   "games_played",
   "points",
+  "points_per_game",
   "goals",
   "assists",
   "shots",
-  "toi_per_game"
+  "shooting_percentage",
+  "plus_minus",
+  "pp_points",
+  "pp_goals",
+  "pp_assists",
+  "pp_toi",
+  "pp_toi_per_game",
+  "sh_points",
+  "sh_goals",
+  "sh_assists",
+  "hits",
+  "blocked_shots",
+  "penalty_minutes",
+  "toi_per_game",
+  "individual_sat_for_per_60"
 ].join(",");
 
-const PAGE_SIZE = 1000;
+const YAHOO_SKATER_SELECT_FIELDS = [
+  "player_id",
+  "season",
+  "player_name",
+  "full_name",
+  "percent_ownership",
+  "ownership_timeline",
+  "draft_analysis",
+  "average_draft_pick",
+  "average_draft_round",
+  "average_draft_cost",
+  "percent_drafted"
+].join(",");
 
-const columns: Array<{
-  key: SortKey;
-  label: string;
-  title?: string;
-  format?: (value: SkaterVarianceRow[SortKey]) => string;
-}> = [
-  { key: "playerName", label: "Player" },
-  { key: "team", label: "Team" },
-  { key: "position", label: "Pos" },
-  { key: "gamesPlayed", label: "GP" },
-  {
-    key: "productionProxy",
-    label: "Prod",
-    title: "Neutral v1 production proxy: points plus 0.1 shots.",
-    format: (value) => formatNumber(value)
-  },
-  { key: "goals", label: "G" },
-  { key: "assists", label: "A" },
-  { key: "shots", label: "SOG" },
-  {
-    key: "toiPerGame",
-    label: "TOI/GP",
-    title: "Average time on ice per game from wgo_skater_stats.",
-    format: formatToi
-  },
-  {
-    key: "gameVolatility",
-    label: "Game Vol",
-    title: "Standard deviation of the neutral production proxy by game.",
-    format: (value) => formatNumber(value)
-  }
-];
+const INITIAL_PAGE_SIZE = 200;
+const PAGE_SIZE = 200;
 
-const formatNumber = (value: unknown, digits = 2) =>
-  typeof value === "number" && Number.isFinite(value)
-    ? value.toFixed(digits)
-    : "N/A";
+type PagedSkaterRowsResult = {
+  rows: SkaterGameRow[];
+  hasMore: boolean;
+};
 
-function formatToi(value: unknown) {
-  if (typeof value !== "number" || !Number.isFinite(value)) {
-    return "N/A";
+type YahooNhlPlayerMapRow = {
+  nhl_player_id: string | null;
+  yahoo_player_id: string | null;
+};
+
+const normalizeIntegerLike = (value: unknown): number | null => {
+  if (typeof value === "number") {
+    return Number.isSafeInteger(value) ? value : Math.trunc(value);
   }
 
-  const totalSeconds = Math.round(value);
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
+  if (typeof value !== "string") {
+    return null;
+  }
 
-  return `${minutes}:${String(seconds).padStart(2, "0")}`;
-}
+  const normalized = value.trim();
+  if (normalized.length === 0) {
+    return null;
+  }
+
+  const numericValue = Number(normalized);
+  if (Number.isFinite(numericValue)) {
+    return Math.trunc(numericValue);
+  }
+
+  const digitGroups = normalized.match(/-?\d+/g);
+  if (!digitGroups || digitGroups.length === 0) {
+    return null;
+  }
+
+  const parsed = Number(digitGroups[digitGroups.length - 1]);
+  return Number.isSafeInteger(parsed) ? parsed : null;
+};
 
 async function fetchLatestSeasonId() {
+  const { data: totalsData, error: totalsError } = await supabase
+    .from("wgo_skater_stats_totals")
+    .select("season")
+    .not("season", "is", null)
+    .order("season", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!totalsError) {
+    const parsedSeasonId = Number(totalsData?.season);
+    if (Number.isFinite(parsedSeasonId)) {
+      return parsedSeasonId;
+    }
+  }
+
   const { data, error } = await supabase
     .from("wgo_skater_stats")
     .select("season_id")
@@ -93,91 +124,281 @@ async function fetchLatestSeasonId() {
     .maybeSingle();
 
   if (error) {
-    throw error;
+    throw totalsError ?? error;
   }
 
   return typeof data?.season_id === "number" ? data.season_id : null;
 }
 
-async function fetchSeasonSkaterRows(seasonId: number) {
-  const rows: SkaterVarianceGameRow[] = [];
-  let page = 0;
+async function fetchSeasonSkaterRowsPage(
+  seasonId: number,
+  page: number,
+  pageSize = PAGE_SIZE
+): Promise<PagedSkaterRowsResult> {
+  const from = page * pageSize;
+  const to = from + pageSize - 1;
+  const { data, error } = await supabase
+    .from("wgo_skater_stats")
+    .select(SKATER_SELECT_FIELDS)
+    .eq("season_id", seasonId)
+    .gt("games_played", 0)
+    .order("id", { ascending: true })
+    .range(from, to);
 
-  while (true) {
-    const from = page * PAGE_SIZE;
-    const to = from + PAGE_SIZE - 1;
-    const { data, error } = await supabase
-      .from("wgo_skater_stats")
-      .select(SKATER_SELECT_FIELDS)
-      .eq("season_id", seasonId)
-      .gt("games_played", 0)
-      .order("date", { ascending: true })
-      .range(from, to);
-
-    if (error) {
-      throw error;
-    }
-
-    rows.push(...(((data ?? []) as unknown) as SkaterVarianceGameRow[]));
-
-    if (!data || data.length < PAGE_SIZE) {
-      return rows;
-    }
-
-    page += 1;
+  if (error) {
+    throw error;
   }
+
+  const rows = (data ?? []) as unknown as SkaterGameRow[];
+  return {
+    rows,
+    hasMore: rows.length === pageSize
+  };
 }
 
-const compareValues = (
-  aValue: SkaterVarianceRow[SortKey],
-  bValue: SkaterVarianceRow[SortKey],
-  direction: SortDirection
+function getYahooSeasonFromNhlSeasonId(seasonId: number) {
+  return Number.parseInt(String(seasonId).slice(0, 4), 10);
+}
+
+function getYahooSeasonStringFromNhlSeasonId(seasonId: number) {
+  return String(seasonId).slice(0, 4);
+}
+
+async function fetchYahooSkaterRowsForNhlPlayerIds(
+  seasonId: number,
+  nhlPlayerIds: number[]
+) {
+  const uniqueNhlPlayerIds = Array.from(new Set(nhlPlayerIds)).filter(
+    (playerId) => Number.isFinite(playerId)
+  );
+
+  if (uniqueNhlPlayerIds.length === 0) {
+    return [] as YahooSkaterRow[];
+  }
+
+  const { data: mappingData, error: mappingError } = await supabase
+    .from("yahoo_nhl_player_map_mat")
+    .select("nhl_player_id, yahoo_player_id")
+    .in("nhl_player_id", uniqueNhlPlayerIds.map(String));
+
+  if (mappingError) {
+    throw mappingError;
+  }
+
+  const yahooSeason = getYahooSeasonFromNhlSeasonId(seasonId);
+  const yahooToNhlMap = new Map<string, number>();
+  const yahooLookupIds = new Set<string>(uniqueNhlPlayerIds.map(String));
+
+  ((mappingData ?? []) as unknown as YahooNhlPlayerMapRow[]).forEach((row) => {
+    if (!row.yahoo_player_id || !row.nhl_player_id) {
+      return;
+    }
+
+    const normalizedNhlId = normalizeIntegerLike(row.nhl_player_id);
+    if (normalizedNhlId === null) {
+      return;
+    }
+
+    yahooLookupIds.add(row.yahoo_player_id);
+    yahooToNhlMap.set(row.yahoo_player_id, normalizedNhlId);
+  });
+
+  const { data, error } = await supabase
+    .from("yahoo_players")
+    .select(YAHOO_SKATER_SELECT_FIELDS)
+    .eq("season", yahooSeason)
+    .in("player_id", Array.from(yahooLookupIds));
+
+  if (error) {
+    throw error;
+  }
+
+  return ((data ?? []) as unknown as YahooSkaterRow[]).reduce<YahooSkaterRow[]>(
+    (normalizedRows, row) => {
+      const normalizedNhlId =
+        (row.player_id != null
+          ? yahooToNhlMap.get(String(row.player_id))
+          : undefined) ?? normalizeIntegerLike(row.player_id);
+
+      if (normalizedNhlId === null) {
+        return normalizedRows;
+      }
+
+      normalizedRows.push({
+        ...row,
+        player_id: normalizedNhlId
+      });
+
+      return normalizedRows;
+    },
+    []
+  );
+}
+
+const mergeYahooRows = (
+  currentRows: YahooSkaterRow[],
+  nextRows: YahooSkaterRow[]
 ) => {
-  const aMissing =
-    aValue == null || (typeof aValue === "number" && !Number.isFinite(aValue));
-  const bMissing =
-    bValue == null || (typeof bValue === "number" && !Number.isFinite(bValue));
+  const mergedByPlayerId = new Map<number, YahooSkaterRow>();
 
-  if (aMissing && bMissing) {
-    return 0;
-  }
+  [...currentRows, ...nextRows].forEach((row) => {
+    const normalizedPlayerId = normalizeIntegerLike(row.player_id);
+    if (normalizedPlayerId === null) {
+      return;
+    }
 
-  if (aMissing) {
-    return 1;
-  }
+    mergedByPlayerId.set(normalizedPlayerId, {
+      ...row,
+      player_id: normalizedPlayerId
+    });
+  });
 
-  if (bMissing) {
-    return -1;
-  }
-
-  if (typeof aValue === "string" && typeof bValue === "string") {
-    const result = aValue.localeCompare(bValue);
-    return direction === "ascending" ? result : -result;
-  }
-
-  const result = Number(aValue) - Number(bValue);
-  return direction === "ascending" ? result : -result;
+  return Array.from(mergedByPlayerId.values());
 };
 
+async function fetchYahooMatchupWeeks(seasonId: number) {
+  const yahooSeason = getYahooSeasonStringFromNhlSeasonId(seasonId);
+  const { data, error } = await supabase
+    .from("yahoo_matchup_weeks")
+    .select("season, week, start_date, end_date")
+    .eq("season", yahooSeason)
+    .order("week", { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  return (
+    (data ?? []) as Array<{
+      season: string | number | null;
+      week: number | null;
+      start_date: string | null;
+      end_date: string | null;
+    }>
+  )
+    .filter(
+      (week) =>
+        week.week !== null && week.start_date !== null && week.end_date !== null
+    )
+    .map(
+      (week): SkaterWeek => ({
+        key: `${week.season ?? yahooSeason}:${week.week}`,
+        season: week.season,
+        weekNumber: week.week,
+        startDate: week.start_date as string,
+        endDate: week.end_date as string
+      })
+    );
+}
+
 export default function VarianceSkatersPage() {
-  const [rows, setRows] = useState<SkaterVarianceRow[]>([]);
+  const [gameRows, setGameRows] = useState<SkaterGameRow[]>([]);
   const [seasonId, setSeasonId] = useState<number | null>(null);
+  const [yahooRows, setYahooRows] = useState<YahooSkaterRow[]>([]);
+  const [matchupWeeks, setMatchupWeeks] = useState<SkaterWeek[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMoreRows, setHasMoreRows] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [minimumGamesPlayed, setMinimumGamesPlayed] = useState(0);
-  const [minimumGamesPlayedInput, setMinimumGamesPlayedInput] = useState("0");
-  const [minimumGamesPlayedError, setMinimumGamesPlayedError] =
-    useState<string | null>(null);
-  const [sortKey, setSortKey] = useState<SortKey>("productionProxy");
-  const [sortDirection, setSortDirection] =
-    useState<SortDirection>("descending");
 
   useEffect(() => {
     let cancelled = false;
+    const loadedPlayerIds = new Set<number>();
+
+    const collectNewPlayerIds = (rows: SkaterGameRow[]) => {
+      const nextPlayerIds: number[] = [];
+
+      rows.forEach((row) => {
+        if (
+          typeof row.player_id !== "number" ||
+          !Number.isFinite(row.player_id)
+        ) {
+          return;
+        }
+
+        if (!loadedPlayerIds.has(row.player_id)) {
+          loadedPlayerIds.add(row.player_id);
+          nextPlayerIds.push(row.player_id);
+        }
+      });
+
+      return nextPlayerIds;
+    };
+
+    const loadYahooRowsForPlayers = async (
+      nextSeasonId: number,
+      playerIds: number[]
+    ) => {
+      if (playerIds.length === 0) {
+        return [] as YahooSkaterRow[];
+      }
+
+      try {
+        return await fetchYahooSkaterRowsForNhlPlayerIds(
+          nextSeasonId,
+          playerIds
+        );
+      } catch (yahooError) {
+        console.warn("Yahoo skater context is unavailable:", yahooError);
+        return [] as YahooSkaterRow[];
+      }
+    };
+
+    const loadRemainingRows = async (
+      nextSeasonId: number,
+      startPage: number
+    ) => {
+      setLoadingMore(true);
+
+      try {
+        let page = startPage;
+
+        while (!cancelled) {
+          const nextPage = await fetchSeasonSkaterRowsPage(nextSeasonId, page);
+          const nextPlayerIds = collectNewPlayerIds(nextPage.rows);
+          const nextYahooRows = await loadYahooRowsForPlayers(
+            nextSeasonId,
+            nextPlayerIds
+          );
+
+          if (cancelled) {
+            return;
+          }
+
+          if (nextPage.rows.length === 0) {
+            setHasMoreRows(false);
+            return;
+          }
+
+          setGameRows((currentRows) => [...currentRows, ...nextPage.rows]);
+          if (nextYahooRows.length > 0) {
+            setYahooRows((currentRows) =>
+              mergeYahooRows(currentRows, nextYahooRows)
+            );
+          }
+          setHasMoreRows(nextPage.hasMore);
+
+          if (!nextPage.hasMore) {
+            return;
+          }
+
+          page += 1;
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingMore(false);
+        }
+      }
+    };
 
     const loadRows = async () => {
       setLoading(true);
+      setLoadingMore(false);
+      setHasMoreRows(false);
       setError(null);
+      setGameRows([]);
+      setYahooRows([]);
+      setMatchupWeeks([]);
 
       try {
         const latestSeasonId = await fetchLatestSeasonId();
@@ -186,18 +407,38 @@ export default function VarianceSkatersPage() {
           throw new Error("No skater season is available.");
         }
 
-        const gameRows = await fetchSeasonSkaterRows(latestSeasonId);
-        const nextRows = buildSkaterVarianceRows(gameRows);
+        const [firstPage, nextMatchupWeeks] = await Promise.all([
+          fetchSeasonSkaterRowsPage(latestSeasonId, 0, INITIAL_PAGE_SIZE),
+          fetchYahooMatchupWeeks(latestSeasonId).catch((weekError) => {
+            console.warn("Yahoo matchup weeks are unavailable:", weekError);
+            return [] as SkaterWeek[];
+          })
+        ]);
+
+        const nextYahooRows = await loadYahooRowsForPlayers(
+          latestSeasonId,
+          collectNewPlayerIds(firstPage.rows)
+        );
 
         if (!cancelled) {
           setSeasonId(latestSeasonId);
-          setRows(nextRows);
+          setYahooRows(nextYahooRows);
+          setMatchupWeeks(nextMatchupWeeks);
+          setGameRows(firstPage.rows);
+          setHasMoreRows(firstPage.hasMore);
+          setLoading(false);
+
+          if (firstPage.hasMore) {
+            void loadRemainingRows(latestSeasonId, 1);
+          }
         }
       } catch (loadError) {
         console.error("Error loading skater variance rows:", loadError);
         if (!cancelled) {
           setError("Skater variance data is unavailable.");
-          setRows([]);
+          setGameRows([]);
+          setYahooRows([]);
+          setMatchupWeeks([]);
         }
       } finally {
         if (!cancelled) {
@@ -213,73 +454,13 @@ export default function VarianceSkatersPage() {
     };
   }, []);
 
-  const filteredRows = useMemo(
-    () =>
-      rows.filter((row) => row.gamesPlayed >= minimumGamesPlayed),
-    [minimumGamesPlayed, rows]
-  );
-
-  const sortedRows = useMemo(
-    () =>
-      [...filteredRows]
-        .map((row, index) => ({ row, index }))
-        .sort((a, b) => {
-          const result = compareValues(
-            a.row[sortKey],
-            b.row[sortKey],
-            sortDirection
-          );
-
-          return result === 0 ? a.index - b.index : result;
-        })
-        .map(({ row }) => row),
-    [filteredRows, sortDirection, sortKey]
-  );
-
-  const handleMinimumGamesChange = (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const nextValue = event.target.value;
-    setMinimumGamesPlayedInput(nextValue);
-    const parsed = parseMinimumGamesPlayedInput(
-      nextValue,
-      minimumGamesPlayed
-    );
-    setMinimumGamesPlayed(parsed.minimumGamesPlayed);
-    setMinimumGamesPlayedError(parsed.error);
-  };
-
-  const requestSort = (key: SortKey) => {
-    if (key === sortKey) {
-      setSortDirection((current) =>
-        current === "ascending" ? "descending" : "ascending"
-      );
-      return;
-    }
-
-    setSortKey(key);
-    setSortDirection(
-      key === "playerName" || key === "team" || key === "position"
-        ? "ascending"
-        : "descending"
-    );
-  };
-
-  const getSortIndicator = (key: SortKey) => {
-    if (key !== sortKey) {
-      return "";
-    }
-
-    return sortDirection === "ascending" ? " ▲" : " ▼";
-  };
-
   return (
     <>
       <Head>
         <title>Variance Skaters | FHFHockey</title>
         <meta
           name="description"
-          content="First live MVP table for the Variance skaters surface."
+          content="Skater variance leaderboard with ownership and ADP valuation."
         />
       </Head>
 
@@ -288,86 +469,40 @@ export default function VarianceSkatersPage() {
           <p className={styles.eyebrow}>Variance</p>
           <h1 className={styles.title}>Skaters</h1>
           <p className={styles.description}>
-            First MVP table built from existing skater game rows. Production is
-            a neutral points-plus-shot-volume proxy, not the goalie fantasy
-            model.
+            Weekly fantasy-point variance, peer-bucket value, and standard
+            skater metrics from existing game rows.
           </p>
           <Link className={styles.backLink} href="/variance">
             Back to Variance
           </Link>
         </header>
 
-        <section className={styles.tableSection}>
-          <div className={styles.tableToolbar}>
-            <div>
-              <h2 className={styles.tableTitle}>Skater Variance MVP</h2>
-              <p className={styles.tableMeta}>
-                {seasonId ? `Season ${seasonId}` : "Latest available season"}
-              </p>
-            </div>
-
-            <label className={styles.inputGroup} htmlFor="skaters-min-games">
-              <span>Minimum GP</span>
-              <input
-                id="skaters-min-games"
-                className={styles.textInput}
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                value={minimumGamesPlayedInput}
-                onChange={handleMinimumGamesChange}
-                placeholder="0"
-                aria-invalid={Boolean(minimumGamesPlayedError)}
-              />
-              <small>
-                {minimumGamesPlayedError ?? "Empty input shows all skaters."}
-              </small>
-            </label>
+        {loading ? (
+          <div className={styles.loadingState}>
+            <Spinner center />
+            <p className={styles.statusText}>Loading first skater batch...</p>
           </div>
-
-          {loading ? (
-            <p className={styles.statusText}>Loading skater rows...</p>
-          ) : error ? (
-            <p className={styles.statusText}>{error}</p>
-          ) : sortedRows.length === 0 ? (
-            <p className={styles.statusText}>
-              No skaters match the current Minimum GP filter.
-            </p>
-          ) : (
-            <div className={styles.tableScroller}>
-              <table className={styles.dataTable}>
-                <thead>
-                  <tr>
-                    {columns.map((column) => (
-                      <th
-                        key={column.key}
-                        onClick={() => requestSort(column.key)}
-                        title={column.title}
-                      >
-                        {column.label}
-                        {getSortIndicator(column.key)}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {sortedRows.map((row) => (
-                    <tr key={row.playerId}>
-                      {columns.map((column) => {
-                        const value = row[column.key];
-                        const formatted = column.format
-                          ? column.format(value)
-                          : String(value ?? "N/A");
-
-                        return <td key={column.key}>{formatted}</td>;
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
+        ) : error ? (
+          <p className={styles.statusText}>{error}</p>
+        ) : (
+          <>
+            <SkaterList
+              seasonId={seasonId}
+              gameRows={gameRows}
+              yahooRows={yahooRows}
+              matchupWeeks={matchupWeeks}
+            />
+            {loadingMore || hasMoreRows ? (
+              <div className={styles.bottomLoadingState}>
+                <Spinner size="small" />
+                <p className={styles.statusText}>
+                  Loading more skater rows in the background...{" "}
+                  {gameRows.length} rows loaded.
+                </p>
+              </div>
+            ) : null}
+          </>
+        )}
       </main>
     </>
   );

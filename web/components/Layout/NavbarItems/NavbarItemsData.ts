@@ -32,7 +32,12 @@ const ITEMS_DATA: NavbarItem[] = [
       { type: "link", label: "TRENDS", href: "/trends" },
       { type: "link", label: "LINES", href: "/lines" },
       { type: "link", label: "LINE COMBO MATRIX", href: "/drm" },
-      { type: "link", label: "SPLITS", href: "/splits" }
+      { type: "link", label: "SPLITS", href: "/splits" },
+      {
+        type: "link",
+        label: "DRAFT DASHBOARD",
+        href: "/draft-dashboard"
+      }
     ]
   },
   {

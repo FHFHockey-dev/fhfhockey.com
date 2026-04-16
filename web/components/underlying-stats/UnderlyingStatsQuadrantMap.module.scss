@@ -1,0 +1,154 @@
+@use "styles/vars" as v;
+
+.shell {
+  position: relative;
+  min-height: 24rem;
+}
+
+.quadrantLabels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(v.$color-white, 0.38);
+}
+
+.quadrantTopLeft,
+.quadrantTopRight,
+.quadrantBottomLeft,
+.quadrantBottomRight {
+  position: absolute;
+}
+
+.quadrantTopLeft {
+  top: 0.1rem;
+  left: 0.25rem;
+}
+
+.quadrantTopRight {
+  top: 0.1rem;
+  right: 0.25rem;
+}
+
+.quadrantBottomLeft {
+  bottom: 0.4rem;
+  left: 0.25rem;
+}
+
+.quadrantBottomRight {
+  right: 0.25rem;
+  bottom: 0.4rem;
+}
+
+.chartArea {
+  height: 24rem;
+  width: 100%;
+}
+
+.pointGroup {
+  cursor: pointer;
+}
+
+.point {
+  fill: rgba(v.$color-brand-yellow, 0.18);
+  stroke: rgba(v.$color-brand-yellow, 0.82);
+  stroke-width: 1.4;
+  transition: r 0.16s ease, fill 0.16s ease, stroke 0.16s ease;
+}
+
+.pointActive {
+  fill: rgba(v.$color-brand-yellow, 0.3);
+  stroke: rgba(v.$color-white, 0.92);
+  stroke-width: 1.8;
+}
+
+.pointLabel,
+.pointLabelActive {
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  fill: v.$color-white;
+  pointer-events: none;
+}
+
+.pointLabelActive {
+  font-size: 0.68rem;
+}
+
+.tooltip {
+  min-width: 14rem;
+  max-width: 18rem;
+  border: 1px solid rgba(v.$color-brand-yellow, 0.34);
+  border-radius: v.$radius-sm;
+  background: rgba(11, 12, 16, 0.96);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.34);
+  padding: 0.8rem;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.tooltipHeader {
+  display: grid;
+  gap: 0.12rem;
+}
+
+.tooltipTeam {
+  color: v.$color-white;
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.tooltipName {
+  color: v.$text-secondary;
+  font-size: 0.75rem;
+}
+
+.tooltipMetrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  color: v.$color-brand-yellow;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.tooltipSummary {
+  margin: 0;
+  color: v.$text-primary;
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.tooltipList {
+  margin: 0;
+  padding-left: 1rem;
+  color: v.$text-secondary;
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
+.tooltipTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.tooltipTag {
+  border-radius: 999px;
+  border: 1px solid rgba(v.$color-brand-yellow, 0.26);
+  background: rgba(v.$color-brand-yellow, 0.1);
+  color: v.$color-brand-yellow;
+  padding: 0.2rem 0.45rem;
+  font-size: 0.66rem;
+  font-weight: 700;
+  line-height: 1;
+}

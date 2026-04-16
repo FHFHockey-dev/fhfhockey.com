@@ -176,16 +176,98 @@
   border-color: v.$primary-color;
 }
 
+.controlPanel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: v.$space-md;
+}
+
+.segmentGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: v.$space-xs;
+}
+
+.segmentButton,
+.tabButton {
+  min-height: 2.5rem;
+  padding: 0.65rem 0.9rem;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-sm;
+  background: rgba(255, 255, 255, 0.03);
+  color: v.$text-secondary;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.segmentButtonActive,
+.tabButtonActive {
+  border-color: v.$primary-color;
+  color: v.$color-white;
+  background: rgba(v.$primary-color, 0.16);
+}
+
+.scoringGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: v.$space-sm;
+}
+
+.scoringItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: v.$space-sm;
+  padding: 0.6rem;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-sm;
+  color: v.$text-secondary;
+  font-size: v.$font-size-sm;
+}
+
+.scoringItem span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.scoringInput {
+  width: 4.25rem;
+  min-height: 2rem;
+  padding: 0.35rem 0.45rem;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-sm;
+  background: rgba(0, 0, 0, 0.22);
+  color: v.$color-white;
+}
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: v.$space-xs;
+}
+
 .tableScroller {
   width: 100%;
   overflow: auto;
 }
 
+.virtualTableScroller {
+  max-height: 72vh;
+}
+
 .dataTable {
+  --sticky-header-height: 3rem;
+  --sticky-row-height: 2.9rem;
   width: 100%;
   min-width: 900px;
   border-collapse: collapse;
   color: v.$text-primary;
+}
+
+.virtualizedDataTable {
+  --virtual-row-height: 46px;
 }
 
 .dataTable th,
@@ -196,12 +278,21 @@
   white-space: nowrap;
 }
 
+.virtualizedDataTable td {
+  height: var(--virtual-row-height);
+}
+
 .dataTable th {
+  position: sticky;
+  top: 0;
+  z-index: 5;
   color: v.$text-secondary;
   font-size: v.$font-size-xs;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   cursor: pointer;
+  background: rgba(10, 12, 16, 0.96);
+  backdrop-filter: blur(10px);
 }
 
 .dataTable th:first-child,
@@ -213,10 +304,64 @@
   background: rgba(255, 255, 255, 0.04);
 }
 
+.bucketTintRow:nth-child(odd) td {
+  background: hsl(var(--bucket-hue), 20%, 12%);
+}
+
+.bucketTintRow:nth-child(even) td {
+  background: hsl(var(--bucket-hue), 22%, 14%);
+}
+
+.bucketTintRow:hover td {
+  background: hsl(var(--bucket-hue), 25%, 18%);
+}
+
+.bucketAverageRow td {
+  border-top: 1px solid v.$border-primary;
+  color: v.$color-white;
+  font-weight: 700;
+  background: hsl(var(--bucket-hue), 24%, 17%);
+}
+
+.virtualSpacerRow td {
+  height: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.pinnedBucketAverageRow td {
+  background: hsl(var(--bucket-hue), 24%, 17%);
+}
+
+.waiverWireRow td {
+  color: v.$text-primary;
+}
+
+.lowPercentDraftedRow td {
+  color: v.$warning-color;
+}
+
 .statusText {
   margin: 0;
   color: v.$text-secondary;
   line-height: 1.6;
+}
+
+.loadingState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: v.$space-sm;
+  padding: v.$space-lg 0;
+}
+
+.bottomLoadingState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: v.$space-sm;
+  padding: v.$space-md 0 v.$space-lg;
 }
 
 @media (max-width: 700px) {

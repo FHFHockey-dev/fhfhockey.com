@@ -1797,6 +1797,97 @@ describe("Forge dashboard render states", () => {
     ).toBeTruthy();
   });
 
+  it("withholds blocked skater-trend rows when the fallback scope is materially stale", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/team-ratings")) return jsonResponse([]);
+      if (url.includes("/api/v1/sustainability/trends")) {
+        return jsonResponse({ snapshot_date: "2026-02-07", rows: [] });
+      }
+      if (url.includes("/api/v1/forge/goalies")) {
+        return jsonResponse({ asOfDate: "2026-02-07", data: [] });
+      }
+      if (url.includes("/api/v1/start-chart")) {
+        return jsonResponse({ dateUsed: "2026-02-07", games: [] });
+      }
+      if (url.includes("/api/v1/forge/players")) {
+        return jsonResponse(emptyForgePlayersResponse());
+      }
+      if (url.includes("/api/v1/transactions/ownership-trends")) {
+        return jsonResponse(emptyOwnershipResponse());
+      }
+      if (url.includes("/api/v1/transactions/ownership-snapshots")) {
+        return jsonResponse({ success: true, players: [] });
+      }
+      if (url.includes("/api/v1/trends/team-ctpi")) {
+        return jsonResponse({ generatedAt: "2026-02-07T12:00:00.000Z", teams: [] });
+      }
+      if (url.includes("/api/v1/trends/skater-power")) {
+        return jsonResponse({
+          generatedAt: "2026-02-07T12:00:00.000Z",
+          requestedDate: "2026-02-07",
+          dateUsed: "2025-10-16",
+          fallbackApplied: true,
+          serving: {
+            requestedDate: "2026-02-07",
+            resolvedDate: "2025-10-16",
+            fallbackApplied: true,
+            isSameDay: false,
+            state: "fallback",
+            strategy: "latest_available_with_data",
+            gapDays: 114,
+            severity: "error",
+            status: "blocked",
+            message:
+              "Trend movement fallback is materially stale: requested 2026-02-07, but latest available scope is 2025-10-16 (114 days old). Treat this module as degraded until fresher trend rows exist."
+          },
+          categories: {
+            shotsPer60: {
+              rankings: [
+                {
+                  playerId: 101,
+                  percentile: 92,
+                  gp: 5,
+                  rank: 1,
+                  previousRank: 3,
+                  delta: 4,
+                  latestValue: 10.2
+                }
+              ],
+              series: {
+                "101": [
+                  { gp: 1, percentile: 68 },
+                  { gp: 2, percentile: 74 },
+                  { gp: 3, percentile: 82 },
+                  { gp: 4, percentile: 88 },
+                  { gp: 5, percentile: 92 }
+                ]
+              }
+            }
+          },
+          playerMetadata: {
+            "101": {
+              id: 101,
+              fullName: "Blocked Trend Skater",
+              position: "C",
+              teamAbbrev: "NJD",
+              imageUrl: null
+            }
+          }
+        });
+      }
+      return jsonResponse({}, false);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<ForgeDashboardPage />);
+
+    expect(
+      await screen.findByText(/Trend movement fallback is materially stale:/)
+    ).toBeTruthy();
+    expect(screen.queryByText("Blocked Trend Skater")).toBeNull();
+  });
+
   it("surfaces blocked goalie fallback and recent slate fallback with contract-aware messaging", async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);

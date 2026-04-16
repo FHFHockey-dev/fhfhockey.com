@@ -42,6 +42,13 @@ export type CalibrationAssessment = {
   adoptableMethod: "raw" | "platt" | "isotonic" | null;
 };
 
+export type CalibrationMethodName = "raw" | "platt" | "isotonic";
+
+export type ProbabilityCalibrator = {
+  method: CalibrationMethodName;
+  predict: (prediction: number) => number;
+};
+
 const MIN_ADOPTABLE_HOLDOUT_POSITIVES = 10;
 const MIN_ADOPTABLE_REBOUND_POSITIVES = 1;
 const MIN_ADOPTABLE_RUSH_POSITIVES = 1;
@@ -333,6 +340,36 @@ function fitIsotonicCalibrator(examples: CalibrationExample[]): { predict: (pred
   const model: IsotonicModel = { blocks };
   return {
     predict: (prediction: number) => predictIsotonicProbability(model, prediction),
+  };
+}
+
+export function fitProbabilityCalibrator(
+  examples: CalibrationExample[],
+  preferredMethod: CalibrationMethodName = "raw"
+): ProbabilityCalibrator {
+  if (preferredMethod === "platt") {
+    const calibrator = fitPlattCalibrator(examples);
+    if (calibrator) {
+      return {
+        method: "platt",
+        predict: calibrator.predict,
+      };
+    }
+  }
+
+  if (preferredMethod === "isotonic") {
+    const calibrator = fitIsotonicCalibrator(examples);
+    if (calibrator) {
+      return {
+        method: "isotonic",
+        predict: calibrator.predict,
+      };
+    }
+  }
+
+  return {
+    method: "raw",
+    predict: (prediction: number) => clipProbability(prediction),
   };
 }
 

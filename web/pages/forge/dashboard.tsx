@@ -244,6 +244,8 @@ const ForgeDashboardPage: NextPage = () => {
     if (requestedTeam && teamOptions.includes(requestedTeam)) return requestedTeam;
     return null;
   }, [requestedTeam, teamOptions]);
+  const requestedTeamForState = normalizedRequestedTeam ?? "all";
+  const requestedPositionForState = requestedPosition ?? "all";
   const formattedDateContext = useMemo(() => {
     const [year, month, day] = selectedDate.split("-").map(Number);
     if (!year || !month || !day) return selectedDate;
@@ -308,6 +310,38 @@ const ForgeDashboardPage: NextPage = () => {
       requestedPosition && current !== requestedPosition ? requestedPosition : current
     );
   }, [normalizedRequestedTeam, requestedDate, requestedPosition, router.isReady]);
+
+  const routeStateApplied =
+    selectedDate === requestedDate &&
+    selectedTeam === requestedTeamForState &&
+    selectedPosition === requestedPositionForState;
+
+  useEffect(() => {
+    if (!router.isReady || !routeStateApplied) return;
+    if (typeof router.replace !== "function") return;
+
+    const nextHref = buildForgeHref("/forge/dashboard", {
+      date: selectedDate,
+      team: selectedTeam,
+      position: selectedPosition
+    });
+
+    if (router.asPath === nextHref) return;
+
+    void router.replace(nextHref, undefined, {
+      shallow: true,
+      scroll: false
+    });
+  }, [
+    requestedDate,
+    requestedPositionForState,
+    requestedTeamForState,
+    routeStateApplied,
+    router,
+    selectedDate,
+    selectedPosition,
+    selectedTeam
+  ]);
 
   useEffect(() => {
     if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
@@ -512,7 +546,7 @@ const ForgeDashboardPage: NextPage = () => {
                   </p>
                 </div>
                 <p className={styles.subtitle}>
-                  Slate-first fantasy control surface for sustainability, adds,
+                  Slate-first fantasy command surface for adds, sustainability,
                   and goalie risk.
                 </p>
               </div>
@@ -540,9 +574,8 @@ const ForgeDashboardPage: NextPage = () => {
                   </span>
                 </div>
                 <p className={styles.contextSummary}>
-                  Date updates the slate, team context, sustainability, and
-                  goalie bands. Team narrows slate-facing surfaces. Position
-                  remaps skater-facing insight and adds surfaces.
+                  Date resets the slate. Team narrows matchup surfaces.
+                  Position remaps the skater insight and add modules.
                 </p>
               </div>
 
@@ -647,8 +680,7 @@ const ForgeDashboardPage: NextPage = () => {
                     <p className={styles.bandEyebrow}>Band 1</p>
                     <h2 className={styles.bandTitle}>Tonight&apos;s Slate</h2>
                     <p className={styles.bandSummary}>
-                      The top band anchors the dashboard in the active slate while
-                      leaving space for the opportunity rail.
+                      The slate stays anchored beside the opportunity rail.
                     </p>
                   </div>
                   <button
@@ -694,9 +726,8 @@ const ForgeDashboardPage: NextPage = () => {
                       <p className={styles.railEyebrow}>Right Rail</p>
                       <h3 className={styles.railTitle}>Top Player Adds</h3>
                       <p className={styles.railSummary}>
-                        Ownership-aware opportunity lives beside the slate so the
-                        first scan surfaces both tonight&apos;s matchups and the
-                        most actionable fantasy adds.
+                        Ownership-aware adds stay beside the slate so the first
+                        scan surfaces matchups and pickups together.
                       </p>
                     </div>
                     <TopAddsRail
@@ -725,8 +756,8 @@ const ForgeDashboardPage: NextPage = () => {
                     <p className={styles.bandEyebrow}>Band 2</p>
                     <h2 className={styles.bandTitle}>Team Trend Context</h2>
                     <p className={styles.bandSummary}>
-                      Team rating blends, momentum, and matchup context should frame the player
-                      opportunity view instead of living in a disconnected module.
+                      Team strength, momentum, and matchup context frame the
+                      player opportunity view.
                     </p>
                   </div>
                   <button
@@ -781,7 +812,7 @@ const ForgeDashboardPage: NextPage = () => {
                     <h2 className={styles.bandTitle}>Player Insight Core</h2>
                     <p className={styles.bandSummary}>
                       Sustainability and short-term movement live together here,
-                      but they remain separate signal families.
+                      while staying separate signal families.
                     </p>
                   </div>
                   <button
@@ -797,10 +828,13 @@ const ForgeDashboardPage: NextPage = () => {
                     </span>
                   </button>
                 </div>
-                <div
-                  className={styles.bandActions}
-                  hidden={isMobileAccordionMode && !isBandExpanded("insight")}
-                >
+              </div>
+              <div
+                id="forge-band-insight"
+                className={styles.sectionBandBody}
+                hidden={!isBandExpanded("insight")}
+              >
+                <div className={styles.bandInlineControlRow}>
                   <div
                     className={styles.ownershipControlCard}
                     aria-label="Player insight ownership filter"
@@ -812,8 +846,8 @@ const ForgeDashboardPage: NextPage = () => {
                       {insightOwnershipMin}% - {insightOwnershipMax}%
                     </p>
                     <p className={styles.contextSummary}>
-                      Applies only to sustainability and trend-movement cards.
-                      Top Adds keeps its own opportunity band in the rail.
+                      Applies only to the insight cards. Top Adds keeps its own
+                      band in the rail.
                     </p>
                     <div className={styles.ownershipControlRows}>
                       <label className={styles.ownershipControlItem}>
@@ -843,12 +877,6 @@ const ForgeDashboardPage: NextPage = () => {
                     </div>
                   </div>
                 </div>
-              </div>
-              <div
-                id="forge-band-insight"
-                className={styles.sectionBandBody}
-                hidden={!isBandExpanded("insight")}
-              >
                 <BandStatusSummary
                   label="Player Insight Core"
                   status={playerInsightStatus}
@@ -900,8 +928,8 @@ const ForgeDashboardPage: NextPage = () => {
                     <p className={styles.bandEyebrow}>Band 4</p>
                     <h2 className={styles.bandTitle}>Goalie and Risk</h2>
                     <p className={styles.bandSummary}>
-                      High-leverage goalie decisions stay visible as a dedicated
-                      decision band instead of being buried under skater modules.
+                      High-leverage goalie calls stay visible as their own
+                      decision band.
                     </p>
                   </div>
                   <button

@@ -208,7 +208,7 @@ export default function HotColdCard({
   }, [date, position]);
 
   const rankedRows = useMemo<CompositePlayerRow[]>(() => {
-    if (!payload) return [];
+    if (!payload || payload.serving?.status === "blocked") return [];
 
     const byPlayer = new Map<
       number,
@@ -394,6 +394,7 @@ export default function HotColdCard({
   const resolvedDate = payload?.dateUsed ?? null;
   const servingMessage = payload?.serving?.message ?? null;
   const servingSeverity = payload?.serving?.severity ?? "none";
+  const servingBlocked = payload?.serving?.status === "blocked";
   const isStale = useMemo(() => {
     if (!payload?.generatedAt) return false;
     const ts = new Date(payload.generatedAt).getTime();
@@ -404,6 +405,14 @@ export default function HotColdCard({
   const rightRows = mode === "hotCold" ? coldRows : downRows;
   const leftTitle = mode === "hotCold" ? "Hot Players" : "Trending Up";
   const rightTitle = mode === "hotCold" ? "Cold Players" : "Trending Down";
+  const leftEmptyLabel =
+    mode === "hotCold"
+      ? "No hot players cleared the current ownership and position filter."
+      : "No players are trending up inside the current filter.";
+  const rightEmptyLabel =
+    mode === "hotCold"
+      ? "No cold players cleared the current ownership and position filter."
+      : "No players are trending down inside the current filter.";
 
   useEffect(() => {
     onResolvedDate?.(resolvedDate);
@@ -434,7 +443,8 @@ export default function HotColdCard({
         !ownershipLoading &&
         !error &&
         position !== "g" &&
-        filteredRankedRows.length === 0
+        filteredRankedRows.length === 0 &&
+        !servingBlocked
     });
   }, [
     error,
@@ -447,6 +457,8 @@ export default function HotColdCard({
     ownershipWarning,
     payload?.generatedAt,
     servingMessage,
+    servingBlocked,
+    date,
     resolvedDate,
     position
   ]);
@@ -494,6 +506,18 @@ export default function HotColdCard({
         !loading &&
         !ownershipLoading &&
         !error &&
+        servingBlocked && (
+        <p className={`${styles.panelState} ${styles.panelStateStale}`}>
+          {servingMessage ??
+            "Trend movement is materially stale for this dashboard date, so the card is withholding player rows until fresher trend metrics exist."}
+          {payload?.generatedAt ? ` Latest refresh timestamp: ${payload.generatedAt}.` : ""}
+        </p>
+      )}
+      {position !== "g" &&
+        !loading &&
+        !ownershipLoading &&
+        !error &&
+        !servingBlocked &&
         filteredRankedRows.length === 0 && (
         <p className={styles.panelState}>No player trend movement available for this filter.</p>
       )}
@@ -501,6 +525,7 @@ export default function HotColdCard({
         !loading &&
         !ownershipLoading &&
         !error &&
+        !servingBlocked &&
         (isStale || (resolvedDate != null && resolvedDate !== date)) && (
         <p className={`${styles.panelState} ${styles.panelStateStale}`}>
           {servingMessage
@@ -547,6 +572,9 @@ export default function HotColdCard({
           <div className={styles.hotColdColumn}>
             <p className={styles.susColumnTitle}>{leftTitle}</p>
             <ul className={styles.susList}>
+              {leftRows.length === 0 && (
+                <li className={styles.hotColdEmptyState}>{leftEmptyLabel}</li>
+              )}
               {leftRows.map((row, index) => {
                 const sparkPath = buildSparklinePath(
                   mode === "hotCold" ? row.currentSeries : row.movementSeries
@@ -630,6 +658,9 @@ export default function HotColdCard({
           <div className={styles.hotColdColumn}>
             <p className={styles.susColumnTitle}>{rightTitle}</p>
             <ul className={styles.susList}>
+              {rightRows.length === 0 && (
+                <li className={styles.hotColdEmptyState}>{rightEmptyLabel}</li>
+              )}
               {rightRows.map((row, index) => {
                 const sparkPath = buildSparklinePath(
                   mode === "hotCold" ? row.currentSeries : row.movementSeries

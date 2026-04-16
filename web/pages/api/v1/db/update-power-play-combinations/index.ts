@@ -9,12 +9,21 @@ type GameRow = {
   date: string;
 };
 
+type PowerPlayFailure = {
+  gameId: number;
+  message: string;
+};
+
 function parseGameIdsParam(value: string | string[] | undefined): number[] {
   const rawValues = Array.isArray(value) ? value : value ? [value] : [];
   return rawValues
     .flatMap((entry) => entry.split(","))
     .map((entry) => Number(entry.trim()))
     .filter((entry) => Number.isFinite(entry) && entry > 0);
+}
+
+function isSkippablePowerPlayFailure(message: string): boolean {
+  return /gameState.*\b(?:FUT|PRE)\b/i.test(message);
 }
 
 async function listGamesInRange(args: {
@@ -93,7 +102,8 @@ export default withCronJobAudit(adminOnly(async (req, res) => {
       games.map((game) => updatePowerPlayCombinations(game.id, supabase))
     );
     const succeededGameIds: number[] = [];
-    const failures: Array<{ gameId: number; message: string }> = [];
+    const failures: PowerPlayFailure[] = [];
+    const skippedGames: PowerPlayFailure[] = [];
 
     results.forEach((result, index) => {
       const game = games[index];
@@ -102,27 +112,42 @@ export default withCronJobAudit(adminOnly(async (req, res) => {
         succeededGameIds.push(game.id);
         return;
       }
-      failures.push({
+      const failure = {
         gameId: game.id,
         message: result.reason?.message ?? String(result.reason)
-      });
+      };
+      if (isSkippablePowerPlayFailure(failure.message)) {
+        skippedGames.push(failure);
+        return;
+      }
+      failures.push(failure);
     });
 
+    const succeededOrSkippedGameIds = [
+      ...succeededGameIds,
+      ...skippedGames.map((entry) => entry.gameId)
+    ];
     const payload = {
       success: failures.length === 0,
       message:
         failures.length === 0
-          ? `Successfully updated power-play combinations for games [${succeededGameIds.join(", ")}].`
-          : `Updated power-play combinations for games [${succeededGameIds.join(", ")}]. Failed games [${failures
+          ? skippedGames.length === 0
+            ? `Successfully updated power-play combinations for games [${succeededGameIds.join(", ")}].`
+            : `Updated power-play combinations for games [${succeededGameIds.join(", ")}]. Skipped pregame games [${skippedGames
+                .map((skip) => `${skip.gameId}: ${skip.message}`)
+                .join("; ")}].`
+          : `Updated power-play combinations for games [${succeededOrSkippedGameIds.join(", ")}]. Failed games [${failures
               .map((failure) => `${failure.gameId}: ${failure.message}`)
               .join("; ")}]`,
       gameIds: games.map((game) => game.id),
       processed: succeededGameIds.length,
+      skipped: skippedGames.length,
       failed: failures.length,
       requestedScope:
         gameIds.length > 0
           ? { gameIds }
           : { startDate: startDate!, endDate: endDate! },
+      skips: skippedGames,
       failures
     };
 

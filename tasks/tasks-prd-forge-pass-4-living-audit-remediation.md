@@ -1,0 +1,114 @@
+## Relevant Files
+
+- `tasks/prd-forge-pass-4-living-audit-remediation.md` - Source PRD for this standalone pass-4 workstream.
+- `tasks/tasks-prd-forge-pass-4-living-audit-remediation.md` - Active pass-4 execution list for this run.
+- `fhfh-styles.md` - Canonical style-system blueprint actually present in the repo root and used for this styling pass.
+- `web/pages/forge/dashboard.tsx` - Main FORGE dashboard page that needs audit, remediation, styling completion, and visual verification.
+- `web/pages/skoCharts.tsx` - Legacy inspiration surface that must be reviewed early for salvage or retirement decisions.
+- `web/lib/projections/run-forge-projections.ts` - Core FORGE projection execution path and a likely integration point for model changes.
+- `web/lib/projections/queries/skater-queries.ts` - Upstream skater query and projection input assembly surface.
+- `web/lib/projections/queries/line-combo-queries.ts` - Canonical recent-team line-combo selector added to replace broken joined-date ordering that was falsely marking fresh teams as hard-stale.
+- `web/lib/projections/queries/line-combo-queries.test.ts` - Regression coverage for date-sorted line-combo selection after the joined-ordering bug was discovered in live FORGE output vetting.
+- `web/lib/xg/binaryLogistic.ts` - Current low-level binary classifier used by the xG model calibration path and a likely upgrade target.
+- `web/lib/xg/calibration.ts` - Existing calibration logic that currently assumes logistic outputs.
+- `web/lib/xg/calibration.test.ts` - Targeted calibration coverage for new post-calibration helpers.
+- `web/lib/xg/baselineDataset.ts` - Shot-feature dataset builder for expected-goals model training and evaluation.
+- `web/scripts/train-nhl-xg-baseline.ts` - Expected-goals training artifact generator now being updated to promote calibrated gradient boosting.
+- `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts` - Rolling data ingestion path feeding downstream FORGE inputs.
+- `web/pages/api/v1/db/update-rolling-player-averages.ts` - Rolling player averages refresh endpoint relevant to smoke testing and upstream integrity.
+- `web/pages/api/v1/db/update-power-play-combinations/index.ts` - Bulk power-play combination repair endpoint that feeds the contextual-builder stage in the rolling FORGE pipeline.
+- `web/pages/api/v1/db/update-games.ts` - Core schedule refresh endpoint used by the rolling FORGE pipeline and hardened for partial upstream fetch failures.
+- `web/__tests__/pages/api/v1/db/update-power-play-combinations.test.ts` - Regression coverage for pregame FUT/PRE bulk power-play skips.
+- `web/__tests__/pages/api/v1/db/update-games.test.ts` - Regression coverage for partial-failure-tolerant schedule refresh behavior.
+- `web/__tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts` - Coordinator coverage for the adjusted daily lookback windows in the rolling FORGE pipeline.
+- `web/styles/vars.scss` - Shared style variables that should remain the source of truth for visual refinements.
+- `web/styles/ForgeDashboard.module.scss` - Shared dashboard/page/component stylesheet that currently carries most FORGE presentation logic.
+- `web/components/forge-dashboard/SlateStripCard.tsx` - Slate hero module used in the top band.
+- `web/components/forge-dashboard/TopAddsRail.tsx` - Right-rail add recommendations fed by FORGE player projections.
+- `web/components/forge-dashboard/TeamPowerCard.tsx` - Team context card for the middle band.
+- `web/components/forge-dashboard/SustainabilityCard.tsx` - Sustainability insight card in the player insight band.
+- `web/components/forge-dashboard/HotColdCard.tsx` - Trend movement card in the player insight band.
+- `web/components/forge-dashboard/GoalieRiskCard.tsx` - Goalie decision card in the final band.
+- `web/pages/api/v1/forge/players.ts` - Player-facing FORGE API response surface used by dashboard components.
+- `web/pages/api/v1/forge/goalies.ts` - Goalie-facing FORGE API response surface used by the dashboard.
+- `web/pages/api/v1/db/run-rolling-forge-pipeline.ts` - Pipeline smoke-test operator for rolling and projection refreshes.
+- `web/pages/api/v1/runs/latest.ts` - Latest-run reader that must not overstate zombie `running` rows as the authoritative operational state.
+- `web/pages/api/v1/trends/skater-power.ts` - Trend-movement API whose stale fallback contract is still driving a degraded dashboard card.
+- `web/pages/api/v1/trends/player-trends.ts` - Trend-metric rebuild endpoint for the stale `player_trend_metrics` source used by trend movement.
+- `web/lib/projections/queries/run-lifecycle-queries.ts` - Projection run lifecycle helper that currently creates duplicate `running` rows without stale-run cleanup or active-run gating.
+- `web/__tests__/pages/api/v1/runs/latest.test.ts` - Coverage for latest-run reader behavior when stale `running` rows coexist with succeeded runs.
+- `web/__tests__/pages/api/v1/trends/skater-power.test.ts` - Coverage for trend-serving contracts and stale fallback scope handling.
+
+### Notes
+
+- This task list is the sole active execution list for pass 4.
+- Older PRDs and task lists may be used only as reference context unless explicitly promoted by the user.
+- This pass is broad enough to require parent-task confirmation before sub-task expansion.
+- Test files should be added to `Relevant Files` only when the audit shows they are genuinely needed.
+
+## Tasks
+
+- [x] 1.0 Initialize pass 4 with a new standalone planning and execution baseline
+  - [x] 1.1 Read `web/rules/create-prd.mdc` and collect the minimum required clarifications for a fresh pass-4 workstream.
+  - [x] 1.2 Create a new standalone pass-4 PRD in `/tasks/` instead of reusing a prior PRD.
+  - [x] 1.3 Read `web/rules/generate-tasks.mdc` and create a new parent-only pass-4 task list.
+  - [x] 1.4 Read `web/rules/process-task-list.mdc` and promote this new file as the sole active execution list for this run.
+  - [x] 1.5 Expand the approved parent tasks into executable sub-tasks for the living audit workflow.
+- [x] 2.0 Review `web/pages/skoCharts.tsx` as an early legacy inspiration and retirement surface
+  - [x] 2.1 Inspect the current `skoCharts` route implementation and determine whether any live calculation or UI logic still survives there.
+  - [x] 2.2 Cross-check legacy references and nearby artifacts to determine whether any useful `skoCharts` concepts still need migration or whether the route should remain purely retired.
+  - [x] 2.3 Record the adopt/adapt/reference/ignore/retire decision for meaningful `skoCharts` findings and append any needed work to the end of this task list.
+- [x] 3.0 Audit the FORGE ecosystem from upstream inputs through dashboard rendering
+  - [x] 3.1 Inventory the primary FORGE page, component, API, projection, rolling-input, and style-system surfaces.
+  - [x] 3.2 Trace the dashboard dependency chain from `web/pages/forge/dashboard.tsx` into every directly used component and response normalizer.
+  - [x] 3.3 Audit the player and goalie FORGE API surfaces, including serving/fallback behavior and degraded-output handling.
+  - [x] 3.4 Audit upstream projection and rolling-input files that materially influence dashboard outputs.
+  - [x] 3.5 Audit the expected-goals modeling surface and identify the production-path upgrade target for gradient boosting.
+  - [x] 3.6 Audit the shared stylesheet against the canonical style guide to identify remaining page-level and component-level gaps.
+- [x] 4.0 Expand the active pass-4 task list continuously as findings emerge
+  - [x] 4.1 Append each meaningful correctness, maintainability, performance, styling, or legacy-lineage finding to the end of this task list as a specific follow-up item.
+  - [x] 4.2 Keep `Relevant Files` accurate as the audit and remediation surface expands.
+- [ ] 5.0 Implement high-priority audit remediations across FORGE logic, components, and maintainability gaps
+  - [ ] 5.1 Fix dashboard page-level control-surface and band-shell issues discovered during the audit.
+  - [ ] 5.2 Fix individual FORGE component defects, weak states, and data-presentation issues discovered during the audit.
+  - [x] 5.3 Add or update targeted tests where logic-risk changes justify regression coverage.
+- [ ] 6.0 Review, hone, test, and implement gradient boosting improvements in the production expected-goals model path used by FORGE
+  - [x] 6.1 Replace or extend the current binary-logistic-only xG training path with a gradient-boosting implementation suitable for the existing encoded shot feature set.
+  - [x] 6.2 Update evaluation and calibration support so the new model path can be judged against the current baseline.
+  - [ ] 6.3 Wire the upgraded expected-goals model into the production path that consumes the xG predictor.
+  - [x] 6.4 Add or update targeted tests for the gradient-boosting model behavior and calibration assumptions.
+- [ ] 7.0 Smoke test relevant FORGE and upstream refresh endpoints under timing and rate-limit constraints
+  - [x] 7.1 Determine the correct smoke-test scope for rolling, projection, and FORGE-serving endpoints and note any manual catch-up blockers.
+  - [x] 7.2 Run the applicable smoke tests, capture durations, and compare them against the 4m30s threshold where relevant.
+  - [ ] 7.3 Append and implement optimization work if any endpoint exceeds acceptable runtime or threatens Natural Stat Trick rate limits.
+- [ ] 8.0 Vet rendered dashboard outputs component-by-component against source inputs and expected logic
+  - [x] 8.1 Trace each major dashboard component’s displayed values back to its source API/data inputs.
+  - [x] 8.2 Verify component outputs are logically and numerically sound after remediation and smoke testing.
+  - [ ] 8.3 Append and fix any newly discovered output mismatches or weak assumptions.
+- [ ] 9.0 Complete the dashboard page and component styling pass using the existing style system
+  - [ ] 9.1 Align the page shell, header, controls, and band containers with `fhfh-styles.md` and shared tokens.
+  - [ ] 9.2 Align individual dashboard components with the style system, including spacing, hierarchy, state treatments, and overflow behavior.
+  - [ ] 9.3 Remove or tame styling treatments that conflict with the style guide’s anti-patterns.
+- [ ] 10.0 Perform Chromium-capable visual inspection and fix any remaining polish issues discovered there
+  - [x] 10.1 Load the FORGE dashboard in a browser-capable environment and inspect desktop composition first.
+  - [x] 10.2 Check component-level hierarchy, density, overflow, and rail behavior in the rendered page.
+  - [ ] 10.3 Fix remaining visual defects found during inspection and append any deferred follow-up work.
+
+- [x] 11.0 Audit finding: reconcile the style-guide file reference mismatch (`fhfh-styles.md` exists at repo root, not `styles/fhfh-styles.md`) and ensure pass-4 artifacts point at the real canonical file.
+- [ ] 12.0 Audit finding: determine whether `web/pages/skoCharts.tsx` needs any further lineage documentation now that the runtime page is already a quarantine shell rather than a live legacy implementation.
+- [ ] 13.0 Audit finding: decide whether the orphaned `web/components/forge-dashboard/TopMoversCard.tsx` should be removed, rehomed, or reintegrated now that it is no longer part of the active dashboard composition.
+- [ ] 14.0 Audit finding: promote the shot-level `xgboost_js` baseline from benchmark-only support into a calibrated, clearly preferred expected-goals training path instead of leaving gradient boosting as an ambiguous optional family.
+- [ ] 15.0 Audit finding: classify or remediate the legacy `/api/v1/db/update-expected-goals` route, which still uses team attack/defense heuristics rather than the newer shot-level xG modeling surface.
+- [x] 16.0 Audit finding: treat pregame `FUT`/`PRE` game-state failures from bulk power-play combination repair as skips instead of hard pipeline blockers, and cover that behavior with regression tests.
+- [x] 17.0 Audit finding: harden `/api/v1/db/update-games` so a single club-schedule fetch failure does not abort the entire rolling FORGE pipeline when the shared slate can still be reconstructed from other teams.
+- [x] 18.0 Audit finding: align `daily_incremental` rolling-FORGE pipeline lookback windows with `run-projection-v2` preflight freshness expectations for ingestion and derived-build stages.
+- [x] 19.0 Audit finding: diagnose and remediate the long-running or stuck skater `run-projection-v2` execution path that leaves fresh goalie priors on `2026-04-15` while `forge_player_projections` remains stale on `2026-03-25` and `forge_runs` can remain in `running` status.
+- [x] 20.0 Audit finding: determine whether the materially stale `Trend Movement` source scope (`2025-10-16` for requested `2026-04-15`) should be repaired, isolated, or visually downgraded more aggressively so the dashboard does not overstate that module’s freshness.
+- [ ] 21.0 Audit finding: tighten the dashboard’s above-the-fold density and degraded-state messaging so the page reads more like a compact command center and less like stacked narrative panels when stale warnings are present.
+- [x] 22.0 Audit finding: make `/api/v1/runs/latest` resilient to zombie `running` rows so operator checks prefer the latest actionable succeeded run while still surfacing stale-run diagnostics.
+- [x] 23.0 Audit finding: classify whether `/api/v1/trends/player-trends` should be integrated into the operational refresh path or explicitly treated as a separate manual repair surface for stale trend metrics.
+- [ ] 24.0 Audit finding: optimize or chunk `/api/v1/trends/player-trends` full-season rebuilds, which currently recover stale trend data but are too slow to complete within practical smoke-test or dashboard-maintenance windows.
+- [x] 25.0 Audit finding: replace the broken joined-date line-combo selectors in projection preflight and runtime paths so fresh 2026 line-combo rows are not misread as 2022 hard-stale context.
+- [ ] 26.0 Audit finding: optimize single-date `/api/v1/db/run-projection-v2` full-slate execution, which now succeeds with fresh line-combo context but still requires `08:10` to complete and failed the required `04:30` smoke-test budget.
+- [ ] 27.0 Audit finding: stabilize the local browser-verification surface for FORGE, because the standard Next dev/runtime paths can fall into missing `.next` manifest errors or EMFILE watcher pressure and weaken repeatable Chromium inspection.
+- [ ] 28.0 Audit finding: investigate why the fresh-line-combo 2026-04-15 run still reports `135` skater pool recovery rows out of `181` returned players, because that degradation volume suggests a remaining candidate-pool or eligibility-screening issue even after line-combo freshness was corrected.

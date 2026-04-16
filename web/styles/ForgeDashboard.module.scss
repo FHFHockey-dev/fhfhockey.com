@@ -6,45 +6,43 @@
   flex: 1 1 auto;
   min-height: 0;
   background:
-    radial-gradient(circle at top left, rgba(v.$primary-color, 0.12), transparent 28%),
-    radial-gradient(circle at top right, rgba(v.$secondary-color, 0.08), transparent 24%),
-    linear-gradient(180deg, color.adjust(v.$background-dark, $lightness: -2%), v.$background-dark 24%);
+    linear-gradient(180deg, color.adjust(v.$background-dark, $lightness: -2%), v.$background-dark 22%),
+    radial-gradient(circle at top left, rgba(v.$primary-color, 0.06), transparent 26%);
   color: v.$text-primary;
 }
 
 .container {
   width: min(1880px, calc(100% - 2rem));
   margin: 0 auto;
-  padding: v.$space-md 0 v.$space-lg;
+  padding: 0.75rem 0 v.$space-md;
   min-height: 100%;
   display: grid;
   grid-template-rows: auto auto auto 1fr;
-  gap: v.$space-md;
+  gap: 0.75rem;
 }
 
 .shell {
   min-height: 0;
   display: grid;
-  gap: v.$space-md;
+  gap: 0.75rem;
   align-content: start;
 }
 
 .sectionBand {
   @include p.panel-container(
     $radius: v.$border-radius-md,
-    $padding: v.$space-md,
+    $padding: 0.8rem,
     $gradient-start: rgba(v.$color-white, 0.04),
     $gradient-end: rgba(v.$color-white, 0.015),
     $blur: 10px
   );
   min-height: 0;
   display: grid;
-  gap: v.$space-md;
+  gap: 0.75rem;
   background:
     linear-gradient(180deg, rgba(v.$color-white, 0.02), rgba(v.$color-white, 0)),
-    linear-gradient(135deg, rgba(v.$primary-color, 0.06), transparent 28%),
     color.adjust(v.$background-medium, $lightness: -1%);
-  border: 1px solid rgba(v.$border-secondary, 0.92);
+  border: 1px solid rgba(v.$border-secondary, 0.84);
 }
 
 .bandHeader {
@@ -64,7 +62,7 @@
 
 .bandIntro {
   display: grid;
-  gap: 0.3rem;
+  gap: 0.18rem;
   min-width: 0;
 }
 
@@ -91,8 +89,8 @@
   margin: 0;
   max-width: 70ch;
   color: v.$text-secondary;
-  font-size: v.$font-size-sm;
-  line-height: 1.45;
+  font-size: 0.78rem;
+  line-height: 1.35;
 }
 
 .bandActions {
@@ -102,8 +100,13 @@
 
 .sectionBandBody {
   display: grid;
-  gap: v.$space-md;
+  gap: 0.75rem;
   min-height: 0;
+}
+
+.bandInlineControlRow {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .bandMobileToggle {
@@ -206,7 +209,7 @@
 
 .bandStatusStack {
   display: grid;
-  gap: v.$space-xs;
+  gap: 0.35rem;
 }
 
 .bandStatusPills {
@@ -256,8 +259,8 @@
 
 .bandLoadingShell {
   display: grid;
-  gap: v.$space-xs;
-  padding: v.$space-sm;
+  gap: 0.3rem;
+  padding: 0.45rem 0.6rem;
   border-radius: v.$border-radius-sm;
   border: 1px solid rgba(v.$primary-color, 0.25);
   background:
@@ -295,7 +298,7 @@
   gap: 0.25rem;
   width: fit-content;
   max-width: min(100%, 92ch);
-  padding: 0.45rem 0.7rem;
+  padding: 0.35rem 0.6rem;
   border-radius: v.$border-radius-sm;
   border: 1px solid rgba(v.$border-secondary, 0.38);
   background: rgba(v.$background-dark, 0.55);
@@ -325,15 +328,15 @@
 .bandAlertLine {
   margin: 0;
   color: v.$text-secondary;
-  font-size: 0.7rem;
-  line-height: 1.35;
+  font-size: 0.66rem;
+  line-height: 1.3;
 }
 
 .topBandLayout {
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1.95fr) minmax(320px, 0.78fr);
-  gap: v.$space-md;
+  grid-template-columns: minmax(0, 1.95fr) minmax(285px, 0.7fr);
+  gap: 0.75rem;
   align-items: start;
 }
 
@@ -399,22 +402,20 @@
   gap: v.$space-sm;
   padding: v.$space-md;
   border-radius: v.$border-radius-md;
-  border: 1px solid rgba(v.$border-secondary, 0.9);
+  border: 1px solid rgba(v.$border-secondary, 0.82);
   background:
-    radial-gradient(circle at top left, rgba(v.$primary-color, 0.16), transparent 34%),
     linear-gradient(180deg, rgba(v.$color-white, 0.025), rgba(v.$color-white, 0)),
-    linear-gradient(135deg, rgba(v.$secondary-color, 0.06), transparent 42%),
-    color.adjust(v.$background-medium, $lightness: -2%);
+    linear-gradient(180deg, color.adjust(v.$background-medium, $lightness: -3%), color.adjust(v.$background-medium, $lightness: -1%));
   box-shadow:
     inset 0 1px 0 rgba(v.$color-white, 0.04),
-    0 14px 30px rgba(0, 0, 0, 0.22);
+    0 14px 30px rgba(0, 0, 0, 0.2);
 
   &::after {
     content: "";
     position: absolute;
-    inset: auto -12% -45% 48%;
-    height: 150px;
-    background: radial-gradient(circle, rgba(v.$primary-color, 0.14), transparent 68%);
+    inset: auto -14% -54% 54%;
+    height: 120px;
+    background: radial-gradient(circle, rgba(v.$primary-color, 0.08), transparent 70%);
     pointer-events: none;
   }
 }
@@ -423,12 +424,13 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: v.$space-lg;
+  gap: v.$space-md;
 }
 
 .titleBlock {
   display: inline-grid;
-  width: max-content;
+  width: fit-content;
+  max-width: 100%;
   min-width: 0;
   gap: 0.3rem;
 }
@@ -467,43 +469,42 @@
 .subtitle {
   margin: 0;
   color: v.$text-secondary;
-  font-size: 0.92rem;
+  font-size: 0.84rem;
   font-family: v.$font-family-primary, sans-serif;
-  max-width: 33ch;
-  padding-top: 0.15rem;
+  max-width: 30ch;
+  padding-top: 0.1rem;
   text-align: right;
   white-space: normal;
   justify-self: end;
   align-self: end;
-  line-height: 1.45;
+  line-height: 1.35;
 }
 
 .controlsSurface {
   @include p.panel-container(
     $radius: v.$border-radius-md,
-    $padding: v.$space-md,
+    $padding: 0.8rem,
     $gradient-start: rgba(v.$color-white, 0.04),
     $gradient-end: rgba(v.$color-white, 0.015),
     $blur: 10px
   );
   display: grid;
   grid-template-columns: minmax(260px, 0.95fr) minmax(0, 1.6fr);
-  gap: v.$space-md;
+  gap: 0.75rem;
   align-items: stretch;
   background:
     linear-gradient(180deg, rgba(v.$color-white, 0.02), rgba(v.$color-white, 0)),
-    linear-gradient(135deg, rgba(v.$primary-color, 0.05), transparent 28%),
     color.adjust(v.$background-medium, $lightness: -1%);
-  border: 1px solid rgba(v.$border-secondary, 0.92);
+  border: 1px solid rgba(v.$border-secondary, 0.84);
   box-shadow:
     inset 0 1px 0 rgba(v.$color-white, 0.04),
-    0 12px 26px rgba(0, 0, 0, 0.2);
+    0 12px 24px rgba(0, 0, 0, 0.16);
 }
 
 .contextBlock {
   min-height: 0;
   display: grid;
-  gap: v.$space-sm;
+  gap: 0.45rem;
   align-content: start;
   padding-right: v.$space-sm;
   border-right: 1px solid rgba(v.$border-secondary, 0.42);
@@ -570,8 +571,8 @@
 .contextSummary {
   margin: 0;
   color: v.$text-secondary;
-  font-size: v.$font-size-xs;
-  line-height: 1.45;
+  font-size: 0.71rem;
+  line-height: 1.35;
 }
 
 .controlStack {
@@ -847,11 +848,7 @@
   width: 100%;
   border-radius: v.$border-radius-sm;
   border: 1px solid rgba(v.$border-secondary, 0.9);
-  background: linear-gradient(
-    180deg,
-    color.adjust(v.$background-medium, $lightness: -4%),
-    color.adjust(v.$background-medium, $lightness: -8%)
-  );
+  background: color.adjust(v.$background-medium, $lightness: -5%);
   color: v.$text-primary;
   padding: v.$space-sm v.$space-sm;
   min-height: v.$touch-target-min;
@@ -868,7 +865,7 @@
     border-color: rgba(v.$primary-color, 0.75);
     box-shadow:
       inset 0 1px 0 rgba(v.$color-white, 0.06),
-      0 0 12px rgba(v.$primary-color, 0.12);
+      0 0 0 1px rgba(v.$primary-color, 0.12);
   }
 
   &:focus-visible {
@@ -970,19 +967,17 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.28rem;
   border: 1px solid rgba(v.$warning-color, 0.45);
   border-radius: v.$border-radius-md;
   background:
-    linear-gradient(90deg, rgba(v.$warning-color, 0.14), rgba(v.$warning-color, 0.06)),
-    rgba(v.$background-medium, 0.82);
+    linear-gradient(90deg, rgba(v.$warning-color, 0.1), rgba(v.$warning-color, 0.03)),
+    rgba(v.$background-medium, 0.94);
   color: color.adjust(v.$warning-color, $lightness: 8%);
-  padding: 0.4rem 0.7rem;
-  font-size: 0.7rem;
-  line-height: 1.35;
-  box-shadow:
-    inset 0 1px 0 rgba(v.$color-white, 0.04),
-    0 8px 18px rgba(0, 0, 0, 0.18);
+  padding: 0.32rem 0.58rem;
+  font-size: 0.66rem;
+  line-height: 1.3;
+  box-shadow: inset 0 1px 0 rgba(v.$color-white, 0.04);
 }
 
 // .moversPanel {}
@@ -994,23 +989,20 @@
   border-radius: v.$border-radius-md;
   background:
     linear-gradient(180deg, rgba(v.$color-white, 0.015), rgba(v.$color-white, 0)),
-    linear-gradient(135deg, rgba(v.$primary-color, 0.04), transparent 24%),
     v.$background-medium;
-  border: 1px solid rgba(v.$border-secondary, 0.95);
+  border: 1px solid rgba(v.$border-secondary, 0.82);
   box-shadow: v.$box-shadow-default;
   font-family: v.$font-family-primary, sans-serif;
   color: v.$text-primary;
   transition:
     border-color v.$transition-duration v.$transition-easing,
-    box-shadow v.$transition-duration v.$transition-easing,
-    transform v.$transition-duration v.$transition-easing;
+    box-shadow v.$transition-duration v.$transition-easing;
 
   &:hover {
-    border-color: rgba(v.$secondary-color, 0.7);
+    border-color: rgba(v.$secondary-color, 0.52);
     box-shadow:
-      0 12px 24px rgba(0, 0, 0, 0.28),
-      0 0 0 1px rgba(v.$secondary-color, 0.28);
-    transform: translateY(-1px);
+      0 10px 20px rgba(0, 0, 0, 0.22),
+      0 0 0 1px rgba(v.$secondary-color, 0.14);
   }
 }
 
@@ -1076,11 +1068,10 @@
   border: 1px solid rgba(v.$border-secondary, 0.62);
   background:
     linear-gradient(180deg, rgba(v.$color-white, 0.025), rgba(v.$color-white, 0)),
-    linear-gradient(145deg, rgba(v.$primary-color, 0.08), rgba(v.$color-white, 0)),
-    rgba(v.$background-dark, 0.42);
+    rgba(v.$background-dark, 0.58);
   box-shadow:
     inset 0 1px 0 rgba(v.$color-white, 0.04),
-    0 10px 20px rgba(0, 0, 0, 0.12);
+    0 10px 18px rgba(0, 0, 0, 0.1);
 }
 
 .topAddsChipRow,
@@ -1288,9 +1279,8 @@
   border-radius: v.$border-radius-md;
   border: 2px solid rgba(v.$primary-color, 0.46);
   background:
-    linear-gradient(160deg, rgba(v.$primary-color, 0.12), rgba(v.$primary-color, 0.03)),
-    linear-gradient(135deg, rgba(v.$color-white, 0.03), rgba(v.$color-white, 0)),
-    rgba(v.$background-dark, 0.78);
+    linear-gradient(180deg, rgba(v.$color-white, 0.025), rgba(v.$color-white, 0)),
+    rgba(v.$background-dark, 0.8);
   color: inherit;
   text-decoration: none;
   transition:
@@ -1304,11 +1294,10 @@
     outline: none;
     border-color: rgba(v.$primary-color, 0.88);
     background:
-      linear-gradient(160deg, rgba(v.$primary-color, 0.18), rgba(v.$primary-color, 0.04)),
-      linear-gradient(135deg, rgba(v.$color-white, 0.04), rgba(v.$color-white, 0)),
-      rgba(v.$background-dark, 0.82);
+      linear-gradient(180deg, rgba(v.$color-white, 0.03), rgba(v.$color-white, 0)),
+      rgba(v.$background-dark, 0.84);
     box-shadow:
-      0 12px 26px rgba(v.$primary-color, 0.14),
+      0 12px 26px rgba(0, 0, 0, 0.2),
       0 0 0 1px rgba(v.$primary-color, 0.22);
     transform: translateY(-1px);
   }
@@ -1324,19 +1313,6 @@
       0 0 24px rgba(v.$primary-color, 0.2);
   }
 
-  &::after {
-    content: "";
-    position: absolute;
-    inset: -30%;
-    background: radial-gradient(60% 40% at 18% 0%, rgba(v.$primary-color, 0.18), transparent 60%);
-    opacity: 0;
-    transition: opacity v.$transition-duration v.$transition-easing;
-  }
-
-  &:hover::after,
-  &:focus-visible::after {
-    opacity: 1;
-  }
 }
 
 .topAddsCandidateHeader {
@@ -1557,15 +1533,11 @@
   gap: v.$space-sm;
   margin: calc(v.$space-sm * -1) calc(v.$space-sm * -1) v.$space-sm;
   padding: v.$space-xs v.$space-sm calc(v.$space-xs + 1px);
-  background: linear-gradient(
-    135deg,
-    color.adjust(v.$background-dark, $lightness: -4%),
-    color.adjust(v.$background-dark, $lightness: 1%)
-  );
-  border-bottom: 2px solid rgba(v.$primary-color, 0.45);
+  background: color.adjust(v.$background-dark, $lightness: -2%);
+  border-bottom: 1px solid rgba(v.$primary-color, 0.32);
   box-shadow:
     inset 0 1px 0 rgba(v.$color-white, 0.04),
-    0 2px 8px rgba(0, 0, 0, 0.22);
+    0 2px 8px rgba(0, 0, 0, 0.16);
 }
 
 .panelTitle {
@@ -1694,10 +1666,10 @@
   border: 1px solid rgba(v.$border-secondary, 0.48);
   background:
     linear-gradient(180deg, rgba(v.$color-white, 0.02), rgba(v.$color-white, 0)),
-    rgba(v.$background-dark, 0.34);
+    rgba(v.$background-dark, 0.5);
   box-shadow:
     inset 0 1px 0 rgba(v.$color-white, 0.03),
-    0 8px 18px rgba(0, 0, 0, 0.12);
+    0 8px 16px rgba(0, 0, 0, 0.1);
 }
 
 .teamContextSpotlightGrid {
@@ -1721,9 +1693,8 @@
   border-radius: v.$border-radius-md;
   border: 2px solid rgba(v.$primary-color, 0.38);
   background:
-    linear-gradient(160deg, rgba(v.$secondary-color, 0.06), rgba(v.$primary-color, 0.03)),
-    linear-gradient(135deg, rgba(v.$color-white, 0.03), rgba(v.$color-white, 0)),
-    rgba(v.$background-dark, 0.78);
+    linear-gradient(180deg, rgba(v.$color-white, 0.025), rgba(v.$color-white, 0)),
+    rgba(v.$background-dark, 0.8);
   color: inherit;
   text-decoration: none;
   transition:
@@ -1753,19 +1724,6 @@
       0 0 24px rgba(v.$primary-color, 0.2);
   }
 
-  &::after {
-    content: "";
-    position: absolute;
-    inset: -28%;
-    background: radial-gradient(60% 40% at 18% 0%, rgba(v.$primary-color, 0.16), transparent 62%);
-    opacity: 0;
-    transition: opacity v.$transition-duration v.$transition-easing;
-  }
-
-  &:hover::after,
-  &:focus-visible::after {
-    opacity: 1;
-  }
 }
 
 .teamContextSpotlightHeader {
@@ -1952,8 +1910,7 @@
   border-radius: v.$border-radius-sm;
   background:
     linear-gradient(180deg, rgba(v.$color-white, 0.02), rgba(v.$color-white, 0)),
-    linear-gradient(145deg, rgba(v.$primary-color, 0.06), transparent 36%),
-    rgba(v.$surface-2, 0.32);
+    rgba(v.$surface-2, 0.42);
   min-height: 0;
   display: grid;
   grid-template-rows: auto 1fr;
@@ -2137,9 +2094,8 @@
   border-radius: v.$border-radius-md;
   border: 2px solid rgba(v.$primary-color, 0.34);
   background:
-    linear-gradient(160deg, rgba(v.$primary-color, 0.08), rgba(v.$primary-color, 0.02)),
-    linear-gradient(135deg, rgba(v.$color-white, 0.03), rgba(v.$color-white, 0)),
-    rgba(v.$background-dark, 0.72);
+    linear-gradient(180deg, rgba(v.$color-white, 0.025), rgba(v.$color-white, 0)),
+    rgba(v.$background-dark, 0.78);
 
   &::before {
     content: "";
@@ -2204,17 +2160,26 @@
 
 .hotColdTabs {
   display: inline-flex;
+  align-items: center;
   gap: v.$space-xs;
   flex-wrap: wrap;
   width: fit-content;
+  max-width: 100%;
   padding: 0.25rem;
   border-radius: v.$border-radius-md;
   border: 1px solid rgba(v.$border-secondary, 0.92);
   background: rgba(v.$background-dark, 0.72);
   box-shadow: inset 0 1px 0 rgba(v.$color-white, 0.03);
+  align-self: start;
 }
 
 .hotColdTab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: auto;
+  flex: 0 0 auto;
+  width: auto;
   min-height: v.$touch-target-min;
   padding: 0 v.$space-sm;
   border-radius: 999px;
@@ -2225,6 +2190,7 @@
   font-size: 0.74rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
+  white-space: nowrap;
   cursor: pointer;
   transition:
     border-color v.$transition-duration v.$transition-easing,
@@ -2259,8 +2225,7 @@
   border-radius: v.$border-radius-sm;
   background:
     linear-gradient(180deg, rgba(v.$color-white, 0.02), rgba(v.$color-white, 0)),
-    linear-gradient(145deg, rgba(v.$primary-color, 0.05), transparent 36%),
-    rgba(v.$surface-2, 0.32);
+    rgba(v.$surface-2, 0.42);
   min-height: 0;
   display: grid;
   grid-template-rows: auto 1fr;
@@ -2292,6 +2257,17 @@
 
 .hotColdRow {
   padding: 0;
+  border-bottom: 1px solid rgba(v.$border-secondary, 0.35);
+}
+
+.hotColdEmptyState {
+  display: grid;
+  align-content: start;
+  min-height: 100%;
+  padding: v.$space-sm;
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+  line-height: 1.45;
   border-bottom: 1px solid rgba(v.$border-secondary, 0.35);
 }
 

@@ -98,6 +98,8 @@ describe("resolveUnderlyingStatsLandingSnapshot", () => {
     expect(result.resolvedDate).toBe("2026-04-04");
     expect(result.ratings).toHaveLength(1);
     expect(result.ratings[0]?.date).toBe("2026-04-04");
+    expect(result.dashboard.quadrant.points).toHaveLength(1);
+    expect(result.dashboard.risers[0]?.teamAbbr).toBe("TOR");
   });
 
   it("returns the first valid available date when the requested date is invalid", async () => {
@@ -120,6 +122,7 @@ describe("resolveUnderlyingStatsLandingSnapshot", () => {
     expect(result.requestedDate).toBe("not-a-date");
     expect(result.resolvedDate).toBe("2026-04-05");
     expect(result.ratings[0]?.date).toBe("2026-04-05");
+    expect(result.dashboard.quadrant.points[0]?.teamAbbr).toBe("DET");
   });
 });
 
@@ -136,15 +139,24 @@ describe("mergeUnderlyingStatsLandingRatings", () => {
           {
             teamAbbr: "TOR",
             date: "2026-04-05",
-            sos: 117.59,
-            standingsComponentScore: 124.23,
-            predictiveComponentScore: 110.94,
-            standingsRaw: 0.61,
-            predictiveRaw: 108.2,
-            directOpponentPointPct: 0.58,
-            opponentScheduleContext: 0.55,
-            opponentGamesPlayed: 77,
-            uniqueOpponents: 31
+            sos: 0.575,
+            texture: null,
+            future: {
+              directOpponentPointPct: 0.56,
+              indirectOpponentPointPct: 0.54,
+              opponentGamesPlayed: 10,
+              rank: 8,
+              sos: 0.5533333333333333,
+              uniqueOpponents: 9
+            },
+            past: {
+              directOpponentPointPct: 0.58,
+              indirectOpponentPointPct: 0.55,
+              opponentGamesPlayed: 77,
+              rank: 4,
+              sos: 0.57,
+              uniqueOpponents: 31
+            }
           }
         ]
       ])
@@ -152,15 +164,118 @@ describe("mergeUnderlyingStatsLandingRatings", () => {
 
     expect(result).toEqual([
       expect.objectContaining({
+        narrative: [],
+        scheduleTexture: null,
         teamAbbr: "TOR",
         trend10: 2.34,
-        sos: 117.59
+        sos: 0.575,
+        sosFuture: 0.5533333333333333,
+        sosPast: 0.57
       }),
       expect.objectContaining({
+        narrative: [],
+        scheduleTexture: null,
         teamAbbr: "DET",
         trend10: 0,
-        sos: null
+        sos: null,
+        sosFuture: null,
+        sosPast: null
       })
     ]);
+  });
+
+  it("adds server-generated narratives from recent rating history", () => {
+    const result = mergeUnderlyingStatsLandingRatings({
+      baseRatings: [
+        {
+          ...buildRating("TOR", "2026-04-05"),
+          components: {
+            ga60: 2.6,
+            gf60: 3.4,
+            pace60: 58.5,
+            sa60: 26,
+            sf60: 31,
+            xga60: 2.7,
+            xgf60: 3.3
+          },
+          defRating: 106,
+          offRating: 109,
+          paceRating: 103,
+          ppTier: 1
+        },
+        buildRating("DET", "2026-04-05")
+      ],
+      ratingHistoryByTeam: new Map([
+        [
+          "TOR",
+          [
+            {
+              components: {
+                ga60: 2.7,
+                gf60: 3.4,
+                pace60: 59,
+                sa60: 26,
+                sf60: 31,
+                xga60: 2.8,
+                xgf60: 3.3
+              },
+              date: "2026-04-05",
+              defRating: 106,
+              offRating: 109,
+              paceRating: 104,
+              pkTier: 2,
+              ppTier: 1
+            },
+            {
+              components: {
+                ga60: 3,
+                gf60: 3,
+                pace60: 56,
+                sa60: 28,
+                sf60: 28,
+                xga60: 3.1,
+                xgf60: 3
+              },
+              date: "2026-04-03",
+              defRating: 100,
+              offRating: 100,
+              paceRating: 100,
+              pkTier: 2,
+              ppTier: 2
+            }
+          ]
+        ]
+      ]),
+      trendOverrides: new Map(),
+      scheduleStrengthByTeam: new Map([
+        [
+          "TOR",
+          {
+            date: "2026-04-05",
+            future: {
+              directOpponentPointPct: null,
+              indirectOpponentPointPct: null,
+              opponentGamesPlayed: 0,
+              rank: 10,
+              sos: 0.5,
+              uniqueOpponents: 0
+            },
+            past: {
+              directOpponentPointPct: null,
+              indirectOpponentPointPct: null,
+              opponentGamesPlayed: 0,
+              rank: 12,
+              sos: 0.49,
+              uniqueOpponents: 0
+            },
+            sos: 0.495,
+            teamAbbr: "TOR",
+            texture: null
+          }
+        ]
+      ])
+    });
+
+    expect(result[0]?.narrative[0]).toContain("5v5 offense is rising");
   });
 });

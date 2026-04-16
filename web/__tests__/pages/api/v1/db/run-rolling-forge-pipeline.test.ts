@@ -186,6 +186,14 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
       fastMode: "true",
       executionProfile: "daily_incremental"
     });
+    expect(ingestProjectionInputsMock.mock.calls[0]?.[0]?.query).toMatchObject({
+      startDate: "2026-02-28",
+      endDate: "2026-03-14"
+    });
+    expect(buildProjectionDerivedMock.mock.calls[0]?.[0]?.query).toMatchObject({
+      startDate: "2026-03-07",
+      endDate: "2026-03-13"
+    });
     expect(runProjectionV2Mock).toHaveBeenCalled();
     expect(runProjectionAccuracyMock).not.toHaveBeenCalled();
     expect(res.body).toMatchObject({
