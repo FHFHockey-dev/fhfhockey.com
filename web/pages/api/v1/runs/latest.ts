@@ -4,6 +4,11 @@ import { z } from "zod";
 import { buildEndpointScanSummary } from "lib/api/scanSummary";
 import supabase from "lib/supabase/server";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
+import {
+  getRunActivityAgeMs,
+  isRunningRunStale,
+  RUN_ACTIVE_WINDOW_MS
+} from "lib/projections/queries/run-lifecycle-queries";
 
 const querySchema = z.object({
   date: z
@@ -26,6 +31,77 @@ function readMetricNumber(metrics: Record<string, unknown>, keys: string[]): num
     if (Number.isFinite(value)) return value;
   }
   return null;
+}
+
+type ForgeRunRow = {
+  run_id: string;
+  as_of_date: string;
+  status: string;
+  created_at: string | null;
+  updated_at: string | null;
+  metrics: Record<string, unknown> | null;
+};
+
+function normalizeForgeRunRow(value: unknown): ForgeRunRow | null {
+  if (!value || typeof value !== "object") return null;
+  const row = value as Record<string, unknown>;
+  const runId = typeof row.run_id === "string" ? row.run_id : null;
+  const asOfDate = typeof row.as_of_date === "string" ? row.as_of_date : null;
+  const status = typeof row.status === "string" ? row.status : null;
+  if (!runId || !asOfDate || !status) return null;
+  return {
+    run_id: runId,
+    as_of_date: asOfDate,
+    status,
+    created_at: typeof row.created_at === "string" ? row.created_at : null,
+    updated_at: typeof row.updated_at === "string" ? row.updated_at : null,
+    metrics:
+      row.metrics && typeof row.metrics === "object"
+        ? (row.metrics as Record<string, unknown>)
+        : {}
+  };
+}
+
+function summarizeRowCounts(metrics: Record<string, unknown>) {
+  return {
+    gamesProcessed: readMetricNumber(metrics, ["games", "games_processed"]),
+    playerRowsUpserted: readMetricNumber(metrics, ["player_rows"]),
+    teamRowsUpserted: readMetricNumber(metrics, ["team_rows"]),
+    goalieRowsUpserted: readMetricNumber(metrics, ["goalie_rows"])
+  };
+}
+
+function buildRunNotes(args: {
+  selected: ForgeRunRow;
+  latestObserved: ForgeRunRow;
+  staleObservedAgeMs: number | null;
+}) {
+  const notes: string[] = [];
+  if (
+    args.latestObserved.run_id !== args.selected.run_id &&
+    args.latestObserved.status === "running"
+  ) {
+    const ageMinutes =
+      args.staleObservedAgeMs == null
+        ? "unknown"
+        : `${Math.max(1, Math.round(args.staleObservedAgeMs / 60_000))}m`;
+    notes.push(
+      `Ignored stale running row ${args.latestObserved.run_id}; latest actionable run is ${args.selected.run_id}.`
+    );
+    notes.push(
+      `Observed running row exceeded the ${Math.round(RUN_ACTIVE_WINDOW_MS / 60_000)}m active window (${ageMinutes} since last activity).`
+    );
+  } else if (
+    args.latestObserved.run_id !== args.selected.run_id &&
+    args.latestObserved.status === "failed"
+  ) {
+    notes.push(
+      `Latest observed run ${args.latestObserved.run_id} failed; using latest succeeded run ${args.selected.run_id} as the actionable state.`
+    );
+  } else if (args.selected.status === "failed") {
+    notes.push("Latest matching run is not in succeeded status.");
+  }
+  return notes;
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -62,14 +138,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .from("forge_runs")
       .select("*")
       .order("created_at", { ascending: false })
-      .limit(1);
+      .limit(10);
 
     if (parsed.data.date) query = query.eq("as_of_date", parsed.data.date);
 
-    const { data, error } = await query.maybeSingle();
+    const { data, error } = await query;
     if (error) throw error;
 
-    if (!data) {
+    const rows = Array.isArray(data)
+      ? data.map(normalizeForgeRunRow).filter((row): row is ForgeRunRow => Boolean(row))
+      : [];
+
+    if (rows.length === 0) {
       return res
         .status(404)
         .json({
@@ -87,19 +167,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           })
         });
     }
-    const record = data as Record<string, unknown>;
-    const metrics =
-      record.metrics && typeof record.metrics === "object"
-        ? (record.metrics as Record<string, unknown>)
-        : {};
-    const runStatus = typeof record.status === "string" ? record.status : null;
+    const latestObserved = rows[0];
+    const latestSucceeded = rows.find((row) => row.status === "succeeded") ?? null;
+    const staleObservedAgeMs =
+      latestObserved.status === "running"
+        ? getRunActivityAgeMs(latestObserved, Date.now())
+        : null;
+    const selected =
+      latestSucceeded &&
+      ((latestObserved.status === "running" &&
+        isRunningRunStale(latestObserved, Date.now(), RUN_ACTIVE_WINDOW_MS)) ||
+        latestObserved.status === "failed")
+        ? latestSucceeded
+        : latestObserved;
+    const metrics = selected.metrics ?? {};
+    const runStatus = selected.status;
     return res.status(200).json({
       durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
       scanSummary: buildEndpointScanSummary({
         surface: "latest_run_reader",
         requestedDate: parsed.data.date ?? null,
-        activeDataDate:
-          typeof record.as_of_date === "string" ? record.as_of_date : null,
+        activeDataDate: selected.as_of_date,
         fallbackApplied: false,
         status:
           runStatus === "succeeded"
@@ -107,18 +195,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             : runStatus === "failed"
               ? "blocked"
               : "partial",
-        rowCounts: {
-          gamesProcessed: readMetricNumber(metrics, ["games", "games_processed"]),
-          playerRowsUpserted: readMetricNumber(metrics, ["player_rows"]),
-          teamRowsUpserted: readMetricNumber(metrics, ["team_rows"]),
-          goalieRowsUpserted: readMetricNumber(metrics, ["goalie_rows"])
-        },
+        rowCounts: summarizeRowCounts(metrics),
         blockingIssueCount: runStatus === "failed" ? 1 : 0,
-        notes: [
-          runStatus === "failed" ? "Latest matching run is not in succeeded status." : null
-        ]
+        notes: buildRunNotes({
+          selected,
+          latestObserved,
+          staleObservedAgeMs
+        })
       }),
-      data
+      data: selected,
+      observedLatestRun:
+        latestObserved.run_id !== selected.run_id ? latestObserved : undefined
     });
   } catch (e) {
     return res

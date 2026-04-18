@@ -1,4 +1,5 @@
 import Head from "next/head";
+import type { GetServerSideProps } from "next";
 import { useEffect, useMemo } from "react";
 import { useRouter } from "next/router";
 import type { ParsedUrlQuery } from "querystring";
@@ -135,3 +136,7 @@ export default function GoalieUnderlyingStatsDetailRoute() {
 
   return <PlayerUnderlyingStatsDetailPage variant="goalie" />;
 }
+
+export const getServerSideProps: GetServerSideProps = async () => ({
+  props: {}
+});

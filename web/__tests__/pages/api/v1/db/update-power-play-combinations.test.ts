@@ -151,6 +151,56 @@ describe("/api/v1/db/update-power-play-combinations", () => {
     });
   });
 
+  it("treats pregame FUT game-state failures as skipped instead of blocking the batch", async () => {
+    updatePowerPlayCombinationsMock
+      .mockRejectedValueOnce(new Error("The gameState for the game 301 is FUT"))
+      .mockRejectedValueOnce(new Error("The gameState for the game 302 is PRE"));
+
+    const req: any = {
+      method: "GET",
+      query: {
+        startDate: "2026-04-15",
+        endDate: "2026-04-15"
+      },
+      mockSupabase: {
+        from: vi.fn(() => ({
+          select: vi.fn(() =>
+            createGamesQueryBuilder([
+              { id: 301, date: "2026-04-15" },
+              { id: 302, date: "2026-04-15" }
+            ])
+          )
+        }))
+      }
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      success: true,
+      gameIds: [301, 302],
+      processed: 0,
+      skipped: 2,
+      failed: 0,
+      requestedScope: {
+        startDate: "2026-04-15",
+        endDate: "2026-04-15"
+      },
+      skips: [
+        {
+          gameId: 301,
+          message: "The gameState for the game 301 is FUT"
+        },
+        {
+          gameId: 302,
+          message: "The gameState for the game 302 is PRE"
+        }
+      ]
+    });
+  });
+
   it("requires either gameIds or a date range", async () => {
     const req: any = {
       method: "GET",

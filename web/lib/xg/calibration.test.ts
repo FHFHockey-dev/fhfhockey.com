@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { assessCalibration, evaluateProbabilityMetrics, type CalibrationExample } from "./calibration";
+import {
+  assessCalibration,
+  evaluateProbabilityMetrics,
+  fitProbabilityCalibrator,
+  type CalibrationExample,
+} from "./calibration";
 
 function createExample(
   rowId: string,
@@ -85,5 +90,16 @@ describe("calibration helpers", () => {
     expect(assessment.holdoutPositiveCount).toBeGreaterThanOrEqual(10);
     expect(assessment.adoptabilityBlockingReasons).toEqual([]);
     expect(assessment.adoptableMethod).not.toBeNull();
+  });
+
+  it("falls back to raw calibration when a preferred fitted calibrator cannot be trained", () => {
+    const calibrator = fitProbabilityCalibrator(
+      [createExample("only-positive", 1, 0.8)],
+      "platt"
+    );
+
+    expect(calibrator.method).toBe("raw");
+    expect(calibrator.predict(1.4)).toBeLessThan(1);
+    expect(calibrator.predict(-0.4)).toBeGreaterThan(0);
   });
 });

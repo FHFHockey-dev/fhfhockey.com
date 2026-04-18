@@ -1,0 +1,618 @@
+@use "sass:color";
+@use "styles/vars" as v;
+
+.playoffBracket {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(v.$space-md, 1.8vw, v.$space-xl);
+  width: 100%;
+  min-width: 0;
+}
+
+.playoffHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: v.$space-md;
+  flex-wrap: wrap;
+}
+
+.playoffEyebrow,
+.roundLabel,
+.conferenceHeading,
+.playoffDate,
+.playoffCount,
+.placeholderAbbrev {
+  font-family: v.$font-family-primary;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+}
+
+.playoffEyebrow {
+  font-size: 0.72rem;
+  color: v.$secondary-color;
+  font-weight: 700;
+}
+
+.playoffHeaderMeta {
+  display: inline-flex;
+  align-items: center;
+  gap: v.$space-sm;
+  flex-wrap: wrap;
+}
+
+.playoffDate,
+.playoffCount {
+  font-size: 0.75rem;
+  color: v.$text-color-secondary;
+}
+
+.railScroller {
+  @include v.custom-scrollbar(
+    rgba(v.$secondary-color, 0.84),
+    rgba(v.$background-dark, 0.94),
+    10px
+  );
+  display: flex;
+  gap: v.$space-md;
+  overflow-x: auto;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding: 1px 1px v.$space-sm;
+  border: 1px solid rgba(v.$secondary-color, 0.18);
+  border-radius: v.$radius-card;
+  background: rgba(v.$secondary-color, 0.08);
+  box-shadow:
+    0 0 0 1px rgba(v.$color-white, 0.03),
+    0 20px 40px -28px rgba(0, 0, 0, 0.9);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(v.$secondary-color, 0.84) rgba(v.$background-dark, 0.94);
+}
+
+.railDayGroup {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: stretch;
+  gap: v.$space-sm;
+  padding-right: v.$space-md;
+  min-width: fit-content;
+
+  &:not(:last-child) {
+    border-right: 1px solid rgba(v.$color-white, 0.08);
+  }
+}
+
+.railDayDivider {
+  display: flex;
+  min-width: 112px;
+  padding: v.$space-md v.$space-sm;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+}
+
+.railDayEyebrow,
+.railDayLabel {
+  font-family: v.$font-family-primary;
+  text-transform: uppercase;
+}
+
+.railDayEyebrow {
+  font-size: 0.66rem;
+  letter-spacing: 0.18em;
+  color: v.$secondary-color;
+  font-weight: 700;
+}
+
+.railDayLabel {
+  font-size: 0.88rem;
+  letter-spacing: 0.1em;
+  color: v.$text-color-primary;
+  font-weight: 700;
+}
+
+.railDayGames {
+  display: flex;
+  gap: 1px;
+}
+
+.railItem,
+.railEmpty {
+  background:
+    linear-gradient(135deg, rgba(v.$secondary-color, 0.12) 0%, transparent 30%),
+    linear-gradient(180deg, color.adjust(v.$background-dark, $lightness: -3%) 0%, v.$background-medium 100%);
+}
+
+.railItem {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-sm;
+  min-height: 96px;
+  min-width: 252px;
+  padding: v.$space-md;
+  color: inherit;
+  text-decoration: none;
+  transition:
+    transform v.$transition-duration v.$transition-easing,
+    background-color v.$transition-duration v.$transition-easing;
+
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 3px;
+  }
+
+  &::before {
+    background: var(--rail-away-color);
+  }
+
+  &::after {
+    inset: 0 0 0 auto;
+    background: var(--rail-home-color);
+  }
+
+  &:hover,
+  &:focus-visible {
+    transform: translateY(-1px);
+    background:
+      linear-gradient(135deg, rgba(v.$secondary-color, 0.18) 0%, transparent 36%),
+      linear-gradient(180deg, color.adjust(v.$background-dark, $lightness: -1%) 0%, color.adjust(v.$background-medium, $lightness: 2%) 100%);
+  }
+
+  &:focus-visible {
+    outline: 2px solid v.$focus-color;
+    outline-offset: 2px;
+  }
+}
+
+.railEmpty {
+  padding: v.$space-md;
+  border-radius: v.$radius-card;
+  color: v.$text-color-secondary;
+  font-size: 0.92rem;
+}
+
+.railStatus {
+  font-family: v.$font-family-numbers;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  color: color.adjust(v.$text-color-secondary, $lightness: 6%);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.railTeams {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-xs;
+}
+
+.railTeam {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  gap: v.$space-xs;
+  align-items: center;
+}
+
+.railTeamLogo {
+  filter:
+    drop-shadow(0 0 8px rgba(255, 255, 255, 0.22))
+    drop-shadow(0 0 10px rgba(v.$secondary-color, 0.16));
+}
+
+.railTeamAbbrev {
+  font-family: v.$font-family-primary;
+  font-size: 1rem;
+  font-weight: 700;
+  color: v.$text-color-primary;
+}
+
+.railScore {
+  font-family: v.$font-family-numbers;
+  color: v.$text-color-primary;
+  font-size: 0.95rem;
+}
+
+.bracketBrand {
+  display: flex;
+  justify-content: center;
+  padding-top: v.$space-sm;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.bracketLogo {
+  width: min(100%, 420px);
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 0 12px rgba(v.$color-white, 0.08));
+}
+
+.bracketTitle {
+  margin: 0;
+  font-family: v.$font-family-primary;
+  font-size: clamp(1.5rem, 3vw, 2.35rem);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: v.$text-color-primary;
+}
+
+.bracketBoard {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: clamp(v.$space-md, 2vw, v.$space-xxl);
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+}
+
+.conferenceBoard,
+.cupBoard {
+  min-width: 0;
+  width: 100%;
+}
+
+.conferenceHeading {
+  margin-bottom: v.$space-md;
+  font-size: 0.8rem;
+  color: rgba(v.$text-color-secondary, 0.9);
+  text-align: center;
+}
+
+.conferenceColumns {
+  --bracket-slot-height: 136px;
+  --bracket-slot-gap: clamp(14px, 1.8vw, 28px);
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1.18fr) minmax(0, 1.12fr);
+  gap: clamp(v.$space-sm, 1.4vw, v.$space-lg);
+  align-items: stretch;
+}
+
+.eastColumns {
+  grid-template-columns: minmax(0, 1.12fr) minmax(0, 1.18fr) minmax(0, 1.7fr);
+}
+
+.roundColumn {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-sm;
+  min-width: 0;
+}
+
+.roundLabel {
+  font-size: 0.72rem;
+  color: rgba(v.$text-color-secondary, 0.8);
+  font-weight: 700;
+  text-align: center;
+}
+
+.roundStack {
+  display: grid;
+  flex: 1 1 auto;
+  grid-template-rows: repeat(4, var(--bracket-slot-height));
+  row-gap: var(--bracket-slot-gap);
+  min-height: calc((4 * var(--bracket-slot-height)) + (3 * var(--bracket-slot-gap)));
+}
+
+.alignStart .roundStack > * {
+  align-self: stretch;
+}
+
+.alignMiddle .roundStack > :first-child {
+  grid-row: 1 / span 2;
+  align-self: center;
+}
+
+.alignMiddle .roundStack > :last-child {
+  grid-row: 3 / span 2;
+  align-self: center;
+}
+
+.alignCenter .roundStack > :only-child {
+  grid-row: 2 / span 2;
+  align-self: center;
+}
+
+.cupBoard {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-sm;
+  align-items: center;
+  justify-content: center;
+}
+
+.seriesCardLink {
+  color: inherit;
+  text-decoration: none;
+
+  &:focus-visible {
+    outline: 2px solid v.$focus-color;
+    outline-offset: 3px;
+    border-radius: v.$radius-card;
+  }
+}
+
+.seriesCard {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 20px;
+  gap: 10px;
+  width: 100%;
+  min-height: 136px;
+  padding: 12px v.$space-md;
+  justify-self: center;
+  border: 1px solid rgba(v.$color-white, 0.1);
+  border-radius: v.$radius-card;
+  background:
+    linear-gradient(135deg, rgba(v.$color-white, 0.04) 0%, transparent 28%),
+    linear-gradient(180deg, rgba(v.$background-medium, 0.98) 0%, color.adjust(v.$background-dark, $lightness: -2%) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(v.$color-white, 0.04),
+    0 18px 34px -26px rgba(0, 0, 0, 0.95);
+}
+
+.roundOneCard {
+  max-width: clamp(224px, 15vw, 264px);
+}
+
+.roundTwoCard,
+.conferenceFinalCard {
+  max-width: clamp(196px, 13vw, 228px);
+}
+
+.cupFinalCard {
+  max-width: clamp(246px, 16vw, 290px);
+  min-height: 182px;
+  padding: 14px calc(v.$space-lg + 2px);
+}
+
+.live {
+  border-color: rgba(v.$success-color, 0.45);
+  box-shadow:
+    inset 0 1px 0 rgba(v.$color-white, 0.04),
+    0 0 0 1px rgba(v.$success-color, 0.12),
+    0 16px 30px -22px rgba(v.$success-color, 0.32);
+}
+
+.upcoming {
+  border-color: rgba(v.$secondary-color, 0.2);
+}
+
+.final {
+  border-color: rgba(v.$warning-color, 0.24);
+}
+
+.seriesMain {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: v.$space-xs;
+  min-width: 0;
+}
+
+.seriesTeamRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: v.$space-sm;
+  align-items: center;
+}
+
+.seriesTeamMeta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.seriesTeamLogo {
+  width: 46px;
+  height: 46px;
+  filter:
+    drop-shadow(0 0 10px rgba(255, 255, 255, 0.18))
+    drop-shadow(0 0 12px rgba(v.$secondary-color, 0.14));
+}
+
+.seriesTeamText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.seriesTeamAbbrev {
+  font-family: v.$font-family-primary;
+  font-size: clamp(1.04rem, 1.2vw, 1.5rem);
+  font-weight: 800;
+  line-height: 1;
+  color: v.$color-white;
+}
+
+.seriesTeamSeed {
+  font-family: v.$font-family-primary;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: rgba(v.$text-color-secondary, 0.92);
+  line-height: 1.1;
+}
+
+.seriesScore {
+  font-family: v.$font-family-numbers;
+  min-width: 1ch;
+  text-align: right;
+  font-size: clamp(1.45rem, 1.7vw, 2.2rem);
+  color: v.$color-white;
+  line-height: 1;
+}
+
+.seriesScoreHidden {
+  opacity: 0;
+}
+
+.seriesCenterLine {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.seriesCenterRule {
+  flex: 1 1 auto;
+  height: 1px;
+  background: rgba(v.$color-white, 0.1);
+}
+
+.seriesCenterText {
+  font-family: v.$font-family-numbers;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+  font-size: 0.62rem;
+  letter-spacing: 0.05em;
+  color: rgba(v.$text-color-secondary, 0.96);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.seriesProgress {
+  display: flex;
+  flex: 0 0 20px;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  width: 20px;
+  min-width: 20px;
+}
+
+.seriesDot,
+.seriesClincherDot {
+  width: 13px;
+  height: 13px;
+  border-radius: 999px;
+}
+
+.seriesDot {
+  border: 1px solid color-mix(in srgb, var(--series-dot-color) 70%, rgba(255, 255, 255, 0.24));
+  background: rgba(v.$background-dark, 0.75);
+  box-shadow:
+    inset 0 0 0 1px rgba(v.$color-white, 0.04),
+    0 0 0 1px rgba(0, 0, 0, 0.22);
+}
+
+.seriesDotFilled {
+  background: color-mix(in srgb, var(--series-dot-color) 88%, rgba(255, 255, 255, 0.14));
+  box-shadow:
+    0 0 12px color-mix(in srgb, var(--series-dot-color) 46%, transparent),
+    inset 0 0 0 1px rgba(v.$color-white, 0.12);
+}
+
+.seriesClincherDot {
+  background: color.adjust(v.$success-color, $lightness: -18%);
+  border: 1px solid rgba(v.$success-color, 0.9);
+  box-shadow:
+    0 0 12px rgba(v.$success-color, 0.45),
+    inset 0 0 0 1px rgba(v.$color-white, 0.12);
+}
+
+.placeholderCard {
+  min-height: 136px;
+}
+
+.placeholderInner {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: v.$space-xs;
+}
+
+.placeholderAbbrev {
+  font-size: 0.72rem;
+  color: rgba(v.$text-color-secondary, 0.82);
+}
+
+.placeholderLogo {
+  width: min(100%, 120px);
+  max-height: 64px;
+  object-fit: contain;
+  opacity: 0.92;
+}
+
+.conferencePlaceholderLogo {
+  width: min(100%, 138px);
+  max-height: 72px;
+}
+
+.placeholderShield {
+  width: 52px;
+  height: 62px;
+  clip-path: polygon(14% 0, 86% 0, 100% 18%, 88% 86%, 50% 100%, 12% 86%, 0 18%);
+  border: 1px solid rgba(v.$color-white, 0.1);
+  background:
+    linear-gradient(180deg, rgba(v.$color-white, 0.08) 0%, rgba(v.$color-white, 0.02) 100%),
+    rgba(v.$background-dark, 0.7);
+}
+
+.placeholderTitle {
+  font-family: v.$font-family-primary;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: v.$text-color-primary;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+@media (max-width: #{v.$breakpoint-desktop}) {
+  .bracketBoard {
+    grid-template-columns: 1fr;
+  }
+
+  .conferenceColumns,
+  .eastColumns {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .cupBoard {
+    order: -1;
+  }
+}
+
+@media (max-width: #{v.$breakpoint-tablet - 1px}) {
+  .railDayGroup {
+    padding-right: v.$space-sm;
+  }
+
+  .conferenceColumns,
+  .eastColumns {
+    grid-template-columns: 1fr;
+  }
+
+  .roundStack {
+    display: flex;
+    min-height: auto;
+    gap: v.$space-md;
+  }
+
+  .seriesCard {
+    min-height: 136px;
+    width: 100%;
+  }
+
+  .seriesTeamAbbrev {
+    font-size: 1.18rem;
+  }
+
+  .seriesScore {
+    font-size: 1.8rem;
+  }
+
+  .seriesCenterText {
+    font-size: 0.62rem;
+  }
+}

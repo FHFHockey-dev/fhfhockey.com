@@ -1,5 +1,6 @@
 // @ts-nocheck
 // PATH: web/pages/game/[gameId].tsx
+import type { GetServerSideProps } from "next";
 import { useRouter } from "next/router";
 import { useEffect, useState, useMemo } from "react";
 import Fetch from "lib/cors-fetch";
@@ -831,3 +832,7 @@ export default function Page() {
     );
   }
 }
+
+export const getServerSideProps: GetServerSideProps = async () => ({
+  props: {}
+});

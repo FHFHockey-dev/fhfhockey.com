@@ -357,9 +357,9 @@ export type PbpGameIdRow = {
 export type LineCombinationWithGameDateRow = {
   gameId: number;
   teamId?: number;
-  forwards?: unknown;
-  defensemen?: unknown;
-  goalies?: unknown;
+  forwards?: number[] | null;
+  defensemen?: number[] | null;
+  goalies?: number[] | null;
   games?: {
     date?: string | null;
   } | null;

@@ -119,6 +119,12 @@ function isoDateOnly(input: Date | string) {
   return value.toISOString().slice(0, 10);
 }
 
+function addDays(date: string, delta: number) {
+  const value = new Date(`${date}T00:00:00.000Z`);
+  value.setUTCDate(value.getUTCDate() + delta);
+  return isoDateOnly(value);
+}
+
 function parseDateWindow(req: NextApiRequest) {
   const date = getParam(req, "date") ?? isoDateOnly(new Date());
   const startDate = getParam(req, "startDate") ?? date;
@@ -334,6 +340,18 @@ async function runStage(args: {
 }): Promise<StageResult> {
   const startedAt = Date.now();
   const steps: StepResult[] = [];
+  const isSingleDateDailyIncremental =
+    args.mode === "daily_incremental" && args.startDate === args.endDate;
+  const projectionInputStartDate = isSingleDateDailyIncremental
+    ? addDays(args.startDate, -14)
+    : args.startDate;
+  const projectionInputEndDate = args.endDate;
+  const derivedBuildStartDate = isSingleDateDailyIncremental
+    ? addDays(args.startDate, -7)
+    : args.startDate;
+  const derivedBuildEndDate = isSingleDateDailyIncremental
+    ? addDays(args.endDate, -1)
+    : args.endDate;
 
   const addStep = async (step: {
     id: string;
@@ -456,8 +474,8 @@ async function runStage(args: {
         route: "/api/v1/db/ingest-projection-inputs",
         handler: ingestProjectionInputsHandler,
         query: {
-          startDate: args.startDate,
-          endDate: args.endDate
+          startDate: projectionInputStartDate,
+          endDate: projectionInputEndDate
         }
       });
       break;
@@ -467,8 +485,8 @@ async function runStage(args: {
         route: "/api/v1/db/build-projection-derived-v2",
         handler: buildProjectionDerivedHandler,
         query: {
-          startDate: args.startDate,
-          endDate: args.endDate
+          startDate: derivedBuildStartDate,
+          endDate: derivedBuildEndDate
         }
       });
       break;

@@ -18,11 +18,36 @@ export default withCronJobAudit(adminOnly(async (req, res) => {
   }
   try {
     const teams = (await getAllTeams(season.seasonId)) ?? [];
-    const tasks = teams.map(async (team) => {
-      const games = await getGamesByTeam(team.abbreviation, season.seasonId);
-      return games;
+    const taskResults = await Promise.allSettled(
+      teams.map(async (team) => ({
+        abbreviation: team.abbreviation,
+        games: await getGamesByTeam(team.abbreviation, season.seasonId)
+      }))
+    );
+    const failedTeams: Array<{ abbreviation: string; message: string }> = [];
+    let games = taskResults.flatMap((result, index) => {
+      const abbreviation = teams[index]?.abbreviation ?? "unknown";
+      if (result.status === "fulfilled") {
+        return result.value.games;
+      }
+
+      failedTeams.push({
+        abbreviation,
+        message: result.reason?.message ?? String(result.reason)
+      });
+      return [];
     });
-    let games = (await Promise.all(tasks)).flat(1);
+
+    if (games.length === 0) {
+      throw new Error(
+        failedTeams.length > 0
+          ? `Failed to fetch games for every team. ${failedTeams
+              .map((failure) => `${failure.abbreviation}: ${failure.message}`)
+              .join("; ")}`
+          : "No games returned for any team."
+      );
+    }
+
     const gamesMap: any = {};
     games.forEach((game) => {
       gamesMap[game.id] = game;
@@ -54,7 +79,14 @@ export default withCronJobAudit(adminOnly(async (req, res) => {
       message:
         "Successfully updated the games table. " +
         `${games.length} games in ${season.seasonId}.`,
-      success: true
+      success: true,
+      partialFailures: failedTeams.length,
+      warnings:
+        failedTeams.length > 0
+          ? failedTeams.map(
+              (failure) => `${failure.abbreviation}: ${failure.message}`
+            )
+          : []
     });
   } catch (e: any) {
     console.error(e);

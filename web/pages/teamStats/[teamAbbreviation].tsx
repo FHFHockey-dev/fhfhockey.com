@@ -5,6 +5,7 @@
 // We will have to redo the fetching of the data and upserting to the supabase table
 
 import React, { useEffect, useState } from "react";
+import type { GetServerSideProps } from "next";
 import { useRouter } from "next/router";
 import supabase from "lib/supabase";
 import styles from "../../styles/teamStats.module.scss";
@@ -259,3 +260,7 @@ const TeamDetail = () => {
 };
 
 export default TeamDetail;
+
+export const getServerSideProps: GetServerSideProps = async () => ({
+  props: {}
+});

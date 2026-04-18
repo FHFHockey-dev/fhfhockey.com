@@ -66,6 +66,7 @@ import {
   normalizeDependencyError,
   type NormalizedDependencyError
 } from "lib/cron/normalizeDependencyError";
+import { fetchRecentTeamLineCombinations } from "lib/projections/queries/line-combo-queries";
 import { runProjectionV2ForDate } from "lib/projections/run-forge-projections";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
 import { FORGE_COMPATIBILITY_INVENTORY } from "lib/projections/compatibilityInventory";
@@ -367,16 +368,12 @@ export async function runProjectionPreflightChecks(
   if (scheduledTeamIds.length > 0) {
     let missingLineComboTeams = 0;
     for (const teamId of scheduledTeamIds) {
-      const { data, error } = await supabase
-        .from("lineCombinations")
-        .select("teamId,games!inner(date)")
-        .eq("teamId", teamId)
-        .lt("games.date", asOfDate)
-        .order("date", { foreignTable: "games", ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (error) throw error;
-      if (!data) missingLineComboTeams += 1;
+      const rows = await fetchRecentTeamLineCombinations({
+        teamId,
+        asOfDate,
+        limit: 1
+      });
+      if (rows.length === 0) missingLineComboTeams += 1;
     }
     gates.push({
       gate_key: "line_combinations",
@@ -523,15 +520,11 @@ export async function runProjectionPreflightChecks(
     const recentGoalieCandidateIds = new Set<number>();
     const latestGoaliesByTeam = new Map<number, number[]>();
     for (const teamId of scheduledTeamIds) {
-      const { data, error } = await supabase
-        .from("lineCombinations")
-        .select("goalies,games!inner(date)")
-        .eq("teamId", teamId)
-        .lt("games.date", asOfDate)
-        .order("date", { foreignTable: "games", ascending: false })
-        .limit(3);
-      if (error) throw error;
-      const rows = (data ?? []) as Array<{ goalies: number[] | null }>;
+      const rows = await fetchRecentTeamLineCombinations({
+        teamId,
+        asOfDate,
+        limit: 3
+      });
       rows.forEach((row, index) => {
         const goalieIds = (row.goalies ?? []).filter((goalieId) =>
           Number.isFinite(goalieId)
@@ -1143,8 +1136,12 @@ async function handler(
       gamesProcessed: 0,
       goalieRowsProcessed: 0
     });
+    const statusCode =
+      typeof (e as { statusCode?: unknown })?.statusCode === "number"
+        ? Number((e as { statusCode?: number }).statusCode)
+        : 500;
     return res
-      .status(500)
+      .status(statusCode)
       .json(withTiming({
         success: false,
         asOfDate,

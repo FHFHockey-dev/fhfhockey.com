@@ -1,4 +1,5 @@
 import Head from "next/head";
+import type { GetServerSideProps } from "next";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/router";
@@ -1079,3 +1080,7 @@ function formatDetailValidationMessage(issues: readonly string[]): string {
     })
     .join(" ");
 }
+
+export const getServerSideProps: GetServerSideProps = async () => ({
+  props: {}
+});

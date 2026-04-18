@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Head from "next/head";
+import type { GetServerSideProps } from "next";
 import { useRouter } from "next/router";
 import { useEffect, useMemo, useState } from "react";
 
@@ -406,3 +407,7 @@ export default function ForgeTeamDetailPage() {
     </>
   );
 }
+
+export const getServerSideProps: GetServerSideProps = async () => ({
+  props: {}
+});

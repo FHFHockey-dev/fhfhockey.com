@@ -18,6 +18,9 @@ function createQueryBuilder(resolver: () => { data?: any; error: any }) {
     eq() {
       return builder;
     },
+    then(resolve: (value: { data?: any; error: any }) => unknown) {
+      return Promise.resolve(resolve(resolver()));
+    },
     maybeSingle() {
       const out = resolver();
       return Promise.resolve({ data: out.data ?? null, error: out.error });
@@ -60,18 +63,21 @@ describe("/api/v1/runs/latest", () => {
     fromMock.mockImplementation((table: string) => {
       if (table === "forge_runs") {
         return createQueryBuilder(() => ({
-          data: {
-            run_id: "run-123",
-            as_of_date: "2026-03-20",
-            status: "succeeded",
-            created_at: "2026-03-20T11:00:00.000Z",
-            metrics: {
-              games: 8,
-              player_rows: 212,
-              team_rows: 16,
-              goalie_rows: 24
+          data: [
+            {
+              run_id: "run-123",
+              as_of_date: "2026-03-20",
+              status: "succeeded",
+              created_at: "2026-03-20T11:00:00.000Z",
+              updated_at: "2026-03-20T11:04:00.000Z",
+              metrics: {
+                games: 8,
+                player_rows: 212,
+                team_rows: 16,
+                goalie_rows: 24
+              }
             }
-          },
+          ],
           error: null
         }));
       }
@@ -112,5 +118,130 @@ describe("/api/v1/runs/latest", () => {
         blockingIssueCount: 0
       }
     });
+  });
+
+  it("falls back to the latest succeeded run when the newest row is a stale running shell", async () => {
+    fromMock.mockImplementation((table: string) => {
+      if (table === "forge_runs") {
+        return createQueryBuilder(() => ({
+          data: [
+            {
+              run_id: "run-stale",
+              as_of_date: "2026-03-20",
+              status: "running",
+              created_at: "2026-03-20T11:05:00.000Z",
+              updated_at: "2026-03-20T11:05:00.000Z",
+              metrics: {}
+            },
+            {
+              run_id: "run-good",
+              as_of_date: "2026-03-20",
+              status: "succeeded",
+              created_at: "2026-03-20T11:00:00.000Z",
+              updated_at: "2026-03-20T11:04:00.000Z",
+              metrics: {
+                games: 7,
+                player_rows: 180,
+                team_rows: 12,
+                goalie_rows: 8
+              }
+            }
+          ],
+          error: null
+        }));
+      }
+      return createQueryBuilder(() => ({ data: null, error: null }));
+    });
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(new Date("2026-03-20T11:20:00.000Z"));
+
+      const req: any = {
+        method: "GET",
+        query: {
+          date: "2026-03-20"
+        }
+      };
+      const res = createMockRes();
+
+      await handler(req, res);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.data).toMatchObject({
+        run_id: "run-good",
+        status: "succeeded"
+      });
+      expect(res.body.observedLatestRun).toMatchObject({
+        run_id: "run-stale",
+        status: "running"
+      });
+      expect(res.body.scanSummary.notes.join(" ")).toContain(
+        "Ignored stale running row run-stale"
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("falls back to the latest succeeded run when a newer rerun failed", async () => {
+    fromMock.mockImplementation((table: string) => {
+      if (table === "forge_runs") {
+        return createQueryBuilder(() => ({
+          data: [
+            {
+              run_id: "run-failed",
+              as_of_date: "2026-03-20",
+              status: "failed",
+              created_at: "2026-03-20T11:10:00.000Z",
+              updated_at: "2026-03-20T11:12:00.000Z",
+              metrics: {
+                games: 2,
+                player_rows: 0,
+                team_rows: 0,
+                goalie_rows: 0
+              }
+            },
+            {
+              run_id: "run-good",
+              as_of_date: "2026-03-20",
+              status: "succeeded",
+              created_at: "2026-03-20T11:00:00.000Z",
+              updated_at: "2026-03-20T11:04:00.000Z",
+              metrics: {
+                games: 7,
+                player_rows: 180,
+                team_rows: 12,
+                goalie_rows: 8
+              }
+            }
+          ],
+          error: null
+        }));
+      }
+      return createQueryBuilder(() => ({ data: null, error: null }));
+    });
+
+    const req: any = {
+      method: "GET",
+      query: {
+        date: "2026-03-20"
+      }
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.data).toMatchObject({
+      run_id: "run-good",
+      status: "succeeded"
+    });
+    expect(res.body.observedLatestRun).toMatchObject({
+      run_id: "run-failed",
+      status: "failed"
+    });
+    expect(res.body.scanSummary.notes.join(" ")).toContain(
+      "using latest succeeded run run-good as the actionable state"
+    );
   });
 });

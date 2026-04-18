@@ -25,7 +25,9 @@ import {
 } from "../lib/xg/binaryLogistic";
 import {
   assessCalibration,
+  fitProbabilityCalibrator,
   type CalibrationAssessment,
+  type CalibrationMethodName,
   type CalibrationExample,
 } from "../lib/xg/calibration";
 import {
@@ -194,6 +196,13 @@ type ModelArtifactPayload = {
   };
   holdoutScores: HoldoutScoreRow[];
   calibrationAssessment: CalibrationAssessment;
+  calibration?: {
+    selectedMethod: CalibrationMethodName;
+    fitSplit: "validation" | "none";
+    fitExampleCount: number;
+    applied: boolean;
+    reason: string;
+  };
   approvalGradeEligibility: ApprovalGradeEligibility;
   featureImportance?: Array<{ featureKey: string; importance: number }>;
   model: unknown;
@@ -230,7 +239,7 @@ function printHelp(): void {
 
 Options:
   --season <seasonId>          Season id to train on. Default: 20252026
-  --family <name>              Model family. Default: logistic_unregularized
+  --family <name>              Model family. Default: xgboost_js
   --featureFamily <name>       Feature family preset. Default: first_pass_v1
   --parserVersion <n>          Required parser version. Default: 1
   --strengthVersion <n>        Required strength version. Default: 1
@@ -351,7 +360,7 @@ function parseCliArgs(argv: string[]): CliOptions {
     season: Number(options.season ?? 20252026),
     outputDir:
       options.outputDir ?? path.resolve(process.cwd(), "scripts/output/xg-baselines"),
-    family: options.family ?? "logistic_unregularized",
+    family: options.family ?? "xgboost_js",
     featureFamily: requestedFeatureFamily as BaselineFeatureFamilyName,
     parserVersion: Number(options.parserVersion ?? 1),
     strengthVersion: Number(options.strengthVersion ?? 1),
@@ -1010,6 +1019,7 @@ export function buildBaselineArtifactPayloads(args: {
   };
   holdoutScores: HoldoutScoreRow[];
   calibrationAssessment: CalibrationAssessment;
+  calibration?: ModelArtifactPayload["calibration"];
   featureImportance?: Array<{ featureKey: string; importance: number }>;
   model: unknown;
 }): {
@@ -1078,6 +1088,7 @@ export function buildBaselineArtifactPayloads(args: {
     holdoutSliceEvaluations: args.holdoutSliceEvaluations,
     holdoutScores: args.holdoutScores,
     calibrationAssessment: args.calibrationAssessment,
+    calibration: args.calibration,
     approvalGradeEligibility,
     featureImportance: args.featureImportance,
     model: args.model,
@@ -1183,7 +1194,17 @@ async function main(): Promise<void> {
     let featureImportance:
       | Array<{ featureKey: string; importance: number }>
       | undefined;
+    let rawScoredExamples: ScoredExample[];
     let scoredExamples: ScoredExample[];
+    let calibration:
+      | {
+          selectedMethod: CalibrationMethodName;
+          fitSplit: "validation" | "none";
+          fitExampleCount: number;
+          applied: boolean;
+          reason: string;
+        }
+      | undefined;
 
     if (
       options.family === "logistic_unregularized" ||
@@ -1193,7 +1214,7 @@ async function main(): Promise<void> {
       fitOptions = resolveFitOptions(options);
       const logisticModel = trainBinaryLogisticModel(trainExamples, fitOptions);
       model = logisticModel;
-      scoredExamples = scoreExamples(logisticModel, dataset.examples);
+      rawScoredExamples = scoreExamples(logisticModel, dataset.examples);
     } else if (options.family === "xgboost_js") {
       fitOptions = resolveBoostingFitOptions(options);
       const booster = new XGBoost(fitOptions);
@@ -1202,7 +1223,7 @@ async function main(): Promise<void> {
         trainExamples.map((example) => example.label)
       );
       model = booster.toJSON();
-      scoredExamples = dataset.examples.map((example) => ({
+      rawScoredExamples = dataset.examples.map((example) => ({
         ...example,
         prediction: Math.min(
           1,
@@ -1217,6 +1238,85 @@ async function main(): Promise<void> {
       throw new Error(
         `Unsupported model family "${options.family}". Supported families: logistic_unregularized, logistic_l2, logistic_elastic_net, xgboost_js.`
       );
+    }
+
+    scoredExamples = rawScoredExamples;
+
+    if (options.family === "xgboost_js") {
+      const validationExamples = rawScoredExamples.filter(
+        (example) => example.split === "validation"
+      );
+      const validationCalibrationExamples = validationExamples.map(
+        (example): CalibrationExample => ({
+          rowId: example.rowId,
+          label: example.label,
+          prediction: example.prediction,
+        })
+      );
+      const validationPositiveCount = validationCalibrationExamples.reduce(
+        (sum, example) => sum + example.label,
+        0
+      );
+      const validationNegativeCount =
+        validationCalibrationExamples.length - validationPositiveCount;
+
+      if (
+        validationCalibrationExamples.length >= 10 &&
+        validationPositiveCount > 0 &&
+        validationNegativeCount > 0
+      ) {
+        const validationAssessment = assessCalibration(
+          validationCalibrationExamples,
+          {
+            featureKeys: dataset.featureKeys,
+            splitCounts: { test: dataset.splitCounts.test },
+            sliceCoverage: {
+              reboundPositiveCount: validationExamples.filter(
+                (example) => example.label === 1 && example.isReboundShot
+              ).length,
+              rushPositiveCount: validationExamples.filter(
+                (example) => example.label === 1 && example.isRushShot
+              ).length,
+            },
+          }
+        );
+        const selectedMethod =
+          validationAssessment.requiresPostCalibration &&
+          validationAssessment.bestObservedMethod != null
+            ? validationAssessment.bestObservedMethod
+            : "raw";
+        const calibrator = fitProbabilityCalibrator(
+          validationCalibrationExamples,
+          selectedMethod
+        );
+
+        if (calibrator.method !== "raw") {
+          scoredExamples = rawScoredExamples.map((example) => ({
+            ...example,
+            prediction: calibrator.predict(example.prediction),
+          }));
+        }
+
+        calibration = {
+          selectedMethod: calibrator.method,
+          fitSplit: "validation",
+          fitExampleCount: validationCalibrationExamples.length,
+          applied: calibrator.method !== "raw",
+          reason:
+            calibrator.method === "raw"
+              ? "Validation holdout did not justify a post-calibration method over raw boosting probabilities."
+              : `Applied ${calibrator.method} calibration selected from validation holdout diagnostics.`,
+        };
+      } else {
+        calibration = {
+          selectedMethod: "raw",
+          fitSplit: "none",
+          fitExampleCount: validationCalibrationExamples.length,
+          applied: false,
+          reason:
+            "Skipped post-calibration because validation coverage was too small or lacked both outcome classes.",
+        };
+      }
     }
 
     const examplesBySplit = {
@@ -1318,6 +1418,7 @@ async function main(): Promise<void> {
       holdoutSliceEvaluations,
       holdoutScores,
       calibrationAssessment,
+      calibration,
       featureImportance,
       model,
     });

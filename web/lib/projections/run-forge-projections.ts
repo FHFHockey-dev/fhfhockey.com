@@ -1,5 +1,6 @@
 import supabase from "lib/supabase/server";
 import { resolveNullableCompatibilityValue } from "lib/rollingPlayerMetricCompatibility";
+import { fetchRecentTeamLineCombinations } from "lib/projections/queries/line-combo-queries";
 // This file is the canonical projection runner that replaced the removed
 // runProjectionV2 shim. Keep cleanup inventory updates alongside
 // lib/projections/compatibilityInventory.ts so surviving compatibility surfaces
@@ -348,49 +349,34 @@ async function fetchLatestLineCombinationForTeam(
   teamId: number,
   asOfDate: string
 ): Promise<LineCombinationContext> {
-  assertSupabase();
-  // Find the most recent game with line combos for this team strictly before the asOfDate.
-  const { data, error } = await supabase
-    .from("lineCombinations")
-    .select(
-      `
-      gameId,
-      teamId,
-      forwards,
-      defensemen,
-      goalies,
-      games!inner (
-        date
-      )
-    `
-    )
-    .eq("teamId", teamId)
-    .lt("games.date", asOfDate)
-    .order("date", { foreignTable: "games", ascending: false })
-    .limit(1)
-    .maybeSingle<LineCombinationWithGameDateRow>();
+  try {
+    const row = (
+      await fetchRecentTeamLineCombinations({
+        teamId,
+        asOfDate,
+        limit: 1
+      })
+    )[0];
+    if (!row) return { lineCombination: null, sourceGameDate: null };
 
-  if (error) {
+    return {
+      lineCombination: {
+        gameId: Number(row.gameId),
+        teamId: Number(row.teamId ?? teamId),
+        forwards: toFiniteNumberArray(row.forwards),
+        defensemen: toFiniteNumberArray(row.defensemen),
+        goalies: toFiniteNumberArray(row.goalies)
+      },
+      sourceGameDate:
+        typeof row.games?.date === "string" ? row.games.date : null
+    };
+  } catch (error) {
     console.warn(
       `Error fetching latest LC for team ${teamId} before ${asOfDate}:`,
       error
     );
     return { lineCombination: null, sourceGameDate: null };
   }
-
-  if (!data) return { lineCombination: null, sourceGameDate: null };
-
-  return {
-    lineCombination: {
-      gameId: Number(data.gameId),
-      teamId: Number(data.teamId ?? teamId),
-      forwards: toFiniteNumberArray(data.forwards),
-      defensemen: toFiniteNumberArray(data.defensemen),
-      goalies: toFiniteNumberArray(data.goalies)
-    },
-    sourceGameDate:
-      typeof data.games?.date === "string" ? data.games.date : null
-  };
 }
 
 async function fetchFallbackSkaterIdsForTeam(
@@ -508,26 +494,12 @@ async function fetchTeamSkaterRoleHistory(
   asOfDate: string,
   windowGames = SKATER_ROLE_HISTORY_WINDOW_GAMES
 ): Promise<Map<number, string[]>> {
-  assertSupabase();
-  const { data, error } = await supabase
-    .from("lineCombinations")
-    .select(
-      `
-      forwards,
-      defensemen,
-      games!inner (
-        date
-      )
-    `
-    )
-    .eq("teamId", teamId)
-    .lt("games.date", asOfDate)
-    .order("date", { foreignTable: "games", ascending: false })
-    .limit(windowGames);
-  if (error) throw error;
-
   const roleHistoryByPlayer = new Map<number, string[]>();
-  const rows = (data ?? []) as LineCombinationWithGameDateRow[];
+  const rows = await fetchRecentTeamLineCombinations({
+    teamId,
+    asOfDate,
+    limit: windowGames
+  });
   for (const row of rows) {
     const forwards = toFiniteNumberArray(row.forwards);
     const defensemen = toFiniteNumberArray(row.defensemen);

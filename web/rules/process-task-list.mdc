@@ -82,7 +82,6 @@ Guidelines for managing task lists in markdown files to track progress on comple
     - unexpected errors or failed assumptions
     - significant scope change
     - risky refactor boundary
-    - completion of a parent task
   - Prefer grouped execution for small related implementation steps, but do **not** batch so much work that review becomes difficult or course-correction becomes expensive.
 
 ## Edit Strategy

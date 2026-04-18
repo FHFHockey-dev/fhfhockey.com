@@ -1,4 +1,5 @@
 import supabase from "lib/supabase/server";
+import { fetchRecentTeamLineCombinations } from "lib/projections/queries/line-combo-queries";
 import type { GoalieEvidence } from "lib/projections/goalieModel";
 import { LINE_COMBO_RECENCY_DECAY } from "../constants/projection-weights";
 import type {
@@ -21,31 +22,20 @@ export async function fetchTeamLineComboGoaliePrior(
   teamId: number,
   asOfDate: string
 ): Promise<Map<number, number>> {
-  assertSupabase();
-  const { data, error } = await supabase
-    .from("lineCombinations")
-    .select(
-      `
-      gameId,
-      goalies,
-      games!inner (
-        date
-      )
-    `
-    )
-    .eq("teamId", teamId)
-    .lt("games.date", asOfDate)
-    .order("date", { foreignTable: "games", ascending: false })
-    .limit(12);
-  if (error) {
+  let rows: LineCombinationWithGameDateRow[];
+  try {
+    rows = await fetchRecentTeamLineCombinations({
+      teamId,
+      asOfDate,
+      limit: 12
+    });
+  } catch (error) {
     console.warn(
       `Error fetching line-combo goalie prior for team ${teamId} before ${asOfDate}:`,
       error
     );
     return new Map();
   }
-
-  const rows = (data ?? []) as LineCombinationWithGameDateRow[];
   if (rows.length === 0) return new Map();
   const weightedByGoalie = new Map<number, number>();
   let totalWeight = 0;

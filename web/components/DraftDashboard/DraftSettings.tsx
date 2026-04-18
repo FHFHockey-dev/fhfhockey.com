@@ -7,6 +7,7 @@ import {
 import type { DraftSettings as DraftSettingsType } from "./DraftDashboard";
 import { PROJECTION_SOURCES_CONFIG } from "lib/projectionsConfig/projectionSourcesConfig";
 import { getDefaultFantasyPointsConfig } from "lib/projectionsConfig/fantasyPointsConfig";
+import { SKATER_LABELS } from "lib/projectionsConfig/skaterScoringLabels";
 import styles from "./DraftSettings.module.scss";
 
 type LeagueType = "points" | "categories";
@@ -87,30 +88,6 @@ const CAT_KEYS = [
 ] as const;
 
 type CatKey = (typeof CAT_KEYS)[number];
-
-const SKATER_LABELS: Record<string, string> = {
-  // Core
-  GOALS: "G",
-  ASSISTS: "A",
-  DEFENSE_POINTS: "DPTS",
-  PP_POINTS: "PPP",
-  SHOTS_ON_GOAL: "SOG",
-  HITS: "HIT",
-  BLOCKED_SHOTS: "BLK",
-  // Requested skater abbreviations
-  FACEOFFS_LOST: "FOL",
-  FACEOFFS_WON: "FOW",
-  GAMES_PLAYED: "GP",
-  PENALTY_MINUTES: "PIM",
-  POINTS: "PTS",
-  PP_ASSISTS: "PPA",
-  PP_GOALS: "PPG",
-  SH_POINTS: "SHP",
-  SH_ASSISTS: "SHA",
-  SH_GOALS: "SHG",
-  PLUS_MINUS: "+/-",
-  TIME_ON_ICE_PER_GAME: "ATOI"
-};
 
 const GOALIE_LABELS: Record<string, string> = {
   WINS_GOALIE: "W",

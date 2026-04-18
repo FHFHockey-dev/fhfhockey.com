@@ -6,12 +6,19 @@ import type {
   UnderlyingStatsLandingRating,
   UnderlyingStatsLandingSnapshot
 } from "../../../lib/underlying-stats/teamLandingRatings";
+import { buildUnderlyingStatsLandingDashboard } from "../../../lib/underlying-stats/teamLandingDashboard";
 
 const routerState = vi.hoisted(() => ({
   pathname: "/underlying-stats",
   query: { date: "2026-04-05" },
   replace: vi.fn()
 }));
+
+class ResizeObserverMock {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
 
 vi.mock("next/head", () => ({
   default: ({ children }: { children: React.ReactNode }) => <>{children}</>
@@ -51,6 +58,41 @@ const buildRating = (
   disciplineRating: 100,
   varianceFlag: 0,
   sos: 100,
+  sosPast: 0.55,
+  sosPastRank: 10,
+  sosFuture: 0.53,
+  sosFutureRank: 14,
+  ppPct: 22.4,
+  ppRank: 11,
+  pkPct: 81.1,
+  pkRank: 8,
+  trendSeries: [
+    { date: "2026-03-28", value: 99 },
+    { date: "2026-04-01", value: 100 },
+    { date: "2026-04-05", value: 101 }
+  ],
+  luckSeries: [
+    { date: "2026-03-28", value: 99.5 },
+    { date: "2026-04-01", value: 100.1 },
+    { date: "2026-04-05", value: 100.4 }
+  ],
+  luckStatus: "normal",
+  luckPdo: 100.4,
+  luckPdoZ: 0.3,
+  narrative: [
+    "5v5 offense is rising as expected goals and shot volume improve.",
+    "Upcoming schedule looks softer than league average."
+  ],
+  scheduleTexture: {
+    backToBacksNext14: 1,
+    gamesNext14: 5,
+    gamesNext7: 3,
+    homeGamesNext14: 2,
+    restAdvantageGamesNext14: 1,
+    restDisadvantageGamesNext14: 0,
+    roadGamesNext14: 3,
+    threeInFourNext14: 1
+  },
   ...overrides
 });
 
@@ -62,23 +104,33 @@ function jsonResponse(data: unknown, ok = true, status = 200): Response {
   } as Response;
 }
 
+const buildSnapshot = (
+  ratings: UnderlyingStatsLandingRating[],
+  resolvedDate = "2026-04-05"
+): UnderlyingStatsLandingSnapshot => ({
+  dashboard: buildUnderlyingStatsLandingDashboard(ratings),
+  requestedDate: resolvedDate,
+  resolvedDate,
+  ratings
+});
+
 describe("/underlying-stats landing page", () => {
   beforeEach(() => {
     routerState.replace.mockReset();
     routerState.query = { date: "2026-04-05" };
     vi.restoreAllMocks();
+    vi.stubGlobal("ResizeObserver", ResizeObserverMock);
   });
 
   afterEach(() => {
     cleanup();
   });
 
-  it("renders snapshot options plus the SoS and repaired trend values in the table", () => {
+  it("renders the dashboard modules plus the simple-mode table values", () => {
     render(
       <TeamPowerRankingsPage
-        initialDate="2026-04-05"
         availableDates={["2026-04-05", "2026-04-04", "2026-04-03"]}
-        initialRatings={[
+        initialSnapshot={buildSnapshot([
           buildRating("TOR", {
             offRating: 110,
             defRating: 108,
@@ -86,29 +138,48 @@ describe("/underlying-stats landing page", () => {
             ppTier: 1,
             pkTier: 1,
             trend10: 2.34,
-            sos: 117.59
+            sosPast: 0.612,
+            sosPastRank: 3,
+            sosFuture: 0.558,
+            sosFutureRank: 9
           }),
           buildRating("VAN", {
             offRating: 102,
             defRating: 101,
             paceRating: 100,
             trend10: -1.12,
-            sos: 98.41
+            sosPast: 0.521,
+            sosFuture: 0.509
           })
-        ]}
+        ])}
       />
     );
 
     const select = screen.getByLabelText("Snapshot date");
     expect(within(select).getAllByRole("option")).toHaveLength(3);
+    expect(screen.getByText("Process quadrant")).toBeTruthy();
+    expect(screen.getByText("Risers and fallers")).toBeTruthy();
+    expect(screen.getByText("What looks real?")).toBeTruthy();
+    expect(screen.getByText("Schedule texture")).toBeTruthy();
+    expect(screen.getByText("Under the radar")).toBeTruthy();
 
     const table = screen.getByRole("table");
-    expect(within(table).getByRole("columnheader", { name: "SoS" })).toBeTruthy();
+    expect(
+      within(table).getByRole("columnheader", { name: /SoS Future/ })
+    ).toBeTruthy();
+    expect(
+      within(table).getByRole("columnheader", { name: "Why moving" })
+    ).toBeTruthy();
 
     const bodyRows = within(table).getAllByRole("row").slice(1);
     expect(within(bodyRows[0]!).getByText("TOR")).toBeTruthy();
-    expect(within(bodyRows[0]!).getByText("117.6")).toBeTruthy();
+    expect(within(bodyRows[0]!).getByText("55.8%")).toBeTruthy();
     expect(within(bodyRows[0]!).getByText("+2.3")).toBeTruthy();
+    expect(
+      within(bodyRows[0]!).getByText(
+        "5v5 offense is rising as expected goals and shot volume improve."
+      )
+    ).toBeTruthy();
   });
 
   it("fetches updated landing ratings when the snapshot date changes", async () => {
@@ -117,20 +188,20 @@ describe("/underlying-stats landing page", () => {
         "/api/underlying-stats/team-ratings?date=2026-04-04"
       );
 
-      const payload: UnderlyingStatsLandingSnapshot = {
-        requestedDate: "2026-04-04",
-        resolvedDate: "2026-04-04",
-        ratings: [
+      const payload = buildSnapshot(
+        [
           buildRating("VAN", {
             date: "2026-04-04",
             offRating: 112,
             defRating: 110,
             paceRating: 108,
             trend10: 3.21,
-            sos: 121.11
+            sosPast: 0.621,
+            sosFuture: 0.589
           })
-        ]
-      };
+        ],
+        "2026-04-04"
+      );
 
       return jsonResponse(payload);
     });
@@ -138,17 +209,17 @@ describe("/underlying-stats landing page", () => {
 
     render(
       <TeamPowerRankingsPage
-        initialDate="2026-04-05"
         availableDates={["2026-04-05", "2026-04-04"]}
-        initialRatings={[
+        initialSnapshot={buildSnapshot([
           buildRating("TOR", {
             offRating: 110,
             defRating: 108,
             paceRating: 107,
             trend10: 2.34,
-            sos: 117.59
+            sosPast: 0.612,
+            sosFuture: 0.558
           })
-        ]}
+        ])}
       />
     );
 
@@ -160,7 +231,7 @@ describe("/underlying-stats landing page", () => {
       const table = screen.getByRole("table");
       const bodyRows = within(table).getAllByRole("row").slice(1);
       expect(within(bodyRows[0]!).getByText("VAN")).toBeTruthy();
-      expect(within(bodyRows[0]!).getByText("121.1")).toBeTruthy();
+      expect(within(bodyRows[0]!).getByText("58.9%")).toBeTruthy();
       expect(within(bodyRows[0]!).getByText("+3.2")).toBeTruthy();
     });
 
@@ -173,5 +244,39 @@ describe("/underlying-stats landing page", () => {
       undefined,
       { shallow: true }
     );
+  });
+
+  it("switches to advanced mode and reveals the component columns", () => {
+    render(
+      <TeamPowerRankingsPage
+        availableDates={["2026-04-05"]}
+        initialSnapshot={buildSnapshot([buildRating("TOR"), buildRating("VAN")])}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Advanced" }));
+
+    const table = screen.getByRole("table");
+    expect(within(table).getByRole("columnheader", { name: /SoS Past/ })).toBeTruthy();
+    expect(within(table).getByRole("columnheader", { name: /Pace/ })).toBeTruthy();
+    expect(within(table).queryByRole("columnheader", { name: /Why moving/ })).toBeNull();
+  });
+
+  it("sorts simple mode rows by trend when the trend header is clicked", () => {
+    render(
+      <TeamPowerRankingsPage
+        availableDates={["2026-04-05"]}
+        initialSnapshot={buildSnapshot([
+          buildRating("TOR", { trend10: 1.2 }),
+          buildRating("VAN", { trend10: 4.4 })
+        ])}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /Trend/ }));
+
+    const table = screen.getByRole("table");
+    const bodyRows = within(table).getAllByRole("row").slice(1);
+    expect(within(bodyRows[0]!).getByText("VAN")).toBeTruthy();
   });
 });

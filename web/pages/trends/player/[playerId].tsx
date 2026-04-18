@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { GetServerSideProps } from "next";
 import { useRouter } from "next/router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -1313,3 +1314,7 @@ export default function PlayerTrendPage() {
     </div>
   );
 }
+
+export const getServerSideProps: GetServerSideProps = async () => ({
+  props: {}
+});
