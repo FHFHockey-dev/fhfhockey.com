@@ -365,9 +365,9 @@
 }
 
 .cupFinalCard {
-  max-width: clamp(246px, 16vw, 290px);
-  min-height: 182px;
-  padding: 14px calc(v.$space-lg + 2px);
+  max-width: clamp(292px, 18vw, 340px);
+  min-height: 208px;
+  padding: 16px calc(v.$space-xl - 2px);
 }
 
 .live {
@@ -519,17 +519,21 @@
 }
 
 .placeholderCard {
+  grid-template-columns: 1fr;
   min-height: 136px;
+  place-items: center;
 }
 
 .placeholderInner {
   display: flex;
   flex: 1 1 auto;
+  width: 100%;
   min-height: 100%;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: v.$space-xs;
+  text-align: center;
 }
 
 .placeholderAbbrev {
@@ -547,6 +551,15 @@
 .conferencePlaceholderLogo {
   width: min(100%, 138px);
   max-height: 72px;
+}
+
+.cupFinalCard.placeholderCard {
+  min-height: 208px;
+}
+
+.cupFinalCard .placeholderLogo {
+  width: min(100%, 156px);
+  max-height: 92px;
 }
 
 .placeholderShield {
