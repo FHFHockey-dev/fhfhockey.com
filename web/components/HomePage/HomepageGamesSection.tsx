@@ -8,10 +8,17 @@ import ClientOnly from "components/ClientOnly";
 import PanelStatus from "components/common/PanelStatus";
 import OptimizedImage from "components/common/OptimizedImage";
 import { buildHomepageModulePresentation } from "lib/dashboard/freshness";
+import { type PlayoffBracketResponse } from "lib/NHL/server/playoffBracket";
 import { fallbackNHLLogo, getTeamLogoSvg } from "lib/images";
 import { HOME_SURFACE_LINKS } from "lib/navigation/siteSurfaceLinks";
 import { teamsInfo } from "lib/teamsInfo";
 import styles from "styles/Home.module.scss";
+import HomepagePlayoffBracket from "./HomepagePlayoffBracket";
+import {
+  formatLocalStartTime,
+  formatPeriodText,
+  getDisplayGameState
+} from "./homepageGameFormatting";
 
 type HomepageGamesSectionProps = {
   currentDate: string;
@@ -21,49 +28,9 @@ type HomepageGamesSectionProps = {
   loading: boolean;
   error: string | null;
   lastUpdatedAt: string | null;
-};
-
-const getDisplayGameState = (gameState: string) => {
-  const gameStateMapping: Record<string, string> = {
-    FUT: "Scheduled",
-    PRE: "Pregame",
-    OVER: "Final",
-    FINAL: "Final",
-    OFF: "Final",
-    LIVE: "LIVE",
-    CRIT: "Critical"
-  };
-
-  return gameStateMapping[gameState] || gameState;
-};
-
-const formatPeriodText = (
-  periodNumber: number,
-  periodDescriptor: string,
-  inIntermission: boolean
-) => {
-  if (inIntermission) return "Intermission";
-  if (periodDescriptor === "OT") return "Overtime";
-
-  const periodSuffix =
-    {
-      1: "st",
-      2: "nd",
-      3: "rd"
-    }[periodNumber] || "th";
-
-  return `${periodNumber}${periodSuffix} Period`;
-};
-
-const formatLocalStartTime = (startTimeUTC: string) => {
-  if (!startTimeUTC) return "";
-
-  try {
-    const timezone = moment.tz.guess();
-    return moment.tz(startTimeUTC, "UTC").tz(timezone).format("h:mm A z");
-  } catch {
-    return moment.utc(startTimeUTC).local().format("h:mm A");
-  }
+  playoffsActive?: boolean;
+  playoffBracket?: PlayoffBracketResponse | null;
+  playoffWeekGames?: any[];
 };
 
 export default function HomepageGamesSection({
@@ -73,7 +40,10 @@ export default function HomepageGamesSection({
   onChangeDate,
   loading,
   error,
-  lastUpdatedAt
+  lastUpdatedAt,
+  playoffsActive = false,
+  playoffBracket = null,
+  playoffWeekGames = []
 }: HomepageGamesSectionProps) {
   const liveGames = games.filter(
     (game) => game.gameState === "LIVE" || game.gameState === "CRIT"
@@ -95,11 +65,17 @@ export default function HomepageGamesSection({
   }, [firstScheduledGame?.startTimeUTC]);
 
   const heroDescription =
-    games.length > 0
+    playoffsActive
       ? liveGames > 0
-        ? `${liveGames} game${liveGames === 1 ? "" : "s"} live right now. Move from the slate to confirmed starter context and market movement without leaving the homepage flow.`
-        : `${games.length} game${games.length === 1 ? "" : "s"} on the board${scheduleContext ? `, starting at ${scheduleContext}` : ""}.`
-      : `No games are scheduled for ${moment(currentDate).format("MMMM D")}. Use the decision surfaces below to plan your next move before the slate repopulates.`;
+        ? `${liveGames} playoff game${liveGames === 1 ? "" : "s"} live right now. Track the bracket, tonight's slate, and every best-of-seven race from one surface.`
+        : games.length > 0
+          ? `${games.length} playoff game${games.length === 1 ? "" : "s"} on the board${scheduleContext ? `, starting at ${scheduleContext}` : ""}.`
+          : `No playoff games are scheduled for ${moment(currentDate).format("MMMM D")}, but the bracket stays live with the next series turn already mapped.`
+      : games.length > 0
+        ? liveGames > 0
+          ? `${liveGames} game${liveGames === 1 ? "" : "s"} live right now. Move from the slate to confirmed starter context and market movement without leaving the homepage flow.`
+          : `${games.length} game${games.length === 1 ? "" : "s"} on the board${scheduleContext ? `, starting at ${scheduleContext}` : ""}.`
+        : `No games are scheduled for ${moment(currentDate).format("MMMM D")}. Use the decision surfaces below to plan your next move before the slate repopulates.`;
   const modulePresentation = buildHomepageModulePresentation({
     source: "homepage-games",
     loading,
@@ -116,9 +92,13 @@ export default function HomepageGamesSection({
     <div className={styles.gameCardsContainer}>
       <div className={styles.slateHero}>
         <div className={styles.slateHeroIntro}>
-          <p className={styles.slateEyebrow}>Fantasy hockey today</p>
+          <p className={styles.slateEyebrow}>
+            {playoffsActive ? "Stanley Cup Playoffs" : "Fantasy hockey today"}
+          </p>
           <div className={styles.slateHeroContent}>
-            <h1 className={styles.slateHeadline}>The Slate</h1>
+            <h1 className={styles.slateHeadline}>
+              {playoffsActive ? "The Bracket" : "The Slate"}
+            </h1>
             <div className={styles.slateDescriptionWrap}>
               <p className={styles.slateDescription}>{heroDescription}</p>
             </div>
@@ -150,31 +130,44 @@ export default function HomepageGamesSection({
           </div>
         </div>
 
-
-      </div>
-
-      <div className={styles.gamesHeader}>
-        <button
-          onClick={() => onChangeDate(-1)}
-          aria-label="Previous Day"
-        ></button>
-        <div className={styles.headerAndDate}>
-          <h1
-            className={
-              gamesHeaderText === "Yesterday's" ||
-              gamesHeaderText === "Tomorrow's"
-                ? styles.smallerHeader
-                : ""
-            }
-          >
-            {gamesHeaderText} <span>Games</span>
-          </h1>
-          <p className={styles.dateDisplay}>
-            {moment(currentDate).format("M/DD/YYYY")}
-          </p>
+        <div className={styles.slateActionRow}>
+          {HOME_SURFACE_LINKS.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={styles.slateActionLink}
+              aria-label={link.label}
+            >
+              {link.label}
+            </Link>
+          ))}
         </div>
-        <button onClick={() => onChangeDate(1)} aria-label="Next Day"></button>
       </div>
+
+      {!playoffsActive ? (
+        <div className={styles.gamesHeader}>
+          <button
+            onClick={() => onChangeDate(-1)}
+            aria-label="Previous Day"
+          ></button>
+          <div className={styles.headerAndDate}>
+            <h1
+              className={
+                gamesHeaderText === "Yesterday's" ||
+                gamesHeaderText === "Tomorrow's"
+                  ? styles.smallerHeader
+                  : ""
+              }
+            >
+              {gamesHeaderText} <span>Games</span>
+            </h1>
+            <p className={styles.dateDisplay}>
+              {moment(currentDate).format("M/DD/YYYY")}
+            </p>
+          </div>
+          <button onClick={() => onChangeDate(1)} aria-label="Next Day"></button>
+        </div>
+      ) : null}
 
       <div className={styles.gamesContainer}>
         {modulePresentation.panelState && (
@@ -184,8 +177,17 @@ export default function HomepageGamesSection({
             className={styles.moduleStatusPanel}
           />
         )}
+        {playoffsActive && playoffBracket ? (
+          <HomepagePlayoffBracket
+            currentDate={currentDate}
+            games={games}
+            playoffBracket={playoffBracket}
+            playoffWeekGames={playoffWeekGames}
+          />
+        ) : null}
         {games.length > 0 ? (
-          <>
+          !playoffsActive ? (
+            <>
             <div className={styles.gameColumnLabels}>
               <span className={styles.homeLabel}>Home</span>
               <span className={styles.awayLabel}>Away</span>
@@ -323,7 +325,8 @@ export default function HomepageGamesSection({
               );
             })}
             </div>
-          </>
+            </>
+          ) : null
         ) : null}
       </div>
     </div>

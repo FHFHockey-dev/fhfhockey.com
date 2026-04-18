@@ -15,6 +15,9 @@ import HomepageGamesSection from "components/HomePage/HomepageGamesSection";
 import HomepageStandingsInjuriesSection from "components/HomePage/HomepageStandingsInjuriesSection";
 import { useHomepageGames } from "components/HomePage/useHomepageGames";
 
+import { isPlayoffsActive, getPlayoffBracketYear } from "lib/NHL/playoffs";
+import { getPlayoffBracket } from "lib/NHL/server/playoffBracket";
+import { getCurrentSeason } from "lib/NHL/server";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
 import { checkIsOffseason } from "../hooks/useOffseason";
 import Fetch from "lib/cors-fetch";
@@ -39,6 +42,9 @@ const Home: NextPage = ({
   initialInjuries,
   initialStandings,
   nextGameDate,
+  playoffsActive,
+  playoffBracket,
+  playoffWeekGames,
   homepageSnapshotGeneratedAt,
   standingsLoadError,
   injuriesLoadError
@@ -82,6 +88,9 @@ const Home: NextPage = ({
           loading={loading}
           error={error}
           lastUpdatedAt={lastUpdatedAt}
+          playoffsActive={playoffsActive}
+          playoffBracket={playoffBracket}
+          playoffWeekGames={playoffWeekGames}
         />
         <ClientOnly>
           <TransactionTrends />
@@ -132,12 +141,21 @@ export async function getServerSideProps({ req, res }) {
       const response = await fetchJson(scheduleUrl);
       return {
         games: response?.gameWeek?.[0]?.games || [],
+        weeklyGames: Array.isArray(response?.gameWeek)
+          ? response.gameWeek.flatMap((entry: any) =>
+              (entry?.games || []).map((game: any) => ({
+                ...game,
+                scheduleDate: entry.date
+              }))
+            )
+          : [],
         failed: false
       };
     } catch (error) {
       console.error(`Error fetching games for ${date}: `, error.message);
       return {
         games: [],
+        weeklyGames: [],
         failed: true
       };
     }
@@ -258,9 +276,12 @@ export async function getServerSideProps({ req, res }) {
 
   // Check if we're in the offseason first
   const isOffseason = await checkIsOffseason();
+  const currentSeason = await getCurrentSeason();
+  const playoffsActive = !isOffseason && isPlayoffsActive(currentSeason);
 
   const today = moment().format("YYYY-MM-DD");
   let gamesToday = [];
+  let playoffWeekGames = [];
   let nextGameDateFound = today;
 
   if (isOffseason) {
@@ -273,9 +294,10 @@ export async function getServerSideProps({ req, res }) {
     // Only search for games during the regular season or playoffs
     const todayGamesResult = await fetchGames(today);
     gamesToday = todayGamesResult.games;
+    playoffWeekGames = todayGamesResult.weeklyGames;
     nextGameDateFound = today;
 
-    if (gamesToday.length === 0 && !todayGamesResult.failed) {
+    if (!playoffsActive && gamesToday.length === 0 && !todayGamesResult.failed) {
       debugLog(
         `No games found for today (${today}), searching for next available date...`
       );
@@ -296,6 +318,7 @@ export async function getServerSideProps({ req, res }) {
         }
         if (gamesToday.length > 0) {
           nextGameDateFound = dateStr;
+          playoffWeekGames = nextGamesResult.weeklyGames;
           debugLog(`Found next games on ${nextGameDateFound}`);
           break;
         }
@@ -312,6 +335,15 @@ export async function getServerSideProps({ req, res }) {
     }
   }
 
+  let playoffBracket = null;
+  if (playoffsActive) {
+    try {
+      playoffBracket = await getPlayoffBracket(getPlayoffBracketYear(currentSeason));
+    } catch (error: any) {
+      console.error("Error fetching playoff bracket:", error.message);
+    }
+  }
+
   const injuriesResult = await fetchInjuries();
   const standingsResult = await fetchStandings();
 
@@ -322,6 +354,9 @@ export async function getServerSideProps({ req, res }) {
       initialStandings: standingsResult.data,
       nextGameDate: nextGameDateFound,
       isOffseason,
+      playoffsActive: Boolean(playoffsActive && playoffBracket),
+      playoffBracket,
+      playoffWeekGames,
       homepageSnapshotGeneratedAt: new Date().toISOString(),
       standingsLoadError: standingsResult.error,
       injuriesLoadError: injuriesResult.error

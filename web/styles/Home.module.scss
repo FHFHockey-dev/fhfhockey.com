@@ -29,8 +29,8 @@ $mobile-column-short: 30px;
 
 // --- Main Page Layout ---
 .homepage {
-  width: min(100%, 1680px);
-  max-width: 1680px;
+  width: min(100%, 1780px);
+  max-width: 1780px;
   margin: clamp(v.$space-lg, 2vw, v.$space-xxl) auto;
   padding-inline: clamp(v.$space-sm, 2vw, v.$space-lg);
   box-sizing: border-box;
