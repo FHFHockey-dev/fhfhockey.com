@@ -415,7 +415,8 @@
   min-height: 0;
 }
 
-.powerPanel {
+.powerPanel,
+.identityPanel {
   grid-area: 2 / 1 / 5 / 6;
   min-height: 0;
 }
@@ -423,6 +424,70 @@
 .powerPanel .panelBody {
   flex: 1;
   min-height: 0;
+}
+
+.identityPanelBody {
+  padding: v.$space-sm v.$space-md;
+  display: grid;
+  gap: v.$space-sm;
+}
+
+.identityCard {
+  display: grid;
+  gap: v.$space-xs;
+  padding: v.$space-md;
+  border-radius: v.$border-radius-md;
+  border: 1px solid rgba(v.$border-primary, 0.65);
+  background: rgba(v.$background-dark, 0.7);
+}
+
+.identityCardLabel {
+  color: v.$text-secondary;
+  font-family: v.$font-family-accent;
+  font-size: v.$font-size-xxs;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.identityCardTitle {
+  margin: 0;
+  color: v.$color-white;
+  font-family: v.$font-family-accent;
+  font-size: v.$font-size-md;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.identityCardCopy {
+  margin: 0;
+  color: v.$text-secondary;
+  font-size: v.$font-size-sm;
+  line-height: 1.5;
+}
+
+.identityCardList {
+  margin: 0;
+  padding-left: 1rem;
+  color: v.$text-primary;
+  display: grid;
+  gap: 0.35rem;
+  font-size: v.$font-size-sm;
+  line-height: 1.5;
+}
+
+.identityCardLink {
+  color: v.$primary-color;
+  font-family: v.$font-family-accent;
+  font-size: v.$font-size-xs;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.identityCardLink:hover {
+  color: v.$color-white;
 }
 
 .goaliePanel {
@@ -1025,6 +1090,7 @@
   .chartPanel,
   .topMoversPanel,
   .powerPanel,
+  .identityPanel,
   .goaliePanel,
   .projectionsPanel,
   .trendsPanel {

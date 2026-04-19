@@ -472,19 +472,23 @@ function TodaySeriesRail({ games }: { games: PlayoffGame[] }) {
 
 function RoundColumn({
   title,
+  roundKey,
   series,
   currentGames,
   weekGames,
   align = "start"
 }: {
   title: string;
+  roundKey: "roundOne" | "roundTwo" | "conferenceFinal";
   series: PlayoffBracketSeries[];
   currentGames: PlayoffGame[];
   weekGames: PlayoffGame[];
   align?: "start" | "middle" | "center";
 }) {
   return (
-    <div className={`${styles.roundColumn} ${styles[`align${align[0].toUpperCase()}${align.slice(1)}`]}`}>
+    <div
+      className={`${styles.roundColumn} ${styles[roundKey]} ${styles[`align${align[0].toUpperCase()}${align.slice(1)}`]}`}
+    >
       <span className={styles.roundLabel}>{title}</span>
       <div className={styles.roundStack}>
         {series.map((entry) => (
@@ -547,17 +551,19 @@ export default function HomepagePlayoffBracket({
       </div>
 
       <div className={styles.bracketBoard}>
-        <section className={styles.conferenceBoard}>
+        <section className={`${styles.conferenceBoard} ${styles.westBoard}`}>
           <div className={styles.conferenceHeading}>Western Conference</div>
           <div className={styles.conferenceColumns}>
             <RoundColumn
               title="R1"
+              roundKey="roundOne"
               series={westRoundOne}
               currentGames={games}
               weekGames={playoffWeekGames}
             />
             <RoundColumn
               title="R2"
+              roundKey="roundTwo"
               series={westRoundTwo}
               currentGames={games}
               weekGames={playoffWeekGames}
@@ -565,6 +571,7 @@ export default function HomepagePlayoffBracket({
             />
             <RoundColumn
               title="CF"
+              roundKey="conferenceFinal"
               series={westFinal ? [westFinal] : []}
               currentGames={games}
               weekGames={playoffWeekGames}
@@ -578,11 +585,12 @@ export default function HomepagePlayoffBracket({
           {cupFinal ? <PlayoffSeriesCard series={cupFinal} currentGames={games} weekGames={playoffWeekGames} /> : null}
         </section>
 
-        <section className={styles.conferenceBoard}>
+        <section className={`${styles.conferenceBoard} ${styles.eastBoard}`}>
           <div className={styles.conferenceHeading}>Eastern Conference</div>
           <div className={`${styles.conferenceColumns} ${styles.eastColumns}`}>
             <RoundColumn
               title="CF"
+              roundKey="conferenceFinal"
               series={eastFinal ? [eastFinal] : []}
               currentGames={games}
               weekGames={playoffWeekGames}
@@ -590,6 +598,7 @@ export default function HomepagePlayoffBracket({
             />
             <RoundColumn
               title="R2"
+              roundKey="roundTwo"
               series={eastRoundTwo}
               currentGames={games}
               weekGames={playoffWeekGames}
@@ -597,6 +606,7 @@ export default function HomepagePlayoffBracket({
             />
             <RoundColumn
               title="R1"
+              roundKey="roundOne"
               series={eastRoundOne}
               currentGames={games}
               weekGames={playoffWeekGames}

@@ -3,9 +3,9 @@ import type { GetServerSideProps, NextPage } from "next";
 import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
+import DashboardPillarHero from "components/dashboard/DashboardPillarHero";
 import GoalieShareChart from "components/GoalieShareChart";
 import { useDashboardData } from "hooks/useDashboardData";
-import type { DashboardData } from "lib/dashboard/dataFetchers";
 import TopMovers from "components/TopMovers/TopMovers";
 import { getTeamMetaById } from "lib/dashboard/teamMetadata";
 import {
@@ -29,7 +29,6 @@ import {
 import { useRouter } from "next/router";
 import supabase from "lib/supabase";
 import { getTeamAbbreviationById } from "lib/teamsInfo";
-import { fetchTeamRatings, type TeamRating } from "lib/teamRatingsService";
 import {
   LineChart,
   Line,
@@ -39,16 +38,7 @@ import {
   Tooltip,
   Legend
 } from "recharts";
-import { computeTeamPowerScore } from "lib/dashboard/teamContext";
 import styles from "./dashboard.module.scss";
-
-type TeamPowerRow = {
-  teamAbbr: string;
-  teamName: string;
-  powerScore: number;
-  ctpiScore: number | null;
-  sosScore: number | null;
-};
 
 type SparkPoint = { date: string; value: number };
 
@@ -144,11 +134,6 @@ const getTodayEt = (): string => {
   return `${y}-${m}-${d}`;
 };
 
-const formatOptional = (value: number | null | undefined): string => {
-  if (value === null || value === undefined || Number.isNaN(value)) return "—";
-  return value.toFixed(1);
-};
-
 const CHART_COLORS = ["#2563eb", "#16a34a", "#f97316", "#ef4444", "#8b5cf6"];
 
 const getChartColor = (index: number): string =>
@@ -162,13 +147,9 @@ const formatPercent = (value: number) => `${value.toFixed(1)}%`;
 
 type TrendsPageProps = {
   initialDate: string;
-  initialTeamRatings: TeamRating[];
 };
 
-const TrendsDashboardPage: NextPage<TrendsPageProps> = ({
-  initialDate,
-  initialTeamRatings
-}) => {
+const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
   const [date] = useState(initialDate ?? getTodayEt);
   const [projectionSource, setProjectionSource] = useState<"forge" | "legacy">(
     "forge"
@@ -196,32 +177,6 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({
     skaterPosition,
     skaterWindow
   });
-
-  const teamRows = useMemo<TeamPowerRow[]>(() => {
-    const ratings = data?.teamRatings ?? initialTeamRatings;
-    if (!ratings || ratings.length === 0) return [];
-    const ctpiTeams = data?.teamCtpi?.teams ?? [];
-    const sosTeams = data?.teamSos?.teams ?? [];
-    const metaIndex = data?.teamMeta ?? {};
-
-    const ctpiMap = new Map(
-      ctpiTeams.map((row) => [row.team, row.ctpi_0_to_100])
-    );
-    const sosMap = new Map(sosTeams.map((row) => [row.team, row.sosScore]));
-
-    return ratings
-      .map((rating) => {
-        const meta = metaIndex[rating.teamAbbr];
-        return {
-          teamAbbr: rating.teamAbbr,
-          teamName: meta?.name ?? rating.teamAbbr,
-          powerScore: computeTeamPowerScore(rating),
-          ctpiScore: ctpiMap.get(rating.teamAbbr) ?? null,
-          sosScore: sosMap.get(rating.teamAbbr) ?? null
-        };
-      })
-      .sort((a, b) => b.powerScore - a.powerScore);
-  }, [data, initialTeamRatings]);
 
   const forgeRows = useMemo<ForgeProjectionRow[]>(() => {
     const raw = data?.forgePlayers?.data ?? [];
@@ -342,15 +297,6 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({
     () => projectionRows.slice(0, 10),
     [projectionRows]
   );
-
-  const ratingMap = useMemo(() => {
-    const map = new Map<string, DashboardData["teamRatings"][number]>();
-    const ratings = data?.teamRatings ?? [];
-    ratings.forEach((row) => {
-      map.set(row.teamAbbr, row);
-    });
-    return map;
-  }, [data]);
 
   const teamTrendSeries = useMemo(() => {
     const category = data?.teamTrends?.categories?.[teamCategory];
@@ -606,17 +552,6 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({
     return { series, teams };
   }, [data]);
 
-  const getTierClass = (value: number | null | undefined): string => {
-    if (value === null || value === undefined || Number.isNaN(value)) {
-      return styles.tierNeutral;
-    }
-    if (value >= 70) return styles.tierElite;
-    if (value >= 60) return styles.tierGood;
-    if (value <= 30) return styles.tierPoor;
-    if (value <= 40) return styles.tierCaution;
-    return styles.tierNeutral;
-  };
-
   const ArrowDelta = ({ delta }: { delta: number }) => {
     if (delta === 0) {
       return <span className={`${styles.delta} ${styles.deltaNeutral}`}>—</span>;
@@ -700,21 +635,38 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({
   return (
     <>
       <Head>
-        <title>FHFH Dashboard | FHFHockey</title>
+        <title>Trends Dashboard | FHFHockey</title>
         <meta
           name="description"
-          content="Unified FORGE, Trends, and Start Chart dashboard."
+          content="Recent-form, skater movement, and workload context for fast player and trend reads."
         />
       </Head>
       <div className={styles.page}>
         <main className={styles.main}>
           <header className={styles.header}>
-            <div className={styles.trendsHeaderSection}>
-              <h1 className={styles.title}>Trends Dashboard</h1>
-              <p className={styles.subtitle}>
-                Sustainability dashboard, team power, and player trends.
-              </p>
-            </div>
+            <DashboardPillarHero
+              eyebrow="Recent-form pillar"
+              title="Trends Dashboard"
+              description={
+                <p>
+                  Use this page to find movement fast: recent-form leaders,
+                  skater percentile changes, slate-ready projections, and goalie
+                  workload context. Team-strength diagnosis now belongs on the
+                  dedicated underlying-stats surface.
+                </p>
+              }
+              emphasis="Player movement"
+              owns={[
+                "Recent-form scanning before you drill into a player page",
+                "Skater movement, percentile leaders, and window-based trend views",
+                "Quick weekly decision context from projections and goalie usage"
+              ]}
+              defers={[
+                "Full team-strength reads, process-vs-results diagnosis, and schedule texture",
+                "Experimental elasticity-band or streak prototypes that still belong in the lab"
+              ]}
+              surfaceLinks={TRENDS_SURFACE_LINKS.slice(0, 4)}
+            />
             <div className={styles.searchPanel}>
               <div className={styles.panelHeader}>
                 <h2 className={styles.panelTitle}>Player Search</h2>
@@ -908,107 +860,80 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({
               </div>
             </section>
 
-            <section id="team-power" className={`${styles.panel} ${styles.powerPanel}`}>
+            <section
+              className={`${styles.panel} ${styles.identityPanel}`}
+              aria-labelledby="trends-surface-split-heading"
+            >
               <div className={styles.panelHeader}>
-                <h2 className={styles.panelTitle}>Team Power</h2>
-                <span className={styles.panelMeta}>All 32</span>
+                <h2
+                  id="trends-surface-split-heading"
+                  className={styles.panelTitle}
+                >
+                  Surface Split
+                </h2>
+                <span className={styles.panelMeta}>What belongs where</span>
               </div>
-              <div className={styles.panelBody}>
-                {error && teamRows.length === 0 ? (
-                  <p className={styles.errorText}>
-                    Failed to load team power: {error.message}
+              <div className={styles.identityPanelBody}>
+                <article className={styles.identityCard}>
+                  <span className={styles.identityCardLabel}>Trends</span>
+                  <h3 className={styles.identityCardTitle}>
+                    Movement and fast action
+                  </h3>
+                  <p className={styles.identityCardCopy}>
+                    Stay here for recent-form scans, skater movers, start-chart
+                    context, and quick weekly decisions.
                   </p>
-                ) : teamRows.length === 0 && isLoading ? (
-                  <p className={styles.loadingText}>
-                    Loading team power snapshot…
+                  <ul className={styles.identityCardList}>
+                    <li>Recent skater movement by percentile and window</li>
+                    <li>Goalie starts and workload context</li>
+                    <li>Projection-driven player triage</li>
+                  </ul>
+                </article>
+
+                <article className={styles.identityCard}>
+                  <span className={styles.identityCardLabel}>
+                    Underlying Stats
+                  </span>
+                  <h3 className={styles.identityCardTitle}>
+                    Team intelligence board
+                  </h3>
+                  <p className={styles.identityCardCopy}>
+                    Use the dedicated team page when you need to explain why a
+                    club looks strong, weak, real, inflated, or due for
+                    regression.
                   </p>
-                ) : teamRows.length === 0 ? (
-                  <p className={styles.emptyText}>
-                    No team power data for the selected date.
+                  <ul className={styles.identityCardList}>
+                    <li>Process quadrant and mover narratives</li>
+                    <li>Schedule texture and trust signals</li>
+                    <li>Detailed team table for support, not discovery</li>
+                  </ul>
+                  <Link
+                    href="/underlying-stats"
+                    className={styles.identityCardLink}
+                  >
+                    Open Underlying Stats
+                  </Link>
+                </article>
+
+                <article className={styles.identityCard}>
+                  <span className={styles.identityCardLabel}>Sandbox</span>
+                  <h3 className={styles.identityCardTitle}>Workshop layer</h3>
+                  <p className={styles.identityCardCopy}>
+                    The lab is where player-trend ideas get tested before they
+                    deserve production space on the main trends page.
                   </p>
-                ) : (
-                  <div className={styles.powerTableWrapper}>
-                    <div className={styles.powerTableHead}>
-                      <span>Rank</span>
-                      <span>Team</span>
-                      <span>Power</span>
-                      <span>CTPI</span>
-                      <span>SOS</span>
-                      <span>Comp</span>
-                    </div>
-                    <ul className={styles.powerTable} role="list">
-                      {teamRows.map((row, index) => {
-                        const rating = ratingMap.get(row.teamAbbr);
-                        const meta = data?.teamMeta?.[row.teamAbbr];
-                        const powerPercentile =
-                          teamRows.length > 1
-                            ? 100 * (1 - index / (teamRows.length - 1))
-                            : 100;
-                        return (
-                          <li key={row.teamAbbr} className={styles.powerRow}>
-                            <span className={styles.powerRank}>
-                              <span className={styles.rankLogoWrapper}>
-                                <Image
-                                  src={meta?.logo ?? DEFAULT_TEAM_LOGO}
-                                  alt={`${row.teamName} logo`}
-                                  className={styles.rankLogo}
-                                  width={34}
-                                  height={34}
-                                  loading="lazy"
-                                />
-                              </span>
-                              <span className={styles.rankText}>
-                                #{index + 1}
-                              </span>
-                            </span>
-                            <div className={styles.powerTeamCell}>
-                              <div className={styles.powerTeamText}>
-                                <div className={styles.powerTeamName}>
-                                  {row.teamName}
-                                </div>
-                                <div className={styles.powerTeamMeta}>
-                                  {row.teamAbbr}
-                                </div>
-                              </div>
-                            </div>
-                            <div className={styles.powerScoreCell}>
-                              <span
-                                className={`${styles.driverTag} ${getTierClass(powerPercentile)}`}
-                              >
-                                {row.powerScore.toFixed(1)}
-                              </span>
-                            </div>
-                            <div className={styles.powerValueCell}>
-                              <span
-                                className={`${styles.valuePill} ${getTierClass(row.ctpiScore)}`}
-                              >
-                                {row.ctpiScore !== null
-                                  ? row.ctpiScore.toFixed(1)
-                                  : "—"}
-                              </span>
-                            </div>
-                            <div className={styles.powerValueCell}>
-                              <span
-                                className={`${styles.valuePill} ${getTierClass(row.sosScore)}`}
-                              >
-                                {row.sosScore !== null
-                                  ? row.sosScore.toFixed(1)
-                                  : "—"}
-                              </span>
-                            </div>
-                            <div className={styles.powerValueCell}>
-                              <span className={styles.compPill}>
-                                F {formatOptional(rating?.finishingRating)} · G{" "}
-                                {formatOptional(rating?.goalieRating)} · D{" "}
-                                {formatOptional(rating?.dangerRating)}
-                              </span>
-                            </div>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </div>
-                )}
+                  <ul className={styles.identityCardList}>
+                    <li>Elasticity bands and streak experiments</li>
+                    <li>Alternative player baselines and chart behaviors</li>
+                    <li>Prototype metrics before they harden into surface copy</li>
+                  </ul>
+                  <Link
+                    href="/trendsSandbox"
+                    className={styles.identityCardLink}
+                  >
+                    Open Trends Sandbox
+                  </Link>
+                </article>
               </div>
             </section>
 
@@ -1396,11 +1321,9 @@ export const getServerSideProps: GetServerSideProps<
   TrendsPageProps
 > = async () => {
   const date = getTodayEt();
-  const initialTeamRatings = await fetchTeamRatings(date);
   return {
     props: {
-      initialDate: date,
-      initialTeamRatings
+      initialDate: date
     }
   };
 };

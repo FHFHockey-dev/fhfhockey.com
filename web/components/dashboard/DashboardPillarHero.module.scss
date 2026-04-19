@@ -1,0 +1,159 @@
+@use "sass:color";
+@use "styles/vars" as v;
+
+.hero {
+  display: grid;
+  gap: v.$space-md;
+  padding: v.$space-lg;
+  border-radius: v.$radius-lg;
+  border: 1px solid rgba(v.$color-white, 0.08);
+  background:
+    linear-gradient(
+      135deg,
+      rgba(v.$primary-color, 0.12),
+      rgba(v.$color-white, 0.02) 48%,
+      rgba(v.$secondary-color, 0.08)
+    ),
+    color.adjust(v.$background-dark, $lightness: -1%);
+  box-shadow: v.$box-shadow-default;
+}
+
+.topRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1.8fr) minmax(180px, 0.7fr);
+  gap: v.$space-md;
+  align-items: start;
+}
+
+.copy {
+  display: grid;
+  gap: v.$space-sm;
+}
+
+.eyebrow {
+  margin: 0;
+  color: v.$primary-color;
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: v.$font-size-xs;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.title {
+  margin: 0;
+  color: v.$color-white;
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: clamp(1.75rem, 3vw, 2.45rem);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  line-height: 1.02;
+  text-transform: uppercase;
+}
+
+.description {
+  color: v.$text-secondary;
+  font-size: v.$font-size-sm;
+  line-height: 1.6;
+
+  p {
+    margin: 0;
+  }
+}
+
+.sideRail {
+  display: grid;
+  gap: v.$space-xs;
+  justify-items: start;
+  padding: v.$space-sm;
+  border-radius: v.$border-radius-md;
+  border: 1px solid rgba(v.$color-white, 0.08);
+  background: rgba(v.$background-dark, 0.58);
+}
+
+.sideLabel,
+.identityLabel {
+  color: v.$text-secondary;
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: v.$font-size-xxs;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.emphasis {
+  color: v.$color-white;
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: v.$font-size-md;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.actions {
+  width: 100%;
+}
+
+.identityGrid,
+.linkGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: v.$space-sm;
+}
+
+.identityCard,
+.linkCard {
+  display: grid;
+  gap: v.$space-xs;
+  padding: v.$space-md;
+  border-radius: v.$border-radius-md;
+  border: 1px solid rgba(v.$color-white, 0.08);
+  background: rgba(v.$background-dark, 0.68);
+}
+
+.identityList {
+  margin: 0;
+  padding-left: 1rem;
+  color: v.$text-primary;
+  display: grid;
+  gap: 0.35rem;
+  font-size: v.$font-size-sm;
+  line-height: 1.5;
+}
+
+.linkCard {
+  text-decoration: none;
+  transition:
+    border-color 0.18s ease,
+    transform 0.18s ease;
+
+  &:hover,
+  &:focus-visible {
+    border-color: rgba(v.$primary-color, 0.45);
+    transform: translateY(-1px);
+    outline: none;
+  }
+}
+
+.linkLabel {
+  color: v.$color-white;
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: v.$font-size-sm;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.linkDescription {
+  color: v.$text-secondary;
+  font-size: v.$font-size-sm;
+  line-height: 1.5;
+}
+
+@media (max-width: 900px) {
+  .topRow,
+  .identityGrid,
+  .linkGrid {
+    grid-template-columns: 1fr;
+  }
+}
