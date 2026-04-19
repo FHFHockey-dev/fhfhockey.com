@@ -20,7 +20,12 @@ export const HOME_SURFACE_LINKS: SiteSurfaceLink[] = [
   {
     href: "/trends",
     label: "Trends Dashboard",
-    description: "Scan recent form, team pulse, and player movement."
+    description: "Scan recent form, skater movers, and workload context."
+  },
+  {
+    href: "/underlying-stats",
+    label: "Underlying Stats",
+    description: "Read team strength, process, and schedule texture."
   },
   {
     href: "/lines",
@@ -35,6 +40,11 @@ export const HOME_SURFACE_LINKS: SiteSurfaceLink[] = [
 ];
 
 export const TRENDS_SURFACE_LINKS: SiteSurfaceLink[] = [
+  {
+    href: "/underlying-stats",
+    label: "Underlying Stats",
+    description: "Move from movement into the team-quality and process read."
+  },
   {
     href: "/splits",
     label: "Splits",
@@ -59,6 +69,29 @@ export const TRENDS_SURFACE_LINKS: SiteSurfaceLink[] = [
     href: "/variance/goalies",
     label: "Goalie View",
     description: "Check the goalie side before locking in a call."
+  }
+];
+
+export const UNDERLYING_STATS_SURFACE_LINKS: SiteSurfaceLink[] = [
+  {
+    href: "/trends",
+    label: "Trends Dashboard",
+    description: "Carry the team read into player movement and recent form."
+  },
+  {
+    href: "/splits",
+    label: "Splits",
+    description: "Stress-test the team profile against matchup-specific context."
+  },
+  {
+    href: "/start-chart",
+    label: "Starter Board",
+    description: "Turn the team read into slate and matchup decisions."
+  },
+  {
+    href: "/lines",
+    label: "Lines",
+    description: "Confirm deployment and PP personnel behind the team thesis."
   }
 ];
 

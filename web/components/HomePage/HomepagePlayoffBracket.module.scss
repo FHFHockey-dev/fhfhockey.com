@@ -597,35 +597,284 @@
 }
 
 @media (max-width: #{v.$breakpoint-tablet - 1px}) {
+  .playoffHeader {
+    gap: v.$space-sm;
+  }
+
+  .playoffHeaderMeta {
+    width: 100%;
+    justify-content: space-between;
+  }
+
   .railDayGroup {
-    padding-right: v.$space-sm;
+    flex-direction: column;
+    gap: 0;
+    min-width: min(100vw - (2 * v.$space-sm), 320px);
+    padding-right: 0;
+    border: 1px solid rgba(v.$secondary-color, 0.18);
+    border-radius: v.$radius-card;
+    overflow: hidden;
+    background:
+      linear-gradient(180deg, rgba(v.$secondary-color, 0.08) 0%, rgba(v.$background-medium, 0.92) 100%);
+
+    &:not(:last-child) {
+      border-right: 1px solid rgba(v.$secondary-color, 0.18);
+    }
+  }
+
+  .railDayDivider {
+    min-width: 100%;
+    padding: 8px v.$space-sm;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(v.$color-white, 0.08);
+    background: rgba(v.$background-dark, 0.34);
+  }
+
+  .railDayLabel {
+    font-size: 0.78rem;
+  }
+
+  .railDayGames {
+    display: flex;
+    gap: 0;
+  }
+
+  .railItem {
+    min-width: 136px;
+    min-height: 74px;
+    padding: 8px 10px;
+    gap: 6px;
+  }
+
+  .railStatus {
+    font-size: 0.58rem;
+    letter-spacing: 0.06em;
+  }
+
+  .railTeam {
+    grid-template-columns: 20px minmax(0, 1fr) auto;
+  }
+
+  .railTeamLogo {
+    width: 20px;
+    height: 20px;
+  }
+
+  .railTeamAbbrev,
+  .railScore {
+    font-size: 0.82rem;
+  }
+
+  .bracketBoard {
+    display: flex;
+    flex-direction: column;
+    gap: v.$space-md;
+  }
+
+  .westBoard {
+    order: 1;
+  }
+
+  .cupBoard {
+    order: 2;
+  }
+
+  .eastBoard {
+    order: 3;
+  }
+
+  .conferenceBoard {
+    display: flex;
+    flex-direction: column;
+    gap: v.$space-sm;
+  }
+
+  .conferenceHeading {
+    margin-bottom: 0;
+    font-size: 0.64rem;
+    letter-spacing: 0.2em;
   }
 
   .conferenceColumns,
   .eastColumns {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .roundColumn {
+    width: 100%;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .roundLabel {
+    font-size: 0.58rem;
+    letter-spacing: 0.22em;
   }
 
   .roundStack {
-    display: flex;
+    display: grid;
+    grid-template-rows: none;
+    row-gap: 0;
     min-height: auto;
-    gap: v.$space-md;
+    gap: 8px;
+    overflow: visible;
+    padding-bottom: 0;
   }
 
-  .seriesCard {
-    min-height: 136px;
+  .alignMiddle .roundStack > :first-child,
+  .alignMiddle .roundStack > :last-child,
+  .alignCenter .roundStack > :only-child {
+    grid-row: auto;
+    align-self: auto;
+  }
+
+  .seriesCardLink,
+  .roundStack > * {
     width: 100%;
   }
 
-  .seriesTeamAbbrev {
-    font-size: 1.18rem;
+  .seriesCard {
+    grid-template-columns: 1fr 14px;
+    gap: 6px;
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    min-height: 78px;
+    padding: 8px 8px;
+    border-radius: 14px;
   }
 
-  .seriesScore {
-    font-size: 1.8rem;
+  .roundOne {
+    max-width: 100%;
   }
 
-  .seriesCenterText {
-    font-size: 0.62rem;
+  .roundOne .roundStack {
+    width: 100%;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .roundOne .seriesCard {
+    min-height: 84px;
+  }
+
+  .roundTwo {
+    width: 75%;
+    max-width: 75%;
+  }
+
+  .roundTwo .roundStack {
+    width: 100%;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .roundTwo .seriesCard {
+    min-height: 72px;
+  }
+
+  .conferenceFinal {
+    width: 50%;
+    max-width: 50%;
+  }
+
+  .conferenceFinal .roundStack {
+    width: 100%;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .conferenceFinal .seriesCard {
+    min-height: 66px;
+  }
+
+  .cupFinalCard {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    min-height: 104px;
+    padding: 12px 12px;
+  }
+
+  .seriesMain {
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .seriesTeamRow {
+    display: flex;
+    justify-content: center;
+  }
+
+  .seriesTeamMeta {
+    justify-content: center;
+  }
+
+  .seriesTeamLogo {
+    width: 28px;
+    height: 28px;
+  }
+
+  .seriesTeamText,
+  .seriesScore,
+  .seriesCenterLine,
+  .placeholderAbbrev,
+  .placeholderTitle {
+    display: none;
+  }
+
+  .seriesProgress {
+    flex: 0 0 14px;
+    gap: 4px;
+    width: 14px;
+    min-width: 14px;
+  }
+
+  .seriesDot,
+  .seriesClincherDot {
+    width: 10px;
+    height: 10px;
+  }
+
+  .placeholderCard {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    min-height: 78px;
+  }
+
+  .placeholderInner {
+    gap: 0;
+  }
+
+  .placeholderLogo {
+    width: min(100%, 48px);
+    max-height: 48px;
+  }
+
+  .conferencePlaceholderLogo {
+    width: min(100%, 64px);
+    max-height: 36px;
+  }
+
+  .cupFinalCard.placeholderCard {
+    min-height: 104px;
+  }
+
+  .cupFinalCard .placeholderLogo {
+    width: min(100%, 56px);
+    max-height: 56px;
+  }
+
+  .placeholderShield {
+    width: 34px;
+    height: 42px;
+  }
+
+  .cupBoard {
+    width: 65%;
+    align-self: center;
   }
 }

@@ -10,11 +10,13 @@ import type { GetServerSideProps, NextPage } from "next";
 import { useRouter } from "next/router";
 import { format, parseISO } from "date-fns";
 
+import DashboardPillarHero from "../../components/dashboard/DashboardPillarHero";
 import UnderlyingStatsDashboardCard from "../../components/underlying-stats/UnderlyingStatsDashboardCard";
 import UnderlyingStatsNavBar from "../../components/underlying-stats/UnderlyingStatsNavBar";
 import UnderlyingStatsQuadrantMap from "../../components/underlying-stats/UnderlyingStatsQuadrantMap";
 import OwnershipSparkline from "../../components/TransactionTrends/OwnershipSparkline";
 import { computeTeamPowerScore } from "../../lib/dashboard/teamContext";
+import { UNDERLYING_STATS_SURFACE_LINKS } from "../../lib/navigation/siteSurfaceLinks";
 import supabaseServer from "../../lib/supabase/server";
 import { type SpecialTeamTier } from "../../lib/teamRatingsService";
 import { teamsInfo } from "../../lib/teamsInfo";
@@ -963,27 +965,35 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
         />
       </Head>
       <main className={styles.page}>
-        <div className={styles.utilityRow}>
-          <a className={styles.utilityLink} href="/trends">
-            Visit the unified dashboard →
-          </a>
-        </div>
-
         <section className={styles.headerPanel}>
           <div className={styles.topNavRow}>
-            <div className={styles.sectionEyebrow}>Underlying stats</div>
+            <div className={styles.sectionEyebrow}>Team hub</div>
             <UnderlyingStatsNavBar />
           </div>
           <div className={styles.header}>
-            <div className={styles.headerIntro}>
-              <h1 className={styles.title}>Underlying Stats Dashboard</h1>
-              <p className={styles.description}>
-                A league intelligence board built to answer the first read fast:
-                who profiles as strong, who is moving, what looks sustainable,
-                what context matters next, and where surface results disagree
-                with the process underneath.
-              </p>
-            </div>
+            <DashboardPillarHero
+              className={styles.headerIntro}
+              eyebrow="Team intelligence pillar"
+              title="Underlying Stats Dashboard"
+              description={
+                <p>
+                  This surface owns the team read: who profiles as strong, what
+                  looks sustainable, which movement is backed by process, and
+                  where surface results disagree with the underlying picture.
+                </p>
+              }
+              emphasis="Team diagnosis"
+              owns={[
+                "Process-first team reads with quadrant and mover context",
+                "Sustainability, inefficiency, and schedule-texture modules",
+                "A supporting table for validation after the dashboard read"
+              ]}
+              defers={[
+                "Fast player triage, recent-form scanning, and start/sit workflow",
+                "Prototype-only player trend experiments that still belong in the lab"
+              ]}
+              surfaceLinks={UNDERLYING_STATS_SURFACE_LINKS}
+            />
             <div
               className={styles.controls}
               role="group"

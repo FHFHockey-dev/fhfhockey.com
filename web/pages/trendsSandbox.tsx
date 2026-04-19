@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as d3 from "d3";
 import { format } from "date-fns";
+import DashboardPillarHero from "components/dashboard/DashboardPillarHero";
+import { TRENDS_SURFACE_LINKS } from "lib/navigation/siteSurfaceLinks";
 import supabase from "lib/supabase/client";
 import type { Database } from "lib/supabase/database-generated.types";
 import type { SustainabilityMetricKey } from "lib/sustainability/bands";
@@ -936,16 +938,38 @@ export default function TrendsSandboxPage() {
 
   return (
     <div className={styles.page}>
-      <div className={styles.header}>
-        <h1>Trends Sandbox</h1>
-        <button
-          type="button"
-          onClick={resetState}
-          className={styles.resetButton}
-        >
-          Reset
-        </button>
-      </div>
+      <DashboardPillarHero
+        eyebrow="Workshop pillar"
+        title="Trends Sandbox"
+        description={
+          <p>
+            This is the lab for player-trend ideas that are still proving their
+            value: elasticity bands, alternate baselines, and experimental chart
+            behavior. Ship winners to the main trends page once the workflow is
+            stable and the meaning is clear.
+          </p>
+        }
+        emphasis="Prototype lab"
+        owns={[
+          "Experimental player-trend workflows and chart behaviors",
+          "Elasticity-band reads, custom baselines, and alternate fantasy views",
+          "Idea validation before a concept hardens into production copy"
+        ]}
+        defers={[
+          "Fast production trend scans and weekly decision support",
+          "Full team-strength and process diagnosis"
+        ]}
+        surfaceLinks={TRENDS_SURFACE_LINKS.slice(0, 3)}
+        actions={
+          <button
+            type="button"
+            onClick={resetState}
+            className={styles.resetButton}
+          >
+            Reset
+          </button>
+        }
+      />
 
       <section className={styles.controls}>
         <div className={styles.controlGroup}>
