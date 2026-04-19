@@ -799,22 +799,25 @@
   }
 
   .seriesMain {
+    align-items: center;
     justify-content: center;
     gap: 8px;
   }
 
   .seriesTeamRow {
     display: flex;
+    width: 100%;
     justify-content: center;
   }
 
   .seriesTeamMeta {
+    width: 100%;
     justify-content: center;
   }
 
   .seriesTeamLogo {
-    width: 28px;
-    height: 28px;
+    width: 36px;
+    height: 36px;
   }
 
   .seriesTeamText,
@@ -846,12 +849,19 @@
   }
 
   .placeholderInner {
+    flex: 0 0 auto;
+    width: fit-content;
+    max-width: 100%;
+    margin-inline: auto;
     gap: 0;
   }
 
   .placeholderLogo {
+    display: block;
+    margin-inline: auto;
     width: min(100%, 48px);
     max-height: 48px;
+    object-position: center;
   }
 
   .conferencePlaceholderLogo {
@@ -869,6 +879,8 @@
   }
 
   .placeholderShield {
+    display: block;
+    margin-inline: auto;
     width: 34px;
     height: 42px;
   }
