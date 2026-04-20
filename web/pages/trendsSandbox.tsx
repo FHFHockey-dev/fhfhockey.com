@@ -82,6 +82,22 @@ function formatSeasonLabel(season: string): string {
   return `${season.slice(0, 4)}-${season.slice(4)}`;
 }
 
+function getSeasonDateRange(
+  season: string
+): { seasonId: number; startDate: string; endDateExclusive: string } | null {
+  if (!/^\d{8}$/.test(season)) return null;
+  const startYear = Number(season.slice(0, 4));
+  const endYear = Number(season.slice(4));
+  if (!Number.isFinite(startYear) || !Number.isFinite(endYear)) {
+    return null;
+  }
+  return {
+    seasonId: Number(season),
+    startDate: `${startYear}-07-01`,
+    endDateExclusive: `${endYear}-07-01`
+  };
+}
+
 async function searchPlayersByName(query: string): Promise<PlayerOption[]> {
   const { data, error } = await supabase
     .from("players")
@@ -125,14 +141,9 @@ async function fetchSeasonGameLog(
   playerId: number,
   season: string
 ): Promise<GameLogRow[]> {
-  const seasonNumeric = Number(season);
-  if (!Number.isFinite(seasonNumeric)) return [];
-
-  // Compute season window (NHL year runs roughly Jul 1 to Jul 1)
-  const startYear = Number(String(season).slice(0, 4));
-  const endYear = Number(String(season).slice(4));
-  const startDateStr = `${startYear}-07-01`;
-  const endDateStr = `${endYear}-07-01`;
+  const seasonRange = getSeasonDateRange(season);
+  if (!seasonRange) return [];
+  const { startDate, endDateExclusive } = seasonRange;
 
   // Strict server-side date window filter plus player filter
   const { data, error } = await supabase
@@ -141,8 +152,8 @@ async function fetchSeasonGameLog(
       "date, points, goals, assists, games_played, season_id, shots, hits, blocked_shots, pp_points"
     )
     .eq("player_id", playerId)
-    .gte("date", startDateStr)
-    .lt("date", endDateStr)
+    .gte("date", startDate)
+    .lt("date", endDateExclusive)
     .gt("games_played", 0)
     .order("date", { ascending: true });
 
@@ -157,7 +168,7 @@ async function fetchSeasonGameLog(
     const maxD = rows.at(-1)?.date ?? null;
     // eslint-disable-next-line no-console
     console.debug(
-      `[Trends] Loaded ${count} games for season ${season} between ${startDateStr} and ${endDateStr}`,
+      `[Trends] Loaded ${count} games for season ${season} between ${startDate} and ${endDateExclusive}`,
       {
         minDate: minD,
         maxDate: maxD
@@ -181,15 +192,16 @@ async function fetchPlayerScheduleDates(
   playerId: number,
   season: string
 ): Promise<Date[]> {
-  const seasonNumeric = Number(season);
-  if (!Number.isFinite(seasonNumeric)) return [];
+  const seasonRange = getSeasonDateRange(season);
+  if (!seasonRange) return [];
+  const { seasonId } = seasonRange;
 
   // Teams the player was rostered on for this season
   const { data: roster, error: rosterError } = await supabase
     .from("rosters")
     .select("teamId")
     .eq("playerId", playerId)
-    .eq("seasonId", seasonNumeric);
+    .eq("seasonId", seasonId);
   if (rosterError) throw rosterError as SupabaseError;
   const teamIds = Array.from(
     new Set(((roster as RosterRow[] | null) ?? []).map((r) => r.teamId))
@@ -201,7 +213,7 @@ async function fetchPlayerScheduleDates(
   const { data: games, error: gamesError } = await supabase
     .from("games")
     .select("date, homeTeamId, awayTeamId")
-    .eq("seasonId", seasonNumeric)
+    .eq("seasonId", seasonId)
     .or(`homeTeamId.in.(${inList}),awayTeamId.in.(${inList})`)
     .order("date", { ascending: true });
   if (gamesError) throw gamesError as SupabaseError;
@@ -461,8 +473,10 @@ function ElasticityBandChart({
         <div ref={containerRef} className={styles.bandChartWrapper}>
           <svg
             className={styles.bandChartSvg}
-            width={containerWidth}
+            width="100%"
             height={chartHeight}
+            viewBox={`0 0 ${containerWidth} ${chartHeight}`}
+            preserveAspectRatio="none"
           >
             <g transform={`translate(${margins.left},${margins.top})`}>
               <rect
@@ -589,6 +603,10 @@ export default function TrendsSandboxPage() {
   const [bandHistory, setBandHistory] = useState<TrendBandRow[]>([]);
   const [loadingBandHistory, setLoadingBandHistory] = useState(false);
   const [bandHistoryError, setBandHistoryError] = useState<string | null>(null);
+  const selectedSeasonRange = useMemo(
+    () => (selectedSeason ? getSeasonDateRange(selectedSeason) : null),
+    [selectedSeason]
+  );
 
   useEffect(() => {
     if (playerQuery.trim().length < MIN_SEARCH_LENGTH) {
@@ -760,7 +778,7 @@ export default function TrendsSandboxPage() {
   }, [selectedPlayer?.id, gameLogRows]);
 
   useEffect(() => {
-    if (!selectedPlayer) {
+    if (!selectedPlayer || !selectedSeasonRange) {
       setBandHistory([]);
       setBandHistoryError(null);
       setLoadingBandHistory(false);
@@ -775,6 +793,9 @@ export default function TrendsSandboxPage() {
       player_id: String(selectedPlayer.id),
       metric: selectedBandMetric,
       window: selectedBandWindow,
+      season_id: String(selectedSeasonRange.seasonId),
+      start_date: selectedSeasonRange.startDate,
+      end_date: selectedSeasonRange.endDateExclusive,
       limit: "120"
     });
 
@@ -802,7 +823,13 @@ export default function TrendsSandboxPage() {
     return () => {
       cancelled = true;
     };
-  }, [selectedPlayer?.id, selectedBandMetric, selectedBandWindow, trendBands]);
+  }, [
+    selectedPlayer?.id,
+    selectedBandMetric,
+    selectedBandWindow,
+    selectedSeasonRange,
+    trendBands
+  ]);
 
   const selectedSeasonSummary = useMemo(
     () =>
@@ -1329,9 +1356,10 @@ function HotColdStreakChart({
 
     svg.selectAll("*").remove();
 
-    const clipId = `clip-${Math.random().toString(36).slice(2, 9)}`;
-    svg
-      .append("defs")
+    const svgId = Math.random().toString(36).slice(2, 9);
+    const clipId = `clip-${svgId}`;
+    const defs = svg.append("defs");
+    defs
       .append("clipPath")
       .attr("id", clipId)
       .append("rect")
@@ -1516,6 +1544,63 @@ function HotColdStreakChart({
       .attr("transform", `translate(0, ${contextHeight})`)
       .call(contextXAxis);
 
+    const streakGradientIds = new Map<string, string>();
+    data.streaks.forEach((segment) => {
+      const segmentPoints = points.slice(
+        segment.startIndex,
+        segment.endIndex + 1
+      );
+      if (!segmentPoints.length) return;
+
+      const deviations = segmentPoints.map((point) => {
+        const delta =
+          segment.type === "hot"
+            ? point.rollingAverage - baseline
+            : baseline - point.rollingAverage;
+        return Math.max(0, delta);
+      });
+      const maxDeviation = Math.max(...deviations, 1e-6);
+      const gradientId = `streak-gradient-${svgId}-${segment.type}-${segment.startIndex}-${segment.endIndex}`;
+      const gradient = defs
+        .append("linearGradient")
+        .attr("id", gradientId)
+        .attr("x1", "0%")
+        .attr("x2", "100%")
+        .attr("y1", "0%")
+        .attr("y2", "0%");
+
+      const stops =
+        segmentPoints.length === 1
+          ? [
+              { offset: 0, opacity: 0.32 },
+              { offset: 1, opacity: 0.32 }
+            ]
+          : segmentPoints.map((point, index) => {
+              const deviation = deviations[index];
+              const normalized = deviation / maxDeviation;
+              return {
+                offset: index / (segmentPoints.length - 1),
+                opacity: 0.18 + normalized * 0.62
+              };
+            });
+
+      stops.forEach((stop) => {
+        gradient
+          .append("stop")
+          .attr("offset", `${(stop.offset * 100).toFixed(2)}%`)
+          .attr(
+            "stop-color",
+            segment.type === "hot" ? "rgb(242, 82, 33)" : "rgb(32, 168, 255)"
+          )
+          .attr("stop-opacity", Math.min(0.9, Math.max(0.16, stop.opacity)));
+      });
+
+      streakGradientIds.set(
+        `${segment.type}-${segment.startIndex}-${segment.endIndex}`,
+        gradientId
+      );
+    });
+
     const streakRects = streakLayer
       .selectAll<SVGRectElement, StreakSegment>("rect")
       .data(
@@ -1524,11 +1609,16 @@ function HotColdStreakChart({
       )
       .join("rect")
       .attr("class", (segment) => `streak ${segment.type}`)
-      .attr("fill", (segment) =>
-        segment.type === "hot"
-          ? `rgba(242, 82, 33, ${Math.min(1, Math.max(segment.intensity, 0.25)).toFixed(2)})`
-          : `rgba(32, 168, 255, ${Math.min(1, Math.max(segment.intensity, 0.25)).toFixed(2)})`
-      );
+      .attr("fill", (segment) => {
+        const gradientId = streakGradientIds.get(
+          `${segment.type}-${segment.startIndex}-${segment.endIndex}`
+        );
+        return gradientId
+          ? `url(#${gradientId})`
+          : segment.type === "hot"
+            ? `rgba(242, 82, 33, ${Math.min(1, Math.max(segment.intensity, 0.25)).toFixed(2)})`
+            : `rgba(32, 168, 255, ${Math.min(1, Math.max(segment.intensity, 0.25)).toFixed(2)})`;
+      });
 
     type MarkerDatum = {
       key: string;

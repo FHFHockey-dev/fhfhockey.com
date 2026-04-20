@@ -749,6 +749,10 @@
     border-radius: 14px;
   }
 
+  .placeholderCard {
+    grid-template-columns: 1fr;
+  }
+
   .roundOne {
     max-width: 100%;
   }
@@ -854,6 +858,7 @@
     max-width: 100%;
     margin-inline: auto;
     gap: 0;
+    justify-self: center;
   }
 
   .placeholderLogo {

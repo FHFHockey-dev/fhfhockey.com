@@ -19,6 +19,13 @@ function parseLimitParam(value: string | string[] | undefined, fallback = 180) {
   return Math.max(1, Math.min(1000, parsed));
 }
 
+function parseSeasonIdParam(value: string | string[] | undefined): number | null {
+  const candidate = Array.isArray(value) ? value[0] : value;
+  if (!candidate) return null;
+  const parsed = Number(candidate);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
 function shouldRecompute(method: string, query: NextApiRequest["query"]): boolean {
   if (method === "POST") return true;
   const flag = query?.recompute;
@@ -37,14 +44,31 @@ async function handleGet(req: NextApiRequest, res: NextApiResponse) {
   const metrics = parseMetricParam(req.query.metric);
   const windows = parseWindowParam(req.query.window);
   const limit = parseLimitParam(req.query.limit, 180);
-  const { data, error } = await supabase
+  const seasonId = parseSeasonIdParam(req.query.season_id);
+  const startDate = req.query.start_date
+    ? parseDateParam(req.query.start_date)
+    : null;
+  const endDate = req.query.end_date ? parseDateParam(req.query.end_date) : null;
+
+  let query = supabase
     .from("sustainability_trend_bands")
     .select("*")
     .eq("player_id", playerId)
     .in("metric_key", metrics as string[])
     .in("window_code", windows as string[])
-    .order("snapshot_date", { ascending: false })
-    .limit(limit);
+    .order("snapshot_date", { ascending: false });
+
+  if (seasonId !== null) {
+    query = query.eq("season_id", seasonId);
+  }
+  if (startDate) {
+    query = query.gte("snapshot_date", startDate);
+  }
+  if (endDate) {
+    query = query.lt("snapshot_date", endDate);
+  }
+
+  const { data, error } = await query.limit(limit);
   if (error) {
     return res
       .status(500)

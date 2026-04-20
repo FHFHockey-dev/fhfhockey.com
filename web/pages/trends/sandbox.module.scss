@@ -429,6 +429,7 @@
 .bandChartWrapper {
   position: relative;
   width: 100%;
+  min-width: 0;
   min-height: 320px;
   background: rgba(v.$background-medium, 0.35);
   border: 1px solid rgba(v.$border-secondary, 0.6);
