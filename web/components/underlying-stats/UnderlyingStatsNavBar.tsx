@@ -1,20 +1,15 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
+import { UNDERLYING_STATS_NAV_LINKS } from "lib/navigation/analyticsSurfaceOwnership";
 import styles from "./UnderlyingStatsNavBar.module.scss";
 
 export default function UnderlyingStatsNavBar() {
   const router = useRouter();
   const pathname = router.pathname;
 
-  const links = [
-    { href: "/underlying-stats/playerStats", label: "Player Stats" },
-    { href: "/underlying-stats/goalieStats", label: "Goalie Stats" },
-    { href: "/underlying-stats/teamStats", label: "Team Stats" },
-  ];
-
   return (
     <nav className={styles.navBar} aria-label="Underlying Stats Hub Navigation">
-      {links.map((link) => {
+      {UNDERLYING_STATS_NAV_LINKS.map((link) => {
         const isActive = pathname === link.href;
         return (
           <Link

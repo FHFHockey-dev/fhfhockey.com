@@ -7,6 +7,7 @@ import PlayerStatsTable from "components/underlying-stats/PlayerStatsTable";
 import TeamStatsFilters from "components/underlying-stats/TeamStatsFilters";
 import { getTeamStatsColumns } from "components/underlying-stats/teamStatsColumns";
 import UnderlyingStatsLandingShell from "components/underlying-stats/UnderlyingStatsLandingShell";
+import { getAnalyticsSurfaceContract } from "lib/navigation/analyticsSurfaceOwnership";
 import { teamsInfo } from "lib/teamsInfo";
 import {
   applyTeamStatsScopeChange,
@@ -26,6 +27,9 @@ import {
 import styles from "../playerStats/playerStats.module.scss";
 
 const TEAM_LANDING_PATHNAME = "/underlying-stats/teamStats";
+const TEAM_EXPLORER_CONTRACT = getAnalyticsSurfaceContract(
+  "uls-team-explorer"
+);
 
 type QueryRecord = Record<string, string>;
 
@@ -389,10 +393,10 @@ export default function TeamUnderlyingStatsLandingRoute() {
   return (
     <UnderlyingStatsLandingShell
       title={pageTitle}
-      description="Team-level underlying stats across score states, strengths, venues, and opponent context."
-      breadcrumbLabel="Team Underlying Stats"
-      heroTitle="Team Underlying Stats"
-      heroLead="Compare team counts and rates across season windows, score states, venues, and opponent context from one canonical landing surface."
+      description={TEAM_EXPLORER_CONTRACT.purpose}
+      breadcrumbLabel={TEAM_EXPLORER_CONTRACT.label}
+      heroTitle={TEAM_EXPLORER_CONTRACT.label}
+      heroLead={`${TEAM_EXPLORER_CONTRACT.purpose} Use filters to compare counts and rates across season windows, score states, venues, and opponent context.`}
       defaultSpanLabel="Default Team Span"
       defaultSpanValue={formatSeasonRange(
         defaultLandingState.primary.seasonRange.fromSeasonId,
@@ -401,6 +405,8 @@ export default function TeamUnderlyingStatsLandingRoute() {
       activeFamilyLabel="Active Team Table"
       activeFamilyValue={formatTableFamily(activeFamily)}
       sectionAriaLabel="Team table"
+      utilityLinkHref="/underlying-stats"
+      utilityLinkLabel="Return to team intelligence landing"
       sectionHeader={
         <div className={styles.chipRow} aria-label="Current team landing defaults">
           {summaryChips.map((chip) => (

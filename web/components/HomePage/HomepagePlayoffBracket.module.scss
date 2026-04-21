@@ -867,6 +867,7 @@
     width: min(100%, 48px);
     max-height: 48px;
     object-position: center;
+    transform: translateX(var(--placeholder-shift-x, 0));
   }
 
   .conferencePlaceholderLogo {
@@ -888,6 +889,19 @@
     margin-inline: auto;
     width: 34px;
     height: 42px;
+    transform: translateX(var(--placeholder-shift-x, 0));
+  }
+
+  .roundTwoCard.placeholderCard {
+    --placeholder-shift-x: 10%;
+  }
+
+  .conferenceFinalCard.placeholderCard {
+    --placeholder-shift-x: 7%;
+  }
+
+  .cupFinalCard.placeholderCard {
+    --placeholder-shift-x: 6%;
   }
 
   .cupBoard {
