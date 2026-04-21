@@ -69,6 +69,11 @@ export type HomepagePlayerStatusRow = {
   statusState: PlayerStatusState;
 };
 
+type SelectCurrentPlayerStatusArgs = {
+  rows: Array<CurrentPlayerStatusRow | Record<string, unknown>>;
+  now?: string | number | Date;
+};
+
 type BellMediaInjuryTeam = {
   competitor?: {
     shortName?: string | null;
@@ -332,6 +337,85 @@ export async function fetchCurrentHomepagePlayerStatuses(args: {
   return mapPlayerStatusRowsToHomepageRows(currentRows);
 }
 
+export function selectCurrentPlayerStatusRows(
+  args: SelectCurrentPlayerStatusArgs
+): CurrentPlayerStatusRow[] {
+  const now =
+    args.now instanceof Date
+      ? args.now.getTime()
+      : typeof args.now === "string"
+        ? Date.parse(args.now)
+        : typeof args.now === "number"
+          ? args.now
+          : Date.now();
+  const currentRows = new Map<string, CurrentPlayerStatusRow>();
+
+  const rows = [...(args.rows as any[])].sort((left, right) => {
+    const leftSnapshot = String(left.snapshot_date ?? "");
+    const rightSnapshot = String(right.snapshot_date ?? "");
+    if (leftSnapshot !== rightSnapshot) {
+      return rightSnapshot.localeCompare(leftSnapshot);
+    }
+
+    const leftRank = Number(left.source_rank ?? 999);
+    const rightRank = Number(right.source_rank ?? 999);
+    if (leftRank !== rightRank) {
+      return leftRank - rightRank;
+    }
+
+    const leftObserved = Date.parse(String(left.observed_at ?? ""));
+    const rightObserved = Date.parse(String(right.observed_at ?? ""));
+    if (Number.isFinite(leftObserved) || Number.isFinite(rightObserved)) {
+      return (Number.isFinite(rightObserved) ? rightObserved : 0) - (Number.isFinite(leftObserved) ? leftObserved : 0);
+    }
+
+    const leftUpdated = Date.parse(String(left.updated_at ?? ""));
+    const rightUpdated = Date.parse(String(right.updated_at ?? ""));
+    return (Number.isFinite(rightUpdated) ? rightUpdated : 0) - (Number.isFinite(leftUpdated) ? leftUpdated : 0);
+  });
+
+  for (const rawRow of rows) {
+    const expiresAt = rawRow.status_expires_at ? Date.parse(String(rawRow.status_expires_at)) : null;
+    if (expiresAt != null && Number.isFinite(expiresAt) && expiresAt <= now) {
+      continue;
+    }
+
+    const playerId = rawRow.player_id == null ? null : Number(rawRow.player_id);
+    const teamId = rawRow.team_id == null ? null : Number(rawRow.team_id);
+    const key = [
+      playerId ?? -1,
+      String(rawRow.player_name ?? "").trim().toLowerCase(),
+      teamId ?? -1
+    ].join(":");
+
+    if (currentRows.has(key)) continue;
+
+    currentRows.set(key, {
+      snapshot_date: String(rawRow.snapshot_date ?? ""),
+      observed_at: String(rawRow.observed_at ?? ""),
+      player_id: playerId,
+      player_name: String(rawRow.player_name ?? ""),
+      team_id: teamId,
+      team_abbreviation: rawRow.team_abbreviation ? String(rawRow.team_abbreviation) : null,
+      status_state: rawRow.status_state as PlayerStatusState,
+      raw_status: rawRow.raw_status ? String(rawRow.raw_status) : null,
+      status_detail: rawRow.status_detail ? String(rawRow.status_detail) : null,
+      source_name: String(rawRow.source_name ?? ""),
+      source_url: rawRow.source_url ? String(rawRow.source_url) : null,
+      source_rank: Number(rawRow.source_rank ?? 999),
+      status_expires_at: rawRow.status_expires_at ? String(rawRow.status_expires_at) : null,
+      updated_at: String(rawRow.updated_at ?? "")
+    });
+  }
+
+  return Array.from(currentRows.values()).sort((a, b) => {
+    if (a.snapshot_date !== b.snapshot_date) {
+      return b.snapshot_date.localeCompare(a.snapshot_date);
+    }
+    return a.player_name.localeCompare(b.player_name);
+  });
+}
+
 export async function fetchCurrentPlayerStatusRows(args: {
   supabase: any;
 }): Promise<CurrentPlayerStatusRow[]> {
@@ -356,54 +440,13 @@ export async function fetchCurrentPlayerStatusRows(args: {
       ].join(", ")
     )
     .order("snapshot_date", { ascending: false })
+    .order("source_rank", { ascending: true })
     .order("observed_at", { ascending: false })
     .order("updated_at", { ascending: false })
     .limit(2000);
 
   if (error) throw error;
-
-  const now = Date.now();
-  const currentRows = new Map<string, CurrentPlayerStatusRow>();
-  for (const row of (data ?? []) as any[]) {
-    const expiresAt = row.status_expires_at ? Date.parse(String(row.status_expires_at)) : null;
-    if (expiresAt != null && Number.isFinite(expiresAt) && expiresAt <= now) {
-      continue;
-    }
-
-    const playerId = row.player_id == null ? null : Number(row.player_id);
-    const teamId = row.team_id == null ? null : Number(row.team_id);
-    const key = [
-      playerId ?? -1,
-      String(row.player_name ?? "").trim().toLowerCase(),
-      teamId ?? -1
-    ].join(":");
-
-    if (currentRows.has(key)) continue;
-
-    currentRows.set(key, {
-      snapshot_date: String(row.snapshot_date ?? ""),
-      observed_at: String(row.observed_at ?? ""),
-      player_id: playerId,
-      player_name: String(row.player_name ?? ""),
-      team_id: teamId,
-      team_abbreviation: row.team_abbreviation ? String(row.team_abbreviation) : null,
-      status_state: row.status_state as PlayerStatusState,
-      raw_status: row.raw_status ? String(row.raw_status) : null,
-      status_detail: row.status_detail ? String(row.status_detail) : null,
-      source_name: String(row.source_name ?? ""),
-      source_url: row.source_url ? String(row.source_url) : null,
-      source_rank: Number(row.source_rank ?? 0),
-      status_expires_at: row.status_expires_at ? String(row.status_expires_at) : null,
-      updated_at: String(row.updated_at ?? "")
-    });
-  }
-
-  return Array.from(currentRows.values()).sort((a, b) => {
-    if (a.snapshot_date !== b.snapshot_date) {
-      return b.snapshot_date.localeCompare(a.snapshot_date);
-    }
-    return a.player_name.localeCompare(b.player_name);
-  });
+  return selectCurrentPlayerStatusRows({ rows: (data ?? []) as any[] });
 }
 
 export function toInjurySourceProvenanceRows(

@@ -211,6 +211,66 @@ describe("lineupSourceIngestion", () => {
     expect(selectBestPregameLineupSource([dfo, nhl])?.sourceName).toBe("nhl.com");
   });
 
+  it("drops stale lineup sources before ranking the remaining options", () => {
+    const nhl = parseNhlLineupProjectionsPage({
+      html: `
+        <body>
+          **Lightning projected lineup**
+          Gage Goncalves -- Brayden Point -- Nikita Kucherov
+          Brandon Hagel -- Anthony Cirelli -- Jake Guentzel
+          Zemgus Girgensons -- Yanni Gourde -- Nick Paul
+          Corey Perry -- Dominic James -- Scott Sabourin
+          J.J. Moser -- Darren Raddysh
+          Ryan McDonagh -- Erik Cernak
+          Declan Carlile -- Emil Lilleberg
+          Andrei Vasilevskiy
+          Jonas Johansson
+        </body>
+      `,
+      teams,
+      sourceUrl: "https://www.nhl.com/news/nhl-lineup-projections-2025-26-season",
+      observedAt: "2026-04-20T00:00:00.000Z",
+      rosterByTeam: new Map([[14, tampaRoster]])
+    })[0];
+
+    const dfo = parseDailyFaceoffLineCombinationsPage({
+      html: `
+        <body>
+          <div>Last updated: 2026-04-21T14:43:32.212Z</div>
+          <div>Source: Gabby Shirley</div>
+          <section id="line_combos">
+            <span id="forwards">Forwards</span>
+            <a href="/players/news/gage-goncalves/1"><span>Gage Goncalves</span></a>
+            <a href="/players/news/brayden-point/2"><span>Brayden Point</span></a>
+            <a href="/players/news/nikita-kucherov/3"><span>Nikita Kucherov</span></a>
+            <a href="/players/news/brandon-hagel/4"><span>Brandon Hagel</span></a>
+            <a href="/players/news/anthony-cirelli/5"><span>Anthony Cirelli</span></a>
+            <a href="/players/news/jake-guentzel/6"><span>Jake Guentzel</span></a>
+            <a href="/players/news/zemgus-girgensons/7"><span>Zemgus Girgensons</span></a>
+            <a href="/players/news/yanni-gourde/8"><span>Yanni Gourde</span></a>
+            <a href="/players/news/nick-paul/9"><span>Nick Paul</span></a>
+            <span id="defense">Defensive Pairings</span>
+            <a href="/players/news/jj-moser/10"><span>J.J. Moser</span></a>
+            <a href="/players/news/darren-raddysh/11"><span>Darren Raddysh</span></a>
+            <a href="/players/news/ryan-mcdonagh/12"><span>Ryan McDonagh</span></a>
+            <a href="/players/news/erik-cernak/13"><span>Erik Cernak</span></a>
+            <span id="powerplay">1st Powerplay Unit</span>
+            <span id="goalies">Goalies</span>
+            <a href="/players/news/andrei-vasilevskiy/6"><span>Andrei Vasilevskiy</span></a>
+            <a href="/players/news/jonas-johansson/7"><span>Jonas Johansson</span></a>
+          </section>
+        </body>
+      `,
+      team: teams[1],
+      rosterEntries: tampaRoster,
+      sourceUrl: "https://www.dailyfaceoff.com/teams/tampa-bay-lightning/line-combinations"
+    });
+
+    expect(
+      selectBestPregameLineupSource([nhl, dfo], "2026-04-21T15:00:00.000Z")?.sourceName
+    ).toBe("dailyfaceoff");
+  });
+
   it("matches last names against the active roster when full names are missing", () => {
     expect(validateLineupNames(["Point", "Kucherov"], tampaRoster)).toMatchObject({
       matchedPlayerIds: [2, 3],
@@ -285,5 +345,49 @@ describe("lineupSourceIngestion", () => {
         dfoGoalies.find((goalie) => goalie.team.id === 14)
       ])?.sourceName
     ).toBe("dailyfaceoff");
+  });
+
+  it("drops stale goalie sources before ranking the remaining options", () => {
+    const staleOfficialGoalie = buildGoalieStartSourceFromOfficialLineup({
+      lineupSource: {
+        ...parseNhlLineupProjectionsPage({
+          html: `
+            <body>
+              **Lightning projected lineup**
+              Gage Goncalves -- Brayden Point -- Nikita Kucherov
+              Brandon Hagel -- Anthony Cirelli -- Jake Guentzel
+              Zemgus Girgensons -- Yanni Gourde -- Nick Paul
+              Corey Perry -- Dominic James -- Scott Sabourin
+              J.J. Moser -- Darren Raddysh
+              Ryan McDonagh -- Erik Cernak
+              Declan Carlile -- Emil Lilleberg
+              Andrei Vasilevskiy
+              Jonas Johansson
+            </body>
+          `,
+          teams,
+          sourceUrl: "https://www.nhl.com/news/nhl-lineup-projections-2025-26-season",
+          observedAt: "2026-04-20T00:00:00.000Z",
+          rosterByTeam: new Map([[14, tampaRoster]])
+        })[0]
+      },
+      rosterEntries: tampaRoster
+    });
+
+    const modelGoalie = buildGoalieStartSourceFromModel({
+      team: teams[1],
+      sourceUrl: "/api/v1/db/update-goalie-projections-v2",
+      goalieName: "Andrei Vasilevskiy",
+      goaliePlayerId: 7,
+      startProbability: 0.73,
+      observedAt: "2026-04-21T12:00:00.000Z"
+    });
+
+    expect(
+      selectBestGoalieStartSource(
+        [staleOfficialGoalie, modelGoalie],
+        "2026-04-21T15:00:00.000Z"
+      )?.sourceName
+    ).toBe("goalie_start_projections");
   });
 });

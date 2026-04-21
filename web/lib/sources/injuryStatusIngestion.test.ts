@@ -5,6 +5,7 @@ import {
   detectReturningStatusRows,
   mapPlayerStatusRowsToHomepageRows,
   normalizeBellMediaInjuryRows,
+  selectCurrentPlayerStatusRows,
   toInjurySourceProvenanceRows
 } from "./injuryStatusIngestion";
 
@@ -138,6 +139,69 @@ describe("injuryStatusIngestion", () => {
       entity_id: 7,
       source_type: "injury",
       game_id: 2025020001
+    });
+  });
+
+  it("prefers the freshest non-expired injury status at the best source rank", () => {
+    const rows = selectCurrentPlayerStatusRows({
+      now: "2026-04-21T18:00:00.000Z",
+      rows: [
+        {
+          snapshot_date: "2026-04-21",
+          observed_at: "2026-04-21T16:00:00.000Z",
+          player_id: 7,
+          player_name: "Andrei Vasilevskiy",
+          team_id: 14,
+          team_abbreviation: "TBL",
+          status_state: "returning",
+          raw_status: "Returning",
+          status_detail: "No longer listed on the injury report.",
+          source_name: "backup-source",
+          source_url: null,
+          source_rank: 2,
+          status_expires_at: "2026-04-28T16:00:00.000Z",
+          updated_at: "2026-04-21T16:00:00.000Z"
+        },
+        {
+          snapshot_date: "2026-04-21",
+          observed_at: "2026-04-21T15:00:00.000Z",
+          player_id: 7,
+          player_name: "Andrei Vasilevskiy",
+          team_id: 14,
+          team_abbreviation: "TBL",
+          status_state: "injured",
+          raw_status: "Out",
+          status_detail: "Upper body",
+          source_name: "bell-tsn",
+          source_url: null,
+          source_rank: 1,
+          status_expires_at: null,
+          updated_at: "2026-04-21T15:00:00.000Z"
+        },
+        {
+          snapshot_date: "2026-04-20",
+          observed_at: "2026-04-20T15:00:00.000Z",
+          player_id: 9,
+          player_name: "Expired Player",
+          team_id: 14,
+          team_abbreviation: "TBL",
+          status_state: "returning",
+          raw_status: "Returning",
+          status_detail: "Expired row",
+          source_name: "bell-tsn",
+          source_url: null,
+          source_rank: 1,
+          status_expires_at: "2026-04-21T12:00:00.000Z",
+          updated_at: "2026-04-20T15:00:00.000Z"
+        }
+      ]
+    });
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      player_id: 7,
+      status_state: "injured",
+      source_rank: 1
     });
   });
 });

@@ -62,13 +62,13 @@
   - [x] 2.4 Define prediction-model output storage for game predictions, player predictions, market comparisons, and prop flags.
   - [x] 2.5 Add source-provenance and freshness fields needed for lineup sources, goalie starts, injuries, odds, props, and model outputs.
 
-- [ ] 3.0 Implement the lineup, goalie-start, injury, and source-ingestion foundation
+- [x] 3.0 Implement the lineup, goalie-start, injury, and source-ingestion foundation
   - [x] 3.1 Build the line-combination ingestion hierarchy with NHL.com lineup projections as default, DailyFaceoff as conditional fallback, and GameDayTweets `/lines` as tertiary fallback.
   - [x] 3.2 Implement DailyFaceoff page-state detection so `Last Game` pages are rejected as fallback sources.
   - [x] 3.3 Build GameDayTweets fallback parsing using tweet-link harvesting, regex extraction, keyword-group classification, and roster/player-table validation.
   - [x] 3.4 Implement official and fallback goalie-start ingestion, then reconcile external source truth with existing internal starter-probability outputs.
   - [x] 3.5 Normalize injury status into durable states including at least `injured` and `returning`, with persistence usable across pages.
-  - [ ] 3.6 Add internal source-ranking and freshness rules so downstream pages can choose the best available lineup, goalie, and injury inputs.
+  - [x] 3.6 Add internal source-ranking and freshness rules so downstream pages can choose the best available lineup, goalie, and injury inputs.
 
 - [ ] 4.0 Expand prediction, odds, and props infrastructure as launch dependencies
   - [ ] 4.1 Select and integrate the launch-ready odds and props source contract for game lines and player props.

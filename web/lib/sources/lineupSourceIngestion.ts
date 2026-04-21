@@ -131,6 +131,17 @@ export type ParsedGoalieStartSource = {
 
 const LINE_DASH_PATTERN = /\s+[–—-]{2,}\s+/g;
 const MULTISPACE_PATTERN = /\s+/g;
+const HOURS_TO_MS = 60 * 60 * 1000;
+const LINEUP_SOURCE_TTL_HOURS: Record<PregameLineupSourceName, number> = {
+  "nhl.com": 18,
+  dailyfaceoff: 8,
+  gamedaytweets: 6
+};
+const GOALIE_SOURCE_TTL_HOURS: Record<ParsedGoalieStartSource["sourceName"], number> = {
+  dailyfaceoff: 8,
+  "nhl.com": 18,
+  goalie_start_projections: 4
+};
 const GDT_LINEUP_KEYWORDS = [
   "lineup",
   "lines",
@@ -146,6 +157,45 @@ const GDT_INJURY_KEYWORDS = ["injury", "injured", "out", "returns", "returning"]
 
 function normalizeWhitespace(value: string): string {
   return value.replace(/\u00a0/g, " ").replace(MULTISPACE_PATTERN, " ").trim();
+}
+
+function addHoursIso(value: string, hours: number): string {
+  return new Date(Date.parse(value) + hours * HOURS_TO_MS).toISOString();
+}
+
+function resolveFreshnessExpiry(args: {
+  observedAt?: string | null;
+  freshnessExpiresAt?: string | null;
+  ttlHours?: number | null;
+}): string | null {
+  if (args.freshnessExpiresAt) {
+    return args.freshnessExpiresAt;
+  }
+  if (!args.observedAt || !args.ttlHours || !Number.isFinite(Date.parse(args.observedAt))) {
+    return null;
+  }
+  return addHoursIso(args.observedAt, args.ttlHours);
+}
+
+function isSourceFresh(args: {
+  status: PregameSourceStatus;
+  observedAt?: string | null;
+  freshnessExpiresAt?: string | null;
+  now?: string | number | Date;
+}): boolean {
+  if (args.status !== "observed") return false;
+  if (!args.freshnessExpiresAt) return true;
+  const expiresAt = Date.parse(args.freshnessExpiresAt);
+  if (!Number.isFinite(expiresAt)) return true;
+  const now =
+    args.now instanceof Date
+      ? args.now.getTime()
+      : typeof args.now === "string"
+        ? Date.parse(args.now)
+        : typeof args.now === "number"
+          ? args.now
+          : Date.now();
+  return !Number.isFinite(now) || expiresAt > now;
 }
 
 function normalizeTeamLabel(value: string): string {
@@ -374,7 +424,11 @@ function buildSourceRecord(args: {
     isOfficial: args.isOfficial,
     status: args.status,
     observedAt: args.observedAt ?? null,
-    freshnessExpiresAt: args.freshnessExpiresAt ?? null,
+    freshnessExpiresAt: resolveFreshnessExpiry({
+      observedAt: args.observedAt ?? null,
+      freshnessExpiresAt: args.freshnessExpiresAt ?? null,
+      ttlHours: LINEUP_SOURCE_TTL_HOURS[args.sourceName]
+    }),
     forwards: args.forwards ?? [],
     defensePairs: args.defensePairs ?? [],
     goalies: args.goalies ?? [],
@@ -727,10 +781,20 @@ export function parseGameDayTweetsLinesPage(args: {
 }
 
 export function selectBestPregameLineupSource(
-  sources: Array<ParsedPregameLineupSource | null | undefined>
+  sources: Array<ParsedPregameLineupSource | null | undefined>,
+  now: string | number | Date = Date.now()
 ): ParsedPregameLineupSource | null {
   const eligible = sources.filter(
-    (source): source is ParsedPregameLineupSource => Boolean(source && source.status === "observed")
+    (source): source is ParsedPregameLineupSource =>
+      Boolean(
+        source &&
+          isSourceFresh({
+            status: source.status,
+            observedAt: source.observedAt,
+            freshnessExpiresAt: source.freshnessExpiresAt,
+            now
+          })
+      )
   );
   if (eligible.length === 0) return null;
 
@@ -794,7 +858,11 @@ function buildGoalieStartSource(args: {
     startStatus: args.startStatus,
     confidenceScore: args.confidenceScore ?? null,
     observedAt: args.observedAt ?? null,
-    freshnessExpiresAt: args.freshnessExpiresAt ?? null,
+    freshnessExpiresAt: resolveFreshnessExpiry({
+      observedAt: args.observedAt ?? null,
+      freshnessExpiresAt: args.freshnessExpiresAt ?? null,
+      ttlHours: GOALIE_SOURCE_TTL_HOURS[args.sourceName]
+    }),
     metadata: {
       ...args.metadata,
       validation
@@ -950,11 +1018,21 @@ export function buildGoalieStartSourceFromModel(args: {
 }
 
 export function selectBestGoalieStartSource(
-  sources: Array<ParsedGoalieStartSource | null | undefined>
+  sources: Array<ParsedGoalieStartSource | null | undefined>,
+  now: string | number | Date = Date.now()
 ): ParsedGoalieStartSource | null {
   const eligible = sources.filter(
     (source): source is ParsedGoalieStartSource =>
-      Boolean(source && source.status === "observed" && source.goaliePlayerId != null)
+      Boolean(
+        source &&
+          source.goaliePlayerId != null &&
+          isSourceFresh({
+            status: source.status,
+            observedAt: source.observedAt,
+            freshnessExpiresAt: source.freshnessExpiresAt,
+            now
+          })
+      )
   );
   if (eligible.length === 0) return null;
 
