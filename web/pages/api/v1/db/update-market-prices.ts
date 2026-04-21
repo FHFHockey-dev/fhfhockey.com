@@ -72,7 +72,15 @@ async function fetchJson<T>(url: string): Promise<T> {
 
   const payload = await response.json();
   if (!response.ok) {
-    throw new Error(`Request failed (${response.status}) for ${url}`);
+    const error = new Error(`Request failed (${response.status}) for ${url}`) as Error & {
+      statusCode?: number;
+      url?: string;
+      payload?: unknown;
+    };
+    error.statusCode = response.status;
+    error.url = url;
+    error.payload = payload;
+    throw error;
   }
   return payload as T;
 }
@@ -237,7 +245,9 @@ export default withCronJobAudit(
           marketRows.push(...featuredNormalized.rows);
           provenanceRows.push(...featuredNormalized.provenanceRows);
 
+          let propsUnsupportedForProvider = false;
           for (const [localGameId, eventId] of featuredNormalized.matchedEvents.entries()) {
+            if (propsUnsupportedForProvider) break;
             const localGame = scheduledGames.find((game) => game.id === localGameId);
             if (!localGame) continue;
 
@@ -260,6 +270,45 @@ export default withCronJobAudit(
               propRows.push(...propNormalized.rows);
               provenanceRows.push(...propNormalized.provenanceRows);
             } catch (error: any) {
+              const statusCode = Number(error?.statusCode);
+              const isParlayProp404 =
+                configuredProvider.provider === "parlayapi" && statusCode === 404;
+              if (isParlayProp404) {
+                propsUnsupportedForProvider = true;
+                warnings.push(
+                  "ParlayAPI live NHL game odds are working, but NHL player prop event endpoints are returning 404. Game markets were ingested; props were skipped."
+                );
+                provenanceRows.push({
+                  snapshot_date: snapshotDate,
+                  source_type: "prop",
+                  entity_type: "game",
+                  entity_id: localGame.id,
+                  game_id: localGame.id,
+                  source_name: configuredProvider.provider,
+                  source_url: buildExternalOddsEventOddsUrl({
+                    provider: configuredProvider.provider,
+                    apiKey: "redacted",
+                    eventId
+                  }),
+                  source_rank: 1,
+                  is_official: false,
+                  status: "rejected",
+                  observed_at: new Date().toISOString(),
+                  freshness_expires_at: null,
+                  payload: {
+                    eventId,
+                    reason: "provider-props-endpoint-404",
+                    statusCode
+                  },
+                  metadata: {
+                    propMarkets: true,
+                    providerSupportsNhlProps: false
+                  },
+                  updated_at: new Date().toISOString()
+                });
+                break;
+              }
+
               warnings.push(
                 `${configuredProvider.provider} event odds failed for local game ${localGameId}: ${error?.message ?? "Unknown error"}`
               );

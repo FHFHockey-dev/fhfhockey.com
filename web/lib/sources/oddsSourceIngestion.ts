@@ -126,6 +126,7 @@ export type TheOddsApiBookmaker = {
 
 export type TheOddsApiFeaturedGame = {
   id?: string;
+  canonical_event_id?: string;
   sport_key?: string;
   sport_title?: string;
   commence_time?: string;
@@ -489,7 +490,8 @@ export function normalizeTheOddsApiFeaturedOdds(
               freshnessExpiresAt,
               provenance: {
                 provider,
-                eventId: event.id ?? null
+                eventId: event.id ?? null,
+                canonicalEventId: event.canonical_event_id ?? null
               },
               metadata: {
                 homeTeamId: localGame.homeTeamId,
@@ -521,11 +523,13 @@ export function normalizeTheOddsApiFeaturedOdds(
         freshness_expires_at: freshnessExpiresAt,
         payload: {
           eventId: event.id ?? null,
+          canonicalEventId: event.canonical_event_id ?? null,
           sportsbookKey,
           markets: (bookmaker.markets ?? []).map((market) => market.key ?? "unknown")
         },
         metadata: {
-          sportKey: event.sport_key ?? ODDS_PROVIDER_SPORT_KEY
+          sportKey: event.sport_key ?? ODDS_PROVIDER_SPORT_KEY,
+          canonicalEventId: event.canonical_event_id ?? null
         },
         updated_at: new Date().toISOString()
       });
