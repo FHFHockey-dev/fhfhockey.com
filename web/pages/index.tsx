@@ -21,6 +21,14 @@ import { getCurrentSeason } from "lib/NHL/server";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
 import { checkIsOffseason } from "../hooks/useOffseason";
 import Fetch from "lib/cors-fetch";
+import supabaseServer from "lib/supabase/server";
+import {
+  buildTeamStatusDirectory,
+  fetchBellMediaInjuries,
+  fetchCurrentHomepagePlayerStatuses,
+  mapPlayerStatusRowsToHomepageRows,
+  normalizeBellMediaInjuryRows
+} from "lib/sources/injuryStatusIngestion";
 
 // Import our chart component
 import TeamStandingsChart from "components/TeamStandingsChart/TeamStandingsChart";
@@ -163,37 +171,36 @@ export async function getServerSideProps({ req, res }) {
 
   const fetchInjuries = async () => {
     try {
-      const response = await fetchJson(
-        `https://stats.sports.bellmedia.ca/sports/hockey/leagues/nhl/playerInjuries?brand=tsn&type=json`
-      );
-
-      if (!Array.isArray(response)) {
-        console.error("Unexpected injuries API response format:", response);
+      const persistedStatuses = await fetchCurrentHomepagePlayerStatuses({
+        supabase: supabaseServer
+      });
+      if (persistedStatuses.length > 0) {
         return {
-          data: [],
-          error: "Injury updates are unavailable right now."
+          data: persistedStatuses.sort((a, b) => moment(b.date).diff(moment(a.date))),
+          error: null
         };
       }
 
-      let injuriesData = response.flatMap((team) =>
-        team.playerInjuries && Array.isArray(team.playerInjuries)
-          ? team.playerInjuries.map((injury) => ({
-              ...injury,
-              team: team.competitor?.shortName ?? "N/A", // Added null check
-              date: injury.date
-                ? moment(injury.date).format("YYYY-MM-DD")
-                : "N/A" // Format date
-            }))
-          : []
-      );
-
-      // Sort injuriesData by date, most recent first
-      injuriesData = injuriesData.sort((a, b) =>
-        moment(b.date).diff(moment(a.date))
-      );
+      const rawTeams = await fetchBellMediaInjuries();
+      const normalizedRows = normalizeBellMediaInjuryRows({
+        rawTeams,
+        snapshotDate: moment().utc().format("YYYY-MM-DD"),
+        directory: buildTeamStatusDirectory(),
+        rosterByTeam: new Map()
+      });
 
       return {
-        data: injuriesData,
+        data: mapPlayerStatusRowsToHomepageRows(
+          normalizedRows.map((row) => ({
+            snapshot_date: row.snapshot_date,
+            player_id: row.player_id,
+            player_name: row.player_name,
+            team_abbreviation: row.team_abbreviation,
+            status_state: row.status_state,
+            raw_status: row.raw_status,
+            status_detail: row.status_detail
+          }))
+        ).sort((a, b) => moment(b.date).diff(moment(a.date))),
         error: null
       };
     } catch (error) {

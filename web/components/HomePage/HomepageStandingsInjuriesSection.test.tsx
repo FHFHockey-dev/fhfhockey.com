@@ -73,4 +73,28 @@ describe("HomepageStandingsInjuriesSection", () => {
 
     expect(screen.getByText("Standings are unavailable right now.")).toBeTruthy();
   });
+
+  it("renders returning player statuses distinctly", () => {
+    render(
+      <HomepageStandingsInjuriesSection
+        standings={[]}
+        injuries={[
+          {
+            date: "2026-04-22",
+            team: "TBL",
+            player: { id: 7, displayName: "Andrei Vasilevskiy" },
+            status: "Returning",
+            description: "No longer listed on the injury report.",
+            statusState: "returning"
+          }
+        ]}
+        snapshotGeneratedAt="2026-04-22T12:00:00.000Z"
+        standingsError={null}
+        injuriesError={null}
+      />
+    );
+
+    expect(screen.getByText("Returning")).toBeTruthy();
+    expect(screen.getByText("No longer listed on the injury report.")).toBeTruthy();
+  });
 });

@@ -23,6 +23,18 @@
 - `web/lib/underlying-stats/playerStatsLandingServer.test.ts` - Regression coverage for season-wide chunked landing summary fetch and aggregate-cache behavior.
 - `web/sql/ratings/001_create_analytics_rating_contracts.sql` - Proposed Supabase schema contract for normalized team ratings plus first-class skater offense, skater defense, and goalie rating storage.
 - `web/sql/ratings/002_create_analytics_trends_predictions_and_provenance.sql` - Proposed Supabase schema contract for parity trend storage, cross-entity sustainability, prediction outputs, market flags, and source provenance/freshness.
+- `web/rules/process-task-list.mdc` - Task-processing rule set clarified so true external manual steps are distinct from routine terminal work Codex can execute directly.
+- `web/lib/sources/lineupSourceIngestion.ts` - Normalized NHL.com, DailyFaceoff, and GameDayTweets lineup parsing, roster validation, source ranking, and provenance-row builders for pregame lineup ingestion.
+- `web/lib/sources/lineupSourceIngestion.test.ts` - Targeted regression coverage for official/fallback lineup parsing, DailyFaceoff `Last Game` rejection, GameDayTweets classification, and lineup-source ranking.
+- `web/pages/api/v1/db/update-lineup-source-provenance.ts` - Admin ingestion endpoint that snapshots scheduled-team lineup sources into `source_provenance_snapshots` using the NHL.com -> DailyFaceoff -> GameDayTweets hierarchy.
+- `web/sql/ratings/003_create_historical_line_source_tables.sql` - Supabase schema for `lines_nhl`, `lines_dfo`, and `lines_gdl` historical lineup snapshot tables with explicit ordered line, pair, and goalie columns.
+- `web/lib/sources/injuryStatusIngestion.ts` - Canonical injury-status normalization, returning-state detection, homepage mapping, and injury provenance builders backed by the durable player-status store.
+- `web/lib/sources/injuryStatusIngestion.test.ts` - Regression coverage for injury normalization, returning-state creation, homepage display mapping, and provenance row shaping.
+- `web/pages/api/v1/db/update-player-statuses.ts` - Admin ingestion endpoint that snapshots Bell injury feed results into `player_status_history` and related provenance rows.
+- `web/sql/ratings/004_create_player_status_history.sql` - Supabase schema for durable `injured` and `returning` player-status history plus the current-state view.
+- `web/components/HomePage/HomepageStandingsInjuriesSection.tsx` - Homepage injury module now styling persisted `injured` and `returning` states distinctly.
+- `web/components/HomePage/HomepageStandingsInjuriesSection.test.tsx` - Homepage regression coverage for returning-player rendering.
+- `web/styles/Home.module.scss` - Homepage injury-row color treatment for negative `injured` and positive `returning` states.
 - `web/pages/api/v1/sustainability/trends.ts` - Existing skater sustainability summary endpoint that will need broader entity support.
 - `web/pages/api/v1/sustainability/trend-bands.ts` - Existing player trend-band endpoint that will need broader entity support.
 - `web/lib/projections/goaliePipeline.ts` - Existing goalie-start/model pipeline contract that informs launch-scope prediction dependencies.
@@ -43,7 +55,7 @@
   - [x] 1.3 Audit and remove current surface overlap where `/underlying-stats` and `/underlying-stats/teamStats` both behave like the primary team advanced-stats route.
   - [x] 1.4 Define which modules stay on the ULS landing versus move to Trends or Sandbox before any major UI rewrite begins.
 
-- [ ] 2.0 Build the launch-scope data contracts for ratings, trends, sustainability, and model outputs
+- [x] 2.0 Build the launch-scope data contracts for ratings, trends, sustainability, and model outputs
   - [x] 2.1 Design or refactor Supabase tables/views for team ratings, skater offensive ratings, skater defensive ratings, and goalie ratings as first-class stored products.
   - [x] 2.2 Define persistence contracts for team/skater/goalie trend outputs so `/trends` can render parity across entity types.
   - [x] 2.3 Expand sustainability storage and contracts beyond skater-only production assumptions to support teams and goalies.
@@ -51,11 +63,11 @@
   - [x] 2.5 Add source-provenance and freshness fields needed for lineup sources, goalie starts, injuries, odds, props, and model outputs.
 
 - [ ] 3.0 Implement the lineup, goalie-start, injury, and source-ingestion foundation
-  - [ ] 3.1 Build the line-combination ingestion hierarchy with NHL.com lineup projections as default, DailyFaceoff as conditional fallback, and GameDayTweets `/lines` as tertiary fallback.
-  - [ ] 3.2 Implement DailyFaceoff page-state detection so `Last Game` pages are rejected as fallback sources.
-  - [ ] 3.3 Build GameDayTweets fallback parsing using tweet-link harvesting, regex extraction, keyword-group classification, and roster/player-table validation.
-  - [ ] 3.4 Implement official and fallback goalie-start ingestion, then reconcile external source truth with existing internal starter-probability outputs.
-  - [ ] 3.5 Normalize injury status into durable states including at least `injured` and `returning`, with persistence usable across pages.
+  - [x] 3.1 Build the line-combination ingestion hierarchy with NHL.com lineup projections as default, DailyFaceoff as conditional fallback, and GameDayTweets `/lines` as tertiary fallback.
+  - [x] 3.2 Implement DailyFaceoff page-state detection so `Last Game` pages are rejected as fallback sources.
+  - [x] 3.3 Build GameDayTweets fallback parsing using tweet-link harvesting, regex extraction, keyword-group classification, and roster/player-table validation.
+  - [x] 3.4 Implement official and fallback goalie-start ingestion, then reconcile external source truth with existing internal starter-probability outputs.
+  - [x] 3.5 Normalize injury status into durable states including at least `injured` and `returning`, with persistence usable across pages.
   - [ ] 3.6 Add internal source-ranking and freshness rules so downstream pages can choose the best available lineup, goalie, and injury inputs.
 
 - [ ] 4.0 Expand prediction, odds, and props infrastructure as launch dependencies
@@ -108,3 +120,8 @@
   - [x] 11.1 Restart the `web` Next dev server so the patched landing aggregation module and cleared in-memory aggregate cache are both active.
   - [x] 11.2 Re-check `/api/v1/underlying-stats/players` and `/api/v1/underlying-stats/goalies` for `20252026` season-wide five-on-five requests and confirm they now return non-empty rows.
   - [x] 11.3 Re-check `/underlying-stats/playerStats` and `/underlying-stats/goalieStats` in the browser and confirm the empty-state copy is gone for the default season-wide landing view.
+
+- [ ] 12.0 NEW: Extend the pregame source hierarchy with GameDayTweets goalie/news feeds and a dedicated injury-state store
+  - [ ] 12.1 Add `https://www.gamedaytweets.com/goalies` as the goalie-start fallback that sits behind DailyFaceoff and ahead of the internal goalie-start probability model.
+  - [ ] 12.2 Evaluate and ingest `https://www.gamedaytweets.com/news` into the injury/news pipeline for returns, transactions, call-ups, and other non-lineup updates.
+  - [x] 12.3 Design the separate injury-state database contract needed for `injured`, `returning`, and related status changes instead of overloading the line-history tables.

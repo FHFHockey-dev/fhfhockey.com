@@ -948,6 +948,14 @@ $mobile-column-short: 30px;
   td.statusColumn {
     font-weight: 600;
   }
+
+  .injuredRow td.statusColumn {
+    color: #ef6a6a;
+  }
+
+  .returningRow td.statusColumn {
+    color: #65d58a;
+  }
 }
 
 .pagination {

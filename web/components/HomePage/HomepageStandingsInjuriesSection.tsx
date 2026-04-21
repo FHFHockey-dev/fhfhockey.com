@@ -48,9 +48,15 @@ export default function HomepageStandingsInjuriesSection({
   const displayInjuryRows = currentPageInjuries.map((injury, idx) => {
     const teamAbbrev = injury.team?.toUpperCase() ?? "NHL";
     const injuryTeamLogoUrl = getTeamLogoSvg(teamAbbrev);
+    const injuryRowClassName =
+      injury.statusState === "returning"
+        ? styles.returningRow
+        : injury.statusState === "injured"
+          ? styles.injuredRow
+          : "";
 
     return (
-      <tr key={`${injury.player?.id ?? idx}-${idx}`}>
+      <tr key={`${injury.player?.id ?? idx}-${idx}`} className={injuryRowClassName}>
         <td className={styles.dateColumn}>
           {injury.date ? moment(injury.date).format("M/D/YY") : "N/A"}
         </td>
