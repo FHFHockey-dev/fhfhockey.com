@@ -35,6 +35,12 @@
 - `web/components/HomePage/HomepageStandingsInjuriesSection.tsx` - Homepage injury module now styling persisted `injured` and `returning` states distinctly.
 - `web/components/HomePage/HomepageStandingsInjuriesSection.test.tsx` - Homepage regression coverage for returning-player rendering.
 - `web/styles/Home.module.scss` - Homepage injury-row color treatment for negative `injured` and positive `returning` states.
+- `web/lib/sources/oddsSourceIngestion.ts` - Launch odds/props source contract, provider normalization, implied-probability shaping, and NHL fallback market builders for sportsbook ingestion.
+- `web/lib/sources/oddsSourceIngestion.test.ts` - Fixture-backed regression coverage for ParlayAPI-compatible featured markets, player props, and NHL schedule fallback odds normalization.
+- `web/pages/api/v1/db/update-market-prices.ts` - Admin ingestion endpoint that persists normalized game markets, player props, and provider provenance using ParlayAPI when configured, The Odds API as secondary compatibility, and NHL fallback odds otherwise.
+- `web/lib/projections/queries/market-queries.ts` - Market-context fetch and consensus-summary layer that makes sportsbook inputs available to the projection runner without coupling it directly to raw odds tables.
+- `web/lib/projections/queries/market-queries.test.ts` - Deterministic coverage for fresh-vs-stale market selection and summary shaping before the projection pipeline consumes sportsbook inputs.
+- `web/lib/projections/run-forge-projections.ts` - Canonical projection runner now responsible for threading sportsbook market context into persisted game/player prediction outputs and model-vs-market flag generation.
 - `web/pages/api/v1/sustainability/trends.ts` - Existing skater sustainability summary endpoint that will need broader entity support.
 - `web/pages/api/v1/sustainability/trend-bands.ts` - Existing player trend-band endpoint that will need broader entity support.
 - `web/lib/projections/goaliePipeline.ts` - Existing goalie-start/model pipeline contract that informs launch-scope prediction dependencies.
@@ -70,12 +76,12 @@
   - [x] 3.5 Normalize injury status into durable states including at least `injured` and `returning`, with persistence usable across pages.
   - [x] 3.6 Add internal source-ranking and freshness rules so downstream pages can choose the best available lineup, goalie, and injury inputs.
 
-- [ ] 4.0 Expand prediction, odds, and props infrastructure as launch dependencies
-  - [ ] 4.1 Select and integrate the launch-ready odds and props source contract for game lines and player props.
-  - [ ] 4.2 Build ingestion and storage for official odds, prop markets, and source freshness metadata.
-  - [ ] 4.3 Extend prediction-model pipelines so lineup, goalie-start, injury, and market inputs are part of the launch architecture instead of post-launch refactors.
-  - [ ] 4.4 Add comparison logic that identifies when internal predictions disagree with market prices in a way that can power page-level highlighting.
-  - [ ] 4.5 Expose a durable flag/output contract for “model-liked” props so ULS and related surfaces can render them consistently.
+- [x] 4.0 Expand prediction, odds, and props infrastructure as launch dependencies
+  - [x] 4.1 Select and integrate the launch-ready odds and props source contract for game lines and player props.
+  - [x] 4.2 Build ingestion and storage for official odds, prop markets, and source freshness metadata.
+  - [x] 4.3 Extend prediction-model pipelines so lineup, goalie-start, injury, and market inputs are part of the launch architecture instead of post-launch refactors.
+  - [x] 4.4 Add comparison logic that identifies when internal predictions disagree with market prices in a way that can power page-level highlighting.
+  - [x] 4.5 Expose a durable flag/output contract for “model-liked” props so ULS and related surfaces can render them consistently.
 
 - [ ] 5.0 Finish the `/underlying-stats` route family around the final ULS product contract
   - [ ] 5.1 Keep `/underlying-stats` team-intelligence-first while formalizing navigation into skater and goalie advanced-metrics explorers.
@@ -125,3 +131,8 @@
   - [ ] 12.1 Add `https://www.gamedaytweets.com/goalies` as the goalie-start fallback that sits behind DailyFaceoff and ahead of the internal goalie-start probability model.
   - [ ] 12.2 Evaluate and ingest `https://www.gamedaytweets.com/news` into the injury/news pipeline for returns, transactions, call-ups, and other non-lineup updates.
   - [x] 12.3 Design the separate injury-state database contract needed for `injured`, `returning`, and related status changes instead of overloading the line-history tables.
+
+- [ ] 13.0 NEW: Provide live external odds-provider verification once a ParlayAPI key is available
+  - [ ] 13.1 Add `PARLAY_API_KEY` to the runtime environment used by `web/pages/api/v1/db/update-market-prices.ts`.
+  - [ ] 13.2 Run `/api/v1/db/update-market-prices` against a live NHL slate and confirm ParlayAPI featured markets upsert with `source_rank = 1`.
+  - [ ] 13.3 Confirm at least one live prop market lands in `prop_market_prices_daily` and player matching succeeds for the target slate.
