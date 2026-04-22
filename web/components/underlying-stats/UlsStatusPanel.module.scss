@@ -1,0 +1,52 @@
+.panel {
+  display: grid;
+  gap: 12px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.card {
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 14px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.card[data-status="pending"] {
+  background: rgba(248, 250, 252, 0.92);
+}
+
+.label {
+  margin: 0 0 6px;
+  font-size: 11px;
+  line-height: 1.2;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.value {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.1;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.meta {
+  margin: 6px 0 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #475569;
+}
+
+.note {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #475569;
+}

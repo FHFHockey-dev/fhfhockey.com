@@ -5,6 +5,7 @@ import {
   type GoalieStatsLandingApiError,
   type GoalieStatsLandingApiResponse,
 } from "lib/underlying-stats/goalieStatsQueries";
+import { overlayEntityRatingsOnLandingResponse } from "lib/underlying-stats/entityRatingsOverlay";
 import { buildGoalieStatsLandingAggregationFromState } from "lib/underlying-stats/goalieStatsServer";
 
 export default async function handler(
@@ -26,13 +27,17 @@ export default async function handler(
 
   try {
     const aggregation = await buildGoalieStatsLandingAggregationFromState(parsed.state);
+    const response = await overlayEntityRatingsOnLandingResponse({
+      response: {
+        ...aggregation,
+        placeholder: false,
+        generatedAt: new Date().toISOString(),
+      },
+      variant: "goalie",
+    });
 
     res.setHeader("Cache-Control", "private, max-age=60, stale-while-revalidate=300");
-    return res.status(200).json({
-      ...aggregation,
-      placeholder: false,
-      generatedAt: new Date().toISOString(),
-    });
+    return res.status(200).json(response);
   } catch (error) {
     const message =
       error instanceof Error

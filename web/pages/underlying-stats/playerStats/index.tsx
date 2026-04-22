@@ -12,6 +12,7 @@ import { useRouter } from "next/router";
 import PlayerStatsExpandedRowChart from "components/underlying-stats/PlayerStatsExpandedRowChart";
 import PlayerStatsFilters from "components/underlying-stats/PlayerStatsFilters";
 import PlayerStatsTable from "components/underlying-stats/PlayerStatsTable";
+import UlsStatusPanel from "components/underlying-stats/UlsStatusPanel";
 import type { PlayerStatsColumnDefinition } from "components/underlying-stats/playerStatsColumns";
 import {
   getPlayerStatsColumns,
@@ -46,6 +47,7 @@ import {
   setPlayerStatsClientCachedResponse
 } from "lib/underlying-stats/playerStatsClientCache";
 import type { PlayerStatsLandingFilterState } from "lib/underlying-stats/playerStatsTypes";
+import type { UlsRouteStatus } from "lib/underlying-stats/ulsRouteStatus";
 import { teamsInfo } from "lib/teamsInfo";
 
 import styles from "./playerStats.module.scss";
@@ -197,15 +199,15 @@ function getLandingPageShell(variant: LandingPageVariant): LandingPageShell {
   }
 
   return {
-    title: "Player Underlying Stats | FHFHockey",
-    description:
-      "Compare skaters and goalies across shared underlying-stat views with sortable tables and drill-down player logs.",
-    breadcrumbLabel: "Underlying Stats",
-    heroTitle: "Underlying Stats",
-    heroLead:
-      "Sortable skater and goalie landing tables with shared filters, staged loading, and drill-down player logs.",
-    defaultSpanLabel: "Default Season Span",
-    activeFamilyLabel: "Current Table Family",
+      title: "Player Underlying Stats | FHFHockey",
+      description:
+        "Compare skaters and goalies across shared underlying-stat views with sortable tables and drill-down player logs.",
+      breadcrumbLabel: "Skater Stats",
+      heroTitle: "Skater Underlying Stats",
+      heroLead:
+        "Sortable skater landing tables with shared season and team filters, staged loading, and optional ratings overlays once the daily skater products are populated.",
+      defaultSpanLabel: "Default Skater Span",
+      activeFamilyLabel: "Current Skater Table",
     preparingFiltersMessage: "Preparing player underlying stats filters...",
     emptyRowsMessage:
       "No players matched the current filter combination. Widen the scope or reset filters.",
@@ -256,6 +258,7 @@ export default function PlayerUnderlyingStatsLandingPage({
   const [filterState, setFilterState] = useState(defaultLandingState);
   const [landingData, setLandingData] =
     useState<PlayerStatsLandingApiResponse | null>(null);
+  const [routeStatus, setRouteStatus] = useState<UlsRouteStatus | null>(null);
   const [landingDataRequestPath, setLandingDataRequestPath] = useState<
     string | null
   >(null);
@@ -309,6 +312,34 @@ export default function PlayerUnderlyingStatsLandingPage({
     lastAppliedQueryStringRef.current = normalizedQueryString;
     setFilterState(parsedState);
   }, [defaultLandingState, filterState, router.isReady, router.query]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    void fetch("/api/v1/underlying-stats/route-status", {
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error("Unable to load route status.");
+        }
+
+        return (await response.json()) as {
+          success: boolean;
+          status?: UlsRouteStatus;
+        };
+      })
+      .then((payload) => {
+        if (payload.success && payload.status) {
+          setRouteStatus(payload.status);
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      controller.abort();
+    };
+  }, []);
 
   const landingRequestPath = useMemo(() => {
     const requestState = buildLandingPageRequestState(filterState);
@@ -638,6 +669,43 @@ export default function PlayerUnderlyingStatsLandingPage({
           ],
     [filterState.expandable.scope.kind]
   );
+  const ratingColumns = useMemo<PlayerStatsColumnDefinition[]>(
+    () =>
+      variant === "goalie"
+        ? [
+            {
+              key: "goalieRating",
+              label: "Goalie Rating",
+              sortKey: "goalieRating",
+              format: "decimal",
+              align: "right",
+            },
+            {
+              key: "goalieRatingRank",
+              label: "Goalie Rank",
+              sortKey: "goalieRatingRank",
+              format: "integer",
+              align: "right",
+            },
+          ]
+        : [
+            {
+              key: "offensiveRating",
+              label: "Off Rating",
+              sortKey: "offensiveRating",
+              format: "decimal",
+              align: "right",
+            },
+            {
+              key: "defensiveRating",
+              label: "Def Rating",
+              sortKey: "defensiveRating",
+              format: "decimal",
+              align: "right",
+            },
+          ],
+    [variant]
+  );
   const activeTableFamily = landingData?.family ?? tableFamily;
   const chartMetricColumns = useMemo(
     () =>
@@ -849,34 +917,42 @@ export default function PlayerUnderlyingStatsLandingPage({
       activeFamilyLabel={pageShell.activeFamilyLabel}
       activeFamilyValue={formatTableFamily(tableFamily)}
       sectionAriaLabel={variant === "goalie" ? "Goalie table" : "Player table"}
+      utilityLinkHref="/underlying-stats"
+      utilityLinkLabel="Return to team intelligence landing"
       sectionHeader={
-        <div className={styles.chipRow} aria-label="Current landing defaults">
-          {summaryChips.map((chip) => (
-            <span
-              key={chip.key}
-              className={styles.chip}
-              data-progress={chip.progress ? "true" : "false"}
-              style={
-                chip.progress
-                  ? ({
-                      "--chip-progress": `${
-                        Math.round(
-                          (chip.progress.total > 0
-                            ? chip.progress.current / chip.progress.total
-                            : rowLoadProgress) * 10000
-                        ) / 100
-                      }%`
-                    } as CSSProperties)
-                  : undefined
-              }
-            >
-              {chip.progress ? (
-                <span className={styles.chipProgressFill} aria-hidden="true" />
-              ) : null}
-              <span className={styles.chipLabel}>{chip.label}</span>
-            </span>
-          ))}
-        </div>
+        <>
+          <div className={styles.chipRow} aria-label="Current landing defaults">
+            {summaryChips.map((chip) => (
+              <span
+                key={chip.key}
+                className={styles.chip}
+                data-progress={chip.progress ? "true" : "false"}
+                style={
+                  chip.progress
+                    ? ({
+                        "--chip-progress": `${
+                          Math.round(
+                            (chip.progress.total > 0
+                              ? chip.progress.current / chip.progress.total
+                              : rowLoadProgress) * 10000
+                          ) / 100
+                        }%`
+                      } as CSSProperties)
+                    : undefined
+                }
+              >
+                {chip.progress ? (
+                  <span className={styles.chipProgressFill} aria-hidden="true" />
+                ) : null}
+                <span className={styles.chipLabel}>{chip.label}</span>
+              </span>
+            ))}
+          </div>
+          <UlsStatusPanel
+            status={routeStatus}
+            variant={variant === "goalie" ? "goalie" : "skater"}
+          />
+        </>
       }
     >
       <div className={styles.tableFrame}>
@@ -1162,7 +1238,7 @@ export default function PlayerUnderlyingStatsLandingPage({
           state={tableState}
           pagination={landingData?.pagination ?? null}
           showRankColumn
-          extraColumns={timeframeColumns}
+          extraColumns={[...ratingColumns, ...timeframeColumns]}
           className={styles.tableShell}
           expandedRowKey={expandedRowKey}
           loadingMoreIndicator={

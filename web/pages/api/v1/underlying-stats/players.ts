@@ -5,6 +5,7 @@ import {
   type PlayerStatsLandingApiError,
   type PlayerStatsLandingApiResponse,
 } from "lib/underlying-stats/playerStatsQueries";
+import { overlayEntityRatingsOnLandingResponse } from "lib/underlying-stats/entityRatingsOverlay";
 import { buildPlayerStatsLandingAggregationFromState } from "lib/underlying-stats/playerStatsLandingServer";
 
 export default async function handler(
@@ -26,13 +27,17 @@ export default async function handler(
 
   try {
     const aggregation = await buildPlayerStatsLandingAggregationFromState(parsed.state);
+    const response = await overlayEntityRatingsOnLandingResponse({
+      response: {
+        ...aggregation,
+        placeholder: false,
+        generatedAt: new Date().toISOString(),
+      },
+      variant: "skater",
+    });
 
     res.setHeader("Cache-Control", "private, max-age=60, stale-while-revalidate=300");
-    return res.status(200).json({
-      ...aggregation,
-      placeholder: false,
-      generatedAt: new Date().toISOString(),
-    });
+    return res.status(200).json(response);
   } catch (error) {
     const message =
       error instanceof Error

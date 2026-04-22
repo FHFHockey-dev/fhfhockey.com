@@ -6,6 +6,7 @@ import {
   type ReactNode
 } from "react";
 import Head from "next/head";
+import Link from "next/link";
 import type { GetServerSideProps, NextPage } from "next";
 import { useRouter } from "next/router";
 import { format, parseISO } from "date-fns";
@@ -14,8 +15,10 @@ import DashboardPillarHero from "../../components/dashboard/DashboardPillarHero"
 import UnderlyingStatsDashboardCard from "../../components/underlying-stats/UnderlyingStatsDashboardCard";
 import UnderlyingStatsNavBar from "../../components/underlying-stats/UnderlyingStatsNavBar";
 import UnderlyingStatsQuadrantMap from "../../components/underlying-stats/UnderlyingStatsQuadrantMap";
+import UlsStatusPanel from "../../components/underlying-stats/UlsStatusPanel";
 import OwnershipSparkline from "../../components/TransactionTrends/OwnershipSparkline";
 import { computeTeamPowerScore } from "../../lib/dashboard/teamContext";
+import { getAnalyticsSurfaceContract } from "../../lib/navigation/analyticsSurfaceOwnership";
 import { UNDERLYING_STATS_SURFACE_LINKS } from "../../lib/navigation/siteSurfaceLinks";
 import supabaseServer from "../../lib/supabase/server";
 import { type SpecialTeamTier } from "../../lib/teamRatingsService";
@@ -26,11 +29,13 @@ import {
   type UnderlyingStatsLandingRating,
   type UnderlyingStatsLandingSnapshot
 } from "../../lib/underlying-stats/teamLandingRatings";
+import { fetchUlsRouteStatus, type UlsRouteStatus } from "../../lib/underlying-stats/ulsRouteStatus";
 import styles from "./indexUS.module.scss";
 
 type PageProps = {
   availableDates: string[];
   initialSnapshot: UnderlyingStatsLandingSnapshot;
+  routeStatus: UlsRouteStatus | null;
 };
 
 type TableViewMode = "advanced" | "simple";
@@ -288,7 +293,8 @@ const MetricPopover = ({
 
 const TeamPowerRankingsPage: NextPage<PageProps> = ({
   availableDates,
-  initialSnapshot
+  initialSnapshot,
+  routeStatus
 }) => {
   const router = useRouter();
   const [selectedDate, setSelectedDate] = useState(
@@ -426,6 +432,21 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
         : null,
     [activeTeamAbbr, ratings]
   );
+  const explorerContracts = useMemo(
+    () => [
+      getAnalyticsSurfaceContract("uls-skater-explorer"),
+      getAnalyticsSurfaceContract("uls-goalie-explorer"),
+      getAnalyticsSurfaceContract("uls-team-explorer")
+    ],
+    []
+  );
+  const explorerTeamId = useMemo(() => {
+    if (!activeTeam?.teamAbbr) {
+      return null;
+    }
+
+    return teamsInfo[activeTeam.teamAbbr as keyof typeof teamsInfo]?.id ?? null;
+  }, [activeTeam?.teamAbbr]);
 
   const componentStats = useMemo(() => {
     const xgf60 = summarizeValues(ratings.map((team) => team.components.xgf60));
@@ -1168,6 +1189,51 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
         </section>
 
         <section className={styles.dashboardGrid}>
+          <UnderlyingStatsDashboardCard
+            kicker="Explorer paths"
+            title="Continue into the right explorer"
+            description="The landing owns the team snapshot. Hover a team anywhere on the page, then open one of these routes to carry that team context into the explorer."
+          >
+            <div className={styles.dashboardList}>
+              {explorerContracts.map((surface) => (
+                <article key={surface.id} className={styles.dashboardListItem}>
+                  <div className={styles.dashboardItemTopline}>
+                    <div>
+                      <span className={styles.dashboardTeam}>{surface.shortLabel}</span>
+                      <span className={styles.dashboardTeamName}>{surface.label}</span>
+                    </div>
+                    <Link
+                      href={
+                        explorerTeamId == null
+                          ? surface.href
+                          : {
+                              pathname: surface.href,
+                              query: { teamId: explorerTeamId }
+                            }
+                      }
+                      className={styles.breadcrumbLink}
+                    >
+                      Open
+                    </Link>
+                  </div>
+                  <ul className={styles.dashboardBullets}>
+                    {surface.owns.slice(0, 2).map((bullet) => (
+                      <li key={`${surface.id}-${bullet}`}>{bullet}</li>
+                    ))}
+                  </ul>
+                </article>
+              ))}
+            </div>
+          </UnderlyingStatsDashboardCard>
+
+          <UnderlyingStatsDashboardCard
+            kicker="Launch status"
+            title="Ratings and model-read status"
+            description="The ULS route family now reads the launch contracts directly. Empty cards mean the daily products still need their first populated snapshot."
+          >
+            <UlsStatusPanel status={routeStatus} variant="landing" />
+          </UnderlyingStatsDashboardCard>
+
           <UnderlyingStatsDashboardCard
             kicker="Trust signal"
             title="What looks real?"
@@ -2032,15 +2098,19 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
       90,
       supabase
     );
-    const snapshot = await resolveUnderlyingStatsLandingSnapshot({
-      requestedDate,
-      availableDates
-    });
+    const [snapshot, routeStatus] = await Promise.all([
+      resolveUnderlyingStatsLandingSnapshot({
+        requestedDate,
+        availableDates
+      }),
+      fetchUlsRouteStatus(supabase)
+    ]);
 
     return {
       props: {
         availableDates,
-        initialSnapshot: snapshot
+        initialSnapshot: snapshot,
+        routeStatus
       }
     };
   } catch (error) {
@@ -2069,7 +2139,8 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
           requestedDate: null,
           resolvedDate: null,
           ratings: []
-        }
+        },
+        routeStatus: null
       }
     };
   }

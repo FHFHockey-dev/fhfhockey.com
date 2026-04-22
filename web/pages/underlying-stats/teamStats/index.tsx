@@ -7,8 +7,10 @@ import PlayerStatsTable from "components/underlying-stats/PlayerStatsTable";
 import TeamStatsFilters from "components/underlying-stats/TeamStatsFilters";
 import { getTeamStatsColumns } from "components/underlying-stats/teamStatsColumns";
 import UnderlyingStatsLandingShell from "components/underlying-stats/UnderlyingStatsLandingShell";
+import UlsStatusPanel from "components/underlying-stats/UlsStatusPanel";
 import { getAnalyticsSurfaceContract } from "lib/navigation/analyticsSurfaceOwnership";
 import { teamsInfo } from "lib/teamsInfo";
+import type { UlsRouteStatus } from "lib/underlying-stats/ulsRouteStatus";
 import {
   applyTeamStatsScopeChange,
   buildTeamStatsSearchParams,
@@ -173,6 +175,7 @@ export default function TeamUnderlyingStatsLandingRoute() {
   );
   const [filterState, setFilterState] = useState(defaultLandingState);
   const [landingData, setLandingData] = useState<TeamStatsLandingApiResponse | null>(null);
+  const [routeStatus, setRouteStatus] = useState<UlsRouteStatus | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [tableError, setTableError] = useState<string | null>(null);
   const hasHydratedFromQueryRef = useRef(false);
@@ -196,6 +199,34 @@ export default function TeamUnderlyingStatsLandingRoute() {
 
     return areQueryRecordsEqual(currentQuery, canonicalQuery);
   }, [canonicalQuery, currentQuery]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    void fetch("/api/v1/underlying-stats/route-status", {
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error("Unable to load route status.");
+        }
+
+        return (await response.json()) as {
+          success: boolean;
+          status?: UlsRouteStatus;
+        };
+      })
+      .then((payload) => {
+        if (payload.success && payload.status) {
+          setRouteStatus(payload.status);
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      controller.abort();
+    };
+  }, []);
 
   useEffect(() => {
     if (!router.isReady || canonicalQuery == null || queryIsCanonical) {
@@ -408,18 +439,21 @@ export default function TeamUnderlyingStatsLandingRoute() {
       utilityLinkHref="/underlying-stats"
       utilityLinkLabel="Return to team intelligence landing"
       sectionHeader={
-        <div className={styles.chipRow} aria-label="Current team landing defaults">
-          {summaryChips.map((chip) => (
-            <span
-              key={chip.key}
-              className={styles.chip}
-              data-progress="false"
-              style={undefined as CSSProperties | undefined}
-            >
-              <span className={styles.chipLabel}>{chip.label}</span>
-            </span>
-          ))}
-        </div>
+        <>
+          <div className={styles.chipRow} aria-label="Current team landing defaults">
+            {summaryChips.map((chip) => (
+              <span
+                key={chip.key}
+                className={styles.chip}
+                data-progress="false"
+                style={undefined as CSSProperties | undefined}
+              >
+                <span className={styles.chipLabel}>{chip.label}</span>
+              </span>
+            ))}
+          </div>
+          <UlsStatusPanel status={routeStatus} variant="team" />
+        </>
       }
     >
       <div className={styles.tableFrame}>

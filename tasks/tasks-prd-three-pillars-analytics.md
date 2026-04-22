@@ -41,6 +41,10 @@
 - `web/lib/projections/queries/market-queries.ts` - Market-context fetch and consensus-summary layer that makes sportsbook inputs available to the projection runner without coupling it directly to raw odds tables.
 - `web/lib/projections/queries/market-queries.test.ts` - Deterministic coverage for fresh-vs-stale market selection and summary shaping before the projection pipeline consumes sportsbook inputs.
 - `web/lib/projections/run-forge-projections.ts` - Canonical projection runner now responsible for threading sportsbook market context into persisted game/player prediction outputs and model-vs-market flag generation.
+- `web/lib/underlying-stats/ulsRouteStatus.ts` - Shared readiness/read contract for team ratings, skater/goalie ratings, game predictions, player predictions, and model-vs-market flags across the ULS route family.
+- `web/lib/underlying-stats/entityRatingsOverlay.ts` - Optional explorer-row overlay that merges skater offense/defense ratings and goalie ratings into the landing API responses whenever those daily tables are populated.
+- `web/components/underlying-stats/UlsStatusPanel.tsx` - Shared route-family status module for landing and explorer surfaces so empty contracts are explicit instead of hidden.
+- `web/pages/api/v1/underlying-stats/route-status.ts` - Route-family status API consumed by team/skater/goalie explorer shells.
 - `web/pages/api/v1/sustainability/trends.ts` - Existing skater sustainability summary endpoint that will need broader entity support.
 - `web/pages/api/v1/sustainability/trend-bands.ts` - Existing player trend-band endpoint that will need broader entity support.
 - `web/lib/projections/goaliePipeline.ts` - Existing goalie-start/model pipeline contract that informs launch-scope prediction dependencies.
@@ -83,13 +87,13 @@
   - [x] 4.4 Add comparison logic that identifies when internal predictions disagree with market prices in a way that can power page-level highlighting.
   - [x] 4.5 Expose a durable flag/output contract for “model-liked” props so ULS and related surfaces can render them consistently.
 
-- [ ] 5.0 Finish the `/underlying-stats` route family around the final ULS product contract
-  - [ ] 5.1 Keep `/underlying-stats` team-intelligence-first while formalizing navigation into skater and goalie advanced-metrics explorers.
-  - [ ] 5.2 Add aligned date-range and relevant team-filter behavior across the ULS route family without breaking the snapshot-first landing workflow.
-  - [ ] 5.3 Integrate first-class team, skater offensive, skater defensive, and goalie rating reads into the ULS route family.
-  - [ ] 5.4 Preserve and refine the current team intelligence modules on the landing page, especially team meaning/explanation, SoS past/future, and process-vs-results context.
-  - [ ] 5.5 Reposition `/underlying-stats/teamStats` as the raw filtered table explorer rather than a competing primary team landing.
-  - [ ] 5.6 Add market/model comparison modules where they belong in the ULS current-state read without turning the landing page into a Trends-style movement dashboard.
+- [x] 5.0 Finish the `/underlying-stats` route family around the final ULS product contract
+  - [x] 5.1 Keep `/underlying-stats` team-intelligence-first while formalizing navigation into skater and goalie advanced-metrics explorers.
+  - [x] 5.2 Add aligned date-range and relevant team-filter behavior across the ULS route family without breaking the snapshot-first landing workflow.
+  - [x] 5.3 Integrate first-class team, skater offensive, skater defensive, and goalie rating reads into the ULS route family.
+  - [x] 5.4 Preserve and refine the current team intelligence modules on the landing page, especially team meaning/explanation, SoS past/future, and process-vs-results context.
+  - [x] 5.5 Reposition `/underlying-stats/teamStats` as the raw filtered table explorer rather than a competing primary team landing.
+  - [x] 5.6 Add market/model comparison modules where they belong in the ULS current-state read without turning the landing page into a Trends-style movement dashboard.
 
 - [ ] 6.0 Rebuild `/trends` as the movement-first surface for teams, skaters, and goalies
   - [ ] 6.1 Keep team trends on `/trends` and formalize the difference between movement/directionality and deeper team diagnosis.
