@@ -95,12 +95,12 @@
   - [x] 5.5 Reposition `/underlying-stats/teamStats` as the raw filtered table explorer rather than a competing primary team landing.
   - [x] 5.6 Add market/model comparison modules where they belong in the ULS current-state read without turning the landing page into a Trends-style movement dashboard.
 
-- [ ] 6.0 Rebuild `/trends` as the movement-first surface for teams, skaters, and goalies
-  - [ ] 6.1 Keep team trends on `/trends` and formalize the difference between movement/directionality and deeper team diagnosis.
-  - [ ] 6.2 Expand team movement views to include rolling averages, recent directionality, risers/fallers, and hot/cold states that feel equivalent to skater movement reads.
-  - [ ] 6.3 Expand goalie movement views so goalies are first-class citizens alongside teams and skaters.
-  - [ ] 6.4 Refactor the route so projection/slate-triage modules support the movement workflow instead of obscuring it.
-  - [ ] 6.5 Add clear hooks or placeholders for later predictions-vs-actual and candlestick implementations without blocking launch.
+- [x] 6.0 Rebuild `/trends` as the movement-first surface for teams, skaters, and goalies
+  - [x] 6.1 Keep team trends on `/trends` and formalize the difference between movement/directionality and deeper team diagnosis.
+  - [x] 6.2 Expand team movement views to include rolling averages, recent directionality, risers/fallers, and hot/cold states that feel equivalent to skater movement reads.
+  - [x] 6.3 Expand goalie movement views so goalies are first-class citizens alongside teams and skaters.
+  - [x] 6.4 Refactor the route so projection/slate-triage modules support the movement workflow instead of obscuring it.
+  - [x] 6.5 Add clear hooks or placeholders for later predictions-vs-actual and candlestick implementations without blocking launch.
 
 - [ ] 7.0 Promote `/trendsSandbox` into the sustainability meter surface for all entity types
   - [ ] 7.1 Generalize the current skater-only sustainability workflow to teams, skaters, and goalies.
@@ -137,6 +137,6 @@
   - [x] 12.3 Design the separate injury-state database contract needed for `injured`, `returning`, and related status changes instead of overloading the line-history tables.
 
 - [ ] 13.0 NEW: Provide live external odds-provider verification once a ParlayAPI key is available
-  - [ ] 13.1 Add `PARLAY_API_KEY` to the runtime environment used by `web/pages/api/v1/db/update-market-prices.ts`.
-  - [ ] 13.2 Run `/api/v1/db/update-market-prices` against a live NHL slate and confirm ParlayAPI featured markets upsert with `source_rank = 1`.
+  - [x] 13.1 Add `PARLAY_API_KEY` to the runtime environment used by `web/pages/api/v1/db/update-market-prices.ts`.
+  - [x] 13.2 Run `/api/v1/db/update-market-prices` against a live NHL slate and confirm ParlayAPI featured markets upsert with `source_rank = 1`.
   - [ ] 13.3 Confirm at least one live prop market lands in `prop_market_prices_daily` and player matching succeeds for the target slate.

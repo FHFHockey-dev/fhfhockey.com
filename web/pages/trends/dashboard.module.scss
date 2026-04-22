@@ -388,6 +388,12 @@
   margin-bottom: v.$space-sm;
 }
 
+.chartMetaStack {
+  display: grid;
+  gap: 0.25rem;
+  justify-items: end;
+}
+
 .chartTitle {
   font-family: v.$font-family-accent, sans-serif;
   font-size: v.$font-size-md;
@@ -397,9 +403,46 @@
   color: v.$color-white;
 }
 
+.chartCopy {
+  margin: 0.25rem 0 0;
+  color: v.$text-secondary;
+  font-size: v.$font-size-sm;
+  line-height: 1.45;
+}
+
 .chartBody {
   flex: 1;
   min-height: 0;
+}
+
+.temperatureStrip {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: v.$space-sm;
+  margin-bottom: v.$space-sm;
+}
+
+.temperatureCard {
+  border: 1px solid rgba(v.$border-primary, 0.7);
+  border-radius: v.$border-radius-md;
+  padding: v.$space-sm v.$space-md;
+  background: rgba(v.$background-dark, 0.55);
+}
+
+.temperatureLabel {
+  display: block;
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+  font-family: v.$font-family-accent;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.25rem;
+}
+
+.temperatureList {
+  color: v.$color-white;
+  font-size: v.$font-size-sm;
+  line-height: 1.4;
 }
 
 .topMoversPanel {
@@ -506,7 +549,7 @@
 }
 
 .trendsPanel {
-  grid-area: 3 / 6 / 5 / 9;
+  grid-area: 3 / 6 / 5 / 12;
   display: flex;
   flex-direction: column;
   gap: v.$space-sm;
@@ -515,6 +558,39 @@
 
 .goalieSharePanel {
   margin-top: v.$space-md;
+}
+
+.supportSection {
+  @include v.glass-panel($padding: v.$space-lg, $radius: v.$radius-lg);
+  display: grid;
+  gap: v.$space-md;
+}
+
+.supportGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: v.$space-md;
+}
+
+.supportPanel,
+.placeholderPanel {
+  min-height: 0;
+}
+
+.placeholderBody {
+  padding: v.$space-md;
+  display: grid;
+  gap: v.$space-sm;
+}
+
+.placeholderList {
+  margin: 0;
+  padding-left: 1rem;
+  color: v.$text-primary;
+  display: grid;
+  gap: 0.35rem;
+  font-size: v.$font-size-sm;
+  line-height: 1.5;
 }
 
 .goalieShareBody {
@@ -837,6 +913,38 @@
   min-height: 0;
 }
 
+.teamRankStrip {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: v.$space-sm;
+  margin-top: v.$space-sm;
+}
+
+.teamRankCard {
+  border: 1px solid rgba(v.$border-primary, 0.7);
+  border-radius: v.$border-radius-md;
+  background: rgba(v.$background-dark, 0.55);
+  padding: v.$space-sm;
+  display: grid;
+  gap: 0.25rem;
+  justify-items: start;
+}
+
+.teamRankLabel {
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+  font-family: v.$font-family-accent;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.teamRankValue {
+  color: v.$color-white;
+  font-family: v.$font-family-numbers;
+  font-size: v.$font-size-md;
+  font-weight: 700;
+}
+
 .rankingHeading {
   display: flex;
   flex-direction: column;
@@ -1095,6 +1203,12 @@
   .projectionsPanel,
   .trendsPanel {
     grid-area: auto;
+  }
+
+  .temperatureStrip,
+  .supportGrid,
+  .teamRankStrip {
+    grid-template-columns: 1fr;
   }
 }
 
