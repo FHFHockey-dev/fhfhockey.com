@@ -32,6 +32,31 @@
   }
 }
 
+.entityTabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: v.$space-xs;
+}
+
+.entityTab,
+.entityTabActive {
+  border: 1px solid v.$border-secondary;
+  background: color.change(v.$background-dark, $alpha: 0.6);
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+  padding: v.$space-xs v.$space-md;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  transition: all 150ms ease;
+}
+
+.entityTabActive {
+  border-color: v.$primary-color;
+  color: v.$color-white;
+  background: rgba(v.$primary-color, 0.18);
+}
+
 .resetButton {
   @include v.button-style;
   background-color: transparent;
@@ -90,6 +115,12 @@
       box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.2);
     }
   }
+}
+
+.readinessCopy {
+  font-size: v.$font-size-sm;
+  line-height: 1.5;
+  color: v.$text-secondary;
 }
 
 .inlineLabel {
@@ -222,6 +253,209 @@
   }
 }
 
+.sustainabilityGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: v.$space-md;
+}
+
+.surfaceSection {
+  display: grid;
+  gap: v.$space-sm;
+}
+
+.surfaceCard {
+  @include v.glass-panel;
+  display: grid;
+  gap: v.$space-sm;
+  padding: v.$space-md;
+}
+
+.surfaceCardHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: v.$space-sm;
+}
+
+.surfaceCardTitle {
+  margin: 0;
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: v.$font-size-lg;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: v.$color-white;
+}
+
+.surfaceCardMeta {
+  font-size: v.$font-size-xs;
+  color: v.$text-secondary;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.meterBlock {
+  display: grid;
+  gap: v.$space-md;
+}
+
+.meterScore {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 96px;
+  border-radius: v.$border-radius-lg;
+  font-family: v.$font-family-numbers;
+  font-size: 2.4rem;
+  font-weight: 800;
+  color: v.$color-white;
+  background: rgba(v.$background-dark, 0.5);
+}
+
+.meterMeta,
+.detailGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: v.$space-sm;
+
+  div {
+    display: grid;
+    gap: 0.2rem;
+  }
+
+  strong {
+    font-size: v.$font-size-xxs;
+    color: v.$text-secondary;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  span {
+    font-size: v.$font-size-sm;
+    color: v.$text-primary;
+    font-weight: 600;
+  }
+}
+
+.metricList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: v.$space-sm;
+}
+
+.metricRow {
+  padding: v.$space-sm;
+  border: 1px solid rgba(v.$border-secondary, 0.55);
+  border-radius: v.$border-radius-md;
+  background: rgba(v.$background-medium, 0.35);
+
+  div {
+    display: grid;
+    gap: 0.25rem;
+  }
+
+  strong {
+    color: v.$color-white;
+    font-size: v.$font-size-sm;
+  }
+
+  span {
+    color: v.$text-secondary;
+    font-size: v.$font-size-sm;
+    line-height: 1.45;
+  }
+}
+
+.reasonGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: v.$space-sm;
+}
+
+.reasonCard {
+  padding: v.$space-md;
+  border: 1px solid rgba(v.$border-secondary, 0.55);
+  border-radius: v.$border-radius-md;
+  background: rgba(v.$background-medium, 0.35);
+  display: grid;
+  gap: v.$space-xs;
+}
+
+.reasonLabel {
+  font-size: v.$font-size-xs;
+  color: v.$text-secondary;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.reasonValue {
+  color: v.$color-white;
+  font-size: v.$font-size-lg;
+  font-family: v.$font-family-numbers;
+  font-weight: 700;
+}
+
+.reasonSentence {
+  margin: 0;
+  color: v.$text-secondary;
+  font-size: v.$font-size-sm;
+  line-height: 1.5;
+}
+
+.leaderboardGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: v.$space-md;
+}
+
+.leaderboardCard {
+  @include v.glass-panel;
+  padding: v.$space-md;
+  display: grid;
+  gap: v.$space-sm;
+}
+
+.leaderboardTitle {
+  color: v.$color-white;
+  font-family: v.$font-family-accent;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: v.$font-size-md;
+}
+
+.leaderboardList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: v.$space-xs;
+}
+
+.leaderboardRow {
+  margin: 0;
+}
+
+.leaderboardButton {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: v.$space-sm;
+  padding: v.$space-sm;
+  border: 1px solid rgba(v.$border-secondary, 0.55);
+  border-radius: v.$border-radius-md;
+  background: rgba(v.$background-medium, 0.35);
+  color: v.$text-primary;
+  transition: border-color 150ms ease, background 150ms ease;
+
+  &:hover {
+    border-color: rgba(v.$primary-color, 0.7);
+    background: rgba(v.$primary-color, 0.12);
+  }
+}
+
 .bandSection {
   display: flex;
   flex-direction: column;
@@ -266,6 +500,7 @@
   display: flex;
   flex-direction: column;
   gap: v.$space-xxs;
+  text-align: left;
   transition:
     border-color 150ms ease,
     box-shadow 150ms ease;
@@ -607,4 +842,11 @@
 
 .chartWrapper :global(.brush .overlay) {
   cursor: crosshair;
+}
+
+@media (max-width: 1100px) {
+  .sustainabilityGrid,
+  .leaderboardGrid {
+    grid-template-columns: 1fr;
+  }
 }

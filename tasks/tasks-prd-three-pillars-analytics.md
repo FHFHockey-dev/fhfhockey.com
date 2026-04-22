@@ -102,12 +102,12 @@
   - [x] 6.4 Refactor the route so projection/slate-triage modules support the movement workflow instead of obscuring it.
   - [x] 6.5 Add clear hooks or placeholders for later predictions-vs-actual and candlestick implementations without blocking launch.
 
-- [ ] 7.0 Promote `/trendsSandbox` into the sustainability meter surface for all entity types
-  - [ ] 7.1 Generalize the current skater-only sustainability workflow to teams, skaters, and goalies.
-  - [ ] 7.2 Define category-specific metric sets for team sustainability, skater sustainability, and goalie sustainability.
-  - [ ] 7.3 Implement season-long baseline plus rolling-window expectation logic for each entity class.
-  - [ ] 7.4 Build readable threshold-band and expectation-state outputs that indicate overperformance, underperformance, and stability.
-  - [ ] 7.5 Surface the reasoning inputs behind each sustainability state so the lab remains interpretable and promotable into production concepts later.
+- [x] 7.0 Promote `/trendsSandbox` into the sustainability meter surface for all entity types
+  - [x] 7.1 Generalize the current skater-only sustainability workflow to teams, skaters, and goalies.
+  - [x] 7.2 Define category-specific metric sets for team sustainability, skater sustainability, and goalie sustainability.
+  - [x] 7.3 Implement season-long baseline plus rolling-window expectation logic for each entity class.
+  - [x] 7.4 Build readable threshold-band and expectation-state outputs that indicate overperformance, underperformance, and stability.
+  - [x] 7.5 Surface the reasoning inputs behind each sustainability state so the lab remains interpretable and promotable into production concepts later.
 
 - [ ] 8.0 Expand public NHL data coverage and harden supporting APIs
   - [ ] 8.1 Audit existing `nhl-edge-stats-api.md` coverage against the actual three-pillar metric needs.
