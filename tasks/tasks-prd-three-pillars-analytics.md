@@ -50,6 +50,11 @@
 - `web/lib/projections/goaliePipeline.ts` - Existing goalie-start/model pipeline contract that informs launch-scope prediction dependencies.
 - `web/pages/index.tsx` - Current homepage injury-source integration that will need normalized `injured` and `returning` state planning.
 - `web/rules/context/nhl-edge-stats-api.md` - Starting point for NHL Edge endpoint expansion during launch implementation.
+- `web/lib/NHL/edge.ts` - Shared official NHL Edge wrapper for verified skater, team, goalie, and shot-location endpoint families.
+- `web/lib/NHL/edgeIngestion.ts` - Row builders for storing official NHL Edge detail and leaderboard payloads into a single daily snapshot table.
+- `web/lib/analytics/edgeMetricCatalog.ts` - Canonical map of which official NHL Edge families support ULS, Trends, and Sandbox without fragmenting route ownership.
+- `web/pages/api/v1/db/update-nhl-edge-stats.ts` - Batch-oriented admin endpoint that snapshots verified NHL Edge families into `nhl_edge_stats_daily`.
+- `web/sql/ratings/005_create_nhl_edge_stats_daily.sql` - Supabase schema for historical daily copies of official NHL Edge payloads.
 
 ### Notes
 
@@ -109,11 +114,11 @@
   - [x] 7.4 Build readable threshold-band and expectation-state outputs that indicate overperformance, underperformance, and stability.
   - [x] 7.5 Surface the reasoning inputs behind each sustainability state so the lab remains interpretable and promotable into production concepts later.
 
-- [ ] 8.0 Expand public NHL data coverage and harden supporting APIs
-  - [ ] 8.1 Audit existing `nhl-edge-stats-api.md` coverage against the actual three-pillar metric needs.
-  - [ ] 8.2 Discover and document additional NHL Edge/public NHL endpoints required for ratings, movement, and sustainability features.
-  - [ ] 8.3 Extend API wrappers and refresh jobs for any new advanced metrics adopted into launch scope.
-  - [ ] 8.4 Reconcile new metrics with existing ULS, Trends, and Sandbox contracts so upstream shape changes do not fragment the route family.
+- [x] 8.0 Expand public NHL data coverage and harden supporting APIs
+  - [x] 8.1 Audit existing `nhl-edge-stats-api.md` coverage against the actual three-pillar metric needs.
+  - [x] 8.2 Discover and document additional NHL Edge/public NHL endpoints required for ratings, movement, and sustainability features.
+  - [x] 8.3 Extend API wrappers and refresh jobs for any new advanced metrics adopted into launch scope.
+  - [x] 8.4 Reconcile new metrics with existing ULS, Trends, and Sandbox contracts so upstream shape changes do not fragment the route family.
 
 - [ ] 9.0 Verify the integrated rollout and backfill missing tests
   - [ ] 9.1 Add targeted tests around source selection, fallback behavior, roster validation, and source-provenance rules where the logic is deterministic.
@@ -140,3 +145,17 @@
   - [x] 13.1 Add `PARLAY_API_KEY` to the runtime environment used by `web/pages/api/v1/db/update-market-prices.ts`.
   - [x] 13.2 Run `/api/v1/db/update-market-prices` against a live NHL slate and confirm ParlayAPI featured markets upsert with `source_rank = 1`.
   - [ ] 13.3 Confirm at least one live prop market lands in `prop_market_prices_daily` and player matching succeeds for the target slate.
+
+- [ ] 14.0 NEW: Backfill and audit elasticity coverage so Sandbox can trust per-player date coverage
+  - [ ] 14.1 Add a coverage audit that compares played game dates against sustainability band dates by player, season, metric, and window.
+  - [ ] 14.2 Run season-batch backfills through `/api/v1/sustainability/rebuild-trend-bands` and measure how many gaps close.
+  - [ ] 14.3 Decide whether elasticity should remain a snapshot-band series or be rebuilt as a strict per-game series for Sandbox charts.
+
+- [ ] 15.0 NEW: Finish the broader NHL Edge ingestion rollout beyond the first verified families
+  - [ ] 15.1 Re-run a full browser-network inventory of NHL Edge once Computer Use access to Chrome is actually available, so hidden route/filter endpoint families are not missed.
+  - [ ] 15.2 Decide which additional NHL Edge families deserve first-class ingestion beyond `skater-detail`, `team-detail`, `goalie-detail`, and `skater-shot-location-top-10`.
+  - [ ] 15.3 Wire `nhl_edge_stats_daily` into the production route family only after those adopted families have stable read contracts.
+
+- [ ] 16.0 NEW: Resolve NHL Edge historical limitations before promising full backfill behavior
+  - [ ] 16.1 Confirm whether any public NHL Edge endpoints expose true historical as-of-date snapshots rather than only current season-to-date states.
+  - [ ] 16.2 If true historical snapshots do not exist, keep the Edge pipeline positioned as prospective daily archiving rather than a reconstructable past-history feed.

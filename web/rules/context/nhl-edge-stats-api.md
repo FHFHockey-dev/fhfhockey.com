@@ -1,3 +1,59 @@
+# NHL Edge Audit
+
+Last verified live on `2026-04-22`.
+
+## What this doc is good for right now
+
+- Capturing real public NHL Edge endpoint families that can support the three-pillar rollout.
+- Showing example payload shapes for skater and team Edge stats.
+- Giving the repo one place to look before adding new official NHL context into ULS, Trends, or Sandbox.
+
+## Current audit against the three-pillar needs
+
+- `ULS`:
+  - Team support is already strong enough to add official NHL Edge context through `team-detail`.
+  - Skater support is strong enough to add public speed, distance, shot-profile, and zone-time context through `skater-detail`.
+  - Goalie support exists through `goalie-detail`, and that is the main official public gap this doc needed to highlight more clearly.
+- `Trends`:
+  - Edge can support movement context and percentile-style overlays, but it is not the source of truth for the existing rolling trend backbone.
+  - Use Edge as a public overlay, not as the primary time-series engine.
+- `Sandbox`:
+  - Edge is useful as explanatory context, not as the baseline engine.
+  - The sustainability/elasticity pipeline still needs dense per-game rows from the existing internal stats foundation, not sparse public Edge snapshots alone.
+
+## Verified working endpoint families
+
+- `https://api-web.nhle.com/v1/edge/skater-detail/{playerId}/{seasonId}/{gameType}`
+  - Verified live with `8478402 / 20252026 / 2`
+  - Exposes: `topShotSpeed`, `skatingSpeed`, `totalDistanceSkated`, `distanceMaxGame`, `sogSummary`, `sogDetails`, `zoneTimeDetails`
+- `https://api-web.nhle.com/v1/edge/team-detail/{teamId}/{seasonId}/{gameType}`
+  - Verified live with `5 / 20252026 / 2`
+  - Exposes: `shotSpeed`, `skatingSpeed`, `distanceSkated`, `sogSummary`, `sogDetails`, `zoneTimeDetails`
+- `https://api-web.nhle.com/v1/edge/goalie-detail/{goalieId}/{seasonId}/{gameType}`
+  - Verified live with `8475883 / 20252026 / 2`
+  - Exposes: `stats`, `shotLocationSummary`, `shotLocationDetails`
+- `https://api-web.nhle.com/v1/edge/skater-shot-location-top-10/all/{stat}/all/{seasonId}/{gameType}`
+  - Already documented below and still valid for `goals`, `sog`, and `shooting-pctg`
+
+## Endpoint guesses that did not verify
+
+These guessed standalone families returned `404` during live checks and should not be treated as current supported public endpoints without new proof:
+
+- `skater-skating-speed-top-10`
+- `skater-skating-speed`
+- `team-zone-time`
+- `team-zone-time-detail`
+- `team-skating-speed-detail`
+- `goalie-save-location-detail`
+- `goalie-save-location-top-10`
+- `goalie-top-10`
+
+## Launch guidance
+
+- Adopt `skater-detail`, `team-detail`, and `goalie-detail` first when official NHL context is needed in code.
+- Treat the `top-10` families as leaderboard overlays, not as the canonical cross-page contract.
+- Do not use public NHL Edge payloads as the only input for Sandbox baseline math until there is a dense per-game coverage audit proving that they are complete enough.
+
 # Skater Endpoints
 
 ## https://api-web.nhle.com/v1/edge/skater-shot-location-top-10/all/shooting-pctg/all/20252026/2
