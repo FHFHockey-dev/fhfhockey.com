@@ -44,6 +44,16 @@ type RequestOptions = {
   goalieId: number | null;
 };
 
+type DetailFetchResult = {
+  rows: NhlEdgeStatsRow[];
+  skipped: Array<{
+    entityType: "skater" | "goalie";
+    playerId: number;
+    fullName: string | null;
+    reason: string;
+  }>;
+};
+
 function firstQueryValue(value: string | string[] | undefined): string | null {
   if (Array.isArray(value)) return value[0] ?? null;
   return value ?? null;
@@ -143,32 +153,60 @@ async function upsertRows(rows: NhlEdgeStatsRow[]): Promise<number> {
   return rows.length;
 }
 
+function isEdgeNotFoundError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error ?? "");
+  return /not found/i.test(message) || /\b404\b/.test(message);
+}
+
 async function fetchSkaterDetailRows(args: {
   snapshotDate: string;
   seasonId: number;
   gameType: EdgeGameType;
   targets: RosterTarget[];
   concurrency: number;
-}): Promise<NhlEdgeStatsRow[]> {
+}): Promise<DetailFetchResult> {
   const limit = pLimit(args.concurrency);
-  const rows = await Promise.all(
+  const results = await Promise.all(
     args.targets.map((target) =>
-      limit(async () =>
-        buildEdgeSkaterDetailRow({
-          snapshotDate: args.snapshotDate,
-          seasonId: args.seasonId,
-          gameType: args.gameType,
-          payload: await getEdgeSkaterDetail(
-            target.playerId,
-            args.seasonId,
-            args.gameType
-          )
-        })
-      )
+      limit(async () => {
+        try {
+          return {
+            row: buildEdgeSkaterDetailRow({
+              snapshotDate: args.snapshotDate,
+              seasonId: args.seasonId,
+              gameType: args.gameType,
+              payload: await getEdgeSkaterDetail(
+                target.playerId,
+                args.seasonId,
+                args.gameType
+              )
+            }),
+            skipped: null
+          };
+        } catch (error) {
+          if (!isEdgeNotFoundError(error)) {
+            throw error;
+          }
+          return {
+            row: null,
+            skipped: {
+              entityType: "skater" as const,
+              playerId: target.playerId,
+              fullName: target.fullName,
+              reason: "Edge detail not available"
+            }
+          };
+        }
+      })
     )
   );
 
-  return rows;
+  return {
+    rows: results.flatMap((result) => (result.row ? [result.row] : [])),
+    skipped: results.flatMap((result) =>
+      result.skipped ? [result.skipped] : []
+    )
+  };
 }
 
 async function fetchGoalieDetailRows(args: {
@@ -177,26 +215,49 @@ async function fetchGoalieDetailRows(args: {
   gameType: EdgeGameType;
   targets: RosterTarget[];
   concurrency: number;
-}): Promise<NhlEdgeStatsRow[]> {
+}): Promise<DetailFetchResult> {
   const limit = pLimit(args.concurrency);
-  const rows = await Promise.all(
+  const results = await Promise.all(
     args.targets.map((target) =>
-      limit(async () =>
-        buildEdgeGoalieDetailRow({
-          snapshotDate: args.snapshotDate,
-          seasonId: args.seasonId,
-          gameType: args.gameType,
-          payload: await getEdgeGoalieDetail(
-            target.playerId,
-            args.seasonId,
-            args.gameType
-          )
-        })
-      )
+      limit(async () => {
+        try {
+          return {
+            row: buildEdgeGoalieDetailRow({
+              snapshotDate: args.snapshotDate,
+              seasonId: args.seasonId,
+              gameType: args.gameType,
+              payload: await getEdgeGoalieDetail(
+                target.playerId,
+                args.seasonId,
+                args.gameType
+              )
+            }),
+            skipped: null
+          };
+        } catch (error) {
+          if (!isEdgeNotFoundError(error)) {
+            throw error;
+          }
+          return {
+            row: null,
+            skipped: {
+              entityType: "goalie" as const,
+              playerId: target.playerId,
+              fullName: target.fullName,
+              reason: "Edge detail not available"
+            }
+          };
+        }
+      })
     )
   );
 
-  return rows;
+  return {
+    rows: results.flatMap((result) => (result.row ? [result.row] : [])),
+    skipped: results.flatMap((result) =>
+      result.skipped ? [result.skipped] : []
+    )
+  };
 }
 
 async function fetchTeamDetailRows(args: {
@@ -249,14 +310,17 @@ async function fetchSkaterShotLocationRows(args: {
   return allRows.flat();
 }
 
-function parseRequest(req: NextApiRequest): RequestOptions {
+function parseRequest(
+  req: NextApiRequest,
+  overrides?: Partial<Pick<RequestOptions, "target">>
+): RequestOptions {
   const snapshotDate = parseDate(firstQueryValue(req.query.date));
   const seasonId = parseInteger(firstQueryValue(req.query.seasonId), 0);
   return {
     snapshotDate,
     seasonId,
     gameType: parseGameType(firstQueryValue(req.query.gameType)),
-    target: parseTarget(firstQueryValue(req.query.target)),
+    target: overrides?.target ?? parseTarget(firstQueryValue(req.query.target)),
     limit: Math.max(1, Math.min(250, parseInteger(firstQueryValue(req.query.limit), 100))),
     offset: Math.max(0, parseInteger(firstQueryValue(req.query.offset), 0)),
     concurrency: Math.max(
@@ -278,13 +342,17 @@ function parseRequest(req: NextApiRequest): RequestOptions {
   };
 }
 
-async function handler(req: NextApiRequest, res: NextApiResponse) {
+export async function runNhlEdgeStatsSnapshot(
+  req: NextApiRequest,
+  res: NextApiResponse,
+  overrides?: Partial<Pick<RequestOptions, "target">>
+) {
   if (req.method !== "GET" && req.method !== "POST") {
     res.setHeader("Allow", ["GET", "POST"]);
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const options = parseRequest(req);
+  const options = parseRequest(req, overrides);
   const currentSeason =
     options.seasonId > 0 ? { seasonId: options.seasonId } : await getCurrentSeason();
   const seasonId = currentSeason.seasonId;
@@ -302,6 +370,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
   const rows: NhlEdgeStatsRow[] = [];
   const executedTargets: string[] = [];
+  const skippedDetails: DetailFetchResult["skipped"] = [];
 
   if (options.target === "all" || options.target === "team-detail") {
     const teamRows = await fetchTeamDetailRows({
@@ -325,26 +394,28 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 
   if (options.target === "all" || options.target === "skater-detail") {
-    const skaterRows = await fetchSkaterDetailRows({
+    const skaterDetailResult = await fetchSkaterDetailRows({
       snapshotDate: options.snapshotDate,
       seasonId,
       gameType: options.gameType,
       targets: selectedSkaters,
       concurrency: options.concurrency
     });
-    rows.push(...skaterRows);
+    rows.push(...skaterDetailResult.rows);
+    skippedDetails.push(...skaterDetailResult.skipped);
     executedTargets.push("skater-detail");
   }
 
   if (options.target === "all" || options.target === "goalie-detail") {
-    const goalieRows = await fetchGoalieDetailRows({
+    const goalieDetailResult = await fetchGoalieDetailRows({
       snapshotDate: options.snapshotDate,
       seasonId,
       gameType: options.gameType,
       targets: selectedGoalies,
       concurrency: options.concurrency
     });
-    rows.push(...goalieRows);
+    rows.push(...goalieDetailResult.rows);
+    skippedDetails.push(...goalieDetailResult.skipped);
     executedTargets.push("goalie-detail");
   }
 
@@ -372,11 +443,17 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         ? EDGE_SHOT_LOCATION_VARIANTS.length
         : 0,
       processedSkaters: executedTargets.includes("skater-detail")
-        ? selectedSkaters.length
+        ? selectedSkaters.length - skippedDetails.filter((entry) => entry.entityType === "skater").length
         : 0,
       processedGoalies: executedTargets.includes("goalie-detail")
-        ? selectedGoalies.length
+        ? selectedGoalies.length - skippedDetails.filter((entry) => entry.entityType === "goalie").length
         : 0
+    },
+    skipped: {
+      total: skippedDetails.length,
+      skaters: skippedDetails.filter((entry) => entry.entityType === "skater").length,
+      goalies: skippedDetails.filter((entry) => entry.entityType === "goalie").length,
+      samples: skippedDetails.slice(0, 15)
     },
     pagination: {
       limit: options.limit,
@@ -395,6 +472,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       "NHL Edge public endpoints are season-to-date snapshots. This route creates historical copies from the day it starts running; it does not reconstruct true historical daily Edge states for past dates."
     ]
   });
+}
+
+async function handler(req: NextApiRequest, res: NextApiResponse) {
+  return runNhlEdgeStatsSnapshot(req, res);
 }
 
 export default withCronJobAudit(handler, {

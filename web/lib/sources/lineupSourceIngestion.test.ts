@@ -343,7 +343,7 @@ describe("lineupSourceIngestion", () => {
         modelGoalie,
         officialGoalie,
         dfoGoalies.find((goalie) => goalie.team.id === 14)
-      ])?.sourceName
+      ], "2026-04-21T18:00:00.000Z")?.sourceName
     ).toBe("dailyfaceoff");
   });
 

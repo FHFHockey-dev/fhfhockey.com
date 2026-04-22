@@ -52,8 +52,11 @@
 - `web/rules/context/nhl-edge-stats-api.md` - Starting point for NHL Edge endpoint expansion during launch implementation.
 - `web/lib/NHL/edge.ts` - Shared official NHL Edge wrapper for verified skater, team, goalie, and shot-location endpoint families.
 - `web/lib/NHL/edgeIngestion.ts` - Row builders for storing official NHL Edge detail and leaderboard payloads into a single daily snapshot table.
+- `web/lib/NHL/edgeIngestion.test.ts` - Deterministic coverage for Edge row builders, including slug-derived leaderboard ids.
 - `web/lib/analytics/edgeMetricCatalog.ts` - Canonical map of which official NHL Edge families support ULS, Trends, and Sandbox without fragmenting route ownership.
+- `web/lib/analytics/edgeMetricCatalog.test.ts` - Deterministic coverage for Edge metric-to-surface and entity-class mapping.
 - `web/pages/api/v1/db/update-nhl-edge-stats.ts` - Batch-oriented admin endpoint that snapshots verified NHL Edge families into `nhl_edge_stats_daily`.
+- `web/pages/api/v1/db/update-nhl-edge-teams.ts` - Team-focused NHL Edge snapshot endpoint for clean WGO-style team ingestion without the mixed-family batch route.
 - `web/sql/ratings/005_create_nhl_edge_stats_daily.sql` - Supabase schema for historical daily copies of official NHL Edge payloads.
 
 ### Notes
@@ -120,10 +123,10 @@
   - [x] 8.3 Extend API wrappers and refresh jobs for any new advanced metrics adopted into launch scope.
   - [x] 8.4 Reconcile new metrics with existing ULS, Trends, and Sandbox contracts so upstream shape changes do not fragment the route family.
 
-- [ ] 9.0 Verify the integrated rollout and backfill missing tests
-  - [ ] 9.1 Add targeted tests around source selection, fallback behavior, roster validation, and source-provenance rules where the logic is deterministic.
-  - [ ] 9.2 Add targeted tests around new rating/trend/sustainability contract builders and route-level data assembly.
-  - [ ] 9.3 Run focused verification on the final route family to confirm ownership boundaries, entity parity, and launch-scope dependencies are all wired together coherently.
+- [x] 9.0 Verify the integrated rollout and backfill missing tests
+  - [x] 9.1 Add targeted tests around source selection, fallback behavior, roster validation, and source-provenance rules where the logic is deterministic.
+  - [x] 9.2 Add targeted tests around new rating/trend/sustainability contract builders and route-level data assembly.
+  - [x] 9.3 Run focused verification on the final route family to confirm ownership boundaries, entity parity, and launch-scope dependencies are all wired together coherently.
 
 - [ ] 10.0 NEW: Restore non-empty player and goalie explorer landing aggregates
   - [x] 10.1 Trace why `/api/v1/underlying-stats/players` and `/api/v1/underlying-stats/goalies` return empty `rows` while `games` and `nhl_api_game_payloads_raw` contain current-season summary data.
