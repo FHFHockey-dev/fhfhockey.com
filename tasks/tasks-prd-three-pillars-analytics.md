@@ -24,13 +24,13 @@
 - `web/sql/ratings/001_create_analytics_rating_contracts.sql` - Proposed Supabase schema contract for normalized team ratings plus first-class skater offense, skater defense, and goalie rating storage.
 - `web/sql/ratings/002_create_analytics_trends_predictions_and_provenance.sql` - Proposed Supabase schema contract for parity trend storage, cross-entity sustainability, prediction outputs, market flags, and source provenance/freshness.
 - `web/rules/process-task-list.mdc` - Task-processing rule set clarified so true external manual steps are distinct from routine terminal work Codex can execute directly.
-- `web/lib/sources/lineupSourceIngestion.ts` - Normalized NHL.com, DailyFaceoff, and GameDayTweets lineup parsing, roster validation, source ranking, and provenance-row builders for pregame lineup ingestion.
-- `web/lib/sources/lineupSourceIngestion.test.ts` - Targeted regression coverage for official/fallback lineup parsing, DailyFaceoff `Last Game` rejection, GameDayTweets classification, and lineup-source ranking.
-- `web/pages/api/v1/db/update-lineup-source-provenance.ts` - Admin ingestion endpoint that snapshots scheduled-team lineup sources into `source_provenance_snapshots` using the NHL.com -> DailyFaceoff -> GameDayTweets hierarchy.
+- `web/lib/sources/lineupSourceIngestion.ts` - Normalized NHL.com, DailyFaceoff, and GameDayTweets lineup/goalie parsing, roster validation, source ranking, and provenance-row builders for pregame source ingestion.
+- `web/lib/sources/lineupSourceIngestion.test.ts` - Targeted regression coverage for official/fallback lineup parsing, DailyFaceoff `Last Game` rejection, GameDayTweets classification, goalie-page parsing, and source ranking.
+- `web/pages/api/v1/db/update-lineup-source-provenance.ts` - Admin ingestion endpoint that snapshots scheduled-team lineup and goalie sources into `source_provenance_snapshots` and the historical line-source tables.
 - `web/sql/ratings/003_create_historical_line_source_tables.sql` - Supabase schema for `lines_nhl`, `lines_dfo`, and `lines_gdl` historical lineup snapshot tables with explicit ordered line, pair, and goalie columns.
-- `web/lib/sources/injuryStatusIngestion.ts` - Canonical injury-status normalization, returning-state detection, homepage mapping, and injury provenance builders backed by the durable player-status store.
-- `web/lib/sources/injuryStatusIngestion.test.ts` - Regression coverage for injury normalization, returning-state creation, homepage display mapping, and provenance row shaping.
-- `web/pages/api/v1/db/update-player-statuses.ts` - Admin ingestion endpoint that snapshots Bell injury feed results into `player_status_history` and related provenance rows.
+- `web/lib/sources/injuryStatusIngestion.ts` - Canonical injury-status normalization, GameDayTweets news parsing, returning-state detection, homepage mapping, and provenance builders backed by the durable player-status store.
+- `web/lib/sources/injuryStatusIngestion.test.ts` - Regression coverage for Bell injury normalization, GameDayTweets news parsing, returning-state creation, homepage display mapping, and provenance row shaping.
+- `web/pages/api/v1/db/update-player-statuses.ts` - Admin ingestion endpoint that snapshots Bell injury feed results plus GameDayTweets news-derived statuses into `player_status_history` and related provenance rows.
 - `web/sql/ratings/004_create_player_status_history.sql` - Supabase schema for durable `injured` and `returning` player-status history plus the current-state view.
 - `web/components/HomePage/HomepageStandingsInjuriesSection.tsx` - Homepage injury module now styling persisted `injured` and `returning` states distinctly.
 - `web/components/HomePage/HomepageStandingsInjuriesSection.test.tsx` - Homepage regression coverage for returning-player rendering.
@@ -139,9 +139,9 @@
   - [x] 11.2 Re-check `/api/v1/underlying-stats/players` and `/api/v1/underlying-stats/goalies` for `20252026` season-wide five-on-five requests and confirm they now return non-empty rows.
   - [x] 11.3 Re-check `/underlying-stats/playerStats` and `/underlying-stats/goalieStats` in the browser and confirm the empty-state copy is gone for the default season-wide landing view.
 
-- [ ] 12.0 NEW: Extend the pregame source hierarchy with GameDayTweets goalie/news feeds and a dedicated injury-state store
-  - [ ] 12.1 Add `https://www.gamedaytweets.com/goalies` as the goalie-start fallback that sits behind DailyFaceoff and ahead of the internal goalie-start probability model.
-  - [ ] 12.2 Evaluate and ingest `https://www.gamedaytweets.com/news` into the injury/news pipeline for returns, transactions, call-ups, and other non-lineup updates.
+- [x] 12.0 NEW: Extend the pregame source hierarchy with GameDayTweets goalie/news feeds and a dedicated injury-state store
+  - [x] 12.1 Add `https://www.gamedaytweets.com/goalies` as the goalie-start fallback that sits behind DailyFaceoff and ahead of the internal goalie-start probability model.
+  - [x] 12.2 Evaluate and ingest `https://www.gamedaytweets.com/news` into the injury/news pipeline for returns, transactions, call-ups, and other non-lineup updates.
   - [x] 12.3 Design the separate injury-state database contract needed for `injured`, `returning`, and related status changes instead of overloading the line-history tables.
 
 - [ ] 13.0 NEW: Provide live external odds-provider verification once a ParlayAPI key is available
@@ -162,3 +162,8 @@
 - [ ] 16.0 NEW: Resolve NHL Edge historical limitations before promising full backfill behavior
   - [ ] 16.1 Confirm whether any public NHL Edge endpoints expose true historical as-of-date snapshots rather than only current season-to-date states.
   - [ ] 16.2 If true historical snapshots do not exist, keep the Edge pipeline positioned as prospective daily archiving rather than a reconstructable past-history feed.
+
+- [ ] 17.0 NEW: Backfill and verify the historical lineup source tables now that the writer path is live again
+  - [ ] 17.1 Run targeted historical sweeps through `/api/v1/db/update-lineup-source-provenance` so `lines_nhl`, `lines_dfo`, and `lines_gdl` no longer start from an empty archive.
+  - [ ] 17.2 Verify which slates legitimately produce `nhl.com`, `dailyfaceoff`, or `gamedaytweets` line rows versus which dates only have goalie-source coverage.
+  - [ ] 17.3 Decide whether to broaden GameDayTweets lineup harvesting beyond the current `DFO rejected` fallback path so `lines_gdl` can accumulate audit history even when DFO is present.

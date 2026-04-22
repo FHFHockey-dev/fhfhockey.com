@@ -8,6 +8,7 @@ import {
   buildTeamDirectory,
   parseDailyFaceoffLineCombinationsPage,
   parseDailyFaceoffStartingGoaliesPage,
+  parseGameDayTweetsGoaliesPage,
   parseGameDayTweetsLinesPage,
   parseNhlLineupProjectionsPage,
   selectBestGoalieStartSource,
@@ -107,7 +108,7 @@ async function fetchTopGoalieModelRowsByTeamGame(args: {
 }): Promise<Map<string, any>> {
   const { data, error } = await args.supabase
     .from("goalie_start_projections")
-    .select("game_id, team_id, player_id, start_probability, updated_at, players!inner(fullName)")
+    .select("game_id, team_id, player_id, start_probability, updated_at")
     .in("game_id", args.gameIds)
     .order("start_probability", { ascending: false });
 
@@ -184,6 +185,17 @@ export default withCronJobAudit(
       });
       const dailyFaceoffGoalieByTeamId = new Map(
         dailyFaceoffGoalies.map((goalie) => [goalie.team.id, goalie])
+      );
+      const gameDayTweetsGoalieUrl = "https://www.gamedaytweets.com/goalies";
+      const gameDayTweetsGoalieHtml = await fetchHtml(gameDayTweetsGoalieUrl);
+      const gameDayTweetsGoalies = parseGameDayTweetsGoaliesPage({
+        html: gameDayTweetsGoalieHtml,
+        teams: teamDirectory,
+        rosterByTeam,
+        sourceUrl: gameDayTweetsGoalieUrl
+      });
+      const gameDayTweetsGoalieByTeamId = new Map(
+        gameDayTweetsGoalies.map((goalie) => [goalie.team.id, goalie])
       );
 
       const gameIdByTeamId = new Map<number, number>();
@@ -275,13 +287,17 @@ export default withCronJobAudit(
             })
           : null;
         const dailyFaceoffGoalie = dailyFaceoffGoalieByTeamId.get(team.id) ?? null;
+        const gameDayTweetsGoalie = gameDayTweetsGoalieByTeamId.get(team.id) ?? null;
         const modelRow = gameId != null ? goalieModelByTeamGame.get(`${gameId}:${team.id}`) ?? null : null;
         const modelGoalie =
           modelRow != null
             ? buildGoalieStartSourceFromModel({
                 team,
                 sourceUrl: "/api/v1/db/update-goalie-projections-v2",
-                goalieName: String((modelRow as any).players?.fullName ?? ""),
+                goalieName:
+                  rosterEntries.find(
+                    (entry) => entry.playerId === Number((modelRow as any).player_id)
+                  )?.fullName ?? "",
                 goaliePlayerId: Number((modelRow as any).player_id),
                 startProbability: Number((modelRow as any).start_probability ?? 0),
                 observedAt: (modelRow as any).updated_at ?? null
@@ -289,11 +305,17 @@ export default withCronJobAudit(
             : null;
         const selectedGoalie = selectBestGoalieStartSource([
           dailyFaceoffGoalie,
+          gameDayTweetsGoalie,
           officialGoalie,
           modelGoalie
         ]);
 
-        for (const source of [dailyFaceoffGoalie, officialGoalie, modelGoalie]) {
+        for (const source of [
+          dailyFaceoffGoalie,
+          gameDayTweetsGoalie,
+          officialGoalie,
+          modelGoalie
+        ]) {
           if (!source) continue;
           const row = toGoalieStartProvenanceSnapshotRow({
             snapshotDate: requestedDate,
@@ -319,6 +341,7 @@ export default withCronJobAudit(
           goalieStatuses: {
             official: officialGoalie?.startStatus ?? "missing",
             dailyFaceoff: dailyFaceoffGoalie?.startStatus ?? "missing",
+            gameDayTweets: gameDayTweetsGoalie?.startStatus ?? "missing",
             model: modelGoalie?.startStatus ?? "missing"
           },
           validation: {

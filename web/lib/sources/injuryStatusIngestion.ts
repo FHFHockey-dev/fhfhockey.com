@@ -1,3 +1,5 @@
+import * as cheerio from "cheerio";
+
 import { teamsInfo } from "lib/teamsInfo";
 
 const BELL_MEDIA_INJURIES_URL =
@@ -5,6 +7,12 @@ const BELL_MEDIA_INJURIES_URL =
 const RETURNING_STATUS_TTL_DAYS = 7;
 
 export type PlayerStatusState = "injured" | "returning";
+export type GameDayTweetsNewsClassification =
+  | "injury"
+  | "returning"
+  | "questionable"
+  | "transaction"
+  | "other";
 
 export type TeamStatusDirectoryEntry = {
   id: number;
@@ -19,6 +27,19 @@ export type RosterStatusEntry = {
   fullName: string;
   lastName: string;
   teamId: number | null;
+};
+
+export type ParsedGameDayTweetsNewsItem = {
+  classification: GameDayTweetsNewsClassification;
+  playerId: number | null;
+  playerName: string;
+  teamId: number | null;
+  teamAbbreviation: string | null;
+  sourceHandle: string | null;
+  sourceUrl: string;
+  tweetUrl: string | null;
+  postedLabel: string | null;
+  text: string;
 };
 
 export type PlayerStatusHistoryRow = {
@@ -99,6 +120,10 @@ function normalizeKey(value: string): string {
     .trim();
 }
 
+function normalizeDisplayText(value: string): string {
+  return value.replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim();
+}
+
 function addDaysIso(value: string, days: number): string {
   const date = new Date(value);
   date.setUTCDate(date.getUTCDate() + days);
@@ -155,6 +180,76 @@ function resolveRosterEntry(
   return lastNameMatches.length === 1 ? lastNameMatches[0] : null;
 }
 
+function resolveRosterEntryFromLeagueTweet(
+  tweetText: string,
+  rosterEntries: RosterStatusEntry[]
+): RosterStatusEntry | null {
+  const normalizedTweet = normalizeKey(tweetText);
+  const fullNameMatches = rosterEntries
+    .map((entry) => ({
+      entry,
+      index: normalizedTweet.indexOf(normalizeKey(entry.fullName))
+    }))
+    .filter((candidate) => candidate.index >= 0)
+    .sort((left, right) => left.index - right.index);
+
+  if (fullNameMatches.length > 0) {
+    return fullNameMatches[0]?.entry ?? null;
+  }
+
+  const lastNameMatches = rosterEntries
+    .map((entry) => ({
+      entry,
+      index: normalizedTweet.indexOf(normalizeKey(entry.lastName))
+    }))
+    .filter((candidate) => candidate.index >= 0)
+    .sort((left, right) => left.index - right.index);
+
+  const firstIndex = lastNameMatches[0]?.index;
+  if (typeof firstIndex !== "number") {
+    return null;
+  }
+
+  const firstWave = lastNameMatches.filter((candidate) => candidate.index === firstIndex);
+  return firstWave.length === 1 ? firstWave[0]?.entry ?? null : null;
+}
+
+function classifyGameDayTweetsNewsItem(
+  value: string
+): GameDayTweetsNewsClassification {
+  const normalized = normalizeKey(value);
+
+  if (
+    /\b(will play|will be in|returns tonight|returns? to the lineup|back in the lineup|available tonight|good to go|set to return|confirmed in)\b/i.test(
+      normalized
+    )
+  ) {
+    return "returning";
+  }
+
+  if (
+    /\b(out|still out|injur|surgery|underwent|tear|torn|ltir|ir|won't play|will not play|ruled out|confirmed out|missed .* with)\b/i.test(
+      normalized
+    )
+  ) {
+    return "injury";
+  }
+
+  if (/\b(game time decision|gtd|questionable|day-to-day|close|not sure)\b/i.test(normalized)) {
+    return "questionable";
+  }
+
+  if (
+    /\b(recalled|reassigned|assigned|loaned|claimed|waived|trade|traded|signed|retire|retirement|called up)\b/i.test(
+      normalized
+    )
+  ) {
+    return "transaction";
+  }
+
+  return "other";
+}
+
 function buildStatusCaptureKey(args: {
   snapshotDate: string;
   teamId: number | null;
@@ -190,6 +285,50 @@ export async function fetchBellMediaInjuries(): Promise<BellMediaInjuryTeam[]> {
   }
 
   return payload as BellMediaInjuryTeam[];
+}
+
+export function parseGameDayTweetsNewsPage(args: {
+  html: string;
+  sourceUrl: string;
+  rosterEntries: RosterStatusEntry[];
+  directory: TeamStatusDirectoryEntry[];
+}): ParsedGameDayTweetsNewsItem[] {
+  const root = cheerio.load(args.html);
+
+  return root("blockquote.tweet")
+    .map((_, element) => {
+      const tweetRoot = root(element);
+      const text = normalizeDisplayText(tweetRoot.text());
+      if (!text) return null;
+
+      const rosterMatch = resolveRosterEntryFromLeagueTweet(text, args.rosterEntries);
+      const team = rosterMatch
+        ? args.directory.find((entry) => entry.id === rosterMatch.teamId) ?? null
+        : null;
+
+      return {
+        classification: classifyGameDayTweetsNewsItem(text),
+        playerId: rosterMatch?.playerId ?? null,
+        playerName: rosterMatch?.fullName ?? "",
+        teamId: team?.id ?? rosterMatch?.teamId ?? null,
+        teamAbbreviation: team?.abbreviation ?? null,
+        sourceHandle: tweetRoot.find("a.handle").attr("href") ?? null,
+        sourceUrl: args.sourceUrl,
+        tweetUrl:
+          tweetRoot.find('a[href*="twitter.com/GameDayNewsNHL/status/"]').attr("href") ??
+          tweetRoot.find('a[href*="twitter.com/GameDayStatsNHL/status/"]').attr("href") ??
+          null,
+        postedLabel:
+          tweetRoot
+            .find('a[href*="twitter.com/GameDayNewsNHL/status/"], a[href*="twitter.com/GameDayStatsNHL/status/"]')
+            .last()
+            .text()
+            .trim() || null,
+        text
+      } satisfies ParsedGameDayTweetsNewsItem;
+    })
+    .get()
+    .filter((item): item is ParsedGameDayTweetsNewsItem => Boolean(item && item.playerId != null));
 }
 
 export function normalizeBellMediaInjuryRows(args: {
@@ -242,6 +381,60 @@ export function normalizeBellMediaInjuryRows(args: {
         }
       ];
     });
+  });
+}
+
+export function normalizeGameDayTweetsNewsStatusRows(args: {
+  items: ParsedGameDayTweetsNewsItem[];
+  snapshotDate: string;
+  observedAt?: string;
+}): PlayerStatusHistoryRow[] {
+  const observedAt = args.observedAt ?? new Date().toISOString();
+
+  return args.items.flatMap((item) => {
+    const statusState: PlayerStatusState | null =
+      item.classification === "injury"
+        ? "injured"
+        : item.classification === "returning"
+          ? "returning"
+          : null;
+
+    if (!statusState || item.playerId == null) {
+      return [];
+    }
+
+    return [
+      {
+        capture_key: buildStatusCaptureKey({
+          snapshotDate: args.snapshotDate,
+          teamId: item.teamId,
+          playerId: item.playerId,
+          playerName: item.playerName,
+          statusState,
+          sourceName: "gamedaytweets-news"
+        }),
+        snapshot_date: args.snapshotDate,
+        observed_at: observedAt,
+        player_id: item.playerId,
+        player_name: item.playerName,
+        team_id: item.teamId,
+        team_abbreviation: item.teamAbbreviation,
+        status_state: statusState,
+        raw_status: statusState === "injured" ? "Out" : "Returning",
+        status_detail: item.text,
+        source_name: "gamedaytweets-news",
+        source_url: item.tweetUrl ?? item.sourceUrl,
+        source_rank: 2,
+        status_expires_at:
+          statusState === "returning" ? addDaysIso(observedAt, 3) : null,
+        metadata: {
+          classification: item.classification,
+          postedLabel: item.postedLabel,
+          sourceHandle: item.sourceHandle
+        },
+        updated_at: observedAt
+      }
+    ];
   });
 }
 
@@ -491,6 +684,57 @@ export function toInjurySourceProvenanceRows(
       },
       metadata: row.metadata,
       updated_at: row.updated_at
+    }))
+    .filter((row) => Number.isFinite(row.game_id));
+}
+
+export function toGameDayTweetsNewsProvenanceRows(
+  items: ParsedGameDayTweetsNewsItem[],
+  snapshotDate: string,
+  observedAt: string,
+  gameIdByTeamId: Map<number, number>
+): Array<{
+  snapshot_date: string;
+  source_type: string;
+  entity_type: string;
+  entity_id: number;
+  game_id: number;
+  source_name: string;
+  source_url: string | null;
+  source_rank: number;
+  is_official: boolean;
+  status: string;
+  observed_at: string;
+  freshness_expires_at: string | null;
+  payload: Record<string, unknown>;
+  metadata: Record<string, unknown>;
+  updated_at: string;
+}> {
+  return items
+    .filter((item) => item.playerId != null && item.teamId != null)
+    .map((item) => ({
+      snapshot_date: snapshotDate,
+      source_type: "news",
+      entity_type: "player",
+      entity_id: Number(item.playerId),
+      game_id: Number(gameIdByTeamId.get(Number(item.teamId))),
+      source_name: "gamedaytweets-news",
+      source_url: item.tweetUrl ?? item.sourceUrl,
+      source_rank: 2,
+      is_official: false,
+      status: "observed",
+      observed_at: observedAt,
+      freshness_expires_at: null,
+      payload: {
+        classification: item.classification,
+        text: item.text,
+        postedLabel: item.postedLabel
+      },
+      metadata: {
+        sourceHandle: item.sourceHandle,
+        teamAbbreviation: item.teamAbbreviation
+      },
+      updated_at: observedAt
     }))
     .filter((row) => Number.isFinite(row.game_id));
 }

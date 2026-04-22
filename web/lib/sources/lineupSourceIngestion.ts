@@ -114,7 +114,11 @@ export type GoalieStartConfidenceLabel =
 
 export type ParsedGoalieStartSource = {
   team: TeamDirectoryEntry;
-  sourceName: "nhl.com" | "dailyfaceoff" | "goalie_start_projections";
+  sourceName:
+    | "nhl.com"
+    | "dailyfaceoff"
+    | "gamedaytweets"
+    | "goalie_start_projections";
   sourceUrl: string;
   sourceRank: number;
   isOfficial: boolean;
@@ -139,6 +143,7 @@ const LINEUP_SOURCE_TTL_HOURS: Record<PregameLineupSourceName, number> = {
 };
 const GOALIE_SOURCE_TTL_HOURS: Record<ParsedGoalieStartSource["sourceName"], number> = {
   dailyfaceoff: 8,
+  gamedaytweets: 6,
   "nhl.com": 18,
   goalie_start_projections: 4
 };
@@ -830,7 +835,11 @@ export function selectBestPregameLineupSource(
 
 function buildGoalieStartSource(args: {
   team: TeamDirectoryEntry;
-  sourceName: "nhl.com" | "dailyfaceoff" | "goalie_start_projections";
+  sourceName:
+    | "nhl.com"
+    | "dailyfaceoff"
+    | "gamedaytweets"
+    | "goalie_start_projections";
   sourceUrl: string;
   sourceRank: number;
   isOfficial: boolean;
@@ -868,6 +877,26 @@ function buildGoalieStartSource(args: {
       validation
     }
   };
+}
+
+function classifyGameDayGoalieStartStatus(
+  value: string
+): GoalieStartConfidenceLabel {
+  const normalized = normalizeTeamLabel(value);
+  if (
+    /\b(warmup|lead[s]? .* out for warmup|starting|gets the start|gets the nod|will start|in net)\b/i.test(
+      normalized
+    )
+  ) {
+    return "confirmed";
+  }
+  if (/\b(our guess|guess)\b/i.test(normalized)) {
+    return "projected";
+  }
+  if (/\b(likely|expected|should start)\b/i.test(normalized)) {
+    return "likely";
+  }
+  return "unconfirmed";
 }
 
 function resolveTeamByFullName(value: string, teams: TeamDirectoryEntry[]): TeamDirectoryEntry | null {
@@ -964,6 +993,108 @@ export function parseDailyFaceoffStartingGoaliesPage(args: {
   return results;
 }
 
+export function parseGameDayTweetsGoaliesPage(args: {
+  html: string;
+  teams: TeamDirectoryEntry[];
+  rosterByTeam?: Map<number, RosterNameEntry[]>;
+  sourceUrl: string;
+}): ParsedGoalieStartSource[] {
+  const root = cheerio.load(args.html);
+  const results: ParsedGoalieStartSource[] = [];
+
+  root("h1.text-3xl").each((_, headerElement) => {
+    const header = root(headerElement);
+    const teamLabels = header
+      .find("div.flex-row")
+      .map((__, section) => normalizeWhitespace(root(section).text()))
+      .get()
+      .filter(Boolean);
+
+    const awayTeam = resolveTeamByFullName(teamLabels[0] ?? "", args.teams);
+    const homeTeam = resolveTeamByFullName(teamLabels[1] ?? "", args.teams);
+    if (!awayTeam || !homeTeam) return;
+
+    const matchupBody = header.nextAll("div.text-2xl").first();
+    if (!matchupBody.length) return;
+
+    const columns = matchupBody
+      .children("div.flex-col")
+      .toArray()
+      .slice(0, 2)
+      .map((element) => root(element));
+    if (columns.length < 2) return;
+
+    const parseColumn = (
+      column: cheerio.Cheerio<any>,
+      team: TeamDirectoryEntry
+    ) => {
+      const rosterEntries = args.rosterByTeam?.get(team.id) ?? [];
+      const tweet = column.find("blockquote.tweet").first();
+      const guess = column.find("span").filter((__, element) => {
+        const text = normalizeWhitespace(root(element).text());
+        return /our guess:/i.test(text);
+      });
+
+      if (tweet.length > 0) {
+        const text = normalizeWhitespace(tweet.text());
+        const goalieName = extractOrderedRosterHitsFromTweet(text, rosterEntries)[0] ?? null;
+        if (!goalieName) return null;
+
+        return buildGoalieStartSource({
+          team,
+          sourceName: "gamedaytweets",
+          sourceUrl:
+            tweet
+              .find('a[href*="twitter.com/GameDayGoalies/status/"]')
+              .attr("href") ?? args.sourceUrl,
+          sourceRank: 2,
+          isOfficial: false,
+          status: "observed",
+          goalieName,
+          startStatus: classifyGameDayGoalieStartStatus(text),
+          rosterEntries,
+          metadata: {
+            page: "goalies",
+            sourceHandle: tweet.find("a.handle").attr("href") ?? null,
+            text
+          }
+        });
+      }
+
+      if (guess.length > 0) {
+        const goalieName = normalizeWhitespace(guess.find("strong").first().text());
+        if (!goalieName) return null;
+
+        return buildGoalieStartSource({
+          team,
+          sourceName: "gamedaytweets",
+          sourceUrl: args.sourceUrl,
+          sourceRank: 2,
+          isOfficial: false,
+          status: "observed",
+          goalieName,
+          startStatus: "projected",
+          rosterEntries,
+          metadata: {
+            page: "goalies",
+            sourceLabel: "Our Guess"
+          }
+        });
+      }
+
+      return null;
+    };
+
+    const awayGoalie = parseColumn(columns[0]!, awayTeam);
+    if (awayGoalie) results.push(awayGoalie);
+
+    const homeGoalie = parseColumn(columns[1]!, homeTeam);
+    if (homeGoalie) results.push(homeGoalie);
+  });
+
+  return results;
+}
+
 export function buildGoalieStartSourceFromOfficialLineup(args: {
   lineupSource: ParsedPregameLineupSource;
   rosterEntries?: RosterNameEntry[];
@@ -975,7 +1106,7 @@ export function buildGoalieStartSourceFromOfficialLineup(args: {
     team: args.lineupSource.team,
     sourceName: "nhl.com",
     sourceUrl: args.lineupSource.sourceUrl,
-    sourceRank: 2,
+    sourceRank: 3,
     isOfficial: true,
     status: args.lineupSource.status,
     goalieName: starter,
@@ -1001,7 +1132,7 @@ export function buildGoalieStartSourceFromModel(args: {
     team: args.team,
     sourceName: "goalie_start_projections",
     sourceUrl: args.sourceUrl,
-    sourceRank: 3,
+    sourceRank: 4,
     isOfficial: false,
     status: "observed",
     goalieName: args.goalieName,

@@ -6,6 +6,7 @@ import {
   buildTeamDirectory,
   parseDailyFaceoffStartingGoaliesPage,
   parseDailyFaceoffLineCombinationsPage,
+  parseGameDayTweetsGoaliesPage,
   parseGameDayTweetsLinesPage,
   parseNhlLineupProjectionsPage,
   selectBestGoalieStartSource,
@@ -149,6 +150,59 @@ describe("lineupSourceIngestion", () => {
     expect(parsed.selectedLineup?.sourceName).toBe("gamedaytweets");
     expect(parsed.selectedLineup?.metadata).toMatchObject({
       candidateClassification: "lineup"
+    });
+  });
+
+  it("parses GameDayTweets goalie page into team-specific starter records", () => {
+    const parsed = parseGameDayTweetsGoaliesPage({
+      html: `
+        <body>
+          <h1 class="text-3xl">
+            <div class="flex flex-row"><span>Montréal Canadiens</span></div>
+            <div class="flex flex-row"><span>Tampa Bay Lightning</span></div>
+          </h1>
+          <div class="text-2xl">
+            <div class="flex flex-col">
+              <blockquote class="tweet">
+                <a class="handle" href="https://twitter.com/HabsSource">@HabsSource</a>
+                Samuel Montembeault and Andrei Vasilevskiy lead the Canadiens and Lightning out for warmup.
+                <a href="https://twitter.com/GameDayGoalies/status/123">tweet</a>
+              </blockquote>
+            </div>
+            <div class="flex flex-col">
+              <blockquote class="tweet">
+                <a class="handle" href="https://twitter.com/HabsSource">@HabsSource</a>
+                Samuel Montembeault and Andrei Vasilevskiy lead the Canadiens and Lightning out for warmup.
+                <a href="https://twitter.com/GameDayGoalies/status/123">tweet</a>
+              </blockquote>
+            </div>
+          </div>
+        </body>
+      `,
+      teams,
+      rosterByTeam: new Map([
+        [
+          8,
+          [
+            { playerId: 20, fullName: "Samuel Montembeault", lastName: "Montembeault" }
+          ]
+        ],
+        [14, tampaRoster]
+      ]),
+      sourceUrl: "https://www.gamedaytweets.com/goalies"
+    });
+
+    expect(parsed).toHaveLength(2);
+    expect(parsed[0]).toMatchObject({
+      sourceName: "gamedaytweets",
+      team: { id: 8 },
+      goalieName: "Samuel Montembeault",
+      startStatus: "confirmed"
+    });
+    expect(parsed[1]).toMatchObject({
+      team: { id: 14 },
+      goalieName: "Andrei Vasilevskiy",
+      startStatus: "confirmed"
     });
   });
 
@@ -337,14 +391,46 @@ describe("lineupSourceIngestion", () => {
       goaliePlayerId: 7,
       startProbability: 0.73
     });
+    const gdtGoalie = parseGameDayTweetsGoaliesPage({
+      html: `
+        <body>
+          <h1 class="text-3xl">
+            <div class="flex flex-row"><span>Montréal Canadiens</span></div>
+            <div class="flex flex-row"><span>Tampa Bay Lightning</span></div>
+          </h1>
+          <div class="text-2xl">
+            <div class="flex flex-col">
+              <span>Our <i>Guess</i>: <strong>Jakub Dobes</strong> (starter)</span>
+            </div>
+            <div class="flex flex-col">
+              <span>Our <i>Guess</i>: <strong>Andrei Vasilevskiy</strong> (starter)</span>
+            </div>
+          </div>
+        </body>
+      `,
+      teams,
+      rosterByTeam: new Map([
+        [8, [{ playerId: 20, fullName: "Jakub Dobes", lastName: "Dobes" }]],
+        [14, tampaRoster]
+      ]),
+      sourceUrl: "https://www.gamedaytweets.com/goalies"
+    }).find((goalie) => goalie.team.id === 14);
 
     expect(
       selectBestGoalieStartSource([
         modelGoalie,
         officialGoalie,
+        gdtGoalie,
         dfoGoalies.find((goalie) => goalie.team.id === 14)
       ], "2026-04-21T18:00:00.000Z")?.sourceName
     ).toBe("dailyfaceoff");
+
+    expect(
+      selectBestGoalieStartSource(
+        [modelGoalie, officialGoalie, gdtGoalie],
+        "2026-04-21T18:00:00.000Z"
+      )?.sourceName
+    ).toBe("gamedaytweets");
   });
 
   it("drops stale goalie sources before ranking the remaining options", () => {

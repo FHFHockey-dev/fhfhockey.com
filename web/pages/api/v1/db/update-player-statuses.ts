@@ -5,6 +5,9 @@ import {
   fetchBellMediaInjuries,
   fetchCurrentPlayerStatusRows,
   normalizeBellMediaInjuryRows,
+  normalizeGameDayTweetsNewsStatusRows,
+  parseGameDayTweetsNewsPage,
+  toGameDayTweetsNewsProvenanceRows,
   toInjurySourceProvenanceRows,
   type RosterStatusEntry
 } from "lib/sources/injuryStatusIngestion";
@@ -18,12 +21,36 @@ function parseRequestedDate(value: string | string[] | undefined): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+async function fetchHtml(url: string): Promise<string> {
+  const response = await fetch(url, {
+    headers: {
+      Accept: "text/html,application/xhtml+xml",
+      "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)"
+    },
+    cache: "no-store"
+  });
+
+  const body = await response.text();
+  if (!response.ok) {
+    throw new Error(`Failed to fetch ${url}: ${response.status} ${response.statusText}`);
+  }
+  return body;
+}
+
 type ScheduledGameRow = {
   id: number;
   date: string;
   homeTeamId: number;
   awayTeamId: number;
 };
+
+function dedupeRowsByKey<T>(rows: T[], getKey: (row: T) => string): T[] {
+  const seen = new Map<string, T>();
+  for (const row of rows) {
+    seen.set(getKey(row), row);
+  }
+  return Array.from(seen.values());
+}
 
 async function fetchRosterByTeam(args: {
   supabase: any;
@@ -109,23 +136,45 @@ export default withCronJobAudit(
       const snapshotDate = parseRequestedDate(req.query.date);
       const observedAt = new Date().toISOString();
       const rosterByTeam = await fetchRosterByTeam({ supabase: req.supabase });
+      const allRosterEntries = Array.from(rosterByTeam.values()).flat();
+      const directory = buildTeamStatusDirectory();
       const rawTeams = await fetchBellMediaInjuries();
       const currentInjuredRows = normalizeBellMediaInjuryRows({
         rawTeams,
         snapshotDate,
         observedAt,
-        directory: buildTeamStatusDirectory(),
+        directory,
         rosterByTeam
+      });
+      const gameDayTweetsNewsUrl = "https://www.gamedaytweets.com/news";
+      const gameDayTweetsNewsHtml = await fetchHtml(gameDayTweetsNewsUrl);
+      const gameDayTweetsNewsItems = parseGameDayTweetsNewsPage({
+        html: gameDayTweetsNewsHtml,
+        sourceUrl: gameDayTweetsNewsUrl,
+        rosterEntries: allRosterEntries,
+        directory
+      });
+      const gameDayTweetsStatusRows = normalizeGameDayTweetsNewsStatusRows({
+        items: gameDayTweetsNewsItems,
+        snapshotDate,
+        observedAt
       });
       const latestStatuses = await fetchCurrentPlayerStatusRows({ supabase: req.supabase });
       const returningRows = detectReturningStatusRows({
         snapshotDate,
         observedAt,
         latestStatuses,
-        currentInjuredRows
+        currentInjuredRows: [...currentInjuredRows, ...gameDayTweetsStatusRows]
       });
 
-      const rowsToUpsert = [...currentInjuredRows, ...returningRows];
+      const rowsToUpsert = dedupeRowsByKey(
+        [
+          ...currentInjuredRows,
+          ...gameDayTweetsStatusRows,
+          ...returningRows
+        ],
+        (row) => row.capture_key
+      );
       const gameIdByTeamId = await fetchNearestScheduledGameIdsByTeam({
         supabase: req.supabase,
         snapshotDate,
@@ -142,10 +191,28 @@ export default withCronJobAudit(
       }
 
       const provenanceRows = toInjurySourceProvenanceRows(rowsToUpsert, gameIdByTeamId);
-      if (provenanceRows.length > 0) {
+      const gameDayTweetsNewsProvenanceRows = toGameDayTweetsNewsProvenanceRows(
+        gameDayTweetsNewsItems,
+        snapshotDate,
+        observedAt,
+        gameIdByTeamId
+      );
+      const allProvenanceRows = dedupeRowsByKey(
+        [...provenanceRows, ...gameDayTweetsNewsProvenanceRows],
+        (row) =>
+          [
+            row.snapshot_date,
+            row.source_type,
+            row.entity_type,
+            row.entity_id,
+            row.source_name,
+            row.game_id
+          ].join(":")
+      );
+      if (allProvenanceRows.length > 0) {
         const { error } = await req.supabase
           .from("source_provenance_snapshots" as any)
-          .upsert(provenanceRows as any, {
+          .upsert(allProvenanceRows as any, {
             onConflict:
               "snapshot_date,source_type,entity_type,entity_id,source_name,game_id"
           });
@@ -157,6 +224,8 @@ export default withCronJobAudit(
         snapshotDate,
         rowsUpserted: rowsToUpsert.length,
         injuredRows: currentInjuredRows.length,
+        gameDayTweetsStatusRows: gameDayTweetsStatusRows.length,
+        gameDayTweetsNewsRows: gameDayTweetsNewsItems.length,
         returningRows: returningRows.length
       });
     } catch (error: any) {
