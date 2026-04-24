@@ -16,6 +16,25 @@ export type EdgeMetricCatalogEntry = {
 
 export const EDGE_METRIC_CATALOG = [
   {
+    key: "skater-detail-now",
+    label: "Skater Edge Detail (Now)",
+    endpointFamily: "/edge/skater-detail/{playerId}/now",
+    entityClasses: ["skater"],
+    surfaceIds: ["uls-skater-explorer", "trends", "sandbox"],
+    strengths: [
+      "current widget parity",
+      "top-shot-speed",
+      "skating-speed",
+      "distance-skated",
+      "shot-on-goal summary",
+      "zone-time details"
+    ],
+    supports: ["movement", "sustainability-context"],
+    launchFit: "supporting-context",
+    notes:
+      "Useful as a current-state widget parity read when the NHL Edge /now surface is the product reference, but the season/game-type detail family remains the better archival ingestion contract."
+  },
+  {
     key: "skater-shot-location-leaders",
     label: "Skater Shot Location Leaders",
     endpointFamily: "/edge/skater-shot-location-top-10/all/{stat}/all/{seasonId}/{gameType}",
@@ -64,6 +83,25 @@ export const EDGE_METRIC_CATALOG = [
       "Strongest official team Edge payload for adding public NHL context without fragmenting the existing team SoS and process modules."
   },
   {
+    key: "team-detail-now",
+    label: "Team Edge Detail (Now)",
+    endpointFamily: "/edge/team-detail/{teamId}/now",
+    entityClasses: ["team"],
+    surfaceIds: ["uls-landing", "uls-team-explorer", "trends", "sandbox"],
+    strengths: [
+      "current widget parity",
+      "team-shot-speed",
+      "team-skating-speed",
+      "team-distance-skated",
+      "team-shot summary",
+      "team-zone-time details"
+    ],
+    supports: ["movement", "sustainability-context"],
+    launchFit: "supporting-context",
+    notes:
+      "Adoptable as a current-state overlay family when we want to mirror the public NHL Edge now surface, but not a replacement for season/game-type archival reads."
+  },
+  {
     key: "goalie-detail",
     label: "Goalie Edge Detail",
     endpointFamily: "/edge/goalie-detail/{goalieId}/{seasonId}/{gameType}",
@@ -74,18 +112,36 @@ export const EDGE_METRIC_CATALOG = [
     launchFit: "ready-now",
     notes:
       "This closes the biggest official NHL Edge gap in the current context doc because goalie coverage is much lighter than skater and team coverage today."
+  },
+  {
+    key: "goalie-detail-now",
+    label: "Goalie Edge Detail (Now)",
+    endpointFamily: "/edge/goalie-detail/{goalieId}/now",
+    entityClasses: ["goalie"],
+    surfaceIds: ["uls-goalie-explorer", "trends", "sandbox"],
+    strengths: [
+      "current widget parity",
+      "goalie-stats",
+      "save-location summary",
+      "save-location details"
+    ],
+    supports: ["movement", "sustainability-context"],
+    launchFit: "supporting-context",
+    notes:
+      "Useful for current-state goalie overlays and parity with the public now surface, while the season/game-type goalie detail family remains the stronger stored contract."
   }
 ] as const satisfies readonly EdgeMetricCatalogEntry[];
 
 export const getEdgeMetricsForSurface = (
   surfaceId: AnalyticsSurfaceId
 ): EdgeMetricCatalogEntry[] =>
-  EDGE_METRIC_CATALOG.filter((entry) => entry.surfaceIds.includes(surfaceId));
+  EDGE_METRIC_CATALOG.filter((entry) =>
+    (entry.surfaceIds as readonly AnalyticsSurfaceId[]).includes(surfaceId)
+  );
 
 export const getEdgeMetricsForEntityClass = (
   entityClass: EdgeEntityClass
 ): EdgeMetricCatalogEntry[] =>
   EDGE_METRIC_CATALOG.filter((entry) =>
-    entry.entityClasses.includes(entityClass)
+    (entry.entityClasses as readonly EdgeEntityClass[]).includes(entityClass)
   );
-

@@ -13,7 +13,7 @@ import {
   normalizeSustainabilityDate,
   parseSustainabilityDateParam
 } from "./dates";
-import { upsertTrendBandRows } from "./persist";
+import { deleteStaleTrendBandRows, upsertTrendBandRows } from "./persist";
 
 type PlayerGameRow =
   Database["public"]["Views"]["player_stats_unified"]["Row"];
@@ -324,6 +324,13 @@ export async function computeAndStoreTrendBandHistory({
 
   if (!dry) {
     await upsertTrendBandRows({ rows: allRecords });
+    await deleteStaleTrendBandRows({
+      playerId,
+      seasonIds: Array.from(seasonSet),
+      startDate: normalizedStart ?? rowsWithIso[0]!.iso,
+      endDate: upperBound,
+      validDates: Array.from(seenDates)
+    });
   }
 
   return {

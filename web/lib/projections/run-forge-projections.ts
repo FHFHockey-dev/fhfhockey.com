@@ -4119,7 +4119,7 @@ export async function runProjectionV2ForDate(
       }
 
       const { error: deletePlayerPredictionErr } = await supabase
-        .from("player_prediction_outputs")
+        .from("player_prediction_outputs" as any)
         .delete()
         .eq("snapshot_date", asOfDate)
         .eq("game_id", game.id)
@@ -4130,7 +4130,7 @@ export async function runProjectionV2ForDate(
 
       if (playerPredictionOutputRows.length > 0) {
         const { error: playerPredictionErr } = await supabase
-          .from("player_prediction_outputs")
+          .from("player_prediction_outputs" as any)
           .upsert(playerPredictionOutputRows as any, {
             onConflict:
               "snapshot_date,player_id,model_name,model_version,prediction_scope,metric_key,game_id"
@@ -4254,7 +4254,7 @@ export async function runProjectionV2ForDate(
       };
 
       const { error: deleteGamePredictionErr } = await supabase
-        .from("game_prediction_outputs")
+        .from("game_prediction_outputs" as any)
         .delete()
         .eq("snapshot_date", asOfDate)
         .eq("game_id", game.id)
@@ -4264,14 +4264,14 @@ export async function runProjectionV2ForDate(
       if (deleteGamePredictionErr) throw deleteGamePredictionErr;
 
       const { error: gamePredictionErr } = await supabase
-        .from("game_prediction_outputs")
+        .from("game_prediction_outputs" as any)
         .upsert(gamePredictionOutput as any, {
           onConflict: "snapshot_date,game_id,model_name,model_version,prediction_scope"
         });
       if (gamePredictionErr) throw gamePredictionErr;
 
       const { error: deleteModelFlagErr } = await supabase
-        .from("model_market_flags_daily")
+        .from("model_market_flags_daily" as any)
         .delete()
         .eq("snapshot_date", asOfDate)
         .eq("game_id", game.id)
@@ -4281,7 +4281,7 @@ export async function runProjectionV2ForDate(
 
       if (modelMarketFlagRows.length > 0) {
         const { error: modelFlagErr } = await supabase
-          .from("model_market_flags_daily")
+          .from("model_market_flags_daily" as any)
           .upsert(modelMarketFlagRows as any, {
             onConflict:
               "snapshot_date,entity_type,entity_id,model_name,model_version,market_type,flag_type,game_id"

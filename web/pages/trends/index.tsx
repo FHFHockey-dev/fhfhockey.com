@@ -117,6 +117,8 @@ type TrendRankingRow = {
   latestValue: number | null;
 };
 
+type SkaterRankingRow = TrendRankingRow;
+
 type SkaterCategoryResult = {
   series?: Record<string, Array<{ gp: number; percentile: number }>>;
   rankings?: SkaterRankingRow[];
@@ -642,8 +644,7 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
   };
 
   const goalieCategoryData = useMemo(() => {
-    const categories = data?.goalieTrends?.categories ?? {};
-    const category = categories[goalieCategory];
+    const category = data?.goalieTrends?.categories?.[goalieCategory];
     return {
       series: category?.series ?? {},
       rankings: category?.rankings ?? []

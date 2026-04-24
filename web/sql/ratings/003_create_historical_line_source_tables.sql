@@ -102,6 +102,7 @@ CREATE TABLE IF NOT EXISTS public.lines_gdl (
   capture_key TEXT PRIMARY KEY,
   snapshot_date DATE NOT NULL,
   observed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  tweet_posted_at TIMESTAMPTZ NULL,
   game_id BIGINT NULL REFERENCES public.games(id) ON DELETE CASCADE,
   team_id BIGINT NOT NULL REFERENCES public.teams(id) ON DELETE CASCADE,
   team_abbreviation TEXT NOT NULL,

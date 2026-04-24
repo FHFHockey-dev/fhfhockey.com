@@ -14,6 +14,13 @@ type TrendBandClient = {
       rows: TrendBandRow[],
       options: UpsertOptions
     ) => Promise<{ error: Error | null }>;
+    delete: () => {
+      eq: (column: string, value: number | string) => any;
+      gte: (column: string, value: string) => any;
+      lte: (column: string, value: string) => any;
+      in: (column: string, value: Array<number | string | null>) => any;
+      not: (column: string, operator: string, value: string) => Promise<{ error: Error | null }>;
+    };
   };
 };
 
@@ -47,4 +54,38 @@ export async function upsertTrendBandRows({
   }
 
   return { inserted: filteredRows.length, chunks };
+}
+
+function buildInList(values: string[]): string {
+  return `(${values.map((value) => `"${value}"`).join(",")})`;
+}
+
+export async function deleteStaleTrendBandRows(args: {
+  playerId: number;
+  seasonIds: Array<number | null>;
+  startDate: string;
+  endDate: string;
+  validDates: string[];
+  client?: TrendBandClient;
+}): Promise<void> {
+  const seasonIds = args.seasonIds.filter(
+    (value): value is number => Number.isFinite(Number(value))
+  );
+  if (!args.validDates.length) {
+    return;
+  }
+
+  let query = (args.client ?? (supabase as unknown as TrendBandClient))
+    .from("sustainability_trend_bands")
+    .delete()
+    .eq("player_id", args.playerId)
+    .gte("snapshot_date", args.startDate)
+    .lte("snapshot_date", args.endDate);
+
+  if (seasonIds.length > 0) {
+    query = query.in("season_id", seasonIds);
+  }
+
+  const { error } = await query.not("snapshot_date", "in", buildInList(args.validDates));
+  if (error) throw error;
 }

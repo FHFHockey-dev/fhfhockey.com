@@ -42,7 +42,13 @@ export type ParsedGameDayTweet = {
   sourceUrl: string | null;
   tweetUrl: string | null;
   postedLabel: string | null;
+  postedAt: string | null;
   text: string;
+  structureSignals: {
+    forwardLineCount: number;
+    defensePairCount: number;
+    keywordHits: string[];
+  };
   matchedPlayerIds: number[];
   matchedNames: string[];
   unmatchedNames: string[];
@@ -70,6 +76,7 @@ export type HistoricalLineSourceRow = {
   capture_key: string;
   snapshot_date: string;
   observed_at: string;
+  tweet_posted_at: string | null;
   game_id: number | null;
   team_id: number;
   team_abbreviation: string;
@@ -150,15 +157,57 @@ const GOALIE_SOURCE_TTL_HOURS: Record<ParsedGoalieStartSource["sourceName"], num
 const GDT_LINEUP_KEYWORDS = [
   "lineup",
   "lines",
+  "line combinations",
+  "line combos",
+  "combo",
+  "line rushes",
+  "rushes",
   "warmups",
   "pregame",
   "morning skate",
   "projected lines"
 ];
-const GDT_PRACTICE_KEYWORDS = ["practice lines", "pairings", "practice"];
+const GDT_PRACTICE_KEYWORDS = ["practice lines", "pairings", "practice", "rushes"];
 const GDT_POWERPLAY_KEYWORDS = ["power play", "pp1", "pp2"];
-const GDT_GOALIE_KEYWORDS = ["starting goalie", "starter", "crease", "starts", "in net"];
-const GDT_INJURY_KEYWORDS = ["injury", "injured", "out", "returns", "returning"];
+const GDT_GOALIE_KEYWORDS = [
+  "starting goalie",
+  "starter",
+  "crease",
+  "starts",
+  "in net",
+  "lead the",
+  "lead the ",
+  "our guess"
+];
+const GDT_INJURY_KEYWORDS = [
+  "injury",
+  "injured",
+  "hurt",
+  "out",
+  "returns",
+  "returning",
+  "signed",
+  "recalled",
+  "promoted"
+];
+const GDT_REGEX_NAME_SEPARATOR = String.raw`(?:-|–|—|/|\\|•|\u2022)`;
+const GDT_INLINE_LINE_PATTERN = new RegExp(
+  String.raw`([A-Z][A-Za-z.'’` + "`" + String.raw`-]+(?:\s+[A-Z][A-Za-z.'’` + "`" + String.raw`-]+){0,2}\s*` +
+    GDT_REGEX_NAME_SEPARATOR +
+    String.raw`\s*[A-Z][A-Za-z.'’` + "`" + String.raw`-]+(?:\s+[A-Z][A-Za-z.'’` + "`" + String.raw`-]+){0,2}\s*` +
+    GDT_REGEX_NAME_SEPARATOR +
+    String.raw`\s*[A-Z][A-Za-z.'’` + "`" + String.raw`-]+(?:\s+[A-Z][A-Za-z.'’` + "`" + String.raw`-]+){0,2})`,
+  "g"
+);
+const GDT_INLINE_PAIR_PATTERN = new RegExp(
+  String.raw`([A-Z][A-Za-z.'’` + "`" + String.raw`-]+(?:\s+[A-Z][A-Za-z.'’` + "`" + String.raw`-]+){0,2}\s*` +
+    GDT_REGEX_NAME_SEPARATOR +
+    String.raw`\s*[A-Z][A-Za-z.'’` + "`" + String.raw`-]+(?:\s+[A-Z][A-Za-z.'’` + "`" + String.raw`-]+){0,2})`,
+  "g"
+);
+const GDT_ALIAS_OVERRIDES: Record<string, string[]> = {
+  "joel eriksson ek": ["jeek"]
+};
 
 function normalizeWhitespace(value: string): string {
   return value.replace(/\u00a0/g, " ").replace(MULTISPACE_PATTERN, " ").trim();
@@ -300,10 +349,41 @@ function parseInjuryList(value: string): InjuryMention[] {
 }
 
 function parsePlayerLine(value: string): string[] {
-  return normalizeLineText(value)
+  const normalized = normalizeLineText(value);
+  const spacedSplit = normalized
     .split(/\s+--\s+|\s+-\s+/)
     .map((item) => normalizeWhitespace(item))
     .filter(Boolean);
+
+  if (spacedSplit.length > 1) {
+    return spacedSplit;
+  }
+
+  return normalized
+    .split(/\s*(?:--|[-–—/\\•])\s*/)
+    .map((item) => normalizeWhitespace(item))
+    .filter(Boolean);
+}
+
+function extractStructuredPlayerGroupsFromText(text: string): {
+  forwards: string[][];
+  defensePairs: string[][];
+  goalies: string[];
+} {
+  const lines = text
+    .split(/\n+/)
+    .map((line) => normalizeWhitespace(line))
+    .filter(Boolean);
+
+  const parsedGroups = lines
+    .map((line) => parsePlayerLine(line))
+    .filter((group) => group.length > 0 && group.length <= 3);
+
+  return {
+    forwards: parsedGroups.filter((group) => group.length === 3).slice(0, 4),
+    defensePairs: parsedGroups.filter((group) => group.length === 2).slice(0, 3),
+    goalies: parsedGroups.filter((group) => group.length === 1).map((group) => group[0]!).slice(0, 2)
+  };
 }
 
 function dedupeNames(names: string[]): string[] {
@@ -316,6 +396,33 @@ function dedupeNames(names: string[]): string[] {
     result.push(name);
   }
   return result;
+}
+
+function buildRosterSearchNeedles(rosterEntry: RosterNameEntry): string[] {
+  const needles = new Set<string>();
+  const normalizedFullName = normalizeTeamLabel(rosterEntry.fullName);
+  const normalizedLastName = normalizeTeamLabel(rosterEntry.lastName);
+  if (normalizedFullName) needles.add(normalizedFullName);
+  if (normalizedLastName) needles.add(normalizedLastName);
+
+  const parts = rosterEntry.fullName
+    .split(/\s+/)
+    .map((part) => normalizeWhitespace(part))
+    .filter(Boolean);
+  if (parts.length >= 2) {
+    const initial = normalizeTeamLabel(parts[0]?.[0] ?? "");
+    const surname = normalizeTeamLabel(parts.slice(1).join(" "));
+    if (initial && surname) {
+      needles.add(`${initial} ${surname}`);
+      needles.add(`${initial}. ${surname}`);
+    }
+  }
+
+  for (const alias of GDT_ALIAS_OVERRIDES[normalizedFullName] ?? []) {
+    needles.add(normalizeTeamLabel(alias));
+  }
+
+  return Array.from(needles.values()).filter(Boolean);
 }
 
 function mapNamesToPlayerIdsOrdered(
@@ -347,6 +454,27 @@ function mapNamesToPlayerIdsOrdered(
 
     return null;
   });
+}
+
+function resolveTweetNameToRosterEntry(
+  rawName: string,
+  rosterEntries: RosterNameEntry[]
+): RosterNameEntry | null {
+  const normalizedName = normalizeTeamLabel(rawName);
+  if (!normalizedName) return null;
+
+  for (const rosterEntry of rosterEntries) {
+    const needles = buildRosterSearchNeedles(rosterEntry);
+    if (needles.includes(normalizedName)) {
+      return rosterEntry;
+    }
+  }
+
+  const lastName = normalizedName.split(" ").pop() ?? normalizedName;
+  const lastNameMatches = rosterEntries.filter(
+    (entry) => normalizeTeamLabel(entry.lastName) === lastName
+  );
+  return lastNameMatches.length === 1 ? lastNameMatches[0]! : null;
 }
 
 export function validateLineupNames(
@@ -507,9 +635,9 @@ export function parseNhlLineupProjectionsPage(args: {
 }): ParsedPregameLineupSource[] {
   const $ = cheerio.load(args.html);
   const bodyText = $("body").text().replace(/\r/g, "");
-  const normalizedText = bodyText.replace(/\u00a0/g, " ");
+  const normalizedText = `\n${bodyText.replace(/\u00a0/g, " ")}`;
   const blockPattern =
-    /\*\*(.+?) projected lineup\*\*([\s\S]*?)(?=(?:\*\*.+? projected lineup\*\*)|(?:##\s)|$)/gi;
+    /(?:^|\n+)\s*\*{0,2}([A-Za-zÀ-ÿ .'-]+?) projected lineup\*{0,2}\s*\n+([\s\S]*?)(?=(?:\n+\s*\*{0,2}[A-Za-zÀ-ÿ .'-]+? projected lineup\*{0,2}\s*\n)|$)/gi;
 
   const results: ParsedPregameLineupSource[] = [];
   let match: RegExpExecArray | null;
@@ -540,6 +668,59 @@ export function parseNhlLineupProjectionsPage(args: {
   }
 
   return results;
+}
+
+export type GameDayTweetOEmbedData = {
+  text: string | null;
+  postedAt: string | null;
+  postedLabel: string | null;
+  sourceTweetUrl: string | null;
+};
+
+function parseDateLabelToIso(dateLabel: string | null | undefined): string | null {
+  if (!dateLabel) return null;
+  const parsed = Date.parse(`${String(dateLabel).trim()} 00:00:00 UTC`);
+  if (!Number.isFinite(parsed)) {
+    return null;
+  }
+  return new Date(parsed).toISOString();
+}
+
+export async function fetchGameDayTweetOEmbedData(
+  tweetUrl: string
+): Promise<GameDayTweetOEmbedData | null> {
+  const endpoint = `https://publish.twitter.com/oembed?omit_script=true&dnt=true&url=${encodeURIComponent(tweetUrl)}`;
+  const response = await fetch(endpoint, {
+    headers: {
+      Accept: "application/json",
+      "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)"
+    },
+    cache: "no-store"
+  });
+
+  if (!response.ok) {
+    return null;
+  }
+
+  const payload = (await response.json()) as { html?: string };
+  if (!payload.html) {
+    return null;
+  }
+
+  const root = cheerio.load(payload.html);
+  const paragraph = root("p").first();
+  paragraph.find("br").replaceWith("\n");
+  const text = paragraph.text().replace(/\n\s+/g, "\n").trim();
+  const sourceLink = root("a").last();
+  const postedLabel = normalizeWhitespace(sourceLink.text()) || null;
+  const sourceTweetUrl = sourceLink.attr("href") ?? null;
+
+  return {
+    text: text || null,
+    postedAt: parseDateLabelToIso(postedLabel),
+    postedLabel,
+    sourceTweetUrl
+  };
 }
 
 function parseLinkedPlayerNamesFromHtml(fragmentHtml: string): string[] {
@@ -613,6 +794,7 @@ export function parseDailyFaceoffLineCombinationsPage(args: {
 
 function classifyGameDayTweet(text: string): GameDayTweetsClassification {
   const normalized = normalizeTeamLabel(text);
+  GDT_INLINE_LINE_PATTERN.lastIndex = 0;
 
   if (GDT_POWERPLAY_KEYWORDS.some((keyword) => normalized.includes(keyword))) {
     return "power_play";
@@ -628,11 +810,26 @@ function classifyGameDayTweet(text: string): GameDayTweetsClassification {
   }
   if (
     GDT_LINEUP_KEYWORDS.some((keyword) => normalized.includes(keyword)) ||
-    /[a-z.'-]+-[a-z.'-]+-[a-z.'-]+/i.test(text)
+    GDT_INLINE_LINE_PATTERN.test(text)
   ) {
     return "lineup";
   }
   return "other";
+}
+
+function findGameDayTweetKeywordHits(text: string): string[] {
+  const normalized = normalizeTeamLabel(text);
+  const keywords = [
+    ...GDT_LINEUP_KEYWORDS,
+    ...GDT_PRACTICE_KEYWORDS,
+    ...GDT_POWERPLAY_KEYWORDS,
+    ...GDT_GOALIE_KEYWORDS,
+    ...GDT_INJURY_KEYWORDS
+  ];
+
+  return dedupeNames(
+    keywords.filter((keyword) => normalized.includes(normalizeTeamLabel(keyword)))
+  );
 }
 
 function matchRosterNamesInTweet(
@@ -644,12 +841,13 @@ function matchRosterNamesInTweet(
   const matchedLastNames: string[] = [];
 
   for (const rosterEntry of rosterEntries) {
-    const normalizedFullName = normalizeTeamLabel(rosterEntry.fullName);
-    const normalizedLastName = normalizeTeamLabel(rosterEntry.lastName);
-    if (normalizedFullName && normalizedTweet.includes(normalizedFullName)) {
+    const needles = buildRosterSearchNeedles(rosterEntry);
+    const matchedNeedle = needles.find((needle) => normalizedTweet.includes(needle));
+    if (matchedNeedle && matchedNeedle !== normalizeTeamLabel(rosterEntry.lastName)) {
       matchedFullNames.push(rosterEntry.fullName);
       continue;
     }
+    const normalizedLastName = normalizeTeamLabel(rosterEntry.lastName);
     if (normalizedLastName && normalizedTweet.includes(normalizedLastName)) {
       matchedLastNames.push(rosterEntry.lastName);
     }
@@ -668,9 +866,12 @@ function extractOrderedRosterHitsFromTweet(
   const normalizedTweet = normalizeTeamLabel(tweetText);
   const matches = rosterEntries
     .map((rosterEntry) => {
-      const fullNameNeedle = normalizeTeamLabel(rosterEntry.fullName);
+      const needles = buildRosterSearchNeedles(rosterEntry);
+      const indexes = needles
+        .map((needle) => normalizedTweet.indexOf(needle))
+        .filter((index) => index >= 0);
+      const fullNameIndex = indexes.length > 0 ? Math.min(...indexes) : -1;
       const lastNameNeedle = normalizeTeamLabel(rosterEntry.lastName);
-      const fullNameIndex = fullNameNeedle ? normalizedTweet.indexOf(fullNameNeedle) : -1;
       const lastNameIndex = lastNameNeedle ? normalizedTweet.indexOf(lastNameNeedle) : -1;
       const index =
         fullNameIndex >= 0
@@ -690,8 +891,115 @@ function extractOrderedRosterHitsFromTweet(
   return dedupeNames(matches.map((entry) => entry.name));
 }
 
+function extractStructuredNameGroupsFromTweet(
+  tweetText: string
+): {
+  forwardLineCount: number;
+  defensePairCount: number;
+} {
+  GDT_INLINE_LINE_PATTERN.lastIndex = 0;
+  GDT_INLINE_PAIR_PATTERN.lastIndex = 0;
+  const forwardLineCount = Array.from(tweetText.matchAll(GDT_INLINE_LINE_PATTERN)).length;
+  GDT_INLINE_PAIR_PATTERN.lastIndex = 0;
+  const pairCandidates = Array.from(tweetText.matchAll(GDT_INLINE_PAIR_PATTERN)).length;
+
+  return {
+    forwardLineCount,
+    defensePairCount: Math.max(0, pairCandidates - forwardLineCount * 2)
+  };
+}
+
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+export function buildGameDayTweetsLineupSourceFromTweet(args: {
+  team: TeamDirectoryEntry;
+  rosterEntries?: RosterNameEntry[];
+  sourceUrl: string;
+  tweet: ParsedGameDayTweet;
+  enrichedText?: string | null;
+  enrichedPostedAt?: string | null;
+  enrichedPostedLabel?: string | null;
+  enrichedSourceTweetUrl?: string | null;
+}): ParsedPregameLineupSource | null {
+  const rosterEntries = args.rosterEntries ?? [];
+  const text = args.enrichedText && args.enrichedText.trim() ? args.enrichedText : args.tweet.text;
+  const validation = matchRosterNamesInTweet(text, rosterEntries);
+
+  if (
+    args.tweet.classification !== "lineup" &&
+    args.tweet.classification !== "practice_lines"
+  ) {
+    return null;
+  }
+
+  if (validation.matchedPlayerIds.length < 6) {
+    return null;
+  }
+
+  const structured = extractStructuredPlayerGroupsFromText(text);
+  let forwards = structured.forwards
+    .map((line) =>
+      line.map((name) => resolveTweetNameToRosterEntry(name, rosterEntries)?.fullName ?? name)
+    )
+    .filter((line) => line.length === 3);
+  let defensePairs = structured.defensePairs
+    .map((pair) =>
+      pair.map((name) => resolveTweetNameToRosterEntry(name, rosterEntries)?.fullName ?? name)
+    )
+    .filter((pair) => pair.length === 2);
+  let goalies = structured.goalies
+    .map((name) => resolveTweetNameToRosterEntry(name, rosterEntries)?.fullName ?? null)
+    .filter((name): name is string => Boolean(name));
+
+  if (forwards.length === 0 && defensePairs.length === 0) {
+    const orderedRosterHits = extractOrderedRosterHitsFromTweet(text, rosterEntries);
+    forwards = Array.from(
+      { length: Math.floor(Math.min(orderedRosterHits.length, 12) / 3) },
+      (_, index) => orderedRosterHits.slice(index * 3, index * 3 + 3)
+    ).filter((line) => line.length === 3);
+    const defenseStartIndex = forwards.length * 3;
+    const defenseHits = orderedRosterHits.slice(defenseStartIndex, defenseStartIndex + 6);
+    defensePairs = Array.from(
+      { length: Math.floor(defenseHits.length / 2) },
+      (_, index) => defenseHits.slice(index * 2, index * 2 + 2)
+    ).filter((pair) => pair.length === 2);
+    goalies = orderedRosterHits.slice(forwards.length * 3 + defensePairs.length * 2).slice(0, 2);
+  }
+
+  return buildSourceRecord({
+    team: args.team,
+    sourceName: "gamedaytweets",
+    sourceUrl: args.enrichedSourceTweetUrl ?? args.tweet.tweetUrl ?? args.sourceUrl,
+    sourceRank: 3,
+    isOfficial: false,
+    status: "observed",
+    observedAt: null,
+    freshnessExpiresAt: null,
+    rosterEntries,
+    forwards,
+    defensePairs,
+    goalies,
+    metadata: {
+      candidateClassification: args.tweet.classification,
+      tweetUrl: args.enrichedSourceTweetUrl ?? args.tweet.tweetUrl,
+      tweetPostedAt: args.enrichedPostedAt ?? args.tweet.postedAt,
+      tweetPostedLabel: args.enrichedPostedLabel ?? args.tweet.postedLabel,
+      tweetPostedPrecision:
+        (args.enrichedPostedAt ?? args.tweet.postedAt) ? "day" : null,
+      matchedPlayerIds: validation.matchedPlayerIds,
+      matchedNames: validation.matchedNames,
+      unmatchedNames: validation.unmatchedNames,
+      structureSignals: {
+        ...extractStructuredNameGroupsFromTweet(text),
+        keywordHits: findGameDayTweetKeywordHits(text)
+      },
+      text,
+      textSource:
+        args.enrichedText && args.enrichedText.trim() ? "twitter-oembed" : "gdt-html"
+    }
+  });
 }
 
 export function parseGameDayTweetsLinesPage(args: {
@@ -717,6 +1025,7 @@ export function parseGameDayTweetsLinesPage(args: {
         .filter((href): href is string => Boolean(href));
 
       const validation = matchRosterNamesInTweet(text, rosterEntries);
+      const structureSignals = extractStructuredNameGroupsFromTweet(text);
 
       return {
         classification: classifyGameDayTweet(text),
@@ -724,7 +1033,12 @@ export function parseGameDayTweetsLinesPage(args: {
         sourceUrl: args.sourceUrl,
         tweetUrl: links.find((href) => /twitter\.com\/GameDayLines\/status\//i.test(href)) ?? null,
         postedLabel: text.match(/([A-Z][a-z]{2} \d{1,2}, \d{4})$/)?.[1] ?? null,
+        postedAt: parseDateLabelToIso(text.match(/([A-Z][a-z]{2} \d{1,2}, \d{4})$/)?.[1] ?? null),
         text,
+        structureSignals: {
+          ...structureSignals,
+          keywordHits: findGameDayTweetKeywordHits(text)
+        },
         matchedPlayerIds: validation.matchedPlayerIds,
         matchedNames: validation.matchedNames,
         unmatchedNames: validation.unmatchedNames
@@ -738,7 +1052,19 @@ export function parseGameDayTweetsLinesPage(args: {
         (tweet.classification === "lineup" || tweet.classification === "practice_lines") &&
         tweet.matchedPlayerIds.length >= 6
     )
-    .sort((left, right) => right.matchedPlayerIds.length - left.matchedPlayerIds.length)[0];
+    .sort((left, right) => {
+      const leftScore =
+        left.structureSignals.forwardLineCount * 6 +
+        left.structureSignals.defensePairCount * 3 +
+        left.structureSignals.keywordHits.length +
+        left.matchedPlayerIds.length;
+      const rightScore =
+        right.structureSignals.forwardLineCount * 6 +
+        right.structureSignals.defensePairCount * 3 +
+        right.structureSignals.keywordHits.length +
+        right.matchedPlayerIds.length;
+      return rightScore - leftScore;
+    })[0];
 
   if (!candidate) {
     return {
@@ -747,39 +1073,12 @@ export function parseGameDayTweetsLinesPage(args: {
     };
   }
 
-  const orderedRosterHits = extractOrderedRosterHitsFromTweet(candidate.text, rosterEntries);
-  const forwards = Array.from({ length: Math.floor(Math.min(orderedRosterHits.length, 12) / 3) }, (_, index) =>
-    orderedRosterHits.slice(index * 3, index * 3 + 3)
-  ).filter((line) => line.length === 3);
-  const defenseStartIndex = forwards.length * 3;
-  const defenseHits = orderedRosterHits.slice(defenseStartIndex, defenseStartIndex + 6);
-  const defensePairs = Array.from(
-    { length: Math.floor(defenseHits.length / 2) },
-    (_, index) => defenseHits.slice(index * 2, index * 2 + 2)
-  ).filter((pair) => pair.length === 2);
-
   return {
-    selectedLineup: buildSourceRecord({
+    selectedLineup: buildGameDayTweetsLineupSourceFromTweet({
       team: args.team,
-      sourceName: "gamedaytweets",
-      sourceUrl: candidate.tweetUrl ?? args.sourceUrl,
-      sourceRank: 3,
-      isOfficial: false,
-      status: "observed",
-      observedAt: null,
-      freshnessExpiresAt: null,
       rosterEntries,
-      forwards,
-      defensePairs,
-      metadata: {
-        candidateClassification: candidate.classification,
-        tweetUrl: candidate.tweetUrl,
-        matchedPlayerIds: candidate.matchedPlayerIds,
-        matchedNames: candidate.matchedNames,
-        unmatchedNames: candidate.unmatchedNames,
-        orderedRosterHits,
-        text: candidate.text
-      }
+      sourceUrl: args.sourceUrl,
+      tweet: candidate
     }),
     tweets
   };
@@ -1325,6 +1624,11 @@ export function toHistoricalLineSourceRow(args: {
     ].join(":"),
     snapshot_date: args.snapshotDate,
     observed_at: observedAt,
+    tweet_posted_at:
+      args.source.sourceName === "gamedaytweets" &&
+      typeof args.source.metadata.tweetPostedAt === "string"
+        ? String(args.source.metadata.tweetPostedAt)
+        : null,
     game_id: args.gameId,
     team_id: args.source.team.id,
     team_abbreviation: args.source.team.abbreviation,

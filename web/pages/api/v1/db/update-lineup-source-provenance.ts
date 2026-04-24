@@ -2,10 +2,12 @@ import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { getCurrentSeason, getTeams } from "lib/NHL/server";
 import type { Team } from "lib/NHL/types";
 import {
+  buildGameDayTweetsLineupSourceFromTweet,
   buildGoalieStartSourceFromModel,
   buildGoalieStartSourceFromOfficialLineup,
   buildNhlLineupProjectionsUrl,
   buildTeamDirectory,
+  fetchGameDayTweetOEmbedData,
   parseDailyFaceoffLineCombinationsPage,
   parseDailyFaceoffStartingGoaliesPage,
   parseGameDayTweetsGoaliesPage,
@@ -36,6 +38,14 @@ function parseRequestedDate(value: string | string[] | undefined): string {
     return rawValue;
   }
   return new Date().toISOString().slice(0, 10);
+}
+
+function todayIsoDate(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function isPastReplayDate(requestedDate: string): boolean {
+  return requestedDate < todayIsoDate();
 }
 
 async function fetchHtml(url: string): Promise<string> {
@@ -131,6 +141,16 @@ export default withCronJobAudit(
   adminOnly(async (req, res) => {
     try {
       const requestedDate = parseRequestedDate(req.query.date);
+      if (isPastReplayDate(requestedDate)) {
+        return res.status(400).json({
+          success: false,
+          date: requestedDate,
+          message:
+            "Historical replay is blocked for lineup source ingestion. NHL.com, DailyFaceoff, and GameDayTweets are current-state sources, so replaying past dates would create dishonest history.",
+          note:
+            "Use this route only for same-day or forward-looking prospective archiving. Historical sweeps are intentionally rejected."
+        });
+      }
       const currentSeason = await getCurrentSeason();
       const teams = await getTeams(currentSeason.seasonId);
       const teamDirectory = buildTeamDirectory(teams);
@@ -228,20 +248,37 @@ export default withCronJobAudit(
           sourceUrl: dfoUrl
         });
 
-        let gameDayTweets = null;
-        let gameDayTweetCount = 0;
-        if (!official && dailyFaceoff.status === "rejected") {
-          const gameDayTweetsUrl = `https://www.gamedaytweets.com/lines?team=${team.abbreviation}`;
-          const gameDayTweetsHtml = await fetchHtml(gameDayTweetsUrl);
-          const parsed = parseGameDayTweetsLinesPage({
-            html: gameDayTweetsHtml,
-            team,
-            rosterEntries,
-            sourceUrl: gameDayTweetsUrl
-          });
-          gameDayTweets = parsed.selectedLineup;
-          gameDayTweetCount = parsed.tweets.length;
+        const gameDayTweetsUrl = `https://www.gamedaytweets.com/lines?team=${team.abbreviation}`;
+        const gameDayTweetsHtml = await fetchHtml(gameDayTweetsUrl);
+        const parsedGameDayTweets = parseGameDayTweetsLinesPage({
+          html: gameDayTweetsHtml,
+          team,
+          rosterEntries,
+          sourceUrl: gameDayTweetsUrl
+        });
+        let gameDayTweets = parsedGameDayTweets.selectedLineup;
+        if (gameDayTweets?.metadata?.tweetUrl && typeof gameDayTweets.metadata.tweetUrl === "string") {
+          const enrichedTweet = await fetchGameDayTweetOEmbedData(
+            String(gameDayTweets.metadata.tweetUrl)
+          );
+          const selectedTweet = parsedGameDayTweets.tweets.find(
+            (tweet) => tweet.tweetUrl === String(gameDayTweets?.metadata?.tweetUrl)
+          );
+          if (selectedTweet && enrichedTweet?.text) {
+            gameDayTweets =
+              buildGameDayTweetsLineupSourceFromTweet({
+                team,
+                rosterEntries,
+                sourceUrl: gameDayTweetsUrl,
+                tweet: selectedTweet,
+                enrichedText: enrichedTweet.text,
+                enrichedPostedAt: enrichedTweet.postedAt,
+                enrichedPostedLabel: enrichedTweet.postedLabel,
+                enrichedSourceTweetUrl: enrichedTweet.sourceTweetUrl
+              }) ?? gameDayTweets;
+          }
         }
+        const gameDayTweetCount = parsedGameDayTweets.tweets.length;
 
         const selected = selectBestPregameLineupSource([
           official,
@@ -367,9 +404,13 @@ export default withCronJobAudit(
         [keyof typeof lineRowsByTable, HistoricalLineSourceRow[]]
       >) {
         if (rows.length === 0) continue;
+        const upsertRows =
+          tableName === "lines_gdl"
+            ? rows
+            : rows.map(({ tweet_posted_at: _tweetPostedAt, ...row }) => row);
         const { error } = await req.supabase
           .from(tableName as any)
-          .upsert(rows as any, {
+          .upsert(upsertRows as any, {
             onConflict: "capture_key"
           });
         if (error) throw error;

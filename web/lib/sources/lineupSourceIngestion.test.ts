@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  buildGameDayTweetsLineupSourceFromTweet,
   buildGoalieStartSourceFromModel,
   buildGoalieStartSourceFromOfficialLineup,
   buildTeamDirectory,
@@ -11,6 +12,7 @@ import {
   parseNhlLineupProjectionsPage,
   selectBestGoalieStartSource,
   selectBestPregameLineupSource,
+  toHistoricalLineSourceRow,
   validateLineupNames
 } from "./lineupSourceIngestion";
 
@@ -38,6 +40,28 @@ const tampaRoster = [
   { playerId: 6, fullName: "Jake Guentzel", lastName: "Guentzel" },
   { playerId: 7, fullName: "Andrei Vasilevskiy", lastName: "Vasilevskiy" },
   { playerId: 8, fullName: "Jonas Johansson", lastName: "Johansson" }
+];
+const wildRoster = [
+  { playerId: 101, fullName: "Kirill Kaprizov", lastName: "Kaprizov" },
+  { playerId: 102, fullName: "Joel Eriksson Ek", lastName: "Eriksson Ek" },
+  { playerId: 103, fullName: "Mats Zuccarello", lastName: "Zuccarello" },
+  { playerId: 104, fullName: "Marcus Johansson", lastName: "Johansson" },
+  { playerId: 105, fullName: "Matt Boldy", lastName: "Boldy" },
+  { playerId: 106, fullName: "Ryan Hartman", lastName: "Hartman" },
+  { playerId: 107, fullName: "Vladimir Tarasenko", lastName: "Tarasenko" },
+  { playerId: 108, fullName: "Nick Foligno", lastName: "Foligno" },
+  { playerId: 109, fullName: "Marcus Foligno", lastName: "Foligno" },
+  { playerId: 110, fullName: "Danila Yurov", lastName: "Yurov" },
+  { playerId: 111, fullName: "Bobby Brink", lastName: "Brink" },
+  { playerId: 112, fullName: "Michael McCarron", lastName: "McCarron" },
+  { playerId: 113, fullName: "Yakov Trenin", lastName: "Trenin" },
+  { playerId: 114, fullName: "Quinn Hughes", lastName: "Hughes" },
+  { playerId: 115, fullName: "Brock Faber", lastName: "Faber" },
+  { playerId: 116, fullName: "Jonas Brodin", lastName: "Brodin" },
+  { playerId: 117, fullName: "Jared Spurgeon", lastName: "Spurgeon" },
+  { playerId: 118, fullName: "Jake Middleton", lastName: "Middleton" },
+  { playerId: 119, fullName: "Zach Bogosian", lastName: "Bogosian" },
+  { playerId: 120, fullName: "Jesper Wallstedt", lastName: "Wallstedt" }
 ];
 
 describe("lineupSourceIngestion", () => {
@@ -91,6 +115,49 @@ describe("lineupSourceIngestion", () => {
     expect(parsed[0]?.injuries).toEqual([
       { playerName: "Victor Hedman", note: "personal leave" }
     ]);
+  });
+
+  it("parses NHL.com projected lineups when the live article mixes bolded and plain headers", () => {
+    const parsed = parseNhlLineupProjectionsPage({
+      html: `
+        <body>
+          Penguins projected lineup
+
+          Rickard Rakell -- Sidney Crosby -- Bryan Rust
+
+          **Wild projected lineup**
+
+          Kirill Kaprizov -- Joel Eriksson Ek -- Matt Boldy
+
+          Marcus Johansson -- Ryan Hartman -- Vladimir Tarasenko
+
+          Marcus Foligno -- Danila Yurov -- Bobby Brink
+
+          Nick Foligno -- Nico Sturm -- Michael McCarron
+
+          Quinn Hughes -- Brock Faber
+
+          Jonas Brodin -- Jared Spurgeon
+
+          Jake Middleton -- Zach Bogosian
+
+          Jesper Wallstedt
+        </body>
+      `,
+      teams: buildTeamDirectory([
+        ...teams,
+        {
+          id: 30,
+          name: "Minnesota Wild",
+          abbreviation: "MIN",
+          logo: "/teamLogos/MIN.png"
+        }
+      ]),
+      sourceUrl: "https://www.nhl.com/news/nhl-lineup-projections-2025-26-season",
+      rosterByTeam: new Map([[30, wildRoster]])
+    });
+
+    expect(parsed.map((row) => row.team.abbreviation)).toContain("MIN");
   });
 
   it("rejects DailyFaceoff pages when the source is Last Game", () => {
@@ -147,10 +214,156 @@ describe("lineupSourceIngestion", () => {
     expect(parsed.tweets[0]).toMatchObject({
       classification: "lineup"
     });
+    expect(parsed.tweets[0]?.structureSignals).toMatchObject({
+      forwardLineCount: 1
+    });
     expect(parsed.selectedLineup?.sourceName).toBe("gamedaytweets");
     expect(parsed.selectedLineup?.metadata).toMatchObject({
-      candidateClassification: "lineup"
+      candidateClassification: "lineup",
+      structureSignals: {
+        keywordHits: expect.arrayContaining(["warmups"])
+      }
     });
+  });
+
+  it("prefers the more structured GDT lineup tweet when multiple tweets match", () => {
+    const parsed = parseGameDayTweetsLinesPage({
+      html: `
+        <body>
+          <blockquote class="tweet">
+            <a href="https://twitter.com/BeatWriter">@BeatWriter</a>
+            Line rushes for Tampa Bay: Point, Kucherov, Hagel, Cirelli, Guentzel, Goncalves.
+            <a href="https://twitter.com/GameDayLines/status/111">tweet</a>
+          </blockquote>
+          <blockquote class="tweet">
+            <a href="https://twitter.com/BeatWriter">@BeatWriter</a>
+            Tampa Bay line combinations:
+            Goncalves-Point-Kucherov
+            Hagel-Cirelli-Guentzel
+            <a href="https://twitter.com/GameDayLines/status/222">tweet</a>
+          </blockquote>
+        </body>
+      `,
+      team: teams[1],
+      rosterEntries: tampaRoster,
+      sourceUrl: "https://www.gamedaytweets.com/lines?team=TBL"
+    });
+
+    expect(parsed.selectedLineup?.sourceUrl).toBe("https://twitter.com/GameDayLines/status/222");
+    expect(parsed.selectedLineup?.metadata).toMatchObject({
+      structureSignals: {
+        forwardLineCount: 1,
+        keywordHits: expect.arrayContaining(["line combinations"])
+      }
+    });
+  });
+
+  it("rebuilds a full GDT lineup from enriched tweet text with initials and aliases", () => {
+    const tweet = {
+      classification: "lineup",
+      sourceHandle: "https://twitter.com/JoeSmithNHL",
+      sourceUrl: "https://www.gamedaytweets.com/lines?team=MIN",
+      tweetUrl: "https://twitter.com/GameDayLines/status/2028892043054072251",
+      postedLabel: "Mar 3, 2026",
+      postedAt: "2026-03-03T00:00:00.000Z",
+      text: "#mnwild lines Kaprizov - Hartman - Zuccarello Johansson - JEEk - Boldy",
+      structureSignals: {
+        forwardLineCount: 1,
+        defensePairCount: 0,
+        keywordHits: ["lines"]
+      },
+      matchedPlayerIds: [101, 103, 104, 105],
+      matchedNames: ["Kirill Kaprizov", "Mats Zuccarello", "Marcus Johansson", "Matt Boldy"],
+      unmatchedNames: []
+    } as const;
+
+    const parsed = buildGameDayTweetsLineupSourceFromTweet({
+      team: buildTeamDirectory([
+        {
+          id: 30,
+          name: "Minnesota Wild",
+          abbreviation: "MIN",
+          logo: "/teamLogos/MIN.png"
+        }
+      ])[0]!,
+      rosterEntries: wildRoster,
+      sourceUrl: "https://www.gamedaytweets.com/lines?team=MIN",
+      tweet,
+      enrichedText:
+        "#mnwild lines for Game 2: Zuccarello out with upper body injury\nKaprizov-Hartman-Tarasenko\nJohansson-Eriksson Ek-Boldy\nN. Foligno-Yurov-Brink\nM. Foligno-McCarron-Trenin\nHughes-Faber\nBrodin-Spurgeon\nMiddleton-Bogosian\nWallstedt"
+    });
+
+    expect(parsed).toMatchObject({
+      forwards: [
+        ["Kirill Kaprizov", "Ryan Hartman", "Vladimir Tarasenko"],
+        ["Marcus Johansson", "Joel Eriksson Ek", "Matt Boldy"],
+        ["Nick Foligno", "Danila Yurov", "Bobby Brink"],
+        ["Marcus Foligno", "Michael McCarron", "Yakov Trenin"]
+      ],
+      defensePairs: [
+        ["Quinn Hughes", "Brock Faber"],
+        ["Jonas Brodin", "Jared Spurgeon"],
+        ["Jake Middleton", "Zach Bogosian"]
+      ],
+      goalies: ["Jesper Wallstedt"]
+    });
+    expect(parsed?.metadata).toMatchObject({
+      tweetPostedAt: "2026-03-03T00:00:00.000Z",
+      tweetPostedLabel: "Mar 3, 2026",
+      tweetPostedPrecision: "day"
+    });
+  });
+
+  it("writes tweet_posted_at into historical GDT rows", () => {
+    const parsed = buildGameDayTweetsLineupSourceFromTweet({
+      team: buildTeamDirectory([
+        {
+          id: 30,
+          name: "Minnesota Wild",
+          abbreviation: "MIN",
+          logo: "/teamLogos/MIN.png"
+        }
+      ])[0]!,
+      rosterEntries: wildRoster,
+      sourceUrl: "https://www.gamedaytweets.com/lines?team=MIN",
+      tweet: {
+        classification: "lineup",
+        sourceHandle: "https://twitter.com/JoeSmithNHL",
+        sourceUrl: "https://www.gamedaytweets.com/lines?team=MIN",
+        tweetUrl: "https://twitter.com/GameDayLines/status/2028892043054072251",
+        postedLabel: "Mar 3, 2026",
+        postedAt: "2026-03-03T00:00:00.000Z",
+        text: "#mnwild lines Kaprizov - Hartman - Zuccarello",
+        structureSignals: {
+          forwardLineCount: 1,
+          defensePairCount: 0,
+          keywordHits: ["lines"]
+        },
+        matchedPlayerIds: [101, 102, 103, 104, 105, 106],
+        matchedNames: [
+          "Kirill Kaprizov",
+          "Joel Eriksson Ek",
+          "Mats Zuccarello",
+          "Marcus Johansson",
+          "Matt Boldy",
+          "Ryan Hartman"
+        ],
+        unmatchedNames: []
+      },
+      enrichedText:
+        "Kaprizov-Hartman-Zuccarello\nJohansson-Eriksson Ek-Boldy\nWallstedt",
+      enrichedPostedAt: "2026-03-03T00:00:00.000Z",
+      enrichedPostedLabel: "March 3, 2026"
+    });
+
+    const row = toHistoricalLineSourceRow({
+      snapshotDate: "2026-04-22",
+      gameId: 2025030163,
+      source: parsed!,
+      rosterEntries: wildRoster
+    });
+
+    expect(row.tweet_posted_at).toBe("2026-03-03T00:00:00.000Z");
   });
 
   it("parses GameDayTweets goalie page into team-specific starter records", () => {

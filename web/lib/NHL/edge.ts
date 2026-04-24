@@ -79,6 +79,26 @@ export type EdgeSkaterShotLocationSortKey =
   | "sog"
   | "shooting-pctg";
 
+export type EdgeByTheNumbersNowResponse = {
+  games?: unknown;
+  gameDate?: string;
+  hardestShotSkater?: unknown;
+  maxSkatingSpeedSkater?: unknown;
+  totalDistanceSkatedSkater?: unknown;
+  totalDistanceSkatedTeam?: unknown;
+  totalDistanceSkatedLeague?: unknown;
+};
+
+export async function getEdgeByTheNumbersNow(): Promise<EdgeByTheNumbersNowResponse> {
+  return get<EdgeByTheNumbersNowResponse>("/edge/by-the-numbers/now");
+}
+
+export async function getEdgeSkaterDetailNow(
+  playerId: number
+): Promise<EdgeSkaterDetailResponse> {
+  return get<EdgeSkaterDetailResponse>(`/edge/skater-detail/${playerId}/now`);
+}
+
 export async function getEdgeSkaterDetail(
   playerId: number,
   seasonId: number,
@@ -99,6 +119,12 @@ export async function getEdgeTeamDetail(
   );
 }
 
+export async function getEdgeTeamDetailNow(
+  teamId: number
+): Promise<EdgeTeamDetailResponse> {
+  return get<EdgeTeamDetailResponse>(`/edge/team-detail/${teamId}/now`);
+}
+
 export async function getEdgeGoalieDetail(
   goalieId: number,
   seasonId: number,
@@ -107,6 +133,12 @@ export async function getEdgeGoalieDetail(
   return get<EdgeGoalieDetailResponse>(
     `/edge/goalie-detail/${goalieId}/${seasonId}/${gameType}`
   );
+}
+
+export async function getEdgeGoalieDetailNow(
+  goalieId: number
+): Promise<EdgeGoalieDetailResponse> {
+  return get<EdgeGoalieDetailResponse>(`/edge/goalie-detail/${goalieId}/now`);
 }
 
 export async function getEdgeSkaterShotLocationTop10(
@@ -118,4 +150,3 @@ export async function getEdgeSkaterShotLocationTop10(
     `/edge/skater-shot-location-top-10/all/${stat}/all/${seasonId}/${gameType}`
   );
 }
-

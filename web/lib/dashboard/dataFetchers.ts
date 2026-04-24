@@ -393,7 +393,7 @@ export const loadTrendsDashboardData = async (
     }),
     fetchGoalieTrends({
       date: params.date,
-      window: skaterWindow > 10 ? 10 : skaterWindow,
+      window: skaterWindow === 20 ? 10 : skaterWindow,
       limit: skaterLimit
     }),
     fetchForgePlayers(params.date),

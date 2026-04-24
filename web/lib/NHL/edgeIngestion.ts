@@ -8,8 +8,11 @@ import type {
 } from "lib/NHL/edge";
 
 export type NhlEdgeStatsFamily =
+  | "skater-detail-now"
   | "skater-detail"
+  | "team-detail-now"
   | "team-detail"
+  | "goalie-detail-now"
   | "goalie-detail"
   | "skater-shot-location-top-10";
 
@@ -105,6 +108,24 @@ export function buildEdgeSkaterDetailRow(args: {
   };
 }
 
+export function buildEdgeSkaterDetailNowRow(args: {
+  snapshotDate: string;
+  seasonId: number;
+  gameType: EdgeGameType;
+  payload: EdgeSkaterDetailResponse;
+}): NhlEdgeStatsRow {
+  const row = buildEdgeSkaterDetailRow(args);
+  return {
+    ...row,
+    endpoint_family: "skater-detail-now",
+    source_url: `https://api-web.nhle.com/v1/edge/skater-detail/${row.entity_id}/now`,
+    metadata: {
+      ...row.metadata,
+      readMode: "now"
+    }
+  };
+}
+
 export function buildEdgeTeamDetailRow(args: {
   snapshotDate: string;
   seasonId: number;
@@ -132,6 +153,24 @@ export function buildEdgeTeamDetailRow(args: {
     payload,
     metadata: {},
     updated_at: isoNow()
+  };
+}
+
+export function buildEdgeTeamDetailNowRow(args: {
+  snapshotDate: string;
+  seasonId: number;
+  gameType: EdgeGameType;
+  payload: EdgeTeamDetailResponse;
+}): NhlEdgeStatsRow {
+  const row = buildEdgeTeamDetailRow(args);
+  return {
+    ...row,
+    endpoint_family: "team-detail-now",
+    source_url: `https://api-web.nhle.com/v1/edge/team-detail/${row.entity_id}/now`,
+    metadata: {
+      ...row.metadata,
+      readMode: "now"
+    }
   };
 }
 
@@ -166,6 +205,24 @@ export function buildEdgeGoalieDetailRow(args: {
       teamName: buildTeamName(player.team)
     },
     updated_at: isoNow()
+  };
+}
+
+export function buildEdgeGoalieDetailNowRow(args: {
+  snapshotDate: string;
+  seasonId: number;
+  gameType: EdgeGameType;
+  payload: EdgeGoalieDetailResponse;
+}): NhlEdgeStatsRow {
+  const row = buildEdgeGoalieDetailRow(args);
+  return {
+    ...row,
+    endpoint_family: "goalie-detail-now",
+    source_url: `https://api-web.nhle.com/v1/edge/goalie-detail/${row.entity_id}/now`,
+    metadata: {
+      ...row.metadata,
+      readMode: "now"
+    }
   };
 }
 

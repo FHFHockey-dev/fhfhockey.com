@@ -64,6 +64,33 @@ export type SandboxBandRow = {
   exposure: number | null;
   distribution: Record<string, unknown> | null;
   provenance: Record<string, unknown>;
+  gameContext: {
+    gameId: number | null;
+    teamAbbreviation: string | null;
+    opponentAbbreviation: string | null;
+    homeRoad: string | null;
+    points: number | null;
+    shots: number | null;
+    hits: number | null;
+    blockedShots: number | null;
+    ppPoints: number | null;
+  } | null;
+  comparisons: SandboxBandComparison[];
+};
+
+export type SandboxBandComparisonKey =
+  | "l5"
+  | "l10"
+  | "l20"
+  | "season"
+  | "career";
+
+export type SandboxBandComparison = {
+  key: SandboxBandComparisonKey;
+  label: string;
+  value: number | null;
+  deltaPct: number | null;
+  source: "baseline_window" | "history_average" | "career_baseline" | "unavailable";
 };
 
 export type ReasonHighlight = {

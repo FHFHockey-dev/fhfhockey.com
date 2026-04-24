@@ -72,12 +72,12 @@ async function fetchSkaterRatings(
   const [{ data: offensiveData, error: offensiveError }, { data: defensiveData, error: defensiveError }] =
     await Promise.all([
       client
-        .from("skater_offensive_ratings_daily")
+        .from("skater_offensive_ratings_daily" as any)
         .select("player_id,snapshot_date,rating_0_to_100,league_rank,percentile")
         .in("player_id", playerIds)
         .order("snapshot_date", { ascending: false }),
       client
-        .from("skater_defensive_ratings_daily")
+        .from("skater_defensive_ratings_daily" as any)
         .select("player_id,snapshot_date,rating_0_to_100,league_rank,percentile")
         .in("player_id", playerIds)
         .order("snapshot_date", { ascending: false }),
@@ -87,10 +87,10 @@ async function fetchSkaterRatings(
   if (defensiveError) throw defensiveError;
 
   const latestOffenseByPlayer = pickLatestByPlayerId(
-    (offensiveData ?? []) as SkaterOffensiveRatingRow[]
+    (offensiveData ?? []) as unknown as SkaterOffensiveRatingRow[]
   );
   const latestDefenseByPlayer = pickLatestByPlayerId(
-    (defensiveData ?? []) as SkaterDefensiveRatingRow[]
+    (defensiveData ?? []) as unknown as SkaterDefensiveRatingRow[]
   );
 
   const overlay = new Map<number, SkaterRatingOverlay>();
@@ -118,13 +118,15 @@ async function fetchGoalieRatings(
   if (playerIds.length === 0) return new Map();
 
   const { data, error } = await client
-    .from("goalie_ratings_daily")
+    .from("goalie_ratings_daily" as any)
     .select("player_id,snapshot_date,rating_0_to_100,league_rank,percentile")
     .in("player_id", playerIds)
     .order("snapshot_date", { ascending: false });
   if (error) throw error;
 
-  const latestByPlayer = pickLatestByPlayerId((data ?? []) as GoalieRatingRow[]);
+  const latestByPlayer = pickLatestByPlayerId(
+    (data ?? []) as unknown as GoalieRatingRow[]
+  );
   const overlay = new Map<number, GoalieRatingOverlay>();
   for (const playerId of playerIds) {
     const row = latestByPlayer.get(playerId);

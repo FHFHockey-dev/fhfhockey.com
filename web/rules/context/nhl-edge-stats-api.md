@@ -1,6 +1,6 @@
 # NHL Edge Audit
 
-Last verified live on `2026-04-22`.
+Last verified live on `2026-04-23`.
 
 ## What this doc is good for right now
 
@@ -21,19 +21,56 @@ Last verified live on `2026-04-22`.
   - Edge is useful as explanatory context, not as the baseline engine.
   - The sustainability/elasticity pipeline still needs dense per-game rows from the existing internal stats foundation, not sparse public Edge snapshots alone.
 
+## Current site route states confirmed from the shipped NHL Edge widget bundle
+
+- The current `https://assets.nhle.com/nhl_d3_widgets/nhl-widgets.bundle.js` bundle still maps the major page types to `skaters`, `teams`, `goalies`, and `comparisons`.
+- The obvious stat/tab route states visible in the current bundle are:
+  - `shot-speed`
+  - `skating-speed`
+  - `skating-distance`
+  - `shot-locations`
+  - `zone-time`
+  - `save-locations`
+  - `five-on-five`
+  - `save-pctg`
+- Important launch takeaway: these route/filter states do not currently prove distinct public endpoint families on their own. The live public API families we could verify still collapse mostly into the detail endpoints below.
+
 ## Verified working endpoint families
 
+- `https://api-web.nhle.com/v1/edge/by-the-numbers/now`
+  - Verified live on `2026-04-23`
+  - This is the current widget-family landing endpoint for the NHL Edge homepage spotlight cards.
+  - Exposes: `games`, `gameDate`, `hardestShotSkater`, `maxSkatingSpeedSkater`, `totalDistanceSkatedSkater`, `totalDistanceSkatedTeam`, `totalDistanceSkatedLeague`
+- `https://api-web.nhle.com/v1/edge/skater-detail/{playerId}/now`
+  - Verified live with `8478402`
+  - This is the current widget-family skater detail endpoint used for the modern `/now` page state.
+  - Example: `https://api-web.nhle.com/v1/edge/skater-detail/8478402/now`
+  - Exposes: `topShotSpeed`, `skatingSpeed`, `totalDistanceSkated`, `distanceMaxGame`, `sogSummary`, `sogDetails`, `zoneTimeDetails`
+- `https://api-web.nhle.com/v1/edge/team-detail/{teamId}/now`
+  - Verified live with `5`
+  - This is the current widget-family team detail endpoint used for the modern `/now` page state.
+  - Example: `https://api-web.nhle.com/v1/edge/team-detail/5/now`
+  - Exposes: `shotSpeed`, `skatingSpeed`, `distanceSkated`, `sogSummary`, `sogDetails`, `zoneTimeDetails`
+- `https://api-web.nhle.com/v1/edge/goalie-detail/{goalieId}/now`
+  - Verified live with `8475883`
+  - This is the current widget-family goalie detail endpoint used for the modern `/now` page state.
+  - Example: `https://api-web.nhle.com/v1/edge/goalie-detail/8475883/now`
+  - Exposes: `stats`, `shotLocationSummary`, `shotLocationDetails`
 - `https://api-web.nhle.com/v1/edge/skater-detail/{playerId}/{seasonId}/{gameType}`
   - Verified live with `8478402 / 20252026 / 2`
+  - Example: `https://api-web.nhle.com/v1/edge/skater-detail/8478402/20252026/2`
   - Exposes: `topShotSpeed`, `skatingSpeed`, `totalDistanceSkated`, `distanceMaxGame`, `sogSummary`, `sogDetails`, `zoneTimeDetails`
 - `https://api-web.nhle.com/v1/edge/team-detail/{teamId}/{seasonId}/{gameType}`
   - Verified live with `5 / 20252026 / 2`
+  - Example: `https://api-web.nhle.com/v1/edge/team-detail/5/20252026/2`
   - Exposes: `shotSpeed`, `skatingSpeed`, `distanceSkated`, `sogSummary`, `sogDetails`, `zoneTimeDetails`
 - `https://api-web.nhle.com/v1/edge/goalie-detail/{goalieId}/{seasonId}/{gameType}`
   - Verified live with `8475883 / 20252026 / 2`
+  - Example: `https://api-web.nhle.com/v1/edge/goalie-detail/8475883/20252026/2`
   - Exposes: `stats`, `shotLocationSummary`, `shotLocationDetails`
 - `https://api-web.nhle.com/v1/edge/skater-shot-location-top-10/all/{stat}/all/{seasonId}/{gameType}`
-  - Already documented below and still valid for `goals`, `sog`, and `shooting-pctg`
+  - Re-verified on `2026-04-23` for `goals`, `sog`, and `shooting-pctg`
+  - Example: `https://api-web.nhle.com/v1/edge/skater-shot-location-top-10/all/sog/all/20252026/2`
 
 ## Endpoint guesses that did not verify
 
@@ -48,11 +85,34 @@ These guessed standalone families returned `404` during live checks and should n
 - `goalie-save-location-top-10`
 - `goalie-top-10`
 
+## Endpoint families visible in the current site implementation but not yet proven as distinct API families
+
+- None beyond the verified families above.
+- The current shipped widget bundle clearly references the route/filter states `shot-speed`, `skating-speed`, `skating-distance`, `shot-locations`, `zone-time`, `save-locations`, `five-on-five`, and `save-pctg`, but the bundle evidence currently points back to the same `by-the-numbers`, `skater-detail`, `team-detail`, and `goalie-detail` families rather than new public endpoints.
+
 ## Launch guidance
 
-- Adopt `skater-detail`, `team-detail`, and `goalie-detail` first when official NHL context is needed in code.
+- Adopt the season/game-type `skater-detail`, `team-detail`, and `goalie-detail` families first when official NHL context is needed in code.
+- Treat the `/now` variants as useful widget-parity reads for current-state UI checks, but not as the main ingestion contract when a season/game-type address is available.
+- `by-the-numbers/now` is worth ingestion only if we want the NHL Edge landing-style spotlight cards or a lightweight homepage overlay; it is not the main pillar backbone.
 - Treat the `top-10` families as leaderboard overlays, not as the canonical cross-page contract.
+- Do not assume every visible Edge tab/filter maps to its own endpoint family; the current site bundle suggests many tabs are just alternate views over the same detail payloads.
 - Do not use public NHL Edge payloads as the only input for Sandbox baseline math until there is a dense per-game coverage audit proving that they are complete enough.
+
+## Historical limitation confirmed
+
+- No verified public NHL Edge endpoint in the current audit accepts an as-of date or game id that would reconstruct past daily states.
+- The verified public families now include both current-state `/now` variants and season/game-type variants:
+  - `/v1/edge/by-the-numbers/now`
+  - `/v1/edge/skater-detail/{playerId}/now`
+  - `/v1/edge/team-detail/{teamId}/now`
+  - `/v1/edge/goalie-detail/{goalieId}/now`
+  - `/v1/edge/skater-detail/{playerId}/{seasonId}/{gameType}`
+  - `/v1/edge/team-detail/{teamId}/{seasonId}/{gameType}`
+  - `/v1/edge/goalie-detail/{goalieId}/{seasonId}/{gameType}`
+  - `/v1/edge/skater-shot-location-top-10/all/{stat}/all/{seasonId}/{gameType}`
+- NHL's own product language still describes the site as a daily-updated surface and a season-long historical view since `2021-22`, not as a date-addressable archive of prior daily snapshots.
+- Practical implication: `nhl_edge_stats_daily` must be treated as a prospective archive from the day we start collecting it. It should not be presented as a reconstructable source of true past daily Edge states.
 
 # Skater Endpoints
 

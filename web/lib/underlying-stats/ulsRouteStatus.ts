@@ -31,27 +31,7 @@ async function fetchSnapshotStatus(args: {
   table: string;
   dateColumn?: string;
 }): Promise<UlsStatusSnapshot> {
-  const dateColumn = args.dateColumn ?? "snapshot_date";
-  const query = `
-    select
-      max(${dateColumn})::text as latest_snapshot_date,
-      count(*)::int as row_count
-    from ${args.table}
-  `;
-
-  const { data, error } = await args.client.rpc("exec_sql", { query } as never);
-  if (error) {
-    throw error;
-  }
-
-  const row = Array.isArray(data) ? ((data[0] as CountRow | undefined) ?? null) : null;
-  const rowCount = Number(row?.row_count ?? 0);
-
-  return {
-    latestSnapshotDate: typeof row?.latest_snapshot_date === "string" ? row.latest_snapshot_date : null,
-    rowCount,
-    status: rowCount > 0 ? "ready" : "pending",
-  };
+  return fetchSnapshotStatusViaSelect(args);
 }
 
 // Supabase RPC coverage varies between environments, so keep a SQL fallback via pg-style select.

@@ -14,9 +14,13 @@
 - `web/lib/dashboard/dataFetchers.ts` - Aggregate fetch layer currently wiring trends, CTPI, SoS, projections, and sustainability.
 - `web/lib/sustainability/bands.ts` - Sustainability metric contract definitions that will need entity expansion planning.
 - `web/lib/sustainability/model.ts` - Sustainability model logic that should become part of the team/skater/goalie sustainability rollout.
+- `web/lib/sustainability/persist.ts` - Trend-band persistence helpers that now prune stale non-game snapshot rows during strict per-game history rebuilds.
+- `web/lib/sustainability/coverageAudit.ts` - Coverage-audit helper that compares played dates against stored trend-band dates and summarizes elasticity gaps.
+- `web/lib/sustainability/coverageAudit.test.ts` - Deterministic tests for the elasticity coverage comparator and aggregate summary math.
 - `web/pages/api/v1/trends/team-power.ts` - Team movement API surface for `/trends`.
 - `web/pages/api/v1/trends/skater-power.ts` - Skater movement API surface for `/trends`.
 - `web/pages/api/v1/trends/player-trends.ts` - Trend metric rebuild and fetch path that may need extension for parity across entities.
+- `web/pages/api/v1/sustainability/coverage-audit.ts` - Season/player elasticity coverage audit endpoint used to measure gaps before and after trend-band rebuilds.
 - `web/lib/underlying-stats/playerStatsLandingServer.ts` - Landing aggregation pipeline returning empty player and goalie rows despite persisted summary payloads.
 - `web/lib/underlying-stats/playerStatsQueries.ts` - Shared player landing API contract and empty-response behavior used by player and goalie explorer routes.
 - `web/lib/underlying-stats/goalieStatsServer.ts` - Goalie landing aggregation wrapper sharing the same empty landing behavior.
@@ -58,6 +62,7 @@
 - `web/pages/api/v1/db/update-nhl-edge-stats.ts` - Batch-oriented admin endpoint that snapshots verified NHL Edge families into `nhl_edge_stats_daily`.
 - `web/pages/api/v1/db/update-nhl-edge-teams.ts` - Team-focused NHL Edge snapshot endpoint for clean WGO-style team ingestion without the mixed-family batch route.
 - `web/sql/ratings/005_create_nhl_edge_stats_daily.sql` - Supabase schema for historical daily copies of official NHL Edge payloads.
+- `web/rules/context/nhl-edge-stats-api.md` - Living NHL Edge context doc now explicitly recording that verified public endpoints are season-scoped and the archive must be treated as prospective, not reconstructable.
 
 ### Notes
 
@@ -128,7 +133,7 @@
   - [x] 9.2 Add targeted tests around new rating/trend/sustainability contract builders and route-level data assembly.
   - [x] 9.3 Run focused verification on the final route family to confirm ownership boundaries, entity parity, and launch-scope dependencies are all wired together coherently.
 
-- [ ] 10.0 NEW: Restore non-empty player and goalie explorer landing aggregates
+- [x] 10.0 NEW: Restore non-empty player and goalie explorer landing aggregates
   - [x] 10.1 Trace why `/api/v1/underlying-stats/players` and `/api/v1/underlying-stats/goalies` return empty `rows` while `games` and `nhl_api_game_payloads_raw` contain current-season summary data.
   - [x] 10.2 Confirm whether the failure lives in persisted-summary fetch, summary-row filtering, aggregate-cache reuse, or row-to-API aggregation.
   - [x] 10.3 Patch the underlying aggregation path so default player and goalie landing queries return populated rows for the current season again.
@@ -149,21 +154,22 @@
   - [x] 13.2 Run `/api/v1/db/update-market-prices` against a live NHL slate and confirm ParlayAPI featured markets upsert with `source_rank = 1`.
   - [ ] 13.3 Confirm at least one live prop market lands in `prop_market_prices_daily` and player matching succeeds for the target slate.
 
-- [ ] 14.0 NEW: Backfill and audit elasticity coverage so Sandbox can trust per-player date coverage
-  - [ ] 14.1 Add a coverage audit that compares played game dates against sustainability band dates by player, season, metric, and window.
-  - [ ] 14.2 Run season-batch backfills through `/api/v1/sustainability/rebuild-trend-bands` and measure how many gaps close.
-  - [ ] 14.3 Decide whether elasticity should remain a snapshot-band series or be rebuilt as a strict per-game series for Sandbox charts.
+- [x] 14.0 NEW: Backfill and audit elasticity coverage so Sandbox can trust per-player date coverage
+  - [x] 14.1 Add a coverage audit that compares played game dates against sustainability band dates by player, season, metric, and window.
+  - [x] 14.2 Run season-batch backfills through `/api/v1/sustainability/rebuild-trend-bands` and measure how many gaps close.
+  - [x] 14.3 Decide whether elasticity should remain a snapshot-band series or be rebuilt as a strict per-game series for Sandbox charts.
 
 - [ ] 15.0 NEW: Finish the broader NHL Edge ingestion rollout beyond the first verified families
-  - [ ] 15.1 Re-run a full browser-network inventory of NHL Edge once Computer Use access to Chrome is actually available, so hidden route/filter endpoint families are not missed.
-  - [ ] 15.2 Decide which additional NHL Edge families deserve first-class ingestion beyond `skater-detail`, `team-detail`, `goalie-detail`, and `skater-shot-location-top-10`.
+  - [ ] 15.1 Re-run a full browser-network inventory of NHL Edge once Computer Use access to Chrome is actually available, so hidden route/filter endpoint families are not missed. Current thread still hit Chrome attach denials on `2026-04-23`, so this remains open even though the Edge widget bundle and direct `/now` endpoint families were re-validated in `web/rules/context/nhl-edge-stats-api.md`.
+  - [x] 15.2 Decide which additional NHL Edge families deserve first-class ingestion beyond `skater-detail`, `team-detail`, `goalie-detail`, and `skater-shot-location-top-10`. Result: keep `/now` skater/team/goalie detail as explicit supporting-context ingestion targets, but leave `by-the-numbers/now` out of the first-class `nhl_edge_stats_daily` contract for now.
   - [ ] 15.3 Wire `nhl_edge_stats_daily` into the production route family only after those adopted families have stable read contracts.
 
-- [ ] 16.0 NEW: Resolve NHL Edge historical limitations before promising full backfill behavior
-  - [ ] 16.1 Confirm whether any public NHL Edge endpoints expose true historical as-of-date snapshots rather than only current season-to-date states.
-  - [ ] 16.2 If true historical snapshots do not exist, keep the Edge pipeline positioned as prospective daily archiving rather than a reconstructable past-history feed.
+- [x] 16.0 NEW: Resolve NHL Edge historical limitations before promising full backfill behavior
+  - [x] 16.1 Confirm whether any public NHL Edge endpoints expose true historical as-of-date snapshots rather than only current season-to-date states.
+  - [x] 16.2 If true historical snapshots do not exist, keep the Edge pipeline positioned as prospective daily archiving rather than a reconstructable past-history feed.
 
 - [ ] 17.0 NEW: Backfill and verify the historical lineup source tables now that the writer path is live again
   - [ ] 17.1 Run targeted historical sweeps through `/api/v1/db/update-lineup-source-provenance` so `lines_nhl`, `lines_dfo`, and `lines_gdl` no longer start from an empty archive.
   - [ ] 17.2 Verify which slates legitimately produce `nhl.com`, `dailyfaceoff`, or `gamedaytweets` line rows versus which dates only have goalie-source coverage.
-  - [ ] 17.3 Decide whether to broaden GameDayTweets lineup harvesting beyond the current `DFO rejected` fallback path so `lines_gdl` can accumulate audit history even when DFO is present.
+  - [x] 17.3 Decide whether to broaden GameDayTweets lineup harvesting beyond the current `DFO rejected` fallback path so `lines_gdl` can accumulate audit history even when DFO is present.
+  - [x] 17.4 Block dishonest past-date replay by default so lineup source ingestion remains a prospective archive instead of pretending to reconstruct historical source states.

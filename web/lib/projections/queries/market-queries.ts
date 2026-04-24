@@ -165,7 +165,7 @@ export async function fetchGameMarketContextByGameIds(args: {
   if (args.gameIds.length === 0) return new Map();
 
   const { data, error } = await supabase
-    .from("market_prices_daily")
+    .from("market_prices_daily" as any)
     .select(
       "snapshot_date,game_id,market_type,sportsbook_key,outcome_key,line_value,price_american,implied_probability,source_rank,source_observed_at,freshness_expires_at,provenance,metadata"
     )
@@ -174,7 +174,7 @@ export async function fetchGameMarketContextByGameIds(args: {
   if (error) throw error;
 
   const rowsByGameId = new Map<number, MarketPriceContextRow[]>();
-  for (const row of (data ?? []) as MarketPriceContextRow[]) {
+  for (const row of (data ?? []) as unknown as MarketPriceContextRow[]) {
     if (!rowsByGameId.has(row.game_id)) rowsByGameId.set(row.game_id, []);
     rowsByGameId.get(row.game_id)?.push(row);
   }
@@ -193,7 +193,7 @@ export async function fetchPlayerPropContextByGameIds(args: {
   if (args.gameIds.length === 0) return new Map();
 
   const { data, error } = await supabase
-    .from("prop_market_prices_daily")
+    .from("prop_market_prices_daily" as any)
     .select(
       "snapshot_date,game_id,player_id,market_type,sportsbook_key,outcome_key,line_value,price_american,implied_probability,source_rank,source_observed_at,freshness_expires_at,provenance,metadata"
     )
@@ -202,7 +202,7 @@ export async function fetchPlayerPropContextByGameIds(args: {
   if (error) throw error;
 
   const rowsByKey = new Map<string, PropMarketPriceContextRow[]>();
-  for (const row of (data ?? []) as PropMarketPriceContextRow[]) {
+  for (const row of (data ?? []) as unknown as PropMarketPriceContextRow[]) {
     const key = `${row.game_id}:${row.player_id}`;
     if (!rowsByKey.has(key)) rowsByKey.set(key, []);
     rowsByKey.get(key)?.push(row);

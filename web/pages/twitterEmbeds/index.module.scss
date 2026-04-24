@@ -1,0 +1,66 @@
+.page {
+  display: grid;
+  gap: 24px;
+  margin: 0 auto;
+  max-width: 920px;
+  padding: 32px 20px 56px;
+}
+
+.timelineSource {
+  min-height: 80px;
+}
+
+.localCards {
+  display: grid;
+  gap: 16px;
+}
+
+.tweetCard {
+  background: #111;
+  border: 1px solid #333;
+  border-radius: 8px;
+  color: #f4f4f4;
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+}
+
+.tweetHeader,
+.quoteHeader {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tweetHeader {
+  justify-content: space-between;
+}
+
+.tweetCard a {
+  color: #8fdcff;
+}
+
+.wrapperText {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.quoteCard {
+  border: 1px solid #3c3c3c;
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+}
+
+.quoteCard p {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.tweetFooter {
+  color: #b8b8b8;
+  font-size: 0.85rem;
+}
