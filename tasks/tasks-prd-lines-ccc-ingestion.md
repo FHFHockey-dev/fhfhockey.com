@@ -136,11 +136,11 @@
   - [ ] 4.10 Preserve raw wrapper text, enriched wrapper text, quoted raw/enriched text, resolved URLs, keyword hits, structure signals, matched names, unmatched names, and filter metadata.
 
 - [ ] 5.0 Create the `lines_ccc` SQL migration and row shaping
-  - [ ] 5.1 Create `web/sql/ratings/007_create_lines_ccc.sql` using the finalized schema from task 1.7.
-  - [ ] 5.2 Mirror `lines_gdl` ordered line, pair, goalie, scratch, injury, raw payload, and metadata storage philosophy.
-  - [ ] 5.3 Add first-class quote provenance fields such as quoted tweet id/url and quoted author fields if confirmed by analysis.
-  - [ ] 5.4 Add NHL filter fields such as detected league, filter status, and filter reason if confirmed by analysis.
-  - [ ] 5.5 Add indexes for `capture_key`, snapshot date/team, game/team, tweet URL, tweet id/team, and quoted tweet id/team where applicable.
+  - [x] 5.1 Create `web/sql/ratings/007_create_lines_ccc.sql` using the finalized schema from task 1.7.
+  - [x] 5.2 Mirror `lines_gdl` ordered line, pair, goalie, scratch, injury, raw payload, and metadata storage philosophy.
+  - [x] 5.3 Add first-class quote provenance fields such as quoted tweet id/url and quoted author fields if confirmed by analysis.
+  - [x] 5.4 Add NHL filter fields such as detected league, filter status, and filter reason if confirmed by analysis.
+  - [x] 5.5 Add indexes for `capture_key`, snapshot date/team, game/team, tweet URL, tweet id/team, and quoted tweet id/team where applicable.
   - [ ] 5.6 Implement `lines_ccc` row shaping with stable dedupe keys and honest `tweet_posted_at` precision.
   - [ ] 5.7 Add tests for row shaping, player id arrays, quote provenance, raw/enriched text fields, metadata, and dedupe keys.
 

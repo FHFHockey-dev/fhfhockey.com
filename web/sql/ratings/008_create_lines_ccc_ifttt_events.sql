@@ -22,9 +22,10 @@ CREATE TABLE IF NOT EXISTS public.lines_ccc_ifttt_events (
     ]))
 );
 
+DROP INDEX IF EXISTS lines_ccc_ifttt_events_tweet_id_unique_idx;
+
 CREATE UNIQUE INDEX IF NOT EXISTS lines_ccc_ifttt_events_tweet_id_unique_idx
-  ON public.lines_ccc_ifttt_events (tweet_id)
-  WHERE tweet_id IS NOT NULL;
+  ON public.lines_ccc_ifttt_events (tweet_id);
 
 CREATE INDEX IF NOT EXISTS lines_ccc_ifttt_events_received_at_idx
   ON public.lines_ccc_ifttt_events (received_at DESC);

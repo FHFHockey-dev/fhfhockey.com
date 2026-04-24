@@ -55,6 +55,17 @@ function parseDateToIso(value: string | null): string | null {
   return Number.isFinite(parsed) ? new Date(parsed).toISOString() : null;
 }
 
+function formatSupabaseError(error: unknown): string {
+  if (!error || typeof error !== "object") return String(error);
+  const record = error as Record<string, unknown>;
+  return JSON.stringify({
+    code: record.code,
+    message: record.message,
+    details: record.details,
+    hint: record.hint
+  });
+}
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<ResponseBody>
@@ -129,7 +140,7 @@ export default async function handler(
     : await query.insert(row as any);
 
   if (error) {
-    console.error("IFTTT CCC tweet ingest failed:", error);
+    console.error("IFTTT CCC tweet ingest failed:", formatSupabaseError(error));
     return res.status(500).json({
       success: false,
       error: "Failed to store IFTTT event"
