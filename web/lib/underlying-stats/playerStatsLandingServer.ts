@@ -745,12 +745,13 @@ async function fetchPlayerStatsPgRows<TRow extends Record<string, unknown>>(
   }
 }
 
-async function fetchSupabaseRowsForGameChunks<TRow>(args: {
+export async function fetchSupabaseRowsForGameChunks<TRow>(args: {
   gameIdChunks: readonly number[][];
   fetchChunkPage: (
     gameIdChunk: readonly number[],
     from: number,
-    to: number
+    to: number,
+    gameIdChunkIndex: number
   ) => PromiseLike<{
     data: unknown[] | null;
     error: unknown;
@@ -767,7 +768,12 @@ async function fetchSupabaseRowsForGameChunks<TRow>(args: {
       nextIndex += 1;
 
       chunkRows[currentIndex] = await fetchAllSupabaseRows<TRow>((from, to) =>
-        args.fetchChunkPage(args.gameIdChunks[currentIndex] ?? [], from, to)
+        args.fetchChunkPage(
+          args.gameIdChunks[currentIndex] ?? [],
+          from,
+          to,
+          currentIndex
+        )
       );
     }
   }
@@ -1404,7 +1410,22 @@ async function fetchPlayerStatsSummaryPayloadRows(args: {
 
   if (client === supabase && getPlayerStatsPgPool() != null) {
     try {
-      return await fetchPlayerStatsSummaryPayloadRowsViaPg(args);
+      const pgRows = await fetchPlayerStatsSummaryPayloadRowsViaPg(args);
+
+      if (pgRows.length > 0) {
+        return pgRows;
+      }
+
+      if (process.env.NODE_ENV !== "test") {
+        console.warn(
+          "[player-stats] falling back from direct PG summary read to Supabase",
+          {
+            reason: "Direct PG summary read returned zero rows.",
+            gameCount: args.gameIds.length,
+            sourceUrlCount: args.sourceUrls?.length ?? 0
+          }
+        );
+      }
     } catch (error) {
       const message =
         error instanceof Error
@@ -1435,7 +1456,7 @@ async function fetchPlayerStatsSummaryPayloadRows(args: {
   return fetchSupabaseRowsForGameChunks<PlayerStatsSummaryPayloadRow>({
     gameIdChunks: chunkNumberArray(args.gameIds, GAME_ID_CHUNK_SIZE),
     concurrency: 6,
-    fetchChunkPage: async (gameIdChunk, from, to) => {
+    fetchChunkPage: async (gameIdChunk, from, to, gameIdChunkIndex) => {
       const baseQuery = client
         .from("nhl_api_game_payloads_raw")
         .select("game_id,payload,fetched_at,source_url")
@@ -1445,8 +1466,7 @@ async function fetchPlayerStatsSummaryPayloadRows(args: {
         .order("fetched_at", { ascending: false })
         .range(from, to);
 
-      const chunkIndex = Math.floor(from / SUPABASE_PAGE_SIZE);
-      const sourceUrlChunk = sourceUrlChunks?.[chunkIndex] ?? null;
+      const sourceUrlChunk = sourceUrlChunks?.[gameIdChunkIndex] ?? null;
 
       if (sourceUrlChunk != null && sourceUrlChunk.length > 0) {
         return baseQuery.in("source_url", sourceUrlChunk);
@@ -1500,7 +1520,7 @@ async function fetchPlayerStatsOfficialLandingPayloadRows(args: {
 
   if (client === supabase && getPlayerStatsPgPool() != null) {
     try {
-      return await fetchPlayerStatsPgRows<PlayerStatsSummaryPayloadRow>(
+      const pgRows = await fetchPlayerStatsPgRows<PlayerStatsSummaryPayloadRow>(
         `select game_id, payload, fetched_at, source_url
          from public.nhl_api_game_payloads_raw
          where endpoint = $1
@@ -1509,6 +1529,17 @@ async function fetchPlayerStatsOfficialLandingPayloadRows(args: {
          order by game_id asc, fetched_at desc`,
         [PLAYER_STATS_SUMMARY_STORAGE_ENDPOINT, args.gameIds]
       );
+
+      if (pgRows.length > 0) {
+        return pgRows;
+      }
+
+      if (process.env.NODE_ENV !== "test") {
+        console.warn("[player-stats] falling back from direct PG landing read to Supabase", {
+          reason: "Direct PG official payload read returned zero rows.",
+          gameCount: args.gameIds.length,
+        });
+      }
     } catch (error) {
       const message =
         error instanceof Error ? error.message : String(error ?? "Unknown PG error");
@@ -1935,6 +1966,13 @@ function getCachedPlayerStatsSeasonAggregateRows(
   }
 
   if (Date.now() - cached.cachedAt > PLAYER_STATS_SEASON_AGGREGATE_CACHE_TTL_MS) {
+    playerStatsSeasonAggregateCache.delete(key);
+    return null;
+  }
+
+  // Treat empty cached aggregates as invalid so transient warm-up failures do not
+  // pin the landing pages to a zero-row season snapshot.
+  if (cached.rows.length === 0) {
     playerStatsSeasonAggregateCache.delete(key);
     return null;
   }
@@ -3588,7 +3626,7 @@ function getPlayerStatsSummaryIdentityKey(args: {
   return `${args.kind}:${args.strength}:${args.scoreState}:${args.playerId}:${args.teamId}`;
 }
 
-function buildPlayerStatsSummaryPartitionSourceUrl(args: {
+export function buildPlayerStatsSummaryPartitionSourceUrl(args: {
   gameId: number;
   mode: PlayerStatsMode;
   strength: PlayerStatsSupportedStrength;
@@ -3999,16 +4037,25 @@ export function flattenPersistedSummaryRows(
   const payloadByGameId = new Map<number, PlayerStatsLandingSummaryPayload>();
 
   for (const row of payloadRows) {
-    if (payloadByGameId.has(row.game_id)) {
+    const normalizedGameId =
+      typeof row.game_id === "string"
+        ? Number.parseInt(row.game_id, 10)
+        : row.game_id;
+
+    if (!Number.isFinite(normalizedGameId)) {
+      continue;
+    }
+
+    if (payloadByGameId.has(normalizedGameId)) {
       continue;
     }
 
     const parsedPayload = parsePlayerStatsLandingSummaryPayload(row.payload);
-    if (!parsedPayload || parsedPayload.game.id !== row.game_id) {
+    if (!parsedPayload || parsedPayload.game.id !== normalizedGameId) {
       continue;
     }
 
-    payloadByGameId.set(row.game_id, {
+    payloadByGameId.set(normalizedGameId, {
       ...parsedPayload,
       rows: parsedPayload.rows.filter((payloadRow) =>
         isSummaryRowConsistentWithGame({

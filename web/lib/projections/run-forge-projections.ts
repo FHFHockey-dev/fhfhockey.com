@@ -212,6 +212,11 @@ import {
   fetchRollingRows
 } from "./queries/skater-queries";
 import {
+  fetchGameMarketContextByGameIds,
+  fetchPlayerPropContextByGameIds,
+  type MarketTypeSummary
+} from "./queries/market-queries";
+import {
   fetchCurrentTeamGoalieIds,
   fetchGoalieEvidence,
   fetchGoalieRestSplitProfile,
@@ -268,6 +273,106 @@ import {
 
 function assertSupabase() {
   if (!supabase) throw new Error("Supabase server client not available");
+}
+
+const ANALYTICS_MODEL_NAME = "forge";
+const ANALYTICS_MODEL_VERSION = "market-context-v1";
+const PLAYER_MARKET_EDGE_THRESHOLDS: Record<string, number> = {
+  player_shots_on_goal: 0.5,
+  player_goals: 0.2,
+  player_assists: 0.25,
+  player_points: 0.35,
+  player_power_play_points: 0.15,
+  player_blocked_shots: 0.4,
+  player_total_saves: 1.5
+};
+const GAME_MARKET_EDGE_THRESHOLDS = {
+  totals: 0.4,
+  spreads: 0.5
+} as const;
+
+function getProjectionValueForPropMarket(args: {
+  marketType: string;
+  projection: {
+    shots: number;
+    goals: number;
+    assists: number;
+    powerPlayPoints: number;
+    blockedShots: number;
+    saves: number | null;
+  };
+}): number | null {
+  switch (args.marketType) {
+    case "player_shots_on_goal":
+      return args.projection.shots;
+    case "player_goals":
+    case "player_goal_scorer_anytime":
+      return args.projection.goals;
+    case "player_assists":
+      return args.projection.assists;
+    case "player_points":
+      return Number((args.projection.goals + args.projection.assists).toFixed(3));
+    case "player_power_play_points":
+      return args.projection.powerPlayPoints;
+    case "player_blocked_shots":
+      return args.projection.blockedShots;
+    case "player_total_saves":
+      return args.projection.saves;
+    default:
+      return null;
+  }
+}
+
+function getConsensusLineValue(summary: MarketTypeSummary | undefined): number | null {
+  if (!summary) return null;
+  const candidate = summary.outcomes.find((outcome) => outcome.averageLineValue != null);
+  return candidate?.averageLineValue ?? null;
+}
+
+function buildFlagConfidence(edgeValue: number, threshold: number): number {
+  if (!Number.isFinite(edgeValue) || !Number.isFinite(threshold) || threshold <= 0) return 0;
+  return Number(Math.min(100, Math.max(0, (Math.abs(edgeValue) / threshold) * 50)).toFixed(2));
+}
+
+function buildModelMarketFlagRow(args: {
+  asOfDate: string;
+  entityType: "game" | "player" | "team";
+  entityId: number;
+  gameId: number;
+  marketType: string;
+  flagType: string;
+  edgeValue: number;
+  reasons: Array<Record<string, unknown>>;
+  provider: string | null;
+  metadata?: Record<string, unknown>;
+}): Record<string, unknown> {
+  const threshold =
+    args.entityType === "game"
+      ? (GAME_MARKET_EDGE_THRESHOLDS as Record<string, number>)[args.marketType] ?? 0.25
+      : PLAYER_MARKET_EDGE_THRESHOLDS[args.marketType] ?? 0.25;
+  const now = new Date().toISOString();
+
+  return {
+    snapshot_date: args.asOfDate,
+    entity_type: args.entityType,
+    entity_id: args.entityId,
+    game_id: args.gameId,
+    model_name: ANALYTICS_MODEL_NAME,
+    model_version: ANALYTICS_MODEL_VERSION,
+    market_type: args.marketType,
+    sportsbook_key: null,
+    flag_type: args.flagType,
+    edge_value: Number(args.edgeValue.toFixed(4)),
+    confidence_0_to_100: buildFlagConfidence(args.edgeValue, threshold),
+    reasons: args.reasons,
+    provenance: {
+      provider: args.provider,
+      input_family: "forge-market-comparison"
+    },
+    metadata: args.metadata ?? {},
+    computed_at: now,
+    updated_at: now
+  };
 }
 
 export function normalizeWgoToiToSeconds(value: number | null | undefined): number | null {
@@ -1350,6 +1455,9 @@ export async function runProjectionV2ForDate(
         .select("id,date,homeTeamId,awayTeamId")
         .eq("date", asOfDate);
       if (gamesErr) throw gamesErr;
+      const gameIds = ((games ?? []) as GameRow[])
+        .map((game) => game.id)
+        .filter((id): id is number => Number.isFinite(id));
       const { startTs, endTs } = toDayBoundsUtc(asOfDate);
       const teamIds = Array.from(
         new Set(
@@ -1365,6 +1473,14 @@ export async function runProjectionV2ForDate(
         number,
         { goalieId: number; starterProb: number }
       >();
+      const gameMarketContextByGameId = await fetchGameMarketContextByGameIds({
+        snapshotDate: asOfDate,
+        gameIds
+      });
+      const playerPropContextByGamePlayerKey = await fetchPlayerPropContextByGameIds({
+        snapshotDate: asOfDate,
+        gameIds
+      });
       if (teamIds.length > 0) {
         const { data: events, error: evErr } = await supabase
           .from("forge_roster_events")
@@ -1431,10 +1547,13 @@ export async function runProjectionV2ForDate(
         currentSeasonId,
         games: (games ?? []) as GameRow[],
         teamIds,
+        gameIds,
         teamAbbreviationById,
         playerAvailabilityMultiplier,
         availabilityEventByPlayer,
-        goalieOverrideByTeamId
+        goalieOverrideByTeamId,
+        gameMarketContextByGameId,
+        playerPropContextByGamePlayerKey
       };
     });
 
@@ -1444,6 +1563,8 @@ export async function runProjectionV2ForDate(
     const playerAvailabilityMultiplier = preflight.playerAvailabilityMultiplier;
     const availabilityEventByPlayer = preflight.availabilityEventByPlayer;
     const goalieOverrideByTeamId = preflight.goalieOverrideByTeamId;
+    const gameMarketContextByGameId = preflight.gameMarketContextByGameId;
+    const playerPropContextByGamePlayerKey = preflight.playerPropContextByGamePlayerKey;
 
     const activeRosterSkaterIdsByTeamId = new Map<number, number[]>();
     const goalieEvidenceCache = new Map<string, GoalieEvidence>();
@@ -1496,11 +1617,38 @@ export async function runProjectionV2ForDate(
       const goalieWorkloadContextCache = new Map<string, GoalieWorkloadContext>();
       const goalieRestSplitProfileCache = new Map<string, GoalieRestSplitProfile | null>();
       const currentTeamGoalieIdsCache = new Map<string, Set<number>>();
+      const playerPredictionOutputRows: Array<Record<string, unknown>> = [];
+      const modelMarketFlagRows: Array<Record<string, unknown>> = [];
+      const projectedPlayerMarketInputs = new Map<
+        number,
+        {
+          teamId: number;
+          opponentTeamId: number;
+          shots: number;
+          goals: number;
+          assists: number;
+          powerPlayPoints: number;
+          blockedShots: number;
+          lineupSourceGameDate: string | null;
+          lineupRecencyDays: number | null;
+          availabilityEvent: RosterEventRow | null;
+        }
+      >();
+      const selectedGoalieByTeamId = new Map<
+        number,
+        {
+          goalieId: number;
+          starterProbability: number;
+          confirmedStatus: boolean;
+          saves: number;
+        }
+      >();
       const goalieCandidates: Array<{
         teamId: number;
         opponentTeamId: number;
         candidateGoalieIds: number[];
         priorStartProbByGoalieId: Map<number, number>;
+        confirmedStarterByGoalieId: Map<number, boolean>;
         lineComboPriorByGoalieId: Map<number, number>;
         projectedGsaaPer60ByGoalieId: Map<number, number>;
         seasonStartPctByGoalieId: Map<number, number>;
@@ -3100,6 +3248,19 @@ export async function runProjectionV2ForDate(
             uncertainty: uncertaintyWithRole,
             updated_at: new Date().toISOString()
           });
+
+          projectedPlayerMarketInputs.set(playerId, {
+            teamId,
+            opponentTeamId,
+            shots: Number(((shotsEs + shotsPp) * teamHorizonTotalScalar).toFixed(3)),
+            goals: Number(((goalsEs + goalsPp) * teamHorizonTotalScalar).toFixed(3)),
+            assists: Number(((assistsEs + assistsPp) * teamHorizonTotalScalar).toFixed(3)),
+            powerPlayPoints: Number(((goalsPp + assistsPp) * teamHorizonTotalScalar).toFixed(3)),
+            blockedShots: Number((projBlocks * teamHorizonTotalScalar).toFixed(3)),
+            lineupSourceGameDate: lcContext.sourceGameDate,
+            lineupRecencyDays: lcRecency.daysStale,
+            availabilityEvent: p.availabilityEvent
+          });
         }
 
         const { error: playerErr } = await supabase
@@ -3109,6 +3270,101 @@ export async function runProjectionV2ForDate(
           });
         if (playerErr) throw playerErr;
         playerRowsUpserted += playerUpserts.length;
+
+        for (const [playerId, projectionInput] of projectedPlayerMarketInputs.entries()) {
+          if (projectionInput.teamId !== teamId) continue;
+          const marketSummaryByType =
+            playerPropContextByGamePlayerKey.get(`${game.id}:${playerId}`) ?? null;
+          if (!marketSummaryByType) continue;
+
+          for (const [marketType, marketSummary] of Object.entries(marketSummaryByType)) {
+            const expectedValue = getProjectionValueForPropMarket({
+              marketType,
+              projection: {
+                shots: projectionInput.shots,
+                goals: projectionInput.goals,
+                assists: projectionInput.assists,
+                powerPlayPoints: projectionInput.powerPlayPoints,
+                blockedShots: projectionInput.blockedShots,
+                saves: null
+              }
+            });
+            if (expectedValue == null) continue;
+
+            playerPredictionOutputRows.push({
+              snapshot_date: asOfDate,
+              game_id: game.id,
+              player_id: playerId,
+              team_id: projectionInput.teamId,
+              opponent_team_id: projectionInput.opponentTeamId,
+              model_name: ANALYTICS_MODEL_NAME,
+              model_version: ANALYTICS_MODEL_VERSION,
+              prediction_scope: "pregame",
+              metric_key: marketType,
+              expected_value: expectedValue,
+              floor_value: null,
+              ceiling_value: null,
+              probability_over: null,
+              line_value: getConsensusLineValue(marketSummary),
+              components: {
+                market_inputs: marketSummary,
+                projection_inputs: {
+                  lineup_source_game_date: projectionInput.lineupSourceGameDate,
+                  lineup_recency_days: projectionInput.lineupRecencyDays
+                }
+              },
+              provenance: {
+                provider: marketSummary.sourceNames[0] ?? null,
+                input_family: "forge-player-projection"
+              },
+              metadata: {
+                horizon_games: horizonGames,
+                run_id: runId,
+                availability_event: projectionInput.availabilityEvent
+                  ? {
+                      event_type: projectionInput.availabilityEvent.event_type,
+                      confidence: projectionInput.availabilityEvent.confidence ?? null,
+                      effective_from:
+                        projectionInput.availabilityEvent.effective_from ?? null,
+                      effective_to:
+                        projectionInput.availabilityEvent.effective_to ?? null
+                    }
+                  : null
+              }
+            });
+
+            const consensusLineValue = getConsensusLineValue(marketSummary);
+            const edgeThreshold = PLAYER_MARKET_EDGE_THRESHOLDS[marketType] ?? 0.25;
+            if (consensusLineValue != null) {
+              const edgeValue = expectedValue - consensusLineValue;
+              if (Math.abs(edgeValue) >= edgeThreshold) {
+                modelMarketFlagRows.push(
+                  buildModelMarketFlagRow({
+                    asOfDate,
+                    entityType: "player",
+                    entityId: playerId,
+                    gameId: game.id,
+                    marketType,
+                    flagType: edgeValue > 0 ? "model_over" : "model_under",
+                    edgeValue,
+                    reasons: [
+                      {
+                        expected_value: expectedValue,
+                        line_value: consensusLineValue,
+                        sportsbook_count: marketSummary.sportsbookKeys.length
+                      }
+                    ],
+                    provider: marketSummary.sourceNames[0] ?? null,
+                    metadata: {
+                      horizon_games: horizonGames,
+                      run_id: runId
+                    }
+                  })
+                );
+              }
+            }
+          }
+        }
 
         const teamUpsert = {
           run_id: runId,
@@ -3261,6 +3517,7 @@ export async function runProjectionV2ForDate(
             opponentTeamId,
             candidateGoalieIds,
             priorStartProbByGoalieId,
+            confirmedStarterByGoalieId,
             lineComboPriorByGoalieId,
             projectedGsaaPer60ByGoalieId,
             seasonStartPctByGoalieId,
@@ -3760,12 +4017,276 @@ export async function runProjectionV2ForDate(
           });
         if (goalieErr) throw goalieErr;
         goalieRowsUpserted += 1;
+
+        selectedGoalieByTeamId.set(c.teamId, {
+          goalieId: selectedGoalieId,
+          starterProbability: Number(starterProb.toFixed(4)),
+          confirmedStatus:
+            c.override != null ||
+            c.confirmedStarterByGoalieId.get(selectedGoalieId) === true,
+          saves: Number((saves * goalieHorizonTotalScalar).toFixed(3))
+        });
+
+        const goalieMarketSummaryByType =
+          playerPropContextByGamePlayerKey.get(`${game.id}:${selectedGoalieId}`) ?? null;
+        if (goalieMarketSummaryByType) {
+          for (const [marketType, marketSummary] of Object.entries(goalieMarketSummaryByType)) {
+            const expectedValue = getProjectionValueForPropMarket({
+              marketType,
+              projection: {
+                shots: 0,
+                goals: 0,
+                assists: 0,
+                powerPlayPoints: 0,
+                blockedShots: 0,
+                saves: Number((saves * goalieHorizonTotalScalar).toFixed(3))
+              }
+            });
+            if (expectedValue == null) continue;
+
+            playerPredictionOutputRows.push({
+              snapshot_date: asOfDate,
+              game_id: game.id,
+              player_id: selectedGoalieId,
+              team_id: c.teamId,
+              opponent_team_id: c.opponentTeamId,
+              model_name: ANALYTICS_MODEL_NAME,
+              model_version: ANALYTICS_MODEL_VERSION,
+              prediction_scope: "pregame",
+              metric_key: marketType,
+              expected_value: expectedValue,
+              floor_value: null,
+              ceiling_value: null,
+              probability_over: null,
+              line_value: getConsensusLineValue(marketSummary),
+              components: {
+                market_inputs: marketSummary,
+                projection_inputs: {
+                  starter_probability: Number(starterProb.toFixed(4)),
+                  confirmed_status:
+                    c.override != null ||
+                    c.confirmedStarterByGoalieId.get(selectedGoalieId) === true
+                }
+              },
+              provenance: {
+                provider: marketSummary.sourceNames[0] ?? null,
+                input_family: "forge-goalie-projection"
+              },
+              metadata: {
+                horizon_games: horizonGames,
+                run_id: runId
+              }
+            });
+
+            const consensusLineValue = getConsensusLineValue(marketSummary);
+            const edgeThreshold = PLAYER_MARKET_EDGE_THRESHOLDS[marketType] ?? 0.25;
+            if (consensusLineValue != null) {
+              const edgeValue = expectedValue - consensusLineValue;
+              if (Math.abs(edgeValue) >= edgeThreshold) {
+                modelMarketFlagRows.push(
+                  buildModelMarketFlagRow({
+                    asOfDate,
+                    entityType: "player",
+                    entityId: selectedGoalieId,
+                    gameId: game.id,
+                    marketType,
+                    flagType: edgeValue > 0 ? "model_over" : "model_under",
+                    edgeValue,
+                    reasons: [
+                      {
+                        expected_value: expectedValue,
+                        line_value: consensusLineValue,
+                        sportsbook_count: marketSummary.sportsbookKeys.length
+                      }
+                    ],
+                    provider: marketSummary.sourceNames[0] ?? null,
+                    metadata: {
+                      horizon_games: horizonGames,
+                      run_id: runId
+                    }
+                  })
+                );
+              }
+            }
+          }
+        }
         }
         return { timedOut: false };
       });
       if (goalieStageResult.timedOut) {
         timedOut = true;
         break gamesLoop;
+      }
+
+      const { error: deletePlayerPredictionErr } = await supabase
+        .from("player_prediction_outputs" as any)
+        .delete()
+        .eq("snapshot_date", asOfDate)
+        .eq("game_id", game.id)
+        .eq("model_name", ANALYTICS_MODEL_NAME)
+        .eq("model_version", ANALYTICS_MODEL_VERSION)
+        .eq("prediction_scope", "pregame");
+      if (deletePlayerPredictionErr) throw deletePlayerPredictionErr;
+
+      if (playerPredictionOutputRows.length > 0) {
+        const { error: playerPredictionErr } = await supabase
+          .from("player_prediction_outputs" as any)
+          .upsert(playerPredictionOutputRows as any, {
+            onConflict:
+              "snapshot_date,player_id,model_name,model_version,prediction_scope,metric_key,game_id"
+          });
+        if (playerPredictionErr) throw playerPredictionErr;
+      }
+
+      const homeExpectedGoals = teamGoalsByTeamId.get(game.homeTeamId) ?? null;
+      const awayExpectedGoals = teamGoalsByTeamId.get(game.awayTeamId) ?? null;
+      const totalExpectedGoals =
+        homeExpectedGoals != null && awayExpectedGoals != null
+          ? Number((homeExpectedGoals + awayExpectedGoals).toFixed(3))
+          : null;
+      const spreadProjection =
+        homeExpectedGoals != null && awayExpectedGoals != null
+          ? Number((homeExpectedGoals - awayExpectedGoals).toFixed(3))
+          : null;
+      const gameMarketSummary = gameMarketContextByGameId.get(game.id) ?? {};
+      const homeGoalie = selectedGoalieByTeamId.get(game.homeTeamId) ?? null;
+      const awayGoalie = selectedGoalieByTeamId.get(game.awayTeamId) ?? null;
+      const totalMarketSummary = gameMarketSummary["totals"];
+      const spreadMarketSummary = gameMarketSummary["spreads"];
+      const totalLineValue = totalMarketSummary?.outcomes.find(
+        (outcome) => outcome.outcomeKey === "over"
+      )?.averageLineValue ?? getConsensusLineValue(totalMarketSummary);
+      if (totalExpectedGoals != null && totalLineValue != null) {
+        const edgeValue = totalExpectedGoals - totalLineValue;
+        if (Math.abs(edgeValue) >= GAME_MARKET_EDGE_THRESHOLDS.totals) {
+          modelMarketFlagRows.push(
+            buildModelMarketFlagRow({
+              asOfDate,
+              entityType: "game",
+              entityId: game.id,
+              gameId: game.id,
+              marketType: "totals",
+              flagType: edgeValue > 0 ? "model_over" : "model_under",
+              edgeValue,
+              reasons: [
+                {
+                  expected_value: totalExpectedGoals,
+                  line_value: totalLineValue,
+                  sportsbook_count: totalMarketSummary?.sportsbookKeys.length ?? 0
+                }
+              ],
+              provider: totalMarketSummary?.sourceNames[0] ?? null,
+              metadata: {
+                horizon_games: horizonGames,
+                run_id: runId
+              }
+            })
+          );
+        }
+      }
+
+      const homeTeamAbbreviation = teamAbbreviationById.get(game.homeTeamId) ?? null;
+      const homeSpreadLineValue =
+        homeTeamAbbreviation != null
+          ? spreadMarketSummary?.outcomes.find(
+              (outcome) => outcome.outcomeKey === `team:${homeTeamAbbreviation}`
+            )?.averageLineValue ?? null
+          : null;
+      if (spreadProjection != null && homeSpreadLineValue != null) {
+        const edgeValue = spreadProjection - homeSpreadLineValue;
+        if (Math.abs(edgeValue) >= GAME_MARKET_EDGE_THRESHOLDS.spreads) {
+          modelMarketFlagRows.push(
+            buildModelMarketFlagRow({
+              asOfDate,
+              entityType: "game",
+              entityId: game.id,
+              gameId: game.id,
+              marketType: "spreads",
+              flagType: edgeValue > 0 ? "model_home_cover" : "model_away_cover",
+              edgeValue,
+              reasons: [
+                {
+                  expected_value: spreadProjection,
+                  line_value: homeSpreadLineValue,
+                  sportsbook_count: spreadMarketSummary?.sportsbookKeys.length ?? 0
+                }
+              ],
+              provider: spreadMarketSummary?.sourceNames[0] ?? null,
+              metadata: {
+                horizon_games: horizonGames,
+                run_id: runId
+              }
+            })
+          );
+        }
+      }
+
+      const gamePredictionOutput = {
+        snapshot_date: asOfDate,
+        game_id: game.id,
+        model_name: ANALYTICS_MODEL_NAME,
+        model_version: ANALYTICS_MODEL_VERSION,
+        prediction_scope: "pregame",
+        home_team_id: game.homeTeamId,
+        away_team_id: game.awayTeamId,
+        home_win_probability: null,
+        away_win_probability: null,
+        home_expected_goals: homeExpectedGoals,
+        away_expected_goals: awayExpectedGoals,
+        total_expected_goals: totalExpectedGoals,
+        spread_projection: spreadProjection,
+        components: {
+          market_inputs: gameMarketSummary,
+          selected_goalies: {
+            home: homeGoalie,
+            away: awayGoalie
+          }
+        },
+        provenance: {
+          game_market_provider:
+            Object.values(gameMarketSummary)[0]?.sourceNames?.[0] ?? null,
+          input_family: "forge-game-projection"
+        },
+        metadata: {
+          horizon_games: horizonGames,
+          run_id: runId
+        }
+      };
+
+      const { error: deleteGamePredictionErr } = await supabase
+        .from("game_prediction_outputs" as any)
+        .delete()
+        .eq("snapshot_date", asOfDate)
+        .eq("game_id", game.id)
+        .eq("model_name", ANALYTICS_MODEL_NAME)
+        .eq("model_version", ANALYTICS_MODEL_VERSION)
+        .eq("prediction_scope", "pregame");
+      if (deleteGamePredictionErr) throw deleteGamePredictionErr;
+
+      const { error: gamePredictionErr } = await supabase
+        .from("game_prediction_outputs" as any)
+        .upsert(gamePredictionOutput as any, {
+          onConflict: "snapshot_date,game_id,model_name,model_version,prediction_scope"
+        });
+      if (gamePredictionErr) throw gamePredictionErr;
+
+      const { error: deleteModelFlagErr } = await supabase
+        .from("model_market_flags_daily" as any)
+        .delete()
+        .eq("snapshot_date", asOfDate)
+        .eq("game_id", game.id)
+        .eq("model_name", ANALYTICS_MODEL_NAME)
+        .eq("model_version", ANALYTICS_MODEL_VERSION);
+      if (deleteModelFlagErr) throw deleteModelFlagErr;
+
+      if (modelMarketFlagRows.length > 0) {
+        const { error: modelFlagErr } = await supabase
+          .from("model_market_flags_daily" as any)
+          .upsert(modelMarketFlagRows as any, {
+            onConflict:
+              "snapshot_date,entity_type,entity_id,model_name,model_version,market_type,flag_type,game_id"
+          });
+        if (modelFlagErr) throw modelFlagErr;
       }
 
       metrics.games += 1;

@@ -2,6 +2,7 @@ import { fetchCachedJson } from "./clientFetchCache";
 import type { TeamRating } from "../teamRatingsService";
 import type { CategoryComputationResult } from "../trends/teamPercentiles";
 import type { TrendCategoryId } from "../trends/teamMetricConfig";
+import type { GoalieTrendCategoryId } from "../trends/goalieMetricConfig";
 import type { RequestedDateServingState } from "./freshness";
 import { getTeamMetaByAbbr, getTeamMetaById } from "./teamMetadata";
 
@@ -54,6 +55,42 @@ export type SkaterTrendsResponse = {
   limit: number;
   windowSize: number;
   categories: Record<string, unknown>;
+  playerMetadata: Record<
+    string,
+    {
+      id: number;
+      fullName: string;
+      position: string | null;
+      teamAbbrev: string | null;
+      imageUrl: string | null;
+    }
+  >;
+};
+
+export type GoalieTrendsResponse = {
+  seasonId: number;
+  generatedAt: string;
+  requestedDate: string;
+  dateUsed: string;
+  fallbackApplied: boolean;
+  serving: RequestedDateServingState;
+  limit: number;
+  windowSize: number;
+  categories: Record<
+    GoalieTrendCategoryId,
+    {
+      series: Record<string, Array<{ gp: number; percentile: number }>>;
+      rankings: Array<{
+        playerId: number;
+        percentile: number;
+        gp: number;
+        rank: number;
+        previousRank: number | null;
+        delta: number;
+        latestValue: number | null;
+      }>;
+    }
+  >;
   playerMetadata: Record<
     string,
     {
@@ -141,6 +178,7 @@ export type DashboardData = {
   teamCtpi: CtpiResponse;
   teamSos: SosResponse;
   skaterTrends: SkaterTrendsResponse;
+  goalieTrends: GoalieTrendsResponse;
   forgePlayers: ForgePlayersResponse;
   forgeGoalies: ForgeGoaliesResponse;
   startChart: StartChartResponse;
@@ -252,6 +290,20 @@ export const fetchSkaterTrends = (params: {
     { ttlMs: TREND_TTL_MS }
   );
 
+export const fetchGoalieTrends = (params: {
+  date: string;
+  window?: 1 | 3 | 5 | 10;
+  limit?: number;
+}): Promise<GoalieTrendsResponse> =>
+  fetchCachedJson<GoalieTrendsResponse>(
+    buildQuery("/api/v1/trends/goalie-power", {
+      date: params.date,
+      window: params.window,
+      limit: params.limit
+    }),
+    { ttlMs: TREND_TTL_MS }
+  );
+
 export const fetchForgePlayers = (date: string): Promise<ForgePlayersResponse> =>
   fetchCachedJson<ForgePlayersResponse>(
     buildQuery("/api/v1/forge/players", { date }),
@@ -323,6 +375,7 @@ export const loadTrendsDashboardData = async (
     teamCtpi,
     teamSos,
     skaterTrends,
+    goalieTrends,
     forgePlayers,
     forgeGoalies,
     startChart,
@@ -336,6 +389,11 @@ export const loadTrendsDashboardData = async (
     fetchSkaterTrends({
       position: skaterPosition,
       window: skaterWindow,
+      limit: skaterLimit
+    }),
+    fetchGoalieTrends({
+      date: params.date,
+      window: skaterWindow === 20 ? 10 : skaterWindow,
       limit: skaterLimit
     }),
     fetchForgePlayers(params.date),
@@ -364,6 +422,7 @@ export const loadTrendsDashboardData = async (
     teamCtpi,
     teamSos,
     skaterTrends,
+    goalieTrends,
     forgePlayers,
     forgeGoalies,
     startChart,

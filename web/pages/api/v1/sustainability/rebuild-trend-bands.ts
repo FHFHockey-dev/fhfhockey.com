@@ -53,19 +53,39 @@ function parseIntParam(
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+function parseSeasonIdParam(
+  value: string | string[] | undefined
+): number | null {
+  const candidate = Array.isArray(value) ? value[0] : value;
+  if (!candidate) return null;
+  const parsed = Number(candidate);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
 async function fetchPlayerIds(
   offset: number,
-  limit: number
+  limit: number,
+  seasonId: number | null
 ): Promise<number[]> {
-  const { data, error } = await supabase
-    .from("players")
-    .select("id")
-    .order("id", { ascending: true })
+  let query = supabase
+    .from("player_totals_unified")
+    .select("player_id")
+    .order("player_id", { ascending: true })
     .range(offset, offset + limit - 1);
+
+  if (seasonId !== null) {
+    query = query.eq("season_id", seasonId);
+  }
+
+  const { data, error } = await query;
   if (error) throw error;
-  return (data ?? [])
-    .map((row) => Number((row as any).id ?? Number.NaN))
-    .filter((id) => Number.isFinite(id));
+  return Array.from(
+    new Set(
+      (data ?? [])
+        .map((row) => Number((row as any).player_id ?? Number.NaN))
+        .filter((id) => Number.isFinite(id))
+    )
+  );
 }
 
 async function handler(
@@ -117,6 +137,9 @@ async function handler(
     Boolean(startDate) ||
     Boolean(endDateOverride);
   const effectiveEndDate = endDateOverride ?? snapshotDate;
+  const seasonId = parseSeasonIdParam(
+    req.body?.season_id ?? req.query.season_id
+  );
 
   try {
     await assertTrendBandPrerequisites();
@@ -124,7 +147,7 @@ async function handler(
     if (runAll) {
       for (let nextOffset = offset + limit; ; nextOffset += limit) {
         offsets.push(nextOffset);
-        const probe = await fetchPlayerIds(nextOffset, 1);
+        const probe = await fetchPlayerIds(nextOffset, 1, seasonId);
         if (!probe.length) {
           offsets.pop();
           break;
@@ -140,7 +163,7 @@ async function handler(
     let processedBatches = 0;
 
     for (const currentOffset of offsets) {
-      const playerIds = await fetchPlayerIds(currentOffset, limit);
+      const playerIds = await fetchPlayerIds(currentOffset, limit, seasonId);
       if (!playerIds.length) {
         continue;
       }
@@ -206,6 +229,7 @@ async function handler(
         history: historyRequested,
         start_date: startDate ?? null,
         snapshot_date: effectiveEndDate,
+        season_id: seasonId,
         run_all: runAll,
         processed: 0,
         batches_processed: 0,
@@ -222,6 +246,7 @@ async function handler(
       history: historyRequested,
       start_date: startDate ?? null,
       snapshot_date: effectiveEndDate,
+      season_id: seasonId,
       dry_run: dry,
       run_all: runAll,
       processed: totalPlayers,

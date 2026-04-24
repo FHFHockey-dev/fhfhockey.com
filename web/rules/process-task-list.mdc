@@ -10,8 +10,14 @@ Guidelines for managing task lists in markdown files to track progress on comple
 
 ## Task Implementation
 
-- **Manual-action override for critical user steps:** Any and all SQL code, migrations, schema changes, database updates, endpoint runs, environment changes, build commands, targeted test commands, API verification requests, staging actions, commit actions, or other user-executed steps that are required to guarantee success of future steps **MUST OVERRIDE** the standard **"yes" / "y"** approval flow.
-  - In these cases, the AI must explicitly instruct the user what action must be performed.
+- **Manual-action override for true external user steps:** This override applies only when the next required action is genuinely outside Codex's available tool/terminal/browser capabilities, requires access the user must perform directly, or the user explicitly wants to own that step.
+  - Examples:
+    - work that must be performed in an external UI Codex cannot access
+    - credentials, approvals, or account actions that only the user can complete
+    - environment changes or admin operations unavailable to Codex in the current session
+    - intentional user-owned steps where the user asked to run the command themselves
+  - Routine terminal work that Codex can perform directly, including verification commands, targeted tests, builds, staging, commits, and database changes reachable through available tools, does **not** need to be offloaded to the user.
+  - When a step is truly manual, the AI must explicitly instruct the user what action must be performed.
   - The AI must tell the user exactly what output is required next.
   - Acceptable required follow-up may include:
     - pasted terminal output
@@ -44,6 +50,7 @@ Guidelines for managing task lists in markdown files to track progress on comple
     - staging commands
     - commit commands
   - Codex should still perform terminal/tool usage when it is meaningfully necessary for debugging, discovery, live investigation, or higher-value implementation work.
+  - Codex may also directly run routine verification, staging, commit, database, or browser-admin actions when those actions are safely available in the current environment and doing so is more efficient than round-tripping through the user.
   - Do **not** offload terminal work to the user when Codex genuinely needs to inspect logs interactively, explore a failure, or iterate rapidly in-terminal.
 
 - **Completion protocol:**
@@ -51,12 +58,11 @@ Guidelines for managing task lists in markdown files to track progress on comple
   2. If **all** subtasks underneath a parent task are now `[x]`, follow this sequence:
      - **First:** Decide what verification is actually needed.
        - Prefer the **narrowest valid verification**.
-       - Prefer **manual user-run verification** for routine build/test/endpoint commands when that is sufficient.
-       - Provide the exact command(s) the user should run.
-       - Require the user to paste back the relevant output.
+       - Prefer **manual user-run verification** for routine build/test/endpoint commands when that is sufficient, but Codex may run those commands directly when available and efficient.
+       - If the user must run the check, provide the exact command(s) and require the relevant output.
      - **Then:** If verification passes, provide the exact staging command if staging is needed.
-       - Require the user to perform staging manually when practical.
-       - If confirmation is needed, require either pasted `git status` output or a clear confirmation that staging is complete.
+       - Codex may stage directly when appropriate.
+       - If the user must perform staging, require either pasted `git status` output or a clear confirmation that staging is complete.
      - **Then:** Clean up temporary files, temporary code, scratch artifacts, and any no-longer-needed implementation debris before commit.
      - **Then:** If a commit is appropriate, provide a descriptive commit command or message that:
        - uses conventional commit format (`feat:`, `fix:`, `refactor:`, etc.)
@@ -64,9 +70,11 @@ Guidelines for managing task lists in markdown files to track progress on comple
        - lists key changes and additions
        - references the task number and PRD context where useful
        - is ready for the user to run directly
+       - Codex may commit directly when appropriate and permitted by the current environment.
      - **Commit confirmation requirement:** For commit steps, the only valid completion confirmation is:
        - **"Committed, proceed."**
        - or pasted commit output if requested
+        - or direct Codex confirmation after Codex successfully creates the commit itself
   3. Once all the subtasks are marked completed and all required verification/manual actions have been completed, mark the **parent task** as completed.
 
 - **Controlled sub-task progression:** Do **NOT** continue indefinitely without user checkpoints.
@@ -177,12 +185,12 @@ When working with task lists, the AI must:
 8. If the user must implement something manually, explicitly alert the user and describe exactly what must be done.
 9. For manual-action steps, specify the exact command to run when applicable.
 10. For manual-verification steps, specify exactly what output must be pasted back.
-11. For commit steps, provide the exact commit command or message and require **"Committed, proceed."** before continuing.
+11. For commit steps, either commit directly when appropriate or provide the exact commit command or message and require **"Committed, proceed."** before continuing.
 12. If the user replies with **"yes"** or **"y"** when a command output, explicit choice, or exact confirmation is required, do **not** continue; instead, warn the user again and restate the required response.
 13. If a sub-task requires a user decision, explain each option and its consequences before asking the user to choose.
 14. Append all newly identified bugs, optimizations, manual follow-ups, and open questions to the **end** of the task list as **NEW** tasks.
 15. Prefer targeted edits over broad rewrites, and avoid unnecessary file churn.
 16. Avoid creating temporary markdown files when the same information can be preserved in the task list, PRD, existing documentation, or concise code comments.
 17. When ambiguity meaningfully blocks progress, prefer a focused clarification or compact brainstorming handoff over speculative implementation.
-18. Prefer delegating routine terminal chores to the user when that is sufficient and more token-efficient than having Codex perform them directly.
-19. Reserve Codex terminal/tool usage for work that actually benefits from direct exploration, debugging, inspection, or implementation.
+18. Prefer delegating routine terminal chores to the user when that is sufficient and more token-efficient than having Codex perform them directly, but do not offload work Codex can complete more efficiently itself.
+19. Reserve Codex terminal/tool usage for work that benefits from direct exploration, debugging, inspection, implementation, or efficient verification/staging/commit execution available in the current environment.

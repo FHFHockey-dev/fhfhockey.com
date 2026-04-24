@@ -19,6 +19,10 @@ import {
   type SkaterPositionGroup,
   type SkaterWindowSize
 } from "lib/trends/skaterMetricConfig";
+import {
+  GOALIE_TREND_CATEGORIES,
+  type GoalieTrendCategoryId
+} from "lib/trends/goalieMetricConfig";
 import { TRENDS_SURFACE_LINKS } from "lib/navigation/siteSurfaceLinks";
 import {
   DEFERRED_PLAYER_BASELINE_NOTE,
@@ -39,8 +43,6 @@ import {
   Legend
 } from "recharts";
 import styles from "./dashboard.module.scss";
-
-type SparkPoint = { date: string; value: number };
 
 type ForgeProjectionRow = {
   player_id: number;
@@ -105,7 +107,7 @@ type PlayerSearchRow = {
   teamAbbrev: string | null;
 };
 
-type SkaterRankingRow = {
+type TrendRankingRow = {
   playerId: number;
   percentile: number;
   gp: number;
@@ -114,6 +116,8 @@ type SkaterRankingRow = {
   delta: number;
   latestValue: number | null;
 };
+
+type SkaterRankingRow = TrendRankingRow;
 
 type SkaterCategoryResult = {
   series?: Record<string, Array<{ gp: number; percentile: number }>>;
@@ -157,9 +161,11 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
   const [teamCategory, setTeamCategory] = useState<TrendCategoryId>("offense");
   const [skaterCategory, setSkaterCategory] =
     useState<SkaterTrendCategoryId>("shotsPer60");
-  const [activeTrendTab, setActiveTrendTab] = useState<"teams" | "skaters">(
-    "teams"
-  );
+  const [goalieCategory, setGoalieCategory] =
+    useState<GoalieTrendCategoryId>("savePct");
+  const [activeTrendTab, setActiveTrendTab] = useState<
+    "teams" | "skaters" | "goalies"
+  >("teams");
   const [skaterPosition, setSkaterPosition] =
     useState<SkaterPositionGroup>("forward");
   const [skaterWindow, setSkaterWindow] = useState<SkaterWindowSize>(3);
@@ -496,61 +502,66 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
     return { series: chartData, players: topPlayers };
   }, [skaterCategoryData]);
 
-  const ctpiMovers = useMemo(() => {
-    if (!data?.teamCtpi?.teams || !data.teamMeta) {
+  const teamTrendRankings = useMemo(
+    () => data?.teamTrends?.categories?.[teamCategory]?.rankings ?? [],
+    [data, teamCategory]
+  );
+
+  const teamMovementMovers = useMemo(() => {
+    if (!data?.teamMeta) {
       return { improved: [], degraded: [] };
     }
-    const deltas = data.teamCtpi.teams
-      .map((team) => {
-        const spark = team.sparkSeries ?? [];
-        if (spark.length < 2) return null;
-        const window = spark.slice(-5);
-        if (window.length < 2) return null;
-        const delta = window[window.length - 1].value - window[0].value;
-        const meta = data.teamMeta[team.team];
+
+    const improved = [...teamTrendRankings]
+      .filter((row) => row.delta > 0)
+      .sort((a, b) => b.delta - a.delta)
+      .slice(0, 5)
+      .map((row) => {
+        const meta = data.teamMeta[row.team];
         return {
-          id: team.team,
-          name: meta?.shortName ?? team.team,
+          id: row.team,
+          name: meta?.shortName ?? row.team,
           logo: meta?.logo,
-          delta,
-          current: team.ctpi_0_to_100
+          delta: row.delta,
+          current: row.percentile
         };
-      })
-      .filter((row): row is NonNullable<typeof row> => Boolean(row));
-
-    const improved = [...deltas].sort((a, b) => b.delta - a.delta).slice(0, 5);
-    const degraded = [...deltas].sort((a, b) => a.delta - b.delta).slice(0, 5);
-    return { improved, degraded };
-  }, [data]);
-
-  const ctpiChartSeries = useMemo(() => {
-    if (!data?.teamCtpi?.teams) return { series: [], teams: [] as string[] };
-    const sorted = [...data.teamCtpi.teams].sort(
-      (a, b) => (b.ctpi_0_to_100 ?? 0) - (a.ctpi_0_to_100 ?? 0)
-    );
-    const selected = sorted.slice(0, TREND_LINE_LIMIT);
-    const teams = selected.map((row) => row.team);
-    const teamSeriesMap = new Map<string, SparkPoint[]>();
-    selected.forEach((row) => {
-      teamSeriesMap.set(row.team, row.sparkSeries ?? []);
-    });
-
-    const dateMap = new Map<string, Record<string, number>>();
-    teams.forEach((team) => {
-      const points = teamSeriesMap.get(team) ?? [];
-      points.forEach((point) => {
-        if (!dateMap.has(point.date)) dateMap.set(point.date, {});
-        dateMap.get(point.date)![team] = point.value;
       });
-    });
 
-    const series = Array.from(dateMap.entries())
-      .map(([dateKey, values]) => ({ date: dateKey, ...values }))
-      .sort(
-        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-      );
-    return { series, teams };
-  }, [data]);
+    const degraded = [...teamTrendRankings]
+      .filter((row) => row.delta < 0)
+      .sort((a, b) => a.delta - b.delta)
+      .slice(0, 5)
+      .map((row) => {
+        const meta = data.teamMeta[row.team];
+        return {
+          id: row.team,
+          name: meta?.shortName ?? row.team,
+          logo: meta?.logo,
+          delta: row.delta,
+          current: row.percentile
+        };
+      });
+
+    return { improved, degraded };
+  }, [data, teamTrendRankings]);
+
+  const teamTemperature = useMemo(() => {
+    const hot = [...teamTrendRankings]
+      .filter((row) => row.percentile >= 70 || row.delta >= 2)
+      .slice(0, 3);
+    const cold = [...teamTrendRankings]
+      .filter((row) => row.percentile <= 35 || row.delta <= -2)
+      .sort((a, b) => a.percentile - b.percentile)
+      .slice(0, 3);
+    return { hot, cold };
+  }, [teamTrendRankings]);
+
+  const activeTeamCategory = useMemo(
+    () =>
+      TEAM_TREND_CATEGORIES.find((category) => category.id === teamCategory) ??
+      TEAM_TREND_CATEGORIES[0],
+    [teamCategory]
+  );
 
   const ArrowDelta = ({ delta }: { delta: number }) => {
     if (delta === 0) {
@@ -577,7 +588,7 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
   const SkaterRankingCard = ({
     rows
   }: {
-    rows: SkaterRankingRow[];
+    rows: TrendRankingRow[];
   }) => {
     const playerMetadata = data?.skaterTrends?.playerMetadata ?? {};
 
@@ -632,13 +643,109 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
     );
   };
 
+  const goalieCategoryData = useMemo(() => {
+    const category = data?.goalieTrends?.categories?.[goalieCategory];
+    return {
+      series: category?.series ?? {},
+      rankings: category?.rankings ?? []
+    };
+  }, [data, goalieCategory]);
+
+  const activeGoalieLabel = useMemo(() => {
+    return (
+      GOALIE_TREND_CATEGORIES.find((category) => category.id === goalieCategory)
+        ?.label ?? "Goalie Rankings"
+    );
+  }, [goalieCategory]);
+
+  const goalieTrendSeries = useMemo(() => {
+    const rankings = goalieCategoryData.rankings ?? [];
+    const topGoalies = rankings
+      .slice(0, TREND_LINE_LIMIT)
+      .map((row) => String(row.playerId));
+    const series = goalieCategoryData.series ?? {};
+    const gpMap = new Map<number, Record<string, number>>();
+
+    topGoalies.forEach((playerId) => {
+      const points = series[playerId] ?? [];
+      points.forEach((point) => {
+        if (!gpMap.has(point.gp)) gpMap.set(point.gp, {});
+        gpMap.get(point.gp)![playerId] = point.percentile;
+      });
+    });
+
+    const chartData = Array.from(gpMap.entries())
+      .map(([gp, values]) => ({ gp, ...values }))
+      .sort((a, b) => a.gp - b.gp);
+
+    return { series: chartData, players: topGoalies };
+  }, [goalieCategoryData]);
+
+  const GoalieRankingCard = ({
+    rows
+  }: {
+    rows: TrendRankingRow[];
+  }) => {
+    const playerMetadata = data?.goalieTrends?.playerMetadata ?? {};
+
+    return (
+      <div className={styles.skaterRankingCard}>
+        <div className={styles.rankingHeading}>
+          <div className={styles.rankingTitle}>{activeGoalieLabel}</div>
+          <p className={styles.rankingMeta}>Top percentile goalies</p>
+        </div>
+        {rows.length === 0 ? (
+          <p className={styles.emptyText}>No goalie data yet.</p>
+        ) : (
+          <ul className={styles.skaterRankingList}>
+            {rows.map((row) => {
+              const meta = playerMetadata[String(row.playerId)];
+              return (
+                <li key={row.playerId} className={styles.skaterRankingRow}>
+                  <div className={styles.skaterInfo}>
+                    <span className={styles.rank}>{row.rank}</span>
+                    <div className={styles.skaterHeadshotWrapper}>
+                      <Image
+                        src={meta?.imageUrl ?? DEFAULT_PLAYER_IMAGE}
+                        alt={meta?.fullName ?? `Goalie ${row.playerId}`}
+                        className={styles.skaterHeadshot}
+                        width={42}
+                        height={42}
+                        loading="lazy"
+                      />
+                    </div>
+                    <div className={styles.skaterText}>
+                      <p className={styles.skaterName}>
+                        {meta?.fullName ?? `Goalie ${row.playerId}`}
+                      </p>
+                      <p className={styles.skaterMeta}>
+                        {meta?.teamAbbrev ?? "FA"}
+                        {meta?.position ? ` · ${meta.position}` : ""}
+                      </p>
+                    </div>
+                  </div>
+                  <div className={styles.skaterScore}>
+                    <ArrowDelta delta={row.delta} />
+                    <span className={styles.percentile}>
+                      {formatPercent(row.percentile)}
+                    </span>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+    );
+  };
+
   return (
     <>
       <Head>
         <title>Trends Dashboard | FHFHockey</title>
         <meta
           name="description"
-          content="Recent-form, skater movement, and workload context for fast player and trend reads."
+          content="Movement-first team, skater, and goalie trend reads with supporting projection and workload context."
         />
       </Head>
       <div className={styles.page}>
@@ -649,451 +756,204 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
               title="Trends Dashboard"
               description={
                 <p>
-                  Use this page to find movement fast: recent-form leaders,
-                  skater percentile changes, slate-ready projections, and goalie
-                  workload context. Team-strength diagnosis now belongs on the
-                  dedicated underlying-stats surface.
+                  Use this page to read movement fast across teams, skaters, and
+                  goalies. Underlying-stats still owns deeper team diagnosis;
+                  this surface owns directionality, recent form, risers,
+                  fallers, and the support context around those shifts.
                 </p>
               }
-              emphasis="Player movement"
+              emphasis="Movement and directionality"
               owns={[
-                "Recent-form scanning before you drill into a player page",
-                "Skater movement, percentile leaders, and window-based trend views",
-                "Quick weekly decision context from projections and goalie usage"
+                "Team, skater, and goalie movement views with rolling recent-form context",
+                "Risers, fallers, and hot/cold states before you drill deeper",
+                "Projection and goalie-start runway that supports the movement read"
               ]}
               defers={[
                 "Full team-strength reads, process-vs-results diagnosis, and schedule texture",
-                "Experimental elasticity-band or streak prototypes that still belong in the lab"
+                "Predictions-vs-actual and candlestick views until the model contracts harden",
+                "Experimental elasticity-band and sustainability prototypes that still belong in the lab"
               ]}
               surfaceLinks={TRENDS_SURFACE_LINKS.slice(0, 4)}
             />
-            <div className={styles.searchPanel}>
-              <div className={styles.panelHeader}>
-                <h2 className={styles.panelTitle}>Player Search</h2>
-                <span className={styles.panelMeta}>Trends lookup</span>
-              </div>
-              <div className={styles.searchBoxButton}>
-                <form onSubmit={handleSearch} className={styles.searchForm}>
-                  <div className={styles.searchInputWrap}>
-                    <input
-                      ref={inputRef}
-                      type="text"
-                      placeholder="Search by player name"
-                      value={query}
-                      onChange={(event) => setQuery(event.target.value)}
-                      onKeyDown={handleSearchKeyDown}
-                      onFocus={() => setShowSuggestions(suggestions.length > 0)}
-                      onBlur={() =>
-                        setTimeout(() => setShowSuggestions(false), 120)
-                      }
-                      className={styles.searchInput}
-                    />
-                    {showSuggestions && suggestions.length > 0 && (
-                      <div className={styles.suggestionPanel}>
-                        {suggestions.map((player, idx) => (
-                          <button
-                            key={player.id}
-                            type="button"
-                            className={`${styles.suggestionItem} ${
-                              idx === activeIndex ? styles.suggestionActive : ""
-                            }`}
-                            onMouseDown={(event) => {
-                              event.preventDefault();
-                              router.push(`/trends/player/${player.id}`);
-                              setShowSuggestions(false);
-                            }}
-                          >
-                            {player.fullName} · {player.teamAbbrev ?? "FA"} ·{" "}
-                            {player.position ?? "—"}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <button type="submit" className={styles.primaryButton}>
-                    {searchLoading ? "Searching…" : "Find Player"}
-                  </button>
-                </form>
-                {searchError && (
-                  <p className={styles.errorText}>{searchError}</p>
-                )}
-                {!searchError && results.length > 0 && (
-                  <div className={styles.searchResults}>
-                    {results.map((player) => (
-                      <button
-                        key={player.id}
-                        type="button"
-                        onClick={() =>
-                          router.push(`/trends/player/${player.id}`)
+            <div className={styles.headerRail}>
+              <div className={styles.searchPanel}>
+                <div className={styles.panelHeader}>
+                  <h2 className={styles.panelTitle}>Player Search</h2>
+                  <span className={styles.panelMeta}>Trends lookup</span>
+                </div>
+                <div className={styles.searchBoxButton}>
+                  <form onSubmit={handleSearch} className={styles.searchForm}>
+                    <div className={styles.searchInputWrap}>
+                      <input
+                        ref={inputRef}
+                        type="text"
+                        placeholder="Search by player name"
+                        value={query}
+                        onChange={(event) => setQuery(event.target.value)}
+                        onKeyDown={handleSearchKeyDown}
+                        onFocus={() =>
+                          setShowSuggestions(suggestions.length > 0)
                         }
-                        className={styles.resultButton}
-                      >
-                        {player.fullName} · {player.teamAbbrev ?? "FA"} ·{" "}
-                        {player.position ?? "—"}
-                      </button>
-                    ))}
-                  </div>
-                )}
+                        onBlur={() =>
+                          setTimeout(() => setShowSuggestions(false), 120)
+                        }
+                        className={styles.searchInput}
+                      />
+                      {showSuggestions && suggestions.length > 0 && (
+                        <div className={styles.suggestionPanel}>
+                          {suggestions.map((player, idx) => (
+                            <button
+                              key={player.id}
+                              type="button"
+                              className={`${styles.suggestionItem} ${
+                                idx === activeIndex ? styles.suggestionActive : ""
+                              }`}
+                              onMouseDown={(event) => {
+                                event.preventDefault();
+                                router.push(`/trends/player/${player.id}`);
+                                setShowSuggestions(false);
+                              }}
+                            >
+                              {player.fullName} · {player.teamAbbrev ?? "FA"} ·{" "}
+                              {player.position ?? "—"}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <button type="submit" className={styles.primaryButton}>
+                      {searchLoading ? "Searching…" : "Find Player"}
+                    </button>
+                  </form>
+                  {searchError && (
+                    <p className={styles.errorText}>{searchError}</p>
+                  )}
+                  {!searchError && results.length > 0 && (
+                    <div className={styles.searchResults}>
+                      {results.map((player) => (
+                        <button
+                          key={player.id}
+                          type="button"
+                          onClick={() =>
+                            router.push(`/trends/player/${player.id}`)
+                          }
+                          className={styles.resultButton}
+                        >
+                          {player.fullName} · {player.teamAbbrev ?? "FA"} ·{" "}
+                          {player.position ?? "—"}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
+
+              <section className={styles.summaryBand}>
+                <div className={styles.summaryBandHeader}>
+                  <div>
+                    <h2 className={styles.panelTitle}>Recent-Form Scan</h2>
+                    <p className={styles.summaryBandCopy}>
+                      Scan deployment, shot pressure, PP usage, and chance
+                      creation before drilling into a player trend page.
+                    </p>
+                  </div>
+                  <div className={styles.summaryBandMeta}>
+                    <span className={styles.panelMeta}>
+                      Window {formatSkaterTrendWindowLabel(skaterWindow)}
+                    </span>
+                    <span className={styles.summaryContract}>
+                      Strong v1 baselines:{" "}
+                      {LOCKED_PLAYER_BASELINES.map((baseline) => baseline.label).join(
+                        ", "
+                      )}
+                      .
+                    </span>
+                    <span className={styles.summaryContract}>
+                      {DEFERRED_PLAYER_BASELINE_NOTE}
+                    </span>
+                  </div>
+                </div>
+
+                <div className={styles.summaryBandGrid}>
+                  {skaterSummaryCards.map((card) => (
+                    <article key={card.categoryId} className={styles.summaryCard}>
+                      <div className={styles.summaryCardHeader}>
+                        <div>
+                          <h3 className={styles.summaryCardTitle}>{card.label}</h3>
+                          <p className={styles.summaryCardCopy}>
+                            {card.description}
+                          </p>
+                        </div>
+                        <span className={styles.summaryBadge}>
+                          {card.windowLabel}
+                        </span>
+                      </div>
+                      <ul className={styles.summaryLeaderList}>
+                        {card.leaders.length === 0 ? (
+                          <li className={styles.summaryEmpty}>
+                            No recent trend leaders yet.
+                          </li>
+                        ) : (
+                          card.leaders.map((leader) => (
+                            <li
+                              key={leader.playerId}
+                              className={styles.summaryLeaderRow}
+                            >
+                              <div className={styles.summaryLeaderText}>
+                                <Link
+                                  href={`/trends/player/${leader.playerId}`}
+                                  className={styles.summaryLeaderLink}
+                                >
+                                  {leader.fullName}
+                                </Link>
+                                <span className={styles.summaryLeaderMeta}>
+                                  {leader.teamAbbrev ?? "FA"}
+                                  {leader.position
+                                    ? ` · ${leader.position}`
+                                    : ""}
+                                </span>
+                              </div>
+                              <div className={styles.summaryLeaderMetrics}>
+                                <span className={styles.summaryLeaderValue}>
+                                  {formatPercent(leader.percentile)}
+                                </span>
+                                <ArrowDelta delta={leader.delta} />
+                              </div>
+                            </li>
+                          ))
+                        )}
+                      </ul>
+                    </article>
+                  ))}
+                </div>
+              </section>
             </div>
           </header>
 
-
-          <section className={styles.summaryBand}>
-            <div className={styles.summaryBandHeader}>
+          <section className={`${styles.panel} ${styles.movementSection}`}>
+            <div className={styles.panelHeader}>
               <div>
-                <h2 className={styles.panelTitle}>Recent-Form Scan</h2>
+                <h2 className={styles.panelTitle}>Movement Workspace</h2>
                 <p className={styles.summaryBandCopy}>
-                  Scan deployment, shot pressure, PP usage, and chance creation
-                  before drilling into a player trend page.
+                  One working surface for directionality, entity movers, and
+                  the immediate follow-up context once a trend is identified.
                 </p>
               </div>
-              <div className={styles.summaryBandMeta}>
+              <div className={styles.movementHeaderMeta}>
+                <span className={styles.panelMeta}>Date {date}</span>
                 <span className={styles.panelMeta}>
-                  Window {formatSkaterTrendWindowLabel(skaterWindow)}
-                </span>
-                <span className={styles.summaryContract}>
-                  Strong v1 baselines:{" "}
-                  {LOCKED_PLAYER_BASELINES.map((baseline) => baseline.label).join(
-                    ", "
-                  )}
-                  .
-                </span>
-                <span className={styles.summaryContract}>
-                  {DEFERRED_PLAYER_BASELINE_NOTE}
+                  Teams, skaters, and goalies
                 </span>
               </div>
             </div>
 
-            <div className={styles.summaryBandGrid}>
-              {skaterSummaryCards.map((card) => (
-                <article key={card.categoryId} className={styles.summaryCard}>
-                  <div className={styles.summaryCardHeader}>
-                    <div>
-                      <h3 className={styles.summaryCardTitle}>{card.label}</h3>
-                      <p className={styles.summaryCardCopy}>{card.description}</p>
-                    </div>
-                    <span className={styles.summaryBadge}>{card.windowLabel}</span>
-                  </div>
-                  <ul className={styles.summaryLeaderList}>
-                    {card.leaders.length === 0 ? (
-                      <li className={styles.summaryEmpty}>No recent trend leaders yet.</li>
-                    ) : (
-                      card.leaders.map((leader) => (
-                        <li key={leader.playerId} className={styles.summaryLeaderRow}>
-                          <div className={styles.summaryLeaderText}>
-                            <Link
-                              href={`/trends/player/${leader.playerId}`}
-                              className={styles.summaryLeaderLink}
-                            >
-                              {leader.fullName}
-                            </Link>
-                            <span className={styles.summaryLeaderMeta}>
-                              {leader.teamAbbrev ?? "FA"}
-                              {leader.position ? ` · ${leader.position}` : ""}
-                            </span>
-                          </div>
-                          <div className={styles.summaryLeaderMetrics}>
-                            <span className={styles.summaryLeaderValue}>
-                              {formatPercent(leader.percentile)}
-                            </span>
-                            <ArrowDelta delta={leader.delta} />
-                          </div>
-                        </li>
-                      ))
-                    )}
-                  </ul>
-                </article>
-              ))}
-            </div>
-          </section>
-
-          <div className={styles.dashboardGrid}>
-            <section className={styles.chartPanel}>
-              <div className={styles.chartHeader}>
-                <div className={styles.chartTitle}>CTPI Pulse</div>
-                <div className={styles.panelMeta}>Date {date}</div>
-              </div>
-              <div className={styles.chartBody}>
-                {ctpiChartSeries.series.length === 0 && isLoading ? (
-                  <p className={styles.loadingText}>Loading CTPI pulse…</p>
-                ) : ctpiChartSeries.series.length === 0 ? (
-                  <p className={styles.emptyText}>No CTPI history yet.</p>
-                ) : (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={ctpiChartSeries.series}>
-                      <XAxis dataKey="date" />
-                      <YAxis domain={[0, 100]} />
-                      <Tooltip />
-                      <Legend />
-                      {ctpiChartSeries.teams.map((team, idx) => (
-                        <Line
-                          key={team}
-                          type="monotone"
-                          dataKey={team}
-                          dot={false}
-                          stroke={getChartColor(idx)}
-                        />
-                      ))}
-                    </LineChart>
-                  </ResponsiveContainer>
-                )}
-              </div>
-            </section>
-
-            <section className={styles.topMoversPanel}>
-              <div className={styles.chartHeader}>
-                <div className={styles.chartTitle}>CTPI Movers</div>
-                <span className={styles.panelMeta}>Last 5 GP</span>
-              </div>
-              <div className={styles.topMoversBody}>
-                {ctpiMovers.improved.length === 0 && isLoading ? (
-                  <p className={styles.loadingText}>Loading CTPI movers…</p>
-                ) : ctpiMovers.improved.length === 0 ? (
-                  <p className={styles.emptyText}>No CTPI mover data yet.</p>
-                ) : (
-                  <TopMovers
-                    improved={ctpiMovers.improved}
-                    degraded={ctpiMovers.degraded}
-                  />
-                )}
-              </div>
-            </section>
-
-            <section
-              className={`${styles.panel} ${styles.identityPanel}`}
-              aria-labelledby="trends-surface-split-heading"
-            >
-              <div className={styles.panelHeader}>
-                <h2
-                  id="trends-surface-split-heading"
-                  className={styles.panelTitle}
-                >
-                  Surface Split
-                </h2>
-                <span className={styles.panelMeta}>What belongs where</span>
-              </div>
-              <div className={styles.identityPanelBody}>
-                <article className={styles.identityCard}>
-                  <span className={styles.identityCardLabel}>Trends</span>
-                  <h3 className={styles.identityCardTitle}>
-                    Movement and fast action
-                  </h3>
-                  <p className={styles.identityCardCopy}>
-                    Stay here for recent-form scans, skater movers, start-chart
-                    context, and quick weekly decisions.
-                  </p>
-                  <ul className={styles.identityCardList}>
-                    <li>Recent skater movement by percentile and window</li>
-                    <li>Goalie starts and workload context</li>
-                    <li>Projection-driven player triage</li>
-                  </ul>
-                </article>
-
-                <article className={styles.identityCard}>
-                  <span className={styles.identityCardLabel}>
-                    Underlying Stats
-                  </span>
-                  <h3 className={styles.identityCardTitle}>
-                    Team intelligence board
-                  </h3>
-                  <p className={styles.identityCardCopy}>
-                    Use the dedicated team page when you need to explain why a
-                    club looks strong, weak, real, inflated, or due for
-                    regression.
-                  </p>
-                  <ul className={styles.identityCardList}>
-                    <li>Process quadrant and mover narratives</li>
-                    <li>Schedule texture and trust signals</li>
-                    <li>Detailed team table for support, not discovery</li>
-                  </ul>
-                  <Link
-                    href="/underlying-stats"
-                    className={styles.identityCardLink}
-                  >
-                    Open Underlying Stats
-                  </Link>
-                </article>
-
-                <article className={styles.identityCard}>
-                  <span className={styles.identityCardLabel}>Sandbox</span>
-                  <h3 className={styles.identityCardTitle}>Workshop layer</h3>
-                  <p className={styles.identityCardCopy}>
-                    The lab is where player-trend ideas get tested before they
-                    deserve production space on the main trends page.
-                  </p>
-                  <ul className={styles.identityCardList}>
-                    <li>Elasticity bands and streak experiments</li>
-                    <li>Alternative player baselines and chart behaviors</li>
-                    <li>Prototype metrics before they harden into surface copy</li>
-                  </ul>
-                  <Link
-                    href="/trendsSandbox"
-                    className={styles.identityCardLink}
-                  >
-                    Open Trends Sandbox
-                  </Link>
-                </article>
-              </div>
-            </section>
-
-            <section
-              id="projections"
-              className={`${styles.panel} ${styles.projectionsPanel}`}
-            >
-              <div className={styles.panelHeader}>
-                <h2 className={styles.panelTitle}>
-                  Projections ({projectionSource.toUpperCase()})
-                </h2>
-                <div className={styles.tabRow}>
-                  <button
-                    type="button"
-                    onClick={() => setProjectionSource("forge")}
-                    disabled={projectionSource === "forge"}
-                    className={styles.tabButton}
-                  >
-                    FORGE
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setProjectionSource("legacy")}
-                    disabled={projectionSource === "legacy"}
-                    className={styles.tabButton}
-                  >
-                    Legacy
-                  </button>
-                </div>
-              </div>
-              <div className={styles.panelBody}>
-                {error && projectionRows.length === 0 ? (
-                  <p className={styles.errorText}>
-                    Failed to load projections: {error.message}
-                  </p>
-                ) : projectionRows.length === 0 && isLoading ? (
-                  <p className={styles.loadingText}>Loading projections…</p>
-                ) : projectionRows.length === 0 ? (
-                  <p className={styles.emptyText}>
-                    No projections available for this date.
-                  </p>
-                ) : (
-                  <>
-                    {isLoading && (
-                      <p className={styles.refreshText}>
-                        Refreshing projections…
-                      </p>
-                    )}
-                    <table className={styles.table}>
-                      <thead>
-                        <tr>
-                          <th className={styles.thLeft}>Player</th>
-                          <th className={styles.thLeft}>Team</th>
-                          <th className={styles.thLeft}>Pos</th>
-                          <th className={styles.thLeft}>Opp</th>
-                          <th className={styles.thRight}>GR</th>
-                          <th className={styles.thRight}>PTS</th>
-                          <th className={styles.thRight}>SOG</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {visibleProjectionRows.map((row) => (
-                          <tr key={row.player_id}>
-                            <td className={styles.tdLeft}>{row.player_name}</td>
-                            <td className={styles.tdLeft}>{row.team_name}</td>
-                            <td className={styles.tdLeft}>{row.position}</td>
-                            <td className={styles.tdLeft}>
-                              {row.opponent ?? "—"}
-                            </td>
-                            <td className={styles.tdRight}>
-                              {row.gamesRemaining ?? "—"}
-                            </td>
-                            <td className={styles.tdRight}>
-                              {row.pts.toFixed(2)}
-                            </td>
-                            <td className={styles.tdRight}>
-                              {row.sog.toFixed(2)}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </>
-                )}
-              </div>
-            </section>
-
-            <section
-              id="goalie-starts"
-              className={`${styles.panel} ${styles.goaliePanel}`}
-            >
-              <div className={styles.panelHeader}>
-                <h2 className={styles.panelTitle}>Goalie Starts</h2>
-                <span className={styles.panelMeta}>Top 8</span>
-              </div>
-              <div className={styles.panelBody}>
-                {error && goalieRows.length === 0 ? (
-                  <p className={styles.errorText}>
-                    Failed to load goalie starts: {error.message}
-                  </p>
-                ) : goalieRows.length === 0 && isLoading ? (
-                  <p className={styles.loadingText}>Loading goalie starts…</p>
-                ) : goalieRows.length === 0 ? (
-                  <p className={styles.emptyText}>
-                    No goalie start data available for this date.
-                  </p>
-                ) : (
-                  <>
-                    {isLoading && (
-                      <p className={styles.refreshText}>
-                        Refreshing goalie starts…
-                      </p>
-                    )}
-                    <table className={styles.table}>
-                      <thead>
-                        <tr>
-                          <th className={styles.thLeft}>Goalie</th>
-                          <th className={styles.thLeft}>Matchup</th>
-                          <th className={styles.thRight}>Start</th>
-                          <th className={styles.thRight}>Win</th>
-                          <th className={styles.thRight}>SO</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {visibleGoalieRows.map((row) => (
-                          <tr key={row.goalieId}>
-                            <td className={styles.tdLeft}>{row.name}</td>
-                            <td className={styles.tdLeft}>
-                              {row.team} vs {row.opponent}
-                            </td>
-                            <td className={styles.tdRight}>
-                              {row.startProb !== null
-                                ? `${(row.startProb * 100).toFixed(0)}%`
-                                : "—"}
-                            </td>
-                            <td className={styles.tdRight}>
-                              {row.winProb !== null
-                                ? `${(row.winProb * 100).toFixed(0)}%`
-                                : "—"}
-                            </td>
-                            <td className={styles.tdRight}>
-                              {row.shutoutProb !== null
-                                ? `${(row.shutoutProb * 100).toFixed(0)}%`
-                                : "—"}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </>
-                )}
-              </div>
-            </section>
-
-            <section className={styles.trendsPanel}>
+            <div className={styles.movementSectionBody}>
               <div className={styles.topTabs} role="tablist" aria-label="Dataset">
                 {(
                   [
                     { id: "teams", label: "Teams" },
-                    { id: "skaters", label: "Skaters" }
+                    { id: "skaters", label: "Skaters" },
+                    { id: "goalies", label: "Goalies" }
                   ] as const
                 ).map((tab) => (
                   <button
@@ -1112,16 +972,35 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
               </div>
 
               {activeTrendTab === "teams" ? (
-                <>
+                <div className={styles.movementTabPanel}>
+                  <div className={styles.workspaceIntro}>
+                    <div>
+                      <div className={styles.chartTitle}>
+                        Team Directionality: {activeTeamCategory.label}
+                      </div>
+                      <p className={styles.chartCopy}>
+                        {activeTeamCategory.description}. Stay at the movement
+                        layer here, then hand off to deeper surfaces only after
+                        the trend is clear.
+                      </p>
+                    </div>
+                    <div className={styles.chartMetaStack}>
+                      <div className={styles.panelMeta}>
+                        Rolling percentile by games played
+                      </div>
+                      <div className={styles.panelMeta}>
+                        Recent directionality first
+                      </div>
+                    </div>
+                  </div>
+
                   <div className={styles.subTabs} aria-label="Team categories">
                     {TEAM_TREND_CATEGORIES.map((category) => (
                       <button
                         key={category.id}
                         type="button"
                         className={`${styles.subTab} ${
-                          teamCategory === category.id
-                            ? styles.subTabActive
-                            : ""
+                          teamCategory === category.id ? styles.subTabActive : ""
                         }`}
                         aria-pressed={teamCategory === category.id}
                         onClick={() => setTeamCategory(category.id)}
@@ -1130,51 +1009,185 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                       </button>
                     ))}
                   </div>
-                  <div
-                    className={styles.dashboardContent}
-                    role="region"
-                    aria-label="Team chart"
-                  >
-                    {error && teamTrendSeries.series.length === 0 ? (
-                      <p className={styles.errorText}>
-                        Failed to load team trends: {error.message}
-                      </p>
-                    ) : teamTrendSeries.series.length === 0 && isLoading ? (
-                      <p className={styles.loadingText}>
-                        Loading trend charts…
-                      </p>
-                    ) : teamTrendSeries.series.length === 0 ? (
-                      <p className={styles.emptyText}>No trend history yet.</p>
-                    ) : (
-                      <>
+
+                  {error && teamTrendSeries.series.length === 0 ? (
+                    <p className={styles.errorText}>
+                      Failed to load team trends: {error.message}
+                    </p>
+                  ) : teamTrendSeries.series.length === 0 && isLoading ? (
+                    <p className={styles.loadingText}>
+                      Loading team directionality…
+                    </p>
+                  ) : teamTrendSeries.series.length === 0 ? (
+                    <p className={styles.emptyText}>No team trend history yet.</p>
+                  ) : (
+                    <div className={styles.teamWorkspaceGrid}>
+                      <div className={styles.chartCard}>
+                        <div className={styles.temperatureStrip}>
+                          <div className={styles.temperatureCard}>
+                            <span className={styles.temperatureLabel}>
+                              Heating Up
+                            </span>
+                            <div className={styles.temperatureList}>
+                              {teamTemperature.hot.length === 0
+                                ? "No clear heaters yet."
+                                : teamTemperature.hot
+                                    .map((row) => row.team)
+                                    .join(" · ")}
+                            </div>
+                          </div>
+                          <div className={styles.temperatureCard}>
+                            <span className={styles.temperatureLabel}>
+                              Cooling Off
+                            </span>
+                            <div className={styles.temperatureList}>
+                              {teamTemperature.cold.length === 0
+                                ? "No clear coolers yet."
+                                : teamTemperature.cold
+                                    .map((row) => row.team)
+                                    .join(" · ")}
+                            </div>
+                          </div>
+                        </div>
                         {isLoading && (
                           <p className={styles.refreshText}>
-                            Refreshing trend charts…
+                            Refreshing team trends…
                           </p>
                         )}
-                        <ResponsiveContainer width="100%" height={260}>
-                          <LineChart data={teamTrendSeries.series}>
-                            <XAxis dataKey="gp" />
-                            <YAxis domain={[0, 100]} />
-                            <Tooltip />
-                            <Legend />
-                            {teamTrendSeries.teams.map((team, idx) => (
-                              <Line
-                                key={team}
-                                type="monotone"
-                                dataKey={team}
-                                dot={false}
-                                stroke={getChartColor(idx)}
+                        <div className={styles.chartBody}>
+                          <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={teamTrendSeries.series}>
+                              <XAxis dataKey="gp" />
+                              <YAxis domain={[0, 100]} />
+                              <Tooltip />
+                              <Legend />
+                              {teamTrendSeries.teams.map((team, idx) => (
+                                <Line
+                                  key={team}
+                                  type="monotone"
+                                  dataKey={team}
+                                  dot={false}
+                                  stroke={getChartColor(idx)}
+                                />
+                              ))}
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </div>
+                        <div className={styles.teamRankStrip}>
+                          {teamTrendRankings.slice(0, 5).map((row) => (
+                            <div key={row.team} className={styles.teamRankCard}>
+                              <span className={styles.teamRankLabel}>
+                                {row.team}
+                              </span>
+                              <span className={styles.teamRankValue}>
+                                {formatPercent(row.percentile)}
+                              </span>
+                              <ArrowDelta delta={row.delta} />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className={styles.workspaceRail}>
+                        <section
+                          className={`${styles.panel} ${styles.workspaceRailPanel}`}
+                        >
+                          <div className={styles.panelHeader}>
+                            <h3 className={styles.panelTitle}>
+                              Team Risers And Fallers
+                            </h3>
+                            <span className={styles.panelMeta}>
+                              {activeTeamCategory.label}
+                            </span>
+                          </div>
+                          <div className={styles.panelBody}>
+                            {teamMovementMovers.improved.length === 0 &&
+                            teamMovementMovers.degraded.length === 0 &&
+                            isLoading ? (
+                              <p className={styles.loadingText}>
+                                Loading team movers…
+                              </p>
+                            ) : teamMovementMovers.improved.length === 0 &&
+                              teamMovementMovers.degraded.length === 0 ? (
+                              <p className={styles.emptyText}>
+                                No team mover data yet.
+                              </p>
+                            ) : (
+                              <TopMovers
+                                improved={teamMovementMovers.improved}
+                                degraded={teamMovementMovers.degraded}
                               />
-                            ))}
-                          </LineChart>
-                        </ResponsiveContainer>
-                      </>
-                    )}
+                            )}
+                          </div>
+                        </section>
+
+                        <section
+                          className={`${styles.panel} ${styles.workspaceRailPanel}`}
+                        >
+                          <div className={styles.panelHeader}>
+                            <h3 className={styles.panelTitle}>Next Surface</h3>
+                            <span className={styles.panelMeta}>
+                              Handoff points
+                            </span>
+                          </div>
+                          <div className={styles.panelBody}>
+                            <p className={styles.summaryBandCopy}>
+                              Use deeper team diagnosis or sustainability only
+                              after the movement read is complete.
+                            </p>
+                            <div className={styles.surfaceLinkList}>
+                              <Link
+                                href="/underlying-stats"
+                                className={styles.surfaceLinkPill}
+                              >
+                                Open Underlying Stats
+                              </Link>
+                              <a
+                                href="#projections"
+                                className={styles.surfaceLinkPill}
+                              >
+                                Projection Runway
+                              </a>
+                              <Link
+                                href="/trendsSandbox"
+                                className={styles.surfaceLinkPill}
+                              >
+                                Open Trends Sandbox
+                              </Link>
+                            </div>
+                          </div>
+                        </section>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : activeTrendTab === "skaters" ? (
+                <div className={styles.movementTabPanel}>
+                  <div className={styles.workspaceIntro}>
+                    <div>
+                      <div className={styles.chartTitle}>
+                        Skater Movement: {activeSkaterLabel}
+                      </div>
+                      <p className={styles.chartCopy}>
+                        Find risers, fallers, and hot recent-form skaters before
+                        handing off to player detail, projections, or later
+                        model work.
+                      </p>
+                    </div>
+                    <div className={styles.chartMetaStack}>
+                      <div className={styles.panelMeta}>
+                        Window {formatSkaterTrendWindowLabel(skaterWindow)}
+                      </div>
+                      <div className={styles.panelMeta}>
+                        {skaterPosition === "all"
+                          ? "All skaters"
+                          : skaterPosition === "forward"
+                            ? "Forwards only"
+                            : "Defense only"}
+                      </div>
+                    </div>
                   </div>
-                </>
-              ) : (
-                <>
+
                   <div className={styles.subTabs} aria-label="Skater categories">
                     {SKATER_TREND_CATEGORIES.map((category) => (
                       <button
@@ -1242,59 +1255,435 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                       </div>
                     </div>
                   </div>
-                  <div
-                    className={styles.dashboardContent}
-                    role="region"
-                    aria-label="Skater chart"
-                  >
-                    {error && skaterTrendSeries.series.length === 0 ? (
-                      <p className={styles.errorText}>
-                        Failed to load skater trends: {error.message}
-                      </p>
-                    ) : skaterTrendSeries.series.length === 0 && isLoading ? (
-                      <p className={styles.loadingText}>
-                        Loading skater trends…
-                      </p>
-                    ) : skaterTrendSeries.series.length === 0 ? (
-                      <p className={styles.emptyText}>
-                        No skater trend history yet.
-                      </p>
-                    ) : (
-                      <div className={styles.trendGrid}>
-                        <SkaterRankingCard
-                          rows={skaterCategoryData.rankings}
-                        />
-                        <div className={styles.chartCard}>
-                          {isLoading && (
-                            <p className={styles.refreshText}>
-                              Refreshing skater trends…
-                            </p>
-                          )}
-                          <ResponsiveContainer width="100%" height={260}>
-                            <LineChart data={skaterTrendSeries.series}>
-                              <XAxis dataKey="gp" />
-                              <YAxis domain={[0, 100]} />
-                              <Tooltip />
-                              <Legend />
-                              {skaterTrendSeries.players.map((playerId, idx) => (
-                                <Line
-                                  key={playerId}
-                                  type="monotone"
-                                  dataKey={playerId}
-                                  dot={false}
-                                  stroke={getChartColor(idx)}
-                                />
-                              ))}
-                            </LineChart>
-                          </ResponsiveContainer>
+
+                  {error && skaterTrendSeries.series.length === 0 ? (
+                    <p className={styles.errorText}>
+                      Failed to load skater trends: {error.message}
+                    </p>
+                  ) : skaterTrendSeries.series.length === 0 && isLoading ? (
+                    <p className={styles.loadingText}>Loading skater trends…</p>
+                  ) : skaterTrendSeries.series.length === 0 ? (
+                    <p className={styles.emptyText}>
+                      No skater trend history yet.
+                    </p>
+                  ) : (
+                    <div className={styles.trendGrid}>
+                      <SkaterRankingCard rows={skaterCategoryData.rankings} />
+                      <div className={styles.chartCard}>
+                        <div className={styles.rankingHeading}>
+                          <div className={styles.rankingTitle}>
+                            Trend Lines
+                          </div>
+                          <p className={styles.rankingMeta}>
+                            Recent percentile movement for the current skater
+                            lens.
+                          </p>
                         </div>
+                        {isLoading && (
+                          <p className={styles.refreshText}>
+                            Refreshing skater trends…
+                          </p>
+                        )}
+                        <ResponsiveContainer width="100%" height={260}>
+                          <LineChart data={skaterTrendSeries.series}>
+                            <XAxis dataKey="gp" />
+                            <YAxis domain={[0, 100]} />
+                            <Tooltip />
+                            <Legend />
+                            {skaterTrendSeries.players.map((playerId, idx) => (
+                              <Line
+                                key={playerId}
+                                type="monotone"
+                                dataKey={playerId}
+                                dot={false}
+                                stroke={getChartColor(idx)}
+                              />
+                            ))}
+                          </LineChart>
+                        </ResponsiveContainer>
                       </div>
-                    )}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className={styles.movementTabPanel}>
+                  <div className={styles.workspaceIntro}>
+                    <div>
+                      <div className={styles.chartTitle}>
+                        Goalie Movement: {activeGoalieLabel}
+                      </div>
+                      <p className={styles.chartCopy}>
+                        Track recent goalie movement first, then use start
+                        runway and workload context as the follow-up layer.
+                      </p>
+                    </div>
+                    <div className={styles.chartMetaStack}>
+                      <div className={styles.panelMeta}>
+                        Window {formatSkaterTrendWindowLabel(skaterWindow)}
+                      </div>
+                      <div className={styles.panelMeta}>
+                        Efficiency and workload movement
+                      </div>
+                    </div>
                   </div>
-                </>
+
+                  <div className={styles.subTabs} aria-label="Goalie categories">
+                    {GOALIE_TREND_CATEGORIES.map((category) => (
+                      <button
+                        key={category.id}
+                        type="button"
+                        className={`${styles.subTab} ${
+                          goalieCategory === category.id
+                            ? styles.subTabActive
+                            : ""
+                        }`}
+                        aria-pressed={goalieCategory === category.id}
+                        onClick={() => setGoalieCategory(category.id)}
+                      >
+                        {category.label}
+                      </button>
+                    ))}
+                    <div className={styles.skaterControls}>
+                      <div
+                        className={styles.windowToggle}
+                        aria-label="Goalie window size"
+                      >
+                        {(SKATER_WINDOW_OPTIONS as readonly SkaterWindowSize[]).map(
+                          (windowSize) => (
+                            <button
+                              key={windowSize}
+                              type="button"
+                              className={`${styles.windowButton} ${
+                                skaterWindow === windowSize
+                                  ? styles.windowActive
+                                  : ""
+                              }`}
+                              aria-pressed={skaterWindow === windowSize}
+                              onClick={() => setSkaterWindow(windowSize)}
+                            >
+                              {windowSize} GP
+                            </button>
+                          )
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {error && goalieTrendSeries.series.length === 0 ? (
+                    <p className={styles.errorText}>
+                      Failed to load goalie trends: {error.message}
+                    </p>
+                  ) : goalieTrendSeries.series.length === 0 && isLoading ? (
+                    <p className={styles.loadingText}>Loading goalie trends…</p>
+                  ) : goalieTrendSeries.series.length === 0 ? (
+                    <p className={styles.emptyText}>
+                      No goalie trend history yet.
+                    </p>
+                  ) : (
+                    <div className={styles.trendGrid}>
+                      <GoalieRankingCard rows={goalieCategoryData.rankings} />
+                      <div className={styles.chartCard}>
+                        <div className={styles.rankingHeading}>
+                          <div className={styles.rankingTitle}>
+                            Trend Lines
+                          </div>
+                          <p className={styles.rankingMeta}>
+                            Recent percentile movement for the current goalie
+                            lens.
+                          </p>
+                        </div>
+                        {isLoading && (
+                          <p className={styles.refreshText}>
+                            Refreshing goalie trends…
+                          </p>
+                        )}
+                        <ResponsiveContainer width="100%" height={260}>
+                          <LineChart data={goalieTrendSeries.series}>
+                            <XAxis dataKey="gp" />
+                            <YAxis domain={[0, 100]} />
+                            <Tooltip />
+                            <Legend />
+                            {goalieTrendSeries.players.map((playerId, idx) => (
+                              <Line
+                                key={playerId}
+                                type="monotone"
+                                dataKey={playerId}
+                                dot={false}
+                                stroke={getChartColor(idx)}
+                              />
+                            ))}
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+                  )}
+                </div>
               )}
-            </section>
-          </div>
+            </div>
+          </section>
+
+          <section className={styles.surfaceBridgeStrip}>
+            <article className={styles.surfaceBridgeCard}>
+              <span className={styles.surfaceBridgeLabel}>Deep team read</span>
+              <h2 className={styles.panelTitle}>Underlying Stats</h2>
+              <p className={styles.summaryBandCopy}>
+                Hand off here when movement needs explanation, schedule texture,
+                or team-level process context.
+              </p>
+              <Link href="/underlying-stats" className={styles.surfaceLinkPill}>
+                Open Underlying Stats
+              </Link>
+            </article>
+
+            <article className={styles.surfaceBridgeCard}>
+              <span className={styles.surfaceBridgeLabel}>Immediate support</span>
+              <h2 className={styles.panelTitle}>Projection And Starts</h2>
+              <p className={styles.summaryBandCopy}>
+                Use runway and goalie-start support after the movement read, not
+                before it.
+              </p>
+              <div className={styles.surfaceLinkList}>
+                <a href="#projections" className={styles.surfaceLinkPill}>
+                  Projection Runway
+                </a>
+                <a href="#goalie-starts" className={styles.surfaceLinkPill}>
+                  Goalie Starts
+                </a>
+              </div>
+            </article>
+
+            <article className={styles.surfaceBridgeCard}>
+              <span className={styles.surfaceBridgeLabel}>Experimental layer</span>
+              <h2 className={styles.panelTitle}>Sustainability Lab</h2>
+              <p className={styles.summaryBandCopy}>
+                Keep elasticity bands, sustainability meters, and prototype
+                baselines in the lab until the contracts harden.
+              </p>
+              <Link href="/trendsSandbox" className={styles.surfaceLinkPill}>
+                Open Trends Sandbox
+              </Link>
+            </article>
+          </section>
+
+          <section className={styles.supportSection}>
+            <div className={styles.summaryBandHeader}>
+              <div>
+                <h2 className={styles.panelTitle}>Supporting Runway</h2>
+                <p className={styles.summaryBandCopy}>
+                  These modules support the movement read. They should inform
+                  the next decision after the trend is identified, not obscure
+                  the trend scan itself.
+                </p>
+              </div>
+              <div className={styles.summaryBandMeta}>
+                <span className={styles.panelMeta}>
+                  Projections and start context
+                </span>
+                <span className={styles.summaryContract}>
+                  Predictions-vs-actual and candlestick views are explicitly
+                  held for a later implementation pass.
+                </span>
+              </div>
+            </div>
+
+            <div className={styles.supportGrid}>
+              <section
+                id="projections"
+                className={`${styles.panel} ${styles.supportPanel}`}
+              >
+                <div className={styles.panelHeader}>
+                  <h2 className={styles.panelTitle}>
+                    Projection Runway ({projectionSource.toUpperCase()})
+                  </h2>
+                  <div className={styles.tabRow}>
+                    <button
+                      type="button"
+                      onClick={() => setProjectionSource("forge")}
+                      disabled={projectionSource === "forge"}
+                      className={styles.tabButton}
+                    >
+                      FORGE
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setProjectionSource("legacy")}
+                      disabled={projectionSource === "legacy"}
+                      className={styles.tabButton}
+                    >
+                      Legacy
+                    </button>
+                  </div>
+                </div>
+                <div className={styles.panelBody}>
+                  <p className={styles.summaryBandCopy}>
+                    Use this after the movement read to see who still has slate
+                    runway.
+                  </p>
+                  {error && projectionRows.length === 0 ? (
+                    <p className={styles.errorText}>
+                      Failed to load projections: {error.message}
+                    </p>
+                  ) : projectionRows.length === 0 && isLoading ? (
+                    <p className={styles.loadingText}>Loading projections…</p>
+                  ) : projectionRows.length === 0 ? (
+                    <p className={styles.emptyText}>
+                      No projections available for this date.
+                    </p>
+                  ) : (
+                    <>
+                      {isLoading && (
+                        <p className={styles.refreshText}>
+                          Refreshing projections…
+                        </p>
+                      )}
+                      <table className={styles.table}>
+                        <thead>
+                          <tr>
+                            <th className={styles.thLeft}>Player</th>
+                            <th className={styles.thLeft}>Team</th>
+                            <th className={styles.thLeft}>Pos</th>
+                            <th className={styles.thLeft}>Opp</th>
+                            <th className={styles.thRight}>GR</th>
+                            <th className={styles.thRight}>PTS</th>
+                            <th className={styles.thRight}>SOG</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {visibleProjectionRows.map((row) => (
+                            <tr key={row.player_id}>
+                              <td className={styles.tdLeft}>{row.player_name}</td>
+                              <td className={styles.tdLeft}>{row.team_name}</td>
+                              <td className={styles.tdLeft}>{row.position}</td>
+                              <td className={styles.tdLeft}>
+                                {row.opponent ?? "—"}
+                              </td>
+                              <td className={styles.tdRight}>
+                                {row.gamesRemaining ?? "—"}
+                              </td>
+                              <td className={styles.tdRight}>
+                                {row.pts.toFixed(2)}
+                              </td>
+                              <td className={styles.tdRight}>
+                                {row.sog.toFixed(2)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </>
+                  )}
+                </div>
+              </section>
+
+              <section
+                id="goalie-starts"
+                className={`${styles.panel} ${styles.supportPanel}`}
+              >
+                <div className={styles.panelHeader}>
+                  <h2 className={styles.panelTitle}>Goalie Start Runway</h2>
+                  <span className={styles.panelMeta}>Top 8</span>
+                </div>
+                <div className={styles.panelBody}>
+                  <p className={styles.summaryBandCopy}>
+                    Start probability, win runway, and shutout ceiling to
+                    support the goalie movement view.
+                  </p>
+                  {error && goalieRows.length === 0 ? (
+                    <p className={styles.errorText}>
+                      Failed to load goalie starts: {error.message}
+                    </p>
+                  ) : goalieRows.length === 0 && isLoading ? (
+                    <p className={styles.loadingText}>Loading goalie starts…</p>
+                  ) : goalieRows.length === 0 ? (
+                    <p className={styles.emptyText}>
+                      No goalie start data available for this date.
+                    </p>
+                  ) : (
+                    <>
+                      {isLoading && (
+                        <p className={styles.refreshText}>
+                          Refreshing goalie starts…
+                        </p>
+                      )}
+                      <table className={styles.table}>
+                        <thead>
+                          <tr>
+                            <th className={styles.thLeft}>Goalie</th>
+                            <th className={styles.thLeft}>Matchup</th>
+                            <th className={styles.thRight}>Start</th>
+                            <th className={styles.thRight}>Win</th>
+                            <th className={styles.thRight}>SO</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {visibleGoalieRows.map((row) => (
+                            <tr key={row.goalieId}>
+                              <td className={styles.tdLeft}>{row.name}</td>
+                              <td className={styles.tdLeft}>
+                                {row.team} vs {row.opponent}
+                              </td>
+                              <td className={styles.tdRight}>
+                                {row.startProb !== null
+                                  ? `${(row.startProb * 100).toFixed(0)}%`
+                                  : "—"}
+                              </td>
+                              <td className={styles.tdRight}>
+                                {row.winProb !== null
+                                  ? `${(row.winProb * 100).toFixed(0)}%`
+                                  : "—"}
+                              </td>
+                              <td className={styles.tdRight}>
+                                {row.shutoutProb !== null
+                                  ? `${(row.shutoutProb * 100).toFixed(0)}%`
+                                  : "—"}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </>
+                  )}
+                </div>
+              </section>
+
+              <section className={`${styles.panel} ${styles.placeholderPanel}`}>
+                <div className={styles.panelHeader}>
+                  <h2 className={styles.panelTitle}>Predictions Vs Actual</h2>
+                  <span className={styles.panelMeta}>Later implementation</span>
+                </div>
+                <div className={styles.placeholderBody}>
+                  <p className={styles.summaryBandCopy}>
+                    Reserved for model expectation against realized results once
+                    the accuracy contract is promoted into the Trends route.
+                  </p>
+                  <ul className={styles.placeholderList}>
+                    <li>Expected vs realized team trend movement</li>
+                    <li>Skater and goalie hit-rate framing</li>
+                    <li>Model drift by rolling window</li>
+                  </ul>
+                </div>
+              </section>
+
+              <section className={`${styles.panel} ${styles.placeholderPanel}`}>
+                <div className={styles.panelHeader}>
+                  <h2 className={styles.panelTitle}>Candlestick Trend View</h2>
+                  <span className={styles.panelMeta}>Later implementation</span>
+                </div>
+                <div className={styles.placeholderBody}>
+                  <p className={styles.summaryBandCopy}>
+                    Reserved for the candlestick format once open, close, range,
+                    and expectation overlays are finalized for each entity
+                    class.
+                  </p>
+                  <ul className={styles.placeholderList}>
+                    <li>Team percentile candles</li>
+                    <li>Skater metric candles</li>
+                    <li>Goalie efficiency and workload candles</li>
+                  </ul>
+                </div>
+              </section>
+            </div>
+          </section>
 
           <section className={`${styles.panel} ${styles.goalieSharePanel}`}>
             <div className={styles.panelHeader}>

@@ -19,9 +19,15 @@
 
 .header {
   display: grid;
-  grid-template-columns: 1.2fr 1fr;
+  grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.95fr);
   gap: v.$space-lg;
   align-items: start;
+}
+
+.headerRail {
+  display: grid;
+  gap: v.$space-md;
+  min-height: 0;
 }
 
 .trendsHeaderSection {
@@ -266,7 +272,7 @@
 .summaryBandGrid {
   display: grid;
   gap: v.$space-md;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .summaryCard {
@@ -276,6 +282,105 @@
   display: grid;
   gap: v.$space-sm;
   min-height: 0;
+}
+
+.movementSection {
+  min-height: 0;
+}
+
+.movementHeaderMeta {
+  display: grid;
+  gap: 0.25rem;
+  justify-items: end;
+  align-content: start;
+}
+
+.movementSectionBody {
+  padding: v.$space-md;
+  display: grid;
+  gap: v.$space-md;
+}
+
+.movementTabPanel {
+  display: grid;
+  gap: v.$space-md;
+}
+
+.workspaceIntro {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: v.$space-md;
+}
+
+.teamWorkspaceGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(300px, 0.85fr);
+  gap: v.$space-md;
+  align-items: stretch;
+}
+
+.workspaceRail {
+  display: grid;
+  gap: v.$space-md;
+}
+
+.workspaceRailPanel {
+  min-height: 0;
+}
+
+.surfaceLinkList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: v.$space-sm;
+}
+
+.surfaceLinkPill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(v.$primary-color, 0.45);
+  background: rgba(v.$primary-color, 0.12);
+  color: v.$color-white;
+  font-family: v.$font-family-accent;
+  font-size: v.$font-size-xs;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: background 0.2s ease, border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.surfaceLinkPill:hover {
+  background: rgba(v.$primary-color, 0.22);
+  border-color: rgba(v.$primary-color, 0.7);
+  transform: translateY(-1px);
+}
+
+.surfaceBridgeStrip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: v.$space-md;
+}
+
+.surfaceBridgeCard {
+  @include v.glass-panel($padding: v.$space-md, $radius: v.$radius-lg);
+  display: grid;
+  gap: v.$space-sm;
+  min-height: 0;
+}
+
+.surfaceBridgeLabel {
+  color: v.$text-secondary;
+  font-family: v.$font-family-accent;
+  font-size: v.$font-size-xxs;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
 .summaryCardHeader {
@@ -388,6 +493,12 @@
   margin-bottom: v.$space-sm;
 }
 
+.chartMetaStack {
+  display: grid;
+  gap: 0.25rem;
+  justify-items: end;
+}
+
 .chartTitle {
   font-family: v.$font-family-accent, sans-serif;
   font-size: v.$font-size-md;
@@ -397,9 +508,46 @@
   color: v.$color-white;
 }
 
+.chartCopy {
+  margin: 0.25rem 0 0;
+  color: v.$text-secondary;
+  font-size: v.$font-size-sm;
+  line-height: 1.45;
+}
+
 .chartBody {
   flex: 1;
-  min-height: 0;
+  min-height: 280px;
+}
+
+.temperatureStrip {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: v.$space-sm;
+  margin-bottom: v.$space-sm;
+}
+
+.temperatureCard {
+  border: 1px solid rgba(v.$border-primary, 0.7);
+  border-radius: v.$border-radius-md;
+  padding: v.$space-sm v.$space-md;
+  background: rgba(v.$background-dark, 0.55);
+}
+
+.temperatureLabel {
+  display: block;
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+  font-family: v.$font-family-accent;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.25rem;
+}
+
+.temperatureList {
+  color: v.$color-white;
+  font-size: v.$font-size-sm;
+  line-height: 1.4;
 }
 
 .topMoversPanel {
@@ -506,7 +654,7 @@
 }
 
 .trendsPanel {
-  grid-area: 3 / 6 / 5 / 9;
+  grid-area: 3 / 6 / 5 / 12;
   display: flex;
   flex-direction: column;
   gap: v.$space-sm;
@@ -515,6 +663,39 @@
 
 .goalieSharePanel {
   margin-top: v.$space-md;
+}
+
+.supportSection {
+  @include v.glass-panel($padding: v.$space-lg, $radius: v.$radius-lg);
+  display: grid;
+  gap: v.$space-md;
+}
+
+.supportGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: v.$space-md;
+}
+
+.supportPanel,
+.placeholderPanel {
+  min-height: 0;
+}
+
+.placeholderBody {
+  padding: v.$space-md;
+  display: grid;
+  gap: v.$space-sm;
+}
+
+.placeholderList {
+  margin: 0;
+  padding-left: 1rem;
+  color: v.$text-primary;
+  display: grid;
+  gap: 0.35rem;
+  font-size: v.$font-size-sm;
+  line-height: 1.5;
 }
 
 .goalieShareBody {
@@ -741,7 +922,7 @@
 .topTabs {
   display: flex;
   gap: v.$space-xs;
-  padding: 0 v.$space-xs;
+  padding: 0;
   border-bottom: 1px solid v.$border-primary;
 }
 
@@ -835,6 +1016,38 @@
   flex-direction: column;
   gap: v.$space-md;
   min-height: 0;
+}
+
+.teamRankStrip {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: v.$space-sm;
+  margin-top: v.$space-sm;
+}
+
+.teamRankCard {
+  border: 1px solid rgba(v.$border-primary, 0.7);
+  border-radius: v.$border-radius-md;
+  background: rgba(v.$background-dark, 0.55);
+  padding: v.$space-sm;
+  display: grid;
+  gap: 0.25rem;
+  justify-items: start;
+}
+
+.teamRankLabel {
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+  font-family: v.$font-family-accent;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.teamRankValue {
+  color: v.$color-white;
+  font-family: v.$font-family-numbers;
+  font-size: v.$font-size-md;
+  font-weight: 700;
 }
 
 .rankingHeading {
@@ -1082,6 +1295,19 @@
     grid-template-columns: 1fr;
   }
 
+  .workspaceIntro,
+  .movementHeaderMeta {
+    justify-items: start;
+  }
+
+  .teamWorkspaceGrid,
+  .surfaceBridgeStrip,
+  .supportGrid,
+  .trendGrid,
+  .teamRankStrip {
+    grid-template-columns: 1fr;
+  }
+
   .dashboardGrid {
     grid-template-columns: 1fr;
     grid-template-rows: auto;
@@ -1096,10 +1322,27 @@
   .trendsPanel {
     grid-area: auto;
   }
+
+  .temperatureStrip {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 720px) {
   .summaryBandGrid {
     grid-template-columns: 1fr;
+  }
+
+  .workspaceIntro {
+    flex-direction: column;
+  }
+
+  .surfaceLinkList {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .surfaceLinkPill {
+    width: 100%;
   }
 }

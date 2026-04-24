@@ -6,6 +6,7 @@ import {
 } from "./playerStatsFilters";
 import {
   buildDetailApiResultFromAggregationRows,
+  buildPlayerStatsSummaryPartitionSourceUrl,
   buildLandingApiResultFromAggregationRows,
   buildPlayerStatsDetailAggregationFromSummaryRows,
   buildPlayerStatsLandingAggregation,
@@ -14,6 +15,7 @@ import {
   buildPlayerStatsLandingSummarySnapshotsFromPayloadRows,
   buildPlayerStatsNativeGameParity,
   buildStoredPbpEventSequence,
+  fetchSupabaseRowsForGameChunks,
   flattenPersistedSummaryRows,
   filterPlayerStatsLandingSourceGames,
   groupPlayerStatsSourceRowsByGameId,
@@ -167,6 +169,64 @@ describe("filterPlayerStatsLandingSourceGames", () => {
         (game) => game.id
       )
     ).toEqual([2, 5]);
+  });
+});
+
+describe("fetchSupabaseRowsForGameChunks", () => {
+  it("passes the matching source-url chunk for each game-id chunk instead of reusing the first chunk", async () => {
+    const gameIdChunks = [[101, 102], [201, 202], [301]];
+    const sourceUrlChunks = gameIdChunks.map((chunk) =>
+      chunk.map((gameId) =>
+        buildPlayerStatsSummaryPartitionSourceUrl({
+          gameId,
+          mode: "onIce",
+          strength: "fiveOnFive",
+          scoreState: "allScores",
+        })
+      )
+    );
+
+    const rows = await fetchSupabaseRowsForGameChunks<{
+      game_id: number;
+      source_url: string;
+    }>({
+      gameIdChunks,
+      fetchChunkPage: async (gameIdChunk, from, to, gameIdChunkIndex) => {
+        expect(from).toBe(0);
+        expect(to).toBeGreaterThanOrEqual(from);
+
+        return {
+          data: gameIdChunk.map((gameId, index) => ({
+            game_id: gameId,
+            source_url: sourceUrlChunks[gameIdChunkIndex]?.[index] ?? "missing",
+          })),
+          error: null,
+        };
+      },
+    });
+
+    expect(rows).toEqual([
+      {
+        game_id: 101,
+        source_url: "derived://underlying-player-summary-v2/onIce/fiveOnFive/101",
+      },
+      {
+        game_id: 102,
+        source_url: "derived://underlying-player-summary-v2/onIce/fiveOnFive/102",
+      },
+      {
+        game_id: 201,
+        source_url: "derived://underlying-player-summary-v2/onIce/fiveOnFive/201",
+      },
+      {
+        game_id: 202,
+        source_url: "derived://underlying-player-summary-v2/onIce/fiveOnFive/202",
+      },
+      {
+        game_id: 301,
+        source_url: "derived://underlying-player-summary-v2/onIce/fiveOnFive/301",
+      },
+    ]);
   });
 });
 
@@ -343,6 +403,131 @@ describe("groupPlayerStatsSourceRowsByGameId", () => {
 });
 
 describe("flattenPersistedSummaryRows", () => {
+  it("normalizes direct-PG string game ids before matching payload game metadata", () => {
+    const payloads = flattenPersistedSummaryRows([
+      {
+        game_id: "2025020564",
+        fetched_at: "2026-04-02T00:00:00.000Z",
+        source_url: "derived://underlying-player-summary-v2/onIce/fiveOnFive/2025020564",
+        payload: {
+          version: 1,
+          generatedAt: "2026-04-02T00:00:00.000Z",
+          game: {
+            id: 2025020564,
+            seasonId: 20252026,
+            date: "2025-12-20",
+            homeTeamId: 1,
+            awayTeamId: 7,
+          },
+          rows: [
+            {
+              kind: "onIce",
+              mode: "onIce",
+              strength: "fiveOnFive",
+              scoreState: "allScores",
+              supportedDisplayModes: ["counts", "rates"],
+              playerId: 8478402,
+              playerName: "Test Skater",
+              positionCode: "C",
+              gameId: 2025020564,
+              seasonId: 20252026,
+              gameDate: "2025-12-20",
+              teamId: 1,
+              teamAbbrev: "NJD",
+              opponentTeamId: 7,
+              isHome: true,
+              hasReliableToi: true,
+              metrics: {
+                toiSeconds: 600,
+                gamesPlayed: 1,
+                onIceGoalsForForIpp: 0,
+                hasUnknownToi: false,
+                hasUnknownOnIceGoalDenominator: false,
+                individual: {
+                  goals: 0,
+                  totalAssists: 0,
+                  firstAssists: 0,
+                  secondAssists: 0,
+                  shots: 0,
+                  ixg: null,
+                  iCf: 0,
+                  iFf: 0,
+                  iScf: null,
+                  iHdcf: null,
+                  rushAttempts: 0,
+                  reboundsCreated: 0,
+                  pim: 0,
+                  totalPenalties: 0,
+                  minorPenalties: 0,
+                  majorPenalties: 0,
+                  misconductPenalties: 0,
+                  penaltiesDrawn: 0,
+                  giveaways: 0,
+                  takeaways: 0,
+                  hits: 0,
+                  hitsTaken: 0,
+                  shotsBlocked: 0,
+                  faceoffsWon: 0,
+                  faceoffsLost: 0,
+                },
+                onIce: {
+                  cf: 10,
+                  ca: 8,
+                  ff: 9,
+                  fa: 7,
+                  sf: 5,
+                  sa: 4,
+                  gf: 1,
+                  ga: 0,
+                  xgf: 0.8,
+                  xga: 0.5,
+                  scf: 4,
+                  sca: 2,
+                  hdcf: 1,
+                  hdca: 1,
+                  hdgf: 0,
+                  hdga: 0,
+                  mdcf: 1,
+                  mdca: 1,
+                  mdgf: 0,
+                  mdga: 0,
+                  ldcf: 1,
+                },
+                goalies: {
+                  shotsAgainst: 0,
+                  saves: 0,
+                  goalsAgainst: 0,
+                  xgAgainst: null,
+                  hdShotsAgainst: 0,
+                  hdSaves: 0,
+                  hdGoalsAgainst: 0,
+                  hdXgAgainst: null,
+                  mdShotsAgainst: 0,
+                  mdSaves: 0,
+                  mdGoalsAgainst: 0,
+                  mdXgAgainst: null,
+                  ldShotsAgainst: 0,
+                  ldSaves: 0,
+                  ldGoalsAgainst: 0,
+                  ldXgAgainst: null,
+                  rushAttemptsAgainst: 0,
+                  reboundAttemptsAgainst: 0,
+                  shotDistanceTotal: 0,
+                  shotDistanceCount: 0,
+                  goalDistanceTotal: 0,
+                  goalDistanceCount: 0,
+                },
+              },
+            },
+          ],
+        },
+      } as any,
+    ]);
+
+    expect(payloads.get(2025020564)?.game.id).toBe(2025020564);
+    expect(payloads.get(2025020564)?.rows).toHaveLength(1);
+  });
+
   it("drops persisted summary rows whose team mapping does not match the game teams", () => {
     const payloads = flattenPersistedSummaryRows([
       {
