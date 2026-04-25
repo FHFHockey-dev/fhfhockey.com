@@ -188,6 +188,23 @@ export default withCronJobAudit(
         byClassification: {} as Record<string, number>
       }
     );
+    const acceptedCount = parsedCandidates.filter(
+      (candidate) => candidate.nhlFilterStatus === "accepted"
+    ).length;
+    const nonNhlRejectedCount = parsedCandidates.filter(
+      (candidate) => candidate.nhlFilterStatus === "rejected_non_nhl"
+    ).length;
+    const ambiguousRejectedCount = parsedCandidates.filter(
+      (candidate) => candidate.nhlFilterStatus === "rejected_ambiguous"
+    ).length;
+    const insufficientTextRejectedCount = parsedCandidates.filter(
+      (candidate) => candidate.nhlFilterStatus === "rejected_insufficient_text"
+    ).length;
+    const quoteTweetsResolved = parsedCandidates.filter(
+      (candidate) => candidate.quotedTweetId || candidate.quotedTweetUrl
+    ).length;
+    const duplicateCaptureKeysSkipped =
+      rowsToUpsert.length - new Set(rowsToUpsert.map((row) => row.capture_key)).size;
 
     if (rowsToUpsert.length > 0) {
       const { error } = await req.supabase
@@ -243,15 +260,25 @@ export default withCronJobAudit(
       scheduledTeamsLoaded: scheduledTeamIds.length,
       rosterTeamsLoaded: rosterByTeam.size,
       gameTeamLinksLoaded: gameIdByTeamId.size,
-      pendingEventsLoaded: pendingEvents.length,
-      concreteTweetUrlsDiscovered: discoveredTweets.length,
-      rowsUpserted: rowsToUpsert.length,
-      eventsProcessed: processedEventUpdates.filter(
-        (event) => event.processing_status === "processed"
-      ).length,
-      eventsRejected: processedEventUpdates.filter(
-        (event) => event.processing_status === "rejected"
-      ).length,
+      summary: {
+        sourcesProcessed: new Set(pendingEvents.map((event) => event.source_account)).size,
+        eventsLoaded: pendingEvents.length,
+        tweetsDiscovered: discoveredTweets.length,
+        tweetsParsed: parsedCandidates.length,
+        quoteTweetsResolved,
+        acceptedNhl: acceptedCount,
+        nonNhlRejected: nonNhlRejectedCount,
+        ambiguousRejected: ambiguousRejectedCount,
+        insufficientTextRejected: insufficientTextRejectedCount,
+        duplicatesSkipped: duplicateCaptureKeysSkipped,
+        rowsUpserted: rowsToUpsert.length,
+        eventsProcessed: processedEventUpdates.filter(
+          (event) => event.processing_status === "processed"
+        ).length,
+        eventsRejected: processedEventUpdates.filter(
+          (event) => event.processing_status === "rejected"
+        ).length
+      },
       discoveredTweets,
       parsedSummary,
       parsedCandidates: parsedCandidates.map((candidate) => ({

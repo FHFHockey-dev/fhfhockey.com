@@ -151,8 +151,8 @@
   - [x] 6.4 Parse and filter candidates through the CCC ingestion module before row shaping.
   - [x] 6.5 Upsert accepted rows into `public.lines_ccc` on `capture_key`.
   - [x] 6.6 Handle rejected/ambiguous/non-NHL candidates according to task 1.6.
-  - [ ] 6.7 Return route summary counts for sources processed, tweets discovered, tweets parsed, quote tweets resolved, non-NHL rejected, duplicates skipped, and rows upserted.
-  - [ ] 6.8 Add mocked route-level coverage for dedupe/upsert behavior and failure handling.
+  - [x] 6.7 Return route summary counts for sources processed, tweets discovered, tweets parsed, quote tweets resolved, non-NHL rejected, duplicates skipped, and rows upserted.
+  - [x] 6.8 Add mocked route-level coverage for dedupe/upsert behavior and failure handling.
 
 - [ ] 7.0 Verify end-to-end behavior and regressions
   - [ ] 7.1 Run focused tests for shared tweet helpers and CCC ingestion.
