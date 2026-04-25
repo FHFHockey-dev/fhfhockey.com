@@ -7,9 +7,9 @@
 - `web/lib/sources/lineupSourceIngestion.test.ts` - Existing regression coverage for GDT behavior that must continue passing.
 - `web/lib/sources/tweetLineupParsing.ts` - Likely new shared helper module for reusable tweet/oEmbed parsing and CCC-specific quote handling.
 - `web/lib/sources/tweetLineupParsing.test.ts` - Focused tests for oEmbed parsing, quote expansion, classification, NHL filtering, and structured extraction.
-- `web/lib/sources/linesCccIngestion.ts` - Likely new CCC ingestion/domain module for source analysis, NHL filtering, row shaping, and parse orchestration.
+- `web/lib/sources/linesCccIngestion.ts` - New CCC ingestion/domain module with `lines_ccc` row shaping.
 - `web/lib/sources/linesCccIngestion.test.ts` - Focused tests for CCC row shaping, dedupe keys, quote-tweet behavior, and non-NHL rejection.
-- `web/pages/api/v1/db/update-lines-ccc.ts` - New admin polling route for `lines_ccc` ingestion.
+- `web/pages/api/v1/db/update-lines-ccc.ts` - New admin polling route shell for `lines_ccc` ingestion.
 - `web/pages/api/v1/sources/ifttt/ccc-tweet.ts` - New IFTTT webhook receiver for CCC tweet discovery events.
 - `web/sql/ratings/007_create_lines_ccc.sql` - New Supabase migration for `public.lines_ccc` after CCC source analysis confirms schema shape.
 - `web/sql/ratings/008_create_lines_ccc_ifttt_events.sql` - New Supabase migration for raw IFTTT CCC tweet discovery queue rows.
@@ -141,16 +141,16 @@
   - [x] 5.3 Add first-class quote provenance fields such as quoted tweet id/url and quoted author fields if confirmed by analysis.
   - [x] 5.4 Add NHL filter fields such as detected league, filter status, and filter reason if confirmed by analysis.
   - [x] 5.5 Add indexes for `capture_key`, snapshot date/team, game/team, tweet URL, tweet id/team, and quoted tweet id/team where applicable.
-  - [ ] 5.6 Implement `lines_ccc` row shaping with stable dedupe keys and honest `tweet_posted_at` precision.
-  - [ ] 5.7 Add tests for row shaping, player id arrays, quote provenance, raw/enriched text fields, metadata, and dedupe keys.
+  - [x] 5.6 Implement `lines_ccc` row shaping with stable dedupe keys and honest `tweet_posted_at` precision.
+  - [x] 5.7 Add tests for row shaping, player id arrays, quote provenance, raw/enriched text fields, metadata, and dedupe keys.
 
 - [ ] 6.0 Add the admin polling ingestion route
-  - [ ] 6.1 Create `web/pages/api/v1/db/update-lines-ccc.ts` behind the existing admin middleware/audit pattern.
-  - [ ] 6.2 Load current season, teams, scheduled games, and roster entries using existing repo patterns.
-  - [ ] 6.3 Poll configured CCC sources and resolve concrete tweet URLs where available.
-  - [ ] 6.4 Parse and filter candidates through the CCC ingestion module before row shaping.
-  - [ ] 6.5 Upsert accepted rows into `public.lines_ccc` on `capture_key`.
-  - [ ] 6.6 Handle rejected/ambiguous/non-NHL candidates according to task 1.6.
+  - [x] 6.1 Create `web/pages/api/v1/db/update-lines-ccc.ts` behind the existing admin middleware/audit pattern.
+  - [x] 6.2 Load current season, teams, scheduled games, and roster entries using existing repo patterns.
+  - [x] 6.3 Poll configured CCC sources and resolve concrete tweet URLs where available.
+  - [x] 6.4 Parse and filter candidates through the CCC ingestion module before row shaping.
+  - [x] 6.5 Upsert accepted rows into `public.lines_ccc` on `capture_key`.
+  - [x] 6.6 Handle rejected/ambiguous/non-NHL candidates according to task 1.6.
   - [ ] 6.7 Return route summary counts for sources processed, tweets discovered, tweets parsed, quote tweets resolved, non-NHL rejected, duplicates skipped, and rows upserted.
   - [ ] 6.8 Add mocked route-level coverage for dedupe/upsert behavior and failure handling.
 
