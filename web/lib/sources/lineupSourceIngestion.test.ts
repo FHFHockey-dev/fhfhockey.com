@@ -5,6 +5,10 @@ import {
   buildGoalieStartSourceFromModel,
   buildGoalieStartSourceFromOfficialLineup,
   buildTeamDirectory,
+  classifyGameDayTweet,
+  extractStructuredNameGroupsFromTweet,
+  findGameDayTweetKeywordHits,
+  matchRosterNamesInTweet,
   parseDailyFaceoffStartingGoaliesPage,
   parseDailyFaceoffLineCombinationsPage,
   parseGameDayTweetsGoaliesPage,
@@ -223,6 +227,25 @@ describe("lineupSourceIngestion", () => {
       structureSignals: {
         keywordHits: expect.arrayContaining(["warmups"])
       }
+    });
+  });
+
+  it("exposes reusable tweet classification, keyword, alias, initials, and structure helpers", () => {
+    const text = `#mnwild practice lines
+Kaprizov - JEEk - Zuccarello
+Johansson - Hartman - N. Foligno`;
+
+    expect(classifyGameDayTweet(text)).toBe("practice_lines");
+    expect(findGameDayTweetKeywordHits(text)).toEqual(
+      expect.arrayContaining(["practice lines", "lines"])
+    );
+    expect(extractStructuredNameGroupsFromTweet(text)).toMatchObject({
+      forwardLineCount: 1
+    });
+    expect(matchRosterNamesInTweet("JEEk and N. Foligno are skating", wildRoster)).toEqual({
+      matchedPlayerIds: [102],
+      matchedNames: ["Joel Eriksson Ek"],
+      unmatchedNames: ["Foligno"]
     });
   });
 

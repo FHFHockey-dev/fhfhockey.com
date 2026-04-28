@@ -1,152 +1,143 @@
-import type { NextPage } from "next";
+import type { GetServerSideProps, InferGetServerSidePropsType, NextPage } from "next";
 import Head from "next/head";
-import Script from "next/script";
-import { useEffect, useRef } from "react";
+
+import serverClient from "lib/supabase/server";
 
 import styles from "./index.module.scss";
 
 type TwitterEmbedSource = {
   handle: string;
   label: string;
-  type: "timeline" | "tweet";
   url: string;
 };
 
 type LocalTweetCard = {
-  id: string;
+  key: string;
+  tweetId: string;
   authorName: string;
   authorHandle: string;
   sourceLabel: string;
   tweetUrl: string;
   wrapperText: string;
-  quotedAuthorName?: string;
-  quotedAuthorHandle?: string;
-  quotedTweetUrl?: string;
+  quotedAuthorName: string | null;
+  quotedAuthorHandle: string | null;
+  quotedTweetUrl: string | null;
   quotedText: string;
-  status: "accepted" | "rejected_non_nhl";
+  status: string;
+  observedAt: string | null;
+  rowStatus: string;
 };
 
 const twitterEmbedSources = [
   {
     handle: "CcCMiddleton",
     label: "Posts by CcCMiddleton",
-    type: "timeline",
     url: "https://twitter.com/CcCMiddleton?ref_src=twsrc%5Etfw",
   }
 ] satisfies TwitterEmbedSource[];
 
-const localTweetCards = [
-  {
-    id: "2047489659752886286",
-    authorName: "LinesLinesLines",
-    authorHandle: "CcCMiddleton",
-    sourceLabel: "April 24, 2026",
-    tweetUrl: "https://twitter.com/CcCMiddleton/status/2047489659752886286",
-    wrapperText: "Kings lines",
-    quotedAuthorName: "Zach Dooley",
-    quotedAuthorHandle: "DooleyLAK",
-    quotedTweetUrl: "https://twitter.com/DooleyLAK/status/2047489041999020180",
-    quotedText:
-      "Tonight's @LAKings Line Rushes -\n\nPanarin - Kopitar - Kempe\nMoore - Byfield - Laferriere\nArmia - Laughton - Kuzmenko\nMalott - Helenius - Wright\n\nAnderson - Doughty\nEdmundson - Clarke\nDumoulin - Ceci\n\nForsberg\nKuemper",
-    status: "accepted"
-  },
-  {
-    id: "2028990278749831669",
-    authorName: "LinesLinesLines",
-    authorHandle: "CcCMiddleton",
-    sourceLabel: "March 4, 2026",
-    tweetUrl: "https://twitter.com/CcCMiddleton/status/2028990278749831669",
-    wrapperText: "Predators lines",
-    quotedText:
-      "Predators lines\n(Bit of a guess!)\n\nStamkos-O'Reilly-Marchessault\nForsberg-Haula-Evangelista\nBunting-Jost-Smith\nL'Heureux-Weisblatt-Wood\n\nSkjei-Josi\nHague-Perbix\nBlankenburg-Barron\n\nAnnunen",
-    status: "accepted"
-  },
-  {
-    id: "2047446876992205035",
-    authorName: "LinesLinesLines",
-    authorHandle: "CcCMiddleton",
-    sourceLabel: "April 23, 2026",
-    tweetUrl: "https://twitter.com/CcCMiddleton/status/2047446876992205035",
-    wrapperText: "ECHL Americans lines",
-    quotedText:
-      "ECHL Americans lines\n\n92 McAuley - 7 Hargrove - 27 Duarte\n29 Watts - 91 Gildon - 9 Katic\n77 Sillinger - 55 Hookey - 18 Blaisdell\n26 Asuchak - 44 Dubois - 11 Barbashev\n\n8 Prefontaine - 23 Sedley\n86 Anania - 40 Toure\n22 Costantini - 2 Warmuth\n\n32 Mirwald",
-    status: "rejected_non_nhl"
-  }
-] satisfies LocalTweetCard[];
+type LinesCccPageRow = {
+  capture_key: string;
+  tweet_id: string | null;
+  tweet_url: string | null;
+  quoted_tweet_id: string | null;
+  quoted_tweet_url: string | null;
+  author_name: string | null;
+  source_handle: string | null;
+  quoted_author_name: string | null;
+  quoted_author_handle: string | null;
+  tweet_posted_label: string | null;
+  raw_text: string | null;
+  enriched_text: string | null;
+  quoted_raw_text: string | null;
+  quoted_enriched_text: string | null;
+  nhl_filter_status: string;
+  observed_at: string | null;
+  status: string;
+};
 
-declare global {
-  interface Window {
-    twttr?: {
-      widgets?: {
-        load: (element?: HTMLElement | null) => void;
-      };
-    };
-  }
+type PageProps = {
+  localTweetCards: LocalTweetCard[];
+  loadError: string | null;
+};
+
+function mapLinesCccRowToCard(row: LinesCccPageRow): LocalTweetCard {
+  return {
+    key: row.capture_key,
+    tweetId: row.tweet_id ?? row.quoted_tweet_id ?? "unknown-tweet",
+    authorName: row.author_name ?? row.source_handle ?? "Unknown author",
+    authorHandle: row.source_handle ?? "unknown",
+    sourceLabel: row.tweet_posted_label ?? "Unknown date",
+    tweetUrl: row.tweet_url ?? row.quoted_tweet_url ?? "#",
+    wrapperText: row.enriched_text ?? row.raw_text ?? "(no wrapper text)",
+    quotedAuthorName: row.quoted_author_name ?? null,
+    quotedAuthorHandle: row.quoted_author_handle ?? null,
+    quotedTweetUrl: row.quoted_tweet_url ?? null,
+    quotedText:
+      row.quoted_enriched_text ??
+      row.quoted_raw_text ??
+      "",
+    status: row.nhl_filter_status,
+    observedAt: row.observed_at ?? null,
+    rowStatus: row.status
+  };
 }
 
-const TwitterEmbedsPage: NextPage = () => {
-  const embedsRef = useRef<HTMLElement | null>(null);
+function getCardDedupeKey(card: LocalTweetCard): string {
+  return card.tweetId !== "unknown-tweet" ? card.tweetId : card.key;
+}
 
-  useEffect(() => {
-    window.twttr?.widgets?.load(embedsRef.current);
+function getCardPriority(card: LocalTweetCard): number {
+  return [
+    card.rowStatus === "observed" ? 8 : 0,
+    card.status === "accepted" ? 4 : 0,
+    card.quotedTweetUrl && card.quotedText ? 2 : 0,
+    card.wrapperText ? 1 : 0
+  ].reduce((total, value) => total + value, 0);
+}
 
-    const root = embedsRef.current;
-    if (!root) return;
+function dedupeTweetCards(cards: LocalTweetCard[]): LocalTweetCard[] {
+  const bestByTweet = new Map<string, LocalTweetCard>();
+  for (const card of cards) {
+    const key = getCardDedupeKey(card);
+    const existing = bestByTweet.get(key);
+    if (!existing || getCardPriority(card) > getCardPriority(existing)) {
+      bestByTweet.set(key, card);
+    }
+  }
+  return Array.from(bestByTweet.values()).sort((left, right) => {
+    const priorityDifference = getCardPriority(right) - getCardPriority(left);
+    if (priorityDifference !== 0) return priorityDifference;
+    return Date.parse(right.observedAt ?? "") - Date.parse(left.observedAt ?? "");
+  });
+}
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (!entry.isIntersecting) continue;
-          const blockquote = entry.target as HTMLElement;
-          blockquote.classList.add("twitter-tweet");
-          window.twttr?.widgets?.load(blockquote);
-          observer.unobserve(blockquote);
-        }
-      },
-      {
-        rootMargin: "300px"
-      }
-    );
-
-    root.querySelectorAll<HTMLElement>("blockquote.tweet").forEach((element) => {
-      observer.observe(element);
-    });
-
-    return () => observer.disconnect();
-  }, []);
-
+const TwitterEmbedsPage: NextPage<InferGetServerSidePropsType<typeof getServerSideProps>> = ({
+  localTweetCards,
+  loadError
+}) => {
   return (
     <>
       <Head>
         <title>Twitter Embeds | FHFH</title>
       </Head>
-      <main className={styles.page} ref={embedsRef}>
+      <main className={styles.page}>
         <h1>Twitter Embeds</h1>
         <section className={styles.timelineSource} aria-label="X timeline source">
-          {twitterEmbedSources.map((source) =>
-            source.type === "timeline" ? (
-              <a
-                className="twitter-timeline"
-                href={source.url}
-                key={source.url}
-              >
-                Tweets by {source.handle}
-              </a>
-            ) : (
-              <blockquote className="twitter-tweet" key={source.url}>
-                <a href={source.url}>{source.label}</a>
-              </blockquote>
-            )
-          )}
+          {twitterEmbedSources.map((source) => (
+            <a href={source.url} key={source.url}>
+              {source.label}
+            </a>
+          ))}
         </section>
 
         <section className={styles.localCards} aria-label="Local tweet examples">
+          {loadError ? <p className={styles.stateNote}>Failed to load `lines_ccc`: {loadError}</p> : null}
+          {!loadError && localTweetCards.length === 0 ? (
+            <p className={styles.stateNote}>No `lines_ccc` rows found yet.</p>
+          ) : null}
           {localTweetCards.map((tweet) => (
-            <blockquote
-              className={`tweet full-sized-tweet ${styles.tweetCard}`}
-              data-tweet-id={tweet.quotedTweetUrl ? tweet.quotedTweetUrl.match(/status\/(\d+)/)?.[1] : tweet.id}
-              key={tweet.id}
-            >
+            <article className={styles.tweetCard} key={tweet.key}>
               <header className={styles.tweetHeader}>
                 <div>
                   <strong>{tweet.authorName}</strong>{" "}
@@ -157,35 +148,52 @@ const TwitterEmbedsPage: NextPage = () => {
                 <a href={tweet.tweetUrl}>{tweet.sourceLabel}</a>
               </header>
               <p className={styles.wrapperText}>{tweet.wrapperText}</p>
-              <div className={styles.quoteCard}>
-                {tweet.quotedAuthorName && tweet.quotedAuthorHandle ? (
-                  <div className={styles.quoteHeader}>
-                    <strong>{tweet.quotedAuthorName}</strong>{" "}
-                    <a href={`https://twitter.com/${tweet.quotedAuthorHandle}`}>
-                      @{tweet.quotedAuthorHandle}
-                    </a>
-                  </div>
-                ) : null}
-                <p>{tweet.quotedText}</p>
-                {tweet.quotedTweetUrl ? (
-                  <a href={tweet.quotedTweetUrl}>Quoted tweet</a>
-                ) : null}
-              </div>
+              {tweet.quotedText || tweet.quotedTweetUrl ? (
+                <div className={styles.quoteCard}>
+                  {tweet.quotedAuthorName && tweet.quotedAuthorHandle ? (
+                    <div className={styles.quoteHeader}>
+                      <strong>{tweet.quotedAuthorName}</strong>{" "}
+                      <a href={`https://twitter.com/${tweet.quotedAuthorHandle}`}>
+                        @{tweet.quotedAuthorHandle}
+                      </a>
+                    </div>
+                  ) : null}
+                  {tweet.quotedText ? <p>{tweet.quotedText}</p> : null}
+                  {tweet.quotedTweetUrl ? (
+                    <a href={tweet.quotedTweetUrl}>Quoted tweet</a>
+                  ) : null}
+                </div>
+              ) : null}
               <footer className={styles.tweetFooter}>
-                {tweet.status} · tweet id {tweet.id}
+                {tweet.status} · tweet id {tweet.tweetId}
               </footer>
-            </blockquote>
+            </article>
           ))}
         </section>
       </main>
-      <Script
-        src="https://platform.twitter.com/widgets.js"
-        charSet="utf-8"
-        onLoad={() => window.twttr?.widgets?.load(embedsRef.current)}
-        strategy="afterInteractive"
-      />
     </>
   );
 };
 
 export default TwitterEmbedsPage;
+
+export const getServerSideProps: GetServerSideProps<PageProps> = async ({ res }) => {
+  res.setHeader("Cache-Control", "public, s-maxage=30, stale-while-revalidate=60");
+
+  const { data, error } = await serverClient
+    .from("lines_ccc" as any)
+    .select(
+      "capture_key, tweet_id, tweet_url, quoted_tweet_id, quoted_tweet_url, author_name, source_handle, quoted_author_name, quoted_author_handle, tweet_posted_label, raw_text, enriched_text, quoted_raw_text, quoted_enriched_text, nhl_filter_status, observed_at, status"
+    )
+    .order("observed_at", { ascending: false })
+    .limit(24);
+
+  return {
+    props: {
+      localTweetCards: dedupeTweetCards(
+        ((data ?? []) as LinesCccPageRow[]).map(mapLinesCccRowToCard)
+      ).slice(0, 12),
+      loadError: error?.message ?? null
+    }
+  };
+};
