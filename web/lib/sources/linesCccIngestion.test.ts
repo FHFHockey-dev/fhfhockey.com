@@ -1,14 +1,35 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { buildTeamDirectory } from "./lineupSourceIngestion";
-import { buildLinesCccSourceFromIftttEvent, toLinesCccRow } from "./linesCccIngestion";
+import {
+  applyLinesCccWrapperOEmbed,
+  applyQuotedTweetPreference,
+  buildLinesCccWrapperOEmbedDeferredState,
+  buildLinesCccSourceFromIftttEvent,
+  buildLinesCccWrapperOEmbedSuccessState,
+  fetchLinesCccTweetOEmbedData,
+  refreshLinesCccSourceFromPrimaryText,
+  rejectInsufficientQuoteWrapper,
+  readLinesCccWrapperOEmbedBackfillState,
+  resolveLinesCccTeam,
+  resolveLinesCccQuotedTweet,
+  shouldAttemptLinesCccWrapperOEmbedBackfill,
+  toLinesCccTweetOEmbedDataFromBackfillState,
+  toLinesCccRow
+} from "./linesCccIngestion";
 
-const [canadiens] = buildTeamDirectory([
+const [canadiens, lightning] = buildTeamDirectory([
   {
     id: 8,
     name: "Montréal Canadiens",
     abbreviation: "MTL",
     logo: "/teamLogos/MTL.png"
+  },
+  {
+    id: 14,
+    name: "Tampa Bay Lightning",
+    abbreviation: "TBL",
+    logo: "/teamLogos/TBL.png"
   }
 ]);
 
@@ -23,8 +44,423 @@ const canadiensRoster = [
   { playerId: 8, fullName: "Lane Hutson", lastName: "Hutson" },
   { playerId: 9, fullName: "Jakub Dobes", lastName: "Dobes" }
 ];
+const lightningRoster = [
+  { playerId: 21, fullName: "Gage Goncalves", lastName: "Goncalves" },
+  { playerId: 22, fullName: "Brayden Point", lastName: "Point" },
+  { playerId: 23, fullName: "Nikita Kucherov", lastName: "Kucherov" },
+  { playerId: 24, fullName: "Brandon Hagel", lastName: "Hagel" },
+  { playerId: 25, fullName: "Anthony Cirelli", lastName: "Cirelli" },
+  { playerId: 26, fullName: "Jake Guentzel", lastName: "Guentzel" },
+  { playerId: 27, fullName: "Ryan McDonagh", lastName: "McDonagh" },
+  { playerId: 28, fullName: "Erik Cernak", lastName: "Cernak" },
+  { playerId: 29, fullName: "Andrei Vasilevskiy", lastName: "Vasilevskiy" },
+  { playerId: 30, fullName: "Jonas Johansson", lastName: "Johansson" }
+];
 
 describe("linesCccIngestion", () => {
+  it("fetches CCC wrapper tweet oEmbed data with author and posted metadata", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          html: `
+            <blockquote>
+              <p>Lightning lines<br>https://t.co/9cZkBXydVn</p>
+              <a href="https://twitter.com/CcCMiddleton/status/2047808711494902155">Apr 24, 2026</a>
+            </blockquote>
+          `,
+          author_name: "LinesLinesLines",
+          author_url: "https://twitter.com/CcCMiddleton"
+        })
+      })
+    );
+
+    await expect(
+      fetchLinesCccTweetOEmbedData("https://x.com/CcCMiddleton/status/2047808711494902155")
+    ).resolves.toEqual({
+      text: "Lightning lines\nhttps://t.co/9cZkBXydVn",
+      postedAt: "2026-04-24T00:00:00.000Z",
+      postedLabel: "Apr 24, 2026",
+      sourceTweetUrl: "https://twitter.com/CcCMiddleton/status/2047808711494902155",
+      authorName: "LinesLinesLines",
+      authorHandle: "CcCMiddleton"
+    });
+
+    vi.unstubAllGlobals();
+  });
+
+  it("schedules exponential backoff for 429 wrapper oEmbed retries", () => {
+    const deferred = buildLinesCccWrapperOEmbedDeferredState({
+      tweetId: "2047808711494902155",
+      tweetUrl: "https://twitter.com/i/web/status/2047808711494902155",
+      existingState: {
+        status: "deferred_429",
+        tweetId: "2047808711494902155",
+        tweetUrl: "https://twitter.com/i/web/status/2047808711494902155",
+        attemptCount: 2,
+        lastAttemptAt: "2026-04-24T12:00:00.000Z",
+        nextAttemptAt: "2026-04-24T12:10:00.000Z"
+      },
+      nowIso: "2026-04-24T13:00:00.000Z",
+      httpStatus: 429,
+      error: "oembed_http_429"
+    });
+
+    expect(deferred).toMatchObject({
+      status: "deferred_429",
+      attemptCount: 3,
+      httpStatus: 429,
+      lastError: "oembed_http_429",
+      nextAttemptAt: "2026-04-24T13:20:00.000Z"
+    });
+  });
+
+  it("uses cached wrapper oEmbed success state and skips new attempts until due", () => {
+    const state = readLinesCccWrapperOEmbedBackfillState({
+      linesCccOembed: {
+        wrapper: {
+          status: "success",
+          tweetId: "2047808711494902155",
+          tweetUrl: "https://twitter.com/i/web/status/2047808711494902155",
+          sourceTweetUrl: "https://twitter.com/CcCMiddleton/status/2047808711494902155",
+          attemptCount: 1,
+          lastAttemptAt: "2026-04-24T12:00:00.000Z",
+          fetchedAt: "2026-04-24T12:00:00.000Z",
+          text: "Lightning lines",
+          postedLabel: "Apr 24, 2026",
+          authorName: "LinesLinesLines",
+          authorHandle: "CcCMiddleton"
+        }
+      }
+    });
+
+    expect(shouldAttemptLinesCccWrapperOEmbedBackfill({
+      tweetId: "2047808711494902155",
+      tweetUrl: "https://twitter.com/i/web/status/2047808711494902155",
+      existingState: state,
+      nowIso: "2026-04-24T12:30:00.000Z"
+    })).toBe(false);
+
+    expect(toLinesCccTweetOEmbedDataFromBackfillState(state)).toMatchObject({
+      text: "Lightning lines",
+      postedLabel: "Apr 24, 2026",
+      authorHandle: "CcCMiddleton"
+    });
+  });
+
+  it("resolves NHL teams from known source handles when text labels are absent", () => {
+    expect(
+      resolveLinesCccTeam({
+        text: "Starting Goalie: Andrei Vasilevskiy",
+        teams: [canadiens!, lightning!],
+        rosterByTeam: new Map([
+          [8, canadiensRoster],
+          [14, lightningRoster]
+        ]),
+        sourceHandles: ["TBLightning"]
+      })
+    ).toMatchObject({
+      id: 14,
+      abbreviation: "TBL"
+    });
+  });
+
+  it("resolves NHL teams from roster density when text labels are absent", () => {
+    expect(
+      resolveLinesCccTeam({
+        text:
+          "Goncalves-Point-Kucherov\nHagel-Cirelli-Guentzel",
+        teams: [canadiens!, lightning!],
+        rosterByTeam: new Map([
+          [8, canadiensRoster],
+          [14, lightningRoster]
+        ])
+      })
+    ).toMatchObject({
+      id: 14,
+      abbreviation: "TBL"
+    });
+  });
+
+  it("uses the leading team nickname before vs when both teams are mentioned", () => {
+    expect(
+      resolveLinesCccTeam({
+        text: "#Habs lines vs #Lightning\nCaufield - Suzuki - Slafkovsky",
+        teams: [canadiens!, lightning!],
+        rosterByTeam: new Map([
+          [8, canadiensRoster],
+          [14, lightningRoster]
+        ])
+      })
+    ).toMatchObject({
+      id: 8,
+      abbreviation: "MTL"
+    });
+  });
+
+  it("refreshes team and roster fields from enriched Habs-vs-Lightning text", () => {
+    const source = buildLinesCccSourceFromIftttEvent({
+      event: {
+        id: "event-habs",
+        source: "ifttt",
+        source_account: "CcCMiddleton",
+        username: "CcCMiddleton",
+        text: "Lightning lines https://t.co/example",
+        link_to_tweet: "https://twitter.com/CcCMiddleton/status/2047814982583414912",
+        tweet_id: "2047814982583414912",
+        tweet_created_at: null,
+        created_at_label: "April 24, 2026",
+        raw_payload: {},
+        received_at: "2026-04-24T22:00:00.000Z"
+      },
+      snapshotDate: "2026-04-25",
+      teams: [canadiens!, lightning!],
+      rosterByTeam: new Map([
+        [8, canadiensRoster],
+        [14, lightningRoster]
+      ])
+    });
+    const refreshed = refreshLinesCccSourceFromPrimaryText({
+      source: {
+        ...source,
+        enrichedText:
+          "#Habs lines vs #Lightning\nCaufield - Suzuki - Slafkovsky\nMatheson - Hutson",
+        sourceHandle: "ChrisHabs360",
+        authorName: "ChrisHabs360",
+        primaryTextSource: "wrapper_oembed"
+      },
+      teams: [canadiens!, lightning!],
+      rosterByTeam: new Map([
+        [8, canadiensRoster],
+        [14, lightningRoster]
+      ])
+    });
+
+    expect(refreshed.team).toMatchObject({
+      id: 8,
+      abbreviation: "MTL"
+    });
+    expect(refreshed.forwards?.[0]).toEqual([
+      "Cole Caufield",
+      "Nick Suzuki",
+      "Juraj Slafkovsky"
+    ]);
+    expect(refreshed.matchedPlayerIds).toContain(2);
+    expect(refreshed.unmatchedNames).toEqual([]);
+  });
+
+  it("resolves quoted tweet urls from wrapper text and fetches quoted oEmbed data", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValueOnce({
+          headers: {
+            get: (name: string) =>
+              name.toLowerCase() === "location"
+                ? "https://twitter.com/BenjaminJReport/status/2047808467969220779"
+                : null
+          },
+          url: "https://t.co/9cZkBXydVn"
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            html: `
+              <blockquote>
+                <p>
+                  The #GoBolts lines unchanged in warmups:<br><br>
+                  Goncalves-Point-Kucherov<br>
+                  Hagel-Cirelli-Guentzel
+                </p>
+                <a href="https://twitter.com/BenjaminJReport/status/2047808467969220779">
+                  Apr 24, 2026
+                </a>
+              </blockquote>
+            `,
+            author_name: "Benjamin Piercey",
+            author_url: "https://twitter.com/BenjaminJReport"
+          })
+        })
+    );
+
+    await expect(
+      resolveLinesCccQuotedTweet({
+        wrapperText: "Lightning lines https://t.co/9cZkBXydVn"
+      })
+    ).resolves.toEqual({
+      quotedTweetId: "2047808467969220779",
+      quotedTweetUrl: "https://twitter.com/i/web/status/2047808467969220779",
+      quotedText:
+        "The #GoBolts lines unchanged in warmups:\nGoncalves-Point-Kucherov\nHagel-Cirelli-Guentzel",
+      quotedPostedAt: "2026-04-24T00:00:00.000Z",
+      quotedPostedLabel: "Apr 24, 2026",
+      quotedSourceTweetUrl: "https://twitter.com/BenjaminJReport/status/2047808467969220779",
+      quotedAuthorName: "Benjamin Piercey",
+      quotedAuthorHandle: "BenjaminJReport"
+    });
+
+    vi.unstubAllGlobals();
+  });
+
+  it("prefers quoted tweet text when the wrapper is only a headline plus t.co link", () => {
+    const preferred = applyQuotedTweetPreference({
+      source: {
+        snapshotDate: "2026-04-25",
+        rawText: "Lightning lines https://t.co/9cZkBXydVn",
+        primaryTextSource: "ifttt_text",
+        classification: "lineup",
+        detectedLeague: "NHL",
+        nhlFilterStatus: "accepted"
+      },
+      quotedTweet: {
+        quotedTweetId: "2047808467969220779",
+        quotedTweetUrl: "https://twitter.com/i/web/status/2047808467969220779",
+        quotedText:
+          "Goncalves-Point-Kucherov\nHagel-Cirelli-Guentzel\nVasilevskiy\nJohansson",
+        quotedPostedAt: "2026-04-24T00:00:00.000Z",
+        quotedPostedLabel: "Apr 24, 2026",
+        quotedSourceTweetUrl: "https://twitter.com/BenjaminJReport/status/2047808467969220779",
+        quotedAuthorName: "Benjamin Piercey",
+        quotedAuthorHandle: "BenjaminJReport"
+      }
+    });
+
+    expect(preferred).toMatchObject({
+      primaryTextSource: "quoted_oembed",
+      quotedTweetId: "2047808467969220779",
+      quotedTweetUrl: "https://twitter.com/i/web/status/2047808467969220779",
+      quotedRawText:
+        "Goncalves-Point-Kucherov\nHagel-Cirelli-Guentzel\nVasilevskiy\nJohansson",
+      quotedEnrichedText:
+        "Goncalves-Point-Kucherov\nHagel-Cirelli-Guentzel\nVasilevskiy\nJohansson",
+      metadata: {
+        preferredQuotedTweet: true,
+        primaryTextSource: "quoted_oembed",
+        primarySourceUrl: "https://twitter.com/i/web/status/2047808467969220779",
+        quotedSourceTweetUrl: "https://twitter.com/BenjaminJReport/status/2047808467969220779"
+      }
+    });
+  });
+
+  it("applies wrapper oEmbed content as cached enriched text and metadata", () => {
+    const source = applyLinesCccWrapperOEmbed({
+      source: {
+        snapshotDate: "2026-04-25",
+        rawText: "Lightning lines https://t.co/9cZkBXydVn",
+        tweetUrl: "https://twitter.com/i/web/status/2047808711494902155",
+        primaryTextSource: "ifttt_text",
+        classification: "lineup",
+        detectedLeague: "NHL",
+        nhlFilterStatus: "accepted",
+        metadata: {}
+      },
+      oembedData: toLinesCccTweetOEmbedDataFromBackfillState(
+        buildLinesCccWrapperOEmbedSuccessState({
+          tweetId: "2047808711494902155",
+          tweetUrl: "https://twitter.com/i/web/status/2047808711494902155",
+          nowIso: "2026-04-24T12:00:00.000Z",
+          existingState: null,
+          data: {
+            text: "Lightning lines\nGoncalves-Point-Kucherov",
+            postedAt: "2026-04-24T00:00:00.000Z",
+            postedLabel: "Apr 24, 2026",
+            sourceTweetUrl: "https://twitter.com/CcCMiddleton/status/2047808711494902155",
+            authorName: "LinesLinesLines",
+            authorHandle: "CcCMiddleton"
+          }
+        })
+      )!
+    });
+
+    expect(source).toMatchObject({
+      enrichedText: "Lightning lines\nGoncalves-Point-Kucherov",
+      primaryTextSource: "wrapper_oembed",
+      sourceUrl: "https://twitter.com/CcCMiddleton/status/2047808711494902155",
+      authorName: "LinesLinesLines",
+      sourceHandle: "CcCMiddleton",
+      metadata: {
+        primaryTextSource: "wrapper_oembed",
+        primarySourceUrl: "https://twitter.com/i/web/status/2047808711494902155"
+      }
+    });
+  });
+
+  it("keeps wrapper text primary when it already has richer structure than the quote", () => {
+    const preferred = applyQuotedTweetPreference({
+      source: {
+        snapshotDate: "2026-04-25",
+        rawText: "Lightning lines\nGoncalves-Point-Kucherov\nHagel-Cirelli-Guentzel",
+        primaryTextSource: "ifttt_text",
+        classification: "lineup",
+        detectedLeague: "NHL",
+        nhlFilterStatus: "accepted",
+        metadata: {}
+      },
+      quotedTweet: {
+        quotedTweetId: "2047808467969220779",
+        quotedTweetUrl: "https://twitter.com/i/web/status/2047808467969220779",
+        quotedText: "Lightning lines",
+        quotedPostedAt: "2026-04-24T00:00:00.000Z",
+        quotedPostedLabel: "Apr 24, 2026",
+        quotedSourceTweetUrl: "https://twitter.com/BenjaminJReport/status/2047808467969220779",
+        quotedAuthorName: "Benjamin Piercey",
+        quotedAuthorHandle: "BenjaminJReport"
+      }
+    });
+
+    expect(preferred.primaryTextSource).toBe("ifttt_text");
+    expect(preferred.metadata).toMatchObject({
+      primaryTextSource: "ifttt_text",
+      primaryText: "Lightning lines\nGoncalves-Point-Kucherov\nHagel-Cirelli-Guentzel",
+      quotedSourceTweetUrl: "https://twitter.com/BenjaminJReport/status/2047808467969220779"
+    });
+    expect(preferred.quotedTweetId).toBe("2047808467969220779");
+  });
+
+  it("rejects headline-only quote wrappers when the quoted tweet cannot be resolved", () => {
+    const rejected = rejectInsufficientQuoteWrapper({
+      source: {
+        snapshotDate: "2026-04-25",
+        rawText: "Lightning lines https://t.co/9cZkBXydVn",
+        primaryTextSource: "ifttt_text",
+        classification: "lineup",
+        detectedLeague: "NHL",
+        nhlFilterStatus: "accepted",
+        metadata: {}
+      },
+      quotedTweet: null
+    });
+
+    expect(rejected).toMatchObject({
+      nhlFilterStatus: "rejected_insufficient_text",
+      nhlFilterReason: "unresolved_quoted_tweet",
+      metadata: {
+        unresolvedQuotedTweet: true
+      }
+    });
+  });
+
+  it("does not reject direct goalie wrappers that still contain useful wrapper text", () => {
+    const preserved = rejectInsufficientQuoteWrapper({
+      source: {
+        snapshotDate: "2026-04-25",
+        rawText: "confirmed Lightning Starting Goalie: Andrei Vasilevskiy https://t.co/SGBBO1KIsp",
+        primaryTextSource: "ifttt_text",
+        classification: "goalie_start",
+        detectedLeague: "NHL",
+        nhlFilterStatus: "accepted",
+        matchedPlayerIds: [7],
+        metadata: {}
+      },
+      quotedTweet: null
+    });
+
+    expect(preserved.nhlFilterStatus).toBe("accepted");
+    expect(preserved.nhlFilterReason).toBeUndefined();
+  });
+
   it("parses IFTTT text into accepted NHL goalie candidates", () => {
     const parsed = buildLinesCccSourceFromIftttEvent({
       event: {
@@ -58,7 +494,56 @@ describe("linesCccIngestion", () => {
       nhlFilterReason: null,
       goalies: ["Jakub Dobes"],
       matchedPlayerIds: [9],
-      matchedNames: ["Jakub Dobes"]
+      matchedNames: ["Jakub Dobes"],
+      enrichedText:
+        "Canadiens lines\nconfirmed Canadiens Starting Goalie: Jakub Dobes https://t.co/NEEgtVpvUw",
+      metadata: {
+        primaryTextSource: "ifttt_text",
+        wrapperKeywordHits: ["lines", "starting goalie"],
+        primaryKeywordHits: ["lines", "starting goalie"],
+        resolvedTweetUrls: {
+          wrapperTweetUrl: "https://twitter.com/i/web/status/2047809041154625899",
+          quotedTweetUrl: null,
+          sourceUrl: "https://twitter.com/i/web/status/2047809041154625899"
+        }
+      }
+    });
+  });
+
+  it("parses direct structured lineup text into forwards, pairs, and goalies", () => {
+    const parsed = buildLinesCccSourceFromIftttEvent({
+      event: {
+        id: "lightning-lines-direct",
+        source: "ifttt",
+        source_account: "CcCMiddleton",
+        username: "CcCMiddleton",
+        text:
+          "Lightning lines\nGoncalves-Point-Kucherov\nHagel-Cirelli-Guentzel\nMcDonagh-Cernak\nVasilevskiy\nJohansson",
+        link_to_tweet: "https://twitter.com/CcCMiddleton/status/2047808711494902155",
+        tweet_id: "2047808711494902155",
+        tweet_created_at: null,
+        created_at_label: "April 24, 2026 at 06:43PM",
+        raw_payload: {},
+        received_at: "2026-04-24T22:46:29.726Z"
+      },
+      snapshotDate: "2026-04-24",
+      teams: [canadiens!, lightning!],
+      rosterByTeam: new Map([
+        [8, canadiensRoster],
+        [14, lightningRoster]
+      ])
+    });
+
+    expect(parsed).toMatchObject({
+      team: lightning,
+      classification: "lineup",
+      nhlFilterStatus: "accepted",
+      forwards: [
+        ["Gage Goncalves", "Brayden Point", "Nikita Kucherov"],
+        ["Brandon Hagel", "Anthony Cirelli", "Jake Guentzel"]
+      ],
+      defensePairs: [["Ryan McDonagh", "Erik Cernak"]],
+      goalies: ["Andrei Vasilevskiy", "Jonas Johansson"]
     });
   });
 
@@ -90,6 +575,104 @@ describe("linesCccIngestion", () => {
       nhlFilterStatus: "rejected_non_nhl",
       nhlFilterReason: "explicit_non_nhl_league_marker",
       goalies: ["Jon Gillies"]
+    });
+  });
+
+  it("rejects non-NHL content from minor-league source handles with an auditable reason", () => {
+    const parsed = buildLinesCccSourceFromIftttEvent({
+      event: {
+        id: "15d482fd-0d90-46ca-bdfd-5522e409c13d",
+        source: "ifttt",
+        source_account: "InsideAhlHockey",
+        username: "InsideAhlHockey",
+        text: "Crunch lines\nStarting Goalie: Jon Gillies",
+        link_to_tweet: "https://twitter.com/InsideAhlHockey/status/2047809493590065526",
+        tweet_id: "2047809493590065526",
+        tweet_created_at: null,
+        created_at_label: "April 24, 2026 at 06:46PM",
+        raw_payload: {},
+        received_at: "2026-04-24T22:51:13.176Z"
+      },
+      snapshotDate: "2026-04-24",
+      teams: [canadiens!],
+      rosterByTeam: new Map()
+    });
+
+    expect(parsed).toMatchObject({
+      team: null,
+      detectedLeague: "AHL",
+      nhlFilterStatus: "rejected_non_nhl",
+      nhlFilterReason: "minor_league_source_handle",
+      metadata: {
+        nonNhlSourceHandle: "insideahlhockey"
+      }
+    });
+  });
+
+  it("rejects multi-team NHL text as ambiguous when no single team can be resolved", () => {
+    const parsed = buildLinesCccSourceFromIftttEvent({
+      event: {
+        id: "ambiguous-nhl-example",
+        source: "ifttt",
+        source_account: "CcCMiddleton",
+        username: "CcCMiddleton",
+        text: "Lightning and Canadiens morning skate notes",
+        link_to_tweet: "https://twitter.com/CcCMiddleton/status/2047808711494902155",
+        tweet_id: "2047808711494902155",
+        tweet_created_at: null,
+        created_at_label: "April 24, 2026 at 06:43PM",
+        raw_payload: {},
+        received_at: "2026-04-24T22:46:29.726Z"
+      },
+      snapshotDate: "2026-04-24",
+      teams: [canadiens!, lightning!],
+      rosterByTeam: new Map([
+        [8, canadiensRoster],
+        [14, lightningRoster]
+      ])
+    });
+
+    expect(parsed).toMatchObject({
+      team: null,
+      detectedLeague: null,
+      nhlFilterStatus: "rejected_ambiguous",
+      nhlFilterReason: "ambiguous_multiple_team_labels",
+      metadata: {
+        teamLabelMatches: ["MTL", "TBL"]
+      }
+    });
+  });
+
+  it("captures injury and transaction signals when the text has return-style status updates", () => {
+    const parsed = buildLinesCccSourceFromIftttEvent({
+      event: {
+        id: "injury-transaction-example",
+        source: "ifttt",
+        source_account: "CcCMiddleton",
+        username: "CcCMiddleton",
+        text: "Canadiens injury update: Patrik Laine returns, Kirby Dach activated from IR",
+        link_to_tweet: "https://twitter.com/CcCMiddleton/status/2047811111111111111",
+        tweet_id: "2047811111111111111",
+        tweet_created_at: null,
+        created_at_label: "April 24, 2026 at 07:00PM",
+        raw_payload: {},
+        received_at: "2026-04-24T23:00:00.000Z"
+      },
+      snapshotDate: "2026-04-24",
+      teams: [canadiens!],
+      rosterByTeam: new Map([[8, canadiensRoster]])
+    });
+
+    expect(parsed).toMatchObject({
+      team: canadiens,
+      classification: "injury",
+      injuries: ["Patrik Laine", "Kirby Dach"],
+      metadata: {
+        transactionSignals: expect.arrayContaining([
+          { signal: "return", playerName: "Patrik Laine" },
+          { signal: "activated", playerName: "Kirby Dach" }
+        ])
+      }
     });
   });
 
@@ -174,6 +757,18 @@ describe("linesCccIngestion", () => {
     expect(row.metadata).toMatchObject({
       storedSkaterOrder: ["RW", "C", "LW"],
       storedDefenseOrder: ["RD", "LD"],
+      matchedNames: [
+        "Cole Caufield",
+        "Nick Suzuki",
+        "Juraj Slafkovsky",
+        "Patrik Laine",
+        "Kirby Dach",
+        "Ivan Demidov",
+        "Mike Matheson",
+        "Lane Hutson",
+        "Jakub Dobes"
+      ],
+      unmatchedNames: [],
       primaryText:
         "Slafkovsky - Suzuki - Caufield\nDemidov - Dach - Laine\nMatheson - Hutson\nJakub Dobes",
       sourceEventTable: "lines_ccc_ifttt_events"

@@ -487,6 +487,44 @@
 -- - 07:15 UTC / 02:15 EST: retired pre-floor slot for update-games.
 ----------------------------------------------------------------------------------
 
+  ----------------------------------------------------------------------------------
+-- NHL Game Prediction Model Pipeline
+----------------------------------------------------------------------------------
+--
+-- Goal: keep each Supabase HTTP GET beneath the Vercel 4m30s ceiling by
+-- sequencing small prediction windows instead of running a full slate/backtest
+-- in one request. Each prediction request defaults to a 240s internal deadline
+-- and should normally finish much faster because it is capped by `limit`.
+--
+-- Live daily forecast snapshots:
+--   11:35 UTC: /api/v1/game-predictions/forecast?fromOffsetDays=7&toOffsetDays=7&limit=16&maxRuntimeMs=240000
+--   11:36 UTC: /api/v1/game-predictions/forecast?fromOffsetDays=3&toOffsetDays=3&limit=16&maxRuntimeMs=240000
+--   11:37 UTC: /api/v1/game-predictions/forecast?fromOffsetDays=1&toOffsetDays=1&limit=16&maxRuntimeMs=240000
+--   11:38 UTC: /api/v1/game-predictions/forecast?fromOffsetDays=0&toOffsetDays=0&limit=16&maxRuntimeMs=240000
+--
+-- These four snapshots are intentionally separate. The repeated prediction
+-- rows for a given game become the candlestick source: open, low, high, and
+-- final pregame probability. The `sourceAsOfDate` defaults to the request day,
+-- so future-game features are cut off at what was knowable when the cron ran.
+--
+-- Post-result scoring:
+--   11:40 UTC: /api/v1/game-predictions/score?startDate={yesterday}&endDate={today}
+--
+-- Research blind replay / accountability backfill:
+--   /api/v1/game-predictions/backtest?seasonId=20252026&trainStartDate=2025-10-07&blindDate=2025-12-31&replayEndDate=2026-04-15&horizonDays=7,3,1,0&maxSimulationDays=3&persist=false
+--
+-- For the full blind replay, increase `maxSimulationDays` gradually or omit it
+-- when running outside the Vercel timeout budget. The route trains on
+-- 2025-10-07 through 2025-12-31, then simulates each date forward: it predicts
+-- future games from the configured horizons, records the outcome once the
+-- simulated date passes the game date, retrains, and continues.
+--
+-- Use `persist=true` only after a dry run returns expected counts and accuracy
+-- behavior. Persisted backtests write aggregate candlestick rows to
+-- game_prediction_accountability_games and daily accuracy rows to
+-- game_prediction_accountability_daily.
+----------------------------------------------------------------------------------
+
 ----------------------------------------------------------------------------------
 -- Player Underlying Stats Freshness
 ----------------------------------------------------------------------------------

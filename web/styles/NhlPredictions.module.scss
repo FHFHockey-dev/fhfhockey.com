@@ -1,0 +1,593 @@
+@use "sass:color";
+@use "styles/vars" as v;
+
+.pageShell {
+  min-height: 100vh;
+  padding: 112px clamp(16px, 4vw, 48px) 64px;
+  background: v.$surface-0;
+  color: v.$text-primary;
+}
+
+.pageHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 24px;
+  align-items: end;
+  max-width: 1240px;
+  margin: 0 auto 24px;
+
+  h1 {
+    margin: 0;
+    font-family: v.$font-family-accent, sans-serif;
+    font-size: clamp(2rem, 4vw, 3.25rem);
+    line-height: 1.05;
+    letter-spacing: 0;
+    color: v.$color-white;
+  }
+
+  p {
+    max-width: 760px;
+    margin: 10px 0 0;
+    color: v.$text-secondary;
+    line-height: 1.55;
+  }
+}
+
+.eyebrow {
+  margin: 0 0 8px !important;
+  color: v.$primary-color !important;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.headerMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 220px;
+  padding: 14px 16px;
+  border: 1px solid v.$border-soft;
+  border-radius: 8px;
+  background: v.$surface-1;
+  color: v.$text-secondary;
+  font-size: 0.86rem;
+  text-align: right;
+}
+
+.predictionGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 390px), 1fr));
+  gap: 18px;
+  max-width: 1240px;
+  margin: 0 auto 24px;
+}
+
+.gameCard,
+.performancePanel,
+.accountabilityPanel,
+.statePanel,
+.errorPanel {
+  border: 1px solid v.$border-soft;
+  border-radius: 8px;
+  background: v.$surface-1;
+  box-shadow: v.$shadow-panel;
+}
+
+.gameCard {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+  padding: 18px;
+  overflow: hidden;
+}
+
+.gameHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  min-width: 0;
+}
+
+.gameDate,
+.modelStamp,
+.summaryRow,
+.factorBlock li span:last-child,
+.performanceGrid span,
+.calibration {
+  color: v.$text-secondary;
+  font-size: 0.78rem;
+}
+
+.matchupTitle {
+  margin: 4px 0 0;
+  color: v.$color-white;
+  font-size: 1.24rem;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+}
+
+.modelStamp {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.teamStrip {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  min-width: 0;
+  color: v.$text-primary;
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1.2;
+
+  span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  span:last-child {
+    text-align: right;
+  }
+}
+
+.summaryRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  span {
+    padding: 6px 8px;
+    border: 1px solid v.$border-soft;
+    border-radius: 8px;
+    background: v.$surface-0;
+  }
+}
+
+.warningText {
+  color: v.$warning-color !important;
+}
+
+.detailGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
+  min-width: 0;
+
+  section {
+    min-width: 0;
+    padding-top: 12px;
+    border-top: 1px solid v.$border-soft;
+  }
+
+  h3 {
+    margin: 0 0 10px;
+    color: v.$color-white;
+    font-size: 0.9rem;
+    letter-spacing: 0;
+  }
+}
+
+.comparisonList {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.comparisonRow {
+  --away-color: #{v.$primary-color};
+  --home-color: #{v.$text-secondary};
+  --away-share: 50%;
+  --home-share: 50%;
+  --bar-opacity: 1;
+
+  display: grid;
+  min-width: 0;
+  gap: 6px;
+}
+
+.comparisonValues,
+.statusComparison {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(84px, 0.9fr) minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+}
+
+.comparisonValues {
+  strong {
+    min-width: 0;
+    color: v.$color-white;
+    font-family: v.$font-family-numbers, monospace;
+    font-size: clamp(1.15rem, 3vw, 1.45rem);
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  strong:last-child {
+    text-align: right;
+  }
+
+  span {
+    min-width: 0;
+    color: v.$text-secondary;
+    font-size: 0.78rem;
+    font-weight: 600;
+    line-height: 1.15;
+    text-align: center;
+    overflow-wrap: anywhere;
+  }
+}
+
+.comparisonBar {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  height: 9px;
+  overflow: hidden;
+  opacity: var(--bar-opacity);
+}
+
+.awaySegment,
+.homeSegment {
+  min-width: 0;
+  background: currentColor;
+  flex-shrink: 1;
+}
+
+.awaySegment {
+  flex-basis: var(--away-share);
+  color: var(--away-color);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+}
+
+.homeSegment {
+  flex-basis: var(--home-share);
+  color: var(--home-color);
+  clip-path: polygon(10px 0, 100% 0, 100% 100%, 0 100%);
+}
+
+.comparisonTeams {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-width: 0;
+  color: v.$text-secondary;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+
+  span:last-child {
+    text-align: right;
+  }
+}
+
+.statusComparison {
+  padding-top: 2px;
+
+  span {
+    min-width: 0;
+    color: v.$text-primary;
+    font-size: 0.72rem;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+  }
+
+  span:last-child {
+    text-align: right;
+  }
+
+  strong {
+    color: v.$text-secondary;
+    font-size: 0.76rem;
+    line-height: 1.15;
+    text-align: center;
+  }
+}
+
+.contextPill {
+  display: block;
+  width: fit-content;
+  max-width: 100%;
+  padding: 6px 8px;
+  border: 1px solid v.$border-soft;
+  border-radius: 8px;
+  color: v.$text-secondary;
+  font-size: 0.78rem;
+}
+
+.factorBlock {
+  h3 {
+    margin: 0 0 10px;
+    color: v.$color-white;
+    font-size: 0.9rem;
+    letter-spacing: 0;
+  }
+
+  ul {
+    display: grid;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    min-width: 0;
+    padding: 8px 0;
+    border-top: 1px solid v.$border-soft;
+
+    span {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+  }
+
+  p {
+    margin: 0;
+    color: v.$text-secondary;
+  }
+}
+
+.performancePanel,
+.accountabilityPanel,
+.statePanel,
+.errorPanel {
+  max-width: 1240px;
+  margin: 0 auto 24px;
+  padding: 18px;
+}
+
+.performancePanel {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.75fr) minmax(0, 1fr);
+  gap: 18px;
+
+  h2 {
+    margin: 0;
+    color: v.$color-white;
+    font-size: 1.2rem;
+    letter-spacing: 0;
+  }
+
+  p {
+    margin: 8px 0 0;
+    color: v.$text-secondary;
+  }
+}
+
+.accountabilityPanel {
+  display: grid;
+  gap: 18px;
+
+  h2 {
+    margin: 0;
+    color: v.$color-white;
+    font-size: 1.2rem;
+    letter-spacing: 0;
+  }
+
+  p {
+    margin: 8px 0 0;
+    color: v.$text-secondary;
+  }
+}
+
+.accountabilityHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.accountabilityMeta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  color: v.$text-secondary;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.performanceGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(110px, 1fr));
+  gap: 10px;
+
+  div {
+    padding: 12px;
+    border: 1px solid v.$border-soft;
+    border-radius: 8px;
+    background: v.$surface-0;
+  }
+
+  strong {
+    display: block;
+    margin-top: 6px;
+    color: v.$primary-color;
+    font-family: v.$font-family-numbers, monospace;
+    font-size: 1.2rem;
+  }
+}
+
+.accountabilityGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(110px, 1fr));
+  gap: 10px;
+
+  div {
+    padding: 12px;
+    border: 1px solid v.$border-soft;
+    border-radius: 8px;
+    background: v.$surface-0;
+  }
+
+  span {
+    color: v.$text-secondary;
+    font-size: 0.78rem;
+  }
+
+  strong {
+    display: block;
+    margin-top: 6px;
+    color: v.$primary-color;
+    font-family: v.$font-family-numbers, monospace;
+    font-size: 1.2rem;
+  }
+}
+
+.candleList {
+  display: grid;
+  gap: 12px;
+}
+
+.candleRow {
+  --range-left: 0%;
+  --range-width: 0%;
+  --open-left: 0%;
+  --final-left: 0%;
+  --actual-left: 0%;
+
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding-top: 10px;
+  border-top: 1px solid v.$border-soft;
+}
+
+.candleTeams,
+.candleMeta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  color: v.$text-secondary;
+  font-size: 0.78rem;
+
+  span,
+  strong {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+}
+
+.candleTeams strong {
+  color: v.$text-primary;
+}
+
+.candleTrack {
+  position: relative;
+  height: 18px;
+  border-radius: 999px;
+  background: v.$surface-0;
+}
+
+.candleRange,
+.candleOpen,
+.candleFinal,
+.candleActual {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.candleRange {
+  left: var(--range-left);
+  width: var(--range-width);
+  height: 6px;
+  border-radius: 999px;
+  background: v.$primary-color;
+}
+
+.candleOpen,
+.candleFinal {
+  width: 2px;
+  height: 14px;
+  background: v.$color-white;
+}
+
+.candleOpen {
+  left: var(--open-left);
+  opacity: 0.5;
+}
+
+.candleFinal {
+  left: var(--final-left);
+}
+
+.candleActual {
+  left: var(--actual-left);
+  width: 10px;
+  height: 10px;
+  border: 2px solid v.$surface-0;
+  border-radius: 50%;
+  background: v.$success-color;
+}
+
+.calibration {
+  grid-column: 1 / -1;
+}
+
+.errorPanel {
+  border-color: rgba(v.$danger-color, 0.65);
+  color: v.$danger-color;
+}
+
+@media (max-width: 760px) {
+  .pageShell {
+    padding: 88px 14px 80px;
+  }
+
+  .pageHeader,
+  .gameHeader,
+  .accountabilityHeader,
+  .performancePanel {
+    grid-template-columns: 1fr;
+  }
+
+  .headerMeta,
+  .modelStamp,
+  .accountabilityMeta {
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .predictionGrid,
+  .detailGrid,
+  .performanceGrid,
+  .accountabilityGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .teamStrip {
+    grid-template-columns: 1fr;
+
+    span:last-child {
+      text-align: left;
+    }
+  }
+
+  .comparisonValues,
+  .statusComparison {
+    grid-template-columns: minmax(0, 1fr) minmax(76px, 0.9fr) minmax(0, 1fr);
+  }
+
+  .comparisonValues {
+    strong {
+      font-size: 1.18rem;
+    }
+
+    span {
+      font-size: 0.74rem;
+    }
+  }
+}

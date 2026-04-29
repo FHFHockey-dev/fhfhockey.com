@@ -2,6 +2,7 @@ import * as cheerio from "cheerio";
 
 import type { Team } from "lib/NHL/types";
 import { teamsInfo } from "lib/teamsInfo";
+import { parseTweetOEmbedHtml } from "lib/sources/tweetLineupParsing";
 
 export type PregameSourceStatus = "observed" | "rejected";
 export type PregameLineupSourceName = "nhl.com" | "dailyfaceoff" | "gamedaytweets";
@@ -17,6 +18,7 @@ export type RosterNameEntry = {
   playerId: number;
   fullName: string;
   lastName: string;
+  aliases?: string[];
 };
 
 export type TeamDirectoryEntry = Team & {
@@ -365,7 +367,7 @@ function parsePlayerLine(value: string): string[] {
     .filter(Boolean);
 }
 
-function extractStructuredPlayerGroupsFromText(text: string): {
+export function extractStructuredPlayerGroupsFromText(text: string): {
   forwards: string[][];
   defensePairs: string[][];
   goalies: string[];
@@ -421,6 +423,9 @@ function buildRosterSearchNeedles(rosterEntry: RosterNameEntry): string[] {
   for (const alias of GDT_ALIAS_OVERRIDES[normalizedFullName] ?? []) {
     needles.add(normalizeTeamLabel(alias));
   }
+  for (const alias of rosterEntry.aliases ?? []) {
+    needles.add(normalizeTeamLabel(alias));
+  }
 
   return Array.from(needles.values()).filter(Boolean);
 }
@@ -456,7 +461,7 @@ function mapNamesToPlayerIdsOrdered(
   });
 }
 
-function resolveTweetNameToRosterEntry(
+export function resolveTweetNameToRosterEntry(
   rawName: string,
   rosterEntries: RosterNameEntry[]
 ): RosterNameEntry | null {
@@ -707,19 +712,13 @@ export async function fetchGameDayTweetOEmbedData(
     return null;
   }
 
-  const root = cheerio.load(payload.html);
-  const paragraph = root("p").first();
-  paragraph.find("br").replaceWith("\n");
-  const text = paragraph.text().replace(/\n\s+/g, "\n").trim();
-  const sourceLink = root("a").last();
-  const postedLabel = normalizeWhitespace(sourceLink.text()) || null;
-  const sourceTweetUrl = sourceLink.attr("href") ?? null;
+  const parsed = parseTweetOEmbedHtml(payload.html);
 
   return {
-    text: text || null,
-    postedAt: parseDateLabelToIso(postedLabel),
-    postedLabel,
-    sourceTweetUrl
+    text: parsed.text,
+    postedAt: parseDateLabelToIso(parsed.postedLabel),
+    postedLabel: parsed.postedLabel,
+    sourceTweetUrl: parsed.sourceTweetUrl
   };
 }
 
@@ -792,7 +791,7 @@ export function parseDailyFaceoffLineCombinationsPage(args: {
   });
 }
 
-function classifyGameDayTweet(text: string): GameDayTweetsClassification {
+export function classifyGameDayTweet(text: string): GameDayTweetsClassification {
   const normalized = normalizeTeamLabel(text);
   GDT_INLINE_LINE_PATTERN.lastIndex = 0;
 
@@ -817,7 +816,7 @@ function classifyGameDayTweet(text: string): GameDayTweetsClassification {
   return "other";
 }
 
-function findGameDayTweetKeywordHits(text: string): string[] {
+export function findGameDayTweetKeywordHits(text: string): string[] {
   const normalized = normalizeTeamLabel(text);
   const keywords = [
     ...GDT_LINEUP_KEYWORDS,
@@ -832,7 +831,7 @@ function findGameDayTweetKeywordHits(text: string): string[] {
   );
 }
 
-function matchRosterNamesInTweet(
+export function matchRosterNamesInTweet(
   tweetText: string,
   rosterEntries: RosterNameEntry[]
 ): NameValidationResult {
@@ -859,7 +858,7 @@ function matchRosterNamesInTweet(
   );
 }
 
-function extractOrderedRosterHitsFromTweet(
+export function extractOrderedRosterHitsFromTweet(
   tweetText: string,
   rosterEntries: RosterNameEntry[]
 ): string[] {
@@ -891,7 +890,7 @@ function extractOrderedRosterHitsFromTweet(
   return dedupeNames(matches.map((entry) => entry.name));
 }
 
-function extractStructuredNameGroupsFromTweet(
+export function extractStructuredNameGroupsFromTweet(
   tweetText: string
 ): {
   forwardLineCount: number;

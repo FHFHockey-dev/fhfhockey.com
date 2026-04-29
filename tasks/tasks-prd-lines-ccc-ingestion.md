@@ -114,37 +114,37 @@
   - [x] 2.3 Render the `CcCMiddleton` timeline anchor and `platform.x.com/widgets.js` script.
   - [x] 2.4 Structure the page/config so future handles or specific tweet URLs can be added without changing parser code.
 
-- [ ] 3.0 Extract shared tweet/oEmbed parsing helpers without breaking GDT
-  - [ ] 3.1 Move reusable oEmbed HTML parsing into a shared helper that preserves `<br>` line breaks and extracts posted labels/source links.
-  - [ ] 3.2 Keep `fetchGameDayTweetOEmbedData(...)` behavior compatible by wrapping or reusing the shared helper.
-  - [ ] 3.3 Expose reusable classification, keyword-hit, structured-group, roster-name, initials, alias, and ordered-roster-hit helpers where appropriate.
-  - [ ] 3.4 Add helper support for extracting tweet ids and normalizing `x.com`/`twitter.com` status URLs.
-  - [ ] 3.5 Add helper support for expanding outbound `t.co` links and detecting quoted status URLs.
-  - [ ] 3.6 Add tests for oEmbed `<br>` preservation, posted-label parsing, classification, aliases, initials, and structured extraction.
-  - [ ] 3.7 Run existing GDT tests and fix only compatibility regressions caused by helper extraction.
+- [x] 3.0 Extract shared tweet/oEmbed parsing helpers without breaking GDT
+  - [x] 3.1 Move reusable oEmbed HTML parsing into a shared helper that preserves `<br>` line breaks and extracts posted labels/source links.
+  - [x] 3.2 Keep `fetchGameDayTweetOEmbedData(...)` behavior compatible by wrapping or reusing the shared helper.
+  - [x] 3.3 Expose reusable classification, keyword-hit, structured-group, roster-name, initials, alias, and ordered-roster-hit helpers where appropriate.
+  - [x] 3.4 Add helper support for extracting tweet ids and normalizing `x.com`/`twitter.com` status URLs.
+  - [x] 3.5 Add helper support for expanding outbound `t.co` links and detecting quoted status URLs.
+  - [x] 3.6 Add tests for oEmbed `<br>` preservation, posted-label parsing, classification, aliases, initials, and structured extraction.
+  - [x] 3.7 Run existing GDT tests and fix only compatibility regressions caused by helper extraction.
 
-- [ ] 4.0 Implement CCC parsing, quote resolution, and NHL-only filtering
-  - [ ] 4.1 Create `web/lib/sources/linesCccIngestion.ts`.
-  - [ ] 4.2 Define CCC source types for wrapper tweet, quoted tweet, resolved links, parse text source, source handle, author, and posted metadata.
-  - [ ] 4.3 Implement per-tweet oEmbed fetch for CCC wrapper tweets.
-  - [ ] 4.4 Implement quote-tweet resolution by expanding `t.co` links and fetching oEmbed for resolved quoted statuses.
-  - [ ] 4.5 Prefer quoted tweet text as primary parse text when CCC wrapper text is incomplete.
-  - [ ] 4.6 Reject quote candidates when quoted content cannot be resolved and wrapper text is insufficient.
-  - [ ] 4.7 Implement NHL team resolution using team labels, abbreviations, handle hints, and roster match density.
-  - [ ] 4.8 Implement non-NHL and ambiguous-content rejection with auditable filter reasons.
-  - [ ] 4.9 Parse lineup, practice-line, power-play, goalie-start, injury, return, and transaction signals into structured payloads where confidence is sufficient.
-  - [ ] 4.10 Preserve raw wrapper text, enriched wrapper text, quoted raw/enriched text, resolved URLs, keyword hits, structure signals, matched names, unmatched names, and filter metadata.
+- [x] 4.0 Implement CCC parsing, quote resolution, and NHL-only filtering
+  - [x] 4.1 Create `web/lib/sources/linesCccIngestion.ts`.
+  - [x] 4.2 Define CCC source types for wrapper tweet, quoted tweet, resolved links, parse text source, source handle, author, and posted metadata.
+  - [x] 4.3 Implement per-tweet oEmbed fetch for CCC wrapper tweets.
+  - [x] 4.4 Implement quote-tweet resolution by expanding `t.co` links and fetching oEmbed for resolved quoted statuses.
+  - [x] 4.5 Prefer quoted tweet text as primary parse text when CCC wrapper text is incomplete.
+  - [x] 4.6 Reject quote candidates when quoted content cannot be resolved and wrapper text is insufficient.
+  - [x] 4.7 Implement NHL team resolution using team labels, abbreviations, handle hints, and roster match density.
+  - [x] 4.8 Implement non-NHL and ambiguous-content rejection with auditable filter reasons.
+  - [x] 4.9 Parse lineup, practice-line, power-play, goalie-start, injury, return, and transaction signals into structured payloads where confidence is sufficient.
+  - [x] 4.10 Preserve raw wrapper text, enriched wrapper text, quoted raw/enriched text, resolved URLs, keyword hits, structure signals, matched names, unmatched names, and filter metadata.
 
-- [ ] 5.0 Create the `lines_ccc` SQL migration and row shaping
+- [x] 5.0 Create the `lines_ccc` SQL migration and row shaping
   - [x] 5.1 Create `web/sql/ratings/007_create_lines_ccc.sql` using the finalized schema from task 1.7.
   - [x] 5.2 Mirror `lines_gdl` ordered line, pair, goalie, scratch, injury, raw payload, and metadata storage philosophy.
   - [x] 5.3 Add first-class quote provenance fields such as quoted tweet id/url and quoted author fields if confirmed by analysis.
-  - [x] 5.4 Add NHL filter fields such as detected league, filter status, and filter reason if confirmed by analysis.
+  - [x] 5.4 Add NHL filter fields such as detected league, filter status, and filter reason if confirmed by analysis.a          
   - [x] 5.5 Add indexes for `capture_key`, snapshot date/team, game/team, tweet URL, tweet id/team, and quoted tweet id/team where applicable.
   - [x] 5.6 Implement `lines_ccc` row shaping with stable dedupe keys and honest `tweet_posted_at` precision.
   - [x] 5.7 Add tests for row shaping, player id arrays, quote provenance, raw/enriched text fields, metadata, and dedupe keys.
 
-- [ ] 6.0 Add the admin polling ingestion route
+- [x] 6.0 Add the admin polling ingestion route
   - [x] 6.1 Create `web/pages/api/v1/db/update-lines-ccc.ts` behind the existing admin middleware/audit pattern.
   - [x] 6.2 Load current season, teams, scheduled games, and roster entries using existing repo patterns.
   - [x] 6.3 Poll configured CCC sources and resolve concrete tweet URLs where available.
@@ -154,13 +154,13 @@
   - [x] 6.7 Return route summary counts for sources processed, tweets discovered, tweets parsed, quote tweets resolved, non-NHL rejected, duplicates skipped, and rows upserted.
   - [x] 6.8 Add mocked route-level coverage for dedupe/upsert behavior and failure handling.
 
-- [ ] 7.0 Verify end-to-end behavior and regressions
-  - [ ] 7.1 Run focused tests for shared tweet helpers and CCC ingestion.
-  - [ ] 7.2 Run existing `lineupSourceIngestion.test.ts` to confirm `lines_gdl` behavior still passes.
-  - [ ] 7.3 Validate the SQL migration syntax against the project’s normal database workflow.
-  - [ ] 7.4 Manually exercise the admin route with mocked or controlled inputs and confirm summary counts are honest.
-  - [ ] 7.5 Confirm no exact tweet timestamps are fabricated when oEmbed only provides date labels.
-  - [ ] 7.6 Confirm non-NHL lineup-style fixtures are rejected before observed NHL rows are persisted.
+- [x] 7.0 Verify end-to-end behavior and regressions
+  - [x] 7.1 Run focused tests for shared tweet helpers and CCC ingestion.
+  - [x] 7.2 Run existing `lineupSourceIngestion.test.ts` to confirm `lines_gdl` behavior still passes.
+  - [x] 7.3 Validate the SQL migration syntax against the project’s normal database workflow.
+  - [x] 7.4 Manually exercise the admin route with mocked or controlled inputs and confirm summary counts are honest.
+  - [x] 7.5 Confirm no exact tweet timestamps are fabricated when oEmbed only provides date labels.
+  - [x] 7.6 Confirm non-NHL lineup-style fixtures are rejected before observed NHL rows are persisted.
 
 - [ ] 8.0 NEW Verify X timeline widget fallback behavior
   - [ ] 8.1 Recheck `/twitterEmbeds` after the X `429` window clears or from a different browser/network.
