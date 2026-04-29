@@ -1,7 +1,7 @@
 import type {
   GameDayTweetsClassification,
   RosterNameEntry,
-  TeamDirectoryEntry
+  TeamDirectoryEntry,
 } from "lib/sources/lineupSourceIngestion";
 import {
   classifyGameDayTweet,
@@ -10,7 +10,7 @@ import {
   extractStructuredNameGroupsFromTweet,
   findGameDayTweetKeywordHits,
   matchRosterNamesInTweet,
-  resolveTweetNameToRosterEntry
+  resolveTweetNameToRosterEntry,
 } from "lib/sources/lineupSourceIngestion";
 import {
   expandRedirectUrl,
@@ -18,7 +18,7 @@ import {
   extractTcoUrlsFromText,
   extractTweetIdFromUrl,
   normalizeTweetStatusUrl,
-  parseTweetOEmbedHtml
+  parseTweetOEmbedHtml,
 } from "lib/sources/tweetLineupParsing";
 
 export type LinesCccNhlFilterStatus =
@@ -219,14 +219,14 @@ const NHL_HANDLE_HINTS: Record<string, string> = {
   tampabaylightning: "TBL",
   tblightning: "TBL",
   mnwildpr: "MIN",
-  wpgjetspr: "WPG"
+  wpgjetspr: "WPG",
 };
 
 const NHL_TEXT_HINTS: Record<string, string> = {
   gohabsgo: "MTL",
   habs: "MTL",
   gobolts: "TBL",
-  bolts: "TBL"
+  bolts: "TBL",
 };
 
 const NON_NHL_HANDLE_HINTS: Array<{
@@ -242,16 +242,20 @@ const NON_NHL_HANDLE_HINTS: Array<{
   { pattern: /\bthehersheybears\b/i, league: "AHL" },
   { pattern: /\bsdgullsahl\b/i, league: "AHL" },
   { pattern: /\bsjbarracuda\b/i, league: "AHL" },
-  { pattern: /\binsideahlhockey\b/i, league: "AHL" }
+  { pattern: /\binsideahlhockey\b/i, league: "AHL" },
 ];
 
 function countStructuredPlayerMentions(text: string): number {
   return Array.from(
-    text.matchAll(/[A-Z][A-Za-z.'’`-]+(?:\s+[A-Z][A-Za-z.'’`-]+){0,2}\s*[-–—/\\•]\s*[A-Z]/g)
+    text.matchAll(
+      /[A-Z][A-Za-z.'’`-]+(?:\s+[A-Z][A-Za-z.'’`-]+){0,2}\s*[-–—/\\•]\s*[A-Z]/g,
+    ),
   ).length;
 }
 
-function isWrapperTextInsufficientWithoutQuote(source: ParsedLinesCccSource): boolean {
+function isWrapperTextInsufficientWithoutQuote(
+  source: ParsedLinesCccSource,
+): boolean {
   const wrapperText = source.enrichedText ?? source.rawText ?? "";
   if (!wrapperText.trim()) return true;
 
@@ -280,7 +284,9 @@ function normalizeNameKey(value: string): string {
 }
 
 function normalizeTextKey(value: string): string {
-  return normalizeNameKey(value).replace(/[^a-z0-9#@]+/g, " ").trim();
+  return normalizeNameKey(value)
+    .replace(/[^a-z0-9#@]+/g, " ")
+    .trim();
 }
 
 function normalizeHandle(value: string | null | undefined): string | null {
@@ -310,18 +316,20 @@ function buildTextSignals(text: string): LinesCccTextSignals {
       defensePairCount: inlineSignals.defensePairCount,
       parsedForwardLines: parsedGroups.forwards.length,
       parsedDefensePairs: parsedGroups.defensePairs.length,
-      parsedGoalieCount: parsedGroups.goalies.length
-    }
+      parsedGoalieCount: parsedGroups.goalies.length,
+    },
   };
 }
 
-function buildPrimaryTextMetadata(source: ParsedLinesCccSource): Record<string, unknown> {
+function buildPrimaryTextMetadata(
+  source: ParsedLinesCccSource,
+): Record<string, unknown> {
   const wrapperText = source.enrichedText ?? source.rawText ?? null;
   const quotedText = source.quotedEnrichedText ?? source.quotedRawText ?? null;
   const primaryText =
     source.primaryTextSource === "quoted_oembed"
-      ? quotedText ?? wrapperText
-      : wrapperText ?? quotedText;
+      ? (quotedText ?? wrapperText)
+      : (wrapperText ?? quotedText);
   const wrapperSignals = wrapperText ? buildTextSignals(wrapperText) : null;
   const quotedSignals = quotedText ? buildTextSignals(quotedText) : null;
   const primarySignals = primaryText ? buildTextSignals(primaryText) : null;
@@ -331,9 +339,12 @@ function buildPrimaryTextMetadata(source: ParsedLinesCccSource): Record<string, 
     primaryTextSource: source.primaryTextSource ?? null,
     primarySourceUrl:
       source.primaryTextSource === "quoted_oembed"
-        ? source.quotedTweetUrl ?? source.tweetUrl ?? null
-        : source.tweetUrl ?? source.quotedTweetUrl ?? null,
-    wrapperTextSource: source.primaryTextSource === "wrapper_oembed" ? "wrapper_oembed" : "wrapper",
+        ? (source.quotedTweetUrl ?? source.tweetUrl ?? null)
+        : (source.tweetUrl ?? source.quotedTweetUrl ?? null),
+    wrapperTextSource:
+      source.primaryTextSource === "wrapper_oembed"
+        ? "wrapper_oembed"
+        : "wrapper",
     wrapperKeywordHits: wrapperSignals?.keywordHits ?? [],
     wrapperStructureSignals: wrapperSignals?.structureSignals ?? null,
     quotedKeywordHits: quotedSignals?.keywordHits ?? [],
@@ -343,8 +354,8 @@ function buildPrimaryTextMetadata(source: ParsedLinesCccSource): Record<string, 
     resolvedTweetUrls: {
       wrapperTweetUrl: source.tweetUrl ?? null,
       quotedTweetUrl: source.quotedTweetUrl ?? null,
-      sourceUrl: source.sourceUrl ?? null
-    }
+      sourceUrl: source.sourceUrl ?? null,
+    },
   };
 }
 
@@ -353,10 +364,11 @@ function addMinutesIso(value: string, minutes: number): string {
 }
 
 export function readLinesCccWrapperOEmbedBackfillState(
-  rawPayload: Record<string, unknown> | null | undefined
+  rawPayload: Record<string, unknown> | null | undefined,
 ): LinesCccWrapperOEmbedBackfillState | null {
-  const wrapper = (rawPayload?.linesCccOembed as Record<string, unknown> | undefined)
-    ?.wrapper as Record<string, unknown> | undefined;
+  const wrapper = (
+    rawPayload?.linesCccOembed as Record<string, unknown> | undefined
+  )?.wrapper as Record<string, unknown> | undefined;
   if (!wrapper || typeof wrapper !== "object") {
     return null;
   }
@@ -371,9 +383,13 @@ export function readLinesCccWrapperOEmbedBackfillState(
         : "pending",
     tweetId: typeof wrapper.tweetId === "string" ? wrapper.tweetId : null,
     tweetUrl: typeof wrapper.tweetUrl === "string" ? wrapper.tweetUrl : null,
-    sourceTweetUrl: typeof wrapper.sourceTweetUrl === "string" ? wrapper.sourceTweetUrl : null,
+    sourceTweetUrl:
+      typeof wrapper.sourceTweetUrl === "string"
+        ? wrapper.sourceTweetUrl
+        : null,
     attemptCount:
-      typeof wrapper.attemptCount === "number" && Number.isFinite(wrapper.attemptCount)
+      typeof wrapper.attemptCount === "number" &&
+      Number.isFinite(wrapper.attemptCount)
         ? wrapper.attemptCount
         : 0,
     lastAttemptAt:
@@ -382,15 +398,19 @@ export function readLinesCccWrapperOEmbedBackfillState(
       typeof wrapper.nextAttemptAt === "string" ? wrapper.nextAttemptAt : null,
     fetchedAt: typeof wrapper.fetchedAt === "string" ? wrapper.fetchedAt : null,
     httpStatus:
-      typeof wrapper.httpStatus === "number" && Number.isFinite(wrapper.httpStatus)
+      typeof wrapper.httpStatus === "number" &&
+      Number.isFinite(wrapper.httpStatus)
         ? wrapper.httpStatus
         : null,
     lastError: typeof wrapper.lastError === "string" ? wrapper.lastError : null,
     text: typeof wrapper.text === "string" ? wrapper.text : null,
     postedAt: typeof wrapper.postedAt === "string" ? wrapper.postedAt : null,
-    postedLabel: typeof wrapper.postedLabel === "string" ? wrapper.postedLabel : null,
-    authorName: typeof wrapper.authorName === "string" ? wrapper.authorName : null,
-    authorHandle: typeof wrapper.authorHandle === "string" ? wrapper.authorHandle : null
+    postedLabel:
+      typeof wrapper.postedLabel === "string" ? wrapper.postedLabel : null,
+    authorName:
+      typeof wrapper.authorName === "string" ? wrapper.authorName : null,
+    authorHandle:
+      typeof wrapper.authorHandle === "string" ? wrapper.authorHandle : null,
   };
 }
 
@@ -408,7 +428,10 @@ export function shouldAttemptLinesCccWrapperOEmbedBackfill(args: {
     return true;
   }
 
-  if (args.existingState.status === "success" || args.existingState.status === "failed") {
+  if (
+    args.existingState.status === "success" ||
+    args.existingState.status === "failed"
+  ) {
     return false;
   }
 
@@ -444,7 +467,7 @@ export function buildLinesCccWrapperOEmbedDeferredState(args: {
     lastAttemptAt: args.nowIso,
     nextAttemptAt: addMinutesIso(args.nowIso, backoffMinutes),
     httpStatus: args.httpStatus,
-    lastError: args.error
+    lastError: args.error,
   };
 }
 
@@ -463,7 +486,7 @@ export function buildLinesCccWrapperOEmbedFailureState(args: {
     attemptCount: (args.existingState?.attemptCount ?? 0) + 1,
     lastAttemptAt: args.nowIso,
     httpStatus: args.httpStatus,
-    lastError: args.error
+    lastError: args.error,
   };
 }
 
@@ -487,12 +510,12 @@ export function buildLinesCccWrapperOEmbedSuccessState(args: {
     postedAt: args.data.postedAt,
     postedLabel: args.data.postedLabel,
     authorName: args.data.authorName,
-    authorHandle: args.data.authorHandle
+    authorHandle: args.data.authorHandle,
   };
 }
 
 export function toLinesCccTweetOEmbedDataFromBackfillState(
-  state: LinesCccWrapperOEmbedBackfillState | null
+  state: LinesCccWrapperOEmbedBackfillState | null,
 ): LinesCccTweetOEmbedData | null {
   if (!state || state.status !== "success" || !state.text) {
     return null;
@@ -504,7 +527,7 @@ export function toLinesCccTweetOEmbedDataFromBackfillState(
     postedLabel: state.postedLabel ?? null,
     sourceTweetUrl: state.sourceTweetUrl ?? null,
     authorName: state.authorName ?? null,
-    authorHandle: state.authorHandle ?? null
+    authorHandle: state.authorHandle ?? null,
   };
 }
 
@@ -519,7 +542,7 @@ function detectNonNhlHandle(args: {
       if (hint.pattern.test(normalizedHandle)) {
         return {
           league: hint.league,
-          matchedHandle: normalizedHandle
+          matchedHandle: normalizedHandle,
         };
       }
     }
@@ -530,7 +553,7 @@ function detectNonNhlHandle(args: {
 
 function findLabelMatchedTeams(
   text: string,
-  teams: TeamDirectoryEntry[]
+  teams: TeamDirectoryEntry[],
 ): TeamDirectoryEntry[] {
   const normalized = normalizeTextKey(text);
   return teams.filter((team) => {
@@ -539,13 +562,15 @@ function findLabelMatchedTeams(
       team.abbreviation,
       team.shortName,
       team.location,
-      `${team.location ?? ""} ${team.shortName ?? ""}`.trim()
+      `${team.location ?? ""} ${team.shortName ?? ""}`.trim(),
     ]
       .filter((value): value is string => Boolean(value))
       .map((value) => normalizeTextKey(value))
       .filter(Boolean);
 
-    return labels.some((label) => new RegExp(`\\b${escapeRegExp(label)}\\b`, "i").test(normalized));
+    return labels.some((label) =>
+      new RegExp(`\\b${escapeRegExp(label)}\\b`, "i").test(normalized),
+    );
   });
 }
 
@@ -555,7 +580,7 @@ function buildTeamTextLabels(team: TeamDirectoryEntry): string[] {
     team.abbreviation,
     team.shortName,
     team.location,
-    `${team.location ?? ""} ${team.shortName ?? ""}`.trim()
+    `${team.location ?? ""} ${team.shortName ?? ""}`.trim(),
   ]
     .filter((value): value is string => Boolean(value))
     .map((value) => normalizeTextKey(value))
@@ -564,48 +589,61 @@ function buildTeamTextLabels(team: TeamDirectoryEntry): string[] {
 
 function findTeamMentionInText(
   text: string,
-  teams: TeamDirectoryEntry[]
+  teams: TeamDirectoryEntry[],
 ): TeamDirectoryEntry | null {
   const normalized = normalizeTextKey(text);
   const hintedTeams = Object.entries(NHL_TEXT_HINTS)
-    .filter(([hint]) => new RegExp(`\\b${escapeRegExp(hint)}\\b`, "i").test(normalized))
-    .map(([, abbreviation]) => teams.find((team) => team.abbreviation === abbreviation) ?? null)
+    .filter(([hint]) =>
+      new RegExp(`\\b${escapeRegExp(hint)}\\b`, "i").test(normalized),
+    )
+    .map(
+      ([, abbreviation]) =>
+        teams.find((team) => team.abbreviation === abbreviation) ?? null,
+    )
     .filter((team): team is TeamDirectoryEntry => Boolean(team));
 
   const labelTeams = teams.filter((team) =>
     buildTeamTextLabels(team).some((label) =>
-      new RegExp(`\\b${escapeRegExp(label)}\\b`, "i").test(normalized)
-    )
+      new RegExp(`\\b${escapeRegExp(label)}\\b`, "i").test(normalized),
+    ),
   );
   const matches = [...hintedTeams, ...labelTeams];
   const uniqueMatches = new Map(matches.map((team) => [team.id, team]));
-  return uniqueMatches.size === 1 ? Array.from(uniqueMatches.values())[0]! : null;
+  return uniqueMatches.size === 1
+    ? Array.from(uniqueMatches.values())[0]!
+    : null;
 }
 
 function resolveTeamFromLeadVsText(
   text: string,
-  teams: TeamDirectoryEntry[]
+  teams: TeamDirectoryEntry[],
 ): TeamDirectoryEntry | null {
   const firstLine = text.split(/\r?\n/).find((line) => line.trim()) ?? text;
   const leadMatch = firstLine.match(/^(.+?)\b(?:vs\.?|versus|against|at)\b/i);
   if (!leadMatch?.[1]) return null;
 
   const leadText = leadMatch[1]
-    .replace(/\b(lines?|lineup|rushes|warmups?|projected|unchanged|confirmed)\b/gi, " ")
+    .replace(
+      /\b(lines?|lineup|rushes|warmups?|projected|unchanged|confirmed)\b/gi,
+      " ",
+    )
     .trim();
   return findTeamMentionInText(leadText, teams);
 }
 
 function resolveTeamFromHandleHints(
   handles: Array<string | null | undefined>,
-  teams: TeamDirectoryEntry[]
+  teams: TeamDirectoryEntry[],
 ): TeamDirectoryEntry | null {
   const hintedTeams = handles
     .map((handle) => normalizeHandle(handle))
     .filter((handle): handle is string => Boolean(handle))
     .map((handle) => NHL_HANDLE_HINTS[handle])
     .filter((abbreviation): abbreviation is string => Boolean(abbreviation))
-    .map((abbreviation) => teams.find((team) => team.abbreviation === abbreviation) ?? null)
+    .map(
+      (abbreviation) =>
+        teams.find((team) => team.abbreviation === abbreviation) ?? null,
+    )
     .filter((team): team is TeamDirectoryEntry => Boolean(team));
 
   return hintedTeams.length === 1 ? hintedTeams[0]! : null;
@@ -623,7 +661,7 @@ function resolveTeamFromRosterDensity(args: {
       const matched = matchRosterNamesInTweet(args.text, rosterEntries);
       return {
         team,
-        matchedCount: matched.matchedPlayerIds.length
+        matchedCount: matched.matchedPlayerIds.length,
       };
     })
     .sort((left, right) => right.matchedCount - left.matchedCount);
@@ -636,7 +674,8 @@ function resolveTeamFromRosterDensity(args: {
 
   const uniqueLeader = best.matchedCount > (second?.matchedCount ?? 0);
   const sufficientForRosterFallback =
-    best.matchedCount >= 6 || (structuredMentions > 0 && best.matchedCount >= 4);
+    best.matchedCount >= 6 ||
+    (structuredMentions > 0 && best.matchedCount >= 4);
 
   return uniqueLeader && sufficientForRosterFallback ? best.team : null;
 }
@@ -662,7 +701,10 @@ export function resolveLinesCccTeam(args: {
     return textHintTeam;
   }
 
-  const handleHintTeam = resolveTeamFromHandleHints(args.sourceHandles ?? [], args.teams);
+  const handleHintTeam = resolveTeamFromHandleHints(
+    args.sourceHandles ?? [],
+    args.teams,
+  );
   if (handleHintTeam) {
     return handleHintTeam;
   }
@@ -671,7 +713,7 @@ export function resolveLinesCccTeam(args: {
     const rosterDensityTeam = resolveTeamFromRosterDensity({
       text: args.text,
       teams: labelMatches.length > 1 ? labelMatches : args.teams,
-      rosterByTeam: args.rosterByTeam
+      rosterByTeam: args.rosterByTeam,
     });
     if (rosterDensityTeam) {
       return rosterDensityTeam;
@@ -689,7 +731,9 @@ function getPrimaryTextForSource(source: ParsedLinesCccSource): string {
 }
 
 function extractGoalieName(text: string): string | null {
-  const match = text.match(/starting goalie:\s*([^:\n]+?)(?:\s+https?:\/\/|$)/i);
+  const match = text.match(
+    /starting goalie:\s*([^:\n]+?)(?:\s+https?:\/\/|$)/i,
+  );
   return match?.[1]?.trim() ?? null;
 }
 
@@ -709,10 +753,11 @@ function dedupeOrderedNames(names: Array<string | null | undefined>): string[] {
 
 function canonicalizeNames(
   names: string[],
-  rosterEntries: RosterNameEntry[]
+  rosterEntries: RosterNameEntry[],
 ): string[] {
   return names.map(
-    (name) => resolveTweetNameToRosterEntry(name, rosterEntries)?.fullName ?? name
+    (name) =>
+      resolveTweetNameToRosterEntry(name, rosterEntries)?.fullName ?? name,
   );
 }
 
@@ -742,18 +787,19 @@ function extractInjuryNames(args: {
     return [];
   }
 
-  const orderedRosterHits = extractOrderedRosterHitsFromTweet(args.text, args.rosterEntries).slice(
-    0,
-    4
-  );
+  const orderedRosterHits = extractOrderedRosterHitsFromTweet(
+    args.text,
+    args.rosterEntries,
+  ).slice(0, 4);
   if (orderedRosterHits.length > 0) {
     return orderedRosterHits;
   }
 
   const labeledNames = parseNamedListFromLabel({
     text: args.text,
-    labelPattern: /\b(?:injured|injury|out|ir|injured reserve)\b[:\s-]+([^\n]+)/i,
-    rosterEntries: args.rosterEntries
+    labelPattern:
+      /\b(?:injured|injury|out|ir|injured reserve)\b[:\s-]+([^\n]+)/i,
+    rosterEntries: args.rosterEntries,
   });
   if (labeledNames.length > 0) {
     return labeledNames;
@@ -767,7 +813,10 @@ function extractTransactionSignals(args: {
   rosterEntries: RosterNameEntry[];
 }): Array<{ signal: string; playerName: string }> {
   const normalizedText = args.text.toLowerCase();
-  const orderedNames = extractOrderedRosterHitsFromTweet(args.text, args.rosterEntries);
+  const orderedNames = extractOrderedRosterHitsFromTweet(
+    args.text,
+    args.rosterEntries,
+  );
   const signals: string[] = [];
 
   if (/\breturns?\b|\breturning\b/.test(normalizedText)) signals.push("return");
@@ -779,8 +828,8 @@ function extractTransactionSignals(args: {
   return signals.flatMap((signal) =>
     orderedNames.slice(0, 3).map((playerName) => ({
       signal,
-      playerName
-    }))
+      playerName,
+    })),
   );
 }
 
@@ -796,8 +845,8 @@ function extractPowerPlayUnits(args: {
           .split(/\s*[-–—/\\•]\s*|\s*,\s*/)
           .map((name) => name.trim())
           .filter(Boolean),
-        args.rosterEntries
-      )
+        args.rosterEntries,
+      ),
     )
     .filter((unit) => unit.length >= 3);
 
@@ -810,7 +859,12 @@ function buildStructuredContent(args: {
   rosterEntries: RosterNameEntry[];
 }): Pick<
   ParsedLinesCccSource,
-  "forwards" | "defensePairs" | "goalies" | "scratches" | "injuries" | "metadata"
+  | "forwards"
+  | "defensePairs"
+  | "goalies"
+  | "scratches"
+  | "injuries"
+  | "metadata"
 > {
   const structured = extractStructuredPlayerGroupsFromText(args.text);
   let forwards = structured.forwards
@@ -821,10 +875,12 @@ function buildStructuredContent(args: {
     .filter((pair) => pair.length === 2);
   let goalies = structured.goalies
     .map((name) => {
-      const resolvedRosterEntry = resolveTweetNameToRosterEntry(name, args.rosterEntries);
-      const hasHeadingKeywords = /\b(lines?|pairings|power play|pp1|pp2|injury|update)\b/i.test(
-        name
+      const resolvedRosterEntry = resolveTweetNameToRosterEntry(
+        name,
+        args.rosterEntries,
       );
+      const hasHeadingKeywords =
+        /\b(lines?|pairings|power play|pp1|pp2|injury|update)\b/i.test(name);
       if (!resolvedRosterEntry && hasHeadingKeywords) {
         return null;
       }
@@ -837,62 +893,79 @@ function buildStructuredContent(args: {
     .map((line) => line.trim())
     .filter(Boolean)
     .filter((line) => !/[-–—/\\•]/.test(line))
-    .filter((line) => !/\b(lines?|pairings|power play|pp1|pp2|injury|update)\b/i.test(line))
-    .map((line) => resolveTweetNameToRosterEntry(line, args.rosterEntries)?.fullName ?? null)
+    .filter(
+      (line) =>
+        !/\b(lines?|pairings|power play|pp1|pp2|injury|update)\b/i.test(line),
+    )
+    .map(
+      (line) =>
+        resolveTweetNameToRosterEntry(line, args.rosterEntries)?.fullName ??
+        null,
+    )
     .filter((name): name is string => Boolean(name));
 
   if (
-    (args.classification === "lineup" || args.classification === "practice_lines") &&
+    (args.classification === "lineup" ||
+      args.classification === "practice_lines") &&
     forwards.length === 0 &&
     defensePairs.length === 0
   ) {
-    const orderedRosterHits = extractOrderedRosterHitsFromTweet(args.text, args.rosterEntries);
+    const orderedRosterHits = extractOrderedRosterHitsFromTweet(
+      args.text,
+      args.rosterEntries,
+    );
     forwards = Array.from(
       { length: Math.floor(Math.min(orderedRosterHits.length, 12) / 3) },
-      (_, index) => orderedRosterHits.slice(index * 3, index * 3 + 3)
+      (_, index) => orderedRosterHits.slice(index * 3, index * 3 + 3),
     ).filter((line) => line.length === 3);
     const defenseStartIndex = forwards.length * 3;
-    const defenseHits = orderedRosterHits.slice(defenseStartIndex, defenseStartIndex + 6);
+    const defenseHits = orderedRosterHits.slice(
+      defenseStartIndex,
+      defenseStartIndex + 6,
+    );
     defensePairs = Array.from(
       { length: Math.floor(defenseHits.length / 2) },
-      (_, index) => defenseHits.slice(index * 2, index * 2 + 2)
+      (_, index) => defenseHits.slice(index * 2, index * 2 + 2),
     ).filter((pair) => pair.length === 2);
   }
 
   const extractedGoalieName = extractGoalieName(args.text);
   if (extractedGoalieName) {
     const canonicalGoalieName =
-      resolveTweetNameToRosterEntry(extractedGoalieName, args.rosterEntries)?.fullName ??
-      extractedGoalieName;
+      resolveTweetNameToRosterEntry(extractedGoalieName, args.rosterEntries)
+        ?.fullName ?? extractedGoalieName;
     goalies = dedupeOrderedNames([
       canonicalGoalieName,
       ...goalies,
-      ...standaloneResolvedGoalies
+      ...standaloneResolvedGoalies,
     ]).slice(0, 2);
   } else {
-    goalies = dedupeOrderedNames([...goalies, ...standaloneResolvedGoalies]).slice(0, 2);
+    goalies = dedupeOrderedNames([
+      ...goalies,
+      ...standaloneResolvedGoalies,
+    ]).slice(0, 2);
   }
 
   const scratches = parseNamedListFromLabel({
     text: args.text,
     labelPattern: /\b(?:scratched|scratches)\b[:\s-]+([^\n]+)/i,
-    rosterEntries: args.rosterEntries
+    rosterEntries: args.rosterEntries,
   });
   const injuries = extractInjuryNames({
     text: args.text,
     classification: args.classification,
-    rosterEntries: args.rosterEntries
+    rosterEntries: args.rosterEntries,
   });
   const powerPlayUnits =
     args.classification === "power_play"
       ? extractPowerPlayUnits({
           text: args.text,
-          rosterEntries: args.rosterEntries
+          rosterEntries: args.rosterEntries,
         })
       : [];
   const transactionSignals = extractTransactionSignals({
     text: args.text,
-    rosterEntries: args.rosterEntries
+    rosterEntries: args.rosterEntries,
   });
 
   return {
@@ -903,8 +976,8 @@ function buildStructuredContent(args: {
     injuries,
     metadata: {
       powerPlayUnits,
-      transactionSignals
-    }
+      transactionSignals,
+    },
   };
 }
 
@@ -916,30 +989,32 @@ export function buildLinesCccSourceFromIftttEvent(args: {
   gameIdByTeamId?: Map<number, number>;
 }): ParsedLinesCccSource {
   const text = args.event.text?.trim() ?? "";
-  const tweetId = args.event.tweet_id ?? extractTweetIdFromUrl(args.event.link_to_tweet);
+  const tweetId =
+    args.event.tweet_id ?? extractTweetIdFromUrl(args.event.link_to_tweet);
   const tweetUrl = normalizeTweetStatusUrl(args.event.link_to_tweet, tweetId);
   const sourceHandles = [args.event.username, args.event.source_account];
   const labelMatchedTeams = text ? findLabelMatchedTeams(text, args.teams) : [];
   const nonNhlHandleMatch = detectNonNhlHandle({
-    sourceHandles
+    sourceHandles,
   });
-  const detectedNonNhlLeague = detectNonNhlLeague(text) ?? nonNhlHandleMatch?.league ?? null;
+  const detectedNonNhlLeague =
+    detectNonNhlLeague(text) ?? nonNhlHandleMatch?.league ?? null;
   const team = detectedNonNhlLeague
     ? null
     : resolveLinesCccTeam({
         text,
         teams: args.teams,
         rosterByTeam: args.rosterByTeam,
-        sourceHandles
+        sourceHandles,
       });
-  const rosterEntries = team ? args.rosterByTeam.get(team.id) ?? [] : [];
+  const rosterEntries = team ? (args.rosterByTeam.get(team.id) ?? []) : [];
   const matched = matchRosterNamesInTweet(text, rosterEntries);
   const goalieName = extractGoalieName(text);
   const classification = classifyGameDayTweet(text);
   const structuredContent = buildStructuredContent({
     text,
     classification,
-    rosterEntries
+    rosterEntries,
   });
   const nhlFilterStatus: LinesCccNhlFilterStatus = !text
     ? "rejected_insufficient_text"
@@ -952,7 +1027,8 @@ export function buildLinesCccSourceFromIftttEvent(args: {
     nhlFilterStatus === "accepted"
       ? null
       : nhlFilterStatus === "rejected_non_nhl"
-        ? detectedNonNhlLeague === nonNhlHandleMatch?.league && !detectNonNhlLeague(text)
+        ? detectedNonNhlLeague === nonNhlHandleMatch?.league &&
+          !detectNonNhlLeague(text)
           ? "minor_league_source_handle"
           : "explicit_non_nhl_league_marker"
         : nhlFilterStatus === "rejected_insufficient_text"
@@ -967,7 +1043,7 @@ export function buildLinesCccSourceFromIftttEvent(args: {
     observedAt: args.event.received_at,
     tweetPostedAt: args.event.tweet_created_at,
     tweetPostedLabel: args.event.created_at_label,
-    gameId: team ? args.gameIdByTeamId?.get(team.id) ?? null : null,
+    gameId: team ? (args.gameIdByTeamId?.get(team.id) ?? null) : null,
     team,
     sourceUrl: tweetUrl,
     sourceLabel: classification,
@@ -989,8 +1065,8 @@ export function buildLinesCccSourceFromIftttEvent(args: {
     forwards: structuredContent.forwards,
     defensePairs: structuredContent.defensePairs,
     goalies:
-      structuredContent.goalies.length > 0
-        ? structuredContent.goalies
+      (structuredContent.goalies ?? []).length > 0
+        ? (structuredContent.goalies ?? [])
         : goalieName
           ? [goalieName]
           : [],
@@ -1001,19 +1077,21 @@ export function buildLinesCccSourceFromIftttEvent(args: {
       iftttEventId: args.event.id,
       iftttSource: args.event.source,
       iftttSourceAccount: args.event.source_account,
-      teamLabelMatches: labelMatchedTeams.map((matchedTeam) => matchedTeam.abbreviation),
+      teamLabelMatches: labelMatchedTeams.map(
+        (matchedTeam) => matchedTeam.abbreviation,
+      ),
       nonNhlSourceHandle: nonNhlHandleMatch?.matchedHandle ?? null,
       initialStructureSignals: textSignals.structureSignals,
-      ...structuredContent.metadata
-    }
+      ...structuredContent.metadata,
+    },
   };
 
   return {
     ...source,
     metadata: {
       ...source.metadata,
-      ...buildPrimaryTextMetadata(source)
-    }
+      ...buildPrimaryTextMetadata(source),
+    },
   };
 }
 
@@ -1030,28 +1108,29 @@ export function refreshLinesCccSourceFromPrimaryText(args: {
     args.source.sourceHandle,
     args.source.authorName,
     args.source.quotedAuthorHandle,
-    args.source.quotedAuthorName
+    args.source.quotedAuthorName,
   ];
   const labelMatchedTeams = findLabelMatchedTeams(text, args.teams);
   const nonNhlHandleMatch = detectNonNhlHandle({
-    sourceHandles
+    sourceHandles,
   });
-  const detectedNonNhlLeague = detectNonNhlLeague(text) ?? nonNhlHandleMatch?.league ?? null;
+  const detectedNonNhlLeague =
+    detectNonNhlLeague(text) ?? nonNhlHandleMatch?.league ?? null;
   const team = detectedNonNhlLeague
     ? null
     : resolveLinesCccTeam({
         text,
         teams: args.teams,
         rosterByTeam: args.rosterByTeam,
-        sourceHandles
+        sourceHandles,
       });
-  const rosterEntries = team ? args.rosterByTeam.get(team.id) ?? [] : [];
+  const rosterEntries = team ? (args.rosterByTeam.get(team.id) ?? []) : [];
   const matched = matchRosterNamesInTweet(text, rosterEntries);
   const classification = classifyGameDayTweet(text);
   const structuredContent = buildStructuredContent({
     text,
     classification,
-    rosterEntries
+    rosterEntries,
   });
   const goalieName = extractGoalieName(text);
   const nhlFilterStatus: LinesCccNhlFilterStatus = detectedNonNhlLeague
@@ -1063,7 +1142,8 @@ export function refreshLinesCccSourceFromPrimaryText(args: {
     nhlFilterStatus === "accepted"
       ? null
       : nhlFilterStatus === "rejected_non_nhl"
-        ? detectedNonNhlLeague === nonNhlHandleMatch?.league && !detectNonNhlLeague(text)
+        ? detectedNonNhlLeague === nonNhlHandleMatch?.league &&
+          !detectNonNhlLeague(text)
           ? "minor_league_source_handle"
           : "explicit_non_nhl_league_marker"
         : labelMatchedTeams.length > 1
@@ -1072,7 +1152,7 @@ export function refreshLinesCccSourceFromPrimaryText(args: {
   const textSignals = buildTextSignals(text);
   const refreshedSource: ParsedLinesCccSource = {
     ...args.source,
-    gameId: team ? args.gameIdByTeamId?.get(team.id) ?? null : null,
+    gameId: team ? (args.gameIdByTeamId?.get(team.id) ?? null) : null,
     team,
     sourceLabel: classification,
     classification,
@@ -1086,8 +1166,8 @@ export function refreshLinesCccSourceFromPrimaryText(args: {
     forwards: structuredContent.forwards,
     defensePairs: structuredContent.defensePairs,
     goalies:
-      structuredContent.goalies.length > 0
-        ? structuredContent.goalies
+      (structuredContent.goalies ?? []).length > 0
+        ? (structuredContent.goalies ?? [])
         : goalieName
           ? [goalieName]
           : [],
@@ -1095,26 +1175,28 @@ export function refreshLinesCccSourceFromPrimaryText(args: {
     injuries: structuredContent.injuries,
     metadata: {
       ...args.source.metadata,
-      teamLabelMatches: labelMatchedTeams.map((matchedTeam) => matchedTeam.abbreviation),
+      teamLabelMatches: labelMatchedTeams.map(
+        (matchedTeam) => matchedTeam.abbreviation,
+      ),
       nonNhlSourceHandle: nonNhlHandleMatch?.matchedHandle ?? null,
       refreshedFromPrimaryText: true,
       refreshedStructureSignals: textSignals.structureSignals,
-      ...structuredContent.metadata
-    }
+      ...structuredContent.metadata,
+    },
   };
 
   return {
     ...refreshedSource,
     metadata: {
       ...refreshedSource.metadata,
-      ...buildPrimaryTextMetadata(refreshedSource)
-    }
+      ...buildPrimaryTextMetadata(refreshedSource),
+    },
   };
 }
 
 function mapNamesToPlayerIdsOrdered(
   names: string[] | null,
-  rosterEntries: RosterNameEntry[]
+  rosterEntries: RosterNameEntry[],
 ): Array<number | null> | null {
   if (!names) return null;
 
@@ -1124,7 +1206,10 @@ function mapNamesToPlayerIdsOrdered(
   for (const rosterEntry of rosterEntries) {
     rosterByFullName.set(normalizeNameKey(rosterEntry.fullName), rosterEntry);
     const lastName = normalizeNameKey(rosterEntry.lastName);
-    rosterByLastName.set(lastName, [...(rosterByLastName.get(lastName) ?? []), rosterEntry]);
+    rosterByLastName.set(lastName, [
+      ...(rosterByLastName.get(lastName) ?? []),
+      rosterEntry,
+    ]);
   }
 
   return names.map((name) => {
@@ -1139,14 +1224,18 @@ function mapNamesToPlayerIdsOrdered(
 }
 
 function toStoredForwardOrder(players: string[] | null): string[] | null {
-  return players && players.length === 3 ? [players[2]!, players[1]!, players[0]!] : players;
+  return players && players.length === 3
+    ? [players[2]!, players[1]!, players[0]!]
+    : players;
 }
 
 function toStoredDefenseOrder(players: string[] | null): string[] | null {
   return players && players.length === 2 ? [players[1]!, players[0]!] : players;
 }
 
-function normalizeTweetPostedAt(value: string | null | undefined): string | null {
+function normalizeTweetPostedAt(
+  value: string | null | undefined,
+): string | null {
   if (!value) return null;
 
   const hasExplicitTimezone =
@@ -1157,13 +1246,17 @@ function normalizeTweetPostedAt(value: string | null | undefined): string | null
   return Number.isFinite(parsed) ? new Date(parsed).toISOString() : null;
 }
 
-function parseDateLabelToIso(dateLabel: string | null | undefined): string | null {
+function parseDateLabelToIso(
+  dateLabel: string | null | undefined,
+): string | null {
   if (!dateLabel) return null;
   const parsed = Date.parse(`${String(dateLabel).trim()} 00:00:00 UTC`);
   return Number.isFinite(parsed) ? new Date(parsed).toISOString() : null;
 }
 
-function parseAuthorHandleFromUrl(value: string | null | undefined): string | null {
+function parseAuthorHandleFromUrl(
+  value: string | null | undefined,
+): string | null {
   if (!value) return null;
   try {
     const url = new URL(value);
@@ -1175,22 +1268,22 @@ function parseAuthorHandleFromUrl(value: string | null | undefined): string | nu
 }
 
 export async function fetchLinesCccTweetOEmbedData(
-  tweetUrl: string
+  tweetUrl: string,
 ): Promise<LinesCccTweetOEmbedData | null> {
   const result = await fetchLinesCccTweetOEmbedAttempt(tweetUrl);
   return result.ok ? result.data : null;
 }
 
 export async function fetchLinesCccTweetOEmbedAttempt(
-  tweetUrl: string
+  tweetUrl: string,
 ): Promise<LinesCccTweetOEmbedAttemptResult> {
   const endpoint = `https://publish.twitter.com/oembed?omit_script=true&dnt=true&url=${encodeURIComponent(tweetUrl)}`;
   const response = await fetch(endpoint, {
     headers: {
       Accept: "application/json",
-      "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)"
+      "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)",
     },
-    cache: "no-store"
+    cache: "no-store",
   });
 
   if (!response.ok) {
@@ -1198,7 +1291,7 @@ export async function fetchLinesCccTweetOEmbedAttempt(
       ok: false,
       httpStatus: response.status,
       retryable: response.status === 429,
-      error: `oembed_http_${response.status}`
+      error: `oembed_http_${response.status}`,
     };
   }
 
@@ -1212,7 +1305,7 @@ export async function fetchLinesCccTweetOEmbedAttempt(
       ok: false,
       httpStatus: response.status,
       retryable: false,
-      error: "oembed_missing_html"
+      error: "oembed_missing_html",
     };
   }
 
@@ -1226,8 +1319,8 @@ export async function fetchLinesCccTweetOEmbedAttempt(
       postedLabel: parsed.postedLabel,
       sourceTweetUrl: parsed.sourceTweetUrl,
       authorName: payload.author_name?.trim() || null,
-      authorHandle: parseAuthorHandleFromUrl(payload.author_url)
-    }
+      authorHandle: parseAuthorHandleFromUrl(payload.author_url),
+    },
   };
 }
 
@@ -1237,30 +1330,43 @@ export function applyLinesCccWrapperOEmbed(args: {
 }): ParsedLinesCccSource {
   const nextSource: ParsedLinesCccSource = {
     ...args.source,
-    enrichedText: args.oembedData.text ?? args.source.enrichedText ?? args.source.rawText ?? null,
-    tweetPostedAt: args.oembedData.postedAt ?? args.source.tweetPostedAt ?? null,
-    tweetPostedLabel: args.oembedData.postedLabel ?? args.source.tweetPostedLabel ?? null,
-    sourceUrl: args.oembedData.sourceTweetUrl ?? args.source.sourceUrl ?? args.source.tweetUrl ?? null,
+    enrichedText:
+      args.oembedData.text ??
+      args.source.enrichedText ??
+      args.source.rawText ??
+      null,
+    tweetPostedAt:
+      args.oembedData.postedAt ?? args.source.tweetPostedAt ?? null,
+    tweetPostedLabel:
+      args.oembedData.postedLabel ?? args.source.tweetPostedLabel ?? null,
+    sourceUrl:
+      args.oembedData.sourceTweetUrl ??
+      args.source.sourceUrl ??
+      args.source.tweetUrl ??
+      null,
     authorName: args.oembedData.authorName ?? args.source.authorName ?? null,
-    sourceHandle: args.oembedData.authorHandle ?? args.source.sourceHandle ?? null,
+    sourceHandle:
+      args.oembedData.authorHandle ?? args.source.sourceHandle ?? null,
     primaryTextSource:
       args.oembedData.text && args.oembedData.text.trim()
         ? "wrapper_oembed"
-        : args.source.primaryTextSource ?? null
+        : (args.source.primaryTextSource ?? null),
   };
 
   return {
     ...nextSource,
     metadata: {
       ...nextSource.metadata,
-      ...buildPrimaryTextMetadata(nextSource)
-    }
+      ...buildPrimaryTextMetadata(nextSource),
+    },
   };
 }
 
-async function resolveQuotedTweetStatusUrlForOEmbed(text: string): Promise<string | null> {
+async function resolveQuotedTweetStatusUrlForOEmbed(
+  text: string,
+): Promise<string | null> {
   const directStatusUrl = extractStatusUrlsFromText(text).find((value) =>
-    Boolean(extractTweetIdFromUrl(value))
+    Boolean(extractTweetIdFromUrl(value)),
   );
   if (directStatusUrl) {
     return directStatusUrl;
@@ -1279,7 +1385,9 @@ async function resolveQuotedTweetStatusUrlForOEmbed(text: string): Promise<strin
 export async function resolveLinesCccQuotedTweet(args: {
   wrapperText: string;
 }): Promise<LinesCccResolvedQuotedTweet | null> {
-  const quotedTweetStatusUrl = await resolveQuotedTweetStatusUrlForOEmbed(args.wrapperText);
+  const quotedTweetStatusUrl = await resolveQuotedTweetStatusUrlForOEmbed(
+    args.wrapperText,
+  );
   if (!quotedTweetStatusUrl) {
     return null;
   }
@@ -1296,13 +1404,15 @@ export async function resolveLinesCccQuotedTweet(args: {
 
   return {
     quotedTweetId,
-    quotedTweetUrl: normalizeTweetStatusUrl(quotedTweetStatusUrl, quotedTweetId) ?? quotedTweetStatusUrl,
+    quotedTweetUrl:
+      normalizeTweetStatusUrl(quotedTweetStatusUrl, quotedTweetId) ??
+      quotedTweetStatusUrl,
     quotedText: quotedTweet.text,
     quotedPostedAt: quotedTweet.postedAt,
     quotedPostedLabel: quotedTweet.postedLabel,
     quotedSourceTweetUrl: quotedTweet.sourceTweetUrl,
     quotedAuthorName: quotedTweet.authorName,
-    quotedAuthorHandle: quotedTweet.authorHandle
+    quotedAuthorHandle: quotedTweet.authorHandle,
   };
 }
 
@@ -1337,33 +1447,34 @@ export function applyQuotedTweetPreference(args: {
   source: ParsedLinesCccSource;
   quotedTweet: LinesCccResolvedQuotedTweet | null;
 }): ParsedLinesCccSource {
-  if (!args.quotedTweet) {
+  const quotedTweet = args.quotedTweet;
+  if (!quotedTweet) {
     return args.source;
   }
 
   const nextSource: ParsedLinesCccSource = {
     ...args.source,
-    quotedTweetId: args.quotedTweet.quotedTweetId,
-    quotedTweetUrl: args.quotedTweet.quotedTweetUrl,
-    quotedAuthorHandle: args.quotedTweet.quotedAuthorHandle,
-    quotedAuthorName: args.quotedTweet.quotedAuthorName,
-    quotedRawText: args.quotedTweet.quotedText,
-    quotedEnrichedText: args.quotedTweet.quotedText,
+    quotedTweetId: quotedTweet.quotedTweetId,
+    quotedTweetUrl: quotedTweet.quotedTweetUrl,
+    quotedAuthorHandle: quotedTweet.quotedAuthorHandle,
+    quotedAuthorName: quotedTweet.quotedAuthorName,
+    quotedRawText: quotedTweet.quotedText,
+    quotedEnrichedText: quotedTweet.quotedText,
     metadata: {
       ...args.source.metadata,
-      quotedPostedAt: args.quotedTweet.quotedPostedAt,
-      quotedPostedLabel: args.quotedTweet.quotedPostedLabel,
-      quotedSourceTweetUrl: args.quotedTweet.quotedSourceTweetUrl
-    }
+      quotedPostedAt: quotedTweet.quotedPostedAt,
+      quotedPostedLabel: quotedTweet.quotedPostedLabel,
+      quotedSourceTweetUrl: quotedTweet.quotedSourceTweetUrl,
+    },
   };
 
-  if (!shouldPreferQuotedTweetText(args)) {
+  if (!shouldPreferQuotedTweetText({ source: args.source, quotedTweet })) {
     return {
       ...nextSource,
       metadata: {
         ...nextSource.metadata,
-        ...buildPrimaryTextMetadata(nextSource)
-      }
+        ...buildPrimaryTextMetadata(nextSource),
+      },
     };
   }
 
@@ -1373,16 +1484,16 @@ export function applyQuotedTweetPreference(args: {
     sourceLabel: nextSource.sourceLabel ?? "quoted_oembed",
     metadata: {
       ...nextSource.metadata,
-      preferredQuotedTweet: true
-    }
+      preferredQuotedTweet: true,
+    },
   };
 
   return {
     ...preferredSource,
     metadata: {
       ...preferredSource.metadata,
-      ...buildPrimaryTextMetadata(preferredSource)
-    }
+      ...buildPrimaryTextMetadata(preferredSource),
+    },
   };
 }
 
@@ -1408,9 +1519,9 @@ export function rejectInsufficientQuoteWrapper(args: {
       ...buildPrimaryTextMetadata({
         ...args.source,
         nhlFilterStatus: "rejected_insufficient_text",
-        nhlFilterReason: "unresolved_quoted_tweet"
-      })
-    }
+        nhlFilterReason: "unresolved_quoted_tweet",
+      }),
+    },
   };
 }
 
@@ -1422,7 +1533,7 @@ function buildLinesCccCaptureKey(source: ParsedLinesCccSource): string {
     source.tweetId ?? source.tweetUrl ?? "no-wrapper-tweet",
     source.quotedTweetId ?? source.quotedTweetUrl ?? "no-quoted-tweet",
     source.classification ?? "unclassified",
-    source.nhlFilterStatus
+    source.nhlFilterStatus,
   ].join(":");
 }
 
@@ -1434,13 +1545,18 @@ export function toLinesCccRow(args: {
   const source = args.source;
   const now = new Date().toISOString();
   const observedAt = source.observedAt ?? now;
-  const status = source.nhlFilterStatus === "accepted" ? "observed" : "rejected";
-  const line = (index: number) => toStoredForwardOrder(source.forwards?.[index] ?? null);
-  const pair = (index: number) => toStoredDefenseOrder(source.defensePairs?.[index] ?? null);
+  const status =
+    source.nhlFilterStatus === "accepted" ? "observed" : "rejected";
+  const line = (index: number) =>
+    toStoredForwardOrder(source.forwards?.[index] ?? null);
+  const pair = (index: number) =>
+    toStoredDefenseOrder(source.defensePairs?.[index] ?? null);
   const goalie1 = source.goalies?.[0] ?? null;
   const goalie2 = source.goalies?.[1] ?? null;
-  const scratches = source.scratches && source.scratches.length > 0 ? source.scratches : null;
-  const injuries = source.injuries && source.injuries.length > 0 ? source.injuries : null;
+  const scratches =
+    source.scratches && source.scratches.length > 0 ? source.scratches : null;
+  const injuries =
+    source.injuries && source.injuries.length > 0 ? source.injuries : null;
 
   return {
     capture_key: buildLinesCccCaptureKey(source),
@@ -1473,15 +1589,22 @@ export function toLinesCccRow(args: {
     enriched_text: source.enrichedText ?? null,
     quoted_raw_text: source.quotedRawText ?? null,
     quoted_enriched_text: source.quotedEnrichedText ?? null,
-    keyword_hits: source.keywordHits && source.keywordHits.length > 0 ? source.keywordHits : null,
+    keyword_hits:
+      source.keywordHits && source.keywordHits.length > 0
+        ? source.keywordHits
+        : null,
     matched_player_ids:
       source.matchedPlayerIds && source.matchedPlayerIds.length > 0
         ? source.matchedPlayerIds
         : null,
     matched_player_names:
-      source.matchedNames && source.matchedNames.length > 0 ? source.matchedNames : null,
+      source.matchedNames && source.matchedNames.length > 0
+        ? source.matchedNames
+        : null,
     unmatched_names:
-      source.unmatchedNames && source.unmatchedNames.length > 0 ? source.unmatchedNames : null,
+      source.unmatchedNames && source.unmatchedNames.length > 0
+        ? source.unmatchedNames
+        : null,
     line_1_player_ids: mapNamesToPlayerIdsOrdered(line(0), rosterEntries),
     line_1_player_names: line(0),
     line_2_player_ids: mapNamesToPlayerIdsOrdered(line(1), rosterEntries),
@@ -1496,9 +1619,13 @@ export function toLinesCccRow(args: {
     pair_2_player_names: pair(1),
     pair_3_player_ids: mapNamesToPlayerIdsOrdered(pair(2), rosterEntries),
     pair_3_player_names: pair(2),
-    goalie_1_player_id: goalie1 ? mapNamesToPlayerIdsOrdered([goalie1], rosterEntries)?.[0] ?? null : null,
+    goalie_1_player_id: goalie1
+      ? (mapNamesToPlayerIdsOrdered([goalie1], rosterEntries)?.[0] ?? null)
+      : null,
     goalie_1_name: goalie1,
-    goalie_2_player_id: goalie2 ? mapNamesToPlayerIdsOrdered([goalie2], rosterEntries)?.[0] ?? null : null,
+    goalie_2_player_id: goalie2
+      ? (mapNamesToPlayerIdsOrdered([goalie2], rosterEntries)?.[0] ?? null)
+      : null,
     goalie_2_name: goalie2,
     scratches_player_ids: mapNamesToPlayerIdsOrdered(scratches, rosterEntries),
     scratches_player_names: scratches,
@@ -1516,8 +1643,8 @@ export function toLinesCccRow(args: {
         null,
       matchedNames: source.matchedNames ?? [],
       unmatchedNames: source.unmatchedNames ?? [],
-      ...source.metadata
+      ...source.metadata,
     },
-    updated_at: now
+    updated_at: now,
   };
 }

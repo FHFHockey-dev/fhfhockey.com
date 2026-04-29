@@ -165,6 +165,8 @@ Each scheduled game record should include, at minimum:
 **FR-2. Completed game result ingestion**  
 The system must ingest completed NHL game results and attach outcomes to the corresponding stored game records or a dedicated result/evaluation table.
 
+For v1 scoring, completed outcomes can be sourced from `pp_timeframes` because it stores `game_id`, `home_team_id`, `away_team_id`, `home_team_score`, `away_team_score`, `game_state`, and update timestamps. Prediction history should remain immutable; scoring should join outcomes to `game_prediction_history` and write aggregate metrics to `game_prediction_model_metrics`.
+
 Each completed game record should include, at minimum:
 
 - Final score

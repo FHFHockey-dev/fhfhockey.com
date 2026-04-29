@@ -3350,8 +3350,12 @@ async function getRestDateCoverage(
 
   return {
     column: columnName,
-    min: formatValue((minResult.data?.[0] as Record<string, unknown> | undefined)?.[columnName]),
-    max: formatValue((maxResult.data?.[0] as Record<string, unknown> | undefined)?.[columnName]),
+    min: formatValue(
+      ((minResult.data?.[0] as unknown) as Record<string, unknown> | undefined)?.[columnName]
+    ),
+    max: formatValue(
+      ((maxResult.data?.[0] as unknown) as Record<string, unknown> | undefined)?.[columnName]
+    ),
   };
 }
 

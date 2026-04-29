@@ -2,13 +2,13 @@ import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { getCurrentSeason, getTeams } from "lib/NHL/server";
 import {
   buildTeamDirectory,
-  type RosterNameEntry
+  type RosterNameEntry,
 } from "lib/sources/lineupSourceIngestion";
 import {
   buildUnresolvedPlayerNameDedupeKey,
   mergePlayerNameAliasesIntoRoster,
   normalizePlayerNameAlias,
-  type PlayerNameAliasRow
+  type PlayerNameAliasRow,
 } from "lib/sources/playerNameAliases";
 import {
   applyLinesCccWrapperOEmbed,
@@ -26,7 +26,7 @@ import {
   toLinesCccTweetOEmbedDataFromBackfillState,
   toLinesCccRow,
   type ParsedLinesCccSource,
-  type LinesCccIftttEventInput
+  type LinesCccIftttEventInput,
 } from "lib/sources/linesCccIngestion";
 import adminOnly from "utils/adminOnlyMiddleware";
 
@@ -57,9 +57,13 @@ function parseBooleanFlag(value: string | string[] | undefined): boolean {
   return rawValue === "1" || rawValue === "true" || rawValue === "yes";
 }
 
-function parseStringQueryValue(value: string | string[] | undefined): string | null {
+function parseStringQueryValue(
+  value: string | string[] | undefined,
+): string | null {
   const rawValue = Array.isArray(value) ? value[0] : value;
-  return typeof rawValue === "string" && rawValue.trim() ? rawValue.trim() : null;
+  return typeof rawValue === "string" && rawValue.trim()
+    ? rawValue.trim()
+    : null;
 }
 
 async function fetchScheduledGamesForDate(args: {
@@ -75,7 +79,7 @@ async function fetchScheduledGamesForDate(args: {
   if (error) throw error;
 
   return ((data ?? []) as ScheduledGameRow[]).filter(
-    (row) => Number.isFinite(row.homeTeamId) && Number.isFinite(row.awayTeamId)
+    (row) => Number.isFinite(row.homeTeamId) && Number.isFinite(row.awayTeamId),
   );
 }
 
@@ -101,7 +105,7 @@ async function fetchRosterEntriesByTeam(args: {
     const entry: RosterNameEntry = {
       playerId: Number((row as any).playerId),
       fullName: String((row as any).players?.fullName ?? ""),
-      lastName: String((row as any).players?.lastName ?? "")
+      lastName: String((row as any).players?.lastName ?? ""),
     };
     if (!result.has(teamId)) {
       result.set(teamId, []);
@@ -143,8 +147,8 @@ function applyPlayerNameAliasesToRosterMap(args: {
       mergePlayerNameAliasesIntoRoster({
         rosterEntries,
         aliases: args.aliases,
-        teamId
-      })
+        teamId,
+      }),
     );
   }
   return result;
@@ -155,7 +159,10 @@ function extractTweetId(value: string | null): string | null {
   return value.match(/\/status(?:es)?\/(\d+)/i)?.[1] ?? null;
 }
 
-function normalizeTweetUrl(value: string | null, tweetId: string | null): string | null {
+function normalizeTweetUrl(
+  value: string | null,
+  tweetId: string | null,
+): string | null {
   if (value) {
     const id = extractTweetId(value);
     if (id) return `https://twitter.com/i/web/status/${id}`;
@@ -172,13 +179,18 @@ async function fetchPendingIftttEvents(args: {
   let query = args.supabase
     .from("lines_ccc_ifttt_events")
     .select(
-      "id, source, source_account, username, text, link_to_tweet, tweet_id, tweet_created_at, created_at_label, raw_payload, received_at"
+      "id, source, source_account, username, text, link_to_tweet, tweet_id, tweet_created_at, created_at_label, raw_payload, received_at",
     );
 
   if (args.tweetId) {
     query = query.eq("tweet_id", args.tweetId);
   } else if (args.reprocess) {
-    query = query.in("processing_status", ["pending", "processed", "rejected", "failed"]);
+    query = query.in("processing_status", [
+      "pending",
+      "processed",
+      "rejected",
+      "failed",
+    ]);
   } else {
     query = query.eq("processing_status", "pending");
   }
@@ -192,12 +204,16 @@ async function fetchPendingIftttEvents(args: {
   return (data ?? []) as LinesCccIftttEventInput[];
 }
 
-function shouldResolveQuotedTweetForCandidate(source: ParsedLinesCccSource): boolean {
+function shouldResolveQuotedTweetForCandidate(
+  source: ParsedLinesCccSource,
+): boolean {
   if (source.quotedTweetId || source.quotedTweetUrl) return false;
 
   const text = source.enrichedText ?? source.rawText ?? "";
   if (!/https?:\/\/t\.co\//i.test(text)) return false;
-  if (!/\b(lines?|lineup|rushes|pairings|starting goalie|goalie)\b/i.test(text)) {
+  if (
+    !/\b(lines?|lineup|rushes|pairings|starting goalie|goalie)\b/i.test(text)
+  ) {
     return false;
   }
 
@@ -205,8 +221,12 @@ function shouldResolveQuotedTweetForCandidate(source: ParsedLinesCccSource): boo
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter(Boolean);
-  const textWithoutShortLinks = text.replace(/https?:\/\/t\.co\/\S+/gi, "").trim();
-  const hasDirectGoalieName = /\bStarting Goalie:\s+[A-Z][A-Za-z.'’`-]+/i.test(text);
+  const textWithoutShortLinks = text
+    .replace(/https?:\/\/t\.co\/\S+/gi, "")
+    .trim();
+  const hasDirectGoalieName = /\bStarting Goalie:\s+[A-Z][A-Za-z.'’`-]+/i.test(
+    text,
+  );
   const hasStructuredLines = /[A-Z][A-Za-z.'’`-]+\s*[-–—/]\s*[A-Z]/.test(text);
 
   return (
@@ -231,9 +251,11 @@ async function persistLinesCccRow(args: {
   supabase: any;
   row: ReturnType<typeof toLinesCccRow>;
 }): Promise<void> {
-  const { error } = await args.supabase.from("lines_ccc" as any).upsert([args.row] as any, {
-    onConflict: "capture_key"
-  });
+  const { error } = await args.supabase
+    .from("lines_ccc" as any)
+    .upsert([args.row] as any, {
+      onConflict: "capture_key",
+    });
   if (!error) return;
 
   if (
@@ -264,7 +286,9 @@ async function persistLinesCccRow(args: {
   if (updateError) throw updateError;
 }
 
-function collectUnresolvedNamesFromRows(rows: Array<ReturnType<typeof toLinesCccRow>>) {
+function collectUnresolvedNamesFromRows(
+  rows: Array<ReturnType<typeof toLinesCccRow>>,
+) {
   const pending = new Map<string, Record<string, unknown>>();
 
   for (const row of rows) {
@@ -280,7 +304,8 @@ function collectUnresolvedNamesFromRows(rows: Array<ReturnType<typeof toLinesCcc
       const trimmed = rawName?.trim() ?? "";
       if (!trimmed) return false;
       if (trimmed.length > 36) return false;
-      if (/https?:|www\.|t\.co|pic\.twitter\.com|@|#|…/.test(trimmed)) return false;
+      if (/https?:|www\.|t\.co|pic\.twitter\.com|@|#|…/.test(trimmed))
+        return false;
       if (/[:]/.test(trimmed)) return false;
       if (!/[A-Za-z]/.test(trimmed)) return false;
       if (/\d/.test(trimmed)) return false;
@@ -289,7 +314,11 @@ function collectUnresolvedNamesFromRows(rows: Array<ReturnType<typeof toLinesCcc
         if (uppercaseCount > 2) return false;
       }
       if (!/^[A-ZÀ-ÖØ-Þ][A-Za-zÀ-ÖØ-öø-ÿ.' -]+$/.test(trimmed)) return false;
-      if (/^(rt|per|confirmed|lineup|lines|starting|goalie|starter)$/i.test(trimmed)) {
+      if (
+        /^(rt|per|confirmed|lineup|lines|starting|goalie|starter)$/i.test(
+          trimmed,
+        )
+      ) {
         return false;
       }
       return true;
@@ -297,20 +326,22 @@ function collectUnresolvedNamesFromRows(rows: Array<ReturnType<typeof toLinesCcc
 
     const addName = (rawName: string | null | undefined, reason: string) => {
       if (!isReviewablePlayerName(rawName)) return;
-      const normalizedName = normalizePlayerNameAlias(rawName);
+      const trimmedName = rawName?.trim();
+      if (!trimmedName) return;
+      const normalizedName = normalizePlayerNameAlias(trimmedName);
       if (!normalizedName) return;
       const dedupeKey = buildUnresolvedPlayerNameDedupeKey({
         source: row.source,
         tweetId: row.tweet_id,
         teamId: row.team_id,
-        normalizedName
+        normalizedName,
       });
       pending.set(dedupeKey, {
         dedupe_key: dedupeKey,
         source: row.source,
         source_url: row.source_url,
         tweet_id: row.tweet_id,
-        raw_name: rawName.trim(),
+        raw_name: trimmedName,
         normalized_name: normalizedName,
         team_id: row.team_id,
         team_abbreviation: row.team_abbreviation,
@@ -325,9 +356,9 @@ function collectUnresolvedNamesFromRows(rows: Array<ReturnType<typeof toLinesCcc
           reason,
           captureKey: row.capture_key,
           classification: row.classification,
-          quotedTweetId: row.quoted_tweet_id
+          quotedTweetId: row.quoted_tweet_id,
         },
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       });
     };
 
@@ -336,23 +367,51 @@ function collectUnresolvedNamesFromRows(rows: Array<ReturnType<typeof toLinesCcc
     }
 
     const groupedNames = [
-      { names: row.line_1_player_names, ids: row.line_1_player_ids, reason: "line_1_null_id" },
-      { names: row.line_2_player_names, ids: row.line_2_player_ids, reason: "line_2_null_id" },
-      { names: row.line_3_player_names, ids: row.line_3_player_ids, reason: "line_3_null_id" },
-      { names: row.line_4_player_names, ids: row.line_4_player_ids, reason: "line_4_null_id" },
-      { names: row.pair_1_player_names, ids: row.pair_1_player_ids, reason: "pair_1_null_id" },
-      { names: row.pair_2_player_names, ids: row.pair_2_player_ids, reason: "pair_2_null_id" },
-      { names: row.pair_3_player_names, ids: row.pair_3_player_ids, reason: "pair_3_null_id" },
+      {
+        names: row.line_1_player_names,
+        ids: row.line_1_player_ids,
+        reason: "line_1_null_id",
+      },
+      {
+        names: row.line_2_player_names,
+        ids: row.line_2_player_ids,
+        reason: "line_2_null_id",
+      },
+      {
+        names: row.line_3_player_names,
+        ids: row.line_3_player_ids,
+        reason: "line_3_null_id",
+      },
+      {
+        names: row.line_4_player_names,
+        ids: row.line_4_player_ids,
+        reason: "line_4_null_id",
+      },
+      {
+        names: row.pair_1_player_names,
+        ids: row.pair_1_player_ids,
+        reason: "pair_1_null_id",
+      },
+      {
+        names: row.pair_2_player_names,
+        ids: row.pair_2_player_ids,
+        reason: "pair_2_null_id",
+      },
+      {
+        names: row.pair_3_player_names,
+        ids: row.pair_3_player_ids,
+        reason: "pair_3_null_id",
+      },
       {
         names: row.scratches_player_names,
         ids: row.scratches_player_ids,
-        reason: "scratches_null_id"
+        reason: "scratches_null_id",
       },
       {
         names: row.injured_player_names,
         ids: row.injured_player_ids,
-        reason: "injuries_null_id"
-      }
+        reason: "injuries_null_id",
+      },
     ];
 
     for (const group of groupedNames) {
@@ -385,7 +444,7 @@ async function persistUnresolvedPlayerNames(args: {
     .from("lineup_unresolved_player_names" as any)
     .upsert(unresolvedRows as any, {
       onConflict: "dedupe_key",
-      ignoreDuplicates: true
+      ignoreDuplicates: true,
     });
 
   if (error) throw error;
@@ -398,7 +457,7 @@ export default withCronJobAudit(
       res.setHeader("Allow", "POST");
       return res.status(405).json({
         success: false,
-        error: "Method not allowed"
+        error: "Method not allowed",
       });
     }
 
@@ -407,26 +466,30 @@ export default withCronJobAudit(
     const requestedTweetId = parseStringQueryValue(req.query.tweetId);
     const requestedDate = parseRequestedDate(req.query.date);
     const currentSeason = await getCurrentSeason();
-    const teamDirectory = buildTeamDirectory(await getTeams(currentSeason.seasonId));
+    const teamDirectory = buildTeamDirectory(
+      await getTeams(currentSeason.seasonId),
+    );
     const scheduledGames = await fetchScheduledGamesForDate({
       supabase: req.supabase,
-      date: requestedDate
+      date: requestedDate,
     });
     const scheduledTeamIds = Array.from(
-      new Set(scheduledGames.flatMap((game) => [game.homeTeamId, game.awayTeamId]))
+      new Set(
+        scheduledGames.flatMap((game) => [game.homeTeamId, game.awayTeamId]),
+      ),
     );
     const rawRosterByTeam = await fetchRosterEntriesByTeam({
       supabase: req.supabase,
       teamIds: scheduledTeamIds,
-      seasonId: currentSeason.seasonId
+      seasonId: currentSeason.seasonId,
     });
     const playerNameAliases = await fetchPlayerNameAliases({
       supabase: req.supabase,
-      teamIds: scheduledTeamIds
+      teamIds: scheduledTeamIds,
     });
     const rosterByTeam = applyPlayerNameAliasesToRosterMap({
       rosterByTeam: rawRosterByTeam,
-      aliases: playerNameAliases
+      aliases: playerNameAliases,
     });
     const gameIdByTeamId = new Map<number, number>();
     for (const game of scheduledGames) {
@@ -437,7 +500,7 @@ export default withCronJobAudit(
       supabase: req.supabase,
       limit: batchSize,
       reprocess,
-      tweetId: requestedTweetId
+      tweetId: requestedTweetId,
     });
     const discoveredTweets = pendingEvents
       .map((event) => ({
@@ -445,7 +508,7 @@ export default withCronJobAudit(
         tweetId: event.tweet_id ?? extractTweetId(event.link_to_tweet),
         tweetUrl: normalizeTweetUrl(event.link_to_tweet, event.tweet_id),
         sourceAccount: event.source_account,
-        username: event.username
+        username: event.username,
       }))
       .filter((tweet) => tweet.tweetUrl != null || tweet.tweetId != null);
     const nowIso = new Date().toISOString();
@@ -455,7 +518,9 @@ export default withCronJobAudit(
       raw_payload: Record<string, unknown>;
       updated_at: string;
     }> = [];
-    const parsedCandidates: ReturnType<typeof buildLinesCccSourceFromIftttEvent>[] = [];
+    const parsedCandidates: ReturnType<
+      typeof buildLinesCccSourceFromIftttEvent
+    >[] = [];
     const parsedEvents: LinesCccIftttEventInput[] = [];
     let oembedFetchSuccessCount = 0;
     let oembedBackfillCacheHitCount = 0;
@@ -470,20 +535,23 @@ export default withCronJobAudit(
         snapshotDate: requestedDate,
         teams: teamDirectory,
         rosterByTeam,
-        gameIdByTeamId
+        gameIdByTeamId,
       });
-      const existingWrapperState = readLinesCccWrapperOEmbedBackfillState(event.raw_payload);
+      const existingWrapperState = readLinesCccWrapperOEmbedBackfillState(
+        event.raw_payload,
+      );
       const tweetId = event.tweet_id ?? extractTweetId(event.link_to_tweet);
       const tweetUrl = normalizeTweetUrl(event.link_to_tweet, tweetId);
       let wrapperState = existingWrapperState;
       let candidate = candidateBase;
       let shouldDeferEvent = false;
 
-      const cachedOembedData = toLinesCccTweetOEmbedDataFromBackfillState(existingWrapperState);
+      const cachedOembedData =
+        toLinesCccTweetOEmbedDataFromBackfillState(existingWrapperState);
       if (cachedOembedData) {
         candidate = applyLinesCccWrapperOEmbed({
           source: candidate,
-          oembedData: cachedOembedData
+          oembedData: cachedOembedData,
         });
         oembedBackfillCacheHitCount += 1;
       } else if (
@@ -491,21 +559,23 @@ export default withCronJobAudit(
           tweetId,
           tweetUrl,
           existingState: existingWrapperState,
-          nowIso
+          nowIso,
         })
       ) {
-        const oembedAttempt = await fetchLinesCccTweetOEmbedAttempt(event.link_to_tweet ?? tweetUrl!);
+        const oembedAttempt = await fetchLinesCccTweetOEmbedAttempt(
+          event.link_to_tweet ?? tweetUrl!,
+        );
         if (oembedAttempt.ok) {
           wrapperState = buildLinesCccWrapperOEmbedSuccessState({
             tweetId,
             tweetUrl,
             nowIso,
             data: oembedAttempt.data,
-            existingState: existingWrapperState
+            existingState: existingWrapperState,
           });
           candidate = applyLinesCccWrapperOEmbed({
             source: candidate,
-            oembedData: oembedAttempt.data
+            oembedData: oembedAttempt.data,
           });
           oembedFetchSuccessCount += 1;
         } else if (oembedAttempt.retryable) {
@@ -515,7 +585,7 @@ export default withCronJobAudit(
             existingState: existingWrapperState,
             nowIso,
             httpStatus: oembedAttempt.httpStatus,
-            error: oembedAttempt.error
+            error: oembedAttempt.error,
           });
           shouldDeferEvent = true;
           oembedBackfillDeferred429Count += 1;
@@ -526,7 +596,7 @@ export default withCronJobAudit(
             existingState: existingWrapperState,
             nowIso,
             httpStatus: oembedAttempt.httpStatus,
-            error: oembedAttempt.error
+            error: oembedAttempt.error,
           });
           oembedBackfillFailedCount += 1;
         }
@@ -536,15 +606,15 @@ export default withCronJobAudit(
       if (shouldResolveQuotedTweetForCandidate(candidate)) {
         quotedTweetResolveAttemptCount += 1;
         const quotedTweet = await resolveLinesCccQuotedTweet({
-          wrapperText: candidate.enrichedText ?? candidate.rawText ?? ""
+          wrapperText: candidate.enrichedText ?? candidate.rawText ?? "",
         });
         candidate = applyQuotedTweetPreference({
           source: candidate,
-          quotedTweet
+          quotedTweet,
         });
         candidate = rejectInsufficientQuoteWrapper({
           source: candidate,
-          quotedTweet
+          quotedTweet,
         });
         if (!quotedTweet) {
           quotedTweetResolveFailedCount += 1;
@@ -553,7 +623,7 @@ export default withCronJobAudit(
           status: quotedTweet ? "success" : "failed",
           resolvedAt: nowIso,
           quotedTweetId: quotedTweet?.quotedTweetId ?? null,
-          quotedTweetUrl: quotedTweet?.quotedTweetUrl ?? null
+          quotedTweetUrl: quotedTweet?.quotedTweetUrl ?? null,
         };
       }
 
@@ -561,21 +631,22 @@ export default withCronJobAudit(
         source: candidate,
         teams: teamDirectory,
         rosterByTeam,
-        gameIdByTeamId
+        gameIdByTeamId,
       });
 
       const nextRawPayload = {
         ...(event.raw_payload ?? {}),
         linesCccOembed: {
-          ...(((event.raw_payload ?? {}).linesCccOembed as Record<string, unknown> | undefined) ??
-            {}),
-          wrapper: wrapperState
+          ...(((event.raw_payload ?? {}).linesCccOembed as
+            | Record<string, unknown>
+            | undefined) ?? {}),
+          wrapper: wrapperState,
         },
         ...(quoteResolutionState
           ? {
-              linesCccQuote: quoteResolutionState
+              linesCccQuote: quoteResolutionState,
             }
-          : {})
+          : {}),
       };
 
       if (shouldDeferEvent) {
@@ -583,7 +654,7 @@ export default withCronJobAudit(
           id: event.id,
           processing_status: "pending",
           raw_payload: nextRawPayload,
-          updated_at: nowIso
+          updated_at: nowIso,
         });
         continue;
       }
@@ -591,14 +662,16 @@ export default withCronJobAudit(
       parsedCandidates.push(candidate);
       parsedEvents.push({
         ...event,
-        raw_payload: nextRawPayload
+        raw_payload: nextRawPayload,
       });
     }
     const rowsToUpsert = parsedCandidates.map((candidate) =>
       toLinesCccRow({
         source: candidate,
-        rosterEntries: candidate.team ? rosterByTeam.get(candidate.team.id) ?? [] : []
-      })
+        rosterEntries: candidate.team
+          ? (rosterByTeam.get(candidate.team.id) ?? [])
+          : [],
+      }),
     );
     const parsedSummary = parsedCandidates.reduce(
       (summary, candidate) => {
@@ -606,42 +679,44 @@ export default withCronJobAudit(
         summary.byFilterStatus[candidate.nhlFilterStatus] =
           (summary.byFilterStatus[candidate.nhlFilterStatus] ?? 0) + 1;
         summary.byClassification[candidate.classification ?? "unknown"] =
-          (summary.byClassification[candidate.classification ?? "unknown"] ?? 0) + 1;
+          (summary.byClassification[candidate.classification ?? "unknown"] ??
+            0) + 1;
         return summary;
       },
       {
         total: 0,
         byFilterStatus: {} as Record<string, number>,
-        byClassification: {} as Record<string, number>
-      }
+        byClassification: {} as Record<string, number>,
+      },
     );
     const acceptedCount = parsedCandidates.filter(
-      (candidate) => candidate.nhlFilterStatus === "accepted"
+      (candidate) => candidate.nhlFilterStatus === "accepted",
     ).length;
     const nonNhlRejectedCount = parsedCandidates.filter(
-      (candidate) => candidate.nhlFilterStatus === "rejected_non_nhl"
+      (candidate) => candidate.nhlFilterStatus === "rejected_non_nhl",
     ).length;
     const ambiguousRejectedCount = parsedCandidates.filter(
-      (candidate) => candidate.nhlFilterStatus === "rejected_ambiguous"
+      (candidate) => candidate.nhlFilterStatus === "rejected_ambiguous",
     ).length;
     const insufficientTextRejectedCount = parsedCandidates.filter(
-      (candidate) => candidate.nhlFilterStatus === "rejected_insufficient_text"
+      (candidate) => candidate.nhlFilterStatus === "rejected_insufficient_text",
     ).length;
     const quoteTweetsResolved = parsedCandidates.filter(
-      (candidate) => candidate.quotedTweetId || candidate.quotedTweetUrl
+      (candidate) => candidate.quotedTweetId || candidate.quotedTweetUrl,
     ).length;
     const duplicateCaptureKeysSkipped =
-      rowsToUpsert.length - new Set(rowsToUpsert.map((row) => row.capture_key)).size;
+      rowsToUpsert.length -
+      new Set(rowsToUpsert.map((row) => row.capture_key)).size;
 
     for (const row of rowsToUpsert) {
       await persistLinesCccRow({
         supabase: req.supabase,
-        row
+        row,
       });
     }
     const unresolvedNamesQueued = await persistUnresolvedPlayerNames({
       supabase: req.supabase,
-      rows: rowsToUpsert
+      rows: rowsToUpsert,
     });
     const processedEventUpdates = parsedCandidates.map((candidate, index) => {
       const event = parsedEvents[index]!;
@@ -664,15 +739,18 @@ export default withCronJobAudit(
             quotedTweetId: candidate.quotedTweetId ?? null,
             keywordHits: candidate.keywordHits ?? [],
             structureSignals:
-              (candidate.metadata?.primaryStructureSignals as Record<string, unknown> | null) ??
-              null,
+              (candidate.metadata?.primaryStructureSignals as Record<
+                string,
+                unknown
+              > | null) ?? null,
             oembedWrapperStatus:
-              readLinesCccWrapperOEmbedBackfillState(event.raw_payload)?.status ?? null,
+              readLinesCccWrapperOEmbedBackfillState(event.raw_payload)
+                ?.status ?? null,
             teamId: candidate.team?.id ?? null,
-            teamAbbreviation: candidate.team?.abbreviation ?? null
-          }
+            teamAbbreviation: candidate.team?.abbreviation ?? null,
+          },
         },
-        updated_at: nowIso
+        updated_at: nowIso,
       };
     });
 
@@ -682,7 +760,7 @@ export default withCronJobAudit(
         .update({
           processing_status: update.processing_status,
           raw_payload: update.raw_payload,
-          updated_at: update.updated_at
+          updated_at: update.updated_at,
         })
         .eq("id", update.id);
       if (error) throw error;
@@ -700,7 +778,9 @@ export default withCronJobAudit(
       rosterTeamsLoaded: rosterByTeam.size,
       gameTeamLinksLoaded: gameIdByTeamId.size,
       summary: {
-        sourcesProcessed: new Set(pendingEvents.map((event) => event.source_account)).size,
+        sourcesProcessed: new Set(
+          pendingEvents.map((event) => event.source_account),
+        ).size,
         eventsLoaded: pendingEvents.length,
         tweetsDiscovered: discoveredTweets.length,
         tweetsParsed: parsedCandidates.length,
@@ -720,11 +800,11 @@ export default withCronJobAudit(
         unresolvedNamesQueued,
         eventsDeferred: deferredEventUpdates.length,
         eventsProcessed: processedEventUpdates.filter(
-          (event) => event.processing_status === "processed"
+          (event) => event.processing_status === "processed",
         ).length,
         eventsRejected: processedEventUpdates.filter(
-          (event) => event.processing_status === "rejected"
-        ).length
+          (event) => event.processing_status === "rejected",
+        ).length,
       },
       discoveredTweets,
       parsedSummary,
@@ -737,13 +817,13 @@ export default withCronJobAudit(
         nhlFilterStatus: candidate.nhlFilterStatus,
         nhlFilterReason: candidate.nhlFilterReason,
         goalies: candidate.goalies,
-        matchedPlayerIds: candidate.matchedPlayerIds
+        matchedPlayerIds: candidate.matchedPlayerIds,
       })),
       message:
-        "lines_ccc processor route parsed pending events, upserted rows, and updated source event statuses."
+        "lines_ccc processor route parsed pending events, upserted rows, and updated source event statuses.",
     });
   }),
   {
-    jobName: "/api/v1/db/update-lines-ccc"
-  }
+    jobName: "/api/v1/db/update-lines-ccc",
+  },
 );

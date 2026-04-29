@@ -30,6 +30,7 @@ const ITEMS_DATA: NavbarItem[] = [
     items: [
       { type: "link", label: "STATS", href: "/stats" },
       { type: "link", label: "TRENDS", href: "/trends" },
+      { type: "link", label: "NHL PREDICTIONS", href: "/nhl-predictions" },
       { type: "link", label: "LINES", href: "/lines" },
       { type: "link", label: "LINE COMBO MATRIX", href: "/drm" },
       { type: "link", label: "SPLITS", href: "/splits" },

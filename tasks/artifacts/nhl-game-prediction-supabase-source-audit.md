@@ -1,6 +1,6 @@
 # NHL Game Prediction Supabase Source Audit
 
-Generated at: 2026-04-27T23:15:26.225Z
+Generated at: 2026-04-28T01:46:16.920Z
 
 Scope: live schema, source inventory, identity joins, team-power math, NST team-table semantics, WGO/standings semantics, goalie-source semantics, lineup/player-context coverage, prediction storage/provenance fit, representative row-level data quality, and as-of/leakage safety for tasks 1.1 through 1.11 of `tasks/tasks-prd-nhl-game-prediction-model.md`.
 
@@ -19,7 +19,7 @@ Metadata mode: management_api_sql
 - NST team-table blockers: 0
 - NST team-table warnings: 5
 - WGO/standings blockers: 0
-- WGO/standings warnings: 2
+- WGO/standings warnings: 3
 - Goalie-source blockers: 0
 - Goalie-source warnings: 6
 - Lineup/player-context blockers: 0
@@ -57,6 +57,7 @@ Metadata mode: management_api_sql
 - No WGO/standings blockers in this pass.
 
 - WGO/standings warning: `wgo_team_stats_identity_coverage` should be handled in source semantics and freshness rules.
+- WGO/standings warning: `wgo_standings_date_freshness_check` should be handled in source semantics and freshness rules.
 - WGO/standings warning: `wgo_team_stats_rate_and_percentage_bounds_check` should be handled in source semantics and freshness rules.
 
 - No goalie-source blockers in this pass.
@@ -311,9 +312,9 @@ Player current team assignments can be optional/stale but should be understood b
 ```json
 [
   {
-    "players": 2895,
+    "players": 2896,
     "null_team_id_rows": 901,
-    "unmapped_team_id_rows": 572
+    "unmapped_team_id_rows": 573
   }
 ]
 ```
@@ -565,7 +566,7 @@ NST team source latest dates should be explicit so stale tables are not treated 
     "min_date": "2024-10-04",
     "max_date": "2026-03-21",
     "distinct_dates": 474,
-    "days_since_latest": 37,
+    "days_since_latest": 38,
     "latest_date_team_count": 22
   },
   {
@@ -573,7 +574,7 @@ NST team source latest dates should be explicit so stale tables are not treated 
     "min_date": "2024-10-04",
     "max_date": "2026-03-21",
     "distinct_dates": 492,
-    "days_since_latest": 37,
+    "days_since_latest": 38,
     "latest_date_team_count": 22
   },
   {
@@ -581,7 +582,7 @@ NST team source latest dates should be explicit so stale tables are not treated 
     "min_date": "2025-10-07",
     "max_date": "2026-04-11",
     "distinct_dates": 162,
-    "days_since_latest": 16,
+    "days_since_latest": 17,
     "latest_date_team_count": 30
   },
   {
@@ -589,7 +590,7 @@ NST team source latest dates should be explicit so stale tables are not treated 
     "min_date": "2025-10-06",
     "max_date": "2026-04-11",
     "distinct_dates": 162,
-    "days_since_latest": 16,
+    "days_since_latest": 17,
     "latest_date_team_count": 30
   },
   {
@@ -597,7 +598,7 @@ NST team source latest dates should be explicit so stale tables are not treated 
     "min_date": "2025-10-06",
     "max_date": "2026-04-11",
     "distinct_dates": 161,
-    "days_since_latest": 16,
+    "days_since_latest": 17,
     "latest_date_team_count": 28
   },
   {
@@ -605,7 +606,7 @@ NST team source latest dates should be explicit so stale tables are not treated 
     "min_date": "2025-10-06",
     "max_date": "2026-04-11",
     "distinct_dates": 162,
-    "days_since_latest": 16,
+    "days_since_latest": 17,
     "latest_date_team_count": 28
   },
   {
@@ -613,7 +614,7 @@ NST team source latest dates should be explicit so stale tables are not treated 
     "min_date": "2025-10-06",
     "max_date": "2026-04-11",
     "distinct_dates": 162,
-    "days_since_latest": 16,
+    "days_since_latest": 17,
     "latest_date_team_count": 28
   },
   {
@@ -621,7 +622,7 @@ NST team source latest dates should be explicit so stale tables are not treated 
     "min_date": "2025-10-06",
     "max_date": "2026-04-11",
     "distinct_dates": 162,
-    "days_since_latest": 16,
+    "days_since_latest": 17,
     "latest_date_team_count": 28
   },
   {
@@ -629,7 +630,7 @@ NST team source latest dates should be explicit so stale tables are not treated 
     "min_date": "2024-10-04",
     "max_date": "2026-03-21",
     "distinct_dates": 467,
-    "days_since_latest": 37,
+    "days_since_latest": 38,
     "latest_date_team_count": 22
   },
   {
@@ -637,7 +638,7 @@ NST team source latest dates should be explicit so stale tables are not treated 
     "min_date": "2024-10-04",
     "max_date": "2026-03-21",
     "distinct_dates": 469,
-    "days_since_latest": 37,
+    "days_since_latest": 38,
     "latest_date_team_count": 22
   }
 ]
@@ -1984,7 +1985,7 @@ Recent WGO team rows should resolve team, game, and opponent identities when IDs
 ]
 ```
 
-### PASS: `wgo_standings_date_freshness_check`
+### WARN: `wgo_standings_date_freshness_check`
 
 WGO and standings source freshness should be explicit for as-of feature joins.
 
@@ -1995,7 +1996,7 @@ WGO and standings source freshness should be explicit for as-of feature joins.
     "min_date": "2024-10-04",
     "max_date": "2026-04-17",
     "distinct_dates": 389,
-    "days_since_latest": 10,
+    "days_since_latest": 11,
     "latest_date_team_count": 32
   },
   {
@@ -2003,7 +2004,7 @@ WGO and standings source freshness should be explicit for as-of feature joins.
     "min_date": "2010-10-07",
     "max_date": "2026-04-26",
     "distinct_dates": 2699,
-    "days_since_latest": 1,
+    "days_since_latest": 2,
     "latest_date_team_count": 8
   }
 ]
@@ -2295,7 +2296,7 @@ NST goalie source latest dates should be explicit so stale goalie quality inputs
     "min_date": "2024-10-04",
     "max_date": "2026-04-09",
     "distinct_dates": 339,
-    "days_since_latest": 18,
+    "days_since_latest": 19,
     "latest_date_goalie_count": 30
   },
   {
@@ -2303,7 +2304,7 @@ NST goalie source latest dates should be explicit so stale goalie quality inputs
     "min_date": "2024-10-04",
     "max_date": "2026-04-09",
     "distinct_dates": 338,
-    "days_since_latest": 18,
+    "days_since_latest": 19,
     "latest_date_goalie_count": 30
   },
   {
@@ -2311,7 +2312,7 @@ NST goalie source latest dates should be explicit so stale goalie quality inputs
     "min_date": "2024-10-04",
     "max_date": "2026-04-09",
     "distinct_dates": 335,
-    "days_since_latest": 18,
+    "days_since_latest": 19,
     "latest_date_goalie_count": 30
   },
   {
@@ -2319,7 +2320,7 @@ NST goalie source latest dates should be explicit so stale goalie quality inputs
     "min_date": "2024-10-04",
     "max_date": "2026-04-09",
     "distinct_dates": 335,
-    "days_since_latest": 18,
+    "days_since_latest": 19,
     "latest_date_goalie_count": 30
   },
   {
@@ -2327,7 +2328,7 @@ NST goalie source latest dates should be explicit so stale goalie quality inputs
     "min_date": "2024-10-04",
     "max_date": "2026-04-09",
     "distinct_dates": 338,
-    "days_since_latest": 18,
+    "days_since_latest": 19,
     "latest_date_goalie_count": 30
   },
   {
@@ -2335,7 +2336,7 @@ NST goalie source latest dates should be explicit so stale goalie quality inputs
     "min_date": "2024-10-04",
     "max_date": "2026-04-09",
     "distinct_dates": 334,
-    "days_since_latest": 18,
+    "days_since_latest": 19,
     "latest_date_goalie_count": 30
   },
   {
@@ -2343,7 +2344,7 @@ NST goalie source latest dates should be explicit so stale goalie quality inputs
     "min_date": "2024-10-04",
     "max_date": "2026-04-09",
     "distinct_dates": 335,
-    "days_since_latest": 18,
+    "days_since_latest": 19,
     "latest_date_goalie_count": 26
   },
   {
@@ -2351,7 +2352,7 @@ NST goalie source latest dates should be explicit so stale goalie quality inputs
     "min_date": "2024-10-04",
     "max_date": "2026-04-09",
     "distinct_dates": 335,
-    "days_since_latest": 18,
+    "days_since_latest": 19,
     "latest_date_goalie_count": 26
   },
   {
@@ -2359,7 +2360,7 @@ NST goalie source latest dates should be explicit so stale goalie quality inputs
     "min_date": "2024-10-04",
     "max_date": "2026-04-09",
     "distinct_dates": 335,
-    "days_since_latest": 18,
+    "days_since_latest": 19,
     "latest_date_goalie_count": 26
   },
   {
@@ -2367,7 +2368,7 @@ NST goalie source latest dates should be explicit so stale goalie quality inputs
     "min_date": "2024-10-04",
     "max_date": "2026-04-09",
     "distinct_dates": 335,
-    "days_since_latest": 18,
+    "days_since_latest": 19,
     "latest_date_goalie_count": 26
   }
 ]
@@ -2502,7 +2503,7 @@ Prospective line-source tables should be treated as sparse/current-context input
     "min_snapshot_date": "2026-04-25",
     "max_snapshot_date": "2026-04-25",
     "max_observed_at": "2026-04-25 01:11:34.089855+00",
-    "days_since_latest_observed_at": 2,
+    "days_since_latest_observed_at": 3,
     "null_game_id_rows": 7,
     "null_team_id_rows": 0
   },
@@ -2513,7 +2514,7 @@ Prospective line-source tables should be treated as sparse/current-context input
     "min_snapshot_date": "2026-04-22",
     "max_snapshot_date": "2026-04-23",
     "max_observed_at": "2026-04-23 01:40:13.546+00",
-    "days_since_latest_observed_at": 4,
+    "days_since_latest_observed_at": 5,
     "null_game_id_rows": 0,
     "null_team_id_rows": 0
   },
@@ -2524,7 +2525,7 @@ Prospective line-source tables should be treated as sparse/current-context input
     "min_snapshot_date": "2026-04-22",
     "max_snapshot_date": "2026-04-23",
     "max_observed_at": "2026-04-23 14:07:26.073+00",
-    "days_since_latest_observed_at": 4,
+    "days_since_latest_observed_at": 5,
     "null_game_id_rows": 0,
     "null_team_id_rows": 0
   },
@@ -2535,7 +2536,7 @@ Prospective line-source tables should be treated as sparse/current-context input
     "min_snapshot_date": "2026-04-22",
     "max_snapshot_date": "2026-04-22",
     "max_observed_at": "2026-04-23 13:38:04.818+00",
-    "days_since_latest_observed_at": 4,
+    "days_since_latest_observed_at": 5,
     "null_game_id_rows": 0,
     "null_team_id_rows": 0
   }
@@ -2554,7 +2555,7 @@ FORGE player, goalie, and team projection tables are optional context and should
     "distinct_games": 1082,
     "min_as_of_date": "2025-10-07",
     "max_as_of_date": "2026-04-16",
-    "days_since_latest_as_of_date": 11,
+    "days_since_latest_as_of_date": 12,
     "min_horizon_games": 1,
     "max_horizon_games": 1,
     "null_game_id_rows": 0,
@@ -2566,7 +2567,7 @@ FORGE player, goalie, and team projection tables are optional context and should
     "distinct_games": 1085,
     "min_as_of_date": "2025-10-07",
     "max_as_of_date": "2026-04-16",
-    "days_since_latest_as_of_date": 11,
+    "days_since_latest_as_of_date": 12,
     "min_horizon_games": 1,
     "max_horizon_games": 1,
     "null_game_id_rows": 0,
@@ -2578,7 +2579,7 @@ FORGE player, goalie, and team projection tables are optional context and should
     "distinct_games": 1085,
     "min_as_of_date": "2025-10-07",
     "max_as_of_date": "2026-04-16",
-    "days_since_latest_as_of_date": 11,
+    "days_since_latest_as_of_date": 12,
     "min_horizon_games": 1,
     "max_horizon_games": 1,
     "null_game_id_rows": 0,
@@ -2668,7 +2669,7 @@ Prediction output tables should expose probability/output fields plus JSON paylo
     "rows": 213,
     "min_as_of_date": "2025-10-07",
     "max_as_of_date": "2026-04-16",
-    "days_since_latest_as_of_date": 11,
+    "days_since_latest_as_of_date": 12,
     "succeeded_rows": 199,
     "failed_rows": 14,
     "empty_metrics_rows": 0,
@@ -2868,7 +2869,7 @@ Each recent game/team side should have reasonably current team-power and standin
 ```json
 [
   {
-    "team_game_sides": 2748,
+    "team_game_sides": 2754,
     "missing_recent_team_power_rows": 56,
     "missing_recent_standings_rows": 56
   }
@@ -2899,7 +2900,7 @@ Historical team features should be joinable from rows dated before the game date
 ```json
 [
   {
-    "team_game_sides": 2748,
+    "team_game_sides": 2754,
     "missing_team_power_before_game_rows": 88,
     "missing_standings_before_game_rows": 0,
     "missing_wgo_before_game_rows": 88,
