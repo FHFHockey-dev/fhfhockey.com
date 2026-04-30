@@ -7,12 +7,15 @@ import {
   BASELINE_MODEL_NAME,
   BASELINE_MODEL_VERSION,
   BASELINE_WINNER_DECISION_THRESHOLD,
+  analyzeBaselineFeatureSignals,
   buildBaselineTrainingDataset,
   predictGameWithBaselineModel,
   trainGamePredictionBaselineModel,
   type BaselineFeatureKey,
+  type BaselineFeatureSignalAnalysis,
   type BaselineFeatureVectorOptions,
   type GamePredictionBaselineExample,
+  type GamePredictionModelAuditMetadata,
 } from "./baselineModel";
 import {
   buildGamePredictionFeatureSnapshotPayload,
@@ -157,6 +160,7 @@ export type WalkForwardBacktestResult = AccountabilityDashboard & {
   predictionSnapshots: number;
   retrainCadenceGames: number;
   horizonDays: number[];
+  modelAuditMetadata: GamePredictionModelAuditMetadata;
   persisted: boolean;
   backtestRunId: string | null;
 };
@@ -165,6 +169,7 @@ export type WalkForwardBacktestVariantOptions = {
   featureVectorOptions?: BaselineFeatureVectorOptions;
   disableDataQualityDampening?: boolean;
   winnerDecisionThreshold?: number;
+  modelAuditMetadata?: GamePredictionModelAuditMetadata;
 };
 
 export type BacktestAblationVariant = WalkForwardBacktestVariantOptions & {
@@ -179,6 +184,7 @@ export type BacktestAblationComparison = {
   excludedFeatureKeys: readonly BaselineFeatureKey[];
   disableDataQualityDampening: boolean;
   winnerDecisionThreshold: number;
+  modelAuditMetadata: GamePredictionModelAuditMetadata;
   summary: AccountabilitySummary;
   deltaVsBaseline: {
     accuracy: number | null;
@@ -194,6 +200,18 @@ export type BacktestAblationResult = {
   featureSetVersion: string;
   baselineKey: string;
   variants: BacktestAblationComparison[];
+};
+
+export type GamePredictionFeatureSignalAnalysisResult = {
+  generatedAt: string;
+  seasonId: number;
+  gameType: number;
+  featureSetVersion: string;
+  analysisStartDate: string;
+  analysisEndDate: string;
+  analyzedGames: number;
+  featureVectorOptions: BaselineFeatureVectorOptions;
+  analysis: BaselineFeatureSignalAnalysis;
 };
 
 const DAY_MS = 86_400_000;
@@ -294,6 +312,30 @@ export const DEFAULT_BACKTEST_ABLATION_VARIANTS: BacktestAblationVariant[] = [
     label: "No recent point %",
     featureVectorOptions: {
       excludedFeatureKeys: ["homeMinusAwayRecent10PointPct"],
+    },
+  },
+  {
+    key: "signal_selected",
+    label: "Signal selected factors",
+    featureVectorOptions: {
+      excludedFeatureKeys: [
+        "homeMinusAwaySpecialRating",
+        "homeMinusAwayRecent10PointPct",
+        "homeMinusAwayWeightedGoalieGsaaPer60",
+      ],
+    },
+  },
+  {
+    key: "signal_selected_strict",
+    label: "Signal selected without point % or short xG",
+    featureVectorOptions: {
+      excludedFeatureKeys: [
+        "homeMinusAwaySpecialRating",
+        "homeMinusAwayPointPctg",
+        "homeMinusAwayRecent5XgfPct",
+        "homeMinusAwayRecent10PointPct",
+        "homeMinusAwayWeightedGoalieGsaaPer60",
+      ],
     },
   },
   {
@@ -956,6 +998,70 @@ function toTrainingExample(args: {
   )[0]!;
 }
 
+export async function runGamePredictionFeatureSignalAnalysis(args: {
+  client: SupabaseClient<Database>;
+  seasonId: number;
+  gameType?: number;
+  featureSetVersion?: string;
+  trainStartDate?: string;
+  analysisEndDate?: string;
+  maxGames?: number;
+  featureVectorOptions?: BaselineFeatureVectorOptions;
+}): Promise<GamePredictionFeatureSignalAnalysisResult> {
+  const gameType = args.gameType ?? 2;
+  const featureSetVersion =
+    args.featureSetVersion ?? GAME_PREDICTION_FEATURE_SET_VERSION;
+  const { games, outcomes } = await fetchCompletedSeasonGames({
+    client: args.client,
+    seasonId: args.seasonId,
+    gameType,
+  });
+  const outcomesByGameId = new Map(
+    outcomes.map((outcome) => [outcome.gameId, outcome]),
+  );
+  const windowGames = games.filter(
+    (game) =>
+      (!args.trainStartDate || game.date >= args.trainStartDate) &&
+      (!args.analysisEndDate || game.date <= args.analysisEndDate),
+  );
+  const analysisGames = args.maxGames
+    ? windowGames.slice(-Math.max(1, args.maxGames))
+    : windowGames;
+  const featureVectorOptions = args.featureVectorOptions ?? {
+    includeDefaultExcludedFeatureKeys: true,
+  };
+
+  const examples: GamePredictionBaselineExample[] = [];
+  for (const game of analysisGames) {
+    const outcome = outcomesByGameId.get(game.id);
+    if (!outcome) continue;
+    const payload = await buildPayloadForGame(args.client, game.id, game.date);
+    examples.push(
+      toTrainingExample({
+        payload,
+        outcome,
+        featureVectorOptions,
+      }),
+    );
+  }
+
+  if (examples.length === 0) {
+    throw new Error("No feature examples could be built for signal analysis.");
+  }
+
+  return {
+    generatedAt: new Date().toISOString(),
+    seasonId: args.seasonId,
+    gameType,
+    featureSetVersion,
+    analysisStartDate: analysisGames[0]!.date,
+    analysisEndDate: analysisGames[analysisGames.length - 1]!.date,
+    analyzedGames: examples.length,
+    featureVectorOptions,
+    analysis: analyzeBaselineFeatureSignals(examples),
+  };
+}
+
 function predictionToAccountabilityRow(args: {
   prediction: ReturnType<typeof predictGameWithBaselineModel>;
   outcome: CompletedGameOutcome;
@@ -1062,6 +1168,7 @@ async function persistBacktestResult(args: {
           prediction_snapshots: result.predictionSnapshots,
           baseline_comparisons: result.baselineComparisons ?? [],
           calibration_buckets: result.calibrationBuckets ?? [],
+          model_audit: result.modelAuditMetadata as unknown as Json,
           accountability_backtest: true,
         },
         updated_at: new Date().toISOString(),
@@ -1093,6 +1200,7 @@ async function persistBacktestResult(args: {
         prediction_snapshots: result.predictionSnapshots,
         baseline_comparisons: result.baselineComparisons ?? [],
         calibration_buckets: result.calibrationBuckets ?? [],
+        model_audit: result.modelAuditMetadata as unknown as Json,
       },
       completed_at: new Date().toISOString(),
     })
@@ -1178,6 +1286,7 @@ export async function runWalkForwardBacktest(args: {
   featureVectorOptions?: BaselineFeatureVectorOptions;
   disableDataQualityDampening?: boolean;
   winnerDecisionThreshold?: number;
+  modelAuditMetadata?: GamePredictionModelAuditMetadata;
 }): Promise<WalkForwardBacktestResult> {
   const modelName = args.modelName ?? BASELINE_MODEL_NAME;
   const modelVersion =
@@ -1347,6 +1456,7 @@ export async function runWalkForwardBacktest(args: {
             featureVectorOptions: args.featureVectorOptions,
             disableDataQualityDampening: args.disableDataQualityDampening,
             winnerDecisionThreshold: args.winnerDecisionThreshold,
+            modelAuditMetadata: args.modelAuditMetadata,
           });
           const row = predictionToSyntheticHistoryRow({
             prediction,
@@ -1395,6 +1505,7 @@ export async function runWalkForwardBacktest(args: {
         featureVectorOptions: args.featureVectorOptions,
         disableDataQualityDampening: args.disableDataQualityDampening,
         winnerDecisionThreshold: args.winnerDecisionThreshold,
+        modelAuditMetadata: args.modelAuditMetadata,
       });
       candles.push(
         predictionToAccountabilityRow({
@@ -1460,6 +1571,18 @@ export async function runWalkForwardBacktest(args: {
     predictionSnapshots,
     retrainCadenceGames,
     horizonDays: hasBlindWindow ? normalizeHorizonDays(args.horizonDays) : [0],
+    modelAuditMetadata: {
+      winnerPolicyVersion: "winner_policy_v1_report_50_and_selected_threshold",
+      winnerPolicyMode: "report_default_50_and_selected_threshold",
+      defaultWinnerThreshold: 0.5,
+      selectedWinnerThreshold:
+        args.winnerDecisionThreshold ?? BASELINE_WINNER_DECISION_THRESHOLD,
+      rosterImpactVersion: "none",
+      strengthOfScheduleVersion: "none",
+      seasonDecayVersion: "none",
+      probabilityBlendVersion: "none",
+      ...args.modelAuditMetadata,
+    },
     persisted: false,
     backtestRunId: null,
   };
@@ -1561,6 +1684,7 @@ export async function runWalkForwardBacktestAblations(args: {
       featureVectorOptions: variant.featureVectorOptions,
       disableDataQualityDampening: variant.disableDataQualityDampening,
       winnerDecisionThreshold: variant.winnerDecisionThreshold,
+      modelAuditMetadata: variant.modelAuditMetadata,
     });
     results.push({ variant, result });
   }
@@ -1602,6 +1726,7 @@ export async function runWalkForwardBacktestAblations(args: {
           variant.disableDataQualityDampening ?? false,
         winnerDecisionThreshold:
           variant.winnerDecisionThreshold ?? BASELINE_WINNER_DECISION_THRESHOLD,
+        modelAuditMetadata: result.modelAuditMetadata,
         summary: result.summary,
         deltaVsBaseline,
         recommendation:
