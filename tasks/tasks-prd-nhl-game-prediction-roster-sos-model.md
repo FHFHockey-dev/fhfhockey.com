@@ -51,6 +51,19 @@
   - `skater_defensive_ratings_daily`: `100762` rows, first snapshot `2025-10-07`, last snapshot `2026-03-08`.
   - `goalie_ratings_daily`: `10156` rows, first snapshot `2025-10-07`, last snapshot `2026-03-08`.
 - First player-impact rating versions are `skater_impact_v1_game_log_toi_shrunk` and `goalie_impact_v1_game_log_toi_shrunk`. They are current-season, game-log aggregated, z-score based ratings with TOI shrinkage; multi-season recency decay remains open.
+- Prior-season player-rating anchors for multi-season priors are now available:
+  - `20222023`: full available source coverage from `2023-01-01` through `2023-04-14` with `61136` skater offense rows, `61136` skater defense rows, and `6603` goalie rows.
+  - `20232024`: partial daily rows plus final anchor through `2024-04-18` with `46368` skater offense rows, `45591` skater defense rows, and `4507` goalie rows.
+  - `20242025`: final anchor snapshot on `2025-04-17` with `1042` skater offense rows, `1042` skater defense rows, and `103` goalie rows.
+  - Full daily prior-season backfills are not required for the first recency-decay player-prior pass; use prior-season final anchors for early-season priors unless later ablations show daily historical snapshots matter.
+- Roster-history decision for first roster-prior ablation: do not build a true roster-history backfill yet. Use projected line-source rows when available, then current `rosters` as the fallback roster state. Revisit roster history only if coverage gaps or ablation results show this is blocking model quality.
+- Latest prerequisite coverage verification:
+  - `rosters`: `1146` rows for `20252026`, `1144` current rows.
+  - `lines_nhl`: `30` rows since `2025-10-01`, snapshots `2026-04-22` through `2026-04-22`.
+  - `lines_dfo`: `14` rows since `2025-10-01`, snapshots `2026-04-22` through `2026-04-23`.
+  - `lines_gdl`: `42` rows since `2025-10-01`, snapshots `2026-04-22` through `2026-04-23`.
+  - `lines_ccc`: `162` rows since `2025-10-01`, snapshots `2026-04-25` through `2026-04-30`.
+  - `sos_standings`: `6592` rows for `20252026`, `2025-10-07` through `2026-04-30`.
 
 ## Tasks
 
@@ -119,6 +132,7 @@
 
 - [ ] 10.0 NEW: Populate prerequisite player-rating and roster-history data before roster-prior modeling
   - [x] 10.1 Build or run the job that populates `skater_offensive_ratings_daily`, `skater_defensive_ratings_daily`, and `goalie_ratings_daily` for `20252026`.
-  - [ ] 10.2 Backfill prior seasons for the same player-rating tables if multi-season player priors are required for early-season predictions.
-  - [ ] 10.3 Decide whether `rosters` needs a true roster-history backfill or whether projected line-source tables plus current roster state are enough for first roster-prior ablations.
-  - [ ] 10.4 Verify counts and date coverage for player ratings, roster history, and line-source tables before task 4 consumes them.
+  - [x] 10.2 Backfill prior seasons for the same player-rating tables if multi-season player priors are required for early-season predictions.
+  - [x] 10.3 Decide whether `rosters` needs a true roster-history backfill or whether projected line-source tables plus current roster state are enough for first roster-prior ablations.
+  - [x] 10.4 Verify counts and date coverage for player ratings, roster history, and line-source tables before task 4 consumes them.
+  - [ ] 10.5 NEW: Optimize the historical player-rating endpoint for incremental daily backfills before attempting full daily coverage for all prior seasons.

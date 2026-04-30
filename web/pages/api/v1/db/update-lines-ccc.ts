@@ -13,6 +13,7 @@ import {
   parseRequestedDate,
   parseStringQueryValue,
   persistUnresolvedPlayerNames,
+  sendPlayerAliasReviewEmailForQueuedNames,
 } from "lib/sources/lineSourceProcessing";
 import {
   applyLinesCccWrapperOEmbed,
@@ -417,6 +418,11 @@ export default withCronJobAudit(
       supabase: req.supabase,
       rows: rowsToUpsert,
     });
+    const unresolvedNameEmail =
+      await sendPlayerAliasReviewEmailForQueuedNames({
+        req,
+        unresolvedNamesQueued,
+      });
     const processedEventUpdates = parsedCandidates.map((candidate, index) => {
       const event = parsedEvents[index]!;
       return {
@@ -497,6 +503,7 @@ export default withCronJobAudit(
         duplicatesSkipped: duplicateCaptureKeysSkipped,
         rowsUpserted: rowsToUpsert.length,
         unresolvedNamesQueued,
+        unresolvedNameEmail,
         eventsDeferred: deferredEventUpdates.length,
         eventsProcessed: processedEventUpdates.filter(
           (event) => event.processing_status === "processed",

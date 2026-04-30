@@ -53,6 +53,43 @@ export type LineSourceRowForUnresolvedNameReview = {
   goalie_2_name: string | null;
 };
 
+export type PlayerAliasReviewEmailResult =
+  | {
+      skipped: true;
+      reason:
+        | "no_unresolved_names"
+        | "test_environment"
+        | "missing_cron_secret";
+    }
+  | {
+      skipped: false;
+      success: boolean;
+      status: number | null;
+      message?: string;
+    };
+
+function getRequestHeaderValue(
+  value: string | string[] | undefined,
+): string | null {
+  if (Array.isArray(value)) return value[0] ?? null;
+  return value ?? null;
+}
+
+function resolveRequestBaseUrl(req: {
+  headers?: Record<string, string | string[] | undefined>;
+}) {
+  const configuredUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ?? process.env.SITE_URL ?? null;
+  if (configuredUrl) return configuredUrl.replace(/\/$/, "");
+
+  const host = getRequestHeaderValue(req.headers?.host);
+  const forwardedProto =
+    getRequestHeaderValue(req.headers?.["x-forwarded-proto"]) ?? "https";
+  if (host) return `${forwardedProto}://${host}`;
+
+  return "http://localhost:3000";
+}
+
 export function parseRequestedDate(value: string | string[] | undefined): string {
   const rawValue = Array.isArray(value) ? value[0] : value;
   if (typeof rawValue === "string" && /^\d{4}-\d{2}-\d{2}$/.test(rawValue)) {
@@ -345,4 +382,62 @@ export async function persistUnresolvedPlayerNames(args: {
 
   if (error) throw error;
   return unresolvedRows.length;
+}
+
+export async function sendPlayerAliasReviewEmailForQueuedNames(args: {
+  req: { headers?: Record<string, string | string[] | undefined> };
+  unresolvedNamesQueued: number;
+}): Promise<PlayerAliasReviewEmailResult> {
+  if (args.unresolvedNamesQueued <= 0) {
+    return {
+      skipped: true,
+      reason: "no_unresolved_names",
+    };
+  }
+  if (process.env.NODE_ENV === "test") {
+    return {
+      skipped: true,
+      reason: "test_environment",
+    };
+  }
+  if (!process.env.CRON_SECRET) {
+    return {
+      skipped: true,
+      reason: "missing_cron_secret",
+    };
+  }
+
+  try {
+    const response = await fetch(
+      `${resolveRequestBaseUrl(args.req)}/api/v1/db/send-player-name-alias-review`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.CRON_SECRET}`,
+        },
+      },
+    );
+    let message: string | undefined;
+    try {
+      const body = await response.json();
+      message =
+        typeof body?.message === "string" ? body.message : response.statusText;
+    } catch {
+      message = await response.text();
+    }
+
+    return {
+      skipped: false,
+      success: response.ok,
+      status: response.status,
+      message,
+    };
+  } catch (error) {
+    return {
+      skipped: false,
+      success: false,
+      status: null,
+      message: error instanceof Error ? error.message : String(error),
+    };
+  }
 }
