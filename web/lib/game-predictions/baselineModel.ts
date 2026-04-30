@@ -66,6 +66,42 @@ export type GamePredictionTopFactor = {
   contribution: number;
 };
 
+export type BaselineFeatureSignal = {
+  featureKey: BaselineFeatureKey;
+  sampleSize: number;
+  meanValue: number;
+  standardDeviation: number;
+  meanWhenHomeWon: number;
+  meanWhenHomeLost: number;
+  pearsonCorrelation: number;
+  absoluteCorrelation: number;
+  univariateLogisticWeight: number;
+  univariateOddsRatioPerStdDev: number;
+  multivariateLogisticWeight: number;
+  multivariateOddsRatioPerStdDev: number;
+  direction: "home" | "away" | "neutral";
+  rank: number;
+};
+
+export type BaselineFeatureSignalAnalysis = {
+  sampleSize: number;
+  homeWins: number;
+  awayWins: number;
+  logisticBias: number;
+  signals: BaselineFeatureSignal[];
+};
+
+export type GamePredictionModelAuditMetadata = {
+  winnerPolicyVersion?: string;
+  winnerPolicyMode?: string;
+  defaultWinnerThreshold?: number;
+  selectedWinnerThreshold?: number;
+  rosterImpactVersion?: string;
+  strengthOfScheduleVersion?: string;
+  seasonDecayVersion?: string;
+  probabilityBlendVersion?: string;
+};
+
 export type GamePredictionResult = {
   gameId: number;
   snapshotDate: string;
@@ -130,6 +166,64 @@ function applyProbabilityFloor(
 
 function roundProbability(value: number): number {
   return Number(clipProbability(value).toFixed(6));
+}
+
+function roundSignalMetric(value: number): number {
+  return Number.isFinite(value) ? Number(value.toFixed(6)) : 0;
+}
+
+function mean(values: number[]): number {
+  if (values.length === 0) return 0;
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+function standardDeviation(values: number[], average = mean(values)): number {
+  if (values.length === 0) return 0;
+  const variance =
+    values.reduce((sum, value) => {
+      const delta = value - average;
+      return sum + delta * delta;
+    }, 0) / values.length;
+  return Math.sqrt(variance);
+}
+
+function pearsonCorrelation(left: number[], right: number[]): number {
+  if (left.length !== right.length || left.length < 2) return 0;
+  const leftMean = mean(left);
+  const rightMean = mean(right);
+  let numerator = 0;
+  let leftVariance = 0;
+  let rightVariance = 0;
+  for (let index = 0; index < left.length; index += 1) {
+    const leftDelta = left[index] - leftMean;
+    const rightDelta = right[index] - rightMean;
+    numerator += leftDelta * rightDelta;
+    leftVariance += leftDelta * leftDelta;
+    rightVariance += rightDelta * rightDelta;
+  }
+  const denominator = Math.sqrt(leftVariance * rightVariance);
+  return denominator > 1e-12 ? numerator / denominator : 0;
+}
+
+function oddsRatioFromWeight(weight: number): number {
+  return Math.exp(Math.max(-20, Math.min(20, weight)));
+}
+
+function buildModelAuditMetadata(args: {
+  selectedWinnerThreshold: number;
+  modelAuditMetadata?: GamePredictionModelAuditMetadata;
+}): GamePredictionModelAuditMetadata {
+  return {
+    winnerPolicyVersion: "winner_policy_v1_report_50_and_selected_threshold",
+    winnerPolicyMode: "report_default_50_and_selected_threshold",
+    defaultWinnerThreshold: 0.5,
+    selectedWinnerThreshold: args.selectedWinnerThreshold,
+    rosterImpactVersion: "none",
+    strengthOfScheduleVersion: "none",
+    seasonDecayVersion: "none",
+    probabilityBlendVersion: "none",
+    ...args.modelAuditMetadata,
+  };
 }
 
 function parseDateOnly(value: string): number {
@@ -322,6 +416,89 @@ export function trainGamePredictionBaselineModel(
   };
 }
 
+export function analyzeBaselineFeatureSignals(
+  examples: GamePredictionBaselineExample[],
+  options: Parameters<typeof trainBinaryLogisticModel>[1] = {
+    iterations: 800,
+    learningRate: 0.03,
+    l2: 0.02,
+  },
+): BaselineFeatureSignalAnalysis {
+  if (examples.length === 0) {
+    throw new Error("At least one baseline training example is required.");
+  }
+
+  const featureNormalization = buildFeatureNormalization(examples);
+  const normalizedExamples = normalizeExamples(examples, featureNormalization);
+  const multivariateModel = trainBinaryLogisticModel(normalizedExamples, options);
+  const labels = examples.map((example) => example.label);
+  const homeWins = labels.filter((label) => label === 1).length;
+  const awayWins = examples.length - homeWins;
+
+  const signals = BASELINE_FEATURE_KEYS.map((featureKey, featureIndex) => {
+    const values = examples.map((example) => example.features[featureIndex] ?? 0);
+    const normalizedValues = normalizedExamples.map(
+      (example) => example.features[featureIndex] ?? 0,
+    );
+    const homeWinValues = values.filter((_, index) => labels[index] === 1);
+    const awayWinValues = values.filter((_, index) => labels[index] === 0);
+    const univariateModel = trainBinaryLogisticModel(
+      normalizedValues.map((value, index) => ({
+        features: [value],
+        label: labels[index],
+      })),
+      options,
+    );
+    const correlation = pearsonCorrelation(values, labels);
+    const multivariateWeight = multivariateModel.weights[featureIndex] ?? 0;
+    const direction: BaselineFeatureSignal["direction"] =
+      Math.abs(multivariateWeight) < 1e-9
+        ? "neutral"
+        : multivariateWeight > 0
+          ? "home"
+          : "away";
+
+    return {
+      featureKey,
+      sampleSize: examples.length,
+      meanValue: roundSignalMetric(mean(values)),
+      standardDeviation: roundSignalMetric(
+        featureNormalization.scales[featureIndex] ?? standardDeviation(values),
+      ),
+      meanWhenHomeWon: roundSignalMetric(mean(homeWinValues)),
+      meanWhenHomeLost: roundSignalMetric(mean(awayWinValues)),
+      pearsonCorrelation: roundSignalMetric(correlation),
+      absoluteCorrelation: roundSignalMetric(Math.abs(correlation)),
+      univariateLogisticWeight: roundSignalMetric(
+        univariateModel.weights[0] ?? 0,
+      ),
+      univariateOddsRatioPerStdDev: roundSignalMetric(
+        oddsRatioFromWeight(univariateModel.weights[0] ?? 0),
+      ),
+      multivariateLogisticWeight: roundSignalMetric(multivariateWeight),
+      multivariateOddsRatioPerStdDev: roundSignalMetric(
+        oddsRatioFromWeight(multivariateWeight),
+      ),
+      direction,
+      rank: 0,
+    };
+  }).sort((left, right) => {
+    const weightDelta =
+      Math.abs(right.multivariateLogisticWeight) -
+      Math.abs(left.multivariateLogisticWeight);
+    if (Math.abs(weightDelta) > 1e-12) return weightDelta;
+    return right.absoluteCorrelation - left.absoluteCorrelation;
+  });
+
+  return {
+    sampleSize: examples.length,
+    homeWins,
+    awayWins,
+    logisticBias: roundSignalMetric(multivariateModel.bias),
+    signals: signals.map((signal, index) => ({ ...signal, rank: index + 1 })),
+  };
+}
+
 export function getConfidenceLabel(probability: number): GamePredictionResult["confidenceLabel"] {
   const edge = Math.abs(probability - 0.5);
   if (edge >= 0.15) return "high";
@@ -362,6 +539,7 @@ export function predictGameWithBaselineModel(args: {
   featureVectorOptions?: BaselineFeatureVectorOptions;
   disableDataQualityDampening?: boolean;
   winnerDecisionThreshold?: number;
+  modelAuditMetadata?: GamePredictionModelAuditMetadata;
 }): GamePredictionResult {
   const features = buildBaselineFeatureVector(
     args.payload,
@@ -397,6 +575,18 @@ export function predictGameWithBaselineModel(args: {
     ),
   );
   const excludedFeatureKeys = getExcludedFeatureKeys(args.featureVectorOptions);
+  const threshold50WinnerTeamId =
+    homeWinProbability >= 0.5
+      ? args.payload.home.teamId
+      : args.payload.away.teamId;
+  const selectedThresholdWinnerTeamId =
+    homeWinProbability >= winnerDecisionThreshold
+      ? args.payload.home.teamId
+      : args.payload.away.teamId;
+  const modelAuditMetadata = buildModelAuditMetadata({
+    selectedWinnerThreshold: winnerDecisionThreshold,
+    modelAuditMetadata: args.modelAuditMetadata,
+  });
 
   return {
     gameId: args.payload.gameId,
@@ -410,10 +600,7 @@ export function predictGameWithBaselineModel(args: {
     awayTeamId: args.payload.away.teamId,
     homeWinProbability,
     awayWinProbability,
-    predictedWinnerTeamId:
-      homeWinProbability >= winnerDecisionThreshold
-        ? args.payload.home.teamId
-        : args.payload.away.teamId,
+    predictedWinnerTeamId: selectedThresholdWinnerTeamId,
     confidenceLabel: getConfidenceLabel(homeWinProbability),
     topFactors: buildTopFactors(args.model, features),
     components: {
@@ -441,6 +628,9 @@ export function predictGameWithBaselineModel(args: {
         : "none",
       excluded_feature_keys: excludedFeatureKeys as unknown as Json,
       winner_decision_threshold: winnerDecisionThreshold,
+      threshold_50_predicted_winner_team_id: threshold50WinnerTeamId,
+      selected_threshold_predicted_winner_team_id: selectedThresholdWinnerTeamId,
+      model_audit: modelAuditMetadata as unknown as Json,
     },
     provenance: {
       source_cutoffs: args.payload.sourceCutoffs as unknown as Json,
@@ -462,6 +652,9 @@ export function predictGameWithBaselineModel(args: {
       data_quality_multiplier: dataQuality.multiplier,
       excluded_feature_keys: excludedFeatureKeys as unknown as Json,
       winner_decision_threshold: winnerDecisionThreshold,
+      threshold_50_predicted_winner_team_id: threshold50WinnerTeamId,
+      selected_threshold_predicted_winner_team_id: selectedThresholdWinnerTeamId,
+      model_audit: modelAuditMetadata as unknown as Json,
     },
   };
 }

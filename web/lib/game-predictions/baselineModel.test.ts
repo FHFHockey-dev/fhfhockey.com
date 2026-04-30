@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { BinaryLogisticModel } from "lib/xg/binaryLogistic";
 import {
   BASELINE_MODEL_VERSION,
+  analyzeBaselineFeatureSignals,
   buildBaselineFeatureVector,
   buildBaselineTrainingDataset,
   buildGamePredictionHistoryInsert,
@@ -166,6 +167,38 @@ describe("game prediction baseline model", () => {
     expect(model.probabilityFloor).toBe(0.05);
   });
 
+  it("analyzes per-feature winning signal with standardized logistic weights", () => {
+    const winningPayload = createPayload(75);
+    const losingPayload = createPayload(35);
+    losingPayload.gameId = 2025020002;
+    const examples = buildBaselineTrainingDataset(
+      [
+        { featureSnapshotId: "win", payload: winningPayload },
+        { featureSnapshotId: "loss", payload: losingPayload },
+      ],
+      [
+        { gameId: winningPayload.gameId, homeWon: true },
+        { gameId: losingPayload.gameId, homeWon: false },
+      ],
+    );
+
+    const analysis = analyzeBaselineFeatureSignals(examples, {
+      iterations: 20,
+      learningRate: 0.05,
+      l2: 0.01,
+    });
+    const offRatingSignal = analysis.signals.find(
+      (signal) => signal.featureKey === "homeMinusAwayOffRating",
+    );
+
+    expect(analysis.sampleSize).toBe(2);
+    expect(analysis.homeWins).toBe(1);
+    expect(analysis.awayWins).toBe(1);
+    expect(offRatingSignal?.pearsonCorrelation).toBeGreaterThan(0);
+    expect(offRatingSignal?.univariateOddsRatioPerStdDev).toBeGreaterThan(1);
+    expect(offRatingSignal?.multivariateOddsRatioPerStdDev).toBeGreaterThan(1);
+  });
+
   it("bounds extreme probabilities and records normalization metadata", () => {
     const winningPayload = createPayload(65);
     const losingPayload = createPayload(40);
@@ -311,6 +344,18 @@ describe("game prediction baseline model", () => {
     ).toBeCloseTo(1);
     expect(prediction.predictedWinnerTeamId).toBe(1);
     expect(prediction.topFactors.length).toBeGreaterThan(0);
+    expect(prediction.components).toMatchObject({
+      threshold_50_predicted_winner_team_id: 1,
+      selected_threshold_predicted_winner_team_id: 1,
+      model_audit: {
+        winnerPolicyVersion:
+          "winner_policy_v1_report_50_and_selected_threshold",
+        rosterImpactVersion: "none",
+        strengthOfScheduleVersion: "none",
+        seasonDecayVersion: "none",
+        probabilityBlendVersion: "none",
+      },
+    });
 
     expect(
       buildGamePredictionHistoryInsert({
