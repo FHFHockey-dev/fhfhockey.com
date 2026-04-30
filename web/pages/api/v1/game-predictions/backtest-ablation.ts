@@ -2,7 +2,10 @@ import type { NextApiResponse } from "next";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
-import { runWalkForwardBacktest } from "lib/game-predictions/accountability";
+import {
+  DEFAULT_BACKTEST_ABLATION_VARIANTS,
+  runWalkForwardBacktestAblations,
+} from "lib/game-predictions/accountability";
 import {
   BASELINE_MODEL_NAME,
   BASELINE_MODEL_VERSION,
@@ -17,7 +20,7 @@ type RequestWithSupabase = {
     seasonId?: string | string[];
     gameType?: string | string[];
     modelName?: string | string[];
-    modelVersion?: string | string[];
+    baseModelVersion?: string | string[];
     featureSetVersion?: string | string[];
     trainStartDate?: string | string[];
     blindDate?: string | string[];
@@ -27,7 +30,7 @@ type RequestWithSupabase = {
     retrainCadenceGames?: string | string[];
     maxTrainingGames?: string | string[];
     maxReplayGames?: string | string[];
-    persist?: string | string[];
+    variants?: string | string[];
   };
   supabase: SupabaseClient<Database>;
 };
@@ -56,6 +59,16 @@ function readIntegerList(value: string | string[] | undefined): number[] | undef
   return values.length > 0 ? values : undefined;
 }
 
+function readVariantKeys(value: string | string[] | undefined): Set<string> | null {
+  const raw = readSingleQueryValue(value);
+  if (!raw) return null;
+  const keys = raw
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+  return keys.length > 0 ? new Set(keys) : null;
+}
+
 async function handler(req: RequestWithSupabase, res: NextApiResponse) {
   if (req.method !== "POST" && req.method !== "GET") {
     res.setHeader("Allow", "GET, POST");
@@ -72,15 +85,29 @@ async function handler(req: RequestWithSupabase, res: NextApiResponse) {
     });
   }
 
-  const persist = readSingleQueryValue(req.query.persist) === "true";
-  const result = await runWalkForwardBacktest({
+  const variantKeys = readVariantKeys(req.query.variants);
+  const variants = variantKeys
+    ? DEFAULT_BACKTEST_ABLATION_VARIANTS.filter((variant) =>
+        variantKeys.has(variant.key),
+      )
+    : DEFAULT_BACKTEST_ABLATION_VARIANTS;
+  if (variants.length === 0) {
+    return res.status(400).json({
+      success: false,
+      error: "No matching ablation variants were requested.",
+      availableVariants: DEFAULT_BACKTEST_ABLATION_VARIANTS.map(
+        (variant) => variant.key,
+      ),
+    });
+  }
+
+  const result = await runWalkForwardBacktestAblations({
     client: req.supabase,
     seasonId,
     gameType: readInteger(req.query.gameType),
     modelName: readSingleQueryValue(req.query.modelName) ?? BASELINE_MODEL_NAME,
-    modelVersion:
-      readSingleQueryValue(req.query.modelVersion) ??
-      `${BASELINE_MODEL_VERSION}_walk_forward_${seasonId}`,
+    baseModelVersion:
+      readSingleQueryValue(req.query.baseModelVersion) ?? BASELINE_MODEL_VERSION,
     featureSetVersion:
       readSingleQueryValue(req.query.featureSetVersion) ??
       GAME_PREDICTION_FEATURE_SET_VERSION,
@@ -92,16 +119,16 @@ async function handler(req: RequestWithSupabase, res: NextApiResponse) {
     retrainCadenceGames: readInteger(req.query.retrainCadenceGames),
     maxTrainingGames: readInteger(req.query.maxTrainingGames),
     maxReplayGames: readInteger(req.query.maxReplayGames),
-    persist,
+    variants,
   });
 
   return res.status(200).json({
     success: true,
-    dryRun: !persist,
+    dryRun: true,
     result,
   });
 }
 
 export default withCronJobAudit(adminOnly(handler as any), {
-  jobName: "game-predictions-backtest",
+  jobName: "game-predictions-backtest-ablation",
 });

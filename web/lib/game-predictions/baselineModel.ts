@@ -10,7 +10,10 @@ import type { Database, Json } from "lib/supabase/database-generated.types";
 import type { GamePredictionFeatureSnapshotPayload } from "./featureBuilder";
 
 export const BASELINE_MODEL_NAME = "nhl_game_baseline_logistic";
-export const BASELINE_MODEL_VERSION = "v1";
+export const BASELINE_MODEL_VERSION = "v4_no_recent_point_pct_threshold_52";
+export const BASELINE_PROBABILITY_FLOOR = 0.05;
+export const BASELINE_MIN_DATA_QUALITY_MULTIPLIER = 0.55;
+export const BASELINE_WINNER_DECISION_THRESHOLD = 0.52;
 
 export const BASELINE_FEATURE_KEYS = [
   "homeMinusAwayOffRating",
@@ -19,6 +22,11 @@ export const BASELINE_FEATURE_KEYS = [
   "homeMinusAwaySpecialRating",
   "homeMinusAwayPointPctg",
   "homeMinusAwayGoalDifferential",
+  "homeMinusAwayRecent5GoalDifferentialPerGame",
+  "homeMinusAwayRecent10GoalDifferentialPerGame",
+  "homeMinusAwayRecent5XgfPct",
+  "homeMinusAwayRecent10XgfPct",
+  "homeMinusAwayRecent10PointPct",
   "homeMinusAwayWeightedGoalieGsaaPer60",
   "homeRestAdvantageDays",
 ] as const;
@@ -29,6 +37,21 @@ export type GamePredictionBaselineExample = BinaryTrainingExample & {
   gameId: number;
   featureSnapshotId: string;
   featureKeys: readonly BaselineFeatureKey[];
+};
+
+export type BaselineFeatureNormalization = {
+  means: number[];
+  scales: number[];
+};
+
+export type GamePredictionBaselineModel = BinaryLogisticModel & {
+  featureNormalization?: BaselineFeatureNormalization;
+  probabilityFloor?: number;
+};
+
+export type BaselineFeatureVectorOptions = {
+  excludedFeatureKeys?: readonly BaselineFeatureKey[];
+  includeDefaultExcludedFeatureKeys?: boolean;
 };
 
 export type GameOutcome = {
@@ -63,6 +86,28 @@ export type GamePredictionResult = {
   metadata: Record<string, Json>;
 };
 
+function isFeatureExcluded(
+  featureKey: BaselineFeatureKey,
+  options?: BaselineFeatureVectorOptions,
+): boolean {
+  return getExcludedFeatureKeys(options).includes(featureKey);
+}
+
+function getExcludedFeatureKeys(
+  options?: BaselineFeatureVectorOptions,
+): readonly BaselineFeatureKey[] {
+  const defaultExcluded: readonly BaselineFeatureKey[] =
+    options?.includeDefaultExcludedFeatureKeys
+      ? []
+      : ["homeMinusAwayRecent10PointPct"];
+  return Array.from(
+    new Set([
+      ...defaultExcluded,
+      ...(options?.excludedFeatureKeys ?? []),
+    ]),
+  );
+}
+
 function finiteOrZero(value: number | null | undefined): number {
   return Number.isFinite(value) ? Number(value) : 0;
 }
@@ -72,32 +117,178 @@ function clipProbability(value: number): number {
   return Math.min(0.999999, Math.max(0.000001, value));
 }
 
+function applyProbabilityFloor(
+  value: number,
+  model: BinaryLogisticModel,
+): number {
+  const floor =
+    (model as GamePredictionBaselineModel).probabilityFloor ??
+    BASELINE_PROBABILITY_FLOOR;
+  const boundedFloor = Math.max(0, Math.min(0.49, floor));
+  return Math.min(1 - boundedFloor, Math.max(boundedFloor, value));
+}
+
 function roundProbability(value: number): number {
   return Number(clipProbability(value).toFixed(6));
 }
 
-export function buildBaselineFeatureVector(
-  payload: GamePredictionFeatureSnapshotPayload
+function parseDateOnly(value: string): number {
+  return Date.parse(`${value}T00:00:00.000Z`);
+}
+
+function differenceInDays(laterDate: string, earlierDate: string): number {
+  return Math.floor(
+    (parseDateOnly(laterDate) - parseDateOnly(earlierDate)) / 86_400_000,
+  );
+}
+
+function dampenTowardCoinFlip(probability: number, multiplier: number): number {
+  return 0.5 + (probability - 0.5) * multiplier;
+}
+
+function buildDataQualityMultiplier(
+  payload: GamePredictionFeatureSnapshotPayload,
+): { multiplier: number; penalties: Record<string, number> } {
+  const penalties: Record<string, number> = {};
+  const staleCount = payload.sourceCutoffs.filter((cutoff) => cutoff.stale).length;
+  if (staleCount > 0) {
+    penalties.stale_sources = Math.min(0.18, staleCount * 0.03);
+  }
+
+  if (payload.missingFeatures.length > 0) {
+    penalties.missing_features = Math.min(0.18, payload.missingFeatures.length * 0.025);
+  }
+
+  const goalieFallbackCount = [payload.home.goalie, payload.away.goalie].filter(
+    (goalie) => goalie.source === "fallback",
+  ).length;
+  if (goalieFallbackCount > 0) {
+    penalties.goalie_fallback = goalieFallbackCount * 0.06;
+  }
+
+  const projectedGoalieCount = [payload.home.goalie, payload.away.goalie].filter(
+    (goalie) => !goalie.confirmed && goalie.source !== "fallback",
+  ).length;
+  if (projectedGoalieCount > 0) {
+    penalties.projected_goalie = projectedGoalieCount * 0.025;
+  }
+
+  if (!payload.home.lineup || !payload.away.lineup) {
+    penalties.missing_lineup = (!payload.home.lineup ? 0.03 : 0) +
+      (!payload.away.lineup ? 0.03 : 0);
+  }
+
+  const horizonDays = Math.max(
+    0,
+    differenceInDays(payload.gameDate, payload.sourceAsOfDate),
+  );
+  if (horizonDays > 0) {
+    penalties.prediction_horizon = Math.min(0.14, horizonDays * 0.02);
+  }
+
+  const totalPenalty = Object.values(penalties).reduce(
+    (sum, penalty) => sum + penalty,
+    0,
+  );
+
+  return {
+    multiplier: Math.max(
+      BASELINE_MIN_DATA_QUALITY_MULTIPLIER,
+      Math.min(1, 1 - totalPenalty),
+    ),
+    penalties,
+  };
+}
+
+function buildFeatureNormalization(
+  examples: GamePredictionBaselineExample[],
+): BaselineFeatureNormalization {
+  const featureCount = examples[0]?.features.length ?? 0;
+  const means = Array.from({ length: featureCount }, (_, featureIndex) => {
+    const sum = examples.reduce(
+      (total, example) => total + example.features[featureIndex],
+      0,
+    );
+    return sum / examples.length;
+  });
+  const scales = means.map((mean, featureIndex) => {
+    const variance =
+      examples.reduce((total, example) => {
+        const delta = example.features[featureIndex] - mean;
+        return total + delta * delta;
+      }, 0) / examples.length;
+    const stdDev = Math.sqrt(variance);
+    return stdDev > 1e-9 ? stdDev : 1;
+  });
+
+  return { means, scales };
+}
+
+function normalizeFeatureVector(
+  features: number[],
+  normalization?: BaselineFeatureNormalization,
 ): number[] {
-  return [
-    payload.matchup.homeMinusAwayOffRating,
-    payload.matchup.homeMinusAwayDefRating,
-    payload.matchup.homeMinusAwayGoalieRating,
-    payload.matchup.homeMinusAwaySpecialRating,
-    payload.matchup.homeMinusAwayPointPctg,
-    payload.matchup.homeMinusAwayGoalDifferential == null
-      ? null
-      : payload.matchup.homeMinusAwayGoalDifferential / 50,
-    payload.matchup.homeMinusAwayWeightedGoalieGsaaPer60,
-    payload.matchup.homeRestAdvantageDays == null
-      ? null
-      : Math.max(-3, Math.min(3, payload.matchup.homeRestAdvantageDays)) / 3,
-  ].map(finiteOrZero);
+  if (!normalization) return features;
+  return features.map((feature, index) => {
+    const mean = normalization.means[index] ?? 0;
+    const scale = normalization.scales[index] ?? 1;
+    return (feature - mean) / scale;
+  });
+}
+
+function normalizeExamples(
+  examples: GamePredictionBaselineExample[],
+  normalization: BaselineFeatureNormalization,
+): GamePredictionBaselineExample[] {
+  return examples.map((example) => ({
+    ...example,
+    features: normalizeFeatureVector(example.features, normalization),
+  }));
+}
+
+export function buildBaselineFeatureVector(
+  payload: GamePredictionFeatureSnapshotPayload,
+  options: BaselineFeatureVectorOptions = {},
+): number[] {
+  const values: Record<BaselineFeatureKey, number | null> = {
+    homeMinusAwayOffRating: payload.matchup.homeMinusAwayOffRating,
+    homeMinusAwayDefRating: payload.matchup.homeMinusAwayDefRating,
+    homeMinusAwayGoalieRating: payload.matchup.homeMinusAwayGoalieRating,
+    homeMinusAwaySpecialRating: payload.matchup.homeMinusAwaySpecialRating,
+    homeMinusAwayPointPctg: payload.matchup.homeMinusAwayPointPctg,
+    homeMinusAwayGoalDifferential:
+      payload.matchup.homeMinusAwayGoalDifferential == null
+        ? null
+        : payload.matchup.homeMinusAwayGoalDifferential / 50,
+    homeMinusAwayRecent5GoalDifferentialPerGame:
+      payload.matchup.homeMinusAwayRecent5GoalDifferentialPerGame == null
+        ? null
+        : payload.matchup.homeMinusAwayRecent5GoalDifferentialPerGame / 3,
+    homeMinusAwayRecent10GoalDifferentialPerGame:
+      payload.matchup.homeMinusAwayRecent10GoalDifferentialPerGame == null
+        ? null
+        : payload.matchup.homeMinusAwayRecent10GoalDifferentialPerGame / 3,
+    homeMinusAwayRecent5XgfPct: payload.matchup.homeMinusAwayRecent5XgfPct,
+    homeMinusAwayRecent10XgfPct: payload.matchup.homeMinusAwayRecent10XgfPct,
+    homeMinusAwayRecent10PointPct:
+      payload.matchup.homeMinusAwayRecent10PointPct,
+    homeMinusAwayWeightedGoalieGsaaPer60:
+      payload.matchup.homeMinusAwayWeightedGoalieGsaaPer60,
+    homeRestAdvantageDays:
+      payload.matchup.homeRestAdvantageDays == null
+        ? null
+        : Math.max(-3, Math.min(3, payload.matchup.homeRestAdvantageDays)) / 3,
+  };
+
+  return BASELINE_FEATURE_KEYS.map((featureKey) =>
+    isFeatureExcluded(featureKey, options) ? 0 : finiteOrZero(values[featureKey]),
+  );
 }
 
 export function buildBaselineTrainingDataset(
   snapshots: Array<{ featureSnapshotId: string; payload: GamePredictionFeatureSnapshotPayload }>,
-  outcomes: GameOutcome[]
+  outcomes: GameOutcome[],
+  featureVectorOptions: BaselineFeatureVectorOptions = {},
 ): GamePredictionBaselineExample[] {
   const outcomesByGameId = new Map(outcomes.map((outcome) => [outcome.gameId, outcome]));
 
@@ -110,7 +301,7 @@ export function buildBaselineTrainingDataset(
         gameId: snapshot.payload.gameId,
         featureSnapshotId: snapshot.featureSnapshotId,
         featureKeys: BASELINE_FEATURE_KEYS,
-        features: buildBaselineFeatureVector(snapshot.payload),
+        features: buildBaselineFeatureVector(snapshot.payload, featureVectorOptions),
         label: outcome.homeWon ? 1 : 0,
       },
     ];
@@ -120,8 +311,15 @@ export function buildBaselineTrainingDataset(
 export function trainGamePredictionBaselineModel(
   examples: GamePredictionBaselineExample[],
   options: Parameters<typeof trainBinaryLogisticModel>[1] = { iterations: 800, learningRate: 0.05, l2: 0.01 }
-): BinaryLogisticModel {
-  return trainBinaryLogisticModel(examples, options);
+): GamePredictionBaselineModel {
+  const featureNormalization = buildFeatureNormalization(examples);
+  const normalizedExamples = normalizeExamples(examples, featureNormalization);
+  const model = trainBinaryLogisticModel(normalizedExamples, options);
+  return {
+    ...model,
+    featureNormalization,
+    probabilityFloor: BASELINE_PROBABILITY_FLOOR,
+  };
 }
 
 export function getConfidenceLabel(probability: number): GamePredictionResult["confidenceLabel"] {
@@ -136,6 +334,10 @@ function buildTopFactors(
   features: number[],
   limit = 5
 ): GamePredictionTopFactor[] {
+  const normalizedFeatures = normalizeFeatureVector(
+    features,
+    (model as GamePredictionBaselineModel).featureNormalization,
+  );
   return BASELINE_FEATURE_KEYS.map((featureKey, index) => {
     const value = features[index] ?? 0;
     const weight = model.weights[index] ?? 0;
@@ -143,7 +345,7 @@ function buildTopFactors(
       featureKey,
       value,
       weight,
-      contribution: value * weight,
+      contribution: (normalizedFeatures[index] ?? 0) * weight,
     };
   })
     .sort((a, b) => Math.abs(b.contribution) - Math.abs(a.contribution))
@@ -157,14 +359,44 @@ export function predictGameWithBaselineModel(args: {
   calibrator?: ProbabilityCalibrator;
   modelName?: string;
   modelVersion?: string;
+  featureVectorOptions?: BaselineFeatureVectorOptions;
+  disableDataQualityDampening?: boolean;
+  winnerDecisionThreshold?: number;
 }): GamePredictionResult {
-  const features = buildBaselineFeatureVector(args.payload);
-  const rawHomeProbability = predictBinaryLogisticProbability(args.model, features);
+  const features = buildBaselineFeatureVector(
+    args.payload,
+    args.featureVectorOptions,
+  );
+  const normalizedFeatures = normalizeFeatureVector(
+    features,
+    (args.model as GamePredictionBaselineModel).featureNormalization,
+  );
+  const rawHomeProbability = predictBinaryLogisticProbability(
+    args.model,
+    normalizedFeatures,
+  );
   const calibratedHomeProbability = args.calibrator
     ? args.calibrator.predict(rawHomeProbability)
     : rawHomeProbability;
-  const homeWinProbability = roundProbability(calibratedHomeProbability);
+  const dataQuality = args.disableDataQualityDampening
+    ? { multiplier: 1, penalties: {} }
+    : buildDataQualityMultiplier(args.payload);
+  const qualityAdjustedHomeProbability = dampenTowardCoinFlip(
+    calibratedHomeProbability,
+    dataQuality.multiplier,
+  );
+  const homeWinProbability = roundProbability(
+    applyProbabilityFloor(qualityAdjustedHomeProbability, args.model),
+  );
   const awayWinProbability = roundProbability(1 - homeWinProbability);
+  const winnerDecisionThreshold = Math.max(
+    0.01,
+    Math.min(
+      0.99,
+      args.winnerDecisionThreshold ?? BASELINE_WINNER_DECISION_THRESHOLD,
+    ),
+  );
+  const excludedFeatureKeys = getExcludedFeatureKeys(args.featureVectorOptions);
 
   return {
     gameId: args.payload.gameId,
@@ -179,15 +411,36 @@ export function predictGameWithBaselineModel(args: {
     homeWinProbability,
     awayWinProbability,
     predictedWinnerTeamId:
-      homeWinProbability >= awayWinProbability ? args.payload.home.teamId : args.payload.away.teamId,
+      homeWinProbability >= winnerDecisionThreshold
+        ? args.payload.home.teamId
+        : args.payload.away.teamId,
     confidenceLabel: getConfidenceLabel(homeWinProbability),
     topFactors: buildTopFactors(args.model, features),
     components: {
       baseline_features: Object.fromEntries(
         BASELINE_FEATURE_KEYS.map((featureKey, index) => [featureKey, features[index]])
       ) as Json,
+      normalized_baseline_features: Object.fromEntries(
+        BASELINE_FEATURE_KEYS.map((featureKey, index) => [
+          featureKey,
+          normalizedFeatures[index],
+        ])
+      ) as Json,
       raw_home_win_probability: rawHomeProbability,
+      quality_adjusted_home_win_probability: qualityAdjustedHomeProbability,
+      bounded_home_win_probability: homeWinProbability,
       calibration_method: args.calibrator?.method ?? "raw",
+      data_quality_multiplier: dataQuality.multiplier,
+      data_quality_penalties: dataQuality.penalties,
+      probability_floor:
+        (args.model as GamePredictionBaselineModel).probabilityFloor ??
+        BASELINE_PROBABILITY_FLOOR,
+      normalization_method: (args.model as GamePredictionBaselineModel)
+        .featureNormalization
+        ? "training_set_standard_score"
+        : "none",
+      excluded_feature_keys: excludedFeatureKeys as unknown as Json,
+      winner_decision_threshold: winnerDecisionThreshold,
     },
     provenance: {
       source_cutoffs: args.payload.sourceCutoffs as unknown as Json,
@@ -206,6 +459,9 @@ export function predictGameWithBaselineModel(args: {
             ? "partial_confirmed"
             : "projected_or_fallback",
       warnings: args.payload.warnings as unknown as Json,
+      data_quality_multiplier: dataQuality.multiplier,
+      excluded_feature_keys: excludedFeatureKeys as unknown as Json,
+      winner_decision_threshold: winnerDecisionThreshold,
     },
   };
 }

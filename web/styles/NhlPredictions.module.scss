@@ -445,18 +445,235 @@
   }
 }
 
-.candleList {
-  display: grid;
-  gap: 12px;
+.stockChartWrap {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid v.$border-soft;
+  border-radius: 8px;
+  background: v.$surface-0;
 }
 
-.candleRow {
-  --range-left: 0%;
-  --range-width: 0%;
-  --open-left: 0%;
-  --final-left: 0%;
-  --actual-left: 0%;
+.stockChartHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 10px;
+  color: v.$text-primary;
+  font-size: 0.82rem;
+  font-weight: 700;
 
+  div {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 10px;
+    color: v.$text-secondary;
+    font-size: 0.72rem;
+    font-weight: 600;
+  }
+
+  span {
+    white-space: nowrap;
+  }
+}
+
+.stockChartControls {
+  display: grid;
+  grid-template-columns: auto minmax(140px, 1fr);
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 8px;
+
+  div {
+    display: flex;
+    gap: 6px;
+  }
+
+  button {
+    min-width: 38px;
+    height: 30px;
+    border: 1px solid v.$border-soft;
+    border-radius: 6px;
+    background: v.$surface-1;
+    color: v.$text-primary;
+    font-size: 0.76rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  button:hover {
+    border-color: rgba(v.$primary-color, 0.75);
+    color: v.$primary-color;
+  }
+
+  input {
+    width: 100%;
+    accent-color: v.$primary-color;
+  }
+}
+
+.legendUp,
+.legendDown,
+.legendActual {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+
+  &::before {
+    content: "";
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    border-radius: 2px;
+  }
+}
+
+.legendUp::before {
+  background: v.$success-color;
+}
+
+.legendDown::before {
+  background: v.$danger-color;
+}
+
+.legendActual::before {
+  border-radius: 50%;
+  background: v.$primary-color;
+}
+
+.stockChart {
+  display: block;
+  width: 100%;
+  height: auto;
+  min-height: 240px;
+  overflow: visible;
+}
+
+.stockGridLine {
+  stroke: rgba(v.$color-white, 0.09);
+  stroke-width: 1;
+}
+
+.stockAxisLine {
+  stroke: rgba(v.$color-white, 0.22);
+  stroke-width: 1;
+}
+
+.stockDayBandEven {
+  fill: rgba(v.$primary-color, 0.045);
+}
+
+.stockDayBandOdd {
+  fill: rgba(v.$color-white, 0.075);
+}
+
+.stockDayDivider {
+  stroke: rgba(v.$color-white, 0.2);
+  stroke-dasharray: 5 5;
+  stroke-width: 2;
+}
+
+.stockAxisText,
+.stockXAxisText,
+.stockDayLabel {
+  fill: v.$text-secondary;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.stockXAxisText {
+  text-anchor: middle;
+  font-size: 18px;
+}
+
+.stockDayLabel {
+  text-anchor: middle;
+  font-size: 16px;
+  opacity: 0.9;
+}
+
+.stockWick {
+  stroke: rgba(v.$color-white, 0.74);
+  stroke-linecap: square;
+  stroke-width: 3;
+}
+
+.stockBody {
+  stroke: rgba(v.$surface-0, 0.9);
+  stroke-width: 1;
+}
+
+.stockBodyUp {
+  fill: v.$success-color;
+}
+
+.stockBodyDown {
+  fill: v.$danger-color;
+}
+
+.actualMarker {
+  fill: v.$primary-color;
+  stroke: v.$surface-0;
+  stroke-width: 2;
+}
+
+.diagnosticGrid {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid v.$border-soft;
+  border-radius: 8px;
+  background: v.$surface-0;
+}
+
+.diagnosticHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 2px;
+
+  h3 {
+    margin: 0;
+    color: v.$color-white;
+    font-size: 0.92rem;
+  }
+
+  span {
+    color: v.$text-secondary;
+    font-size: 0.76rem;
+  }
+}
+
+.diagnosticRow {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) repeat(3, minmax(70px, auto));
+  gap: 10px;
+  align-items: center;
+  min-width: 0;
+  padding: 8px 0;
+  border-top: 1px solid v.$border-soft;
+  color: v.$text-secondary;
+  font-size: 0.78rem;
+
+  span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  strong {
+    color: v.$primary-color;
+    font-family: v.$font-family-numbers, monospace;
+    font-size: 0.95rem;
+  }
+}
+
+.candleTable {
+  display: grid;
+  gap: 10px;
+}
+
+.candleTableRow {
   display: grid;
   gap: 6px;
   min-width: 0;
@@ -482,55 +699,6 @@
 
 .candleTeams strong {
   color: v.$text-primary;
-}
-
-.candleTrack {
-  position: relative;
-  height: 18px;
-  border-radius: 999px;
-  background: v.$surface-0;
-}
-
-.candleRange,
-.candleOpen,
-.candleFinal,
-.candleActual {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-.candleRange {
-  left: var(--range-left);
-  width: var(--range-width);
-  height: 6px;
-  border-radius: 999px;
-  background: v.$primary-color;
-}
-
-.candleOpen,
-.candleFinal {
-  width: 2px;
-  height: 14px;
-  background: v.$color-white;
-}
-
-.candleOpen {
-  left: var(--open-left);
-  opacity: 0.5;
-}
-
-.candleFinal {
-  left: var(--final-left);
-}
-
-.candleActual {
-  left: var(--actual-left);
-  width: 10px;
-  height: 10px;
-  border: 2px solid v.$surface-0;
-  border-radius: 50%;
-  background: v.$success-color;
 }
 
 .calibration {
@@ -564,8 +732,14 @@
   .predictionGrid,
   .detailGrid,
   .performanceGrid,
-  .accountabilityGrid {
+  .accountabilityGrid,
+  .stockChartControls,
+  .diagnosticRow {
     grid-template-columns: 1fr;
+  }
+
+  .diagnosticHeader {
+    flex-direction: column;
   }
 
   .teamStrip {

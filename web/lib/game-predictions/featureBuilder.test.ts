@@ -6,8 +6,40 @@ import {
   buildGoalieBlendFeatures,
   buildScheduleContextFeatures,
   type GamePredictionFeatureInputs,
+  type NstTeamGamelogRow,
 } from "./featureBuilder";
 import { getFeatureSourceByTable } from "./featureSources";
+
+function createNstTeamGamelogRow(args: {
+  teamAbbreviation: string;
+  date: string;
+  gf: number;
+  ga: number;
+  xgf: number;
+  xga: number;
+  sf: number;
+  sa: number;
+  points: number;
+}): NstTeamGamelogRow {
+  return {
+    team_abbreviation: args.teamAbbreviation,
+    date: args.date,
+    gp: 1,
+    wins: args.points === 2 ? 1 : 0,
+    losses: args.points === 0 ? 1 : 0,
+    otl: args.points === 1 ? 1 : 0,
+    points: args.points,
+    point_pct: args.points / 2,
+    gf: args.gf,
+    ga: args.ga,
+    xgf: args.xgf,
+    xga: args.xga,
+    xgf_pct: (args.xgf / (args.xgf + args.xga)) * 100,
+    sf: args.sf,
+    sa: args.sa,
+    sf_pct: (args.sf / (args.sf + args.sa)) * 100,
+  };
+}
 
 function createInputs(
   overrides: Partial<GamePredictionFeatureInputs> = {},
@@ -115,6 +147,52 @@ function createInputs(
       },
     ],
     wgoTeamRows: [],
+    nstTeamGamelogRows: [
+      createNstTeamGamelogRow({
+        teamAbbreviation: "BOS",
+        date: "2026-01-09",
+        gf: 4,
+        ga: 2,
+        xgf: 3,
+        xga: 2,
+        sf: 35,
+        sa: 25,
+        points: 2,
+      }),
+      createNstTeamGamelogRow({
+        teamAbbreviation: "BOS",
+        date: "2026-01-07",
+        gf: 3,
+        ga: 2,
+        xgf: 2.6,
+        xga: 2.4,
+        sf: 31,
+        sa: 29,
+        points: 1,
+      }),
+      createNstTeamGamelogRow({
+        teamAbbreviation: "MTL",
+        date: "2026-01-09",
+        gf: 2,
+        ga: 3,
+        xgf: 2,
+        xga: 3,
+        sf: 27,
+        sa: 33,
+        points: 0,
+      }),
+      createNstTeamGamelogRow({
+        teamAbbreviation: "MTL",
+        date: "2026-01-08",
+        gf: 1,
+        ga: 4,
+        xgf: 2,
+        xga: 3,
+        sf: 26,
+        sa: 34,
+        points: 1,
+      }),
+    ],
     goalieStartRows: [
       {
         game_id: 2025020001,
@@ -194,6 +272,24 @@ describe("game prediction feature builder", () => {
 
     expect(payload.away.teamPower?.sourceDate).toBe("2026-01-08");
     expect(payload.away.teamPower?.offRating).toBe(47);
+  });
+
+  it("builds recent team form from NST gamelog rows", () => {
+    const payload = buildGamePredictionFeatureSnapshotPayload(createInputs());
+
+    expect(payload.home.recentForm).toMatchObject({
+      sourceMaxDate: "2026-01-09",
+      last5Games: 2,
+      last10Games: 2,
+      last10GoalDifferentialPerGame: 1.5,
+      last10PointPct: 0.75,
+    });
+    expect(payload.away.recentForm?.last10GoalDifferentialPerGame).toBe(-2);
+    expect(
+      payload.matchup.homeMinusAwayRecent10GoalDifferentialPerGame,
+    ).toBe(3.5);
+    expect(payload.matchup.homeMinusAwayRecent10XgfPct).toBeCloseTo(0.16);
+    expect(payload.matchup.homeMinusAwayRecent10PointPct).toBe(0.5);
   });
 
   it("blends unconfirmed goalie candidates and collapses confirmed candidates", () => {
@@ -418,7 +514,7 @@ describe("game prediction feature builder", () => {
       snapshot_date: "2026-01-10",
       model_name: "baseline_logistic",
       model_version: "v0",
-      feature_set_version: "game_features_v1",
+      feature_set_version: "game_features_v2",
       home_team_id: 1,
       away_team_id: 2,
     });

@@ -102,6 +102,11 @@ const FACTOR_LABELS: Record<string, string> = {
   homeMinusAwaySpecialRating: "Special teams edge",
   homeMinusAwayPointPctg: "Standings point rate edge",
   homeMinusAwayGoalDifferential: "Goal differential edge",
+  homeMinusAwayRecent5GoalDifferentialPerGame: "Last 5 goal differential edge",
+  homeMinusAwayRecent10GoalDifferentialPerGame: "Last 10 goal differential edge",
+  homeMinusAwayRecent5XgfPct: "Last 5 xG share edge",
+  homeMinusAwayRecent10XgfPct: "Last 10 xG share edge",
+  homeMinusAwayRecent10PointPct: "Last 10 point rate edge",
   homeMinusAwayWeightedGoalieGsaaPer60: "Projected goalie GSAA edge",
   homeRestAdvantageDays: "Rest edge",
 };

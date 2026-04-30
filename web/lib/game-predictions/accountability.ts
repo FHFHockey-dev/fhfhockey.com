@@ -6,9 +6,12 @@ import type { Database, Json } from "lib/supabase/database-generated.types";
 import {
   BASELINE_MODEL_NAME,
   BASELINE_MODEL_VERSION,
+  BASELINE_WINNER_DECISION_THRESHOLD,
   buildBaselineTrainingDataset,
   predictGameWithBaselineModel,
   trainGamePredictionBaselineModel,
+  type BaselineFeatureKey,
+  type BaselineFeatureVectorOptions,
   type GamePredictionBaselineExample,
 } from "./baselineModel";
 import {
@@ -109,6 +112,28 @@ export type AccountabilitySummary = {
   logLoss: number | null;
 };
 
+export type BacktestBaselineComparison = {
+  key: string;
+  label: string;
+  evaluatedGames: number;
+  correctGames: number;
+  wrongGames: number;
+  accuracy: number | null;
+  brierScore: number | null;
+  logLoss: number | null;
+  averagePrediction: number | null;
+};
+
+export type ConfidenceCalibrationBucket = {
+  label: string;
+  minConfidence: number;
+  maxConfidence: number;
+  predictions: number;
+  correctGames: number;
+  accuracy: number | null;
+  averageConfidence: number | null;
+};
+
 export type AccountabilityDashboard = {
   generatedAt: string;
   modelName: string;
@@ -117,6 +142,8 @@ export type AccountabilityDashboard = {
   summary: AccountabilitySummary;
   daily: AccountabilityDailyPoint[];
   candles: PredictionCandlestick[];
+  baselineComparisons?: BacktestBaselineComparison[];
+  calibrationBuckets?: ConfidenceCalibrationBucket[];
 };
 
 export type WalkForwardBacktestResult = AccountabilityDashboard & {
@@ -132,6 +159,41 @@ export type WalkForwardBacktestResult = AccountabilityDashboard & {
   horizonDays: number[];
   persisted: boolean;
   backtestRunId: string | null;
+};
+
+export type WalkForwardBacktestVariantOptions = {
+  featureVectorOptions?: BaselineFeatureVectorOptions;
+  disableDataQualityDampening?: boolean;
+  winnerDecisionThreshold?: number;
+};
+
+export type BacktestAblationVariant = WalkForwardBacktestVariantOptions & {
+  key: string;
+  label: string;
+};
+
+export type BacktestAblationComparison = {
+  key: string;
+  label: string;
+  modelVersion: string;
+  excludedFeatureKeys: readonly BaselineFeatureKey[];
+  disableDataQualityDampening: boolean;
+  winnerDecisionThreshold: number;
+  summary: AccountabilitySummary;
+  deltaVsBaseline: {
+    accuracy: number | null;
+    brierScore: number | null;
+    logLoss: number | null;
+  };
+  recommendation: "keep" | "reject" | "review";
+};
+
+export type BacktestAblationResult = {
+  generatedAt: string;
+  modelName: string;
+  featureSetVersion: string;
+  baselineKey: string;
+  variants: BacktestAblationComparison[];
 };
 
 const DAY_MS = 86_400_000;
@@ -169,6 +231,95 @@ function normalizeHorizonDays(horizonDays?: number[]): number[] {
     new Set(values.filter((value) => Number.isInteger(value) && value >= 0)),
   ).sort((a, b) => b - a);
   return normalized.length > 0 ? normalized : [0];
+}
+
+const RECENT_FORM_FEATURE_KEYS: readonly BaselineFeatureKey[] = [
+  "homeMinusAwayRecent5GoalDifferentialPerGame",
+  "homeMinusAwayRecent10GoalDifferentialPerGame",
+  "homeMinusAwayRecent5XgfPct",
+  "homeMinusAwayRecent10XgfPct",
+  "homeMinusAwayRecent10PointPct",
+];
+
+export const DEFAULT_BACKTEST_ABLATION_VARIANTS: BacktestAblationVariant[] = [
+  {
+    key: "v4_default",
+    label: "Current v4 default",
+  },
+  {
+    key: "with_recent_point_pct",
+    label: "Include recent point %",
+    featureVectorOptions: {
+      includeDefaultExcludedFeatureKeys: true,
+    },
+    winnerDecisionThreshold: 0.52,
+  },
+  {
+    key: "v3_recent_form",
+    label: "Prior v3 recent form",
+    featureVectorOptions: {
+      includeDefaultExcludedFeatureKeys: true,
+    },
+    winnerDecisionThreshold: 0.5,
+  },
+  {
+    key: "no_recent_form",
+    label: "No recent form features",
+    featureVectorOptions: {
+      excludedFeatureKeys: RECENT_FORM_FEATURE_KEYS,
+    },
+  },
+  {
+    key: "no_recent_goal_diff",
+    label: "No recent goal differential",
+    featureVectorOptions: {
+      excludedFeatureKeys: [
+        "homeMinusAwayRecent5GoalDifferentialPerGame",
+        "homeMinusAwayRecent10GoalDifferentialPerGame",
+      ],
+    },
+  },
+  {
+    key: "no_recent_xg",
+    label: "No recent xG share",
+    featureVectorOptions: {
+      excludedFeatureKeys: [
+        "homeMinusAwayRecent5XgfPct",
+        "homeMinusAwayRecent10XgfPct",
+      ],
+    },
+  },
+  {
+    key: "no_recent_point_pct",
+    label: "No recent point %",
+    featureVectorOptions: {
+      excludedFeatureKeys: ["homeMinusAwayRecent10PointPct"],
+    },
+  },
+  {
+    key: "no_quality_dampening",
+    label: "No data quality dampening",
+    disableDataQualityDampening: true,
+  },
+  {
+    key: "home_threshold_52",
+    label: "Home decision threshold 52%",
+    winnerDecisionThreshold: 0.52,
+  },
+];
+
+function boundedEdgeProbability(
+  edge: number | null | undefined,
+  scale: number,
+  baseConfidence = 0.55,
+  maxConfidence = 0.75,
+): number {
+  if (edge == null || !Number.isFinite(edge) || Math.abs(edge) < 1e-9) {
+    return 0.5;
+  }
+  const confidence =
+    baseConfidence + Math.min(maxConfidence - baseConfidence, Math.abs(edge) / scale);
+  return edge > 0 ? confidence : 1 - confidence;
 }
 
 function teamAbbreviation(
@@ -328,11 +479,173 @@ export function buildAccountabilitySummary(
   };
 }
 
+function buildBaselineComparison(args: {
+  key: string;
+  label: string;
+  candles: PredictionCandlestick[];
+  probabilityFor: (candle: PredictionCandlestick) => number;
+}): BacktestBaselineComparison {
+  const predictions = args.candles.map((candle) => {
+    const homeWinProbability = Math.min(
+      0.95,
+      Math.max(0.05, args.probabilityFor(candle)),
+    );
+    const predictedHome = homeWinProbability >= 0.5;
+    const actualHome = candle.actualHomeWinProbability === 1;
+    return {
+      label: candle.actualHomeWinProbability,
+      prediction: homeWinProbability,
+      correct: predictedHome === actualHome,
+    };
+  });
+  const metrics = evaluateProbabilityMetrics(predictions);
+  const correctGames = predictions.filter((prediction) => prediction.correct).length;
+
+  return {
+    key: args.key,
+    label: args.label,
+    evaluatedGames: predictions.length,
+    correctGames,
+    wrongGames: predictions.length - correctGames,
+    accuracy: predictions.length ? roundMetric(correctGames / predictions.length) : null,
+    brierScore: metrics.brierScore,
+    logLoss: metrics.logLoss,
+    averagePrediction: metrics.averagePrediction,
+  };
+}
+
+export function buildBacktestBaselineComparisons(args: {
+  candles: PredictionCandlestick[];
+  payloadsByGameId?: Map<number, GamePredictionFeatureSnapshotPayload>;
+}): BacktestBaselineComparison[] {
+  const { candles, payloadsByGameId = new Map() } = args;
+  const payloadFor = (candle: PredictionCandlestick) =>
+    payloadsByGameId.get(candle.gameId);
+
+  return [
+    buildBaselineComparison({
+      key: "home_team_fixed_54",
+      label: "Always home team",
+      candles,
+      probabilityFor: () => 0.54,
+    }),
+    buildBaselineComparison({
+      key: "standings_point_pct",
+      label: "Better standings point %",
+      candles,
+      probabilityFor: (candle) =>
+        boundedEdgeProbability(
+          payloadFor(candle)?.matchup.homeMinusAwayPointPctg,
+          0.3,
+          0.53,
+          0.68,
+        ),
+    }),
+    buildBaselineComparison({
+      key: "goal_differential",
+      label: "Better goal differential",
+      candles,
+      probabilityFor: (candle) =>
+        boundedEdgeProbability(
+          payloadFor(candle)?.matchup.homeMinusAwayGoalDifferential,
+          100,
+          0.53,
+          0.68,
+        ),
+    }),
+    buildBaselineComparison({
+      key: "recent10_goal_differential",
+      label: "Better last 10 goal differential",
+      candles,
+      probabilityFor: (candle) =>
+        boundedEdgeProbability(
+          payloadFor(candle)?.matchup
+            .homeMinusAwayRecent10GoalDifferentialPerGame,
+          3,
+          0.53,
+          0.68,
+        ),
+    }),
+    buildBaselineComparison({
+      key: "team_power_composite",
+      label: "Team power composite",
+      candles,
+      probabilityFor: (candle) => {
+        const matchup = payloadFor(candle)?.matchup;
+        const edge =
+          (matchup?.homeMinusAwayOffRating ?? 0) +
+          (matchup?.homeMinusAwayDefRating ?? 0) +
+          (matchup?.homeMinusAwayGoalieRating ?? 0) +
+          (matchup?.homeMinusAwaySpecialRating ?? 0);
+        return boundedEdgeProbability(edge, 120, 0.53, 0.72);
+      },
+    }),
+    buildBaselineComparison({
+      key: "goalie_gsaa",
+      label: "Goalie GSAA edge",
+      candles,
+      probabilityFor: (candle) =>
+        boundedEdgeProbability(
+          payloadFor(candle)?.matchup.homeMinusAwayWeightedGoalieGsaaPer60,
+          2,
+          0.52,
+          0.65,
+        ),
+    }),
+  ];
+}
+
+export function buildConfidenceCalibrationBuckets(
+  candles: PredictionCandlestick[],
+): ConfidenceCalibrationBucket[] {
+  const bucketEdges = [0.5, 0.55, 0.6, 0.65, 0.7, 0.8, 0.9, 1.000001];
+  return bucketEdges.slice(0, -1).map((minConfidence, index) => {
+    const maxConfidence = bucketEdges[index + 1]!;
+    const bucketCandles = candles.filter((candle) => {
+      const confidence = Math.max(
+        candle.finalHomeWinProbability,
+        1 - candle.finalHomeWinProbability,
+      );
+      return confidence >= minConfidence && confidence < maxConfidence;
+    });
+    const correctGames = bucketCandles.filter(
+      (candle) => candle.predictedWinnerCorrect,
+    ).length;
+    const confidenceSum = bucketCandles.reduce(
+      (sum, candle) =>
+        sum +
+        Math.max(
+          candle.finalHomeWinProbability,
+          1 - candle.finalHomeWinProbability,
+        ),
+      0,
+    );
+
+    return {
+      label: `${Math.round(minConfidence * 100)}-${Math.round(
+        Math.min(1, maxConfidence) * 100,
+      )}%`,
+      minConfidence,
+      maxConfidence: Math.min(1, maxConfidence),
+      predictions: bucketCandles.length,
+      correctGames,
+      accuracy: bucketCandles.length
+        ? roundMetric(correctGames / bucketCandles.length)
+        : null,
+      averageConfidence: bucketCandles.length
+        ? roundMetric(confidenceSum / bucketCandles.length)
+        : null,
+    };
+  });
+}
+
 export function buildAccountabilityDashboard(args: {
   modelName: string;
   modelVersion: string;
   featureSetVersion: string;
   candles: PredictionCandlestick[];
+  baselineComparisons?: BacktestBaselineComparison[];
+  calibrationBuckets?: ConfidenceCalibrationBucket[];
   generatedAt?: string;
 }): AccountabilityDashboard {
   const candles = [...args.candles].sort((a, b) =>
@@ -349,6 +662,8 @@ export function buildAccountabilityDashboard(args: {
     summary: buildAccountabilitySummary(candles),
     daily: buildAccountabilityDailySeries(candles),
     candles,
+    baselineComparisons: args.baselineComparisons,
+    calibrationBuckets: args.calibrationBuckets,
   };
 }
 
@@ -357,6 +672,8 @@ export async function fetchAccountabilityDashboard(args: {
   modelName?: string;
   modelVersion?: string;
   featureSetVersion?: string;
+  backtestRunId?: string;
+  latestBacktest?: boolean;
   fromDate?: string;
   toDate?: string;
   limit?: number;
@@ -366,6 +683,16 @@ export async function fetchAccountabilityDashboard(args: {
   const featureSetVersion =
     args.featureSetVersion ?? GAME_PREDICTION_FEATURE_SET_VERSION;
   const limit = Math.min(Math.max(args.limit ?? 250, 1), 1000);
+  if (args.backtestRunId || args.latestBacktest) {
+    return fetchPersistedBacktestDashboard({
+      client: args.client,
+      modelName,
+      modelVersion: args.modelVersion,
+      featureSetVersion,
+      backtestRunId: args.backtestRunId,
+      limit,
+    });
+  }
 
   let query = args.client
     .from("game_prediction_history")
@@ -455,6 +782,120 @@ export async function fetchAccountabilityDashboard(args: {
   });
 }
 
+async function fetchPersistedBacktestDashboard(args: {
+  client: SupabaseClient<Database>;
+  modelName: string;
+  modelVersion?: string;
+  featureSetVersion: string;
+  backtestRunId?: string;
+  limit: number;
+}): Promise<AccountabilityDashboard> {
+  let backtestRunId = args.backtestRunId;
+  let modelVersion = args.modelVersion;
+  let modelName = args.modelName;
+  let featureSetVersion = args.featureSetVersion;
+
+  let runQuery = args.client
+    .from("game_prediction_backtest_runs" as any)
+    .select(
+      "backtest_run_id,model_name,model_version,feature_set_version,metadata,completed_at",
+    )
+    .eq("status", "completed")
+    .order("completed_at", { ascending: false })
+    .limit(1);
+  if (backtestRunId) {
+    runQuery = runQuery.eq("backtest_run_id", backtestRunId);
+  } else if (args.modelVersion) {
+    runQuery = runQuery.eq("model_version", args.modelVersion);
+  }
+
+  const { data: runRows, error: runError } = await runQuery;
+  if (runError) throw runError;
+  const latestRun = (runRows ?? [])[0] as any;
+  if (!latestRun) {
+    return buildAccountabilityDashboard({
+      modelName,
+      modelVersion: modelVersion ?? BASELINE_MODEL_VERSION,
+      featureSetVersion,
+      candles: [],
+    });
+  }
+
+  backtestRunId = String(latestRun.backtest_run_id);
+  modelName = String(latestRun.model_name);
+  modelVersion = String(latestRun.model_version);
+  featureSetVersion = String(latestRun.feature_set_version);
+  const runMetadata =
+    latestRun.metadata && typeof latestRun.metadata === "object"
+      ? latestRun.metadata
+      : {};
+
+  const { data, error } = await args.client
+    .from("game_prediction_accountability_games" as any)
+    .select(
+      "game_id,snapshot_date,home_team_id,away_team_id,open_home_win_probability,low_home_win_probability,high_home_win_probability,final_home_win_probability,actual_home_win_probability,prediction_count,predicted_winner_team_id,actual_winner_team_id,predicted_winner_correct,home_score,away_score,probability_spread,final_prediction_cutoff_at",
+    )
+    .eq("backtest_run_id", backtestRunId)
+    .order("snapshot_date", { ascending: true })
+    .limit(args.limit);
+  if (error) throw error;
+
+  const rows = (data ?? []) as any[];
+  const teamIds = Array.from(
+    new Set(rows.flatMap((row) => [row.home_team_id, row.away_team_id])),
+  );
+  const { data: teamRows, error: teamError } = teamIds.length
+    ? await args.client
+        .from("teams")
+        .select("id,abbreviation,name")
+        .in("id", teamIds)
+    : { data: [], error: null };
+  if (teamError) throw teamError;
+  const teamsById = new Map(
+    ((teamRows ?? []) as AccountabilityTeamRow[]).map((team) => [
+      team.id,
+      team,
+    ]),
+  );
+
+  const candles: PredictionCandlestick[] = rows.map((row) => ({
+    gameId: Number(row.game_id),
+    snapshotDate: String(row.snapshot_date),
+    startTime: null,
+    homeTeamId: Number(row.home_team_id),
+    awayTeamId: Number(row.away_team_id),
+    homeTeamAbbreviation: teamAbbreviation(teamsById, Number(row.home_team_id)),
+    awayTeamAbbreviation: teamAbbreviation(teamsById, Number(row.away_team_id)),
+    openHomeWinProbability: Number(row.open_home_win_probability),
+    lowHomeWinProbability: Number(row.low_home_win_probability),
+    highHomeWinProbability: Number(row.high_home_win_probability),
+    finalHomeWinProbability: Number(row.final_home_win_probability),
+    actualHomeWinProbability: Number(row.actual_home_win_probability) as 0 | 1,
+    probabilitySpread: Number(row.probability_spread),
+    predictionCount: Number(row.prediction_count),
+    finalPredictionId: null,
+    finalPredictionCutoffAt: String(row.final_prediction_cutoff_at),
+    predictedWinnerTeamId: Number(row.predicted_winner_team_id),
+    actualWinnerTeamId: Number(row.actual_winner_team_id),
+    predictedWinnerCorrect: Boolean(row.predicted_winner_correct),
+    homeScore: Number(row.home_score),
+    awayScore: Number(row.away_score),
+  }));
+
+  return buildAccountabilityDashboard({
+    modelName,
+    modelVersion: modelVersion ?? BASELINE_MODEL_VERSION,
+    featureSetVersion,
+    candles,
+    baselineComparisons: Array.isArray(runMetadata.baseline_comparisons)
+      ? runMetadata.baseline_comparisons
+      : undefined,
+    calibrationBuckets: Array.isArray(runMetadata.calibration_buckets)
+      ? runMetadata.calibration_buckets
+      : undefined,
+  });
+}
+
 async function fetchCompletedSeasonGames(args: {
   client: SupabaseClient<Database>;
   seasonId: number;
@@ -501,6 +942,7 @@ async function buildPayloadForGame(
 function toTrainingExample(args: {
   payload: GamePredictionFeatureSnapshotPayload;
   outcome: CompletedGameOutcome;
+  featureVectorOptions?: BaselineFeatureVectorOptions;
 }): GamePredictionBaselineExample {
   return buildBaselineTrainingDataset(
     [
@@ -510,6 +952,7 @@ function toTrainingExample(args: {
       },
     ],
     [{ gameId: args.outcome.gameId, homeWon: args.outcome.homeWon }],
+    args.featureVectorOptions,
   )[0]!;
 }
 
@@ -617,6 +1060,8 @@ async function persistBacktestResult(args: {
           retrain_cadence_games: result.retrainCadenceGames,
           horizon_days: result.horizonDays,
           prediction_snapshots: result.predictionSnapshots,
+          baseline_comparisons: result.baselineComparisons ?? [],
+          calibration_buckets: result.calibrationBuckets ?? [],
           accountability_backtest: true,
         },
         updated_at: new Date().toISOString(),
@@ -646,6 +1091,8 @@ async function persistBacktestResult(args: {
       metadata: {
         horizon_days: result.horizonDays,
         prediction_snapshots: result.predictionSnapshots,
+        baseline_comparisons: result.baselineComparisons ?? [],
+        calibration_buckets: result.calibrationBuckets ?? [],
       },
       completed_at: new Date().toISOString(),
     })
@@ -724,8 +1171,13 @@ export async function runWalkForwardBacktest(args: {
   maxSimulationDays?: number;
   retrainCadenceGames?: number;
   persist?: boolean;
+  maxTrainingGames?: number;
   maxReplayGames?: number;
   initialModel?: BinaryLogisticModel;
+  payloadCache?: Map<string, GamePredictionFeatureSnapshotPayload>;
+  featureVectorOptions?: BaselineFeatureVectorOptions;
+  disableDataQualityDampening?: boolean;
+  winnerDecisionThreshold?: number;
 }): Promise<WalkForwardBacktestResult> {
   const modelName = args.modelName ?? BASELINE_MODEL_NAME;
   const modelVersion =
@@ -749,12 +1201,15 @@ export async function runWalkForwardBacktest(args: {
   );
   const hasBlindWindow = Boolean(args.trainStartDate && args.blindDate);
   const splitIndex = Math.floor(games.length / 2);
-  const trainingGames = hasBlindWindow
+  const allTrainingGames = hasBlindWindow
     ? games.filter(
         (game) =>
           game.date >= args.trainStartDate! && game.date <= args.blindDate!,
       )
     : games.slice(0, splitIndex);
+  const trainingGames = args.maxTrainingGames
+    ? allTrainingGames.slice(-args.maxTrainingGames)
+    : allTrainingGames;
   const allReplayGames = hasBlindWindow
     ? games.filter(
         (game) =>
@@ -782,7 +1237,8 @@ export async function runWalkForwardBacktest(args: {
   );
 
   const examples: GamePredictionBaselineExample[] = [];
-  const payloadCache = new Map<string, GamePredictionFeatureSnapshotPayload>();
+  const payloadCache =
+    args.payloadCache ?? new Map<string, GamePredictionFeatureSnapshotPayload>();
   const getPayload = async (gameId: number, sourceAsOfDate?: string) => {
     const key = `${gameId}:${sourceAsOfDate ?? "pregame"}`;
     const cached = payloadCache.get(key);
@@ -800,7 +1256,13 @@ export async function runWalkForwardBacktest(args: {
     const outcome = outcomesByGameId.get(game.id);
     if (!outcome) continue;
     const payload = await getPayload(game.id, game.date);
-    examples.push(toTrainingExample({ payload, outcome }));
+    examples.push(
+      toTrainingExample({
+        payload,
+        outcome,
+        featureVectorOptions: args.featureVectorOptions,
+      }),
+    );
   }
   if (examples.length === 0) {
     throw new Error(
@@ -848,7 +1310,13 @@ export async function runWalkForwardBacktest(args: {
         const outcome = outcomesByGameId.get(game.id);
         if (!outcome) continue;
         const payload = await getPayload(game.id, game.date);
-        examples.push(toTrainingExample({ payload, outcome }));
+        examples.push(
+          toTrainingExample({
+            payload,
+            outcome,
+            featureVectorOptions: args.featureVectorOptions,
+          }),
+        );
         addedTrainingGameIds.add(game.id);
         addedExamplesToday += 1;
       }
@@ -876,6 +1344,9 @@ export async function runWalkForwardBacktest(args: {
             modelName,
             modelVersion,
             predictionCutoffAt,
+            featureVectorOptions: args.featureVectorOptions,
+            disableDataQualityDampening: args.disableDataQualityDampening,
+            winnerDecisionThreshold: args.winnerDecisionThreshold,
           });
           const row = predictionToSyntheticHistoryRow({
             prediction,
@@ -921,6 +1392,9 @@ export async function runWalkForwardBacktest(args: {
         modelName,
         modelVersion,
         predictionCutoffAt,
+        featureVectorOptions: args.featureVectorOptions,
+        disableDataQualityDampening: args.disableDataQualityDampening,
+        winnerDecisionThreshold: args.winnerDecisionThreshold,
       });
       candles.push(
         predictionToAccountabilityRow({
@@ -931,7 +1405,13 @@ export async function runWalkForwardBacktest(args: {
       );
       predictionSnapshots += 1;
 
-      examples.push(toTrainingExample({ payload, outcome }));
+      examples.push(
+        toTrainingExample({
+          payload,
+          outcome,
+          featureVectorOptions: args.featureVectorOptions,
+        }),
+      );
       replayedSinceRetrain += 1;
       if (replayedSinceRetrain >= retrainCadenceGames) {
         model = trainGamePredictionBaselineModel(examples, {
@@ -944,11 +1424,26 @@ export async function runWalkForwardBacktest(args: {
     }
   }
 
+  const payloadsByGameId = new Map<number, GamePredictionFeatureSnapshotPayload>();
+  for (const candle of candles) {
+    payloadsByGameId.set(
+      candle.gameId,
+      await getPayload(candle.gameId, candle.snapshotDate),
+    );
+  }
+  const baselineComparisons = buildBacktestBaselineComparisons({
+    candles,
+    payloadsByGameId,
+  });
+  const calibrationBuckets = buildConfidenceCalibrationBuckets(candles);
+
   const dashboard = buildAccountabilityDashboard({
     modelName,
     modelVersion,
     featureSetVersion,
     candles,
+    baselineComparisons,
+    calibrationBuckets,
   });
   const result: WalkForwardBacktestResult = {
     ...dashboard,
@@ -982,4 +1477,141 @@ export async function runWalkForwardBacktest(args: {
   }
 
   return result;
+}
+
+function deltaMetric(
+  value: number | null,
+  baseline: number | null,
+): number | null {
+  if (value == null || baseline == null) return null;
+  return roundMetric(value - baseline);
+}
+
+function recommendAblationVariant(args: {
+  summary: AccountabilitySummary;
+  baseline: AccountabilitySummary;
+}): BacktestAblationComparison["recommendation"] {
+  const accuracyDelta = deltaMetric(args.summary.accuracy, args.baseline.accuracy) ?? 0;
+  const brierDelta =
+    deltaMetric(args.summary.brierScore, args.baseline.brierScore) ?? 0;
+  const logLossDelta =
+    deltaMetric(args.summary.logLoss, args.baseline.logLoss) ?? 0;
+
+  if (accuracyDelta > 0 && brierDelta <= 0 && logLossDelta <= 0) {
+    return "keep";
+  }
+
+  if (accuracyDelta < 0 && brierDelta >= 0 && logLossDelta >= 0) {
+    return "reject";
+  }
+
+  return "review";
+}
+
+export async function runWalkForwardBacktestAblations(args: {
+  client: SupabaseClient<Database>;
+  seasonId: number;
+  gameType?: number;
+  modelName?: string;
+  baseModelVersion?: string;
+  featureSetVersion?: string;
+  trainStartDate?: string;
+  blindDate?: string;
+  replayEndDate?: string;
+  horizonDays?: number[];
+  maxSimulationDays?: number;
+  retrainCadenceGames?: number;
+  maxTrainingGames?: number;
+  maxReplayGames?: number;
+  variants?: BacktestAblationVariant[];
+}): Promise<BacktestAblationResult> {
+  const modelName = args.modelName ?? BASELINE_MODEL_NAME;
+  const featureSetVersion =
+    args.featureSetVersion ?? GAME_PREDICTION_FEATURE_SET_VERSION;
+  const variants = args.variants?.length
+    ? args.variants
+    : DEFAULT_BACKTEST_ABLATION_VARIANTS;
+  const baselineKey = variants[0]?.key ?? "baseline";
+  const sharedPayloadCache = new Map<string, GamePredictionFeatureSnapshotPayload>();
+  const results: Array<{
+    variant: BacktestAblationVariant;
+    result: WalkForwardBacktestResult;
+  }> = [];
+
+  for (const variant of variants) {
+    const modelVersion =
+      `${args.baseModelVersion ?? BASELINE_MODEL_VERSION}_ablation_${variant.key}_${args.seasonId}`;
+    const result = await runWalkForwardBacktest({
+      client: args.client,
+      seasonId: args.seasonId,
+      gameType: args.gameType,
+      modelName,
+      modelVersion,
+      featureSetVersion,
+      trainStartDate: args.trainStartDate,
+      blindDate: args.blindDate,
+      replayEndDate: args.replayEndDate,
+      horizonDays: args.horizonDays,
+      maxSimulationDays: args.maxSimulationDays,
+      retrainCadenceGames: args.retrainCadenceGames,
+      maxTrainingGames: args.maxTrainingGames,
+      maxReplayGames: args.maxReplayGames,
+      persist: false,
+      payloadCache: sharedPayloadCache,
+      featureVectorOptions: variant.featureVectorOptions,
+      disableDataQualityDampening: variant.disableDataQualityDampening,
+      winnerDecisionThreshold: variant.winnerDecisionThreshold,
+    });
+    results.push({ variant, result });
+  }
+
+  const baselineSummary = results[0]?.result.summary ?? {
+    evaluatedGames: 0,
+    correctGames: 0,
+    wrongGames: 0,
+    accuracy: null,
+    rolling10Accuracy: null,
+    rolling25Accuracy: null,
+    rolling50Accuracy: null,
+    brierScore: null,
+    logLoss: null,
+  };
+
+  return {
+    generatedAt: new Date().toISOString(),
+    modelName,
+    featureSetVersion,
+    baselineKey,
+    variants: results.map(({ variant, result }) => {
+      const deltaVsBaseline = {
+        accuracy: deltaMetric(result.summary.accuracy, baselineSummary.accuracy),
+        brierScore: deltaMetric(
+          result.summary.brierScore,
+          baselineSummary.brierScore,
+        ),
+        logLoss: deltaMetric(result.summary.logLoss, baselineSummary.logLoss),
+      };
+
+      return {
+        key: variant.key,
+        label: variant.label,
+        modelVersion: result.modelVersion,
+        excludedFeatureKeys:
+          variant.featureVectorOptions?.excludedFeatureKeys ?? [],
+        disableDataQualityDampening:
+          variant.disableDataQualityDampening ?? false,
+        winnerDecisionThreshold:
+          variant.winnerDecisionThreshold ?? BASELINE_WINNER_DECISION_THRESHOLD,
+        summary: result.summary,
+        deltaVsBaseline,
+        recommendation:
+          variant.key === baselineKey
+            ? "review"
+            : recommendAblationVariant({
+                summary: result.summary,
+                baseline: baselineSummary,
+              }),
+      };
+    }),
+  };
 }
