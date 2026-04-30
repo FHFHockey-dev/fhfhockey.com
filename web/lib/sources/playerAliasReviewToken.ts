@@ -8,7 +8,8 @@ type PlayerAliasReviewTokenPayload = {
 const DEFAULT_TTL_SECONDS = 7 * 24 * 60 * 60;
 
 function base64UrlEncode(value: string | Buffer): string {
-  return Buffer.from(value)
+  const buffer = typeof value === "string" ? Buffer.from(value) : value;
+  return buffer
     .toString("base64")
     .replace(/\+/g, "-")
     .replace(/\//g, "_")
@@ -57,8 +58,8 @@ export function verifyPlayerAliasReviewToken(args: {
   if (!payloadPart || !signaturePart) return false;
 
   const expectedSignature = sign(payloadPart, secret);
-  const supplied = Buffer.from(signaturePart);
-  const expected = Buffer.from(expectedSignature);
+  const supplied = Uint8Array.from(Buffer.from(signaturePart));
+  const expected = Uint8Array.from(Buffer.from(expectedSignature));
   if (supplied.length !== expected.length || !crypto.timingSafeEqual(supplied, expected)) {
     return false;
   }
