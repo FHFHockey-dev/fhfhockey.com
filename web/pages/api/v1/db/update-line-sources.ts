@@ -241,18 +241,16 @@ export default withCronJobAudit(
         scheduledGames.flatMap((game) => [game.homeTeamId, game.awayTeamId]),
       ),
     );
-    const rawRosterByTeam = await fetchRosterEntriesByTeam({
-      supabase: req.supabase,
-      teamIds: scheduledTeamIds,
-      seasonId: currentSeason.seasonId,
-    });
-    const playerNameAliases = await fetchPlayerNameAliases({
-      supabase: req.supabase,
-      teamIds: scheduledTeamIds,
-    });
-    const rosterByTeam = applyPlayerNameAliasesToRosterMap({
-      rosterByTeam: rawRosterByTeam,
-      aliases: playerNameAliases,
+    let rosterByTeam = applyPlayerNameAliasesToRosterMap({
+      rosterByTeam: await fetchRosterEntriesByTeam({
+        supabase: req.supabase,
+        teamIds: scheduledTeamIds,
+        seasonId: currentSeason.seasonId,
+      }),
+      aliases: await fetchPlayerNameAliases({
+        supabase: req.supabase,
+        teamIds: scheduledTeamIds,
+      }),
     });
     const gameIdByTeamId = new Map<number, number>();
     for (const game of scheduledGames) {
@@ -434,6 +432,52 @@ export default withCronJobAudit(
         ...event,
         raw_payload: nextRawPayload,
       });
+    }
+
+    const unscheduledAcceptedTeamIds = Array.from(
+      new Set(
+        parsedCandidates
+          .map((candidate) =>
+            candidate.nhlFilterStatus === "accepted"
+              ? candidate.team?.id
+              : null,
+          )
+          .filter(
+            (teamId): teamId is number =>
+              typeof teamId === "number" && !rosterByTeam.has(teamId),
+          ),
+      ),
+    );
+    if (unscheduledAcceptedTeamIds.length > 0) {
+      const additionalRosterByTeam = applyPlayerNameAliasesToRosterMap({
+        rosterByTeam: await fetchRosterEntriesByTeam({
+          supabase: req.supabase,
+          teamIds: unscheduledAcceptedTeamIds,
+          seasonId: currentSeason.seasonId,
+        }),
+        aliases: await fetchPlayerNameAliases({
+          supabase: req.supabase,
+          teamIds: unscheduledAcceptedTeamIds,
+        }),
+      });
+      rosterByTeam = new Map([...rosterByTeam, ...additionalRosterByTeam]);
+
+      for (let index = 0; index < parsedCandidates.length; index += 1) {
+        const event = parsedEvents[index];
+        const candidate = parsedCandidates[index];
+        if (!event || !candidate?.team) continue;
+        if (!unscheduledAcceptedTeamIds.includes(candidate.team.id)) continue;
+
+        parsedCandidates[index] = applyGdlSourceClassificationHint({
+          sourceKey: event.source_key,
+          candidate: refreshLinesCccSourceFromPrimaryText({
+            source: candidate,
+            teams: teamDirectory,
+            rosterByTeam,
+            gameIdByTeamId,
+          }),
+        });
+      }
     }
 
     const rowsToUpsert = parsedCandidates.map((candidate, index) =>
