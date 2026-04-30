@@ -14,6 +14,7 @@ type UnresolvedName = {
   source_url: string | null;
   tweet_id: string | null;
   context_text: string | null;
+  status: "pending" | "resolved" | "ignored";
   created_at: string;
 };
 
@@ -149,10 +150,15 @@ const PlayerAliasesPage: NextPage = () => {
         {statusMessage ? <p>{statusMessage}</p> : null}
         {isLoading ? <p>Loading...</p> : null}
         {!isLoading && unresolvedNames.length === 0 ? (
-          <p>No pending unresolved player names.</p>
+          <p>No matching unresolved player name was found.</p>
         ) : null}
         {selectedUnresolved ? (
           <section style={{ display: "grid", gap: 16 }}>
+            {selectedUnresolved.status !== "pending" ? (
+              <p>
+                This name is already {selectedUnresolved.status}. You can leave this page as-is.
+              </p>
+            ) : null}
             <label>
               Pending name
               <select
@@ -196,10 +202,18 @@ const PlayerAliasesPage: NextPage = () => {
             </label>
 
             <div style={{ display: "flex", gap: 12 }}>
-              <button disabled={!selectedPlayerId} onClick={() => void resolveName()}>
+              <button
+                disabled={selectedUnresolved.status !== "pending" || !selectedPlayerId}
+                onClick={() => void resolveName()}
+              >
                 Save alias
               </button>
-              <button onClick={() => void ignoreName()}>Ignore</button>
+              <button
+                disabled={selectedUnresolved.status !== "pending"}
+                onClick={() => void ignoreName()}
+              >
+                Ignore
+              </button>
             </div>
 
             <article>

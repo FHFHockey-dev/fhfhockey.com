@@ -29,11 +29,15 @@ async function handleGet(req: any, res: NextApiResponse) {
     .from("lineup_unresolved_player_names" as any)
     .select(
       "id, raw_name, normalized_name, team_id, team_abbreviation, source, source_url, tweet_id, context_text, status, metadata, created_at"
-    )
-    .eq("status", "pending");
+    );
 
   if (typeof unresolvedId === "string" && unresolvedId.trim()) {
     unresolvedQuery = unresolvedQuery.eq("id", unresolvedId.trim());
+    if (!req.hasValidReviewToken) {
+      unresolvedQuery = unresolvedQuery.eq("status", "pending");
+    }
+  } else {
+    unresolvedQuery = unresolvedQuery.eq("status", "pending");
   }
 
   const { data: unresolvedRows, error: unresolvedError } = await unresolvedQuery
@@ -199,6 +203,7 @@ export default async function handler(req: any, res: NextApiResponse) {
   ) {
     req.body = body;
     req.supabase = serviceRoleClient;
+    req.hasValidReviewToken = true;
     return playerNameAliasesHandler(req, res);
   }
 
