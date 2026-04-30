@@ -190,7 +190,7 @@ function createSupabaseMocks(eventRows: LineSourceEventFixture[]) {
     },
     rosters: {
       select: vi.fn(() => ({
-        in: vi.fn(() => ({
+        in: vi.fn((_column: string, teamIds: number[]) => ({
           eq: vi.fn().mockResolvedValue({
             data: [
               {
@@ -239,7 +239,42 @@ function createSupabaseMocks(eventRows: LineSourceEventFixture[]) {
                 playerId: 8482201,
                 players: { fullName: "Gage Goncalves", lastName: "Goncalves" },
               },
-            ],
+              {
+                teamId: 54,
+                playerId: 8474565,
+                players: { fullName: "Ivan Barbashev", lastName: "Barbashev" },
+              },
+              {
+                teamId: 54,
+                playerId: 8478403,
+                players: { fullName: "Jack Eichel", lastName: "Eichel" },
+              },
+              {
+                teamId: 54,
+                playerId: 8475913,
+                players: { fullName: "Brett Howden", lastName: "Howden" },
+              },
+              {
+                teamId: 54,
+                playerId: 8475191,
+                players: { fullName: "Reilly Smith", lastName: "Smith" },
+              },
+              {
+                teamId: 54,
+                playerId: 8478483,
+                players: { fullName: "Mitch Marner", lastName: "Marner" },
+              },
+              {
+                teamId: 54,
+                playerId: 8475913,
+                players: { fullName: "Mark Stone", lastName: "Stone" },
+              },
+              {
+                teamId: 54,
+                playerId: 8479394,
+                players: { fullName: "Carter Hart", lastName: "Hart" },
+              },
+            ].filter((row) => teamIds.includes(row.teamId)),
             error: null,
           }),
         })),
@@ -299,6 +334,12 @@ describe("/api/v1/db/update-line-sources", () => {
         name: "Tampa Bay Lightning",
         abbreviation: "TBL",
         logo: "/teamLogos/TBL.png",
+      },
+      {
+        id: 54,
+        name: "Vegas Golden Knights",
+        abbreviation: "VGK",
+        logo: "/teamLogos/VGK.png",
       },
     ]);
   });
@@ -582,6 +623,46 @@ describe("/api/v1/db/update-line-sources", () => {
       sourceGroup: "gdl_suite",
       sourceKey: "gamedaylines",
       sourceAccount: "GameDayLines",
+    });
+  });
+
+  it("loads rosters for accepted teams that are not on the requested date schedule", async () => {
+    const events = [
+      buildEvent({
+        id: "event-vgk",
+        sourceKey: "gamedaylines",
+        sourceAccount: "GameDayLines",
+        tweetId: "2049666976247947332",
+        text: "VGK lines for warmups before Game 5\nBarbashev-Eichel-Howden\nSmith-Marner-Stone\nHart",
+      }),
+    ];
+    const { lineSourceSnapshotsUpsertMock } = createSupabaseMocks(events);
+    const req = createMockReq({
+      query: {
+        date: "2026-04-30",
+        limit: "10",
+      },
+    });
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      success: true,
+      rosterTeamsLoaded: 3,
+      summary: {
+        acceptedNhl: 1,
+        rowsUpserted: 1,
+      },
+    });
+    const [row] = getUpsertedRows(lineSourceSnapshotsUpsertMock);
+    expect(row).toMatchObject({
+      source_key: "gamedaylines",
+      team_abbreviation: "VGK",
+      nhl_filter_status: "accepted",
+      line_1_player_ids: [8475913, 8478403, 8474565],
+      goalie_1_player_id: 8479394,
     });
   });
 });

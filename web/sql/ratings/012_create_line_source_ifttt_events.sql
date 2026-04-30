@@ -31,8 +31,7 @@ CREATE TABLE IF NOT EXISTS public.line_source_ifttt_events (
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS line_source_ifttt_events_source_tweet_unique_idx
-  ON public.line_source_ifttt_events (source_key, tweet_id)
-  WHERE tweet_id IS NOT NULL;
+  ON public.line_source_ifttt_events (source_key, tweet_id);
 
 CREATE INDEX IF NOT EXISTS line_source_ifttt_events_processing_status_idx
   ON public.line_source_ifttt_events (
