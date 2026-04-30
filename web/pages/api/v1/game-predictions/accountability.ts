@@ -50,6 +50,10 @@ function parseLimit(value: string | undefined): number | undefined {
   return Number.isInteger(parsed) ? parsed : undefined;
 }
 
+function parseBoolean(value: string | undefined): boolean {
+  return value === "true" || value === "1" || value === "yes";
+}
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse,
@@ -62,14 +66,19 @@ export default async function handler(
   }
 
   try {
+    const requestedModelVersion = firstParam(req.query.modelVersion);
+    const latestBacktest = parseBoolean(firstParam(req.query.latestBacktest));
     const payload = await fetchAccountabilityDashboard({
       client: getServerClient(),
       modelName: firstParam(req.query.modelName) ?? BASELINE_MODEL_NAME,
-      modelVersion:
-        firstParam(req.query.modelVersion) ?? BASELINE_MODEL_VERSION,
+      modelVersion: latestBacktest
+        ? requestedModelVersion
+        : requestedModelVersion ?? BASELINE_MODEL_VERSION,
       featureSetVersion:
         firstParam(req.query.featureSetVersion) ??
         GAME_PREDICTION_FEATURE_SET_VERSION,
+      backtestRunId: firstParam(req.query.backtestRunId),
+      latestBacktest,
       fromDate: parseDate(firstParam(req.query.fromDate ?? req.query.since)),
       toDate: parseDate(firstParam(req.query.toDate ?? req.query.until)),
       limit: parseLimit(firstParam(req.query.limit)),

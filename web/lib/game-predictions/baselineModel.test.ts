@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { BinaryLogisticModel } from "lib/xg/binaryLogistic";
 import {
+  BASELINE_MODEL_VERSION,
   buildBaselineFeatureVector,
   buildBaselineTrainingDataset,
   buildGamePredictionHistoryInsert,
@@ -84,6 +85,7 @@ function createPayload(homeOffRating = 60) {
       },
     ],
     wgoTeamRows: [],
+    nstTeamGamelogRows: [],
     goalieStartRows: [
       {
         game_id: 2025020001,
@@ -119,7 +121,7 @@ function createPayload(homeOffRating = 60) {
 describe("game prediction baseline model", () => {
   it("builds finite baseline feature vectors", () => {
     expect(buildBaselineFeatureVector(createPayload())).toEqual([
-      12, 5, 3, 7, 0.12, 0.5, 0.4, 0,
+      12, 5, 3, 7, 0.12, 0.5, 0, 0, 0, 0, 0, 0.4, 0,
     ]);
   });
 
@@ -157,14 +159,145 @@ describe("game prediction baseline model", () => {
       learningRate: 0.01,
       l2: 0.01,
     });
-    expect(model.featureCount).toBe(8);
-    expect(model.weights).toHaveLength(8);
+    expect(model.featureCount).toBe(13);
+    expect(model.weights).toHaveLength(13);
+    expect(model.featureNormalization?.means).toHaveLength(13);
+    expect(model.featureNormalization?.scales).toHaveLength(13);
+    expect(model.probabilityFloor).toBe(0.05);
+  });
+
+  it("bounds extreme probabilities and records normalization metadata", () => {
+    const winningPayload = createPayload(65);
+    const losingPayload = createPayload(40);
+    losingPayload.gameId = 2025020002;
+    const examples = buildBaselineTrainingDataset(
+      [
+        { featureSnapshotId: "win", payload: winningPayload },
+        { featureSnapshotId: "loss", payload: losingPayload },
+      ],
+      [
+        { gameId: winningPayload.gameId, homeWon: true },
+        { gameId: losingPayload.gameId, homeWon: false },
+      ],
+    );
+    const model = trainGamePredictionBaselineModel(examples, {
+      iterations: 20,
+      learningRate: 0.05,
+      l2: 0.01,
+    });
+
+    const prediction = predictGameWithBaselineModel({
+      payload: createPayload(1000),
+      model: {
+        ...model,
+        weights: model.weights.map(() => 100),
+        bias: 100,
+      },
+      predictionCutoffAt: "2026-01-10T18:00:00+00:00",
+    });
+
+    expect(prediction.homeWinProbability).toBeLessThanOrEqual(0.95);
+    expect(prediction.homeWinProbability).toBeGreaterThan(0.85);
+    expect(prediction.components.normalization_method).toBe(
+      "training_set_standard_score",
+    );
+    expect(prediction.components.probability_floor).toBe(0.05);
+  });
+
+  it("dampens confidence when source quality is weaker", () => {
+    const model: BinaryLogisticModel = {
+      featureCount: 13,
+      weights: [
+        0.12,
+        0.08,
+        0.04,
+        0.04,
+        0.4,
+        0.2,
+        0.02,
+        0.02,
+        0.02,
+        0.02,
+        0.02,
+        0.1,
+        0.05,
+      ],
+      bias: 0,
+    };
+    const cleanPayload = createPayload(65);
+    const weakerPayload = {
+      ...createPayload(65),
+      sourceAsOfDate: "2026-01-03",
+      missingFeatures: [
+        "home.goalie_start_projection",
+        "away.goalie_start_projection",
+      ],
+      sourceCutoffs: [
+        {
+          table: "team_power_ratings_daily",
+          cutoff: "2025-12-15",
+          asOfRule: "strict_before_source_as_of_date",
+          stale: true,
+        },
+      ],
+      home: {
+        ...cleanPayload.home,
+        lineup: null,
+        goalie: {
+          ...cleanPayload.home.goalie,
+          source: "fallback" as const,
+          confirmed: false,
+        },
+      },
+      away: {
+        ...cleanPayload.away,
+        lineup: null,
+        goalie: {
+          ...cleanPayload.away.goalie,
+          source: "fallback" as const,
+          confirmed: false,
+        },
+      },
+    };
+
+    const clean = predictGameWithBaselineModel({
+      payload: cleanPayload,
+      model,
+      predictionCutoffAt: "2026-01-10T18:00:00+00:00",
+    });
+    const weaker = predictGameWithBaselineModel({
+      payload: weakerPayload,
+      model,
+      predictionCutoffAt: "2026-01-10T18:00:00+00:00",
+    });
+
+    expect(Math.abs(weaker.homeWinProbability - 0.5)).toBeLessThan(
+      Math.abs(clean.homeWinProbability - 0.5),
+    );
+    expect(Number(weaker.components.data_quality_multiplier)).toBeLessThan(1);
+    expect(weaker.components.data_quality_penalties).toMatchObject({
+      goalie_fallback: 0.12,
+    });
   });
 
   it("generates probability-consistent prediction payloads and persistence rows", () => {
     const model: BinaryLogisticModel = {
-      featureCount: 8,
-      weights: [0.02, 0.01, 0.03, 0.01, 0.4, 0.2, 0.3, 0.05],
+      featureCount: 13,
+      weights: [
+        0.02,
+        0.01,
+        0.03,
+        0.01,
+        0.4,
+        0.2,
+        0.02,
+        0.02,
+        0.02,
+        0.02,
+        0.02,
+        0.3,
+        0.05,
+      ],
       bias: 0,
     };
     const prediction = predictGameWithBaselineModel({
@@ -195,6 +328,7 @@ describe("game prediction baseline model", () => {
     expect(buildGamePredictionOutputUpsert(prediction)).toMatchObject({
       game_id: 2025020001,
       model_name: "nhl_game_baseline_logistic",
+      model_version: BASELINE_MODEL_VERSION,
       prediction_scope: "pregame",
     });
   });

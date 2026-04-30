@@ -7,7 +7,12 @@ type ResponseBody =
   | {
       success: true;
       tweetId: string | null;
-      processingStatus: "pending";
+      processingStatus: "pending" | "processed_attempted";
+      processor?: {
+        success: boolean;
+        status: number | null;
+        error?: string;
+      };
     }
   | {
       success: false;
@@ -53,6 +58,77 @@ function parseDateToIso(value: string | null): string | null {
   if (!value) return null;
   const parsed = Date.parse(value);
   return Number.isFinite(parsed) ? new Date(parsed).toISOString() : null;
+}
+
+function parseBooleanQueryFlag(value: string | string[] | undefined): boolean {
+  const rawValue = Array.isArray(value) ? value[0] : value;
+  return rawValue === "1" || rawValue === "true" || rawValue === "yes";
+}
+
+function getHeaderValue(value: string | string[] | undefined): string | null {
+  if (Array.isArray(value)) return value[0] ?? null;
+  return value ?? null;
+}
+
+function getBaseUrl(req: NextApiRequest): string {
+  const configuredUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ?? process.env.SITE_URL ?? null;
+  if (configuredUrl) return configuredUrl.replace(/\/$/, "");
+
+  const host = getHeaderValue(req.headers.host);
+  const forwardedProto =
+    getHeaderValue(req.headers["x-forwarded-proto"]) ?? "https";
+  if (host) return `${forwardedProto}://${host}`;
+
+  return "http://localhost:3000";
+}
+
+function getProcessorDate(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+async function processStoredTweetEvent(args: {
+  req: NextApiRequest;
+  tweetId: string;
+}): Promise<{ success: boolean; status: number | null; error?: string }> {
+  const params = new URLSearchParams({
+    limit: "1",
+    reprocess: "true",
+    tweetId: args.tweetId,
+    date: getProcessorDate()
+  });
+  const url = `${getBaseUrl(args.req)}/api/v1/db/update-lines-ccc?${params.toString()}`;
+  const headers: Record<string, string> = {};
+
+  if (process.env.CRON_SECRET) {
+    headers.Authorization = `Bearer ${process.env.CRON_SECRET}`;
+  }
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers
+    });
+
+    if (!response.ok) {
+      return {
+        success: false,
+        status: response.status,
+        error: await response.text()
+      };
+    }
+
+    return {
+      success: true,
+      status: response.status
+    };
+  } catch (error) {
+    return {
+      success: false,
+      status: null,
+      error: error instanceof Error ? error.message : String(error)
+    };
+  }
 }
 
 function formatSupabaseError(error: unknown): string {
@@ -109,6 +185,7 @@ export default async function handler(
   const sourceAccount =
     getBodyValue(req.body, ["source_account", "sourceAccount"]) ?? "CcCMiddleton";
   const tweetId = extractTweetId(linkToTweet);
+  const shouldProcessImmediately = parseBooleanQueryFlag(req.query.process);
 
   if (!linkToTweet && !text) {
     return res.status(400).json({
@@ -147,9 +224,19 @@ export default async function handler(
     });
   }
 
+  const processor =
+    shouldProcessImmediately && tweetId
+      ? await processStoredTweetEvent({ req, tweetId })
+      : undefined;
+
+  if (processor && !processor.success) {
+    console.warn("IFTTT CCC tweet processor follow-up failed:", processor);
+  }
+
   return res.status(200).json({
     success: true,
     tweetId,
-    processingStatus: "pending"
+    processingStatus: processor ? "processed_attempted" : "pending",
+    ...(processor ? { processor } : {})
   });
 }

@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import {
   buildAccountabilityDailySeries,
   buildAccountabilitySummary,
+  buildBacktestBaselineComparisons,
+  buildConfidenceCalibrationBuckets,
   buildPredictionCandlestick,
   type AccountabilityPredictionRow,
   type PredictionCandlestick,
@@ -166,5 +168,56 @@ describe("game prediction accountability", () => {
         cumulativeAccuracy: 0.666667,
       },
     ]);
+  });
+
+  it("builds simple baseline comparisons and confidence buckets", () => {
+    const candles = [
+      candle({
+        gameId: 1,
+        finalHomeWinProbability: 0.54,
+        predictedWinnerCorrect: true,
+        actualHomeWinProbability: 1,
+      }),
+      candle({
+        gameId: 2,
+        finalHomeWinProbability: 0.72,
+        predictedWinnerCorrect: false,
+        actualHomeWinProbability: 0,
+      }),
+      candle({
+        gameId: 3,
+        finalHomeWinProbability: 0.43,
+        predictedWinnerCorrect: true,
+        actualHomeWinProbability: 0,
+      }),
+    ];
+
+    expect(buildBacktestBaselineComparisons({ candles })).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          key: "home_team_fixed_54",
+          evaluatedGames: 3,
+        }),
+        expect.objectContaining({
+          key: "team_power_composite",
+          evaluatedGames: 3,
+        }),
+      ]),
+    );
+
+    expect(buildConfidenceCalibrationBuckets(candles)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          label: "50-55%",
+          predictions: 1,
+          accuracy: 1,
+        }),
+        expect.objectContaining({
+          label: "70-80%",
+          predictions: 1,
+          accuracy: 0,
+        }),
+      ]),
+    );
   });
 });

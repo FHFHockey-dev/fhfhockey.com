@@ -4,6 +4,8 @@ import type {
   NextPage,
 } from "next";
 import Head from "next/head";
+import { useRouter } from "next/router";
+import { useEffect } from "react";
 
 import serverClient from "lib/supabase/server";
 
@@ -39,6 +41,8 @@ const twitterEmbedSources = [
     url: "https://twitter.com/CcCMiddleton?ref_src=twsrc%5Etfw",
   },
 ] satisfies TwitterEmbedSource[];
+
+const PAGE_REFRESH_INTERVAL_MS = 60_000;
 
 type LinesCccPageRow = {
   capture_key: string;
@@ -118,6 +122,18 @@ function dedupeTweetCards(cards: LocalTweetCard[]): LocalTweetCard[] {
 const TwitterEmbedsPage: NextPage<
   InferGetServerSidePropsType<typeof getServerSideProps>
 > = ({ localTweetCards, loadError }) => {
+  const router = useRouter();
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      if (document.visibilityState === "visible") {
+        void router.replace(router.asPath, undefined, { scroll: false });
+      }
+    }, PAGE_REFRESH_INTERVAL_MS);
+
+    return () => window.clearInterval(interval);
+  }, [router]);
+
   return (
     <>
       <Head>

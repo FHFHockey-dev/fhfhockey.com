@@ -22,7 +22,7 @@ export type GamePredictionFeatureSource = {
   goNoGo: "go" | "go_with_caveat" | "limited" | "no_go";
 };
 
-export const GAME_PREDICTION_FEATURE_SET_VERSION = "game_features_v1";
+export const GAME_PREDICTION_FEATURE_SET_VERSION = "game_features_v2";
 
 export const GAME_PREDICTION_FEATURE_SOURCES: GamePredictionFeatureSource[] = [
   {

@@ -35,8 +35,22 @@ export const PREGAME_PREDICTION_REFRESH_POLICY = {
 } as const;
 
 export const INITIAL_BASELINE_MODEL: BinaryLogisticModel = {
-  featureCount: 8,
-  weights: [0.018, 0.008, 0.02, 0.008, 0.35, 0.18, 0.2, 0.04],
+  featureCount: 13,
+  weights: [
+    0.018,
+    0.008,
+    0.02,
+    0.008,
+    0.35,
+    0.18,
+    0.08,
+    0.06,
+    0.18,
+    0.12,
+    0,
+    0.2,
+    0.04,
+  ],
   bias: 0,
 };
 

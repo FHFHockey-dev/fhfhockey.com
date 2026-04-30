@@ -394,6 +394,41 @@
     "active": true
   },
   {
+    "jobid": null,
+    "jobname": "game-predictions-forecast-h7",
+    "schedule": "35 11 * * *",
+    "run_time_utc": "11:35 UTC",
+    "active": true
+  },
+  {
+    "jobid": null,
+    "jobname": "game-predictions-forecast-h3",
+    "schedule": "36 11 * * *",
+    "run_time_utc": "11:36 UTC",
+    "active": true
+  },
+  {
+    "jobid": null,
+    "jobname": "game-predictions-forecast-h1",
+    "schedule": "37 11 * * *",
+    "run_time_utc": "11:37 UTC",
+    "active": true
+  },
+  {
+    "jobid": null,
+    "jobname": "game-predictions-forecast-h0",
+    "schedule": "38 11 * * *",
+    "run_time_utc": "11:38 UTC",
+    "active": true
+  },
+  {
+    "jobid": null,
+    "jobname": "game-predictions-score-recent",
+    "schedule": "40 11 * * *",
+    "run_time_utc": "11:40 UTC",
+    "active": true
+  },
+  {
     "jobid": 234,
     "jobname": "daily-cron-report",
     "schedule": "00 13 * * *",
@@ -509,6 +544,10 @@
 --
 -- Post-result scoring:
 --   11:40 UTC: /api/v1/game-predictions/score?startDate={yesterday}&endDate={today}
+--
+-- Activation SQL now lives in the chronological floor-cluster itinerary below
+-- at 11:35, 11:36, 11:37, 11:38, and 11:40 UTC so the forecast snapshots and
+-- score pass sit beside the rest of the daily schedule.
 --
 -- Research blind replay / accountability backfill:
 --   /api/v1/game-predictions/backtest?seasonId=20252026&trainStartDate=2025-10-07&blindDate=2025-12-31&replayEndDate=2026-04-15&horizonDays=7,3,1,0&maxSimulationDays=3&persist=false
@@ -1693,6 +1732,105 @@ curl -i -sS -m 180 \
 --             body := '{}'::jsonb,
 --             headers := '{"Authorization": "Bearer fhfh-cron-mima-233", "Content-Type": "application/json"}'::jsonb,
 --             timeout_milliseconds := 300000
+--         );
+--     $$
+-- );
+
+----------------------------------------------------------------------------------
+-- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||  11:35 UTC  |||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||  06:35 EST  |||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
+-- Forecast candlestick pass 1/4: seven-day horizon snapshot.
+-- SELECT cron.schedule(
+--     'game-predictions-forecast-h7',
+--     '35 11 * * *', -- 11:35 UTC
+--     $$
+--         SELECT net.http_get(
+--             url := 'https://fhfhockey.com/api/v1/game-predictions/forecast?fromOffsetDays=7&toOffsetDays=7&limit=16&maxRuntimeMs=240000',
+--             headers := '{"Authorization": "Bearer fhfh-cron-mima-233", "Content-Type": "application/json"}'::jsonb,
+--             timeout_milliseconds := 270000
+--         );
+--     $$
+-- );
+
+----------------------------------------------------------------------------------
+-- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||  11:36 UTC  |||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||  06:36 EST  |||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
+-- Forecast candlestick pass 2/4: three-day horizon snapshot.
+-- SELECT cron.schedule(
+--     'game-predictions-forecast-h3',
+--     '36 11 * * *', -- 11:36 UTC
+--     $$
+--         SELECT net.http_get(
+--             url := 'https://fhfhockey.com/api/v1/game-predictions/forecast?fromOffsetDays=3&toOffsetDays=3&limit=16&maxRuntimeMs=240000',
+--             headers := '{"Authorization": "Bearer fhfh-cron-mima-233", "Content-Type": "application/json"}'::jsonb,
+--             timeout_milliseconds := 270000
+--         );
+--     $$
+-- );
+
+----------------------------------------------------------------------------------
+-- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||  11:37 UTC  |||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||  06:37 EST  |||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
+-- Forecast candlestick pass 3/4: one-day horizon snapshot.
+-- SELECT cron.schedule(
+--     'game-predictions-forecast-h1',
+--     '37 11 * * *', -- 11:37 UTC
+--     $$
+--         SELECT net.http_get(
+--             url := 'https://fhfhockey.com/api/v1/game-predictions/forecast?fromOffsetDays=1&toOffsetDays=1&limit=16&maxRuntimeMs=240000',
+--             headers := '{"Authorization": "Bearer fhfh-cron-mima-233", "Content-Type": "application/json"}'::jsonb,
+--             timeout_milliseconds := 270000
+--         );
+--     $$
+-- );
+
+----------------------------------------------------------------------------------
+-- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||  11:38 UTC  |||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||  06:38 EST  |||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
+-- Forecast candlestick pass 4/4: same-day final pregame snapshot.
+-- SELECT cron.schedule(
+--     'game-predictions-forecast-h0',
+--     '38 11 * * *', -- 11:38 UTC
+--     $$
+--         SELECT net.http_get(
+--             url := 'https://fhfhockey.com/api/v1/game-predictions/forecast?fromOffsetDays=0&toOffsetDays=0&limit=16&maxRuntimeMs=240000',
+--             headers := '{"Authorization": "Bearer fhfh-cron-mima-233", "Content-Type": "application/json"}'::jsonb,
+--             timeout_milliseconds := 270000
+--         );
+--     $$
+-- );
+
+----------------------------------------------------------------------------------
+-- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||  11:40 UTC  |||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||  06:40 EST  |||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
+-- Post-result scoring pass for the most recent finished window.
+-- SELECT cron.schedule(
+--     'game-predictions-score-recent',
+--     '40 11 * * *', -- 11:40 UTC
+--     $$
+--         SELECT net.http_get(
+--             url :=
+--                 'https://fhfhockey.com/api/v1/game-predictions/score?startDate=' ||
+--                 to_char((CURRENT_DATE - INTERVAL '1 day')::date, 'YYYY-MM-DD') ||
+--                 '&endDate=' ||
+--                 to_char(CURRENT_DATE::date, 'YYYY-MM-DD'),
+--             headers := '{"Authorization": "Bearer fhfh-cron-mima-233", "Content-Type": "application/json"}'::jsonb,
+--             timeout_milliseconds := 270000
 --         );
 --     $$
 -- );

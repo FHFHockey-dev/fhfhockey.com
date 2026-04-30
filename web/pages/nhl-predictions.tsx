@@ -1,7 +1,10 @@
 import Head from "next/head";
 import React, { useEffect, useMemo, useState } from "react";
 
-import type { AccountabilityDashboard } from "lib/game-predictions/accountability";
+import type {
+  AccountabilityDashboard,
+  PredictionCandlestick,
+} from "lib/game-predictions/accountability";
 import type {
   PublicGamePrediction,
   PublicGamePredictionsPayload,
@@ -46,6 +49,11 @@ function formatDateTime(value: string | null): string {
     hour: "numeric",
     minute: "2-digit",
   });
+}
+
+function clampPercentValue(value: number): number {
+  if (!Number.isFinite(value)) return 50;
+  return Math.max(0, Math.min(100, value * 100));
 }
 
 function winnerLabel(prediction: PublicGamePrediction): string {
@@ -340,6 +348,254 @@ function PredictionCard({ prediction }: { prediction: PublicGamePrediction }) {
   );
 }
 
+function AccountabilityCandlestickChart({
+  candles,
+}: {
+  candles: PredictionCandlestick[];
+}) {
+  const width = 1000;
+  const height = 360;
+  const margin = { top: 22, right: 58, bottom: 56, left: 58 };
+  const plotWidth = width - margin.left - margin.right;
+  const plotHeight = height - margin.top - margin.bottom;
+  const sortedCandles = useMemo(
+    () =>
+      [...candles].sort((a, b) =>
+        a.snapshotDate === b.snapshotDate
+          ? a.gameId - b.gameId
+          : a.snapshotDate.localeCompare(b.snapshotDate),
+      ),
+    [candles],
+  );
+  const defaultVisibleCount = Math.min(48, Math.max(1, sortedCandles.length));
+  const [visibleCount, setVisibleCount] = useState(defaultVisibleCount);
+  const [startIndex, setStartIndex] = useState(
+    Math.max(0, sortedCandles.length - defaultVisibleCount),
+  );
+
+  useEffect(() => {
+    const nextVisibleCount = Math.min(48, Math.max(1, sortedCandles.length));
+    setVisibleCount(nextVisibleCount);
+    setStartIndex(Math.max(0, sortedCandles.length - nextVisibleCount));
+  }, [sortedCandles.length]);
+
+  if (!sortedCandles.length) return null;
+
+  const boundedVisibleCount = Math.min(
+    Math.max(1, visibleCount),
+    sortedCandles.length,
+  );
+  const maxStartIndex = Math.max(0, sortedCandles.length - boundedVisibleCount);
+  const boundedStartIndex = Math.min(startIndex, maxStartIndex);
+  const visibleCandles = sortedCandles.slice(
+    boundedStartIndex,
+    boundedStartIndex + boundedVisibleCount,
+  );
+  const xStep = plotWidth / visibleCandles.length;
+  const candleWidth = Math.max(8, Math.min(24, xStep * 0.42));
+  const yFor = (probability: number) =>
+    margin.top + (1 - clampPercentValue(probability) / 100) * plotHeight;
+  const yTicks = [100, 75, 50, 25, 0];
+  const dayGroups = visibleCandles.reduce<
+    Array<{ date: string; start: number; end: number }>
+  >((groups, candle, index) => {
+    const current = groups[groups.length - 1];
+    if (current?.date === candle.snapshotDate) {
+      current.end = index;
+    } else {
+      groups.push({ date: candle.snapshotDate, start: index, end: index });
+    }
+    return groups;
+  }, []);
+  const setZoomWindow = (count: number) => {
+    const nextCount = Math.min(Math.max(1, count), sortedCandles.length);
+    setVisibleCount(nextCount);
+    setStartIndex(Math.max(0, sortedCandles.length - nextCount));
+  };
+
+  return (
+    <div className={styles.stockChartWrap}>
+      <div className={styles.stockChartHeader}>
+        <span>Prediction Candles</span>
+        <div>
+          <span className={styles.legendUp}>Final up</span>
+          <span className={styles.legendDown}>Final down</span>
+          <span className={styles.legendActual}>Actual</span>
+        </div>
+      </div>
+      <div className={styles.stockChartControls}>
+        <div>
+          <button type="button" onClick={() => setZoomWindow(16)}>
+            16
+          </button>
+          <button type="button" onClick={() => setZoomWindow(32)}>
+            32
+          </button>
+          <button type="button" onClick={() => setZoomWindow(64)}>
+            64
+          </button>
+          <button
+            type="button"
+            onClick={() => setZoomWindow(sortedCandles.length)}
+          >
+            All
+          </button>
+        </div>
+        <input
+          aria-label="Candlestick chart brush"
+          type="range"
+          min={0}
+          max={maxStartIndex}
+          value={boundedStartIndex}
+          onChange={(event) => setStartIndex(Number(event.target.value))}
+        />
+      </div>
+      <svg
+        className={styles.stockChart}
+        viewBox={`0 0 ${width} ${height}`}
+        role="img"
+        aria-label="Stock-style candlestick chart of model prediction movement"
+      >
+        {dayGroups.map((group, index) => {
+          const x = margin.left + xStep * group.start;
+          const groupWidth = xStep * (group.end - group.start + 1);
+          const labelX = x + groupWidth / 2;
+          return (
+            <g key={group.date}>
+              <rect
+                className={
+                  index % 2 === 0
+                    ? styles.stockDayBandEven
+                    : styles.stockDayBandOdd
+                }
+                x={x}
+                y={margin.top}
+                width={groupWidth}
+                height={plotHeight}
+              />
+              {index > 0 ? (
+                <line
+                  className={styles.stockDayDivider}
+                  x1={x}
+                  x2={x}
+                  y1={margin.top}
+                  y2={height - margin.bottom}
+                />
+              ) : null}
+              <text
+                className={styles.stockDayLabel}
+                x={labelX}
+                y={height - 8}
+              >
+                {group.date.slice(5)}
+              </text>
+            </g>
+          );
+        })}
+        {yTicks.map((tick) => {
+          const y = margin.top + (1 - tick / 100) * plotHeight;
+          return (
+            <g key={tick}>
+              <line
+                className={styles.stockGridLine}
+                x1={margin.left}
+                x2={width - margin.right}
+                y1={y}
+                y2={y}
+              />
+              <text
+                className={styles.stockAxisText}
+                x={width - margin.right + 12}
+                y={y + 4}
+              >
+                {tick}%
+              </text>
+            </g>
+          );
+        })}
+        <line
+          className={styles.stockAxisLine}
+          x1={margin.left}
+          x2={margin.left}
+          y1={margin.top}
+          y2={height - margin.bottom}
+        />
+        <line
+          className={styles.stockAxisLine}
+          x1={margin.left}
+          x2={width - margin.right}
+          y1={height - margin.bottom}
+          y2={height - margin.bottom}
+        />
+
+        {visibleCandles.map((candle, index) => {
+          const x = margin.left + xStep * index + xStep / 2;
+          const lowY = yFor(candle.lowHomeWinProbability);
+          const highY = yFor(candle.highHomeWinProbability);
+          const openY = yFor(candle.openHomeWinProbability);
+          const finalY = yFor(candle.finalHomeWinProbability);
+          const actualY = yFor(candle.actualHomeWinProbability);
+          const rawBodyHeight = Math.abs(finalY - openY);
+          const bodyHeight = Math.max(5, rawBodyHeight);
+          const bodyY =
+            rawBodyHeight < 5
+              ? (openY + finalY) / 2 - bodyHeight / 2
+              : Math.min(openY, finalY);
+          const finishedHigher =
+            candle.finalHomeWinProbability >= candle.openHomeWinProbability;
+          const label = `${candle.awayTeamAbbreviation} at ${candle.homeTeamAbbreviation}`;
+
+          return (
+            <g key={`${candle.gameId}-${candle.finalPredictionCutoffAt}`}>
+              <title>
+                {`${label}: open ${Math.round(
+                  candle.openHomeWinProbability * 100,
+                )}%, low ${Math.round(
+                  candle.lowHomeWinProbability * 100,
+                )}%, high ${Math.round(
+                  candle.highHomeWinProbability * 100,
+                )}%, final ${Math.round(
+                  candle.finalHomeWinProbability * 100,
+                )}%, actual ${
+                  candle.actualHomeWinProbability === 1 ? "home win" : "away win"
+                }`}
+              </title>
+              <line
+                className={styles.stockWick}
+                x1={x}
+                x2={x}
+                y1={highY}
+                y2={lowY}
+              />
+              <rect
+                className={`${styles.stockBody} ${
+                  finishedHigher ? styles.stockBodyUp : styles.stockBodyDown
+                }`}
+                x={x - candleWidth / 2}
+                y={bodyY}
+                width={candleWidth}
+                height={bodyHeight}
+                rx="2"
+              />
+              <circle
+                className={styles.actualMarker}
+                cx={x}
+                cy={actualY}
+                r="4"
+              />
+              {index % Math.ceil(visibleCandles.length / 8) === 0 ? (
+                <text className={styles.stockXAxisText} x={x} y={height - 24}>
+                  {candle.homeTeamAbbreviation}
+                </text>
+              ) : null}
+            </g>
+          );
+        })}
+      </svg>
+    </div>
+  );
+}
+
 function PerformancePanel({
   performance,
 }: {
@@ -443,27 +699,52 @@ function AccountabilityPanel({
         </div>
       </div>
 
+      <AccountabilityCandlestickChart candles={accountability.candles} />
+
+      {accountability.baselineComparisons?.length ? (
+        <div className={styles.diagnosticGrid}>
+          <div className={styles.diagnosticHeader}>
+            <h3>Baseline Comparisons</h3>
+            <span>Simple rules to beat</span>
+          </div>
+          {accountability.baselineComparisons.map((baseline) => (
+            <div className={styles.diagnosticRow} key={baseline.key}>
+              <span>{baseline.label}</span>
+              <strong>{formatPercent(baseline.accuracy)}</strong>
+              <span>Brier {formatCompactDecimal(baseline.brierScore)}</span>
+              <span>Log {formatCompactDecimal(baseline.logLoss)}</span>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      {accountability.calibrationBuckets?.length ? (
+        <div className={styles.diagnosticGrid}>
+          <div className={styles.diagnosticHeader}>
+            <h3>Confidence Calibration</h3>
+            <span>Confidence vs actual hit rate</span>
+          </div>
+          {accountability.calibrationBuckets.map((bucket) => (
+            <div className={styles.diagnosticRow} key={bucket.label}>
+              <span>{bucket.label}</span>
+              <strong>{formatPercent(bucket.accuracy)}</strong>
+              <span>{bucket.predictions} games</span>
+              <span>
+                Avg confidence {formatPercent(bucket.averageConfidence)}
+              </span>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
       {recentCandles.length ? (
-        <div className={styles.candleList}>
+        <div className={styles.candleTable}>
           {recentCandles.map((candle) => {
-            const low = candle.lowHomeWinProbability * 100;
-            const high = candle.highHomeWinProbability * 100;
-            const open = candle.openHomeWinProbability * 100;
             const final = candle.finalHomeWinProbability * 100;
-            const actual = candle.actualHomeWinProbability * 100;
             return (
               <div
                 key={`${candle.gameId}-${candle.finalPredictionCutoffAt}`}
-                className={styles.candleRow}
-                style={
-                  {
-                    "--range-left": `${low}%`,
-                    "--range-width": `${Math.max(1, high - low)}%`,
-                    "--open-left": `${open}%`,
-                    "--final-left": `${final}%`,
-                    "--actual-left": `${actual}%`,
-                  } as React.CSSProperties
-                }
+                className={styles.candleTableRow}
               >
                 <div className={styles.candleTeams}>
                   <span>
@@ -474,16 +755,18 @@ function AccountabilityPanel({
                     {candle.predictedWinnerCorrect ? "Correct" : "Wrong"}
                   </strong>
                 </div>
-                <div className={styles.candleTrack}>
-                  <span className={styles.candleRange} />
-                  <span className={styles.candleOpen} />
-                  <span className={styles.candleFinal} />
-                  <span className={styles.candleActual} />
-                </div>
                 <div className={styles.candleMeta}>
-                  <span>Low {Math.round(low)}%</span>
+                  <span>
+                    Range {Math.round(candle.lowHomeWinProbability * 100)}-
+                    {Math.round(candle.highHomeWinProbability * 100)}%
+                  </span>
                   <span>Final {Math.round(final)}%</span>
-                  <span>High {Math.round(high)}%</span>
+                  <span>
+                    Actual{" "}
+                    {candle.actualHomeWinProbability === 1
+                      ? candle.homeTeamAbbreviation
+                      : candle.awayTeamAbbreviation}
+                  </span>
                 </div>
               </div>
             );
@@ -536,13 +819,40 @@ export default function NhlPredictionsPage({
 
   useEffect(() => {
     let active = true;
-    fetch("/api/v1/game-predictions/accountability?limit=250")
+    const search =
+      typeof window === "undefined"
+        ? new URLSearchParams()
+        : new URLSearchParams(window.location.search);
+    const accountabilityParams = new URLSearchParams({ limit: "1000" });
+    const backtestRunId = search.get("backtestRunId");
+    const preferHistorical = search.get("accountability") !== "live";
+    if (preferHistorical || backtestRunId) {
+      accountabilityParams.set("latestBacktest", "true");
+    }
+    if (backtestRunId) {
+      accountabilityParams.set("backtestRunId", backtestRunId);
+    }
+    const fetchAccountability = (params: URLSearchParams) =>
+      fetch(`/api/v1/game-predictions/accountability?${params}`).then(
+        async (response) => {
+          const body = (await response.json()) as AccountabilityApiPayload;
+          if (!response.ok || body.success === false) {
+            throw new Error(body.error ?? "Unable to load accountability");
+          }
+          return body;
+        },
+      );
+
+    fetchAccountability(accountabilityParams)
       .then(async (response) => {
-        const body = (await response.json()) as AccountabilityApiPayload;
-        if (!response.ok || body.success === false) {
-          throw new Error(body.error ?? "Unable to load accountability");
+        if (
+          preferHistorical &&
+          !backtestRunId &&
+          response.candles.length === 0
+        ) {
+          return fetchAccountability(new URLSearchParams({ limit: "1000" }));
         }
-        return body;
+        return response;
       })
       .then((nextPayload) => {
         if (!active) return;
@@ -592,6 +902,8 @@ export default function NhlPredictionsPage({
           </div>
         </header>
 
+        <AccountabilityPanel accountability={accountability} />
+
         {loading ? (
           <div className={styles.statePanel}>Loading predictions...</div>
         ) : null}
@@ -614,7 +926,6 @@ export default function NhlPredictionsPage({
         ) : null}
 
         <PerformancePanel performance={payload?.performance ?? null} />
-        <AccountabilityPanel accountability={accountability} />
       </main>
     </>
   );
