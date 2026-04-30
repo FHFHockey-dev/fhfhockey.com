@@ -11,6 +11,9 @@
 - `web/lib/game-predictions/workflow.ts` - Production scoring workflow that must consume any promoted feature-set/model version.
 - `web/pages/api/v1/game-predictions/backtest-ablation.ts` - Dry-run comparison endpoint for roster, SoS, decay, and blend variants.
 - `web/pages/api/v1/game-predictions/feature-signal-analysis.ts` - Dry-run endpoint for statistical relationship analysis between features and game outcomes.
+- `web/lib/ratings/playerImpactRatings.ts` - Builds TOI-shrunk skater offense, skater defense, and goalie impact ratings from game-log source rows.
+- `web/lib/ratings/playerImpactRatings.test.ts` - Unit coverage for player-impact rating ranking, sample shrinkage, and snapshot-date selection.
+- `web/pages/api/v1/db/update-player-impact-ratings.ts` - Admin update endpoint that dry-runs or backfills daily player impact ratings into the rating contract tables.
 - `web/sql/ratings/001_create_analytics_rating_contracts.sql` - Existing first-class skater offense, skater defense, goalie, and team rating tables that may support roster-impact features.
 - `web/pages/api/v1/db/update-team-sos.ts` - Existing strength-of-schedule ingestion path to reuse or extend for opponent-adjusted form.
 - `web/pages/api/v1/trends/team-sos.ts` - Existing SoS read/API logic that can inform feature reads.
@@ -43,6 +46,11 @@
   - `sos_standings` has `6592` rows for `20252026` and includes `game_date`, team record fields, past opponent totals, future opponent totals, and opponent JSON payloads.
   - Historical lineup source tables have limited prospective coverage after `2025-10-01`: `lines_nhl = 30`, `lines_dfo = 14`, `lines_gdl = 42`, `lines_ccc = 161`.
   - Existing game-prediction features already use strict `< sourceAsOfDate` reads for team power, standings, WGO team stats, NST team logs, and goalie performance. SoS and roster-prior reads should follow the same rule.
+- Player-impact rating backfill completed for `20252026` from `2025-10-07` through `2026-03-08` using `update-player-impact-ratings` with `dryRun=false`:
+  - `skater_offensive_ratings_daily`: `100762` rows, first snapshot `2025-10-07`, last snapshot `2026-03-08`.
+  - `skater_defensive_ratings_daily`: `100762` rows, first snapshot `2025-10-07`, last snapshot `2026-03-08`.
+  - `goalie_ratings_daily`: `10156` rows, first snapshot `2025-10-07`, last snapshot `2026-03-08`.
+- First player-impact rating versions are `skater_impact_v1_game_log_toi_shrunk` and `goalie_impact_v1_game_log_toi_shrunk`. They are current-season, game-log aggregated, z-score based ratings with TOI shrinkage; multi-season recency decay remains open.
 
 ## Tasks
 
@@ -60,10 +68,10 @@
   - [x] 2.5 Document any missing tables or backfill gaps before changing model features.
 
 - [ ] 3.0 Build player impact priors that survive roster movement
-  - [ ] 3.1 Define skater offensive impact from per60 scoring, shot, xG, and on-ice creation metrics using existing data where available.
-  - [ ] 3.2 Define skater defensive impact from xGA/shot suppression, defensive usage, PK context, and goals-against context where available.
-  - [ ] 3.3 Define goalie impact separately using GSAA/GSAx/save-rate/workload features, with current negative GSAA signal treated as a known risk.
-  - [ ] 3.4 Apply TOI/sample-size shrinkage to each per60 player impact rating.
+  - [x] 3.1 Define skater offensive impact from per60 scoring, shot, xG, and on-ice creation metrics using existing data where available.
+  - [x] 3.2 Define skater defensive impact from xGA/shot suppression, defensive usage, PK context, and goals-against context where available.
+  - [x] 3.3 Define goalie impact separately using GSAA/GSAx/save-rate/workload features, with current negative GSAA signal treated as a known risk.
+  - [x] 3.4 Apply TOI/sample-size shrinkage to each per60 player impact rating.
   - [ ] 3.5 Apply season recency decay to player priors, with current season weighted most heavily and prior seasons retained with lower weights.
   - [ ] 3.6 Add deterministic tests for shrinkage, decay, and zero/missing-player fallback behavior.
 
@@ -110,7 +118,7 @@
   - [ ] 9.5 Verify `/nhl-predictions` renders the promoted model and baseline comparisons without layout regressions.
 
 - [ ] 10.0 NEW: Populate prerequisite player-rating and roster-history data before roster-prior modeling
-  - [ ] 10.1 Build or run the job that populates `skater_offensive_ratings_daily`, `skater_defensive_ratings_daily`, and `goalie_ratings_daily` for `20252026`.
+  - [x] 10.1 Build or run the job that populates `skater_offensive_ratings_daily`, `skater_defensive_ratings_daily`, and `goalie_ratings_daily` for `20252026`.
   - [ ] 10.2 Backfill prior seasons for the same player-rating tables if multi-season player priors are required for early-season predictions.
   - [ ] 10.3 Decide whether `rosters` needs a true roster-history backfill or whether projected line-source tables plus current roster state are enough for first roster-prior ablations.
   - [ ] 10.4 Verify counts and date coverage for player ratings, roster history, and line-source tables before task 4 consumes them.
