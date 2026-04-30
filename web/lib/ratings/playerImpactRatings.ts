@@ -44,6 +44,18 @@ export type BuildPlayerImpactRatingsResult = {
   goalieRows: PlayerImpactRatingRow[];
 };
 
+export type PlayerImpactSeasonDecayWeight = {
+  seasonId: number;
+  weight: number;
+};
+
+export type BuildSeasonDecayedPlayerImpactPriorsInput = {
+  targetSeasonId: number;
+  snapshotDate: string;
+  ratingRows: PlayerImpactRatingRow[];
+  seasonWeights?: PlayerImpactSeasonDecayWeight[];
+};
+
 type SkaterAggregate = {
   playerId: number;
   teamId: number | null;
@@ -70,6 +82,8 @@ type GoalieAggregate = {
 
 const SKATER_MODEL_VERSION = "skater_impact_v1_game_log_toi_shrunk";
 const GOALIE_MODEL_VERSION = "goalie_impact_v1_game_log_toi_shrunk";
+export const PLAYER_IMPACT_SEASON_DECAY_VERSION =
+  "player_impact_season_decay_v1_current_1_prev_0_65_prev2_0_35_prev3_0_2";
 
 const OFFENSE_COMPONENTS = [
   ["pointsPer60", 0.24],
@@ -112,6 +126,10 @@ function round(value: number, decimals = 6): number {
 function dateOnly(value: string | null | undefined): string | null {
   if (!value) return null;
   return value.slice(0, 10);
+}
+
+function seasonStartYear(seasonId: number): number {
+  return Math.floor(seasonId / 10000);
 }
 
 function addWeighted(
@@ -478,6 +496,138 @@ function buildRows<T extends Record<string, any>>(args: {
         positionCode: row.positionCode ?? null,
         gamesStarted: row.gamesStarted ?? null,
         minToiSeconds: args.minToiSeconds,
+      },
+    };
+  });
+}
+
+export function defaultPlayerImpactSeasonDecayWeight(
+  targetSeasonId: number,
+  sourceSeasonId: number,
+): number {
+  const age = seasonStartYear(targetSeasonId) - seasonStartYear(sourceSeasonId);
+  if (age < 0) return 0;
+  if (age === 0) return 1;
+  if (age === 1) return 0.65;
+  if (age === 2) return 0.35;
+  if (age === 3) return 0.2;
+  return 0;
+}
+
+export function buildSeasonDecayedPlayerImpactPriors(
+  input: BuildSeasonDecayedPlayerImpactPriorsInput,
+): PlayerImpactRatingRow[] {
+  const explicitWeights = new Map(
+    (input.seasonWeights ?? []).map((entry) => [
+      entry.seasonId,
+      Math.max(0, entry.weight),
+    ]),
+  );
+  const byPlayer = new Map<
+    number,
+    {
+      playerId: number;
+      weightedRaw: number;
+      weightedRating: number;
+      totalWeight: number;
+      sampleGames: number;
+      sampleToiSeconds: number;
+      sourceRows: PlayerImpactRatingRow[];
+      latestRow: PlayerImpactRatingRow;
+    }
+  >();
+
+  for (const row of input.ratingRows) {
+    const playerId = finiteNumber(row.player_id);
+    if (playerId == null) continue;
+
+    const weight =
+      explicitWeights.get(row.season_id) ??
+      defaultPlayerImpactSeasonDecayWeight(input.targetSeasonId, row.season_id);
+    if (weight <= 0) continue;
+
+    const current = byPlayer.get(playerId);
+    const latestRow =
+      !current ||
+      row.season_id > current.latestRow.season_id ||
+      (row.season_id === current.latestRow.season_id &&
+        row.snapshot_date > current.latestRow.snapshot_date)
+        ? row
+        : current.latestRow;
+
+    byPlayer.set(playerId, {
+      playerId,
+      weightedRaw: (current?.weightedRaw ?? 0) + row.rating_raw * weight,
+      weightedRating:
+        (current?.weightedRating ?? 0) + row.rating_0_to_100 * weight,
+      totalWeight: (current?.totalWeight ?? 0) + weight,
+      sampleGames: (current?.sampleGames ?? 0) + row.sample_games,
+      sampleToiSeconds:
+        (current?.sampleToiSeconds ?? 0) + row.sample_toi_seconds,
+      sourceRows: [...(current?.sourceRows ?? []), row],
+      latestRow,
+    });
+  }
+
+  const scoredRows = Array.from(byPlayer.values())
+    .map((row) => ({
+      ...row,
+      ratingRaw: row.weightedRaw / row.totalWeight,
+      averageRating: row.weightedRating / row.totalWeight,
+    }))
+    .sort((a, b) => b.ratingRaw - a.ratingRaw);
+
+  const denominator = Math.max(1, scoredRows.length - 1);
+  return scoredRows.map((row, index) => {
+    const percentile = scoredRows.length === 1 ? 1 : 1 - index / denominator;
+    const seasons = row.sourceRows.map((source) => source.season_id);
+    const seasonWeights = row.sourceRows.map((source) => ({
+      seasonId: source.season_id,
+      weight:
+        explicitWeights.get(source.season_id) ??
+        defaultPlayerImpactSeasonDecayWeight(
+          input.targetSeasonId,
+          source.season_id,
+        ),
+      snapshotDate: source.snapshot_date,
+      ratingRaw: source.rating_raw,
+      rating0To100: source.rating_0_to_100,
+    }));
+
+    return {
+      snapshot_date: input.snapshotDate,
+      season_id: input.targetSeasonId,
+      player_id: row.playerId,
+      team_id: row.latestRow.team_id,
+      rating_0_to_100: round(percentile * 100, 3),
+      rating_raw: round(row.ratingRaw),
+      league_rank: index + 1,
+      percentile: round(percentile, 6),
+      sample_games: row.sampleGames,
+      sample_toi_seconds: row.sampleToiSeconds,
+      model_name: row.latestRow.model_name,
+      model_version: `${row.latestRow.model_version}_${PLAYER_IMPACT_SEASON_DECAY_VERSION}`,
+      source_window: "season_decayed",
+      components: {
+        decayedRawRating: round(row.ratingRaw),
+        decayedAverageRating0To100: round(row.averageRating, 3),
+        totalSeasonWeight: round(row.totalWeight),
+      },
+      provenance: {
+        sourceTables: [
+          row.latestRow.model_name === "goalie"
+            ? "goalie_ratings_daily"
+            : row.latestRow.model_name === "skater_defense"
+              ? "skater_defensive_ratings_daily"
+              : "skater_offensive_ratings_daily",
+        ],
+        sourceRows: row.sourceRows.length,
+        sourceSeasons: Array.from(new Set(seasons)).sort(),
+      },
+      metadata: {
+        ...(row.latestRow.metadata ?? {}),
+        seasonDecayVersion: PLAYER_IMPACT_SEASON_DECAY_VERSION,
+        seasonWeights,
       },
     };
   });

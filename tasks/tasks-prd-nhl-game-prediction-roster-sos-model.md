@@ -51,6 +51,7 @@
   - `skater_defensive_ratings_daily`: `100762` rows, first snapshot `2025-10-07`, last snapshot `2026-03-08`.
   - `goalie_ratings_daily`: `10156` rows, first snapshot `2025-10-07`, last snapshot `2026-03-08`.
 - First player-impact rating versions are `skater_impact_v1_game_log_toi_shrunk` and `goalie_impact_v1_game_log_toi_shrunk`. They are current-season, game-log aggregated, z-score based ratings with TOI shrinkage; multi-season recency decay remains open.
+- Player-prior season decay is implemented as `player_impact_season_decay_v1_current_1_prev_0_65_prev2_0_35_prev3_0_2`, combining player rating rows by `rating_raw`, weighting the target season at `1.0`, one season back at `0.65`, two seasons back at `0.35`, and three seasons back at `0.20`, then reranking the decayed prior within the target snapshot.
 - Prior-season player-rating anchors for multi-season priors are now available:
   - `20222023`: full available source coverage from `2023-01-01` through `2023-04-14` with `61136` skater offense rows, `61136` skater defense rows, and `6603` goalie rows.
   - `20232024`: partial daily rows plus final anchor through `2024-04-18` with `46368` skater offense rows, `45591` skater defense rows, and `4507` goalie rows.
@@ -85,7 +86,7 @@
   - [x] 3.2 Define skater defensive impact from xGA/shot suppression, defensive usage, PK context, and goals-against context where available.
   - [x] 3.3 Define goalie impact separately using GSAA/GSAx/save-rate/workload features, with current negative GSAA signal treated as a known risk.
   - [x] 3.4 Apply TOI/sample-size shrinkage to each per60 player impact rating.
-  - [ ] 3.5 Apply season recency decay to player priors, with current season weighted most heavily and prior seasons retained with lower weights.
+  - [x] 3.5 Apply season recency decay to player priors, with current season weighted most heavily and prior seasons retained with lower weights.
   - [ ] 3.6 Add deterministic tests for shrinkage, decay, and zero/missing-player fallback behavior.
 
 - [ ] 4.0 Aggregate player priors into roster-adjusted team features

@@ -1,6 +1,7 @@
 import type { NextApiResponse } from "next";
 import { Resend } from "resend";
 
+import { createPlayerAliasReviewToken } from "lib/sources/playerAliasReviewToken";
 import adminOnly from "utils/adminOnlyMiddleware";
 
 const resend = new Resend(process.env.RESEND_API_KEY ?? "");
@@ -58,13 +59,16 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
   const baseUrl = resolveBaseUrl(req);
   const rowsHtml = pending
     .map((row: any) => {
-      const resolveUrl = `${baseUrl}/db/player-aliases?unresolvedId=${encodeURIComponent(row.id)}`;
+      const token = createPlayerAliasReviewToken({ unresolvedId: row.id });
+      const resolveUrl = new URL("/db/player-aliases", baseUrl);
+      resolveUrl.searchParams.set("unresolvedId", row.id);
+      if (token) resolveUrl.searchParams.set("reviewToken", token);
       return `
         <tr>
           <td style="padding:8px;border-bottom:1px solid #ddd;"><strong>${escapeHtml(row.raw_name)}</strong></td>
           <td style="padding:8px;border-bottom:1px solid #ddd;">${escapeHtml(row.team_abbreviation)}</td>
           <td style="padding:8px;border-bottom:1px solid #ddd;">${escapeHtml(row.tweet_id)}</td>
-          <td style="padding:8px;border-bottom:1px solid #ddd;"><a href="${resolveUrl}">Resolve</a></td>
+          <td style="padding:8px;border-bottom:1px solid #ddd;"><a href="${escapeHtml(resolveUrl.toString())}">Resolve</a></td>
         </tr>`;
     })
     .join("");
