@@ -32,7 +32,7 @@ type ApiData = {
   message?: string;
 };
 
-async function fetchWithAuth(url: string): Promise<ApiData> {
+async function fetchWithOptionalAuth(url: string): Promise<ApiData> {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
 
@@ -81,10 +81,14 @@ const PlayerAliasesPage: NextPage = () => {
     setIsLoading(true);
     const params = new URLSearchParams(window.location.search);
     const unresolvedId = params.get("unresolvedId");
+    const reviewToken = params.get("reviewToken");
     const endpoint = unresolvedId
-      ? `/api/v1/db/player-name-aliases?unresolvedId=${encodeURIComponent(unresolvedId)}`
+      ? `/api/v1/db/player-name-aliases?${new URLSearchParams({
+          unresolvedId,
+          ...(reviewToken ? { reviewToken } : {}),
+        }).toString()}`
       : "/api/v1/db/player-name-aliases";
-    const payload = await fetchWithAuth(endpoint);
+    const payload = await fetchWithOptionalAuth(endpoint);
     setUnresolvedNames(payload.unresolvedNames);
     setPlayers(payload.players);
     const first = payload.unresolvedNames[0];
@@ -112,10 +116,12 @@ const PlayerAliasesPage: NextPage = () => {
 
   async function resolveName() {
     if (!selectedUnresolved || !selectedPlayerId) return;
+    const reviewToken = new URLSearchParams(window.location.search).get("reviewToken");
     const payload = await postWithOptionalAuth("/api/v1/db/player-name-aliases", {
       unresolvedId: selectedUnresolved.id,
       playerId: Number(selectedPlayerId),
-      alias: alias || selectedUnresolved.raw_name
+      alias: alias || selectedUnresolved.raw_name,
+      ...(reviewToken ? { reviewToken } : {}),
     });
     setStatusMessage(payload.message ?? "Alias saved.");
     await loadData();
@@ -123,9 +129,11 @@ const PlayerAliasesPage: NextPage = () => {
 
   async function ignoreName() {
     if (!selectedUnresolved) return;
+    const reviewToken = new URLSearchParams(window.location.search).get("reviewToken");
     const payload = await postWithOptionalAuth("/api/v1/db/player-name-aliases", {
       unresolvedId: selectedUnresolved.id,
-      action: "ignore"
+      action: "ignore",
+      ...(reviewToken ? { reviewToken } : {}),
     });
     setStatusMessage(payload.message ?? "Name ignored.");
     await loadData();

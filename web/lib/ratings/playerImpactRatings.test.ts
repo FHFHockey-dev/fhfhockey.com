@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  buildSeasonDecayedPlayerImpactPriors,
   buildPlayerImpactRatings,
+  defaultPlayerImpactSeasonDecayWeight,
   uniqueSnapshotDatesFromSources,
+  type PlayerImpactRatingRow,
   type PlayerImpactSourceRow,
 } from "./playerImpactRatings";
 
@@ -64,6 +67,34 @@ function goalieRow(
   };
 }
 
+function ratingRow(args: {
+  playerId: number;
+  seasonId: number;
+  snapshotDate: string;
+  ratingRaw: number;
+  rating0To100: number;
+  teamId?: number;
+}): PlayerImpactRatingRow {
+  return {
+    snapshot_date: args.snapshotDate,
+    season_id: args.seasonId,
+    player_id: args.playerId,
+    team_id: args.teamId ?? args.playerId,
+    rating_0_to_100: args.rating0To100,
+    rating_raw: args.ratingRaw,
+    league_rank: 1,
+    percentile: 1,
+    sample_games: 10,
+    sample_toi_seconds: 6000,
+    model_name: "skater_offense",
+    model_version: "skater_impact_v1_game_log_toi_shrunk",
+    source_window: "season_to_date",
+    components: {},
+    provenance: {},
+    metadata: { ratingKind: "skater_offense" },
+  };
+}
+
 describe("player impact ratings", () => {
   it("builds TOI-shrunk skater and goalie ratings as of a snapshot date", () => {
     const result = buildPlayerImpactRatings({
@@ -111,5 +142,59 @@ describe("player impact ratings", () => {
         "2026-01-03",
       ),
     ).toEqual(["2026-01-03"]);
+  });
+
+  it("applies default season recency decay to player priors", () => {
+    expect(defaultPlayerImpactSeasonDecayWeight(20252026, 20252026)).toBe(1);
+    expect(defaultPlayerImpactSeasonDecayWeight(20252026, 20242025)).toBe(0.65);
+    expect(defaultPlayerImpactSeasonDecayWeight(20252026, 20232024)).toBe(0.35);
+    expect(defaultPlayerImpactSeasonDecayWeight(20252026, 20222023)).toBe(0.2);
+    expect(defaultPlayerImpactSeasonDecayWeight(20252026, 20212022)).toBe(0);
+
+    const decayed = buildSeasonDecayedPlayerImpactPriors({
+      targetSeasonId: 20252026,
+      snapshotDate: "2025-10-10",
+      ratingRows: [
+        ratingRow({
+          playerId: 1,
+          seasonId: 20252026,
+          snapshotDate: "2025-10-10",
+          ratingRaw: 0.5,
+          rating0To100: 70,
+          teamId: 22,
+        }),
+        ratingRow({
+          playerId: 1,
+          seasonId: 20242025,
+          snapshotDate: "2025-04-17",
+          ratingRaw: 1.5,
+          rating0To100: 90,
+          teamId: 21,
+        }),
+        ratingRow({
+          playerId: 2,
+          seasonId: 20252026,
+          snapshotDate: "2025-10-10",
+          ratingRaw: 0.7,
+          rating0To100: 80,
+        }),
+        ratingRow({
+          playerId: 3,
+          seasonId: 20212022,
+          snapshotDate: "2022-04-29",
+          ratingRaw: 10,
+          rating0To100: 100,
+        }),
+      ],
+    });
+
+    expect(decayed.map((row) => row.player_id)).toEqual([1, 2]);
+    expect(decayed[0].rating_raw).toBeCloseTo(
+      (0.5 * 1 + 1.5 * 0.65) / 1.65,
+      5,
+    );
+    expect(decayed[0].team_id).toBe(22);
+    expect(decayed[0].source_window).toBe("season_decayed");
+    expect(decayed[0].metadata.seasonDecayVersion).toBeDefined();
   });
 });

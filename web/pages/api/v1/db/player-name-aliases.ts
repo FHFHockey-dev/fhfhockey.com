@@ -2,6 +2,8 @@ import type { NextApiResponse } from "next";
 
 import { getCurrentSeason } from "lib/NHL/server";
 import { normalizePlayerNameAlias } from "lib/sources/playerNameAliases";
+import { verifyPlayerAliasReviewToken } from "lib/sources/playerAliasReviewToken";
+import serviceRoleClient from "lib/supabase/server";
 import adminOnly from "utils/adminOnlyMiddleware";
 
 type PlayerOption = {
@@ -157,7 +159,7 @@ async function handlePost(req: any, res: NextApiResponse) {
   });
 }
 
-export default adminOnly(async (req: any, res: NextApiResponse) => {
+async function playerNameAliasesHandler(req: any, res: NextApiResponse) {
   if (req.method === "GET") {
     return handleGet(req, res);
   }
@@ -169,4 +171,36 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
     success: false,
     message: "Method not allowed."
   });
-});
+}
+
+const adminHandler = adminOnly(playerNameAliasesHandler);
+
+function getStringValue(value: unknown): string | null {
+  if (Array.isArray(value)) return typeof value[0] === "string" ? value[0] : null;
+  return typeof value === "string" ? value : null;
+}
+
+export default async function handler(req: any, res: NextApiResponse) {
+  const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body ?? {};
+  const unresolvedId =
+    req.method === "GET"
+      ? getStringValue(req.query.unresolvedId)
+      : getStringValue(body.unresolvedId);
+  const reviewToken =
+    req.method === "GET"
+      ? getStringValue(req.query.reviewToken)
+      : getStringValue(body.reviewToken);
+
+  if (
+    verifyPlayerAliasReviewToken({
+      token: reviewToken,
+      unresolvedId,
+    })
+  ) {
+    req.body = body;
+    req.supabase = serviceRoleClient;
+    return playerNameAliasesHandler(req, res);
+  }
+
+  return adminHandler(req, res);
+}
