@@ -274,6 +274,16 @@ function createSupabaseMocks(eventRows: LineSourceEventFixture[]) {
                 playerId: 8479394,
                 players: { fullName: "Carter Hart", lastName: "Hart" },
               },
+              {
+                teamId: 24,
+                playerId: 8478873,
+                players: { fullName: "Troy Terry", lastName: "Terry" },
+              },
+              {
+                teamId: 24,
+                playerId: 8482745,
+                players: { fullName: "Lukas Dostal", lastName: "Dostal" },
+              },
             ].filter((row) => teamIds.includes(row.teamId)),
             error: null,
           }),
@@ -340,6 +350,30 @@ describe("/api/v1/db/update-line-sources", () => {
         name: "Vegas Golden Knights",
         abbreviation: "VGK",
         logo: "/teamLogos/VGK.png",
+      },
+      {
+        id: 24,
+        name: "Anaheim Ducks",
+        abbreviation: "ANA",
+        logo: "/teamLogos/ANA.png",
+      },
+      {
+        id: 7,
+        name: "Buffalo Sabres",
+        abbreviation: "BUF",
+        logo: "/teamLogos/BUF.png",
+      },
+      {
+        id: 30,
+        name: "Minnesota Wild",
+        abbreviation: "MIN",
+        logo: "/teamLogos/MIN.png",
+      },
+      {
+        id: 25,
+        name: "Dallas Stars",
+        abbreviation: "DAL",
+        logo: "/teamLogos/DAL.png",
       },
     ]);
   });
@@ -663,6 +697,141 @@ describe("/api/v1/db/update-line-sources", () => {
       nhl_filter_status: "accepted",
       line_1_player_ids: [8475913, 8478403, 8474565],
       goalie_1_player_id: 8479394,
+    });
+  });
+
+  it("uses beat-writer handles and NHL hashtag hints to avoid false ambiguous GDL rejections", async () => {
+    const events = [
+      buildEvent({
+        id: "event-ducks-goalie",
+        sourceKey: "gamedaygoalies",
+        sourceAccount: "GameDayGoalies",
+        tweetId: "2049909539970122058",
+        text: "Terry IN, Dostál starting, per Quenneville.#FlyTogether https://t.co/yquWQ5hKMK",
+      }),
+      buildEvent({
+        id: "event-sabres-boston",
+        sourceKey: "gamedaygoalies",
+        sourceAccount: "GameDayGoalies",
+        tweetId: "2049866903368110544",
+        text: "Hi from KeyBank Center — the #Sabres practice before heading to Boston for Game 6 on Friday.\nAlex Lyon is in the starter’s net.",
+      }),
+      buildEvent({
+        id: "event-wild-news",
+        sourceKey: "gamedaynewsnhl",
+        sourceAccount: "GameDayNewsNHL",
+        tweetId: "2049873426932797786",
+        text: "In other #mnwild lineup news, Brink will come out, and Sturm comes in.",
+      }),
+      buildEvent({
+        id: "event-stars-news",
+        sourceKey: "gamedaynewsnhl",
+        sourceAccount: "GameDayNewsNHL",
+        tweetId: "2049885673360916596",
+        text: "Glen Gulutzan and staff are shaking up the lines and the lineup.\nIt appears that Michael Bunting & Alexander Petrovic will make their 2026 playoff debuts.",
+      }),
+      buildEvent({
+        id: "event-moose",
+        sourceKey: "gamedaynewsnhl",
+        sourceAccount: "GameDayNewsNHL",
+        tweetId: "2049890927775486457",
+        text: "#MBMoose coach Mark Morrison just told us Elias Salomonsson is having season-ending surgery due to injury.",
+      }),
+    ];
+    events[0]!.username = "Derek_Lee27";
+    events[1]!.username = "rachelmlenzi";
+    events[2]!.username = "JoeSmithNHL";
+    events[3]!.username = "OwenNewkirk";
+    events[4]!.username = "mikemcintyrewpg";
+    const { lineSourceSnapshotsUpsertMock } = createSupabaseMocks(events);
+    const req = createMockReq({
+      query: {
+        date: "2026-04-30",
+        limit: "10",
+      },
+    });
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      success: true,
+      summary: {
+        acceptedNhl: 4,
+        nonNhlRejected: 1,
+        ambiguousRejected: 0,
+        rowsUpserted: 5,
+      },
+    });
+    const rows = getUpsertedRows(lineSourceSnapshotsUpsertMock);
+    expect(rows).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          tweet_id: "2049909539970122058",
+          team_abbreviation: "ANA",
+          nhl_filter_status: "accepted",
+        }),
+        expect.objectContaining({
+          tweet_id: "2049866903368110544",
+          team_abbreviation: "BUF",
+          nhl_filter_status: "accepted",
+        }),
+        expect.objectContaining({
+          tweet_id: "2049873426932797786",
+          team_abbreviation: "MIN",
+          nhl_filter_status: "accepted",
+        }),
+        expect.objectContaining({
+          tweet_id: "2049885673360916596",
+          team_abbreviation: "DAL",
+          nhl_filter_status: "accepted",
+        }),
+        expect.objectContaining({
+          tweet_id: "2049890927775486457",
+          team_id: null,
+          detected_league: "AHL",
+          nhl_filter_status: "rejected_non_nhl",
+        }),
+      ]),
+    );
+  });
+
+  it("uses decisive roster-density fallback for short tweets with multiple same-team player hits", async () => {
+    const events = [
+      buildEvent({
+        id: "event-ducks-roster-density",
+        sourceKey: "gamedaygoalies",
+        sourceAccount: "GameDayGoalies",
+        tweetId: "2049909539970122058",
+        text: "Terry IN, Dostál starting, per Quenneville.",
+      }),
+    ];
+    const { lineSourceSnapshotsUpsertMock } = createSupabaseMocks(events);
+    const req = createMockReq({
+      query: {
+        date: "2026-04-30",
+        limit: "10",
+      },
+    });
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      success: true,
+      summary: {
+        acceptedNhl: 1,
+        ambiguousRejected: 0,
+        rowsUpserted: 1,
+      },
+    });
+    const [row] = getUpsertedRows(lineSourceSnapshotsUpsertMock);
+    expect(row).toMatchObject({
+      team_abbreviation: "ANA",
+      nhl_filter_status: "accepted",
+      matched_player_ids: [8478873, 8482745],
     });
   });
 });

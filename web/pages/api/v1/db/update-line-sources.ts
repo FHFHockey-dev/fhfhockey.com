@@ -13,6 +13,7 @@ import {
   parseRequestedDate,
   parseStringQueryValue,
   persistUnresolvedPlayerNames,
+  sendPlayerAliasReviewEmailForQueuedNames,
 } from "lib/sources/lineSourceProcessing";
 import {
   applyLinesCccWrapperOEmbed,
@@ -479,6 +480,44 @@ export default withCronJobAudit(
         });
       }
     }
+    const hasAmbiguousNhlCandidates = parsedCandidates.some(
+      (candidate) => candidate.nhlFilterStatus === "rejected_ambiguous",
+    );
+    const unloadedTeamIds = teamDirectory
+      .map((team) => team.id)
+      .filter((teamId) => !rosterByTeam.has(teamId));
+    if (hasAmbiguousNhlCandidates && unloadedTeamIds.length > 0) {
+      const additionalRosterByTeam = applyPlayerNameAliasesToRosterMap({
+        rosterByTeam: await fetchRosterEntriesByTeam({
+          supabase: req.supabase,
+          teamIds: unloadedTeamIds,
+          seasonId: currentSeason.seasonId,
+        }),
+        aliases: await fetchPlayerNameAliases({
+          supabase: req.supabase,
+          teamIds: unloadedTeamIds,
+        }),
+      });
+      rosterByTeam = new Map([...rosterByTeam, ...additionalRosterByTeam]);
+
+      for (let index = 0; index < parsedCandidates.length; index += 1) {
+        const event = parsedEvents[index];
+        const candidate = parsedCandidates[index];
+        if (!event || candidate?.nhlFilterStatus !== "rejected_ambiguous") {
+          continue;
+        }
+
+        parsedCandidates[index] = applyGdlSourceClassificationHint({
+          sourceKey: event.source_key,
+          candidate: refreshLinesCccSourceFromPrimaryText({
+            source: candidate,
+            teams: teamDirectory,
+            rosterByTeam,
+            gameIdByTeamId,
+          }),
+        });
+      }
+    }
 
     const rowsToUpsert = parsedCandidates.map((candidate, index) =>
       toLineSourceSnapshotRow({
@@ -608,6 +647,11 @@ export default withCronJobAudit(
       supabase: req.supabase,
       rows: rowsToUpsert,
     });
+    const unresolvedNameEmail =
+      await sendPlayerAliasReviewEmailForQueuedNames({
+        req,
+        unresolvedNamesQueued,
+      });
     const processedEventUpdates = parsedCandidates.map((candidate, index) => {
       const event = parsedEvents[index]!;
       return {
@@ -684,6 +728,7 @@ export default withCronJobAudit(
         duplicatesSkipped: duplicateCaptureKeysSkipped,
         rowsUpserted: rowsToUpsert.length,
         unresolvedNamesQueued,
+        unresolvedNameEmail,
         eventsDeferred: deferredEventUpdates.length,
         eventsProcessed: processedEventUpdates.filter(
           (event) => event.processing_status === "processed",

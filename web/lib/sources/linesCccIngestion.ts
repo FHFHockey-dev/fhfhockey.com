@@ -220,6 +220,15 @@ const NHL_HANDLE_HINTS: Record<string, string> = {
   tblightning: "TBL",
   mnwildpr: "MIN",
   wpgjetspr: "WPG",
+  bellefraser1: "BOS",
+  derek_lee27: "ANA",
+  joesmithnhl: "MIN",
+  lassimak: "DAL",
+  matthewfairburn: "BUF",
+  owennewkirk: "DAL",
+  patrickcpresent: "ANA",
+  rachelmlenzi: "BUF",
+  smclaughlin9: "BOS",
 };
 
 const NHL_TEXT_HINTS: Record<string, string> = {
@@ -227,6 +236,10 @@ const NHL_TEXT_HINTS: Record<string, string> = {
   habs: "MTL",
   gobolts: "TBL",
   bolts: "TBL",
+  flytogether: "ANA",
+  mnwild: "MIN",
+  nhlbruins: "BOS",
+  sabres: "BUF",
 };
 
 const NON_NHL_HANDLE_HINTS: Array<{
@@ -301,6 +314,7 @@ function escapeRegExp(value: string): string {
 
 function detectNonNhlLeague(text: string): string | null {
   const normalized = normalizeTextKey(text);
+  if (/\b#?mbmoose\b/.test(normalized)) return "AHL";
   const match = normalized.match(/\b(ahl|echl|ohl|whl|qmjhl|ncaa)\b/);
   return match?.[1]?.toUpperCase() ?? null;
 }
@@ -601,6 +615,10 @@ function findTeamMentionInText(
         teams.find((team) => team.abbreviation === abbreviation) ?? null,
     )
     .filter((team): team is TeamDirectoryEntry => Boolean(team));
+  const uniqueHintedTeams = new Map(hintedTeams.map((team) => [team.id, team]));
+  if (uniqueHintedTeams.size === 1) {
+    return Array.from(uniqueHintedTeams.values())[0]!;
+  }
 
   const labelTeams = teams.filter((team) =>
     buildTeamTextLabels(team).some((label) =>
@@ -646,7 +664,10 @@ function resolveTeamFromHandleHints(
     )
     .filter((team): team is TeamDirectoryEntry => Boolean(team));
 
-  return hintedTeams.length === 1 ? hintedTeams[0]! : null;
+  const uniqueHintedTeams = new Map(hintedTeams.map((team) => [team.id, team]));
+  return uniqueHintedTeams.size === 1
+    ? Array.from(uniqueHintedTeams.values())[0]!
+    : null;
 }
 
 function resolveTeamFromRosterDensity(args: {
@@ -673,7 +694,11 @@ function resolveTeamFromRosterDensity(args: {
   }
 
   const uniqueLeader = best.matchedCount > (second?.matchedCount ?? 0);
+  const decisiveRosterLead =
+    best.matchedCount >= 2 &&
+    best.matchedCount - (second?.matchedCount ?? 0) >= 2;
   const sufficientForRosterFallback =
+    decisiveRosterLead ||
     best.matchedCount >= 6 ||
     (structuredMentions > 0 && best.matchedCount >= 4);
 
@@ -698,6 +723,13 @@ export function resolveLinesCccTeam(args: {
 
   const textHintTeam = findTeamMentionInText(args.text, args.teams);
   if (textHintTeam && labelMatches.length === 0) {
+    return textHintTeam;
+  }
+  if (
+    textHintTeam &&
+    labelMatches.length > 1 &&
+    labelMatches.some((team) => team.id === textHintTeam.id)
+  ) {
     return textHintTeam;
   }
 
