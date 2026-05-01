@@ -16,6 +16,7 @@ type UnresolvedName = {
   context_text: string | null;
   status: "pending" | "resolved" | "ignored";
   metadata: {
+    contextAlias?: string | null;
     reason?: string | null;
   } | null;
   created_at: string;
@@ -105,15 +106,26 @@ function isStructuredContextLine(line: string): boolean {
   return /[-–—/\\•]/.test(line) && !/^https?:\/\//i.test(line.trim());
 }
 
+function countMatches(text: string, pattern: RegExp): number {
+  pattern.lastIndex = 0;
+  return Array.from(text.matchAll(pattern)).length;
+}
+
 function renderHighlightedContext(selectedUnresolved: UnresolvedName) {
   const text = selectedUnresolved.context_text ?? "No context text.";
   const rawName = selectedUnresolved.raw_name.trim();
+  const contextAlias = selectedUnresolved.metadata?.contextAlias?.trim();
   const reason = selectedUnresolved.metadata?.reason;
   const slot = parseReviewSlot(reason);
   let structuredLineNumber = 0;
-  const namePattern = rawName
-    ? new RegExp(`((?:[A-Z]\\.?\\s*)?${escapeRegExp(rawName)})`, "gi")
+  const exactName = contextAlias || rawName;
+  const exactPattern = exactName
+    ? new RegExp(`\\b(${escapeRegExp(exactName)})\\b`, "gi")
     : null;
+  const namePattern =
+    exactPattern && (contextAlias || countMatches(text, exactPattern) === 1)
+      ? exactPattern
+      : null;
 
   return text.split(/(\n)/).map((part, index) => {
     if (part === "\n") return part;
@@ -138,7 +150,7 @@ function renderHighlightedContext(selectedUnresolved: UnresolvedName) {
     return (
       <span key={index} style={shouldHighlightLine ? { background: "#513d05" } : undefined}>
         {pieces.map((piece, pieceIndex) =>
-          piece.toLowerCase().endsWith(rawName.toLowerCase()) ? (
+          piece.toLowerCase() === exactName.toLowerCase() ? (
             <mark key={pieceIndex} style={{ background: "#ffd54a", color: "#111", padding: "0 2px" }}>
               {piece}
             </mark>
