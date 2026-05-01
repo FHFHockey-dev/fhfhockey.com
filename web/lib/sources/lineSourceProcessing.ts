@@ -243,6 +243,42 @@ function isReviewablePlayerName(rawName: string | null | undefined) {
   return true;
 }
 
+function getReviewContextText(row: LineSourceRowForUnresolvedNameReview) {
+  return (
+    row.quoted_enriched_text ??
+    row.quoted_raw_text ??
+    row.enriched_text ??
+    row.raw_text ??
+    null
+  );
+}
+
+function expandNameWithContextAliases(args: {
+  rawName: string;
+  contextText: string | null;
+}) {
+  const rawName = args.rawName.trim();
+  if (!rawName || !args.contextText || rawName.includes(" ")) {
+    return [{ rawName, contextAlias: rawName }];
+  }
+
+  const escapedName = rawName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const pattern = new RegExp(`\\b([A-Z]\\.\\s*${escapedName})\\b`, "g");
+  const matches = Array.from(args.contextText.matchAll(pattern))
+    .map((match) => match[1]?.replace(/\s+/g, " ").trim())
+    .filter((value): value is string => Boolean(value));
+  const uniqueMatches = Array.from(new Set(matches));
+
+  if (uniqueMatches.length === 0) {
+    return [{ rawName, contextAlias: rawName }];
+  }
+
+  return uniqueMatches.map((contextAlias) => ({
+    rawName: contextAlias,
+    contextAlias,
+  }));
+}
+
 export function collectUnresolvedNamesFromLineRows(
   rows: LineSourceRowForUnresolvedNameReview[],
 ) {
@@ -256,8 +292,13 @@ export function collectUnresolvedNamesFromLineRows(
     ) {
       continue;
     }
+    const contextText = getReviewContextText(row);
 
-    const addName = (rawName: string | null | undefined, reason: string) => {
+    const addName = (
+      rawName: string | null | undefined,
+      reason: string,
+      metadata: Record<string, unknown> = {},
+    ) => {
       if (!isReviewablePlayerName(rawName)) return;
       const trimmedName = rawName?.trim();
       if (!trimmedName) return;
@@ -278,25 +319,28 @@ export function collectUnresolvedNamesFromLineRows(
         normalized_name: normalizedName,
         team_id: row.team_id,
         team_abbreviation: row.team_abbreviation,
-        context_text:
-          row.quoted_enriched_text ??
-          row.quoted_raw_text ??
-          row.enriched_text ??
-          row.raw_text ??
-          null,
+        context_text: contextText,
         status: "pending",
         metadata: {
           reason,
           captureKey: row.capture_key,
           classification: row.classification,
           quotedTweetId: row.quoted_tweet_id,
+          ...metadata,
         },
         updated_at: new Date().toISOString(),
       });
     };
 
     for (const rawName of row.unmatched_names ?? []) {
-      addName(rawName, "unmatched_names");
+      for (const expanded of expandNameWithContextAliases({
+        rawName,
+        contextText,
+      })) {
+        addName(expanded.rawName, "unmatched_names", {
+          contextAlias: expanded.contextAlias,
+        });
+      }
     }
 
     const groupedNames = [
@@ -350,16 +394,22 @@ export function collectUnresolvedNamesFromLineRows(
     for (const group of groupedNames) {
       group.names?.forEach((name, index) => {
         if (group.ids?.[index] == null) {
-          addName(name, group.reason);
+          addName(name, group.reason, {
+            contextAlias: name,
+          });
         }
       });
     }
 
     if (row.goalie_1_name && row.goalie_1_player_id == null) {
-      addName(row.goalie_1_name, "goalie_1_null_id");
+      addName(row.goalie_1_name, "goalie_1_null_id", {
+        contextAlias: row.goalie_1_name,
+      });
     }
     if (row.goalie_2_name && row.goalie_2_player_id == null) {
-      addName(row.goalie_2_name, "goalie_2_null_id");
+      addName(row.goalie_2_name, "goalie_2_null_id", {
+        contextAlias: row.goalie_2_name,
+      });
     }
   }
 
