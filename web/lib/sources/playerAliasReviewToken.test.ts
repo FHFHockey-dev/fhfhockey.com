@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
+  createPlayerAliasQueueReviewToken,
   createPlayerAliasReviewToken,
   verifyPlayerAliasReviewToken,
 } from "./playerAliasReviewToken";
@@ -39,6 +40,39 @@ describe("player alias review tokens", () => {
         nowMs: 30_000,
       })
     ).toBe(false);
+    expect(
+      verifyPlayerAliasReviewToken({
+        token,
+        unresolvedId: "unresolved-1",
+        nowMs: 120_000,
+      })
+    ).toBe(false);
+  });
+
+  it("creates an expiring queue token that can resolve multiple pending names", () => {
+    process.env.PLAYER_ALIAS_REVIEW_TOKEN_SECRET = "review-secret";
+    delete process.env.CRON_SECRET;
+
+    const token = createPlayerAliasQueueReviewToken({
+      ttlSeconds: 60,
+      nowMs: 1_000,
+    });
+
+    expect(token).toEqual(expect.any(String));
+    expect(
+      verifyPlayerAliasReviewToken({
+        token,
+        unresolvedId: null,
+        nowMs: 30_000,
+      })
+    ).toBe(true);
+    expect(
+      verifyPlayerAliasReviewToken({
+        token,
+        unresolvedId: "unresolved-1",
+        nowMs: 30_000,
+      })
+    ).toBe(true);
     expect(
       verifyPlayerAliasReviewToken({
         token,

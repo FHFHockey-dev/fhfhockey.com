@@ -1,7 +1,8 @@
 import crypto from "crypto";
 
 type PlayerAliasReviewTokenPayload = {
-  unresolvedId: string;
+  unresolvedId?: string;
+  scope?: "pending_queue";
   exp: number;
 };
 
@@ -46,13 +47,29 @@ export function createPlayerAliasReviewToken(args: {
   return `${payload}.${sign(payload, secret)}`;
 }
 
+export function createPlayerAliasQueueReviewToken(args: {
+  ttlSeconds?: number;
+  nowMs?: number;
+} = {}): string | null {
+  const secret = resolveSecret();
+  if (!secret) return null;
+
+  const payload = base64UrlEncode(
+    JSON.stringify({
+      scope: "pending_queue",
+      exp: Math.floor((args.nowMs ?? Date.now()) / 1000) + (args.ttlSeconds ?? DEFAULT_TTL_SECONDS),
+    } satisfies PlayerAliasReviewTokenPayload)
+  );
+  return `${payload}.${sign(payload, secret)}`;
+}
+
 export function verifyPlayerAliasReviewToken(args: {
   token: string | null | undefined;
   unresolvedId: string | null | undefined;
   nowMs?: number;
 }): boolean {
   const secret = resolveSecret();
-  if (!secret || !args.token || !args.unresolvedId) return false;
+  if (!secret || !args.token) return false;
 
   const [payloadPart, signaturePart] = args.token.split(".");
   if (!payloadPart || !signaturePart) return false;
@@ -67,7 +84,9 @@ export function verifyPlayerAliasReviewToken(args: {
   try {
     const payload = JSON.parse(base64UrlDecode(payloadPart)) as PlayerAliasReviewTokenPayload;
     const nowSeconds = Math.floor((args.nowMs ?? Date.now()) / 1000);
-    return payload.unresolvedId === args.unresolvedId && payload.exp >= nowSeconds;
+    if (payload.exp < nowSeconds) return false;
+    if (payload.scope === "pending_queue") return true;
+    return Boolean(args.unresolvedId && payload.unresolvedId === args.unresolvedId);
   } catch {
     return false;
   }

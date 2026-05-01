@@ -83,12 +83,12 @@ const PlayerAliasesPage: NextPage = () => {
     const params = new URLSearchParams(window.location.search);
     const unresolvedId = params.get("unresolvedId");
     const reviewToken = params.get("reviewToken");
-    const endpoint = unresolvedId
-      ? `/api/v1/db/player-name-aliases?${new URLSearchParams({
-          unresolvedId,
-          ...(reviewToken ? { reviewToken } : {}),
-        }).toString()}`
-      : "/api/v1/db/player-name-aliases";
+    const query = new URLSearchParams({
+      ...(unresolvedId ? { unresolvedId } : {}),
+      ...(reviewToken ? { reviewToken } : {}),
+    });
+    const queryString = query.toString();
+    const endpoint = `/api/v1/db/player-name-aliases${queryString ? `?${queryString}` : ""}`;
     const payload = await fetchWithOptionalAuth(endpoint);
     setUnresolvedNames(payload.unresolvedNames);
     setPlayers(payload.players);
