@@ -1,7 +1,10 @@
 import type { NextApiResponse } from "next";
 import { Resend } from "resend";
 
-import { createPlayerAliasReviewToken } from "lib/sources/playerAliasReviewToken";
+import {
+  createPlayerAliasQueueReviewToken,
+  createPlayerAliasReviewToken
+} from "lib/sources/playerAliasReviewToken";
 import adminOnly from "utils/adminOnlyMiddleware";
 
 const resend = new Resend(process.env.RESEND_API_KEY ?? "");
@@ -57,6 +60,9 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
   }
 
   const baseUrl = resolveBaseUrl(req);
+  const queueToken = createPlayerAliasQueueReviewToken();
+  const reviewAllUrl = new URL("/db/player-aliases", baseUrl);
+  if (queueToken) reviewAllUrl.searchParams.set("reviewToken", queueToken);
   const rowsHtml = pending
     .map((row: any) => {
       const token = createPlayerAliasReviewToken({ unresolvedId: row.id });
@@ -81,6 +87,7 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
       <div style="font-family:Arial,sans-serif;">
         <h1>Unresolved player names</h1>
         <p>These names were captured from tweet-derived lineup parsing and need a manual player alias.</p>
+        <p><a href="${escapeHtml(reviewAllUrl.toString())}">Review all pending names</a></p>
         <table style="border-collapse:collapse;width:100%;">
           <thead>
             <tr>

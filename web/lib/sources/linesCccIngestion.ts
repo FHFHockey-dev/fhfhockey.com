@@ -1232,11 +1232,9 @@ function mapNamesToPlayerIdsOrdered(
 ): Array<number | null> | null {
   if (!names) return null;
 
-  const rosterByFullName = new Map<string, RosterNameEntry>();
   const rosterByLastName = new Map<string, RosterNameEntry[]>();
 
   for (const rosterEntry of rosterEntries) {
-    rosterByFullName.set(normalizeNameKey(rosterEntry.fullName), rosterEntry);
     const lastName = normalizeNameKey(rosterEntry.lastName);
     rosterByLastName.set(lastName, [
       ...(rosterByLastName.get(lastName) ?? []),
@@ -1245,10 +1243,10 @@ function mapNamesToPlayerIdsOrdered(
   }
 
   return names.map((name) => {
-    const normalizedName = normalizeNameKey(name);
-    const fullNameMatch = rosterByFullName.get(normalizedName);
-    if (fullNameMatch) return fullNameMatch.playerId;
+    const resolvedEntry = resolveTweetNameToRosterEntry(name, rosterEntries);
+    if (resolvedEntry) return resolvedEntry.playerId;
 
+    const normalizedName = normalizeNameKey(name);
     const lastName = normalizedName.split(" ").pop() ?? normalizedName;
     const lastNameMatches = rosterByLastName.get(lastName) ?? [];
     return lastNameMatches.length === 1 ? lastNameMatches[0]!.playerId : null;

@@ -197,4 +197,48 @@ describe("player impact ratings", () => {
     expect(decayed[0].source_window).toBe("season_decayed");
     expect(decayed[0].metadata.seasonDecayVersion).toBeDefined();
   });
+
+  it("returns empty ratings for missing rows and ignores zero-TOI source rows", () => {
+    expect(
+      buildPlayerImpactRatings({
+        seasonId: 20252026,
+        snapshotDate: "2026-01-03",
+        skaterRows: [],
+        goalieRows: [],
+      }),
+    ).toEqual({
+      skaterOffenseRows: [],
+      skaterDefenseRows: [],
+      goalieRows: [],
+    });
+
+    const zeroToi = buildPlayerImpactRatings({
+      seasonId: 20252026,
+      snapshotDate: "2026-01-03",
+      skaterRows: [skaterRow(1, "2026-01-01", 0, 8, 1)],
+      goalieRows: [goalieRow(10, "2026-01-01", 0, 3, 1)],
+    });
+
+    expect(zeroToi.skaterOffenseRows).toEqual([]);
+    expect(zeroToi.skaterDefenseRows).toEqual([]);
+    expect(zeroToi.goalieRows).toEqual([]);
+  });
+
+  it("returns empty decayed priors when no source season has usable weight", () => {
+    expect(
+      buildSeasonDecayedPlayerImpactPriors({
+        targetSeasonId: 20252026,
+        snapshotDate: "2025-10-10",
+        ratingRows: [
+          ratingRow({
+            playerId: 1,
+            seasonId: 20212022,
+            snapshotDate: "2022-04-29",
+            ratingRaw: 2,
+            rating0To100: 100,
+          }),
+        ],
+      }),
+    ).toEqual([]);
+  });
 });

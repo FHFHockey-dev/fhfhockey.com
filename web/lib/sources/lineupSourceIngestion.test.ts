@@ -45,6 +45,13 @@ const tampaRoster = [
   { playerId: 7, fullName: "Andrei Vasilevskiy", lastName: "Vasilevskiy" },
   { playerId: 8, fullName: "Jonas Johansson", lastName: "Johansson" }
 ];
+const bruinsRoster = [
+  { playerId: 201, fullName: "Elias Lindholm", lastName: "Lindholm" },
+  { playerId: 202, fullName: "Hampus Lindholm", lastName: "Lindholm" },
+  { playerId: 203, fullName: "Morgan Geekie", lastName: "Geekie" },
+  { playerId: 204, fullName: "Casey Mittelstadt", lastName: "Mittelstadt" },
+  { playerId: 205, fullName: "Henri Jokiharju", lastName: "Jokiharju" }
+];
 const wildRoster = [
   { playerId: 101, fullName: "Kirill Kaprizov", lastName: "Kaprizov" },
   { playerId: 102, fullName: "Joel Eriksson Ek", lastName: "Eriksson Ek" },
@@ -243,9 +250,9 @@ Johansson - Hartman - N. Foligno`;
       forwardLineCount: 1
     });
     expect(matchRosterNamesInTweet("JEEk and N. Foligno are skating", wildRoster)).toEqual({
-      matchedPlayerIds: [102],
-      matchedNames: ["Joel Eriksson Ek"],
-      unmatchedNames: ["Foligno"]
+      matchedPlayerIds: [102, 108],
+      matchedNames: ["Joel Eriksson Ek", "Nick Foligno"],
+      unmatchedNames: []
     });
   });
 
@@ -564,6 +571,24 @@ Johansson - Hartman - N. Foligno`;
   it("matches last names against the active roster when full names are missing", () => {
     expect(validateLineupNames(["Point", "Kucherov"], tampaRoster)).toMatchObject({
       matchedPlayerIds: [2, 3],
+      unmatchedNames: []
+    });
+  });
+
+  it("prefers initial-qualified last names before ambiguous bare last names", () => {
+    expect(validateLineupNames(["E. Lindholm", "H. Lindholm"], bruinsRoster)).toMatchObject({
+      matchedPlayerIds: [201, 202],
+      matchedNames: ["Elias Lindholm", "Hampus Lindholm"],
+      unmatchedNames: []
+    });
+
+    expect(
+      matchRosterNamesInTweet(
+        "Mittelstadt-E. Lindholm-Geekie\nH. Lindholm-Jokiharju",
+        bruinsRoster
+      )
+    ).toMatchObject({
+      matchedPlayerIds: [201, 202, 203, 204, 205],
       unmatchedNames: []
     });
   });

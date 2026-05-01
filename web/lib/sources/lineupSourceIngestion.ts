@@ -434,11 +434,9 @@ function mapNamesToPlayerIdsOrdered(
   names: string[],
   rosterEntries: RosterNameEntry[]
 ): Array<number | null> {
-  const rosterByFullName = new Map<string, RosterNameEntry>();
   const rosterByLastName = new Map<string, RosterNameEntry[]>();
 
   for (const rosterEntry of rosterEntries) {
-    rosterByFullName.set(normalizeTeamLabel(rosterEntry.fullName), rosterEntry);
     const normalizedLastName = normalizeTeamLabel(rosterEntry.lastName);
     if (!rosterByLastName.has(normalizedLastName)) {
       rosterByLastName.set(normalizedLastName, []);
@@ -447,10 +445,10 @@ function mapNamesToPlayerIdsOrdered(
   }
 
   return names.map((name) => {
-    const normalizedName = normalizeTeamLabel(name);
-    const byFullName = rosterByFullName.get(normalizedName);
-    if (byFullName) return byFullName.playerId;
+    const resolvedEntry = resolveTweetNameToRosterEntry(name, rosterEntries);
+    if (resolvedEntry) return resolvedEntry.playerId;
 
+    const normalizedName = normalizeTeamLabel(name);
     const lastName = normalizedName.split(" ").pop() ?? normalizedName;
     const byLastName = rosterByLastName.get(lastName) ?? [];
     if (byLastName.length === 1) {
@@ -490,11 +488,9 @@ export function validateLineupNames(
   const matchedNames = new Set<string>();
   const unmatchedNames: string[] = [];
 
-  const rosterByFullName = new Map<string, RosterNameEntry>();
   const rosterByLastName = new Map<string, RosterNameEntry[]>();
 
   for (const rosterEntry of rosterEntries) {
-    rosterByFullName.set(normalizeTeamLabel(rosterEntry.fullName), rosterEntry);
     const normalizedLastName = normalizeTeamLabel(rosterEntry.lastName);
     if (!rosterByLastName.has(normalizedLastName)) {
       rosterByLastName.set(normalizedLastName, []);
@@ -503,14 +499,14 @@ export function validateLineupNames(
   }
 
   for (const name of dedupeNames(names)) {
-    const normalizedName = normalizeTeamLabel(name);
-    const byFullName = rosterByFullName.get(normalizedName);
-    if (byFullName) {
-      matchedPlayerIds.add(byFullName.playerId);
-      matchedNames.add(byFullName.fullName);
+    const resolvedEntry = resolveTweetNameToRosterEntry(name, rosterEntries);
+    if (resolvedEntry) {
+      matchedPlayerIds.add(resolvedEntry.playerId);
+      matchedNames.add(resolvedEntry.fullName);
       continue;
     }
 
+    const normalizedName = normalizeTeamLabel(name);
     const lastName = normalizedName.split(" ").pop() ?? normalizedName;
     const lastNameMatches = rosterByLastName.get(lastName) ?? [];
     if (lastNameMatches.length === 1) {
@@ -841,12 +837,14 @@ export function matchRosterNamesInTweet(
 
   for (const rosterEntry of rosterEntries) {
     const needles = buildRosterSearchNeedles(rosterEntry);
-    const matchedNeedle = needles.find((needle) => normalizedTweet.includes(needle));
-    if (matchedNeedle && matchedNeedle !== normalizeTeamLabel(rosterEntry.lastName)) {
+    const normalizedLastName = normalizeTeamLabel(rosterEntry.lastName);
+    const matchedSpecificNeedle = needles.find(
+      (needle) => needle !== normalizedLastName && normalizedTweet.includes(needle)
+    );
+    if (matchedSpecificNeedle) {
       matchedFullNames.push(rosterEntry.fullName);
       continue;
     }
-    const normalizedLastName = normalizeTeamLabel(rosterEntry.lastName);
     if (normalizedLastName && normalizedTweet.includes(normalizedLastName)) {
       matchedLastNames.push(rosterEntry.lastName);
     }
