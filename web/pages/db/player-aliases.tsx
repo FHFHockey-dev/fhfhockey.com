@@ -15,6 +15,9 @@ type UnresolvedName = {
   tweet_id: string | null;
   context_text: string | null;
   status: "pending" | "resolved" | "ignored";
+  metadata: {
+    reason?: string | null;
+  } | null;
   created_at: string;
 };
 
@@ -69,6 +72,85 @@ async function postWithOptionalAuth(url: string, body: Record<string, unknown>) 
   return payload;
 }
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function getReviewSlotLabel(reason: string | null | undefined): string | null {
+  if (!reason) return null;
+  const lineMatch = reason.match(/^line_(\d+)_null_id$/);
+  if (lineMatch?.[1]) return `forward line ${lineMatch[1]}`;
+  const pairMatch = reason.match(/^pair_(\d+)_null_id$/);
+  if (pairMatch?.[1]) return `defense pair ${pairMatch[1]}`;
+  if (reason === "goalie_1_null_id") return "goalie 1";
+  if (reason === "goalie_2_null_id") return "goalie 2";
+  if (reason === "scratches_null_id") return "scratches";
+  if (reason === "injuries_null_id") return "injuries";
+  if (reason === "unmatched_names") return "unmatched name";
+  return null;
+}
+
+function parseReviewSlot(reason: string | null | undefined): {
+  group: "line" | "pair" | null;
+  index: number | null;
+} {
+  const lineMatch = reason?.match(/^line_(\d+)_null_id$/);
+  if (lineMatch?.[1]) return { group: "line", index: Number(lineMatch[1]) };
+  const pairMatch = reason?.match(/^pair_(\d+)_null_id$/);
+  if (pairMatch?.[1]) return { group: "pair", index: Number(pairMatch[1]) };
+  return { group: null, index: null };
+}
+
+function isStructuredContextLine(line: string): boolean {
+  return /[-–—/\\•]/.test(line) && !/^https?:\/\//i.test(line.trim());
+}
+
+function renderHighlightedContext(selectedUnresolved: UnresolvedName) {
+  const text = selectedUnresolved.context_text ?? "No context text.";
+  const rawName = selectedUnresolved.raw_name.trim();
+  const reason = selectedUnresolved.metadata?.reason;
+  const slot = parseReviewSlot(reason);
+  let structuredLineNumber = 0;
+  const namePattern = rawName
+    ? new RegExp(`((?:[A-Z]\\.?\\s*)?${escapeRegExp(rawName)})`, "gi")
+    : null;
+
+  return text.split(/(\n)/).map((part, index) => {
+    if (part === "\n") return part;
+
+    const isStructured = isStructuredContextLine(part);
+    if (isStructured) structuredLineNumber += 1;
+    const shouldHighlightLine =
+      slot.index != null &&
+      isStructured &&
+      ((slot.group === "line" && structuredLineNumber === slot.index) ||
+        (slot.group === "pair" && structuredLineNumber === slot.index + 4));
+
+    if (!namePattern) {
+      return (
+        <span key={index} style={shouldHighlightLine ? { background: "#513d05" } : undefined}>
+          {part}
+        </span>
+      );
+    }
+
+    const pieces = part.split(namePattern);
+    return (
+      <span key={index} style={shouldHighlightLine ? { background: "#513d05" } : undefined}>
+        {pieces.map((piece, pieceIndex) =>
+          piece.toLowerCase().endsWith(rawName.toLowerCase()) ? (
+            <mark key={pieceIndex} style={{ background: "#ffd54a", color: "#111", padding: "0 2px" }}>
+              {piece}
+            </mark>
+          ) : (
+            piece
+          )
+        )}
+      </span>
+    );
+  });
+}
+
 const PlayerAliasesPage: NextPage = () => {
   const [unresolvedNames, setUnresolvedNames] = useState<UnresolvedName[]>([]);
   const [players, setPlayers] = useState<PlayerOption[]>([]);
@@ -109,6 +191,7 @@ const PlayerAliasesPage: NextPage = () => {
   const selectedUnresolved = unresolvedNames.find(
     (name) => name.id === selectedUnresolvedId
   );
+  const selectedReviewSlot = getReviewSlotLabel(selectedUnresolved?.metadata?.reason);
   const filteredPlayers = useMemo(() => {
     if (!selectedUnresolved?.team_id) return players;
     const teamPlayers = players.filter((player) => player.team_id === selectedUnresolved.team_id);
@@ -222,13 +305,14 @@ const PlayerAliasesPage: NextPage = () => {
                 {selectedUnresolved.source} · {selectedUnresolved.team_abbreviation ?? "No team"} ·{" "}
                 {selectedUnresolved.tweet_id ?? "No tweet id"}
               </p>
+              {selectedReviewSlot ? <p>Review target: {selectedReviewSlot}</p> : null}
               {selectedUnresolved.source_url ? (
                 <p>
                   <a href={selectedUnresolved.source_url}>Open source tweet</a>
                 </p>
               ) : null}
               <pre style={{ whiteSpace: "pre-wrap" }}>
-                {selectedUnresolved.context_text ?? "No context text."}
+                {renderHighlightedContext(selectedUnresolved)}
               </pre>
             </article>
           </section>
