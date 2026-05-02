@@ -163,6 +163,12 @@ function createSupabaseMocks(eventRows: LineSourceEventFixture[]) {
   const lineSourceSnapshotsUpsertMock = vi
     .fn()
     .mockResolvedValue({ error: null });
+  const staleRowUpdateQuery: any = {
+    eq: vi.fn(() => staleRowUpdateQuery),
+    neq: vi.fn(() => staleRowUpdateQuery),
+    then: (resolve: any) => Promise.resolve({ error: null }).then(resolve),
+  };
+  const staleRowUpdateMock = vi.fn(() => staleRowUpdateQuery);
   const eventUpdateEqMock = vi.fn().mockResolvedValue({ error: null });
   const eventUpdateMock = vi.fn(() => ({
     eq: eventUpdateEqMock,
@@ -307,9 +313,11 @@ function createSupabaseMocks(eventRows: LineSourceEventFixture[]) {
       update: eventUpdateMock,
     },
     line_source_snapshots: {
+      update: staleRowUpdateMock,
       upsert: lineSourceSnapshotsUpsertMock,
     },
     lineup_unresolved_player_names: {
+      update: staleRowUpdateMock,
       upsert: unresolvedNamesUpsertMock,
     },
   };

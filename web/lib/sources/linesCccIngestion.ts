@@ -312,6 +312,12 @@ function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+function includesNormalizedLabel(text: string, label: string): boolean {
+  return new RegExp(`(?:^|\\s)${escapeRegExp(label)}(?:$|\\s)`, "i").test(
+    text,
+  );
+}
+
 function detectNonNhlLeague(text: string): string | null {
   const normalized = normalizeTextKey(text);
   if (/\b#?mbmoose\b/.test(normalized)) return "AHL";
@@ -577,14 +583,13 @@ function findLabelMatchedTeams(
       team.shortName,
       team.location,
       `${team.location ?? ""} ${team.shortName ?? ""}`.trim(),
+      ...team.hashtags,
     ]
       .filter((value): value is string => Boolean(value))
       .map((value) => normalizeTextKey(value))
       .filter(Boolean);
 
-    return labels.some((label) =>
-      new RegExp(`\\b${escapeRegExp(label)}\\b`, "i").test(normalized),
-    );
+    return labels.some((label) => includesNormalizedLabel(normalized, label));
   });
 }
 
@@ -595,6 +600,7 @@ function buildTeamTextLabels(team: TeamDirectoryEntry): string[] {
     team.shortName,
     team.location,
     `${team.location ?? ""} ${team.shortName ?? ""}`.trim(),
+    ...team.hashtags,
   ]
     .filter((value): value is string => Boolean(value))
     .map((value) => normalizeTextKey(value))
@@ -607,9 +613,7 @@ function findTeamMentionInText(
 ): TeamDirectoryEntry | null {
   const normalized = normalizeTextKey(text);
   const hintedTeams = Object.entries(NHL_TEXT_HINTS)
-    .filter(([hint]) =>
-      new RegExp(`\\b${escapeRegExp(hint)}\\b`, "i").test(normalized),
-    )
+    .filter(([hint]) => includesNormalizedLabel(normalized, hint))
     .map(
       ([, abbreviation]) =>
         teams.find((team) => team.abbreviation === abbreviation) ?? null,
@@ -622,7 +626,7 @@ function findTeamMentionInText(
 
   const labelTeams = teams.filter((team) =>
     buildTeamTextLabels(team).some((label) =>
-      new RegExp(`\\b${escapeRegExp(label)}\\b`, "i").test(normalized),
+      includesNormalizedLabel(normalized, label),
     ),
   );
   const matches = [...hintedTeams, ...labelTeams];
@@ -717,6 +721,18 @@ export function resolveLinesCccTeam(args: {
   }
 
   const labelMatches = findLabelMatchedTeams(args.text, args.teams);
+
+  if (args.rosterByTeam) {
+    const rosterDensityTeam = resolveTeamFromRosterDensity({
+      text: args.text,
+      teams: args.teams,
+      rosterByTeam: args.rosterByTeam,
+    });
+    if (rosterDensityTeam) {
+      return rosterDensityTeam;
+    }
+  }
+
   if (labelMatches.length === 1) {
     return labelMatches[0]!;
   }
@@ -739,17 +755,6 @@ export function resolveLinesCccTeam(args: {
   );
   if (handleHintTeam) {
     return handleHintTeam;
-  }
-
-  if (args.rosterByTeam) {
-    const rosterDensityTeam = resolveTeamFromRosterDensity({
-      text: args.text,
-      teams: labelMatches.length > 1 ? labelMatches : args.teams,
-      rosterByTeam: args.rosterByTeam,
-    });
-    if (rosterDensityTeam) {
-      return rosterDensityTeam;
-    }
   }
 
   return null;

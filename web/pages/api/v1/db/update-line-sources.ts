@@ -203,6 +203,41 @@ async function persistLineSourceSnapshotRow(args: {
   supabase: any;
   row: ReturnType<typeof toLineSourceSnapshotRow>;
 }) {
+  if (
+    args.row.status === "observed" &&
+    args.row.nhl_filter_status === "accepted" &&
+    args.row.tweet_id &&
+    args.row.team_id
+  ) {
+    const { error: snapshotSupersedeError } = await args.supabase
+      .from("line_source_snapshots" as any)
+      .update({
+        status: "superseded",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("source", args.row.source)
+      .eq("tweet_id", args.row.tweet_id)
+      .eq("status", "observed")
+      .eq("nhl_filter_status", "accepted")
+      .neq("team_id", args.row.team_id)
+      .neq("capture_key", args.row.capture_key);
+
+    if (snapshotSupersedeError) throw snapshotSupersedeError;
+
+    const { error: unresolvedIgnoreError } = await args.supabase
+      .from("lineup_unresolved_player_names" as any)
+      .update({
+        status: "ignored",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("source", args.row.source)
+      .eq("tweet_id", args.row.tweet_id)
+      .eq("status", "pending")
+      .neq("team_id", args.row.team_id);
+
+    if (unresolvedIgnoreError) throw unresolvedIgnoreError;
+  }
+
   const { error } = await args.supabase
     .from("line_source_snapshots" as any)
     .upsert([args.row] as any, {

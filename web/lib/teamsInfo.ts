@@ -585,6 +585,41 @@ export const teamNameToAbbreviationMap: { [name: string]: string } = {
   "Utah Utah HC": "UTA" // Natural Stat Trick uses "Utah Utah HC" for some reason
 };
 
+export const teamHashtagsByAbbreviation: Record<string, string[]> = {
+  ANA: ["#FlyTogether"],
+  BOS: ["#NHLBruins"],
+  BUF: ["#SabreHood"],
+  CGY: ["#Flames"],
+  CAR: ["#CarolinaCultre"],
+  CHI: ["#Blackhawks"],
+  COL: ["#GoAvsGo"],
+  CBJ: ["#CBJ"],
+  DAL: ["#TexasHockey"],
+  DET: ["#LGRW"],
+  EDM: ["#LetsGoOilers"],
+  FLA: ["#TimeToHunt"],
+  LAK: ["#GoKingsGo"],
+  MIN: ["#MNWild"],
+  MTL: ["#GoHabsGo"],
+  NSH: ["#Smashville"],
+  NJD: ["#NJDevils"],
+  NYI: ["#Isles"],
+  NYR: ["#NYR"],
+  OTT: ["#GoSensGo"],
+  PHI: ["#LetsGoFlyers"],
+  PIT: ["#LetsGoPens"],
+  SJS: ["#TheFutureIsTeal"],
+  SEA: ["#SeaKraken"],
+  STL: ["#STLBlues"],
+  TBL: ["#GoBolts"],
+  TOR: ["#LeafsForever"],
+  UTA: ["#TusksUp"],
+  VAN: ["#Canucks"],
+  VGK: ["#VegasBorn"],
+  WSH: ["#ALLCAPS"],
+  WPG: ["#GoJetsGo", "#NHLJets"]
+};
+
 // Helper function to get team info by team_id
 export const getTeamInfoById = (
   teamId: number

@@ -42,7 +42,19 @@ const canadiensRoster = [
   { playerId: 6, fullName: "Ivan Demidov", lastName: "Demidov" },
   { playerId: 7, fullName: "Mike Matheson", lastName: "Matheson" },
   { playerId: 8, fullName: "Lane Hutson", lastName: "Hutson" },
-  { playerId: 9, fullName: "Jakub Dobes", lastName: "Dobes" }
+  { playerId: 9, fullName: "Jakub Dobes", lastName: "Dobes" },
+  { playerId: 10, fullName: "Josh Anderson", lastName: "Anderson" },
+  { playerId: 11, fullName: "Jake Evans", lastName: "Evans" },
+  { playerId: 12, fullName: "Zach Bolduc", lastName: "Bolduc" },
+  { playerId: 13, fullName: "Alex Newhook", lastName: "Newhook" },
+  { playerId: 14, fullName: "Phillip Danault", lastName: "Danault" },
+  { playerId: 15, fullName: "Brendan Gallagher", lastName: "Gallagher" },
+  { playerId: 16, fullName: "Kaiden Guhle", lastName: "Guhle" },
+  { playerId: 17, fullName: "Arber Xhekaj", lastName: "Xhekaj" },
+  { playerId: 18, fullName: "Jayden Struble", lastName: "Struble" },
+  { playerId: 19, fullName: "Jacob Fowler", lastName: "Fowler" },
+  { playerId: 20, fullName: "Alexandre Carrier", lastName: "Carrier" },
+  { playerId: 31, fullName: "Alexandre Texier", lastName: "Texier" }
 ];
 const lightningRoster = [
   { playerId: 21, fullName: "Gage Goncalves", lastName: "Goncalves" },
@@ -641,6 +653,51 @@ describe("linesCccIngestion", () => {
         teamLabelMatches: ["MTL", "TBL"]
       }
     });
+  });
+
+  it("uses decisive roster density over a lone opponent team label", () => {
+    const parsed = buildLinesCccSourceFromIftttEvent({
+      event: {
+        id: "canadiens-french-lines-vs-lightning",
+        source: "ifttt",
+        source_account: "GameDayLines",
+        username: "GameDayLines",
+        text:
+          "La formation du CH à l'échauffement avant ce 6e match contre le Lightning\n" +
+          "Caufield-Suzuki-Anderson\n" +
+          "Slafkovsky-Evans-Demidov\n" +
+          "Bolduc-Dach-Texier\n" +
+          "Newhook-Danault-Gallagher\n" +
+          "Matheson-Carrier\n" +
+          "Guhle-Hutson\n" +
+          "Xhekaj-Struble\n" +
+          "Dobes\n" +
+          "Fowler",
+        link_to_tweet: "https://twitter.com/source/status/2050344773027033540",
+        tweet_id: "2050344773027033540",
+        tweet_created_at: null,
+        created_at_label: "May 2, 2026",
+        raw_payload: {},
+        received_at: "2026-05-02T12:31:07.000Z"
+      },
+      snapshotDate: "2026-05-02",
+      teams: [canadiens!, lightning!],
+      rosterByTeam: new Map([
+        [8, canadiensRoster],
+        [14, lightningRoster]
+      ])
+    });
+
+    expect(parsed).toMatchObject({
+      team: { abbreviation: "MTL" },
+      nhlFilterStatus: "accepted",
+      metadata: {
+        teamLabelMatches: ["TBL"]
+      }
+    });
+    expect(parsed.matchedNames).toEqual(
+      expect.arrayContaining(["Cole Caufield", "Nick Suzuki", "Josh Anderson"])
+    );
   });
 
   it("captures injury and transaction signals when the text has return-style status updates", () => {
