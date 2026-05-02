@@ -187,7 +187,7 @@ export default withCronJobAudit(
       supabase: req.supabase,
       teamIds: scheduledTeamIds,
     });
-    const rosterByTeam = applyPlayerNameAliasesToRosterMap({
+    let rosterByTeam = applyPlayerNameAliasesToRosterMap({
       rosterByTeam: rawRosterByTeam,
       aliases: playerNameAliases,
     });
@@ -365,6 +365,82 @@ export default withCronJobAudit(
         raw_payload: nextRawPayload,
       });
     }
+
+    const unscheduledAcceptedTeamIds = Array.from(
+      new Set(
+        parsedCandidates
+          .map((candidate) =>
+            candidate.nhlFilterStatus === "accepted"
+              ? candidate.team?.id
+              : null,
+          )
+          .filter(
+            (teamId): teamId is number =>
+              typeof teamId === "number" && !rosterByTeam.has(teamId),
+          ),
+      ),
+    );
+    if (unscheduledAcceptedTeamIds.length > 0) {
+      const additionalRosterByTeam = applyPlayerNameAliasesToRosterMap({
+        rosterByTeam: await fetchRosterEntriesByTeam({
+          supabase: req.supabase,
+          teamIds: unscheduledAcceptedTeamIds,
+          seasonId: currentSeason.seasonId,
+        }),
+        aliases: await fetchPlayerNameAliases({
+          supabase: req.supabase,
+          teamIds: unscheduledAcceptedTeamIds,
+        }),
+      });
+      rosterByTeam = new Map([...rosterByTeam, ...additionalRosterByTeam]);
+
+      for (let index = 0; index < parsedCandidates.length; index += 1) {
+        const candidate = parsedCandidates[index];
+        if (!candidate?.team) continue;
+        if (!unscheduledAcceptedTeamIds.includes(candidate.team.id)) continue;
+
+        parsedCandidates[index] = refreshLinesCccSourceFromPrimaryText({
+          source: candidate,
+          teams: teamDirectory,
+          rosterByTeam,
+          gameIdByTeamId,
+        });
+      }
+    }
+
+    const hasAmbiguousNhlCandidates = parsedCandidates.some(
+      (candidate) => candidate.nhlFilterStatus === "rejected_ambiguous",
+    );
+    const unloadedTeamIds = teamDirectory
+      .map((team) => team.id)
+      .filter((teamId) => !rosterByTeam.has(teamId));
+    if (hasAmbiguousNhlCandidates && unloadedTeamIds.length > 0) {
+      const additionalRosterByTeam = applyPlayerNameAliasesToRosterMap({
+        rosterByTeam: await fetchRosterEntriesByTeam({
+          supabase: req.supabase,
+          teamIds: unloadedTeamIds,
+          seasonId: currentSeason.seasonId,
+        }),
+        aliases: await fetchPlayerNameAliases({
+          supabase: req.supabase,
+          teamIds: unloadedTeamIds,
+        }),
+      });
+      rosterByTeam = new Map([...rosterByTeam, ...additionalRosterByTeam]);
+
+      for (let index = 0; index < parsedCandidates.length; index += 1) {
+        const candidate = parsedCandidates[index];
+        if (candidate?.nhlFilterStatus !== "rejected_ambiguous") continue;
+
+        parsedCandidates[index] = refreshLinesCccSourceFromPrimaryText({
+          source: candidate,
+          teams: teamDirectory,
+          rosterByTeam,
+          gameIdByTeamId,
+        });
+      }
+    }
+
     const rowsToUpsert = parsedCandidates.map((candidate) =>
       toLinesCccRow({
         source: candidate,
