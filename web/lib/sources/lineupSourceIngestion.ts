@@ -1,7 +1,7 @@
 import * as cheerio from "cheerio";
 
 import type { Team } from "lib/NHL/types";
-import { teamsInfo } from "lib/teamsInfo";
+import { teamHashtagsByAbbreviation, teamsInfo } from "lib/teamsInfo";
 import { parseTweetOEmbedHtml } from "lib/sources/tweetLineupParsing";
 
 export type PregameSourceStatus = "observed" | "rejected";
@@ -25,6 +25,7 @@ export type TeamDirectoryEntry = Team & {
   slug: string;
   location: string | null;
   shortName: string | null;
+  hashtags: string[];
 };
 
 export type InjuryMention = {
@@ -287,7 +288,8 @@ export function buildTeamDirectory(teams: Team[]): TeamDirectoryEntry[] {
       ...team,
       slug: toTeamSlug(team.name),
       shortName,
-      location
+      location,
+      hashtags: teamHashtagsByAbbreviation[team.abbreviation] ?? []
     };
   });
 }
