@@ -199,6 +199,19 @@ function applyGdlSourceClassificationHint(args: {
   };
 }
 
+function isLineSourceSnapshotTweetTeamUniqueConflict(error: unknown): boolean {
+  const message =
+    typeof error === "object" && error && "message" in error
+      ? String((error as { message?: unknown }).message ?? "")
+      : String(error ?? "");
+  return (
+    message.includes("line_source_snapshots_source_tweet_team_unique_idx") ||
+    message.includes(
+      "line_source_snapshots_source_quoted_tweet_team_unique_idx",
+    )
+  );
+}
+
 async function persistLineSourceSnapshotRow(args: {
   supabase: any;
   row: ReturnType<typeof toLineSourceSnapshotRow>;
@@ -244,7 +257,37 @@ async function persistLineSourceSnapshotRow(args: {
       onConflict: "capture_key",
     });
 
-  if (error) throw error;
+  if (!error) return;
+
+  if (
+    !isLineSourceSnapshotTweetTeamUniqueConflict(error) ||
+    args.row.status !== "observed" ||
+    args.row.nhl_filter_status !== "accepted" ||
+    !args.row.source_key ||
+    !args.row.team_id ||
+    (!args.row.tweet_id && !args.row.quoted_tweet_id)
+  ) {
+    throw error;
+  }
+
+  const query = args.row.tweet_id
+    ? args.supabase
+        .from("line_source_snapshots" as any)
+        .update(args.row as any)
+        .eq("source_key", args.row.source_key)
+        .eq("tweet_id", args.row.tweet_id)
+    : args.supabase
+        .from("line_source_snapshots" as any)
+        .update(args.row as any)
+        .eq("source_key", args.row.source_key)
+        .eq("quoted_tweet_id", args.row.quoted_tweet_id);
+
+  const { error: updateError } = await query
+    .eq("team_id", args.row.team_id)
+    .eq("status", "observed")
+    .eq("nhl_filter_status", "accepted");
+
+  if (updateError) throw updateError;
 }
 
 export default withCronJobAudit(
