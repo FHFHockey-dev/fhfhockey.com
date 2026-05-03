@@ -13,6 +13,20 @@
 - `web/pages/api/v1/sources/ifttt/ccc-tweet.ts` - New IFTTT webhook receiver for CCC tweet discovery events.
 - `web/sql/ratings/007_create_lines_ccc.sql` - New Supabase migration for `public.lines_ccc` after CCC source analysis confirms schema shape.
 - `web/sql/ratings/008_create_lines_ccc_ifttt_events.sql` - New Supabase migration for raw IFTTT CCC tweet discovery queue rows.
+- `web/sql/ratings/014_create_tweet_pattern_review_items.sql` - New manual tweet-pattern review queue table for corpus polling, category assignment, and evidence highlights.
+- `web/sql/ratings/015_add_review_assignments_to_tweet_pattern_review_items.sql` - Adds multi-assignment JSON storage so one tweet can carry multiple player-linked review decisions.
+- `web/sql/ratings/016_create_news_feed_funnel.sql` - Creates the distilled news-card funnel, player join rows, and manual keyword phrase storage.
+- `web/lib/newsFeed.ts` - Shared news-feed helpers for card normalization, team theming, published-feed loading, and player-flag lookups.
+- `web/components/NewsFeed/NewsCard.tsx` - Reusable distilled news card used for preview and feed rendering.
+- `web/components/NewsFeed/NewsCard.module.scss` - Shared dark news-card styling aligned to the FHFH design system.
+- `web/lib/sources/tweetPatternReview.ts` - Shared pattern-review category suggestions, review-text shaping, evidence normalization, and dedupe helpers.
+- `web/pages/api/v1/db/tweet-pattern-review.ts` - Admin review-queue API for syncing stored tweets into the corpus-review queue and saving manual classifications.
+- `web/pages/api/v1/db/news-feed-items.ts` - Admin API for saving draft/published news cards and manual keyword phrases tied to reviewed tweets.
+- `web/pages/db/tweet-pattern-review.tsx` - Tweet-by-tweet manual pattern-analysis UI inspired by the player-alias review page.
+- `web/pages/news/index.tsx` - New distilled `/news` feed surface for published cards with search and filter controls.
+- `web/pages/news/index.module.scss` - System-styled dense layout for the published `/news` feed.
+- `web/pages/lines/index.tsx` - Lines landing page now consumes published news flags per player from the new funnel.
+- `web/styles/Lines.module.scss` - Adds player news-pill styling to the lines landing page rows.
 
 ### Notes
 
@@ -175,3 +189,30 @@
   - [x] 9.3 Accept IFTTT Twitter ingredient fields with flexible casing and preserve the full raw payload for audit/debugging.
   - [x] 9.4 Extract tweet ids from `LinkToTweet` and upsert duplicate tweet events safely.
   - [x] 9.5 Return a small success payload that leaves downstream parsing status as `pending`.
+
+- [ ] 10.0 NEW Analyze harvested tweet corpus and refine classifier heuristics
+  - [x] 10.1 Pull representative corpora from `lines_ccc_ifttt_events`, `line_source_ifttt_events`, `lines_ccc`, and `line_source_snapshots`, preserving source, parse text, classification, filter status, filter reason, and resolved team metadata.
+  - [ ] 10.2 Analyze injury-related tweets to identify recurring keywords, phrasing, and beat-writer patterns that correlate with true injury/status updates versus false positives.
+  - [ ] 10.3 Analyze goalie-start tweets to identify recurring confirmation language, full-name patterns, team/hashtag support patterns, and short-text edge cases that should influence acceptance confidence.
+  - [ ] 10.4 Review line-combination tweets to refine regex coverage for forward lines, defense pairs, initials, separators, caveat text, multiline layouts, and quote-wrapper variants.
+  - [ ] 10.5 Audit rejected and ambiguous tweets to identify repeat subcategories such as multi-team roundup, transaction-only note, non-NHL lineup, unresolved quote wrapper, insufficient-text goalie update, or unsupported injury shorthand.
+  - [ ] 10.6 Decide whether any ambiguous/rejected subcategories deserve new explicit classifications, filter reasons, or separate downstream pipelines rather than remaining in one generic ambiguous bucket.
+  - [ ] 10.7 Convert corpus findings into updated keyword maps, regexes, alias/handle hints, and regression fixtures/tests for CCC + GDL ingestion.
+
+- [ ] 11.0 NEW Build tweet-by-tweet manual pattern-review workflow
+  - [x] 11.1 Create a persistent review-queue table for manual tweet classification, custom categories/subcategories, and evidence highlights.
+  - [x] 11.2 Sync tweets from `lines_ccc`, `line_source_snapshots`, `lines_ccc_ifttt_events`, and `line_source_ifttt_events` into one deduped review queue without losing source attribution.
+  - [x] 11.3 Create an admin review API that loads pending/reviewed/ignored queue items and saves manual category/subcategory/evidence decisions.
+  - [x] 11.4 Create a `/db/tweet-pattern-review` page inspired by the player-alias flow, with one-tweet-at-a-time review, custom category inputs, and evidence highlighting.
+  - [ ] 11.5 Verify the new queue/API/page locally and confirm the sync output is usable for corpus analysis.
+  - [ ] 11.6 Add follow-on export/summary helpers so reviewed tweets can directly drive keyword-array edits, regex refinements, and ambiguous-bucket reporting.
+  - [x] 11.7 Support multiple assignments per tweet, including player-linked injuries and mixed tweet classifications such as goalie start + injury + line combination.
+
+- [ ] 12.0 NEW Build distilled news-feed funnel from reviewed tweet updates
+  - [x] 12.1 Create a reusable funnel schema for draft/published news cards, multi-player assignments, and manual keyword phrases.
+  - [x] 12.2 Add admin save/load APIs for news cards and manual keyword phrases tied to reviewed tweets.
+  - [x] 12.3 Add a news-card composer beneath the tweet-pattern-review workflow with player assignment, team assignment, category/subcategory, blurb writing, preview, and publish flow.
+  - [x] 12.4 Create a branded `/news` page that renders published cards in a dense desktop/mobile feed.
+  - [x] 12.5 Expose the funnel through reusable helpers so other pages can consume latest player/team flags.
+  - [x] 12.6 Wire the first consumer into the line-combinations landing page so players can show news-derived status pills.
+  - [ ] 12.7 Extend distilled news flags into additional site surfaces such as team line pages, homepage status modules, and player pages.

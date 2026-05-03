@@ -674,39 +674,148 @@ function resolveTeamFromHandleHints(
     : null;
 }
 
+type TeamResolutionScore = {
+  team: TeamDirectoryEntry;
+  rosterMatchCount: number;
+  exactFullNameMatchCount: number;
+  supportScore: number;
+  totalScore: number;
+};
+
+function countMatchedTeamLabels(args: {
+  normalizedText: string;
+  labels: string[];
+}): number {
+  return args.labels.filter((label) =>
+    includesNormalizedLabel(args.normalizedText, label),
+  ).length;
+}
+
+function buildTeamResolutionScores(args: {
+  text: string;
+  teams: TeamDirectoryEntry[];
+  rosterByTeam: Map<number, RosterNameEntry[]>;
+  leadVsTeam: TeamDirectoryEntry | null;
+  handleHintTeam: TeamDirectoryEntry | null;
+}): TeamResolutionScore[] {
+  const normalizedText = normalizeTextKey(args.text);
+  const textHintAbbreviations = new Set(
+    Object.entries(NHL_TEXT_HINTS)
+      .filter(([hint]) => includesNormalizedLabel(normalizedText, hint))
+      .map(([, abbreviation]) => abbreviation),
+  );
+
+  return args.teams
+    .map((team) => {
+      const rosterEntries = args.rosterByTeam.get(team.id) ?? [];
+      const matched = matchRosterNamesInTweet(args.text, rosterEntries);
+      const exactFullNameMatchCount = rosterEntries.filter((rosterEntry) =>
+        includesNormalizedLabel(
+          normalizedText,
+          normalizeTextKey(rosterEntry.fullName),
+        ),
+      ).length;
+      const hashtagMatchCount = countMatchedTeamLabels({
+        normalizedText,
+        labels: team.hashtags.map((hashtag) => normalizeTextKey(hashtag)),
+      });
+      const genericLabelMatchCount = countMatchedTeamLabels({
+        normalizedText,
+        labels: [
+          team.name,
+          team.abbreviation,
+          team.shortName,
+          team.location,
+          `${team.location ?? ""} ${team.shortName ?? ""}`.trim(),
+        ]
+          .filter((value): value is string => Boolean(value))
+          .map((value) => normalizeTextKey(value)),
+      });
+      const textHintMatched = textHintAbbreviations.has(team.abbreviation);
+      const leadVsMatched = args.leadVsTeam?.id === team.id;
+      const handleHintMatched = args.handleHintTeam?.id === team.id;
+      const supportScore =
+        hashtagMatchCount * 3 +
+        genericLabelMatchCount * 2 +
+        (textHintMatched ? 2 : 0) +
+        (handleHintMatched ? 4 : 0) +
+        (leadVsMatched ? 1 : 0);
+
+      return {
+        team,
+        rosterMatchCount: matched.matchedPlayerIds.length,
+        exactFullNameMatchCount,
+        supportScore,
+        totalScore:
+          matched.matchedPlayerIds.length * 10 +
+          exactFullNameMatchCount * 4 +
+          supportScore,
+      };
+    })
+    .sort((left, right) => {
+      if (right.totalScore !== left.totalScore) {
+        return right.totalScore - left.totalScore;
+      }
+      if (right.rosterMatchCount !== left.rosterMatchCount) {
+        return right.rosterMatchCount - left.rosterMatchCount;
+      }
+      return right.supportScore - left.supportScore;
+    });
+}
+
 function resolveTeamFromRosterDensity(args: {
   text: string;
   teams: TeamDirectoryEntry[];
   rosterByTeam: Map<number, RosterNameEntry[]>;
+  leadVsTeam: TeamDirectoryEntry | null;
+  handleHintTeam: TeamDirectoryEntry | null;
+  classification: GameDayTweetsClassification | null | undefined;
 }): TeamDirectoryEntry | null {
-  const structuredMentions = countStructuredPlayerMentions(args.text);
-  const scores = args.teams
-    .map((team) => {
-      const rosterEntries = args.rosterByTeam.get(team.id) ?? [];
-      const matched = matchRosterNamesInTweet(args.text, rosterEntries);
-      return {
-        team,
-        matchedCount: matched.matchedPlayerIds.length,
-      };
-    })
-    .sort((left, right) => right.matchedCount - left.matchedCount);
-
+  const scores = buildTeamResolutionScores(args);
   const best = scores[0];
   const second = scores[1];
-  if (!best || best.matchedCount === 0) {
+  if (!best) {
     return null;
   }
 
-  const uniqueLeader = best.matchedCount > (second?.matchedCount ?? 0);
-  const decisiveRosterLead =
-    best.matchedCount >= 2 &&
-    best.matchedCount - (second?.matchedCount ?? 0) >= 2;
-  const sufficientForRosterFallback =
-    decisiveRosterLead ||
-    best.matchedCount >= 6 ||
-    (structuredMentions > 0 && best.matchedCount >= 4);
+  const rosterLead = best.rosterMatchCount - (second?.rosterMatchCount ?? 0);
+  const scoreLead = best.totalScore - (second?.totalScore ?? 0);
+  const hasSupport = best.supportScore > 0;
+  const hasExactFullName = best.exactFullNameMatchCount >= 1;
+  const supportedRosterMatch =
+    best.rosterMatchCount >= 1 &&
+    rosterLead >= 1 &&
+    hasSupport &&
+    scoreLead >= 2;
+  const decisiveRosterOnlyGoalieMatch =
+    best.rosterMatchCount >= 2 && rosterLead >= 2 && scoreLead >= 8;
+  const supportedLineupMatch =
+    best.rosterMatchCount >= 2 &&
+    rosterLead >= 1 &&
+    hasSupport &&
+    scoreLead >= 4;
+  const confirmedLineupMatch =
+    best.rosterMatchCount >= 4 && rosterLead >= 2 && scoreLead >= 4;
+  const decisiveRosterOnlyLineupMatch =
+    best.rosterMatchCount >= 3 && rosterLead >= 2 && scoreLead >= 8;
 
-  return uniqueLeader && sufficientForRosterFallback ? best.team : null;
+  if (args.classification === "injury") {
+    return hasExactFullName || supportedRosterMatch ? best.team : null;
+  }
+
+  if (args.classification === "goalie_start") {
+    return hasExactFullName ||
+      supportedRosterMatch ||
+      decisiveRosterOnlyGoalieMatch
+      ? best.team
+      : null;
+  }
+
+  return confirmedLineupMatch ||
+    supportedLineupMatch ||
+    decisiveRosterOnlyLineupMatch
+    ? best.team
+    : null;
 }
 
 export function resolveLinesCccTeam(args: {
@@ -714,47 +823,73 @@ export function resolveLinesCccTeam(args: {
   teams: TeamDirectoryEntry[];
   rosterByTeam?: Map<number, RosterNameEntry[]>;
   sourceHandles?: Array<string | null | undefined>;
+  classification?: GameDayTweetsClassification | null;
 }): TeamDirectoryEntry | null {
   const leadVsTeam = resolveTeamFromLeadVsText(args.text, args.teams);
-  if (leadVsTeam) {
-    return leadVsTeam;
-  }
-
   const labelMatches = findLabelMatchedTeams(args.text, args.teams);
+  const handleHintTeam = resolveTeamFromHandleHints(
+    args.sourceHandles ?? [],
+    args.teams,
+  );
+  const textHintTeam = findTeamMentionInText(args.text, args.teams);
 
   if (args.rosterByTeam) {
     const rosterDensityTeam = resolveTeamFromRosterDensity({
       text: args.text,
       teams: args.teams,
       rosterByTeam: args.rosterByTeam,
+      leadVsTeam,
+      handleHintTeam,
+      classification: args.classification,
     });
     if (rosterDensityTeam) {
       return rosterDensityTeam;
     }
   }
 
-  if (labelMatches.length === 1) {
-    return labelMatches[0]!;
-  }
-
-  const textHintTeam = findTeamMentionInText(args.text, args.teams);
-  if (textHintTeam && labelMatches.length === 0) {
-    return textHintTeam;
-  }
   if (
     textHintTeam &&
-    labelMatches.length > 1 &&
-    labelMatches.some((team) => team.id === textHintTeam.id)
+    labelMatches.length === 1 &&
+    labelMatches[0]?.id === textHintTeam.id &&
+    (!handleHintTeam || handleHintTeam.id === textHintTeam.id)
   ) {
     return textHintTeam;
   }
-
-  const handleHintTeam = resolveTeamFromHandleHints(
-    args.sourceHandles ?? [],
-    args.teams,
-  );
-  if (handleHintTeam) {
+  if (
+    leadVsTeam &&
+    labelMatches.length === 1 &&
+    labelMatches[0]?.id === leadVsTeam.id &&
+    (!handleHintTeam || handleHintTeam.id === leadVsTeam.id)
+  ) {
+    return leadVsTeam;
+  }
+  if (textHintTeam && handleHintTeam && textHintTeam.id === handleHintTeam.id) {
+    return textHintTeam;
+  }
+  if (leadVsTeam && handleHintTeam && leadVsTeam.id === handleHintTeam.id) {
+    return leadVsTeam;
+  }
+  if (
+    !args.rosterByTeam &&
+    handleHintTeam &&
+    labelMatches.length === 1 &&
+    labelMatches[0]?.id === handleHintTeam.id
+  ) {
     return handleHintTeam;
+  }
+  if (args.classification == null) {
+    if (leadVsTeam) {
+      return leadVsTeam;
+    }
+    if (labelMatches.length === 1) {
+      return labelMatches[0]!;
+    }
+    if (textHintTeam && labelMatches.length === 0) {
+      return textHintTeam;
+    }
+    if (handleHintTeam) {
+      return handleHintTeam;
+    }
   }
 
   return null;
@@ -890,6 +1025,35 @@ function extractPowerPlayUnits(args: {
   return units.slice(0, 2);
 }
 
+function extractGoalieNameFromKeywordLine(args: {
+  text: string;
+  rosterEntries: RosterNameEntry[];
+}): string | null {
+  for (const line of args.text.split(/\n+/).map((value) => value.trim())) {
+    if (
+      !line ||
+      !/\b(goalie|starter|starting|in net|gets the start|gets the nod|warmup)\b/i.test(
+        line,
+      )
+    ) {
+      continue;
+    }
+
+    const matchedNames = canonicalizeNames(
+      extractOrderedRosterHitsFromTweet(line, args.rosterEntries),
+      args.rosterEntries,
+    );
+    if (matchedNames.length === 1) {
+      return matchedNames[0]!;
+    }
+    if (matchedNames.length > 1) {
+      return matchedNames[matchedNames.length - 1]!;
+    }
+  }
+
+  return null;
+}
+
 function buildStructuredContent(args: {
   text: string;
   classification: GameDayTweetsClassification;
@@ -917,7 +1081,9 @@ function buildStructuredContent(args: {
         args.rosterEntries,
       );
       const hasHeadingKeywords =
-        /\b(lines?|pairings|power play|pp1|pp2|injury|update)\b/i.test(name);
+        /\b(lines?|pairings|power play|pp1|pp2|injury|update|goalie|starter|starting|net)\b/i.test(
+          name,
+        );
       if (!resolvedRosterEntry && hasHeadingKeywords) {
         return null;
       }
@@ -967,10 +1133,16 @@ function buildStructuredContent(args: {
   }
 
   const extractedGoalieName = extractGoalieName(args.text);
-  if (extractedGoalieName) {
+  const inferredGoalieName =
+    extractedGoalieName ??
+    extractGoalieNameFromKeywordLine({
+      text: args.text,
+      rosterEntries: args.rosterEntries,
+    });
+  if (inferredGoalieName) {
     const canonicalGoalieName =
-      resolveTweetNameToRosterEntry(extractedGoalieName, args.rosterEntries)
-        ?.fullName ?? extractedGoalieName;
+      resolveTweetNameToRosterEntry(inferredGoalieName, args.rosterEntries)
+        ?.fullName ?? inferredGoalieName;
     goalies = dedupeOrderedNames([
       canonicalGoalieName,
       ...goalies,
@@ -1026,6 +1198,7 @@ export function buildLinesCccSourceFromIftttEvent(args: {
   gameIdByTeamId?: Map<number, number>;
 }): ParsedLinesCccSource {
   const text = args.event.text?.trim() ?? "";
+  const classification = classifyGameDayTweet(text);
   const tweetId =
     args.event.tweet_id ?? extractTweetIdFromUrl(args.event.link_to_tweet);
   const tweetUrl = normalizeTweetStatusUrl(args.event.link_to_tweet, tweetId);
@@ -1043,11 +1216,11 @@ export function buildLinesCccSourceFromIftttEvent(args: {
         teams: args.teams,
         rosterByTeam: args.rosterByTeam,
         sourceHandles,
+        classification,
       });
   const rosterEntries = team ? (args.rosterByTeam.get(team.id) ?? []) : [];
   const matched = matchRosterNamesInTweet(text, rosterEntries);
   const goalieName = extractGoalieName(text);
-  const classification = classifyGameDayTweet(text);
   const structuredContent = buildStructuredContent({
     text,
     classification,
@@ -1140,6 +1313,7 @@ export function refreshLinesCccSourceFromPrimaryText(args: {
 }): ParsedLinesCccSource {
   const text = getPrimaryTextForSource(args.source).trim();
   if (!text) return args.source;
+  const classification = classifyGameDayTweet(text);
 
   const sourceHandles = [
     args.source.sourceHandle,
@@ -1160,10 +1334,10 @@ export function refreshLinesCccSourceFromPrimaryText(args: {
         teams: args.teams,
         rosterByTeam: args.rosterByTeam,
         sourceHandles,
+        classification,
       });
   const rosterEntries = team ? (args.rosterByTeam.get(team.id) ?? []) : [];
   const matched = matchRosterNamesInTweet(text, rosterEntries);
-  const classification = classifyGameDayTweet(text);
   const structuredContent = buildStructuredContent({
     text,
     classification,

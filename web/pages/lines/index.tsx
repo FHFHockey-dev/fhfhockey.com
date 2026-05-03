@@ -16,7 +16,8 @@ import styles from "styles/Lines.module.scss";
 import { getTeams, getCurrentSeason } from "lib/NHL/server";
 import ClientOnly from "components/ClientOnly";
 import { getLineCombinations } from "components/LineCombinations/utilities";
-import supabase from "lib/supabase";
+import { fetchLatestPlayerNewsFlags, type PlayerNewsFlag } from "lib/newsFeed";
+import supabaseServer from "lib/supabase/server";
 
 export type RowData = {
   playerId: number;
@@ -27,6 +28,7 @@ export type RowData = {
    * Team abbreviation
    */
   abbreviation: string;
+  newsFlag?: PlayerNewsFlag | null;
 };
 
 type LandingPageProps = {
@@ -129,7 +131,7 @@ export const getStaticProps: GetStaticProps = async () => {
   const playerIds = new Set<number>();
   promotions.forEach((p) => playerIds.add(p.playerId));
   demotions.forEach((p) => playerIds.add(p.playerId));
-  const { data: playersInfo } = await supabase
+  const { data: playersInfo } = await supabaseServer
     .from("players")
     .select("id, playerName:fullName")
     .in("id", [...playerIds])
@@ -139,11 +141,22 @@ export const getStaticProps: GetStaticProps = async () => {
     playerNamesMap.set(p.id, p.playerName);
   });
 
+  const newsFlags = await fetchLatestPlayerNewsFlags({
+    supabase: supabaseServer,
+    playerIds: [...playerIds],
+  });
+
   promotions.forEach(
-    (p) => (p.playerName = playerNamesMap.get(p.playerId) ?? "Unknown")
+    (p) => {
+      p.playerName = playerNamesMap.get(p.playerId) ?? "Unknown";
+      p.newsFlag = newsFlags.get(p.playerId) ?? null;
+    }
   );
   demotions.forEach(
-    (p) => (p.playerName = playerNamesMap.get(p.playerId) ?? "Unknown")
+    (p) => {
+      p.playerName = playerNamesMap.get(p.playerId) ?? "Unknown";
+      p.newsFlag = newsFlags.get(p.playerId) ?? null;
+    }
   );
 
   return {
@@ -293,6 +306,16 @@ function Row({ player }: { player: RowData }) {
         <span className={styles.formattedName}>
           {shorten(player.playerName)}
         </span>
+        {player.newsFlag ? (
+          <span
+            className={`${styles.newsFlag} ${
+              styles[`newsFlag${player.newsFlag.tone[0].toUpperCase()}${player.newsFlag.tone.slice(1)}`]
+            }`}
+            title={player.newsFlag.headline}
+          >
+            {player.newsFlag.subcategory ?? player.newsFlag.category}
+          </span>
+        ) : null}
 
       </Link>
       <div className={styles.twoChanges}>

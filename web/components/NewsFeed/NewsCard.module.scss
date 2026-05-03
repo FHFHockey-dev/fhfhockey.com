@@ -1,0 +1,172 @@
+@use "styles/vars" as v;
+@use "styles/panel" as panel;
+
+.card {
+  @include panel.panel-shell($radius: 18px, $padding: 0, $variant: standard, $overflow: hidden);
+
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 112px;
+  min-height: 172px;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.content {
+  position: relative;
+  display: grid;
+  gap: v.$space-sm;
+  padding: v.$space-md v.$space-lg v.$space-md calc(v.$space-lg + 14px);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0)),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
+    v.$background-medium;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 8px;
+    background: var(--news-accent, v.$primary-color);
+    box-shadow: 0 0 18px rgba(20, 162, 210, 0.35);
+  }
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: v.$text-secondary;
+}
+
+.metaStrong {
+  color: v.$color-white;
+}
+
+.headline {
+  margin: 0;
+  font-family: v.$font-family-primary, sans-serif;
+  font-size: clamp(1.1rem, 1.9vw, 1.45rem);
+  font-weight: 700;
+  line-height: 1.1;
+  color: v.$color-white;
+}
+
+.playerRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.playerChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  color: v.$color-white;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.blurb {
+  margin: 0;
+  color: v.$text-primary;
+  font-size: 0.93rem;
+  line-height: 1.55;
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  align-items: center;
+  color: v.$text-secondary;
+  font-size: 0.78rem;
+}
+
+.sourceLink {
+  color: v.$primary-color;
+  font-weight: 600;
+
+  &:hover {
+    color: v.$color-white;
+  }
+}
+
+.badgeRail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: v.$text-primary;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.teamPane {
+  display: grid;
+  place-items: center;
+  padding: v.$space-md;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
+    var(--news-team-surface, v.$background-dark);
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.teamLogo {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.35));
+}
+
+.teamLabel {
+  margin-top: v.$space-sm;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: v.$color-white;
+}
+
+.draftState {
+  color: v.$warning-color;
+}
+
+@media (max-width: v.$breakpoint-mobile-max) {
+  .card {
+    grid-template-columns: 1fr;
+  }
+
+  .teamPane {
+    grid-row: 1;
+    grid-template-columns: auto 1fr;
+    gap: 12px;
+    justify-content: start;
+    padding: v.$mobile-space-md;
+    border-left: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .teamLogo {
+    width: 44px;
+    height: 44px;
+  }
+
+  .content {
+    padding: v.$mobile-space-md v.$mobile-space-md v.$mobile-space-md calc(v.$mobile-space-md + 12px);
+  }
+}

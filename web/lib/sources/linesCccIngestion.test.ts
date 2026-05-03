@@ -18,7 +18,7 @@ import {
   toLinesCccRow
 } from "./linesCccIngestion";
 
-const [canadiens, lightning] = buildTeamDirectory([
+const [canadiens, lightning, utah] = buildTeamDirectory([
   {
     id: 8,
     name: "Montréal Canadiens",
@@ -30,6 +30,12 @@ const [canadiens, lightning] = buildTeamDirectory([
     name: "Tampa Bay Lightning",
     abbreviation: "TBL",
     logo: "/teamLogos/TBL.png"
+  },
+  {
+    id: 59,
+    name: "Utah Mammoth",
+    abbreviation: "UTA",
+    logo: "/teamLogos/UTA.png"
   }
 ]);
 
@@ -67,6 +73,10 @@ const lightningRoster = [
   { playerId: 28, fullName: "Erik Cernak", lastName: "Cernak" },
   { playerId: 29, fullName: "Andrei Vasilevskiy", lastName: "Vasilevskiy" },
   { playerId: 30, fullName: "Jonas Johansson", lastName: "Johansson" }
+];
+const utahRoster = [
+  { playerId: 40, fullName: "Karel Vejmelka", lastName: "Vejmelka" },
+  { playerId: 41, fullName: "Clayton Keller", lastName: "Keller" }
 ];
 
 describe("linesCccIngestion", () => {
@@ -208,6 +218,89 @@ describe("linesCccIngestion", () => {
     ).toMatchObject({
       id: 8,
       abbreviation: "MTL"
+    });
+  });
+
+  it("does not let conflicting lead-vs text outweigh stronger roster evidence", () => {
+    expect(
+      resolveLinesCccTeam({
+        text:
+          "Lightning lines vs #Habs\nCaufield - Suzuki - Slafkovsky\nMatheson - Hutson",
+        teams: [canadiens!, lightning!],
+        rosterByTeam: new Map([
+          [8, canadiensRoster],
+          [14, lightningRoster]
+        ])
+      })
+    ).toMatchObject({
+      id: 8,
+      abbreviation: "MTL"
+    });
+  });
+
+  it("accepts a single roster hit when a team hashtag supports it", () => {
+    expect(
+      resolveLinesCccTeam({
+        text: "#TusksUp Vejmelka in the starter's net",
+        teams: [canadiens!, lightning!, utah!],
+        rosterByTeam: new Map([
+          [8, canadiensRoster],
+          [14, lightningRoster],
+          [59, utahRoster]
+        ]),
+        classification: "goalie_start"
+      })
+    ).toMatchObject({
+      id: 59,
+      abbreviation: "UTA"
+    });
+  });
+
+  it("rejects injury tweets with only a last-name match and no team support", () => {
+    expect(
+      resolveLinesCccTeam({
+        text: "Dach returns tonight",
+        teams: [canadiens!, lightning!],
+        rosterByTeam: new Map([
+          [8, canadiensRoster],
+          [14, lightningRoster]
+        ]),
+        classification: "injury"
+      })
+    ).toBeNull();
+  });
+
+  it("accepts injury tweets on a full-name match even without a team label", () => {
+    expect(
+      resolveLinesCccTeam({
+        text: "Patrik Laine returns tonight",
+        teams: [canadiens!, lightning!],
+        rosterByTeam: new Map([
+          [8, canadiensRoster],
+          [14, lightningRoster]
+        ]),
+        classification: "injury"
+      })
+    ).toMatchObject({
+      id: 8,
+      abbreviation: "MTL"
+    });
+  });
+
+  it("accepts goalie-start tweets on a full-name match even without a team label", () => {
+    expect(
+      resolveLinesCccTeam({
+        text: "Andrei Vasilevskiy gets the start tonight",
+        teams: [canadiens!, lightning!],
+        rosterByTeam: new Map([
+          [8, canadiensRoster],
+          [14, lightningRoster]
+        ]),
+        classification: "goalie_start"
+      })
+    ).toMatchObject({
+      id: 14,
+      abbreviation: "TBL"
     });
   });
 
@@ -511,8 +604,8 @@ describe("linesCccIngestion", () => {
         "Canadiens lines\nconfirmed Canadiens Starting Goalie: Jakub Dobes https://t.co/NEEgtVpvUw",
       metadata: {
         primaryTextSource: "ifttt_text",
-        wrapperKeywordHits: ["lines", "starting goalie"],
-        primaryKeywordHits: ["lines", "starting goalie"],
+        wrapperKeywordHits: ["lines", "starting goalie", "starting"],
+        primaryKeywordHits: ["lines", "starting goalie", "starting"],
         resolvedTweetUrls: {
           wrapperTweetUrl: "https://twitter.com/i/web/status/2047809041154625899",
           quotedTweetUrl: null,

@@ -174,6 +174,7 @@ const GDT_PRACTICE_KEYWORDS = ["practice lines", "pairings", "practice", "rushes
 const GDT_POWERPLAY_KEYWORDS = ["power play", "pp1", "pp2"];
 const GDT_GOALIE_KEYWORDS = [
   "starting goalie",
+  "starting",
   "starter",
   "crease",
   "starts",

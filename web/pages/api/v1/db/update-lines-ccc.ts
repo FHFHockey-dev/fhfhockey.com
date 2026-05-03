@@ -116,6 +116,40 @@ async function persistLinesCccRow(args: {
   supabase: any;
   row: ReturnType<typeof toLinesCccRow>;
 }): Promise<void> {
+  if (
+    args.row.status === "observed" &&
+    args.row.nhl_filter_status === "accepted" &&
+    args.row.tweet_id &&
+    args.row.team_id
+  ) {
+    const { error: staleSnapshotError } = await args.supabase
+      .from("lines_ccc" as any)
+      .update({
+        status: "superseded",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("tweet_id", args.row.tweet_id)
+      .eq("status", "observed")
+      .eq("nhl_filter_status", "accepted")
+      .neq("team_id", args.row.team_id)
+      .neq("capture_key", args.row.capture_key);
+
+    if (staleSnapshotError) throw staleSnapshotError;
+
+    const { error: staleUnresolvedError } = await args.supabase
+      .from("lineup_unresolved_player_names" as any)
+      .update({
+        status: "ignored",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("source", args.row.source)
+      .eq("tweet_id", args.row.tweet_id)
+      .eq("status", "pending")
+      .neq("team_id", args.row.team_id);
+
+    if (staleUnresolvedError) throw staleUnresolvedError;
+  }
+
   const { error } = await args.supabase
     .from("lines_ccc" as any)
     .upsert([args.row] as any, {
