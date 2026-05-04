@@ -17,7 +17,7 @@ type TwitterEmbedSource = {
   url: string;
 };
 
-type LocalTweetCard = {
+export type LocalTweetCard = {
   key: string;
   tweetId: string;
   authorName: string;
@@ -162,6 +162,15 @@ function getCardDedupeKey(card: LocalTweetCard): string {
   return getCardCanonicalUrl(card) ?? (card.tweetId !== "unknown-tweet" ? card.tweetId : card.key);
 }
 
+function isAcceptedObservedCard(card: LocalTweetCard): boolean {
+  return card.rowStatus === "observed" && card.status === "accepted";
+}
+
+function getObservedAtMs(card: LocalTweetCard): number | null {
+  const observedAtMs = Date.parse(card.observedAt ?? "");
+  return Number.isFinite(observedAtMs) ? observedAtMs : null;
+}
+
 function getCardPriority(card: LocalTweetCard): number {
   return [
     card.rowStatus === "observed" ? 8 : 0,
@@ -175,17 +184,31 @@ function shouldReplaceCard(
   existing: LocalTweetCard,
   candidate: LocalTweetCard,
 ): boolean {
+  const existingAcceptedObserved = isAcceptedObservedCard(existing);
+  const candidateAcceptedObserved = isAcceptedObservedCard(candidate);
+  if (existingAcceptedObserved !== candidateAcceptedObserved) {
+    return candidateAcceptedObserved;
+  }
+
+  const existingObservedAt = getObservedAtMs(existing);
+  const candidateObservedAt = getObservedAtMs(candidate);
+  if (existingAcceptedObserved && candidateAcceptedObserved) {
+    if (existingObservedAt == null) return candidateObservedAt != null;
+    if (candidateObservedAt == null) return false;
+    if (candidateObservedAt !== existingObservedAt) {
+      return candidateObservedAt < existingObservedAt;
+    }
+  }
+
   const priorityDifference =
     getCardPriority(candidate) - getCardPriority(existing);
   if (priorityDifference !== 0) {
     return priorityDifference > 0;
   }
 
-  const existingObservedAt = Date.parse(existing.observedAt ?? "");
-  const candidateObservedAt = Date.parse(candidate.observedAt ?? "");
   if (
-    Number.isFinite(existingObservedAt) &&
-    Number.isFinite(candidateObservedAt) &&
+    existingObservedAt != null &&
+    candidateObservedAt != null &&
     candidateObservedAt !== existingObservedAt
   ) {
     return candidateObservedAt < existingObservedAt;
@@ -194,7 +217,7 @@ function shouldReplaceCard(
   return candidate.key < existing.key;
 }
 
-function dedupeTweetCards(cards: LocalTweetCard[]): LocalTweetCard[] {
+export function dedupeTweetCards(cards: LocalTweetCard[]): LocalTweetCard[] {
   const bestByTweet = new Map<string, LocalTweetCard>();
   for (const card of cards) {
     const key = getCardDedupeKey(card);
@@ -204,11 +227,10 @@ function dedupeTweetCards(cards: LocalTweetCard[]): LocalTweetCard[] {
     }
   }
   return Array.from(bestByTweet.values()).sort((left, right) => {
-    const priorityDifference = getCardPriority(right) - getCardPriority(left);
-    if (priorityDifference !== 0) return priorityDifference;
-    return (
-      Date.parse(right.observedAt ?? "") - Date.parse(left.observedAt ?? "")
-    );
+    const acceptedObservedDifference =
+      Number(isAcceptedObservedCard(right)) - Number(isAcceptedObservedCard(left));
+    if (acceptedObservedDifference !== 0) return acceptedObservedDifference;
+    return (getObservedAtMs(right) ?? 0) - (getObservedAtMs(left) ?? 0);
   });
 }
 

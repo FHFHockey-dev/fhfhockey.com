@@ -87,15 +87,19 @@ function createSupabaseMocks(args?: {
     });
   });
   const linesCccUpdateEqMock = vi.fn().mockResolvedValue({ error: null });
-  const linesCccUpdateMock = vi.fn(() => ({
-    eq: vi.fn(() => ({
-      eq: vi.fn(() => ({
-        eq: vi.fn(() => ({
-          eq: linesCccUpdateEqMock,
-        })),
-      })),
-    })),
-  }));
+  const staleRowUpdateQuery: any = {
+    eq: linesCccUpdateEqMock,
+    neq: vi.fn(() => staleRowUpdateQuery),
+    then: (resolve: any) => Promise.resolve({ error: null }).then(resolve),
+  };
+  linesCccUpdateEqMock.mockImplementation(() => staleRowUpdateQuery);
+  const linesCccUpdateMock = vi.fn(() => staleRowUpdateQuery);
+  const unresolvedUpdateQuery: any = {
+    eq: vi.fn(() => unresolvedUpdateQuery),
+    neq: vi.fn(() => unresolvedUpdateQuery),
+    then: (resolve: any) => Promise.resolve({ error: null }).then(resolve),
+  };
+  const unresolvedUpdateMock = vi.fn(() => unresolvedUpdateQuery);
   const eventUpdateEqMock = vi.fn().mockResolvedValue({ error: null });
   const eventUpdateMock = vi.fn(() => ({
     eq: eventUpdateEqMock,
@@ -234,16 +238,19 @@ function createSupabaseMocks(args?: {
       })),
     },
     lines_ccc_ifttt_events: {
-      select: vi.fn(() => ({
-        eq: vi.fn(() => ({
+      select: vi.fn(() => {
+        const query: any = {
+          eq: vi.fn(() => query),
+          in: vi.fn(() => query),
           order: vi.fn(() => ({
             limit: vi.fn().mockResolvedValue({
               data: eventRows,
               error: null,
             }),
           })),
-        })),
-      })),
+        };
+        return query;
+      }),
       update: eventUpdateMock,
     },
     lines_ccc: {
@@ -251,6 +258,7 @@ function createSupabaseMocks(args?: {
       update: linesCccUpdateMock,
     },
     lineup_unresolved_player_names: {
+      update: unresolvedUpdateMock,
       upsert: unresolvedNamesUpsertMock,
     },
   };
@@ -261,6 +269,7 @@ function createSupabaseMocks(args?: {
     linesCccUpdateMock,
     linesCccUpdateEqMock,
     unresolvedNamesUpsertMock,
+    unresolvedUpdateMock,
     eventUpdateMock,
     eventUpdateEqMock,
   };
@@ -440,11 +449,35 @@ describe("/api/v1/db/update-lines-ccc", () => {
     await handler(req, res);
 
     expect(res.statusCode).toBe(200);
-    expect(linesCccUpdateMock).toHaveBeenCalledTimes(1);
+    expect(linesCccUpdateMock).toHaveBeenCalledTimes(2);
     expect(linesCccUpdateEqMock).toHaveBeenCalledWith(
       "nhl_filter_status",
       "accepted",
     );
+  });
+
+  it("ignores stale unresolved names from the wrong team before re-upserting an accepted CCC row", async () => {
+    const { linesCccUpdateMock, unresolvedUpdateMock } = createSupabaseMocks();
+    const req = createMockReq({
+      query: {
+        date: "2026-04-24",
+        limit: "10",
+        reprocess: "true",
+      },
+    });
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(linesCccUpdateMock).toHaveBeenCalledTimes(1);
+    expect(linesCccUpdateMock.mock.calls[0]?.[0]).toMatchObject({
+      status: "superseded",
+    });
+    expect(unresolvedUpdateMock).toHaveBeenCalledTimes(1);
+    expect(unresolvedUpdateMock.mock.calls[0]?.[0]).toMatchObject({
+      status: "ignored",
+    });
   });
 
   it("does not queue URL fragments as unresolved player names", async () => {

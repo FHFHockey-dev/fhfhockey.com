@@ -62,6 +62,9 @@ $border-size: 2px;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 8px;
 
             .fullName {
               display: none;
@@ -70,6 +73,37 @@ $border-size: 2px;
               color: vars.$primary-color;
               cursor: pointer;
             }
+          }
+          .newsFlag {
+            flex: 0 0 auto;
+            display: inline-flex;
+            align-items: center;
+            min-height: 20px;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: vars.$color-white;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+          }
+          .newsFlagDanger {
+            background: rgba(vars.$danger-color, 0.22);
+          }
+          .newsFlagSuccess {
+            background: rgba(vars.$success-color, 0.22);
+            color: vars.$background-dark;
+          }
+          .newsFlagInfo {
+            background: rgba(vars.$primary-color, 0.22);
+          }
+          .newsFlagWarning {
+            background: rgba(vars.$warning-color, 0.24);
+            color: vars.$background-dark;
+          }
+          .newsFlagNeutral {
+            background: rgba(255, 255, 255, 0.12);
           }
           .twoChanges {
             display: flex;
@@ -156,6 +190,9 @@ $border-size: 2px;
             grid-template-columns: 45% auto 2rem 16px;
 
             .name {
+              flex-wrap: wrap;
+              row-gap: 6px;
+
               .fullName {
                 display: block;
                 overflow: hidden;

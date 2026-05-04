@@ -174,19 +174,28 @@ const GDT_PRACTICE_KEYWORDS = ["practice lines", "pairings", "practice", "rushes
 const GDT_POWERPLAY_KEYWORDS = ["power play", "pp1", "pp2"];
 const GDT_GOALIE_KEYWORDS = [
   "starting goalie",
+  "starting",
   "starter",
+  "starter net",
   "crease",
   "starts",
   "in net",
   "lead the",
   "lead the ",
+  "leads",
   "our guess"
 ];
 const GDT_INJURY_KEYWORDS = [
   "injury",
   "injured",
   "hurt",
+  "broke",
+  "broken",
   "out",
+  "not a possibility",
+  "not doing any drills",
+  "not practicing",
+  "will not play",
   "returns",
   "returning",
   "signed",

@@ -290,6 +290,34 @@ function createSupabaseMocks(eventRows: LineSourceEventFixture[]) {
                 playerId: 8482745,
                 players: { fullName: "Lukas Dostal", lastName: "Dostal" },
               },
+              {
+                teamId: 59,
+                playerId: 8479979,
+                players: { fullName: "Karel Vejmelka", lastName: "Vejmelka" },
+              },
+              {
+                teamId: 7,
+                playerId: 8479312,
+                players: { fullName: "Alex Lyon", lastName: "Lyon" },
+              },
+              {
+                teamId: 30,
+                playerId: 8476958,
+                players: { fullName: "Nico Sturm", lastName: "Sturm" },
+              },
+              {
+                teamId: 25,
+                playerId: 8477504,
+                players: { fullName: "Michael Bunting", lastName: "Bunting" },
+              },
+              {
+                teamId: 25,
+                playerId: 8475692,
+                players: {
+                  fullName: "Alexander Petrovic",
+                  lastName: "Petrovic",
+                },
+              },
             ].filter((row) => teamIds.includes(row.teamId)),
             error: null,
           }),
@@ -382,6 +410,12 @@ describe("/api/v1/db/update-line-sources", () => {
         name: "Dallas Stars",
         abbreviation: "DAL",
         logo: "/teamLogos/DAL.png",
+      },
+      {
+        id: 59,
+        name: "Utah Mammoth",
+        abbreviation: "UTA",
+        logo: "/teamLogos/UTA.png",
       },
     ]);
   });
@@ -803,6 +837,47 @@ describe("/api/v1/db/update-line-sources", () => {
         }),
       ]),
     );
+  });
+
+  it("accepts Utah goalie tweets after second-pass roster loading when #TusksUp is the only team hint", async () => {
+    const events = [
+      buildEvent({
+        id: "event-utah-goalie",
+        sourceKey: "gamedaygoalies",
+        sourceAccount: "GameDayGoalies",
+        tweetId: "2050000000000000001",
+        text: "#TusksUp Vejmelka in the starter's net",
+      }),
+    ];
+    const { lineSourceSnapshotsUpsertMock } = createSupabaseMocks(events);
+    const req = createMockReq({
+      query: {
+        date: "2026-04-30",
+        limit: "10",
+      },
+    });
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      success: true,
+      summary: {
+        acceptedNhl: 1,
+        ambiguousRejected: 0,
+        rowsUpserted: 1,
+      },
+    });
+    const [row] = getUpsertedRows(lineSourceSnapshotsUpsertMock);
+    expect(row).toMatchObject({
+      source_key: "gamedaygoalies",
+      tweet_id: "2050000000000000001",
+      team_abbreviation: "UTA",
+      nhl_filter_status: "accepted",
+      goalie_1_player_id: 8479979,
+      goalie_1_name: "Karel Vejmelka",
+    });
   });
 
   it("uses decisive roster-density fallback for short tweets with multiple same-team player hits", async () => {

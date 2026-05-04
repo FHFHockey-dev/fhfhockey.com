@@ -1,0 +1,116 @@
+@use "styles/vars" as v;
+@use "styles/panel" as panel;
+
+.page {
+  min-height: 100vh;
+  padding: v.$space-lg 0 v.$space-xxl;
+  background:
+    radial-gradient(circle at top left, rgba(v.$primary-color, 0.08), transparent 32%),
+    radial-gradient(circle at top right, rgba(v.$success-color, 0.06), transparent 24%),
+    v.$background-dark;
+}
+
+.shell {
+  width: min(1180px, calc(100vw - 32px));
+  margin: 0 auto;
+  display: grid;
+  gap: v.$space-lg;
+}
+
+.header {
+  @include panel.panel-shell($radius: 22px, $padding: v.$space-lg, $variant: intense);
+
+  display: grid;
+  gap: v.$space-md;
+}
+
+.eyebrow {
+  margin: 0;
+  color: v.$primary-color;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.72rem;
+}
+
+.title {
+  margin: 0;
+  font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
+  font-size: clamp(2.1rem, 6vw, 3.2rem);
+  letter-spacing: 0.08em;
+  color: v.$color-white;
+  text-transform: uppercase;
+}
+
+.subtitle {
+  margin: 0;
+  max-width: 780px;
+  color: v.$text-primary;
+  line-height: 1.6;
+}
+
+.toolbar {
+  @include panel.panel-shell($radius: 18px, $padding: v.$space-md, $variant: standard);
+
+  display: grid;
+  gap: v.$space-md;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.control {
+  display: grid;
+  gap: 6px;
+  color: v.$text-secondary;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.control input,
+.control select {
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: v.$background-dark;
+  color: v.$color-white;
+}
+
+.summaryRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.summaryChip {
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: v.$text-primary;
+  font-size: 0.8rem;
+}
+
+.feed {
+  display: grid;
+  gap: v.$space-md;
+}
+
+.empty {
+  @include panel.panel-shell($radius: 18px, $padding: v.$space-lg, $variant: soft);
+
+  color: v.$text-primary;
+}
+
+@media (max-width: v.$screen-medium-max) {
+  .toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .shell {
+    width: min(100vw - 20px, 1180px);
+  }
+
+  .page {
+    padding-top: v.$mobile-space-md;
+  }
+}
