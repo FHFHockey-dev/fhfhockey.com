@@ -256,6 +256,18 @@ Johansson - Hartman - N. Foligno`;
     });
   });
 
+  it("classifies reviewed injury and goalie phrasing from the harvested corpus", () => {
+    expect(
+      classifyGameDayTweet("Victor Hedman is not a possibility for Game 7")
+    ).toBe("injury");
+    expect(classifyGameDayTweet("Owen Tippett is not doing any drills")).toBe(
+      "injury"
+    );
+    expect(classifyGameDayTweet("Dobes leads Canadiens to the ice")).toBe(
+      "goalie_start"
+    );
+  });
+
   it("prefers the more structured GDT lineup tweet when multiple tweets match", () => {
     const parsed = parseGameDayTweetsLinesPage({
       html: `

@@ -4,6 +4,7 @@ import Image from "next/legacy/image";
 import styles from "./NewsCard.module.scss";
 
 import {
+  formatNewsFeedLabel,
   getNewsItemTeamColors,
   type NewsFeedItem,
 } from "lib/newsFeed";
@@ -25,6 +26,7 @@ type NewsCardProps = {
     | "players"
   >;
   compact?: boolean;
+  sourceDisplayNameOverride?: string | null;
 };
 
 function formatDate(value: string | null | undefined): string {
@@ -34,13 +36,40 @@ function formatDate(value: string | null | undefined): string {
   return date.toLocaleString();
 }
 
-export default function NewsCard({ item }: NewsCardProps) {
+function formatSourceAttribution(
+  sourceLabel: string | null | undefined,
+  sourceAccount: string | null | undefined,
+  sourceDisplayNameOverride?: string | null,
+): string | null {
+  const account = sourceAccount?.trim() || null;
+  const label = sourceDisplayNameOverride?.trim() || sourceLabel?.trim() || null;
+  if (!label && !account) return null;
+  if (!label) return account;
+  if (!account) return label;
+  if (label.toLowerCase() === account.toLowerCase()) return label;
+  return `${label} · ${account}`;
+}
+
+export default function NewsCard({
+  item,
+  compact = false,
+  sourceDisplayNameOverride = null,
+}: NewsCardProps) {
   const team = getNewsItemTeamColors(item.team_abbreviation);
   const publishedAt = item.published_at ?? item.created_at ?? null;
+  const sourceAttribution = formatSourceAttribution(
+    item.source_label,
+    item.source_account,
+    sourceDisplayNameOverride,
+  );
+  const categoryLabel = formatNewsFeedLabel(item.category);
+  const subcategoryLabel = item.subcategory
+    ? formatNewsFeedLabel(item.subcategory)
+    : null;
 
   return (
     <article
-      className={styles.card}
+      className={`${styles.card} ${compact ? styles.compact : ""}`.trim()}
       style={
         {
           "--news-accent": team.primary,
@@ -53,8 +82,8 @@ export default function NewsCard({ item }: NewsCardProps) {
           <span className={styles.metaStrong}>
             {item.team_abbreviation ?? "NHL"}
           </span>
-          <span>{item.category}</span>
-          {item.subcategory ? <span>{item.subcategory}</span> : null}
+          <span>{categoryLabel}</span>
+          {subcategoryLabel ? <span>{subcategoryLabel}</span> : null}
           {item.card_status !== "published" ? (
             <span className={styles.draftState}>{item.card_status}</span>
           ) : null}
@@ -76,11 +105,7 @@ export default function NewsCard({ item }: NewsCardProps) {
 
         <div className={styles.footer}>
           <span>{formatDate(publishedAt)}</span>
-          {item.source_account || item.source_label ? (
-            <span>
-              {(item.source_account ?? item.source_label) as string}
-            </span>
-          ) : null}
+          {sourceAttribution ? <span>{sourceAttribution}</span> : null}
           {item.source_url ? (
             <a className={styles.sourceLink} href={item.source_url}>
               Source

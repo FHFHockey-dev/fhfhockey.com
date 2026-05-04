@@ -59,6 +59,68 @@ $mobile-column-short: 30px;
   text-align: left;
 }
 
+.latestNewsContainer {
+  @include v.element-wrapper;
+  display: grid;
+  gap: v.$space-lg;
+  padding: v.$space-lg;
+  background:
+    radial-gradient(circle at top left, rgba(v.$secondary-color, 0.12), transparent 34%),
+    linear-gradient(145deg, color.adjust(v.$background-dark, $lightness: -3%), v.$background-medium);
+}
+
+.latestNewsHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: v.$space-xs v.$space-md;
+  align-items: end;
+
+  p {
+    grid-column: 1 / -1;
+    margin: 0;
+    color: v.$secondary-color;
+    font-family: v.$font-family-primary;
+    font-size: 0.72rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+  }
+
+  h2 {
+    margin: 0;
+    color: v.$text-color-primary;
+    font-family: v.$font-family-primary;
+    font-size: clamp(1.2rem, 2vw, 1.7rem);
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    line-height: 1.15;
+    text-transform: uppercase;
+
+    span {
+      color: v.$secondary-color;
+    }
+  }
+
+  a {
+    color: v.$secondary-color;
+    font-family: v.$font-family-primary;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-decoration: none;
+
+    &:hover {
+      color: v.$text-color-primary;
+    }
+  }
+}
+
+.latestNewsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: v.$space-md;
+}
+
 .slateHero {
   display: grid;
   grid-template-columns: minmax(0, 1.7fr) minmax(280px, 1fr);
@@ -1081,6 +1143,7 @@ $mobile-column-short: 30px;
   .gameCardsContainer,
   .standingsContainer,
   .injuriesContainer,
+  .latestNewsContainer,
   .chartContainer {
     min-width: 0 !important;
     max-width: 100% !important; // respect Container.pageContent width
@@ -1092,6 +1155,19 @@ $mobile-column-short: 30px;
 
   .gameCardsContainer {
     border-radius: v.$border-radius;
+  }
+
+  .latestNewsContainer {
+    padding: v.$space-md;
+  }
+
+  .latestNewsHeader {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .latestNewsGrid {
+    grid-template-columns: 1fr;
   }
 
   .slateHero {

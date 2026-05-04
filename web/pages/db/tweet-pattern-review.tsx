@@ -1,20 +1,17 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-  type CSSProperties,
-} from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { NextPage } from "next";
 import Head from "next/head";
+
+import styles from "./tweet-pattern-review.module.scss";
 
 import NewsCard from "components/NewsFeed/NewsCard";
 import {
   buildNewsFeedHeadline,
+  formatNewsFeedLabel,
   getTeamOptions,
   normalizeNewsCategory,
   type NewsFeedItem,
-  type NewsFeedKeywordPhrase,
+  type NewsFeedKeywordPhrase
 } from "lib/newsFeed";
 import type { TweetPatternReviewAssignment } from "lib/sources/tweetPatternReview";
 import supabase from "lib/supabase";
@@ -55,6 +52,9 @@ type TweetPatternReviewItem = {
   parser_filter_reason: string | null;
   keyword_hits: string[] | null;
   review_text: string | null;
+  raw_text?: string | null;
+  enriched_text?: string | null;
+  quoted_text?: string | null;
   review_status: ReviewStatus;
   review_assignments: TweetPatternReviewAssignment[] | null;
 };
@@ -78,6 +78,18 @@ type ReviewNewsApiData = {
   items: NewsFeedItem[];
   keywordPhrases: NewsFeedKeywordPhrase[];
   message?: string;
+};
+
+type AuthorLookupApiData = {
+  success: boolean;
+  authorName: string | null;
+  authorHandle: string | null;
+  message?: string;
+};
+
+type AuthorOverride = {
+  authorName: string | null;
+  authorHandle: string | null;
 };
 
 type NewsDraft = {
@@ -127,7 +139,7 @@ function createEmptyAssignment(): EditableAssignment {
     notes: null,
     pendingHighlight: "",
     pendingPlayerId: "",
-    pendingPlayerName: "",
+    pendingPlayerName: ""
   };
 }
 
@@ -136,7 +148,7 @@ function createEmptyKeywordDraft(): KeywordDraft {
     phrase: "",
     category: "",
     subcategory: "",
-    notes: "",
+    notes: ""
   };
 }
 
@@ -152,18 +164,208 @@ function createEmptyNewsDraft(): NewsDraft {
     playerIds: [],
     playerNames: [],
     pendingPlayerId: "",
-    pendingPlayerName: "",
+    pendingPlayerName: ""
+  };
+}
+
+function normalizeSourceHandle(
+  value: string | null | undefined
+): string | null {
+  const trimmed = value?.trim();
+  if (!trimmed) return null;
+  return trimmed.startsWith("@") ? trimmed : `@${trimmed}`;
+}
+
+function parseHandleFromTweetUrl(
+  value: string | null | undefined
+): string | null {
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    const hostname = url.hostname.toLowerCase();
+    if (!hostname.includes("twitter.com") && !hostname.includes("x.com")) {
+      return null;
+    }
+    const handle = url.pathname.split("/").filter(Boolean)[0] ?? null;
+    return normalizeSourceHandle(handle);
+  } catch {
+    return null;
+  }
+}
+
+function pickLongestText(
+  ...values: Array<string | null | undefined>
+): string | null {
+  let longestValue: string | null = null;
+  for (const value of values) {
+    const trimmed = value?.trim() ?? "";
+    if (!trimmed) continue;
+    if (!longestValue || trimmed.length > longestValue.length) {
+      longestValue = trimmed;
+    }
+  }
+  return longestValue;
+}
+
+function getReviewItemDisplayText(
+  item: TweetPatternReviewItem | null | undefined
+): string {
+  return (
+    pickLongestText(
+      item?.review_text,
+      item?.enriched_text,
+      item?.raw_text,
+      item?.quoted_text
+    ) ?? "No tweet text captured."
+  );
+}
+
+function getReviewItemSourceName(
+  item: TweetPatternReviewItem | null | undefined,
+  authorOverride?: AuthorOverride | null
+): string {
+  const overrideName = authorOverride?.authorName?.trim();
+  if (overrideName) return overrideName;
+
+  const sourceUrlHandle =
+    parseHandleFromTweetUrl(item?.source_url) ??
+    parseHandleFromTweetUrl(item?.tweet_url);
+  const displayHandle =
+    normalizeSourceHandle(authorOverride?.authorHandle) ??
+    sourceUrlHandle ??
+    normalizeSourceHandle(item?.source_handle);
+  const authorName = item?.author_name?.trim();
+  const sourceLabel = item?.source_label?.trim();
+  const sourceAccount = item?.source_account?.trim();
+  const isFeedName =
+    authorName &&
+    [sourceLabel, sourceAccount].some(
+      (value) => value && value.toLowerCase() === authorName.toLowerCase()
+    );
+  return (
+    (!isFeedName ? authorName : null) ||
+    displayHandle ||
+    sourceLabel ||
+    sourceAccount ||
+    item?.source_key?.trim() ||
+    item?.source_table ||
+    "Unknown source"
+  );
+}
+
+function getReviewItemSourceHandle(
+  item: TweetPatternReviewItem | null | undefined,
+  authorOverride?: AuthorOverride | null
+): string | null {
+  const handle =
+    normalizeSourceHandle(authorOverride?.authorHandle) ??
+    parseHandleFromTweetUrl(item?.source_url) ??
+    parseHandleFromTweetUrl(item?.tweet_url) ??
+    normalizeSourceHandle(item?.source_handle);
+  if (!handle) return null;
+  if (
+    handle.toLowerCase() ===
+    getReviewItemSourceName(item, authorOverride).toLowerCase()
+  ) {
+    return null;
+  }
+  return handle;
+}
+
+function getReviewItemSourceFeed(
+  item: TweetPatternReviewItem | null | undefined,
+  authorOverride?: AuthorOverride | null
+): string | null {
+  const blocked = new Set(
+    [
+      getReviewItemSourceName(item, authorOverride),
+      getReviewItemSourceHandle(item, authorOverride)
+    ]
+      .map((value) => value?.trim().toLowerCase())
+      .filter(Boolean)
+  );
+
+  for (const candidate of [
+    item?.source_label,
+    item?.source_key,
+    item?.source_group,
+    item?.source_account
+  ]) {
+    const trimmed = candidate?.trim();
+    if (!trimmed) continue;
+    if (!blocked.has(trimmed.toLowerCase())) return formatNewsFeedLabel(trimmed);
+  }
+
+  return null;
+}
+
+function getReviewItemTweetLookupUrl(
+  item: TweetPatternReviewItem | null | undefined
+): string | null {
+  return item?.source_url ?? item?.tweet_url ?? null;
+}
+
+function buildNewsDraftFromItem(
+  item: TweetPatternReviewItem | null | undefined,
+  assignment?: TweetPatternReviewAssignment | null
+): NewsDraft {
+  if (!item) return createEmptyNewsDraft();
+
+  const fallbackPlayers = Array.from(
+    new Set(
+      (item.review_assignments ?? [])
+        .flatMap((reviewAssignment) => reviewAssignment.playerNames)
+        .filter(Boolean)
+    )
+  );
+  const fallbackPlayerIds = Array.from(
+    new Set(
+      (item.review_assignments ?? []).flatMap(
+        (reviewAssignment) => reviewAssignment.playerIds
+      )
+    )
+  );
+  const primaryAssignment = assignment ?? item.review_assignments?.[0] ?? null;
+  const playerNames = primaryAssignment?.playerNames?.length
+    ? primaryAssignment.playerNames
+    : fallbackPlayers;
+  const playerIds = primaryAssignment?.playerIds?.length
+    ? primaryAssignment.playerIds
+    : fallbackPlayerIds;
+  const category =
+    primaryAssignment?.category ??
+    normalizeNewsCategory(item.parser_classification) ??
+    "";
+  const subcategory = primaryAssignment?.subcategory ?? "";
+
+  return {
+    itemId: null,
+    headline: buildNewsFeedHeadline({
+      playerNames,
+      category,
+      subcategory,
+      teamAbbreviation: item.team_abbreviation ?? null
+    }),
+    blurb: "",
+    category,
+    subcategory,
+    teamId: item.team_id ? String(item.team_id) : "",
+    teamAbbreviation: item.team_abbreviation ?? "",
+    playerIds,
+    playerNames,
+    pendingPlayerId: "",
+    pendingPlayerName: ""
   };
 }
 
 function toEditableAssignment(
-  assignment: TweetPatternReviewAssignment,
+  assignment: TweetPatternReviewAssignment
 ): EditableAssignment {
   return {
     ...assignment,
     pendingHighlight: "",
     pendingPlayerId: "",
-    pendingPlayerName: "",
+    pendingPlayerName: ""
   };
 }
 
@@ -171,7 +373,7 @@ async function fetchWithOptionalAuth(url: string): Promise<ApiData> {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
   const response = await fetch(url, {
-    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined
   });
   const payload = await response.json();
   if (!response.ok || !payload.success) {
@@ -181,12 +383,12 @@ async function fetchWithOptionalAuth(url: string): Promise<ApiData> {
 }
 
 async function fetchReviewNewsWithOptionalAuth(
-  url: string,
+  url: string
 ): Promise<ReviewNewsApiData> {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
   const response = await fetch(url, {
-    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined
   });
   const payload = await response.json();
   if (!response.ok || !payload.success) {
@@ -195,16 +397,34 @@ async function fetchReviewNewsWithOptionalAuth(
   return payload;
 }
 
-async function postWithOptionalAuth(url: string, body: Record<string, unknown>) {
+async function fetchAuthorLookupWithOptionalAuth(
+  url: string
+): Promise<AuthorLookupApiData> {
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  const response = await fetch(url, {
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined
+  });
+  const payload = await response.json();
+  if (!response.ok || !payload.success) {
+    throw new Error(payload.message ?? "Author lookup failed.");
+  }
+  return payload;
+}
+
+async function postWithOptionalAuth(
+  url: string,
+  body: Record<string, unknown>
+) {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
   const response = await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {})
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify(body)
   });
   const payload = await response.json();
   if (!response.ok || !payload.success) {
@@ -217,62 +437,52 @@ function renderHighlightedText(text: string, highlights: string[]) {
   if (highlights.length === 0) return text;
 
   const uniqueHighlights = Array.from(
-    new Set(highlights.map((value) => value.trim()).filter(Boolean)),
+    new Set(highlights.map((value) => value.trim()).filter(Boolean))
   ).sort((left, right) => right.length - left.length);
   if (uniqueHighlights.length === 0) return text;
 
   const pattern = new RegExp(
     `(${uniqueHighlights.map(escapeRegExp).join("|")})`,
-    "gi",
+    "gi"
   );
   return text.split(pattern).map((part, index) =>
     uniqueHighlights.some(
-      (highlight) => part.toLowerCase() === highlight.toLowerCase(),
+      (highlight) => part.toLowerCase() === highlight.toLowerCase()
     ) ? (
       <mark
         key={index}
-        style={{ background: "#f4b942", color: "#111", padding: "0 2px" }}
+        className={styles.highlightMark}
       >
         {part}
       </mark>
     ) : (
       <span key={index}>{part}</span>
-    ),
+    )
   );
 }
-
-const formControlStyle = {
-  background: "#fff",
-  color: "#111",
-  border: "1px solid #8c8c8c",
-  borderRadius: 6,
-  padding: "8px 10px",
-} satisfies CSSProperties;
-
-const smallButtonStyle = {
-  ...formControlStyle,
-  padding: "6px 10px",
-} satisfies CSSProperties;
-
-const linkStyle = {
-  color: "#0b57d0",
-} satisfies CSSProperties;
 
 const TweetPatternReviewPage: NextPage = () => {
   const [items, setItems] = useState<TweetPatternReviewItem[]>([]);
   const [players, setPlayers] = useState<PlayerOption[]>([]);
-  const [categoryOptions, setCategoryOptions] = useState<PatternCategoryOption[]>(
-    [],
-  );
+  const [categoryOptions, setCategoryOptions] = useState<
+    PatternCategoryOption[]
+  >([]);
   const [selectedItemId, setSelectedItemId] = useState("");
   const [assignments, setAssignments] = useState<EditableAssignment[]>([]);
   const [capturedSelection, setCapturedSelection] = useState("");
   const [savedNewsItems, setSavedNewsItems] = useState<NewsFeedItem[]>([]);
-  const [savedKeywordPhrases, setSavedKeywordPhrases] = useState<NewsFeedKeywordPhrase[]>([]);
+  const [savedKeywordPhrases, setSavedKeywordPhrases] = useState<
+    NewsFeedKeywordPhrase[]
+  >([]);
+  const [authorOverrides, setAuthorOverrides] = useState<
+    Record<string, AuthorOverride>
+  >({});
   const [newsDraft, setNewsDraft] = useState<NewsDraft>(createEmptyNewsDraft());
-  const [keywordDraft, setKeywordDraft] = useState<KeywordDraft>(createEmptyKeywordDraft());
+  const [keywordDraft, setKeywordDraft] = useState<KeywordDraft>(
+    createEmptyKeywordDraft()
+  );
   const [statusFilter, setStatusFilter] = useState<ReviewStatus | "all">(
-    "pending",
+    "pending"
   );
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -286,21 +496,22 @@ const TweetPatternReviewPage: NextPage = () => {
       setIsLoading(true);
       const query = new URLSearchParams({
         status: nextStatusFilter,
-        limit: "150",
+        limit: "150"
       });
       const payload = await fetchWithOptionalAuth(
-        `/api/v1/db/tweet-pattern-review?${query.toString()}`,
+        `/api/v1/db/tweet-pattern-review?${query.toString()}`
       );
       setItems(payload.items);
       setPlayers(payload.players);
       setCategoryOptions(payload.categoryOptions);
       setSelectedItemId((current) => {
-        if (current && payload.items.some((item) => item.id === current)) return current;
+        if (current && payload.items.some((item) => item.id === current))
+          return current;
         return payload.items[0]?.id ?? "";
       });
       setIsLoading(false);
     },
-    [statusFilter],
+    [statusFilter]
   );
 
   useEffect(() => {
@@ -312,9 +523,16 @@ const TweetPatternReviewPage: NextPage = () => {
 
   const selectedItem = useMemo(
     () => items.find((item) => item.id === selectedItemId),
-    [items, selectedItemId],
+    [items, selectedItemId]
   );
+  const selectedAuthorOverride = selectedItem
+    ? authorOverrides[selectedItem.id] ?? null
+    : null;
   const teamOptions = useMemo(() => getTeamOptions(), []);
+  const selectedItemDisplayText = useMemo(
+    () => getReviewItemDisplayText(selectedItem),
+    [selectedItem]
+  );
 
   useEffect(() => {
     const nextAssignments = selectedItem?.review_assignments?.length
@@ -325,48 +543,15 @@ const TweetPatternReviewPage: NextPage = () => {
   }, [selectedItem]);
 
   useEffect(() => {
-    const assignmentPlayers = Array.from(
-      new Set(
-        (selectedItem?.review_assignments ?? [])
-          .flatMap((assignment) => assignment.playerNames)
-          .filter(Boolean)
-      )
-    );
-    const assignmentPlayerIds = Array.from(
-      new Set(
-        (selectedItem?.review_assignments ?? []).flatMap((assignment) => assignment.playerIds)
-      )
-    );
-    const primaryAssignment = selectedItem?.review_assignments?.[0] ?? null;
-    setNewsDraft({
-      itemId: null,
-      headline: buildNewsFeedHeadline({
-        playerNames: assignmentPlayers,
-        category: primaryAssignment?.category ?? selectedItem?.parser_classification,
-        subcategory: primaryAssignment?.subcategory ?? null,
-        teamAbbreviation: selectedItem?.team_abbreviation ?? null,
-      }),
-      blurb: "",
-      category:
-        primaryAssignment?.category ??
-        normalizeNewsCategory(selectedItem?.parser_classification) ??
-        "",
-      subcategory: primaryAssignment?.subcategory ?? "",
-      teamId: selectedItem?.team_id ? String(selectedItem.team_id) : "",
-      teamAbbreviation: selectedItem?.team_abbreviation ?? "",
-      playerIds: assignmentPlayerIds,
-      playerNames: assignmentPlayers,
-      pendingPlayerId: "",
-      pendingPlayerName: "",
-    });
+    setNewsDraft(buildNewsDraftFromItem(selectedItem));
     setKeywordDraft({
       phrase: "",
       category:
-        primaryAssignment?.category ??
+        selectedItem?.review_assignments?.[0]?.category ??
         normalizeNewsCategory(selectedItem?.parser_classification) ??
         "",
-      subcategory: primaryAssignment?.subcategory ?? "",
-      notes: "",
+      subcategory: selectedItem?.review_assignments?.[0]?.subcategory ?? "",
+      notes: ""
     });
     setSavedNewsItems([]);
     setSavedKeywordPhrases([]);
@@ -381,17 +566,41 @@ const TweetPatternReviewPage: NextPage = () => {
       .catch((error) => setStatusMessage(error.message));
   }, [selectedItem]);
 
+  useEffect(() => {
+    if (!selectedItem?.id || authorOverrides[selectedItem.id]) return;
+    const lookupUrl = getReviewItemTweetLookupUrl(selectedItem);
+    if (!lookupUrl) return;
+
+    const query = new URLSearchParams({ authorLookupUrl: lookupUrl });
+    void fetchAuthorLookupWithOptionalAuth(
+      `/api/v1/db/tweet-pattern-review?${query.toString()}`
+    )
+      .then((payload) => {
+        if (!payload.authorName && !payload.authorHandle) return;
+        setAuthorOverrides((current) => ({
+          ...current,
+          [selectedItem.id]: {
+            authorName: payload.authorName,
+            authorHandle: payload.authorHandle
+          }
+        }));
+      })
+      .catch(() => {
+        // Author lookup is a display enhancement; keep review flow quiet on rate limits.
+      });
+  }, [authorOverrides, selectedItem]);
+
   const currentIndex = selectedItem
     ? items.findIndex((item) => item.id === selectedItem.id)
     : -1;
   const pendingCount = useMemo(
     () => items.filter((item) => item.review_status === "pending").length,
-    [items],
+    [items]
   );
   const filteredPlayers = useMemo(() => {
     if (!selectedItem?.team_id) return players;
     const teamPlayers = players.filter(
-      (player) => player.team_id === selectedItem.team_id,
+      (player) => player.team_id === selectedItem.team_id
     );
     return teamPlayers.length > 0 ? teamPlayers : players;
   }, [players, selectedItem?.team_id]);
@@ -412,12 +621,12 @@ const TweetPatternReviewPage: NextPage = () => {
 
   function updateAssignment(
     assignmentId: string,
-    updater: (assignment: EditableAssignment) => EditableAssignment,
+    updater: (assignment: EditableAssignment) => EditableAssignment
   ) {
     setAssignments((current) =>
       current.map((assignment) =>
-        assignment.id === assignmentId ? updater(assignment) : assignment,
-      ),
+        assignment.id === assignmentId ? updater(assignment) : assignment
+      )
     );
   }
 
@@ -429,14 +638,14 @@ const TweetPatternReviewPage: NextPage = () => {
     setAssignments((current) =>
       current.length > 1
         ? current.filter((assignment) => assignment.id !== assignmentId)
-        : current,
+        : current
     );
   }
 
   function addPlayerToAssignment(assignmentId: string) {
     updateAssignment(assignmentId, (assignment) => {
       const selectedPlayer = filteredPlayers.find(
-        (player) => String(player.id) === assignment.pendingPlayerId,
+        (player) => String(player.id) === assignment.pendingPlayerId
       );
       if (!selectedPlayer) return assignment;
       if (assignment.playerIds.includes(selectedPlayer.id)) {
@@ -446,7 +655,7 @@ const TweetPatternReviewPage: NextPage = () => {
         ...assignment,
         playerIds: [...assignment.playerIds, selectedPlayer.id],
         playerNames: [...assignment.playerNames, selectedPlayer.fullName],
-        pendingPlayerId: "",
+        pendingPlayerId: ""
       };
     });
   }
@@ -457,7 +666,7 @@ const TweetPatternReviewPage: NextPage = () => {
       if (!name) return assignment;
       if (
         assignment.playerNames.some(
-          (playerName) => playerName.toLowerCase() === name.toLowerCase(),
+          (playerName) => playerName.toLowerCase() === name.toLowerCase()
         )
       ) {
         return { ...assignment, pendingPlayerName: "" };
@@ -465,22 +674,22 @@ const TweetPatternReviewPage: NextPage = () => {
       return {
         ...assignment,
         playerNames: [...assignment.playerNames, name],
-        pendingPlayerName: "",
+        pendingPlayerName: ""
       };
     });
   }
 
   function removePlayerFromAssignment(
     assignmentId: string,
-    playerName: string,
+    playerName: string
   ) {
     updateAssignment(assignmentId, (assignment) => {
       const playerIndex = assignment.playerNames.findIndex(
-        (value) => value === playerName,
+        (value) => value === playerName
       );
       if (playerIndex < 0) return assignment;
       const nextPlayerNames = assignment.playerNames.filter(
-        (value) => value !== playerName,
+        (value) => value !== playerName
       );
       const nextPlayerIds = [...assignment.playerIds];
       if (playerIndex < nextPlayerIds.length) {
@@ -489,21 +698,18 @@ const TweetPatternReviewPage: NextPage = () => {
       return {
         ...assignment,
         playerIds: nextPlayerIds,
-        playerNames: nextPlayerNames,
+        playerNames: nextPlayerNames
       };
     });
   }
 
-  function addHighlightToAssignment(
-    assignmentId: string,
-    phrase: string,
-  ) {
+  function addHighlightToAssignment(assignmentId: string, phrase: string) {
     const trimmedPhrase = phrase.trim();
     if (!trimmedPhrase) return;
     updateAssignment(assignmentId, (assignment) => {
       if (
         assignment.highlightPhrases.some(
-          (value) => value.toLowerCase() === trimmedPhrase.toLowerCase(),
+          (value) => value.toLowerCase() === trimmedPhrase.toLowerCase()
         )
       ) {
         return { ...assignment, pendingHighlight: "" };
@@ -511,36 +717,23 @@ const TweetPatternReviewPage: NextPage = () => {
       return {
         ...assignment,
         highlightPhrases: [...assignment.highlightPhrases, trimmedPhrase],
-        pendingHighlight: "",
+        pendingHighlight: ""
       };
     });
     setCapturedSelection("");
   }
 
   function applyAssignmentToNewsDraft(assignment: EditableAssignment) {
-    setNewsDraft((current) => ({
-      ...current,
-      itemId: null,
-      headline: buildNewsFeedHeadline({
-        playerNames: assignment.playerNames,
-        category: assignment.category,
-        subcategory: assignment.subcategory,
-        teamAbbreviation: selectedItem?.team_abbreviation ?? current.teamAbbreviation,
-      }),
-      category: assignment.category,
-      subcategory: assignment.subcategory ?? "",
-      teamId: selectedItem?.team_id ? String(selectedItem.team_id) : current.teamId,
-      teamAbbreviation: selectedItem?.team_abbreviation ?? current.teamAbbreviation,
-      playerIds: assignment.playerIds,
-      playerNames: assignment.playerNames,
-      pendingPlayerId: "",
-      pendingPlayerName: "",
-    }));
+    setNewsDraft(buildNewsDraftFromItem(selectedItem, assignment));
+  }
+
+  function startNewNewsCard() {
+    setNewsDraft(buildNewsDraftFromItem(selectedItem));
   }
 
   function addPlayerToNewsDraft() {
     const selectedPlayer = filteredDraftPlayers.find(
-      (player) => String(player.id) === newsDraft.pendingPlayerId,
+      (player) => String(player.id) === newsDraft.pendingPlayerId
     );
     if (!selectedPlayer) return;
     if (newsDraft.playerIds.includes(selectedPlayer.id)) {
@@ -551,7 +744,7 @@ const TweetPatternReviewPage: NextPage = () => {
       ...current,
       playerIds: [...current.playerIds, selectedPlayer.id],
       playerNames: [...current.playerNames, selectedPlayer.fullName],
-      pendingPlayerId: "",
+      pendingPlayerId: ""
     }));
   }
 
@@ -560,7 +753,8 @@ const TweetPatternReviewPage: NextPage = () => {
     if (!playerName) return;
     if (
       newsDraft.playerNames.some(
-        (existingName) => existingName.toLowerCase() === playerName.toLowerCase(),
+        (existingName) =>
+          existingName.toLowerCase() === playerName.toLowerCase()
       )
     ) {
       setNewsDraft((current) => ({ ...current, pendingPlayerName: "" }));
@@ -569,15 +763,19 @@ const TweetPatternReviewPage: NextPage = () => {
     setNewsDraft((current) => ({
       ...current,
       playerNames: [...current.playerNames, playerName],
-      pendingPlayerName: "",
+      pendingPlayerName: ""
     }));
   }
 
   function removePlayerFromNewsDraft(playerName: string) {
     setNewsDraft((current) => {
-      const playerIndex = current.playerNames.findIndex((value) => value === playerName);
+      const playerIndex = current.playerNames.findIndex(
+        (value) => value === playerName
+      );
       if (playerIndex < 0) return current;
-      const nextPlayerNames = current.playerNames.filter((value) => value !== playerName);
+      const nextPlayerNames = current.playerNames.filter(
+        (value) => value !== playerName
+      );
       const nextPlayerIds = [...current.playerIds];
       if (playerIndex < nextPlayerIds.length) {
         nextPlayerIds.splice(playerIndex, 1);
@@ -585,30 +783,30 @@ const TweetPatternReviewPage: NextPage = () => {
       return {
         ...current,
         playerNames: nextPlayerNames,
-        playerIds: nextPlayerIds,
+        playerIds: nextPlayerIds
       };
     });
   }
 
-  function removeHighlightFromAssignment(
-    assignmentId: string,
-    phrase: string,
-  ) {
+  function removeHighlightFromAssignment(assignmentId: string, phrase: string) {
     updateAssignment(assignmentId, (assignment) => ({
       ...assignment,
       highlightPhrases: assignment.highlightPhrases.filter(
-        (value) => value !== phrase,
-      ),
+        (value) => value !== phrase
+      )
     }));
   }
 
   async function syncQueue() {
     setIsSyncing(true);
     try {
-      const payload = await postWithOptionalAuth("/api/v1/db/tweet-pattern-review", {
-        action: "sync",
-        perSourceLimit: 200,
-      });
+      const payload = await postWithOptionalAuth(
+        "/api/v1/db/tweet-pattern-review",
+        {
+          action: "sync",
+          perSourceLimit: 200
+        }
+      );
       setStatusMessage(payload.message ?? "Queue synced.");
       await loadData(statusFilter);
     } catch (error: any) {
@@ -626,11 +824,13 @@ const TweetPatternReviewPage: NextPage = () => {
         category: assignment.category.trim(),
         subcategory: assignment.subcategory?.trim() || null,
         playerIds: assignment.playerIds,
-        playerNames: assignment.playerNames.map((name) => name.trim()).filter(Boolean),
+        playerNames: assignment.playerNames
+          .map((name) => name.trim())
+          .filter(Boolean),
         highlightPhrases: assignment.highlightPhrases
           .map((phrase) => phrase.trim())
           .filter(Boolean),
-        notes: assignment.notes?.trim() || null,
+        notes: assignment.notes?.trim() || null
       }))
       .filter((assignment) => assignment.category);
 
@@ -641,10 +841,13 @@ const TweetPatternReviewPage: NextPage = () => {
 
     setIsSaving(true);
     try {
-      const payload = await postWithOptionalAuth("/api/v1/db/tweet-pattern-review", {
-        itemId: selectedItem.id,
-        reviewAssignments: cleanedAssignments,
-      });
+      const payload = await postWithOptionalAuth(
+        "/api/v1/db/tweet-pattern-review",
+        {
+          itemId: selectedItem.id,
+          reviewAssignments: cleanedAssignments
+        }
+      );
       setStatusMessage(payload.message ?? "Review saved.");
       await loadData(statusFilter);
     } catch (error: any) {
@@ -658,10 +861,13 @@ const TweetPatternReviewPage: NextPage = () => {
     if (!selectedItem) return;
     setIsSaving(true);
     try {
-      const payload = await postWithOptionalAuth("/api/v1/db/tweet-pattern-review", {
-        action,
-        itemId: selectedItem.id,
-      });
+      const payload = await postWithOptionalAuth(
+        "/api/v1/db/tweet-pattern-review",
+        {
+          action,
+          itemId: selectedItem.id
+        }
+      );
       setStatusMessage(payload.message ?? "Status updated.");
       await loadData(statusFilter);
     } catch (error: any) {
@@ -680,7 +886,21 @@ const TweetPatternReviewPage: NextPage = () => {
 
     const normalizedCategory = normalizeNewsCategory(newsDraft.category);
     const normalizedSubcategory = normalizeNewsCategory(newsDraft.subcategory);
-    const teamOption = teamOptions.find((team) => String(team.id) === newsDraft.teamId);
+    const teamOption = teamOptions.find(
+      (team) => String(team.id) === newsDraft.teamId
+    );
+    const sourceName = getReviewItemSourceName(
+      selectedItem,
+      selectedAuthorOverride
+    );
+    const sourceHandle = getReviewItemSourceHandle(
+      selectedItem,
+      selectedAuthorOverride
+    );
+    const sourceFeed = getReviewItemSourceFeed(
+      selectedItem,
+      selectedAuthorOverride
+    );
 
     setIsSavingNews(true);
     try {
@@ -691,10 +911,10 @@ const TweetPatternReviewPage: NextPage = () => {
         sourceTweetId: selectedItem.tweet_id,
         sourceUrl: selectedItem.source_url,
         tweetUrl: selectedItem.tweet_url,
-        sourceLabel: selectedItem.source_label,
-        sourceAccount: selectedItem.source_account,
+        sourceLabel: sourceName,
+        sourceAccount: sourceHandle,
         observedAt: selectedItem.source_created_at,
-        teamId: teamOption?.id ?? (selectedItem.team_id ?? null),
+        teamId: teamOption?.id ?? selectedItem.team_id ?? null,
         teamAbbreviation:
           teamOption?.abbreviation ??
           newsDraft.teamAbbreviation ??
@@ -707,12 +927,15 @@ const TweetPatternReviewPage: NextPage = () => {
         playerAssignments: newsDraft.playerNames.map((playerName, index) => ({
           playerId: newsDraft.playerIds[index] ?? null,
           playerName,
-          teamId: teamOption?.id ?? selectedItem.team_id ?? null,
+          teamId: teamOption?.id ?? selectedItem.team_id ?? null
         })),
         metadata: {
           parserClassification: selectedItem.parser_classification,
           parserFilterStatus: selectedItem.parser_filter_status,
-        },
+          sourceFeed,
+          sourceAccount: selectedItem.source_account,
+          sourceKey: selectedItem.source_key
+        }
       });
       setStatusMessage(payload.message ?? "News card saved.");
       const refreshed = await fetchReviewNewsWithOptionalAuth(
@@ -722,7 +945,7 @@ const TweetPatternReviewPage: NextPage = () => {
       setSavedKeywordPhrases(refreshed.keywordPhrases);
       setNewsDraft((current) => ({
         ...current,
-        itemId: payload.itemId ?? current.itemId,
+        itemId: payload.itemId ?? current.itemId
       }));
     } catch (error: any) {
       setStatusMessage(error.message);
@@ -746,7 +969,7 @@ const TweetPatternReviewPage: NextPage = () => {
         phrase: keywordDraft.phrase,
         category: keywordDraft.category,
         subcategory: keywordDraft.subcategory,
-        notes: keywordDraft.notes,
+        notes: keywordDraft.notes
       });
       setStatusMessage(payload.message ?? "Keyword phrase saved.");
       const refreshed = await fetchReviewNewsWithOptionalAuth(
@@ -766,374 +989,737 @@ const TweetPatternReviewPage: NextPage = () => {
       <Head>
         <title>Tweet Pattern Review | FHFH</title>
       </Head>
-      <main style={{ margin: "0 auto", maxWidth: 1280, padding: 24, color: "#f5f5f5" }}>
-        <h1>Tweet Pattern Review</h1>
-        <p>
-          Review tweets one by one, add one or more assignments per tweet, and mark
-          the exact evidence text that justifies each assignment.
-        </p>
-        {statusMessage ? <p>{statusMessage}</p> : null}
+      <div className={styles.page}>
+        {/* ── Page header ─────────────────────────────────────────────────── */}
+        <header className={styles.pageHeader}>
+          <h1>Tweet Pattern Review</h1>
+          {statusMessage ? (
+            <span className={styles.statusMessage}>{statusMessage}</span>
+          ) : null}
+        </header>
 
-        <section
-          style={{
-            display: "grid",
-            gap: 16,
-            gridTemplateColumns: "minmax(0, 2.2fr) minmax(320px, 1fr)",
-            alignItems: "start",
-          }}
-        >
-          <div style={{ display: "grid", gap: 16 }}>
-            <div
-              style={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: 12,
-                alignItems: "end",
-                padding: 16,
-                border: "1px solid #d7d7d7",
-                borderRadius: 12,
-                color: "#f5f5f5",
-              }}
-            >
-              <label style={{ display: "grid", gap: 6 }}>
-                Review status
-                <select
-                  style={formControlStyle}
-                  value={statusFilter}
-                  onChange={(event) => {
-                    const nextFilter = event.target.value as ReviewStatus | "all";
-                    setStatusFilter(nextFilter);
-                    void loadData(nextFilter).catch((error) =>
-                      setStatusMessage(error.message),
-                    );
-                  }}
-                >
-                  <option value="pending">Pending</option>
-                  <option value="reviewed">Reviewed</option>
-                  <option value="ignored">Ignored</option>
-                  <option value="all">All</option>
-                </select>
-              </label>
-
-              <label style={{ display: "grid", gap: 6, minWidth: 320 }}>
-                Queue item
-                <select
-                  style={formControlStyle}
-                  value={selectedItemId}
-                  onChange={(event) => setSelectedItemId(event.target.value)}
-                  disabled={items.length === 0}
-                >
-                  {items.map((item, index) => (
-                    <option key={item.id} value={item.id}>
-                      {index + 1}. {item.source_account ?? item.source_key ?? item.source_table} ·{" "}
-                      {item.team_abbreviation ?? "No team"} · {item.tweet_id ?? "No tweet id"}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <button
-                style={formControlStyle}
-                disabled={isSyncing}
-                onClick={() => void syncQueue()}
+        {/* ── Workspace ───────────────────────────────────────────────────── */}
+        <div className={styles.workspace}>
+          {/* ── Control bar ───────────────────────────────────────────────── */}
+          <div className={styles.controlBar}>
+            <div className={styles.controlField}>
+              <span>Status</span>
+              <select
+                value={statusFilter}
+                onChange={(event) => {
+                  const nextFilter = event.target.value as ReviewStatus | "all";
+                  setStatusFilter(nextFilter);
+                  void loadData(nextFilter).catch((error) =>
+                    setStatusMessage(error.message)
+                  );
+                }}
               >
-                {isSyncing ? "Syncing..." : "Sync corpus queue"}
-              </button>
-
-              <div>
-                <strong>{pendingCount}</strong> pending in current filter
-              </div>
+                <option value="pending">Pending</option>
+                <option value="reviewed">Reviewed</option>
+                <option value="ignored">Ignored</option>
+                <option value="all">All</option>
+              </select>
             </div>
 
-            {isLoading ? <p>Loading...</p> : null}
+            <div className={`${styles.controlField} ${styles.queueField}`}>
+              <span>Queue item</span>
+              <select
+                value={selectedItemId}
+                onChange={(event) => setSelectedItemId(event.target.value)}
+                disabled={items.length === 0}
+              >
+                {items.map((item, index) => (
+                  <option key={item.id} value={item.id}>
+                    {index + 1}.{" "}
+                    {getReviewItemSourceName(item, authorOverrides[item.id])} ·{" "}
+                    {item.team_abbreviation ?? "No team"} ·{" "}
+                    {item.tweet_id ?? "No tweet id"}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className={styles.navGroup}>
+              <button
+                className={styles.btn}
+                disabled={currentIndex <= 0}
+                onClick={() => moveSelection(-1)}
+              >
+                ←
+              </button>
+              <button
+                className={styles.btn}
+                disabled={currentIndex < 0 || currentIndex >= items.length - 1}
+                onClick={() => moveSelection(1)}
+              >
+                →
+              </button>
+            </div>
+
+            <button
+              className={styles.btn}
+              disabled={isSyncing}
+              onClick={() => void syncQueue()}
+            >
+              {isSyncing ? "Syncing…" : "Sync queue"}
+            </button>
+
+            <div className={styles.pendingBadge}>
+              <span className={styles.pendingCount}>{pendingCount}</span> pending
+            </div>
+          </div>
+
+          {/* ── Left column ─────────────────────────────────────────────── */}
+          <div className={styles.leftColumn}>
+            {isLoading ? (
+              <div className={styles.stateMessage}>Loading…</div>
+            ) : null}
             {!isLoading && !selectedItem ? (
-              <p>No tweets are currently loaded for this review filter.</p>
+              <div className={styles.stateMessage}>
+                No items in queue for this filter.
+              </div>
             ) : null}
 
             {selectedItem ? (
-              <article
-                style={{
-                  display: "grid",
-                  gap: 16,
-                  padding: 20,
-                  border: "1px solid #d7d7d7",
-                  borderRadius: 16,
-                  background: "#fffaf3",
-                  color: "#111",
-                }}
-              >
-                <header style={{ display: "grid", gap: 8 }}>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-                    <span>
+              <>
+                {/* Tweet panel */}
+                <div className={styles.tweetPanel}>
+                  <div className={styles.tweetMeta}>
+                    <span className={styles.metaItem}>
                       <strong>Source:</strong>{" "}
-                      {selectedItem.source_account ??
-                        selectedItem.source_key ??
-                        selectedItem.source_table}
+                      {getReviewItemSourceName(
+                        selectedItem,
+                        selectedAuthorOverride
+                      )}
                     </span>
-                    <span>
-                      <strong>Team:</strong> {selectedItem.team_abbreviation ?? "Unknown"}
+                    {getReviewItemSourceHandle(
+                      selectedItem,
+                      selectedAuthorOverride
+                    ) ? (
+                      <span className={styles.metaItem}>
+                        <strong>Handle:</strong>{" "}
+                        {getReviewItemSourceHandle(
+                          selectedItem,
+                          selectedAuthorOverride
+                        )}
+                      </span>
+                    ) : null}
+                    {getReviewItemSourceFeed(
+                      selectedItem,
+                      selectedAuthorOverride
+                    ) ? (
+                      <span className={styles.metaItem}>
+                        <strong>Feed:</strong>{" "}
+                        {getReviewItemSourceFeed(
+                          selectedItem,
+                          selectedAuthorOverride
+                        )}
+                      </span>
+                    ) : null}
+                    <span className={styles.metaItem}>
+                      <strong>Team:</strong>{" "}
+                      {selectedItem.team_abbreviation ?? "Unknown"}
                     </span>
-                    <span>
-                      <strong>Parser:</strong> {selectedItem.parser_classification ?? "None"}
+                    <span className={styles.metaItem}>
+                      <strong>Parser:</strong>{" "}
+                      {formatNewsFeedLabel(selectedItem.parser_classification) ||
+                        "None"}
                     </span>
-                    <span>
-                      <strong>Filter:</strong> {selectedItem.parser_filter_status ?? "None"}
+                    <span className={styles.metaItem}>
+                      <strong>Filter:</strong>{" "}
+                      {formatNewsFeedLabel(selectedItem.parser_filter_status) ||
+                        "None"}
+                    </span>
+                    <span className={styles.metaItem}>
+                      {formatTimestamp(selectedItem.source_created_at)}
                     </span>
                   </div>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
-                    <span>{formatTimestamp(selectedItem.source_created_at)}</span>
-                    {selectedItem.source_url ? (
-                      <a href={selectedItem.source_url} style={linkStyle}>
-                        Open source tweet
-                      </a>
-                    ) : null}
-                    {selectedItem.tweet_url && selectedItem.tweet_url !== selectedItem.source_url ? (
-                      <a href={selectedItem.tweet_url} style={linkStyle}>
-                        Open tweet URL
-                      </a>
-                    ) : null}
-                    {selectedItem.quoted_tweet_url ? (
-                      <a href={selectedItem.quoted_tweet_url} style={linkStyle}>
-                        Open quoted tweet
-                      </a>
-                    ) : null}
-                  </div>
-                  {selectedItem.keyword_hits && selectedItem.keyword_hits.length > 0 ? (
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                      {selectedItem.keyword_hits.map((keyword) => (
-                        <span
-                          key={keyword}
-                          style={{
-                            border: "1px solid #c7c7c7",
-                            borderRadius: 999,
-                            padding: "4px 10px",
-                            background: "#f3f3f3",
-                            color: "#222",
-                          }}
+
+                  {selectedItem.source_url ||
+                  selectedItem.tweet_url ||
+                  selectedItem.quoted_tweet_url ? (
+                    <div className={styles.tweetLinks}>
+                      {selectedItem.source_url ? (
+                        <a
+                          href={selectedItem.source_url}
+                          className={styles.tweetLink}
+                          target="_blank"
+                          rel="noreferrer"
                         >
+                          Open source tweet
+                        </a>
+                      ) : null}
+                      {selectedItem.tweet_url &&
+                      selectedItem.tweet_url !== selectedItem.source_url ? (
+                        <a
+                          href={selectedItem.tweet_url}
+                          className={styles.tweetLink}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Open tweet URL
+                        </a>
+                      ) : null}
+                      {selectedItem.quoted_tweet_url ? (
+                        <a
+                          href={selectedItem.quoted_tweet_url}
+                          className={styles.tweetLink}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Open quoted tweet
+                        </a>
+                      ) : null}
+                    </div>
+                  ) : null}
+
+                  {selectedItem.keyword_hits &&
+                  selectedItem.keyword_hits.length > 0 ? (
+                    <div className={styles.keywordChips}>
+                      {selectedItem.keyword_hits.map((keyword) => (
+                        <span key={keyword} className={styles.keywordChip}>
                           {keyword}
                         </span>
                       ))}
                     </div>
                   ) : null}
-                </header>
 
-                <pre
-                  style={{
-                    margin: 0,
-                    padding: 16,
-                    minHeight: 240,
-                    whiteSpace: "pre-wrap",
-                    background: "#111",
-                    color: "#f7f0df",
-                    borderRadius: 12,
-                    fontSize: 15,
-                    lineHeight: 1.55,
-                  }}
-                  onMouseUp={(event) => {
-                    const selection = window.getSelection();
-                    if (!selection || selection.isCollapsed || selection.rangeCount === 0) {
-                      setCapturedSelection("");
-                      return;
-                    }
-                    const range = selection.getRangeAt(0);
-                    if (!event.currentTarget.contains(range.commonAncestorContainer)) {
-                      setCapturedSelection("");
-                      return;
-                    }
-                    setCapturedSelection(selection.toString().trim());
-                  }}
-                >
-                  {renderHighlightedText(
-                    selectedItem.review_text ?? "No tweet text captured.",
-                    assignments.flatMap((assignment) => assignment.highlightPhrases),
-                  )}
-                </pre>
-
-                <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-                  <strong>Assignments</strong>
-                  <button style={smallButtonStyle} onClick={() => addAssignment()}>
-                    Add assignment
-                  </button>
+                  <pre
+                    className={styles.tweetText}
+                    onMouseUp={(event) => {
+                      const selection = window.getSelection();
+                      if (
+                        !selection ||
+                        selection.isCollapsed ||
+                        selection.rangeCount === 0
+                      ) {
+                        setCapturedSelection("");
+                        return;
+                      }
+                      const range = selection.getRangeAt(0);
+                      if (
+                        !event.currentTarget.contains(
+                          range.commonAncestorContainer
+                        )
+                      ) {
+                        setCapturedSelection("");
+                        return;
+                      }
+                      setCapturedSelection(selection.toString().trim());
+                    }}
+                  >
+                    {renderHighlightedText(
+                      selectedItemDisplayText,
+                      assignments.flatMap((a) => a.highlightPhrases)
+                    )}
+                  </pre>
                 </div>
 
-                <div style={{ display: "grid", gap: 14 }}>
-                  {assignments.map((assignment, index) => {
-                    const selectedCategoryOption =
-                      categoryOptions.find(
-                        (option) =>
-                          option.category.toLowerCase() ===
-                          assignment.category.trim().toLowerCase(),
-                      ) ?? null;
+                {/* Assignments pane */}
+                <div className={styles.assignmentsPane}>
+                  <div className={styles.paneHeader}>
+                    <span>Assignments</span>
+                    <button
+                      className={styles.btn}
+                      onClick={() => addAssignment()}
+                    >
+                      + Add assignment
+                    </button>
+                  </div>
 
-                    return (
-                      <section
-                        key={assignment.id}
-                        style={{
-                          display: "grid",
-                          gap: 12,
-                          padding: 14,
-                          border: "1px solid #d8cfbf",
-                          borderRadius: 12,
-                          background: "#fff",
-                        }}
-                      >
+                  <div className={styles.assignmentsBody}>
+                    {assignments.map((assignment, index) => {
+                      const selectedCategoryOption =
+                        categoryOptions.find(
+                          (option) =>
+                            option.category.toLowerCase() ===
+                            assignment.category.trim().toLowerCase()
+                        ) ?? null;
+
+                      return (
                         <div
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            gap: 12,
-                            alignItems: "center",
-                          }}
+                          key={assignment.id}
+                          className={styles.assignmentCard}
                         >
-                          <strong>Assignment {index + 1}</strong>
-                          <button
-                            style={smallButtonStyle}
-                            disabled={assignments.length <= 1}
-                            onClick={() => removeAssignment(assignment.id)}
+                          <datalist id="tweet-pattern-categories">
+                            {categoryOptions.map((option) => (
+                              <option
+                                key={option.category}
+                                value={option.category}
+                              />
+                            ))}
+                          </datalist>
+                          <datalist
+                            id={`tweet-pattern-subcategories-${assignment.id}`}
                           >
-                            Remove assignment
-                          </button>
-                        </div>
-                        <div>
-                          <button
-                            style={smallButtonStyle}
-                            onClick={() => applyAssignmentToNewsDraft(assignment)}
-                          >
-                            Use for news card
-                          </button>
-                        </div>
+                            {(selectedCategoryOption?.subcategories ?? []).map(
+                              (subcategory) => (
+                                <option key={subcategory} value={subcategory} />
+                              )
+                            )}
+                          </datalist>
 
-                        <div
-                          style={{
-                            display: "grid",
-                            gap: 12,
-                            gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-                          }}
-                        >
-                          <label style={{ display: "grid", gap: 6 }}>
-                            Category
-                            <input
-                              style={formControlStyle}
-                              list="tweet-pattern-categories"
-                              value={assignment.category}
-                              onChange={(event) =>
-                                updateAssignment(assignment.id, (current) => ({
-                                  ...current,
-                                  category: event.target.value,
-                                }))
-                              }
-                              placeholder="INJURY, GOALIE START, LINE COMBINATION..."
-                            />
-                          </label>
+                          <div className={styles.assignmentCardHeader}>
+                            <span>Assignment {index + 1}</span>
+                            <div className={styles.headerActions}>
+                              <button
+                                className={styles.btn}
+                                onClick={() =>
+                                  applyAssignmentToNewsDraft(assignment)
+                                }
+                              >
+                                New card from assignment
+                              </button>
+                              <button
+                                className={styles.btn}
+                                disabled={assignments.length <= 1}
+                                onClick={() => removeAssignment(assignment.id)}
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          </div>
 
-                          <label style={{ display: "grid", gap: 6 }}>
-                            Subcategory
-                            <input
-                              style={formControlStyle}
-                              list={`tweet-pattern-subcategories-${assignment.id}`}
-                              value={assignment.subcategory ?? ""}
-                              onChange={(event) =>
-                                updateAssignment(assignment.id, (current) => ({
-                                  ...current,
-                                  subcategory: event.target.value || null,
-                                }))
-                              }
-                              placeholder="POWER PLAY, QUESTIONABLE, CONFIRMED STARTER..."
-                            />
-                          </label>
-                        </div>
+                          <div className={styles.assignmentGrid}>
+                            <div className={styles.fieldRow}>
+                              <div className={styles.formField}>
+                                <label>Category</label>
+                                <input
+                                  list="tweet-pattern-categories"
+                                  value={assignment.category}
+                                  onChange={(event) =>
+                                    updateAssignment(
+                                      assignment.id,
+                                      (current) => ({
+                                        ...current,
+                                        category: event.target.value
+                                      })
+                                    )
+                                  }
+                                  placeholder="INJURY, GOALIE START, LINE COMBINATION…"
+                                />
+                              </div>
+                              <div className={styles.formField}>
+                                <label>Subcategory</label>
+                                <input
+                                  list={`tweet-pattern-subcategories-${assignment.id}`}
+                                  value={assignment.subcategory ?? ""}
+                                  onChange={(event) =>
+                                    updateAssignment(
+                                      assignment.id,
+                                      (current) => ({
+                                        ...current,
+                                        subcategory: event.target.value || null
+                                      })
+                                    )
+                                  }
+                                  placeholder="QUESTIONABLE, CONFIRMED STARTER…"
+                                />
+                              </div>
+                            </div>
 
-                        <datalist id="tweet-pattern-categories">
-                          {categoryOptions.map((option) => (
-                            <option key={option.category} value={option.category} />
-                          ))}
-                        </datalist>
-                        <datalist id={`tweet-pattern-subcategories-${assignment.id}`}>
-                          {(selectedCategoryOption?.subcategories ?? []).map((subcategory) => (
-                            <option key={subcategory} value={subcategory} />
-                          ))}
-                        </datalist>
+                            <div className={styles.fieldRowSplit}>
+                              <div className={styles.formField}>
+                                <label>Player from roster</label>
+                                <select
+                                  value={assignment.pendingPlayerId}
+                                  onChange={(event) =>
+                                    updateAssignment(
+                                      assignment.id,
+                                      (current) => ({
+                                        ...current,
+                                        pendingPlayerId: event.target.value
+                                      })
+                                    )
+                                  }
+                                >
+                                  <option value="">Choose a player…</option>
+                                  {filteredPlayers.map((player) => (
+                                    <option key={player.id} value={player.id}>
+                                      {player.fullName}
+                                      {player.position
+                                        ? ` — ${player.position}`
+                                        : ""}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                              <button
+                                className={styles.btn}
+                                disabled={!assignment.pendingPlayerId}
+                                onClick={() =>
+                                  addPlayerToAssignment(assignment.id)
+                                }
+                              >
+                                Add
+                              </button>
+                            </div>
 
-                        <div
-                          style={{
-                            display: "grid",
-                            gap: 12,
-                            gridTemplateColumns: "minmax(0, 1fr) auto",
-                          }}
-                        >
-                          <label style={{ display: "grid", gap: 6 }}>
-                            Assign player from roster
-                            <select
-                              style={formControlStyle}
-                              value={assignment.pendingPlayerId}
-                              onChange={(event) =>
-                                updateAssignment(assignment.id, (current) => ({
-                                  ...current,
-                                  pendingPlayerId: event.target.value,
-                                }))
-                              }
+                            <div className={styles.fieldRowSplit}>
+                              <div className={styles.formField}>
+                                <label>Manual player name</label>
+                                <input
+                                  value={assignment.pendingPlayerName}
+                                  onChange={(event) =>
+                                    updateAssignment(
+                                      assignment.id,
+                                      (current) => ({
+                                        ...current,
+                                        pendingPlayerName: event.target.value
+                                      })
+                                    )
+                                  }
+                                  placeholder="Player name or shorthand"
+                                />
+                              </div>
+                              <button
+                                className={styles.btn}
+                                disabled={!assignment.pendingPlayerName.trim()}
+                                onClick={() =>
+                                  addManualPlayerNameToAssignment(assignment.id)
+                                }
+                              >
+                                Add
+                              </button>
+                            </div>
+
+                            {assignment.playerNames.length > 0 ? (
+                              <div className={styles.chipsRow}>
+                                {assignment.playerNames.map((playerName) => (
+                                  <button
+                                    key={`${assignment.id}-${playerName}`}
+                                    className={styles.chipPlayer}
+                                    onClick={() =>
+                                      removePlayerFromAssignment(
+                                        assignment.id,
+                                        playerName
+                                      )
+                                    }
+                                  >
+                                    {playerName} ×
+                                  </button>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className={styles.emptyNote}>
+                                No players assigned.
+                              </p>
+                            )}
+
+                            <div className={styles.evidenceRow}>
+                              <button
+                                className={styles.btn}
+                                disabled={!capturedSelection}
+                                onClick={() =>
+                                  addHighlightToAssignment(
+                                    assignment.id,
+                                    capturedSelection
+                                  )
+                                }
+                              >
+                                Add selected text
+                              </button>
+                              <div className={styles.formField}>
+                                <label>Manual evidence phrase</label>
+                                <input
+                                  value={assignment.pendingHighlight}
+                                  onChange={(event) =>
+                                    updateAssignment(
+                                      assignment.id,
+                                      (current) => ({
+                                        ...current,
+                                        pendingHighlight: event.target.value
+                                      })
+                                    )
+                                  }
+                                  placeholder="Expected starter, day to day, PP1…"
+                                />
+                              </div>
+                              <button
+                                className={styles.btn}
+                                disabled={!assignment.pendingHighlight.trim()}
+                                onClick={() =>
+                                  addHighlightToAssignment(
+                                    assignment.id,
+                                    assignment.pendingHighlight
+                                  )
+                                }
+                              >
+                                Add phrase
+                              </button>
+                            </div>
+
+                            {assignment.highlightPhrases.length > 0 ? (
+                              <div className={styles.chipsRow}>
+                                {assignment.highlightPhrases.map((phrase) => (
+                                  <button
+                                    key={`${assignment.id}-${phrase}`}
+                                    className={styles.chipEvidence}
+                                    onClick={() =>
+                                      removeHighlightFromAssignment(
+                                        assignment.id,
+                                        phrase
+                                      )
+                                    }
+                                  >
+                                    {phrase} ×
+                                  </button>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className={styles.emptyNote}>
+                                No evidence text selected.
+                              </p>
+                            )}
+
+                            <div
+                              className={`${styles.formField} ${styles.notesField}`}
                             >
-                              <option value="">Choose a player...</option>
-                              {filteredPlayers.map((player) => (
-                                <option key={player.id} value={player.id}>
-                                  {player.fullName}
-                                  {player.position ? ` - ${player.position}` : ""}
+                              <label>Assignment notes</label>
+                              <textarea
+                                rows={2}
+                                value={assignment.notes ?? ""}
+                                onChange={(event) =>
+                                  updateAssignment(
+                                    assignment.id,
+                                    (current) => ({
+                                      ...current,
+                                      notes: event.target.value || null
+                                    })
+                                  )
+                                }
+                                placeholder="Optional reasoning, regex idea, or ambiguity note."
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Action bar */}
+                <div className={styles.actionBar}>
+                  <button
+                    className={styles.btn}
+                    disabled={currentIndex <= 0}
+                    onClick={() => moveSelection(-1)}
+                  >
+                    ← Prev
+                  </button>
+                  <button
+                    className={styles.btn}
+                    disabled={
+                      currentIndex < 0 || currentIndex >= items.length - 1
+                    }
+                    onClick={() => moveSelection(1)}
+                  >
+                    Next →
+                  </button>
+                  <button
+                    className={styles.btnIgnore}
+                    disabled={isSaving}
+                    onClick={() => void updateReviewStatus("ignore")}
+                  >
+                    Ignore
+                  </button>
+                  <button
+                    className={styles.btn}
+                    disabled={isSaving}
+                    onClick={() => void updateReviewStatus("requeue")}
+                  >
+                    Requeue
+                  </button>
+                  <div className={styles.actionBarSpacer} />
+                  <button
+                    className={styles.btnPrimary}
+                    disabled={isSaving}
+                    onClick={() => void saveReview()}
+                  >
+                    {isSaving ? "Saving…" : "Save assignments"}
+                  </button>
+                </div>
+              </>
+            ) : null}
+          </div>
+
+          {/* ── Right column ────────────────────────────────────────────── */}
+          <div className={styles.rightColumn}>
+            {/* Review guide */}
+
+            {/* Right scrollable pane */}
+            <div className={styles.rightPane}>
+              {selectedItem ? (
+                <>
+                  {/* News card composer */}
+                  <div className={styles.composerSection}>
+                    <div className={styles.sectionHeader}>
+                      <span>News card composer</span>
+                      <div className={styles.headerActions}>
+                        <button
+                          className={styles.btn}
+                          onClick={() => startNewNewsCard()}
+                        >
+                          Start new card
+                        </button>
+                        <a href="/news" target="_blank" rel="noreferrer">
+                          Open /news
+                        </a>
+                      </div>
+                    </div>
+
+                    <div className={styles.composerGrid}>
+                      <div className={styles.composerFormColumn}>
+                        <div className={styles.fieldRow}>
+                          <div className={styles.formField}>
+                            <label>Headline</label>
+                            <input
+                              value={newsDraft.headline}
+                              onChange={(event) =>
+                                setNewsDraft((current) => ({
+                                  ...current,
+                                  headline: event.target.value
+                                }))
+                              }
+                              placeholder="Write the card headline"
+                            />
+                          </div>
+                          <div className={styles.formField}>
+                            <label>Team</label>
+                            <select
+                              value={newsDraft.teamId}
+                              onChange={(event) => {
+                                const team = teamOptions.find(
+                                  (option) =>
+                                    String(option.id) === event.target.value
+                                );
+                                setNewsDraft((current) => ({
+                                  ...current,
+                                  teamId: event.target.value,
+                                  teamAbbreviation: team?.abbreviation ?? ""
+                                }));
+                              }}
+                            >
+                              <option value="">Choose a team…</option>
+                              {teamOptions.map((team) => (
+                                <option key={team.id} value={team.id}>
+                                  {team.name}
                                 </option>
                               ))}
                             </select>
-                          </label>
-                          <button
-                            style={smallButtonStyle}
-                            disabled={!assignment.pendingPlayerId}
-                            onClick={() => addPlayerToAssignment(assignment.id)}
-                          >
-                            Add player
-                          </button>
+                          </div>
+                        </div>
+
+                        <div className={styles.fieldRow}>
+                          <div className={styles.formField}>
+                            <label>Category</label>
+                            <input
+                              list="tweet-pattern-categories"
+                              value={newsDraft.category}
+                              onChange={(event) =>
+                                setNewsDraft((current) => ({
+                                  ...current,
+                                  category: event.target.value
+                                }))
+                              }
+                              placeholder="INJURY, RETURN, GOALIE START…"
+                            />
+                          </div>
+                          <div className={styles.formField}>
+                            <label>Subcategory</label>
+                            <input
+                              value={newsDraft.subcategory}
+                              onChange={(event) =>
+                                setNewsDraft((current) => ({
+                                  ...current,
+                                  subcategory: event.target.value
+                                }))
+                              }
+                              placeholder="QUESTIONABLE, PP1, TRADE…"
+                            />
+                          </div>
                         </div>
 
                         <div
-                          style={{
-                            display: "grid",
-                            gap: 12,
-                            gridTemplateColumns: "minmax(0, 1fr) auto",
-                          }}
+                          className={`${styles.formField} ${styles.blurbField}`}
                         >
-                          <label style={{ display: "grid", gap: 6 }}>
-                            Or add player text manually
-                            <input
-                              style={formControlStyle}
-                              value={assignment.pendingPlayerName}
+                          <label>Blurb</label>
+                          <textarea
+                            rows={3}
+                            value={newsDraft.blurb}
+                            onChange={(event) =>
+                              setNewsDraft((current) => ({
+                                ...current,
+                                blurb: event.target.value
+                              }))
+                            }
+                            placeholder="Write the distilled Rotowire-style blurb for this update."
+                          />
+                        </div>
+
+                        <div className={styles.fieldRowSplit}>
+                          <div className={styles.formField}>
+                            <label>Add player from roster</label>
+                            <select
+                              value={newsDraft.pendingPlayerId}
                               onChange={(event) =>
-                                updateAssignment(assignment.id, (current) => ({
+                                setNewsDraft((current) => ({
                                   ...current,
-                                  pendingPlayerName: event.target.value,
+                                  pendingPlayerId: event.target.value
                                 }))
                               }
-                              placeholder="Player name or shorthand"
-                            />
-                          </label>
+                            >
+                              <option value="">Choose a player…</option>
+                              {filteredDraftPlayers.map((player) => (
+                                <option key={player.id} value={player.id}>
+                                  {player.fullName}
+                                  {player.position
+                                    ? ` — ${player.position}`
+                                    : ""}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
                           <button
-                            style={smallButtonStyle}
-                            disabled={!assignment.pendingPlayerName.trim()}
-                            onClick={() => addManualPlayerNameToAssignment(assignment.id)}
+                            className={styles.btn}
+                            disabled={!newsDraft.pendingPlayerId}
+                            onClick={() => addPlayerToNewsDraft()}
                           >
-                            Add manual name
+                            Add
                           </button>
                         </div>
 
-                        {assignment.playerNames.length > 0 ? (
-                          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                            {assignment.playerNames.map((playerName) => (
+                        <div className={styles.fieldRowSplit}>
+                          <div className={styles.formField}>
+                            <label>Manual player text</label>
+                            <input
+                              value={newsDraft.pendingPlayerName}
+                              onChange={(event) =>
+                                setNewsDraft((current) => ({
+                                  ...current,
+                                  pendingPlayerName: event.target.value
+                                }))
+                              }
+                              placeholder="Prospect, unsigned player, shorthand…"
+                            />
+                          </div>
+                          <button
+                            className={styles.btn}
+                            disabled={!newsDraft.pendingPlayerName.trim()}
+                            onClick={() => addManualPlayerToNewsDraft()}
+                          >
+                            Add
+                          </button>
+                        </div>
+
+                        {newsDraft.playerNames.length > 0 ? (
+                          <div className={styles.chipsRow}>
+                            {newsDraft.playerNames.map((playerName) => (
                               <button
-                                key={`${assignment.id}-${playerName}`}
-                                style={{
-                                  ...smallButtonStyle,
-                                  border: "1px solid #b6d3a4",
-                                  background: "#edf8e5",
-                                }}
+                                key={`news-draft-${playerName}`}
+                                className={styles.chipPlayer}
                                 onClick={() =>
-                                  removePlayerFromAssignment(assignment.id, playerName)
+                                  removePlayerFromNewsDraft(playerName)
                                 }
                               >
                                 {playerName} ×
@@ -1141,556 +1727,238 @@ const TweetPatternReviewPage: NextPage = () => {
                             ))}
                           </div>
                         ) : (
-                          <p style={{ margin: 0 }}>No players assigned yet.</p>
+                          <p className={styles.emptyNote}>
+                            No players attached to this card.
+                          </p>
                         )}
 
-                        <div
-                          style={{
-                            display: "grid",
-                            gap: 12,
-                            gridTemplateColumns: "repeat(auto-fit, minmax(220px, auto))",
-                            alignItems: "end",
-                          }}
-                        >
+                        <div className={styles.btnRow}>
                           <button
-                            style={smallButtonStyle}
-                            disabled={!capturedSelection}
-                            onClick={() =>
-                              addHighlightToAssignment(assignment.id, capturedSelection)
-                            }
+                            className={styles.btn}
+                            disabled={isSavingNews}
+                            onClick={() => void saveNewsCard("draft")}
                           >
-                            Add selected text as evidence
+                            {isSavingNews ? "Saving…" : "Save draft"}
                           </button>
-                          <label style={{ display: "grid", gap: 6 }}>
-                            Manual evidence phrase
-                            <input
-                              style={formControlStyle}
-                              value={assignment.pendingHighlight}
-                              onChange={(event) =>
-                                updateAssignment(assignment.id, (current) => ({
-                                  ...current,
-                                  pendingHighlight: event.target.value,
-                                }))
-                              }
-                              placeholder="Expected starter, day to day, PP1, etc."
-                            />
-                          </label>
                           <button
-                            style={smallButtonStyle}
-                            disabled={!assignment.pendingHighlight.trim()}
-                            onClick={() =>
-                              addHighlightToAssignment(
-                                assignment.id,
-                                assignment.pendingHighlight,
-                              )
-                            }
+                            className={styles.btnPrimary}
+                            disabled={isSavingNews}
+                            onClick={() => void saveNewsCard("published")}
                           >
-                            Add phrase
+                            {isSavingNews ? "Saving…" : "Publish card"}
                           </button>
                         </div>
+                      </div>
 
-                        {assignment.highlightPhrases.length > 0 ? (
-                          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                            {assignment.highlightPhrases.map((phrase) => (
-                              <button
-                                key={`${assignment.id}-${phrase}`}
-                                style={{
-                                  ...smallButtonStyle,
-                                  border: "1px solid #d6b25b",
-                                  background: "#fff3d0",
-                                }}
-                                onClick={() =>
-                                  removeHighlightFromAssignment(assignment.id, phrase)
-                                }
-                              >
-                                {phrase} ×
-                              </button>
-                            ))}
+                      <div className={styles.composerPreviewColumn}>
+                        <div className={styles.cardPreviewLabel}>
+                          Card preview
+                        </div>
+                        <div className={styles.previewFrame}>
+                          <NewsCard
+                            compact
+                            item={{
+                              headline: newsDraft.headline || "Draft headline",
+                              blurb:
+                                newsDraft.blurb ||
+                                "Write a concise fantasy-news blurb for this update.",
+                              category:
+                                normalizeNewsCategory(newsDraft.category) ||
+                                "UPDATE",
+                              subcategory:
+                                normalizeNewsCategory(newsDraft.subcategory) ||
+                                null,
+                              team_abbreviation:
+                                newsDraft.teamAbbreviation ||
+                                selectedItem.team_abbreviation,
+                              source_label:
+                                getReviewItemSourceName(
+                                  selectedItem,
+                                  selectedAuthorOverride
+                                ),
+                              source_account:
+                                getReviewItemSourceHandle(
+                                  selectedItem,
+                                  selectedAuthorOverride
+                                ),
+                              source_url: selectedItem.source_url,
+                              published_at: null,
+                              created_at: new Date().toISOString(),
+                              card_status: "draft",
+                              players: newsDraft.playerNames.map(
+                                (playerName, index) => ({
+                                  id: `${playerName}-${index}`,
+                                  news_item_id: "draft",
+                                  player_id: newsDraft.playerIds[index] ?? null,
+                                  player_name: playerName,
+                                  team_id:
+                                    Number(newsDraft.teamId) ||
+                                    selectedItem.team_id,
+                                  role: "subject"
+                                })
+                              )
+                            }}
+                            sourceDisplayNameOverride={
+                              selectedAuthorOverride?.authorName ?? null
+                            }
+                          />
+                        </div>
+
+                        {savedNewsItems.length > 0 ? (
+                          <div className={styles.savedCards}>
+                            <div className={styles.savedCardsLabel}>
+                              Saved for this tweet
+                            </div>
+                            <div className={styles.savedCardsRail}>
+                              {savedNewsItems.map((item) => (
+                                <div
+                                  key={item.id}
+                                  className={styles.savedCardItem}
+                                >
+                                  <NewsCard
+                                    compact
+                                    item={item}
+                                    sourceDisplayNameOverride={
+                                      selectedAuthorOverride?.authorName ?? null
+                                    }
+                                  />
+                                  <button
+                                    className={styles.btn}
+                                    onClick={() =>
+                                      setNewsDraft({
+                                        itemId: item.id,
+                                        headline: item.headline,
+                                        blurb: item.blurb,
+                                        category: item.category,
+                                        subcategory: item.subcategory ?? "",
+                                        teamId: item.team_id
+                                          ? String(item.team_id)
+                                          : "",
+                                        teamAbbreviation:
+                                          item.team_abbreviation ?? "",
+                                        playerIds: item.players
+                                          .map((p) => p.player_id ?? 0)
+                                          .filter(Boolean),
+                                        playerNames: item.players.map(
+                                          (p) => p.player_name
+                                        ),
+                                        pendingPlayerId: "",
+                                        pendingPlayerName: ""
+                                      })
+                                    }
+                                  >
+                                    Load into composer
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                        ) : (
-                          <p style={{ margin: 0 }}>No evidence text selected for this assignment.</p>
-                        )}
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
 
-                        <label style={{ display: "grid", gap: 6 }}>
-                          Assignment notes
-                          <textarea
-                            style={formControlStyle}
-                            rows={3}
-                            value={assignment.notes ?? ""}
+                  {/* Keyword phrases */}
+                  <div className={styles.keywordsSection}>
+                    <div className={styles.sectionHeader}>
+                      <span>Novel keyword phrases</span>
+                    </div>
+
+                    <div className={styles.keywordGrid}>
+                      <div className={styles.fieldRow}>
+                        <div className={styles.formField}>
+                          <label>Phrase</label>
+                          <input
+                            value={keywordDraft.phrase}
                             onChange={(event) =>
-                              updateAssignment(assignment.id, (current) => ({
+                              setKeywordDraft((current) => ({
                                 ...current,
-                                notes: event.target.value || null,
+                                phrase: event.target.value
                               }))
                             }
-                            placeholder="Optional reasoning, regex idea, or ambiguity note."
+                            placeholder="Projected starter, no contact jersey, PP1…"
                           />
-                        </label>
-                      </section>
-                    );
-                  })}
-                </div>
-
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
-                  <button
-                    style={formControlStyle}
-                    disabled={currentIndex <= 0}
-                    onClick={() => moveSelection(-1)}
-                  >
-                    Previous tweet
-                  </button>
-                  <button
-                    style={formControlStyle}
-                    disabled={currentIndex < 0 || currentIndex >= items.length - 1}
-                    onClick={() => moveSelection(1)}
-                  >
-                    Next tweet
-                  </button>
-                  <button
-                    style={formControlStyle}
-                    disabled={isSaving}
-                    onClick={() => void updateReviewStatus("ignore")}
-                  >
-                    Ignore tweet
-                  </button>
-                  <button
-                    style={formControlStyle}
-                    disabled={isSaving}
-                    onClick={() => void updateReviewStatus("requeue")}
-                  >
-                    Requeue
-                  </button>
-                  <button
-                    style={formControlStyle}
-                    disabled={isSaving}
-                    onClick={() => void saveReview()}
-                  >
-                    {isSaving ? "Saving..." : "Save assignments"}
-                  </button>
-                </div>
-
-                <section
-                  style={{
-                    display: "grid",
-                    gap: 16,
-                    paddingTop: 8,
-                    borderTop: "1px solid rgba(0,0,0,0.12)",
-                  }}
-                >
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-                    <strong>News card composer</strong>
-                    <a href="/news" style={linkStyle} target="_blank" rel="noreferrer">
-                      Open /news
-                    </a>
-                  </div>
-
-                  <div
-                    style={{
-                      display: "grid",
-                      gap: 12,
-                      gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-                    }}
-                  >
-                    <label style={{ display: "grid", gap: 6 }}>
-                      Headline
-                      <input
-                        style={formControlStyle}
-                        value={newsDraft.headline}
-                        onChange={(event) =>
-                          setNewsDraft((current) => ({
-                            ...current,
-                            headline: event.target.value,
-                          }))
-                        }
-                        placeholder="Write the card headline"
-                      />
-                    </label>
-                    <label style={{ display: "grid", gap: 6 }}>
-                      Team
-                      <select
-                        style={formControlStyle}
-                        value={newsDraft.teamId}
-                        onChange={(event) => {
-                          const team = teamOptions.find((option) => String(option.id) === event.target.value);
-                          setNewsDraft((current) => ({
-                            ...current,
-                            teamId: event.target.value,
-                            teamAbbreviation: team?.abbreviation ?? "",
-                          }));
-                        }}
-                      >
-                        <option value="">Choose a team...</option>
-                        {teamOptions.map((team) => (
-                          <option key={team.id} value={team.id}>
-                            {team.name}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label style={{ display: "grid", gap: 6 }}>
-                      Category
-                      <input
-                        style={formControlStyle}
-                        list="tweet-pattern-categories"
-                        value={newsDraft.category}
-                        onChange={(event) =>
-                          setNewsDraft((current) => ({
-                            ...current,
-                            category: event.target.value,
-                          }))
-                        }
-                        placeholder="INJURY, RETURN, GOALIE START..."
-                      />
-                    </label>
-                    <label style={{ display: "grid", gap: 6 }}>
-                      Subcategory
-                      <input
-                        style={formControlStyle}
-                        value={newsDraft.subcategory}
-                        onChange={(event) =>
-                          setNewsDraft((current) => ({
-                            ...current,
-                            subcategory: event.target.value,
-                          }))
-                        }
-                        placeholder="QUESTIONABLE, PP1, TRADE, etc."
-                      />
-                    </label>
-                  </div>
-
-                  <label style={{ display: "grid", gap: 6 }}>
-                    Blurb
-                    <textarea
-                      style={formControlStyle}
-                      rows={4}
-                      value={newsDraft.blurb}
-                      onChange={(event) =>
-                        setNewsDraft((current) => ({
-                          ...current,
-                          blurb: event.target.value,
-                        }))
-                      }
-                      placeholder="Write the distilled Rotowire-style blurb for this update."
-                    />
-                  </label>
-
-                  <div
-                    style={{
-                      display: "grid",
-                      gap: 12,
-                      gridTemplateColumns: "minmax(0, 1fr) auto",
-                    }}
-                  >
-                    <label style={{ display: "grid", gap: 6 }}>
-                      Add player from roster
-                      <select
-                        style={formControlStyle}
-                        value={newsDraft.pendingPlayerId}
-                        onChange={(event) =>
-                          setNewsDraft((current) => ({
-                            ...current,
-                            pendingPlayerId: event.target.value,
-                          }))
-                        }
-                      >
-                        <option value="">Choose a player...</option>
-                        {filteredDraftPlayers.map((player) => (
-                          <option key={player.id} value={player.id}>
-                            {player.fullName}
-                            {player.position ? ` - ${player.position}` : ""}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <button
-                      style={smallButtonStyle}
-                      disabled={!newsDraft.pendingPlayerId}
-                      onClick={() => addPlayerToNewsDraft()}
-                    >
-                      Add player
-                    </button>
-                  </div>
-
-                  <div
-                    style={{
-                      display: "grid",
-                      gap: 12,
-                      gridTemplateColumns: "minmax(0, 1fr) auto",
-                    }}
-                  >
-                    <label style={{ display: "grid", gap: 6 }}>
-                      Add manual player text
-                      <input
-                        style={formControlStyle}
-                        value={newsDraft.pendingPlayerName}
-                        onChange={(event) =>
-                          setNewsDraft((current) => ({
-                            ...current,
-                            pendingPlayerName: event.target.value,
-                          }))
-                        }
-                        placeholder="Prospect, unsigned player, shorthand, etc."
-                      />
-                    </label>
-                    <button
-                      style={smallButtonStyle}
-                      disabled={!newsDraft.pendingPlayerName.trim()}
-                      onClick={() => addManualPlayerToNewsDraft()}
-                    >
-                      Add manual name
-                    </button>
-                  </div>
-
-                  {newsDraft.playerNames.length > 0 ? (
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                      {newsDraft.playerNames.map((playerName) => (
-                        <button
-                          key={`news-draft-${playerName}`}
-                          style={{
-                            ...smallButtonStyle,
-                            border: "1px solid #b6d3a4",
-                            background: "#edf8e5",
-                          }}
-                          onClick={() => removePlayerFromNewsDraft(playerName)}
-                        >
-                          {playerName} ×
-                        </button>
-                      ))}
-                    </div>
-                  ) : (
-                    <p style={{ margin: 0 }}>No players attached to this card yet.</p>
-                  )}
-
-                  <div style={{ display: "grid", gap: 12 }}>
-                    <strong>Card preview</strong>
-                    <NewsCard
-                      item={{
-                        headline: newsDraft.headline || "Draft headline",
-                        blurb:
-                          newsDraft.blurb || "Write a concise fantasy-news blurb for this update.",
-                        category: normalizeNewsCategory(newsDraft.category) || "UPDATE",
-                        subcategory: normalizeNewsCategory(newsDraft.subcategory) || null,
-                        team_abbreviation:
-                          newsDraft.teamAbbreviation || selectedItem.team_abbreviation,
-                        source_label: selectedItem.source_label,
-                        source_account: selectedItem.source_account,
-                        source_url: selectedItem.source_url,
-                        published_at: null,
-                        created_at: new Date().toISOString(),
-                        card_status: "draft",
-                        players: newsDraft.playerNames.map((playerName, index) => ({
-                          id: `${playerName}-${index}`,
-                          news_item_id: "draft",
-                          player_id: newsDraft.playerIds[index] ?? null,
-                          player_name: playerName,
-                          team_id: Number(newsDraft.teamId) || selectedItem.team_id,
-                          role: "subject",
-                        })),
-                      }}
-                    />
-                  </div>
-
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
-                    <button
-                      style={formControlStyle}
-                      disabled={isSavingNews}
-                      onClick={() => void saveNewsCard("draft")}
-                    >
-                      {isSavingNews ? "Saving..." : "Save draft card"}
-                    </button>
-                    <button
-                      style={formControlStyle}
-                      disabled={isSavingNews}
-                      onClick={() => void saveNewsCard("published")}
-                    >
-                      {isSavingNews ? "Saving..." : "Publish card"}
-                    </button>
-                  </div>
-
-                  {savedNewsItems.length > 0 ? (
-                    <div style={{ display: "grid", gap: 12 }}>
-                      <strong>Saved cards for this tweet</strong>
-                      {savedNewsItems.map((item) => (
-                        <div key={item.id} style={{ display: "grid", gap: 8 }}>
-                          <NewsCard item={item} />
-                          <button
-                            style={smallButtonStyle}
-                            onClick={() =>
-                              setNewsDraft({
-                                itemId: item.id,
-                                headline: item.headline,
-                                blurb: item.blurb,
-                                category: item.category,
-                                subcategory: item.subcategory ?? "",
-                                teamId: item.team_id ? String(item.team_id) : "",
-                                teamAbbreviation: item.team_abbreviation ?? "",
-                                playerIds: item.players.map((player) => player.player_id ?? 0).filter(Boolean),
-                                playerNames: item.players.map((player) => player.player_name),
-                                pendingPlayerId: "",
-                                pendingPlayerName: "",
-                              })
-                            }
-                          >
-                            Load into composer
-                          </button>
                         </div>
-                      ))}
+                        <div className={styles.formField}>
+                          <label>Category</label>
+                          <input
+                            value={keywordDraft.category}
+                            onChange={(event) =>
+                              setKeywordDraft((current) => ({
+                                ...current,
+                                category: event.target.value
+                              }))
+                            }
+                            placeholder="GOALIE START, INJURY…"
+                          />
+                        </div>
+                        <div className={styles.formField}>
+                          <label>Subcategory</label>
+                          <input
+                            value={keywordDraft.subcategory}
+                            onChange={(event) =>
+                              setKeywordDraft((current) => ({
+                                ...current,
+                                subcategory: event.target.value
+                              }))
+                            }
+                            placeholder="QUESTIONABLE, EXPECTED STARTER…"
+                          />
+                        </div>
+                      </div>
+
+                      <div
+                        className={`${styles.formField} ${styles.keywordNotesField}`}
+                      >
+                        <label>Notes</label>
+                        <textarea
+                          rows={2}
+                          value={keywordDraft.notes}
+                          onChange={(event) =>
+                            setKeywordDraft((current) => ({
+                              ...current,
+                              notes: event.target.value
+                            }))
+                          }
+                          placeholder="When this phrase should or should not trigger."
+                        />
+                      </div>
+
+                      <button
+                        className={styles.btn}
+                        disabled={isSavingKeyword}
+                        onClick={() => void saveKeywordPhrase()}
+                      >
+                        {isSavingKeyword ? "Saving…" : "Save keyword phrase"}
+                      </button>
                     </div>
-                  ) : null}
-                </section>
 
-                <section
-                  style={{
-                    display: "grid",
-                    gap: 16,
-                    paddingTop: 8,
-                    borderTop: "1px solid rgba(0,0,0,0.12)",
-                  }}
-                >
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-                    <strong>Novel keyword phrases</strong>
-                    <span style={{ color: "#666" }}>
-                      Add phrases that should later feed auto-flagging, even if they are not exact tweet text.
-                    </span>
+                    {savedKeywordPhrases.length > 0 ? (
+                      <div className={styles.chipsRow}>
+                        {savedKeywordPhrases.map((phrase) => (
+                          <span key={phrase.id} className={styles.keywordChip}>
+                            {phrase.phrase}
+                            {phrase.category
+                              ? ` · ${formatNewsFeedLabel(phrase.category)}`
+                              : ""}
+                            {phrase.subcategory
+                              ? ` · ${formatNewsFeedLabel(phrase.subcategory)}`
+                              : ""}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className={styles.emptyNote}>
+                        No keyword phrases saved for this tweet.
+                      </p>
+                    )}
                   </div>
-
-                  <div
-                    style={{
-                      display: "grid",
-                      gap: 12,
-                      gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-                    }}
-                  >
-                    <label style={{ display: "grid", gap: 6 }}>
-                      Phrase
-                      <input
-                        style={formControlStyle}
-                        value={keywordDraft.phrase}
-                        onChange={(event) =>
-                          setKeywordDraft((current) => ({
-                            ...current,
-                            phrase: event.target.value,
-                          }))
-                        }
-                        placeholder="Projected starter, no contact jersey, PP1..."
-                      />
-                    </label>
-                    <label style={{ display: "grid", gap: 6 }}>
-                      Category
-                      <input
-                        style={formControlStyle}
-                        value={keywordDraft.category}
-                        onChange={(event) =>
-                          setKeywordDraft((current) => ({
-                            ...current,
-                            category: event.target.value,
-                          }))
-                        }
-                        placeholder="GOALIE START, INJURY, LINE COMBINATION..."
-                      />
-                    </label>
-                    <label style={{ display: "grid", gap: 6 }}>
-                      Subcategory
-                      <input
-                        style={formControlStyle}
-                        value={keywordDraft.subcategory}
-                        onChange={(event) =>
-                          setKeywordDraft((current) => ({
-                            ...current,
-                            subcategory: event.target.value,
-                          }))
-                        }
-                        placeholder="QUESTIONABLE, PP1, EXPECTED STARTER..."
-                      />
-                    </label>
-                  </div>
-
-                  <label style={{ display: "grid", gap: 6 }}>
-                    Notes
-                    <textarea
-                      style={formControlStyle}
-                      rows={3}
-                      value={keywordDraft.notes}
-                      onChange={(event) =>
-                        setKeywordDraft((current) => ({
-                          ...current,
-                          notes: event.target.value,
-                        }))
-                      }
-                      placeholder="Optional comment about when this phrase should or should not trigger."
-                    />
-                  </label>
-
-                  <div>
-                    <button
-                      style={formControlStyle}
-                      disabled={isSavingKeyword}
-                      onClick={() => void saveKeywordPhrase()}
-                    >
-                      {isSavingKeyword ? "Saving..." : "Save keyword phrase"}
-                    </button>
-                  </div>
-
-                  {savedKeywordPhrases.length > 0 ? (
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                      {savedKeywordPhrases.map((phrase) => (
-                        <span
-                          key={phrase.id}
-                          style={{
-                            border: "1px solid #d4d4d4",
-                            borderRadius: 999,
-                            padding: "6px 10px",
-                            background: "#fafafa",
-                            color: "#222",
-                          }}
-                        >
-                          {phrase.phrase}
-                          {phrase.category ? ` · ${phrase.category}` : ""}
-                          {phrase.subcategory ? ` · ${phrase.subcategory}` : ""}
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <p style={{ margin: 0 }}>No manual keyword phrases saved for this tweet yet.</p>
-                  )}
-                </section>
-              </article>
-            ) : null}
+                </>
+              ) : null}
+            </div>
           </div>
-
-          <aside
-            style={{
-              display: "grid",
-              gap: 12,
-              padding: 16,
-              border: "1px solid #d7d7d7",
-              borderRadius: 12,
-              background: "#f8f8f8",
-              color: "#111",
-            }}
-          >
-            <h2 style={{ margin: 0 }}>Review guide</h2>
-            <p style={{ margin: 0 }}>
-              One tweet can contain several assignments. Use separate blocks when a tweet
-              mixes lines, goalie starts, injuries, scratches, or returns.
-            </p>
-            <p style={{ margin: 0 }}>
-              Add specific players to the assignment when the tweet points to them. For
-              injuries, this is the main way to tie the status note to the correct player.
-            </p>
-            <p style={{ margin: 0 }}>
-              Use <strong>OTHER / NON NHL</strong> when the tweet is a useful non-NHL example
-              you want counted in the analysis set. Use <strong>Ignore</strong> only for
-              duplicates, junk, or rows you do not want included at all.
-            </p>
-            {selectedItem?.parser_filter_reason ? (
-              <p style={{ margin: 0 }}>
-                <strong>Current parser reason:</strong> {selectedItem.parser_filter_reason}
-              </p>
-            ) : null}
-          </aside>
-        </section>
-      </main>
+        </div>
+      </div>
     </>
   );
 };

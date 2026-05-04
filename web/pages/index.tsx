@@ -14,10 +14,12 @@ import styles from "../styles/Home.module.scss";
 import HomepageGamesSection from "components/HomePage/HomepageGamesSection";
 import HomepageStandingsInjuriesSection from "components/HomePage/HomepageStandingsInjuriesSection";
 import { useHomepageGames } from "components/HomePage/useHomepageGames";
+import NewsCard from "components/NewsFeed/NewsCard";
 
 import { isPlayoffsActive, getPlayoffBracketYear } from "lib/NHL/playoffs";
 import { getPlayoffBracket } from "lib/NHL/server/playoffBracket";
 import { getCurrentSeason } from "lib/NHL/server";
+import { fetchNewsFeedItems } from "lib/newsFeed";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
 import { checkIsOffseason } from "../hooks/useOffseason";
 import Fetch from "lib/cors-fetch";
@@ -55,7 +57,8 @@ const Home: NextPage = ({
   playoffWeekGames,
   homepageSnapshotGeneratedAt,
   standingsLoadError,
-  injuriesLoadError
+  injuriesLoadError,
+  latestNews
 }) => {
   const { currentDate, games, gamesHeaderText, changeDate, loading, error, lastUpdatedAt } =
     useHomepageGames({
@@ -103,6 +106,23 @@ const Home: NextPage = ({
         <ClientOnly>
           <TransactionTrends />
         </ClientOnly>
+
+        {latestNews?.length > 0 ? (
+          <section className={styles.latestNewsContainer}>
+            <div className={styles.latestNewsHeader}>
+              <p>Distilled feed</p>
+              <h2>
+                Latest <span>News Cards</span>
+              </h2>
+              <a href="/news">View all</a>
+            </div>
+            <div className={styles.latestNewsGrid}>
+              {latestNews.map((item) => (
+                <NewsCard key={item.id} compact item={item} />
+              ))}
+            </div>
+          </section>
+        ) : null}
 
         <div className={styles.chartContainer}>
           <TeamStandingsChart />
@@ -353,6 +373,16 @@ export async function getServerSideProps({ req, res }) {
 
   const injuriesResult = await fetchInjuries();
   const standingsResult = await fetchStandings();
+  let latestNews = [];
+  try {
+    latestNews = await fetchNewsFeedItems({
+      supabase: supabaseServer,
+      status: "published",
+      limit: 3
+    });
+  } catch (error: any) {
+    console.error("Error fetching homepage news cards:", error.message);
+  }
 
   return {
     props: {
@@ -366,7 +396,8 @@ export async function getServerSideProps({ req, res }) {
       playoffWeekGames,
       homepageSnapshotGeneratedAt: new Date().toISOString(),
       standingsLoadError: standingsResult.error,
-      injuriesLoadError: injuriesResult.error
+      injuriesLoadError: injuriesResult.error,
+      latestNews
     }
   };
 }

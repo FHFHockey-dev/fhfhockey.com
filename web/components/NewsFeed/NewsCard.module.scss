@@ -10,6 +10,51 @@
   border-color: rgba(255, 255, 255, 0.08);
 }
 
+.compact {
+  grid-template-columns: minmax(0, 1fr) 92px;
+  min-height: 132px;
+
+  .content {
+    gap: 10px;
+    padding: 12px 14px 12px 24px;
+  }
+
+  .headline {
+    font-size: clamp(0.96rem, 1.45vw, 1.2rem);
+    line-height: 1.08;
+  }
+
+  .playerChip {
+    padding: 4px 8px;
+    font-size: 0.72rem;
+  }
+
+  .blurb {
+    font-size: 0.82rem;
+    line-height: 1.42;
+  }
+
+  .footer,
+  .meta {
+    gap: 8px 10px;
+    font-size: 0.7rem;
+  }
+
+  .teamPane {
+    padding: 12px;
+  }
+
+  .teamLogo {
+    width: 48px;
+    height: 48px;
+  }
+
+  .teamLabel {
+    margin-top: 8px;
+    font-size: 0.72rem;
+  }
+}
+
 .content {
   position: relative;
   display: grid;

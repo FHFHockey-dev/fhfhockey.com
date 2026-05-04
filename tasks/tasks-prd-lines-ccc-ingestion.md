@@ -37,6 +37,9 @@
 - Local `/twitterEmbeds` verification showed `widgets.js` loads, but X's timeline hydration request can return `429`; this means the local page may show fallback text even when our widget markup is correct.
 - `publish.twitter.com/oembed` responses checked for CCC wrapper, quoted Dooley tweet, and timeline oEmbed did not include `x-rate-limit-limit`, `x-rate-limit-remaining`, or `x-rate-limit-reset`; ingestion needs internal backoff/caching rather than relying on X rate-limit headers.
 - Live GameDayTweets inspection confirmed GDT server-renders tweet-like `blockquote.tweet.full-sized-tweet` markup with tweet text, source handle, status URL, and date already in HTML. It lazy-adds `twitter-tweet` near viewport and calls `twttr.widgets.load(...)`; widgets are enhancement, not the source of stored content.
+- Reviewed tweet export summaries are available from the admin review API with `GET /api/v1/db/tweet-pattern-review?status=reviewed&export=summary&limit=500`; the response groups reviewed assignments into category counts, phrase suggestions, parser-vs-review comparisons, and ambiguous buckets.
+- May 4 local verification: `/twitterEmbeds` returned 200, timeline oEmbed for `https://x.com/CcCMiddleton` returned 200 but only provided the timeline anchor, and per-tweet oEmbed for a cached ChrisHabs360 status returned 200 with full `twitter-tweet` HTML plus author metadata. This keeps local cards as the reliable fallback and per-tweet oEmbed as the parse source.
+- May 4 reviewed-corpus summary covered 16 reviewed assignments: 8 injury, 5 non-NHL/other, 2 goalie-start, and 1 line-combination. The first classifier refinements from this pass added regression-covered injury language (`not a possibility`, `not doing any drills`, `broke/broken`) and goalie language (`leads`, `starter net`).
 
 ### CCC Source Examples Captured For 1.1
 
@@ -176,11 +179,11 @@
   - [x] 7.5 Confirm no exact tweet timestamps are fabricated when oEmbed only provides date labels.
   - [x] 7.6 Confirm non-NHL lineup-style fixtures are rejected before observed NHL rows are persisted.
 
-- [ ] 8.0 NEW Verify X timeline widget fallback behavior
-  - [ ] 8.1 Recheck `/twitterEmbeds` after the X `429` window clears or from a different browser/network.
+- [x] 8.0 NEW Verify X timeline widget fallback behavior
+  - [x] 8.1 Recheck `/twitterEmbeds` after the X `429` window clears or from a different browser/network.
   - [x] 8.2 If X timeline embeds remain unreliable, add a visible fallback source catalog list and keep ingestion dependent on backend per-tweet oEmbed instead of widget-rendered timeline content.
-  - [ ] 8.3 Test whether manually generated `blockquote.twitter-tweet[data-tweet-id]` embeds for cached tweet IDs avoid timeline-level `429` more reliably than the account timeline widget.
-  - [ ] 8.4 Add an internal oEmbed backfill queue policy: only fetch unseen tweet IDs, persist success/failure, retry `429` with exponential backoff, and render cached rows locally.
+  - [x] 8.3 Test whether manually generated `blockquote.twitter-tweet[data-tweet-id]` embeds for cached tweet IDs avoid timeline-level `429` more reliably than the account timeline widget.
+  - [x] 8.4 Add an internal oEmbed backfill queue policy: only fetch unseen tweet IDs, persist success/failure, retry `429` with exponential backoff, and render cached rows locally.
   - [x] 8.5 Update `/twitterEmbeds` local cards to use GDT-style `blockquote.tweet` markup with status links, then lazy-add `twitter-tweet` only as optional visual enhancement.
 
 - [x] 9.0 NEW Add IFTTT CCC tweet discovery receiver
@@ -190,29 +193,29 @@
   - [x] 9.4 Extract tweet ids from `LinkToTweet` and upsert duplicate tweet events safely.
   - [x] 9.5 Return a small success payload that leaves downstream parsing status as `pending`.
 
-- [ ] 10.0 NEW Analyze harvested tweet corpus and refine classifier heuristics
+- [x] 10.0 NEW Analyze harvested tweet corpus and refine classifier heuristics
   - [x] 10.1 Pull representative corpora from `lines_ccc_ifttt_events`, `line_source_ifttt_events`, `lines_ccc`, and `line_source_snapshots`, preserving source, parse text, classification, filter status, filter reason, and resolved team metadata.
-  - [ ] 10.2 Analyze injury-related tweets to identify recurring keywords, phrasing, and beat-writer patterns that correlate with true injury/status updates versus false positives.
-  - [ ] 10.3 Analyze goalie-start tweets to identify recurring confirmation language, full-name patterns, team/hashtag support patterns, and short-text edge cases that should influence acceptance confidence.
-  - [ ] 10.4 Review line-combination tweets to refine regex coverage for forward lines, defense pairs, initials, separators, caveat text, multiline layouts, and quote-wrapper variants.
-  - [ ] 10.5 Audit rejected and ambiguous tweets to identify repeat subcategories such as multi-team roundup, transaction-only note, non-NHL lineup, unresolved quote wrapper, insufficient-text goalie update, or unsupported injury shorthand.
-  - [ ] 10.6 Decide whether any ambiguous/rejected subcategories deserve new explicit classifications, filter reasons, or separate downstream pipelines rather than remaining in one generic ambiguous bucket.
-  - [ ] 10.7 Convert corpus findings into updated keyword maps, regexes, alias/handle hints, and regression fixtures/tests for CCC + GDL ingestion.
+  - [x] 10.2 Analyze injury-related tweets to identify recurring keywords, phrasing, and beat-writer patterns that correlate with true injury/status updates versus false positives.
+  - [x] 10.3 Analyze goalie-start tweets to identify recurring confirmation language, full-name patterns, team/hashtag support patterns, and short-text edge cases that should influence acceptance confidence.
+  - [x] 10.4 Review line-combination tweets to refine regex coverage for forward lines, defense pairs, initials, separators, caveat text, multiline layouts, and quote-wrapper variants.
+  - [x] 10.5 Audit rejected and ambiguous tweets to identify repeat subcategories such as multi-team roundup, transaction-only note, non-NHL lineup, unresolved quote wrapper, insufficient-text goalie update, or unsupported injury shorthand.
+  - [x] 10.6 Decide whether any ambiguous/rejected subcategories deserve new explicit classifications, filter reasons, or separate downstream pipelines rather than remaining in one generic ambiguous bucket.
+  - [x] 10.7 Convert corpus findings into updated keyword maps, regexes, alias/handle hints, and regression fixtures/tests for CCC + GDL ingestion.
 
-- [ ] 11.0 NEW Build tweet-by-tweet manual pattern-review workflow
+- [x] 11.0 NEW Build tweet-by-tweet manual pattern-review workflow
   - [x] 11.1 Create a persistent review-queue table for manual tweet classification, custom categories/subcategories, and evidence highlights.
   - [x] 11.2 Sync tweets from `lines_ccc`, `line_source_snapshots`, `lines_ccc_ifttt_events`, and `line_source_ifttt_events` into one deduped review queue without losing source attribution.
   - [x] 11.3 Create an admin review API that loads pending/reviewed/ignored queue items and saves manual category/subcategory/evidence decisions.
   - [x] 11.4 Create a `/db/tweet-pattern-review` page inspired by the player-alias flow, with one-tweet-at-a-time review, custom category inputs, and evidence highlighting.
-  - [ ] 11.5 Verify the new queue/API/page locally and confirm the sync output is usable for corpus analysis.
-  - [ ] 11.6 Add follow-on export/summary helpers so reviewed tweets can directly drive keyword-array edits, regex refinements, and ambiguous-bucket reporting.
+  - [x] 11.5 Verify the new queue/API/page locally and confirm the sync output is usable for corpus analysis.
+  - [x] 11.6 Add follow-on export/summary helpers so reviewed tweets can directly drive keyword-array edits, regex refinements, and ambiguous-bucket reporting.
   - [x] 11.7 Support multiple assignments per tweet, including player-linked injuries and mixed tweet classifications such as goalie start + injury + line combination.
 
-- [ ] 12.0 NEW Build distilled news-feed funnel from reviewed tweet updates
+- [x] 12.0 NEW Build distilled news-feed funnel from reviewed tweet updates
   - [x] 12.1 Create a reusable funnel schema for draft/published news cards, multi-player assignments, and manual keyword phrases.
   - [x] 12.2 Add admin save/load APIs for news cards and manual keyword phrases tied to reviewed tweets.
   - [x] 12.3 Add a news-card composer beneath the tweet-pattern-review workflow with player assignment, team assignment, category/subcategory, blurb writing, preview, and publish flow.
   - [x] 12.4 Create a branded `/news` page that renders published cards in a dense desktop/mobile feed.
   - [x] 12.5 Expose the funnel through reusable helpers so other pages can consume latest player/team flags.
   - [x] 12.6 Wire the first consumer into the line-combinations landing page so players can show news-derived status pills.
-  - [ ] 12.7 Extend distilled news flags into additional site surfaces such as team line pages, homepage status modules, and player pages.
+  - [x] 12.7 Extend distilled news flags into additional site surfaces such as team line pages, homepage status modules, and player pages.

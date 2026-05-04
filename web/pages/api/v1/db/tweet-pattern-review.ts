@@ -2,6 +2,7 @@ import type { NextApiResponse } from "next";
 
 import { getCurrentSeason } from "lib/NHL/server";
 import {
+  buildTweetPatternReviewExportSummary,
   buildTweetPatternReviewDedupeKey,
   buildTweetPatternReviewText,
   normalizePatternEvidencePhrase,
@@ -9,6 +10,7 @@ import {
   type TweetPatternReviewAssignment,
   TWEET_PATTERN_CATEGORY_OPTIONS
 } from "lib/sources/tweetPatternReview";
+import { fetchLinesCccTweetOEmbedAttempt } from "lib/sources/linesCccIngestion";
 import adminOnly from "utils/adminOnlyMiddleware";
 
 type ReviewStatus = "pending" | "reviewed" | "ignored";
@@ -19,6 +21,12 @@ type PlayerOption = {
   position: string | null;
   team_id: number | null;
 };
+
+function normalizeResolvedHandle(value: string | null | undefined): string | null {
+  const trimmed = value?.trim();
+  if (!trimmed) return null;
+  return trimmed.startsWith("@") ? trimmed : `@${trimmed}`;
+}
 
 type TweetPatternReviewRow = {
   id: string;
@@ -101,6 +109,7 @@ type LinesCccReviewSourceRow = {
   enriched_text: string | null;
   quoted_raw_text: string | null;
   quoted_enriched_text: string | null;
+  raw_payload: Record<string, unknown> | null;
   primary_text_source: string | null;
   tweet_posted_label: string | null;
   status: string | null;
@@ -132,6 +141,7 @@ type LineSourceSnapshotReviewSourceRow = {
   enriched_text: string | null;
   quoted_raw_text: string | null;
   quoted_enriched_text: string | null;
+  raw_payload: Record<string, unknown> | null;
   primary_text_source: string | null;
   tweet_posted_label: string | null;
   status: string | null;
@@ -149,6 +159,7 @@ type LinesCccEventReviewSourceRow = {
   created_at_label: string | null;
   processing_status: string | null;
   received_at: string | null;
+  raw_payload: Record<string, unknown> | null;
 };
 
 type LineSourceEventReviewSourceRow = {
@@ -165,6 +176,7 @@ type LineSourceEventReviewSourceRow = {
   created_at_label: string | null;
   processing_status: string | null;
   received_at: string | null;
+  raw_payload: Record<string, unknown> | null;
 };
 
 function parseLimit(value: string | string[] | undefined, fallback = 100): number {
@@ -254,7 +266,104 @@ function toMillis(value: string | null | undefined): number {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+function readNestedString(
+  value: Record<string, unknown> | null | undefined,
+  path: string[]
+): string | null {
+  let current: unknown = value;
+  for (const segment of path) {
+    if (!current || typeof current !== "object") return null;
+    current = (current as Record<string, unknown>)[segment];
+  }
+  return typeof current === "string" && current.trim() ? current.trim() : null;
+}
+
+function parseHandleFromTweetUrl(value: string | null | undefined): string | null {
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    const hostname = url.hostname.toLowerCase();
+    if (!hostname.includes("twitter.com") && !hostname.includes("x.com")) {
+      return null;
+    }
+    const handle = url.pathname.split("/").filter(Boolean)[0] ?? null;
+    return handle?.trim() || null;
+  } catch {
+    return null;
+  }
+}
+
+function chooseLongestText(...values: Array<string | null | undefined>): string | null {
+  return values
+    .map((value) => (typeof value === "string" && value.trim() ? value : null))
+    .filter((value): value is string => Boolean(value))
+    .sort((left, right) => right.length - left.length)[0] ?? null;
+}
+
+function extractFallbackAuthor(args: {
+  authorName?: string | null;
+  sourceHandle?: string | null;
+  username?: string | null;
+  sourceUrl?: string | null;
+  tweetUrl?: string | null;
+  rawPayload?: Record<string, unknown> | null;
+}) {
+  const urlHandle =
+    parseHandleFromTweetUrl(args.sourceUrl) ??
+    parseHandleFromTweetUrl(args.tweetUrl);
+  return {
+    authorName:
+      readNestedString(args.rawPayload, ["linesCccOembed", "wrapper", "authorName"]) ??
+      readNestedString(args.rawPayload, ["author_name"]) ??
+      readNestedString(args.rawPayload, ["authorName"]) ??
+      readNestedString(args.rawPayload, ["AuthorName"]) ??
+      args.authorName ??
+      urlHandle ??
+      null,
+    sourceHandle:
+      urlHandle ??
+      readNestedString(args.rawPayload, ["linesCccOembed", "wrapper", "authorHandle"]) ??
+      readNestedString(args.rawPayload, ["username"]) ??
+      readNestedString(args.rawPayload, ["UserName"]) ??
+      readNestedString(args.rawPayload, ["screen_name"]) ??
+      args.sourceHandle ??
+      args.username ??
+      null,
+  };
+}
+
+function extractFallbackReviewText(args: {
+  reviewText?: string | null;
+  rawText?: string | null;
+  enrichedText?: string | null;
+  quotedText?: string | null;
+  rawPayload?: Record<string, unknown> | null;
+}) {
+  return chooseLongestText(
+    args.reviewText,
+    args.quotedText,
+    readNestedString(args.rawPayload, ["linesCccOembed", "wrapper", "text"]),
+    readNestedString(args.rawPayload, ["text"]),
+    readNestedString(args.rawPayload, ["Text"]),
+    args.enrichedText,
+    args.rawText
+  );
+}
+
 function buildLinesCccCandidate(row: LinesCccReviewSourceRow): SyncCandidate {
+  const fallbackAuthor = extractFallbackAuthor({
+    authorName: row.author_name,
+    sourceHandle: row.source_handle,
+    sourceUrl: row.source_url,
+    tweetUrl: row.tweet_url,
+    rawPayload: row.raw_payload,
+  });
+  const reviewText = buildTweetPatternReviewText({
+    rawText: row.raw_text,
+    enrichedText: row.enriched_text,
+    quotedRawText: row.quoted_raw_text,
+    quotedEnrichedText: row.quoted_enriched_text
+  });
   return {
     dedupe_key: buildTweetPatternReviewDedupeKey({
       sourceKey: "cccmiddleton",
@@ -269,8 +378,8 @@ function buildLinesCccCandidate(row: LinesCccReviewSourceRow): SyncCandidate {
     source_key: "cccmiddleton",
     source_account: "CcCMiddleton",
     source_label: row.source_label ?? row.source,
-    source_handle: row.source_handle,
-    author_name: row.author_name,
+    source_handle: fallbackAuthor.sourceHandle,
+    author_name: fallbackAuthor.authorName,
     snapshot_date: row.snapshot_date,
     source_created_at: row.observed_at,
     tweet_id: row.tweet_id,
@@ -284,11 +393,12 @@ function buildLinesCccCandidate(row: LinesCccReviewSourceRow): SyncCandidate {
     parser_filter_status: row.nhl_filter_status,
     parser_filter_reason: row.nhl_filter_reason,
     keyword_hits: row.keyword_hits ?? [],
-    review_text: buildTweetPatternReviewText({
+    review_text: extractFallbackReviewText({
+      reviewText,
       rawText: row.raw_text,
       enrichedText: row.enriched_text,
-      quotedRawText: row.quoted_raw_text,
-      quotedEnrichedText: row.quoted_enriched_text
+      quotedText: row.quoted_enriched_text ?? row.quoted_raw_text ?? null,
+      rawPayload: row.raw_payload,
     }),
     raw_text: row.raw_text,
     enriched_text: row.enriched_text,
@@ -310,6 +420,19 @@ function buildLinesCccCandidate(row: LinesCccReviewSourceRow): SyncCandidate {
 }
 
 function buildLineSourceSnapshotCandidate(row: LineSourceSnapshotReviewSourceRow): SyncCandidate {
+  const fallbackAuthor = extractFallbackAuthor({
+    authorName: row.author_name,
+    sourceHandle: row.source_handle,
+    sourceUrl: row.source_url,
+    tweetUrl: row.tweet_url,
+    rawPayload: row.raw_payload,
+  });
+  const reviewText = buildTweetPatternReviewText({
+    rawText: row.raw_text,
+    enrichedText: row.enriched_text,
+    quotedRawText: row.quoted_raw_text,
+    quotedEnrichedText: row.quoted_enriched_text
+  });
   return {
     dedupe_key: buildTweetPatternReviewDedupeKey({
       sourceKey: row.source_key ?? row.source_account,
@@ -324,8 +447,8 @@ function buildLineSourceSnapshotCandidate(row: LineSourceSnapshotReviewSourceRow
     source_key: row.source_key,
     source_account: row.source_account,
     source_label: row.source_label ?? row.source,
-    source_handle: row.source_handle,
-    author_name: row.author_name,
+    source_handle: fallbackAuthor.sourceHandle,
+    author_name: fallbackAuthor.authorName,
     snapshot_date: row.snapshot_date,
     source_created_at: row.observed_at,
     tweet_id: row.tweet_id,
@@ -339,11 +462,12 @@ function buildLineSourceSnapshotCandidate(row: LineSourceSnapshotReviewSourceRow
     parser_filter_status: row.nhl_filter_status,
     parser_filter_reason: row.nhl_filter_reason,
     keyword_hits: row.keyword_hits ?? [],
-    review_text: buildTweetPatternReviewText({
+    review_text: extractFallbackReviewText({
+      reviewText,
       rawText: row.raw_text,
       enrichedText: row.enriched_text,
-      quotedRawText: row.quoted_raw_text,
-      quotedEnrichedText: row.quoted_enriched_text
+      quotedText: row.quoted_enriched_text ?? row.quoted_raw_text ?? null,
+      rawPayload: row.raw_payload,
     }),
     raw_text: row.raw_text,
     enriched_text: row.enriched_text,
@@ -365,6 +489,12 @@ function buildLineSourceSnapshotCandidate(row: LineSourceSnapshotReviewSourceRow
 }
 
 function buildLinesCccEventCandidate(row: LinesCccEventReviewSourceRow): SyncCandidate {
+  const fallbackAuthor = extractFallbackAuthor({
+    sourceHandle: row.username,
+    sourceUrl: row.link_to_tweet,
+    tweetUrl: row.link_to_tweet,
+    rawPayload: row.raw_payload,
+  });
   return {
     dedupe_key: buildTweetPatternReviewDedupeKey({
       sourceKey: "cccmiddleton",
@@ -379,8 +509,8 @@ function buildLinesCccEventCandidate(row: LinesCccEventReviewSourceRow): SyncCan
     source_key: "cccmiddleton",
     source_account: row.source_account ?? "CcCMiddleton",
     source_label: row.source,
-    source_handle: row.username,
-    author_name: row.username,
+    source_handle: fallbackAuthor.sourceHandle,
+    author_name: fallbackAuthor.authorName ?? fallbackAuthor.sourceHandle,
     snapshot_date: null,
     source_created_at: row.tweet_created_at ?? row.received_at,
     tweet_id: row.tweet_id,
@@ -394,7 +524,12 @@ function buildLinesCccEventCandidate(row: LinesCccEventReviewSourceRow): SyncCan
     parser_filter_status: row.processing_status,
     parser_filter_reason: null,
     keyword_hits: [],
-    review_text: row.text ?? null,
+    review_text: extractFallbackReviewText({
+      reviewText: row.text ?? null,
+      rawText: row.text ?? null,
+      enrichedText: row.text ?? null,
+      rawPayload: row.raw_payload,
+    }),
     raw_text: row.text ?? null,
     enriched_text: row.text ?? null,
     quoted_text: null,
@@ -414,6 +549,12 @@ function buildLinesCccEventCandidate(row: LinesCccEventReviewSourceRow): SyncCan
 }
 
 function buildLineSourceEventCandidate(row: LineSourceEventReviewSourceRow): SyncCandidate {
+  const fallbackAuthor = extractFallbackAuthor({
+    sourceHandle: row.username,
+    sourceUrl: row.link_to_tweet,
+    tweetUrl: row.link_to_tweet,
+    rawPayload: row.raw_payload,
+  });
   return {
     dedupe_key: buildTweetPatternReviewDedupeKey({
       sourceKey: row.source_key ?? row.source_account,
@@ -428,8 +569,8 @@ function buildLineSourceEventCandidate(row: LineSourceEventReviewSourceRow): Syn
     source_key: row.source_key,
     source_account: row.source_account,
     source_label: row.source,
-    source_handle: row.username,
-    author_name: row.username,
+    source_handle: fallbackAuthor.sourceHandle,
+    author_name: fallbackAuthor.authorName ?? fallbackAuthor.sourceHandle,
     snapshot_date: null,
     source_created_at: row.tweet_created_at ?? row.received_at,
     tweet_id: row.tweet_id,
@@ -443,7 +584,12 @@ function buildLineSourceEventCandidate(row: LineSourceEventReviewSourceRow): Syn
     parser_filter_status: row.processing_status,
     parser_filter_reason: null,
     keyword_hits: [],
-    review_text: row.text ?? null,
+    review_text: extractFallbackReviewText({
+      reviewText: row.text ?? null,
+      rawText: row.text ?? null,
+      enrichedText: row.text ?? null,
+      rawPayload: row.raw_payload,
+    }),
     raw_text: row.text ?? null,
     enriched_text: row.text ?? null,
     quoted_text: null,
@@ -484,28 +630,28 @@ async function syncTweetPatternReviewItems(args: {
       args.supabase
         .from("lines_ccc" as any)
         .select(
-          "capture_key, source, source_label, source_handle, author_name, snapshot_date, observed_at, tweet_id, tweet_url, source_url, quoted_tweet_id, quoted_tweet_url, team_id, team_abbreviation, classification, nhl_filter_status, nhl_filter_reason, keyword_hits, raw_text, enriched_text, quoted_raw_text, quoted_enriched_text, primary_text_source, tweet_posted_label, status"
+          "capture_key, source, source_label, source_handle, author_name, snapshot_date, observed_at, tweet_id, tweet_url, source_url, quoted_tweet_id, quoted_tweet_url, team_id, team_abbreviation, classification, nhl_filter_status, nhl_filter_reason, keyword_hits, raw_text, enriched_text, quoted_raw_text, quoted_enriched_text, raw_payload, primary_text_source, tweet_posted_label, status"
         )
         .order("observed_at", { ascending: false })
         .limit(args.perSourceLimit),
       args.supabase
         .from("line_source_snapshots" as any)
         .select(
-          "capture_key, source_group, source_key, source_account, source, source_label, source_handle, author_name, snapshot_date, observed_at, tweet_id, tweet_url, source_url, quoted_tweet_id, quoted_tweet_url, team_id, team_abbreviation, classification, nhl_filter_status, nhl_filter_reason, keyword_hits, raw_text, enriched_text, quoted_raw_text, quoted_enriched_text, primary_text_source, tweet_posted_label, status"
+          "capture_key, source_group, source_key, source_account, source, source_label, source_handle, author_name, snapshot_date, observed_at, tweet_id, tweet_url, source_url, quoted_tweet_id, quoted_tweet_url, team_id, team_abbreviation, classification, nhl_filter_status, nhl_filter_reason, keyword_hits, raw_text, enriched_text, quoted_raw_text, quoted_enriched_text, raw_payload, primary_text_source, tweet_posted_label, status"
         )
         .order("observed_at", { ascending: false })
         .limit(args.perSourceLimit),
       args.supabase
         .from("lines_ccc_ifttt_events" as any)
         .select(
-          "id, source, source_account, username, text, link_to_tweet, tweet_id, tweet_created_at, created_at_label, processing_status, received_at"
+          "id, source, source_account, username, text, link_to_tweet, tweet_id, tweet_created_at, created_at_label, processing_status, received_at, raw_payload"
         )
         .order("received_at", { ascending: false })
         .limit(args.perSourceLimit),
       args.supabase
         .from("line_source_ifttt_events" as any)
         .select(
-          "id, source, source_group, source_key, source_account, username, text, link_to_tweet, tweet_id, tweet_created_at, created_at_label, processing_status, received_at"
+          "id, source, source_group, source_key, source_account, username, text, link_to_tweet, tweet_id, tweet_created_at, created_at_label, processing_status, received_at, raw_payload"
         )
         .order("received_at", { ascending: false })
         .limit(args.perSourceLimit)
@@ -615,8 +761,26 @@ async function syncTweetPatternReviewItems(args: {
 }
 
 async function handleGet(req: any, res: NextApiResponse) {
+  const authorLookupUrl = parseString(req.query.authorLookupUrl);
+  if (authorLookupUrl) {
+    const result = await fetchLinesCccTweetOEmbedAttempt(authorLookupUrl);
+    if (!result.ok) {
+      return res.status(result.retryable ? 429 : 502).json({
+        success: false,
+        message: result.error
+      });
+    }
+
+    return res.json({
+      success: true,
+      authorName: result.data.authorName,
+      authorHandle: normalizeResolvedHandle(result.data.authorHandle)
+    });
+  }
+
   const limit = parseLimit(req.query.limit);
   const status = parseStatus(req.query.status);
+  const exportMode = parseString(req.query.export);
   let query = req.supabase
     .from("tweet_pattern_review_items" as any)
     .select(
@@ -632,7 +796,6 @@ async function handleGet(req: any, res: NextApiResponse) {
 
   const { data, error } = await query;
   if (error) throw error;
-  const players = await fetchRosterPlayers(req.supabase);
   const items = ((data ?? []) as TweetPatternReviewRow[]).map((row) => ({
     ...row,
     review_assignments: normalizePatternReviewAssignments({
@@ -643,6 +806,17 @@ async function handleGet(req: any, res: NextApiResponse) {
       legacyNotes: row.notes
     })
   }));
+
+  if (exportMode === "summary" || exportMode === "reviewed-summary") {
+    return res.json({
+      success: true,
+      exportMode,
+      summary: buildTweetPatternReviewExportSummary(items),
+      generatedAt: new Date().toISOString()
+    });
+  }
+
+  const players = await fetchRosterPlayers(req.supabase);
 
   return res.json({
     success: true,

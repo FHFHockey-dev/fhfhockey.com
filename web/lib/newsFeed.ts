@@ -81,7 +81,13 @@ export function normalizeNewsText(value: string | null | undefined): string {
 }
 
 export function normalizeNewsCategory(value: string | null | undefined): string {
-  return normalizeNewsText(value).toUpperCase();
+  return normalizeNewsText(value).replace(/[_-]+/g, " ").toUpperCase();
+}
+
+export function formatNewsFeedLabel(value: string | null | undefined): string {
+  return normalizeNewsCategory(value)
+    .toLowerCase()
+    .replace(/\b[a-z]/g, (letter) => letter.toUpperCase());
 }
 
 export function normalizeKeywordScopeKey(args: {
@@ -136,8 +142,8 @@ export function buildNewsFlagLabel(args: {
   category: string;
   subcategory?: string | null;
 }): string {
-  const category = normalizeNewsCategory(args.category);
-  const subcategory = normalizeNewsCategory(args.subcategory);
+  const category = formatNewsFeedLabel(args.category);
+  const subcategory = formatNewsFeedLabel(args.subcategory);
   return subcategory ? `${category} · ${subcategory}` : category;
 }
 
