@@ -7,7 +7,7 @@
   gap: 16px;
 }
 
-.googleButton,
+.oauthButton,
 .submitButton {
   display: inline-flex;
   align-items: center;
@@ -29,7 +29,12 @@
     color v.$transition-duration v.$transition-easing;
 }
 
-.googleButton {
+.oauthButtonStack {
+  display: grid;
+  gap: 10px;
+}
+
+.oauthButton {
   position: relative;
   overflow: hidden;
   border: 2px solid rgba(v.$primary-color, 0.68);
@@ -64,7 +69,22 @@
   }
 }
 
-.googleButton:disabled,
+.githubButton {
+  border-color: rgba(v.$color-white, 0.28);
+  background:
+    linear-gradient(180deg, rgba(v.$color-white, 0.09), rgba(v.$color-white, 0.025)),
+    linear-gradient(145deg, rgba(30, 34, 42, 0.98), rgba(5, 7, 10, 0.98));
+  color: v.$color-white;
+
+  &::before {
+    background: v.$color-white;
+    box-shadow:
+      0 0 14px rgba(v.$color-white, 0.55),
+      0 0 24px rgba(v.$secondary-color, 0.28);
+  }
+}
+
+.oauthButton:disabled,
 .submitButton:disabled {
   cursor: not-allowed;
   opacity: 0.62;

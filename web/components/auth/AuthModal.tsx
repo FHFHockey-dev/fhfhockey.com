@@ -29,7 +29,7 @@ const MODE_COPY: Record<
     eyebrow: "Account Access",
     title: "Sign in to your account",
     description:
-      "Use Google or your email and password to get back into your profile, league defaults, and saved teams. Password reset stays in this same modal flow.",
+      "Use Google, GitHub, or your email and password to get back into your profile, league defaults, and saved teams. Password reset stays in this same modal flow.",
     primaryLabel: "Continue to Sign In",
     secondaryLabel: "Need an account?",
     helperPrompt: "Forgot your password?",
@@ -40,7 +40,7 @@ const MODE_COPY: Record<
     eyebrow: "Create Account",
     title: "Create your account",
     description:
-      "Start with Google or email and password. New email/password accounts should expect verification before protected settings and connected-account actions are available.",
+      "Start with Google, GitHub, or email and password. New email/password accounts should expect verification before protected settings and connected-account actions are available.",
     primaryLabel: "Continue to Sign Up",
     secondaryLabel: "Already have an account?",
     helperPrompt: "Want to sign in instead?",

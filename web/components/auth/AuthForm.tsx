@@ -174,7 +174,7 @@ export default function AuthForm({ mode, onSuccess }: AuthFormProps) {
     }
 
     if (normalized.includes("provider is not enabled")) {
-      return "Google sign-in is not enabled yet in Supabase. Finish the provider setup first.";
+      return "This sign-in provider is not enabled yet in Supabase. Finish the provider setup first.";
     }
 
     if (normalized.includes("popup") || normalized.includes("redirect")) {
@@ -184,25 +184,31 @@ export default function AuthForm({ mode, onSuccess }: AuthFormProps) {
     return message;
   }
 
-  async function handleGoogleAuth() {
+  async function handleOAuthAuth(provider: "google" | "github") {
     setIsSubmitting(true);
     setFeedback(null);
 
     await resetSupabaseBrowserAuthState(supabase);
 
+    const providerLabel = provider === "github" ? "GitHub" : "Google";
     const { error } = await withTimeout(
       supabase.auth.signInWithOAuth({
-        provider: "google",
+        provider,
         options: {
           redirectTo: buildCallbackRedirectUrl()
         }
       }),
       12000,
-      "Google sign-in did not start cleanly. Reset the local auth session and try again."
+      `${providerLabel} sign-in did not start cleanly. Reset the local auth session and try again.`
     );
 
     if (error) {
-      setError(normalizeAuthErrorMessage(error.message, mode));
+      setError(
+        normalizeAuthErrorMessage(
+          error.message.replace(/^provider/i, providerLabel),
+          mode
+        )
+      );
       setIsSubmitting(false);
     }
   }
@@ -312,14 +318,24 @@ export default function AuthForm({ mode, onSuccess }: AuthFormProps) {
     <div className={styles.authFormWrap}>
       {!isForgotPasswordMode ? (
         <>
-          <button
-            type="button"
-            className={styles.googleButton}
-            onClick={() => void handleGoogleAuth()}
-            disabled={isSubmitting}
-          >
-            {mode === "sign-up" ? "Sign Up with Google" : "Continue with Google"}
-          </button>
+          <div className={styles.oauthButtonStack}>
+            <button
+              type="button"
+              className={`${styles.oauthButton} ${styles.googleButton}`}
+              onClick={() => void handleOAuthAuth("google")}
+              disabled={isSubmitting}
+            >
+              {mode === "sign-up" ? "Sign Up with Google" : "Continue with Google"}
+            </button>
+            <button
+              type="button"
+              className={`${styles.oauthButton} ${styles.githubButton}`}
+              onClick={() => void handleOAuthAuth("github")}
+              disabled={isSubmitting}
+            >
+              {mode === "sign-up" ? "Sign Up with GitHub" : "Continue with GitHub"}
+            </button>
+          </div>
 
           <div className={styles.divider}>
             <span className={styles.dividerLine} />
