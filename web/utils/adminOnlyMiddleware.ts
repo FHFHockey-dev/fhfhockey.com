@@ -15,15 +15,15 @@ type Handler = (req: ApiRequest, res: NextApiResponse) => Promise<any>;
 export default function adminOnly(handler: Handler): Handler {
   return async (req, res) => {
     const authHeader = req.headers.authorization ?? "";
-    let client: ReturnType<typeof createClientWithToken>;
+    let client: SupabaseClient<Database>;
     // check if this is invoked by cron
     if (invokedByCron(authHeader) || invokedByLocalDev(req)) {
       client = serviceRoleClient;
     } else {
       // authentication check
       const access_token = authHeader.split(" ")[1] ?? "";
-      client = createClientWithToken(access_token);
-      const { error: userError } = await client.auth.getUser();
+      const authClient = createClientWithToken(access_token);
+      const { error: userError } = await authClient.auth.getUser();
       if (userError) {
         return res.status(401).json({
           message: userError.message,
@@ -31,13 +31,15 @@ export default function adminOnly(handler: Handler): Handler {
         });
       }
 
-      const { data } = await client.from("users").select("role").maybeSingle();
+      const { data } = await authClient.from("users").select("role").maybeSingle();
       if (data?.role !== "admin") {
         return res.status(403).json({
           message: "You are not an Admin.",
           success: false
         });
       }
+
+      client = serviceRoleClient;
     }
 
     // attach supabase client to request object
