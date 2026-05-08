@@ -259,12 +259,18 @@ const NON_NHL_HANDLE_HINTS: Array<{
 ];
 
 function countStructuredPlayerMentions(text: string): number {
-  return Array.from(
-    text.matchAll(
-      /[A-Z][A-Za-z.'’`-]+(?:\s+[A-Z][A-Za-z.'’`-]+){0,2}\s*[-–—/\\•]\s*[A-Z]/g,
-    ),
-  ).length;
+  const structuredGroups = extractStructuredPlayerGroupsFromText(text);
+  return structuredGroups.forwards.reduce((sum, line) => sum + line.length, 0) +
+    structuredGroups.defensePairs.reduce((sum, pair) => sum + pair.length, 0) +
+    structuredGroups.goalies.length;
 }
+
+type PowerPlayUnitLabel = "pp1" | "pp2" | null;
+
+type ExtractedPowerPlayUnits = {
+  labels: PowerPlayUnitLabel[];
+  units: string[][];
+};
 
 function isWrapperTextInsufficientWithoutQuote(
   source: ParsedLinesCccSource,
@@ -1005,24 +1011,152 @@ function extractTransactionSignals(args: {
   );
 }
 
+function detectPowerPlayUnitLabel(value: string): PowerPlayUnitLabel {
+  const normalized = normalizeTextKey(value);
+  if (
+    /\b(?:pp\s*1|power play\s*1|power-play\s*1|first unit|top unit|unit 1|unite 1|premiere unite|première unité)\b/i.test(
+      normalized
+    )
+  ) {
+    return "pp1";
+  }
+  if (
+    /\b(?:pp\s*2|power play\s*2|power-play\s*2|second unit|unit 2|unite 2|deuxieme unite|deuxième unité)\b/i.test(
+      normalized
+    )
+  ) {
+    return "pp2";
+  }
+  return null;
+}
+
 function extractPowerPlayUnits(args: {
   text: string;
   rosterEntries: RosterNameEntry[];
-}): string[][] {
-  const units = Array.from(args.text.matchAll(/\bpp([12])\b[:\s-]+([^\n]+)/gi))
+}): ExtractedPowerPlayUnits {
+  const labeledUnits = Array.from(
+    args.text.matchAll(/\b(?:pp|power\s*play)\s*([12])\b[:\s-]+([^\n]+)/gi)
+  )
     .sort((left, right) => Number(left[1] ?? 9) - Number(right[1] ?? 9))
     .map((match) =>
-      canonicalizeNames(
-        match[2]!
-          .split(/\s*[-–—/\\•]\s*|\s*,\s*/)
-          .map((name) => name.trim())
-          .filter(Boolean),
-        args.rosterEntries,
-      ),
+      ({
+        label: `pp${match[1] ?? ""}` as PowerPlayUnitLabel,
+        unit: canonicalizeNames(
+          match[2]!
+            .split(/\s*[-–—/\\•]\s*|\s*,\s*/)
+            .map((name) => name.trim())
+            .filter(Boolean),
+          args.rosterEntries,
+        ),
+      })
     )
-    .filter((unit) => unit.length >= 3);
+    .filter((entry) => entry.unit.length >= 3)
+    .map((entry) => ({
+      label: entry.label,
+      unit: entry.unit.slice(0, 5),
+    }));
 
-  return units.slice(0, 2);
+  const groupedLineTokens = args.text
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .filter(
+      (line) =>
+        !/https?:|t\.co|pic\.twitter\.com|^#/.test(line) &&
+        !/\b(power play|units?|advantage numérique|avantage numerique|jeu de puissance|vs\.?|contre)\b/i.test(
+          line
+        )
+    )
+    .flatMap((line) => {
+      const parsed = extractStructuredPlayerGroupsFromText(line, args.rosterEntries);
+      return [
+        ...parsed.forwards.map((group) => canonicalizeNames(group, args.rosterEntries)),
+        ...parsed.defensePairs.map((group) => canonicalizeNames(group, args.rosterEntries)),
+        ...parsed.goalies
+          .map((name) => canonicalizeNames([name], args.rosterEntries))
+          .filter((group) => group.length === 1)
+      ];
+    });
+
+  const unlabeledUnits: Array<{ label: PowerPlayUnitLabel; unit: string[] }> = [];
+  for (let index = 0; index <= groupedLineTokens.length - 3; index += 1) {
+    const first = groupedLineTokens[index];
+    const second = groupedLineTokens[index + 1];
+    const third = groupedLineTokens[index + 2];
+    if (first?.length === 1 && second?.length === 3 && third?.length === 1) {
+      unlabeledUnits.push({
+        label: null,
+        unit: [...first, ...second, ...third],
+      });
+      index += 2;
+    }
+  }
+
+  const dedupedUnits = [...labeledUnits, ...unlabeledUnits].reduce<
+    Array<{ label: PowerPlayUnitLabel; unit: string[] }>
+  >(
+    (units, unit) => {
+      const normalizedKey = unit.unit.map((name) => normalizeNameKey(name)).join("|");
+      if (
+        normalizedKey &&
+        !units.some(
+          (existing) =>
+            existing.unit.map((name) => normalizeNameKey(name)).join("|") ===
+            normalizedKey
+        )
+      ) {
+        units.push(unit);
+      }
+      return units;
+    },
+    []
+  );
+
+  if (dedupedUnits.length === 0) {
+    const orderedRosterHits = dedupeOrderedNames(
+      canonicalizeNames(
+        extractOrderedRosterHitsFromTweet(args.text, args.rosterEntries),
+        args.rosterEntries
+      )
+    );
+    if (orderedRosterHits.length === 5 || orderedRosterHits.length === 10) {
+      const units =
+        orderedRosterHits.length === 10
+          ? [orderedRosterHits.slice(0, 5), orderedRosterHits.slice(5, 10)]
+          : [orderedRosterHits];
+      return {
+        units,
+        labels:
+          units.length === 2
+            ? ["pp1", "pp2"]
+            : [detectPowerPlayUnitLabel(args.text)],
+      };
+    }
+  }
+
+  const flattenedUnits = dedupedUnits
+    .filter((entry) => entry.unit.length === 5 || entry.unit.length === 10)
+    .flatMap((entry) =>
+      entry.unit.length === 10
+        ? [
+            { label: "pp1" as PowerPlayUnitLabel, unit: entry.unit.slice(0, 5) },
+            { label: "pp2" as PowerPlayUnitLabel, unit: entry.unit.slice(5, 10) },
+          ]
+        : [entry]
+    )
+    .slice(0, 2);
+
+  return {
+    units: flattenedUnits.map((entry) => entry.unit),
+    labels:
+      flattenedUnits.length === 2
+        ? flattenedUnits.map((entry, index) =>
+            entry.label ?? (index === 0 ? "pp1" : "pp2")
+          )
+        : flattenedUnits.map(
+            (entry) => entry.label ?? detectPowerPlayUnitLabel(args.text)
+          ),
+  };
 }
 
 function extractGoalieNameFromKeywordLine(args: {
@@ -1067,31 +1201,40 @@ function buildStructuredContent(args: {
   | "injuries"
   | "metadata"
 > {
-  const structured = extractStructuredPlayerGroupsFromText(args.text);
+  const structured = extractStructuredPlayerGroupsFromText(
+    args.text,
+    args.rosterEntries
+  );
   let forwards = structured.forwards
     .map((line) => canonicalizeNames(line, args.rosterEntries))
     .filter((line) => line.length === 3);
   let defensePairs = structured.defensePairs
     .map((pair) => canonicalizeNames(pair, args.rosterEntries))
     .filter((pair) => pair.length === 2);
-  let goalies = structured.goalies
-    .map((name) => {
-      const resolvedRosterEntry = resolveTweetNameToRosterEntry(
-        name,
-        args.rosterEntries,
-      );
-      const hasHeadingKeywords =
-        /\b(lines?|pairings|power play|pp1|pp2|injury|update|goalie|starter|starting|net)\b/i.test(
-          name,
-        );
-      if (!resolvedRosterEntry && hasHeadingKeywords) {
-        return null;
-      }
-      return resolvedRosterEntry?.fullName ?? name;
-    })
-    .filter((name): name is string => Boolean(name))
-    .filter(Boolean);
-  const standaloneResolvedGoalies = args.text
+  let goalies =
+    args.classification === "power_play"
+      ? []
+      : structured.goalies
+          .map((name) => {
+            const resolvedRosterEntry = resolveTweetNameToRosterEntry(
+              name,
+              args.rosterEntries,
+            );
+            const hasHeadingKeywords =
+              /\b(lines?|pairings|power play|pp1|pp2|injury|update|goalie|starter|starting|net)\b/i.test(
+                name,
+              );
+            if (!resolvedRosterEntry && hasHeadingKeywords) {
+              return null;
+            }
+            return resolvedRosterEntry?.fullName ?? name;
+          })
+          .filter((name): name is string => Boolean(name))
+          .filter(Boolean);
+  const standaloneResolvedGoalies =
+    args.classification === "power_play"
+      ? []
+      : args.text
     .split(/\n+/)
     .map((line) => line.trim())
     .filter(Boolean)
@@ -1165,13 +1308,13 @@ function buildStructuredContent(args: {
     classification: args.classification,
     rosterEntries: args.rosterEntries,
   });
-  const powerPlayUnits =
+  const powerPlayDetection =
     args.classification === "power_play"
       ? extractPowerPlayUnits({
           text: args.text,
           rosterEntries: args.rosterEntries,
         })
-      : [];
+      : { units: [], labels: [] };
   const transactionSignals = extractTransactionSignals({
     text: args.text,
     rosterEntries: args.rosterEntries,
@@ -1184,7 +1327,8 @@ function buildStructuredContent(args: {
     scratches,
     injuries,
     metadata: {
-      powerPlayUnits,
+      powerPlayUnits: powerPlayDetection.units,
+      powerPlayUnitLabels: powerPlayDetection.labels,
       transactionSignals,
     },
   };

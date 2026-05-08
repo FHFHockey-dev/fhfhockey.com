@@ -1,8 +1,24 @@
 import { describe, expect, it } from "vitest";
 
-import { buildTweetPatternReviewExportSummary } from "./tweetPatternReview";
+import {
+  buildTweetPatternReviewExportSummary,
+  buildTweetPatternReviewText
+} from "./tweetPatternReview";
 
 describe("tweetPatternReview", () => {
+  it("uses quoted tweet text directly when the quoted oEmbed is primary", () => {
+    const text = buildTweetPatternReviewText({
+      enrichedText: "Canadiens lines https://t.co/dp8aQg57lf",
+      quotedEnrichedText:
+        "Canadiens Game 7 warmup lines and pairings:\nCaufield-Suzuki-Slafkovsky",
+      primaryTextSource: "quoted_oembed"
+    });
+
+    expect(text).toBe(
+      "Canadiens Game 7 warmup lines and pairings:\nCaufield-Suzuki-Slafkovsky"
+    );
+  });
+
   it("summarizes reviewed assignments into phrase and ambiguity exports", () => {
     const summary = buildTweetPatternReviewExportSummary([
       {

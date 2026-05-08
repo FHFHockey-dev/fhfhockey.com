@@ -14,6 +14,7 @@ import { fetchLinesCccTweetOEmbedAttempt } from "lib/sources/linesCccIngestion";
 import adminOnly from "utils/adminOnlyMiddleware";
 
 type ReviewStatus = "pending" | "reviewed" | "ignored";
+type ReviewSort = "newest" | "oldest";
 type PlayerOption = {
   id: number;
   fullName: string;
@@ -99,6 +100,8 @@ type LinesCccReviewSourceRow = {
   source_url: string | null;
   quoted_tweet_id: string | null;
   quoted_tweet_url: string | null;
+  quoted_author_handle: string | null;
+  quoted_author_name: string | null;
   team_id: number | null;
   team_abbreviation: string | null;
   classification: string | null;
@@ -193,8 +196,24 @@ function parseStatus(value: string | string[] | undefined): ReviewStatus | "all"
   return "pending";
 }
 
+function parseSort(value: string | string[] | undefined): ReviewSort {
+  const rawValue = Array.isArray(value) ? value[0] : value;
+  return rawValue === "oldest" ? "oldest" : "newest";
+}
+
 function parseString(value: unknown): string | null {
   return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function parseStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return Array.from(
+    new Set(
+      value
+        .map((item) => parseString(item))
+        .filter((item): item is string => Boolean(item))
+    )
+  );
 }
 
 function parseHighlights(value: unknown): string[] {
@@ -338,7 +357,12 @@ function extractFallbackReviewText(args: {
   enrichedText?: string | null;
   quotedText?: string | null;
   rawPayload?: Record<string, unknown> | null;
+  primaryTextSource?: string | null;
 }) {
+  if (args.primaryTextSource === "quoted_oembed") {
+    return chooseLongestText(args.reviewText, args.quotedText);
+  }
+
   return chooseLongestText(
     args.reviewText,
     args.quotedText,
@@ -350,6 +374,33 @@ function extractFallbackReviewText(args: {
   );
 }
 
+function shouldPreferQuotedAttribution(row: {
+  primary_text_source: string | null;
+  quoted_author_handle: string | null;
+  quoted_author_name: string | null;
+  quoted_tweet_url: string | null;
+  raw_text: string | null;
+  enriched_text: string | null;
+  quoted_raw_text: string | null;
+  quoted_enriched_text: string | null;
+}): boolean {
+  const wrapperText = chooseLongestText(row.enriched_text, row.raw_text) ?? "";
+  const quotedText =
+    chooseLongestText(row.quoted_enriched_text, row.quoted_raw_text) ?? "";
+  const wrapperIsQuotePointer =
+    /\b(lines?|pairings?|goalie|starter|warmups?)\b/i.test(wrapperText) &&
+    /https?:\/\/t\.co\//i.test(wrapperText) &&
+    wrapperText.length < 160;
+
+  return (
+    Boolean(row.quoted_author_name || row.quoted_author_handle || row.quoted_tweet_url) &&
+    Boolean(quotedText) &&
+    (row.primary_text_source === "quoted_oembed" ||
+      wrapperIsQuotePointer ||
+      quotedText.length > wrapperText.length * 1.5)
+  );
+}
+
 function buildLinesCccCandidate(row: LinesCccReviewSourceRow): SyncCandidate {
   const fallbackAuthor = extractFallbackAuthor({
     authorName: row.author_name,
@@ -358,11 +409,24 @@ function buildLinesCccCandidate(row: LinesCccReviewSourceRow): SyncCandidate {
     tweetUrl: row.tweet_url,
     rawPayload: row.raw_payload,
   });
+  const prefersQuotedAttribution = shouldPreferQuotedAttribution(row);
+  const primaryTextSource = prefersQuotedAttribution
+    ? "quoted_oembed"
+    : row.primary_text_source;
+  const sourceHandle = prefersQuotedAttribution
+    ? row.quoted_author_handle ??
+      parseHandleFromTweetUrl(row.quoted_tweet_url) ??
+      fallbackAuthor.sourceHandle
+    : fallbackAuthor.sourceHandle;
+  const authorName = prefersQuotedAttribution
+    ? row.quoted_author_name ?? sourceHandle ?? fallbackAuthor.authorName
+    : fallbackAuthor.authorName;
   const reviewText = buildTweetPatternReviewText({
     rawText: row.raw_text,
     enrichedText: row.enriched_text,
     quotedRawText: row.quoted_raw_text,
-    quotedEnrichedText: row.quoted_enriched_text
+    quotedEnrichedText: row.quoted_enriched_text,
+    primaryTextSource
   });
   return {
     dedupe_key: buildTweetPatternReviewDedupeKey({
@@ -378,13 +442,15 @@ function buildLinesCccCandidate(row: LinesCccReviewSourceRow): SyncCandidate {
     source_key: "cccmiddleton",
     source_account: "CcCMiddleton",
     source_label: row.source_label ?? row.source,
-    source_handle: fallbackAuthor.sourceHandle,
-    author_name: fallbackAuthor.authorName,
+    source_handle: sourceHandle,
+    author_name: authorName,
     snapshot_date: row.snapshot_date,
     source_created_at: row.observed_at,
     tweet_id: row.tweet_id,
     tweet_url: row.tweet_url,
-    source_url: row.source_url,
+    source_url: prefersQuotedAttribution
+      ? row.quoted_tweet_url ?? row.source_url
+      : row.source_url,
     quoted_tweet_id: row.quoted_tweet_id,
     quoted_tweet_url: row.quoted_tweet_url,
     team_id: row.team_id,
@@ -399,6 +465,7 @@ function buildLinesCccCandidate(row: LinesCccReviewSourceRow): SyncCandidate {
       enrichedText: row.enriched_text,
       quotedText: row.quoted_enriched_text ?? row.quoted_raw_text ?? null,
       rawPayload: row.raw_payload,
+      primaryTextSource
     }),
     raw_text: row.raw_text,
     enriched_text: row.enriched_text,
@@ -410,9 +477,15 @@ function buildLinesCccCandidate(row: LinesCccReviewSourceRow): SyncCandidate {
       review_assignments: [],
       notes: null,
     metadata: {
-      primaryTextSource: row.primary_text_source,
+      primaryTextSource,
+      originalPrimaryTextSource: row.primary_text_source,
+      preferredQuotedAttribution: prefersQuotedAttribution,
       tweetPostedLabel: row.tweet_posted_label,
-      sourceRowStatus: row.status
+      sourceRowStatus: row.status,
+      wrapperAuthorName: fallbackAuthor.authorName,
+      wrapperAuthorHandle: fallbackAuthor.sourceHandle,
+      quotedAuthorName: row.quoted_author_name,
+      quotedAuthorHandle: row.quoted_author_handle
     },
     reviewed_at: null,
     source_priority: 4
@@ -427,11 +500,24 @@ function buildLineSourceSnapshotCandidate(row: LineSourceSnapshotReviewSourceRow
     tweetUrl: row.tweet_url,
     rawPayload: row.raw_payload,
   });
+  const prefersQuotedAttribution = shouldPreferQuotedAttribution(row);
+  const primaryTextSource = prefersQuotedAttribution
+    ? "quoted_oembed"
+    : row.primary_text_source;
+  const sourceHandle = prefersQuotedAttribution
+    ? row.quoted_author_handle ??
+      parseHandleFromTweetUrl(row.quoted_tweet_url) ??
+      fallbackAuthor.sourceHandle
+    : fallbackAuthor.sourceHandle;
+  const authorName = prefersQuotedAttribution
+    ? row.quoted_author_name ?? sourceHandle ?? fallbackAuthor.authorName
+    : fallbackAuthor.authorName;
   const reviewText = buildTweetPatternReviewText({
     rawText: row.raw_text,
     enrichedText: row.enriched_text,
     quotedRawText: row.quoted_raw_text,
-    quotedEnrichedText: row.quoted_enriched_text
+    quotedEnrichedText: row.quoted_enriched_text,
+    primaryTextSource
   });
   return {
     dedupe_key: buildTweetPatternReviewDedupeKey({
@@ -447,13 +533,15 @@ function buildLineSourceSnapshotCandidate(row: LineSourceSnapshotReviewSourceRow
     source_key: row.source_key,
     source_account: row.source_account,
     source_label: row.source_label ?? row.source,
-    source_handle: fallbackAuthor.sourceHandle,
-    author_name: fallbackAuthor.authorName,
+    source_handle: sourceHandle,
+    author_name: authorName,
     snapshot_date: row.snapshot_date,
     source_created_at: row.observed_at,
     tweet_id: row.tweet_id,
     tweet_url: row.tweet_url,
-    source_url: row.source_url,
+    source_url: prefersQuotedAttribution
+      ? row.quoted_tweet_url ?? row.source_url
+      : row.source_url,
     quoted_tweet_id: row.quoted_tweet_id,
     quoted_tweet_url: row.quoted_tweet_url,
     team_id: row.team_id,
@@ -468,6 +556,7 @@ function buildLineSourceSnapshotCandidate(row: LineSourceSnapshotReviewSourceRow
       enrichedText: row.enriched_text,
       quotedText: row.quoted_enriched_text ?? row.quoted_raw_text ?? null,
       rawPayload: row.raw_payload,
+      primaryTextSource
     }),
     raw_text: row.raw_text,
     enriched_text: row.enriched_text,
@@ -479,9 +568,15 @@ function buildLineSourceSnapshotCandidate(row: LineSourceSnapshotReviewSourceRow
       review_assignments: [],
       notes: null,
     metadata: {
-      primaryTextSource: row.primary_text_source,
+      primaryTextSource,
+      originalPrimaryTextSource: row.primary_text_source,
+      preferredQuotedAttribution: prefersQuotedAttribution,
       tweetPostedLabel: row.tweet_posted_label,
-      sourceRowStatus: row.status
+      sourceRowStatus: row.status,
+      wrapperAuthorName: fallbackAuthor.authorName,
+      wrapperAuthorHandle: fallbackAuthor.sourceHandle,
+      quotedAuthorName: row.quoted_author_name,
+      quotedAuthorHandle: row.quoted_author_handle
     },
     reviewed_at: null,
     source_priority: 4
@@ -630,14 +725,14 @@ async function syncTweetPatternReviewItems(args: {
       args.supabase
         .from("lines_ccc" as any)
         .select(
-          "capture_key, source, source_label, source_handle, author_name, snapshot_date, observed_at, tweet_id, tweet_url, source_url, quoted_tweet_id, quoted_tweet_url, team_id, team_abbreviation, classification, nhl_filter_status, nhl_filter_reason, keyword_hits, raw_text, enriched_text, quoted_raw_text, quoted_enriched_text, raw_payload, primary_text_source, tweet_posted_label, status"
+          "capture_key, source, source_label, source_handle, author_name, snapshot_date, observed_at, tweet_id, tweet_url, source_url, quoted_tweet_id, quoted_tweet_url, quoted_author_handle, quoted_author_name, team_id, team_abbreviation, classification, nhl_filter_status, nhl_filter_reason, keyword_hits, raw_text, enriched_text, quoted_raw_text, quoted_enriched_text, raw_payload, primary_text_source, tweet_posted_label, status"
         )
         .order("observed_at", { ascending: false })
         .limit(args.perSourceLimit),
       args.supabase
         .from("line_source_snapshots" as any)
         .select(
-          "capture_key, source_group, source_key, source_account, source, source_label, source_handle, author_name, snapshot_date, observed_at, tweet_id, tweet_url, source_url, quoted_tweet_id, quoted_tweet_url, team_id, team_abbreviation, classification, nhl_filter_status, nhl_filter_reason, keyword_hits, raw_text, enriched_text, quoted_raw_text, quoted_enriched_text, raw_payload, primary_text_source, tweet_posted_label, status"
+          "capture_key, source_group, source_key, source_account, source, source_label, source_handle, author_name, snapshot_date, observed_at, tweet_id, tweet_url, source_url, quoted_tweet_id, quoted_tweet_url, quoted_author_handle, quoted_author_name, team_id, team_abbreviation, classification, nhl_filter_status, nhl_filter_reason, keyword_hits, raw_text, enriched_text, quoted_raw_text, quoted_enriched_text, raw_payload, primary_text_source, tweet_posted_label, status"
         )
         .order("observed_at", { ascending: false })
         .limit(args.perSourceLimit),
@@ -741,8 +836,8 @@ async function syncTweetPatternReviewItems(args: {
       review_assignments: existing?.review_assignments ?? [],
       notes: existing?.notes ?? null,
       metadata: {
-        ...(candidate.metadata ?? {}),
-        ...((existing?.metadata as Record<string, unknown> | null) ?? {})
+        ...((existing?.metadata as Record<string, unknown> | null) ?? {}),
+        ...(candidate.metadata ?? {})
       },
       reviewed_at: existing?.reviewed_at ?? null,
       updated_at: nowIso
@@ -780,14 +875,16 @@ async function handleGet(req: any, res: NextApiResponse) {
 
   const limit = parseLimit(req.query.limit);
   const status = parseStatus(req.query.status);
+  const sort = parseSort(req.query.sort);
+  const ascending = sort === "oldest";
   const exportMode = parseString(req.query.export);
   let query = req.supabase
     .from("tweet_pattern_review_items" as any)
     .select(
       "id, dedupe_key, source_table, source_row_key, source_group, source_key, source_account, source_label, source_handle, author_name, snapshot_date, source_created_at, tweet_id, tweet_url, source_url, quoted_tweet_id, quoted_tweet_url, team_id, team_abbreviation, parser_classification, parser_filter_status, parser_filter_reason, keyword_hits, review_text, raw_text, enriched_text, quoted_text, review_status, reviewed_category, reviewed_subcategory, selected_highlights, review_assignments, notes, metadata, reviewed_at, created_at, updated_at"
     )
-    .order("source_created_at", { ascending: false, nullsFirst: false })
-    .order("created_at", { ascending: false })
+    .order("source_created_at", { ascending, nullsFirst: false })
+    .order("created_at", { ascending })
     .limit(limit);
 
   if (status !== "all") {
@@ -833,7 +930,7 @@ async function handlePost(req: any, res: NextApiResponse) {
   if (action === "sync") {
     const syncSummary = await syncTweetPatternReviewItems({
       supabase: req.supabase,
-      perSourceLimit: parseLimit(body.perSourceLimit, 200)
+      perSourceLimit: parseLimit(body.perSourceLimit, 500)
     });
     return res.json({
       success: true,
@@ -842,29 +939,53 @@ async function handlePost(req: any, res: NextApiResponse) {
     });
   }
 
+  if (action === "ignore" || action === "requeue") {
+    const itemIds = parseStringArray(body.itemIds);
+    const itemId = parseString(body.itemId);
+    const targetItemIds = itemIds.length > 0 ? itemIds : itemId ? [itemId] : [];
+    if (targetItemIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing itemId or itemIds."
+      });
+    }
+
+    const nextStatus: ReviewStatus = action === "ignore" ? "ignored" : "pending";
+    const nowIso = new Date().toISOString();
+    let updatedCount = 0;
+    for (let index = 0; index < targetItemIds.length; index += 100) {
+      const itemIdBatch = targetItemIds.slice(index, index + 100);
+      const updateQuery = req.supabase
+        .from("tweet_pattern_review_items" as any)
+        .update({
+          review_status: nextStatus,
+          reviewed_at: action === "ignore" ? nowIso : null,
+          updated_at: nowIso
+        })
+        .select("id");
+      const { data, error } =
+        itemIdBatch.length === 1
+          ? await updateQuery.eq("id", itemIdBatch[0])
+          : await updateQuery.in("id", itemIdBatch);
+      if (error) throw error;
+      updatedCount += (data ?? []).length;
+    }
+
+    return res.json({
+      success: true,
+      updatedCount,
+      message:
+        action === "ignore"
+          ? `Ignored ${updatedCount} tweet${updatedCount === 1 ? "" : "s"}.`
+          : `Returned ${updatedCount} tweet${updatedCount === 1 ? "" : "s"} to pending review.`
+    });
+  }
+
   const itemId = parseString(body.itemId);
   if (!itemId) {
     return res.status(400).json({
       success: false,
       message: "Missing itemId."
-    });
-  }
-
-  if (action === "ignore" || action === "requeue") {
-    const nextStatus: ReviewStatus = action === "ignore" ? "ignored" : "pending";
-    const { error } = await req.supabase
-      .from("tweet_pattern_review_items" as any)
-      .update({
-        review_status: nextStatus,
-        reviewed_at: action === "ignore" ? new Date().toISOString() : null,
-        updated_at: new Date().toISOString()
-      })
-      .eq("id", itemId);
-    if (error) throw error;
-
-    return res.json({
-      success: true,
-      message: action === "ignore" ? "Tweet ignored." : "Tweet returned to pending review."
     });
   }
 

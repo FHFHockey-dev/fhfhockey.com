@@ -13,10 +13,12 @@ import {
   type NewsFeedItem,
   type NewsFeedKeywordPhrase
 } from "lib/newsFeed";
+import { parseLineupCardFromText } from "lib/newsLineupCard";
 import type { TweetPatternReviewAssignment } from "lib/sources/tweetPatternReview";
 import supabase from "lib/supabase";
 
 type ReviewStatus = "pending" | "reviewed" | "ignored";
+type ReviewSort = "newest" | "oldest";
 
 type PatternCategoryOption = {
   category: string;
@@ -484,19 +486,25 @@ const TweetPatternReviewPage: NextPage = () => {
   const [statusFilter, setStatusFilter] = useState<ReviewStatus | "all">(
     "pending"
   );
+  const [queueSort, setQueueSort] = useState<ReviewSort>("newest");
+  const [selectedBulkIds, setSelectedBulkIds] = useState<Set<string>>(
+    () => new Set()
+  );
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isBulkUpdating, setIsBulkUpdating] = useState(false);
   const [isSavingNews, setIsSavingNews] = useState(false);
   const [isSavingKeyword, setIsSavingKeyword] = useState(false);
 
   const loadData = useCallback(
-    async (nextStatusFilter = statusFilter) => {
+    async (nextStatusFilter = statusFilter, nextQueueSort = queueSort) => {
       setIsLoading(true);
       const query = new URLSearchParams({
         status: nextStatusFilter,
-        limit: "150"
+        sort: nextQueueSort,
+        limit: "500"
       });
       const payload = await fetchWithOptionalAuth(
         `/api/v1/db/tweet-pattern-review?${query.toString()}`
@@ -511,7 +519,7 @@ const TweetPatternReviewPage: NextPage = () => {
       });
       setIsLoading(false);
     },
-    [statusFilter]
+    [queueSort, statusFilter]
   );
 
   useEffect(() => {
@@ -590,9 +598,28 @@ const TweetPatternReviewPage: NextPage = () => {
       });
   }, [authorOverrides, selectedItem]);
 
+  useEffect(() => {
+    const visiblePendingItemIds = new Set(
+      items
+        .filter((item) => item.review_status === "pending")
+        .map((item) => item.id)
+    );
+    setSelectedBulkIds((current) => {
+      const next = new Set(
+        Array.from(current).filter((itemId) => visiblePendingItemIds.has(itemId))
+      );
+      return next.size === current.size ? current : next;
+    });
+  }, [items]);
+
   const currentIndex = selectedItem
     ? items.findIndex((item) => item.id === selectedItem.id)
     : -1;
+  const bulkIgnoreCandidates = useMemo(
+    () => items.filter((item) => item.review_status === "pending"),
+    [items]
+  );
+  const selectedBulkCount = selectedBulkIds.size;
   const pendingCount = useMemo(
     () => items.filter((item) => item.review_status === "pending").length,
     [items]
@@ -617,6 +644,26 @@ const TweetPatternReviewPage: NextPage = () => {
     const nextIndex = currentIndex + direction;
     if (nextIndex < 0 || nextIndex >= items.length) return;
     setSelectedItemId(items[nextIndex].id);
+  }
+
+  function toggleBulkSelection(itemId: string) {
+    setSelectedBulkIds((current) => {
+      const next = new Set(current);
+      if (next.has(itemId)) {
+        next.delete(itemId);
+      } else {
+        next.add(itemId);
+      }
+      return next;
+    });
+  }
+
+  function selectVisibleBulkCandidates() {
+    setSelectedBulkIds(new Set(bulkIgnoreCandidates.map((item) => item.id)));
+  }
+
+  function clearBulkSelection() {
+    setSelectedBulkIds(new Set());
   }
 
   function updateAssignment(
@@ -804,7 +851,7 @@ const TweetPatternReviewPage: NextPage = () => {
         "/api/v1/db/tweet-pattern-review",
         {
           action: "sync",
-          perSourceLimit: 200
+          perSourceLimit: 500
         }
       );
       setStatusMessage(payload.message ?? "Queue synced.");
@@ -877,6 +924,29 @@ const TweetPatternReviewPage: NextPage = () => {
     }
   }
 
+  async function bulkIgnoreSelected() {
+    const itemIds = Array.from(selectedBulkIds);
+    if (itemIds.length === 0) return;
+
+    setIsBulkUpdating(true);
+    try {
+      const payload = await postWithOptionalAuth(
+        "/api/v1/db/tweet-pattern-review",
+        {
+          action: "ignore",
+          itemIds
+        }
+      );
+      setStatusMessage(payload.message ?? "Selected tweets ignored.");
+      setSelectedBulkIds(new Set());
+      await loadData(statusFilter, queueSort);
+    } catch (error: any) {
+      setStatusMessage(error.message);
+    } finally {
+      setIsBulkUpdating(false);
+    }
+  }
+
   async function saveNewsCard(cardStatus: "draft" | "published") {
     if (!selectedItem) return;
     if (!newsDraft.headline.trim() || !newsDraft.category.trim()) {
@@ -886,6 +956,11 @@ const TweetPatternReviewPage: NextPage = () => {
 
     const normalizedCategory = normalizeNewsCategory(newsDraft.category);
     const normalizedSubcategory = normalizeNewsCategory(newsDraft.subcategory);
+    const lineupCard = parseLineupCardFromText({
+      text: selectedItemDisplayText,
+      category: normalizedCategory,
+      subcategory: normalizedSubcategory
+    });
     const teamOption = teamOptions.find(
       (team) => String(team.id) === newsDraft.teamId
     );
@@ -934,7 +1009,8 @@ const TweetPatternReviewPage: NextPage = () => {
           parserFilterStatus: selectedItem.parser_filter_status,
           sourceFeed,
           sourceAccount: selectedItem.source_account,
-          sourceKey: selectedItem.source_key
+          sourceKey: selectedItem.source_key,
+          ...(lineupCard ? { lineupCard } : {})
         }
       });
       setStatusMessage(payload.message ?? "News card saved.");
@@ -1009,7 +1085,7 @@ const TweetPatternReviewPage: NextPage = () => {
                 onChange={(event) => {
                   const nextFilter = event.target.value as ReviewStatus | "all";
                   setStatusFilter(nextFilter);
-                  void loadData(nextFilter).catch((error) =>
+                  void loadData(nextFilter, queueSort).catch((error) =>
                     setStatusMessage(error.message)
                   );
                 }}
@@ -1018,6 +1094,23 @@ const TweetPatternReviewPage: NextPage = () => {
                 <option value="reviewed">Reviewed</option>
                 <option value="ignored">Ignored</option>
                 <option value="all">All</option>
+              </select>
+            </div>
+
+            <div className={styles.controlField}>
+              <span>Sort</span>
+              <select
+                value={queueSort}
+                onChange={(event) => {
+                  const nextSort = event.target.value as ReviewSort;
+                  setQueueSort(nextSort);
+                  void loadData(statusFilter, nextSort).catch((error) =>
+                    setStatusMessage(error.message)
+                  );
+                }}
+              >
+                <option value="newest">Newest first</option>
+                <option value="oldest">Oldest first</option>
               </select>
             </div>
 
@@ -1213,6 +1306,104 @@ const TweetPatternReviewPage: NextPage = () => {
                       assignments.flatMap((a) => a.highlightPhrases)
                     )}
                   </pre>
+                </div>
+
+                {/* Queue browser */}
+                <div className={styles.queueBrowser}>
+                  <div className={styles.queueBrowserHeader}>
+                    <div>
+                      <span>Needs resolution</span>
+                      <small>
+                        {pendingCount} pending in {items.length} loaded ·{" "}
+                        {queueSort === "newest" ? "newest first" : "oldest first"}
+                      </small>
+                    </div>
+                    <div className={styles.queueBrowserActions}>
+                      <button
+                        className={styles.btn}
+                        disabled={bulkIgnoreCandidates.length === 0}
+                        onClick={() => selectVisibleBulkCandidates()}
+                      >
+                        Select visible
+                      </button>
+                      <button
+                        className={styles.btn}
+                        disabled={selectedBulkCount === 0}
+                        onClick={() => clearBulkSelection()}
+                      >
+                        Clear
+                      </button>
+                      <button
+                        className={styles.btnIgnore}
+                        disabled={selectedBulkCount === 0 || isBulkUpdating}
+                        onClick={() => void bulkIgnoreSelected()}
+                      >
+                        {isBulkUpdating
+                          ? "Ignoring…"
+                          : `Ignore selected (${selectedBulkCount})`}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className={styles.queueList}>
+                    {items.map((item) => {
+                      const authorOverride = authorOverrides[item.id];
+                      const isChecked = selectedBulkIds.has(item.id);
+                      const isSelected = item.id === selectedItemId;
+                      const canBulkIgnore = item.review_status === "pending";
+                      const queueSnippet = getReviewItemDisplayText(item)
+                        .replace(/\s+/g, " ")
+                        .slice(0, 180);
+
+                      return (
+                        <div
+                          key={item.id}
+                          className={[
+                            styles.queueItem,
+                            isSelected ? styles.queueItemSelected : "",
+                            isChecked ? styles.queueItemChecked : ""
+                          ]
+                            .filter(Boolean)
+                            .join(" ")}
+                        >
+                          <label
+                            className={styles.queueCheckbox}
+                            onClick={(event) => event.stopPropagation()}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              disabled={!canBulkIgnore}
+                              onChange={() => toggleBulkSelection(item.id)}
+                              aria-label={`Select ${getReviewItemSourceName(
+                                item,
+                                authorOverride
+                              )}`}
+                            />
+                          </label>
+                          <button
+                            className={styles.queueItemButton}
+                            onClick={() => setSelectedItemId(item.id)}
+                          >
+                            <span className={styles.queueItemMeta}>
+                              <span>{formatTimestamp(item.source_created_at)}</span>
+                              <span>{item.team_abbreviation ?? "No team"}</span>
+                              <span>
+                                {formatNewsFeedLabel(item.parser_classification) ||
+                                  "No parser"}
+                              </span>
+                            </span>
+                            <span className={styles.queueItemTitle}>
+                              {getReviewItemSourceName(item, authorOverride)}
+                            </span>
+                            <span className={styles.queueItemText}>
+                              {queueSnippet}
+                            </span>
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 {/* Assignments pane */}
@@ -1785,6 +1976,13 @@ const TweetPatternReviewPage: NextPage = () => {
                               published_at: null,
                               created_at: new Date().toISOString(),
                               card_status: "draft",
+                              metadata: {
+                                lineupCard: parseLineupCardFromText({
+                                  text: selectedItemDisplayText,
+                                  category: newsDraft.category,
+                                  subcategory: newsDraft.subcategory
+                                })
+                              },
                               players: newsDraft.playerNames.map(
                                 (playerName, index) => ({
                                   id: `${playerName}-${index}`,

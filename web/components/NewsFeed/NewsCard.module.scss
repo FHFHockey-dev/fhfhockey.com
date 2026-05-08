@@ -10,6 +10,10 @@
   border-color: rgba(255, 255, 255, 0.08);
 }
 
+.lineupCard {
+  min-height: 258px;
+}
+
 .compact {
   grid-template-columns: minmax(0, 1fr) 92px;
   min-height: 132px;
@@ -27,6 +31,23 @@
   .playerChip {
     padding: 4px 8px;
     font-size: 0.72rem;
+  }
+
+  .lineupGrid {
+    gap: 5px;
+  }
+
+  .lineupSlot {
+    min-height: 34px;
+    padding: 5px 6px;
+  }
+
+  .lineupSlotLabel {
+    font-size: 0.52rem;
+  }
+
+  .lineupSlotName {
+    font-size: clamp(0.68rem, 1.1vw, 0.82rem);
   }
 
   .blurb {
@@ -116,6 +137,80 @@
   color: v.$color-white;
   font-size: 0.78rem;
   font-weight: 600;
+}
+
+.lineupGrid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-rows: repeat(4, minmax(38px, auto));
+  gap: 7px;
+  min-width: 0;
+}
+
+.lineupSlot {
+  position: relative;
+  min-width: 0;
+  min-height: 42px;
+  display: grid;
+  align-content: center;
+  gap: 2px;
+  padding: 7px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  overflow: hidden;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0)),
+    rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.2);
+}
+
+.lineupSlotForward {
+  border-color: rgba(51, 190, 132, 0.35);
+  background:
+    linear-gradient(135deg, rgba(51, 190, 132, 0.28), rgba(12, 83, 55, 0.36)),
+    rgba(9, 48, 35, 0.72);
+}
+
+.lineupSlotDefense {
+  border-color: rgba(229, 75, 75, 0.38);
+  background:
+    linear-gradient(135deg, rgba(229, 75, 75, 0.32), rgba(88, 20, 25, 0.38)),
+    rgba(54, 19, 24, 0.78);
+}
+
+.lineupSlotGoalie {
+  border-color: rgba(239, 191, 86, 0.42);
+  background:
+    linear-gradient(135deg, rgba(239, 191, 86, 0.34), rgba(100, 73, 21, 0.34)),
+    rgba(58, 43, 18, 0.78);
+}
+
+.lineupSlotStarter {
+  border-color: rgba(255, 232, 151, 0.95);
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 232, 151, 0.42),
+    0 0 0 1px rgba(255, 232, 151, 0.2),
+    0 10px 22px rgba(0, 0, 0, 0.24);
+}
+
+.lineupSlotLabel {
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.lineupSlotName {
+  min-width: 0;
+  color: v.$color-white;
+  font-size: clamp(0.74rem, 1.15vw, 0.92rem);
+  font-weight: 800;
+  line-height: 1.05;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .blurb {

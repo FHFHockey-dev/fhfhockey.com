@@ -6,8 +6,13 @@ import styles from "./NewsCard.module.scss";
 import {
   formatNewsFeedLabel,
   getNewsItemTeamColors,
+  normalizeNewsCategory,
   type NewsFeedItem,
 } from "lib/newsFeed";
+import {
+  readLineupCardFromMetadata,
+  type NewsLineupCardData
+} from "lib/newsLineupCard";
 
 type NewsCardProps = {
   item: Pick<
@@ -23,6 +28,7 @@ type NewsCardProps = {
     | "published_at"
     | "created_at"
     | "card_status"
+    | "metadata"
     | "players"
   >;
   compact?: boolean;
@@ -34,6 +40,100 @@ function formatDate(value: string | null | undefined): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   return date.toLocaleString();
+}
+
+function isLineupCardCategory(item: NewsCardProps["item"]): boolean {
+  const category = normalizeNewsCategory(item.category);
+  const subcategory = normalizeNewsCategory(item.subcategory);
+  return (
+    category === "LINE COMBINATION" ||
+    category === "PRACTICE LINES" ||
+    subcategory === "PRACTICE LINES" ||
+    subcategory === "FORWARD LINES" ||
+    subcategory === "DEFENSE PAIRS"
+  );
+}
+
+function LineupSlot({
+  name,
+  label,
+  variant,
+  isStarter = false
+}: {
+  name: string | null;
+  label: string;
+  variant: "forward" | "defense" | "goalie";
+  isStarter?: boolean;
+}) {
+  return (
+    <div
+      className={[
+        styles.lineupSlot,
+        styles[`lineupSlot${variant[0].toUpperCase()}${variant.slice(1)}`],
+        isStarter ? styles.lineupSlotStarter : ""
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
+      <span className={styles.lineupSlotLabel}>
+        {isStarter ? "START" : label}
+      </span>
+      <span className={styles.lineupSlotName}>{name || "TBD"}</span>
+    </div>
+  );
+}
+
+function LineupGrid({ lineup }: { lineup: NewsLineupCardData }) {
+  return (
+    <div className={styles.lineupGrid} aria-label="Projected lineup">
+      {Array.from({ length: 4 }).flatMap((_, rowIndex) => {
+        const forwardLine = lineup.forwards[rowIndex] ?? [];
+        const rightSide =
+          rowIndex < 3
+            ? (lineup.defensePairs[rowIndex] ?? []).map((name, index) => (
+                <LineupSlot
+                  key={`d-${rowIndex}-${index}`}
+                  name={name}
+                  label={`D${rowIndex + 1}`}
+                  variant="defense"
+                />
+              ))
+            : lineup.goalies.slice(0, 2).map((name, index) => (
+                <LineupSlot
+                  key={`g-${index}`}
+                  name={name}
+                  label={index === 0 ? "G1" : "G2"}
+                  variant="goalie"
+                  isStarter={Boolean(
+                    lineup.startingGoalie &&
+                      name.toLowerCase() === lineup.startingGoalie.toLowerCase()
+                  )}
+                />
+              ));
+
+        return [
+          ...Array.from({ length: 3 }).map((__, index) => (
+            <LineupSlot
+              key={`f-${rowIndex}-${index}`}
+              name={forwardLine[index] ?? null}
+              label={`F${rowIndex + 1}`}
+              variant="forward"
+            />
+          )),
+          ...Array.from({ length: 2 }).map((__, index) =>
+            rightSide[index] ?? (
+              <LineupSlot
+                key={`empty-${rowIndex}-${index}`}
+                name={null}
+                label={rowIndex < 3 ? `D${rowIndex + 1}` : `G${index + 1}`}
+                variant={rowIndex < 3 ? "defense" : "goalie"}
+              />
+            )
+          )
+        ];
+      })}
+    </div>
+  );
 }
 
 function formatSourceAttribution(
@@ -66,10 +166,15 @@ export default function NewsCard({
   const subcategoryLabel = item.subcategory
     ? formatNewsFeedLabel(item.subcategory)
     : null;
+  const lineup = isLineupCardCategory(item)
+    ? readLineupCardFromMetadata(item.metadata)
+    : null;
 
   return (
     <article
-      className={`${styles.card} ${compact ? styles.compact : ""}`.trim()}
+      className={`${styles.card} ${compact ? styles.compact : ""} ${
+        lineup ? styles.lineupCard : ""
+      }`.trim()}
       style={
         {
           "--news-accent": team.primary,
@@ -91,7 +196,9 @@ export default function NewsCard({
 
         <h2 className={styles.headline}>{item.headline}</h2>
 
-        {item.players.length > 0 ? (
+        {lineup ? <LineupGrid lineup={lineup} /> : null}
+
+        {!lineup && item.players.length > 0 ? (
           <div className={styles.playerRow}>
             {item.players.map((player) => (
               <span key={`${item.headline}-${player.player_name}`} className={styles.playerChip}>

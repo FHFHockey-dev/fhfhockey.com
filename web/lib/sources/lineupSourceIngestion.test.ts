@@ -6,6 +6,7 @@ import {
   buildGoalieStartSourceFromOfficialLineup,
   buildTeamDirectory,
   classifyGameDayTweet,
+  extractStructuredPlayerGroupsFromText,
   extractStructuredNameGroupsFromTweet,
   findGameDayTweetKeywordHits,
   matchRosterNamesInTweet,
@@ -226,7 +227,7 @@ describe("lineupSourceIngestion", () => {
       classification: "lineup"
     });
     expect(parsed.tweets[0]?.structureSignals).toMatchObject({
-      forwardLineCount: 1
+      forwardLineCount: 2
     });
     expect(parsed.selectedLineup?.sourceName).toBe("gamedaytweets");
     expect(parsed.selectedLineup?.metadata).toMatchObject({
@@ -253,6 +254,87 @@ Johansson - Hartman - N. Foligno`;
       matchedPlayerIds: [102, 108],
       matchedNames: ["Joel Eriksson Ek", "Nick Foligno"],
       unmatchedNames: []
+    });
+  });
+
+  it("detects keywordless structured lineup blocks with initials and compact separators", () => {
+    const text = `Barbashev—Eichel—Dorofeyev
+Howden—Marner—Stone
+Hertl—Karlsson—Kolesar
+C Smith—Dowd—Sissons
+
+McNabb—Theodore
+Hanifin—Andersson
+Hutton—Korczak
+
+Hart`;
+
+    expect(classifyGameDayTweet(text)).toBe("lineup");
+    expect(extractStructuredPlayerGroupsFromText(text)).toEqual({
+      forwards: [
+        ["Barbashev", "Eichel", "Dorofeyev"],
+        ["Howden", "Marner", "Stone"],
+        ["Hertl", "Karlsson", "Kolesar"],
+        ["C Smith", "Dowd", "Sissons"]
+      ],
+      defensePairs: [
+        ["McNabb", "Theodore"],
+        ["Hanifin", "Andersson"],
+        ["Hutton", "Korczak"]
+      ],
+      goalies: ["Hart"]
+    });
+  });
+
+  it("isolates structured spans from prefixed prose and canonicalizes roster-linked names", () => {
+    const roster = [
+      { playerId: 1, fullName: "Nicolas Aube-Kubel", lastName: "Aube-Kubel" },
+      { playerId: 2, fullName: "Connor McDavid", lastName: "McDavid" },
+      { playerId: 3, fullName: "Zach Hyman", lastName: "Hyman" },
+      { playerId: 4, fullName: "Darnell Nurse", lastName: "Nurse" },
+      { playerId: 5, fullName: "Evan Bouchard", lastName: "Bouchard" },
+      { playerId: 6, fullName: "Carter Hart", lastName: "Hart" }
+    ];
+    const text = `Player returns to lineup tonight. Aube-Kubel - McDavid - Hyman
+D1: Nurse - Bouchard
+Hart (starter)`;
+
+    expect(extractStructuredPlayerGroupsFromText(text, roster)).toEqual({
+      forwards: [["Nicolas Aube-Kubel", "Connor McDavid", "Zach Hyman"]],
+      defensePairs: [["Darnell Nurse", "Evan Bouchard"]],
+      goalies: ["Hart"]
+    });
+  });
+
+  it("treats French lineup blocks as lineup content without relying on English keywords", () => {
+    const text = `La formation du CH pendant l'échauffement du premier match contre les Sabres à Buffalo.
+
+Caufield-Suzuki-Slafkovsky
+Texier-Danault-Anderson
+Newhook-Evans-Demidov
+Bolduc-Veleno-Dach
+
+Matheson-Carrier
+Guhle-Hutson
+Xhekaj-Dobson
+
+Dobes
+Fowler`;
+
+    expect(classifyGameDayTweet(text)).toBe("lineup");
+    expect(extractStructuredPlayerGroupsFromText(text)).toEqual({
+      forwards: [
+        ["Caufield", "Suzuki", "Slafkovsky"],
+        ["Texier", "Danault", "Anderson"],
+        ["Newhook", "Evans", "Demidov"],
+        ["Bolduc", "Veleno", "Dach"]
+      ],
+      defensePairs: [
+        ["Matheson", "Carrier"],
+        ["Guhle", "Hutson"],
+        ["Xhekaj", "Dobson"]
+      ],
+      goalies: ["Dobes", "Fowler"]
     });
   });
 
@@ -294,7 +376,7 @@ Johansson - Hartman - N. Foligno`;
     expect(parsed.selectedLineup?.sourceUrl).toBe("https://twitter.com/GameDayLines/status/222");
     expect(parsed.selectedLineup?.metadata).toMatchObject({
       structureSignals: {
-        forwardLineCount: 1,
+        forwardLineCount: 2,
         keywordHits: expect.arrayContaining(["line combinations"])
       }
     });
