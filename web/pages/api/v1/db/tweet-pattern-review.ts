@@ -134,6 +134,8 @@ type LineSourceSnapshotReviewSourceRow = {
   source_url: string | null;
   quoted_tweet_id: string | null;
   quoted_tweet_url: string | null;
+  quoted_author_handle: string | null;
+  quoted_author_name: string | null;
   team_id: number | null;
   team_abbreviation: string | null;
   classification: string | null;
