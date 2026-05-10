@@ -10,7 +10,7 @@ import type { Database, Json } from "lib/supabase/database-generated.types";
 import type { GamePredictionFeatureSnapshotPayload } from "./featureBuilder";
 
 export const BASELINE_MODEL_NAME = "nhl_game_baseline_logistic";
-export const BASELINE_MODEL_VERSION = "v4_no_recent_point_pct_threshold_52";
+export const BASELINE_MODEL_VERSION = "v6_roster_ctpi_sos_threshold_52";
 export const BASELINE_PROBABILITY_FLOOR = 0.05;
 export const BASELINE_MIN_DATA_QUALITY_MULTIPLIER = 0.55;
 export const BASELINE_WINNER_DECISION_THRESHOLD = 0.52;
@@ -27,6 +27,10 @@ export const BASELINE_FEATURE_KEYS = [
   "homeMinusAwayRecent5XgfPct",
   "homeMinusAwayRecent10XgfPct",
   "homeMinusAwayRecent10PointPct",
+  "homeMinusAwayCtpi",
+  "homeMinusAwayPastOpponentCompositeRating",
+  "homeMinusAwayForgeProjectedGoals",
+  "homeMinusAwayForgeProjectedShots",
   "homeMinusAwayWeightedGoalieGsaaPer60",
   "homeRestAdvantageDays",
 ] as const;
@@ -218,8 +222,8 @@ function buildModelAuditMetadata(args: {
     winnerPolicyMode: "report_default_50_and_selected_threshold",
     defaultWinnerThreshold: 0.5,
     selectedWinnerThreshold: args.selectedWinnerThreshold,
-    rosterImpactVersion: "none",
-    strengthOfScheduleVersion: "none",
+    rosterImpactVersion: "forge_team_projection_v1",
+    strengthOfScheduleVersion: "past_opponent_power_v1",
     seasonDecayVersion: "none",
     probabilityBlendVersion: "none",
     ...args.modelAuditMetadata,
@@ -366,6 +370,22 @@ export function buildBaselineFeatureVector(
     homeMinusAwayRecent10XgfPct: payload.matchup.homeMinusAwayRecent10XgfPct,
     homeMinusAwayRecent10PointPct:
       payload.matchup.homeMinusAwayRecent10PointPct,
+    homeMinusAwayCtpi:
+      payload.matchup.homeMinusAwayCtpi == null
+        ? null
+        : payload.matchup.homeMinusAwayCtpi / 100,
+    homeMinusAwayPastOpponentCompositeRating:
+      payload.matchup.homeMinusAwayPastOpponentCompositeRating == null
+        ? null
+        : payload.matchup.homeMinusAwayPastOpponentCompositeRating / 100,
+    homeMinusAwayForgeProjectedGoals:
+      payload.matchup.homeMinusAwayForgeProjectedGoals == null
+        ? null
+        : payload.matchup.homeMinusAwayForgeProjectedGoals / 3,
+    homeMinusAwayForgeProjectedShots:
+      payload.matchup.homeMinusAwayForgeProjectedShots == null
+        ? null
+        : payload.matchup.homeMinusAwayForgeProjectedShots / 10,
     homeMinusAwayWeightedGoalieGsaaPer60:
       payload.matchup.homeMinusAwayWeightedGoalieGsaaPer60,
     homeRestAdvantageDays:

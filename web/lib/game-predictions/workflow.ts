@@ -26,6 +26,7 @@ import {
   persistMetricInserts,
   type GamePredictionHistoryRow,
 } from "./evaluation";
+import { upsertGamePredictionSourceProvenanceRows } from "lib/predictions/sourceProvenance";
 
 export const PREGAME_PREDICTION_REFRESH_POLICY = {
   windowsBeforeStartHours: [24, 6, 1],
@@ -35,7 +36,7 @@ export const PREGAME_PREDICTION_REFRESH_POLICY = {
 } as const;
 
 export const INITIAL_BASELINE_MODEL: BinaryLogisticModel = {
-  featureCount: 13,
+  featureCount: 17,
   weights: [
     0.018,
     0.008,
@@ -49,7 +50,11 @@ export const INITIAL_BASELINE_MODEL: BinaryLogisticModel = {
     0.12,
     0,
     0.2,
+    0.08,
     0.04,
+    0.04,
+    0.02,
+    0,
   ],
   bias: 0,
 };
@@ -197,6 +202,11 @@ export async function generatePregamePredictionForGame(args: {
       onConflict: "snapshot_date,game_id,model_name,model_version,prediction_scope",
     });
   if (latestError) throw latestError;
+  await upsertGamePredictionSourceProvenanceRows({
+    client: args.client,
+    payload,
+    prediction,
+  });
 
   return {
     gameId: args.gameId,

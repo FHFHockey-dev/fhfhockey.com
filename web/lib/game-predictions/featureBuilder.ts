@@ -2,6 +2,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database, Json } from "lib/supabase/database-generated.types";
 import {
+  buildPredictionMetadataContract,
+  buildSourceFreshnessContract,
+} from "lib/predictions/contracts";
+import {
   GAME_PREDICTION_FEATURE_SET_VERSION,
   getGamePredictionFeatureSources,
 } from "./featureSources";
@@ -85,6 +89,20 @@ export type NstTeamGamelogRow = Pick<
   | "sf_pct"
 >;
 
+export type TeamCtpiRow = Pick<
+  Tables<"team_ctpi_daily">,
+  | "team"
+  | "date"
+  | "computed_at"
+  | "ctpi_0_to_100"
+  | "ctpi_raw"
+  | "offense"
+  | "defense"
+  | "goaltending"
+  | "special_teams"
+  | "luck"
+>;
+
 export type GoalieStartProjectionRow = Pick<
   Tables<"goalie_start_projections">,
   | "game_id"
@@ -128,20 +146,74 @@ export type GoaliePerformanceRow = Pick<
   | "nst_5v5_rates_gsaa_per_60"
 >;
 
+export type ForgeGoalieGameRow = Pick<
+  Tables<"forge_goalie_game">,
+  | "game_id"
+  | "game_date"
+  | "goalie_id"
+  | "team_id"
+  | "shots_against"
+  | "saves"
+  | "goals_allowed"
+  | "toi_seconds"
+>;
+
+export type WgoGoalieRow = Pick<
+  Tables<"wgo_goalie_stats">,
+  | "goalie_id"
+  | "goalie_name"
+  | "team_abbreviation"
+  | "date"
+  | "games_played"
+  | "games_started"
+  | "save_pct"
+  | "shots_against_per_60"
+  | "quality_start"
+  | "quality_starts_pct"
+  | "games_played_days_rest_0"
+  | "games_played_days_rest_1"
+  | "games_played_days_rest_2"
+  | "games_played_days_rest_3"
+  | "games_played_days_rest_4_plus"
+  | "save_pct_days_rest_0"
+  | "save_pct_days_rest_1"
+  | "save_pct_days_rest_2"
+  | "save_pct_days_rest_3"
+  | "save_pct_days_rest_4_plus"
+>;
+
+export type ForgeTeamProjectionRow = Pick<
+  Tables<"forge_team_projections">,
+  | "run_id"
+  | "game_id"
+  | "team_id"
+  | "horizon_games"
+  | "proj_shots_es"
+  | "proj_shots_pp"
+  | "proj_goals_es"
+  | "proj_goals_pp"
+  | "updated_at"
+>;
+
 export type GamePredictionFeatureInputs = {
   game: GameRow;
   sourceAsOfDate: string;
   homeTeam: TeamRow;
   awayTeam: TeamRow;
+  teamRows?: TeamRow[];
   priorGames: GameRow[];
   teamPowerRows: TeamPowerRow[];
   standingsRows: StandingsRow[];
   wgoTeamRows: WgoTeamRow[];
   nstTeamGamelogRows: NstTeamGamelogRow[];
+  teamCtpiRows: TeamCtpiRow[];
   goalieStartRows: GoalieStartProjectionRow[];
   lineCombinationRows: LineCombinationRow[];
   linesCccRows: LinesCccRow[];
   goaliePerformanceRows: GoaliePerformanceRow[];
+  forgeGoalieGameRows: ForgeGoalieGameRow[];
+  wgoGoalieRows: WgoGoalieRow[];
+  forgeTeamProjectionRows?: ForgeTeamProjectionRow[];
 };
 
 export type SourceCutoff = {
@@ -167,6 +239,9 @@ export type TeamSideFeatures = {
   standings: StandingsFeatures | null;
   wgoTeam: WgoTeamFeatures | null;
   recentForm: TeamRecentFormFeatures | null;
+  ctpi: TeamCtpiFeatures | null;
+  scheduleStrength: TeamScheduleStrengthFeatures | null;
+  forgeProjection: ForgeTeamProjectionFeatures | null;
   goalie: GoalieBlendFeatures;
   lineup: LineupFeatures | null;
 };
@@ -227,6 +302,35 @@ export type TeamRecentFormFeatures = {
   last10PointPct: number | null;
 };
 
+export type TeamCtpiFeatures = {
+  sourceDate: string;
+  computedAt: string | null;
+  ctpi0To100: number | null;
+  ctpiRaw: number | null;
+  offense: number | null;
+  defense: number | null;
+  goaltending: number | null;
+  specialTeams: number | null;
+  luck: number | null;
+};
+
+export type TeamScheduleStrengthFeatures = {
+  sourceMaxDate: string | null;
+  pastOpponentGames: number;
+  pastOpponentAvgOffRating: number | null;
+  pastOpponentAvgDefRating: number | null;
+  pastOpponentAvgGoalieRating: number | null;
+  pastOpponentAvgSpecialRating: number | null;
+  pastOpponentCompositeRating: number | null;
+};
+
+export type ForgeTeamProjectionFeatures = {
+  runId: string;
+  updatedAt: string | null;
+  projectedGoals: number | null;
+  projectedShots: number | null;
+};
+
 export type GoalieBlendFeatures = {
   source:
     | "lines_ccc"
@@ -241,6 +345,25 @@ export type GoalieBlendFeatures = {
   topGoalieName: string | null;
   topGoalieStartProbability: number | null;
   probabilityMass: number;
+  context: GoalieContextFeatures | null;
+};
+
+export type GoalieContextFeatures = {
+  sourceMaxDate: string | null;
+  gamesPlayedLast14Days: number;
+  startsLast14Days: number;
+  daysSinceLastStart: number | null;
+  isGoalieBackToBack: boolean;
+  last5ShotsAgainstPerGame: number | null;
+  last5SavePct: number | null;
+  seasonGamesPlayed: number | null;
+  seasonGamesStarted: number | null;
+  seasonSavePct: number | null;
+  seasonShotsAgainstPer60: number | null;
+  qualityStarts: number | null;
+  qualityStartsPct: number | null;
+  restSplitGamesPlayed: Record<"rest0" | "rest1" | "rest2" | "rest3" | "rest4Plus", number | null>;
+  restSplitSavePct: Record<"rest0" | "rest1" | "rest2" | "rest3" | "rest4Plus", number | null>;
 };
 
 export type LineupFeatures = {
@@ -262,6 +385,10 @@ export type MatchupFeatures = {
   homeMinusAwayRecent5XgfPct: number | null;
   homeMinusAwayRecent10XgfPct: number | null;
   homeMinusAwayRecent10PointPct: number | null;
+  homeMinusAwayCtpi: number | null;
+  homeMinusAwayPastOpponentCompositeRating: number | null;
+  homeMinusAwayForgeProjectedGoals: number | null;
+  homeMinusAwayForgeProjectedShots: number | null;
   homeMinusAwayWeightedGoalieGsaaPer60: number | null;
   homeRestAdvantageDays: number | null;
 };
@@ -334,8 +461,8 @@ function collectSourceCutoff(
   sourceDate: string | null,
   sourceAsOfDate: string,
   asOfRule = "strict_before_source_as_of_date",
-) {
-  cutoffs.push({
+): SourceCutoff {
+  const cutoff = {
     table,
     cutoff: sourceDate,
     asOfRule,
@@ -343,7 +470,55 @@ function collectSourceCutoff(
       sourceDate == null
         ? true
         : differenceInDays(sourceAsOfDate, sourceDate) > 14,
+  };
+  cutoffs.push(cutoff);
+  return cutoff;
+}
+
+function pushSourceCutoffWarning(
+  warnings: FeatureBuildWarning[],
+  side: "home" | "away",
+  cutoff: SourceCutoff,
+) {
+  if (cutoff.cutoff == null) {
+    warnings.push({
+      code: "missing_source",
+      source: cutoff.table,
+      message: `${side} ${cutoff.table} source is missing; fallback or omission is active.`,
+    });
+    return;
+  }
+
+  if (cutoff.stale) {
+    warnings.push({
+      code: "stale_source",
+      source: cutoff.table,
+      message: `${side} ${cutoff.table} source cutoff ${cutoff.cutoff} is stale for prediction as-of date.`,
+    });
+  }
+}
+
+function pushSparseWarning(
+  warnings: FeatureBuildWarning[],
+  side: "home" | "away",
+  code: string,
+  source: string,
+  message: string,
+) {
+  warnings.push({
+    code,
+    source,
+    message: `${side} ${message}`,
   });
+}
+
+function latestDateOnly(values: Array<string | null | undefined>): string | null {
+  return (
+    values
+      .map((value) => (typeof value === "string" ? value.slice(0, 10) : null))
+      .filter((value): value is string => Boolean(value))
+      .sort((a, b) => b.localeCompare(a))[0] ?? null
+  );
 }
 
 export function buildScheduleContextFeatures(args: {
@@ -507,6 +682,120 @@ function buildTeamRecentFormFeatures(
   };
 }
 
+function buildTeamCtpiFeatures(row: TeamCtpiRow | null): TeamCtpiFeatures | null {
+  if (!row) return null;
+  return {
+    sourceDate: row.date,
+    computedAt: row.computed_at ?? null,
+    ctpi0To100: toNumber(row.ctpi_0_to_100),
+    ctpiRaw: toNumber(row.ctpi_raw),
+    offense: toNumber(row.offense),
+    defense: toNumber(row.defense),
+    goaltending: toNumber(row.goaltending),
+    specialTeams: toNumber(row.special_teams),
+    luck: toNumber(row.luck),
+  };
+}
+
+function averageNullable(values: Array<number | null>): number | null {
+  const finiteValues = values.filter((value): value is number => value != null);
+  if (finiteValues.length === 0) return null;
+  return finiteValues.reduce((sum, value) => sum + value, 0) / finiteValues.length;
+}
+
+function teamPowerComposite(row: TeamPowerRow): number | null {
+  return averageNullable([
+    toNumber(row.off_rating),
+    toNumber(row.def_rating),
+    toNumber(row.goalie_rating),
+    toNumber(row.special_rating),
+  ]);
+}
+
+function buildTeamScheduleStrengthFeatures(args: {
+  teamId: number;
+  game: GameRow;
+  sourceAsOfDate: string;
+  priorGames: GameRow[];
+  teams: TeamRow[];
+  teamPowerRows: TeamPowerRow[];
+}): TeamScheduleStrengthFeatures | null {
+  const teamAbbreviationById = new Map(
+    args.teams.map((team) => [team.id, team.abbreviation]),
+  );
+  const opponentRows = args.priorGames
+    .filter(
+      (game) =>
+        game.date < args.sourceAsOfDate &&
+        game.date < args.game.date &&
+        (game.homeTeamId === args.teamId || game.awayTeamId === args.teamId),
+    )
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .slice(0, 10)
+    .map((game) => {
+      const opponentId =
+        game.homeTeamId === args.teamId ? game.awayTeamId : game.homeTeamId;
+      const opponentAbbreviation = teamAbbreviationById.get(opponentId);
+      if (!opponentAbbreviation) return null;
+      return latestBefore(
+        args.teamPowerRows,
+        args.sourceAsOfDate,
+        (row) => row.team_abbreviation === opponentAbbreviation,
+      );
+    })
+    .filter((row): row is TeamPowerRow => row != null);
+
+  if (opponentRows.length === 0) return null;
+
+  return {
+    sourceMaxDate: latestDateOnly(opponentRows.map((row) => row.date)),
+    pastOpponentGames: opponentRows.length,
+    pastOpponentAvgOffRating: averageNullable(
+      opponentRows.map((row) => toNumber(row.off_rating)),
+    ),
+    pastOpponentAvgDefRating: averageNullable(
+      opponentRows.map((row) => toNumber(row.def_rating)),
+    ),
+    pastOpponentAvgGoalieRating: averageNullable(
+      opponentRows.map((row) => toNumber(row.goalie_rating)),
+    ),
+    pastOpponentAvgSpecialRating: averageNullable(
+      opponentRows.map((row) => toNumber(row.special_rating)),
+    ),
+    pastOpponentCompositeRating: averageNullable(
+      opponentRows.map(teamPowerComposite),
+    ),
+  };
+}
+
+function buildForgeTeamProjectionFeatures(
+  rows: ForgeTeamProjectionRow[] | undefined,
+  gameId: number,
+  teamId: number,
+): ForgeTeamProjectionFeatures | null {
+  const row = (rows ?? [])
+    .filter(
+      (candidate) =>
+        candidate.game_id === gameId &&
+        candidate.team_id === teamId &&
+        Number(candidate.horizon_games ?? 1) === 1,
+    )
+    .sort((a, b) => (b.updated_at ?? "").localeCompare(a.updated_at ?? ""))[0];
+  if (!row) return null;
+  const goalsEs = toNumber(row.proj_goals_es);
+  const goalsPp = toNumber(row.proj_goals_pp);
+  const shotsEs = toNumber(row.proj_shots_es);
+  const shotsPp = toNumber(row.proj_shots_pp);
+  return {
+    runId: row.run_id,
+    updatedAt: row.updated_at ?? null,
+    projectedGoals:
+      goalsEs == null && goalsPp == null ? null : (goalsEs ?? 0) + (goalsPp ?? 0),
+    projectedShots:
+      shotsEs == null && shotsPp == null ? null : (shotsEs ?? 0) + (shotsPp ?? 0),
+  };
+}
+
 export function buildGoalieBlendFeatures(
   rows: GoalieStartProjectionRow[],
   teamId: number,
@@ -550,6 +839,7 @@ export function buildGoalieBlendFeatures(
       topGoalieName: linesCccGoalie.goalie_1_name,
       topGoalieStartProbability: 1,
       probabilityMass: 1,
+      context: null,
     };
   }
 
@@ -576,6 +866,7 @@ export function buildGoalieBlendFeatures(
         topGoalieName: null,
         topGoalieStartProbability: 1,
         probabilityMass: 1,
+        context: null,
       };
     }
 
@@ -596,6 +887,7 @@ export function buildGoalieBlendFeatures(
       topGoalieName: null,
       topGoalieStartProbability: null,
       probabilityMass: 0,
+      context: null,
     };
   }
 
@@ -634,6 +926,7 @@ export function buildGoalieBlendFeatures(
     topGoalieName: null,
     topGoalieStartProbability: top ? top.weight : null,
     probabilityMass: rawTotal,
+    context: null,
   };
 }
 
@@ -692,6 +985,87 @@ function buildRecentUsageGoalieFeatures(args: {
     topGoalieName: null,
     topGoalieStartProbability: topCount / recentStarterIds.length,
     probabilityMass: 1,
+    context: null,
+  };
+}
+
+function buildGoalieContextFeatures(args: {
+  goalieId: number | null;
+  teamId: number;
+  gameDate: string;
+  sourceAsOfDate: string;
+  forgeGoalieGameRows: ForgeGoalieGameRow[];
+  wgoGoalieRows: WgoGoalieRow[];
+}): GoalieContextFeatures | null {
+  if (args.goalieId == null) return null;
+
+  const forgeRows = args.forgeGoalieGameRows
+    .filter(
+      (row) =>
+        row.goalie_id === args.goalieId &&
+        row.team_id === args.teamId &&
+        row.game_date < args.sourceAsOfDate &&
+        row.game_date < args.gameDate,
+    )
+    .sort((a, b) => b.game_date.localeCompare(a.game_date));
+  const recentRows = forgeRows.slice(0, 5);
+  const last14Rows = forgeRows.filter(
+    (row) => differenceInDays(args.gameDate, row.game_date) <= 14,
+  );
+  const startsLast14Days = last14Rows.filter(
+    (row) => (toNumber(row.toi_seconds) ?? 0) >= 1_200,
+  ).length;
+  const latestStart = forgeRows.find(
+    (row) => (toNumber(row.toi_seconds) ?? 0) >= 1_200,
+  );
+  const wgoRow = args.wgoGoalieRows
+    .filter(
+      (row) =>
+        row.goalie_id === args.goalieId &&
+        row.date < args.sourceAsOfDate &&
+        row.date < args.gameDate,
+    )
+    .sort((a, b) => b.date.localeCompare(a.date))[0] ?? null;
+  const shotsAgainst = sumNumbers(recentRows, (row) => row.shots_against);
+  const saves = sumNumbers(recentRows, (row) => row.saves);
+
+  if (forgeRows.length === 0 && !wgoRow) return null;
+
+  return {
+    sourceMaxDate: latestDateOnly([
+      ...forgeRows.map((row) => row.game_date),
+      wgoRow?.date,
+    ]),
+    gamesPlayedLast14Days: last14Rows.length,
+    startsLast14Days,
+    daysSinceLastStart: latestStart
+      ? differenceInDays(args.gameDate, latestStart.game_date)
+      : null,
+    isGoalieBackToBack: latestStart
+      ? differenceInDays(args.gameDate, latestStart.game_date) <= 1
+      : false,
+    last5ShotsAgainstPerGame: divideOrNull(shotsAgainst, recentRows.length),
+    last5SavePct: divideOrNull(saves, shotsAgainst),
+    seasonGamesPlayed: toNumber(wgoRow?.games_played),
+    seasonGamesStarted: toNumber(wgoRow?.games_started),
+    seasonSavePct: toNumber(wgoRow?.save_pct),
+    seasonShotsAgainstPer60: toNumber(wgoRow?.shots_against_per_60),
+    qualityStarts: toNumber(wgoRow?.quality_start),
+    qualityStartsPct: percentishToRate(wgoRow?.quality_starts_pct),
+    restSplitGamesPlayed: {
+      rest0: toNumber(wgoRow?.games_played_days_rest_0),
+      rest1: toNumber(wgoRow?.games_played_days_rest_1),
+      rest2: toNumber(wgoRow?.games_played_days_rest_2),
+      rest3: toNumber(wgoRow?.games_played_days_rest_3),
+      rest4Plus: toNumber(wgoRow?.games_played_days_rest_4_plus),
+    },
+    restSplitSavePct: {
+      rest0: toNumber(wgoRow?.save_pct_days_rest_0),
+      rest1: toNumber(wgoRow?.save_pct_days_rest_1),
+      rest2: toNumber(wgoRow?.save_pct_days_rest_2),
+      rest3: toNumber(wgoRow?.save_pct_days_rest_3),
+      rest4Plus: toNumber(wgoRow?.save_pct_days_rest_4_plus),
+    },
   };
 }
 
@@ -783,6 +1157,22 @@ export function buildMatchupFeatures(
       home.recentForm?.last10PointPct,
       away.recentForm?.last10PointPct,
     ),
+    homeMinusAwayCtpi: subtractNullable(
+      home.ctpi?.ctpi0To100,
+      away.ctpi?.ctpi0To100,
+    ),
+    homeMinusAwayPastOpponentCompositeRating: subtractNullable(
+      home.scheduleStrength?.pastOpponentCompositeRating,
+      away.scheduleStrength?.pastOpponentCompositeRating,
+    ),
+    homeMinusAwayForgeProjectedGoals: subtractNullable(
+      home.forgeProjection?.projectedGoals,
+      away.forgeProjection?.projectedGoals,
+    ),
+    homeMinusAwayForgeProjectedShots: subtractNullable(
+      home.forgeProjection?.projectedShots,
+      away.forgeProjection?.projectedShots,
+    ),
     homeMinusAwayWeightedGoalieGsaaPer60: subtractNullable(
       home.goalie.weightedProjectedGsaaPer60,
       away.goalie.weightedProjectedGsaaPer60,
@@ -833,31 +1223,73 @@ function buildTeamSideFeatures(args: {
     team.abbreviation,
     inputs.sourceAsOfDate,
   );
+  const ctpiRow = latestBefore(
+    inputs.teamCtpiRows,
+    inputs.sourceAsOfDate,
+    (row) => row.team === team.abbreviation,
+  );
+  const scheduleStrength = buildTeamScheduleStrengthFeatures({
+    teamId: team.id,
+    game: inputs.game,
+    sourceAsOfDate: inputs.sourceAsOfDate,
+    priorGames: inputs.priorGames,
+    teams: [inputs.homeTeam, inputs.awayTeam, ...(inputs.teamRows ?? [])],
+    teamPowerRows: inputs.teamPowerRows,
+  });
+  const forgeProjection = buildForgeTeamProjectionFeatures(
+    inputs.forgeTeamProjectionRows,
+    inputs.game.id,
+    team.id,
+  );
 
-  collectSourceCutoff(
-    sourceCutoffs,
-    "team_power_ratings_daily",
-    teamPowerRow?.date ?? null,
-    inputs.sourceAsOfDate,
-  );
-  collectSourceCutoff(
-    sourceCutoffs,
-    "nhl_standings_details",
-    standingsRow?.date ?? null,
-    inputs.sourceAsOfDate,
-  );
-  collectSourceCutoff(
-    sourceCutoffs,
-    "wgo_team_stats",
-    wgoRow?.date ?? null,
-    inputs.sourceAsOfDate,
-  );
-  collectSourceCutoff(
-    sourceCutoffs,
-    "nst_team_gamelogs_as_counts",
-    recentForm?.sourceMaxDate ?? null,
-    inputs.sourceAsOfDate,
-  );
+  for (const cutoff of [
+    collectSourceCutoff(
+      sourceCutoffs,
+      "team_power_ratings_daily",
+      teamPowerRow?.date ?? null,
+      inputs.sourceAsOfDate,
+    ),
+    collectSourceCutoff(
+      sourceCutoffs,
+      "nhl_standings_details",
+      standingsRow?.date ?? null,
+      inputs.sourceAsOfDate,
+    ),
+    collectSourceCutoff(
+      sourceCutoffs,
+      "wgo_team_stats",
+      wgoRow?.date ?? null,
+      inputs.sourceAsOfDate,
+    ),
+    collectSourceCutoff(
+      sourceCutoffs,
+      "nst_team_gamelogs_as_counts",
+      recentForm?.sourceMaxDate ?? null,
+      inputs.sourceAsOfDate,
+    ),
+    collectSourceCutoff(
+      sourceCutoffs,
+      "team_ctpi_daily",
+      ctpiRow?.date ?? null,
+      inputs.sourceAsOfDate,
+    ),
+    collectSourceCutoff(
+      sourceCutoffs,
+      "team_power_ratings_daily",
+      scheduleStrength?.sourceMaxDate ?? null,
+      inputs.sourceAsOfDate,
+      "strict_before_source_as_of_date_for_schedule_strength",
+    ),
+    collectSourceCutoff(
+      sourceCutoffs,
+      "forge_team_projections",
+      forgeProjection?.updatedAt?.slice(0, 10) ?? null,
+      inputs.sourceAsOfDate,
+      "current_prediction_only",
+    ),
+  ]) {
+    pushSourceCutoffWarning(warnings, args.side, cutoff);
+  }
 
   if (!teamPowerRow) {
     missingFeatures.push(`${args.side}.team_power`);
@@ -882,18 +1314,155 @@ function buildTeamSideFeatures(args: {
   if (!recentForm) {
     missingFeatures.push(`${args.side}.recent_form`);
     fallbackFlags[`${args.side}_recent_form_fallback`] = true;
+  } else if (recentForm.last10Games < 5) {
+    pushSparseWarning(
+      warnings,
+      args.side,
+      "sparse_recent_form",
+      "nst_team_gamelogs_as_counts",
+      `recent form has only ${recentForm.last10Games} eligible game(s).`,
+    );
   }
 
-  const goalie = buildGoalieBlendFeatures(inputs.goalieStartRows, team.id, {
+  if (!ctpiRow) {
+    missingFeatures.push(`${args.side}.ctpi`);
+    fallbackFlags[`${args.side}_ctpi_fallback`] = true;
+  }
+
+  if (!scheduleStrength) {
+    missingFeatures.push(`${args.side}.schedule_strength`);
+    fallbackFlags[`${args.side}_schedule_strength_fallback`] = true;
+  } else if (scheduleStrength.pastOpponentGames < 3) {
+    pushSparseWarning(
+      warnings,
+      args.side,
+      "sparse_schedule_strength",
+      "team_power_ratings_daily",
+      `schedule-strength context has only ${scheduleStrength.pastOpponentGames} prior opponent game(s).`,
+    );
+  }
+
+  if (!forgeProjection) {
+    fallbackFlags[`${args.side}_forge_projection_fallback`] = true;
+  }
+
+  const goalieSelection = buildGoalieBlendFeatures(inputs.goalieStartRows, team.id, {
     linesCccRows: inputs.linesCccRows,
     lineCombinationRows: inputs.lineCombinationRows,
     goaliePerformanceRows: inputs.goaliePerformanceRows,
     priorGames: inputs.priorGames,
     gameId: inputs.game.id,
   });
+  const goalieContext = buildGoalieContextFeatures({
+    goalieId: goalieSelection.topGoalieId,
+    teamId: team.id,
+    gameDate: inputs.game.date,
+    sourceAsOfDate: inputs.sourceAsOfDate,
+    forgeGoalieGameRows: inputs.forgeGoalieGameRows,
+    wgoGoalieRows: inputs.wgoGoalieRows,
+  });
+  const goalie = {
+    ...goalieSelection,
+    context: goalieContext,
+  };
   if (goalie.source === "fallback") {
     missingFeatures.push(`${args.side}.goalie_start_projection`);
     fallbackFlags[`${args.side}_goalie_fallback`] = true;
+  }
+  if (!goalieContext) {
+    missingFeatures.push(`${args.side}.goalie_context`);
+    fallbackFlags[`${args.side}_goalie_context_fallback`] = true;
+  } else if (goalieContext.startsLast14Days === 0) {
+    pushSparseWarning(
+      warnings,
+      args.side,
+      "sparse_goalie_workload",
+      "forge_goalie_game",
+      "goalie workload context has no starts in the last 14 days.",
+    );
+  }
+  const goalieProjectionDate = latestDateOnly(
+    inputs.goalieStartRows
+      .filter((row) => row.team_id === team.id && row.game_id === inputs.game.id)
+      .map((row) => row.updated_at ?? row.created_at ?? row.game_date),
+  );
+  const acceptedTweetGoalieDate = latestDateOnly(
+    inputs.linesCccRows
+      .filter(
+        (row) =>
+          row.team_id === team.id &&
+          row.game_id === inputs.game.id &&
+          row.status === "observed" &&
+          row.nhl_filter_status === "accepted",
+      )
+      .map((row) => row.observed_at ?? row.tweet_posted_at),
+  );
+  const recentUsageDate =
+    goalie.source === "recent_usage"
+      ? latestDateOnly(
+          inputs.priorGames
+            .filter(
+              (game) =>
+                game.homeTeamId === team.id || game.awayTeamId === team.id,
+            )
+            .map((game) => game.date),
+        )
+      : null;
+  const goalieSourceDate =
+    goalie.source === "lines_ccc"
+      ? acceptedTweetGoalieDate
+      : goalie.source === "goalie_start_projections"
+        ? goalieProjectionDate
+        : goalie.source === "recent_usage"
+          ? recentUsageDate
+          : goalie.source === "lineCombinations"
+            ? inputs.sourceAsOfDate
+            : null;
+  for (const cutoff of [
+    collectSourceCutoff(
+      sourceCutoffs,
+      goalie.source === "lines_ccc"
+        ? "lines_ccc"
+        : goalie.source === "lineCombinations" || goalie.source === "recent_usage"
+          ? "lineCombinations"
+          : "goalie_start_projections",
+      goalieSourceDate,
+      inputs.sourceAsOfDate,
+      goalie.source === "goalie_start_projections" || goalie.source === "lines_ccc"
+        ? "current_prediction_only"
+        : "strict_before_source_as_of_date",
+    ),
+    collectSourceCutoff(
+      sourceCutoffs,
+      "forge_goalie_game",
+      latestDateOnly(
+        inputs.forgeGoalieGameRows
+          .filter(
+            (row) =>
+              row.team_id === team.id &&
+              row.goalie_id === goalie.topGoalieId &&
+              row.game_date < inputs.sourceAsOfDate,
+          )
+          .map((row) => row.game_date),
+      ),
+      inputs.sourceAsOfDate,
+    ),
+    collectSourceCutoff(
+      sourceCutoffs,
+      "wgo_goalie_stats",
+      latestDateOnly(
+        inputs.wgoGoalieRows
+          .filter(
+            (row) =>
+              row.goalie_id === goalie.topGoalieId &&
+              row.date < inputs.sourceAsOfDate,
+          )
+          .map((row) => row.date),
+      ),
+      inputs.sourceAsOfDate,
+    ),
+  ]) {
+    pushSourceCutoffWarning(warnings, args.side, cutoff);
   }
 
   const lineup = buildLineupFeatures(
@@ -903,7 +1472,23 @@ function buildTeamSideFeatures(args: {
   );
   if (!lineup) {
     fallbackFlags[`${args.side}_lineup_omitted`] = true;
+    warnings.push({
+      code: "fallback_lineup_omitted",
+      source: "lineCombinations",
+      message: `${args.side} lineup context is omitted because no current line-combination row is available.`,
+    });
   }
+  pushSourceCutoffWarning(
+    warnings,
+    args.side,
+    collectSourceCutoff(
+      sourceCutoffs,
+      "lineCombinations",
+      lineup ? inputs.sourceAsOfDate : null,
+      inputs.sourceAsOfDate,
+      "current_prediction_only",
+    ),
+  );
 
   return {
     teamId: team.id,
@@ -913,6 +1498,9 @@ function buildTeamSideFeatures(args: {
     standings: buildStandingsFeatures(standingsRow),
     wgoTeam: buildWgoTeamFeatures(wgoRow),
     recentForm,
+    ctpi: buildTeamCtpiFeatures(ctpiRow),
+    scheduleStrength,
+    forgeProjection,
     goalie,
     lineup,
   };
@@ -969,6 +1557,25 @@ export function buildFeatureSnapshotInsert(args: {
   predictionCutoffAt: string;
 }): Database["public"]["Tables"]["game_prediction_feature_snapshots"]["Insert"] {
   const { payload } = args;
+  const sourceFreshness = payload.sourceCutoffs.map((cutoff) =>
+    buildSourceFreshnessContract({
+      source: cutoff.table,
+      requestedDate: payload.sourceAsOfDate,
+      sourceDate: cutoff.cutoff,
+      staleThresholdDays: 14,
+      currentOnly: cutoff.asOfRule === "current_prediction_only",
+    }),
+  );
+  const predictionContract = buildPredictionMetadataContract({
+    modelName: args.modelName,
+    modelVersion: args.modelVersion,
+    featureSetVersion: payload.featureSetVersion,
+    asOfDate: payload.sourceAsOfDate,
+    sourceCutoffs: sourceFreshness,
+    warnings: payload.warnings,
+    fallbackFlags: payload.fallbackFlags,
+  });
+
   return {
     game_id: payload.gameId,
     snapshot_date: payload.gameDate,
@@ -987,11 +1594,13 @@ export function buildFeatureSnapshotInsert(args: {
       feature_sources: getGamePredictionFeatureSources(),
       warnings: payload.warnings,
       source_as_of_date: payload.sourceAsOfDate,
+      source_freshness: sourceFreshness,
     } as unknown as Json,
     metadata: {
       generated_by: "game-prediction-feature-builder",
       feature_set_version: payload.featureSetVersion,
       source_as_of_date: payload.sourceAsOfDate,
+      prediction_contract: predictionContract,
     },
   };
 }
@@ -1061,6 +1670,26 @@ export async function fetchGamePredictionFeatureInputs(
   if (priorGamesError) throw priorGamesError;
 
   const priorGames = (priorGamesData ?? []) as GameRow[];
+  const opponentTeamIds = Array.from(
+    new Set(
+      priorGames.flatMap((priorGame) => [
+        priorGame.homeTeamId,
+        priorGame.awayTeamId,
+      ]),
+    ),
+  ).filter((teamId) => !teamIds.includes(teamId));
+  const { data: opponentTeamsData, error: opponentTeamsError } =
+    opponentTeamIds.length > 0
+      ? await client
+          .from("teams")
+          .select("id,abbreviation,name")
+          .in("id", opponentTeamIds)
+      : { data: [], error: null };
+  if (opponentTeamsError) throw opponentTeamsError;
+  const teamRows = [
+    ...teams,
+    ...((opponentTeamsData ?? []) as TeamRow[]),
+  ];
   const sourceEligiblePriorGames = priorGames.filter(
     (priorGame) => priorGame.date < sourceAsOfDate,
   );
@@ -1084,10 +1713,14 @@ export async function fetchGamePredictionFeatureInputs(
     standingsResult,
     wgoTeamResult,
     nstTeamGamelogResult,
+    teamCtpiResult,
     goalieStartResult,
     lineCombinationResult,
     linesCccResult,
     goaliePerformanceResult,
+    forgeGoalieGameResult,
+    wgoGoalieResult,
+    forgeTeamProjectionResult,
   ] = await Promise.all([
     client
       .from("team_power_ratings_daily")
@@ -1124,6 +1757,15 @@ export async function fetchGamePredictionFeatureInputs(
       .order("date", { ascending: false })
       .limit(80),
     client
+      .from("team_ctpi_daily")
+      .select(
+        "team,date,computed_at,ctpi_0_to_100,ctpi_raw,offense,defense,goaltending,special_teams,luck",
+      )
+      .in("team", teamAbbreviations)
+      .lt("date", sourceAsOfDate)
+      .order("date", { ascending: false })
+      .limit(100),
+    client
       .from("goalie_start_projections")
       .select(
         "game_id,team_id,player_id,game_date,start_probability,confirmed_status,projected_gsaa_per_60,created_at,updated_at",
@@ -1150,6 +1792,34 @@ export async function fetchGamePredictionFeatureInputs(
       .lt("date", sourceAsOfDate)
       .order("date", { ascending: false })
       .limit(300),
+    client
+      .from("forge_goalie_game")
+      .select(
+        "game_id,game_date,goalie_id,team_id,shots_against,saves,goals_allowed,toi_seconds",
+      )
+      .in("team_id", teamIds)
+      .lt("game_date", sourceAsOfDate)
+      .order("game_date", { ascending: false })
+      .limit(300),
+    client
+      .from("wgo_goalie_stats")
+      .select(
+        "goalie_id,goalie_name,team_abbreviation,date,games_played,games_started,save_pct,shots_against_per_60,quality_start,quality_starts_pct,games_played_days_rest_0,games_played_days_rest_1,games_played_days_rest_2,games_played_days_rest_3,games_played_days_rest_4_plus,save_pct_days_rest_0,save_pct_days_rest_1,save_pct_days_rest_2,save_pct_days_rest_3,save_pct_days_rest_4_plus",
+      )
+      .in("team_abbreviation", teamAbbreviations)
+      .lt("date", sourceAsOfDate)
+      .order("date", { ascending: false })
+      .limit(300),
+    client
+      .from("forge_team_projections")
+      .select(
+        "run_id,game_id,team_id,horizon_games,proj_shots_es,proj_shots_pp,proj_goals_es,proj_goals_pp,updated_at",
+      )
+      .eq("game_id", gameId)
+      .in("team_id", teamIds)
+      .eq("horizon_games", 1)
+      .order("updated_at", { ascending: false })
+      .limit(10),
   ]);
 
   for (const result of [
@@ -1157,10 +1827,14 @@ export async function fetchGamePredictionFeatureInputs(
     standingsResult,
     wgoTeamResult,
     nstTeamGamelogResult,
+    teamCtpiResult,
     goalieStartResult,
     lineCombinationResult,
     linesCccResult,
     goaliePerformanceResult,
+    forgeGoalieGameResult,
+    wgoGoalieResult,
+    forgeTeamProjectionResult,
   ]) {
     if (result.error) throw result.error;
   }
@@ -1170,12 +1844,14 @@ export async function fetchGamePredictionFeatureInputs(
     sourceAsOfDate,
     homeTeam,
     awayTeam,
+    teamRows,
     priorGames,
     teamPowerRows: (teamPowerResult.data ?? []) as TeamPowerRow[],
     standingsRows: (standingsResult.data ?? []) as StandingsRow[],
     wgoTeamRows: (wgoTeamResult.data ?? []) as WgoTeamRow[],
     nstTeamGamelogRows: (nstTeamGamelogResult.data ??
       []) as NstTeamGamelogRow[],
+    teamCtpiRows: (teamCtpiResult.data ?? []) as TeamCtpiRow[],
     goalieStartRows: (goalieStartResult.data ??
       []) as GoalieStartProjectionRow[],
     lineCombinationRows: (lineCombinationResult.data ??
@@ -1183,5 +1859,10 @@ export async function fetchGamePredictionFeatureInputs(
     linesCccRows: (linesCccResult.data ?? []) as LinesCccRow[],
     goaliePerformanceRows: (goaliePerformanceResult.data ??
       []) as GoaliePerformanceRow[],
+    forgeGoalieGameRows: (forgeGoalieGameResult.data ??
+      []) as ForgeGoalieGameRow[],
+    wgoGoalieRows: (wgoGoalieResult.data ?? []) as WgoGoalieRow[],
+    forgeTeamProjectionRows: (forgeTeamProjectionResult.data ??
+      []) as ForgeTeamProjectionRow[],
   };
 }
