@@ -80,7 +80,7 @@
   - [x] 1.3 Fix the root cause of the targeted upsert failure and verify that player-specific recomputes can write fresh rows successfully again.
   - [x] 1.4 Re-run the March 12 blocked recompute examples for Brent Burns, Corey Perry, Jesper Bratt, and Seth Jones and update the freshness evidence once target writes succeed.
   - [x] 1.5 Add regression coverage for the repaired recompute path, including error handling for malformed upsert payloads and successful targeted writes.
-- [ ] 2.0 Expand validation payload and `trendsDebug.tsx` observability for metric-by-metric inspection
+- [x] 2.0 Expand validation payload and `trendsDebug.tsx` observability for metric-by-metric inspection
   - [x] 2.1 Populate server-authoritative formula metadata, helper-contract summaries, and rolling-window membership data in `rollingPlayerValidationPayload.ts` and the debug route.
   - [x] 2.2 Add per-row TOI source-trace output to the validation payload, including candidate sources, chosen source, trust tier, rejected candidates, fallback seed, and suspicious-value notes.
   - [x] 2.3 Add PP-share provenance output to the validation payload, including per-game builder versus WGO denominator source mix and mixed-source window flags.
