@@ -1,9 +1,10 @@
 // web/lib/sustainability/windows.ts
 
-import supabase from "lib/supabase";
+import supabase from "lib/supabase/server";
 import { toPosGroup, PosGroup, StatCode } from "lib/sustainability/priors";
+import type { CanonicalSustainabilityWindowCode } from "lib/predictions/rollingWindows";
 
-export type WindowCode = "l3" | "l5" | "l10" | "l20";
+export type WindowCode = CanonicalSustainabilityWindowCode;
 const EPS = 1e-9;
 
 // Generic fetch of priors for all Beta proportion stats we currently support.

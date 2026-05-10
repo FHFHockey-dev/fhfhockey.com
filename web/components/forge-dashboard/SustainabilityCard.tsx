@@ -141,6 +141,7 @@ export default function SustainabilityCard({
   const [hotRows, setHotRows] = useState<NormalizedSustainabilityRow[]>([]);
   const [coldRows, setColdRows] = useState<NormalizedSustainabilityRow[]>([]);
   const [snapshotDate, setSnapshotDate] = useState<string | null>(null);
+  const [servingMessage, setServingMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ownershipMap, setOwnershipMap] = useState<
@@ -153,6 +154,7 @@ export default function SustainabilityCard({
     let active = true;
     setLoading(true);
     setError(null);
+    setServingMessage(null);
 
     const pos = toPosParam(position);
 
@@ -165,6 +167,7 @@ export default function SustainabilityCard({
         setHotRows(hot.rows ?? []);
         setColdRows(cold.rows ?? []);
         setSnapshotDate(hot.snapshot_date ?? cold.snapshot_date ?? null);
+        setServingMessage(hot.serving?.message ?? cold.serving?.message ?? null);
       })
       .catch((fetchError: unknown) => {
         if (!active) return;
@@ -176,6 +179,7 @@ export default function SustainabilityCard({
         setHotRows([]);
         setColdRows([]);
         setSnapshotDate(null);
+        setServingMessage(null);
       })
       .finally(() => {
         if (!active) return;
@@ -272,6 +276,7 @@ export default function SustainabilityCard({
         !loading && !ownershipLoading && !error
           ? [
               isStale && snapshotDate ? `Sustainability using ${snapshotDate}` : null,
+              servingMessage,
               ownershipWarning,
               ownershipCoverageWarning
             ]
@@ -294,6 +299,7 @@ export default function SustainabilityCard({
     ownershipWarning,
     onStatusChange,
     riskRows.length,
+    servingMessage,
     snapshotDate,
     sustainableRows.length
   ]);
@@ -313,7 +319,7 @@ export default function SustainabilityCard({
       )}
       {!loading && !error && isStale && (
         <p className={`${styles.panelState} ${styles.panelStateStale}`}>
-          Showing nearest available snapshot ({snapshotDate}).
+          {servingMessage ?? `Showing nearest available snapshot (${snapshotDate}).`}
         </p>
       )}
 
@@ -370,6 +376,11 @@ export default function SustainabilityCard({
                             5D {formatOwnershipDelta(ownershipContext?.delta)}
                           </span>
                           <span className={styles.susBadge}>S {formatScore(row.s_100)}</span>
+                          {row.guardrail_state === "degraded" && (
+                            <span className={`${styles.susBadge} ${styles.susBadgeRisk}`}>
+                              Guarded
+                            </span>
+                          )}
                         </div>
                         <span className={styles.susName}>
                           {row.player_name ?? `Player ${row.player_id}`}
@@ -445,6 +456,11 @@ export default function SustainabilityCard({
                             5D {formatOwnershipDelta(ownershipContext?.delta)}
                           </span>
                           <span className={styles.susBadge}>S {formatScore(row.s_100)}</span>
+                          {row.guardrail_state === "degraded" && (
+                            <span className={`${styles.susBadge} ${styles.susBadgeRisk}`}>
+                              Guarded
+                            </span>
+                          )}
                         </div>
                         <span className={styles.susName}>
                           {row.player_name ?? `Player ${row.player_id}`}

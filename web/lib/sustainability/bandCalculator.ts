@@ -12,6 +12,10 @@ import {
   gammaCredibleInterval
 } from "./bands";
 import { WindowCode } from "./windows";
+import {
+  SUSTAINABILITY_TREND_BAND_MODEL_VERSION,
+  buildSustainabilityConfigHash
+} from "./runtimeContract";
 
 type PlayerGameRow = Database["public"]["Views"]["player_stats_unified"]["Row"];
 type PlayerSeasonTotal =
@@ -73,11 +77,33 @@ type ComputedBand = {
 };
 
 const SEASON_WEIGHTS = [0.6, 0.3, 0.1] as const;
+const Z_80 = 1.2815515655446004;
 
 function normalizePercentage(value: number | null | undefined): number | null {
   if (value == null) return null;
   if (Number.isNaN(value)) return null;
   return value > 1 ? value / 100 : value;
+}
+
+function estimateZScoreFromBand(
+  value: number,
+  baseline: number | null,
+  lower: number,
+  upper: number
+): number | null {
+  if (baseline == null || !Number.isFinite(baseline)) return null;
+  const sd = (upper - lower) / (2 * Z_80);
+  if (!Number.isFinite(sd) || sd <= 1e-9) return null;
+  return Number(((value - baseline) / sd).toFixed(6));
+}
+
+function estimatePercentileFromBand(value: number, lower: number, upper: number): number | null {
+  if (!Number.isFinite(value) || !Number.isFinite(lower) || !Number.isFinite(upper)) {
+    return null;
+  }
+  if (upper <= lower) return null;
+  const percentile = 10 + ((value - lower) / (upper - lower)) * 80;
+  return Number(Math.max(0, Math.min(100, percentile)).toFixed(3));
 }
 
 function getSeasonWeights(length: number): number[] {
@@ -708,10 +734,31 @@ export function computeTrendBandsForPlayer({
         ci_upper: computed.upper,
         n_eff: computed.nEff,
         prior_weight: spec.priorStrength,
-        z_score: null,
-        percentile: null,
+        z_score: estimateZScoreFromBand(
+          computed.value,
+          baseline,
+          computed.lower,
+          computed.upper
+        ),
+        percentile: estimatePercentileFromBand(
+          computed.value,
+          computed.lower,
+          computed.upper
+        ),
         exposure: computed.nEff,
-        distribution: computed.distribution
+        distribution: {
+          ...(computed.distribution as Record<string, unknown>),
+          modelVersion: SUSTAINABILITY_TREND_BAND_MODEL_VERSION,
+          configHash: buildSustainabilityConfigHash({
+            metric,
+            windowCode,
+            distribution: spec.distribution,
+            halfLifeGames: spec.halfLifeGames,
+            priorStrength: spec.priorStrength
+          }),
+          warnings: [],
+          fallbackFlags: {}
+        }
       });
     });
   });

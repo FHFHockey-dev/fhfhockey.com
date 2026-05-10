@@ -1,6 +1,6 @@
 // web/lib/sustainability/priors.ts
 
-import supabase from "lib/supabase";
+import supabase from "lib/supabase/server";
 
 // Types
 export type StatCode = "shp" | "oishp" | "ipp" | "ppshp"; // ppshp = power play shooting %
@@ -86,7 +86,10 @@ export function betaFromMuK(
 }
 
 // Fetch per-player counts across last 3 seasons
-export async function fetchPlayerSeasonCounts(seasonIdNow: number): Promise<
+export async function fetchPlayerSeasonCounts(
+  seasonIdNow: number,
+  options: { offset?: number; limit?: number } = {}
+): Promise<
   Array<{
     player_id: number;
     position_group: PosGroup;
@@ -99,7 +102,7 @@ export async function fetchPlayerSeasonCounts(seasonIdNow: number): Promise<
   }>
 > {
   const seasonIds = [seasonIdNow, seasonIdNow - 1, seasonIdNow - 2];
-  const { data, error } = await (supabase as any)
+  let query = (supabase as any)
     .from("player_totals_unified")
     .select(
       [
@@ -116,7 +119,15 @@ export async function fetchPlayerSeasonCounts(seasonIdNow: number): Promise<
       ].join(",")
     )
     .in("season_id", seasonIds)
-    .not("player_id", "is", null);
+    .not("player_id", "is", null)
+    .order("player_id", { ascending: true })
+    .order("season_id", { ascending: false });
+  if (options.limit != null) {
+    const offset = Math.max(0, options.offset ?? 0);
+    const limit = Math.max(1, options.limit);
+    query = query.range(offset, offset + limit - 1);
+  }
+  const { data, error } = await query;
   if (error) throw error;
 
   const byPlayer: Map<
@@ -344,7 +355,8 @@ export async function upsertPlayerPosteriors(
   season_id: number,
   k: { shp: number; oishp: number; ipp: number },
   dryRun = false,
-  leaguePriors?: Map<string, { alpha0: number; beta0: number }> // NEW
+  leaguePriors?: Map<string, { alpha0: number; beta0: number }>,
+  options: { offset?: number; limit?: number } = {}
 ): Promise<{ inserted: number; sample: any[] }> {
   let leagueMap = leaguePriors;
   if (!leagueMap) {
@@ -362,7 +374,7 @@ export async function upsertPlayerPosteriors(
     }
   }
 
-  const playerSeasonCounts = await fetchPlayerSeasonCounts(season_id);
+  const playerSeasonCounts = await fetchPlayerSeasonCounts(season_id, options);
   const upsertRows: any[] = [];
   for (const rec of playerSeasonCounts) {
     const blended = blendCounts(
