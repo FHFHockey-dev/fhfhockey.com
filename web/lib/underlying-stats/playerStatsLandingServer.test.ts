@@ -1004,19 +1004,24 @@ describe("flattenPersistedSummaryRows", () => {
 });
 
 describe("buildPlayerStatsDetailAggregationFromSummaryRows", () => {
-  function createSummaryMetrics() {
+  function createSummaryMetrics(args?: {
+    goals?: number;
+    shots?: number;
+    toiSeconds?: number;
+    totalAssists?: number;
+  }) {
     return {
-      toiSeconds: 900,
+      toiSeconds: args?.toiSeconds ?? 900,
       gamesPlayed: 1,
       onIceGoalsForForIpp: 1,
       hasUnknownToi: false,
       hasUnknownOnIceGoalDenominator: false,
       individual: {
-        goals: 1,
-        totalAssists: 1,
-        firstAssists: 1,
+        goals: args?.goals ?? 1,
+        totalAssists: args?.totalAssists ?? 1,
+        firstAssists: args?.totalAssists ?? 1,
         secondAssists: 0,
-        shots: 3,
+        shots: args?.shots ?? 3,
         ixg: 0.4,
         iCf: 4,
         iFf: 3,
@@ -1149,7 +1154,7 @@ describe("buildPlayerStatsDetailAggregationFromSummaryRows", () => {
         hasReliableToi: true,
         metrics: createSummaryMetrics(),
       },
-    ] as const;
+    ];
 
     const combineState = createDefaultDetailFilterState({
       currentSeasonId: 20252026,
@@ -1162,7 +1167,7 @@ describe("buildPlayerStatsDetailAggregationFromSummaryRows", () => {
       playerId: 8478401,
       state: combineState,
       games,
-      rows: summaryRows,
+      rows: summaryRows as any,
     });
 
     expect(combinedRows).toHaveLength(1);
@@ -1186,7 +1191,7 @@ describe("buildPlayerStatsDetailAggregationFromSummaryRows", () => {
       playerId: 8478401,
       state: splitState,
       games,
-      rows: summaryRows,
+      rows: summaryRows as any,
     });
 
     expect(splitRows).toHaveLength(2);
@@ -2745,7 +2750,7 @@ describe("buildPlayerStatsLandingAggregation", () => {
           },
           shotFeatures: [],
         },
-      ],
+      ] as any,
       identityMaps: {
         playersById: new Map([
           [
@@ -2952,7 +2957,7 @@ describe("buildPlayerStatsLandingAggregation", () => {
           },
           shotFeatures: [],
         },
-      ],
+      ] as any,
       identityMaps: {
         playersById: new Map([
           [

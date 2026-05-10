@@ -170,7 +170,7 @@ function createSupabaseMocks(eventRows: LineSourceEventFixture[]) {
   };
   const staleRowUpdateMock = vi.fn(() => staleRowUpdateQuery);
   const eventUpdateEqMock = vi.fn().mockResolvedValue({ error: null });
-  const eventUpdateMock = vi.fn(() => ({
+  const eventUpdateMock = vi.fn((_values: Record<string, unknown>) => ({
     eq: eventUpdateEqMock,
   }));
   const unresolvedNamesUpsertMock = vi.fn().mockResolvedValue({ error: null });
@@ -564,7 +564,11 @@ describe("/api/v1/db/update-line-sources", () => {
       expect.objectContaining({ processing_status: "rejected" }),
       expect.objectContaining({ processing_status: "rejected" }),
     ]);
-    expect(eventUpdateEqMock.mock.calls.map((call) => call[1])).toEqual([
+    expect(
+      (eventUpdateEqMock.mock.calls as Array<[unknown, unknown]>).map(
+        (call) => call[1],
+      ),
+    ).toEqual([
       "event-goalie",
       "event-lines",
       "event-news",

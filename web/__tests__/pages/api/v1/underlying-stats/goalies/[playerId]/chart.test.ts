@@ -57,7 +57,6 @@ describe("/api/v1/underlying-stats/goalies/[playerId]/chart", () => {
           savePct: 0.944,
         },
       ],
-      generatedAt: "2026-04-06T00:00:00.000Z",
     });
 
     const { req, res } = createMockApiContext({
@@ -108,7 +107,6 @@ describe("/api/v1/underlying-stats/goalies/[playerId]/chart", () => {
           shotsAgainstPer60: 25.8,
         },
       ],
-      generatedAt: "2026-04-06T00:00:00.000Z",
     });
 
     const { req, res } = createMockApiContext({

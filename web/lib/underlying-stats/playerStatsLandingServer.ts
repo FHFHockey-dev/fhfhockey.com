@@ -55,7 +55,9 @@ export type PlayerStatsSourceGameRow =
     | "startTime"
     | "homeTeamId"
     | "awayTeamId"
-  >;
+  > & {
+    created_at?: string;
+  };
 export type PlayerStatsSourceEventRow = Pick<
   Database["public"]["Tables"]["nhl_api_pbp_events"]["Row"],
   | "game_id"
@@ -111,7 +113,15 @@ export type PlayerStatsSourceEventRow = Pick<
   | "away_score"
   | "home_sog"
   | "away_sog"
->;
+> & {
+  created_at?: string;
+  details?: unknown;
+  event_owner_side?: "away" | "home" | null;
+  parser_version?: number;
+  raw_event?: unknown;
+  strength_version?: number;
+  updated_at?: string;
+};
 export type PlayerStatsSourceShiftRow = Pick<
   Database["public"]["Tables"]["nhl_api_shift_rows"]["Row"],
   | "game_id"
@@ -128,7 +138,23 @@ export type PlayerStatsSourceShiftRow = Pick<
   | "start_seconds"
   | "end_seconds"
   | "duration_seconds"
->;
+> & {
+  created_at?: string;
+  detail_code?: string | null;
+  duration?: string | null;
+  end_time?: string | null;
+  event_description?: string | null;
+  event_details?: unknown;
+  event_number?: number | null;
+  hex_value?: string | null;
+  parser_version?: number | null;
+  raw_shift?: unknown;
+  source_shiftcharts_hash?: string | null;
+  start_time?: string | null;
+  team_name?: string | null;
+  type_code?: number | null;
+  updated_at?: string | null;
+};
 export type PlayerStatsSourceRosterSpotRow = Pick<
   Database["public"]["Tables"]["nhl_api_game_roster_spots"]["Row"],
   | "game_id"
@@ -138,7 +164,16 @@ export type PlayerStatsSourceRosterSpotRow = Pick<
   | "last_name"
   | "sweater_number"
   | "position_code"
->;
+> & {
+  created_at?: string | null;
+  game_date?: string | null;
+  headshot_url?: string | null;
+  parser_version?: number | null;
+  raw_spot?: unknown;
+  season_id?: number | null;
+  source_play_by_play_hash?: string | null;
+  updated_at?: string | null;
+};
 export type PlayerStatsLandingSourceBundle = {
   games: PlayerStatsSourceGameRow[];
   eventsByGameId: Map<number, PlayerStatsSourceEventRow[]>;
@@ -453,7 +488,7 @@ type PlayerStatsLandingSummaryRow = {
   kind: PlayerStatsLandingAppearanceContext["kind"];
   mode: PlayerStatsMode;
   strength: PlayerStatsSupportedStrength;
-  scoreState: PlayerStatsSupportedScoreState;
+  scoreState?: PlayerStatsSupportedScoreState;
   supportedDisplayModes: PlayerStatsDisplayMode[];
   playerId: number;
   playerName: string;
@@ -4098,7 +4133,7 @@ async function buildLiveSummaryRowsForGames(args: {
     }).rows.filter(
       (row) =>
         row.mode === args.state.primary.statMode &&
-        row.scoreState === args.state.primary.scoreState &&
+        getSummaryRowScoreState(row) === args.state.primary.scoreState &&
         (supportedStrength == null || row.strength === supportedStrength)
     )
   );

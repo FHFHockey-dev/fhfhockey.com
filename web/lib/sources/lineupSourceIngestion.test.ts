@@ -384,7 +384,7 @@ Fowler`;
 
   it("rebuilds a full GDT lineup from enriched tweet text with initials and aliases", () => {
     const tweet = {
-      classification: "lineup",
+      classification: "lineup" as const,
       sourceHandle: "https://twitter.com/JoeSmithNHL",
       sourceUrl: "https://www.gamedaytweets.com/lines?team=MIN",
       tweetUrl: "https://twitter.com/GameDayLines/status/2028892043054072251",
@@ -399,7 +399,7 @@ Fowler`;
       matchedPlayerIds: [101, 103, 104, 105],
       matchedNames: ["Kirill Kaprizov", "Mats Zuccarello", "Marcus Johansson", "Matt Boldy"],
       unmatchedNames: []
-    } as const;
+    };
 
     const parsed = buildGameDayTweetsLineupSourceFromTweet({
       team: buildTeamDirectory([

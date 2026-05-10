@@ -93,13 +93,17 @@ function createSupabaseMocks(args?: {
     then: (resolve: any) => Promise.resolve({ error: null }).then(resolve),
   };
   linesCccUpdateEqMock.mockImplementation(() => staleRowUpdateQuery);
-  const linesCccUpdateMock = vi.fn(() => staleRowUpdateQuery);
+  const linesCccUpdateMock = vi.fn(
+    (_values: Record<string, unknown>) => staleRowUpdateQuery,
+  );
   const unresolvedUpdateQuery: any = {
     eq: vi.fn(() => unresolvedUpdateQuery),
     neq: vi.fn(() => unresolvedUpdateQuery),
     then: (resolve: any) => Promise.resolve({ error: null }).then(resolve),
   };
-  const unresolvedUpdateMock = vi.fn(() => unresolvedUpdateQuery);
+  const unresolvedUpdateMock = vi.fn(
+    (_values: Record<string, unknown>) => unresolvedUpdateQuery,
+  );
   const eventUpdateEqMock = vi.fn().mockResolvedValue({ error: null });
   const eventUpdateMock = vi.fn(() => ({
     eq: eventUpdateEqMock,

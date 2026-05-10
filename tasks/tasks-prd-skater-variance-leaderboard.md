@@ -16,6 +16,22 @@
 - `web/components/DraftDashboard/DraftSettings.tsx` - Existing source pattern for skater scoring labels that may need extraction or shared reuse.
 - `web/styles/vars.scss` - Existing color variables for bucket-tinted row styling.
 - `web/pages/variance/variance.module.scss` - Existing variance page styles that may need skater table/control additions.
+- `web/__tests__/pages/api/v1/db/update-line-sources.test.ts` - Typed line-source update mock calls so TypeScript can inspect update payload assertions.
+- `web/__tests__/pages/api/v1/db/update-lines-ccc.test.ts` - Typed CCC stale-row and unresolved-name update mocks for TypeScript-safe payload assertions.
+- `web/__tests__/pages/api/v1/underlying-stats/goalies/[playerId]/chart.test.ts` - Updated goalie chart fixtures to match the current shared chart result contract.
+- `web/__tests__/pages/trends/index.test.tsx` - Updated trends page props to match the current dashboard page contract.
+- `web/__tests__/pages/underlying-stats/goalieStats/index.test.tsx` - Typed shared goalie landing page mock props.
+- `web/__tests__/pages/underlying-stats/index.test.tsx` - Added required route-status fixture for the team underlying-stats landing page.
+- `web/__tests__/pages/underlying-stats/playerStats/[playerId].test.tsx` - Typed deferred fetch resolver fixture for detail loading-state tests.
+- `web/__tests__/pages/underlying-stats/playerStats/index.test.tsx` - Typed deferred fetch resolver fixtures for background hydration tests.
+- `web/lib/NHL/edge.ts` - Relaxed NHL Edge shot-location player summary IDs so slug-derived IDs remain supported.
+- `web/lib/sources/lineupSourceIngestion.test.ts` - Narrowed GameDayTweets lineup fixture literals without making array fields readonly.
+- `web/lib/underlying-stats/goalieStatsServer.test.ts` - Updated goalie chart delegation fixture to match the current chart result type.
+- `web/lib/underlying-stats/playerStatsLandingServer.ts` - Preserved compatibility with legacy/generated fixture row fields while keeping selected runtime reads unchanged.
+- `web/lib/underlying-stats/playerStatsLandingServer.test.ts` - Updated player-stats landing fixtures for current summary-row, parity, and mock metric contracts.
+- `web/lib/underlying-stats/teamLandingRatings.test.ts` - Updated landing-rating fixtures to include current dashboard enrichment fields.
+- `web/lib/underlying-stats/teamScheduleStrength.test.ts` - Added future-opponent fields required by the current SoS snapshot contract.
+- `web/lib/xg/deploymentContext.test.ts` - Added required own-goal feature fixture field.
 
 ### Notes
 
@@ -125,5 +141,5 @@
   - [x] 10.7 Verify bucket average rows appear in Value Overview and Metrics.
   - [x] 10.8 Verify missing Yahoo data degrades gracefully.
 
-- [ ] 11.0 NEW: Resolve existing full TypeScript verification blockers
-  - [ ] 11.1 Fix or quarantine pre-existing `tsc --noEmit` failures in underlying-stats and xg test files so full typecheck can be used as a clean verification signal.
+- [x] 11.0 NEW: Resolve existing full TypeScript verification blockers
+  - [x] 11.1 Fix or quarantine pre-existing `tsc --noEmit` failures in underlying-stats and xg test files so full typecheck can be used as a clean verification signal. Verified with `npx tsc --noEmit` and a targeted Vitest pass covering 15 touched test files.

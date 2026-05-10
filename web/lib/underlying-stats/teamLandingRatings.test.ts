@@ -32,6 +32,17 @@ const buildRating = (teamAbbr: string, date: string): TeamRating => ({
   varianceFlag: null
 });
 
+const buildLandingRating = (
+  teamAbbr: string,
+  date: string,
+  overrides: Partial<TeamRating> = {}
+) =>
+  mergeUnderlyingStatsLandingRatings({
+    baseRatings: [{ ...buildRating(teamAbbr, date), ...overrides }],
+    trendOverrides: new Map(),
+    scheduleStrengthByTeam: new Map()
+  })[0]!;
+
 describe("computeTrendOverridesFromHistory", () => {
   it("computes trend from the latest played snapshot against the prior 10 snapshots", () => {
     const history = new Map([
@@ -75,13 +86,11 @@ describe("resolveUnderlyingStatsLandingSnapshot", () => {
 
       if (date === "2026-04-04") {
         return [
-          {
-            ...buildRating("TOR", date),
+          buildLandingRating("TOR", date, {
             ppTier: 1 as const,
             pkTier: 1 as const,
-            trend10: 1,
-            sos: 111.11
-          }
+            trend10: 1
+          })
         ];
       }
 
@@ -104,13 +113,11 @@ describe("resolveUnderlyingStatsLandingSnapshot", () => {
 
   it("returns the first valid available date when the requested date is invalid", async () => {
     const fetchRatings = async (date: string) => [
-      {
-        ...buildRating("DET", date),
+      buildLandingRating("DET", date, {
         offRating: 99,
         defRating: 99,
-        paceRating: 99,
-        sos: 98.76
-      }
+        paceRating: 99
+      })
     ];
 
     const result = await resolveUnderlyingStatsLandingSnapshot({

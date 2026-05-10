@@ -162,7 +162,12 @@ describe("PlayerUnderlyingStatsDetailPage", () => {
           ok: boolean;
           json: () => Promise<unknown>;
         }) => void)
-      | null = resolveFetch;
+      | null = resolveFetch as
+      | ((value: {
+          ok: boolean;
+          json: () => Promise<unknown>;
+        }) => void)
+      | null;
     if (flushFetch !== null) {
       flushFetch({
         ok: true,

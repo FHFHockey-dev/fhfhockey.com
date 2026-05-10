@@ -24,6 +24,7 @@ function createShotRow(
     strengthExact: "5v5",
     shotEventType: "shot-on-goal",
     isGoal: false,
+    isOwnGoal: false,
     isShotOnGoal: true,
     isMissedShot: false,
     isBlockedShot: false,
