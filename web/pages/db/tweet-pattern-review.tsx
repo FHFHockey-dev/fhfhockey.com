@@ -13,12 +13,24 @@ import {
   type NewsFeedItem,
   type NewsFeedKeywordPhrase
 } from "lib/newsFeed";
-import { parseLineupCardFromText } from "lib/newsLineupCard";
+import {
+  parseLineupCardFromText,
+  readLineupCardFromMetadata
+} from "lib/newsLineupCard";
+import type { NewsLineupCardData } from "lib/newsLineupCard";
 import type { TweetPatternReviewAssignment } from "lib/sources/tweetPatternReview";
 import supabase from "lib/supabase";
 
 type ReviewStatus = "pending" | "reviewed" | "ignored";
 type ReviewSort = "newest" | "oldest";
+type ReviewSection =
+  | "controls"
+  | "tweet"
+  | "composer"
+  | "assignments"
+  | "actions"
+  | "queue"
+  | "keywords";
 
 type PatternCategoryOption = {
   category: string;
@@ -106,6 +118,10 @@ type NewsDraft = {
   playerNames: string[];
   pendingPlayerId: string;
   pendingPlayerName: string;
+  lineupGoalieNames: string[];
+  lineupGoalieSourceUrl: string;
+  lineupGoalieSourceLabel: string;
+  activeLineupGoalieIndex: number | null;
 };
 
 type KeywordDraft = {
@@ -166,7 +182,34 @@ function createEmptyNewsDraft(): NewsDraft {
     playerIds: [],
     playerNames: [],
     pendingPlayerId: "",
-    pendingPlayerName: ""
+    pendingPlayerName: "",
+    lineupGoalieNames: [],
+    lineupGoalieSourceUrl: "",
+    lineupGoalieSourceLabel: "",
+    activeLineupGoalieIndex: null
+  };
+}
+
+function mergeLineupGoalieOverrides(
+  lineupCard: NewsLineupCardData | null,
+  goalieNames: string[]
+): NewsLineupCardData | null {
+  if (!lineupCard) return null;
+  const goalies = [...lineupCard.goalies.slice(0, 2)];
+  goalieNames.slice(0, 2).forEach((goalieName, index) => {
+    const trimmed = goalieName.trim();
+    if (trimmed) goalies[index] = trimmed;
+  });
+
+  const startingGoalie =
+    lineupCard.startingGoalie && goalies.includes(lineupCard.startingGoalie)
+      ? lineupCard.startingGoalie
+      : goalies[0] ?? null;
+
+  return {
+    ...lineupCard,
+    goalies,
+    startingGoalie
   };
 }
 
@@ -356,7 +399,11 @@ function buildNewsDraftFromItem(
     playerIds,
     playerNames,
     pendingPlayerId: "",
-    pendingPlayerName: ""
+    pendingPlayerName: "",
+    lineupGoalieNames: [],
+    lineupGoalieSourceUrl: "",
+    lineupGoalieSourceLabel: "",
+    activeLineupGoalieIndex: null
   };
 }
 
@@ -497,6 +544,12 @@ const TweetPatternReviewPage: NextPage = () => {
   const [isBulkUpdating, setIsBulkUpdating] = useState(false);
   const [isSavingNews, setIsSavingNews] = useState(false);
   const [isSavingKeyword, setIsSavingKeyword] = useState(false);
+  const [collapsedSections, setCollapsedSections] = useState<
+    Partial<Record<ReviewSection, boolean>>
+  >({
+    queue: true,
+    keywords: true
+  });
 
   const loadData = useCallback(
     async (nextStatusFilter = statusFilter, nextQueueSort = queueSort) => {
@@ -638,12 +691,63 @@ const TweetPatternReviewPage: NextPage = () => {
     );
     return teamPlayers.length > 0 ? teamPlayers : players;
   }, [newsDraft.teamId, players]);
+  const filteredDraftGoalies = useMemo(() => {
+    const goalies = filteredDraftPlayers.filter((player) =>
+      (player.position ?? "").toUpperCase().includes("G")
+    );
+    return goalies.length > 0 ? goalies : filteredDraftPlayers;
+  }, [filteredDraftPlayers]);
+  const parsedDraftLineupCard = useMemo(
+    () =>
+      parseLineupCardFromText({
+        text: selectedItemDisplayText,
+        category: newsDraft.category,
+        subcategory: newsDraft.subcategory
+      }),
+    [newsDraft.category, newsDraft.subcategory, selectedItemDisplayText]
+  );
+  const draftLineupCard = useMemo(
+    () =>
+      mergeLineupGoalieOverrides(
+        parsedDraftLineupCard,
+        newsDraft.lineupGoalieNames
+      ),
+    [newsDraft.lineupGoalieNames, parsedDraftLineupCard]
+  );
 
   function moveSelection(direction: -1 | 1) {
     if (currentIndex < 0) return;
     const nextIndex = currentIndex + direction;
     if (nextIndex < 0 || nextIndex >= items.length) return;
     setSelectedItemId(items[nextIndex].id);
+  }
+
+  function toggleSection(section: ReviewSection) {
+    setCollapsedSections((current) => ({
+      ...current,
+      [section]: !current[section]
+    }));
+  }
+
+  function sectionClass(baseClass: string, section: ReviewSection) {
+    return `${baseClass} ${
+      collapsedSections[section] ? styles.sectionCollapsed : ""
+    }`.trim();
+  }
+
+  function renderMobileSectionToggle(section: ReviewSection, label: string) {
+    const isCollapsed = Boolean(collapsedSections[section]);
+    return (
+      <button
+        type="button"
+        className={styles.mobileSectionToggle}
+        onClick={() => toggleSection(section)}
+        aria-expanded={!isCollapsed}
+      >
+        <span>{label}</span>
+        <span>{isCollapsed ? "Show" : "Hide"}</span>
+      </button>
+    );
   }
 
   function toggleBulkSelection(itemId: string) {
@@ -814,6 +918,44 @@ const TweetPatternReviewPage: NextPage = () => {
     }));
   }
 
+  function setActiveLineupGoalieSlot(slotIndex: number) {
+    setNewsDraft((current) => ({
+      ...current,
+      activeLineupGoalieIndex: slotIndex
+    }));
+  }
+
+  function setLineupGoalieName(slotIndex: number, goalieName: string) {
+    const trimmedGoalieName = goalieName.trim();
+    if (!trimmedGoalieName) return;
+    setNewsDraft((current) => {
+      const nextGoalieNames = [...current.lineupGoalieNames];
+      nextGoalieNames[slotIndex] = trimmedGoalieName;
+      return {
+        ...current,
+        lineupGoalieNames: nextGoalieNames,
+        pendingPlayerId: "",
+        pendingPlayerName: ""
+      };
+    });
+  }
+
+  function addRosterGoalieToLineup() {
+    const slotIndex = newsDraft.activeLineupGoalieIndex;
+    if (slotIndex === null) return;
+    const selectedPlayer = filteredDraftGoalies.find(
+      (player) => String(player.id) === newsDraft.pendingPlayerId
+    );
+    if (!selectedPlayer) return;
+    setLineupGoalieName(slotIndex, selectedPlayer.fullName);
+  }
+
+  function addManualGoalieToLineup() {
+    const slotIndex = newsDraft.activeLineupGoalieIndex;
+    if (slotIndex === null) return;
+    setLineupGoalieName(slotIndex, newsDraft.pendingPlayerName);
+  }
+
   function removePlayerFromNewsDraft(playerName: string) {
     setNewsDraft((current) => {
       const playerIndex = current.playerNames.findIndex(
@@ -855,7 +997,7 @@ const TweetPatternReviewPage: NextPage = () => {
         }
       );
       setStatusMessage(payload.message ?? "Queue synced.");
-      await loadData(statusFilter);
+      await loadData(statusFilter, queueSort);
     } catch (error: any) {
       setStatusMessage(error.message);
     } finally {
@@ -896,7 +1038,7 @@ const TweetPatternReviewPage: NextPage = () => {
         }
       );
       setStatusMessage(payload.message ?? "Review saved.");
-      await loadData(statusFilter);
+      await loadData(statusFilter, queueSort);
     } catch (error: any) {
       setStatusMessage(error.message);
     } finally {
@@ -916,7 +1058,7 @@ const TweetPatternReviewPage: NextPage = () => {
         }
       );
       setStatusMessage(payload.message ?? "Status updated.");
-      await loadData(statusFilter);
+      await loadData(statusFilter, queueSort);
     } catch (error: any) {
       setStatusMessage(error.message);
     } finally {
@@ -956,11 +1098,7 @@ const TweetPatternReviewPage: NextPage = () => {
 
     const normalizedCategory = normalizeNewsCategory(newsDraft.category);
     const normalizedSubcategory = normalizeNewsCategory(newsDraft.subcategory);
-    const lineupCard = parseLineupCardFromText({
-      text: selectedItemDisplayText,
-      category: normalizedCategory,
-      subcategory: normalizedSubcategory
-    });
+    const lineupCard = draftLineupCard;
     const teamOption = teamOptions.find(
       (team) => String(team.id) === newsDraft.teamId
     );
@@ -1010,7 +1148,16 @@ const TweetPatternReviewPage: NextPage = () => {
           sourceFeed,
           sourceAccount: selectedItem.source_account,
           sourceKey: selectedItem.source_key,
-          ...(lineupCard ? { lineupCard } : {})
+          ...(lineupCard ? { lineupCard } : {}),
+          ...(newsDraft.lineupGoalieSourceUrl.trim() ||
+          newsDraft.lineupGoalieSourceLabel.trim()
+            ? {
+                lineupGoalieSource: {
+                  sourceUrl: newsDraft.lineupGoalieSourceUrl.trim() || null,
+                  sourceLabel: newsDraft.lineupGoalieSourceLabel.trim() || null
+                }
+              }
+            : {})
         }
       });
       setStatusMessage(payload.message ?? "News card saved.");
@@ -1077,8 +1224,9 @@ const TweetPatternReviewPage: NextPage = () => {
         {/* ── Workspace ───────────────────────────────────────────────────── */}
         <div className={styles.workspace}>
           {/* ── Control bar ───────────────────────────────────────────────── */}
-          <div className={styles.controlBar}>
-            <div className={styles.controlField}>
+          <div className={sectionClass(styles.controlBar, "controls")}>
+            {renderMobileSectionToggle("controls", "Controls")}
+            <div className={`${styles.controlField} ${styles.statusField}`}>
               <span>Status</span>
               <select
                 value={statusFilter}
@@ -1097,7 +1245,7 @@ const TweetPatternReviewPage: NextPage = () => {
               </select>
             </div>
 
-            <div className={styles.controlField}>
+            <div className={`${styles.controlField} ${styles.sortField}`}>
               <span>Sort</span>
               <select
                 value={queueSort}
@@ -1132,25 +1280,23 @@ const TweetPatternReviewPage: NextPage = () => {
               </select>
             </div>
 
-            <div className={styles.navGroup}>
-              <button
-                className={styles.btn}
-                disabled={currentIndex <= 0}
-                onClick={() => moveSelection(-1)}
-              >
-                ←
-              </button>
-              <button
-                className={styles.btn}
-                disabled={currentIndex < 0 || currentIndex >= items.length - 1}
-                onClick={() => moveSelection(1)}
-              >
-                →
-              </button>
-            </div>
+            <button
+              className={`${styles.btn} ${styles.navButtonPrev}`}
+              disabled={currentIndex <= 0}
+              onClick={() => moveSelection(-1)}
+            >
+              ←
+            </button>
+            <button
+              className={`${styles.btn} ${styles.navButtonNext}`}
+              disabled={currentIndex < 0 || currentIndex >= items.length - 1}
+              onClick={() => moveSelection(1)}
+            >
+              →
+            </button>
 
             <button
-              className={styles.btn}
+              className={`${styles.btn} ${styles.syncButton}`}
               disabled={isSyncing}
               onClick={() => void syncQueue()}
             >
@@ -1176,7 +1322,8 @@ const TweetPatternReviewPage: NextPage = () => {
             {selectedItem ? (
               <>
                 {/* Tweet panel */}
-                <div className={styles.tweetPanel}>
+                <div className={sectionClass(styles.tweetPanel, "tweet")}>
+                  {renderMobileSectionToggle("tweet", "Tweet")}
                   <div className={styles.tweetMeta}>
                     <span className={styles.metaItem}>
                       <strong>Source:</strong>{" "}
@@ -1309,7 +1456,8 @@ const TweetPatternReviewPage: NextPage = () => {
                 </div>
 
                 {/* Queue browser */}
-                <div className={styles.queueBrowser}>
+                <div className={sectionClass(styles.queueBrowser, "queue")}>
+                  {renderMobileSectionToggle("queue", "Needs resolution")}
                   <div className={styles.queueBrowserHeader}>
                     <div>
                       <span>Needs resolution</span>
@@ -1407,7 +1555,13 @@ const TweetPatternReviewPage: NextPage = () => {
                 </div>
 
                 {/* Assignments pane */}
-                <div className={styles.assignmentsPane}>
+                <div
+                  className={sectionClass(
+                    styles.assignmentsPane,
+                    "assignments"
+                  )}
+                >
+                  {renderMobileSectionToggle("assignments", "Assignments")}
                   <div className={styles.paneHeader}>
                     <span>Assignments</span>
                     <button
@@ -1690,7 +1844,8 @@ const TweetPatternReviewPage: NextPage = () => {
                 </div>
 
                 {/* Action bar */}
-                <div className={styles.actionBar}>
+                <div className={sectionClass(styles.actionBar, "actions")}>
+                  {renderMobileSectionToggle("actions", "Actions")}
                   <button
                     className={styles.btn}
                     disabled={currentIndex <= 0}
@@ -1743,7 +1898,13 @@ const TweetPatternReviewPage: NextPage = () => {
               {selectedItem ? (
                 <>
                   {/* News card composer */}
-                  <div className={styles.composerSection}>
+                  <div
+                    className={sectionClass(
+                      styles.composerSection,
+                      "composer"
+                    )}
+                  >
+                    {renderMobileSectionToggle("composer", "Composer")}
                     <div className={styles.sectionHeader}>
                       <span>News card composer</span>
                       <div className={styles.headerActions}>
@@ -1923,6 +2084,137 @@ const TweetPatternReviewPage: NextPage = () => {
                           </p>
                         )}
 
+                        {draftLineupCard ? (
+                          <div className={styles.lineupGoalieEditor}>
+                            <div className={styles.lineupGoalieHeader}>
+                              <span>Goalie resolution</span>
+                              <small>
+                                Click G1/G2 in the preview, then add a goalie and
+                                optional source.
+                              </small>
+                            </div>
+                            <div className={styles.lineupGoalieSlotButtons}>
+                              {[0, 1].map((slotIndex) => (
+                                <button
+                                  key={`lineup-goalie-slot-${slotIndex}`}
+                                  className={[
+                                    styles.btn,
+                                    newsDraft.activeLineupGoalieIndex ===
+                                    slotIndex
+                                      ? styles.btnActive
+                                      : ""
+                                  ]
+                                    .filter(Boolean)
+                                    .join(" ")}
+                                  onClick={() =>
+                                    setActiveLineupGoalieSlot(slotIndex)
+                                  }
+                                >
+                                  G{slotIndex + 1}:{" "}
+                                  {draftLineupCard.goalies[slotIndex] ?? "TBD"}
+                                </button>
+                              ))}
+                            </div>
+
+                            <div className={styles.fieldRowSplit}>
+                              <div className={styles.formField}>
+                                <label>Goalie from roster</label>
+                                <select
+                                  value={newsDraft.pendingPlayerId}
+                                  onChange={(event) =>
+                                    setNewsDraft((current) => ({
+                                      ...current,
+                                      pendingPlayerId: event.target.value
+                                    }))
+                                  }
+                                  disabled={
+                                    newsDraft.activeLineupGoalieIndex === null
+                                  }
+                                >
+                                  <option value="">Choose a goalie…</option>
+                                  {filteredDraftGoalies.map((player) => (
+                                    <option key={player.id} value={player.id}>
+                                      {player.fullName}
+                                      {player.position
+                                        ? ` — ${player.position}`
+                                        : ""}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                              <button
+                                className={styles.btn}
+                                disabled={
+                                  newsDraft.activeLineupGoalieIndex === null ||
+                                  !newsDraft.pendingPlayerId
+                                }
+                                onClick={() => addRosterGoalieToLineup()}
+                              >
+                                Add
+                              </button>
+                            </div>
+
+                            <div className={styles.fieldRow}>
+                              <div className={styles.formField}>
+                                <label>Goalie source URL</label>
+                                <input
+                                  value={newsDraft.lineupGoalieSourceUrl}
+                                  onChange={(event) =>
+                                    setNewsDraft((current) => ({
+                                      ...current,
+                                      lineupGoalieSourceUrl: event.target.value
+                                    }))
+                                  }
+                                  placeholder="Paste goalie confirmation source"
+                                />
+                              </div>
+                              <div className={styles.formField}>
+                                <label>Source label</label>
+                                <input
+                                  value={newsDraft.lineupGoalieSourceLabel}
+                                  onChange={(event) =>
+                                    setNewsDraft((current) => ({
+                                      ...current,
+                                      lineupGoalieSourceLabel:
+                                        event.target.value
+                                    }))
+                                  }
+                                  placeholder="Reporter or feed name"
+                                />
+                              </div>
+                            </div>
+
+                            <div className={styles.fieldRowSplit}>
+                              <div className={styles.formField}>
+                                <label>Manual goalie text</label>
+                                <input
+                                  value={newsDraft.pendingPlayerName}
+                                  onChange={(event) =>
+                                    setNewsDraft((current) => ({
+                                      ...current,
+                                      pendingPlayerName: event.target.value
+                                    }))
+                                  }
+                                  disabled={
+                                    newsDraft.activeLineupGoalieIndex === null
+                                  }
+                                  placeholder="Goalie name"
+                                />
+                              </div>
+                              <button
+                                className={styles.btn}
+                                disabled={
+                                  newsDraft.activeLineupGoalieIndex === null ||
+                                  !newsDraft.pendingPlayerName.trim()
+                                }
+                                onClick={() => addManualGoalieToLineup()}
+                              >
+                                Add
+                              </button>
+                            </div>
+                          </div>
+                        ) : null}
+
                         <div className={styles.btnRow}>
                           <button
                             className={styles.btn}
@@ -1977,11 +2269,7 @@ const TweetPatternReviewPage: NextPage = () => {
                               created_at: new Date().toISOString(),
                               card_status: "draft",
                               metadata: {
-                                lineupCard: parseLineupCardFromText({
-                                  text: selectedItemDisplayText,
-                                  category: newsDraft.category,
-                                  subcategory: newsDraft.subcategory
-                                })
+                                lineupCard: draftLineupCard
                               },
                               players: newsDraft.playerNames.map(
                                 (playerName, index) => ({
@@ -1998,6 +2286,9 @@ const TweetPatternReviewPage: NextPage = () => {
                             }}
                             sourceDisplayNameOverride={
                               selectedAuthorOverride?.authorName ?? null
+                            }
+                            onLineupGoalieSlotClick={(slotIndex) =>
+                              setActiveLineupGoalieSlot(slotIndex)
                             }
                           />
                         </div>
@@ -2022,7 +2313,21 @@ const TweetPatternReviewPage: NextPage = () => {
                                   />
                                   <button
                                     className={styles.btn}
-                                    onClick={() =>
+                                    onClick={() => {
+                                      const savedLineupCard =
+                                        readLineupCardFromMetadata(
+                                          item.metadata
+                                        );
+                                      const goalieSource =
+                                        item.metadata?.lineupGoalieSource &&
+                                        typeof item.metadata
+                                          .lineupGoalieSource === "object"
+                                          ? (item.metadata
+                                              .lineupGoalieSource as Record<
+                                              string,
+                                              unknown
+                                            >)
+                                          : null;
                                       setNewsDraft({
                                         itemId: item.id,
                                         headline: item.headline,
@@ -2041,9 +2346,22 @@ const TweetPatternReviewPage: NextPage = () => {
                                           (p) => p.player_name
                                         ),
                                         pendingPlayerId: "",
-                                        pendingPlayerName: ""
-                                      })
-                                    }
+                                        pendingPlayerName: "",
+                                        lineupGoalieNames:
+                                          savedLineupCard?.goalies ?? [],
+                                        lineupGoalieSourceUrl:
+                                          typeof goalieSource?.sourceUrl ===
+                                          "string"
+                                            ? goalieSource.sourceUrl
+                                            : "",
+                                        lineupGoalieSourceLabel:
+                                          typeof goalieSource?.sourceLabel ===
+                                          "string"
+                                            ? goalieSource.sourceLabel
+                                            : "",
+                                        activeLineupGoalieIndex: null
+                                      });
+                                    }}
                                   >
                                     Load into composer
                                   </button>
@@ -2057,7 +2375,13 @@ const TweetPatternReviewPage: NextPage = () => {
                   </div>
 
                   {/* Keyword phrases */}
-                  <div className={styles.keywordsSection}>
+                  <div
+                    className={sectionClass(
+                      styles.keywordsSection,
+                      "keywords"
+                    )}
+                  >
+                    {renderMobileSectionToggle("keywords", "Keywords")}
                     <div className={styles.sectionHeader}>
                       <span>Novel keyword phrases</span>
                     </div>

@@ -60,11 +60,15 @@
   text-overflow: ellipsis;
 }
 
+.mobileSectionToggle {
+  display: none;
+}
+
 .controlBar {
   @include panel.panel-shell($radius: v.$radius-panel, $variant: standard);
   grid-area: 1 / 1 / 2 / 7;
   display: grid;
-  grid-template-columns: 130px 140px minmax(260px, 1fr) auto auto auto;
+  grid-template-columns: 130px 140px minmax(260px, 1fr) auto auto auto auto;
   gap: 10px;
   align-items: end;
   padding: 10px v.$space-md;
@@ -122,6 +126,13 @@
   align-items: center;
 }
 
+.navButtonPrev,
+.navButtonNext {
+  width: 46px;
+  padding-left: 0;
+  padding-right: 0;
+}
+
 .pendingBadge {
   display: inline-flex;
   align-items: baseline;
@@ -172,6 +183,13 @@
     transform: none;
     box-shadow: none;
   }
+}
+
+.btnActive {
+  border-color: rgba(v.$primary-color, 0.85);
+  background: rgba(v.$primary-color, 0.16);
+  color: v.$color-white;
+  box-shadow: inset 0 0 0 1px rgba(v.$primary-color, 0.2);
 }
 
 .btn {
@@ -679,8 +697,8 @@
 .queueList {
   min-height: 0;
   overflow: auto;
-  display: grid;
-  align-content: start;
+  display: flex;
+  flex-direction: column;
   gap: 8px;
   padding: 10px 12px 12px;
 }
@@ -843,6 +861,47 @@
   align-content: start;
 }
 
+.lineupGoalieEditor {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid rgba(v.$warning-color, 0.22);
+  border-radius: v.$radius-card;
+  background: rgba(v.$warning-color, 0.045);
+}
+
+.lineupGoalieHeader {
+  display: grid;
+  gap: 2px;
+
+  span {
+    color: v.$color-white;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  small {
+    color: v.$text-secondary;
+    font-size: 12px;
+    line-height: 1.35;
+  }
+}
+
+.lineupGoalieSlotButtons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+
+  button {
+    min-width: 0;
+    justify-content: flex-start;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
 .composerPreviewColumn {
   grid-template-rows: auto minmax(0, auto) minmax(0, 1fr);
 }
@@ -999,8 +1058,11 @@
 @media (max-width: 860px) {
   .page {
     width: 100%;
+    height: auto;
+    min-height: calc(100dvh - 72px);
     padding: 8px;
     gap: 8px;
+    overflow: visible;
   }
 
   .pageHeader,
@@ -1024,7 +1086,68 @@
   }
 
   .controlBar {
-    grid-template-columns: 1fr;
+    grid-template-columns: 46px minmax(0, 1fr) minmax(0, 1fr) 46px;
+    gap: 8px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+
+  .mobileSectionToggle {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 0 10px;
+    border: 1px solid v.$border-soft;
+    border-radius: v.$radius-control;
+    background: rgba(v.$primary-color, 0.06);
+    color: v.$color-white;
+    font-family: v.$font-family-primary;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .sectionCollapsed {
+    min-height: auto;
+  }
+
+  .sectionCollapsed > :not(.mobileSectionToggle) {
+    display: none !important;
+  }
+
+  .statusField {
+    grid-column: 1 / 3;
+  }
+
+  .sortField {
+    grid-column: 3 / 5;
+  }
+
+  .queueField {
+    grid-column: 2 / 4;
+  }
+
+  .navButtonPrev {
+    grid-column: 1 / 2;
+  }
+
+  .navButtonNext {
+    grid-column: 4 / 5;
+  }
+
+  .syncButton {
+    grid-column: 1 / 3;
+  }
+
+  .pendingBadge {
+    grid-column: 3 / 5;
+    justify-self: stretch;
+    justify-content: center;
   }
 
   .fieldRow,
@@ -1050,6 +1173,75 @@
   }
 
   .tweetText {
-    min-height: 180px;
+    min-height: 220px;
+    max-height: 42dvh;
+    font-size: 18px;
+    line-height: 1.45;
+  }
+
+  .controlField {
+    gap: 3px;
+
+    > span {
+      font-size: 11px;
+    }
+
+    select,
+    input {
+      height: 36px;
+      padding: 0 10px;
+      font-size: 14px;
+    }
+  }
+
+  .btn,
+  .btnPrimary,
+  .btnIgnore {
+    min-height: 36px;
+    font-size: 13px;
+  }
+
+  .leftColumn,
+  .rightColumn,
+  .rightPane {
+    display: contents;
+  }
+
+  .controlBar {
+    order: 1;
+  }
+
+  .tweetPanel {
+    order: 2;
+  }
+
+  .composerSection {
+    order: 3;
+  }
+
+  .assignmentsPane {
+    order: 4;
+  }
+
+  .actionBar {
+    order: 5;
+  }
+
+  .queueBrowser {
+    order: 6;
+  }
+
+  .keywordsSection {
+    order: 7;
+  }
+
+  .composerGrid {
+    gap: 10px;
+  }
+
+  .savedCardsRail,
+  .queueList,
+  .assignmentsBody {
+    max-height: 48dvh;
   }
 }

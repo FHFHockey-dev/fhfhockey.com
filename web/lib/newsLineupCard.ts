@@ -7,6 +7,11 @@ export type NewsLineupCardData = {
   startingGoalie: string | null;
 };
 
+export type NewsLineupGoalieSource = {
+  sourceUrl: string | null;
+  sourceLabel: string | null;
+};
+
 function cleanPlayerName(value: string): string {
   return value
     .replace(/https?:\/\/\S+/gi, "")
@@ -50,8 +55,10 @@ export function isLineupNewsCategory(
   const normalizedCategory = normalizeNewsCategory(category);
   const normalizedSubcategory = normalizeNewsCategory(subcategory);
   return (
+    normalizedCategory === "LINEUP" ||
     normalizedCategory === "LINE COMBINATION" ||
     normalizedCategory === "PRACTICE LINES" ||
+    normalizedSubcategory === "LINEUP" ||
     normalizedSubcategory === "PRACTICE LINES" ||
     normalizedSubcategory === "FORWARD LINES" ||
     normalizedSubcategory === "DEFENSE PAIRS"

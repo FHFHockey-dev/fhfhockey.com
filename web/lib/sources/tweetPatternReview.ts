@@ -84,6 +84,16 @@ const DEFAULT_SOURCE_SCOPE = "tweet-pattern-review";
 
 export const TWEET_PATTERN_CATEGORY_OPTIONS: PatternCategoryOption[] = [
   {
+    category: "LINEUP",
+    subcategories: [
+      "LINE COMBINATION",
+      "FORWARD LINES",
+      "DEFENSE PAIRS",
+      "PRACTICE LINES",
+      "MORNING SKATE"
+    ]
+  },
+  {
     category: "LINE COMBINATION",
     subcategories: [
       "FORWARD LINES",

@@ -21,6 +21,7 @@
 - `web/components/NewsFeed/NewsCard.module.scss` - Shared dark news-card styling aligned to the FHFH design system.
 - `web/lib/sources/tweetPatternReview.ts` - Shared pattern-review category suggestions, review-text shaping, evidence normalization, and dedupe helpers.
 - `web/pages/api/v1/db/tweet-pattern-review.ts` - Admin review-queue API for syncing stored tweets into the corpus-review queue and saving manual classifications.
+- `web/lib/projections/rosterEvents.ts` - Converts reviewed tweet assignments into curated FORGE roster-event rows.
 - `web/pages/api/v1/db/news-feed-items.ts` - Admin API for saving draft/published news cards and manual keyword phrases tied to reviewed tweets.
 - `web/pages/db/tweet-pattern-review.tsx` - Tweet-by-tweet manual pattern-analysis UI inspired by the player-alias review page.
 - `web/pages/news/index.tsx` - New distilled `/news` feed surface for published cards with search and filter controls.

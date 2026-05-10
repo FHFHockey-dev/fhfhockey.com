@@ -876,6 +876,14 @@ export function resolveLinesCccTeam(args: {
     return leadVsTeam;
   }
   if (
+    handleHintTeam &&
+    labelMatches.length === 0 &&
+    !textHintTeam &&
+    args.classification !== "other"
+  ) {
+    return handleHintTeam;
+  }
+  if (
     !args.rosterByTeam &&
     handleHintTeam &&
     labelMatches.length === 1 &&

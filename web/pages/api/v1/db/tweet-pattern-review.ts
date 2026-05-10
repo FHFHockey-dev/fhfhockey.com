@@ -10,6 +10,7 @@ import {
   type TweetPatternReviewAssignment,
   TWEET_PATTERN_CATEGORY_OPTIONS
 } from "lib/sources/tweetPatternReview";
+import { buildRosterEventsFromReviewedTweet } from "lib/projections/rosterEvents";
 import { fetchLinesCccTweetOEmbedAttempt } from "lib/sources/linesCccIngestion";
 import adminOnly from "utils/adminOnlyMiddleware";
 
@@ -166,6 +167,9 @@ type LinesCccEventReviewSourceRow = {
   received_at: string | null;
   raw_payload: Record<string, unknown> | null;
 };
+
+
+
 
 type LineSourceEventReviewSourceRow = {
   id: string;
@@ -980,6 +984,47 @@ async function handlePost(req: any, res: NextApiResponse) {
         action === "ignore"
           ? `Ignored ${updatedCount} tweet${updatedCount === 1 ? "" : "s"}.`
           : `Returned ${updatedCount} tweet${updatedCount === 1 ? "" : "s"} to pending review.`
+    });
+  }
+
+  if (action === "publish-roster-events") {
+    const itemIds = parseStringArray(body.itemIds);
+    const itemId = parseString(body.itemId);
+    const targetItemIds = itemIds.length > 0 ? itemIds : itemId ? [itemId] : [];
+    if (targetItemIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing itemId or itemIds."
+      });
+    }
+
+    const { data: reviewRows, error: reviewError } = await req.supabase
+      .from("tweet_pattern_review_items" as any)
+      .select(
+        "id, source_account, source_handle, team_id, team_abbreviation, review_text, raw_text, enriched_text, review_status, reviewed_category, reviewed_subcategory, selected_highlights, review_assignments, notes, source_url, tweet_url, reviewed_at, source_created_at"
+      )
+      .in("id", targetItemIds);
+    if (reviewError) throw reviewError;
+
+    const rosterEvents = (reviewRows ?? []).flatMap((row: TweetPatternReviewRow) =>
+      buildRosterEventsFromReviewedTweet(row as any)
+    );
+    if (rosterEvents.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No reviewed assignments mapped to supported roster events."
+      });
+    }
+
+    const { error: insertError } = await req.supabase
+      .from("forge_roster_events")
+      .insert(rosterEvents);
+    if (insertError) throw insertError;
+
+    return res.json({
+      success: true,
+      insertedCount: rosterEvents.length,
+      message: `Published ${rosterEvents.length} roster event${rosterEvents.length === 1 ? "" : "s"}.`
     });
   }
 
