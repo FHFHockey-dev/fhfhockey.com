@@ -42,6 +42,40 @@ function getLastElement<T>(items: T[]): T {
   return item;
 }
 
+function getFetchCalls() {
+  return vi.mocked(fetch).mock.calls;
+}
+
+function getTeamLandingFetchCalls() {
+  return getFetchCalls().filter(([input]) => {
+    const url =
+      typeof input === "string"
+        ? input
+        : input instanceof URL
+          ? input.toString()
+          : input.url;
+    return url.startsWith("/api/v1/underlying-stats/teams");
+  });
+}
+
+function createStatusSnapshot() {
+  return {
+    latestSnapshotDate: "2026-04-07",
+    rowCount: 1,
+    status: "ready",
+  };
+}
+
+function expectLastTeamLandingFetch(path: string) {
+  const calls = getTeamLandingFetchCalls();
+  const lastCall = getLastElement(calls);
+
+  expect(lastCall).toEqual([
+    path,
+    expect.objectContaining({ signal: expect.any(AbortSignal) }),
+  ]);
+}
+
 describe("TeamUnderlyingStatsLandingRoute", () => {
   beforeEach(() => {
     routerMock.isReady = true;
@@ -58,6 +92,25 @@ describe("TeamUnderlyingStatsLandingRoute", () => {
             : input instanceof URL
               ? input.toString()
               : input.url;
+
+        if (url.startsWith("/api/v1/underlying-stats/route-status")) {
+          return {
+            ok: true,
+            json: async () => ({
+              success: true,
+              status: {
+                teamRatings: createStatusSnapshot(),
+                skaterOffenseRatings: createStatusSnapshot(),
+                skaterDefenseRatings: createStatusSnapshot(),
+                goalieRatings: createStatusSnapshot(),
+                gamePredictions: createStatusSnapshot(),
+                playerPredictions: createStatusSnapshot(),
+                modelMarketFlags: createStatusSnapshot(),
+              },
+            }),
+          };
+        }
+
         const params = new URL(url, "http://localhost").searchParams;
         const displayMode = params.get("displayMode") ?? "counts";
         const family = displayMode === "rates" ? "rates" : "counts";
@@ -125,7 +178,7 @@ describe("TeamUnderlyingStatsLandingRoute", () => {
       );
     });
 
-    expect(fetch).not.toHaveBeenCalled();
+    expect(getTeamLandingFetchCalls()).toHaveLength(0);
   });
 
   it("loads the default team landing API and renders returned rows", async () => {
@@ -135,14 +188,11 @@ describe("TeamUnderlyingStatsLandingRoute", () => {
     render(<TeamUnderlyingStatsLandingRoute />);
 
     await waitFor(() => {
-      expect(fetch).toHaveBeenCalledWith(
-        buildTeamStatsLandingApiPath(defaultState),
-        expect.objectContaining({ signal: expect.any(AbortSignal) })
-      );
+      expectLastTeamLandingFetch(buildTeamStatsLandingApiPath(defaultState));
     });
 
     expect(
-      screen.getByRole("heading", { name: "Team Underlying Stats" })
+      screen.getByRole("heading", { name: "Team Table Explorer" })
     ).toBeTruthy();
     expect(screen.getByText("FLA")).toBeTruthy();
     expect(screen.getByText("Showing 1 of 1 teams.")).toBeTruthy();
@@ -156,7 +206,7 @@ describe("TeamUnderlyingStatsLandingRoute", () => {
     render(<TeamUnderlyingStatsLandingRoute />);
 
     await waitFor(() => {
-      expect(fetch).toHaveBeenCalledTimes(1);
+      expect(getTeamLandingFetchCalls()).toHaveLength(1);
     });
 
     fireEvent.change(screen.getAllByLabelText("Display mode")[0], {
@@ -184,10 +234,7 @@ describe("TeamUnderlyingStatsLandingRoute", () => {
     ratesState.view.sort = { sortKey: "xgfPct", direction: "desc" };
 
     await waitFor(() => {
-      expect(fetch).toHaveBeenLastCalledWith(
-        buildTeamStatsLandingApiPath(ratesState),
-        expect.objectContaining({ signal: expect.any(AbortSignal) })
-      );
+      expectLastTeamLandingFetch(buildTeamStatsLandingApiPath(ratesState));
     });
 
     expect(screen.getByText("xGF/60")).toBeTruthy();
@@ -203,7 +250,7 @@ describe("TeamUnderlyingStatsLandingRoute", () => {
     render(<TeamUnderlyingStatsLandingRoute />);
 
     await waitFor(() => {
-      expect(fetch).toHaveBeenCalledTimes(1);
+      expect(getTeamLandingFetchCalls()).toHaveLength(1);
     });
 
     fireEvent.click(
@@ -223,7 +270,7 @@ describe("TeamUnderlyingStatsLandingRoute", () => {
     render(<TeamUnderlyingStatsLandingRoute />);
 
     await waitFor(() => {
-      expect(fetch).toHaveBeenCalledTimes(1);
+      expect(getTeamLandingFetchCalls()).toHaveLength(1);
     });
 
     expect(getLastElement(screen.getAllByRole("button", { name: "Sort by Team" }))).toBeTruthy();

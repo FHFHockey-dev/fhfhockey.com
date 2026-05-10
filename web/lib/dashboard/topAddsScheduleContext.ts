@@ -2,6 +2,7 @@ import { parseISO, startOfWeek } from "date-fns";
 
 import type { ScheduleArray } from "components/GameGrid/utils/useSchedule";
 import { DAYS, type DAY_ABBREVIATION } from "lib/NHL/types";
+import { isRegularSeasonOrPlayoffGameType } from "lib/NHL/playoffs";
 import { teamsInfo } from "lib/teamsInfo";
 
 export type TopAddsScheduleContext = {
@@ -50,7 +51,7 @@ export function buildTopAddsScheduleContextMap(
 
     remainingDays.forEach((dayKey, offset) => {
       const game = row[dayKey as DAY_ABBREVIATION];
-      if (!game || game.gameType !== 2) return;
+      if (!game || !isRegularSeasonOrPlayoffGameType(game.gameType)) return;
 
       gamesRemaining += 1;
 

@@ -1,3 +1,5 @@
+import { FORGE_TREND_ADJUSTMENT_WINDOW_PRIORITY } from "lib/predictions/rollingWindows";
+
 export const GOALIE_STALE_SOFT_DAYS = 30;
 export const GOALIE_STALE_HARD_DAYS = 75;
 export const SKATER_STALE_SOFT_DAYS = 21;
@@ -120,4 +122,4 @@ export const TREND_BAND_METRIC_PRIORITY = [
   "shots_per_60",
   "points_per_60_5v5"
 ] as const;
-export const TREND_BAND_WINDOW_PRIORITY = ["l5", "l10"] as const;
+export const TREND_BAND_WINDOW_PRIORITY = FORGE_TREND_ADJUSTMENT_WINDOW_PRIORITY;

@@ -156,10 +156,14 @@ export type NormalizedSustainabilityRow = {
   z_oishp: number | null;
   z_ipp: number | null;
   z_ppshp: number | null;
+  guardrail_state: string | null;
+  guardrail_warnings: string[];
 };
 
 export type NormalizedSustainabilityResponse = {
+  requested_snapshot_date: string | null;
   snapshot_date: string | null;
+  serving: NormalizedServingContract | null;
   rows: NormalizedSustainabilityRow[];
 };
 
@@ -184,13 +188,19 @@ export const normalizeSustainabilityResponse = (
         z_shp: toFiniteNumber(row.z_shp),
         z_oishp: toFiniteNumber(row.z_oishp),
         z_ipp: toFiniteNumber(row.z_ipp),
-        z_ppshp: toFiniteNumber(row.z_ppshp)
+        z_ppshp: toFiniteNumber(row.z_ppshp),
+        guardrail_state: toStringOrNull(row.guardrail_state),
+        guardrail_warnings: toArray<unknown>(row.guardrail_warnings).filter(
+          (warning): warning is string => typeof warning === "string"
+        )
       };
     })
     .filter((row): row is NormalizedSustainabilityRow => Boolean(row));
 
   return {
+    requested_snapshot_date: toStringOrNull(root.requested_snapshot_date),
     snapshot_date: toStringOrNull(root.snapshot_date),
+    serving: normalizeServingContract(root.serving),
     rows
   };
 };

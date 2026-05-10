@@ -105,6 +105,57 @@ async function fetchSkaterStats(options: {
   return results;
 }
 
+async function fetchPlayoffSkaterStats(options: {
+  startDate: string;
+  seasonId?: number;
+  playerIds?: number[];
+}) {
+  const { startDate, seasonId, playerIds } = options;
+  const results: PlayerStatsRow[] = [];
+
+  for (let page = 0; ; page += 1) {
+    const from = page * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
+
+    let query = supabase.from("wgo_skater_stats_playoffs").select("*");
+
+    if (startDate) {
+      query = query.gte("date", startDate);
+    }
+    if (seasonId) {
+      query = query.eq("season_id", seasonId);
+    }
+    if (playerIds && playerIds.length > 0) {
+      query = query.in("player_id", playerIds);
+    }
+
+    query = query
+      .order("player_id", { ascending: true })
+      .order("date", { ascending: true })
+      .range(from, to);
+
+    const { data, error } = await query;
+
+    if (error) {
+      throw new Error(
+        `Failed to load playoff skater stats (page ${page}): ${error.message}`
+      );
+    }
+
+    if (!data || data.length === 0) {
+      break;
+    }
+
+    results.push(...((data as unknown) as PlayerStatsRow[]));
+
+    if (data.length < PAGE_SIZE) {
+      break;
+    }
+  }
+
+  return results;
+}
+
 async function fetchGoalieStats(options: {
   startDate: string;
   seasonId?: number;
@@ -208,8 +259,13 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
   const playerIds = parsePlayerIds(req.body?.playerIds);
 
   try {
-    const [skaterRows, goalieRows] = await Promise.all([
+    const [skaterRows, playoffSkaterRows, goalieRows] = await Promise.all([
       fetchSkaterStats({
+        startDate,
+        seasonId: Number.isFinite(seasonId) ? seasonId : undefined,
+        playerIds
+      }),
+      fetchPlayoffSkaterStats({
         startDate,
         seasonId: Number.isFinite(seasonId) ? seasonId : undefined,
         playerIds
@@ -221,7 +277,7 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
       })
     ]);
 
-    const rows = [...skaterRows, ...goalieRows];
+    const rows = [...skaterRows, ...playoffSkaterRows, ...goalieRows];
 
     const trendRecords = buildPlayerTrendRecords(rows);
     await upsertTrendRecords(trendRecords);

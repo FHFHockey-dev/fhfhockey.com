@@ -61,7 +61,7 @@
   - [x] 3.4 Ensure both admin routes write only to the new team tables and do not regress player or goalie refresh behavior.
   - [x] 3.5 Add focused tests for game selection, batching, partial-failure reporting, and summary-refresh invocation.
 
-- [ ] 4.0 Implement the team landing query contract, filter state, and URL semantics
+- [x] 4.0 Implement the team landing query contract, filter state, and URL semantics
   - [x] 4.1 Create `web/lib/underlying-stats/teamStatsFilters.ts` with the canonical landing filter shape covering primary controls, expandable filters, sorting, pagination, and advanced-panel state.
   - [x] 4.2 Support and validate all PRD filters: `From Season`, `Through Season`, `Season Type`, `Strength`, `Score State`, `Display Mode`, `Team`, `Opponent`, `Home/Away`, `Minimum TOI`, `Date Range`, `Game Range`, and `Team Game Range`.
   - [x] 4.3 Enforce that `Date Range`, `Game Range`, and `Team Game Range` are mutually exclusive during normalization and URL serialization.
@@ -70,14 +70,14 @@
   - [x] 4.6 Implement opponent-filter behavior so `againstTeamId` alone shows all teams against that opponent, and `teamId + againstTeamId` shows the selected team’s aggregate against that opponent without special-case UI branching.
   - [x] 4.7 Add focused tests for filter parsing, URL round-trips, scope exclusivity, default sorts, rate derivations, and opponent semantics.
 
-- [ ] 5.0 Add the dedicated team landing API surface and route wiring
+- [x] 5.0 Add the dedicated team landing API surface and route wiring
   - [x] 5.1 Create `web/pages/api/v1/underlying-stats/teams.ts` as the landing API wrapper over `teamStatsQueries.ts`.
   - [x] 5.2 Define the team landing response contract so `rows`, `family`, `sort`, `pagination`, `placeholder`, and `generatedAt` mirror the existing player or goalie landing API pattern where practical.
   - [x] 5.3 Create `web/pages/underlying-stats/teamStats/index.tsx` and mirror the goalie route’s canonical-query normalization so shared links resolve to one stable URL state.
   - [x] 5.4 Wire the route to the team landing API path, default filter state, loading and empty and error states, and display-mode switching without breaking back or forward navigation.
   - [x] 5.5 Add route-level tests for canonical query rewriting, default-load behavior, and landing API integration.
 
-- [ ] 6.0 Adapt the shared underlying-stats UI for `variant="team"`
+- [x] 6.0 Adapt the shared underlying-stats UI for `variant="team"`
   - [x] 6.1 Refactor or wrap the shared landing-page shell so it cleanly supports `variant="team"` alongside player and goalie.
   - [x] 6.2 Create `web/components/underlying-stats/teamStatsColumns.ts` with the exact Team Counts and Team Rates column order, labels, formatting, and sortable keys required by the PRD.
   - [x] 6.3 Reuse the shared wide-table renderer for team rows, including sticky identifier behavior, horizontal overflow, and sortable headers across the full column surface.
@@ -92,7 +92,7 @@
 - [ ] 7.0 Validate the landing-page v1 end to end
   - [x] 7.1 Run the team catch-up or season-backfill flow locally against a representative season and verify sample team rows land in the new tables.
   - [x] 7.2 Verify `/underlying-stats/teamStats` renders with the expected default display mode, default sort, and URL-synced filter state.
-  - [ ] 7.3 Verify `Counts` vs `Rates` switches the correct column families and calculations without dropping active filters.
+  - [x] 7.3 Verify `Counts` vs `Rates` switches the correct column families and calculations without dropping active filters.
   - [ ] 7.4 Verify `Team`, `Opponent`, `Home/Away`, `Strength`, `Score State`, `Minimum TOI`, `Date Range`, `Game Range`, and `Team Game Range` each affect both data and URL state as expected.
   - [ ] 7.5 Verify wide-viewport table behavior matches the existing `playerStats` and `goalieStats` patterns for sticky headers, sticky identity columns if used, and horizontal scrolling.
   - [ ] 7.6 Run targeted tests and the workspace typecheck build, then record any remaining risks or follow-up gaps before shipping v1.

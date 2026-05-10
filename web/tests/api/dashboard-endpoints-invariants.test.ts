@@ -121,6 +121,8 @@ describe("Dashboard Endpoint Invariant Guards", () => {
       window_code: "l10",
       s_100: 73.5,
       luck_pressure: 0.81,
+      guardrail_state: null,
+      guardrail_warnings: [],
       z_shp: null,
       z_oishp: null,
       z_ipp: null,

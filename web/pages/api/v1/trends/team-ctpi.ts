@@ -145,7 +145,9 @@ async function fetchGameRows(seasonId: number): Promise<TeamGameRow[]> {
   });
 }
 
-async function fetchCtpiDaily(seasonId: number): Promise<CtpiScore[] | null> {
+async function fetchCtpiDaily(
+  seasonId: number
+): Promise<{ scores: CtpiScore[]; generatedAt: string } | null> {
   const { data, error } = await supabase
     .from(DAILY_TABLE)
     .select(
@@ -158,7 +160,8 @@ async function fetchCtpiDaily(seasonId: number): Promise<CtpiScore[] | null> {
         "defense",
         "goaltending",
         "special_teams",
-        "luck"
+        "luck",
+        "computed_at"
       ].join(",")
     )
     .eq("season_id", seasonId)
@@ -171,9 +174,14 @@ async function fetchCtpiDaily(seasonId: number): Promise<CtpiScore[] | null> {
   if (!data || data.length === 0) return null;
 
   const teamMap = new Map<string, any[]>();
+  let latestGeneratedAt: string | null = null;
   data.forEach((row: any) => {
     if (!teamMap.has(row.team)) teamMap.set(row.team, []);
     teamMap.get(row.team)!.push(row);
+    const generatedAt = row.computed_at ?? (row.date ? `${row.date}T23:59:59.999Z` : null);
+    if (generatedAt && (!latestGeneratedAt || generatedAt > latestGeneratedAt)) {
+      latestGeneratedAt = generatedAt;
+    }
   });
 
   const scores: CtpiScore[] = [];
@@ -195,7 +203,10 @@ async function fetchCtpiDaily(seasonId: number): Promise<CtpiScore[] | null> {
         .map((r: any) => ({ date: r.date, value: r.ctpi_0_to_100 }))
     });
   });
-  return scores;
+  return {
+    scores,
+    generatedAt: latestGeneratedAt ?? new Date().toISOString()
+  };
 }
 
 export default async function handler(
@@ -213,7 +224,8 @@ export default async function handler(
 
     // Prefer precomputed daily table for latest values + sparkline
     const dailyCtpi = await fetchCtpiDaily(seasonId);
-    let ctpi: CtpiScore[] | null = dailyCtpi;
+    let ctpi: CtpiScore[] | null = dailyCtpi?.scores ?? null;
+    let generatedAt = dailyCtpi?.generatedAt ?? new Date().toISOString();
 
     // Fallback to on-the-fly compute if table empty
     if (!ctpi || ctpi.length === 0) {
@@ -227,12 +239,13 @@ export default async function handler(
         computeTrendMetrics(games)
       );
       ctpi = computeCtpi(trendMetrics);
+      generatedAt = new Date().toISOString();
     }
 
     res.setHeader("Cache-Control", "s-maxage=900, stale-while-revalidate=60");
     return res.status(200).json({
       seasonId,
-      generatedAt: new Date().toISOString(),
+      generatedAt,
       teams: ctpi
     });
   } catch (error: any) {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildHomepageModulePresentation } from "./freshness";
+import { buildHomepageModulePresentation, evaluateFreshness } from "./freshness";
 
 describe("buildHomepageModulePresentation", () => {
   it("prioritizes loading and error states over stale evaluation", () => {
@@ -67,6 +67,18 @@ describe("buildHomepageModulePresentation", () => {
       state: "ready",
       panelState: null,
       message: null
+    });
+  });
+
+  it("treats date-only daily snapshots as covering the full source day", () => {
+    expect(
+      evaluateFreshness(
+        [{ source: "team-ratings", timestamp: "2026-05-09", maxAgeHours: 1, severity: "warn" }],
+        Date.parse("2026-05-09T12:00:00.000Z")
+      )
+    ).toEqual({
+      ok: true,
+      issues: []
     });
   });
 });
