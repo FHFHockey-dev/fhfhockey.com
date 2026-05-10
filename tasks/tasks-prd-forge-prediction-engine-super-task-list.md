@@ -16,7 +16,34 @@ The shared trunk is:
 
 This consolidation intentionally does not force every task into the same model. Some branches are serving, observability, UI, or research layers. They remain in this file because they are necessary to make the prediction system usable and trustworthy.
 
+## Relevant Files
+
+- `web/lib/projections/run-forge-projections.ts` - Canonical FORGE skater, goalie, and team projection runner.
+- `web/lib/game-predictions/featureBuilder.ts` - Game-prediction feature construction, source cutoffs, roster/SoS context, and fallback warnings.
+- `web/lib/game-predictions/baselineModel.ts` - Game-prediction model contract, feature vector, output payload, probability floors, and explainability factors.
+- `web/lib/sustainability/score.ts` - Canonical TypeScript sustainability score builder.
+- `web/lib/sustainability/backtest.ts` - Sustainability baseline comparison helper.
+- `web/lib/sustainability/guardrails.ts` - Sustainability score/dashboard guardrails.
+- `web/lib/projections/rosterEvents.ts` - Canonical `forge_roster_events` mapping and preflight helpers.
+- `web/pages/api/v1/db/run-projection-v2.ts` - Projection execution route and freshness preflight gate surface.
+- `web/pages/api/v1/runs/[runId].ts` - Projection run detail API.
+- `web/pages/api/v1/forge/roster-events.ts` - Admin CRUD API for curated roster events.
+- `web/pages/api/v1/sustainability/trends.ts` - Sustainability dashboard serving endpoint with guarded output.
+- `web/components/forge-dashboard/SustainabilityCard.tsx` - Dashboard sustainability card.
+- `web/lib/predictions/sourceOwnership.ts` - Source/stage ownership map and sKO quarantine decision.
+- `web/lib/predictions/legacyQuarantine.ts` - Legacy/adjacent artifact quarantine inventory.
+- `tasks/artifacts/forge-prediction-operator-runbook.md` - Operator runbook for reruns, triage, and rollback.
+
+### Notes
+
+- Treat this file as the active implementation plan; the 11 merged source files remain historical traceability inputs.
+- sKO is quarantined unless it gains persisted feature importances, validation metrics, freshness metadata, and promotion gates.
+- Lineup, goalie, injury, and roster-event work is prediction context, not isolated UI work.
+
 ## Source Map
+
+
+
 
 - A: `tasks/PRD/prd-projection-model.md` - FORGE player/team/goalie projection engine.
 - B: `tasks/PRD/prd-sko-charts.md` - sKO player evaluation/prediction charts and model transparency.
@@ -117,119 +144,119 @@ Use one trunk and five branches.
 | I+K | Volatility can adjust roster-impact confidence. | Fuse as confidence modifier after core roster priors exist. |
 | J+K | K is the next feature-generation phase for J. | Fully merge K into J as the model-improvement branch. |
 
-## Super Task List
+## Tasks
 
-- [ ] 0.0 Establish the canonical prediction-engine contract
-  - [ ] 0.1 Treat this file as the active meta task list and freeze the 11 source files as historical inputs unless a source-specific task is intentionally revived.
-  - [ ] 0.2 Update stale source references, especially `web/rules/forge-tables.md` -> `web/rules/context/forge-tables.md`.
-  - [ ] 0.3 Create a source-to-stage ownership map for every table used by FORGE, sustainability, sKO, trends, SoS, and game predictions.
-  - [ ] 0.4 Decide canonical ownership for duplicate sustainability implementations: TypeScript `web/lib/sustainability/*`, Python `functions/lib/sustainability/*`, or an explicit split by runtime.
-  - [ ] 0.5 Decide canonical ownership for sKO: promote into the prediction trunk as feature importance/stability tooling, or quarantine as legacy/adjacent.
-  - [ ] 0.6 Define one shared model metadata contract: `modelName`, `modelVersion`, `featureSetVersion`, `asOfDate`, `sourceCutoffs`, `warnings`, `topFactors`, `calibration`, and `fallbackFlags`.
-  - [ ] 0.7 Define one shared freshness contract for all prediction surfaces: source date, requested date, effective date, stale threshold, fallback reason, and degraded-state label.
-  - [ ] 0.8 Add a document section or artifact that maps A-K tasks to this consolidated file so no source-list work is silently dropped.
+- [x] 0.0 Establish the canonical prediction-engine contract
+  - [x] 0.1 Treat this file as the active meta task list and freeze the 11 source files as historical inputs unless a source-specific task is intentionally revived.
+  - [x] 0.2 Update stale source references, especially `web/rules/forge-tables.md` -> `web/rules/context/forge-tables.md`.
+  - [x] 0.3 Create a source-to-stage ownership map for every table used by FORGE, sustainability, sKO, trends, SoS, and game predictions.
+  - [x] 0.4 Decide canonical ownership for duplicate sustainability implementations: TypeScript `web/lib/sustainability/*`, Python `functions/lib/sustainability/*`, or an explicit split by runtime.
+  - [x] 0.5 Decide canonical ownership for sKO: promote into the prediction trunk as feature importance/stability tooling, or quarantine as legacy/adjacent.
+  - [x] 0.6 Define one shared model metadata contract: `modelName`, `modelVersion`, `featureSetVersion`, `asOfDate`, `sourceCutoffs`, `warnings`, `topFactors`, `calibration`, and `fallbackFlags`.
+  - [x] 0.7 Define one shared freshness contract for all prediction surfaces: source date, requested date, effective date, stale threshold, fallback reason, and degraded-state label.
+  - [x] 0.8 Add a document section or artifact that maps A-K tasks to this consolidated file so no source-list work is silently dropped.
 
-- [ ] 1.0 Stabilize upstream source freshness and pipeline health
-  - [ ] 1.1 Verify the active cron order in `web/rules/context/cron-schedule.md` against the real dependency graph in `web/lib/rollingForgePipeline.ts`.
-  - [ ] 1.2 Ensure core entities refresh before downstream stages: games, teams, players, rosters, standings, seasons.
-  - [ ] 1.3 Ensure NST/WGO skater, goalie, team, and totals sources complete before rolling metrics, sustainability, FORGE, sKO, and game predictions run.
-  - [ ] 1.4 Ensure line combinations and power-play combinations complete before rolling metrics and FORGE projection execution.
-  - [ ] 1.5 Ensure goalie projections, accepted lineup/goaltender tweet sources, and line combinations have consistent as-of semantics before game prediction snapshots.
-  - [ ] 1.6 Add or update source provenance rows for team power, CTPI, SoS, rolling metrics, sustainability, goalie starts, lineups, FORGE outputs, and game predictions.
-  - [ ] 1.7 Repair dashboard/source freshness issues from D: mixed effective dates, request-time timestamps, stale sustainability fallbacks, stale goalie coverage, stale CTPI/team power.
-  - [ ] 1.8 Re-run cron health and admin health checks until stale-source warnings are either fixed or explicitly classified.
+- [x] 1.0 Stabilize upstream source freshness and pipeline health
+  - [x] 1.1 Verify the active cron order in `web/rules/context/cron-schedule.md` against the real dependency graph in `web/lib/rollingForgePipeline.ts`.
+  - [x] 1.2 Ensure core entities refresh before downstream stages: games, teams, players, rosters, standings, seasons.
+  - [x] 1.3 Ensure NST/WGO skater, goalie, team, and totals sources complete before rolling metrics, sustainability, FORGE, sKO, and game predictions run.
+  - [x] 1.4 Ensure line combinations and power-play combinations complete before rolling metrics and FORGE projection execution.
+  - [x] 1.5 Ensure goalie projections, accepted lineup/goaltender tweet sources, and line combinations have consistent as-of semantics before game prediction snapshots.
+  - [x] 1.6 Add or update source provenance rows for team power, CTPI, SoS, rolling metrics, sustainability, goalie starts, lineups, FORGE outputs, and game predictions.
+  - [x] 1.7 Repair dashboard/source freshness issues from D: mixed effective dates, request-time timestamps, stale sustainability fallbacks, stale goalie coverage, stale CTPI/team power.
+  - [x] 1.8 Re-run cron health and admin health checks until stale-source warnings are either fixed or explicitly classified.
 
-- [ ] 2.0 Make rolling player/team/goalie features the canonical historical performance foundation
-  - [ ] 2.1 Finish validation/logging for `update-rolling-player-averages` and confirm the cron route is the canonical source for player rolling windows.
-  - [ ] 2.2 Reconcile rolling-window definitions across C, F, G, H, and I: 1/3/5/10/20/25/50 game windows, cumulative season, career, and three-year baselines.
-  - [ ] 2.3 Document every player metric source and unit: TOI, ES/PP/PK splits, shots, iCF, iSCF, iHDCF, iXG, goals, assists, points, hits, blocks, IPP, PDO, on-ice shooting, zone starts, PP share.
-  - [ ] 2.4 Add validation payloads for rolling metrics so `trendsDebug.tsx` or replacement tooling can inspect metric-by-metric values.
-  - [ ] 2.5 Build team rolling/context features from team power, NST team logs, WGO team rows, CTPI, and SoS with as-of filtering.
-  - [ ] 2.6 Build goalie rolling/context features from `forge_goalie_game`, goalie unified views, WGO goalie stats, rest, workload, quality starts, and starter history.
-  - [ ] 2.7 Add source warnings when rolling rows are stale, sparse, compatibility-derived, or from fallback columns.
+- [x] 2.0 Make rolling player/team/goalie features the canonical historical performance foundation
+  - [x] 2.1 Finish validation/logging for `update-rolling-player-averages` and confirm the cron route is the canonical source for player rolling windows.
+  - [x] 2.2 Reconcile rolling-window definitions across C, F, G, H, and I: 1/3/5/10/20/25/50 game windows, cumulative season, career, and three-year baselines.
+  - [x] 2.3 Document every player metric source and unit: TOI, ES/PP/PK splits, shots, iCF, iSCF, iHDCF, iXG, goals, assists, points, hits, blocks, IPP, PDO, on-ice shooting, zone starts, PP share.
+  - [x] 2.4 Add validation payloads for rolling metrics so `trendsDebug.tsx` or replacement tooling can inspect metric-by-metric values.
+  - [x] 2.5 Build team rolling/context features from team power, NST team logs, WGO team rows, CTPI, and SoS with as-of filtering.
+  - [x] 2.6 Build goalie rolling/context features from `forge_goalie_game`, goalie unified views, WGO goalie stats, rest, workload, quality starts, and starter history.
+  - [x] 2.7 Add source warnings when rolling rows are stale, sparse, compatibility-derived, or from fallback columns.
 
-- [ ] 3.0 Consolidate sustainability, volatility, and unsustainable-performance detection
-  - [ ] 3.1 Decide the canonical sustainability runtime and retire or document the non-canonical path.
-  - [ ] 3.2 Build one feature dictionary for sustainable production: recent rate, baseline rate, z-score, percentile, usage delta, context delta, opponent adjustment, reliability, and sample weight.
-  - [ ] 3.3 Finish data joins/windows from G against WGO, NST, rolling metrics, career baselines, and season totals.
-  - [ ] 3.4 Finish priors/posteriors from F/G: league priors, player priors, empirical Bayes shrinkage, reliability weighting, and soft clipping.
-  - [ ] 3.5 Finish volatility/elasticity bands from I: metric/window snapshots, confidence intervals, percentiles, and trend-band history.
-  - [ ] 3.6 Persist sustainability scores/bands with as-of metadata, model version, config hash, components JSON, and stale/fallback warnings.
-  - [ ] 3.7 Add rebuild endpoints for baselines, priors, window z-scores, scores, and trend bands with bounded batch/runtime controls.
-  - [ ] 3.8 Add backtests comparing sustainability outputs against career-only, season-only, recent-only, and naive baselines.
-  - [ ] 3.9 Add guardrails so impossible values or tiny-sample explosions cannot reach dashboard cards as ordinary predictions.
+- [x] 3.0 Consolidate sustainability, volatility, and unsustainable-performance detection
+  - [x] 3.1 Decide the canonical sustainability runtime and retire or document the non-canonical path.
+  - [x] 3.2 Build one feature dictionary for sustainable production: recent rate, baseline rate, z-score, percentile, usage delta, context delta, opponent adjustment, reliability, and sample weight.
+  - [x] 3.3 Finish data joins/windows from G against WGO, NST, rolling metrics, career baselines, and season totals.
+  - [x] 3.4 Finish priors/posteriors from F/G: league priors, player priors, empirical Bayes shrinkage, reliability weighting, and soft clipping.
+  - [x] 3.5 Finish volatility/elasticity bands from I: metric/window snapshots, confidence intervals, percentiles, and trend-band history.
+  - [x] 3.6 Persist sustainability scores/bands with as-of metadata, model version, config hash, components JSON, and stale/fallback warnings.
+  - [x] 3.7 Add rebuild endpoints for baselines, priors, window z-scores, scores, and trend bands with bounded batch/runtime controls.
+  - [x] 3.8 Add backtests comparing sustainability outputs against career-only, season-only, recent-only, and naive baselines.
+  - [x] 3.9 Add guardrails so impossible values or tiny-sample explosions cannot reach dashboard cards as ordinary predictions.
 
-- [ ] 4.0 Formalize lineup, injury, goalie, and roster-event state as prediction inputs
-  - [ ] 4.1 Treat confirmed goalies, likely goalies, injuries, lineup vacancies, callups, senddowns, line changes, and PP-unit changes as structured events, not UI-only annotations.
-  - [ ] 4.2 Use `forge_roster_events` as the canonical manual/curated override table unless a better table already owns the same concept.
-  - [ ] 4.3 Connect accepted tweet pattern review outputs and line-source ingestion into roster/lineup/goalie event writing with author/source provenance.
-  - [ ] 4.4 Normalize source priority for goalies: confirmed accepted tweet rows, explicit goalie projections, current line combinations, recent usage, fallback.
-  - [ ] 4.5 Add injury/absence logic that reduces or removes player projection opportunity and redistributes opportunity to plausible replacements.
-  - [ ] 4.6 Add line/PP-unit logic that adjusts TOI share, PP share, teammate assist coupling, and role scenario metadata.
-  - [ ] 4.7 Add preflight gates for stale lineups, missing current line combos, missing goalie priors, stale roster assignments, and unsupported fallback states.
-  - [ ] 4.8 Add tests proving confirmed goalies override probabilistic rows and stale/current-only lineup sources do not leak into historical backtests.
+- [x] 4.0 Formalize lineup, injury, goalie, and roster-event state as prediction inputs
+  - [x] 4.1 Treat confirmed goalies, likely goalies, injuries, lineup vacancies, callups, senddowns, line changes, and PP-unit changes as structured events, not UI-only annotations.
+  - [x] 4.2 Use `forge_roster_events` as the canonical manual/curated override table unless a better table already owns the same concept.
+  - [x] 4.3 Connect accepted tweet pattern review outputs and line-source ingestion into roster/lineup/goalie event writing with author/source provenance.
+  - [x] 4.4 Normalize source priority for goalies: confirmed accepted tweet rows, explicit goalie projections, current line combinations, recent usage, fallback.
+  - [x] 4.5 Add injury/absence logic that reduces or removes player projection opportunity and redistributes opportunity to plausible replacements.
+  - [x] 4.6 Add line/PP-unit logic that adjusts TOI share, PP share, teammate assist coupling, and role scenario metadata.
+  - [x] 4.7 Add preflight gates for stale lineups, missing current line combos, missing goalie priors, stale roster assignments, and unsupported fallback states.
+  - [x] 4.8 Add tests proving confirmed goalies override probabilistic rows and stale/current-only lineup sources do not leak into historical backtests.
 
-- [ ] 5.0 Finish the FORGE player, goalie, and team projection engine
-  - [ ] 5.1 Validate `run-projection-v2` performance with batching/chunked upserts under nightly runtime constraints.
-  - [ ] 5.2 Implement or verify `/runs/{run_id}` detail API for run metadata, preflight gates, row counts, warnings, and metrics.
-  - [ ] 5.3 Implement admin endpoints for projection run triggers and `forge_roster_events` CRUD.
-  - [ ] 5.4 Complete skater rate modeling from H: team opportunities -> player shares -> conversion -> reconciliation.
-  - [ ] 5.5 Apply sustainability/band outputs to skater projection uncertainty, regression, floor/typical/ceiling, and confidence labels.
-  - [ ] 5.6 Improve goalie projections with scenario probabilities, save percentage context, workload/rest adjustments, quality/reliability tiers, and recommendations.
-  - [ ] 5.7 Ensure team projections reconcile from player/goalie outputs and expose team totals that equal player sums where hard constraints apply.
-  - [ ] 5.8 Add horizon support with clear decay/rest/schedule semantics and no unsupported future leakage.
-  - [ ] 5.9 Add launch gates: sample floors, MAE/RMSE, calibration/coverage bands, stale-data blockers, and rollback triggers.
-  - [ ] 5.10 Run shadow-mode comparisons for skater and goalie projections before changing defaults.
+- [x] 5.0 Finish the FORGE player, goalie, and team projection engine
+  - [x] 5.1 Validate `run-projection-v2` performance with batching/chunked upserts under nightly runtime constraints.
+  - [x] 5.2 Implement or verify `/runs/{run_id}` detail API for run metadata, preflight gates, row counts, warnings, and metrics.
+  - [x] 5.3 Implement admin endpoints for projection run triggers and `forge_roster_events` CRUD.
+  - [x] 5.4 Complete skater rate modeling from H: team opportunities -> player shares -> conversion -> reconciliation.
+  - [x] 5.5 Apply sustainability/band outputs to skater projection uncertainty, regression, floor/typical/ceiling, and confidence labels.
+  - [x] 5.6 Improve goalie projections with scenario probabilities, save percentage context, workload/rest adjustments, quality/reliability tiers, and recommendations.
+  - [x] 5.7 Ensure team projections reconcile from player/goalie outputs and expose team totals that equal player sums where hard constraints apply.
+  - [x] 5.8 Add horizon support with clear decay/rest/schedule semantics and no unsupported future leakage.
+  - [x] 5.9 Add launch gates: sample floors, MAE/RMSE, calibration/coverage bands, stale-data blockers, and rollback triggers.
+  - [x] 5.10 Run shadow-mode comparisons for skater and goalie projections before changing defaults.
 
-- [ ] 6.0 Build roster-adjusted and SoS-adjusted game prediction features
-  - [ ] 6.1 Complete source-audit blockers from J before training/publishing any game prediction variant.
-  - [ ] 6.2 Promote or seed a production `game_prediction_model_versions` row only after documented backtest metrics exist.
-  - [ ] 6.3 Build player impact priors that survive roster movement using stable player IDs, team history, position, role, TOI share, and sustainability-adjusted recent form.
-  - [ ] 6.4 Aggregate expected roster into team features: skater offense, skater defense, goalie impact, special teams, PP context, injury/absence deltas.
-  - [ ] 6.5 Add confirmed/projected goalie starter handling with fallback to goalie-start probability or team-level goalie strength.
-  - [ ] 6.6 Build as-of SoS features from past opponent strength and future schedule difficulty without future leakage.
-  - [ ] 6.7 Adjust current form for opponent quality so weak-schedule runs do not inflate team strength.
-  - [ ] 6.8 Add time-dependent blend features: roster priors matter more early, current form matters more later, but injury/transaction context remains available.
-  - [ ] 6.9 Keep raw and adjusted forms side by side for ablations.
-  - [ ] 6.10 Add feature-source metadata and warnings for stale, incomplete, fallback, or current-only features.
+- [x] 6.0 Build roster-adjusted and SoS-adjusted game prediction features
+  - [x] 6.1 Complete source-audit blockers from J before training/publishing any game prediction variant.
+  - [x] 6.2 Promote or seed a production `game_prediction_model_versions` row only after documented backtest metrics exist.
+  - [x] 6.3 Build player impact priors that survive roster movement using stable player IDs, team history, position, role, TOI share, and sustainability-adjusted recent form.
+  - [x] 6.4 Aggregate expected roster into team features: skater offense, skater defense, goalie impact, special teams, PP context, injury/absence deltas.
+  - [x] 6.5 Add confirmed/projected goalie starter handling with fallback to goalie-start probability or team-level goalie strength.
+  - [x] 6.6 Build as-of SoS features from past opponent strength and future schedule difficulty without future leakage.
+  - [x] 6.7 Adjust current form for opponent quality so weak-schedule runs do not inflate team strength.
+  - [x] 6.8 Add time-dependent blend features: roster priors matter more early, current form matters more later, but injury/transaction context remains available.
+  - [x] 6.9 Keep raw and adjusted forms side by side for ablations.
+  - [x] 6.10 Add feature-source metadata and warnings for stale, incomplete, fallback, or current-only features.
 
-- [ ] 7.0 Train, backtest, calibrate, and promote models with evidence
-  - [ ] 7.1 Backtest FORGE player projections for the last 30 days and persist MAE, RMSE, interval coverage, and per-player/per-stat summaries.
-  - [ ] 7.2 Backtest game predictions with walk-forward or season-held-out validation and document acceptance criteria.
-  - [ ] 7.3 Add postgame scoring verification so metrics append/upsert without overwriting historical predictions.
-  - [ ] 7.4 Add game-prediction ablations: roster only, SoS only, roster+SoS, raw form vs adjusted form, per60 priors vs TOI-shrunk priors.
-  - [ ] 7.5 Add segment reporting for early season, mid season, late season, confirmed goalie, unconfirmed goalie, missing lineup, and stale-source cohorts.
-  - [ ] 7.6 Decide whether sKO should be replaced by the sustainability/FORGE feature layer, or rebuilt as a real model with feature importance.
-  - [ ] 7.7 If sKO is retained, implement a real model path with persisted `top_features`, feature importances, metrics, and nightly update controls.
-  - [ ] 7.8 Add calibration outputs and probability floors for all promoted game-prediction models.
-  - [ ] 7.9 Require model promotion gates before bumping `GAME_PREDICTION_FEATURE_SET_VERSION`, `BASELINE_MODEL_VERSION`, or FORGE model versions.
+- [x] 7.0 Train, backtest, calibrate, and promote models with evidence
+  - [x] 7.1 Backtest FORGE player projections for the last 30 days and persist MAE, RMSE, interval coverage, and per-player/per-stat summaries.
+  - [x] 7.2 Backtest game predictions with walk-forward or season-held-out validation and document acceptance criteria.
+  - [x] 7.3 Add postgame scoring verification so metrics append/upsert without overwriting historical predictions.
+  - [x] 7.4 Add game-prediction ablations: roster only, SoS only, roster+SoS, raw form vs adjusted form, per60 priors vs TOI-shrunk priors.
+  - [x] 7.5 Add segment reporting for early season, mid season, late season, confirmed goalie, unconfirmed goalie, missing lineup, and stale-source cohorts.
+  - [x] 7.6 Decide whether sKO should be replaced by the sustainability/FORGE feature layer, or rebuilt as a real model with feature importance.
+  - [x] 7.7 If sKO is retained, implement a real model path with persisted `top_features`, feature importances, metrics, and nightly update controls.
+  - [x] 7.8 Add calibration outputs and probability floors for all promoted game-prediction models.
+  - [x] 7.9 Require model promotion gates before bumping `GAME_PREDICTION_FEATURE_SET_VERSION`, `BASELINE_MODEL_VERSION`, or FORGE model versions.
 
-- [ ] 8.0 Serve predictions, trends, and explanations through stable product surfaces
-  - [ ] 8.1 Consolidate FORGE and Trends data loading/cache strategy from E.
-  - [ ] 8.2 Repair dashboard component trust from D: freshness labels, mixed-date warnings, degraded states, ownership overlays, goalie coverage loss, and route continuity.
-  - [ ] 8.3 Add player projection explainers: role, PP share, line context, recent trend, sustainability state, matchup, rest, uncertainty, and fallback caveats.
-  - [ ] 8.4 Add goalie projection explainers: starter probability, confirmed status, workload/rest, modeled save percentage, quality/reliability tier, blowup risk.
-  - [ ] 8.5 Add game prediction explainers: top factors, roster deltas, goalie state, SoS adjustment, current form, source warnings, and prediction candlestick history.
-  - [ ] 8.6 Add sustainability UI: badges, sparklines, tooltips, volatility bands, hot/cold/unsustainable labels, and components tables.
-  - [ ] 8.7 Decide whether sKO charts remain a standalone route, become a panel, or are retired after feature parity exists elsewhere.
-  - [ ] 8.8 Verify empty/offseason/degraded states so missing data is never presented as neutral certainty.
+- [x] 8.0 Serve predictions, trends, and explanations through stable product surfaces
+  - [x] 8.1 Consolidate FORGE and Trends data loading/cache strategy from E.
+  - [x] 8.2 Repair dashboard component trust from D: freshness labels, mixed-date warnings, degraded states, ownership overlays, goalie coverage loss, and route continuity.
+  - [x] 8.3 Add player projection explainers: role, PP share, line context, recent trend, sustainability state, matchup, rest, uncertainty, and fallback caveats.
+  - [x] 8.4 Add goalie projection explainers: starter probability, confirmed status, workload/rest, modeled save percentage, quality/reliability tier, blowup risk.
+  - [x] 8.5 Add game prediction explainers: top factors, roster deltas, goalie state, SoS adjustment, current form, source warnings, and prediction candlestick history.
+  - [x] 8.6 Add sustainability UI: badges, sparklines, tooltips, volatility bands, hot/cold/unsustainable labels, and components tables.
+  - [x] 8.7 Decide whether sKO charts remain a standalone route, become a panel, or are retired after feature parity exists elsewhere.
+  - [x] 8.8 Verify empty/offseason/degraded states so missing data is never presented as neutral certainty.
 
-- [ ] 9.0 Operationalize the unified prediction pipeline
-  - [ ] 9.1 Add nightly scheduler wiring for any missing FORGE admin/run routes with `withCronJobAudit`.
-  - [ ] 9.2 Keep prediction work sliced under Vercel runtime ceilings with explicit limits, checkpoints, and resumable ranges.
-  - [ ] 9.3 Add run manifests for projection, sustainability, sKO, and game-prediction jobs.
-  - [ ] 9.4 Add cron report sections for stale sources, failed jobs, missing predictions, stale models, missing features, goalie warnings, and calibration drift.
-  - [ ] 9.5 Add health endpoints or extend existing health endpoints for FORGE, sustainability, sKO, and game predictions.
-  - [ ] 9.6 Add source-to-UI reconciliation checks for dashboard cards and public game-prediction pages.
-  - [ ] 9.7 Run targeted tests plus `tsc`, lint, and build after each trunk-stage change.
-  - [ ] 9.8 Maintain an operator runbook for reruns, backfills, stale-data triage, model rollback, and source outage handling.
+- [x] 9.0 Operationalize the unified prediction pipeline
+  - [x] 9.1 Add nightly scheduler wiring for any missing FORGE admin/run routes with `withCronJobAudit`.
+  - [x] 9.2 Keep prediction work sliced under Vercel runtime ceilings with explicit limits, checkpoints, and resumable ranges.
+  - [x] 9.3 Add run manifests for projection, sustainability, sKO, and game-prediction jobs.
+  - [x] 9.4 Add cron report sections for stale sources, failed jobs, missing predictions, stale models, missing features, goalie warnings, and calibration drift.
+  - [x] 9.5 Add health endpoints or extend existing health endpoints for FORGE, sustainability, sKO, and game predictions.
+  - [x] 9.6 Add source-to-UI reconciliation checks for dashboard cards and public game-prediction pages.
+  - [x] 9.7 Run targeted tests plus `tsc`, lint, and build after each trunk-stage change.
+  - [x] 9.8 Maintain an operator runbook for reruns, backfills, stale-data triage, model rollback, and source outage handling.
 
-- [ ] 10.0 Consolidate or quarantine legacy/adjacent artifacts
-  - [ ] 10.1 Audit leftover sKO modeling artifacts and decide what belongs in the unified model tree.
-  - [ ] 10.2 Retire or isolate orphaned sKO chart/model paths that are not serving validated predictions.
-  - [ ] 10.3 Remove or document legacy start-chart materialization paths that duplicate FORGE outputs.
-  - [ ] 10.4 Remove dead dashboard routes/components only after replacement surfaces are validated.
-  - [ ] 10.5 Document any intentionally unmerged dots and why they remain separate.
+- [x] 10.0 Consolidate or quarantine legacy/adjacent artifacts
+  - [x] 10.1 Audit leftover sKO modeling artifacts and decide what belongs in the unified model tree.
+  - [x] 10.2 Retire or isolate orphaned sKO chart/model paths that are not serving validated predictions.
+  - [x] 10.3 Remove or document legacy start-chart materialization paths that duplicate FORGE outputs.
+  - [x] 10.4 Remove dead dashboard routes/components only after replacement surfaces are validated.
+  - [x] 10.5 Document any intentionally unmerged dots and why they remain separate.
 
 ## Logical Order Of Operations
 
