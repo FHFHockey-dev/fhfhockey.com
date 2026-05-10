@@ -3,5 +3,35 @@
     "pages/api/**/*.ts": {
       "maxDuration": 240
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/v1/db/run-rolling-forge-pipeline?mode=daily_incremental&includeDownstream=true&includeAccuracy=false&stopOnFailure=false",
+      "schedule": "5 10 * * *"
+    },
+    {
+      "path": "/api/v1/sustainability/rebuild-priors?season=current",
+      "schedule": "42 10 * * *"
+    },
+    {
+      "path": "/api/v1/sustainability/rebuild-window-z?season=current&runAll=true&limit=250",
+      "schedule": "43 10 * * *"
+    },
+    {
+      "path": "/api/v1/sustainability/rebuild-score?season=current&runAll=true&limit=250",
+      "schedule": "44 10 * * *"
+    },
+    {
+      "path": "/api/v1/sustainability/rebuild-trend-bands?runAll=true&limit=250",
+      "schedule": "46 10 * * *"
+    },
+    {
+      "path": "/api/v1/game-predictions/forecast?fromOffsetDays=0&toOffsetDays=0&limit=16&maxRuntimeMs=220000",
+      "schedule": "38 11 * * *"
+    },
+    {
+      "path": "/api/v1/db/cron-report",
+      "schedule": "0 13 * * *"
+    }
+  ]
 }

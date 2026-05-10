@@ -392,6 +392,9 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
     expect(stage?.steps.map((step: any) => step.route)).not.toContain(
       "/api/v1/db/update-wgo-ly"
     );
+    expect(stage?.steps.map((step: any) => step.route)).not.toContain(
+      "/api/v1/db/update-wgo-averages"
+    );
   });
 
   it("keeps stage 8 accuracy-only after retiring the legacy start-chart materializer", async () => {

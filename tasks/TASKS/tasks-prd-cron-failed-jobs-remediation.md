@@ -12,7 +12,10 @@
 - `tasks/artifacts/cron-downstream-failure-dependencies.md` - Direct dependency mapping for the remaining failed downstream routes, including sustainability and ML jobs.
 - `tasks/artifacts/cron-failed-jobs-root-cause-matrix.md` - Consolidated matrix mapping every failed job to root cause, dependent systems, proposed fix type, and validation path.
 - `tasks/artifacts/cron-audit-findings.md` - Existing bottleneck and dependency-risk findings that should guide remediation order.
-- `web/rules/cron-schedule.md` - Current cron ordering and slot assignments that may need adjustment after fixes.
+- `web/rules/context/cron-schedule.md` - Current cron ordering and slot assignments that may need adjustment after fixes.
+- `web/vercel.json` - Vercel Cron entrypoint schedule for production cron invocations.
+- `web/lib/cron/cronInventory.ts` - Cron schedule parser used by reports and alignment checks.
+- `web/lib/cron/cronInventory.test.ts` - Coverage for SQL-block and JSON inventory parsing.
 - `web/scripts/cron-audit-runner.ts` - Benchmark script used to re-run targeted validation after fixes.
 - `web/pages/api/v1/db/update-rolling-player-averages.ts` - Failing rolling metrics route used by both the `GET` and `POST` cron jobs.
 - `web/__tests__/pages/api/v1/db/update-rolling-player-averages.test.ts` - Tests for rolling-player endpoint behavior and failure handling.
@@ -54,7 +57,7 @@
 
 ## Tasks
 
-- [ ] 1.0 Classify every failed cron job by failure mode and identify the concrete root cause in code, SQL, or infrastructure.
+- [x] 1.0 Classify every failed cron job by failure mode and identify the concrete root cause in code, SQL, or infrastructure.
   - [x] 1.1 Build a normalized failed-jobs inventory from `tasks/artifacts/cron-benchmark-run-latest.md` and `tasks/artifacts/cron-benchmark-run-latest.json` that groups failures into categories such as application error, timeout, fetch failure, SQL/RPC failure, and upstream HTML failure.
   - [x] 1.2 Trace the two `update-rolling-player-averages` failures separately and determine whether the `GET` timeout and the `POST` fetch failure share the same root cause or represent different execution modes breaking for different reasons.
   - [x] 1.3 Trace every failed FORGE/projection-chain job (`update-start-chart-projections`, `ingest-projection-inputs`, `build-projection-derived-v2`, `run-projection-v2`, `run-projection-accuracy`) and document whether each failure is caused by upstream stale data, route timeout, infrastructure instability, or code defects.
@@ -70,7 +73,7 @@
   - [x] 2.5 Fix `run-projection-v2` and `run-projection-accuracy` by addressing whichever preflight or dependency failures were surfaced in the root-cause pass, while preserving audit timing and machine-readable error context.
   - [x] 2.6 Add or update focused tests for the repaired rolling and FORGE/projection routes so the specific benchmark failure modes are covered by regression tests.
 
-- [ ] 3.0 Fix the SQL-backed refresh and downstream data-consumer jobs that failed due to Supabase/Cloudflare HTML failures or stale dependency chains.
+- [x] 3.0 Fix the SQL-backed refresh and downstream data-consumer jobs that failed due to Supabase/Cloudflare HTML failures or stale dependency chains.
   - [x] 3.1 Investigate the failing SQL-backed refresh jobs and determine whether they need query changes, RPC retry/error normalization, workload reduction, or schedule-aware dependency protection.
   - [x] 3.2 Fix `calculate-wigo-stats`, `update-season-stats`, `update-sko-stats`, and `update-wgo-averages` so upstream table or view failures are surfaced as structured operator-usable errors instead of leaking raw HTML pages through nested exceptions.
   - [x] 3.3 Fix `update-rolling-games` and `update-power-rankings` by resolving the `require is not a function` defect and adding regression coverage for the runtime/module-loading path.
@@ -86,7 +89,7 @@
   - [x] 4.5 Audit `nst-team-stats` / `update-nst-team-stats-all` for the same burst-mode opportunity, confirm the real per-run URL count, and implement safe burst behavior if it is compliant.
   - [x] 4.6 Add or update tests around NST rate-limit policy, small-batch burst eligibility, and failure handling so the remediated routes cannot silently exceed the published limits.
 
-- [ ] 5.0 Re-run targeted validations for every remediated failure cluster, record outcomes, and update the benchmark artifacts with a clean failure-resolution summary.
+- [x] 5.0 Re-run targeted validations for every remediated failure cluster, record outcomes, and update the benchmark artifacts with a clean failure-resolution summary.
   - [x] 5.1 Re-run targeted local/dev validation for the rolling and FORGE/projection cluster and record per-route outcomes, durations, and any remaining blockers.
   - [x] 5.2 Re-run targeted validation for the SQL-backed refresh and downstream consumer cluster and verify that failures, if any, now return structured operator-usable details instead of raw HTML bodies.
   - [x] 5.3 Re-run targeted validation for the NST cluster and verify that any burst-mode optimization remains compliant with all NST request limits while improving completion time where appropriate.

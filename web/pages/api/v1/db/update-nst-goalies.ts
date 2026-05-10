@@ -643,7 +643,12 @@ async function main(
     const seasonInfo = await fetchCurrentSeason();
     const seasonId = seasonInfo.id.toString();
     const seasonStartDate = parseISO(seasonInfo.startDate);
-    const regularSeasonEndDate = parseISO(seasonInfo.regularSeasonEndDate);
+    const regularSeasonEndDateIso =
+      seasonInfo.regularSeasonEndDate ?? seasonInfo.endDate;
+    if (!regularSeasonEndDateIso) {
+      throw new Error("Current season is missing a regular-season end date.");
+    }
+    const regularSeasonEndDate = parseISO(regularSeasonEndDateIso);
     const today = new Date();
     const scrapingEndDate =
       today < regularSeasonEndDate ? today : regularSeasonEndDate;
@@ -674,7 +679,7 @@ async function main(
 
     if (startDate > regularSeasonEndDate) {
       console.log(
-        `Start date ${startDate.toISOString().split("T")[0]} is after regular season end ${seasonInfo.regularSeasonEndDate}. No regular-season NST goalie dates to scrape.`
+        `Start date ${startDate.toISOString().split("T")[0]} is after regular season end ${regularSeasonEndDateIso}. No regular-season NST goalie dates to scrape.`
       );
       return {
         message: "No regular-season NST goalie dates to scrape.",
@@ -784,7 +789,7 @@ async function main(
       maxPendingUrls: maxPendingUrls ?? null,
       runMode,
       seasonStartDate: seasonInfo.startDate,
-      regularSeasonEndDate: seasonInfo.regularSeasonEndDate,
+      regularSeasonEndDate: regularSeasonEndDateIso,
       overwrite,
       datasetType: options.datasetType ?? null,
       nextStartDate: result.stoppedEarly

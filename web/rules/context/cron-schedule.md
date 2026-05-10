@@ -74,8 +74,8 @@
   {
     "jobid": 278,
     "jobname": "update-rolling-player-averages",
-    "schedule": "45 7 * * *",
-    "run_time_utc": "07:45 UTC",
+    "schedule": "15 8 * * *",
+    "run_time_utc": "08:15 UTC",
     "active": true
   },
   {
@@ -104,6 +104,13 @@
     "jobname": "update-line-combinations-all",
     "schedule": "00 8 * * *",
     "run_time_utc": "08:00 UTC",
+    "active": true
+  },
+  {
+    "jobid": 388,
+    "jobname": "update-power-play-combinations",
+    "schedule": "05 8 * * *",
+    "run_time_utc": "08:05 UTC",
     "active": true
   },
   {
@@ -457,17 +464,17 @@
 -- - 08:06 UTC / 03:06 EST: daily-refresh-player-unified-matview
 -- - 08:07 UTC / 03:07 EST: update-power-play-timeframes
 -- - 08:08 UTC / 03:08 EST: update-line-combinations-all
+-- - 08:05 UTC / 03:05 EST: update-power-play-combinations
 -- - 08:09 UTC / 03:09 EST: update-team-yearly-summary
 -- - 08:10 UTC / 03:10 EST: update-nst-gamelog
 -- - 08:12 UTC / 03:12 EST: update-standings-details
 -- - 08:14 UTC / 03:14 EST: update-all-wgo-goalie-totals
--- - 08:15 UTC / 03:15 EST: update-expected-goals
+-- - 08:15 UTC / 03:15 EST: update-rolling-player-averages
 -- - 08:17 UTC / 03:17 EST: update-yahoo-players
 -- - 08:30 UTC / 03:30 EST: update-nst-tables-all
 -- - 08:45 UTC / 03:45 EST: update-nst-goalies
 -- - 08:50 UTC / 03:50 EST: update-wigo-table-stats
 -- - 08:55 UTC / 03:55 EST: sync-yahoo-players-to-sheet
--- - 09:00 UTC / 04:00 EST: update-rolling-player-averages
 -- - 09:05 UTC / 04:05 EST: daily-refresh-goalie-unified-matview
 -- - 09:10 UTC / 04:10 EST: update-team-ctpi-daily
 -- - 09:11 UTC / 04:11 EST: update-team-sos
@@ -765,8 +772,8 @@ curl -i -sS -m 180 \
 
 ----------------------------------------------------------------------------------
 -- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
--- |||||||||||||||||||||||||||||||||  07:45 UTC  |||||||||||||||||||||||||||||||||
--- |||||||||||||||||||||||||||||||||  02:45 EST  |||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||  08:15 UTC  |||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||  03:15 EST  |||||||||||||||||||||||||||||||||
 -- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
 -- STATUS: 404 NOT FOUND
@@ -790,7 +797,7 @@ curl -i -sS -m 180 \
 
 -- SELECT cron.schedule(
 --     'update-rolling-player-averages',
---     '45 7 * * *', -- 07:45 UTC
+--     '15 8 * * *', -- 08:15 UTC
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/update-rolling-player-averages',
@@ -842,6 +849,22 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/update-line-combinations',
+--             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             timeout_milliseconds := 300000
+--         );
+--     $$
+-- );
+
+-- SELECT cron.schedule(
+--     'update-power-play-combinations',
+--     '05 8 * * *', -- 08:05 UTC
+--     $$
+--         SELECT net.http_get(
+--             url :=
+--               'https://fhfhockey.com/api/v1/db/update-power-play-combinations?startDate=' ||
+--               to_char((CURRENT_DATE - INTERVAL '2 days')::date, 'YYYY-MM-DD') ||
+--               '&endDate=' ||
+--               to_char(CURRENT_DATE::date, 'YYYY-MM-DD'),
 --             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
@@ -1034,13 +1057,13 @@ curl -i -sS -m 180 \
 
 ----------------------------------------------------------------------------------
 -- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
--- |||||||||||||||||||||||||||||||||  09:00 UTC  |||||||||||||||||||||||||||||||||
--- |||||||||||||||||||||||||||||||||  04:00 EST  |||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||  08:15 UTC  |||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||  03:15 EST  |||||||||||||||||||||||||||||||||
 -- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
 -- SELECT cron.schedule(
 --     'update-rolling-player-averages',
---     '00 9 * * *', -- 09:00 UTC
+--     '15 8 * * *', -- 08:15 UTC
 --     $$
 --         SELECT net.http_post(
 --             url := 'https://fhfhockey.com/api/v1/db/update-rolling-player-averages',

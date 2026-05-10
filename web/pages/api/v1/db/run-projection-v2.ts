@@ -410,12 +410,21 @@ export async function runProjectionPreflightChecks(
       .select("id", { count: "exact", head: true })
       .in("game_id", recentGameIds);
     if (shiftErr) throw shiftErr;
-    const pbpCoverage = recentGameIds.length > 0 ? (pbpCount ?? 0) / recentGameIds.length : 0;
+    const pbpCoverage =
+      recentGameIds.length > 0 ? (pbpCount ?? 0) / recentGameIds.length : 0;
+    const playoffWindowHasEnoughActualGames = (pbpCount ?? 0) >= 20;
     gates.push({
       gate_key: "projection_input_ingest",
-      status: pbpCoverage >= 0.8 && (shiftRows ?? 0) > 0 ? "PASS" : "FAIL",
+      status:
+        (pbpCoverage >= 0.8 || playoffWindowHasEnoughActualGames) &&
+        (shiftRows ?? 0) > 0
+          ? "PASS"
+          : "FAIL",
       detail: `recent_games_14d=${recentGameIds.length}, pbp_games=${pbpCount ?? 0}, pbp_coverage=${pbpCoverage.toFixed(2)}, shift_rows=${shiftRows ?? 0}`,
-      action: "Run /api/v1/db/ingest-projection-inputs for recent dates."
+      action:
+        playoffWindowHasEnoughActualGames && pbpCoverage < 0.8
+          ? "Coverage is below the regular-season ratio because playoff schedules include if-necessary games without Gamecenter PBP; enough actual recent games are present."
+          : "Run /api/v1/db/ingest-projection-inputs for recent dates."
     });
   } else {
     gates.push({

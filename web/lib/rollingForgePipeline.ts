@@ -70,10 +70,9 @@ export const ROLLING_FORGE_PIPELINE_ORDER: RollingForgePipelineStage[] = [
     routes: [
       "/api/v1/db/update-nst-gamelog",
       "/api/v1/db/update-wgo-skaters",
-      "/api/v1/db/update-wgo-totals",
-      "/api/v1/db/update-wgo-averages"
+      "/api/v1/db/update-wgo-totals"
     ],
-    produces: ["nst_gamelog_*", "wgo_skater_stats", "wgo_support_tables"],
+    produces: ["nst_gamelog_*", "wgo_skater_stats", "wgo_skater_stats_totals"],
     depends_on: ["core_entity_freshness"],
     skippableInDaily: false,
     blocking: true
@@ -86,8 +85,7 @@ export const ROLLING_FORGE_PIPELINE_ORDER: RollingForgePipelineStage[] = [
     operatorSurface: "contextual-builder freshness",
     routes: [
       "/api/v1/db/update-line-combinations",
-      "/api/v1/db/update-power-play-combinations",
-      "/api/v1/db/update-power-play-combinations/[gameId]"
+      "/api/v1/db/update-power-play-combinations"
     ],
     produces: ["lineCombinations", "powerPlayCombinations"],
     depends_on: ["core_entity_freshness"],
@@ -207,7 +205,7 @@ const DEPENDENCY_STAGE_REQUIREMENTS: Record<
   core_entity_freshness:
     "Games, teams, players, and rosters must refresh before any downstream freshness check is meaningful.",
   upstream_skater_sources:
-    "NST and WGO skater-source tables must refresh before rolling_player_game_metrics is trusted.",
+    "NST game logs plus WGO skater game/totals tables must refresh before rolling_player_game_metrics is trusted. Support-only WGO average surfaces are not a rolling/FORGE blocker.",
   contextual_builders:
     "Line and power-play context must refresh before rolling outputs or projection preflight are treated as healthy.",
   rolling_player_recompute:

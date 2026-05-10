@@ -38,6 +38,7 @@ type Result = {
     alreadyHadPbpAndShifts: number;
     alreadyHadPbpOnly: number;
     alreadyHadShiftTotalsOnly: number;
+    gamecenterFeedUnavailable: number;
   };
   debug?: {
     sampled: Array<{
@@ -115,6 +116,15 @@ function buildDateRange(start: string, end: string): string[] {
   return out;
 }
 
+function isUnavailableGamecenterFeedError(error: unknown): boolean {
+  const message = (error as any)?.message ?? String(error);
+  return (
+    typeof message === "string" &&
+    message.includes("HTTP 404 Not Found") &&
+    message.includes("/gamecenter/")
+  );
+}
+
 async function hasPbp(gameId: number): Promise<boolean> {
   assertSupabase();
   const { data, error } = await supabase
@@ -181,7 +191,8 @@ async function handler(
       skipReasons: {
         alreadyHadPbpAndShifts: 0,
         alreadyHadPbpOnly: 0,
-        alreadyHadShiftTotalsOnly: 0
+        alreadyHadShiftTotalsOnly: 0,
+        gamecenterFeedUnavailable: 0
       },
       maxGames: null,
       nextGameId: null,
@@ -223,7 +234,8 @@ async function handler(
       skipReasons: {
         alreadyHadPbpAndShifts: 0,
         alreadyHadPbpOnly: 0,
-        alreadyHadShiftTotalsOnly: 0
+        alreadyHadShiftTotalsOnly: 0,
+        gamecenterFeedUnavailable: 0
       },
       maxGames: null,
       nextGameId: null,
@@ -305,7 +317,8 @@ async function handler(
     skipReasons: {
       alreadyHadPbpAndShifts: 0,
       alreadyHadPbpOnly: 0,
-      alreadyHadShiftTotalsOnly: 0
+      alreadyHadShiftTotalsOnly: 0,
+      gamecenterFeedUnavailable: 0
     },
     maxGames,
     nextGameId,
@@ -406,6 +419,26 @@ async function handler(
         });
       }
     } catch (e) {
+      if (stage === "fetch_pbp" && isUnavailableGamecenterFeedError(e)) {
+        result.skipped += 1;
+        result.skipReasons.gamecenterFeedUnavailable += 1;
+        result.lastCompletedGameId = g.id;
+        if (
+          debug &&
+          result.debug &&
+          result.debug.sampled.length < (Number.isFinite(debugLimit) ? debugLimit : 50)
+        ) {
+          result.debug.sampled.push({
+            gameId: g.id,
+            date: g.date,
+            pbpExists: false,
+            shiftTotalsExist: false,
+            action: "skipped"
+          });
+        }
+        continue;
+      }
+
       result.success = false;
       result.errors.push({
         gameId: g.id,

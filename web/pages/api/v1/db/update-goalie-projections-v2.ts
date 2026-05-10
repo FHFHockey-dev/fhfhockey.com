@@ -4,6 +4,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import supabase from "lib/supabase/server";
 import { teamsInfo } from "lib/teamsInfo";
 import Fetch from "lib/cors-fetch";
+import { buildNhlStatsScoringGameTypeCayenne } from "lib/NHL/playoffs";
 
 // Helper to fetch current season info
 async function fetchCurrentSeasonInfo() {
@@ -142,7 +143,7 @@ const handler = async (
       // Fetch everything from season start up to today (or lastDateToProcess to be safe, but today is fine)
       params.append(
         "cayenneExp",
-        `franchiseId=${franchiseId} and gameDate>="${seasonStartDate}" and gameTypeId=2`
+        `franchiseId=${franchiseId} and gameDate>="${seasonStartDate}" and ${buildNhlStatsScoringGameTypeCayenne()}`
       );
 
       const queryString = params.toString().replace(/\+/g, "%20");

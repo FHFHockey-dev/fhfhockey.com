@@ -26,7 +26,6 @@ import updatePlayersHandler from "./update-players";
 import updateNstGamelogHandler from "./update-nst-gamelog";
 import updateWgoSkatersHandler from "./update-wgo-skaters";
 import updateWgoTotalsHandler from "./update-wgo-totals";
-import updateWgoAveragesHandler from "./update-wgo-averages";
 import updateLineCombinationsHandler from "./update-line-combinations";
 import updatePowerPlayCombinationsBatchHandler from "./update-power-play-combinations";
 import updateRollingPlayerAveragesHandler from "./update-rolling-player-averages";
@@ -119,6 +118,19 @@ function isoDateOnly(input: Date | string) {
   return value.toISOString().slice(0, 10);
 }
 
+function todayEtDateOnly() {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/New_York",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(new Date());
+  const year = parts.find((part) => part.type === "year")?.value ?? "1970";
+  const month = parts.find((part) => part.type === "month")?.value ?? "01";
+  const day = parts.find((part) => part.type === "day")?.value ?? "01";
+  return `${year}-${month}-${day}`;
+}
+
 function addDays(date: string, delta: number) {
   const value = new Date(`${date}T00:00:00.000Z`);
   value.setUTCDate(value.getUTCDate() + delta);
@@ -126,7 +138,7 @@ function addDays(date: string, delta: number) {
 }
 
 function parseDateWindow(req: NextApiRequest) {
-  const date = getParam(req, "date") ?? isoDateOnly(new Date());
+  const date = getParam(req, "date") ?? todayEtDateOnly();
   const startDate = getParam(req, "startDate") ?? date;
   const endDate = getParam(req, "endDate") ?? date;
   return {
@@ -407,14 +419,6 @@ async function runStage(args: {
           season: "current"
         }
       });
-      await addStep({
-        id: "update-wgo-averages",
-        route: "/api/v1/db/update-wgo-averages",
-        handler: updateWgoAveragesHandler,
-        query: {
-          season: "current"
-        }
-      });
       break;
     case "contextual_builders": {
       await addStep({
@@ -475,7 +479,8 @@ async function runStage(args: {
         handler: ingestProjectionInputsHandler,
         query: {
           startDate: projectionInputStartDate,
-          endDate: projectionInputEndDate
+          endDate: projectionInputEndDate,
+          maxGames: args.mode === "overnight" ? "80" : "50"
         }
       });
       break;
@@ -486,7 +491,8 @@ async function runStage(args: {
         handler: buildProjectionDerivedHandler,
         query: {
           startDate: derivedBuildStartDate,
-          endDate: derivedBuildEndDate
+          endDate: derivedBuildEndDate,
+          maxDays: args.mode === "overnight" ? "30" : "14"
         }
       });
       break;
