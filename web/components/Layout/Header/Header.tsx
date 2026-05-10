@@ -237,7 +237,6 @@ function Header() {
           <Image
             src={isUnderlyingStatsRoute ? UNDERLYING_STATS_LOGO : LOGO}
             alt="FHFH logo"
-            placeholder="blur"
             width={isUnderlyingStatsRoute ? 270 : 110}
             height={isUnderlyingStatsRoute ? 35 : 30}
             priority

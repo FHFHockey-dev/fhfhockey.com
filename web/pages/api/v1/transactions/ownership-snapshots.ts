@@ -6,6 +6,15 @@ type SnapshotRow = {
   ownership: number | null;
 };
 
+type PlayerIdResolution = {
+  requestedId: string;
+  yahooPlayerId: string;
+};
+
+type SupabaseQueryClient = {
+  from(table: string): any;
+};
+
 function resolveKey(): { url: string; key: string } {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   if (!url) throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL");
@@ -50,6 +59,31 @@ const resolveOwnership = (row: Record<string, unknown>): number | null => {
   return fallback != null && Number.isFinite(fallback) ? fallback : null;
 };
 
+async function resolveYahooPlayerIds(
+  supabase: SupabaseQueryClient,
+  playerIds: string[]
+): Promise<PlayerIdResolution[]> {
+  const { data, error } = await supabase
+    .from("yahoo_nhl_player_map_mat")
+    .select("nhl_player_id, yahoo_player_id")
+    .in("nhl_player_id", playerIds);
+
+  if (error) throw error;
+
+  const byNhlId = new Map<string, string>();
+  (data ?? []).forEach((row: any) => {
+    const nhlPlayerId = row?.nhl_player_id != null ? String(row.nhl_player_id) : null;
+    const yahooPlayerId =
+      row?.yahoo_player_id != null ? String(row.yahoo_player_id) : null;
+    if (nhlPlayerId && yahooPlayerId) byNhlId.set(nhlPlayerId, yahooPlayerId);
+  });
+
+  return playerIds.map((requestedId) => ({
+    requestedId,
+    yahooPlayerId: byNhlId.get(requestedId) ?? requestedId
+  }));
+}
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
@@ -70,12 +104,16 @@ export default async function handler(
     const supabase = createClient(url, key, {
       auth: { persistSession: false }
     });
+    const idResolution = await resolveYahooPlayerIds(supabase, playerIds);
+    const yahooPlayerIds = Array.from(
+      new Set(idResolution.map((entry) => entry.yahooPlayerId))
+    );
 
     let query = supabase
       .from("yahoo_players")
       .select("player_id, percent_ownership, ownership_timeline, season")
-      .in("player_id", playerIds)
-      .limit(Math.max(playerIds.length * 2, 50));
+      .in("player_id", yahooPlayerIds)
+      .limit(Math.max(yahooPlayerIds.length * 2, 50));
 
     if (season && Number.isFinite(season)) {
       query = query.eq("season", season);
@@ -99,9 +137,11 @@ export default async function handler(
       }
     });
 
-    const players: SnapshotRow[] = playerIds.map((playerId) => ({
-      playerId: Number(playerId),
-      ownership: byPlayer.has(playerId) ? resolveOwnership(byPlayer.get(playerId)!) : null
+    const players: SnapshotRow[] = idResolution.map((entry) => ({
+      playerId: Number(entry.requestedId),
+      ownership: byPlayer.has(entry.yahooPlayerId)
+        ? resolveOwnership(byPlayer.get(entry.yahooPlayerId)!)
+        : null
     }));
 
     res.setHeader(

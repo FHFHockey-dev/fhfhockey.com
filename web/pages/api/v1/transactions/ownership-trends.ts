@@ -20,6 +20,12 @@ type TrendPlayer = {
   sparkline: OwnershipPoint[];
 };
 
+type YahooToNhlMap = Map<number, number>;
+
+type SupabaseQueryClient = {
+  from(table: string): any;
+};
+
 type OwnershipTrendPayload = {
   success: boolean;
   windowDays: number;
@@ -48,6 +54,33 @@ function resolveKey(): { url: string; key: string } {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!key) throw new Error("Missing Supabase key env var");
   return { url, key };
+}
+
+async function fetchYahooToNhlMap(
+  supabase: SupabaseQueryClient,
+  yahooPlayerIds: number[]
+): Promise<YahooToNhlMap> {
+  const uniqueIds = Array.from(
+    new Set(yahooPlayerIds.filter((id) => Number.isFinite(id)))
+  );
+  if (uniqueIds.length === 0) return new Map();
+
+  const { data, error } = await supabase
+    .from("yahoo_nhl_player_map_mat")
+    .select("nhl_player_id, yahoo_player_id")
+    .in("yahoo_player_id", uniqueIds.map(String));
+
+  if (error) throw error;
+
+  const map: YahooToNhlMap = new Map();
+  (data ?? []).forEach((row: any) => {
+    const yahooId = Number(row?.yahoo_player_id);
+    const nhlId = Number(row?.nhl_player_id);
+    if (Number.isFinite(yahooId) && Number.isFinite(nhlId)) {
+      map.set(yahooId, nhlId);
+    }
+  });
+  return map;
 }
 
 export default async function handler(
@@ -129,6 +162,12 @@ export default async function handler(
     }
     if (error) throw error;
     const rows: any[] = Array.isArray(data) ? (data as any[]) : [];
+    const yahooToNhl = await fetchYahooToNhlMap(
+      supabase,
+      rows
+        .map((row) => Number(row?.player_id))
+        .filter((id) => Number.isFinite(id))
+    );
 
     const today = new Date();
     const targetDateObj = new Date(today);
@@ -194,12 +233,16 @@ export default async function handler(
         if (!all.has(posFilter)) continue;
       }
 
+      const yahooPlayerId =
+        row.player_id == null || Number.isNaN(Number(row.player_id))
+          ? null
+          : Number(row.player_id);
+      const nhlPlayerId =
+        yahooPlayerId != null ? yahooToNhl.get(yahooPlayerId) ?? yahooPlayerId : null;
+
       const obj: TrendPlayer = {
         playerKey: row.player_key,
-        playerId:
-          row.player_id == null || Number.isNaN(Number(row.player_id))
-            ? null
-            : Number(row.player_id),
+        playerId: nhlPlayerId,
         name: row.full_name || row.player_key,
         headshot: row.headshot_url || null,
         displayPosition: row.display_position ?? null,

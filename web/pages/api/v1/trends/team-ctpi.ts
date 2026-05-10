@@ -165,7 +165,8 @@ async function fetchCtpiDaily(
       ].join(",")
     )
     .eq("season_id", seasonId)
-    .order("date", { ascending: true });
+    .order("date", { ascending: false })
+    .limit(4000);
 
   if (error) {
     console.error("team-ctpi daily load error", error);
