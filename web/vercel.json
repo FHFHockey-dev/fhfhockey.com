@@ -10,24 +10,52 @@
       "schedule": "5 10 * * *"
     },
     {
-      "path": "/api/v1/sustainability/rebuild-priors?season=current",
+      "path": "/api/v1/sustainability/rebuild-priors?season=current&limit=2000",
       "schedule": "42 10 * * *"
     },
     {
-      "path": "/api/v1/sustainability/rebuild-window-z?season=current&runAll=true&limit=250",
+      "path": "/api/v1/sustainability/rebuild-window-z?season=current&limit=250&offset=0",
       "schedule": "43 10 * * *"
     },
     {
-      "path": "/api/v1/sustainability/rebuild-score?season=current&runAll=true&limit=250",
-      "schedule": "44 10 * * *"
+      "path": "/api/v1/sustainability/rebuild-window-z?season=current&limit=250&offset=250",
+      "schedule": "48 10 * * *"
     },
     {
-      "path": "/api/v1/sustainability/rebuild-trend-bands?runAll=true&limit=250",
-      "schedule": "46 10 * * *"
+      "path": "/api/v1/sustainability/rebuild-window-z?season=current&limit=250&offset=500",
+      "schedule": "53 10 * * *"
+    },
+    {
+      "path": "/api/v1/sustainability/rebuild-score?season=current&limit=250&offset=0",
+      "schedule": "0 11 * * *"
+    },
+    {
+      "path": "/api/v1/sustainability/rebuild-score?season=current&limit=250&offset=250",
+      "schedule": "6 11 * * *"
+    },
+    {
+      "path": "/api/v1/sustainability/rebuild-score?season=current&limit=250&offset=500",
+      "schedule": "12 11 * * *"
+    },
+    {
+      "path": "/api/v1/sustainability/rebuild-trend-bands?limit=250&offset=0",
+      "schedule": "18 11 * * *"
+    },
+    {
+      "path": "/api/v1/sustainability/rebuild-trend-bands?limit=250&offset=250",
+      "schedule": "23 11 * * *"
+    },
+    {
+      "path": "/api/v1/sustainability/rebuild-trend-bands?limit=250&offset=500",
+      "schedule": "28 11 * * *"
+    },
+    {
+      "path": "/api/v1/sustainability/rebuild-trend-bands?limit=250&offset=750",
+      "schedule": "33 11 * * *"
     },
     {
       "path": "/api/v1/game-predictions/forecast?fromOffsetDays=0&toOffsetDays=0&limit=16&maxRuntimeMs=220000",
-      "schedule": "38 11 * * *"
+      "schedule": "45 11 * * *"
     },
     {
       "path": "/api/v1/db/cron-report",

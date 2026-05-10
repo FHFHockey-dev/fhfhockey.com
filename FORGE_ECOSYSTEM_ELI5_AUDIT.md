@@ -89,7 +89,7 @@ This is a file-by-file map of the **`web/pages/FORGE.tsx` ecosystem**: page UI, 
 - `web/pages/api/v1/forge/__snapshots__/goalies.test.ts.snap` - Snapshot of expected goalie API payload.
 
 ### J) Schema and migration files that define FORGE storage
-- `web/rules/forge-tables.md` - Source-of-truth SQL table definitions for FORGE tables.
+- `web/rules/context/forge-tables.md` - Source-of-truth SQL table definitions for FORGE tables.
 - `migrations/20251224_rename_projection_tables_to_forge.sql` - Renames old v2 projection tables to `forge_*`.
 - `migrations/20251227_add_goalie_win_shutout_and_accuracy_stats.sql` - Adds goalie win/shutout projection fields + per-stat accuracy table.
 - `migrations/20260208_add_projection_calibration_snapshots.sql` - Adds daily calibration snapshot table for probability/interval diagnostics.

@@ -89,7 +89,7 @@ Implement adapters so sources can be swapped without rewriting the pipeline.
 
 ## 8) Data model (Supabase tables; storage-only)
 > Note: keep columns minimal and store computed “wide” feature blobs as JSONB where appropriate. No SQL feature computation.
-> Schema source of truth: `web/rules/forge-tables.md` (keep PRD aligned with that file).
+> Schema source of truth: `web/rules/context/forge-tables.md` (keep PRD aligned with that file).
 
 ### Naming
 All projection-engine tables are prefixed with `forge_` so they group together in Supabase:
@@ -526,7 +526,7 @@ The ingest endpoint considers a game “complete” and will skip when:
 - `web/lib/projections/uncertainty.ts` - Uncertainty bands + simulation quantiles for FORGE projections.
 - `web/pages/api/v1/db/run-projection-accuracy.ts` - Backtest/accuracy job with interval calibration metrics.
 - `web/styles/Forge.module.scss` - Styling for the FORGE projections page.
-- `web/rules/forge-tables.md` - Supabase table definitions for FORGE outputs.
+- `web/rules/context/forge-tables.md` - Supabase table definitions for FORGE outputs.
 
 ## 17) Troubleshooting notes
 
