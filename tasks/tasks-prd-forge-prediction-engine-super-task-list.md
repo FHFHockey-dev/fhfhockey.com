@@ -30,8 +30,12 @@ This consolidation intentionally does not force every task into the same model. 
 - `web/pages/api/v1/forge/roster-events.ts` - Admin CRUD API for curated roster events.
 - `web/pages/api/v1/sustainability/trends.ts` - Sustainability dashboard serving endpoint with guarded output.
 - `web/components/forge-dashboard/SustainabilityCard.tsx` - Dashboard sustainability card.
+- `web/lib/predictions/contracts.ts` - Shared prediction metadata and source freshness contracts.
+- `web/lib/predictions/rollingWindows.ts` - Canonical persisted rolling-window and sustainability-window definitions.
 - `web/lib/predictions/sourceOwnership.ts` - Source/stage ownership map and sKO quarantine decision.
 - `web/lib/predictions/legacyQuarantine.ts` - Legacy/adjacent artifact quarantine inventory.
+- `web/lib/predictions/pipelineCronAlignment.ts` - Cron-versus-pipeline dependency alignment report helper.
+- `web/lib/predictions/sourceProvenance.ts` - Game-prediction source provenance row builder and upsert helper.
 - `tasks/artifacts/forge-prediction-operator-runbook.md` - Operator runbook for reruns, triage, and rollback.
 
 ### Notes

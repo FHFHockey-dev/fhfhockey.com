@@ -48,8 +48,11 @@
 - `web/lib/api/queryParams.ts` - Shared query parsing helper for operator-facing API routes.
 - `web/lib/rollingPlayerOperationalPolicy.ts` - Shared operational-policy module for execution-profile parsing, defaults, inference, and runtime budgets across routes, scripts, and orchestration.
 - `web/lib/rollingForgePipeline.ts` - Shared stage graph for the new rolling-player + FORGE coordinator surface.
+- `web/lib/predictions/rollingWindows.ts` - Shared canonical rolling/sustainability window definitions consumed by rolling-player and FORGE projection code.
 - `web/pages/api/v1/db/run-rolling-forge-pipeline.ts` - Consolidated coordinator entrypoint for overnight and daily incremental orchestration.
 - `web/pages/api/v1/db/run-rolling-forge-pipeline.test.ts` - Route-level regression coverage for stage ordering, failure short-circuiting, and daily-mode behavior.
+- `web/lib/supabase/Upserts/rollingMetricSourceUnitContract.ts` - Rolling-player metric source/unit ownership contract for operator validation metadata.
+- `web/lib/supabase/Upserts/rollingMetricSourceUnitContract.test.ts` - Regression coverage for required rolling metric source/unit ownership entries.
 - `web/package.json` - Script surface for full-suite verification and possibly consolidated overnight/daily refresh commands.
 - `web/pages/trendsDebug.test.tsx` - Validation-console tests that may need updates if orchestration/freshness status becomes more explicit.
 - `web/pages/api/v1/debug/rolling-player-metrics.test.ts` - Debug-route tests for richer readiness/orchestration state exposure.
@@ -73,7 +76,7 @@
   - [x] 1.2 Verify `npm test -- --run` executes only source test files and capture the final passing baseline in a closeout artifact.
   - [x] 1.3 Review existing `package.json` verification scripts and normalize them so “full suite” versus “targeted rolling validation” commands are explicit and non-overlapping.
   - [x] 1.4 Identify any remaining post-pass blockers that are operational rather than arithmetic, and move them into a small, explicit blocker section in the action backlog.
-- [ ] 2.0 Consolidate rolling-player and FORGE refresh orchestration into a smaller, explicit dependency graph
+- [x] 2.0 Consolidate rolling-player and FORGE refresh orchestration into a smaller, explicit dependency graph
   - [x] 2.1 Inventory the currently relevant refresh entrypoints for rolling-player freshness, PP/line builders, projection inputs, rolling recomputes, and FORGE projection refreshes.
   - [x] 2.2 Group those entrypoints into a single dependency graph with distinct phases: upstream ingest, contextual builders, rolling recompute, and downstream FORGE/projection refresh.
   - [x] 2.3 Decide which existing endpoints remain first-class operational surfaces and which should become internal implementation steps behind a smaller orchestration layer.
@@ -99,7 +102,7 @@
   - [x] 5.2 Consolidate organization around a smaller set of ownership boundaries, for example: pipeline contracts, orchestration, diagnostics, validation payloads, and downstream readers.
   - [x] 5.3 Move or refactor any thin glue logic that only exists because the pass-2 work accumulated across many files, especially where the same runtime/freshness concepts are repeated.
   - [x] 5.4 Review whether existing action-backlog items about PP provenance, TOI traceability, GP semantics, and alias cleanup can be grouped into fewer implementation tracks instead of separate mini-projects.
-  - [ ] 5.5 Produce a final operational runbook update that answers three questions clearly:
+  - [x] 5.5 Produce a final operational runbook update that answers three questions clearly:
     - [x] what runs overnight
     - [x] what runs in the daily incremental path
     - [x] what the minimal cron/job surface is for keeping FORGE fresh

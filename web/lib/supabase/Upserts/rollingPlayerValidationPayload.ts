@@ -18,6 +18,9 @@ import {
   ROLLING_PLAYER_PP_UNIT_CONTRACT
 } from "./rollingPlayerPpUnitContract";
 import {
+  ROLLING_METRIC_SOURCE_UNIT_CONTRACTS
+} from "./rollingMetricSourceUnitContract";
+import {
   normalizeWgoToiPerGame,
   resolveFallbackToiSeed,
   resolveRollingPlayerToiContext
@@ -388,6 +391,7 @@ export type RollingPlayerValidationPayload = {
       ppShare: typeof ROLLING_PLAYER_PP_SHARE_CONTRACT;
       ppUnit: typeof ROLLING_PLAYER_PP_UNIT_CONTRACT;
       lineContext: typeof ROLLING_PLAYER_LINE_CONTEXT_CONTRACT;
+      metricSourceUnits: typeof ROLLING_METRIC_SOURCE_UNIT_CONTRACTS;
       toi: {
         sourcePriority: string[];
         trustTiers: string[];
@@ -1099,6 +1103,7 @@ function buildContractMetadata(
       ppShare: ROLLING_PLAYER_PP_SHARE_CONTRACT,
       ppUnit: ROLLING_PLAYER_PP_UNIT_CONTRACT,
       lineContext: ROLLING_PLAYER_LINE_CONTEXT_CONTRACT,
+      metricSourceUnits: ROLLING_METRIC_SOURCE_UNIT_CONTRACTS,
       toi: {
         sourcePriority: ["counts", "counts_oi", "rates", "fallback", "wgo"],
         trustTiers: ["authoritative", "supplementary", "fallback", "none"],

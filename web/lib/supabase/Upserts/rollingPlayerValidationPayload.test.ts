@@ -129,6 +129,38 @@ describe("rollingPlayerValidationPayload metadata builders", () => {
     });
   });
 
+  it("includes metric source and unit contracts in validation metadata", () => {
+    const contracts = __testables.buildContractMetadata(
+      __testables.buildFormulaMetadata({
+        key: "pp_share_pct_last5",
+        family: "pp_usage",
+        canonicalField: "pp_share_pct_last5",
+        legacyFields: ["pp_share_pct_avg_last5"],
+        supportFields: [
+          "pp_share_pct_player_pp_toi_last5",
+          "pp_share_pct_team_pp_toi_last5"
+        ]
+      })
+    );
+
+    expect(contracts?.helperSummaries.metricSourceUnits).toContainEqual(
+      expect.objectContaining({
+        metricKey: "pp_share_pct",
+        unit: "fraction_0_to_1",
+        primarySources: [
+          "powerPlayCombinations.PPTOI",
+          "powerPlayCombinations.pp_share_of_team"
+        ]
+      })
+    );
+    expect(contracts?.helperSummaries.metricSourceUnits).toContainEqual(
+      expect.objectContaining({
+        metricKey: "sog_per_60",
+        unit: "count_per_60"
+      })
+    );
+  });
+
   it("builds appearance-based window membership from row history for non-availability metrics", () => {
     const windows = __testables.buildWindowMembership({
       focusedRow: {

@@ -75,14 +75,18 @@ import {
   summarizeSuspiciousOutputs
 } from "./rollingPlayerPipelineDiagnostics";
 import { type RollingMetricWindowFamily } from "./rollingWindowContract";
+import {
+  CANONICAL_ROLLING_GAME_WINDOWS,
+  type CanonicalRollingGameWindow
+} from "lib/predictions/rollingWindows";
 
 export type StrengthState = "all" | "ev" | "pp" | "pk";
 type FullRefreshMode = "rpc_truncate" | "overwrite_only" | "delete";
 type PowerPlayCombinationRow = RollingPlayerPpContextRow;
 
-type RollingWindow = 3 | 5 | 10 | 20;
+type RollingWindow = CanonicalRollingGameWindow;
 
-const ROLLING_WINDOWS: RollingWindow[] = [3, 5, 10, 20];
+const ROLLING_WINDOWS: readonly RollingWindow[] = CANONICAL_ROLLING_GAME_WINDOWS;
 const MAX_RETRIES = 5;
 const RETRY_BASE_DELAY_MS = 1000;
 const RETRY_MAX_DELAY_MS = 30000;
