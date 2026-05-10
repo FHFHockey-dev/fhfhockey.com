@@ -8,6 +8,8 @@
 - `web/lib/projections/runProjectionV2.test.ts` - Unit tests for skater/goalie projection helpers and regression coverage.
 - `web/lib/projections/reconcile.ts` - Team-to-player reconciliation constraints for TOI and shot distributions.
 - `web/lib/projections/uncertainty.ts` - Skater uncertainty simulation and quantile output.
+- `web/lib/projections/promotionGates.ts` - Launch-gate and shadow-mode improvement helpers for skater/FORGE promotion decisions.
+- `web/lib/projections/promotionGates.test.ts` - Regression tests for promotion-gate threshold and shadow-mode comparison behavior.
 - `web/lib/projections/derived/buildStrengthTablesV2.ts` - Derived skater/team strength feature inputs.
 - `web/pages/api/v1/db/ingest-projection-inputs.ts` - PbP + shift ingest dependency for skater derived features.
 - `web/pages/api/v1/db/build-projection-derived-v2.ts` - Derived table build orchestrator for skater inputs.
@@ -46,7 +48,7 @@
   - [x] 2.6 Add rest/schedule features (team rest, B2B, travel proxy if available) for TOI and conversion adjustments.
   - [x] 2.7 Add small-sample shrinkage guards and fallback priors for low-minute / call-up players.
 
-- [ ] 3.0 Upgrade skater projection math and rate modeling
+- [x] 3.0 Upgrade skater projection math and rate modeling
   - [x] 3.1 Split conversion modeling into separate ES and PP goal/assist processes instead of one shared rate.
   - [x] 3.2 Add hierarchical/Bayesian blending for each rate with adaptive prior strength by sample size.
   - [x] 3.3 Rework PP opportunity modeling using projected team PP time + unit share allocation.
@@ -67,7 +69,7 @@
   - [x] 5.2 Add component-level miss attribution (TOI miss vs shot-rate miss vs conversion miss).
   - [x] 5.3 Add interval calibration diagnostics by stat (`g`, `a`, `pts`, `sog`, `ppp`) and role bucket.
   - [x] 5.4 Add rolling 7/14/30-day skater dashboards in calibration snapshots for trend monitoring.
-  - [ ] 5.5 Define skater launch gates (sample floor, MAE/RMSE thresholds, coverage/calibration bands).
+  - [x] 5.5 Define skater launch gates (sample floor, MAE/RMSE thresholds, coverage/calibration bands).
   - [ ] 5.6 Add holdout comparison reports versus current baseline and versus naive prior baselines.
 
 - [ ] 6.0 Improve skater API/UI transparency and explainability
