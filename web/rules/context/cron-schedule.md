@@ -1912,3 +1912,18 @@ curl -i -sS -m 180 \
 -- Notes:
 -- - Sustainability rebuild follow-ups and player_totals_unified refresh are now
 --   scheduled above using static cron-safe defaults.
+
+----------------------------------------------------------------------------------
+-- Vercel cron safety net (web/vercel.json)
+--
+-- These jobs cover dashboard-critical FORGE freshness outside Supabase pg_cron.
+-- Keep long sustainability rebuilds chunked by offset so each invocation stays
+-- under the Vercel function maxDuration.
+--
+-- 10:05 UTC: run rolling FORGE pipeline, downstream projections included.
+-- 10:42 UTC: rebuild sustainability priors with limit=2000.
+-- 10:43/10:48/10:53 UTC: rebuild sustainability window-z offsets 0/250/500.
+-- 11:00/11:06/11:12 UTC: rebuild sustainability scores offsets 0/250/500.
+-- 11:18/11:23/11:28/11:33 UTC: rebuild sustainability trend bands offsets 0/250/500/750.
+-- 11:45 UTC: refresh roster-adjusted game predictions.
+-- 13:00 UTC: run cron-report.
