@@ -170,7 +170,7 @@ function BurgerButton({ onClick }: { onClick: () => void }) {
   return (
     <button className={styles.burgerButton} onClick={onClick}>
       <Image
-        src="/pictures/hamburgerMenu.svg"
+        src="/pictures/burgerMenu.svg"
         alt="menu"
         width={24}
         height={16}

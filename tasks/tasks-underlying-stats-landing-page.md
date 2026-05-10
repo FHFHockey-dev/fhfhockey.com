@@ -11,6 +11,7 @@
 - `web/__tests__/pages/underlying-stats/index.test.tsx` - Page-level coverage for the dashboard snapshot shape, module rendering, and table integration.
 - `web/lib/underlying-stats/teamLandingRatings.test.ts` - Snapshot-level coverage for the landing payload and dashboard summary wiring.
 - `web/lib/underlying-stats/teamLandingDashboard.test.ts` - Targeted tests for dashboard derivation logic.
+- `web/components/Layout/Header/Header.tsx` - Shared header and desktop burger button asset path used during live page verification.
 
 ### Notes
 
@@ -66,5 +67,5 @@
   - [x] 6.4 Validate desktop and smaller-screen presentation so charts, cards, tooltips, and shared highlight behavior remain legible and useful.
   - [x] 6.5 Run targeted lint/tests for the touched page, helpers, and API shaping code, then do a browser pass against a populated snapshot to confirm the page feels like a market-style league dashboard rather than a re-skinned table.
 
-- [ ] 7.0 NEW: Clean up the missing asset request observed during live verification
-  - [ ] 7.1 Investigate why `/pictures/hamburgerMenu.svg` returned `404` during the local `/underlying-stats` browser pass and either restore the asset or remove the stale reference.
+- [x] 7.0 NEW: Clean up the missing asset request observed during live verification
+  - [x] 7.1 Investigate why `/pictures/hamburgerMenu.svg` returned `404` during the local `/underlying-stats` browser pass and either restore the asset or remove the stale reference. The desktop header now points at the existing `/pictures/burgerMenu.svg` asset.
