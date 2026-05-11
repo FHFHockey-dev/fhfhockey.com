@@ -89,13 +89,15 @@
   - [x] NEW 10.1 Move the team landing API path and response contract into a client-safe module so the page route does not import `pg` through server-only query dependencies.
   - [x] NEW 10.2 Narrow nullable event and game fields in `teamStatsSummaryRefresh.ts` so the new team summary builder passes TypeScript checks.
 
-- [ ] 7.0 Validate the landing-page v1 end to end
+- [x] 7.0 Validate the landing-page v1 end to end
   - [x] 7.1 Run the team catch-up or season-backfill flow locally against a representative season and verify sample team rows land in the new tables.
   - [x] 7.2 Verify `/underlying-stats/teamStats` renders with the expected default display mode, default sort, and URL-synced filter state.
   - [x] 7.3 Verify `Counts` vs `Rates` switches the correct column families and calculations without dropping active filters.
-  - [ ] 7.4 Verify `Team`, `Opponent`, `Home/Away`, `Strength`, `Score State`, `Minimum TOI`, `Date Range`, `Game Range`, and `Team Game Range` each affect both data and URL state as expected.
-  - [ ] 7.5 Verify wide-viewport table behavior matches the existing `playerStats` and `goalieStats` patterns for sticky headers, sticky identity columns if used, and horizontal scrolling.
-  - [ ] 7.6 Run targeted tests and the workspace typecheck build, then record any remaining risks or follow-up gaps before shipping v1.
+  - [x] 7.4 Verify `Team`, `Opponent`, `Home/Away`, `Strength`, `Score State`, `Minimum TOI`, `Date Range`, `Game Range`, and `Team Game Range` each affect both data and URL state as expected.
+  - [x] 7.5 Verify wide-viewport table behavior matches the existing `playerStats` and `goalieStats` patterns for sticky headers, sticky identity columns if used, and horizontal scrolling.
+  - [x] 7.6 Run targeted tests and the workspace typecheck build, then record any remaining risks or follow-up gaps before shipping v1.
+
+Validation note: local Chrome route verification returned `200` for the default table plus representative advanced date-range, game-range, and team-game-range URLs covering `Team`, `Opponent`, `Home/Away`, `Strength`, `Score State`, and `Minimum TOI`. The default wide table rendered one table with 72 headers, and targeted Vitest coverage for the team route, filters, queries, columns, and mobile stats component passed (`5` files, `24` tests). `npx tsc --noEmit` passed. Residual risk is limited to live data sparsity in very narrow filter combinations, which correctly returns an empty table state instead of a route failure.
 
 - [x] NEW 12.0 Exclude zero-sample placeholder rows from team landing aggregation so narrow slices only report games with actual filtered sample.
   - [x] NEW 12.1 Filter zero-TOI/all-zero summary rows out of `teamStatsQueries.ts` before aggregation so GP, points, and team visibility are not inflated by synthetic slice placeholders.

@@ -113,6 +113,12 @@
   box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.55);
 }
 
+.mobileTabButton:focus-visible,
+.mobileSectionToggle:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.55);
+}
+
 .teamListItem {
   border: 1px solid v.$border-secondary;
   background: v.$surface-1;
@@ -1772,28 +1778,13 @@
 }
 
 // =============================================================================
-// MOBILE LEADERBOARD CARDS - HORIZONTAL SCROLLABLE DESIGN
+// MOBILE LEADERBOARD CARDS - TABBED, DENSE TOUCH DESIGN
 // =============================================================================
 
 .mobileLeaderboardSection {
-  // Mobile: Horizontal scrollable cards instead of stacked
-  display: flex;
-  flex-direction: row;
-  gap: v.$mobile-space-md;
+  display: block;
   margin-top: 0;
-  // Enable horizontal scrolling
-  overflow-x: auto;
-  overflow-y: visible;
   padding: v.$mobile-container-padding;
-  // Smooth scrolling on iOS
-  -webkit-overflow-scrolling: touch;
-  // Hide scrollbar but keep functionality
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-
-  &::-webkit-scrollbar {
-    display: none;
-  }
 
   // Progressive enhancement: Hide on larger screens (use sidebar layout)
   @media (min-width: v.$breakpoint-tablet-min) {
@@ -1801,33 +1792,73 @@
   }
 }
 
+.mobileTabShell {
+  display: flex;
+  flex-direction: column;
+  gap: v.$mobile-space-sm;
+  width: 100%;
+}
+
+.mobileTabHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: v.$mobile-space-sm;
+  padding: v.$mobile-space-sm;
+  background: v.$background-medium;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-md;
+}
+
+.mobileTabs {
+  display: inline-flex;
+  align-items: center;
+  gap: v.$mobile-space-xxs;
+  padding: 2px;
+  background: v.$background-dark;
+  border: 1px solid v.$border-primary;
+  border-radius: v.$border-radius-sm;
+}
+
+.mobileTabButton {
+  min-height: v.$touch-target-min;
+  padding: v.$mobile-space-xs v.$mobile-space-sm;
+  border: 0;
+  border-radius: v.$border-radius-sm;
+  background: transparent;
+  color: v.$text-secondary;
+  font-family: v.$font-family-condensed;
+  font-size: v.$mobile-font-size-sm;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: v.$mobile-letter-spacing-normal;
+}
+
+.mobileTabButtonActive {
+  background: v.$primary-color;
+  color: v.$text-button;
+}
+
+.mobileTabPanel {
+  display: flex;
+  flex-direction: column;
+  gap: v.$mobile-space-sm;
+}
+
 .mobileLeaderboardCard {
   @include v.component-wrapper;
   background: v.$background-medium;
   border: 1px solid v.$border-secondary;
   border-radius: v.$border-radius-md;
-  // Horizontal scrolling: Fixed width cards
-  flex: 0 0 280px; // Fixed width, no grow/shrink
-  min-width: 280px; // Ensure minimum width
-  max-width: 320px; // Reasonable maximum
-  height: auto; // Let content determine height
-  padding: v.$mobile-card-padding;
-
-  // Touch-friendly minimum height
+  width: 100%;
+  height: auto;
+  padding: v.$mobile-space-xs;
   min-height: v.$touch-target-large;
-
-  // No border removal for horizontal layout - each card is independent
   border-left: 3px solid v.$primary-color;
-
-  // Add subtle shadow for cards in horizontal scroll
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-
-  // Smooth transitions
   transition: all v.$mobile-animation-fast ease;
 
-  // Enhanced touch feedback for horizontal cards
   &:active {
-    transform: scale(0.98);
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
   }
 
@@ -1841,13 +1872,30 @@
   }
 }
 
-.mobileCardHeader {
+.mobileSectionToggle {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: v.$mobile-space-sm;
-  padding-bottom: v.$mobile-space-xs;
-  border-bottom: 1px solid v.$border-primary;
+  gap: v.$mobile-space-sm;
+  width: 100%;
+  min-height: v.$touch-target-min;
+  padding: v.$mobile-space-xs;
+  border: 0;
+  background: transparent;
+  color: v.$text-primary;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mobileSectionTitle {
+  font-family: v.$font-family-accent;
+  font-size: v.$mobile-font-size-md;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: v.$mobile-letter-spacing-wide;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .mobileCardTitle {
@@ -1881,44 +1929,22 @@
   display: flex;
   flex-direction: column;
   gap: v.$mobile-space-xs;
-  // Set max height to prevent cards from getting too tall in horizontal scroll
-  max-height: 200px;
-  overflow-y: auto;
-  // Custom scrollbar for vertical overflow in cards
-  scrollbar-width: thin;
-  scrollbar-color: v.$border-primary v.$background-dark;
-
-  &::-webkit-scrollbar {
-    width: 4px;
-  }
-
-  &::-webkit-scrollbar-track {
-    background: v.$background-dark;
-    border-radius: 2px;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: v.$border-primary;
-    border-radius: 2px;
-
-    &:hover {
-      background: v.$border-accent;
-    }
-  }
+  padding: 0 v.$mobile-space-xs v.$mobile-space-xs;
 }
 
 .mobileLeaderItem {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: v.$mobile-space-xs;
   padding: v.$mobile-space-xs;
   background: v.$background-dark;
   border: 1px solid v.$border-primary;
   border-radius: v.$border-radius-sm;
   transition: all v.$mobile-animation-fast ease;
-
-  // Touch target optimization
   min-height: v.$touch-target-min;
+  color: inherit;
+  text-decoration: none;
 
   &:hover {
     background: v.$background-light;
@@ -1946,6 +1972,21 @@
   &:nth-child(5) {
     border-left: 3px solid #ef4444;
   }
+}
+
+.mobileLeaderRank {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  border-radius: v.$border-radius-sm;
+  background: v.$surface-2;
+  color: v.$text-secondary;
+  font-family: "SF Mono", "Monaco", "Cascadia Code", monospace;
+  font-size: v.$mobile-font-size-xs;
+  font-weight: 700;
 }
 
 .mobileLeaderInfo {
@@ -1985,6 +2026,19 @@
   letter-spacing: v.$mobile-letter-spacing-tight;
   flex-shrink: 0;
   text-align: right;
+}
+
+.mobileEmptyState {
+  margin: 0 v.$mobile-space-xs v.$mobile-space-xs;
+  min-height: v.$touch-target-min;
+  display: flex;
+  align-items: center;
+  padding: v.$mobile-space-xs;
+  color: v.$text-secondary;
+  background: v.$background-dark;
+  border: 1px dashed v.$border-primary;
+  border-radius: v.$border-radius-sm;
+  font-size: v.$mobile-font-size-sm;
 }
 
 // =============================================================================

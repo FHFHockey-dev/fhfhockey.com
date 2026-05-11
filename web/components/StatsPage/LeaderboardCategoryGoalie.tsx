@@ -50,6 +50,8 @@ const LeaderboardCategoryGoalie: React.FC<LeaderboardCategoryGoalieProps> = ({
                     }
                     alt={goalie.fullName}
                     className={styles.playerHeadshot}
+                    loading="lazy"
+                    decoding="async"
                     style={{ cursor: "pointer" }}
                     onError={(e) => {
                       (e.target as HTMLImageElement).style.display = "none";

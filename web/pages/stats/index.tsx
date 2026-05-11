@@ -6,6 +6,7 @@ import LeaderboardCategory from "components/StatsPage/LeaderboardCategory";
 import LeaderboardCategoryBSH from "components/StatsPage/LeaderboardCategoryBSH";
 import LeaderboardCategoryGoalie from "components/StatsPage/LeaderboardCategoryGoalie";
 import MobileTeamList from "components/StatsPage/MobileTeamList";
+import MobileTabInterface from "components/StatsPage/MobileTabInterface";
 import GoalieShareChart from "components/GoalieShareChart";
 import { StatsProps } from "lib/NHL/statsPageTypes";
 import { fetchStatsData } from "lib/NHL/statsPageFetch";
@@ -695,91 +696,16 @@ export default function StatsPage({
       </div>
 
       {/* Mobile Leaderboard Cards - Appear Below Main Content on Mobile */}
-      <section className={styles.mobileLeaderboardSection}>
-        {/* Skater Statistics Card */}
-        <div className={styles.mobileLeaderboardCard}>
-          <div className={styles.mobileCardHeader}>
-            <h2 className={styles.mobileCardTitle}>Skater Stats</h2>
-            <span className={styles.mobileCardType}>Players</span>
-          </div>
-          <div className={styles.mobileLeadersList}>
-            {/* Points Leaders */}
-            {pointsLeaders.slice(0, 3).map((leader, index) => (
-              <div
-                key={`points-${leader.player_id}`}
-                className={styles.mobileLeaderItem}
-              >
-                <div className={styles.mobileLeaderInfo}>
-                  <div className={styles.mobileLeaderName}>
-                    {leader.fullName}
-                  </div>
-                  <div className={styles.mobileLeaderTeam}>Points Leader</div>
-                </div>
-                <div className={styles.mobileLeaderValue}>{leader.points}</div>
-              </div>
-            ))}
-            {/* Goals Leaders */}
-            {goalsLeaders.slice(0, 2).map((leader, index) => (
-              <div
-                key={`goals-${leader.player_id}`}
-                className={styles.mobileLeaderItem}
-              >
-                <div className={styles.mobileLeaderInfo}>
-                  <div className={styles.mobileLeaderName}>
-                    {leader.fullName}
-                  </div>
-                  <div className={styles.mobileLeaderTeam}>Goals Leader</div>
-                </div>
-                <div className={styles.mobileLeaderValue}>{leader.goals}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Goaltender Statistics Card */}
-        <div className={styles.mobileLeaderboardCard}>
-          <div className={styles.mobileCardHeader}>
-            <h2 className={styles.mobileCardTitle}>Goalie Stats</h2>
-            <span className={styles.mobileCardType}>Goalies</span>
-          </div>
-          <div className={styles.mobileLeadersList}>
-            {/* Save Percentage Leaders */}
-            {goalieLeadersSavePct.slice(0, 3).map((leader, index) => (
-              <div
-                key={`save-pct-${leader.goalie_id}`}
-                className={styles.mobileLeaderItem}
-              >
-                <div className={styles.mobileLeaderInfo}>
-                  <div className={styles.mobileLeaderName}>
-                    {leader.fullName}
-                  </div>
-                  <div className={styles.mobileLeaderTeam}>Save %</div>
-                </div>
-                <div className={styles.mobileLeaderValue}>
-                  {leader.save_pct
-                    ? leader.save_pct.toFixed(3).replace(/^0/, "")
-                    : "-.---"}
-                </div>
-              </div>
-            ))}
-            {/* Wins Leaders */}
-            {goalieLeadersWins.slice(0, 2).map((leader, index) => (
-              <div
-                key={`wins-${leader.goalie_id}`}
-                className={styles.mobileLeaderItem}
-              >
-                <div className={styles.mobileLeaderInfo}>
-                  <div className={styles.mobileLeaderName}>
-                    {leader.fullName}
-                  </div>
-                  <div className={styles.mobileLeaderTeam}>Wins</div>
-                </div>
-                <div className={styles.mobileLeaderValue}>{leader.wins}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <MobileTabInterface
+        pointsLeaders={pointsLeaders}
+        goalsLeaders={goalsLeaders}
+        pppLeaders={pppLeaders}
+        bshLeaders={bshLeaders}
+        goalieLeadersWins={goalieLeadersWins}
+        goalieLeadersSavePct={goalieLeadersSavePct}
+        goalieLeadersGAA={goalieLeadersGAA}
+        goalieLeadersQS={goalieLeadersQS}
+      />
     </div>
   );
 }
