@@ -368,107 +368,112 @@ const ForgeDashboardPage: NextPage = () => {
             </section>
 
             <section
-              className={styles.dashboardStage}
-              aria-label="Forge dashboard overview"
+              className={styles.controlCenter}
+              aria-label="Forge dashboard control center"
             >
-              <div className={`${styles.panel} ${styles.teamPowerPanel}`}>
-                <TeamPowerCard
-                  date={selectedDate}
-                  team={selectedTeam}
-                />
-              </div>
-
-              <div className={`${styles.panel} ${styles.focusPanel}`}>
-                <SlateStripCard
-                  date={selectedDate}
-                  team={selectedTeam}
-                />
-                <GoalieRiskCard
-                  date={selectedDate}
-                  team={selectedTeam}
-                />
-              </div>
-
-              <aside className={`${styles.panel} ${styles.topRailPanel}`}>
-                <TopAddsRail
-                  date={selectedDate}
-                  position={selectedPosition}
-                  positionLabel={selectedPositionLabel}
-                />
-              </aside>
-            </section>
-
-            <section
-              className={styles.playerInsightBand}
-              aria-label="Player insight core"
-            >
-              <div className={styles.playerInsightHeader}>
-                <div className={styles.bandIntro}>
-                  <p className={styles.bandEyebrow}>Player Insight Core</p>
-                  <h2 className={styles.bandTitle}>
-                    Trust, Regression, and Momentum
-                  </h2>
-                </div>
-                <div
-                  className={styles.ownershipControlCard}
-                  aria-label="Player insight ownership filter"
-                >
-                  <p className={styles.ownershipControlEyebrow}>
-                    Insight Ownership Band
-                  </p>
-                  <p className={styles.ownershipControlValue}>
-                    {insightOwnershipMin}% - {insightOwnershipMax}%
-                  </p>
-                  <div className={styles.ownershipControlRows}>
-                    <label className={styles.ownershipControlItem}>
-                      <span>Min</span>
-                      <input
-                        aria-label="Player insight minimum ownership"
-                        type="range"
-                        min="0"
-                        max="100"
-                        step="1"
-                        value={insightOwnershipMin}
-                        onChange={handleInsightOwnershipMinChange}
-                      />
-                    </label>
-                    <label className={styles.ownershipControlItem}>
-                      <span>Max</span>
-                      <input
-                        aria-label="Player insight maximum ownership"
-                        type="range"
-                        min="0"
-                        max="100"
-                        step="1"
-                        value={insightOwnershipMax}
-                        onChange={handleInsightOwnershipMaxChange}
-                      />
-                    </label>
-                  </div>
-                </div>
-              </div>
-
-              <div className={styles.insightBandLayout}>
-                <div className={`${styles.panel} ${styles.sustainabilityPanel}`}>
-                  <SustainabilityCard
-                    date={selectedDate}
-                    position={selectedPosition}
-                    ownershipMin={insightOwnershipMin}
-                    ownershipMax={insightOwnershipMax}
-                    returnToHref={dashboardReturnHref}
-                  />
-                </div>
-                <div className={`${styles.panel} ${styles.hotColdPanel}`}>
-                  <HotColdCard
+              <section
+                className={styles.dashboardStage}
+                aria-label="Forge dashboard overview"
+              >
+                <div className={`${styles.panel} ${styles.teamPowerPanel}`}>
+                  <TeamPowerCard
                     date={selectedDate}
                     team={selectedTeam}
-                    position={selectedPosition}
-                    ownershipMin={insightOwnershipMin}
-                    ownershipMax={insightOwnershipMax}
-                    returnToHref={dashboardReturnHref}
                   />
                 </div>
-              </div>
+
+                <div className={`${styles.panel} ${styles.focusPanel}`}>
+                  <SlateStripCard
+                    date={selectedDate}
+                    team={selectedTeam}
+                  />
+                  <GoalieRiskCard
+                    date={selectedDate}
+                    team={selectedTeam}
+                  />
+                </div>
+
+                <aside className={`${styles.panel} ${styles.topRailPanel}`}>
+                  <TopAddsRail
+                    date={selectedDate}
+                    position={selectedPosition}
+                    positionLabel={selectedPositionLabel}
+                  />
+                </aside>
+              </section>
+
+              <section
+                className={styles.playerInsightBand}
+                aria-label="Player insight core"
+              >
+                <div className={styles.playerInsightHeader}>
+                  <div className={styles.bandIntro}>
+                    <p className={styles.bandEyebrow}>Player Insight Core</p>
+                    <h2 className={styles.bandTitle}>
+                      Trust, Regression, and Momentum
+                    </h2>
+                  </div>
+                  <div
+                    className={styles.ownershipControlCard}
+                    aria-label="Player insight ownership filter"
+                  >
+                    <p className={styles.ownershipControlEyebrow}>
+                      Insight Ownership Band
+                    </p>
+                    <p className={styles.ownershipControlValue}>
+                      {insightOwnershipMin}% - {insightOwnershipMax}%
+                    </p>
+                    <div className={styles.ownershipControlRows}>
+                      <label className={styles.ownershipControlItem}>
+                        <span>Min</span>
+                        <input
+                          aria-label="Player insight minimum ownership"
+                          type="range"
+                          min="0"
+                          max="100"
+                          step="1"
+                          value={insightOwnershipMin}
+                          onChange={handleInsightOwnershipMinChange}
+                        />
+                      </label>
+                      <label className={styles.ownershipControlItem}>
+                        <span>Max</span>
+                        <input
+                          aria-label="Player insight maximum ownership"
+                          type="range"
+                          min="0"
+                          max="100"
+                          step="1"
+                          value={insightOwnershipMax}
+                          onChange={handleInsightOwnershipMaxChange}
+                        />
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <div className={styles.insightBandLayout}>
+                  <div className={`${styles.panel} ${styles.sustainabilityPanel}`}>
+                    <SustainabilityCard
+                      date={selectedDate}
+                      position={selectedPosition}
+                      ownershipMin={insightOwnershipMin}
+                      ownershipMax={insightOwnershipMax}
+                      returnToHref={dashboardReturnHref}
+                    />
+                  </div>
+                  <div className={`${styles.panel} ${styles.hotColdPanel}`}>
+                    <HotColdCard
+                      date={selectedDate}
+                      team={selectedTeam}
+                      position={selectedPosition}
+                      ownershipMin={insightOwnershipMin}
+                      ownershipMax={insightOwnershipMax}
+                      returnToHref={dashboardReturnHref}
+                    />
+                  </div>
+                </div>
+              </section>
             </section>
           </div>
         </div>

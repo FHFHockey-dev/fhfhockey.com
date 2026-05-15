@@ -46,6 +46,7 @@ type TeamPowerRow = NormalizedTeamRatingRow & {
 
 type TeamPowerView = "top" | "bottom";
 const MAX_TEAM_CONTEXT_SPARKS = 1;
+const TEAM_POWER_ROWS_PER_VIEW = 6;
 
 const formatPower = (value: number): string => value.toFixed(1);
 const formatMetric = (value: number | null | undefined): string =>
@@ -224,9 +225,9 @@ export default function TeamPowerCard({
   const visibleRows = useMemo<TeamPowerRow[]>(() => {
     if (team !== "all") return rankedRows;
     if (view === "bottom") {
-      return [...rankedRows].slice(-16).reverse();
+      return [...rankedRows].slice(-TEAM_POWER_ROWS_PER_VIEW).reverse();
     }
-    return rankedRows.slice(0, 16);
+    return rankedRows.slice(0, TEAM_POWER_ROWS_PER_VIEW);
   }, [rankedRows, team, view]);
   const spotlightRows = useMemo(() => visibleRows.slice(0, Math.min(4, visibleRows.length)), [visibleRows]);
   const allTrendsFlat = useMemo(
@@ -318,7 +319,7 @@ export default function TeamPowerCard({
                 .join(" • ")}
             </p>
           )}
-          {team === "all" && rankedRows.length > 16 && (
+          {team === "all" && rankedRows.length > TEAM_POWER_ROWS_PER_VIEW && (
             <div className={styles.teamPowerControls}>
               <div className={styles.segmentedToggle} aria-label="Team power ranking range">
                 <button
@@ -328,7 +329,7 @@ export default function TeamPowerCard({
                   }`}
                   onClick={() => setView("top")}
                 >
-                  Top 16
+                  Top {TEAM_POWER_ROWS_PER_VIEW}
                 </button>
                 <button
                   type="button"
@@ -337,7 +338,7 @@ export default function TeamPowerCard({
                   }`}
                   onClick={() => setView("bottom")}
                 >
-                  Bottom 16
+                  Bottom {TEAM_POWER_ROWS_PER_VIEW}
                 </button>
               </div>
               <span className={styles.teamPowerControlMeta}>
