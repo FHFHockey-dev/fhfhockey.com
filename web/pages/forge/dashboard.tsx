@@ -34,8 +34,6 @@ type DashboardModuleKey =
   | "hotCold"
   | "goalie";
 
-type DashboardBandKey = "top" | "team" | "insight" | "goalie";
-
 const EMPTY_MODULE_STATUS: DashboardModuleStatus = {
   loading: true,
   error: null,
@@ -57,14 +55,6 @@ const MODULE_LABELS: Record<DashboardModuleKey, string> = {
   sustainability: "Sustainability",
   hotCold: "Trend Movement",
   goalie: "Goalies"
-};
-
-const MOBILE_ACCORDION_QUERY = "(max-width: 767px)";
-const DEFAULT_MOBILE_BAND_STATE: Record<DashboardBandKey, boolean> = {
-  top: true,
-  team: false,
-  insight: true,
-  goalie: true
 };
 
 function BandStatusSummary({
@@ -186,10 +176,6 @@ const ForgeDashboardPage: NextPage = () => {
   const [selectedPosition, setSelectedPosition] = useState<
     "all" | "f" | "d" | "g"
   >("all");
-  const [isMobileAccordionMode, setIsMobileAccordionMode] = useState(false);
-  const [mobileBandState, setMobileBandState] = useState<
-    Record<DashboardBandKey, boolean>
-  >(DEFAULT_MOBILE_BAND_STATE);
   const [insightOwnershipMin, setInsightOwnershipMin] = useState(25);
   const [insightOwnershipMax, setInsightOwnershipMax] = useState(50);
   const titleRef = useRef<HTMLHeadingElement | null>(null);
@@ -344,31 +330,6 @@ const ForgeDashboardPage: NextPage = () => {
   ]);
 
   useEffect(() => {
-    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
-      return undefined;
-    }
-
-    const mediaQuery = window.matchMedia(MOBILE_ACCORDION_QUERY);
-    const syncViewportState = (event?: MediaQueryListEvent) => {
-      setIsMobileAccordionMode(event?.matches ?? mediaQuery.matches);
-    };
-
-    syncViewportState();
-
-    if (typeof mediaQuery.addEventListener === "function") {
-      mediaQuery.addEventListener("change", syncViewportState);
-      return () => {
-        mediaQuery.removeEventListener("change", syncViewportState);
-      };
-    }
-
-    mediaQuery.addListener(syncViewportState);
-    return () => {
-      mediaQuery.removeListener(syncViewportState);
-    };
-  }, []);
-
-  useEffect(() => {
     const updateExpansionScale = () => {
       const titleEl = titleRef.current;
       const expansionEl = expansionTextRef.current;
@@ -508,14 +469,6 @@ const ForgeDashboardPage: NextPage = () => {
   const teamBandStatus = getBandStatus(["teamPower"]);
   const playerInsightStatus = getBandStatus(["sustainability", "hotCold"]);
   const goalieBandStatus = getBandStatus(["goalie"]);
-  const toggleBand = (bandKey: DashboardBandKey) => {
-    setMobileBandState((current) => ({
-      ...current,
-      [bandKey]: !current[bandKey]
-    }));
-  };
-  const isBandExpanded = (bandKey: DashboardBandKey) =>
-    !isMobileAccordionMode || mobileBandState[bandKey];
 
   return (
     <>
@@ -671,304 +624,157 @@ const ForgeDashboardPage: NextPage = () => {
             )}
 
             <section
-              className={styles.sectionBand}
-              aria-label="Top command band"
+              className={styles.dashboardStage}
+              aria-label="Forge dashboard overview"
             >
-              <div className={styles.bandHeader}>
-                <div className={styles.bandHeaderMain}>
-                  <div className={styles.bandIntro}>
-                    <p className={styles.bandEyebrow}>Band 1</p>
-                    <h2 className={styles.bandTitle}>Tonight&apos;s Slate</h2>
-                    <p className={styles.bandSummary}>
-                      The slate stays anchored beside the opportunity rail.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    className={styles.bandMobileToggle}
-                    aria-expanded={isBandExpanded("top")}
-                    aria-controls="forge-band-top"
-                    onClick={() => toggleBand("top")}
-                  >
-                    {isBandExpanded("top") ? "Collapse" : "Expand"}
-                    <span className={styles.bandMobileToggleLabel}>
-                      Tonight&apos;s Slate
-                    </span>
-                  </button>
-                </div>
-              </div>
-              <div
-                id="forge-band-top"
-                className={styles.sectionBandBody}
-                hidden={!isBandExpanded("top")}
-              >
-                <BandStatusSummary
-                  label="Tonight's Slate"
-                  status={topBandStatus}
-                />
-
-                <div className={styles.topBandLayout}>
-                  <div className={`${styles.panel} ${styles.topHeroPanel}`}>
-                    <SlateStripCard
-                      date={selectedDate}
-                      team={selectedTeam}
-                      onStatusChange={(status) =>
-                        updateModuleStatus("slate", status)
-                      }
-                      onResolvedDate={(resolvedDate) =>
-                        updateModuleResolvedDate("slate", resolvedDate)
-                      }
-                    />
-                  </div>
-
-                  <aside className={`${styles.panel} ${styles.topRailPanel}`}>
-                    <div className={styles.railHeader}>
-                      <p className={styles.railEyebrow}>Right Rail</p>
-                      <h3 className={styles.railTitle}>Top Player Adds</h3>
-                      <p className={styles.railSummary}>
-                        Ownership-aware adds stay beside the slate so the first
-                        scan surfaces matchups and pickups together.
-                      </p>
-                    </div>
-                    <TopAddsRail
-                      date={selectedDate}
-                      position={selectedPosition}
-                      positionLabel={selectedPositionLabel}
-                      onResolvedDate={(resolvedDate) =>
-                        updateModuleResolvedDate("adds", resolvedDate)
-                      }
-                      onStatusChange={(status) =>
-                        updateModuleStatus("adds", status)
-                      }
-                    />
-                  </aside>
-                </div>
-              </div>
-            </section>
-
-            <section
-              className={styles.sectionBand}
-              aria-label="Team trend context band"
-            >
-              <div className={styles.bandHeader}>
-                <div className={styles.bandHeaderMain}>
-                  <div className={styles.bandIntro}>
-                    <p className={styles.bandEyebrow}>Band 2</p>
-                    <h2 className={styles.bandTitle}>Team Trend Context</h2>
-                    <p className={styles.bandSummary}>
-                      Team strength, momentum, and matchup context frame the
-                      player opportunity view.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    className={styles.bandMobileToggle}
-                    aria-expanded={isBandExpanded("team")}
-                    aria-controls="forge-band-team"
-                    onClick={() => toggleBand("team")}
-                  >
-                    {isBandExpanded("team") ? "Collapse" : "Expand"}
-                    <span className={styles.bandMobileToggleLabel}>
-                      Team Trend Context
-                    </span>
-                  </button>
-                </div>
-              </div>
-              <div
-                id="forge-band-team"
-                className={styles.sectionBandBody}
-                hidden={!isBandExpanded("team")}
-              >
+              <div className={`${styles.panel} ${styles.teamPowerPanel}`}>
                 <BandStatusSummary
                   label="Team Trend Context"
                   status={teamBandStatus}
                 />
-
-                <div className={styles.contextBandLayout}>
-                  <div className={`${styles.panel} ${styles.teamPowerPanel}`}>
-                    <TeamPowerCard
-                      date={selectedDate}
-                      team={selectedTeam}
-                      onStatusChange={(status) =>
-                        updateModuleStatus("teamPower", status)
-                      }
-                      onResolvedDate={(resolvedDate) =>
-                        updateModuleResolvedDate("teamPower", resolvedDate)
-                      }
-                    />
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <section
-              className={styles.sectionBand}
-              aria-label="Player insight core"
-            >
-              <div className={styles.bandHeader}>
-                <div className={styles.bandHeaderMain}>
-                  <div className={styles.bandIntro}>
-                    <p className={styles.bandEyebrow}>Band 3</p>
-                    <h2 className={styles.bandTitle}>Player Insight Core</h2>
-                    <p className={styles.bandSummary}>
-                      Sustainability and short-term movement live together here,
-                      while staying separate signal families.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    className={styles.bandMobileToggle}
-                    aria-expanded={isBandExpanded("insight")}
-                    aria-controls="forge-band-insight"
-                    onClick={() => toggleBand("insight")}
-                  >
-                    {isBandExpanded("insight") ? "Collapse" : "Expand"}
-                    <span className={styles.bandMobileToggleLabel}>
-                      Player Insight Core
-                    </span>
-                  </button>
-                </div>
-              </div>
-              <div
-                id="forge-band-insight"
-                className={styles.sectionBandBody}
-                hidden={!isBandExpanded("insight")}
-              >
-                <div className={styles.bandInlineControlRow}>
-                  <div
-                    className={styles.ownershipControlCard}
-                    aria-label="Player insight ownership filter"
-                  >
-                    <p className={styles.ownershipControlEyebrow}>
-                      Insight Ownership Band
-                    </p>
-                    <p className={styles.ownershipControlValue}>
-                      {insightOwnershipMin}% - {insightOwnershipMax}%
-                    </p>
-                    <p className={styles.contextSummary}>
-                      Applies only to the insight cards. Top Adds keeps its own
-                      band in the rail.
-                    </p>
-                    <div className={styles.ownershipControlRows}>
-                      <label className={styles.ownershipControlItem}>
-                        <span>Min</span>
-                        <input
-                          aria-label="Player insight minimum ownership"
-                          type="range"
-                          min="0"
-                          max="100"
-                          step="1"
-                          value={insightOwnershipMin}
-                          onChange={handleInsightOwnershipMinChange}
-                        />
-                      </label>
-                      <label className={styles.ownershipControlItem}>
-                        <span>Max</span>
-                        <input
-                          aria-label="Player insight maximum ownership"
-                          type="range"
-                          min="0"
-                          max="100"
-                          step="1"
-                          value={insightOwnershipMax}
-                          onChange={handleInsightOwnershipMaxChange}
-                        />
-                      </label>
-                    </div>
-                  </div>
-                </div>
-                <BandStatusSummary
-                  label="Player Insight Core"
-                  status={playerInsightStatus}
+                <TeamPowerCard
+                  date={selectedDate}
+                  team={selectedTeam}
+                  onStatusChange={(status) =>
+                    updateModuleStatus("teamPower", status)
+                  }
+                  onResolvedDate={(resolvedDate) =>
+                    updateModuleResolvedDate("teamPower", resolvedDate)
+                  }
                 />
-
-                <div className={styles.insightBandLayout}>
-                  <div className={`${styles.panel} ${styles.sustainabilityPanel}`}>
-                    <SustainabilityCard
-                      date={selectedDate}
-                      position={selectedPosition}
-                      ownershipMin={insightOwnershipMin}
-                      ownershipMax={insightOwnershipMax}
-                      returnToHref={dashboardReturnHref}
-                      onStatusChange={(status) =>
-                        updateModuleStatus("sustainability", status)
-                      }
-                      onResolvedDate={(resolvedDate) =>
-                        updateModuleResolvedDate("sustainability", resolvedDate)
-                      }
-                    />
-                  </div>
-                  <div className={`${styles.panel} ${styles.hotColdPanel}`}>
-                    <HotColdCard
-                      date={selectedDate}
-                      team={selectedTeam}
-                      position={selectedPosition}
-                      ownershipMin={insightOwnershipMin}
-                      ownershipMax={insightOwnershipMax}
-                      returnToHref={dashboardReturnHref}
-                      onResolvedDate={(resolvedDate) =>
-                        updateModuleResolvedDate("hotCold", resolvedDate)
-                      }
-                      onStatusChange={(status) =>
-                        updateModuleStatus("hotCold", status)
-                      }
-                    />
-                  </div>
-                </div>
               </div>
-            </section>
 
-            <section
-              className={styles.sectionBand}
-              aria-label="Goalie and risk band"
-            >
-              <div className={styles.bandHeader}>
-                <div className={styles.bandHeaderMain}>
-                  <div className={styles.bandIntro}>
-                    <p className={styles.bandEyebrow}>Band 4</p>
-                    <h2 className={styles.bandTitle}>Goalie and Risk</h2>
-                    <p className={styles.bandSummary}>
-                      High-leverage goalie calls stay visible as their own
-                      decision band.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    className={styles.bandMobileToggle}
-                    aria-expanded={isBandExpanded("goalie")}
-                    aria-controls="forge-band-goalie"
-                    onClick={() => toggleBand("goalie")}
-                  >
-                    {isBandExpanded("goalie") ? "Collapse" : "Expand"}
-                    <span className={styles.bandMobileToggleLabel}>
-                      Goalie and Risk
-                    </span>
-                  </button>
-                </div>
-              </div>
-              <div
-                id="forge-band-goalie"
-                className={styles.sectionBandBody}
-                hidden={!isBandExpanded("goalie")}
-              >
+              <div className={`${styles.panel} ${styles.focusPanel}`}>
+                <BandStatusSummary
+                  label="Focused Slate and Goalie Context"
+                  status={topBandStatus}
+                />
+                <SlateStripCard
+                  date={selectedDate}
+                  team={selectedTeam}
+                  onStatusChange={(status) =>
+                    updateModuleStatus("slate", status)
+                  }
+                  onResolvedDate={(resolvedDate) =>
+                    updateModuleResolvedDate("slate", resolvedDate)
+                  }
+                />
+                <GoalieRiskCard
+                  date={selectedDate}
+                  team={selectedTeam}
+                  onStatusChange={(status) =>
+                    updateModuleStatus("goalie", status)
+                  }
+                  onResolvedDate={(resolvedDate) =>
+                    updateModuleResolvedDate("goalie", resolvedDate)
+                  }
+                />
                 <BandStatusSummary
                   label="Goalie and Risk"
                   status={goalieBandStatus}
                 />
+              </div>
 
-                <div className={styles.goalieBandLayout}>
-                  <div className={`${styles.panel} ${styles.goaliePanel}`}>
-                    <GoalieRiskCard
-                      date={selectedDate}
-                      team={selectedTeam}
-                      onStatusChange={(status) =>
-                        updateModuleStatus("goalie", status)
-                      }
-                      onResolvedDate={(resolvedDate) =>
-                        updateModuleResolvedDate("goalie", resolvedDate)
-                      }
-                    />
+              <aside className={`${styles.panel} ${styles.topRailPanel}`}>
+                <TopAddsRail
+                  date={selectedDate}
+                  position={selectedPosition}
+                  positionLabel={selectedPositionLabel}
+                  onResolvedDate={(resolvedDate) =>
+                    updateModuleResolvedDate("adds", resolvedDate)
+                  }
+                  onStatusChange={(status) =>
+                    updateModuleStatus("adds", status)
+                  }
+                />
+              </aside>
+            </section>
+
+            <section
+              className={styles.playerInsightBand}
+              aria-label="Player insight core"
+            >
+              <div className={styles.playerInsightHeader}>
+                <div className={styles.bandIntro}>
+                  <p className={styles.bandEyebrow}>Player Insight Core</p>
+                  <h2 className={styles.bandTitle}>
+                    Trust, Regression, and Momentum
+                  </h2>
+                </div>
+                <div
+                  className={styles.ownershipControlCard}
+                  aria-label="Player insight ownership filter"
+                >
+                  <p className={styles.ownershipControlEyebrow}>
+                    Insight Ownership Band
+                  </p>
+                  <p className={styles.ownershipControlValue}>
+                    {insightOwnershipMin}% - {insightOwnershipMax}%
+                  </p>
+                  <div className={styles.ownershipControlRows}>
+                    <label className={styles.ownershipControlItem}>
+                      <span>Min</span>
+                      <input
+                        aria-label="Player insight minimum ownership"
+                        type="range"
+                        min="0"
+                        max="100"
+                        step="1"
+                        value={insightOwnershipMin}
+                        onChange={handleInsightOwnershipMinChange}
+                      />
+                    </label>
+                    <label className={styles.ownershipControlItem}>
+                      <span>Max</span>
+                      <input
+                        aria-label="Player insight maximum ownership"
+                        type="range"
+                        min="0"
+                        max="100"
+                        step="1"
+                        value={insightOwnershipMax}
+                        onChange={handleInsightOwnershipMaxChange}
+                      />
+                    </label>
                   </div>
+                </div>
+              </div>
+              <BandStatusSummary
+                label="Player Insight Core"
+                status={playerInsightStatus}
+              />
+
+              <div className={styles.insightBandLayout}>
+                <div className={`${styles.panel} ${styles.sustainabilityPanel}`}>
+                  <SustainabilityCard
+                    date={selectedDate}
+                    position={selectedPosition}
+                    ownershipMin={insightOwnershipMin}
+                    ownershipMax={insightOwnershipMax}
+                    returnToHref={dashboardReturnHref}
+                    onStatusChange={(status) =>
+                      updateModuleStatus("sustainability", status)
+                    }
+                    onResolvedDate={(resolvedDate) =>
+                      updateModuleResolvedDate("sustainability", resolvedDate)
+                    }
+                  />
+                </div>
+                <div className={`${styles.panel} ${styles.hotColdPanel}`}>
+                  <HotColdCard
+                    date={selectedDate}
+                    team={selectedTeam}
+                    position={selectedPosition}
+                    ownershipMin={insightOwnershipMin}
+                    ownershipMax={insightOwnershipMax}
+                    returnToHref={dashboardReturnHref}
+                    onResolvedDate={(resolvedDate) =>
+                      updateModuleResolvedDate("hotCold", resolvedDate)
+                    }
+                    onStatusChange={(status) =>
+                      updateModuleStatus("hotCold", status)
+                    }
+                  />
                 </div>
               </div>
             </section>

@@ -6,25 +6,25 @@
   flex: 1 1 auto;
   min-height: 0;
   background:
-    linear-gradient(180deg, color.adjust(v.$background-dark, $lightness: -2%), v.$background-dark 22%),
-    radial-gradient(circle at top left, rgba(v.$primary-color, 0.06), transparent 26%);
+    linear-gradient(180deg, color.adjust(v.$background-dark, $lightness: -3%), v.$background-dark 18%),
+    radial-gradient(circle at top left, rgba(v.$primary-color, 0.035), transparent 24%);
   color: v.$text-primary;
 }
 
 .container {
-  width: min(1880px, calc(100% - 2rem));
+  width: min(1940px, calc(100% - 1rem));
   margin: 0 auto;
-  padding: 0.75rem 0 v.$space-md;
+  padding: 0.45rem 0 v.$space-sm;
   min-height: 100%;
   display: grid;
-  grid-template-rows: auto auto auto 1fr;
-  gap: 0.75rem;
+  grid-template-rows: auto 1fr;
+  gap: 0.5rem;
 }
 
 .shell {
   min-height: 0;
   display: grid;
-  gap: 0.75rem;
+  gap: 0.5rem;
   align-content: start;
 }
 
@@ -138,10 +138,10 @@
   overflow: hidden;
   min-width: min(100%, 290px);
   display: grid;
-  gap: 0.45rem;
-  padding: v.$space-sm v.$space-sm v.$space-sm calc(v.$space-sm + 12px + v.$space-xs);
+  gap: 0.35rem;
+  padding: 0.55rem 0.6rem 0.55rem calc(0.6rem + 8px + v.$space-xs);
   border-radius: v.$border-radius-sm;
-  border: 2px solid rgba(v.$primary-color, 0.45);
+  border: 1px solid rgba(v.$primary-color, 0.45);
   background:
     linear-gradient(180deg, rgba(v.$primary-color, 0.12), rgba(v.$primary-color, 0.03)),
     linear-gradient(135deg, rgba(v.$color-white, 0.03), rgba(v.$color-white, 0)),
@@ -154,7 +154,7 @@
     content: "";
     position: absolute;
     inset: 0 auto 0 0;
-    width: 12px;
+    width: 8px;
     background: linear-gradient(180deg, rgba(v.$warning-color, 0.96), rgba(v.$primary-color, 0.78));
     box-shadow:
       0 0 14px rgba(v.$warning-color, 0.28),
@@ -182,13 +182,14 @@
 
 .ownershipControlRows {
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.45rem;
 }
 
 .ownershipControlItem {
   display: grid;
   gap: 0.24rem;
-  padding: 0.35rem 0.5rem;
+  padding: 0.32rem 0.45rem;
   border-radius: v.$border-radius-sm;
   border: 1px solid rgba(v.$border-secondary, 0.5);
   background: rgba(v.$background-dark, 0.4);
@@ -392,7 +393,49 @@
   min-height: 0;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: v.$space-md;
+  gap: 0.5rem;
+}
+
+.dashboardStage {
+  min-height: 0;
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1.18fr)
+    minmax(390px, 0.86fr)
+    minmax(330px, 0.76fr);
+  gap: 0.5rem;
+  align-items: start;
+}
+
+.focusPanel {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  gap: v.$space-sm;
+}
+
+.playerInsightBand {
+  @include p.panel-container(
+    $radius: v.$border-radius-md,
+    $padding: 0.65rem,
+    $gradient-start: rgba(v.$color-white, 0.025),
+    $gradient-end: rgba(v.$color-white, 0.008),
+    $blur: 0
+  );
+  min-height: 0;
+  display: grid;
+  gap: 0.5rem;
+  background:
+    linear-gradient(180deg, rgba(v.$color-white, 0.018), rgba(v.$color-white, 0)),
+    color.adjust(v.$background-medium, $lightness: -2%);
+  border: 1px solid rgba(v.$border-secondary, 0.84);
+}
+
+.playerInsightHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.36fr);
+  gap: v.$space-sm;
+  align-items: start;
 }
 
 .header {
@@ -400,15 +443,15 @@
   overflow: hidden;
   display: grid;
   gap: v.$space-sm;
-  padding: v.$space-md;
+  padding: 0.65rem 0.8rem;
   border-radius: v.$border-radius-md;
   border: 1px solid rgba(v.$border-secondary, 0.82);
   background:
-    linear-gradient(180deg, rgba(v.$color-white, 0.025), rgba(v.$color-white, 0)),
-    linear-gradient(180deg, color.adjust(v.$background-medium, $lightness: -3%), color.adjust(v.$background-medium, $lightness: -1%));
+    linear-gradient(180deg, rgba(v.$color-white, 0.018), rgba(v.$color-white, 0)),
+    color.adjust(v.$background-medium, $lightness: -3%);
   box-shadow:
     inset 0 1px 0 rgba(v.$color-white, 0.04),
-    0 14px 30px rgba(0, 0, 0, 0.2);
+    0 10px 22px rgba(0, 0, 0, 0.18);
 
   &::after {
     content: "";
@@ -437,7 +480,7 @@
 
 .title {
   margin: 0;
-  font-size: clamp(1.5rem, 2.2vw, 2.1rem);
+  font-size: clamp(1.35rem, 1.9vw, 1.9rem);
   line-height: 1.1;
   font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
   letter-spacing: 0.08em;
@@ -483,18 +526,18 @@
 .controlsSurface {
   @include p.panel-container(
     $radius: v.$border-radius-md,
-    $padding: 0.8rem,
-    $gradient-start: rgba(v.$color-white, 0.04),
-    $gradient-end: rgba(v.$color-white, 0.015),
-    $blur: 10px
+    $padding: 0.65rem,
+    $gradient-start: rgba(v.$color-white, 0.025),
+    $gradient-end: rgba(v.$color-white, 0.008),
+    $blur: 0
   );
   display: grid;
-  grid-template-columns: minmax(260px, 0.95fr) minmax(0, 1.6fr);
-  gap: 0.75rem;
+  grid-template-columns: minmax(260px, 0.58fr) minmax(0, 1.42fr);
+  gap: 0.65rem;
   align-items: stretch;
   background:
-    linear-gradient(180deg, rgba(v.$color-white, 0.02), rgba(v.$color-white, 0)),
-    color.adjust(v.$background-medium, $lightness: -1%);
+    linear-gradient(180deg, rgba(v.$color-white, 0.018), rgba(v.$color-white, 0)),
+    color.adjust(v.$background-medium, $lightness: -2%);
   border: 1px solid rgba(v.$border-secondary, 0.84);
   box-shadow:
     inset 0 1px 0 rgba(v.$color-white, 0.04),
@@ -504,7 +547,7 @@
 .contextBlock {
   min-height: 0;
   display: grid;
-  gap: 0.45rem;
+  gap: 0.35rem;
   align-content: start;
   padding-right: v.$space-sm;
   border-right: 1px solid rgba(v.$border-secondary, 0.42);
@@ -529,7 +572,7 @@
 .contextTitle {
   margin: 0;
   font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
-  font-size: clamp(1rem, 1.5vw, 1.3rem);
+  font-size: clamp(0.95rem, 1.25vw, 1.14rem);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: v.$color-white;
@@ -578,7 +621,7 @@
 .controlStack {
   min-height: 0;
   display: grid;
-  gap: 0.75rem;
+  gap: 0.55rem;
   align-content: start;
 }
 
@@ -651,8 +694,8 @@
   color: v.$secondary-color;
   text-decoration: none;
   border: 2px solid rgba(v.$primary-color, 0.95);
-  border-radius: 999px;
-  min-height: v.$touch-target-min;
+  border-radius: v.$border-radius-sm;
+  min-height: 36px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -819,12 +862,12 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: stretch;
-  gap: v.$space-sm;
+  gap: 0.5rem;
 }
 
 .filterBar {
   display: grid;
-  gap: v.$space-sm;
+  gap: 0.5rem;
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
@@ -850,8 +893,8 @@
   border: 1px solid rgba(v.$border-secondary, 0.9);
   background: color.adjust(v.$background-medium, $lightness: -5%);
   color: v.$text-primary;
-  padding: v.$space-sm v.$space-sm;
-  min-height: v.$touch-target-min;
+  padding: 0.55rem 0.6rem;
+  min-height: 38px;
   font-family: v.$font-family-primary, sans-serif;
   box-shadow:
     inset 0 1px 0 rgba(v.$color-white, 0.04),
@@ -878,7 +921,7 @@
 }
 
 .resetButton {
-  min-height: v.$touch-target-min;
+  min-height: 38px;
   padding: 0 v.$space-md;
   border-radius: v.$border-radius-sm;
   border: 2px solid rgba(v.$primary-color, 0.95);
@@ -985,13 +1028,15 @@
 .panel {
   position: relative;
   min-height: 0;
-  padding: v.$space-sm;
+  padding: 0.6rem;
   border-radius: v.$border-radius-md;
   background:
-    linear-gradient(180deg, rgba(v.$color-white, 0.015), rgba(v.$color-white, 0)),
-    v.$background-medium;
+    linear-gradient(180deg, rgba(v.$color-white, 0.012), rgba(v.$color-white, 0)),
+    color.adjust(v.$background-medium, $lightness: -1%);
   border: 1px solid rgba(v.$border-secondary, 0.82);
-  box-shadow: v.$box-shadow-default;
+  box-shadow:
+    inset 0 1px 0 rgba(v.$color-white, 0.035),
+    0 10px 22px rgba(0, 0, 0, 0.18);
   font-family: v.$font-family-primary, sans-serif;
   color: v.$text-primary;
   transition:
@@ -1007,22 +1052,25 @@
 }
 
 .topHeroPanel {
-  min-height: 320px;
+  min-height: 0;
 }
 
 .topRailPanel {
-  min-height: 320px;
-  align-self: stretch;
+  min-height: 0;
+  align-self: start;
+  max-height: min(680px, calc(100vh - 260px));
+  overflow: auto;
+  @include v.custom-scrollbar(v.$primary-color, v.$background-medium);
 }
 
 .teamPowerPanel {
-  min-height: 280px;
+  min-height: 0;
 }
 
 .sustainabilityPanel,
 .hotColdPanel,
 .goaliePanel {
-  min-height: 260px;
+  min-height: 0;
 }
 
 .teamPowerCard {
@@ -1037,6 +1085,23 @@
   display: grid;
   grid-template-rows: auto 1fr;
   gap: v.$space-sm;
+}
+
+.focusPanel .goalieRiskCard {
+  min-height: 0;
+  gap: 0.55rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid rgba(v.$border-secondary, 0.42);
+}
+
+.focusPanel .goalieRiskCard .panelHeader {
+  margin: 0 0 0.55rem;
+  border-radius: v.$border-radius-sm;
+  border: 1px solid rgba(v.$border-secondary, 0.36);
+}
+
+.focusPanel .goalieRiskCard .tableWrap {
+  max-height: 210px;
 }
 
 .slateStripCard {
@@ -1056,14 +1121,14 @@
 .topAddsRailCard {
   min-height: 100%;
   display: grid;
-  grid-template-rows: auto auto auto 1fr;
-  gap: v.$space-sm;
+  grid-template-rows: auto auto 1fr;
+  gap: 0.55rem;
 }
 
 .topAddsControls {
   display: grid;
-  gap: v.$space-md;
-  padding: v.$space-sm;
+  gap: 0.55rem;
+  padding: 0.55rem;
   border-radius: v.$border-radius-md;
   border: 1px solid rgba(v.$border-secondary, 0.62);
   background:
@@ -1099,8 +1164,8 @@
 .topAddsShellSummary {
   margin: 0;
   color: v.$text-secondary;
-  font-size: v.$font-size-sm;
-  line-height: 1.5;
+  font-size: v.$font-size-xs;
+  line-height: 1.35;
 }
 
 .topAddsToggleGroup {
@@ -1156,7 +1221,7 @@
 .topAddsOwnershipControls {
   display: grid;
   gap: v.$space-xs;
-  padding: v.$space-sm;
+  padding: 0.55rem;
   border-radius: v.$border-radius-md;
   border: 1px solid rgba(v.$primary-color, 0.42);
   background:
@@ -1274,10 +1339,10 @@
   position: relative;
   overflow: hidden;
   display: grid;
-  gap: v.$space-xs;
-  padding: v.$space-sm v.$space-sm v.$space-sm calc(v.$space-sm + 12px + v.$space-xs);
-  border-radius: v.$border-radius-md;
-  border: 2px solid rgba(v.$primary-color, 0.46);
+  gap: 0.4rem;
+  padding: 0.55rem 0.6rem 0.55rem calc(0.6rem + 8px + v.$space-xs);
+  border-radius: v.$border-radius-sm;
+  border: 1px solid rgba(v.$primary-color, 0.5);
   background:
     linear-gradient(180deg, rgba(v.$color-white, 0.025), rgba(v.$color-white, 0)),
     rgba(v.$background-dark, 0.8);
@@ -1306,7 +1371,7 @@
     content: "";
     position: absolute;
     inset: 0 auto 0 0;
-    width: 12px;
+    width: 8px;
     background: linear-gradient(180deg, rgba(v.$secondary-color, 0.95), rgba(v.$primary-color, 0.84));
     box-shadow:
       0 0 14px rgba(v.$secondary-color, 0.28),
@@ -1326,8 +1391,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  inline-size: 2rem;
-  block-size: 2rem;
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
   border-radius: 999px;
   background: rgba(v.$primary-color, 0.14);
   color: v.$color-white;
@@ -1338,8 +1403,8 @@
 
 .topAddsCandidateHeadshot,
 .topAddsCandidateHeadshotPlaceholder {
-  inline-size: 2.6rem;
-  block-size: 2.6rem;
+  inline-size: 2.1rem;
+  block-size: 2.1rem;
   border-radius: v.$border-radius-md;
   object-fit: cover;
   border: 1px solid rgba(v.$primary-color, 0.28);
@@ -1531,8 +1596,8 @@
   align-items: center;
   justify-content: space-between;
   gap: v.$space-sm;
-  margin: calc(v.$space-sm * -1) calc(v.$space-sm * -1) v.$space-sm;
-  padding: v.$space-xs v.$space-sm calc(v.$space-xs + 1px);
+  margin: -0.6rem -0.6rem 0.6rem;
+  padding: 0.45rem 0.6rem;
   background: color.adjust(v.$background-dark, $lightness: -2%);
   border-bottom: 1px solid rgba(v.$primary-color, 0.32);
   box-shadow:
@@ -1543,7 +1608,7 @@
 .panelTitle {
   margin: 0;
   font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
-  font-size: clamp(0.9rem, 1.25vw, 1.1rem);
+  font-size: clamp(0.86rem, 1vw, 1rem);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: v.$color-white;
@@ -1675,7 +1740,7 @@
 .teamContextSpotlightGrid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: v.$space-md;
+  gap: 0.55rem;
 }
 
 .teamContextSpotlightGrid > .compactChartNote {
@@ -1688,10 +1753,10 @@
   position: relative;
   overflow: hidden;
   display: grid;
-  gap: v.$space-xs;
-  padding: v.$space-sm v.$space-sm v.$space-sm calc(v.$space-sm + 12px + v.$space-xs);
-  border-radius: v.$border-radius-md;
-  border: 2px solid rgba(v.$primary-color, 0.38);
+  gap: 0.38rem;
+  padding: 0.55rem 0.6rem 0.55rem calc(0.6rem + 8px + v.$space-xs);
+  border-radius: v.$border-radius-sm;
+  border: 1px solid rgba(v.$primary-color, 0.42);
   background:
     linear-gradient(180deg, rgba(v.$color-white, 0.025), rgba(v.$color-white, 0)),
     rgba(v.$background-dark, 0.8);
@@ -1717,7 +1782,7 @@
     content: "";
     position: absolute;
     inset: 0 auto 0 0;
-    width: 12px;
+    width: 8px;
     background: linear-gradient(180deg, rgba(v.$secondary-color, 0.95), rgba(v.$primary-color, 0.82));
     box-shadow:
       0 0 14px rgba(v.$secondary-color, 0.28),
@@ -1833,7 +1898,7 @@
     background: color.adjust(v.$background-dark, $lightness: -4%);
     color: v.$text-secondary;
     text-align: left;
-    padding: 0.7rem 0.75rem;
+    padding: 0.52rem 0.62rem;
     border-bottom: 1px solid rgba(v.$primary-color, 0.35);
     font-weight: 600;
     text-transform: uppercase;
@@ -1842,7 +1907,7 @@
   }
 
   tbody td {
-    padding: 0.7rem 0.75rem;
+    padding: 0.52rem 0.62rem;
     border-bottom: 1px solid rgba(v.$border-secondary, 0.35);
     color: v.$text-primary;
     white-space: nowrap;
@@ -2081,18 +2146,18 @@
 .goalieSpotlightGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: v.$space-sm;
-  margin-bottom: v.$space-sm;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
 }
 
 .goalieSpotlightCard {
   position: relative;
   overflow: hidden;
   display: grid;
-  gap: v.$space-sm;
-  padding: v.$space-sm v.$space-sm v.$space-sm calc(v.$space-sm + 12px + v.$space-xs);
-  border-radius: v.$border-radius-md;
-  border: 2px solid rgba(v.$primary-color, 0.34);
+  gap: 0.5rem;
+  padding: 0.55rem 0.6rem 0.55rem calc(0.6rem + 8px + v.$space-xs);
+  border-radius: v.$border-radius-sm;
+  border: 1px solid rgba(v.$primary-color, 0.38);
   background:
     linear-gradient(180deg, rgba(v.$color-white, 0.025), rgba(v.$color-white, 0)),
     rgba(v.$background-dark, 0.78);
@@ -2101,7 +2166,7 @@
     content: "";
     position: absolute;
     inset: 0 auto 0 0;
-    width: 12px;
+    width: 8px;
     background: linear-gradient(180deg, rgba(v.$success-color, 0.94), rgba(v.$primary-color, 0.78));
     box-shadow:
       0 0 14px rgba(v.$success-color, 0.24),
@@ -2511,9 +2576,9 @@
 
 .slateHeroFocus {
   display: grid;
-  gap: v.$space-md;
-  margin-bottom: v.$space-sm;
-  padding: v.$space-md;
+  gap: 0.65rem;
+  margin-bottom: 0.55rem;
+  padding: 0.7rem;
   border-radius: v.$border-radius-md;
   border: 1px solid rgba(v.$border-secondary, 0.92);
   background:
@@ -2527,7 +2592,7 @@
 .slateHeroTeams {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-  gap: v.$space-md;
+  gap: 0.65rem;
   align-items: center;
 }
 
@@ -2604,7 +2669,7 @@
 .slateHeroGoalies {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: v.$space-sm;
+  gap: 0.5rem;
 }
 
 .slateGoalieColumn {
@@ -2644,7 +2709,7 @@
   scroll-snap-align: start;
   display: grid;
   gap: v.$space-xs;
-  padding: v.$space-xs v.$space-sm v.$space-xs calc(v.$space-sm + 12px + v.$space-xs);
+  padding: v.$space-xs v.$space-sm v.$space-xs calc(v.$space-sm + 8px + v.$space-xs);
   border-radius: v.$border-radius-sm;
   border: 2px solid color-mix(in srgb, var(--away-color) 30%, rgba(v.$primary-color, 0.45));
   background:
@@ -2674,7 +2739,7 @@
     content: "";
     position: absolute;
     inset: 0 auto 0 0;
-    width: 12px;
+    width: 8px;
     background: linear-gradient(180deg, var(--away-color), var(--home-color));
     opacity: 0.9;
     box-shadow:
@@ -2912,9 +2977,14 @@
   }
 
   .topBandLayout,
+  .dashboardStage,
   .insightBandLayout {
     grid-template-columns: 1fr;
     gap: v.$space-sm;
+  }
+
+  .playerInsightHeader {
+    grid-template-columns: 1fr;
   }
 
   .topHeroPanel,
@@ -2951,6 +3021,10 @@
 
   .ownershipControlCard {
     min-width: 100%;
+  }
+
+  .ownershipControlRows {
+    grid-template-columns: 1fr;
   }
 
   .teamPowerControls {
@@ -3078,6 +3152,14 @@
   }
 
   .topBandLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboardStage {
+    grid-template-columns: 1fr;
+  }
+
+  .playerInsightHeader {
     grid-template-columns: 1fr;
   }
 
