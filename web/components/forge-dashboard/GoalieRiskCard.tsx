@@ -105,7 +105,11 @@ export default function GoalieRiskCard({
     setLoading(true);
     setError(null);
 
-    const query = new URLSearchParams({ date, horizon: "1" });
+    const query = new URLSearchParams({
+      date,
+      horizon: "1",
+      fallbackToLatestWithData: "true"
+    });
 
     fetchCachedJson<unknown>(`/api/v1/forge/goalies?${query.toString()}`, {
       ttlMs: 60_000

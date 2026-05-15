@@ -19,142 +19,6 @@ import {
 } from "lib/dashboard/forgeLinks";
 import { teamsInfo } from "lib/teamsInfo";
 
-type DashboardModuleStatus = {
-  loading: boolean;
-  error: string | null;
-  staleMessage: string | null;
-  empty: boolean;
-};
-
-type DashboardModuleKey =
-  | "slate"
-  | "adds"
-  | "teamPower"
-  | "sustainability"
-  | "hotCold"
-  | "goalie";
-
-const EMPTY_MODULE_STATUS: DashboardModuleStatus = {
-  loading: true,
-  error: null,
-  staleMessage: null,
-  empty: false
-};
-
-const STATIC_MODULE_STATUS: DashboardModuleStatus = {
-  loading: false,
-  error: null,
-  staleMessage: null,
-  empty: false
-};
-
-const MODULE_LABELS: Record<DashboardModuleKey, string> = {
-  slate: "Slate",
-  adds: "Top Adds",
-  teamPower: "Team Context",
-  sustainability: "Sustainability",
-  hotCold: "Trend Movement",
-  goalie: "Goalies"
-};
-
-function BandStatusSummary({
-  status,
-  label
-}: {
-  status: {
-    loadingCount: number;
-    errors: Array<{ module: string; message: string }>;
-    staleMessages: string[];
-    allEmpty: boolean;
-  };
-  label: string;
-}) {
-  const hasAlerts =
-    status.loadingCount > 0 ||
-    status.errors.length > 0 ||
-    status.staleMessages.length > 0 ||
-    status.allEmpty;
-
-  if (!hasAlerts) return null;
-
-  return (
-    <div
-      className={styles.bandStatusStack}
-      aria-live="polite"
-      aria-label={`${label} status`}
-    >
-      <div className={styles.bandStatusPills}>
-        {status.loadingCount > 0 && (
-          <span
-            className={`${styles.bandStatusPill} ${styles.bandStatusPillLoading}`}
-          >
-            Loading {status.loadingCount}
-          </span>
-        )}
-        {status.errors.length > 0 && (
-          <span
-            className={`${styles.bandStatusPill} ${styles.bandStatusPillError}`}
-          >
-            Error {status.errors.length}
-          </span>
-        )}
-        {status.staleMessages.length > 0 && (
-          <span
-            className={`${styles.bandStatusPill} ${styles.bandStatusPillStale}`}
-          >
-            Stale {status.staleMessages.length}
-          </span>
-        )}
-        {status.allEmpty && (
-          <span
-            className={`${styles.bandStatusPill} ${styles.bandStatusPillEmpty}`}
-          >
-            Empty
-          </span>
-        )}
-      </div>
-
-      {status.loadingCount > 0 && (
-        <div className={styles.bandLoadingShell} aria-hidden="true">
-          <span className={styles.bandLoadingBarLg} />
-          <span className={styles.bandLoadingBarSm} />
-        </div>
-      )}
-
-      {status.errors.length > 0 && (
-        <div className={`${styles.bandAlert} ${styles.bandAlertError}`}>
-          {status.errors.map((entry) => (
-            <p key={`${entry.module}-${entry.message}`} className={styles.bandAlertLine}>
-              {entry.module}: {entry.message}
-            </p>
-          ))}
-        </div>
-      )}
-
-      {status.staleMessages.length > 0 && (
-        <div className={`${styles.bandAlert} ${styles.bandAlertStale}`}>
-          {status.staleMessages.map((message) => (
-            <p key={message} className={styles.bandAlertLine}>
-              {message}
-            </p>
-          ))}
-        </div>
-      )}
-
-      {status.allEmpty &&
-        status.loadingCount === 0 &&
-        status.errors.length === 0 && (
-          <div className={`${styles.bandAlert} ${styles.bandAlertEmpty}`}>
-            <p className={styles.bandAlertLine}>
-              No {label.toLowerCase()} signals are available for the current
-              filters yet.
-            </p>
-          </div>
-        )}
-    </div>
-  );
-}
-
 const ForgeDashboardPage: NextPage = () => {
   const router = useRouter();
   const todayEt = useMemo(() => {
@@ -180,31 +44,6 @@ const ForgeDashboardPage: NextPage = () => {
   const [insightOwnershipMax, setInsightOwnershipMax] = useState(50);
   const titleRef = useRef<HTMLHeadingElement | null>(null);
   const expansionTextRef = useRef<HTMLSpanElement | null>(null);
-  const [moduleResolvedDates, setModuleResolvedDates] = useState<{
-    adds: string | null;
-    teamPower: string | null;
-    sustainability: string | null;
-    hotCold: string | null;
-    goalie: string | null;
-    slate: string | null;
-  }>({
-    adds: null,
-    teamPower: null,
-    sustainability: null,
-    hotCold: null,
-    goalie: null,
-    slate: null
-  });
-  const [moduleStatuses, setModuleStatuses] = useState<
-    Record<DashboardModuleKey, DashboardModuleStatus>
-  >({
-    slate: EMPTY_MODULE_STATUS,
-    adds: STATIC_MODULE_STATUS,
-    teamPower: EMPTY_MODULE_STATUS,
-    sustainability: EMPTY_MODULE_STATUS,
-    hotCold: EMPTY_MODULE_STATUS,
-    goalie: EMPTY_MODULE_STATUS
-  });
   const teamOptions = useMemo(
     () =>
       Object.values(teamsInfo)
@@ -264,26 +103,6 @@ const ForgeDashboardPage: NextPage = () => {
       }),
     [selectedDate, selectedPosition, selectedTeam]
   );
-  const driftWarnings = useMemo(() => {
-    const labels: Record<keyof typeof moduleResolvedDates, string> = {
-      adds: "Top Adds",
-      teamPower: "Team Power",
-      sustainability: "Sustainability",
-      hotCold: "Trend Movement",
-      goalie: "Goalie Risk",
-      slate: "Slate Strip"
-    };
-
-    return Object.entries(moduleResolvedDates)
-      .filter(([, resolvedDate]) =>
-        Boolean(resolvedDate && resolvedDate !== selectedDate)
-      )
-      .map(([moduleKey, resolvedDate]) => ({
-        module: labels[moduleKey as keyof typeof moduleResolvedDates],
-        resolvedDate: resolvedDate as string
-      }));
-  }, [moduleResolvedDates, selectedDate]);
-
   useEffect(() => {
     if (!router.isReady) return;
     setSelectedDate((current) => (current === requestedDate ? current : requestedDate));
@@ -365,19 +184,6 @@ const ForgeDashboardPage: NextPage = () => {
     };
   }, []);
 
-  const updateModuleResolvedDate = (
-    moduleKey: keyof typeof moduleResolvedDates,
-    resolvedDate: string | null
-  ) => {
-    setModuleResolvedDates((current) => {
-      if (current[moduleKey] === resolvedDate) return current;
-      return {
-        ...current,
-        [moduleKey]: resolvedDate
-      };
-    });
-  };
-
   const handleDateChange = (event: ChangeEvent<HTMLInputElement>) => {
     setSelectedDate(event.target.value);
   };
@@ -416,59 +222,6 @@ const ForgeDashboardPage: NextPage = () => {
     if (!Number.isFinite(nextValue)) return;
     setInsightOwnershipMax(Math.max(nextValue, insightOwnershipMin));
   };
-
-  const updateModuleStatus = (
-    moduleKey: DashboardModuleKey,
-    status: DashboardModuleStatus
-  ) => {
-    setModuleStatuses((current) => {
-      const previous = current[moduleKey];
-      if (
-        previous.loading === status.loading &&
-        previous.error === status.error &&
-        previous.staleMessage === status.staleMessage &&
-        previous.empty === status.empty
-      ) {
-        return current;
-      }
-
-      return {
-        ...current,
-        [moduleKey]: status
-      };
-    });
-  };
-
-  const getBandStatus = (keys: DashboardModuleKey[]) => {
-    const statuses = keys.map((key) => ({
-      module: MODULE_LABELS[key],
-      ...moduleStatuses[key]
-    }));
-
-    return {
-      loadingCount: statuses.filter((status) => status.loading).length,
-      errors: statuses
-        .filter((status) => Boolean(status.error))
-        .map((status) => ({
-          module: status.module,
-          message: status.error as string
-        })),
-      staleMessages: statuses
-        .map((status) => status.staleMessage)
-        .filter((message): message is string => Boolean(message)),
-      allEmpty:
-        statuses.length > 0 &&
-        statuses.every(
-          (status) =>
-            !status.loading && !status.error && status.empty
-        )
-    };
-  };
-
-  const topBandStatus = getBandStatus(["slate", "adds"]);
-  const teamBandStatus = getBandStatus(["teamPower"]);
-  const playerInsightStatus = getBandStatus(["sustainability", "hotCold"]);
-  const goalieBandStatus = getBandStatus(["goalie"]);
 
   return (
     <>
@@ -614,64 +367,25 @@ const ForgeDashboardPage: NextPage = () => {
               </div>
             </section>
 
-            {driftWarnings.length > 0 && (
-              <section className={styles.driftBanner} aria-live="polite">
-                <strong>Data date mismatch:</strong>{" "}
-                {driftWarnings
-                  .map((entry) => `${entry.module} using ${entry.resolvedDate}`)
-                  .join(" • ")}
-              </section>
-            )}
-
             <section
               className={styles.dashboardStage}
               aria-label="Forge dashboard overview"
             >
               <div className={`${styles.panel} ${styles.teamPowerPanel}`}>
-                <BandStatusSummary
-                  label="Team Trend Context"
-                  status={teamBandStatus}
-                />
                 <TeamPowerCard
                   date={selectedDate}
                   team={selectedTeam}
-                  onStatusChange={(status) =>
-                    updateModuleStatus("teamPower", status)
-                  }
-                  onResolvedDate={(resolvedDate) =>
-                    updateModuleResolvedDate("teamPower", resolvedDate)
-                  }
                 />
               </div>
 
               <div className={`${styles.panel} ${styles.focusPanel}`}>
-                <BandStatusSummary
-                  label="Focused Slate and Goalie Context"
-                  status={topBandStatus}
-                />
                 <SlateStripCard
                   date={selectedDate}
                   team={selectedTeam}
-                  onStatusChange={(status) =>
-                    updateModuleStatus("slate", status)
-                  }
-                  onResolvedDate={(resolvedDate) =>
-                    updateModuleResolvedDate("slate", resolvedDate)
-                  }
                 />
                 <GoalieRiskCard
                   date={selectedDate}
                   team={selectedTeam}
-                  onStatusChange={(status) =>
-                    updateModuleStatus("goalie", status)
-                  }
-                  onResolvedDate={(resolvedDate) =>
-                    updateModuleResolvedDate("goalie", resolvedDate)
-                  }
-                />
-                <BandStatusSummary
-                  label="Goalie and Risk"
-                  status={goalieBandStatus}
                 />
               </div>
 
@@ -680,12 +394,6 @@ const ForgeDashboardPage: NextPage = () => {
                   date={selectedDate}
                   position={selectedPosition}
                   positionLabel={selectedPositionLabel}
-                  onResolvedDate={(resolvedDate) =>
-                    updateModuleResolvedDate("adds", resolvedDate)
-                  }
-                  onStatusChange={(status) =>
-                    updateModuleStatus("adds", status)
-                  }
                 />
               </aside>
             </section>
@@ -739,10 +447,6 @@ const ForgeDashboardPage: NextPage = () => {
                   </div>
                 </div>
               </div>
-              <BandStatusSummary
-                label="Player Insight Core"
-                status={playerInsightStatus}
-              />
 
               <div className={styles.insightBandLayout}>
                 <div className={`${styles.panel} ${styles.sustainabilityPanel}`}>
@@ -752,12 +456,6 @@ const ForgeDashboardPage: NextPage = () => {
                     ownershipMin={insightOwnershipMin}
                     ownershipMax={insightOwnershipMax}
                     returnToHref={dashboardReturnHref}
-                    onStatusChange={(status) =>
-                      updateModuleStatus("sustainability", status)
-                    }
-                    onResolvedDate={(resolvedDate) =>
-                      updateModuleResolvedDate("sustainability", resolvedDate)
-                    }
                   />
                 </div>
                 <div className={`${styles.panel} ${styles.hotColdPanel}`}>
@@ -768,12 +466,6 @@ const ForgeDashboardPage: NextPage = () => {
                     ownershipMin={insightOwnershipMin}
                     ownershipMax={insightOwnershipMax}
                     returnToHref={dashboardReturnHref}
-                    onResolvedDate={(resolvedDate) =>
-                      updateModuleResolvedDate("hotCold", resolvedDate)
-                    }
-                    onStatusChange={(status) =>
-                      updateModuleStatus("hotCold", status)
-                    }
                   />
                 </div>
               </div>

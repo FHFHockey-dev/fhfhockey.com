@@ -1058,9 +1058,8 @@
 .topRailPanel {
   min-height: 0;
   align-self: start;
-  max-height: min(680px, calc(100vh - 260px));
-  overflow: auto;
-  @include v.custom-scrollbar(v.$primary-color, v.$background-medium);
+  max-height: none;
+  overflow: visible;
 }
 
 .teamPowerPanel {
@@ -1126,9 +1125,11 @@
 }
 
 .topAddsControls {
-  display: grid;
-  gap: 0.55rem;
-  padding: 0.55rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem;
   border-radius: v.$border-radius-md;
   border: 1px solid rgba(v.$border-secondary, 0.62);
   background:
@@ -1219,17 +1220,7 @@
 }
 
 .topAddsOwnershipControls {
-  display: grid;
-  gap: v.$space-xs;
-  padding: 0.55rem;
-  border-radius: v.$border-radius-md;
-  border: 1px solid rgba(v.$primary-color, 0.42);
-  background:
-    linear-gradient(135deg, rgba(v.$primary-color, 0.1), rgba(v.$color-white, 0)),
-    rgba(v.$background-dark, 0.72);
-  box-shadow:
-    inset 0 1px 0 rgba(v.$color-white, 0.04),
-    0 0 0 1px rgba(v.$primary-color, 0.08);
+  display: none;
 }
 
 .topAddsOwnershipHeader {
@@ -1433,7 +1424,7 @@
 .topAddsCandidateMetrics,
 .topAddsCandidateReasons {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: v.$space-xs;
   font-size: v.$font-size-xs;
   color: v.$text-secondary;
@@ -1489,11 +1480,7 @@
 }
 
 .compactChartNote {
-  color: rgba(v.$text-secondary, 0.92);
-  font-size: 0.68rem;
-  line-height: 1.35;
-  font-family: v.$font-family-numbers, monospace;
-  text-align: right;
+  display: none;
 }
 
 .topAddsCandidateReasons {
@@ -1649,11 +1636,7 @@
 }
 
 .panelStateStale {
-  border-color: rgba(v.$warning-color, 0.42);
-  background:
-    linear-gradient(90deg, rgba(v.$warning-color, 0.12), rgba(v.$warning-color, 0.03)),
-    rgba(v.$background-dark, 0.58);
-  color: v.$warning-color;
+  display: none;
 }
 
 .teamPowerControls {
