@@ -161,6 +161,36 @@ export default async function handler(
       }
     }
     if (error) throw error;
+    if ((!data || data.length === 0) && season) {
+      let fallback = supabase
+        .from("yahoo_players")
+        .select(selectWithMeta)
+        .limit(2500);
+      let r3: any = await fallback;
+      data = (r3.data as any[] | null) ?? null;
+      error = r3.error;
+
+      if (error) {
+        const msg = String(error.message || "").toLowerCase();
+        const missingCols =
+          msg.includes("display_position") ||
+          msg.includes("editorial_team_full_name") ||
+          msg.includes("editorial_team_abbreviation") ||
+          msg.includes("eligible_positions") ||
+          msg.includes("uniform_number") ||
+          msg.includes("column") ||
+          msg.includes("does not exist");
+        if (missingCols) {
+          r3 = await supabase
+            .from("yahoo_players")
+            .select(selectMinimal)
+            .limit(2500);
+          data = (r3.data as any[] | null) ?? null;
+          error = r3.error;
+        }
+      }
+      if (error) throw error;
+    }
     const rows: any[] = Array.isArray(data) ? (data as any[]) : [];
     const yahooToNhl = await fetchYahooToNhlMap(
       supabase,
