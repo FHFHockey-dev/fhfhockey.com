@@ -57,29 +57,29 @@ function buildNavItems({
     },
     {
       key: "startChart",
-      label: "Start Chart",
+      label: "Goalie Starts",
       href: buildForgeHref("/start-chart", sharedContext)
     },
     {
       key: "trends",
-      label: "Trends",
+      label: "Player Trends",
       href: buildForgeHref("/trends", sharedContext)
     },
     {
       key: "teamDetail",
       label: "Team Detail",
       href: teamHref ?? null,
-      disabledTitle: "Team detail becomes active once a team context is selected."
+      disabledTitle: "Pick a team to open its detail page."
     },
     {
       key: "playerDetail",
       label: "Player Detail",
       href: playerHref ?? null,
-      disabledTitle: "Player detail becomes active once a player context is selected."
+      disabledTitle: "Pick a player to open his detail page."
     },
     {
       key: "landing",
-      label: "FORGE Landing",
+      label: "Quick Read",
       href: buildForgeHref("/FORGE", sharedContext)
     }
   ];

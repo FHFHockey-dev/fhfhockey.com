@@ -152,7 +152,7 @@ export default function TeamPowerCard({
         } else {
           setCtpiRows([]);
           setCtpiGeneratedAt(null);
-          warnings.push("CTPI pulse unavailable");
+          warnings.push("Team trend unavailable");
         }
 
         if (startChartResult.status === "fulfilled") {
@@ -164,7 +164,7 @@ export default function TeamPowerCard({
           setSlateGames([]);
           setSlateDateUsed(null);
           setSlateServingMessage(null);
-          warnings.push("Slate matchup context unavailable");
+          warnings.push("Game matchup unavailable");
         }
 
         setSecondaryWarnings(warnings);
@@ -174,7 +174,7 @@ export default function TeamPowerCard({
         const message =
           fetchError instanceof Error
             ? fetchError.message
-            : "Failed to load team context.";
+            : "Failed to load team ratings.";
         setError(message);
         setRows([]);
         setCtpiRows([]);
@@ -251,10 +251,10 @@ export default function TeamPowerCard({
         !loading && !error
           ? [
               isStale && resolvedDate ? `Team ratings using ${resolvedDate}` : null,
-              ctpiDate && ctpiDate !== date ? `CTPI pulse from ${ctpiDate}` : null,
+              ctpiDate && ctpiDate !== date ? `Team trend from ${ctpiDate}` : null,
               slateServingMessage ??
                 (slateDateUsed && slateDateUsed !== date
-                  ? `Slate matchup context from ${slateDateUsed}`
+                  ? `Game matchups from ${slateDateUsed}`
                   : null),
               secondaryWarnings.length > 0 ? secondaryWarnings.join(" • ") : null
             ]
@@ -277,19 +277,19 @@ export default function TeamPowerCard({
   ]);
 
   return (
-    <article className={styles.teamPowerCard} aria-label="Team rating blend rankings">
+    <article className={styles.teamPowerCard} aria-label="Team power rankings">
       <header className={styles.panelHeader}>
-        <h3 className={styles.panelTitle}>Team Rating Blend</h3>
+        <h3 className={styles.panelTitle}>Team Power Snapshot</h3>
         <span className={styles.panelMeta}>
-          Ratings {metaDate} • CTPI {ctpiDate ?? "--"} • Slate {slateDateUsed ?? date}
+          Ratings {metaDate} • Form {ctpiDate ?? "--"} • Games {slateDateUsed ?? date}
         </span>
       </header>
 
-      {loading && <p className={styles.panelState}>Loading team rating blend...</p>}
+      {loading && <p className={styles.panelState}>Loading team power...</p>}
       {!loading && error && <p className={styles.panelState}>Error: {error}</p>}
 
       {!loading && !error && rankedRows.length === 0 && (
-        <p className={styles.panelState}>No team rating-blend data for this date.</p>
+        <p className={styles.panelState}>No team power data for this date.</p>
       )}
 
       {!loading && !error && rankedRows.length > 0 && (
@@ -301,7 +301,7 @@ export default function TeamPowerCard({
           )}
           {allTrendsFlat && (
             <p className={`${styles.panelState} ${styles.panelStateStale}`}>
-              Trend feed is currently flat in the source snapshot; all teams are reporting 0.0.
+              Recent form is flat in the source data right now.
             </p>
           )}
           {(secondaryWarnings.length > 0 ||
@@ -309,9 +309,9 @@ export default function TeamPowerCard({
             (slateDateUsed != null && slateDateUsed !== date)) && (
             <p className={`${styles.panelState} ${styles.panelStateStale}`}>
               {[
-                ctpiDate && ctpiDate !== date ? `CTPI pulse from ${ctpiDate}` : null,
+                ctpiDate && ctpiDate !== date ? `Team form from ${ctpiDate}` : null,
                 slateDateUsed && slateDateUsed !== date
-                  ? `Slate matchup context from ${slateDateUsed}`
+                  ? `Game matchups from ${slateDateUsed}`
                   : null,
                 ...secondaryWarnings
               ]
@@ -329,7 +329,7 @@ export default function TeamPowerCard({
                   }`}
                   onClick={() => setView("top")}
                 >
-                  Top {TEAM_POWER_ROWS_PER_VIEW}
+                  Best {TEAM_POWER_ROWS_PER_VIEW}
                 </button>
                 <button
                   type="button"
@@ -338,18 +338,18 @@ export default function TeamPowerCard({
                   }`}
                   onClick={() => setView("bottom")}
                 >
-                  Bottom {TEAM_POWER_ROWS_PER_VIEW}
+                  Weakest {TEAM_POWER_ROWS_PER_VIEW}
                 </button>
               </div>
               <span className={styles.teamPowerControlMeta}>
-                {view === "top" ? "Highest-rated teams" : "Lowest-rated teams"}
+                {view === "top" ? "Strongest teams today" : "Teams to attack today"}
               </span>
             </div>
           )}
           {spotlightRows.length > 0 && (
             <div className={styles.teamContextSpotlightGrid}>
               <p className={styles.compactChartNote}>
-                Compact CTPI traces stay on the lead spotlight card only.
+                Top cards show the teams with the clearest fantasy environment.
               </p>
               {spotlightRows.map((row, index) => {
                 const sparkPoints = buildSparkline(
@@ -392,17 +392,17 @@ export default function TeamPowerCard({
                       </span>
                     </div>
                     <div className={styles.teamContextSpotlightStats}>
-                      <span>Blend {formatPower(row.powerScore)}</span>
-                      <span>CTPI {formatCtpi(row.ctpiScore)}</span>
+                      <span>Power {formatPower(row.powerScore)}</span>
+                      <span>Form {formatCtpi(row.ctpiScore)}</span>
                       <span>
-                        Matchup{" "}
+                        Tonight{" "}
                         <strong className={`${styles.trendChip} ${matchupClass}`}>
                           {row.matchup ? `${row.matchup.opponentAbbr} ${formatMatchupEdge(row.matchup.edge)}` : "Off slate"}
                         </strong>
                       </span>
                       <span>
-                        Variance{" "}
-                        <strong>{row.varianceFlag === 1 ? "High" : "Stable"}</strong>
+                        Stability{" "}
+                        <strong>{row.varianceFlag === 1 ? "Shaky" : "Stable"}</strong>
                       </span>
                     </div>
                     <div className={styles.teamContextSpotlightFooter}>
@@ -424,7 +424,7 @@ export default function TeamPowerCard({
                           />
                         </svg>
                       ) : (
-                        <span className={styles.compactChartNote}>Text-first card</span>
+                        <span className={styles.compactChartNote}>No chart needed</span>
                       )}
                     </div>
                   </Link>
@@ -438,16 +438,16 @@ export default function TeamPowerCard({
                 <tr>
                   <th scope="col">#</th>
                   <th scope="col">Team</th>
-                  <th scope="col">Blend</th>
-                  <th scope="col">CTPI</th>
-                  <th scope="col">Matchup</th>
-                  <th scope="col">Off</th>
-                  <th scope="col">Def</th>
-                  <th scope="col">Pace</th>
-                  <th scope="col">Trend</th>
+                  <th scope="col">Power</th>
+                  <th scope="col">Form</th>
+                  <th scope="col">Tonight</th>
+                  <th scope="col">Offense</th>
+                  <th scope="col">Defense</th>
+                  <th scope="col">Speed</th>
+                  <th scope="col">Recent</th>
                   <th scope="col">Finish</th>
                   <th scope="col">Goalie</th>
-                  <th scope="col">Var</th>
+                  <th scope="col">Stability</th>
                 </tr>
               </thead>
               <tbody>
@@ -504,7 +504,7 @@ export default function TeamPowerCard({
                       </td>
                       <td>{formatMetric(row.finishingRating)}</td>
                       <td>{formatMetric(row.goalieRating)}</td>
-                      <td>{row.varianceFlag === 1 ? "High" : "Stable"}</td>
+                      <td>{row.varianceFlag === 1 ? "Shaky" : "Stable"}</td>
                     </tr>
                   );
                 })}

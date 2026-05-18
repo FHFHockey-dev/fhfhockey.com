@@ -91,14 +91,14 @@ const getReasonText = (
   if (!driver) {
     return direction === "sustainable"
       ? "Low luck pressure keeps this rise closer to skill-backed than spike-backed."
-      : "Luck pressure is elevated even without one dominant component spike.";
+      : "The hot streak looks boosted even without one obvious reason.";
   }
 
   if (direction === "sustainable") {
-    return `${driver.key} is not driving the signal beyond expectation, keeping the profile steadier.`;
+    return `${driver.key} is not unusually inflated, so the rise looks steadier.`;
   }
 
-  return `${driver.key} is the biggest inflation source inside this heater right now.`;
+  return `${driver.key} is the biggest reason this hot streak may cool off.`;
 };
 
 const toneClassForPressure = (pressure: number) => {
@@ -174,7 +174,7 @@ export default function SustainabilityCard({
         const message =
           fetchError instanceof Error
             ? fetchError.message
-            : "Failed to load sustainability data.";
+            : "Failed to load trust and fade data.";
         setError(message);
         setHotRows([]);
         setColdRows([]);
@@ -242,7 +242,7 @@ export default function SustainabilityCard({
   );
   const ownershipCoverageWarning =
     ownershipFilterActive && missingOwnershipCount > 0
-      ? `Ownership coverage incomplete for ${missingOwnershipCount} sustainability candidates; rows with Own -- remain visible outside the normal ownership band.`
+      ? `Ownership is missing for ${missingOwnershipCount} players, so those rows stay visible even if they fall outside the range.`
       : null;
   const withinOwnershipBand = (playerId: number) => {
     if (!ownershipFilterActive) return true;
@@ -252,11 +252,17 @@ export default function SustainabilityCard({
   };
 
   const sustainableRows = useMemo(
-    () => coldRows.filter((row) => withinOwnershipBand(row.player_id)).slice(0, 5),
+    () =>
+      coldRows
+        .filter((row) => row.player_name && withinOwnershipBand(row.player_id))
+        .slice(0, 5),
     [coldRows, ownershipMap, ownershipMax, ownershipMin, ownershipWarning]
   );
   const riskRows = useMemo(
-    () => hotRows.filter((row) => withinOwnershipBand(row.player_id)).slice(0, 5),
+    () =>
+      hotRows
+        .filter((row) => row.player_name && withinOwnershipBand(row.player_id))
+        .slice(0, 5),
     [hotRows, ownershipMap, ownershipMax, ownershipMin, ownershipWarning]
   );
   const isStale = Boolean(snapshotDate && snapshotDate !== date);
@@ -275,7 +281,7 @@ export default function SustainabilityCard({
       staleMessage:
         !loading && !ownershipLoading && !error
           ? [
-              isStale && snapshotDate ? `Sustainability using ${snapshotDate}` : null,
+              isStale && snapshotDate ? `Trust and fade data from ${snapshotDate}` : null,
               servingMessage,
               ownershipWarning,
               ownershipCoverageWarning
@@ -305,17 +311,17 @@ export default function SustainabilityCard({
   ]);
 
   return (
-    <article className={styles.sustainabilityCard} aria-label="Sustainable versus unsustainable performances">
+    <article className={styles.sustainabilityCard} aria-label="Trust and fade player calls">
       <header className={styles.panelHeader}>
-        <h3 className={styles.panelTitle}>Sustainable vs Unsustainable</h3>
-        <span className={styles.panelMeta}>L10 • {metaSnapshot}</span>
+        <h3 className={styles.panelTitle}>Trust Or Fade</h3>
+        <span className={styles.panelMeta}>Last 10 • {metaSnapshot}</span>
       </header>
 
-      {(loading || ownershipLoading) && <p className={styles.panelState}>Loading sustainability signals...</p>}
+      {(loading || ownershipLoading) && <p className={styles.panelState}>Loading trust calls...</p>}
       {!loading && error && <p className={styles.panelState}>Error: {error}</p>}
 
       {!loading && !error && sustainableRows.length === 0 && riskRows.length === 0 && (
-        <p className={styles.panelState}>No sustainability signals available for this date.</p>
+        <p className={styles.panelState}>No trust or fade calls available for this date.</p>
       )}
       {!loading && !error && isStale && (
         <p className={`${styles.panelState} ${styles.panelStateStale}`}>
@@ -325,7 +331,7 @@ export default function SustainabilityCard({
 
       {!loading && !error && (sustainableRows.length > 0 || riskRows.length > 0) && (
         <>
-          <div className={styles.insightLegend} aria-label="Sustainability signal guide">
+          <div className={styles.insightLegend} aria-label="Trust and fade guide">
             <div className={styles.insightLegendItem}>
               <span className={`${styles.susBadge} ${styles.susBadgeStable}`}>
                 {trustworthyGuide.label}
@@ -340,16 +346,16 @@ export default function SustainabilityCard({
             </div>
             <div className={styles.insightLegendItem}>
               <span className={`${styles.insightContextPill} ${styles.insightRoutePill}`}>
-                Trends drill-in
+                Player detail
               </span>
               <span className={styles.insightLegendText}>
-                Sustainability rows open the Trends player page where the longer signal history lives.
+                Open a row for the longer trend history behind the call.
               </span>
             </div>
           </div>
           <div className={styles.sustainabilityColumns}>
             <div className={styles.susColumn}>
-              <p className={styles.susColumnTitle}>Sustainable Risers</p>
+              <p className={styles.susColumnTitle}>Trust These Risers</p>
               <ul className={styles.susList}>
                 {sustainableRows.map((row, index) => {
                   const band = describeSustainabilityBand(row, "sustainable");
@@ -375,10 +381,10 @@ export default function SustainabilityCard({
                           <span className={styles.susBadge}>
                             5D {formatOwnershipDelta(ownershipContext?.delta)}
                           </span>
-                          <span className={styles.susBadge}>S {formatScore(row.s_100)}</span>
+                          <span className={styles.susBadge}>Trust {formatScore(row.s_100)}</span>
                           {row.guardrail_state === "degraded" && (
                             <span className={`${styles.susBadge} ${styles.susBadgeRisk}`}>
-                              Guarded
+                              Check role
                             </span>
                           )}
                         </div>
@@ -386,7 +392,7 @@ export default function SustainabilityCard({
                           {row.player_name ?? `Player ${row.player_id}`}
                         </span>
                         <span className={styles.susMeta}>
-                          Luck pressure {formatSigned(row.luck_pressure)}
+                          Luck risk {formatSigned(row.luck_pressure)}
                         </span>
                         <div className={styles.insightContextBlock}>
                           <span
@@ -419,7 +425,7 @@ export default function SustainabilityCard({
                           {getReasonText(row, "sustainable")}
                         </span>
                         <span className={styles.insightRouteNote}>
-                          Opens in Trends player detail
+                          Open trend detail
                         </span>
                       </Link>
                     </li>
@@ -429,7 +435,7 @@ export default function SustainabilityCard({
             </div>
 
             <div className={styles.susColumn}>
-              <p className={styles.susColumnTitle}>Unsustainable Heaters</p>
+              <p className={styles.susColumnTitle}>Fade These Heaters</p>
               <ul className={styles.susList}>
                 {riskRows.map((row, index) => {
                   const band = describeSustainabilityBand(row, "unsustainable");
@@ -455,10 +461,10 @@ export default function SustainabilityCard({
                           <span className={styles.susBadge}>
                             5D {formatOwnershipDelta(ownershipContext?.delta)}
                           </span>
-                          <span className={styles.susBadge}>S {formatScore(row.s_100)}</span>
+                          <span className={styles.susBadge}>Trust {formatScore(row.s_100)}</span>
                           {row.guardrail_state === "degraded" && (
                             <span className={`${styles.susBadge} ${styles.susBadgeRisk}`}>
-                              Guarded
+                              Check role
                             </span>
                           )}
                         </div>
@@ -466,7 +472,7 @@ export default function SustainabilityCard({
                           {row.player_name ?? `Player ${row.player_id}`}
                         </span>
                         <span className={styles.susMeta}>
-                          Luck pressure {formatSigned(row.luck_pressure)}
+                          Luck risk {formatSigned(row.luck_pressure)}
                         </span>
                         <div className={styles.insightContextBlock}>
                           <span
@@ -499,7 +505,7 @@ export default function SustainabilityCard({
                           {getReasonText(row, "unsustainable")}
                         </span>
                         <span className={styles.insightRouteNote}>
-                          Opens in Trends player detail
+                          Open trend detail
                         </span>
                       </Link>
                     </li>

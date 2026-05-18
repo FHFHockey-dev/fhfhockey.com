@@ -19,37 +19,37 @@ export const describeSustainabilityBand = (
   if (direction === "sustainable") {
     if (tone === "stable") {
       return {
-        title: "Inside expected band",
-        detail: "Recent output is still living near the player’s expected conversion band."
+        title: "Looks repeatable",
+        detail: "Recent scoring is close to what the player usually earns from his chances."
       };
     }
     if (tone === "watch") {
       return {
-        title: "Leaning above baseline",
-        detail: "The run is still mostly supportable, but it is starting to press the expected band."
+        title: "Mostly believable",
+        detail: "The run still has support, but it is getting a little hot."
       };
     }
     return {
-      title: "Still above expected band",
-      detail: "The player is producing through a hotter-than-usual band even if the rise still has skill support."
+      title: "Good, but hot",
+      detail: "The rise has some skill support, but the scoring pace is still hotter than normal."
     };
   }
 
   if (tone === "stable") {
     return {
-      title: "Watch for cooling",
-      detail: "The heater is not wildly outside baseline yet, but the signal still needs skepticism."
+      title: "Could cool",
+      detail: "The streak is not extreme yet, but it still deserves skepticism."
     };
   }
   if (tone === "watch") {
     return {
-      title: "Pressing the upper band",
-      detail: "The current heater is moving beyond the player’s normal expected range."
+      title: "Running hot",
+      detail: "The current streak is moving beyond the player’s normal range."
     };
   }
   return {
-    title: "Outside expected band",
-    detail: "This run is materially above the expected band and most exposed to regression."
+    title: "Likely to cool",
+    detail: "This run is well above normal and most exposed to a drop."
   };
 };
 
@@ -60,37 +60,37 @@ export const describeTrendBand = (
   if (mode === "movement") {
     if (score >= 2) {
       return {
-        title: "Acceleration band",
-        detail: "Recent percentile rank is climbing fast enough to matter in the short term."
+        title: "Moving up fast",
+        detail: "Recent form is climbing quickly enough to matter short term."
       };
     }
     if (score <= -2) {
       return {
-        title: "Slide band",
-        detail: "Recent percentile rank is falling fast enough to flag a real short-term drop."
+        title: "Dropping fast",
+        detail: "Recent form is falling quickly enough to flag a short-term problem."
       };
     }
     return {
-      title: "Low movement band",
-      detail: "Recent ranking movement is present, but not yet forceful."
+      title: "Small move",
+      detail: "Recent movement is present, but not strong yet."
     };
   }
 
   if (score >= 75) {
     return {
       title: "Hot stretch",
-      detail: "Current percentile profile is sitting well above the middle of the pool."
+      detail: "Current form is well above the middle of the player pool."
     };
   }
   if (score <= 25) {
     return {
       title: "Cold stretch",
-      detail: "Current percentile profile is lagging the pool and needs rebound evidence."
+      detail: "Current form is lagging the pool and needs rebound evidence."
     };
   }
   return {
-    title: "Middle band",
-    detail: "Current percentile profile is active, but not strongly hot or cold."
+    title: "Middle range",
+    detail: "Current form is active, but not strongly hot or cold."
   };
 };
 
@@ -98,19 +98,19 @@ export const describePlayerSignalFrame = (frame: PlayerSignalFrame) => {
   if (frame === "trustworthy") {
     return {
       label: "Trustworthy",
-      detail: "Skill-backed rise with manageable luck pressure."
+      detail: "The rise looks supported by more than luck."
     };
   }
 
   if (frame === "overheated") {
     return {
       label: "Overheated",
-      detail: "Regression-prone heater pushing beyond the expected band."
+      detail: "The hot streak may cool off."
     };
   }
 
   return {
     label: "Short-term only",
-    detail: "Momentum and movement cues are useful, but they are not trust verdicts."
+    detail: "Useful for quick decisions, but not a long-term verdict."
   };
 };

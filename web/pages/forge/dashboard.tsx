@@ -229,7 +229,7 @@ const ForgeDashboardPage: NextPage = () => {
         <title>Forge Dashboard | FHFHockey</title>
         <meta
           name="description"
-          content="Single-screen fantasy hockey command center for team power, sustainability, streaks, and goalie decisions."
+          content="Fantasy hockey dashboard for waiver adds, team strength, player trust, and goalie start decisions."
         />
       </Head>
 
@@ -247,23 +247,23 @@ const ForgeDashboardPage: NextPage = () => {
                       ref={expansionTextRef}
                       className={styles.titleExpansionText}
                     >
-                      Forecasting &amp; Outcome Reconciliation Game Engine
+                      Fantasy Hockey Forecast Engine
                     </span>
                   </p>
                 </div>
                 <p className={styles.subtitle}>
-                  Slate-first fantasy command surface for adds, sustainability,
-                  and goalie risk.
+                  Plain-English picks for waivers, lineup calls, team strength,
+                  and goalie starts.
                 </p>
               </div>
             </header>
 
             <section
               className={styles.controlsSurface}
-              aria-label="Forge dashboard command surface"
+              aria-label="Forge dashboard filters"
             >
               <div className={styles.contextBlock}>
-                <p className={styles.contextEyebrow}>Active Context</p>
+                <p className={styles.contextEyebrow}>Your View</p>
                 <div className={styles.contextHeadingRow}>
                   <h2 className={styles.contextTitle}>{formattedDateContext}</h2>
                   <span className={styles.contextTimezone}>ET</span>
@@ -276,12 +276,11 @@ const ForgeDashboardPage: NextPage = () => {
                     Position: {selectedPositionLabel}
                   </span>
                   <span className={styles.contextChip}>
-                    Slate: {selectedDate === todayEt ? "Tonight" : "Custom Date"}
+                    Games: {selectedDate === todayEt ? "Tonight" : "Custom Date"}
                   </span>
                 </div>
                 <p className={styles.contextSummary}>
-                  Date resets the slate. Team narrows matchup surfaces.
-                  Position remaps the skater insight and add modules.
+                  Pick a date, team, or position to narrow every card below.
                 </p>
               </div>
 
@@ -369,7 +368,7 @@ const ForgeDashboardPage: NextPage = () => {
 
             <section
               className={styles.controlCenter}
-              aria-label="Forge dashboard control center"
+              aria-label="Forge dashboard"
             >
               <section
                 className={styles.dashboardStage}
@@ -408,17 +407,21 @@ const ForgeDashboardPage: NextPage = () => {
               >
                 <div className={styles.playerInsightHeader}>
                   <div className={styles.bandIntro}>
-                    <p className={styles.bandEyebrow}>Player Insight Core</p>
+                    <p className={styles.bandEyebrow}>Player Calls</p>
                     <h2 className={styles.bandTitle}>
-                      Trust, Regression, and Momentum
+                      Who To Trust, Who To Fade, Who Is Moving
                     </h2>
+                    <p className={styles.bandSummary}>
+                      These cards translate recent form into fantasy actions:
+                      add, hold, stream, or be careful.
+                    </p>
                   </div>
                   <div
                     className={styles.ownershipControlCard}
                     aria-label="Player insight ownership filter"
                   >
                     <p className={styles.ownershipControlEyebrow}>
-                      Insight Ownership Band
+                      Show Players Owned In
                     </p>
                     <p className={styles.ownershipControlValue}>
                       {insightOwnershipMin}% - {insightOwnershipMax}%

@@ -3284,6 +3284,63 @@
   }
 }
 
+@media (min-width: 1280px) and (min-height: 821px) and (max-height: 980px) {
+  .page {
+    height: auto;
+    min-height: calc(100dvh - 130px);
+    overflow: visible;
+  }
+
+  .container,
+  .shell {
+    height: auto;
+    overflow: visible;
+  }
+
+  .controlCenter {
+    grid-template-columns:
+      minmax(0, 1.18fr)
+      minmax(390px, 0.86fr)
+      minmax(330px, 0.76fr);
+    grid-template-rows: minmax(420px, auto) auto;
+    grid-template-areas:
+      "team focus adds"
+      "insights insights adds";
+    align-items: start;
+    overflow: visible;
+  }
+
+  .dashboardStage {
+    display: contents;
+  }
+
+  .teamPowerPanel,
+  .focusPanel,
+  .topRailPanel,
+  .playerInsightBand,
+  .sustainabilityPanel,
+  .hotColdPanel {
+    overflow: visible;
+  }
+
+  .teamPowerCard,
+  .slateStripCard,
+  .goalieRiskCard,
+  .topAddsRailCard,
+  .sustainabilityCard,
+  .hotColdCard {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .topAddsList,
+  .sustainabilityColumns,
+  .hotColdColumns,
+  .insightBandLayout {
+    overflow: visible;
+  }
+}
+
 @keyframes forgeBandPulse {
   0% {
     background-position: 0 0;

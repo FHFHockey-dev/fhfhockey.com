@@ -50,9 +50,9 @@ const getConfidenceClass = (tier: string | null | undefined) => {
 
 const getVolatilityLabel = (value: number | null | undefined) => {
   if (value == null || Number.isNaN(value)) return "Unknown";
-  if (value <= 0.95) return "Stable";
+  if (value <= 0.95) return "Steady";
   if (value <= 1.2) return "Moderate";
-  return "Volatile";
+  return "Shaky";
 };
 
 const getRiskLabel = (value: number | null | undefined) => {
@@ -80,7 +80,7 @@ const buildConfidenceDrivers = (row: NormalizedGoalieProjectionRow): string[] =>
   }
   if (selection?.opponent_context_adjustment_pct != null) {
     drivers.push(
-      `Opp ctx ${formatSignedPercent(selection.opponent_context_adjustment_pct)}`
+      `Matchup ${formatSignedPercent(selection.opponent_context_adjustment_pct)}`
     );
   }
 
@@ -174,9 +174,9 @@ export default function GoalieRiskCard({
   }, [asOfDate, date, error, loading, onStatusChange, servingMessage, tableRows.length]);
 
   return (
-    <article className={styles.goalieRiskCard} aria-label="Goalie start and risk projections">
+    <article className={styles.goalieRiskCard} aria-label="Goalie start calls and risk">
       <header className={styles.panelHeader}>
-        <h3 className={styles.panelTitle}>Goalie Start + Risk</h3>
+        <h3 className={styles.panelTitle}>Goalie Start Calls</h3>
         <span className={styles.panelMeta}>As of {asOfDate ?? date}</span>
       </header>
 
@@ -202,7 +202,7 @@ export default function GoalieRiskCard({
             <div className={styles.insightLegendItem}>
               <span className={`${styles.susBadge} ${styles.susBadgeStable}`}>Starter trust</span>
               <span className={styles.insightLegendText}>
-                Lead cards combine starter probability, matchup context, volatility, and model recommendation.
+                Use these calls to decide who is safer to start and who carries more blow-up risk.
               </span>
             </div>
           </div>
@@ -239,7 +239,7 @@ export default function GoalieRiskCard({
                       <span className={`${styles.susBadge} ${getConfidenceClass(row.confidence_tier)}`}>
                         Confidence {row.confidence_tier ?? "--"}
                       </span>
-                      <span className={styles.susBadge}>Vol {getVolatilityLabel(row.volatility_index)}</span>
+                      <span className={styles.susBadge}>Stability {getVolatilityLabel(row.volatility_index)}</span>
                       <span className={styles.susBadge}>
                         Call {row.recommendation ?? "--"}
                       </span>
@@ -248,8 +248,8 @@ export default function GoalieRiskCard({
                     <div className={styles.goalieSpotlightMetrics}>
                       <span>Starter <strong>{formatPercent(row.starter_probability)}</strong></span>
                       <span>Win <strong>{formatPercent(row.proj_win_prob)}</strong></span>
-                      <span>SO <strong>{formatPercent(row.proj_shutout_prob, 1)}</strong></span>
-                      <span>Sv% <strong>{formatPercent(row.modeled_save_pct, 1)}</strong></span>
+                      <span>Shutout <strong>{formatPercent(row.proj_shutout_prob, 1)}</strong></span>
+                      <span>Save% <strong>{formatPercent(row.modeled_save_pct, 1)}</strong></span>
                     </div>
 
                     {drivers.length > 0 && (
@@ -275,9 +275,9 @@ export default function GoalieRiskCard({
                   <th scope="col">Matchup</th>
                   <th scope="col">Start</th>
                   <th scope="col">Win</th>
-                  <th scope="col">SO</th>
-                  <th scope="col">Vol</th>
-                  <th scope="col">Risk</th>
+                  <th scope="col">Shutout</th>
+                  <th scope="col">Stability</th>
+                  <th scope="col">Blow-up</th>
                   <th scope="col">Call</th>
                 </tr>
               </thead>
