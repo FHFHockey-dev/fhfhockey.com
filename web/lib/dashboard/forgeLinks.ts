@@ -4,6 +4,7 @@ type ForgeRouteContext = {
   date?: string | null;
   mode?: "tonight" | "week" | null;
   resolvedDate?: string | null;
+  slate?: "main" | "all" | null;
   team?: string | null;
   position?: "all" | "f" | "d" | "g" | null;
   origin?: string | null;
@@ -60,6 +61,10 @@ export function buildForgeHref(
     params.set("resolvedDate", context.resolvedDate);
   }
 
+  if (context.slate === "main" || context.slate === "all") {
+    params.set("slate", context.slate);
+  }
+
   if (context.team) {
     params.set("team", context.team);
   }
@@ -113,6 +118,26 @@ export function parseForgePositionParam(
 ): "all" | "f" | "d" | "g" | null {
   const candidate = Array.isArray(value) ? value[0] : value;
   if (candidate === "all" || candidate === "f" || candidate === "d" || candidate === "g") {
+    return candidate;
+  }
+  return null;
+}
+
+export function parseForgeModeParam(
+  value: string | string[] | undefined
+): "tonight" | "week" | null {
+  const candidate = Array.isArray(value) ? value[0] : value;
+  if (candidate === "tonight" || candidate === "week") {
+    return candidate;
+  }
+  return null;
+}
+
+export function parseForgeSlateParam(
+  value: string | string[] | undefined
+): "main" | "all" | null {
+  const candidate = Array.isArray(value) ? value[0] : value;
+  if (candidate === "main" || candidate === "all") {
     return candidate;
   }
   return null;

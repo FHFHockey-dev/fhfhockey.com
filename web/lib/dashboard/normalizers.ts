@@ -260,6 +260,9 @@ export type NormalizedGoalieProjectionRow = {
   opponent_team_abbreviation: string | null;
   opponent_team_name: string;
   starter_probability: number | null;
+  proj_shots_against: number | null;
+  proj_saves: number | null;
+  proj_goals_allowed: number | null;
   proj_win_prob: number | null;
   proj_shutout_prob: number | null;
   modeled_save_pct: number | null;
@@ -331,6 +334,9 @@ export const normalizeGoalieResponse = (payload: unknown): NormalizedGoalieRespo
         opponent_team_abbreviation: toStringOrNull(row.opponent_team_abbreviation),
         opponent_team_name: toStringOrNull(row.opponent_team_name) ?? "",
         starter_probability: toFiniteNumber(row.starter_probability),
+        proj_shots_against: toFiniteNumber(row.proj_shots_against),
+        proj_saves: toFiniteNumber(row.proj_saves),
+        proj_goals_allowed: toFiniteNumber(row.proj_goals_allowed),
         proj_win_prob: toFiniteNumber(row.proj_win_prob),
         proj_shutout_prob: toFiniteNumber(row.proj_shutout_prob),
         modeled_save_pct: toFiniteNumber(row.modeled_save_pct),

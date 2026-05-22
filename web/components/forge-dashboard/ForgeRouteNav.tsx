@@ -4,6 +4,7 @@ import { buildForgeHref } from "lib/dashboard/forgeLinks";
 import styles from "styles/ForgeDashboard.module.scss";
 
 type ForgeRouteKey =
+  | "commandCenter"
   | "dashboard"
   | "startChart"
   | "trends"
@@ -50,6 +51,11 @@ function buildNavItems({
   } as const;
 
   return [
+    {
+      key: "commandCenter",
+      label: "Command Center",
+      href: buildForgeHref("/forge/command-center", sharedContext)
+    },
     {
       key: "dashboard",
       label: "Dashboard",
