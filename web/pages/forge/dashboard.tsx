@@ -19,152 +19,6 @@ import {
 } from "lib/dashboard/forgeLinks";
 import { teamsInfo } from "lib/teamsInfo";
 
-type DashboardModuleStatus = {
-  loading: boolean;
-  error: string | null;
-  staleMessage: string | null;
-  empty: boolean;
-};
-
-type DashboardModuleKey =
-  | "slate"
-  | "adds"
-  | "teamPower"
-  | "sustainability"
-  | "hotCold"
-  | "goalie";
-
-type DashboardBandKey = "top" | "team" | "insight" | "goalie";
-
-const EMPTY_MODULE_STATUS: DashboardModuleStatus = {
-  loading: true,
-  error: null,
-  staleMessage: null,
-  empty: false
-};
-
-const STATIC_MODULE_STATUS: DashboardModuleStatus = {
-  loading: false,
-  error: null,
-  staleMessage: null,
-  empty: false
-};
-
-const MODULE_LABELS: Record<DashboardModuleKey, string> = {
-  slate: "Slate",
-  adds: "Top Adds",
-  teamPower: "Team Context",
-  sustainability: "Sustainability",
-  hotCold: "Trend Movement",
-  goalie: "Goalies"
-};
-
-const MOBILE_ACCORDION_QUERY = "(max-width: 767px)";
-const DEFAULT_MOBILE_BAND_STATE: Record<DashboardBandKey, boolean> = {
-  top: true,
-  team: false,
-  insight: true,
-  goalie: true
-};
-
-function BandStatusSummary({
-  status,
-  label
-}: {
-  status: {
-    loadingCount: number;
-    errors: Array<{ module: string; message: string }>;
-    staleMessages: string[];
-    allEmpty: boolean;
-  };
-  label: string;
-}) {
-  const hasAlerts =
-    status.loadingCount > 0 ||
-    status.errors.length > 0 ||
-    status.staleMessages.length > 0 ||
-    status.allEmpty;
-
-  if (!hasAlerts) return null;
-
-  return (
-    <div
-      className={styles.bandStatusStack}
-      aria-live="polite"
-      aria-label={`${label} status`}
-    >
-      <div className={styles.bandStatusPills}>
-        {status.loadingCount > 0 && (
-          <span
-            className={`${styles.bandStatusPill} ${styles.bandStatusPillLoading}`}
-          >
-            Loading {status.loadingCount}
-          </span>
-        )}
-        {status.errors.length > 0 && (
-          <span
-            className={`${styles.bandStatusPill} ${styles.bandStatusPillError}`}
-          >
-            Error {status.errors.length}
-          </span>
-        )}
-        {status.staleMessages.length > 0 && (
-          <span
-            className={`${styles.bandStatusPill} ${styles.bandStatusPillStale}`}
-          >
-            Stale {status.staleMessages.length}
-          </span>
-        )}
-        {status.allEmpty && (
-          <span
-            className={`${styles.bandStatusPill} ${styles.bandStatusPillEmpty}`}
-          >
-            Empty
-          </span>
-        )}
-      </div>
-
-      {status.loadingCount > 0 && (
-        <div className={styles.bandLoadingShell} aria-hidden="true">
-          <span className={styles.bandLoadingBarLg} />
-          <span className={styles.bandLoadingBarSm} />
-        </div>
-      )}
-
-      {status.errors.length > 0 && (
-        <div className={`${styles.bandAlert} ${styles.bandAlertError}`}>
-          {status.errors.map((entry) => (
-            <p key={`${entry.module}-${entry.message}`} className={styles.bandAlertLine}>
-              {entry.module}: {entry.message}
-            </p>
-          ))}
-        </div>
-      )}
-
-      {status.staleMessages.length > 0 && (
-        <div className={`${styles.bandAlert} ${styles.bandAlertStale}`}>
-          {status.staleMessages.map((message) => (
-            <p key={message} className={styles.bandAlertLine}>
-              {message}
-            </p>
-          ))}
-        </div>
-      )}
-
-      {status.allEmpty &&
-        status.loadingCount === 0 &&
-        status.errors.length === 0 && (
-          <div className={`${styles.bandAlert} ${styles.bandAlertEmpty}`}>
-            <p className={styles.bandAlertLine}>
-              No {label.toLowerCase()} signals are available for the current
-              filters yet.
-            </p>
-          </div>
-        )}
-    </div>
-  );
-}
-
 const ForgeDashboardPage: NextPage = () => {
   const router = useRouter();
   const todayEt = useMemo(() => {
@@ -186,39 +40,10 @@ const ForgeDashboardPage: NextPage = () => {
   const [selectedPosition, setSelectedPosition] = useState<
     "all" | "f" | "d" | "g"
   >("all");
-  const [isMobileAccordionMode, setIsMobileAccordionMode] = useState(false);
-  const [mobileBandState, setMobileBandState] = useState<
-    Record<DashboardBandKey, boolean>
-  >(DEFAULT_MOBILE_BAND_STATE);
   const [insightOwnershipMin, setInsightOwnershipMin] = useState(25);
   const [insightOwnershipMax, setInsightOwnershipMax] = useState(50);
   const titleRef = useRef<HTMLHeadingElement | null>(null);
   const expansionTextRef = useRef<HTMLSpanElement | null>(null);
-  const [moduleResolvedDates, setModuleResolvedDates] = useState<{
-    adds: string | null;
-    teamPower: string | null;
-    sustainability: string | null;
-    hotCold: string | null;
-    goalie: string | null;
-    slate: string | null;
-  }>({
-    adds: null,
-    teamPower: null,
-    sustainability: null,
-    hotCold: null,
-    goalie: null,
-    slate: null
-  });
-  const [moduleStatuses, setModuleStatuses] = useState<
-    Record<DashboardModuleKey, DashboardModuleStatus>
-  >({
-    slate: EMPTY_MODULE_STATUS,
-    adds: STATIC_MODULE_STATUS,
-    teamPower: EMPTY_MODULE_STATUS,
-    sustainability: EMPTY_MODULE_STATUS,
-    hotCold: EMPTY_MODULE_STATUS,
-    goalie: EMPTY_MODULE_STATUS
-  });
   const teamOptions = useMemo(
     () =>
       Object.values(teamsInfo)
@@ -278,26 +103,6 @@ const ForgeDashboardPage: NextPage = () => {
       }),
     [selectedDate, selectedPosition, selectedTeam]
   );
-  const driftWarnings = useMemo(() => {
-    const labels: Record<keyof typeof moduleResolvedDates, string> = {
-      adds: "Top Adds",
-      teamPower: "Team Power",
-      sustainability: "Sustainability",
-      hotCold: "Trend Movement",
-      goalie: "Goalie Risk",
-      slate: "Slate Strip"
-    };
-
-    return Object.entries(moduleResolvedDates)
-      .filter(([, resolvedDate]) =>
-        Boolean(resolvedDate && resolvedDate !== selectedDate)
-      )
-      .map(([moduleKey, resolvedDate]) => ({
-        module: labels[moduleKey as keyof typeof moduleResolvedDates],
-        resolvedDate: resolvedDate as string
-      }));
-  }, [moduleResolvedDates, selectedDate]);
-
   useEffect(() => {
     if (!router.isReady) return;
     setSelectedDate((current) => (current === requestedDate ? current : requestedDate));
@@ -344,31 +149,6 @@ const ForgeDashboardPage: NextPage = () => {
   ]);
 
   useEffect(() => {
-    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
-      return undefined;
-    }
-
-    const mediaQuery = window.matchMedia(MOBILE_ACCORDION_QUERY);
-    const syncViewportState = (event?: MediaQueryListEvent) => {
-      setIsMobileAccordionMode(event?.matches ?? mediaQuery.matches);
-    };
-
-    syncViewportState();
-
-    if (typeof mediaQuery.addEventListener === "function") {
-      mediaQuery.addEventListener("change", syncViewportState);
-      return () => {
-        mediaQuery.removeEventListener("change", syncViewportState);
-      };
-    }
-
-    mediaQuery.addListener(syncViewportState);
-    return () => {
-      mediaQuery.removeListener(syncViewportState);
-    };
-  }, []);
-
-  useEffect(() => {
     const updateExpansionScale = () => {
       const titleEl = titleRef.current;
       const expansionEl = expansionTextRef.current;
@@ -403,19 +183,6 @@ const ForgeDashboardPage: NextPage = () => {
       window.removeEventListener("resize", updateExpansionScale);
     };
   }, []);
-
-  const updateModuleResolvedDate = (
-    moduleKey: keyof typeof moduleResolvedDates,
-    resolvedDate: string | null
-  ) => {
-    setModuleResolvedDates((current) => {
-      if (current[moduleKey] === resolvedDate) return current;
-      return {
-        ...current,
-        [moduleKey]: resolvedDate
-      };
-    });
-  };
 
   const handleDateChange = (event: ChangeEvent<HTMLInputElement>) => {
     setSelectedDate(event.target.value);
@@ -456,74 +223,13 @@ const ForgeDashboardPage: NextPage = () => {
     setInsightOwnershipMax(Math.max(nextValue, insightOwnershipMin));
   };
 
-  const updateModuleStatus = (
-    moduleKey: DashboardModuleKey,
-    status: DashboardModuleStatus
-  ) => {
-    setModuleStatuses((current) => {
-      const previous = current[moduleKey];
-      if (
-        previous.loading === status.loading &&
-        previous.error === status.error &&
-        previous.staleMessage === status.staleMessage &&
-        previous.empty === status.empty
-      ) {
-        return current;
-      }
-
-      return {
-        ...current,
-        [moduleKey]: status
-      };
-    });
-  };
-
-  const getBandStatus = (keys: DashboardModuleKey[]) => {
-    const statuses = keys.map((key) => ({
-      module: MODULE_LABELS[key],
-      ...moduleStatuses[key]
-    }));
-
-    return {
-      loadingCount: statuses.filter((status) => status.loading).length,
-      errors: statuses
-        .filter((status) => Boolean(status.error))
-        .map((status) => ({
-          module: status.module,
-          message: status.error as string
-        })),
-      staleMessages: statuses
-        .map((status) => status.staleMessage)
-        .filter((message): message is string => Boolean(message)),
-      allEmpty:
-        statuses.length > 0 &&
-        statuses.every(
-          (status) =>
-            !status.loading && !status.error && status.empty
-        )
-    };
-  };
-
-  const topBandStatus = getBandStatus(["slate", "adds"]);
-  const teamBandStatus = getBandStatus(["teamPower"]);
-  const playerInsightStatus = getBandStatus(["sustainability", "hotCold"]);
-  const goalieBandStatus = getBandStatus(["goalie"]);
-  const toggleBand = (bandKey: DashboardBandKey) => {
-    setMobileBandState((current) => ({
-      ...current,
-      [bandKey]: !current[bandKey]
-    }));
-  };
-  const isBandExpanded = (bandKey: DashboardBandKey) =>
-    !isMobileAccordionMode || mobileBandState[bandKey];
-
   return (
     <>
       <Head>
         <title>Forge Dashboard | FHFHockey</title>
         <meta
           name="description"
-          content="Single-screen fantasy hockey command center for team power, sustainability, streaks, and goalie decisions."
+          content="Fantasy hockey dashboard for waiver adds, team strength, player trust, and goalie start decisions."
         />
       </Head>
 
@@ -541,23 +247,23 @@ const ForgeDashboardPage: NextPage = () => {
                       ref={expansionTextRef}
                       className={styles.titleExpansionText}
                     >
-                      Forecasting &amp; Outcome Reconciliation Game Engine
+                      Fantasy Hockey Forecast Engine
                     </span>
                   </p>
                 </div>
                 <p className={styles.subtitle}>
-                  Slate-first fantasy command surface for adds, sustainability,
-                  and goalie risk.
+                  Plain-English picks for waivers, lineup calls, team strength,
+                  and goalie starts.
                 </p>
               </div>
             </header>
 
             <section
               className={styles.controlsSurface}
-              aria-label="Forge dashboard command surface"
+              aria-label="Forge dashboard filters"
             >
               <div className={styles.contextBlock}>
-                <p className={styles.contextEyebrow}>Active Context</p>
+                <p className={styles.contextEyebrow}>Your View</p>
                 <div className={styles.contextHeadingRow}>
                   <h2 className={styles.contextTitle}>{formattedDateContext}</h2>
                   <span className={styles.contextTimezone}>ET</span>
@@ -570,12 +276,11 @@ const ForgeDashboardPage: NextPage = () => {
                     Position: {selectedPositionLabel}
                   </span>
                   <span className={styles.contextChip}>
-                    Slate: {selectedDate === todayEt ? "Tonight" : "Custom Date"}
+                    Games: {selectedDate === todayEt ? "Tonight" : "Custom Date"}
                   </span>
                 </div>
                 <p className={styles.contextSummary}>
-                  Date resets the slate. Team narrows matchup surfaces.
-                  Position remaps the skater insight and add modules.
+                  Pick a date, team, or position to narrow every card below.
                 </p>
               </div>
 
@@ -661,193 +366,65 @@ const ForgeDashboardPage: NextPage = () => {
               </div>
             </section>
 
-            {driftWarnings.length > 0 && (
-              <section className={styles.driftBanner} aria-live="polite">
-                <strong>Data date mismatch:</strong>{" "}
-                {driftWarnings
-                  .map((entry) => `${entry.module} using ${entry.resolvedDate}`)
-                  .join(" • ")}
+            <section
+              className={styles.controlCenter}
+              aria-label="Forge dashboard"
+            >
+              <section
+                className={styles.dashboardStage}
+                aria-label="Forge dashboard overview"
+              >
+                <div className={`${styles.panel} ${styles.teamPowerPanel}`}>
+                  <TeamPowerCard
+                    date={selectedDate}
+                    team={selectedTeam}
+                  />
+                </div>
+
+                <div className={`${styles.panel} ${styles.focusPanel}`}>
+                  <SlateStripCard
+                    date={selectedDate}
+                    team={selectedTeam}
+                  />
+                  <GoalieRiskCard
+                    date={selectedDate}
+                    team={selectedTeam}
+                  />
+                </div>
+
+                <aside className={`${styles.panel} ${styles.topRailPanel}`}>
+                  <TopAddsRail
+                    date={selectedDate}
+                    position={selectedPosition}
+                    positionLabel={selectedPositionLabel}
+                  />
+                </aside>
               </section>
-            )}
 
-            <section
-              className={styles.sectionBand}
-              aria-label="Top command band"
-            >
-              <div className={styles.bandHeader}>
-                <div className={styles.bandHeaderMain}>
+              <section
+                className={styles.playerInsightBand}
+                aria-label="Player insight core"
+              >
+                <div className={styles.playerInsightHeader}>
                   <div className={styles.bandIntro}>
-                    <p className={styles.bandEyebrow}>Band 1</p>
-                    <h2 className={styles.bandTitle}>Tonight&apos;s Slate</h2>
+                    <p className={styles.bandEyebrow}>Player Calls</p>
+                    <h2 className={styles.bandTitle}>
+                      Who To Trust, Who To Fade, Who Is Moving
+                    </h2>
                     <p className={styles.bandSummary}>
-                      The slate stays anchored beside the opportunity rail.
+                      These cards translate recent form into fantasy actions:
+                      add, hold, stream, or be careful.
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    className={styles.bandMobileToggle}
-                    aria-expanded={isBandExpanded("top")}
-                    aria-controls="forge-band-top"
-                    onClick={() => toggleBand("top")}
-                  >
-                    {isBandExpanded("top") ? "Collapse" : "Expand"}
-                    <span className={styles.bandMobileToggleLabel}>
-                      Tonight&apos;s Slate
-                    </span>
-                  </button>
-                </div>
-              </div>
-              <div
-                id="forge-band-top"
-                className={styles.sectionBandBody}
-                hidden={!isBandExpanded("top")}
-              >
-                <BandStatusSummary
-                  label="Tonight's Slate"
-                  status={topBandStatus}
-                />
-
-                <div className={styles.topBandLayout}>
-                  <div className={`${styles.panel} ${styles.topHeroPanel}`}>
-                    <SlateStripCard
-                      date={selectedDate}
-                      team={selectedTeam}
-                      onStatusChange={(status) =>
-                        updateModuleStatus("slate", status)
-                      }
-                      onResolvedDate={(resolvedDate) =>
-                        updateModuleResolvedDate("slate", resolvedDate)
-                      }
-                    />
-                  </div>
-
-                  <aside className={`${styles.panel} ${styles.topRailPanel}`}>
-                    <div className={styles.railHeader}>
-                      <p className={styles.railEyebrow}>Right Rail</p>
-                      <h3 className={styles.railTitle}>Top Player Adds</h3>
-                      <p className={styles.railSummary}>
-                        Ownership-aware adds stay beside the slate so the first
-                        scan surfaces matchups and pickups together.
-                      </p>
-                    </div>
-                    <TopAddsRail
-                      date={selectedDate}
-                      position={selectedPosition}
-                      positionLabel={selectedPositionLabel}
-                      onResolvedDate={(resolvedDate) =>
-                        updateModuleResolvedDate("adds", resolvedDate)
-                      }
-                      onStatusChange={(status) =>
-                        updateModuleStatus("adds", status)
-                      }
-                    />
-                  </aside>
-                </div>
-              </div>
-            </section>
-
-            <section
-              className={styles.sectionBand}
-              aria-label="Team trend context band"
-            >
-              <div className={styles.bandHeader}>
-                <div className={styles.bandHeaderMain}>
-                  <div className={styles.bandIntro}>
-                    <p className={styles.bandEyebrow}>Band 2</p>
-                    <h2 className={styles.bandTitle}>Team Trend Context</h2>
-                    <p className={styles.bandSummary}>
-                      Team strength, momentum, and matchup context frame the
-                      player opportunity view.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    className={styles.bandMobileToggle}
-                    aria-expanded={isBandExpanded("team")}
-                    aria-controls="forge-band-team"
-                    onClick={() => toggleBand("team")}
-                  >
-                    {isBandExpanded("team") ? "Collapse" : "Expand"}
-                    <span className={styles.bandMobileToggleLabel}>
-                      Team Trend Context
-                    </span>
-                  </button>
-                </div>
-              </div>
-              <div
-                id="forge-band-team"
-                className={styles.sectionBandBody}
-                hidden={!isBandExpanded("team")}
-              >
-                <BandStatusSummary
-                  label="Team Trend Context"
-                  status={teamBandStatus}
-                />
-
-                <div className={styles.contextBandLayout}>
-                  <div className={`${styles.panel} ${styles.teamPowerPanel}`}>
-                    <TeamPowerCard
-                      date={selectedDate}
-                      team={selectedTeam}
-                      onStatusChange={(status) =>
-                        updateModuleStatus("teamPower", status)
-                      }
-                      onResolvedDate={(resolvedDate) =>
-                        updateModuleResolvedDate("teamPower", resolvedDate)
-                      }
-                    />
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <section
-              className={styles.sectionBand}
-              aria-label="Player insight core"
-            >
-              <div className={styles.bandHeader}>
-                <div className={styles.bandHeaderMain}>
-                  <div className={styles.bandIntro}>
-                    <p className={styles.bandEyebrow}>Band 3</p>
-                    <h2 className={styles.bandTitle}>Player Insight Core</h2>
-                    <p className={styles.bandSummary}>
-                      Sustainability and short-term movement live together here,
-                      while staying separate signal families.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    className={styles.bandMobileToggle}
-                    aria-expanded={isBandExpanded("insight")}
-                    aria-controls="forge-band-insight"
-                    onClick={() => toggleBand("insight")}
-                  >
-                    {isBandExpanded("insight") ? "Collapse" : "Expand"}
-                    <span className={styles.bandMobileToggleLabel}>
-                      Player Insight Core
-                    </span>
-                  </button>
-                </div>
-              </div>
-              <div
-                id="forge-band-insight"
-                className={styles.sectionBandBody}
-                hidden={!isBandExpanded("insight")}
-              >
-                <div className={styles.bandInlineControlRow}>
                   <div
                     className={styles.ownershipControlCard}
                     aria-label="Player insight ownership filter"
                   >
                     <p className={styles.ownershipControlEyebrow}>
-                      Insight Ownership Band
+                      Show Players Owned In
                     </p>
                     <p className={styles.ownershipControlValue}>
                       {insightOwnershipMin}% - {insightOwnershipMax}%
-                    </p>
-                    <p className={styles.contextSummary}>
-                      Applies only to the insight cards. Top Adds keeps its own
-                      band in the rail.
                     </p>
                     <div className={styles.ownershipControlRows}>
                       <label className={styles.ownershipControlItem}>
@@ -877,10 +454,6 @@ const ForgeDashboardPage: NextPage = () => {
                     </div>
                   </div>
                 </div>
-                <BandStatusSummary
-                  label="Player Insight Core"
-                  status={playerInsightStatus}
-                />
 
                 <div className={styles.insightBandLayout}>
                   <div className={`${styles.panel} ${styles.sustainabilityPanel}`}>
@@ -890,12 +463,6 @@ const ForgeDashboardPage: NextPage = () => {
                       ownershipMin={insightOwnershipMin}
                       ownershipMax={insightOwnershipMax}
                       returnToHref={dashboardReturnHref}
-                      onStatusChange={(status) =>
-                        updateModuleStatus("sustainability", status)
-                      }
-                      onResolvedDate={(resolvedDate) =>
-                        updateModuleResolvedDate("sustainability", resolvedDate)
-                      }
                     />
                   </div>
                   <div className={`${styles.panel} ${styles.hotColdPanel}`}>
@@ -906,71 +473,10 @@ const ForgeDashboardPage: NextPage = () => {
                       ownershipMin={insightOwnershipMin}
                       ownershipMax={insightOwnershipMax}
                       returnToHref={dashboardReturnHref}
-                      onResolvedDate={(resolvedDate) =>
-                        updateModuleResolvedDate("hotCold", resolvedDate)
-                      }
-                      onStatusChange={(status) =>
-                        updateModuleStatus("hotCold", status)
-                      }
                     />
                   </div>
                 </div>
-              </div>
-            </section>
-
-            <section
-              className={styles.sectionBand}
-              aria-label="Goalie and risk band"
-            >
-              <div className={styles.bandHeader}>
-                <div className={styles.bandHeaderMain}>
-                  <div className={styles.bandIntro}>
-                    <p className={styles.bandEyebrow}>Band 4</p>
-                    <h2 className={styles.bandTitle}>Goalie and Risk</h2>
-                    <p className={styles.bandSummary}>
-                      High-leverage goalie calls stay visible as their own
-                      decision band.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    className={styles.bandMobileToggle}
-                    aria-expanded={isBandExpanded("goalie")}
-                    aria-controls="forge-band-goalie"
-                    onClick={() => toggleBand("goalie")}
-                  >
-                    {isBandExpanded("goalie") ? "Collapse" : "Expand"}
-                    <span className={styles.bandMobileToggleLabel}>
-                      Goalie and Risk
-                    </span>
-                  </button>
-                </div>
-              </div>
-              <div
-                id="forge-band-goalie"
-                className={styles.sectionBandBody}
-                hidden={!isBandExpanded("goalie")}
-              >
-                <BandStatusSummary
-                  label="Goalie and Risk"
-                  status={goalieBandStatus}
-                />
-
-                <div className={styles.goalieBandLayout}>
-                  <div className={`${styles.panel} ${styles.goaliePanel}`}>
-                    <GoalieRiskCard
-                      date={selectedDate}
-                      team={selectedTeam}
-                      onStatusChange={(status) =>
-                        updateModuleStatus("goalie", status)
-                      }
-                      onResolvedDate={(resolvedDate) =>
-                        updateModuleResolvedDate("goalie", resolvedDate)
-                      }
-                    />
-                  </div>
-                </div>
-              </div>
+              </section>
             </section>
           </div>
         </div>

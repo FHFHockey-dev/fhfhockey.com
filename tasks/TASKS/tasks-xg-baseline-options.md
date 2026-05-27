@@ -46,13 +46,13 @@
   - [x] 1.3 Record an explicit verdict of `release gate satisfied` or `release gate not satisfied` for training use, with dated rationale and approved exceptions if any.
   - [x] 1.4 If the gate is not satisfied, stop baseline-model work and create remediation tasks before proceeding.
 
-- [ ] 2.0 If and only if the release gate is satisfied, define the first training dataset contract
+- [x] 2.0 If and only if the release gate is satisfied, define the first training dataset contract
   - [x] 2.1 Lock the canonical training-row grain, label definition, and season split strategy for the first xG baseline comparison.
   - [x] 2.2 Define which shot-feature columns are mandatory, optional, or excluded for baseline training.
   - [x] 2.3 Specify dataset lineage requirements, including `parser_version`, `strength_version`, `feature_version`, and source commit SHA.
   - [x] 2.4 Decide whether training datasets will be generated on demand or stored in a versioned table/file artifact.
 
-- [ ] 3.0 Build the shared baseline-training harness before fitting any model family
+- [x] 3.0 Build the shared baseline-training harness before fitting any model family
   - [x] 3.1 Create a reproducible baseline-training entrypoint that reads validated shot-feature rows and outputs versioned model artifacts.
   - [x] 3.2 Add configuration for feature selection, data splits, and seed control so baseline runs are repeatable.
   - [x] 3.3 Add evaluation output for log loss, Brier score, calibration, and split-specific reporting.

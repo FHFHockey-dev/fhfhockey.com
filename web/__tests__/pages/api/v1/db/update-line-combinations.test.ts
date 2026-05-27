@@ -185,6 +185,52 @@ describe("/api/v1/db/update-line-combinations", () => {
     });
   });
 
+  it("classifies recent unavailable NHL feeds as skipped instead of cron failures", async () => {
+    updateLineCombosMock.mockRejectedValue(
+      new Error("Failed to fetch or parse boxscore for game 301: Gamecenter boxscore HTTP 404: Not Found")
+    );
+    const req: any = {
+      method: "GET",
+      query: {
+        count: "2"
+      },
+      mockSupabase: {
+        from: vi.fn((table: string) => {
+          if (table === "games") {
+            return {
+              select: vi.fn(() =>
+                createGamesQueryBuilder([
+                  { id: 301, startTime: "2026-05-09T01:00:00.000Z" },
+                  { id: 302, startTime: "2026-05-08T01:00:00.000Z" }
+                ])
+              )
+            };
+          }
+
+          if (table === "lineCombinations") {
+            return {
+              select: vi.fn(() => createLineCombosQueryBuilder([]))
+            };
+          }
+
+          throw new Error(`Unexpected table ${table}`);
+        })
+      }
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      success: true,
+      repairMode: "recent_gap",
+      status: "skipped_external_feed_unavailable",
+      processed: 0,
+      skipped: 2
+    });
+  });
+
   it("requires explicit scope for historical backfill", async () => {
     const req: any = {
       method: "GET",

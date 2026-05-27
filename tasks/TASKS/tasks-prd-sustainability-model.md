@@ -22,8 +22,26 @@
 - `web/lib/sustainability/bandService.ts` - Now consumes the shared date helper instead of keeping duplicate inline normalization logic.
 - `web/lib/sustainability/features.ts` - Typed feature-engineering helpers for rates, z-scores, weighting, shrinkage, usage/context deltas, opponent adjustments, count-distribution rollups, and 50%/80% forecast band + calibration utilities.
 - `web/lib/sustainability/features.test.ts` - Unit tests covering rate helpers, z-score calculations, rolling-window weighting, empirical-Bayes shrinkage, usage/context deltas, opponent adjustment factors, count-distribution rollups, and forecast band calibration.
+- `web/lib/sustainability/bandCalculator.ts` - Sustainability band and score guardrail calculations used by dashboard/API outputs.
+- `web/lib/sustainability/bandCalculator.test.ts` - Regression tests for band calculation and score guardrail behavior.
+- `web/lib/sustainability/backtest.ts` - Lightweight sustainability baseline comparison helper.
+- `web/lib/sustainability/backtest.test.ts` - Unit tests for sustainability backtest baseline comparisons.
+- `web/lib/sustainability/dataJoins.ts` - Data-join/runtime shaping helpers for sustainability inputs.
+- `web/lib/sustainability/dataJoins.test.ts` - Regression tests for sustainability data-join behavior.
+- `web/lib/sustainability/featureDictionary.ts` - Canonical feature dictionary for sustainability inputs and explanations.
+- `web/lib/sustainability/featureDictionary.test.ts` - Tests covering feature dictionary completeness and lookup behavior.
+- `web/lib/sustainability/guardrails.ts` - Guardrail helpers that prevent invalid sustainability outputs from being served as normal predictions.
+- `web/lib/sustainability/guardrails.test.ts` - Unit tests for sustainability guardrail states and warnings.
+- `web/lib/sustainability/runtimeContract.ts` - Runtime contract for sustainability payloads served to dashboard/API consumers.
+- `web/lib/sustainability/runtimeContract.test.ts` - Unit tests for sustainability runtime contract shape and defaults.
+- `web/lib/sustainability/windows.ts` - Sustainability window constants and helpers.
 - `web/lib/sustainability/model.ts` - Modeling helpers for Hot/Normal/Cold target labeling, future logistic scoring, and projection output shaping.
 - `web/lib/sustainability/model.test.ts` - Unit tests covering canonical sustainability training-target label generation.
+- `web/lib/sustainability/score.ts` - Canonical TypeScript sustainability score builder and flag logic.
+- `web/pages/api/v1/sustainability/rebuild-priors.ts` - Sustainability priors rebuild route with bounded runtime/error handling.
+- `web/pages/api/v1/sustainability/trends.ts` - Sustainability trends serving route with guarded runtime output.
+- `web/components/forge-dashboard/SustainabilityCard.tsx` - Dashboard card for guarded sustainability output.
+- `functions/lib/sustainability/README.md` - Notes for the non-canonical Python sustainability path and current TypeScript ownership.
 - `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts` - Rolling metrics backfill/upsert pipeline; now also persists explicit season, 3-year, and career averages alongside existing cumulative and rolling-window outputs.
 - `web/lib/supabase/Upserts/rollingMetricAggregation.ts` - Shared rolling ratio accumulator utilities for percentage and composite metrics such as shooting%, IPP, zone-start%, and PDO.
 - `web/lib/supabase/Upserts/rollingMetricAggregation.test.ts` - Unit tests for rolling ratio aggregation and historical ratio snapshots.
@@ -58,13 +76,13 @@
 
 ## Tasks
 
-- [ ] 1.0 Data access and joins
-  - [ ] 1.1 Implement SQL/queries to fetch rolling windows (3/5/10/25/50) from WGO and NST per player and date.
+- [x] 1.0 Data access and joins
+  - [x] 1.1 Implement SQL/queries to fetch rolling windows (3/5/10/25/50) from WGO and NST per player and date.
     - [x] 1.1.1 Add SQL files in `web/sql/sustainability/` to compute last-N games by player for WGO per-game stats (goals, assists, shots, pp_points, hits, blocks, pim, plus_minus, fow/fo%, toi splits).
     - [x] 1.1.2 Add SQL files for NST gamelogs (counts/rates) to compute last-N windows for ixG, iCF/FF/SF, rush_attempts, rebounds_created, first/second assists.
   - [x] 1.1.3 Implement a canonical game_date selection (prefer WGO date; map NST `date_scraped` to game_date).
   - [x] 1.1.4 Expose typed data access helpers in `web/lib/sustainability/data.ts` with input: {playerId, snapshotDate, windows[]}.
-  - [ ] 1.2 Implement career all-strengths baselines from NST seasonlong views and/or seasonal tables.
+  - [x] 1.2 Implement career all-strengths baselines from NST seasonlong views and/or seasonal tables.
     - [x] 1.2.1 Create queries to aggregate multi-season career baselines from `nst_seasonlong_as_counts` and `nst_seasonlong_as_rates`.
     - [x] 1.2.2 Implement per-60 baselines and variance estimates (for priors) in `data.ts`.
     - [x] 1.2.3 Add fallback for rookies/limited data: shrink toward league-average by position.
@@ -79,7 +97,7 @@
   - [x] 1.5.1 Persist season-to-date, 3-year, and career averages for every metric tracked in `rolling_player_game_metrics`.
   - [x] 1.5.2 Expose additional aggregates in Supabase schema/types and surface them to trend visualizations.
 
-- [ ] 2.0 Feature engineering
+- [x] 2.0 Feature engineering
 - [x] 2.1 Compute per-60 rates and recent-vs-career deltas/z-scores for surface and underlying metrics.
     - [x] 2.1.1 Implement per-60 and per-game rate calculators in `features.ts` with type-safe inputs.
     - [x] 2.1.2 Compute z-scores: (recent_rate - career_rate) / career_sd; store alongside raw.
@@ -95,7 +113,7 @@
     - [x] 2.4.2 Produce per-game Poisson/NegBin approximations for counting stats; simulate or analytically sum to 5/10.
     - [x] 2.4.3 Emit bands (50%/80%) via quantiles; verify calibration with small backtest.
 
-- [ ] 3.0 Modeling and outputs
+- [x] 3.0 Modeling and outputs
   - [x] 3.1 Implement baseline probability model (logistic) for Hot/Normal/Cold using feature set; add calibration.
     - [x] 3.1.1 Define Hot/Cold labels from historical z-scores or quantiles; create training target.
     - [x] 3.1.2 Fit logistic regression; add isotonic/Platt calibration; return class probabilities.
@@ -103,7 +121,7 @@
   - [x] 3.2 Convert rate expectations to counting projections for goals/assists/points/shots/pp_points/hits/blocks/pim/+/−/fow/fo%.
     - [x] 3.2.1 Compute expected per-game counts from rate×TOI; aggregate to 5/10; include variance.
     - [x] 3.2.2 Handle FO% as a rate with appropriate aggregation and bands.
-  - [ ] 3.3 Compute Sustainability Score (0–100) and generate over/underperforming flags.
+  - [x] 3.3 Compute Sustainability Score (0–100) and generate over/underperforming flags.
     - [x] 3.3.1 Define score formula combining calibrated streak probs and deltas vs baseline.
     - [x] 3.3.2 Set thresholds for over/underperforming; expose flags.
   - [x] 3.4 Generate explanations (top drivers); simple importance first.

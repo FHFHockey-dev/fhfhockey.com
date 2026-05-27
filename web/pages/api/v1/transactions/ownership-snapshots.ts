@@ -6,6 +6,15 @@ type SnapshotRow = {
   ownership: number | null;
 };
 
+type PlayerIdResolution = {
+  requestedId: string;
+  yahooPlayerId: string;
+};
+
+type SupabaseQueryClient = {
+  from(table: string): any;
+};
+
 function resolveKey(): { url: string; key: string } {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   if (!url) throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL");
@@ -50,6 +59,92 @@ const resolveOwnership = (row: Record<string, unknown>): number | null => {
   return fallback != null && Number.isFinite(fallback) ? fallback : null;
 };
 
+function getLatestTimelineDate(row: Record<string, unknown>): string | null {
+  const timeline = Array.isArray(row.ownership_timeline)
+    ? (row.ownership_timeline as Array<{ date?: unknown }>)
+    : [];
+  const latestPoint = timeline[timeline.length - 1];
+  return typeof latestPoint?.date === "string" ? latestPoint.date : null;
+}
+
+async function resolveYahooPlayerIds(
+  supabase: SupabaseQueryClient,
+  playerIds: string[]
+): Promise<PlayerIdResolution[]> {
+  const { data, error } = await supabase
+    .from("yahoo_nhl_player_map_mat")
+    .select("nhl_player_id, yahoo_player_id")
+    .in("nhl_player_id", playerIds);
+
+  if (error) throw error;
+
+  const byNhlId = new Map<string, string>();
+  (data ?? []).forEach((row: any) => {
+    const nhlPlayerId = row?.nhl_player_id != null ? String(row.nhl_player_id) : null;
+    const yahooPlayerId =
+      row?.yahoo_player_id != null ? String(row.yahoo_player_id) : null;
+    if (nhlPlayerId && yahooPlayerId) byNhlId.set(nhlPlayerId, yahooPlayerId);
+  });
+
+  const unresolvedIds = playerIds.filter((playerId) => !byNhlId.has(playerId));
+  if (unresolvedIds.length > 0) {
+    const { data: players, error: playersError } = await supabase
+      .from("players")
+      .select("id, fullName")
+      .in("id", unresolvedIds.map(Number));
+    if (playersError) throw playersError;
+
+    const namesById = new Map<string, string>();
+    (players ?? []).forEach((row: any) => {
+      const id = row?.id != null ? String(row.id) : null;
+      const name = typeof row?.fullName === "string" ? row.fullName.trim() : "";
+      if (id && name) namesById.set(id, name);
+    });
+
+    const names = Array.from(new Set(namesById.values()));
+    if (names.length > 0) {
+      const { data: yahooRows, error: yahooError } = await supabase
+        .from("yahoo_players")
+        .select("player_id, full_name, player_name, ownership_timeline, season")
+        .in("full_name", names)
+        .limit(Math.max(names.length * 3, 20));
+      if (yahooError) throw yahooError;
+
+      const yahooByName = new Map<string, Record<string, unknown>>();
+      (yahooRows ?? []).forEach((row: any) => {
+        const name =
+          typeof row?.full_name === "string"
+            ? row.full_name.trim()
+            : typeof row?.player_name === "string"
+              ? row.player_name.trim()
+              : "";
+        if (!name) return;
+
+        const existing = yahooByName.get(name);
+        const existingTimelineDate = existing ? getLatestTimelineDate(existing) : null;
+        const nextTimelineDate = getLatestTimelineDate(row);
+        if (
+          !existing ||
+          (nextTimelineDate &&
+            (!existingTimelineDate || nextTimelineDate > existingTimelineDate))
+        ) {
+          yahooByName.set(name, row);
+        }
+      });
+
+      namesById.forEach((name, nhlId) => {
+        const yahooPlayerId = yahooByName.get(name)?.player_id;
+        if (yahooPlayerId != null) byNhlId.set(nhlId, String(yahooPlayerId));
+      });
+    }
+  }
+
+  return playerIds.map((requestedId) => ({
+    requestedId,
+    yahooPlayerId: byNhlId.get(requestedId) ?? requestedId
+  }));
+}
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
@@ -70,19 +165,33 @@ export default async function handler(
     const supabase = createClient(url, key, {
       auth: { persistSession: false }
     });
+    const idResolution = await resolveYahooPlayerIds(supabase, playerIds);
+    const yahooPlayerIds = Array.from(
+      new Set(idResolution.map((entry) => entry.yahooPlayerId))
+    );
 
     let query = supabase
       .from("yahoo_players")
       .select("player_id, percent_ownership, ownership_timeline, season")
-      .in("player_id", playerIds)
-      .limit(Math.max(playerIds.length * 2, 50));
+      .in("player_id", yahooPlayerIds)
+      .limit(Math.max(yahooPlayerIds.length * 2, 50));
 
     if (season && Number.isFinite(season)) {
       query = query.eq("season", season);
     }
 
-    const { data, error } = await query;
+    let { data, error } = await query;
     if (error) throw error;
+    if ((!data || data.length === 0) && season && Number.isFinite(season)) {
+      const fallback = await supabase
+        .from("yahoo_players")
+        .select("player_id, percent_ownership, ownership_timeline, season")
+        .in("player_id", yahooPlayerIds)
+        .limit(Math.max(yahooPlayerIds.length * 2, 50));
+      data = fallback.data;
+      error = fallback.error;
+      if (error) throw error;
+    }
 
     const rows = Array.isArray(data) ? (data as Array<Record<string, unknown>>) : [];
     const byPlayer = new Map<string, Record<string, unknown>>();
@@ -91,17 +200,28 @@ export default async function handler(
       const playerId = typeof row.player_id === "string" ? row.player_id : null;
       if (!playerId) return;
       const existing = byPlayer.get(playerId);
+      const existingTimelineDate = existing ? getLatestTimelineDate(existing) : null;
+      const nextTimelineDate = getLatestTimelineDate(row);
+      if (
+        !existing ||
+        (nextTimelineDate && (!existingTimelineDate || nextTimelineDate > existingTimelineDate))
+      ) {
+        byPlayer.set(playerId, row);
+        return;
+      }
       const existingSeason =
         existing && typeof existing.season === "number" ? existing.season : -Infinity;
       const nextSeason = typeof row.season === "number" ? row.season : -Infinity;
-      if (!existing || nextSeason >= existingSeason) {
+      if (!existingTimelineDate && !nextTimelineDate && nextSeason >= existingSeason) {
         byPlayer.set(playerId, row);
       }
     });
 
-    const players: SnapshotRow[] = playerIds.map((playerId) => ({
-      playerId: Number(playerId),
-      ownership: byPlayer.has(playerId) ? resolveOwnership(byPlayer.get(playerId)!) : null
+    const players: SnapshotRow[] = idResolution.map((entry) => ({
+      playerId: Number(entry.requestedId),
+      ownership: byPlayer.has(entry.yahooPlayerId)
+        ? resolveOwnership(byPlayer.get(entry.yahooPlayerId)!)
+        : null
     }));
 
     res.setHeader(

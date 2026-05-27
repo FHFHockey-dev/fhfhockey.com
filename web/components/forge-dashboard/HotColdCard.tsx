@@ -107,13 +107,13 @@ const buildReason = (
 ) => {
   if (mode === "movement") {
     return side === "positive"
-      ? `${row.movementDriver} is climbing fastest in the latest window. Short-term only.`
-      : `${row.movementDriver} is sliding hardest in the latest window. Short-term only.`;
+      ? `${row.movementDriver} is improving fastest right now. Short-term only.`
+      : `${row.movementDriver} is falling fastest right now. Short-term only.`;
   }
 
   return side === "positive"
-    ? `${row.currentDriver} keeps this player hot right now. Momentum only, not a trust grade.`
-    : `${row.currentDriver} is the clearest sign that this player is cold right now. Short-term read, not a long-term verdict.`;
+    ? `${row.currentDriver} is keeping this player hot right now.`
+    : `${row.currentDriver} is the clearest reason this player is cold right now.`;
 };
 
 const buildSparklinePath = (
@@ -360,7 +360,7 @@ export default function HotColdCard({
   );
   const ownershipCoverageWarning =
     ownershipFilterActive && missingOwnershipCount > 0
-      ? `Ownership coverage incomplete for ${missingOwnershipCount} trend candidates; rows with Own -- remain visible outside the normal ownership band.`
+      ? `Ownership is missing for ${missingOwnershipCount} players, so those rows stay visible even if they fall outside the range.`
       : null;
   const filteredRankedRows = useMemo(
     () =>
@@ -403,8 +403,8 @@ export default function HotColdCard({
 
   const leftRows = mode === "hotCold" ? hotRows : upRows;
   const rightRows = mode === "hotCold" ? coldRows : downRows;
-  const leftTitle = mode === "hotCold" ? "Hot Players" : "Trending Up";
-  const rightTitle = mode === "hotCold" ? "Cold Players" : "Trending Down";
+  const leftTitle = mode === "hotCold" ? "Heating Up" : "Moving Up";
+  const rightTitle = mode === "hotCold" ? "Cooling Off" : "Moving Down";
   const leftEmptyLabel =
     mode === "hotCold"
       ? "No hot players cleared the current ownership and position filter."
@@ -464,11 +464,11 @@ export default function HotColdCard({
   ]);
 
   return (
-    <article className={styles.hotColdCard} aria-label="Player hot and cold trend movement">
+    <article className={styles.hotColdCard} aria-label="Player form and movement">
       <header className={styles.panelHeader}>
-        <h3 className={styles.panelTitle}>Hot / Cold and Trend Movement</h3>
+        <h3 className={styles.panelTitle}>Who&apos;s Hot, Cold, Or Moving</h3>
         <span className={styles.panelMeta}>
-          Skater 5G • Scope {resolvedDate ?? date} • Updated {generatedDate}
+          Skaters • Last 5 • {resolvedDate ?? date}
         </span>
       </header>
 
@@ -480,7 +480,7 @@ export default function HotColdCard({
           className={`${styles.hotColdTab} ${mode === "hotCold" ? styles.hotColdTabActive : ""}`}
           onClick={() => setMode("hotCold")}
         >
-          Hot / Cold
+          Current Form
         </button>
         <button
           type="button"
@@ -489,7 +489,7 @@ export default function HotColdCard({
           className={`${styles.hotColdTab} ${mode === "movement" ? styles.hotColdTabActive : ""}`}
           onClick={() => setMode("movement")}
         >
-          Trending Up / Down
+          Fast Movers
         </button>
       </div>
 
@@ -497,7 +497,7 @@ export default function HotColdCard({
         <p className={styles.panelState}>Trend movement is available for skaters only.</p>
       )}
       {position !== "g" && (loading || ownershipLoading) && (
-        <p className={styles.panelState}>Loading player trend movement...</p>
+        <p className={styles.panelState}>Loading player form...</p>
       )}
       {position !== "g" && !loading && error && (
         <p className={styles.panelState}>Error: {error}</p>
@@ -519,7 +519,7 @@ export default function HotColdCard({
         !error &&
         !servingBlocked &&
         filteredRankedRows.length === 0 && (
-        <p className={styles.panelState}>No player trend movement available for this filter.</p>
+        <p className={styles.panelState}>No player form data available for this filter.</p>
       )}
       {position !== "g" &&
         !loading &&
@@ -533,8 +533,8 @@ export default function HotColdCard({
               ? `${servingMessage} Latest refresh timestamp: ${payload?.generatedAt ?? "unknown"}.`
               : servingMessage
             : resolvedDate != null && resolvedDate !== date
-              ? `Trend movement is using the latest available game-date scope (${resolvedDate}).`
-              : `Trend feed may be stale (last update ${payload?.generatedAt}).`}
+              ? `Player form is using the latest available game date (${resolvedDate}).`
+              : `Player form may be stale (last update ${payload?.generatedAt}).`}
         </p>
       )}
 
@@ -551,22 +551,22 @@ export default function HotColdCard({
             </span>
             <span className={styles.insightLegendText}>
               {mode === "hotCold"
-                ? "Hot and cold identify current form. They do not say whether the run is trustworthy."
-                : "Trending up and down track movement speed. They do not replace sustainability."
+                ? "Hot and cold show current form. Use Trust Or Fade to judge whether it can last."
+                : "Fast movers show who changed quickest. Use Trust Or Fade to judge whether it can last."
               }
             </span>
           </div>
           <div className={styles.insightLegendItem}>
             <span className={`${styles.insightContextPill} ${styles.insightRoutePill}`}>
-              Trends drill-in
+              Player detail
             </span>
             <span className={styles.insightLegendText}>
-              Player rows open the Trends player page for deeper movement history, not the FORGE opportunity detail page.
+              Open a row for the longer trend history behind the call.
             </span>
           </div>
         </div>
         <p className={styles.compactChartNote}>
-          Lead rows keep the only trend traces in each column.
+          The first row in each column includes a small form chart.
         </p>
         <div className={styles.hotColdColumns}>
           <div className={styles.hotColdColumn}>
@@ -615,7 +615,7 @@ export default function HotColdCard({
                           {buildReason(row, mode, "positive")}
                         </p>
                         <span className={styles.insightRouteNote}>
-                          Opens in Trends player detail
+                          Open trend detail
                         </span>
                       </div>
                       <div className={styles.hotColdStats}>
@@ -645,7 +645,7 @@ export default function HotColdCard({
                             />
                           </svg>
                         ) : (
-                          <span className={styles.compactChartNote}>Text-first row</span>
+                          <span className={styles.compactChartNote}>No chart needed</span>
                         )}
                       </div>
                     </Link>
@@ -701,7 +701,7 @@ export default function HotColdCard({
                           {buildReason(row, mode, "negative")}
                         </p>
                         <span className={styles.insightRouteNote}>
-                          Opens in Trends player detail
+                          Open trend detail
                         </span>
                       </div>
                       <div className={styles.hotColdStats}>
@@ -733,7 +733,7 @@ export default function HotColdCard({
                             />
                           </svg>
                         ) : (
-                          <span className={styles.compactChartNote}>Text-first row</span>
+                          <span className={styles.compactChartNote}>No chart needed</span>
                         )}
                       </div>
                     </Link>

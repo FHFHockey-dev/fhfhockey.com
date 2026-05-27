@@ -12,7 +12,7 @@ When styling or re-styling a page:
 2. Reuse the canonical element families defined here instead of inventing local one-off patterns.
 3. Use shared tokens from `web/styles/vars.scss` and shared panel helpers from `web/styles/_panel.scss`.
 4. If a required token does not exist, add it to the shared token source instead of hardcoding a new literal in the feature stylesheet.
-5. Prefer the structure, density, and reusable UI patterns from `DraftDashboard` over decorative effects.
+5. Prefer the structure, density, and reusable UI patterns from `DraftDashboard` and the Forge Dashboard command-center template over decorative effects.
 6. Treat gradients, glow, and blur as optional emphasis tools, not as default background treatments.
 7. Keep the documentation, shared tokens, sandbox page, and production implementation aligned.
 
@@ -23,7 +23,7 @@ When styling or re-styling a page:
 1. The site remains dark, dense, and analytics-focused.
 2. The site should feel like one connected product system, not a collection of individually styled pages.
 3. Readability, hierarchy, and data scanning take priority over atmosphere.
-4. `DraftDashboard` is the primary visual reference for reusable application UI unless a better canonical site example is explicitly documented.
+4. `DraftDashboard` is the primary visual reference for reusable application UI; Forge Dashboard should use it as the live command-center derivative unless a better canonical site example is explicitly documented.
 5. New page work should extend the system, not invent a parallel one.
 
 ### 2.2 Background And Surface Rules
@@ -98,7 +98,45 @@ FHFH should feel like a futuristic sports analytics terminal, but the implementa
   - restrained accent color usage
   - selective glow only where it improves emphasis
 
-### 4.2 What To Borrow From `DraftDashboard`
+### 4.2 Draft Dashboard Audit Findings
+
+`DraftDashboard` is the canonical internal-app reference because it behaves like a production workbench rather than a content page.
+
+Page anatomy:
+
+- One dark, full-height app canvas with compact edge padding.
+- A full-width setup/control plane before the main workspace.
+- A dense utility row for suggested picks and position state.
+- A primary multi-panel workspace below, with one center-emphasized roster panel and two supporting data panels.
+- No hero section, marketing intro, oversized empty gutters, or decorative page-level storytelling.
+
+Surface language:
+
+- Panels use solid dark fills, visible borders, compact radii, and restrained shadow.
+- Panel headers are darker than panel bodies, divided by a clear bottom border, and use uppercase accent typography.
+- The selected/primary panel earns stronger accent borders and a restrained glow; ordinary panels remain quieter.
+- Card emphasis is structural first: left accent strip, tighter padding, and clear border before glow.
+
+Control language:
+
+- Controls are grouped into dense settings rows instead of scattered around the page.
+- Segmented controls use a dark rail, compact buttons, and an accent-filled active state.
+- Inputs, selects, steppers, and search fields are dark, bordered, compact, and focus with the brand accent.
+- Action buttons are short, uppercase, border-led, and designed for toolbars rather than hero CTAs.
+
+Data language:
+
+- Tables and roster rows favor compact row height, sticky headers when useful, numeric alignment, and visible separators.
+- Deltas, trust/risk states, and position signals use semantic color sparingly.
+- Current-state emphasis should be obvious but still fit the same panel/card anatomy.
+
+Forge Dashboard derivative:
+
+- Use the Draft Dashboard anatomy for Forge: top command plane, then a first-viewport grid with team power, focused slate/goalie context, and top adds visible together.
+- Keep player insight modules in a compact second band that appears immediately below the first grid.
+- Do not stack major dashboard modules into separate full-width labeled bands on desktop when they are meant to be scanned together.
+
+### 4.3 What To Borrow From `DraftDashboard`
 
 Use `DraftDashboard` as the main reference for:
 
@@ -108,12 +146,13 @@ Use `DraftDashboard` as the main reference for:
 - segmented toggle rails
 - compact action buttons
 - panel header + scroll-body composition
+- three-column first-viewport dashboard grids
 - left-accent recommendation cards
 - dense sticky-header tables
 - current-row/current-state emphasis
 - modal shell anatomy
 
-### 4.3 What Not To Copy Blindly
+### 4.4 What Not To Copy Blindly
 
 Do not copy these as defaults without judgment:
 
@@ -127,6 +166,7 @@ Do not copy these as defaults without judgment:
 - Tokens: `web/styles/vars.scss`
 - Shared panel helpers: `web/styles/_panel.scss`
 - Primary canonical UI reference: `web/components/DraftDashboard/*`
+- Primary Forge derivative: `web/pages/forge/dashboard.tsx` and `web/styles/ForgeDashboard.module.scss`
 - Sandbox and showcase surface: `web/pages/cssTestingGrounds.tsx` and `web/pages/cssTestingGrounds.module.scss`
 
 ## 6. Page Archetypes
@@ -139,24 +179,27 @@ Use for pages like `DraftDashboard`.
 
 - Enter directly into utility surfaces rather than a marketing-style intro.
 - Keep top-level spacing compact from the first viewport.
-- Favor full-width control planes, horizontal utility rails, and multi-panel workspaces.
+- Favor full-width command planes, horizontal utility rails, and multi-panel workspaces.
 - Use one visually emphasized primary panel at most.
 - Group related controls into one dense control plane instead of scattering filters throughout the page.
-- Prefer asymmetric workspaces such as `2fr / 1fr / 2fr` or a dominant primary column with supporting side rails.
+- Prefer asymmetric workspaces such as `2fr / 1fr / 2fr`, `1.2fr / 0.9fr / 0.75fr`, or a dominant primary column with supporting side rails.
 - Panels should feel operational and continuously usable, not decorative.
+- Desktop dashboards should show related decision modules together in the first viewport rather than serializing them into tall single-column bands.
+- The Forge template uses a first grid of `team power / focused slate + goalie context / top adds`, followed by a player insight band.
 
 Recommended structure:
 
-1. compact page header or title band when needed
-2. primary settings or filter plane
-3. utility rail or summary rail if applicable
-4. main multi-panel workspace
+1. compact title strip only when identity is needed
+2. primary command plane with date/team/position/scope controls and route toggles
+3. first-viewport multi-panel workspace
+4. immediate secondary insight band or table section
 
 Do not default to:
 
 - oversized hero intros
 - centered marketing layouts
 - equal-width cards when one area is clearly primary
+- stacked full-width dashboard modules on desktop when a command-center grid would keep the workflow scannable
 
 ### 6.2 Data Pages
 

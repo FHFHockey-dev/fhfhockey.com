@@ -79,7 +79,6 @@ describe("goalieStatsServer", () => {
       playerId: 8475883,
       family: "goalieCounts",
       rows: [],
-      generatedAt: "2026-04-06T00:00:00.000Z",
     });
 
     const state = createDefaultLandingFilterState({ currentSeasonId: 20252026 });

@@ -239,32 +239,42 @@ async function fetchFallbackRunWithPlayerData(
   horizonGames: number
 ): Promise<{ runId: string; asOfDate: string } | null> {
   if (!supabase) throw new Error("Supabase server client not available");
-  const { data: candidates, error: candidatesError } = await supabase
-    .from("forge_runs")
-    .select("run_id,as_of_date")
-    .eq("status", "succeeded")
-    .lte("as_of_date", targetDate)
-    .order("as_of_date", { ascending: false })
-    .order("created_at", { ascending: false })
-    .limit(30);
-  if (candidatesError) throw candidatesError;
 
-  const rows = (candidates ?? []) as Array<{
-    run_id: string;
-    as_of_date: string;
-  }>;
-  for (const row of rows) {
-    const { count, error } = await supabase
-      .from("forge_player_projections")
-      .select("player_id", { count: "exact", head: true })
-      .eq("run_id", row.run_id)
-      .eq("horizon_games", horizonGames);
-    if (error) throw error;
-    if ((count ?? 0) > 0) {
-      return { runId: row.run_id, asOfDate: row.as_of_date };
+  const scanCandidates = async (includeFutureDates: boolean) => {
+    let query = supabase
+      .from("forge_runs")
+      .select("run_id,as_of_date")
+      .eq("status", "succeeded")
+      .order("as_of_date", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(30);
+
+    if (!includeFutureDates) {
+      query = query.lte("as_of_date", targetDate);
     }
-  }
-  return null;
+
+    const { data: candidates, error: candidatesError } = await query;
+    if (candidatesError) throw candidatesError;
+
+    const rows = (candidates ?? []) as Array<{
+      run_id: string;
+      as_of_date: string;
+    }>;
+    for (const row of rows) {
+      const { count, error } = await supabase
+        .from("forge_player_projections")
+        .select("player_id", { count: "exact", head: true })
+        .eq("run_id", row.run_id)
+        .eq("horizon_games", horizonGames);
+      if (error) throw error;
+      if ((count ?? 0) > 0) {
+        return { runId: row.run_id, asOfDate: row.as_of_date };
+      }
+    }
+    return null;
+  };
+
+  return (await scanCandidates(false)) ?? scanCandidates(true);
 }
 
 function parseHorizonGames(value: string | string[] | undefined): number {

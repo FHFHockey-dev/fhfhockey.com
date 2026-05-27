@@ -134,11 +134,11 @@ export const fetchTeamRatings = async (
       ? [...coreColumns, ...extendedColumns].join(",")
       : coreColumns.join(",");
 
-  const runQuery = async (includeExtended: boolean) => {
+  const runQuery = async (includeExtended: boolean, queryDate = date) => {
     let query = supabase
       .from("team_power_ratings_daily")
       .select(selectColumns(includeExtended))
-      .eq("date", date)
+      .eq("date", queryDate)
       .order("off_rating", { ascending: false })
       .order("team_abbreviation", { ascending: true });
 
@@ -170,6 +170,35 @@ export const fetchTeamRatings = async (
   }
 
   if (error) throw error;
+
+  if (!data || data.length === 0) {
+    const { data: fallbackDateRows, error: fallbackDateError } = await supabase
+      .from("team_power_ratings_daily")
+      .select("date")
+      .order("date", { ascending: false })
+      .limit(1);
+
+    if (fallbackDateError) throw fallbackDateError;
+
+    const fallbackDate =
+      Array.isArray(fallbackDateRows) && typeof fallbackDateRows[0]?.date === "string"
+        ? fallbackDateRows[0].date
+        : null;
+
+    if (fallbackDate && fallbackDate !== date) {
+      const fallbackResponse = await runQuery(true, fallbackDate);
+      data = fallbackResponse.data;
+      error = fallbackResponse.error;
+
+      if (error && isMissingColumnError(error)) {
+        const fallbackCoreResponse = await runQuery(false, fallbackDate);
+        data = fallbackCoreResponse.data;
+        error = fallbackCoreResponse.error;
+      }
+
+      if (error) throw error;
+    }
+  }
 
   const rows = Array.isArray(data) ? data : [];
   const payload = rows.map((row) =>

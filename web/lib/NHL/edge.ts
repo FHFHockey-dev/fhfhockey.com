@@ -71,7 +71,7 @@ export type EdgeShotLocationSplit = {
 };
 
 export type EdgeSkaterShotLocationLeaderRow = EdgeShotLocationSplit & {
-  player: EdgePlayerSummary;
+  player: Omit<EdgePlayerSummary, "id"> & { id?: number };
 };
 
 export type EdgeSkaterShotLocationSortKey =

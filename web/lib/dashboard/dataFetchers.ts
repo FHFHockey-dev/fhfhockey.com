@@ -150,6 +150,8 @@ export type SustainabilityTrendRow = {
   z_oishp?: number;
   z_ipp?: number;
   z_ppshp?: number;
+  guardrail_state?: string;
+  guardrail_warnings?: string[];
 };
 
 export type SustainabilityTrendsResponse = {

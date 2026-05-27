@@ -22,7 +22,7 @@ export type GamePredictionFeatureSource = {
   goNoGo: "go" | "go_with_caveat" | "limited" | "no_go";
 };
 
-export const GAME_PREDICTION_FEATURE_SET_VERSION = "game_features_v2";
+export const GAME_PREDICTION_FEATURE_SET_VERSION = "game_features_v4_roster_sos_context";
 
 export const GAME_PREDICTION_FEATURE_SOURCES: GamePredictionFeatureSource[] = [
   {
@@ -41,6 +41,24 @@ export const GAME_PREDICTION_FEATURE_SOURCES: GamePredictionFeatureSource[] = [
     use: "required",
     asOfRule: "strict_before_game_date",
     fallback: "Use wider lookback or preseason/team prior.",
+    goNoGo: "go_with_caveat",
+  },
+  {
+    id: "schedule_strength",
+    tables: ["games", "teams", "team_power_ratings_daily"],
+    featureGroup: "schedule_strength",
+    use: "optional",
+    asOfRule: "strict_before_game_date",
+    fallback: "Omit schedule-strength context when prior opponents or as-of team ratings are unavailable.",
+    goNoGo: "go_with_caveat",
+  },
+  {
+    id: "team_ctpi",
+    tables: ["team_ctpi_daily"],
+    featureGroup: "team_context",
+    use: "optional",
+    asOfRule: "strict_before_game_date",
+    fallback: "Omit CTPI context and rely on team power/NST/WGO features.",
     goNoGo: "go_with_caveat",
   },
   {

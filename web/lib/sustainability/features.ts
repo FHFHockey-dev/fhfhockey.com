@@ -68,6 +68,21 @@ export type EBShrinkResult = {
   sampleWeight: number;
 };
 
+export type ReliabilityWeightInput = {
+  sampleSize: NumericLike;
+  calibrationK: NumericLike;
+  precision?: number;
+};
+
+export type ReliabilityWeightedZScoreInput = ReliabilityWeightInput & {
+  zScore: NumericLike;
+};
+
+export type ReliabilityWeightedZScoreResult = {
+  reliability: number;
+  weightedZScore: number | null;
+};
+
 export type UsageMetric = "toi" | "es_toi" | "pp_toi" | "sh_toi";
 
 export type UsageDeltaResult = {
@@ -543,6 +558,46 @@ export function empiricalBayesShrinkForMetric(
     priorMean: gammaInput.priorMean,
     priorStrength
   });
+}
+
+export function calculateReliabilityWeight(
+  input: ReliabilityWeightInput
+): number {
+  const sampleSize = Math.max(toFiniteNumber(input.sampleSize) ?? 0, 0);
+  const calibrationK = Math.max(toFiniteNumber(input.calibrationK) ?? 0, 0);
+  const precision = input.precision ?? 6;
+  if (calibrationK <= 0) return sampleSize > 0 ? 1 : 0;
+  return roundRate(
+    Math.sqrt(sampleSize / (sampleSize + calibrationK)),
+    precision
+  );
+}
+
+export function applyReliabilityWeightToZScore(
+  input: ReliabilityWeightedZScoreInput
+): ReliabilityWeightedZScoreResult {
+  const reliability = calculateReliabilityWeight(input);
+  const zScore = toFiniteNumber(input.zScore);
+  return {
+    reliability,
+    weightedZScore:
+      zScore == null
+        ? null
+        : roundRate(zScore * reliability, input.precision ?? 6)
+  };
+}
+
+export function softClipZScore(
+  zScore: NumericLike,
+  c = 3,
+  precision = 6
+): number | null {
+  const value = toFiniteNumber(zScore);
+  if (value == null) return null;
+  if (!Number.isFinite(c) || c <= 0) {
+    throw new Error("Soft clipping constant must be greater than zero");
+  }
+  return roundRate(Math.tanh(value / c), precision);
 }
 
 export function calculateUsageDelta(

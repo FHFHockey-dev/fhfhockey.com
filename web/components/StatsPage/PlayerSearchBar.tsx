@@ -58,6 +58,10 @@ export default function PlayerSearchBar() {
         type="text"
         value={query}
         onChange={handleChange}
+        aria-label="Search players"
+        autoComplete="off"
+        enterKeyHint="search"
+        inputMode="search"
         placeholder="Search for a player..."
         style={{
           width: "100%",

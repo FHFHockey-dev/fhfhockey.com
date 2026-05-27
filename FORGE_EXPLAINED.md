@@ -164,7 +164,7 @@ These are the factory workers that prepare the data before FORGE predicts anythi
 - `web/pages/api/v1/forge/__snapshots__/goalies.test.ts.snap` - saved picture of expected goalie API payload
 
 ## Database and Schema Files (where FORGE stores things)
-- `web/rules/forge-tables.md` - FORGE table definitions (source of truth doc)
+- `web/rules/context/forge-tables.md` - FORGE table definitions (source of truth doc)
 - `migrations/20251224_rename_projection_tables_to_forge.sql` - renamed old projection tables to `forge_*`
 - `migrations/20251227_add_goalie_win_shutout_and_accuracy_stats.sql` - added goalie win/shutout fields + per-stat accuracy table
 - `migrations/20260208_add_projection_calibration_snapshots.sql` - added daily calibration snapshot table

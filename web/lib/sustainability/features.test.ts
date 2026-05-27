@@ -12,8 +12,10 @@ import {
   calculateWeightedRate,
   calculateZScore,
   calculateZScores,
+  applyReliabilityWeightToZScore,
   aggregateCountDistributions,
   buildCountDistribution,
+  calculateReliabilityWeight,
   emitForecastBands,
   evaluateBandCalibration,
   deriveOpponentAdjustmentFactors,
@@ -21,7 +23,8 @@ import {
   empiricalBayesGammaShrink,
   empiricalBayesShrinkForMetric,
   getDefaultWindowWeights,
-  normalizeWindowWeights
+  normalizeWindowWeights,
+  softClipZScore
 } from "./features";
 
 describe("sustainability features rate calculators", () => {
@@ -258,6 +261,28 @@ describe("sustainability features rate calculators", () => {
       priorStrength: 50,
       sampleWeight: 0.074074
     });
+  });
+
+  it("computes reliability weights and applies them to z-scores", () => {
+    expect(calculateReliabilityWeight({ sampleSize: 100, calibrationK: 300 })).toBe(0.5);
+    expect(
+      applyReliabilityWeightToZScore({
+        zScore: 2,
+        sampleSize: 100,
+        calibrationK: 300
+      })
+    ).toEqual({
+      reliability: 0.5,
+      weightedZScore: 1
+    });
+    expect(calculateReliabilityWeight({ sampleSize: 0, calibrationK: 0 })).toBe(0);
+  });
+
+  it("soft clips extreme z-scores without mutating the original scale", () => {
+    expect(softClipZScore(0)).toBe(0);
+    expect(softClipZScore(3, 3)).toBeCloseTo(0.761594);
+    expect(softClipZScore(-3, 3)).toBeCloseTo(-0.761594);
+    expect(() => softClipZScore(1, 0)).toThrow(/greater than zero/);
   });
 
   it("leans much harder on the prior for small-N gamma windows than large-N windows", () => {

@@ -10,7 +10,24 @@ import {
 describe("dashboard normalizers", () => {
   it("normalizes sustainability payloads while dropping incomplete rows", () => {
     const normalized = normalizeSustainabilityResponse({
+      requested_snapshot_date: "2026-03-15",
       snapshot_date: "2026-03-14",
+      serving: {
+        requestedDate: "2026-03-15",
+        resolvedDate: "2026-03-14",
+        fallbackApplied: true,
+        isSameDay: false,
+        state: "fallback",
+        strategy: "latest_available_with_data",
+        gapDays: 1,
+        severity: "warn",
+        status: "fallback_recent",
+        message: "Sustainability trends are using the nearest available date.",
+        requestedScheduledGames: null,
+        resolvedScheduledGames: null,
+        requestedHadGames: null,
+        resolvedHadGames: null
+      },
       rows: [
         {
           player_id: 12,
@@ -30,7 +47,14 @@ describe("dashboard normalizers", () => {
       ]
     });
 
+    expect(normalized.requested_snapshot_date).toBe("2026-03-15");
     expect(normalized.snapshot_date).toBe("2026-03-14");
+    expect(normalized.serving).toMatchObject({
+      requestedDate: "2026-03-15",
+      resolvedDate: "2026-03-14",
+      fallbackApplied: true,
+      status: "fallback_recent"
+    });
     expect(normalized.rows).toHaveLength(1);
     expect(normalized.rows[0]).toMatchObject({
       player_id: 12,

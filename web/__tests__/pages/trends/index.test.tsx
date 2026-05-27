@@ -142,7 +142,7 @@ describe("Trends dashboard", () => {
   });
 
   it("renders recent-form summary cards and goalie workload context", () => {
-    render(<TrendsDashboardPage initialDate="2026-04-08" initialTeamRatings={[]} />);
+    render(<TrendsDashboardPage initialDate="2026-04-08" />);
 
     expect(screen.getByText("Recent-Form Scan")).toBeTruthy();
     expect(screen.getByText("Usage Driver")).toBeTruthy();

@@ -66,6 +66,8 @@ const LeaderboardCategoryBSH: React.FC<LeaderboardCategoryBSHProps> = ({
                     }
                     alt={player.fullName}
                     className={styles.playerHeadshot}
+                    loading="lazy"
+                    decoding="async"
                     style={{ cursor: "pointer" }}
                     onError={(e) => {
                       (e.target as HTMLImageElement).style.display = "none";

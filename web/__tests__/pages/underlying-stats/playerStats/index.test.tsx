@@ -106,6 +106,21 @@ function buildMockLandingRows(family: string, count: number) {
   });
 }
 
+function getPlayerLandingFetchCalls() {
+  return vi.mocked(fetch).mock.calls.filter(([input]) => {
+    const url =
+      typeof input === "string"
+        ? input
+        : input instanceof URL
+          ? input.toString()
+          : input.url;
+    return (
+      url.startsWith("/api/v1/underlying-stats/players") ||
+      url.startsWith("/api/v1/underlying-stats/goalies")
+    );
+  });
+}
+
 describe("PlayerUnderlyingStatsLandingPage", () => {
   afterEach(() => {
     cleanup();
@@ -174,7 +189,7 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
     expect(
       screen.getAllByText("Date Range requires a start date.").length
     ).toBeGreaterThan(0);
-    expect(fetch).not.toHaveBeenCalled();
+    expect(getPlayerLandingFetchCalls()).toHaveLength(0);
 
     fireEvent.click(
       screen.getByRole("button", { name: "Reset landing filters" })
@@ -195,7 +210,7 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
     expect(latestReplaceCall?.[0].query).not.toHaveProperty("endDate");
 
     await waitFor(() => {
-      expect(fetch).toHaveBeenCalled();
+      expect(getPlayerLandingFetchCalls().length).toBeGreaterThan(0);
     });
   });
 
@@ -450,7 +465,7 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
       expect.any(Object)
     );
 
-    const flushSecondPageFetch: (() => void) | null = resolveSecondPageFetch;
+    const flushSecondPageFetch = resolveSecondPageFetch as (() => void) | null;
     if (flushSecondPageFetch !== null) {
       flushSecondPageFetch();
     }
@@ -779,7 +794,7 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
     expect(screen.queryByRole("button", { name: "Previous" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Next" })).toBeNull();
 
-    const flushSecondPageFetch: (() => void) | null = resolveSecondPageFetch;
+    const flushSecondPageFetch = resolveSecondPageFetch as (() => void) | null;
     if (flushSecondPageFetch !== null) {
       flushSecondPageFetch();
     }

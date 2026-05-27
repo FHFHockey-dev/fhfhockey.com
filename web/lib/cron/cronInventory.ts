@@ -27,6 +27,21 @@ export type CronInventoryJob = {
   notes: string[];
 };
 
+const JSON_JOB_ROUTE_ALIASES: Record<string, string> = {
+  "update-games-job": "/api/v1/db/update-games",
+  "update-teams-job": "/api/v1/db/update-teams",
+  "update-players-job": "/api/v1/db/update-players",
+  "update-line-combinations-all": "/api/v1/db/update-line-combinations",
+  "update-power-play-combinations": "/api/v1/db/update-power-play-combinations",
+  "update-rolling-player-averages": "/api/v1/db/update-rolling-player-averages",
+  "update-goalie-projections-v2": "/api/v1/db/update-goalie-projections-v2",
+  "ingest-projection-inputs": "/api/v1/db/ingest-projection-inputs",
+  "build-forge-derived-v2": "/api/v1/db/build-projection-derived-v2",
+  "run-forge-projection-v2": "/api/v1/db/run-projection-v2",
+  "run-projection-accuracy": "/api/v1/db/run-projection-accuracy",
+  "daily-cron-report": "/api/v1/db/cron-report"
+};
+
 function truncateText(value: string, maxLen = 180): string {
   return value.length <= maxLen ? value : `${value.slice(0, maxLen - 1)}…`;
 }
@@ -170,7 +185,7 @@ export function parseCronInventoryFromMarkdown(markdown: string): CronInventoryJ
   const scheduleRegex =
     /((?:[^\S\r\n]*[A-Z][^\n]*\n)*)[^\S\r\n]*SELECT\s+cron\.schedule\(\s*'([^']+)'\s*,\s*'([^']+)'\s*,\s*([\s\S]*?)\);\s*/gi;
 
-  const jobs = Array.from(normalized.matchAll(scheduleRegex)).map((match, index) => {
+  const sqlJobs = Array.from(normalized.matchAll(scheduleRegex)).map((match, index) => {
     const noteBlock = match[1] ?? "";
     const notes = noteBlock
       .split("\n")
@@ -205,6 +220,10 @@ export function parseCronInventoryFromMarkdown(markdown: string): CronInventoryJ
     } satisfies CronInventoryJob;
   });
 
+  const sqlJobNames = new Set(sqlJobs.map((job) => job.name));
+  const jsonJobs = parseCronInventoryJsonJobs(markdown, sqlJobNames, sqlJobs.length);
+  const jobs = [...sqlJobs, ...jsonJobs];
+
   return jobs.sort((left, right) => {
     if (left.slotIndex !== right.slotIndex) {
       return left.slotIndex - right.slotIndex;
@@ -214,10 +233,59 @@ export function parseCronInventoryFromMarkdown(markdown: string): CronInventoryJ
   });
 }
 
+function parseCronInventoryJsonJobs(
+  markdown: string,
+  skipNames: Set<string>,
+  sortOffset: number
+): CronInventoryJob[] {
+  const jsonMatch = markdown.match(/```json\s*([\s\S]*?)```/i);
+  if (!jsonMatch?.[1]) return [];
+
+  let rows: Array<{
+    jobname?: string;
+    schedule?: string;
+    run_time_utc?: string;
+    active?: boolean;
+  }>;
+  try {
+    rows = JSON.parse(jsonMatch[1]);
+  } catch {
+    return [];
+  }
+
+  return rows
+    .filter((row) => row.active !== false && row.jobname && row.schedule)
+    .filter((row) => !skipNames.has(row.jobname!))
+    .map((row, index) => {
+      const routePath = JSON_JOB_ROUTE_ALIASES[row.jobname!] ?? null;
+      const { hour, minute } = parseScheduleTimeParts(row.schedule!);
+      return {
+        key: `${row.jobname}__${row.schedule}__JSON__${index}`,
+        name: row.jobname!,
+        cronExpression: row.schedule!,
+        scheduleTimeDisplay: row.run_time_utc ?? formatScheduleTime(row.schedule!),
+        utcHour: hour,
+        utcMinute: minute,
+        slotIndex:
+          hour != null && minute != null ? hour * 60 + minute : Number.MAX_SAFE_INTEGER,
+        sortOrder: sortOffset + index,
+        method: "UNKNOWN",
+        executionShape: routePath ? "wrapper-dependent" : "currently non-runnable in local/dev",
+        url: null,
+        route: routePath,
+        routePath,
+        sqlText: null,
+        notes: ["Parsed from ALL CRON JOBS JSON inventory."]
+      } satisfies CronInventoryJob;
+    });
+}
+
 export async function readCronScheduleMarkdown(): Promise<string> {
   const candidates = [
     path.resolve(process.cwd(), "rules/cron-schedule.md"),
-    path.resolve(process.cwd(), "web/rules/cron-schedule.md")
+    path.resolve(process.cwd(), "web/rules/cron-schedule.md"),
+    path.resolve(process.cwd(), "rules/context/cron-schedule.md"),
+    path.resolve(process.cwd(), "web/rules/context/cron-schedule.md")
   ];
 
   for (const candidate of candidates) {

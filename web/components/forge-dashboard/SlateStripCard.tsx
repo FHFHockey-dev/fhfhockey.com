@@ -85,7 +85,7 @@ function GoalieBar({
       {emphasis === "hero" && (
         <div className={styles.slateGoalieHeroMeta}>
           <span>
-            GSAA/60 <strong>{formatGsaa(top.projected_gsaa_per_60)}</strong>
+            Goalie form <strong>{formatGsaa(top.projected_gsaa_per_60)}</strong>
           </span>
           <span>
             Own{" "}
@@ -251,7 +251,7 @@ export default function SlateStripCard({
   return (
     <article className={styles.slateStripCard} aria-label="Start-chart slate strip">
       <header className={styles.panelHeader}>
-        <h3 className={styles.panelTitle}>Tonight&apos;s Slate</h3>
+        <h3 className={styles.panelTitle}>Tonight&apos;s Games</h3>
         <span className={styles.panelMeta}>{dateUsed}</span>
       </header>
 
@@ -310,7 +310,7 @@ export default function SlateStripCard({
                 href={`/start-chart?date=${dateUsed}`}
                 className={styles.slateActionLink}
               >
-                Open Start Chart
+                See Goalie Starts
               </Link>
             </div>
           </div>
@@ -323,17 +323,16 @@ export default function SlateStripCard({
                 rating={selectedGame.awayRating}
               />
               <div className={styles.slateHeroVersus}>
-                <span className={styles.slateHeroEyebrow}>Focused Matchup</span>
+                <span className={styles.slateHeroEyebrow}>Selected Game</span>
                 <strong>
                   {(getTeamMetaById(selectedGame.awayTeamId)?.abbr ?? "AWY")} @{" "}
                   {(getTeamMetaById(selectedGame.homeTeamId)?.abbr ?? "HME")}
                 </strong>
                 <span className={styles.slateHeroSubcopy}>
-                  Starter confidence and team-power context stay visible in one
-                  slate-first panel.
+                  Quick read on team strength and likely starting goalies.
                 </span>
                 <span className={styles.slateHeroSubcopy}>
-                  Home-side edge: <strong>{formatPowerEdge(getGamePowerEdge(selectedGame))}</strong>
+                  Home edge: <strong>{formatPowerEdge(getGamePowerEdge(selectedGame))}</strong>
                 </span>
               </div>
               <TeamSnapshot
@@ -346,15 +345,13 @@ export default function SlateStripCard({
             <div className={styles.slateHeroGoalies}>
               <div className={styles.slateGoalieColumn}>
                 <span className={styles.slateGoalieColumnLabel}>
-                  {(getTeamMetaById(selectedGame.awayTeamId)?.abbr ?? "AWY")} starter
-                  lane
+                  {(getTeamMetaById(selectedGame.awayTeamId)?.abbr ?? "AWY")} likely starter
                 </span>
                 <GoalieBar goalies={selectedGame.awayGoalies} emphasis="hero" />
               </div>
               <div className={styles.slateGoalieColumn}>
                 <span className={styles.slateGoalieColumnLabel}>
-                  {(getTeamMetaById(selectedGame.homeTeamId)?.abbr ?? "HME")} starter
-                  lane
+                  {(getTeamMetaById(selectedGame.homeTeamId)?.abbr ?? "HME")} likely starter
                 </span>
                 <GoalieBar goalies={selectedGame.homeGoalies} emphasis="hero" />
               </div>

@@ -68,7 +68,7 @@ export const fetchOwnershipSnapshotMap = async (
 
   const response = await fetchCachedJson<OwnershipSnapshotApiResponse>(
     `/api/v1/transactions/ownership-snapshots?${params.toString()}`,
-    { ttlMs: 5 * 60_000 }
+    { ttlMs: 5 * 60_000, init: { cache: "no-store" } }
   );
 
   const players = Array.isArray(response?.players) ? response.players : [];
@@ -105,7 +105,7 @@ export const fetchOwnershipTrendMap = async (
 
   const response = await fetchCachedJson<OwnershipTrendApiResponse>(
     `/api/v1/transactions/ownership-trends?${params.toString()}`,
-    { ttlMs: 5 * 60_000 }
+    { ttlMs: 5 * 60_000, init: { cache: "no-store" } }
   );
 
   const selectedPlayers = Array.isArray(response?.selectedPlayers)

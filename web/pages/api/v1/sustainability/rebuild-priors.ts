@@ -17,6 +17,13 @@ import {
   isSustainabilityDependencyError
 } from "lib/sustainability/dependencyChecks";
 
+function parseBoundedInt(value: string | string[] | undefined, fallback: number, max: number) {
+  const candidate = Array.isArray(value) ? value[0] : value;
+  const parsed = Number(candidate);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.max(0, Math.min(max, Math.floor(parsed)));
+}
+
 async function handler(
   req: NextApiRequest,
   res: NextApiResponse<CronTimedResponse<Record<string, unknown>>>
@@ -37,6 +44,8 @@ async function handler(
       oishp: Number(req.query.k_oishp) || 800,
       ipp: Number(req.query.k_ipp) || 60
     };
+    const offset = parseBoundedInt(req.query.offset, 0, 100_000);
+    const limit = Math.max(1, parseBoundedInt(req.query.limit, 500, 2_000));
 
     if (!dry) await ensureTables(); // (still a no-op unless you hook it up)
 
@@ -71,7 +80,8 @@ async function handler(
       season,
       k,
       dry,
-      dryPriorMap
+      dryPriorMap,
+      { offset, limit }
     );
 
     const duration_s = ((Date.now() - started) / 1000).toFixed(2);
@@ -81,6 +91,8 @@ async function handler(
         success: true,
         season,
         dry,
+        offset,
+        limit,
         k,
         inserted_player_rows: inserted,
         sample,

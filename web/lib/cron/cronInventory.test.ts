@@ -63,4 +63,35 @@ describe("cronInventory", () => {
     expect(formatScheduleTime("5 9 * * *")).toBe("09:05 UTC");
     expect(formatScheduleTime("invalid")).toBe("invalid");
   });
+
+  it("uses active JSON inventory rows when SQL blocks are absent", () => {
+    const inventory = parseCronInventoryFromMarkdown(`
+# ALL CRON JOBS:
+\`\`\`json
+[
+  {
+    "jobid": 7,
+    "jobname": "update-games-job",
+    "schedule": "0 3 * * *",
+    "run_time_utc": "03:00 UTC",
+    "active": true
+  },
+  {
+    "jobid": 8,
+    "jobname": "retired-job",
+    "schedule": "5 3 * * *",
+    "run_time_utc": "03:05 UTC",
+    "active": false
+  }
+]
+\`\`\`
+`);
+
+    expect(inventory).toHaveLength(1);
+    expect(inventory[0]).toMatchObject({
+      name: "update-games-job",
+      routePath: "/api/v1/db/update-games",
+      executionShape: "wrapper-dependent",
+    });
+  });
 });

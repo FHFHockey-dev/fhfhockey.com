@@ -1,0 +1,971 @@
+@use "vars" as *;
+
+.page {
+  min-height: 100vh;
+  background:
+    linear-gradient(180deg, rgba(0, 180, 210, 0.08), transparent 340px),
+    #04090d;
+  color: #e8f4f8;
+}
+
+.shell {
+  width: min(100%, 1800px);
+  margin: 0 auto;
+  padding: 12px 14px 28px;
+}
+
+.topbar {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 20px;
+  min-height: 52px;
+  border-bottom: 1px solid rgba(127, 219, 235, 0.18);
+}
+
+.brandLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #f7fbff;
+  text-decoration: none;
+}
+
+.brandMark {
+  display: inline-grid;
+  place-items: center;
+  width: 42px;
+  height: 28px;
+  border-right: 1px solid rgba(232, 244, 248, 0.22);
+  font-size: 1.15rem;
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: 0;
+}
+
+.brandText {
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.primaryNav {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  min-width: 0;
+}
+
+.primaryNav a,
+.primaryNavActive {
+  color: rgba(232, 244, 248, 0.72);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.primaryNavActive {
+  color: #16e6f0;
+}
+
+.topbarMeta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid rgba(127, 219, 235, 0.2);
+  border-radius: 6px;
+  color: rgba(232, 244, 248, 0.82);
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.liveDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #1ce870;
+  box-shadow: 0 0 14px rgba(28, 232, 112, 0.7);
+}
+
+.heroBand {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: end;
+  padding: 24px 0 14px;
+}
+
+.heroCopy {
+  max-width: 860px;
+}
+
+.eyebrow,
+.panelEyebrow {
+  margin: 0 0 6px;
+  color: #16e6f0;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.heroCopy h1 {
+  margin: 0;
+  font-size: clamp(2rem, 3vw, 3.7rem);
+  line-height: 0.96;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.heroCopy p:last-child {
+  max-width: 680px;
+  margin: 10px 0 0;
+  color: rgba(232, 244, 248, 0.72);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.statusStack {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.statusChip,
+.statusChipMuted {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid rgba(22, 230, 240, 0.48);
+  border-radius: 6px;
+  background: rgba(10, 31, 38, 0.9);
+  color: #16e6f0;
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.statusChipMuted {
+  border-color: rgba(232, 244, 248, 0.18);
+  color: rgba(232, 244, 248, 0.74);
+}
+
+.mixedStateBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 200, 87, 0.36);
+  border-radius: 8px;
+  background: rgba(255, 200, 87, 0.08);
+}
+
+.mixedStateBanner strong {
+  color: #ffe0a6;
+  font-size: 0.86rem;
+  line-height: 1.35;
+}
+
+.statusToken,
+.metricPill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  border: 1px solid rgba(127, 219, 235, 0.2);
+  border-radius: 6px;
+  background: rgba(8, 24, 31, 0.9);
+  color: rgba(232, 244, 248, 0.78);
+  font-size: 0.7rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.statusToken {
+  padding: 0 9px;
+}
+
+.statusToken_live,
+.statusToken_good,
+.metricPill_good {
+  border-color: rgba(28, 232, 112, 0.45);
+  color: #69f99c;
+}
+
+.statusToken_warn,
+.metricPill_warn {
+  border-color: rgba(255, 200, 87, 0.48);
+  color: #ffc857;
+}
+
+.statusToken_danger,
+.metricPill_danger {
+  border-color: rgba(255, 80, 92, 0.48);
+  color: #ff5c67;
+}
+
+.statusToken_muted,
+.metricPill_muted {
+  color: rgba(232, 244, 248, 0.54);
+}
+
+.metricPill {
+  gap: 8px;
+  padding: 0 10px;
+}
+
+.metricPill span {
+  color: rgba(232, 244, 248, 0.52);
+}
+
+.metricPill strong {
+  color: inherit;
+  font-size: 0.76rem;
+}
+
+.sparkline {
+  width: 96px;
+  height: 28px;
+  overflow: visible;
+}
+
+.sparkline polyline,
+.sparkline line {
+  fill: none;
+  stroke: rgba(232, 244, 248, 0.58);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.2;
+}
+
+.sparkline_up polyline,
+.sparkline_up line {
+  stroke: #69f99c;
+}
+
+.sparkline_down polyline,
+.sparkline_down line {
+  stroke: #ff5c67;
+}
+
+.moduleState,
+.moduleStateWarning {
+  border: 1px solid rgba(127, 219, 235, 0.16);
+  border-radius: 6px;
+  background: rgba(3, 12, 17, 0.66);
+}
+
+.moduleState {
+  display: grid;
+  gap: 8px;
+  place-items: start;
+  padding: 14px;
+}
+
+.moduleState p,
+.moduleStateWarning {
+  color: rgba(232, 244, 248, 0.68);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.moduleState p {
+  margin: 0;
+}
+
+.moduleStateWarning {
+  margin: 0 0 10px;
+  padding: 10px 12px;
+}
+
+.controlsPanel {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(130px, 1fr)) auto;
+  gap: 10px;
+  align-items: end;
+  margin: 0 0 12px;
+  padding: 12px;
+  border: 1px solid rgba(127, 219, 235, 0.18);
+  border-radius: 8px;
+  background: rgba(4, 14, 19, 0.84);
+}
+
+.controlItem {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.controlItem span {
+  color: rgba(232, 244, 248, 0.58);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.controlItem input,
+.controlItem select {
+  width: 100%;
+  min-height: 34px;
+  border: 1px solid rgba(127, 219, 235, 0.18);
+  border-radius: 6px;
+  background: rgba(2, 9, 13, 0.96);
+  color: #e8f4f8;
+  font-size: 0.8rem;
+}
+
+.resetButton {
+  min-height: 34px;
+  padding: 0 14px;
+  border: 1px solid rgba(22, 230, 240, 0.38);
+  border-radius: 6px;
+  background: rgba(22, 230, 240, 0.08);
+  color: #16e6f0;
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.commandGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.commandLayout {
+  display: grid;
+  grid-template-columns: minmax(360px, 0.9fr) minmax(420px, 1fr) minmax(360px, 0.8fr);
+  grid-template-areas:
+    "team slate adds"
+    "insight insight goalie"
+    "route route route";
+  gap: 12px;
+  align-items: start;
+  margin-top: 8px;
+}
+
+.panel {
+  min-width: 0;
+  border: 1px solid rgba(127, 219, 235, 0.18);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(15, 39, 47, 0.9), rgba(5, 18, 24, 0.96)),
+    #061117;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.teamPanel,
+.slatePanel,
+.addsPanel,
+.insightPanel,
+.goaliePanel,
+.routePanel {
+  min-width: 0;
+}
+
+.teamPanel {
+  grid-area: team;
+}
+
+.slatePanel {
+  grid-area: slate;
+}
+
+.addsPanel {
+  grid-area: adds;
+}
+
+.insightPanel {
+  grid-area: insight;
+}
+
+.goaliePanel {
+  grid-area: goalie;
+}
+
+.routePanel {
+  grid-area: route;
+}
+
+.panelHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid rgba(127, 219, 235, 0.12);
+}
+
+.panelHeader h2 {
+  margin: 0;
+  color: #f4fbff;
+  font-size: 1rem;
+  line-height: 1.15;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.panelMeta {
+  color: rgba(232, 244, 248, 0.58);
+  font-size: 0.72rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.panelBody {
+  padding: 14px 16px 16px;
+}
+
+.panelText {
+  margin: 0;
+  color: rgba(232, 244, 248, 0.72);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.routeStateText {
+  margin: 12px 0 0;
+  color: rgba(22, 230, 240, 0.8);
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.quickLinkRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.quickLinkRow a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid rgba(127, 219, 235, 0.18);
+  border-radius: 6px;
+  color: #e8f4f8;
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.primitivePreview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.denseList {
+  display: grid;
+  gap: 8px;
+}
+
+.denseListRow {
+  display: grid;
+  grid-template-columns: var(
+    --command-center-columns,
+    minmax(160px, 0.42fr) minmax(0, 1fr)
+  );
+  gap: 12px;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(127, 219, 235, 0.1);
+}
+
+.denseListRow:last-child {
+  border-bottom: 0;
+}
+
+.denseListRow strong {
+  color: #f4fbff;
+  font-size: 0.82rem;
+}
+
+.denseListRow span {
+  color: rgba(232, 244, 248, 0.64);
+  font-size: 0.8rem;
+}
+
+.teamTerminal,
+.slateContext {
+  display: grid;
+  gap: 12px;
+}
+
+.terminalFocus,
+.focusMatchup {
+  display: grid;
+  align-items: center;
+  gap: 14px;
+  padding: 12px;
+  border: 1px solid rgba(127, 219, 235, 0.14);
+  border-radius: 8px;
+  background: rgba(2, 10, 14, 0.58);
+}
+
+.terminalFocus {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.teamIdentity,
+.teamListLink,
+.playerListLink {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  color: #f4fbff;
+  text-decoration: none;
+}
+
+.teamIdentity {
+  gap: 10px;
+}
+
+.teamIdentity span,
+.matchupEdge span,
+.goalieCallStrip span,
+.playerListLink small {
+  color: rgba(232, 244, 248, 0.55);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.teamIdentity strong {
+  display: block;
+  margin-top: 3px;
+  color: #f4fbff;
+  font-size: 1rem;
+}
+
+.teamLogoLg {
+  width: 46px;
+  height: 46px;
+  object-fit: contain;
+}
+
+.metricStrip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.scoreBarGrid {
+  display: grid;
+  gap: 8px;
+}
+
+.scoreBarRow {
+  display: grid;
+  grid-template-columns: 70px minmax(0, 1fr) 34px;
+  gap: 8px;
+  align-items: center;
+}
+
+.scoreBarRow span,
+.scoreBarRow strong {
+  color: rgba(232, 244, 248, 0.72);
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.scoreBarRow strong {
+  justify-self: end;
+  color: #f4fbff;
+}
+
+.scoreBarTrack {
+  height: 5px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(232, 244, 248, 0.1);
+}
+
+.scoreBarFillGood,
+.scoreBarFillRisk {
+  height: 100%;
+  border-radius: inherit;
+}
+
+.scoreBarFillGood {
+  background: linear-gradient(90deg, #16e6f0, #69f99c);
+}
+
+.scoreBarFillRisk {
+  background: linear-gradient(90deg, #ffc857, #ff5c67);
+}
+
+.terminalLists {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.teamListLink {
+  gap: 7px;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.teamListLink img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+
+.focusMatchup {
+  grid-template-columns: 1fr auto 1fr;
+  color: inherit;
+  text-decoration: none;
+}
+
+.matchupTeam {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.matchupTeam img {
+  width: 58px;
+  height: 58px;
+  object-fit: contain;
+}
+
+.matchupTeam strong {
+  color: #f4fbff;
+  font-size: 1.28rem;
+  line-height: 1;
+}
+
+.matchupTeam span {
+  color: rgba(232, 244, 248, 0.56);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.matchupEdge {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  min-width: 96px;
+  padding: 0 14px;
+  border-right: 1px solid rgba(127, 219, 235, 0.15);
+  border-left: 1px solid rgba(127, 219, 235, 0.15);
+}
+
+.matchupEdge strong {
+  color: #69f99c;
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.matchupEdge small {
+  color: rgba(232, 244, 248, 0.72);
+  font-size: 0.7rem;
+  font-weight: 900;
+}
+
+.environmentMatrix {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.environmentCell {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid rgba(127, 219, 235, 0.12);
+  border-radius: 6px;
+  background: rgba(3, 12, 17, 0.72);
+  color: inherit;
+  text-decoration: none;
+}
+
+.environmentCell span {
+  overflow: hidden;
+  color: rgba(232, 244, 248, 0.58);
+  font-size: 0.62rem;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.environmentCell strong {
+  color: #f4fbff;
+  font-size: 0.95rem;
+}
+
+.goalieCallStrip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.goalieCallStrip div {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid rgba(127, 219, 235, 0.12);
+  border-radius: 6px;
+  background: rgba(3, 12, 17, 0.58);
+}
+
+.goalieCallStrip strong,
+.goalieCallStrip small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.goalieCallStrip strong {
+  margin: 4px 0;
+  color: #f4fbff;
+  font-size: 0.78rem;
+}
+
+.goalieCallStrip small {
+  color: rgba(232, 244, 248, 0.58);
+  font-size: 0.68rem;
+}
+
+.topAddsHeaderRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.playerListLink {
+  gap: 8px;
+}
+
+.playerListLink img {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  object-fit: cover;
+}
+
+.playerListLink span {
+  display: grid;
+  min-width: 0;
+}
+
+.playerListLink strong {
+  overflow: hidden;
+  color: #f4fbff;
+  font-size: 0.78rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.playerInsightCore,
+.goalieContextPanel {
+  display: grid;
+  gap: 12px;
+}
+
+.quadrantPlot {
+  position: relative;
+  min-height: 230px;
+  overflow: hidden;
+  border: 1px solid rgba(127, 219, 235, 0.14);
+  border-radius: 8px;
+  background:
+    linear-gradient(90deg, rgba(255, 92, 103, 0.08), transparent 50%, rgba(105, 249, 156, 0.08)),
+    linear-gradient(180deg, rgba(105, 249, 156, 0.08), transparent 50%, rgba(255, 92, 103, 0.08)),
+    rgba(3, 12, 17, 0.66);
+}
+
+.quadrantAxisX,
+.quadrantAxisY {
+  position: absolute;
+  background: rgba(232, 244, 248, 0.28);
+}
+
+.quadrantAxisX {
+  top: 50%;
+  right: 0;
+  left: 0;
+  height: 1px;
+}
+
+.quadrantAxisY {
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+}
+
+.quadrantLabelTrust,
+.quadrantLabelFade {
+  position: absolute;
+  color: rgba(232, 244, 248, 0.5);
+  font-size: 0.66rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.quadrantLabelTrust {
+  top: 10px;
+  right: 12px;
+}
+
+.quadrantLabelFade {
+  bottom: 10px;
+  left: 12px;
+}
+
+.quadrantPoint {
+  position: absolute;
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  transform: translate(-50%, -50%);
+  border: 2px solid #16e6f0;
+  border-radius: 999px;
+  background: rgba(3, 12, 17, 0.94);
+  color: #e8f4f8;
+  font-size: 0.68rem;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.insightTables {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.uncertaintyNote {
+  margin: 0;
+  color: rgba(232, 244, 248, 0.66);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.goalieRiskGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.goalieRiskGrid div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid rgba(127, 219, 235, 0.12);
+  border-radius: 6px;
+  background: rgba(3, 12, 17, 0.58);
+}
+
+.goalieRiskGrid strong {
+  overflow: hidden;
+  color: #f4fbff;
+  font-size: 0.78rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.goalieRiskGrid span {
+  color: rgba(232, 244, 248, 0.62);
+  font-size: 0.7rem;
+}
+
+@media (max-width: 900px) {
+  .topbar,
+  .heroBand,
+  .commandGrid,
+  .controlsPanel {
+    grid-template-columns: 1fr;
+  }
+
+  .commandLayout {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "slate"
+      "adds"
+      "insight"
+      "goalie"
+      "team"
+      "route";
+  }
+
+  .primaryNav {
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .topbarMeta,
+  .statusStack {
+    justify-content: flex-start;
+  }
+
+}
+
+@media (max-width: 560px) {
+  .shell {
+    padding: 10px 10px 20px;
+  }
+
+  .brandText {
+    font-size: 1rem;
+  }
+
+  .heroCopy h1 {
+    font-size: 2rem;
+  }
+
+  .denseListRow {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .mixedStateBanner {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .terminalFocus,
+  .focusMatchup,
+  .terminalLists,
+  .environmentMatrix,
+  .goalieCallStrip,
+  .insightTables,
+  .goalieRiskGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .matchupEdge {
+    border: 0;
+    border-top: 1px solid rgba(127, 219, 235, 0.15);
+    border-bottom: 1px solid rgba(127, 219, 235, 0.15);
+    padding: 10px 0;
+  }
+}

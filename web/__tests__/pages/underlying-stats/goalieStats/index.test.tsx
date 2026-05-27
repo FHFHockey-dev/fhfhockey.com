@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import GoalieUnderlyingStatsLandingRoute from "../../../../pages/underlying-stats/goalieStats/index";
 
-const sharedLandingPageMock = vi.fn(() => (
+const sharedLandingPageMock = vi.fn((_props?: { variant?: string }) => (
   <div>Shared player landing page</div>
 ));
 

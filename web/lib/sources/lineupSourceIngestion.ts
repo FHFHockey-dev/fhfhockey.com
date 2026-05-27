@@ -171,7 +171,19 @@ const GDT_LINEUP_KEYWORDS = [
   "projected lines"
 ];
 const GDT_PRACTICE_KEYWORDS = ["practice lines", "pairings", "practice", "rushes"];
-const GDT_POWERPLAY_KEYWORDS = ["power play", "pp1", "pp2"];
+const GDT_POWERPLAY_KEYWORDS = [
+  "power play",
+  "power-play",
+  "power play units",
+  "pp1",
+  "pp2",
+  "pp 1",
+  "pp 2",
+  "pp units",
+  "jeu de puissance",
+  "avantage numerique",
+  "avantage numérique"
+];
 const GDT_GOALIE_KEYWORDS = [
   "starting goalie",
   "starting",
@@ -202,24 +214,30 @@ const GDT_INJURY_KEYWORDS = [
   "recalled",
   "promoted"
 ];
-const GDT_REGEX_NAME_SEPARATOR = String.raw`(?:-|–|—|/|\\|•|\u2022)`;
+const GDT_REGEX_PLAYER_TOKEN =
+  String.raw`(?:[A-ZÀ-ÖØ-Þ](?:[A-Za-zÀ-ÖØ-öø-ÿ.'’` +
+  "`" +
+  String.raw`]*|\.)?(?:-[A-ZÀ-ÖØ-Þ][A-Za-zÀ-ÖØ-öø-ÿ.'’` +
+  "`" +
+  String.raw`]+)?|[A-Z])`;
+const GDT_REGEX_PLAYER_NAME =
+  String.raw`${GDT_REGEX_PLAYER_TOKEN}(?:\s+${GDT_REGEX_PLAYER_TOKEN}){0,2}`;
+const GDT_REGEX_INLINE_NAME_SEPARATOR = String.raw`(?:--+|[-–—−/\\•])`;
 const GDT_INLINE_LINE_PATTERN = new RegExp(
-  String.raw`([A-Z][A-Za-z.'’` + "`" + String.raw`-]+(?:\s+[A-Z][A-Za-z.'’` + "`" + String.raw`-]+){0,2}\s*` +
-    GDT_REGEX_NAME_SEPARATOR +
-    String.raw`\s*[A-Z][A-Za-z.'’` + "`" + String.raw`-]+(?:\s+[A-Z][A-Za-z.'’` + "`" + String.raw`-]+){0,2}\s*` +
-    GDT_REGEX_NAME_SEPARATOR +
-    String.raw`\s*[A-Z][A-Za-z.'’` + "`" + String.raw`-]+(?:\s+[A-Z][A-Za-z.'’` + "`" + String.raw`-]+){0,2})`,
+  String.raw`(${GDT_REGEX_PLAYER_NAME}\s*${GDT_REGEX_INLINE_NAME_SEPARATOR}\s*${GDT_REGEX_PLAYER_NAME}\s*${GDT_REGEX_INLINE_NAME_SEPARATOR}\s*${GDT_REGEX_PLAYER_NAME})`,
   "g"
 );
 const GDT_INLINE_PAIR_PATTERN = new RegExp(
-  String.raw`([A-Z][A-Za-z.'’` + "`" + String.raw`-]+(?:\s+[A-Z][A-Za-z.'’` + "`" + String.raw`-]+){0,2}\s*` +
-    GDT_REGEX_NAME_SEPARATOR +
-    String.raw`\s*[A-Z][A-Za-z.'’` + "`" + String.raw`-]+(?:\s+[A-Z][A-Za-z.'’` + "`" + String.raw`-]+){0,2})`,
+  String.raw`(${GDT_REGEX_PLAYER_NAME}\s*${GDT_REGEX_INLINE_NAME_SEPARATOR}\s*${GDT_REGEX_PLAYER_NAME})`,
   "g"
 );
 const GDT_ALIAS_OVERRIDES: Record<string, string[]> = {
   "joel eriksson ek": ["jeek"]
 };
+const GDT_PLAYER_TOKEN_PATTERN =
+  /^(?:[A-ZÀ-ÖØ-Þ](?:[A-Za-zÀ-ÖØ-öø-ÿ.'’`]*|\.)?(?:-[A-ZÀ-ÖØ-Þ][A-Za-zÀ-ÖØ-öø-ÿ.'’`]+)?|[A-Z])(?:\s+(?:[A-ZÀ-ÖØ-Þ](?:[A-Za-zÀ-ÖØ-öø-ÿ.'’`]*|\.)?(?:-[A-ZÀ-ÖØ-Þ][A-Za-zÀ-ÖØ-öø-ÿ.'’`]+)?|[A-Z])){0,2}$/u;
+const GDT_ROSTER_LINKED_SEPARATOR_PATTERN =
+  /^(?:\s*(?:--+|[-–—−/\\•])\s*)+$/u;
 
 function normalizeWhitespace(value: string): string {
   return value.replace(/\u00a0/g, " ").replace(MULTISPACE_PATTERN, " ").trim();
@@ -378,7 +396,203 @@ function parsePlayerLine(value: string): string[] {
     .filter(Boolean);
 }
 
-export function extractStructuredPlayerGroupsFromText(text: string): {
+function cleanStructuredPlayerToken(value: string): string {
+  return normalizeWhitespace(value)
+    .replace(/^[^\p{L}\p{N}]+/u, "")
+    .replace(/\s*\((?:starter|starting|confirmed|backup)\)\s*$/i, "")
+    .replace(/[,:;.!?]+$/g, "")
+    .trim();
+}
+
+function isLikelyStructuredPlayerToken(
+  value: string,
+  rosterEntries: RosterNameEntry[]
+): boolean {
+  const cleaned = cleanStructuredPlayerToken(value);
+  if (!cleaned) return false;
+  if (
+    /https?:|www\.|t\.co|pic\.twitter\.com|[#@]|:/.test(cleaned) ||
+    cleaned.length > 40 ||
+    cleaned.split(/\s+/).length > 3 ||
+    /[.!?]\s+[A-ZÀ-ÖØ-Þ]/u.test(cleaned)
+  ) {
+    return false;
+  }
+  return (
+    GDT_PLAYER_TOKEN_PATTERN.test(cleaned) ||
+    Boolean(resolveTweetNameToRosterEntry(cleaned, rosterEntries))
+  );
+}
+
+function recombineCompactHyphenTokens(
+  tokens: string[],
+  rosterEntries: RosterNameEntry[]
+): string[] {
+  if (tokens.length <= 3 || rosterEntries.length === 0) {
+    return tokens;
+  }
+
+  const combined: string[] = [];
+  for (let index = 0; index < tokens.length; index += 1) {
+    const current = tokens[index]!;
+    const next = tokens[index + 1];
+    if (next) {
+      const merged = `${current}-${next}`;
+      if (resolveTweetNameToRosterEntry(merged, rosterEntries)) {
+        combined.push(merged);
+        index += 1;
+        continue;
+      }
+    }
+    combined.push(current);
+  }
+
+  return combined;
+}
+
+function parseStructuredPlayerLineTokens(
+  value: string,
+  rosterEntries: RosterNameEntry[]
+): string[] | null {
+  const normalized = normalizeWhitespace(value);
+  if (!normalized) return null;
+
+  let tokens = parsePlayerLine(normalized).map(cleanStructuredPlayerToken).filter(Boolean);
+  tokens = recombineCompactHyphenTokens(tokens, rosterEntries);
+  if (tokens.length === 0 || tokens.length > 3) {
+    return null;
+  }
+  if (!tokens.every((token) => isLikelyStructuredPlayerToken(token, rosterEntries))) {
+    return null;
+  }
+
+  return tokens;
+}
+
+type StructuredRosterHit = {
+  end: number;
+  playerName: string;
+  playerId: number;
+  start: number;
+};
+
+function findStructuredRosterHitsInLine(
+  line: string,
+  rosterEntries: RosterNameEntry[]
+): StructuredRosterHit[] {
+  if (rosterEntries.length === 0) return [];
+
+  const normalizedLine = normalizeTeamLabel(line);
+  const candidates = rosterEntries
+    .flatMap((rosterEntry) =>
+      buildRosterSearchNeedles(rosterEntry).flatMap((needle) => {
+        const pattern = new RegExp(
+          String.raw`(?<![a-z])${escapeRegExp(needle)}(?![a-z])`,
+          "g"
+        );
+        return Array.from(normalizedLine.matchAll(pattern), (match) => ({
+          start: match.index ?? -1,
+          end: (match.index ?? -1) + (match[0]?.length ?? 0),
+          playerId: rosterEntry.playerId,
+          playerName: rosterEntry.fullName,
+          needleLength: needle.length
+        }));
+      })
+    )
+    .filter((candidate) => candidate.start >= 0)
+    .sort(
+      (left, right) =>
+        left.start - right.start ||
+        right.needleLength - left.needleLength ||
+        left.end - right.end
+    );
+
+  const hits: StructuredRosterHit[] = [];
+  for (const candidate of candidates) {
+    if (
+      hits.some(
+        (hit) =>
+          hit.playerId === candidate.playerId &&
+          hit.start === candidate.start &&
+          hit.end === candidate.end
+      )
+    ) {
+      continue;
+    }
+    if (
+      hits.some(
+        (hit) => candidate.start < hit.end && candidate.end > hit.start
+      )
+    ) {
+      continue;
+    }
+    hits.push({
+      start: candidate.start,
+      end: candidate.end,
+      playerId: candidate.playerId,
+      playerName: candidate.playerName
+    });
+  }
+
+  return hits;
+}
+
+function extractRosterLinkedPlayerGroupsFromLine(
+  line: string,
+  rosterEntries: RosterNameEntry[]
+): string[][] {
+  const hits = findStructuredRosterHitsInLine(line, rosterEntries);
+  if (hits.length < 2) return [];
+
+  const normalizedLine = normalizeTeamLabel(line);
+  const groups: string[][] = [];
+  let currentGroup: StructuredRosterHit[] = [hits[0]!];
+
+  for (let index = 1; index < hits.length; index += 1) {
+    const currentHit = hits[index]!;
+    const previousHit = currentGroup[currentGroup.length - 1]!;
+    const separator = normalizedLine.slice(previousHit.end, currentHit.start);
+
+    if (
+      GDT_ROSTER_LINKED_SEPARATOR_PATTERN.test(separator) &&
+      currentGroup.length < 3
+    ) {
+      currentGroup.push(currentHit);
+      continue;
+    }
+
+    if (currentGroup.length >= 2) {
+      groups.push(currentGroup.map((hit) => hit.playerName));
+    }
+    currentGroup = [currentHit];
+  }
+
+  if (currentGroup.length >= 2) {
+    groups.push(currentGroup.map((hit) => hit.playerName));
+  }
+
+  return groups;
+}
+
+function extractStructuredSegmentsFromLine(line: string): string[] {
+  GDT_INLINE_LINE_PATTERN.lastIndex = 0;
+  const lineMatches = Array.from(line.matchAll(GDT_INLINE_LINE_PATTERN), (match) =>
+    normalizeWhitespace(match[0] ?? "")
+  ).filter(Boolean);
+  if (lineMatches.length > 0) {
+    return lineMatches;
+  }
+
+  GDT_INLINE_PAIR_PATTERN.lastIndex = 0;
+  return Array.from(line.matchAll(GDT_INLINE_PAIR_PATTERN), (match) =>
+    normalizeWhitespace(match[0] ?? "")
+  ).filter(Boolean);
+}
+
+export function extractStructuredPlayerGroupsFromText(
+  text: string,
+  rosterEntries: RosterNameEntry[] = []
+): {
   forwards: string[][];
   defensePairs: string[][];
   goalies: string[];
@@ -388,9 +602,30 @@ export function extractStructuredPlayerGroupsFromText(text: string): {
     .map((line) => normalizeWhitespace(line))
     .filter(Boolean);
 
-  const parsedGroups = lines
-    .map((line) => parsePlayerLine(line))
-    .filter((group) => group.length > 0 && group.length <= 3);
+  const parsedGroups: string[][] = [];
+  for (const line of lines) {
+    const rosterLinkedGroups = extractRosterLinkedPlayerGroupsFromLine(
+      line,
+      rosterEntries
+    );
+    if (rosterLinkedGroups.length > 0) {
+      parsedGroups.push(...rosterLinkedGroups);
+      continue;
+    }
+
+    const parsedLine = parseStructuredPlayerLineTokens(line, rosterEntries);
+    if (parsedLine) {
+      parsedGroups.push(parsedLine);
+      continue;
+    }
+
+    for (const segment of extractStructuredSegmentsFromLine(line)) {
+      const parsedSegment = parseStructuredPlayerLineTokens(segment, rosterEntries);
+      if (parsedSegment) {
+        parsedGroups.push(parsedSegment);
+      }
+    }
+  }
 
   return {
     forwards: parsedGroups.filter((group) => group.length === 3).slice(0, 4),
@@ -800,23 +1035,42 @@ export function parseDailyFaceoffLineCombinationsPage(args: {
 
 export function classifyGameDayTweet(text: string): GameDayTweetsClassification {
   const normalized = normalizeTeamLabel(text);
-  GDT_INLINE_LINE_PATTERN.lastIndex = 0;
+  const structuredGroups = extractStructuredPlayerGroupsFromText(text);
+  const hasLineupBlock =
+    structuredGroups.forwards.length >= 2 ||
+    (structuredGroups.forwards.length >= 1 &&
+      (structuredGroups.defensePairs.length >= 1 ||
+        structuredGroups.goalies.length >= 1)) ||
+    (structuredGroups.defensePairs.length >= 2 &&
+      structuredGroups.goalies.length >= 1);
+  const hasAnyStructuredLine =
+    structuredGroups.forwards.length >= 1 || structuredGroups.defensePairs.length >= 2;
 
   if (GDT_POWERPLAY_KEYWORDS.some((keyword) => normalized.includes(keyword))) {
     return "power_play";
   }
-  if (GDT_GOALIE_KEYWORDS.some((keyword) => normalized.includes(keyword))) {
-    return "goalie_start";
-  }
-  if (GDT_INJURY_KEYWORDS.some((keyword) => normalized.includes(keyword))) {
-    return "injury";
-  }
   if (GDT_PRACTICE_KEYWORDS.some((keyword) => normalized.includes(keyword))) {
     return "practice_lines";
   }
+  if (hasLineupBlock) {
+    return "lineup";
+  }
+  if (
+    GDT_GOALIE_KEYWORDS.some((keyword) => normalized.includes(keyword)) &&
+    !hasAnyStructuredLine
+  ) {
+    return "goalie_start";
+  }
+  if (
+    GDT_INJURY_KEYWORDS.some((keyword) => normalized.includes(keyword)) &&
+    !hasLineupBlock
+  ) {
+    return "injury";
+  }
   if (
     GDT_LINEUP_KEYWORDS.some((keyword) => normalized.includes(keyword)) ||
-    GDT_INLINE_LINE_PATTERN.test(text)
+    structuredGroups.forwards.length >= 1 ||
+    structuredGroups.defensePairs.length >= 2
   ) {
     return "lineup";
   }
@@ -900,20 +1154,20 @@ export function extractOrderedRosterHitsFromTweet(
 }
 
 export function extractStructuredNameGroupsFromTweet(
-  tweetText: string
+  tweetText: string,
+  rosterEntries: RosterNameEntry[] = []
 ): {
   forwardLineCount: number;
   defensePairCount: number;
 } {
-  GDT_INLINE_LINE_PATTERN.lastIndex = 0;
-  GDT_INLINE_PAIR_PATTERN.lastIndex = 0;
-  const forwardLineCount = Array.from(tweetText.matchAll(GDT_INLINE_LINE_PATTERN)).length;
-  GDT_INLINE_PAIR_PATTERN.lastIndex = 0;
-  const pairCandidates = Array.from(tweetText.matchAll(GDT_INLINE_PAIR_PATTERN)).length;
+  const structuredGroups = extractStructuredPlayerGroupsFromText(
+    tweetText,
+    rosterEntries
+  );
 
   return {
-    forwardLineCount,
-    defensePairCount: Math.max(0, pairCandidates - forwardLineCount * 2)
+    forwardLineCount: structuredGroups.forwards.length,
+    defensePairCount: structuredGroups.defensePairs.length
   };
 }
 
@@ -946,7 +1200,7 @@ export function buildGameDayTweetsLineupSourceFromTweet(args: {
     return null;
   }
 
-  const structured = extractStructuredPlayerGroupsFromText(text);
+  const structured = extractStructuredPlayerGroupsFromText(text, rosterEntries);
   let forwards = structured.forwards
     .map((line) =>
       line.map((name) => resolveTweetNameToRosterEntry(name, rosterEntries)?.fullName ?? name)
@@ -1000,7 +1254,7 @@ export function buildGameDayTweetsLineupSourceFromTweet(args: {
       matchedNames: validation.matchedNames,
       unmatchedNames: validation.unmatchedNames,
       structureSignals: {
-        ...extractStructuredNameGroupsFromTweet(text),
+        ...extractStructuredNameGroupsFromTweet(text, rosterEntries),
         keywordHits: findGameDayTweetKeywordHits(text)
       },
       text,
@@ -1033,7 +1287,10 @@ export function parseGameDayTweetsLinesPage(args: {
         .filter((href): href is string => Boolean(href));
 
       const validation = matchRosterNamesInTweet(text, rosterEntries);
-      const structureSignals = extractStructuredNameGroupsFromTweet(text);
+      const structureSignals = extractStructuredNameGroupsFromTweet(
+        text,
+        rosterEntries
+      );
 
       return {
         classification: classifyGameDayTweet(text),

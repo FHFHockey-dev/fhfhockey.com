@@ -9,6 +9,8 @@
 - `web/lib/game-predictions/accountability.test.ts` - Deterministic tests for new ablation variants, blend behavior, and feature-analysis summaries.
 - `web/lib/game-predictions/featureSources.ts` - Feature-set version and source registry for new roster, player-rating, and SoS sources.
 - `web/lib/game-predictions/workflow.ts` - Production scoring workflow that must consume any promoted feature-set/model version.
+- `web/lib/predictions/contracts.ts` - Shared prediction metadata/source-freshness contract now embedded in feature snapshot provenance.
+- `web/lib/predictions/sourceProvenance.ts` - Game-prediction source-provenance rows written during pregame generation.
 - `web/pages/api/v1/game-predictions/backtest-ablation.ts` - Dry-run comparison endpoint for roster, SoS, decay, and blend variants.
 - `web/pages/api/v1/game-predictions/feature-signal-analysis.ts` - Dry-run endpoint for statistical relationship analysis between features and game outcomes.
 - `web/lib/ratings/playerImpactRatings.ts` - Builds TOI-shrunk skater offense, skater defense, and goalie impact ratings from game-log source rows.
@@ -66,6 +68,7 @@
   - `lines_gdl`: `42` rows since `2025-10-01`, snapshots `2026-04-22` through `2026-04-23`.
   - `lines_ccc`: `162` rows since `2025-10-01`, snapshots `2026-04-25` through `2026-04-30`.
   - `sos_standings`: `6592` rows for `20252026`, `2025-10-07` through `2026-04-30`.
+- Current feature-context implementation adds CTPI, past-opponent team-power schedule strength, FORGE team projection deltas, goalie workload/rest context, and source-provenance rows with deterministic tests. Promotion/backtest tasks remain open until the versioned model beats the recorded gates.
 
 ## Tasks
 
@@ -93,12 +96,12 @@
 - [ ] 4.0 Aggregate player priors into roster-adjusted team features
   - [ ] 4.1 Build expected-roster aggregation for skater offense, skater defense, goalie impact, and special-teams context.
   - [ ] 4.2 Weight skater impact by expected or historical TOI share instead of simple roster average.
-  - [ ] 4.3 Use confirmed/projected goalie starter when available, with fallback to goalie-start probability or roster goalie aggregate.
+  - [x] 4.3 Use confirmed/projected goalie starter when available, with fallback to goalie-start probability or roster goalie aggregate.
   - [ ] 4.4 Emit matchup deltas such as `homeMinusAwayRosterOffImpact`, `homeMinusAwayRosterDefImpact`, and `homeMinusAwayRosterGoalieImpact`.
   - [ ] 4.5 Add feature-source and warning metadata when roster or player-prior inputs are stale, incomplete, or fallback-derived.
 
 - [ ] 5.0 Add opponent-adjusted current team form and strength of schedule
-  - [ ] 5.1 Define season-to-date and recent-window opponent strength features using as-of SoS data.
+  - [x] 5.1 Define season-to-date and recent-window opponent strength features using as-of SoS data.
   - [ ] 5.2 Adjust goal differential and xG share form for opponent quality so weak-schedule runs do not inflate teams.
   - [ ] 5.3 Add recent opponent-strength deltas for last 5 and last 10 games.
   - [ ] 5.4 Keep raw and adjusted team-form values available for feature-signal analysis and ablations.

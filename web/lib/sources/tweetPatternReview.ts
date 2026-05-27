@@ -84,6 +84,16 @@ const DEFAULT_SOURCE_SCOPE = "tweet-pattern-review";
 
 export const TWEET_PATTERN_CATEGORY_OPTIONS: PatternCategoryOption[] = [
   {
+    category: "LINEUP",
+    subcategories: [
+      "LINE COMBINATION",
+      "FORWARD LINES",
+      "DEFENSE PAIRS",
+      "PRACTICE LINES",
+      "MORNING SKATE"
+    ]
+  },
+  {
     category: "LINE COMBINATION",
     subcategories: [
       "FORWARD LINES",
@@ -253,9 +263,14 @@ export function buildTweetPatternReviewText(args: {
   enrichedText?: string | null;
   quotedRawText?: string | null;
   quotedEnrichedText?: string | null;
+  primaryTextSource?: string | null;
 }): string | null {
   const wrapperText = normalizeBlock(args.enrichedText ?? args.rawText);
   const quotedText = normalizeBlock(args.quotedEnrichedText ?? args.quotedRawText);
+
+  if (args.primaryTextSource === "quoted_oembed" && quotedText) {
+    return quotedText;
+  }
 
   if (wrapperText && quotedText && wrapperText !== quotedText) {
     return `Wrapper text\n${wrapperText}\n\nQuoted text\n${quotedText}`;

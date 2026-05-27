@@ -1,8 +1,16 @@
 // web/lib/sustainability/score.ts
 
-import supabase from "lib/supabase";
+import supabase from "lib/supabase/server";
 import { PosGroup } from "lib/sustainability/priors";
 import { WindowCode } from "lib/sustainability/windows";
+import {
+  SUSTAINABILITY_SCORE_MODEL_VERSION,
+  buildSustainabilityConfigHash
+} from "./runtimeContract";
+import {
+  applySustainabilityScoreGuardrails,
+  clampSustainabilityZScore
+} from "./guardrails";
 
 const EPS = 1e-9;
 
@@ -118,7 +126,17 @@ export async function buildScoreForPlayerWindow(
     .in("stat_code", ["shp", "oishp", "ipp", "ppshp"]);
   if (error) throw error;
   const zmap: Record<string, number> = {};
-  for (const r of zrows ?? []) zmap[r.stat_code] = Number(r.eb_z) || 0;
+  const guardrailWarnings: string[] = [];
+  for (const r of zrows ?? []) {
+    zmap[r.stat_code] = clampSustainabilityZScore(
+      Number(r.eb_z),
+      `window_z_${r.stat_code}`,
+      guardrailWarnings
+    );
+  }
+  const missingLuckStats = ["shp", "oishp", "ipp", "ppshp"].filter(
+    (stat) => zmap[stat] == null
+  );
 
   // skill z's
   const rates = await fetchSkillWindowRates(player_id, snapshot_date, window.n);
@@ -138,7 +156,34 @@ export async function buildScoreForPlayerWindow(
     weights.skill.ixg60 * z_ixg +
     weights.skill.icf60 * z_icf +
     weights.skill.hdcf60 * z_hdc;
-  const s100 = 100 * sigmoid(sRaw);
+  const components = {
+    modelVersion: SUSTAINABILITY_SCORE_MODEL_VERSION,
+    configHash: buildSustainabilityConfigHash({ weights, window }),
+    sourceCutoffs: {
+      sustainability_window_z: snapshot_date,
+      player_stats_unified: snapshot_date,
+      player_totals_unified: season_id
+    },
+    warnings: [
+      ...missingLuckStats.map((stat) => `missing_window_z_${stat}`),
+      ...guardrailWarnings
+    ],
+    fallbackFlags: {
+      missing_luck_stats: missingLuckStats.length > 0
+    },
+    z_shp: zmap["shp"] ?? 0,
+    z_oishp: zmap["oishp"] ?? 0,
+    z_ipp: zmap["ipp"] ?? 0,
+    z_ppshp: zmap["ppshp"] ?? 0,
+    z_ixg60: z_ixg,
+    z_icf60: z_icf,
+    z_hdcf60: z_hdc,
+    weights
+  };
+  const guardedScore = applySustainabilityScoreGuardrails({
+    sRaw,
+    components
+  });
 
   return {
     row: {
@@ -147,18 +192,9 @@ export async function buildScoreForPlayerWindow(
       snapshot_date,
       position_group: pg,
       window_code: window.code,
-      s_raw: Number(sRaw.toFixed(6)),
-      s_100: Number(s100.toFixed(2)),
-      components: {
-        z_shp: zmap["shp"] ?? 0,
-        z_oishp: zmap["oishp"] ?? 0,
-        z_ipp: zmap["ipp"] ?? 0,
-        z_ppshp: zmap["ppshp"] ?? 0,
-        z_ixg60: z_ixg,
-        z_icf60: z_icf,
-        z_hdcf60: z_hdc,
-        weights
-      }
+      s_raw: guardedScore.sRaw,
+      s_100: guardedScore.s100,
+      components: guardedScore.components
     },
     sample: { rates, zmap }
   };

@@ -99,6 +99,27 @@ function formatSigned(value: number | null | undefined, suffix = ""): string {
   return `${sign}${value.toFixed(1)}${suffix}`;
 }
 
+function withPreviewTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs = 10_000
+): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timeoutId = window.setTimeout(() => {
+      reject(new Error("Preview request timed out."));
+    }, timeoutMs);
+
+    promise
+      .then((value) => {
+        window.clearTimeout(timeoutId);
+        resolve(value);
+      })
+      .catch((timeoutError: unknown) => {
+        window.clearTimeout(timeoutId);
+        reject(timeoutError);
+      });
+  });
+}
+
 const ForgeLandingPage: NextPage = () => {
   const router = useRouter();
   const todayEt = useMemo(() => getTodayEt(), []);
@@ -135,24 +156,34 @@ const ForgeLandingPage: NextPage = () => {
     setSustainabilityPreviewMessage(null);
 
     Promise.allSettled([
-      fetchCachedJson<unknown>(`/api/v1/start-chart?date=${encodeURIComponent(date)}`, {
-        ttlMs: 60_000
-      }),
-      fetchCachedJson<ForgePlayersResponse>(
-        `/api/v1/forge/players?date=${encodeURIComponent(date)}&horizon=1`,
-        { ttlMs: 60_000 }
+      withPreviewTimeout(
+        fetchCachedJson<unknown>(`/api/v1/start-chart?date=${encodeURIComponent(date)}`, {
+          ttlMs: 60_000
+        })
       ),
-      fetchCachedJson<OwnershipTrendsResponse>(
-        "/api/v1/transactions/ownership-trends?window=5&limit=40",
-        { ttlMs: 60_000 }
+      withPreviewTimeout(
+        fetchCachedJson<ForgePlayersResponse>(
+          `/api/v1/forge/players?date=${encodeURIComponent(date)}&horizon=1`,
+          { ttlMs: 60_000 }
+        )
       ),
-      fetchCachedJson<unknown>(
-        `/api/v1/sustainability/trends?snapshot_date=${encodeURIComponent(date)}&window_code=l10&pos=all&direction=cold&limit=3`,
-        { ttlMs: 90_000 }
+      withPreviewTimeout(
+        fetchCachedJson<OwnershipTrendsResponse>(
+          "/api/v1/transactions/ownership-trends?window=5&limit=40",
+          { ttlMs: 60_000 }
+        )
       ),
-      fetchCachedJson<unknown>(
-        `/api/v1/sustainability/trends?snapshot_date=${encodeURIComponent(date)}&window_code=l10&pos=all&direction=hot&limit=3`,
-        { ttlMs: 90_000 }
+      withPreviewTimeout(
+        fetchCachedJson<unknown>(
+          `/api/v1/sustainability/trends?snapshot_date=${encodeURIComponent(date)}&window_code=l10&pos=all&direction=cold&limit=3`,
+          { ttlMs: 90_000 }
+        )
+      ),
+      withPreviewTimeout(
+        fetchCachedJson<unknown>(
+          `/api/v1/sustainability/trends?snapshot_date=${encodeURIComponent(date)}&window_code=l10&pos=all&direction=hot&limit=3`,
+          { ttlMs: 90_000 }
+        )
       )
     ])
       .then((results) => {
@@ -186,7 +217,7 @@ const ForgeLandingPage: NextPage = () => {
           setSlateGames([]);
           setSlatePreviewMessage({
             tone: "notice",
-            text: "Slate preview unavailable. Open Start Chart for a live retry."
+            text: "Game preview unavailable. Open goalie starts for a live retry."
           });
         }
 
@@ -260,7 +291,7 @@ const ForgeLandingPage: NextPage = () => {
           if (playersPayload?.asOfDate && playersPayload.asOfDate !== date) {
             setAddsPreviewMessage({
               tone: "warning",
-              text: `Using latest available add context from ${playersPayload.asOfDate}.`
+              text: `Using latest available add data from ${playersPayload.asOfDate}.`
             });
           } else if (playersPayload?.degradedProjectionSummary?.note) {
             setAddsPreviewMessage({
@@ -291,19 +322,25 @@ const ForgeLandingPage: NextPage = () => {
             : null;
 
         const nextSustainablePreview =
-          sustainable?.rows.slice(0, 3).map((row) => ({
-            playerId: row.player_id,
-            playerName: row.player_name,
-            score: row.s_100,
-            pressure: row.luck_pressure
-          })) ?? [];
+          sustainable?.rows
+            .filter((row) => row.player_name)
+            .slice(0, 3)
+            .map((row) => ({
+              playerId: row.player_id,
+              playerName: row.player_name,
+              score: row.s_100,
+              pressure: row.luck_pressure
+            })) ?? [];
         const nextRiskPreview =
-          risk?.rows.slice(0, 3).map((row) => ({
-            playerId: row.player_id,
-            playerName: row.player_name,
-            score: row.s_100,
-            pressure: row.luck_pressure
-          })) ?? [];
+          risk?.rows
+            .filter((row) => row.player_name)
+            .slice(0, 3)
+            .map((row) => ({
+              playerId: row.player_id,
+              playerName: row.player_name,
+              score: row.s_100,
+              pressure: row.luck_pressure
+            })) ?? [];
 
         setSustainablePreview(nextSustainablePreview);
         setRiskPreview(nextRiskPreview);
@@ -317,7 +354,7 @@ const ForgeLandingPage: NextPage = () => {
         if (staleInsightDates.length > 0) {
           setSustainabilityPreviewMessage({
             tone: "warning",
-            text: `Using latest available sustainability snapshot from ${staleInsightDates[0]}.`
+            text: `Using latest available trust and fade data from ${staleInsightDates[0]}.`
           });
         } else if (
           sustainableResult.status === "rejected" ||
@@ -325,12 +362,12 @@ const ForgeLandingPage: NextPage = () => {
         ) {
           setSustainabilityPreviewMessage({
             tone: "notice",
-            text: "Sustainability preview is partial. Open the dashboard for the full signal view."
+            text: "Trust and fade preview is partial. Open the dashboard for the full view."
           });
         }
 
         if (availablePreviewCount === 0) {
-          setError("FORGE previews are temporarily unavailable.");
+          setError(null);
         }
       })
       .catch((fetchError: unknown) => {
@@ -361,7 +398,7 @@ const ForgeLandingPage: NextPage = () => {
         <title>FORGE | FHFHockey</title>
         <meta
           name="description"
-          content="Preview the FORGE dashboard, top adds, slate context, and sustainability signals before drilling into deeper views."
+          content="Preview plain-English fantasy hockey forecasts for tonight's games, waiver adds, and player trust calls."
         />
       </Head>
 
@@ -370,23 +407,22 @@ const ForgeLandingPage: NextPage = () => {
           <div className={styles.shell}>
             <header className={styles.routePageHeader}>
               <div className={styles.routePageIntro}>
-                <p className={styles.routePageEyebrow}>FORGE Landing</p>
-                <h1 className={styles.routePageTitle}>FORGE</h1>
+                <p className={styles.routePageEyebrow}>Fantasy Forecast</p>
+                <h1 className={styles.routePageTitle}>FORGE Dashboard</h1>
                 <p className={styles.routePageSubtitle}>
-                  Preview the slate, the most actionable adds, and the strongest
-                  sustainability reads before you drop into the full control
-                  surface.
+                  Start here when you want the short version: which games matter,
+                  who is worth adding, and which hot streaks deserve trust.
                 </p>
               </div>
               <div className={styles.routePageNavStack}>
                 <ForgeRouteNav current="landing" date={date} />
                 <div className={styles.routePageMeta}>
-                  <span className={styles.contextChip}>Preview date: {slateDateUsed ?? date}</span>
+                  <span className={styles.contextChip}>Games date: {slateDateUsed ?? date}</span>
                   <Link
                     href={buildForgeHref("/forge/dashboard", { date })}
                     className={styles.navLink}
                   >
-                    Open Full Dashboard
+                    Open Dashboard
                   </Link>
                 </div>
               </div>
@@ -401,11 +437,11 @@ const ForgeLandingPage: NextPage = () => {
             <section className={styles.sectionBand} aria-label="FORGE landing previews">
               <div className={styles.bandHeader}>
                 <div className={styles.bandIntro}>
-                  <p className={styles.bandEyebrow}>Preview Grid</p>
-                  <h2 className={styles.bandTitle}>Slate, Adds, Sustainability</h2>
+                  <p className={styles.bandEyebrow}>Quick Read</p>
+                  <h2 className={styles.bandTitle}>Tonight, Waivers, Trust Calls</h2>
                   <p className={styles.bandSummary}>
-                    This page stays slim on purpose. It previews the live surfaces,
-                    then pushes you toward the full dashboard or the deeper drill-ins.
+                    Use this page for a quick scan. Open the dashboard when you
+                    want filters, goalie detail, and the full player lists.
                   </p>
                 </div>
               </div>
@@ -416,7 +452,7 @@ const ForgeLandingPage: NextPage = () => {
                 <div className={styles.previewGrid}>
                   <article className={styles.previewPanel}>
                     <header className={styles.panelHeader}>
-                      <h3 className={styles.panelTitle}>Slate Preview</h3>
+                      <h3 className={styles.panelTitle}>Tonight&apos;s Games</h3>
                       <span className={styles.panelMeta}>{slateDateUsed ?? date}</span>
                     </header>
                     {slatePreviewMessage ? (
@@ -450,9 +486,9 @@ const ForgeLandingPage: NextPage = () => {
                             >
                               <strong>{awayTeam} @ {homeTeam}</strong>
                               <span>
-                                Away start {game.awayGoalies[0]?.start_probability != null
+                                Away goalie likely {game.awayGoalies[0]?.start_probability != null
                                   ? `${(game.awayGoalies[0].start_probability * 100).toFixed(0)}%`
-                                  : "--"} • Home start {game.homeGoalies[0]?.start_probability != null
+                                  : "--"} • Home goalie likely {game.homeGoalies[0]?.start_probability != null
                                   ? `${(game.homeGoalies[0].start_probability * 100).toFixed(0)}%`
                                   : "--"}
                               </span>
@@ -471,14 +507,14 @@ const ForgeLandingPage: NextPage = () => {
                         })}
                         className={styles.slateActionLink}
                       >
-                        Open Start Chart
+                        See Goalie Starts
                       </Link>
                     </div>
                   </article>
 
                   <article className={styles.previewPanel}>
                     <header className={styles.panelHeader}>
-                      <h3 className={styles.panelTitle}>Top Player Adds</h3>
+                      <h3 className={styles.panelTitle}>Best Waiver Adds</h3>
                       <span className={styles.panelMeta}>25% - 75% owned</span>
                     </header>
                     {addsPreviewMessage ? (
@@ -506,7 +542,7 @@ const ForgeLandingPage: NextPage = () => {
                             <strong>{row.name}</strong>
                             <span>
                               {(row.teamAbbr ?? row.team ?? "--")} • Own {row.ownership.toFixed(0)}% •
-                              5D {formatSigned(row.delta, " pts")} • Score {row.score.total.toFixed(1)}
+                              5D {formatSigned(row.delta, " pts")} • Add score {row.score.total.toFixed(1)}
                             </span>
                           </Link>
                         ))
@@ -519,15 +555,15 @@ const ForgeLandingPage: NextPage = () => {
                         href={buildForgeHref("/forge/dashboard", { date })}
                         className={styles.slateActionLink}
                       >
-                        Open Dashboard Adds
+                        See All Adds
                       </Link>
                     </div>
                   </article>
 
                   <article className={styles.previewPanel}>
                     <header className={styles.panelHeader}>
-                      <h3 className={styles.panelTitle}>Sustainability Preview</h3>
-                      <span className={styles.panelMeta}>L10</span>
+                      <h3 className={styles.panelTitle}>Trust Or Fade</h3>
+                      <span className={styles.panelMeta}>Last 10</span>
                     </header>
                     {sustainabilityPreviewMessage ? (
                       <p
@@ -542,7 +578,7 @@ const ForgeLandingPage: NextPage = () => {
                     ) : null}
                     <div className={styles.previewColumns}>
                       <div className={styles.previewSubsection}>
-                        <p className={styles.previewSubheading}>Trustworthy</p>
+                        <p className={styles.previewSubheading}>Safer Risers</p>
                         <div className={styles.previewList}>
                           {sustainablePreview.map((row) => (
                             <Link
@@ -553,13 +589,16 @@ const ForgeLandingPage: NextPage = () => {
                               className={styles.previewRow}
                             >
                               <strong>{row.playerName ?? `Player ${row.playerId}`}</strong>
-                              <span>S {row.score.toFixed(1)} • Pressure {formatSigned(row.pressure)}</span>
+                              <span>Trust score {row.score.toFixed(1)} • Luck risk {formatSigned(row.pressure)}</span>
                             </Link>
                           ))}
+                          {sustainablePreview.length === 0 ? (
+                            <p className={styles.panelState}>No safer risers to show yet.</p>
+                          ) : null}
                         </div>
                       </div>
                       <div className={styles.previewSubsection}>
-                        <p className={styles.previewSubheading}>Overheated</p>
+                        <p className={styles.previewSubheading}>Fade Candidates</p>
                         <div className={styles.previewList}>
                           {riskPreview.map((row) => (
                             <Link
@@ -570,9 +609,12 @@ const ForgeLandingPage: NextPage = () => {
                               className={styles.previewRow}
                             >
                               <strong>{row.playerName ?? `Player ${row.playerId}`}</strong>
-                              <span>S {row.score.toFixed(1)} • Pressure {formatSigned(row.pressure)}</span>
+                              <span>Trust score {row.score.toFixed(1)} • Luck risk {formatSigned(row.pressure)}</span>
                             </Link>
                           ))}
+                          {riskPreview.length === 0 ? (
+                            <p className={styles.panelState}>No fade candidates to show yet.</p>
+                          ) : null}
                         </div>
                       </div>
                     </div>
@@ -581,7 +623,7 @@ const ForgeLandingPage: NextPage = () => {
                         href={buildForgeHref("/forge/dashboard", { date })}
                         className={styles.slateActionLink}
                       >
-                        Open Dashboard Insight
+                        See Player Calls
                       </Link>
                     </div>
                   </article>

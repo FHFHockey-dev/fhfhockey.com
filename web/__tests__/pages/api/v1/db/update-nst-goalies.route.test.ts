@@ -148,7 +148,7 @@ describe("/api/v1/db/update-nst-goalies", () => {
           player_name: "John Goalie",
           team: "TOR",
           player_id: 8478402,
-          date_scraped: "2025-09-30",
+          date_scraped: "2025-10-01",
           season: 20252026,
           gp: 1,
           toi: 60,

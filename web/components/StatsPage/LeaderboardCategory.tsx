@@ -139,6 +139,8 @@ const LeaderboardCategory: React.FC<LeaderboardCategoryProps> = ({
                     }
                     alt={player.fullName}
                     className={styles.playerHeadshot}
+                    loading="lazy"
+                    decoding="async"
                     style={{ cursor: "pointer" }}
                     onError={(e) => {
                       (e.target as HTMLImageElement).style.display = "none";

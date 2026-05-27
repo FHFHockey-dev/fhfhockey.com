@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import adminOnly from "utils/adminOnlyMiddleware";
 import shiftChartsHandler from "./shift-charts";
 
@@ -11,4 +12,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   return shiftChartsHandler(req as any, res);
 }
 
-export default adminOnly(handler);
+export default withCronJobAudit(adminOnly(handler), {
+  jobName: "update-shift-charts"
+});

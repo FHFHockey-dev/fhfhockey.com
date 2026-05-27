@@ -60,6 +60,12 @@ const twitterEmbedSources = [
 ] satisfies TwitterEmbedSource[];
 
 const PAGE_REFRESH_INTERVAL_MS = 60_000;
+const retweetingSourceHandles = new Set([
+  "cccmiddleton",
+  "gamedaygoalies",
+  "gamedaynewsnhl",
+  "gamedaylines",
+]);
 
 type LinesCccPageRow = {
   capture_key: string;
@@ -110,44 +116,194 @@ type PageProps = {
   loadError: string | null;
 };
 
-function mapLinesCccRowToCard(row: LinesCccPageRow): LocalTweetCard {
+type RetweetAttributionRow = {
+  tweet_id: string | null;
+  tweet_url: string | null;
+  source_url: string | null;
+  source_key?: string | null;
+  source_account?: string | null;
+  quoted_tweet_id: string | null;
+  quoted_tweet_url: string | null;
+  author_name: string | null;
+  source_handle: string | null;
+  quoted_author_name: string | null;
+  quoted_author_handle: string | null;
+  raw_text: string | null;
+  enriched_text: string | null;
+  quoted_raw_text: string | null;
+  quoted_enriched_text: string | null;
+};
+
+function normalizeTwitterHandle(
+  handle: string | null | undefined,
+): string | null {
+  const normalized = handle?.trim().replace(/^@/, "").toLowerCase();
+  return normalized || null;
+}
+
+function isRetweetingSourceHandle(handle: string | null | undefined): boolean {
+  const normalized = normalizeTwitterHandle(handle);
+  return normalized ? retweetingSourceHandles.has(normalized) : false;
+}
+
+function parseHandleFromTweetUrl(url: string | null): string | null {
+  if (!url) return null;
+
+  try {
+    const { pathname } = new URL(url);
+    const handle = pathname.match(/^\/([^/]+)\/status(?:es)?\/\d+/i)?.[1];
+    return handle &&
+      handle.toLowerCase() !== "i" &&
+      !isRetweetingSourceHandle(handle)
+      ? handle
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function getRetweetedAttribution(row: RetweetAttributionRow) {
+  const isRetweetingSource =
+    isRetweetingSourceHandle(row.source_handle) ||
+    isRetweetingSourceHandle(row.source_account) ||
+    isRetweetingSourceHandle(row.source_key);
+  const explicitQuotedAuthorHandle = isRetweetingSourceHandle(
+    row.quoted_author_handle,
+  )
+    ? null
+    : row.quoted_author_handle;
+  const quotedAuthorHandle =
+    explicitQuotedAuthorHandle ?? parseHandleFromTweetUrl(row.quoted_tweet_url);
+  const quotedAuthorName = isRetweetingSourceHandle(row.quoted_author_name)
+    ? null
+    : row.quoted_author_name;
+
+  if (
+    !isRetweetingSource ||
+    (!quotedAuthorHandle && !quotedAuthorName && !row.quoted_tweet_url)
+  ) {
+    return null;
+  }
+
+  const quotedText = row.quoted_enriched_text ?? row.quoted_raw_text ?? "";
+
+  return {
+    tweetId: row.quoted_tweet_id ?? row.tweet_id ?? "unknown-tweet",
+    authorName: quotedAuthorName ?? quotedAuthorHandle ?? "Unknown author",
+    authorHandle: quotedAuthorHandle ?? "unknown",
+    tweetUrl: row.quoted_tweet_url ?? row.source_url ?? row.tweet_url ?? "#",
+    sourceUrl: row.quoted_tweet_url ?? row.source_url ?? null,
+    wrapperText:
+      quotedText || row.enriched_text || row.raw_text || "(no wrapper text)",
+  };
+}
+
+function getFallbackAttribution(row: RetweetAttributionRow) {
+  const sourceHandle = isRetweetingSourceHandle(row.source_handle)
+    ? null
+    : row.source_handle;
+  const authorName = isRetweetingSourceHandle(row.author_name)
+    ? null
+    : row.author_name;
+
+  return {
+    authorName: authorName ?? sourceHandle ?? "Unknown author",
+    authorHandle: sourceHandle ?? "unknown",
+  };
+}
+
+export function mapLinesCccRowToCard(row: LinesCccPageRow): LocalTweetCard {
+  const retweetedAttribution = getRetweetedAttribution({
+    ...row,
+    source_account: "CcCMiddleton",
+  });
+  const fallbackAttribution = getFallbackAttribution(row);
+
   return {
     key: row.capture_key,
-    tweetId: row.tweet_id ?? row.quoted_tweet_id ?? "unknown-tweet",
-    authorName: row.author_name ?? row.source_handle ?? "Unknown author",
-    authorHandle: row.source_handle ?? "unknown",
+    tweetId:
+      retweetedAttribution?.tweetId ??
+      row.tweet_id ??
+      row.quoted_tweet_id ??
+      "unknown-tweet",
+    authorName:
+      retweetedAttribution?.authorName ?? fallbackAttribution.authorName,
+    authorHandle:
+      retweetedAttribution?.authorHandle ?? fallbackAttribution.authorHandle,
     sourceAccount: "CcCMiddleton",
     sourceLabel: row.tweet_posted_label ?? "Unknown date",
-    tweetUrl: row.tweet_url ?? row.quoted_tweet_url ?? "#",
-    sourceUrl: row.source_url ?? null,
-    wrapperText: row.enriched_text ?? row.raw_text ?? "(no wrapper text)",
-    quotedAuthorName: row.quoted_author_name ?? null,
-    quotedAuthorHandle: row.quoted_author_handle ?? null,
-    quotedTweetUrl: row.quoted_tweet_url ?? null,
-    quotedText: row.quoted_enriched_text ?? row.quoted_raw_text ?? "",
+    tweetUrl:
+      retweetedAttribution?.tweetUrl ??
+      row.tweet_url ??
+      row.quoted_tweet_url ??
+      "#",
+    sourceUrl: retweetedAttribution?.sourceUrl ?? row.source_url ?? null,
+    wrapperText:
+      retweetedAttribution?.wrapperText ??
+      row.enriched_text ??
+      row.raw_text ??
+      "(no wrapper text)",
+    quotedAuthorName: retweetedAttribution
+      ? null
+      : (row.quoted_author_name ?? null),
+    quotedAuthorHandle: retweetedAttribution
+      ? null
+      : (row.quoted_author_handle ?? null),
+    quotedTweetUrl: retweetedAttribution
+      ? null
+      : (row.quoted_tweet_url ?? null),
+    quotedText: retweetedAttribution
+      ? ""
+      : (row.quoted_enriched_text ?? row.quoted_raw_text ?? ""),
     status: row.nhl_filter_status,
     observedAt: row.observed_at ?? null,
     rowStatus: row.status,
   };
 }
 
-function mapLineSourceSnapshotRowToCard(
+export function mapLineSourceSnapshotRowToCard(
   row: LineSourceSnapshotPageRow,
 ): LocalTweetCard {
+  const retweetedAttribution = getRetweetedAttribution(row);
+  const fallbackAttribution = getFallbackAttribution(row);
+
   return {
     key: row.capture_key,
-    tweetId: row.tweet_id ?? row.quoted_tweet_id ?? "unknown-tweet",
-    authorName: row.author_name ?? row.source_handle ?? "Unknown author",
-    authorHandle: row.source_handle ?? "unknown",
+    tweetId:
+      retweetedAttribution?.tweetId ??
+      row.tweet_id ??
+      row.quoted_tweet_id ??
+      "unknown-tweet",
+    authorName:
+      retweetedAttribution?.authorName ?? fallbackAttribution.authorName,
+    authorHandle:
+      retweetedAttribution?.authorHandle ?? fallbackAttribution.authorHandle,
     sourceAccount: row.source_account ?? row.source_key,
     sourceLabel: row.tweet_posted_label ?? "Unknown date",
-    tweetUrl: row.source_url ?? row.tweet_url ?? row.quoted_tweet_url ?? "#",
-    sourceUrl: row.source_url ?? null,
-    wrapperText: row.enriched_text ?? row.raw_text ?? "(no wrapper text)",
-    quotedAuthorName: row.quoted_author_name ?? null,
-    quotedAuthorHandle: row.quoted_author_handle ?? null,
-    quotedTweetUrl: row.quoted_tweet_url ?? null,
-    quotedText: row.quoted_enriched_text ?? row.quoted_raw_text ?? "",
+    tweetUrl:
+      retweetedAttribution?.tweetUrl ??
+      row.source_url ??
+      row.tweet_url ??
+      row.quoted_tweet_url ??
+      "#",
+    sourceUrl: retweetedAttribution?.sourceUrl ?? row.source_url ?? null,
+    wrapperText:
+      retweetedAttribution?.wrapperText ??
+      row.enriched_text ??
+      row.raw_text ??
+      "(no wrapper text)",
+    quotedAuthorName: retweetedAttribution
+      ? null
+      : (row.quoted_author_name ?? null),
+    quotedAuthorHandle: retweetedAttribution
+      ? null
+      : (row.quoted_author_handle ?? null),
+    quotedTweetUrl: retweetedAttribution
+      ? null
+      : (row.quoted_tweet_url ?? null),
+    quotedText: retweetedAttribution
+      ? ""
+      : (row.quoted_enriched_text ?? row.quoted_raw_text ?? ""),
     status: row.nhl_filter_status,
     observedAt: row.observed_at ?? null,
     rowStatus: row.status,
@@ -159,7 +315,10 @@ function getCardCanonicalUrl(card: LocalTweetCard): string | null {
 }
 
 function getCardDedupeKey(card: LocalTweetCard): string {
-  return getCardCanonicalUrl(card) ?? (card.tweetId !== "unknown-tweet" ? card.tweetId : card.key);
+  return (
+    getCardCanonicalUrl(card) ??
+    (card.tweetId !== "unknown-tweet" ? card.tweetId : card.key)
+  );
 }
 
 function isAcceptedObservedCard(card: LocalTweetCard): boolean {
@@ -228,7 +387,8 @@ export function dedupeTweetCards(cards: LocalTweetCard[]): LocalTweetCard[] {
   }
   return Array.from(bestByTweet.values()).sort((left, right) => {
     const acceptedObservedDifference =
-      Number(isAcceptedObservedCard(right)) - Number(isAcceptedObservedCard(left));
+      Number(isAcceptedObservedCard(right)) -
+      Number(isAcceptedObservedCard(left));
     if (acceptedObservedDifference !== 0) return acceptedObservedDifference;
     return (getObservedAtMs(right) ?? 0) - (getObservedAtMs(left) ?? 0);
   });

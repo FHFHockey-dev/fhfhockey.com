@@ -6,6 +6,7 @@ import type {
   UnderlyingStatsLandingRating,
   UnderlyingStatsLandingSnapshot
 } from "../../../lib/underlying-stats/teamLandingRatings";
+import type { UlsRouteStatus } from "../../../lib/underlying-stats/ulsRouteStatus";
 import { buildUnderlyingStatsLandingDashboard } from "../../../lib/underlying-stats/teamLandingDashboard";
 
 const routerState = vi.hoisted(() => ({
@@ -114,6 +115,16 @@ const buildSnapshot = (
   ratings
 });
 
+const routeStatus: UlsRouteStatus = {
+  teamRatings: { latestSnapshotDate: "2026-04-05", rowCount: 32, status: "ready" },
+  skaterOffenseRatings: { latestSnapshotDate: null, rowCount: 0, status: "pending" },
+  skaterDefenseRatings: { latestSnapshotDate: null, rowCount: 0, status: "pending" },
+  goalieRatings: { latestSnapshotDate: null, rowCount: 0, status: "pending" },
+  gamePredictions: { latestSnapshotDate: null, rowCount: 0, status: "pending" },
+  playerPredictions: { latestSnapshotDate: null, rowCount: 0, status: "pending" },
+  modelMarketFlags: { latestSnapshotDate: null, rowCount: 0, status: "pending" }
+};
+
 describe("/underlying-stats landing page", () => {
   beforeEach(() => {
     routerState.replace.mockReset();
@@ -130,6 +141,7 @@ describe("/underlying-stats landing page", () => {
     render(
       <TeamPowerRankingsPage
         availableDates={["2026-04-05", "2026-04-04", "2026-04-03"]}
+        routeStatus={routeStatus}
         initialSnapshot={buildSnapshot([
           buildRating("TOR", {
             offRating: 110,
@@ -210,6 +222,7 @@ describe("/underlying-stats landing page", () => {
     render(
       <TeamPowerRankingsPage
         availableDates={["2026-04-05", "2026-04-04"]}
+        routeStatus={routeStatus}
         initialSnapshot={buildSnapshot([
           buildRating("TOR", {
             offRating: 110,
@@ -250,6 +263,7 @@ describe("/underlying-stats landing page", () => {
     render(
       <TeamPowerRankingsPage
         availableDates={["2026-04-05"]}
+        routeStatus={routeStatus}
         initialSnapshot={buildSnapshot([buildRating("TOR"), buildRating("VAN")])}
       />
     );
@@ -266,6 +280,7 @@ describe("/underlying-stats landing page", () => {
     render(
       <TeamPowerRankingsPage
         availableDates={["2026-04-05"]}
+        routeStatus={routeStatus}
         initialSnapshot={buildSnapshot([
           buildRating("TOR", { trend10: 1.2 }),
           buildRating("VAN", { trend10: 4.4 })

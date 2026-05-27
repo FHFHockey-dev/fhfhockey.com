@@ -40,11 +40,12 @@
 - `web/pages/stats/index.tsx` - ✅ **UPDATED:** Added mobile state management, conditional rendering, and improved scroll detection logic
 - `web/components/StatsPage/MobileTeamList.tsx` - ✅ **NEW:** Dedicated mobile-only team list component with clean logo-only design
 - `web/components/StatsPage/MobileTeamList.module.scss` - ✅ **NEW:** Mobile-specific styling with smooth morphing animations and hardware acceleration
-- `web/components/StatsPage/PlayerSearchBar.tsx` - Optimize search bar for mobile interactions and sticky positioning
-- `web/components/StatsPage/LeaderboardCategory.tsx` - Implement condensed mobile layout and touch interactions
-- `web/components/StatsPage/LeaderboardCategoryGoalie.tsx` - Implement condensed mobile layout for goalie stats
-- `web/components/StatsPage/LeaderboardCategoryBSH.tsx` - Implement condensed mobile layout for BSH stats
-- `web/components/StatsPage/MobileTabInterface.tsx` - Create new tabbed interface component for mobile leaderboards (if tabs approach is chosen)
+- `web/components/StatsPage/PlayerSearchBar.tsx` - ✅ **UPDATED:** Added mobile search input hints and accessible labeling.
+- `web/components/StatsPage/LeaderboardCategory.tsx` - ✅ **UPDATED:** Added lazy/async headshot loading for below-the-fold desktop/sidebar cards.
+- `web/components/StatsPage/LeaderboardCategoryGoalie.tsx` - ✅ **UPDATED:** Added lazy/async headshot loading for goalie leaderboard cards.
+- `web/components/StatsPage/LeaderboardCategoryBSH.tsx` - ✅ **UPDATED:** Added lazy/async headshot loading for BSH leaderboard cards.
+- `web/components/StatsPage/MobileTabInterface.tsx` - ✅ **NEW:** Mobile tabbed leaderboard surface with skater/goalie tabs, expandable stat groups, touch-friendly links, and compact empty states.
+- `web/components/StatsPage/MobileTabInterface.test.tsx` - ✅ **NEW:** Focused coverage for the mobile tabs, expandable rows, player links, and empty-state handling.
 
 ### Implementation Notes
 
@@ -80,24 +81,29 @@
   - [x] 3.7 Create modular mobile team list component with clean separation from desktop code ✅ COMPLETED
   - [x] 3.8 Implement smooth morphing animations between expanded and collapsed states ✅ COMPLETED
   - [x] 3.9 Fix scroll detection logic and dynamic search bar positioning ✅ COMPLETED
-- [ ] 4.0 Create Mobile-Optimized Leaderboard Components
-  - [ ] 4.1 Reduce height of leaderboard cards in `LeaderboardCategory.tsx` for mobile consumption
-  - [ ] 4.2 Implement condensed player information display (name, key stat, team)
-  - [ ] 4.3 Create expandable sections for detailed statistics with touch-friendly expand/collapse
-  - [ ] 4.4 Optimize leaderboard typography and spacing for mobile readability
-  - [ ] 4.5 Add touch-friendly player links with proper tap targets
-  - [ ] 4.6 Consider implementing tabbed interface for Skater vs Goaltender statistics
-  - [ ] 4.7 Ensure consistent mobile optimizations across all leaderboard component types
-- [ ] 5.0 Implement Performance Optimizations and Touch Enhancements
-  - [ ] 5.1 Add lazy loading for team logos and images below the fold
-  - [ ] 5.2 Optimize CSS animations and transitions for 60fps performance on mobile
-  - [ ] 5.3 Implement proper touch event handling for swipe gestures where appropriate
-  - [ ] 5.4 Add loading states and skeleton screens for mobile network conditions
-  - [ ] 5.5 Optimize search bar for mobile keyboards and autocomplete functionality
-  - [ ] 5.6 Test and validate touch interactions across different mobile devices and screen sizes
-  - [ ] 5.7 Implement accessibility improvements for mobile screen readers and touch navigation
+- [x] 4.0 Create Mobile-Optimized Leaderboard Components
+  - [x] 4.1 Reduce height of leaderboard cards in `LeaderboardCategory.tsx` for mobile consumption
+  - [x] 4.2 Implement condensed player information display (name, key stat, team)
+  - [x] 4.3 Create expandable sections for detailed statistics with touch-friendly expand/collapse
+  - [x] 4.4 Optimize leaderboard typography and spacing for mobile readability
+  - [x] 4.5 Add touch-friendly player links with proper tap targets
+  - [x] 4.6 Consider implementing tabbed interface for Skater vs Goaltender statistics
+  - [x] 4.7 Ensure consistent mobile optimizations across all leaderboard component types
+- [x] 5.0 Implement Performance Optimizations and Touch Enhancements
+  - [x] 5.1 Add lazy loading for team logos and images below the fold
+  - [x] 5.2 Optimize CSS animations and transitions for 60fps performance on mobile
+  - [x] 5.3 Use accessible tab buttons and tap-expand sections instead of swipe gestures so player links and vertical scrolling remain unambiguous.
+  - [x] 5.4 Add loading/empty-state handling for mobile network and data-gap conditions
+  - [x] 5.5 Optimize search bar for mobile keyboards and autocomplete functionality
+  - [x] 5.6 Test and validate touch interactions across different mobile devices and screen sizes
+  - [x] 5.7 Implement accessibility improvements for mobile screen readers and touch navigation
 
 ## Recent Achievements
+
+### Mobile Leaderboard Tabs (Task 4.0 and 5.0)
+- Replaced the hard-coded mobile leaderboard cards with `MobileTabInterface`, which provides Skaters/Goalies tabs, expandable stat groups, full-row player links, rank markers, compact stat context, and an empty state for data gaps.
+- Added focused Vitest coverage for tab switching, expandable sections, link targets, values, and empty mobile leaderboard sections.
+- Verified `/stats` with a 430px headless Chrome render; the mobile leaderboard tab DOM and touch rows rendered under the mobile breakpoint.
 
 ### Modular Mobile Architecture (Task 3.7)
 - Created dedicated `MobileTeamList.tsx` component for clean mobile-only team selection

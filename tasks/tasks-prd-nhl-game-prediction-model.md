@@ -24,6 +24,8 @@
 - `web/lib/game-predictions/evaluation.test.ts` - Targeted tests for outcome derivation, immutable scoring joins, AUC, calibration bins, segment metrics, and metric inserts.
 - `web/lib/game-predictions/workflow.ts` - Scheduled pregame generation, scoring, walk-forward retraining, promotion checks, and prediction-health helpers.
 - `web/lib/game-predictions/workflow.test.ts` - Targeted tests for refresh policy, chronological split generation, promotion decisions, and health checks.
+- `web/lib/predictions/contracts.ts` - Shared prediction metadata and source freshness contract embedded in feature snapshot metadata.
+- `web/lib/predictions/sourceProvenance.ts` - Source provenance row builder/upsert helper used by pregame prediction generation.
 - `web/pages/api/v1/game-predictions/generate.ts` - Admin/cron prediction-generation API route.
 - `web/pages/api/v1/game-predictions/score.ts` - Admin/cron postgame scoring and model-metrics API route.
 - `web/lib/game-predictions/publicPredictions.ts` - Public prediction API data shaper that joins serving rows, stored history, feature snapshots, teams, games, and model metrics.

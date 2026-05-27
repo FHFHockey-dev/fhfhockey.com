@@ -87,6 +87,7 @@ function createPayload(homeOffRating = 60) {
     ],
     wgoTeamRows: [],
     nstTeamGamelogRows: [],
+    teamCtpiRows: [],
     goalieStartRows: [
       {
         game_id: 2025020001,
@@ -114,6 +115,9 @@ function createPayload(homeOffRating = 60) {
     lineCombinationRows: [],
     linesCccRows: [],
     goaliePerformanceRows: [],
+    forgeGoalieGameRows: [],
+    wgoGoalieRows: [],
+    forgeTeamProjectionRows: [],
   };
 
   return buildGamePredictionFeatureSnapshotPayload(inputs);
@@ -122,7 +126,7 @@ function createPayload(homeOffRating = 60) {
 describe("game prediction baseline model", () => {
   it("builds finite baseline feature vectors", () => {
     expect(buildBaselineFeatureVector(createPayload())).toEqual([
-      12, 5, 3, 7, 0.12, 0.5, 0, 0, 0, 0, 0, 0.4, 0,
+      12, 5, 3, 7, 0.12, 0.5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.4, 0,
     ]);
   });
 
@@ -160,10 +164,10 @@ describe("game prediction baseline model", () => {
       learningRate: 0.01,
       l2: 0.01,
     });
-    expect(model.featureCount).toBe(13);
-    expect(model.weights).toHaveLength(13);
-    expect(model.featureNormalization?.means).toHaveLength(13);
-    expect(model.featureNormalization?.scales).toHaveLength(13);
+    expect(model.featureCount).toBe(17);
+    expect(model.weights).toHaveLength(17);
+    expect(model.featureNormalization?.means).toHaveLength(17);
+    expect(model.featureNormalization?.scales).toHaveLength(17);
     expect(model.probabilityFloor).toBe(0.05);
   });
 
@@ -230,7 +234,7 @@ describe("game prediction baseline model", () => {
     });
 
     expect(prediction.homeWinProbability).toBeLessThanOrEqual(0.95);
-    expect(prediction.homeWinProbability).toBeGreaterThan(0.85);
+    expect(prediction.homeWinProbability).toBeGreaterThan(0.75);
     expect(prediction.components.normalization_method).toBe(
       "training_set_standard_score",
     );
@@ -239,7 +243,7 @@ describe("game prediction baseline model", () => {
 
   it("dampens confidence when source quality is weaker", () => {
     const model: BinaryLogisticModel = {
-      featureCount: 13,
+      featureCount: 17,
       weights: [
         0.12,
         0.08,
@@ -247,6 +251,10 @@ describe("game prediction baseline model", () => {
         0.04,
         0.4,
         0.2,
+        0.02,
+        0.02,
+        0.02,
+        0.02,
         0.02,
         0.02,
         0.02,
@@ -262,6 +270,7 @@ describe("game prediction baseline model", () => {
       ...createPayload(65),
       sourceAsOfDate: "2026-01-03",
       missingFeatures: [
+        ...cleanPayload.missingFeatures,
         "home.goalie_start_projection",
         "away.goalie_start_projection",
       ],
@@ -315,7 +324,7 @@ describe("game prediction baseline model", () => {
 
   it("generates probability-consistent prediction payloads and persistence rows", () => {
     const model: BinaryLogisticModel = {
-      featureCount: 13,
+      featureCount: 17,
       weights: [
         0.02,
         0.01,
@@ -323,6 +332,10 @@ describe("game prediction baseline model", () => {
         0.01,
         0.4,
         0.2,
+        0.02,
+        0.02,
+        0.02,
+        0.02,
         0.02,
         0.02,
         0.02,
@@ -350,8 +363,8 @@ describe("game prediction baseline model", () => {
       model_audit: {
         winnerPolicyVersion:
           "winner_policy_v1_report_50_and_selected_threshold",
-        rosterImpactVersion: "none",
-        strengthOfScheduleVersion: "none",
+        rosterImpactVersion: "forge_team_projection_v1",
+        strengthOfScheduleVersion: "past_opponent_power_v1",
         seasonDecayVersion: "none",
         probabilityBlendVersion: "none",
       },

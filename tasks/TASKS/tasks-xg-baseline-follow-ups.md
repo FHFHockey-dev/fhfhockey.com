@@ -51,7 +51,7 @@
   - [x] 1.4 Rerun the benchmark and calibration review on the repaired contract and publish dated artifacts.
   - [x] 1.5 Record a fresh first-baseline approval decision after the repaired rerun.
 
-- [ ] 2.0 Harden calibration and evaluation once the repaired rerun exists
+- [x] 2.0 Harden calibration and evaluation once the repaired rerun exists
   - [x] 2.1 Reassess whether post-calibration is required under the repaired feature contract.
   - [x] 2.2 Decide whether `Platt`, `isotonic`, or no post-calibration is the first adoptable calibration approach once leakage is removed.
   - [x] 2.3 Require a non-empty dedicated `test` split for future approval-grade benchmark artifacts.

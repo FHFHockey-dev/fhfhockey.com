@@ -34,6 +34,10 @@ function parseGameIdsParam(value: string | string[] | undefined): number[] {
     .filter((entry) => Number.isFinite(entry) && entry > 0);
 }
 
+function isExternalFeedUnavailableError(message: string): boolean {
+  return /Gamecenter (boxscore|play-by-play) HTTP 404: Not Found/i.test(message);
+}
+
 async function listHistoricalGamesInRange(args: {
   supabase: SupabaseClient;
   startDate: string;
@@ -216,11 +220,32 @@ export default withCronJobAudit(adminOnly(async (req, res) => {
       (item) => item.status === "rejected"
     ) as PromiseRejectedResult[];
 
-    // Log the errors if any
-    failed.forEach((item) => console.error(item.reason));
-
     const updatedGameIds = updated.map((item) => item.value[0].gameId);
     const failedMessages = failed.map((item) => item.reason.message);
+    const allFailuresAreUnavailableFeeds =
+      failedMessages.length > 0 && failedMessages.every(isExternalFeedUnavailableError);
+
+    failed
+      .filter((item) => !isExternalFeedUnavailableError(item.reason?.message ?? String(item.reason)))
+      .forEach((item) => console.error(item.reason));
+
+    if (allFailuresAreUnavailableFeeds) {
+      return res.json({
+        success: true,
+        repairMode,
+        candidateWindow,
+        status: "skipped_external_feed_unavailable",
+        requestedScope: {
+          count,
+          seasonId: currentSeason.seasonId
+        },
+        processed: updatedGameIds.length,
+        skipped: failedMessages.length,
+        message:
+          `Updated line combinations for games [${updatedGameIds}]. ` +
+          `Skipped ${failedMessages.length} game(s) because NHL Gamecenter feeds returned 404.`
+      });
+    }
 
     if (failed.length > 0) {
       return res.status(500).json({

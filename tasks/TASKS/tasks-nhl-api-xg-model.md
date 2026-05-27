@@ -157,10 +157,10 @@
   - [x] 7.8 Produce a final implementation summary listing what is complete, what is approximated, what is intentionally deferred, and what still blocks release.
   - [x] 7.9 Leave follow-up tasks for model training, coefficient fitting, calibration, benchmarking, and advanced feature additions after the data foundation is validated.
 
-- [ ] 8.0 Resolve live schema drift discovered during NHL raw-ingest execution
+- [x] 8.0 Resolve live schema drift discovered during NHL raw-ingest execution
   - [x] 8.1 Compare the live `nhl_api_*` table shapes in the target Supabase project against `migrations/20260330_create_nhl_api_raw_ingestion_tables.sql` and identify every missing lineage/raw JSON/index-related column.
   - [x] 8.2 Create an additive corrective migration so already-created `nhl_api_*` tables gain the missing phase-1 columns without requiring destructive table recreation.
   - [x] 8.3 Apply the corrective migration in the target Supabase project, regenerate `web/lib/supabase/database-generated.types.ts`, and retry `web/scripts/ingest-nhl-api-raw.mjs` for the sampled recon games.
   - [x] 8.4 Decide whether to keep `pbp_plays` frozen as a partial comparison baseline or backfill its missing recent-game coverage for broader overlap validation. `pbp_plays` will remain frozen as a partial comparison baseline.
-  - [ ] 8.5 Decide whether `shift_charts` should remain a validation baseline as-is or be repaired/backfilled, given that recent rows can have null `game_toi`, `durations`, and `shifts`.
+  - [x] 8.5 Decide whether `shift_charts` should remain a validation baseline as-is or be repaired/backfilled, given that recent rows can have null `game_toi`, `durations`, and `shifts`. `shift_charts` will remain a secondary validation surface for player coverage and ES/PP/PK TOI totals only; `nhl_api_shift_rows` is the canonical source for raw shift reconstruction, stint logic, on-ice replay, and feature generation.
   - [x] 8.6 Add retry/backoff handling around raw NHL endpoint fetches so multi-game ingest batches survive transient `UND_ERR_SOCKET` failures instead of aborting the whole run. Completed during `4.8` by adding shared retry/backoff fetch handling in `web/lib/supabase/Upserts/nhlRawGamecenter.mjs`.

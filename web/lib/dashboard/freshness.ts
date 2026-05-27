@@ -62,16 +62,17 @@ const normalizeDateOnly = (value: string | null | undefined): string | null => {
   return DATE_ONLY_PATTERN.test(value) ? value : null;
 };
 
-const parseTimestamp = (value: string | null): number | null => {
+const parseTimestamp = (value: string | null, nowMs = Date.now()): number | null => {
   if (!value) return null;
+
+  // Daily snapshots represent the full source day, not request time at midnight.
+  if (DATE_ONLY_PATTERN.test(value)) {
+    const asIso = Date.parse(`${value}T23:59:59.999Z`);
+    return Number.isFinite(asIso) ? Math.min(asIso, nowMs) : null;
+  }
+
   const direct = Date.parse(value);
   if (Number.isFinite(direct)) return direct;
-
-  // Accept date-only values by interpreting them as UTC midnight.
-  if (DATE_ONLY_PATTERN.test(value)) {
-    const asIso = Date.parse(`${value}T00:00:00.000Z`);
-    return Number.isFinite(asIso) ? asIso : null;
-  }
 
   return null;
 };
@@ -226,7 +227,7 @@ export const evaluateFreshness = (
   const issues: FreshnessIssue[] = [];
 
   checks.forEach((check) => {
-    const ts = parseTimestamp(check.timestamp);
+    const ts = parseTimestamp(check.timestamp, nowMs);
     if (ts == null) {
       issues.push({
         source: check.source,

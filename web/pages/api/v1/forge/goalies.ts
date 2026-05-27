@@ -267,15 +267,25 @@ async function fetchFallbackRunWithGoalieData(
   horizon: number
 ): Promise<{ runId: string; asOfDate: string } | null> {
   if (!supabase) throw new Error("Supabase server client not available");
-  const { data, error } = await supabase
-    .from("forge_goalie_projections")
-    .select("run_id,as_of_date")
-    .lte("as_of_date", targetDate)
-    .eq("horizon_games", horizon)
-    .order("as_of_date", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (error) throw error;
+
+  const findCandidate = async (includeFutureDates: boolean) => {
+    let query = supabase
+      .from("forge_goalie_projections")
+      .select("run_id,as_of_date")
+      .eq("horizon_games", horizon)
+      .order("as_of_date", { ascending: false })
+      .limit(1);
+
+    if (!includeFutureDates) {
+      query = query.lte("as_of_date", targetDate);
+    }
+
+    const { data, error } = await query.maybeSingle();
+    if (error) throw error;
+    return data;
+  };
+
+  const data = (await findCandidate(false)) ?? (await findCandidate(true));
   const runId = (data as any)?.run_id as string | undefined;
   const asOfDate = (data as any)?.as_of_date as string | undefined;
   if (!runId || !asOfDate) return null;

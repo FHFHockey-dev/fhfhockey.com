@@ -522,10 +522,10 @@ export default function TopAddsRail({
             : null,
           projectionResponse?.degradedProjectionSummary?.note ?? null,
           visibleDegradedCandidateCount > 0
-            ? `${visibleDegradedCandidateCount} visible add card${visibleDegradedCandidateCount === 1 ? "" : "s"} use fallback or emergency skater-pool context.`
+            ? `${visibleDegradedCandidateCount} visible add card${visibleDegradedCandidateCount === 1 ? "" : "s"} has less certain role data than usual.`
             : null,
           missingOwnershipCount > 0
-            ? `Ownership context missing for ${missingOwnershipCount} projected candidates; those players were excluded from the ownership-banded rail.`
+            ? `Ownership is missing for ${missingOwnershipCount} projected candidates, so they are hidden by this ownership range.`
             : null
         ]
           .filter(Boolean)
@@ -558,7 +558,7 @@ export default function TopAddsRail({
   ]);
 
   return (
-    <article className={styles.topAddsRailCard} aria-label="Top player adds rail">
+    <article className={styles.topAddsRailCard} aria-label="Best waiver adds">
       {mode === "week" ? (
         <TopAddsWeekScheduleBridge
           date={date}
@@ -566,7 +566,7 @@ export default function TopAddsRail({
         />
       ) : null}
       <header className={styles.panelHeader}>
-        <h3 className={styles.panelTitle}>Top Player Adds</h3>
+        <h3 className={styles.panelTitle}>Best Waiver Adds</h3>
         <span className={styles.panelMeta}>
           Own {minOwnership}% - {maxOwnership}%
         </span>
@@ -599,24 +599,24 @@ export default function TopAddsRail({
         <div className={styles.topAddsContextRow}>
           <span className={styles.topAddsChip}>{positionLabel}</span>
           <span className={styles.topAddsChip}>
-            {mode === "tonight" ? "1G horizon" : "5G horizon"}
+            {mode === "tonight" ? "Tonight" : "Next 5 games"}
           </span>
           {mode === "week" && (
             <span className={styles.topAddsChip}>
-              {scheduleLoading ? "Week context..." : "Streaming-aware"}
+              {scheduleLoading ? "Loading schedule..." : "Schedule included"}
             </span>
           )}
         </div>
 
         <div className={styles.topAddsOwnershipControls}>
           <div className={styles.topAddsOwnershipHeader}>
-            <strong>Top Adds ownership band</strong>
+            <strong>Show players owned in</strong>
             <span>
               {minOwnership}% to {maxOwnership}%
             </span>
           </div>
           <p className={styles.compactChartNote}>
-            This band only filters the Top Adds rail. Insight cards use the dashboard-level insight band.
+            Adjust this if your league is deeper or shallower than normal.
           </p>
           <label className={styles.topAddsRangeLabel}>
             <span>Min</span>
@@ -671,7 +671,8 @@ export default function TopAddsRail({
       {!loading && !error && candidates.length > 0 && (
         <div className={styles.topAddsList}>
           <p className={styles.compactChartNote}>
-            Lead add cards keep the ownership trace and score inspector for pass-4 vetting.
+            Higher add scores combine opportunity, recent demand, projection,
+            schedule, and risk.
           </p>
           {candidates.map((candidate, index) => (
             <Link
@@ -709,13 +710,13 @@ export default function TopAddsRail({
                   Own <strong>{candidate.ownership.toFixed(0)}%</strong>
                 </span>
                 <span>
-                  Trend <strong>{formatSigned(candidate.delta, "%")}</strong>
+                  Demand <strong>{formatSigned(candidate.delta, " pts")}</strong>
                 </span>
                 <span>
-                  Proj <strong>{formatProjection(candidate.projectionPts)} PTS</strong>
+                  Points <strong>{formatProjection(candidate.projectionPts)}</strong>
                 </span>
                 <span>
-                  Model <strong>{formatProjection(candidate.score.total)}</strong>
+                  Add score <strong>{formatProjection(candidate.score.total)}</strong>
                 </span>
                 {mode === "week" && (
                   <span>
@@ -752,16 +753,16 @@ export default function TopAddsRail({
                     emptyClassName={styles.sparkEmpty}
                   />
                 ) : (
-                  <span className={styles.compactChartNote}>Text-first card</span>
+                  <span className={styles.compactChartNote}>No chart needed</span>
                 )}
               </div>
 
               <div className={styles.topAddsCandidateReasons}>
-                <span>Trend Wt {formatProjection(candidate.score.trendStrengthScore)}</span>
-                <span>Own Wt {formatProjection(candidate.score.ownershipBiasScore)}</span>
-                <span>Proj Wt {formatProjection(candidate.score.projectionSupportScore)}</span>
+                <span>Demand {formatProjection(candidate.score.trendStrengthScore)}</span>
+                <span>Availability {formatProjection(candidate.score.ownershipBiasScore)}</span>
+                <span>Projection {formatProjection(candidate.score.projectionSupportScore)}</span>
                 {mode === "week" && (
-                  <span>Sched Wt {formatProjection(candidate.score.scheduleContextScore)}</span>
+                  <span>Schedule {formatProjection(candidate.score.scheduleContextScore)}</span>
                 )}
                 <span>Risk {formatProjection(candidate.score.riskPenaltyScore)}</span>
               </div>
@@ -769,17 +770,17 @@ export default function TopAddsRail({
               {index < MAX_ADD_INSPECTORS && (
                 <div
                   className={styles.topAddsInspector}
-                  aria-label={`${candidate.name} score inspector`}
-                >
-                  <div className={styles.topAddsInspectorHeader}>
-                    <strong>Score inspector</strong>
-                    <span>Raw inputs and weighted path</span>
+                aria-label={`${candidate.name} score inspector`}
+              >
+                <div className={styles.topAddsInspectorHeader}>
+                    <strong>Why This Add</strong>
+                    <span>The plain reasons behind the score</span>
                   </div>
                   <div className={styles.topAddsInspectorGrid}>
                     <div className={styles.topAddsInspectorBlock}>
-                      <span className={styles.topAddsInspectorEyebrow}>Raw inputs</span>
+                      <span className={styles.topAddsInspectorEyebrow}>Fantasy Line</span>
                       <p className={styles.topAddsInspectorText}>
-                        Proj {formatProjection(candidate.projectionPts)} pts • PPP{" "}
+                        Projected {formatProjection(candidate.projectionPts)} pts • PP{" "}
                         {formatProjection(candidate.ppp)} • SOG{" "}
                         {formatProjection(candidate.sog)}
                       </p>
@@ -798,12 +799,12 @@ export default function TopAddsRail({
                     </div>
 
                     <div className={styles.topAddsInspectorBlock}>
-                      <span className={styles.topAddsInspectorEyebrow}>Weighted path</span>
+                      <span className={styles.topAddsInspectorEyebrow}>Add Score</span>
                       <div className={styles.topAddsInspectorBreakdown}>
-                        <span>Trend {formatSignedContribution(candidate.score.trendStrengthScore)}</span>
-                        <span>Own {formatSignedContribution(candidate.score.ownershipBiasScore)}</span>
-                        <span>Proj {formatSignedContribution(candidate.score.projectionSupportScore)}</span>
-                        <span>Sched {formatSignedContribution(candidate.score.scheduleContextScore)}</span>
+                        <span>Demand {formatSignedContribution(candidate.score.trendStrengthScore)}</span>
+                        <span>Available {formatSignedContribution(candidate.score.ownershipBiasScore)}</span>
+                        <span>Projection {formatSignedContribution(candidate.score.projectionSupportScore)}</span>
+                        <span>Schedule {formatSignedContribution(candidate.score.scheduleContextScore)}</span>
                         <span>Risk -{formatProjection(candidate.score.riskPenaltyScore)}</span>
                         <span>Total {formatProjection(candidate.score.total)}</span>
                       </div>

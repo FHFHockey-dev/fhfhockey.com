@@ -652,6 +652,156 @@ describe("linesCccIngestion", () => {
     });
   });
 
+  it("parses keywordless beat-writer lineup blocks through roster density and separator patterns", () => {
+    const vegas = buildTeamDirectory([
+      {
+        id: 54,
+        name: "Vegas Golden Knights",
+        abbreviation: "VGK",
+        logo: "/teamLogos/VGK.png"
+      }
+    ])[0]!;
+    const vegasRoster = [
+      { playerId: 1, fullName: "Ivan Barbashev", lastName: "Barbashev" },
+      { playerId: 2, fullName: "Jack Eichel", lastName: "Eichel" },
+      { playerId: 3, fullName: "Pavel Dorofeyev", lastName: "Dorofeyev" },
+      { playerId: 4, fullName: "Brett Howden", lastName: "Howden" },
+      { playerId: 5, fullName: "Mitchell Marner", lastName: "Marner" },
+      { playerId: 6, fullName: "Mark Stone", lastName: "Stone" },
+      { playerId: 7, fullName: "Tomas Hertl", lastName: "Hertl" },
+      { playerId: 8, fullName: "William Karlsson", lastName: "Karlsson" },
+      { playerId: 9, fullName: "Keegan Kolesar", lastName: "Kolesar" },
+      { playerId: 10, fullName: "Cole Smith", lastName: "Smith", aliases: ["C Smith"] },
+      { playerId: 11, fullName: "Nic Dowd", lastName: "Dowd" },
+      { playerId: 12, fullName: "Colton Sissons", lastName: "Sissons" },
+      { playerId: 13, fullName: "Brayden McNabb", lastName: "McNabb" },
+      { playerId: 14, fullName: "Shea Theodore", lastName: "Theodore" },
+      { playerId: 15, fullName: "Noah Hanifin", lastName: "Hanifin" },
+      { playerId: 16, fullName: "Rasmus Andersson", lastName: "Andersson" },
+      { playerId: 17, fullName: "Ben Hutton", lastName: "Hutton" },
+      { playerId: 18, fullName: "Kaedan Korczak", lastName: "Korczak" },
+      { playerId: 19, fullName: "Carter Hart", lastName: "Hart" }
+    ];
+    const parsed = buildLinesCccSourceFromIftttEvent({
+      event: {
+        id: "vegas-keywordless-lines",
+        source: "ifttt",
+        source_account: "BeatWriterVGK",
+        username: "BeatWriterVGK",
+        text:
+          "Barbashev—Eichel—Dorofeyev\n" +
+          "Howden—Marner—Stone\n" +
+          "Hertl—Karlsson—Kolesar\n" +
+          "C Smith—Dowd—Sissons\n\n" +
+          "McNabb—Theodore\n" +
+          "Hanifin—Andersson\n" +
+          "Hutton—Korczak\n\n" +
+          "Hart",
+        link_to_tweet: "https://twitter.com/BeatWriterVGK/status/2052196164116893794",
+        tweet_id: "2052196164116893794",
+        tweet_created_at: null,
+        created_at_label: "August 29, 2026",
+        raw_payload: {},
+        received_at: "2026-08-29T14:30:00.000Z"
+      },
+      snapshotDate: "2026-08-29",
+      teams: [vegas],
+      rosterByTeam: new Map([[54, vegasRoster]])
+    });
+
+    expect(parsed).toMatchObject({
+      team: vegas,
+      classification: "lineup",
+      nhlFilterStatus: "accepted",
+      forwards: [
+        ["Ivan Barbashev", "Jack Eichel", "Pavel Dorofeyev"],
+        ["Brett Howden", "Mitchell Marner", "Mark Stone"],
+        ["Tomas Hertl", "William Karlsson", "Keegan Kolesar"],
+        ["Cole Smith", "Nic Dowd", "Colton Sissons"]
+      ],
+      defensePairs: [
+        ["Brayden McNabb", "Shea Theodore"],
+        ["Noah Hanifin", "Rasmus Andersson"],
+        ["Ben Hutton", "Kaedan Korczak"]
+      ],
+      goalies: ["Carter Hart"]
+    });
+  });
+
+  it("flags keyworded power-play text only when it resolves to five-player units", () => {
+    const ducks = buildTeamDirectory([
+      {
+        id: 24,
+        name: "Anaheim Ducks",
+        abbreviation: "ANA",
+        logo: "/teamLogos/ANA.png"
+      }
+    ])[0]!;
+    const ducksRoster = [
+      { playerId: 1, fullName: "Chris Kreider", lastName: "Kreider" },
+      { playerId: 2, fullName: "Leo Carlsson", lastName: "Carlsson" },
+      { playerId: 3, fullName: "Troy Terry", lastName: "Terry" },
+      { playerId: 4, fullName: "Mikael Granlund", lastName: "Granlund" },
+      { playerId: 5, fullName: "John Carlson", lastName: "Carlson" },
+      { playerId: 6, fullName: "Beckett Sennecke", lastName: "Sennecke" },
+      { playerId: 7, fullName: "Ryan Poehling", lastName: "Poehling" },
+      { playerId: 8, fullName: "Alex Killorn", lastName: "Killorn" },
+      { playerId: 9, fullName: "Cutter Gauthier", lastName: "Gauthier" },
+      { playerId: 10, fullName: "Jackson LaCombe", lastName: "LaCombe" }
+    ];
+    const parsed = buildLinesCccSourceFromIftttEvent({
+      event: {
+        id: "ducks-pp-units",
+        source: "ifttt",
+        source_account: "BeatWriterANA",
+        username: "BeatWriterANA",
+        text:
+          "Ducks Game 2 power play units vs. #ForgedInGold:\n\n" +
+          "Kreider\n" +
+          "Carlsson-Terry-Granlund\n" +
+          "Carlson\n\n" +
+          "Sennecke\n" +
+          "Poehling-Killorn-Gauthier\n" +
+          "LaCombe\n\n" +
+          "#FlyTogether",
+        link_to_tweet: "https://twitter.com/BeatWriterANA/status/2052196164116893795",
+        tweet_id: "2052196164116893795",
+        tweet_created_at: null,
+        created_at_label: "August 29, 2026",
+        raw_payload: {},
+        received_at: "2026-08-29T14:35:00.000Z"
+      },
+      snapshotDate: "2026-08-29",
+      teams: [ducks],
+      rosterByTeam: new Map([[24, ducksRoster]])
+    });
+
+    expect(parsed).toMatchObject({
+      team: ducks,
+      classification: "power_play",
+      nhlFilterStatus: "accepted",
+      metadata: {
+        powerPlayUnitLabels: ["pp1", "pp2"],
+        powerPlayUnits: [
+          [
+            "Chris Kreider",
+            "Leo Carlsson",
+            "Troy Terry",
+            "Mikael Granlund",
+            "John Carlson"
+          ],
+          [
+            "Beckett Sennecke",
+            "Ryan Poehling",
+            "Alex Killorn",
+            "Cutter Gauthier",
+            "Jackson LaCombe"
+          ]
+        ]
+      }
+    });
+  });
+
   it("parses IFTTT text into rejected non-NHL candidates", () => {
     const parsed = buildLinesCccSourceFromIftttEvent({
       event: {

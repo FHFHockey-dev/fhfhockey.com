@@ -37,12 +37,15 @@ interface RunDigest {
   runTimeDisplay: string;
   method: string | null;
   route: string | null;
+  routePath: string | null;
+  targetTable: string | null;
   statusCode: number | null;
   durationMs: number | null;
   rowsUpserted: number | null;
   rowsAffected: number | null;
   failedRows: number | null;
   reason: string | null;
+  lastKnownSuccessDisplay: string | null;
   failedRowSamples: string[];
 }
 
@@ -375,7 +378,7 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
 
       {!telemetryUnavailable && unscheduledRuns.length > 0 ? (
         <>
-          <h2 style={{ margin: "16px 0 8px" }}>Unscheduled activity</h2>
+          <h2 style={{ margin: "16px 0 8px" }}>Unscheduled alerts</h2>
           {renderTable(
             <>
               <thead>

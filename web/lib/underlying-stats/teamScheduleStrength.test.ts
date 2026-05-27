@@ -26,6 +26,10 @@ describe("computeUnderlyingStatsTeamScheduleStrength", () => {
           past_opponent_total_wins: 7,
           past_opponent_total_losses: 3,
           past_opponent_total_ot_losses: 0,
+          future_opponent_total_wins: 0,
+          future_opponent_total_losses: 0,
+          future_opponent_total_ot_losses: 0,
+          future_opponents: [],
           past_opponents: [
             { opponent: "BOS", date: "2026-03-01" },
             { opponent: "BOS", date: "2026-03-10" },
@@ -38,6 +42,10 @@ describe("computeUnderlyingStatsTeamScheduleStrength", () => {
           past_opponent_total_wins: 5,
           past_opponent_total_losses: 5,
           past_opponent_total_ot_losses: 0,
+          future_opponent_total_wins: 0,
+          future_opponent_total_losses: 0,
+          future_opponent_total_ot_losses: 0,
+          future_opponents: [],
           past_opponents: [
             { opponent: "TOR", date: "2026-03-01" },
             { opponent: "MTL", date: "2026-03-10" },
@@ -50,6 +58,10 @@ describe("computeUnderlyingStatsTeamScheduleStrength", () => {
           past_opponent_total_wins: 3,
           past_opponent_total_losses: 7,
           past_opponent_total_ot_losses: 0,
+          future_opponent_total_wins: 0,
+          future_opponent_total_losses: 0,
+          future_opponent_total_ot_losses: 0,
+          future_opponents: [],
           past_opponents: [
             { opponent: "TOR", date: "2026-03-01" },
             { opponent: "TOR", date: "2026-03-10" },
@@ -83,6 +95,10 @@ describe("computeUnderlyingStatsTeamScheduleStrength", () => {
           past_opponent_total_wins: 0,
           past_opponent_total_losses: 0,
           past_opponent_total_ot_losses: 0,
+          future_opponent_total_wins: 0,
+          future_opponent_total_losses: 0,
+          future_opponent_total_ot_losses: 0,
+          future_opponents: [],
           past_opponents: []
         }
       ]

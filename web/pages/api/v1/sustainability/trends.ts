@@ -1,5 +1,10 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import supabase from "lib/supabase/public-client";
+import { buildResolvedDataServingContract } from "lib/dashboard/freshness";
+import {
+  guardSustainabilityDashboardRow,
+  type SustainabilityGuardrailState
+} from "lib/sustainability/guardrails";
 
 type Direction = "hot" | "cold";
 type WindowCode = "l3" | "l5" | "l10" | "l20";
@@ -97,6 +102,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         success: true,
         requested_snapshot_date: requestedSnapshot,
         snapshot_date: null,
+        serving: buildResolvedDataServingContract({
+          requestedDate: requestedSnapshot,
+          resolvedDate: null,
+          sourceLabel: "Sustainability trends",
+        }),
         window_code: windowCode,
         pos,
         direction,
@@ -134,6 +144,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         success: true,
         requested_snapshot_date: requestedSnapshot,
         snapshot_date: snapshot,
+        serving: buildResolvedDataServingContract({
+          requestedDate: requestedSnapshot,
+          resolvedDate: snapshot,
+          sourceLabel: "Sustainability trends",
+        }),
         window_code: windowCode,
         pos,
         direction,
@@ -173,9 +188,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       z_oishp: number;
       z_ipp: number;
       z_ppshp: number;
+      guardrail_state: SustainabilityGuardrailState;
+      guardrail_warnings: string[];
     };
 
-    const rows: RowOut[] = (scores as ScoreRow[]).map((score) => {
+    let guardrailFiltered = 0;
+    const rows = (scores as ScoreRow[]).map((score): RowOut | null => {
       const componentsRaw = score.components ?? {};
       let components =
         typeof componentsRaw === "string" ? undefined : (componentsRaw as Record<string, any>);
@@ -203,6 +221,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           Number(weights.ppshp ?? 0) * z_ppshp
         ) || 0;
 
+      const guarded = guardSustainabilityDashboardRow({
+        sRaw: score.s_raw,
+        s100: score.s_100,
+        luckPressure,
+        components
+      });
+      if (guarded.state === "blocked") {
+        guardrailFiltered += 1;
+        return null;
+      }
+
       const meta = nameMap.get(Number(score.player_id));
 
       return {
@@ -211,14 +240,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         position_group: score.position_group,
         position_code: meta?.position_code ?? null,
         window_code: score.window_code,
-        s_100: Number(score.s_100 ?? 0) || 0,
-        luck_pressure: Number(luckPressure.toFixed(6)),
-        z_shp,
-        z_oishp,
-        z_ipp,
-        z_ppshp
+        s_100: guarded.s100,
+        luck_pressure: guarded.luckPressure,
+        z_shp: Number(guarded.components.z_shp ?? z_shp) || 0,
+        z_oishp: Number(guarded.components.z_oishp ?? z_oishp) || 0,
+        z_ipp: Number(guarded.components.z_ipp ?? z_ipp) || 0,
+        z_ppshp: Number(guarded.components.z_ppshp ?? z_ppshp) || 0,
+        guardrail_state: guarded.state,
+        guardrail_warnings: guarded.warnings
       };
-    });
+    }).filter((row): row is RowOut => Boolean(row));
 
     rows.sort((a, b) => {
       return direction === "hot"
@@ -230,10 +261,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       success: true,
       requested_snapshot_date: requestedSnapshot,
       snapshot_date: snapshot,
+      serving: buildResolvedDataServingContract({
+        requestedDate: requestedSnapshot,
+        resolvedDate: snapshot,
+        sourceLabel: "Sustainability trends",
+      }),
       window_code: windowCode,
       pos,
       direction,
       limit,
+      guardrail_filtered: guardrailFiltered,
       rows: rows.slice(0, limit)
     });
   } catch (error: any) {
