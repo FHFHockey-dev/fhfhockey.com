@@ -3,11 +3,15 @@ import pLimit from "p-limit";
 
 import {
   EDGE_SHOT_LOCATION_VARIANTS,
+  buildEdgeGoalieMetricRow,
   buildEdgeGoalieDetailRow,
   buildEdgeGoalieDetailNowRow,
+  buildEdgeSkaterMetricRow,
   buildEdgeSkaterDetailRow,
   buildEdgeSkaterDetailNowRow,
+  buildEdgeSkaterShotLocationLeaderMetricRows,
   buildEdgeSkaterShotLocationRows,
+  buildEdgeTeamMetricRow,
   buildEdgeTeamDetailRow,
   buildEdgeTeamDetailNowRow,
   type NhlEdgeStatsFamily,
@@ -86,6 +90,15 @@ function parseTarget(value: string | null): TargetMode {
   }
 }
 
+function parseActionTarget(action: string | null, target: string | null): TargetMode {
+  if (action === "all") return "all";
+  if (action === "teams") return "team-detail";
+  if (action === "skaters") return "skater-detail";
+  if (action === "goalies") return "goalie-detail";
+  if (action === "leaderboards") return "skater-shot-location-top-10";
+  return parseTarget(target);
+}
+
 function parseGameType(value: string | null): EdgeGameType {
   return value === "3" ? 3 : 2;
 }
@@ -97,6 +110,10 @@ function parseDate(value: string | null): string {
     throw new Error("Invalid snapshot date");
   }
   return normalized;
+}
+
+function notNull<T>(value: T | null | undefined): value is T {
+  return value != null;
 }
 
 async function getCurrentRosterTargets(): Promise<RosterTarget[]> {
@@ -162,6 +179,60 @@ async function upsertRows(rows: NhlEdgeStatsRow[]): Promise<number> {
   return rows.length;
 }
 
+async function upsertTypedMetricRows(rows: NhlEdgeStatsRow[]) {
+  const skaterRows = rows
+    .map(buildEdgeSkaterMetricRow)
+    .filter(notNull);
+  const teamRows = rows
+    .map(buildEdgeTeamMetricRow)
+    .filter(notNull);
+  const goalieRows = rows
+    .map(buildEdgeGoalieMetricRow)
+    .filter(notNull);
+  const leaderboardRows = buildEdgeSkaterShotLocationLeaderMetricRows(rows);
+
+  const upserts = [
+    {
+      table: "nhl_edge_skater_metrics_daily",
+      rows: skaterRows,
+      onConflict: "snapshot_date,season_id,game_type,player_id"
+    },
+    {
+      table: "nhl_edge_team_metrics_daily",
+      rows: teamRows,
+      onConflict: "snapshot_date,season_id,game_type,team_id"
+    },
+    {
+      table: "nhl_edge_goalie_metrics_daily",
+      rows: goalieRows,
+      onConflict: "snapshot_date,season_id,game_type,goalie_id"
+    },
+    {
+      table: "nhl_edge_skater_shot_location_leaders_daily",
+      rows: leaderboardRows,
+      onConflict: "snapshot_date,season_id,game_type,metric_key,rank_order,player_id"
+    }
+  ];
+
+  for (const upsert of upserts) {
+    if (upsert.rows.length === 0) continue;
+    const { error } = await supabase
+      .from(upsert.table as any)
+      .upsert(upsert.rows as any, { onConflict: upsert.onConflict });
+
+    if (error) {
+      throw new Error(`Failed to upsert ${upsert.table} rows: ${error.message}`);
+    }
+  }
+
+  return {
+    skaters: skaterRows.length,
+    teams: teamRows.length,
+    goalies: goalieRows.length,
+    skaterShotLocationLeaders: leaderboardRows.length
+  };
+}
+
 function isEdgeNotFoundError(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error ?? "");
   return /not found/i.test(message) || /\b404\b/.test(message);
@@ -187,20 +258,31 @@ async function fetchSkaterDetailRows(args: {
                 args.seasonId,
                 args.gameType
               );
+          const row = args.nowMode
+            ? buildEdgeSkaterDetailNowRow({
+                snapshotDate: args.snapshotDate,
+                seasonId: args.seasonId,
+                gameType: args.gameType,
+                payload
+              })
+            : buildEdgeSkaterDetailRow({
+                snapshotDate: args.snapshotDate,
+                seasonId: args.seasonId,
+                gameType: args.gameType,
+                payload
+              });
+
           return {
-            row: args.nowMode
-              ? buildEdgeSkaterDetailNowRow({
-                  snapshotDate: args.snapshotDate,
-                  seasonId: args.seasonId,
-                  gameType: args.gameType,
-                  payload
-                })
-              : buildEdgeSkaterDetailRow({
-                  snapshotDate: args.snapshotDate,
-                  seasonId: args.seasonId,
-                  gameType: args.gameType,
-                  payload
-                }),
+            row: {
+              ...row,
+              team_id: row.team_id ?? target.teamId,
+              team_abbreviation: row.team_abbreviation ?? target.teamAbbreviation,
+              metadata: {
+                ...row.metadata,
+                rosterTeamId: target.teamId,
+                rosterTeamAbbreviation: target.teamAbbreviation
+              }
+            },
             skipped: null
           };
         } catch (error) {
@@ -249,20 +331,31 @@ async function fetchGoalieDetailRows(args: {
                 args.seasonId,
                 args.gameType
               );
+          const row = args.nowMode
+            ? buildEdgeGoalieDetailNowRow({
+                snapshotDate: args.snapshotDate,
+                seasonId: args.seasonId,
+                gameType: args.gameType,
+                payload
+              })
+            : buildEdgeGoalieDetailRow({
+                snapshotDate: args.snapshotDate,
+                seasonId: args.seasonId,
+                gameType: args.gameType,
+                payload
+              });
+
           return {
-            row: args.nowMode
-              ? buildEdgeGoalieDetailNowRow({
-                  snapshotDate: args.snapshotDate,
-                  seasonId: args.seasonId,
-                  gameType: args.gameType,
-                  payload
-                })
-              : buildEdgeGoalieDetailRow({
-                  snapshotDate: args.snapshotDate,
-                  seasonId: args.seasonId,
-                  gameType: args.gameType,
-                  payload
-                }),
+            row: {
+              ...row,
+              team_id: row.team_id ?? target.teamId,
+              team_abbreviation: row.team_abbreviation ?? target.teamAbbreviation,
+              metadata: {
+                ...row.metadata,
+                rosterTeamId: target.teamId,
+                rosterTeamAbbreviation: target.teamAbbreviation
+              }
+            },
             skipped: null
           };
         } catch (error) {
@@ -355,12 +448,15 @@ function parseRequest(
 ): RequestOptions {
   const snapshotDate = parseDate(firstQueryValue(req.query.date));
   const seasonId = parseInteger(firstQueryValue(req.query.seasonId), 0);
+  const action = firstQueryValue(req.query.action);
+  const target = parseActionTarget(action, firstQueryValue(req.query.target));
+  const defaultLimit = action === "all" ? 1000 : 100;
   return {
     snapshotDate,
     seasonId,
     gameType: parseGameType(firstQueryValue(req.query.gameType)),
-    target: overrides?.target ?? parseTarget(firstQueryValue(req.query.target)),
-    limit: Math.max(1, Math.min(250, parseInteger(firstQueryValue(req.query.limit), 100))),
+    target: overrides?.target ?? target,
+    limit: Math.max(1, Math.min(1000, parseInteger(firstQueryValue(req.query.limit), defaultLimit))),
     offset: Math.max(0, parseInteger(firstQueryValue(req.query.offset), 0)),
     concurrency: Math.max(
       1,
@@ -498,7 +594,12 @@ export async function runNhlEdgeStatsSnapshot(
     executedTargets.push("goalie-detail-now");
   }
 
-  const rowsUpserted = await upsertRows(rows);
+  const validRows = rows.filter(
+    (row) => Number.isFinite(row.entity_id) && row.entity_id > 0
+  );
+  const invalidRows = rows.length - validRows.length;
+  const rowsUpserted = await upsertRows(validRows);
+  const typedRowsUpserted = await upsertTypedMetricRows(validRows);
 
   return res.status(200).json({
     success: true,
@@ -508,6 +609,8 @@ export async function runNhlEdgeStatsSnapshot(
     target: options.target,
     executedTargets,
     rowsUpserted,
+    typedRowsUpserted,
+    invalidRowsSkipped: invalidRows,
     counts: {
       currentSkaterTargets: skaters.length,
       currentGoalieTargets: goalies.length,

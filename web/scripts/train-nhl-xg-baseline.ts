@@ -29,6 +29,7 @@ import {
   type CalibrationAssessment,
   type CalibrationMethodName,
   type CalibrationExample,
+  type SerializedCalibrationModel,
 } from "../lib/xg/calibration";
 import {
   buildShooterGoalieHandednessMatchup,
@@ -132,6 +133,9 @@ type ApprovalGradeEligibility = {
   isEligible: boolean;
   blockingReasons: string[];
 };
+type FeatureTransforms = {
+  numericStandardization?: Record<string, { mean: number; std: number }>;
+};
 type DatasetArtifactPayload = {
   artifactKind: "nhl_xg_training_dataset";
   artifactVersion: number;
@@ -183,6 +187,7 @@ type ModelArtifactPayload = {
     categorical: string[];
   };
   featureKeys: string[];
+  featureTransforms?: FeatureTransforms;
   trainExampleCount: number;
   validationExampleCount: number;
   testExampleCount: number;
@@ -202,6 +207,7 @@ type ModelArtifactPayload = {
     fitExampleCount: number;
     applied: boolean;
     reason: string;
+    model: SerializedCalibrationModel;
   };
   approvalGradeEligibility: ApprovalGradeEligibility;
   featureImportance?: Array<{ featureKey: string; importance: number }>;
@@ -265,14 +271,61 @@ Options:
 `);
 }
 
-function buildApprovalGradeEligibility(
-  splitCounts: Record<"train" | "validation" | "test", number>
-): ApprovalGradeEligibility {
+const SUPABASE_PAGE_SIZE = 1000;
+const MIN_APPROVAL_HOLDOUT_POSITIVES = 10;
+const MIN_APPROVAL_TEST_POSITIVES = 10;
+const MIN_NON_COLLAPSED_AVERAGE_PREDICTION = 0.001;
+const MAX_NON_COLLAPSED_AVERAGE_PREDICTION = 0.999;
+
+function buildApprovalGradeEligibility(args: {
+  splitCounts: Record<"train" | "validation" | "test", number>;
+  holdoutEvaluation: SplitEvaluation;
+  testEvaluation: SplitEvaluation;
+  calibrationAssessment: CalibrationAssessment;
+}): ApprovalGradeEligibility {
   const blockingReasons: string[] = [];
 
-  if (splitCounts.test <= 0) {
+  if (args.splitCounts.test <= 0) {
     blockingReasons.push(
       "Dedicated test split is empty; approval-grade benchmark artifacts require at least one test example."
+    );
+  }
+
+  if (args.testEvaluation.goalCount < MIN_APPROVAL_TEST_POSITIVES) {
+    blockingReasons.push(
+      `Dedicated test split has ${args.testEvaluation.goalCount} goals; approval-grade benchmark artifacts require at least ${MIN_APPROVAL_TEST_POSITIVES}.`
+    );
+  }
+
+  if (args.holdoutEvaluation.goalCount < MIN_APPROVAL_HOLDOUT_POSITIVES) {
+    blockingReasons.push(
+      `Validation+test holdout has ${args.holdoutEvaluation.goalCount} goals; approval-grade benchmark artifacts require at least ${MIN_APPROVAL_HOLDOUT_POSITIVES}.`
+    );
+  }
+
+  const averagePrediction = args.holdoutEvaluation.averagePrediction;
+  if (
+    averagePrediction == null ||
+    averagePrediction <= MIN_NON_COLLAPSED_AVERAGE_PREDICTION ||
+    averagePrediction >= MAX_NON_COLLAPSED_AVERAGE_PREDICTION
+  ) {
+    blockingReasons.push(
+      "Validation+test holdout average prediction is collapsed or unavailable; approval-grade artifacts require non-degenerate probabilities."
+    );
+  }
+
+  for (const reason of args.calibrationAssessment.adoptabilityBlockingReasons) {
+    if (!blockingReasons.includes(reason)) {
+      blockingReasons.push(reason);
+    }
+  }
+
+  if (
+    args.calibrationAssessment.requiresPostCalibration &&
+    args.calibrationAssessment.adoptableMethod == null
+  ) {
+    blockingReasons.push(
+      "Post-calibration is required, but no calibration method is currently adoptable."
     );
   }
 
@@ -445,9 +498,54 @@ function buildConfigSignature(args: {
   numericFeatures: string[];
   booleanFeatures: string[];
   categoricalFeatures: string[];
+  fitOptions: Record<string, number>;
 }): string {
   const raw = JSON.stringify(args);
   return crypto.createHash("sha1").update(raw).digest("hex").slice(0, 8);
+}
+
+function buildNumericStandardization(
+  examples: EncodedBaselineExample[],
+  numericFeatureKeys: string[]
+): FeatureTransforms {
+  const trainExamples = examples.filter((example) => example.split === "train");
+  const numericStandardization: Record<string, { mean: number; std: number }> = {};
+
+  for (let index = 0; index < numericFeatureKeys.length; index += 1) {
+    const values = trainExamples.map((example) => example.features[index] ?? 0);
+    const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
+    const variance =
+      values.reduce((sum, value) => sum + (value - mean) ** 2, 0) / values.length;
+    const std = Math.sqrt(variance);
+    numericStandardization[numericFeatureKeys[index]!] = {
+      mean,
+      std: std > 1e-9 ? std : 1,
+    };
+  }
+
+  return { numericStandardization };
+}
+
+function applyFeatureTransforms(
+  examples: EncodedBaselineExample[],
+  numericFeatureKeys: string[],
+  transforms: FeatureTransforms
+): EncodedBaselineExample[] {
+  const numericStandardization = transforms.numericStandardization ?? {};
+
+  return examples.map((example) => {
+    const features = [...example.features];
+    for (let index = 0; index < numericFeatureKeys.length; index += 1) {
+      const transform = numericStandardization[numericFeatureKeys[index]!];
+      if (!transform) continue;
+      features[index] = ((features[index] ?? 0) - transform.mean) / transform.std;
+    }
+
+    return {
+      ...example,
+      features,
+    };
+  });
 }
 
 function resolveSelectedFeatures(
@@ -560,33 +658,49 @@ async function fetchSelectedGames(
   client: SupabaseClient,
   options: CliOptions
 ): Promise<GameRow[]> {
+  const rows: GameRow[] = [];
+
   if (options.gameIds?.length) {
+    for (let from = 0; ; from += SUPABASE_PAGE_SIZE) {
+      const { data, error } = await client
+        .from("games")
+        .select("id, date, seasonId, homeTeamId, awayTeamId")
+        .in("id", options.gameIds)
+        .order("date", { ascending: true })
+        .order("id", { ascending: true })
+        .range(from, from + SUPABASE_PAGE_SIZE - 1);
+
+      if (error) {
+        throw error;
+      }
+
+      rows.push(...((data ?? []) as GameRow[]));
+
+      if ((data?.length ?? 0) < SUPABASE_PAGE_SIZE) {
+        return rows;
+      }
+    }
+  }
+
+  for (let from = 0; ; from += SUPABASE_PAGE_SIZE) {
     const { data, error } = await client
       .from("games")
       .select("id, date, seasonId, homeTeamId, awayTeamId")
-      .in("id", options.gameIds)
+      .eq("seasonId", options.season)
       .order("date", { ascending: true })
-      .order("id", { ascending: true });
+      .order("id", { ascending: true })
+      .range(from, from + SUPABASE_PAGE_SIZE - 1);
 
     if (error) {
       throw error;
     }
 
-    return (data ?? []) as GameRow[];
+    rows.push(...((data ?? []) as GameRow[]));
+
+    if ((data?.length ?? 0) < SUPABASE_PAGE_SIZE) {
+      return rows;
+    }
   }
-
-  const { data, error } = await client
-    .from("games")
-    .select("id, date, seasonId, homeTeamId, awayTeamId")
-    .eq("seasonId", options.season)
-    .order("date", { ascending: true })
-    .order("id", { ascending: true });
-
-  if (error) {
-    throw error;
-  }
-
-  return (data ?? []) as GameRow[];
 }
 
 function chunkNumbers(values: number[], size: number): number[][] {
@@ -606,21 +720,28 @@ async function fetchPbpRows(
   const rows: PbpEventRow[] = [];
 
   for (const chunk of chunkNumbers(gameIds, 20)) {
-    const { data, error } = await client
-      .from("nhl_api_pbp_events")
-      .select("*")
-      .in("game_id", chunk)
-      .eq("parser_version", parserVersion)
-      .eq("strength_version", strengthVersion)
-      .order("game_id", { ascending: true })
-      .order("sort_order", { ascending: true, nullsFirst: false })
-      .order("event_id", { ascending: true });
+    for (let from = 0; ; from += SUPABASE_PAGE_SIZE) {
+      const { data, error } = await client
+        .from("nhl_api_pbp_events")
+        .select("*")
+        .in("game_id", chunk)
+        .eq("parser_version", parserVersion)
+        .eq("strength_version", strengthVersion)
+        .order("game_id", { ascending: true })
+        .order("sort_order", { ascending: true, nullsFirst: false })
+        .order("event_id", { ascending: true })
+        .range(from, from + SUPABASE_PAGE_SIZE - 1);
 
-    if (error) {
-      throw error;
+      if (error) {
+        throw error;
+      }
+
+      rows.push(...((data ?? []) as PbpEventRow[]));
+
+      if ((data?.length ?? 0) < SUPABASE_PAGE_SIZE) {
+        break;
+      }
     }
-
-    rows.push(...((data ?? []) as PbpEventRow[]));
   }
 
   return rows;
@@ -634,21 +755,28 @@ async function fetchShiftRows(
   const rows: ShiftRow[] = [];
 
   for (const chunk of chunkNumbers(gameIds, 20)) {
-    const { data, error } = await client
-      .from("nhl_api_shift_rows")
-      .select("*")
-      .in("game_id", chunk)
-      .eq("parser_version", parserVersion)
-      .order("game_id", { ascending: true })
-      .order("period", { ascending: true, nullsFirst: false })
-      .order("start_seconds", { ascending: true, nullsFirst: false })
-      .order("shift_id", { ascending: true });
+    for (let from = 0; ; from += SUPABASE_PAGE_SIZE) {
+      const { data, error } = await client
+        .from("nhl_api_shift_rows")
+        .select("*")
+        .in("game_id", chunk)
+        .eq("parser_version", parserVersion)
+        .order("game_id", { ascending: true })
+        .order("period", { ascending: true, nullsFirst: false })
+        .order("start_seconds", { ascending: true, nullsFirst: false })
+        .order("shift_id", { ascending: true })
+        .range(from, from + SUPABASE_PAGE_SIZE - 1);
 
-    if (error) {
-      throw error;
+      if (error) {
+        throw error;
+      }
+
+      rows.push(...((data ?? []) as ShiftRow[]));
+
+      if ((data?.length ?? 0) < SUPABASE_PAGE_SIZE) {
+        break;
+      }
     }
-
-    rows.push(...((data ?? []) as ShiftRow[]));
   }
 
   return rows;
@@ -990,6 +1118,94 @@ function evaluateSlices(
     }));
 }
 
+function buildValidationCalibration(args: {
+  rawScoredExamples: ScoredExample[];
+  featureKeys: string[];
+  splitCounts: Record<"train" | "validation" | "test", number>;
+}): {
+  scoredExamples: ScoredExample[];
+  calibration: NonNullable<ModelArtifactPayload["calibration"]>;
+} {
+  const validationExamples = args.rawScoredExamples.filter(
+    (example) => example.split === "validation"
+  );
+  const validationCalibrationExamples = validationExamples.map(
+    (example): CalibrationExample => ({
+      rowId: example.rowId,
+      label: example.label,
+      prediction: example.prediction,
+    })
+  );
+  const validationPositiveCount = validationCalibrationExamples.reduce(
+    (sum, example) => sum + example.label,
+    0
+  );
+  const validationNegativeCount =
+    validationCalibrationExamples.length - validationPositiveCount;
+
+  if (
+    validationCalibrationExamples.length < 10 ||
+    validationPositiveCount <= 0 ||
+    validationNegativeCount <= 0
+  ) {
+    return {
+      scoredExamples: args.rawScoredExamples,
+      calibration: {
+        selectedMethod: "raw",
+        fitSplit: "none",
+        fitExampleCount: validationCalibrationExamples.length,
+        applied: false,
+        reason:
+          "Skipped post-calibration because validation coverage was too small or lacked both outcome classes.",
+        model: { method: "raw" },
+      },
+    };
+  }
+
+  const validationAssessment = assessCalibration(validationCalibrationExamples, {
+    featureKeys: args.featureKeys,
+    splitCounts: { test: args.splitCounts.test },
+    sliceCoverage: {
+      reboundPositiveCount: validationExamples.filter(
+        (example) => example.label === 1 && example.isReboundShot
+      ).length,
+      rushPositiveCount: validationExamples.filter(
+        (example) => example.label === 1 && example.isRushShot
+      ).length,
+    },
+  });
+  const selectedMethod =
+    validationAssessment.requiresPostCalibration &&
+    validationAssessment.adoptableMethod != null
+      ? validationAssessment.adoptableMethod
+      : "raw";
+  const calibrator = fitProbabilityCalibrator(
+    validationCalibrationExamples,
+    selectedMethod
+  );
+
+  return {
+    scoredExamples:
+      calibrator.method === "raw"
+        ? args.rawScoredExamples
+        : args.rawScoredExamples.map((example) => ({
+            ...example,
+            prediction: calibrator.predict(example.prediction),
+          })),
+    calibration: {
+      selectedMethod: calibrator.method,
+      fitSplit: "validation",
+      fitExampleCount: validationCalibrationExamples.length,
+      applied: calibrator.method !== "raw",
+      reason:
+        calibrator.method === "raw"
+          ? "Validation holdout did not require or support a post-calibration method over raw probabilities."
+          : `Applied ${calibrator.method} calibration selected from validation holdout diagnostics.`,
+      model: calibrator.model,
+    },
+  };
+}
+
 export function buildBaselineArtifactPayloads(args: {
   artifactTag: string;
   generatedAt: string;
@@ -1009,6 +1225,7 @@ export function buildBaselineArtifactPayloads(args: {
     categorical: string[];
   };
   dataset: ReturnType<typeof buildEncodedBaselineDataset>;
+  featureTransforms?: FeatureTransforms;
   fitOptions: Record<string, number>;
   evaluation: Record<"overall" | "train" | "validation" | "test", SplitEvaluation>;
   holdoutEvaluation: SplitEvaluation;
@@ -1030,7 +1247,12 @@ export function buildBaselineArtifactPayloads(args: {
     selectedFeatures: args.selectedFeatures,
     featureKeys: args.dataset.featureKeys,
   });
-  const approvalGradeEligibility = buildApprovalGradeEligibility(args.dataset.splitCounts);
+  const approvalGradeEligibility = buildApprovalGradeEligibility({
+    splitCounts: args.dataset.splitCounts,
+    holdoutEvaluation: args.holdoutEvaluation,
+    testEvaluation: args.evaluation.test,
+    calibrationAssessment: args.calibrationAssessment,
+  });
 
   const datasetArtifact: DatasetArtifactPayload = {
     artifactKind: "nhl_xg_training_dataset",
@@ -1079,6 +1301,7 @@ export function buildBaselineArtifactPayloads(args: {
     featureFamily: args.featureFamily,
     selectedFeatures: args.selectedFeatures,
     featureKeys: args.dataset.featureKeys,
+    featureTransforms: args.featureTransforms,
     trainExampleCount: args.dataset.splitCounts.train,
     validationExampleCount: args.dataset.splitCounts.validation,
     testExampleCount: args.dataset.splitCounts.test,
@@ -1121,32 +1344,78 @@ async function main(): Promise<void> {
       throw new Error(`No games found for season ${options.season}.`);
     }
 
-    const gameIds = selectedGames.map((game) => game.id);
-    const pbpRows = await fetchPbpRows(
-      supabase,
-      gameIds,
-      options.parserVersion,
-      options.strengthVersion
-    );
-    const shiftRows = await fetchShiftRows(supabase, gameIds, options.parserVersion);
-
-    const pbpByGameId = groupByGameId(
-      pbpRows.map((row) => ({ ...row, game_id: row.game_id }))
-    );
-    const shiftByGameId = groupByGameId(
-      shiftRows.map((row) => ({ ...row, game_id: row.game_id }))
-    );
-
     const shotRows: NhlShotFeatureRow[] = [];
+    const selectedFeatures = resolveSelectedFeatures(options);
+    let processedGameCount = 0;
 
-    for (const game of selectedGames) {
-      const events = (pbpByGameId.get(game.id) ?? []) as unknown as ParsedNhlPbpEvent[];
-      const shifts = shiftByGameId.get(game.id) ?? [];
-      if (!events.length) continue;
+    for (const gameChunk of chunkNumbers(selectedGames.map((game) => game.id), 20)) {
+      const gamesById = new Map(
+        selectedGames
+          .filter((game) => gameChunk.includes(game.id))
+          .map((game) => [game.id, game])
+      );
+      const pbpRows = await fetchPbpRows(
+        supabase,
+        gameChunk,
+        options.parserVersion,
+        options.strengthVersion
+      );
+      const shiftRows = await fetchShiftRows(supabase, gameChunk, options.parserVersion);
+      const pbpByGameId = groupByGameId(
+        pbpRows.map((row) => ({ ...row, game_id: row.game_id }))
+      );
+      const shiftByGameId = groupByGameId(
+        shiftRows.map((row) => ({ ...row, game_id: row.game_id }))
+      );
+      const stintsByGameId = buildShiftStintsByGameId(shiftRows);
+      const onIcePlayerIds = Array.from(
+        new Set(
+          shiftRows
+            .map((row) => {
+              const playerId = row.player_id;
+              return typeof playerId === "number" && Number.isInteger(playerId)
+                ? playerId
+                : null;
+            })
+            .filter((playerId): playerId is number => playerId != null)
+        )
+      );
+      const positionByPlayerId = onIcePlayerIds.length
+        ? await fetchPlayerRosterPositionMap(supabase, onIcePlayerIds)
+        : new Map<number, RosterPositionCode>();
 
-      shotRows.push(
-        ...buildShotFeatureRows(events, shifts, game.homeTeamId, game.awayTeamId, {
+      for (const gameId of gameChunk) {
+        const game = gamesById.get(gameId);
+        if (!game) continue;
+        const events = (pbpByGameId.get(game.id) ?? []) as unknown as ParsedNhlPbpEvent[];
+        const shifts = shiftByGameId.get(game.id) ?? [];
+        if (!events.length) continue;
+
+        const builtRows = buildShotFeatureRows(events, shifts, game.homeTeamId, game.awayTeamId, {
           featureVersion: options.featureVersion,
+        });
+
+        shotRows.push(
+          ...builtRows.map((row) => ({
+            ...row,
+            ...buildDeploymentContextForShot(
+              row,
+              stintsByGameId.get(row.gameId) ?? [],
+              positionByPlayerId
+            ),
+          }))
+        );
+      }
+      processedGameCount += gameChunk.length;
+
+      console.error(
+        JSON.stringify({
+          phase: "build-shot-features",
+          processedGames: processedGameCount,
+          totalGames: selectedGames.length,
+          chunkFirstGameId: gameChunk[0] ?? null,
+          chunkLastGameId: gameChunk[gameChunk.length - 1] ?? null,
+          cumulativeShotRows: shotRows.length,
         })
       );
     }
@@ -1158,13 +1427,11 @@ async function main(): Promise<void> {
       );
     }
 
-    const seasonShotRowsWithTrainingContext = await enrichShotRowsWithTrainingContext(
+    const seasonShotRowsWithTrainingContext = await enrichShotRowsWithHandedness(
       supabase,
       seasonShotRows,
-      shiftRows,
       options.season
     );
-    const selectedFeatures = resolveSelectedFeatures(options);
 
     const dataset = buildEncodedBaselineDataset(seasonShotRowsWithTrainingContext, {
       featureFamily: options.featureFamily,
@@ -1182,7 +1449,16 @@ async function main(): Promise<void> {
           | undefined,
       },
     });
-    const trainExamples = dataset.examples
+    const featureTransforms = buildNumericStandardization(
+      dataset.examples,
+      selectedFeatures.numeric
+    );
+    const transformedExamples = applyFeatureTransforms(
+      dataset.examples,
+      selectedFeatures.numeric,
+      featureTransforms
+    );
+    const trainExamples = transformedExamples
       .filter((example) => example.split === "train")
       .map((example) => ({
         features: example.features,
@@ -1203,6 +1479,7 @@ async function main(): Promise<void> {
           fitExampleCount: number;
           applied: boolean;
           reason: string;
+          model: SerializedCalibrationModel;
         }
       | undefined;
 
@@ -1214,7 +1491,7 @@ async function main(): Promise<void> {
       fitOptions = resolveFitOptions(options);
       const logisticModel = trainBinaryLogisticModel(trainExamples, fitOptions);
       model = logisticModel;
-      rawScoredExamples = scoreExamples(logisticModel, dataset.examples);
+      rawScoredExamples = scoreExamples(logisticModel, transformedExamples);
     } else if (options.family === "xgboost_js") {
       fitOptions = resolveBoostingFitOptions(options);
       const booster = new XGBoost(fitOptions);
@@ -1223,7 +1500,7 @@ async function main(): Promise<void> {
         trainExamples.map((example) => example.label)
       );
       model = booster.toJSON();
-      rawScoredExamples = dataset.examples.map((example) => ({
+      rawScoredExamples = transformedExamples.map((example) => ({
         ...example,
         prediction: Math.min(
           1,
@@ -1240,84 +1517,13 @@ async function main(): Promise<void> {
       );
     }
 
-    scoredExamples = rawScoredExamples;
-
-    if (options.family === "xgboost_js") {
-      const validationExamples = rawScoredExamples.filter(
-        (example) => example.split === "validation"
-      );
-      const validationCalibrationExamples = validationExamples.map(
-        (example): CalibrationExample => ({
-          rowId: example.rowId,
-          label: example.label,
-          prediction: example.prediction,
-        })
-      );
-      const validationPositiveCount = validationCalibrationExamples.reduce(
-        (sum, example) => sum + example.label,
-        0
-      );
-      const validationNegativeCount =
-        validationCalibrationExamples.length - validationPositiveCount;
-
-      if (
-        validationCalibrationExamples.length >= 10 &&
-        validationPositiveCount > 0 &&
-        validationNegativeCount > 0
-      ) {
-        const validationAssessment = assessCalibration(
-          validationCalibrationExamples,
-          {
-            featureKeys: dataset.featureKeys,
-            splitCounts: { test: dataset.splitCounts.test },
-            sliceCoverage: {
-              reboundPositiveCount: validationExamples.filter(
-                (example) => example.label === 1 && example.isReboundShot
-              ).length,
-              rushPositiveCount: validationExamples.filter(
-                (example) => example.label === 1 && example.isRushShot
-              ).length,
-            },
-          }
-        );
-        const selectedMethod =
-          validationAssessment.requiresPostCalibration &&
-          validationAssessment.bestObservedMethod != null
-            ? validationAssessment.bestObservedMethod
-            : "raw";
-        const calibrator = fitProbabilityCalibrator(
-          validationCalibrationExamples,
-          selectedMethod
-        );
-
-        if (calibrator.method !== "raw") {
-          scoredExamples = rawScoredExamples.map((example) => ({
-            ...example,
-            prediction: calibrator.predict(example.prediction),
-          }));
-        }
-
-        calibration = {
-          selectedMethod: calibrator.method,
-          fitSplit: "validation",
-          fitExampleCount: validationCalibrationExamples.length,
-          applied: calibrator.method !== "raw",
-          reason:
-            calibrator.method === "raw"
-              ? "Validation holdout did not justify a post-calibration method over raw boosting probabilities."
-              : `Applied ${calibrator.method} calibration selected from validation holdout diagnostics.`,
-        };
-      } else {
-        calibration = {
-          selectedMethod: "raw",
-          fitSplit: "none",
-          fitExampleCount: validationCalibrationExamples.length,
-          applied: false,
-          reason:
-            "Skipped post-calibration because validation coverage was too small or lacked both outcome classes.",
-        };
-      }
-    }
+    const calibrationResult = buildValidationCalibration({
+      rawScoredExamples,
+      featureKeys: dataset.featureKeys,
+      splitCounts: dataset.splitCounts,
+    });
+    scoredExamples = calibrationResult.scoredExamples;
+    calibration = calibrationResult.calibration;
 
     const examplesBySplit = {
       overall: scoredExamples,
@@ -1384,6 +1590,7 @@ async function main(): Promise<void> {
       numericFeatures: selectedFeatures.numeric,
       booleanFeatures: selectedFeatures.boolean,
       categoricalFeatures: selectedFeatures.categorical,
+      fitOptions,
     });
     const artifactTag = buildArtifactVersionTag({
       family: options.family,
@@ -1412,6 +1619,7 @@ async function main(): Promise<void> {
       splitStrategy,
       selectedFeatures,
       dataset,
+      featureTransforms,
       fitOptions,
       evaluation,
       holdoutEvaluation,

@@ -35,6 +35,7 @@ const resend = new Resend(process.env.RESEND_API_KEY!);
 
 const REPORT_WINDOW_MS = 24 * 60 * 60 * 1000;
 const MATCH_WINDOW_MS = 6 * 60 * 60 * 1000;
+const MAX_UNSCHEDULED_ALERTS = 8;
 
 const SCHEDULE_ALIAS_MAP: Record<string, string[]> = {
   "update-all-wgo-skaters": ["update-wgo-skaters", "/api/v1/db/update-wgo-skaters"],
@@ -54,6 +55,58 @@ const SCHEDULE_ALIAS_MAP: Record<string, string[]> = {
   "update-nst-tables-all": ["/api/Teams/nst-team-stats"],
   "sync-yahoo-players-to-sheet": ["/api/internal/sync-yahoo-players-to-sheet"],
   "update-predictions-sko": ["/api/v1/ml/update-predictions-sko"]
+};
+
+const ROUTE_TARGET_TABLE_MAP: Record<string, string> = {
+  "/api/v1/db/update-teams": "teams",
+  "/api/v1/db/update-seasons": "seasons",
+  "/api/v1/db/update-players": "players, rosters",
+  "/api/v1/db/update-games": "games",
+  "/api/v1/db/update-yahoo-weeks": "yahoo_weeks",
+  "/api/v1/db/update-nst-gamelog": "nst_* game logs",
+  "/api/v1/db/update-wgo-skaters": "wgo_skater_stats",
+  "/api/v1/db/update-wgo-goalies": "wgo_goalie_stats",
+  "/api/v1/db/update-wgo-totals": "wgo_skater_stats_totals",
+  "/api/v1/db/update-power-play-combinations": "powerPlayCombinations",
+  "/api/v1/db/powerPlayTimeFrame": "powerPlayTimeFrame",
+  "/api/v1/db/update-line-combinations": "lineCombinations",
+  "/api/v1/db/update-team-yearly-summary": "team_yearly_summary",
+  "/api/v1/db/update-standings-details": "standings_details",
+  "/api/v1/db/update-wgo-goalie-totals": "wgo_goalie_stats_totals",
+  "/api/v1/db/update-rolling-player-averages": "rolling_player_averages",
+  "/api/v1/db/update-expected-goals": "expected_goals",
+  "/api/v1/db/update-yahoo-players": "yahoo_players",
+  "/api/Teams/nst-team-stats": "nst_team_stats",
+  "/api/v1/db/update-nst-goalies": "nst_goalie_stats",
+  "/api/v1/db/calculate-wigo-stats": "wigo_table_stats",
+  "/api/internal/sync-yahoo-players-to-sheet": "external sheet sync",
+  "/api/v1/db/update-team-ctpi-daily": "team_ctpi_daily",
+  "/api/v1/db/update-team-sos": "team_sos",
+  "/api/v1/db/update-team-power-ratings": "team_power_ratings",
+  "/api/v1/db/update-team-power-ratings-new": "team_power_ratings_daily",
+  "/api/v1/db/run-fetch-wgo-data": "wgo_team_stats",
+  "/api/v1/db/update-nhl-edge-stats": "nhl_edge_*",
+  "/api/v1/db/update-goalie-projections-v2": "goalie_projections",
+  "/api/v1/db/update-player-underlying-stats": "player_underlying_*",
+  "/api/v1/db/ingest-projection-inputs": "projection_inputs",
+  "/api/v1/db/build-projection-derived-v2": "projection_derived_*",
+  "/api/v1/db/update-nst-team-daily": "nst_team_daily",
+  "/api/v1/db/run-projection-v2": "projection_execution",
+  "/api/v1/db/update-season-stats": "season_stats",
+  "/api/v1/db/update-rolling-games": "rolling_games",
+  "/api/v1/db/update-sko-stats": "sko_skater_stats",
+  "/api/v1/db/update-wgo-averages": "wgo_averages",
+  "/api/v1/db/sustainability/rebuild-baselines": "sustainability_baselines",
+  "/api/v1/sustainability/rebuild-priors": "sustainability_priors",
+  "/api/v1/sustainability/rebuild-window-z": "sustainability_window_z",
+  "/api/v1/sustainability/rebuild-score": "sustainability_scores",
+  "/api/v1/sustainability/rebuild-trend-bands": "sustainability_trend_bands",
+  "/api/v1/ml/update-predictions-sko": "sko_predictions",
+  "/api/v1/db/update-power-rankings": "legacy disabled",
+  "/api/v1/db/run-projection-accuracy": "projection_accuracy",
+  "/api/v1/game-predictions/forecast": "game_prediction_forecasts",
+  "/api/v1/game-predictions/score": "game_prediction_scores",
+  "/api/v1/db/update-PbP": "play_by_play"
 };
 
 type NormalizedStatus = "success" | "failure" | "unknown";
@@ -143,6 +196,8 @@ type JobSummary = {
   lastRunDisplay: string;
   method: ScheduleMethod;
   route: string | null;
+  routePath: string | null;
+  targetTable: string | null;
   statusCode: number | null;
   message: string | null;
   why: string | null;
@@ -157,6 +212,7 @@ type JobSummary = {
   failedRowSamples: string[];
   lastDurationMs: number | null;
   avgDurationMs: number | null;
+  lastKnownSuccessDisplay: string | null;
   optimizationDenotation: typeof SLOW_JOB_DENOTATION | null;
   benchmarkAnnotations: BenchmarkAnnotation[];
   missingObservationWarnings: string[];
@@ -171,12 +227,15 @@ type RunDigest = {
   runTimeDisplay: string;
   method: string | null;
   route: string | null;
+  routePath: string | null;
+  targetTable: string | null;
   statusCode: number | null;
   durationMs: number | null;
   rowsUpserted: number | null;
   rowsAffected: number | null;
   failedRows: number | null;
   reason: string | null;
+  lastKnownSuccessDisplay: string | null;
   failedRowSamples: string[];
   optimizationDenotation: typeof SLOW_JOB_DENOTATION | null;
   benchmarkAnnotations: BenchmarkAnnotation[];
@@ -591,6 +650,23 @@ function parseUrlPieces(
   }
 }
 
+function inferTargetTable(routePath: string | null, jobName: string): string | null {
+  if (routePath && ROUTE_TARGET_TABLE_MAP[routePath]) {
+    return ROUTE_TARGET_TABLE_MAP[routePath];
+  }
+
+  const normalizedJob = jobName.toLowerCase();
+  if (normalizedJob.includes("matview")) return "materialized view";
+  if (normalizedJob.includes("sustainability")) return "sustainability_*";
+  if (normalizedJob.includes("projection")) return "projection_*";
+  if (normalizedJob.includes("prediction")) return "game_prediction_*";
+  if (normalizedJob.includes("nst")) return "nst_*";
+  if (normalizedJob.includes("wgo")) return "wgo_*";
+  if (normalizedJob.includes("yahoo")) return "yahoo_*";
+
+  return null;
+}
+
 function parseAuditDetails(details: unknown): ParsedAuditDetails {
   const empty: ParsedAuditDetails = {
     timing: null,
@@ -771,7 +847,9 @@ function expectedRunAtWithinWindow(
 async function readCronScheduleMarkdown(): Promise<string> {
   const candidates = [
     path.resolve(process.cwd(), "rules/cron-schedule.md"),
-    path.resolve(process.cwd(), "web/rules/cron-schedule.md")
+    path.resolve(process.cwd(), "web/rules/cron-schedule.md"),
+    path.resolve(process.cwd(), "rules/context/cron-schedule.md"),
+    path.resolve(process.cwd(), "web/rules/context/cron-schedule.md")
   ];
 
   for (const candidate of candidates) {
@@ -782,7 +860,9 @@ async function readCronScheduleMarkdown(): Promise<string> {
     }
   }
 
-  throw new Error("Could not locate rules/cron-schedule.md");
+  throw new Error(
+    "Could not locate cron schedule markdown in rules/cron-schedule.md, web/rules/cron-schedule.md, rules/context/cron-schedule.md, or web/rules/context/cron-schedule.md"
+  );
 }
 
 function parseScheduleJsonEntries(markdown: string): CronScheduleJsonEntry[] {
@@ -982,7 +1062,10 @@ function statusSortValue(status: ReportJobStatus): number {
   }
 }
 
-function buildRunDigestFromAudit(row: AuditRow): RunDigest {
+function buildRunDigestFromAudit(
+  row: AuditRow,
+  lastKnownSuccessDisplay: string | null = null
+): RunDigest {
   const benchmarkAnnotations = getBenchmarkAnnotations(row.jobName);
   const optimizationDenotation = isSlowJobDuration(row.parsed.durationMs)
     ? SLOW_JOB_DENOTATION
@@ -1001,6 +1084,8 @@ function buildRunDigestFromAudit(row: AuditRow): RunDigest {
     runTimeDisplay: new Date(row.time).toLocaleString(),
     method: row.parsed.method,
     route: row.parsed.route,
+    routePath: row.parsed.routePath,
+    targetTable: inferTargetTable(row.parsed.routePath, row.jobName),
     statusCode: row.parsed.statusCode,
     durationMs: row.parsed.durationMs,
     rowsUpserted: row.parsed.rowsUpserted ?? row.rowsAffected,
@@ -1011,6 +1096,7 @@ function buildRunDigestFromAudit(row: AuditRow): RunDigest {
       row.parsed.responseMessage ??
       row.detailsMessage ??
       null,
+    lastKnownSuccessDisplay,
     failedRowSamples: row.parsed.failedRowSamples,
     optimizationDenotation,
     benchmarkAnnotations,
@@ -1018,7 +1104,10 @@ function buildRunDigestFromAudit(row: AuditRow): RunDigest {
   };
 }
 
-function buildRunDigestFromCron(row: RunRow): RunDigest {
+function buildRunDigestFromCron(
+  row: RunRow,
+  lastKnownSuccessDisplay: string | null = null
+): RunDigest {
   const benchmarkAnnotations = getBenchmarkAnnotations(row.jobName);
   const optimizationDenotation = isSlowJobDuration(row.durationMs)
     ? SLOW_JOB_DENOTATION
@@ -1037,17 +1126,90 @@ function buildRunDigestFromCron(row: RunRow): RunDigest {
     runTimeDisplay: new Date(row.time).toLocaleString(),
     method: row.method === "UNKNOWN" ? null : row.method,
     route: row.route,
+    routePath: row.routePath,
+    targetTable: inferTargetTable(row.routePath, row.jobName),
     statusCode: null,
     durationMs: row.durationMs,
     rowsUpserted: row.rowsAffected,
     rowsAffected: row.rowsAffected,
     failedRows: null,
     reason: row.returnMessage ? sanitizeErrorMessage(row.returnMessage, 240) : null,
+    lastKnownSuccessDisplay,
     failedRowSamples: [],
     optimizationDenotation,
     benchmarkAnnotations,
     missingObservationWarnings
   };
+}
+
+function auditSuccessKey(candidate: {
+  jobName: string;
+  routePath: string | null;
+  route: string | null;
+}): string {
+  return candidate.routePath ?? candidate.route ?? candidate.jobName;
+}
+
+function buildLastKnownSuccessMap(auditRows: AuditRow[]): Map<string, string> {
+  const successes = auditRows
+    .filter((row) => row.status === "success")
+    .sort((a, b) => Date.parse(b.time) - Date.parse(a.time));
+  const result = new Map<string, string>();
+
+  for (const row of successes) {
+    const display = new Date(row.time).toLocaleString();
+    const keys = new Set([
+      row.jobName,
+      row.parsed.route,
+      row.parsed.routePath,
+      auditSuccessKey({
+        jobName: row.jobName,
+        route: row.parsed.route,
+        routePath: row.parsed.routePath
+      })
+    ]);
+
+    for (const key of keys) {
+      if (key && !result.has(key)) {
+        result.set(key, display);
+      }
+    }
+  }
+
+  return result;
+}
+
+function findLastKnownSuccessDisplay(
+  successMap: Map<string, string>,
+  candidate: {
+    jobName: string;
+    route: string | null;
+    routePath: string | null;
+  }
+): string | null {
+  return (
+    successMap.get(candidate.jobName) ??
+    (candidate.routePath ? successMap.get(candidate.routePath) : undefined) ??
+    (candidate.route ? successMap.get(candidate.route) : undefined) ??
+    successMap.get(auditSuccessKey(candidate)) ??
+    null
+  );
+}
+
+function compactUnscheduledRuns(runs: RunDigest[]): RunDigest[] {
+  const seen = new Set<string>();
+  const alerts: RunDigest[] = [];
+
+  for (const run of runs) {
+    if (run.status === "success") continue;
+    const key = run.routePath ?? run.route ?? run.jobName;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    alerts.push(run);
+    if (alerts.length >= MAX_UNSCHEDULED_ALERTS) break;
+  }
+
+  return alerts;
 }
 
 function collectMissingObservationWarnings(job: {
@@ -1170,6 +1332,7 @@ async function handler(
     detailsMessage: extractDetailsMessage(row.details),
     parsed: parseAuditDetails(row.details)
   }));
+  const lastKnownSuccessMap = buildLastKnownSuccessMap(auditRows);
 
   const runRows: RunRow[] = (runs ?? []).map((row: any, index: number) => {
     const invocation = parseCronInvocation((row.sql_text ?? null) as string | null);
@@ -1302,6 +1465,16 @@ async function handler(
       const rowsAffectedLast = lastAudit?.rowsAffected ?? lastRun?.rowsAffected ?? null;
       const failedRowsLast = lastAudit?.parsed.failedRows ?? null;
       const failedRowSamples = lastAudit?.parsed.failedRowSamples ?? [];
+      const route = job.route ?? job.sqlText;
+      const routePath = job.routePath;
+      const lastKnownSuccessDisplay = findLastKnownSuccessDisplay(
+        lastKnownSuccessMap,
+        {
+          jobName: job.name,
+          route,
+          routePath
+        }
+      );
 
       const message =
         lastAudit?.parsed.responseMessage ??
@@ -1395,7 +1568,9 @@ async function handler(
             ? new Date(lastAudit?.time ?? lastRun?.time ?? "").toLocaleString()
             : "—",
         method: job.method,
-        route: job.route ?? job.sqlText,
+        route,
+        routePath,
+        targetTable: inferTargetTable(routePath, job.name),
         statusCode: lastAudit?.parsed.statusCode ?? null,
         message,
         why,
@@ -1410,6 +1585,7 @@ async function handler(
         failedRowSamples,
         lastDurationMs,
         avgDurationMs,
+        lastKnownSuccessDisplay,
         optimizationDenotation,
         benchmarkAnnotations,
         missingObservationWarnings
@@ -1428,17 +1604,68 @@ async function handler(
 
   const unmatchedAuditRuns = auditRows
     .filter((row) => !matchedAuditIds.has(row.id))
-    .map((row) => buildRunDigestFromAudit(row));
+    .map((row) =>
+      buildRunDigestFromAudit(
+        row,
+        findLastKnownSuccessDisplay(lastKnownSuccessMap, {
+          jobName: row.jobName,
+          route: row.parsed.route,
+          routePath: row.parsed.routePath
+        })
+      )
+    );
   const unmatchedCronRuns = runRows
     .filter((row) => !matchedRunIds.has(row.id))
-    .map((row) => buildRunDigestFromCron(row));
+    .map((row) =>
+      buildRunDigestFromCron(
+        row,
+        findLastKnownSuccessDisplay(lastKnownSuccessMap, {
+          jobName: row.jobName,
+          route: row.route,
+          routePath: row.routePath
+        })
+      )
+    );
   const unscheduledRuns = [...unmatchedAuditRuns, ...unmatchedCronRuns].sort(
     (a, b) => Date.parse(b.runTime) - Date.parse(a.runTime)
   );
+  const notableUnscheduledRuns = compactUnscheduledRuns(unscheduledRuns);
 
   const auditRunDigests = auditRows
-    .map((row) => buildRunDigestFromAudit(row))
+    .map((row) =>
+      buildRunDigestFromAudit(
+        row,
+        findLastKnownSuccessDisplay(lastKnownSuccessMap, {
+          jobName: row.jobName,
+          route: row.parsed.route,
+          routePath: row.parsed.routePath
+        })
+      )
+    )
     .sort((a, b) => Date.parse(b.runTime) - Date.parse(a.runTime));
+  const auditBriefings = jobSummaries.map((job) => ({
+    key: job.jobKey,
+    label: job.route ?? job.displayName,
+    jobName: job.displayName,
+    status: job.lastStatus === "missing" ? "unknown" : job.lastStatus,
+    runTime: job.lastRunDisplay,
+    runTimeDisplay: job.lastRunDisplay,
+    method: job.method === "UNKNOWN" ? null : job.method,
+    route: job.route,
+    routePath: job.routePath,
+    targetTable: job.targetTable,
+    statusCode: job.statusCode,
+    durationMs: job.lastDurationMs,
+    rowsUpserted: job.rowsUpsertedLast,
+    rowsAffected: job.rowsAffectedLast,
+    failedRows: job.failedRowsLast,
+    reason: job.why ?? job.note,
+    lastKnownSuccessDisplay: job.lastKnownSuccessDisplay,
+    failedRowSamples: job.failedRowSamples,
+    optimizationDenotation: job.optimizationDenotation,
+    benchmarkAnnotations: job.benchmarkAnnotations,
+    missingObservationWarnings: job.missingObservationWarnings
+  } satisfies RunDigest));
 
   const WARN_SLOW: SlowJobWarning[] = jobSummaries
     .filter((job) => isSlowJobDuration(job.lastDurationMs))
@@ -1530,10 +1757,10 @@ async function handler(
             ? `❌ Cron Audit — ${counts.auditFailures} failing audit runs`
             : `✅ Cron Audit — ${counts.auditSuccesses} audit runs ok`,
         react: CronAuditEmail({
-          audits: auditRunDigests,
+          audits: auditBriefings,
           sinceDate: since,
           fetchErrors: errors.filter((message) => message.includes("cron_job_audit")),
-      summary: {
+          summary: {
             auditRuns: counts.auditRuns,
             auditSuccesses: counts.auditSuccesses,
             auditFailures: counts.auditFailures,
@@ -1599,7 +1826,7 @@ async function handler(
           jobs: jobSummaries,
           failureHighlights,
           missingJobs,
-          unscheduledRuns,
+          unscheduledRuns: notableUnscheduledRuns,
           fetchErrors: errors,
           warnings: {
             slowMsThreshold: SLOW_JOB_THRESHOLD_MS,

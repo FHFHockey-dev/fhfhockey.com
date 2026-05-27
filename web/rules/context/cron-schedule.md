@@ -226,6 +226,13 @@
     "active": true
   },
   {
+    "jobid": null,
+    "jobname": "update-nhl-edge-stats",
+    "schedule": "25 9 * * *",
+    "run_time_utc": "09:25 UTC",
+    "active": true
+  },
+  {
     "jobid": 364,
     "jobname": "update-goalie-projections-v2",
     "schedule": "30 9 * * *",
@@ -265,6 +272,20 @@
     "jobname": "build-forge-derived-v2",
     "schedule": "50 09 * * *",
     "run_time_utc": "09:50 UTC",
+    "active": true
+  },
+  {
+    "jobid": null,
+    "jobname": "update-nhl-xg-shot-features",
+    "schedule": "51 9 * * *",
+    "run_time_utc": "09:51 UTC",
+    "active": true
+  },
+  {
+    "jobid": null,
+    "jobname": "update-nhl-xg-shot-predictions",
+    "schedule": "52 9 * * *",
+    "run_time_utc": "09:52 UTC",
     "active": true
   },
   {
@@ -482,10 +503,13 @@
 -- - 09:13 UTC / 04:13 EST: update-team-power-ratings-new
 -- - 09:14 UTC / 04:14 EST: update-wgo-teams
 -- - 09:15 UTC / 04:15 EST: update-nst-current-season
+-- - 09:25 UTC / 04:25 EST: update-nhl-edge-stats
 -- - 09:30 UTC / 04:30 EST: update-goalie-projections-v2
 -- - 09:40 UTC / 04:40 EST: RETIRED IN PASS 3 (formerly update-start-chart-projections)
 -- - 09:45 UTC / 04:45 EST: ingest-projection-inputs
 -- - 09:50 UTC / 04:50 EST: build-forge-derived-v2
+-- - 09:51 UTC / 04:51 EST: update-nhl-xg-shot-features
+-- - 09:52 UTC / 04:52 EST: update-nhl-xg-shot-predictions
 -- - 09:55 UTC / 04:55 EST: update-nst-team-daily
 -- - 10:00 UTC / 05:00 EST: daily-refresh-matview
 -- - 10:05 UTC / 05:05 EST: run-forge-projection-v2
@@ -1163,6 +1187,24 @@ curl -i -sS -m 180 \
 
 ----------------------------------------------------------------------------------
 -- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||  09:25 UTC  |||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||  04:25 EST  |||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
+-- SELECT cron.schedule(
+--     'update-nhl-edge-stats',
+--     '25 9 * * *', -- 09:25 UTC
+--     $$
+--         SELECT net.http_get(
+--             url := 'https://fhfhockey.com/api/v1/db/update-nhl-edge-stats?action=all&limit=1000&concurrency=8',
+--             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             timeout_milliseconds := 300000
+--         );
+--     $$
+-- );
+
+----------------------------------------------------------------------------------
+-- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 -- |||||||||||||||||||||||||||||||||  09:30 UTC  |||||||||||||||||||||||||||||||||
 -- |||||||||||||||||||||||||||||||||  04:30 EST  |||||||||||||||||||||||||||||||||
 -- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
@@ -1244,6 +1286,48 @@ curl -i -sS -m 180 \
 --             url := 'https://fhfhockey.com/api/v1/db/build-projection-derived-v2',
 --             body := '{}'::jsonb,
 --             headers := '{"Authorization": "Bearer fhfh-cron-mima-233", "Content-Type": "application/json"}'::jsonb,
+--             timeout_milliseconds := 300000
+--         );
+--     $$
+-- );
+
+----------------------------------------------------------------------------------
+-- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||  09:51 UTC  |||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||  04:51 EST  |||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
+-- Daily xG feature refresh. This uses bounded incremental backfill selection:
+-- it only selects past games that have normalized NHL API PBP rows and do not
+-- already have persisted xG shot-feature rows for the configured version.
+-- SELECT cron.schedule(
+--     'update-nhl-xg-shot-features',
+--     '51 9 * * *', -- 09:51 UTC
+--     $$
+--         SELECT net.http_get(
+--             url := 'https://fhfhockey.com/api/v1/db/update-nhl-xg-shot-features?backfill=true&featureVersion=1&parserVersion=1&strengthVersion=1&limit=25&gameBatchSize=1&upsertBatchSize=500',
+--             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             timeout_milliseconds := 300000
+--         );
+--     $$
+-- );
+
+----------------------------------------------------------------------------------
+-- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||  09:52 UTC  |||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||  04:52 EST  |||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
+-- Daily xG prediction refresh. This depends on `NHL_XG_MODEL_ARTIFACT_PATH`
+-- being configured in the deployed environment; do not pass local artifact
+-- paths through production cron URLs.
+-- SELECT cron.schedule(
+--     'update-nhl-xg-shot-predictions',
+--     '52 9 * * *', -- 09:52 UTC
+--     $$
+--         SELECT net.http_get(
+--             url := 'https://fhfhockey.com/api/v1/db/update-nhl-xg-shot-predictions?backfill=true&featureVersion=1&predictionType=shot_goal&limit=3000&upsertBatchSize=500',
+--             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$

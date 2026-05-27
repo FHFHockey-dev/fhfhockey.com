@@ -35,6 +35,8 @@ type ShiftRow = Pick<
 >;
 
 export const NHL_SHOT_FEATURE_VERSION = 1;
+const DEFAULT_REGULATION_PERIOD_SECONDS = 20 * 60;
+const DEFAULT_REGULAR_SEASON_OT_SECONDS = 5 * 60;
 
 export type NhlShotFeatureRow = {
   featureVersion: number;
@@ -187,6 +189,167 @@ function computeShotAngleDegrees(
   return (Math.atan2(deltaY, deltaX) * 180) / Math.PI;
 }
 
+function getEventOrder(event: ParsedNhlPbpEvent): number {
+  return event.sort_order ?? event.event_id;
+}
+
+function sortEvents(events: ParsedNhlPbpEvent[]): ParsedNhlPbpEvent[] {
+  return [...events].sort((left, right) => {
+    if (left.game_id !== right.game_id) return left.game_id - right.game_id;
+    const leftOrder = getEventOrder(left);
+    const rightOrder = getEventOrder(right);
+    if (leftOrder !== rightOrder) return leftOrder - rightOrder;
+    return left.event_id - right.event_id;
+  });
+}
+
+function defaultPeriodDurationSeconds(periodType: string | null): number {
+  const normalized = periodType?.trim().toUpperCase() ?? "";
+  if (
+    normalized.includes("OT") ||
+    normalized.includes("OVERTIME") ||
+    normalized === "SO"
+  ) {
+    return DEFAULT_REGULAR_SEASON_OT_SECONDS;
+  }
+  return DEFAULT_REGULATION_PERIOD_SECONDS;
+}
+
+function resolvePeriodDurationSeconds(event: ParsedNhlPbpEvent): number | null {
+  if (event.period_duration_seconds != null) {
+    return event.period_duration_seconds;
+  }
+
+  const timeRemainingSeconds = (event as ParsedNhlPbpEvent & {
+    time_remaining_seconds?: number | null;
+  }).time_remaining_seconds;
+
+  if (event.period_seconds_elapsed != null && timeRemainingSeconds != null) {
+    return event.period_seconds_elapsed + timeRemainingSeconds;
+  }
+
+  if (event.period_number == null) {
+    return null;
+  }
+
+  return defaultPeriodDurationSeconds(event.period_type ?? null);
+}
+
+function buildPeriodDurationLookup(events: ParsedNhlPbpEvent[]): Map<string, number> {
+  const durationByGamePeriod = new Map<string, number>();
+
+  for (const event of events) {
+    if (event.period_number == null) continue;
+    const duration = resolvePeriodDurationSeconds(event);
+    if (duration == null) continue;
+
+    const key = `${event.game_id}:${event.period_number}`;
+    durationByGamePeriod.set(
+      key,
+      Math.max(durationByGamePeriod.get(key) ?? 0, duration)
+    );
+  }
+
+  return durationByGamePeriod;
+}
+
+function buildPeriodOffsetLookup(
+  events: ParsedNhlPbpEvent[],
+  durationByGamePeriod: Map<string, number>
+): Map<string, number> {
+  const periodsByGame = new Map<number, number[]>();
+
+  for (const event of events) {
+    if (event.period_number == null) continue;
+    const periods = periodsByGame.get(event.game_id) ?? [];
+    periods.push(event.period_number);
+    periodsByGame.set(event.game_id, periods);
+  }
+
+  const offsetByGamePeriod = new Map<string, number>();
+  for (const [gameId, periods] of periodsByGame.entries()) {
+    const uniquePeriods = Array.from(new Set(periods)).sort((left, right) => left - right);
+    let offset = 0;
+
+    for (const periodNumber of uniquePeriods) {
+      const key = `${gameId}:${periodNumber}`;
+      offsetByGamePeriod.set(key, offset);
+      offset += durationByGamePeriod.get(key) ?? defaultPeriodDurationSeconds(null);
+    }
+  }
+
+  return offsetByGamePeriod;
+}
+
+function hydratePersistedEventTimingFields(
+  events: ParsedNhlPbpEvent[]
+): ParsedNhlPbpEvent[] {
+  const sorted = sortEvents(events);
+  const durationByGamePeriod = buildPeriodDurationLookup(sorted);
+  const offsetByGamePeriod = buildPeriodOffsetLookup(sorted, durationByGamePeriod);
+  const hydrated: ParsedNhlPbpEvent[] = [];
+
+  for (let index = 0; index < sorted.length; index += 1) {
+    const event = sorted[index];
+    const previous =
+      index > 0 && sorted[index - 1].game_id === event.game_id
+        ? sorted[index - 1]
+        : null;
+    const next =
+      index < sorted.length - 1 && sorted[index + 1].game_id === event.game_id
+        ? sorted[index + 1]
+        : null;
+
+    const periodKey =
+      event.period_number == null ? null : `${event.game_id}:${event.period_number}`;
+    const periodOffset =
+      periodKey == null ? null : offsetByGamePeriod.get(periodKey) ?? null;
+    const gameSecondsElapsed =
+      event.game_seconds_elapsed ??
+      (periodOffset != null && event.period_seconds_elapsed != null
+        ? periodOffset + event.period_seconds_elapsed
+        : null);
+    const previousPeriodKey =
+      previous?.period_number == null
+        ? null
+        : `${previous.game_id}:${previous.period_number}`;
+    const previousPeriodOffset =
+      previousPeriodKey == null
+        ? null
+        : offsetByGamePeriod.get(previousPeriodKey) ?? null;
+    const previousGameSecondsElapsed =
+      previous?.game_seconds_elapsed ??
+      (previousPeriodOffset != null && previous?.period_seconds_elapsed != null
+        ? previousPeriodOffset + previous.period_seconds_elapsed
+        : null);
+
+    hydrated.push({
+      ...event,
+      event_index: event.event_index ?? index,
+      period_duration_seconds:
+        event.period_duration_seconds ??
+        (periodKey == null ? null : durationByGamePeriod.get(periodKey) ?? null),
+      game_seconds_elapsed: gameSecondsElapsed,
+      previous_event_id: event.previous_event_id ?? previous?.event_id ?? null,
+      previous_event_sort_order:
+        event.previous_event_sort_order ?? previous?.sort_order ?? null,
+      previous_event_type_desc_key:
+        event.previous_event_type_desc_key ?? previous?.type_desc_key ?? null,
+      next_event_id: event.next_event_id ?? next?.event_id ?? null,
+      next_event_sort_order: event.next_event_sort_order ?? next?.sort_order ?? null,
+      next_event_type_desc_key:
+        event.next_event_type_desc_key ?? next?.type_desc_key ?? null,
+      seconds_since_previous_event:
+        event.seconds_since_previous_event ??
+        (gameSecondsElapsed != null && previousGameSecondsElapsed != null
+          ? Math.max(0, gameSecondsElapsed - previousGameSecondsElapsed)
+          : null),
+    });
+  }
+
+  return hydrated;
+}
+
 function getPrimaryShooterId(event: ParsedNhlPbpEvent): number | null {
   return event.shooting_player_id ?? event.scoring_player_id ?? null;
 }
@@ -227,37 +390,38 @@ export function buildShotFeatureRows(
   } = {}
 ): NhlShotFeatureRow[] {
   const featureVersion = options.featureVersion ?? NHL_SHOT_FEATURE_VERSION;
+  const hydratedEvents = hydratePersistedEventTimingFields(events);
 
-  const priorContexts = buildPriorEventContexts(events);
+  const priorContexts = buildPriorEventContexts(hydratedEvents);
   const priorByEventId = new Map(
     priorContexts.map((context) => [context.eventId, context])
   );
-  const possessionContexts = buildPossessionChainContexts(events);
+  const possessionContexts = buildPossessionChainContexts(hydratedEvents);
   const possessionByEventId = new Map(
     possessionContexts.map((context) => [context.eventId, context])
   );
-  const scoreStateContexts = buildScoreStateContexts(events);
+  const scoreStateContexts = buildScoreStateContexts(hydratedEvents);
   const scoreStateByEventId = new Map(
     scoreStateContexts.map((context) => [context.eventId, context])
   );
-  const reboundContexts = buildReboundContexts(events);
+  const reboundContexts = buildReboundContexts(hydratedEvents);
   const reboundByEventId = new Map(
     reboundContexts.map((context) => [context.eventId, context])
   );
-  const rushContexts = buildRushContexts(events);
+  const rushContexts = buildRushContexts(hydratedEvents);
   const rushByEventId = new Map(
     rushContexts.map((context) => [context.eventId, context])
   );
-  const flurryContexts = buildFlurryContexts(events);
+  const flurryContexts = buildFlurryContexts(hydratedEvents);
   const flurryByEventId = new Map(
     flurryContexts.map((context) => [context.eventId, context])
   );
-  const missReasonContexts = buildMissReasonContexts(events);
+  const missReasonContexts = buildMissReasonContexts(hydratedEvents);
   const missReasonByEventId = new Map(
     missReasonContexts.map((context) => [context.eventId, context])
   );
   const contextualFeatures = buildContextualFeatureContexts(
-    events,
+    hydratedEvents,
     shiftRows,
     homeTeamId,
     awayTeamId
@@ -266,7 +430,7 @@ export function buildShotFeatureRows(
     contextualFeatures.map((context) => [context.eventId, context])
   );
 
-  return events
+  return hydratedEvents
     .filter((event) => {
       const inclusion = evaluateNormalizedEventInclusion(event);
       return event.is_shot_like && inclusion.includeInShotFeatures;

@@ -65,6 +65,54 @@ Important boundaries:
 - empty-net events remain included unless later excluded by an explicitly versioned training-policy decision
 - overtime rows remain included unless later excluded by an explicitly versioned training-policy decision
 
+## Rebound-Creation Label Definition
+
+The rebound-creation model is a separate prediction task from shot-goal xG.
+
+Canonical row grain:
+
+- one row per current shot-feature row
+- same unique `(gameId, eventId)` identity as the shot-goal model
+- same source feature layer from `nhlShotFeatureBuilder.ts`
+
+Canonical target:
+
+- `label_rebound_creation = 1` when the current shot creates a subsequent rebound shot
+- `label_rebound_creation = 0` when the current shot does not create a subsequent rebound shot within the approved rebound window
+
+The current approved first-pass source of this label is:
+
+- `createsRebound = true`
+- backed by `buildReboundContexts(...)`
+- using `DEFAULT_REBOUND_WINDOW_SECONDS = 3`
+
+Required positive-label conditions:
+
+- the current event is a shot-feature-eligible rebound source
+- the next rebound target is shot-feature eligible
+- the rebound target occurs in the same game and same period
+- the rebound target follows within the rebound window
+- the rebound target is same-team by the current prior-event context
+- the rebound target is linked by `reboundTargetEventId`
+
+Source-event treatment:
+
+- `shot-on-goal`, `missed-shot`, and `blocked-shot` may act as rebound sources in the feature layer
+- model training may narrow the row cohort, but any narrowing must be recorded in the artifact metadata
+- shot-goal xG remains trained only on unblocked attempts unless a separate versioned decision changes that policy
+
+Explicit exclusions and unresolved boundaries:
+
+- goalie freezes are not yet a positive rebound-creation label unless a subsequent rebound shot is recorded
+- covered pucks, whistles, and stoppages are not modeled as a separate freeze target in this rebound-creation task
+- rebound-control, freeze probability, and second-chance danger are later tasks, not alternate labels for the first rebound-creation model
+- empty-net, delayed-penalty, rare-manpower, and shootout/penalty-shot treatment must be recorded in the rebound artifact policy before approval
+
+Leakage rule:
+
+- the rebound-creation label may be used only as the supervised target for `prediction_type = "rebound_creation"`
+- it must not be used as a feature for shot-goal xG or other pre-shot scoring models
+
 ## Season Scope For The First Baseline Comparison
 
 The first baseline comparison is locked to:

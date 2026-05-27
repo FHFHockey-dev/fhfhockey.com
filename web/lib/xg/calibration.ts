@@ -2,6 +2,7 @@ import {
   predictBinaryLogisticProbability,
   trainBinaryLogisticModel,
   type BinaryLabel,
+  type BinaryLogisticModel,
 } from "./binaryLogistic";
 
 export type ProbabilityLabel = BinaryLabel;
@@ -44,8 +45,24 @@ export type CalibrationAssessment = {
 
 export type CalibrationMethodName = "raw" | "platt" | "isotonic";
 
+export type PlattCalibrationModel = {
+  method: "platt";
+  model: BinaryLogisticModel;
+};
+
+export type IsotonicCalibrationModel = {
+  method: "isotonic";
+  blocks: IsotonicBlock[];
+};
+
+export type SerializedCalibrationModel =
+  | { method: "raw" }
+  | PlattCalibrationModel
+  | IsotonicCalibrationModel;
+
 export type ProbabilityCalibrator = {
   method: CalibrationMethodName;
+  model: SerializedCalibrationModel;
   predict: (prediction: number) => number;
 };
 
@@ -272,7 +289,9 @@ function assignFoldIndices(examples: CalibrationExample[], foldCount: number): M
   return foldByRowId;
 }
 
-function fitPlattCalibrator(examples: CalibrationExample[]): { predict: (prediction: number) => number } | null {
+function fitPlattCalibrator(
+  examples: CalibrationExample[]
+): { model: PlattCalibrationModel; predict: (prediction: number) => number } | null {
   const labels = new Set(examples.map((example) => example.label));
   if (examples.length < 10 || labels.size < 2) {
     return null;
@@ -290,12 +309,15 @@ function fitPlattCalibrator(examples: CalibrationExample[]): { predict: (predict
   });
 
   return {
+    model: { method: "platt", model },
     predict: (prediction: number) =>
       predictBinaryLogisticProbability(model, [logit(prediction)]),
   };
 }
 
-function fitIsotonicCalibrator(examples: CalibrationExample[]): { predict: (prediction: number) => number } | null {
+function fitIsotonicCalibrator(
+  examples: CalibrationExample[]
+): { model: IsotonicCalibrationModel; predict: (prediction: number) => number } | null {
   const labels = new Set(examples.map((example) => example.label));
   if (examples.length < 10 || labels.size < 2) {
     return null;
@@ -337,9 +359,9 @@ function fitIsotonicCalibrator(examples: CalibrationExample[]): { predict: (pred
     }
   }
 
-  const model: IsotonicModel = { blocks };
   return {
-    predict: (prediction: number) => predictIsotonicProbability(model, prediction),
+    model: { method: "isotonic", blocks },
+    predict: (prediction: number) => predictIsotonicProbability({ blocks }, prediction),
   };
 }
 
@@ -352,6 +374,7 @@ export function fitProbabilityCalibrator(
     if (calibrator) {
       return {
         method: "platt",
+        model: calibrator.model,
         predict: calibrator.predict,
       };
     }
@@ -362,6 +385,7 @@ export function fitProbabilityCalibrator(
     if (calibrator) {
       return {
         method: "isotonic",
+        model: calibrator.model,
         predict: calibrator.predict,
       };
     }
@@ -369,8 +393,24 @@ export function fitProbabilityCalibrator(
 
   return {
     method: "raw",
+    model: { method: "raw" },
     predict: (prediction: number) => clipProbability(prediction),
   };
+}
+
+export function predictWithSerializedCalibrator(
+  calibrationModel: SerializedCalibrationModel | null | undefined,
+  prediction: number
+): number {
+  if (!calibrationModel || calibrationModel.method === "raw") {
+    return clipProbability(prediction);
+  }
+
+  if (calibrationModel.method === "platt") {
+    return predictBinaryLogisticProbability(calibrationModel.model, [logit(prediction)]);
+  }
+
+  return predictIsotonicProbability({ blocks: calibrationModel.blocks }, prediction);
 }
 
 function predictIsotonicProbability(model: IsotonicModel, prediction: number): number {

@@ -12,12 +12,15 @@ interface AuditEntry {
   runTimeDisplay: string;
   method: string | null;
   route: string | null;
+  routePath: string | null;
+  targetTable: string | null;
   statusCode: number | null;
   durationMs: number | null;
   rowsUpserted: number | null;
   rowsAffected: number | null;
   failedRows: number | null;
   reason: string | null;
+  lastKnownSuccessDisplay: string | null;
   failedRowSamples: string[];
   optimizationDenotation?: string | null;
   benchmarkAnnotations?: BenchmarkAnnotation[];
@@ -50,7 +53,6 @@ export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({
   summary
 }) => {
   const failures = audits.filter((audit) => audit.status === "failure");
-  const nonFailures = audits.filter((audit) => audit.status !== "failure");
   const telemetryUnavailable = fetchErrors.length > 0 && audits.length === 0;
 
   const container: React.CSSProperties = {
@@ -131,13 +133,15 @@ export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({
         <tr style={{ background: "#F9FAFB" }}>
           <th align="left">Status</th>
           <th align="left">Job</th>
-          <th align="left">Run Time</th>
-          <th align="left">Route</th>
+          <th align="left">Started</th>
+          <th align="left">API Route</th>
+          <th align="left">Target</th>
           <th align="right">HTTP</th>
-          <th align="right">Duration</th>
+          <th align="right">Elapsed</th>
           <th align="right">Upserted</th>
-          <th align="right">Failed Rows</th>
-          <th align="left">Reason</th>
+          <th align="right">Err Rows</th>
+          <th align="left">Last Success</th>
+          <th align="left">Failure Reason</th>
         </tr>
       </thead>
       <tbody>
@@ -154,15 +158,17 @@ export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({
             <td style={{ fontWeight: 700 }}>{audit.jobName}</td>
             <td>{audit.runTimeDisplay}</td>
             <td>
-              <div>{audit.route ?? audit.label}</div>
+              <div>{audit.routePath ?? audit.route ?? audit.label}</div>
               <div style={{ fontSize: 12, color: "#6B7280" }}>
                 {audit.method ?? "—"}
               </div>
             </td>
+            <td>{audit.targetTable ?? "—"}</td>
             <td align="right">{audit.statusCode ?? "—"}</td>
             <td align="right">{renderDuration(audit.durationMs)}</td>
             <td align="right">{audit.rowsUpserted ?? audit.rowsAffected ?? "—"}</td>
             <td align="right">{audit.failedRows ?? "—"}</td>
+            <td>{audit.lastKnownSuccessDisplay ?? "—"}</td>
             <td>
               <div>{audit.reason ?? "—"}</div>
               {audit.optimizationDenotation
@@ -211,7 +217,7 @@ export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({
 
   return (
     <div style={container}>
-      <h1 style={{ margin: "0 0 8px" }}>Cron Audit — last 24 hrs</h1>
+      <h1 style={{ margin: "0 0 8px" }}>Daily Cron CEO Briefing</h1>
       <div style={{ margin: "0 0 12px", color: "#374151" }}>
         Since {new Date(sinceDate).toLocaleString()} • {summary.auditRuns} audit runs
         • {summary.auditSuccesses} successes •{" "}
@@ -255,23 +261,16 @@ export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({
         </div>
       ) : null}
 
-      {!telemetryUnavailable && failures.length > 0 ? (
-        <>
-          <h2 style={{ margin: "16px 0 8px", color: "#991B1B" }}>
-            Failing audit runs
-          </h2>
-          {renderTable(failures)}
-        </>
-      ) : !telemetryUnavailable ? (
+      {!telemetryUnavailable && failures.length === 0 ? (
         <div style={{ margin: "12px 0", color: "#166534", fontWeight: 700 }}>
-          No audit failures in this period.
+          No scheduled audit failures in this period.
         </div>
       ) : null}
 
-      {!telemetryUnavailable && nonFailures.length > 0 ? (
+      {!telemetryUnavailable && audits.length > 0 ? (
         <>
-          <h2 style={{ margin: "16px 0 8px" }}>All other audit runs</h2>
-          {renderTable(nonFailures)}
+          <h2 style={{ margin: "16px 0 8px" }}>Scheduled job briefing</h2>
+          {renderTable(audits)}
         </>
       ) : null}
     </div>
