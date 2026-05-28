@@ -3,6 +3,7 @@ export type AnalyticsSurfaceId =
   | "uls-team-explorer"
   | "uls-skater-explorer"
   | "uls-goalie-explorer"
+  | "uls-xg-lab"
   | "trends"
   | "sandbox";
 
@@ -96,6 +97,25 @@ export const ANALYTICS_SURFACE_CONTRACTS = [
     ]
   },
   {
+    id: "uls-xg-lab",
+    href: "/underlying-stats/xg",
+    label: "xG Model Lab",
+    shortLabel: "xG Lab",
+    pillar: "uls",
+    purpose:
+      "Own the isolated review surface for in-house xG, created-xG, transition, and rebound-control outputs before they are promoted into production player, goalie, and team drill-ins.",
+    owns: [
+      "Read-only validation of in-house xG aggregate outputs",
+      "Model component inspection before production integration",
+      "Cross-entity xG QA for players, teams, and goalies"
+    ],
+    defers: [
+      "Production player drill-in ownership",
+      "Production goalie drill-in ownership",
+      "Production team explorer ownership"
+    ]
+  },
+  {
     id: "trends",
     href: "/trends",
     label: "Trends Dashboard",
@@ -174,7 +194,8 @@ export const UNDERLYING_STATS_NAV_LINKS = ANALYTICS_SURFACE_CONTRACTS.filter(
   (surface) =>
     surface.id === "uls-skater-explorer" ||
     surface.id === "uls-goalie-explorer" ||
-    surface.id === "uls-team-explorer"
+    surface.id === "uls-team-explorer" ||
+    surface.id === "uls-xg-lab"
 ).map((surface) => ({
   href: surface.href,
   label: surface.shortLabel

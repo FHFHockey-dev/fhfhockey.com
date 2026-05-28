@@ -80,6 +80,12 @@ describe("nhlRebounds", () => {
       createsRebound: true,
       reboundTargetEventId: 101,
       reboundTargetTypeDescKey: "goal",
+      reboundControlOutcome: "second_chance_allowed",
+      createsSecondChanceAllowed: true,
+      createsGoalieFreeze: false,
+      createsCoveredPuck: false,
+      createsNoDangerContinuation: false,
+      reboundOutcomeConfidence: "high",
     });
 
     expect(contexts[1]).toMatchObject({
@@ -91,6 +97,7 @@ describe("nhlRebounds", () => {
       reboundTimeDeltaSeconds: 2,
       reboundWindowSeconds: DEFAULT_REBOUND_WINDOW_SECONDS,
       createsRebound: false,
+      reboundControlOutcome: "unknown",
     });
     expect(contexts[1].reboundDistanceFromSource).toBeCloseTo(13.601, 3);
     expect(contexts[1].reboundLateralDisplacementFeet).toBe(11);
@@ -155,6 +162,100 @@ describe("nhlRebounds", () => {
       { eventId: 201, isReboundShot: false },
       { eventId: 202, isReboundShot: false, reboundSourceEventId: null },
     ]);
+  });
+
+  it("labels a quick shot-on-goal stoppage as a goalie freeze and covered puck", () => {
+    const events = parseEvents([
+      {
+        eventId: 150,
+        sortOrder: 150,
+        periodDescriptor: { number: 1, periodType: "REG" },
+        timeInPeriod: "08:00",
+        timeRemaining: "12:00",
+        situationCode: "1551",
+        homeTeamDefendingSide: "left",
+        typeCode: 506,
+        typeDescKey: "shot-on-goal",
+        details: {
+          eventOwnerTeamId: 10,
+          shootingPlayerId: 91,
+          goalieInNetId: 30,
+          xCoord: 70,
+          yCoord: 8,
+        },
+      },
+      {
+        eventId: 151,
+        sortOrder: 151,
+        periodDescriptor: { number: 1, periodType: "REG" },
+        timeInPeriod: "08:01",
+        timeRemaining: "11:59",
+        situationCode: "1551",
+        homeTeamDefendingSide: "left",
+        typeCode: 521,
+        typeDescKey: "stoppage",
+        details: { reason: "Goalie froze puck" },
+      },
+    ]);
+
+    expect(buildReboundContexts(events)[0]).toMatchObject({
+      eventId: 150,
+      createsRebound: false,
+      reboundControlOutcome: "goalie_freeze",
+      createsGoalieFreeze: true,
+      createsCoveredPuck: true,
+      createsNoDangerContinuation: false,
+      reboundOutcomeConfidence: "medium",
+    });
+  });
+
+  it("supports rebound creation after post or missed-shot sources", () => {
+    const events = parseEvents([
+      {
+        eventId: 175,
+        sortOrder: 175,
+        periodDescriptor: { number: 1, periodType: "REG" },
+        timeInPeriod: "06:00",
+        timeRemaining: "14:00",
+        situationCode: "1551",
+        homeTeamDefendingSide: "left",
+        typeCode: 507,
+        typeDescKey: "missed-shot",
+        details: {
+          eventOwnerTeamId: 10,
+          shootingPlayerId: 91,
+          reason: "post",
+          xCoord: 70,
+          yCoord: 8,
+        },
+      },
+      {
+        eventId: 176,
+        sortOrder: 176,
+        periodDescriptor: { number: 1, periodType: "REG" },
+        timeInPeriod: "06:02",
+        timeRemaining: "13:58",
+        situationCode: "1551",
+        homeTeamDefendingSide: "left",
+        typeCode: 506,
+        typeDescKey: "shot-on-goal",
+        details: {
+          eventOwnerTeamId: 10,
+          shootingPlayerId: 92,
+          goalieInNetId: 30,
+          xCoord: 78,
+          yCoord: -3,
+        },
+      },
+    ]);
+
+    expect(buildReboundContexts(events)[0]).toMatchObject({
+      eventId: 175,
+      createsRebound: true,
+      reboundTargetEventId: 176,
+      reboundControlOutcome: "second_chance_allowed",
+      createsSecondChanceAllowed: true,
+    });
   });
 
   it("requires the follow-up shot to stay within the rebound time window", () => {
